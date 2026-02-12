@@ -161,6 +161,8 @@
 &lt;li>修改 HugeGraph-Server 的 &lt;code>rest-server.properties&lt;/code> 配置：&lt;/li>
 &lt;/ol>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>usePD=true
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span># 注意，1.7.0 必须在 rest-server.properties 配置 pd.peers
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span># 若需要 auth
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span># auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator

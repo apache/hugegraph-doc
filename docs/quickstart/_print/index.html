@@ -89,6 +89,8 @@ after the service is stopped artificially, or when the service needs to be start
 </span></span><span style=display:flex><span>pd.peers=127.0.0.1:8686
 </span></span></code></pre></div><p>Then enable PD discovery in <code>rest-server.properties</code> (required for every HugeGraph-Server node):</p><div class=highlight><pre tabindex=0 style=background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback><span style=display:flex><span>usePD=true
 </span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span># notice: must have this conf in 1.7.0
+</span></span><span style=display:flex><span>pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
 </span></span><span style=display:flex><span># If auth is needed
 </span></span><span style=display:flex><span># auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
 </span></span></code></pre></div><p>If configuring multiple HugeGraph-Server nodes, you need to modify the <code>rest-server.properties</code> configuration file for each node, for example:</p><p>Node 1 (Master node):</p><div class=highlight><pre tabindex=0 style=background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback><span style=display:flex><span>usePD=true

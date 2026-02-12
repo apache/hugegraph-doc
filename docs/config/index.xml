@@ -123,7 +123,7 @@
 &lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>There are many configuration options mentioned above, but for now, let&amp;rsquo;s focus on the following options: &lt;code>channelizer&lt;/code> and &lt;code>graphs&lt;/code>.&lt;/p>
 &lt;ul>
 &lt;li>&lt;code>graphs&lt;/code>: This option specifies the graphs that need to be opened when the GremlinServer starts. It is a map structure where the key is the name of the graph and the value is the configuration file path for that graph.&lt;/li>
-&lt;li>&lt;code>channelizer&lt;/code>: The GremlinServer supports two communication modes with clients: WebSocket and HTTP (default). If WebSocket is chosen, users can quickly experience the features of HugeGraph using &lt;a href="/clients/gremlin-console.html">Gremlin-Console&lt;/a>, but it does not support importing large-scale data. It is recommended to use HTTP for communication, as all peripheral components of HugeGraph are implemented based on HTTP.&lt;/li>
+&lt;li>&lt;code>channelizer&lt;/code>: The GremlinServer supports two communication modes with clients: WebSocket and HTTP (default). If WebSocket is chosen, users can quickly experience the features of HugeGraph using &lt;a href="../clients/gremlin-console">Gremlin-Console&lt;/a>, but it does not support importing large-scale data. It is recommended to use HTTP for communication, as all peripheral components of HugeGraph are implemented based on HTTP.&lt;/li>
 &lt;/ul>
 &lt;p>By default, the GremlinServer serves at &lt;code>localhost:8182&lt;/code>. If you need to modify it, configure the &lt;code>host&lt;/code> and &lt;code>port&lt;/code> settings.&lt;/p>
 &lt;ul>

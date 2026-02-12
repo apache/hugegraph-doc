@@ -1117,7 +1117,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note:&lt;/p>
 &lt;blockquote>
-&lt;p>You can use &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code> (where &amp;ldquo;1&amp;rdquo; is the task_id) to query the execution status of the asynchronous task. For more information, refer to the &lt;a href="../task">Asynchronous Task RESTful API&lt;/a>.&lt;/p>
+&lt;p>You can use &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code> (where &amp;ldquo;1&amp;rdquo; is the task_id) to query the execution status of the asynchronous task. For more information, refer to the &lt;a href="./task">Asynchronous Task RESTful API&lt;/a>.&lt;/p>
 &lt;/blockquote></description></item><item><title>Docs: EdgeLabel API</title><link>/docs/clients/restful-api/edgelabel/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/clients/restful-api/edgelabel/</guid><description>
 &lt;h3 id="14-edgelabel">1.4 EdgeLabel&lt;/h3>
 &lt;p>Assuming PropertyKeys from version 1.2.3 and VertexLabels from version 1.3.3 have already been created.&lt;/p>
@@ -1341,7 +1341,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note:&lt;/p>
 &lt;blockquote>
-&lt;p>You can query the execution status of an asynchronous task by using &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code> (where &amp;ldquo;1&amp;rdquo; is the task_id). For more information, refer to the &lt;a href="../task">Asynchronous Task RESTful API&lt;/a>.&lt;/p>
+&lt;p>You can query the execution status of an asynchronous task by using &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code> (where &amp;ldquo;1&amp;rdquo; is the task_id). For more information, refer to the &lt;a href="./task">Asynchronous Task RESTful API&lt;/a>.&lt;/p>
 &lt;/blockquote></description></item><item><title>Docs: IndexLabel API</title><link>/docs/clients/restful-api/indexlabel/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/clients/restful-api/indexlabel/</guid><description>
 &lt;h3 id="15-indexlabel">1.5 IndexLabel&lt;/h3>
 &lt;p>Assuming PropertyKeys from version 1.1.3, VertexLabels from version 1.2.3, and EdgeLabels from version 1.3.3 have already been created.&lt;/p>
@@ -1453,7 +1453,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note:&lt;/p>
 &lt;blockquote>
-&lt;p>You can query the execution status of an asynchronous task by using &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code> (where &amp;ldquo;1&amp;rdquo; is the task_id). For more information, refer to the &lt;a href="../task">Asynchronous Task RESTful API&lt;/a>.&lt;/p>
+&lt;p>You can query the execution status of an asynchronous task by using &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code> (where &amp;ldquo;1&amp;rdquo; is the task_id). For more information, refer to the &lt;a href="./task">Asynchronous Task RESTful API&lt;/a>.&lt;/p>
 &lt;/blockquote></description></item><item><title>Docs: Rebuild API</title><link>/docs/clients/restful-api/rebuild/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/clients/restful-api/rebuild/</guid><description>
 &lt;h3 id="16-rebuild">1.6 Rebuild&lt;/h3>
 &lt;h4 id="161-rebuild-indexlabel">1.6.1 Rebuild IndexLabel&lt;/h4>
@@ -1467,7 +1467,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note:&lt;/p>
 &lt;blockquote>
-&lt;p>You can get the asynchronous job status by &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/${task_id}&lt;/code> (the task_id here should be 1). See More &lt;a href="../task">AsyncJob RESTfull API&lt;/a>&lt;/p>
+&lt;p>You can get the asynchronous job status by &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/${task_id}&lt;/code> (the task_id here should be 1). See More &lt;a href="./task">AsyncJob RESTfull API&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;h4 id="162-rebulid-all-indexs-of-vertexlabel">1.6.2 Rebulid all Indexs of VertexLabel&lt;/h4>
 &lt;h5 id="method--url-1">Method &amp;amp; Url&lt;/h5>
@@ -1480,7 +1480,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note:&lt;/p>
 &lt;blockquote>
-&lt;p>You can get the asynchronous job status by &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/${task_id}&lt;/code> (the task_id here should be 2). See More &lt;a href="../task">AsyncJob RESTfull API&lt;/a>&lt;/p>
+&lt;p>You can get the asynchronous job status by &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/${task_id}&lt;/code> (the task_id here should be 2). See More &lt;a href="./task">AsyncJob RESTfull API&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;h4 id="163-rebulid-all-indexs-of-edgelabel">1.6.3 Rebulid all Indexs of EdgeLabel&lt;/h4>
 &lt;h5 id="method--url-2">Method &amp;amp; Url&lt;/h5>
@@ -1493,7 +1493,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note:&lt;/p>
 &lt;blockquote>
-&lt;p>You can get the asynchronous job status by &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/${task_id}&lt;/code> (the task_id here should be 3). See More &lt;a href="../task">AsyncJob RESTfull API&lt;/a>&lt;/p>
+&lt;p>You can get the asynchronous job status by &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/${task_id}&lt;/code> (the task_id here should be 3). See More &lt;a href="./task">AsyncJob RESTfull API&lt;/a>&lt;/p>
 &lt;/blockquote></description></item><item><title>Docs: Vertex API</title><link>/docs/clients/restful-api/vertex/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/clients/restful-api/vertex/</guid><description>
 &lt;h3 id="21-vertex">2.1 Vertex&lt;/h3>
 &lt;p>In vertex types, the &lt;code>Id&lt;/code> strategy determines the type of the vertex &lt;code>Id&lt;/code>, with the corresponding relationships as follows:&lt;/p>
@@ -6198,7 +6198,7 @@ When you complete the restore, change the graph mode to None.&lt;/p>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note:&lt;/p>
 &lt;blockquote>
-&lt;p>You can query the execution status of an asynchronous task by using &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code> (where &amp;ldquo;1&amp;rdquo; is the task_id). For more information, refer to the &lt;a href="../task">Asynchronous Task RESTful API&lt;/a>.&lt;/p>
+&lt;p>You can query the execution status of an asynchronous task by using &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code> (where &amp;ldquo;1&amp;rdquo; is the task_id). For more information, refer to the &lt;a href="./task">Asynchronous Task RESTful API&lt;/a>.&lt;/p>
 &lt;/blockquote>
 &lt;p>&lt;strong>Querying edges&lt;/strong>&lt;/p>
 &lt;h5 id="request-body-3">Request Body&lt;/h5>
@@ -6216,7 +6216,7 @@ When you complete the restore, change the graph mode to None.&lt;/p>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note:&lt;/p>
 &lt;blockquote>
-&lt;p>You can query the execution status of an asynchronous task by using &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2&lt;/code> (where &amp;ldquo;2&amp;rdquo; is the task_id). For more information, refer to the &lt;a href="../task">Asynchronous Task RESTful API&lt;/a>.&lt;/p>
+&lt;p>You can query the execution status of an asynchronous task by using &lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2&lt;/code> (where &amp;ldquo;2&amp;rdquo; is the task_id). For more information, refer to the &lt;a href="./task">Asynchronous Task RESTful API&lt;/a>.&lt;/p>
 &lt;/blockquote></description></item><item><title>Docs: Cypher API</title><link>/docs/clients/restful-api/cypher/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/clients/restful-api/cypher/</guid><description>
 &lt;h3 id="91-cypher">9.1 Cypher&lt;/h3>
 &lt;h4 id="911-sending-a-cypher-statement-get-to-hugegraphserver-for-synchronous-execution">9.1.1 Sending a cypher statement (GET) to HugeGraphServer for synchronous execution&lt;/h4>
@@ -6955,7 +6955,7 @@ The authorization API includes: creating, deleting, modifying, and querying perm
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="107-graphspace-manager-manager-api">10.7 Graphspace Manager (Manager) API&lt;/h3>
 &lt;blockquote>
-&lt;p>&lt;strong>Note&lt;/strong>: Before using the following APIs, you need to create a graphspace first. For example, create a graphspace named &lt;code>gs1&lt;/code> via the &lt;a href="../graphspace">Graphspace API&lt;/a>. The examples below assume that &lt;code>gs1&lt;/code> already exists.&lt;/p>
+&lt;p>&lt;strong>Note&lt;/strong>: Before using the following APIs, you need to create a graphspace first. For example, create a graphspace named &lt;code>gs1&lt;/code> via the &lt;a href="./graphspace">Graphspace API&lt;/a>. The examples below assume that &lt;code>gs1&lt;/code> already exists.&lt;/p>
 &lt;/blockquote>
 &lt;ol>
 &lt;li>The graphspace manager API is used to grant/revoke manager roles for users at the graphspace level, and to query the roles of the current user or other users in a graphspace. Supported role types include &lt;code>SPACE&lt;/code>, &lt;code>SPACE_MEMBER&lt;/code>, and &lt;code>ADMIN&lt;/code>.&lt;/li>

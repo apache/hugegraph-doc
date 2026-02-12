@@ -51,7 +51,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>vim hugegraph-core/src/main/java/org/apache/hugegraph/HugeFactory.java
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># run test locally (optional)&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>mvn &lt;span style="color:#204a87">test&lt;/span> -Pcore-test,memory
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note: In order to be consistent with the code style easily, if you use &lt;a href="https://www.jetbrains.com/idea/">IDEA&lt;/a> as your IDE, you can directly &lt;a href="https://www.jetbrains.com/help/idea/configuring-code-style.html">import&lt;/a> our code style &lt;a href="./hugegraph-style.xml">configuration file&lt;/a>.&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note: In order to be consistent with the code style easily, if you use IDEA as your IDE, you can import our code style configuration file.&lt;/p>
 &lt;h5 id="321-添加第三方依赖">3.2.1 添加第三方依赖&lt;/h5>
 &lt;p>如果我们要在 &lt;code>HugeGraph&lt;/code> 项目中添加新的第三方依赖, 我们需要做下面的几件事情：&lt;/p>
 &lt;ol>

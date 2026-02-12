@@ -1132,7 +1132,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>注：&lt;/p>
 &lt;blockquote>
-&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code>（其中&amp;quot;1&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="../task">异步任务 RESTful API&lt;/a>&lt;/p>
+&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code>（其中&amp;quot;1&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="./task">异步任务 RESTful API&lt;/a>&lt;/p>
 &lt;/blockquote></description></item><item><title>Docs: EdgeLabel API</title><link>/cn/docs/clients/restful-api/edgelabel/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/clients/restful-api/edgelabel/</guid><description>
 &lt;h3 id="14-edgelabel">1.4 EdgeLabel&lt;/h3>
 &lt;p>假设已经创建好了 1.2.3 中的 PropertyKeys 和 1.3.3 中的 VertexLabels&lt;/p>
@@ -1356,7 +1356,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>注：&lt;/p>
 &lt;blockquote>
-&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code>（其中&amp;quot;1&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="../task">异步任务 RESTful API&lt;/a>&lt;/p>
+&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code>（其中&amp;quot;1&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="./task">异步任务 RESTful API&lt;/a>&lt;/p>
 &lt;/blockquote></description></item><item><title>Docs: IndexLabel API</title><link>/cn/docs/clients/restful-api/indexlabel/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/clients/restful-api/indexlabel/</guid><description>
 &lt;h3 id="15-indexlabel">1.5 IndexLabel&lt;/h3>
 &lt;p>假设已经创建好了 1.1.3 中的 PropertyKeys、1.2.3 中的 VertexLabels 以及 1.3.3 中的 EdgeLabels&lt;/p>
@@ -1468,7 +1468,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>注：&lt;/p>
 &lt;blockquote>
-&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code>（其中&amp;quot;1&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="../task">异步任务 RESTful API&lt;/a>&lt;/p>
+&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code>（其中&amp;quot;1&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="./task">异步任务 RESTful API&lt;/a>&lt;/p>
 &lt;/blockquote></description></item><item><title>Docs: Rebuild API</title><link>/cn/docs/clients/restful-api/rebuild/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/clients/restful-api/rebuild/</guid><description>
 &lt;h3 id="16-rebuild">1.6 Rebuild&lt;/h3>
 &lt;h4 id="161-重建-indexlabel">1.6.1 重建 IndexLabel&lt;/h4>
@@ -1482,7 +1482,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>注：&lt;/p>
 &lt;blockquote>
-&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code>（其中&amp;quot;1&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="../task">异步任务 RESTful API&lt;/a>&lt;/p>
+&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code>（其中&amp;quot;1&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="./task">异步任务 RESTful API&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;h4 id="162-vertexlabel-对应的全部索引重建">1.6.2 VertexLabel 对应的全部索引重建&lt;/h4>
 &lt;h5 id="method--url-1">Method &amp;amp; Url&lt;/h5>
@@ -1495,7 +1495,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>注：&lt;/p>
 &lt;blockquote>
-&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2&lt;/code>（其中&amp;quot;2&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="../task">异步任务 RESTful API&lt;/a>&lt;/p>
+&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2&lt;/code>（其中&amp;quot;2&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="./task">异步任务 RESTful API&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;h4 id="163-edgelabel-对应的全部索引重建">1.6.3 EdgeLabel 对应的全部索引重建&lt;/h4>
 &lt;h5 id="method--url-2">Method &amp;amp; Url&lt;/h5>
@@ -1508,7 +1508,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>注：&lt;/p>
 &lt;blockquote>
-&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/3&lt;/code>（其中&amp;quot;3&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="../task">异步任务 RESTful API&lt;/a>&lt;/p>
+&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/3&lt;/code>（其中&amp;quot;3&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="./task">异步任务 RESTful API&lt;/a>&lt;/p>
 &lt;/blockquote></description></item><item><title>Docs: Vertex API</title><link>/cn/docs/clients/restful-api/vertex/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/clients/restful-api/vertex/</guid><description>
 &lt;h3 id="21-vertex">2.1 Vertex&lt;/h3>
 &lt;p>顶点类型中的 &lt;code>Id&lt;/code> 策略决定了顶点的 &lt;code>Id&lt;/code> 类型，其对应的 &lt;code>id&lt;/code> 类型如下：&lt;/p>
@@ -6238,7 +6238,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>注：&lt;/p>
 &lt;blockquote>
-&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code>（其中&amp;quot;1&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="../task">异步任务 RESTful API&lt;/a>&lt;/p>
+&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1&lt;/code>（其中&amp;quot;1&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="./task">异步任务 RESTful API&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;p>&lt;strong>查询边&lt;/strong>&lt;/p>
 &lt;h5 id="request-body-3">Request Body&lt;/h5>
@@ -6256,7 +6256,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>注：&lt;/p>
 &lt;blockquote>
-&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2&lt;/code>（其中&amp;quot;2&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="../task">异步任务 RESTful API&lt;/a>&lt;/p>
+&lt;p>可以通过&lt;code>GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2&lt;/code>（其中&amp;quot;2&amp;quot;是 task_id）来查询异步任务的执行状态，更多&lt;a href="./task">异步任务 RESTful API&lt;/a>&lt;/p>
 &lt;/blockquote></description></item><item><title>Docs: Cypher API</title><link>/cn/docs/clients/restful-api/cypher/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/clients/restful-api/cypher/</guid><description>
 &lt;h3 id="91-cypher">9.1 Cypher&lt;/h3>
 &lt;h4 id="911-向-hugegraphserver-发送-cypher-语句get同步执行">9.1.1 向 HugeGraphServer 发送 Cypher 语句（GET），同步执行&lt;/h4>
@@ -7003,7 +7003,7 @@ P.gte(18)），properties 如果为 null 表示任意属性均可，如果属性
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;target&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;-77:all&amp;#34;&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="107-图空间管理员managerapi">10.7 图空间管理员（Manager）API&lt;/h3>
-&lt;p>&lt;strong>重要提示&lt;/strong>：在使用以下 API 之前，需要先创建图空间（graphspace）。请参考 &lt;a href="../graphspace">Graphspace API&lt;/a> 创建名为 &lt;code>gs1&lt;/code> 的图空间。文档中的示例均假设已存在名为 &lt;code>gs1&lt;/code> 的图空间&lt;/p>
+&lt;p>&lt;strong>重要提示&lt;/strong>：在使用以下 API 之前，需要先创建图空间（graphspace）。请参考 &lt;a href="./graphspace">Graphspace API&lt;/a> 创建名为 &lt;code>gs1&lt;/code> 的图空间。文档中的示例均假设已存在名为 &lt;code>gs1&lt;/code> 的图空间&lt;/p>
 &lt;ol>
 &lt;li>图空间管理员 API 用于在 graphspace 维度给用户授予/回收管理员角色，并查询当前用户或其他用户在该 graphspace 下的角色信息。角色类型可取 &lt;code>SPACE&lt;/code>、&lt;code>SPACE_MEMBER&lt;/code>、&lt;code>ADMIN&lt;/code> 。&lt;/li>
 &lt;/ol>

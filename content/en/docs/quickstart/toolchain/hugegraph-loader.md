@@ -65,7 +65,7 @@ The specific data loading process can be referenced under [4.5 User Docker to lo
 Download the latest version of the HugeGraph-Toolchain release package:
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
 tar zxf *hugegraph*.tar.gz
 ```
 
@@ -78,7 +78,7 @@ Clone the latest version of HugeGraph-Loader source package:
 git clone https://github.com/apache/hugegraph-toolchain.git
 
 # 2. get from direct  (e.g. here is 1.0.0, please choose the latest version)
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}-src.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}-src.tar.gz
 ```
 
 <details>

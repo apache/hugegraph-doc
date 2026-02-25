@@ -4,11 +4,11 @@ linkTitle: "HugeGraph-LLM"
 weight: 1
 ---
 
-> Please refer to the AI repository [README](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-llm#readme) for the most up-to-date documentation, and the official website **regularly** is updated and synchronized.
+> Please refer to the AI repository [README](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm#readme) for the most up-to-date documentation, and the official website **regularly** is updated and synchronized.
 
 > **Bridge the gap between Graph Databases and Large Language Models**
 
-> AI summarizes the project documentation: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/incubator-hugegraph-ai)
+> AI summarizes the project documentation: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-ai)
 
 
 ## 🎯 Overview
@@ -21,7 +21,7 @@ It enables seamless integration between HugeGraph and LLMs for building intellig
 - 🗣️ **Natural Language Querying** - Operate graph databases using natural language (Gremlin/Cypher)
 - 🔍 **Graph-Enhanced RAG** - Leverage knowledge graphs to improve answer accuracy (GraphRAG & Graph Agent)
 
-For detailed source code doc, visit our [DeepWiki](https://deepwiki.com/apache/incubator-hugegraph-ai) page. (Recommended)
+For detailed source code doc, visit our [DeepWiki](https://deepwiki.com/apache/hugegraph-ai) page. (Recommended)
 
 ## 📋 Prerequisites
 
@@ -92,8 +92,8 @@ docker run -itd --name=server -p 8080:8080 hugegraph/hugegraph
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 3. Clone and setup project
-git clone https://github.com/apache/incubator-hugegraph-ai.git
-cd incubator-hugegraph-ai/hugegraph-llm
+git clone https://github.com/apache/hugegraph-ai.git
+cd hugegraph-ai/hugegraph-llm
 
 # 4. Create virtual environment and install dependencies
 uv venv && source .venv/bin/activate
@@ -118,7 +118,7 @@ python -m hugegraph_llm.config.generate --update
 ```
 
 > [!TIP]
-> Check our [Quick Start Guide](https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/quick_start.md) for detailed usage examples and query logic explanations.
+> Check our [Quick Start Guide](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/quick_start.md) for detailed usage examples and query logic explanations.
 
 ## 💡 Usage Examples
 
@@ -133,7 +133,7 @@ Use the Gradio interface for visual knowledge graph building:
 - **Files**: Upload TXT or DOCX files (multiple selection supported)
 
 **Schema Configuration:**
-- **Custom Schema**: JSON format following our [template](https://github.com/apache/incubator-hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125)
+- **Custom Schema**: JSON format following our [template](https://github.com/apache/hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125)
 - **HugeGraph Schema**: Use existing graph instance schema (e.g., "hugegraph")
 
 ![Knowledge Graph Builder](https://hugegraph.apache.org/docs/images/gradio-kg.png)

@@ -4,7 +4,7 @@ description: Apache HugeGraph maturity assessment
 weight: 50
 ---
 
-# Maturity Assessment for Apache HugeGraph (incubating)
+# Maturity Assessment for Apache HugeGraph
 
 The goals of this maturity model are to describe how Apache projects operate in a concise and high-level way, and to provide a basic framework that projects may choose to use to evaluate themselves.
 
@@ -42,9 +42,9 @@ The following table is filled according to the [Apache Maturity Model](https://c
 
 | **ID**   | **Description** | **Status** |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| **RE10** | Releases consist of source code, distributed using standard and open archive formats that are expected to stay readable in the long term.                                                                                                                                       | **YES** Source releases are distributed via [dist.apache.org](https://dist.apache.org/repos/dist/release/incubator/hugegraph/) and linked from the website's [download page](https://hugegraph.apache.org/docs/download/download/). |
+| **RE10** | Releases consist of source code, distributed using standard and open archive formats that are expected to stay readable in the long term.                                                                                                                                       | **YES** Source releases are distributed via [dist.apache.org](https://dist.apache.org/repos/dist/release/hugegraph/) and linked from the website's [download page](https://hugegraph.apache.org/docs/download/download/). |
 | **RE20** | The project's PMC (Project Management Committee, see CS10) approves each software release in order to make the release an act of the Foundation.                                                                                                                                                                          | **YES** All releases are voted on by the PMC on the dev@hugegraph.apache.org mailing list. |
-| **RE30** | Releases are signed and/or distributed along with digests that anyone can reliably use to validate the downloaded archives.                                                                                                                                                       | **YES** All releases are signed by the release manager and distributed with checksums. The [KEYS](https://downloads.apache.org/incubator/hugegraph/KEYS) file is available for verification. |
+| **RE30** | Releases are signed and/or distributed along with digests that anyone can reliably use to validate the downloaded archives.                                                                                                                                                       | **YES** All releases are signed by the release manager and distributed with checksums. The [KEYS](https://downloads.apache.org/hugegraph/KEYS) file is available for verification. |
 | **RE40** | The project can distribute convenience binaries alongside source code, but they are not Apache Releases, they are provided with no guarantee. | **YES** The project provides convenience binaries, but only the source code archive is an official Apache release. |
 | **RE50** | The project documents a repeatable release process so that someone new to the project can independently generate the complete set of artifacts required for a release. | **YES** The project documents its release process in the [How to Release](https://github.com/apache/hugegraph/wiki/ASF-Release-Guidance-V2.0) guide. |
 
@@ -74,7 +74,7 @@ The following table is filled according to the [Apache Maturity Model](https://c
 
 | **ID**   | **Description** | **Status** |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| **CS10** | The project maintains a public list of its contributors who have decision power. The project's PMC (Project Management Committee) consists of those contributors. | **YES** The website maintains a public list of all [PMC members and committers](https://incubator.apache.org/clutch/hugegraph.html). |
+| **CS10** | The project maintains a public list of its contributors who have decision power. The project's PMC (Project Management Committee) consists of those contributors. | **YES** Project governance information is publicly available via ASF committee and roster pages, such as [committee info](https://projects.apache.org/committee.html?hugegraph). |
 | **CS20** | Decisions require a consensus among PMC members and are documented on the project's main communications channel. The PMC takes community opinions into account, but the PMC has the final word. | **YES** All decisions are made by votes on the dev@hugegraph.apache.org mailing list, requiring at least three +1 votes from PMC members and no vetos. |
 | **CS30** | The project uses documented voting rules to build consensus when discussion is not sufficient. | **YES** The project uses the standard ASF voting rules. |
 | **CS40** | In Apache projects, vetoes are only valid for code commits. The person exercising the veto must justify it with a technical explanation, as per the Apache voting rules defined in CS30. | **YES** The HugeGraph community follows this principle. |

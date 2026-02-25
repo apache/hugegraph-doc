@@ -101,7 +101,7 @@ services:
 `hubble` is in the `toolchain` project. First, download the binary tar tarball
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
 tar -xvf apache-hugegraph-toolchain-incubating-{version}.tar.gz 
 cd apache-hugegraph-toolchain-incubating-{version}.tar.gz/apache-hugegraph-hubble-incubating-{version}
 ```

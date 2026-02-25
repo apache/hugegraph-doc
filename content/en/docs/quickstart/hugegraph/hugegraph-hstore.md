@@ -30,7 +30,7 @@ Download the latest version of HugeGraph-Store from the Apache HugeGraph officia
 
 ```bash
 # Replace {version} with the latest version number, e.g., 1.5.0
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
 tar zxf apache-hugegraph-incubating-{version}.tar.gz
 cd apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{version}
 ```

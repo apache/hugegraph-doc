@@ -19,7 +19,7 @@
 2. 先 fork 仓库，然后基于 `master` 创建一个**新的**分支，修改完成后提交 PR ✅ (请在 PR 内**截图**对比一下修改**前后**的效果 & 简要说明，感谢)
 3. 新增/修改网站/文档 (提供**中/英文**页面翻译，基本为 `markdown` 格式)
 
-Refer: 不熟悉 **github-pr** 流程的同学, 可参考[贡献流程](https://github.com/apache/incubator-hugegraph/blob/master/CONTRIBUTING.md)文档, 推荐使用 [github desktop](https://desktop.github.com/) 应用, 会简单方便许多~
+Refer: 不熟悉 **github-pr** 流程的同学, 可参考[贡献流程](https://github.com/apache/hugegraph/blob/master/CONTRIBUTING.md)文档, 推荐使用 [github desktop](https://desktop.github.com/) 应用, 会简单方便许多~
 
 **PS:** 可以参考其他官网的[源码](https://www.docsy.dev/docs/examples), 方便快速了解 docsy 主题结构.
 

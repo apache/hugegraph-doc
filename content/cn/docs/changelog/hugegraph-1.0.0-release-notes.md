@@ -166,8 +166,8 @@ weight: 9
 
 更加详细的版本变更信息，可以查看各个子仓库的链接：
 
-- [Server Release Notes](https://github.com/apache/incubator-hugegraph/releases/tag/1.0.0)
-- [Toolchain Release Notes](https://github.com/apache/incubator-hugegraph-toolchain/releases/tag/1.0.0)
-- [Computer Release Notes](https://github.com/apache/incubator-hugegraph-computer/releases/tag/1.0.0)
-- [Commons Release Notes](https://github.com/apache/incubator-hugegraph-commons/releases/tag/1.0.0)
+- [Server Release Notes](https://github.com/apache/hugegraph/releases/tag/1.0.0)
+- [Toolchain Release Notes](https://github.com/apache/hugegraph-toolchain/releases/tag/1.0.0)
+- [Computer Release Notes](https://github.com/apache/hugegraph-computer/releases/tag/1.0.0)
+- [Commons Release Notes](https://github.com/apache/hugegraph-commons/releases/tag/1.0.0)
 

@@ -25,7 +25,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       SCRIPT_PATH: hugegraph-dist/scripts/
-      URL_PREFIX: https://dist.apache.org/repos/dist/dev/incubator/hugegraph/
+      URL_PREFIX: https://dist.apache.org/repos/dist/dev/hugegraph/
+      URL_PREFIX_INCUBATOR: https://dist.apache.org/repos/dist/dev/incubator/hugegraph/
       USER: ${{ inputs.gpg_user }}
       # TODO: parse version from the running branch name & also adapt the input version
       RELEASE_VERSION: ''
@@ -70,8 +71,14 @@ jobs:
           if [[ ${{ matrix.os }} =~ "ubuntu" ]]; then
             sudo apt-get install -y subversion
           fi
+          URL_PREFIX_EFFECTIVE="${URL_PREFIX}"
+          if ! svn ls "${URL_PREFIX}/${{ inputs.release_version }}/" >/dev/null 2>&1; then
+            echo "TLP path not found, fallback to incubator path for historical release"
+            URL_PREFIX_EFFECTIVE="${URL_PREFIX_INCUBATOR}"
+          fi
+          echo "Using SVN prefix: ${URL_PREFIX_EFFECTIVE}"
           rm -rf dist/${{ inputs.release_version }}
-          svn co ${URL_PREFIX}/${{ inputs.release_version }} dist/${{ inputs.release_version }}
+          svn co ${URL_PREFIX_EFFECTIVE}/${{ inputs.release_version }} dist/${{ inputs.release_version }}
 
       - name: 2. Check Environment & Import Public Keys
         run: |
@@ -80,7 +87,7 @@ jobs:
           shasum --version 1>/dev/null || exit
           gpg --version 1>/dev/null || exit
 
-          wget https://downloads.apache.org/incubator/hugegraph/KEYS || exit
+          wget https://downloads.apache.org/hugegraph/KEYS || exit
           echo "Import KEYS:" && gpg --import KEYS
           # TODO: how to trust all public keys in gpg list, currently only trust the first one
           echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key $USER trust
@@ -110,9 +117,9 @@ jobs:
           for i in *src.tar.gz; do
             echo "$i"
 
-            # 4.1 check the directory name include "incubating"
-            if [[ ! "$i" =~ "incubating" ]]; then
-              echo "The package name $i should include incubating" && exit 1
+            # 4.1 package naming supports both TLP and historical incubating naming
+            if [[ ! "$i" =~ ^apache-hugegraph ]]; then
+              echo "The package name $i should start with apache-hugegraph" && exit 1
             fi
 
             tar xzvf "$i" || exit
@@ -126,8 +133,8 @@ jobs:
             if [[ ! -f "NOTICE" ]]; then
               echo "The package should include NOTICE file" && exit 1
             fi
-            if [[ ! -f "DISCLAIMER" ]]; then
-                echo "The package should include DISCLAIMER file" && exit 1
+            if [[ "$i" =~ "incubating" ]] && [[ ! -f "DISCLAIMER" ]]; then
+                echo "Historical incubating package should include DISCLAIMER file" && exit 1
             fi
 
             # 4.3: ensure doesn't contains ASF CATEGORY X License dependencies in LICENSE and NOTICE files
@@ -191,7 +198,7 @@ jobs:
           cd dist/${{ inputs.release_version }} || exit
 
           ls -lh
-          pushd ./*hugegraph-incubating*src/hugegraph-server/*hugegraph*${{ inputs.release_version }} || exit
+          pushd ./*hugegraph*${{ inputs.release_version }}*src/hugegraph-server/*hugegraph-server*${{ inputs.release_version }}* || exit
           bin/init-store.sh || exit
           sleep 3
           bin/start-hugegraph.sh || exit
@@ -233,7 +240,7 @@ jobs:
           popd || exit
           popd || exit
           # stop server
-          pushd ./*hugegraph-incubating*src/hugegraph-server/*hugegraph*${{ inputs.release_version }} || exit
+          pushd ./*hugegraph*${{ inputs.release_version }}*src/hugegraph-server/*hugegraph-server*${{ inputs.release_version }}* || exit
           bin/stop-hugegraph.sh || exit
           popd || exit
 
@@ -253,9 +260,9 @@ jobs:
 
             echo "$i"
 
-            # 7.1 check the directory name include "incubating"
-            if [[ ! "$i" =~ "incubating" ]]; then
-              echo "The package name $i should include incubating" && exit 1
+            # 7.1 package naming supports both TLP and historical incubating naming
+            if [[ ! "$i" =~ ^apache-hugegraph ]]; then
+              echo "The package name $i should start with apache-hugegraph" && exit 1
             fi
 
             tar xzvf "$i" || exit
@@ -270,8 +277,8 @@ jobs:
             if [[ ! -f "NOTICE" ]]; then
               echo "The package should include NOTICE file" && exit 1
             fi
-            if [[ ! -f "DISCLAIMER" ]]; then
-                echo "The package should include DISCLAIMER file" && exit 1
+            if [[ "$i" =~ "incubating" ]] && [[ ! -f "DISCLAIMER" ]]; then
+                echo "Historical incubating package should include DISCLAIMER file" && exit 1
             fi
             if [[ ! -d "licenses" ]]; then
               echo "The package should include licenses dir" && exit 1
@@ -302,7 +309,7 @@ jobs:
           cd dist/${{ inputs.release_version }} || exit
 
           # TODO: run pd & store
-          pushd ./*hugegraph-incubating*${{ inputs.release_version }}/*hugegraph-server-incubating*${{ inputs.release_version }} || exit
+          pushd ./*hugegraph*${{ inputs.release_version }}*/*hugegraph-server*${{ inputs.release_version }}* || exit
           bin/init-store.sh || exit
           sleep 3
           bin/start-hugegraph.sh || exit
@@ -341,7 +348,7 @@ jobs:
 
           popd || exit
           # stop server
-          pushd ./*hugegraph-incubating*${{ inputs.release_version }}/*hugegraph-server-incubating*${{ inputs.release_version }} || exit
+          pushd ./*hugegraph*${{ inputs.release_version }}*/*hugegraph-server*${{ inputs.release_version }}* || exit
           bin/stop-hugegraph.sh || exit
           popd || exit
 

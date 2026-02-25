@@ -44,7 +44,7 @@ weight: 2
 下载最新版本的 HugeGraph-Computer release 包：
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/${version}/apache-hugegraph-computer-incubating-${version}.tar.gz
+wget https://downloads.apache.org/hugegraph/${version}/apache-hugegraph-computer-incubating-${version}.tar.gz
 tar zxvf apache-hugegraph-computer-incubating-${version}.tar.gz -C hugegraph-computer
 ```
 

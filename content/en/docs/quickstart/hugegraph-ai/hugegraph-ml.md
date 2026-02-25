@@ -39,8 +39,8 @@ docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
 ### 2. Clone and Setup
 
 ```bash
-git clone https://github.com/apache/incubator-hugegraph-ai.git
-cd incubator-hugegraph-ai/hugegraph-ml
+git clone https://github.com/apache/hugegraph-ai.git
+cd hugegraph-ai/hugegraph-ml
 ```
 
 ### 3. Install Dependencies
@@ -199,7 +199,7 @@ print(node_clf_task.evaluate())
 {'accuracy': 0.82, 'loss': 0.5714246034622192}
 ```
 
-**Full Example**: See [dgi_example.py](https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/dgi_example.py)
+**Full Example**: See [dgi_example.py](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/dgi_example.py)
 
 ### Example 2: Node Classification with GRAND
 
@@ -226,7 +226,7 @@ node_clf_task.train(lr=1e-2, n_epochs=1500, patience=100)
 print(node_clf_task.evaluate())
 ```
 
-**Full Example**: See [grand_example.py](https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/grand_example.py)
+**Full Example**: See [grand_example.py](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/grand_example.py)
 
 ## Core Components
 
@@ -286,4 +286,4 @@ To add a new algorithm:
 
 - [HugeGraph-AI Overview](../_index.md) - Full AI ecosystem
 - [HugeGraph-LLM](./hugegraph-llm.md) - RAG and knowledge graph construction
-- [GitHub Repository](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-ml) - Source code and examples
+- [GitHub Repository](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml) - Source code and examples

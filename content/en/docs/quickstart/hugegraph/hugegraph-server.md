@@ -84,12 +84,12 @@ services:
 You could download the binary tarball from the download page of the ASF site like this:
 ```bash
 # use the latest version, here is 1.7.0 for example
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz
 tar zxf *hugegraph*.tar.gz
 
 # (Optional) verify the integrity with SHA512 (recommended)
 shasum -a 512 apache-hugegraph-incubating-{version}.tar.gz
-curl https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz.sha512
+curl https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz.sha512
 ```
 
 #### 3.3 Source code compilation
@@ -102,12 +102,12 @@ Download HugeGraph **source code** in either of the following 2 ways (so as the 
 
 ```bash
 # Way 1. download release package from the ASF site
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-incubating-src-{version}.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-src-{version}.tar.gz
 tar zxf *hugegraph*.tar.gz
 
 # (Optional) verify the integrity with SHA512 (recommended)
 shasum -a 512 apache-hugegraph-incubating-src-{version}.tar.gz
-curl https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-incubating-{version}-src.tar.gz.sha512
+curl https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}-src.tar.gz.sha512
 
 # Way2 : clone the latest code by git way (e.g GitHub)
 git clone https://github.com/apache/hugegraph.git
@@ -159,7 +159,7 @@ Of course, you should download the tarball of `HugeGraph-Toolchain` first.
 ```bash
 # download toolchain binary package, it includes loader + tool + hubble
 # please check the latest version (e.g. here is 1.7.0)
-wget https://downloads.apache.org/incubator/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz
 tar zxf *hugegraph-*.tar.gz
 
 # enter the tool's package

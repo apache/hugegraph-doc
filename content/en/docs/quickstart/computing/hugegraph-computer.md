@@ -44,7 +44,7 @@ There are two ways to get HugeGraph-Computer:
 Download the latest version of the HugeGraph-Computer release package:
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/${version}/apache-hugegraph-computer-incubating-${version}.tar.gz
+wget https://downloads.apache.org/hugegraph/${version}/apache-hugegraph-computer-incubating-${version}.tar.gz
 tar zxvf apache-hugegraph-computer-incubating-${version}.tar.gz -C hugegraph-computer
 ```
 

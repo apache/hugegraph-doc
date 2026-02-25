@@ -77,7 +77,7 @@ services:
 下载最新版本的 `HugeGraph-Toolchain` Release 包，里面包含了 `loader + tool + hubble` 全套工具，如果你已经下载，可跳过重复步骤
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
 tar zxf *hugegraph*.tar.gz
 ```
 
@@ -90,7 +90,7 @@ tar zxf *hugegraph*.tar.gz
 git clone https://github.com/apache/hugegraph-toolchain.git
 
 # 2. get from direct url (please choose the **latest release** version)
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}-src.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}-src.tar.gz
 ```
 
 <details>

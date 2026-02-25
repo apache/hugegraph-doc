@@ -3,7 +3,7 @@
 
   Some tips for you:
     1. If this is your first time to submit PR, please read the  
-    [contributing guidelines](https://github.com/apache/incubator-hugegraph-doc/blob/master/contribution.md)
+    [contributing guidelines](https://github.com/apache/hugegraph-doc/blob/master/contribution.md)
 
     2. If a PR fix/close an issue, type the message "close xxx" below (Remember to update both EN & CN doc)
 
@@ -15,4 +15,3 @@
 - close #xxx <!-- or "fix #xxx", "link #xxx" -->
 
 <!-- Better to paste the screenshot diff here, "xxx" is the ID-link of related issue, e.g: #1024 -->
-

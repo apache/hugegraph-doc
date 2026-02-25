@@ -169,7 +169,7 @@ weight: 9
 
 Please check the release details in each repository:
 
-- [Server Release Notes](https://github.com/apache/incubator-hugegraph/releases/tag/1.0.0)
-- [Toolchain Release Notes](https://github.com/apache/incubator-hugegraph-toolchain/releases/tag/1.0.0)
-- [Computer Release Notes](https://github.com/apache/incubator-hugegraph-computer/releases/tag/1.0.0)
-- [Commons Release Notes](https://github.com/apache/incubator-hugegraph-commons/releases/tag/1.0.0)
+- [Server Release Notes](https://github.com/apache/hugegraph/releases/tag/1.0.0)
+- [Toolchain Release Notes](https://github.com/apache/hugegraph-toolchain/releases/tag/1.0.0)
+- [Computer Release Notes](https://github.com/apache/hugegraph-computer/releases/tag/1.0.0)
+- [Commons Release Notes](https://github.com/apache/hugegraph-commons/releases/tag/1.0.0)

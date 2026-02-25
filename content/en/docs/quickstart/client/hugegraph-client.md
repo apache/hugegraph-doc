@@ -7,7 +7,7 @@ weight: 1
 ### 1 Overview Of Hugegraph
 
 [HugeGraph-Client](https://github.com/apache/hugegraph-toolchain) sends HTTP request to HugeGraph-Server to get and parse the execution result of Server. 
-We support HugeGraph-Client for Java/Go/[Python](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-python-client) language.
+We support HugeGraph-Client for Java/Go/[Python](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client) language.
 You can use [Client-API](/docs/clients/hugegraph-client) to write code to operate HugeGraph, such as adding, deleting, modifying, and querying schema and graph data, or executing gremlin statements.
 
 > [HugeGraph client SDK tool based on Go language](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/README.en.md) (version >=1.2.0)

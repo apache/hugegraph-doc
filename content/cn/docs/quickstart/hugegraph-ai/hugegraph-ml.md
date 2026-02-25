@@ -39,8 +39,8 @@ docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
 ### 2. 克隆并设置
 
 ```bash
-git clone https://github.com/apache/incubator-hugegraph-ai.git
-cd incubator-hugegraph-ai/hugegraph-ml
+git clone https://github.com/apache/hugegraph-ai.git
+cd hugegraph-ai/hugegraph-ml
 ```
 
 ### 3. 安装依赖
@@ -199,7 +199,7 @@ print(node_clf_task.evaluate())
 {'accuracy': 0.82, 'loss': 0.5714246034622192}
 ```
 
-**完整示例**：参见 [dgi_example.py](https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/dgi_example.py)
+**完整示例**：参见 [dgi_example.py](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/dgi_example.py)
 
 ### 示例 2：使用 GRAND 进行节点分类
 
@@ -226,7 +226,7 @@ node_clf_task.train(lr=1e-2, n_epochs=1500, patience=100)
 print(node_clf_task.evaluate())
 ```
 
-**完整示例**：参见 [grand_example.py](https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/grand_example.py)
+**完整示例**：参见 [grand_example.py](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/grand_example.py)
 
 ## 核心组件
 
@@ -286,4 +286,4 @@ graph = hg2d.convert_graph(
 
 - [HugeGraph-AI 概述](../_index.md) - 完整 AI 生态系统
 - [HugeGraph-LLM](./hugegraph-llm.md) - RAG 和知识图谱构建
-- [GitHub 仓库](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-ml) - 源代码和示例
+- [GitHub 仓库](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml) - 源代码和示例

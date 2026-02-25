@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# TODO: Update for TLP graduation after ASF infra migration is complete.
 ################################################################################
 # Apache HugeGraph Release Validation Script
 ################################################################################
 #
-# This script validates Apache HugeGraph (Incubating) release packages:
+# This script validates Apache HugeGraph release packages:
 #   1. Check package integrity (SHA512, GPG signatures)
 #   2. Validate package names and required files
 #   3. Check license compliance (ASF categories)
@@ -13,7 +12,7 @@
 #   6. Run server and toolchain tests
 #
 # Usage:
-#   validate-release.sh <version> <user> [local-path] [java-version]
+#   validate-release.sh [--layout auto|tlp|incubator] <version> <user> [local-path] [java-version]
 #   validate-release.sh --help
 #
 # Arguments:
@@ -26,6 +25,13 @@
 # Examples:
 #   # Validate from Apache SVN
 #   ./validate-release.sh 1.7.0 pengjunzhi
+#
+#   # Auto layout (prefer TLP path, fallback incubator path for history)
+#   ./validate-release.sh --layout auto 1.7.0 pengjunzhi
+#
+#   # Explicit layout
+#   ./validate-release.sh --layout tlp 1.8.0 pengjunzhi
+#   ./validate-release.sh --layout incubator 1.7.0 pengjunzhi
 #
 #   # Validate from local directory
 #   ./validate-release.sh 1.7.0 pengjunzhi /path/to/dist
@@ -43,12 +49,13 @@ set -o nounset
 # Configuration Constants
 ################################################################################
 
-readonly SCRIPT_VERSION="2.0.0"
+readonly SCRIPT_VERSION="2.1.0"
 readonly SCRIPT_NAME=$(basename "$0")
 
 # URLs
-readonly SVN_URL_PREFIX="https://dist.apache.org/repos/dist/dev/incubator/hugegraph"
-readonly KEYS_URL="https://downloads.apache.org/incubator/hugegraph/KEYS"
+readonly SVN_URL_PREFIX_TLP="https://dist.apache.org/repos/dist/dev/hugegraph"
+readonly SVN_URL_PREFIX_INCUBATOR="https://dist.apache.org/repos/dist/dev/incubator/hugegraph"
+readonly KEYS_URL="https://downloads.apache.org/hugegraph/KEYS"
 
 # Validation Rules
 readonly MAX_FILE_SIZE="800k"
@@ -81,6 +88,9 @@ USER=""
 LOCAL_DIST_PATH=""
 JAVA_VERSION=11
 NON_INTERACTIVE=0
+LAYOUT="auto"
+RESOLVED_LAYOUT="auto"
+SVN_URL_PREFIX_RESOLVED=""
 
 # Error tracking
 declare -a VALIDATION_ERRORS=()
@@ -97,6 +107,7 @@ HUBBLE_STARTED=0
 
 # Script execution time tracking
 SCRIPT_START_TIME=0
+ENABLE_CLEANUP=0
 
 ################################################################################
 # Helper Functions - Output & Logging
@@ -106,7 +117,7 @@ show_usage() {
     cat << EOF
 Apache HugeGraph Release Validation Script v${SCRIPT_VERSION}
 
-Usage: ${SCRIPT_NAME} <version> <user> [local-path] [java-version]
+Usage: ${SCRIPT_NAME} [--layout auto|tlp|incubator] <version> <user> [local-path] [java-version]
        ${SCRIPT_NAME} --help | -h
        ${SCRIPT_NAME} --version | -v
 
@@ -127,6 +138,7 @@ Options:
   --help, -h            Show this help message
   --version, -v         Show script version
   --non-interactive     Run without prompts (for CI/CD)
+  --layout MODE         Dist layout: auto|tlp|incubator (default: auto)
 
 Examples:
   # Validate from Apache SVN (downloads files)
@@ -142,8 +154,11 @@ Examples:
   # Non-interactive mode for CI
   ${SCRIPT_NAME} --non-interactive 1.7.0 pengjunzhi
 
+  # Validate with explicit TLP layout
+  ${SCRIPT_NAME} --layout tlp 1.7.0 pengjunzhi
+
 For more information, visit:
-  https://github.com/apache/incubator-hugegraph-doc/tree/master/dist
+  https://github.com/apache/hugegraph-doc/tree/master/dist
 
 EOF
 }
@@ -266,6 +281,7 @@ setup_logging() {
     local log_dir="${WORK_DIR}/logs"
     mkdir -p "$log_dir"
     LOG_FILE="$log_dir/validate-${RELEASE_VERSION}-$(date +%Y%m%d-%H%M%S).log"
+    ENABLE_CLEANUP=1
 
     info "Logging to: ${LOG_FILE}"
     log "INIT" "Starting validation for HugeGraph ${RELEASE_VERSION}"
@@ -349,6 +365,49 @@ find_package_dir() {
     echo "$found"
 }
 
+find_package_dir_silent() {
+    local pattern=$1
+    local base_dir=${2:-"${DIST_DIR}"}
+    find "$base_dir" -maxdepth 3 -type d -path "$pattern" 2>/dev/null | head -n1
+}
+
+resolve_layout_for_svn() {
+    case "$LAYOUT" in
+        tlp)
+            SVN_URL_PREFIX_RESOLVED="$SVN_URL_PREFIX_TLP"
+            RESOLVED_LAYOUT="tlp"
+            ;;
+        incubator)
+            SVN_URL_PREFIX_RESOLVED="$SVN_URL_PREFIX_INCUBATOR"
+            RESOLVED_LAYOUT="incubator"
+            ;;
+        auto)
+            if svn ls "${SVN_URL_PREFIX_TLP}/${RELEASE_VERSION}" &>/dev/null; then
+                SVN_URL_PREFIX_RESOLVED="$SVN_URL_PREFIX_TLP"
+                RESOLVED_LAYOUT="tlp"
+            elif svn ls "${SVN_URL_PREFIX_INCUBATOR}/${RELEASE_VERSION}" &>/dev/null; then
+                SVN_URL_PREFIX_RESOLVED="$SVN_URL_PREFIX_INCUBATOR"
+                RESOLVED_LAYOUT="incubator"
+            else
+                collect_error "Release version '${RELEASE_VERSION}' not found in either TLP or incubator dist paths"
+                return 1
+            fi
+            ;;
+        *)
+            collect_error "Invalid layout mode '${LAYOUT}', expected auto|tlp|incubator"
+            return 1
+            ;;
+    esac
+
+    info "Using layout '${RESOLVED_LAYOUT}' with SVN prefix: ${SVN_URL_PREFIX_RESOLVED}"
+    return 0
+}
+
+package_requires_disclaimer() {
+    local package=$1
+    [[ "$package" =~ incubating ]]
+}
+
 ################################################################################
 # Helper Functions - GPG & Signatures
 ################################################################################
@@ -400,13 +459,22 @@ import_and_trust_gpg_keys() {
 # Validation Functions - Package Checks
 ################################################################################
 
-check_incubating_name() {
+check_package_name() {
     local package=$1
     TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 
-    if [[ ! "$package" =~ "incubating" ]]; then
-        collect_error "Package name '$package' should include 'incubating'"
+    if [[ "$package" != apache-hugegraph* ]]; then
+        collect_error "Package name '$package' should start with 'apache-hugegraph'"
         return 1
+    fi
+
+    if [[ "$package" != *"${RELEASE_VERSION}"* ]]; then
+        collect_error "Package name '$package' does not include release version '${RELEASE_VERSION}'"
+        return 1
+    fi
+
+    if [[ "$RESOLVED_LAYOUT" == "tlp" ]] && [[ "$package" =~ incubating ]]; then
+        collect_warning "Package '$package' still contains 'incubating' under TLP layout (allowed for historical releases)"
     fi
 
     mark_check_passed
@@ -813,8 +881,12 @@ validate_source_package() {
     pushd "$package_dir" > /dev/null
 
     # Run all checks
-    check_incubating_name "$package_file"
-    check_required_files "$package_file" true
+    check_package_name "$package_file"
+    if package_requires_disclaimer "$package_file"; then
+        check_required_files "$package_file" true
+    else
+        check_required_files "$package_file" false
+    fi
     check_license_categories "$package_file" "LICENSE NOTICE"
     check_empty_files_and_dirs "$package_file"
     check_file_sizes "$package_file" "$MAX_FILE_SIZE"
@@ -877,8 +949,12 @@ validate_binary_package() {
     pushd "$package_dir" > /dev/null
 
     # Run checks
-    check_incubating_name "$package_file"
-    check_required_files "$package_file" true
+    check_package_name "$package_file"
+    if package_requires_disclaimer "$package_file"; then
+        check_required_files "$package_file" true
+    else
+        check_required_files "$package_file" false
+    fi
 
     # Binary packages should have licenses directory
     TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
@@ -906,12 +982,16 @@ validate_binary_package() {
 cleanup() {
     local exit_code=$?
 
+    if [[ $ENABLE_CLEANUP -eq 0 ]]; then
+        return "$exit_code"
+    fi
+
     log "CLEANUP" "Starting cleanup (exit code: $exit_code)"
 
     # Stop running services
     if [[ $SERVER_STARTED -eq 1 ]]; then
         info "Stopping HugeGraph server..."
-        local server_dir=$(find_package_dir "*hugegraph-incubating*src/hugegraph-server/*hugegraph*${RELEASE_VERSION}" 2>/dev/null || echo "")
+        local server_dir=$(find_package_dir_silent "*hugegraph*${RELEASE_VERSION}*src/hugegraph-server/*hugegraph-server*${RELEASE_VERSION}*")
         if [[ -n "$server_dir" ]] && [[ -d "$server_dir" ]]; then
             pushd "$server_dir" > /dev/null 2>&1
             bin/stop-hugegraph.sh || true
@@ -1016,6 +1096,18 @@ main() {
                 NON_INTERACTIVE=1
                 shift
                 ;;
+            --layout)
+                if [[ $# -lt 2 ]]; then
+                    error "Missing value for --layout (expected: auto|tlp|incubator)"
+                    exit 1
+                fi
+                LAYOUT=$2
+                shift 2
+                ;;
+            --layout=*)
+                LAYOUT="${1#*=}"
+                shift
+                ;;
             *)
                 break
                 ;;
@@ -1043,6 +1135,16 @@ main() {
         exit 1
     fi
 
+    case "$LAYOUT" in
+        auto|tlp|incubator) ;;
+        *)
+            error "Invalid --layout value '${LAYOUT}', expected: auto|tlp|incubator"
+            echo ""
+            show_usage
+            exit 1
+            ;;
+    esac
+
     # Initialize
     WORK_DIR=$(cd "$(dirname "$0")" && pwd)
     cd "${WORK_DIR}"
@@ -1057,6 +1159,7 @@ main() {
     echo "  Version:   ${RELEASE_VERSION}"
     echo "  User:      ${USER}"
     echo "  Java:      ${JAVA_VERSION}"
+    echo "  Layout:    ${LAYOUT}"
     echo "  Mode:      $([ -n "${LOCAL_DIST_PATH}" ] && echo "Local (${LOCAL_DIST_PATH})" || echo "SVN Download")"
     echo "  Log:       ${LOG_FILE}"
     echo ""
@@ -1079,6 +1182,11 @@ main() {
         # Use local directory
         DIST_DIR="${LOCAL_DIST_PATH}"
         info "Using local directory: ${DIST_DIR}"
+        if [[ "$LAYOUT" == "auto" ]]; then
+            RESOLVED_LAYOUT="tlp"
+        else
+            RESOLVED_LAYOUT="$LAYOUT"
+        fi
 
         if [[ ! -d "${DIST_DIR}" ]]; then
             collect_error "Directory ${DIST_DIR} does not exist"
@@ -1089,14 +1197,17 @@ main() {
         ls -lh "${DIST_DIR}"
     else
         # Download from SVN
+        if ! resolve_layout_for_svn; then
+            exit 1
+        fi
         DIST_DIR="${WORK_DIR}/dist/${RELEASE_VERSION}"
         info "Downloading from SVN to: ${DIST_DIR}"
 
         rm -rf "${DIST_DIR}"
         mkdir -p "${DIST_DIR}"
 
-        if ! svn co "${SVN_URL_PREFIX}/${RELEASE_VERSION}" "${DIST_DIR}"; then
-            collect_error "Failed to download from SVN: ${SVN_URL_PREFIX}/${RELEASE_VERSION}"
+        if ! svn co "${SVN_URL_PREFIX_RESOLVED}/${RELEASE_VERSION}" "${DIST_DIR}"; then
+            collect_error "Failed to download from SVN: ${SVN_URL_PREFIX_RESOLVED}/${RELEASE_VERSION}"
             exit 1
         fi
 
@@ -1172,7 +1283,7 @@ main() {
     ####################################################
     print_step 6 9 "Test Compiled Server Package"
 
-    local server_dir=$(find_package_dir "*hugegraph-incubating*src/hugegraph-server/*hugegraph*${RELEASE_VERSION}")
+    local server_dir=$(find_package_dir "*hugegraph*${RELEASE_VERSION}*src/hugegraph-server/*hugegraph-server*${RELEASE_VERSION}*")
     if [[ -n "$server_dir" ]]; then
         info "Starting HugeGraph server from: $server_dir"
         pushd "$server_dir" > /dev/null
@@ -1298,7 +1409,7 @@ main() {
     print_step 9 9 "Test Binary Server & Toolchain"
 
     # Test binary server
-    local bin_server_dir=$(find_package_dir "*hugegraph-incubating*${RELEASE_VERSION}/*hugegraph-server-incubating*${RELEASE_VERSION}")
+    local bin_server_dir=$(find_package_dir "*hugegraph*${RELEASE_VERSION}/*hugegraph-server*${RELEASE_VERSION}*")
     if [[ -n "$bin_server_dir" ]]; then
         info "Testing binary server package..."
         pushd "$bin_server_dir" > /dev/null

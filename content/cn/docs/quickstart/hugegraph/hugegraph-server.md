@@ -82,7 +82,7 @@ services:
 
 ```bash
 # use the latest version, here is 1.7.0 for example
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz
 tar zxf *hugegraph*.tar.gz
 ```
 
@@ -141,7 +141,7 @@ HugeGraph-Tools 提供了一键部署的命令行工具，用户可以使用该�
 
 ```bash
 # download toolchain package, it includes loader + tool + hubble, please check the latest version (here is 1.7.0)
-wget https://downloads.apache.org/incubator/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz
 tar zxf *hugegraph-*.tar.gz
 # enter the tool's package
 cd *hugegraph*/*tool*

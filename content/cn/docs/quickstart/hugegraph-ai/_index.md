@@ -5,11 +5,11 @@ weight: 3
 ---
 
 [![License](https://img.shields.io/badge/license-Apache%202-0E78BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/incubator-hugegraph-ai)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-ai)
 
 > DeepWiki 提供实时更新的项目文档，内容更全面准确，适合快速了解项目最新情况。
 >
-> 📖 [https://deepwiki.com/apache/incubator-hugegraph-ai](https://deepwiki.com/apache/incubator-hugegraph-ai)
+> 📖 [https://deepwiki.com/apache/hugegraph-ai](https://deepwiki.com/apache/hugegraph-ai)
 
 `hugegraph-ai` 整合了 [HugeGraph](https://github.com/apache/hugegraph) 与人工智能功能，为开发者构建 AI 驱动的图应用提供全面支持。
 
@@ -35,7 +35,7 @@ weight: 3
 ## 🚀 快速开始
 
 > [!NOTE]
-> 如需完整的部署指南和详细示例，请参阅 [hugegraph-llm/README.md](https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/README.md)。
+> 如需完整的部署指南和详细示例，请参阅 [hugegraph-llm/README.md](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/README.md)。
 
 ### 环境要求
 - Python 3.10+（hugegraph-llm 必需）
@@ -47,8 +47,8 @@ weight: 3
 
 ```bash
 # 克隆仓库
-git clone https://github.com/apache/incubator-hugegraph-ai.git
-cd incubator-hugegraph-ai
+git clone https://github.com/apache/hugegraph-ai.git
+cd hugegraph-ai
 
 # 设置环境并启动服务
 cp docker/env.template docker/.env
@@ -68,8 +68,8 @@ docker-compose -f docker-compose-network.yml up -d
 docker run -itd --name=server -p 8080:8080 hugegraph/hugegraph
 
 # 2. 克隆并设置项目
-git clone https://github.com/apache/incubator-hugegraph-ai.git
-cd incubator-hugegraph-ai/hugegraph-llm
+git clone https://github.com/apache/hugegraph-ai.git
+cd hugegraph-ai/hugegraph-llm
 
 # 3. 安装依赖
 uv venv && source .venv/bin/activate
@@ -124,14 +124,14 @@ from pyhugegraph.client import PyHugeClient
 
 ## 📦 模块
 
-### [hugegraph-llm](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-llm) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/incubator-hugegraph-ai)
+### [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-ai)
 用于图应用的大语言模型集成：
 - **GraphRAG**：基于图数据的检索增强生成
 - **知识图谱构建**：从文本自动构建知识图谱
 - **自然语言接口**：使用自然语言查询图
 - **AI 智能体**：智能图分析与推理
 
-### [hugegraph-ml](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-ml)
+### [hugegraph-ml](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml)
 包含 21 种算法的图机器学习：
 - **节点分类**：GCN、GAT、GraphSAGE、APPNP、AGNN、ARMA、DAGNN、DeeperGCN、GRAND、JKNet、Cluster-GCN
 - **图分类**：DiffPool、GIN
@@ -140,7 +140,7 @@ from pyhugegraph.client import PyHugeClient
 - **欺诈检测**：CARE-GNN、BGNN
 - **后处理**：C&S（Correct & Smooth）
 
-### [hugegraph-python-client](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-python-client)
+### [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client)
 用于 HugeGraph 操作的 Python 客户端：
 - **Schema 管理**：定义顶点/边标签和属性
 - **CRUD 操作**：创建、读取、更新、删除图数据
@@ -150,8 +150,8 @@ from pyhugegraph.client import PyHugeClient
 ## 📚 了解更多
 
 - [项目主页](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/)
-- [LLM 快速入门指南](https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/quick_start.md)
-- [DeepWiki AI 文档](https://deepwiki.com/apache/incubator-hugegraph-ai)
+- [LLM 快速入门指南](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/quick_start.md)
+- [DeepWiki AI 文档](https://deepwiki.com/apache/hugegraph-ai)
 
 ## 🔗 相关项目
 
@@ -168,15 +168,15 @@ from pyhugegraph.client import PyHugeClient
 - 提交 PR 前运行 `./style/code_format_and_analysis.sh`
 - 报告错误前检查现有问题
 
-[![contributors graph](https://contrib.rocks/image?repo=apache/incubator-hugegraph-ai)](https://github.com/apache/incubator-hugegraph-ai/graphs/contributors)
+[![contributors graph](https://contrib.rocks/image?repo=apache/hugegraph-ai)](https://github.com/apache/hugegraph-ai/graphs/contributors)
 
 ## 📄 许可证
 
-hugegraph-ai 采用 [Apache 2.0 许可证](https://github.com/apache/incubator-hugegraph-ai/blob/main/LICENSE)。
+hugegraph-ai 采用 [Apache 2.0 许可证](https://github.com/apache/hugegraph-ai/blob/main/LICENSE)。
 
 ## 📞 联系我们
 
-- **GitHub Issues**：[报告错误或请求功能](https://github.com/apache/incubator-hugegraph-ai/issues)（响应最快）
+- **GitHub Issues**：[报告错误或请求功能](https://github.com/apache/hugegraph-ai/issues)（响应最快）
 - **电子邮件**：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)（[需要订阅](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/)）
 - **微信**：关注 "Apache HugeGraph" 微信公众号
 

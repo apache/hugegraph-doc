@@ -352,7 +352,8 @@ python -m pip install -r hubble-dist/assembly/travis/requirements.txt
 ```bash
 mvn package -Dmaven.test.skip=true
 # 可选：启动验证
-cd apache-hugegraph-hubble-incubating-*/bin
+# 兼容历史（-incubating-）与毕业后 TLP 命名
+cd apache-hugegraph-hubble*/bin
 ./start-hubble.sh -d && sleep 10
 curl http://localhost:8088/api/health
 ./stop-hubble.sh

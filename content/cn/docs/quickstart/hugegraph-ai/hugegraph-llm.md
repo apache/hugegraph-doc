@@ -4,11 +4,11 @@ linkTitle: "HugeGraph-LLM"
 weight: 1
 ---
 
-> 本文为中文翻译版本，内容基于英文版进行，我们欢迎您随时提出修改建议。我们推荐您阅读 [AI 仓库 README](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-llm#readme) 以获取最新信息，官网会定期同步更新。
+> 本文为中文翻译版本，内容基于英文版进行，我们欢迎您随时提出修改建议。我们推荐您阅读 [AI 仓库 README](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm#readme) 以获取最新信息，官网会定期同步更新。
 
 > **连接图数据库与大语言模型的桥梁**
 
-> AI 总结项目文档：[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/incubator-hugegraph-ai)
+> AI 总结项目文档：[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-ai)
 
 ## 🎯 概述
 
@@ -19,7 +19,7 @@ HugeGraph-LLM 是一个功能强大的工具包，它融合了图数据库和大
 - 🗣️ **自然语言查询**：通过自然语言（Gremlin/Cypher）操作图数据库。
 - 🔍 **图增强 RAG**：借助知识图谱提升问答准确性（GraphRAG 和 Graph Agent）。
 
-更多源码文档，请访问我们的 [DeepWiki](https://deepwiki.com/apache/incubator-hugegraph-ai) 页面（推荐）。
+更多源码文档，请访问我们的 [DeepWiki](https://deepwiki.com/apache/hugegraph-ai) 页面（推荐）。
 
 ## 📋 环境要求
 
@@ -90,8 +90,8 @@ docker run -itd --name=server -p 8080:8080 hugegraph/hugegraph
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 3. 克隆并设置项目
-git clone https://github.com/apache/incubator-hugegraph-ai.git
-cd incubator-hugegraph-ai/hugegraph-llm
+git clone https://github.com/apache/hugegraph-ai.git
+cd hugegraph-ai/hugegraph-llm
 
 # 4. 创建虚拟环境并安装依赖
 uv venv && source .venv/bin/activate
@@ -116,7 +116,7 @@ python -m hugegraph_llm.config.generate --update
 ```
 
 > [!TIP]
-> 查看我们的[快速入门指南](https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/quick_start.md)获取详细用法示例和查询逻辑解释。
+> 查看我们的[快速入门指南](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/quick_start.md)获取详细用法示例和查询逻辑解释。
 
 ## 💡 用法示例
 
@@ -131,7 +131,7 @@ python -m hugegraph_llm.config.generate --update
 - **文件**：上传 TXT 或 DOCX 文件（支持多选）
 
 **Schema 配置：**
-- **自定义 Schema**：遵循我们[模板](https://github.com/apache/incubator-hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125)的 JSON 格式
+- **自定义 Schema**：遵循我们[模板](https://github.com/apache/hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125)的 JSON 格式
 - **HugeGraph Schema**：使用现有图实例的 Schema（例如，“hugegraph”）
 
 ![知识图谱构建器](https://hugegraph.apache.org/docs/images/gradio-kg.png)

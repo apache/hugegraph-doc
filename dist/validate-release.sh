@@ -12,7 +12,7 @@
 #   6. Run server and toolchain tests
 #
 # Usage:
-#   validate-release.sh [--layout auto|tlp|incubator] <version> <user> [local-path] [java-version]
+#   validate-release.sh <version> <user> [local-path] [java-version]
 #   validate-release.sh --help
 #
 # Arguments:
@@ -25,13 +25,6 @@
 # Examples:
 #   # Validate from Apache SVN
 #   ./validate-release.sh 1.7.0 pengjunzhi
-#
-#   # Auto layout (prefer TLP path, fallback incubator path for history)
-#   ./validate-release.sh --layout auto 1.7.0 pengjunzhi
-#
-#   # Explicit layout
-#   ./validate-release.sh --layout tlp 1.8.0 pengjunzhi
-#   ./validate-release.sh --layout incubator 1.7.0 pengjunzhi
 #
 #   # Validate from local directory
 #   ./validate-release.sh 1.7.0 pengjunzhi /path/to/dist
@@ -49,12 +42,11 @@ set -o nounset
 # Configuration Constants
 ################################################################################
 
-readonly SCRIPT_VERSION="2.1.0"
+readonly SCRIPT_VERSION="2.2.0"
 readonly SCRIPT_NAME=$(basename "$0")
 
 # URLs
-readonly SVN_URL_PREFIX_TLP="https://dist.apache.org/repos/dist/dev/hugegraph"
-readonly SVN_URL_PREFIX_INCUBATOR="https://dist.apache.org/repos/dist/dev/incubator/hugegraph"
+readonly SVN_URL_PREFIX="https://dist.apache.org/repos/dist/dev/hugegraph"
 readonly KEYS_URL="https://downloads.apache.org/hugegraph/KEYS"
 
 # Validation Rules
@@ -88,9 +80,6 @@ USER=""
 LOCAL_DIST_PATH=""
 JAVA_VERSION=11
 NON_INTERACTIVE=0
-LAYOUT="auto"
-RESOLVED_LAYOUT="auto"
-SVN_URL_PREFIX_RESOLVED=""
 
 # Error tracking
 declare -a VALIDATION_ERRORS=()
@@ -117,7 +106,7 @@ show_usage() {
     cat << EOF
 Apache HugeGraph Release Validation Script v${SCRIPT_VERSION}
 
-Usage: ${SCRIPT_NAME} [--layout auto|tlp|incubator] <version> <user> [local-path] [java-version]
+Usage: ${SCRIPT_NAME} <version> <user> [local-path] [java-version]
        ${SCRIPT_NAME} --help | -h
        ${SCRIPT_NAME} --version | -v
 
@@ -138,7 +127,6 @@ Options:
   --help, -h            Show this help message
   --version, -v         Show script version
   --non-interactive     Run without prompts (for CI/CD)
-  --layout MODE         Dist layout: auto|tlp|incubator (default: auto)
 
 Examples:
   # Validate from Apache SVN (downloads files)
@@ -153,9 +141,6 @@ Examples:
 
   # Non-interactive mode for CI
   ${SCRIPT_NAME} --non-interactive 1.7.0 pengjunzhi
-
-  # Validate with explicit TLP layout
-  ${SCRIPT_NAME} --layout tlp 1.7.0 pengjunzhi
 
 For more information, visit:
   https://github.com/apache/hugegraph-doc/tree/master/dist
@@ -371,43 +356,6 @@ find_package_dir_silent() {
     find "$base_dir" -maxdepth 3 -type d -path "$pattern" 2>/dev/null | head -n1
 }
 
-resolve_layout_for_svn() {
-    case "$LAYOUT" in
-        tlp)
-            SVN_URL_PREFIX_RESOLVED="$SVN_URL_PREFIX_TLP"
-            RESOLVED_LAYOUT="tlp"
-            ;;
-        incubator)
-            SVN_URL_PREFIX_RESOLVED="$SVN_URL_PREFIX_INCUBATOR"
-            RESOLVED_LAYOUT="incubator"
-            ;;
-        auto)
-            if svn ls "${SVN_URL_PREFIX_TLP}/${RELEASE_VERSION}" &>/dev/null; then
-                SVN_URL_PREFIX_RESOLVED="$SVN_URL_PREFIX_TLP"
-                RESOLVED_LAYOUT="tlp"
-            elif svn ls "${SVN_URL_PREFIX_INCUBATOR}/${RELEASE_VERSION}" &>/dev/null; then
-                SVN_URL_PREFIX_RESOLVED="$SVN_URL_PREFIX_INCUBATOR"
-                RESOLVED_LAYOUT="incubator"
-            else
-                collect_error "Release version '${RELEASE_VERSION}' not found in either TLP or incubator dist paths"
-                return 1
-            fi
-            ;;
-        *)
-            collect_error "Invalid layout mode '${LAYOUT}', expected auto|tlp|incubator"
-            return 1
-            ;;
-    esac
-
-    info "Using layout '${RESOLVED_LAYOUT}' with SVN prefix: ${SVN_URL_PREFIX_RESOLVED}"
-    return 0
-}
-
-package_requires_disclaimer() {
-    local package=$1
-    [[ "$package" =~ incubating ]]
-}
-
 ################################################################################
 # Helper Functions - GPG & Signatures
 ################################################################################
@@ -473,8 +421,9 @@ check_package_name() {
         return 1
     fi
 
-    if [[ "$RESOLVED_LAYOUT" == "tlp" ]] && [[ "$package" =~ incubating ]]; then
-        collect_warning "Package '$package' still contains 'incubating' under TLP layout (allowed for historical releases)"
+    if [[ "$package" =~ incubating ]]; then
+        collect_error "Package '$package' should not contain 'incubating' for post-graduation releases"
+        return 1
     fi
 
     mark_check_passed
@@ -483,7 +432,6 @@ check_package_name() {
 
 check_required_files() {
     local package=$1
-    local require_disclaimer=${2:-true}
     local has_error=0
 
     if [[ ! -f "LICENSE" ]]; then
@@ -495,13 +443,6 @@ check_required_files() {
 
     if [[ ! -f "NOTICE" ]]; then
         collect_error "Package '$package' missing NOTICE file"
-        has_error=1
-    else
-        mark_check_passed
-    fi
-
-    if [[ "$require_disclaimer" == "true" ]] && [[ ! -f "DISCLAIMER" ]]; then
-        collect_error "Package '$package' missing DISCLAIMER file"
         has_error=1
     else
         mark_check_passed
@@ -882,11 +823,7 @@ validate_source_package() {
 
     # Run all checks
     check_package_name "$package_file"
-    if package_requires_disclaimer "$package_file"; then
-        check_required_files "$package_file" true
-    else
-        check_required_files "$package_file" false
-    fi
+    check_required_files "$package_file"
     check_license_categories "$package_file" "LICENSE NOTICE"
     check_empty_files_and_dirs "$package_file"
     check_file_sizes "$package_file" "$MAX_FILE_SIZE"
@@ -950,11 +887,7 @@ validate_binary_package() {
 
     # Run checks
     check_package_name "$package_file"
-    if package_requires_disclaimer "$package_file"; then
-        check_required_files "$package_file" true
-    else
-        check_required_files "$package_file" false
-    fi
+    check_required_files "$package_file"
 
     # Binary packages should have licenses directory
     TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
@@ -1096,18 +1029,6 @@ main() {
                 NON_INTERACTIVE=1
                 shift
                 ;;
-            --layout)
-                if [[ $# -lt 2 ]]; then
-                    error "Missing value for --layout (expected: auto|tlp|incubator)"
-                    exit 1
-                fi
-                LAYOUT=$2
-                shift 2
-                ;;
-            --layout=*)
-                LAYOUT="${1#*=}"
-                shift
-                ;;
             *)
                 break
                 ;;
@@ -1135,16 +1056,6 @@ main() {
         exit 1
     fi
 
-    case "$LAYOUT" in
-        auto|tlp|incubator) ;;
-        *)
-            error "Invalid --layout value '${LAYOUT}', expected: auto|tlp|incubator"
-            echo ""
-            show_usage
-            exit 1
-            ;;
-    esac
-
     # Initialize
     WORK_DIR=$(cd "$(dirname "$0")" && pwd)
     cd "${WORK_DIR}"
@@ -1159,7 +1070,6 @@ main() {
     echo "  Version:   ${RELEASE_VERSION}"
     echo "  User:      ${USER}"
     echo "  Java:      ${JAVA_VERSION}"
-    echo "  Layout:    ${LAYOUT}"
     echo "  Mode:      $([ -n "${LOCAL_DIST_PATH}" ] && echo "Local (${LOCAL_DIST_PATH})" || echo "SVN Download")"
     echo "  Log:       ${LOG_FILE}"
     echo ""
@@ -1182,11 +1092,6 @@ main() {
         # Use local directory
         DIST_DIR="${LOCAL_DIST_PATH}"
         info "Using local directory: ${DIST_DIR}"
-        if [[ "$LAYOUT" == "auto" ]]; then
-            RESOLVED_LAYOUT="tlp"
-        else
-            RESOLVED_LAYOUT="$LAYOUT"
-        fi
 
         if [[ ! -d "${DIST_DIR}" ]]; then
             collect_error "Directory ${DIST_DIR} does not exist"
@@ -1197,7 +1102,8 @@ main() {
         ls -lh "${DIST_DIR}"
     else
         # Download from SVN
-        if ! resolve_layout_for_svn; then
+        if ! svn ls "${SVN_URL_PREFIX}/${RELEASE_VERSION}" &>/dev/null; then
+            collect_error "Release version '${RELEASE_VERSION}' not found in TLP dist path: ${SVN_URL_PREFIX}/${RELEASE_VERSION}"
             exit 1
         fi
         DIST_DIR="${WORK_DIR}/dist/${RELEASE_VERSION}"
@@ -1206,8 +1112,8 @@ main() {
         rm -rf "${DIST_DIR}"
         mkdir -p "${DIST_DIR}"
 
-        if ! svn co "${SVN_URL_PREFIX_RESOLVED}/${RELEASE_VERSION}" "${DIST_DIR}"; then
-            collect_error "Failed to download from SVN: ${SVN_URL_PREFIX_RESOLVED}/${RELEASE_VERSION}"
+        if ! svn co "${SVN_URL_PREFIX}/${RELEASE_VERSION}" "${DIST_DIR}"; then
+            collect_error "Failed to download from SVN: ${SVN_URL_PREFIX}/${RELEASE_VERSION}"
             exit 1
         fi
 

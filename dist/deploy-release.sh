@@ -18,16 +18,13 @@
 set -euo pipefail
 
 DOWNLOAD_URL_PREFIX="https://downloads.apache.org/hugegraph"
-LAYOUT="auto" # auto|tlp|incubator
 
 usage() {
   cat <<USAGE
-Usage: $(basename "$0") [--layout auto|tlp|incubator] <release-version>
+Usage: $(basename "$0") <release-version>
 
 Examples:
   $(basename "$0") 1.7.0
-  $(basename "$0") --layout tlp 1.8.0
-  $(basename "$0") --layout incubator 1.7.0
 USAGE
 }
 
@@ -35,51 +32,22 @@ log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
-build_candidates() {
-  local component=$1
-  case "$LAYOUT" in
-    tlp)
-      echo "apache-hugegraph${component}-${RELEASE_VERSION}.tar.gz"
-      ;;
-    incubator)
-      echo "apache-hugegraph${component}-incubating-${RELEASE_VERSION}.tar.gz"
-      ;;
-    auto)
-      echo "apache-hugegraph${component}-${RELEASE_VERSION}.tar.gz"
-      echo "apache-hugegraph${component}-incubating-${RELEASE_VERSION}.tar.gz"
-      ;;
-    *)
-      echo "Invalid layout: $LAYOUT" >&2
-      return 1
-      ;;
-  esac
-}
-
-download_first_available() {
-  local component=$1
-  local tar_name=""
+download_tarball() {
+  local tar_name=$1
   local url=""
+  if [[ -f "$tar_name" ]]; then
+    log "Reuse local tarball: $tar_name"
+    return 0
+  fi
 
-  while IFS= read -r candidate; do
-    [[ -z "$candidate" ]] && continue
+  url="${DOWNLOAD_URL_PREFIX}/${RELEASE_VERSION}/${tar_name}"
+  if ! wget --spider -q "$url"; then
+    echo "Cannot find tarball: $url" >&2
+    return 1
+  fi
 
-    if [[ -f "$candidate" ]]; then
-      log "Reuse local tarball: $candidate"
-      echo "$candidate"
-      return 0
-    fi
-
-    url="${DOWNLOAD_URL_PREFIX}/${RELEASE_VERSION}/${candidate}"
-    if wget --spider -q "$url"; then
-      log "Download $url"
-      wget "$url"
-      echo "$candidate"
-      return 0
-    fi
-  done < <(build_candidates "$component")
-
-  log "Cannot find downloadable tarball for component '${component}' in layout '${LAYOUT}'"
-  return 1
+  log "Download $url"
+  wget "$url"
 }
 
 extract_tar_if_needed() {
@@ -105,15 +73,6 @@ find_hubble_dir() {
 parse_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --layout)
-        [[ $# -lt 2 ]] && { echo "Missing value for --layout" >&2; usage; exit 1; }
-        LAYOUT="$2"
-        shift 2
-        ;;
-      --layout=*)
-        LAYOUT="${1#*=}"
-        shift
-        ;;
       --help|-h)
         usage
         exit 0
@@ -135,30 +94,21 @@ parse_args() {
     usage
     exit 1
   fi
-
-  case "$LAYOUT" in
-    auto|tlp|incubator) ;;
-    *)
-      echo "Invalid --layout '$LAYOUT', expected auto|tlp|incubator" >&2
-      usage
-      exit 1
-      ;;
-  esac
 }
 
 main() {
   parse_args "$@"
   log "Release version: $RELEASE_VERSION"
-  log "Layout: $LAYOUT"
   log "Download prefix: $DOWNLOAD_URL_PREFIX"
 
-  local server_tar
-  local toolchain_tar
-  server_tar=$(download_first_available "")
-  toolchain_tar=$(download_first_available "-toolchain")
+  local server_tar="apache-hugegraph-${RELEASE_VERSION}.tar.gz"
+  local toolchain_tar="apache-hugegraph-toolchain-${RELEASE_VERSION}.tar.gz"
 
-  extract_tar_if_needed "$server_tar"
-  extract_tar_if_needed "$toolchain_tar"
+  download_tarball "$server_tar"
+  download_tarball "$toolchain_tar"
+
+  extract_tar_if_needed "${server_tar}"
+  extract_tar_if_needed "${toolchain_tar}"
 
   local server_dir
   server_dir=$(find_server_dir)

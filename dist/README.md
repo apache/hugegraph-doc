@@ -4,7 +4,7 @@ Apache HugeGraph 发布包的自动化验证脚本。
 
 ## 概述
 
-`validate-release.sh` 脚本对 Apache HugeGraph 发布包进行全面验证，自动执行 [Apache 发布政策](https://www.apache.org/legal/release-policy.html) 的核心要求，并将 [孵化器发布检查清单](https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist) 作为历史归档参考。
+`validate-release.sh` 脚本对 Apache HugeGraph 发布包进行全面验证，自动执行 [Apache 发布政策](https://www.apache.org/legal/release-policy.html) 的核心要求。
 
 ## 功能特性
 
@@ -12,8 +12,7 @@ Apache HugeGraph 发布包的自动化验证脚本。
 - ✅ **SHA512 和 GPG 签名验证** - 确保包的完整性和真实性
 - ✅ **许可证合规性验证** - 检查禁止的 ASF Category X 和需要文档化的 Category B 许可证
 - ✅ **详细的许可证错误报告** - 对 Category X 违规显示文件路径、许可证名称和上下文
-- ✅ **包内容验证** - 强校验 `LICENSE`、`NOTICE`；`DISCLAIMER` 仅在历史 `incubating` 包名下必需
-- ✅ **双布局兼容** - 支持 `--layout auto|tlp|incubator`，自动优先新 TLP 路径并兼容历史目录
+- ✅ **包内容验证** - 强校验 `LICENSE`、`NOTICE`
 - ✅ **ASF 许可证头检查** - 验证所有源文件中的许可证头，支持第三方代码文档化
 - ✅ **版本一致性验证** - 验证 Maven `<revision>` 属性与预期发布版本匹配
 - ✅ **多语言项目支持** - 自动跳过 Python 项目（hugegraph-ai）的 Maven 版本检查
@@ -71,10 +70,6 @@ Apache HugeGraph 发布包的自动化验证脚本。
 # 非交互模式（用于 CI/CD）
 ./validate-release.sh --non-interactive 1.7.0 pengjunzhi
 
-# 指定目录布局（默认 auto）
-./validate-release.sh --layout auto 1.7.0 pengjunzhi
-./validate-release.sh --layout tlp 1.8.0 pengjunzhi
-./validate-release.sh --layout incubator 1.7.0 pengjunzhi
 ```
 
 ### 命令行选项
@@ -82,21 +77,13 @@ Apache HugeGraph 发布包的自动化验证脚本。
 - `--help`, `-h` - 显示帮助信息并退出
 - `--version`, `-v` - 显示脚本版本并退出
 - `--non-interactive` - 无提示运行（用于 CI/CD 管道）
-- `--layout auto|tlp|incubator` - 指定 dist 目录布局（默认 `auto`）
 
 ### `deploy-release.sh`（本地快速拉起）
 
-该脚本用于从 `downloads.apache.org/hugegraph` 下载对应版本并快速启动 server/hubble，同样支持双轨命名和布局模式：
+该脚本用于从 `downloads.apache.org/hugegraph` 下载对应版本并快速启动 server/hubble。
 
 ```bash
-# 默认 auto：优先非 incubating 包名，失败后自动回退历史 incubating 包名
 ./deploy-release.sh 1.7.0
-
-# 仅使用 TLP 命名
-./deploy-release.sh --layout tlp 1.8.0
-
-# 仅使用历史 incubating 命名（历史复检）
-./deploy-release.sh --layout incubator 1.7.0
 ```
 
 ## 验证步骤
@@ -108,8 +95,8 @@ Apache HugeGraph 发布包的自动化验证脚本。
 3. **导入并信任 GPG 密钥** - 导入 KEYS 文件并信任所有公钥
 4. **验证 SHA512 和 GPG 签名** - 验证所有包的校验和和签名
 5. **验证源码包** - 对源码包进行全面检查：
-   - 包命名（同时支持 `apache-hugegraph-<ver>*` 与 `apache-hugegraph-incubating-<ver>*`）
-   - 必需文件（`LICENSE`、`NOTICE` 强校验，`DISCLAIMER` 仅对 `incubating` 历史包强制）
+   - 包命名（必须符合 `apache-hugegraph-<ver>*`）
+   - 必需文件（`LICENSE`、`NOTICE`）
    - 许可证合规性（禁止 Category X，记录 Category B）
    - 详细的许可证违规报告（文件路径、许可证名称、上下文）
    - 无空文件或目录
@@ -132,13 +119,12 @@ Apache HugeGraph 发布包的自动化验证脚本。
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    Apache HugeGraph Release Validation v2.1.0
+    Apache HugeGraph Release Validation v2.2.0
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Version:   1.7.0
   User:      pengjunzhi
   Java:      11
-  Layout:    auto
   Mode:      SVN Download
   Log:       logs/validate-1.7.0-20251115-021742.log
 
@@ -364,7 +350,6 @@ grep "Step \[5/9\]" logs/validate-*.log
 ## 参考文档
 
 - [Apache 发布政策](https://www.apache.org/legal/release-policy.html)
-- [孵化器发布检查清单（历史参考）](https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist)
 - [Apache 许可证分类](https://www.apache.org/legal/resolved.html)
 - [HugeGraph 验证发布指南](../content/cn/docs/contribution-guidelines/validate-release.md)
 

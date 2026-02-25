@@ -2,6 +2,9 @@
 title: "Introduction with HugeGraph"
 linkTitle: "Introduction"
 weight: 1
+aliases:
+  - /docs/introduction/readme/
+  - /docs/introduction/README/
 ---
 
 ### Summary

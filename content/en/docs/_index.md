@@ -55,4 +55,4 @@ Apache HugeGraph is a complete graph database ecosystem, supporting OLTP real-ti
 | **Distributed** | Massive storage, compute-storage separated | < 1000TB |
 | **Docker** | Quick start | Any |
 
-[📖 Detailed Introduction](introduction/README)
+[📖 Detailed Introduction](introduction/)

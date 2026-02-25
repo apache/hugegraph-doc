@@ -14,52 +14,49 @@ linkTitle = "Huge Docs"
 	<a class="btn btn-lg btn-primary mr-3 mb-4" href="{{< relref "/docs" >}}">
 		Learn More <i class="fas fa-arrow-alt-circle-right ml-2"></i>
 	</a>
-	<a class="btn btn-lg btn-secondary mr-3 mb-4" href="./docs/download/download/">
+	<a class="btn btn-lg btn-secondary mr-3 mb-4" href="{{< relref "/docs/download/download" >}}">
 		Download <i class="fab fa-github ml-2 "></i>
 	</a>
-	<p class="lead mt-5">HugeGraph is a full-stack graph database system</p>
-	<p>providing complete graph data processing capabilities from storage, real-time querying to offline analysis, supporting both Gremlin and Cypher query languages.</p>
+	<p class="lead mt-5">HugeGraph is a full-stack graph system covering <a href="{{< relref "/docs/quickstart/hugegraph/hugegraph-server" >}}">graph database</a>, <a href="{{< relref "/docs/quickstart/computing/hugegraph-computer" >}}">graph computing</a>, and <a href="{{< relref "/docs/quickstart/hugegraph-ai" >}}">graph AI</a>.</p>
+	<p>It provides complete graph data processing capabilities from storage and real-time querying to offline analysis, and supports both <a href="{{< relref "/docs/language/hugegraph-gremlin" >}}">Gremlin</a> and <a href="{{< relref "/docs/clients/restful-api/cypher" >}}">Cypher</a> query languages.</p>
 	{{< blocks/link-down color="info" >}}
 </div>
 {{< /blocks/cover >}}
 
 
 {{% blocks/lead color="primary" %}}
-<p>HugeGraph supports high-speed import of billions of graph data and millisecond-level real-time queries,</p>
-<p>with deep integration with big data platforms like Spark and Flink. In the AI era, combined with Large Language Models (LLMs),</p>
-<p>it provides powerful graph computing capabilities for intelligent Q&A, recommendation systems, fraud detection, knowledge graphs and more.</p>
+<p>HugeGraph supports high-speed import and millisecond-level real-time queries for up to hundreds of billions of graph data, with deep integration with big data platforms like Spark and Flink, and can use the <a href="{{< relref "/docs/quickstart/toolchain" >}}">HugeGraph toolchain</a> for data import, visualization, and operations.</p>
+<p>In the AI era, combined with Large Language Models (LLMs), it provides powerful graph computing capabilities for intelligent Q&A, recommendation systems, fraud detection, and knowledge graph applications.</p>
 {{% /blocks/lead %}}
 
 {{< blocks/section color="dark" >}}
 {{% blocks/feature icon="fa-lightbulb" title="Convenient" %}}
-Not only supports Gremlin graph query language and RESTful API but also provides commonly used graph algorithm APIs. To help users easily implement various queries and analyses, HugeGraph has a full range of accessory tools, such as supporting distributed storage, data replication, scaling horizontally, and supports many built-in backends of storage engines.
-
-<!-- Please follow us for updates! -->
+Supports Gremlin graph query language and [**RESTful API**]({{< relref "/docs/clients/restful-api" >}}), and provides commonly used graph retrieval interfaces. It includes a complete set of supporting tools with distributed storage, data replication, horizontal scaling, and multiple built-in backend storage engines for efficient query and analysis workflows.
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-shipping-fast" title="Efficient" %}}
-Has been deeply optimized in graph storage and graph computation. It provides multiple batch import tools that can easily complete the fast-import of tens of billions of data, achieves millisecond-level response for graph retrieval through ameliorated queries, and supports concurrent online and real-time operations for thousands of users.
+Deeply optimized for graph storage and graph computing, it provides [**batch import tools**]({{< relref "/docs/quickstart/toolchain/hugegraph-loader" >}}) to efficiently ingest massive data, achieves millisecond-level graph retrieval latency with optimized queries, and supports concurrent online operations for thousands of users.
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-exchange-alt" title="Adaptable" %}}
-Adapts to the Apache Gremlin standard graph query language and the Property Graph standard modeling method, and both support graph-based OLTP and OLAP schemes. Furthermore, HugeGraph can be integrated with Hadoop and Spark's big data platforms, and easily extend the back-end storage engine through plug-ins.
+Supports the Apache Gremlin standard graph query language and the Property Graph modeling method, with both OLTP and [**OLAP graph computing**]({{< relref "/docs/quickstart/computing/hugegraph-computer" >}}) scenarios. It can be integrated with Hadoop and Spark and can extend backend storage engines through plug-ins.
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-brain" title="AI-Ready" %}}
-Integrates LLM for GraphRAG intelligent Q&A, automated knowledge graph construction, with 20+ built-in graph machine learning algorithms to easily build AI-driven graph applications.
+Integrates LLM with [**GraphRAG capabilities**]({{< relref "/docs/quickstart/hugegraph-ai" >}}), automated knowledge graph construction, and 20+ built-in graph machine learning algorithms to build AI-driven graph applications.
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-expand-arrows-alt" title="Scalable" %}}
-Supports horizontal scaling and distributed deployment, seamlessly migrating from standalone to PB-level clusters, with multiple storage engine options for different scale and performance requirements.
+Supports horizontal scaling and distributed deployment, seamlessly migrating from standalone to PB-level clusters, and provides [**distributed storage engine**]({{< relref "/docs/quickstart/hugegraph/hugegraph-hstore" >}}) options for different scale and performance requirements.
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-puzzle-piece" title="Open Ecosystem" %}}
-Adheres to Apache TinkerPop standards, provides multi-language clients (Java, Python, Go), compatible with mainstream big data platforms, with an active and continuously evolving community.
+Adheres to Apache TinkerPop standards, provides [**multi-language clients**]({{< relref "/docs/quickstart/client/hugegraph-client" >}}), is compatible with mainstream big data platforms, and is backed by an active and evolving community.
 {{% /blocks/feature %}}
 
 

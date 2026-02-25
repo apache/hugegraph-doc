@@ -235,7 +235,7 @@ enable = false
 # Developer relevant links. These will show up on right side of footer and in the community page if you have one.
 [[params.links.user]]
   name ="Introduction"
-  url = "../docs/introduction/readme/"
+  url = "../docs/introduction/"
   icon = "fa fa-book"
   desc = "Increase your understanding about the project"
 [[params.links.user]]

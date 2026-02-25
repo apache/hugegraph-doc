@@ -55,4 +55,4 @@ Apache HugeGraph 是一套完整的图数据库生态系统，支持 OLTP 实时
 | **分布式** | 海量存储、存算分离 | < 1000TB |
 | **Docker** | 快速体验 | 任意 |
 
-[📖 详细介绍](introduction/README)
+[📖 详细介绍](introduction/)

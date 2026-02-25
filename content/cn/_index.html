@@ -15,50 +15,50 @@ linkTitle = "Huge Docs"
 	<a class="btn btn-lg btn-primary mr-3 mb-4" href="{{< relref "/docs" >}}">
 		Learn More <i class="fas fa-arrow-alt-circle-right ml-2"></i>
 	</a>
-	<a class="btn btn-lg btn-secondary mr-3 mb-4" href="https://github.com/apache/hugegraph">
+	<a class="btn btn-lg btn-secondary mr-3 mb-4" href="{{< relref "/docs/download/download" >}}">
 		Download <i class="fab fa-github ml-2 "></i>
 	</a>
-	<p class="lead mt-5">HugeGraph 是一款全栈式图数据库系统</p>
-	<p>支持从数据存储、实时查询到离线分析的完整图数据处理能力，同时支持 Gremlin 和 Cypher 查询语言。</p>
+	<p class="lead mt-5">HugeGraph 是一套全栈图系统，覆盖 <a href="{{< relref "/docs/quickstart/hugegraph/hugegraph-server" >}}">图数据库</a>、<a href="{{< relref "/docs/quickstart/computing/hugegraph-computer" >}}">图计算</a> 与 <a href="{{< relref "/docs/quickstart/hugegraph-ai" >}}">图 AI</a>。</p>
+	<p>支持从数据存储、实时查询到离线分析的完整图数据处理能力，并支持 <a href="{{< relref "/docs/language/hugegraph-gremlin" >}}">Gremlin</a> 与 <a href="{{< relref "/docs/clients/restful-api/cypher" >}}">Cypher</a> 查询语言。</p>
 	{{< blocks/link-down color="info" >}}
 </div>
 {{< /blocks/cover >}}
 
 
 {{% blocks/lead color="primary" %}}
-<p>HugeGraph 支持百亿级图数据高速导入与毫秒级实时查询，可与 Spark、Flink 等大数据平台深度集成。</p>
+<p>HugeGraph 最高支持千亿级图数据高速导入与毫秒级实时查询，可与 Spark、Flink 等大数据平台深度集成，并可通过 <a href="{{< relref "/docs/quickstart/toolchain" >}}">HugeGraph 工具链</a> 快速完成导入、可视化与运维。</p>
 <p>在 AI 时代，通过与大语言模型 (LLM) 结合，为智能问答、推荐系统、风控反欺诈、知识图谱等场景提供强大的图计算能力。</p>
 {{% /blocks/lead %}}
 
 {{< blocks/section color="dark" >}}
 {{% blocks/feature icon="fa-lightbulb" title="易用" %}}
-支持Gremlin图查询语言与RESTful API，并提供图检索常用接口，具备齐全的周边工具，支持分布式存储、数据多副本及横向扩容，内置多种后端存储引擎，轻松实现各种查询、分析。
+支持 Gremlin 图查询语言与 [**RESTful API**]({{< relref "/docs/clients/restful-api" >}})，并提供图检索常用接口，具备齐全的周边工具，支持分布式存储、数据多副本及横向扩容，内置多种后端存储引擎，轻松实现各种查询、分析。
 
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-shipping-fast" title="高效" %}}
-在图存储和图计算方面做了深度优化，提供支持多种数据源的批量导入工具，轻松完成百亿级数据快速导入，通过优化过的查询达到图检索的毫秒级响应，支持数千用户并发的在线实时操作。
+在图存储和图计算方面做了深度优化，提供 [**批量导入工具**]({{< relref "/docs/quickstart/toolchain/hugegraph-loader" >}})，轻松完成百亿级数据快速导入，通过优化过的查询达到图检索的毫秒级响应，支持数千用户并发的在线实时操作。
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-exchange-alt" title="通用" %}}
-支持Apache Gremlin标准图查询语言和Property Graph标准图建模方法，支持基于图的OLTP和OLAP方案。集成Apache Hadoop及Apache Spark大数据平台，也可插件式轻松扩展后端存储引擎。
+支持 Apache Gremlin 标准图查询语言和 Property Graph 标准图建模方法，支持基于图的 OLTP 和 [**OLAP 图计算**]({{< relref "/docs/quickstart/computing/hugegraph-computer" >}}) 方案。集成 Apache Hadoop 及 Apache Spark 大数据平台，也可插件式轻松扩展后端存储引擎。
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-brain" title="智能化" %}}
-集成LLM实现GraphRAG智能问答、自动化知识图谱构建，内置20+图机器学习算法，轻松构建AI驱动的图应用。
+集成 LLM 实现 [**GraphRAG 能力**]({{< relref "/docs/quickstart/hugegraph-ai" >}})、自动化知识图谱构建，内置 20+ 图机器学习算法，轻松构建 AI 驱动的图应用。
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-expand-arrows-alt" title="可扩展" %}}
-支持水平扩容和分布式部署，从单机到PB级集群无缝迁移，提供多种存储引擎适配，满足不同规模和性能需求。
+支持水平扩容和分布式部署，从单机到 PB 级集群无缝迁移，提供 [**分布式存储引擎**]({{< relref "/docs/quickstart/hugegraph/hugegraph-hstore" >}}) 适配，满足不同规模和性能需求。
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-puzzle-piece" title="开放生态" %}}
-遵循Apache TinkerPop标准，提供Java、Python、Go等多语言客户端，兼容主流大数据平台，社区活跃持续演进。
+遵循 Apache TinkerPop 标准，提供 [**多语言客户端**]({{< relref "/docs/quickstart/client/hugegraph-client" >}})，兼容主流大数据平台，社区活跃持续演进。
 {{% /blocks/feature %}}
 
 

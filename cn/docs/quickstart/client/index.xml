@@ -1,7 +1,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>HugeGraph – HugeGraph Client</title><link>/cn/docs/quickstart/client/</link><description>Recent content in HugeGraph Client on HugeGraph</description><generator>Hugo -- gohugo.io</generator><atom:link href="/cn/docs/quickstart/client/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: HugeGraph-Java-Client</title><link>/cn/docs/quickstart/client/hugegraph-client/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/quickstart/client/hugegraph-client/</guid><description>
 &lt;h3 id="1-hugegraph-client-概述">1 HugeGraph-Client 概述&lt;/h3>
 &lt;p>&lt;a href="https://github.com/apache/hugegraph-toolchain">HugeGraph-Client&lt;/a> 向 HugeGraph-Server 发出 HTTP 请求，获取并解析 Server 的执行结果。
-提供了 Java/Go/&lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-python-client">Python&lt;/a> 版，
+提供了 Java/Go/&lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client">Python&lt;/a> 版，
 用户可以使用 &lt;a href="/cn/docs/clients/hugegraph-client">Client-API&lt;/a> 编写代码操作 HugeGraph，比如元数据和图数据的增删改查，或者执行 gremlin 语句等。
 后文主要是 Java 使用示例 (其他语言 SDK 可参考对应 &lt;code>READEME&lt;/code> 页面)&lt;/p>
 &lt;blockquote>
@@ -347,8 +347,8 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># WIP：我们很快会将 &amp;#39;hugegraph-python-client&amp;#39; 作为包名&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="从源码安装最新代码">从源码安装（最新代码）&lt;/h3>
 &lt;p>要从源码安装，请克隆仓库并安装所需的依赖项：&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/incubator-hugegraph-ai.git
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> incubator-hugegraph-ai/hugegraph-python-client
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/hugegraph-ai.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph-ai/hugegraph-python-client
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 普通安装&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>uv pip install .

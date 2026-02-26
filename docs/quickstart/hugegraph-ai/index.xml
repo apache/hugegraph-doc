@@ -1,12 +1,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>HugeGraph – HugeGraph-AI</title><link>/docs/quickstart/hugegraph-ai/</link><description>Recent content in HugeGraph-AI on HugeGraph</description><generator>Hugo -- gohugo.io</generator><atom:link href="/docs/quickstart/hugegraph-ai/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: HugeGraph-LLM</title><link>/docs/quickstart/hugegraph-ai/hugegraph-llm/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/quickstart/hugegraph-ai/hugegraph-llm/</guid><description>
 &lt;blockquote>
-&lt;p>Please refer to the AI repository &lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-llm#readme">README&lt;/a> for the most up-to-date documentation, and the official website &lt;strong>regularly&lt;/strong> is updated and synchronized.&lt;/p>
+&lt;p>Please refer to the AI repository &lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm#readme">README&lt;/a> for the most up-to-date documentation, and the official website &lt;strong>regularly&lt;/strong> is updated and synchronized.&lt;/p>
 &lt;/blockquote>
 &lt;blockquote>
 &lt;p>&lt;strong>Bridge the gap between Graph Databases and Large Language Models&lt;/strong>&lt;/p>
 &lt;/blockquote>
 &lt;blockquote>
-&lt;p>AI summarizes the project documentation: &lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/p>
+&lt;p>AI summarizes the project documentation: &lt;a href="https://deepwiki.com/apache/hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;h2 id="-overview">🎯 Overview&lt;/h2>
 &lt;p>HugeGraph-LLM is a comprehensive toolkit that combines the power of graph databases with large language models.
@@ -17,7 +17,7 @@ It enables seamless integration between HugeGraph and LLMs for building intellig
 &lt;li>🗣️ &lt;strong>Natural Language Querying&lt;/strong> - Operate graph databases using natural language (Gremlin/Cypher)&lt;/li>
 &lt;li>🔍 &lt;strong>Graph-Enhanced RAG&lt;/strong> - Leverage knowledge graphs to improve answer accuracy (GraphRAG &amp;amp; Graph Agent)&lt;/li>
 &lt;/ul>
-&lt;p>For detailed source code doc, visit our &lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">DeepWiki&lt;/a> page. (Recommended)&lt;/p>
+&lt;p>For detailed source code doc, visit our &lt;a href="https://deepwiki.com/apache/hugegraph-ai">DeepWiki&lt;/a> page. (Recommended)&lt;/p>
 &lt;h2 id="-prerequisites">📋 Prerequisites&lt;/h2>
 &lt;blockquote>
 &lt;p>[!IMPORTANT]&lt;/p>
@@ -75,8 +75,8 @@ It enables seamless integration between HugeGraph and LLMs for building intellig
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl -LsSf https://astral.sh/uv/install.sh &lt;span style="color:#000;font-weight:bold">|&lt;/span> sh
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 3. Clone and setup project&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/incubator-hugegraph-ai.git
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> incubator-hugegraph-ai/hugegraph-llm
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/hugegraph-ai.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph-ai/hugegraph-llm
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 4. Create virtual environment and install dependencies&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>uv venv &lt;span style="color:#ce5c00;font-weight:bold">&amp;amp;&amp;amp;&lt;/span> &lt;span style="color:#204a87">source&lt;/span> .venv/bin/activate
@@ -96,7 +96,7 @@ It enables seamless integration between HugeGraph and LLMs for building intellig
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>python -m hugegraph_llm.config.generate --update
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;blockquote>
 &lt;p>[!TIP]
-Check our &lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/quick_start.md">Quick Start Guide&lt;/a> for detailed usage examples and query logic explanations.&lt;/p>
+Check our &lt;a href="https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/quick_start.md">Quick Start Guide&lt;/a> for detailed usage examples and query logic explanations.&lt;/p>
 &lt;/blockquote>
 &lt;h2 id="-usage-examples">💡 Usage Examples&lt;/h2>
 &lt;h3 id="knowledge-graph-construction">Knowledge Graph Construction&lt;/h3>
@@ -109,7 +109,7 @@ Check our &lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main
 &lt;/ul>
 &lt;p>&lt;strong>Schema Configuration:&lt;/strong>&lt;/p>
 &lt;ul>
-&lt;li>&lt;strong>Custom Schema&lt;/strong>: JSON format following our &lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125">template&lt;/a>&lt;/li>
+&lt;li>&lt;strong>Custom Schema&lt;/strong>: JSON format following our &lt;a href="https://github.com/apache/hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125">template&lt;/a>&lt;/li>
 &lt;li>&lt;strong>HugeGraph Schema&lt;/strong>: Use existing graph instance schema (e.g., &amp;ldquo;hugegraph&amp;rdquo;)&lt;/li>
 &lt;/ul>
 &lt;p>&lt;img src="https://hugegraph.apache.org/docs/images/gradio-kg.png" alt="Knowledge Graph Builder">&lt;/p>
@@ -267,8 +267,8 @@ Configuration changes are automatically saved when using the web interface. For 
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Option 2: Binary packages&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># See https://hugegraph.apache.org/docs/download/download/&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="2-clone-and-setup">2. Clone and Setup&lt;/h3>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/incubator-hugegraph-ai.git
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> incubator-hugegraph-ai/hugegraph-ml
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/hugegraph-ai.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph-ai/hugegraph-ml
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="3-install-dependencies">3. Install Dependencies&lt;/h3>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># uv sync automatically creates .venv and installs all dependencies&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>uv sync
@@ -514,7 +514,7 @@ All examples assume you&amp;rsquo;re in the activated virtual environment.&lt;/p
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">print&lt;/span>&lt;span style="color:#000;font-weight:bold">(&lt;/span>&lt;span style="color:#000">node_clf_task&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">.&lt;/span>&lt;span style="color:#000">evaluate&lt;/span>&lt;span style="color:#000;font-weight:bold">())&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>Expected Output:&lt;/strong>&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#39;accuracy&amp;#39;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">0.82&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span> &lt;span style="color:#4e9a06">&amp;#39;loss&amp;#39;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">0.5714246034622192&lt;/span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>Full Example&lt;/strong>: See &lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/dgi_example.py">dgi_example.py&lt;/a>&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>Full Example&lt;/strong>: See &lt;a href="https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/dgi_example.py">dgi_example.py&lt;/a>&lt;/p>
 &lt;h3 id="example-2-node-classification-with-grand">Example 2: Node Classification with GRAND&lt;/h3>
 &lt;p>Directly classify nodes using the GRAND model (no separate embedding step needed).&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">from&lt;/span> &lt;span style="color:#000">hugegraph_ml.data.hugegraph2dgl&lt;/span> &lt;span style="color:#204a87;font-weight:bold">import&lt;/span> &lt;span style="color:#000">HugeGraph2DGL&lt;/span>
@@ -535,7 +535,7 @@ All examples assume you&amp;rsquo;re in the activated virtual environment.&lt;/p
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">node_clf_task&lt;/span> &lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span> &lt;span style="color:#000">NodeClassify&lt;/span>&lt;span style="color:#000;font-weight:bold">(&lt;/span>&lt;span style="color:#000">graph&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&lt;span style="color:#000">graph&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span> &lt;span style="color:#000">model&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&lt;span style="color:#000">model&lt;/span>&lt;span style="color:#000;font-weight:bold">)&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">node_clf_task&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">.&lt;/span>&lt;span style="color:#000">train&lt;/span>&lt;span style="color:#000;font-weight:bold">(&lt;/span>&lt;span style="color:#000">lr&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">1e-2&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span> &lt;span style="color:#000">n_epochs&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">1500&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span> &lt;span style="color:#000">patience&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">100&lt;/span>&lt;span style="color:#000;font-weight:bold">)&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">print&lt;/span>&lt;span style="color:#000;font-weight:bold">(&lt;/span>&lt;span style="color:#000">node_clf_task&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">.&lt;/span>&lt;span style="color:#000">evaluate&lt;/span>&lt;span style="color:#000;font-weight:bold">())&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>Full Example&lt;/strong>: See &lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/grand_example.py">grand_example.py&lt;/a>&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>Full Example&lt;/strong>: See &lt;a href="https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/grand_example.py">grand_example.py&lt;/a>&lt;/p>
 &lt;h2 id="core-components">Core Components&lt;/h2>
 &lt;h3 id="hugegraph2dgl-converter">HugeGraph2DGL Converter&lt;/h3>
 &lt;p>Seamlessly converts HugeGraph data to DGL graph format:&lt;/p>
@@ -627,7 +627,7 @@ All examples assume you&amp;rsquo;re in the activated virtual environment.&lt;/p
 &lt;ul>
 &lt;li>&lt;a href="../_index.md">HugeGraph-AI Overview&lt;/a> - Full AI ecosystem&lt;/li>
 &lt;li>&lt;a href="./hugegraph-llm.md">HugeGraph-LLM&lt;/a> - RAG and knowledge graph construction&lt;/li>
-&lt;li>&lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-ml">GitHub Repository&lt;/a> - Source code and examples&lt;/li>
+&lt;li>&lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml">GitHub Repository&lt;/a> - Source code and examples&lt;/li>
 &lt;/ul></description></item><item><title>Docs: Configuration Reference</title><link>/docs/quickstart/hugegraph-ai/config-reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/quickstart/hugegraph-ai/config-reference/</guid><description>
 &lt;p>This document provides a comprehensive reference for all configuration options in HugeGraph-LLM.&lt;/p>
 &lt;h2 id="configuration-files">Configuration Files&lt;/h2>

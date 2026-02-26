@@ -1,12 +1,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>HugeGraph – HugeGraph-AI</title><link>/cn/docs/quickstart/hugegraph-ai/</link><description>Recent content in HugeGraph-AI on HugeGraph</description><generator>Hugo -- gohugo.io</generator><atom:link href="/cn/docs/quickstart/hugegraph-ai/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: HugeGraph-LLM</title><link>/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/</guid><description>
 &lt;blockquote>
-&lt;p>本文为中文翻译版本，内容基于英文版进行，我们欢迎您随时提出修改建议。我们推荐您阅读 &lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-llm#readme">AI 仓库 README&lt;/a> 以获取最新信息，官网会定期同步更新。&lt;/p>
+&lt;p>本文为中文翻译版本，内容基于英文版进行，我们欢迎您随时提出修改建议。我们推荐您阅读 &lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm#readme">AI 仓库 README&lt;/a> 以获取最新信息，官网会定期同步更新。&lt;/p>
 &lt;/blockquote>
 &lt;blockquote>
 &lt;p>&lt;strong>连接图数据库与大语言模型的桥梁&lt;/strong>&lt;/p>
 &lt;/blockquote>
 &lt;blockquote>
-&lt;p>AI 总结项目文档：&lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/p>
+&lt;p>AI 总结项目文档：&lt;a href="https://deepwiki.com/apache/hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;h2 id="-概述">🎯 概述&lt;/h2>
 &lt;p>HugeGraph-LLM 是一个功能强大的工具包，它融合了图数据库和大型语言模型的优势，实现了 HugeGraph 与 LLM 之间的无缝集成，助力开发者构建智能应用。&lt;/p>
@@ -16,7 +16,7 @@
 &lt;li>🗣️ &lt;strong>自然语言查询&lt;/strong>：通过自然语言（Gremlin/Cypher）操作图数据库。&lt;/li>
 &lt;li>🔍 &lt;strong>图增强 RAG&lt;/strong>：借助知识图谱提升问答准确性（GraphRAG 和 Graph Agent）。&lt;/li>
 &lt;/ul>
-&lt;p>更多源码文档，请访问我们的 &lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">DeepWiki&lt;/a> 页面（推荐）。&lt;/p>
+&lt;p>更多源码文档，请访问我们的 &lt;a href="https://deepwiki.com/apache/hugegraph-ai">DeepWiki&lt;/a> 页面（推荐）。&lt;/p>
 &lt;h2 id="-环境要求">📋 环境要求&lt;/h2>
 &lt;blockquote>
 &lt;p>[!IMPORTANT]&lt;/p>
@@ -74,8 +74,8 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl -LsSf https://astral.sh/uv/install.sh &lt;span style="color:#000;font-weight:bold">|&lt;/span> sh
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 3. 克隆并设置项目&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/incubator-hugegraph-ai.git
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> incubator-hugegraph-ai/hugegraph-llm
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/hugegraph-ai.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph-ai/hugegraph-llm
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 4. 创建虚拟环境并安装依赖&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>uv venv &lt;span style="color:#ce5c00;font-weight:bold">&amp;amp;&amp;amp;&lt;/span> &lt;span style="color:#204a87">source&lt;/span> .venv/bin/activate
@@ -95,7 +95,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>python -m hugegraph_llm.config.generate --update
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;blockquote>
 &lt;p>[!TIP]
-查看我们的&lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/quick_start.md">快速入门指南&lt;/a>获取详细用法示例和查询逻辑解释。&lt;/p>
+查看我们的&lt;a href="https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/quick_start.md">快速入门指南&lt;/a>获取详细用法示例和查询逻辑解释。&lt;/p>
 &lt;/blockquote>
 &lt;h2 id="-用法示例">💡 用法示例&lt;/h2>
 &lt;h3 id="知识图谱构建">知识图谱构建&lt;/h3>
@@ -108,7 +108,7 @@
 &lt;/ul>
 &lt;p>&lt;strong>Schema 配置：&lt;/strong>&lt;/p>
 &lt;ul>
-&lt;li>&lt;strong>自定义 Schema&lt;/strong>：遵循我们&lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125">模板&lt;/a>的 JSON 格式&lt;/li>
+&lt;li>&lt;strong>自定义 Schema&lt;/strong>：遵循我们&lt;a href="https://github.com/apache/hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125">模板&lt;/a>的 JSON 格式&lt;/li>
 &lt;li>&lt;strong>HugeGraph Schema&lt;/strong>：使用现有图实例的 Schema（例如，“hugegraph”）&lt;/li>
 &lt;/ul>
 &lt;p>&lt;img src="https://hugegraph.apache.org/docs/images/gradio-kg.png" alt="知识图谱构建器">&lt;/p>
@@ -266,8 +266,8 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 方案二：二进制包&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 参见 https://hugegraph.apache.org/docs/download/download/&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="2-克隆并设置">2. 克隆并设置&lt;/h3>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/incubator-hugegraph-ai.git
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> incubator-hugegraph-ai/hugegraph-ml
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/hugegraph-ai.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph-ai/hugegraph-ml
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="3-安装依赖">3. 安装依赖&lt;/h3>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># uv sync 自动创建 .venv 并安装所有依赖&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>uv sync
@@ -513,7 +513,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">print&lt;/span>&lt;span style="color:#000;font-weight:bold">(&lt;/span>&lt;span style="color:#000">node_clf_task&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">.&lt;/span>&lt;span style="color:#000">evaluate&lt;/span>&lt;span style="color:#000;font-weight:bold">())&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>预期输出：&lt;/strong>&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#39;accuracy&amp;#39;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">0.82&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span> &lt;span style="color:#4e9a06">&amp;#39;loss&amp;#39;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">0.5714246034622192&lt;/span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>完整示例&lt;/strong>：参见 &lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/dgi_example.py">dgi_example.py&lt;/a>&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>完整示例&lt;/strong>：参见 &lt;a href="https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/dgi_example.py">dgi_example.py&lt;/a>&lt;/p>
 &lt;h3 id="示例-2使用-grand-进行节点分类">示例 2：使用 GRAND 进行节点分类&lt;/h3>
 &lt;p>使用 GRAND 模型直接对节点进行分类（无需单独的嵌入步骤）。&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-python" data-lang="python">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">from&lt;/span> &lt;span style="color:#000">hugegraph_ml.data.hugegraph2dgl&lt;/span> &lt;span style="color:#204a87;font-weight:bold">import&lt;/span> &lt;span style="color:#000">HugeGraph2DGL&lt;/span>
@@ -534,7 +534,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">node_clf_task&lt;/span> &lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span> &lt;span style="color:#000">NodeClassify&lt;/span>&lt;span style="color:#000;font-weight:bold">(&lt;/span>&lt;span style="color:#000">graph&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&lt;span style="color:#000">graph&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span> &lt;span style="color:#000">model&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&lt;span style="color:#000">model&lt;/span>&lt;span style="color:#000;font-weight:bold">)&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">node_clf_task&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">.&lt;/span>&lt;span style="color:#000">train&lt;/span>&lt;span style="color:#000;font-weight:bold">(&lt;/span>&lt;span style="color:#000">lr&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">1e-2&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span> &lt;span style="color:#000">n_epochs&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">1500&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span> &lt;span style="color:#000">patience&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">100&lt;/span>&lt;span style="color:#000;font-weight:bold">)&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">print&lt;/span>&lt;span style="color:#000;font-weight:bold">(&lt;/span>&lt;span style="color:#000">node_clf_task&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">.&lt;/span>&lt;span style="color:#000">evaluate&lt;/span>&lt;span style="color:#000;font-weight:bold">())&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>完整示例&lt;/strong>：参见 &lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/grand_example.py">grand_example.py&lt;/a>&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>完整示例&lt;/strong>：参见 &lt;a href="https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/grand_example.py">grand_example.py&lt;/a>&lt;/p>
 &lt;h2 id="核心组件">核心组件&lt;/h2>
 &lt;h3 id="hugegraph2dgl-转换器">HugeGraph2DGL 转换器&lt;/h3>
 &lt;p>无缝将 HugeGraph 数据转换为 DGL 图格式：&lt;/p>
@@ -626,7 +626,7 @@
 &lt;ul>
 &lt;li>&lt;a href="../_index.md">HugeGraph-AI 概述&lt;/a> - 完整 AI 生态系统&lt;/li>
 &lt;li>&lt;a href="./hugegraph-llm.md">HugeGraph-LLM&lt;/a> - RAG 和知识图谱构建&lt;/li>
-&lt;li>&lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-ml">GitHub 仓库&lt;/a> - 源代码和示例&lt;/li>
+&lt;li>&lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml">GitHub 仓库&lt;/a> - 源代码和示例&lt;/li>
 &lt;/ul></description></item><item><title>Docs: GraphRAG UI Details</title><link>/cn/docs/quickstart/hugegraph-ai/quick_start/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/quickstart/hugegraph-ai/quick_start/</guid><description>
 &lt;blockquote>
 &lt;p>接续&lt;a href="../">主文档&lt;/a>介绍基础 UI 功能及详情，欢迎随时更新和改进，谢谢&lt;/p>

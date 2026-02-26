@@ -159,12 +159,17 @@
 &lt;blockquote>
 &lt;p>Note: 这篇文档会持续更新。
 你需要使用 Java11 验证测试 (如果希望测试功能/运行时)，从 1.5.0 版本开始 (除 client 外) 不再支持 Java8&lt;/p>
+&lt;p>毕业说明：Apache HugeGraph 已于 2026 年 1 月毕业。正式发版投票现由 HugeGraph 社区内部完成（&lt;code>dev@hugegraph.apache.org&lt;/code> 上的 PMC binding 投票），不再需要 Incubator &lt;code>general@incubator.apache.org&lt;/code> 审批。&lt;/p>
 &lt;/blockquote>
 &lt;h2 id="验证阶段">验证阶段&lt;/h2>
 &lt;p>当内部的临时发布和打包工作完成后，其他的社区开发者 (尤其是 PMC)
-需要参与到&lt;a href="https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist">验证环节&lt;/a>
+需要按 ASF 发版规范参与验证，可参考：&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://www.apache.org/legal/release-policy.html">ASF 发布策略&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist">Incubator 检查清单（历史参考）&lt;/a>
 确保某个人发布版本的&amp;quot;正确性 + 完整性&amp;quot;, 这里需要&lt;strong>每个人&lt;/strong>都尽量参与，然后后序&lt;strong>邮件回复&lt;/strong>的时候说明自己
-&lt;strong>已检查&lt;/strong>了哪些项。(下面是核心项)&lt;/p>
+&lt;strong>已检查&lt;/strong>了哪些项。(下面是核心项)&lt;/li>
+&lt;/ul>
 &lt;h4 id="1-准备工作">1. 准备工作&lt;/h4>
 &lt;p>如果本地没有 svn 或 gpg 或 wget 环境，建议先安装一下 (windows 推荐使用 WSL2 环境，
 或者至少是 &lt;code>git-bash&lt;/code>), 同时确保安装 Java(推荐 11) 和 maven 软件。&lt;/p>
@@ -191,9 +196,9 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>brew install wget
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 4. 下载 hugegraph-svn 目录 (版本号注意填写此次验证版本)&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>svn co https://dist.apache.org/repos/dist/dev/incubator/hugegraph/1.x.x/
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>svn co https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># (注) 如果出现 svn 下载某个文件速度很慢的情况, 可以考虑 wget 单个文件下载, 如下 (或考虑使用 VPN / 代理)&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>wget https://dist.apache.org/repos/dist/dev/incubator/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="2-检查-hash-值">2. 检查 hash 值&lt;/h4>
 &lt;p>首先需要检查 &lt;code>source + binary&lt;/code> 包的文件完整性，通过 &lt;code>shasum&lt;/code> 进行校验，确保和发布到 apache/github 上的
 hash 值一致 (一般是 sha512)&lt;/p>
@@ -203,7 +208,7 @@ hash 值一致 (一般是 sha512)&lt;/p>
 &lt;p>这个就是为了确保发布的包是由&lt;strong>可信赖&lt;/strong>的人上传的，假设 tom 签名后上传，其他人应该下载 A 的&lt;strong>公钥&lt;/strong>
 然后进行&lt;strong>签名确认&lt;/strong>, 相关命令：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 1. 下载项目可信赖公钥到本地 (首次需要) &amp;amp; 导入&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl https://downloads.apache.org/incubator/hugegraph/KEYS &amp;gt; KEYS
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl https://downloads.apache.org/hugegraph/KEYS &amp;gt; KEYS
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>gpg --import KEYS
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 导入后可以看到如下输出, 这代表导入了 x 个用户公钥&lt;/span>
@@ -243,8 +248,8 @@ hash 值一致 (一般是 sha512)&lt;/p>
 &lt;h5 id="a-源码包">A. 源码包&lt;/h5>
 &lt;p>解压 &lt;code>*hugegraph*src.tar.gz&lt;/code>后，进行如下检查：&lt;/p>
 &lt;ol>
-&lt;li>文件夹都带有 &lt;code>incubating&lt;/code>, 且不存在&lt;strong>空的&lt;/strong>文件/文件夹&lt;/li>
-&lt;li>存在 &lt;code>LICENSE&lt;/code> + &lt;code>NOTICE&lt;/code> + 存在 &lt;code>DISCLAIMER&lt;/code> 文件并且内容正常&lt;/li>
+&lt;li>包名/目录名应符合当前发版命名（历史版本可能仍包含 &lt;code>incubating&lt;/code>），且不存在&lt;strong>空的&lt;/strong>文件/文件夹&lt;/li>
+&lt;li>存在 &lt;code>LICENSE&lt;/code> + &lt;code>NOTICE&lt;/code> 且内容正常；历史 incubating 制品需检查 &lt;code>DISCLAIMER&lt;/code>&lt;/li>
 &lt;li>&lt;strong>不存在&lt;/strong> 缺乏 License 的二进制文件&lt;/li>
 &lt;li>源码文件都包含标准 &lt;code>ASF License&lt;/code> 头 (这个用插件跑一下为主)&lt;/li>
 &lt;li>检查每个父 / 子模块的 &lt;code>pom.xml&lt;/code> 版本号是否一致 (且符合期望)&lt;/li>
@@ -260,8 +265,8 @@ hash 值一致 (一般是 sha512)&lt;/p>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h5 id="b-二进制包">B. 二进制包&lt;/h5>
 &lt;p>解压 &lt;code>xxx-hugegraph.tar.gz&lt;/code>后，进行如下检查：&lt;/p>
 &lt;ol>
-&lt;li>文件夹都带有 &lt;code>incubating&lt;/code>&lt;/li>
-&lt;li>存在 &lt;code>LICENSE&lt;/code> + &lt;code>NOTICE&lt;/code> 文件并且内容正常&lt;/li>
+&lt;li>包名/目录名应符合当前发版命名（历史版本可能仍包含 &lt;code>incubating&lt;/code>）&lt;/li>
+&lt;li>存在 &lt;code>LICENSE&lt;/code> + &lt;code>NOTICE&lt;/code> 且内容正常（历史 incubating 制品需检查 &lt;code>DISCLAIMER&lt;/code>）&lt;/li>
 &lt;li>服务启动&lt;/li>
 &lt;/ol>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># hugegraph-server&lt;/span>
@@ -453,7 +458,7 @@ LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更�
 &lt;h1 id="推选详细流程">推选详细流程&lt;/h1>
 &lt;p>&lt;strong>讨论 (DISCUSS) → 投票 (VOTE) → 邀请 (INVITE) → 公告 (ANNOUNCE)&lt;/strong>&lt;/p>
 &lt;h2 id="发起社区邮件讨论-discuss">发起社区邮件讨论 (DISCUSS)&lt;/h2>
-&lt;p>任何 HugeGraph 的 (P)PMC 成员都可以发起投票讨论，在发现社区贡献者任何有价值的贡献并取得候选人本人同意后，可以在 &lt;a href="mailto:private@hugegraph.apache.org">private@hugegraph.apache.org&lt;/a> 发起讨论。
+&lt;p>任何 HugeGraph 的 PMC 成员都可以发起投票讨论，在发现社区贡献者任何有价值的贡献并取得候选人本人同意后，可以在 &lt;a href="mailto:private@hugegraph.apache.org">private@hugegraph.apache.org&lt;/a> 发起讨论。
 讨论邮件里提议者要把候选人的贡献说清楚，并最好给出确认贡献的 URL 等信息，便于大家讨论分析。&lt;/p>
 &lt;p>下面是 HugeGraph 对应的邮件模板：(仅供参考)&lt;/p>
 &lt;blockquote>
@@ -582,7 +587,7 @@ LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更�
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>[ ] -1 disapprove with the reason
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Thanks!
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>然后 (P)PMC 成员回复 +1 或 -1 的邮件回复表达意见，一般来说至少需要 ≥3 票 +1 才能结束投票。&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>然后 PMC 成员回复 +1 或 -1 的邮件回复表达意见，一般来说至少需要 ≥3 票 +1 才能结束投票。&lt;/p>
 &lt;h2 id="宣布投票结果-result">宣布投票结果 (RESULT)&lt;/h2>
 &lt;p>投票邮件结束后，投票发起者需要邮件里提醒投票结束。同时，投票发起者需要发起邮件宣布投票结果，发送至 &lt;a href="mailto:private@hugegraph.apache.org">private@hugegraph.apache.org&lt;/a>，邮件模板可参考：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span>To: private@hugegraph.apache.org
@@ -608,7 +613,7 @@ LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更�
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hello xxx,
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The HugeGraph Project Management Committee (PPMC)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The HugeGraph Project Management Committee (PMC)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>hereby offers you committer privileges to the project.
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>These privileges are offered on the understanding that you&amp;#39;ll use them
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>reasonably and with common sense. We like to work on trust
@@ -653,20 +658,20 @@ LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更�
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>With the expectation of your acceptance, welcome!
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The Apache HugeGraph(incubating) PPMC
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The Apache HugeGraph PMC
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="候选人接受邀请-accept">候选人接受邀请 (ACCEPT)&lt;/h2>
 &lt;p>候选人应回复上述邮件 (选择 &lt;strong>reply all&lt;/strong>)，表明接受邀请，邮件模板可参考：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span>To: [ Sender&amp;#39;s Email ]
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Cc: private@hugegraph.apache.org
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Subject: Re: Invitation to become HugeGraph committer: xxx
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hello Apache HugeGraph(incubating) PPMC,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hello Apache HugeGraph PMC,
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>I accept the invitation.
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Thanks to the Apache HugeGraph Community for recognizing my work, I
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>will continue to actively participate in the work of the Apache
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>HugeGraph(incubating).
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>HugeGraph.
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Next, I will follow the instructions to complete the next steps:
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Signing and submitting iCLA and registering Apache ID.
@@ -690,7 +695,7 @@ LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更�
 &lt;li>&lt;strong>Country:&lt;/strong> 所在国家英文&lt;/li>
 &lt;li>&lt;strong>E-mail&lt;/strong>: 邮箱地址，建议与上述邮件中使用的邮箱相同&lt;/li>
 &lt;li>&lt;strong>(optional) preferred Apache id(s)&lt;/strong>: 选择一个 &lt;a href="http://people.apache.org/committer-index.html">Apache committer&lt;/a> 页面不存在的 &lt;strong>SVN ID&lt;/strong>&lt;/li>
-&lt;li>&lt;strong>(optional) notify project&lt;/strong>：Apache HugeGraph(incubating)&lt;/li>
+&lt;li>&lt;strong>(optional) notify project&lt;/strong>：Apache HugeGraph&lt;/li>
 &lt;li>&lt;strong>签名：务必使用 PDF 工具手写&lt;/strong>&lt;/li>
 &lt;li>&lt;strong>Date:&lt;/strong> 格式 xxxx-xx-xx&lt;/li>
 &lt;/ol>
@@ -703,7 +708,7 @@ LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更�
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hello everyone:
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>I have accepted the Apache HugeGraph(incubating) PPMC invitation to
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>I have accepted the Apache HugeGraph PMC invitation to
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>become a HugeGraph committer, the attachment is my ICLA information.
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>(Optional) My GitHub account is https://github.com/xxx. Thanks!
@@ -732,7 +737,7 @@ LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更�
 &lt;li>这一步需要配置 GitHub 双重身份验证 (2FA)&lt;/li>
 &lt;/ol>
 &lt;/li>
-&lt;li>&lt;strong>负责提名的 PMC 成员需通过 &lt;a href="https://whimsy.apache.org/roster/ppmc/hugegraph">Roster&lt;/a> 页面，将新的 Committer 添加到官方提交者列表中&lt;/strong> (&lt;strong>重要&lt;/strong>, 否则仓库权限不生效)
+&lt;li>&lt;strong>负责提名的 PMC 成员需通过 &lt;a href="https://whimsy.apache.org/roster/pmc/hugegraph">Roster&lt;/a> 页面，将新的 Committer 添加到官方提交者列表中&lt;/strong> (&lt;strong>重要&lt;/strong>, 否则仓库权限不生效)
 &lt;ol>
 &lt;li>在这一步后，候选人即新的 Committer 才拥有对 GitHub HugeGraph 仓库的写权限&lt;/li>
 &lt;/ol>
@@ -744,7 +749,7 @@ LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更�
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span>To: dev@hugegraph.apache.org
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Subject: [ANNOUNCE] New Committer: xxx
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hi everyone, The PPMC for Apache HugeGraph(incubating) has invited xxx to
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hi everyone, The PMC for Apache HugeGraph has invited xxx to
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>become a Committer and we are pleased to announce that he/she has accepted.
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>xxx is being active in the HugeGraph community &amp;amp; dedicated to ... modules,
@@ -756,27 +761,16 @@ LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更�
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Thanks!
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The Apache HugeGraph PPMC
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="更新-clutch-status-信息">更新 clutch status 信息&lt;/h2>
-&lt;p>负责提名的 PMC 成员需下载 clutch status 信息, 并进行更新, 生效后可在 &lt;a href="https://incubator.apache.org/clutch/hugegraph.html">clutch&lt;/a> 和 &lt;a href="https://incubator.apache.org/projects/hugegraph.html">projects&lt;/a> 页面查询。流程参考如下：&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span># 1. 下载 clutch status 信息
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>svn co https://svn.apache.org/repos/asf/incubator/public/trunk/content/projects/
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span># 2. 修改编辑 (注意下面内容仅供参考)
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>cd projects
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>vim hugegraph.xml
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&amp;lt;section id=&amp;#34;News&amp;#34;&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &amp;lt;title&amp;gt;News&amp;lt;/title&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &amp;lt;ul&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &amp;lt;li&amp;gt;YYYY-MM-DD New Committer: xxx&amp;lt;/li&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &amp;lt;li&amp;gt;...&amp;lt;/li&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &amp;lt;/ul&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&amp;lt;/section&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span># 3. 提交
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>svn commit -m &amp;#34;update news for hugegraph&amp;#34;
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h1 id="参考">参考&lt;/h1>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The Apache HugeGraph PMC
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="更新治理信息入口">更新治理信息入口&lt;/h2>
+&lt;p>Apache HugeGraph 已于 2026 年 1 月毕业，治理信息不再通过 Incubator clutch 页面维护，而是通过 ASF committee/project 数据维护。&lt;/p>
+&lt;p>请优先检查：&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://projects.apache.org/committee.html?hugegraph">HugeGraph 的 ASF Committee 页面&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://whimsy.apache.org/roster/pmc/hugegraph">PMC roster 页面&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>若信息未自动同步，请按照 ASF 官方流程联系 Apache Community Development 或 ASF Infra 协助处理。&lt;/p>
+&lt;h1 id="参考">参考&lt;/h1>
 &lt;ol>
 &lt;li>&lt;a href="https://community.apache.org/newcommitter.html">https://community.apache.org/newcommitter.html&lt;/a> (ASF 官方文档)&lt;/li>
 &lt;li>&lt;a href="https://infra.apache.org/new-committers-guide.html">https://infra.apache.org/new-committers-guide.html&lt;/a>&lt;/li>

@@ -1,5 +1,5 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>HugeGraph – Community</title><link>/community/</link><description>Recent content in Community on HugeGraph</description><generator>Hugo -- gohugo.io</generator><atom:link href="/community/index.xml" rel="self" type="application/rss+xml"/><item><title>Community: Maturity</title><link>/community/maturity/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/community/maturity/</guid><description>
-&lt;h1 id="maturity-assessment-for-apache-hugegraph-incubating">Maturity Assessment for Apache HugeGraph (incubating)&lt;/h1>
+&lt;h1 id="maturity-assessment-for-apache-hugegraph">Maturity Assessment for Apache HugeGraph&lt;/h1>
 &lt;p>The goals of this maturity model are to describe how Apache projects operate in a concise and high-level way, and to provide a basic framework that projects may choose to use to evaluate themselves.&lt;/p>
 &lt;p>More details can be found &lt;a href="https://community.apache.org/apache-way/apache-project-maturity-model.html">here&lt;/a>.&lt;/p>
 &lt;h2 id="status-of-this-assessment">Status of this assessment&lt;/h2>
@@ -93,7 +93,7 @@
 &lt;tr>
 &lt;td>&lt;strong>RE10&lt;/strong>&lt;/td>
 &lt;td>Releases consist of source code, distributed using standard and open archive formats that are expected to stay readable in the long term.                                                                                                                                       &lt;/td>
-&lt;td>&lt;strong>YES&lt;/strong> Source releases are distributed via &lt;a href="https://dist.apache.org/repos/dist/release/incubator/hugegraph/">dist.apache.org&lt;/a> and linked from the website&amp;rsquo;s &lt;a href="https://hugegraph.apache.org/docs/download/download/">download page&lt;/a>.&lt;/td>
+&lt;td>&lt;strong>YES&lt;/strong> Source releases are distributed via &lt;a href="https://dist.apache.org/repos/dist/release/hugegraph/">dist.apache.org&lt;/a> and linked from the website&amp;rsquo;s &lt;a href="https://hugegraph.apache.org/docs/download/download/">download page&lt;/a>.&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>&lt;strong>RE20&lt;/strong>&lt;/td>
@@ -103,7 +103,7 @@
 &lt;tr>
 &lt;td>&lt;strong>RE30&lt;/strong>&lt;/td>
 &lt;td>Releases are signed and/or distributed along with digests that anyone can reliably use to validate the downloaded archives.                                                                                                                                                       &lt;/td>
-&lt;td>&lt;strong>YES&lt;/strong> All releases are signed by the release manager and distributed with checksums. The &lt;a href="https://downloads.apache.org/incubator/hugegraph/KEYS">KEYS&lt;/a> file is available for verification.&lt;/td>
+&lt;td>&lt;strong>YES&lt;/strong> All releases are signed by the release manager and distributed with checksums. The &lt;a href="https://downloads.apache.org/hugegraph/KEYS">KEYS&lt;/a> file is available for verification.&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>&lt;strong>RE40&lt;/strong>&lt;/td>
@@ -214,7 +214,7 @@
 &lt;tr>
 &lt;td>&lt;strong>CS10&lt;/strong>&lt;/td>
 &lt;td>The project maintains a public list of its contributors who have decision power. The project&amp;rsquo;s PMC (Project Management Committee) consists of those contributors.&lt;/td>
-&lt;td>&lt;strong>YES&lt;/strong> The website maintains a public list of all &lt;a href="https://incubator.apache.org/clutch/hugegraph.html">PMC members and committers&lt;/a>.&lt;/td>
+&lt;td>&lt;strong>YES&lt;/strong> Project governance information is publicly available via ASF committee and roster pages, such as &lt;a href="https://projects.apache.org/committee.html?hugegraph">committee info&lt;/a>.&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>&lt;strong>CS20&lt;/strong>&lt;/td>

@@ -157,13 +157,18 @@
 &lt;blockquote>
 &lt;p>Note: this doc will be updated continuously.
 You need to use Java11 in runtime verification, we will drop Java8 support from version 1.5.0 (And currently doesn&amp;rsquo;t support Java17)&lt;/p>
+&lt;p>Graduation note: Apache HugeGraph graduated in January 2026. Official release voting is now completed within the HugeGraph community (PMC binding votes on &lt;code>dev@hugegraph.apache.org&lt;/code>), and no longer requires Incubator &lt;code>general@incubator.apache.org&lt;/code> approval.&lt;/p>
 &lt;/blockquote>
 &lt;h2 id="verification">Verification&lt;/h2>
 &lt;p>When the internal temporary release and packaging work is completed, other community developers (
-especially PMC) need to participate in the &lt;a href="https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist">verification link&lt;/a>
+especially PMC) need to participate in verification based on ASF release policy and checklist references:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://www.apache.org/legal/release-policy.html">ASF release policy&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist">Incubator checklist (historical reference)&lt;/a>
 To ensure the &amp;ldquo;correctness + completeness&amp;rdquo; of someone&amp;rsquo;s published version, here requires **everyone
 ** to participate as much as possible, and then explain which items you have &lt;strong>checked&lt;/strong> in the
-subsequent &lt;strong>email reply&lt;/strong>.(The following are the core items)&lt;/p>
+subsequent &lt;strong>email reply&lt;/strong>.(The following are the core items)&lt;/li>
+&lt;/ul>
 &lt;h4 id="1-prepare">1. prepare&lt;/h4>
 &lt;p>If there is no svn or gpg or wget environment locally, it is recommended to install it first
 (windows recommend using WSL2 environment, or at least &lt;code>git-bash&lt;/code>), also make sure to install java
@@ -192,10 +197,10 @@ subsequent &lt;strong>email reply&lt;/strong>.(The following are the core items)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 4. Download the hugegraph-svn directory &lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># For version number, pay attention to fill in the verification version&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>svn co https://dist.apache.org/repos/dist/dev/incubator/hugegraph/1.x.x/
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>svn co https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># (Note) If svn downloads a file very slowly, &lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># you can consider wget to download a single file, as follows (or consider using a proxy)&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>wget https://dist.apache.org/repos/dist/dev/incubator/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="2-check-hash-value">2. check hash value&lt;/h4>
 &lt;p>First you need to check the file integrity of the &lt;code>source + binary&lt;/code> package, Verify by &lt;code>shasum&lt;/code> to
 ensure that it is consistent with the hash value published on apache/GitHub (Usually sha512), Here
@@ -209,7 +214,7 @@ others should download A&amp;rsquo;s &lt;strong>public key&lt;/strong> and then 
 confirmation&lt;/strong>.&lt;/p>
 &lt;p>Related commands:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 1. Download project trusted public key to local (required for the first time) &amp;amp; import&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl https://downloads.apache.org/incubator/hugegraph/KEYS &amp;gt; KEYS
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl https://downloads.apache.org/hugegraph/KEYS &amp;gt; KEYS
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>gpg --import KEYS
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># After importing, you can see the following output, which means that x user public keys have been imported&lt;/span>
@@ -251,8 +256,8 @@ the official &lt;a href="https://cwiki.apache.org/confluence/display/INCUBATOR/I
 &lt;h5 id="a-source-package">A. source package&lt;/h5>
 &lt;p>After decompressing &lt;code>*hugegraph*src.tar.gz&lt;/code>, Do the following checks:&lt;/p>
 &lt;ol>
-&lt;li>folders with &lt;code>incubating&lt;/code>, and no &lt;strong>empty&lt;/strong> files/folders&lt;/li>
-&lt;li>&lt;code>LICENSE&lt;/code> + &lt;code>NOTICE&lt;/code> + &lt;code>DISCLAIM&lt;/code> file exists and the content is normal&lt;/li>
+&lt;li>package/folder naming should match the release line (historical releases may still contain &lt;code>incubating&lt;/code>), and no &lt;strong>empty&lt;/strong> files/folders&lt;/li>
+&lt;li>&lt;code>LICENSE&lt;/code> + &lt;code>NOTICE&lt;/code> exist and the content is normal; &lt;code>DISCLAIMER&lt;/code> is required for historical incubating artifacts&lt;/li>
 &lt;li>&lt;strong>does not exist&lt;/strong> binaries (without LICENSE)&lt;/li>
 &lt;li>The source code files all contain the standard &lt;code>ASF License&lt;/code> header (this could be done with
 the &lt;code>Maven-MAT&lt;/code> plugin)&lt;/li>
@@ -268,8 +273,8 @@ expectations)&lt;/li>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h5 id="b-binary-package">B. binary package&lt;/h5>
 &lt;p>After decompressing &lt;code>xxx-hugegraph.tar.gz&lt;/code>, perform the following checks:&lt;/p>
 &lt;ol>
-&lt;li>folders with &lt;code>incubating&lt;/code>&lt;/li>
-&lt;li>&lt;code>LICENSE&lt;/code> and &lt;code>NOTICE&lt;/code> file exists and the content is normal&lt;/li>
+&lt;li>package/folder naming should match the release line (historical releases may still contain &lt;code>incubating&lt;/code>)&lt;/li>
+&lt;li>&lt;code>LICENSE&lt;/code> and &lt;code>NOTICE&lt;/code> file exists and the content is normal (&lt;code>DISCLAIMER&lt;/code> applies to historical incubating artifacts)&lt;/li>
 &lt;li>start server&lt;/li>
 &lt;/ol>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># hugegraph-server&lt;/span>
@@ -462,7 +467,7 @@ with this &lt;a href="https://github.com/apache/hugegraph/wiki/The-style-config-
 &lt;h1 id="nomination-process">Nomination Process&lt;/h1>
 &lt;p>&lt;strong>Discussion → Vote → Invitation → Announcement&lt;/strong>&lt;/p>
 &lt;h2 id="initiate-community-discussion-discuss">Initiate Community Discussion (DISCUSS)&lt;/h2>
-&lt;p>Any (P)PMC member of HugeGraph can initiate a voting discussion. After identifying valuable contributions from a community contributor and obtaining the candidate&amp;rsquo;s consent, a discussion can be initiated via &lt;a href="mailto:private@hugegraph.apache.org">private@hugegraph.apache.org&lt;/a>.
+&lt;p>Any PMC member of HugeGraph can initiate a voting discussion. After identifying valuable contributions from a community contributor and obtaining the candidate&amp;rsquo;s consent, a discussion can be initiated via &lt;a href="mailto:private@hugegraph.apache.org">private@hugegraph.apache.org&lt;/a>.
 The initiator of the discussion should clearly state the candidate&amp;rsquo;s contributions in the discussion email and provide URLs or other information for confirming the contributions, facilitating discussion and analysis.&lt;/p>
 &lt;p>Below is a template for HugeGraph emails: (For reference only)&lt;/p>
 &lt;blockquote>
@@ -590,7 +595,7 @@ The initiator of the discussion should clearly state the candidate&amp;rsquo;s c
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>[ ] -1 disapprove with the reason
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Thanks!
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Then, (P)PMC members reply to the email with +1 or -1 to express their opinions. Generally, at least 3 votes of +1 are needed to conclude the vote.&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Then, PMC members reply to the email with +1 or -1 to express their opinions. Generally, at least 3 votes of +1 are needed to conclude the vote.&lt;/p>
 &lt;h2 id="announcement-of-voting-results-result">Announcement of Voting Results (RESULT)&lt;/h2>
 &lt;p>After the voting email concludes, the initiator of the vote needs to remind the end of the voting in the email. Additionally, the initiator needs to announce the voting results via email to &lt;a href="mailto:private@hugegraph.apache.org">private@hugegraph.apache.org&lt;/a>. The email template can be as follows:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span>To: private@hugegraph.apache.org
@@ -616,7 +621,7 @@ The initiator of the discussion should clearly state the candidate&amp;rsquo;s c
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hello xxx,
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The HugeGraph Project Management Committee (PPMC)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The HugeGraph Project Management Committee (PMC)
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>hereby offers you committer privileges to the project.
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>These privileges are offered on the understanding that you&amp;#39;ll use them
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>reasonably and with common sense. We like to work on trust
@@ -661,20 +666,20 @@ The initiator of the discussion should clearly state the candidate&amp;rsquo;s c
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>With the expectation of your acceptance, welcome!
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The Apache HugeGraph(incubating) PPMC
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The Apache HugeGraph PMC
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="candidate-accepts-invitation-accept">Candidate Accepts Invitation (ACCEPT)&lt;/h2>
 &lt;p>The candidate should reply to the aforementioned email (select &lt;strong>reply all&lt;/strong>) to indicate acceptance of the invitation. Below is a template for the email:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span>To: [ Sender&amp;#39;s Email ]
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Cc: private@hugegraph.apache.org
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Subject: Re: Invitation to become HugeGraph committer: xxx
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hello Apache HugeGraph(incubating) PPMC,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hello Apache HugeGraph PMC,
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>I accept the invitation.
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Thanks to the Apache HugeGraph Community for recognizing my work, I
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>will continue to actively participate in the work of the Apache
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>HugeGraph(incubating).
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>HugeGraph.
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Next, I will follow the instructions to complete the next steps:
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Signing and submitting iCLA and registering Apache ID.
@@ -698,7 +703,7 @@ The initiator of the discussion should clearly state the candidate&amp;rsquo;s c
 &lt;li>&lt;strong>Country:&lt;/strong> Country of residence in English&lt;/li>
 &lt;li>&lt;strong>E-mail&lt;/strong>: Email address, preferably the same as the one used in the invitation email&lt;/li>
 &lt;li>&lt;strong>(optional) preferred Apache id(s)&lt;/strong>: Choose an SVN ID that is not listed on the &lt;a href="http://people.apache.org/committer-index.html">Apache committer&lt;/a> page&lt;/li>
-&lt;li>&lt;strong>(optional) notify project&lt;/strong>: Apache HugeGraph(incubating)&lt;/li>
+&lt;li>&lt;strong>(optional) notify project&lt;/strong>: Apache HugeGraph&lt;/li>
 &lt;li>&lt;strong>Signature: Must be handwritten using a PDF tool&lt;/strong>&lt;/li>
 &lt;li>&lt;strong>Date:&lt;/strong> Format as xxxx-xx-xx&lt;/li>
 &lt;/ol>
@@ -711,7 +716,7 @@ The initiator of the discussion should clearly state the candidate&amp;rsquo;s c
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hello everyone:
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>I have accepted the Apache HugeGraph(incubating) PPMC invitation to
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>I have accepted the Apache HugeGraph PMC invitation to
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>become a HugeGraph committer, the attachment is my ICLA information.
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>(Optional) My GitHub account is https://github.com/xxx. Thanks!
@@ -740,7 +745,7 @@ The initiator of the discussion should clearly state the candidate&amp;rsquo;s c
 &lt;li>This step requires configuring GitHub Two-Factor Authentication (2FA).&lt;/li>
 &lt;/ul>
 &lt;/li>
-&lt;li>&lt;strong>The nominating PMC member must add the new Committer to the official list of committers via the &lt;a href="https://whimsy.apache.org/roster/ppmc/hugegraph">Roster&lt;/a> page.&lt;/strong> (&lt;strong>Important&lt;/strong>, otherwise repository permissions will not take effect).
+&lt;li>&lt;strong>The nominating PMC member must add the new Committer to the official list of committers via the &lt;a href="https://whimsy.apache.org/roster/pmc/hugegraph">Roster&lt;/a> page.&lt;/strong> (&lt;strong>Important&lt;/strong>, otherwise repository permissions will not take effect).
 &lt;ul>
 &lt;li>After this step, the candidate becomes a new Committer and gains write access to the GitHub HugeGraph repository.&lt;/li>
 &lt;/ul>
@@ -752,7 +757,7 @@ The initiator of the discussion should clearly state the candidate&amp;rsquo;s c
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span>To: dev@hugegraph.apache.org
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Subject: [ANNOUNCE] New Committer: xxx
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hi everyone, The PPMC for Apache HugeGraph(incubating) has invited xxx to
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Hi everyone, The PMC for Apache HugeGraph has invited xxx to
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>become a Committer and we are pleased to announce that he/she has accepted.
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>xxx is being active in the HugeGraph community &amp;amp; dedicated to ... modules,
@@ -764,27 +769,16 @@ The initiator of the discussion should clearly state the candidate&amp;rsquo;s c
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Thanks!
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The Apache HugeGraph PPMC
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="update-clutch-status-information">Update clutch status information&lt;/h2>
-&lt;p>PMC members responsible for nominations need to download clutch status information and update it. Once effective, it can be viewed on the &lt;a href="https://incubator.apache.org/clutch/hugegraph.html">clutch&lt;/a> and &lt;a href="https://incubator.apache.org/projects/hugegraph.html">projects&lt;/a> pages. The process is as follows:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-text" data-lang="text">&lt;span style="display:flex;">&lt;span># 1. Download clutch status information
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>svn co https://svn.apache.org/repos/asf/incubator/public/trunk/content/projects/
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span># 2. Modify and edit (note the following is for reference only)
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>cd projects
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>vim hugegraph.xml
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&amp;lt;section id=&amp;#34;News&amp;#34;&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &amp;lt;title&amp;gt;News&amp;lt;/title&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &amp;lt;ul&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &amp;lt;li&amp;gt;YYYY-MM-DD New Committer: xxx&amp;lt;/li&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &amp;lt;li&amp;gt;...&amp;lt;/li&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &amp;lt;/ul&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&amp;lt;/section&amp;gt;
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span># 3. Commit
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>svn commit -m &amp;#34;update news for hugegraph&amp;#34;
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h1 id="references">References&lt;/h1>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>The Apache HugeGraph PMC
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="update-governance-information">Update Governance Information&lt;/h2>
+&lt;p>Since Apache HugeGraph graduated in January 2026, governance information is maintained in ASF committee/project data rather than Incubator clutch pages.&lt;/p>
+&lt;p>Please check:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://projects.apache.org/committee.html?hugegraph">ASF Committee data for HugeGraph&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://whimsy.apache.org/roster/pmc/hugegraph">PMC roster page&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>If an update is required but does not appear automatically, coordinate with Apache Community Development or ASF Infra according to the official process.&lt;/p>
+&lt;h1 id="references">References&lt;/h1>
 &lt;ol>
 &lt;li>&lt;a href="https://community.apache.org/newcommitter.html">https://community.apache.org/newcommitter.html&lt;/a> (ASF official documentation)&lt;/li>
 &lt;li>&lt;a href="https://infra.apache.org/new-committers-guide.html">https://infra.apache.org/new-committers-guide.html&lt;/a>&lt;/li>

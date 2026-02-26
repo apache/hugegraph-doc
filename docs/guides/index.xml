@@ -753,7 +753,8 @@ target directory. Copy the Jar package to the &lt;code>plugins&lt;/code> directo
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>3. Build and Verify&lt;/strong>&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>mvn package -Dmaven.test.skip&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&lt;span style="color:#204a87">true&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Optional: Start and verify&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> apache-hugegraph-hubble-incubating-*/bin
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Compatible with both historical (-incubating-) and TLP package naming&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> apache-hugegraph-hubble*/bin
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>./start-hubble.sh -d &lt;span style="color:#ce5c00;font-weight:bold">&amp;amp;&amp;amp;&lt;/span> sleep &lt;span style="color:#0000cf;font-weight:bold">10&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl http://localhost:8088/api/health
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>./stop-hubble.sh

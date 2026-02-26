@@ -1,7 +1,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>HugeGraph – HugeGraph Client</title><link>/docs/quickstart/client/</link><description>Recent content in HugeGraph Client on HugeGraph</description><generator>Hugo -- gohugo.io</generator><atom:link href="/docs/quickstart/client/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: HugeGraph-Java-Client</title><link>/docs/quickstart/client/hugegraph-client/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/quickstart/client/hugegraph-client/</guid><description>
 &lt;h3 id="1-overview-of-hugegraph">1 Overview Of Hugegraph&lt;/h3>
 &lt;p>&lt;a href="https://github.com/apache/hugegraph-toolchain">HugeGraph-Client&lt;/a> sends HTTP request to HugeGraph-Server to get and parse the execution result of Server.
-We support HugeGraph-Client for Java/Go/&lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-python-client">Python&lt;/a> language.
+We support HugeGraph-Client for Java/Go/&lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client">Python&lt;/a> language.
 You can use &lt;a href="/docs/clients/hugegraph-client">Client-API&lt;/a> to write code to operate HugeGraph, such as adding, deleting, modifying, and querying schema and graph data, or executing gremlin statements.&lt;/p>
 &lt;blockquote>
 &lt;p>&lt;a href="https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/README.en.md">HugeGraph client SDK tool based on Go language&lt;/a> (version &amp;gt;=1.2.0)&lt;/p>
@@ -342,8 +342,8 @@ You can use &lt;a href="/docs/clients/hugegraph-client">Client-API&lt;/a> to wri
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># WIP: we will use &amp;#39;hugegraph-python-client&amp;#39; as the package name soon&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="install-from-source-latest-code">Install from Source (Latest Code)&lt;/h3>
 &lt;p>To install from the source, clone the repository and install the required dependencies:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/incubator-hugegraph-ai.git
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> incubator-hugegraph-ai/hugegraph-python-client
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/hugegraph-ai.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph-ai/hugegraph-python-client
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Normal install &lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>uv pip install .
@@ -451,7 +451,7 @@ You can use &lt;a href="/docs/clients/hugegraph-client">Client-API&lt;/a> to wri
 &lt;p>Thank you to all the people who already contributed to &lt;code>hugegraph-python-client&lt;/code>!&lt;/p>
 &lt;h2 id="contact-us">Contact Us&lt;/h2>
 &lt;ul>
-&lt;li>&lt;a href="https://github.com/apache/incubator-hugegraph-ai/issues">GitHub Issues&lt;/a>: Feedback on usage issues and functional requirements (quick response)&lt;/li>
+&lt;li>&lt;a href="https://github.com/apache/hugegraph-ai/issues">GitHub Issues&lt;/a>: Feedback on usage issues and functional requirements (quick response)&lt;/li>
 &lt;/ul></description></item><item><title>Docs: HugeGraph Go Client Quick Start</title><link>/docs/quickstart/client/hugegraph-client-go/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/quickstart/client/hugegraph-client-go/</guid><description>
 &lt;p>A HugeGraph Client SDK tool based on the Go language.&lt;/p>
 &lt;h2 id="software-architecture">Software Architecture&lt;/h2>

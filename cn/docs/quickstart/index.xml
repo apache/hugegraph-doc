@@ -13,10 +13,10 @@
 &lt;/blockquote>
 &lt;p>&lt;strong>GitHub 访问：&lt;/strong> &lt;i class="fab fa-github">&lt;/i> &lt;a href="https://github.com/apache/hugegraph-toolchain">https://github.com/apache/hugegraph-toolchain&lt;/a>&lt;/p></description></item><item><title>Docs: HugeGraph-AI</title><link>/cn/docs/quickstart/hugegraph-ai/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/quickstart/hugegraph-ai/</guid><description>
 &lt;p>&lt;a href="https://www.apache.org/licenses/LICENSE-2.0.html">&lt;img src="https://img.shields.io/badge/license-Apache%202-0E78BA.svg" alt="License">&lt;/a>
-&lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/p>
+&lt;a href="https://deepwiki.com/apache/hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/p>
 &lt;blockquote>
 &lt;p>DeepWiki 提供实时更新的项目文档，内容更全面准确，适合快速了解项目最新情况。&lt;/p>
-&lt;p>📖 &lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">https://deepwiki.com/apache/incubator-hugegraph-ai&lt;/a>&lt;/p>
+&lt;p>📖 &lt;a href="https://deepwiki.com/apache/hugegraph-ai">https://deepwiki.com/apache/hugegraph-ai&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;p>&lt;code>hugegraph-ai&lt;/code> 整合了 &lt;a href="https://github.com/apache/hugegraph">HugeGraph&lt;/a> 与人工智能功能，为开发者构建 AI 驱动的图应用提供全面支持。&lt;/p>
 &lt;h2 id="-核心功能">✨ 核心功能&lt;/h2>
@@ -41,7 +41,7 @@
 &lt;h2 id="-快速开始">🚀 快速开始&lt;/h2>
 &lt;blockquote>
 &lt;p>[!NOTE]
-如需完整的部署指南和详细示例，请参阅 &lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/README.md">hugegraph-llm/README.md&lt;/a>。&lt;/p>
+如需完整的部署指南和详细示例，请参阅 &lt;a href="https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/README.md">hugegraph-llm/README.md&lt;/a>。&lt;/p>
 &lt;/blockquote>
 &lt;h3 id="环境要求">环境要求&lt;/h3>
 &lt;ul>
@@ -52,8 +52,8 @@
 &lt;/ul>
 &lt;h3 id="方案一docker-部署推荐">方案一：Docker 部署（推荐）&lt;/h3>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 克隆仓库&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/incubator-hugegraph-ai.git
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> incubator-hugegraph-ai
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/hugegraph-ai.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph-ai
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 设置环境并启动服务&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>cp docker/env.template docker/.env
@@ -69,8 +69,8 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>docker run -itd --name&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>server -p 8080:8080 hugegraph/hugegraph
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 2. 克隆并设置项目&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/incubator-hugegraph-ai.git
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> incubator-hugegraph-ai/hugegraph-llm
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/hugegraph-ai.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph-ai/hugegraph-llm
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 3. 安装依赖&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>uv venv &lt;span style="color:#ce5c00;font-weight:bold">&amp;amp;&amp;amp;&lt;/span> &lt;span style="color:#204a87">source&lt;/span> .venv/bin/activate
@@ -112,7 +112,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 连接 HugeGraph 并运行机器学习算法&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 详细示例请参阅 hugegraph-ml 文档&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="-模块">📦 模块&lt;/h2>
-&lt;h3 id="hugegraph-llmhttpsgithubcomapacheincubator-hugegraph-aitreemainhugegraph-llm-ask-deepwikihttpsdeepwikicombadgesvghttpsdeepwikicomapacheincubator-hugegraph-ai">&lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-llm">hugegraph-llm&lt;/a> &lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/h3>
+&lt;h3 id="hugegraph-llmhttpsgithubcomapachehugegraph-aitreemainhugegraph-llm-ask-deepwikihttpsdeepwikicombadgesvghttpsdeepwikicomapachehugegraph-ai">&lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm">hugegraph-llm&lt;/a> &lt;a href="https://deepwiki.com/apache/hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/h3>
 &lt;p>用于图应用的大语言模型集成：&lt;/p>
 &lt;ul>
 &lt;li>&lt;strong>GraphRAG&lt;/strong>：基于图数据的检索增强生成&lt;/li>
@@ -120,7 +120,7 @@
 &lt;li>&lt;strong>自然语言接口&lt;/strong>：使用自然语言查询图&lt;/li>
 &lt;li>&lt;strong>AI 智能体&lt;/strong>：智能图分析与推理&lt;/li>
 &lt;/ul>
-&lt;h3 id="hugegraph-mlhttpsgithubcomapacheincubator-hugegraph-aitreemainhugegraph-ml">&lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-ml">hugegraph-ml&lt;/a>&lt;/h3>
+&lt;h3 id="hugegraph-mlhttpsgithubcomapachehugegraph-aitreemainhugegraph-ml">&lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml">hugegraph-ml&lt;/a>&lt;/h3>
 &lt;p>包含 21 种算法的图机器学习：&lt;/p>
 &lt;ul>
 &lt;li>&lt;strong>节点分类&lt;/strong>：GCN、GAT、GraphSAGE、APPNP、AGNN、ARMA、DAGNN、DeeperGCN、GRAND、JKNet、Cluster-GCN&lt;/li>
@@ -130,7 +130,7 @@
 &lt;li>&lt;strong>欺诈检测&lt;/strong>：CARE-GNN、BGNN&lt;/li>
 &lt;li>&lt;strong>后处理&lt;/strong>：C&amp;amp;S（Correct &amp;amp; Smooth）&lt;/li>
 &lt;/ul>
-&lt;h3 id="hugegraph-python-clienthttpsgithubcomapacheincubator-hugegraph-aitreemainhugegraph-python-client">&lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-python-client">hugegraph-python-client&lt;/a>&lt;/h3>
+&lt;h3 id="hugegraph-python-clienthttpsgithubcomapachehugegraph-aitreemainhugegraph-python-client">&lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client">hugegraph-python-client&lt;/a>&lt;/h3>
 &lt;p>用于 HugeGraph 操作的 Python 客户端：&lt;/p>
 &lt;ul>
 &lt;li>&lt;strong>Schema 管理&lt;/strong>：定义顶点/边标签和属性&lt;/li>
@@ -141,8 +141,8 @@
 &lt;h2 id="-了解更多">📚 了解更多&lt;/h2>
 &lt;ul>
 &lt;li>&lt;a href="https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/">项目主页&lt;/a>&lt;/li>
-&lt;li>&lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/quick_start.md">LLM 快速入门指南&lt;/a>&lt;/li>
-&lt;li>&lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">DeepWiki AI 文档&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/quick_start.md">LLM 快速入门指南&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://deepwiki.com/apache/hugegraph-ai">DeepWiki AI 文档&lt;/a>&lt;/li>
 &lt;/ul>
 &lt;h2 id="-相关项目">🔗 相关项目&lt;/h2>
 &lt;ul>
@@ -158,12 +158,12 @@
 &lt;li>提交 PR 前运行 &lt;code>./style/code_format_and_analysis.sh&lt;/code>&lt;/li>
 &lt;li>报告错误前检查现有问题&lt;/li>
 &lt;/ul>
-&lt;p>&lt;a href="https://github.com/apache/incubator-hugegraph-ai/graphs/contributors">&lt;img src="https://contrib.rocks/image?repo=apache/incubator-hugegraph-ai" alt="contributors graph">&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://github.com/apache/hugegraph-ai/graphs/contributors">&lt;img src="https://contrib.rocks/image?repo=apache/hugegraph-ai" alt="contributors graph">&lt;/a>&lt;/p>
 &lt;h2 id="-许可证">📄 许可证&lt;/h2>
-&lt;p>hugegraph-ai 采用 &lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/LICENSE">Apache 2.0 许可证&lt;/a>。&lt;/p>
+&lt;p>hugegraph-ai 采用 &lt;a href="https://github.com/apache/hugegraph-ai/blob/main/LICENSE">Apache 2.0 许可证&lt;/a>。&lt;/p>
 &lt;h2 id="-联系我们">📞 联系我们&lt;/h2>
 &lt;ul>
-&lt;li>&lt;strong>GitHub Issues&lt;/strong>：&lt;a href="https://github.com/apache/incubator-hugegraph-ai/issues">报告错误或请求功能&lt;/a>（响应最快）&lt;/li>
+&lt;li>&lt;strong>GitHub Issues&lt;/strong>：&lt;a href="https://github.com/apache/hugegraph-ai/issues">报告错误或请求功能&lt;/a>（响应最快）&lt;/li>
 &lt;li>&lt;strong>电子邮件&lt;/strong>：&lt;a href="mailto:dev@hugegraph.apache.org">dev@hugegraph.apache.org&lt;/a>（&lt;a href="https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/">需要订阅&lt;/a>）&lt;/li>
 &lt;li>&lt;strong>微信&lt;/strong>：关注 &amp;ldquo;Apache HugeGraph&amp;rdquo; 微信公众号&lt;/li>
 &lt;/ul>

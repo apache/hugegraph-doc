@@ -459,7 +459,8 @@ HugeGraph目前采用EdgeCut的分区方案。</p><h3 id=3-vertexid-策略>3. Ve
 </span></span><span style=display:flex><span>python -m pip install -r hubble-dist/assembly/travis/requirements.txt
 </span></span></code></pre></div><p><strong>3. 构建并验证</strong></p><div class=highlight><pre tabindex=0 style=background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>mvn package -Dmaven.test.skip<span style=color:#ce5c00;font-weight:700>=</span><span style=color:#204a87>true</span>
 </span></span><span style=display:flex><span><span style=color:#8f5902;font-style:italic># 可选：启动验证</span>
-</span></span><span style=display:flex><span><span style=color:#204a87>cd</span> apache-hugegraph-hubble-incubating-*/bin
+</span></span><span style=display:flex><span><span style=color:#8f5902;font-style:italic># 兼容历史（-incubating-）与毕业后 TLP 命名</span>
+</span></span><span style=display:flex><span><span style=color:#204a87>cd</span> apache-hugegraph-hubble*/bin
 </span></span><span style=display:flex><span>./start-hubble.sh -d <span style=color:#ce5c00;font-weight:700>&amp;&amp;</span> sleep <span style=color:#0000cf;font-weight:700>10</span>
 </span></span><span style=display:flex><span>curl http://localhost:8088/api/health
 </span></span><span style=display:flex><span>./stop-hubble.sh

@@ -489,7 +489,7 @@
 &lt;/ul>
 &lt;h4 id="311-下载已编译的压缩包">3.1.1 下载已编译的压缩包&lt;/h4>
 &lt;p>下载最新版本的 HugeGraph-Computer release 包：&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>wget https://downloads.apache.org/incubator/hugegraph/&lt;span style="color:#4e9a06">${&lt;/span>&lt;span style="color:#000">version&lt;/span>&lt;span style="color:#4e9a06">}&lt;/span>/apache-hugegraph-computer-incubating-&lt;span style="color:#4e9a06">${&lt;/span>&lt;span style="color:#000">version&lt;/span>&lt;span style="color:#4e9a06">}&lt;/span>.tar.gz
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>wget https://downloads.apache.org/hugegraph/&lt;span style="color:#4e9a06">${&lt;/span>&lt;span style="color:#000">version&lt;/span>&lt;span style="color:#4e9a06">}&lt;/span>/apache-hugegraph-computer-incubating-&lt;span style="color:#4e9a06">${&lt;/span>&lt;span style="color:#000">version&lt;/span>&lt;span style="color:#4e9a06">}&lt;/span>.tar.gz
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>tar zxvf apache-hugegraph-computer-incubating-&lt;span style="color:#4e9a06">${&lt;/span>&lt;span style="color:#000">version&lt;/span>&lt;span style="color:#4e9a06">}&lt;/span>.tar.gz -C hugegraph-computer
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="312-克隆源码编译打包">3.1.2 克隆源码编译打包&lt;/h4>
 &lt;p>克隆最新版本的 HugeGraph-Computer 源码包：&lt;/p>

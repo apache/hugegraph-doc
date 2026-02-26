@@ -13,10 +13,10 @@
 &lt;/blockquote>
 &lt;p>&lt;strong>GitHub Access:&lt;/strong> &lt;i class="fab fa-github">&lt;/i> &lt;a href="https://github.com/apache/hugegraph-toolchain">https://github.com/apache/hugegraph-toolchain&lt;/a>&lt;/p></description></item><item><title>Docs: HugeGraph-AI</title><link>/docs/quickstart/hugegraph-ai/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/quickstart/hugegraph-ai/</guid><description>
 &lt;p>&lt;a href="https://www.apache.org/licenses/LICENSE-2.0.html">&lt;img src="https://img.shields.io/badge/license-Apache%202-0E78BA.svg" alt="License">&lt;/a>
-&lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/p>
+&lt;a href="https://deepwiki.com/apache/hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/p>
 &lt;blockquote>
 &lt;p>DeepWiki provides real-time updated project documentation with more comprehensive and accurate content, suitable for quickly understanding the latest project information.&lt;/p>
-&lt;p>📖 &lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">https://deepwiki.com/apache/incubator-hugegraph-ai&lt;/a>&lt;/p>
+&lt;p>📖 &lt;a href="https://deepwiki.com/apache/hugegraph-ai">https://deepwiki.com/apache/hugegraph-ai&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;p>&lt;code>hugegraph-ai&lt;/code> integrates &lt;a href="https://github.com/apache/hugegraph">HugeGraph&lt;/a> with artificial intelligence capabilities, providing comprehensive support for developers to build AI-powered graph applications.&lt;/p>
 &lt;h2 id="-key-features">✨ Key Features&lt;/h2>
@@ -41,7 +41,7 @@
 &lt;h2 id="-quick-start">🚀 Quick Start&lt;/h2>
 &lt;blockquote>
 &lt;p>[!NOTE]
-For a complete deployment guide and detailed examples, please refer to &lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/README.md">hugegraph-llm/README.md&lt;/a>&lt;/p>
+For a complete deployment guide and detailed examples, please refer to &lt;a href="https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/README.md">hugegraph-llm/README.md&lt;/a>&lt;/p>
 &lt;/blockquote>
 &lt;h3 id="prerequisites">Prerequisites&lt;/h3>
 &lt;ul>
@@ -52,8 +52,8 @@ For a complete deployment guide and detailed examples, please refer to &lt;a hre
 &lt;/ul>
 &lt;h3 id="option-1-docker-deployment-recommended">Option 1: Docker Deployment (Recommended)&lt;/h3>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Clone the repository&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/incubator-hugegraph-ai.git
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> incubator-hugegraph-ai
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/hugegraph-ai.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph-ai
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Set up environment and start services&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>cp docker/env.template docker/.env
@@ -69,8 +69,8 @@ For a complete deployment guide and detailed examples, please refer to &lt;a hre
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>docker run -itd --name&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>server -p 8080:8080 hugegraph/hugegraph
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 2. Clone and set up the project&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/incubator-hugegraph-ai.git
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> incubator-hugegraph-ai/hugegraph-llm
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>git clone https://github.com/apache/hugegraph-ai.git
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph-ai/hugegraph-llm
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 3. Install dependencies&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>uv venv &lt;span style="color:#ce5c00;font-weight:bold">&amp;amp;&amp;amp;&lt;/span> &lt;span style="color:#204a87">source&lt;/span> .venv/bin/activate
@@ -112,7 +112,7 @@ For a complete deployment guide and detailed examples, please refer to &lt;a hre
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Connect to HugeGraph and run ML algorithms&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># See hugegraph-ml documentation for detailed examples&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="-modules">📦 Modules&lt;/h2>
-&lt;h3 id="hugegraph-llmhttpsgithubcomapacheincubator-hugegraph-aitreemainhugegraph-llm-ask-deepwikihttpsdeepwikicombadgesvghttpsdeepwikicomapacheincubator-hugegraph-ai">&lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-llm">hugegraph-llm&lt;/a> &lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/h3>
+&lt;h3 id="hugegraph-llmhttpsgithubcomapachehugegraph-aitreemainhugegraph-llm-ask-deepwikihttpsdeepwikicombadgesvghttpsdeepwikicomapachehugegraph-ai">&lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm">hugegraph-llm&lt;/a> &lt;a href="https://deepwiki.com/apache/hugegraph-ai">&lt;img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">&lt;/a>&lt;/h3>
 &lt;p>Large language model integration for graph applications:&lt;/p>
 &lt;ul>
 &lt;li>&lt;strong>GraphRAG&lt;/strong>: Retrieval-augmented generation with graph data&lt;/li>
@@ -120,7 +120,7 @@ For a complete deployment guide and detailed examples, please refer to &lt;a hre
 &lt;li>&lt;strong>Natural Language Interface&lt;/strong>: Query graphs using natural language&lt;/li>
 &lt;li>&lt;strong>AI Agents&lt;/strong>: Intelligent graph analysis and reasoning&lt;/li>
 &lt;/ul>
-&lt;h3 id="hugegraph-mlhttpsgithubcomapacheincubator-hugegraph-aitreemainhugegraph-ml">&lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-ml">hugegraph-ml&lt;/a>&lt;/h3>
+&lt;h3 id="hugegraph-mlhttpsgithubcomapachehugegraph-aitreemainhugegraph-ml">&lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml">hugegraph-ml&lt;/a>&lt;/h3>
 &lt;p>Graph machine learning with 21 implemented algorithms:&lt;/p>
 &lt;ul>
 &lt;li>&lt;strong>Node Classification&lt;/strong>: GCN, GAT, GraphSAGE, APPNP, AGNN, ARMA, DAGNN, DeeperGCN, GRAND, JKNet, Cluster-GCN&lt;/li>
@@ -130,7 +130,7 @@ For a complete deployment guide and detailed examples, please refer to &lt;a hre
 &lt;li>&lt;strong>Fraud Detection&lt;/strong>: CARE-GNN, BGNN&lt;/li>
 &lt;li>&lt;strong>Post-Processing&lt;/strong>: C&amp;amp;S (Correct &amp;amp; Smooth)&lt;/li>
 &lt;/ul>
-&lt;h3 id="hugegraph-python-clienthttpsgithubcomapacheincubator-hugegraph-aitreemainhugegraph-python-client">&lt;a href="https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-python-client">hugegraph-python-client&lt;/a>&lt;/h3>
+&lt;h3 id="hugegraph-python-clienthttpsgithubcomapachehugegraph-aitreemainhugegraph-python-client">&lt;a href="https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client">hugegraph-python-client&lt;/a>&lt;/h3>
 &lt;p>Python client for HugeGraph operations:&lt;/p>
 &lt;ul>
 &lt;li>&lt;strong>Schema Management&lt;/strong>: Define vertex/edge labels and properties&lt;/li>
@@ -141,8 +141,8 @@ For a complete deployment guide and detailed examples, please refer to &lt;a hre
 &lt;h2 id="-learn-more">📚 Learn More&lt;/h2>
 &lt;ul>
 &lt;li>&lt;a href="https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/">Project Homepage&lt;/a>&lt;/li>
-&lt;li>&lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/quick_start.md">LLM Quick Start Guide&lt;/a>&lt;/li>
-&lt;li>&lt;a href="https://deepwiki.com/apache/incubator-hugegraph-ai">DeepWiki AI Documentation&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/quick_start.md">LLM Quick Start Guide&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://deepwiki.com/apache/hugegraph-ai">DeepWiki AI Documentation&lt;/a>&lt;/li>
 &lt;/ul>
 &lt;h2 id="-related-projects">🔗 Related Projects&lt;/h2>
 &lt;ul>
@@ -158,12 +158,12 @@ For a complete deployment guide and detailed examples, please refer to &lt;a hre
 &lt;li>Run &lt;code>./style/code_format_and_analysis.sh&lt;/code> before submitting PRs&lt;/li>
 &lt;li>Check existing issues before reporting bugs&lt;/li>
 &lt;/ul>
-&lt;p>&lt;a href="https://github.com/apache/incubator-hugegraph-ai/graphs/contributors">&lt;img src="https://contrib.rocks/image?repo=apache/incubator-hugegraph-ai" alt="contributors graph">&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://github.com/apache/hugegraph-ai/graphs/contributors">&lt;img src="https://contrib.rocks/image?repo=apache/hugegraph-ai" alt="contributors graph">&lt;/a>&lt;/p>
 &lt;h2 id="-license">📄 License&lt;/h2>
-&lt;p>hugegraph-ai is licensed under &lt;a href="https://github.com/apache/incubator-hugegraph-ai/blob/main/LICENSE">Apache 2.0 License&lt;/a>.&lt;/p>
+&lt;p>hugegraph-ai is licensed under &lt;a href="https://github.com/apache/hugegraph-ai/blob/main/LICENSE">Apache 2.0 License&lt;/a>.&lt;/p>
 &lt;h2 id="-contact-us">📞 Contact Us&lt;/h2>
 &lt;ul>
-&lt;li>&lt;strong>GitHub Issues&lt;/strong>: &lt;a href="https://github.com/apache/incubator-hugegraph-ai/issues">Report bugs or request features&lt;/a> (fastest response)&lt;/li>
+&lt;li>&lt;strong>GitHub Issues&lt;/strong>: &lt;a href="https://github.com/apache/hugegraph-ai/issues">Report bugs or request features&lt;/a> (fastest response)&lt;/li>
 &lt;li>&lt;strong>Email&lt;/strong>: &lt;a href="mailto:dev@hugegraph.apache.org">dev@hugegraph.apache.org&lt;/a> (&lt;a href="https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/">subscription required&lt;/a>)&lt;/li>
 &lt;li>&lt;strong>WeChat&lt;/strong>: Follow &amp;ldquo;Apache HugeGraph&amp;rdquo; on WeChat&lt;/li>
 &lt;/ul>

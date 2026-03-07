@@ -49,6 +49,53 @@ mvn clean install -DskipTests=true
 #    target/apache-hugegraph-incubating-{version}.tar.gz
 ```
 
+#### 3.3 Docker Deployment
+
+The HugeGraph-PD Docker image is available on Docker Hub as `hugegraph/pd:latest`.
+
+For a complete 3-node cluster with PD, Store, and Server, use the compose file:
+
+```bash
+git clone https://github.com/apache/hugegraph.git
+cd hugegraph/docker
+docker compose -f docker-compose-3pd-3store-3server.yml up -d
+```
+
+To run a single PD node via `docker run`, configuration is provided via environment variables:
+
+```bash
+docker run -d \
+  -p 8620:8620 \
+  -p 8686:8686 \
+  -p 8610:8610 \
+  -e HG_PD_GRPC_HOST=<your-ip> \
+  -e HG_PD_RAFT_ADDRESS=<your-ip>:8610 \
+  -e HG_PD_RAFT_PEERS_LIST=<your-ip>:8610 \
+  -e HG_PD_INITIAL_STORE_LIST=<store-ip>:8500 \
+  -v /path/to/data:/hugegraph-pd/pd_data \
+  --name hugegraph-pd \
+  hugegraph/pd:latest
+```
+
+**Environment variable reference:**
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `HG_PD_GRPC_HOST` | Yes | — | This node's hostname/IP for gRPC (e.g. `pd0` in Docker, `192.168.1.10` on bare metal) |
+| `HG_PD_RAFT_ADDRESS` | Yes | — | This node's Raft address (e.g. `pd0:8610`) |
+| `HG_PD_RAFT_PEERS_LIST` | Yes | — | All PD peers (e.g. `pd0:8610,pd1:8610,pd2:8610`) |
+| `HG_PD_INITIAL_STORE_LIST` | Yes | — | Expected store gRPC addresses (e.g. `store0:8500,store1:8500,store2:8500`) |
+| `HG_PD_GRPC_PORT` | No | `8686` | gRPC server port |
+| `HG_PD_REST_PORT` | No | `8620` | REST API port |
+| `HG_PD_DATA_PATH` | No | `/hugegraph-pd/pd_data` | Metadata storage path |
+| `HG_PD_INITIAL_STORE_COUNT` | No | `1` | Minimum stores required for cluster availability |
+
+> **Note**: In Docker bridge networking, use container hostnames (e.g. `pd0`) for `HG_PD_GRPC_HOST` and `HG_PD_RAFT_ADDRESS` instead of IP addresses.
+
+> **Deprecated aliases**: `GRPC_HOST`, `RAFT_ADDRESS`, `RAFT_PEERS`, `PD_INITIAL_STORE_LIST` still work but log a deprecation warning. Use the `HG_PD_*` names for new deployments.
+
+See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full cluster setup guide.
+
 ### 4 Configuration
 
 The main configuration file for PD is `conf/application.yml`. Here are the key configuration items:

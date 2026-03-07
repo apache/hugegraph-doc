@@ -42,7 +42,7 @@ There are four ways to deploy HugeGraph-Server components:
 #### 3.1 Use Docker container (Convenient for Test/Dev)
 
 <!-- 3.1 is linked by another place. if change 3.1's title, please check -->
-You can refer to the [Docker deployment guide](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/README.md).
+You can refer to the [Docker deployment guide](https://github.com/apache/hugegraph/blob/master/docker/README.md).
 
 We can use `docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0` to quickly start a `HugeGraph Server` with a built-in `RocksDB` backend.
 
@@ -56,22 +56,20 @@ If you use docker desktop, you can set the option like:
     <img src="/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
 </div>
 
-Also, if we want to manage the other Hugegraph related instances in one file, we can use `docker-compose` to deploy, with the command `docker-compose up -d` (you can config only `server`). Here is an example `docker-compose.yml`:
+> **Note**: The Docker compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster, allocate at least **12 GB** memory to Docker Desktop (Settings → Resources → Memory).
 
-```yaml
-version: '3'
-services:
-  server:
-    image: hugegraph/hugegraph:1.7.0
-    container_name: server
-    environment:
-     - PASSWORD=xxx
-    # PASSWORD is an option to enable auth mode with the password you set.
-    #  - PRELOAD=true
-    # PRELOAD is a option to preload a build-in sample graph when initializing.
-    ports:
-      - 8080:8080
+Also, if we want to manage HugeGraph-related instances in one file, we can use `docker compose` to deploy.
+Two compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory:
+
+- **Single-node quickstart** (pre-built images): `docker/docker-compose.yml`
+- **Single-node dev build** (build from source): `docker/docker-compose-dev.yml`
+
+```bash
+cd docker
+docker compose up -d
 ```
+
+See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full setup guide.
 
 > Note: 
 >
@@ -323,6 +321,34 @@ The sequence to stop the services should be the reverse of the startup sequence:
 ```bash
 bin/stop-hugegraph.sh
 ```
+
+#### Docker Cluster Quickstart
+
+For running the full distributed cluster (3 PD + 3 Store + 3 Server) via Docker:
+
+> **Prerequisites**: Allocate at least **12 GB** memory to Docker Desktop (Settings → Resources → Memory). Requires a cloned repository (temporary requirement until updated images are published).
+
+```bash
+git clone https://github.com/apache/hugegraph.git
+cd hugegraph/docker
+docker compose -f docker-compose-3pd-3store-3server.yml up -d
+```
+
+Services communicate via container hostnames on the `hg-net` bridge network. Configuration is injected via environment variables:
+
+```yaml
+# Server configuration
+HG_SERVER_BACKEND: hstore
+HG_SERVER_PD_PEERS: pd0:8686,pd1:8686,pd2:8686
+```
+
+Verify the cluster:
+```bash
+curl http://localhost:8080/versions
+curl http://localhost:8620/v1/stores
+```
+
+See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full environment variable reference, port table, and troubleshooting guide.
 </details>
 
 ##### 5.1.2 Memory

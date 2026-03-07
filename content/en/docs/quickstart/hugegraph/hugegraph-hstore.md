@@ -50,6 +50,48 @@ mvn clean install -DskipTests=true
 #    target/apache-hugegraph-incubating-{version}.tar.gz
 ```
 
+#### 3.3 Docker Deployment
+
+The HugeGraph-Store Docker image is available on Docker Hub as `hugegraph/store:latest`.
+
+For a complete 3-node cluster with PD, Store, and Server, use the compose file:
+
+```bash
+git clone https://github.com/apache/hugegraph.git
+cd hugegraph/docker
+docker compose -f docker-compose-3pd-3store-3server.yml up -d
+```
+
+To run a single Store node via `docker run`:
+
+```bash
+docker run -d \
+  -p 8520:8520 \
+  -p 8500:8500 \
+  -p 8510:8510 \
+  -e HG_STORE_PD_ADDRESS=<pd-ip>:8686 \
+  -e HG_STORE_GRPC_HOST=<your-ip> \
+  -e HG_STORE_RAFT_ADDRESS=<your-ip>:8510 \
+  -v /path/to/storage:/hugegraph-store/storage \
+  --name hugegraph-store \
+  hugegraph/store:latest
+```
+
+**Environment variable reference:**
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `HG_STORE_PD_ADDRESS` | Yes | — | PD gRPC addresses (e.g. `pd0:8686,pd1:8686,pd2:8686`) |
+| `HG_STORE_GRPC_HOST` | Yes | — | This node's hostname/IP for gRPC (e.g. `store0`) |
+| `HG_STORE_RAFT_ADDRESS` | Yes | — | This node's Raft address (e.g. `store0:8510`) |
+| `HG_STORE_GRPC_PORT` | No | `8500` | gRPC server port |
+| `HG_STORE_REST_PORT` | No | `8520` | REST API port |
+| `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | Data storage path |
+
+> **Note**: In Docker bridge networking, use container hostnames (e.g. `store0`) for `HG_STORE_GRPC_HOST` instead of IP addresses.
+
+> **Deprecated aliases**: `PD_ADDRESS`, `GRPC_HOST`, `RAFT_ADDRESS` still work but log a deprecation warning. Use the `HG_STORE_*` names for new deployments.
+
 ### 4 Configuration
 
 The main configuration file for Store is `conf/application.yml`. Here are the key configuration items:
@@ -187,6 +229,34 @@ All nodes should point to the same PD cluster:
 pdserver:
   address: 127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
 ```
+
+#### 6.3 Docker Cluster Quickstart
+
+The 3-node Store cluster is included in `docker/docker-compose-3pd-3store-3server.yml`. Each Store node gets its own hostname and env vars:
+
+```yaml
+# store0
+HG_STORE_PD_ADDRESS: pd0:8686,pd1:8686,pd2:8686
+HG_STORE_GRPC_HOST: store0
+HG_STORE_GRPC_PORT: "8500"
+HG_STORE_REST_PORT: "8520"
+HG_STORE_RAFT_ADDRESS: store0:8510
+HG_STORE_DATA_PATH: /hugegraph-store/storage
+
+# store1
+HG_STORE_PD_ADDRESS: pd0:8686,pd1:8686,pd2:8686
+HG_STORE_GRPC_HOST: store1
+HG_STORE_RAFT_ADDRESS: store1:8510
+
+# store2
+HG_STORE_PD_ADDRESS: pd0:8686,pd1:8686,pd2:8686
+HG_STORE_GRPC_HOST: store2
+HG_STORE_RAFT_ADDRESS: store2:8510
+```
+
+Store nodes start only after all PD nodes pass healthchecks (`/v1/health`), enforced via `depends_on: condition: service_healthy`.
+
+See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full setup guide.
 
 ### 7 Verify Store Service
 

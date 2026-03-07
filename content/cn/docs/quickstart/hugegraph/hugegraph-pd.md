@@ -49,6 +49,53 @@ mvn clean install -DskipTests=true
 #    target/apache-hugegraph-incubating-{version}.tar.gz
 ```
 
+#### 3.3 Docker 部署
+
+HugeGraph-PD Docker 镜像已发布在 Docker Hub，镜像名为 `hugegraph/pd:latest`。
+
+使用 compose 文件部署完整的 3 节点集群（PD + Store + Server）：
+
+```bash
+git clone https://github.com/apache/hugegraph.git
+cd hugegraph/docker
+docker compose -f docker-compose-3pd-3store-3server.yml up -d
+```
+
+通过 `docker run` 运行单个 PD 节点时，通过环境变量提供配置：
+
+```bash
+docker run -d \
+  -p 8620:8620 \
+  -p 8686:8686 \
+  -p 8610:8610 \
+  -e HG_PD_GRPC_HOST=<your-ip> \
+  -e HG_PD_RAFT_ADDRESS=<your-ip>:8610 \
+  -e HG_PD_RAFT_PEERS_LIST=<your-ip>:8610 \
+  -e HG_PD_INITIAL_STORE_LIST=<store-ip>:8500 \
+  -v /path/to/data:/hugegraph-pd/pd_data \
+  --name hugegraph-pd \
+  hugegraph/pd:latest
+```
+
+**环境变量参考：**
+
+| 变量 | 必填 | 默认值 | 描述 |
+|------|------|--------|------|
+| `HG_PD_GRPC_HOST` | 是 | — | 本节点的 gRPC 主机名/IP（Docker 中使用 `pd0`，裸机使用 `192.168.1.10`） |
+| `HG_PD_RAFT_ADDRESS` | 是 | — | 本节点的 Raft 地址（如 `pd0:8610`） |
+| `HG_PD_RAFT_PEERS_LIST` | 是 | — | 所有 PD 节点的 Raft 地址（如 `pd0:8610,pd1:8610,pd2:8610`） |
+| `HG_PD_INITIAL_STORE_LIST` | 是 | — | 预期的 Store gRPC 地址（如 `store0:8500,store1:8500,store2:8500`） |
+| `HG_PD_GRPC_PORT` | 否 | `8686` | gRPC 服务端口 |
+| `HG_PD_REST_PORT` | 否 | `8620` | REST API 端口 |
+| `HG_PD_DATA_PATH` | 否 | `/hugegraph-pd/pd_data` | 元数据存储路径 |
+| `HG_PD_INITIAL_STORE_COUNT` | 否 | `1` | 集群可用所需的最小 Store 数量 |
+
+> **注意**：在 Docker 桥接网络中，`HG_PD_GRPC_HOST` 和 `HG_PD_RAFT_ADDRESS` 应使用容器主机名（如 `pd0`）而非 IP 地址。
+
+> **已弃用的别名**：`GRPC_HOST`、`RAFT_ADDRESS`、`RAFT_PEERS`、`PD_INITIAL_STORE_LIST` 仍可使用，但会输出弃用警告。新部署请使用 `HG_PD_*` 名称。
+
+完整的集群部署指南请参阅 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
+
 ### 4 配置
 
 PD 的主要配置文件为 `conf/application.yml`，以下是关键配置项：

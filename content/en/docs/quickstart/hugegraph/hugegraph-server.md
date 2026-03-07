@@ -69,6 +69,8 @@ cd docker
 docker compose up -d
 ```
 
+To enable authentication, add `PASSWORD=xxx` to the service environment in the compose file or pass `-e PASSWORD=xxx` to `docker run`.
+
 See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full setup guide.
 
 > Note: 

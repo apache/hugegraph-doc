@@ -68,6 +68,8 @@ cd docker
 docker compose up -d
 ```
 
+如需开启鉴权，可在 compose 文件的环境变量中添加 `PASSWORD=xxx`，或在 `docker run` 命令中传入 `-e PASSWORD=xxx`。
+
 完整的部署指南请参阅 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
 > 注意：

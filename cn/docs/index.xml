@@ -4691,7 +4691,7 @@
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="8-使用-intellij-idea-调试-server">8 使用 IntelliJ IDEA 调试 Server&lt;/h3>
 &lt;p>请参考&lt;a href="/docs/contribution-guidelines/hugegraph-server-idea-setup">在 IDEA 中配置 Server 开发环境&lt;/a>&lt;/p></description></item><item><title>Docs: HugeGraph Architecture Overview</title><link>/cn/docs/guides/architectural/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/guides/architectural/</guid><description>
 &lt;h3 id="1-概述">1 概述&lt;/h3>
-&lt;p>作为一款通用的图数据库产品，HugeGraph 需具备图数据库的基本功能。HugeGraph 支持 OLTP 和 OLAP 两种图计算类型，其中 OLTP 实现了 &lt;a href="https://tinkerpop.apache.org">Apache TinkerPop3&lt;/a> 框架，支持 &lt;a href="https://tinkerpop.apache.org/gremlin.html">Gremlin&lt;/a> 和 &lt;a href="https://en.wikipedia.org/wiki/Cypher">Cypher&lt;/a> 查询语言，拥有功能齐全的应用工具链，还提供了插件式后端存储驱动框架。&lt;/p>
+&lt;p>作为一套覆盖&lt;strong>图数据库、图计算与图 AI&lt;/strong> 的全栈图系统，HugeGraph 以高性能图引擎（HugeGraph Server）为核心，支持 OLTP 和 OLAP 两种图计算类型。其中 OLTP 层实现了 &lt;a href="https://tinkerpop.apache.org">Apache TinkerPop3&lt;/a> 框架，支持 &lt;a href="https://tinkerpop.apache.org/gremlin.html">Gremlin&lt;/a> 和 &lt;a href="https://en.wikipedia.org/wiki/Cypher">Cypher&lt;/a> 查询语言，拥有功能齐全的应用工具链，还提供了插件式后端存储驱动框架。&lt;/p>
 &lt;p>下面是 HugeGraph 的整体架构图：&lt;/p>
 &lt;div style="text-align: center;">
 &lt;img src="/docs/images/design/architectural-revised.png" alt="image">

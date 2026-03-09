@@ -45,7 +45,7 @@ The core module of the HugeGraph project, providing high-performance graph data 
 - **Dual Query Languages**: Fully compatible with Gremlin (TinkerPop 3) and Cypher (OpenCypher).
 - **REST API**: Built-in REST Server, providing RESTful graph operation interfaces.
 - **Multi-type Indexes**: Exact query, range query, and complex condition combination queries.
-- **Pluggable Storage Backends**: Defaults to `RocksDB` (standalone) / `HStore + HBase` (distributed); older versions (≤1.5.0) support MySQL / PostgreSQL / Cassandra, etc.
+- **Pluggable Storage Backends**: For 1.7.0 and later, supports `RocksDB` (standalone default), `HStore` (distributed), `HBase`, and `Memory`; for 1.5.x or earlier, supports `MySQL` / `PostgreSQL` / `Cassandra`, etc.
 
 **Submodules:**
 - `Core`: Graph engine implementation, connecting downwards to Backend and upwards to API.
@@ -101,7 +101,7 @@ HugeGraph supports two primary deployment modes:
 
 | Mode | Core Components | Suitable Scenarios | Data Scale | High Availability (HA) |
 |------|-----------------|--------------------|------------|------------------------|
-| **Standalone** | Server + RocksDB | Development, testing, single-node production | < 1TB | Basic |
+| **Standalone** | Server + RocksDB | Development, testing, single-node production | < 4TB | Basic |
 | **Distributed** | Server + PD (3-5 nodes) + Store (3+ nodes) | Production environments, horizontal scaling | < 1000TB | ✅ |
 
 **Docker Quick Experience:**

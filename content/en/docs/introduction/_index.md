@@ -63,7 +63,7 @@ Provides two complementary graph analysis engines:
 - **Vermeer** (Recommended): High-performance pure in-memory graph computing engine, simple to deploy, fast response, suitable for small to medium-scale graph analysis and quick onboarding.
 - **HugeGraph-Computer**: Distributed OLAP engine based on the [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf) model, can run on Kubernetes / Yarn clusters, suitable for mega-scale graph algorithm tasks.
 
-📖 [Computing Quick Start](/docs/quickstart/computing/hugegraph-computer)
+📖 [Computing Quick Start](/docs/quickstart/computing/hugegraph-vermeer)
 
 ---
 

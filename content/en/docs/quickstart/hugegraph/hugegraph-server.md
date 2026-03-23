@@ -110,6 +110,8 @@ shasum -a 512 apache-hugegraph-incubating-src-{version}.tar.gz
 curl https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}-src.tar.gz.sha512
 
 # Way2 : clone the latest code by git way (e.g GitHub)
+git clone https://github.com/apache/hugegraph.git
+
 ```
 
 Compile and generate tarball

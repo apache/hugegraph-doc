@@ -66,7 +66,7 @@ Two compose files are available in the [`docker/`](https://github.com/apache/hug
 
 ```bash
 cd docker
-docker compose up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose up -d
 ```
 
 To enable authentication, add `PASSWORD=xxx` to the service environment in the compose file or pass `-e PASSWORD=xxx` to `docker run`.
@@ -110,7 +110,6 @@ shasum -a 512 apache-hugegraph-incubating-src-{version}.tar.gz
 curl https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}-src.tar.gz.sha512
 
 # Way2 : clone the latest code by git way (e.g GitHub)
-git clone https://github.com/apache/hugegraph.git
 ```
 
 Compile and generate tarball
@@ -328,12 +327,9 @@ bin/stop-hugegraph.sh
 
 For running the full distributed cluster (3 PD + 3 Store + 3 Server) via Docker:
 
-> **Prerequisites**: Allocate at least **12 GB** memory to Docker Desktop (Settings → Resources → Memory). Requires a cloned repository (temporary requirement until updated images are published).
-
 ```bash
-git clone https://github.com/apache/hugegraph.git
 cd hugegraph/docker
-docker compose -f docker-compose-3pd-3store-3server.yml up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
 Services communicate via container hostnames on the `hg-net` bridge network. Configuration is injected via environment variables:
@@ -645,7 +641,7 @@ In [3.1 Use Docker container](#31-use-docker-container-convenient-for-testdev), 
 
 When using Docker, we can use Cassandra as the backend storage. We highly recommend using docker-compose directly to manage both the server and Cassandra.
 
-The sample `docker-compose.yml` can be obtained on [GitHub](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/example/docker-compose-cassandra.yml), and you can start it with `docker-compose up -d`. (If using Cassandra 4.0 as the backend storage, it takes approximately two minutes to initialize. Please be patient.)
+The sample `docker-compose.yml` can be obtained on [GitHub](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/example/docker-compose-cassandra.yml), and you can start it with `HUGEGRAPH_VERSION=1.7.0 docker-compose up -d`. (If using Cassandra 4.0 as the backend storage, it takes approximately two minutes to initialize. Please be patient.)
 
 ```yaml
 version: "3"
@@ -727,7 +723,7 @@ Set the environment variable `PRELOAD=true` when starting Docker to load data du
             - 8080:8080
     ```
 
-    Use `docker-compose up -d` to start the container
+    Use `HUGEGRAPH_VERSION=1.7.0 docker-compose up -d` to start the container
 
 And use the RESTful API to request `HugeGraphServer` and get the following result:
 

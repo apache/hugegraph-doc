@@ -38,7 +38,6 @@ cd apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version
 
 ```bash
 # 1. Clone the source code
-git clone https://github.com/apache/hugegraph.git
 
 # 2. Build the project
 cd hugegraph
@@ -51,14 +50,13 @@ mvn clean install -DskipTests=true
 
 #### 3.3 Docker Deployment
 
-The HugeGraph-PD Docker image is available on Docker Hub as `hugegraph/pd:latest`.
+The HugeGraph-PD Docker image is available on Docker Hub as `hugegraph/pd:1.7.0`.
 
 For a complete 3-node cluster with PD, Store, and Server, use the compose file:
 
 ```bash
-git clone https://github.com/apache/hugegraph.git
 cd hugegraph/docker
-docker compose -f docker-compose-3pd-3store-3server.yml up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
 To run a single PD node via `docker run`, configuration is provided via environment variables:
@@ -74,7 +72,7 @@ docker run -d \
   -e HG_PD_INITIAL_STORE_LIST=<store-ip>:8500 \
   -v /path/to/data:/hugegraph-pd/pd_data \
   --name hugegraph-pd \
-  hugegraph/pd:latest
+  hugegraph/pd:1.7.0
 ```
 
 **Environment variable reference:**

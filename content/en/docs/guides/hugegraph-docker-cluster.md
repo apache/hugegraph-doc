@@ -1,4 +1,4 @@
----
+cl---
 title: "HugeGraph Docker Cluster Guide"
 linkTitle: "Docker Cluster"
 weight: 5
@@ -15,7 +15,6 @@ Previous versions used `network_mode: host` which only worked on Linux. The clus
 - Docker Engine 20.10+ or Docker Desktop 4.x+
 - Docker Compose v2
 - For the 3-node cluster: at least **12 GB** memory allocated to Docker Desktop (Settings → Resources → Memory)
-- Repository cloned locally (temporary requirement until updated images are published to Docker Hub)
 
 > **Tested platforms**: Linux (native Docker) and macOS (Docker Desktop, tested on Apple M4). Windows Docker Desktop is untested.
 
@@ -32,9 +31,8 @@ Three compose files are available in the [`docker/`](https://github.com/apache/h
 ## Single-Node Quickstart
 
 ```bash
-git clone https://github.com/apache/hugegraph.git
 cd hugegraph/docker
-docker compose up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose up -d
 ```
 
 Verify:
@@ -46,7 +44,7 @@ curl http://localhost:8080/versions
 
 ```bash
 cd hugegraph/docker
-docker compose -f docker-compose-3pd-3store-3server.yml up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
 Startup ordering is enforced automatically:

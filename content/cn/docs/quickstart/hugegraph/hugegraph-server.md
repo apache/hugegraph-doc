@@ -93,6 +93,7 @@ tar zxf *hugegraph*.tar.gz
 下载 HugeGraph 源代码
 
 ```bash
+git clone https://github.com/apache/hugegraph.git
 ```
 
 编译打包生成 tar 包

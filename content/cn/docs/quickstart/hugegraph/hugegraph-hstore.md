@@ -39,6 +39,7 @@ cd apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{ver
 
 ```bash
 # 1. 克隆源代码
+git clone https://github.com/apache/hugegraph.git
 
 # 2. 编译项目
 cd hugegraph

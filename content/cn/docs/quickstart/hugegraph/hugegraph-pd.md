@@ -38,7 +38,6 @@ cd apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version
 
 ```bash
 # 1. 克隆源代码
-git clone https://github.com/apache/hugegraph.git
 
 # 2. 编译项目
 cd hugegraph
@@ -51,14 +50,13 @@ mvn clean install -DskipTests=true
 
 #### 3.3 Docker 部署
 
-HugeGraph-PD Docker 镜像已发布在 Docker Hub，镜像名为 `hugegraph/pd:latest`。
+HugeGraph-PD Docker 镜像已发布在 Docker Hub，镜像名为 `hugegraph/pd:1.7.0`。
 
 使用 compose 文件部署完整的 3 节点集群（PD + Store + Server）：
 
 ```bash
-git clone https://github.com/apache/hugegraph.git
 cd hugegraph/docker
-docker compose -f docker-compose-3pd-3store-3server.yml up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
 通过 `docker run` 运行单个 PD 节点时，通过环境变量提供配置：
@@ -74,7 +72,7 @@ docker run -d \
   -e HG_PD_INITIAL_STORE_LIST=<store-ip>:8500 \
   -v /path/to/data:/hugegraph-pd/pd_data \
   --name hugegraph-pd \
-  hugegraph/pd:latest
+  hugegraph/pd:1.7.0
 ```
 
 **环境变量参考：**

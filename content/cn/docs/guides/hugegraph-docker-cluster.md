@@ -15,7 +15,6 @@ HugeGraph 支持通过 Docker 桥接网络运行完整的分布式集群（PD + 
 - Docker Engine 20.10+ 或 Docker Desktop 4.x+
 - Docker Compose v2
 - 3 节点集群需为 Docker Desktop 分配至少 **12 GB** 内存（设置 → 资源 → 内存）
-- 本地克隆仓库（在更新后的镜像发布到 Docker Hub 之前的临时要求）
 
 > **已测试平台**：Linux（原生 Docker）和 macOS（Docker Desktop，已在 Apple M4 上测试）。Windows Docker Desktop 未经测试。
 
@@ -26,15 +25,14 @@ HugeGraph 支持通过 Docker 桥接网络运行完整的分布式集群（PD + 
 | 文件 | 描述 |
 |------|------|
 | `docker-compose.yml` | 使用预构建镜像的单节点快速启动 |
-| `docker-compose-dev.yml` | 从源码构建的单节点开发模式 |
+| `docker-compose.dev.yml` | 从源码构建的单节点开发模式 |
 | `docker-compose-3pd-3store-3server.yml` | 3 节点分布式集群 |
 
 ## 单节点快速启动
 
 ```bash
-git clone https://github.com/apache/hugegraph.git
 cd hugegraph/docker
-docker compose up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose up -d
 ```
 
 验证：
@@ -46,7 +44,7 @@ curl http://localhost:8080/versions
 
 ```bash
 cd hugegraph/docker
-docker compose -f docker-compose-3pd-3store-3server.yml up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
 启动顺序自动强制执行：

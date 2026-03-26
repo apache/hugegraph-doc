@@ -39,7 +39,6 @@ cd apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{ver
 
 ```bash
 # 1. 克隆源代码
-git clone https://github.com/apache/hugegraph.git
 
 # 2. 编译项目
 cd hugegraph
@@ -52,14 +51,13 @@ mvn clean install -DskipTests=true
 
 #### 3.3 Docker 部署
 
-HugeGraph-Store Docker 镜像已发布在 Docker Hub，镜像名为 `hugegraph/store:latest`。
+HugeGraph-Store Docker 镜像已发布在 Docker Hub，镜像名为 `hugegraph/store:1.7.0`。
 
 使用 compose 文件部署完整的 3 节点集群（PD + Store + Server）：
 
 ```bash
-git clone https://github.com/apache/hugegraph.git
 cd hugegraph/docker
-docker compose -f docker-compose-3pd-3store-3server.yml up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
 通过 `docker run` 运行单个 Store 节点：
@@ -74,7 +72,7 @@ docker run -d \
   -e HG_STORE_RAFT_ADDRESS=<your-ip>:8510 \
   -v /path/to/storage:/hugegraph-store/storage \
   --name hugegraph-store \
-  hugegraph/store:latest
+  hugegraph/store:1.7.0
 ```
 
 **环境变量参考：**

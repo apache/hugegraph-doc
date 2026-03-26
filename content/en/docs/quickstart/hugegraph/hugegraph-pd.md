@@ -38,6 +38,7 @@ cd apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version
 
 ```bash
 # 1. Clone the source code
+git clone https://github.com/apache/hugegraph.git
 
 # 2. Build the project
 cd hugegraph

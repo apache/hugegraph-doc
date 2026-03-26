@@ -25,7 +25,7 @@ Three compose files are available in the [`docker/`](https://github.com/apache/h
 | File | Description |
 |------|-------------|
 | `docker-compose.yml` | Single-node quickstart using pre-built images |
-| `docker-compose-dev.yml` | Single-node dev build from source |
+| `docker-compose.dev.yml` | Single-node dev build from source |
 | `docker-compose-3pd-3store-3server.yml` | 3-node distributed cluster |
 
 ## Single-Node Quickstart

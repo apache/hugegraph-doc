@@ -62,7 +62,7 @@ Also, if we want to manage HugeGraph-related instances in one file, we can use `
 Two compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory:
 
 - **Single-node quickstart** (pre-built images): `docker/docker-compose.yml`
-- **Single-node dev build** (build from source): `docker/docker-compose-dev.yml`
+- **Single-node dev build** (build from source): `docker/docker-compose.dev.yml`
 
 ```bash
 cd docker

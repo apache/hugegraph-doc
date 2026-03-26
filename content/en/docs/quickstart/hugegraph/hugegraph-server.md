@@ -643,7 +643,7 @@ In [3.1 Use Docker container](#31-use-docker-container-convenient-for-testdev), 
 
 When using Docker, we can use Cassandra as the backend storage. We highly recommend using docker-compose directly to manage both the server and Cassandra.
 
-The sample `docker-compose.yml` can be obtained on [GitHub](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/example/docker-compose-cassandra.yml), and you can start it with `HUGEGRAPH_VERSION=1.7.0 docker-compose up -d`. (If using Cassandra 4.0 as the backend storage, it takes approximately two minutes to initialize. Please be patient.)
+The sample `docker-compose.yml` can be obtained on [GitHub](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/example/docker-compose-cassandra.yml), and you can start it with `docker-compose up -d`. (If using Cassandra 4.0 as the backend storage, it takes approximately two minutes to initialize. Please be patient.)
 
 ```yaml
 version: "3"
@@ -725,7 +725,7 @@ Set the environment variable `PRELOAD=true` when starting Docker to load data du
             - 8080:8080
     ```
 
-    Use `HUGEGRAPH_VERSION=1.7.0 docker-compose up -d` to start the container
+    Use `docker-compose up -d` to start the container
 
 And use the RESTful API to request `HugeGraphServer` and get the following result:
 

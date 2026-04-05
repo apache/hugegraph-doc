@@ -65,7 +65,7 @@ Two compose files are available in the [`docker/`](https://github.com/apache/hug
 - **Single-node dev build** (build from source): `docker/docker-compose.dev.yml`
 
 ```bash
-cd docker
+cd hugegraph/docker
 HUGEGRAPH_VERSION=1.7.0 docker compose up -d
 ```
 

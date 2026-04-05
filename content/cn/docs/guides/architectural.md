@@ -6,7 +6,7 @@ weight: 1
 
 ### 1 概述
 
-作为一款通用的图数据库产品，HugeGraph 需具备图数据库的基本功能。HugeGraph 支持 OLTP 和 OLAP 两种图计算类型，其中 OLTP 实现了 [Apache TinkerPop3](https://tinkerpop.apache.org) 框架，支持 [Gremlin](https://tinkerpop.apache.org/gremlin.html) 和 [Cypher](https://en.wikipedia.org/wiki/Cypher) 查询语言，拥有功能齐全的应用工具链，还提供了插件式后端存储驱动框架。
+作为一套覆盖**图数据库、图计算与图 AI** 的全栈图系统，HugeGraph 以高性能图引擎（HugeGraph Server）为核心，支持 OLTP 和 OLAP 两种图计算类型。其中 OLTP 层实现了 [Apache TinkerPop3](https://tinkerpop.apache.org) 框架，支持 [Gremlin](https://tinkerpop.apache.org/gremlin.html) 和 [Cypher](https://en.wikipedia.org/wiki/Cypher) 查询语言，拥有功能齐全的应用工具链，还提供了插件式后端存储驱动框架。
 
 下面是 HugeGraph 的整体架构图：
 

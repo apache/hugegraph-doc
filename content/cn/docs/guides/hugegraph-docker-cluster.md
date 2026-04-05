@@ -14,7 +14,7 @@ HugeGraph 支持通过 Docker 桥接网络运行完整的分布式集群（PD + 
 
 - Docker Engine 20.10+ 或 Docker Desktop 4.x+
 - Docker Compose v2
-- 3 节点集群需为 Docker Desktop 分配至少 **12 GB** 内存（设置 → 资源 → 内存）
+- Mac（Docker Desktop）运行 3 节点集群时，需分配至少 **12 GB** 内存（设置 → 资源 → 内存）。Linux 上 Docker 直接使用宿主机内存，无需额外分配
 
 > **已测试平台**：Linux（原生 Docker）和 macOS（Docker Desktop，已在 Apple M4 上测试）。Windows Docker Desktop 未经测试。
 

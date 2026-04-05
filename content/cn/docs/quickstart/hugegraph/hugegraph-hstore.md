@@ -255,6 +255,8 @@ HG_STORE_RAFT_ADDRESS: store2:8510
 
 Store 节点仅在所有 PD 节点通过健康检查（`/v1/health`）后启动，通过 `depends_on: condition: service_healthy` 强制执行。
 
+运行时日志可通过 `docker logs <container-name>`（如 `docker logs hg-store0`）直接查看，无需进入容器。
+
 完整的部署指南请参阅 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
 ### 7 验证 Store 服务

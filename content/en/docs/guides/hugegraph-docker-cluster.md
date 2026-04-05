@@ -14,7 +14,7 @@ Previous versions used `network_mode: host` which only worked on Linux. The clus
 
 - Docker Engine 20.10+ or Docker Desktop 4.x+
 - Docker Compose v2
-- For the 3-node cluster: at least **12 GB** memory allocated to Docker Desktop (Settings → Resources → Memory)
+- For the 3-node cluster on Mac (Docker Desktop): allocate at least **12 GB** memory (Settings → Resources → Memory)
 
 > **Tested platforms**: Linux (native Docker) and macOS (Docker Desktop, tested on Apple M4). Windows Docker Desktop is untested.
 
@@ -131,3 +131,5 @@ curl http://localhost:8620/v1/partitions   # Partition assignment
 **Partition assignment not completing**: Check `curl http://localhost:8620/v1/stores` — all 3 stores must show `"state":"Up"` before partitions are assigned.
 
 **Connection refused**: Ensure `HG_*` env vars use container hostnames (`pd0`, `store0`), not `127.0.0.1`.
+
+**Viewing runtime logs**: Use `docker logs <container-name>` (e.g. `docker logs hg-pd0`) to view logs directly without exec-ing into the container.

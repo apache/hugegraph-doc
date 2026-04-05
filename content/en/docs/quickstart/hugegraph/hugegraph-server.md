@@ -56,7 +56,7 @@ If you use docker desktop, you can set the option like:
     <img src="/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
 </div>
 
-> **Note**: The Docker compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster, allocate at least **12 GB** memory to Docker Desktop (Settings → Resources → Memory).
+> **Note**: The Docker compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least **12 GB** memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.
 
 Also, if we want to manage HugeGraph-related instances in one file, we can use `docker compose` to deploy.
 Two compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory:
@@ -347,6 +347,7 @@ Verify the cluster:
 curl http://localhost:8080/versions
 curl http://localhost:8620/v1/stores
 ```
+To view runtime logs for any container use `docker logs <container-name>` (e.g. `docker logs hg-pd0`).
 
 See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full environment variable reference, port table, and troubleshooting guide.
 </details>

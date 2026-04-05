@@ -255,6 +255,8 @@ HG_STORE_RAFT_ADDRESS: store2:8510
 
 Store nodes start only after all PD nodes pass healthchecks (`/v1/health`), enforced via `depends_on: condition: service_healthy`.
 
+To view runtime logs for a running Store container use `docker logs <container-name>` (e.g. `docker logs hg-store0`).
+
 See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full setup guide.
 
 ### 7 Verify Store Service

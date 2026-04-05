@@ -93,6 +93,8 @@ docker run -d \
 
 > **Deprecated aliases**: `GRPC_HOST`, `RAFT_ADDRESS`, `RAFT_PEERS`, `PD_INITIAL_STORE_LIST` still work but log a deprecation warning. Use the `HG_PD_*` names for new deployments.
 
+To view runtime logs for a running PD container use `docker logs <container-name>` (e.g. `docker logs hg-pd0`).
+
 See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full cluster setup guide.
 
 ### 4 Configuration

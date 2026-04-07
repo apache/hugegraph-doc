@@ -6,32 +6,33 @@ weight: 5
 
 ## Overview
 
-HugeGraph supports running a full distributed cluster (PD + Store + Server) via Docker using bridge networking. This works on Linux and Mac (Docker Desktop).
-
-Previous versions used `network_mode: host` which only worked on Linux. The cluster now uses a Docker bridge network (`hg-net`) where services communicate via container hostnames instead of `127.0.0.1`.
+HugeGraph can quickly run a full distributed deployment (PD + Store + Server) with Docker Compose. This works on Linux and Mac.
 
 ## Prerequisites
 
 - Docker Engine 20.10+ or Docker Desktop 4.x+
 - Docker Compose v2
-- For the 3-node cluster on Mac (Docker Desktop): allocate at least **12 GB** memory (Settings → Resources → Memory)
+- For a 3-node cluster on Mac: allocate at least **12 GB** memory (Settings → Resources → Memory). Adjust this on other platforms as needed.
 
-> **Tested platforms**: Linux (native Docker) and macOS (Docker Desktop, tested on Apple M4). Windows Docker Desktop is untested.
+> **Tested environments**: Linux (native Docker) and macOS (Docker Desktop with ARM M4).
 
 ## Compose Files
 
-Three compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory:
+Three compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory of the HugeGraph main repository:
 
 | File | Description |
 |------|-------------|
-| `docker-compose.yml` | Single-node quickstart using pre-built images |
-| `docker-compose.dev.yml` | Single-node dev build from source |
-| `docker-compose-3pd-3store-3server.yml` | 3-node distributed cluster |
+| `docker-compose.yml` | Quickstart for a single-host deployment using pre-built images |
+| `docker-compose.dev.yml` | Development mode for a single-host deployment built from source |
+| `docker-compose-3pd-3store-3server.yml` | Distributed cluster with 3 PD, 3 Store, and 3 Server processes |
+
+> **Note**: The following steps assume you have already cloned or pulled the HugeGraph main repository locally, or at least have its `docker/` directory available.
 
 ## Single-Node Quickstart
 
 ```bash
 cd hugegraph/docker
+# Keep the version aligned with the latest release, for example 1.x.0
 HUGEGRAPH_VERSION=1.7.0 docker compose up -d
 ```
 
@@ -47,12 +48,12 @@ cd hugegraph/docker
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
-Startup ordering is enforced automatically:
-1. PD nodes start first and must pass `/v1/health`
-2. Store nodes start after all PD nodes are healthy
-3. Server nodes start after all Store nodes are healthy
+Built-in startup ordering:
+1. PD nodes start first and must pass the `/v1/health` check
+2. Store nodes start only after all PD nodes are healthy
+3. Server nodes start last, after all PD and Store nodes are healthy
 
-Verify the cluster:
+Verify that the cluster is healthy:
 ```bash
 curl http://localhost:8620/v1/health      # PD health
 curl http://localhost:8520/v1/health      # Store health
@@ -76,7 +77,7 @@ curl http://localhost:8620/v1/partitions   # Partition assignment
 | `HG_PD_DATA_PATH` | No | `/hugegraph-pd/pd_data` | `pd.data-path` |
 | `HG_PD_INITIAL_STORE_COUNT` | No | `1` | `pd.initial-store-count` |
 
-**Deprecated aliases**: `GRPC_HOST` → `HG_PD_GRPC_HOST`, `RAFT_ADDRESS` → `HG_PD_RAFT_ADDRESS`, `RAFT_PEERS` → `HG_PD_RAFT_PEERS_LIST`
+> **Deprecated aliases**: `GRPC_HOST` → `HG_PD_GRPC_HOST`, `RAFT_ADDRESS` → `HG_PD_RAFT_ADDRESS`, `RAFT_PEERS` → `HG_PD_RAFT_PEERS_LIST`
 
 ### Store Variables
 
@@ -89,7 +90,7 @@ curl http://localhost:8620/v1/partitions   # Partition assignment
 | `HG_STORE_REST_PORT` | No | `8520` | `server.port` |
 | `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` |
 
-**Deprecated aliases**: `PD_ADDRESS` → `HG_STORE_PD_ADDRESS`, `GRPC_HOST` → `HG_STORE_GRPC_HOST`, `RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`
+> **Deprecated aliases**: `PD_ADDRESS` → `HG_STORE_PD_ADDRESS`, `GRPC_HOST` → `HG_STORE_GRPC_HOST`, `RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`
 
 ### Server Variables
 
@@ -100,7 +101,7 @@ curl http://localhost:8620/v1/partitions   # Partition assignment
 | `STORE_REST` | No | — | used by `wait-partition.sh` |
 | `PASSWORD` | No | — | enables auth mode |
 
-**Deprecated aliases**: `BACKEND` → `HG_SERVER_BACKEND`, `PD_PEERS` → `HG_SERVER_PD_PEERS`
+> **Deprecated aliases**: `BACKEND` → `HG_SERVER_BACKEND`, `PD_PEERS` → `HG_SERVER_PD_PEERS`
 
 ## Port Reference
 
@@ -124,12 +125,12 @@ curl http://localhost:8620/v1/partitions   # Partition assignment
 
 ## Troubleshooting
 
-**Containers OOM killed (exit code 137)**: Increase Docker Desktop memory to 12 GB+.
+1. **Containers exit due to OOM (`exit code 137`)**: Increase Docker Desktop memory to at least 12 GB, or reduce the JVM heap settings for the process that is being killed.
 
-**Raft leader election timeout**: Check `HG_PD_RAFT_PEERS_LIST` is identical on all PD nodes. Verify connectivity: `docker exec hg-pd0 ping pd1`
+2. **Raft leader election timeout**: Check that `HG_PD_RAFT_PEERS_LIST` is identical on all PD nodes. Verify connectivity with `docker exec hg-pd0 ping pd1`.
 
-**Partition assignment not completing**: Check `curl http://localhost:8620/v1/stores` — all 3 stores must show `"state":"Up"` before partitions are assigned.
+3. **Partition assignment does not complete**: Check `curl http://localhost:8620/v1/stores` and confirm that all 3 stores show `"state":"Up"` before partition assignment can finish.
 
-**Connection refused**: Ensure `HG_*` env vars use container hostnames (`pd0`, `store0`), not `127.0.0.1`.
+4. **Connection refused**: Ensure `HG_*` environment variables use container hostnames (`pd0`, `store0`) instead of `127.0.0.1`.
 
 **Viewing runtime logs**: Use `docker logs <container-name>` (e.g. `docker logs hg-pd0`) to view logs directly without exec-ing into the container.

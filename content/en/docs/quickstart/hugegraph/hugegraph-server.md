@@ -58,7 +58,7 @@ If you use docker desktop, you can set the option like:
 
 > **Note**: The Docker compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least **12 GB** memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.
 
-Also, if we want to manage HugeGraph-related instances in one file, we can use `docker compose` to deploy.
+If you want a single, unified setup for multiple HugeGraph services, you can use `docker compose`.
 Two compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory:
 
 - **Single-node quickstart** (pre-built images): `docker/docker-compose.yml`
@@ -66,6 +66,7 @@ Two compose files are available in the [`docker/`](https://github.com/apache/hug
 
 ```bash
 cd hugegraph/docker
+# Keep the version aligned with the latest release, for example 1.x.0
 HUGEGRAPH_VERSION=1.7.0 docker compose up -d
 ```
 
@@ -325,9 +326,9 @@ The sequence to stop the services should be the reverse of the startup sequence:
 bin/stop-hugegraph.sh
 ```
 
-#### Docker Cluster Quickstart
+#### Docker Distributed Cluster
 
-For running the full distributed cluster (3 PD + 3 Store + 3 Server) via Docker:
+Run the full distributed cluster (3 PD + 3 Store + 3 Server) with Docker Compose:
 
 ```bash
 cd hugegraph/docker

@@ -6,32 +6,33 @@ weight: 5
 
 ## 概述
 
-HugeGraph 支持通过 Docker 桥接网络运行完整的分布式集群（PD + Store + Server）。该方式适用于 Linux 和 Mac（Docker Desktop）。
-
-早期版本使用 `network_mode: host`，仅在 Linux 上可用。集群现在使用 Docker 桥接网络（`hg-net`），服务通过容器主机名而非 `127.0.0.1` 进行通信。
+HugeGraph 通过 Docker-Compose 可快速运行完整的分布式集群版（PD + Store + Server）。该方式适用于 Linux 和 Mac。
 
 ## 前置条件
 
 - Docker Engine 20.10+ 或 Docker Desktop 4.x+
 - Docker Compose v2
-- Mac（Docker Desktop）运行 3 节点集群时，需分配至少 **12 GB** 内存（设置 → 资源 → 内存）。Linux 上 Docker 直接使用宿主机内存，无需额外分配
+- Mac 运行 3 节点集群时，建议分配至少 **12 GB** 内存（设置 → 资源 → 内存）。[其他平台根据实际情况调整]
 
-> **已测试平台**：Linux（原生 Docker）和 macOS（Docker Desktop，已在 Apple M4 上测试）。Windows Docker Desktop 未经测试。
+> **已测试环境**：Linux（原生 Docker）和 macOS（Docker Desktop with ARM M4）
 
 ## Compose 文件
 
-[`docker/`](https://github.com/apache/hugegraph/tree/master/docker) 目录下提供了三个 compose 文件：
+在 HugeGraph 主仓库 [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) 目录下提供了三个 compose 文件：
 
 | 文件 | 描述 |
 |------|------|
-| `docker-compose.yml` | 使用预构建镜像的单节点快速启动 |
-| `docker-compose.dev.yml` | 从源码构建的单节点开发模式 |
-| `docker-compose-3pd-3store-3server.yml` | 3 节点分布式集群 |
+| `docker-compose.yml` | 使用预构建镜像的** 1x3 单进程(节点)**快速启动 |
+| `docker-compose.dev.yml` | 从源码构建的单节点**开发模式** |
+| `docker-compose-3pd-3store-3server.yml` | ** 3x3 进程**(模拟节点)分布式集群 |
+
+> 注: 后续步骤皆为假设你本地**已拉取** `hugegraph` 主仓库代码 (至少是 docker 目录)
 
 ## 单节点快速启动
 
 ```bash
 cd hugegraph/docker
+ # 注意版本号请随时保持更新 → 1.x.0 
 HUGEGRAPH_VERSION=1.7.0 docker compose up -d
 ```
 
@@ -47,12 +48,12 @@ cd hugegraph/docker
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
-启动顺序自动强制执行：
-1. PD 节点首先启动，必须通过 `/v1/health` 健康检查
-2. Store 节点在所有 PD 节点健康后启动
-3. Server 节点在所有 Store 节点健康后启动
+默认内置的启动顺序：
+1. PD (节点)最先启动，且必须通过 `/v1/health` 健康检查
+2. Store (节点)在所有 PD 健康后再启动
+3. Server (节点)在所有 Store + PD 健康后最后启动
 
-验证集群：
+验证集群正常：(重要)
 ```bash
 curl http://localhost:8620/v1/health      # PD 健康检查
 curl http://localhost:8520/v1/health      # Store 健康检查
@@ -76,7 +77,7 @@ curl http://localhost:8620/v1/partitions   # 分区分配
 | `HG_PD_DATA_PATH` | 否 | `/hugegraph-pd/pd_data` | `pd.data-path` |
 | `HG_PD_INITIAL_STORE_COUNT` | 否 | `1` | `pd.initial-store-count` |
 
-**已弃用的别名**：`GRPC_HOST` → `HG_PD_GRPC_HOST`、`RAFT_ADDRESS` → `HG_PD_RAFT_ADDRESS`、`RAFT_PEERS` → `HG_PD_RAFT_PEERS_LIST`
+> **已弃用的别名**：`GRPC_HOST` → `HG_PD_GRPC_HOST`、`RAFT_ADDRESS` → `HG_PD_RAFT_ADDRESS`、`RAFT_PEERS` → `HG_PD_RAFT_PEERS_LIST`
 
 ### Store 变量
 
@@ -89,7 +90,7 @@ curl http://localhost:8620/v1/partitions   # 分区分配
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` |
 
-**已弃用的别名**：`PD_ADDRESS` → `HG_STORE_PD_ADDRESS`、`GRPC_HOST` → `HG_STORE_GRPC_HOST`、`RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`
+> **已弃用的别名**：`PD_ADDRESS` → `HG_STORE_PD_ADDRESS`、`GRPC_HOST` → `HG_STORE_GRPC_HOST`、`RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`
 
 ### Server 变量
 
@@ -100,7 +101,7 @@ curl http://localhost:8620/v1/partitions   # 分区分配
 | `STORE_REST` | 否 | — | `wait-partition.sh` 使用 |
 | `PASSWORD` | 否 | — | 启用鉴权模式 |
 
-**已弃用的别名**：`BACKEND` → `HG_SERVER_BACKEND`、`PD_PEERS` → `HG_SERVER_PD_PEERS`
+> **已弃用的别名**：`BACKEND` → `HG_SERVER_BACKEND`、`PD_PEERS` → `HG_SERVER_PD_PEERS`
 
 ## 端口参考
 
@@ -124,10 +125,10 @@ curl http://localhost:8620/v1/partitions   # 分区分配
 
 ## 故障排查
 
-**容器 OOM 被杀（退出码 137）**：将 Docker Desktop 内存增加到 12 GB 以上。
+1. **容器 OOM 退出（exit code 137）**：将 Docker Desktop 内存增加到 12 GB 以上 (或调整被 kill 的启动 jvm 内存设置)
 
-**Raft 选举超时**：检查所有 PD 节点的 `HG_PD_RAFT_PEERS_LIST` 是否一致。验证连通性：`docker exec hg-pd0 ping pd1`
+2. **Raft 选举超时**：检查所有 PD 节点的 `HG_PD_RAFT_PEERS_LIST` 是否一致。验证连通性：`docker exec hg-pd0 ping pd1`
 
-**分区分配未完成**：检查 `curl http://localhost:8620/v1/stores` — 所有 3 个 Store 必须显示 `"state":"Up"` 才能完成分区分配。
+3. **分区分配未完成**：检查 `curl http://localhost:8620/v1/stores` — 3 个 Store 必须都显示 `"state":"Up"` 才能完成分区分配
 
-**连接被拒**：确保 `HG_*` 环境变量使用容器主机名（`pd0`、`store0`），而非 `127.0.0.1`。
+4. **连接被拒**：确保 `HG_*` 环境变量使用容器主机名（`pd0`、`store0`），而非 `127.0.0.1`

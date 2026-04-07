@@ -1,3 +1,4 @@
+
 ---
 title: "HugeGraph-Store Quick Start"
 linkTitle: "安装/构建 HugeGraph-Store"
@@ -52,12 +53,15 @@ mvn clean install -DskipTests=true
 
 #### 3.3 Docker 部署
 
-HugeGraph-Store Docker 镜像已发布在 Docker Hub，镜像名为 `hugegraph/store:1.7.0`。
+HugeGraph-Store Docker 镜像已发布在 DockerHub，镜像名是 `hugegraph/store`。
 
-使用 compose 文件部署完整的 3 节点集群（PD + Store + Server）：
+> 注: 后续步骤皆假设你本地**已拉取** `hugegraph` 主仓库代码 (至少是 docker 目录)
+
+使用 docker-compose 文件部署完整的 3 节点集群（PD + Store + Server）：
 
 ```bash
 cd hugegraph/docker
+# 注意版本号请随时保持更新 → 1.x.0
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
@@ -157,7 +161,7 @@ logging:
 启动成功后，可以在 `logs/hugegraph-store-server.log` 中看到类似以下的日志：
 
 ```
-2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
+2026-xx-xx xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
 ```
 
 #### 5.2 停止 Store
@@ -229,7 +233,7 @@ pdserver:
   address: 127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
 ```
 
-#### 6.3 Docker 集群快速启动
+#### 6.3 Docker 分布式集群配置
 
 3 节点 Store 集群包含在 `docker/docker-compose-3pd-3store-3server.yml` 中。每个 Store 节点拥有独立的主机名和环境变量：
 

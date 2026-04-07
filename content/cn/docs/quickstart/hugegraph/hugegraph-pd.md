@@ -51,12 +51,14 @@ mvn clean install -DskipTests=true
 
 #### 3.3 Docker 部署
 
-HugeGraph-PD Docker 镜像已发布在 Docker Hub，镜像名为 `hugegraph/pd:1.7.0`。
+HugeGraph-PD Docker 镜像已发布在 Docker Hub，镜像名为 `hugegraph/pd`。
+> 注: 后续步骤皆假设你本地**已拉取** `hugegraph` 主仓库代码 (至少是 docker 目录)
 
-使用 compose 文件部署完整的 3 节点集群（PD + Store + Server）：
+使用 docker-compose 模式部署完整的 3 节点集群（PD + Store + Server）：
 
 ```bash
 cd hugegraph/docker
+# 注意版本号请随时保持更新 → 1.x.0
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
@@ -164,7 +166,7 @@ partition:
 启动成功后，可以在 `logs/hugegraph-pd-stdout.log` 中看到类似以下的日志：
 
 ```
-2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
+2026-xx-xx xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
 ```
 
 #### 5.2 停止 PD

@@ -51,12 +51,15 @@ mvn clean install -DskipTests=true
 
 #### 3.3 Docker Deployment
 
-The HugeGraph-PD Docker image is available on Docker Hub as `hugegraph/pd:1.7.0`.
+The HugeGraph-PD Docker image is available on Docker Hub as `hugegraph/pd`.
 
-For a complete 3-node cluster with PD, Store, and Server, use the compose file:
+> **Note**: The following steps assume you have already cloned or pulled the HugeGraph main repository locally, or at least have its `docker/` directory available.
+
+Use the `docker compose` setup to deploy the complete 3-node cluster (PD + Store + Server):
 
 ```bash
 cd hugegraph/docker
+# Keep the version aligned with the latest release, for example 1.x.0
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
@@ -164,7 +167,7 @@ In the PD installation directory, execute:
 After successful startup, you can see logs similar to the following in `logs/hugegraph-pd-stdout.log`:
 
 ```
-2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
+2026-xx-xx xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
 ```
 
 #### 5.2 Stop PD

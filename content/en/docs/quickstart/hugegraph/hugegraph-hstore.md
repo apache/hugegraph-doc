@@ -52,12 +52,15 @@ mvn clean install -DskipTests=true
 
 #### 3.3 Docker Deployment
 
-The HugeGraph-Store Docker image is available on Docker Hub as `hugegraph/store:1.7.0`.
+The HugeGraph-Store Docker image is available on Docker Hub as `hugegraph/store`.
 
-For a complete 3-node cluster with PD, Store, and Server, use the compose file:
+> **Note**: The following steps assume you have already cloned or pulled the HugeGraph main repository locally, or at least have its `docker/` directory available.
+
+Use the compose file to deploy the complete 3-node cluster (PD + Store + Server):
 
 ```bash
 cd hugegraph/docker
+# Keep the version aligned with the latest release, for example 1.x.0
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
 ```
 
@@ -157,7 +160,7 @@ Ensure that the PD service is already started, then in the Store installation di
 After successful startup, you can see logs similar to the following in `logs/hugegraph-store-server.log`:
 
 ```
-2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
+2026-xx-xx xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
 ```
 
 #### 5.2 Stop Store
@@ -229,9 +232,9 @@ pdserver:
   address: 127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
 ```
 
-#### 6.3 Docker Cluster Quickstart
+#### 6.3 Docker Distributed Cluster Configuration
 
-The 3-node Store cluster is included in `docker/docker-compose-3pd-3store-3server.yml`. Each Store node gets its own hostname and env vars:
+The distributed Store cluster definition is included in `docker/docker-compose-3pd-3store-3server.yml`. Each Store node gets its own hostname and environment variables:
 
 ```yaml
 # store0

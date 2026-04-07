@@ -167,7 +167,7 @@ In the PD installation directory, execute:
 After successful startup, you can see logs similar to the following in `logs/hugegraph-pd-stdout.log`:
 
 ```
-2026-xx-xx xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
+YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
 ```
 
 #### 5.2 Stop PD

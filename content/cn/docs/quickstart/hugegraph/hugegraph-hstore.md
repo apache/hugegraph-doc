@@ -160,7 +160,7 @@ logging:
 启动成功后，可以在 `logs/hugegraph-store-server.log` 中看到类似以下的日志：
 
 ```
-2026-xx-xx xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
+YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
 ```
 
 #### 5.2 停止 Store

@@ -160,7 +160,7 @@ Ensure that the PD service is already started, then in the Store installation di
 After successful startup, you can see logs similar to the following in `logs/hugegraph-store-server.log`:
 
 ```
-2026-xx-xx xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
+YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
 ```
 
 #### 5.2 Stop Store

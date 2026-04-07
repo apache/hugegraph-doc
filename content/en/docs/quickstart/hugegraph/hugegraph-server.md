@@ -322,7 +322,7 @@ The sequence to stop the services should be the reverse of the startup sequence:
 bin/stop-hugegraph.sh
 ```
 
-#### Docker Distributed Cluster
+###### Docker Distributed Cluster
 
 Run the full distributed cluster (3 PD + 3 Store + 3 Server) with Docker Compose:
 

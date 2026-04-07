@@ -308,7 +308,7 @@ curl http://localhost:8081/graphs
 bin/stop-hugegraph.sh
 ```
 
-#### Docker 分布式集群
+###### Docker 分布式集群
 
 通过 Docker-Compose 运行完整的分布式集群（3 PD + 3 Store + 3 Server）：
 

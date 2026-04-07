@@ -12,7 +12,7 @@ HugeGraph-PD (Placement Driver) is the metadata management component of HugeGrap
 
 #### 2.1 Requirements
 
-- Operating System: Linux or MacOS (Windows has not been fully tested)
+- Operating System: Linux or macOS (Windows has not been fully tested)
 - Java version: ≥ 11
 - Maven version: ≥ 3.5.0
 
@@ -123,7 +123,7 @@ pd:
   data-path: ./pd_data
   # Auto-expansion check cycle (seconds)
   patrol-interval: 1800
-  # Initial store list, stores in the list are automatically activated
+  # Minimum number of Store nodes required for cluster availability
   initial-store-count: 1
   # Store configuration information, format is IP:gRPC port
   initial-store-list: 127.0.0.1:8500
@@ -188,13 +188,13 @@ curl http://localhost:8620/actuator/health
 
 If it returns `{"status":"UP"}`, it indicates that the PD service has been successfully started.
 
-Additionally, you can verify the status of the Store node by querying the PD API:
+Additionally, you can verify Store node status through the PD API:
 
 ```bash
 curl http://localhost:8620/v1/stores
 ```
 
-If the Store is configured successfully, the response of the above interface should contain the status information of the current node. The status "Up" indicates that the node is running normally. Only the response of one node configuration is shown here. If all three nodes are configured successfully and are running, the `storeId` list in the response should contain three IDs, and the `Up`, `numOfService`, and `numOfNormalService` fields in `stateCountMap` should be 3.
+If the response shows `state` as `Up`, the corresponding Store node is running normally. The example below shows a single Store node. In a healthy 3-node deployment, the `storeId` list should contain three IDs, and `stateCountMap.Up`, `numOfService`, and `numOfNormalService` should all be `3`.
 
 ```javascript
 {

@@ -12,10 +12,10 @@ HugeGraph-Store is the storage node component of HugeGraph's distributed version
 
 #### 2.1 Requirements
 
-- Operating System: Linux or MacOS (Windows has not been fully tested)
+- Operating System: Linux or macOS (Windows has not been fully tested)
 - Java version: ≥ 11
 - Maven version: ≥ 3.5.0
-- Deployed HugeGraph-PD (for multi-node deployment)
+- Deploy HugeGraph-PD first for multi-node deployment
 
 ### 3 Deployment
 
@@ -275,5 +275,47 @@ If it returns `{"status":"UP"}`, it indicates that the Store service has been su
 Additionally, you can check the status of Store nodes in the cluster through the PD API:
 
 ```bash
-curl http://localhost:8620/pd/api/v1/stores
+curl http://localhost:8620/v1/stores
+```
+
+If Store is configured successfully, the response should include status information for the current node, and `state: "Up"` means the node is running normally.
+
+The example below shows a single Store node. If all three nodes are configured correctly and running, the `storeId` list should contain three IDs, and `stateCountMap.Up`, `numOfService`, and `numOfNormalService` should all be `3`.
+
+```javascript
+{
+  "message": "OK",
+  "data": {
+    "stores": [
+      {
+        "storeId": 8319292642220586694,
+        "address": "127.0.0.1:8500",
+        "raftAddress": "127.0.0.1:8510",
+        "version": "",
+        "state": "Up",
+        "deployPath": "/Users/{your_user_name}/hugegraph/apache-hugegraph-incubating-1.5.0/apache-hugegraph-store-incubating-1.5.0/lib/hg-store-node-1.5.0.jar",
+        "dataPath": "./storage",
+        "startTimeStamp": 1754027127969,
+        "registedTimeStamp": 1754027127969,
+        "lastHeartBeat": 1754027909444,
+        "capacity": 494384795648,
+        "available": 346535829504,
+        "partitionCount": 0,
+        "graphSize": 0,
+        "keyCount": 0,
+        "leaderCount": 0,
+        "serviceName": "127.0.0.1:8500-store",
+        "serviceVersion": "",
+        "serviceCreatedTimeStamp": 1754027127000,
+        "partitions": []
+      }
+    ],
+    "stateCountMap": {
+      "Up": 1
+    },
+    "numOfService": 1,
+    "numOfNormalService": 1
+  },
+  "status": 0
+}
 ```

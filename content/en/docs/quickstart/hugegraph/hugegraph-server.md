@@ -6,27 +6,23 @@ weight: 1
 
 ### 1 HugeGraph-Server Overview
 
-`HugeGraph-Server` is the core part of the HugeGraph Project, contains submodules such as graph-core, backend, API.
+`HugeGraph-Server` is the core server component of the HugeGraph project. It includes submodules such as graph-core, backend, and API.
 
-The Core Module is an implementation of the Tinkerpop interface; The Backend module is used to save the graph data to the data store. For version 1.7.0+, supported backends include: RocksDB (standalone default), HStore (distributed), HBase, and Memory. The API Module provides HTTP Server, which converts Client's HTTP request into a call to Core Module.
+The Core module implements the TinkerPop interfaces. The Backend module manages data storage. Starting from 1.7.0, supported backends include RocksDB (the default standalone backend), HStore (distributed), HBase, and Memory. The API module provides an HTTP server that converts client requests into calls to the Core module.
 
 > ⚠️ **Important Change**: Starting from version 1.7.0, legacy backends such as MySQL, PostgreSQL, Cassandra, and ScyllaDB have been removed. If you need to use these backends, please use version 1.5.x or earlier.
 
-> There will be two spellings HugeGraph-Server and HugeGraphServer in the document, and other 
-> modules are similar. There is no big difference in the meaning of these two ways, 
-> which can be distinguished as follows: `HugeGraph-Server` represents the code of server-related 
-> components, `HugeGraphServer` represents the service process.
+> The documentation uses both `HugeGraph-Server` and `HugeGraphServer`, and the same pattern applies to other components. The two names are nearly interchangeable: `HugeGraph-Server` usually refers to the server-side codebase, while `HugeGraphServer` refers to the running service process.
 
 ### 2 Dependency for Building/Running
 
 #### 2.1 Install Java 11 (JDK 11)
 
-You need to use Java 11 to run `HugeGraph-Server` (compatible with Java 8 before 1.5.0, but not recommended to use), 
-and configure by yourself.
+Use Java 11 to run `HugeGraph-Server`. Versions earlier than 1.5.0 kept basic compatibility with Java 8, but Java 11 is recommended.
 
-**Be sure to execute the `java -version` command to check the jdk version before reading**
+**Before continuing, run `java -version` to confirm your JDK version.**
 
-> Note: Using Java8 will lose some security guarantees, we recommend using Java11 in production
+> Note: Running HugeGraph-Server on Java 8 loses some security protections and may reduce performance. Please upgrade as soon as possible. Java 8 is no longer supported starting from 1.7.0.
 
 ### 3 Deploy
 
@@ -37,26 +33,26 @@ There are four ways to deploy HugeGraph-Server components:
 - Method 3: Source code compilation
 - Method 4: One-click deployment
 
-**Note:** If it's exposed to the public network, **must enable** [Auth authentication](/docs/config/config-authentication/) to ensure safety (so as the legacy version).
+**Note:** For production environments or environments exposed to the public network, you must use Java 11 and enable [Auth authentication](/docs/config/config-authentication/) to avoid security risks.
 
 #### 3.1 Use Docker container (Convenient for Test/Dev)
 
 <!-- 3.1 is linked by another place. if change 3.1's title, please check -->
 You can refer to the [Docker deployment guide](https://github.com/apache/hugegraph/blob/master/docker/README.md).
 
-We can use `docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0` to quickly start a `HugeGraph Server` with a built-in `RocksDB` backend.
+You can use `docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0` to quickly start a `HugeGraph-Server` instance with a built-in `RocksDB` backend.
 
 Optional:
-1. use `docker exec -it graph bash` to enter the container to do some operations.
-2. use `docker run -itd --name=graph -p 8080:8080 -e PRELOAD="true" hugegraph/hugegraph:1.7.0` to start with a **built-in** example graph. We can use `RESTful API` to verify the result. The detailed step can refer to [5.1.8](#518-create-an-example-graph-when-startup)
-3. use `-e PASSWORD=xxx` to enable auth mode and set the password for admin. You can find more details from [Config Authentication](/docs/config/config-authentication#use-docker-to-enable-authentication-mode)
+1. You can use `docker exec -it server bash` to enter the container for troubleshooting or other maintenance operations.
+2. You can use `docker run -itd --name=server -p 8080:8080 -e PRELOAD="true" hugegraph/hugegraph:1.7.0` to preload a **built-in** sample graph at startup. You can verify it through the `RESTful API`. See [5.1.8](#518-create-an-example-graph-when-startup) for details.
+3. You can use `-e PASSWORD=xxx` to enable authentication mode and set the admin password. See [Config Authentication](/docs/config/config-authentication#use-docker-to-enable-authentication-mode) for details.
 
-If you use docker desktop, you can set the option like: 
+If you use Docker Desktop, you can set the options as follows:
 <div style="text-align: center;">
     <img src="/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
 </div>
 
-> **Note**: The Docker compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least **12 GB** memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.
+> **Note**: The Docker Compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least **12 GB** of memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.
 
 If you want a single, unified setup for multiple HugeGraph services, you can use `docker compose`.
 Two compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory:
@@ -76,11 +72,11 @@ See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/RE
 
 > Note: 
 >
-> 1. The docker image of the hugegraph is a convenient release to start it quickly, but not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
+> 1. HugeGraph Docker images are provided as a convenient way to start HugeGraph quickly, but they are not official ASF distribution artifacts. You can find more details in the [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 >
-> 2. Recommend to use `release tag` (like `1.7.0`/`1.x.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
+> 2. We recommend using a release tag (such as `1.7.0` or `1.x.0`) for stable deployments. Use the `latest` tag only if you want the newest features still under development.
 
-#### 3.2 Download the binary tar tarball
+#### 3.2 Download the binary tarball
 
 You could download the binary tarball from the download page of the ASF site like this:
 ```bash
@@ -188,13 +184,13 @@ For detailed configuration introduction, please refer to [configuration document
 
 #### 5.1 Use a startup script to startup
 
-The startup is divided into "first startup" and "non-first startup." This distinction is because the back-end database needs to be initialized before the first startup, and then the service is started.
-after the service is stopped artificially, or when the service needs to be started again for other reasons, because the backend database is persistent, you can start the service directly.
+Startup is divided into "first startup" and "non-first startup". On the first startup, you need to initialize the backend database before starting the service.
 
-When HugeGraphServer starts, it will connect to the backend storage and try to check the version number of the backend storage. If the backend is not initialized or the backend has been initialized but the version does not match (old version data), HugeGraphServer will fail to start and give an error message.
+If the service was stopped manually, or needs to be started again for any other reason, you can usually start it directly because the backend database is persistent.
 
-If you need to access HugeGraphServer externally, please modify the `restserver.url` configuration item of `rest-server.properties`
-（default is `http://127.0.0.1:8080`）, change to machine name or IP address.
+When HugeGraphServer starts, it connects to the backend storage and checks its version information. If the backend has not been initialized, or if it was initialized with an incompatible version (for example, old-version data), HugeGraphServer will fail to start and report an error.
+
+If you need to access HugeGraphServer externally, modify the `restserver.url` configuration item in `rest-server.properties` (the default is `http://127.0.0.1:8080`) and change it to the machine name or IP address.
 
 Since the configuration (hugegraph.properties) and startup steps required by various backends are slightly different, the following will introduce the configuration and startup of each backend one by one.
 
@@ -613,7 +609,7 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 
 ##### 5.1.8 Create an example graph when startup
 
-Carry the `-p true` arguments when starting the script, which indicates `preload`, to create a sample graph.
+Pass the `-p true` argument when starting the script to enable `preload`, which creates a sample graph.
 
 ```
 bin/start-hugegraph.sh -p true
@@ -634,7 +630,7 @@ This indicates the successful creation of the sample graph.
 
 #### 5.2 Use Docker to startup
 
-In [3.1 Use Docker container](#31-use-docker-container-convenient-for-testdev), we have introduced how to use docker to deploy `hugegraph-server`. `server` can also preload an example graph by setting the parameter.
+In [3.1 Use Docker container](#31-use-docker-container-convenient-for-testdev), we introduced how to deploy `hugegraph-server` with Docker. You can also switch storage backends or preload a sample graph by setting the corresponding parameters.
 
 ##### 5.2.1 Uses Cassandra as storage
 
@@ -696,15 +692,15 @@ volumes:
 
 In this YAML file, configuration parameters related to Cassandra need to be passed as environment variables in the format of `hugegraph.<parameter_name>`.
 
-Specifically, in the configuration file `hugegraph.properties` , there are settings like `backend=xxx` and `cassandra.host=xxx`. To configure these settings during the process of passing environment variables, we need to prepend `hugegraph.` to these configurations, like `hugegraph.backend` and `hugegraph.cassandra.host`.
+Specifically, the `hugegraph.properties` file contains settings such as `backend=xxx` and `cassandra.host=xxx`. To pass these settings through environment variables, prepend `hugegraph.` to the configuration keys, for example `hugegraph.backend` and `hugegraph.cassandra.host`.
 
-The rest of the configurations can be referenced under [4 config](#4-config)
+Refer to [4 Config](#4-config) for the remaining settings.
 
 </details>
 
 ##### 5.2.2 Create an example graph when starting a server
 
-Set the environment variable `PRELOAD=true` when starting Docker to load data during the execution of the startup script.
+Set the environment variable `PRELOAD=true` when starting Docker so that sample data is loaded during startup.
 
 1. Use `docker run`
 
@@ -712,22 +708,24 @@ Set the environment variable `PRELOAD=true` when starting Docker to load data du
 
 2. Use `docker-compose`
 
-    Create `docker-compose.yml` as following. We should set the environment variable `PRELOAD=true`. [`example.groovy`](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy) is a predefined script to preload the sample data. If needed, we can mount a new `example.groovy` to change the preload data.
+    Create a `docker-compose.yml` file like the following and set `PRELOAD=true` in the environment. [`example.groovy`](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy) is a predefined script used to preload sample data. If needed, you can mount a new `example.groovy` script to change the preload data.
 
     ```yaml
     version: '3'
-      services:
-        server:
-          image: hugegraph/hugegraph:1.7.0
-          container_name: server
-          environment:
-            - PRELOAD=true
-            - PASSWORD=xxx
-          ports:
-            - 8080:8080
+    services:
+      server:
+        image: hugegraph/hugegraph:1.7.0
+        container_name: server
+        environment:
+          - PRELOAD=true
+          - PASSWORD=xxx
+        volumes:
+          - /path/to/yourscript:/hugegraph/scripts/example.groovy
+        ports:
+          - 8080:8080
     ```
 
-    Use `docker-compose up -d` to start the container
+    Use `docker-compose up -d` to start the container.
 
 And use the RESTful API to request `HugeGraphServer` and get the following result:
 
@@ -737,7 +735,7 @@ And use the RESTful API to request `HugeGraphServer` and get the following resul
 {"vertices":[{"id":"2:lop","label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"2:ripple","label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199}}]}
 ```
 
-This indicates the successful creation of the sample graph.
+This indicates that the sample graph was created successfully.
 
 
 ### 6. Access server

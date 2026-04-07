@@ -916,7 +916,326 @@ Merging mode as needed, and when the Restore is completed, restore the graph mod
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-json" data-lang="json">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;mode&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;RESTORING&amp;#34;&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: FAQ</title><link>/docs/guides/faq/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/guides/faq/</guid><description>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: HugeGraph Docker Cluster Guide</title><link>/docs/guides/hugegraph-docker-cluster/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/guides/hugegraph-docker-cluster/</guid><description>
+&lt;h2 id="overview">Overview&lt;/h2>
+&lt;p>HugeGraph can quickly run a full distributed deployment (PD + Store + Server) with Docker Compose. This works on Linux and Mac.&lt;/p>
+&lt;h2 id="prerequisites">Prerequisites&lt;/h2>
+&lt;ul>
+&lt;li>Docker Engine 20.10+ or Docker Desktop 4.x+&lt;/li>
+&lt;li>Docker Compose v2&lt;/li>
+&lt;li>For a 3-node cluster on Mac: allocate at least &lt;strong>12 GB&lt;/strong> memory (Settings → Resources → Memory). Adjust this on other platforms as needed.&lt;/li>
+&lt;/ul>
+&lt;blockquote>
+&lt;p>&lt;strong>Tested environments&lt;/strong>: Linux (native Docker) and macOS (Docker Desktop with ARM M4).&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="compose-files">Compose Files&lt;/h2>
+&lt;p>Three compose files are available in the &lt;a href="https://github.com/apache/hugegraph/tree/master/docker">&lt;code>docker/&lt;/code>&lt;/a> directory of the HugeGraph main repository:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>File&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>docker-compose.yml&lt;/code>&lt;/td>
+&lt;td>Quickstart for a single-host deployment using pre-built images&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>docker-compose.dev.yml&lt;/code>&lt;/td>
+&lt;td>Development mode for a single-host deployment built from source&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>docker-compose-3pd-3store-3server.yml&lt;/code>&lt;/td>
+&lt;td>Distributed cluster with 3 PD, 3 Store, and 3 Server processes&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;blockquote>
+&lt;p>&lt;strong>Note&lt;/strong>: The following steps assume you have already cloned or pulled the HugeGraph main repository locally, or at least have its &lt;code>docker/&lt;/code> directory available.&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="single-node-quickstart">Single-Node Quickstart&lt;/h2>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph/docker
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Keep the version aligned with the latest release, for example 1.x.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">HUGEGRAPH_VERSION&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>1.7.0 docker compose up -d
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Verify:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8080/versions
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="3-node-cluster-quickstart">3-Node Cluster Quickstart&lt;/h2>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph/docker
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">HUGEGRAPH_VERSION&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Built-in startup ordering:&lt;/p>
+&lt;ol>
+&lt;li>PD nodes start first and must pass the &lt;code>/v1/health&lt;/code> check&lt;/li>
+&lt;li>Store nodes start only after all PD nodes are healthy&lt;/li>
+&lt;li>Server nodes start last, after all PD and Store nodes are healthy&lt;/li>
+&lt;/ol>
+&lt;p>Verify that the cluster is healthy:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/v1/health &lt;span style="color:#8f5902;font-style:italic"># PD health&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl http://localhost:8520/v1/health &lt;span style="color:#8f5902;font-style:italic"># Store health&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl http://localhost:8080/versions &lt;span style="color:#8f5902;font-style:italic"># Server&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/v1/stores &lt;span style="color:#8f5902;font-style:italic"># Registered stores&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/v1/partitions &lt;span style="color:#8f5902;font-style:italic"># Partition assignment&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="environment-variable-reference">Environment Variable Reference&lt;/h2>
+&lt;h3 id="pd-variables">PD Variables&lt;/h3>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Variable&lt;/th>
+&lt;th>Required&lt;/th>
+&lt;th>Default&lt;/th>
+&lt;th>Maps To&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_GRPC_HOST&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>&lt;code>grpc.host&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_RAFT_ADDRESS&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>&lt;code>raft.address&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_RAFT_PEERS_LIST&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>&lt;code>raft.peers-list&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_INITIAL_STORE_LIST&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>&lt;code>pd.initial-store-list&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_GRPC_PORT&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>8686&lt;/code>&lt;/td>
+&lt;td>&lt;code>grpc.port&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_REST_PORT&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>8620&lt;/code>&lt;/td>
+&lt;td>&lt;code>server.port&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_DATA_PATH&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>/hugegraph-pd/pd_data&lt;/code>&lt;/td>
+&lt;td>&lt;code>pd.data-path&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_INITIAL_STORE_COUNT&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>1&lt;/code>&lt;/td>
+&lt;td>&lt;code>pd.initial-store-count&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;blockquote>
+&lt;p>&lt;strong>Deprecated aliases&lt;/strong>: &lt;code>GRPC_HOST&lt;/code> → &lt;code>HG_PD_GRPC_HOST&lt;/code>, &lt;code>RAFT_ADDRESS&lt;/code> → &lt;code>HG_PD_RAFT_ADDRESS&lt;/code>, &lt;code>RAFT_PEERS&lt;/code> → &lt;code>HG_PD_RAFT_PEERS_LIST&lt;/code>&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="store-variables">Store Variables&lt;/h3>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Variable&lt;/th>
+&lt;th>Required&lt;/th>
+&lt;th>Default&lt;/th>
+&lt;th>Maps To&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_PD_ADDRESS&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>&lt;code>pdserver.address&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_GRPC_HOST&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>&lt;code>grpc.host&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_RAFT_ADDRESS&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>&lt;code>raft.address&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_GRPC_PORT&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>8500&lt;/code>&lt;/td>
+&lt;td>&lt;code>grpc.port&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_REST_PORT&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>8520&lt;/code>&lt;/td>
+&lt;td>&lt;code>server.port&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_DATA_PATH&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>/hugegraph-store/storage&lt;/code>&lt;/td>
+&lt;td>&lt;code>app.data-path&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;blockquote>
+&lt;p>&lt;strong>Deprecated aliases&lt;/strong>: &lt;code>PD_ADDRESS&lt;/code> → &lt;code>HG_STORE_PD_ADDRESS&lt;/code>, &lt;code>GRPC_HOST&lt;/code> → &lt;code>HG_STORE_GRPC_HOST&lt;/code>, &lt;code>RAFT_ADDRESS&lt;/code> → &lt;code>HG_STORE_RAFT_ADDRESS&lt;/code>&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="server-variables">Server Variables&lt;/h3>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Variable&lt;/th>
+&lt;th>Required&lt;/th>
+&lt;th>Default&lt;/th>
+&lt;th>Maps To&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>HG_SERVER_BACKEND&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>&lt;code>backend&lt;/code> in &lt;code>hugegraph.properties&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_SERVER_PD_PEERS&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>&lt;code>pd.peers&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>STORE_REST&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>used by &lt;code>wait-partition.sh&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>PASSWORD&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>enables auth mode&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;blockquote>
+&lt;p>&lt;strong>Deprecated aliases&lt;/strong>: &lt;code>BACKEND&lt;/code> → &lt;code>HG_SERVER_BACKEND&lt;/code>, &lt;code>PD_PEERS&lt;/code> → &lt;code>HG_SERVER_PD_PEERS&lt;/code>&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="port-reference">Port Reference&lt;/h2>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Service&lt;/th>
+&lt;th>Host Port&lt;/th>
+&lt;th>Purpose&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>pd0&lt;/td>
+&lt;td>8620&lt;/td>
+&lt;td>REST API&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>pd0&lt;/td>
+&lt;td>8686&lt;/td>
+&lt;td>gRPC&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>pd1&lt;/td>
+&lt;td>8621&lt;/td>
+&lt;td>REST API&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>pd1&lt;/td>
+&lt;td>8687&lt;/td>
+&lt;td>gRPC&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>pd2&lt;/td>
+&lt;td>8622&lt;/td>
+&lt;td>REST API&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>pd2&lt;/td>
+&lt;td>8688&lt;/td>
+&lt;td>gRPC&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>store0&lt;/td>
+&lt;td>8500&lt;/td>
+&lt;td>gRPC&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>store0&lt;/td>
+&lt;td>8520&lt;/td>
+&lt;td>REST API&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>store1&lt;/td>
+&lt;td>8501&lt;/td>
+&lt;td>gRPC&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>store1&lt;/td>
+&lt;td>8521&lt;/td>
+&lt;td>REST API&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>store2&lt;/td>
+&lt;td>8502&lt;/td>
+&lt;td>gRPC&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>store2&lt;/td>
+&lt;td>8522&lt;/td>
+&lt;td>REST API&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>server0&lt;/td>
+&lt;td>8080&lt;/td>
+&lt;td>Graph API&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>server1&lt;/td>
+&lt;td>8081&lt;/td>
+&lt;td>Graph API&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>server2&lt;/td>
+&lt;td>8082&lt;/td>
+&lt;td>Graph API&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h2 id="troubleshooting">Troubleshooting&lt;/h2>
+&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>Containers exit due to OOM (&lt;code>exit code 137&lt;/code>)&lt;/strong>: Increase Docker Desktop memory to at least 12 GB, or reduce the JVM heap settings for the process that is being killed.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Raft leader election timeout&lt;/strong>: Check that &lt;code>HG_PD_RAFT_PEERS_LIST&lt;/code> is identical on all PD nodes. Verify connectivity with &lt;code>docker exec hg-pd0 ping pd1&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Partition assignment does not complete&lt;/strong>: Check &lt;code>curl http://localhost:8620/v1/stores&lt;/code> and confirm that all 3 stores show &lt;code>&amp;quot;state&amp;quot;:&amp;quot;Up&amp;quot;&lt;/code> before partition assignment can finish.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Connection refused&lt;/strong>: Ensure &lt;code>HG_*&lt;/code> environment variables use container hostnames (&lt;code>pd0&lt;/code>, &lt;code>store0&lt;/code>) instead of &lt;code>127.0.0.1&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>&lt;strong>Viewing runtime logs&lt;/strong>: Use &lt;code>docker logs &amp;lt;container-name&amp;gt;&lt;/code> (e.g. &lt;code>docker logs hg-pd0&lt;/code>) to view logs directly without exec-ing into the container.&lt;/p></description></item><item><title>Docs: FAQ</title><link>/docs/guides/faq/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/guides/faq/</guid><description>
 &lt;ul>
 &lt;li>
 &lt;p>How to choose the back-end storage? RocksDB or distributed storage?&lt;/p>

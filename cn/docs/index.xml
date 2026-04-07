@@ -4101,15 +4101,15 @@
 &lt;p>⚠️ &lt;strong>重要变更&lt;/strong>: 从 1.7.0 版本开始，MySQL、PostgreSQL、Cassandra、ScyllaDB 等遗留后端已被移除。如需使用这些后端，请使用 1.5.x 或更早版本。&lt;/p>
 &lt;/blockquote>
 &lt;blockquote>
-&lt;p>文档中会出现 &lt;code>HugeGraph-Server&lt;/code> 及 &lt;code>HugeGraphServer&lt;/code> 这两种写法，其他组件也类似。
-这两种写法含义上并明显差异，可以这么区分：&lt;code>HugeGraph-Server&lt;/code> 表示服务端相关组件代码，&lt;code>HugeGraphServer&lt;/code> 表示服务进程。&lt;/p>
+&lt;p>文档中会出现 &lt;code>HugeGraph-Server&lt;/code> 与 &lt;code>HugeGraphServer&lt;/code> 两种写法，其他组件也类似。
+两者在含义上并无明显差异，可简单区分为：&lt;code>HugeGraph-Server&lt;/code> 表示服务端相关组件代码，&lt;code>HugeGraphServer&lt;/code> 表示服务进程。&lt;/p>
 &lt;/blockquote>
 &lt;h3 id="2-依赖">2 依赖&lt;/h3>
 &lt;h4 id="21-安装-java-11-jdk-11">2.1 安装 Java 11 (JDK 11)&lt;/h4>
-&lt;p>请考虑在 Java 11 的环境上启动 &lt;code>HugeGraph-Server&lt;/code>(在 1.5.0 版前，会保留对 Java 8 的基本兼容)&lt;/p>
-&lt;p>&lt;strong>在往下阅读之前先执行 &lt;code>java -version&lt;/code> 命令确认 jdk 版本&lt;/strong>&lt;/p>
+&lt;p>建议在 Java 11 环境中运行 &lt;code>HugeGraph-Server&lt;/code>（1.5.0 之前的版本仍保留对 Java 8 的基本兼容）。&lt;/p>
+&lt;p>&lt;strong>在继续阅读前，请先执行 &lt;code>java -version&lt;/code> 命令确认 JDK 版本。&lt;/strong>&lt;/p>
 &lt;blockquote>
-&lt;p>注：使用 Java 8 启动 HugeGraph-Server 会失去一些&lt;strong>安全性&lt;/strong>的保障，也会降低性能相关指标 (请尽早升级/迁移，1.7.0 不再支持)&lt;/p>
+&lt;p>注：使用 Java 8 启动 HugeGraph-Server 会失去部分&lt;strong>安全性&lt;/strong>保障，也会影响性能表现。请尽早升级或迁移，1.7.0 起已不再支持 Java 8。&lt;/p>
 &lt;/blockquote>
 &lt;h3 id="3-部署">3 部署&lt;/h3>
 &lt;p>有四种方式可以部署 HugeGraph-Server 组件：&lt;/p>
@@ -4119,39 +4119,40 @@
 &lt;li>方式 3：源码编译&lt;/li>
 &lt;li>方式 4：使用 tools 工具部署 (Outdated)&lt;/li>
 &lt;/ul>
-&lt;p>&lt;strong>注意&lt;/strong> 生产或对外网暴露访问的环境必须使用 Java 11 并开启 &lt;a href="/cn/docs/config/config-authentication/">Auth 权限认证&lt;/a>, 否则会有安全隐患。&lt;/p>
+&lt;p>&lt;strong>注意&lt;/strong>：生产环境或对公网暴露的环境必须使用 Java 11，并开启 &lt;a href="/cn/docs/config/config-authentication/">Auth 权限认证&lt;/a>，否则存在安全风险。&lt;/p>
 &lt;h4 id="31-使用-docker-容器-便于测试">3.1 使用 Docker 容器 (便于&lt;strong>测试&lt;/strong>)&lt;/h4>
 &lt;!-- 3.1 is linked by another place. if change 3.1's title, please check -->
-&lt;p>可参考 &lt;a href="https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/README.md">Docker 部署方式&lt;/a>。&lt;/p>
-&lt;p>我们可以使用 &lt;code>docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0&lt;/code> 去快速启动一个内置了 &lt;code>RocksDB&lt;/code> 的 &lt;code>Hugegraph server&lt;/code>.&lt;/p>
+&lt;p>可参考 &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">Docker 部署方式&lt;/a>。&lt;/p>
+&lt;p>可以使用 &lt;code>docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0&lt;/code> 快速启动一个内置 &lt;code>RocksDB&lt;/code> 后端的 &lt;code>HugeGraph-Server&lt;/code> 实例。&lt;/p>
 &lt;p>可选项：&lt;/p>
 &lt;ol>
-&lt;li>可以使用 &lt;code>docker exec -it server bash&lt;/code> 进入容器完成一些操作&lt;/li>
-&lt;li>可以使用 &lt;code>docker run -itd --name=server -p 8080:8080 -e PRELOAD=&amp;quot;true&amp;quot; hugegraph/hugegraph:1.7.0&lt;/code> 在启动的时候预加载一个&lt;strong>内置的&lt;/strong>样例图。可以通过 &lt;code>RESTful API&lt;/code> 进行验证。具体步骤可以参考 &lt;a href="#519-%E5%90%AF%E5%8A%A8-server-%E7%9A%84%E6%97%B6%E5%80%99%E5%88%9B%E5%BB%BA%E7%A4%BA%E4%BE%8B%E5%9B%BE">5.1.9&lt;/a>&lt;/li>
-&lt;li>可以使用 &lt;code>-e PASSWORD=xxx&lt;/code> 设置是否开启鉴权模式以及 admin 的密码，具体步骤可以参考 &lt;a href="/cn/docs/config/config-authentication#%E4%BD%BF%E7%94%A8-docker-%E6%97%B6%E5%BC%80%E5%90%AF%E9%89%B4%E6%9D%83%E6%A8%A1%E5%BC%8F">Config Authentication&lt;/a>&lt;/li>
+&lt;li>可以使用 &lt;code>docker exec -it server bash&lt;/code> 进入容器执行运维或调试操作。&lt;/li>
+&lt;li>可以使用 &lt;code>docker run -itd --name=server -p 8080:8080 -e PRELOAD=&amp;quot;true&amp;quot; hugegraph/hugegraph:1.7.0&lt;/code> 在启动时预加载一个&lt;strong>内置&lt;/strong>样例图。可通过 &lt;code>RESTful API&lt;/code> 进行验证，具体步骤可参考 &lt;a href="#518-%E5%90%AF%E5%8A%A8-server-%E7%9A%84%E6%97%B6%E5%80%99%E5%88%9B%E5%BB%BA%E7%A4%BA%E4%BE%8B%E5%9B%BE">5.1.8&lt;/a>。&lt;/li>
+&lt;li>可以使用 &lt;code>-e PASSWORD=xxx&lt;/code> 开启鉴权模式并设置 admin 密码，具体步骤可参考 &lt;a href="/cn/docs/config/config-authentication#%E4%BD%BF%E7%94%A8-docker-%E6%97%B6%E5%BC%80%E5%90%AF%E9%89%B4%E6%9D%83%E6%A8%A1%E5%BC%8F">Config Authentication&lt;/a>。&lt;/li>
 &lt;/ol>
-&lt;p>如果使用 docker desktop，则可以按照如下的方式设置可选项：&lt;/p>
+&lt;p>如果使用 Docker Desktop，则可以按如下方式设置相关选项：&lt;/p>
 &lt;div style="text-align: center;">
 &lt;img src="/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
 &lt;/div>
-&lt;p>另外，如果我们希望能够在一个文件中管理除了 &lt;code>server&lt;/code> 之外的其他 Hugegraph 相关的实例，我们也可以使用 &lt;code>docker-compose&lt;/code>完成部署，使用命令 &lt;code>docker-compose up -d&lt;/code>，（当然只配置 &lt;code>server&lt;/code> 也是可以的）以下是一个样例的 &lt;code>docker-compose.yml&lt;/code>:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">version&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#4e9a06">&amp;#39;3&amp;#39;&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">services&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">server&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">image&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">hugegraph/hugegraph:1.7.0&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">container_name&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">server&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">environment&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>- &lt;span style="color:#000">PASSWORD=xxx&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># - PASSWORD=xxx 为可选参数，设置的时候可以开启鉴权模式，并设置密码&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># - PRELOAD=true&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># - PRELOAD=true 为可选参数，为 True 时可以在启动的时候预加载一个内置的样例图&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">ports&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>- &lt;span style="color:#0000cf;font-weight:bold">8080&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">8080&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;blockquote>
+&lt;blockquote>
+&lt;p>&lt;strong>注意&lt;/strong>：Docker Compose 文件使用桥接网络（&lt;code>hg-net&lt;/code>），适用于 Linux 和 Mac（Docker Desktop）。如需运行 3 节点分布式集群，请为 Docker Desktop 分配至少 &lt;strong>12 GB&lt;/strong> 内存（设置 → 资源 → 内存）。Linux 上 Docker 直接使用宿主机内存。&lt;/p>
+&lt;/blockquote>
+&lt;p>如果希望通过一个配置文件统一管理 HugeGraph 的多个服务实例，则可以使用 &lt;code>docker compose&lt;/code>。
+&lt;a href="https://github.com/apache/hugegraph/tree/master/docker">&lt;code>docker/&lt;/code>&lt;/a> 目录下提供了两个 compose 文件：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>单节点快速启动&lt;/strong>（预构建镜像）：&lt;code>docker/docker-compose.yml&lt;/code>&lt;/li>
+&lt;li>&lt;strong>单节点开发构建&lt;/strong>（从源码构建）：&lt;code>docker/docker-compose.dev.yml&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph/docker
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 注意版本号请随时保持更新 → 1.x.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">HUGEGRAPH_VERSION&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>1.7.0 docker compose up -d
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>如需开启鉴权，可在 compose 文件的环境变量中添加 &lt;code>PASSWORD=xxx&lt;/code>，或在 &lt;code>docker run&lt;/code> 命令中传入 &lt;code>-e PASSWORD=xxx&lt;/code>。&lt;/p>
+&lt;p>完整的部署指南请参阅 &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">docker/README.md&lt;/a>。&lt;/p>
+&lt;blockquote>
 &lt;p>注意：&lt;/p>
 &lt;ol>
 &lt;li>
-&lt;p>hugegraph 的 docker 镜像是一个便捷版本，用于快速启动 hugegraph，并不是&lt;strong>官方发布物料包方式&lt;/strong>。你可以从 &lt;a href="https://infra.apache.org/release-distribution.html#dockerhub">ASF Release Distribution Policy&lt;/a> 中得到更多细节。&lt;/p>
+&lt;p>HugeGraph 的 Docker 镜像主要用于便捷地快速启动 HugeGraph，并不是 &lt;strong>ASF 官方发布物料包&lt;/strong>。你可以从 &lt;a href="https://infra.apache.org/release-distribution.html#dockerhub">ASF Release Distribution Policy&lt;/a> 中了解更多细节。&lt;/p>
 &lt;/li>
 &lt;li>
 &lt;p>推荐使用 &lt;code>release tag&lt;/code> (如 &lt;code>1.7.0/1.x.0&lt;/code>) 以获取稳定版。使用 &lt;code>latest&lt;/code> tag 可以使用开发中的最新功能。&lt;/p>
@@ -4194,12 +4195,9 @@
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>执行成功后，在 hugegraph 目录下生成 &lt;code>*hugegraph-*.tar.gz&lt;/code> 文件，就是编译生成的 tar 包。&lt;/p>
 &lt;details>
 &lt;summary>过时的 tools 工具安装&lt;/summary>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic">#### 3.4 使用 tools 工具部署 (Outdated)&lt;/span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>HugeGraph-Tools 提供了一键部署的命令行工具，用户可以使用该工具快速地一键下载、解压、配置并启动 HugeGraph-Server 和 HugeGraph-Hubble，最新的 HugeGraph-Toolchain 中已经包含所有的这些工具，直接下载它解压就有工具包集合了
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">```&lt;/span>bash
-&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># download toolchain package, it includes loader + tool + hubble, please check the latest version (here is 1.7.0)&lt;/span>
+&lt;h4 id="34-使用-tools-工具部署-outdated">3.4 使用 tools 工具部署 (Outdated)&lt;/h4>
+&lt;p>HugeGraph-Tools 提供了一键部署的命令行工具，用户可以使用该工具快速地一键下载、解压、配置并启动 HugeGraph-Server 和 HugeGraph-Hubble，最新的 HugeGraph-Toolchain 中已经包含所有的这些工具，直接下载它解压就有工具包集合了&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># download toolchain package, it includes loader + tool + hubble, please check the latest version (here is 1.7.0)&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>tar zxf *hugegraph-*.tar.gz
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># enter the tool&amp;#39;s package&lt;/span>
@@ -4216,9 +4214,9 @@
 &lt;p>详细的配置介绍请参考&lt;a href="/docs/config/config-guide">配置文档&lt;/a>及&lt;a href="/docs/config/config-option">配置项介绍&lt;/a>。&lt;/p>
 &lt;h3 id="5-启动">5 启动&lt;/h3>
 &lt;h4 id="51-使用启动脚本启动">5.1 使用启动脚本启动&lt;/h4>
-&lt;p>启动分为&amp;quot;首次启动&amp;quot;和&amp;quot;非首次启动&amp;quot;，这么区分是因为在第一次启动前需要初始化后端数据库，然后启动服务。&lt;/p>
-&lt;p>而在人为停掉服务后，或者其他原因需要再次启动服务时，因为后端数据库是持久化存在的，直接启动服务即可。&lt;/p>
-&lt;p>HugeGraphServer 启动时会连接后端存储并尝试检查后端存储版本号，如果未初始化后端或者后端已初始化但版本不匹配时（旧版本数据），HugeGraphServer 会启动失败，并给出错误信息。&lt;/p>
+&lt;p>启动流程分为“首次启动”和“非首次启动”。首次启动前需要先初始化后端数据库，然后再启动服务。&lt;/p>
+&lt;p>如果服务曾被手动停止，或因其他原因需要再次启动，由于后端数据库已持久化存在，通常可以直接启动服务。&lt;/p>
+&lt;p>HugeGraphServer 启动时会连接后端存储并检查其版本信息。如果后端尚未初始化，或者已初始化但版本不匹配（例如存在旧版本数据），HugeGraphServer 会启动失败并给出错误信息。&lt;/p>
 &lt;p>如果需要外部访问 HugeGraphServer，请修改 &lt;code>rest-server.properties&lt;/code> 的 &lt;code>restserver.url&lt;/code> 配置项（默认为 &lt;code>http://127.0.0.1:8080&lt;/code>），修改成机器名或 IP 地址。&lt;/p>
 &lt;p>由于各种后端所需的配置（hugegraph.properties）及启动步骤略有不同，下面逐一对各后端的配置及启动做介绍。&lt;/p>
 &lt;p>&lt;strong>注:&lt;/strong> 如果想要开启 HugeGraph 权限系统，在启动 Server 之前应按照 &lt;a href="/cn/docs/config/config-authentication/">Server 鉴权配置&lt;/a> 进行配置。(尤其是生产环境/外网环境须开启)&lt;/p>
@@ -4313,7 +4311,20 @@
 &lt;li>停止 HugeGraph-PD&lt;/li>
 &lt;/ol>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>bin/stop-hugegraph.sh
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/details>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h6 id="docker-分布式集群">Docker 分布式集群&lt;/h6>
+&lt;p>通过 Docker-Compose 运行完整的分布式集群（3 PD + 3 Store + 3 Server）：&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph/docker
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">HUGEGRAPH_VERSION&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>服务通过 &lt;code>hg-net&lt;/code> 桥接网络上的容器主机名进行通信。配置通过环境变量注入：&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Server 配置&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_SERVER_BACKEND&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">hstore&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_SERVER_PD_PEERS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">pd0:8686,pd1:8686,pd2:8686&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>验证集群：&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8080/versions
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/v1/stores
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>运行时日志可通过 &lt;code>docker logs &amp;lt;container-name&amp;gt;&lt;/code>（如 &lt;code>docker logs hg-pd0&lt;/code>）直接查看，无需进入容器。&lt;/p>
+&lt;p>完整的环境变量参考、端口表和故障排查指南请参阅 &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">docker/README.md&lt;/a>。&lt;/p>
+&lt;/details>
 &lt;h5 id="512-rocksdb--toplingdb">5.1.2 RocksDB / ToplingDB&lt;/h5>
 &lt;details>
 &lt;summary>点击展开/折叠 RocksDB 配置及启动方法&lt;/summary>
@@ -4492,7 +4503,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Connecting to HugeGraphServer &lt;span style="color:#ce5c00;font-weight:bold">(&lt;/span>http://127.0.0.1:8080/graphs&lt;span style="color:#ce5c00;font-weight:bold">)&lt;/span>....OK
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/details>
 &lt;h5 id="518-启动-server-的时候创建示例图">5.1.8 启动 server 的时候创建示例图&lt;/h5>
-&lt;p>在脚本启动时候携带 &lt;code>-p true&lt;/code>参数，表示 preload, 即创建示例图图&lt;/p>
+&lt;p>在启动脚本时携带 &lt;code>-p true&lt;/code> 参数，表示开启 preload，即创建示例图。&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>bin/start-hugegraph.sh -p true
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Starting HugeGraphServer in daemon mode...
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
@@ -4502,7 +4513,7 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertices&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">[{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;2:lop&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;software&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;lop&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;lang&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;java&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;price&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">328&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:josh&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;josh&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">32&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Beijing&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:marko&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;marko&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">29&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Beijing&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:peter&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;peter&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">35&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Shanghai&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:vadas&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vadas&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">27&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Hongkong&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;2:ripple&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;software&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;ripple&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;lang&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;java&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;price&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">199&lt;/span>&lt;span style="color:#000;font-weight:bold">}}]}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>代表创建示例图成功。&lt;/p>
 &lt;h4 id="52-使用-docker">5.2 使用 Docker&lt;/h4>
-&lt;p>在 &lt;a href="#31-%E4%BD%BF%E7%94%A8-docker-%E5%AE%B9%E5%99%A8-%E4%BE%BF%E4%BA%8E%E6%B5%8B%E8%AF%95">3.1 使用 Docker 容器&lt;/a>中，我们已经介绍了如何使用 &lt;code>docker&lt;/code> 部署 &lt;code>hugegraph-server&lt;/code>, 我们还可以使用其他的后端存储或者设置参数在 sever 启动的时候加载样例图&lt;/p>
+&lt;p>在 &lt;a href="#31-%E4%BD%BF%E7%94%A8-docker-%E5%AE%B9%E5%99%A8-%E4%BE%BF%E4%BA%8E%E6%B5%8B%E8%AF%95">3.1 使用 Docker 容器&lt;/a> 中，我们已经介绍了如何使用 &lt;code>docker&lt;/code> 部署 &lt;code>hugegraph-server&lt;/code>。此外，也可以通过切换后端存储或设置参数，在 Server 启动时加载样例图。&lt;/p>
 &lt;h5 id="521-使用-cassandra-作为后端">5.2.1 使用 Cassandra 作为后端&lt;/h5>
 &lt;blockquote>
 &lt;p>⚠️ &lt;strong>已废弃&lt;/strong>: Cassandra 后端从 HugeGraph 1.7.0 版本开始已移除。如需使用，请参考 1.5.x 版本文档。&lt;/p>
@@ -4556,11 +4567,11 @@
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">volumes&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">hugegraph-data&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>在这个 yaml 中，需要在环境变量中以 &lt;code>hugegraph.&amp;lt;parameter_name&amp;gt;&lt;/code>的形式进行参数传递，配置 Cassandra 相关的参数。&lt;/p>
-&lt;p>具体来说，在 &lt;code>hugegraph.properties&lt;/code> 配置文件中，提供了 &lt;code>backend=xxx&lt;/code>, &lt;code>cassandra.host=xxx&lt;/code> 等配置项，为了配置这些配置项，在传递环境变量的过程之中，我们需要在这些配置项前加上 &lt;code>hugegrpah.&lt;/code>，即 &lt;code>hugegraph.backend&lt;/code> 和 &lt;code>hugegraph.cassandra.host&lt;/code>。&lt;/p>
+&lt;p>具体来说，在 &lt;code>hugegraph.properties&lt;/code> 配置文件中，提供了 &lt;code>backend=xxx&lt;/code>、&lt;code>cassandra.host=xxx&lt;/code> 等配置项。为了通过环境变量传递这些配置，需要在配置项前加上 &lt;code>hugegraph.&lt;/code>，例如 &lt;code>hugegraph.backend&lt;/code> 和 &lt;code>hugegraph.cassandra.host&lt;/code>。&lt;/p>
 &lt;p>其他配置可以参照 &lt;a href="#4-%E9%85%8D%E7%BD%AE">4 配置&lt;/a>&lt;/p>
 &lt;/details>
 &lt;h5 id="522-启动-server-的时候创建示例图">5.2.2 启动 server 的时候创建示例图&lt;/h5>
-&lt;p>在 docker 启动的时候设置环境变量 &lt;code>PRELOAD=true&lt;/code>, 从而实现启动脚本的时候加载数据。&lt;/p>
+&lt;p>在 Docker 启动时设置环境变量 &lt;code>PRELOAD=true&lt;/code>，即可在启动脚本执行过程中加载样例数据。&lt;/p>
 &lt;ol>
 &lt;li>
 &lt;p>使用&lt;code>docker run&lt;/code>&lt;/p>
@@ -9539,7 +9550,7 @@ HugeGraph Toolchain 版本：toolchain-1.0.0&lt;/p>
 &lt;h3 id="2-依赖">2 依赖&lt;/h3>
 &lt;h4 id="21-前置条件">2.1 前置条件&lt;/h4>
 &lt;ul>
-&lt;li>操作系统：Linux 或 MacOS（Windows 尚未经过完整测试）&lt;/li>
+&lt;li>操作系统：Linux 或 macOS（Windows 尚未经过完整测试）&lt;/li>
 &lt;li>Java 版本：≥ 11&lt;/li>
 &lt;li>Maven 版本：≥ 3.5.0&lt;/li>
 &lt;/ul>
@@ -9566,7 +9577,97 @@ HugeGraph Toolchain 版本：toolchain-1.0.0&lt;/p>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 3. 编译成功后，PD 模块的构建产物将位于&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version}&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># target/apache-hugegraph-incubating-{version}.tar.gz&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="4-配置">4 配置&lt;/h3>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="33-docker-部署">3.3 Docker 部署&lt;/h4>
+&lt;p>HugeGraph-PD Docker 镜像已发布在 Docker Hub，镜像名为 &lt;code>hugegraph/pd&lt;/code>。&lt;/p>
+&lt;blockquote>
+&lt;p>注: 后续步骤皆假设你本地&lt;strong>已拉取&lt;/strong> &lt;code>hugegraph&lt;/code> 主仓库代码 (至少是 docker 目录)&lt;/p>
+&lt;/blockquote>
+&lt;p>使用 docker-compose 模式部署完整的 3 节点集群（PD + Store + Server）：&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph/docker
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 注意版本号请随时保持更新 → 1.x.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">HUGEGRAPH_VERSION&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>通过 &lt;code>docker run&lt;/code> 运行单个 PD 节点时，通过环境变量提供配置：&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>docker run -d &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8620:8620 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8686:8686 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8610:8610 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_PD_GRPC_HOST&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;your-ip&amp;gt; &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_PD_RAFT_ADDRESS&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;your-ip&amp;gt;:8610 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_PD_RAFT_PEERS_LIST&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;your-ip&amp;gt;:8610 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_PD_INITIAL_STORE_LIST&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;store-ip&amp;gt;:8500 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -v /path/to/data:/hugegraph-pd/pd_data &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> --name hugegraph-pd &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> hugegraph/pd:1.7.0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>环境变量参考：&lt;/strong>&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>变量&lt;/th>
+&lt;th>必填&lt;/th>
+&lt;th>默认值&lt;/th>
+&lt;th>描述&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_GRPC_HOST&lt;/code>&lt;/td>
+&lt;td>是&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>本节点的 gRPC 主机名/IP（Docker 中使用 &lt;code>pd0&lt;/code>，裸机使用 &lt;code>192.168.1.10&lt;/code>）&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_RAFT_ADDRESS&lt;/code>&lt;/td>
+&lt;td>是&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>本节点的 Raft 地址（如 &lt;code>pd0:8610&lt;/code>）&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_RAFT_PEERS_LIST&lt;/code>&lt;/td>
+&lt;td>是&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>所有 PD 节点的 Raft 地址（如 &lt;code>pd0:8610,pd1:8610,pd2:8610&lt;/code>）&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_INITIAL_STORE_LIST&lt;/code>&lt;/td>
+&lt;td>是&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>预期的 Store gRPC 地址（如 &lt;code>store0:8500,store1:8500,store2:8500&lt;/code>）&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_GRPC_PORT&lt;/code>&lt;/td>
+&lt;td>否&lt;/td>
+&lt;td>&lt;code>8686&lt;/code>&lt;/td>
+&lt;td>gRPC 服务端口&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_REST_PORT&lt;/code>&lt;/td>
+&lt;td>否&lt;/td>
+&lt;td>&lt;code>8620&lt;/code>&lt;/td>
+&lt;td>REST API 端口&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_DATA_PATH&lt;/code>&lt;/td>
+&lt;td>否&lt;/td>
+&lt;td>&lt;code>/hugegraph-pd/pd_data&lt;/code>&lt;/td>
+&lt;td>元数据存储路径&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_INITIAL_STORE_COUNT&lt;/code>&lt;/td>
+&lt;td>否&lt;/td>
+&lt;td>&lt;code>1&lt;/code>&lt;/td>
+&lt;td>集群可用所需的最小 Store 数量&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;blockquote>
+&lt;p>&lt;strong>注意&lt;/strong>：在 Docker 桥接网络中，&lt;code>HG_PD_GRPC_HOST&lt;/code> 和 &lt;code>HG_PD_RAFT_ADDRESS&lt;/code> 应使用容器主机名（如 &lt;code>pd0&lt;/code>）而非 IP 地址。&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>&lt;strong>已弃用的别名&lt;/strong>：&lt;code>GRPC_HOST&lt;/code>、&lt;code>RAFT_ADDRESS&lt;/code>、&lt;code>RAFT_PEERS&lt;/code>、&lt;code>PD_INITIAL_STORE_LIST&lt;/code> 仍可使用，但会输出弃用警告。新部署请使用 &lt;code>HG_PD_*&lt;/code> 名称。&lt;/p>
+&lt;/blockquote>
+&lt;p>运行时日志可通过 &lt;code>docker logs &amp;lt;container-name&amp;gt;&lt;/code>（如 &lt;code>docker logs hg-pd0&lt;/code>）直接查看，无需进入容器。&lt;/p>
+&lt;p>完整的集群部署指南请参阅 &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">docker/README.md&lt;/a>。&lt;/p>
+&lt;h3 id="4-配置">4 配置&lt;/h3>
 &lt;p>PD 的主要配置文件为 &lt;code>conf/application.yml&lt;/code>，以下是关键配置项：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">spring&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">application&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
@@ -9586,7 +9687,7 @@ HugeGraph Toolchain 版本：toolchain-1.0.0&lt;/p>
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">data-path&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">./pd_data&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># 自动扩容的检查周期（秒）&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">patrol-interval&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#0000cf;font-weight:bold">1800&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># 初始 store 列表，在列表内的 store 自动激活&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># 集群可用所需的最小 Store 数量&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">initial-store-count&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#0000cf;font-weight:bold">1&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># store 的配置信息，格式为 IP:gRPC端口&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">initial-store-list&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#0000cf;font-weight:bold">127.0.0.1&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">8500&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
@@ -9619,14 +9720,17 @@ HugeGraph Toolchain 版本：toolchain-1.0.0&lt;/p>
 &lt;p>在 PD 安装目录下执行：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>./bin/start-hugegraph-pd.sh
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>启动成功后，可以在 &lt;code>logs/hugegraph-pd-stdout.log&lt;/code> 中看到类似以下的日志：&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="52-停止-pd">5.2 停止 PD&lt;/h4>
 &lt;p>在 PD 安装目录下执行：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>./bin/stop-hugegraph-pd.sh
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="6-验证">6 验证&lt;/h3>
 &lt;p>确认 PD 服务是否正常运行：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/actuator/health
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>如果返回 &lt;code>{&amp;quot;status&amp;quot;:&amp;quot;UP&amp;quot;}&lt;/code>，则表示 PD 服务已成功启动。&lt;/p></description></item><item><title>Docs: 订阅社区邮箱</title><link>/cn/docs/contribution-guidelines/subscribe/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/contribution-guidelines/subscribe/</guid><description>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>如果返回 &lt;code>{&amp;quot;status&amp;quot;:&amp;quot;UP&amp;quot;}&lt;/code>，则表示 PD 服务已成功启动。&lt;/p>
+&lt;p>此外，也可以通过 PD API 查看 Store 节点状态：&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/v1/stores
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>如果响应中 &lt;code>state&lt;/code> 为 &lt;code>Up&lt;/code>，说明对应的 Store 节点运行正常。在一个健康的 3 节点部署中，&lt;code>storeId&lt;/code> 列表应包含 3 个 ID，且 &lt;code>stateCountMap.Up&lt;/code>、&lt;code>numOfService&lt;/code> 和 &lt;code>numOfNormalService&lt;/code> 都应为 &lt;code>3&lt;/code>。&lt;/p></description></item><item><title>Docs: 订阅社区邮箱</title><link>/cn/docs/contribution-guidelines/subscribe/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/contribution-guidelines/subscribe/</guid><description>
 &lt;p>按照以下步骤订阅邮件列表：&lt;/p>
 &lt;ul>
 &lt;li>通过您的电子邮件账户发送邮件至 &lt;a href="mailto:dev-subscribe@hugegraph.apache.org">dev-subscribe@hugegraph.apache.org&lt;/a>，然后您将收到一封确认邮件。&lt;/li>
@@ -12782,10 +12886,10 @@ HugeGraph目前采用EdgeCut的分区方案。&lt;/p>
 &lt;h3 id="2-依赖">2 依赖&lt;/h3>
 &lt;h4 id="21-前置条件">2.1 前置条件&lt;/h4>
 &lt;ul>
-&lt;li>操作系统：Linux 或 MacOS（Windows 尚未经过完整测试）&lt;/li>
+&lt;li>操作系统：Linux 或 macOS（Windows 尚未经过完整测试）&lt;/li>
 &lt;li>Java 版本：≥ 11&lt;/li>
 &lt;li>Maven 版本：≥ 3.5.0&lt;/li>
-&lt;li>已部署的 HugeGraph-PD（如果是多节点部署）&lt;/li>
+&lt;li>如需进行多节点部署，请先部署 HugeGraph-PD&lt;/li>
 &lt;/ul>
 &lt;h3 id="3-部署">3 部署&lt;/h3>
 &lt;p>有两种方式可以部署 HugeGraph-Store 组件：&lt;/p>
@@ -12810,7 +12914,82 @@ HugeGraph目前采用EdgeCut的分区方案。&lt;/p>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 3. 编译成功后，Store 模块的构建产物将位于&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{version}&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># target/apache-hugegraph-incubating-{version}.tar.gz&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="4-配置">4 配置&lt;/h3>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="33-docker-部署">3.3 Docker 部署&lt;/h4>
+&lt;p>HugeGraph-Store Docker 镜像已发布在 Docker Hub，镜像名是 &lt;code>hugegraph/store&lt;/code>。&lt;/p>
+&lt;blockquote>
+&lt;p>注: 后续步骤皆假设你本地&lt;strong>已拉取&lt;/strong> &lt;code>hugegraph&lt;/code> 主仓库代码 (至少是 docker 目录)&lt;/p>
+&lt;/blockquote>
+&lt;p>使用 docker-compose 文件部署完整的 3 节点集群（PD + Store + Server）：&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph/docker
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 注意版本号请随时保持更新 → 1.x.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">HUGEGRAPH_VERSION&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>通过 &lt;code>docker run&lt;/code> 运行单个 Store 节点：&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>docker run -d &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8520:8520 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8500:8500 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8510:8510 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_STORE_PD_ADDRESS&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;pd-ip&amp;gt;:8686 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_STORE_GRPC_HOST&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;your-ip&amp;gt; &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_STORE_RAFT_ADDRESS&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;your-ip&amp;gt;:8510 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -v /path/to/storage:/hugegraph-store/storage &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> --name hugegraph-store &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> hugegraph/store:1.7.0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>环境变量参考：&lt;/strong>&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>变量&lt;/th>
+&lt;th>必填&lt;/th>
+&lt;th>默认值&lt;/th>
+&lt;th>描述&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_PD_ADDRESS&lt;/code>&lt;/td>
+&lt;td>是&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>PD gRPC 地址（如 &lt;code>pd0:8686,pd1:8686,pd2:8686&lt;/code>）&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_GRPC_HOST&lt;/code>&lt;/td>
+&lt;td>是&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>本节点的 gRPC 主机名/IP（如 &lt;code>store0&lt;/code>）&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_RAFT_ADDRESS&lt;/code>&lt;/td>
+&lt;td>是&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>本节点的 Raft 地址（如 &lt;code>store0:8510&lt;/code>）&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_GRPC_PORT&lt;/code>&lt;/td>
+&lt;td>否&lt;/td>
+&lt;td>&lt;code>8500&lt;/code>&lt;/td>
+&lt;td>gRPC 服务端口&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_REST_PORT&lt;/code>&lt;/td>
+&lt;td>否&lt;/td>
+&lt;td>&lt;code>8520&lt;/code>&lt;/td>
+&lt;td>REST API 端口&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_DATA_PATH&lt;/code>&lt;/td>
+&lt;td>否&lt;/td>
+&lt;td>&lt;code>/hugegraph-store/storage&lt;/code>&lt;/td>
+&lt;td>数据存储路径&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;blockquote>
+&lt;p>&lt;strong>注意&lt;/strong>：在 Docker 桥接网络中，&lt;code>HG_STORE_GRPC_HOST&lt;/code> 应使用容器主机名（如 &lt;code>store0&lt;/code>）而非 IP 地址。&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>&lt;strong>已弃用的别名&lt;/strong>：&lt;code>PD_ADDRESS&lt;/code>、&lt;code>GRPC_HOST&lt;/code>、&lt;code>RAFT_ADDRESS&lt;/code> 仍可使用，但会输出弃用警告。新部署请使用 &lt;code>HG_STORE_*&lt;/code> 名称。&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="4-配置">4 配置&lt;/h3>
 &lt;p>Store 的主要配置文件为 &lt;code>conf/application.yml&lt;/code>，以下是关键配置项：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">pdserver&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># PD 服务地址，多个 PD 地址用逗号分割（配置 PD 的 gRPC 端口）&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
@@ -12863,7 +13042,7 @@ HugeGraph目前采用EdgeCut的分区方案。&lt;/p>
 &lt;p>确保 PD 服务已经启动，然后在 Store 安装目录下执行：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>./bin/start-hugegraph-store.sh
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>启动成功后，可以在 &lt;code>logs/hugegraph-store-server.log&lt;/code> 中看到类似以下的日志：&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="52-停止-store">5.2 停止 Store&lt;/h4>
 &lt;p>在 Store 安装目录下执行：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>./bin/stop-hugegraph-store.sh
@@ -12918,13 +13097,36 @@ HugeGraph目前采用EdgeCut的分区方案。&lt;/p>
 &lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>所有节点都应该指向相同的 PD 集群：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">pdserver&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">address&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#0000cf;font-weight:bold">127.0.0.1&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">8686&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">127.0.0.1&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">8687&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">127.0.0.1&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">8688&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="7-验证-store-服务">7 验证 Store 服务&lt;/h3>
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="63-docker-分布式集群配置">6.3 Docker 分布式集群配置&lt;/h4>
+&lt;p>3 节点 Store 集群包含在 &lt;code>docker/docker-compose-3pd-3store-3server.yml&lt;/code> 中。每个 Store 节点拥有独立的主机名和环境变量：&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># store0&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_PD_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">pd0:8686,pd1:8686,pd2:8686&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_GRPC_HOST&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store0&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_GRPC_PORT&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#4e9a06">&amp;#34;8500&amp;#34;&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_REST_PORT&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#4e9a06">&amp;#34;8520&amp;#34;&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_RAFT_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store0:8510&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_DATA_PATH&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">/hugegraph-store/storage&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#8f5902;font-style:italic"># store1&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_PD_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">pd0:8686,pd1:8686,pd2:8686&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_GRPC_HOST&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store1&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_RAFT_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store1:8510&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#8f5902;font-style:italic"># store2&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_PD_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">pd0:8686,pd1:8686,pd2:8686&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_GRPC_HOST&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store2&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_RAFT_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store2:8510&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Store 节点仅在所有 PD 节点通过健康检查后才会启动，其中 docker-compose 中的 healthcheck 实际访问的是 PD 的 REST 接口 &lt;code>/v1/health&lt;/code>（也可以通过 Actuator 暴露的 &lt;code>/actuator/health&lt;/code> 进行手动检查），并通过 &lt;code>depends_on: condition: service_healthy&lt;/code> 强制执行依赖关系。&lt;/p>
+&lt;p>运行时日志可通过 &lt;code>docker logs &amp;lt;container-name&amp;gt;&lt;/code>（如 &lt;code>docker logs hg-store0&lt;/code>）直接查看，无需进入容器。&lt;/p>
+&lt;p>完整的部署指南请参阅 &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">docker/README.md&lt;/a>。&lt;/p>
+&lt;h3 id="7-验证-store-服务">7 验证 Store 服务&lt;/h3>
 &lt;p>确认 Store 服务是否正常运行：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8520/actuator/health
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>如果返回 &lt;code>{&amp;quot;status&amp;quot;:&amp;quot;UP&amp;quot;}&lt;/code>，则表示 Store 服务已成功启动。&lt;/p>
 &lt;p>此外，可以通过 PD 的 API 查看集群中的 Store 节点状态：&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/v1/stores
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>如果Store配置成功，上述接口的响应中应该包含当前节点的状态信息，状态为Up表示节点正常运行，这里只展示了一个节点配置成功的响应，如果三个节点都配置成功并正在运行，响应中&lt;code>storeId&lt;/code>列表应该包含三个id，并且&lt;code>stateCountMap&lt;/code>中&lt;code>Up&lt;/code>、&lt;code>numOfService&lt;/code>、&lt;code>numOfNormalService&lt;/code>三个字段应该为3。&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>如果 Store 配置成功，上述接口响应中应包含当前节点的状态信息，其中 &lt;code>state&lt;/code> 为 &lt;code>Up&lt;/code> 表示节点运行正常。&lt;/p>
+&lt;p>下方示例仅展示 1 个 Store 节点的返回结果。如果 3 个节点都已正确配置并正在运行，则响应中的 &lt;code>storeId&lt;/code> 列表应包含 3 个 ID，且 &lt;code>stateCountMap.Up&lt;/code>、&lt;code>numOfService&lt;/code> 和 &lt;code>numOfNormalService&lt;/code> 都应为 &lt;code>3&lt;/code>。&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-javascript" data-lang="javascript">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;message&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;OK&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;data&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>

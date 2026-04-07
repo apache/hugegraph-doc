@@ -1,23 +1,19 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>HugeGraph – HugeGraph (OLTP)</title><link>/docs/quickstart/hugegraph/</link><description>Recent content in HugeGraph (OLTP) on HugeGraph</description><generator>Hugo -- gohugo.io</generator><atom:link href="/docs/quickstart/hugegraph/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: HugeGraph-Server Quick Start</title><link>/docs/quickstart/hugegraph/hugegraph-server/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/quickstart/hugegraph/hugegraph-server/</guid><description>
 &lt;h3 id="1-hugegraph-server-overview">1 HugeGraph-Server Overview&lt;/h3>
-&lt;p>&lt;code>HugeGraph-Server&lt;/code> is the core part of the HugeGraph Project, contains submodules such as graph-core, backend, API.&lt;/p>
-&lt;p>The Core Module is an implementation of the Tinkerpop interface; The Backend module is used to save the graph data to the data store. For version 1.7.0+, supported backends include: RocksDB (standalone default), HStore (distributed), HBase, and Memory. The API Module provides HTTP Server, which converts Client&amp;rsquo;s HTTP request into a call to Core Module.&lt;/p>
+&lt;p>&lt;code>HugeGraph-Server&lt;/code> is the core server component of the HugeGraph project. It includes submodules such as graph-core, backend, and API.&lt;/p>
+&lt;p>The Core module implements the TinkerPop interfaces. The Backend module manages data storage. Starting from 1.7.0, supported backends include RocksDB (the default standalone backend), HStore (distributed), HBase, and Memory. The API module provides an HTTP server that converts client requests into calls to the Core module.&lt;/p>
 &lt;blockquote>
 &lt;p>⚠️ &lt;strong>Important Change&lt;/strong>: Starting from version 1.7.0, legacy backends such as MySQL, PostgreSQL, Cassandra, and ScyllaDB have been removed. If you need to use these backends, please use version 1.5.x or earlier.&lt;/p>
 &lt;/blockquote>
 &lt;blockquote>
-&lt;p>There will be two spellings HugeGraph-Server and HugeGraphServer in the document, and other
-modules are similar. There is no big difference in the meaning of these two ways,
-which can be distinguished as follows: &lt;code>HugeGraph-Server&lt;/code> represents the code of server-related
-components, &lt;code>HugeGraphServer&lt;/code> represents the service process.&lt;/p>
+&lt;p>The documentation uses both &lt;code>HugeGraph-Server&lt;/code> and &lt;code>HugeGraphServer&lt;/code>, and the same pattern applies to other components. The two names are nearly interchangeable: &lt;code>HugeGraph-Server&lt;/code> usually refers to the server-side codebase, while &lt;code>HugeGraphServer&lt;/code> refers to the running service process.&lt;/p>
 &lt;/blockquote>
 &lt;h3 id="2-dependency-for-buildingrunning">2 Dependency for Building/Running&lt;/h3>
 &lt;h4 id="21-install-java-11-jdk-11">2.1 Install Java 11 (JDK 11)&lt;/h4>
-&lt;p>You need to use Java 11 to run &lt;code>HugeGraph-Server&lt;/code> (compatible with Java 8 before 1.5.0, but not recommended to use),
-and configure by yourself.&lt;/p>
-&lt;p>&lt;strong>Be sure to execute the &lt;code>java -version&lt;/code> command to check the jdk version before reading&lt;/strong>&lt;/p>
+&lt;p>Use Java 11 to run &lt;code>HugeGraph-Server&lt;/code>. Versions earlier than 1.5.0 kept basic compatibility with Java 8, but Java 11 is recommended.&lt;/p>
+&lt;p>&lt;strong>Before continuing, run &lt;code>java -version&lt;/code> to confirm your JDK version.&lt;/strong>&lt;/p>
 &lt;blockquote>
-&lt;p>Note: Using Java8 will lose some security guarantees, we recommend using Java11 in production&lt;/p>
+&lt;p>Note: Running HugeGraph-Server on Java 8 loses some security protections and may reduce performance. Please upgrade as soon as possible. Java 8 is no longer supported starting from 1.7.0.&lt;/p>
 &lt;/blockquote>
 &lt;h3 id="3-deploy">3 Deploy&lt;/h3>
 &lt;p>There are four ways to deploy HugeGraph-Server components:&lt;/p>
@@ -27,46 +23,47 @@ and configure by yourself.&lt;/p>
 &lt;li>Method 3: Source code compilation&lt;/li>
 &lt;li>Method 4: One-click deployment&lt;/li>
 &lt;/ul>
-&lt;p>&lt;strong>Note:&lt;/strong> If it&amp;rsquo;s exposed to the public network, &lt;strong>must enable&lt;/strong> &lt;a href="/docs/config/config-authentication/">Auth authentication&lt;/a> to ensure safety (so as the legacy version).&lt;/p>
+&lt;p>&lt;strong>Note:&lt;/strong> For production environments or environments exposed to the public network, you must use Java 11 and enable &lt;a href="/docs/config/config-authentication/">Auth authentication&lt;/a> to avoid security risks.&lt;/p>
 &lt;h4 id="31-use-docker-container-convenient-for-testdev">3.1 Use Docker container (Convenient for Test/Dev)&lt;/h4>
 &lt;!-- 3.1 is linked by another place. if change 3.1's title, please check -->
-&lt;p>You can refer to the &lt;a href="https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/README.md">Docker deployment guide&lt;/a>.&lt;/p>
-&lt;p>We can use &lt;code>docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0&lt;/code> to quickly start a &lt;code>HugeGraph Server&lt;/code> with a built-in &lt;code>RocksDB&lt;/code> backend.&lt;/p>
+&lt;p>You can refer to the &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">Docker deployment guide&lt;/a>.&lt;/p>
+&lt;p>You can use &lt;code>docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0&lt;/code> to quickly start a &lt;code>HugeGraph-Server&lt;/code> instance with a built-in &lt;code>RocksDB&lt;/code> backend.&lt;/p>
 &lt;p>Optional:&lt;/p>
 &lt;ol>
-&lt;li>use &lt;code>docker exec -it graph bash&lt;/code> to enter the container to do some operations.&lt;/li>
-&lt;li>use &lt;code>docker run -itd --name=graph -p 8080:8080 -e PRELOAD=&amp;quot;true&amp;quot; hugegraph/hugegraph:1.7.0&lt;/code> to start with a &lt;strong>built-in&lt;/strong> example graph. We can use &lt;code>RESTful API&lt;/code> to verify the result. The detailed step can refer to &lt;a href="#518-create-an-example-graph-when-startup">5.1.8&lt;/a>&lt;/li>
-&lt;li>use &lt;code>-e PASSWORD=xxx&lt;/code> to enable auth mode and set the password for admin. You can find more details from &lt;a href="/docs/config/config-authentication#use-docker-to-enable-authentication-mode">Config Authentication&lt;/a>&lt;/li>
+&lt;li>You can use &lt;code>docker exec -it server bash&lt;/code> to enter the container for troubleshooting or other maintenance operations.&lt;/li>
+&lt;li>You can use &lt;code>docker run -itd --name=server -p 8080:8080 -e PRELOAD=&amp;quot;true&amp;quot; hugegraph/hugegraph:1.7.0&lt;/code> to preload a &lt;strong>built-in&lt;/strong> sample graph at startup. You can verify it through the &lt;code>RESTful API&lt;/code>. See &lt;a href="#518-create-an-example-graph-when-startup">5.1.8&lt;/a> for details.&lt;/li>
+&lt;li>You can use &lt;code>-e PASSWORD=xxx&lt;/code> to enable authentication mode and set the admin password. See &lt;a href="/docs/config/config-authentication#use-docker-to-enable-authentication-mode">Config Authentication&lt;/a> for details.&lt;/li>
 &lt;/ol>
-&lt;p>If you use docker desktop, you can set the option like:&lt;/p>
+&lt;p>If you use Docker Desktop, you can set the options as follows:&lt;/p>
 &lt;div style="text-align: center;">
 &lt;img src="/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
 &lt;/div>
-&lt;p>Also, if we want to manage the other Hugegraph related instances in one file, we can use &lt;code>docker-compose&lt;/code> to deploy, with the command &lt;code>docker-compose up -d&lt;/code> (you can config only &lt;code>server&lt;/code>). Here is an example &lt;code>docker-compose.yml&lt;/code>:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">version&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#4e9a06">&amp;#39;3&amp;#39;&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">services&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">server&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">image&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">hugegraph/hugegraph:1.7.0&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">container_name&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">server&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">environment&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>- &lt;span style="color:#000">PASSWORD=xxx&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># PASSWORD is an option to enable auth mode with the password you set.&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># - PRELOAD=true&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># PRELOAD is a option to preload a build-in sample graph when initializing.&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">ports&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>- &lt;span style="color:#0000cf;font-weight:bold">8080&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">8080&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;blockquote>
+&lt;blockquote>
+&lt;p>&lt;strong>Note&lt;/strong>: The Docker Compose files use bridge networking (&lt;code>hg-net&lt;/code>) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least &lt;strong>12 GB&lt;/strong> of memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.&lt;/p>
+&lt;/blockquote>
+&lt;p>If you want a single, unified setup for multiple HugeGraph services, you can use &lt;code>docker compose&lt;/code>.
+Two compose files are available in the &lt;a href="https://github.com/apache/hugegraph/tree/master/docker">&lt;code>docker/&lt;/code>&lt;/a> directory:&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>Single-node quickstart&lt;/strong> (pre-built images): &lt;code>docker/docker-compose.yml&lt;/code>&lt;/li>
+&lt;li>&lt;strong>Single-node dev build&lt;/strong> (build from source): &lt;code>docker/docker-compose.dev.yml&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph/docker
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Keep the version aligned with the latest release, for example 1.x.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">HUGEGRAPH_VERSION&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>1.7.0 docker compose up -d
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>To enable authentication, add &lt;code>PASSWORD=xxx&lt;/code> to the service environment in the compose file or pass &lt;code>-e PASSWORD=xxx&lt;/code> to &lt;code>docker run&lt;/code>.&lt;/p>
+&lt;p>See &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">docker/README.md&lt;/a> for the full setup guide.&lt;/p>
+&lt;blockquote>
 &lt;p>Note:&lt;/p>
 &lt;ol>
 &lt;li>
-&lt;p>The docker image of the hugegraph is a convenient release to start it quickly, but not &lt;strong>official distribution&lt;/strong> artifacts. You can find more details from &lt;a href="https://infra.apache.org/release-distribution.html#dockerhub">ASF Release Distribution Policy&lt;/a>.&lt;/p>
+&lt;p>HugeGraph Docker images are provided as a convenient way to start HugeGraph quickly, but they are not official ASF distribution artifacts. You can find more details in the &lt;a href="https://infra.apache.org/release-distribution.html#dockerhub">ASF Release Distribution Policy&lt;/a>.&lt;/p>
 &lt;/li>
 &lt;li>
-&lt;p>Recommend to use &lt;code>release tag&lt;/code> (like &lt;code>1.7.0&lt;/code>/&lt;code>1.x.0&lt;/code>) for the stable version. Use &lt;code>latest&lt;/code> tag to experience the newest functions in development.&lt;/p>
+&lt;p>We recommend using a release tag (such as &lt;code>1.7.0&lt;/code> or &lt;code>1.x.0&lt;/code>) for stable deployments. Use the &lt;code>latest&lt;/code> tag only if you want the newest features still under development.&lt;/p>
 &lt;/li>
 &lt;/ol>
 &lt;/blockquote>
-&lt;h4 id="32-download-the-binary-tar-tarball">3.2 Download the binary tar tarball&lt;/h4>
+&lt;h4 id="32-download-the-binary-tarball">3.2 Download the binary tarball&lt;/h4>
 &lt;p>You could download the binary tarball from the download page of the ASF site like this:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># use the latest version, here is 1.7.0 for example&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>wget https://downloads.apache.org/hugegraph/&lt;span style="color:#ce5c00;font-weight:bold">{&lt;/span>version&lt;span style="color:#ce5c00;font-weight:bold">}&lt;/span>/apache-hugegraph-incubating-&lt;span style="color:#ce5c00;font-weight:bold">{&lt;/span>version&lt;span style="color:#ce5c00;font-weight:bold">}&lt;/span>.tar.gz
@@ -142,11 +139,10 @@ and configure by yourself.&lt;/p>
 For detailed configuration introduction, please refer to &lt;a href="/docs/config/config-guide">configuration document&lt;/a> and &lt;a href="/docs/config/config-option">introduction to configuration items&lt;/a>&lt;/p>
 &lt;h3 id="5-startup">5 Startup&lt;/h3>
 &lt;h4 id="51-use-a-startup-script-to-startup">5.1 Use a startup script to startup&lt;/h4>
-&lt;p>The startup is divided into &amp;ldquo;first startup&amp;rdquo; and &amp;ldquo;non-first startup.&amp;rdquo; This distinction is because the back-end database needs to be initialized before the first startup, and then the service is started.
-after the service is stopped artificially, or when the service needs to be started again for other reasons, because the backend database is persistent, you can start the service directly.&lt;/p>
-&lt;p>When HugeGraphServer starts, it will connect to the backend storage and try to check the version number of the backend storage. If the backend is not initialized or the backend has been initialized but the version does not match (old version data), HugeGraphServer will fail to start and give an error message.&lt;/p>
-&lt;p>If you need to access HugeGraphServer externally, please modify the &lt;code>restserver.url&lt;/code> configuration item of &lt;code>rest-server.properties&lt;/code>
-（default is &lt;code>http://127.0.0.1:8080&lt;/code>）, change to machine name or IP address.&lt;/p>
+&lt;p>Startup is divided into &amp;ldquo;first startup&amp;rdquo; and &amp;ldquo;non-first startup&amp;rdquo;. On the first startup, you need to initialize the backend database before starting the service.&lt;/p>
+&lt;p>If the service was stopped manually, or needs to be started again for any other reason, you can usually start it directly because the backend database is persistent.&lt;/p>
+&lt;p>When HugeGraphServer starts, it connects to the backend storage and checks its version information. If the backend has not been initialized, or if it was initialized with an incompatible version (for example, old-version data), HugeGraphServer will fail to start and report an error.&lt;/p>
+&lt;p>If you need to access HugeGraphServer externally, modify the &lt;code>restserver.url&lt;/code> configuration item in &lt;code>rest-server.properties&lt;/code> (the default is &lt;code>http://127.0.0.1:8080&lt;/code>) and change it to the machine name or IP address.&lt;/p>
 &lt;p>Since the configuration (hugegraph.properties) and startup steps required by various backends are slightly different, the following will introduce the configuration and startup of each backend one by one.&lt;/p>
 &lt;p>&lt;strong>Note:&lt;/strong> Configure &lt;a href="/docs/config/config-authentication/">Server Authentication&lt;/a> before starting HugeGraphServer if you need Auth mode (especially for production or public network environments).&lt;/p>
 &lt;h5 id="511-distributed-storage-hstore">5.1.1 Distributed Storage (HStore)&lt;/h5>
@@ -235,7 +231,20 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;li>Stop HugeGraph-PD&lt;/li>
 &lt;/ol>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>bin/stop-hugegraph.sh
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/details>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h6 id="docker-distributed-cluster">Docker Distributed Cluster&lt;/h6>
+&lt;p>Run the full distributed cluster (3 PD + 3 Store + 3 Server) with Docker Compose:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph/docker
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">HUGEGRAPH_VERSION&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Services communicate via container hostnames on the &lt;code>hg-net&lt;/code> bridge network. Configuration is injected via environment variables:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Server configuration&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_SERVER_BACKEND&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">hstore&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_SERVER_PD_PEERS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">pd0:8686,pd1:8686,pd2:8686&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Verify the cluster:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8080/versions
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/v1/stores
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>To view runtime logs for any container use &lt;code>docker logs &amp;lt;container-name&amp;gt;&lt;/code> (e.g. &lt;code>docker logs hg-pd0&lt;/code>).&lt;/p>
+&lt;p>See &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">docker/README.md&lt;/a> for the full environment variable reference, port table, and troubleshooting guide.&lt;/p>
+&lt;/details>
 &lt;h5 id="512-memory">5.1.2 Memory&lt;/h5>
 &lt;details>
 &lt;summary>Click to expand/collapse Memory configuration and startup methods&lt;/summary>
@@ -414,7 +423,7 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Connecting to HugeGraphServer &lt;span style="color:#ce5c00;font-weight:bold">(&lt;/span>http://127.0.0.1:8080/graphs&lt;span style="color:#ce5c00;font-weight:bold">)&lt;/span>....OK
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/details>
 &lt;h5 id="518-create-an-example-graph-when-startup">5.1.8 Create an example graph when startup&lt;/h5>
-&lt;p>Carry the &lt;code>-p true&lt;/code> arguments when starting the script, which indicates &lt;code>preload&lt;/code>, to create a sample graph.&lt;/p>
+&lt;p>Pass the &lt;code>-p true&lt;/code> argument when starting the script to enable &lt;code>preload&lt;/code>, which creates a sample graph.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>bin/start-hugegraph.sh -p true
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Starting HugeGraphServer in daemon mode...
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
@@ -424,7 +433,7 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertices&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">[{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;2:lop&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;software&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;lop&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;lang&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;java&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;price&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">328&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:josh&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;josh&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">32&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Beijing&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:marko&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;marko&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">29&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Beijing&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:peter&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;peter&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">35&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Shanghai&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:vadas&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vadas&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">27&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Hongkong&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;2:ripple&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;software&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;ripple&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;lang&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;java&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;price&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">199&lt;/span>&lt;span style="color:#000;font-weight:bold">}}]}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This indicates the successful creation of the sample graph.&lt;/p>
 &lt;h4 id="52-use-docker-to-startup">5.2 Use Docker to startup&lt;/h4>
-&lt;p>In &lt;a href="#31-use-docker-container-convenient-for-testdev">3.1 Use Docker container&lt;/a>, we have introduced how to use docker to deploy &lt;code>hugegraph-server&lt;/code>. &lt;code>server&lt;/code> can also preload an example graph by setting the parameter.&lt;/p>
+&lt;p>In &lt;a href="#31-use-docker-container-convenient-for-testdev">3.1 Use Docker container&lt;/a>, we introduced how to deploy &lt;code>hugegraph-server&lt;/code> with Docker. You can also switch storage backends or preload a sample graph by setting the corresponding parameters.&lt;/p>
 &lt;h5 id="521-uses-cassandra-as-storage">5.2.1 Uses Cassandra as storage&lt;/h5>
 &lt;blockquote>
 &lt;p>⚠️ &lt;strong>Deprecated&lt;/strong>: Cassandra backend has been removed starting from HugeGraph 1.7.0. If you need to use it, please refer to version 1.5.x documentation.&lt;/p>
@@ -478,11 +487,11 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">volumes&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">hugegraph-data&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>In this YAML file, configuration parameters related to Cassandra need to be passed as environment variables in the format of &lt;code>hugegraph.&amp;lt;parameter_name&amp;gt;&lt;/code>.&lt;/p>
-&lt;p>Specifically, in the configuration file &lt;code>hugegraph.properties&lt;/code> , there are settings like &lt;code>backend=xxx&lt;/code> and &lt;code>cassandra.host=xxx&lt;/code>. To configure these settings during the process of passing environment variables, we need to prepend &lt;code>hugegraph.&lt;/code> to these configurations, like &lt;code>hugegraph.backend&lt;/code> and &lt;code>hugegraph.cassandra.host&lt;/code>.&lt;/p>
-&lt;p>The rest of the configurations can be referenced under &lt;a href="#4-config">4 config&lt;/a>&lt;/p>
+&lt;p>Specifically, the &lt;code>hugegraph.properties&lt;/code> file contains settings such as &lt;code>backend=xxx&lt;/code> and &lt;code>cassandra.host=xxx&lt;/code>. To pass these settings through environment variables, prepend &lt;code>hugegraph.&lt;/code> to the configuration keys, for example &lt;code>hugegraph.backend&lt;/code> and &lt;code>hugegraph.cassandra.host&lt;/code>.&lt;/p>
+&lt;p>Refer to &lt;a href="#4-config">4 Config&lt;/a> for the remaining settings.&lt;/p>
 &lt;/details>
 &lt;h5 id="522-create-an-example-graph-when-starting-a-server">5.2.2 Create an example graph when starting a server&lt;/h5>
-&lt;p>Set the environment variable &lt;code>PRELOAD=true&lt;/code> when starting Docker to load data during the execution of the startup script.&lt;/p>
+&lt;p>Set the environment variable &lt;code>PRELOAD=true&lt;/code> when starting Docker so that sample data is loaded during startup.&lt;/p>
 &lt;ol>
 &lt;li>
 &lt;p>Use &lt;code>docker run&lt;/code>&lt;/p>
@@ -490,25 +499,27 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;/li>
 &lt;li>
 &lt;p>Use &lt;code>docker-compose&lt;/code>&lt;/p>
-&lt;p>Create &lt;code>docker-compose.yml&lt;/code> as following. We should set the environment variable &lt;code>PRELOAD=true&lt;/code>. &lt;a href="https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy">&lt;code>example.groovy&lt;/code>&lt;/a> is a predefined script to preload the sample data. If needed, we can mount a new &lt;code>example.groovy&lt;/code> to change the preload data.&lt;/p>
+&lt;p>Create a &lt;code>docker-compose.yml&lt;/code> file like the following and set &lt;code>PRELOAD=true&lt;/code> in the environment. &lt;a href="https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy">&lt;code>example.groovy&lt;/code>&lt;/a> is a predefined script used to preload sample data. If needed, you can mount a new &lt;code>example.groovy&lt;/code> script to change the preload data.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">version&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#4e9a06">&amp;#39;3&amp;#39;&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">services&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">services&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">server&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">image&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">hugegraph/hugegraph:1.7.0&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">container_name&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">server&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">environment&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>- &lt;span style="color:#000">PRELOAD=true&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>- &lt;span style="color:#000">PASSWORD=xxx&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">volumes&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>- &lt;span style="color:#000">/path/to/yourscript:/hugegraph/scripts/example.groovy&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">ports&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>- &lt;span style="color:#0000cf;font-weight:bold">8080&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">8080&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Use &lt;code>docker-compose up -d&lt;/code> to start the container&lt;/p>
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Use &lt;code>docker-compose up -d&lt;/code> to start the container.&lt;/p>
 &lt;/li>
 &lt;/ol>
 &lt;p>And use the RESTful API to request &lt;code>HugeGraphServer&lt;/code> and get the following result:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-javascript" data-lang="javascript">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#ce5c00;font-weight:bold">&amp;gt;&lt;/span> &lt;span style="color:#000">curl&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;http://localhost:8080/graphs/hugegraph/graph/vertices&amp;#34;&lt;/span> &lt;span style="color:#ce5c00;font-weight:bold">|&lt;/span> &lt;span style="color:#000">gunzip&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertices&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">[{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;2:lop&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;software&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;lop&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;lang&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;java&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;price&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">328&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:josh&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;josh&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">32&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Beijing&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:marko&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;marko&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">29&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Beijing&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:peter&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;peter&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">35&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Shanghai&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;1:vadas&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;person&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vadas&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;age&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">27&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;city&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;Hongkong&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">}},{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;2:ripple&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;label&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;software&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;vertex&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;properties&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;name&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;ripple&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;lang&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;java&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;price&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">199&lt;/span>&lt;span style="color:#000;font-weight:bold">}}]}&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This indicates the successful creation of the sample graph.&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This indicates that the sample graph was created successfully.&lt;/p>
 &lt;h3 id="6-access-server">6. Access server&lt;/h3>
 &lt;h4 id="61-service-startup-status-check">6.1 Service startup status check&lt;/h4>
 &lt;p>Use &lt;code>jps&lt;/code> to see a service process&lt;/p>
@@ -615,7 +626,7 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;h3 id="2-prerequisites">2 Prerequisites&lt;/h3>
 &lt;h4 id="21-requirements">2.1 Requirements&lt;/h4>
 &lt;ul>
-&lt;li>Operating System: Linux or MacOS (Windows has not been fully tested)&lt;/li>
+&lt;li>Operating System: Linux or macOS (Windows has not been fully tested)&lt;/li>
 &lt;li>Java version: ≥ 11&lt;/li>
 &lt;li>Maven version: ≥ 3.5.0&lt;/li>
 &lt;/ul>
@@ -642,7 +653,97 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 3. After successful compilation, the PD module build artifacts will be located at&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version}&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># target/apache-hugegraph-incubating-{version}.tar.gz&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="4-configuration">4 Configuration&lt;/h3>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="33-docker-deployment">3.3 Docker Deployment&lt;/h4>
+&lt;p>The HugeGraph-PD Docker image is available on Docker Hub as &lt;code>hugegraph/pd&lt;/code>.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>Note&lt;/strong>: The following steps assume you have already cloned or pulled the HugeGraph main repository locally, or at least have its &lt;code>docker/&lt;/code> directory available.&lt;/p>
+&lt;/blockquote>
+&lt;p>Use the &lt;code>docker compose&lt;/code> setup to deploy the complete 3-node cluster (PD + Store + Server):&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph/docker
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Keep the version aligned with the latest release, for example 1.x.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">HUGEGRAPH_VERSION&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>To run a single PD node via &lt;code>docker run&lt;/code>, configuration is provided via environment variables:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>docker run -d &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8620:8620 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8686:8686 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8610:8610 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_PD_GRPC_HOST&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;your-ip&amp;gt; &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_PD_RAFT_ADDRESS&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;your-ip&amp;gt;:8610 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_PD_RAFT_PEERS_LIST&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;your-ip&amp;gt;:8610 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_PD_INITIAL_STORE_LIST&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;store-ip&amp;gt;:8500 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -v /path/to/data:/hugegraph-pd/pd_data &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> --name hugegraph-pd &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> hugegraph/pd:1.7.0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>Environment variable reference:&lt;/strong>&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Variable&lt;/th>
+&lt;th>Required&lt;/th>
+&lt;th>Default&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_GRPC_HOST&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>This node&amp;rsquo;s hostname/IP for gRPC (e.g. &lt;code>pd0&lt;/code> in Docker, &lt;code>192.168.1.10&lt;/code> on bare metal)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_RAFT_ADDRESS&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>This node&amp;rsquo;s Raft address (e.g. &lt;code>pd0:8610&lt;/code>)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_RAFT_PEERS_LIST&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>All PD peers (e.g. &lt;code>pd0:8610,pd1:8610,pd2:8610&lt;/code>)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_INITIAL_STORE_LIST&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>Expected store gRPC addresses (e.g. &lt;code>store0:8500,store1:8500,store2:8500&lt;/code>)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_GRPC_PORT&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>8686&lt;/code>&lt;/td>
+&lt;td>gRPC server port&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_REST_PORT&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>8620&lt;/code>&lt;/td>
+&lt;td>REST API port&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_DATA_PATH&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>/hugegraph-pd/pd_data&lt;/code>&lt;/td>
+&lt;td>Metadata storage path&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_PD_INITIAL_STORE_COUNT&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>1&lt;/code>&lt;/td>
+&lt;td>Minimum stores required for cluster availability&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;blockquote>
+&lt;p>&lt;strong>Note&lt;/strong>: In Docker bridge networking, use container hostnames (e.g. &lt;code>pd0&lt;/code>) for &lt;code>HG_PD_GRPC_HOST&lt;/code> and &lt;code>HG_PD_RAFT_ADDRESS&lt;/code> instead of IP addresses.&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>&lt;strong>Deprecated aliases&lt;/strong>: &lt;code>GRPC_HOST&lt;/code>, &lt;code>RAFT_ADDRESS&lt;/code>, &lt;code>RAFT_PEERS&lt;/code>, &lt;code>PD_INITIAL_STORE_LIST&lt;/code> still work but log a deprecation warning. Use the &lt;code>HG_PD_*&lt;/code> names for new deployments.&lt;/p>
+&lt;/blockquote>
+&lt;p>To view runtime logs for a running PD container use &lt;code>docker logs &amp;lt;container-name&amp;gt;&lt;/code> (e.g. &lt;code>docker logs hg-pd0&lt;/code>).&lt;/p>
+&lt;p>See &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">docker/README.md&lt;/a> for the full cluster setup guide.&lt;/p>
+&lt;h3 id="4-configuration">4 Configuration&lt;/h3>
 &lt;p>The main configuration file for PD is &lt;code>conf/application.yml&lt;/code>. Here are the key configuration items:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">spring&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">application&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
@@ -662,7 +763,7 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">data-path&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">./pd_data&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># Auto-expansion check cycle (seconds)&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">patrol-interval&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#0000cf;font-weight:bold">1800&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># Initial store list, stores in the list are automatically activated&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># Minimum number of Store nodes required for cluster availability&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">initial-store-count&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#0000cf;font-weight:bold">1&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># Store configuration information, format is IP:gRPC port&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">initial-store-list&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#0000cf;font-weight:bold">127.0.0.1&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">8500&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
@@ -695,7 +796,7 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;p>In the PD installation directory, execute:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>./bin/start-hugegraph-pd.sh
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>After successful startup, you can see logs similar to the following in &lt;code>logs/hugegraph-pd-stdout.log&lt;/code>:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="52-stop-pd">5.2 Stop PD&lt;/h4>
 &lt;p>In the PD installation directory, execute:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>./bin/stop-hugegraph-pd.sh
@@ -703,9 +804,9 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;p>Confirm that the PD service is running properly:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/actuator/health
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If it returns &lt;code>{&amp;quot;status&amp;quot;:&amp;quot;UP&amp;quot;}&lt;/code>, it indicates that the PD service has been successfully started.&lt;/p>
-&lt;p>Additionally, you can verify the status of the Store node by querying the PD API:&lt;/p>
+&lt;p>Additionally, you can verify Store node status through the PD API:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/v1/stores
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If the Store is configured successfully, the response of the above interface should contain the status information of the current node. The status &amp;ldquo;Up&amp;rdquo; indicates that the node is running normally. Only the response of one node configuration is shown here. If all three nodes are configured successfully and are running, the &lt;code>storeId&lt;/code> list in the response should contain three IDs, and the &lt;code>Up&lt;/code>, &lt;code>numOfService&lt;/code>, and &lt;code>numOfNormalService&lt;/code> fields in &lt;code>stateCountMap&lt;/code> should be 3.&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If the response shows &lt;code>state&lt;/code> as &lt;code>Up&lt;/code>, the corresponding Store node is running normally. The example below shows a single Store node. In a healthy 3-node deployment, the &lt;code>storeId&lt;/code> list should contain three IDs, and &lt;code>stateCountMap.Up&lt;/code>, &lt;code>numOfService&lt;/code>, and &lt;code>numOfNormalService&lt;/code> should all be &lt;code>3&lt;/code>.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-javascript" data-lang="javascript">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;message&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;OK&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;data&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
@@ -747,10 +848,10 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;h3 id="2-prerequisites">2 Prerequisites&lt;/h3>
 &lt;h4 id="21-requirements">2.1 Requirements&lt;/h4>
 &lt;ul>
-&lt;li>Operating System: Linux or MacOS (Windows has not been fully tested)&lt;/li>
+&lt;li>Operating System: Linux or macOS (Windows has not been fully tested)&lt;/li>
 &lt;li>Java version: ≥ 11&lt;/li>
 &lt;li>Maven version: ≥ 3.5.0&lt;/li>
-&lt;li>Deployed HugeGraph-PD (for multi-node deployment)&lt;/li>
+&lt;li>Deploy HugeGraph-PD first for multi-node deployment&lt;/li>
 &lt;/ul>
 &lt;h3 id="3-deployment">3 Deployment&lt;/h3>
 &lt;p>There are two ways to deploy the HugeGraph-Store component:&lt;/p>
@@ -775,7 +876,82 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># 3. After successful compilation, the Store module build artifacts will be located at&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{version}&lt;/span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># target/apache-hugegraph-incubating-{version}.tar.gz&lt;/span>
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="4-configuration">4 Configuration&lt;/h3>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="33-docker-deployment">3.3 Docker Deployment&lt;/h4>
+&lt;p>The HugeGraph-Store Docker image is available on Docker Hub as &lt;code>hugegraph/store&lt;/code>.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>Note&lt;/strong>: The following steps assume you have already cloned or pulled the HugeGraph main repository locally, or at least have its &lt;code>docker/&lt;/code> directory available.&lt;/p>
+&lt;/blockquote>
+&lt;p>Use the compose file to deploy the complete 3-node cluster (PD + Store + Server):&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87">cd&lt;/span> hugegraph/docker
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># Keep the version aligned with the latest release, for example 1.x.0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000">HUGEGRAPH_VERSION&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>To run a single Store node via &lt;code>docker run&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>docker run -d &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8520:8520 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8500:8500 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -p 8510:8510 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_STORE_PD_ADDRESS&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;pd-ip&amp;gt;:8686 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_STORE_GRPC_HOST&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;your-ip&amp;gt; &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -e &lt;span style="color:#000">HG_STORE_RAFT_ADDRESS&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">=&lt;/span>&amp;lt;your-ip&amp;gt;:8510 &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> -v /path/to/storage:/hugegraph-store/storage &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> --name hugegraph-store &lt;span style="color:#4e9a06">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#4e9a06">&lt;/span> hugegraph/store:1.7.0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>Environment variable reference:&lt;/strong>&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Variable&lt;/th>
+&lt;th>Required&lt;/th>
+&lt;th>Default&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_PD_ADDRESS&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>PD gRPC addresses (e.g. &lt;code>pd0:8686,pd1:8686,pd2:8686&lt;/code>)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_GRPC_HOST&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>This node&amp;rsquo;s hostname/IP for gRPC (e.g. &lt;code>store0&lt;/code>)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_RAFT_ADDRESS&lt;/code>&lt;/td>
+&lt;td>Yes&lt;/td>
+&lt;td>—&lt;/td>
+&lt;td>This node&amp;rsquo;s Raft address (e.g. &lt;code>store0:8510&lt;/code>)&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_GRPC_PORT&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>8500&lt;/code>&lt;/td>
+&lt;td>gRPC server port&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_REST_PORT&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>8520&lt;/code>&lt;/td>
+&lt;td>REST API port&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>HG_STORE_DATA_PATH&lt;/code>&lt;/td>
+&lt;td>No&lt;/td>
+&lt;td>&lt;code>/hugegraph-store/storage&lt;/code>&lt;/td>
+&lt;td>Data storage path&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;blockquote>
+&lt;p>&lt;strong>Note&lt;/strong>: In Docker bridge networking, use container hostnames (e.g. &lt;code>store0&lt;/code>) for &lt;code>HG_STORE_GRPC_HOST&lt;/code> instead of IP addresses.&lt;/p>
+&lt;/blockquote>
+&lt;blockquote>
+&lt;p>&lt;strong>Deprecated aliases&lt;/strong>: &lt;code>PD_ADDRESS&lt;/code>, &lt;code>GRPC_HOST&lt;/code>, &lt;code>RAFT_ADDRESS&lt;/code> still work but log a deprecation warning. Use the &lt;code>HG_STORE_*&lt;/code> names for new deployments.&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="4-configuration">4 Configuration&lt;/h3>
 &lt;p>The main configuration file for Store is &lt;code>conf/application.yml&lt;/code>. Here are the key configuration items:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">pdserver&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#8f5902;font-style:italic"># PD service address, multiple PD addresses are separated by commas (configure PD&amp;#39;s gRPC port)&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
@@ -828,7 +1004,7 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;p>Ensure that the PD service is already started, then in the Store installation directory, execute:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>./bin/start-hugegraph-store.sh
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>After successful startup, you can see logs similar to the following in &lt;code>logs/hugegraph-store-server.log&lt;/code>:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="52-stop-store">5.2 Stop Store&lt;/h4>
 &lt;p>In the Store installation directory, execute:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>./bin/stop-hugegraph-store.sh
@@ -883,10 +1059,69 @@ after the service is stopped artificially, or when the service needs to be start
 &lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>All nodes should point to the same PD cluster:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#204a87;font-weight:bold">pdserver&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
 &lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#204a87;font-weight:bold">address&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#0000cf;font-weight:bold">127.0.0.1&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">8686&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">127.0.0.1&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">8687&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">127.0.0.1&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#0000cf;font-weight:bold">8688&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
-&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="7-verify-store-service">7 Verify Store Service&lt;/h3>
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="63-docker-distributed-cluster-configuration">6.3 Docker Distributed Cluster Configuration&lt;/h4>
+&lt;p>The distributed Store cluster definition is included in &lt;code>docker/docker-compose-3pd-3store-3server.yml&lt;/code>. Each Store node gets its own hostname and environment variables:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-yaml" data-lang="yaml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic"># store0&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_PD_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">pd0:8686,pd1:8686,pd2:8686&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_GRPC_HOST&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store0&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_GRPC_PORT&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#4e9a06">&amp;#34;8500&amp;#34;&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_REST_PORT&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#4e9a06">&amp;#34;8520&amp;#34;&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_RAFT_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store0:8510&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_DATA_PATH&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">/hugegraph-store/storage&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#8f5902;font-style:italic"># store1&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_PD_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">pd0:8686,pd1:8686,pd2:8686&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_GRPC_HOST&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store1&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_RAFT_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store1:8510&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#8f5902;font-style:italic"># store2&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_PD_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">pd0:8686,pd1:8686,pd2:8686&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_GRPC_HOST&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store2&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f8f8f8;text-decoration:underline">&lt;/span>&lt;span style="color:#204a87;font-weight:bold">HG_STORE_RAFT_ADDRESS&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline"> &lt;/span>&lt;span style="color:#000">store2:8510&lt;/span>&lt;span style="color:#f8f8f8;text-decoration:underline">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Store nodes start only after all PD nodes pass healthchecks (&lt;code>/v1/health&lt;/code>), enforced via &lt;code>depends_on: condition: service_healthy&lt;/code>.&lt;/p>
+&lt;p>To view runtime logs for a running Store container use &lt;code>docker logs &amp;lt;container-name&amp;gt;&lt;/code> (e.g. &lt;code>docker logs hg-store0&lt;/code>).&lt;/p>
+&lt;p>See &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">docker/README.md&lt;/a> for the full setup guide.&lt;/p>
+&lt;h3 id="7-verify-store-service">7 Verify Store Service&lt;/h3>
 &lt;p>Confirm that the Store service is running properly:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8520/actuator/health
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If it returns &lt;code>{&amp;quot;status&amp;quot;:&amp;quot;UP&amp;quot;}&lt;/code>, it indicates that the Store service has been successfully started.&lt;/p>
 &lt;p>Additionally, you can check the status of Store nodes in the cluster through the PD API:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/pd/api/v1/stores
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>curl http://localhost:8620/v1/stores
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>If Store is configured successfully, the response should include status information for the current node, and &lt;code>state: &amp;quot;Up&amp;quot;&lt;/code> means the node is running normally.&lt;/p>
+&lt;p>The example below shows a single Store node. If all three nodes are configured correctly and running, the &lt;code>storeId&lt;/code> list should contain three IDs, and &lt;code>stateCountMap.Up&lt;/code>, &lt;code>numOfService&lt;/code>, and &lt;code>numOfNormalService&lt;/code> should all be &lt;code>3&lt;/code>.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-javascript" data-lang="javascript">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;message&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;OK&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;data&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;stores&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;storeId&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">8319292642220586694&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;address&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;127.0.0.1:8500&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;raftAddress&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;127.0.0.1:8510&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;version&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;state&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;Up&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;deployPath&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;/Users/{your_user_name}/hugegraph/apache-hugegraph-incubating-1.5.0/apache-hugegraph-store-incubating-1.5.0/lib/hg-store-node-1.5.0.jar&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;dataPath&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;./storage&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;startTimeStamp&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">1754027127969&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;registedTimeStamp&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">1754027127969&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;lastHeartBeat&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">1754027909444&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;capacity&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">494384795648&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;available&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">346535829504&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;partitionCount&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">0&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;graphSize&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">0&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;keyCount&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">0&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;leaderCount&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">0&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;serviceName&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;127.0.0.1:8500-store&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;serviceVersion&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;serviceCreatedTimeStamp&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">1754027127000&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;partitions&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[]&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;stateCountMap&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;Up&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;numOfService&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">1&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;numOfNormalService&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;status&amp;#34;&lt;/span>&lt;span style="color:#ce5c00;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">0&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div></description></item></channel></rss>

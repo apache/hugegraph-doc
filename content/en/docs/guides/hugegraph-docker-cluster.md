@@ -1,7 +1,7 @@
 ---
 title: "HugeGraph Docker Cluster Guide"
 linkTitle: "Docker Cluster"
-weight: 5
+weight: 6
 ---
 
 ## Overview

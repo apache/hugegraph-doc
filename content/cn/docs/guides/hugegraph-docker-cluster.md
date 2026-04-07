@@ -1,7 +1,7 @@
 ---
 title: "HugeGraph Docker 集群部署指南"
 linkTitle: "Docker 集群"
-weight: 5
+weight: 6
 ---
 
 ## 概述

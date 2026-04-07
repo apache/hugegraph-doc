@@ -256,7 +256,7 @@ HG_STORE_GRPC_HOST: store2
 HG_STORE_RAFT_ADDRESS: store2:8510
 ```
 
-Store 节点仅在所有 PD 节点通过健康检查（`/v1/health`）后启动，通过 `depends_on: condition: service_healthy` 强制执行。
+Store 节点仅在所有 PD 节点通过健康检查后才会启动，其中 docker-compose 中的 healthcheck 实际访问的是 PD 的 REST 接口 `/v1/health`（也可以通过 Actuator 暴露的 `/actuator/health` 进行手动检查），并通过 `depends_on: condition: service_healthy` 强制执行依赖关系。
 
 运行时日志可通过 `docker logs <container-name>`（如 `docker logs hg-store0`）直接查看，无需进入容器。
 

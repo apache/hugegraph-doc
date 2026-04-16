@@ -27,7 +27,7 @@ user(name=xx) -belong-> group(name=xx) -access(read)-> target(graph=graph1, reso
 By default, HugeGraph does **not enable** user authentication, and it needs to be enabled by modifying the configuration file.
 
 > ⚠️ **SEC Reminder: Security of Graph Query Languages (Gremlin/Cypher)**
->  
+>
 > Due to potential system security risks brought about by the flexibility of graph query languages, **please avoid exposing any query-related endpoints directly to public/external network environments**. In actual production deployments, please use the **[Authentication System](/docs/config/config-authentication/)** outlined here combined with an **IP Whitelist** as a dual-security mechanism, and we recommend enabling Audit Logs to pinpoint the exact queries executed by users. Given the stateless nature of the Server, it is strongly recommended overall to use a **[Containerized Environment (Docker/K8s)](/docs/quickstart/hugegraph/hugegraph-server/#31-use-docker-container-convenient-for-testdev)** architecture to effectively isolate underlying system safety risks at a minimal cost.
 
 You need to modify the configuration file to enable this feature. HugeGraph provides built-in authentication mode: `StandardAuthenticator`. This mode supports multi-user authentication and fine-grained permission control. Additionally, developers can implement their own `HugeAuthenticator` interface to integrate with their existing authentication systems.

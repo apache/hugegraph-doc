@@ -33,7 +33,7 @@ There are four ways to deploy HugeGraph-Server components:
 - Method 3: Source code compilation
 - Method 4: One-click deployment
 
-> ⚠️ **SEC Reminder**: Due to the high flexibility of graph query languages (like Gremlin/Cypher), exposing native query endpoints directly presents potential security risks. Therefore, **please avoid exposing any query-related endpoints directly in public network environments**. In production environments, it is imperative to enable the **[Authentication System (Auth)](/docs/config/config-authentication/)** combined with an **IP Whitelist** to establish a dual assurance mechanism, along with an Audit Log to track specific query statements. It is heavily recommended to adopt a **[Containerized Environment (Docker/K8s)](#31-use-docker-container-convenient-for-testdev)** for deployment to achieve better system-level security isolation.
+> ⚠️ **SEC Reminder**: Due to the high flexibility of graph query languages (like Gremlin/Cypher), exposing native query endpoints directly presents potential security risks. Therefore, **please avoid exposing any query-related endpoints directly in public network environments**. In production environments, it is imperative to enable the **[Authentication System (Auth)](/docs/config/config-authentication/)** combined with an **IP Whitelist** to establish a dual assurance mechanism, along with an Audit Log to track specific query statements. It is strongly recommended to adopt a **[Containerized Environment (Docker/K8s)](#31-use-docker-container-convenient-for-testdev)** for deployment to achieve better system-level security isolation.
 
 #### 3.1 Use Docker container (Convenient for Test/Dev)
 

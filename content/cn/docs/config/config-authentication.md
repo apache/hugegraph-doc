@@ -27,7 +27,7 @@ user(name=xx) -belong-> group(name=xx) -access(read)-> target(graph=graph1, reso
 HugeGraph 目前默认**未启用**用户认证功能，需通过修改配置文件来启用该功能。
 
 > ⚠️ **SEC 提醒：图查询语言 (Gremlin/Cypher) 的安全性**
->  
+>
 > 出于图查询语言的灵活性可能带来的潜在系统安全隐患，**请避免直接在公网/外网环境暴露任何查询相关接口**。在实际生产部署时，请以此处的 **[鉴权认证体系](/cn/docs/config/config-authentication/)** 结合 **IP 白名单** 为安全双重保障机制，同时建议开启 Audit Log (审计日志) 以精准定位用户执行的具体查询语句。鉴于 Server 的无状态特性，整体架构上强烈推荐采用 **[容器化环境 (Docker/K8s)](/cn/docs/quickstart/hugegraph/hugegraph-server/#31-使用-docker-容器-便于测试)** 部署，以极低成本有效隔离底层系统的安全风险。
 
 目前已内置实现了`StandardAuthenticator`模式，该模式支持多用户认证与细粒度权限控制。此外，开发者可以自定义实现`HugeAuthenticator`接口来对接自身的权限系统。

@@ -6,6 +6,14 @@ weight: 7
 
 ## 报告 Apache HugeGraph 的安全问题
 
+> ⚠️ **SEC 提醒：致漏洞研究人员关于图查询语言的说明**
+>
+> 鉴于图查询语言 (如 Gremlin/Cypher) 本身在解析与执行上的灵活性，HugeGraph 推荐在生产环境依赖 **"[Auth (配置鉴权)](/cn/docs/config/config-authentication/) + IP 白名单 + Audit Log (审计日志)"** 机制来践行最小权限原则。同时由于 Server 节点基本是无状态的，**所有生产环境均明确建议使用[容器环境 (Docker/K8s)](/cn/docs/quickstart/hugegraph/hugegraph-server/#31-使用-docker-容器-便于测试) 进行隔离部署**。
+>
+> 近期社区已收到较多关于图查询语言灵活性的安全反馈。在 HugeGraph 安全体系整体重构完成前，对于在**不启用或跳过 Auth 系统/避开授权身份**的前提下执行 DSL 查询的情况，此类已知风险将**不再单独视为新漏洞**进行处理。
+>
+> 但是，如果在**已开启 Auth 系统**的环境中，仍能以**匿名或未授权身份访问**并进行漏洞利用，或者成功**绕过 IP 白名单 / 逃逸容器**造成严重越权或底层系统破坏，我们仍然将其视为高危安全漏洞，非常欢迎您随时向我们反馈！
+
 遵循 ASF 的规范，HugeGraph 社区对**解决修复**项目中的安全问题保持非常积极和开放的态度。
 
 我们强烈建议用户首先向我们的独立安全邮件列表报告此类问题，相关详细的流程规范请参考 [ASF SEC](https://www.apache.org/security/committers.html) 守则。

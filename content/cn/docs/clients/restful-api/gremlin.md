@@ -7,6 +7,11 @@ description: "Gremlin（图查询语言）REST 接口:通过 HTTP 接口执行 G
 
 ### 8.1 Gremlin
 
+> ⚠️ **SEC 提醒：生产环境下安全使用原生查询接口**
+>
+> 图查询语言 (如 Gremlin/Cypher) 本身的灵活性会带来一些潜在的安全隐患。为了保障核心安全，**请避免直接在公网环境暴露任何相关的原生查询接口**。
+> 在必须对内暴露的生产场景中，必须开启 **[鉴权体系 (Auth)](/cn/docs/config/config-authentication/)** 并结合 **IP 白名单**作为双重保障机制，严格控制用户执行权限。同时建议结合 Audit Log (审计日志) 来审计具体执行的语句，以及采用 **[容器环境 (Docker/K8s)](/cn/docs/quickstart/hugegraph/hugegraph-server/#31-使用-docker-容器-便于测试)** 部署以提升系统级的安全隔离。
+
 #### 8.1.1 向 HugeGraphServer 发送 gremlin 语句（GET），同步执行
 
 ##### Params

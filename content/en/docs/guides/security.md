@@ -6,6 +6,14 @@ weight: 7
 
 ## Reporting New Security Problems with Apache HugeGraph
 
+> ⚠️ **SEC Reminder: Notice to Vulnerability Researchers Regarding Graph Query Languages**
+>
+> Given the inherent parsing and execution flexibility of graph query languages (like Gremlin/Cypher), HugeGraph strongly recommends relying on the **"[Auth (Authentication)](/docs/config/config-authentication/) + IP Whitelist + Audit Log"** mechanism in production environments to adhere to the Principle of Least Privilege. Furthermore, since Server nodes are essentially stateless, **it is explicitly advised to use [Containerized Environments (Docker/K8s)](/docs/quickstart/hugegraph/hugegraph-server/#31-use-docker-container-convenient-for-testdev) for isolated deployments in all production environments**.
+>
+> Recently, the community has received numerous security reports concerning the flexibility of graph queries. Until the overall HugeGraph security architecture is fully refactored, known situations involving the execution of DSL queries under the premise of **not enabling/skipping the Auth system or avoiding authorized identities** will **no longer be treated individually as new vulnerabilities**.
+>
+> However, if a vulnerability can still be exploited in an environment where the **Auth system is enabled** by accessing it with an **anonymous or unauthorized identity**, or if one successfully **bypasses the IP whitelist / escapes the container** causing severe unauthorized access or underlying system destruction, we still consider this a high-risk security vulnerability and highly encourage you to report it to us at any time!
+
 Adhering to the specifications of ASF, the HugeGraph community maintains a highly proactive and open attitude towards addressing security issues in the **remediation** projects.
 
 We strongly recommend that users first report such issues to our dedicated security email list, with detailed procedures specified in the [ASF SEC](https://www.apache.org/security/committers.html) code of conduct.

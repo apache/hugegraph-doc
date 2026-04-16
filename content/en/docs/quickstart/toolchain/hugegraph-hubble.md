@@ -409,6 +409,8 @@ HugeGraph supports Gremlin, a graph traversal query language of Apache TinkerPop
 
 After Gremlin query, below is the graph result display area, which provides 3 kinds of graph result display modes: [Graph Mode], [Table Mode], [Json Mode].
 
+> ⚠️ **SEC Reminder**: Hubble allows the direct input and execution of native Gremlin query statements on the web interface, which grants users relatively high operational privileges. **Please avoid exposing the Hubble service to public network environments**. It is recommended to ensure that the graph database server has enabled the **[Authentication System (Auth)](/docs/config/config-authentication/)** combined with an **IP Whitelist** for strict permission control when in use, preventing unauthorized access or malware execution risks.
+
 Support zoom, center, full screen, export and other operations.
 
 【Picture Mode】

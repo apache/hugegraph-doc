@@ -7,6 +7,11 @@ description: "Gremlin REST API: Execute Gremlin graph traversal language scripts
 
 ### 8.1 Gremlin
 
+> ⚠️ **SEC Reminder: Safe Usage of Native Query Endpoints in Production Environments**
+>
+> The flexibility of Graph Query Languages (such as Gremlin/Cypher) inherently introduces certain potential security risks. To ensure core security, **please avoid exposing any related native query endpoints directly to the public network**.
+> In production scenarios where internal exposure is required, you must enable the **[Authentication System (Auth)](/docs/config/config-authentication/)** combined with an **IP Whitelist** as a dual-security mechanism to strictly control user execution permissions. Additionally, it is advised to use an Audit Log to audit the specific statements executed and to adopt **[Containerized Deployment (Docker/K8s)](/docs/quickstart/hugegraph/hugegraph-server/#31-use-docker-container-convenient-for-testdev)** to enhance system-level security isolation.
+
 #### 8.1.1 Sending a gremlin statement (GET) to HugeGraphServer for synchronous execution
 
 ##### Params

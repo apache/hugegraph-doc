@@ -142,6 +142,8 @@ Another way is to set the environment variable in the bin/hugegraph script:
 
 ##### 3.5 Gremlin Type，gremlin-execute and gremlin-schedule
 
+> ⚠️ **SEC Reminder**: The execution of Gremlin depends on the actual logic of the statements, which may involve scenarios such as large-scale data modification and high-risk system calls with potential implicit hazards. Please use this tool **only in secure and trusted network environments**. It is imperative to bind the backend graph database with the **[Authentication System (Auth)](/docs/config/config-authentication/)** and an **IP Whitelist** to restrict execution requests on the server side. Never hand over the tool or expose the execution entry to unauthorized personnel.
+
 - gremlin-execute, send Gremlin statements to HugeGraph-Server to execute query or modification operations, execute synchronously, and return results after completion
   - --file or -f, specify the script file to execute, UTF-8 encoding, mutually exclusive with --script
   - --script or -s, specifies the script string to execute, mutually exclusive with --file

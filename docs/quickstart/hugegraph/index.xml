@@ -23,7 +23,9 @@
 &lt;li>Method 3: Source code compilation&lt;/li>
 &lt;li>Method 4: One-click deployment&lt;/li>
 &lt;/ul>
-&lt;p>&lt;strong>Note:&lt;/strong> For production environments or environments exposed to the public network, you must use Java 11 and enable &lt;a href="/docs/config/config-authentication/">Auth authentication&lt;/a> to avoid security risks.&lt;/p>
+&lt;blockquote>
+&lt;p>⚠️ &lt;strong>SEC Reminder&lt;/strong>: Due to the high flexibility of graph query languages (like Gremlin/Cypher), exposing native query endpoints directly presents potential security risks. Therefore, &lt;strong>please avoid exposing any query-related endpoints directly in public network environments&lt;/strong>. In production environments, it is imperative to enable the &lt;strong>&lt;a href="/docs/config/config-authentication/">Authentication System (Auth)&lt;/a>&lt;/strong> combined with an &lt;strong>IP Whitelist&lt;/strong> to establish a dual assurance mechanism, along with an Audit Log to track specific query statements. It is strongly recommended to adopt a &lt;strong>&lt;a href="#31-use-docker-container-convenient-for-testdev">Containerized Environment (Docker/K8s)&lt;/a>&lt;/strong> for deployment to achieve better system-level security isolation.&lt;/p>
+&lt;/blockquote>
 &lt;h4 id="31-use-docker-container-convenient-for-testdev">3.1 Use Docker container (Convenient for Test/Dev)&lt;/h4>
 &lt;!-- 3.1 is linked by another place. if change 3.1's title, please check -->
 &lt;p>You can refer to the &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">Docker deployment guide&lt;/a>.&lt;/p>

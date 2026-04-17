@@ -327,6 +327,9 @@ error retry mechanism, etc., which reduces import costs and improves efficiency.
 &lt;h5 id="443-graph-analysis-and-processing">4.4.3 Graph Analysis and Processing&lt;/h5>
 &lt;p>HugeGraph supports Gremlin, a graph traversal query language of Apache TinkerPop3. Gremlin is a general graph database query language. By entering Gremlin statements and clicking execute, you can perform query and analysis operations on graph data, and create and delete vertices/edges. vertex/edge attribute modification, etc.&lt;/p>
 &lt;p>After Gremlin query, below is the graph result display area, which provides 3 kinds of graph result display modes: [Graph Mode], [Table Mode], [Json Mode].&lt;/p>
+&lt;blockquote>
+&lt;p>⚠️ &lt;strong>SEC Reminder&lt;/strong>: Hubble allows the direct input and execution of native Gremlin query statements on the web interface, which grants users relatively high operational privileges. &lt;strong>Please avoid exposing the Hubble service to public network environments&lt;/strong>. It is recommended to ensure that the graph database server has enabled the &lt;strong>&lt;a href="/docs/config/config-authentication/">Authentication System (Auth)&lt;/a>&lt;/strong> combined with an &lt;strong>IP Whitelist&lt;/strong> for strict permission control when in use, preventing unauthorized access or malware execution risks.&lt;/p>
+&lt;/blockquote>
 &lt;p>Support zoom, center, full screen, export and other operations.&lt;/p>
 &lt;p>【Picture Mode】&lt;/p>
 &lt;center>
@@ -2058,6 +2061,9 @@ And there is no need to guarantee the order between the two parameters.&lt;/p>
 &lt;/li>
 &lt;/ul>
 &lt;h5 id="35-gremlin-typegremlin-execute-and-gremlin-schedule">3.5 Gremlin Type，gremlin-execute and gremlin-schedule&lt;/h5>
+&lt;blockquote>
+&lt;p>⚠️ &lt;strong>SEC Reminder&lt;/strong>: The execution of Gremlin depends on the actual logic of the statements, which may involve scenarios such as large-scale data modification and high-risk system calls with potential implicit hazards. Please use this tool &lt;strong>only in secure and trusted network environments&lt;/strong>. It is imperative to configure and secure &lt;strong>HugeGraph-Server&lt;/strong> with the &lt;strong>&lt;a href="/docs/config/config-authentication/">Authentication System (Auth)&lt;/a>&lt;/strong> and an &lt;strong>IP Whitelist&lt;/strong> to restrict execution requests on the server side. Never hand over the tool or expose the execution entry to unauthorized personnel.&lt;/p>
+&lt;/blockquote>
 &lt;ul>
 &lt;li>gremlin-execute, send Gremlin statements to HugeGraph-Server to execute query or modification operations, execute synchronously, and return results after completion
 &lt;ul>

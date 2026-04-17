@@ -1325,6 +1325,12 @@ HugeGraph目前采用EdgeCut的分区方案。&lt;/p>
 &lt;/ul>
 &lt;p>其他问题可以在对应项目的 issue 区搜索，例如 &lt;a href="https://github.com/apache/hugegraph/issues">Server-Issues&lt;/a> / &lt;a href="https://github.com/apache/hugegraph-toolchain/issues">Loader Issues&lt;/a>&lt;/p></description></item><item><title>Docs: 报告安全问题</title><link>/cn/docs/guides/security/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/guides/security/</guid><description>
 &lt;h2 id="报告-apache-hugegraph-的安全问题">报告 Apache HugeGraph 的安全问题&lt;/h2>
+&lt;blockquote>
+&lt;p>⚠️ &lt;strong>SEC 提醒：致漏洞研究人员关于图查询语言的说明&lt;/strong>&lt;/p>
+&lt;p>鉴于图查询语言 (如 Gremlin/Cypher) 本身在解析与执行上的灵活性，HugeGraph 推荐在生产环境依赖 &lt;strong>&amp;quot;&lt;a href="/cn/docs/config/config-authentication/">Auth (配置鉴权)&lt;/a> + IP 白名单 + Audit Log (审计日志)&amp;quot;&lt;/strong> 机制来践行最小权限原则。同时由于 Server 节点基本是无状态的，&lt;strong>所有生产环境均明确建议使用&lt;a href="/cn/docs/quickstart/hugegraph/hugegraph-server/#31-%E4%BD%BF%E7%94%A8-docker-%E5%AE%B9%E5%99%A8-%E4%BE%BF%E4%BA%8E%E6%B5%8B%E8%AF%95">容器环境 (Docker/K8s)&lt;/a> 进行隔离部署&lt;/strong>。&lt;/p>
+&lt;p>近期社区已收到较多关于图查询语言灵活性的安全反馈。在 HugeGraph 安全体系整体重构完成前，对于在&lt;strong>不启用或跳过 Auth 系统/避开授权身份&lt;/strong>的前提下执行 DSL 查询的情况，此类已知风险将&lt;strong>不再单独视为新漏洞&lt;/strong>进行处理。&lt;/p>
+&lt;p>但是，如果在&lt;strong>已开启 Auth 系统&lt;/strong>的环境中，仍能以&lt;strong>匿名或未授权身份访问&lt;/strong>并进行漏洞利用，或者成功&lt;strong>绕过 IP 白名单 / 逃逸容器&lt;/strong>造成严重越权或底层系统破坏，我们仍然将其视为高危安全漏洞，非常欢迎您随时向我们反馈！&lt;/p>
+&lt;/blockquote>
 &lt;p>遵循 ASF 的规范，HugeGraph 社区对&lt;strong>解决修复&lt;/strong>项目中的安全问题保持非常积极和开放的态度。&lt;/p>
 &lt;p>我们强烈建议用户首先向我们的独立安全邮件列表报告此类问题，相关详细的流程规范请参考 &lt;a href="https://www.apache.org/security/committers.html">ASF SEC&lt;/a> 守则。&lt;/p>
 &lt;p>请注意，安全邮件组适用于报告&lt;strong>未公开&lt;/strong>的安全漏洞并跟进漏洞处理的过程。常规的软件 &lt;code>Bug/Error&lt;/code> 报告应该使用 &lt;code>Github Issue/Discussion&lt;/code>

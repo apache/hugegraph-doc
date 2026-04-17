@@ -24,7 +24,9 @@
 &lt;li>方式 3：源码编译&lt;/li>
 &lt;li>方式 4：使用 tools 工具部署 (Outdated)&lt;/li>
 &lt;/ul>
-&lt;p>&lt;strong>注意&lt;/strong>：生产环境或对公网暴露的环境必须使用 Java 11，并开启 &lt;a href="/cn/docs/config/config-authentication/">Auth 权限认证&lt;/a>，否则存在安全风险。&lt;/p>
+&lt;blockquote>
+&lt;p>⚠️ &lt;strong>SEC 提醒&lt;/strong>：由于图查询语言 (如 Gremlin/Cypher) 的高度灵活性，直接暴露原生查询接口会带来潜在的安全隐患，因此&lt;strong>请避免直接在公网环境中暴露任何查询相关接口&lt;/strong>。生产环境中务必开启 &lt;strong>&lt;a href="/cn/docs/config/config-authentication/">鉴权体系 (Auth)&lt;/a>&lt;/strong> 配合 &lt;strong>IP 白名单&lt;/strong> 构成双重保障机制，同时建议辅以 Audit Log (审计日志) 追踪具体查询语句。推荐整体采用 &lt;strong>&lt;a href="#31-%E4%BD%BF%E7%94%A8-docker-%E5%AE%B9%E5%99%A8-%E4%BE%BF%E4%BA%8E%E6%B5%8B%E8%AF%95">容器化环境 (Docker/K8s)&lt;/a>&lt;/strong> 进行部署以获得更好的系统级安全隔离。&lt;/p>
+&lt;/blockquote>
 &lt;h4 id="31-使用-docker-容器-便于测试">3.1 使用 Docker 容器 (便于&lt;strong>测试&lt;/strong>)&lt;/h4>
 &lt;!-- 3.1 is linked by another place. if change 3.1's title, please check -->
 &lt;p>可参考 &lt;a href="https://github.com/apache/hugegraph/blob/master/docker/README.md">Docker 部署方式&lt;/a>。&lt;/p>

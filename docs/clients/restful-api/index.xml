@@ -6042,6 +6042,11 @@ When you complete the restore, change the graph mode to None.&lt;/p>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>At this point, the number of vertices whose label is man must be less than 10.&lt;/p></description></item><item><title>Docs: Gremlin API</title><link>/docs/clients/restful-api/gremlin/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/clients/restful-api/gremlin/</guid><description>
 &lt;h3 id="81-gremlin">8.1 Gremlin&lt;/h3>
+&lt;blockquote>
+&lt;p>⚠️ &lt;strong>SEC Reminder: Safe Usage of Native Query Endpoints in Production Environments&lt;/strong>&lt;/p>
+&lt;p>The flexibility of Graph Query Languages (such as Gremlin/Cypher) inherently introduces certain potential security risks. To ensure core security, &lt;strong>please avoid exposing any related native query endpoints directly to the public network&lt;/strong>.
+In production scenarios where internal exposure is required, you must enable the &lt;strong>&lt;a href="/docs/config/config-authentication/">Authentication System (Auth)&lt;/a>&lt;/strong> combined with an &lt;strong>IP Whitelist&lt;/strong> as a dual-security mechanism to strictly control user execution permissions. Additionally, it is advised to use an Audit Log to audit the specific statements executed and to adopt &lt;strong>&lt;a href="/docs/quickstart/hugegraph/hugegraph-server/#31-use-docker-container-convenient-for-testdev">Containerized Deployment (Docker/K8s)&lt;/a>&lt;/strong> to enhance system-level security isolation.&lt;/p>
+&lt;/blockquote>
 &lt;h4 id="811-sending-a-gremlin-statement-get-to-hugegraphserver-for-synchronous-execution">8.1.1 Sending a gremlin statement (GET) to HugeGraphServer for synchronous execution&lt;/h4>
 &lt;h5 id="params">Params&lt;/h5>
 &lt;ul>

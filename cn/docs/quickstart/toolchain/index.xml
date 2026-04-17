@@ -316,6 +316,9 @@
 &lt;h5 id="443图分析与处理">4.4.3 图分析与处理&lt;/h5>
 &lt;p>HugeGraph 支持 Apache TinkerPop3 的图遍历查询语言 Gremlin，Gremlin 是一种通用的图数据库查询语言，通过输入 Gremlin 语句，点击执行，即可执行图数据的查询分析操作，并可实现顶点/边的创建及删除、顶点/边的属性修改等。&lt;/p>
 &lt;p>Gremlin 查询后，下方为图结果展示区域，提供 3 种图结果展示方式，分别为：【图模式】、【表格模式】、【Json 模式】。&lt;/p>
+&lt;blockquote>
+&lt;p>⚠️ &lt;strong>SEC 提醒&lt;/strong>：Hubble 允许在网页端直接输入并执行 Gremlin 原生查询语句，这赋予了使用者较高的操作权限。&lt;strong>请避免将 Hubble 服务暴露在公网环境&lt;/strong>，建议在使用时确保图数据库服务端已开启 &lt;strong>&lt;a href="/cn/docs/config/config-authentication/">鉴权体系 (Auth)&lt;/a>&lt;/strong> 并配合 &lt;strong>IP 白名单&lt;/strong>进行严格的权限控制，防止未授权访问或恶意代码执行风险。&lt;/p>
+&lt;/blockquote>
 &lt;p>支持缩放、居中、全屏、导出等操作。&lt;/p>
 &lt;p>【图模式】&lt;/p>
 &lt;center>

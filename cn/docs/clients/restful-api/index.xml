@@ -6078,6 +6078,11 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>此时查询 label 为 man 的顶点数目，一定是小于 10 的。&lt;/p></description></item><item><title>Docs: Gremlin API</title><link>/cn/docs/clients/restful-api/gremlin/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/clients/restful-api/gremlin/</guid><description>
 &lt;h3 id="81-gremlin">8.1 Gremlin&lt;/h3>
+&lt;blockquote>
+&lt;p>⚠️ &lt;strong>SEC 提醒：生产环境下安全使用原生查询接口&lt;/strong>&lt;/p>
+&lt;p>图查询语言 (如 Gremlin/Cypher) 本身的灵活性会带来一些潜在的安全隐患。为了保障核心安全，&lt;strong>请避免直接在公网环境暴露任何相关的原生查询接口&lt;/strong>。
+在必须对内暴露的生产场景中，必须开启 &lt;strong>&lt;a href="/cn/docs/config/config-authentication/">鉴权体系 (Auth)&lt;/a>&lt;/strong> 并结合 &lt;strong>IP 白名单&lt;/strong>作为双重保障机制，严格控制用户执行权限。同时建议结合 Audit Log (审计日志) 来审计具体执行的语句，以及采用 &lt;strong>&lt;a href="/cn/docs/quickstart/hugegraph/hugegraph-server/#31-%E4%BD%BF%E7%94%A8-docker-%E5%AE%B9%E5%99%A8-%E4%BE%BF%E4%BA%8E%E6%B5%8B%E8%AF%95">容器环境 (Docker/K8s)&lt;/a>&lt;/strong> 部署以提升系统级的安全隔离。&lt;/p>
+&lt;/blockquote>
 &lt;h4 id="811-向-hugegraphserver-发送-gremlin-语句get同步执行">8.1.1 向 HugeGraphServer 发送 gremlin 语句（GET），同步执行&lt;/h4>
 &lt;h5 id="params">Params&lt;/h5>
 &lt;ul>

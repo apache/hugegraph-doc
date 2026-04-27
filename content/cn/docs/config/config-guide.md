@@ -146,7 +146,7 @@ ssl: {
 - host：部署 GremlinServer 机器的机器名或 IP，目前 HugeGraphServer 不支持分布式部署，且 GremlinServer 不直接暴露给用户;
 - port：部署 GremlinServer 机器的端口；
 
-同时需要在 rest-server.properties 中增加对应的配置项 gremlinserver.url=http://host:port
+同时需要在 rest-server.properties 中增加对应的配置项 gremlinserver.url=host:port
 
 ### 3 rest-server.properties
 
@@ -155,10 +155,10 @@ rest-server.properties 文件的默认内容如下：
 ```properties
 # bind url
 # could use '0.0.0.0' or specified (real)IP to expose external network access
-restserver.url=http://127.0.0.1:8080
+restserver.url=127.0.0.1:8080
 #restserver.enable_graphspaces_filter=false
 # gremlin server url, need to be consistent with host and port in gremlin-server.yaml
-#gremlinserver.url=http://127.0.0.1:8182
+#gremlinserver.url=127.0.0.1:8182
 
 graphs=./conf/graphs
 
@@ -210,12 +210,12 @@ memory_monitor.threshold=0.85
 memory_monitor.period=2000
 ```
 
-- restserver.url：RestServer 提供服务的 url，根据实际环境修改。如果其他 IP 地址无法访问，可以尝试修改为特定的地址；或修改为 `http://0.0.0.0` 来监听来自任何 IP 地址的请求，这种方案较为便捷，但需要留意服务可被访问的网络范围；
+- restserver.url：RestServer 提供服务的 url，根据实际环境修改。如果其他 IP 地址无法访问，可以尝试修改为特定的地址；或修改为 `0.0.0.0` 来监听来自任何 IP 地址的请求，这种方案较为便捷，但需要留意服务可被访问的网络范围；
 - graphs：RestServer 启动时也需要打开图，该项为 map 结构，key 是图的名字，value 是该图的配置文件路径；
 
 > 注意：gremlin-server.yaml 和 rest-server.properties 都包含 graphs 配置项，而 `init-store` 命令是根据 gremlin-server.yaml 的 graphs 下的图进行初始化的。
 
-> 配置项 gremlinserver.url 是 GremlinServer 为 RestServer 提供服务的 url，该配置项默认为 http://localhost:8182，如需修改，需要和 gremlin-server.yaml 中的 host 和 port 相匹配；
+> 配置项 gremlinserver.url 是 GremlinServer 为 RestServer 提供服务的 url，该配置项默认为 localhost:8182，如需修改，需要和 gremlin-server.yaml 中的 host 和 port 相匹配；
 
 ### 4 hugegraph.properties
 

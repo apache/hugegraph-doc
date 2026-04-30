@@ -31,6 +31,7 @@
     * [Rank](clients/restful-api/rank)
     * [Variable](clients/restful-api/variable)
     * [Graphs](clients/restful-api/graphs)
+    * [算法](clients/restful-api/algorithm)
     * [Task](clients/restful-api/task)
     * [Gremlin](clients/restful-api/gremlin)
     * [Cypher](clients/restful-api/cypher)

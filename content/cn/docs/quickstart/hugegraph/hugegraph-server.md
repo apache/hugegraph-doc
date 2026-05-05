@@ -371,7 +371,7 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 
 提示的 url 与 `rest-server.properties` 中配置的 `restserver.url` 一致
 
-**ToplingDB (Beta)**: 作为 RocksDB 的高性能替代方案，配置方式请参考: [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="cn">}})
+**ToplingDB (Beta)**: 作为 RocksDB 的高性能替代方案，配置方式请参考: [ToplingDB Quick Start](/cn/blog/2025/10/09/toplingdb-quick-start/)
 
 </details>
 

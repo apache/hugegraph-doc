@@ -1,0 +1,304 @@
+:root {
+  --ifm-color-primary: #b32025;
+  --ifm-color-primary-dark: #9f1c21;
+  --ifm-color-primary-darker: #8f191d;
+  --ifm-color-primary-darkest: #751418;
+  --ifm-color-primary-light: #c83b3f;
+  --ifm-color-primary-lighter: #d15256;
+  --ifm-color-primary-lightest: #df7477;
+  --ifm-font-family-base: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ifm-heading-font-family: var(--ifm-font-family-base);
+  --ifm-navbar-height: 4rem;
+  --ifm-global-radius: 8px;
+  --hugegraph-ink: #18212f;
+  --hugegraph-muted: #5f6877;
+  --hugegraph-border: #dfe4ec;
+  --hugegraph-band: #f6f8fb;
+  --hugegraph-accent: #117a8b;
+}
+
+html[data-theme='dark'] {
+  --ifm-color-primary: #ff7a7e;
+  --ifm-background-color: #111827;
+  --ifm-navbar-background-color: #101723;
+  --hugegraph-ink: #f8fafc;
+  --hugegraph-muted: #c7ced8;
+  --hugegraph-border: #2b3545;
+  --hugegraph-band: #151f2c;
+}
+
+.navbar {
+  border-bottom: 1px solid var(--hugegraph-border);
+  box-shadow: none;
+}
+
+.navbar__brand {
+  font-weight: 700;
+}
+
+.navbar__logo {
+  height: 2rem;
+  width: 2rem;
+}
+
+.navbar__item.dropdown > .navbar__link::after {
+  margin-left: 0.4rem;
+}
+
+.hugegraphHero {
+  align-items: center;
+  background-image: url('/img/featured-background.jpg');
+  background-position: center;
+  background-size: cover;
+  color: #ffffff;
+  display: flex;
+  min-height: min(690px, 72vh);
+  overflow: hidden;
+  position: relative;
+}
+
+.hugegraphHero__overlay {
+  background: rgba(11, 18, 29, 0.72);
+  inset: 0;
+  position: absolute;
+}
+
+.hugegraphHero__content {
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 5rem 1.5rem 4rem;
+  position: relative;
+  width: 100%;
+}
+
+.hugegraphHero h1 {
+  color: #ffffff;
+  font-size: 5.25rem;
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 0 0 1.25rem;
+}
+
+.hugegraphHero__lead {
+  color: #e8edf5;
+  font-size: 1.35rem;
+  line-height: 1.6;
+  max-width: 780px;
+}
+
+.hugegraphHero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+
+.hugegraphHero .button--secondary {
+  --ifm-button-background-color: rgba(255, 255, 255, 0.12);
+  --ifm-button-border-color: rgba(255, 255, 255, 0.75);
+  --ifm-button-color: #ffffff;
+  color: #ffffff;
+}
+
+.apacheEyebrow {
+  color: var(--ifm-color-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-bottom: 0.65rem;
+  text-transform: uppercase;
+}
+
+.hugegraphHero .apacheEyebrow {
+  color: #ffb5b8;
+}
+
+.siteBand {
+  padding: 4.5rem 0;
+}
+
+.siteBand--light {
+  background: var(--hugegraph-band);
+}
+
+.sectionHeading {
+  margin-bottom: 2rem;
+  max-width: 760px;
+}
+
+.sectionHeading h2,
+.ecosystemLayout h2 {
+  color: var(--hugegraph-ink);
+  font-size: 2.65rem;
+  letter-spacing: 0;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.sectionHeading p,
+.ecosystemLayout p {
+  color: var(--hugegraph-muted);
+}
+
+.highlightGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.productCard {
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--hugegraph-border);
+  border-radius: 8px;
+  min-height: 230px;
+  padding: 1.5rem;
+}
+
+.productCard h3 {
+  color: var(--hugegraph-ink);
+  font-size: 1.3rem;
+  letter-spacing: 0;
+}
+
+.productCard p {
+  color: var(--hugegraph-muted);
+  line-height: 1.65;
+}
+
+.productCard a {
+  font-weight: 700;
+}
+
+.ecosystemLayout {
+  align-items: center;
+  display: grid;
+  gap: 3rem;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+}
+
+.ecosystemMap {
+  border: 1px solid var(--hugegraph-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.ecosystemNode {
+  background: var(--ifm-background-surface-color);
+  min-height: 150px;
+  padding: 1.25rem;
+}
+
+.ecosystemNode strong,
+.ecosystemNode span {
+  display: block;
+}
+
+.ecosystemNode strong {
+  color: var(--hugegraph-ink);
+  font-size: 1.2rem;
+  margin-bottom: 0.6rem;
+}
+
+.ecosystemNode span {
+  color: var(--hugegraph-muted);
+  line-height: 1.55;
+}
+
+.ecosystemNode--5 {
+  grid-column: 1 / -1;
+}
+
+.theme-doc-sidebar-container {
+  border-right-color: var(--hugegraph-border) !important;
+}
+
+.theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible .menu__link {
+  font-weight: 700;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  letter-spacing: 0;
+}
+
+.markdown table {
+  display: table;
+  width: 100%;
+}
+
+.markdown img {
+  border: 1px solid var(--hugegraph-border);
+  border-radius: 8px;
+  max-width: 100%;
+}
+
+.footer {
+  background: #14171f;
+}
+
+.footer__logo {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 0.6rem;
+}
+
+.footer__copyright {
+  color: #d7dce5;
+  margin: 1.5rem auto 0;
+  max-width: 1060px;
+}
+
+@media (max-width: 996px) {
+  .hugegraphHero {
+    min-height: 68vh;
+  }
+
+  .hugegraphHero h1 {
+    font-size: 4rem;
+  }
+
+  .hugegraphHero__lead {
+    font-size: 1.2rem;
+  }
+
+  .sectionHeading h2,
+  .ecosystemLayout h2 {
+    font-size: 2.2rem;
+  }
+
+  .highlightGrid,
+  .ecosystemLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .ecosystemMap {
+    grid-template-columns: 1fr;
+  }
+
+  .ecosystemNode--5 {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .hugegraphHero__content {
+    padding: 4rem 1rem 3rem;
+  }
+
+  .hugegraphHero h1 {
+    font-size: 3rem;
+  }
+
+  .siteBand {
+    padding: 3rem 0;
+  }
+
+  .productCard,
+  .ecosystemNode {
+    min-height: auto;
+  }
+}

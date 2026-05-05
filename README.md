@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-doc)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Hugo](https://img.shields.io/badge/Hugo-Extended-ff4088?logo=hugo)](https://gohugo.io/)
+[![Docusaurus](https://img.shields.io/badge/Docusaurus-3.x-2e8555?logo=docusaurus)](https://docusaurus.io/)
 
 ---
 
@@ -16,7 +16,7 @@ For the HugeGraph database project, visit [apache/hugegraph](https://github.com/
 
 Only **3 steps** to run the documentation website locally:
 
-**Prerequisites:** [Hugo Extended](https://github.com/gohugoio/hugo/releases) v0.95+ and Node.js v16+
+**Prerequisites:** Node.js v18+
 
 ```bash
 # 1. Clone repository
@@ -27,13 +27,10 @@ cd hugegraph-doc
 npm install
 
 # 3. Start development server (auto-reload)
-hugo server
+npm run start
 ```
 
-Open http://localhost:1313 to preview.
-
-> **Troubleshooting:** If you see `TOCSS: failed to transform "scss/main.scss"`,
-> install Hugo **Extended** version, not the standard version.
+Open http://localhost:3000 to preview.
 
 ## Repository Structure
 
@@ -51,11 +48,10 @@ hugegraph-doc/
 │   │   └── community/          #    Community pages
 │   └── en/                     # 🇺🇸 English documentation (mirrors cn/ structure)
 │
-├── themes/docsy/               # 🎨 Docsy theme (git submodule)
-├── assets/                     # 🖼️  Custom assets (fonts, images, scss)
-├── layouts/                    # 📐 Hugo template overrides
-├── static/                     # 📁 Static files
-├── config.toml                 # ⚙️  Site configuration
+├── src/                        # 🎨 Docusaurus pages, CSS, and helpers
+├── static/                     # 📁 Static files served from site root
+├── docusaurus.config.js        # ⚙️  Site configuration
+├── sidebars*.js                # 🧭 Documentation sidebar configuration
 └── package.json                # 📦 Node.js dependencies
 ```
 
@@ -74,22 +70,23 @@ hugegraph-doc/
 |-------------|-------------|
 | **Bilingual Updates** | Update **BOTH** `content/cn/` and `content/en/` |
 | **PR Screenshots** | Include **before/after screenshots** in PR |
-| **Markdown** | Use Markdown with Hugo front matter |
+| **Markdown** | Use Markdown with front matter |
 
 ### Detailed Guide
 
 See [contribution.md](./contribution.md) for:
-- Platform-specific Hugo installation
-- Docsy theme customization
+- Local development setup
+- Docusaurus theme customization
 - Translation tips
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `hugo server` | Start dev server (hot reload) |
-| `hugo --minify` | Build production to `./public/` |
-| `hugo server -p 8080` | Custom port |
+| `npm run start` | Start dev server (hot reload) |
+| `npm run build` | Build production site to `./build/` |
+| `npm run serve` | Serve the production build locally |
+| `npm run validate` | Build, check content inventory, and run headless UI validation |
 
 ---
 
@@ -103,7 +100,7 @@ See [contribution.md](./contribution.md) for:
 
 只需 **3 步**即可在本地启动文档网站：
 
-**前置条件：** [Hugo Extended](https://github.com/gohugoio/hugo/releases) v0.95+ 和 Node.js v16+
+**前置条件：** Node.js v18+
 
 ```bash
 # 1. 克隆仓库
@@ -114,13 +111,10 @@ cd hugegraph-doc
 npm install
 
 # 3. 启动开发服务器（支持热重载）
-hugo server
+npm run start
 ```
 
-打开 http://localhost:1313 预览网站。
-
-> **常见问题：** 如果遇到 `TOCSS: failed to transform "scss/main.scss"` 错误，
-> 说明你需要安装 Hugo **Extended** 版本，而不是标准版本。
+打开 http://localhost:3000 预览网站。
 
 ### 仓库结构
 
@@ -138,11 +132,10 @@ hugegraph-doc/
 │   │   └── community/          #    社区页面
 │   └── en/                     # 🇺🇸 英文文档（与 cn/ 结构一致）
 │
-├── themes/docsy/               # 🎨 Docsy 主题 (git submodule)
-├── assets/                     # 🖼️  自定义资源 (fonts, images, scss)
-├── layouts/                    # 📐 Hugo 模板覆盖
-├── static/                     # 📁 静态文件
-├── config.toml                 # ⚙️  站点配置
+├── src/                        # 🎨 Docusaurus 页面、样式和辅助脚本
+├── static/                     # 📁 站点根路径静态文件
+├── docusaurus.config.js        # ⚙️  站点配置
+├── sidebars*.js                # 🧭 文档侧边栏配置
 └── package.json                # 📦 Node.js 依赖
 ```
 
@@ -161,22 +154,23 @@ hugegraph-doc/
 |------|------|
 | **双语更新** | 修改内容时需**同时更新** `content/cn/` 和 `content/en/` |
 | **PR 截图** | 提交 PR 时需附上修改**前后对比截图** |
-| **Markdown** | 文档使用 Markdown 格式，带 Hugo front matter |
+| **Markdown** | 文档使用 Markdown 格式，带 front matter |
 
 #### 详细指南
 
 查看 [contribution.md](./contribution.md) 了解：
-- 各平台 Hugo 安装方法
-- Docsy 主题定制
+- 本地开发环境配置
+- Docusaurus 主题定制
 - 翻译技巧
 
 ### 常用命令
 
 | 命令 | 说明 |
 |------|------|
-| `hugo server` | 启动开发服务器（热重载） |
-| `hugo --minify` | 构建生产版本到 `./public/` |
-| `hugo server -p 8080` | 指定端口 |
+| `npm run start` | 启动开发服务器（热重载） |
+| `npm run build` | 构建生产版本到 `./build/` |
+| `npm run serve` | 本地预览生产构建 |
+| `npm run validate` | 构建、检查内容清单并运行无头 UI 校验 |
 
 ---
 

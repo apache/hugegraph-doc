@@ -5,4 +5,4 @@ menu:
     weight: 40
 ---
 
-Visit the [Project Maturity]({{< relref "maturity" >}}) assessment.
+Visit the [Project Maturity](/community/maturity/) assessment.

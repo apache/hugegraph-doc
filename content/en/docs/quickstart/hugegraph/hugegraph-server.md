@@ -406,7 +406,7 @@ Starting HugeGraphServer...
 Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 ```
 
-**ToplingDB (Beta)**: As a high-performance alternative to RocksDB, please refer to the configuration guide: [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="en">}})
+**ToplingDB (Beta)**: As a high-performance alternative to RocksDB, please refer to the configuration guide: [ToplingDB Quick Start](/blog/2025/10/09/toplingdb-quick-start/)
 
 </details>
 

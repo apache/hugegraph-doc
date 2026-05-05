@@ -1,4 +1,7 @@
 public/
+build/
+.docusaurus/
+artifacts/
 resources/
 node_modules/
 package-lock.json

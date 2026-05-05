@@ -24,7 +24,7 @@ linkTitle: "Agentic GraphRAG：模块化架构实践"
 2. Online: 当GraphRAG系统接收到用户问题时，根据图数据库捕捉到的语料库中不同实体之间的关联关系，我们可以从图数据库中抓取到上面的三句话（具体图数据库索引可能如下图所示）
 
 <div style="text-align: center;">
-  <img src="/blog/images/images-server/agentic-background.png" alt="image" width="400">
+  <img src="/blog/images/images-server/agentic-background-cn.png" alt="image" width="400">
 </div>
 
 但是GraphRAG本身也存在几个问题：

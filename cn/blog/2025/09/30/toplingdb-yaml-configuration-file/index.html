@@ -16,7 +16,7 @@
 
 <link rel="alternate" type="application/rss+xml" href="/cn/blog/rss.xml" title="Apache HugeGraph RSS Feed">
 <link rel="alternate" type="application/atom+xml" href="/cn/blog/atom.xml" title="Apache HugeGraph Atom Feed"><link rel="stylesheet" href="/assets/css/styles.7b8cbe21.css">
-<script src="/assets/js/runtime~main.ee1111d7.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.9c9ddaef.js" defer="defer"></script>
 <script src="/assets/js/main.1fc5d235.js" defer="defer"></script>
 </head>
 <body>
@@ -52,7 +52,7 @@
 </ul>
 <p>ToplingDB YAML 引用与复用图示:</p>
 <div style="text-align:center">
-  <img decoding="async" loading="lazy" src="/blog/images/images-server/toplingdb-yaml-ref.png" alt="image" width="800" class="img_ev3q">
+  <img decoding="async" loading="lazy" src="/img/blog/images-server/toplingdb-yaml-ref.png" alt="image" width="800" class="img_ev3q">
 </div>
 <p>这种机制使得配置更灵活，便于在复杂场景下组合不同组件。</p>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="2-新的-memtable-实现cspp">2. 新的 MemTable 实现：CSPP<a href="#2-新的-memtable-实现cspp" class="hash-link" aria-label="Direct link to 2. 新的 MemTable 实现：CSPP" title="Direct link to 2. 新的 MemTable 实现：CSPP" translate="no">​</a></h2>
@@ -75,7 +75,7 @@
 <li class="">大型部署（&gt; 64GB 内存）: 建议设置为 16G</li>
 </ul>
 <h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="use_vm">use_vm<a href="#use_vm" class="hash-link" aria-label="Direct link to use_vm" title="Direct link to use_vm" translate="no">​</a></h3>
-<p>在使用 malloc/posix_memalign 分配内存时，地址空间可能是已经实际分配的（位于堆空间中，已有对应的物理页面）， 而 CSPP 在分配时只需要获得保留的地址空间。
+<p>在使用 malloc/posix_memalign 分配内存时，地址空间可能是已经实际分配的（位于堆空间中，已有对应的物理页面），而 CSPP 在分配时只需要获得保留的地址空间。
 <code>use_vm</code> 选项为 <code>true</code> 时会强制使用 <code>mmap</code> 分配内存，从而保证分配的一定时是保留地址空间，但并不实际占用物理页面。
 <code>use_vm</code> 默认值为 <code>true</code>。如果用户物理内存空间充足，建议关闭此选项，<code>mmap</code> 分配的虚拟内存空间在建立对物理地址的映射时会触发大量minor page fault，可能会影响性能。</p>
 <h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="convert_to_sst">convert_to_sst<a href="#convert_to_sst" class="hash-link" aria-label="Direct link to convert_to_sst" title="Direct link to convert_to_sst" translate="no">​</a></h3>
@@ -111,7 +111,7 @@
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="6-安全注意事项">6. 安全注意事项<a href="#6-安全注意事项" class="hash-link" aria-label="Direct link to 6. 安全注意事项" title="Direct link to 6. 安全注意事项" translate="no">​</a></h2>
 <p><strong>Web Server 安全配置</strong>:</p>
 <ul>
-<li class="">Web Server 页面由ToplingDB提供， 不包含权限认证功能</li>
+<li class="">Web Server 页面由ToplingDB提供，不  包含权限认证功能</li>
 <li class="">默认设置 <code>listening_ports: &#x27;127.0.0.1:2011&#x27;</code> 仅限本地访问</li>
 <li class="">生产环境建议配置防火墙规则，仅允许内网访问</li>
 <li class="">如需禁用 Web Server，在 <code>hugegraph.properties</code> 中设置 <code>rocksdb.open_http=false</code></li>

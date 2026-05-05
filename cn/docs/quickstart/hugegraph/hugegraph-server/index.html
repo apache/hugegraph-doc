@@ -16,7 +16,7 @@
 
 <link rel="alternate" type="application/rss+xml" href="/cn/blog/rss.xml" title="Apache HugeGraph RSS Feed">
 <link rel="alternate" type="application/atom+xml" href="/cn/blog/atom.xml" title="Apache HugeGraph Atom Feed"><link rel="stylesheet" href="/assets/css/styles.7b8cbe21.css">
-<script src="/assets/js/runtime~main.ee1111d7.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.9c9ddaef.js" defer="defer"></script>
 <script src="/assets/js/main.1fc5d235.js" defer="defer"></script>
 </head>
 <body>
@@ -62,13 +62,13 @@
 </ol>
 <p>如果使用 Docker Desktop，则可以按如下方式设置相关选项：</p>
 <div style="text-align:center">
-    <img decoding="async" loading="lazy" src="/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%" class="img_ev3q">
+    <img decoding="async" loading="lazy" src="/img/docs/images-server/31docker-option.jpg" alt="image" style="width:33%" class="img_ev3q">
 </div>
 <blockquote>
 <p><strong>注意</strong>：Docker Compose 文件使用桥接网络（<code>hg-net</code>），适用于 Linux 和 Mac（Docker Desktop）。如需运行 3 节点分布式集群，请为 Docker Desktop 分配至少 <strong>12 GB</strong> 内存（设置 → 资源 → 内存）。Linux 上 Docker 直接使用宿主机内存。</p>
 </blockquote>
 <p>如果希望通过一个配置文件统一管理 HugeGraph 的多个服务实例，则可以使用 <code>docker compose</code>。
-<a href="https://github.com/apache/hugegraph/tree/master/docker" target="_blank" rel="noopener noreferrer" class=""><code>docker/</code></a> 目录下提供了两个 compose 文件：</p>
+<a href="https://github.com/apache/hugegraph/tree/master/docker" target="_blank" rel="noopener noreferrer" class=""><code>docker/</code></a> 目录下提供了两个 compose   文件：</p>
 <ul>
 <li class=""><strong>单节点快速启动</strong>（预构建镜像）：<code>docker/docker-compose.yml</code></li>
 <li class=""><strong>单节点开发构建</strong>（从源码构建）：<code>docker/docker-compose.dev.yml</code></li>
@@ -114,7 +114,7 @@
 <p>如果需要快速启动 HugeGraph 仅用于测试，那么只需要进行少数几个配置项的修改即可（见下一节）。</p>
 <p>详细的配置介绍请参考<a class="" href="/docs/config/config-guide/">配置文档</a>及<a class="" href="/docs/config/config-option/">配置项介绍</a>。</p>
 <h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="5-启动">5 启动<a href="#5-启动" class="hash-link" aria-label="Direct link to 5 启动" title="Direct link to 5 启动" translate="no">​</a></h3>
-<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="51-使用启动脚  本启动">5.1 使用启动脚本启动<a href="#51-使用启动脚本启动" class="hash-link" aria-label="Direct link to 5.1 使用启动脚本启动" title="Direct link to 5.1 使用启动脚本启动" translate="no">​</a></h4>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="51-使用启动脚本启动">5.1 使用启动脚本启动<a href="#51-使用启动脚本启动" class="hash-link" aria-label="Direct link to 5.1 使用启动脚本启动" title="Direct link to 5.1 使用启动脚本启动" translate="no">​</a></h4>
 <p>启动流程分为“首次启动”和“非首次启动”。首次启动前需要先初始化后端数据库，然后再启动服务。</p>
 <p>如果服务曾被手动停止，或因其他原因需要再次启动，由于后端数据库已持久化存在，通常可以直接启动服务。</p>
 <p>HugeGraphServer 启动时会连接后端存储并检查其版本信息。如果后端尚未初始化，或者已初始化但版本不匹配（例如存在旧版本数据），HugeGraphServer 会启动失败并给出错误信息。</p>
@@ -125,7 +125,7 @@
 <details class="details_lb9f alert alert--info details_b_Ee" data-collapsed="true"><summary>点击展开/折叠 分布式存储 配置及启动方法</summary><div><div class="collapsibleContent_i85q">
 <!-- -->
 <blockquote>
-<p>分布式存储是 HugeGraph 1.5.0 之后推出的新特性，它基于 HugeGraph-PD 和 HugeGraph-Store 组件实  现了分布式的数据存储和计算。</p>
+<p>分布式存储是 HugeGraph 1.5.0 之后推出的新特性，它基于 HugeGraph-PD 和 HugeGraph-Store 组件实现  了分布式的数据存储和计算。</p>
 </blockquote>
 <p>要使用分布式存储引擎，需要先部署 HugeGraph-PD 和 HugeGraph-Store，详见 <a class="" href="/cn/docs/quickstart/hugegraph/hugegraph-pd/">HugeGraph-PD 快速入门</a> 和 <a class="" href="/cn/docs/quickstart/hugegraph/hugegraph-hstore/">HugeGraph-Store 快速入门</a>。</p>
 <p>确保 PD 和 Store 服务均已启动后</p>
@@ -344,15 +344,15 @@
 <p>详细的 API 请参考 <a class="" href="/docs/clients/restful-api/">RESTful-API</a> 文档。</p>
 <p>另外也可以通过访问 <code>localhost:8080/swagger-ui/index.html</code> 查看 API。</p>
 <div style="text-align:center">
-  <img decoding="async" loading="lazy" src="/docs/images/images-server/swagger-ui.png" alt="image" class="img_ev3q">
+  <img decoding="async" loading="lazy" src="/img/docs/images-server/swagger-ui.png" alt="image" class="img_ev3q">
 </div>
 <p>在使用 Swagger UI 调试 HugeGraph 提供的 API 时，如果 HugeGraph Server 开启了鉴权模式，可以在 Swagger 页面输入鉴权信息。</p>
 <div style="text-align:center">
-  <img decoding="async" loading="lazy" src="/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="image" class="img_ev3q">
+  <img decoding="async" loading="lazy" src="/img/docs/images-server/swagger-ui-where-set-auth-example.png" alt="image" class="img_ev3q">
 </div>
 <p>当前 HugeGraph 支持基于 Basic 和 Bearer 两种形式设置鉴权信息。</p>
 <div style="text-align:center">
-  <img decoding="async" loading="lazy" src="/docs/images/images-server/swagger-ui-set-auth-example.png" alt="image" class="img_ev3q">
+  <img decoding="async" loading="lazy" src="/img/docs/images-server/swagger-ui-set-auth-example.png" alt="image" class="img_ev3q">
 </div>
 <h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="7-停止-server">7 停止 Server<a href="#7-停止-server" class="hash-link" aria-label="Direct link to 7 停止 Server" title="Direct link to 7 停止 Server" translate="no">​</a></h3>
 <div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#bfc7d5"><span class="token variable" style="color:rgb(191, 199, 213)">$cd</span><span class="token plain"> *hugegraph-</span><span class="token variable" style="color:rgb(191, 199, 213)">${version}</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain"></span><span class="token variable" style="color:rgb(191, 199, 213)">$bin</span><span class="token plain">/stop-hugegraph.sh</span><br></div></code></pre></div></div>

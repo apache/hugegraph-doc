@@ -12,7 +12,7 @@ RDF is a W3C standard, while Property Graph is an industry standard and is widel
 The storage concept model corresponding to HugeGraph is also designed with reference to Property Graph. For specific examples, see the figure below: 
 ( This figure is outdated for the old version design, please ignore it and update it later )
 
-![image](/docs/images/design/PropertyGraph.png)
+![image](/img/docs/design/PropertyGraph.png)
 
 Inside HugeGraph, each vertex/edge is identified by a unique VertexId/EdgeId, and the attributes are stored inside the corresponding vertex/edge. 
 The relationship/mapping between vertices is stored through edges.
@@ -29,7 +29,7 @@ Edge Cut method to store graphs, any vertex will only appear on one machine, whi
 to multiple storage of edges. When using the Vertex Cut method to store graphs, any edge will only appear on one machine, and each same point may be distributed 
 to different machines. This storage method may result in multiple storage of vertices.
 
-![image](/docs/images/design/GraphCut.png)
+![image](/img/docs/design/GraphCut.png)
 
 The EdgeCut partition scheme can support high-performance insert and update operations, while the VertexCut partition scheme is more suitable for static graph query 
 analysis, so EdgeCut is suitable for OLTP graph query, and VertexCut is more suitable for OLAP graph query. HugeGraph currently adopts the partition scheme of EdgeCut.

@@ -142,4 +142,4 @@ docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
 - Security: [security@hugegraph.apache.org](mailto:security@hugegraph.apache.org) (Report security issues)
 - WeChat Public Account: Apache HugeGraph
 
-<img src="/docs/images/wechat.png" alt="WeChat QR Code" width="300"/>
+<img src="/img/docs/wechat.png" alt="WeChat QR Code" width="300"/>

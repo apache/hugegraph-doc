@@ -180,4 +180,4 @@ hugegraph-ai is licensed under [Apache 2.0 License](https://github.com/apache/hu
 - **Email**: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscription required](https://hugegraph.apache.org/community/contribution-guidelines/subscribe/))
 - **WeChat**: Follow "Apache HugeGraph" on WeChat
 
-<img src="/docs/images/wechat.png" alt="Apache HugeGraph WeChat QR Code" width="200"/>
+<img src="/img/docs/wechat.png" alt="Apache HugeGraph WeChat QR Code" width="200"/>

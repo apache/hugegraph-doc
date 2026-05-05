@@ -177,7 +177,7 @@ DBOptions:
 ToplingDB YAML Reference and Reuse Diagram:
 
 <div style="text-align: center;">
-  <img src="/blog/images/images-server/toplingdb-yaml-ref.png" alt="ToplingDB YAML Reference Diagram" width="800">
+  <img src="/img/blog/images-server/toplingdb-yaml-ref.png" alt="ToplingDB YAML Reference Diagram" width="800">
 </div>
 
 This mechanism makes configuration more flexible and easier to compose in complex scenarios.

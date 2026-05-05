@@ -53,7 +53,7 @@ rocksdb.open_http=true
 Visualize the Web monitoring page. Example screenshot:
 
 <div style="text-align: center;">
-  <img src="/blog/images/images-server/toplingdb-web-server.png" alt="image" width="400">
+  <img src="/img/blog/images-server/toplingdb-web-server.png" alt="image" width="400">
 </div>
 
 Verify via terminal:

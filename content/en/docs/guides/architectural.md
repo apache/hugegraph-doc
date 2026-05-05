@@ -11,7 +11,7 @@ As a full-stack graph system covering **Graph Database, Graph Computing, and Gra
 Below is the overall architecture diagram of HugeGraph:
 
 <div style="text-align: center;">
-  <img src="/docs/images/design/architectural-revised.png" alt="image">
+  <img src="/img/docs/design/architectural-revised.png" alt="image">
 </div>
 
 HugeGraph consists of three layers of functionality: the application layer, the graph engine layer, and the storage layer.

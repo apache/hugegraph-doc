@@ -250,7 +250,7 @@ docker compose down
 各工具的测试流程：
 
 <div style="text-align: center;">
-    <img src="/docs/images/cn/toolchain-test-mermaid-2.png" alt="HugeGraph工具链测试流程图">
+    <img src="/img/docs/cn/toolchain-test-mermaid-2.png" alt="HugeGraph工具链测试流程图">
 </div>
 
 ### 4.1 hugegraph-client

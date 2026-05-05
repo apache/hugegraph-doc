@@ -21,7 +21,7 @@ weight: 4
 
 Construct a knowledge graph, chunk vector, and graph vid vector from the text.
 
-![image](/docs/images/hugegraph-ai/quick-start/f3366d46-2e31-4638-94c4-7214951ef77a.png)
+![image](/img/docs/hugegraph-ai/quick-start/f3366d46-2e31-4638-94c4-7214951ef77a.png)
 
 ```mermaid
 graph TD;
@@ -81,7 +81,7 @@ This module consists of two parts:
 
 The first part handles single queries, while the second part handles multiple queries at once. Below is an explanation of the first part.
 
-![image](/docs/images/hugegraph-ai/quick-start/33698062-e46b-4757-8b5e-93e8f10eae65.png)
+![image](/img/docs/hugegraph-ai/quick-start/33698062-e46b-4757-8b5e-93e8f10eae65.png)
 
 
 ```mermaid
@@ -114,7 +114,7 @@ graph TD;
 - **Graph-only Answer:** Uses only graph-based retrieval (queries graph vid vectors in the vector database and the graph database)
 - **Graph-Vector Answer:** Uses both graph-based and vector-based retrieval
 
-![image](/docs/images/hugegraph-ai/quick-start/26641e09-249f-4b3a-8013-16dc9383d333.png)
+![image](/img/docs/hugegraph-ai/quick-start/26641e09-249f-4b3a-8013-16dc9383d333.png)
 
 ### Execution Flow:
 
@@ -122,7 +122,7 @@ graph TD;
 
 - Extract keywords from the **question** using the **Keywords Extraction Prompt**.
 
-![image](/docs/images/hugegraph-ai/quick-start/b49e269f-eaec-40b1-8d8f-9e409821d75d.png)
+![image](/img/docs/hugegraph-ai/quick-start/b49e269f-eaec-40b1-8d8f-9e409821d75d.png)
 
 
 - Use the extracted keywords to:
@@ -151,7 +151,7 @@ graph TD;
   - **Graph-only Answer**
   - **Graph-Vector Answer**
 
-![image](/docs/images/hugegraph-ai/quick-start/7d4496a3-d44c-4491-9463-8e93595dfa45.png)
+![image](/img/docs/hugegraph-ai/quick-start/7d4496a3-d44c-4491-9463-8e93595dfa45.png)
 
 # 4. (Processing Flow) Text2Gremlin
 
@@ -164,7 +164,7 @@ This module consists of two parts:
 
 The first part is straightforward, so the focus is on the second part.
 
-![image](/docs/images/hugegraph-ai/quick-start/fc678369-261d-49ea-a289-1ca6ade5ca55.png)
+![image](/img/docs/hugegraph-ai/quick-start/fc678369-261d-49ea-a289-1ca6ade5ca55.png)
 
 
 ```mermaid
@@ -180,7 +180,7 @@ graph TD;
 
 - **Natural Language** **Query**: Input the natural language text to be converted into Gremlin.
 
-![image](/docs/images/hugegraph-ai/quick-start/d2a72f45-488c-4099-968b-a11816655ba0.png)
+![image](/img/docs/hugegraph-ai/quick-start/d2a72f45-488c-4099-968b-a11816655ba0.png)
 
 - **Schema:** Input the graph schema.
 
@@ -199,7 +199,7 @@ graph TD;
       - Retrieve the **graph schema**.
       - Query the vector database for example vectors, retrieving query-gremlin pairs similar to the input query (if the vector database lacks examples, it automatically initializes with examples from the **resources** folder).
 
-![image](/docs/images/hugegraph-ai/quick-start/fd150f87-27f8-48e5-8a55-319ec039b7e0.png)
+![image](/img/docs/hugegraph-ai/quick-start/fd150f87-27f8-48e5-8a55-319ec039b7e0.png)
 
 
       - Generate the Gremlin query using the constructed prompt.

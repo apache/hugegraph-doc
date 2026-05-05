@@ -66,7 +66,7 @@ rocksdb.open_http=true
 可视化访问Web监控页面，页面示例如下图所示:
 
 <div style="text-align: center;">
-  <img src="/blog/images/images-server/toplingdb-web-server.png" alt="image" width="400">
+  <img src="/img/blog/images-server/toplingdb-web-server.png" alt="image" width="400">
 </div>
 
 通过终端验证:

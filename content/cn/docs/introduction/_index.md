@@ -145,4 +145,4 @@ docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
 - 安全问题：[security@hugegraph.apache.org](mailto:security@hugegraph.apache.org)
 - 微信公众号：Apache HugeGraph
 
-<img src="/docs/images/wechat.png" alt="微信公众号二维码" width="300"/>
+<img src="/img/docs/wechat.png" alt="微信公众号二维码" width="300"/>

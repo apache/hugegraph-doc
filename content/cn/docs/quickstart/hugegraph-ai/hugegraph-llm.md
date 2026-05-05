@@ -134,7 +134,7 @@ python -m hugegraph_llm.config.generate --update
 - **自定义 Schema**：遵循我们[模板](https://github.com/apache/hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125)的 JSON 格式
 - **HugeGraph Schema**：使用现有图实例的 Schema（例如，“hugegraph”）
 
-![知识图谱构建器](https://hugegraph.apache.org/docs/images/gradio-kg.png)
+![知识图谱构建器](/docs/images/gradio-kg.png)
 
 #### 代码构建
 

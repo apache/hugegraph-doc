@@ -2,6 +2,8 @@
 title: "Setup Server in IDEA (Dev)"
 linkTitle: "Setup Server in IDEA"
 weight: 4
+aliases:
+  - /docs/contribution-guidelines/hugegraph-server-idea-setup/
 ---
 
 > NOTE: The following configuration is for reference purposes only, and has been tested on Linux and macOS platforms based on [this version](https://github.com/apache/hugegraph/commit/a946ad1de4e8f922251a5241ffc957c33379677f).

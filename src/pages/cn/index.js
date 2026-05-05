@@ -43,7 +43,7 @@ function HomepageHeader() {
           <Link className="button button--primary button--lg" to="/cn/docs/">
             阅读文档
           </Link>
-          <Link className="button button--secondary button--lg" to="/cn/docs/download/download/">
+          <Link className="button button--secondary button--lg" to="/cn/download/">
             下载
           </Link>
         </div>

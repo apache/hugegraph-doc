@@ -2,6 +2,8 @@
 title: "订阅社区邮箱"
 linkTitle: "订阅社区邮箱"
 weight: 2
+aliases:
+  - /cn/docs/contribution-guidelines/subscribe/
 ---
 
 按照以下步骤订阅邮件列表：

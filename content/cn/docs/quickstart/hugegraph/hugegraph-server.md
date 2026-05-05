@@ -147,7 +147,7 @@ tar zxf *hugegraph-*.tar.gz
 cd *hugegraph*/*tool*
 ```
 
-> 注：`${version}` 为版本号，最新版本号可参考 [Download 页面](/docs/download/download)，或直接从 Download 页面点击链接下载
+> 注：`${version}` 为版本号，最新版本号可参考 [Download 页面](/cn/download/)，或直接从 Download 页面点击链接下载
 
 HugeGraph-Tools 的总入口脚本是 `bin/hugegraph`，用户可以使用 `help` 子命令查看其用法，这里只介绍一键部署的命令。
 
@@ -862,4 +862,4 @@ $bin/stop-hugegraph.sh
 
 ### 8 使用 IntelliJ IDEA 调试 Server
 
-请参考[在 IDEA 中配置 Server 开发环境](/docs/contribution-guidelines/hugegraph-server-idea-setup)
+请参考[在 IDEA 中配置 Server 开发环境](/cn/community/contribution-guidelines/hugegraph-server-idea-setup)

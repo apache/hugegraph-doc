@@ -2,6 +2,8 @@
 title: "Subscribe Mailing Lists"
 linkTitle: "Subscribe Mailing Lists"
 weight: 2
+aliases:
+  - /docs/contribution-guidelines/subscribe/
 ---
 
 ### Subscribe the mailing list

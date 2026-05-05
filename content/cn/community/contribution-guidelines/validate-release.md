@@ -2,6 +2,8 @@
 title: "验证 Apache 发版"
 linkTitle: "验证 Apache 发版"
 weight: 3
+aliases:
+  - /cn/docs/contribution-guidelines/validate-release/
 ---
 
 > Note: 这篇文档会持续更新。

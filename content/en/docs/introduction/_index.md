@@ -1,5 +1,5 @@
 ---
-title: "Introduction with HugeGraph"
+title: "Introduction to HugeGraph"
 linkTitle: "Introduction"
 weight: 1
 aliases:
@@ -138,7 +138,7 @@ docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
 ### Contact Us
 
 - [GitHub Issues](https://github.com/apache/hugegraph/issues): Feedback on usage issues and functional requirements (Recommended)
-- Email: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([How to subscribe](/docs/contribution-guidelines/subscribe/))
+- Email: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([How to subscribe](/community/contribution-guidelines/subscribe/))
 - Security: [security@hugegraph.apache.org](mailto:security@hugegraph.apache.org) (Report security issues)
 - WeChat Public Account: Apache HugeGraph
 

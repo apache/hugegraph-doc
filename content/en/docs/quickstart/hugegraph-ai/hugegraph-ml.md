@@ -33,7 +33,7 @@ HugeGraph-ML integrates HugeGraph with popular graph learning libraries, enablin
 docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
 
 # Option 2: Binary packages
-# See https://hugegraph.apache.org/docs/download/download/
+# See https://hugegraph.apache.org/download/
 ```
 
 ### 2. Clone and Setup

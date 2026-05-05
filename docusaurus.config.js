@@ -120,6 +120,26 @@ const config = {
       },
     ],
     [
+      '@docusaurus/plugin-content-pages',
+      {
+        id: 'download',
+        path: 'content/en/download',
+        routeBasePath: 'download',
+        include: ['**/*.md', '**/*.mdx'],
+        editUrl: 'https://github.com/apache/hugegraph-doc/edit/master/',
+      },
+    ],
+    [
+      '@docusaurus/plugin-content-pages',
+      {
+        id: 'download-cn',
+        path: 'content/cn/download',
+        routeBasePath: 'cn/download',
+        include: ['**/*.md', '**/*.mdx'],
+        editUrl: 'https://github.com/apache/hugegraph-doc/edit/master/',
+      },
+    ],
+    [
       '@docusaurus/plugin-content-blog',
       {
         id: 'blog-cn',
@@ -155,20 +175,17 @@ const config = {
           {to: '/docs/', label: 'Docs', position: 'left'},
           {to: '/blog/', label: 'Blog', position: 'left'},
           {to: '/community/', label: 'Community', position: 'left'},
-          {to: '/docs/download/download/', label: 'Download', position: 'left'},
+          {to: '/download/', label: 'Download', position: 'left'},
           {
             label: 'ASF',
             position: 'right',
             items: apacheLinks,
           },
           {
+            type: 'custom-languageSwitcher',
             label: 'Language',
             position: 'right',
             className: 'navbar-language-dropdown',
-            items: [
-              {label: 'English', to: '/'},
-              {label: '中文', to: '/cn/'},
-            ],
           },
           {
             href: 'https://github.com/apache/hugegraph',
@@ -183,14 +200,14 @@ const config = {
           alt: 'Apache Software Foundation logo',
           src: 'img/apache-logo.svg',
           href: 'https://www.apache.org/',
-          width: 220,
+          width: 180,
         },
         links: [
           {
             title: 'Project',
             items: [
               {label: 'Documentation', to: '/docs/'},
-              {label: 'Download', to: '/docs/download/download/'},
+              {label: 'Download', to: '/download/'},
               {label: 'GitHub', href: 'https://github.com/apache/hugegraph'},
               {label: 'Issue Tracker', href: 'https://github.com/apache/hugegraph/issues'},
             ],
@@ -199,6 +216,7 @@ const config = {
             title: 'Community',
             items: [
               {label: 'Community', to: '/community/'},
+              {label: 'Contributor Guide', to: '/community/contribution-guidelines/'},
               {label: 'Mailing List', href: 'mailto:dev@hugegraph.apache.org'},
               {label: 'ASF Slack', href: 'https://the-asf.slack.com/archives/C059UU2FJ23'},
             ],
@@ -208,7 +226,7 @@ const config = {
             items: apacheLinks,
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} The Apache Software Foundation. Licensed under the Apache License, Version 2.0. Apache HugeGraph, HugeGraph, Apache, the Apache feather logo, and the Apache HugeGraph project logo are either registered trademarks or trademarks of The Apache Software Foundation in the United States and other countries.`,
+        copyright: `Copyright © ${new Date().getFullYear()} The Apache Software Foundation. Licensed under the Apache License, Version 2.0. Apache HugeGraph, HugeGraph, Apache, and related logos are trademarks of The Apache Software Foundation.`,
       },
       prism: {
         additionalLanguages: ['bash', 'java', 'json', 'python', 'yaml'],

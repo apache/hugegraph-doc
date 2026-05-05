@@ -2,6 +2,8 @@
 title: "Apache HugeGraph Committer 指南"
 linkTitle: "Apache HugeGraph Committer 指南"
 weight: 5
+aliases:
+  - /cn/docs/contribution-guidelines/committer-guidelines/
 ---
 
 > 本文档概述了 Apache Committer 推选要求以及流程，对应的 ASF 官方文档可见：https://community.apache.org/newcommitter.html
@@ -244,7 +246,7 @@ xxx
 
 一旦邀请被接受，候选人需要完成以下事项：
 
-- 订阅 dev@hugegraph.apache.org，具体步骤/过滤等配置请参考[文档](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/)
+- 订阅 dev@hugegraph.apache.org，具体步骤/过滤等配置请参考[文档](https://hugegraph.apache.org/cn/community/contribution-guidelines/subscribe/)
 - 签署 [ICLA](https://www.apache.org/licenses/icla.pdf)，具体步骤见下↓
 
 ### ICLA 签署流程

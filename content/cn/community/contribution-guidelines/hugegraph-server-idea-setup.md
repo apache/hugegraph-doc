@@ -2,13 +2,15 @@
 title: "在 IDEA 中配置 Server 开发环境"
 linkTitle: "在 IDEA 中配置 Server 开发环境"
 weight: 4
+aliases:
+  - /cn/docs/contribution-guidelines/hugegraph-server-idea-setup/
 ---
 
 > 注意：下述配置仅供参考，基于[这个版本](https://github.com/apache/hugegraph/commit/a946ad1de4e8f922251a5241ffc957c33379677f)，在 Linux 和 macOS 平台下进行了测试。
 
 ### 背景
 
-在 [Quick Start](/docs/quickstart/hugegraph/hugegraph-server/) 部分已经介绍了使用**脚本**启停 HugeGraph-Server 的流程。下面以 Linux 平台为例，
+在 [Quick Start](/cn/docs/quickstart/hugegraph/hugegraph-server/) 部分已经介绍了使用**脚本**启停 HugeGraph-Server 的流程。下面以 Linux 平台为例，
 介绍使用 **IntelliJ IDEA** 运行与调试 HugeGraph-Server 的流程。
 
 本地启动的核心与**脚本启动**是一样的：
@@ -167,7 +169,7 @@ curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
 
 ##### 参考
 
-1. [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/)
+1. [HugeGraph-Server Quick Start](/cn/docs/quickstart/hugegraph/hugegraph-server/)
 2. [hugegraph-server 本地调试文档 (Win/Unix)](https://gist.github.com/imbajin/1661450f000cd62a67e46d4f1abfe82c)
 3. ["package sun.misc does not exist" compilation error](https://youtrack.jetbrains.com/issue/IDEA-180033)
 4. [Cannot compile: java: package sun.misc does not exist](https://youtrack.jetbrains.com/issue/IDEA-201168)

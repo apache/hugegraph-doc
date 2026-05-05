@@ -1,10 +1,10 @@
 ---
-title: "如何参与 HugeGraph 社区"
-linkTitle: "如何参与 HugeGraph 社区"
+title: "How to Contribute to HugeGraph"
+linkTitle: "How to Contribute to HugeGraph"
 weight: 1
+aliases:
+  - /docs/contribution-guidelines/contribute/
 ---
-
-> TODO: translate this article to Chinese
 
 Thanks for taking the time to contribute! As an open source project, HugeGraph is looking forward to be contributed from everyone, and we are also grateful to all the contributors.
 
@@ -14,7 +14,7 @@ The following is a contribution guide for HugeGraph:
 
 ## 1. Preparation
 
-**建议**: 使用 [GitHub desktop](https://desktop.github.com/) 可以大幅简化和改善你提交 PR/Commit 的过程, 特别适合新人
+Optional: You can use [GitHub desktop](https://desktop.github.com/) to greatly simplify the commit and update process.
 
 We can contribute by reporting issues, submitting code patches or any other feedback.
 
@@ -43,7 +43,7 @@ Before submitting the code, we need to do some preparation:
    git config user.name "{full-name}" # like "Jermy Li"
    git config user.email "{email-address-of-github}" # like "jermy@apache.org"
    ```
-   
+
 ## 2. Create an Issue on GitHub
 
 If you encounter bugs or have any questions, please go to [GitHub Issues](https://github.com/apache/hugegraph/issues) to report them and feel free to [create an issue](https://github.com/apache/hugegraph/issues/new).
@@ -76,20 +76,19 @@ mvn test -Pcore-test,memory
 ```
 Note: In order to be consistent with the code style easily, if you use IDEA as your IDE, you can import our code style configuration file.
 
-##### 3.2.1 添加第三方依赖
+##### 3.2.1 Check licenses
+If we want to add new third-party dependencies to the `HugeGraph` project, we need to do the following things:
+1. Find the third-party dependent repository, put the dependent `license` file into [./hugegraph-dist/release-docs/licenses/](https://github.com/apache/hugegraph/tree/master/hugegraph-server/hugegraph-dist/release-docs/licenses) path.
+2. Declare the dependency in [./hugegraph-dist/release-docs/LICENSE](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/release-docs/LICENSE) `LICENSE` information.
+3. Find the NOTICE file in the repository and append it to [./hugegraph-dist/release-docs/NOTICE](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/release-docs/NOTICE) file (skip this step if there is no NOTICE file).
+4. Execute locally [./hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh) to update the dependency list [known-dependencies.txt](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/scripts/dependency/known-dependencies.txt) (or manually update) .
 
-如果我们要在 `HugeGraph` 项目中添加新的第三方依赖, 我们需要做下面的几件事情：
-1. 找到第三方依赖的仓库，将依赖的 `license` 文件放到 [./hugegraph-dist/release-docs/licenses/](https://github.com/apache/hugegraph/tree/master/hugegraph-server/hugegraph-dist/release-docs/licenses) 路径下。
-2. 在[./hugegraph-dist/release-docs/LICENSE](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/release-docs/LICENSE) 中声明该依赖的 `LICENSE` 信息。
-3. 找到仓库里的 NOTICE 文件，将其追加到 [./hugegraph-dist/release-docs/NOTICE](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/release-docs/NOTICE) 文件后面（如果没有NOTICE文件则跳过这一步）。
-4. 本地执行[./hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh) 脚本来更新依赖列表[known-dependencies.txt](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/scripts/dependency/known-dependencies.txt) (或者手动更新)。
+**Example**: A new third-party dependency is introduced into the project -> `ant-1.9.1.jar`
+- The project source code is located at: https://github.com/apache/ant/tree/rel/1.9.1
+- LICENSE file: https://github.com/apache/ant/blob/rel/1.9.1/LICENSE
+- NOTICE file: https://github.com/apache/ant/blob/rel/1.9.1/NOTICE
 
-**例如**：在项目中引入了第三方新依赖 -> `ant-1.9.1.jar`
-- 项目源码位于：https://github.com/apache/ant/tree/rel/1.9.1
-- LICENSE 文件：https://github.com/apache/ant/blob/rel/1.9.1/LICENSE
-- NOTICE 文件：https://github.com/apache/ant/blob/rel/1.9.1/NOTICE
-
-`ant-1.9.1.jar` 的 license 信息需要在 LICENSE 文件中指定，notice 信息需要在 NOTICE 文件中指定。 ant-1.9.1.jar 对应的详细 LICENSE 文件需要复制到我们的 licenses/ 目录下。最后更新 known-dependencies.txt 文件。
+The license information of `ant-1.9.1.jar` needs to be specified in the LICENSE file, and the notice information needs to be specified in the NOTICE file. The detailed LICENSE file corresponding to ant-1.9.1.jar needs to be copied to our licenses/ directory. Finally update the known-dependencies.txt file.
 
 #### 3.3 Commit changes to git repo
 

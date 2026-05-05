@@ -164,7 +164,7 @@ tar zxf *hugegraph-*.tar.gz
 cd *hugegraph*/*tool* 
 ```
 
-> note: `${version}` is the version, The latest version can refer to [Download Page](/docs/download/download), or click the link to download directly from the Download page
+> note: `${version}` is the version, The latest version can refer to [Download Page](/download/), or click the link to download directly from the Download page
 
 The general entry script for HugeGraph-Tools is `bin/hugegraph`, Users can use the `help` command to view its usage, here only the commands for one-click deployment are introduced.
 
@@ -874,4 +874,4 @@ $bin/stop-hugegraph.sh
 
 ### 8 Debug Server with IntelliJ IDEA
 
-Please refer to [Setup Server in IDEA](/docs/contribution-guidelines/hugegraph-server-idea-setup)
+Please refer to [Setup Server in IDEA](/community/contribution-guidelines/hugegraph-server-idea-setup)

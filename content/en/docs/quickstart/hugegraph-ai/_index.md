@@ -161,7 +161,7 @@ Python client for HugeGraph operations:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [contribution guidelines](https://hugegraph.apache.org/docs/contribution-guidelines/) for details.
+We welcome contributions! Please see our [contribution guidelines](https://hugegraph.apache.org/community/contribution-guidelines/) for details.
 
 **Development Setup:**
 - Use [GitHub Desktop](https://desktop.github.com/) for easier PR management
@@ -177,7 +177,7 @@ hugegraph-ai is licensed under [Apache 2.0 License](https://github.com/apache/hu
 ## 📞 Contact Us
 
 - **GitHub Issues**: [Report bugs or request features](https://github.com/apache/hugegraph-ai/issues) (fastest response)
-- **Email**: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscription required](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/))
+- **Email**: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscription required](https://hugegraph.apache.org/community/contribution-guidelines/subscribe/))
 - **WeChat**: Follow "Apache HugeGraph" on WeChat
 
 <img src="https://raw.githubusercontent.com/apache/hugegraph-doc/master/assets/images/wechat.png" alt="Apache HugeGraph WeChat QR Code" width="200"/>

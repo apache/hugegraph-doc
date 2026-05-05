@@ -1,3 +1,11 @@
+---
+title: "Contributor License Agreement"
+linkTitle: "CLA"
+weight: 6
+aliases:
+  - /cn/docs/CLA/
+---
+
 ## Contributor Agreement
 
 ## Individual Contributor exclusive License Agreement

@@ -2,6 +2,8 @@
 title: "Apache HugeGraph Committer Guide"
 linkTitle: "Apache HugeGraph Committer Guide"
 weight: 5
+aliases:
+  - /docs/contribution-guidelines/committer-guidelines/
 ---
 
 > This document outlines the requirements and process for becoming an Apache Committer. The corresponding ASF official document can be found at: https://community.apache.org/newcommitter.html
@@ -242,7 +244,7 @@ Of course, the candidate may also choose to decline the invitation, in which cas
 
 Once the invitation is accepted, the candidate needs to complete the following tasks:
 
-- Subscribe to dev@hugegraph.apache.org, for specific steps/filtering configurations, please refer to the [documentation](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/)
+- Subscribe to dev@hugegraph.apache.org, for specific steps/filtering configurations, please refer to the [documentation](https://hugegraph.apache.org/community/contribution-guidelines/subscribe/)
 - Sign the [ICLA](https://www.apache.org/licenses/icla.pdf), follow the steps below↓
 
 ### ICLA Signing Process

@@ -243,13 +243,16 @@ html[data-theme='dark'] {
 .footer__logo {
   background: #ffffff;
   border-radius: 8px;
-  padding: 0.6rem;
+  max-width: 180px;
+  padding: 0.5rem;
 }
 
 .footer__copyright {
   color: #d7dce5;
+  font-size: 0.74rem;
+  line-height: 1.45;
   margin: 1.5rem auto 0;
-  max-width: 1060px;
+  max-width: 880px;
 }
 
 @media (max-width: 996px) {

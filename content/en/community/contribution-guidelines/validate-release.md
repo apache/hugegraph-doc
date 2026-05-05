@@ -2,6 +2,8 @@
 title: "Validate Apache Release"
 linkTitle: "Validate Apache Release"
 weight: 3
+aliases:
+  - /docs/contribution-guidelines/validate-release/
 ---
 
 > Note: this doc will be updated continuously.

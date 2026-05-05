@@ -2,6 +2,7 @@
 title: "Download Apache HugeGraph"
 linkTitle: "Download"
 weight: 2
+slug: /
 ---
 
 
@@ -9,7 +10,7 @@ weight: 2
 > 
 > - It is recommended to use the latest version of the HugeGraph software package. Please select Java11 for the runtime environment.
 > - To verify downloads, use the corresponding hash (SHA512), signature, and [Project Signature Verification KEYS](https://downloads.apache.org/hugegraph/KEYS).
-> - Instructions for checking hash (SHA512) and signatures are on the [Validate Release](/docs/contribution-guidelines/validate-release) page, and you can also refer to [ASF official instructions](https://www.apache.org/dyn/closer.cgi#verify).
+> - Instructions for checking hash (SHA512) and signatures are on the [Validate Release](/community/contribution-guidelines/validate-release/) page, and you can also refer to [ASF official instructions](https://www.apache.org/dyn/closer.cgi#verify).
 > - Note: The version numbers of all components of HugeGraph have been kept consistent, and the version numbers of Maven repositories such as `client/loader/hubble/common` are the same. You can refer to these for dependency references [maven example](https://github.com/apache/hugegraph-toolchain#maven-dependencies).
 > - Compatibility note: after HugeGraph graduated in January 2026, download paths moved from `/incubator/hugegraph` to `/hugegraph`. Historical release file names may still include `-incubating-`.
 

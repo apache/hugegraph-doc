@@ -6,15 +6,14 @@ const SKIP_FILES = new Set(['SUMMARY.md']);
 
 const SECTION_ORDER = [
   'introduction',
-  'download',
   'quickstart',
   'config',
   'clients',
   'guides',
   'language',
   'performance',
-  'contribution-guidelines',
   'changelog',
+  'contribution-guidelines',
 ];
 
 function readFrontMatter(filePath) {

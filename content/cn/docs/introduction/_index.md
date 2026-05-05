@@ -1,6 +1,6 @@
 ---
-title: "Introduction with HugeGraph"
-linkTitle: "Introduction"
+title: "HugeGraph 简介"
+linkTitle: "简介"
 weight: 1
 aliases:
   - /cn/docs/introduction/readme/
@@ -141,7 +141,7 @@ docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
 ### 联系我们
 
 - [GitHub Issues](https://github.com/apache/hugegraph/issues)：问题反馈与功能建议（推荐）
-- 邮件：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)（[订阅方式](/cn/docs/contribution-guidelines/subscribe/)）
+- 邮件：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)（[订阅方式](/cn/community/contribution-guidelines/subscribe/)）
 - 安全问题：[security@hugegraph.apache.org](mailto:security@hugegraph.apache.org)
 - 微信公众号：Apache HugeGraph
 

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkapache_hugegraph_doc=self.webpackChunkapache_hugegraph_doc||[]).push([[9647],{7121(e,a,r){r.r(a),r.d(a,{default:()=>n});r(96540);var c=r(34164),s=r(17559),h=r(45500),u=r(22831),p=r(79139),d=r(74848);function n(e){return(0,d.jsx)(h.e3,{className:(0,c.A)(s.G.wrapper.docsPages),children:(0,d.jsx)(p.A,{children:(0,u.v)(e.route.routes)})})}}}]);

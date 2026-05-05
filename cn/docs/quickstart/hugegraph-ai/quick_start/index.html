@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-docs-cn docs-version-current docs-doc-page docs-doc-id-quickstart/hugegraph-ai/quick_start" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.1">
+<title data-rh="true">GraphRAG UI Details | Apache HugeGraph</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/quick_start/"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-docs-cn-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-docs-cn-current"><meta data-rh="true" property="og:title" content="GraphRAG UI Details | Apache HugeGraph"><meta data-rh="true" name="description" content="接续主文档介绍基础 UI 功能及详情，欢迎随时更新和改进，谢谢"><meta data-rh="true" property="og:description" content="接续主文档介绍基础 UI 功能及详情，欢迎随时更新和改进，谢谢"><link data-rh="true" rel="icon" href="/img/hugegraph-logo.svg"><link data-rh="true" rel="canonical" href="https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/quick_start/"><link data-rh="true" rel="alternate" href="https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/quick_start/" hreflang="en"><link data-rh="true" rel="alternate" href="https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/quick_start/" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Quick Start","item":"https://hugegraph.apache.org/cn/docs/quickstart"},{"@type":"ListItem","position":2,"name":"HugeGraph-AI","item":"https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai"},{"@type":"ListItem","position":3,"name":"GraphRAG UI Details","item":"https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/quick_start"}]}</script><link rel="alternate" type="application/rss+xml" href="/blog/rss.xml" title="Apache HugeGraph RSS Feed">
+<link rel="alternate" type="application/atom+xml" href="/blog/atom.xml" title="Apache HugeGraph Atom Feed">
+
+
+
+
+
+
+
+<link rel="alternate" type="application/rss+xml" href="/cn/blog/rss.xml" title="Apache HugeGraph RSS Feed">
+<link rel="alternate" type="application/atom+xml" href="/cn/blog/atom.xml" title="Apache HugeGraph Atom Feed"><link rel="stylesheet" href="/assets/css/styles.5dda875a.css">
+<script src="/assets/js/runtime~main.f9ee28d5.js" defer="defer"></script>
+<script src="/assets/js/main.3026fb60.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/"><div class="navbar__logo"><img src="/img/hugegraph-logo.svg" alt="Apache HugeGraph logo" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/img/hugegraph-logo.svg" alt="Apache HugeGraph logo" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Apache HugeGraph</b></a><a class="navbar__item navbar__link" href="/docs/">Docs</a><a class="navbar__item navbar__link" href="/blog/">Blog</a><a class="navbar__item navbar__link" href="/community/">Community</a><a class="navbar__item navbar__link" href="/docs/download/download/">Download</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a href="#" aria-haspopup="true" aria-expanded="false" role="button" class="navbar__link">ASF</a><ul class="dropdown__menu"><li><a href="https://www.apache.org/" target="_blank" rel="noopener noreferrer" class="dropdown__link">Foundation<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/licenses/" target="_blank" rel="noopener noreferrer" class="dropdown__link">License<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/events/current-event.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Events<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://privacy.apache.org/policies/privacy-policy-public.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Privacy<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/security/" target="_blank" rel="noopener noreferrer" class="dropdown__link">Security<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/foundation/sponsorship.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Sponsorship<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/foundation/thanks.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Thanks<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/foundation/policies/conduct.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Code of Conduct<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a href="#" aria-haspopup="true" aria-expanded="false" role="button" class="navbar__link navbar-language-dropdown">Language</a><ul class="dropdown__menu"><li><a aria-current="page" class="dropdown__link dropdown__link--active" href="/">English</a></li><li><a aria-current="page" class="dropdown__link dropdown__link--active" href="/cn/">中文</a></li></ul></div><a href="https://github.com/apache/hugegraph" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/cn/docs/"><span title="Documentation" class="linkLabel_WmDU">Documentation</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/cn/docs/download/download/"><span title="Download" class="categoryLinkLabel_W154">Download</span></a></div></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/cn/docs/introduction/"><span title="Introduction" class="linkLabel_WmDU">Introduction</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--active" href="/cn/docs/quickstart/"><span title="Quick Start" class="categoryLinkLabel_W154">Quick Start</span></a><button aria-label="Collapse sidebar category &#x27;Quick Start&#x27;" aria-expanded="true" type="button" class="clean-btn menu__caret"></button></div><ul class="menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" tabindex="0" href="/cn/docs/quickstart/hugegraph/"><span title="HugeGraph (OLTP)" class="categoryLinkLabel_W154">HugeGraph (OLTP)</span></a><button aria-label="Expand sidebar category &#x27;HugeGraph (OLTP)&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" tabindex="0" href="/cn/docs/quickstart/toolchain/"><span title="HugeGraph 工具链" class="categoryLinkLabel_W154">HugeGraph 工具链</span></a><button aria-label="Expand sidebar category &#x27;HugeGraph 工具链&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--active" tabindex="0" href="/cn/docs/quickstart/hugegraph-ai/"><span title="HugeGraph-AI" class="categoryLinkLabel_W154">HugeGraph-AI</span></a><button aria-label="Collapse sidebar category &#x27;HugeGraph-AI&#x27;" aria-expanded="true" type="button" class="clean-btn menu__caret"></button></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/"><span title="HugeGraph-LLM" class="linkLabel_WmDU">HugeGraph-LLM</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/cn/docs/quickstart/hugegraph-ai/hugegraph-ml/"><span title="HugeGraph-ML" class="linkLabel_WmDU">HugeGraph-ML</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/cn/docs/quickstart/hugegraph-ai/config-reference/"><span title="配置参考" class="linkLabel_WmDU">配置参考</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/cn/docs/quickstart/hugegraph-ai/quick_start/"><span title="GraphRAG UI Details" class="linkLabel_WmDU">GraphRAG UI Details</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/cn/docs/quickstart/hugegraph-ai/rest-api/"><span title="REST API" class="linkLabel_WmDU">REST API</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" tabindex="0" href="/cn/docs/quickstart/computing/"><span title="HugeGraph Computing (OLAP)" class="categoryLinkLabel_W154">HugeGraph Computing (OLAP)</span></a><button aria-label="Expand sidebar category &#x27;HugeGraph Computing (OLAP)&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" tabindex="0" href="/cn/docs/quickstart/client/"><span title="HugeGraph Client" class="categoryLinkLabel_W154">HugeGraph Client</span></a><button aria-label="Expand sidebar category &#x27;HugeGraph Client&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/cn/docs/config/"><span title="Server 配置" class="categoryLinkLabel_W154">Server 配置</span></a><button aria-label="Expand sidebar category &#x27;Server 配置&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/cn/docs/clients/"><span title="API" class="categoryLinkLabel_W154">API</span></a><button aria-label="Expand sidebar category &#x27;API&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/cn/docs/guides/"><span title="GUIDES" class="categoryLinkLabel_W154">GUIDES</span></a><button aria-label="Expand sidebar category &#x27;GUIDES&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/cn/docs/language/"><span title="QUERY LANGUAGE" class="categoryLinkLabel_W154">QUERY LANGUAGE</span></a><button aria-label="Expand sidebar category &#x27;QUERY LANGUAGE&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/cn/docs/performance/"><span title="PERFORMANCE" class="categoryLinkLabel_W154">PERFORMANCE</span></a><button aria-label="Expand sidebar category &#x27;PERFORMANCE&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/cn/docs/contribution-guidelines/"><span title="Contribution Guidelines" class="categoryLinkLabel_W154">Contribution Guidelines</span></a><button aria-label="Expand sidebar category &#x27;Contribution Guidelines&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/cn/docs/changelog/"><span title="CHANGELOGS" class="categoryLinkLabel_W154">CHANGELOGS</span></a><button aria-label="Expand sidebar category &#x27;CHANGELOGS&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/cn/docs/CLA/"><span title="CLA" class="linkLabel_WmDU">CLA</span></a></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><a class="breadcrumbs__link" href="/cn/docs/quickstart/"><span>Quick Start</span></a></li><li class="breadcrumbs__item"><a class="breadcrumbs__link" href="/cn/docs/quickstart/hugegraph-ai/"><span>HugeGraph-AI</span></a></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">GraphRAG UI Details</span></li></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><blockquote>
+<p>接续<a class="" href="/cn/docs/quickstart/hugegraph-ai/">主文档</a>介绍基础 UI 功能及详情，欢迎随时更新和改进，谢谢</p>
+</blockquote>
+<header><h1>1. 项目核心逻辑</h1></header>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="构建-rag-索引职责">构建 RAG 索引职责：<a href="#构建-rag-索引职责" class="hash-link" aria-label="Direct link to 构建 RAG 索引职  责：" title="Direct link to 构建 RAG 索引职责：" translate="no">​</a></h2>
+<ul>
+<li class="">文本分割和向量化</li>
+<li class="">从文本中提取图（构建知识图谱）并对顶点进行向量化</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="graphrag-和用户功能职责">(Graph)RAG 和用户功能职责：<a href="#graphrag-和用户功能职责" class="hash-link" aria-label="Direct link to (Graph)RAG 和用户功能职责：" title="Direct link to (Graph)RAG 和用户功能职责：" translate="no">​</a></h2>
+<ul>
+<li class="">根据查询从构建的知识图谱和向量数据库中检索相关内容，用于补充提示词。</li>
+</ul>
+<h1>2. （处理流程）构建 RAG 索引</h1>
+<p>从文本构建知识图谱、分块向量和图顶点向量。</p>
+<p><img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/f3366d46-2e31-4638-94c4-7214951ef77a" alt="image" class="img_ev3q"></p>
+<!-- -->
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="四个输入字段">四个输入字段：<a href="#四个输入字段" class="hash-link" aria-label="Direct link to 四个输入字段：" title="Direct link to 四个输入字段：" translate="no">​</a></h3>
+<ul>
+<li class=""><strong>文档：</strong> 输入文本</li>
+<li class=""><strong>Schema：</strong> 图的 schema，可以以 JSON 格式的 schema 提供，或提供图名称（如果数据库中已存在）。</li>
+<li class=""><strong>图提取提示词头部：</strong> 提示词的头部</li>
+<li class=""><strong>输出：</strong> 显示结果</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="按钮">按钮：<a href="#按钮" class="hash-link" aria-label="Direct link to 按钮：" title="Direct link to 按钮：" translate="no">​</a></h3>
+<ul>
+<li class="">
+<p><strong>获取 RAG 信息</strong></p>
+<ul>
+<li class=""><strong>获取向量索引信息：</strong> 检索向量索引信息</li>
+<li class=""><strong>获取图索引信息：</strong> 检索图索引信  息</li>
+</ul>
+</li>
+<li class="">
+<p><strong>清除 RAG 数据</strong></p>
+<ul>
+<li class=""><strong>清除分块向量索引：</strong> 清除分块向量</li>
+<li class=""><strong>清除图顶点向量索引：</strong> 清除图顶点向量</li>
+<li class=""><strong>清除图数据：</strong> 清除图数据</li>
+</ul>
+</li>
+<li class="">
+<p><strong>导入到向量：</strong> 将文档中的文本转换为向量（需要先对文本进行分块，然后将分块转换为向量）</p>
+</li>
+<li class="">
+<p><strong>提取图数据 (1)：</strong> 基于 Schema，使用图提取提示词头部和分块内容作为提示词，从文档中提取图数据</p>
+</li>
+<li class="">
+<p><strong>加载到图数据库 (2)：</strong> 将提取的图数据存储到数据库（自动调用更新顶点嵌入以将向量存储到向量数据库）</p>
+</li>
+<li class="">
+<p><strong>更新顶点嵌入：</strong> 将图顶点转换为向量</p>
+</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="执行流程">执行流程：<a href="#执行流程" class="hash-link" aria-label="Direct link to 执行流程：" title="Direct link to 执行流程：" translate="no">​</a></h3>
+<ol>
+<li class="">在<strong>文档</strong>字段中输入文本。</li>
+<li class="">点击<strong>导入到向量</strong>按钮，对文本进行分割和向量化，存储到向量数据库。</li>
+<li class="">在 Schema 字段中输入图的 <strong>Schema</strong>。</li>
+<li class="">点击<strong>提取图数据 (1)</strong> 按钮，将文本提取为图。</li>
+<li class="">点击<strong>加载到图数据库 (2)</strong> 按钮，将提取的图存储到图数据库（这会自动调用<strong>更新顶点嵌入</strong>以将向量存储到向量数据库）。</li>
+<li class="">点击<strong>更新顶点嵌入</strong>按钮，将图顶点向量化并存储到向量数据库。</li>
+</ol>
+<h1>3. （处理流程）(Graph)RAG 和用户功能</h1>
+<p>前一个模块中的<strong>导入到向量</strong>按钮将文本（分块 ）转换为向量，<strong>更新顶点嵌入</strong>按钮将图顶点转换为向量。这些向量分别存储，用于在本模块中补充查询（答案生成）的上下文。换句话说，前一个模块为 RAG 准备数据（向量化），而本模块执行 RAG。</p>
+<p>本模块包含两个部分：</p>
+<ul>
+<li class=""><strong>HugeGraph RAG 查询</strong></li>
+<li class=""><strong>（批量）回测</strong></li>
+</ul>
+<p>第一部分处理单个查询，第二部分同时处理多个查询。以下是第一部分的说明。</p>
+<p><img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/33698062-e46b-4757-8b5e-93e8f10eae65" alt="image" class="img_ev3q"></p>
+<!-- -->
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="输入字段">输入字段：<a href="#输入字段" class="hash-link" aria-label="Direct link to 输入字段：" title="Direct link to 输入字段：" translate="no">​</a></h3>
+<ul>
+<li class=""><strong>问题：</strong> 输入查询</li>
+<li class=""><strong>查询提示词：</strong> 用于向 LLM 提出最终问题的提示词模板</li>
+<li class=""><strong>关键词提取提示词：</strong> 用于从问题中提取关键词的提示词模板</li>
+<li class=""><strong>模板数量：</strong> &lt; 0 表示禁用 text2gql；= 0 表示不使用模板（零样本）；&gt; 0 表示使用指定数量的模板</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="查询范围选择">查询范围选择：<a href="#查询范围选择" class="hash-link" aria-label="Direct link to 查询范围选择：" title="Direct link to 查询范围选择：" translate="no">​</a></h3>
+<ul>
+<li class=""><strong>基础 LLM 答案：</strong> 不使用 RAG 功能</li>
+<li class=""><strong>仅向量答案：</strong> 仅使用基于向量的检索（在向量数据库中查询分块向量）</li>
+<li class=""><strong>仅图答案：</strong> 仅使用基于图的检索（在向量数据库中查询图顶点向量和图数据库）</li>
+<li class=""><strong>图-向量答案：</strong> 同时使用基于图和基于向量的检索</li>
+</ul>
+<p><img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/26641e09-249f-4b3a-8013-16dc9383d333" alt="image" class="img_ev3q"></p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="执行流程-1">执行流程：<a href="#执行流程-1" class="hash-link" aria-label="Direct link to 执行流程：" title="Direct link to 执行流程：" translate="no">​</a></h3>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="仅图答案"><strong>仅图答案：</strong><a href="#仅图答案" class="hash-link" aria-label="Direct link to 仅图答案" title="Direct link to 仅图答案" translate="no">​</a></h4>
+<ul>
+<li class="">使用<strong>关键词提取提示词</strong>从<strong>问题</strong>中提取关键词。</li>
+</ul>
+<p><img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/b49e269f-eaec-40b1-8d8f-9e409821d75d" alt="image" class="img_ev3q"></p>
+<ul>
+<li class="">
+<p>使用提取的关键词：</p>
+<ul>
+<li class="">首先，在图数据库中进行精确匹配。</li>
+<li class="">如果未找到匹配，在向量数据库（图顶点向量）中进行模糊匹配以检索相关顶点。</li>
+</ul>
+</li>
+<li class="">
+<p><strong>text2gql：</strong> 调用 text2gql 相关接口，使用匹配的顶点作为实体，将<strong>问题</strong>转换为 Gremlin 查询并在图数据库中执行。</p>
+</li>
+<li class="">
+<p><strong>BFS：</strong> 如果 text2gql 失败（LLM 生成的查询可能无效），回退到使用预定义的<strong>Gremlin 查询模板</strong>执行图查询（本质上是 BFS 遍历）。</p>
+</li>
+</ul>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="仅向量答案"><strong>仅向量答案：</strong><a href="#仅向量答案" class="hash-link" aria-label="Direct link to 仅向量答案" title="Direct link to 仅向量答案" translate="no">​</a></h4>
+<ul>
+<li class="">将<strong>查询</strong>转换为向量。</li>
+<li class="">在向量数据库的<strong>分块向量</strong>数据集中搜索最相似的内容。</li>
+</ul>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="排序和答案生成"><strong>排序和答案生成：</strong><a href="#排序和答案生成" class="hash-link" aria-label="Direct link to 排序和答案生成" title="Direct link to 排序和答案生成" translate="no">​</a></h4>
+<ul>
+<li class="">执行检索后，对搜索结果进行排序以构建最终的<strong>提示词</strong>。</li>
+<li class="">基于不同的提示词配置生成答案，并在不同的输出字段中显示：
+<ul>
+<li class=""><strong>基础 LLM 答案</strong></li>
+<li class=""><strong>仅向量答案</strong></li>
+<li class=""><strong>仅图答案</strong></li>
+<li class=""><strong>图-向量答案</strong></li>
+</ul>
+</li>
+</ul>
+<p><img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/7d4496a3-d44c-4491-9463-8e93595dfa45" alt="image" class="img_ev3q"></p>
+<h1>4. （处理流程）Text2Gremlin</h1>
+<p>将自然语言查询转换为 Gremlin 查询。</p>
+<p>本模块包含两个部分：</p>
+<ul>
+<li class=""><strong>构建向量模板索引（可选）：</strong> 将示例文件中的查询/gremlin 对进行向量化并存储到向量数据库中，用于生成 Gremlin 查询时参考。</li>
+<li class=""><strong>自然语言转 Gremlin：</strong> 将自然语言查询转换为 Gremlin 查询。</li>
+</ul>
+<p>第一部分较为简单，因此重点介绍第二部分。</p>
+<p><img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/fc678369-261d-49ea-a289-1ca6ade5ca55" alt="image" class="img_ev3q"></p>
+<!-- -->
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="第二部分的输入字段">第二部分的输入字段：<a href="#第二部分的输入字段" class="hash-link" aria-label="Direct link to 第二部分的输入字段：" title="Direct link to 第二部分的输入字段：" translate="no">​</a></h3>
+<ul>
+<li class=""><strong> 自然语言查询：</strong> 输入要转换为 Gremlin 的自然语言文本。</li>
+</ul>
+<p><img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/d2a72f45-488c-4499-968b-a11816655ba0" alt="image" class="img_ev3q"></p>
+<ul>
+<li class=""><strong>Schema：</strong> 输入图 schema。</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="执行流程-2">执行流程：<a href="#执行流程-2" class="hash-link" aria-label="Direct link to 执行流程：" title="Direct link to 执行流程：" translate="no">​</a></h3>
+<ol>
+<li class="">在<strong>自然语言查询</strong>字段中输入<strong>查询</strong>（自然语言）。</li>
+<li class="">在<strong>Schema</strong>字段中输入<strong>图 schema</strong>。</li>
+<li class="">点击<strong>Text2Gremlin</strong>按钮，执行以下逻辑：
+<ol>
+<li class="">将<strong>查询</strong>转换为向量。</li>
+<li class="">构建<strong>提示词</strong>：
+<ul>
+<li class="">检索<strong>图 schema</strong>。</li>
+<li class="">在向量数据库中查询示例向量，检索与输入查询相似的查询-gremlin 对（如果向量数据库中缺少示例，将自动使用<strong>resources</strong>文件夹中的示例进行初始化）。</li>
+</ul>
+</li>
+</ol>
+</li>
+</ol>
+<p><img decoding="async" loading="lazy" src="https://github.com/user-attachments/assets/fd150f87-27f8-48e5-8a55-319ec039b7e0" alt="image" class="img_ev3q"></p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#bfc7d5"><span class="token plain">  - 使用构建的提示词生成 Gremlin 查询。</span><br></div></code></pre></div></div>
+<h1>5. 图工具</h1>
+<p>输入 Gremlin 查询以执行相应操作。</p>
+<h1>6. 语言  切换 (v1.5.0+)</h1>
+<p>HugeGraph-LLM 支持双语提示词，以提高跨语言的准确性。</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="在英文和中文之间切换">在英文和中文之间切换<a href="#在英文和中文之间切换" class="hash-link" aria-label="Direct link to 在英文和中文之间切换" title="Direct link to 在英文和中文之间切换" translate="no">​</a></h3>
+<p>系统语言影响：</p>
+<ul>
+<li class=""><strong>系统提示词</strong>：LLM 使用的内部提示词</li>
+<li class=""><strong>关键词提取</strong>：特定语言的提取逻辑</li>
+<li class=""><strong>答案生成</strong>：响应格式和风格</li>
+</ul>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="配置方法一环境变量">配置方法一：环境变量<a href="#配置方法一环境变量" class="hash-link" aria-label="Direct link to 配置方法一：环境变量" title="Direct link to 配置方法一：环境变量" translate="no">​</a></h4>
+<p>编辑您的 <code>.env</code> 文件：</p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#bfc7d5"><span class="token comment" style="color:rgb(105, 112, 152);font-style:italic"># 英文提示词（默认）</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain"></span><span class="token assign-left variable environment constant" style="color:rgb(130, 170, 255)">LANGUAGE</span><span class="token operator" style="color:rgb(137, 221, 255)">=</span><span class="token plain">EN</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain"></span><span class="token comment" style="color:rgb(105, 112, 152);font-style:italic"># 中文提示词</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain"></span><span class="token assign-left variable environment constant" style="color:rgb(130, 170, 255)">LANGUAGE</span><span class="token operator" style="color:rgb(137, 221, 255)">=</span><span class="token plain">CN</span><br></div></code></pre></div></div>
+<p>更改语言设置后重启服务。</p>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="配置方法二web-ui动态">配置方法二：Web UI（动态）<a href="#配置方法二web-ui动态" class="hash-link" aria-label="Direct link to 配置方法二：Web UI（动态）" title="Direct link to 配置方法二：Web UI（动态）" translate="no">​</a></h4>
+<p>如果您的部署中可用，使用 Web UI 中的设置面板切换语言，无需重启：</p>
+<ol>
+<li class="">导航到<strong>设置</strong>或<strong>配置</strong>选项卡</li>
+<li class="">选择<strong>语言</strong>：<code>EN</code> 或 <code>CN</code></li>
+<li class="">点击<strong>保存</strong> - 更改立即生效</li>
+</ol>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="特定语言的行为">特定语言的行为<a href="#特定语言的行为" class="hash-link" aria-label="Direct link to 特定语言的行为" title="Direct link to 特定语言的行为" translate="no">​</a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>语言</th><th>关键词提取</th><th>答案风格</th><th>使用场景</th></tr></thead><tbody><tr><td><code>EN</code></td><td>英文 NLP 模型</td><td>专业、简洁</td><td>国际用户、英文文档</td></tr><tr><td><code>CN</code></td><td>中文 NLP 模型</td><td>自然的中文表达</td><td>中文用户、中文文档</td></tr></tbody></table>
+<blockquote>
+<p>[!TIP]
+将 <code>LANGUAGE</code> 设置与您的主要文档语言匹配，以获得最佳 RAG 准确性。</p>
+</blockquote>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="rest-api-语言覆盖">REST API 语言覆盖<a href="#rest-api-语言覆盖" class="hash-link" aria-label="Direct link to REST API 语言覆盖" title="Direct link to REST API 语言覆盖" translate="no">​</a></h3>
+<p>使用 REST API 时，您可以为每个请求指定自定义提示词，以覆盖默认语言设置：</p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#bfc7d5"><span class="token function" style="color:rgb(130, 170, 255)">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:rgb(191, 199, 213)">-X</span><span class="token plain"> POST http://localhost:8001/rag </span><span class="token punctuation" style="color:rgb(199, 146, 234)">\</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token parameter variable" style="color:rgb(191, 199, 213)">-H</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&quot;Content-Type: application/json&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">\</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token parameter variable" style="color:rgb(191, 199, 213)">-d</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&#x27;{</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token string" style="color:rgb(195, 232, 141)">    &quot;query&quot;: &quot;告诉我关于阿尔·帕西诺的信息&quot;,</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token string" style="color:rgb(195, 232, 141)">    &quot;graph_only&quot;: true,</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token string" style="color:rgb(195, 232, 141)">    &quot;keywords_extract_prompt&quot;: &quot;请从以下文本中提取关键实体...&quot;,</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token string" style="color:rgb(195, 232, 141)">    &quot;answer_prompt&quot;: &quot;请根据以下上下文回答问题...&quot;</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token string" style="color:rgb(195, 232, 141)">  }&#x27;</span><br></div></code></pre></div></div>
+<p>完整参数详情请参阅 <a class="" href="/cn/docs/quickstart/hugegraph-ai/rest-api/">REST API 参考</a>。</p></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"><a href="https://github.com/apache/hugegraph-doc/edit/master/content/cn/docs/quickstart/hugegraph-ai/quick_start.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_Z9Sw" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_JAkA"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/cn/docs/quickstart/hugegraph-ai/config-reference/"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">配置参考</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/cn/docs/quickstart/hugegraph-ai/rest-api/"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">REST API</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#构建-rag-索引职责" class="table-of-contents__link toc-highlight">构建 RAG 索引职责：</a></li><li><a href="#graphrag-和用户功能职责" class="table-of-contents__link toc-highlight">(Graph)RAG 和用户功能职责：</a><ul><li><a href="#四个输入字段" class="table-of-contents__link toc-highlight">四个输入字段：</a></li><li><a href="#按钮" class="table-of-contents__link toc-highlight">按钮：</a></li><li><a href="#执行流程" class="table-of-contents__link toc-highlight">执行流程：</a></li><li><a href="#输入字段" class="table-of-contents__link toc-highlight">输入字段：</a></li><li><a href="#查询范围选择" class="table-of-contents__link toc-highlight">查询范围选择：</a></li><li><a href="#执行流程-1" class="table-of-contents__link toc-highlight">执行流程：</a><ul><li><a href="#仅图答案" class="table-of-contents__link toc-highlight"><strong>仅图答案：</strong></a></li><li><a href="#仅向量答案" class="table-of-contents__link toc-highlight"><strong>仅向量答案：</strong></a></li><li><a href="#排序和答案生成" class="table-of-contents__link toc-highlight"><strong>排序和答案生成：</strong></a></li></ul></li><li><a href="#第二部分的输入字段" class="table-of-contents__link toc-highlight">第二部分的输入字段：</a></li><li><a href="#执行流程-2" class="table-of-contents__link toc-highlight">执行流程：</a></li><li><a href="#在英文和中文之间切换" class="table-of-contents__link toc-highlight">在英文和中文之间切换</a><ul><li><a href="#配置方法一环境变量" class="table-of-contents__link toc-highlight">配置方法一：环境变量</a></li><li><a href="#配置方法二web-ui动态" class="table-of-contents__link toc-highlight">配置方法二 ：Web UI（动态）</a></li><li><a href="#特定语言的行为" class="table-of-contents__link toc-highlight">特定语言的行为</a></li></ul></li><li><a href="#rest-api-语言覆盖" class="table-of-contents__link toc-highlight">REST API 语言覆盖</a></li></ul></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Project</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/">Documentation</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/download/download/">Download</a></li><li class="footer__item"><a href="https://github.com/apache/hugegraph" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/apache/hugegraph/issues" target="_blank" rel="noopener noreferrer" class="footer__link-item">Issue Tracker<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Community</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/community/">Community</a></li><li class="footer__item"><a href="mailto:dev@hugegraph.apache.org" target="_blank" rel="noopener noreferrer" class="footer__link-item">Mailing List<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://the-asf.slack.com/archives/C059UU2FJ23" target="_blank" rel="noopener noreferrer" class="footer__link-item">ASF Slack<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">ASF</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://www.apache.org/" target="_blank" rel="noopener noreferrer" class="footer__link-item">Foundation<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/licenses/" target="_blank" rel="noopener noreferrer" class="footer__link-item">License<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/events/current-event.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Events<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://privacy.apache.org/policies/privacy-policy-public.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Privacy<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/security/" target="_blank" rel="noopener noreferrer" class="footer__link-item">Security<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/foundation/sponsorship.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Sponsorship<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/foundation/thanks.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Thanks<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/foundation/policies/conduct.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Code of Conduct<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="margin-bottom--sm"><a href="https://www.apache.org/" rel="noopener noreferrer" class="footerLogoLink_BH7S"><img src="/img/apache-logo.svg" alt="Apache Software Foundation logo" class="footer__logo themedComponent_mlkZ themedComponent--light_NVdE" width="220"><img src="/img/apache-logo.svg" alt="Apache Software Foundation logo" class="footer__logo themedComponent_mlkZ themedComponent--dark_xIcU" width="220"></a></div><div class="footer__copyright">Copyright © 2026 The Apache Software Foundation. Licensed under the Apache License, Version 2.0. Apache HugeGraph, HugeGraph, Apache, the Apache feather logo, and the Apache HugeGraph project logo are either registered trademarks or trademarks of The Apache Software Foundation in the United States and other countries.</div></div></div></footer></div>
+</body>
+</html>

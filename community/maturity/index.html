@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-community docs-version-current docs-doc-page docs-doc-id-maturity" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.1">
+<title data-rh="true">Maturity | Apache HugeGraph</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://hugegraph.apache.org/community/maturity/"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-community-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-community-current"><meta data-rh="true" property="og:title" content="Maturity | Apache HugeGraph"><meta data-rh="true" name="description" content="Apache HugeGraph maturity assessment"><meta data-rh="true" property="og:description" content="Apache HugeGraph maturity assessment"><link data-rh="true" rel="icon" href="/img/hugegraph-logo.svg"><link data-rh="true" rel="canonical" href="https://hugegraph.apache.org/community/maturity/"><link data-rh="true" rel="alternate" href="https://hugegraph.apache.org/community/maturity/" hreflang="en"><link data-rh="true" rel="alternate" href="https://hugegraph.apache.org/community/maturity/" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Maturity","item":"https://hugegraph.apache.org/community/maturity"}]}</script><link rel="alternate" type="application/rss+xml" href="/blog/rss.xml" title="Apache HugeGraph RSS Feed">
+<link rel="alternate" type="application/atom+xml" href="/blog/atom.xml" title="Apache HugeGraph Atom Feed">
+
+
+
+
+
+
+
+<link rel="alternate" type="application/rss+xml" href="/cn/blog/rss.xml" title="Apache HugeGraph RSS Feed">
+<link rel="alternate" type="application/atom+xml" href="/cn/blog/atom.xml" title="Apache HugeGraph Atom Feed"><link rel="stylesheet" href="/assets/css/styles.5dda875a.css">
+<script src="/assets/js/runtime~main.f9ee28d5.js" defer="defer"></script>
+<script src="/assets/js/main.3026fb60.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/"><div class="navbar__logo"><img src="/img/hugegraph-logo.svg" alt="Apache HugeGraph logo" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/img/hugegraph-logo.svg" alt="Apache HugeGraph logo" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Apache HugeGraph</b></a><a class="navbar__item navbar__link" href="/docs/">Docs</a><a class="navbar__item navbar__link" href="/blog/">Blog</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/community/">Community</a><a class="navbar__item navbar__link" href="/docs/download/download/">Download</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a href="#" aria-haspopup="true" aria-expanded="false" role="button" class="navbar__link">ASF</a><ul class="dropdown__menu"><li><a href="https://www.apache.org/" target="_blank" rel="noopener noreferrer" class="dropdown__link">Foundation<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/licenses/" target="_blank" rel="noopener noreferrer" class="dropdown__link">License<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/events/current-event.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Events<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://privacy.apache.org/policies/privacy-policy-public.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Privacy<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/security/" target="_blank" rel="noopener noreferrer" class="dropdown__link">Security<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/foundation/sponsorship.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Sponsorship<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/foundation/thanks.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Thanks<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/foundation/policies/conduct.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Code of Conduct<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a href="#" aria-haspopup="true" aria-expanded="false" role="button" class="navbar__link navbar-language-dropdown">Language</a><ul class="dropdown__menu"><li><a aria-current="page" class="dropdown__link dropdown__link--active" href="/">English</a></li><li><a class="dropdown__link" href="/cn/">中文</a></li></ul></div><a href="https://github.com/apache/hugegraph" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/community/"><span title="Community" class="linkLabel_WmDU">Community</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" href="/community/maturity/"><span title="Maturity" class="linkLabel_WmDU">Maturity</span></a></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Maturity</span></li></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Maturity Assessment for Apache HugeGraph</h1></header>
+<p>The goals of this maturity model are to describe how Apache projects operate in a concise and high-level way, and to provide a basic framework that projects may choose to use to evaluate themselves.</p>
+<p>More details can be found <a href="https://community.apache.org/apache-way/apache-project-maturity-model.html" target="_blank" rel="noopener noreferrer" class="">here</a>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="status-of-this-assessment">Status of this assessment<a href="#status-of-this-assessment" class="hash-link" aria-label="Direct link to Status of this assessment" title="Direct link to Status of this assessment" translate="no">​</a></h2>
+<p>Preliminary assessment completed.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="maturity-model-assessment">Maturity model assessment<a href="#maturity-model-assessment" class="hash-link" aria-label="Direct link to Maturity model assessment" title="Direct link to Maturity model assessment" translate="no">​</a></h2>
+<p>The following table is filled according to the <a href="https://community.apache.org/apache-way/apache-project-maturity-model.html" target="_blank" rel="noopener noreferrer" class="">Apache Maturity Model</a>. Mentors and community members are welcome to comment and modify it.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="code">CODE<a href="#code" class="hash-link" aria-label="Direct link to CODE" title="Direct link to CODE" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>ID</strong></th><th><strong>Description</strong></th><th><strong>Status</strong></th></tr></thead><tbody><tr><td><strong>CD10</strong></td><td>The project produces Open Source software for distribution to the public, at no charge.                                                                                                                                                                         </td><td><strong>YES</strong> The project source code is licensed under the <code>Apache License 2.0</code>.</td></tr><tr><td><strong>CD20</strong></td><td>Anyone can easily discover and access the project&#x27;s code.                                                                                                                                                                                                     </td><td><strong>YES</strong> The <a href="https://hugegraph.apache.org/" target="_blank" rel="noopener noreferrer" class="">official website</a> includes a link to the <a href="https://github.com/apache/hugegraph" target="_blank" rel="noopener noreferrer" class="">GitHub repository</a>.</td></tr><tr><td><strong>CD30</strong></td><td>Anyone using standard, widely-available tools, can build the code in a reproducible way.                                                                                                                                                                       </td><td><strong>YES</strong>  Apache HugeGraph provides a <a href="https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/" target="_blank" rel="noopener noreferrer" class="">Quick Start</a> document that explains how to compile the source code.</td></tr><tr><td><strong>CD40</strong></td><td>The full history of the project&#x27;s code is available via a source code control system, in a way that allows anyone to recreate any released version.</td><td><strong>YES</strong> The project uses Git, and anyone can view the full history of the project via commit logs and tags for each release.</td></tr><tr><td><strong>CD50</strong></td><td>The source code control system establishes the provenance of each line of code in a reliable way, based on strong authentication of the committer. When third parties contribute code, commit messages provide reliable information about the code provenance.</td><td><strong>YES</strong> The project uses GitHub managed by Apache Infra, ensuring provenance of each line of code to a committer. Third-party contributions are accepted via pull requests in accordance with the <a href="https://hugegraph.apache.org/docs/contribution-guidelines/" target="_blank" rel="noopener noreferrer" class="">Contribution Guidelines</a>.</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="license">LICENSE<a href="#license" class="hash-link" aria-label="Direct link to LICENSE" title="Direct link to LICENSE" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>ID</strong>   </th><th><strong>Description</strong></th><th><strong>Status</strong></th></tr></thead><tbody><tr><td><strong>LC10</strong></td><td>The Apache License, version 2.0, covers the released code.                                                                                                                                                                                                                     </td><td><strong>YES</strong> The <a href="https://github.com/apache/hugegraph/blob/master/LICENSE" target="_blank" rel="noopener noreferrer" class="">LICENSE</a> file is present in the source repository. All source files contain the APLv2 header, which is checked by the Apache Rat plugin during builds.</td></tr><tr><td><strong>LC20</strong></td><td>Libraries that are mandatory dependencies of the project&#x27;s code do not create more restrictions than the Apache License does.                                                                                                                                          </td><td><strong>YES</strong> All dependencies have been checked and none of them create more restrictions than the Apache License does.</td></tr><tr><td><strong>LC30</strong></td><td>The libraries mentioned in LC20 are available as Open Source software.                                                                                                                                                                                      </td><td><strong>YES</strong> Dependencies are available in public Maven repositories.</td></tr><tr><td><strong>LC40</strong></td><td>Committers are bound by an Individual Contributor Agreement (the &quot;Apache iCLA&quot;) that defines which code they may commit and how they need to identify code that is not their own.</td><td><strong>YES</strong> All committers have a signed iCLA on file with the ASF.</td></tr><tr><td><strong>LC50</strong></td><td>The project clearly defines and documents the copyright ownership of everything that the project produces.                                                                                                                                                                             </td><td><strong>YES</strong> This is documented via copyright notices in the source files and the NOTICE file.</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="releases">Releases<a href="#releases" class="hash-link" aria-label="Direct link to Releases" title="Direct link to Releases" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>ID</strong>   </th><th><strong>Description</strong></th><th><strong>Status</strong></th></tr></thead><tbody><tr><td><strong>RE10</strong></td><td>Releases consist of source code, distributed using standard and open archive formats that are expected to stay readable in the long term.                                                                                                                                       </td><td><strong>YES</strong> Source releases are distributed via <a href="https://dist.apache.org/repos/dist/release/hugegraph/" target="_blank" rel="noopener noreferrer" class="">dist.apache.org</a> and linked from the website&#x27;s <a href="https://hugegraph.apache.org/docs/download/download/" target="_blank" rel="noopener noreferrer" class="">download page</a>.</td></tr><tr><td><strong>RE20</strong></td><td>The project&#x27;s PMC (Project Management Committee, see CS10) approves each software release in order to make the release an act of the Foundation.                                                                                                                                                                         </td><td><strong>YES</strong> All releases are voted on by the PMC on the <a href="mailto:dev@hugegraph.apache.org" target="_blank" rel="noopener noreferrer" class="">dev@hugegraph.apache.org</a> mailing list.</td></tr><tr><td><strong>RE30</strong></td><td>Releases are signed and/or distributed along with digests that anyone can reliably use to validate the downloaded archives.                                                                                                                                                       </td><td><strong>YES</strong> All releases are signed by the release manager and distributed with checksums. The <a href="https://downloads.apache.org/hugegraph/KEYS" target="_blank" rel="noopener noreferrer" class="">KEYS</a> file is available for verification.</td></tr><tr><td><strong>RE40</strong></td><td>The project can distribute convenience binaries alongside source code, but they are not Apache Releases, they are provided with no guarantee.</td><td><strong>YES</strong> The project provides convenience binaries, but only the source code archive is an official Apache release.</td></tr><tr><td><strong>RE50</strong></td><td>The project documents a repeatable release process so that someone new to the project can independently generate the complete set of artifacts required for a release.</td><td><strong>YES</strong> The project documents its release process in the <a href="https://github.com/apache/hugegraph/wiki/ASF-Release-Guidance-V2.0" target="_blank" rel="noopener noreferrer" class="">How to Release</a> guide.</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="quality">Quality<a href="#quality" class="hash-link" aria-label="Direct link to Quality" title="Direct link to Quality" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>ID</strong>   </th><th><strong>Description</strong></th><th><strong>Status</strong></th></tr></thead><tbody><tr><td><strong>QU10</strong></td><td>The project is open and honest about the quality of its code. Various levels of quality and maturity for various modules are natural and acceptable as long as they are clearly communicated.</td><td><strong>YES</strong> Users are encouraged to <a href="https://github.com/apache/hugegraph/issues" target="_blank" rel="noopener noreferrer" class="">report issues</a> on GitHub, and all discussions are public.</td></tr><tr><td><strong>QU20</strong></td><td>The project puts a very high priority on producing secure software.                                                                                                                                                                                                           </td><td><strong>YES</strong> All reported security issues are treated with high priority.</td></tr><tr><td><strong>QU30</strong></td><td>The project provides a well-documented, secure and private channel to report security issues, along with a documented way of responding to them.</td><td><strong>YES</strong> The project website has a dedicated <a href="https://hugegraph.apache.org/docs/guides/security/" target="_blank" rel="noopener noreferrer" class="">security page</a> with instructions for reporting vulnerabilities.</td></tr><tr><td><strong>QU40</strong></td><td>The project puts a high priority on backwards compatibility and aims to document any incompatible changes and provide tools and documentation to help users transition to new features.</td><td><strong>YES</strong> The project values backward compatibility and documents any breaking changes in release notes.</td></tr><tr><td><strong>QU50</strong></td><td>The project strives to respond to documented bug reports in a timely manner.</td><td><strong>YES</strong> The community is active in addressing issues reported on GitHub and questions on the mailing list.</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="community">Community<a href="#community" class="hash-link" aria-label="Direct link to Community" title="Direct link to Community" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>ID</strong>   </th><th><strong>Description</strong></th><th><strong>Status</strong></th></tr></thead><tbody><tr><td><strong>CO10</strong></td><td>The project has a well-known homepage that points to all the information required to operate according to this maturity model.</td><td><strong>YES</strong> The <a href="https://hugegraph.apache.org/" target="_blank" rel="noopener noreferrer" class="">website</a> serves as the central point for project information.</td></tr><tr><td><strong>CO20</strong></td><td>The community welcomes contributions from anyone who acts in good faith and in a respectful manner, and who adds value to the project.</td><td><strong>YES</strong> Apache HugeGraph has a <a href="https://hugegraph.apache.org/docs/contribution-guidelines/" target="_blank" rel="noopener noreferrer" class="">Contribution Guidelines</a> page and welcomes all valuable contributions.</td></tr><tr><td><strong>CO30</strong></td><td>Contributions include source code, documentation, constructive bug reports, constructive discussions, marketing and generally anything that adds value to the project.</td><td><strong>YES</strong> The project values both code and non-code contributions.</td></tr><tr><td><strong>CO40</strong></td><td>The community strives to be meritocratic and gives more rights and responsibilities to contributors who, over time, add value to the project.</td><td><strong>YES</strong> The community follows the Apache Way and has a history of promoting active contributors to committer and PMC roles.</td></tr><tr><td><strong>CO50</strong></td><td>The project documents how contributors can earn more rights such as commit access or decision power, and applies these principles consistently.</td><td><strong>YES</strong> The process for becoming a committer is outlined in the <a href="https://hugegraph.apache.org/docs/contribution-guidelines/committer-guidelines/" target="_blank" rel="noopener noreferrer" class="">contribution guidelines</a>.</td></tr><tr><td><strong>CO60</strong></td><td>The community operates based on consensus of its members (see CS10) who have decision power. Dictators, benevolent or not, are not welcome in Apache projects.</td><td><strong>YES</strong> All major decisions are made through public discussion and consensus on the mailing list.</td></tr><tr><td><strong>CO70</strong></td><td>The project strives to answer user questions in a timely manner.</td><td><strong>YES</strong> The community uses the <a href="mailto:dev@hugegraph.apache.org" target="_blank" rel="noopener noreferrer" class="">dev@hugegraph.apache.org</a> mailing list, <a href="https://github.com/apache/hugegraph/issues" target="_blank" rel="noopener noreferrer" class="">GitHub Issues</a>, and <a href="https://github.com/apache/hugegraph/discussions" target="_blank" rel="noopener noreferrer" class="">GitHub Discussions</a> to provide support to users.</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="consensus">Consensus<a href="#consensus" class="hash-link" aria-label="Direct link to Consensus" title="Direct link to Consensus" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>ID</strong>   </th><th><strong>Description</strong></th><th><strong>Status</strong></th></tr></thead><tbody><tr><td><strong>CS10</strong></td><td>The project maintains a public list of its contributors who have decision power. The project&#x27;s PMC (Project Management Committee) consists of those contributors.</td><td><strong>YES</strong> Project governance information is publicly available via ASF committee and roster pages, such as <a href="https://projects.apache.org/committee.html?hugegraph" target="_blank" rel="noopener noreferrer" class="">committee info</a>.</td></tr><tr><td><strong>CS20</strong></td><td>Decisions require a consensus among PMC members and are documented on the project&#x27;s main communications channel. The PMC takes community opinions into account, but the PMC has the final word.</td><td><strong>YES</strong> All decisions are made by votes on the <a href="mailto:dev@hugegraph.apache.org" target="_blank" rel="noopener noreferrer" class="">dev@hugegraph.apache.org</a> mailing list, requiring at least three +1 votes from PMC members and no vetos.</td></tr><tr><td><strong>CS30</strong></td><td>The project uses documented voting rules to build consensus when discussion is not sufficient.</td><td><strong>YES</strong> The project uses the standard ASF voting rules.</td></tr><tr><td><strong>CS40</strong></td><td>In Apache projects, vetoes are only valid for code commits. The person exercising the veto must justify it with a technical explanation, as per the Apache voting rules defined in CS30.</td><td><strong>YES</strong> The HugeGraph community follows this principle.</td></tr><tr><td><strong>CS50</strong></td><td>All &quot;important&quot; discussions happen asynchronously in written form on the project&#x27;s main communications channel. Offline, face-to-face or private discussions that affect the project are also documented on that channel.</td><td><strong>YES</strong> All important discussions and decisions are documented on the public mailing list for transparency and accessibility.</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="independence">Independence<a href="#independence" class="hash-link" aria-label="Direct link to Independence" title="Direct link to Independence" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>ID</strong>   </th><th><strong>Description</strong></th><th><strong>Status</strong></th></tr></thead><tbody><tr><td><strong>IN10</strong></td><td>The project is independent from any corporate or organizational influence.</td><td><strong>YES</strong> The PMC members and committers of Apache HugeGraph are from 10+ different companies/college/institution, ensuring no single entity controls the project.</td></tr><tr><td><strong>IN20</strong></td><td>Contributors act as themselves, not as representatives of a corporation or organization.</td><td><strong>YES</strong> Contributions are made by individuals on behalf of the project and community, not their employers.</td></tr></tbody></table></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"><a href="https://github.com/apache/hugegraph-doc/edit/master/content/en/community/maturity.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_Z9Sw" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_JAkA"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/community/"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Community</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#status-of-this-assessment" class="table-of-contents__link toc-highlight">Status of this assessment</a></li><li><a href="#maturity-model-assessment" class="table-of-contents__link toc-highlight">Maturity model assessment</a><ul><li><a href="#code" class="table-of-contents__link toc-highlight">CODE</a></li><li><a href="#license" class="table-of-contents__link toc-highlight">LICENSE</a></li><li><a href="#releases" class="table-of-contents__link toc-highlight">Releases</a></li><li><a href="#quality" class="table-of-contents__link toc-highlight">Quality</a></li><li><a href="#community" class="table-of-contents__link toc-highlight">Community</a></li><li><a href="#consensus" class="table-of-contents__link toc-highlight">Consensus</a></li><li><a href="#independence" class="table-of-contents__link toc-highlight">Independence</a></li></ul></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Project</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/">Documentation</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/download/download/">Download</a></li><li class="footer__item"><a href="https://github.com/apache/hugegraph" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/apache/hugegraph/issues" target="_blank" rel="noopener noreferrer" class="footer__link-item">Issue Tracker<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Community</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/community/">Community</a></li><li class="footer__item"><a href="mailto:dev@hugegraph.apache.org" target="_blank" rel="noopener noreferrer" class="footer__link-item">Mailing List<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://the-asf.slack.com/archives/C059UU2FJ23" target="_blank" rel="noopener noreferrer" class="footer__link-item">ASF Slack<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">ASF</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://www.apache.org/" target="_blank" rel="noopener noreferrer" class="footer__link-item">Foundation<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/licenses/" target="_blank" rel="noopener noreferrer" class="footer__link-item">License<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/events/current-event.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Events<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://privacy.apache.org/policies/privacy-policy-public.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Privacy<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/security/" target="_blank" rel="noopener noreferrer" class="footer__link-item">Security<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/foundation/sponsorship.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Sponsorship<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/foundation/thanks.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Thanks<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/foundation/policies/conduct.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Code of Conduct<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="margin-bottom--sm"><a href="https://www.apache.org/" rel="noopener noreferrer" class="footerLogoLink_BH7S"><img src="/img/apache-logo.svg" alt="Apache Software Foundation logo" class="footer__logo themedComponent_mlkZ themedComponent--light_NVdE" width="220"><img src="/img/apache-logo.svg" alt="Apache Software Foundation logo" class="footer__logo themedComponent_mlkZ themedComponent--dark_xIcU" width="220"></a></div><div class="footer__copyright">Copyright © 2026 The Apache Software Foundation. Licensed under the Apache License, Version 2.0. Apache HugeGraph, HugeGraph, Apache, the Apache feather logo, and the Apache HugeGraph project logo are either registered trademarks or trademarks of The Apache Software Foundation in the United States and other countries.</div></div></div></footer></div>
+</body>
+</html>

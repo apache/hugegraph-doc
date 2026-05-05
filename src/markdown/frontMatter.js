@@ -48,12 +48,6 @@ function blogSlug(filePath, frontMatter) {
   return `/${year}/${month}/${day}/${slugify(frontMatter.title || fallback)}`;
 }
 
-function legacyDocSlug(filePath) {
-  const normalized = filePath.split(path.sep).join('/');
-  const match = normalized.match(/content\/(?:en|cn)\/docs\/download\/download\.md$/);
-  return match ? '/download/download' : undefined;
-}
-
 module.exports = async function parseHugoFrontMatter(args) {
   const parsed = await DEFAULT_PARSE_FRONT_MATTER(args);
   parsed.frontMatter = parsed.frontMatter || {};
@@ -61,11 +55,6 @@ module.exports = async function parseHugoFrontMatter(args) {
 
   if (slug && parsed.frontMatter.slug === undefined) {
     parsed.frontMatter.slug = slug;
-  }
-
-  const legacySlug = legacyDocSlug(args.filePath);
-  if (legacySlug && parsed.frontMatter.slug === undefined) {
-    parsed.frontMatter.slug = legacySlug;
   }
 
   const postSlug = blogSlug(args.filePath, parsed.frontMatter);

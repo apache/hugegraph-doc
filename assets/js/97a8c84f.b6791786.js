@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkapache_hugegraph_doc=self.webpackChunkapache_hugegraph_doc||[]).push([[6315],{49427(a,e,h){h.r(e),h.d(e,{default:()=>r});h(96540);var u=h(56347),c=h(74848);function r(){return(0,c.jsx)(u.rd,{to:"/download/"})}}}]);

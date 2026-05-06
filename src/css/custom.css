@@ -45,6 +45,85 @@ html[data-theme='dark'] {
   margin-left: 0.4rem;
 }
 
+.documentationDropdown {
+  align-items: center;
+  display: flex;
+  position: relative;
+}
+
+.documentationDropdown__button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--ifm-navbar-link-color);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 0.35rem;
+  height: 100%;
+  padding: var(--ifm-navbar-item-padding-vertical) var(--ifm-navbar-item-padding-horizontal);
+}
+
+.documentationDropdown__button:hover,
+.documentationDropdown__button:focus {
+  color: var(--ifm-navbar-link-hover-color);
+  outline: none;
+}
+
+.documentationDropdown__button:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 2px;
+}
+
+.documentationDropdown__chevron {
+  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  height: 0.42rem;
+  margin-top: -0.2rem;
+  transform: rotate(45deg);
+  width: 0.42rem;
+}
+
+.documentationDropdown__menu {
+  background: #ffffff;
+  border: 1px solid rgba(24, 33, 47, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 16px 38px rgba(24, 33, 47, 0.16);
+  display: none;
+  left: 50%;
+  list-style: none;
+  margin: 0;
+  min-width: 190px;
+  padding: 0.55rem;
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  transform: translateX(-50%);
+  z-index: var(--ifm-z-index-dropdown);
+}
+
+.documentationDropdown__menu--open {
+  display: block;
+}
+
+.documentationDropdown__item {
+  border-radius: 6px;
+  color: #18212f;
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  padding: 0.75rem 0.85rem;
+  text-decoration: none;
+}
+
+.documentationDropdown__item:hover,
+.documentationDropdown__item:focus {
+  background: #f3f5f8;
+  color: var(--ifm-color-primary);
+  outline: none;
+  text-decoration: none;
+}
+
 .hugegraphHero {
   align-items: center;
   background-image: url('/img/featured-background.jpg');
@@ -439,6 +518,26 @@ html[data-theme='dark'] {
 
   .ecosystemMap {
     grid-template-columns: 1fr;
+  }
+
+  .documentationDropdown {
+    align-items: stretch;
+    display: block;
+    width: 100%;
+  }
+
+  .documentationDropdown__button {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .documentationDropdown__menu {
+    box-shadow: none;
+    left: auto;
+    margin: 0.2rem 0 0;
+    position: static;
+    transform: none;
+    width: 100%;
   }
 
   .ecosystemNode--5 {

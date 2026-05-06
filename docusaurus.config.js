@@ -1,4 +1,5 @@
 const hugoFrontMatter = require('./src/markdown/frontMatter');
+const docsVersions = require('./src/data/versions.json');
 
 const apacheLinks = [
   {label: 'Foundation', href: 'https://www.apache.org/'},
@@ -13,46 +14,31 @@ const apacheLinks = [
 
 const docsExclude = ['**/_*/**', '**/SUMMARY.md', '**/*.test.{js,jsx,ts,tsx}', '**/__tests__/**'];
 
+const currentDocsVersion = docsVersions.find((version) => version.status === 'next');
+const stableDocsVersion = docsVersions.find((version) => version.id === 'stable');
+
 const docsVersionOptions = {
   lastVersion: 'stable',
   includeCurrentVersion: true,
   versions: {
     current: {
-      label: 'Next',
+      label: currentDocsVersion.label,
       path: 'next',
       banner: 'unreleased',
       badge: true,
       noIndex: true,
     },
     stable: {
-      label: 'Stable (1.7.0)',
+      label: stableDocsVersion.label,
       path: '',
       banner: 'none',
       badge: true,
-    },
-    'v1.3.0': {
-      label: 'v1.3.0',
-      path: 'v1.3.0',
-      banner: 'unmaintained',
-      badge: true,
-      noIndex: true,
     },
   },
 };
 
 const docsCnVersionOptions = {
   ...docsVersionOptions,
-  versions: {
-    current: {
-      ...docsVersionOptions.versions.current,
-      label: '开发版',
-    },
-    stable: {
-      ...docsVersionOptions.versions.stable,
-      label: '稳定版 (1.7.0)',
-    },
-    'v1.3.0': docsVersionOptions.versions['v1.3.0'],
-  },
 };
 
 /** @type {import('@docusaurus/types').Config} */
@@ -217,19 +203,8 @@ const config = {
         },
         items: [
           {
-            type: 'custom-localeAwareLink',
-            enTo: '/docs/',
-            cnTo: '/cn/docs/',
-            label: 'Docs',
-            cnLabel: '文档',
-            activeBasePath: '/docs/',
-            cnActiveBasePath: '/cn/docs/',
+            type: 'custom-documentationDropdown',
             position: 'left',
-          },
-          {
-            type: 'custom-localeAwareDocsVersionDropdown',
-            position: 'left',
-            dropdownActiveClassDisabled: true,
           },
           {
             type: 'custom-localeAwareLink',

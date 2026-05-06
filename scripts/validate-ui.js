@@ -75,7 +75,7 @@ async function assertDocs(page) {
   await page.goto(`${baseUrl}/docs/`, {waitUntil: 'networkidle'});
   const navbar = page.locator('nav.navbar');
   const navbarText = await navbar.textContent();
-  for (const label of ['Next', 'Stable (1.7.0)', 'v1.3.0']) {
+  for (const label of ['Documentation', 'next', 'Stable (1.7.0)']) {
     if (!navbarText.includes(label)) {
       throw new Error(`Docs navbar is missing version label ${label}`);
     }
@@ -89,9 +89,6 @@ async function assertDocs(page) {
 
   await page.goto(`${baseUrl}/docs/next/`, {waitUntil: 'networkidle'});
   await expectVisible(page.getByText('This is unreleased documentation'), 'next docs unreleased banner');
-
-  await page.goto(`${baseUrl}/docs/v1.3.0/`, {waitUntil: 'networkidle'});
-  await expectVisible(page.getByText('no longer actively maintained'), 'old docs unmaintained banner');
 }
 
 async function assertCommunityPages(page) {
@@ -111,7 +108,7 @@ async function assertMobileMenu(page) {
   const sidebar = page.locator('.navbar-sidebar');
   await expectVisible(sidebar, 'mobile navbar sidebar');
   const text = await sidebar.textContent();
-  for (const label of ['Docs', 'Blog', 'Community', 'Team', 'Users', 'ASF']) {
+  for (const label of ['Documentation', 'Blog', 'Community', 'Team', 'Users', 'ASF']) {
     if (!text.includes(label)) {
       throw new Error(`Mobile menu is missing ${label}`);
     }

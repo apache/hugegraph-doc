@@ -1,31 +1,11 @@
 #!/usr/bin/env node
-import {spawnSync} from 'node:child_process';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const version = process.argv[2];
-
-if (!version) {
-  console.error('Usage: npm run docs:version -- <version>');
-  process.exit(1);
-}
-
-const docusaurusBin = path.join(repoRoot, 'node_modules', '.bin', 'docusaurus');
-
-function run(args) {
-  const result = spawnSync(process.execPath, [docusaurusBin, ...args], {
-    cwd: repoRoot,
-    stdio: 'inherit',
-  });
-  if (result.status !== 0) {
-    process.exit(result.status ?? 1);
-  }
-}
-
-run(['docs:version', version]);
-run(['docs:version:docs-cn', version]);
-
-console.log('');
-console.log(`Created EN and CN docs snapshots for ${version}.`);
-console.log('Review versions.json, docs-cn_versions.json, and src/data/versions.json before publishing.');
+console.error('This repository generates Docusaurus version snapshots from Git refs instead of committing them.');
+console.error('');
+console.error('To add or refresh a documentation version:');
+console.error('1. Update src/data/versions.json with the version id, label, routes, and sourceRef.');
+console.error('2. Run npm run docs:versions:prepare.');
+console.error('3. Run npm run build to verify the generated output.');
+console.error('');
+console.error('The generated versioned_docs and docs-cn_versioned_docs directories are intentionally ignored by Git.');
+process.exit(1);

@@ -10,8 +10,9 @@ function readJson(relPath) {
 }
 
 const metadata = readJson('src/data/versions.json');
-const englishVersions = readJson('versions.json');
-const chineseVersions = readJson('docs-cn_versions.json');
+const releaseVersions = metadata
+  .filter((version) => version.status !== 'next')
+  .map((version) => version.docusaurusVersion || version.id);
 
 console.log('HugeGraph documentation versions');
 console.log('');
@@ -25,7 +26,10 @@ for (const version of metadata) {
   if (version.githubTagUrl) {
     console.log(`  Tag: ${version.githubTagUrl}`);
   }
+  if (version.sourceRef) {
+    console.log(`  Source ref: ${version.sourceRef}`);
+  }
 }
 console.log('');
-console.log(`Docusaurus EN versions.json: ${englishVersions.join(', ')}`);
-console.log(`Docusaurus CN docs-cn_versions.json: ${chineseVersions.join(', ')}`);
+console.log(`Generated Docusaurus release versions: ${releaseVersions.join(', ') || '(none)'}`);
+console.log('Run npm run docs:versions:prepare to regenerate Docusaurus version files from the configured source refs.');

@@ -37,7 +37,7 @@ function toEnglish(pathname) {
   }
 
   const versionedChangelogFallback = pathname.match(
-    /^\/cn\/docs\/(?:(next|v1\.3\.0)\/)?changelog\/hugegraph-0\.12\.0-release-notes\/?$/,
+    /^\/cn\/docs\/(?:(next)\/)?changelog\/hugegraph-0\.12\.0-release-notes\/?$/,
   );
   if (versionedChangelogFallback) {
     const versionPrefix = versionedChangelogFallback[1] ? `${versionedChangelogFallback[1]}/` : '';

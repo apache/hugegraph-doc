@@ -1,7 +1,8 @@
 [
   {
     "id": "current",
-    "label": "Next",
+    "docusaurusVersion": "current",
+    "label": "next",
     "path": "/docs/next/",
     "cnPath": "/cn/docs/next/",
     "status": "next",
@@ -11,22 +12,14 @@
   },
   {
     "id": "stable",
+    "docusaurusVersion": "stable",
     "label": "Stable (1.7.0)",
     "path": "/docs/",
     "cnPath": "/cn/docs/",
     "status": "stable",
     "releaseDate": "2025-11-16",
-    "githubTagUrl": "https://github.com/apache/hugegraph/tree/1.7.0",
+    "githubTagUrl": "https://github.com/apache/hugegraph-doc/tree/docusaurus-1.7.0",
+    "sourceRef": "docusaurus-1.7.0",
     "notes": "Default documentation route for most users."
-  },
-  {
-    "id": "v1.3.0",
-    "label": "v1.3.0",
-    "path": "/docs/v1.3.0/",
-    "cnPath": "/cn/docs/v1.3.0/",
-    "status": "old",
-    "releaseDate": "2024-03-22",
-    "githubTagUrl": "https://github.com/apache/hugegraph/tree/1.3.0",
-    "notes": "Historical documentation snapshot."
   }
 ]

@@ -90,7 +90,7 @@ A complete tool ecosystem surrounding the graph system ([toolchain repository](h
 | [Hubble](/docs/quickstart/toolchain/hugegraph-hubble) | Web visualization platform: one-stop operation for data modeling → batch importing → online/offline analysis. |
 | [Loader](/docs/quickstart/toolchain/hugegraph-loader) | Data import tool: supports multiple data sources like local files, HDFS, MySQL, and formats like TXT/CSV/JSON. |
 | [Client](/docs/quickstart/client/hugegraph-client) | Multi-language SDKs: Java / Python / Go. |
-| [Spark-connector](/docs/quickstart/toolchain/hugegraph-spark-connector) | Spark integration: supports batch graph data read/write via Spark, suitable for big data offline processing. |
+| [Spark-connector](../quickstart/toolchain/hugegraph-spark-connector/) | Spark integration: supports batch graph data read/write via Spark, suitable for big data offline processing. |
 | [Tools](/docs/quickstart/toolchain/hugegraph-tools) | Command-line operational tools: graph management, backup/restore, Gremlin execution, etc. |
 
 ---

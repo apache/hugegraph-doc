@@ -75,7 +75,7 @@ async function assertDocs(page) {
   await page.goto(`${baseUrl}/docs/`, {waitUntil: 'networkidle'});
   const navbar = page.locator('nav.navbar');
   const navbarText = await navbar.textContent();
-  for (const label of ['Documentation', 'next', 'Stable (1.7.0)']) {
+  for (const label of ['Documentation', 'Next', 'Stable (1.7.0)']) {
     if (!navbarText.includes(label)) {
       throw new Error(`Docs navbar is missing version label ${label}`);
     }
@@ -89,6 +89,38 @@ async function assertDocs(page) {
 
   await page.goto(`${baseUrl}/docs/next/`, {waitUntil: 'networkidle'});
   await expectVisible(page.getByText('This is unreleased documentation'), 'next docs unreleased banner');
+}
+
+async function assertDocumentationDropdown(page) {
+  await page.setViewportSize({width: 1440, height: 900});
+  await page.goto(`${baseUrl}/docs/`, {waitUntil: 'networkidle'});
+
+  const dropdown = page.locator('.documentationDropdown').first();
+  const button = dropdown.locator('button').first();
+  const menu = dropdown.locator('.documentationDropdown__menu').first();
+  const nextItem = dropdown.getByRole('menuitem', {name: 'Next'});
+
+  await button.hover();
+  await expectVisible(nextItem, 'Documentation dropdown Next item');
+
+  const buttonBox = await button.boundingBox();
+  const nextItemBox = await nextItem.boundingBox();
+  if (!buttonBox || !nextItemBox) {
+    throw new Error('Documentation dropdown bounding boxes are unavailable');
+  }
+
+  await page.mouse.move(buttonBox.x + buttonBox.width / 2, buttonBox.y + buttonBox.height - 1);
+  await page.mouse.move(nextItemBox.x + nextItemBox.width / 2, nextItemBox.y + nextItemBox.height / 2, {steps: 8});
+  await page.waitForTimeout(240);
+  await expectVisible(nextItem, 'Documentation dropdown remains open while moving into menu');
+
+  await button.click();
+  await page.mouse.move(20, 240);
+  await page.waitForTimeout(240);
+  await expectVisible(nextItem, 'Documentation dropdown remains open after click');
+
+  await page.mouse.click(20, 240);
+  await menu.waitFor({state: 'hidden', timeout: 2000});
 }
 
 async function assertCommunityPages(page) {
@@ -165,6 +197,7 @@ async function main() {
     const page = await browser.newPage({viewport: {width: 1440, height: 900}});
     await assertShell(page);
     await assertDocs(page);
+    await assertDocumentationDropdown(page);
     await assertCommunityPages(page);
     await assertMobileMenu(page);
     await captureScreenshots(page);

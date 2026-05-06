@@ -75,7 +75,7 @@ async function assertDocs(page) {
   await page.goto(`${baseUrl}/docs/`, {waitUntil: 'networkidle'});
   const navbar = page.locator('nav.navbar');
   const navbarText = await navbar.textContent();
-  for (const label of ['Documentation', 'Next', 'Stable (1.7.0)']) {
+  for (const label of ['Documentation', 'Next', 'Stable (1.7.0)', '1.5.0', '1.3.0', '1.2.0', '1.0.0', '0.11', '0.10']) {
     if (!navbarText.includes(label)) {
       throw new Error(`Docs navbar is missing version label ${label}`);
     }

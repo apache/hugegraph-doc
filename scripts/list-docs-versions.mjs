@@ -17,17 +17,25 @@ const releaseVersions = metadata
 console.log('HugeGraph documentation versions');
 console.log('');
 for (const version of metadata) {
+  const docusaurusVersion = version.docusaurusVersion || version.id;
   console.log(`- ${version.label} [${version.status}]`);
+  console.log(`  Docusaurus version: ${docusaurusVersion}`);
   console.log(`  EN: ${version.path}`);
   console.log(`  CN: ${version.cnPath}`);
   if (version.releaseDate) {
     console.log(`  Released: ${version.releaseDate}`);
   }
   if (version.githubTagUrl) {
-    console.log(`  Tag: ${version.githubTagUrl}`);
+    console.log(`  Source URL: ${version.githubTagUrl}`);
   }
   if (version.sourceRef) {
     console.log(`  Source ref: ${version.sourceRef}`);
+  }
+  if (version.sourceRef && docusaurusVersion !== version.sourceRef) {
+    console.log(`  Mapping: ${version.sourceRef} -> ${docusaurusVersion} -> ${version.label}`);
+  }
+  if (version.legacyCompatibility?.enabled) {
+    console.log('  Legacy compatibility: enabled for archived-branch import only');
   }
 }
 console.log('');

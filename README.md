@@ -59,7 +59,7 @@ hugegraph-doc/
 
 ## Documentation Versions
 
-The source tree keeps only current documentation and version metadata. Docusaurus release snapshots are generated before `npm run start` and `npm run build` from Docusaurus-native Markdown sources. A version entry may set `sourceRef` to read from a Git branch or tag; when it is omitted, the current working tree is used.
+The source tree keeps only current documentation and version metadata. Docusaurus release snapshots are generated before `npm run start` and `npm run build` from the configured Git source refs. A version entry may set `sourceRef` to read from a Git branch or tag; when it is omitted, the current working tree is used.
 
 Version semantics:
 
@@ -67,6 +67,19 @@ Version semantics:
 |---------|-------|---------|
 | `stable` | `/docs/`, `/cn/docs/` | Latest stable release documentation and the default navbar target |
 | `current` / `next` | `/docs/next/`, `/cn/docs/next/` | Unreleased development documentation with an unreleased banner |
+
+Release-branch mapping is explicit:
+
+| Source branch | Docusaurus version / route segment | UI label |
+|---------------|------------------------------------|----------|
+| `release-1.5.0` | `docusaurus-1.5.0` | `1.5.0` |
+| `release-1.3.0` | `docusaurus-1.3.0` | `1.3.0` |
+| `release-1.2.0` | `docusaurus-1.2.0` | `1.2.0` |
+| `release-1.0.0` | `docusaurus-1.0.0` | `1.0.0` |
+| `release-0.11` | `docusaurus-0.11` | `0.11` |
+| `release-0.10` | `docusaurus-0.10` | `0.10` |
+
+The source branch prefix is never shown in the UI. The archived release branches listed above were authored before this Docusaurus migration, so any import repair for those snapshots is isolated under `legacyCompatibility` in `src/data/versions.json`. That compatibility layer is only for adapting those historical branches to a previewable Docusaurus build; it is not part of the normal documentation authoring or version generation pipeline. Future Docusaurus-native release branches should keep the standard `content/{en,cn}/docs` layout and should not require those adapters.
 
 Generate the Docusaurus version files locally:
 
@@ -82,11 +95,13 @@ List configured versions:
 npm run docs:versions:list
 ```
 
-To update the stable release source:
+To update a release source:
 
-1. Update the stable entry in `src/data/versions.json`, especially `label`, `githubTagUrl`, and `sourceRef` if the stable docs should come from a branch or tag.
-2. Make sure the source ref contains Docusaurus-native docs and is fetched locally. CI uses `fetch-depth: 0`, so tags and release branches are available there.
+1. Update the entry in `src/data/versions.json`, especially `label`, `docusaurusVersion`, `path`, `cnPath`, `githubTagUrl`, and `sourceRef`.
+2. Make sure the source ref is fetched locally. CI uses `fetch-depth: 0`, so tags and release branches are available there.
 3. Run `npm run docs:versions:prepare`, then `npm run build`.
+
+Only archived pre-Docusaurus branches should use `legacyCompatibility` fields such as `sourcePaths`, `sourceIncludes`, `sourceOverlays`, `indexFrom`, or Markdown normalization. These fields document deliberate compatibility work for old snapshots, not guidance for new documentation.
 
 Do not use `latest` ambiguously in docs navigation. Use `stable` for the latest released documentation and `next` for unreleased documentation.
 
@@ -220,12 +235,25 @@ hugegraph-doc/
 
 ### 文档版本
 
-源码分支只保留当前文档和版本元数据。Docusaurus 需要的版本快照会在 `npm run start` 和 `npm run build` 前，从 Docusaurus 原生 Markdown 源生成。版本条目可以通过 `sourceRef` 指向 Git 分支或标签；未设置时使用当前工作区文档。
+源码分支只保留当前文档和版本元数据。Docusaurus 需要的版本快照会在 `npm run start` 和 `npm run build` 前，从配置的 Git source ref 生成。版本条目可以通过 `sourceRef` 指向 Git 分支或标签；未设置时使用当前工作区文档。
 
 | 版本 | 路由 | 含义 |
 |------|------|------|
 | `stable` | `/docs/`, `/cn/docs/` | 最新稳定版本文档，也是导航栏默认入口 |
 | `current` / `next` | `/docs/next/`, `/cn/docs/next/` | 未发布开发中文档，并展示 unreleased 提示 |
+
+发布分支映射规则是显式配置的：
+
+| 源分支 | Docusaurus 版本 / 路由段 | UI 展示 |
+|--------|--------------------------|---------|
+| `release-1.5.0` | `docusaurus-1.5.0` | `1.5.0` |
+| `release-1.3.0` | `docusaurus-1.3.0` | `1.3.0` |
+| `release-1.2.0` | `docusaurus-1.2.0` | `1.2.0` |
+| `release-1.0.0` | `docusaurus-1.0.0` | `1.0.0` |
+| `release-0.11` | `docusaurus-0.11` | `0.11` |
+| `release-0.10` | `docusaurus-0.10` | `0.10` |
+
+UI 不展示源分支的 `release-` 前缀。上表中的归档 release 分支是在这次 Docusaurus 迁移之前编写的，所以为了让这些历史快照可以被 Docusaurus 预览，相关导入修补都被限制在 `src/data/versions.json` 的 `legacyCompatibility` 下。这一层只用于适配这些旧分支，不属于正常的文档编写或版本生成流水线。未来 Docusaurus 原生的发布分支应保持标准的 `content/{en,cn}/docs` 目录，不应依赖这些适配项。
 
 本地生成 Docusaurus 版本文件：
 
@@ -235,7 +263,9 @@ npm run docs:versions:prepare
 
 该命令会生成 `versioned_docs/`、`versioned_sidebars/`、`versions.json`、`docs-cn_versioned_docs/`、`docs-cn_versioned_sidebars/` 和 `docs-cn_versions.json`。这些是构建输入，不作为源码提交。
 
-更新 stable 版本时，请修改 `src/data/versions.json` 中的 `label`、`githubTagUrl`，如果 stable 文档来自单独分支或标签，再设置 `sourceRef`。该 ref 必须已经使用 Docusaurus 原生路径整理好，并且本地已经 fetch，然后运行 `npm run docs:versions:prepare` 和 `npm run build`。
+更新发布版本时，请修改 `src/data/versions.json` 中的 `label`、`docusaurusVersion`、`path`、`cnPath`、`githubTagUrl` 和 `sourceRef`。该 ref 需要已经 fetch 到本地，然后运行 `npm run docs:versions:prepare` 和 `npm run build`。
+
+只有归档的 pre-Docusaurus 分支才应该使用 `legacyCompatibility` 下的 `sourcePaths`、`sourceIncludes`、`sourceOverlays`、`indexFrom` 或 Markdown normalization。这些字段用于记录旧快照的兼容目的，不是新文档的开发规范。
 
 不要在导航中模糊使用 `latest`：`stable` 表示最新已发布版本，`next` 表示未发布开发中文档。
 

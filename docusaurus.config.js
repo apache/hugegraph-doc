@@ -15,26 +15,40 @@ const apacheLinks = [
 const docsExclude = ['**/_*/**', '**/SUMMARY.md', '**/*.test.{js,jsx,ts,tsx}', '**/__tests__/**'];
 
 const currentDocsVersion = docsVersions.find((version) => version.status === 'next');
-const stableDocsVersion = docsVersions.find((version) => version.id === 'stable');
+const releaseDocsVersions = docsVersions.filter((version) => version.status !== 'next');
+
+function docsRoutePath(version) {
+  if (version.id === 'stable') {
+    return '';
+  }
+  return version.docusaurusVersion || version.id;
+}
+
+function docsVersionConfig(version) {
+  return {
+    label: version.label,
+    path: docsRoutePath(version),
+    banner: version.status === 'archived' ? 'unmaintained' : 'none',
+    badge: true,
+  };
+}
 
 const docsVersionOptions = {
   lastVersion: 'stable',
   includeCurrentVersion: true,
-  versions: {
-    current: {
-      label: currentDocsVersion.label,
-      path: 'next',
-      banner: 'unreleased',
-      badge: true,
-      noIndex: true,
-    },
-    stable: {
-      label: stableDocsVersion.label,
-      path: '',
-      banner: 'none',
-      badge: true,
-    },
-  },
+  versions: Object.fromEntries([
+    [
+      'current',
+      {
+        label: currentDocsVersion.label,
+        path: 'next',
+        banner: 'unreleased',
+        badge: true,
+        noIndex: true,
+      },
+    ],
+    ...releaseDocsVersions.map((version) => [version.docusaurusVersion || version.id, docsVersionConfig(version)]),
+  ]),
 };
 
 const docsCnVersionOptions = {

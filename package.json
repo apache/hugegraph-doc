@@ -5,7 +5,7 @@
   "description": "Apache HugeGraph documentation website built with Docusaurus.",
   "scripts": {
     "start": "npm run docs:versions:prepare && docusaurus start --host 0.0.0.0",
-    "build": "npm run docs:versions:prepare && npm run check:content-visibility && docusaurus build",
+    "build": "npm run docs:versions:prepare && npm run check:content-visibility && DOCUSAURUS_SSR_CONCURRENCY=1 DOCUSAURUS_SSG_WORKER_THREAD_COUNT=1 TERSER_PARALLEL=false NODE_OPTIONS=--max-old-space-size=8192 docusaurus build",
     "serve": "docusaurus serve --host 0.0.0.0",
     "clear": "docusaurus clear",
     "docs:version": "node scripts/version-docs.mjs",

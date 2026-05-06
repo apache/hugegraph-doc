@@ -81,6 +81,8 @@ Release-branch mapping is explicit:
 
 The source branch prefix is never shown in the UI. The archived release branches listed above were authored before this Docusaurus migration, so any import repair for those snapshots is isolated under `legacyCompatibility` in `src/data/versions.json`. That compatibility layer is only for adapting those historical branches to a previewable Docusaurus build; it is not part of the normal documentation authoring or version generation pipeline. Future Docusaurus-native release branches should keep the standard `content/{en,cn}/docs` layout and should not require those adapters.
 
+In the mapping table, `docusaurus-*` is a Docusaurus version name and route segment, not necessarily a Git branch. The actual content source is always the configured `sourceRef`. For example, `1.5.0` currently reads from the Git branch `release-1.5.0` and is published under the Docusaurus route segment `docusaurus-1.5.0`.
+
 Generate the Docusaurus version files locally:
 
 ```bash
@@ -254,6 +256,8 @@ hugegraph-doc/
 | `release-0.10` | `docusaurus-0.10` | `0.10` |
 
 UI 不展示源分支的 `release-` 前缀。上表中的归档 release 分支是在这次 Docusaurus 迁移之前编写的，所以为了让这些历史快照可以被 Docusaurus 预览，相关导入修补都被限制在 `src/data/versions.json` 的 `legacyCompatibility` 下。这一层只用于适配这些旧分支，不属于正常的文档编写或版本生成流水线。未来 Docusaurus 原生的发布分支应保持标准的 `content/{en,cn}/docs` 目录，不应依赖这些适配项。
+
+上表里的 `docusaurus-*` 是 Docusaurus 版本名和路由段，不一定是 Git 分支名。实际内容来源始终由配置中的 `sourceRef` 决定。例如 `1.5.0` 当前从 Git 分支 `release-1.5.0` 读取内容，并发布到 Docusaurus 路由段 `docusaurus-1.5.0`。
 
 本地生成 Docusaurus 版本文件：
 

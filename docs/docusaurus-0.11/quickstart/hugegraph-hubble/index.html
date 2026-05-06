@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-docusaurus-0.11 docs-doc-page docs-doc-id-quickstart/hugegraph-hubble" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.1">
+<title data-rh="true">hugegraph-hubble | Apache HugeGraph</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://hugegraph.apache.org/docs/docusaurus-0.11/quickstart/hugegraph-hubble/"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="docusaurus-0.11"><meta data-rh="true" name="docusaurus_tag" content="docs-default-docusaurus-0.11"><meta data-rh="true" name="docsearch:version" content="docusaurus-0.11"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-docusaurus-0.11"><meta data-rh="true" property="og:title" content="hugegraph-hubble | Apache HugeGraph"><meta data-rh="true" name="description" content="HugeGraph-Hubble用户使用手册"><meta data-rh="true" property="og:description" content="HugeGraph-Hubble用户使用手册"><link data-rh="true" rel="icon" href="/img/hugegraph-logo.svg"><link data-rh="true" rel="canonical" href="https://hugegraph.apache.org/docs/docusaurus-0.11/quickstart/hugegraph-hubble/"><link data-rh="true" rel="alternate" href="https://hugegraph.apache.org/docs/docusaurus-0.11/quickstart/hugegraph-hubble/" hreflang="en"><link data-rh="true" rel="alternate" href="https://hugegraph.apache.org/docs/docusaurus-0.11/quickstart/hugegraph-hubble/" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Hugegraph Hubble","item":"https://hugegraph.apache.org/docs/docusaurus-0.11/quickstart/hugegraph-hubble"}]}</script><link rel="alternate" type="application/rss+xml" href="/blog/rss.xml" title="Apache HugeGraph RSS Feed">
+<link rel="alternate" type="application/atom+xml" href="/blog/atom.xml" title="Apache HugeGraph Atom Feed">
+
+
+
+
+
+
+
+
+
+<link rel="alternate" type="application/rss+xml" href="/cn/blog/rss.xml" title="Apache HugeGraph RSS Feed">
+<link rel="alternate" type="application/atom+xml" href="/cn/blog/atom.xml" title="Apache HugeGraph Atom Feed"><link rel="stylesheet" href="/assets/css/styles.c200bdca.css">
+<script src="/assets/js/runtime~main.28e8a9b1.js" defer="defer"></script>
+<script src="/assets/js/main.75a54710.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/"><div class="navbar__logo"><img src="/img/hugegraph-logo.svg" alt="Apache HugeGraph logo" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/img/hugegraph-logo.svg" alt="Apache HugeGraph logo" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Apache HugeGraph</b></a><div class="navbar__item documentationDropdown"><button aria-expanded="false" aria-haspopup="menu" class="navbar__link documentationDropdown__button navbar__link--active" type="button"><span>Documentation</span><span class="documentationDropdown__chevron" aria-hidden="true"></span></button><ul class="documentationDropdown__menu" role="menu"><li role="none"><a class="documentationDropdown__item" role="menuitem" href="/docs/next/">Next</a></li><li role="none"><a class="documentationDropdown__item" role="menuitem" href="/docs/">Stable (1.7.0)</a></li><li role="none"><a class="documentationDropdown__item" role="menuitem" href="/docs/docusaurus-1.5.0/">1.5.0</a></li><li role="none"><a class="documentationDropdown__item" role="menuitem" href="/docs/docusaurus-1.3.0/">1.3.0</a></li><li role="none"><a class="documentationDropdown__item" role="menuitem" href="/docs/docusaurus-1.2.0/">1.2.0</a></li><li role="none"><a class="documentationDropdown__item" role="menuitem" href="/docs/docusaurus-1.0.0/">1.0.0</a></li><li role="none"><a class="documentationDropdown__item" role="menuitem" href="/docs/docusaurus-0.11/">0.11</a></li><li role="none"><a class="documentationDropdown__item" role="menuitem" href="/docs/docusaurus-0.10/">0.10</a></li></ul></div><a class="navbar__item navbar__link" href="/blog/">Blog</a><a class="navbar__item navbar__link" href="/community/">Community</a><a class="navbar__item navbar__link" href="/team/">Team</a><a class="navbar__item navbar__link" href="/users/">Users</a><a class="navbar__item navbar__link" href="/download/">Download</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a href="#" aria-haspopup="true" aria-expanded="false" role="button" class="navbar__link">ASF</a><ul class="dropdown__menu"><li><a href="https://www.apache.org/" target="_blank" rel="noopener noreferrer" class="dropdown__link">Foundation<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/licenses/" target="_blank" rel="noopener noreferrer" class="dropdown__link">License<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/events/current-event.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Events<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://privacy.apache.org/policies/privacy-policy-public.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Privacy<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/security/" target="_blank" rel="noopener noreferrer" class="dropdown__link">Security<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/foundation/sponsorship.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Sponsorship<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/foundation/thanks.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Thanks<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li><a href="https://www.apache.org/foundation/policies/conduct.html" target="_blank" rel="noopener noreferrer" class="dropdown__link">Code of Conduct<svg width="12" height="12" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a href="#" aria-haspopup="true" aria-expanded="false" role="button" class="navbar__link navbar-language-dropdown">English</a><ul class="dropdown__menu"><li><a aria-current="page" class="dropdown__link dropdown__link--active" href="/docs/docusaurus-0.11/quickstart/hugegraph-hubble/">English</a></li><li><a class="dropdown__link" href="/cn/docs/docusaurus-0.11/quickstart/hugegraph-hubble/">中文</a></li></ul></div><a href="https://github.com/apache/hugegraph" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/docs/docusaurus-0.11/"><span title="Documentation" class="linkLabel_WmDU">Documentation</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/docs/docusaurus-0.11/quickstart/hugegraph-client/"><span title="Quickstart" class="categoryLinkLabel_W154">Quickstart</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/docusaurus-0.11/quickstart/hugegraph-client/"><span title="Hugegraph Client" class="linkLabel_WmDU">Hugegraph Client</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/docs/docusaurus-0.11/quickstart/hugegraph-hubble/"><span title="Hugegraph Hubble" class="linkLabel_WmDU">Hugegraph Hubble</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/docusaurus-0.11/quickstart/hugegraph-loader/"><span title="Hugegraph Loader" class="linkLabel_WmDU">Hugegraph Loader</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/docusaurus-0.11/quickstart/hugegraph-server/"><span title="Hugegraph Server" class="linkLabel_WmDU">Hugegraph Server</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/docusaurus-0.11/quickstart/hugegraph-spark/"><span title="Hugegraph Spark" class="linkLabel_WmDU">Hugegraph Spark</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/docusaurus-0.11/quickstart/hugegraph-studio/"><span title="Hugegraph Studio" class="linkLabel_WmDU">Hugegraph Studio</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/docusaurus-0.11/quickstart/hugegraph-tools/"><span title="Hugegraph Tools" class="linkLabel_WmDU">Hugegraph Tools</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/docs/docusaurus-0.11/config/config-authentication/"><span title="Config" class="categoryLinkLabel_W154">Config</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/docs/docusaurus-0.11/clients/restful-api/auth/"><span title="Clients" class="categoryLinkLabel_W154">Clients</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/docs/docusaurus-0.11/guides/architectural/"><span title="Guides" class="categoryLinkLabel_W154">Guides</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/docs/docusaurus-0.11/language/hugegraph-example/"><span title="Language" class="categoryLinkLabel_W154">Language</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/docs/docusaurus-0.11/performance/hugegraph-api-0.2/"><span title="Performance" class="categoryLinkLabel_W154">Performance</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/docs/docusaurus-0.11/changelog/hugegraph-0.10.4-release-notes/"><span title="Changelog" class="categoryLinkLabel_W154">Changelog</span></a></div></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/docs/docusaurus-0.11/download/"><span title="Download" class="linkLabel_WmDU">Download</span></a></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="theme-doc-version-banner alert alert--warning margin-bottom--md" role="alert"><div>This is documentation for <!-- -->Apache HugeGraph<!-- --> <b>0.11</b>, which is no longer actively maintained.</div><div class="margin-top--md">For up-to-date documentation, see the <b><a href="/docs/">latest version</a></b> (<!-- -->Stable (1.7.0)<!-- -->).</div></div><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Quickstart</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Hugegraph Hubble</span></li></ul></nav><span class="theme-doc-version-badge badge badge--secondary">Version: 0.11</span><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>hugegraph-hubble</h1></header><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="hugegraph-hubble用户使用手册">HugeGraph-Hubble用户使用手册<a href="#hugegraph-hubble用户使用手册" class="hash-link" aria-label="Direct link to HugeGraph-Hubble用户使用手册" title="Direct link to HugeGraph-Hubble用户使用手册" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="1平台概述">1	平台概述<a href="#1平台概述" class="hash-link" aria-label="Direct link to 1	平台概述" title="Direct link to 1	平台概述" translate="no">​</a></h3>
+<p>HugeGraph是一款面向分析型，支持批量操作的图数据库系统，它由百度安全团队自主研发，全面支持<a href="https://tinkerpop.apache.org" target="_blank" rel="noopener noreferrer" class="">Apache TinkerPop3</a>框架和<a href="https://tinkerpop.apache.org/gremlin.html" target="_blank" rel="noopener noreferrer" class="">Gremlin</a>图查询语言，提供导出、备份、恢复等完善的工具链生态，有效解决海量图数据的存储、查询和关联分析需求。HugeGraph广泛应用于银行券商的风控打击、保险理赔、推荐搜索、公安犯罪打击、知识图谱构建、网络安全、IT运维等领域，致力于让更多行业、组织及用户享受到更广泛的数据综合价值。</p>
+<p><strong>HugeGraph-Hubble</strong> 是HugeGraph的一站式可视化分析平台，平台涵盖了从数据建模，到数据快速导入，再到数据的在线、离线分析、以及图的统一管理的全过程，实现了图应用的全流程向导式操作，旨在提升用户的使用流畅度，降低用户的  使用门槛，提供更为高效易用的使用体验。</p>
+<p>平台主要包括以下模块：</p>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="图管理">图管理<a href="#图管理" class="hash-link" aria-label="Direct link to 图管理" title="Direct link to 图管理" translate="no">​</a></h5>
+<p>图管理模块通过图的创建，连接平台与图数据，实现多图的统一管理，并实现图的访问、编辑、删除、查询操作。</p>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="元数据建模">元数据建模<a href="#元数据建模" class="hash-link" aria-label="Direct link to 元数据建模" title="Direct link to 元数据建模" translate="no">​</a></h5>
+<p>元数据建模模块通过创建属性库，顶点类型，边类型，索引类型，实现图模型的构建与管理，平台提供两种模式，列表模式和图模式，可实时展示元数据模型，更加直观。同时还提供了跨图的元数据复用功能，省去相同元数据繁琐的重复创建过程，极大地提升建模效率，增强易用性。</p>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="数据导入">数据导入<a href="#数据导入" class="hash-link" aria-label="Direct link to 数据导入" title="Direct link to 数据导入" translate="no">​</a></h5>
+<p>数据导入是将用户的业务数据转化为图的顶点和边并插入图数据库中，平台提供了向导式的可视化导入模块，通过创建导入任务，实现导入任务的管理及多个导入任务的并行运行，提高导入效能。进入导入任务后，只需跟随平台步骤提示，按需上传文件，填写内容，就可轻松实现图数据的导入过程，同时支持断点续传，错误重试机制等，降低导入成本，提升效率。</p>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="图分析">图分析<a href="#图分析" class="hash-link" aria-label="Direct link to 图分析" title="Direct link to 图分析" translate="no">​</a></h5>
+<p>通过输入图遍历语言Gremlin可实现图数据的高性能通用分析，并提供顶点的定制化多维路径查询等功能，提供3种图结果展示方式，包括：图形式、表格形式、Json形式，多维度展示数据形态，满足用户使用的多种场景需求。提供运行记录及常用语句收藏等功能，实现图操作的可追溯，以及查询输入的复用共享，快捷高效。支持图数据的导出，导出格式为Json格式。</p>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="任务管理">任务管理<a href="#任务管理" class="hash-link" aria-label="Direct link to 任务管理" title="Direct link to 任务管理" translate="no">​</a></h5>
+<p>对于需要遍历全图的Gremlin任务，索引的创建与重建等耗时较长的异步任务，平台提供相应的任务管理功能，实现异步任务的统一的管理与结果查看。</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="2平台使用流程">2	平台使用流程<a href="#2平台使用流程" class="hash-link" aria-label="Direct link to 2	平台使用流程" title="Direct link to 2	平台使用流程" translate="no">​</a></h3>
+<p>平台的模块使用流程如下：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/2平台使用流程.png" alt="image" class="img_ev3q">
+</center>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="3平台使用说明">3	平台使用说明<a href="#3平台使用说明" class="hash-link" aria-label="Direct link to 3	平台使用说明" title="Direct link to 3	平台使用说明" translate="no">​</a></h3>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="31图管理">3.1	图管理<a href="#31图管理" class="hash-link" aria-label="Direct link to 3.1	图管理" title="Direct link to 3.1	图管理" translate="no">​</a></h4>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="311图创建">3.1.1	图创建<a href="#311图创建" class="hash-link" aria-label="Direct link to 3.1.1	图创建" title="Direct link to 3.1.1	图创建" translate="no">​</a></h5>
+<p>图管理模块下，点击【创建图】，通过填写图ID、图名称、主机名、端口号、用户名、密码的信息，实现多图的连接。</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/311图创建.png" alt="image" class="img_ev3q">
+</center>
+<p>创建图填写内容如下：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/311图创建2.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="312图访问">3.1.2	图访问<a href="#312图访问" class="hash-link" aria-label="Direct link to 3.1.2	图访问" title="Direct link to 3.1.2	图访问" translate="no">​</a></h5>
+<p>实现图空间的信息访问，进入后，可进行图的多维查询分析、元数据管理、数据导入、算法分析等操作。</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/312图访问.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="313图管理">3.1.3	图管理<a href="#313图管理" class="hash-link" aria-label="Direct link to 3.1.3	图管理" title="Direct link to 3.1.3	图管理" translate="no">​</a></h5>
+<ol>
+<li class="">用户通过对图的概览、搜索以及单图的信息编辑与删除，实现图的统一管理。</li>
+<li class="">搜索范围：可对图名称和ID进行搜索。</li>
+</ol>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/313图管理.png" alt="image" class="img_ev3q">
+</center>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="32元数据建模列表图模式">3.2	元数据建模（列表+图模式）<a href="#32元数据建模列表图模式" class="hash-link" aria-label="Direct link to 3.2	元数据建模（列表+图模式）" title="Direct link to 3.2	元数据建模（列表+图模式）" translate="no">​</a></h4>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="321模块入口">3.2.1	模块入口<a href="#321模块入 口" class="hash-link" aria-label="Direct link to 3.2.1	模块入口" title="Direct link to 3.2.1	模块入口" translate="no">​</a></h5>
+<p>左侧导航处：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/321元数据入口.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="322属性类型">3.2.2	属性类型<a href="#322属性类型" class="hash-link" aria-label="Direct link to 3.2.2	属性类型" title="Direct link to 3.2.2	属性类型" translate="no">​</a></h5>
+<h6 class="anchor anchorTargetStickyNavbar_Vzrq" id="3221创建">3.2.2.1	创建<a href="#3221创建" class="hash-link" aria-label="Direct link to 3.2.2.1	创建" title="Direct link to 3.2.2.1	创建" translate="no">​</a></h6>
+<ol>
+<li class="">填写或选择属性名称、数据类型、基数，完成属性的创建。</li>
+<li class="">创建的属性可作为顶点类型和边类型的属性。</li>
+</ol>
+<p>列表模式：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/3221属性创建.png" alt="image" class="img_ev3q">
+</center>
+<p>图模式：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/3221属性创建2.png" alt="image" class="img_ev3q">
+</center>
+<h6 class="anchor anchorTargetStickyNavbar_Vzrq" id="3222复用">3.2.2.2	复用<a href="#3222复用" class="hash-link" aria-label="Direct link to 3.2.2.2	复用" title="Direct link to 3.2.2.2	复用" translate="no">​</a></h6>
+<ol>
+<li class="">平台提供【复用】功能，可直接复用其他图的元数据。</li>
+<li class="">选择需要复用的图ID，继续选择需要复用的属性，之后平台会进行是否冲突的校验，通过后，可实现元数据的复用。</li>
+</ol>
+<p>选择复用项：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/3222属性复用.png" alt="image" class="img_ev3q">
+</center>
+<p>校验复用项：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/3222属性复用2.png" alt="image" class="img_ev3q">
+</center>
+<h6 class="anchor anchorTargetStickyNavbar_Vzrq" id="3223管理">3.2.2.3	管理<a href="#3223管理" class="hash-link" aria-label="Direct link to 3.2.2.3	管理" title="Direct link to 3.2.2.3	管理" translate="no">​</a></h6>
+<ol>
+<li class="">在属性列表中可进行单条删除或批量删除操作。</li>
+</ol>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="323顶点类型">3.2.3	顶点类型<a href="#323顶点类型" class="hash-link" aria-label="Direct link to 3.2.3	顶点类型" title="Direct link to 3.2.3	顶点类型" translate="no">​</a></h5>
+<h6 class="anchor anchorTargetStickyNavbar_Vzrq" id="3231创建">3.2.3.1	创建<a href="#3231创建" class="hash-link" aria-label="Direct link to 3.2.3.1	创建" title="Direct link to 3.2.3.1	创建" translate="no">​</a></h6>
+<ol>
+<li class="">填写或选择顶点类型名称、ID策略、关联属性、主键属性，顶点样式、查询结果中顶点下方展示的内容，以及索引的信息：包括是否创建类型索引，及属性索引的具体内容，完成顶点类型的创建。</li>
+</ol>
+<p>列表模式：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/3231顶点创建.png" alt="image" class="img_ev3q">
+</center>
+<p>图模式：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/3231顶点创建2.png" alt="image" class="img_ev3q">
+</center>
+<h6 class="anchor anchorTargetStickyNavbar_Vzrq" id="3232复用">3.2.3.2	复用<a href="#3232复用" class="hash-link" aria-label="Direct link to 3.2.3.2	复用" title="Direct link to 3.2.3.2	复用" translate="no">​</a></h6>
+<ol>
+<li class="">顶点类型的复用，会将此类型关联的属性和属性索引一并复用。</li>
+<li class="">复用功能使用方法类似属性的复用，见3.2.2.2。</li>
+</ol>
+<h6 class="anchor anchorTargetStickyNavbar_Vzrq" id="3233管理">3.2.3.3	管理<a href="#3233管理" class="hash-link" aria-label="Direct link to 3.2.3.3	管理" title="Direct link to 3.2.3.3	管理" translate="no">​</a></h6>
+<ol>
+<li class="">
+<p>可进行编辑操作，顶点样式、关联类型、顶点展示内容、属性索引可编辑，其余不可编辑。</p>
+</li>
+<li class="">
+<p>可进行单条删除或批量删除操作。</p>
+</li>
+</ol>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/3233顶点删除.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="324边类型">3.2.4	边类型<a href="#324边类型" class="hash-link" aria-label="Direct link to 3.2.4	边类型" title="Direct link to 3.2.4	边类型" translate="no">​</a></h5>
+<h6 class="anchor anchorTargetStickyNavbar_Vzrq" id="3241创建">3.2.4.1	创建<a href="#3241创建" class="hash-link" aria-label="Direct link to 3.2.4.1	创建" title="Direct link to 3.2.4.1	创建" translate="no">​</a></h6>
+<ol>
+<li class="">填写或选择边类型名称、起点类型、终点类型、关联属性、是否允许多次连接、边样式、查询结果中边下方展示的内容，以及索引的信息：包括是否创建类型索引，及属性索引的具体内容，完成边类型的创建。</li>
+</ol>
+<p>列表模式：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/3241边创建.png" alt="image" class="img_ev3q">
+</center>
+<p>图模式：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/3241边创建2.png" alt="image" class="img_ev3q">
+</center>
+<h6 class="anchor anchorTargetStickyNavbar_Vzrq" id="3242复用">3.2.4.2	复用<a href="#3242复用" class="hash-link" aria-label="Direct link to 3.2.4.2	复用" title="Direct link to 3.2.4.2	复用" translate="no">​</a></h6>
+<ol>
+<li class="">边类型的复用，会将此类型的起点类型、终点类型、关联的属性和属性索引一并复用。</li>
+<li class="">复用功能使用方法类似属性的复用，见3.2.2.2。</li>
+</ol>
+<h6 class="anchor anchorTargetStickyNavbar_Vzrq" id="3243管理">3.2.4.3	管理<a href="#3243管理" class="hash-link" aria-label="Direct link to 3.2.4.3	管理" title="Direct link to 3.2.4.3	管理" translate="no">​</a></h6>
+<ol>
+<li class="">可进行编辑操作，边样式、关联属性、边展示内容、属性索引可编辑，其余不可编辑，同顶点类型。</li>
+<li class="">可进行单条删除或批量删除操作。</li>
+</ol>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="325索引类型">3.2.5	索引类型<a href="#325索引类型" class="hash-link" aria-label="Direct link to 3.2.5	索引类型" title="Direct link to 3.2.5	索引类型" translate="no">​</a></h5>
+<p>展示顶点类型和边类型的顶点索引和边索引。</p>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="33数据导入">3.3	数据导入<a href="#33数据导入" class="hash-link" aria-label="Direct link to 3.3	数据导入" title="Direct link to 3.3	数据导入" translate="no">​</a></h4>
+<p>数据导入的使用流程如下：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/33导入流程.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="331模块入口">3.3.1	模块入口<a href="#331模块入口" class="hash-link" aria-label="Direct link to 3.3.1	模块入口" title="Direct link to 3.3.1	模块入口" translate="no">​</a></h5>
+<p>左侧导航处：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/331导入入口.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="332创建任务">3.3.2	创建任务<a href="#332创建任务" class="hash-link" aria-label="Direct link to 3.3.2	创建任务" title="Direct link to 3.3.2	创建任务" translate="no">​</a></h5>
+<ol>
+<li class="">填写任务名称和备注（非必填），可以创建导入任务。</li>
+<li class="">可创建多个导入任务，并行导入。</li>
+</ol>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/332创建任务.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="333上传文件">3.3.3	上传文件<a href="#333上传文件" class="hash-link" aria-label="Direct link to 3.3.3	上传文件" title="Direct link to 3.3.3	上传文件" translate="no">​</a></h5>
+<ol>
+<li class="">上传需要构图的文件，目前支持的格式为CSV，后续会不断更新。</li>
+<li class="">可同时上传多个文件。</li>
+</ol>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/333上传文件.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="334设置数据映射">3.3.4	设置数据映射<a href="#334设置数据映射" class="hash-link" aria-label="Direct link to 3.3.4	设置数据映射" title="Direct link to 3.3.4	设置数据映射" translate="no">​</a></h5>
+<ol>
+<li class="">
+<p>对上传的文件分别设置数据映射，包括文件设置和类型设置</p>
+</li>
+<li class="">
+<p>文件设置：勾选或填写是否包含表头、分隔符、编码格式等文件本身的设置内容，均设置默认值，无需手动填写</p>
+</li>
+<li class="">
+<p>类型设置：</p>
+<ol>
+<li class="">顶点映射和边映射：</li>
+</ol>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#bfc7d5"><span class="token plain">【顶点类型】 ：选择顶点类型，并为其ID映射上传文件中列数据；</span><br></div></code></pre></div></div>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#bfc7d5"><span class="token plain">【边类型】：选择边类型，为其起点类型和终点类型的ID列映射上传文件的列数据；</span><br></div></code></pre></div></div>
+<p>2.	映射设置：为选定的顶点类型的属性映射上传文件中的列数据，此处，若属性名称与文件的表头名称一致，可自动匹配映射属性，无需手动填选
+3.	完成设置后，显示设置列表，方可进行下一步操作，支持映射的新增、编辑、删除操作</p>
+</li>
+</ol>
+<p>设置映射的填写内容：</p>
+  <center>
+      <img decoding="async" loading="lazy" src="../images/images-hubble/334设置映射.png" alt="image" class="img_ev3q">
+  </center>
+<p>映射列表：</p>
+  <center>
+    <img decoding="async" loading="lazy" src="../images/images-hubble/334设置映射2.png" alt="image" class="img_ev3q">
+  </center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="335导入数据">3.3.5	导入数据<a href="#335导入数据" class="hash-link" aria-label="Direct link to 3.3.5	导入数据" title="Direct link to 3.3.5	导入数据" translate="no">​</a></h5>
+<p>导入前需要填写导入设置参数，填写完成后，可开始向图库中导入数据</p>
+<ol>
+<li class="">导入设置</li>
+</ol>
+<ul>
+<li class="">导入设置参数项如下图所示，均设置默认值，无需手动填写</li>
+</ul>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/335导入设置.png" alt="image" class="img_ev3q">
+</center>
+<ol start="2">
+<li class="">导入详情</li>
+</ol>
+<ul>
+<li class="">点击开始导入，开始文件的导入任务</li>
+<li class="">导入详情中提供每个上传文件设置的映射类型、导入速度、导入的进度、耗时以及当前任务的具体状态，并可对每个任务进行暂停、继续、停止等操作</li>
+<li class="">若导入失败，可查看具体原因</li>
+</ul>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/335导入详情.png" alt="image" class="img_ev3q">
+</center>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="34数据分析">3.4	数据分析<a href="#34数据分析" class="hash-link" aria-label="Direct link to 3.4	数据分析" title="Direct link to 3.4	数据分析" translate="no">​</a></h4>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="341模块入口">3.4.1	模块入口<a href="#341模块入口" class="hash-link" aria-label="Direct link to 3.4.1	模块入口" title="Direct link to 3.4.1	模块入口" translate="no">​</a></h5>
+<p>左侧导航处：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/341分析入口.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="342多图切换">3.4.2	多图切换<a href="#342多图切换" class="hash-link" aria-label="Direct link to 3.4.2	多图切换" title="Direct link to 3.4.2	多图切换" translate="no">​</a></h5>
+<p>通过左侧切换入口，灵活切换多图的操作空间</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/342多图切换.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="343图分析与处理">3.4.3	图分析与处理<a href="#343图分析与处理" class="hash-link" aria-label="Direct link to 3.4.3	图分析与处理" title="Direct link to 3.4.3	图分析与处理" translate="no">​</a></h5>
+<p>HugeGraph支持Apache TinkerPop3的图遍历查询语言Gremlin，Gremlin是一种通用的图数据库查询语言，通过输入Gremlin语句，点击执行，即可执行图数据的查询分析操作，并可实现顶点/边的创建及删除、顶点/边的属性修改等。</p>
+<p>Gremlin查询后，下方为图结果展示区域，提供3种图结果展示方式，分别为：【图模式】、【表格模式】、【Json模式】。</p>
+<p>支持缩放、居中、全屏、导出等操作。</p>
+<p>【图模式】</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/343图分析-图.png" alt="image" class="img_ev3q">
+</center>
+<p>【表格模式】</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/343图分析-表格.png" alt="image" class="img_ev3q">
+</center>
+<p>【Json模式】</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/343图分析-json.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="344数据详情">3.4.4	数据详情<a href="#344数据详情" class="hash-link" aria-label="Direct link to 3.4.4	数据详情" title="Direct link to 3.4.4	数据详情" translate="no">​</a></h5>
+<p>点击顶点/边实体，可查看顶点/边的数据详情，包括：顶点/边类型，顶点ID，属性及对应值，拓展图的信息展示维度，提高易用性。</p>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="345图结果的多维路径查询">3.4.5	图结果的多维路径查询<a href="#345图结果的多维路径查询" class="hash-link" aria-label="Direct link to 3.4.5	图结果的多维路径查询" title="Direct link to 3.4.5	图结果的多维路径查询" translate="no">​</a></h5>
+<p>除了全局的查询外，可针对查询结果中的顶点进行深度定制化查询以及隐藏操作，实现图结果的定制化挖掘。</p>
+<p>右击顶点，出现顶点的菜单入口，可进行展示、查询、隐藏等操作。</p>
+<ul>
+<li class="">展开：点击后，展示与选中点关联的顶点。</li>
+<li class="">查询：通过选择与选中点关联的边类型及边方向，在此条件下，再选择其属性及相应筛选规则，可实现定制化的路径展示。</li>
+<li class="">隐藏：点击后，隐藏选中点及与之关联的边。</li>
+</ul>
+<p>双击顶点，也可展示与选中点关联的顶点。</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/345定制路径查询.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="346新增顶点边">3.4.6	新增顶点/边<a href="#346新增顶点边" class="hash-link" aria-label="Direct link to 3.4.6	新增顶点/边" title="Direct link to 3.4.6	新增顶点/边" translate="no">​</a></h5>
+<h6 class="anchor anchorTargetStickyNavbar_Vzrq" id="3461新增顶点">3.4.6.1	新增顶点<a href="#3461新增顶点" class="hash-link" aria-label="Direct link to 3.4.6.1	新增顶点" title="Direct link to 3.4.6.1	新增顶点" translate="no">​</a></h6>
+<p>在图区可通过两个入口，动态新增顶点，如下：</p>
+<ol>
+<li class="">点击图区面板，出现添加顶点入口</li>
+<li class="">点击右上角的操作栏中的首个图标</li>
+</ol>
+<p>通过选择或填写顶点类型、ID值、属性信息，完成顶点的增加。</p>
+<p>入口如下：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/346新增顶点.png" alt="image" class="img_ev3q">
+</center>
+<p>添加顶点内容如下：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/346新增顶点2.png" alt="image" class="img_ev3q">
+</center>
+<h6 class="anchor anchorTargetStickyNavbar_Vzrq" id="3462新增边">3.4.6.2	新增边<a href="#3462新增边" class="hash-link" aria-label="Direct link to 3.4.6.2	新增边" title="Direct link to 3.4.6.2	新增边" translate="no">​</a></h6>
+<p>右击图结果中的顶点，可增加该点的出边或者入边。</p>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="347执行记录与收藏的查询">3.4.7	执行记录与收藏的查询<a href="#347执行记录与收藏的查询" class="hash-link" aria-label="Direct link to 3.4.7	执行记录与收藏的查询" title="Direct link to 3.4.7	执行记录与收藏的查询" translate="no">​</a></h5>
+<ol>
+<li class="">图区下方记载每次查询记录，包括：查询时间、执行类型、内容、状态、耗时、以及【收藏】和【加载】操作，实现图执行的全方位记录，有迹可循，并可对执行内容快速加载复用</li>
+<li class="">提供语句的收藏功能，可对常用语句进行收藏操作，方便高频语句快速调用</li>
+</ol>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/347收藏.png" alt="image" class="img_ev3q">
+</center>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="35任务管理">3.5	任务管理<a href="#35任务管理" class="hash-link" aria-label="Direct link to 3.5	任务管理" title="Direct link to 3.5	任务管理" translate="no">​</a></h4>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="351模块入口">3.5.1	模块入口<a href="#351模块入口" class="hash-link" aria-label="Direct link to 3.5.1	模块入口" title="Direct link to 3.5.1	模块入口" translate="no">​</a></h5>
+<p>左侧导航处：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/351任务管理入口.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="352任务管理">3.5.2	任务管理<a href="#352任务管理" class="hash-link" aria-label="Direct link to 3.5.2	任务管理" title="Direct link to 3.5.2	任务管理" translate="no">​</a></h5>
+<ol>
+<li class="">提供异步任务的统一的管理与结果查看，异步任务包括4类，分别为：</li>
+</ol>
+<ul>
+<li class="">gremlin：Gremlin任务</li>
+<li class="">algorithm：OLAP算法任务</li>
+<li class="">remove_schema：删除元数据</li>
+<li class="">rebuild_index：重建索引</li>
+</ul>
+<ol start="2">
+<li class="">列表显示当前图的异步任务信息，包括：任务ID，任务名称，任务类型，创建时间，耗时，状态，操作，实现对异步任务的管理。</li>
+<li class="">支持对任务类型和状态进行筛选</li>
+<li class="">支持搜索任务ID和任务名称</li>
+<li class="">可对异步任务进行删除或批量删除操作</li>
+</ol>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/352任务列表.png" alt="image" class="img_ev3q">
+</center>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="353gremlin异步任务">3.5.3	Gremlin异步任务<a href="#353gremlin异步任务" class="hash-link" aria-label="Direct link to 3.5.3	Gremlin异步任务" title="Direct link to 3.5.3	Gremlin异步任务" translate="no">​</a></h5>
+<p>1.创建任务</p>
+<ul>
+<li class="">数据分析模块，目前支持两种Gremlin操作，Gremlin查询和Gremlin任务；若用户切换到Gremlin任务，点击执行后，在异步任务中心会建立一条异步任务；
+2.任务提交</li>
+<li class="">任务提交成功后，图区部分返回提交结果和任务ID
+3.任务详情</li>
+<li class="">提供【查看】入口，可跳转到任务详情查看当前任务具体执行情况跳转到任务中心后，直接显示当前执行的任务行</li>
+</ul>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/353gremlin任务.png" alt="image" class="img_ev3q">
+</center>
+<p>点击查看入口，跳转到任务管理列表，如下：</p>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/353gremlin任务2.png" alt="image" class="img_ev3q">
+</center>
+<p>4.查看结果</p>
+<ul>
+<li class="">结果通过json形式展示</li>
+</ul>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="354olap算法任务">3.5.4	OLAP算法任务<a href="#354olap算法任务" class="hash-link" aria-label="Direct link to 3.5.4	OLAP算法任务" title="Direct link to 3.5.4	OLAP算法任务" translate="no">​</a></h5>
+<p>Hubble上暂未提供可视化的OLAP算法执行，可调用RESTful API进行OLAP类算法任务，在任务管理中通过ID找到相应任务，查看进度与结果等。</p>
+<h5 class="anchor anchorTargetStickyNavbar_Vzrq" id="355删除元数据重建索引">3.5.5	删除元数据、重建索引<a href="#355删除元数据重建索引" class="hash-link" aria-label="Direct link to 3.5.5	删除元数据、重建索引" title="Direct link to 3.5.5	删除元数据、重建索引" translate="no">​</a></h5>
+<p>1.创建任务</p>
+<ul>
+<li class="">在元数据建模模块中，删除元数据时，可建立删除元数据的异步任务</li>
+</ul>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/355删除元数据.png" alt="image" class="img_ev3q">
+</center>
+<ul>
+<li class="">在编辑已有的顶点/边类型操作中，新增索引时，可建立创建索引的异步任务</li>
+</ul>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/355构建索引.png" alt="image" class="img_ev3q">
+</center>
+<p>2.任务详情</p>
+<ul>
+<li class="">确认/保存后，可跳转到任务中心查看当前任务的详情</li>
+</ul>
+<center>
+  <img decoding="async" loading="lazy" src="../images/images-hubble/355任务详情.png" alt="image" class="img_ev3q">
+</center></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"><a href="https://github.com/apache/hugegraph-doc/edit/master/versioned_docs/version-docusaurus-0.11/quickstart/hugegraph-hubble.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_Z9Sw" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_JAkA"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/docusaurus-0.11/quickstart/hugegraph-client/"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Hugegraph Client</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/docs/docusaurus-0.11/quickstart/hugegraph-loader/"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Hugegraph Loader</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#hugegraph-hubble用户使用手册" class="table-of-contents__link toc-highlight">HugeGraph-Hubble用户使用手册</a><ul><li><a href="#1平台概述" class="table-of-contents__link toc-highlight">1	平台概述</a></li><li><a href="#2平台使用流程" class="table-of-contents__link toc-highlight">2	平台使用流程</a></li><li><a href="#3平台使用说明" class="table-of-contents__link toc-highlight">3	平台使用说明</a><ul><li><a href="#31图管理" class="table-of-contents__link toc-highlight">3.1	图管理</a></li><li><a href="#32元数据建模列表图模式" class="table-of-contents__link toc-highlight">3.2	元数据建模（列表+图模式）</a></li><li><a href="#33数据导入" class="table-of-contents__link toc-highlight">3.3	数据导入</a></li><li><a href="#34数据分析" class="table-of-contents__link toc-highlight">3.4	数据分析</a></li><li><a href="#35任务管理" class="table-of-contents__link toc-highlight">3.5	任务管理</a></li></ul></li></ul></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Project</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/">Documentation</a></li><li class="footer__item"><a class="footer__link-item" href="/download/">Download</a></li><li class="footer__item"><a class="footer__link-item" href="/team/">Team</a></li><li class="footer__item"><a class="footer__link-item" href="/users/">Users</a></li><li class="footer__item"><a href="https://github.com/apache/hugegraph" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/apache/hugegraph/issues" target="_blank" rel="noopener noreferrer" class="footer__link-item">Issue Tracker<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Community</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/community/">Community</a></li><li class="footer__item"><a class="footer__link-item" href="/community/contribution-guidelines/">Contributor Guide</a></li><li class="footer__item"><a href="mailto:dev@hugegraph.apache.org" target="_blank" rel="noopener noreferrer" class="footer__link-item">Mailing List<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://the-asf.slack.com/archives/C059UU2FJ23" target="_blank" rel="noopener noreferrer" class="footer__link-item">ASF Slack<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">ASF</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://www.apache.org/" target="_blank" rel="noopener noreferrer" class="footer__link-item">Foundation<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/licenses/" target="_blank" rel="noopener noreferrer" class="footer__link-item">License<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/events/current-event.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Events<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://privacy.apache.org/policies/privacy-policy-public.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Privacy<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/security/" target="_blank" rel="noopener noreferrer" class="footer__link-item">Security<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/foundation/sponsorship.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Sponsorship<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/foundation/thanks.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Thanks<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://www.apache.org/foundation/policies/conduct.html" target="_blank" rel="noopener noreferrer" class="footer__link-item">Code of Conduct<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="margin-bottom--sm"><a href="https://www.apache.org/" rel="noopener noreferrer" class="footerLogoLink_BH7S"><img src="/img/apache-logo.svg" alt="Apache Software Foundation logo" class="footer__logo themedComponent_mlkZ themedComponent--light_NVdE" width="180"><img src="/img/apache-logo.svg" alt="Apache Software Foundation logo" class="footer__logo themedComponent_mlkZ themedComponent--dark_xIcU" width="180"></a></div><div class="footer__copyright">Copyright © 2026 The Apache Software Foundation. Licensed under the Apache License, Version 2.0. Apache HugeGraph, HugeGraph, Apache, and related logos are trademarks of The Apache Software Foundation.</div></div></div></footer></div>
+</body>
+</html>

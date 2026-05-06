@@ -103,6 +103,19 @@ To update a release source:
 2. Make sure the source ref is fetched locally. CI uses `fetch-depth: 0`, so tags and release branches are available there.
 3. Run `npm run docs:versions:prepare`, then `npm run build`.
 
+To freeze the current `next` documentation as a new stable release, such as `1.8.0`, first create a durable Docusaurus-native source branch from the release-ready documentation state:
+
+```bash
+git checkout master
+git pull
+git checkout -b docusaurus-1.8.0
+git push origin docusaurus-1.8.0
+```
+
+Then update `src/data/versions.json` on `master`: point `stable.sourceRef` to `docusaurus-1.8.0`, change the stable label to `Stable (1.8.0)`, and, if the previous stable release should remain available, add an archived `1.7.0` entry whose `sourceRef` is `docusaurus-1.7.0`. Docusaurus-native frozen branches should not need `legacyCompatibility`.
+
+After the version metadata is merged to `master`, the production deployment is automatic. `.github/workflows/docusaurus.yml` runs `npm run build` on `master`, generates all version snapshots from their configured `sourceRef` values, and publishes `./build` to the `asf-site` branch. `.asf.yaml` publishes the production website from `asf-site`; `asf-staging` is only for manual preview validation before the merge.
+
 Only archived pre-Docusaurus branches should use `legacyCompatibility` fields such as `sourcePaths`, `sourceIncludes`, `sourceOverlays`, `indexFrom`, or Markdown normalization. These fields document deliberate compatibility work for old snapshots, not guidance for new documentation.
 
 Do not use `latest` ambiguously in docs navigation. Use `stable` for the latest released documentation and `next` for unreleased documentation.
@@ -268,6 +281,19 @@ npm run docs:versions:prepare
 该命令会生成 `versioned_docs/`、`versioned_sidebars/`、`versions.json`、`docs-cn_versioned_docs/`、`docs-cn_versioned_sidebars/` 和 `docs-cn_versions.json`。这些是构建输入，不作为源码提交。
 
 更新发布版本时，请修改 `src/data/versions.json` 中的 `label`、`docusaurusVersion`、`path`、`cnPath`、`githubTagUrl` 和 `sourceRef`。该 ref 需要已经 fetch 到本地，然后运行 `npm run docs:versions:prepare` 和 `npm run build`。
+
+如果要把当前 `next` 文档固化为新的稳定版本，比如 `1.8.0`，请先从已准备发布的文档状态创建一个长期存在的 Docusaurus 原生 source branch：
+
+```bash
+git checkout master
+git pull
+git checkout -b docusaurus-1.8.0
+git push origin docusaurus-1.8.0
+```
+
+然后在 `master` 上更新 `src/data/versions.json`：将 `stable.sourceRef` 指向 `docusaurus-1.8.0`，将 stable label 改成 `Stable (1.8.0)`；如果旧 stable 仍需保留入口，则新增归档版本 `1.7.0`，并让它的 `sourceRef` 指向 `docusaurus-1.7.0`。这种 Docusaurus 原生固化分支不应需要 `legacyCompatibility`。
+
+版本元数据合入 `master` 后，生产部署会自动完成。`.github/workflows/docusaurus.yml` 会在 `master` 上执行 `npm run build`，根据各版本配置的 `sourceRef` 生成版本快照，并把 `./build` 发布到 `asf-site` 分支。`.asf.yaml` 会从 `asf-site` 发布正式站点；`asf-staging` 只用于 merge 前的手动预览验证。
 
 只有归档的 pre-Docusaurus 分支才应该使用 `legacyCompatibility` 下的 `sourcePaths`、`sourceIncludes`、`sourceOverlays`、`indexFrom` 或 Markdown normalization。这些字段用于记录旧快照的兼容目的，不是新文档的开发规范。
 

@@ -7,10 +7,10 @@ const buildDir = path.join(repoRoot, 'build');
 
 const expectedPages = [
   ['homepage', 'index.html', 'Apache HugeGraph'],
-  ['docs landing', 'docs/index.html', 'Welcome to HugeGraph docs'],
+  ['docs landing', 'docs/index.html', 'Apache HugeGraph Documentation'],
   ['next docs landing', 'docs/next/index.html', 'This is unreleased documentation'],
   ['English deep docs page', 'docs/quickstart/hugegraph/hugegraph-server/index.html', 'HugeGraph-Server'],
-  ['Chinese docs landing', 'cn/docs/index.html', '欢迎阅读HugeGraph文档'],
+  ['Chinese docs landing', 'cn/docs/index.html', 'Apache HugeGraph 文档'],
   ['Chinese next docs landing', 'cn/docs/next/index.html', 'noindex, nofollow'],
   ['Chinese deep docs page', 'cn/docs/quickstart/hugegraph/hugegraph-server/index.html', 'HugeGraph-Server'],
   ['English blog', 'blog/index.html', 'Blog'],

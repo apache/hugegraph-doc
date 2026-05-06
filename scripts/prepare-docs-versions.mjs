@@ -64,6 +64,19 @@ function gitRefExists(ref) {
   return result.status === 0;
 }
 
+function resolveGitRef(ref) {
+  if (gitRefExists(ref)) {
+    return ref;
+  }
+
+  const remoteRef = `origin/${ref}`;
+  if (gitRefExists(remoteRef)) {
+    return remoteRef;
+  }
+
+  return null;
+}
+
 function cleanGeneratedPaths() {
   for (const relPath of generatedPaths) {
     fs.rmSync(path.join(repoRoot, relPath), {force: true, recursive: true});
@@ -117,13 +130,14 @@ function prepareVersion(version, locale, target) {
 
   ensureDir(destinationDir);
   if (sourceRef) {
-    if (!gitRefExists(sourceRef)) {
+    const resolvedSourceRef = resolveGitRef(sourceRef);
+    if (!resolvedSourceRef) {
       throw new Error(
         `Configured docs source ref "${sourceRef}" is not available locally. Fetch tags/branches first, or override with DOCS_STABLE_REF.`,
       );
     }
-    copyFromGitRef(sourceRef, sourcePath, destinationDir);
-    log(`${locale}: generated ${versionId} from ${sourceRef}:${sourcePath}`);
+    copyFromGitRef(resolvedSourceRef, sourcePath, destinationDir);
+    log(`${locale}: generated ${versionId} from ${resolvedSourceRef}:${sourcePath}`);
   } else {
     copyFromWorkingTree(sourcePath, destinationDir);
     log(`${locale}: generated ${versionId} from working tree ${sourcePath}`);

@@ -72,11 +72,36 @@ async function assertShell(page) {
 }
 
 async function assertDocs(page) {
+  await page.goto(`${baseUrl}/docs/`, {waitUntil: 'networkidle'});
+  const navbar = page.locator('nav.navbar');
+  const navbarText = await navbar.textContent();
+  for (const label of ['Next', 'Stable (1.7.0)', 'v1.3.0']) {
+    if (!navbarText.includes(label)) {
+      throw new Error(`Docs navbar is missing version label ${label}`);
+    }
+  }
+
   await page.goto(`${baseUrl}/docs/quickstart/hugegraph/hugegraph-server/`, {waitUntil: 'networkidle'});
   const sidebar = page.locator('aside.theme-doc-sidebar-container');
   await expectVisible(sidebar, 'docs sidebar');
   const quickStart = sidebar.getByText('Quick Start').first();
   await expectVisible(quickStart, 'docs sidebar Quick Start item');
+
+  await page.goto(`${baseUrl}/docs/next/`, {waitUntil: 'networkidle'});
+  await expectVisible(page.getByText('This is unreleased documentation'), 'next docs unreleased banner');
+
+  await page.goto(`${baseUrl}/docs/v1.3.0/`, {waitUntil: 'networkidle'});
+  await expectVisible(page.getByText('no longer actively maintained'), 'old docs unmaintained banner');
+}
+
+async function assertCommunityPages(page) {
+  await page.goto(`${baseUrl}/team/`, {waitUntil: 'networkidle'});
+  await expectVisible(page.getByRole('heading', {name: 'Apache HugeGraph Team'}), 'team page heading');
+  await expectVisible(page.getByText('PMC Members').first(), 'team page PMC section');
+
+  await page.goto(`${baseUrl}/users/`, {waitUntil: 'networkidle'});
+  await expectVisible(page.getByRole('heading', {name: 'HugeGraph User Showcase'}), 'users page heading');
+  await expectVisible(page.getByText('Baidu').first(), 'users page case card');
 }
 
 async function assertMobileMenu(page) {
@@ -86,7 +111,7 @@ async function assertMobileMenu(page) {
   const sidebar = page.locator('.navbar-sidebar');
   await expectVisible(sidebar, 'mobile navbar sidebar');
   const text = await sidebar.textContent();
-  for (const label of ['Docs', 'Blog', 'Community', 'ASF']) {
+  for (const label of ['Docs', 'Blog', 'Community', 'Team', 'Users', 'ASF']) {
     if (!text.includes(label)) {
       throw new Error(`Mobile menu is missing ${label}`);
     }
@@ -103,6 +128,8 @@ async function captureScreenshots(page) {
     ['homepage', '/'],
     ['docs-landing', '/docs/'],
     ['deep-docs', '/docs/quickstart/hugegraph/hugegraph-server/'],
+    ['team', '/team/'],
+    ['users', '/users/'],
   ];
 
   for (const [viewportName, viewport] of viewports) {
@@ -141,6 +168,7 @@ async function main() {
     const page = await browser.newPage({viewport: {width: 1440, height: 900}});
     await assertShell(page);
     await assertDocs(page);
+    await assertCommunityPages(page);
     await assertMobileMenu(page);
     await captureScreenshots(page);
     await browser.close();

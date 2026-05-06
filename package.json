@@ -5,9 +5,12 @@
   "description": "Apache HugeGraph documentation website built with Docusaurus.",
   "scripts": {
     "start": "docusaurus start --host 0.0.0.0",
-    "build": "docusaurus build",
+    "build": "npm run check:content-visibility && docusaurus build",
     "serve": "docusaurus serve --host 0.0.0.0",
     "clear": "docusaurus clear",
+    "docs:version": "node scripts/version-docs.mjs",
+    "docs:versions:list": "node scripts/list-docs-versions.mjs",
+    "check:content-visibility": "node scripts/check-content-visibility.mjs",
     "playwright:install": "playwright install chromium",
     "validate:content": "node scripts/validate-content-inventory.js",
     "validate:build": "npm run build && node scripts/validate-build.js && npm run validate:content",

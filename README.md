@@ -50,9 +50,88 @@ hugegraph-doc/
 │
 ├── src/                        # 🎨 Docusaurus pages, CSS, and helpers
 ├── static/                     # 📁 Static files served from site root
+├── versioned_docs/             # 📚 English release documentation snapshots
+├── docs-cn_versioned_docs/     # 📚 Chinese release documentation snapshots
+├── versions.json               # 🏷️  English docs versions
+├── docs-cn_versions.json       # 🏷️  Chinese docs versions
 ├── docusaurus.config.js        # ⚙️  Site configuration
 ├── sidebars*.js                # 🧭 Documentation sidebar configuration
 └── package.json                # 📦 Node.js dependencies
+```
+
+## Documentation Versions
+
+The Docusaurus docs plugin is the source of truth for versioned documentation.
+
+Version semantics:
+
+| Version | Route | Meaning |
+|---------|-------|---------|
+| `stable` | `/docs/`, `/cn/docs/` | Latest stable release documentation and the default navbar target |
+| `current` / `next` | `/docs/next/`, `/cn/docs/next/` | Unreleased development documentation with an unreleased banner |
+| Explicit tags | `/docs/v1.3.0/`, `/cn/docs/v1.3.0/` | Historical release snapshots with an older-version banner |
+
+Create a new release documentation snapshot:
+
+```bash
+npm run docs:version -- <version>
+```
+
+This creates both English and Chinese docs snapshots by running the default docs plugin and the `docs-cn` plugin versioning commands. Review `versions.json`, `docs-cn_versions.json`, and `src/data/versions.json` before publishing.
+
+List configured versions:
+
+```bash
+npm run docs:versions:list
+```
+
+To update the stable release:
+
+1. Create or refresh the release snapshot under `versioned_docs/version-<version>/` and `docs-cn_versioned_docs/version-<version>/`.
+2. Put the stable version first in `versions.json` and `docs-cn_versions.json`.
+3. Update `docsVersionOptions.lastVersion` and labels in `docusaurus.config.js` if the stable version id changes.
+4. Update `src/data/versions.json` with release metadata and tag links.
+5. Run `npm run build` and check the version dropdown.
+
+Do not use `latest` ambiguously in docs navigation. Use `stable` for the latest released documentation and `next` for unreleased documentation.
+
+## Team and User Data
+
+The Team page is available at `/team/` and `/cn/team/`. It is data-driven from `src/data/team.js`, currently based on public ASF roster data. Update that file when PMC or committer information changes, and include the public source used for the update.
+
+The user showcase is available at `/users/` and `/cn/users/`. It is data-driven from `src/data/users.js` and uses public submissions from [apache/hugegraph#1651](https://github.com/apache/hugegraph/issues/1651). Do not add company names, logos, quotes, or deployment details unless they are already public and approved. If no approved logo exists in the repository, leave the logo empty and let the page render the fallback initials.
+
+## Content Visibility
+
+The site supports these publishing states:
+
+| State | Front matter | Production behavior |
+|-------|--------------|---------------------|
+| Public | default | Appears in navigation and generated outputs |
+| Draft | `draft: true` | Excluded from production builds by Docusaurus |
+| Unlisted | `unlisted: true` | Built for direct URL access but hidden from navigation, listings, feeds, and indexed discovery; Docusaurus adds noindex/nofollow metadata |
+| Placeholder | `placeholder: true`, `unlisted: true`, `noindex: true` | Reserves a URL with only a short safe placeholder message |
+| Private | `private: true` | Fails production builds unless `ALLOW_PRIVATE_CONTENT=true` is explicitly set for a non-public preview |
+
+Private content is not access control. Do not put sensitive material in Markdown, MDX, static assets, generated HTML, JavaScript bundles, source maps, or JSON that will be published. Real private access must be enforced by the hosting platform, reverse proxy, authentication gateway, or a non-public preview environment.
+
+Production builds run:
+
+```bash
+npm run check:content-visibility
+```
+
+Use this placeholder pattern when reserving a route:
+
+```markdown
+---
+title: Upcoming Case Study
+unlisted: true
+noindex: true
+placeholder: true
+---
+
+This page is reserved for an upcoming Apache HugeGraph case study.
 ```
 
 ## Contributing
@@ -86,6 +165,9 @@ See [contribution.md](./contribution.md) for:
 | `npm run start` | Start dev server (hot reload) |
 | `npm run build` | Build production site to `./build/` |
 | `npm run serve` | Serve the production build locally |
+| `npm run check:content-visibility` | Fail production-unsafe private content |
+| `npm run docs:version -- <version>` | Create EN/CN docs snapshots for a release |
+| `npm run docs:versions:list` | Print configured docs versions |
 | `npm run validate` | Build, check content inventory, and run headless UI validation |
 
 ---
@@ -134,10 +216,52 @@ hugegraph-doc/
 │
 ├── src/                        # 🎨 Docusaurus 页面、样式和辅助脚本
 ├── static/                     # 📁 站点根路径静态文件
+├── versioned_docs/             # 📚 英文版本化文档快照
+├── docs-cn_versioned_docs/     # 📚 中文版本化文档快照
+├── versions.json               # 🏷️  英文文档版本列表
+├── docs-cn_versions.json       # 🏷️  中文文档版本列表
 ├── docusaurus.config.js        # ⚙️  站点配置
 ├── sidebars*.js                # 🧭 文档侧边栏配置
 └── package.json                # 📦 Node.js 依赖
 ```
+
+### 文档版本
+
+版本化文档以 Docusaurus docs plugin 为准。
+
+| 版本 | 路由 | 含义 |
+|------|------|------|
+| `stable` | `/docs/`, `/cn/docs/` | 最新稳定版本文档，也是导航栏默认入口 |
+| `current` / `next` | `/docs/next/`, `/cn/docs/next/` | 未发布开发中文档，并展示 unreleased 提示 |
+| 显式版本标签 | `/docs/v1.3.0/`, `/cn/docs/v1.3.0/` | 历史版本快照，并展示 older-version 提示 |
+
+创建新的中英文版本文档快照：
+
+```bash
+npm run docs:version -- <version>
+```
+
+发布前请检查 `versions.json`、`docs-cn_versions.json` 和 `src/data/versions.json`。更新 stable 版本时，需要刷新对应的 `versioned_docs/version-<version>/` 与 `docs-cn_versioned_docs/version-<version>/`，调整版本列表、`docusaurus.config.js` 中的版本标签，并运行 `npm run build` 验证。
+
+不要在导航中模糊使用 `latest`：`stable` 表示最新已发布版本，`next` 表示未发布开发中文档。
+
+### 团队和用户数据
+
+Team 页面位于 `/team/` 与 `/cn/team/`，数据来自 `src/data/team.js`，当前基于 ASF 公开 roster。PMC 或 committer 变化时请更新该数据文件，并保留公开来源。
+
+用户案例页面位于 `/users/` 与 `/cn/users/`，数据来自 `src/data/users.js`，当前基于 [apache/hugegraph#1651](https://github.com/apache/hugegraph/issues/1651) 的公开提交。不要加入未经公开授权的公司名、Logo、引用或部署细节；如果仓库中没有已授权 Logo，则保持为空，页面会展示缩写占位。
+
+### 内容可见性
+
+| 状态 | Front matter | 生产行为 |
+|------|--------------|----------|
+| Public | 默认 | 正常出现在导航和生成内容中 |
+| Draft | `draft: true` | Docusaurus 在生产构建中排除 |
+| Unlisted | `unlisted: true` | 可通过直链访问，但不进入导航、列表、feed 和索引发现；Docusaurus 会添加 noindex/nofollow |
+| Placeholder | `placeholder: true`, `unlisted: true`, `noindex: true` | 只保留短占位内容，用于预留 URL |
+| Private | `private: true` | 生产构建失败，除非在非公开预览环境显式设置 `ALLOW_PRIVATE_CONTENT=true` |
+
+静态站点前端不提供真正的加密或访问控制。不要把敏感内容放进会发布的 Markdown、MDX、静态资源、HTML、JS bundle、source map 或 JSON 中；真正的私有访问必须由托管平台、反向代理、认证网关或非公开预览环境实现。
 
 ### 如何贡献
 
@@ -170,6 +294,9 @@ hugegraph-doc/
 | `npm run start` | 启动开发服务器（热重载） |
 | `npm run build` | 构建生产版本到 `./build/` |
 | `npm run serve` | 本地预览生产构建 |
+| `npm run check:content-visibility` | 检查并阻断生产不安全的私有内容 |
+| `npm run docs:version -- <version>` | 创建中英文版本化文档快照 |
+| `npm run docs:versions:list` | 输出当前配置的文档版本 |
 | `npm run validate` | 构建、检查内容清单并运行无头 UI 校验 |
 
 ---
@@ -177,7 +304,7 @@ hugegraph-doc/
 ## Contact & Community
 
 - **Issues:** [GitHub Issues](https://github.com/apache/hugegraph-doc/issues)
-- **Mailing List:** [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscribe first](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/))
+- **Mailing List:** [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscribe first](https://hugegraph.apache.org/community/contribution-guidelines/subscribe/))
 - **Slack:** [ASF Slack](https://the-asf.slack.com/archives/C059UU2FJ23)
 
 <img src="./assets/images/wechat.png" alt="WeChat QR Code" width="350"/>

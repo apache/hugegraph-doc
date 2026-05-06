@@ -1,0 +1,583 @@
+{
+  "docsSidebar": [
+    {
+      "type": "doc",
+      "id": "_index",
+      "label": "文档"
+    },
+    {
+      "type": "category",
+      "label": "简介",
+      "collapsible": true,
+      "collapsed": true,
+      "items": [],
+      "link": {
+        "type": "doc",
+        "id": "introduction/_index"
+      }
+    },
+    {
+      "type": "category",
+      "label": "快速开始",
+      "collapsible": true,
+      "collapsed": true,
+      "items": [
+        {
+          "type": "category",
+          "label": "HugeGraph (OLTP)",
+          "collapsible": true,
+          "collapsed": true,
+          "items": [
+            {
+              "type": "doc",
+              "id": "quickstart/hugegraph/hugegraph-server",
+              "label": "安装/构建 HugeGraph-Server"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/hugegraph/hugegraph-pd",
+              "label": "安装/构建 HugeGraph-PD"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/hugegraph/hugegraph-hstore",
+              "label": "安装/构建 HugeGraph-Store"
+            }
+          ],
+          "link": {
+            "type": "doc",
+            "id": "quickstart/hugegraph/_index"
+          }
+        },
+        {
+          "type": "category",
+          "label": "HugeGraph 工具链",
+          "collapsible": true,
+          "collapsed": true,
+          "items": [
+            {
+              "type": "doc",
+              "id": "quickstart/toolchain/hugegraph-hubble",
+              "label": "使用 Hubble 实现图可视化"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/toolchain/hugegraph-loader",
+              "label": "使用 Loader 实时/流式导入数据"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/toolchain/hugegraph-tools",
+              "label": "使用 HugeGraph-Tools 导出/管理图"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/toolchain/hugegraph-spark-connector",
+              "label": "使用 Spark Connector 读写图数据"
+            }
+          ],
+          "link": {
+            "type": "doc",
+            "id": "quickstart/toolchain/_index"
+          }
+        },
+        {
+          "type": "category",
+          "label": "HugeGraph-AI",
+          "collapsible": true,
+          "collapsed": true,
+          "items": [
+            {
+              "type": "doc",
+              "id": "quickstart/hugegraph-ai/hugegraph-llm",
+              "label": "HugeGraph-LLM"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/hugegraph-ai/hugegraph-ml",
+              "label": "HugeGraph-ML"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/hugegraph-ai/config-reference",
+              "label": "配置参考"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/hugegraph-ai/quick_start",
+              "label": "GraphRAG UI Details"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/hugegraph-ai/rest-api",
+              "label": "REST API"
+            }
+          ],
+          "link": {
+            "type": "doc",
+            "id": "quickstart/hugegraph-ai/_index"
+          }
+        },
+        {
+          "type": "category",
+          "label": "HugeGraph Computing (OLAP)",
+          "collapsible": true,
+          "collapsed": true,
+          "items": [
+            {
+              "type": "doc",
+              "id": "quickstart/computing/hugegraph-computer",
+              "label": "使用 Computer 进行 OLAP 分析"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/computing/hugegraph-computer-config",
+              "label": "Computer 配置参考"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/computing/hugegraph-vermeer",
+              "label": "Hugegraph Vermeer"
+            }
+          ],
+          "link": {
+            "type": "doc",
+            "id": "quickstart/computing/_index"
+          }
+        },
+        {
+          "type": "category",
+          "label": "HugeGraph Client",
+          "collapsible": true,
+          "collapsed": true,
+          "items": [
+            {
+              "type": "doc",
+              "id": "quickstart/client/hugegraph-client",
+              "label": "Java 客户端"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/client/hugegraph-client-python",
+              "label": "Python 客户端"
+            },
+            {
+              "type": "doc",
+              "id": "quickstart/client/hugegraph-client-go",
+              "label": "Go 客户端"
+            }
+          ],
+          "link": {
+            "type": "doc",
+            "id": "quickstart/client/_index"
+          }
+        },
+        {
+          "type": "doc",
+          "id": "quickstart/hugegraph-studio",
+          "label": "(Deprecated) Display with HugeGraph-Studio"
+        },
+        {
+          "type": "doc",
+          "id": "quickstart/hugegraph-spark",
+          "label": "(Deprecated) Analysis with HugeGraph-Spark"
+        }
+      ],
+      "link": {
+        "type": "doc",
+        "id": "quickstart/_index"
+      }
+    },
+    {
+      "type": "category",
+      "label": "配置",
+      "collapsible": true,
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "config/config-guide",
+          "label": "Server 启动指南"
+        },
+        {
+          "type": "doc",
+          "id": "config/config-option",
+          "label": "Server 完整配置手册"
+        },
+        {
+          "type": "doc",
+          "id": "config/config-authentication",
+          "label": "权限配置"
+        },
+        {
+          "type": "doc",
+          "id": "config/config-https",
+          "label": "配置 HTTPS"
+        }
+      ],
+      "link": {
+        "type": "doc",
+        "id": "config/_index"
+      }
+    },
+    {
+      "type": "category",
+      "label": "客户端与 API",
+      "collapsible": true,
+      "collapsed": true,
+      "items": [
+        {
+          "type": "category",
+          "label": "RESTful API",
+          "collapsible": true,
+          "collapsed": true,
+          "items": [
+            {
+              "type": "doc",
+              "id": "clients/restful-api/graphspace",
+              "label": "Graphspace"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/schema",
+              "label": "Schema"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/propertykey",
+              "label": "PropertyKey"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/vertexlabel",
+              "label": "VertexLabel"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/edgelabel",
+              "label": "EdgeLabel"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/indexlabel",
+              "label": "IndexLabel"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/rebuild",
+              "label": "Rebuild"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/vertex",
+              "label": "Vertex"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/edge",
+              "label": "Edge"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/traverser",
+              "label": "Traverser"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/rank",
+              "label": "Rank"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/variable",
+              "label": "Variable"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/graphs",
+              "label": "Graphs"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/task",
+              "label": "Task"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/gremlin",
+              "label": "Gremlin"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/cypher",
+              "label": "Cypher"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/auth",
+              "label": "Authentication"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/metrics",
+              "label": "Metrics"
+            },
+            {
+              "type": "doc",
+              "id": "clients/restful-api/other",
+              "label": "Other"
+            }
+          ],
+          "link": {
+            "type": "doc",
+            "id": "clients/restful-api/_index"
+          }
+        },
+        {
+          "type": "doc",
+          "id": "clients/hugegraph-client",
+          "label": "HugeGraph Java Client"
+        },
+        {
+          "type": "doc",
+          "id": "clients/gremlin-console",
+          "label": "Gremlin Console"
+        }
+      ],
+      "link": {
+        "type": "doc",
+        "id": "clients/_index"
+      }
+    },
+    {
+      "type": "category",
+      "label": "指南",
+      "collapsible": true,
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "guides/architectural",
+          "label": "架构概览"
+        },
+        {
+          "type": "doc",
+          "id": "guides/desgin-concept",
+          "label": "设计理念(legacy)"
+        },
+        {
+          "type": "doc",
+          "id": "guides/custom-plugin",
+          "label": "HugeGraph Plugin"
+        },
+        {
+          "type": "doc",
+          "id": "guides/toolchain-local-test",
+          "label": "Toolchain本地测试"
+        },
+        {
+          "type": "doc",
+          "id": "guides/backup-restore",
+          "label": "备份 & 恢复"
+        },
+        {
+          "type": "doc",
+          "id": "guides/faq",
+          "label": "FAQ"
+        },
+        {
+          "type": "doc",
+          "id": "guides/hugegraph-docker-cluster",
+          "label": "Docker 集群"
+        },
+        {
+          "type": "doc",
+          "id": "guides/security",
+          "label": "安全公告"
+        }
+      ],
+      "link": {
+        "type": "doc",
+        "id": "guides/_index"
+      }
+    },
+    {
+      "type": "category",
+      "label": "查询语言",
+      "collapsible": true,
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "language/hugegraph-gremlin",
+          "label": "Gremlin Query Language"
+        },
+        {
+          "type": "doc",
+          "id": "language/hugegraph-example",
+          "label": "HugeGraph Examples"
+        }
+      ],
+      "link": {
+        "type": "doc",
+        "id": "language/_index"
+      }
+    },
+    {
+      "type": "category",
+      "label": "性能",
+      "collapsible": true,
+      "collapsed": true,
+      "items": [
+        {
+          "type": "category",
+          "label": "HugeGraph-API 性能",
+          "collapsible": true,
+          "collapsed": true,
+          "items": [
+            {
+              "type": "doc",
+              "id": "performance/api-performance/hugegraph-api-0.5.6-rocksdb",
+              "label": "v0.5.6 Stand-alone(RocksDB)"
+            },
+            {
+              "type": "doc",
+              "id": "performance/api-performance/hugegraph-api-0.5.6-cassandra",
+              "label": "v0.5.6 Cluster(Cassandra)"
+            },
+            {
+              "type": "doc",
+              "id": "performance/api-performance/hugegraph-api-0.4.4",
+              "label": "v0.4.4"
+            },
+            {
+              "type": "doc",
+              "id": "performance/api-performance/hugegraph-api-0.2",
+              "label": "v0.2"
+            }
+          ],
+          "link": {
+            "type": "doc",
+            "id": "performance/api-performance/_index"
+          }
+        },
+        {
+          "type": "doc",
+          "id": "performance/hugegraph-benchmark-0.5.6",
+          "label": "HugeGraph 基准测试"
+        },
+        {
+          "type": "doc",
+          "id": "performance/hugegraph-loader-performance",
+          "label": "HugeGraph-Loader 性能"
+        },
+        {
+          "type": "doc",
+          "id": "performance/hugegraph-benchmark-0.4.4",
+          "label": "Hugegraph Benchmark 0.4.4"
+        }
+      ],
+      "link": {
+        "type": "doc",
+        "id": "performance/_index"
+      }
+    },
+    {
+      "type": "category",
+      "label": "版本日志",
+      "collapsible": true,
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-1.7.0-release-notes",
+          "label": "Release-1.7.0"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-1.5.0-release-notes",
+          "label": "Release-1.5.0"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-1.3.0-release-notes",
+          "label": "Release-1.3.0"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-1.2.0-release-notes",
+          "label": "Release-1.2.0"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-1.0.0-release-notes",
+          "label": "Release-1.0.0"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.12.0-release-notes",
+          "label": "Release-0.12.0"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.11.2-release-notes",
+          "label": "Release-0.11.2"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.10.4-release-notes",
+          "label": "Release-0.10.4"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.9.2-release-notes",
+          "label": "Release-0.9.2"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.8.0-release-notes",
+          "label": "Release-0.8.0"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.7.4-release-notes",
+          "label": "Release-0.7.4"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.6.1-release-notes",
+          "label": "Release-0.6.1"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.5.6-release-notes",
+          "label": "Release-0.5.6"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.4.4-release-notes",
+          "label": "Release-0.4.4"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.3.3-release-notes",
+          "label": "Release-0.3.3"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.2.4-release-notes",
+          "label": "Release-0.2.4"
+        },
+        {
+          "type": "doc",
+          "id": "changelog/hugegraph-0.2-release-notes",
+          "label": "Release-0.2.4"
+        }
+      ],
+      "link": {
+        "type": "doc",
+        "id": "changelog/_index"
+      }
+    }
+  ]
+}

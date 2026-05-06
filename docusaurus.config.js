@@ -13,6 +13,48 @@ const apacheLinks = [
 
 const docsExclude = ['**/_*/**', '**/SUMMARY.md', '**/*.test.{js,jsx,ts,tsx}', '**/__tests__/**'];
 
+const docsVersionOptions = {
+  lastVersion: 'stable',
+  includeCurrentVersion: true,
+  versions: {
+    current: {
+      label: 'Next',
+      path: 'next',
+      banner: 'unreleased',
+      badge: true,
+      noIndex: true,
+    },
+    stable: {
+      label: 'Stable (1.7.0)',
+      path: '',
+      banner: 'none',
+      badge: true,
+    },
+    'v1.3.0': {
+      label: 'v1.3.0',
+      path: 'v1.3.0',
+      banner: 'unmaintained',
+      badge: true,
+      noIndex: true,
+    },
+  },
+};
+
+const docsCnVersionOptions = {
+  ...docsVersionOptions,
+  versions: {
+    current: {
+      ...docsVersionOptions.versions.current,
+      label: '开发版',
+    },
+    stable: {
+      ...docsVersionOptions.versions.stable,
+      label: '稳定版 (1.7.0)',
+    },
+    'v1.3.0': docsVersionOptions.versions['v1.3.0'],
+  },
+};
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Apache HugeGraph',
@@ -57,6 +99,7 @@ const config = {
           editUrl: 'https://github.com/apache/hugegraph-doc/edit/master/',
           showLastUpdateAuthor: false,
           showLastUpdateTime: false,
+          ...docsVersionOptions,
         },
         blog: {
           path: 'content/en/blog',
@@ -91,6 +134,7 @@ const config = {
         editUrl: 'https://github.com/apache/hugegraph-doc/edit/master/',
         showLastUpdateAuthor: false,
         showLastUpdateTime: false,
+        ...docsCnVersionOptions,
       },
     ],
     [
@@ -183,6 +227,11 @@ const config = {
             position: 'left',
           },
           {
+            type: 'custom-localeAwareDocsVersionDropdown',
+            position: 'left',
+            dropdownActiveClassDisabled: true,
+          },
+          {
             type: 'custom-localeAwareLink',
             enTo: '/blog/',
             cnTo: '/cn/blog/',
@@ -200,6 +249,26 @@ const config = {
             cnLabel: '社区',
             activeBasePath: '/community/',
             cnActiveBasePath: '/cn/community/',
+            position: 'left',
+          },
+          {
+            type: 'custom-localeAwareLink',
+            enTo: '/team/',
+            cnTo: '/cn/team/',
+            label: 'Team',
+            cnLabel: '团队',
+            activeBasePath: '/team/',
+            cnActiveBasePath: '/cn/team/',
+            position: 'left',
+          },
+          {
+            type: 'custom-localeAwareLink',
+            enTo: '/users/',
+            cnTo: '/cn/users/',
+            label: 'Users',
+            cnLabel: '用户',
+            activeBasePath: '/users/',
+            cnActiveBasePath: '/cn/users/',
             position: 'left',
           },
           {
@@ -244,6 +313,8 @@ const config = {
             items: [
               {label: 'Documentation', to: '/docs/'},
               {label: 'Download', to: '/download/'},
+              {label: 'Team', to: '/team/'},
+              {label: 'Users', to: '/users/'},
               {label: 'GitHub', href: 'https://github.com/apache/hugegraph'},
               {label: 'Issue Tracker', href: 'https://github.com/apache/hugegraph/issues'},
             ],

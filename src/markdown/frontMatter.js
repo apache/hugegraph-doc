@@ -7,7 +7,9 @@ function indexSlug(filePath) {
   }
 
   const normalized = filePath.split(path.sep).join('/');
-  const match = normalized.match(/content\/(?:en|cn)\/(?:docs|community)\/(.*)_index\.md$/);
+  const match = normalized.match(
+    /(?:content\/(?:en|cn)\/(?:docs|community)|(?:versioned_docs|docs-cn_versioned_docs)\/version-[^/]+)\/(.*)_index\.md$/,
+  );
   if (!match) {
     return undefined;
   }
@@ -48,6 +50,22 @@ function blogSlug(filePath, frontMatter) {
   return `/${year}/${month}/${day}/${slugify(frontMatter.title || fallback)}`;
 }
 
+function applyPlaceholderDefaults(frontMatter) {
+  if (frontMatter.placeholder !== true) {
+    return;
+  }
+
+  if (frontMatter.unlisted === undefined) {
+    frontMatter.unlisted = true;
+  }
+  if (frontMatter.noindex === undefined) {
+    frontMatter.noindex = true;
+  }
+  if (frontMatter.description === undefined) {
+    frontMatter.description = 'Reserved route for upcoming Apache HugeGraph content.';
+  }
+}
+
 module.exports = async function parseHugoFrontMatter(args) {
   const parsed = await DEFAULT_PARSE_FRONT_MATTER(args);
   parsed.frontMatter = parsed.frontMatter || {};
@@ -65,6 +83,8 @@ module.exports = async function parseHugoFrontMatter(args) {
   if (parsed.frontMatter.linkTitle && parsed.frontMatter.sidebar_label === undefined) {
     parsed.frontMatter.sidebar_label = parsed.frontMatter.linkTitle;
   }
+
+  applyPlaceholderDefaults(parsed.frontMatter);
 
   return parsed;
 };

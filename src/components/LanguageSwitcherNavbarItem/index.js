@@ -2,8 +2,8 @@ import React from 'react';
 import {useLocation} from '@docusaurus/router';
 import DropdownNavbarItem from '@theme/NavbarItem/DropdownNavbarItem';
 
-const cnPrefixes = ['/cn/docs/', '/cn/blog/', '/cn/community/', '/cn/download/'];
-const enPrefixes = ['/docs/', '/blog/', '/community/', '/download/'];
+const cnPrefixes = ['/cn/docs/', '/cn/blog/', '/cn/community/', '/cn/team/', '/cn/users/', '/cn/download/'];
+const enPrefixes = ['/docs/', '/blog/', '/community/', '/team/', '/users/', '/download/'];
 const cnToEnFallbacks = new Map([
   ['/cn/docs/changelog/hugegraph-0.12.0-release-notes/', '/docs/changelog/'],
 ]);
@@ -34,6 +34,14 @@ function toEnglish(pathname) {
 
   if (pathname === '/cn' || pathname === '/cn/') {
     return '/';
+  }
+
+  const versionedChangelogFallback = pathname.match(
+    /^\/cn\/docs\/(?:(next|v1\.3\.0)\/)?changelog\/hugegraph-0\.12\.0-release-notes\/?$/,
+  );
+  if (versionedChangelogFallback) {
+    const versionPrefix = versionedChangelogFallback[1] ? `${versionedChangelogFallback[1]}/` : '';
+    return `/docs/${versionPrefix}changelog/`;
   }
 
   const fallback = cnToEnFallbacks.get(normalizeLookupPath(pathname));

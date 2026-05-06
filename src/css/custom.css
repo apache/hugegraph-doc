@@ -236,6 +236,161 @@ html[data-theme='dark'] {
   max-width: 100%;
 }
 
+.subpageHero {
+  background: var(--hugegraph-band);
+  border-bottom: 1px solid var(--hugegraph-border);
+  padding: 4rem 0 3.25rem;
+}
+
+.subpageHero h1 {
+  color: var(--hugegraph-ink);
+  font-size: 3.5rem;
+  letter-spacing: 0;
+  line-height: 1.05;
+  margin: 0 0 1rem;
+}
+
+.subpageHero p:not(.apacheEyebrow) {
+  color: var(--hugegraph-muted);
+  font-size: 1.15rem;
+  line-height: 1.65;
+  max-width: 840px;
+}
+
+.statGrid,
+.directoryGrid,
+.showcaseGrid,
+.linkGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.statGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.statCard,
+.directoryCard,
+.showcaseCard,
+.linkCard {
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--hugegraph-border);
+  border-radius: 8px;
+}
+
+.statCard {
+  padding: 1.5rem;
+}
+
+.statCard strong,
+.statCard span {
+  display: block;
+}
+
+.statCard strong {
+  color: var(--ifm-color-primary);
+  font-size: 2.2rem;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.statCard span {
+  color: var(--hugegraph-muted);
+  font-weight: 700;
+}
+
+.directoryGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.directoryCard,
+.showcaseCard {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.directoryCard h3,
+.showcaseCard h3 {
+  color: var(--hugegraph-ink);
+  font-size: 1.15rem;
+  letter-spacing: 0;
+  margin: 0 0 0.35rem;
+}
+
+.directoryCard p,
+.showcaseCard p {
+  color: var(--hugegraph-muted);
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+}
+
+.directoryAvatar,
+.showcaseLogo {
+  align-items: center;
+  background: color-mix(in srgb, var(--ifm-color-primary) 12%, var(--ifm-background-surface-color));
+  border: 1px solid color-mix(in srgb, var(--ifm-color-primary) 35%, var(--hugegraph-border));
+  border-radius: 8px;
+  color: var(--ifm-color-primary);
+  display: flex;
+  flex: 0 0 auto;
+  font-weight: 800;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+}
+
+.inlineLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-weight: 700;
+}
+
+.showcaseGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metadataList {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.metadataList div {
+  min-width: 0;
+}
+
+.metadataList dt {
+  color: var(--hugegraph-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.metadataList dd {
+  color: var(--hugegraph-ink);
+  margin: 0.2rem 0 0;
+}
+
+.linkGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 2rem;
+}
+
+.linkCard {
+  color: var(--hugegraph-ink);
+  display: block;
+  font-weight: 800;
+  padding: 1.2rem;
+}
+
+.linkCard:hover {
+  color: var(--ifm-color-primary);
+  text-decoration: none;
+}
+
 .footer {
   background: #14171f;
 }
@@ -274,7 +429,11 @@ html[data-theme='dark'] {
   }
 
   .highlightGrid,
-  .ecosystemLayout {
+  .ecosystemLayout,
+  .statGrid,
+  .directoryGrid,
+  .showcaseGrid,
+  .linkGrid {
     grid-template-columns: 1fr;
   }
 
@@ -301,7 +460,13 @@ html[data-theme='dark'] {
   }
 
   .productCard,
-  .ecosystemNode {
+  .ecosystemNode,
+  .directoryCard,
+  .showcaseCard {
     min-height: auto;
+  }
+
+  .metadataList {
+    grid-template-columns: 1fr;
   }
 }

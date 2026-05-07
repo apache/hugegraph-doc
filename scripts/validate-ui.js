@@ -145,6 +145,34 @@ async function assertMobileMenu(page) {
       throw new Error(`Mobile menu is missing ${label}`);
     }
   }
+
+  const dropdown = sidebar.locator('.documentationDropdown').first();
+  const button = dropdown.locator('button').first();
+  const menu = dropdown.locator('.documentationDropdown__menu').first();
+  await button.click();
+
+  for (const label of ['Next', 'Stable (1.7.0)', '1.5.0', '1.3.0', '1.2.0', '1.0.0', '0.11', '0.10']) {
+    await expectVisible(dropdown.getByRole('menuitem', {name: label}), `mobile Documentation dropdown ${label} item`);
+  }
+
+  const buttonBox = await button.boundingBox();
+  const menuBox = await menu.boundingBox();
+  if (!buttonBox || !menuBox) {
+    throw new Error('Mobile Documentation dropdown bounding boxes are unavailable');
+  }
+  if (menuBox.y < buttonBox.y + buttonBox.height - 1) {
+    throw new Error('Mobile Documentation dropdown is not positioned under its nav item');
+  }
+  if (menuBox.width > 220 || menuBox.height > 260) {
+    throw new Error(`Mobile Documentation dropdown is too large: ${Math.round(menuBox.width)}x${Math.round(menuBox.height)}`);
+  }
+  if (menuBox.x < 0 || menuBox.x + menuBox.width > 390 || menuBox.y + menuBox.height > 844) {
+    throw new Error('Mobile Documentation dropdown overflows the viewport');
+  }
+  const overflowY = await menu.evaluate((element) => window.getComputedStyle(element).overflowY);
+  if (overflowY !== 'auto') {
+    throw new Error(`Mobile Documentation dropdown should be scrollable when needed, got overflow-y=${overflowY}`);
+  }
 }
 
 async function captureScreenshots(page) {

@@ -35,6 +35,12 @@
     "legacyCompatibility": {
       "enabled": true,
       "normalizeMarkdown": true,
+      "excludePaths": [
+        "download",
+        "download.md",
+        "CLA.md",
+        "contribution-guidelines"
+      ],
       "reason": "Compatibility-only import for the archived release branch; this is not part of the normal Docusaurus authoring pipeline."
     },
     "notes": "Source branch release-1.5.0 maps to Docusaurus version docusaurus-1.5.0."
@@ -52,6 +58,12 @@
     "legacyCompatibility": {
       "enabled": true,
       "normalizeMarkdown": true,
+      "excludePaths": [
+        "download",
+        "download.md",
+        "CLA.md",
+        "contribution-guidelines"
+      ],
       "reason": "Compatibility-only import for the archived release branch; this is not part of the normal Docusaurus authoring pipeline."
     },
     "notes": "Source branch release-1.3.0 maps to Docusaurus version docusaurus-1.3.0."
@@ -69,6 +81,12 @@
     "legacyCompatibility": {
       "enabled": true,
       "normalizeMarkdown": true,
+      "excludePaths": [
+        "download",
+        "download.md",
+        "CLA.md",
+        "contribution-guidelines"
+      ],
       "reason": "Compatibility-only import for the archived release branch; this is not part of the normal Docusaurus authoring pipeline."
     },
     "notes": "Source branch release-1.2.0 maps to Docusaurus version docusaurus-1.2.0."
@@ -86,6 +104,12 @@
     "legacyCompatibility": {
       "enabled": true,
       "normalizeMarkdown": true,
+      "excludePaths": [
+        "download",
+        "download.md",
+        "CLA.md",
+        "contribution-guidelines"
+      ],
       "sourceOverlays": {
         "cn": [
           {
@@ -127,6 +151,12 @@
         "performance",
         "quickstart"
       ],
+      "excludePaths": [
+        "download",
+        "download.md",
+        "CLA.md",
+        "contribution-guidelines"
+      ],
       "indexFrom": "README.md",
       "reason": "Compatibility-only import for the archived pre-content-layout branch; this is not part of the normal Docusaurus authoring pipeline."
     },
@@ -160,6 +190,12 @@
         "language",
         "performance",
         "quickstart"
+      ],
+      "excludePaths": [
+        "download",
+        "download.md",
+        "CLA.md",
+        "contribution-guidelines"
       ],
       "indexFrom": "README.md",
       "reason": "Compatibility-only import for the archived pre-content-layout branch; this is not part of the normal Docusaurus authoring pipeline."

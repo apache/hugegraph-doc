@@ -116,7 +116,7 @@ Then update `src/data/versions.json` on `master`: point `stable.sourceRef` to `d
 
 After the version metadata is merged to `master`, the production deployment is automatic. `.github/workflows/docusaurus.yml` runs `npm run build` on `master`, generates all version snapshots from their configured `sourceRef` values, and publishes `./build` to the `asf-site` branch. `.asf.yaml` publishes the production website from `asf-site`; `asf-staging` is only for manual preview validation before the merge.
 
-Only archived pre-Docusaurus branches should use `legacyCompatibility` fields such as `sourcePaths`, `sourceIncludes`, `sourceOverlays`, `indexFrom`, or Markdown normalization. These fields document deliberate compatibility work for old snapshots, not guidance for new documentation.
+Only archived pre-Docusaurus branches should use `legacyCompatibility` fields such as `sourcePaths`, `sourceIncludes`, `sourceOverlays`, `excludePaths`, `indexFrom`, or Markdown normalization. These fields document deliberate compatibility work for old snapshots, not guidance for new documentation. Use `excludePaths` for old-version docs that have been moved to global site sections, such as Download or Community contribution pages, so they do not appear again inside archived Documentation.
 
 Do not use `latest` ambiguously in docs navigation. Use `stable` for the latest released documentation and `next` for unreleased documentation.
 
@@ -295,7 +295,7 @@ git push origin docusaurus-1.8.0
 
 版本元数据合入 `master` 后，生产部署会自动完成。`.github/workflows/docusaurus.yml` 会在 `master` 上执行 `npm run build`，根据各版本配置的 `sourceRef` 生成版本快照，并把 `./build` 发布到 `asf-site` 分支。`.asf.yaml` 会从 `asf-site` 发布正式站点；`asf-staging` 只用于 merge 前的手动预览验证。
 
-只有归档的 pre-Docusaurus 分支才应该使用 `legacyCompatibility` 下的 `sourcePaths`、`sourceIncludes`、`sourceOverlays`、`indexFrom` 或 Markdown normalization。这些字段用于记录旧快照的兼容目的，不是新文档的开发规范。
+只有归档的 pre-Docusaurus 分支才应该使用 `legacyCompatibility` 下的 `sourcePaths`、`sourceIncludes`、`sourceOverlays`、`excludePaths`、`indexFrom` 或 Markdown normalization。这些字段用于记录旧快照的兼容目的，不是新文档的开发规范。对于已经迁移到全局站点区域的旧版本文档，例如 Download 或 Community contribution 页面，应通过 `excludePaths` 从归档 Documentation 中移除，避免重复出现。
 
 不要在导航中模糊使用 `latest`：`stable` 表示最新已发布版本，`next` 表示未发布开发中文档。
 

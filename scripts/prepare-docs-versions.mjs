@@ -188,6 +188,16 @@ function prepareIndex(destinationDir, indexFrom) {
   fs.rmSync(sourcePath, {force: true});
 }
 
+function removeLegacyExcludedPaths(destinationDir, excludePaths = []) {
+  for (const excludePath of excludePaths) {
+    const targetPath = path.resolve(destinationDir, excludePath);
+    if (!targetPath.startsWith(`${path.resolve(destinationDir)}${path.sep}`)) {
+      throw new Error(`Refusing to remove path outside generated docs directory: ${excludePath}`);
+    }
+    fs.rmSync(targetPath, {force: true, recursive: true});
+  }
+}
+
 function walkMarkdownFiles(dir) {
   const entries = fs.readdirSync(dir, {withFileTypes: true});
   return entries.flatMap((entry) => {
@@ -285,6 +295,57 @@ function normalizeLegacyDocsRelPath(pathname) {
   return null;
 }
 
+function normalizeRelativeLegacyDocsRelPath(pathname, context) {
+  const directRelPath = normalizeLegacyDocsRelPath(pathname);
+  if (directRelPath !== null) {
+    return directRelPath;
+  }
+
+  if (pathname.startsWith('/')) {
+    return null;
+  }
+
+  const baseRoute = context.currentRoute ? path.posix.dirname(context.currentRoute) : '';
+  const relativePath = path.posix.normalize(path.posix.join(baseRoute, pathname));
+  return normalizeLegacyDocsRelPath(`/${relativePath}`);
+}
+
+function ownSiteLegacyUrlPath(url) {
+  try {
+    const parsedUrl = new URL(url);
+    if (
+      parsedUrl.hostname === 'hugegraph.apache.org' &&
+      /^\/(?:cn\/)?docs\/(?:download|contribution-guidelines)(?:\/|$)/.test(parsedUrl.pathname)
+    ) {
+      return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function globalRouteForLegacyRelPath(relPath, locale) {
+  const normalized = stripRoute(relPath);
+  const lower = normalized.toLowerCase();
+
+  if (lower === 'download' || lower.startsWith('download/')) {
+    return locale === 'cn' ? '/cn/download' : '/download';
+  }
+
+  if (lower === 'cla') {
+    return locale === 'cn' ? '/cn/community/contribution-guidelines/cla' : '/community/contribution-guidelines/cla';
+  }
+
+  if (lower === 'contribution-guidelines' || lower.startsWith('contribution-guidelines/')) {
+    const suffix = stripRoute(normalized.slice('contribution-guidelines'.length));
+    const base = locale === 'cn' ? '/cn/community/contribution-guidelines' : '/community/contribution-guidelines';
+    return suffix ? `${base}/${suffix}` : base;
+  }
+
+  return null;
+}
+
 function resolveDocsRelPath(relPath, docRouteIndex) {
   const normalized = stripRoute(relPath);
   const alias = legacyRouteAliases.get(normalized.toLowerCase());
@@ -307,6 +368,11 @@ function resolveDocsRelPath(relPath, docRouteIndex) {
 }
 
 function normalizeLegacyLinkUrl(url, context) {
+  const ownSitePath = ownSiteLegacyUrlPath(url);
+  if (ownSitePath) {
+    return normalizeLegacyLinkUrl(ownSitePath, context);
+  }
+
   if (
     !url ||
     url.startsWith('http://') ||
@@ -329,15 +395,20 @@ function normalizeLegacyLinkUrl(url, context) {
 
   const {hash, pathname, search} = splitUrl(url);
   const targetHash = context.dropInternalAnchors ? '' : hash;
-  const relPath = normalizeLegacyDocsRelPath(pathname);
+  const relPath = normalizeRelativeLegacyDocsRelPath(pathname, context);
   if (relPath === null) {
     return url;
   }
 
+  const globalRoute = globalRouteForLegacyRelPath(relPath, context.locale);
+  if (globalRoute) {
+    return `${globalRoute}${search}${targetHash}`;
+  }
+
   const resolvedRelPath = resolveDocsRelPath(relPath, context.docRouteIndex);
-  if (resolvedRelPath === 'download' && !context.docRouteIndex.routes.has('download')) {
-    const downloadBase = context.locale === 'cn' ? '/cn/download' : '/download';
-    return `${downloadBase}${search}${targetHash}`;
+  const resolvedGlobalRoute = globalRouteForLegacyRelPath(resolvedRelPath, context.locale);
+  if (resolvedGlobalRoute) {
+    return `${resolvedGlobalRoute}${search}${targetHash}`;
   }
   return `${routeBase(context.locale, context.versionId)}/${resolvedRelPath}${search}${targetHash}`;
 }
@@ -457,6 +528,7 @@ function prepareVersion(version, locale, target) {
     log(`${locale}: generated ${versionId} from working tree ${sourcePath}`);
   }
   copySourceOverlays(legacyCompatibility, locale, destinationDir, resolvedSourceRef);
+  removeLegacyExcludedPaths(destinationDir, legacyCompatibility?.excludePaths);
   prepareIndex(destinationDir, legacyCompatibility?.indexFrom);
   if (legacyCompatibility?.normalizeMarkdown) {
     normalizeGeneratedMarkdown(destinationDir, {locale, versionId});

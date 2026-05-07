@@ -91,6 +91,30 @@ async function assertDocs(page) {
   await expectVisible(page.getByText('This is unreleased documentation'), 'next docs unreleased banner');
 }
 
+async function assertArchivedDocsPruned(page) {
+  for (const versionPath of ['docusaurus-1.5.0', 'docusaurus-1.3.0', 'docusaurus-1.0.0', 'docusaurus-0.11']) {
+    await page.goto(`${baseUrl}/docs/${versionPath}/`, {waitUntil: 'networkidle'});
+    const sidebarText = await page.locator('aside.theme-doc-sidebar-container').textContent();
+    for (const duplicateSection of ['Contribution Guidelines', 'Download', 'CLA']) {
+      if (sidebarText.includes(duplicateSection)) {
+        throw new Error(`Archived docs ${versionPath} still shows duplicate ${duplicateSection} section`);
+      }
+    }
+  }
+
+  for (const route of [
+    '/docs/docusaurus-1.5.0/download/',
+    '/docs/docusaurus-1.5.0/CLA/',
+    '/docs/docusaurus-1.5.0/contribution-guidelines/',
+    '/docs/docusaurus-0.11/download/',
+  ]) {
+    const response = await page.goto(`${baseUrl}${route}`, {waitUntil: 'networkidle'});
+    if (!response || response.status() !== 404) {
+      throw new Error(`Archived duplicate docs route should be removed: ${route}`);
+    }
+  }
+}
+
 async function assertDocumentationDropdown(page) {
   await page.setViewportSize({width: 1440, height: 900});
   await page.goto(`${baseUrl}/docs/`, {waitUntil: 'networkidle'});
@@ -225,6 +249,7 @@ async function main() {
     const page = await browser.newPage({viewport: {width: 1440, height: 900}});
     await assertShell(page);
     await assertDocs(page);
+    await assertArchivedDocsPruned(page);
     await assertDocumentationDropdown(page);
     await assertCommunityPages(page);
     await assertMobileMenu(page);

@@ -36,6 +36,9 @@ for (const version of metadata) {
   }
   if (version.legacyCompatibility?.enabled) {
     console.log('  Legacy compatibility: enabled for archived-branch import only');
+    if (version.legacyCompatibility.excludePaths?.length) {
+      console.log(`  Excluded docs paths: ${version.legacyCompatibility.excludePaths.join(', ')}`);
+    }
   }
 }
 console.log('');

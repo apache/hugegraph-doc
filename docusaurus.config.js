@@ -55,7 +55,10 @@ const docsCnVersionOptions = {
   ...docsVersionOptions,
 };
 
-const kapaWebsiteId = (process.env.KAPA_WEBSITE_ID || '').trim();
+// TODO: Move this public Kapa website widget integration ID to a GitHub
+// repository variable after the HugeGraph Kapa setup is finalized.
+const defaultKapaWebsiteId = '0b277570-4740-451e-96fa-1e4ac1ac5e88';
+const kapaWebsiteId = (process.env.KAPA_WEBSITE_ID || defaultKapaWebsiteId).trim();
 const kapaWidgetScripts = kapaWebsiteId
   ? [
       {

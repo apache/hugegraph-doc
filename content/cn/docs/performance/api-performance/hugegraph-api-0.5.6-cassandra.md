@@ -63,7 +63,7 @@ weight: 2
 ###### 顶点的最大插入速度：
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/vertex_batch.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/vertex_batch.png" alt="image">
 </div>
 
 
@@ -74,7 +74,7 @@ weight: 2
 ###### 边的最大插入速度
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/edge_batch.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/edge_batch.png" alt="image">
 </div>
 
 
@@ -98,7 +98,7 @@ weight: 2
 ###### 顶点的单条插入
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/vertex_single.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/vertex_single.png" alt="image">
 </div>
 
 
@@ -109,7 +109,7 @@ weight: 2
 ###### 边的单条插入
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/edge_single.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/edge_single.png" alt="image">
 </div>
 
 
@@ -133,7 +133,7 @@ weight: 2
 ###### 顶点的按 id 查询
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/vertex_id_query.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/vertex_id_query.png" alt="image">
 </div>
 
 
@@ -144,7 +144,7 @@ weight: 2
 ###### 边的按 id 查询
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/edge_id_query.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/edge_id_query.png" alt="image">
 </div>
 
 ###### 结论：

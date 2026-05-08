@@ -12,7 +12,7 @@ weight: 1
 > - **Note**: Before version 1.5.0, the format of ids such as group/target was similar to -69:grant. After version 1.7.0, the id and name were consistent, such as admin [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
 
 
-Besides the documentation below, you can also open `swagger-ui` at `localhost:8080/swagger-ui/index.html` to explore the RESTful API. [Here is an example](/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example)
+Besides the documentation below, you can also open `swagger-ui` at `localhost:8080/swagger-ui/index.html` to explore the RESTful API. [Here is an example](/docs/quickstart/hugegraph/hugegraph-server/#62-request-server)
 
 [comment]: <> (- Graph Schema)
 

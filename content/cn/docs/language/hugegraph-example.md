@@ -26,7 +26,7 @@ HugeGraph 相对于 TitanDB 而言，其主要特点如下：
 本示例通过 Property Graph Model 图数据模型来描述希腊神话中各人物角色的关系（也被成为人物关系图谱），具体关系详见下图。
 
 <div style="text-align: center;">
-  <img src="/docs/images/graph-of-gods.png" alt="image">
+  <img src="/img/docs/graph-of-gods.png" alt="image">
 </div>
 
 

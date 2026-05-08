@@ -65,7 +65,7 @@ mvn clean package -DskipTests
 
 #### 3.1.3 启动 master 节点
 
-> 您可以使用 `-c` 参数指定配置文件，更多 computer 配置请看：[Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config#computer-config-options)
+> 您可以使用 `-c` 参数指定配置文件，更多 computer 配置请看：[Computer Config Options](./hugegraph-computer-config.md)
 
 ```bash
 cd hugegraph-computer
@@ -137,9 +137,9 @@ hugegraph-computer-operator-etcd-28lm67jxk5                       1/1     Runnin
 
 #### 3.2.5 提交作业
 
-> 更多 computer crd spec 请看：[Computer CRD](/docs/quickstart/computing/hugegraph-computer-config#hugegraph-computer-crd)
+> 更多 computer crd spec 请看：[Computer CRD](./hugegraph-computer-config.md)
 >
-> 更多 Computer 配置请看：[Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config#computer-config-options)
+> 更多 Computer 配置请看：[Computer Config Options](./hugegraph-computer-config.md)
 
 ```yaml
 cat <<EOF | kubectl apply --filename -

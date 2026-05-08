@@ -250,7 +250,7 @@ docker compose down
 Test process for each tool:
 
 <div style="text-align: center;">
-    <img src="/docs/images/toolchain-test-mermaid-2.png" alt="HugeGraph Toolchain Testing Process">
+    <img src="/img/docs/toolchain-test-mermaid-2.png" alt="HugeGraph Toolchain Testing Process">
 </div>
 
 

@@ -65,7 +65,7 @@ Duration: 5 minutes
 ###### Maximum insertion speed for vertices:
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/vertex_batch.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/vertex_batch.png" alt="image">
 </center>
 
 
@@ -78,7 +78,7 @@ Duration: 5 minutes
 
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/edge_batch.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/edge_batch.png" alt="image">
 </center>
 
 ###### Conclusion:
@@ -101,7 +101,7 @@ Stress limit testing is a process of continuously increasing the concurrency lev
 ###### Single vertex insertion
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/vertex_single.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/vertex_single.png" alt="image">
 </center>
 
 
@@ -112,7 +112,7 @@ Stress limit testing is a process of continuously increasing the concurrency lev
 ###### Single edge insertion
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/edge_single.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/edge_single.png" alt="image">
 </center>
 
 
@@ -136,7 +136,7 @@ Continuously increasing the concurrency level to test the upper limit of the ser
 ###### Querying vertices by ID
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/vertex_id_query.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/vertex_id_query.png" alt="image">
 </center>
 
 ###### Conclusion：
@@ -146,7 +146,7 @@ Continuously increasing the concurrency level to test the upper limit of the ser
 ###### Querying edges by ID
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/edge_id_query.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/edge_id_query.png" alt="image">
 </center>
 
 

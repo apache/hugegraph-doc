@@ -308,4 +308,4 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexl
 
 Note:
 
-> You can use `GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1` (where "1" is the task_id) to query the execution status of the asynchronous task. For more information, refer to the [Asynchronous Task RESTful API](./task).
+> You can use `GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1` (where "1" is the task_id) to query the execution status of the asynchronous task. For more information, refer to the [Asynchronous Task RESTful API](/docs/clients/restful-api/task/).

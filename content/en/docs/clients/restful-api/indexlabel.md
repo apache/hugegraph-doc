@@ -174,4 +174,4 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexla
 
 Note:
 
-> You can query the execution status of an asynchronous task by using `GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1` (where "1" is the task_id). For more information, refer to the [Asynchronous Task RESTful API](./task).
+> You can query the execution status of an asynchronous task by using `GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1` (where "1" is the task_id). For more information, refer to the [Asynchronous Task RESTful API](/docs/clients/restful-api/task/).

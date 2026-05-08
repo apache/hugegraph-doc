@@ -49,7 +49,7 @@ Optional:
 
 If you use Docker Desktop, you can set the options as follows:
 <div style="text-align: center;">
-    <img src="/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
+    <img src="/img/docs/images-server/31docker-option.jpg" alt="image" style="width:33%;">
 </div>
 
 > **Note**: The Docker Compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least **12 GB** of memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.
@@ -164,7 +164,7 @@ tar zxf *hugegraph-*.tar.gz
 cd *hugegraph*/*tool* 
 ```
 
-> note: `${version}` is the version, The latest version can refer to [Download Page](/docs/download/download), or click the link to download directly from the Download page
+> note: `${version}` is the version, The latest version can refer to [Download Page](/download/), or click the link to download directly from the Download page
 
 The general entry script for HugeGraph-Tools is `bin/hugegraph`, Users can use the `help` command to view its usage, here only the commands for one-click deployment are introduced.
 
@@ -406,7 +406,7 @@ Starting HugeGraphServer...
 Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 ```
 
-**ToplingDB (Beta)**: As a high-performance alternative to RocksDB, please refer to the configuration guide: [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="en">}})
+**ToplingDB (Beta)**: As a high-performance alternative to RocksDB, please refer to the configuration guide: [ToplingDB Quick Start](/blog/2025/10/09/toplingdb-quick-start/)
 
 </details>
 
@@ -850,19 +850,19 @@ For the detailed API, please refer to [RESTful-API](/docs/clients/restful-api)
 You can also visit `localhost:8080/swagger-ui/index.html` to check the API.
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui.png" alt="image">
+  <img src="/img/docs/images-server/swagger-ui.png" alt="image">
 </div>
 
 When using Swagger UI to debug the API provided by HugeGraph, if HugeGraph Server turns on authentication mode, you can enter authentication information on the Swagger page.
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="image">
+  <img src="/img/docs/images-server/swagger-ui-where-set-auth-example.png" alt="image">
 </div>
 
 Currently, HugeGraph supports setting authentication information in two forms: Basic and Bearer.
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui-set-auth-example.png" alt="image">
+  <img src="/img/docs/images-server/swagger-ui-set-auth-example.png" alt="image">
 </div>
 
 ### 7 Stop Server
@@ -874,4 +874,4 @@ $bin/stop-hugegraph.sh
 
 ### 8 Debug Server with IntelliJ IDEA
 
-Please refer to [Setup Server in IDEA](/docs/contribution-guidelines/hugegraph-server-idea-setup)
+Please refer to [Setup Server in IDEA](/community/contribution-guidelines/hugegraph-server-idea-setup)

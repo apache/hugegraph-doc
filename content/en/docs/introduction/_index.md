@@ -1,5 +1,5 @@
 ---
-title: "Introduction with HugeGraph"
+title: "Introduction to HugeGraph"
 linkTitle: "Introduction"
 weight: 1
 aliases:
@@ -90,7 +90,7 @@ A complete tool ecosystem surrounding the graph system ([toolchain repository](h
 | [Hubble](/docs/quickstart/toolchain/hugegraph-hubble) | Web visualization platform: one-stop operation for data modeling → batch importing → online/offline analysis. |
 | [Loader](/docs/quickstart/toolchain/hugegraph-loader) | Data import tool: supports multiple data sources like local files, HDFS, MySQL, and formats like TXT/CSV/JSON. |
 | [Client](/docs/quickstart/client/hugegraph-client) | Multi-language SDKs: Java / Python / Go. |
-| [Spark-connector](/docs/quickstart/toolchain/hugegraph-spark-connector) | Spark integration: supports batch graph data read/write via Spark, suitable for big data offline processing. |
+| [Spark-connector](../quickstart/toolchain/hugegraph-spark-connector/) | Spark integration: supports batch graph data read/write via Spark, suitable for big data offline processing. |
 | [Tools](/docs/quickstart/toolchain/hugegraph-tools) | Command-line operational tools: graph management, backup/restore, Gremlin execution, etc. |
 
 ---
@@ -138,8 +138,8 @@ docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
 ### Contact Us
 
 - [GitHub Issues](https://github.com/apache/hugegraph/issues): Feedback on usage issues and functional requirements (Recommended)
-- Email: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([How to subscribe](/docs/contribution-guidelines/subscribe/))
+- Email: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([How to subscribe](/community/contribution-guidelines/subscribe/))
 - Security: [security@hugegraph.apache.org](mailto:security@hugegraph.apache.org) (Report security issues)
 - WeChat Public Account: Apache HugeGraph
 
-<img src="https://github.com/apache/hugegraph-doc/blob/master/assets/images/wechat.png?raw=true" alt="WeChat QR Code" width="300"/>
+<img src="/img/docs/wechat.png" alt="WeChat QR Code" width="300"/>

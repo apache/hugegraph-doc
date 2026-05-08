@@ -31,6 +31,8 @@ jobs:
         run: npm install
 
       - name: Build Site
+        env:
+          KAPA_WEBSITE_ID: ${{ vars.KAPA_WEBSITE_ID || secrets.KAPA_WEBSITE_ID }}
         run: npm run build
 
       - name: Deploy Site

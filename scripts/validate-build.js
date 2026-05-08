@@ -41,6 +41,20 @@ for (const label of ['Foundation', 'License', 'Events', 'Privacy', 'Security', '
   }
 }
 
+if (homepage.includes('https://widget.kapa.ai/kapa-widget.bundle.js')) {
+  for (const snippet of [
+    'data-website-id=',
+    'data-project-name="Apache HugeGraph"',
+    'data-modal-title="Apache HugeGraph AI Assistant"',
+    'data-launcher-button-text="Ask AI"',
+    'data-consent-required="true"',
+  ]) {
+    if (!homepage.includes(snippet)) {
+      throw new Error(`Kapa Ask AI widget script is missing ${snippet}`);
+    }
+  }
+}
+
 const docsLanding = fs.readFileSync(path.join(buildDir, 'docs/index.html'), 'utf8');
 for (const label of ['Documentation', 'next', 'Stable (1.7.0)']) {
   if (!docsLanding.includes(label)) {

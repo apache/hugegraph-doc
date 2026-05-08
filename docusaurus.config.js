@@ -55,6 +55,36 @@ const docsCnVersionOptions = {
   ...docsVersionOptions,
 };
 
+const kapaWebsiteId = (process.env.KAPA_WEBSITE_ID || '').trim();
+const kapaWidgetScripts = kapaWebsiteId
+  ? [
+      {
+        async: true,
+        src: 'https://widget.kapa.ai/kapa-widget.bundle.js',
+        'data-website-id': kapaWebsiteId,
+        'data-project-name': 'Apache HugeGraph',
+        'data-project-color': '#b32025',
+        'data-project-color-dark': '#ff7a7e',
+        'data-project-logo': 'https://hugegraph.apache.org/img/hugegraph-logo.svg',
+        'data-modal-title': 'Apache HugeGraph AI Assistant',
+        'data-launcher-button-text': 'Ask AI',
+        'data-modal-open-on-command-k': 'true',
+        'data-color-scheme-selector': "[data-theme='dark']",
+        'data-bot-protection-mechanism': 'hcaptcha',
+        'data-consent-required': 'true',
+        'data-user-analytics-cookie-enabled': 'false',
+        'data-user-analytics-fingerprint-enabled': 'false',
+        'data-consent-screen-disclaimer':
+          'This AI assistant is provided by kapa.ai and may process your question with third-party services. Use the linked documentation sources to verify important answers.',
+        'data-chat-disclaimer':
+          'AI answers are generated from Apache HugeGraph documentation. Verify important operational or security decisions against the linked sources.',
+        'data-ask-ai-input-placeholder': 'Ask a question about Apache HugeGraph...',
+        'data-example-questions':
+          'How do I start HugeGraph Server?,How do I load data into HugeGraph?,How do I query HugeGraph with Gremlin?,How do I enable authentication?',
+      },
+    ]
+  : [];
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Apache HugeGraph',
@@ -70,6 +100,8 @@ const config = {
   onBrokenLinks: 'throw',
   onBrokenAnchors: 'throw',
   onDuplicateRoutes: 'throw',
+
+  scripts: kapaWidgetScripts,
 
   markdown: {
     format: 'md',

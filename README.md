@@ -126,6 +126,19 @@ The Team page is available at `/team/` and `/cn/team/`. It is data-driven from `
 
 The user showcase is available at `/users/` and `/cn/users/`. It is data-driven from `src/data/users.js` and uses public submissions from [apache/hugegraph#1651](https://github.com/apache/hugegraph/issues/1651). Do not add company names, logos, quotes, or deployment details unless they are already public and approved. If no approved logo exists in the repository, leave the logo empty and let the page render the fallback initials.
 
+## Ask AI Widget
+
+The Kapa Ask AI website widget is configured in `docusaurus.config.js` and is disabled unless `KAPA_WEBSITE_ID` is set at build time. This keeps local and CI builds deterministic before the HugeGraph Kapa integration ID is available.
+
+To preview the widget locally:
+
+```bash
+KAPA_WEBSITE_ID=<kapa-website-id> npm run build
+npm run serve
+```
+
+For production, configure `KAPA_WEBSITE_ID` as a repository variable or secret so `.github/workflows/docusaurus.yml` can pass it to `npm run build`. The value is the public Kapa Website Widget integration ID, not a private API key. If a Content Security Policy is added later, allow the Kapa widget domain plus the selected bot-protection provider, following the Kapa and Pulsar examples.
+
 ## Content Visibility
 
 The site supports these publishing states:
@@ -304,6 +317,19 @@ git push origin docusaurus-1.8.0
 Team 页面位于 `/team/` 与 `/cn/team/`，数据来自 `src/data/team.js`，当前基于 ASF 公开 roster。PMC 或 committer 变化时请更新该数据文件，并保留公开来源。
 
 用户案例页面位于 `/users/` 与 `/cn/users/`，数据来自 `src/data/users.js`，当前基于 [apache/hugegraph#1651](https://github.com/apache/hugegraph/issues/1651) 的公开提交。不要加入未经公开授权的公司名、Logo、引用或部署细节；如果仓库中没有已授权 Logo，则保持为空，页面会展示缩写占位。
+
+### Ask AI 小组件
+
+Kapa Ask AI 网站小组件在 `docusaurus.config.js` 中配置，但只有构建时设置了 `KAPA_WEBSITE_ID` 才会启用。这样在 HugeGraph 的 Kapa integration ID 准备好之前，本地和 CI 构建不会注入无效的小组件脚本。
+
+本地预览：
+
+```bash
+KAPA_WEBSITE_ID=<kapa-website-id> npm run build
+npm run serve
+```
+
+生产环境需要把 `KAPA_WEBSITE_ID` 配成仓库 variable 或 secret，`.github/workflows/docusaurus.yml` 会把它传给 `npm run build`。这个值是公开的 Kapa Website Widget integration ID，不是私有 API key。如果以后给站点增加 Content Security Policy，需要参考 Kapa 和 Pulsar 的示例，把 Kapa widget 域名以及所选 bot-protection provider 加入允许列表。
 
 ### 内容可见性
 

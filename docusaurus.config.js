@@ -55,10 +55,16 @@ const docsCnVersionOptions = {
   ...docsVersionOptions,
 };
 
-// TODO: Move this public Kapa website widget integration ID to a GitHub
-// repository variable after the HugeGraph Kapa setup is finalized.
+// CI sets KAPA_WEBSITE_ID from GitHub repository variables (vars/secrets).
+// The hardcoded default below is used for local development and the ASF
+// staged preview only. Once HugeGraph's production Kapa integration is
+// finalized, replace this with the production ID or remove the fallback
+// entirely and require KAPA_WEBSITE_ID at build time.
 const defaultKapaWebsiteId = '0b277570-4740-451e-96fa-1e4ac1ac5e88';
 const kapaWebsiteId = (process.env.KAPA_WEBSITE_ID || defaultKapaWebsiteId).trim();
+if (!process.env.KAPA_WEBSITE_ID) {
+  console.log('[kapa] Using default website ID — set KAPA_WEBSITE_ID env var to override.');
+}
 const kapaWidgetScripts = kapaWebsiteId
   ? [
       {

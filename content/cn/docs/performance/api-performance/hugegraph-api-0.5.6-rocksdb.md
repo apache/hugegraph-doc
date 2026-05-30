@@ -63,7 +63,7 @@ weight: 1
 ###### 顶点的最大插入速度：
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/vertex_batch.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/vertex_batch.png" alt="image">
 </div>
 
 
@@ -74,7 +74,7 @@ weight: 1
 ###### 边的最大插入速度
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/edge_batch.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/edge_batch.png" alt="image">
 </div>
 
 ###### 结论：
@@ -97,7 +97,7 @@ weight: 1
 ###### 顶点的单条插入
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/vertex_single.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/vertex_single.png" alt="image">
 </div>
 
 
@@ -108,7 +108,7 @@ weight: 1
 ###### 边的单条插入
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/edge_single.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/edge_single.png" alt="image">
 </center>
 
 
@@ -132,7 +132,7 @@ weight: 1
 ###### 顶点的按 id 查询
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/vertex_id_query.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/vertex_id_query.png" alt="image">
 </center>
 
 ###### 结论：
@@ -142,7 +142,7 @@ weight: 1
 ###### 边的按 id 查询
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/rocksdb/edge_id_query.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/rocksdb/edge_id_query.png" alt="image">
 </center>
 
 

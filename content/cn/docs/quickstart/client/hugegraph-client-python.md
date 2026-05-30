@@ -182,7 +182,7 @@ print(res)
 
 ## 贡献
 
-* 欢迎为 `hugegraph-python-client` 做出贡献。请参阅 [贡献指南](https://hugegraph.apache.org/docs/contribution-guidelines/) 获取更多信息。
+* 欢迎为 `hugegraph-python-client` 做出贡献。请参阅 [贡献指南](https://hugegraph.apache.org/cn/community/contribution-guidelines/) 获取更多信息。
 * 代码格式：请在提交 PR 前运行 `./style/code_format_and_analysis.sh` 来格式化您的代码。
 
 感谢所有已经为 `hugegraph-python-client` 做出贡献的人！

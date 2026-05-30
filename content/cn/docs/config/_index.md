@@ -1,6 +1,6 @@
 ---
-title: "HugeGraph-Server 配置"
-linkTitle: "Server 配置"
+title: "配置"
+linkTitle: "配置"
 weight: 4
 ---
 

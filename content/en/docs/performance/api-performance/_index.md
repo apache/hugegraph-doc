@@ -12,7 +12,7 @@ The HugeGraph API performance test mainly tests HugeGraph-Server's ability to co
 
 For the performance test of the RESTful API of each release version of HugeGraph, please refer to:
 
-- [HugeGraph API-0.5.6-RocksDB](/docs/performance/api-performance/hugegraph-api-0.5.6-rocksdb)
-- [HugeGraph API-0.5.6-Cassandra](/docs/performance/api-performance/hugegraph-api-0.5.6-cassandra)
+- [HugeGraph API-0.5.6-RocksDB](hugegraph-api-0.5.6-rocksdb/)
+- [HugeGraph API-0.5.6-Cassandra](hugegraph-api-0.5.6-cassandra/)
 
 > Updates coming soon, stay tuned!

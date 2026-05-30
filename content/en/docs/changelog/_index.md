@@ -1,5 +1,5 @@
 ---
-title: "CHANGELOGS"
-linkTitle: "CHANGELOGS"
+title: "Changelog"
+linkTitle: "Changelog"
 weight: 10
 ---

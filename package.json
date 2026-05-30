@@ -1,27 +1,45 @@
 {
-  "name": "tech-doc-hugo",
-  "version": "0.0.1",
-  "description": "Hugo theme for technical documentation.",
-  "main": "none.js",
+  "name": "apache-hugegraph-doc",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Apache HugeGraph documentation website built with Docusaurus.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm run docs:versions:prepare && docusaurus start --host 0.0.0.0",
+    "build": "npm run docs:versions:prepare && npm run check:content-visibility && DOCUSAURUS_SSR_CONCURRENCY=1 DOCUSAURUS_SSG_WORKER_THREAD_COUNT=1 TERSER_PARALLEL=false NODE_OPTIONS=--max-old-space-size=8192 docusaurus build",
+    "serve": "docusaurus serve --host 0.0.0.0",
+    "clear": "docusaurus clear",
+    "docs:version": "node scripts/version-docs.mjs",
+    "docs:versions:prepare": "node scripts/prepare-docs-versions.mjs",
+    "docs:versions:list": "node scripts/list-docs-versions.mjs",
+    "check:content-visibility": "node scripts/check-content-visibility.mjs",
+    "playwright:install": "playwright install chromium",
+    "validate:content": "node scripts/validate-content-inventory.js",
+    "validate:build": "npm run build && node scripts/validate-build.js && npm run validate:content",
+    "validate:ui": "node scripts/validate-ui.js",
+    "validate": "npm run validate:build && npm run validate:ui"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/google/docsy-example.git"
+    "url": "git+https://github.com/apache/hugegraph-doc.git"
   },
-  "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/google/docsy-example/issues"
+    "url": "https://github.com/apache/hugegraph-doc/issues"
   },
-  "homepage": "https://github.com/google/docsy-example#readme",
-  "devDependencies": {
-    "autoprefixer": "^10.4.0",
-    "postcss": "^8.3.7",
-    "postcss-cli": "^9.0.2"
-  },
+  "homepage": "https://hugegraph.apache.org/",
   "dependencies": {
-    "mermaid": "^10.9.5"
+    "@docusaurus/core": "3.10.1",
+    "@docusaurus/preset-classic": "3.10.1",
+    "@docusaurus/theme-mermaid": "3.10.1",
+    "@mermaid-js/layout-elk": "0.1.9",
+    "@mdx-js/react": "3.1.1",
+    "clsx": "2.1.1",
+    "mermaid": "11.10.1",
+    "prism-react-renderer": "2.4.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
   }
 }

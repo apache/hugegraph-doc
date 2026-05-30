@@ -1,8 +1,10 @@
 ---
 title: Community
+linkTitle: Community
+weight: 1
 menu:
   main:
     weight: 40
 ---
 
-Visit the [Project Maturity]({{< relref "maturity" >}}) assessment.
+Start with the [Contributor Guide](/community/contribution-guidelines/) or visit the [Project Maturity](/community/maturity/) assessment.

@@ -118,7 +118,7 @@ For example, if you want to create a graph with two types of vertices and two ty
 "Software" includes: "name", "sale price" and other attributes; side "knowledge" includes: "date" attribute and so on.
 
 <div style="text-align: center;">
-  <img src="/docs/images/demo-graph-model.png" alt="image">
+  <img src="/img/docs/demo-graph-model.png" alt="image">
   <p>graph model example</p>
 </div>
 

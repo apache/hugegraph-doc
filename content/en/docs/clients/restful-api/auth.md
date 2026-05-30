@@ -1049,7 +1049,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>11>S-77
 
 ### 10.7 Graphspace Manager (Manager) API
 
-> **Note**: Before using the following APIs, you need to create a graphspace first. For example, create a graphspace named `gs1` via the [Graphspace API](./graphspace). The examples below assume that `gs1` already exists.
+> **Note**: Before using the following APIs, you need to create a graphspace first. For example, create a graphspace named `gs1` via the [Graphspace API](/docs/clients/restful-api/graphspace/). The examples below assume that `gs1` already exists.
 
 1. The graphspace manager API is used to grant/revoke manager roles for users at the graphspace level, and to query the roles of the current user or other users in a graphspace. Supported role types include `SPACE`, `SPACE_MEMBER`, and `ADMIN`.
 

@@ -1,5 +1,5 @@
 ---
-title: "QUERY LANGUAGE"
-linkTitle: "QUERY LANGUAGE"
+title: "Query Language"
+linkTitle: "Query Language"
 weight: 7
 ---

@@ -21,7 +21,7 @@ weight: 4
 
 从文本构建知识图谱、分块向量和图顶点向量。
 
-![image](https://github.com/user-attachments/assets/f3366d46-2e31-4638-94c4-7214951ef77a)
+![image](/img/docs/hugegraph-ai/quick-start/f3366d46-2e31-4638-94c4-7214951ef77a.png)
 
 ```mermaid
 graph TD;
@@ -79,7 +79,7 @@ graph TD;
 
 第一部分处理单个查询，第二部分同时处理多个查询。以下是第一部分的说明。
 
-![image](https://github.com/user-attachments/assets/33698062-e46b-4757-8b5e-93e8f10eae65)
+![image](/img/docs/hugegraph-ai/quick-start/33698062-e46b-4757-8b5e-93e8f10eae65.png)
 
 ```mermaid
 graph TD;
@@ -109,7 +109,7 @@ graph TD;
 - **仅图答案：** 仅使用基于图的检索（在向量数据库中查询图顶点向量和图数据库）
 - **图-向量答案：** 同时使用基于图和基于向量的检索
 
-![image](https://github.com/user-attachments/assets/26641e09-249f-4b3a-8013-16dc9383d333)
+![image](/img/docs/hugegraph-ai/quick-start/26641e09-249f-4b3a-8013-16dc9383d333.png)
 
 ### 执行流程：
 
@@ -117,7 +117,7 @@ graph TD;
 
 - 使用**关键词提取提示词**从**问题**中提取关键词。
 
-![image](https://github.com/user-attachments/assets/b49e269f-eaec-40b1-8d8f-9e409821d75d)
+![image](/img/docs/hugegraph-ai/quick-start/b49e269f-eaec-40b1-8d8f-9e409821d75d.png)
 
 - 使用提取的关键词：
   - 首先，在图数据库中进行精确匹配。
@@ -141,7 +141,7 @@ graph TD;
   - **仅图答案**
   - **图-向量答案**
 
-![image](https://github.com/user-attachments/assets/7d4496a3-d44c-4491-9463-8e93595dfa45)
+![image](/img/docs/hugegraph-ai/quick-start/7d4496a3-d44c-4491-9463-8e93595dfa45.png)
 
 # 4. （处理流程）Text2Gremlin
 
@@ -154,7 +154,7 @@ graph TD;
 
 第一部分较为简单，因此重点介绍第二部分。
 
-![image](https://github.com/user-attachments/assets/fc678369-261d-49ea-a289-1ca6ade5ca55)
+![image](/img/docs/hugegraph-ai/quick-start/fc678369-261d-49ea-a289-1ca6ade5ca55.png)
 
 ```mermaid
 graph TD;
@@ -169,7 +169,7 @@ graph TD;
 
 - **自然语言查询：** 输入要转换为 Gremlin 的自然语言文本。
 
-![image](https://github.com/user-attachments/assets/d2a72f45-488c-4499-968b-a11816655ba0)
+![image](/img/docs/hugegraph-ai/quick-start/d2a72f45-488c-4099-968b-a11816655ba0.png)
 
 - **Schema：** 输入图 schema。
 
@@ -183,7 +183,7 @@ graph TD;
       - 检索**图 schema**。
       - 在向量数据库中查询示例向量，检索与输入查询相似的查询-gremlin 对（如果向量数据库中缺少示例，将自动使用**resources**文件夹中的示例进行初始化）。
 
-![image](https://github.com/user-attachments/assets/fd150f87-27f8-48e5-8a55-319ec039b7e0)
+![image](/img/docs/hugegraph-ai/quick-start/fd150f87-27f8-48e5-8a55-319ec039b7e0.png)
 
       - 使用构建的提示词生成 Gremlin 查询。
 

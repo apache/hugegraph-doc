@@ -137,6 +137,8 @@ curl http://localhost:8620/v1/partitions   # Partition assignment
 
 ## Container Supervision & Health Checks
 
+> **Version note**: This behavior is **not present in the `1.7.0` images**. Use `HUGEGRAPH_VERSION=latest` or wait for the next release tag.
+
 ### Process Supervision Model
 
 Previously, all three Docker entrypoints ended with `tail -f /dev/null`, which kept the container running even if the Java process crashed. Docker's `restart: unless-stopped` policy never fired because the container never exited.

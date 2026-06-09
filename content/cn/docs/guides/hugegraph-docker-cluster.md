@@ -137,6 +137,8 @@ curl http://localhost:8620/v1/partitions   # 分区分配
 
 ## 容器监控与健康检查
 
+> **版本说明**：本节描述的行为**不包含在 `1.7.0` 镜像中**。请使用 `HUGEGRAPH_VERSION=latest` 或等待下一个发布版本。
+
 ### 进程监控模型
 
 此前，三个 Docker 入口脚本均以 `tail -f /dev/null` 结尾，即使 Java 进程崩溃，容器仍会保持运行状态。由于容器从未退出，Docker 的 `restart: unless-stopped` 策略也不会触发。

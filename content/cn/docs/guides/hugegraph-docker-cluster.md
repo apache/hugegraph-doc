@@ -132,3 +132,30 @@ curl http://localhost:8620/v1/partitions   # 分区分配
 3. **分区分配未完成**：检查 `curl http://localhost:8620/v1/stores` — 3 个 Store 必须都显示 `"state":"Up"` 才能完成分区分配
 
 4. **连接被拒**：确保 `HG_*` 环境变量使用容器主机名（`pd0`、`store0`），而非 `127.0.0.1`
+
+**查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。
+
+## 容器监控与健康检查
+
+### 进程监控模型
+
+此前，三个 Docker 入口脚本均以 `tail -f /dev/null` 结尾，即使 Java 进程崩溃，容器仍会保持运行状态。由于容器从未退出，Docker 的 `restart: unless-stopped` 策略也不会触发。
+
+现在，入口脚本直接监控 Java 进程：
+
+- **PD 和 Store 容器**：入口脚本向启动脚本传入 `-d false` 参数，启动脚本通过 `exec` 直接替换为 Java 进程。容器进程即为 Java 进程——当 Java 退出（崩溃或正常关闭）时，容器立即退出，Docker 的重启策略随即触发。
+- **Server 容器**：入口脚本使用 `tail --pid=$PID -f /dev/null` 阻塞，直到 Java 退出。`SIGTERM`/`SIGINT` 信号陷阱会将 `docker stop` 信号转发给 Java 并等待其正常关闭（退出码 0）。若 Java 崩溃，入口脚本以退出码 1 退出，从而触发重启策略。
+- 所有镜像中的 PID 1 均为 `dumb-init`，负责将 Docker 信号转发给入口脚本进程。
+
+### 健康检查端点
+
+所有四个 Docker 镜像现已内置 `HEALTHCHECK` 指令。`docker ps` 将显示真实的健康状态。在 90 秒的启动期内，检查失败不计入统计；此后，连续三次失败将把容器标记为 `unhealthy`。
+
+| 镜像 | 健康检查端点 | 端口 | 参数 |
+|------|-------------|------|------|
+| `hugegraph/hugegraph`（server） | `GET /versions` | 8080 | `--interval=15s --timeout=10s --start-period=90s --retries=3` |
+| `hugegraph/hugegraph-hstore` | `GET /versions` | 8080 | 同上 |
+| `hugegraph/hugegraph-pd` | `GET /v1/health` | 8620 | 同上 |
+| `hugegraph/hugegraph-store` | `GET /v1/health` | 8520 | 同上 |
+
+> **注意**：`start-hugegraph.sh` 中的 `-m true` 标志（基于 cron 的监控）仅适用于虚拟机/裸机部署，Docker 镜像中未安装也不使用该功能。Docker 用户应依赖内置的 `HEALTHCHECK` 和 Docker 重启策略。

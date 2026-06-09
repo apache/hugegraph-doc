@@ -163,6 +163,11 @@ partition:
 ./bin/start-hugegraph-pd.sh
 ```
 
+启动脚本支持 `-d` 参数控制守护进程模式：
+
+- `-d true`（默认）：以后台守护进程方式运行，脚本立即返回。
+- `-d false`：以前台模式运行——脚本通过 `exec` 替换为 Java 进程，容器/进程管理器的进程即为 Java 本身。在 Docker 或进程管理器（systemd、supervisord）下运行时请使用此参数，以便在崩溃时自动检测并重启服务。
+
 启动成功后，可以在 `logs/hugegraph-pd-stdout.log` 中看到类似以下的日志：
 
 ```

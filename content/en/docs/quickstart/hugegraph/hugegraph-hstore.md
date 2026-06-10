@@ -157,6 +157,11 @@ Ensure that the PD service is already started, then in the Store installation di
 ./bin/start-hugegraph-store.sh
 ```
 
+The startup script supports a `-d` flag to control daemon mode:
+
+- `-d true` (default): run as a background daemon; the script returns immediately.
+- `-d false`: run in foreground — the script `exec`s Java, so the container/supervisor process IS Java. Use this when running under Docker or a process supervisor (systemd, supervisord) so crashes are detected and the service is restarted automatically.
+
 After successful startup, you can see logs similar to the following in `logs/hugegraph-store-server.log`:
 
 ```

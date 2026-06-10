@@ -134,3 +134,30 @@ curl http://localhost:8620/v1/partitions   # Partition assignment
 4. **Connection refused**: Ensure `HG_*` environment variables use container hostnames (`pd0`, `store0`) instead of `127.0.0.1`.
 
 **Viewing runtime logs**: Use `docker logs <container-name>` (e.g. `docker logs hg-pd0`) to view logs directly without exec-ing into the container.
+
+## Container Supervision & Health Checks
+
+> **Version note**: This behavior is **not present in the `1.7.0` images**. Use `HUGEGRAPH_VERSION=latest` or wait for the next release tag.
+
+### Process Supervision Model
+
+Previously, all three Docker entrypoints ended with `tail -f /dev/null`, which kept the container running even if the Java process crashed. Docker's `restart: unless-stopped` policy never fired because the container never exited.
+
+The entrypoints now supervise Java directly:
+
+- **PD and Store containers**: the entrypoint passes `-d false` to the startup script, which `exec`s Java directly. The container process IS the Java process — when Java exits (crash or clean shutdown), the container exits immediately and Docker's restart policy fires.
+- **Server container**: the entrypoint uses `tail --pid=$PID -f /dev/null` to block until Java exits. A `SIGTERM`/`SIGINT` trap forwards `docker stop` signals to Java and waits for clean shutdown (exits 0). If Java crashes, the entrypoint exits 1 so the restart policy fires.
+- `dumb-init` (PID 1 in all images) forwards signals from Docker to the entrypoint process.
+
+### Health Check Endpoints
+
+All four Docker images now include a `HEALTHCHECK` instruction. `docker ps` shows real health status. During the 90-second start period, failed checks do not count. After that, three consecutive failures mark the container as `unhealthy`.
+
+| Image | Health endpoint | Port | Parameters |
+|-------|-----------------|------|------------|
+| `hugegraph/hugegraph` (server) | `GET /versions` | 8080 | `--interval=15s --timeout=10s --start-period=90s --retries=3` |
+| `hugegraph/hugegraph-hstore` | `GET /versions` | 8080 | same |
+| `hugegraph/hugegraph-pd` | `GET /v1/health` | 8620 | same |
+| `hugegraph/hugegraph-store` | `GET /v1/health` | 8520 | same |
+
+> **Note**: The `-m true` flag (cron-based monitor) in `start-hugegraph.sh` is for VM/bare-metal deployments only. It is not installed or used in Docker images. Docker users should rely on the built-in `HEALTHCHECK` and Docker's restart policy instead.

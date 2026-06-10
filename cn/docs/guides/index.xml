@@ -1225,7 +1225,61 @@ HugeGraph目前采用EdgeCut的分区方案。&lt;/p>
 &lt;li>
 &lt;p>&lt;strong>连接被拒&lt;/strong>：确保 &lt;code>HG_*&lt;/code> 环境变量使用容器主机名（&lt;code>pd0&lt;/code>、&lt;code>store0&lt;/code>），而非 &lt;code>127.0.0.1&lt;/code>&lt;/p>
 &lt;/li>
-&lt;/ol></description></item><item><title>Docs: FAQ</title><link>/cn/docs/guides/faq/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/guides/faq/</guid><description>
+&lt;/ol>
+&lt;p>&lt;strong>查看运行时日志&lt;/strong>：使用 &lt;code>docker logs &amp;lt;container-name&amp;gt;&lt;/code>（如 &lt;code>docker logs hg-pd0&lt;/code>）可直接查看日志，无需进入容器。&lt;/p>
+&lt;h2 id="容器监控与健康检查">容器监控与健康检查&lt;/h2>
+&lt;blockquote>
+&lt;p>&lt;strong>版本说明&lt;/strong>：本节描述的行为&lt;strong>不包含在 &lt;code>1.7.0&lt;/code> 镜像中&lt;/strong>。请使用 &lt;code>HUGEGRAPH_VERSION=latest&lt;/code> 或等待下一个发布版本。&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="进程监控模型">进程监控模型&lt;/h3>
+&lt;p>此前，三个 Docker 入口脚本均以 &lt;code>tail -f /dev/null&lt;/code> 结尾，即使 Java 进程崩溃，容器仍会保持运行状态。由于容器从未退出，Docker 的 &lt;code>restart: unless-stopped&lt;/code> 策略也不会触发。&lt;/p>
+&lt;p>现在，入口脚本直接监控 Java 进程：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>PD 和 Store 容器&lt;/strong>：入口脚本向启动脚本传入 &lt;code>-d false&lt;/code> 参数，启动脚本通过 &lt;code>exec&lt;/code> 直接替换为 Java 进程。容器进程即为 Java 进程——当 Java 退出（崩溃或正常关闭）时，容器立即退出，Docker 的重启策略随即触发。&lt;/li>
+&lt;li>&lt;strong>Server 容器&lt;/strong>：入口脚本使用 &lt;code>tail --pid=$PID -f /dev/null&lt;/code> 阻塞，直到 Java 退出。&lt;code>SIGTERM&lt;/code>/&lt;code>SIGINT&lt;/code> 信号陷阱会将 &lt;code>docker stop&lt;/code> 信号转发给 Java 并等待其正常关闭（退出码 0）。若 Java 崩溃，入口脚本以退出码 1 退出，从而触发重启策略。&lt;/li>
+&lt;li>所有镜像中的 PID 1 均为 &lt;code>dumb-init&lt;/code>，负责将 Docker 信号转发给入口脚本进程。&lt;/li>
+&lt;/ul>
+&lt;h3 id="健康检查端点">健康检查端点&lt;/h3>
+&lt;p>所有四个 Docker 镜像现已内置 &lt;code>HEALTHCHECK&lt;/code> 指令。&lt;code>docker ps&lt;/code> 将显示真实的健康状态。在 90 秒的启动期内，检查失败不计入统计；此后，连续三次失败将把容器标记为 &lt;code>unhealthy&lt;/code>。&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>镜像&lt;/th>
+&lt;th>健康检查端点&lt;/th>
+&lt;th>端口&lt;/th>
+&lt;th>参数&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>hugegraph/hugegraph&lt;/code>（server）&lt;/td>
+&lt;td>&lt;code>GET /versions&lt;/code>&lt;/td>
+&lt;td>8080&lt;/td>
+&lt;td>&lt;code>--interval=15s --timeout=10s --start-period=90s --retries=3&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>hugegraph/hugegraph-hstore&lt;/code>&lt;/td>
+&lt;td>&lt;code>GET /versions&lt;/code>&lt;/td>
+&lt;td>8080&lt;/td>
+&lt;td>同上&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>hugegraph/hugegraph-pd&lt;/code>&lt;/td>
+&lt;td>&lt;code>GET /v1/health&lt;/code>&lt;/td>
+&lt;td>8620&lt;/td>
+&lt;td>同上&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>hugegraph/hugegraph-store&lt;/code>&lt;/td>
+&lt;td>&lt;code>GET /v1/health&lt;/code>&lt;/td>
+&lt;td>8520&lt;/td>
+&lt;td>同上&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;blockquote>
+&lt;p>&lt;strong>注意&lt;/strong>：&lt;code>start-hugegraph.sh&lt;/code> 中的 &lt;code>-m true&lt;/code> 标志（基于 cron 的监控）仅适用于虚拟机/裸机部署，Docker 镜像中未安装也不使用该功能。Docker 用户应依赖内置的 &lt;code>HEALTHCHECK&lt;/code> 和 Docker 重启策略。&lt;/p>
+&lt;/blockquote></description></item><item><title>Docs: FAQ</title><link>/cn/docs/guides/faq/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cn/docs/guides/faq/</guid><description>
 &lt;ul>
 &lt;li>
 &lt;p>如何选择后端存储? 选 RocksDB 还是分布式存储?&lt;/p>

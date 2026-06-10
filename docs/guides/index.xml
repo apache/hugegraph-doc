@@ -1235,7 +1235,60 @@ Merging mode as needed, and when the Restore is completed, restore the graph mod
 &lt;p>&lt;strong>Connection refused&lt;/strong>: Ensure &lt;code>HG_*&lt;/code> environment variables use container hostnames (&lt;code>pd0&lt;/code>, &lt;code>store0&lt;/code>) instead of &lt;code>127.0.0.1&lt;/code>.&lt;/p>
 &lt;/li>
 &lt;/ol>
-&lt;p>&lt;strong>Viewing runtime logs&lt;/strong>: Use &lt;code>docker logs &amp;lt;container-name&amp;gt;&lt;/code> (e.g. &lt;code>docker logs hg-pd0&lt;/code>) to view logs directly without exec-ing into the container.&lt;/p></description></item><item><title>Docs: FAQ</title><link>/docs/guides/faq/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/guides/faq/</guid><description>
+&lt;p>&lt;strong>Viewing runtime logs&lt;/strong>: Use &lt;code>docker logs &amp;lt;container-name&amp;gt;&lt;/code> (e.g. &lt;code>docker logs hg-pd0&lt;/code>) to view logs directly without exec-ing into the container.&lt;/p>
+&lt;h2 id="container-supervision--health-checks">Container Supervision &amp;amp; Health Checks&lt;/h2>
+&lt;blockquote>
+&lt;p>&lt;strong>Version note&lt;/strong>: This behavior is &lt;strong>not present in the &lt;code>1.7.0&lt;/code> images&lt;/strong>. Use &lt;code>HUGEGRAPH_VERSION=latest&lt;/code> or wait for the next release tag.&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="process-supervision-model">Process Supervision Model&lt;/h3>
+&lt;p>Previously, all three Docker entrypoints ended with &lt;code>tail -f /dev/null&lt;/code>, which kept the container running even if the Java process crashed. Docker&amp;rsquo;s &lt;code>restart: unless-stopped&lt;/code> policy never fired because the container never exited.&lt;/p>
+&lt;p>The entrypoints now supervise Java directly:&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>PD and Store containers&lt;/strong>: the entrypoint passes &lt;code>-d false&lt;/code> to the startup script, which &lt;code>exec&lt;/code>s Java directly. The container process IS the Java process — when Java exits (crash or clean shutdown), the container exits immediately and Docker&amp;rsquo;s restart policy fires.&lt;/li>
+&lt;li>&lt;strong>Server container&lt;/strong>: the entrypoint uses &lt;code>tail --pid=$PID -f /dev/null&lt;/code> to block until Java exits. A &lt;code>SIGTERM&lt;/code>/&lt;code>SIGINT&lt;/code> trap forwards &lt;code>docker stop&lt;/code> signals to Java and waits for clean shutdown (exits 0). If Java crashes, the entrypoint exits 1 so the restart policy fires.&lt;/li>
+&lt;li>&lt;code>dumb-init&lt;/code> (PID 1 in all images) forwards signals from Docker to the entrypoint process.&lt;/li>
+&lt;/ul>
+&lt;h3 id="health-check-endpoints">Health Check Endpoints&lt;/h3>
+&lt;p>All four Docker images now include a &lt;code>HEALTHCHECK&lt;/code> instruction. &lt;code>docker ps&lt;/code> shows real health status. During the 90-second start period, failed checks do not count. After that, three consecutive failures mark the container as &lt;code>unhealthy&lt;/code>.&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Image&lt;/th>
+&lt;th>Health endpoint&lt;/th>
+&lt;th>Port&lt;/th>
+&lt;th>Parameters&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>hugegraph/hugegraph&lt;/code> (server)&lt;/td>
+&lt;td>&lt;code>GET /versions&lt;/code>&lt;/td>
+&lt;td>8080&lt;/td>
+&lt;td>&lt;code>--interval=15s --timeout=10s --start-period=90s --retries=3&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>hugegraph/hugegraph-hstore&lt;/code>&lt;/td>
+&lt;td>&lt;code>GET /versions&lt;/code>&lt;/td>
+&lt;td>8080&lt;/td>
+&lt;td>same&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>hugegraph/hugegraph-pd&lt;/code>&lt;/td>
+&lt;td>&lt;code>GET /v1/health&lt;/code>&lt;/td>
+&lt;td>8620&lt;/td>
+&lt;td>same&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>hugegraph/hugegraph-store&lt;/code>&lt;/td>
+&lt;td>&lt;code>GET /v1/health&lt;/code>&lt;/td>
+&lt;td>8520&lt;/td>
+&lt;td>same&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;blockquote>
+&lt;p>&lt;strong>Note&lt;/strong>: The &lt;code>-m true&lt;/code> flag (cron-based monitor) in &lt;code>start-hugegraph.sh&lt;/code> is for VM/bare-metal deployments only. It is not installed or used in Docker images. Docker users should rely on the built-in &lt;code>HEALTHCHECK&lt;/code> and Docker&amp;rsquo;s restart policy instead.&lt;/p>
+&lt;/blockquote></description></item><item><title>Docs: FAQ</title><link>/docs/guides/faq/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/docs/guides/faq/</guid><description>
 &lt;ul>
 &lt;li>
 &lt;p>How to choose the back-end storage? RocksDB or distributed storage?&lt;/p>

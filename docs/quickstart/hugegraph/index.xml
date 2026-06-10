@@ -797,7 +797,12 @@ For detailed configuration introduction, please refer to &lt;a href="/docs/confi
 &lt;h4 id="51-start-pd">5.1 Start PD&lt;/h4>
 &lt;p>In the PD installation directory, execute:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>./bin/start-hugegraph-pd.sh
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>After successful startup, you can see logs similar to the following in &lt;code>logs/hugegraph-pd-stdout.log&lt;/code>:&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The startup script supports a &lt;code>-d&lt;/code> flag to control daemon mode:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>-d true&lt;/code> (default): run as a background daemon; the script returns immediately.&lt;/li>
+&lt;li>&lt;code>-d false&lt;/code>: run in foreground — the script &lt;code>exec&lt;/code>s Java, so the container/supervisor process IS Java. Use this when running under Docker or a process supervisor (systemd, supervisord) so crashes are detected and the service is restarted automatically.&lt;/li>
+&lt;/ul>
+&lt;p>After successful startup, you can see logs similar to the following in &lt;code>logs/hugegraph-pd-stdout.log&lt;/code>:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="52-stop-pd">5.2 Stop PD&lt;/h4>
 &lt;p>In the PD installation directory, execute:&lt;/p>
@@ -1005,7 +1010,12 @@ For detailed configuration introduction, please refer to &lt;a href="/docs/confi
 &lt;h4 id="51-start-store">5.1 Start Store&lt;/h4>
 &lt;p>Ensure that the PD service is already started, then in the Store installation directory, execute:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-bash" data-lang="bash">&lt;span style="display:flex;">&lt;span>./bin/start-hugegraph-store.sh
-&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>After successful startup, you can see logs similar to the following in &lt;code>logs/hugegraph-store-server.log&lt;/code>:&lt;/p>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>The startup script supports a &lt;code>-d&lt;/code> flag to control daemon mode:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>-d true&lt;/code> (default): run as a background daemon; the script returns immediately.&lt;/li>
+&lt;li>&lt;code>-d false&lt;/code>: run in foreground — the script &lt;code>exec&lt;/code>s Java, so the container/supervisor process IS Java. Use this when running under Docker or a process supervisor (systemd, supervisord) so crashes are detected and the service is restarted automatically.&lt;/li>
+&lt;/ul>
+&lt;p>After successful startup, you can see logs similar to the following in &lt;code>logs/hugegraph-store-server.log&lt;/code>:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-fallback" data-lang="fallback">&lt;span style="display:flex;">&lt;span>YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h4 id="52-stop-store">5.2 Stop Store&lt;/h4>
 &lt;p>In the Store installation directory, execute:&lt;/p>

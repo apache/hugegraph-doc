@@ -59,6 +59,10 @@ const docsCnVersionOptions = {
 // repository variable after the HugeGraph Kapa setup is finalized.
 const defaultKapaWebsiteId = '0b277570-4740-451e-96fa-1e4ac1ac5e88';
 const kapaWebsiteId = (process.env.KAPA_WEBSITE_ID || defaultKapaWebsiteId).trim();
+// Root-relative so the launcher logo resolves against whichever origin serves
+// the page (e.g. hugegraph.staged.apache.org or hugegraph.apache.org), rather
+// than a hardcoded production URL that 404s before the site is promoted.
+const kapaProjectLogo = (process.env.KAPA_PROJECT_LOGO || '/img/hugegraph-logo.svg').trim();
 const kapaWidgetScripts = kapaWebsiteId
   ? [
       {
@@ -68,7 +72,7 @@ const kapaWidgetScripts = kapaWebsiteId
         'data-project-name': 'Apache HugeGraph',
         'data-project-color': '#b32025',
         'data-project-color-dark': '#ff7a7e',
-        'data-project-logo': 'https://hugegraph.apache.org/img/hugegraph-logo.svg',
+        'data-project-logo': kapaProjectLogo,
         'data-modal-title': 'Apache HugeGraph AI Assistant',
         'data-launcher-button-text': 'Ask AI',
         'data-modal-open-on-command-k': 'true',

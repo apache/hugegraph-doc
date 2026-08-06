@@ -43,7 +43,7 @@ gremlin>
 
 > 这里的 `--` 会被 getopts 解析为最后一个 option，这样后面的 options 就可以传入 Gremlin-Console 进行处理了。`-i` 代表 `Execute the specified script and leave the console open on completion`，更多的选项可以参考 Gremlin-Console 的[源代码](https://github.com/apache/tinkerpop/blob/3.5.1/gremlin-console/src/main/groovy/org/apache/tinkerpop/gremlin/console/Console.groovy#L483)。
 
-其中 [`example.groovy`](https://github.com/apache/incubator-hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy) 是 scripts 目录下的一个示例脚本，该脚本插入了一些数据，并在最后查询图中顶点和边的数量。
+其中 [`example.groovy`](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy) 是 scripts 目录下的一个示例脚本，该脚本插入了一些数据，并在最后查询图中顶点和边的数量。
 
 此时还可以继续输入 Gremlin 语句对图进行操作：
 

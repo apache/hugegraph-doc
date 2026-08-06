@@ -2,6 +2,7 @@
 title: "Task API"
 linkTitle: "Task"
 weight: 13
+description: "Task（任务管理）REST 接口:查询和管理异步任务的执行状态,如索引重建、图遍历等长时任务。"
 ---
 
 ### 7.1 Task

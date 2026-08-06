@@ -4,8 +4,8 @@ linkTitle: "HugeGraph (OLTP)"
 weight: 1
 ---
 
-## 🚀 最佳实践：优先使用 DeepWiki 智能文档
+> DeepWiki 提供实时更新的项目文档，内容更全面准确，适合快速了解项目最新情况。
+>
+> 📖 [https://deepwiki.com/apache/hugegraph](https://deepwiki.com/apache/hugegraph)
 
-> 为解决静态文档可能过时的问题，我们提供了 **实时更新、内容更全面** 的 DeepWiki。它相当于一个拥有项目最新知识的专家，非常适合**所有开发者**在开始项目前阅读和咨询。
-
-**👉 强烈推荐访问并对话：**[**incubator-hugegraph**](https://deepwiki.com/apache/incubator-hugegraph)
+**GitHub 访问：** <i class="fab fa-github"></i> [https://github.com/apache/hugegraph](https://github.com/apache/hugegraph)

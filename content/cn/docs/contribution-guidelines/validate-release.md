@@ -6,11 +6,15 @@ weight: 3
 
 > Note: 这篇文档会持续更新。
 > 你需要使用 Java11 验证测试 (如果希望测试功能/运行时)，从 1.5.0 版本开始 (除 client 外) 不再支持 Java8
+>
+> 毕业说明：Apache HugeGraph 已于 2026 年 1 月毕业。正式发版投票现由 HugeGraph 社区内部完成（`dev@hugegraph.apache.org` 上的 PMC binding 投票），不再需要 Incubator `general@incubator.apache.org` 审批。
 
 ## 验证阶段
 
 当内部的临时发布和打包工作完成后，其他的社区开发者 (尤其是 PMC)
-需要参与到[验证环节](https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist)
+需要按 ASF 发版规范参与验证，可参考：
+- [ASF 发布策略](https://www.apache.org/legal/release-policy.html)
+- [Incubator 检查清单（历史参考）](https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist)
 确保某个人发布版本的"正确性 + 完整性", 这里需要**每个人**都尽量参与，然后后序**邮件回复**的时候说明自己
 **已检查**了哪些项。(下面是核心项)
 
@@ -43,9 +47,9 @@ sudo apt-get install wget -y
 brew install wget
 
 # 4. 下载 hugegraph-svn 目录 (版本号注意填写此次验证版本)
-svn co https://dist.apache.org/repos/dist/dev/incubator/hugegraph/1.x.x/
+svn co https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/
 # (注) 如果出现 svn 下载某个文件速度很慢的情况, 可以考虑 wget 单个文件下载, 如下 (或考虑使用 VPN / 代理)
-wget https://dist.apache.org/repos/dist/dev/incubator/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
+wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
 ```
 
 #### 2. 检查 hash 值
@@ -65,7 +69,7 @@ for i in *.tar.gz; do echo $i; shasum -a 512 --check  $i.sha512; done
 
 ```bash
 # 1. 下载项目可信赖公钥到本地 (首次需要) & 导入
-curl  https://downloads.apache.org/incubator/hugegraph/KEYS > KEYS
+curl  https://downloads.apache.org/hugegraph/KEYS > KEYS
 gpg --import KEYS
 
 # 导入后可以看到如下输出, 这代表导入了 x 个用户公钥
@@ -111,8 +115,8 @@ for i in *.tar.gz; do echo $i; gpg --verify $i.asc $i ; done
 
 解压 `*hugegraph*src.tar.gz`后，进行如下检查：
 
-1. 文件夹都带有 `incubating`, 且不存在**空的**文件/文件夹
-2. 存在 `LICENSE` + `NOTICE` + 存在 `DISCLAIMER` 文件并且内容正常
+1. 包名/目录名应符合当前发版命名（历史版本可能仍包含 `incubating`），且不存在**空的**文件/文件夹
+2. 存在 `LICENSE` + `NOTICE` 且内容正常；历史 incubating 制品需检查 `DISCLAIMER`
 3. **不存在** 缺乏 License 的二进制文件
 4. 源码文件都包含标准 `ASF License` 头 (这个用插件跑一下为主)
 5. 检查每个父 / 子模块的 `pom.xml` 版本号是否一致 (且符合期望)
@@ -133,8 +137,8 @@ mvn clean package -DskipTests -Dcheckstyle.skip=true -P stage
 
 解压 `xxx-hugegraph.tar.gz`后，进行如下检查：
 
-1. 文件夹都带有 `incubating`
-2. 存在 `LICENSE` + `NOTICE` 文件并且内容正常
+1. 包名/目录名应符合当前发版命名（历史版本可能仍包含 `incubating`）
+2. 存在 `LICENSE` + `NOTICE` 且内容正常（历史 incubating 制品需检查 `DISCLAIMER`）
 3. 服务启动
 
 ```bash

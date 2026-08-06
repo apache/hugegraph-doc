@@ -145,7 +145,7 @@ graph.schema().propertyKey("price").asInt().ifNotExist().create()
 **在这里有几点需要说明**
 
 1、上述语句是`groovy`语言形式（类似但不是`java`）的`gremlin`语句，这些`gremlin`语句会被发送到`HugeGraphServer`上执行。
-关于`gremlin`本身可以参考[Gremlin Query Language](/language/hugegraph-gremlin.md)或[Tinkerpop官网](http://tinkerpop.apache.org/)；
+关于`gremlin`本身可以参考[Gremlin Query Language](../language/hugegraph-gremlin)或[Tinkerpop官网](http://tinkerpop.apache.org/)；
 
 2、上述语句是通过`graph.schema()`获取到`SchemaManager`对象后操作元数据，通过`gremlin`语句操作Schema可参考文档[HugeGraph-Client](/docs/clients/hugegraph-client)，
 需要注意的是`HugeGraph-Client`是`java`语法，大体上与`gremlin`风格是一致的，具体的差异见文档`HugeGraph-Client`中的说明。

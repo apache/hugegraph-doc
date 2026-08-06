@@ -9,7 +9,7 @@ weight: 1
 > - HugeGraph 1.7.0+ introduces graphspaces, and REST paths follow `/graphspaces/{graphspace}/graphs/{graph}`.
 > - HugeGraph 1.5.x and earlier still rely on the legacy `/graphs/{graph}` path, and the create/clone graph APIs require `Content-Type: text/plain`; 1.7.0+ expects JSON bodies.
 > - The default graphspace name is `DEFAULT`, which you can use directly if you do not need multi-tenant isolation.
-> - **Note**: Before version 1.5.0, the format of ids such as group/target was similar to -69:grant. After version 1.7.0, the id and name were consistent, such as admin [HugeGraph 1.5.x RESTful API](https://github.com/apache/incubator-hugegraph-doc/tree/release-1.5.0)
+> - **Note**: Before version 1.5.0, the format of ids such as group/target was similar to -69:grant. After version 1.7.0, the id and name were consistent, such as admin [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
 
 
 Besides the documentation below, you can also open `swagger-ui` at `localhost:8080/swagger-ui/index.html` to explore the RESTful API. [Here is an example](/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example)

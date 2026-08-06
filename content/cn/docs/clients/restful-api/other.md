@@ -2,6 +2,7 @@
 title: "Other API"
 linkTitle: "Other"
 weight: 18
+description: "Other（其他接口）REST 接口:提供系统版本查询和 API 版本信息等辅助功能。"
 ---
 
 ### 11.1 Other

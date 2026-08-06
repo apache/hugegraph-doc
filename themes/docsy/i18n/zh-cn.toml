@@ -34,7 +34,7 @@ other = "By"
 [post_created]
 other = "创建"
 [post_last_mod]
-other = "最后修改"
+other = "本页最后更新于"
 [post_edit_this]
 other = "编辑此页"
 [post_create_child_page]

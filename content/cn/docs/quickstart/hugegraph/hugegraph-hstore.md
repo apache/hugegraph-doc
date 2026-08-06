@@ -12,10 +12,10 @@ HugeGraph-Store 是 HugeGraph 分布式版本的存储节点组件，负责实�
 
 #### 2.1 前置条件
 
-- 操作系统：Linux 或 MacOS（Windows 尚未经过完整测试）
+- 操作系统：Linux 或 macOS（Windows 尚未经过完整测试）
 - Java 版本：≥ 11
 - Maven 版本：≥ 3.5.0
-- 已部署的 HugeGraph-PD（如果是多节点部署）
+- 如需进行多节点部署，请先部署 HugeGraph-PD
 
 ### 3 部署
 
@@ -30,7 +30,7 @@ HugeGraph-Store 是 HugeGraph 分布式版本的存储节点组件，负责实�
 
 ```bash
 # 用最新版本号替换 {version}，例如 1.5.0
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
 tar zxf apache-hugegraph-incubating-{version}.tar.gz
 cd apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{version}
 ```
@@ -49,6 +49,50 @@ mvn clean install -DskipTests=true
 #    apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{version}
 #    target/apache-hugegraph-incubating-{version}.tar.gz
 ```
+
+#### 3.3 Docker 部署
+
+HugeGraph-Store Docker 镜像已发布在 Docker Hub，镜像名是 `hugegraph/store`。
+
+> 注: 后续步骤皆假设你本地**已拉取** `hugegraph` 主仓库代码 (至少是 docker 目录)
+
+使用 docker-compose 文件部署完整的 3 节点集群（PD + Store + Server）：
+
+```bash
+cd hugegraph/docker
+# 注意版本号请随时保持更新 → 1.x.0
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+```
+
+通过 `docker run` 运行单个 Store 节点：
+
+```bash
+docker run -d \
+  -p 8520:8520 \
+  -p 8500:8500 \
+  -p 8510:8510 \
+  -e HG_STORE_PD_ADDRESS=<pd-ip>:8686 \
+  -e HG_STORE_GRPC_HOST=<your-ip> \
+  -e HG_STORE_RAFT_ADDRESS=<your-ip>:8510 \
+  -v /path/to/storage:/hugegraph-store/storage \
+  --name hugegraph-store \
+  hugegraph/store:1.7.0
+```
+
+**环境变量参考：**
+
+| 变量 | 必填 | 默认值 | 描述 |
+|------|------|--------|------|
+| `HG_STORE_PD_ADDRESS` | 是 | — | PD gRPC 地址（如 `pd0:8686,pd1:8686,pd2:8686`） |
+| `HG_STORE_GRPC_HOST` | 是 | — | 本节点的 gRPC 主机名/IP（如 `store0`） |
+| `HG_STORE_RAFT_ADDRESS` | 是 | — | 本节点的 Raft 地址（如 `store0:8510`） |
+| `HG_STORE_GRPC_PORT` | 否 | `8500` | gRPC 服务端口 |
+| `HG_STORE_REST_PORT` | 否 | `8520` | REST API 端口 |
+| `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | 数据存储路径 |
+
+> **注意**：在 Docker 桥接网络中，`HG_STORE_GRPC_HOST` 应使用容器主机名（如 `store0`）而非 IP 地址。
+
+> **已弃用的别名**：`PD_ADDRESS`、`GRPC_HOST`、`RAFT_ADDRESS` 仍可使用，但会输出弃用警告。新部署请使用 `HG_STORE_*` 名称。
 
 ### 4 配置
 
@@ -113,10 +157,15 @@ logging:
 ./bin/start-hugegraph-store.sh
 ```
 
+启动脚本支持 `-d` 参数控制守护进程模式：
+
+- `-d true`（默认）：以后台守护进程方式运行，脚本立即返回。
+- `-d false`：以前台模式运行——脚本通过 `exec` 替换为 Java 进程，容器/进程管理器的进程即为 Java 本身。在 Docker 或进程管理器（systemd、supervisord）下运行时请使用此参数，以便在崩溃时自动检测并重启服务。
+
 启动成功后，可以在 `logs/hugegraph-store-server.log` 中看到类似以下的日志：
 
 ```
-2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
+YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
 ```
 
 #### 5.2 停止 Store
@@ -188,6 +237,36 @@ pdserver:
   address: 127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
 ```
 
+#### 6.3 Docker 分布式集群配置
+
+3 节点 Store 集群包含在 `docker/docker-compose-3pd-3store-3server.yml` 中。每个 Store 节点拥有独立的主机名和环境变量：
+
+```yaml
+# store0
+HG_STORE_PD_ADDRESS: pd0:8686,pd1:8686,pd2:8686
+HG_STORE_GRPC_HOST: store0
+HG_STORE_GRPC_PORT: "8500"
+HG_STORE_REST_PORT: "8520"
+HG_STORE_RAFT_ADDRESS: store0:8510
+HG_STORE_DATA_PATH: /hugegraph-store/storage
+
+# store1
+HG_STORE_PD_ADDRESS: pd0:8686,pd1:8686,pd2:8686
+HG_STORE_GRPC_HOST: store1
+HG_STORE_RAFT_ADDRESS: store1:8510
+
+# store2
+HG_STORE_PD_ADDRESS: pd0:8686,pd1:8686,pd2:8686
+HG_STORE_GRPC_HOST: store2
+HG_STORE_RAFT_ADDRESS: store2:8510
+```
+
+Store 节点仅在所有 PD 节点通过健康检查后才会启动，其中 docker-compose 中的 healthcheck 实际访问的是 PD 的 REST 接口 `/v1/health`（也可以通过 Actuator 暴露的 `/actuator/health` 进行手动检查），并通过 `depends_on: condition: service_healthy` 强制执行依赖关系。
+
+运行时日志可通过 `docker logs <container-name>`（如 `docker logs hg-store0`）直接查看，无需进入容器。
+
+完整的部署指南请参阅 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
+
 ### 7 验证 Store 服务
 
 确认 Store 服务是否正常运行：
@@ -204,7 +283,9 @@ curl http://localhost:8520/actuator/health
 curl http://localhost:8620/v1/stores
 ```
 
-如果Store配置成功，上述接口的响应中应该包含当前节点的状态信息，状态为Up表示节点正常运行，这里只展示了一个节点配置成功的响应，如果三个节点都配置成功并正在运行，响应中`storeId`列表应该包含三个id，并且`stateCountMap`中`Up`、`numOfService`、`numOfNormalService`三个字段应该为3。
+如果 Store 配置成功，上述接口响应中应包含当前节点的状态信息，其中 `state` 为 `Up` 表示节点运行正常。
+
+下方示例仅展示 1 个 Store 节点的返回结果。如果 3 个节点都已正确配置并正在运行，则响应中的 `storeId` 列表应包含 3 个 ID，且 `stateCountMap.Up`、`numOfService` 和 `numOfNormalService` 都应为 `3`。
 ```javascript
 {
   "message": "OK",

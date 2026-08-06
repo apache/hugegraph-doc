@@ -25,7 +25,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       SCRIPT_PATH: hugegraph-dist/scripts/
-      URL_PREFIX: https://dist.apache.org/repos/dist/dev/incubator/hugegraph/
+      URL_PREFIX: https://dist.apache.org/repos/dist/dev/hugegraph/
       USER: ${{ inputs.gpg_user }}
       # TODO: parse version from the running branch name & also adapt the input version
       RELEASE_VERSION: ''
@@ -70,6 +70,10 @@ jobs:
           if [[ ${{ matrix.os }} =~ "ubuntu" ]]; then
             sudo apt-get install -y subversion
           fi
+          if ! svn ls "${URL_PREFIX}/${{ inputs.release_version }}/" >/dev/null 2>&1; then
+            echo "Release path not found: ${URL_PREFIX}/${{ inputs.release_version }}/" && exit 1
+          fi
+          echo "Using SVN prefix: ${URL_PREFIX}"
           rm -rf dist/${{ inputs.release_version }}
           svn co ${URL_PREFIX}/${{ inputs.release_version }} dist/${{ inputs.release_version }}
 
@@ -80,7 +84,7 @@ jobs:
           shasum --version 1>/dev/null || exit
           gpg --version 1>/dev/null || exit
 
-          wget https://downloads.apache.org/incubator/hugegraph/KEYS || exit
+          wget https://downloads.apache.org/hugegraph/KEYS || exit
           echo "Import KEYS:" && gpg --import KEYS
           # TODO: how to trust all public keys in gpg list, currently only trust the first one
           echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key $USER trust
@@ -110,24 +114,24 @@ jobs:
           for i in *src.tar.gz; do
             echo "$i"
 
-            # 4.1 check the directory name include "incubating"
-            if [[ ! "$i" =~ "incubating" ]]; then
-              echo "The package name $i should include incubating" && exit 1
+            # 4.1 package naming should follow post-graduation TLP naming
+            if [[ ! "$i" =~ ^apache-hugegraph ]]; then
+              echo "The package name $i should start with apache-hugegraph" && exit 1
+            fi
+            if [[ "$i" =~ "incubating" ]]; then
+              echo "The package name $i should not contain incubating in post-graduation releases" && exit 1
             fi
 
             tar xzvf "$i" || exit
             pushd "$(basename "$i" .tar.gz)" || exit
             echo "Start to check the package content: $(basename "$i" .tar.gz)"
 
-            # 4.2 check the directory include "NOTICE" and "LICENSE" and "DISCLAIMER" file
+            # 4.2 check the directory include "NOTICE" and "LICENSE" file
             if [[ ! -f "LICENSE" ]]; then
               echo "The package should include LICENSE file" && exit 1
             fi
             if [[ ! -f "NOTICE" ]]; then
               echo "The package should include NOTICE file" && exit 1
-            fi
-            if [[ ! -f "DISCLAIMER" ]]; then
-                echo "The package should include DISCLAIMER file" && exit 1
             fi
 
             # 4.3: ensure doesn't contains ASF CATEGORY X License dependencies in LICENSE and NOTICE files
@@ -191,7 +195,7 @@ jobs:
           cd dist/${{ inputs.release_version }} || exit
 
           ls -lh
-          pushd ./*hugegraph-incubating*src/hugegraph-server/*hugegraph*${{ inputs.release_version }} || exit
+          pushd ./*hugegraph*${{ inputs.release_version }}*src/hugegraph-server/*hugegraph-server*${{ inputs.release_version }}* || exit
           bin/init-store.sh || exit
           sleep 3
           bin/start-hugegraph.sh || exit
@@ -233,7 +237,7 @@ jobs:
           popd || exit
           popd || exit
           # stop server
-          pushd ./*hugegraph-incubating*src/hugegraph-server/*hugegraph*${{ inputs.release_version }} || exit
+          pushd ./*hugegraph*${{ inputs.release_version }}*src/hugegraph-server/*hugegraph-server*${{ inputs.release_version }}* || exit
           bin/stop-hugegraph.sh || exit
           popd || exit
 
@@ -253,9 +257,12 @@ jobs:
 
             echo "$i"
 
-            # 7.1 check the directory name include "incubating"
-            if [[ ! "$i" =~ "incubating" ]]; then
-              echo "The package name $i should include incubating" && exit 1
+            # 7.1 package naming should follow post-graduation TLP naming
+            if [[ ! "$i" =~ ^apache-hugegraph ]]; then
+              echo "The package name $i should start with apache-hugegraph" && exit 1
+            fi
+            if [[ "$i" =~ "incubating" ]]; then
+              echo "The package name $i should not contain incubating in post-graduation releases" && exit 1
             fi
 
             tar xzvf "$i" || exit
@@ -263,15 +270,12 @@ jobs:
             ls -lh
             echo "Start to check the package content: $(basename "$i" .tar.gz)"
 
-            # 7.2 check root dir include "NOTICE"/"LICENSE"/"DISCLAIMER" & "licenses" dir
+            # 7.2 check root dir include "NOTICE"/"LICENSE" & "licenses" dir
             if [[ ! -f "LICENSE" ]]; then
               echo "The package should include LICENSE file" && exit 1
             fi
             if [[ ! -f "NOTICE" ]]; then
               echo "The package should include NOTICE file" && exit 1
-            fi
-            if [[ ! -f "DISCLAIMER" ]]; then
-                echo "The package should include DISCLAIMER file" && exit 1
             fi
             if [[ ! -d "licenses" ]]; then
               echo "The package should include licenses dir" && exit 1
@@ -302,7 +306,7 @@ jobs:
           cd dist/${{ inputs.release_version }} || exit
 
           # TODO: run pd & store
-          pushd ./*hugegraph-incubating*${{ inputs.release_version }}/*hugegraph-server-incubating*${{ inputs.release_version }} || exit
+          pushd ./*hugegraph*${{ inputs.release_version }}*/*hugegraph-server*${{ inputs.release_version }}* || exit
           bin/init-store.sh || exit
           sleep 3
           bin/start-hugegraph.sh || exit
@@ -341,7 +345,7 @@ jobs:
 
           popd || exit
           # stop server
-          pushd ./*hugegraph-incubating*${{ inputs.release_version }}/*hugegraph-server-incubating*${{ inputs.release_version }} || exit
+          pushd ./*hugegraph*${{ inputs.release_version }}*/*hugegraph-server*${{ inputs.release_version }}* || exit
           bin/stop-hugegraph.sh || exit
           popd || exit
 

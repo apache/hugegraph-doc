@@ -2,6 +2,7 @@
 title: "VertexLabel API"
 linkTitle: "VertexLabel"
 weight: 3
+description: "VertexLabel REST API: Define vertex types, ID strategies, and associated properties that determine vertex structure and constraints."
 ---
 
 ### 1.3 VertexLabel
@@ -307,4 +308,4 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexl
 
 Note:
 
-> You can use `GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1` (where "1" is the task_id) to query the execution status of the asynchronous task. For more information, refer to the [Asynchronous Task RESTful API](../task).
+> You can use `GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1` (where "1" is the task_id) to query the execution status of the asynchronous task. For more information, refer to the [Asynchronous Task RESTful API](./task).

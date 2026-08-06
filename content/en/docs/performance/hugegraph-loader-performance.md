@@ -14,7 +14,7 @@ weight: 3
 ## Use Cases
 
 When the number of graph data to be batch inserted (including vertices and edges) is at the billion level or below, 
-or the total data size is less than TB, the [HugeGraph-Loader](/docs/quickstart/hugegraph-loader) tool can be used to continuously and quickly import 
+or the total data size is less than TB, the [HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader) tool can be used to continuously and quickly import 
 graph data.
 
 ## Performance

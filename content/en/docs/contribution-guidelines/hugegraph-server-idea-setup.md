@@ -4,7 +4,7 @@ linkTitle: "Setup Server in IDEA"
 weight: 4
 ---
 
-> NOTE: The following configuration is for reference purposes only, and has been tested on Linux and macOS platforms based on [this version](https://github.com/apache/incubator-hugegraph/commit/a946ad1de4e8f922251a5241ffc957c33379677f).
+> NOTE: The following configuration is for reference purposes only, and has been tested on Linux and macOS platforms based on [this version](https://github.com/apache/hugegraph/commit/a946ad1de4e8f922251a5241ffc957c33379677f).
 
 ### Background
 
@@ -17,7 +17,7 @@ The core steps for local startup are the same as starting with **scripts**:
 
 Before proceeding with the following process, make sure that you have cloned the source code of HugeGraph
 and have configured the development environment, such as `Java 11` & you could config your local environment
-with this [config-doc](https://github.com/apache/incubator-hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
+with this [config-doc](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
 
 ```bash
 git clone https://github.com/apache/hugegraph.git
@@ -57,7 +57,7 @@ Next, open the `Run/Debug Configurations` panel in IntelliJ IDEA and create a ne
   - LD_LIBRARY_PATH=/path/to/your/library:$LD_LIBRARY_PATH
   - LD_PRELOAD=libjemalloc.so:librocksdbjni-linux64.so
 
-> If **user authentication** (authenticator) is configured for HugeGraph-Server in the **Java 11** environment, you need to refer to the script [configuration](https://github.com/apache/incubator-hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/init-store.sh#L52) in the binary package and add the following **VM options**:
+> If **user authentication** (authenticator) is configured for HugeGraph-Server in the **Java 11** environment, you need to refer to the script [configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/init-store.sh#L52) in the binary package and add the following **VM options**:
 >
 > ```bash
 > --add-exports=java.base/jdk.internal.reflect=ALL-UNNAMED
@@ -93,7 +93,7 @@ Similarly, open the `Run/Debug Configurations` panel in IntelliJ IDEA and create
 - Set the `Main class` to `org.apache.hugegraph.dist.HugeGraphServer`.
 - Set the program arguments to `conf/gremlin-server.yaml conf/rest-server.properties`. Similarly, note that the path here is relative to the working directory, so make sure to set the working directory to `path-to-your-directory`.
 
-> Similarly, if **user authentication** (authenticator) is configured for HugeGraph-Server in the **Java 11** environment, you need to refer to the script [configuration](https://github.com/apache/incubator-hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/hugegraph-server.sh#L124) in the binary package and add the following **VM options**:
+> Similarly, if **user authentication** (authenticator) is configured for HugeGraph-Server in the **Java 11** environment, you need to refer to the script [configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/hugegraph-server.sh#L124) in the binary package and add the following **VM options**:
 >
 > ```bash
 > --add-exports=java.base/jdk.internal.reflect=ALL-UNNAMED --add-modules=jdk.unsupported --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
@@ -165,8 +165,8 @@ This is because Log4j2 uses asynchronous loggers. You can refer to the [official
 
 ### References
 
-1. [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/)
+1. [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server): Instructions for setting up HugeGraph-Server.
 2. [Local Debugging Guide for HugeGraph Server (Win/Unix)](https://gist.github.com/imbajin/1661450f000cd62a67e46d4f1abfe82c)
 3. ["package sun.misc does not exist" compilation error](https://youtrack.jetbrains.com/issue/IDEA-180033)
 4. [Cannot compile: java: package sun.misc does not exist](https://youtrack.jetbrains.com/issue/IDEA-201168)
-5. [The code-style config for HugeGraph in IDEA](https://github.com/apache/incubator-hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
+5. [The code-style config for HugeGraph in IDEA](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)

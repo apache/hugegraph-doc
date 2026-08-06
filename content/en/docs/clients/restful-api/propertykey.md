@@ -2,6 +2,7 @@
 title: "PropertyKey API"
 linkTitle: "PropertyKey"
 weight: 2
+description: "PropertyKey REST API: Define data types and cardinality constraints for all properties in the graph, serving as fundamental schema elements."
 ---
 
 ### 1.2 PropertyKey

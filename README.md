@@ -1,79 +1,201 @@
+# Apache HugeGraph Documentation Website
+
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-doc)
-
-## Build/Test/Contribute to website
-
-Please visit the [contribution doc](./contribution.md) to get start, include theme/website description & settings~
-
-### Summary
-
-Apache HugeGraph is an easy-to-use, efficient, general-purpose open-source graph database system
-(Graph Database, [GitHub project address](https://github.com/hugegraph/hugegraph)), implementing the [Apache TinkerPop3](https://tinkerpop.apache.org) framework and fully compatible with the [Gremlin](https://tinkerpop.apache.org/gremlin.html) query language,
-With complete toolchain components, it helps users easily build applications and products based on graph databases. HugeGraph supports fast import of more than 10 billion vertices and edges, and provides millisecond-level relational query capability (OLTP). 
-It also supports large-scale distributed graph computing (OLAP).
-
-Typical application scenarios of HugeGraph include deep relationship exploration, association analysis, path search, feature extraction, data clustering, community detection, knowledge graph, etc., and are applicable to business fields such as network security, telecommunication fraud, financial risk control, advertising recommendation, social network and intelligence Robots etc.
-
-### Features
-
-HugeGraph supports graph operations in online and offline environments, batch importing of data and efficient complex relationship analysis. It can seamlessly be integrated with big data platforms.
-HugeGraph supports multi-user parallel operations. Users can enter Gremlin query statements and get graph query results in time. They can also call the HugeGraph API in user programs for graph analysis or queries.
-
-This system has the following features: 
-
-- Ease of use: HugeGraph supports the Gremlin graph query language and a RESTful API, providing common interfaces for graph retrieval, and peripheral tools with complete functions to easily implement various graph-based query and analysis operations.
-- Efficiency: HugeGraph has been deeply optimized in graph storage and graph computing, and provides a variety of batch import tools, which can easily complete the rapid import of tens of billions of data, and achieve millisecond-level response for graph retrieval through optimized queries. Supports simultaneous online real-time operations of thousands of users.
-- Universal: HugeGraph supports the Apache Gremlin standard graph query language and the Property Graph standard graph modeling method, and supports graph-based OLTP and OLAP schemes. Integrate Apache Hadoop and Apache Spark big data platform.
-- Scalable: supports distributed storage, multiple copies of data and horizontal expansion, built-in multiple back-end storage engines, and can easily expand the back-end storage engine through plug-ins.
-- Open: HugeGraph code is open source (Apache 2 License), customers can modify and customize independently, and selectively give back to the open source community.
-
-The functions of this system include but are not limited to: 
-
-- Supports batch import of data from multiple data sources (including local files, HDFS files, MySQL databases and other data sources), and supports import of multiple file formats (including TXT, CSV, JSON and other formats)
-- With a visual operation interface, it can be used for operation, analysis and display diagrams, reducing the threshold for users to use
-- Optimized graph interface: shortest path (Shortest Path), K-step connected subgraph (K-neighbor), K-step to reach the adjacent point (K-out), personalized recommendation algorithm PersonalRank, etc.
-- Implemented based on the Apache-TinkerPop3 framework, supports Gremlin graph query language
-- Support attribute graph, attributes can be added to vertices and edges, and support rich attribute types
-- Has independent schema metadata information, has powerful graph modeling capabilities, and facilitates third-party system integration
-- Support multi-vertex ID strategy: support primary key ID, support automatic ID generation, support user-defined string ID, support user-defined digital ID
-- The attributes of edges and vertices can be indexed to support precise query, range query, and full-text search
-- The storage system adopts plug-in mode, supporting RocksDB, Cassandra, ScyllaDB, HBase, MySQL, PostgreSQL, Palo, and InMemory, etc.
-- Integrate with big data systems such as Hadoop and Spark GraphX, and support Bulk Load operations
-- Support high availability (HA), multiple copies of data, backup recovery, monitoring, etc.
-
-### Modules
-
-- [HugeGraph-Store]: HugeGraph-Store is a distributed storage engine to manage large-scale graph data by integrating storage and computation within a unified system.
-- [HugeGraph-PD]: HugeGraph-PD (Placement Driver) manages metadata and coordinates storage nodes.
-- [HugeGraph-Server](/docs/quickstart/hugegraph-server): HugeGraph-Server is the core part of the HugeGraph project, containing Core, Backend, API and other submodules;
-  - Core: Implements the graph engine, connects to the Backend module downwards, and supports the API module upwards;
-  - Backend: Implements the storage of graph data to the backend, supports backends including Memory, Cassandra, ScyllaDB, RocksDB, HBase, MySQL and PostgreSQL, users can choose one according to the actual situation;
-  - API: Built-in REST Server, provides RESTful API to users, and is fully compatible with Gremlin queries. (Supports distributed storage and computation pushdown)
-- [HugeGraph-Toolchain](https://github.com/apache/hugegraph-toolchain): (Toolchain)
-  - [HugeGraph-Client](/docs/quickstart/hugegraph-client): HugeGraph-Client provides a RESTful API client for connecting to HugeGraph-Server, currently only the Java version is implemented, users of other languages can implement it themselves;
-  - [HugeGraph-Loader](/docs/quickstart/hugegraph-loader): HugeGraph-Loader is a data import tool based on HugeGraph-Client, which transforms ordinary text data into vertices and edges of the graph and inserts them into the graph database;
-  - [HugeGraph-Hubble](/docs/quickstart/hugegraph-hubble): HugeGraph-Hubble is HugeGraph's Web 
-  visualization management platform, a one-stop visualization analysis platform, the platform covers the whole process from data modeling, to fast data import, to online and offline analysis of data, and unified management of the graph;
-  - [HugeGraph-Tools](/docs/quickstart/hugegraph-tools): HugeGraph-Tools is HugeGraph's deployment and management tool, including graph management, backup/recovery, Gremlin execution and other functions.
-- [HugeGraph-Computer](/docs/quickstart/hugegraph-computer): HugeGraph-Computer is a distributed graph processing system (OLAP). 
-  It is an implementation of [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf). It can run on clusters such as Kubernetes/Yarn, and supports large-scale graph computing.
-- [HugeGraph-AI](/docs/quickstart/hugegraph-ai): HugeGraph-AI is HugeGraph's independent AI 
-  component, providing training and inference functions of graph neural networks, LLM/Graph RAG combination/Python-Client and other related components, continuously updating.
-
-## Contributing
-
-- Welcome to contribute to HugeGraph, please see [How to Contribute](https://hugegraph.apache.org/docs/contribution-guidelines/contribute/)  for more information.  
-- Note: It's recommended to use [GitHub Desktop](https://desktop.github.com/) to greatly simplify the PR and commit process.  
-- Thank you to all the people who already contributed to HugeGraph!
-
-[![contributors graph](https://contrib.rocks/image?repo=apache/hugegraph-doc)](https://github.com/apache/incubator-hugegraph-doc/graphs/contributors)
-
-### Contact Us
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Hugo](https://img.shields.io/badge/Hugo-Extended-ff4088?logo=hugo)](https://gohugo.io/)
 
 ---
 
-- [GitHub Issues](https://github.com/apache/incubator-hugegraph-doc/issues): Feedback on usage issues and functional requirements (quick response)
-- Feedback Email: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscriber](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/) only)
-- Security Email: [security@hugegraph.apache.org](mailto:security@hugegraph.apache.org) (Report SEC problems)
-- WeChat public account: Apache HugeGraph, welcome to scan this QR code to follow us.
+[中文](#中文版) | **English**
 
- <img src="./assets/images/wechat.png" alt="QR png" width="350"/>
+This is the **source code repository** for the [HugeGraph documentation website](https://hugegraph.apache.org/docs/).
+
+For the HugeGraph database project, visit [apache/hugegraph](https://github.com/apache/hugegraph).
+
+## Quick Start
+
+Only **3 steps** to run the documentation website locally:
+
+**Prerequisites:** [Hugo Extended](https://github.com/gohugoio/hugo/releases) v0.95+ and Node.js v16+
+
+```bash
+# 1. Clone repository
+git clone https://github.com/apache/hugegraph-doc.git
+cd hugegraph-doc
+
+# 2. Install dependencies
+npm install
+
+# 3. Start development server (auto-reload)
+hugo server
+```
+
+Open http://localhost:1313 to preview.
+
+> **Troubleshooting:** If you see `TOCSS: failed to transform "scss/main.scss"`,
+> install Hugo **Extended** version, not the standard version.
+
+## Repository Structure
+
+```
+hugegraph-doc/
+├── content/                    # 📄 Documentation content (Markdown)
+│   ├── cn/                     # 🇨🇳 Chinese documentation
+│   │   ├── docs/               #    Main documentation
+│   │   │   ├── quickstart/     #    Quick start guides
+│   │   │   ├── config/         #    Configuration docs
+│   │   │   ├── clients/        #    Client docs
+│   │   │   ├── guides/         #    User guides
+│   │   │   └── ...
+│   │   ├── blog/               #    Blog posts
+│   │   └── community/          #    Community pages
+│   └── en/                     # 🇺🇸 English documentation (mirrors cn/ structure)
+│
+├── themes/docsy/               # 🎨 Docsy theme (git submodule)
+├── assets/                     # 🖼️  Custom assets (fonts, images, scss)
+├── layouts/                    # 📐 Hugo template overrides
+├── static/                     # 📁 Static files
+├── config.toml                 # ⚙️  Site configuration
+└── package.json                # 📦 Node.js dependencies
+```
+
+## Contributing
+
+### Contribution Workflow
+
+1. **Fork** this repository
+2. Create a **new branch** from `master`
+3. Make your changes
+4. Submit a **Pull Request** with screenshots
+
+### Requirements
+
+| Requirement | Description |
+|-------------|-------------|
+| **Bilingual Updates** | Update **BOTH** `content/cn/` and `content/en/` |
+| **PR Screenshots** | Include **before/after screenshots** in PR |
+| **Markdown** | Use Markdown with Hugo front matter |
+
+### Detailed Guide
+
+See [contribution.md](./contribution.md) for:
+- Platform-specific Hugo installation
+- Docsy theme customization
+- Translation tips
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `hugo server` | Start dev server (hot reload) |
+| `hugo --minify` | Build production to `./public/` |
+| `hugo server -p 8080` | Custom port |
+
+---
+
+## 中文版
+
+这是 [HugeGraph 官方文档网站](https://hugegraph.apache.org/docs/) 的**源代码仓库**。
+
+如果你想查找 HugeGraph 数据库本身，请访问 [apache/hugegraph](https://github.com/apache/hugegraph)。
+
+### 快速开始
+
+只需 **3 步**即可在本地启动文档网站：
+
+**前置条件：** [Hugo Extended](https://github.com/gohugoio/hugo/releases) v0.95+ 和 Node.js v16+
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/apache/hugegraph-doc.git
+cd hugegraph-doc
+
+# 2. 安装依赖
+npm install
+
+# 3. 启动开发服务器（支持热重载）
+hugo server
+```
+
+打开 http://localhost:1313 预览网站。
+
+> **常见问题：** 如果遇到 `TOCSS: failed to transform "scss/main.scss"` 错误，
+> 说明你需要安装 Hugo **Extended** 版本，而不是标准版本。
+
+### 仓库结构
+
+```
+hugegraph-doc/
+├── content/                    # 📄 文档内容 (Markdown)
+│   ├── cn/                     # 🇨🇳 中文文档
+│   │   ├── docs/               #    主要文档目录
+│   │   │   ├── quickstart/     #    快速开始指南
+│   │   │   ├── config/         #    配置文档
+│   │   │   ├── clients/        #    客户端文档
+│   │   │   ├── guides/         #    使用指南
+│   │   │   └── ...
+│   │   ├── blog/               #    博客文章
+│   │   └── community/          #    社区页面
+│   └── en/                     # 🇺🇸 英文文档（与 cn/ 结构一致）
+│
+├── themes/docsy/               # 🎨 Docsy 主题 (git submodule)
+├── assets/                     # 🖼️  自定义资源 (fonts, images, scss)
+├── layouts/                    # 📐 Hugo 模板覆盖
+├── static/                     # 📁 静态文件
+├── config.toml                 # ⚙️  站点配置
+└── package.json                # 📦 Node.js 依赖
+```
+
+### 如何贡献
+
+#### 贡献流程
+
+1. **Fork** 本仓库
+2. 基于 `master` 创建**新分支**
+3. 修改文档内容
+4. 提交 **Pull Request**（附截图）
+
+#### 重要说明
+
+| 要求 | 说明 |
+|------|------|
+| **双语更新** | 修改内容时需**同时更新** `content/cn/` 和 `content/en/` |
+| **PR 截图** | 提交 PR 时需附上修改**前后对比截图** |
+| **Markdown** | 文档使用 Markdown 格式，带 Hugo front matter |
+
+#### 详细指南
+
+查看 [contribution.md](./contribution.md) 了解：
+- 各平台 Hugo 安装方法
+- Docsy 主题定制
+- 翻译技巧
+
+### 常用命令
+
+| 命令 | 说明 |
+|------|------|
+| `hugo server` | 启动开发服务器（热重载） |
+| `hugo --minify` | 构建生产版本到 `./public/` |
+| `hugo server -p 8080` | 指定端口 |
+
+---
+
+## Contact & Community
+
+- **Issues:** [GitHub Issues](https://github.com/apache/hugegraph-doc/issues)
+- **Mailing List:** [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscribe first](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/))
+- **Slack:** [ASF Slack](https://the-asf.slack.com/archives/C059UU2FJ23)
+
+<img src="./assets/images/wechat.png" alt="WeChat QR Code" width="350"/>
+
+## Contributors
+
+Thanks to all contributors to the HugeGraph documentation!
+
+[![contributors](https://contrib.rocks/image?repo=apache/hugegraph-doc)](https://github.com/apache/hugegraph-doc/graphs/contributors)
+
+---
+
+## License
+
+[Apache License 2.0](LICENSE)

@@ -6,7 +6,7 @@ weight: 2
 
 ## 1 HugeGraph-Computer 概述
 
-[`HugeGraph-Computer`](https://github.com/apache/incubator-hugegraph-computer) 是分布式图处理系统 (OLAP). 它是 [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf)的一个实现。它可以运行在 Kubernetes(K8s)/Yarn 上。(它侧重可支持百亿~千亿的图数据量下进行图计算, 会使用磁盘进行排序和加速, 这是它和 Vermeer 相对最大的区别之一)
+[`HugeGraph-Computer`](https://github.com/apache/hugegraph-computer) 是分布式图处理系统 (OLAP). 它是 [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf)的一个实现。它可以运行在 Kubernetes(K8s)/Yarn 上。(它侧重可支持百亿~千亿的图数据量下进行图计算, 会使用磁盘进行排序和加速, 这是它和 Vermeer 相对最大的区别之一)
 
 ### 特性
 
@@ -44,7 +44,7 @@ weight: 2
 下载最新版本的 HugeGraph-Computer release 包：
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/${version}/apache-hugegraph-computer-incubating-${version}.tar.gz
+wget https://downloads.apache.org/hugegraph/${version}/apache-hugegraph-computer-incubating-${version}.tar.gz
 tar zxvf apache-hugegraph-computer-incubating-${version}.tar.gz -C hugegraph-computer
 ```
 
@@ -65,7 +65,7 @@ mvn clean package -DskipTests
 
 #### 3.1.3 启动 master 节点
 
-> 您可以使用 `-c` 参数指定配置文件，更多 computer 配置请看：[Computer Config Options](/docs/config/config-computer#computer-config-options)
+> 您可以使用 `-c` 参数指定配置文件，更多 computer 配置请看：[Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config#computer-config-options)
 
 ```bash
 cd hugegraph-computer
@@ -137,9 +137,9 @@ hugegraph-computer-operator-etcd-28lm67jxk5                       1/1     Runnin
 
 #### 3.2.5 提交作业
 
-> 更多 computer crd spec 请看：[Computer CRD](/docs/config/config-computer#hugegraph-computer-crd)
+> 更多 computer crd spec 请看：[Computer CRD](/docs/quickstart/computing/hugegraph-computer-config#hugegraph-computer-crd)
 >
-> 更多 Computer 配置请看：[Computer Config Options](/docs/config/config-computer#computer-config-options)
+> 更多 Computer 配置请看：[Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config#computer-config-options)
 
 ```yaml
 cat <<EOF | kubectl apply --filename -

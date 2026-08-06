@@ -90,7 +90,7 @@ services:
 `hubble`项目在`toolchain`项目中，首先下载`toolchain`的 tar 包
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
 tar -xvf apache-hugegraph-toolchain-incubating-{version}.tar.gz 
 cd apache-hugegraph-toolchain-incubating-{version}.tar.gz/apache-hugegraph-hubble-incubating-{version}
 ```
@@ -402,6 +402,8 @@ HugeGraph 支持 Apache TinkerPop3 的图遍历查询语言 Gremlin，Gremlin �
 
 Gremlin 查询后，下方为图结果展示区域，提供 3 种图结果展示方式，分别为：【图模式】、【表格模式】、【Json 模式】。
 
+> ⚠️ **SEC 提醒**：Hubble 允许在网页端直接输入并执行 Gremlin 原生查询语句，这赋予了使用者较高的操作权限。**请避免将 Hubble 服务暴露在公网环境**，建议在使用时确保图数据库服务端已开启 **[鉴权体系 (Auth)](/cn/docs/config/config-authentication/)** 并配合 **IP 白名单**进行严格的权限控制，防止未授权访问或恶意代码执行风险。
+
 支持缩放、居中、全屏、导出等操作。
 
 【图模式】
@@ -551,3 +553,26 @@ Hubble 上暂未提供可视化的 OLAP 算法执行，可调用 RESTful API 进
 <center>
   <img src="/docs/images/images-hubble/355任务详情.png" alt="image">
 </center>
+
+
+### 5 配置说明
+
+HugeGraph-Hubble 可以通过 `conf/hugegraph-hubble.properties` 文件进行配置。
+
+#### 5.1 服务器配置
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `hubble.host` | `0.0.0.0` | Hubble 服务绑定的地址 |
+| `hubble.port` | `8088` | Hubble 服务监听的端口 |
+
+#### 5.2 Gremlin 查询限制
+
+这些设置控制查询结果限制，防止内存问题：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `gremlin.suffix_limit` | `250` | 查询后缀最大长度 |
+| `gremlin.vertex_degree_limit` | `100` | 显示的最大顶点度数 |
+| `gremlin.edges_total_limit` | `500` | 返回的最大边数 |
+| `gremlin.batch_query_ids` | `100` | ID 批量查询大小 |

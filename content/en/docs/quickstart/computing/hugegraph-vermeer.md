@@ -131,7 +131,7 @@ docker network rm vermeer_network
 
 3.  **Option 3: Build from Source**
 
-Build. You can refer [Vermeer Readme](https://github.com/apache/incubator-hugegraph-computer/tree/master/vermeer).
+Build. You can refer [Vermeer Readme](https://github.com/apache/hugegraph-computer/tree/master/vermeer).
 
 ```shell
 go build

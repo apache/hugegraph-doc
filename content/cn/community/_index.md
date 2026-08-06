@@ -5,4 +5,4 @@ menu:
     weight: 40
 ---
 
-<!--add blocks of content here to add more sections to the community page -->
+查看 [项目成熟度](/community/maturity/) 评估。

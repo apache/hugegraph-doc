@@ -6,7 +6,7 @@ weight: 2
 
 ## 1 HugeGraph-Computer Overview
 
-The [`HugeGraph-Computer`](https://github.com/apache/incubator-hugegraph-computer) is a distributed graph processing system for HugeGraph (OLAP). It is an implementation of [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf). It runs on a Kubernetes(K8s) framework.(It focuses on supporting graph data volumes of hundreds of billions to trillions, using disk for sorting and acceleration, which is one of the biggest differences from Vermeer)
+The [`HugeGraph-Computer`](https://github.com/apache/hugegraph-computer) is a distributed graph processing system for HugeGraph (OLAP). It is an implementation of [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf). It runs on a Kubernetes(K8s) framework.(It focuses on supporting graph data volumes of hundreds of billions to trillions, using disk for sorting and acceleration, which is one of the biggest differences from Vermeer)
 
 ### Features
 
@@ -44,7 +44,7 @@ There are two ways to get HugeGraph-Computer:
 Download the latest version of the HugeGraph-Computer release package:
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/${version}/apache-hugegraph-computer-incubating-${version}.tar.gz
+wget https://downloads.apache.org/hugegraph/${version}/apache-hugegraph-computer-incubating-${version}.tar.gz
 tar zxvf apache-hugegraph-computer-incubating-${version}.tar.gz -C hugegraph-computer
 ```
 
@@ -63,24 +63,53 @@ cd hugegraph-computer
 mvn clean package -DskipTests
 ```
 
-#### 3.1.3 Start master node
+#### 3.1.3 Configure computer.properties
 
-> You can use `-c`  parameter specify the configuration file, more computer config please see:[Computer Config Options](/docs/config/config-computer#computer-config-options)
+Edit `conf/computer.properties` to configure the connection to HugeGraph-Server and etcd:
+
+```properties
+# Job configuration
+job.id=local_pagerank_001
+job.partitions_count=4
+
+# HugeGraph connection (✅ Correct configuration keys)
+hugegraph.url=http://localhost:8080
+hugegraph.name=hugegraph
+# If authentication is enabled on HugeGraph-Server
+hugegraph.username=
+hugegraph.password=
+
+# BSP coordination (✅ Correct key: bsp.etcd_endpoints)
+bsp.etcd_endpoints=http://localhost:2379
+bsp.max_super_step=10
+
+# Algorithm parameters (⚠️ Required)
+algorithm.params_class=org.apache.hugegraph.computer.algorithm.centrality.pagerank.PageRankParams
+```
+
+> **Important Configuration Notes:**
+> - Use `bsp.etcd_endpoints` (NOT `bsp.etcd.url`) for etcd connection
+> - `algorithm.params_class` is required for all algorithms
+> - For multiple etcd endpoints, use comma-separated list: `http://host1:2379,http://host2:2379`
+
+#### 3.1.4 Start master node
+
+> You can use `-c`  parameter specify the configuration file, more computer config please see:[Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config#computer-config-options)
 
 ```bash
 cd hugegraph-computer
 bin/start-computer.sh -d local -r master
 ```
 
-#### 3.1.4 Start worker node
+#### 3.1.5 Start worker node
 
 ```bash
 bin/start-computer.sh -d local -r worker
 ```
 
-#### 3.1.5 Query algorithm results
+#### 3.1.6 Query algorithm results
 
-3.1.5.1 Enable `OLAP` index query for server
+3.1.6.1 Enable `OLAP` index query for server
 
 If the OLAP index is not enabled, it needs to be enabled. More reference: [modify-graphs-read-mode](/docs/clients/restful-api/graphs/#634-modify-graphs-read-mode-this-operation-requires-administrator-privileges)
 
@@ -90,11 +119,13 @@ PUT http://localhost:8080/graphs/hugegraph/graph_read_mode
 "ALL"
 ```
 
-3.1.5.2 Query `page_rank` property value:
+3.1.6.2 Query `page_rank` property value:
 
 ```bash
 curl "http://localhost:8080/graphs/hugegraph/graph/vertices?page&limit=3" | gunzip
 ```
+
+---
 
 ### 3.2 Run PageRank algorithm in Kubernetes
 
@@ -137,9 +168,11 @@ hugegraph-computer-operator-etcd-28lm67jxk5                       1/1     Runnin
 
 #### 3.2.5 Submit a job
 
-> More computer crd please see: [Computer CRD](/docs/config/config-computer#hugegraph-computer-crd)
+> More computer crd please see: [Computer CRD](/docs/quickstart/computing/hugegraph-computer-config#hugegraph-computer-crd)
 >
-> More computer config please see: [Computer Config Options](/docs/config/config-computer#computer-config-options)
+> More computer config please see: [Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config#computer-config-options)
+
+**Basic Example:**
 
 ```yaml
 cat <<EOF | kubectl apply --filename -
@@ -150,9 +183,9 @@ metadata:
   name: &jobName pagerank-sample
 spec:
   jobId: *jobName
-  algorithmName: page_rank
-  image: hugegraph/hugegraph-computer:latest # algorithm image url
-  jarFile: /hugegraph/hugegraph-computer/algorithm/builtin-algorithm.jar # algorithm jar path
+  algorithmName: page_rank  # ✅ Correct: use underscore format (matches algorithm implementation)
+  image: hugegraph/hugegraph-computer:latest
+  jarFile: /hugegraph/hugegraph-computer/algorithm/builtin-algorithm.jar
   pullPolicy: Always
   workerCpu: "4"
   workerMemory: "4Gi"
@@ -160,10 +193,89 @@ spec:
   computerConf:
     job.partitions_count: "20"
     algorithm.params_class: org.apache.hugegraph.computer.algorithm.centrality.pagerank.PageRankParams
-    hugegraph.url: http://${hugegraph-server-host}:${hugegraph-server-port} # hugegraph server url
-    hugegraph.name: hugegraph # hugegraph graph name
+    hugegraph.url: http://${hugegraph-server-host}:${hugegraph-server-port}
+    hugegraph.name: hugegraph
 EOF
 ```
+
+**Complete Example with Advanced Features:**
+
+```yaml
+cat <<EOF | kubectl apply --filename -
+apiVersion: hugegraph.apache.org/v1
+kind: HugeGraphComputerJob
+metadata:
+  namespace: hugegraph-computer-operator-system
+  name: &jobName pagerank-advanced
+spec:
+  jobId: *jobName
+  algorithmName: page_rank  # ✅ Correct: underscore format
+  image: hugegraph/hugegraph-computer:latest
+  jarFile: /hugegraph/hugegraph-computer/algorithm/builtin-algorithm.jar
+  pullPolicy: Always
+
+  # Resource limits
+  masterCpu: "2"
+  masterMemory: "2Gi"
+  workerCpu: "4"
+  workerMemory: "4Gi"
+  workerInstances: 5
+
+  # JVM options
+  jvmOptions: "-Xmx3g -Xms3g -XX:+UseG1GC"
+
+  # Environment variables (optional)
+  envVars:
+    - name: REMOTE_JAR_URI
+      value: "http://example.com/custom-algorithm.jar"  # Download custom algorithm JAR
+    - name: LOG_LEVEL
+      value: "INFO"
+
+  # Computer configuration
+  computerConf:
+    # Job settings
+    job.partitions_count: "20"
+
+    # Algorithm parameters (⚠️ Required)
+    algorithm.params_class: org.apache.hugegraph.computer.algorithm.centrality.pagerank.PageRankParams
+    page_rank.alpha: "0.85"  # PageRank damping factor
+
+    # HugeGraph connection
+    hugegraph.url: http://hugegraph-server:8080
+    hugegraph.name: hugegraph
+    hugegraph.username: ""  # Fill if authentication is enabled
+    hugegraph.password: ""
+
+    # BSP configuration (⚠️ System-managed in K8s, do not override)
+    # bsp.etcd_endpoints is automatically set by operator
+    bsp.max_super_step: "20"
+    bsp.log_interval: "30000"
+
+    # Snapshot configuration (optional)
+    snapshot.write: "true"       # Enable snapshot writing
+    snapshot.load: "false"       # Do not load from snapshot this time
+    snapshot.name: "pagerank-snapshot-v1"
+    snapshot.minio_endpoint: "http://minio:9000"
+    snapshot.minio_access_key: "minioadmin"
+    snapshot.minio_secret_key: "minioadmin"
+    snapshot.minio_bucket_name: "hugegraph-snapshots"
+
+    # Output configuration
+    output.result_name: "page_rank"
+    output.batch_size: "500"
+    output.with_adjacent_edges: "false"
+EOF
+```
+
+**Configuration Notes:**
+
+| Configuration Key | ⚠️ Important Notes |
+|-------------------|-------------------|
+| `algorithmName` | Must use `page_rank` (underscore format), matches the algorithm's `name()` method return value |
+| `bsp.etcd_endpoints` | **System-managed in K8s** - automatically set by operator, do not override in `computerConf` |
+| `algorithm.params_class` | **Required** - must specify for all algorithms |
+| `REMOTE_JAR_URI` | Optional environment variable to download custom algorithm JAR from remote URL |
+| `snapshot.*` | Optional - enable snapshots for checkpoint recovery or repeated computations |
 
 #### 3.2.6 Show job
 
@@ -199,6 +311,189 @@ kubectl get event --field-selector reason=ComputerJobSucceed --field-selector in
 #### 3.2.9 Query algorithm results
 
 If the output to `Hugegraph-Server` is consistent with Locally, if output to `HDFS`, please check the result file in the directory of `/hugegraph-computer/results/{jobId}` directory.
+
+---
+
+## 3.3 Local Mode vs Kubernetes Mode
+
+Understanding the differences helps you choose the right deployment mode for your use case.
+
+| Feature | Local Mode | Kubernetes Mode |
+|---------|------------|-----------------|
+| **Configuration** | `conf/computer.properties` file | CRD YAML `computerConf` field |
+| **Etcd Management** | Manual deployment of external etcd | Operator auto-deploys etcd StatefulSet |
+| **Worker Scaling** | Manual start of multiple processes | CRD `workerInstances` field auto-scales |
+| **Resource Isolation** | Shared host resources | Pod-level CPU/Memory limits |
+| **Remote JAR** | `JAR_FILE_PATH` environment variable | CRD `remoteJarUri` or `envVars.REMOTE_JAR_URI` |
+| **Log Viewing** | Local `logs/` directory | `kubectl logs` command |
+| **Fault Recovery** | Manual process restart | K8s auto-restarts failed pods |
+| **Use Cases** | Development, testing, small datasets | Production, large-scale data |
+
+**Local Mode Prerequisites:**
+- Java 11+
+- HugeGraph-Server running on localhost:8080
+- Etcd running on localhost:2379
+
+**K8s Mode Prerequisites:**
+- Kubernetes cluster (version 1.16+)
+- HugeGraph-Server accessible from cluster
+- HugeGraph-Computer Operator installed
+
+**Configuration Key Differences:**
+
+```properties
+# Local Mode (computer.properties)
+bsp.etcd_endpoints=http://localhost:2379  # ✅ User-configured
+job.workers_count=4                        # User-configured
+```
+
+```yaml
+# K8s Mode (CRD)
+spec:
+  workerInstances: 5  # Overrides job.workers_count
+  computerConf:
+    # bsp.etcd_endpoints is auto-set by operator, do NOT configure
+    job.partitions_count: "20"
+```
+
+---
+
+## 3.4 Common Troubleshooting
+
+### 3.4.1 Configuration Errors
+
+**Error: "Failed to connect to etcd"**
+
+**Symptoms:** Master or Worker cannot connect to etcd
+
+**Local Mode Solutions:**
+```bash
+# Check configuration key name (common mistake)
+grep "bsp.etcd_endpoints" conf/computer.properties
+# Should output: bsp.etcd_endpoints=http://localhost:2379
+
+# ❌ WRONG: bsp.etcd.url (old/incorrect key)
+# ✅ CORRECT: bsp.etcd_endpoints
+
+# Test etcd connectivity
+curl http://localhost:2379/version
+```
+
+**K8s Mode Solutions:**
+```bash
+# Check Operator etcd service
+kubectl get svc hugegraph-computer-operator-etcd -n hugegraph-computer-operator-system
+
+# Verify etcd pod is running
+kubectl get pods -n hugegraph-computer-operator-system -l app=hugegraph-computer-operator-etcd
+# Should show: Running status
+
+# Test connectivity from worker pod
+kubectl exec -it pagerank-sample-worker-0 -n hugegraph-computer-operator-system -- \
+  curl http://hugegraph-computer-operator-etcd:2379/version
+```
+
+**Error: "Algorithm class not found"**
+
+**Symptoms:** Cannot find algorithm implementation class
+
+**Cause:** Incorrect `algorithmName` format
+
+```yaml
+# ❌ WRONG formats:
+algorithmName: pageRank   # Camel case
+algorithmName: PageRank   # Title case
+
+# ✅ CORRECT format (matches PageRank.name() return value):
+algorithmName: page_rank  # Underscore lowercase
+```
+
+**Verification:**
+```bash
+# Check algorithm implementation in source code
+# File: computer-algorithm/.../PageRank.java
+# Method: public String name() { return "page_rank"; }
+```
+
+**Error: "Required option 'algorithm.params_class' is missing"**
+
+**Solution:**
+```yaml
+computerConf:
+  algorithm.params_class: org.apache.hugegraph.computer.algorithm.centrality.pagerank.PageRankParams  # ⚠️ Required
+```
+
+### 3.4.2 K8s Deployment Issues
+
+**Issue: REMOTE_JAR_URI not working**
+
+**Solution:**
+```yaml
+spec:
+  envVars:
+    - name: REMOTE_JAR_URI
+      value: "http://example.com/my-algorithm.jar"
+```
+
+**Issue: Etcd connection timeout in K8s**
+
+**Check Operator etcd:**
+```bash
+# Verify etcd is running
+kubectl get pods -n hugegraph-computer-operator-system -l app=hugegraph-computer-operator-etcd
+# Should show: Running
+
+# From worker pod, test etcd connectivity
+kubectl exec -it pagerank-sample-worker-0 -n hugegraph-computer-operator-system -- \
+  curl http://hugegraph-computer-operator-etcd:2379/version
+```
+
+**Issue: Snapshot/MinIO configuration problems**
+
+**Verify MinIO service:**
+```bash
+# Test MinIO reachability
+kubectl run -it --rm debug --image=alpine --restart=Never -- sh
+wget -O- http://minio:9000/minio/health/live
+
+# Test bucket permissions (requires MinIO client)
+mc config host add myminio http://minio:9000 minioadmin minioadmin
+mc ls myminio/hugegraph-snapshots
+```
+
+### 3.4.3 Job Status Checks
+
+**Check job overall status:**
+```bash
+kubectl get hcjob pagerank-sample -n hugegraph-computer-operator-system
+# Output example:
+# NAME              JOBSTATUS   SUPERSTEP   MAXSUPERSTEP   SUPERSTEPSTAT
+# pagerank-sample   Running     5           20             COMPUTING
+```
+
+**Check detailed events:**
+```bash
+kubectl describe hcjob pagerank-sample -n hugegraph-computer-operator-system
+```
+
+**Check failure reasons:**
+```bash
+kubectl get events --field-selector reason=ComputerJobFailed \
+  --field-selector involvedObject.name=pagerank-sample \
+  -n hugegraph-computer-operator-system
+```
+
+**Real-time master logs:**
+```bash
+kubectl logs -f -l component=pagerank-sample-master -n hugegraph-computer-operator-system
+```
+
+**All worker logs:**
+```bash
+kubectl logs -l component=pagerank-sample-worker -n hugegraph-computer-operator-system --all-containers=true
+```
+
+---
 
 ## 4. Built-In algorithms document
 

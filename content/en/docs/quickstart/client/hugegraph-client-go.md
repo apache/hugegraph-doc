@@ -13,7 +13,7 @@ A HugeGraph Client SDK tool based on the Go language.
 ## Installation Tutorial
 
 ```shell
-go get github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go
+go get github.com/apache/hugegraph-toolchain/hugegraph-client-go
 ```
 
 ## Implemented APIs
@@ -34,8 +34,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
+	"github.com/apache/hugegraph-toolchain/hugegraph-client-go"
+	"github.com/apache/hugegraph-toolchain/hugegraph-client-go/hgtransport"
 )
 
 func main() {
@@ -73,8 +73,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
+	"github.com/apache/hugegraph-toolchain/hugegraph-client-go"
+	"github.com/apache/hugegraph-toolchain/hugegraph-client-go/hgtransport"
 )
 
 // initClient initializes and returns a HugeGraph client instance

@@ -4,11 +4,11 @@ linkTitle: "在 IDEA 中配置 Server 开发环境"
 weight: 4
 ---
 
-> 注意：下述配置仅供参考，基于[这个版本](https://github.com/apache/incubator-hugegraph/commit/a946ad1de4e8f922251a5241ffc957c33379677f)，在 Linux 和 macOS 平台下进行了测试。
+> 注意：下述配置仅供参考，基于[这个版本](https://github.com/apache/hugegraph/commit/a946ad1de4e8f922251a5241ffc957c33379677f)，在 Linux 和 macOS 平台下进行了测试。
 
 ### 背景
 
-在 [Quick Start](/docs/quickstart/hugegraph-server/) 部分已经介绍了使用**脚本**启停 HugeGraph-Server 的流程。下面以 Linux 平台为例，
+在 [Quick Start](/docs/quickstart/hugegraph/hugegraph-server/) 部分已经介绍了使用**脚本**启停 HugeGraph-Server 的流程。下面以 Linux 平台为例，
 介绍使用 **IntelliJ IDEA** 运行与调试 HugeGraph-Server 的流程。
 
 本地启动的核心与**脚本启动**是一样的：
@@ -17,7 +17,7 @@ weight: 4
 2. 启动 HugeGraph-Server，执行 `HugeGraphServer` 类加载初始化的图信息启动
 
 在执行下述流程之前，请确保已经克隆了 HugeGraph 的源代码，并且已经配置了 Java 11 环境 & 可以参考这个
-[配置文档](https://github.com/apache/incubator-hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
+[配置文档](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
 
 ```bash
 git clone https://github.com/apache/hugegraph.git
@@ -57,7 +57,7 @@ rocksdb.wal_path=.
   - LD_LIBRARY_PATH=/path/to/your/library:$LD_LIBRARY_PATH
   - LD_PRELOAD=libjemalloc.so:librocksdbjni-linux64.so
 
-> 若在 **Java 11** 环境下为 HugeGraph-Server 配置了**用户认证** (authenticator)，需要参考二进制包的脚本[配置](https://github.com/apache/incubator-hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/init-store.sh#L52)，添加下述 **VM options**:
+> 若在 **Java 11** 环境下为 HugeGraph-Server 配置了**用户认证** (authenticator)，需要参考二进制包的脚本[配置](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/init-store.sh#L52)，添加下述 **VM options**:
 >
 > ```bash
 > --add-exports=java.base/jdk.internal.reflect=ALL-UNNAMED
@@ -93,7 +93,7 @@ rocksdb.wal_path=.
 - 将 `Main class` 设置为 `org.apache.hugegraph.dist.HugeGraphServer`
 - 设置运行参数为 `conf/gremlin-server.yaml conf/rest-server.properties`，同样地，这里的路径是相对于工作路径的，需要将工作路径设置为 `path-to-your-directory`
 
-> 类似的，若在 **Java 11** 环境下为 HugeGraph-Server 配置了**用户认证** (authenticator)，同样需要参考二进制包的脚本[配置](https://github.com/apache/incubator-hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/hugegraph-server.sh#L124)，添加下述 **VM options**:
+> 类似的，若在 **Java 11** 环境下为 HugeGraph-Server 配置了**用户认证** (authenticator)，同样需要参考二进制包的脚本[配置](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/hugegraph-server.sh#L124)，添加下述 **VM options**:
 >
 > ```bash
 > --add-exports=java.base/jdk.internal.reflect=ALL-UNNAMED --add-modules=jdk.unsupported --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
@@ -167,8 +167,8 @@ curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
 
 ##### 参考
 
-1. [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph-server/)
+1. [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/)
 2. [hugegraph-server 本地调试文档 (Win/Unix)](https://gist.github.com/imbajin/1661450f000cd62a67e46d4f1abfe82c)
 3. ["package sun.misc does not exist" compilation error](https://youtrack.jetbrains.com/issue/IDEA-180033)
 4. [Cannot compile: java: package sun.misc does not exist](https://youtrack.jetbrains.com/issue/IDEA-201168)
-5. [The code-style config for HugeGraph in IDEA](https://github.com/apache/incubator-hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
+5. [The code-style config for HugeGraph in IDEA](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)

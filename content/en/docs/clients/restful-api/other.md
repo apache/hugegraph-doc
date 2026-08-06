@@ -2,6 +2,7 @@
 title: "Other API"
 linkTitle: "Other"
 weight: 18
+description: "Other REST API: Provide auxiliary functions such as system version query and API version information."
 ---
 
 ### 11.1 Other

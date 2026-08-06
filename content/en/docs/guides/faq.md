@@ -4,9 +4,13 @@ linkTitle: "FAQ"
 weight: 6
 ---
 
-- How to choose the back-end storage? Choose RocksDB, Cassandra, ScyllaDB, Hbase or Mysql?
+- How to choose the back-end storage? RocksDB or distributed storage?
 
-  The choice of backend storage depends on specific needs. For installations on a single machine (node) with data volumes under 10 billion records, RocksDB is generally recommended. However, if a distributed backend is needed for scaling across multiple nodes, other options should be considered. ScyllaDB, designed as a drop-in replacement for Cassandra, offers protocol compatibility and better hardware utilization, often requiring less infrastructure. HBase, on the other hand, requires a Hadoop ecosystem to function effectively. Finally, while MySQL supports horizontal scaling, managing it in a distributed setup can be challenging.
+  HugeGraph supports multiple deployment modes. Choose based on your data scale and scenario:
+  - **Standalone Mode**: Server + RocksDB, suitable for development/testing and small to medium-scale data (< 4TB)
+  - **Distributed Mode**: HugeGraph-PD + HugeGraph-Store (HStore), supports horizontal scaling and high availability (< 1000TB data scale), suitable for production environments and large-scale graph data applications
+
+  Note: Cassandra, HBase, MySQL and other backends are only available in HugeGraph <= 1.5 versions and are no longer maintained by the official team
 
 - Prompt when starting the service: `xxx (core dumped) xxx`
 

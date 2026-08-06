@@ -13,7 +13,7 @@ weight: 3
 ## 安装教程
 
 ```shell
-go get github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go
+go get github.com/apache/hugegraph-toolchain/hugegraph-client-go
 ```
 
 ## 已实现 API
@@ -34,8 +34,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
+	"github.com/apache/hugegraph-toolchain/hugegraph-client-go"
+	"github.com/apache/hugegraph-toolchain/hugegraph-client-go/hgtransport"
 )
 
 func main() {
@@ -73,8 +73,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
+	"github.com/apache/hugegraph-toolchain/hugegraph-client-go"
+	"github.com/apache/hugegraph-toolchain/hugegraph-client-go/hgtransport"
 )
 
 // initClient 初始化并返回一个 HugeGraph 客户端实例

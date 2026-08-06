@@ -2,6 +2,7 @@
 title: "Schema API"
 linkTitle: "Schema"
 weight: 1
+description: "Schema REST API: Query the complete schema definition of a graph, including property keys, vertex labels, edge labels, and index labels."
 ---
 
 ### 1.1 Schema

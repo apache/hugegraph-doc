@@ -4,11 +4,11 @@ linkTitle: "HugeGraph-LLM"
 weight: 1
 ---
 
-> 本文为中文翻译版本，内容基于英文版进行，我们欢迎您随时提出修改建议。我们推荐您阅读 [AI 仓库 README](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-llm#readme) 以获取最新信息，官网会定期同步更新。
+> 本文为中文翻译版本，内容基于英文版进行，我们欢迎您随时提出修改建议。我们推荐您阅读 [AI 仓库 README](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm#readme) 以获取最新信息，官网会定期同步更新。
 
 > **连接图数据库与大语言模型的桥梁**
 
-> AI 总结项目文档：[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/incubator-hugegraph-ai)
+> AI 总结项目文档：[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-ai)
 
 ## 🎯 概述
 
@@ -19,7 +19,7 @@ HugeGraph-LLM 是一个功能强大的工具包，它融合了图数据库和大
 - 🗣️ **自然语言查询**：通过自然语言（Gremlin/Cypher）操作图数据库。
 - 🔍 **图增强 RAG**：借助知识图谱提升问答准确性（GraphRAG 和 Graph Agent）。
 
-更多源码文档，请访问我们的 [DeepWiki](https://deepwiki.com/apache/incubator-hugegraph-ai) 页面（推荐）。
+更多源码文档，请访问我们的 [DeepWiki](https://deepwiki.com/apache/hugegraph-ai) 页面（推荐）。
 
 ## 📋 环境要求
 
@@ -90,8 +90,8 @@ docker run -itd --name=server -p 8080:8080 hugegraph/hugegraph
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 3. 克隆并设置项目
-git clone https://github.com/apache/incubator-hugegraph-ai.git
-cd incubator-hugegraph-ai/hugegraph-llm
+git clone https://github.com/apache/hugegraph-ai.git
+cd hugegraph-ai/hugegraph-llm
 
 # 4. 创建虚拟环境并安装依赖
 uv venv && source .venv/bin/activate
@@ -116,7 +116,7 @@ python -m hugegraph_llm.config.generate --update
 ```
 
 > [!TIP]
-> 查看我们的[快速入门指南](https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/quick_start.md)获取详细用法示例和查询逻辑解释。
+> 查看我们的[快速入门指南](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/quick_start.md)获取详细用法示例和查询逻辑解释。
 
 ## 💡 用法示例
 
@@ -131,7 +131,7 @@ python -m hugegraph_llm.config.generate --update
 - **文件**：上传 TXT 或 DOCX 文件（支持多选）
 
 **Schema 配置：**
-- **自定义 Schema**：遵循我们[模板](https://github.com/apache/incubator-hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125)的 JSON 格式
+- **自定义 Schema**：遵循我们[模板](https://github.com/apache/hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125)的 JSON 格式
 - **HugeGraph Schema**：使用现有图实例的 Schema（例如，“hugegraph”）
 
 ![知识图谱构建器](https://hugegraph.apache.org/docs/images/gradio-kg.png)
@@ -214,7 +214,7 @@ graph TD
 
 ## 🔧 配置
 
-运行演示后，将自动生成配置文件：
+运行演示后,将自动生成配置文件：
 
 - **环境**：`hugegraph-llm/.env`
 - **提示**：`hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml`
@@ -222,7 +222,80 @@ graph TD
 > [!NOTE]
 > 使用 Web 界面时，配置更改会自动保存。对于手动更改，刷新页面即可加载更新。
 
-**LLM 提供商支持**：本项目使用 [LiteLLM](https://docs.litellm.ai/docs/providers) 实现多提供商 LLM 支持。
+### LLM 提供商配置
+
+本项目使用 [LiteLLM](https://docs.litellm.ai/docs/providers) 实现多提供商 LLM 支持，可统一访问 OpenAI、Anthropic、Google、Cohere 以及 100 多个其他提供商。
+
+#### 方案一：直接 LLM 连接（OpenAI、Ollama）
+
+```bash
+# .env 配置
+chat_llm_type=openai           # 或 ollama/local
+openai_api_key=sk-xxx
+openai_api_base=https://api.openai.com/v1
+openai_language_model=gpt-4o-mini
+openai_max_tokens=4096
+```
+
+#### 方案二：LiteLLM 多提供商支持
+
+LiteLLM 作为多个 LLM 提供商的统一代理：
+
+```bash
+# .env 配置
+chat_llm_type=litellm
+extract_llm_type=litellm
+text2gql_llm_type=litellm
+
+# LiteLLM 设置
+litellm_api_base=http://localhost:4000  # LiteLLM 代理服务器
+litellm_api_key=sk-1234                  # LiteLLM API 密钥
+
+# 模型选择（提供商/模型格式）
+litellm_language_model=anthropic/claude-3-5-sonnet-20241022
+litellm_max_tokens=4096
+```
+
+**支持的提供商**：OpenAI、Anthropic、Google（Gemini）、Azure、Cohere、Bedrock、Vertex AI、Hugging Face 等。
+
+完整提供商列表和配置详情，请访问 [LiteLLM Providers](https://docs.litellm.ai/docs/providers)。
+
+### Reranker 配置
+
+Reranker 通过重新排序检索结果来提高 RAG 准确性。支持的提供商：
+
+```bash
+# Cohere Reranker
+reranker_type=cohere
+cohere_api_key=your-cohere-key
+cohere_rerank_model=rerank-english-v3.0
+
+# SiliconFlow Reranker
+reranker_type=siliconflow
+siliconflow_api_key=your-siliconflow-key
+siliconflow_rerank_model=BAAI/bge-reranker-v2-m3
+```
+
+### Text2Gremlin 配置
+
+将自然语言转换为 Gremlin 查询：
+
+```python
+from hugegraph_llm.operators.graph_rag_task import Text2GremlinPipeline
+
+# 初始化工作流
+text2gremlin = Text2GremlinPipeline()
+
+# 生成 Gremlin 查询
+result = (
+    text2gremlin
+    .query_to_gremlin(query="查找所有由 Francis Ford Coppola 执导的电影")
+    .execute_gremlin_query()
+    .run()
+)
+```
+
+**REST API 端点**：有关 HTTP 端点详情，请参阅 [REST API 文档](./rest-api.md)。
 
 ## 📚 其他资源
 

@@ -2,6 +2,7 @@
 title: "Graphs API"
 linkTitle: "Graphs"
 weight: 12
+description: "Graphs REST API: Manage graph instance lifecycle including creating, querying, cloning, clearing, and deleting graph databases."
 ---
 
 ### 6.1 Graphs
@@ -112,25 +113,25 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 ##### Method & Url
 
 ```
-POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph_clone?clone_graph_name=hugegraph
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_name=hugegraph
 ```
 
 ##### Request Body [Optional]
 
 Clone a `non-auth` mode graph (set `Content-Type: application/json`)
 
-```json
+```javascript
 {
   "gremlin.graph": "org.apache.hugegraph.HugeFactory",
   "backend": "rocksdb",
   "serializer": "binary",
-  "store": "hugegraph",
+  "store": "cloneGraph",
   "rocksdb.data_path": "./rks-data-xx",
   "rocksdb.wal_path": "./rks-data-xx"
 }
 ```
 
-> Note: 
+> Note:
 > 1. The data/wal_path can't be the same as the existing graph (use separate directories)
 > 2. Replace "gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy" to enable auth mode
 
@@ -144,8 +145,8 @@ Clone a `non-auth` mode graph (set `Content-Type: application/json`)
 
 ```javascript
 {
-  "name": "hugegraph_clone",
-  "backend": "rocksdb"
+    "name": "cloneGraph",
+    "backend": "rocksdb"
 }
 ```
 
@@ -166,11 +167,21 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph2
 
 ##### Request Body
 
-Create a non-auth graph (set `Content-Type: application/json`)
+Create a graph (set `Content-Type: application/json`)
 
-```json
+**`gremlin.graph` Configuration:**
+- Auth mode: `"gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy"` (Recommended)
+- Non-auth mode: `"gremlin.graph": "org.apache.hugegraph.HugeFactory"`
+
+**Note**!!
+1. In version 1.7.0, dynamic graph creation would cause a NPE. This issue has been fixed in [PR#2912](https://github.com/apache/hugegraph/pull/2912). The current master version and versions after 1.7.0 do not have this problem.
+2. For version 1.7.0 and earlier, if the backend is hstore, you must add "task.scheduler_type": "distributed" in the request body. Also ensure HugeGraph-Server is properly configured with PD, see [HStore Configuration](/docs/quickstart/hugegraph/hugegraph-server/#511-distributed-storage-hstore).
+
+**RocksDB Example:**
+
+```javascript
 {
-  "gremlin.graph": "org.apache.hugegraph.HugeFactory",
+  "gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy",
   "backend": "rocksdb",
   "serializer": "binary",
   "store": "hugegraph2",
@@ -179,9 +190,20 @@ Create a non-auth graph (set `Content-Type: application/json`)
 }
 ```
 
-> Note: 
-> 1. The data/wal_path can't be the same as the existing graph (use separate directories)
-> 2. Replace "gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy" to enable auth mode
+**HStore Example (for version 1.7.0 and earlier):**
+
+```javascript
+{
+  "gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy",
+  "backend": "hstore",
+  "serializer": "binary",
+  "store": "hugegraph2",
+  "task.scheduler_type": "distributed",
+  "pd.peers": "127.0.0.1:8686"
+}
+```
+
+> Note: The data/wal_path can't be the same as the existing graph (use separate directories)
 
 ##### Response Status
 
@@ -216,7 +238,7 @@ Since deleting a graph is a dangerous operation, we have added parameters for co
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph_clone?confirm_message=I%27m%20sure%20to%20drop%20the%20graph
+DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/graphA?confirm_message=I%27m%20sure%20to%20drop%20the%20graph
 ```
 
 ##### Response Status

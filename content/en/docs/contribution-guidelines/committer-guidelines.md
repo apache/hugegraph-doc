@@ -9,7 +9,7 @@ weight: 5
 # Candidate Requirements
 
 1. Candidates must adhere to the [Apache Code of Conduct](https://www.apache.org/foundation/policies/conduct.html).
-2. PMC members will assess candidates' interactions with others and contributions through [mailing lists](https://lists.apache.org/list?dev@hugegraph.apache.org), [issues](https://github.com/apache/hugegraph/issues), [pull requests](https://github.com/apache/incubator-hugegraph/pulls), and [official documentation](https://hugegraph.apache.org/docs).
+2. PMC members will assess candidates' interactions with others and contributions through [mailing lists](https://lists.apache.org/list?dev@hugegraph.apache.org), [issues](https://github.com/apache/hugegraph/issues), [pull requests](https://github.com/apache/hugegraph/pulls), and [official documentation](https://hugegraph.apache.org/docs).
 3. Considerations for evaluating candidates as potential Committers include:
    1. Ability to collaborate with community members
    2. Mentorship capabilities
@@ -23,7 +23,7 @@ weight: 5
 
 ## Initiate Community Discussion (DISCUSS)
 
-Any (P)PMC member of HugeGraph can initiate a voting discussion. After identifying valuable contributions from a community contributor and obtaining the candidate's consent, a discussion can be initiated via private@hugegraph.apache.org.
+Any PMC member of HugeGraph can initiate a voting discussion. After identifying valuable contributions from a community contributor and obtaining the candidate's consent, a discussion can be initiated via private@hugegraph.apache.org.
 The initiator of the discussion should clearly state the candidate's contributions in the discussion email and provide URLs or other information for confirming the contributions, facilitating discussion and analysis.
 
 Below is a template for HugeGraph emails: (For reference only)
@@ -72,32 +72,32 @@ Welcome everyone to share opinions~
 Thanks!
 ```
 
-For contribution links in discussion emails, you can use the statistical feature of [GitHub Search](https://github.com/search) by entering corresponding keywords as needed. You can also adjust parameters and add new repositories such as `repo:apache/incubator-hugegraph-computer`. Pay special attention to adjusting the **time range** (below is a template reference, please adjust the parameters accordingly):
+For contribution links in discussion emails, you can use the statistical feature of [GitHub Search](https://github.com/search) by entering corresponding keywords as needed. You can also adjust parameters and add new repositories such as `repo:apache/hugegraph-computer`. Pay special attention to adjusting the **time range** (below is a template reference, please adjust the parameters accordingly):
 
 - Number of PR submissions
-  - `is:pr author:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `is:pr author:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - Lines of code submissions/changes
-  - https://github.com/apache/incubator-hugegraph/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
-  - https://github.com/apache/incubator-hugegraph-doc/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
+  - https://github.com/apache/hugegraph/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
+  - https://github.com/apache/hugegraph-doc/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
 - Number of PR submissions associated with issues
-  - `linked:issue involves:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `linked:issue involves:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - Number of PR reviews
-  - `type:pr reviewed-by:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:pr reviewed-by:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - Number of merge commits
-  - `type:pr author:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:pr author:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - Effective lines merged
-  - https://github.com/apache/incubator-hugegraph/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
-  - https://github.com/apache/incubator-hugegraph-doc/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
+  - https://github.com/apache/hugegraph/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
+  - https://github.com/apache/hugegraph-doc/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
 - Number of issue submissions
-  - `type:issue author:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:issue author:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - Number of issue fixes
   - Based on the number of issue submissions, select those with a closed status.
 - Number of issue participations
-  - `type:issue involves:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:issue involves:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - Number of issue comments
-  - `type:issue commenter:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:issue commenter:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - Number of PR comments
-  - `type:pr commenter:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:pr commenter:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 
 For participation in mailing lists, you can use https://lists.apache.org/list?dev@hugegraph.apache.org:lte=10M:xxx.
 
@@ -131,7 +131,7 @@ Please vote accordingly:
 Thanks!
 ```
 
-Then, (P)PMC members reply to the email with +1 or -1 to express their opinions. Generally, at least 3 votes of +1 are needed to conclude the vote.
+Then, PMC members reply to the email with +1 or -1 to express their opinions. Generally, at least 3 votes of +1 are needed to conclude the vote.
 
 ## Announcement of Voting Results (RESULT)
 
@@ -167,7 +167,7 @@ Subject: Invitation to become HugeGraph committer: xxx
 
 Hello xxx,
 
-The HugeGraph Project Management Committee (PPMC)
+The HugeGraph Project Management Committee (PMC)
 hereby offers you committer privileges to the project.
 These privileges are offered on the understanding that you'll use them
 reasonably and with common sense. We like to work on trust
@@ -212,7 +212,7 @@ establishing you as a committer.
 
 With the expectation of your acceptance, welcome!
 
-The Apache HugeGraph(incubating) PPMC
+The Apache HugeGraph PMC
 ```
 
 ## Candidate Accepts Invitation (ACCEPT)
@@ -224,13 +224,13 @@ To: [ Sender's Email ]
 Cc: private@hugegraph.apache.org
 Subject: Re: Invitation to become HugeGraph committer: xxx
 
-Hello Apache HugeGraph(incubating) PPMC,
+Hello Apache HugeGraph PMC,
 
 I accept the invitation.
 
 Thanks to the Apache HugeGraph Community for recognizing my work, I
 will continue to actively participate in the work of the Apache
-HugeGraph(incubating).
+HugeGraph.
 
 Next, I will follow the instructions to complete the next steps:
 Signing and submitting iCLA and registering Apache ID.
@@ -256,7 +256,7 @@ Once the invitation is accepted, the candidate needs to complete the following t
    5. **Country:** Country of residence in English
    6. **E-mail**: Email address, preferably the same as the one used in the invitation email
    7. **(optional) preferred Apache id(s)**: Choose an SVN ID that is not listed on the [Apache committer](http://people.apache.org/committer-index.html) page
-   8. **(optional) notify project**: Apache HugeGraph(incubating)
+   8. **(optional) notify project**: Apache HugeGraph
    9. **Signature: Must be handwritten using a PDF tool**
    10. **Date:** Format as xxxx-xx-xx
 3. After signing, rename `icla.pdf` to `name-pinyin-icla.pdf`
@@ -268,7 +268,7 @@ Subject: ICLA Information
 
 Hello everyone:
 
-I have accepted the Apache HugeGraph(incubating) PPMC invitation to
+I have accepted the Apache HugeGraph PMC invitation to
 become a HugeGraph committer, the attachment is my ICLA information.
 
 (Optional) My GitHub account is https://github.com/xxx. Thanks!
@@ -300,7 +300,7 @@ After the record is completed, the candidate will receive an email from root@apa
 2. Configure personal information at https://whimsy.apache.org/roster/committer/xxx.
 3. Associate GitHub account at https://gitbox.apache.org/boxer.
    - This step requires configuring GitHub Two-Factor Authentication (2FA).
-4. **The nominating PMC member must add the new Committer to the official list of committers via the [Roster](https://whimsy.apache.org/roster/ppmc/hugegraph) page.** (**Important**, otherwise repository permissions will not take effect).
+4. **The nominating PMC member must add the new Committer to the official list of committers via the [Roster](https://whimsy.apache.org/roster/pmc/hugegraph) page.** (**Important**, otherwise repository permissions will not take effect).
    - After this step, the candidate becomes a new Committer and gains write access to the GitHub HugeGraph repository.
 5. (Optional) The new Committer can apply for free use of JetBrains' full range of products with their Apache account [here](https://www.jetbrains.com/shop/eform/apache).
 
@@ -313,7 +313,7 @@ After the candidate completes the above steps, they will officially become a Com
 To: dev@hugegraph.apache.org
 Subject: [ANNOUNCE] New Committer: xxx
 
-Hi everyone, The PPMC for Apache HugeGraph(incubating) has invited xxx to
+Hi everyone, The PMC for Apache HugeGraph has invited xxx to
 become a Committer and we are pleased to announce that he/she has accepted.
 
 xxx is being active in the HugeGraph community & dedicated to ... modules, 
@@ -325,32 +325,19 @@ Welcome xxx, and please enjoy your community journey~
 
 Thanks! 
 
-The Apache HugeGraph PPMC
+The Apache HugeGraph PMC
 ```
 
-## Update clutch status information
+## Update Governance Information
 
-PMC members responsible for nominations need to download clutch status information and update it. Once effective, it can be viewed on the [clutch](https://incubator.apache.org/clutch/hugegraph.html) and [projects](https://incubator.apache.org/projects/hugegraph.html) pages. The process is as follows:
+Since Apache HugeGraph graduated in January 2026, governance information is maintained in ASF committee/project data rather than Incubator clutch pages.
 
-```text
-# 1. Download clutch status information
-svn co https://svn.apache.org/repos/asf/incubator/public/trunk/content/projects/
+Please check:
 
-# 2. Modify and edit (note the following is for reference only)
-cd projects
-vim hugegraph.xml
+- [ASF Committee data for HugeGraph](https://projects.apache.org/committee.html?hugegraph)
+- [PMC roster page](https://whimsy.apache.org/roster/pmc/hugegraph)
 
-<section id="News">
-  <title>News</title>
-  <ul>
-    <li>YYYY-MM-DD New Committer: xxx</li>
-    <li>...</li>
-  </ul>
-</section>
-
-# 3. Commit
-svn commit -m "update news for hugegraph"
-```
+If an update is required but does not appear automatically, coordinate with Apache Community Development or ASF Infra according to the official process.
 
 # References
 

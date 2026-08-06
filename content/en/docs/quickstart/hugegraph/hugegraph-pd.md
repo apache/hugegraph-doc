@@ -12,7 +12,7 @@ HugeGraph-PD (Placement Driver) is the metadata management component of HugeGrap
 
 #### 2.1 Requirements
 
-- Operating System: Linux or MacOS (Windows has not been fully tested)
+- Operating System: Linux or macOS (Windows has not been fully tested)
 - Java version: ≥ 11
 - Maven version: ≥ 3.5.0
 
@@ -29,7 +29,7 @@ Download the latest version of HugeGraph-PD from the Apache HugeGraph official d
 
 ```bash
 # Replace {version} with the latest version number, e.g., 1.5.0
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
 tar zxf apache-hugegraph-incubating-{version}.tar.gz
 cd apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version}
 ```
@@ -48,6 +48,57 @@ mvn clean install -DskipTests=true
 #    apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version}
 #    target/apache-hugegraph-incubating-{version}.tar.gz
 ```
+
+#### 3.3 Docker Deployment
+
+The HugeGraph-PD Docker image is available on Docker Hub as `hugegraph/pd`.
+
+> **Note**: The following steps assume you have already cloned or pulled the HugeGraph main repository locally, or at least have its `docker/` directory available.
+
+Use the `docker compose` setup to deploy the complete 3-node cluster (PD + Store + Server):
+
+```bash
+cd hugegraph/docker
+# Keep the version aligned with the latest release, for example 1.x.0
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+```
+
+To run a single PD node via `docker run`, configuration is provided via environment variables:
+
+```bash
+docker run -d \
+  -p 8620:8620 \
+  -p 8686:8686 \
+  -p 8610:8610 \
+  -e HG_PD_GRPC_HOST=<your-ip> \
+  -e HG_PD_RAFT_ADDRESS=<your-ip>:8610 \
+  -e HG_PD_RAFT_PEERS_LIST=<your-ip>:8610 \
+  -e HG_PD_INITIAL_STORE_LIST=<store-ip>:8500 \
+  -v /path/to/data:/hugegraph-pd/pd_data \
+  --name hugegraph-pd \
+  hugegraph/pd:1.7.0
+```
+
+**Environment variable reference:**
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `HG_PD_GRPC_HOST` | Yes | — | This node's hostname/IP for gRPC (e.g. `pd0` in Docker, `192.168.1.10` on bare metal) |
+| `HG_PD_RAFT_ADDRESS` | Yes | — | This node's Raft address (e.g. `pd0:8610`) |
+| `HG_PD_RAFT_PEERS_LIST` | Yes | — | All PD peers (e.g. `pd0:8610,pd1:8610,pd2:8610`) |
+| `HG_PD_INITIAL_STORE_LIST` | Yes | — | Expected store gRPC addresses (e.g. `store0:8500,store1:8500,store2:8500`) |
+| `HG_PD_GRPC_PORT` | No | `8686` | gRPC server port |
+| `HG_PD_REST_PORT` | No | `8620` | REST API port |
+| `HG_PD_DATA_PATH` | No | `/hugegraph-pd/pd_data` | Metadata storage path |
+| `HG_PD_INITIAL_STORE_COUNT` | No | `1` | Minimum stores required for cluster availability |
+
+> **Note**: In Docker bridge networking, use container hostnames (e.g. `pd0`) for `HG_PD_GRPC_HOST` and `HG_PD_RAFT_ADDRESS` instead of IP addresses.
+
+> **Deprecated aliases**: `GRPC_HOST`, `RAFT_ADDRESS`, `RAFT_PEERS`, `PD_INITIAL_STORE_LIST` still work but log a deprecation warning. Use the `HG_PD_*` names for new deployments.
+
+To view runtime logs for a running PD container use `docker logs <container-name>` (e.g. `docker logs hg-pd0`).
+
+See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full cluster setup guide.
 
 ### 4 Configuration
 
@@ -72,7 +123,7 @@ pd:
   data-path: ./pd_data
   # Auto-expansion check cycle (seconds)
   patrol-interval: 1800
-  # Initial store list, stores in the list are automatically activated
+  # Minimum number of Store nodes required for cluster availability
   initial-store-count: 1
   # Store configuration information, format is IP:gRPC port
   initial-store-list: 127.0.0.1:8500
@@ -113,10 +164,15 @@ In the PD installation directory, execute:
 ./bin/start-hugegraph-pd.sh
 ```
 
+The startup script supports a `-d` flag to control daemon mode:
+
+- `-d true` (default): run as a background daemon; the script returns immediately.
+- `-d false`: run in foreground — the script `exec`s Java, so the container/supervisor process IS Java. Use this when running under Docker or a process supervisor (systemd, supervisord) so crashes are detected and the service is restarted automatically.
+
 After successful startup, you can see logs similar to the following in `logs/hugegraph-pd-stdout.log`:
 
 ```
-2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
+YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
 ```
 
 #### 5.2 Stop PD
@@ -137,13 +193,13 @@ curl http://localhost:8620/actuator/health
 
 If it returns `{"status":"UP"}`, it indicates that the PD service has been successfully started.
 
-Additionally, you can verify the status of the Store node by querying the PD API:
+Additionally, you can verify Store node status through the PD API:
 
 ```bash
 curl http://localhost:8620/v1/stores
 ```
 
-If the Store is configured successfully, the response of the above interface should contain the status information of the current node. The status "Up" indicates that the node is running normally. Only the response of one node configuration is shown here. If all three nodes are configured successfully and are running, the `storeId` list in the response should contain three IDs, and the `Up`, `numOfService`, and `numOfNormalService` fields in `stateCountMap` should be 3.
+If the response shows `state` as `Up`, the corresponding Store node is running normally. The example below shows a single Store node. In a healthy 3-node deployment, the `storeId` list should contain three IDs, and `stateCountMap.Up`, `numOfService`, and `numOfNormalService` should all be `3`.
 
 ```javascript
 {

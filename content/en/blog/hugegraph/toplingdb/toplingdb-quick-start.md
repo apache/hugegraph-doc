@@ -136,5 +136,5 @@ Caused by: org.rocksdb.RocksDBException: While lock file: rocksdb-data/data/m/LO
 ## Related Documentation
 
 - [ToplingDB YAML Configuration Explained](/blog/2025/09/30/toplingdb-yaml-configuration-file/) – Understand each parameter in the config file
-- [HugeGraph Configuration Guide](/docs/config/config-option/) – Reference for core HugeGraph settings
+- [HugeGraph Configuration Guide](/docs/config/config-option) – Reference for core HugeGraph settings
 - [ToplingDB GitHub Repository](https://github.com/topling/toplingdb) – Official docs and latest updates

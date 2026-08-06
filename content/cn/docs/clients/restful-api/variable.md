@@ -2,6 +2,7 @@
 title: "Variable API"
 linkTitle: "Variable"
 weight: 11
+description: "Variable（变量）REST 接口:存储和管理键值对形式的全局变量,支持图级别的配置和状态管理。"
 ---
 
 ### 5.1 Variables

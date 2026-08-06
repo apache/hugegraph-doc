@@ -2,6 +2,7 @@
 title: "Vertex API"
 linkTitle: "Vertex"
 weight: 7
+description: "Vertex REST API: Create, query, update, and delete vertex data in the graph with support for batch operations and conditional filtering."
 ---
 
 ### 2.1 Vertex

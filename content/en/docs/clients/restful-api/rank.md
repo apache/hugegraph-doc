@@ -2,6 +2,7 @@
 title: "Rank API"
 linkTitle: "Rank"
 weight: 10
+description: "Rank REST API: Execute graph node ranking algorithms such as PageRank and Personalized PageRank for centrality analysis."
 ---
 
 ### 4.1 Rank API overview

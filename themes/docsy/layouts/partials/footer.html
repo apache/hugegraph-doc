@@ -6,25 +6,23 @@
       <div class="col-1"></div>
       <div class="col-4 text-center container-center">
           <div class="footer-row">
-            <a href="https://incubator.apache.org/">
+            <a href="https://www.apache.org/">
               <div class="footer-apache-logo">
-                {{ with resources.Get "icons/apache-incubator.svg" }}{{ ( . | minify).Content | safeHTML }}{{ end }}{{ end }}
+                {{ with resources.Get "icons/apache_logo.svg" }}{{ ( . | minify).Content | safeHTML }}{{ end }}{{ end }}
               </div>
             </a>
             <ul class="footer-link">
               <li><a class="white" href="https://www.apache.org">Foundation</a></li>
               <li><a class="white" href="https://www.apache.org/licenses/">License</a></li>
               <li><a class="white" href="https://hugegraph.apache.org/docs/guides/security">Security</a></li>
-              <li><a class="white" href="https://www.apache.org/events/current-event">Events</a></li>
               <li><a class="white" href="https://www.apache.org/foundation/sponsorship.html">Sponsorship</a></li>
-              <li><a class="white" href="https://www.apache.org/foundation/thanks.html">Thanks</a></li>
               <li><a class="white" href="https://privacy.apache.org/policies/privacy-policy-public.html" target="_blank">Privacy</a></li>
             </ul>
           </div>
       </div>
       <div class="col-6 text-white text-center container-center">
-        <p>Apache HugeGraph is an effort undergoing incubation at The Apache Software Foundation (ASF), sponsored by the Apache Incubator. Incubation is required of all newly accepted projects until a further review indicates that the infrastructure, communications, and decision making process have stabilized in a manner consistent with other successful ASF projects. While incubation status is not necessarily a reflection of the completeness or stability of the code, it does indicate that the project has yet to be fully endorsed by the ASF.</p>
-        <p>Copyright &copy; {{ now.Year}} The Apache Software Foundation, Licensed under the <a class="white" href="https://www.apache.org/licenses/LICENSE-2.0">Apache License Version 2.0</a> <br> Apache, the names of Apache projects, and the feather logo are either registered trademarks or trademarks of the Apache Software Foundation in the United States and/or other countries.</p>
+        <p>Copyright &copy; {{ now.Year}} The Apache Software Foundation, Licensed under the <a class="white" href="https://www.apache.org/licenses/LICENSE-2.0">Apache License Version 2.0</a></p>
+        <p>Apache, the names of Apache projects, and the feather logo are either registered trademarks or trademarks of the Apache Software Foundation in the United States and/or other countries.</p>
       </div>
       <div class="col-1"></div>
     </div>

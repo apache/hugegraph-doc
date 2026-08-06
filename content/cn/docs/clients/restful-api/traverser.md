@@ -2,6 +2,7 @@
 title: "Traverser API"
 linkTitle: "Traverser"
 weight: 9
+description: "Traverser（图遍历）REST 接口:执行复杂的图算法和路径查询,包括最短路径、K近邻、相似度计算等高级分析功能。"
 ---
 
 ### 3.1 traverser API 概述

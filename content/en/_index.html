@@ -10,45 +10,53 @@ linkTitle = "Huge Docs"
 	<h1 ><span style="font-size:50px;font-weight:bold">Apache</span>
 		<span style="font-size:50px;font-weight:bold">HugeGraph</span>
 	</h1>
-	<p><span style="font-size:20px; float:contour">&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
-		&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Incubating</span><br/></p>
 
 	<a class="btn btn-lg btn-primary mr-3 mb-4" href="{{< relref "/docs" >}}">
 		Learn More <i class="fas fa-arrow-alt-circle-right ml-2"></i>
 	</a>
-	<a class="btn btn-lg btn-secondary mr-3 mb-4" href="./docs/download/download/">
+	<a class="btn btn-lg btn-secondary mr-3 mb-4" href="{{< relref "/docs/download/download" >}}">
 		Download <i class="fab fa-github ml-2 "></i>
 	</a>
-	<p class="lead mt-5">HugeGraph is a convenient, efficient, and adaptable graph database</p>
-	<p>compatible with the Apache TinkerPop3 framework and the Gremlin query language.</p>
+	<p class="lead mt-5">HugeGraph is a full-stack graph system covering <a href="{{< relref "/docs/quickstart/hugegraph/hugegraph-server" >}}">graph database</a>, <a href="{{< relref "/docs/quickstart/computing/hugegraph-computer" >}}">graph computing</a>, and <a href="{{< relref "/docs/quickstart/hugegraph-ai" >}}">graph AI</a>.</p>
+	<p>It provides complete graph data processing capabilities from storage and real-time querying to offline analysis, and supports both <a href="{{< relref "/docs/language/hugegraph-gremlin" >}}">Gremlin</a> and <a href="{{< relref "/docs/clients/restful-api/cypher" >}}">Cypher</a> query languages.</p>
 	{{< blocks/link-down color="info" >}}
 </div>
 {{< /blocks/cover >}}
 
 
 {{% blocks/lead color="primary" %}}
-<p>HugeGraph supports fast import performance in the case of more than 10 billion Vertices and Edges</p>
-<p> Graph, millisecond-level OLTP query capability, and large-scale distributed</p>
-<p> graph processing (OLAP). The main scenarios of HugeGraph include</p>
-<p> correlation search, fraud detection, and knowledge graph.</p>
-
+<p>HugeGraph supports high-speed import and millisecond-level real-time queries for up to hundreds of billions of graph data, with deep integration with big data platforms like Spark and Flink, and can use the <a href="{{< relref "/docs/quickstart/toolchain" >}}">HugeGraph toolchain</a> for data import, visualization, and operations.</p>
+<p>In the AI era, combined with Large Language Models (LLMs), it provides powerful graph computing capabilities for intelligent Q&A, recommendation systems, fraud detection, and knowledge graph applications.</p>
 {{% /blocks/lead %}}
 
 {{< blocks/section color="dark" >}}
 {{% blocks/feature icon="fa-lightbulb" title="Convenient" %}}
-Not only supports Gremlin graph query language and RESTful API but also provides commonly used graph algorithm APIs. To help users easily implement various queries and analyses, HugeGraph has a full range of accessory tools, such as supporting distributed storage, data replication, scaling horizontally, and supports many built-in backends of storage engines.
-
-<!-- Please follow us for updates! -->
+Supports Gremlin graph query language and [**RESTful API**]({{< relref "/docs/clients/restful-api" >}}), and provides commonly used graph retrieval interfaces. It includes a complete set of supporting tools with distributed storage, data replication, horizontal scaling, and multiple built-in backend storage engines for efficient query and analysis workflows.
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-shipping-fast" title="Efficient" %}}
-Has been deeply optimized in graph storage and graph computation. It provides multiple batch import tools that can easily complete the fast-import of tens of billions of data, achieves millisecond-level response for graph retrieval through ameliorated queries, and supports concurrent online and real-time operations for thousands of users.
+Deeply optimized for graph storage and graph computing, it provides [**batch import tools**]({{< relref "/docs/quickstart/toolchain/hugegraph-loader" >}}) to efficiently ingest massive data, achieves millisecond-level graph retrieval latency with optimized queries, and supports concurrent online operations for thousands of users.
 {{% /blocks/feature %}}
 
 
 {{% blocks/feature icon="fa-exchange-alt" title="Adaptable" %}}
-Adapts to the Apache Gremlin standard graph query language and the Property Graph standard modeling method, and both support graph-based OLTP and OLAP schemes. Furthermore, HugeGraph can be integrated with Hadoop and Spark's big data platforms, and easily extend the back-end storage engine through plug-ins.
+Supports the Apache Gremlin standard graph query language and the Property Graph modeling method, with both OLTP and [**OLAP graph computing**]({{< relref "/docs/quickstart/computing/hugegraph-computer" >}}) scenarios. It can be integrated with Hadoop and Spark and can extend backend storage engines through plug-ins.
+{{% /blocks/feature %}}
+
+
+{{% blocks/feature icon="fa-brain" title="AI-Ready" %}}
+Integrates LLM with [**GraphRAG capabilities**]({{< relref "/docs/quickstart/hugegraph-ai" >}}), automated knowledge graph construction, and 20+ built-in graph machine learning algorithms to build AI-driven graph applications.
+{{% /blocks/feature %}}
+
+
+{{% blocks/feature icon="fa-expand-arrows-alt" title="Scalable" %}}
+Supports horizontal scaling and distributed deployment, seamlessly migrating from standalone to PB-level clusters, and provides [**distributed storage engine**]({{< relref "/docs/quickstart/hugegraph/hugegraph-hstore" >}}) options for different scale and performance requirements.
+{{% /blocks/feature %}}
+
+
+{{% blocks/feature icon="fa-puzzle-piece" title="Open Ecosystem" %}}
+Adheres to Apache TinkerPop standards, provides [**multi-language clients**]({{< relref "/docs/quickstart/client/hugegraph-client" >}}), is compatible with mainstream big data platforms, and is backed by an active and evolving community.
 {{% /blocks/feature %}}
 
 
@@ -57,7 +65,7 @@ Adapts to the Apache Gremlin standard graph query language and the Property Grap
 
 {{< blocks/section color="blue-deep">}}
 <div class="col">
-<h1 class="text-center">The first graph database project in Apache</h1>
+<h1 class="text-center">The First Apache Foundation Top-Level Graph Project</h1>
 </div>
 
 {{< /blocks/section >}}
@@ -66,19 +74,19 @@ Adapts to the Apache Gremlin standard graph query language and the Property Grap
 
 {{< blocks/section >}}
 {{% blocks/feature icon="far fa-tools" title="Get The **Toolchain**" %}}
-[It](https://github.com/apache/incubator-hugegraph-toolchain) includes graph loader & dashboard & backup tools
+[It](https://github.com/apache/hugegraph-toolchain) includes graph loader & dashboard & backup tools
 {{% /blocks/feature %}}
 
 
-{{% blocks/feature icon="fab fa-github" title="Efficient" url="https://github.com/apache/incubator-hugegraph" %}}
-We do a [Pull Request](https://github.com/apache/incubator-hugegraph/pulls) contributions workflow on **GitHub**. New users are always welcome!
+{{% blocks/feature icon="fab fa-github" title="Efficient" url="https://github.com/apache/hugegraph" %}}
+We do a [Pull Request](https://github.com/apache/hugegraph/pulls) contributions workflow on **GitHub**. New users are always welcome!
 {{% /blocks/feature %}}
 
 
-{{% blocks/feature icon="fab fa-weixin" title="Follow us on Wechat!" url="https://twitter.com/apache-hugegraph" %}}
-Follow the official account "HugeGraph" to get the latest news
+{{% blocks/feature icon="fab fa-slack" title="Join us on Slack!" url="https://the-asf.slack.com/archives/C059UU2FJ23" %}}
+Join the [ASF Slack channel](https://the-asf.slack.com/archives/C059UU2FJ23) for community discussions
 
-PS: twitter account it's on the way
+Could also follow the WeChat account "HugeGraph" for updates
 {{% /blocks/feature %}}
 
 

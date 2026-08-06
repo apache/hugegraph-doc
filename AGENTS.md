@@ -1,171 +1,110 @@
-# AI Development Agent Instructions
+# AGENTS.md
 
 This file provides guidance to AI coding assistants (Claude Code, Cursor, GitHub Copilot, etc.) when working with code in this repository.
 
 ## Project Overview
 
-This is the **Apache HugeGraph documentation website** repository (`hugegraph-doc`), built with Hugo static site generator using the Docsy theme. The site provides comprehensive documentation for the HugeGraph graph database system, including quickstart guides, API references, configuration guides, and contribution guidelines.
+Apache HugeGraph documentation website built with Hugo static site generator and the Docsy theme. The site is bilingual (Chinese/English) and covers the complete HugeGraph graph database ecosystem.
 
-The documentation is multilingual, supporting both **Chinese (cn)** and **English (en)** content.
-
-## Development Setup
-
-### Prerequisites
-
-1. **Hugo Extended** (v0.95.0 recommended, v0.102.3 used in CI)
-   - Must be the "extended" version (includes SASS/SCSS support)
-   - Download from: https://github.com/gohugoio/hugo/releases
-   - Install location: `/usr/bin` or `/usr/local/bin`
-
-2. **Node.js and npm** (v16+ as specified in CI)
-
-### Quick Start
+## Development Commands
 
 ```bash
-# Install npm dependencies (autoprefixer, postcss, postcss-cli)
+# Install dependencies
 npm install
 
-# Start local development server (with auto-reload)
+# Start development server (auto-reload enabled)
 hugo server
-
-# Custom server with different ip/port
-hugo server -b http://127.0.0.1 -p 80 --bind=0.0.0.0
 
 # Build production site (output to ./public)
 hugo --minify
-```
 
-## Project Structure
-
-### Key Directories
-
-- **`content/`** - All documentation content in Markdown
-  - `content/cn/` - Chinese (simplified) documentation
-  - `content/en/` - English documentation
-  - Each language has parallel structure: `docs/`, `blog/`, `community/`, `about/`
-
-- **`themes/docsy/`** - The Docsy Hugo theme (submodule or vendored)
-
-- **`static/`** - Static assets (images, files) served directly
-
-- **`assets/`** - Assets processed by Hugo pipelines (SCSS, images for processing)
-
-- **`layouts/`** - Custom Hugo template overrides for the Docsy theme
-
-- **`public/`** - Generated site output (gitignored, created by `hugo` build)
-
-- **`dist/`** - Additional distribution files
-
-### Important Files
-
-- **`config.toml`** - Main site configuration
-  - Defines language settings (cn as default, en available)
-  - Menu structure and navigation
-  - Theme parameters and UI settings
-  - Currently shows version `0.13`
-
-- **`package.json`** - Node.js dependencies for CSS processing (postcss, autoprefixer)
-
-- **`.editorconfig`** - Code style rules (UTF-8, LF line endings, spaces for indentation)
-
-- **`contribution.md`** - Contributing guide (Chinese/English mixed)
-
-- **`maturity.md`** - Project maturity assessment documentation
-
-## Content Organization
-
-Documentation is organized into major sections:
-
-- **`quickstart/`** - Getting started guides for HugeGraph components (Server, Loader, Hubble, Tools, Computer, AI)
-- **`config/`** - Configuration documentation
-- **`clients/`** - Client API documentation (Gremlin Console, RESTful API)
-- **`guides/`** - User guides and tutorials
-- **`performance/`** - Performance benchmarks and optimization
-- **`language/`** - Query language documentation
-- **`contribution-guidelines/`** - How to contribute to HugeGraph
-- **`changelog/`** - Release notes and version history
-- **`download/`** - Download links and instructions
-
-## Common Tasks
-
-### Building and Testing
-
-```bash
-# Build for production (with minification)
-hugo --minify
-
-# Clean previous build
+# Clean build
 rm -rf public/
 
-# Build with specific environment
+# Production build with garbage collection
 HUGO_ENV="production" hugo --gc
+
+# Custom server configuration
+hugo server -b http://127.0.0.1 -p 80 --bind=0.0.0.0
 ```
 
-### Working with Content
+## Prerequisites
+
+- **Hugo Extended** v0.95.0 recommended (v0.102.3 in CI) - must be the "extended" version for SASS/SCSS support
+- **Node.js** v16+ and npm
+- Download Hugo from: https://github.com/gohugoio/hugo/releases
+
+## Architecture
+
+```
+content/
+├── cn/          # Chinese documentation (default language)
+│   ├── docs/    # Main documentation
+│   ├── blog/    # Blog posts
+│   ├── community/
+│   └── about/
+└── en/          # English documentation (parallel structure)
+
+themes/docsy/    # Docsy theme (submodule)
+layouts/         # Custom template overrides
+assets/          # Processed assets (SCSS, images)
+static/          # Static files served directly
+config.toml      # Main site configuration
+```
+
+### Content Structure
+
+Documentation sections in `content/{cn,en}/docs/`:
+- `quickstart/` - Getting started guides for HugeGraph components
+- `config/` - Configuration documentation
+- `clients/` - Client API documentation (Gremlin, RESTful)
+- `guides/` - User guides and tutorials
+- `performance/` - Benchmarks and optimization
+- `language/` - Query language docs
+- `contribution-guidelines/` - Contributing guides
+- `changelog/` - Release notes
+- `download/` - Download instructions
+
+## Key Configuration Files
+
+- `config.toml` - Site-wide settings, language config, menu structure, version (currently 0.13)
+- `package.json` - Node dependencies for CSS processing (postcss, autoprefixer, mermaid)
+- `.editorconfig` - UTF-8, LF line endings, spaces for indentation
+
+## Working with Content
 
 When editing documentation:
-
 1. Maintain parallel structure between `content/cn/` and `content/en/`
-2. Use Markdown format for all documentation files
-3. Include front matter in each file (title, weight, description)
-4. For translated content, ensure both Chinese and English versions are updated
-
-### Theme Customization
-
-- Global site config: `config.toml` (root directory)
-- Theme-specific config: `themes/docsy/config.toml`
-- Custom layouts: Place in `layouts/` to override theme defaults
-- Custom styles: Modify files in `assets/` directory
-
-Refer to [Docsy documentation](https://www.docsy.dev/docs/) for theme customization details.
+2. Use Markdown with Hugo front matter (title, weight, description)
+3. For bilingual changes, update both Chinese and English versions
+4. Include mermaid diagrams where appropriate (mermaid.js is available)
 
 ## Deployment
 
-The site uses GitHub Actions for CI/CD (`.github/workflows/hugo.yml`):
+- **CI/CD**: GitHub Actions (`.github/workflows/hugo.yml`)
+- **Trigger**: Push to `master` branch or pull requests
+- **Build**: `npm i && hugo --minify` with Node v16 and Hugo v0.102.3 extended
+- **Deploy**: Publishes to `asf-site` branch (GitHub Pages)
+- **PR Requirements**: Include screenshots showing before/after changes
 
-1. **Triggers**: On push to `master` branch or pull requests
-2. **Build process**:
-   - Checkout with submodules (for themes)
-   - Setup Node v16 and Hugo v0.102.3 extended
-   - Run `npm i && hugo --minify`
-3. **Deployment**: Publishes to `asf-site` branch (GitHub Pages)
+## HugeGraph Ecosystem Context
 
-The deployed site is hosted as part of Apache HugeGraph's documentation infrastructure.
-
-## HugeGraph Architecture Context
-
-This documentation covers the complete HugeGraph ecosystem:
-
-- **HugeGraph-Server** - Core graph database engine with REST API
-- **HugeGraph-Store** - Distributed storage engine with integrated computation
-- **HugeGraph-PD** - Placement Driver for metadata management
-- **HugeGraph-Toolchain**:
-  - Client (Java RESTful API client)
-  - Loader (data import tool)
-  - Hubble (web visualization platform)
-  - Tools (deployment and management utilities)
-- **HugeGraph-Computer** - Distributed graph processing system (OLAP)
-- **HugeGraph-AI** - Graph neural networks and LLM/RAG components
-
-## Git Workflow
-
-- **Main branch**: `master` (protected, triggers deployment)
-- **PR requirements**: Include screenshots showing before/after changes in documentation
-- **Commit messages**: Follow Apache commit conventions
-- Always create a new branch from `master` for changes
-- Deployment to `asf-site` branch is automated via GitHub Actions
+This documentation covers:
+- **HugeGraph-Server** - Core graph database with REST API
+- **HugeGraph-Store** - Distributed storage engine
+- **HugeGraph-PD** - Placement Driver for metadata
+- **Toolchain** - Client, Loader, Hubble (web UI), Tools
+- **HugeGraph-Computer** - Distributed OLAP graph processing
+- **HugeGraph-AI** - GNN, LLM/RAG components
 
 ## Troubleshooting
 
-**Error: "TOCSS: failed to transform scss/main.scss"**
-- Cause: Using standard Hugo instead of Hugo Extended
-- Solution: Install Hugo Extended version
+**"TOCSS: failed to transform scss/main.scss"**
+- Install Hugo Extended (not standard Hugo)
 
-**Error: Module/theme not found**
-- Cause: Git submodules not initialized
-- Solution: `git submodule update --init --recursive`
+**Theme/module not found**
+- Run: `git submodule update --init --recursive`
 
-**Build fails in CI but works locally**
-- Check Hugo version match (CI uses v0.102.3)
-- Ensure npm dependencies are installed
-- Verify Node.js version (CI uses v16)
+**CI build fails but works locally**
+- Match Hugo version (v0.102.3) and Node.js (v16)
+- Verify npm dependencies are installed

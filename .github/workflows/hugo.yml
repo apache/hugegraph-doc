@@ -40,6 +40,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-hugomod-
 
+      - name: Check Links
+        run: bash dist/validate-links.sh
+
       - name: Build Site (minify)
         run: npm i && hugo --minify
 

@@ -2,6 +2,7 @@
 title: "Vertex API"
 linkTitle: "Vertex"
 weight: 7
+description: "Vertex（顶点）REST 接口:创建、查询、更新和删除图中的顶点数据,支持批量操作和条件过滤。"
 ---
 
 ### 2.1 Vertex

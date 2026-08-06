@@ -17,7 +17,7 @@ HugeGraph-Studio是HugeGraph的前端展示工具，是基于Web的图形化IDE�
 - 图数据的展示
 - 图数据的分析
 
-> 注意：HugeGraph-Studio需要依赖HugeGraph-Server，在安装和使用HugeGraph-Studio之前，请通过jps命令检查HugeGraphServer服务是否已经启动，如果没有启动，请参考[HugeGraph-Server安装配置](/docs/quickstart/hugegraph-server)启动HugeGraphServer。
+> 注意：HugeGraph-Studio需要依赖HugeGraph-Server，在安装和使用HugeGraph-Studio之前，请通过jps命令检查HugeGraphServer服务是否已经启动，如果没有启动，请参考[HugeGraph-Server安装配置](/docs/quickstart/hugegraph/hugegraph-server)启动HugeGraphServer。
 
 ### 2 安装和运行HugeGraph-Studio
 
@@ -145,7 +145,7 @@ graph.schema().propertyKey("price").asInt().ifNotExist().create()
 **在这里有几点需要说明**
 
 1、上述语句是`groovy`语言形式（类似但不是`java`）的`gremlin`语句，这些`gremlin`语句会被发送到`HugeGraphServer`上执行。
-关于`gremlin`本身可以参考[Gremlin Query Language](/language/hugegraph-gremlin.md)或[Tinkerpop官网](http://tinkerpop.apache.org/)；
+关于`gremlin`本身可以参考[Gremlin Query Language](../language/hugegraph-gremlin)或[Tinkerpop官网](http://tinkerpop.apache.org/)；
 
 2、上述语句是通过`graph.schema()`获取到`SchemaManager`对象后操作元数据，通过`gremlin`语句操作Schema可参考文档[HugeGraph-Client](/docs/clients/hugegraph-client)，
 需要注意的是`HugeGraph-Client`是`java`语法，大体上与`gremlin`风格是一致的，具体的差异见文档`HugeGraph-Client`中的说明。

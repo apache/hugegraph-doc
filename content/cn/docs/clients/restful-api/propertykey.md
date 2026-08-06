@@ -2,6 +2,7 @@
 title: "PropertyKey API"
 linkTitle: "PropertyKey"
 weight: 2
+description: "PropertyKey（属性键）REST 接口:定义图中所有属性的数据类型和基数约束,是构建图模式的基础元素。"
 ---
 
 ### 1.2 PropertyKey

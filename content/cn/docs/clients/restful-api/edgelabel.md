@@ -2,6 +2,7 @@
 title: "EdgeLabel API"
 linkTitle: "EdgeLabel"
 weight: 4
+description: "EdgeLabel（边标签）REST 接口:定义边类型、源顶点和目标顶点的关系约束,构建图的连接规则。"
 ---
 
 ### 1.4 EdgeLabel
@@ -310,4 +311,4 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelab
 
 注：
 
-> 可以通过`GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1`（其中"1"是 task_id）来查询异步任务的执行状态，更多[异步任务 RESTful API](../task)
+> 可以通过`GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1`（其中"1"是 task_id）来查询异步任务的执行状态，更多[异步任务 RESTful API](./task)

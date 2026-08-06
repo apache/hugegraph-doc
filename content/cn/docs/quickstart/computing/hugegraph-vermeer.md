@@ -130,7 +130,7 @@ docker network rm vermeer_network
 
 3. **方案三：从源码构建**
 
-构建。具体请参照 [Vermeer Readme](https://github.com/apache/incubator-hugegraph-computer/tree/master/vermeer)。
+构建。具体请参照 [Vermeer Readme](https://github.com/apache/hugegraph-computer/tree/master/vermeer)。
 
 ```shell
 go build

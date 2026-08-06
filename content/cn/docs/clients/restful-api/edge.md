@@ -2,6 +2,7 @@
 title: "Edge API"
 linkTitle: "Edge"
 weight: 8
+description: "Edge（边）REST 接口:创建、查询、更新和删除顶点之间的关系数据,支持批量操作和方向查询。"
 ---
 
 ### 2.2 Edge

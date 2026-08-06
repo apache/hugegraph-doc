@@ -2,6 +2,7 @@
 title: "Rank API"
 linkTitle: "Rank"
 weight: 10
+description: "Rank（图排序）REST 接口:执行图节点排序算法,如 PageRank、个性化 PageRank 等中心性分析。"
 ---
 
 ### 4.1 rank API 概述

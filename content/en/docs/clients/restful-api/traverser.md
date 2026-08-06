@@ -2,6 +2,7 @@
 title: "Traverser API"
 linkTitle: "Traverser"
 weight: 9
+description: "Traverser REST API: Execute complex graph algorithms and path queries including shortest path, k-neighbors, similarity computation, and advanced analytics."
 ---
 
 ### 3.1 Overview of Traverser API

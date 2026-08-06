@@ -14,4 +14,4 @@ menu:
 - **HugeGraph-AI**: AI 与图计算结合的应用案例
 - **HugeGraph Computing (OLAP)**: 大规模图计算和分析实践
 
-探索更多内容，提升您的图数据库使用体验！
+探索更多内容，深入了解 HugeGraph 图系统的全栈能力！

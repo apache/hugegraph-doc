@@ -2,6 +2,7 @@
 title: "VertexLabel API"
 linkTitle: "VertexLabel"
 weight: 3
+description: "VertexLabel（顶点标签）REST 接口:定义顶点类型、ID策略及关联的属性,决定顶点的结构和约束规则。"
 ---
 
 ### 1.3 VertexLabel
@@ -307,4 +308,4 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexl
 
 注：
 
-> 可以通过`GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1`（其中"1"是 task_id）来查询异步任务的执行状态，更多[异步任务 RESTful API](../task)
+> 可以通过`GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1`（其中"1"是 task_id）来查询异步任务的执行状态，更多[异步任务 RESTful API](./task)

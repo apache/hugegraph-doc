@@ -2,6 +2,7 @@
 title: "Graphspace API"
 linkTitle: "Graphspace"
 weight: 1
+description: "Graphspace REST API: Multi-tenancy and resource isolation for creating, viewing, updating, and deleting graph spaces with prerequisites and constraints."
 ---
 
 ### 2.0 Graphspace

@@ -2,7 +2,7 @@
 title: "Metrics API"
 linkTitle: "Metrics"
 weight: 17
-
+description: "Metrics REST API: Retrieve runtime performance metrics, statistics, and health status data of the system."
 ---
 
 

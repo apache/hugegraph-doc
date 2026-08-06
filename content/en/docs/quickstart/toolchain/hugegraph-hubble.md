@@ -101,7 +101,7 @@ services:
 `hubble` is in the `toolchain` project. First, download the binary tar tarball
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
+wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
 tar -xvf apache-hugegraph-toolchain-incubating-{version}.tar.gz 
 cd apache-hugegraph-toolchain-incubating-{version}.tar.gz/apache-hugegraph-hubble-incubating-{version}
 ```
@@ -409,6 +409,8 @@ HugeGraph supports Gremlin, a graph traversal query language of Apache TinkerPop
 
 After Gremlin query, below is the graph result display area, which provides 3 kinds of graph result display modes: [Graph Mode], [Table Mode], [Json Mode].
 
+> ⚠️ **SEC Reminder**: Hubble allows the direct input and execution of native Gremlin query statements on the web interface, which grants users relatively high operational privileges. **Please avoid exposing the Hubble service to public network environments**. It is recommended to ensure that the graph database server has enabled the **[Authentication System (Auth)](/docs/config/config-authentication/)** combined with an **IP Whitelist** for strict permission control when in use, preventing unauthorized access or malware execution risks.
+
 Support zoom, center, full screen, export and other operations.
 
 【Picture Mode】
@@ -556,4 +558,27 @@ There is no visual OLAP algorithm execution on Hubble. You can call the RESTful 
 <center>
   <img src="/docs/images/images-hubble/355任务详情.png" alt="image">
 </center>
+
+
+### 5 Configuration
+
+HugeGraph-Hubble can be configured through the `conf/hugegraph-hubble.properties` file.
+
+#### 5.1 Server Configuration
+
+| Configuration Item | Default Value | Description |
+|-------------------|---------------|-------------|
+| `hubble.host` | `0.0.0.0` | The address that Hubble service binds to |
+| `hubble.port` | `8088` | The port that Hubble service listens on |
+
+#### 5.2 Gremlin Query Limits
+
+These settings control query result limits to prevent memory issues:
+
+| Configuration Item | Default Value | Description |
+|-------------------|---------------|-------------|
+| `gremlin.suffix_limit` | `250` | Maximum query suffix length |
+| `gremlin.vertex_degree_limit` | `100` | Maximum vertex degree to display |
+| `gremlin.edges_total_limit` | `500` | Maximum number of edges returned |
+| `gremlin.batch_query_ids` | `100` | ID batch query size |
 

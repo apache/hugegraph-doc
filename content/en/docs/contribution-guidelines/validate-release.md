@@ -6,11 +6,15 @@ weight: 3
 
 > Note: this doc will be updated continuously.
 > You need to use Java11 in runtime verification, we will drop Java8 support from version 1.5.0 (And currently doesn't support Java17)
+>
+> Graduation note: Apache HugeGraph graduated in January 2026. Official release voting is now completed within the HugeGraph community (PMC binding votes on `dev@hugegraph.apache.org`), and no longer requires Incubator `general@incubator.apache.org` approval.
 
 ## Verification
 
 When the internal temporary release and packaging work is completed, other community developers (
-especially PMC) need to participate in the [verification link](https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist)
+especially PMC) need to participate in verification based on ASF release policy and checklist references:
+- [ASF release policy](https://www.apache.org/legal/release-policy.html)
+- [Incubator checklist (historical reference)](https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist)
 To ensure the "correctness + completeness" of someone's published version, here requires **everyone
 ** to participate as much as possible, and then explain which items you have **checked** in the
 subsequent **email reply**.(The following are the core items)
@@ -46,10 +50,10 @@ brew install wget
 
 # 4. Download the hugegraph-svn directory 
 # For version number, pay attention to fill in the verification version
-svn co https://dist.apache.org/repos/dist/dev/incubator/hugegraph/1.x.x/
+svn co https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/
 # (Note) If svn downloads a file very slowly, 
 # you can consider wget to download a single file, as follows (or consider using a proxy)
-wget https://dist.apache.org/repos/dist/dev/incubator/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
+wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
 ```
 
 #### 2. check hash value
@@ -74,7 +78,7 @@ Related commands:
 
 ```bash
 # 1. Download project trusted public key to local (required for the first time) & import
-curl  https://downloads.apache.org/incubator/hugegraph/KEYS > KEYS
+curl  https://downloads.apache.org/hugegraph/KEYS > KEYS
 gpg --import KEYS
 
 # After importing, you can see the following output, which means that x user public keys have been imported
@@ -123,8 +127,8 @@ the official [Wiki](https://cwiki.apache.org/confluence/display/INCUBATOR/Incuba
 
 After decompressing `*hugegraph*src.tar.gz`, Do the following checks:
 
-1. folders with `incubating`, and no **empty** files/folders
-2. `LICENSE` + `NOTICE` + `DISCLAIM` file exists and the content is normal
+1. package/folder naming should match the release line (historical releases may still contain `incubating`), and no **empty** files/folders
+2. `LICENSE` + `NOTICE` exist and the content is normal; `DISCLAIMER` is required for historical incubating artifacts
 3. **does not exist** binaries (without LICENSE)
 4. The source code files all contain the standard `ASF License` header (this could be done with
    the `Maven-MAT` plugin)
@@ -144,8 +148,8 @@ mvn clean package -P stage -DskipTests -Dcheckstyle.skip=true
 
 After decompressing `xxx-hugegraph.tar.gz`, perform the following checks:
 
-1. folders with `incubating`
-2. `LICENSE` and `NOTICE` file exists and the content is normal
+1. package/folder naming should match the release line (historical releases may still contain `incubating`)
+2. `LICENSE` and `NOTICE` file exists and the content is normal (`DISCLAIMER` applies to historical incubating artifacts)
 3. start server
 
 ```bash

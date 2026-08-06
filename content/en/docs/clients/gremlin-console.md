@@ -43,7 +43,7 @@ gremlin>
 
 > The `--` here will be parsed by getopts as the last option, allowing the subsequent options to be passed to Gremlin-Console for processing. `-i` represents `Execute the specified script and leave the console open on completion`. For more options, you can refer to the [source code](https://github.com/apache/tinkerpop/blob/3.5.1/gremlin-console/src/main/groovy/org/apache/tinkerpop/gremlin/console/Console.groovy#L483) of Gremlin-Console.
 
-[`example.groovy`](https://github.com/apache/incubator-hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy) is an example script under the `scripts` directory. This script inserts some data and queries the number of vertices and edges in the graph at the end.
+[`example.groovy`](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy) is an example script under the `scripts` directory. This script inserts some data and queries the number of vertices and edges in the graph at the end.
 
 You can continue to enter Gremlin statements to operate on the graph:
 

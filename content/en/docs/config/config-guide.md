@@ -1,6 +1,6 @@
 ---
-title: "HugeGraph configuration"
-linkTitle: "Config Guide"
+title: "Server Startup Guide"
+linkTitle: "Server Startup Guide"
 weight: 1
 ---
 
@@ -137,7 +137,7 @@ ssl: {
 There are many configuration options mentioned above, but for now, let's focus on the following options: `channelizer` and `graphs`.
 
 - `graphs`: This option specifies the graphs that need to be opened when the GremlinServer starts. It is a map structure where the key is the name of the graph and the value is the configuration file path for that graph.
-- `channelizer`: The GremlinServer supports two communication modes with clients: WebSocket and HTTP (default). If WebSocket is chosen, users can quickly experience the features of HugeGraph using [Gremlin-Console](/clients/gremlin-console.html), but it does not support importing large-scale data. It is recommended to use HTTP for communication, as all peripheral components of HugeGraph are implemented based on HTTP.
+- `channelizer`: The GremlinServer supports two communication modes with clients: WebSocket and HTTP (default). If WebSocket is chosen, users can quickly experience the features of HugeGraph using [Gremlin-Console](../clients/gremlin-console), but it does not support importing large-scale data. It is recommended to use HTTP for communication, as all peripheral components of HugeGraph are implemented based on HTTP.
 
 By default, the GremlinServer serves at `localhost:8182`. If you need to modify it, configure the `host` and `port` settings.
 
@@ -171,18 +171,13 @@ arthas.ip=127.0.0.1
 arthas.disabled_commands=jad
 
 # authentication configs
-# choose 'org.apache.hugegraph.auth.StandardAuthenticator' or
-# 'org.apache.hugegraph.auth.ConfigAuthenticator'
+# choose 'org.apache.hugegraph.auth.StandardAuthenticator' or a custom implementation
 #auth.authenticator=
 
 # for StandardAuthenticator mode
 #auth.graph_store=hugegraph
 # auth client config
 #auth.remote_url=127.0.0.1:8899,127.0.0.1:8898,127.0.0.1:8897
-
-# for ConfigAuthenticator mode
-#auth.admin_token=
-#auth.user_tokens=[]
 
 # TODO: Deprecated & removed later (useless from version 1.5.0)
 # rpc server configs for multi graph-servers or raft-servers

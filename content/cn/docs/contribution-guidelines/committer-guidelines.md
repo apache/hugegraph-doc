@@ -9,7 +9,7 @@ weight: 5
 # 候选人要求
 
 1. 候选人应遵守 [Apache Code of Conduct](https://www.apache.org/foundation/policies/conduct.html)
-2. PMC 成员将通过搜索[邮件列表](https://lists.apache.org/list?dev@hugegraph.apache.org)、[issues](https://github.com/apache/hugegraph/issues)、[PRs](https://github.com/apache/incubator-hugegraph/pulls)、[官网文档](https://hugegraph.apache.org/docs)等方式，了解候选人如何与他人互动，以及他们所做的贡献
+2. PMC 成员将通过搜索[邮件列表](https://lists.apache.org/list?dev@hugegraph.apache.org)、[issues](https://github.com/apache/hugegraph/issues)、[PRs](https://github.com/apache/hugegraph/pulls)、[官网文档](https://hugegraph.apache.org/docs)等方式，了解候选人如何与他人互动，以及他们所做的贡献
 3. 以下是在评估候选人是否适合成为 Committer 时需要考虑的一些要点：
    1. 与社区成员合作的能力
    2. 担任导师的能力
@@ -24,7 +24,7 @@ weight: 5
 
 ## 发起社区邮件讨论 (DISCUSS)
 
-任何 HugeGraph 的 (P)PMC 成员都可以发起投票讨论，在发现社区贡献者任何有价值的贡献并取得候选人本人同意后，可以在 private@hugegraph.apache.org 发起讨论。
+任何 HugeGraph 的 PMC 成员都可以发起投票讨论，在发现社区贡献者任何有价值的贡献并取得候选人本人同意后，可以在 private@hugegraph.apache.org 发起讨论。
 讨论邮件里提议者要把候选人的贡献说清楚，并最好给出确认贡献的 URL 等信息，便于大家讨论分析。
 
 下面是 HugeGraph 对应的邮件模板：(仅供参考)
@@ -73,33 +73,33 @@ Welcome everyone to share opinions~
 Thanks!
 ```
 
-对于讨论邮件中贡献链接，可以使用 [GitHub Search](https://github.com/search) 的统计功能，按需输入如下对应关键词查询即可，可以在此基础上添加新的 repo 如 `repo:apache/incubator-hugegraph-computer`，特别注意调整**时间范围** (下面是一个模板参考，请自行调整参数):
+对于讨论邮件中贡献链接，可以使用 [GitHub Search](https://github.com/search) 的统计功能，按需输入如下对应关键词查询即可，可以在此基础上添加新的 repo 如 `repo:apache/hugegraph-computer`，特别注意调整**时间范围** (下面是一个模板参考，请自行调整参数):
 
 - PR 提交次数
-  - `is:pr author:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `is:pr author:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - 代码提交/修改行数
-  - https://github.com/apache/incubator-hugegraph/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
-  - https://github.com/apache/incubator-hugegraph-doc/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
+  - https://github.com/apache/hugegraph/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
+  - https://github.com/apache/hugegraph-doc/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
 - PR 提交关联 Issue 次数
-  - `linked:issue involves:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `linked:issue involves:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - PR Review 个数
-  - `type:pr reviewed-by:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:pr reviewed-by:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - PR Review 行数
 - 合并次数
-  - `type:pr author:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:pr author:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - 有效合并行数
-  - https://github.com/apache/incubator-hugegraph/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
-  - https://github.com/apache/incubator-hugegraph-doc/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
+  - https://github.com/apache/hugegraph/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
+  - https://github.com/apache/hugegraph-doc/graphs/contributors?from=2023-06-01&to=2023-12-25&type=c
 - Issue 提交数
-  - `type:issue author:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:issue author:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - Issue 修复数
   - 在 Issue 提交数的基础上选取状态为 closed 的 Issues
 - Issue 参与数
-  - `type:issue involves:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:issue involves:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - 评论 Issue 数
-  - `type:issue commenter:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:issue commenter:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 - 评论 PR 数
-  - `type:pr commenter:xxx repo:apache/incubator-hugegraph repo:apache/incubator-hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
+  - `type:pr commenter:xxx repo:apache/hugegraph repo:apache/hugegraph-doc created:>2023-06-01 updated:<2023-12-25`
 
 Mailing Lists 的参与则可使用 https://lists.apache.org/list?dev@hugegraph.apache.org:lte=10M:xxx 查询。
 
@@ -133,7 +133,7 @@ Please vote accordingly:
 Thanks!
 ```
 
-然后 (P)PMC 成员回复 +1 或 -1 的邮件回复表达意见，一般来说至少需要 ≥3 票 +1 才能结束投票。
+然后 PMC 成员回复 +1 或 -1 的邮件回复表达意见，一般来说至少需要 ≥3 票 +1 才能结束投票。
 
 ## 宣布投票结果 (RESULT)
 
@@ -169,7 +169,7 @@ Subject: Invitation to become HugeGraph committer: xxx
 
 Hello xxx,
 
-The HugeGraph Project Management Committee (PPMC)
+The HugeGraph Project Management Committee (PMC)
 hereby offers you committer privileges to the project.
 These privileges are offered on the understanding that you'll use them
 reasonably and with common sense. We like to work on trust
@@ -214,7 +214,7 @@ establishing you as a committer.
 
 With the expectation of your acceptance, welcome!
 
-The Apache HugeGraph(incubating) PPMC
+The Apache HugeGraph PMC
 ```
 
 ## 候选人接受邀请 (ACCEPT)
@@ -226,13 +226,13 @@ To: [ Sender's Email ]
 Cc: private@hugegraph.apache.org
 Subject: Re: Invitation to become HugeGraph committer: xxx
 
-Hello Apache HugeGraph(incubating) PPMC,
+Hello Apache HugeGraph PMC,
 
 I accept the invitation.
 
 Thanks to the Apache HugeGraph Community for recognizing my work, I
 will continue to actively participate in the work of the Apache
-HugeGraph(incubating).
+HugeGraph.
 
 Next, I will follow the instructions to complete the next steps:
 Signing and submitting iCLA and registering Apache ID.
@@ -258,7 +258,7 @@ xxx
    5. **Country:** 所在国家英文
    6. **E-mail**: 邮箱地址，建议与上述邮件中使用的邮箱相同
    7. **(optional) preferred Apache id(s)**: 选择一个 [Apache committer](http://people.apache.org/committer-index.html) 页面不存在的 **SVN ID**
-   8. **(optional) notify project**：Apache HugeGraph(incubating)
+   8. **(optional) notify project**：Apache HugeGraph
    9. **签名：务必使用 PDF 工具手写**
    10. **Date:** 格式 xxxx-xx-xx
 3. 签署完之后将 `icla.pdf` 重命名为 `姓名拼音-icla.pdf`
@@ -270,7 +270,7 @@ Subject: ICLA Information
 
 Hello everyone:
 
-I have accepted the Apache HugeGraph(incubating) PPMC invitation to
+I have accepted the Apache HugeGraph PMC invitation to
 become a HugeGraph committer, the attachment is my ICLA information.
 
 (Optional) My GitHub account is https://github.com/xxx. Thanks!
@@ -302,7 +302,7 @@ for more information about roles at Apache.
 2. 配置个人信息 https://whimsy.apache.org/roster/committer/xxx
 3. 关联 GitHub 账号 https://gitbox.apache.org/boxer
    1. 这一步需要配置 GitHub 双重身份验证 (2FA)
-4. **负责提名的 PMC 成员需通过 [Roster](https://whimsy.apache.org/roster/ppmc/hugegraph) 页面，将新的 Committer 添加到官方提交者列表中** (**重要**, 否则仓库权限不生效)
+4. **负责提名的 PMC 成员需通过 [Roster](https://whimsy.apache.org/roster/pmc/hugegraph) 页面，将新的 Committer 添加到官方提交者列表中** (**重要**, 否则仓库权限不生效)
    1. 在这一步后，候选人即新的 Committer 才拥有对 GitHub HugeGraph 仓库的写权限
 5. (可选) 新的 Committer 可以使用 Apache 账号[申请](https://www.jetbrains.com/shop/eform/apache)免费使用 Jetbrains 的全系列产品
 
@@ -315,7 +315,7 @@ for more information about roles at Apache.
 To: dev@hugegraph.apache.org
 Subject: [ANNOUNCE] New Committer: xxx
 
-Hi everyone, The PPMC for Apache HugeGraph(incubating) has invited xxx to
+Hi everyone, The PMC for Apache HugeGraph has invited xxx to
 become a Committer and we are pleased to announce that he/she has accepted.
 
 xxx is being active in the HugeGraph community & dedicated to ... modules, 
@@ -327,32 +327,19 @@ Welcome xxx, and please enjoy your community journey~
 
 Thanks! 
 
-The Apache HugeGraph PPMC
+The Apache HugeGraph PMC
 ```
 
-## 更新 clutch status 信息
+## 更新治理信息入口
 
-负责提名的 PMC 成员需下载 clutch status 信息, 并进行更新, 生效后可在 [clutch](https://incubator.apache.org/clutch/hugegraph.html) 和 [projects](https://incubator.apache.org/projects/hugegraph.html) 页面查询。流程参考如下：
+Apache HugeGraph 已于 2026 年 1 月毕业，治理信息不再通过 Incubator clutch 页面维护，而是通过 ASF committee/project 数据维护。
 
-```text
-# 1. 下载 clutch status 信息
-svn co https://svn.apache.org/repos/asf/incubator/public/trunk/content/projects/
+请优先检查：
 
-# 2. 修改编辑 (注意下面内容仅供参考)
-cd projects
-vim hugegraph.xml
+- [HugeGraph 的 ASF Committee 页面](https://projects.apache.org/committee.html?hugegraph)
+- [PMC roster 页面](https://whimsy.apache.org/roster/pmc/hugegraph)
 
-<section id="News">
-  <title>News</title>
-  <ul>
-    <li>YYYY-MM-DD New Committer: xxx</li>
-    <li>...</li>
-  </ul>
-</section>
-
-# 3. 提交
-svn commit -m "update news for hugegraph"
-```
+若信息未自动同步，请按照 ASF 官方流程联系 Apache Community Development 或 ASF Infra 协助处理。
 
 # 参考
 

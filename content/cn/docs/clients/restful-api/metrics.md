@@ -2,7 +2,7 @@
 title: "Metrics API"
 linkTitle: "Metrics"
 weight: 17
-
+description: "Metrics（监控指标）REST 接口:获取系统运行时的性能指标、统计信息和健康状态数据。"
 ---
 
 HugeGraph 提供了获取监控信息的 Metrics 接口，比如各个 Gremlin 执行时间的统计、缓存的占用大小等。Metrics

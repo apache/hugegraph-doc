@@ -22,7 +22,7 @@ There are two ways to get HugeGraph-Tools:
 Download the latest version of the HugeGraph-Toolchain package:
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0.tar.gz
+wget https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0.tar.gz
 tar zxf *hugegraph*.tar.gz
 ```
 
@@ -36,7 +36,7 @@ Download the latest version of the HugeGraph-Tools source package:
 git clone https://github.com/apache/hugegraph-toolchain.git
 
 # 2. get from direct  (e.g. here is 1.0.0, please choose the latest version)
-wget https://downloads.apache.org/incubator/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz
+wget https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz
 ```
 
 Compile and generate tar package:
@@ -55,11 +55,12 @@ Generate tar package hugegraph-tools-${version}.tar.gz
 
 After decompression, enter the hugegraph-tools directory, you can use `bin/hugegraph` or `bin/hugegraph help` to view the usage information. mainly divided:
 
-- Graph management Type，graph-mode-set、graph-mode-get、graph-list、graph-get and graph-clear
-- Asynchronous task management Type，task-list、task-get、task-delete、task-cancel and task-clear
-- Gremlin Type，gremlin-execute and gremlin-schedule
-- Backup/Restore Type，backup、restore、migrate、schedule-backup and dump
-- Install the deployment Type，deploy、clear、start-all and stop-all
+- Graph management type, graph-mode-set, graph-mode-get, graph-list, graph-get, graph-clear, graph-create, graph-clone and graph-drop
+- Asynchronous task management type, task-list, task-get, task-delete, task-cancel and task-clear
+- Gremlin type, gremlin-execute and gremlin-schedule
+- Backup/Restore type, backup, restore, migrate, schedule-backup and dump
+- Authentication data backup/restore type, auth-backup and auth-restore
+- Install deployment type, deploy, clear, start-all and stop-all
 
 ```bash
 Usage: hugegraph [options] [command] [command options]
@@ -105,15 +106,23 @@ Another way is to set the environment variable in the bin/hugegraph script:
 #export HUGEGRAPH_TRUST_STORE_PASSWORD=
 ```
 
-##### 3.3 Graph Management Type，graph-mode-set、graph-mode-get、graph-list、graph-get and graph-clear
+##### 3.3 Graph Management Type, graph-mode-set, graph-mode-get, graph-list, graph-get, graph-clear, graph-create, graph-clone and graph-drop
 
-- graph-mode-set，set graph restore mode
+- graph-mode-set, set graph restore mode
   - --graph-mode or -m, required, specifies the mode to be set, legal values include [NONE, RESTORING, MERGING, LOADING]
-- graph-mode-get，get graph restore mode
-- graph-list，list all graphs in a HugeGraph-Server
-- graph-get，get a graph and its storage backend type
-- graph-clear，clear all schema and data of a graph
-  - --confirm-message Or -c, required, delete confirmation information, manual input is required, double confirmation to prevent accidental deletion, "I'm sure to delete all data", including double quotes
+- graph-mode-get, get graph restore mode
+- graph-list, list all graphs in a HugeGraph-Server
+- graph-get, get a graph and its storage backend type
+- graph-clear, clear all schema and data of a graph
+  - --confirm-message or -c, required, delete confirmation information, manual input is required, double confirmation to prevent accidental deletion, "I'm sure to delete all data", including double quotes
+- graph-create, create a new graph with configuration file
+  - --name or -n, optional, the name of the new graph, default is hugegraph
+  - --file or -f, required, the path to the graph configuration file
+- graph-clone, clone an existing graph
+  - --name or -n, optional, the name of the cloned graph, default is hugegraph
+  - --clone-graph-name, optional, the name of the source graph to clone from, default is hugegraph
+- graph-drop, drop a graph (different from graph-clear, this completely removes the graph)
+  - --confirm-message or -c, required, confirmation message "I'm sure to drop the graph", including double quotes
 
 > When you need to restore the backup graph to a new graph, you need to set the graph mode to RESTORING mode; when you need to merge the backup graph into an existing graph, you need to first set the graph mode to MERGING model.
 
@@ -132,6 +141,8 @@ Another way is to set the environment variable in the bin/hugegraph script:
   - --force，Optional. When set, it means to clean up all asynchronous tasks. Unfinished ones are canceled first, and then all asynchronous tasks are cleared. By default, only completed asynchronous tasks are cleaned up
 
 ##### 3.5 Gremlin Type，gremlin-execute and gremlin-schedule
+
+> ⚠️ **SEC Reminder**: The execution of Gremlin depends on the actual logic of the statements, which may involve scenarios such as large-scale data modification and high-risk system calls with potential implicit hazards. Please use this tool **only in secure and trusted network environments**. It is imperative to configure and secure **HugeGraph-Server** with the **[Authentication System (Auth)](/docs/config/config-authentication/)** and an **IP Whitelist** to restrict execution requests on the server side. Never hand over the tool or expose the execution entry to unauthorized personnel.
 
 - gremlin-execute, send Gremlin statements to HugeGraph-Server to execute query or modification operations, execute synchronously, and return results after completion
   - --file or -f, specify the script file to execute, UTF-8 encoding, mutually exclusive with --script
@@ -159,6 +170,7 @@ Another way is to set the environment variable in the bin/hugegraph script:
   - --huge-types or -t, the data types to be backed up, separated by commas, the optional value is 'all' or a combination of one or more [vertex, edge, vertex_label, edge_label, property_key, index_label], 'all' Represents all 6 types, namely vertices, edges and all schemas
   - --log or -l, specify the log directory, the default is the current directory
   - --retry, specify the number of failed retries, the default is 3
+  - --thread-num or -T, the number of threads to use, default is Math.min(10, Math.max(4, CPUs / 2))
   - --split-size or -s, specifies the size of splitting vertices or edges when backing up, the default is 1048576
   - -D, use the mode of -Dkey=value to specify dynamic parameters, and specify HDFS configuration items when backing up data to HDFS, for example: -Dfs.default.name=hdfs://localhost:9000
 - restore, restore schema or data stored in JSON format to a new graph (RESTORING mode) or merge into an existing graph (MERGING mode)
@@ -167,6 +179,7 @@ Another way is to set the environment variable in the bin/hugegraph script:
   - --huge-types or -t, data types to restore, separated by commas, optional value is 'all' or a combination of one or more [vertex, edge, vertex_label, edge_label, property_key, index_label], 'all' Represents all 6 types, namely vertices, edges and all schemas
   - --log or -l, specify the log directory, the default is the current directory
   - --retry, specify the number of failed retries, the default is 3
+  - --thread-num or -T, the number of threads to use, default is Math.min(10, Math.max(4, CPUs / 2))
   - -D, use the mode of -Dkey=value to specify dynamic parameters, which are used to specify HDFS configuration items when restoring graphs from HDFS, for example: -Dfs.default.name=hdfs://localhost:9000
   > restore command can be used only if --format is executed as backup for json
 - migrate, migrate the currently connected graph to another HugeGraphServer
@@ -200,7 +213,26 @@ Another way is to set the environment variable in the bin/hugegraph script:
   - --split-size or -s, specifies the size of splitting vertices or edges when backing up, the default is 1048576
   - -D, use the mode of -Dkey=value to specify dynamic parameters, and specify HDFS configuration items when backing up data to HDFS, for example: -Dfs.default.name=hdfs://localhost:9000
 
-##### 3.7 Install the deployment type
+##### 3.7 Authentication data backup/restore type
+
+- auth-backup, backup authentication data to a specified directory
+  - --types or -t, types of authentication data to back up, separated by commas, optional value is 'all' or a combination of one or more [user, group, target, belong, access], 'all' represents all 5 types
+  - --directory or -d, directory to store backup data, defaults to current directory
+  - --log or -l, specify the log directory, the default is the current directory
+  - --retry, specify the number of failed retries, the default is 3
+  - --thread-num or -T, the number of threads to use, default is Math.min(10, Math.max(4, CPUs / 2))
+  - -D, use the mode of -Dkey=value to specify dynamic parameters, and specify HDFS configuration items when backing up data to HDFS, for example: -Dfs.default.name=hdfs://localhost:9000
+- auth-restore, restore authentication data from a specified directory
+  - --types or -t, types of authentication data to restore, separated by commas, optional value is 'all' or a combination of one or more [user, group, target, belong, access], 'all' represents all 5 types
+  - --directory or -d, directory where backup data is stored, defaults to current directory
+  - --log or -l, specify the log directory, the default is the current directory
+  - --retry, specify the number of failed retries, the default is 3
+  - --thread-num or -T, the number of threads to use, default is Math.min(10, Math.max(4, CPUs / 2))
+  - --strategy, conflict handling strategy, optional values are [stop, ignore], default is stop. stop means stop restoring when encountering conflicts, ignore means ignore conflicts and continue restoring
+  - --init-password, initial password to set when restoring users, required when restoring user data
+  - -D, use the mode of -Dkey=value to specify dynamic parameters, which are used to specify HDFS configuration items when restoring data from HDFS, for example: -Dfs.default.name=hdfs://localhost:9000
+
+##### 3.8 Install the deployment type
 
 - deploy, one-click download, install and start HugeGraph-Server and HugeGraph-Studio
   - -v, required, specifies the version number of HugeGraph-Server and HugeGraph-Studio installed, the latest is 0.9
@@ -215,7 +247,7 @@ Another way is to set the environment variable in the bin/hugegraph script:
 
 > There is an optional parameter -u in the deploy command. When provided, the specified download address will be used instead of the default download address to download the tar package, and the address will be written into the `~/hugegraph-download-url-prefix` file; if no address is specified later When -u and `~/hugegraph-download-url-prefix` are not specified, the tar package will be downloaded from the address specified by `~/hugegraph-download-url-prefix`; if there is neither -u nor `~/hugegraph-download-url-prefix`, it will be downloaded from the default download address
 
-##### 3.8 Specific command parameters
+##### 3.9 Specific command parameters
 
 The specific parameters of each subcommand are as follows:
 
@@ -524,7 +556,7 @@ Usage: hugegraph [options] [command] [command options]
 
 ```
 
-##### 3.9 Specific command example
+##### 3.10 Specific command example
 
 ###### 1. gremlin statement
 

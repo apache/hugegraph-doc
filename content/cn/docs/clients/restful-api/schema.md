@@ -2,6 +2,7 @@
 title: "Schema API"
 linkTitle: "Schema"
 weight: 1
+description: "Schema（图模式）REST 接口:查询图的完整模式定义,包括属性键、顶点标签、边标签和索引标签的统一视图。"
 ---
 
 ### 1.1 Schema

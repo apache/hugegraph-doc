@@ -24,8 +24,11 @@ user(name=xx) -belong-> group(name=xx) -access(read)-> target(graph=graph1, reso
 
 ### 配置用户认证
 
-HugeGraph 目前默认**未启用**用户认证功能，需通过修改配置文件来启用该功能。(Note: 如果在生产环境/外网使用, 
-请使用 **Java11** 版本 + 开启权限避免安全相关隐患)
+HugeGraph 目前默认**未启用**用户认证功能，需通过修改配置文件来启用该功能。
+
+> ⚠️ **SEC 提醒：图查询语言 (Gremlin/Cypher) 的安全性**
+>
+> 出于图查询语言的灵活性可能带来的潜在系统安全隐患，**请避免直接在公网/外网环境暴露任何查询相关接口**。在实际生产部署时，请以此处的 **[鉴权认证体系](/cn/docs/config/config-authentication/)** 结合 **IP 白名单** 为安全双重保障机制，同时建议开启 Audit Log (审计日志) 以精准定位用户执行的具体查询语句。鉴于 Server 的无状态特性，整体架构上强烈推荐采用 **[容器化环境 (Docker/K8s)](/cn/docs/quickstart/hugegraph/hugegraph-server/#31-使用-docker-容器-便于测试)** 部署，以极低成本有效隔离底层系统的安全风险。
 
 目前已内置实现了`StandardAuthenticator`模式，该模式支持多用户认证与细粒度权限控制。此外，开发者可以自定义实现`HugeAuthenticator`接口来对接自身的权限系统。
 
@@ -94,14 +97,14 @@ gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
 在鉴权配置完成后，需在首次执行 `init-store.sh` 时命令行中输入 `admin` 密码 (非 docker 部署模式下)
 
 如果基于 docker 镜像部署或者已经初始化 HugeGraph 并需要转换为鉴权模式，需要删除相关图数据并重新启动 HugeGraph, 若图已有业务数据，暂时**无法直接转换**鉴权模式 (hugegraph 版本 <= 1.2.0) 
-> 对于该功能的改进已经在最新版本发布 (Docker latest 可用)，可参考 [PR 2411](https://github.com/apache/incubator-hugegraph/pull/2411), 此时可无缝切换。 
+> 对于该功能的改进已经在最新版本发布 (Docker latest 可用)，可参考 [PR 2411](https://github.com/apache/hugegraph/pull/2411), 此时可无缝切换。 
 
 ```bash
 # stop the hugeGraph firstly
 bin/stop-hugegraph.sh
 
 # delete the store data (here we use the default path for rocksdb)
-# Note: no need to delete data in the latest code (fixed in https://github.com/apache/incubator-hugegraph/pull/2411)
+# Note: no need to delete data in the latest code (fixed in https://github.com/apache/hugegraph/pull/2411)
 rm -rf rocksdb-data/
 
 # init store again

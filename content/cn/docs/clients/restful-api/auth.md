@@ -2,7 +2,12 @@
 title: "Authentication API"
 linkTitle: "Authentication"
 weight: 16
+description: "Authentication（认证鉴权）REST 接口:管理用户、角色、权限和访问控制,实现细粒度的图数据安全机制。"
 ---
+
+> **版本变更说明**:
+> - 1.7.0+: Auth API 路径使用 GraphSpace 格式，如 `/graphspaces/DEFAULT/auth/users`，且 group/target 等 id 格式与 name 一致（如 `admin`）
+> - 1.5.x 及更早: Auth API 路径包含 graph 名称，group/target 等 id 格式类似 `-69:grant`。参考 [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
 
 ### 10.1 用户认证与权限控制
 
@@ -22,7 +27,7 @@ city: Beijing})
 
 ##### 接口说明：
 用户认证与权限控制接口包括 5 类：UserAPI、GroupAPI、TargetAPI、BelongAPI、AccessAPI。
-**注意**: 1.5.0 及之前，group/target 等 id 的格式类似 -69:grant，1.7.0 及之后，id 和 name 一致，如 admin [HugeGraph 1.5.x RESTful API](https://github.com/apache/incubator-hugegraph-doc/tree/release-1.5.0)
+**注意**: 1.5.0 及之前，group/target 等 id 的格式类似 -69:grant，1.7.0 及之后，id 和 name 一致，如 admin [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
 
 ### 10.2 用户（User）API
 用户接口包括：创建用户，删除用户，修改用户，和查询用户相关信息接口。
@@ -1044,7 +1049,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>11>S-77
 
 ### 10.7 图空间管理员（Manager）API
 
-**重要提示**：在使用以下 API 之前，需要先创建图空间（graphspace）。请参考 [Graphspace API](../graphspace) 创建名为 `gs1` 的图空间。文档中的示例均假设已存在名为 `gs1` 的图空间
+**重要提示**：在使用以下 API 之前，需要先创建图空间（graphspace）。请参考 [Graphspace API](./graphspace) 创建名为 `gs1` 的图空间。文档中的示例均假设已存在名为 `gs1` 的图空间
 
 1. 图空间管理员 API 用于在 graphspace 维度给用户授予/回收管理员角色，并查询当前用户或其他用户在该 graphspace 下的角色信息。角色类型可取 `SPACE`、`SPACE_MEMBER`、`ADMIN` 。
 

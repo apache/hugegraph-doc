@@ -3,7 +3,7 @@
 # Apache HugeGraph Release Validation Script
 ################################################################################
 #
-# This script validates Apache HugeGraph (Incubating) release packages:
+# This script validates Apache HugeGraph release packages:
 #   1. Check package integrity (SHA512, GPG signatures)
 #   2. Validate package names and required files
 #   3. Check license compliance (ASF categories)
@@ -42,12 +42,12 @@ set -o nounset
 # Configuration Constants
 ################################################################################
 
-readonly SCRIPT_VERSION="2.0.0"
+readonly SCRIPT_VERSION="2.2.0"
 readonly SCRIPT_NAME=$(basename "$0")
 
 # URLs
-readonly SVN_URL_PREFIX="https://dist.apache.org/repos/dist/dev/incubator/hugegraph"
-readonly KEYS_URL="https://downloads.apache.org/incubator/hugegraph/KEYS"
+readonly SVN_URL_PREFIX="https://dist.apache.org/repos/dist/dev/hugegraph"
+readonly KEYS_URL="https://downloads.apache.org/hugegraph/KEYS"
 
 # Validation Rules
 readonly MAX_FILE_SIZE="800k"
@@ -96,6 +96,7 @@ HUBBLE_STARTED=0
 
 # Script execution time tracking
 SCRIPT_START_TIME=0
+ENABLE_CLEANUP=0
 
 ################################################################################
 # Helper Functions - Output & Logging
@@ -142,7 +143,7 @@ Examples:
   ${SCRIPT_NAME} --non-interactive 1.7.0 pengjunzhi
 
 For more information, visit:
-  https://github.com/apache/incubator-hugegraph-doc/tree/master/dist
+  https://github.com/apache/hugegraph-doc/tree/master/dist
 
 EOF
 }
@@ -265,6 +266,7 @@ setup_logging() {
     local log_dir="${WORK_DIR}/logs"
     mkdir -p "$log_dir"
     LOG_FILE="$log_dir/validate-${RELEASE_VERSION}-$(date +%Y%m%d-%H%M%S).log"
+    ENABLE_CLEANUP=1
 
     info "Logging to: ${LOG_FILE}"
     log "INIT" "Starting validation for HugeGraph ${RELEASE_VERSION}"
@@ -348,6 +350,12 @@ find_package_dir() {
     echo "$found"
 }
 
+find_package_dir_silent() {
+    local pattern=$1
+    local base_dir=${2:-"${DIST_DIR}"}
+    find "$base_dir" -maxdepth 3 -type d -path "$pattern" 2>/dev/null | head -n1
+}
+
 ################################################################################
 # Helper Functions - GPG & Signatures
 ################################################################################
@@ -399,12 +407,22 @@ import_and_trust_gpg_keys() {
 # Validation Functions - Package Checks
 ################################################################################
 
-check_incubating_name() {
+check_package_name() {
     local package=$1
     TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 
-    if [[ ! "$package" =~ "incubating" ]]; then
-        collect_error "Package name '$package' should include 'incubating'"
+    if [[ "$package" != apache-hugegraph* ]]; then
+        collect_error "Package name '$package' should start with 'apache-hugegraph'"
+        return 1
+    fi
+
+    if [[ "$package" != *"${RELEASE_VERSION}"* ]]; then
+        collect_error "Package name '$package' does not include release version '${RELEASE_VERSION}'"
+        return 1
+    fi
+
+    if [[ "$package" =~ incubating ]]; then
+        collect_error "Package '$package' should not contain 'incubating' for post-graduation releases"
         return 1
     fi
 
@@ -414,7 +432,6 @@ check_incubating_name() {
 
 check_required_files() {
     local package=$1
-    local require_disclaimer=${2:-true}
     local has_error=0
 
     if [[ ! -f "LICENSE" ]]; then
@@ -426,13 +443,6 @@ check_required_files() {
 
     if [[ ! -f "NOTICE" ]]; then
         collect_error "Package '$package' missing NOTICE file"
-        has_error=1
-    else
-        mark_check_passed
-    fi
-
-    if [[ "$require_disclaimer" == "true" ]] && [[ ! -f "DISCLAIMER" ]]; then
-        collect_error "Package '$package' missing DISCLAIMER file"
         has_error=1
     else
         mark_check_passed
@@ -812,8 +822,8 @@ validate_source_package() {
     pushd "$package_dir" > /dev/null
 
     # Run all checks
-    check_incubating_name "$package_file"
-    check_required_files "$package_file" true
+    check_package_name "$package_file"
+    check_required_files "$package_file"
     check_license_categories "$package_file" "LICENSE NOTICE"
     check_empty_files_and_dirs "$package_file"
     check_file_sizes "$package_file" "$MAX_FILE_SIZE"
@@ -876,8 +886,8 @@ validate_binary_package() {
     pushd "$package_dir" > /dev/null
 
     # Run checks
-    check_incubating_name "$package_file"
-    check_required_files "$package_file" true
+    check_package_name "$package_file"
+    check_required_files "$package_file"
 
     # Binary packages should have licenses directory
     TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
@@ -905,12 +915,16 @@ validate_binary_package() {
 cleanup() {
     local exit_code=$?
 
+    if [[ $ENABLE_CLEANUP -eq 0 ]]; then
+        return "$exit_code"
+    fi
+
     log "CLEANUP" "Starting cleanup (exit code: $exit_code)"
 
     # Stop running services
     if [[ $SERVER_STARTED -eq 1 ]]; then
         info "Stopping HugeGraph server..."
-        local server_dir=$(find_package_dir "*hugegraph-incubating*src/hugegraph-server/*hugegraph*${RELEASE_VERSION}" 2>/dev/null || echo "")
+        local server_dir=$(find_package_dir_silent "*hugegraph*${RELEASE_VERSION}*src/hugegraph-server/*hugegraph-server*${RELEASE_VERSION}*")
         if [[ -n "$server_dir" ]] && [[ -d "$server_dir" ]]; then
             pushd "$server_dir" > /dev/null 2>&1
             bin/stop-hugegraph.sh || true
@@ -1088,6 +1102,10 @@ main() {
         ls -lh "${DIST_DIR}"
     else
         # Download from SVN
+        if ! svn ls "${SVN_URL_PREFIX}/${RELEASE_VERSION}" &>/dev/null; then
+            collect_error "Release version '${RELEASE_VERSION}' not found in TLP dist path: ${SVN_URL_PREFIX}/${RELEASE_VERSION}"
+            exit 1
+        fi
         DIST_DIR="${WORK_DIR}/dist/${RELEASE_VERSION}"
         info "Downloading from SVN to: ${DIST_DIR}"
 
@@ -1171,7 +1189,7 @@ main() {
     ####################################################
     print_step 6 9 "Test Compiled Server Package"
 
-    local server_dir=$(find_package_dir "*hugegraph-incubating*src/hugegraph-server/*hugegraph*${RELEASE_VERSION}")
+    local server_dir=$(find_package_dir "*hugegraph*${RELEASE_VERSION}*src/hugegraph-server/*hugegraph-server*${RELEASE_VERSION}*")
     if [[ -n "$server_dir" ]]; then
         info "Starting HugeGraph server from: $server_dir"
         pushd "$server_dir" > /dev/null
@@ -1297,7 +1315,7 @@ main() {
     print_step 9 9 "Test Binary Server & Toolchain"
 
     # Test binary server
-    local bin_server_dir=$(find_package_dir "*hugegraph-incubating*${RELEASE_VERSION}/*hugegraph-server-incubating*${RELEASE_VERSION}")
+    local bin_server_dir=$(find_package_dir "*hugegraph*${RELEASE_VERSION}/*hugegraph-server*${RELEASE_VERSION}*")
     if [[ -n "$bin_server_dir" ]]; then
         info "Testing binary server package..."
         pushd "$bin_server_dir" > /dev/null

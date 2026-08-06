@@ -4,8 +4,8 @@ linkTitle: "HugeGraph Computing (OLAP)"
 weight: 4
 ---
 
-## 🚀 Best practice: Prioritize using DeepWiki intelligent documents
+> DeepWiki provides real-time updated project documentation with more comprehensive and accurate content, suitable for quickly understanding the latest project information.
+>
+> 📖 [https://deepwiki.com/apache/hugegraph-computer](https://deepwiki.com/apache/hugegraph-computer)
 
-> To address the issue of outdated static documents, we provide DeepWiki with **real-time updates and more comprehensive content**. It is equivalent to an expert with the latest knowledge of the project, which is very suitable for **all developers** to read and consult before starting the project.
-
-**👉 Strongly recommend visiting and having a conversation with:** [**incubator-hugegraph-computer**](https://deepwiki.com/apache/incubator-hugegraph-computer)
+**GitHub Access:** <i class="fab fa-github"></i> [https://github.com/apache/hugegraph-computer](https://github.com/apache/hugegraph-computer)

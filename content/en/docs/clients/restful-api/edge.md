@@ -2,6 +2,7 @@
 title: "Edge API"
 linkTitle: "Edge"
 weight: 8
+description: "Edge REST API: Create, query, update, and delete relationship data between vertices with support for batch operations and directional queries."
 ---
 
 ### 2.2 Edge

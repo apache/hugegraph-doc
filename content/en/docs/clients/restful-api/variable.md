@@ -2,6 +2,7 @@
 title: "Variable API"
 linkTitle: "Variable"
 weight: 11
+description: "Variable REST API: Store and manage key-value pairs as global variables for graph-level configuration and state management."
 ---
 
 ### 5.1 Variables

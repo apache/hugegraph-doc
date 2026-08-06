@@ -2,7 +2,7 @@
 title: "HugeGraph 0.9 Release Notes"
 linkTitle: "Release-0.9.2"
 draft: true
-weight: 15
+weight: 17
 ---
 
 ### API & Client

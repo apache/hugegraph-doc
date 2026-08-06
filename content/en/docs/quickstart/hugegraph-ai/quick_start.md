@@ -207,3 +207,63 @@ graph TD;
 # 5. Graph Tools
 
 Input Gremlin queries to execute corresponding operations.
+
+# 6. Language Switching (v1.5.0+)
+
+HugeGraph-LLM supports bilingual prompts for improved accuracy across languages.
+
+### Switching Between English and Chinese
+
+The system language affects:
+- **System prompts**: Internal prompts used by the LLM
+- **Keyword extraction**: Language-specific extraction logic
+- **Answer generation**: Response formatting and style
+
+#### Configuration Method 1: Environment Variable
+
+Edit your `.env` file:
+
+```bash
+# English prompts (default)
+LANGUAGE=EN
+
+# Chinese prompts
+LANGUAGE=CN
+```
+
+Restart the service after changing the language setting.
+
+#### Configuration Method 2: Web UI (Dynamic)
+
+If available in your deployment, use the settings panel in the Web UI to switch languages without restarting:
+
+1. Navigate to the **Settings** or **Configuration** tab
+2. Select **Language**: `EN` or `CN`
+3. Click **Save** - changes apply immediately
+
+#### Language-Specific Behavior
+
+| Language | Keyword Extraction | Answer Style | Use Case |
+|----------|-------------------|--------------|----------|
+| `EN` | English NLP models | Professional, concise | International users, English documents |
+| `CN` | Chinese NLP models | Natural Chinese phrasing | Chinese users, Chinese documents |
+
+> [!TIP]
+> Match the `LANGUAGE` setting to your primary document language for best RAG accuracy.
+
+### REST API Language Override
+
+When using the REST API, you can specify custom prompts per request to override the default language setting:
+
+```bash
+curl -X POST http://localhost:8001/rag \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "告诉我关于阿尔·帕西诺的信息",
+    "graph_only": true,
+    "keywords_extract_prompt": "请从以下文本中提取关键实体...",
+    "answer_prompt": "请根据以下上下文回答问题..."
+  }'
+```
+
+See the [REST API Reference](./rest-api.md) for complete parameter details.

@@ -2,6 +2,7 @@
 title: "Cypher API"
 linkTitle: "Cypher"
 weight: 15
+description: "Cypher（图查询语言）REST 接口:通过 HTTP 接口执行 OpenCypher 声明式图查询语言。"
 ---
 
 ### 9.1 Cypher

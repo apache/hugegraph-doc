@@ -2,6 +2,7 @@
 title: "Graphs API"
 linkTitle: "Graphs"
 weight: 12
+description: "Graphs（图管理）REST 接口:管理图实例的生命周期,包括创建、查询、克隆、清空和删除图数据库。"
 ---
 
 ### 6.1 Graphs
@@ -112,19 +113,19 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 ##### Method & Url
 
 ```
-POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph_clone?clone_graph_name=hugegraph
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_name=hugegraph
 ```
 
 ##### Request Body (可选)
 
 克隆一个非鉴权模式的图（设置 `Content-Type: application/json`）
 
-```json
+```javascript
 {
   "gremlin.graph": "org.apache.hugegraph.HugeFactory",
   "backend": "rocksdb",
   "serializer": "binary",
-  "store": "hugegraph_clone",
+  "store": "cloneGraph",
   "rocksdb.data_path": "./rks-data-xx",
   "rocksdb.wal_path": "./rks-data-xx"
 }
@@ -144,7 +145,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph_clone?clone_grap
 
 ```javascript
 {
-    "name": "hugegraph_clone",
+    "name": "cloneGraph",
     "backend": "rocksdb"
 }
 ```
@@ -166,11 +167,21 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph-xx
 
 ##### Request Body
 
-创建一个非鉴权模式的图（设置 `Content-Type: application/json`）
+创建一个图（设置 `Content-Type: application/json`）
 
-```json
+**`gremlin.graph` 配置说明：**
+- 鉴权模式：`"gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy"`（推荐）
+- 非鉴权模式：`"gremlin.graph": "org.apache.hugegraph.HugeFactory"`
+
+**注意**！！
+1. 在 1.7.0 版本中，动态创建图会导致 NPE 错误。该问题已在 [PR#2912](https://github.com/apache/hugegraph/pull/2912) 中修复。当前 master 版本和 1.7.0 之前的版本不受此问题影响。
+2. 1.7.0 及之前版本，如果 backend 是 hstore，必须在请求体加上 "task.scheduler_type": "distributed"。同时请确保 HugeGraph-Server 已正确配置 PD，参见 [HStore 配置](/cn/docs/quickstart/hugegraph/hugegraph-server/#511-分布式存储hstore)。
+
+**RocksDB 示例：**
+
+```javascript
 {
-  "gremlin.graph": "org.apache.hugegraph.HugeFactory",
+  "gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy",
   "backend": "rocksdb",
   "serializer": "binary",
   "store": "hugegraph",
@@ -179,9 +190,20 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph-xx
 }
 ```
 
-> Note:
-> 1. Rocksdb 存储路径不能与现有图相同（需使用不同的目录）
-> 2. 如需开启新图的权限系统，需替换设置 `gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy`
+**HStore 示例（适用于 1.7.0 及之前版本）：**
+
+```javascript
+{
+  "gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy",
+  "backend": "hstore",
+  "serializer": "binary",
+  "store": "hugegraph2",
+  "task.scheduler_type": "distributed",
+  "pd.peers": "127.0.0.1:8686"
+}
+```
+
+> Note: Rocksdb 存储路径不能与现有图相同（需使用不同的目录）
 
 ##### Response Status
 
@@ -216,7 +238,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph-xx
 ##### Method & Url
 
 ```javascript
-DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph_clone?confirm_message=I%27m%20sure%20to%20drop%20the%20graph
+DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/graphA?confirm_message=I%27m%20sure%20to%20drop%20the%20graph
 ```
 
 ##### Response Status

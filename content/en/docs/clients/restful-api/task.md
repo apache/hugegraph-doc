@@ -2,6 +2,7 @@
 title: "Task API"
 linkTitle: "Task"
 weight: 13
+description: "Task REST API: Query and manage asynchronous task execution status for long-running operations like index rebuilding and graph traversals."
 ---
 
 ### 7.1 Task

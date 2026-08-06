@@ -2,6 +2,7 @@
 title: "Cypher API"
 linkTitle: "Cypher"
 weight: 15
+description: "Cypher REST API: Execute OpenCypher declarative graph query language via HTTP interface."
 ---
 
 ### 9.1 Cypher

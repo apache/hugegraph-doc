@@ -36,6 +36,10 @@ HugeGraph 支持百亿以上的顶点和边的快速存储与查询，具备出�
 └──────────────────────────────────────────────────────────────┘
 ```
 
+![Apache HugeGraph 全栈图系统生态全景图](/cn/docs/images/seatunnel/hugegraph-fullstack-ecosystem.png)
+
+```text
+
 ---
 
 ### 核心组件

@@ -13,6 +13,8 @@ HugeGraph 为 Apache SeaTunnel 提供了 Connector-V2 支持，用户可以通�
 > **注意**：SeaTunnel Connector 由 HugeGraph 社区贡献至 Apache SeaTunnel 项目，具体使用方式请参考
 > [Apache SeaTunnel 官方文档](https://seatunnel.apache.org/docs/)。
 
+![HugeGraph + SeaTunnel 数据集成架构图](/cn/docs/images/seatunnel/hugegraph-seatunnel-architecture.png)
+
 ### 2 功能特性
 
 HugeGraph-SeaTunnel Connector 提供以下能力：
@@ -23,6 +25,8 @@ HugeGraph-SeaTunnel Connector 提供以下能力：
 - **边同步**：支持全量或增量同步边数据
 - **Schema 映射**：自动映射 HugeGraph Schema（PropertyKey、VertexLabel、EdgeLabel）与外部数据字段
 - **数据迁移**：支持在不同 HugeGraph 实例之间进行数据迁移，或从其他数据源导入图数据
+
+![HugeGraph Source/Sink 双向数据流示意图](/cn/docs/images/seatunnel/hugegraph-seatunnel-source-sink.png)
 
 ### 3 环境要求
 

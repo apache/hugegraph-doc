@@ -23,17 +23,17 @@ HugeGraph 支持百亿以上的顶点和边的快速存储与查询，具备出�
 
 ### 生态系统全景
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│         Apache HugeGraph - Full-Stack Graph System           │
-├──────────────────┬────────────────────┬──────────────────────┤
-│  Graph DB (OLTP) │    Graph Compute   │       Graph AI       │
-│  HugeGraph       │  Vermeer (Memory)  │    HugeGraph-AI      │
-│  Server          │  Computer (Dist.)  │  GraphRAG/GNN/Py     │
-├──────────────────┴────────────────────┴──────────────────────┤
-│                    HugeGraph Toolchain                       │
-│  Hubble | Loader | Client(Java/Go/Py) | Spark | SeaTunnel | Tools        │
-└──────────────────────────────────────────────────────────────┘
+```text
+┌────────────────────────────────────────────────────────────────────┐
+│           Apache HugeGraph - Full-Stack Graph System               │
+├──────────────────┬────────────────────┬────────────────────────────┤
+│  Graph DB (OLTP) │    Graph Compute   │         Graph AI           │
+│  HugeGraph       │  Vermeer (Memory)  │      HugeGraph-AI          │
+│  Server          │  Computer (Dist.)  │    GraphRAG/GNN/Py         │
+├──────────────────┴────────────────────┴────────────────────────────┤
+│                      HugeGraph Toolchain                           │
+│  Hubble | Loader | Client(Java/Go/Py) | Spark | SeaTunnel | Tools  │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 ![Apache HugeGraph 全栈图系统生态全景图](/cn/docs/images/seatunnel/hugegraph-fullstack-ecosystem.png)

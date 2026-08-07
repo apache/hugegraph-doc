@@ -21,16 +21,16 @@ HugeGraph supports the rapid storage and querying of tens of billions of vertice
 ### Ecosystem Overview
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│         Apache HugeGraph - Full-Stack Graph System           │
-├──────────────────┬────────────────────┬──────────────────────┤
-│  Graph DB (OLTP) │    Graph Compute   │       Graph AI       │
-│  HugeGraph       │  Vermeer (Memory)  │    HugeGraph-AI      │
-│  Server          │  Computer (Dist.)  │  GraphRAG/GNN/Py     │
-├──────────────────┴────────────────────┴──────────────────────┤
-│                    HugeGraph Toolchain                       │
-│  Hubble | Loader | Client(Java/Go/Py) | Spark | Tools        │
-└──────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│           Apache HugeGraph - Full-Stack Graph System               │
+├──────────────────┬────────────────────┬────────────────────────────┤
+│  Graph DB (OLTP) │    Graph Compute   │         Graph AI           │
+│  HugeGraph       │  Vermeer (Memory)  │      HugeGraph-AI          │
+│  Server          │  Computer (Dist.)  │    GraphRAG/GNN/Py         │
+├──────────────────┴────────────────────┴────────────────────────────┤
+│                      HugeGraph Toolchain                           │
+│  Hubble | Loader | Client(Java/Go/Py) | Spark | SeaTunnel | Tools  │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -91,6 +91,7 @@ A complete tool ecosystem surrounding the graph system ([toolchain repository](h
 | [Loader](/docs/quickstart/toolchain/hugegraph-loader) | Data import tool: supports multiple data sources like local files, HDFS, MySQL, and formats like TXT/CSV/JSON. |
 | [Client](/docs/quickstart/client/hugegraph-client) | Multi-language SDKs: Java / Python / Go. |
 | [Spark-connector](/docs/quickstart/toolchain/hugegraph-spark-connector) | Spark integration: supports batch graph data read/write via Spark, suitable for big data offline processing. |
+| [SeaTunnel-connector](/docs/quickstart/toolchain/hugegraph-seatunnel-connector) | SeaTunnel integration: supports data synchronization between HugeGraph and external data systems via SeaTunnel. |
 | [Tools](/docs/quickstart/toolchain/hugegraph-tools) | Command-line operational tools: graph management, backup/restore, Gremlin execution, etc. |
 
 ---

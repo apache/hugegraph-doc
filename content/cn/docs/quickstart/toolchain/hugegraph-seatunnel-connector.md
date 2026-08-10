@@ -28,9 +28,9 @@ HugeGraph-SeaTunnel Connector 提供以下能力：
 
 | 组件 | 版本要求 | 说明 |
 |------|---------|------|
-| Java | 8+ | SeaTunnel 运行环境要求 |
-| Apache SeaTunnel | 2.3.12+ | Sink Connector 自此版本发布 |
-| HugeGraph Server | 1.0.0+ | 建议使用最新稳定版 |
+| Java | 11+ | HugeGraph Client 1.5.0+ 运行环境要求 |
+| Apache SeaTunnel | 2.3.13+ | Sink Connector 自此版本发布（内置 HugeGraph Client 1.5.0） |
+| HugeGraph Server | 1.5.0+ | 需与 Connector 内置 Client 版本匹配 |
 
 > **Source Connector 说明**：HugeGraph Source Connector 目前仅在 SeaTunnel 开发分支（Next/master）中可用，
 > 尚未包含在正式 Release 中。如需使用 Source 功能，请从 SeaTunnel 源码编译或等待下一版本发布。
@@ -137,7 +137,7 @@ sink {
 ### 5 文档与资源
 
 - [Apache SeaTunnel 官方网站](https://seatunnel.apache.org/)
-- [Apache SeaTunnel Connector-V2 文档](https://seatunnel.apache.org/docs/connector-v2/)
+- [Apache SeaTunnel HugeGraph Sink Connector 文档](https://seatunnel.apache.org/docs/connector-v2/sink/HugeGraph/)
 - [Apache SeaTunnel GitHub](https://github.com/apache/seatunnel)
 - [HugeGraph GitHub](https://github.com/apache/hugegraph)
 

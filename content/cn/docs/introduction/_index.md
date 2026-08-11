@@ -36,8 +36,6 @@ HugeGraph 支持百亿以上的顶点和边的快速存储与查询，具备出�
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-![Apache HugeGraph 全栈图系统生态全景图](/cn/docs/images/seatunnel/hugegraph-fullstack-ecosystem.png)
-
 ---
 
 ### 核心组件
@@ -96,7 +94,7 @@ HugeGraph 独立的 AI 组件，连接图与大语言模型（LLM）：
 | [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader) | 数据导入工具：支持本地文件、HDFS、MySQL 等多数据源，TXT/CSV/JSON 等格式 |
 | [Client](/cn/docs/quickstart/client/hugegraph-client) | 多语言 SDK：Java / Python / Go |
 | [Spark-connector](/cn/docs/quickstart/toolchain/hugegraph-spark-connector) | Spark 集成：支持通过 Spark 批量读写图数据，适合大数据离线处理场景 |
-| [SeaTunnel-connector](/cn/docs/quickstart/toolchain/hugegraph-seatunnel-connector) | SeaTunnel 集成：支持通过 SeaTunnel 在 HugeGraph 与外部数据系统之间同步数据 |
+| [SeaTunnel Connector](/cn/docs/quickstart/toolchain/hugegraph-seatunnel-connector) | 提供 HugeGraph Source 与 Sink，支持读取和写入图数据 |
 | [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools) | 命令行运维工具：图管理、备份恢复、Gremlin 执行等 |
 
 ---

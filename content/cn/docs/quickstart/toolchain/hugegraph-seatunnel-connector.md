@@ -18,7 +18,7 @@ weight: 5
 | 组件 | 版本要求 | 说明 |
 |------|---------|------|
 | Java | 11+ | HugeGraph Client 1.5.0+ 运行环境要求 |
-| Apache SeaTunnel | 2.3.13+ | Sink 自 2.3.12 合入；2.3.13 起内置 HugeGraph Client 1.5.0 |
+| Apache SeaTunnel | 2.3.13+ | - |
 | HugeGraph Server | 1.5.0+ | 需与 Connector 内置 Client 版本匹配 |
 
 > 配置 API 有两代，别混用：

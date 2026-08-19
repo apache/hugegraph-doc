@@ -6,6 +6,7 @@ weight: 5
 
 <!--
   TODO(apache/hugegraph-doc#464)：本文 SeaTunnel 官方文档链接暂指向 latest（无版本号）页面。
+  2.3.13 及之前版本的参数以官网版本下拉里的 2.3.13 文档为准。
   HugeGraph Source Connector 尚未随正式版本发布，官网 latest 无对应页面，
   故 Source 文档链接暂指向 GitHub dev 分支文件。
   待 Source 随正式版本发布后，将链接切换为官网版本化地址，
@@ -20,11 +21,16 @@ weight: 5
 | Apache SeaTunnel | 2.3.13+ | Sink 自 2.3.12 合入；2.3.13 起内置 HugeGraph Client 1.5.0 |
 | HugeGraph Server | 1.5.0+ | 需与 Connector 内置 Client 版本匹配 |
 
-> Source Connector 目前只在 SeaTunnel next（dev）分支，正式版还没带。要用就从源码编译，或等下一个 Release；next 分支内置的 HugeGraph Client 已升到 1.7.0，需搭配对应版本的 Server。
+> 配置 API 有两代，别混用：
+>
+> - **2.3.13 正式版**：Sink 只支持 `schema_config`（必填）。本文第 4 节和第 5.1 节的示例按它来写。
+> - **next（dev）分支**：`mappings` 多映射、`schema_save_mode` 自动建 Schema、`data_save_mode` 等新选项，以及 **Source Connector** 都只在这里，正式版还没带。本文 5.3 节的图迁移是 dev 预览。
+>
+> next 分支内置的 HugeGraph Client 已升到 1.7.0，需搭配对应版本的 Server。
 
 ### 2 概述
 
-[Apache SeaTunnel](https://seatunnel.apache.org/) 是开源数据集成平台，批处理、流式同步都支持，自带 100+ 连接器。HugeGraph 的 Connector-V2 已合入：Sink 负责写入（顶点/边的批量写入、更新、删除），Source 负责读取（批量读取、整图迁移）。
+[Apache SeaTunnel](https://seatunnel.apache.org/) 是开源数据集成平台，批处理、流式同步都支持，自带 100+ 连接器。HugeGraph 的 Connector-V2 已合入：Sink 负责写入（顶点/边的批量写入、更新、删除），Source 负责读取（批量读取、整图迁移，尚未发布）。
 
 ![HugeGraph + SeaTunnel 数据集成架构图](/cn/docs/images/seatunnel/hugegraph-seatunnel-architecture.png)
 
@@ -37,7 +43,6 @@ weight: 5
 | 一次性 / 定时把本地文件、HDFS、MySQL 等导入 HugeGraph | Loader | 免部署，映射文件即写即用 |
 | 数据已在（或必须经过）Flink、Spark、Kafka 等大数据管道 | SeaTunnel | 复用现有管道，不引入第二套导入工具 |
 | 实时流式导入、CDC 增量同步 | SeaTunnel | 原生流式作业 + checkpoint 断点恢复 |
-| 导入时自动创建 Schema（PropertyKey / VertexLabel / EdgeLabel） | SeaTunnel | Sink 默认 `CREATE_SCHEMA_WHEN_NOT_EXIST` |
 | 只维护 HugeGraph 一张图，规模可控、追求简单 | Loader | 工具链内闭环，无额外集群 |
 
 选 SeaTunnel 要接受两点：部署一套 SeaTunnel 集群（或复用现有的），作业用通用 HOCON 配置，而不是 HugeGraph 映射文件。
@@ -48,18 +53,25 @@ weight: 5
 
 #### 4.1 部署 SeaTunnel
 
-**Docker（推荐）**。拉取镜像，把作业配置所在目录挂载进容器提交，宿主机不用装 Java 环境：
+**Docker（推荐）**。注意两点：官方 `apache/seatunnel:2.3.13` 镜像只内置 fake/console 两个连接器（[官方说明](https://seatunnel.apache.org/docs/getting-started/docker/)），且基础镜像是 JDK8；本文示例需要 LocalFile、HugeGraph 连接器和 Java 11。所以官方镜像不能直接跑本文作业，二选一：
 
-```bash
-docker pull apache/seatunnel:2.3.13
+- 基于 JDK11 自建镜像并装好插件（示意，细节以官方 [自建镜像文档](https://seatunnel.apache.org/docs/getting-started/docker/) 为准）：
 
-docker run --rm -it \
-  -v /path/to/job:/config \
-  apache/seatunnel:2.3.13 \
-  ./bin/seatunnel.sh -e local -c /config/hugegraph-sync.conf
+```dockerfile
+FROM eclipse-temurin:11-jre
+RUN curl -L -o /tmp/st.tgz https://downloads.apache.org/seatunnel/2.3.13/apache-seatunnel-2.3.13-bin.tar.gz \
+    && tar -xzf /tmp/st.tgz -C /opt \
+    && mv /opt/apache-seatunnel-2.3.13 /opt/seatunnel \
+    && sh /opt/seatunnel/bin/install-plugin.sh 2.3.13 \
+    && rm /tmp/st.tgz
+WORKDIR /opt/seatunnel
 ```
 
-更多用法见官方 [Docker 部署文档](https://seatunnel.apache.org/docs/getting-started/docker/docker/)。
+```bash
+docker build -t seatunnel-hg:2.3.13 .
+```
+
+- 或者直接用 4.1 末的二进制包方式跑（最省事）。
 
 **Kubernetes**：生产集群用 Helm 部署，见官方 [K8s（Helm）部署文档](https://seatunnel.apache.org/docs/getting-started/kubernetes/helm/)。
 
@@ -73,6 +85,8 @@ sh bin/seatunnel.sh --config ./config/hugegraph-sync.conf -e local
 部署细节以官方 [本地部署文档](https://seatunnel.apache.org/docs/getting-started/locally/deployment/) 为准。
 
 #### 4.2 最小示例：CSV 文件 → person 顶点
+
+先建 Schema：PropertyKey `name`（Text）、`age`（Int），VertexLabel `person`（主键 `name`），边示例另需 EdgeLabel `knows`（属性 `since`）。2.3.13 的 Sink 不会自动建 Schema，可在 Hubble 里建，或用服务端 REST/Gremlin 建。
 
 准备一个无表头的 CSV（列顺序与 `schema.fields` 声明顺序一致），内容如下：
 
@@ -110,16 +124,13 @@ sink {
     # protocol = "http"
     # username = "admin"
     # password = "admin"
-    # schema_save_mode = CREATE_SCHEMA_WHEN_NOT_EXIST
-    mappings = [
-      {
-        type = "VERTEX"
-        label = "person"
-        idStrategy = "PRIMARY_KEY"
-        idFields = ["name"]
-        properties = ["name", "age"]
-      }
-    ]
+    schema_config = {
+      type = "VERTEX"
+      label = "person"
+      idStrategy = "PRIMARY_KEY"
+      idFields = ["name"]
+      properties = ["name", "age"]
+    }
   }
 }
 ```
@@ -130,7 +141,7 @@ sink {
 ┌───────────────── 输入行 (SeaTunnel Row) ─────────────────┐
 │  name = "marko"        age = 29                          │
 └──────────────────────────┬───────────────────────────────┘
-                           │ mappings:
+                           │ schema_config:
                            │   type = VERTEX, label = person
                            │   idStrategy = PRIMARY_KEY, idFields = [name]
                            ▼
@@ -138,20 +149,22 @@ sink {
                  │ HugeGraph 顶点                 │
                  │ id   = person:marko           │
                  │ label = person                │
-                 │ props = { age: 29 }           │
+                 │ props = { name: "marko",      │
+                 │           age: 29 }           │
                  └───────────────────────────────┘
 ```
 
 #### 4.3 运行与验证
 
 ```bash
-# 配置和 CSV 分别挂载进容器；路径换成你机器上的实际目录
-docker run --rm -it \
-  -v /path/to/job:/config \
-  -v /path/to/data:/data \
-  apache/seatunnel:2.3.13 \
-  ./bin/seatunnel.sh -e local -c /config/hugegraph-sync.conf
+# 二进制方式（4.1 的自建镜像同理，把挂载和容器名换一下）
+sh bin/seatunnel.sh --config ./config/hugegraph-sync.conf -e local
 ```
+
+> **容器里跑要注意网络**：`127.0.0.1` 指向容器自身，连不到宿主机或另一个容器。
+>
+> - HugeGraph 跑在宿主机：把 `host` 改成 `host.docker.internal`，Linux 启动容器时加 `--add-host=host.docker.internal:host-gateway`；
+> - HugeGraph 也在容器里：两个容器进同一个 docker 网络，`host` 填 HugeGraph 容器的容器名/服务名。
 
 运行后，在 Hubble 或 REST API 里执行这条 Gremlin 验证：
 
@@ -159,11 +172,9 @@ docker run --rm -it \
 g.V().hasLabel('person').valueMap()
 ```
 
-> **Schema 说明**：`mappings` 模式下默认 `schema_save_mode = CREATE_SCHEMA_WHEN_NOT_EXIST`，写入前自动补建缺失的 PropertyKey / VertexLabel / EdgeLabel。要严格管控就自己先建 Schema，并设 `ERROR_WHEN_SCHEMA_NOT_EXIST`。
-
 #### 4.4 写入边
 
-关系行到边的映射同样通过 `mappings` 完成，用 `sourceConfig` / `targetConfig` 还原边的两个端点。
+关系行到边的映射同样用 `schema_config`，`sourceConfig` / `targetConfig` 还原边的两个端点，字段改名放在 `mapping.fieldMapping` 里。
 
 <details>
 <summary>展开查看：关系 CSV → knows 边 完整配置</summary>
@@ -200,25 +211,25 @@ sink {
     port = 8080
     graph_name = "hugegraph"
     graph_space = "DEFAULT"
-    mappings = [
-      {
-        type = "EDGE"
-        label = "knows"
-        sourceConfig = {
-          label = "person"
-          idFields = ["person1_name"]
-        }
-        targetConfig = {
-          label = "person"
-          idFields = ["person2_name"]
-        }
-        properties = ["since"]
+    schema_config = {
+      type = "EDGE"
+      label = "knows"
+      sourceConfig = {
+        label = "person"
+        idFields = ["person1_name"]
+      }
+      targetConfig = {
+        label = "person"
+        idFields = ["person2_name"]
+      }
+      properties = ["since"]
+      mapping = {
         fieldMapping = {
           person1_name = "name"
           person2_name = "name"
         }
       }
-    ]
+    }
   }
 }
 ```
@@ -238,7 +249,7 @@ person1_name = "marko"   person2_name = "vadas"   since = 2020
       properties = { since: 2020 }
 ```
 
-> 边的端点 ID 策略从服务端已有的 VertexLabel 读取，`sourceConfig.idFields` / `targetConfig.idFields` 必须能拼出端点 ID。默认 `check_vertex = false`，顶点和边允许乱序写入，跑完图最终一致；设成 `true` 则服务端直接拒绝端点不存在的边。
+> 写边时端点顶点还不存在的话，默认行为可能产生孤儿边或幻影顶点（服务端行为）。不能接受就先导顶点、再导边；所用版本支持 `check_vertex` 时，开 `check_vertex = true` 可让服务端直接拒绝这类边（以所用版本的官方文档为准）。
 
 ### 5 常见场景
 
@@ -252,7 +263,7 @@ flowchart LR
 ```
 
 <details>
-<summary>展开查看：Kafka → HugeGraph 流式作业配置</summary>
+<summary>展开查看：Kafka → HugeGraph 流式作业配置（2.3.13）</summary>
 
 ```hocon
 env {
@@ -263,7 +274,7 @@ env {
 source {
   Kafka {
     bootstrap.servers = "localhost:9092"
-    topics = "user-events"
+    topic = "user-events"
     consumer.group = "hugegraph-import"
     format = json
     schema = {
@@ -281,28 +292,28 @@ sink {
     port = 8080
     graph_name = "hugegraph"
     graph_space = "DEFAULT"
-    mappings = [
-      {
-        type = "VERTEX"
-        label = "person"
-        idStrategy = "PRIMARY_KEY"
-        idFields = ["name"]
-        properties = ["name", "age"]
-      }
-    ]
+    schema_config = {
+      type = "VERTEX"
+      label = "person"
+      idStrategy = "PRIMARY_KEY"
+      idFields = ["name"]
+      properties = ["name", "age"]
+    }
   }
 }
 ```
 
 </details>
 
-> 要点：`job.mode = "STREAMING"` 加 `checkpoint.interval`，任务就能断点恢复。Sink 是 at-least-once 语义，`PRIMARY_KEY` / `CUSTOMIZE_*` 这类可还原的 ID 重放只是幂等更新。Kafka 的 offset、分区、format 等参数见 [Kafka Source 官方文档](https://seatunnel.apache.org/docs/connectors/source/Kafka/)。
+> 要点：`job.mode = "STREAMING"` 加 `checkpoint.interval`，任务就能断点恢复。Sink 是 at-least-once 语义，`PRIMARY_KEY` / `CUSTOMIZE_*` 这类可还原的 ID 重放只是幂等更新。Kafka 参数是 `topic`（逗号分隔多 topic），offset、分区、format 等见 [Kafka Source 官方文档](https://seatunnel.apache.org/docs/connectors/source/Kafka/)。
 
 #### 5.2 在 Flink / Spark 上运行
 
 作业默认跑在 SeaTunnel 自带的 Zeta 引擎上。已有 Flink / Spark 集群的话，同一份配置换对应的 starter 脚本提交即可，内容不用改。脚本用法和版本支持见官方 [Flink 引擎文档](https://seatunnel.apache.org/docs/engines/flink/) 与 [Spark 引擎文档](https://seatunnel.apache.org/docs/engines/spark/)。
 
-#### 5.3 HugeGraph → HugeGraph 图迁移（Source Connector，next 分支）
+#### 5.3 HugeGraph → HugeGraph 图迁移（dev 预览）
+
+2.3.13 没有 HugeGraph Source，本节需要 next（dev）构建（或等正式发布）；dev 同时支持 `mappings` 新配置。
 
 ```mermaid
 flowchart LR
@@ -311,7 +322,7 @@ flowchart LR
 ```
 
 <details>
-<summary>展开查看：单图迁移（person 顶点）</summary>
+<summary>展开查看：单图迁移（person 顶点，dev 构建）</summary>
 
 ```hocon
 env {
@@ -320,7 +331,7 @@ env {
 
 source {
   HugeGraph {
-    host = "127.0.0.1"
+    host = "graph-a"
     port = 8080
     graph_name = "hugegraph"
     graph_space = "DEFAULT"
@@ -337,7 +348,7 @@ source {
 
 sink {
   HugeGraph {
-    host = "127.0.0.2"
+    host = "graph-b"
     port = 8080
     graph_name = "hugegraph"
     graph_space = "DEFAULT"
@@ -357,18 +368,23 @@ sink {
 </details>
 
 <details>
-<summary>展开查看：批量迁移（A 实例 3 个图 → B 实例，图名不变）</summary>
+<summary>展开查看：批量迁移多个图的思路（示意，非可直接运行的配置）</summary>
 
-一次作业迁一张图；省略 `label` 时读取该图全部顶点 label，边同理（`label_type = "EDGE"`），顶点和边分开跑。多张图用变量替换 + 循环逐个执行：
+A 实例有 3 个图，全部迁到 B 实例、图名不变时，按下面的思路组织，而不是复制粘贴下面这段伪代码：
+
+1. **一次作业只迁一种元素**：Source 的 `label_type` 只能是 `VERTEX` 或 `EDGE` 之一，顶点、边各跑一次；先顶点、后边（边依赖端点）。
+2. **省略 `label` 读全量**：Source 省略 `label` 会按 label 输出多张输入表；此时 sink 的 `mappings` 必须按每个 label 逐条写全，并按官方文档把每条映射绑定到对应输入表，否则会交叉写入。单 label 的 mappings 不能直接复用。
+3. **多图用变量替换**：配置里写 `graph_name = "${graph}"`，提交时 `-i graph=xxx`（多个参数用逗号分隔，见官方 [命令文档](https://seatunnel.apache.org/docs/engines/zeta/user-command/)）。
 
 ```hocon
+# 伪代码：结构示意，mappings 需按 label 逐条补全并绑定输入表
 env {
   job.mode = "BATCH"
 }
 
 source {
   HugeGraph {
-    host = "graph-a:8080"
+    host = "graph-a"
     port = 8080
     graph_name = "${graph}"
     graph_space = "DEFAULT"
@@ -379,25 +395,21 @@ source {
 
 sink {
   HugeGraph {
-    host = "graph-b:8080"
+    host = "graph-b"
     port = 8080
     graph_name = "${graph}"
     graph_space = "DEFAULT"
-    # mappings 按目标图的 label 逐一列出，源、目标同名 label 一一对应
-    mappings = [...]
+    mappings = [ /* 按 label 逐条写，并绑定对应输入表 */ ]
   }
 }
 ```
 
 ```bash
-# 每个图跑两次：先顶点（VERTEX）、再边（EDGE），图名不变
+# 每张图：先跑 VERTEX 作业，再改 label_type 跑 EDGE 作业
 for g in graph1 graph2 graph3; do
-  docker run --rm -it -v /path/to/job:/config apache/seatunnel:2.3.13 \
-    ./bin/seatunnel.sh -e local -c /config/hugegraph-migrate.conf -i graph=$g
+  sh bin/seatunnel.sh --config ./config/hugegraph-migrate.conf -e local -i graph=$g
 done
 ```
-
-`-i key=value` 会把配置里的 `${key}` 替换成对应值，用法见官方 [命令文档](https://seatunnel.apache.org/docs/engines/zeta/user-command/)。
 
 </details>
 
@@ -405,34 +417,29 @@ done
 
 ### 6 核心配置参数
 
-常用参数如下，完整列表见 [官方文档](https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/)：
+以下为 2.3.13 版本 Sink 的常用参数；`mappings`、`schema_save_mode`、`data_save_mode` 等是 next（dev）分支新增（5.3 节用到 `mappings`），完整说明以官网对应版本文档为准：
 
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|------|--------|------|
-| `host` | String | 是 | - | HugeGraph Server 地址 |
+| `host` | String | 是 | - | HugeGraph Server 地址（只填主机名/IP，端口走 `port`） |
 | `port` | Integer | 是 | - | HugeGraph Server 端口 |
 | `graph_name` | String | 是 | - | 图名称 |
-| `mappings` | List | 是 | - | 顶点/边映射配置，每项一个 label |
+| `schema_config` | Object | 是 | - | 顶点/边映射（2.3.13 的配置方式） |
 | `graph_space` | String | 否 | `DEFAULT` | 图空间 |
 | `protocol` | String | 否 | `http` | 服务协议，支持 `http` / `https` |
 | `username` | String | 否 | - | 认证用户名（服务端开启认证时必填） |
 | `password` | String | 否 | - | 认证密码（服务端开启认证时必填） |
-| `schema_save_mode` | Enum | 否 | `CREATE_SCHEMA_WHEN_NOT_EXIST` | 缺失 Schema 时自动建；`ERROR_WHEN_SCHEMA_NOT_EXIST` 则报错 |
-| `data_save_mode` | Enum | 否 | `APPEND_DATA` | `APPEND_DATA` 保留已有数据；`DROP_DATA` 仅清空本任务涉及的 label |
 | `batch_size` | Integer | 否 | 500 | 单批写入前缓冲的记录数 |
 | `batch_interval_ms` | Integer | 否 | 5000 | 刷新批次的最大等待时间（毫秒） |
-| `check_vertex` | Boolean | 否 | false | 写边时校验端点是否存在，开启后拒绝孤儿边 |
-| `max_retries` | Integer | 否 | 3 | 请求失败后的重试次数 |
-| `retry_backoff_ms` | Integer | 否 | 5000 | 重试基础退避时间（毫秒），指数增长 |
 
-mappings 每项的常用字段：`type`、`label`、`properties`、`idStrategy` / `idFields`（顶点）、`sourceConfig` / `targetConfig`（边）、`fieldMapping`、`ttl`、`updateStrategies`，详见 [官方文档](https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/)。
+`schema_config` 的常用字段：`type`（`VERTEX` / `EDGE`）、`label`、`properties`、`idStrategy` / `idFields`（顶点）、`sourceConfig` / `targetConfig`（边）、`mapping.fieldMapping`。其余字段见官方文档。
 
 ### 参考文档
 
 - [Apache SeaTunnel 官方网站](https://seatunnel.apache.org/)
-- [HugeGraph Sink Connector 官方文档](https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/)
+- [HugeGraph Sink Connector 官方文档](https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/)（latest 展示 `mappings` 新 API，2.3.13 的 `schema_config` 版从官网版本下拉切换）
 - [HugeGraph Source Connector 文档（dev 分支）](https://github.com/apache/seatunnel/blob/dev/docs/zh/connectors/source/HugeGraph.md)
-- [SeaTunnel Docker 部署](https://seatunnel.apache.org/docs/getting-started/docker/docker/)
+- [SeaTunnel Docker 部署](https://seatunnel.apache.org/docs/getting-started/docker/)
 - [SeaTunnel K8s（Helm）部署](https://seatunnel.apache.org/docs/getting-started/kubernetes/helm/)
 - [SeaTunnel 本地部署](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
 - [Apache SeaTunnel GitHub](https://github.com/apache/seatunnel)

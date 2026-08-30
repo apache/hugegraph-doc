@@ -2,6 +2,8 @@
 title: "HugeGraph-Server Quick Start"
 linkTitle: "Install/Build HugeGraph-Server"
 weight: 1
+aliases:
+  - /docs/quickstart/hugegraph-server/
 ---
 
 ### 1 HugeGraph-Server Overview

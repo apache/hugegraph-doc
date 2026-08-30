@@ -1,0 +1,33 @@
+brand:
+  name: Apache HugeGraph
+  tagline: 全栈图数据库生态系统
+  slogan: 覆盖 OLTP、OLAP、图智能及其配套工具
+columns:
+  - title: 项目
+    links:
+      - { label: 文档, url: /cn/docs/ }
+      - { label: 下载, url: /cn/docs/download/download/ }
+      - { label: 博客, url: /cn/blog/ }
+      - { label: 社区, url: /cn/community/ }
+  - title: 资源
+    links:
+      - { label: 项目介绍, url: /cn/docs/introduction/ }
+      - { label: 快速开始, url: /cn/docs/quickstart/ }
+      - { label: 配置参考, url: /cn/docs/config/ }
+      - { label: REST API, url: /cn/docs/clients/restful-api/ }
+  - title: 社区
+    links:
+      - { label: GitHub, url: 'https://github.com/apache/hugegraph', external: true }
+      - { label: 问题跟踪, url: 'https://github.com/apache/hugegraph/issues', external: true }
+      - { label: 开发者邮件列表, url: /cn/docs/contribution-guidelines/subscribe/ }
+      - { label: 安全, url: 'https://www.apache.org/security/', external: true }
+  - title: Apache
+    links:
+      - { label: 基金会, url: 'https://www.apache.org/', external: true }
+      - { label: 许可证, url: 'https://www.apache.org/licenses/', external: true }
+      - { label: 隐私政策, url: 'https://privacy.apache.org/policies/privacy-policy-public.html', external: true }
+      - { label: 活动, url: 'https://www.apache.org/events/current-event.html', external: true }
+      - { label: 赞助, url: 'https://www.apache.org/foundation/sponsorship.html', external: true }
+      - { label: 致谢, url: 'https://www.apache.org/foundation/thanks.html', external: true }
+      - { label: 行为准则, url: 'https://www.apache.org/foundation/policies/conduct.html', external: true }
+

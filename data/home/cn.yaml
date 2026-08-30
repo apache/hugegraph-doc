@@ -1,0 +1,32 @@
+sections: [hero, cards, cta]
+
+hero:
+  align: center
+  eyebrow: Apache 顶级项目
+  title_lines:
+    - words: [{ text: 用图构建应用。 }]
+    - words: [{ text: 从存储一直到智能。 }]
+  lead: Apache HugeGraph 将实时图查询、分布式分析、开发工具和图智能汇聚在一个开放生态中。
+  actions:
+    - { label: 五分钟开始, url: docs/quickstart/, icon: fa-solid fa-rocket, style: primary }
+    - { label: 下载 HugeGraph, url: docs/download/download/, icon: fa-solid fa-download, style: ghost }
+
+cards:
+  eyebrow: 选择你的路径
+  title: 从眼前要完成的任务开始
+  columns: 3
+  items:
+    - { title: 运行图数据库, desc: 使用单机或分布式存储部署 HugeGraph Server。, icon: fa-solid fa-database, url: docs/quickstart/hugegraph/hugegraph-server/ }
+    - { title: 导入和探索数据, desc: 使用 Loader、Tools 和 Hubble 导入数据并管理 Schema。, icon: fa-solid fa-diagram-project, url: docs/quickstart/toolchain/ }
+    - { title: 查询和开发, desc: 使用 Gremlin、Cypher、REST 与客户端 SDK 构建应用。, icon: fa-solid fa-code, url: docs/clients/ }
+    - { title: 执行图分析, desc: 使用 HugeGraph Computer 与 Vermeer 处理大规模图数据。, icon: fa-solid fa-chart-line, url: docs/quickstart/computing/ }
+    - { title: 构建图智能, desc: 使用 HugeGraph-AI 创建 GraphRAG 与图学习应用。, icon: fa-solid fa-brain, url: docs/quickstart/hugegraph-ai/ }
+    - { title: 稳定运维, desc: 完成配置、安全、备份恢复和故障排查。, icon: fa-solid fa-screwdriver-wrench, url: docs/config/ }
+
+cta:
+  title: 找到通向可用图应用的最短路径。
+  text: 从快速开始进入部署、开发和运维参考，全程留在同一个文档站点中。
+  label: 打开文档
+  url: docs/
+  style: primary
+

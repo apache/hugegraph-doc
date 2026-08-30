@@ -1,58 +1,88 @@
-# Sample workflow for building and deploying a Hugo site to GitHub Pages
-name: "Deploy site to pages (hugo)"
+name: Build and deploy site
 
 on:
   pull_request:
   push:
-    branches: ["master"] # Set a branch name to trigger deployment
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HUGO_VERSION: 0.165.0
+  HUGO_ENVIRONMENT: production
+  HUGO_CACHEDIR: /tmp/hugo_cache
 
 jobs:
+  # Keep this job id aligned with the required `deploy` status in .asf.yaml.
+  # Publishing is added only after the aggregate artifact is complete.
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pages: write
-      id-token: write
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-    # Hugo steps
+      contents: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          submodules: true  # Fetch Hugo themes (true OR recursive)
-          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
-          node-version: "16"
+          go-version-file: go.mod
+          cache: true
 
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
+      - name: Setup Hugo Extended
+        uses: peaceiris/actions-hugo@2752ce1d29631191ea3f27c23495fa06139a5b78 # v3.2.1
         with:
-          hugo-version: '0.102.3'
+          hugo-version: ${{ env.HUGO_VERSION }}
           extended: true
 
-      - uses: actions/cache@v3
+      - name: Cache Hugo resources
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: /tmp/hugo_cache
-          key: ${{ runner.os }}-hugomod-${{ hashFiles('**/go.sum') }}
+          path: ${{ env.HUGO_CACHEDIR }}
+          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ hashFiles('go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-hugomod-
+            ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-
 
-      - name: Check Links
+      - name: Verify pinned OINK module
+        run: test "$(hugo mod graph)" = "github.com/apache/hugegraph-doc github.com/pgsty/oink@v1.0.0"
+
+      - name: Check source links
         run: bash dist/validate-links.sh
 
-      - name: Build Site (minify)
-        run: npm i && hugo --minify
+      - name: Build strict production artifact
+        run: >-
+          hugo --cleanDestinationDir --gc --minify
+          --environment production
+          --printPathWarnings --printI18nWarnings
+          --panicOnWarning --logLevel info
 
-      - name: Deploy Site
-        uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.ref == 'refs/heads/master' }}
+      - name: Validate production artifact
+        run: python3 dist/validate-site-output.py public https://hugegraph.apache.org/
+
+      - name: Build and validate staging URL shape
+        run: >-
+          hugo --cleanDestinationDir --gc --minify
+          --destination public-staging
+          --baseURL https://hugegraph-oink.staged.apache.org/
+          --environment production
+          --printPathWarnings --printI18nWarnings
+          --panicOnWarning --logLevel info
+
+      - name: Validate staging artifact
+        run: >-
+          python3 dist/validate-site-output.py public-staging
+          https://hugegraph-oink.staged.apache.org/
+
+      - name: Add ASF deployment metadata
+        run: cp .asf.yaml public/.asf.yaml
+
+      - name: Upload site artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          # Refer: https://github.com/marketplace/actions/github-pages-action
-          publish_dir: ./public
-          publish_branch: asf-site
-          keep_files: true # A simple way to keep ".asf.yaml" file
-          commit_message: ${{ github.event.head_commit.message }}
+          name: hugegraph-site-${{ github.sha }}
+          path: public
+          include-hidden-files: true
+          if-no-files-found: error

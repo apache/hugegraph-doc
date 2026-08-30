@@ -1,4 +1,5 @@
 public/
+public-staging/
 resources/
 node_modules/
 package-lock.json

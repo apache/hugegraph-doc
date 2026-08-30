@@ -3,8 +3,9 @@ title: "Introduction with HugeGraph"
 linkTitle: "Introduction"
 weight: 1
 aliases:
-  - /cn/docs/introduction/readme/
-  - /cn/docs/introduction/README/
+  # Hugo 0.165 prefixes aliases with the current language path.
+  - /docs/introduction/readme/
+  - /docs/introduction/README/
 ---
 
 ### 什么是 Apache HugeGraph？

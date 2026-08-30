@@ -1,0 +1,32 @@
+sections: [hero, cards, cta]
+
+hero:
+  align: center
+  eyebrow: Apache top-level project
+  title_lines:
+    - words: [{ text: Build with graphs. }]
+    - words: [{ text: From storage to intelligence. }]
+  lead: Apache HugeGraph brings real-time graph queries, distributed analytics, developer tools, and graph AI into one open ecosystem.
+  actions:
+    - { label: Start in five minutes, url: docs/quickstart/, icon: fa-solid fa-rocket, style: primary }
+    - { label: Download HugeGraph, url: docs/download/download/, icon: fa-solid fa-download, style: ghost }
+
+cards:
+  eyebrow: Choose your path
+  title: Start from the task in front of you
+  columns: 3
+  items:
+    - { title: Run a graph database, desc: Deploy HugeGraph Server with standalone or distributed storage., icon: fa-solid fa-database, url: docs/quickstart/hugegraph/hugegraph-server/ }
+    - { title: Import and explore data, desc: Load datasets and manage schemas with Loader, Tools, and Hubble., icon: fa-solid fa-diagram-project, url: docs/quickstart/toolchain/ }
+    - { title: Query and develop, desc: Build with Gremlin, Cypher, REST, and client SDKs., icon: fa-solid fa-code, url: docs/clients/ }
+    - { title: Run graph analytics, desc: Process large graphs with HugeGraph Computer and Vermeer., icon: fa-solid fa-chart-line, url: docs/quickstart/computing/ }
+    - { title: Build graph AI, desc: Create GraphRAG and graph learning applications with HugeGraph-AI., icon: fa-solid fa-brain, url: docs/quickstart/hugegraph-ai/ }
+    - { title: Operate with confidence, desc: Configure, secure, back up, restore, and troubleshoot deployments., icon: fa-solid fa-screwdriver-wrench, url: docs/config/ }
+
+cta:
+  title: Find the shortest path to a working graph.
+  text: Follow the quick start, then move into deployment, development, and operations references without changing documentation sites.
+  label: Open the documentation
+  url: docs/
+  style: primary
+

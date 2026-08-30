@@ -55,12 +55,9 @@
 * [HugeGraph API Performance—Outdated](performance/api-performance)
     * [v0.5.6 Stand-alone(RocksDB)](performance/api-performance/hugegraph-api-0.5.6-rocksdb)
     * [v0.5.6 Cluster(Cassandra)](performance/api-performance/hugegraph-api-0.5.6-cassandra)
-    * [v0.4.4](performance/api-performance/hugegraph-api-0.4.4)
-    * [v0.2](performance/api-performance/hugegraph-api-0.2)
 * [HugeGraph-Loader Performance](performance/hugegraph-loader-performance)
 
 ## ChangeLogs
 * [Release-1.3.0](changelog/hugegraph-1.3.0-release-notes)
 * [Release-1.2.0](changelog/hugegraph-1.2.0-release-notes)
 * [Release-1.0.0](changelog/hugegraph-1.0.0-release-notes)
-* [Release-0.12.0](changelog/hugegraph-0.12.0-release-notes)

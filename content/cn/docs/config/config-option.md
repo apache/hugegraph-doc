@@ -53,6 +53,7 @@ weight: 2
 | memory_monitor.threshold           | 0.85                                             | The threshold of JVM(in-heap) memory usage monitoring , 1 means disabling this function.                                                                                                                                                                                |
 | memory_monitor.period              | 2000                                             | The period in ms of JVM(in-heap) memory usage monitoring.                                                                                                                                                     |
 | log.slow_query_threshold           | 1000                                             | Slow query log threshold in milliseconds, 0 means disabled.                                                                                                                                                   |
+| log.slow_query_body_limit          | 512                                              | 慢查询日志记录的请求体最大字节数，0 表示不记录。记录的前缀可能包含敏感的 Gremlin 或 Cypher 字面量。                                                                                                              |
 
 ### PD/Meta 配置项 (分布式模式)
 
@@ -340,4 +341,3 @@ weight: 2
 > - `jdbc.url=jdbc:postgresql://localhost:5432/`
 
 </details>
-

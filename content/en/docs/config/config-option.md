@@ -53,6 +53,7 @@ Corresponding configuration file `rest-server.properties`
 | memory_monitor.threshold           | 0.85                                             | The threshold of JVM(in-heap) memory usage monitoring , 1 means disabling this function.                                                                                                                      |
 | memory_monitor.period              | 2000                                             | The period in ms of JVM(in-heap) memory usage monitoring.                                                                                                                                                     |
 | log.slow_query_threshold           | 1000                                             | Slow query log threshold in milliseconds, 0 means disabled.                                                                                                                                                   |
+| log.slow_query_body_limit          | 512                                              | Maximum bytes of a request body recorded in the slow query log, 0 means disabled. The recorded prefix may contain sensitive Gremlin or Cypher literals.                                                       |
 
 ### PD/Meta Config Options (Distributed Mode)
 
@@ -319,4 +320,3 @@ Other options are consistent with the MySQL backend.
 > - `jdbc.url=jdbc:postgresql://localhost:5432/`
 
 </details>
-

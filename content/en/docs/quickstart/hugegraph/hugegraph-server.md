@@ -248,8 +248,8 @@ If configuring multiple HugeGraph-Server nodes, you need to modify the `rest-ser
 Node 1 (Master node):
 ```properties
 usePD=true
-restserver.url=http://127.0.0.1:8081
-gremlinserver.url=http://127.0.0.1:8181
+restserver.url=127.0.0.1:8081
+gremlinserver.url=127.0.0.1:8181
 pd.peers=127.0.0.1:8686
 
 rpc.server_host=127.0.0.1
@@ -262,8 +262,8 @@ server.role=master
 Node 2 (Worker node):
 ```properties
 usePD=true
-restserver.url=http://127.0.0.1:8082
-gremlinserver.url=http://127.0.0.1:8182
+restserver.url=127.0.0.1:8082
+gremlinserver.url=127.0.0.1:8182
 pd.peers=127.0.0.1:8686
 
 rpc.server_host=127.0.0.1
@@ -786,7 +786,7 @@ _explanation_
     ```
     vim conf/rest-server.properties
     
-    restserver.url=http://0.0.0.0:8080
+    restserver.url=0.0.0.0:8080
     ```
 
 response body:

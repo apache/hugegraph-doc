@@ -55,7 +55,7 @@ HugeGraph 支持的 Traverser API 包括：
 
 使用方法中的例子，都是基于 TinkerPop 官网给出的图：
 
-![tinkerpop 示例图](http://tinkerpop.apache.org/docs/3.4.0/images/tinkerpop-modern.png)
+![tinkerpop 示例图](/img/docs/clients/restful-api/tinkerpop-modern.png)
 
 数据导入程序如下：
 

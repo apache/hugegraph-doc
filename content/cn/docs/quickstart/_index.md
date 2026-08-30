@@ -1,5 +1,5 @@
 ---
-title: "Quick Start"
-linkTitle: "Quick Start"
+title: "快速开始"
+linkTitle: "快速开始"
 weight: 3
 ---

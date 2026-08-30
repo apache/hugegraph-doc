@@ -178,7 +178,7 @@ Other info is under 🚧 (Welcome to add more docs for it, users could refer [ja
 
 ## Contributing
 
-* Welcome to contribute to `hugegraph-python-client`. Please see the [Guidelines](https://hugegraph.apache.org/docs/contribution-guidelines/) for more information.
+* Welcome to contribute to `hugegraph-python-client`. Please see the [Guidelines](https://hugegraph.apache.org/community/contribution-guidelines/) for more information.
 * Code format: Please run `./style/code_format_and_analysis.sh` to format your code before submitting a PR.
 
 Thank you to all the people who already contributed to `hugegraph-python-client`!

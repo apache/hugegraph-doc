@@ -11,7 +11,7 @@ weight: 1
 下面是 HugeGraph 的整体架构图：
 
 <div style="text-align: center;">
-  <img src="/docs/images/design/architectural-revised.png" alt="image">
+  <img src="/img/docs/design/architectural-revised.png" alt="image">
 </div>
 
 HugeGraph 包括三个层次的功能，分别是应用程序层、图引擎层和存储层。

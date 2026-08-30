@@ -137,7 +137,7 @@ ssl: {
 There are many configuration options mentioned above, but for now, let's focus on the following options: `channelizer` and `graphs`.
 
 - `graphs`: This option specifies the graphs that need to be opened when the GremlinServer starts. It is a map structure where the key is the name of the graph and the value is the configuration file path for that graph.
-- `channelizer`: The GremlinServer supports two communication modes with clients: WebSocket and HTTP (default). If WebSocket is chosen, users can quickly experience the features of HugeGraph using [Gremlin-Console](../clients/gremlin-console), but it does not support importing large-scale data. It is recommended to use HTTP for communication, as all peripheral components of HugeGraph are implemented based on HTTP.
+- `channelizer`: The GremlinServer supports two communication modes with clients: WebSocket and HTTP (default). If WebSocket is chosen, users can quickly experience the features of HugeGraph using [Gremlin-Console](/docs/clients/gremlin-console/), but it does not support importing large-scale data. It is recommended to use HTTP for communication, as all peripheral components of HugeGraph are implemented based on HTTP.
 
 By default, the GremlinServer serves at `localhost:8182`. If you need to modify it, configure the `host` and `port` settings.
 

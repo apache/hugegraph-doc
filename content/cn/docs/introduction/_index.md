@@ -1,6 +1,6 @@
 ---
-title: "Introduction with HugeGraph"
-linkTitle: "Introduction"
+title: "HugeGraph 简介"
+linkTitle: "简介"
 weight: 1
 aliases:
   - /cn/docs/introduction/readme/
@@ -93,7 +93,7 @@ HugeGraph 独立的 AI 组件，连接图与大语言模型（LLM）：
 | [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble) | Web 可视化平台：数据建模 → 批量导入 → 在线/离线分析 一站式操作 |
 | [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader) | 数据导入工具：支持本地文件、HDFS、MySQL 等多数据源，TXT/CSV/JSON 等格式 |
 | [Client](/cn/docs/quickstart/client/hugegraph-client) | 多语言 SDK：Java / Python / Go |
-| [Spark-connector](/cn/docs/quickstart/toolchain/hugegraph-spark-connector) | Spark 集成：支持通过 Spark 批量读写图数据，适合大数据离线处理场景 |
+| [Spark-connector](../quickstart/toolchain/hugegraph-spark-connector/) | Spark 集成：支持通过 Spark 批量读写图数据，适合大数据离线处理场景 |
 | [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools) | 命令行运维工具：图管理、备份恢复、Gremlin 执行等 |
 
 ---
@@ -141,8 +141,8 @@ docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
 ### 联系我们
 
 - [GitHub Issues](https://github.com/apache/hugegraph/issues)：问题反馈与功能建议（推荐）
-- 邮件：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)（[订阅方式](/cn/docs/contribution-guidelines/subscribe/)）
+- 邮件：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)（[订阅方式](/cn/community/contribution-guidelines/subscribe/)）
 - 安全问题：[security@hugegraph.apache.org](mailto:security@hugegraph.apache.org)
 - 微信公众号：Apache HugeGraph
 
-<img src="https://github.com/apache/hugegraph-doc/blob/master/assets/images/wechat.png?raw=true" alt="微信公众号二维码" width="300"/>
+<img src="/img/docs/wechat.png" alt="微信公众号二维码" width="300"/>

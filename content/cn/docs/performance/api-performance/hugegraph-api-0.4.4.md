@@ -63,7 +63,7 @@ weight: 3
 ###### 顶点和边的最大插入速度（高性能服务器，使用SSD存储RocksDB数据）：
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.4.4/best.png" alt="image">
+  <img src="/img/docs/API-perf/v0.4.4/best.png" alt="image">
 </div>
 
 
@@ -75,7 +75,7 @@ weight: 3
 **1\. CPU和内存对插入性能的影响（服务器都使用HDD存储RocksDB数据，批量插入）**
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.4.4/cpu-memory.png" alt="image">
+  <img src="/img/docs/API-perf/v0.4.4/cpu-memory.png" alt="image">
 </div>
 
 
@@ -88,7 +88,7 @@ weight: 3
 **2\. SSD和HDD对插入性能的影响（高性能服务器，批量插入）**
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.4.4/ssd.png" alt="image">
+  <img src="/img/docs/API-perf/v0.4.4/ssd.png" alt="image">
 </div>
 
 
@@ -100,7 +100,7 @@ weight: 3
 **3\. 不同并发线程数对插入性能的影响（普通服务器，使用HDD存储RocksDB数据）**
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.4.4/threads-batch.png" alt="image">
+  <img src="/img/docs/API-perf/v0.4.4/threads-batch.png" alt="image">
 </div>
 
 
@@ -123,7 +123,7 @@ weight: 3
 - 服务异常标志：错误率大于0.00%
 
 <div style="text-align: center;">
-  <img src="/docs/images/API-perf/v0.4.4/threads-single.png" alt="image">
+  <img src="/img/docs/API-perf/v0.4.4/threads-single.png" alt="image">
 </div>
 
 ###### 结论：

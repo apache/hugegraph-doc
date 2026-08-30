@@ -4,7 +4,7 @@ This file provides guidance to AI coding assistants (Claude Code, Cursor, GitHub
 
 ## Project Overview
 
-Apache HugeGraph documentation website built with Hugo static site generator and the Docsy theme. The site is bilingual (Chinese/English) and covers the complete HugeGraph graph database ecosystem.
+Apache HugeGraph documentation website built with Docusaurus (v3.x). The site is bilingual (Chinese/English) and covers the complete HugeGraph graph database ecosystem.
 
 ## Development Commands
 
@@ -12,44 +12,46 @@ Apache HugeGraph documentation website built with Hugo static site generator and
 # Install dependencies
 npm install
 
-# Start development server (auto-reload enabled)
-hugo server
+# Start development server (auto-reload)
+npm run start
 
-# Build production site (output to ./public)
-hugo --minify
+# Build production site (output to ./build)
+npm run build
 
-# Clean build
-rm -rf public/
+# Prepare versioned docs from Git branches
+npm run docs:versions:prepare
 
-# Production build with garbage collection
-HUGO_ENV="production" hugo --gc
+# Run all validations
+npm run validate
 
-# Custom server configuration
-hugo server -b http://127.0.0.1 -p 80 --bind=0.0.0.0
+# Content validation only
+npm run validate:content
 ```
 
 ## Prerequisites
 
-- **Hugo Extended** v0.95.0 recommended (v0.102.3 in CI) - must be the "extended" version for SASS/SCSS support
-- **Node.js** v16+ and npm
-- Download Hugo from: https://github.com/gohugoio/hugo/releases
+- **Node.js** v18+ and npm
 
 ## Architecture
 
 ```
 content/
-├── cn/          # Chinese documentation (default language)
+├── cn/          # Chinese documentation
 │   ├── docs/    # Main documentation
 │   ├── blog/    # Blog posts
 │   ├── community/
-│   └── about/
+│   └── download/
 └── en/          # English documentation (parallel structure)
 
-themes/docsy/    # Docsy theme (submodule)
-layouts/         # Custom template overrides
-assets/          # Processed assets (SCSS, images)
-static/          # Static files served directly
-config.toml      # Main site configuration
+src/             # Docusaurus pages, custom CSS, React components
+  components/    # Custom navbar items (DocumentationDropdown, LocaleAware, LanguageSwitcher)
+  pages/         # Homepage, Team, Users, Download redirects
+  data/          # versions.json, team.js, users.js
+  sidebars/      # Sidebar builders
+static/          # Static files (images, .htaccess)
+scripts/         # Content validation and version preparation
+docusaurus.config.js  # Site configuration + plugin setup
+sidebars*.js     # Sidebar configuration
 ```
 
 ### Content Structure
@@ -61,31 +63,41 @@ Documentation sections in `content/{cn,en}/docs/`:
 - `guides/` - User guides and tutorials
 - `performance/` - Benchmarks and optimization
 - `language/` - Query language docs
-- `contribution-guidelines/` - Contributing guides
 - `changelog/` - Release notes
 - `download/` - Download instructions
 
+Contribution guidelines moved to `content/{cn,en}/community/contribution-guidelines/`.
+
 ## Key Configuration Files
 
-- `config.toml` - Site-wide settings, language config, menu structure, version (currently 0.13)
-- `package.json` - Node dependencies for CSS processing (postcss, autoprefixer, mermaid)
-- `.editorconfig` - UTF-8, LF line endings, spaces for indentation
+- `docusaurus.config.js` - Site-wide settings, plugins, navbar, theme
+- `src/data/versions.json` - Documentation version metadata
+- `sidebars.js` / `sidebars-cn.js` - Documentation sidebars (en/cn)
+- `sidebars-community.js` / `sidebars-community-cn.js` - Community sidebars
+- `package.json` - Node dependencies (Docusaurus, React, Mermaid, Playwright)
 
 ## Working with Content
 
 When editing documentation:
 1. Maintain parallel structure between `content/cn/` and `content/en/`
-2. Use Markdown with Hugo front matter (title, weight, description)
+2. Use Markdown with standard front matter (title, weight, description)
 3. For bilingual changes, update both Chinese and English versions
-4. Include mermaid diagrams where appropriate (mermaid.js is available)
+4. Include mermaid diagrams where appropriate (mermaid.js is configured)
+
+## Documentation Versions
+
+- `src/data/versions.json` defines all versions (stable, next, archived)
+- `npm run docs:versions:prepare` generates versioned docs from configured Git source refs
+- Source `release-*` branches map to `docusaurus-*` version routes
+- Archived versions use `legacyCompatibility` config for pre-Docusaurus branch imports
 
 ## Deployment
 
-- **CI/CD**: GitHub Actions (`.github/workflows/hugo.yml`)
+- **CI/CD**: GitHub Actions (`.github/workflows/docusaurus.yml`)
 - **Trigger**: Push to `master` branch or pull requests
-- **Build**: `npm i && hugo --minify` with Node v16 and Hugo v0.102.3 extended
+- **Build**: `npm install && npm run build` with Node v20
 - **Deploy**: Publishes to `asf-site` branch (GitHub Pages)
-- **PR Requirements**: Include screenshots showing before/after changes
+- **Staging**: ASF GitPubSub via `.asf.yaml` publishes `asf-staging` branch to https://hugegraph.staged.apache.org/
 
 ## HugeGraph Ecosystem Context
 
@@ -99,12 +111,10 @@ This documentation covers:
 
 ## Troubleshooting
 
-**"TOCSS: failed to transform scss/main.scss"**
-- Install Hugo Extended (not standard Hugo)
+**Build errors related to missing versions**
+- Run `npm run docs:versions:prepare` to generate versioned docs before building
 
-**Theme/module not found**
-- Run: `git submodule update --init --recursive`
-
-**CI build fails but works locally**
-- Match Hugo version (v0.102.3) and Node.js (v16)
-- Verify npm dependencies are installed
+**Docusaurus fails to start**
+- Ensure Node.js v18+ is installed
+- Run `npm install` to install dependencies
+- Run `npm run clear` to clear Docusaurus cache

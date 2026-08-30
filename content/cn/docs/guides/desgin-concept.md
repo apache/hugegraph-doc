@@ -11,7 +11,7 @@ RDF是W3C标准，而Property Graph是工业标准，受到广大图数据库厂
 
 HugeGraph对应的存储概念模型也是参考Property Graph而设计的，具体示例详见下图：（*此图为旧版设计已过时，请忽略它，后续更新*）
 
-![image](/docs/images/design/PropertyGraph.png)
+![image](/img/docs/design/PropertyGraph.png)
 
 在HugeGraph内部，每个顶点 / 边由唯一的 VertexId / EdgeId 标识，属性存储在对应点 / 边内部。而顶点与顶点之间的关系 / 映射则是通过边来存储的。
 
@@ -24,7 +24,7 @@ HugeGraph对应的存储概念模型也是参考Property Graph而设计的，具
 使用Edge Cut方式存储图时，任何一个顶点只会出现在一台机器上，而边可能分布在不同机器上，这种存储方式有可能导致边多次存储。
 使用Vertex Cut方式存储图时，任何一条边只会出现在一台机器上，而每相同的一个点可能分布到不同机器上，这种存储方式可能会导致顶点多次存储。
 
-![image](/docs/images/design/GraphCut.png)
+![image](/img/docs/design/GraphCut.png)
 
 采用EdgeCut分区方案可以支持高性能的插入和更新操作，而VertexCut分区方案更适合静态图查询分析，因此EdgeCut适合OLTP图查询，VertexCut更适合OLAP的图查询。
 HugeGraph目前采用EdgeCut的分区方案。

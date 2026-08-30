@@ -65,7 +65,7 @@ Duration: 5 minutes.
 ###### Maximum Insertion Speed of Vertices:
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/vertex_batch.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/vertex_batch.png" alt="image">
 </center>
 
 ###### Conclusion:
@@ -75,7 +75,7 @@ Duration: 5 minutes.
 ###### Maximum Insertion Speed of Edges:
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/edge_batch.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/edge_batch.png" alt="image">
 </center>
 
 ###### Conclusion:
@@ -98,7 +98,7 @@ Continuously increase the concurrency level to test the upper limit of the serve
 ###### Single Insertion of Vertices:
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/vertex_single.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/vertex_single.png" alt="image">
 </center>
 
 ###### Conclusion:
@@ -108,7 +108,7 @@ Continuously increase the concurrency level to test the upper limit of the serve
 ###### Single Insertion of Edges:
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/edge_single.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/edge_single.png" alt="image">
 </center>
 
 
@@ -132,7 +132,7 @@ Continuously increase the concurrency and test the upper limit of the pressure t
 ###### Query by ID for vertices
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/vertex_id_query.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/vertex_id_query.png" alt="image">
 </center>
 
 
@@ -143,7 +143,7 @@ Continuously increase the concurrency and test the upper limit of the pressure t
 ###### Edge search by ID
 
 <center>
-  <img src="/docs/images/API-perf/v0.5.6/cassandra/edge_id_query.png" alt="image">
+  <img src="/img/docs/API-perf/v0.5.6/cassandra/edge_id_query.png" alt="image">
 </center>
 
 ###### Conclusion:

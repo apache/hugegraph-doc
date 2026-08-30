@@ -63,7 +63,7 @@ Duration: 5 minutes
 ###### Maximum Insertion Speed of Vertices and Edges (High-performance server with SSD storage for RocksDB data):
 
 <center>
-  <img src="/docs/images/API-perf/v0.4.4/best.png" alt="image">
+  <img src="/img/docs/API-perf/v0.4.4/best.png" alt="image">
 </center>
 
 ###### Conclusion:
@@ -74,7 +74,7 @@ Duration: 5 minutes
 **1\. The Impact of CPU and Memory on Insertion Performance (Servers Using HDD Storage for RocksDB Data, Batch Insertion)**
 
 <center>
-  <img src="/docs/images/API-perf/v0.4.4/cpu-memory.png" alt="image">
+  <img src="/img/docs/API-perf/v0.4.4/cpu-memory.png" alt="image">
 </center>
 
 ###### Conclusion:
@@ -85,7 +85,7 @@ Duration: 5 minutes
 **2\. The Impact of SSD and HDD on Insertion Performance (High-performance Servers, Batch Insertion)**
 
 <center>
-  <img src="/docs/images/API-perf/v0.4.4/ssd.png" alt="image">
+  <img src="/img/docs/API-perf/v0.4.4/ssd.png" alt="image">
 </center>
 
 ###### Conclusion:
@@ -96,7 +96,7 @@ Duration: 5 minutes
 **3\. The Impact of Different Concurrent Thread Numbers on Insertion Performance (Ordinary Servers, HDD Storage for RocksDB Data)**
 
 <center>
-  <img src="/docs/images/API-perf/v0.4.4/threads-batch.png" alt="image">
+  <img src="/img/docs/API-perf/v0.4.4/threads-batch.png" alt="image">
 </center>
 
 ##### Conclusion:
@@ -118,7 +118,7 @@ Continuously increase the concurrency level and test the upper limit of the pres
 - Service exception criteria: Error rate greater than 0.00%.
 
 <center>
-  <img src="/docs/images/API-perf/v0.4.4/threads-single.png" alt="image">
+  <img src="/img/docs/API-perf/v0.4.4/threads-single.png" alt="image">
 </center>
 
 #### Conclusion:

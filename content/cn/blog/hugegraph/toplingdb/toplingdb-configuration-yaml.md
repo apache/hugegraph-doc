@@ -176,7 +176,7 @@ DBOptions:
 ToplingDB YAML 引用与复用图示:
 
 <div style="text-align: center;">
-  <img src="/blog/images/images-server/toplingdb-yaml-ref.png" alt="image" width="800">
+  <img src="/img/blog/images-server/toplingdb-yaml-ref.png" alt="image" width="800">
 </div>
 
 这种机制使得配置更灵活，便于在复杂场景下组合不同组件。

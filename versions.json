@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/apache/hugegraph-doc.git",
+  "versions": [
+    {
+      "id": "latest",
+      "name": "latest",
+      "ref": "master",
+      "publishPath": "",
+      "archived": false,
+      "githubBranch": "master"
+    },
+    {
+      "id": "1.7",
+      "name": "1.7",
+      "ref": "release-1.7.0",
+      "publishPath": "versions/1.7",
+      "archived": true,
+      "githubBranch": "release-1.7.0"
+    },
+    {
+      "id": "1.5",
+      "name": "1.5",
+      "ref": "release-1.5.0",
+      "publishPath": "versions/1.5",
+      "archived": true,
+      "githubBranch": "release-1.5.0"
+    }
+  ]
+}

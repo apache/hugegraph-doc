@@ -15,17 +15,68 @@ env:
   HUGO_CACHEDIR: /tmp/hugo_cache
 
 jobs:
-  # Keep this job id aligned with the required `deploy` status in .asf.yaml.
-  # Publishing is added only after the aggregate artifact is complete.
-  deploy:
+  prepare:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      versions: ${{ steps.matrix.outputs.versions }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.13"
+
+      - name: Validate source and version tooling
+        run: |
+          bash dist/validate-links.sh
+          python3 -m unittest discover -s scripts -p 'test_*.py' -v
+
+      - name: Resolve immutable version matrix
+        id: matrix
+        env:
+          LATEST_SHA: ${{ github.sha }}
+        run: |
+          python3 scripts/versioning.py prepare \
+            --latest-sha "$LATEST_SHA" \
+            --output resolved-versions.json
+          echo "versions=$(jq -c '.include' resolved-versions.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload resolved version manifest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: resolved-versions-${{ github.sha }}
+          path: resolved-versions.json
+          if-no-files-found: error
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJSON(needs.prepare.outputs.versions) }}
+        site:
+          - name: production
+            origin: https://hugegraph.apache.org/
+          - name: staging
+            origin: https://hugegraph-oink.staged.apache.org/
+    name: Build ${{ matrix.site.name }} / ${{ matrix.version.id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.13"
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
@@ -42,47 +93,132 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ env.HUGO_CACHEDIR }}
-          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ hashFiles('go.sum') }}
+          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ matrix.version.id }}-${{ hashFiles('go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-
+            ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ matrix.version.id }}-
 
       - name: Verify pinned OINK module
         run: test "$(hugo mod graph)" = "github.com/apache/hugegraph-doc github.com/pgsty/oink@v1.0.0"
 
-      - name: Check source links
-        run: bash dist/validate-links.sh
+      - name: Build isolated version artifact
+        env:
+          OINK_PYTHON: python3
+        run: |
+          python3 scripts/versioning.py build \
+            --version "${{ matrix.version.id }}" \
+            --sha "${{ matrix.version.sha }}" \
+            --site-origin "${{ matrix.site.origin }}" \
+            --output "${RUNNER_TEMP}/version-public"
+          python3 scripts/versioning.py validate \
+            --version "${{ matrix.version.id }}" \
+            --sha "${{ matrix.version.sha }}" \
+            --site-origin "${{ matrix.site.origin }}" \
+            --artifact "${RUNNER_TEMP}/version-public"
 
-      - name: Build strict production artifact
-        run: >-
-          hugo --cleanDestinationDir --gc --minify
-          --environment production
-          --printPathWarnings --printI18nWarnings
-          --panicOnWarning --logLevel info
-
-      - name: Validate production artifact
-        run: python3 dist/validate-site-output.py public https://hugegraph.apache.org/
-
-      - name: Build and validate staging URL shape
-        run: >-
-          hugo --cleanDestinationDir --gc --minify
-          --destination public-staging
-          --baseURL https://hugegraph-oink.staged.apache.org/
-          --environment production
-          --printPathWarnings --printI18nWarnings
-          --panicOnWarning --logLevel info
-
-      - name: Validate staging artifact
-        run: >-
-          python3 dist/validate-site-output.py public-staging
-          https://hugegraph-oink.staged.apache.org/
-
-      - name: Add ASF deployment metadata
-        run: cp .asf.yaml public/.asf.yaml
-
-      - name: Upload site artifact
+      - name: Upload isolated version artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: hugegraph-site-${{ github.sha }}
-          path: public
+          name: ${{ matrix.site.name }}-${{ matrix.version.id }}
+          path: ${{ runner.temp }}/version-public
           include-hidden-files: true
           if-no-files-found: error
+
+  # Keep this job id aligned with the required `deploy` status in .asf.yaml.
+  # It produces deployable artifacts but does not publish untrusted PR code.
+  deploy:
+    if: always()
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Require every version build to succeed
+        env:
+          PREPARE_RESULT: ${{ needs.prepare.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          test "$PREPARE_RESULT" = success
+          test "$BUILD_RESULT" = success
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.13"
+
+      - name: Download resolved version manifest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: resolved-versions-${{ github.sha }}
+          path: resolved
+
+      - name: Download production versions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: production-*
+          path: version-artifacts
+
+      - name: Download staging versions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: staging-*
+          path: version-artifacts
+
+      - name: Aggregate production and staging sites
+        run: |
+          python3 scripts/versioning.py aggregate \
+            --artifacts version-artifacts \
+            --artifact-prefix production- \
+            --resolved-manifest resolved/resolved-versions.json \
+            --site-origin https://hugegraph.apache.org/ \
+            --output "${RUNNER_TEMP}/public-production"
+          python3 scripts/versioning.py aggregate \
+            --artifacts version-artifacts \
+            --artifact-prefix staging- \
+            --resolved-manifest resolved/resolved-versions.json \
+            --site-origin https://hugegraph-oink.staged.apache.org/ \
+            --asf-profile oink \
+            --asf-whoami asf-staging-oink \
+            --output "${RUNNER_TEMP}/public-staging"
+
+      - name: Upload production aggregate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: hugegraph-site-production-${{ github.sha }}
+          path: ${{ runner.temp }}/public-production
+          include-hidden-files: true
+          if-no-files-found: error
+
+      - name: Upload ASF staging aggregate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: hugegraph-site-staging-${{ github.sha }}
+          path: ${{ runner.temp }}/public-staging
+          include-hidden-files: true
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download reviewed production aggregate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: hugegraph-site-production-${{ github.sha }}
+          path: public-production
+
+      - name: Publish clean aggregate to asf-site
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public-production
+          publish_branch: asf-site
+          keep_files: false
+          force_orphan: false
+          commit_message: ${{ github.event.head_commit.message }}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "origin": "https://hugegraph.apache.org/",
+    "verifiedAt": "2026-08-31",
+    "defaultStatus": 200,
+    "stagingOrigin": "https://hugegraph-oink.staged.apache.org/",
+    "stagingStatusBeforePublish": 404
+  },
+  "routes": [
+    {"path": "/", "versions": ["latest", "1.7", "1.5"], "file": "index.html", "contains": ["Apache HugeGraph"]},
+    {"path": "/cn/", "versions": ["latest", "1.7", "1.5"], "file": "cn/index.html", "contains": ["Apache HugeGraph"]},
+    {"path": "/docs/", "versions": ["latest", "1.7", "1.5"], "file": "docs/index.html", "contains": ["Documentation"]},
+    {"path": "/cn/docs/", "versions": ["latest", "1.7", "1.5"], "file": "cn/docs/index.html", "contains": ["Documentation"]},
+    {"path": "/blog/", "versions": ["latest"], "file": "blog/index.html", "contains": ["Blog"]},
+    {"path": "/cn/blog/", "versions": ["latest"], "file": "cn/blog/index.html", "contains": ["Blog"]},
+    {"path": "/about/", "versions": ["latest"], "file": "about/index.html", "contains": ["Apache HugeGraph"]},
+    {"path": "/cn/about/", "versions": ["latest"], "file": "cn/about/index.html", "contains": ["Apache HugeGraph"]},
+    {"path": "/community/", "versions": ["latest"], "file": "community/index.html", "contains": ["Community"]},
+    {"path": "/cn/community/", "versions": ["latest"], "file": "cn/community/index.html", "contains": ["社区"]},
+    {"path": "/docs/download/download/", "versions": ["latest", "1.7", "1.5"], "file": "docs/download/download/index.html", "contains": ["Download"]},
+    {"path": "/cn/docs/download/download/", "versions": ["latest", "1.7", "1.5"], "file": "cn/docs/download/download/index.html", "contains": ["下载"]},
+    {"path": "/docs/quickstart/hugegraph/hugegraph-server/", "versions": ["latest", "1.7", "1.5"], "file": "docs/quickstart/hugegraph/hugegraph-server/index.html", "contains": ["HugeGraph-Server"]},
+    {"path": "/cn/docs/quickstart/hugegraph/hugegraph-server/", "versions": ["latest", "1.7", "1.5"], "file": "cn/docs/quickstart/hugegraph/hugegraph-server/index.html", "contains": ["HugeGraph-Server"]},
+    {"path": "/docs/config/config-guide/", "versions": ["latest", "1.7", "1.5"], "file": "docs/config/config-guide/index.html", "contains": ["GremlinServer"]},
+    {"path": "/cn/docs/config/config-guide/", "versions": ["latest", "1.7", "1.5"], "file": "cn/docs/config/config-guide/index.html", "contains": ["GremlinServer"]},
+    {"path": "/docs/clients/restful-api/graphs/", "versions": ["latest", "1.7", "1.5"], "file": "docs/clients/restful-api/graphs/index.html", "contains": ["REST"]},
+    {"path": "/cn/docs/clients/restful-api/graphs/", "versions": ["latest", "1.7", "1.5"], "file": "cn/docs/clients/restful-api/graphs/index.html", "contains": ["REST"]},
+    {"path": "/docs/guides/architectural/", "versions": ["latest", "1.7", "1.5"], "file": "docs/guides/architectural/index.html", "contains": ["HugeGraph"]},
+    {"path": "/cn/docs/guides/architectural/", "versions": ["latest", "1.7", "1.5"], "file": "cn/docs/guides/architectural/index.html", "contains": ["HugeGraph"]},
+    {"path": "/404.html", "versions": ["latest", "1.7", "1.5"], "file": "404.html", "contains": ["404"]},
+    {"path": "/cn/404.html", "versions": ["latest", "1.7", "1.5"], "file": "cn/404.html", "contains": ["404"]},
+    {"path": "/client-go/", "versions": ["latest"], "file": "client-go/index.html", "contains": ["go-import", "go-source"]},
+    {"path": "/icons/logo.svg", "versions": ["latest", "1.7", "1.5"], "file": "icons/logo.svg", "contains": ["<svg"], "baselineStatus": 404, "migrationStatus": 200}
+  ]
+}

@@ -202,6 +202,8 @@ server.role=master
 
 # slow query log
 log.slow_query_threshold=1000
+# bytes of request body recorded as-is (may contain sensitive literals), 0 to disable
+log.slow_query_body_limit=512
 
 # jvm(in-heap) memory usage monitor, set 1 to disable it
 memory_monitor.threshold=0.85

@@ -148,7 +148,7 @@ bin/start-hubble.sh -d
 平台的模块使用流程如下：
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/2平台使用流程.png" alt="image">
+  <img src="/img/docs/images-hubble/2平台使用流程.png" alt="image">
 </div>
 
 
@@ -158,14 +158,14 @@ bin/start-hubble.sh -d
 图管理模块下，点击【创建图】，通过填写图 ID、图名称、主机名、端口号、用户名、密码的信息，实现多图的连接。
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/311图创建.png" alt="image">
+  <img src="/img/docs/images-hubble/311图创建.png" alt="image">
 </div>
 
 
 创建图填写内容如下：
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/311图创建2.png" alt="image">
+  <img src="/img/docs/images-hubble/311图创建2.png" alt="image">
 </div>
 
 > **注意**：如果使用 docker 启动 `hubble`，且 `server` 和 `hubble` 位于同一宿主机，不能直接使用 `localhost/127.0.0.1` 作为主机名。如果 `hubble` 和 `server` 在同一 docker 网络下，则可以直接使用 container_name 作为主机名，端口则为 8080。或者也可以使用宿主机 ip 作为主机名，此时端口为宿主机为 server 配置的端口
@@ -174,7 +174,7 @@ bin/start-hubble.sh -d
 实现图空间的信息访问，进入后，可进行图的多维查询分析、元数据管理、数据导入、算法分析等操作。
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/312图访问.png" alt="image">
+  <img src="/img/docs/images-hubble/312图访问.png" alt="image">
 </div>
 
 
@@ -183,7 +183,7 @@ bin/start-hubble.sh -d
 2. 搜索范围：可对图名称和 ID 进行搜索。
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/313图管理.png" alt="image">
+  <img src="/img/docs/images-hubble/313图管理.png" alt="image">
 </div>
 
 
@@ -192,7 +192,7 @@ bin/start-hubble.sh -d
 左侧导航处：
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/321元数据入口.png" alt="image">
+  <img src="/img/docs/images-hubble/321元数据入口.png" alt="image">
 </div>
 
 
@@ -204,14 +204,14 @@ bin/start-hubble.sh -d
 列表模式：
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/3221属性创建.png" alt="image">
+  <img src="/img/docs/images-hubble/3221属性创建.png" alt="image">
 </div>
 
 
 图模式：
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/3221属性创建2.png" alt="image">
+  <img src="/img/docs/images-hubble/3221属性创建2.png" alt="image">
 </div>
 
 
@@ -222,14 +222,14 @@ bin/start-hubble.sh -d
 选择复用项：
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/3222属性复用.png" alt="image">
+  <img src="/img/docs/images-hubble/3222属性复用.png" alt="image">
 </div>
 
 
 校验复用项：
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/3222属性复用2.png" alt="image">
+  <img src="/img/docs/images-hubble/3222属性复用2.png" alt="image">
 </div>
 
 
@@ -243,14 +243,14 @@ bin/start-hubble.sh -d
 列表模式：
 
 <center>
-  <img src="/docs/images/images-hubble/3231顶点创建.png" alt="image">
+  <img src="/img/docs/images-hubble/3231顶点创建.png" alt="image">
 </center>
 
 
 图模式：
 
 <center>
-  <img src="/docs/images/images-hubble/3231顶点创建2.png" alt="image">
+  <img src="/img/docs/images-hubble/3231顶点创建2.png" alt="image">
 </center>
 
 
@@ -265,7 +265,7 @@ bin/start-hubble.sh -d
 2.	可进行单条删除或批量删除操作。
 
 <center>
-  <img src="/docs/images/images-hubble/3233顶点删除.png" alt="image">
+  <img src="/img/docs/images-hubble/3233顶点删除.png" alt="image">
 </center>
 
 
@@ -276,14 +276,14 @@ bin/start-hubble.sh -d
 列表模式：
 
 <center>
-  <img src="/docs/images/images-hubble/3241边创建.png" alt="image">
+  <img src="/img/docs/images-hubble/3241边创建.png" alt="image">
 </center>
 
 
 图模式：
 
 <center>
-  <img src="/docs/images/images-hubble/3241边创建2.png" alt="image">
+  <img src="/img/docs/images-hubble/3241边创建2.png" alt="image">
 </center>
 
 
@@ -306,14 +306,14 @@ bin/start-hubble.sh -d
 数据导入的使用流程如下：
 
 <center>
-  <img src="/docs/images/images-hubble/33导入流程.png" alt="image">
+  <img src="/img/docs/images-hubble/33导入流程.png" alt="image">
 </center>
 
 
 ##### 4.3.1	模块入口
 左侧导航处：
 <center>
-  <img src="/docs/images/images-hubble/331导入入口.png" alt="image">
+  <img src="/img/docs/images-hubble/331导入入口.png" alt="image">
 </center>
 
 
@@ -322,7 +322,7 @@ bin/start-hubble.sh -d
 2.	可创建多个导入任务，并行导入。
 
 <center>
-  <img src="/docs/images/images-hubble/332创建任务.png" alt="image">
+  <img src="/img/docs/images-hubble/332创建任务.png" alt="image">
 </center>
 
 
@@ -331,7 +331,7 @@ bin/start-hubble.sh -d
 2.	可同时上传多个文件。
 
 <center>
-  <img src="/docs/images/images-hubble/333上传文件.png" alt="image">
+  <img src="/img/docs/images-hubble/333上传文件.png" alt="image">
 </center>
 
 
@@ -351,14 +351,14 @@ bin/start-hubble.sh -d
 设置映射的填写内容：
 
   <center>
-      <img src="/docs/images/images-hubble/334设置映射.png" alt="image">
+      <img src="/img/docs/images-hubble/334设置映射.png" alt="image">
   </center>
 
 
 映射列表：
 
   <center>
-    <img src="/docs/images/images-hubble/334设置映射2.png" alt="image">
+    <img src="/img/docs/images-hubble/334设置映射2.png" alt="image">
   </center>
 
 
@@ -368,7 +368,7 @@ bin/start-hubble.sh -d
 - 导入设置参数项如下图所示，均设置默认值，无需手动填写
 
 <center>
-  <img src="/docs/images/images-hubble/335导入设置.png" alt="image">
+  <img src="/img/docs/images-hubble/335导入设置.png" alt="image">
 </center>
 
 
@@ -378,7 +378,7 @@ bin/start-hubble.sh -d
 - 若导入失败，可查看具体原因
 
 <center>
-  <img src="/docs/images/images-hubble/335导入详情.png" alt="image">
+  <img src="/img/docs/images-hubble/335导入详情.png" alt="image">
 </center>
 
 
@@ -386,14 +386,14 @@ bin/start-hubble.sh -d
 ##### 4.4.1	模块入口
 左侧导航处：
 <center>
-  <img src="/docs/images/images-hubble/341分析入口.png" alt="image">
+  <img src="/img/docs/images-hubble/341分析入口.png" alt="image">
 </center>
 
 
 ##### 4.4.2	多图切换
 通过左侧切换入口，灵活切换多图的操作空间
 <center>
-  <img src="/docs/images/images-hubble/342多图切换.png" alt="image">
+  <img src="/img/docs/images-hubble/342多图切换.png" alt="image">
 </center>
 
 
@@ -409,19 +409,19 @@ Gremlin 查询后，下方为图结果展示区域，提供 3 种图结果展示
 【图模式】
 
 <center>
-  <img src="/docs/images/images-hubble/343图分析-图.png" alt="image">
+  <img src="/img/docs/images-hubble/343图分析-图.png" alt="image">
 </center>
 
 
 【表格模式】
 <center>
-  <img src="/docs/images/images-hubble/343图分析-表格.png" alt="image">
+  <img src="/img/docs/images-hubble/343图分析-表格.png" alt="image">
 </center>
 
 
 【Json 模式】
 <center>
-  <img src="/docs/images/images-hubble/343图分析-json.png" alt="image">
+  <img src="/img/docs/images-hubble/343图分析-json.png" alt="image">
 </center>
 
 
@@ -440,7 +440,7 @@ Gremlin 查询后，下方为图结果展示区域，提供 3 种图结果展示
 双击顶点，也可展示与选中点关联的顶点。
 
 <center>
-  <img src="/docs/images/images-hubble/345定制路径查询.png" alt="image">
+  <img src="/img/docs/images-hubble/345定制路径查询.png" alt="image">
 </center>
 
 
@@ -455,14 +455,14 @@ Gremlin 查询后，下方为图结果展示区域，提供 3 种图结果展示
 入口如下：
 
 <center>
-  <img src="/docs/images/images-hubble/346新增顶点.png" alt="image">
+  <img src="/img/docs/images-hubble/346新增顶点.png" alt="image">
 </center>
 
 
 添加顶点内容如下：
 
 <center>
-  <img src="/docs/images/images-hubble/346新增顶点2.png" alt="image">
+  <img src="/img/docs/images-hubble/346新增顶点2.png" alt="image">
 </center>
 
 
@@ -475,7 +475,7 @@ Gremlin 查询后，下方为图结果展示区域，提供 3 种图结果展示
 2.	提供语句的收藏功能，可对常用语句进行收藏操作，方便高频语句快速调用
 
 <center>
-  <img src="/docs/images/images-hubble/347收藏.png" alt="image">
+  <img src="/img/docs/images-hubble/347收藏.png" alt="image">
 </center>
 
 
@@ -483,7 +483,7 @@ Gremlin 查询后，下方为图结果展示区域，提供 3 种图结果展示
 ##### 4.5.1	模块入口
 左侧导航处：
 <center>
-  <img src="/docs/images/images-hubble/351任务管理入口.png" alt="image">
+  <img src="/img/docs/images-hubble/351任务管理入口.png" alt="image">
 </center>
 
 
@@ -499,7 +499,7 @@ Gremlin 查询后，下方为图结果展示区域，提供 3 种图结果展示
 5.	可对异步任务进行删除或批量删除操作
 
 <center>
-  <img src="/docs/images/images-hubble/352任务列表.png" alt="image">
+  <img src="/img/docs/images-hubble/352任务列表.png" alt="image">
 </center>
 
 
@@ -513,14 +513,14 @@ Gremlin 查询后，下方为图结果展示区域，提供 3 种图结果展示
 - 提供【查看】入口，可跳转到任务详情查看当前任务具体执行情况跳转到任务中心后，直接显示当前执行的任务行
 
 <center>
-  <img src="/docs/images/images-hubble/353gremlin任务.png" alt="image">
+  <img src="/img/docs/images-hubble/353gremlin任务.png" alt="image">
 </center>
 
 
 点击查看入口，跳转到任务管理列表，如下：
 
 <center>
-  <img src="/docs/images/images-hubble/353gremlin任务2.png" alt="image">
+  <img src="/img/docs/images-hubble/353gremlin任务2.png" alt="image">
 </center>
 
 
@@ -536,14 +536,14 @@ Hubble 上暂未提供可视化的 OLAP 算法执行，可调用 RESTful API 进
 - 在元数据建模模块中，删除元数据时，可建立删除元数据的异步任务
 
 <center>
-  <img src="/docs/images/images-hubble/355删除元数据.png" alt="image">
+  <img src="/img/docs/images-hubble/355删除元数据.png" alt="image">
 </center>
 
 
 - 在编辑已有的顶点/边类型操作中，新增索引时，可建立创建索引的异步任务
 
 <center>
-  <img src="/docs/images/images-hubble/355构建索引.png" alt="image">
+  <img src="/img/docs/images-hubble/355构建索引.png" alt="image">
 </center>
 
 
@@ -551,7 +551,7 @@ Hubble 上暂未提供可视化的 OLAP 算法执行，可调用 RESTful API 进
 - 确认/保存后，可跳转到任务中心查看当前任务的详情
 
 <center>
-  <img src="/docs/images/images-hubble/355任务详情.png" alt="image">
+  <img src="/img/docs/images-hubble/355任务详情.png" alt="image">
 </center>
 
 

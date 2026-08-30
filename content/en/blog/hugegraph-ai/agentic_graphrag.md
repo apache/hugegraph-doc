@@ -24,7 +24,7 @@ Therefore, GraphRAG technology was developed. A typical GraphRAG involves two st
 2. Online: When the GraphRAG system receives a user question, it can capture the relationships between different entities in the knowledge base using the graph database. Consequently, we can retrieve the three sentences above (the specific graph database index might look like the following example).
 
 <div style="text-align: center;">
-  <img src="/blog/images/images-server/agentic-background.png" alt="image" width="400">
+  <img src="/img/blog/images-server/agentic-background.png" alt="image" width="400">
 </div>
 
 However, GraphRAG itself also presents several challenges:
@@ -168,7 +168,7 @@ We inspected the latest version of the Agno source code at the time of our resea
 We saw from the official documentation
 
 <div style="text-align: center;">
-  <img src="/blog/images/images-server/agentic-pydantic.png" alt="image" width="800">
+  <img src="/img/blog/images-server/agentic-pydantic.png" alt="image" width="800">
 </div>
 
 Surprisingly, the Pydantic-Ai framework doesn't support automatic parallelism at the Task level.
@@ -251,7 +251,7 @@ However, what truly made us decide was the project's "heartbeat". We contacted t
 We believe that an excellent technology selection is not only about matching functionality but also about recognizing the project's future potential. (Welcome to witness its growth together: https://github.com/ChunelFeng/CGraph)
 
 <div style="text-align: center;">
-  <img src="/blog/images/images-server/agentic-frame.png" alt="image" width="800">
+  <img src="/img/blog/images-server/agentic-frame.png" alt="image" width="800">
 </div>
 
 ## Architectural Design
@@ -271,7 +271,7 @@ For example, vector similarity search is a very common RAG process. However, dep
 3. By introducing a new Node abstraction, we don't need to modify the implementation of the underlying Operator during the refactoring process, which reduces the mental burden during refactoring.
 
 <div style="text-align: center;">
-  <img src="/blog/images/images-server/agentic-abstract.png" alt="image" width="800">
+  <img src="/img/blog/images-server/agentic-abstract.png" alt="image" width="800">
 </div>
 
 Since we want to reuse the same type of Workflow across requests, we need to ensure that the Workflow itself is stateless. Because if the reused Workflow still carries the state of the previous request, users may get unexpected results. The state of the Workflow can be divided into two types:
@@ -294,7 +294,7 @@ We use the `GParam` (global parameter) abstraction provided by the CGraph framew
 This way we can ensure that each time the Workflow is executed, these two states only contain the state of the current request. Since the WorkflowInput state is reset after Workflow execution, we can only selectively choose some data from the WorkflowState to return to the user. Therefore, we get the interface that a Flow abstraction should implement.
 
 <div style="text-align: center;">
-  <img src="/blog/images/images-server/agentic-lifeline.svg" alt="image" width="1000">
+  <img src="/img/blog/images-server/agentic-lifeline.svg" alt="image" width="1000">
 </div>
 
 ```python
@@ -411,7 +411,7 @@ We fully leverage the Pool abstraction provided by the underlying CGraph framewo
 Now we can get the overall architecture diagram of the entire project.
 
 <div style="text-align: center;">
-  <img src="/blog/images/images-server/agentic-scheduler.png" alt="image" width="600">
+  <img src="/img/blog/images-server/agentic-scheduler.png" alt="image" width="600">
 </div>
 
 1. After receiving a request, the Scheduler first queries the PipelinePool to check if there is a idle Pipeline of the corresponding type.

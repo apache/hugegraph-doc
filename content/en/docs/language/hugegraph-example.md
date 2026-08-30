@@ -26,7 +26,7 @@ Compared to TitanDB, HugeGraph's main features are as follows:
 This example uses the Property Graph Model to describe the relationships between characters in Greek mythology, also known as the character relationship graph. The specific relationships are shown in the diagram below.
 
 <div style="text-align: center;">
-  <img src="/docs/images/graph-of-gods.png" alt="image">
+  <img src="/img/docs/graph-of-gods.png" alt="image">
 </div>
 
 

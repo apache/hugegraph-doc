@@ -1049,7 +1049,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>11>S-77
 
 ### 10.7 图空间管理员（Manager）API
 
-**重要提示**：在使用以下 API 之前，需要先创建图空间（graphspace）。请参考 [Graphspace API](./graphspace) 创建名为 `gs1` 的图空间。文档中的示例均假设已存在名为 `gs1` 的图空间
+**重要提示**：在使用以下 API 之前，需要先创建图空间（graphspace）。请参考 [Graphspace API](/cn/docs/clients/restful-api/graphspace/) 创建名为 `gs1` 的图空间。文档中的示例均假设已存在名为 `gs1` 的图空间
 
 1. 图空间管理员 API 用于在 graphspace 维度给用户授予/回收管理员角色，并查询当前用户或其他用户在该 graphspace 下的角色信息。角色类型可取 `SPACE`、`SPACE_MEMBER`、`ADMIN` 。
 

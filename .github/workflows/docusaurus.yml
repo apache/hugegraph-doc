@@ -1,0 +1,47 @@
+# Build and deploy the Docusaurus documentation site.
+name: "Deploy site to pages (docusaurus)"
+
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - asf-site
+      - gh-pages
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Site
+        env:
+          KAPA_WEBSITE_ID: ${{ vars.KAPA_WEBSITE_ID || secrets.KAPA_WEBSITE_ID }}
+        run: npm run build
+
+      - name: Deploy Site
+        uses: peaceiris/actions-gh-pages@v3
+        if: ${{ github.ref == 'refs/heads/master' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Refer: https://github.com/marketplace/actions/github-pages-action
+          publish_dir: ./build
+          publish_branch: asf-site
+          keep_files: true # A simple way to keep ".asf.yaml" file
+          commit_message: ${{ github.event.head_commit.message }}

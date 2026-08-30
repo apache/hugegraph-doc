@@ -157,7 +157,7 @@ bin/start-hubble.sh -d
 The module usage process of the platform is as follows:
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/2平台使用流程.png" alt="image">
+  <img src="/img/docs/images-hubble/2平台使用流程.png" alt="image">
 </div>
 
 
@@ -167,14 +167,14 @@ The module usage process of the platform is as follows:
 Under the graph management module, click [Create graph], and realize the connection of multiple graphs by filling in the graph ID, graph name, host name, port number, username, and password information.
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-hubble/311图创建.png" alt="image">
+  <img src="/img/docs/images-hubble/311图创建.png" alt="image">
 </div>
 
 
 Create graph by filling in the content as follows:
 
 <center>
-  <img src="/docs/images/images-hubble/311图创建2.png" alt="image">
+  <img src="/img/docs/images-hubble/311图创建2.png" alt="image">
 </center>
 
 > **Special Note**: If you are starting `hubble` with Docker, and `hubble` and the server are on the same host. When configuring the hostname for the graph on the Hubble web page, please do not directly set it to `localhost/127.0.0.1`. If `hubble` and `server` is in the same docker network, we **recommend** using the `container_name` (in our example, it is `graph`) as the hostname, and `8080` as the port. Or you can use the **host IP** as the hostname, and the port is configured by the host for the server.
@@ -183,7 +183,7 @@ Create graph by filling in the content as follows:
 Realize the information access to the graph space. After entering, you can perform operations such as multidimensional query analysis, metadata management, data import, and algorithm analysis of the graph.
 
 <center>
-  <img src="/docs/images/images-hubble/312图访问.png" alt="image">
+  <img src="/img/docs/images-hubble/312图访问.png" alt="image">
 </center>
 
 
@@ -192,7 +192,7 @@ Realize the information access to the graph space. After entering, you can perfo
 2. Search range: You can search for the graph name and ID.
 
 <center>
-  <img src="/docs/images/images-hubble/313图管理.png" alt="image">
+  <img src="/img/docs/images-hubble/313图管理.png" alt="image">
 </center>
 
 
@@ -201,7 +201,7 @@ Realize the information access to the graph space. After entering, you can perfo
 Left navigation:
 
 <center>
-  <img src="/docs/images/images-hubble/321元数据入口.png" alt="image">
+  <img src="/img/docs/images-hubble/321元数据入口.png" alt="image">
 </center>
 
 
@@ -213,14 +213,14 @@ Left navigation:
 List mode:
 
 <center>
-  <img src="/docs/images/images-hubble/3221属性创建.png" alt="image">
+  <img src="/img/docs/images-hubble/3221属性创建.png" alt="image">
 </center>
 
 
 Graph mode:
 
 <center>
-  <img src="/docs/images/images-hubble/3221属性创建2.png" alt="image">
+  <img src="/img/docs/images-hubble/3221属性创建2.png" alt="image">
 </center>
 
 
@@ -231,14 +231,14 @@ Graph mode:
 Select reuse items:
 
 <center>
-  <img src="/docs/images/images-hubble/3222属性复用.png" alt="image">
+  <img src="/img/docs/images-hubble/3222属性复用.png" alt="image">
 </center>
 
 
 Check reuse items:
 
 <center>
-  <img src="/docs/images/images-hubble/3222属性复用2.png" alt="image">
+  <img src="/img/docs/images-hubble/3222属性复用2.png" alt="image">
 </center>
 
 
@@ -252,14 +252,14 @@ Check reuse items:
 List mode:
 
 <center>
-  <img src="/docs/images/images-hubble/3231顶点创建.png" alt="image">
+  <img src="/img/docs/images-hubble/3231顶点创建.png" alt="image">
 </center>
 
 
 Graph mode:
 
 <center>
-  <img src="/docs/images/images-hubble/3231顶点创建2.png" alt="image">
+  <img src="/img/docs/images-hubble/3231顶点创建2.png" alt="image">
 </center>
 
 ###### 4.2.3.2 Reuse
@@ -272,7 +272,7 @@ Graph mode:
 2. You can delete a single item or delete it in batches.
 
 <center>
-  <img src="/docs/images/images-hubble/3233顶点删除.png" alt="image">
+  <img src="/img/docs/images-hubble/3233顶点删除.png" alt="image">
 </center>
 
 
@@ -283,14 +283,14 @@ Graph mode:
 List mode:
 
 <center>
-  <img src="/docs/images/images-hubble/3241边创建.png" alt="image">
+  <img src="/img/docs/images-hubble/3241边创建.png" alt="image">
 </center>
 
 
 Graph mode:
 
 <center>
-  <img src="/docs/images/images-hubble/3241边创建2.png" alt="image">
+  <img src="/img/docs/images-hubble/3241边创建2.png" alt="image">
 </center>
 
 
@@ -313,14 +313,14 @@ Displays vertex and edge indices for vertex types and edge types.
 The usage process of data import is as follows:
 
 <center>
-  <img src="/docs/images/images-hubble/33导入流程.png" alt="image">
+  <img src="/img/docs/images-hubble/33导入流程.png" alt="image">
 </center>
 
 
 ##### 4.3.1	Module entrance
 Left navigation:
 <center>
-  <img src="/docs/images/images-hubble/331导入入口.png" alt="image">
+  <img src="/img/docs/images-hubble/331导入入口.png" alt="image">
 </center>
 
 
@@ -329,7 +329,7 @@ Left navigation:
 2. Multiple import tasks can be created and imported in parallel.
 
 <center>
-  <img src="/docs/images/images-hubble/332创建任务.png" alt="image">
+  <img src="/img/docs/images-hubble/332创建任务.png" alt="image">
 </center>
 
 
@@ -338,7 +338,7 @@ Left navigation:
 2. Multiple files can be uploaded at the same time.
 
 <center>
-  <img src="/docs/images/images-hubble/333上传文件.png" alt="image">
+  <img src="/img/docs/images-hubble/333上传文件.png" alt="image">
 </center>
 
 
@@ -358,14 +358,14 @@ Left navigation:
 Fill in the settings map:
 
   <center>
-      <img src="/docs/images/images-hubble/334设置映射.png" alt="image">
+      <img src="/img/docs/images-hubble/334设置映射.png" alt="image">
   </center>
 
 
 Mapping list:
 
   <center>
-    <img src="/docs/images/images-hubble/334设置映射2.png" alt="image">
+    <img src="/img/docs/images-hubble/334设置映射2.png" alt="image">
   </center>
 
 
@@ -375,7 +375,7 @@ Before importing, you need to fill in the import setting parameters. After filli
 - The import setting parameter items are as shown in the figure below, all set the default value, no need to fill in manually
 
 <center>
-  <img src="/docs/images/images-hubble/335导入设置.png" alt="image">
+  <img src="/img/docs/images-hubble/335导入设置.png" alt="image">
 </center>
 
 
@@ -385,7 +385,7 @@ Before importing, you need to fill in the import setting parameters. After filli
 - If the import fails, you can view the specific reason
 
 <center>
-  <img src="/docs/images/images-hubble/335导入详情.png" alt="image">
+  <img src="/img/docs/images-hubble/335导入详情.png" alt="image">
 </center>
 
 
@@ -393,14 +393,14 @@ Before importing, you need to fill in the import setting parameters. After filli
 ##### 4.4.1 Module entry
 Left navigation:
 <center>
-  <img src="/docs/images/images-hubble/341分析入口.png" alt="image">
+  <img src="/img/docs/images-hubble/341分析入口.png" alt="image">
 </center>
 
 
 ##### 4.4.2 Multi-graphs switching
 By switching the entrance on the left, flexibly switch the operation space of multiple graphs
 <center>
-  <img src="/docs/images/images-hubble/342多图切换.png" alt="image">
+  <img src="/img/docs/images-hubble/342多图切换.png" alt="image">
 </center>
 
 
@@ -415,19 +415,19 @@ Support zoom, center, full screen, export and other operations.
 
 【Picture Mode】
 <center>
-  <img src="/docs/images/images-hubble/343图分析-图.png" alt="image">
+  <img src="/img/docs/images-hubble/343图分析-图.png" alt="image">
 </center>
 
 
 【Table mode】
 <center>
-  <img src="/docs/images/images-hubble/343图分析-表格.png" alt="image">
+  <img src="/img/docs/images-hubble/343图分析-表格.png" alt="image">
 </center>
 
 
 【Json mode】
 <center>
-  <img src="/docs/images/images-hubble/343图分析-json.png" alt="image">
+  <img src="/img/docs/images-hubble/343图分析-json.png" alt="image">
 </center>
 
 
@@ -446,7 +446,7 @@ Right-click a vertex, and the menu entry of the vertex appears, which can be dis
 Double-clicking a vertex also displays the vertex associated with the selected point.
 
 <center>
-  <img src="/docs/images/images-hubble/345定制路径查询.png" alt="image">
+  <img src="/img/docs/images-hubble/345定制路径查询.png" alt="image">
 </center>
 
 
@@ -461,14 +461,14 @@ Complete the addition of vertices by selecting or filling in the vertex type, ID
 The entry is as follows:
 
 <center>
-  <img src="/docs/images/images-hubble/346新增顶点.png" alt="image">
+  <img src="/img/docs/images-hubble/346新增顶点.png" alt="image">
 </center>
 
 
 Add the vertex content as follows:
 
 <center>
-  <img src="/docs/images/images-hubble/346新增顶点2.png" alt="image">
+  <img src="/img/docs/images-hubble/346新增顶点2.png" alt="image">
 </center>
 
 
@@ -481,7 +481,7 @@ Right-click a vertex in the graph result to add the outgoing or incoming edge of
 2. Provides the function of collecting sentences, which can be used to collect frequently used sentences, which is convenient for fast calling of high-frequency sentences.
 
 <center>
-  <img src="/docs/images/images-hubble/347收藏.png" alt="image">
+  <img src="/img/docs/images-hubble/347收藏.png" alt="image">
 </center>
 
 
@@ -489,7 +489,7 @@ Right-click a vertex in the graph result to add the outgoing or incoming edge of
 ##### 4.5.1 Module entry
 Left navigation:
 <center>
-   <img src="/docs/images/images-hubble/351任务管理入口.png" alt="image">
+   <img src="/img/docs/images-hubble/351任务管理入口.png" alt="image">
 </center>
 
 
@@ -505,7 +505,7 @@ Left navigation:
 5. Asynchronous tasks can be deleted or deleted in batches
 
 <center>
-  <img src="/docs/images/images-hubble/352任务列表.png" alt="image">
+  <img src="/img/docs/images-hubble/352任务列表.png" alt="image">
 </center>
 
 
@@ -519,14 +519,14 @@ Left navigation:
 - Provide [View] entry, you can jump to the task details to view the specific execution of the current task After jumping to the task center, the currently executing task line will be displayed directly
 
 <center>
-  <img src="/docs/images/images-hubble/353gremlin任务.png" alt="image">
+  <img src="/img/docs/images-hubble/353gremlin任务.png" alt="image">
 </center>
 
 
 Click to view the entry to jump to the task management list, as follows:
 
 <center>
-  <img src="/docs/images/images-hubble/353gremlin任务2.png" alt="image">
+  <img src="/img/docs/images-hubble/353gremlin任务2.png" alt="image">
 </center>
 
 
@@ -542,13 +542,13 @@ There is no visual OLAP algorithm execution on Hubble. You can call the RESTful 
 - In the metadata modeling module, when deleting metadata, an asynchronous task for deleting metadata can be created
 
 <center>
-  <img src="/docs/images/images-hubble/355删除元数据.png" alt="image">
+  <img src="/img/docs/images-hubble/355删除元数据.png" alt="image">
 </center>
 
 
 - When editing an existing vertex/edge type operation, when adding an index, an asynchronous task of creating an index can be created
 <center>
-  <img src="/docs/images/images-hubble/355构建索引.png" alt="image">
+  <img src="/img/docs/images-hubble/355构建索引.png" alt="image">
 </center>
 
 
@@ -556,7 +556,7 @@ There is no visual OLAP algorithm execution on Hubble. You can call the RESTful 
 - After confirming/saving, you can jump to the task center to view the details of the current task
 
 <center>
-  <img src="/docs/images/images-hubble/355任务详情.png" alt="image">
+  <img src="/img/docs/images-hubble/355任务详情.png" alt="image">
 </center>
 
 

@@ -175,7 +175,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph-xx
 
 **注意**！！
 1. 在 1.7.0 版本中，动态创建图会导致 NPE 错误。该问题已在 [PR#2912](https://github.com/apache/hugegraph/pull/2912) 中修复。当前 master 版本和 1.7.0 之前的版本不受此问题影响。
-2. 1.7.0 及之前版本，如果 backend 是 hstore，必须在请求体加上 "task.scheduler_type": "distributed"。同时请确保 HugeGraph-Server 已正确配置 PD，参见 [HStore 配置](/cn/docs/quickstart/hugegraph/hugegraph-server/#511-分布式存储hstore)。
+2. 1.7.0 及之前版本，如果 backend 是 hstore，必须在请求体加上 "task.scheduler_type": "distributed"。同时请确保 HugeGraph-Server 已正确配置 PD，参见 [HStore 配置](/cn/docs/quickstart/hugegraph/hugegraph-server/#511-分布式存储-hstore)。
 
 **RocksDB 示例：**
 

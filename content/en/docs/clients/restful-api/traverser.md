@@ -59,7 +59,7 @@ In the following, we provide a detailed explanation of the Traverser API:
 
 The usage examples provided in this section are based on the graph presented on the TinkerPop official website:
 
-![tinkerpop example graph](http://tinkerpop.apache.org/docs/3.4.0/images/tinkerpop-modern.png)
+![tinkerpop example graph](/img/docs/clients/restful-api/tinkerpop-modern.png)
 
 The data import program is as follows:
 

@@ -24,6 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -39,7 +40,7 @@ jobs:
       - name: Resolve immutable version matrix
         id: matrix
         env:
-          LATEST_SHA: ${{ github.sha }}
+          LATEST_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           python3 scripts/versioning.py prepare \
             --latest-sha "$LATEST_SHA" \
@@ -71,6 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -98,7 +100,13 @@ jobs:
             ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ matrix.version.id }}-
 
       - name: Verify pinned OINK module
-        run: test "$(hugo mod graph)" = "github.com/apache/hugegraph-doc github.com/pgsty/oink@v1.0.0"
+        run: |
+          go mod verify
+          go list -m all
+          test "$(go list -m -f '{{ .Path }}')" = "github.com/apache/hugegraph-doc"
+          test "$(go list -m all | wc -l)" -eq 2
+          test "$(go list -m -f '{{ .Path }}@{{ .Version }}' github.com/pgsty/oink)" = "github.com/pgsty/oink@v1.0.0"
+          test -z "$(go list -m -f '{{ with .Replace }}{{ .Path }}@{{ .Version }}{{ end }}' github.com/pgsty/oink)"
 
       - name: Build isolated version artifact
         env:
@@ -142,6 +150,7 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 

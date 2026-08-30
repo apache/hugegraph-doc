@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://hugegraph-oink.staged.apache.org/en/sitemap.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://hugegraph-oink.staged.apache.org/cn/sitemap.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://hugegraph-oink.staged.apache.org/versions/1.7/sitemap.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://hugegraph-oink.staged.apache.org/versions/1.5/sitemap.xml</loc>
+  </sitemap>
+</sitemapindex>

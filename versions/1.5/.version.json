@@ -1,0 +1,25 @@
+{
+  "archived": true,
+  "baseURL": "https://hugegraph-oink.staged.apache.org/versions/1.5/",
+  "githubBranch": "release-1.5.0",
+  "id": "1.5",
+  "migration": {
+    "changed": 5,
+    "files": 181,
+    "findings": 0,
+    "knownFixes": 21,
+    "residual": 0
+  },
+  "name": "1.5",
+  "publishPath": "versions/1.5",
+  "ref": "release-1.5.0",
+  "sha": "34bbc87147f60db49888b2ce718cc051973c943e",
+  "urlScoping": {
+    "files": 369,
+    "historicalHomeRedirects": 2,
+    "manifests": 201,
+    "searchFingerprints": 2,
+    "searchRefs": 137,
+    "urls": 1767
+  }
+}

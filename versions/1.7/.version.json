@@ -1,0 +1,25 @@
+{
+  "archived": true,
+  "baseURL": "https://hugegraph-oink.staged.apache.org/versions/1.7/",
+  "githubBranch": "release-1.7.0",
+  "id": "1.7",
+  "migration": {
+    "changed": 4,
+    "files": 187,
+    "findings": 0,
+    "knownFixes": 21,
+    "residual": 0
+  },
+  "name": "1.7",
+  "publishPath": "versions/1.7",
+  "ref": "release-1.7.0",
+  "sha": "a036f550bf412ea2950271390888d63bbffef6ba",
+  "urlScoping": {
+    "files": 385,
+    "historicalHomeRedirects": 2,
+    "manifests": 207,
+    "searchFingerprints": 2,
+    "searchRefs": 149,
+    "urls": 1861
+  }
+}

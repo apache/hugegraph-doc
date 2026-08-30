@@ -1,0 +1,25 @@
+{
+  "archived": false,
+  "baseURL": "https://hugegraph-oink.staged.apache.org/",
+  "githubBranch": "master",
+  "id": "latest",
+  "migration": {
+    "changed": 0,
+    "files": 224,
+    "findings": 0,
+    "knownFixes": 0,
+    "residual": 0
+  },
+  "name": "latest",
+  "publishPath": "",
+  "ref": "master",
+  "sha": "1c6bc5b58bad650244c081648ce34a3ba3b94772",
+  "urlScoping": {
+    "files": 279,
+    "historicalHomeRedirects": 0,
+    "manifests": 260,
+    "searchFingerprints": 2,
+    "searchRefs": 0,
+    "urls": 154
+  }
+}

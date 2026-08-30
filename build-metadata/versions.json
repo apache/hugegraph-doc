@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "versions": [
+    {
+      "archived": false,
+      "baseURL": "https://hugegraph-oink.staged.apache.org/",
+      "githubBranch": "master",
+      "id": "latest",
+      "migration": {
+        "changed": 0,
+        "files": 224,
+        "findings": 0,
+        "knownFixes": 0,
+        "residual": 0
+      },
+      "name": "latest",
+      "publishPath": "",
+      "ref": "master",
+      "sha": "1c6bc5b58bad650244c081648ce34a3ba3b94772",
+      "urlScoping": {
+        "files": 279,
+        "historicalHomeRedirects": 0,
+        "manifests": 260,
+        "searchFingerprints": 2,
+        "searchRefs": 0,
+        "urls": 154
+      }
+    },
+    {
+      "archived": true,
+      "baseURL": "https://hugegraph-oink.staged.apache.org/versions/1.7/",
+      "githubBranch": "release-1.7.0",
+      "id": "1.7",
+      "migration": {
+        "changed": 4,
+        "files": 187,
+        "findings": 0,
+        "knownFixes": 21,
+        "residual": 0
+      },
+      "name": "1.7",
+      "publishPath": "versions/1.7",
+      "ref": "release-1.7.0",
+      "sha": "a036f550bf412ea2950271390888d63bbffef6ba",
+      "urlScoping": {
+        "files": 385,
+        "historicalHomeRedirects": 2,
+        "manifests": 207,
+        "searchFingerprints": 2,
+        "searchRefs": 149,
+        "urls": 1861
+      }
+    },
+    {
+      "archived": true,
+      "baseURL": "https://hugegraph-oink.staged.apache.org/versions/1.5/",
+      "githubBranch": "release-1.5.0",
+      "id": "1.5",
+      "migration": {
+        "changed": 5,
+        "files": 181,
+        "findings": 0,
+        "knownFixes": 21,
+        "residual": 0
+      },
+      "name": "1.5",
+      "publishPath": "versions/1.5",
+      "ref": "release-1.5.0",
+      "sha": "34bbc87147f60db49888b2ce718cc051973c943e",
+      "urlScoping": {
+        "files": 369,
+        "historicalHomeRedirects": 2,
+        "manifests": 201,
+        "searchFingerprints": 2,
+        "searchRefs": 137,
+        "urls": 1767
+      }
+    }
+  ]
+}

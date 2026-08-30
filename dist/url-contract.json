@@ -31,6 +31,6 @@
     {"path": "/404.html", "versions": ["latest", "1.7", "1.5"], "file": "404.html", "contains": ["404"]},
     {"path": "/cn/404.html", "versions": ["latest", "1.7", "1.5"], "file": "cn/404.html", "contains": ["404"]},
     {"path": "/client-go/", "versions": ["latest"], "file": "client-go/index.html", "contains": ["go-import", "go-source"]},
-    {"path": "/icons/logo.svg", "versions": ["latest", "1.7", "1.5"], "file": "icons/logo.svg", "contains": ["<svg"], "baselineStatus": 404, "migrationStatus": 200}
+    {"path": "/img/logo.svg", "versions": ["latest", "1.7", "1.5"], "file": "img/logo.svg", "contains": ["<svg"], "baselineStatus": 404, "migrationStatus": 200}
   ]
 }

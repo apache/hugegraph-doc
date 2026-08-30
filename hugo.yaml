@@ -79,7 +79,7 @@ params:
   github_repo: https://github.com/apache/hugegraph-doc
   github_project_repo: https://github.com/apache/hugegraph
   github_branch: master
-  logo: icons/logo.svg
+  logo: img/logo.svg
   version: latest
   # Historical entries are enabled only after the aggregate artifact exists.
   version_menu_pagelinks: false

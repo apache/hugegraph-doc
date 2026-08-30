@@ -2720,6 +2720,8 @@
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span># slow query log
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>log.slow_query_threshold=1000
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span># bytes of request body recorded as-is (may contain sensitive literals), 0 to disable
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>log.slow_query_body_limit=512
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span># jvm(in-heap) memory usage monitor, set 1 to disable it
 &lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>memory_monitor.threshold=0.85
@@ -6811,6 +6813,11 @@
 &lt;td>log.slow_query_threshold&lt;/td>
 &lt;td>1000&lt;/td>
 &lt;td>Slow query log threshold in milliseconds, 0 means disabled.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>log.slow_query_body_limit&lt;/td>
+&lt;td>512&lt;/td>
+&lt;td>慢查询日志记录的请求体最大字节数，0 表示不记录。记录的前缀可能包含敏感的 Gremlin 或 Cypher 字面量。&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>

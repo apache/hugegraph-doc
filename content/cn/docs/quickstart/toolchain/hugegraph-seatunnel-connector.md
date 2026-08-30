@@ -7,7 +7,7 @@ weight: 5
 SeaTunnel 负责连接数据源和数据目的地。HugeGraph Connector 提供两种能力。
 
 - `HugeGraph Sink` 把文件、数据库、Kafka 等数据写入 HugeGraph。
-- `HugeGraph Source` 从 HugeGraph 读出顶点和边，目前只在 SeaTunnel `dev` 分支提供。
+- `HugeGraph Source` 从 HugeGraph 读出顶点和边，已合入 `dev`（将随 SeaTunnel 3.0.0 发布），尚未随正式版本发布。
 
 ![SeaTunnel 与 HugeGraph 数据流总览](/cn/docs/images/seatunnel/seatunnel-overview.png)
 
@@ -18,8 +18,10 @@ SeaTunnel 负责连接数据源和数据目的地。HugeGraph Connector 提供�
 | 使用内容 | SeaTunnel 版本 | 配置方式 | 状态 |
 | --- | --- | --- | --- |
 | JDBC / Kafka 写入 HugeGraph | 2.3.13 | `schema_config` | 发布版 |
-| HugeGraph 读取和图迁移 | 当前 `dev` | HugeGraph Source + `mappings` | 开发预览 |
-| `graph2graph` | 当前 `dev` | Source + Sink | 开发预览 |
+| HugeGraph 读取和图迁移 | 当前 `dev` | HugeGraph Source + `mappings` | 已合入 dev，随 3.0.0 发布 |
+| `graph2graph` | 当前 `dev` | Source + Sink | 已合入 dev，随 3.0.0 发布 |
+
+HugeGraph Source 与 `mappings` 多映射重构已随 PR [apache/seatunnel#11413](https://github.com/apache/seatunnel/pull/11413) 合入 dev（2026-08），将随 SeaTunnel **3.0.0** 正式发布。2.3.13 发行包内置 HugeGraph Client 1.5.0，dev 已升级到 1.7.0，需与 Server 版本匹配。
 
 当前 `dev` 示例按 commit [`f1a1a0a`](https://github.com/apache/seatunnel/commit/f1a1a0abbe24bdac8cf23307995a78f778a3f467) 核对，固定版本的 [HugeGraph Source 文档](https://github.com/apache/seatunnel/blob/f1a1a0abbe24bdac8cf23307995a78f778a3f467/docs/zh/connectors/source/HugeGraph.md) 和 [HugeGraph Sink 文档](https://github.com/apache/seatunnel/blob/f1a1a0abbe24bdac8cf23307995a78f778a3f467/docs/zh/connectors/sink/HugeGraph.md) 与本文对应。`dev` 会继续变化，使用新版本前请重新核对配置。
 
@@ -252,7 +254,7 @@ Kafka 的参数和消息格式见 [Kafka Source 文档](https://seatunnel.apache
 
 ## 6 graph2graph
 
-HugeGraph Source 目前只在 SeaTunnel `dev` 分支提供。下面的配置按 [`f1a1a0a`](https://github.com/apache/seatunnel/tree/f1a1a0abbe24bdac8cf23307995a78f778a3f467) 核对，不能直接放进 2.3.13 发行包。
+HugeGraph Source 已合入 SeaTunnel `dev`（PR [apache/seatunnel#11413](https://github.com/apache/seatunnel/pull/11413)），随 3.0.0 发布，尚未包含在任何发行包中。下面的配置按 [`f1a1a0a`](https://github.com/apache/seatunnel/tree/f1a1a0abbe24bdac8cf23307995a78f778a3f467) 核对，不能直接放进 2.3.13 发行包。
 
 ![HugeGraph 图迁移](/cn/docs/images/seatunnel/seatunnel-graph2graph.png)
 
@@ -370,6 +372,8 @@ sink {
 
 如果源图使用 `AUTOMATIC` 顶点 ID，Source 无法把原 ID 作为主键重新生成。需要保留原 ID 时，应按 dev 文档使用 `CUSTOMIZE_*` 策略和 `~id` 保留列，并先确认目标图 Schema 与 ID 策略一致。
 
+dev Source 的其他要点：省略 `label` 时按 `label_type` 一次读取该类型全部 label，每个 label 输出一张表（此模式不能配置 `schema` 和 `filter`）；`parallelism > 1` 分片并行需要 RocksDB / HBase / Cassandra 等可扫描后端（`memory` 后端不支持），且不能与 `filter` 同用。
+
 ## 7 常用配置
 
 以下字段同时出现在本文的发布版示例中。
@@ -387,10 +391,13 @@ sink {
 
 2.3.13 不支持本文 dev 示例中的 `mappings`、HugeGraph Source 和 `schema_save_mode`。遇到配置校验失败时，先检查 SeaTunnel 发行包版本和配置 API 是否对应。
 
+dev Sink 还提供 `data_save_mode`、`check_vertex`、失败回退（`batch_failure_fallback` / `max_insert_errors` / `failure_data_path`）、`max_retries` 指数退避、`ttl`、`frequency` / `sortKeys`、`updateStrategies`、`valueMapping`、`listFormat`、`unfold*` 等选项，完整列表见第 8 节的 dev 文档链接。
+
 ## 8 参考文档
 
 - [SeaTunnel 本地部署](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
 - [HugeGraph Sink 2.3.13](https://github.com/apache/seatunnel/blob/2.3.13/docs/zh/connectors/sink/HugeGraph.md)
+- [HugeGraph Sink 2.3.13（官网版本文档）](https://seatunnel.apache.org/docs/2.3.13/connectors/sink/HugeGraph/)
 - [HugeGraph Sink dev（本文核对版本）](https://github.com/apache/seatunnel/blob/f1a1a0abbe24bdac8cf23307995a78f778a3f467/docs/zh/connectors/sink/HugeGraph.md)
 - [HugeGraph Source dev（本文核对版本）](https://github.com/apache/seatunnel/blob/f1a1a0abbe24bdac8cf23307995a78f778a3f467/docs/zh/connectors/source/HugeGraph.md)
 - [JDBC Source](https://seatunnel.apache.org/docs/connectors/source/Jdbc/)
@@ -398,5 +405,6 @@ sink {
 - [MySQL CDC Source](https://seatunnel.apache.org/docs/connectors/source/MySQL-CDC/)
 - [HugeGraph-Loader](/cn/docs/quickstart/toolchain/hugegraph-loader)
 - [HugeGraph-Tools](/cn/docs/quickstart/toolchain/hugegraph-tools)
+- 上游追踪：功能请求 [apache/seatunnel#10001](https://github.com/apache/seatunnel/issues/10001) · Sink PR [apache/seatunnel#10002](https://github.com/apache/seatunnel/pull/10002) · Source / 多映射 PR [apache/seatunnel#11413](https://github.com/apache/seatunnel/pull/11413) · 文档 PR [apache/seatunnel#11329](https://github.com/apache/seatunnel/pull/11329)
 - [Apache SeaTunnel GitHub](https://github.com/apache/seatunnel)
 - [Apache HugeGraph GitHub](https://github.com/apache/hugegraph)

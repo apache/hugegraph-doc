@@ -65,7 +65,7 @@ mvn clean package -DskipTests
 
 #### 3.1.3 启动 master 节点
 
-> 您可以使用 `-c` 参数指定配置文件，更多 computer 配置请看：[Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config#computer-config-options)
+> 您可以使用 `-c` 参数指定配置文件，更多 computer 配置请看：[Computer Config Options](/cn/docs/quickstart/computing/hugegraph-computer-config#computer-配置选项)
 
 ```bash
 cd hugegraph-computer
@@ -82,7 +82,7 @@ bin/start-computer.sh -d local -r worker
 
 2.5.1 为 server 启用 `OLAP` 索引查询
 
-如果没有启用 OLAP 索引，则需要启用，更多参考：[modify-graphs-read-mode](/docs/clients/restful-api/graphs/#634-modify-graphs-read-mode-this-operation-requires-administrator-privileges)
+如果没有启用 OLAP 索引，则需要启用，更多参考：[modify-graphs-read-mode](/cn/docs/clients/restful-api/graphs/#634-设置某个图的读模式该操作需要管理员权限)
 
 ```http
 PUT http://localhost:8080/graphs/hugegraph/graph_read_mode
@@ -139,7 +139,7 @@ hugegraph-computer-operator-etcd-28lm67jxk5                       1/1     Runnin
 
 > 更多 computer crd spec 请看：[Computer CRD](/docs/quickstart/computing/hugegraph-computer-config#hugegraph-computer-crd)
 >
-> 更多 Computer 配置请看：[Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config#computer-config-options)
+> 更多 Computer 配置请看：[Computer Config Options](/cn/docs/quickstart/computing/hugegraph-computer-config#computer-配置选项)
 
 ```yaml
 cat <<EOF | kubectl apply --filename -

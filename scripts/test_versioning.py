@@ -7,6 +7,7 @@
 
 import argparse
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -35,6 +36,12 @@ def rewrite(value: str) -> str:
         publish_path=PUBLISH_PATH,
         allowed_paths=ALLOWED_PATHS,
     )
+
+
+def _walk_docs_nav_pages(nodes):
+    for node in nodes:
+        yield node["page"]
+        yield from _walk_docs_nav_pages(node.get("children", []))
 
 
 class VersionUrlTest(unittest.TestCase):
@@ -95,7 +102,13 @@ class VersionUrlTest(unittest.TestCase):
             )["versions"][0]
             sha = "a" * 40
             metadata = dict(entry)
-            metadata.update({"sha": sha, "baseURL": ORIGIN})
+            metadata.update(
+                {
+                    "sha": sha,
+                    "baseURL": ORIGIN,
+                    "docsNavigation": versioning.DOCS_NAV_EXPECTED_STATS["latest"],
+                }
+            )
             (artifact / ".version.json").write_text(
                 json.dumps(metadata), encoding="utf-8"
             )
@@ -174,6 +187,7 @@ class VersionUrlTest(unittest.TestCase):
             self.assertEqual(versioning.write_error_documents(output, seen), 4)
             self.assertEqual(
                 (output / ".htaccess").read_text(encoding="utf-8"),
+                'RedirectMatch 404 "(?i)(?:^|/)\\.git(?:/|$)"\n'
                 "ErrorDocument 404 /404.html\n",
             )
             self.assertEqual(
@@ -184,6 +198,16 @@ class VersionUrlTest(unittest.TestCase):
                 (output / "versions/1.7/cn/.htaccess").read_text(encoding="utf-8"),
                 "ErrorDocument 404 /versions/1.7/cn/404.html\n",
             )
+
+    def test_write_error_documents_requires_root_404_for_git_deny(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            page = output / "versions/1.7/404.html"
+            page.parent.mkdir(parents=True)
+            page.write_text("not found", encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "root 404.html"):
+                versioning.write_error_documents(output, set())
+            self.assertFalse((output / ".htaccess").exists())
 
     def test_error_documents_must_not_claim_canonical_urls(self) -> None:
         for relative in (
@@ -281,6 +305,103 @@ class VersionUrlTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 versioning.ensure_search_excluded(page)
 
+    def test_materialize_docs_navigation_adapts_historical_routes_and_groups(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            assembly = Path(temp_name)
+            (assembly / "data").mkdir()
+            shutil.copy2(
+                versioning.ROOT / "data/docs_nav.json",
+                assembly / "data/docs_nav.json",
+            )
+            routes = (
+                "/docs/_nav/start",
+                "/docs/_nav/components",
+                "/docs/_nav/develop",
+                "/docs/_nav/operate",
+                "/docs/_nav/reference",
+                "/docs/introduction/readme",
+                "/docs/quickstart/toolchain",
+                "/docs/quickstart/toolchain/hugegraph-loader",
+                "/docs/clients",
+                "/docs/clients/gremlin-console",
+                "/docs/config",
+                "/docs/config/config-guide",
+                "/docs/performance",
+                "/docs/performance/api-preformance",
+                "/docs/performance/api-preformance/hugegraph-api-0.2",
+                "/docs/changelog",
+                "/docs/changelog/hugegraph-1.5.0-release-notes",
+            )
+            for language in ("en", "cn"):
+                for route in routes:
+                    relative = route.removeprefix("/docs/")
+                    path = assembly / f"content/{language}/docs/{relative}.md"
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    manual_link = (
+                        f"manual_link: /{'cn/' if language == 'cn' else ''}docs/quickstart/\n"
+                        if "/_nav/" in route
+                        else ""
+                    )
+                    path.write_text(
+                        f"---\ntitle: fixture\n{manual_link}---\n", encoding="utf-8"
+                    )
+
+            stats = versioning.materialize_docs_navigation(assembly, "versions/1.7")
+            self.assertEqual(stats["groups"], 5)
+            self.assertEqual(stats["scopedLinks"], 10)
+            self.assertGreater(stats["removed"], 0)
+            nav = json.loads(
+                (assembly / "data/docs_nav.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                [group["group"] for group in nav["sections"]],
+                list(versioning.DOCS_NAV_GROUP_IDS),
+            )
+            all_pages = list(_walk_docs_nav_pages(nav["sections"]))
+            self.assertIn("/docs/introduction/readme", all_pages)
+            self.assertIn("/docs/performance/api-preformance", all_pages)
+            self.assertNotIn("/docs/introduction", all_pages)
+            self.assertIn(
+                "/docs/introduction/readme/",
+                nav["active_path_by_url"],
+            )
+            original_digest = stats["treeSha256"]
+            self.assertRegex(original_digest, r"^[0-9a-f]{64}$")
+            moved = json.loads(json.dumps(nav["sections"]))
+            moved[0]["children"].append(moved[1]["children"].pop())
+            self.assertNotEqual(
+                versioning.docs_navigation_tree_sha256(moved),
+                original_digest,
+            )
+            self.assertEqual(
+                nav["children_by_url"]["/docs/"],
+                [f"/docs/_nav/{group}" for group in versioning.DOCS_NAV_GROUP_IDS],
+            )
+            self.assertIn(
+                "manual_link: /versions/1.7/cn/docs/quickstart/",
+                (assembly / "content/cn/docs/_nav/start.md").read_text(
+                    encoding="utf-8"
+                ),
+            )
+
+    def test_docs_navigation_json_requires_exact_localized_groups(self) -> None:
+        groups = [
+            {
+                "title": title,
+                "kind": "external",
+                "url": f"https://example.org/docs/{index}/",
+                "children": [{"title": "child"}],
+            }
+            for index, title in enumerate(versioning.DOCS_NAV_GROUP_TITLES["en"])
+        ]
+        nav = {"root": {"children": [{"id": "/docs/", "children": groups}]}}
+        versioning.require_docs_navigation_json(nav, "navigation.json", "en")
+        groups[0]["title"] = "Changed"
+        with self.assertRaises(SystemExit):
+            versioning.require_docs_navigation_json(nav, "navigation.json", "en")
+
     def test_legacy_wechat_images_ignore_historical_alt_text(self) -> None:
         source = (
             '<img src="https://github.com/apache/hugegraph-doc/blob/master/'
@@ -366,6 +487,46 @@ class VersionUrlTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 versioning.normalize_historical_server_headings(page)
 
+    def test_exact_legacy_content_fixes_cover_every_bound_mapping(self) -> None:
+        for version, fixes in versioning.LEGACY_EXACT_CONTENT_FIXES.items():
+            with (
+                self.subTest(version=version),
+                tempfile.TemporaryDirectory() as temp_name,
+            ):
+                assembly = Path(temp_name)
+                fixtures: dict[Path, list[str]] = {}
+                for language, relative, old, _, expected_count in fixes:
+                    path = assembly / "content" / language / relative
+                    fixtures.setdefault(path, []).extend([old] * expected_count)
+                for path, source in fixtures.items():
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("\n".join(source), encoding="utf-8")
+
+                self.assertEqual(
+                    versioning.apply_exact_legacy_content_fixes(assembly, version),
+                    sum(fix[4] for fix in fixes),
+                )
+                for language, relative, old, new, expected_count in fixes:
+                    rendered = (assembly / "content" / language / relative).read_text(
+                        encoding="utf-8"
+                    )
+                    self.assertNotIn(old, rendered)
+                    self.assertEqual(rendered.count(new), expected_count)
+
+    def test_exact_legacy_content_fixes_fail_closed_on_count_drift(self) -> None:
+        language, relative, old, _, _ = versioning.LEGACY_EXACT_CONTENT_FIXES["1.5"][0]
+        for source in ("no expected anchor", f"{old}\n{old}"):
+            with (
+                self.subTest(matches=source.count(old)),
+                tempfile.TemporaryDirectory() as temp_name,
+            ):
+                assembly = Path(temp_name)
+                path = assembly / "content" / language / relative
+                path.parent.mkdir(parents=True)
+                path.write_text(source, encoding="utf-8")
+                with self.assertRaises(SystemExit):
+                    versioning.apply_exact_legacy_content_fixes(assembly, "1.5")
+
     def test_legacy_adapter_normalizes_server_headings_for_all_archives(
         self,
     ) -> None:
@@ -392,6 +553,24 @@ class VersionUrlTest(unittest.TestCase):
                             + f"/{index})"
                             for index in range(3)
                         ),
+                        encoding="utf-8",
+                    )
+
+                exact_fixtures: dict[Path, list[str]] = {}
+                for (
+                    language,
+                    relative,
+                    old,
+                    _,
+                    expected_count,
+                ) in versioning.LEGACY_EXACT_CONTENT_FIXES[version]:
+                    path = assembly / "content" / language / relative
+                    exact_fixtures.setdefault(path, []).extend([old] * expected_count)
+                for path, source in exact_fixtures.items():
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    existing = path.read_text(encoding="utf-8") if path.exists() else ""
+                    path.write_text(
+                        existing + "\n" + "\n".join(source) + "\n",
                         encoding="utf-8",
                     )
 
@@ -432,15 +611,21 @@ class VersionUrlTest(unittest.TestCase):
         )
 
     def test_rewrites_production_origin_for_staging(self) -> None:
-        self.assertEqual(
-            versioning.rewrite_internal_url(
-                "https://hugegraph.apache.org/docs/config/",
-                origin=STAGING_ORIGIN,
-                publish_path=PUBLISH_PATH,
-                allowed_paths=ALLOWED_PATHS,
-            ),
-            "https://hugegraph-oink.staged.apache.org/versions/1.7/docs/config/",
-        )
+        for production_url in (
+            "https://hugegraph.apache.org/docs/config/",
+            "https://HUGEGRAPH.APACHE.ORG/docs/config/",
+            "https://hugegraph.apache.org.:443/docs/config/",
+        ):
+            with self.subTest(production_url=production_url):
+                self.assertEqual(
+                    versioning.rewrite_internal_url(
+                        production_url,
+                        origin=STAGING_ORIGIN,
+                        publish_path=PUBLISH_PATH,
+                        allowed_paths=ALLOWED_PATHS,
+                    ),
+                    "https://hugegraph-oink.staged.apache.org/versions/1.7/docs/config/",
+                )
         self.assertEqual(
             versioning.rewrite_internal_url(
                 "https://hugegraph.apache.org/blog/",
@@ -450,6 +635,27 @@ class VersionUrlTest(unittest.TestCase):
             ),
             "https://hugegraph-oink.staged.apache.org/blog/",
         )
+        for unsafe in (
+            "https://hugegraph.apache.org:444/docs/config/",
+            "https://evil@hugegraph-oink.staged.apache.org/docs/",
+            "https://@hugegraph-oink.staged.apache.org/docs/",
+            "https://hugegraph-oink.staged.apache.org\\docs/",
+            "https://hugegraph-oink.staged.apache.org。/docs/",
+            "https://hugegraph.apache.org%2e/docs/",
+            "https://ｈｕｇｅｇｒａｐｈ.apache.org/docs/",
+            r"https:\hugegraph-oink.staged.apache.org\docs/",
+            r"https:/\hugegraph-oink.staged.apache.org\docs/",
+        ):
+            with (
+                self.subTest(unsafe=unsafe),
+                self.assertRaises(SystemExit),
+            ):
+                versioning.rewrite_internal_url(
+                    unsafe,
+                    origin=STAGING_ORIGIN,
+                    publish_path=PUBLISH_PATH,
+                    allowed_paths=ALLOWED_PATHS,
+                )
 
     def test_rejects_non_selector_cross_version_url(self) -> None:
         with self.assertRaises(SystemExit):

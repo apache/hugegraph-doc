@@ -53,7 +53,7 @@ Core 模块是 Tinkerpop 接口的实现，Backend 模块用于管理数据存�
 
 如果使用 Docker Desktop，则可以按如下方式设置相关选项：
 <div style="text-align: center;">
-    <img src="/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
+    <img src="/docs/images/images-server/31docker-option.jpg" alt="Docker Desktop 中 HugeGraph 容器的运行设置" style="width:33%;">
 </div>
 
 
@@ -805,19 +805,19 @@ _说明_
 另外也可以通过访问 `localhost:8080/swagger-ui/index.html` 查看 API。
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui.png" alt="image">
+  <img src="/docs/images/images-server/swagger-ui.png" alt="Swagger UI 中的 HugeGraph RESTful API 接口列表">
 </div>
 
 在使用 Swagger UI 调试 HugeGraph 提供的 API 时，如果 HugeGraph Server 开启了鉴权模式，可以在 Swagger 页面输入鉴权信息。
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="image">
+  <img src="/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="HugeGraph Swagger UI 中的 Authorize 按钮">
 </div>
 
 当前 HugeGraph 支持基于 Basic 和 Bearer 两种形式设置鉴权信息。
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui-set-auth-example.png" alt="image">
+  <img src="/docs/images/images-server/swagger-ui-set-auth-example.png" alt="Swagger UI 授权对话框中的 Basic 和 Bearer 凭据输入框">
 </div>
 
 ## 7 停止 Server

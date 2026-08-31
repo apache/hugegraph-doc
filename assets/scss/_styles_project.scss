@@ -121,6 +121,16 @@
   }
 }
 
+@media screen and (max-width: 575.98px) {
+  // Keep technical tokens readable and let OINK's labelled, focusable wrapper
+  // own mobile overflow instead of collapsing identifiers one letter per line.
+  .td-content .td-table-scroll > table :is(th, td),
+  .td-content .td-table-scroll > table :is(th, td) :is(a, code) {
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+}
+
 @media (max-width: 575.98px) {
   .td-default main .td-landing-hero.hg-home-hero {
     min-height: 760px;

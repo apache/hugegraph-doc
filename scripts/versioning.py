@@ -40,6 +40,10 @@ URL_CONTRACT = ROOT / "dist/url-contract.json"
 CANONICAL_ORIGIN = "https://hugegraph.apache.org/"
 SHELL_FILES = ("go.mod", "go.sum", "hugo.yaml")
 SHELL_DIRS = ("assets", "data", "i18n", "layouts")
+SHELL_CONTENT_DIRS = (
+    "content/en/docs/_nav",
+    "content/cn/docs/_nav",
+)
 SHELL_STATIC_FILES = ("favicon.svg",)
 SHELL_CONTENT = (
     "content/en/_index.md",
@@ -86,6 +90,34 @@ HREFLANG_FALLBACKS = {
     "community/maturity/index.html": {"zh-CN": "/cn/"},
 }
 LANGUAGE_OPTION_TITLES = {"en-US": "English", "zh-CN": "简体中文"}
+DOCS_NAV_GROUP_IDS = ("start", "components", "develop", "operate", "reference")
+DOCS_NAV_GROUP_TITLES = {
+    "en": ("Get Started", "Components", "Develop", "Operate", "Reference"),
+    "cn": ("开始", "组件", "开发", "运维", "参考"),
+}
+DOCS_NAV_EXPECTED_STATS = {
+    "latest": {
+        "groups": 5,
+        "pages": 86,
+        "removed": 4,
+        "scopedLinks": 0,
+        "treeSha256": "b252d700e9547f7468410edde28de6659018cdb0b2b0b379c125a32c3f802b79",
+    },
+    "1.7": {
+        "groups": 5,
+        "pages": 80,
+        "removed": 10,
+        "scopedLinks": 10,
+        "treeSha256": "a764c50bbeca08da1fc23869758f3b5646e7071607214fedb03a8fcc16e0b1c0",
+    },
+    "1.5": {
+        "groups": 5,
+        "pages": 77,
+        "removed": 13,
+        "scopedLinks": 10,
+        "treeSha256": "70b2a46f047b3c88a6b1b937eb79676a7f68437485b3248e5f84b9c621d5ad06",
+    },
+}
 
 
 class DocumentParser(html.parser.HTMLParser):
@@ -388,6 +420,12 @@ def overlay_shell(assembly: pathlib.Path, *, historical: bool, origin: str) -> N
         if legacy_html.exists():
             legacy_html.unlink()
         shutil.copy2(source, target)
+    for relative in SHELL_CONTENT_DIRS:
+        source = ROOT / relative
+        target = assembly / relative
+        if target.exists():
+            shutil.rmtree(target)
+        shutil.copytree(source, target)
     for relative in MENU_CONTENT:
         strip_menu_frontmatter(assembly / relative)
     if historical:
@@ -545,6 +583,179 @@ def ensure_search_excluded(path: pathlib.Path) -> int:
     return 1
 
 
+def docs_content_routes(assembly: pathlib.Path, language: str) -> set[str]:
+    """Return case-normalized GetPage routes backed by one language's Docs."""
+    docs_root = assembly / f"content/{language}/docs"
+    if not docs_root.is_dir():
+        fail(f"Docs content root is missing: {docs_root}")
+    routes: set[str] = set()
+    for path in docs_root.rglob("*.md"):
+        source = path.read_text(encoding="utf-8")
+        if source.startswith("---\n"):
+            closing = source.find("\n---\n", 4)
+            frontmatter = source[4:closing] if closing >= 0 else ""
+            if re.search(r"(?m)^draft\s*:\s*true\s*$", frontmatter):
+                continue
+        relative = path.relative_to(docs_root)
+        if path.name == "_index.md":
+            route = pathlib.PurePosixPath("/docs", *relative.parent.parts).as_posix()
+        else:
+            route = pathlib.PurePosixPath(
+                "/docs", *relative.with_suffix("").parts
+            ).as_posix()
+        routes.add(route.rstrip("/").lower())
+    return routes
+
+
+def docs_nav_page_for_routes(page: str, routes: set[str]) -> str | None:
+    """Resolve a declared latest route against latest or pinned historical content."""
+    normalized = page.rstrip("/").lower()
+    candidates = [normalized]
+    if normalized == "/docs/introduction":
+        candidates.append("/docs/introduction/readme")
+    if "/api-performance" in normalized:
+        candidates.append(normalized.replace("/api-performance", "/api-preformance"))
+    return next((candidate for candidate in candidates if candidate in routes), None)
+
+
+def docs_nav_url(page: str) -> str:
+    """Return Hugo's language-neutral RelPermalink key for Docs navigation."""
+    return page.rstrip("/") + "/"
+
+
+def scope_docs_nav_group_links(assembly: pathlib.Path, publish_path: str) -> int:
+    """Scope group manual links before Hugo serializes them into NAVJSON."""
+    if not publish_path:
+        return 0
+    prefix = "/" + publish_path.strip("/")
+    changed = 0
+    for language in ("en", "cn"):
+        for group_id in DOCS_NAV_GROUP_IDS:
+            path = assembly / f"content/{language}/docs/_nav/{group_id}.md"
+            source = path.read_text(encoding="utf-8")
+            match = re.search(r"(?m)^manual_link:\s*(/\S+)\s*$", source)
+            if match is None:
+                fail(f"Docs navigation manual_link is missing: {path}")
+            target = match.group(1)
+            if target == prefix or target.startswith(prefix + "/"):
+                continue
+            if target == "/versions" or target.startswith("/versions/"):
+                fail(f"Docs navigation manual_link has the wrong version: {path}")
+            scoped = prefix + target
+            path.write_text(
+                source[: match.start(1)] + scoped + source[match.end(1) :],
+                encoding="utf-8",
+            )
+            changed += 1
+    return changed
+
+
+def docs_navigation_tree_sha256(sections: list[dict]) -> str:
+    """Fingerprint exact group membership, order, routes, and hierarchy."""
+    return hashlib.sha256(
+        json.dumps(sections, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    ).hexdigest()
+
+
+def materialize_docs_navigation(
+    assembly: pathlib.Path, publish_path: str
+) -> dict[str, int]:
+    """Adapt the five-group IA to the checked-out bilingual Docs snapshot.
+
+    The authored ``groups`` tree is latest-oriented. Historical builds retain
+    the same task groups while missing later pages are removed and the two
+    legacy route spellings are resolved. Derived maps are regenerated so the
+    OINK sidebar, pager, section index, and NAVJSON share one authority.
+    """
+    nav_path = assembly / "data/docs_nav.json"
+    try:
+        source = json.loads(nav_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        fail(f"cannot read Docs navigation source {nav_path}: {exc}")
+    if source.get("schemaVersion") != 1 or not isinstance(source.get("groups"), list):
+        fail("data/docs_nav.json must contain schemaVersion 1 and a groups array")
+    groups = source["groups"]
+    if [group.get("id") for group in groups if isinstance(group, dict)] != list(
+        DOCS_NAV_GROUP_IDS
+    ):
+        fail(
+            "Docs navigation groups must be start, components, develop, operate, reference"
+        )
+
+    scoped_links = scope_docs_nav_group_links(assembly, publish_path)
+
+    routes = docs_content_routes(assembly, "en") & docs_content_routes(assembly, "cn")
+    seen_pages: set[str] = set()
+    removed = 0
+
+    def adapt(node: dict, *, group: bool = False) -> dict | None:
+        nonlocal removed
+        if not isinstance(node, dict) or not isinstance(node.get("page"), str):
+            fail(f"invalid Docs navigation node: {node!r}")
+        resolved = docs_nav_page_for_routes(node["page"], routes)
+        if resolved is None:
+            removed += 1
+            return None
+        if resolved in seen_pages:
+            fail(f"duplicate Docs navigation page: {resolved}")
+        seen_pages.add(resolved)
+        children = []
+        for child in node.get("children", []):
+            adapted = adapt(child)
+            if adapted is not None:
+                children.append(adapted)
+        if group and not children:
+            fail(f"Docs navigation group is empty: {node.get('id')}")
+        return {
+            "page": resolved,
+            "url": f"@group/{node['id']}" if group else docs_nav_url(resolved),
+            "children": children,
+            **({"group": node["id"]} if group else {}),
+        }
+
+    sections = [adapt(group, group=True) for group in groups]
+    if any(section is None for section in sections):
+        fail("one or more Docs navigation group pages are missing")
+
+    active_path_by_url: dict[str, list[str]] = {}
+    children_by_url: dict[str, list[str]] = {
+        docs_nav_url("/docs"): [section["page"] for section in sections]
+    }
+
+    def index_node(node: dict, ancestors: list[str]) -> None:
+        current_path = [*ancestors, node["url"]]
+        if not node.get("group"):
+            active_path_by_url[node["url"]] = current_path
+            if node["children"]:
+                children_by_url[node["url"]] = [
+                    child["page"] for child in node["children"]
+                ]
+        for child in node["children"]:
+            index_node(child, current_path)
+
+    for section in sections:
+        index_node(section, [])
+
+    materialized = {
+        "schemaVersion": 1,
+        "groups": groups,
+        "sections": sections,
+        "active_path_by_url": active_path_by_url,
+        "children_by_url": children_by_url,
+    }
+    nav_path.write_text(
+        json.dumps(materialized, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return {
+        "groups": len(sections),
+        "pages": len(active_path_by_url),
+        "removed": removed,
+        "scopedLinks": scoped_links,
+        "treeSha256": docs_navigation_tree_sha256(sections),
+    }
+
+
 LEGACY_WECHAT_IMAGE_RE = re.compile(
     r'<img\b(?=[^>]*\bsrc="(?:https://github\.com/apache/hugegraph-doc/'
     r"blob/master/assets/images/wechat\.png\?raw=true|https://raw\.githubusercontent\.com/"
@@ -679,9 +890,253 @@ def normalize_historical_server_headings(path: pathlib.Path) -> int:
     return len(headings)
 
 
+LEGACY_EXACT_CONTENT_FIXES = {
+    "1.5": (
+        (
+            "cn",
+            "docs/quickstart/computing/hugegraph-computer.md",
+            "/docs/clients/restful-api/graphs/"
+            "#634-modify-graphs-read-mode-this-operation-requires-administrator-privileges",
+            "/docs/clients/restful-api/graphs/"
+            "#634-设置某个图的读模式该操作需要管理员权限",
+            1,
+        ),
+        (
+            "cn",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            "/cn/docs/quickstart/hugegraph-server/"
+            "#511-%E5%90%AF%E5%8A%A8-server-%E7%9A%84%E6%97%B6%E5%80%99"
+            "%E5%88%9B%E5%BB%BA%E7%A4%BA%E4%BE%8B%E5%9B%BE",
+            "/cn/docs/quickstart/hugegraph-server/"
+            "#518-%E5%90%AF%E5%8A%A8-server-%E7%9A%84%E6%97%B6%E5%80%99"
+            "%E5%88%9B%E5%BB%BA%E7%A4%BA%E4%BE%8B%E5%9B%BE",
+            1,
+        ),
+        (
+            "cn",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            "#33-使用-docker-容器",
+            "#31-使用-docker-容器-便于测试",
+            1,
+        ),
+        (
+            "en",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            "/docs/config/config-authentication"
+            "#Use-docker-to-enble-authentication-mode",
+            "/docs/config/config-authentication/"
+            "#use-docker-to-enable-authentication-mode",
+            1,
+        ),
+        (
+            "en",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            "#33-use-docker-container",
+            "#31-use-docker-container-convenient-for-testdev",
+            1,
+        ),
+        (
+            "en",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/31docker-option.jpg" '
+            'alt="image" style="width:33%;">',
+            '<img src="/docs/images/images-server/31docker-option.jpg" '
+            'alt="Docker Desktop settings for a HugeGraph container" '
+            'style="width:33%;">',
+            1,
+        ),
+        (
+            "en",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/swagger-ui.png" alt="image">',
+            '<img src="/docs/images/images-server/swagger-ui.png" '
+            'alt="HugeGraph RESTful API endpoints in Swagger UI">',
+            1,
+        ),
+        (
+            "en",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-where-set-auth-example.png" alt="image">',
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-where-set-auth-example.png" '
+            'alt="Authorize button in the HugeGraph Swagger UI">',
+            1,
+        ),
+        (
+            "en",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-set-auth-example.png" alt="image">',
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-set-auth-example.png" '
+            'alt="Basic and Bearer credential fields in the Swagger UI '
+            'authorization dialog">',
+            1,
+        ),
+        (
+            "cn",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/31docker-option.jpg" '
+            'alt="image" style="width:33%;">',
+            '<img src="/docs/images/images-server/31docker-option.jpg" '
+            'alt="Docker Desktop 中 HugeGraph 容器的运行设置" '
+            'style="width:33%;">',
+            1,
+        ),
+        (
+            "cn",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/swagger-ui.png" alt="image">',
+            '<img src="/docs/images/images-server/swagger-ui.png" '
+            'alt="Swagger UI 中的 HugeGraph RESTful API 接口列表">',
+            1,
+        ),
+        (
+            "cn",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-where-set-auth-example.png" alt="image">',
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-where-set-auth-example.png" '
+            'alt="HugeGraph Swagger UI 中的 Authorize 按钮">',
+            1,
+        ),
+        (
+            "cn",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-set-auth-example.png" alt="image">',
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-set-auth-example.png" '
+            'alt="Swagger UI 授权对话框中的 Basic 和 Bearer 凭据输入框">',
+            1,
+        ),
+    ),
+    "1.7": (
+        (
+            "cn",
+            "docs/quickstart/computing/hugegraph-computer.md",
+            "/docs/clients/restful-api/graphs/"
+            "#634-modify-graphs-read-mode-this-operation-requires-administrator-privileges",
+            "/docs/clients/restful-api/graphs/"
+            "#634-设置某个图的读模式该操作需要管理员权限",
+            1,
+        ),
+        (
+            "cn",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            "#519-%E5%90%AF%E5%8A%A8-server-%E7%9A%84%E6%97%B6%E5%80%99"
+            "%E5%88%9B%E5%BB%BA%E7%A4%BA%E4%BE%8B%E5%9B%BE",
+            "#518-%E5%90%AF%E5%8A%A8-server-%E7%9A%84%E6%97%B6%E5%80%99"
+            "%E5%88%9B%E5%BB%BA%E7%A4%BA%E4%BE%8B%E5%9B%BE",
+            1,
+        ),
+        (
+            "en",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/31docker-option.jpg" '
+            'alt="image" style="width:33%;">',
+            '<img src="/docs/images/images-server/31docker-option.jpg" '
+            'alt="Docker Desktop settings for a HugeGraph container" '
+            'style="width:33%;">',
+            1,
+        ),
+        (
+            "en",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/swagger-ui.png" alt="image">',
+            '<img src="/docs/images/images-server/swagger-ui.png" '
+            'alt="HugeGraph RESTful API endpoints in Swagger UI">',
+            1,
+        ),
+        (
+            "en",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-where-set-auth-example.png" alt="image">',
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-where-set-auth-example.png" '
+            'alt="Authorize button in the HugeGraph Swagger UI">',
+            1,
+        ),
+        (
+            "en",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-set-auth-example.png" alt="image">',
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-set-auth-example.png" '
+            'alt="Basic and Bearer credential fields in the Swagger UI '
+            'authorization dialog">',
+            1,
+        ),
+        (
+            "cn",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/31docker-option.jpg" '
+            'alt="image" style="width:33%;">',
+            '<img src="/docs/images/images-server/31docker-option.jpg" '
+            'alt="Docker Desktop 中 HugeGraph 容器的运行设置" '
+            'style="width:33%;">',
+            1,
+        ),
+        (
+            "cn",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/swagger-ui.png" alt="image">',
+            '<img src="/docs/images/images-server/swagger-ui.png" '
+            'alt="Swagger UI 中的 HugeGraph RESTful API 接口列表">',
+            1,
+        ),
+        (
+            "cn",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-where-set-auth-example.png" alt="image">',
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-where-set-auth-example.png" '
+            'alt="HugeGraph Swagger UI 中的 Authorize 按钮">',
+            1,
+        ),
+        (
+            "cn",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-set-auth-example.png" alt="image">',
+            '<img src="/docs/images/images-server/'
+            'swagger-ui-set-auth-example.png" '
+            'alt="Swagger UI 授权对话框中的 Basic 和 Bearer 凭据输入框">',
+            1,
+        ),
+    ),
+}
+
+
+def apply_exact_legacy_content_fixes(assembly: pathlib.Path, version: str) -> int:
+    """Apply version, language, and path-bound historical content repairs."""
+    fixes = LEGACY_EXACT_CONTENT_FIXES.get(version)
+    if fixes is None:
+        fail(f"unsupported exact legacy content-fix version: {version}")
+    fixed = 0
+    for language, relative, old, new, expected_count in fixes:
+        path = assembly / "content" / language / relative
+        source = path.read_text(encoding="utf-8")
+        count = source.count(old)
+        if count != expected_count:
+            fail(
+                f"expected {expected_count} exact historical content match(es) "
+                f"for {version}/{language}/{relative}, found {count}"
+            )
+        path.write_text(source.replace(old, new), encoding="utf-8")
+        fixed += count
+    return fixed
+
+
 def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
     fixed = 0
     if version in {"1.7", "1.5"}:
+        fixed += apply_exact_legacy_content_fixes(assembly, version)
         for language in ("en", "cn"):
             language_prefix = "/cn" if language == "cn" else ""
             legacy_metadata = (
@@ -954,6 +1409,43 @@ def is_latest_shared_path(path: str) -> bool:
     )
 
 
+def same_site_host(parts: urllib.parse.SplitResult) -> str | None:
+    """Normalize an HTTP(S) site authority while rejecting unsafe variants."""
+    scheme = parts.scheme.lower()
+    if scheme not in {"http", "https"} or "@" in parts.netloc:
+        return None
+    try:
+        port = parts.port
+    except ValueError:
+        return None
+    if port is not None and port != {"http": 80, "https": 443}[scheme]:
+        return None
+    hostname = (parts.hostname or "").lower().rstrip(".")
+    return hostname or None
+
+
+def normalized_hostname(parts: urllib.parse.SplitResult) -> str | None:
+    """Return the DNS hostname independently from authority validity."""
+    hostname = (parts.hostname or "").lower().rstrip(".")
+    return hostname or None
+
+
+def require_safe_url_syntax(value: str) -> None:
+    """Reject separators whose browser meaning differs from RFC urlsplit."""
+    if "\\" in value:
+        fail(f"unsafe URL syntax: {value}")
+
+
+def require_safe_http_authority(parts: urllib.parse.SplitResult, value: str) -> None:
+    """Reject authority syntax that browsers normalize differently from urlsplit."""
+    if parts.scheme.lower() not in {"http", "https"} or not parts.netloc:
+        return
+    if not parts.netloc.isascii() or any(
+        char in parts.netloc for char in ("@", "\\", "%")
+    ):
+        fail(f"unsafe URL authority: {value}")
+
+
 def rewrite_internal_url(
     value: str,
     *,
@@ -964,17 +1456,24 @@ def rewrite_internal_url(
     """Scope a same-site absolute/root URL to one historical artifact."""
     if not value or value.startswith(("#", "?")):
         return value
+    require_safe_url_syntax(value)
     if value.startswith("//"):
         fail(f"protocol-relative URL is not allowed in a version artifact: {value}")
     parsed = urllib.parse.urlsplit(value)
     origin_parts = urllib.parse.urlsplit(origin.rstrip("/") + "/")
     canonical_parts = urllib.parse.urlsplit(CANONICAL_ORIGIN)
+    require_safe_http_authority(parsed, value)
+    parsed_host = same_site_host(parsed)
+    origin_host = same_site_host(origin_parts)
+    canonical_host = same_site_host(canonical_parts)
     absolute = bool(parsed.scheme or parsed.netloc)
     if absolute:
-        if parsed.scheme not in {"http", "https"} or parsed.netloc not in {
-            origin_parts.netloc,
-            canonical_parts.netloc,
-        }:
+        if (
+            normalized_hostname(parsed) in {origin_host, canonical_host}
+            and parsed_host is None
+        ):
+            fail(f"unsafe same-site URL authority: {value}")
+        if parsed_host not in {origin_host, canonical_host}:
             return value
         path = parsed.path or "/"
     elif value.startswith("/"):
@@ -983,7 +1482,7 @@ def rewrite_internal_url(
         return value
 
     if not publish_path:
-        if absolute and parsed.netloc != origin_parts.netloc:
+        if absolute and parsed_host != origin_host:
             return urllib.parse.urlunsplit(
                 (
                     origin_parts.scheme,
@@ -1020,7 +1519,10 @@ def rewrite_internal_url(
             ("", "", scoped_path, parsed.query, parsed.fragment)
         )
     if normalized == prefix or normalized.startswith(prefix + "/"):
-        if absolute and parsed.scheme != origin_parts.scheme:
+        if absolute and (
+            parsed.scheme.lower() != origin_parts.scheme.lower()
+            or parsed.netloc != origin_parts.netloc
+        ):
             return urllib.parse.urlunsplit(
                 (
                     origin_parts.scheme,
@@ -1406,6 +1908,38 @@ def iter_json_url_fields(value):
             yield from iter_json_url_fields(item)
 
 
+def require_docs_navigation_json(data: dict, source: str, language: str) -> None:
+    """Require the five task groups in the machine-readable navigation tree."""
+    expected_titles = DOCS_NAV_GROUP_TITLES.get(language)
+    if expected_titles is None:
+        fail(f"unsupported Docs navigation language in {source}: {language}")
+    docs_nodes = [
+        item
+        for item in data.get("root", {}).get("children", [])
+        if isinstance(item, dict) and item.get("id") == "/docs/"
+    ]
+    if len(docs_nodes) != 1:
+        fail(f"expected one Docs node in {source}, found {len(docs_nodes)}")
+    groups = docs_nodes[0].get("children")
+    if not isinstance(groups, list):
+        fail(f"Docs navigation children are missing in {source}")
+    actual_titles = tuple(
+        item.get("title") if isinstance(item, dict) else None for item in groups
+    )
+    if actual_titles != expected_titles:
+        fail(
+            f"Docs navigation groups changed in {source}: "
+            f"{actual_titles!r} != {expected_titles!r}"
+        )
+    for group in groups:
+        if group.get("kind") != "external" or not group.get("children"):
+            fail(
+                f"Docs navigation group is not a populated link in {source}: {group!r}"
+            )
+    if any("/_nav/" in value.lower() for value in iter_json_strings(data)):
+        fail(f"private Docs navigation route leaked into {source}")
+
+
 def validate_artifact(args: argparse.Namespace) -> None:
     manifest = load_manifest(args.manifest)
     entry = next(
@@ -1424,6 +1958,13 @@ def validate_artifact(args: argparse.Namespace) -> None:
     require_metadata_matches(expected_entry, metadata, metadata_path)
     if metadata.get("baseURL") != expected_base:
         fail(f"version metadata does not match {entry['id']} at {expected_base}")
+    docs_navigation = metadata.get("docsNavigation")
+    expected_docs_navigation = DOCS_NAV_EXPECTED_STATS[entry["id"]]
+    if docs_navigation != expected_docs_navigation:
+        fail(
+            f"Docs navigation metadata mismatch for {entry['id']}: "
+            f"{docs_navigation!r} != {expected_docs_navigation!r}"
+        )
     if entry["archived"]:
         for shared_path in (
             "about",
@@ -1439,6 +1980,8 @@ def validate_artifact(args: argparse.Namespace) -> None:
 
     origin_parts = urllib.parse.urlsplit(args.site_origin.rstrip("/") + "/")
     canonical_parts = urllib.parse.urlsplit(CANONICAL_ORIGIN)
+    origin_host = same_site_host(origin_parts)
+    canonical_host = same_site_host(canonical_parts)
     prefix = "/" + entry["publishPath"].strip("/") if entry["publishPath"] else ""
     allowed_paths = allowed_version_paths(manifest)
     current_docs = (prefix + "/docs").rstrip("/") or "/docs"
@@ -1490,15 +2033,21 @@ def validate_artifact(args: argparse.Namespace) -> None:
         if not value or value.startswith(("#", "?")):
             return
         source_name = source.relative_to(root).as_posix()
+        require_safe_url_syntax(value)
         if not require_safe_url_scheme(value, source_name):
             return
         parsed = urllib.parse.urlsplit(value)
+        require_safe_http_authority(parsed, value)
+        parsed_host = same_site_host(parsed) if parsed.netloc else None
         if (
-            parsed.netloc == canonical_parts.netloc
-            and parsed.netloc != origin_parts.netloc
+            parsed.netloc
+            and normalized_hostname(parsed) in {origin_host, canonical_host}
+            and parsed_host is None
         ):
+            fail(f"unsafe same-site URL authority in {source_name}: {value}")
+        if parsed_host == canonical_host and parsed_host != origin_host:
             fail(f"production-origin URL leaked into staging {source_name}: {value}")
-        if parsed.netloc and parsed.netloc != origin_parts.netloc:
+        if parsed.netloc and parsed_host != origin_host:
             return
         if not parsed.netloc and not value.startswith("/"):
             source_relative = source.relative_to(root).as_posix()
@@ -1513,7 +2062,9 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 value,
             )
             parsed = urllib.parse.urlsplit(value)
-        if parsed.netloc and parsed.netloc != origin_parts.netloc:
+            require_safe_http_authority(parsed, value)
+            parsed_host = same_site_host(parsed) if parsed.netloc else None
+        if parsed.netloc and parsed_host != origin_host:
             return
         if parsed.scheme and parsed.scheme != origin_parts.scheme:
             fail(
@@ -1540,6 +2091,9 @@ def validate_artifact(args: argparse.Namespace) -> None:
     for path in sorted(root.rglob("*")):
         if not path.is_file():
             continue
+        relative_path = path.relative_to(root)
+        if "_nav" in relative_path.parts:
+            fail(f"private Docs navigation route was rendered: {relative_path}")
         if path.match("offline-search-index.*.json"):
             parts = path.name.split(".")
             digest = hashlib.md5(path.read_bytes()).hexdigest()
@@ -1550,6 +2104,8 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 ref = item.get("ref") if isinstance(item, dict) else None
                 if not isinstance(ref, str):
                     fail(f"invalid search entry in {path.relative_to(root)}")
+                if "/_nav/" in ref.lower():
+                    fail(f"private Docs navigation route leaked into search: {ref}")
                 validate_url(ref, path)
             continue
         if path.name == "navigation.json":
@@ -1567,6 +2123,7 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 fail(f"navigation baseURL/language mismatch in {relative}")
             if data.get("root", {}).get("url") != expected_root_url:
                 fail(f"navigation root is not language-scoped in {relative}")
+            require_docs_navigation_json(data, relative, language)
             for value in iter_json_url_fields(data):
                 validate_url(value, path)
                 value_parts = urllib.parse.urlsplit(value)
@@ -1991,6 +2548,7 @@ def build(args: argparse.Namespace) -> None:
             check=True,
         )
         known_fixes = apply_known_legacy_fixes(assembly, entry["id"])
+        docs_navigation = materialize_docs_navigation(assembly, entry["publishPath"])
         subprocess.run(
             [
                 migration_python,
@@ -2069,6 +2627,7 @@ def build(args: argparse.Namespace) -> None:
                     "knownFixes": known_fixes,
                     "residual": 0,
                 },
+                "docsNavigation": docs_navigation,
                 "urlScoping": url_scoping,
             }
         )
@@ -2128,23 +2687,30 @@ def copy_without_collision(
 def write_error_documents(output: pathlib.Path, seen: set[str]) -> int:
     """Install localized Apache error documents beside every generated 404 page."""
     template = (ROOT / ".htaccess").read_text(encoding="utf-8")
-    if template != "ErrorDocument 404 /404.html\n":
+    if template != (
+        'RedirectMatch 404 "(?i)(?:^|/)\\.git(?:/|$)"\nErrorDocument 404 /404.html\n'
+    ):
         fail("unexpected root .htaccess contract")
-    count = 0
+    root_page = output / "404.html"
+    if not root_page.is_file():
+        fail("aggregate root 404.html is required before writing .htaccess")
+    root_target = output / ".htaccess"
+    if root_target.exists() or ".htaccess" in seen:
+        fail("aggregate error-document collision: .htaccess")
+    root_target.write_text(template, encoding="utf-8")
+    seen.add(".htaccess")
+    count = 1
     for page in sorted(output.rglob("404.html")):
         relative = page.relative_to(output).as_posix()
+        if relative == "404.html":
+            continue
         target = page.parent / ".htaccess"
         target_relative = target.relative_to(output).as_posix()
         if target.exists() or target_relative in seen:
             fail(f"aggregate error-document collision: {target_relative}")
-        directive = (
-            template if relative == "404.html" else f"ErrorDocument 404 /{relative}\n"
-        )
-        target.write_text(directive, encoding="utf-8")
+        target.write_text(f"ErrorDocument 404 /{relative}\n", encoding="utf-8")
         seen.add(target_relative)
         count += 1
-    if count == 0:
-        fail("aggregate contains no 404 page for ErrorDocument")
     return count
 
 

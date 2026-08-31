@@ -32,6 +32,32 @@ def parse(fragment: str):
 
 
 class SiteOutputSecurityTest(unittest.TestCase):
+    def test_docs_navigation_requires_five_localized_populated_groups(self) -> None:
+        for language in ("en", "cn"):
+            groups = [
+                {
+                    "title": title,
+                    "kind": "external",
+                    "url": f"https://example.org/{language}/docs/{index}/",
+                    "children": [{"title": "child"}],
+                }
+                for index, title in enumerate(VALIDATOR.DOCS_NAV_GROUP_TITLES[language])
+            ]
+            nav = {"root": {"children": [{"id": "/docs/", "children": groups}]}}
+            with self.subTest(language=language):
+                self.assertEqual(
+                    VALIDATOR.docs_navigation_errors(
+                        nav, f"{language}/navigation.json", language
+                    ),
+                    [],
+                )
+
+        groups[0]["url"] = "https://example.org/docs/_nav/start/"
+        self.assertIn(
+            "private Docs navigation route leaked",
+            "\n".join(VALIDATOR.docs_navigation_errors(nav, "navigation.json", "cn")),
+        )
+
     def test_toc_accessibility_accepts_empty_and_populated_localized_navs(self) -> None:
         fixtures = (
             (

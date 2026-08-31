@@ -128,7 +128,7 @@ mvn clean package -DskipTests
 "软件"有："名字"、"售卖价格"等属性；边"认识"有："日期"属性等。
 
 <div style="text-align: center;">
-  <img src="/docs/images/demo-graph-model.png" alt="image">
+  <img src="/docs/images/demo-graph-model.png" alt="由“认识”和“创建”边连接人物与软件顶点的示例图">
   <p>示例图模型</p>
 </div>
 

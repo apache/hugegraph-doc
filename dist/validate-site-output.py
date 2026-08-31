@@ -79,6 +79,10 @@ ERROR_DOCUMENT_PATHS = {
     "versions/1.5/404.html",
     "versions/1.5/cn/404.html",
 }
+DOCS_NAV_GROUP_TITLES = {
+    "en": ("Get Started", "Components", "Develop", "Operate", "Reference"),
+    "cn": ("开始", "组件", "开发", "运维", "参考"),
+}
 EXTERNAL_ACTIVE_RESOURCE_ATTRIBUTES = {
     ("script", "src"),
     ("link", "href"),
@@ -254,6 +258,44 @@ def toc_accessibility_errors(parser: DocumentParser, page_name: str) -> list[str
             f"aria-label {expected!r}, found {labels!r}"
         ]
     return []
+
+
+def docs_navigation_errors(data: dict, source: str, language: str) -> list[str]:
+    """Validate the five-group Docs IA in one OINK NAVJSON output."""
+    errors: list[str] = []
+    expected = DOCS_NAV_GROUP_TITLES.get(language)
+    if expected is None:
+        return [f"{source}: unsupported navigation language: {language}"]
+    docs_nodes = [
+        item
+        for item in data.get("root", {}).get("children", [])
+        if isinstance(item, dict) and item.get("id") == "/docs/"
+    ]
+    if len(docs_nodes) != 1:
+        return [f"{source}: expected one Docs node, found {len(docs_nodes)}"]
+    groups = docs_nodes[0].get("children")
+    if not isinstance(groups, list):
+        return [f"{source}: Docs navigation children are missing"]
+    actual = tuple(
+        item.get("title") if isinstance(item, dict) else None for item in groups
+    )
+    if actual != expected:
+        errors.append(f"{source}: Docs groups {actual!r} != {expected!r}")
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        if group.get("kind") != "external" or not group.get("children"):
+            errors.append(f"{source}: Docs group is not a populated link: {group!r}")
+    pending = [data]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, dict):
+            pending.extend(item.values())
+        elif isinstance(item, list):
+            pending.extend(item)
+        elif isinstance(item, str) and "/_nav/" in item.lower():
+            errors.append(f"{source}: private Docs navigation route leaked: {item}")
+    return errors
 
 
 def document_security_errors(
@@ -540,6 +582,25 @@ def main() -> int:
     html_files = sorted(root.rglob("*.html")) if root.is_dir() else []
     if not html_files:
         errors.append("no generated HTML files found")
+    if not args.security_only:
+        for path in sorted(root.rglob("*")):
+            if path.is_file() and "_nav" in path.relative_to(root).parts:
+                errors.append(
+                    f"private Docs navigation route was rendered: {path.relative_to(root)}"
+                )
+        for search_path in sorted(root.rglob("offline-search-index.*.json")):
+            try:
+                search_data = json.loads(search_path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                errors.append(f"{search_path.relative_to(root)}: cannot parse: {exc}")
+                continue
+            for item in search_data if isinstance(search_data, list) else []:
+                ref = item.get("ref") if isinstance(item, dict) else None
+                if isinstance(ref, str) and "/_nav/" in ref.lower():
+                    errors.append(
+                        f"{search_path.relative_to(root)}: private Docs navigation "
+                        f"route leaked into search: {ref}"
+                    )
 
     for page in html_files:
         parser = DocumentParser()
@@ -669,6 +730,11 @@ def main() -> int:
         for attribute, raw_url in parser.urls:
             url = raw_url.strip()
             lower_url = url.lower()
+            if "/_nav/" in lower_url:
+                errors.append(
+                    f"{page_name}: private Docs navigation route in {attribute}: {url}"
+                )
+                continue
             if (
                 not url
                 or url.startswith("#")
@@ -829,22 +895,27 @@ def main() -> int:
             if target is not None and not target.is_file():
                 errors.append(f"{llms_name}: missing URL output: {url}")
 
-    for nav_name, language in (("navigation.json", "en"), ("cn/navigation.json", "cn")):
-        nav_path = root / nav_name
-        if not nav_path.is_file():
-            continue
+    for nav_path in sorted(root.rglob("navigation.json")):
+        nav_name = nav_path.relative_to(root).as_posix()
+        parts = pathlib.PurePosixPath(nav_name).parts
+        language = "cn" if len(parts) >= 2 and parts[-2] == "cn" else "en"
+        prefix_parts = parts[:-2] if language == "cn" else parts[:-1]
+        nav_base = urllib.parse.urljoin(
+            base, "/".join(prefix_parts) + ("/" if prefix_parts else "")
+        )
         try:
             nav = json.loads(nav_path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError) as exc:
             errors.append(f"{nav_name}: cannot parse: {exc}")
             continue
-        if nav.get("baseURL") != base or nav.get("language") != language:
+        if nav.get("baseURL") != nav_base or nav.get("language") != language:
             errors.append(f"{nav_name}: baseURL or language changed")
         expected_root_url = (
-            base if language == "en" else urllib.parse.urljoin(base, "cn/")
+            nav_base if language == "en" else urllib.parse.urljoin(nav_base, "cn/")
         )
         if nav.get("root", {}).get("url") != expected_root_url:
             errors.append(f"{nav_name}: root URL is not language-scoped")
+        errors.extend(docs_navigation_errors(nav, nav_name, language))
         pending = [nav]
         while pending:
             item = pending.pop()
@@ -853,12 +924,19 @@ def main() -> int:
                     value = item.get(key)
                     if not isinstance(value, str):
                         continue
-                    if not value.startswith(base):
-                        errors.append(f"{nav_name}: {key} escapes base: {value}")
+                    resolved_value = urllib.parse.urljoin(nav_base, value)
+                    if not resolved_value.startswith(nav_base):
+                        errors.append(
+                            f"{nav_name}: {key} escapes version base: {value}"
+                        )
                         continue
-                    url_path = urllib.parse.urlsplit(value).path
-                    if language == "cn" and not url_path.startswith("/cn/"):
+                    url_path = urllib.parse.urlsplit(resolved_value).path
+                    nav_path_prefix = urllib.parse.urlsplit(nav_base).path.rstrip("/")
+                    chinese_prefix = nav_path_prefix + "/cn/"
+                    if language == "cn" and not url_path.startswith(chinese_prefix):
                         errors.append(f"{nav_name}: {key} loses /cn/: {value}")
+                    if language == "en" and url_path.startswith(chinese_prefix):
+                        errors.append(f"{nav_name}: {key} crosses into /cn/: {value}")
                     target = internal_output_target(root, base_parts, value)
                     if target is not None and not target.is_file():
                         errors.append(f"{nav_name}: missing {key} output: {value}")

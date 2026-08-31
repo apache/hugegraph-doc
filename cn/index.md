@@ -12,6 +12,6 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 - [Documentation](/cn/docs/)
 - [Blog](/cn/blog/)
-- [Community](/cn/community/)
 - [Search Results](/cn/search/)
 - [关于 Apache HugeGraph](/cn/about/)
+- [社区](/cn/community/)

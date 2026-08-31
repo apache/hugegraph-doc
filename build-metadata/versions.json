@@ -23,7 +23,7 @@
       "name": "latest",
       "publishPath": "",
       "ref": "master",
-      "sha": "13a965616248063d3fc7675fa7cdb08fc40d531b",
+      "sha": "4aefd01325697f6729eacc0a4de530bd560da333",
       "urlScoping": {
         "files": 277,
         "historicalHomeRedirects": 0,
@@ -62,7 +62,7 @@
         "manifests": 205,
         "searchFingerprints": 2,
         "searchRefs": 145,
-        "urls": 1812
+        "urls": 1639
       }
     },
     {
@@ -94,7 +94,7 @@
         "manifests": 199,
         "searchFingerprints": 2,
         "searchRefs": 133,
-        "urls": 1715
+        "urls": 1548
       }
     }
   ]

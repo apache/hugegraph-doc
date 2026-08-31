@@ -397,11 +397,6 @@ def overlay_shell(assembly: pathlib.Path, *, historical: bool, origin: str) -> N
         target = assembly / "static" / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
-    license_source = ROOT / "static/licenses"
-    if license_source.exists():
-        shutil.copytree(
-            license_source, assembly / "static/licenses", dirs_exist_ok=True
-        )
     client_go_target = assembly / "static/client-go"
     if historical:
         if client_go_target.exists():
@@ -2408,16 +2403,6 @@ def validate_artifact(args: argparse.Namespace) -> None:
             package_url
         ]:
             fail("client-go visible redirect link changed")
-
-    license_root = root / "licenses/oink"
-    for name in ("LICENSE", "NOTICE", "VENDOR.json"):
-        if not (license_root / name).is_file():
-            fail(f"missing OINK license bundle file: {name}")
-    vendor = json.loads((license_root / "VENDOR.json").read_text(encoding="utf-8"))
-    for dependency in vendor.get("dependencies", []):
-        for name in dependency.get("licenseFiles", []):
-            if not (license_root / name).is_file():
-                fail(f"missing OINK dependency license: {name}")
 
     if manifest_pages == 0 or canonical_pages == 0:
         fail("artifact validation did not inspect rendered pages")

@@ -49,9 +49,6 @@ REQUIRED_FILES = (
     "_print/docs/index.html",
     "cn/_print/docs/index.html",
     "client-go/index.html",
-    "licenses/oink/LICENSE",
-    "licenses/oink/NOTICE",
-    "licenses/oink/VENDOR.json",
 )
 
 HREFLANG_FALLBACKS = {
@@ -561,23 +558,6 @@ def main() -> int:
         for relative in REQUIRED_FILES:
             if not (root / relative).is_file():
                 errors.append(f"missing required output: {relative}")
-
-        vendor_manifest = root / "licenses/oink/VENDOR.json"
-        if vendor_manifest.is_file():
-            try:
-                vendor = json.loads(vendor_manifest.read_text(encoding="utf-8"))
-                license_files = {
-                    license_path
-                    for dependency in vendor.get("dependencies", [])
-                    for license_path in dependency.get("licenseFiles", [])
-                }
-                for license_path in sorted(license_files):
-                    if not (root / "licenses/oink" / license_path).is_file():
-                        errors.append(
-                            f"missing OINK dependency license: {license_path}"
-                        )
-            except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-                errors.append(f"cannot parse licenses/oink/VENDOR.json: {exc}")
 
     html_files = sorted(root.rglob("*.html")) if root.is_dir() else []
     if not html_files:

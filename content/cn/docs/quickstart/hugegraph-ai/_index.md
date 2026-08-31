@@ -179,5 +179,5 @@ hugegraph-ai 采用 [Apache 2.0 许可证](https://github.com/apache/hugegraph-a
 - **电子邮件**：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)（[需要订阅](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/)）
 - **微信**：关注 "Apache HugeGraph" 微信公众号
 
-![Apache HugeGraph WeChat 二维码](/images/docs/community/wechat.png)
+![Apache HugeGraph 微信公众号二维码](/images/docs/community/wechat.png)
 {width="200" height="63"}

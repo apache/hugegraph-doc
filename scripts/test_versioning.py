@@ -104,6 +104,27 @@ class VersionUrlTest(unittest.TestCase):
                 "ErrorDocument 404 /versions/1.7/cn/404.html\n",
             )
 
+    def test_error_documents_must_not_claim_canonical_urls(self) -> None:
+        for relative in (
+            "404.html",
+            "cn/404.html",
+        ):
+            with self.subTest(relative=relative):
+                self.assertTrue(
+                    versioning.require_error_document_without_canonical(relative, [])
+                )
+                with self.assertRaises(SystemExit):
+                    versioning.require_error_document_without_canonical(
+                        relative,
+                        ['<link rel="canonical" href="https://example.com/404.html">'],
+                    )
+        self.assertFalse(
+            versioning.require_error_document_without_canonical(
+                "docs/404.html",
+                ['<link rel="canonical" href="https://example.com/docs/404.html">'],
+            )
+        )
+
     def test_ensure_frontmatter_preserves_body_and_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             page = Path(temp_name) / "legacy.md"
@@ -204,18 +225,18 @@ class VersionUrlTest(unittest.TestCase):
             summary = Path(temp_name) / "SUMMARY.md"
             historical = "\n".join(
                 f"[route {index}](performance/api-preformance/{index})"
-                for index in range(5)
+                for index in range(3)
             )
             summary.write_text(historical, encoding="utf-8")
             self.assertEqual(
                 versioning.repair_historical_performance_routes(summary), 0
             )
             migrated = historical.replace(
-                "performance/api-preformance", "performance/api-performance", 3
+                "performance/api-preformance", "performance/api-performance", 2
             )
             summary.write_text(migrated, encoding="utf-8")
             self.assertEqual(
-                versioning.repair_historical_performance_routes(summary), 3
+                versioning.repair_historical_performance_routes(summary), 2
             )
             self.assertEqual(summary.read_text(encoding="utf-8"), historical)
 
@@ -227,6 +248,93 @@ class VersionUrlTest(unittest.TestCase):
             )
             with self.assertRaises(SystemExit):
                 versioning.repair_historical_performance_routes(summary)
+
+    def test_historical_server_heading_normalization_skips_fenced_code(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            page = Path(temp_name) / "hugegraph-server.md"
+            page.write_text(
+                '---\ntitle: "HugeGraph Server"\n---\n\n'
+                "### 1 Overview\n"
+                "#### 1.1 Install\n"
+                "````shell\n"
+                "# shell comment\n"
+                "### rendered as example text\n"
+                "```\n"
+                "````\n"
+                "~~~markdown\n"
+                "##### another example\n"
+                "~~~\n"
+                "### 2 Run\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(versioning.normalize_historical_server_headings(page), 3)
+            rendered = page.read_text(encoding="utf-8")
+            self.assertIn("## 1 Overview\n### 1.1 Install\n", rendered)
+            self.assertIn("# shell comment\n### rendered as example text\n", rendered)
+            self.assertIn("~~~markdown\n##### another example\n~~~\n", rendered)
+            self.assertTrue(rendered.endswith("## 2 Run\n"))
+            self.assertEqual(versioning.normalize_historical_server_headings(page), 0)
+            self.assertEqual(page.read_text(encoding="utf-8"), rendered)
+
+    def test_historical_server_heading_normalization_rejects_skips(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            page = Path(temp_name) / "hugegraph-server.md"
+            page.write_text("### Overview\n##### Skipped child\n", encoding="utf-8")
+            with self.assertRaises(SystemExit):
+                versioning.normalize_historical_server_headings(page)
+
+    def test_legacy_adapter_normalizes_server_headings_for_all_archives(
+        self,
+    ) -> None:
+        for version in ("1.7", "1.5"):
+            with (
+                self.subTest(version=version),
+                tempfile.TemporaryDirectory() as temp_name,
+            ):
+                assembly = Path(temp_name)
+                for language in ("en", "cn"):
+                    docs = assembly / f"content/{language}/docs"
+                    server = docs / "quickstart/hugegraph/hugegraph-server.md"
+                    server.parent.mkdir(parents=True)
+                    server.write_text(
+                        "### 1 Server\n#### 1.1 Start\n"
+                        "```shell\n# keep this comment\n```\n",
+                        encoding="utf-8",
+                    )
+                    summary = docs / "SUMMARY.md"
+                    summary.write_text(
+                        "\n".join(
+                            f"[route {index}](performance/"
+                            + ("api-performance" if index < 2 else "api-preformance")
+                            + f"/{index})"
+                            for index in range(3)
+                        ),
+                        encoding="utf-8",
+                    )
+
+                with (
+                    mock.patch.object(versioning, "ensure_frontmatter", return_value=0),
+                    mock.patch.object(
+                        versioning, "ensure_search_excluded", return_value=0
+                    ),
+                    mock.patch.object(
+                        versioning, "ensure_search_metadata", return_value=0
+                    ),
+                ):
+                    versioning.apply_known_legacy_fixes(assembly, version)
+
+                for language in ("en", "cn"):
+                    docs = assembly / f"content/{language}/docs"
+                    server = (
+                        docs / "quickstart/hugegraph/hugegraph-server.md"
+                    ).read_text(encoding="utf-8")
+                    self.assertTrue(server.startswith("## 1 Server\n### 1.1 Start\n"))
+                    self.assertIn("```shell\n# keep this comment\n```\n", server)
+                    summary = (docs / "SUMMARY.md").read_text(encoding="utf-8")
+                    self.assertNotIn("performance/api-performance", summary)
+                    self.assertEqual(summary.count("performance/api-preformance"), 3)
 
     def test_scopes_root_relative_urls(self) -> None:
         self.assertEqual(rewrite("/docs/"), "/versions/1.7/docs/")
@@ -390,9 +498,7 @@ class VersionUrlTest(unittest.TestCase):
             source = temp / "artifacts/latest"
             source.mkdir(parents=True)
             entry = {"id": "latest", "publishPath": "", "sha": "a" * 40}
-            (source / ".version.json").write_text(
-                json.dumps(entry), encoding="utf-8"
-            )
+            (source / ".version.json").write_text(json.dumps(entry), encoding="utf-8")
             args = argparse.Namespace(
                 resolved_manifest=temp / "resolved.json",
                 artifacts=temp / "artifacts",
@@ -417,9 +523,7 @@ class VersionUrlTest(unittest.TestCase):
                 ),
                 mock.patch.object(versioning, "require_metadata_matches"),
                 mock.patch.object(versioning, "validate_artifact"),
-                mock.patch.object(
-                    versioning, "write_error_documents", return_value=1
-                ),
+                mock.patch.object(versioning, "write_error_documents", return_value=1),
                 mock.patch.object(versioning, "sitemap_locations", return_value=[]),
                 mock.patch.object(
                     versioning,

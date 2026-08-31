@@ -71,6 +71,14 @@ ASF_CSP_IMAGE_HOSTS = {
 }
 ASF_CSP_IMAGE_SUFFIXES = (".apache.org", ".scarf.sh")
 UNSAFE_AUTHORED_ELEMENTS = {"script", "iframe", "object", "embed"}
+ERROR_DOCUMENT_PATHS = {
+    "404.html",
+    "cn/404.html",
+    "versions/1.7/404.html",
+    "versions/1.7/cn/404.html",
+    "versions/1.5/404.html",
+    "versions/1.5/cn/404.html",
+}
 EXTERNAL_ACTIVE_RESOURCE_ATTRIBUTES = {
     ("script", "src"),
     ("link", "href"),
@@ -188,6 +196,39 @@ def image_url_allowed_by_asf_csp(
         return False
     hostname = (parts.hostname or "").lower().rstrip(".")
     return hostname in ASF_CSP_IMAGE_HOSTS or hostname.endswith(ASF_CSP_IMAGE_SUFFIXES)
+
+
+def error_document_seo_errors(parser: DocumentParser, page_name: str) -> list[str]:
+    """Require error documents to stay out of indexes and canonical clusters."""
+
+    if page_name not in ERROR_DOCUMENT_PATHS:
+        return []
+
+    errors: list[str] = []
+    robots = [
+        meta.get("content", "")
+        for meta in parser.meta
+        if meta.get("name", "").strip().lower() == "robots"
+    ]
+    expected_directives = {"noindex", "nofollow"}
+    if (
+        len(robots) != 1
+        or {
+            directive.strip().lower()
+            for directive in robots[0].split(",")
+            if directive.strip()
+        }
+        != expected_directives
+    ):
+        errors.append(
+            f"{page_name}: expected one robots noindex,nofollow directive, "
+            f"found {robots!r}"
+        )
+    if parser.canonical:
+        errors.append(f"{page_name}: error document must not declare canonical")
+    if parser.hreflang:
+        errors.append(f"{page_name}: error document must not declare hreflang")
+    return errors
 
 
 def document_security_errors(
@@ -478,6 +519,7 @@ def main() -> int:
 
         page_name = page.relative_to(root).as_posix()
         errors.extend(document_security_errors(parser, page_name, base_parts))
+        errors.extend(error_document_seo_errors(parser, page_name))
         if args.security_only:
             continue
         try:
@@ -485,7 +527,8 @@ def main() -> int:
         except ValueError as exc:
             errors.append(f"{page_name}: {exc}")
             alias_target = None
-        if page_name not in {"404.html", "cn/404.html", "client-go/index.html"}:
+        is_error_document = page_name in ERROR_DOCUMENT_PATHS
+        if not is_error_document and page_name != "client-go/index.html":
             if len(parser.canonical) != 1:
                 errors.append(
                     f"{page_name}: expected one canonical, found {len(parser.canonical)}"
@@ -524,7 +567,8 @@ def main() -> int:
 
         is_regular_page = (
             "_print/" not in page_name
-            and page_name not in {"404.html", "cn/404.html", "client-go/index.html"}
+            and not is_error_document
+            and page_name != "client-go/index.html"
             and not alias_target
         )
         if is_regular_page:

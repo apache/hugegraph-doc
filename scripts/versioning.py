@@ -136,6 +136,17 @@ def refresh_target(parser: DocumentParser) -> str | None:
     return match.group(1).strip(" \"'")
 
 
+def require_error_document_without_canonical(
+    relative: str, canonical_tags: list[str]
+) -> bool:
+    """Fail closed when a generated error document claims a canonical URL."""
+    if relative not in {"404.html", "cn/404.html"}:
+        return False
+    if canonical_tags:
+        fail(f"error document must not declare canonical: {relative}")
+    return True
+
+
 def require_safe_url_scheme(value: str, source: str) -> bool:
     """Reject active or ambiguous schemes; return whether target validation applies."""
     if value.startswith("//"):
@@ -543,9 +554,9 @@ def repair_historical_performance_routes(path: pathlib.Path) -> int:
     source = path.read_text(encoding="utf-8")
     corrected = source.count("performance/api-performance")
     historical = source.count("performance/api-preformance")
-    if corrected + historical != 5:
+    if corrected + historical != 3:
         fail(
-            f"expected 5 historical performance routes in {path}, "
+            f"expected 3 historical performance routes in {path}, "
             f"found {corrected + historical}"
         )
     if corrected == 0:
@@ -555,6 +566,91 @@ def repair_historical_performance_routes(path: pathlib.Path) -> int:
         encoding="utf-8",
     )
     return corrected
+
+
+MARKDOWN_ATX_HEADING_RE = re.compile(
+    r"^(?P<indent> {0,3})(?P<marks>#{1,6})(?P<spacing>[ \t]+)(?P<body>.*)$"
+)
+MARKDOWN_FENCE_OPEN_RE = re.compile(
+    r"^ {0,3}(?P<marker>`{3,}|~{3,})(?:[^\r\n]*)?(?:\r?\n)?$"
+)
+
+
+def normalize_historical_server_headings(path: pathlib.Path) -> int:
+    """Promote legacy Server headings without touching fenced examples."""
+    source = path.read_text(encoding="utf-8")
+    lines = source.splitlines(keepends=True)
+    headings: list[tuple[int, re.Match[str]]] = []
+    fence_character: str | None = None
+    fence_length = 0
+
+    for index, line in enumerate(lines):
+        line_without_ending = line.rstrip("\r\n")
+        if fence_character is not None:
+            closing = re.match(
+                rf"^ {{0,3}}{re.escape(fence_character)}{{{fence_length},}}[ \t]*$",
+                line_without_ending,
+            )
+            if closing:
+                fence_character = None
+                fence_length = 0
+            continue
+
+        opening = MARKDOWN_FENCE_OPEN_RE.match(line)
+        if opening:
+            marker = opening.group("marker")
+            fence_character = marker[0]
+            fence_length = len(marker)
+            continue
+
+        heading = MARKDOWN_ATX_HEADING_RE.match(line_without_ending)
+        if heading:
+            headings.append((index, heading))
+
+    if fence_character is not None:
+        fail(f"unterminated Markdown fence in historical Server page: {path}")
+    if not headings:
+        fail(f"no Markdown headings found in historical Server page: {path}")
+
+    first_level = len(headings[0][1].group("marks"))
+    if first_level == 2:
+        shift = 0
+    elif first_level == 3:
+        shift = 1
+    else:
+        fail(
+            f"unexpected first heading level in historical Server page {path}: "
+            f"h{first_level}"
+        )
+
+    previous_level: int | None = None
+    for _, heading in headings:
+        normalized_level = len(heading.group("marks")) - shift
+        if normalized_level < 2:
+            fail(f"heading would collide with the page title in {path}")
+        if previous_level is not None and normalized_level > previous_level + 1:
+            fail(
+                f"heading level skips from h{previous_level} to h{normalized_level} "
+                f"in {path}"
+            )
+        previous_level = normalized_level
+
+    if shift == 0:
+        return 0
+
+    for index, heading in headings:
+        newline = "\r\n" if lines[index].endswith("\r\n") else "\n"
+        if not lines[index].endswith(("\n", "\r")):
+            newline = ""
+        lines[index] = (
+            heading.group("indent")
+            + heading.group("marks")[shift:]
+            + heading.group("spacing")
+            + heading.group("body")
+            + newline
+        )
+    path.write_text("".join(lines), encoding="utf-8")
+    return len(headings)
 
 
 def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
@@ -606,6 +702,10 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
                 )
             summary_path = assembly / f"content/{language}/docs/SUMMARY.md"
             fixed += repair_historical_performance_routes(summary_path)
+            fixed += normalize_historical_server_headings(
+                assembly
+                / f"content/{language}/docs/quickstart/hugegraph/hugegraph-server.md"
+            )
             replacements = []
             if language == "cn":
                 replacements.append(
@@ -1475,7 +1575,9 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 r"\brel=[\"']?canonical(?:[\"'\s>]|$)", tag, flags=re.IGNORECASE
             )
         ]
-        if relative in canonical_exceptions:
+        if require_error_document_without_canonical(relative, canonical_tags):
+            pass
+        elif relative in canonical_exceptions:
             if len(canonical_tags) > 1:
                 fail(f"too many canonicals on special page {relative}")
             if canonical_tags:

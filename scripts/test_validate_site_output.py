@@ -32,6 +32,48 @@ def parse(fragment: str):
 
 
 class SiteOutputSecurityTest(unittest.TestCase):
+    def test_error_documents_are_noindex_without_canonical_or_hreflang(self) -> None:
+        parser = parse(
+            '<meta name="robots" content="noindex, nofollow"><main>Not found</main>'
+        )
+        for page_name in (
+            "404.html",
+            "cn/404.html",
+            "versions/1.7/404.html",
+            "versions/1.7/cn/404.html",
+        ):
+            with self.subTest(page_name=page_name):
+                self.assertEqual(
+                    VALIDATOR.error_document_seo_errors(parser, page_name), []
+                )
+
+    def test_error_document_seo_rejects_indexing_and_url_claims(self) -> None:
+        parser = parse(
+            '<meta name="robots" content="index, follow">'
+            '<link rel="canonical" href="https://example.com/404.html">'
+            '<link rel="alternate" hreflang="en-US" '
+            'href="https://example.com/404.html">'
+        )
+        self.assertEqual(
+            VALIDATOR.error_document_seo_errors(parser, "versions/1.5/cn/404.html"),
+            [
+                "versions/1.5/cn/404.html: expected one robots "
+                "noindex,nofollow directive, found ['index, follow']",
+                "versions/1.5/cn/404.html: error document must not declare canonical",
+                "versions/1.5/cn/404.html: error document must not declare hreflang",
+            ],
+        )
+
+    def test_nested_content_404_is_not_an_error_document_exception(self) -> None:
+        parser = parse(
+            '<meta name="robots" content="index, follow">'
+            '<link rel="canonical" href="https://example.com/docs/404.html">'
+        )
+        self.assertNotIn("docs/404.html", VALIDATOR.ERROR_DOCUMENT_PATHS)
+        self.assertEqual(
+            VALIDATOR.error_document_seo_errors(parser, "docs/404.html"), []
+        )
+
     def test_security_only_mode_skips_aggregate_url_contracts(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             root = pathlib.Path(temp_name)
@@ -254,8 +296,7 @@ class SiteOutputSecurityTest(unittest.TestCase):
 
     def test_srcset_candidates_without_spaces_are_all_checked(self) -> None:
         parser = parse(
-            '<source srcset="https://www.apache.org/a.png,'
-            'http://evil.example/b.png">'
+            '<source srcset="https://www.apache.org/a.png,http://evil.example/b.png">'
         )
         self.assertEqual(
             parser.image_urls,
@@ -267,8 +308,7 @@ class SiteOutputSecurityTest(unittest.TestCase):
         self.assertEqual(
             VALIDATOR.document_security_errors(parser, "index.html", BASE),
             [
-                "index.html: mixed-content <source> srcset: "
-                "http://evil.example/b.png",
+                "index.html: mixed-content <source> srcset: http://evil.example/b.png",
             ],
         )
 

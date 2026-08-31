@@ -1,6 +1,7 @@
 {{- /* Keep OINK's complete interactive 404 shell and add an explicit local
      search recovery action beside the home-page escape hatch. */ -}}
 {{- .Page.Store.Set "tdOutputFormat" "html" -}}
+{{- .Page.Store.Set "tdIsErrorDocument" true -}}
 <!doctype html>
 <html itemscope itemtype="http://schema.org/WebPage"
     dir="{{ .Site.Language.Direction | default "ltr" }}"
@@ -10,6 +11,7 @@
     {{- if $darkMode.enable }} data-td-theme-init{{ end }}>
   <head>
     {{- $head := partial "head.html" . -}}
+    {{- $head = replaceRE `(?i)<meta\s+name=["']robots["']\s+content=["'][^"']*["']\s*/?>` `<meta name="robots" content="noindex, nofollow">` $head -}}
     {{- $title := printf "<title>%s | %s</title>" (T "error_404_title") .Site.Title -}}
     {{- replaceRE `(?s)<title>.*?</title>` $title $head | safeHTML -}}
   </head>

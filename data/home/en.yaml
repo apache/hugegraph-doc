@@ -2,14 +2,13 @@ sections: [hero, cards, cta]
 
 hero:
   align: center
-  eyebrow: Apache top-level project
-  title_lines:
-    - words: [{ text: Build with graphs. }]
-    - words: [{ text: From storage to intelligence. }]
-  lead: Apache HugeGraph brings real-time graph queries, distributed analytics, developer tools, and graph AI into one open ecosystem.
+  class: hg-home-hero
+  title: Apache HugeGraph
+  lead: HugeGraph is a full-stack graph system covering [graph database](docs/quickstart/hugegraph/hugegraph-server/), [graph computing](docs/quickstart/computing/hugegraph-computer/), and [graph AI](docs/quickstart/hugegraph-ai/).
+  note: It provides complete graph data processing capabilities from storage and real-time querying to offline analysis, and supports both [Gremlin](docs/language/hugegraph-gremlin/) and [Cypher](docs/clients/restful-api/cypher/) query languages.
   actions:
-    - { label: Start in five minutes, url: docs/quickstart/, icon: fa-solid fa-rocket, style: primary }
-    - { label: Download HugeGraph, url: docs/download/download/, icon: fa-solid fa-download, style: ghost }
+    - { label: Learn More, url: docs/, icon: fa-solid fa-circle-arrow-right, style: primary }
+    - { label: Download, url: docs/download/download/, icon: fa-brands fa-github, style: ghost }
 
 cards:
   eyebrow: Choose your path
@@ -29,4 +28,3 @@ cta:
   label: Open the documentation
   url: docs/
   style: primary
-

@@ -2,6 +2,11 @@
 title: "Server 完整配置手册"
 linkTitle: "Server 完整配置手册"
 weight: 2
+search_keywords:
+  - gremlin.graph
+  - rest-server.properties
+  - hugegraph.properties
+search_boost: 1.5
 ---
 
 ### Gremlin Server 配置项

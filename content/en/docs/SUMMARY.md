@@ -1,3 +1,8 @@
+---
+title: "Legacy GitBook Summary"
+draft: true
+---
+
 # HugeGraph Docs
 
 * [Download](download/download)

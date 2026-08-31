@@ -1,3 +1,9 @@
+---
+title: "HugeGraph 0.4.4 性能测试"
+linkTitle: "HugeGraph 0.4.4 性能测试"
+weight: 100
+---
+
 ### 1 测试环境
 
 #### 1.1 硬件信息

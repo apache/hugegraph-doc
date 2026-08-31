@@ -2,14 +2,13 @@ sections: [hero, cards, cta]
 
 hero:
   align: center
-  eyebrow: Apache 顶级项目
-  title_lines:
-    - words: [{ text: 用图构建应用。 }]
-    - words: [{ text: 从存储一直到智能。 }]
-  lead: Apache HugeGraph 将实时图查询、分布式分析、开发工具和图智能汇聚在一个开放生态中。
+  class: hg-home-hero
+  title: Apache HugeGraph
+  lead: HugeGraph 是一套全栈图系统，覆盖 [图数据库](docs/quickstart/hugegraph/hugegraph-server/)、[图计算](docs/quickstart/computing/hugegraph-computer/) 与 [图 AI](docs/quickstart/hugegraph-ai/)。
+  note: 支持从数据存储、实时查询到离线分析的完整图数据处理能力，并支持 [Gremlin](docs/language/hugegraph-gremlin/) 与 [Cypher](docs/clients/restful-api/cypher/) 查询语言。
   actions:
-    - { label: 五分钟开始, url: docs/quickstart/, icon: fa-solid fa-rocket, style: primary }
-    - { label: 下载 HugeGraph, url: docs/download/download/, icon: fa-solid fa-download, style: ghost }
+    - { label: 了解更多, url: docs/, icon: fa-solid fa-circle-arrow-right, style: primary }
+    - { label: 下载, url: docs/download/download/, icon: fa-brands fa-github, style: ghost }
 
 cards:
   eyebrow: 选择你的路径
@@ -29,4 +28,3 @@ cta:
   label: 打开文档
   url: docs/
   style: primary
-

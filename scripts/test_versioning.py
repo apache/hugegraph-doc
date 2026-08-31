@@ -10,6 +10,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import versioning
 
@@ -17,7 +18,14 @@ import versioning
 ORIGIN = "https://hugegraph.apache.org/"
 STAGING_ORIGIN = "https://hugegraph-oink.staged.apache.org/"
 PUBLISH_PATH = "versions/1.7"
-ALLOWED_PATHS = {"/docs", "/versions/1.7/docs", "/versions/1.5/docs"}
+ALLOWED_PATHS = {
+    "/docs",
+    "/cn/docs",
+    "/versions/1.7/docs",
+    "/versions/1.7/cn/docs",
+    "/versions/1.5/docs",
+    "/versions/1.5/cn/docs",
+}
 
 
 def rewrite(value: str) -> str:
@@ -30,6 +38,196 @@ def rewrite(value: str) -> str:
 
 
 class VersionUrlTest(unittest.TestCase):
+    def test_version_urls_preserve_language_and_order(self) -> None:
+        manifest = {
+            "versions": [
+                {"id": "latest", "name": "latest", "publishPath": ""},
+                {"id": "1.7", "name": "1.7", "publishPath": "versions/1.7"},
+                {"id": "1.5", "name": "1.5", "publishPath": "versions/1.5"},
+            ]
+        }
+        self.assertEqual(
+            [item["url"] for item in versioning.version_urls(manifest, ORIGIN, "en")],
+            [
+                f"{ORIGIN}docs/",
+                f"{ORIGIN}versions/1.7/docs/",
+                f"{ORIGIN}versions/1.5/docs/",
+            ],
+        )
+        self.assertEqual(
+            [item["url"] for item in versioning.version_urls(manifest, ORIGIN, "cn")],
+            [
+                f"{ORIGIN}cn/docs/",
+                f"{ORIGIN}versions/1.7/cn/docs/",
+                f"{ORIGIN}versions/1.5/cn/docs/",
+            ],
+        )
+        self.assertEqual(
+            versioning.language_version_params(manifest, ORIGIN, "en")["version_menu"],
+            "Releases",
+        )
+        self.assertEqual(
+            versioning.language_version_params(manifest, ORIGIN, "cn")["version_menu"],
+            "版本",
+        )
+        self.assertEqual(
+            versioning.language_version_params(manifest, ORIGIN, "cn")[
+                "url_latest_version"
+            ],
+            f"{ORIGIN}cn/docs/",
+        )
+
+    def test_write_error_documents_keeps_localized_404_status_targets(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            for relative in (
+                "404.html",
+                "cn/404.html",
+                "versions/1.7/404.html",
+                "versions/1.7/cn/404.html",
+            ):
+                page = output / relative
+                page.parent.mkdir(parents=True, exist_ok=True)
+                page.write_text("not found", encoding="utf-8")
+            seen: set[str] = set()
+            self.assertEqual(versioning.write_error_documents(output, seen), 4)
+            self.assertEqual(
+                (output / ".htaccess").read_text(encoding="utf-8"),
+                "ErrorDocument 404 /404.html\n",
+            )
+            self.assertEqual(
+                (output / "cn/.htaccess").read_text(encoding="utf-8"),
+                "ErrorDocument 404 /cn/404.html\n",
+            )
+            self.assertEqual(
+                (output / "versions/1.7/cn/.htaccess").read_text(encoding="utf-8"),
+                "ErrorDocument 404 /versions/1.7/cn/404.html\n",
+            )
+
+    def test_ensure_frontmatter_preserves_body_and_is_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            page = Path(temp_name) / "legacy.md"
+            page.write_text("## Legacy body\n", encoding="utf-8")
+            self.assertEqual(
+                versioning.ensure_frontmatter(
+                    page,
+                    title="Legacy title",
+                    link_title="Legacy link",
+                    weight=100,
+                ),
+                1,
+            )
+            rendered = page.read_text(encoding="utf-8")
+            self.assertIn('title: "Legacy title"', rendered)
+            self.assertTrue(rendered.endswith("## Legacy body\n"))
+            self.assertEqual(
+                versioning.ensure_frontmatter(
+                    page,
+                    title="Changed title",
+                    link_title="Changed link",
+                    weight=1,
+                ),
+                0,
+            )
+            self.assertEqual(page.read_text(encoding="utf-8"), rendered)
+
+    def test_ensure_search_metadata_preserves_frontmatter_and_body(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            page = Path(temp_name) / "config.md"
+            page.write_text(
+                '---\ntitle: "Config"\nweight: 2\n---\n\n## Body\n',
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                versioning.ensure_search_metadata(
+                    page,
+                    keywords=("gremlin.graph", "hugegraph.properties"),
+                    boost=1.5,
+                ),
+                1,
+            )
+            rendered = page.read_text(encoding="utf-8")
+            self.assertIn("search_keywords:\n  - gremlin.graph\n", rendered)
+            self.assertIn("search_boost: 1.5\n---\n\n## Body\n", rendered)
+            self.assertEqual(
+                versioning.ensure_search_metadata(
+                    page,
+                    keywords=("changed",),
+                    boost=9,
+                ),
+                0,
+            )
+            self.assertEqual(page.read_text(encoding="utf-8"), rendered)
+
+    def test_ensure_search_excluded_is_fail_closed_and_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            page = Path(temp_name) / "cla.md"
+            page.write_text(
+                '---\ntitle: "Contributor Agreement"\n---\n\n## Body\n',
+                encoding="utf-8",
+            )
+            self.assertEqual(versioning.ensure_search_excluded(page), 1)
+            rendered = page.read_text(encoding="utf-8")
+            self.assertIn("search_exclude: true\n---\n\n## Body\n", rendered)
+            self.assertEqual(versioning.ensure_search_excluded(page), 0)
+            self.assertEqual(page.read_text(encoding="utf-8"), rendered)
+
+            page.write_text(
+                '---\ntitle: "Contributor Agreement"\nsearch_exclude: false\n---\n',
+                encoding="utf-8",
+            )
+            with self.assertRaises(SystemExit):
+                versioning.ensure_search_excluded(page)
+
+    def test_legacy_wechat_images_ignore_historical_alt_text(self) -> None:
+        source = (
+            '<img src="https://github.com/apache/hugegraph-doc/blob/master/'
+            'assets/images/wechat.png?raw=true" alt="QR png" width="300"/>'
+            '\n<img width="200" alt="changed" src="https://raw.githubusercontent.com/'
+            'apache/hugegraph-doc/master/assets/images/wechat.png">\n'
+        )
+        rendered, count = versioning.replace_legacy_wechat_images(source, "en")
+        self.assertEqual(count, 2)
+        self.assertIn(
+            "![Apache HugeGraph WeChat QR Code](/images/docs/community/wechat.png)"
+            '{width="300" height="94"}',
+            rendered,
+        )
+        self.assertIn('{width="200" height="63"}', rendered)
+        self.assertNotIn("github.com/apache/hugegraph-doc", rendered)
+        self.assertNotIn("raw.githubusercontent.com", rendered)
+
+    def test_historical_performance_routes_accept_source_and_migrated_states(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            summary = Path(temp_name) / "SUMMARY.md"
+            historical = "\n".join(
+                f"[route {index}](performance/api-preformance/{index})"
+                for index in range(5)
+            )
+            summary.write_text(historical, encoding="utf-8")
+            self.assertEqual(
+                versioning.repair_historical_performance_routes(summary), 0
+            )
+            migrated = historical.replace(
+                "performance/api-preformance", "performance/api-performance", 3
+            )
+            summary.write_text(migrated, encoding="utf-8")
+            self.assertEqual(
+                versioning.repair_historical_performance_routes(summary), 3
+            )
+            self.assertEqual(summary.read_text(encoding="utf-8"), historical)
+
+    def test_historical_performance_routes_reject_unknown_shape(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            summary = Path(temp_name) / "SUMMARY.md"
+            summary.write_text(
+                "[route](performance/api-preformance/one)", encoding="utf-8"
+            )
+            with self.assertRaises(SystemExit):
+                versioning.repair_historical_performance_routes(summary)
+
     def test_scopes_root_relative_urls(self) -> None:
         self.assertEqual(rewrite("/docs/"), "/versions/1.7/docs/")
         self.assertEqual(
@@ -184,6 +382,54 @@ class VersionUrlTest(unittest.TestCase):
             )
             with self.assertRaises(SystemExit):
                 versioning.aggregate(args)
+
+    def test_aggregate_security_scan_runs_after_metadata_is_written(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            output = temp / "aggregate"
+            source = temp / "artifacts/latest"
+            source.mkdir(parents=True)
+            entry = {"id": "latest", "publishPath": "", "sha": "a" * 40}
+            (source / ".version.json").write_text(
+                json.dumps(entry), encoding="utf-8"
+            )
+            args = argparse.Namespace(
+                resolved_manifest=temp / "resolved.json",
+                artifacts=temp / "artifacts",
+                artifact_prefix="",
+                site_origin=ORIGIN,
+                output=output,
+                asf_profile=None,
+                asf_whoami=None,
+            )
+
+            def assert_complete_aggregate(path: Path, origin: str) -> None:
+                self.assertEqual(path, output.resolve())
+                self.assertEqual(origin, ORIGIN)
+                self.assertTrue((path / ".asf.yaml").is_file())
+                self.assertTrue((path / "build-metadata/versions.json").is_file())
+
+            with (
+                mock.patch.object(
+                    versioning,
+                    "load_resolved_manifest",
+                    return_value={"versions": [entry]},
+                ),
+                mock.patch.object(versioning, "require_metadata_matches"),
+                mock.patch.object(versioning, "validate_artifact"),
+                mock.patch.object(
+                    versioning, "write_error_documents", return_value=1
+                ),
+                mock.patch.object(versioning, "sitemap_locations", return_value=[]),
+                mock.patch.object(
+                    versioning,
+                    "validate_output_security",
+                    side_effect=assert_complete_aggregate,
+                ) as security_scan,
+            ):
+                versioning.aggregate(args)
+
+            security_scan.assert_called_once_with(output.resolve(), ORIGIN)
 
     def test_output_cleanup_is_limited_to_temporary_descendants(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:

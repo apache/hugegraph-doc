@@ -1,3 +1,9 @@
+---
+title: "HugeGraph 0.4.4 Benchmark"
+linkTitle: "HugeGraph 0.4.4 Benchmark"
+weight: 100
+---
+
 ### 1 测试环境
 
 #### 1.1 硬件信息

@@ -40,6 +40,7 @@ URL_CONTRACT = ROOT / "dist/url-contract.json"
 CANONICAL_ORIGIN = "https://hugegraph.apache.org/"
 SHELL_FILES = ("go.mod", "go.sum", "hugo.yaml")
 SHELL_DIRS = ("assets", "data", "i18n", "layouts")
+SHELL_STATIC_FILES = ("favicon.svg",)
 SHELL_CONTENT = (
     "content/en/_index.md",
     "content/cn/_index.md",
@@ -322,6 +323,11 @@ def overlay_shell(assembly: pathlib.Path, *, historical: bool, origin: str) -> N
         source = ROOT / name
         if source.exists():
             shutil.copytree(source, assembly / name, dirs_exist_ok=True)
+    for relative in SHELL_STATIC_FILES:
+        source = ROOT / "static" / relative
+        target = assembly / "static" / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
     license_source = ROOT / "static/licenses"
     if license_source.exists():
         shutil.copytree(
@@ -438,26 +444,168 @@ def base_url(origin: str, publish_path: str) -> str:
     return urllib.parse.urljoin(normalized_origin, publish_path.rstrip("/") + "/")
 
 
+def ensure_frontmatter(
+    path: pathlib.Path, *, title: str, link_title: str, weight: int
+) -> int:
+    """Add navigation metadata to a legacy Markdown page without replacing its body."""
+    source = path.read_text(encoding="utf-8")
+    if source.startswith("---\n"):
+        return 0
+    path.write_text(
+        "---\n"
+        f'title: "{title}"\n'
+        f'linkTitle: "{link_title}"\n'
+        f"weight: {weight}\n"
+        "---\n\n"
+        f"{source}",
+        encoding="utf-8",
+    )
+    return 1
+
+
+def ensure_search_metadata(
+    path: pathlib.Path, *, keywords: tuple[str, ...], boost: float
+) -> int:
+    """Add search hints to an existing YAML front matter block once."""
+    source = path.read_text(encoding="utf-8")
+    if not source.startswith("---\n"):
+        fail(f"cannot add search metadata without YAML front matter: {path}")
+    closing = source.find("\n---\n", 4)
+    if closing < 0:
+        fail(f"unterminated YAML front matter: {path}")
+    frontmatter = source[4:closing]
+    if re.search(r"(?m)^search_keywords\s*:", frontmatter):
+        return 0
+    metadata = "search_keywords:\n" + "".join(
+        f"  - {keyword}\n" for keyword in keywords
+    )
+    metadata += f"search_boost: {boost:g}\n"
+    path.write_text(
+        source[: closing + 1] + metadata + source[closing + 1 :],
+        encoding="utf-8",
+    )
+    return 1
+
+
+def ensure_search_excluded(path: pathlib.Path) -> int:
+    """Exclude a rendered utility page from OINK's offline search index."""
+    source = path.read_text(encoding="utf-8")
+    if not source.startswith("---\n"):
+        fail(f"cannot add search exclusion without YAML front matter: {path}")
+    closing = source.find("\n---\n", 4)
+    if closing < 0:
+        fail(f"unterminated YAML front matter: {path}")
+    frontmatter = source[4:closing]
+    match = re.search(r"(?m)^search_exclude\s*:\s*(\S+)\s*$", frontmatter)
+    if match:
+        if match.group(1) == "true":
+            return 0
+        fail(f"unexpected search_exclude value in {path}: {match.group(1)}")
+    path.write_text(
+        source[: closing + 1] + "search_exclude: true\n" + source[closing + 1 :],
+        encoding="utf-8",
+    )
+    return 1
+
+
+LEGACY_WECHAT_IMAGE_RE = re.compile(
+    r'<img\b(?=[^>]*\bsrc="(?:https://github\.com/apache/hugegraph-doc/'
+    r"blob/master/assets/images/wechat\.png\?raw=true|https://raw\.githubusercontent\.com/"
+    r'apache/hugegraph-doc/master/assets/images/wechat\.png)")'
+    r'(?=[^>]*\bwidth="(?P<width>200|300)")[^>]*?/?>',
+    re.IGNORECASE,
+)
+
+
+def replace_legacy_wechat_images(source: str, language: str) -> tuple[str, int]:
+    """Localize legacy WeChat images regardless of their historical alt text."""
+    if language not in {"en", "cn"}:
+        fail(f"unsupported legacy image language: {language}")
+    alt = (
+        "Apache HugeGraph WeChat QR Code"
+        if language == "en"
+        else "Apache HugeGraph 微信公众号二维码"
+    )
+
+    def replacement(match: re.Match) -> str:
+        width = int(match.group("width"))
+        height = 63 if width == 200 else 94
+        return (
+            f"![{alt}](/images/docs/community/wechat.png)"
+            f'{{width="{width}" height="{height}"}}'
+        )
+
+    return LEGACY_WECHAT_IMAGE_RE.subn(replacement, source)
+
+
+def repair_historical_performance_routes(path: pathlib.Path) -> int:
+    """Restore the misspelled directory name used by pinned historical refs."""
+    source = path.read_text(encoding="utf-8")
+    corrected = source.count("performance/api-performance")
+    historical = source.count("performance/api-preformance")
+    if corrected + historical != 5:
+        fail(
+            f"expected 5 historical performance routes in {path}, "
+            f"found {corrected + historical}"
+        )
+    if corrected == 0:
+        return 0
+    path.write_text(
+        source.replace("performance/api-performance", "performance/api-preformance"),
+        encoding="utf-8",
+    )
+    return corrected
+
+
 def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
     fixed = 0
     if version in {"1.7", "1.5"}:
         for language in ("en", "cn"):
             language_prefix = "/cn" if language == "cn" else ""
-            summary_path = assembly / f"content/{language}/docs/SUMMARY.md"
-            summary = summary_path.read_text(encoding="utf-8")
-            summary_count = summary.count("performance/api-performance")
-            if summary_count != 3:
-                fail(
-                    f"expected 3 historical performance routes in {summary_path}, "
-                    f"found {summary_count}"
-                )
-            summary_path.write_text(
-                summary.replace(
-                    "performance/api-performance", "performance/api-preformance"
+            legacy_metadata = (
+                ("CLA.md", "Contributor Agreement", "Contributor Agreement"),
+                (
+                    "performance/hugegraph-benchmark-0.4.4.md",
+                    "HugeGraph 0.4.4 Benchmark"
+                    if language == "en"
+                    else "HugeGraph 0.4.4 性能测试",
+                    "HugeGraph 0.4.4 Benchmark"
+                    if language == "en"
+                    else "HugeGraph 0.4.4 性能测试",
                 ),
-                encoding="utf-8",
             )
-            fixed += summary_count
+            for relative, title, link_title in legacy_metadata:
+                fixed += ensure_frontmatter(
+                    assembly / f"content/{language}/docs/{relative}",
+                    title=title,
+                    link_title=link_title,
+                    weight=100,
+                )
+            fixed += ensure_search_excluded(
+                assembly / f"content/{language}/docs/CLA.md"
+            )
+            search_metadata = (
+                (
+                    "config/config-option.md",
+                    ("gremlin.graph", "rest-server.properties", "hugegraph.properties"),
+                ),
+                (
+                    "quickstart/hugegraph/hugegraph-hstore.md",
+                    (
+                        "server.port",
+                        "REST port" if language == "en" else "REST 端口",
+                        "Store REST port" if language == "en" else "Store REST 端口",
+                    ),
+                ),
+            )
+            for relative, keywords in search_metadata:
+                fixed += ensure_search_metadata(
+                    assembly / f"content/{language}/docs/{relative}",
+                    keywords=keywords,
+                    boost=1.5,
+                )
+            summary_path = assembly / f"content/{language}/docs/SUMMARY.md"
+            fixed += repair_historical_performance_routes(summary_path)
             replacements = []
             if language == "cn":
                 replacements.append(
@@ -483,9 +631,76 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
                     ),
                 ]
             )
+            image_urls = {
+                "http://tinkerpop.apache.org/docs/3.4.0/images/tinkerpop-modern.png": "/images/docs/graphs/tinkerpop-modern.png",
+                "https://hugegraph.apache.org/docs/images/gradio-kg.png": "/images/docs/hugegraph-ai/gradio-kg.jpg",
+                "https://github.com/user-attachments/assets/f3366d46-2e31-4638-94c4-7214951ef77a": "/images/docs/hugegraph-ai/quick-start-01.png",
+                "https://github.com/user-attachments/assets/33698062-e46b-4757-8b5e-93e8f10eae65": "/images/docs/hugegraph-ai/quick-start-02.png",
+                "https://github.com/user-attachments/assets/26641e09-249f-4b3a-8013-16dc9383d333": "/images/docs/hugegraph-ai/quick-start-03.jpg",
+                "https://github.com/user-attachments/assets/b49e269f-eaec-40b1-8d8f-9e409821d75d": "/images/docs/hugegraph-ai/quick-start-04.png",
+                "https://github.com/user-attachments/assets/7d4496a3-d44c-4491-9463-8e93595dfa45": "/images/docs/hugegraph-ai/quick-start-05.jpg",
+                "https://github.com/user-attachments/assets/fc678369-261d-49ea-a289-1ca6ade5ca55": "/images/docs/hugegraph-ai/quick-start-06.png",
+                "https://github.com/user-attachments/assets/d2a72f45-488c-4099-968b-a11816655ba0": "/images/docs/hugegraph-ai/quick-start-07.png",
+                "https://github.com/user-attachments/assets/d2a72f45-488c-4499-968b-a11816655ba0": "/images/docs/hugegraph-ai/quick-start-07.png",
+                "https://github.com/user-attachments/assets/fd150f87-27f8-48e5-8a55-319ec039b7e0": "/images/docs/hugegraph-ai/quick-start-08.png",
+            }
+            replacements.extend(image_urls.items())
+            replacements.extend(
+                [
+                    (
+                        "[![License](https://img.shields.io/badge/license-Apache%202-0E78BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)",
+                        "[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)",
+                    ),
+                    (
+                        "[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/incubator-hugegraph-ai)",
+                        "[Ask DeepWiki](https://deepwiki.com/apache/incubator-hugegraph-ai)",
+                    ),
+                    (
+                        "[![contributors graph](https://contrib.rocks/image?repo=apache/incubator-hugegraph-ai)](https://github.com/apache/incubator-hugegraph-ai/graphs/contributors)",
+                        "[View the HugeGraph-AI contributors](https://github.com/apache/incubator-hugegraph-ai/graphs/contributors).",
+                    ),
+                ]
+            )
+            contribution_images = (
+                (
+                    '<img width="884" alt="image" src="https://user-images.githubusercontent.com/9625821/159643158-8bf72c0a-93c3-4a58-8912-7b2ab20ced1d.png">',
+                    "Fork the HugeGraph repository on GitHub"
+                    if language == "en"
+                    else "在 GitHub 上 Fork HugeGraph 仓库",
+                    "/images/docs/contribution/github-fork.png",
+                    884,
+                    462,
+                ),
+                (
+                    '<img width="1280" alt="image" src="https://user-images.githubusercontent.com/9625821/163524204-7fe0e6bf-9c8b-4b1a-ac65-6a0ac423eb16.png">',
+                    "Authenticate a Git push with a personal access token"
+                    if language == "en"
+                    else "使用个人访问令牌认证 Git 推送",
+                    "/images/docs/contribution/github-authentication.png",
+                    1280,
+                    422,
+                ),
+                (
+                    '<img width="1280" alt="image" src="https://user-images.githubusercontent.com/9625821/163522445-2a50a72a-dea2-434f-9868-3a0d40d0d037.png">',
+                    "Verify the commit email address in GitHub"
+                    if language == "en"
+                    else "在 GitHub 中验证提交邮箱",
+                    "/images/docs/contribution/github-email.png",
+                    1280,
+                    592,
+                ),
+            )
+            replacements.extend(
+                (
+                    raw,
+                    f'![{alt}]({url}){{width="{width}" height="{height}"}}',
+                )
+                for raw, alt, url, width, height in contribution_images
+            )
             for path in sorted((assembly / f"content/{language}").rglob("*.md")):
                 text = path.read_text(encoding="utf-8")
-                rendered = text
+                rendered, wechat_count = replace_legacy_wechat_images(text, language)
+                fixed += wechat_count
                 for old, new in replacements:
                     count = rendered.count(old)
                     rendered = rendered.replace(old, new)
@@ -497,10 +712,17 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
     return fixed
 
 
-def version_urls(manifest: dict, origin: str) -> list[dict]:
+def version_urls(manifest: dict, origin: str, language: str = "en") -> list[dict]:
+    if language not in {"en", "cn"}:
+        fail(f"unsupported version-menu language: {language}")
+    language_prefix = "cn/" if language == "cn" else ""
     urls = []
     for entry in manifest["versions"]:
-        path = f"{entry['publishPath']}/docs/" if entry["publishPath"] else "docs/"
+        path = (
+            f"{entry['publishPath']}/{language_prefix}docs/"
+            if entry["publishPath"]
+            else f"{language_prefix}docs/"
+        )
         urls.append(
             {
                 "version": entry["id"],
@@ -510,6 +732,20 @@ def version_urls(manifest: dict, origin: str) -> list[dict]:
             }
         )
     return urls
+
+
+def language_version_params(manifest: dict, origin: str, language: str) -> dict:
+    """Build language-preserving version selector and archive-banner params."""
+    if language not in {"en", "cn"}:
+        fail(f"unsupported version-menu language: {language}")
+    return {
+        "version_menu": "Releases" if language == "en" else "版本",
+        "versions": version_urls(manifest, origin, language),
+        "url_latest_version": urllib.parse.urljoin(
+            origin.rstrip("/") + "/",
+            "cn/docs/" if language == "cn" else "docs/",
+        ),
+    }
 
 
 def historical_language_menus(origin: str) -> dict:
@@ -577,8 +813,10 @@ def historical_language_menus(origin: str) -> dict:
 def allowed_version_paths(manifest: dict) -> set[str]:
     result = {"/", "/cn", "/blog", "/cn/blog", "/community", "/cn/community"}
     for entry in manifest["versions"]:
-        path = f"/{entry['publishPath']}/docs" if entry["publishPath"] else "/docs"
-        result.add(path.rstrip("/") or "/")
+        version_prefix = f"/{entry['publishPath']}" if entry["publishPath"] else ""
+        for language_prefix in ("", "/cn"):
+            path = f"{version_prefix}{language_prefix}/docs"
+            result.add(path.rstrip("/") or "/")
     return result
 
 
@@ -1195,7 +1433,8 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 ),
                 None,
             )
-            expected_options = version_urls(manifest, args.site_origin)
+            language = "cn" if relative.startswith("cn/") else "en"
+            expected_options = version_urls(manifest, args.site_origin, language)
             if switch is None or [
                 (
                     item.get("id"),
@@ -1422,7 +1661,7 @@ def build(args: argparse.Namespace) -> None:
                 "version": entry["id"],
                 "version_menu": "Releases",
                 "version_menu_pagelinks": False,
-                "versions": version_urls(manifest, args.site_origin),
+                "versions": version_urls(manifest, args.site_origin, "en"),
                 "archived_version": bool(entry["archived"]),
                 "url_latest_version": urllib.parse.urljoin(
                     args.site_origin.rstrip("/") + "/", "docs/"
@@ -1431,8 +1670,16 @@ def build(args: argparse.Namespace) -> None:
                 "github_branch": entry["githubBranch"],
             },
         }
-        if entry["archived"]:
-            override["languages"] = historical_language_menus(args.site_origin)
+        language_overrides = (
+            historical_language_menus(args.site_origin)
+            if entry["archived"]
+            else {"en": {}, "cn": {}}
+        )
+        for language in ("en", "cn"):
+            language_overrides[language]["params"] = language_version_params(
+                manifest, args.site_origin, language
+            )
+        override["languages"] = language_overrides
         override_path = assembly / "version-config.json"
         override_path.write_text(
             json.dumps(override, ensure_ascii=False), encoding="utf-8"
@@ -1532,6 +1779,17 @@ def build(args: argparse.Namespace) -> None:
             if entry["archived"]
             else 0
         )
+        subprocess.run(
+            [
+                migration_python,
+                str(ROOT / "dist/validate-site-output.py"),
+                str(output),
+                site_base,
+                "--security-only",
+            ],
+            cwd=assembly,
+            check=True,
+        )
         metadata = dict(entry)
         migration_data = json.loads(migration_report.read_text(encoding="utf-8"))
         metadata.update(
@@ -1608,6 +1866,44 @@ def copy_without_collision(
         shutil.copy2(path, target)
 
 
+def write_error_documents(output: pathlib.Path, seen: set[str]) -> int:
+    """Install localized Apache error documents beside every generated 404 page."""
+    template = (ROOT / ".htaccess").read_text(encoding="utf-8")
+    if template != "ErrorDocument 404 /404.html\n":
+        fail("unexpected root .htaccess contract")
+    count = 0
+    for page in sorted(output.rglob("404.html")):
+        relative = page.relative_to(output).as_posix()
+        target = page.parent / ".htaccess"
+        target_relative = target.relative_to(output).as_posix()
+        if target.exists() or target_relative in seen:
+            fail(f"aggregate error-document collision: {target_relative}")
+        directive = (
+            template if relative == "404.html" else f"ErrorDocument 404 /{relative}\n"
+        )
+        target.write_text(directive, encoding="utf-8")
+        seen.add(target_relative)
+        count += 1
+    if count == 0:
+        fail("aggregate contains no 404 page for ErrorDocument")
+    return count
+
+
+def validate_output_security(output: pathlib.Path, site_origin: str) -> None:
+    """Re-scan a complete output tree before it can be published."""
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "dist/validate-site-output.py"),
+            str(output),
+            site_origin,
+            "--security-only",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+
 def aggregate(args: argparse.Namespace) -> None:
     manifest = load_resolved_manifest(args.resolved_manifest)
     output = prepare_output_directory(args.output, "aggregate output")
@@ -1634,6 +1930,7 @@ def aggregate(args: argparse.Namespace) -> None:
         destination.mkdir(parents=True, exist_ok=True)
         copy_without_collision(source, destination, seen)
         resolved.append(metadata)
+    error_documents = write_error_documents(output, seen)
     write_aggregate_sitemap(output, args.site_origin, manifest)
     expected_sitemaps = sitemap_locations(output / "sitemap.xml")
     for location in expected_sitemaps:
@@ -1667,7 +1964,11 @@ def aggregate(args: argparse.Namespace) -> None:
         + "\n",
         encoding="utf-8",
     )
-    print(f"aggregated {len(resolved)} versions and {len(seen)} files -> {output}")
+    validate_output_security(output, args.site_origin)
+    print(
+        f"aggregated {len(resolved)} versions and {len(seen)} files "
+        f"with {error_documents} error documents -> {output}"
+    )
 
 
 def parser() -> argparse.ArgumentParser:

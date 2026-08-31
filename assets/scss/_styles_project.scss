@@ -1,0 +1,224 @@
+// HugeGraph homepage: preserve the original product copy and isometric brand
+// artwork while using OINK's accessible navigation and landing primitives.
+.td-default main .td-landing-hero.hg-home-hero {
+  min-height: clamp(650px, calc(100vh - 74px), 780px);
+  padding: clamp(58px, 7vh, 82px) 0 24px;
+  align-items: flex-start;
+  background-color: #356fe8;
+  background-image: url('/img/home/hugegraph-hero-1920.jpg');
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  .td-landing-hero__glow {
+    display: none;
+  }
+
+  .td-landing-hero__copy {
+    max-width: 1040px;
+    text-shadow: 0 1px 3px rgba(11, 25, 67, 0.48);
+
+    > .td-landing-hero__title {
+      order: 0;
+    }
+
+    > .td-landing-hero__actions {
+      order: 1;
+      margin: 18px 0 28px;
+    }
+
+    > .td-landing-hero__lead {
+      order: 2;
+    }
+
+    > .td-landing-hero__note {
+      order: 3;
+    }
+  }
+
+  .td-landing-hero__title {
+    margin-bottom: 0;
+    color: #fff;
+    font-size: clamp(2.8rem, 4.6vw, 4.35rem);
+    line-height: 1.04;
+  }
+
+  .td-landing-hero__lead,
+  .td-landing-hero__note {
+    display: block;
+    max-width: 1040px;
+    margin: 0 auto 10px;
+    color: #fff;
+    font-family: var(--bs-body-font-family);
+    font-size: clamp(1rem, 1.35vw, 1.16rem);
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.55;
+    text-wrap: balance;
+
+    a {
+      color: inherit;
+      text-decoration-color: rgba(255, 255, 255, 0.72);
+      text-decoration-line: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.16em;
+
+      &:hover {
+        text-decoration-thickness: 2px;
+      }
+    }
+  }
+
+  .td-landing-hero__note i {
+    display: none;
+  }
+
+  .td-landing-button {
+    min-height: 48px;
+    padding: 13px 25px;
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(20, 17, 73, 0.28);
+    text-shadow: none;
+  }
+
+  .td-landing-button--primary {
+    background: #5930b8;
+
+    &:hover {
+      background: #48239e;
+    }
+  }
+
+  .td-landing-button--ghost {
+    border-color: transparent;
+    background: #a94f00;
+    color: #fff;
+
+    &:hover {
+      border-color: transparent;
+      background: #873f00;
+      color: #fff;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .td-default main .td-landing-hero.hg-home-hero {
+    min-height: 720px;
+    padding-top: 52px;
+    background-position: center bottom;
+    background-image: url('/img/home/hugegraph-hero-960.jpg');
+    background-size: auto 100%;
+
+    .td-landing-hero__copy {
+      max-width: 680px;
+    }
+
+    .td-landing-hero__lead,
+    .td-landing-hero__note {
+      max-width: 680px;
+    }
+  }
+}
+
+@media (max-width: 575.98px) {
+  .td-default main .td-landing-hero.hg-home-hero {
+    min-height: 760px;
+    padding: 38px 0 20px;
+    background-position: 50% bottom;
+    background-size: auto 74%;
+
+    .td-landing-hero__copy {
+      align-items: stretch;
+    }
+
+    .td-landing-hero__title {
+      font-size: clamp(2.25rem, 11vw, 3rem);
+      text-align: center;
+    }
+
+    .td-landing-hero__actions {
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .td-landing-hero__lead,
+    .td-landing-hero__note {
+      font-size: 0.98rem;
+      line-height: 1.48;
+      text-align: start;
+      text-wrap: pretty;
+    }
+  }
+}
+
+@media (forced-colors: active) {
+  .td-default main .td-landing-hero.hg-home-hero {
+    min-height: auto;
+    background-image: none;
+
+    .td-landing-hero__copy {
+      text-shadow: none;
+    }
+
+    .td-landing-hero__title,
+    .td-landing-hero__lead,
+    .td-landing-hero__note {
+      color: CanvasText;
+    }
+
+    .td-landing-button {
+      border: 2px solid ButtonText;
+      box-shadow: none;
+    }
+  }
+}
+
+@media print {
+  .td-home .td-landing-landing {
+    --td-ink: #000;
+    --td-soft: #222;
+    --td-muted: #333;
+    --td-paper: #fff;
+    background: #fff;
+    color: #000;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .td-home .td-landing-section,
+  .td-home .td-landing-card,
+  .td-home .td-landing-final-cta {
+    background: #fff;
+    color: #000;
+    box-shadow: none;
+  }
+
+  .td-default main .td-landing-hero.hg-home-hero {
+    min-height: auto;
+    padding: 1rem 0;
+    background-color: #fff;
+    background-image: none;
+
+    .td-landing-hero__copy {
+      text-shadow: none;
+    }
+
+    .td-landing-hero__title,
+    .td-landing-hero__lead,
+    .td-landing-hero__note {
+      color: #000;
+    }
+
+    .td-landing-button,
+    .td-landing-button--primary,
+    .td-landing-button--ghost {
+      border: 1px solid #000;
+      background: #fff;
+      box-shadow: none;
+      color: #000;
+    }
+  }
+}

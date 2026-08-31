@@ -1,0 +1,31 @@
+{{- $isLanding := eq .Layout "landing" -}}
+{{- $landingSearch := true -}}
+{{- if isset .Site.Params.ui "landing_search" }}{{ $landingSearch = .Site.Params.ui.landing_search }}{{ end -}}
+{{- if and $isLanding (ne (printf "%T" $landingSearch) "bool") -}}
+  {{- warnf "params.ui.landing_search must be a boolean; using true" -}}
+{{- end -}}
+{{- $surface := or .IsHome (eq .Kind "404") (partial "shell/chrome-enabled.html" .) (and $isLanding $landingSearch) -}}
+{{- $format := lower (.Store.Get "tdOutputFormat" | default "html") -}}
+{{- $serveSearch := true -}}
+{{- if isset .Site.Params "offline_search_on_serve" -}}
+  {{- $serveSearch = .Site.Params.offline_search_on_serve -}}
+{{- end -}}
+{{- /* Hugo preserves environment overrides (HUGOxPARAMSxOFFLINE_SEARCH_ON_SERVE)
+       as strings, so normalize only the two documented forms. */ -}}
+{{- if eq (printf "%T" $serveSearch) "string" -}}
+  {{- if eq $serveSearch "true" -}}
+    {{- $serveSearch = true -}}
+  {{- else if eq $serveSearch "false" -}}
+    {{- $serveSearch = false -}}
+  {{- end -}}
+{{- end -}}
+{{- if ne (printf "%T" $serveSearch) "bool" -}}
+  {{- warnf "params.offline_search_on_serve must be a boolean or an exact true/false environment value; using true" -}}
+  {{- $serveSearch = true -}}
+{{- end -}}
+{{- return and
+      .Site.Params.offline_search
+      (or (not hugo.IsServer) $serveSearch)
+      $surface
+      (ne $format "print")
+-}}

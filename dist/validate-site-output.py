@@ -18,11 +18,11 @@
 
 from __future__ import annotations
 
+import argparse
 import html.parser
 import json
 import pathlib
 import re
-import sys
 import urllib.parse
 import xml.etree.ElementTree as ET
 
@@ -61,6 +61,182 @@ HREFLANG_FALLBACKS = {
     "community/maturity/index.html": {"zh-CN": "/cn/"},
 }
 
+# Mirrors the HTTPS image sources currently allowed by the ASF staging CSP:
+# https://*.apache.org, https://apache.org, the two conference sites, and
+# https://*.scarf.sh. The expected site origin is allowed separately as self.
+ASF_CSP_IMAGE_HOSTS = {
+    "apache.org",
+    "www.apachecon.com",
+    "www.communityovercode.org",
+}
+ASF_CSP_IMAGE_SUFFIXES = (".apache.org", ".scarf.sh")
+UNSAFE_AUTHORED_ELEMENTS = {"script", "iframe", "object", "embed"}
+EXTERNAL_ACTIVE_RESOURCE_ATTRIBUTES = {
+    ("script", "src"),
+    ("link", "href"),
+    ("iframe", "src"),
+    ("object", "data"),
+    ("embed", "src"),
+    ("audio", "src"),
+    ("video", "src"),
+    ("track", "src"),
+}
+
+
+def is_inert_oink_diagram_source(tag: str, values: dict[str, str]) -> bool:
+    """Match only OINK's inert Mermaid source carrier, not authored JSON scripts."""
+
+    return (
+        tag == "script"
+        and set(values) == {"type", "data-td-diagram-source"}
+        and values["type"].strip().lower() == "application/json"
+        and values["data-td-diagram-source"] == ""
+    )
+
+
+def srcset_urls(value: str) -> list[str]:
+    """Return URL tokens from an HTML srcset without splitting data-URL commas."""
+
+    urls: list[str] = []
+    position = 0
+    while position < len(value):
+        while position < len(value) and (
+            value[position].isspace() or value[position] == ","
+        ):
+            position += 1
+        if position == len(value):
+            break
+
+        start = position
+        is_data_url = value[start:].lower().startswith("data:")
+        while position < len(value) and not value[position].isspace():
+            if value[position] == "," and not is_data_url:
+                break
+            position += 1
+        token = value[start:position]
+        trailing_commas = len(token) - len(token.rstrip(","))
+        token = token.rstrip(",")
+        if token:
+            urls.append(token)
+        if position < len(value) and value[position] == ",":
+            position += 1
+            continue
+        if trailing_commas:
+            continue
+
+        # Skip width/density descriptors until the next candidate delimiter.
+        while position < len(value) and value[position] != ",":
+            position += 1
+        if position < len(value):
+            position += 1
+    return urls
+
+
+def css_http_resources(value: str) -> list[str]:
+    """Find insecure HTTP resources in CSS declarations or stylesheets."""
+    return [
+        resource
+        for resource in css_resource_urls(value)
+        if urllib.parse.urlsplit(resource).scheme.lower() == "http"
+    ]
+
+
+def css_resource_urls(value: str) -> list[str]:
+    """Extract CSS url() and quoted @import resources in source order."""
+    pattern = re.compile(
+        r"url\(\s*(?P<quote>['\"]?)(?P<url>[^'\"\s)]+)(?P=quote)\s*\)"
+        r"|@import\s+(?P<import_quote>['\"])(?P<import_url>[^'\"]+)"
+        r"(?P=import_quote)",
+        re.IGNORECASE,
+    )
+    return [
+        match.group("url") or match.group("import_url")
+        for match in pattern.finditer(value)
+    ]
+
+
+def css_external_resources(
+    value: str, base_parts: urllib.parse.SplitResult
+) -> list[str]:
+    """Reject HTTPS/protocol-relative CSS resources outside the site origin."""
+    resources = []
+    for resource in css_resource_urls(value):
+        parts = urllib.parse.urlsplit(resource)
+        if (
+            parts.netloc
+            and parts.netloc != base_parts.netloc
+            and parts.scheme.lower() != "http"
+        ):
+            resources.append(resource)
+    return resources
+
+
+def image_url_allowed_by_asf_csp(
+    url: str, base_parts: urllib.parse.SplitResult
+) -> bool:
+    """Return whether an external image URL is loadable by the ASF staging CSP."""
+
+    parts = urllib.parse.urlsplit(url)
+    if not parts.netloc or parts.netloc == base_parts.netloc:
+        return True
+    if parts.scheme.lower() != "https":
+        return False
+    try:
+        if parts.port not in {None, 443}:
+            return False
+    except ValueError:
+        return False
+    hostname = (parts.hostname or "").lower().rstrip(".")
+    return hostname in ASF_CSP_IMAGE_HOSTS or hostname.endswith(ASF_CSP_IMAGE_SUFFIXES)
+
+
+def document_security_errors(
+    parser: DocumentParser, page_name: str, base_parts: urllib.parse.SplitResult
+) -> list[str]:
+    """Return fail-closed resource and authored-markup errors for one page."""
+
+    errors = [
+        f"{page_name}: unsafe content markup: {violation}"
+        for violation in parser.authored_violations
+    ]
+    errors.extend(
+        f"{page_name}: mixed-content CSS resource: {resource}"
+        for resource in parser.inline_css_http_resources
+    )
+    errors.extend(
+        f"{page_name}: external CSS resource is forbidden: {resource}"
+        for resource in css_external_resources(
+            "\n".join(parser.inline_css_sources), base_parts
+        )
+    )
+    errors.extend(
+        f"{page_name}: mixed-content <{tag}> {attribute}: {resource}"
+        for tag, attribute, resource in parser.resources
+        if urllib.parse.urlsplit(resource.strip()).scheme.lower() == "http"
+    )
+    errors.extend(
+        f"{page_name}: external active resource is forbidden <{tag}> "
+        f"{attribute}: {resource}"
+        for tag, attribute, resource in parser.resources
+        if (tag, attribute) in EXTERNAL_ACTIVE_RESOURCE_ATTRIBUTES
+        and urllib.parse.urlsplit(resource.strip()).netloc
+        and urllib.parse.urlsplit(resource.strip()).netloc != base_parts.netloc
+        and urllib.parse.urlsplit(resource.strip()).scheme.lower() != "http"
+    )
+    for tag, attribute, image_url in parser.image_urls:
+        parts = urllib.parse.urlsplit(image_url.strip())
+        if (
+            parts.scheme.lower() != "http"
+            and parts.netloc
+            and not image_url_allowed_by_asf_csp(image_url, base_parts)
+        ):
+            errors.append(
+                f"{page_name}: image URL is outside ASF CSP <{tag}> "
+                f"{attribute}: {image_url}"
+            )
+    return errors
+
+
 class DocumentParser(html.parser.HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -68,33 +244,124 @@ class DocumentParser(html.parser.HTMLParser):
         self.canonical: list[str] = []
         self.hreflang: list[tuple[str, str]] = []
         self.meta: list[dict[str, str]] = []
+        self.resources: list[tuple[str, str, str]] = []
+        self.image_urls: list[tuple[str, str, str]] = []
+        self.authored_violations: list[str] = []
+        self.inline_css_http_resources: list[str] = []
+        self.inline_css_sources: list[str] = []
         self.action_manifest = ""
         self._in_action_manifest = False
+        self._content_depth = 0
+        self._in_style = False
 
-    def handle_starttag(
-        self, tag: str, attrs: list[tuple[str, str | None]]
-    ) -> None:
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        tag = tag.lower()
         values = {key.lower(): value or "" for key, value in attrs}
+        if tag in {"main", "article"}:
+            self._content_depth += 1
+        if self._content_depth:
+            if tag in UNSAFE_AUTHORED_ELEMENTS and not is_inert_oink_diagram_source(
+                tag, values
+            ):
+                self.authored_violations.append(f"authored <{tag}>")
+            for attribute in values:
+                if attribute.startswith("on"):
+                    self.authored_violations.append(
+                        f"authored {attribute} event attribute on <{tag}>"
+                    )
+
         if tag in {"a", "link"} and values.get("href"):
             self.urls.append(("href", values["href"]))
         if tag in {"img", "script", "source"} and values.get("src"):
             self.urls.append(("src", values["src"]))
+        resource_attributes: list[tuple[str, str]] = []
+        if tag in {"img", "script", "source", "video", "audio", "track", "embed"}:
+            if values.get("src"):
+                resource_attributes.append(("src", values["src"]))
+        if tag == "video" and values.get("poster"):
+            resource_attributes.append(("poster", values["poster"]))
+        if tag == "object" and values.get("data"):
+            resource_attributes.append(("data", values["data"]))
+        if tag == "iframe" and values.get("src"):
+            resource_attributes.append(("src", values["src"]))
+        if (
+            tag == "input"
+            and values.get("type", "").lower() == "image"
+            and values.get("src")
+        ):
+            resource_attributes.append(("src", values["src"]))
+        if tag == "image" and values.get("href"):
+            resource_attributes.append(("href", values["href"]))
+        if tag == "link" and values.get("href"):
+            rel = set(values.get("rel", "").lower().split())
+            if rel & {
+                "stylesheet",
+                "preload",
+                "modulepreload",
+                "icon",
+                "apple-touch-icon",
+                "manifest",
+            }:
+                resource_attributes.append(("href", values["href"]))
+        self.resources.extend(
+            (tag, attribute, url) for attribute, url in resource_attributes
+        )
+
+        if tag in {"img", "source"}:
+            for attribute in ("src", "srcset"):
+                if not values.get(attribute):
+                    continue
+                urls = (
+                    srcset_urls(values[attribute])
+                    if attribute == "srcset"
+                    else [values[attribute]]
+                )
+                self.image_urls.extend((tag, attribute, url) for url in urls)
+                if attribute == "srcset":
+                    self.resources.extend((tag, attribute, url) for url in urls)
+        if tag == "video" and values.get("poster"):
+            self.image_urls.append((tag, "poster", values["poster"]))
+        if (
+            tag == "input"
+            and values.get("type", "").lower() == "image"
+            and values.get("src")
+        ):
+            self.image_urls.append((tag, "src", values["src"]))
+        if tag == "image" and values.get("href"):
+            self.image_urls.append((tag, "href", values["href"]))
+
+        if values.get("style"):
+            self.inline_css_sources.append(values["style"])
+            self.inline_css_http_resources.extend(css_http_resources(values["style"]))
         if tag == "link" and values.get("rel", "").lower() == "canonical":
             self.canonical.append(values.get("href", ""))
-        if tag == "link" and values.get("rel", "").lower() == "alternate" and values.get("hreflang"):
+        if (
+            tag == "link"
+            and values.get("rel", "").lower() == "alternate"
+            and values.get("hreflang")
+        ):
             self.hreflang.append((values["hreflang"], values.get("href", "")))
         if tag == "meta":
             self.meta.append(values)
         if tag == "script" and values.get("id") == "td-action-manifest":
             self._in_action_manifest = True
+        if tag == "style":
+            self._in_style = True
 
     def handle_data(self, data: str) -> None:
         if self._in_action_manifest:
             self.action_manifest += data
+        if self._in_style:
+            self.inline_css_sources.append(data)
+            self.inline_css_http_resources.extend(css_http_resources(data))
 
     def handle_endtag(self, tag: str) -> None:
         if tag == "script" and self._in_action_manifest:
             self._in_action_manifest = False
+        if tag == "style":
+            self._in_style = False
+        if tag in {"main", "article"} and self._content_depth:
+            self._content_depth -= 1
 
 
 def output_path(root: pathlib.Path, url_path: str) -> pathlib.Path:
@@ -152,36 +419,50 @@ def refresh_target(parser: DocumentParser) -> str | None:
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
-        print("usage: validate-site-output.py PUBLIC_DIR EXPECTED_BASE_URL")
-        return 2
+    argument_parser = argparse.ArgumentParser(
+        description="Validate a generated HugeGraph documentation artifact."
+    )
+    argument_parser.add_argument("public_dir", type=pathlib.Path)
+    argument_parser.add_argument("expected_base_url")
+    argument_parser.add_argument(
+        "--security-only",
+        action="store_true",
+        help=(
+            "Check rendered active-content, mixed-content, and CSP image "
+            "boundaries only; versioning.py validates isolated URL contracts."
+        ),
+    )
+    args = argument_parser.parse_args()
 
-    root = pathlib.Path(sys.argv[1]).resolve()
-    base = sys.argv[2].rstrip("/") + "/"
+    root = args.public_dir.resolve()
+    base = args.expected_base_url.rstrip("/") + "/"
     base_parts = urllib.parse.urlsplit(base)
     errors: list[str] = []
 
     if not root.is_dir():
         errors.append(f"missing output directory: {root}")
 
-    for relative in REQUIRED_FILES:
-        if not (root / relative).is_file():
-            errors.append(f"missing required output: {relative}")
+    if not args.security_only:
+        for relative in REQUIRED_FILES:
+            if not (root / relative).is_file():
+                errors.append(f"missing required output: {relative}")
 
-    vendor_manifest = root / "licenses/oink/VENDOR.json"
-    if vendor_manifest.is_file():
-        try:
-            vendor = json.loads(vendor_manifest.read_text(encoding="utf-8"))
-            license_files = {
-                license_path
-                for dependency in vendor.get("dependencies", [])
-                for license_path in dependency.get("licenseFiles", [])
-            }
-            for license_path in sorted(license_files):
-                if not (root / "licenses/oink" / license_path).is_file():
-                    errors.append(f"missing OINK dependency license: {license_path}")
-        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-            errors.append(f"cannot parse licenses/oink/VENDOR.json: {exc}")
+        vendor_manifest = root / "licenses/oink/VENDOR.json"
+        if vendor_manifest.is_file():
+            try:
+                vendor = json.loads(vendor_manifest.read_text(encoding="utf-8"))
+                license_files = {
+                    license_path
+                    for dependency in vendor.get("dependencies", [])
+                    for license_path in dependency.get("licenseFiles", [])
+                }
+                for license_path in sorted(license_files):
+                    if not (root / "licenses/oink" / license_path).is_file():
+                        errors.append(
+                            f"missing OINK dependency license: {license_path}"
+                        )
+            except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                errors.append(f"cannot parse licenses/oink/VENDOR.json: {exc}")
 
     html_files = sorted(root.rglob("*.html")) if root.is_dir() else []
     if not html_files:
@@ -196,6 +477,9 @@ def main() -> int:
             continue
 
         page_name = page.relative_to(root).as_posix()
+        errors.extend(document_security_errors(parser, page_name, base_parts))
+        if args.security_only:
+            continue
         try:
             alias_target = refresh_target(parser)
         except ValueError as exc:
@@ -232,7 +516,9 @@ def main() -> int:
             try:
                 alias_output = internal_output_target(root, base_parts, alias_target)
                 if alias_output is None or not alias_output.is_file():
-                    errors.append(f"{page_name}: alias target is absent: {alias_target}")
+                    errors.append(
+                        f"{page_name}: alias target is absent: {alias_target}"
+                    )
             except ValueError as exc:
                 errors.append(f"{page_name}: unsafe alias target {alias_target}: {exc}")
 
@@ -256,7 +542,9 @@ def main() -> int:
                 "en-US": urllib.parse.urljoin(base, english_path.lstrip("/")),
                 "zh-CN": urllib.parse.urljoin(base, chinese_path.lstrip("/")),
             }
-            for language, fallback_path in HREFLANG_FALLBACKS.get(page_name, {}).items():
+            for language, fallback_path in HREFLANG_FALLBACKS.get(
+                page_name, {}
+            ).items():
                 expected_hreflang[language] = urllib.parse.urljoin(
                     base, fallback_path.lstrip("/")
                 )
@@ -290,31 +578,45 @@ def main() -> int:
                             or placements.get("page") is not False
                             or placements.get("palette") is not False
                         ):
-                            errors.append(f"{page_name}: {action_id} is externally enabled")
+                            errors.append(
+                                f"{page_name}: {action_id} is externally enabled"
+                            )
 
             for _attribute, link_url in parser.urls:
                 hostname = (urllib.parse.urlsplit(link_url).hostname or "").lower()
                 if hostname in {"chatgpt.com", "claude.ai", "anthropic.com"}:
-                    errors.append(f"{page_name}: assistant link is externally enabled: {link_url}")
+                    errors.append(
+                        f"{page_name}: assistant link is externally enabled: {link_url}"
+                    )
 
         for attribute, raw_url in parser.urls:
             url = raw_url.strip()
             lower_url = url.lower()
-            if not url or url.startswith("#") or lower_url.startswith(("mailto:", "tel:")):
+            if (
+                not url
+                or url.startswith("#")
+                or lower_url.startswith(("mailto:", "tel:"))
+            ):
                 continue
             if url.startswith("//"):
-                errors.append(f"{page_name}: protocol-relative {attribute} is forbidden: {url}")
+                errors.append(
+                    f"{page_name}: protocol-relative {attribute} is forbidden: {url}"
+                )
                 continue
 
             parts = urllib.parse.urlsplit(url)
             if parts.scheme and parts.scheme.lower() not in {"http", "https"}:
-                errors.append(f"{page_name}: forbidden URL scheme in {attribute}: {url}")
+                errors.append(
+                    f"{page_name}: forbidden URL scheme in {attribute}: {url}"
+                )
                 continue
             if parts.netloc and parts.netloc != base_parts.netloc:
                 continue
             resolved_path = parts.path
             if not parts.netloc and not parts.path.startswith("/"):
-                resolved_path = urllib.parse.urljoin(page_url_path(root, page), parts.path)
+                resolved_path = urllib.parse.urljoin(
+                    page_url_path(root, page), parts.path
+                )
             if resolved_path.startswith("/versions/"):
                 errors.append(f"{page_name}: unpublished version URL: {url}")
                 continue
@@ -330,12 +632,48 @@ def main() -> int:
                     f"{target.relative_to(root)}"
                 )
 
-    client_go = (root / "client-go/index.html")
+    for stylesheet in sorted(root.rglob("*.css")) if root.is_dir() else []:
+        try:
+            stylesheet_text = stylesheet.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as exc:
+            errors.append(f"cannot parse {stylesheet.relative_to(root)}: {exc}")
+            continue
+        for resource in css_http_resources(stylesheet_text):
+            errors.append(
+                f"{stylesheet.relative_to(root)}: mixed-content CSS resource: {resource}"
+            )
+        for resource in css_external_resources(stylesheet_text, base_parts):
+            errors.append(
+                f"{stylesheet.relative_to(root)}: external CSS resource is forbidden: "
+                f"{resource}"
+            )
+
+    if args.security_only:
+        if errors:
+            print("Generated site security validation failed:")
+            for error in errors:
+                print(f"- {error}")
+            return 1
+        print(
+            f"Generated site security validation passed: {len(html_files)} HTML "
+            f"files, base {base}"
+        )
+        return 0
+
+    client_go = root / "client-go/index.html"
     if client_go.is_file():
         parser = DocumentParser()
         parser.feed(client_go.read_text(encoding="utf-8"))
-        go_import = [item.get("content", "") for item in parser.meta if item.get("name") == "go-import"]
-        go_source = [item.get("content", "") for item in parser.meta if item.get("name") == "go-source"]
+        go_import = [
+            item.get("content", "")
+            for item in parser.meta
+            if item.get("name") == "go-import"
+        ]
+        go_source = [
+            item.get("content", "")
+            for item in parser.meta
+            if item.get("name") == "go-source"
+        ]
         if go_import != [
             "hugegraph.apache.org/client-go git https://github.com/apache/hugegraph-toolchain.git"
         ]:
@@ -347,7 +685,10 @@ def main() -> int:
         )
         if go_source != [expected_go_source]:
             errors.append("client-go/index.html: go-source metadata changed")
-        if refresh_target(parser) != "https://pkg.go.dev/hugegraph.apache.org/client-go":
+        if (
+            refresh_target(parser)
+            != "https://pkg.go.dev/hugegraph.apache.org/client-go"
+        ):
             errors.append("client-go/index.html: refresh target changed")
         client_links = [url for attribute, url in parser.urls if attribute == "href"]
         if client_links != ["https://pkg.go.dev/hugegraph.apache.org/client-go"]:
@@ -359,7 +700,9 @@ def main() -> int:
             continue
         try:
             locations = [
-                node.text or "" for node in ET.parse(sitemap).iter() if node.tag.endswith("loc")
+                node.text or ""
+                for node in ET.parse(sitemap).iter()
+                if node.tag.endswith("loc")
             ]
         except (ET.ParseError, OSError) as exc:
             errors.append(f"{sitemap_name}: cannot parse sitemap: {exc}")
@@ -370,10 +713,16 @@ def main() -> int:
             if not location.startswith(base):
                 errors.append(f"{sitemap_name}: location escapes base: {location}")
                 continue
-            if sitemap_name == "cn/sitemap.xml" and not urllib.parse.urlsplit(location).path.startswith("/cn/"):
+            if sitemap_name == "cn/sitemap.xml" and not urllib.parse.urlsplit(
+                location
+            ).path.startswith("/cn/"):
                 errors.append(f"{sitemap_name}: non-Chinese location: {location}")
-            if sitemap_name == "en/sitemap.xml" and urllib.parse.urlsplit(location).path.startswith("/cn/"):
-                errors.append(f"{sitemap_name}: Chinese location in English sitemap: {location}")
+            if sitemap_name == "en/sitemap.xml" and urllib.parse.urlsplit(
+                location
+            ).path.startswith("/cn/"):
+                errors.append(
+                    f"{sitemap_name}: Chinese location in English sitemap: {location}"
+                )
             target = internal_output_target(root, base_parts, location)
             if target is not None and not target.is_file():
                 errors.append(f"{sitemap_name}: missing location output: {location}")
@@ -414,7 +763,9 @@ def main() -> int:
             continue
         if nav.get("baseURL") != base or nav.get("language") != language:
             errors.append(f"{nav_name}: baseURL or language changed")
-        expected_root_url = base if language == "en" else urllib.parse.urljoin(base, "cn/")
+        expected_root_url = (
+            base if language == "en" else urllib.parse.urljoin(base, "cn/")
+        )
         if nav.get("root", {}).get("url") != expected_root_url:
             errors.append(f"{nav_name}: root URL is not language-scoped")
         pending = [nav]

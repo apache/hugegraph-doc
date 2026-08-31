@@ -1,3 +1,8 @@
+---
+title: "旧版 GitBook 目录"
+draft: true
+---
+
 # HugeGraph Docs
 
 * [Download](download/download)

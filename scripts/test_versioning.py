@@ -17,7 +17,7 @@ import versioning
 
 
 ORIGIN = "https://hugegraph.apache.org/"
-STAGING_ORIGIN = "https://hugegraph.staged.apache.org/"
+STAGING_ORIGIN = "https://hugegraph-oink.staged.apache.org/"
 PUBLISH_PATH = "versions/1.7"
 ALLOWED_PATHS = {
     "/docs",
@@ -666,7 +666,7 @@ class VersionUrlTest(unittest.TestCase):
                         publish_path=PUBLISH_PATH,
                         allowed_paths=ALLOWED_PATHS,
                     ),
-                    "https://hugegraph.staged.apache.org/versions/1.7/docs/config/",
+                    "https://hugegraph-oink.staged.apache.org/versions/1.7/docs/config/",
                 )
         self.assertEqual(
             versioning.rewrite_internal_url(
@@ -675,18 +675,18 @@ class VersionUrlTest(unittest.TestCase):
                 publish_path="",
                 allowed_paths=ALLOWED_PATHS,
             ),
-            "https://hugegraph.staged.apache.org/blog/",
+            "https://hugegraph-oink.staged.apache.org/blog/",
         )
         for unsafe in (
             "https://hugegraph.apache.org:444/docs/config/",
-            "https://evil@hugegraph.staged.apache.org/docs/",
-            "https://@hugegraph.staged.apache.org/docs/",
-            "https://hugegraph.staged.apache.org\\docs/",
-            "https://hugegraph.staged.apache.org。/docs/",
+            "https://evil@hugegraph-oink.staged.apache.org/docs/",
+            "https://@hugegraph-oink.staged.apache.org/docs/",
+            "https://hugegraph-oink.staged.apache.org\\docs/",
+            "https://hugegraph-oink.staged.apache.org。/docs/",
             "https://hugegraph.apache.org%2e/docs/",
             "https://ｈｕｇｅｇｒａｐｈ.apache.org/docs/",
-            r"https:\hugegraph.staged.apache.org\docs/",
-            r"https:/\hugegraph.staged.apache.org\docs/",
+            r"https:\hugegraph-oink.staged.apache.org\docs/",
+            r"https:/\hugegraph-oink.staged.apache.org\docs/",
         ):
             with (
                 self.subTest(unsafe=unsafe),
@@ -1010,6 +1010,8 @@ class VersionUrlTest(unittest.TestCase):
                 artifact_prefix="",
                 site_origin=ORIGIN,
                 output=temp / "aggregate",
+                asf_profile=None,
+                asf_whoami=None,
             )
             with self.assertRaises(SystemExit):
                 versioning.aggregate(args)
@@ -1028,6 +1030,8 @@ class VersionUrlTest(unittest.TestCase):
                 artifact_prefix="",
                 site_origin=ORIGIN,
                 output=output,
+                asf_profile="oink",
+                asf_whoami="asf-staging-oink",
             )
 
             def assert_complete_aggregate(path: Path, origin: str) -> None:
@@ -1035,12 +1039,9 @@ class VersionUrlTest(unittest.TestCase):
                 self.assertEqual(origin, ORIGIN)
                 self.assertTrue((path / ".asf.yaml").is_file())
                 asf_text = (path / ".asf.yaml").read_text(encoding="utf-8")
-                self.assertEqual(
-                    asf_text,
-                    (versioning.ROOT / ".asf.yaml").read_text(encoding="utf-8"),
-                )
                 self.assertIn(
-                    "staging:\n  profile: ~\n  whoami: asf-staging\n", asf_text
+                    "staging:\n  profile: oink\n  whoami: asf-staging-oink\n",
+                    asf_text,
                 )
                 self.assertTrue((path / "build-metadata/versions.json").is_file())
 

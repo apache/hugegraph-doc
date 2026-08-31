@@ -22,7 +22,7 @@ assert SPEC and SPEC.loader
 VALIDATOR = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(VALIDATOR)
 
-BASE = urllib.parse.urlsplit("https://hugegraph.staged.apache.org/")
+BASE = urllib.parse.urlsplit("https://hugegraph-oink.staged.apache.org/")
 
 
 def parse(fragment: str):
@@ -339,7 +339,7 @@ class SiteOutputSecurityTest(unittest.TestCase):
     def test_asf_csp_image_sources_are_allowed(self) -> None:
         allowed = [
             "/img/local.svg",
-            "https://hugegraph.staged.apache.org/img/self.svg",
+            "https://hugegraph-oink.staged.apache.org/img/self.svg",
             "https://apache.org/img/foundation.svg",
             "https://www.apache.org/img/logo.svg",
             "https://community.apache.org/img/community.svg",

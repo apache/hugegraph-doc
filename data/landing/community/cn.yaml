@@ -22,7 +22,7 @@ sections:
             - [快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/) — 通过简单配置开始 HugeGraph 之旅。
             - [下载](/cn/docs/download/download/) — 获取最新的 Apache HugeGraph 版本。
             - [配置文档](/cn/docs/config/) — 根据使用场景配置 HugeGraph。
-            - [微信公众号](https://github.com/apache/hugegraph#contact-us) — 关注社区并获取最新动态。
+            - [微信公众号](https://github.com/apache/hugegraph#community) — 关注社区并获取最新动态。
         - title: 开发与贡献
           icon: fa-solid fa-code
           desc: |

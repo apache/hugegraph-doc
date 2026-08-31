@@ -22,7 +22,7 @@ sections:
             - [Quick start](/docs/quickstart/hugegraph/hugegraph-server/) — begin your HugeGraph journey with a simple setup.
             - [Download](/docs/download/download/) — get the latest Apache HugeGraph release.
             - [Configuration](/docs/config/) — learn how to configure HugeGraph for your use case.
-            - [WeChat](https://github.com/apache/hugegraph#contact-us) — follow the community and get the latest news.
+            - [WeChat](https://github.com/apache/hugegraph#community) — follow the community and get the latest news.
         - title: Develop and contribute
           icon: fa-solid fa-code
           desc: |

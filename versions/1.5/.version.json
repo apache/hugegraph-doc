@@ -7,7 +7,7 @@
     "changed": 5,
     "files": 181,
     "findings": 0,
-    "knownFixes": 21,
+    "knownFixes": 124,
     "residual": 0
   },
   "name": "1.5",
@@ -15,11 +15,11 @@
   "ref": "release-1.5.0",
   "sha": "34bbc87147f60db49888b2ce718cc051973c943e",
   "urlScoping": {
-    "files": 369,
+    "files": 365,
     "historicalHomeRedirects": 2,
-    "manifests": 201,
+    "manifests": 199,
     "searchFingerprints": 2,
-    "searchRefs": 137,
-    "urls": 1767
+    "searchRefs": 133,
+    "urls": 1718
   }
 }

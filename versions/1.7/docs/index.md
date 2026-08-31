@@ -20,5 +20,4 @@ Section pages:
 - [PERFORMANCE](/versions/1.7/docs/performance/)
 - [Contribution Guidelines](/versions/1.7/docs/contribution-guidelines/)
 - [CHANGELOGS](/versions/1.7/docs/changelog/)
-- [](/versions/1.7/docs/cla/)
-- [](/versions/1.7/docs/summary/)
+- [Contributor Agreement](/versions/1.7/docs/cla/)

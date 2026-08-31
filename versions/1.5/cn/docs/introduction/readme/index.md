@@ -68,4 +68,4 @@ HugeGraph 支持多用户并行操作，用户可输入 Gremlin 查询语句，�
 - SEC 反馈： [security@hugegraph.apache.org](mailto:security@hugegraph.apache.org) (报告安全相关问题)
 - 微信公众号：Apache HugeGraph, 欢迎扫描下方二维码加入我们！
 
- <img src="https://github.com/apache/hugegraph-doc/blob/master/assets/images/wechat.png?raw=true" alt="QR png" width="300"/>
+ ![Apache HugeGraph 微信公众号二维码](/versions/1.5/images/docs/community/wechat.png){width="300" height="94"}

@@ -1,4 +1,4 @@
-# 
+# Contributor Agreement
 
 LLMS index: [llms.txt](/llms.txt)
 

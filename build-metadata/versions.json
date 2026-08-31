@@ -16,14 +16,14 @@
       "name": "latest",
       "publishPath": "",
       "ref": "master",
-      "sha": "4d43cf3231b5655f6e3b9224da696cd0280df1f3",
+      "sha": "352953fa4546c63980a78ed1bca222f38adbf50a",
       "urlScoping": {
-        "files": 279,
+        "files": 277,
         "historicalHomeRedirects": 0,
-        "manifests": 260,
+        "manifests": 258,
         "searchFingerprints": 2,
         "searchRefs": 0,
-        "urls": 154
+        "urls": 144
       }
     },
     {
@@ -35,7 +35,7 @@
         "changed": 4,
         "files": 187,
         "findings": 0,
-        "knownFixes": 21,
+        "knownFixes": 125,
         "residual": 0
       },
       "name": "1.7",
@@ -43,12 +43,12 @@
       "ref": "release-1.7.0",
       "sha": "a036f550bf412ea2950271390888d63bbffef6ba",
       "urlScoping": {
-        "files": 385,
+        "files": 381,
         "historicalHomeRedirects": 2,
-        "manifests": 207,
+        "manifests": 205,
         "searchFingerprints": 2,
-        "searchRefs": 149,
-        "urls": 1861
+        "searchRefs": 145,
+        "urls": 1812
       }
     },
     {
@@ -60,7 +60,7 @@
         "changed": 5,
         "files": 181,
         "findings": 0,
-        "knownFixes": 21,
+        "knownFixes": 124,
         "residual": 0
       },
       "name": "1.5",
@@ -68,12 +68,12 @@
       "ref": "release-1.5.0",
       "sha": "34bbc87147f60db49888b2ce718cc051973c943e",
       "urlScoping": {
-        "files": 369,
+        "files": 365,
         "historicalHomeRedirects": 2,
-        "manifests": 201,
+        "manifests": 199,
         "searchFingerprints": 2,
-        "searchRefs": 137,
-        "urls": 1767
+        "searchRefs": 133,
+        "urls": 1718
       }
     }
   ]

@@ -4,7 +4,7 @@ LLMS index: [llms.txt](/versions/1.5/llms.txt)
 
 ---
 
-### 1 HugeGraph-Server Overview
+## 1 HugeGraph-Server Overview
 
 `HugeGraph-Server` is the core part of the HugeGraph Project, contains submodules such as graph-core, backend, API.
 
@@ -15,9 +15,9 @@ The Core Module is an implementation of the Tinkerpop interface; The Backend mod
 > which can be distinguished as follows: `HugeGraph-Server` represents the code of server-related 
 > components, `HugeGraphServer` represents the service process.
 
-### 2 Dependency for Building/Running
+## 2 Dependency for Building/Running
 
-#### 2.1 Install Java 11 (JDK 11)
+### 2.1 Install Java 11 (JDK 11)
 
 You need to use Java 11 to run `HugeGraph-Server` (compatible with Java 8 before 1.5.0, but not recommended to use), 
 and configure by yourself.
@@ -26,7 +26,7 @@ and configure by yourself.
 
 > Note: Using Java8 will lose some security guarantees, we recommend using Java11 in production
 
-### 3 Deploy
+## 3 Deploy
 
 There are four ways to deploy HugeGraph-Server components:
 
@@ -37,7 +37,7 @@ There are four ways to deploy HugeGraph-Server components:
 
 **Note:** If it's exposed to the public network, **must enable** [Auth authentication](/versions/1.5/docs/config/config-authentication/) to ensure safety (so as the legacy version).
 
-#### 3.1 Use Docker container (Convenient for Test/Dev)
+### 3.1 Use Docker container (Convenient for Test/Dev)
 
 <!-- 3.1 is linked by another place. if change 3.1's title, please check -->
 You can refer to [Docker deployment guide](https://hub.docker.com/r/hugegraph/hugegraph).
@@ -77,7 +77,7 @@ services:
 > 
 > 2. Recommend to use `release tag`(like `1.5.0`/`1.5.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
 
-#### 3.2 Download the binary tar tarball
+### 3.2 Download the binary tar tarball
 
 You could download the binary tarball from the download page of the ASF site like this:
 ```bash
@@ -90,7 +90,7 @@ shasum -a 512 apache-hugegraph-incubating-{version}.tar.gz
 curl https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz.sha512
 ```
 
-#### 3.3 Source code compilation
+### 3.3 Source code compilation
 Please ensure that the wget command is installed before compiling the source code
 
 We could get HugeGraph **source code** in 2 ways: (So as the other HugeGraph repos/modules)
@@ -172,14 +172,14 @@ After successful execution, `*hugegraph-*.tar.gz` files will be generated in the
 >
 > `{hugegraph-version}` indicates the version of HugeGraphServer and HugeGraphStudio to be deployed, users can view the `conf/version-mapping.yaml` file for version information, `{install-path}` specify the installation directory of HugeGraphServer and HugeGraphStudio, `{download-path-prefix}` optional, specify the download address of HugeGraphServer and HugeGraphStudio tarball, use default download URL if not provided, for example, to start HugeGraph-Server and HugeGraphStudio version 0.6, write the above command as `bin/hugegraph deploy -v 0.6 -p services`.
 
-### 4 Config
+## 4 Config
 
 If you need to quickly start HugeGraph just for testing, then you only need to modify a few configuration items (see next section).
 For detailed configuration introduction, please refer to [configuration document](/versions/1.5/docs/config/config-guide) and [introduction to configuration items](/versions/1.5/docs/config/config-option)
 
-### 5 Startup
+## 5 Startup
 
-#### 5.1 Use a startup script to startup
+### 5.1 Use a startup script to startup
 
 The startup is divided into "first startup" and "non-first startup." This distinction is because the back-end database needs to be initialized before the first startup, and then the service is started.
 after the service is stopped artificially, or when the service needs to be started again for other reasons, because the backend database is persistent, you can start the service directly.
@@ -193,7 +193,7 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 
 Follow the [Server Authentication Configuration](/versions/1.5/docs/config/config-authentication/) before you start Server later.
 
-##### 5.1.1 Distributed Storage (HStore)
+#### 5.1.1 Distributed Storage (HStore)
 
 > [!DETAILS]- Click to expand/collapse Distributed Storage configuration and startup method
 > > Distributed storage is a new feature introduced after HugeGraph 1.5.0, which implements distributed data storage and computation based on HugeGraph-PD and HugeGraph-Store components.
@@ -286,7 +286,7 @@ Follow the [Server Authentication Configuration](/versions/1.5/docs/config/confi
 > bin/stop-hugegraph.sh
 > ```
 
-##### 5.1.2 Memory
+#### 5.1.2 Memory
 
 > [!DETAILS]- Click to expand/collapse Memory configuration and startup methods
 > Update hugegraph.properties
@@ -308,7 +308,7 @@ Follow the [Server Authentication Configuration](/versions/1.5/docs/config/confi
 >
 > The prompted url is the same as the restserver.url configured in rest-server.properties
 
-##### 5.1.3 RocksDB
+#### 5.1.3 RocksDB
 
 > [!DETAILS]- Click to expand/collapse RocksDB configuration and startup methods
 > > RocksDB is an embedded database that does not require manual installation and deployment. GCC version >= 4.3.0 (GLIBCXX_3.4.10) is required. If not, GCC needs to be upgraded in advance
@@ -337,7 +337,7 @@ Follow the [Server Authentication Configuration](/versions/1.5/docs/config/confi
 > Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 > ```
 
-##### 5.1.4 Cassandra
+#### 5.1.4 Cassandra
 
 > [!DETAILS]- Click to expand/collapse Cassandra configuration and startup methods
 > > users need to install Cassandra by themselves, requiring version 3.0 or above, [download link](http://cassandra.apache.org/download/)
@@ -393,7 +393,7 @@ Follow the [Server Authentication Configuration](/versions/1.5/docs/config/confi
 > Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 > ```
 
-##### 5.1.5 ScyllaDB
+#### 5.1.5 ScyllaDB
 
 > [!DETAILS]- Click to expand/collapse ScyllaDB configuration and startup methods
 > > users need to install ScyllaDB by themselves, version 2.1 or above is recommended, [download link](https://docs.scylladb.com/getting-started/)
@@ -433,7 +433,7 @@ Follow the [Server Authentication Configuration](/versions/1.5/docs/config/confi
 > Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 > ```
 
-##### 5.1.6 HBase
+#### 5.1.6 HBase
 
 > [!DETAILS]- Click to expand/collapse HBase configuration and startup methods
 > > users need to install HBase by themselves, requiring version 2.0 or above,[download link](https://hbase.apache.org/downloads.html)
@@ -471,7 +471,7 @@ Follow the [Server Authentication Configuration](/versions/1.5/docs/config/confi
 >
 > > for more other backend configurations, please refer to[introduction to configuration options](/versions/1.5/docs/config/config-option)
 
-##### 5.1.7 Create an example graph when startup
+#### 5.1.7 Create an example graph when startup
 
 Carry the `-p true` arguments when starting the script, which indicates `preload`, to create a sample graph.
 
@@ -492,11 +492,11 @@ And use the RESTful API to request `HugeGraphServer` and get the following resul
 This indicates the successful creation of the sample graph.
 
 
-#### 5.2 Use Docker to startup
+### 5.2 Use Docker to startup
 
 In [3.3 Use Docker container](#33-use-docker-container), we have introduced how to use docker to deploy `hugegraph-server`. `server` can also preload an example graph by setting the parameter.
 
-##### 5.2.1 Uses Cassandra as storage
+#### 5.2.1 Uses Cassandra as storage
 
 > [!DETAILS]- Click to expand/collapse Cassandra configuration and startup methods
 > When using Docker, we can use Cassandra as the backend storage. We highly recommend using docker-compose directly to manage both the server and Cassandra.
@@ -556,7 +556,7 @@ In [3.3 Use Docker container](#33-use-docker-container), we have introduced how 
 >
 > The rest of the configurations can be referenced under [4 config](#4-config)
 
-##### 5.2.2 Create an example graph when starting a server
+#### 5.2.2 Create an example graph when starting a server
 
 Set the environment variable `PRELOAD=true` when starting Docker to load data during the execution of the startup script.
 
@@ -594,9 +594,9 @@ And use the RESTful API to request `HugeGraphServer` and get the following resul
 This indicates the successful creation of the sample graph.
 
 
-### 6. Access server
+## 6. Access server
 
-#### 6.1 Service startup status check
+### 6.1 Service startup status check
 
 Use `jps` to see a service process
 
@@ -613,7 +613,7 @@ echo `curl -o /dev/null -s -w %{http_code} "http://localhost:8080/graphs/hugegra
 
 Return 200, which means the server starts normally.
 
-#### 6.2 Request Server
+### 6.2 Request Server
 
 The RESTful API of HugeGraphServer includes various types of resources, typically including graph, schema, gremlin, traverser and task.
 
@@ -623,7 +623,7 @@ The RESTful API of HugeGraphServer includes various types of resources, typicall
 - `traverser` contains various advanced queries including shortest paths, intersections, N-step reachable neighbors, etc.
 - `task` contains query and delete with asynchronous tasks
 
-##### 6.2.1 Get vertices and its related properties in `hugegraph`
+#### 6.2.1 Get vertices and its related properties in `hugegraph`
 
 ```bash
 curl http://localhost:8080/graphs/hugegraph/graph/vertices 
@@ -721,13 +721,13 @@ Currently, HugeGraph supports setting authentication information in two forms: B
   <img src="/versions/1.5/docs/images/images-server/swagger-ui-set-auth-example.png" alt="image">
 </div>
 
-### 7 Stop Server
+## 7 Stop Server
 
 ```bash
 $cd *hugegraph-${version}
 $bin/stop-hugegraph.sh
 ```
 
-### 8 Debug Server with IntelliJ IDEA
+## 8 Debug Server with IntelliJ IDEA
 
 Please refer to [Setup Server in IDEA](/versions/1.5/docs/contribution-guidelines/hugegraph-server-idea-setup)

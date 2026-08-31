@@ -68,5 +68,4 @@ Section pages:
 - [PERFORMANCE](/docs/performance/)
 - [Contribution Guidelines](/docs/contribution-guidelines/)
 - [CHANGELOGS](/docs/changelog/)
-- [](/docs/cla/)
-- [](/docs/summary/)
+- [Contributor Agreement](/docs/cla/)

@@ -4,7 +4,7 @@ LLMS 索引： [llms.txt](/versions/1.5/cn/llms.txt)
 
 ---
 
-### 1 HugeGraph-Server 概述
+## 1 HugeGraph-Server 概述
 
 HugeGraph-Server 是 HugeGraph 项目的核心部分，包含 graph-core、backend、API 等子模块。
 
@@ -13,9 +13,9 @@ Core 模块是 Tinkerpop 接口的实现，Backend 模块用于管理数据存�
 > 文档中会出现 `HugeGraph-Server` 及 `HugeGraphServer` 这两种写法，其他组件也类似。
 > 这两种写法含义上并明显差异，可以这么区分：`HugeGraph-Server` 表示服务端相关组件代码，`HugeGraphServer` 表示服务进程。
 
-### 2 依赖
+## 2 依赖
 
-#### 2.1 安装 Java 11 (JDK 11)
+### 2.1 安装 Java 11 (JDK 11)
 
 请优先考虑在 Java 11 的环境上启动 `HugeGraph-Server`(在 1.5.0 版前，会保留对 Java 8 的基本兼容)
 
@@ -23,7 +23,7 @@ Core 模块是 Tinkerpop 接口的实现，Backend 模块用于管理数据存�
 
 > 注：使用 Java 8 启动 HugeGraph-Server 会失去一些**安全性**的保障，也会降低性能相关指标 (请尽早升级/迁移)
 
-### 3 部署
+## 3 部署
 
 有四种方式可以部署 HugeGraph-Server 组件：
 
@@ -34,7 +34,7 @@ Core 模块是 Tinkerpop 接口的实现，Backend 模块用于管理数据存�
 
 **注意** 生产或对外网暴露访问的环境必须使用 Java 11 并开启 [Auth 权限认证](/versions/1.5/cn/docs/config/config-authentication/), 否则会有安全隐患。
 
-#### 3.1 使用 Docker 容器 (便于**测试**)
+### 3.1 使用 Docker 容器 (便于**测试**)
 <!-- 3.1 is linked by another place. if change 3.1's title, please check -->
 
 可参考 [Docker 部署方式](https://github.com/apache/incubator-hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/README.md)。
@@ -76,7 +76,7 @@ services:
 >
 > 2. 推荐使用 `release tag` (如 `1.5.0/1.x.0`) 以获取稳定版。使用 `latest` tag 可以使用开发中的最新功能。
 
-#### 3.2 下载 tar 包
+### 3.2 下载 tar 包
 
 ```bash
 # use the latest version, here is 1.5.0 for example
@@ -84,7 +84,7 @@ wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph
 tar zxf *hugegraph*.tar.gz
 ```
 
-#### 3.3 源码编译
+### 3.3 源码编译
 
 源码编译前请确保本机有安装 `wget/curl` 命令
 
@@ -153,15 +153,15 @@ mvn package -DskipTests
 >
 > `{hugegraph-version}` 表示要部署的 HugeGraphServer 及 HugeGraphStudio 的版本，用户可查看 `conf/version-mapping.yaml` 文件获取版本信息，`{install-path}` 指定 HugeGraphServer 及 HugeGraphStudio 的安装目录，`{download-path-prefix}` 可选，指定 HugeGraphServer 及 HugeGraphStudio tar 包的下载地址，不提供时使用默认下载地址，比如要启动 0.6 版本的 HugeGraph-Server 及 HugeGraphStudio 将上述命令写为 `bin/hugegraph deploy -v 0.6 -p services` 即可。
 
-### 4 配置
+## 4 配置
 
 如果需要快速启动 HugeGraph 仅用于测试，那么只需要进行少数几个配置项的修改即可（见下一节）。
 
 详细的配置介绍请参考[配置文档](/versions/1.5/docs/config/config-guide)及[配置项介绍](/versions/1.5/docs/config/config-option)。
 
-### 5 启动
+## 5 启动
 
-#### 5.1 使用启动脚本启动
+### 5.1 使用启动脚本启动
 
 启动分为"首次启动"和"非首次启动"，这么区分是因为在第一次启动前需要初始化后端数据库，然后启动服务。
 
@@ -175,7 +175,7 @@ HugeGraphServer 启动时会连接后端存储并尝试检查后端存储版本�
 
 **注:** 如果想要开启 HugeGraph 权限系统，在启动 Server 之前应按照 [Server 鉴权配置](/versions/1.5/cn/docs/config/config-authentication/) 进行配置。(尤其是生产环境/外网环境须开启)
 
-##### 5.1.1 分布式存储 (HStore)
+#### 5.1.1 分布式存储 (HStore)
 
 > [!DETAILS]- 点击展开/折叠 分布式存储 配置及启动方法
 > > 分布式存储是 HugeGraph 1.5.0 之后推出的新特性，它基于 HugeGraph-PD 和 HugeGraph-Store 组件实现了分布式的数据存储和计算。
@@ -268,7 +268,7 @@ HugeGraphServer 启动时会连接后端存储并尝试检查后端存储版本�
 > bin/stop-hugegraph.sh
 > ```
 
-##### 5.1.2 RocksDB
+#### 5.1.2 RocksDB
 
 > [!DETAILS]- 点击展开/折叠 RocksDB 配置及启动方法
 > > RocksDB 是一个嵌入式的数据库，不需要手动安装部署，要求 GCC 版本 >= 4.3.0（GLIBCXX_3.4.10），如不满足，需要提前升级 GCC
@@ -299,7 +299,7 @@ HugeGraphServer 启动时会连接后端存储并尝试检查后端存储版本�
 >
 > 提示的 url 与 `rest-server.properties` 中配置的 `restserver.url` 一致
 
-##### 5.1.3 HBase
+#### 5.1.3 HBase
 
 > [!DETAILS]- 点击展开/折叠 HBase 配置及启动方法
 > > 用户需自行安装 HBase，要求版本 2.0 以上，[下载地址](https://hbase.apache.org/downloads.html)
@@ -337,7 +337,7 @@ HugeGraphServer 启动时会连接后端存储并尝试检查后端存储版本�
 >
 > > 更多其它后端配置可参考[配置项介绍](/versions/1.5/docs/config/config-option)
 
-##### 5.1.4 MySQL
+#### 5.1.4 MySQL
 
 > [!DETAILS]- 点击展开/折叠 MySQL 配置及启动方法
 > > 由于 MySQL 是在 GPL 协议下，与 Apache 协议不兼容，用户需自行安装 MySQL，[下载地址](https://dev.mysql.com/downloads/mysql/)
@@ -377,7 +377,7 @@ HugeGraphServer 启动时会连接后端存储并尝试检查后端存储版本�
 > Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 > ```
 
-##### 5.1.5 Cassandra
+#### 5.1.5 Cassandra
 
 > [!DETAILS]- 点击展开/折叠 Cassandra 配置及启动方法
 > > 用户需自行安装 Cassandra，要求版本 3.0 以上，[下载地址](http://cassandra.apache.org/download/)
@@ -432,7 +432,7 @@ HugeGraphServer 启动时会连接后端存储并尝试检查后端存储版本�
 > Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 > ```
 
-##### 5.1.6 Memory
+#### 5.1.6 Memory
 
 > [!DETAILS]- 点击展开/折叠 Memory 配置及启动方法
 > 修改 hugegraph.properties
@@ -454,7 +454,7 @@ HugeGraphServer 启动时会连接后端存储并尝试检查后端存储版本�
 >
 > 提示的 url 与 rest-server.properties 中配置的 restserver.url 一致
 
-##### 5.1.7 ScyllaDB
+#### 5.1.7 ScyllaDB
 
 > [!DETAILS]- 点击展开/折叠 ScyllaDB 配置及启动方法
 > > 用户需自行安装 ScyllaDB，推荐版本 2.1 以上，[下载地址](https://docs.scylladb.com/getting-started/)
@@ -494,7 +494,7 @@ HugeGraphServer 启动时会连接后端存储并尝试检查后端存储版本�
 > Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 > ```
 
-##### 5.1.8 启动 server 的时候创建示例图
+#### 5.1.8 启动 server 的时候创建示例图
 
 在脚本启动时候携带 `-p true`参数，表示 preload, 即创建示例图图
 
@@ -514,11 +514,11 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 
 代表创建示例图成功。
 
-#### 5.2 使用 Docker
+### 5.2 使用 Docker
 
 在 [3.3 使用 Docker 容器](#33-使用-docker-容器)中，我们已经介绍了如何使用 `docker` 部署 `hugegraph-server`, 我们还可以使用其他的后端存储或者设置参数在 sever 启动的时候加载样例图
 
-##### 5.2.1 使用 Cassandra 作为后端
+#### 5.2.1 使用 Cassandra 作为后端
 
 > [!DETAILS]- 点击展开/折叠 Cassandra 配置及启动方法
 > 在使用 Docker 的时候，我们可以使用 Cassandra 作为后端存储。我们更加推荐直接使用 docker-compose 来对于 server 以及 Cassandra 进行统一管理
@@ -578,7 +578,7 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 >
 > 其他配置可以参照 [4 配置](#4-配置)
 
-##### 5.2.2 启动 server 的时候创建示例图
+#### 5.2.2 启动 server 的时候创建示例图
 
 在 docker 启动的时候设置环境变量 `PRELOAD=true`, 从而实现启动脚本的时候加载数据。
 
@@ -618,9 +618,9 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 代表创建示例图成功。
 
 
-### 6 访问 Server
+## 6 访问 Server
 
-#### 6.1 服务启动状态校验
+### 6.1 服务启动状态校验
 
 `jps` 查看服务进程
 
@@ -637,7 +637,7 @@ echo `curl -o /dev/null -s -w %{http_code} "http://localhost:8080/graphs/hugegra
 
 返回结果 200，代表 server 启动正常
 
-#### 6.2 请求 Server
+### 6.2 请求 Server
 
 HugeGraphServer 的 RESTful API 包括多种类型的资源，典型的包括 graph、schema、gremlin、traverser 和 task
 
@@ -647,7 +647,7 @@ HugeGraphServer 的 RESTful API 包括多种类型的资源，典型的包括 gr
 - `traverser` 包含各种高级查询，包括最短路径、交叉点、N 步可达邻居等
 - `task` 包含异步任务的查询和删除
 
-##### 6.2.1 获取 `hugegraph` 的顶点及相关属性
+#### 6.2.1 获取 `hugegraph` 的顶点及相关属性
 
 ```bash
 curl http://localhost:8080/graphs/hugegraph/graph/vertices 
@@ -745,13 +745,13 @@ _说明_
   <img src="/versions/1.5/docs/images/images-server/swagger-ui-set-auth-example.png" alt="image">
 </div>
 
-### 7 停止 Server
+## 7 停止 Server
 
 ```bash
 $cd *hugegraph-${version}
 $bin/stop-hugegraph.sh
 ```
 
-### 8 使用 IntelliJ IDEA 调试 Server
+## 8 使用 IntelliJ IDEA 调试 Server
 
 请参考[在 IDEA 中配置 Server 开发环境](/versions/1.5/docs/contribution-guidelines/hugegraph-server-idea-setup)

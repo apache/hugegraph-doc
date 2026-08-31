@@ -7,7 +7,7 @@
     "changed": 4,
     "files": 187,
     "findings": 0,
-    "knownFixes": 21,
+    "knownFixes": 125,
     "residual": 0
   },
   "name": "1.7",
@@ -15,11 +15,11 @@
   "ref": "release-1.7.0",
   "sha": "a036f550bf412ea2950271390888d63bbffef6ba",
   "urlScoping": {
-    "files": 385,
+    "files": 381,
     "historicalHomeRedirects": 2,
-    "manifests": 207,
+    "manifests": 205,
     "searchFingerprints": 2,
-    "searchRefs": 149,
-    "urls": 1861
+    "searchRefs": 145,
+    "urls": 1812
   }
 }

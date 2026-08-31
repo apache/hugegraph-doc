@@ -10,7 +10,7 @@ Thanks for taking the time to contribute! As an open source project, HugeGraph i
 
 The following is a contribution guide for HugeGraph:
 
-<img width="884" alt="image" src="https://user-images.githubusercontent.com/9625821/159643158-8bf72c0a-93c3-4a58-8912-7b2ab20ced1d.png">
+![在 GitHub 上 Fork HugeGraph 仓库](/versions/1.5/images/docs/contribution/github-fork.png){width="884" height="462"}
 
 ## 1. Preparation
 
@@ -123,14 +123,14 @@ git push origin bugfix-branch:bugfix-branch
 ```
 
 Note that since GitHub requires submitting code through `username + token` (instead of using `username + password` directly), you need to create a GitHub token from https://github.com/settings/tokens:
-<img width="1280" alt="image" src="https://user-images.githubusercontent.com/9625821/163524204-7fe0e6bf-9c8b-4b1a-ac65-6a0ac423eb16.png">
+![使用个人访问令牌认证 Git 推送](/versions/1.5/images/docs/contribution/github-authentication.png){width="1280" height="422"}
 
 ## 4. Create a Pull Request
 
 Go to the web page of GitHub fork repo, there would be a chance to create a Pull Request after pushing to a new branch, just click button "Compare & pull request" to do it. Then edit the description for proposed changes, which can just be copied from the commit message.
 
 Note: please make sure the email address you used to submit the code is bound to the GitHub account. For how to bind the email address, please refer to https://github.com/settings/emails:
-<img width="1280" alt="image" src="https://user-images.githubusercontent.com/9625821/163522445-2a50a72a-dea2-434f-9868-3a0d40d0d037.png">
+![在 GitHub 中验证提交邮箱](/versions/1.5/images/docs/contribution/github-email.png){width="1280" height="592"}
 
 ## 5. Code review
 

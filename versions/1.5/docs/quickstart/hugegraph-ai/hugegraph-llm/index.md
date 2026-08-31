@@ -8,7 +8,7 @@ LLMS index: [llms.txt](/versions/1.5/llms.txt)
 
 > **Bridge the gap between Graph Databases and Large Language Models**
 
-> AI summarizes the project documentation: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/incubator-hugegraph-ai)
+> AI summarizes the project documentation: [Ask DeepWiki](https://deepwiki.com/apache/incubator-hugegraph-ai)
 
 
 ## 🎯 Overview
@@ -136,7 +136,7 @@ Use the Gradio interface for visual knowledge graph building:
 - **Custom Schema**: JSON format following our [template](https://github.com/apache/incubator-hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125)
 - **HugeGraph Schema**: Use existing graph instance schema (e.g., "hugegraph")
 
-![Knowledge Graph Builder](https://hugegraph-oink.staged.apache.org/versions/1.5/docs/images/gradio-kg.png)
+![Knowledge Graph Builder](/versions/1.5/images/docs/hugegraph-ai/gradio-kg.jpg)
 
 #### Programmatic Construction
 

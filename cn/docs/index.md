@@ -68,5 +68,4 @@ Apache HugeGraph 是一套完整的图数据库生态系统，支持 OLTP 实时
 - [PERFORMANCE](/cn/docs/performance/)
 - [Contribution Guidelines](/cn/docs/contribution-guidelines/)
 - [CHANGELOGS](/cn/docs/changelog/)
-- [](/cn/docs/cla/)
-- [](/cn/docs/summary/)
+- [Contributor Agreement](/cn/docs/cla/)

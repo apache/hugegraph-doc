@@ -4,8 +4,7 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-[![License](https://img.shields.io/badge/license-Apache%202-0E78BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-ai)
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) · [Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
 
 > DeepWiki provides real-time updated project documentation with more comprehensive and accurate content, suitable for quickly understanding the latest project information.
 >
@@ -124,7 +123,7 @@ from pyhugegraph.client import PyHugeClient
 
 ## 📦 Modules
 
-### [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-ai)
+### [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm) ([Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai))
 Large language model integration for graph applications:
 - **GraphRAG**: Retrieval-augmented generation with graph data
 - **Knowledge Graph Construction**: Build KGs from text automatically
@@ -168,7 +167,7 @@ We welcome contributions! Please see our [contribution guidelines](https://hugeg
 - Run `./style/code_format_and_analysis.sh` before submitting PRs
 - Check existing issues before reporting bugs
 
-[![contributors graph](https://contrib.rocks/image?repo=apache/hugegraph-ai)](https://github.com/apache/hugegraph-ai/graphs/contributors)
+[View the HugeGraph-AI contributors](https://github.com/apache/hugegraph-ai/graphs/contributors).
 
 ## 📄 License
 
@@ -180,7 +179,8 @@ hugegraph-ai is licensed under [Apache 2.0 License](https://github.com/apache/hu
 - **Email**: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscription required](https://hugegraph-oink.staged.apache.org/docs/contribution-guidelines/subscribe/))
 - **WeChat**: Follow "Apache HugeGraph" on WeChat
 
-<img src="https://raw.githubusercontent.com/apache/hugegraph-doc/master/assets/images/wechat.png" alt="Apache HugeGraph WeChat QR Code" width="200"/>
+![Apache HugeGraph WeChat QR Code](/images/docs/community/wechat.png)
+{width="200" height="63"}
 
 ---
 

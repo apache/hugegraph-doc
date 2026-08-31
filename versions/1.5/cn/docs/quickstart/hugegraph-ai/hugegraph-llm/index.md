@@ -8,7 +8,7 @@ LLMS 索引： [llms.txt](/versions/1.5/cn/llms.txt)
 
 > **连接图数据库与大语言模型的桥梁**
 
-> AI 总结项目文档：[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/incubator-hugegraph-ai)
+> AI 总结项目文档：[Ask DeepWiki](https://deepwiki.com/apache/incubator-hugegraph-ai)
 
 ## 🎯 概述
 
@@ -134,7 +134,7 @@ python -m hugegraph_llm.config.generate --update
 - **自定义 Schema**：遵循我们[模板](https://github.com/apache/incubator-hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125)的 JSON 格式
 - **HugeGraph Schema**：使用现有图实例的 Schema（例如，“hugegraph”）
 
-![知识图谱构建器](https://hugegraph-oink.staged.apache.org/versions/1.5/docs/images/gradio-kg.png)
+![知识图谱构建器](/versions/1.5/images/docs/hugegraph-ai/gradio-kg.jpg)
 
 #### 代码构建
 

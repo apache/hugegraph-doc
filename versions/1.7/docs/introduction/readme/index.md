@@ -66,4 +66,4 @@ visualization management platform, a one-stop visualization analysis platform, t
 - Security Email: [security@hugegraph.apache.org](mailto:security@hugegraph.apache.org) (Report SEC problems)
 - WeChat public account: Apache HugeGraph, welcome to scan this QR code to follow us.
 
- <img src="https://github.com/apache/hugegraph-doc/blob/master/assets/images/wechat.png?raw=true" alt="QR png" width="300"/>
+ ![Apache HugeGraph WeChat QR Code](/versions/1.7/images/docs/community/wechat.png){width="300" height="94"}

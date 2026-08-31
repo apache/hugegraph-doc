@@ -69,7 +69,7 @@
   - [v0.5.6 Stand-alone(RocksDB)](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/performance/api-preformance/hugegraph-api-0.5.6-rocksdb/index.md)
   - [v0.5.6 Cluster(Cassandra)](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/performance/api-preformance/hugegraph-api-0.5.6-cassandra/index.md)
   - [HugeGraph-Loader Performance](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/performance/hugegraph-loader-performance/index.md)
-  - [](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/performance/hugegraph-benchmark-0.4.4/index.md)
+  - [HugeGraph 0.4.4 Benchmark](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/performance/hugegraph-benchmark-0.4.4/index.md)
 - [Contribution Guidelines](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/contribution-guidelines/index.md)
   - [How to Contribute to HugeGraph](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/contribution-guidelines/contribute/index.md)
   - [Subscribe Mailing Lists](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/contribution-guidelines/subscribe/index.md)
@@ -84,8 +84,7 @@
   - [Release-1.7.0](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/changelog/hugegraph-1.7.0-release-notes/index.md)
 - [Introduction](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/introduction/readme/index.md)
 - [Download](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/download/download/index.md)
-- [](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/cla/index.md)
-- [](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/summary/index.md)
+- [Contributor Agreement](https://hugegraph-oink.staged.apache.org/versions/1.7/docs/cla/index.md)
 
 ## Site locales
 

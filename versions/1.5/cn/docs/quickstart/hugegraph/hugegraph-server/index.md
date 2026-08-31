@@ -44,12 +44,12 @@ Core 模块是 Tinkerpop 接口的实现，Backend 模块用于管理数据存�
 可选项：
 
 1. 可以使用 `docker exec -it server bash` 进入容器完成一些操作
-2. 可以使用 `docker run -itd --name=server -p 8080:8080 -e PRELOAD="true" hugegraph/hugegraph:1.5.0` 在启动的时候预加载一个**内置的**样例图。可以通过 `RESTful API` 进行验证。具体步骤可以参考 [5.1.1](/versions/1.5/cn/docs/quickstart/hugegraph/hugegraph-server/#511-%E5%90%AF%E5%8A%A8-server-%E7%9A%84%E6%97%B6%E5%80%99%E5%88%9B%E5%BB%BA%E7%A4%BA%E4%BE%8B%E5%9B%BE) 
+2. 可以使用 `docker run -itd --name=server -p 8080:8080 -e PRELOAD="true" hugegraph/hugegraph:1.5.0` 在启动的时候预加载一个**内置的**样例图。可以通过 `RESTful API` 进行验证。具体步骤可以参考 [5.1.1](/versions/1.5/cn/docs/quickstart/hugegraph/hugegraph-server/#518-%E5%90%AF%E5%8A%A8-server-%E7%9A%84%E6%97%B6%E5%80%99%E5%88%9B%E5%BB%BA%E7%A4%BA%E4%BE%8B%E5%9B%BE) 
 3. 可以使用 `-e PASSWORD=xxx` 设置是否开启鉴权模式以及 admin 的密码，具体步骤可以参考 [Config Authentication](/versions/1.5/cn/docs/config/config-authentication#使用-docker-时开启鉴权模式) 
 
 如果使用 docker desktop，则可以按照如下的方式设置可选项：
 <div style="text-align: center;">
-    <img src="/versions/1.5/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
+    <img src="/versions/1.5/docs/images/images-server/31docker-option.jpg" alt="Docker Desktop 中 HugeGraph 容器的运行设置" style="width:33%;">
 </div>
 
 
@@ -516,7 +516,7 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 
 ### 5.2 使用 Docker
 
-在 [3.3 使用 Docker 容器](#33-使用-docker-容器)中，我们已经介绍了如何使用 `docker` 部署 `hugegraph-server`, 我们还可以使用其他的后端存储或者设置参数在 sever 启动的时候加载样例图
+在 [3.3 使用 Docker 容器](#31-使用-docker-容器-便于测试)中，我们已经介绍了如何使用 `docker` 部署 `hugegraph-server`, 我们还可以使用其他的后端存储或者设置参数在 sever 启动的时候加载样例图
 
 #### 5.2.1 使用 Cassandra 作为后端
 
@@ -730,19 +730,19 @@ _说明_
 另外也可以通过访问 `localhost:8080/swagger-ui/index.html` 查看 API。
 
 <div style="text-align: center;">
-  <img src="/versions/1.5/docs/images/images-server/swagger-ui.png" alt="image">
+  <img src="/versions/1.5/docs/images/images-server/swagger-ui.png" alt="Swagger UI 中的 HugeGraph RESTful API 接口列表">
 </div>
 
 在使用 Swagger UI 调试 HugeGraph 提供的 API 时，如果 HugeGraph Server 开启了鉴权模式，可以在 Swagger 页面输入鉴权信息。
 
 <div style="text-align: center;">
-  <img src="/versions/1.5/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="image">
+  <img src="/versions/1.5/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="HugeGraph Swagger UI 中的 Authorize 按钮">
 </div>
 
 当前 HugeGraph 支持基于 Basic 和 Bearer 两种形式设置鉴权信息。
 
 <div style="text-align: center;">
-  <img src="/versions/1.5/docs/images/images-server/swagger-ui-set-auth-example.png" alt="image">
+  <img src="/versions/1.5/docs/images/images-server/swagger-ui-set-auth-example.png" alt="Swagger UI 授权对话框中的 Basic 和 Bearer 凭据输入框">
 </div>
 
 ## 7 停止 Server

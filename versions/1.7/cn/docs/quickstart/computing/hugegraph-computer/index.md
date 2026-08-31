@@ -82,7 +82,7 @@ bin/start-computer.sh -d local -r worker
 
 2.5.1 为 server 启用 `OLAP` 索引查询
 
-如果没有启用 OLAP 索引，则需要启用，更多参考：[modify-graphs-read-mode](/versions/1.7/docs/clients/restful-api/graphs/#634-modify-graphs-read-mode-this-operation-requires-administrator-privileges)
+如果没有启用 OLAP 索引，则需要启用，更多参考：[modify-graphs-read-mode](/versions/1.7/docs/clients/restful-api/graphs/#634-设置某个图的读模式该操作需要管理员权限)
 
 ```http
 PUT http://localhost:8080/graphs/hugegraph/graph_read_mode

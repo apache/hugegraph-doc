@@ -49,7 +49,7 @@ Optional:
 
 If you use Docker Desktop, you can set the options as follows:
 <div style="text-align: center;">
-    <img src="/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
+    <img src="/docs/images/images-server/31docker-option.jpg" alt="Docker Desktop settings for a HugeGraph container" style="width:33%;">
 </div>
 
 > **Note**: The Docker Compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least **12 GB** of memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.
@@ -817,19 +817,19 @@ For the detailed API, please refer to [RESTful-API](/docs/clients/restful-api)
 You can also visit `localhost:8080/swagger-ui/index.html` to check the API.
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui.png" alt="image">
+  <img src="/docs/images/images-server/swagger-ui.png" alt="HugeGraph RESTful API endpoints in Swagger UI">
 </div>
 
 When using Swagger UI to debug the API provided by HugeGraph, if HugeGraph Server turns on authentication mode, you can enter authentication information on the Swagger page.
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="image">
+  <img src="/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="Authorize button in the HugeGraph Swagger UI">
 </div>
 
 Currently, HugeGraph supports setting authentication information in two forms: Basic and Bearer.
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui-set-auth-example.png" alt="image">
+  <img src="/docs/images/images-server/swagger-ui-set-auth-example.png" alt="Basic and Bearer credential fields in the Swagger UI authorization dialog">
 </div>
 
 ## 7 Stop Server

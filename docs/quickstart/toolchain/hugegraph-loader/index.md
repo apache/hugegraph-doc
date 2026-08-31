@@ -114,7 +114,7 @@ For example, if you want to create a graph with two types of vertices and two ty
 "Software" includes: "name", "sale price" and other attributes; side "knowledge" includes: "date" attribute and so on.
 
 <div style="text-align: center;">
-  <img src="/docs/images/demo-graph-model.png" alt="image">
+  <img src="/docs/images/demo-graph-model.png" alt="Example graph with person and software vertices connected by knows and created edges">
   <p>graph model example</p>
 </div>
 

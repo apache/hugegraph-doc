@@ -1,13 +1,20 @@
 {
   "archived": true,
   "baseURL": "https://hugegraph-oink.staged.apache.org/versions/1.5/",
+  "docsNavigation": {
+    "groups": 5,
+    "pages": 77,
+    "removed": 13,
+    "scopedLinks": 10,
+    "treeSha256": "70b2a46f047b3c88a6b1b937eb79676a7f68437485b3248e5f84b9c621d5ad06"
+  },
   "githubBranch": "release-1.5.0",
   "id": "1.5",
   "migration": {
     "changed": 5,
-    "files": 181,
+    "files": 191,
     "findings": 0,
-    "knownFixes": 124,
+    "knownFixes": 137,
     "residual": 0
   },
   "name": "1.5",
@@ -20,6 +27,6 @@
     "manifests": 199,
     "searchFingerprints": 2,
     "searchRefs": 133,
-    "urls": 1718
+    "urls": 1715
   }
 }

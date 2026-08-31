@@ -51,7 +51,7 @@ Optional:
 
 If you use docker desktop, you can set the option like: 
 <div style="text-align: center;">
-    <img src="/versions/1.7/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
+    <img src="/versions/1.7/docs/images/images-server/31docker-option.jpg" alt="Docker Desktop settings for a HugeGraph container" style="width:33%;">
 </div>
 
 Also, if we want to manage the other Hugegraph related instances in one file, we can use `docker-compose` to deploy, with the command `docker-compose up -d` (you can config only `server`). Here is an example `docker-compose.yml`:
@@ -758,19 +758,19 @@ For the detailed API, please refer to [RESTful-API](/versions/1.7/docs/clients/r
 You can also visit `localhost:8080/swagger-ui/index.html` to check the API.
 
 <div style="text-align: center;">
-  <img src="/versions/1.7/docs/images/images-server/swagger-ui.png" alt="image">
+  <img src="/versions/1.7/docs/images/images-server/swagger-ui.png" alt="HugeGraph RESTful API endpoints in Swagger UI">
 </div>
 
 When using Swagger UI to debug the API provided by HugeGraph, if HugeGraph Server turns on authentication mode, you can enter authentication information on the Swagger page.
 
 <div style="text-align: center;">
-  <img src="/versions/1.7/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="image">
+  <img src="/versions/1.7/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="Authorize button in the HugeGraph Swagger UI">
 </div>
 
 Currently, HugeGraph supports setting authentication information in two forms: Basic and Bearer.
 
 <div style="text-align: center;">
-  <img src="/versions/1.7/docs/images/images-server/swagger-ui-set-auth-example.png" alt="image">
+  <img src="/versions/1.7/docs/images/images-server/swagger-ui-set-auth-example.png" alt="Basic and Bearer credential fields in the Swagger UI authorization dialog">
 </div>
 
 ## 7 Stop Server

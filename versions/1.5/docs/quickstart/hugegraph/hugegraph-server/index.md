@@ -47,11 +47,11 @@ We can use `docker run -itd --name=graph -e PASSWORD=xxx -p 8080:8080 hugegraph/
 Optional: 
 1. use `docker exec -it graph bash` to enter the container to do some operations.
 2. use `docker run -itd --name=graph -p 8080:8080 -e PRELOAD="true" hugegraph/hugegraph:1.5.0` to start with a **built-in** example graph. We can use `RESTful API` to verify the result. The detailed step can refer to [5.1.7](#517-create-an-example-graph-when-startup)
-3. use `-e PASSWORD=xxx` to enable auth mode and set the password for admin. You can find more details from [Config Authentication](/versions/1.5/docs/config/config-authentication#Use-docker-to-enble-authentication-mode)
+3. use `-e PASSWORD=xxx` to enable auth mode and set the password for admin. You can find more details from [Config Authentication](/versions/1.5/docs/config/config-authentication/#use-docker-to-enable-authentication-mode)
 
 If you use docker desktop, you can set the option like: 
 <div style="text-align: center;">
-    <img src="/versions/1.5/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
+    <img src="/versions/1.5/docs/images/images-server/31docker-option.jpg" alt="Docker Desktop settings for a HugeGraph container" style="width:33%;">
 </div>
 
 Also, if we want to manage the other Hugegraph related instances in one file, we can use `docker-compose` to deploy, with the command `docker-compose up -d` (you can config only `server`). Here is an example `docker-compose.yml`:
@@ -494,7 +494,7 @@ This indicates the successful creation of the sample graph.
 
 ### 5.2 Use Docker to startup
 
-In [3.3 Use Docker container](#33-use-docker-container), we have introduced how to use docker to deploy `hugegraph-server`. `server` can also preload an example graph by setting the parameter.
+In [3.3 Use Docker container](#31-use-docker-container-convenient-for-testdev), we have introduced how to use docker to deploy `hugegraph-server`. `server` can also preload an example graph by setting the parameter.
 
 #### 5.2.1 Uses Cassandra as storage
 
@@ -706,19 +706,19 @@ For the detailed API, please refer to [RESTful-API](/versions/1.5/docs/clients/r
 You can also visit `localhost:8080/swagger-ui/index.html` to check the API.
 
 <div style="text-align: center;">
-  <img src="/versions/1.5/docs/images/images-server/swagger-ui.png" alt="image">
+  <img src="/versions/1.5/docs/images/images-server/swagger-ui.png" alt="HugeGraph RESTful API endpoints in Swagger UI">
 </div>
 
 When using Swagger UI to debug the API provided by HugeGraph, if HugeGraph Server turns on authentication mode, you can enter authentication information on the Swagger page.
 
 <div style="text-align: center;">
-  <img src="/versions/1.5/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="image">
+  <img src="/versions/1.5/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="Authorize button in the HugeGraph Swagger UI">
 </div>
 
 Currently, HugeGraph supports setting authentication information in two forms: Basic and Bearer.
 
 <div style="text-align: center;">
-  <img src="/versions/1.5/docs/images/images-server/swagger-ui-set-auth-example.png" alt="image">
+  <img src="/versions/1.5/docs/images/images-server/swagger-ui-set-auth-example.png" alt="Basic and Bearer credential fields in the Swagger UI authorization dialog">
 </div>
 
 ## 7 Stop Server

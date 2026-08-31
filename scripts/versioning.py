@@ -85,6 +85,7 @@ HREFLANG_FALLBACKS = {
     "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html": {"en-US": "/"},
     "community/maturity/index.html": {"zh-CN": "/cn/"},
 }
+LANGUAGE_OPTION_TITLES = {"en-US": "English", "zh-CN": "简体中文"}
 
 
 class DocumentParser(html.parser.HTMLParser):
@@ -1042,6 +1043,124 @@ def rewrite_json_urls(value, rewrite):
     return value
 
 
+def expected_language_fallback_urls(
+    relative: str, artifact_base: str
+) -> dict[str, str]:
+    """Resolve declared missing-translation fallbacks within the current artifact."""
+    return {
+        language: urllib.parse.urljoin(artifact_base, fallback.lstrip("/"))
+        for language, fallback in HREFLANG_FALLBACKS.get(relative, {}).items()
+    }
+
+
+def language_fallback_options(action_data: dict, relative: str) -> dict[str, dict]:
+    """Return manifest options covered by HREFLANG_FALLBACKS, failing closed."""
+    fallbacks = HREFLANG_FALLBACKS.get(relative, {})
+    if not fallbacks:
+        return {}
+    actions = action_data.get("actions")
+    if not isinstance(actions, list):
+        fail(f"action manifest has no actions array in {relative}")
+    switches = [
+        action
+        for action in actions
+        if isinstance(action, dict) and action.get("id") == "switch_language"
+    ]
+    if (
+        len(switches) != 1
+        or switches[0].get("available") is not True
+        or not isinstance(switches[0].get("options"), list)
+    ):
+        fail(f"language switch contract missing in {relative}")
+    result = {}
+    for language in fallbacks:
+        matches = [
+            option
+            for option in switches[0]["options"]
+            if isinstance(option, dict) and option.get("id") == language
+        ]
+        if (
+            len(matches) != 1
+            or not isinstance(matches[0].get("url"), str)
+            or matches[0].get("active") is not False
+        ):
+            fail(f"language fallback option mismatch in {relative}: {language}")
+        result[language] = matches[0]
+    return result
+
+
+def scope_language_fallback_urls(
+    action_data: dict, relative: str, artifact_base: str
+) -> int:
+    """Keep missing-translation actions inside the current version artifact."""
+    expected = expected_language_fallback_urls(relative, artifact_base)
+    options = language_fallback_options(action_data, relative)
+    changed = 0
+    for language, url in expected.items():
+        option = options[language]
+        if urllib.parse.urljoin(artifact_base, option["url"]) != url:
+            option["url"] = url
+            changed += 1
+    return changed
+
+
+def validate_language_switch_contract(
+    action_data: dict,
+    relative: str,
+    expected_urls: dict[str, str],
+    current_url: str,
+    current_language: str,
+) -> None:
+    """Require one exact language switch whose URLs mirror page hreflang links."""
+    actions = action_data.get("actions")
+    if not isinstance(actions, list):
+        fail(f"action manifest has no actions array in {relative}")
+    switches = [
+        action
+        for action in actions
+        if isinstance(action, dict) and action.get("id") == "switch_language"
+    ]
+    if (
+        len(switches) != 1
+        or switches[0].get("available") is not True
+        or not isinstance(switches[0].get("options"), list)
+    ):
+        fail(f"language switch contract missing in {relative}")
+    options = switches[0]["options"]
+    if len(options) != len(expected_urls):
+        fail(f"language switch option count mismatch in {relative}")
+    actual_ids = [
+        option.get("id") if isinstance(option, dict) else None for option in options
+    ]
+    if actual_ids != list(expected_urls):
+        fail(f"language switch option order mismatch in {relative}: {actual_ids}")
+    for option in options:
+        language = option["id"]
+        url = option.get("url")
+        if not isinstance(url, str) or not url:
+            fail(f"language switch URL missing in {relative}: {language}")
+        url_parts = urllib.parse.urlsplit(url)
+        is_root_relative = url.startswith("/") and not url.startswith("//")
+        is_http_absolute = url_parts.scheme in {"http", "https"} and bool(
+            url_parts.netloc
+        )
+        if not (is_root_relative or is_http_absolute):
+            fail(f"language switch URL shape mismatch in {relative}: {url}")
+        resolved_url = urllib.parse.urljoin(current_url, url)
+        if resolved_url != expected_urls[language]:
+            fail(
+                f"language switch URL mismatch in {relative}: "
+                f"{resolved_url} != {expected_urls[language]}"
+            )
+        if option.get("active") is not (language == current_language):
+            fail(f"language switch active option mismatch in {relative}: {language}")
+        if (
+            option.get("title") != LANGUAGE_OPTION_TITLES.get(language)
+            or option.get("available") is not True
+        ):
+            fail(f"language switch metadata mismatch in {relative}: {language}")
+
+
 def rewrite_text_urls(text: str, rewrite, *, markdown: bool) -> tuple[str, int]:
     count = 0
 
@@ -1090,6 +1209,7 @@ def scope_version_artifact(
     if not entry["publishPath"] and origin.rstrip("/") == CANONICAL_ORIGIN.rstrip("/"):
         return {"files": 0, "urls": 0, "manifests": 0, "searchRefs": 0}
     allowed_paths = allowed_version_paths(manifest)
+    artifact_base = base_url(origin, entry["publishPath"])
 
     def rewrite(value: str) -> str:
         return rewrite_internal_url(
@@ -1137,6 +1257,9 @@ def scope_version_artifact(
         def replace_manifest(match: re.Match) -> str:
             data = json.loads(match.group("body"))
             rewritten = rewrite_json_urls(data, rewrite)
+            scope_language_fallback_urls(
+                rewritten, path.relative_to(output).as_posix(), artifact_base
+            )
             stats["manifests"] += 1
             return (
                 match.group("open")
@@ -1498,6 +1621,7 @@ def validate_artifact(args: argparse.Namespace) -> None:
         alias_target = refresh_target(document)
         if alias_target:
             validate_url(alias_target, path)
+        action_data = {}
         manifests = list(ACTION_MANIFEST_RE.finditer(text))
         if manifests:
             if len(manifests) != 1:
@@ -1656,6 +1780,13 @@ def validate_artifact(args: argparse.Namespace) -> None:
                     f"hreflang mismatch in {relative}: "
                     f"{actual_hreflang} != {expected_hreflang}"
                 )
+            validate_language_switch_contract(
+                action_data,
+                relative,
+                expected_hreflang,
+                current_path,
+                "zh-CN" if relative.startswith("cn/") else "en-US",
+            )
 
     if not entry["archived"]:
         client_go = root / "client-go/index.html"

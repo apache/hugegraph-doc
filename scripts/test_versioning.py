@@ -398,6 +398,202 @@ class VersionUrlTest(unittest.TestCase):
         self.assertIn('<a href="/docs/">example</a>', rendered)
         self.assertIn('<a href="https://hugegraph.apache.org/blog/">Blog</a>', rendered)
 
+    def test_language_fallback_scopes_to_each_artifact_base(self) -> None:
+        manifest = {
+            "versions": [
+                {"publishPath": ""},
+                {"publishPath": "versions/1.7"},
+                {"publishPath": "versions/1.5"},
+            ]
+        }
+        relative = "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html"
+        for publish_path, expected_url in (
+            ("", "/"),
+            ("versions/1.7", f"{STAGING_ORIGIN}versions/1.7/"),
+            ("versions/1.5", f"{STAGING_ORIGIN}versions/1.5/"),
+        ):
+            with self.subTest(publish_path=publish_path):
+                with tempfile.TemporaryDirectory() as temp_name:
+                    output = Path(temp_name)
+                    page = output / relative
+                    page.parent.mkdir(parents=True)
+                    action_data = {
+                        "actions": [
+                            {
+                                "id": "switch_language",
+                                "available": True,
+                                "options": [
+                                    {
+                                        "id": "en-US",
+                                        "active": False,
+                                        "url": "/",
+                                    },
+                                    {
+                                        "id": "zh-CN",
+                                        "active": True,
+                                        "url": "/cn/docs/changelog/",
+                                    },
+                                ],
+                            }
+                        ]
+                    }
+                    page.write_text(
+                        '<script type="application/json" id="td-action-manifest">'
+                        + json.dumps(action_data)
+                        + "</script>",
+                        encoding="utf-8",
+                    )
+
+                    versioning.scope_version_artifact(
+                        output,
+                        manifest,
+                        {"publishPath": publish_path},
+                        STAGING_ORIGIN,
+                    )
+
+                    rendered = page.read_text(encoding="utf-8")
+                    scoped = json.loads(
+                        versioning.ACTION_MANIFEST_RE.search(rendered).group("body")
+                    )
+                    switch = scoped["actions"][0]
+                    self.assertEqual(switch["options"][0]["url"], expected_url)
+
+    def test_latest_language_fallback_preserves_root_relative_url(self) -> None:
+        relative = "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html"
+        current_url = f"{ORIGIN}cn/docs/changelog/hugegraph-0.12.0-release-notes/"
+        action_data = {
+            "actions": [
+                {
+                    "id": "switch_language",
+                    "available": True,
+                    "options": [
+                        {
+                            "id": "en-US",
+                            "title": "English",
+                            "active": False,
+                            "available": True,
+                            "url": "/",
+                        },
+                        {
+                            "id": "zh-CN",
+                            "title": "简体中文",
+                            "active": True,
+                            "available": True,
+                            "url": "/cn/docs/changelog/hugegraph-0.12.0-release-notes/",
+                        },
+                    ],
+                }
+            ]
+        }
+        self.assertEqual(
+            versioning.scope_language_fallback_urls(action_data, relative, ORIGIN),
+            0,
+        )
+        self.assertEqual(action_data["actions"][0]["options"][0]["url"], "/")
+        versioning.validate_language_switch_contract(
+            action_data,
+            relative,
+            {"en-US": ORIGIN, "zh-CN": current_url},
+            current_url,
+            "zh-CN",
+        )
+
+    def test_language_switch_validator_fails_closed(self) -> None:
+        relative = "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html"
+        expected_base = f"{STAGING_ORIGIN}versions/1.7/"
+        current_url = (
+            f"{expected_base}cn/docs/changelog/hugegraph-0.12.0-release-notes/"
+        )
+        expected_urls = {
+            "en-US": expected_base,
+            "zh-CN": current_url,
+        }
+        valid = {
+            "actions": [
+                {
+                    "id": "switch_language",
+                    "available": True,
+                    "options": [
+                        {
+                            "id": "en-US",
+                            "title": "English",
+                            "active": False,
+                            "available": True,
+                            "url": expected_base,
+                        },
+                        {
+                            "id": "zh-CN",
+                            "title": "简体中文",
+                            "active": True,
+                            "available": True,
+                            "url": "/versions/1.7/cn/docs/changelog/"
+                            "hugegraph-0.12.0-release-notes/",
+                        },
+                    ],
+                }
+            ]
+        }
+        versioning.validate_language_switch_contract(
+            valid, relative, expected_urls, current_url, "zh-CN"
+        )
+
+        escaped = json.loads(json.dumps(valid))
+        escaped["actions"][0]["options"][0]["url"] = STAGING_ORIGIN
+        with self.assertRaises(SystemExit):
+            versioning.validate_language_switch_contract(
+                escaped, relative, expected_urls, current_url, "zh-CN"
+            )
+
+        missing = {"actions": []}
+        with self.assertRaises(SystemExit):
+            versioning.validate_language_switch_contract(
+                missing, relative, expected_urls, current_url, "zh-CN"
+            )
+
+        active = json.loads(json.dumps(valid))
+        active["actions"][0]["options"][0]["active"] = True
+        with self.assertRaises(SystemExit):
+            versioning.validate_language_switch_contract(
+                active, relative, expected_urls, current_url, "zh-CN"
+            )
+
+        duplicate = json.loads(json.dumps(valid))
+        duplicate["actions"].append(duplicate["actions"][0])
+        with self.assertRaises(SystemExit):
+            versioning.validate_language_switch_contract(
+                duplicate, relative, expected_urls, current_url, "zh-CN"
+            )
+
+        reversed_options = json.loads(json.dumps(valid))
+        reversed_options["actions"][0]["options"].reverse()
+        with self.assertRaises(SystemExit):
+            versioning.validate_language_switch_contract(
+                reversed_options, relative, expected_urls, current_url, "zh-CN"
+            )
+
+        for invalid_url in ("", "next/", "//example.org/", "javascript:alert(1)"):
+            with self.subTest(invalid_url=invalid_url):
+                invalid = json.loads(json.dumps(valid))
+                invalid["actions"][0]["options"][0]["url"] = invalid_url
+                with self.assertRaises(SystemExit):
+                    versioning.validate_language_switch_contract(
+                        invalid, relative, expected_urls, current_url, "zh-CN"
+                    )
+
+        unavailable = json.loads(json.dumps(valid))
+        unavailable["actions"][0]["options"][0]["available"] = False
+        with self.assertRaises(SystemExit):
+            versioning.validate_language_switch_contract(
+                unavailable, relative, expected_urls, current_url, "zh-CN"
+            )
+
+        disabled_action = json.loads(json.dumps(valid))
+        disabled_action["actions"][0]["available"] = False
+        with self.assertRaises(SystemExit):
+            versioning.validate_language_switch_contract(
+                disabled_action, relative, expected_urls, current_url, "zh-CN"
+            )
+
     def test_rejects_artifact_from_unexpected_sha(self) -> None:
         expected = {
             "id": "1.7",

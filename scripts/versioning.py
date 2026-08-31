@@ -456,9 +456,11 @@ def prune_historical_content(assembly: pathlib.Path, origin: str) -> None:
             ),
         }
         for old, new in replacements.items():
-            if footer.count(old) != 1:
+            occurrences = footer.count(old)
+            if occurrences > 1:
                 fail(f"expected one shared footer route in {footer_path}: {old}")
-            footer = footer.replace(old, new)
+            if occurrences == 1:
+                footer = footer.replace(old, new)
         footer_path.write_text(footer, encoding="utf-8")
 
         blog_ref = (
@@ -2751,16 +2753,6 @@ def aggregate(args: argparse.Namespace) -> None:
         if not target_exists(output, parsed.path):
             fail(f"aggregate sitemap target is missing: {location}")
     asf_text = (ROOT / ".asf.yaml").read_text(encoding="utf-8")
-    if args.asf_profile or args.asf_whoami:
-        if not args.asf_profile or not args.asf_whoami:
-            fail("ASF staging profile and whoami must be set together")
-        old_staging = "staging:\n  profile: ~\n  whoami: asf-staging"
-        new_staging = (
-            f"staging:\n  profile: {args.asf_profile}\n  whoami: {args.asf_whoami}"
-        )
-        if asf_text.count(old_staging) != 1:
-            fail("cannot locate the exact ASF staging block")
-        asf_text = asf_text.replace(old_staging, new_staging)
     (output / ".asf.yaml").write_text(asf_text, encoding="utf-8")
     metadata_dir = output / "build-metadata"
     metadata_dir.mkdir()
@@ -2814,8 +2806,6 @@ def parser() -> argparse.ArgumentParser:
     )
     aggregate_parser.add_argument("--site-origin", required=True)
     aggregate_parser.add_argument("--output", type=pathlib.Path, required=True)
-    aggregate_parser.add_argument("--asf-profile")
-    aggregate_parser.add_argument("--asf-whoami")
     aggregate_parser.set_defaults(func=aggregate)
     return result
 

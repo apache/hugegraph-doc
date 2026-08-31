@@ -67,7 +67,7 @@ jobs:
           - name: production
             origin: https://hugegraph.apache.org/
           - name: staging
-            origin: https://hugegraph-oink.staged.apache.org/
+            origin: https://hugegraph.staged.apache.org/
     name: Build ${{ matrix.site.name }} / ${{ matrix.version.id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -188,9 +188,7 @@ jobs:
             --artifacts version-artifacts \
             --artifact-prefix staging- \
             --resolved-manifest resolved/resolved-versions.json \
-            --site-origin https://hugegraph-oink.staged.apache.org/ \
-            --asf-profile oink \
-            --asf-whoami asf-staging-oink \
+            --site-origin https://hugegraph.staged.apache.org/ \
             --output "${RUNNER_TEMP}/public-staging"
 
       - name: Upload production aggregate

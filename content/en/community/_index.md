@@ -1,5 +1,7 @@
 ---
 title: Community
+linkTitle: Community
+layout: landing
+landing: community
+outputs: [HTML, print, markdown]
 ---
-
-Visit the [Project Maturity]({{< relref "maturity" >}}) assessment.

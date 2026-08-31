@@ -91,9 +91,9 @@ params:
   offline_search_summary_length: 70
   offline_search_max_results: 10
   footer_center_info: ''
-  copyright:
-    authors: Apache HugeGraph Authors
-    from_year: 2017
+  # The compact ASF footer owns the legal line; keep OINK's utility footline
+  # focused on version, language, theme, and keyboard controls.
+  copyright: false
   print:
     toc: true
   ui:

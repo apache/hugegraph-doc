@@ -1,4 +1,10 @@
-sections: [hero, cards, cta]
+sections:
+  - hero
+  - { type: markdown, key: introduction }
+  - { type: cards, key: capabilities }
+  - { type: markdown, key: tlp }
+  - { type: cards, key: community }
+  - { type: markdown, key: welcome }
 
 hero:
   align: center
@@ -10,21 +16,59 @@ hero:
     - { label: 了解更多, url: docs/, icon: fa-solid fa-circle-arrow-right, style: primary }
     - { label: 下载, url: docs/download/download/, icon: fa-brands fa-github, style: ghost }
 
-cards:
-  eyebrow: 选择你的路径
-  title: 从眼前要完成的任务开始
+introduction:
+  class: hg-home-introduction
+  body: |-
+    HugeGraph 最高支持千亿级图数据高速导入与毫秒级实时查询，可与 Spark、Flink 等大数据平台深度集成，并可通过 [HugeGraph 工具链](docs/quickstart/toolchain/)快速完成导入、可视化与运维。
+
+    在 AI 时代，通过与大语言模型 (LLM) 结合，为智能问答、推荐系统、风控反欺诈、知识图谱等场景提供强大的图计算能力。
+
+capabilities:
+  class: hg-home-capabilities
   columns: 3
   items:
-    - { title: 运行图数据库, desc: 使用单机或分布式存储部署 HugeGraph Server。, icon: fa-solid fa-database, url: docs/quickstart/hugegraph/hugegraph-server/ }
-    - { title: 导入和探索数据, desc: 使用 Loader、Tools 和 Hubble 导入数据并管理 Schema。, icon: fa-solid fa-diagram-project, url: docs/quickstart/toolchain/ }
-    - { title: 查询和开发, desc: 使用 Gremlin、Cypher、REST 与客户端 SDK 构建应用。, icon: fa-solid fa-code, url: docs/clients/ }
-    - { title: 执行图分析, desc: 使用 HugeGraph Computer 与 Vermeer 处理大规模图数据。, icon: fa-solid fa-chart-line, url: docs/quickstart/computing/ }
-    - { title: 构建图智能, desc: 使用 HugeGraph-AI 创建 GraphRAG 与图学习应用。, icon: fa-solid fa-brain, url: docs/quickstart/hugegraph-ai/ }
-    - { title: 稳定运维, desc: 完成配置、安全、备份恢复和故障排查。, icon: fa-solid fa-screwdriver-wrench, url: docs/config/ }
+    - title: 易用
+      icon: fa-solid fa-lightbulb
+      desc: 支持 Gremlin 图查询语言与 [**RESTful API**](docs/clients/restful-api/)，并提供图检索常用接口，具备齐全的周边工具，支持分布式存储、数据多副本及横向扩容，内置多种后端存储引擎，轻松实现各种查询、分析。
+    - title: 高效
+      icon: fa-solid fa-truck-fast
+      desc: 在图存储和图计算方面做了深度优化，提供 [**批量导入工具**](docs/quickstart/toolchain/hugegraph-loader/)，轻松完成百亿级数据快速导入，通过优化过的查询达到图检索的毫秒级响应，支持数千用户并发的在线实时操作。
+    - title: 通用
+      icon: fa-solid fa-arrow-right-arrow-left
+      desc: 支持 Apache Gremlin 标准图查询语言和 Property Graph 标准图建模方法，支持基于图的 OLTP 和 [**OLAP 图计算**](docs/quickstart/computing/hugegraph-computer/)方案。集成 Apache Hadoop 及 Apache Spark 大数据平台，也可插件式轻松扩展后端存储引擎。
+    - title: 智能化
+      icon: fa-solid fa-brain
+      desc: 集成 LLM 实现 [**GraphRAG 能力**](docs/quickstart/hugegraph-ai/)、自动化知识图谱构建，内置 20+ 图机器学习算法，轻松构建 AI 驱动的图应用。
+    - title: 可扩展
+      icon: fa-solid fa-up-right-and-down-left-from-center
+      desc: 支持水平扩容和分布式部署，从单机到 PB 级集群无缝迁移，提供 [**分布式存储引擎**](docs/quickstart/hugegraph/hugegraph-hstore/)适配，满足不同规模和性能需求。
+    - title: 开放生态
+      icon: fa-solid fa-puzzle-piece
+      desc: 遵循 Apache TinkerPop 标准，提供 [**多语言客户端**](docs/quickstart/client/hugegraph-client/)，兼容主流大数据平台，社区活跃持续演进。
 
-cta:
-  title: 找到通向可用图应用的最短路径。
-  text: 从快速开始进入部署、开发和运维参考，全程留在同一个文档站点中。
-  label: 打开文档
-  url: docs/
-  style: primary
+tlp:
+  class: hg-home-band hg-home-tlp
+  title: 首个 Apache 基金会的顶级图项目
+
+community:
+  class: hg-home-community
+  columns: 3
+  items:
+    - title: 使用易用的**工具链**
+      icon: fa-solid fa-screwdriver-wrench
+      desc: 可从[此](https://github.com/apache/hugegraph-toolchain)获取图数据导入工具, 可视化界面以及备份还原迁移工具, 欢迎使用
+    - title: 参与开源
+      icon: fa-brands fa-github
+      url: https://github.com/apache/hugegraph
+      external: true
+      desc: 我们可以在 **Github** 上提交 [Pull Request](https://github.com/apache/hugegraph/pulls). 热烈欢迎大家加入!
+    - title: 关注微信
+      icon: fa-brands fa-weixin
+      desc: |-
+        关注微信公众号 "HugeGraph" 获取最新动态
+
+        也可以加入 [ASF Slack 频道](https://the-asf.slack.com/archives/C059UU2FJ23)参与讨论
+
+welcome:
+  class: hg-home-band hg-home-welcome
+  title: 欢迎大家给 HugeGraph 添砖加瓦

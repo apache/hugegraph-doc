@@ -17,7 +17,7 @@ import versioning
 
 
 ORIGIN = "https://hugegraph.apache.org/"
-STAGING_ORIGIN = "https://hugegraph-oink.staged.apache.org/"
+STAGING_ORIGIN = "https://hugegraph.staged.apache.org/"
 PUBLISH_PATH = "versions/1.7"
 ALLOWED_PATHS = {
     "/docs",
@@ -45,6 +45,48 @@ def _walk_docs_nav_pages(nodes):
 
 
 class VersionUrlTest(unittest.TestCase):
+    def test_historical_pruning_allows_footer_without_shared_routes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            assembly = Path(temp_name)
+            for language in ("en", "cn"):
+                docs = assembly / f"content/{language}/docs"
+                docs.mkdir(parents=True)
+                (docs / "index.md").write_text("# Docs\n", encoding="utf-8")
+                footer = assembly / f"data/footer/{language}.yaml"
+                footer.parent.mkdir(parents=True, exist_ok=True)
+                footer.write_text(
+                    "links:\n  - { label: Security, url: /docs/guides/security/ }\n",
+                    encoding="utf-8",
+                )
+
+            versioning.prune_historical_content(assembly, ORIGIN)
+
+            for language in ("en", "cn"):
+                rendered = (assembly / f"data/footer/{language}.yaml").read_text(
+                    encoding="utf-8"
+                )
+                self.assertIn("url: /docs/guides/security/", rendered)
+
+    def test_historical_pruning_rejects_duplicate_shared_footer_route(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            assembly = Path(temp_name)
+            for language in ("en", "cn"):
+                docs = assembly / f"content/{language}/docs"
+                docs.mkdir(parents=True)
+                (docs / "index.md").write_text("# Docs\n", encoding="utf-8")
+                footer = assembly / f"data/footer/{language}.yaml"
+                footer.parent.mkdir(parents=True, exist_ok=True)
+                prefix = "cn/" if language == "cn" else ""
+                footer.write_text(
+                    "links:\n"
+                    f"  - {{ label: Blog, url: /{prefix}blog/ }}\n"
+                    f"  - {{ label: Blog again, url: /{prefix}blog/ }}\n",
+                    encoding="utf-8",
+                )
+
+            with self.assertRaisesRegex(SystemExit, "expected one shared footer route"):
+                versioning.prune_historical_content(assembly, ORIGIN)
+
     def test_toc_accessible_name_accepts_en_cn_and_no_toc(self) -> None:
         fixtures = (
             (
@@ -624,7 +666,7 @@ class VersionUrlTest(unittest.TestCase):
                         publish_path=PUBLISH_PATH,
                         allowed_paths=ALLOWED_PATHS,
                     ),
-                    "https://hugegraph-oink.staged.apache.org/versions/1.7/docs/config/",
+                    "https://hugegraph.staged.apache.org/versions/1.7/docs/config/",
                 )
         self.assertEqual(
             versioning.rewrite_internal_url(
@@ -633,18 +675,18 @@ class VersionUrlTest(unittest.TestCase):
                 publish_path="",
                 allowed_paths=ALLOWED_PATHS,
             ),
-            "https://hugegraph-oink.staged.apache.org/blog/",
+            "https://hugegraph.staged.apache.org/blog/",
         )
         for unsafe in (
             "https://hugegraph.apache.org:444/docs/config/",
-            "https://evil@hugegraph-oink.staged.apache.org/docs/",
-            "https://@hugegraph-oink.staged.apache.org/docs/",
-            "https://hugegraph-oink.staged.apache.org\\docs/",
-            "https://hugegraph-oink.staged.apache.org。/docs/",
+            "https://evil@hugegraph.staged.apache.org/docs/",
+            "https://@hugegraph.staged.apache.org/docs/",
+            "https://hugegraph.staged.apache.org\\docs/",
+            "https://hugegraph.staged.apache.org。/docs/",
             "https://hugegraph.apache.org%2e/docs/",
             "https://ｈｕｇｅｇｒａｐｈ.apache.org/docs/",
-            r"https:\hugegraph-oink.staged.apache.org\docs/",
-            r"https:/\hugegraph-oink.staged.apache.org\docs/",
+            r"https:\hugegraph.staged.apache.org\docs/",
+            r"https:/\hugegraph.staged.apache.org\docs/",
         ):
             with (
                 self.subTest(unsafe=unsafe),
@@ -968,8 +1010,6 @@ class VersionUrlTest(unittest.TestCase):
                 artifact_prefix="",
                 site_origin=ORIGIN,
                 output=temp / "aggregate",
-                asf_profile=None,
-                asf_whoami=None,
             )
             with self.assertRaises(SystemExit):
                 versioning.aggregate(args)
@@ -988,14 +1028,20 @@ class VersionUrlTest(unittest.TestCase):
                 artifact_prefix="",
                 site_origin=ORIGIN,
                 output=output,
-                asf_profile=None,
-                asf_whoami=None,
             )
 
             def assert_complete_aggregate(path: Path, origin: str) -> None:
                 self.assertEqual(path, output.resolve())
                 self.assertEqual(origin, ORIGIN)
                 self.assertTrue((path / ".asf.yaml").is_file())
+                asf_text = (path / ".asf.yaml").read_text(encoding="utf-8")
+                self.assertEqual(
+                    asf_text,
+                    (versioning.ROOT / ".asf.yaml").read_text(encoding="utf-8"),
+                )
+                self.assertIn(
+                    "staging:\n  profile: ~\n  whoami: asf-staging\n", asf_text
+                )
                 self.assertTrue((path / "build-metadata/versions.json").is_file())
 
             with (

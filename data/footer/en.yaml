@@ -1,33 +1,10 @@
 brand:
-  name: Apache HugeGraph
-  tagline: A full-stack graph database ecosystem
-  slogan: OLTP, OLAP, graph AI, and the tools around them
-columns:
-  - title: Project
-    links:
-      - { label: Documentation, url: /docs/ }
-      - { label: Download, url: /docs/download/download/ }
-      - { label: Blog, url: /blog/ }
-      - { label: Community, url: /community/ }
-  - title: Resources
-    links:
-      - { label: Introduction, url: /docs/introduction/ }
-      - { label: Quick start, url: /docs/quickstart/ }
-      - { label: Configuration, url: /docs/config/ }
-      - { label: REST API, url: /docs/clients/restful-api/ }
-  - title: Community
-    links:
-      - { label: GitHub, url: 'https://github.com/apache/hugegraph', external: true }
-      - { label: Issue tracker, url: 'https://github.com/apache/hugegraph/issues', external: true }
-      - { label: Developer mailing list, url: /docs/contribution-guidelines/subscribe/ }
-      - { label: Security, url: 'https://www.apache.org/security/', external: true }
-  - title: Apache
-    links:
-      - { label: Foundation, url: 'https://www.apache.org/', external: true }
-      - { label: License, url: 'https://www.apache.org/licenses/', external: true }
-      - { label: Privacy, url: 'https://privacy.apache.org/policies/privacy-policy-public.html', external: true }
-      - { label: Events, url: 'https://www.apache.org/events/current-event.html', external: true }
-      - { label: Sponsorship, url: 'https://www.apache.org/foundation/sponsorship.html', external: true }
-      - { label: Thanks, url: 'https://www.apache.org/foundation/thanks.html', external: true }
-      - { label: Code of Conduct, url: 'https://www.apache.org/foundation/policies/conduct.html', external: true }
-
+  name: The Apache Software Foundation
+  logo: icons/apache_logo.svg
+nav_label: Apache links
+links:
+  - { label: Foundation, url: 'https://www.apache.org/', external: true }
+  - { label: License, url: 'https://www.apache.org/licenses/', external: true }
+  - { label: Security, url: /docs/guides/security/ }
+  - { label: Sponsorship, url: 'https://www.apache.org/foundation/sponsorship.html', external: true }
+  - { label: Privacy, url: 'https://privacy.apache.org/policies/privacy-policy-public.html', external: true }

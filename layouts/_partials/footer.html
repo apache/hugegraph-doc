@@ -1,0 +1,45 @@
+{{- /* HugeGraph keeps the compact ASF footer used by the original site while
+       retaining OINK's version, language, theme, and keyboard utility line. */ -}}
+{{- $style := partial "footer-style.html" . -}}
+{{- if ne $style "none" -}}
+  {{- if eq $style "fat" -}}
+    {{- $data := partial "footer-data.html" . -}}
+    {{- $brand := $data.brand | default dict -}}
+    {{- $logoURL := "" -}}
+    {{- with resources.Get ($brand.logo | default "icons/apache_logo.svg") -}}
+      {{- $logoURL = .RelPermalink -}}
+    {{- else -}}
+      {{- warnf "HugeGraph footer: Apache wordmark asset is missing" -}}
+    {{- end -}}
+<footer class="d-print-none" data-td-shell-footer>
+  <div class="hg-asf-footer" id="td-site-footer">
+    <div class="hg-asf-footer__container">
+      <div class="hg-asf-footer__brand">
+        <a href="https://www.apache.org/" target="_blank" rel="noopener noreferrer"
+           aria-label="{{ $brand.name | default "The Apache Software Foundation" }}">
+          {{- with $logoURL }}
+          <img src="{{ . }}" alt="{{ $brand.name | default "The Apache Software Foundation" }}" width="300" height="122">
+          {{- end }}
+        </a>
+        {{- with $data.links }}
+        <nav aria-label="{{ $data.nav_label | default "Apache links" }}">
+          <ul>
+            {{- range . }}
+            <li><a href="{{ if .external }}{{ .url }}{{ else }}{{ .url | relLangURL }}{{ end }}"{{ if .external }} target="_blank" rel="noopener noreferrer"{{ end }}>{{ .label }}</a></li>
+            {{- end }}
+          </ul>
+        </nav>
+        {{- end }}
+      </div>
+      <div class="hg-asf-footer__legal">
+        <p>Copyright &copy; {{ now.Year }} The Apache Software Foundation, Licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener noreferrer">Apache License Version 2.0</a></p>
+        <p>Apache, the names of Apache projects, and the feather logo are either registered trademarks or trademarks of the Apache Software Foundation in the United States and/or other countries.</p>
+      </div>
+    </div>
+  </div>
+  {{ partial "shell/footer-line.html" (dict "page" . "nested" true "collapsible" false) }}
+</footer>
+  {{- else -}}
+    {{ partial "shell/footer-line.html" . }}
+  {{- end -}}
+{{- end -}}

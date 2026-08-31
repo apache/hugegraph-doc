@@ -1,8 +1,68 @@
 // HugeGraph homepage: preserve the original product copy and isometric brand
 // artwork while using OINK's accessible navigation and landing primitives.
+.td-home > .td-site-header {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  width: 100%;
+  border-block-end: 0;
+  background: transparent;
+  color: #fff;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+
+  &::after {
+    display: none;
+  }
+
+  .td-nav-title {
+    background: none;
+    color: #fff;
+    -webkit-text-fill-color: #fff;
+  }
+
+  .td-nav-brand,
+  .td-nav-menu-zone > .nav-link,
+  .td-nav-search-box,
+  .td-nav-version-menu > .td-nav-util,
+  .td-site-nav__language > .td-language-selector__trigger,
+  .td-nav-theme-menu > .td-nav-util,
+  .td-nav-github,
+  .td-site-drawer-toggle {
+    color: #fff;
+  }
+
+  .td-nav-search-box {
+    border-color: rgba(255, 255, 255, 0.38);
+    background: rgba(15, 24, 92, 0.2);
+
+    kbd {
+      border-color: rgba(255, 255, 255, 0.32);
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+  }
+
+  .td-nav-brand:hover,
+  .td-nav-brand:focus-visible,
+  .td-nav-menu-zone > .nav-link:hover,
+  .td-nav-menu-zone > .nav-link:focus-visible,
+  .td-nav-search-box:hover,
+  .td-nav-search-box:focus-visible,
+  .td-nav-util:hover,
+  .td-nav-util:focus-visible,
+  .td-nav-github:hover,
+  .td-nav-github:focus-visible,
+  .td-site-drawer-toggle:hover,
+  .td-site-drawer-toggle:focus-visible {
+    background: rgba(15, 24, 92, 0.28);
+    color: #fff;
+  }
+}
+
 .td-default main .td-landing-hero.hg-home-hero {
-  min-height: clamp(650px, calc(100vh - 74px), 780px);
-  padding: clamp(58px, 7vh, 82px) 0 24px;
+  min-height: clamp(650px, 100svh, 780px);
+  padding: clamp(108px, calc(7vh + 50px), 132px) 0 24px;
   align-items: flex-start;
   background-color: #356fe8;
   background-image: url('/img/home/hugegraph-hero-1920.jpg');
@@ -102,10 +162,136 @@
   }
 }
 
+.td-home .hg-home-introduction {
+  padding-block: clamp(46px, 6vw, 76px);
+  background: color-mix(in srgb, var(--td-blue) 8%, var(--bs-body-bg));
+
+  .td-landing-markdown {
+    max-width: 1040px;
+    margin: 0 auto;
+    color: var(--td-ink);
+    font-size: clamp(1.02rem, 1.4vw, 1.16rem);
+    line-height: 1.75;
+    text-align: center;
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.td-home .hg-home-capabilities,
+.td-home .hg-home-community {
+  padding-block: clamp(54px, 6vw, 82px);
+}
+
+.td-home .hg-home-capabilities .td-landing-card,
+.td-home .hg-home-community .td-landing-card {
+  height: 100%;
+}
+
+.td-home .hg-home-band {
+  padding-block: clamp(42px, 5vw, 66px);
+  background: color-mix(in srgb, var(--td-blue) 10%, var(--bs-body-bg));
+  text-align: center;
+
+  .td-landing-section__head {
+    margin: 0;
+  }
+
+  .td-landing-section__head h2 {
+    font-size: clamp(1.75rem, 3.4vw, 2.6rem);
+  }
+}
+
+.td-home .hg-home-welcome {
+  background: color-mix(in srgb, var(--td-copper) 9%, var(--bs-body-bg));
+}
+
+.hg-asf-footer {
+  border-block-start: 2px solid #21b6d7;
+  background: #41414d;
+  color: #f5f5f8;
+
+  &__container {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.7fr);
+    align-items: center;
+    gap: clamp(2rem, 5vw, 5rem);
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: clamp(2rem, 4vw, 3.4rem) clamp(1.25rem, 5vw, 4.5rem);
+  }
+
+  &__brand {
+    text-align: center;
+
+    > a {
+      display: inline-block;
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      max-width: 300px;
+      height: auto;
+      margin: 0 auto 1.4rem;
+    }
+
+    ul {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.55rem 1rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+  }
+
+  a {
+    color: #f5f5f8;
+    text-decoration-color: rgba(255, 255, 255, 0.5);
+    text-underline-offset: 0.16em;
+
+    &:hover,
+    &:focus-visible {
+      color: #fff;
+      text-decoration-thickness: 2px;
+    }
+  }
+
+  &__legal {
+    font-size: clamp(0.9rem, 1.25vw, 1.02rem);
+    line-height: 1.65;
+    text-align: center;
+
+    p {
+      margin: 0;
+    }
+
+    p + p {
+      margin-top: 1rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .hg-asf-footer__container {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+
+  .hg-asf-footer__brand img {
+    width: 76vw;
+    max-width: 250px;
+  }
+}
+
 @media (max-width: 900px) {
   .td-default main .td-landing-hero.hg-home-hero {
     min-height: 720px;
-    padding-top: 52px;
+    padding-top: 102px;
     background-position: center bottom;
     background-image: url('/img/home/hugegraph-hero-960.jpg');
     background-size: auto 100%;
@@ -134,7 +320,7 @@
 @media (max-width: 575.98px) {
   .td-default main .td-landing-hero.hg-home-hero {
     min-height: 760px;
-    padding: 38px 0 20px;
+    padding: 88px 0 20px;
     background-position: 50% bottom;
     background-size: auto 74%;
 
@@ -163,6 +349,21 @@
 }
 
 @media (forced-colors: active) {
+  .td-home > .td-site-header {
+    background: Canvas;
+
+    .td-nav-title,
+    .td-nav-brand,
+    .td-nav-menu-zone > .nav-link,
+    .td-nav-search-box,
+    .td-nav-util,
+    .td-nav-github,
+    .td-site-drawer-toggle {
+      color: CanvasText;
+      -webkit-text-fill-color: CanvasText;
+    }
+  }
+
   .td-default main .td-landing-hero.hg-home-hero {
     min-height: auto;
     background-image: none;

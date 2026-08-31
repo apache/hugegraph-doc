@@ -4,8 +4,7 @@
     "origin": "https://hugegraph.apache.org/",
     "verifiedAt": "2026-08-31",
     "defaultStatus": 200,
-    "stagingOrigin": "https://hugegraph-oink.staged.apache.org/",
-    "stagingStatusBeforePublish": 404
+    "stagingOrigin": "https://hugegraph.staged.apache.org/"
   },
   "routes": [
     {"path": "/", "versions": ["latest", "1.7", "1.5"], "file": "index.html", "contains": ["Apache HugeGraph"]},

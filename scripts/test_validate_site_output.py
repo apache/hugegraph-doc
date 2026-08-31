@@ -32,6 +32,66 @@ def parse(fragment: str):
 
 
 class SiteOutputSecurityTest(unittest.TestCase):
+    def test_toc_accessibility_accepts_empty_and_populated_localized_navs(self) -> None:
+        fixtures = (
+            (
+                "docs/config/index.html",
+                '<nav id="TableOfContents" aria-label="Content"></nav>',
+            ),
+            (
+                "cn/docs/config/index.html",
+                '<nav id="TableOfContents" aria-label="目录">'
+                '<ul><li><a href="#server">Server</a></li></ul></nav>',
+            ),
+            (
+                "versions/1.7/cn/docs/config/index.html",
+                '<nav id="TableOfContents" aria-label="目录"></nav>',
+            ),
+        )
+        for page_name, fragment in fixtures:
+            with self.subTest(page_name=page_name):
+                self.assertEqual(
+                    VALIDATOR.toc_accessibility_errors(parse(fragment), page_name), []
+                )
+
+        self.assertEqual(
+            VALIDATOR.toc_accessibility_errors(
+                parse("<main>No table of contents</main>"), "docs/short/index.html"
+            ),
+            [],
+        )
+
+    def test_toc_accessibility_rejects_missing_wrong_and_duplicate_labels(self) -> None:
+        fixtures = (
+            (
+                '<nav id="TableOfContents"></nav>',
+                "docs/config/index.html: TableOfContents nav must have exactly one "
+                "localized aria-label 'Content', found []",
+            ),
+            (
+                '<nav id="TableOfContents" aria-label="Content"></nav>',
+                "cn/docs/config/index.html: TableOfContents nav must have exactly one "
+                "localized aria-label '目录', found ['Content']",
+            ),
+            (
+                '<nav id="TableOfContents" aria-label="Content" '
+                'aria-label="Content"></nav>',
+                "docs/config/index.html: TableOfContents nav must have exactly one "
+                "localized aria-label 'Content', found ['Content', 'Content']",
+            ),
+        )
+        for fragment, expected in fixtures:
+            page_name = (
+                "cn/docs/config/index.html"
+                if "localized aria-label '目录'" in expected
+                else "docs/config/index.html"
+            )
+            with self.subTest(fragment=fragment):
+                self.assertEqual(
+                    VALIDATOR.toc_accessibility_errors(parse(fragment), page_name),
+                    [expected],
+                )
+
     def test_error_documents_are_noindex_without_canonical_or_hreflang(self) -> None:
         parser = parse(
             '<meta name="robots" content="noindex, nofollow"><main>Not found</main>'
@@ -78,7 +138,8 @@ class SiteOutputSecurityTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_name:
             root = pathlib.Path(temp_name)
             (root / "index.html").write_text(
-                '<main><a href="/versions/1.7/docs/">1.7</a></main>',
+                '<main><a href="/versions/1.7/docs/">1.7</a></main>'
+                '<nav id="TableOfContents"></nav>',
                 encoding="utf-8",
             )
             result = subprocess.run(
@@ -94,6 +155,23 @@ class SiteOutputSecurityTest(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+            full_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(VALIDATOR_PATH),
+                    str(root),
+                    "https://hugegraph.apache.org/versions/1.5/",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(full_result.returncode, 1)
+            self.assertIn(
+                "TableOfContents nav must have exactly one localized aria-label",
+                full_result.stdout,
+            )
 
             (root / "index.html").write_text(
                 "<main><script>alert(1)</script></main>", encoding="utf-8"

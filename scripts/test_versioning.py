@@ -38,6 +38,87 @@ def rewrite(value: str) -> str:
 
 
 class VersionUrlTest(unittest.TestCase):
+    def test_toc_accessible_name_accepts_en_cn_and_no_toc(self) -> None:
+        fixtures = (
+            (
+                "docs/config/index.html",
+                '<nav id="TableOfContents" aria-label="Content"></nav>',
+            ),
+            (
+                "cn/docs/config/index.html",
+                '<nav id="TableOfContents" aria-label="目录">'
+                '<ul><li><a href="#server">Server</a></li></ul></nav>',
+            ),
+            ("docs/short/index.html", "<main>No table of contents</main>"),
+        )
+        for relative, fragment in fixtures:
+            with self.subTest(relative=relative):
+                parser = versioning.DocumentParser()
+                parser.feed(fragment)
+                versioning.require_toc_accessible_name(parser, relative)
+
+    def test_toc_accessible_name_rejects_missing_wrong_and_duplicates(self) -> None:
+        fixtures = (
+            (
+                "docs/config/index.html",
+                '<nav id="TableOfContents"></nav>',
+            ),
+            (
+                "cn/docs/config/index.html",
+                '<nav id="TableOfContents" aria-label="Content"></nav>',
+            ),
+            (
+                "docs/config/index.html",
+                '<nav id="TableOfContents" aria-label="Content" '
+                'aria-label="Content"></nav>',
+            ),
+            (
+                "docs/config/index.html",
+                '<nav id="TableOfContents" aria-label="Content"></nav>'
+                '<nav id="TableOfContents" aria-label="Content"></nav>',
+            ),
+        )
+        for relative, fragment in fixtures:
+            with self.subTest(fragment=fragment):
+                parser = versioning.DocumentParser()
+                parser.feed(fragment)
+                with self.assertRaises(SystemExit):
+                    versioning.require_toc_accessible_name(parser, relative)
+
+    def test_validate_artifact_rejects_missing_toc_accessible_name(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            artifact = temp / "artifact"
+            artifact.mkdir()
+            entry = json.loads(
+                (versioning.ROOT / "versions.json").read_text(encoding="utf-8")
+            )["versions"][0]
+            sha = "a" * 40
+            metadata = dict(entry)
+            metadata.update({"sha": sha, "baseURL": ORIGIN})
+            (artifact / ".version.json").write_text(
+                json.dumps(metadata), encoding="utf-8"
+            )
+            (artifact / "index.html").write_text(
+                '<nav id="TableOfContents"></nav>', encoding="utf-8"
+            )
+            contract = temp / "url-contract.json"
+            contract.write_text(
+                json.dumps({"schemaVersion": 1, "routes": []}), encoding="utf-8"
+            )
+            args = argparse.Namespace(
+                manifest=versioning.ROOT / "versions.json",
+                version="latest",
+                sha=sha,
+                site_origin=ORIGIN,
+                artifact=artifact,
+            )
+            with (
+                mock.patch.object(versioning, "URL_CONTRACT", contract),
+                self.assertRaisesRegex(SystemExit, "TableOfContents nav"),
+            ):
+                versioning.validate_artifact(args)
+
     def test_version_urls_preserve_language_and_order(self) -> None:
         manifest = {
             "versions": [

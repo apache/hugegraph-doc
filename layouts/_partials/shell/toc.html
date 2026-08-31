@@ -1,0 +1,9 @@
+{{- /* OINK v1.0.0 shell/toc.html with an accessible name on Hugo's TOC nav. */ -}}
+{{- $toc := .TableOfContents -}}
+{{- $label := T "toc_on_this_page" | htmlEscape -}}
+{{- $toc = replace $toc `<nav id="TableOfContents">` (printf `<nav id="TableOfContents" aria-label="%s">` $label) -}}
+<div class="td-shell-toc__inner" data-proofer-ignore>
+  <div class="td-shell-toc__body" id="td-shell-toc-body">
+    {{ $toc | safeHTML }}
+  </div>
+</div>

@@ -231,6 +231,31 @@ def error_document_seo_errors(parser: DocumentParser, page_name: str) -> list[st
     return errors
 
 
+def toc_accessibility_errors(parser: DocumentParser, page_name: str) -> list[str]:
+    """Require each rendered Hugo TOC nav to have one localized accessible name."""
+
+    if not parser.toc_nav_labels:
+        return []
+    if len(parser.toc_nav_labels) != 1:
+        return [
+            f"{page_name}: expected at most one TableOfContents nav, "
+            f"found {len(parser.toc_nav_labels)}"
+        ]
+    parts = pathlib.PurePosixPath(page_name).parts
+    is_chinese = bool(parts) and (
+        parts[0] == "cn"
+        or (len(parts) >= 3 and parts[0] == "versions" and parts[2] == "cn")
+    )
+    expected = "目录" if is_chinese else "Content"
+    labels = parser.toc_nav_labels[0]
+    if labels != [expected]:
+        return [
+            f"{page_name}: TableOfContents nav must have exactly one localized "
+            f"aria-label {expected!r}, found {labels!r}"
+        ]
+    return []
+
+
 def document_security_errors(
     parser: DocumentParser, page_name: str, base_parts: urllib.parse.SplitResult
 ) -> list[str]:
@@ -290,6 +315,7 @@ class DocumentParser(html.parser.HTMLParser):
         self.authored_violations: list[str] = []
         self.inline_css_http_resources: list[str] = []
         self.inline_css_sources: list[str] = []
+        self.toc_nav_labels: list[list[str]] = []
         self.action_manifest = ""
         self._in_action_manifest = False
         self._content_depth = 0
@@ -298,6 +324,12 @@ class DocumentParser(html.parser.HTMLParser):
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         tag = tag.lower()
         values = {key.lower(): value or "" for key, value in attrs}
+        if tag == "nav" and "TableOfContents" in [
+            value or "" for key, value in attrs if key.lower() == "id"
+        ]:
+            self.toc_nav_labels.append(
+                [value or "" for key, value in attrs if key.lower() == "aria-label"]
+            )
         if tag in {"main", "article"}:
             self._content_depth += 1
         if self._content_depth:
@@ -522,6 +554,7 @@ def main() -> int:
         errors.extend(error_document_seo_errors(parser, page_name))
         if args.security_only:
             continue
+        errors.extend(toc_accessibility_errors(parser, page_name))
         try:
             alias_target = refresh_target(parser)
         except ValueError as exc:

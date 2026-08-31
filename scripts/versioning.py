@@ -95,9 +95,16 @@ class DocumentParser(html.parser.HTMLParser):
         self.canonical: list[str] = []
         self.hreflang: list[tuple[str, str]] = []
         self.meta: list[dict[str, str]] = []
+        self.toc_nav_labels: list[list[str]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = {key.lower(): value or "" for key, value in attrs}
+        if tag.lower() == "nav" and "TableOfContents" in [
+            value or "" for key, value in attrs if key.lower() == "id"
+        ]:
+            self.toc_nav_labels.append(
+                [value or "" for key, value in attrs if key.lower() == "aria-label"]
+            )
         for attribute in (
             "href",
             "src",
@@ -146,6 +153,24 @@ def require_error_document_without_canonical(
     if canonical_tags:
         fail(f"error document must not declare canonical: {relative}")
     return True
+
+
+def require_toc_accessible_name(parser: DocumentParser, relative: str) -> None:
+    """Require one localized label whenever Hugo renders its page TOC nav."""
+    if not parser.toc_nav_labels:
+        return
+    if len(parser.toc_nav_labels) != 1:
+        fail(
+            f"expected at most one TableOfContents nav in {relative}, "
+            f"found {len(parser.toc_nav_labels)}"
+        )
+    expected = "目录" if relative.startswith("cn/") else "Content"
+    labels = parser.toc_nav_labels[0]
+    if labels != [expected]:
+        fail(
+            f"TableOfContents nav in {relative} must have exactly one localized "
+            f"aria-label {expected!r}, found {labels!r}"
+        )
 
 
 def require_safe_url_scheme(value: str, source: str) -> bool:
@@ -1618,6 +1643,7 @@ def validate_artifact(args: argparse.Namespace) -> None:
             fail(f"404 page does not use the interactive OINK shell: {relative}")
         document = DocumentParser()
         document.feed(text)
+        require_toc_accessible_name(document, relative)
         alias_target = refresh_target(document)
         if alias_target:
             validate_url(alias_target, path)

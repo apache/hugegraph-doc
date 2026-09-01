@@ -1,5 +1,5 @@
-{{- /* HugeGraph keeps the compact ASF footer used by the original site while
-       retaining OINK's version, language, theme, and keyboard utility line. */ -}}
+{{- /* HugeGraph keeps the compact ASF footer used by the original site.
+       Global utilities live in the site header, so the footer stays focused. */ -}}
 {{- $style := partial "footer-style.html" . -}}
 {{- if ne $style "none" -}}
   {{- if eq $style "fat" -}}
@@ -37,7 +37,6 @@
       </div>
     </div>
   </div>
-  {{ partial "shell/footer-line.html" (dict "page" . "nested" true "collapsible" false) }}
 </footer>
   {{- else -}}
     {{ partial "shell/footer-line.html" . }}

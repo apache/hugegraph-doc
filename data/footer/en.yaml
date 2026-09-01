@@ -7,4 +7,3 @@ links:
   - { label: License, url: 'https://www.apache.org/licenses/', external: true }
   - { label: Security, url: /docs/guides/security/ }
   - { label: Sponsorship, url: 'https://www.apache.org/foundation/sponsorship.html', external: true }
-  - { label: Privacy, url: 'https://privacy.apache.org/policies/privacy-policy-public.html', external: true }

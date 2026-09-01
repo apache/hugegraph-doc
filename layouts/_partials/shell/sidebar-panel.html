@@ -1,0 +1,97 @@
+{{- /* OINK v1.0.0 override: the mobile Docs drawer owns global controls that
+       disappear from the compact header and no longer repeat in the footer. */ -}}
+{{- $config := partialCached "shell/config.html" . .Site.Language.Lang -}}
+{{- $darkMode := partialCached "dark-mode-config.html" "dark-mode-global" -}}
+{{- $hasAlgolia := partialCached "search/algolia-enabled.html" . .Site.Language.Lang .Site.BaseURL -}}
+{{- $hasOnlineSearch := or .Site.Params.gcs_engine_id $hasAlgolia -}}
+{{- $localSearch := partial "shell/search-enabled.html" . -}}
+{{- /* The sidebar owns its identity row even when the global navbar exists:
+       content hierarchy has visual priority over site-wide navigation. */ -}}
+<div class="td-shell-sidebar__panel">
+  <div class="td-shell-sidebar__header">
+    <div class="td-shell-sidebar__brand-row">
+      <a class="td-shell-sidebar__brand" href="{{ .Site.Home.RelPermalink }}" aria-label="{{ $config.brandName }} home">
+        <img src="{{ $config.logoURL }}" alt="" width="20" height="20">
+        {{- if $config.wordmarkURL }}
+        <img class="td-shell-brand-logo--wordmark" src="{{ $config.wordmarkURL }}" alt="" width="100" height="40">
+        {{- else }}
+        <span class="td-shell-wordmark">{{ $config.brandName }}</span>
+        {{- end }}
+      </a>
+      {{- if $localSearch }}
+      <button type="button" class="td-shell-iconbtn td-shell-sidebar__search" data-td-shell-search-open
+        title="{{ T "ui_search" }}" aria-label="{{ T "ui_search" }}"
+        aria-controls="td-shell-search" aria-expanded="false">
+        {{- partialCached "shell/icon.html" "search" "sidebar-search" -}}
+      </button>
+      {{- end }}
+      <button type="button" class="td-shell-iconbtn td-shell-sidebar__collapse" data-td-shell-sidebar-toggle
+        title="{{ T "ui_sidebar_collapse" }}" aria-label="{{ T "ui_sidebar_collapse" }}">
+        {{- partialCached "shell/icon.html" "panel-left" "panel-left" -}}
+      </button>
+    </div>
+    {{- /* The local palette has a compact desktop opener above, so its full
+           field belongs to the drawer at every navbar setting. Online search
+           has no equivalent icon contract and may keep this row on desktop. */ -}}
+    {{- $drawerOnly := or $localSearch (not $hasOnlineSearch) }}
+    <div class="td-shell-sidebar__header-row{{ if $drawerOnly }} td-shell-sidebar__header-row--drawer-only{{ end }}">
+      {{- if $localSearch }}
+      <button type="button" class="td-shell-search-btn td-shell-search-btn--drawer" data-td-shell-search-open
+        aria-controls="td-shell-search" aria-expanded="false">
+        {{ partialCached "shell/icon.html" "search" "search" }}
+        <span class="td-shell-search-btn__label">{{ T "ui_search" }}</span>
+        <span class="td-shell-search-btn__keys" aria-hidden="true"><kbd>/</kbd></span>
+      </button>
+      {{- else if $hasOnlineSearch }}
+        {{ partial "search-input.html" . }}
+      {{- else }}
+      <span class="td-shell-sidebar__header-spacer"></span>
+      {{- end }}
+      <button type="button" class="td-shell-iconbtn td-shell-sidebar__close" data-td-shell-drawer-close
+        aria-label="{{ T "ui_drawer_close" }}" aria-controls="td-shell-sidebar">{{ partialCached "shell/icon.html" "x" "x" }}</button>
+    </div>
+    {{ partial "shell/root-menu.html" . }}
+  </div>
+  <div class="td-shell-sidebar__viewport" data-td-shell-sidebar-scroll>
+    {{ partial "shell/sidebar.html" . }}
+    {{/* Below xl the TOC rail is hidden; docs-shell.js parks its contents here
+         so the table of contents and the taxonomies stay reachable from the drawer. Empty until then. */ -}}
+    <div class="td-shell-sidebar__aside" data-td-shell-aside-slot hidden></div>
+  </div>
+  <nav class="hg-shell-mobile-utils" aria-label="{{ T "ui_palette_actions" }}">
+    {{- with .Site.Params.versions }}
+    <section class="hg-shell-mobile-utils__group" aria-labelledby="hg-mobile-versions">
+      <strong id="hg-mobile-versions">{{ $.Site.Params.version_menu | default "Version" }}</strong>
+      <div class="hg-shell-mobile-utils__links">
+        {{- range . }}
+          {{- $url := strings.TrimSuffix "/" (.url | default "") -}}
+          {{- if $url }}
+          <a href="{{ $url }}/"{{ if eq .version $.Site.Params.version }} aria-current="page"{{ end }}>
+            {{- partialCached "shell/icon.html" "code-branch" (printf "mobile-version-%s" .version) -}}
+            <span>{{ .name | default .version }}</span>
+          </a>
+          {{- end }}
+        {{- end }}
+      </div>
+    </section>
+    {{- end }}
+    <section class="hg-shell-mobile-utils__group" aria-label="{{ T "ui_language_select" }}">
+      {{ partial "language-selector.html" (dict "page" . "mode" "list" "class" "hg-shell-mobile-utils__languages") }}
+    </section>
+    {{- if $darkMode.showMenu }}
+    <section class="hg-shell-mobile-utils__group" aria-label="{{ T "ui_theme_toggle" }}">
+      <div class="hg-shell-mobile-utils__links">
+        <button type="button" data-bs-theme-value="light" aria-pressed="false">{{ partialCached "shell/icon.html" "sun" "mobile-theme-light" }}<span>{{ T "ui_theme_light" }}</span></button>
+        <button type="button" data-bs-theme-value="dark" aria-pressed="false">{{ partialCached "shell/icon.html" "moon" "mobile-theme-dark" }}<span>{{ T "ui_theme_dark" }}</span></button>
+        <button type="button" data-bs-theme-value="auto" aria-pressed="false">{{ partialCached "shell/icon.html" "contrast" "mobile-theme-auto" }}<span>{{ T "ui_theme_auto" }}</span></button>
+      </div>
+    </section>
+    {{- end }}
+    {{- with $config.projectRepo }}
+    <a class="hg-shell-mobile-utils__github" href="{{ . }}" target="_blank" rel="noopener noreferrer">
+      {{ partialCached "shell/icon.html" "github" "mobile-github" }}<span>GitHub</span>
+    </a>
+    {{- end }}
+  </nav>
+  <div class="td-shell-sidebar__resizer" data-td-shell-resizer aria-hidden="true"></div>
+</div>

@@ -23,10 +23,12 @@
 
   .td-nav-brand,
   .td-nav-menu-zone > .nav-link,
+  .td-nav-menu-zone .td-nav-menu > .nav-link,
   .td-nav-search-box,
   .td-nav-version-menu > .td-nav-util,
   .td-site-nav__language > .td-language-selector__trigger,
   .td-nav-theme-menu > .td-nav-util,
+  .td-shell-keyboard__trigger,
   .td-nav-github,
   .td-site-drawer-toggle {
     color: #fff;
@@ -47,6 +49,8 @@
   .td-nav-brand:focus-visible,
   .td-nav-menu-zone > .nav-link:hover,
   .td-nav-menu-zone > .nav-link:focus-visible,
+  .td-nav-menu-zone .td-nav-menu > .nav-link:hover,
+  .td-nav-menu-zone .td-nav-menu > .nav-link:focus-visible,
   .td-nav-search-box:hover,
   .td-nav-search-box:focus-visible,
   .td-nav-util:hover,
@@ -57,6 +61,28 @@
   .td-site-drawer-toggle:focus-visible {
     background: rgba(15, 24, 92, 0.28);
     color: #fff;
+  }
+}
+
+// Keep global help with the other persistent header utilities. The OINK
+// shortcut panel is reused intact; only its trigger and viewport anchoring are
+// adapted from the former footer placement.
+.td-site-header {
+  .td-shell-keyboard__trigger {
+    width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    color: var(--bs-tertiary-color);
+  }
+
+  .td-shell-keyboard-help {
+    width: unquote('min(21rem, calc(100vw - 2rem))');
+    max-height: calc(100dvh - 5rem);
+    gap: 0;
+    padding: 0;
+    overflow-y: auto;
+    inset-inline-start: auto;
+    inset-inline-end: 0;
   }
 }
 
@@ -217,10 +243,10 @@
     display: grid;
     grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.7fr);
     align-items: center;
-    gap: clamp(2rem, 5vw, 5rem);
+    gap: clamp(1.5rem, 4vw, 4rem);
     max-width: 1440px;
     margin: 0 auto;
-    padding: clamp(2rem, 4vw, 3.4rem) clamp(1.25rem, 5vw, 4.5rem);
+    padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1.25rem, 5vw, 4.5rem);
   }
 
   &__brand {
@@ -233,16 +259,16 @@
     img {
       display: block;
       width: 100%;
-      max-width: 300px;
+      max-width: 260px;
       height: auto;
-      margin: 0 auto 1.4rem;
+      margin: 0 auto 0.7rem;
     }
 
     ul {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 0.55rem 1rem;
+      gap: 0.25rem 1rem;
       margin: 0;
       padding: 0;
       list-style: none;
@@ -263,7 +289,7 @@
 
   &__legal {
     font-size: clamp(0.9rem, 1.25vw, 1.02rem);
-    line-height: 1.65;
+    line-height: 1.5;
     text-align: center;
 
     p {
@@ -271,8 +297,79 @@
     }
 
     p + p {
-      margin-top: 1rem;
+      margin-top: 0.6rem;
     }
+  }
+}
+
+.hg-shell-mobile-utils,
+.hg-landing-mobile-utils {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .hg-shell-mobile-utils,
+  .hg-landing-mobile-utils {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.9rem;
+    border-block-start: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+  }
+
+  .hg-landing-mobile-utils {
+    margin-block-start: 0.25rem;
+    border-block-end: 1px solid var(--bs-border-color);
+  }
+
+  .hg-shell-mobile-utils__group {
+    display: grid;
+    gap: 0.35rem;
+
+    > strong {
+      color: var(--bs-tertiary-color);
+      font-family: var(--td-meta-font-family);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+  }
+
+  .hg-shell-mobile-utils__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+
+    > a,
+    > button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 36px;
+      padding: 0.4rem 0.6rem;
+      border: 0;
+      border-radius: 0.5rem;
+      background: var(--bs-tertiary-bg);
+      color: var(--bs-body-color);
+      font-size: 0.8rem;
+      text-decoration: none;
+    }
+
+    > a[aria-current='page'],
+    > button[aria-pressed='true'] {
+      background: var(--bs-primary-bg-subtle);
+      color: var(--bs-primary-text-emphasis);
+    }
+  }
+
+  .hg-shell-mobile-utils__github {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 36px;
+    color: var(--bs-body-color);
+    font-size: 0.82rem;
+    text-decoration: none;
   }
 }
 
@@ -284,7 +381,7 @@
 
   .hg-asf-footer__brand img {
     width: 76vw;
-    max-width: 250px;
+    max-width: 220px;
   }
 }
 

@@ -90,6 +90,7 @@ params:
   github_project_repo: https://github.com/apache/hugegraph
   github_branch: master
   logo: img/logo.svg
+  home_brand_name: HugeGraph
   version: latest
   # Historical entries are enabled only after the aggregate artifact exists.
   version_menu_pagelinks: false
@@ -115,6 +116,7 @@ params:
     sidebar_menu_compact: true
     sidebar_menu_foldable: true
     sidebar_expand_levels: 2
+    wide_nav_sections: [community]
     sidebar_icon_policy: groups
     sidebar_item_overflow: wrap
     page_context_menu:

@@ -1,23 +1,57 @@
 // HugeGraph homepage: preserve the original product copy and isometric brand
 // artwork while using OINK's accessible navigation and landing primitives.
+$hg-navbar-purple: #532fc9;
+
+.td-home {
+  // Keep OINK's display face for headings, but restore the original site's
+  // native system stack for body copy, links, buttons, and navigation.
+  --td-ui-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans SC", "PingFang SC", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  --td-body-font-family: var(--td-ui-font-family);
+  --td-heading-font-family: "Inter", var(--td-ui-font-family);
+}
+
+.td-site-header--wide > .td-site-container {
+  max-width: none;
+  padding-inline: clamp(16px, 1.5vw, 28px);
+}
+
 .td-home > .td-site-header {
-  position: absolute;
+  position: fixed;
   inset-block-start: 0;
   inset-inline: 0;
+  z-index: 100;
   width: 100%;
   border-block-end: 0;
   background: transparent;
   color: #fff;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+  transition:
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    -webkit-backdrop-filter 180ms ease,
+    backdrop-filter 180ms ease;
 
   &::after {
     display: none;
   }
 
+  &.td-scrolled {
+    background: rgba($hg-navbar-purple, 0.96);
+    box-shadow: 0 6px 22px rgba(20, 17, 73, 0.24);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+
   .td-nav-title {
     background: none;
     color: #fff;
+    font-family: var(--td-ui-font-family);
+    font-size: 1.08rem;
+    font-weight: 700;
+    letter-spacing: 0;
     -webkit-text-fill-color: #fff;
   }
 
@@ -177,14 +211,93 @@
 
   .td-landing-button--ghost {
     border-color: transparent;
-    background: #a94f00;
+    background: #ffa630;
     color: #fff;
 
     &:hover {
       border-color: transparent;
-      background: #873f00;
+      background: #e38100;
       color: #fff;
     }
+  }
+}
+
+.td-home .td-landing-landing :where(p, li) a:not(.td-landing-button) {
+  color: #3176d9;
+
+  &:hover,
+  &:focus-visible {
+    color: #1e53a0;
+  }
+}
+
+[data-bs-theme="dark"]
+  .td-home
+  .td-landing-landing
+  :where(p, li)
+  a:not(.td-landing-button) {
+  color: #78b7ff;
+
+  &:hover,
+  &:focus-visible {
+    color: #a8d0ff;
+  }
+}
+
+// Restore the solid purple Docs banner from the previous site while keeping
+// OINK's sticky header, search, version, language, theme, and help controls.
+.td-shell-chrome .td-site-header {
+  border-block-end-color: rgba(255, 255, 255, 0.22);
+  background: $hg-navbar-purple;
+  color: #fff;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+
+  .td-nav-title {
+    color: #fff;
+    -webkit-text-fill-color: #fff;
+  }
+
+  .td-nav-brand,
+  .td-nav-menu-zone > .nav-link,
+  .td-nav-menu-zone .td-nav-menu > .nav-link,
+  .td-nav-version-menu > .td-nav-util,
+  .td-site-nav__language > .td-language-selector__trigger,
+  .td-nav-theme-menu > .td-nav-util,
+  .td-shell-keyboard__trigger,
+  .td-nav-github,
+  .td-site-drawer-toggle {
+    color: #fff;
+  }
+
+  .td-nav-search-box {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(20, 17, 73, 0.18);
+    color: #fff;
+
+    kbd {
+      border-color: rgba(255, 255, 255, 0.32);
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+  }
+
+  .td-nav-brand:hover,
+  .td-nav-brand:focus-visible,
+  .td-nav-menu-zone > .nav-link:hover,
+  .td-nav-menu-zone > .nav-link:focus-visible,
+  .td-nav-menu-zone .td-nav-menu > .nav-link:hover,
+  .td-nav-menu-zone .td-nav-menu > .nav-link:focus-visible,
+  .td-nav-search-box:hover,
+  .td-nav-search-box:focus-visible,
+  .td-nav-util:hover,
+  .td-nav-util:focus-visible,
+  .td-nav-github:hover,
+  .td-nav-github:focus-visible,
+  .td-site-drawer-toggle:hover,
+  .td-site-drawer-toggle:focus-visible {
+    background: rgba(20, 17, 73, 0.24);
+    color: #fff;
   }
 }
 

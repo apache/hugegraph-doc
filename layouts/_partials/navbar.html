@@ -18,14 +18,20 @@
 {{- $altSite := false -}}
 {{- if le (len $targets) 1 }}{{ $altSite = partial "landing/alt-site.html" . }}{{ end -}}
 {{- $autohide := partial "shell/navbar-autohide.html" . -}}
+{{- $brandName := $config.brandName -}}
+{{- if .IsHome -}}
+  {{- $brandName = .Site.Params.home_brand_name | default $brandName -}}
+{{- end -}}
+{{- $wideHeaderSections := .Site.Params.ui.wide_nav_sections | default (slice) -}}
+{{- $wideHeader := or .IsHome (in $wideHeaderSections .Section) -}}
 {{- if $autohide }}
 <div class="td-navbar-autohide" data-td-navbar-autohide>
 {{- end }}
-<header class="td-site-header d-print-none" data-td-header>
+<header class="td-site-header d-print-none{{ if $wideHeader }} td-site-header--wide{{ end }}" data-td-header>
   <div class="td-site-container">
     <nav class="td-site-nav" aria-label="{{ T "ui_main_nav" }}">
       <a href="{{ .Site.Home.RelPermalink }}" class="td-nav-brand" data-td-navbar-route
-         aria-label="{{ $config.brandName }} — {{ T "ui_home" }}"{{ if .IsHome }} aria-current="page"{{ end }}>
+         aria-label="{{ $brandName }} — {{ T "ui_home" }}"{{ if .IsHome }} aria-current="page"{{ end }}>
         <img src="{{ $config.logoURL }}" alt="" class="td-nav-logo" width="22" height="22">
         {{- /* The mark above is the constant half of the lockup. The text half
              is the site's wordmark when it has one, else its title, and it is
@@ -33,7 +39,7 @@
         {{- if $config.wordmarkURL }}
         <img src="{{ $config.wordmarkURL }}" alt="" class="td-nav-wordmark" width="100" height="40">
         {{- else }}
-        <span class="td-nav-title">{{ $config.brandName }}</span>
+        <span class="td-nav-title">{{ $brandName }}</span>
         {{- end }}
       </a>
 

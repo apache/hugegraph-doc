@@ -301,6 +301,51 @@ $hg-navbar-purple: #532fc9;
   }
 }
 
+// The desktop Docs sidebar deliberately overlays the navbar's left edge. Give
+// its identity row the same band treatment so the two structural regions read
+// as one header, while the drawer keeps its light mobile surface.
+@media (min-width: 768px) {
+  .td-shell-chrome--navbar .td-shell-sidebar__brand-row {
+    min-height: var(--td-shell-nav-h);
+    margin: calc(-1 * #{$spacer}) calc(-1 * #{$spacer}) 0;
+    padding-inline: $spacer;
+    border-block-end: 1px solid rgba(255, 255, 255, 0.22);
+    background: $hg-navbar-purple;
+    color: #fff;
+    box-shadow: 1px 0 $hg-navbar-purple;
+
+    .td-shell-wordmark {
+      background: none;
+      color: #fff;
+      -webkit-text-fill-color: #fff;
+    }
+
+    .td-shell-iconbtn {
+      color: #fff;
+
+      &:hover,
+      &:focus-visible {
+        background: rgba(20, 17, 73, 0.24);
+        color: #fff;
+      }
+    }
+  }
+}
+
+@media (forced-colors: active) and (min-width: 768px) {
+  .td-shell-chrome--navbar .td-shell-sidebar__brand-row {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+
+    .td-shell-wordmark,
+    .td-shell-iconbtn {
+      color: CanvasText;
+      -webkit-text-fill-color: CanvasText;
+    }
+  }
+}
+
 .td-home .hg-home-introduction {
   padding-block: clamp(46px, 6vw, 76px);
   background: color-mix(in srgb, var(--td-blue) 8%, var(--bs-body-bg));

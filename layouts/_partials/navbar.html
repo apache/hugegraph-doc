@@ -19,9 +19,6 @@
 {{- if le (len $targets) 1 }}{{ $altSite = partial "landing/alt-site.html" . }}{{ end -}}
 {{- $autohide := partial "shell/navbar-autohide.html" . -}}
 {{- $brandName := $config.brandName -}}
-{{- if .IsHome -}}
-  {{- $brandName = .Site.Params.home_brand_name | default $brandName -}}
-{{- end -}}
 {{- $wideHeaderSections := .Site.Params.ui.wide_nav_sections | default (slice) -}}
 {{- $wideHeader := or .IsHome (in $wideHeaderSections .Section) -}}
 {{- if $autohide }}

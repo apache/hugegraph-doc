@@ -90,7 +90,8 @@ params:
   github_project_repo: https://github.com/apache/hugegraph
   github_branch: master
   logo: img/logo.svg
-  home_brand_name: HugeGraph
+  # Visible navigation lockup; keep the longer site title for metadata/SEO.
+  brand_name: HugeGraph
   version: latest
   # Historical entries are enabled only after the aggregate artifact exists.
   version_menu_pagelinks: false

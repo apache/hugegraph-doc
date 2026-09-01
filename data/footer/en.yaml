@@ -1,6 +1,6 @@
 brand:
   name: The Apache Software Foundation
-  logo: icons/apache_logo.svg
+  logo: img/apache_logo.svg
 nav_label: Apache links
 links:
   - { label: Foundation, url: 'https://www.apache.org/', external: true }

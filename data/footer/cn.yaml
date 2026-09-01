@@ -1,6 +1,6 @@
 brand:
   name: The Apache Software Foundation
-  logo: icons/apache_logo.svg
+  logo: img/apache_logo.svg
 nav_label: Apache 链接
 links:
   - { label: 基金会, url: 'https://www.apache.org/', external: true }

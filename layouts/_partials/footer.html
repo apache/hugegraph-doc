@@ -6,7 +6,7 @@
     {{- $data := partial "footer-data.html" . -}}
     {{- $brand := $data.brand | default dict -}}
     {{- $logoURL := "" -}}
-    {{- with resources.Get ($brand.logo | default "icons/apache_logo.svg") -}}
+    {{- with resources.Get ($brand.logo | default "img/apache_logo.svg") -}}
       {{- $logoURL = .RelPermalink -}}
     {{- else -}}
       {{- warnf "HugeGraph footer: Apache wordmark asset is missing" -}}

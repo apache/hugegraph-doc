@@ -5,3 +5,6 @@ This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
 The initial codebase was donated to the ASF by HugeGraph Authors, copyright 2017-2021.
+
+This product includes OINK v1.0.0 (https://github.com/pgsty/oink),
+Copyright 2026 PGSTY contributors, licensed under the Apache License 2.0.

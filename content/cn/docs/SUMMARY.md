@@ -1,3 +1,8 @@
+---
+title: "旧版 GitBook 目录"
+draft: true
+---
+
 # HugeGraph Docs
 
 * [Download](download/download)
@@ -55,8 +60,6 @@
 * [HugeGraph API Performance-Outdated](performance/api-performance)
     * [v0.5.6 Stand-alone(RocksDB)](performance/api-performance/hugegraph-api-0.5.6-rocksdb)
     * [v0.5.6 Cluster(Cassandra)](performance/api-performance/hugegraph-api-0.5.6-cassandra)
-    * [v0.4.4](performance/api-performance/hugegraph-api-0.4.4)
-    * [v0.2](performance/api-performance/hugegraph-api-0.2)
 * [HugeGraph-Loader Performance](performance/hugegraph-loader-performance)
 
 ## ChangeLogs
@@ -64,14 +67,3 @@
 * [Release-1.2.0](changelog/hugegraph-1.2.0-release-notes)
 * [Release-1.0.0](changelog/hugegraph-1.0.0-release-notes)
 * [Release-0.12.0](changelog/hugegraph-0.12.0-release-notes)
-* [Release-0.11.2](changelog/hugegraph-0.11.2-release-notes)
-* [Release-0.10.4](changelog/hugegraph-0.10.4-release-notes)
-* [Release-0.9.2](changelog/hugegraph-0.9.2-release-notes)
-* [Release-0.8.0](changelog/hugegraph-0.8.0-release-notes)
-* [Release-0.7.4](changelog/hugegraph-0.7.4-release-notes)
-* [Release-0.6.1](changelog/hugegraph-0.6.1-release-notes)
-* [Release-0.5.6](changelog/hugegraph-0.5.6-release-notes)
-* [Release-0.4.4](changelog/hugegraph-0.4.4-release-notes)
-* [Release-0.3.3](changelog/hugegraph-0.3.3-release-notes)
-* [Release-0.2.4](changelog/hugegraph-0.2.4-release-notes)
-* [Release-0.2](changelog/hugegraph-0.2-release-notes)

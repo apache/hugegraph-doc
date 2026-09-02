@@ -1,0 +1,16 @@
+{{- /* Error documents describe whichever missing URL Apache serves them for, so
+       they must not claim the generated /404.html URL as canonical or translated. */ -}}
+{{- if not (.Store.Get "tdIsErrorDocument") -}}
+  {{- $targets := partialCached "language-targets.html" . .Site.BaseURL .RelPermalink .Site.Language.Lang -}}
+  {{- $outputFormat := lower (.Store.Get "tdOutputFormat" | default "html") -}}
+  {{- /* Print already receives the regular HTML URL as its canonical alternative. */ -}}
+  {{- if ne $outputFormat "print" }}
+<link rel="canonical" href="{{ .Permalink }}">
+  {{- end }}
+  {{- range $targets }}
+<link rel="alternate" hreflang="{{ .code }}" href="{{ .permalink }}">
+  {{- end }}
+  {{- range where $targets "active" false }}
+<meta property="og:locale:alternate" content="{{ .locale }}">
+  {{- end }}
+{{- end }}

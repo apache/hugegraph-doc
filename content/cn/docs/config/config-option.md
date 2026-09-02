@@ -2,6 +2,11 @@
 title: "Server 完整配置手册"
 linkTitle: "Server 完整配置手册"
 weight: 2
+search_keywords:
+  - gremlin.graph
+  - rest-server.properties
+  - hugegraph.properties
+search_boost: 1.5
 ---
 
 ### Gremlin Server 配置项
@@ -196,76 +201,60 @@ weight: 2
 | rocksdb.level0_stop_writes_trigger              | 36                                                                                                                                   | Hard limit on number of level-0 files for stopping writes.                                                                                                                                                                                                                                                                                                                                            |
 | rocksdb.soft_pending_compaction_bytes_limit     | 68719476736                                                                                                                          | The soft limit to impose on pending compaction in bytes.                                                                                                                                                                                                                                                                                                                                              |
 
-<details>
-<summary><b>K8s 配置项 (可选)</b></summary>
+> [!DETAILS]- **K8s 配置项 (可选)**
+> 对应配置文件`rest-server.properties`
+>
+> | config option    | default value                 | description                              |
+> |------------------|-------------------------------|------------------------------------------|
+> | server.use_k8s   | false                         | Whether to enable K8s multi-tenancy mode. |
+> | k8s.namespace    | hugegraph-computer-system     | K8s namespace for compute jobs.          |
+> | k8s.kubeconfig   |                               | Path to kubeconfig file.                 |
 
-对应配置文件`rest-server.properties`
+> [!DETAILS]- **Arthas 诊断配置项 (可选)**
+> 对应配置文件`rest-server.properties`
+>
+> | config option      | default value | description           |
+> |--------------------|---------------|-----------------------|
+> | arthas.telnetPort  | 8562          | Arthas telnet port.   |
+> | arthas.httpPort    | 8561          | Arthas HTTP port.     |
+> | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
 
-| config option    | default value                 | description                              |
-|------------------|-------------------------------|------------------------------------------|
-| server.use_k8s   | false                         | Whether to enable K8s multi-tenancy mode. |
-| k8s.namespace    | hugegraph-computer-system     | K8s namespace for compute jobs.          |
-| k8s.kubeconfig   |                               | Path to kubeconfig file.                 |
+> [!DETAILS]- **RPC Server 配置**
+> | config option               | default value                           | description                                                                                                                                                                                                   |
+> |-----------------------------|-----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+> | rpc.client_connect_timeout  | 20                                      | The timeout(in seconds) of rpc client connect to rpc server.                                                                                                                                                  |
+> | rpc.client_load_balancer    | consistentHash                          | The rpc client uses a load-balancing algorithm to access multiple rpc servers in one cluster. Default value is 'consistentHash', means forwarding by request parameters.                                      |
+> | rpc.client_read_timeout     | 40                                      | The timeout(in seconds) of rpc client read from rpc server.                                                                                                                                                   |
+> | rpc.client_reconnect_period | 10                                      | The period(in seconds) of rpc client reconnect to rpc server.                                                                                                                                                 |
+> | rpc.client_retries          | 3                                       | Failed retry number of rpc client calls to rpc server.                                                                                                                                                        |
+> | rpc.config_order            | 999                                     | Sofa rpc configuration file loading order, the larger the more later loading.                                                                                                                                 |
+> | rpc.logger_impl             | com.alipay.sofa.rpc.log.SLF4JLoggerImpl | Sofa rpc log implementation class.                                                                                                                                                                            |
+> | rpc.protocol                | bolt                                    | Rpc communication protocol, client and server need to be specified the same value.                                                                                                                            |
+> | rpc.remote_url              |                                         | The remote urls of rpc peers, it can be set to multiple addresses, which are concat by ',', empty value means not enabled.                                                                                    |
+> | rpc.server_adaptive_port    | false                                   | Whether the bound port is adaptive, if it's enabled, when the port is in use, automatically +1 to detect the next available port. Note that this process is not atomic, so there may still be port conflicts. |
+> | rpc.server_host             |                                         | The hosts/ips bound by rpc server to provide services, empty value means not enabled.                                                                                                                         |
+> | rpc.server_port             | 8090                                    | The port bound by rpc server to provide services.                                                                                                                                                             |
+> | rpc.server_timeout          | 30                                      | The timeout(in seconds) of rpc server execution.                                                                                                                                                              |
 
-</details>
-
-<details>
-<summary><b>Arthas 诊断配置项 (可选)</b></summary>
-
-对应配置文件`rest-server.properties`
-
-| config option      | default value | description           |
-|--------------------|---------------|-----------------------|
-| arthas.telnetPort  | 8562          | Arthas telnet port.   |
-| arthas.httpPort    | 8561          | Arthas HTTP port.     |
-| arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
-
-</details>
-
-<details>
-<summary><b>RPC Server 配置</b></summary>
-
-| config option               | default value                           | description                                                                                                                                                                                                   |
-|-----------------------------|-----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| rpc.client_connect_timeout  | 20                                      | The timeout(in seconds) of rpc client connect to rpc server.                                                                                                                                                  |
-| rpc.client_load_balancer    | consistentHash                          | The rpc client uses a load-balancing algorithm to access multiple rpc servers in one cluster. Default value is 'consistentHash', means forwarding by request parameters.                                      |
-| rpc.client_read_timeout     | 40                                      | The timeout(in seconds) of rpc client read from rpc server.                                                                                                                                                   |
-| rpc.client_reconnect_period | 10                                      | The period(in seconds) of rpc client reconnect to rpc server.                                                                                                                                                 |
-| rpc.client_retries          | 3                                       | Failed retry number of rpc client calls to rpc server.                                                                                                                                                        |
-| rpc.config_order            | 999                                     | Sofa rpc configuration file loading order, the larger the more later loading.                                                                                                                                 |
-| rpc.logger_impl             | com.alipay.sofa.rpc.log.SLF4JLoggerImpl | Sofa rpc log implementation class.                                                                                                                                                                            |
-| rpc.protocol                | bolt                                    | Rpc communication protocol, client and server need to be specified the same value.                                                                                                                            |
-| rpc.remote_url              |                                         | The remote urls of rpc peers, it can be set to multiple addresses, which are concat by ',', empty value means not enabled.                                                                                    |
-| rpc.server_adaptive_port    | false                                   | Whether the bound port is adaptive, if it's enabled, when the port is in use, automatically +1 to detect the next available port. Note that this process is not atomic, so there may still be port conflicts. |
-| rpc.server_host             |                                         | The hosts/ips bound by rpc server to provide services, empty value means not enabled.                                                                                                                         |
-| rpc.server_port             | 8090                                    | The port bound by rpc server to provide services.                                                                                                                                                             |
-| rpc.server_timeout          | 30                                      | The timeout(in seconds) of rpc server execution.                                                                                                                                                              |
-
-</details>
-
-<details>
-<summary><b>HBase 后端配置项</b></summary>
-
-| config option             | default value                  | description                                                              |
-|---------------------------|--------------------------------|--------------------------------------------------------------------------|
-| backend                   |                                | Must be set to `hbase`.                                                  |
-| serializer                |                                | Must be set to `hbase`.                                                  |
-| hbase.hosts               | localhost                      | The hostnames or ip addresses of HBase zookeeper, separated with commas. |
-| hbase.port                | 2181                           | The port address of HBase zookeeper.                                     |
-| hbase.threads_max         | 64                             | The max threads num of hbase connections.                                |
-| hbase.znode_parent        | /hbase                         | The znode parent path of HBase zookeeper.                                |
-| hbase.zk_retry            | 3                              | The recovery retry times of HBase zookeeper.                             |
-| hbase.aggregation_timeout | 43200                          | The timeout in seconds of waiting for aggregation.                       |
-| hbase.kerberos_enable     | false                          | Is Kerberos authentication enabled for HBase.                            |
-| hbase.kerberos_keytab     |                                | The HBase's key tab file for kerberos authentication.                    |
-| hbase.kerberos_principal  |                                | The HBase's principal for kerberos authentication.                       |
-| hbase.krb5_conf           | etc/krb5.conf                  | Kerberos configuration file, including KDC IP, default realm, etc.       |
-| hbase.hbase_site          | /etc/hbase/conf/hbase-site.xml | The HBase's configuration file                                           |
-| hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
-| hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
-| hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
-
-</details>
+> [!DETAILS]- **HBase 后端配置项**
+> | config option             | default value                  | description                                                              |
+> |---------------------------|--------------------------------|--------------------------------------------------------------------------|
+> | backend                   |                                | Must be set to `hbase`.                                                  |
+> | serializer                |                                | Must be set to `hbase`.                                                  |
+> | hbase.hosts               | localhost                      | The hostnames or ip addresses of HBase zookeeper, separated with commas. |
+> | hbase.port                | 2181                           | The port address of HBase zookeeper.                                     |
+> | hbase.threads_max         | 64                             | The max threads num of hbase connections.                                |
+> | hbase.znode_parent        | /hbase                         | The znode parent path of HBase zookeeper.                                |
+> | hbase.zk_retry            | 3                              | The recovery retry times of HBase zookeeper.                             |
+> | hbase.aggregation_timeout | 43200                          | The timeout in seconds of waiting for aggregation.                       |
+> | hbase.kerberos_enable     | false                          | Is Kerberos authentication enabled for HBase.                            |
+> | hbase.kerberos_keytab     |                                | The HBase's key tab file for kerberos authentication.                    |
+> | hbase.kerberos_principal  |                                | The HBase's principal for kerberos authentication.                       |
+> | hbase.krb5_conf           | etc/krb5.conf                  | Kerberos configuration file, including KDC IP, default realm, etc.       |
+> | hbase.hbase_site          | /etc/hbase/conf/hbase-site.xml | The HBase's configuration file                                           |
+> | hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
+> | hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
+> | hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
 
 
 ---
@@ -274,70 +263,54 @@ weight: 2
 
 以下后端存储在 1.7.0+ 版本中不再支持，仅在 1.5.x 及更早版本中可用：
 
-<details>
-<summary><b>Cassandra 后端配置项</b></summary>
+> [!DETAILS]- **Cassandra 后端配置项**
+> | config option                  | default value  | description                                                                                                                                    |
+> |--------------------------------|----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+> | backend                        |                | Must be set to `cassandra`.                                                                                                                    |
+> | serializer                     |                | Must be set to `cassandra`.                                                                                                                    |
+> | cassandra.host                 | localhost      | The seeds hostname or ip address of cassandra cluster.                                                                                         |
+> | cassandra.port                 | 9042           | The seeds port address of cassandra cluster.                                                                                                   |
+> | cassandra.connect_timeout      | 5              | The cassandra driver connect server timeout(seconds).                                                                                          |
+> | cassandra.read_timeout         | 20             | The cassandra driver read from server timeout(seconds).                                                                                        |
+> | cassandra.keyspace.strategy    | SimpleStrategy | The replication strategy of keyspace, valid value is SimpleStrategy or NetworkTopologyStrategy.                                                |
+> | cassandra.keyspace.replication | [3]            | The keyspace replication factor of SimpleStrategy, like '[3]'.Or replicas in each datacenter of NetworkTopologyStrategy, like '[dc1:2,dc2:1]'. |
+> | cassandra.username             |                | The username to use to login to cassandra cluster.                                                                                             |
+> | cassandra.password             |                | The password corresponding to cassandra.username.                                                                                              |
+> | cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
+> | cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
+> | cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
 
-| config option                  | default value  | description                                                                                                                                    |
-|--------------------------------|----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| backend                        |                | Must be set to `cassandra`.                                                                                                                    |
-| serializer                     |                | Must be set to `cassandra`.                                                                                                                    |
-| cassandra.host                 | localhost      | The seeds hostname or ip address of cassandra cluster.                                                                                         |
-| cassandra.port                 | 9042           | The seeds port address of cassandra cluster.                                                                                                   |
-| cassandra.connect_timeout      | 5              | The cassandra driver connect server timeout(seconds).                                                                                          |
-| cassandra.read_timeout         | 20             | The cassandra driver read from server timeout(seconds).                                                                                        |
-| cassandra.keyspace.strategy    | SimpleStrategy | The replication strategy of keyspace, valid value is SimpleStrategy or NetworkTopologyStrategy.                                                |
-| cassandra.keyspace.replication | [3]            | The keyspace replication factor of SimpleStrategy, like '[3]'.Or replicas in each datacenter of NetworkTopologyStrategy, like '[dc1:2,dc2:1]'. |
-| cassandra.username             |                | The username to use to login to cassandra cluster.                                                                                             |
-| cassandra.password             |                | The password corresponding to cassandra.username.                                                                                              |
-| cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
-| cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
-| cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
+> [!DETAILS]- **ScyllaDB 后端配置项**
+> | config option | default value | description                |
+> |---------------|---------------|----------------------------|
+> | backend       |               | Must be set to `scylladb`. |
+> | serializer    |               | Must be set to `scylladb`. |
+>
+> 其它与 Cassandra 后端一致。
 
-</details>
+> [!DETAILS]- **MySQL & PostgreSQL 后端配置项**
+> | config option                    | default value               | description                                                                         |
+> |----------------------------------|-----------------------------|-------------------------------------------------------------------------------------|
+> | backend                          |                             | Must be set to `mysql`.                                                             |
+> | serializer                       |                             | Must be set to `mysql`.                                                             |
+> | jdbc.driver                      | com.mysql.jdbc.Driver       | The JDBC driver class to connect database.                                          |
+> | jdbc.url                         | jdbc:mysql://127.0.0.1:3306 | The url of database in JDBC format.                                                 |
+> | jdbc.username                    | root                        | The username to login database.                                                     |
+> | jdbc.password                    | ******                      | The password corresponding to jdbc.username.                                        |
+> | jdbc.ssl_mode                    | false                       | The SSL mode of connections with database.                                          |
+> | jdbc.reconnect_interval          | 3                           | The interval(seconds) between reconnections when the database connection fails.     |
+> | jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
+> | jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
+> | jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
 
-<details>
-<summary><b>ScyllaDB 后端配置项</b></summary>
-
-| config option | default value | description                |
-|---------------|---------------|----------------------------|
-| backend       |               | Must be set to `scylladb`. |
-| serializer    |               | Must be set to `scylladb`. |
-
-其它与 Cassandra 后端一致。
-
-</details>
-
-<details>
-<summary><b>MySQL & PostgreSQL 后端配置项</b></summary>
-
-| config option                    | default value               | description                                                                         |
-|----------------------------------|-----------------------------|-------------------------------------------------------------------------------------|
-| backend                          |                             | Must be set to `mysql`.                                                             |
-| serializer                       |                             | Must be set to `mysql`.                                                             |
-| jdbc.driver                      | com.mysql.jdbc.Driver       | The JDBC driver class to connect database.                                          |
-| jdbc.url                         | jdbc:mysql://127.0.0.1:3306 | The url of database in JDBC format.                                                 |
-| jdbc.username                    | root                        | The username to login database.                                                     |
-| jdbc.password                    | ******                      | The password corresponding to jdbc.username.                                        |
-| jdbc.ssl_mode                    | false                       | The SSL mode of connections with database.                                          |
-| jdbc.reconnect_interval          | 3                           | The interval(seconds) between reconnections when the database connection fails.     |
-| jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
-| jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
-| jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
-
-</details>
-
-<details>
-<summary><b>PostgreSQL 后端配置项</b></summary>
-
-| config option | default value | description                  |
-|---------------|---------------|------------------------------|
-| backend       |               | Must be set to `postgresql`. |
-| serializer    |               | Must be set to `postgresql`. |
-
-其它与 MySQL 后端一致。
-
-> PostgreSQL 后端的 driver 和 url 应该设置为：
-> - `jdbc.driver=org.postgresql.Driver`
-> - `jdbc.url=jdbc:postgresql://localhost:5432/`
-
-</details>
+> [!DETAILS]- **PostgreSQL 后端配置项**
+> | config option | default value | description                  |
+> |---------------|---------------|------------------------------|
+> | backend       |               | Must be set to `postgresql`. |
+> | serializer    |               | Must be set to `postgresql`. |
+>
+> 其它与 MySQL 后端一致。
+>
+> > PostgreSQL 后端的 driver 和 url 应该设置为：
+> > - `jdbc.driver=org.postgresql.Driver`
+> > - `jdbc.url=jdbc:postgresql://localhost:5432/`

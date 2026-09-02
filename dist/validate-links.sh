@@ -17,6 +17,8 @@ ASSET_EXTENSIONS_REGEX='png|jpg|jpeg|svg|gif|webp|avif|ico|xml|yaml|yml|json|css
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || exit 1
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)" || exit 1
 CONTENT_ROOT="$(cd "$REPO_ROOT/$CONTENT_DIR" && pwd)" || exit 1
+ASSETS_IMAGE_ROOT="$REPO_ROOT/assets/images"
+STATIC_IMAGE_ROOT="$REPO_ROOT/static/images"
 
 if [[ ! -d "$CONTENT_ROOT" ]]; then
     echo "Error: content directory not found. Run from repository root."
@@ -101,6 +103,7 @@ check_internal_link() {
     local clean_link
     local target_path
     local location
+    local restricted_image_target=0
 
     clean_link="$(normalize_link "$link")"
 
@@ -146,6 +149,22 @@ check_internal_link() {
     elif [[ "$clean_link" == /clients/* ]]; then
         target_path="$REPO_ROOT/static${clean_link}"
 
+    elif [[ "$clean_link" == /images/* ]]; then
+        local asset_target="$REPO_ROOT/assets${clean_link}"
+        local static_target="$REPO_ROOT/static${clean_link}"
+        restricted_image_target=1
+
+        # Hugo render hooks publish assets/images/* at /images/*. Prefer the
+        # pipeline source deterministically, and only fall back to a legacy
+        # static image when no assets path (including a symlink) exists.
+        if [[ -e "$asset_target" || -L "$asset_target" ]]; then
+            target_path="$asset_target"
+        elif [[ -f "$static_target" ]]; then
+            target_path="$static_target"
+        else
+            target_path="$asset_target"
+        fi
+
     elif [[ "$clean_link" == /* ]]; then
         location="$file"
         [[ -n "$line_no" ]] && location="$file:$line_no"
@@ -166,19 +185,35 @@ check_internal_link() {
     target_path="$(canonicalize_path "$target_path")"
     target_path="$(resolve_real_path "$target_path")"
 
-    case "$target_path" in
-        "$CONTENT_ROOT"/*) ;;
-        "$REPO_ROOT/static"/*) ;;
-        *)
-            location="$file"
-            [[ -n "$line_no" ]] && location="$file:$line_no"
-            echo "Error: Link resolves outside content directory"
-            echo "  File: $location"
-            echo "  Link: $link"
-            EXIT_CODE=1
-            return
-            ;;
-    esac
+    if [[ "$restricted_image_target" == "1" ]]; then
+        case "$target_path" in
+            "$ASSETS_IMAGE_ROOT"/*) ;;
+            "$STATIC_IMAGE_ROOT"/*) ;;
+            *)
+                location="$file"
+                [[ -n "$line_no" ]] && location="$file:$line_no"
+                echo "Error: Link resolves outside content directory"
+                echo "  File: $location"
+                echo "  Link: $link"
+                EXIT_CODE=1
+                return
+                ;;
+        esac
+    else
+        case "$target_path" in
+            "$CONTENT_ROOT"/*) ;;
+            "$REPO_ROOT/static"/*) ;;
+            *)
+                location="$file"
+                [[ -n "$line_no" ]] && location="$file:$line_no"
+                echo "Error: Link resolves outside content directory"
+                echo "  File: $location"
+                echo "  Link: $link"
+                EXIT_CODE=1
+                return
+                ;;
+        esac
+    fi
 
     if [[ "$clean_lower" =~ \.(${ASSET_EXTENSIONS_REGEX})$ ]]; then
         if [[ -f "$target_path" ]]; then

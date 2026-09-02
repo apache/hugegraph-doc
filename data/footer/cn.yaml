@@ -1,0 +1,9 @@
+brand:
+  name: The Apache Software Foundation
+  logo: img/apache_logo.svg
+nav_label: Apache 链接
+links:
+  - { label: 基金会, url: 'https://www.apache.org/', external: true }
+  - { label: 许可证, url: 'https://www.apache.org/licenses/', external: true }
+  - { label: 安全, url: /cn/docs/guides/security/ }
+  - { label: 赞助, url: 'https://www.apache.org/foundation/sponsorship.html', external: true }

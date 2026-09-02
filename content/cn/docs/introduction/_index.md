@@ -3,8 +3,9 @@ title: "Introduction with HugeGraph"
 linkTitle: "Introduction"
 weight: 1
 aliases:
-  - /cn/docs/introduction/readme/
-  - /cn/docs/introduction/README/
+  # Hugo 0.165 prefixes aliases with the current language path.
+  - /docs/introduction/readme/
+  - /docs/introduction/README/
 ---
 
 ### 什么是 Apache HugeGraph？
@@ -145,4 +146,5 @@ docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
 - 安全问题：[security@hugegraph.apache.org](mailto:security@hugegraph.apache.org)
 - 微信公众号：Apache HugeGraph
 
-<img src="https://github.com/apache/hugegraph-doc/blob/master/assets/images/wechat.png?raw=true" alt="微信公众号二维码" width="300"/>
+![微信公众号二维码](/images/docs/community/wechat.png)
+{width="300" height="94"}

@@ -1,3 +1,9 @@
 [build]
+command = "hugo --cleanDestinationDir --gc --minify --environment production --printPathWarnings --printI18nWarnings --panicOnWarning"
+publish = "public"
+
 [build.environment]
-HUGO_VERSION = "0.88.1"
+GO_VERSION = "1.27.0"
+HUGO_VERSION = "0.165.0"
+HUGO_ENVIRONMENT = "production"
+

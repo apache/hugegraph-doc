@@ -4,8 +4,7 @@ linkTitle: "HugeGraph-AI"
 weight: 3
 ---
 
-[![License](https://img.shields.io/badge/license-Apache%202-0E78BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-ai)
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) · [Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
 
 > DeepWiki 提供实时更新的项目文档，内容更全面准确，适合快速了解项目最新情况。
 >
@@ -124,7 +123,7 @@ from pyhugegraph.client import PyHugeClient
 
 ## 📦 模块
 
-### [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-ai)
+### [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm) ([Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai))
 用于图应用的大语言模型集成：
 - **GraphRAG**：基于图数据的检索增强生成
 - **知识图谱构建**：从文本自动构建知识图谱
@@ -168,7 +167,7 @@ from pyhugegraph.client import PyHugeClient
 - 提交 PR 前运行 `./style/code_format_and_analysis.sh`
 - 报告错误前检查现有问题
 
-[![contributors graph](https://contrib.rocks/image?repo=apache/hugegraph-ai)](https://github.com/apache/hugegraph-ai/graphs/contributors)
+[查看 HugeGraph-AI 贡献者列表](https://github.com/apache/hugegraph-ai/graphs/contributors)。
 
 ## 📄 许可证
 
@@ -180,4 +179,5 @@ hugegraph-ai 采用 [Apache 2.0 许可证](https://github.com/apache/hugegraph-a
 - **电子邮件**：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)（[需要订阅](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/)）
 - **微信**：关注 "Apache HugeGraph" 微信公众号
 
-<img src="https://raw.githubusercontent.com/apache/hugegraph-doc/master/assets/images/wechat.png" alt="Apache HugeGraph WeChat QR Code" width="200"/>
+![Apache HugeGraph 微信公众号二维码](/images/docs/community/wechat.png)
+{width="200" height="63"}

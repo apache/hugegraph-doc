@@ -81,20 +81,16 @@ git clone https://github.com/apache/hugegraph-toolchain.git
 wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}-src.tar.gz
 ```
 
-<details>
-<summary>click to fold/collapse hwo to install ojdbc</summary>
-
-Due to the license limitation of the `Oracle OJDBC`, you need to manually install ojdbc to the local maven repository.
-Visit the [Oracle jdbc downloads](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html) page. Select Oracle Database 12c Release 2 (12.2.0.1) drivers, as shown in the following figure.
-
-After opening the link, select "ojdbc8.jar".
-
-Install ojdbc8 to the local maven repository, enter the directory where `ojdbc8.jar` is located, and execute the following command.
-```
-mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-```
-
-</details>
+> [!DETAILS]- How to install OJDBC
+> Due to the license limitation of the `Oracle OJDBC`, you need to manually install ojdbc to the local maven repository.
+> Visit the [Oracle jdbc downloads](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html) page. Select Oracle Database 12c Release 2 (12.2.0.1) drivers, as shown in the following figure.
+>
+> After opening the link, select "ojdbc8.jar".
+>
+> Install ojdbc8 to the local maven repository, enter the directory where `ojdbc8.jar` is located, and execute the following command.
+> ```
+> mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
+> ```
 
 Compile and generate tar package:
 
@@ -118,7 +114,7 @@ For example, if you want to create a graph with two types of vertices and two ty
 "Software" includes: "name", "sale price" and other attributes; side "knowledge" includes: "date" attribute and so on.
 
 <div style="text-align: center;">
-  <img src="/docs/images/demo-graph-model.png" alt="image">
+  <img src="/docs/images/demo-graph-model.png" alt="Example graph with person and software vertices connected by knows and created edges">
   <p>graph model example</p>
 </div>
 
@@ -282,302 +278,290 @@ In the simplest terms, each mapping block describes: where is the file to be imp
 
 
 
-<details>
-<summary>Click to expand/collapse the skeleton of the map file for version 2.0</summary>
-
-```json
-{
-  "version": "2.0",
-  "structs": [
-    {
-      "id": "1",
-      "input": {
-      },
-      "vertices": [
-        {},
-        {}
-      ],
-      "edges": [
-        {},
-        {}
-      ]
-    }
-  ]
-}
-```
-
-</details>
+> [!DETAILS]- Click to expand/collapse the skeleton of the map file for version 2.0
+> ```json
+> {
+>   "version": "2.0",
+>   "structs": [
+>     {
+>       "id": "1",
+>       "input": {
+>       },
+>       "vertices": [
+>         {},
+>         {}
+>       ],
+>       "edges": [
+>         {},
+>         {}
+>       ]
+>     }
+>   ]
+> }
+> ```
 <br/>
 
 Two versions of the mapping file are given directly here (the above graph model and data file are described)
 
-<details>
-<summary>Click to expand/collapse the mapping file for version 2.0</summary>
-
-```json
-{
-  "version": "2.0",
-  "structs": [
-    {
-      "id": "1",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "vertex_person.csv",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "CSV",
-        "delimiter": ",",
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": [
-          "name",
-          "age",
-          "city"
-        ],
-        "charset": "UTF-8",
-        "list_format": {
-          "start_symbol": "[",
-          "elem_delimiter": "|",
-          "end_symbol": "]"
-        }
-      },
-      "vertices": [
-        {
-          "label": "person",
-          "skip": false,
-          "id": null,
-          "unfold": false,
-          "field_mapping": {},
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ],
-      "edges": []
-    },
-    {
-      "id": "2",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "vertex_software.csv",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "CSV",
-        "delimiter": ",",
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": null,
-        "charset": "UTF-8",
-        "list_format": {
-          "start_symbol": "",
-          "elem_delimiter": ",",
-          "end_symbol": ""
-        }
-      },
-      "vertices": [
-        {
-          "label": "software",
-          "skip": false,
-          "id": null,
-          "unfold": false,
-          "field_mapping": {},
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ],
-      "edges": []
-    },
-    {
-      "id": "3",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "edge_knows.json",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "JSON",
-        "delimiter": null,
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": null,
-        "charset": "UTF-8",
-        "list_format": null
-      },
-      "vertices": [],
-      "edges": [
-        {
-          "label": "knows",
-          "skip": false,
-          "source": [
-            "source_name"
-          ],
-          "unfold_source": false,
-          "target": [
-            "target_name"
-          ],
-          "unfold_target": false,
-          "field_mapping": {
-            "source_name": "name",
-            "target_name": "name"
-          },
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ]
-    },
-    {
-      "id": "4",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "edge_created.json",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "JSON",
-        "delimiter": null,
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": null,
-        "charset": "UTF-8",
-        "list_format": null
-      },
-      "vertices": [],
-      "edges": [
-        {
-          "label": "created",
-          "skip": false,
-          "source": [
-            "source_name"
-          ],
-          "unfold_source": false,
-          "target": [
-            "target_name"
-          ],
-          "unfold_target": false,
-          "field_mapping": {
-            "source_name": "name",
-            "target_name": "name"
-          },
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ]
-    }
-  ]
-}
-```
-
-</details>
+> [!DETAILS]- Click to expand/collapse the mapping file for version 2.0
+> ```json
+> {
+>   "version": "2.0",
+>   "structs": [
+>     {
+>       "id": "1",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "vertex_person.csv",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "CSV",
+>         "delimiter": ",",
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": [
+>           "name",
+>           "age",
+>           "city"
+>         ],
+>         "charset": "UTF-8",
+>         "list_format": {
+>           "start_symbol": "[",
+>           "elem_delimiter": "|",
+>           "end_symbol": "]"
+>         }
+>       },
+>       "vertices": [
+>         {
+>           "label": "person",
+>           "skip": false,
+>           "id": null,
+>           "unfold": false,
+>           "field_mapping": {},
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ],
+>       "edges": []
+>     },
+>     {
+>       "id": "2",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "vertex_software.csv",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "CSV",
+>         "delimiter": ",",
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": null,
+>         "charset": "UTF-8",
+>         "list_format": {
+>           "start_symbol": "",
+>           "elem_delimiter": ",",
+>           "end_symbol": ""
+>         }
+>       },
+>       "vertices": [
+>         {
+>           "label": "software",
+>           "skip": false,
+>           "id": null,
+>           "unfold": false,
+>           "field_mapping": {},
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ],
+>       "edges": []
+>     },
+>     {
+>       "id": "3",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "edge_knows.json",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "JSON",
+>         "delimiter": null,
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": null,
+>         "charset": "UTF-8",
+>         "list_format": null
+>       },
+>       "vertices": [],
+>       "edges": [
+>         {
+>           "label": "knows",
+>           "skip": false,
+>           "source": [
+>             "source_name"
+>           ],
+>           "unfold_source": false,
+>           "target": [
+>             "target_name"
+>           ],
+>           "unfold_target": false,
+>           "field_mapping": {
+>             "source_name": "name",
+>             "target_name": "name"
+>           },
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ]
+>     },
+>     {
+>       "id": "4",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "edge_created.json",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "JSON",
+>         "delimiter": null,
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": null,
+>         "charset": "UTF-8",
+>         "list_format": null
+>       },
+>       "vertices": [],
+>       "edges": [
+>         {
+>           "label": "created",
+>           "skip": false,
+>           "source": [
+>             "source_name"
+>           ],
+>           "unfold_source": false,
+>           "target": [
+>             "target_name"
+>           ],
+>           "unfold_target": false,
+>           "field_mapping": {
+>             "source_name": "name",
+>             "target_name": "name"
+>           },
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ]
+>     }
+>   ]
+> }
+> ```
 <br/>
 
-<details>
-<summary>Click to expand/collapse the mapping file for version 1.0</summary>
-
-```json
-{
-  "vertices": [
-    {
-      "label": "person",
-      "input": {
-        "type": "file",
-        "path": "vertex_person.csv",
-        "format": "CSV",
-        "header": ["name", "age", "city"],
-        "charset": "UTF-8"
-      }
-    },
-    {
-      "label": "software",
-      "input": {
-        "type": "file",
-        "path": "vertex_software.csv",
-        "format": "CSV"
-      }
-    }
-  ],
-  "edges": [
-    {
-      "label": "knows",
-      "source": ["source_name"],
-      "target": ["target_name"],
-      "input": {
-        "type": "file",
-        "path": "edge_knows.json",
-        "format": "JSON"
-      },
-      "field_mapping": {
-        "source_name": "name",
-        "target_name": "name"
-      }
-    },
-    {
-      "label": "created",
-      "source": ["source_name"],
-      "target": ["target_name"],
-      "input": {
-        "type": "file",
-        "path": "edge_created.json",
-        "format": "JSON"
-      },
-      "field_mapping": {
-        "source_name": "name",
-        "target_name": "name"
-      }
-    }
-  ]
-}
-```
-
-</details>
+> [!DETAILS]- Click to expand/collapse the mapping file for version 1.0
+> ```json
+> {
+>   "vertices": [
+>     {
+>       "label": "person",
+>       "input": {
+>         "type": "file",
+>         "path": "vertex_person.csv",
+>         "format": "CSV",
+>         "header": ["name", "age", "city"],
+>         "charset": "UTF-8"
+>       }
+>     },
+>     {
+>       "label": "software",
+>       "input": {
+>         "type": "file",
+>         "path": "vertex_software.csv",
+>         "format": "CSV"
+>       }
+>     }
+>   ],
+>   "edges": [
+>     {
+>       "label": "knows",
+>       "source": ["source_name"],
+>       "target": ["target_name"],
+>       "input": {
+>         "type": "file",
+>         "path": "edge_knows.json",
+>         "format": "JSON"
+>       },
+>       "field_mapping": {
+>         "source_name": "name",
+>         "target_name": "name"
+>       }
+>     },
+>     {
+>       "label": "created",
+>       "source": ["source_name"],
+>       "target": ["target_name"],
+>       "input": {
+>         "type": "file",
+>         "path": "edge_created.json",
+>         "format": "JSON"
+>       },
+>       "field_mapping": {
+>         "source_name": "name",
+>         "target_name": "name"
+>       }
+>     }
+>   ]
+> }
+> ```
 <br/>
 
 The 1.0 version of the mapping file is centered on the vertex and edge, and sets the input source; while the 2.0 version is centered on the input source, and sets the vertex and edge mapping. Some input sources (such as a file) can generate both vertices and edges. If you write in the 1.0 format, you need to write an input block in each of the vertex and edge mapping blocks. The two input blocks are exactly the same; and the 2.0 version only needs to write input once. Therefore, compared with version 1.0, version 2.0 can save some repetitive writing of input.
@@ -942,106 +926,98 @@ Edge file: `example/file/edge_created.json`
 
 #### 4.2 Write schema
 
-<details>
-<summary>Click to expand/collapse the schema file: example/file/schema.groovy</summary>
-
-```groovy
-schema.propertyKey("name").asText().ifNotExist().create();
-schema.propertyKey("age").asInt().ifNotExist().create();
-schema.propertyKey("city").asText().ifNotExist().create();
-schema.propertyKey("weight").asDouble().ifNotExist().create();
-schema.propertyKey("lang").asText().ifNotExist().create();
-schema.propertyKey("date").asText().ifNotExist().create();
-schema.propertyKey("price").asDouble().ifNotExist().create();
-
-schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
-schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
-
-schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
-schema.indexLabel("personByCity").onV("person").by("city").secondary().ifNotExist().create();
-schema.indexLabel("personByAgeAndCity").onV("person").by("age", "city").secondary().ifNotExist().create();
-schema.indexLabel("softwareByPrice").onV("software").by("price").range().ifNotExist().create();
-
-schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date", "weight").ifNotExist().create();
-schema.edgeLabel("created").sourceLabel("person").targetLabel("software").properties("date", "weight").ifNotExist().create();
-
-schema.indexLabel("createdByDate").onE("created").by("date").secondary().ifNotExist().create();
-schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
-schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();
-```
-
-</details>
+> [!DETAILS]- Click to expand/collapse the schema file: example/file/schema.groovy
+> ```groovy
+> schema.propertyKey("name").asText().ifNotExist().create();
+> schema.propertyKey("age").asInt().ifNotExist().create();
+> schema.propertyKey("city").asText().ifNotExist().create();
+> schema.propertyKey("weight").asDouble().ifNotExist().create();
+> schema.propertyKey("lang").asText().ifNotExist().create();
+> schema.propertyKey("date").asText().ifNotExist().create();
+> schema.propertyKey("price").asDouble().ifNotExist().create();
+>
+> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
+> schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
+>
+> schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
+> schema.indexLabel("personByCity").onV("person").by("city").secondary().ifNotExist().create();
+> schema.indexLabel("personByAgeAndCity").onV("person").by("age", "city").secondary().ifNotExist().create();
+> schema.indexLabel("softwareByPrice").onV("software").by("price").range().ifNotExist().create();
+>
+> schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date", "weight").ifNotExist().create();
+> schema.edgeLabel("created").sourceLabel("person").targetLabel("software").properties("date", "weight").ifNotExist().create();
+>
+> schema.indexLabel("createdByDate").onE("created").by("date").secondary().ifNotExist().create();
+> schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
+> schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();
+> ```
 
 #### 4.3 Write the input source mapping file `example/file/struct.json`
 
-<details>
-<summary>Click to expand/collapse the input source mapping file example/file/struct.json</summary>
-
-```json
-{
-  "vertices": [
-    {
-      "label": "person",
-      "input": {
-        "type": "file",
-        "path": "example/file/vertex_person.csv",
-        "format": "CSV",
-        "header": ["name", "age", "city"],
-        "charset": "UTF-8",
-        "skipped_line": {
-          "regex": "(^#|^//).*"
-        }
-      },
-      "null_values": ["NULL", "null", ""]
-    },
-    {
-      "label": "software",
-      "input": {
-        "type": "file",
-        "path": "example/file/vertex_software.txt",
-        "format": "TEXT",
-        "delimiter": "|",
-        "charset": "GBK"
-      },
-      "id": "id",
-      "ignored": ["ISBN"]
-    }
-  ],
-  "edges": [
-    {
-      "label": "knows",
-      "source": ["source_name"],
-      "target": ["target_name"],
-      "input": {
-        "type": "file",
-        "path": "example/file/edge_knows.json",
-        "format": "JSON",
-        "date_format": "yyyyMMdd"
-      },
-      "field_mapping": {
-        "source_name": "name",
-        "target_name": "name"
-      }
-    },
-    {
-      "label": "created",
-      "source": ["source_name"],
-      "target": ["target_id"],
-      "input": {
-        "type": "file",
-        "path": "example/file/edge_created.json",
-        "format": "JSON",
-        "date_format": "yyyy-MM-dd"
-      },
-      "field_mapping": {
-        "source_name": "name"
-      }
-    }
-  ]
-}
-```
-
-</details>
+> [!DETAILS]- Click to expand/collapse the input source mapping file example/file/struct.json
+> ```json
+> {
+>   "vertices": [
+>     {
+>       "label": "person",
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/vertex_person.csv",
+>         "format": "CSV",
+>         "header": ["name", "age", "city"],
+>         "charset": "UTF-8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*"
+>         }
+>       },
+>       "null_values": ["NULL", "null", ""]
+>     },
+>     {
+>       "label": "software",
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/vertex_software.txt",
+>         "format": "TEXT",
+>         "delimiter": "|",
+>         "charset": "GBK"
+>       },
+>       "id": "id",
+>       "ignored": ["ISBN"]
+>     }
+>   ],
+>   "edges": [
+>     {
+>       "label": "knows",
+>       "source": ["source_name"],
+>       "target": ["target_name"],
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/edge_knows.json",
+>         "format": "JSON",
+>         "date_format": "yyyyMMdd"
+>       },
+>       "field_mapping": {
+>         "source_name": "name",
+>         "target_name": "name"
+>       }
+>     },
+>     {
+>       "label": "created",
+>       "source": ["source_name"],
+>       "target": ["target_id"],
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/edge_created.json",
+>         "format": "JSON",
+>         "date_format": "yyyy-MM-dd"
+>       },
+>       "field_mapping": {
+>         "source_name": "name"
+>       }
+>     }
+>   ]
+> }
+> ```
 
 #### 4.4 Command to import
 

@@ -1,0 +1,76 @@
+sections:
+  - hero
+  - { type: markdown, key: introduction }
+  - { type: cards, key: capabilities }
+  - { type: markdown, key: tlp }
+  - { type: cards, key: community }
+  - { type: markdown, key: welcome }
+
+hero:
+  align: center
+  class: hg-home-hero
+  title: Apache HugeGraph
+  lead: HugeGraph is a full-stack graph system covering [graph database](docs/quickstart/hugegraph/hugegraph-server/), [graph computing](docs/quickstart/computing/hugegraph-computer/), and [graph AI](docs/quickstart/hugegraph-ai/).
+  note: It provides complete graph data processing capabilities from storage and real-time querying to offline analysis, and supports both [Gremlin](docs/language/hugegraph-gremlin/) and [Cypher](docs/clients/restful-api/cypher/) query languages.
+  actions:
+    - { label: Learn More, url: docs/, icon: fa-solid fa-circle-arrow-right, style: primary }
+    - { label: Download, url: docs/download/download/, icon: fa-brands fa-github, style: ghost }
+
+introduction:
+  class: hg-home-introduction
+  body: |-
+    HugeGraph supports high-speed import and millisecond-level real-time queries for up to hundreds of billions of graph data, with deep integration with big data platforms like Spark and Flink, and can use the [HugeGraph toolchain](docs/quickstart/toolchain/) for data import, visualization, and operations.
+
+    In the AI era, combined with Large Language Models (LLMs), it provides powerful graph computing capabilities for intelligent Q&A, recommendation systems, fraud detection, and knowledge graph applications.
+
+capabilities:
+  class: hg-home-capabilities
+  columns: 3
+  items:
+    - title: Convenient
+      icon: fa-solid fa-lightbulb
+      desc: Supports Gremlin graph query language and [**RESTful API**](docs/clients/restful-api/), and provides commonly used graph retrieval interfaces. It includes a complete set of supporting tools with distributed storage, data replication, horizontal scaling, and multiple built-in backend storage engines for efficient query and analysis workflows.
+    - title: Efficient
+      icon: fa-solid fa-truck-fast
+      desc: Deeply optimized for graph storage and graph computing, it provides [**batch import tools**](docs/quickstart/toolchain/hugegraph-loader/) to efficiently ingest massive data, achieves millisecond-level graph retrieval latency with optimized queries, and supports concurrent online operations for thousands of users.
+    - title: Adaptable
+      icon: fa-solid fa-arrow-right-arrow-left
+      desc: Supports the Apache Gremlin standard graph query language and the Property Graph modeling method, with both OLTP and [**OLAP graph computing**](docs/quickstart/computing/hugegraph-computer/) scenarios. It can be integrated with Hadoop and Spark and can extend backend storage engines through plug-ins.
+    - title: AI-Ready
+      icon: fa-solid fa-brain
+      desc: Integrates LLM with [**GraphRAG capabilities**](docs/quickstart/hugegraph-ai/), automated knowledge graph construction, and 20+ built-in graph machine learning algorithms to build AI-driven graph applications.
+    - title: Scalable
+      icon: fa-solid fa-up-right-and-down-left-from-center
+      desc: Supports horizontal scaling and distributed deployment, seamlessly migrating from standalone to PB-level clusters, and provides [**distributed storage engine**](docs/quickstart/hugegraph/hugegraph-hstore/) options for different scale and performance requirements.
+    - title: Open Ecosystem
+      icon: fa-solid fa-puzzle-piece
+      desc: Adheres to Apache TinkerPop standards, provides [**multi-language clients**](docs/quickstart/client/hugegraph-client/), is compatible with mainstream big data platforms, and is backed by an active and evolving community.
+
+tlp:
+  class: hg-home-band hg-home-tlp
+  title: The First Apache Foundation Top-Level Graph Project
+
+community:
+  class: hg-home-community
+  columns: 3
+  items:
+    - title: Get The **Toolchain**
+      icon: fa-solid fa-screwdriver-wrench
+      desc: '[It](https://github.com/apache/hugegraph-toolchain) includes graph loader & dashboard & backup tools'
+    - title: Efficient
+      icon: fa-brands fa-github
+      url: https://github.com/apache/hugegraph
+      external: true
+      desc: We do a [Pull Request](https://github.com/apache/hugegraph/pulls) contributions workflow on **GitHub**. New users are always welcome!
+    - title: Join us on Slack!
+      icon: fa-brands fa-slack
+      url: https://the-asf.slack.com/archives/C059UU2FJ23
+      external: true
+      desc: |-
+        Join the [ASF Slack channel](https://the-asf.slack.com/archives/C059UU2FJ23) for community discussions
+
+        Could also follow the WeChat account "HugeGraph" for updates
+
+welcome:
+  class: hg-home-band hg-home-welcome
+  title: Welcome to the HugeGraph open source community!

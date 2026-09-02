@@ -1,0 +1,99 @@
+# Apache HugeGraph
+
+> A full-stack graph database ecosystem for OLTP, OLAP, and graph AI.
+
+## Site index
+
+- [Home page](https://hugegraph.apache.org/index.md)
+- [navigation.json](https://hugegraph.apache.org/navigation.json)
+- [Documentation](https://hugegraph.apache.org/docs/index.md)
+- [Download](https://hugegraph.apache.org/docs/download/download/index.md)
+- [Blog](https://hugegraph.apache.org/blog/index.md)
+- [Community](https://hugegraph.apache.org/community/index.md)
+
+## Documentation index
+
+- [Introduction](https://hugegraph.apache.org/docs/introduction/index.md)
+- [Quick Start](https://hugegraph.apache.org/docs/quickstart/index.md)
+  - [HugeGraph-LLM](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-llm/index.md)
+  - [Install/Build HugeGraph-Server](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/index.md)
+  - [Java-Client](https://hugegraph.apache.org/docs/quickstart/client/hugegraph-client/index.md)
+  - [Vermeer: Memory-First Computing Framework](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-vermeer/index.md)
+  - [Visual with HugeGraph-Hubble](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md)
+  - [Analysis with HugeGraph-Computer](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-computer/index.md)
+  - [HugeGraph-ML](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-ml/index.md)
+  - [Install/Build HugeGraph-PD](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-pd/index.md)
+  - [Load data with HugeGraph-Loader](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-loader/index.md)
+  - [Python Client](https://hugegraph.apache.org/docs/quickstart/client/hugegraph-client-python/index.md)
+  - [Computer Config Reference](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-computer-config/index.md)
+  - [Go Client](https://hugegraph.apache.org/docs/quickstart/client/hugegraph-client-go/index.md)
+  - [Install/Build HugeGraph-Store](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-hstore/index.md)
+  - [Manage with HugeGraph-Tools](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-tools/index.md)
+  - [Configuration Reference](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/config-reference/index.md)
+  - [GraphRAG UI Details](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/quick_start/index.md)
+  - [Read/Write Graph Data with Spark Connector](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-spark-connector/index.md)
+  - [REST API](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/rest-api/index.md)
+- [Server Config](https://hugegraph.apache.org/docs/config/index.md)
+  - [Server Startup Guide](https://hugegraph.apache.org/docs/config/config-guide/index.md)
+  - [Server Complete Configuration Manual](https://hugegraph.apache.org/docs/config/config-option/index.md)
+  - [Config Authentication](https://hugegraph.apache.org/docs/config/config-authentication/index.md)
+  - [Config HTTPS](https://hugegraph.apache.org/docs/config/config-https/index.md)
+- [API](https://hugegraph.apache.org/docs/clients/index.md)
+  - [Graphspace](https://hugegraph.apache.org/docs/clients/restful-api/graphspace/index.md): Graphspace REST API: Multi-tenancy and resource isolation for creating, viewing, updating, and deleting graph spaces with prerequisites and constraints.
+  - [Schema](https://hugegraph.apache.org/docs/clients/restful-api/schema/index.md): Schema REST API: Query the complete schema definition of a graph, including property keys, vertex labels, edge labels, and index labels.
+  - [HugeGraph Java Client](https://hugegraph.apache.org/docs/clients/hugegraph-client/index.md)
+  - [PropertyKey](https://hugegraph.apache.org/docs/clients/restful-api/propertykey/index.md): PropertyKey REST API: Define data types and cardinality constraints for all properties in the graph, serving as fundamental schema elements.
+  - [Gremlin Console](https://hugegraph.apache.org/docs/clients/gremlin-console/index.md)
+  - [VertexLabel](https://hugegraph.apache.org/docs/clients/restful-api/vertexlabel/index.md): VertexLabel REST API: Define vertex types, ID strategies, and associated properties that determine vertex structure and constraints.
+  - [EdgeLabel](https://hugegraph.apache.org/docs/clients/restful-api/edgelabel/index.md): EdgeLabel REST API: Define edge types and relationship constraints between source and target vertices to construct graph connection rules.
+  - [IndexLabel](https://hugegraph.apache.org/docs/clients/restful-api/indexlabel/index.md): IndexLabel REST API: Create indexes on vertex and edge properties to accelerate property-based queries and filtering operations.
+  - [Rebuild](https://hugegraph.apache.org/docs/clients/restful-api/rebuild/index.md): Rebuild REST API: Rebuild graph schema indexes to ensure consistency between index data and graph data.
+  - [Vertex](https://hugegraph.apache.org/docs/clients/restful-api/vertex/index.md): Vertex REST API: Create, query, update, and delete vertex data in the graph with support for batch operations and conditional filtering.
+  - [Edge](https://hugegraph.apache.org/docs/clients/restful-api/edge/index.md): Edge REST API: Create, query, update, and delete relationship data between vertices with support for batch operations and directional queries.
+  - [Traverser](https://hugegraph.apache.org/docs/clients/restful-api/traverser/index.md): Traverser REST API: Execute complex graph algorithms and path queries including shortest path, k-neighbors, similarity computation, and advanced analytics.
+  - [Rank](https://hugegraph.apache.org/docs/clients/restful-api/rank/index.md): Rank REST API: Execute graph node ranking algorithms such as PageRank and Personalized PageRank for centrality analysis.
+  - [Variable](https://hugegraph.apache.org/docs/clients/restful-api/variable/index.md): Variable REST API: Store and manage key-value pairs as global variables for graph-level configuration and state management.
+  - [Graphs](https://hugegraph.apache.org/docs/clients/restful-api/graphs/index.md): Graphs REST API: Manage graph instance lifecycle including creating, querying, cloning, clearing, and deleting graph databases.
+  - [Task](https://hugegraph.apache.org/docs/clients/restful-api/task/index.md): Task REST API: Query and manage asynchronous task execution status for long-running operations like index rebuilding and graph traversals.
+  - [Gremlin](https://hugegraph.apache.org/docs/clients/restful-api/gremlin/index.md): Gremlin REST API: Execute Gremlin graph traversal language scripts via HTTP interface.
+  - [Cypher](https://hugegraph.apache.org/docs/clients/restful-api/cypher/index.md): Cypher REST API: Execute OpenCypher declarative graph query language via HTTP interface.
+  - [Authentication](https://hugegraph.apache.org/docs/clients/restful-api/auth/index.md): Authentication REST API: Manage users, roles, permissions, and access control to implement fine-grained graph data security.
+  - [Metrics](https://hugegraph.apache.org/docs/clients/restful-api/metrics/index.md): Metrics REST API: Retrieve runtime performance metrics, statistics, and health status data of the system.
+  - [Other](https://hugegraph.apache.org/docs/clients/restful-api/other/index.md): Other REST API: Provide auxiliary functions such as system version query and API version information.
+- [GUIDES](https://hugegraph.apache.org/docs/guides/index.md)
+  - [Architecture Overview](https://hugegraph.apache.org/docs/guides/architectural/index.md)
+  - [Design Concepts](https://hugegraph.apache.org/docs/guides/desgin-concept/index.md)
+  - [HugeGraph Plugin](https://hugegraph.apache.org/docs/guides/custom-plugin/index.md)
+  - [Toolchain Local Testing](https://hugegraph.apache.org/docs/guides/toolchain-local-test/index.md)
+  - [Backup Restore](https://hugegraph.apache.org/docs/guides/backup-restore/index.md)
+  - [Docker Cluster](https://hugegraph.apache.org/docs/guides/hugegraph-docker-cluster/index.md)
+  - [FAQ](https://hugegraph.apache.org/docs/guides/faq/index.md)
+  - [Security](https://hugegraph.apache.org/docs/guides/security/index.md)
+- [QUERY LANGUAGE](https://hugegraph.apache.org/docs/language/index.md)
+  - [Gremlin Query Language](https://hugegraph.apache.org/docs/language/hugegraph-gremlin/index.md)
+  - [HugeGraph Examples](https://hugegraph.apache.org/docs/language/hugegraph-example/index.md)
+- [PERFORMANCE](https://hugegraph.apache.org/docs/performance/index.md)
+  - [HugeGraph BenchMark Performance](https://hugegraph.apache.org/docs/performance/hugegraph-benchmark-0.5.6/index.md)
+  - [v0.5.6 Stand-alone(RocksDB)](https://hugegraph.apache.org/docs/performance/api-performance/hugegraph-api-0.5.6-rocksdb/index.md)
+  - [v0.5.6 Cluster(Cassandra)](https://hugegraph.apache.org/docs/performance/api-performance/hugegraph-api-0.5.6-cassandra/index.md)
+  - [HugeGraph-Loader Performance](https://hugegraph.apache.org/docs/performance/hugegraph-loader-performance/index.md)
+  - [HugeGraph 0.4.4 Benchmark](https://hugegraph.apache.org/docs/performance/hugegraph-benchmark-0.4.4/index.md)
+- [Contribution Guidelines](https://hugegraph.apache.org/docs/contribution-guidelines/index.md)
+  - [How to Contribute to HugeGraph](https://hugegraph.apache.org/docs/contribution-guidelines/contribute/index.md)
+  - [Subscribe Mailing Lists](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/index.md)
+  - [Validate Apache Release](https://hugegraph.apache.org/docs/contribution-guidelines/validate-release/index.md)
+  - [Setup Server in IDEA](https://hugegraph.apache.org/docs/contribution-guidelines/hugegraph-server-idea-setup/index.md)
+  - [Apache HugeGraph Committer Guide](https://hugegraph.apache.org/docs/contribution-guidelines/committer-guidelines/index.md)
+- [CHANGELOGS](https://hugegraph.apache.org/docs/changelog/index.md)
+  - [Release-1.7.0](https://hugegraph.apache.org/docs/changelog/hugegraph-1.7.0-release-notes/index.md)
+  - [Release-1.5.0](https://hugegraph.apache.org/docs/changelog/hugegraph-1.5.0-release-notes/index.md)
+  - [Release-1.3.0](https://hugegraph.apache.org/docs/changelog/hugegraph-1.3.0-release-notes/index.md)
+  - [Release-1.2.0](https://hugegraph.apache.org/docs/changelog/hugegraph-1.2.0-release-notes/index.md)
+  - [Release-1.0.0](https://hugegraph.apache.org/docs/changelog/hugegraph-1.0.0-release-notes/index.md)
+- [Download](https://hugegraph.apache.org/docs/download/download/index.md)
+- [Contributor Agreement](https://hugegraph.apache.org/docs/cla/index.md)
+
+## Site locales
+
+- [English](https://hugegraph.apache.org/index.md)
+- [简体中文](https://hugegraph.apache.org/cn/index.md)

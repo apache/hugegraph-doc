@@ -4,14 +4,15 @@ for (const locale of ["en", "cn"]) {
   const prefix = locale === "cn" ? "/cn" : "";
   test(`latest ${locale} sidebar persists and isolates collapse`, async ({ page }) => {
     await page.goto(`${prefix}/docs/introduction/`);
+    const key = `oink.sidebar.v1.latest.${locale}`;
+    await expect.poll(() => page.evaluate((name) => localStorage.getItem(name), key))
+      .not.toBeNull();
     const toggle = page
-      .locator(
-        '#td-shell-sidebar li [data-td-shell-tree-toggle][aria-expanded=false][aria-controls*="_nav"]'
-      )
+      .locator('#td-shell-sidebar [data-td-shell-tree-toggle][aria-controls$="_navdevelop-children"]')
       .first();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await toggle.click();
     const target = await toggle.getAttribute("aria-controls");
-    const key = `oink.sidebar.v1.latest.${locale}`;
     await expect.poll(() => page.evaluate((name) => localStorage.getItem(name), key))
       .toContain(target);
     await page.reload();

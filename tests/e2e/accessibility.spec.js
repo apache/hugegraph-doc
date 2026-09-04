@@ -9,6 +9,7 @@ for (const route of ["/docs/", "/cn/docs/", "/community/", "/cn/community/"]) {
       content: "*,*::before,*::after{animation:none!important;transition:none!important}"
     });
     await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(250);
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
       .analyze();

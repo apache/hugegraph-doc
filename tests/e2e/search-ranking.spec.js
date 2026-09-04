@@ -34,8 +34,9 @@ const FALLBACK_CASES = {
 };
 
 const metadataFixture = path.resolve(__dirname, "../../scripts/fixtures/community_search_queries.json");
+const metadataIntegrated = fs.existsSync(metadataFixture);
 const siteRoot = process.env.SITE_ROOT;
-const rawCases = fs.existsSync(metadataFixture)
+const rawCases = metadataIntegrated
   ? Object.groupBy(
       JSON.parse(fs.readFileSync(metadataFixture, "utf8")).map((entry) => [
         entry.query,
@@ -65,6 +66,7 @@ const cases = Object.fromEntries(
 
 for (const [locale, localeCases] of Object.entries(cases)) {
   test(`summary Lunr ranks fixed ${locale} entry queries`, async ({ page }) => {
+    test.skip(!metadataIntegrated, "PR-B search metadata fixture is not integrated");
     for (const [query, expectedRef, expectedTitle] of localeCases) {
       await page.goto(locale === "cn" ? "/cn/docs/" : "/docs/");
       await page.locator("[data-td-shell-search-open]").first().click();

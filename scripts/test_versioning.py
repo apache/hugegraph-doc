@@ -1526,6 +1526,10 @@ class VersionUrlTest(unittest.TestCase):
             "file:///etc/passwd",
             "ftp://example.org/file",
             "//example.org/path",
+            "https:///docs/introduction/",
+            "https:////docs/introduction/",
+            "http:docs/introduction/",
+            "/docs/introduction/\t",
         ):
             with self.subTest(value=value), self.assertRaises(SystemExit):
                 versioning.require_safe_url_scheme(value, "fixture.html")

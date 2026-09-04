@@ -315,11 +315,18 @@ def require_safe_url_scheme(value: str, source: str) -> bool:
     """Reject active or ambiguous schemes; return whether target validation applies."""
     if value.startswith("//"):
         fail(f"protocol-relative URL in {source}: {value}")
-    scheme = urllib.parse.urlsplit(value).scheme.lower()
+    if any(
+        char.isspace() or ord(char) < 0x20 or ord(char) == 0x7F for char in value
+    ):
+        fail(f"whitespace/control URL in {source}: {value}")
+    parts = urllib.parse.urlsplit(value)
+    scheme = parts.scheme.lower()
     if scheme in {"mailto", "tel"}:
         return False
     if scheme not in {"", "http", "https"}:
         fail(f"forbidden URL scheme in {source}: {value}")
+    if scheme in {"http", "https"} and not parts.netloc:
+        fail(f"HTTP(S) URL has no authority in {source}: {value}")
     return True
 
 

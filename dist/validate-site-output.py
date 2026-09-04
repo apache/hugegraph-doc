@@ -575,6 +575,31 @@ def refresh_target(parser: DocumentParser) -> str | None:
     return match.group(1).strip(" \"'")
 
 
+def rendered_url_shape_error(
+    value: str,
+    page_name: str,
+    attribute: str,
+) -> str | None:
+    """Reject URL spellings that browsers and RFC parsers interpret differently."""
+    if any(
+        char.isspace() or ord(char) < 0x20 or ord(char) == 0x7F for char in value
+    ):
+        return (
+            f"{page_name}: unsafe whitespace/control URL in {attribute}: {value}"
+        )
+    if "\\" in value:
+        return f"{page_name}: unsafe backslash URL in {attribute}: {value}"
+    if value.startswith("//"):
+        return f"{page_name}: protocol-relative {attribute} is forbidden: {value}"
+    try:
+        parts = urllib.parse.urlsplit(value)
+    except ValueError as exc:
+        return f"{page_name}: malformed URL in {attribute}: {value}: {exc}"
+    if parts.scheme.lower() in {"http", "https"} and not parts.netloc:
+        return f"{page_name}: HTTP(S) URL has no authority in {attribute}: {value}"
+    return None
+
+
 def main() -> int:
     argument_parser = argparse.ArgumentParser(
         description="Validate a generated HugeGraph documentation artifact."
@@ -643,6 +668,10 @@ def main() -> int:
         page_name = page.relative_to(root).as_posix()
         errors.extend(document_security_errors(parser, page_name, base_parts))
         errors.extend(error_document_seo_errors(parser, page_name, error_paths))
+        for attribute, raw_url in parser.urls:
+            shape_error = rendered_url_shape_error(raw_url, page_name, attribute)
+            if shape_error:
+                errors.append(shape_error)
         if args.security_only:
             continue
         errors.extend(toc_accessibility_errors(parser, page_name))
@@ -758,7 +787,9 @@ def main() -> int:
                     )
 
         for attribute, raw_url in parser.urls:
-            url = raw_url.strip()
+            if rendered_url_shape_error(raw_url, page_name, attribute):
+                continue
+            url = raw_url
             lower_url = url.lower()
             if "/_nav/" in lower_url:
                 errors.append(
@@ -771,12 +802,6 @@ def main() -> int:
                 or lower_url.startswith(("mailto:", "tel:"))
             ):
                 continue
-            if url.startswith("//"):
-                errors.append(
-                    f"{page_name}: protocol-relative {attribute} is forbidden: {url}"
-                )
-                continue
-
             parts = urllib.parse.urlsplit(url)
             if parts.scheme and parts.scheme.lower() not in {"http", "https"}:
                 errors.append(

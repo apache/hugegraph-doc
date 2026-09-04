@@ -400,6 +400,41 @@ class SiteOutputSecurityTest(unittest.TestCase):
             ],
         )
 
+    def test_authorityless_and_ambiguous_http_links_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = pathlib.Path(temp_name)
+            docs = root / "docs/introduction"
+            docs.mkdir(parents=True)
+            (docs / "index.html").write_text("target", encoding="utf-8")
+            (root / "index.html").write_text(
+                (
+                    '<a href="https:///docs/introduction/">triple</a>'
+                    '<a href="https:////docs/introduction/">quad</a>'
+                    '<a href="http:docs/introduction/">opaque</a>'
+                    '<a href="/docs/introduction/\t">control</a>'
+                    '<a href="/docs\\introduction/">backslash</a>'
+                ),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(VALIDATOR_PATH),
+                    str(root),
+                    "https://hugegraph.apache.org/",
+                    "--security-only",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("HTTP(S) URL has no authority", result.stdout)
+            self.assertIn("unsafe whitespace/control URL", result.stdout)
+            self.assertIn("unsafe backslash URL", result.stdout)
+
     def test_css_http_resources_are_detected(self) -> None:
         parser = parse(
             '<style>@import "http://example.com/base.css"; '

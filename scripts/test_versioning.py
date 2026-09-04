@@ -1122,6 +1122,55 @@ class VersionUrlTest(unittest.TestCase):
         finally:
             checkout_child.rmdir()
 
+    def test_output_cleanup_rejects_sibling_checkout_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            sibling = Path(temp_name) / "sibling-worktree"
+            sibling.mkdir()
+            (sibling / ".git").write_text(
+                "gitdir: /tmp/fixture.git/worktrees/sibling\n",
+                encoding="utf-8",
+            )
+            with (
+                mock.patch.object(versioning.shutil, "rmtree") as remove,
+                self.assertRaisesRegex(SystemExit, "Git checkout"),
+            ):
+                versioning.prepare_output_directory(sibling, "fixture")
+            remove.assert_not_called()
+
+    def test_output_cleanup_rejects_registered_sibling_worktree(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            sibling = Path(temp_name) / "registered-sibling"
+            sibling.mkdir()
+            with (
+                mock.patch.object(
+                    versioning,
+                    "registered_worktree_roots",
+                    return_value=(versioning.ROOT.resolve(), sibling.resolve()),
+                ),
+                mock.patch.object(versioning.shutil, "rmtree") as remove,
+                self.assertRaisesRegex(SystemExit, "Git checkout"),
+            ):
+                versioning.prepare_output_directory(sibling, "fixture")
+            remove.assert_not_called()
+
+    def test_output_cleanup_fails_closed_when_worktrees_cannot_be_enumerated(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name) / "output"
+            output.mkdir()
+            with (
+                mock.patch.object(
+                    versioning,
+                    "registered_worktree_roots",
+                    side_effect=SystemExit("cannot enumerate protected Git worktrees"),
+                ),
+                mock.patch.object(versioning.shutil, "rmtree") as remove,
+                self.assertRaisesRegex(SystemExit, "cannot enumerate"),
+            ):
+                versioning.prepare_output_directory(output, "fixture")
+            remove.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

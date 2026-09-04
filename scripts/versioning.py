@@ -266,6 +266,52 @@ def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 
+def registered_worktree_roots() -> tuple[pathlib.Path, ...]:
+    """Enumerate every checkout sharing this repository, failing closed."""
+    try:
+        result = subprocess.run(
+            ["git", "worktree", "list", "--porcelain", "-z"],
+            cwd=ROOT,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except OSError as exc:
+        fail(f"cannot enumerate protected Git worktrees: {exc}")
+    if result.returncode != 0:
+        detail = os.fsdecode(result.stderr).strip()
+        fail(f"cannot enumerate protected Git worktrees: {detail or result.returncode}")
+    roots = []
+    for field in result.stdout.split(b"\0"):
+        if not field.startswith(b"worktree "):
+            continue
+        raw = os.fsdecode(field.removeprefix(b"worktree "))
+        path = pathlib.Path(raw)
+        if not raw or not path.is_absolute():
+            fail(f"invalid Git worktree path: {raw!r}")
+        roots.append(path.resolve())
+    if not roots:
+        fail("cannot enumerate protected Git worktrees: no checkout paths")
+    return tuple(roots)
+
+
+def require_output_outside_git_checkouts(output: pathlib.Path, label: str) -> None:
+    """Reject registered, prunable, and unregistered checkout paths."""
+    protected = set(registered_worktree_roots())
+    protected.add(ROOT.resolve())
+    for checkout in protected:
+        if (
+            output == checkout
+            or output in checkout.parents
+            or checkout in output.parents
+        ):
+            fail(f"{label} must be outside every Git checkout: {output}")
+    for candidate in (output, *output.parents):
+        marker = candidate / ".git"
+        if marker.exists() or marker.is_symlink():
+            fail(f"{label} must be outside every Git checkout: {output}")
+
+
 def prepare_output_directory(path: pathlib.Path, label: str) -> pathlib.Path:
     raw = path.expanduser()
     if raw.is_symlink():
@@ -280,13 +326,7 @@ def prepare_output_directory(path: pathlib.Path, label: str) -> pathlib.Path:
         allowed_roots.add(pathlib.Path(runner_temp).resolve())
     if not any(root != output and root in output.parents for root in allowed_roots):
         fail(f"{label} must be below a controlled temporary directory: {output}")
-    repository_root = ROOT.resolve()
-    if (
-        output == repository_root
-        or output in repository_root.parents
-        or repository_root in output.parents
-    ):
-        fail(f"{label} must be outside the repository checkout: {output}")
+    require_output_outside_git_checkouts(output, label)
     if output.exists():
         if output.is_symlink() or not output.is_dir():
             fail(f"{label} is not a removable directory: {output}")

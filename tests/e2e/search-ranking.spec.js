@@ -75,10 +75,19 @@ for (const [locale, localeCases] of Object.entries(cases)) {
         .first()
         .locator('[role="option"]');
       await expect(pageResults.first(), `no Lunr results for ${query}`).toBeVisible();
+      await expect
+        .poll(() =>
+          pageResults.evaluateAll((rows) =>
+            rows
+              .slice(0, 3)
+              .map((row) => row.querySelector(".td-shell-search__item-title")?.textContent.trim())
+          )
+        )
+        .toContain(expectedTitle);
       const titles = await pageResults.evaluateAll((rows) =>
-        rows
-          .slice(0, 3)
-          .map((row) => row.querySelector(".td-shell-search__item-title")?.textContent.trim())
+        rows.slice(0, 3).map((row) =>
+          row.querySelector(".td-shell-search__item-title")?.textContent.trim()
+        )
       );
       expect(
         titles.includes(expectedTitle),

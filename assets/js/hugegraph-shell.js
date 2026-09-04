@@ -83,7 +83,7 @@
         documentObject,
       );
       button.addEventListener('click', function () {
-        global.queueMicrotask(function () {
+        global.setTimeout(function () {
           if (!storage) return;
           var expanded = buttons
             .filter(function (candidate) {
@@ -102,7 +102,7 @@
           } catch (_) {
             /* Active-path expansion remains the storage-free fallback. */
           }
-        });
+        }, 0);
       });
     });
 

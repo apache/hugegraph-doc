@@ -21,7 +21,7 @@ HugeGraph 包括三个层次的功能，分别是应用程序层、图引擎层�
   - [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/): 数据导入组件，能够将多种数据源的数据转化为图的顶点和边并批量导入到图数据库中。
   - [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/): 命令行工具，用于部署、管理和备份/恢复 HugeGraph 中的数据。
   - [Computer](/cn/docs/quickstart/computing/hugegraph-computer/): 分布式图处理系统 (OLAP)，它是 [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf) 的一个实现，可以运行在 Kubernetes 上。
-  - [Client](/cn/docs/quickstart/client/hugegraph-client/): Java 客户端。文档还提供 Python 和 Go 客户端入口。
+  - [Client](/cn/docs/quickstart/client/hugegraph-client/)：客户端 SDK 封装了 HugeGraph Server 的连接、Schema 管理、图数据读写和查询等核心操作。目前支持 [Java](/cn/docs/quickstart/client/hugegraph-client/)、[Python](/cn/docs/quickstart/client/hugegraph-client-python/) 和 [Go](/cn/docs/quickstart/client/hugegraph-client-go/) 版本，Rust 客户端正在开发中。
 - [图引擎层](/cn/docs/quickstart/hugegraph/hugegraph-server/)：
   - REST Server: 提供 RESTful API 用于查询 Graph/Schema 等信息，支持 [Gremlin](https://tinkerpop.apache.org/gremlin.html) 和 [Cypher](https://en.wikipedia.org/wiki/Cypher) 查询语言，提供服务监控和运维的 APIs。
   - Graph Engine: 支持 OLTP 和 OLAP 两种图计算类型，其中 OLTP 实现了 [Apache TinkerPop3](https://tinkerpop.apache.org) 框架。

@@ -344,6 +344,48 @@ class VersionUrlTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "historical artifact"):
                 versioning.validate_llms_full_outputs(root, archived, ORIGIN)
 
+    def test_llms_full_contract_validates_every_source_line(self) -> None:
+        latest = versioning.load_manifest(
+            versioning.ROOT / "versions.json"
+        )["versions"][0]
+        invalid_sources = (
+            "https://hugegraph.apache.org/cn/docs/config/index.md",
+            "https://example.com/docs/config/index.md",
+            "https://hugegraph.apache.org/versions/1.7/docs/config/index.md",
+            "javascript:alert(1)",
+            "",
+            "https://hugegraph.apache.org/docs/index.md",
+        )
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            en = root / "docs/llms-full.txt"
+            cn = root / "cn/docs/llms-full.txt"
+            en.parent.mkdir(parents=True)
+            cn.parent.mkdir(parents=True)
+            cn.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/cn/docs/index.md\n\n"
+                    "LLMS 索引： [llms.txt](/cn/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            for invalid in invalid_sources:
+                with self.subTest(source=invalid):
+                    en.write_text(
+                        (
+                            "Source: https://hugegraph.apache.org/docs/index.md\n"
+                            f"Source: {invalid}\n\n"
+                            "LLMS index: [llms.txt](/llms.txt)\n"
+                        ),
+                        encoding="utf-8",
+                    )
+                    with self.assertRaisesRegex(
+                        SystemExit, "English LLMSFULL source"
+                    ):
+                        versioning.validate_llms_full_outputs(
+                            root, latest, ORIGIN
+                        )
+
     def test_temporary_manifest_drives_prepare_config_and_route_order(self) -> None:
         manifest_data = {
             "schemaVersion": 1,

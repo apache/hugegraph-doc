@@ -3003,6 +3003,40 @@ def validate_llms_full_outputs(
             or forbidden in text
         ):
             fail(f"{label} LLMSFULL locale contract is invalid")
+        source_rows = [
+            line for line in text.splitlines() if line.startswith("Source:")
+        ]
+        sources = [line.removeprefix("Source:").strip() for line in source_rows]
+        if (
+            not sources
+            or any(not line.startswith("Source: ") for line in source_rows)
+            or any(not value for value in sources)
+        ):
+            fail(f"{label} LLMSFULL source is missing or malformed")
+        if len(sources) != len(set(sources)):
+            fail(f"{label} LLMSFULL source is duplicated")
+        expected_parts = urllib.parse.urlsplit(expected_base)
+        locale_root = "cn/docs/" if language == "cn" else "docs/"
+        expected_path_prefix = urllib.parse.urlsplit(
+            urllib.parse.urljoin(expected_base, locale_root)
+        ).path
+        for value in sources:
+            require_safe_url_syntax(value)
+            parts = urllib.parse.urlsplit(value)
+            require_safe_http_authority(parts, value)
+            decoded_path = urllib.parse.unquote(parts.path)
+            if (
+                any(char.isspace() for char in value)
+                or parts.scheme.lower() != expected_parts.scheme.lower()
+                or parts.netloc != expected_parts.netloc
+                or parts.query
+                or parts.fragment
+                or "\\" in decoded_path
+                or not decoded_path.startswith(expected_path_prefix)
+                or not decoded_path.endswith(".md")
+                or ".." in pathlib.PurePosixPath(decoded_path).parts
+            ):
+                fail(f"{label} LLMSFULL source is outside its artifact: {value}")
 
 
 def validate_artifact(args: argparse.Namespace) -> None:

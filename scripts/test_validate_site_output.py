@@ -357,6 +357,30 @@ class SiteOutputSecurityTest(unittest.TestCase):
             ],
         )
 
+    def test_duplicate_attributes_are_rejected_case_insensitively(self) -> None:
+        parser = parse(
+            '<img src="/safe.png" SRC="https://evil.example/image.png">'
+            '<svg><use xlink:href="#safe" XLINK:HREF="https://evil.example/x">'
+            "</use></svg>"
+        )
+        self.assertEqual(
+            parser.authored_violations,
+            [
+                "duplicate src attribute on <img>",
+                "duplicate xlink:href attribute on <use>",
+            ],
+        )
+        errors = VALIDATOR.document_security_errors(parser, "index.html", BASE)
+        self.assertIn(
+            "index.html: unsafe content markup: duplicate src attribute on <img>",
+            errors,
+        )
+        self.assertIn(
+            "index.html: unsafe content markup: duplicate xlink:href attribute "
+            "on <use>",
+            errors,
+        )
+
     def test_exact_oink_diagram_source_is_allowed_inside_content(self) -> None:
         parser = parse(
             '<main><script type="application/json" data-td-diagram-source>'
@@ -496,6 +520,12 @@ class SiteOutputSecurityTest(unittest.TestCase):
                     '<link rel="prerender" href="https://evil.example/page">'
                     '<link rel="preconnect" href="https://evil.example/">'
                     '<link rel="dns-prefetch" href="https://evil.example/">'
+                    '<link rel="preload" as="image" '
+                    'imagesrcset="https://evil.example/preload.png 1x">'
+                    '<svg><use xlink:href="https://evil.example/icon.svg"></use>'
+                    '<image xlink:href="https://evil.example/image.svg"></image></svg>'
+                    '<img src="/local.png" '
+                    'attributionsrc="https://evil.example/attribute">'
                 ),
                 encoding="utf-8",
             )
@@ -529,9 +559,68 @@ class SiteOutputSecurityTest(unittest.TestCase):
                 "https://evil.example/page",
                 result.stdout,
             )
+            self.assertIn(
+                "external active resource is forbidden <use> xlink:href",
+                result.stdout,
+            )
+            self.assertIn(
+                "external active resource is forbidden <link> imagesrcset",
+                result.stdout,
+            )
+            self.assertIn("forbidden attributionsrc attribute", result.stdout)
             self.assertIn("forbidden URL scheme in use[href]", result.stdout)
 
-    def test_security_only_allows_passive_data_images_only(self) -> None:
+    def test_runtime_url_attributes_enter_security_and_target_validation(self) -> None:
+        fragment = (
+            '<main data-td-index-src="/missing-index.json" '
+            'data-td-url="/missing-runtime/" '
+            'data-td-action-url="/missing-action/" '
+            'data-td-image-zoom="https://images.example.com/zoom.png"></main>'
+        )
+        parser = parse(fragment)
+        for attribute, url in (
+            ("data-td-index-src", "/missing-index.json"),
+            ("data-td-url", "/missing-runtime/"),
+            ("data-td-action-url", "/missing-action/"),
+            ("data-td-image-zoom", "https://images.example.com/zoom.png"),
+        ):
+            self.assertIn((attribute, url), parser.urls)
+        errors = VALIDATOR.document_security_errors(parser, "index.html", BASE)
+        self.assertIn(
+            "index.html: image URL is outside ASF CSP <main> "
+            "data-td-image-zoom: https://images.example.com/zoom.png",
+            errors,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = pathlib.Path(temp_name)
+            (root / "index.html").write_text(fragment, encoding="utf-8")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(VALIDATOR_PATH),
+                    str(root),
+                    "https://hugegraph.apache.org/",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn(
+                "broken internal data-td-index-src /missing-index.json",
+                result.stdout,
+            )
+            self.assertIn(
+                "broken internal data-td-url /missing-runtime/",
+                result.stdout,
+            )
+            self.assertIn(
+                "broken internal data-td-action-url /missing-action/",
+                result.stdout,
+            )
+
+    def test_security_only_rejects_data_resource_schemes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             root = pathlib.Path(temp_name)
             data_image = "data:image/png;base64,AAAA"
@@ -549,7 +638,7 @@ class SiteOutputSecurityTest(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            allowed = subprocess.run(
+            passive = subprocess.run(
                 [
                     sys.executable,
                     str(VALIDATOR_PATH),
@@ -561,7 +650,10 @@ class SiteOutputSecurityTest(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
-            self.assertEqual(allowed.returncode, 0, allowed.stdout + allowed.stderr)
+            self.assertEqual(passive.returncode, 1)
+            self.assertIn("forbidden URL scheme in img[src]", passive.stdout)
+            self.assertIn("forbidden URL scheme in inline CSS", passive.stdout)
+            self.assertIn("forbidden URL scheme in CSS resource", passive.stdout)
 
             (root / "active.html").write_text(
                 f'<script src="{data_image}"></script>',
@@ -610,6 +702,216 @@ class SiteOutputSecurityTest(unittest.TestCase):
                 "//evil.example/hero.png",
             ],
         )
+
+    def test_css_tokenizer_covers_escaped_and_image_set_resources(self) -> None:
+        source = (
+            '@\\69mport "https://evil.example/import with space.css";'
+            ".quoted { background: url('https://evil.example/image with space.png') }"
+            ".escaped { background: u\\72l(h\\74tps://evil.example/escaped.png) }"
+            ".set { background-image: image-set("
+            '"https://evil.example/one.png" 1x, '
+            "url(https://evil.example/two.png) 2x) }"
+            ".webkit { background-image: -webkit-image-set("
+            '"https://evil.example/three.png" 1x) }'
+        )
+        self.assertEqual(
+            VALIDATOR.css_resource_urls(source),
+            [
+                "https://evil.example/import with space.css",
+                "https://evil.example/image with space.png",
+                "https://evil.example/escaped.png",
+                "https://evil.example/one.png",
+                "https://evil.example/two.png",
+                "https://evil.example/three.png",
+            ],
+        )
+
+    def test_css_request_surfaces_share_the_same_security_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = pathlib.Path(temp_name)
+            escaped = "h\\74tps://evil.example/request.png"
+            (root / "index.html").write_text(
+                (
+                    f'<div style="background:image-set(&quot;{escaped}&quot; 1x)">'
+                    "</div>"
+                    f"<style>.hero{{background:url('{escaped}')}}</style>"
+                ),
+                encoding="utf-8",
+            )
+            (root / "site.css").write_text(
+                f".hero{{background:-webkit-image-set(\"{escaped}\" 1x)}}",
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(VALIDATOR_PATH),
+                    str(root),
+                    "https://hugegraph.apache.org/",
+                    "--security-only",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertGreaterEqual(
+                result.stdout.count("external CSS resource is forbidden"),
+                3,
+                result.stdout,
+            )
+
+    def test_css_internal_resources_resolve_from_stylesheet_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = pathlib.Path(temp_name)
+            (root / "index.html").write_text("<main>safe</main>", encoding="utf-8")
+            (root / "scss").mkdir()
+            (root / "img").mkdir()
+            (root / "img/present.svg").write_text("<svg/>", encoding="utf-8")
+            (root / "scss/site.css").write_text(
+                (
+                    '.present{background:url("../img/present.svg")}'
+                    '.scoped{background:url("https://hugegraph.apache.org/'
+                    'versions/1.7/img/present.svg")}'
+                    '.missing{background:url("../img/missing.svg")}'
+                    '@import "./missing.css";'
+                    '.escape{background:url("../../escape.svg")}'
+                    '.fragment{filter:url("#local-filter")}'
+                ),
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(VALIDATOR_PATH),
+                    str(root),
+                    "https://hugegraph.apache.org/versions/1.7/",
+                    "--security-only",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertNotIn("present.svg", result.stdout)
+            self.assertIn(
+                "broken internal CSS resource ../img/missing.svg -> img/missing.svg",
+                result.stdout,
+            )
+            self.assertIn(
+                "broken internal CSS resource ./missing.css -> scss/missing.css",
+                result.stdout,
+            )
+            self.assertIn(
+                "unsafe internal CSS resource ../../escape.svg: "
+                "escapes output directory",
+                result.stdout,
+            )
+            self.assertNotIn("local-filter", result.stdout)
+
+    def test_parser_covers_legacy_and_svg_request_surfaces(self) -> None:
+        parser = parse(
+            '<iframe srcdoc="<script>run()</script>"></iframe>'
+            '<frame src="https://evil.example/frame">'
+            '<body background="https://images.example.com/body.png">'
+            '<table background="/table.png"><tr>'
+            '<th background="/head.png">h</th>'
+            '<td background="/cell.png">c</td></tr></table>'
+            '<svg>'
+            '<a xlink:href="https://example.com/docs">docs</a>'
+            '<image xlink:href="https://www.apache.org/image.svg"></image>'
+            '<feImage href="https://www.apache.org/filter.svg"></feImage>'
+            '<mpath xlink:href="https://evil.example/path.svg#p"></mpath>'
+            '<pattern href="https://evil.example/pattern.svg#p"></pattern>'
+            '<path fill="url(https://evil.example/paint.svg#gradient)"></path>'
+            "</svg>"
+        )
+        self.assertIn("forbidden iframe[srcdoc]", parser.authored_violations)
+        self.assertIn(
+            ("a", "xlink:href", "https://example.com/docs"),
+            parser.navigation_urls,
+        )
+        self.assertIn(
+            ("mpath", "xlink:href", "https://evil.example/path.svg#p"),
+            parser.resources,
+        )
+        self.assertIn(
+            ("pattern", "href", "https://evil.example/pattern.svg#p"),
+            parser.resources,
+        )
+        self.assertIn(
+            ("image", "xlink:href", "https://www.apache.org/image.svg"),
+            parser.image_urls,
+        )
+        self.assertIn(
+            ("feimage", "href", "https://www.apache.org/filter.svg"),
+            parser.image_urls,
+        )
+        self.assertIn(
+            "https://evil.example/paint.svg#gradient",
+            [
+                url
+                for source in parser.inline_css_sources
+                for url in VALIDATOR.css_resource_urls(source)
+            ],
+        )
+        self.assertIn(
+            "external active resource is forbidden <frame> src",
+            "\n".join(
+                VALIDATOR.document_security_errors(parser, "index.html", BASE)
+            ),
+        )
+
+    def test_link_rel_is_fail_closed_for_request_capable_and_unknown_values(self) -> None:
+        parser = parse(
+            '<link rel="canonical" href="https://hugegraph-oink.staged.apache.org/">'
+            '<link rel="alternate" hreflang="zh-CN" '
+            'href="https://hugegraph-oink.staged.apache.org/cn/">'
+            '<link rel="mask-icon" href="https://evil.example/mask.svg">'
+            '<link rel="apple-touch-startup-image" '
+            'href="https://evil.example/start.png">'
+            '<link rel="future-browser-fetch" href="https://evil.example/future">'
+        )
+        errors = VALIDATOR.document_security_errors(parser, "index.html", BASE)
+        self.assertEqual(len(errors), 3, errors)
+        self.assertTrue(all("external active resource" in error for error in errors))
+
+    def test_srcset_and_imagesrcset_candidates_are_internal_targets(self) -> None:
+        fragment = (
+            '<img srcset="/present.png 1x, /missing.png 2x">'
+            '<link rel="preload" as="image" '
+            'imagesrcset="/present-link.png 1x, /missing-link.png 2x">'
+        )
+        parser = parse(fragment)
+        self.assertIn(("srcset", "/missing.png"), parser.urls)
+        self.assertIn(("imagesrcset", "/missing-link.png"), parser.urls)
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = pathlib.Path(temp_name)
+            (root / "index.html").write_text(fragment, encoding="utf-8")
+            (root / "present.png").write_bytes(b"present")
+            (root / "present-link.png").write_bytes(b"present")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(VALIDATOR_PATH),
+                    str(root),
+                    "https://hugegraph.apache.org/",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn(
+                "broken internal srcset /missing.png -> missing.png",
+                result.stdout,
+            )
+            self.assertIn(
+                "broken internal imagesrcset /missing-link.png -> missing-link.png",
+                result.stdout,
+            )
 
     def test_asf_csp_image_sources_are_allowed(self) -> None:
         allowed = [

@@ -294,7 +294,7 @@ class VersionUrlTest(unittest.TestCase):
             )
         self.assertNotIn("1.2", json.dumps(config))
 
-    def test_shell_static_files_include_scoped_social_fallback(self) -> None:
+    def test_shell_static_assets_include_all_shared_resources(self) -> None:
         self.assertIn(
             "img/social/hugegraph-default.png",
             versioning.SHELL_STATIC_FILES,
@@ -305,6 +305,32 @@ class VersionUrlTest(unittest.TestCase):
                 / "static/img/social/hugegraph-default.png"
             ).is_file()
         )
+        self.assertIn("img/bootstrap-controls", versioning.SHELL_STATIC_DIRS)
+        self.assertIn("img/home", versioning.SHELL_STATIC_DIRS)
+        controls = (
+            versioning.ROOT / "static/img/bootstrap-controls"
+        )
+        self.assertEqual(len(list(controls.glob("*.svg"))), 20)
+
+        with tempfile.TemporaryDirectory() as temp_name:
+            assembly = Path(temp_name)
+            versioning.overlay_shell(
+                assembly,
+                historical=True,
+                origin=ORIGIN,
+            )
+            copied = assembly / "static/img/bootstrap-controls"
+            self.assertEqual(
+                sorted(path.name for path in copied.glob("*.svg")),
+                sorted(path.name for path in controls.glob("*.svg")),
+            )
+            self.assertEqual(
+                sorted(
+                    path.name
+                    for path in (assembly / "static/img/home").glob("*.jpg")
+                ),
+                ["hugegraph-hero-1920.jpg", "hugegraph-hero-960.jpg"],
+            )
 
     def test_llms_full_contract_requires_latest_locales_and_forbids_history(
         self,
@@ -1288,6 +1314,59 @@ class VersionUrlTest(unittest.TestCase):
         self.assertIn('<a href="/docs/">example</a>', rendered)
         self.assertIn('<a href="https://hugegraph.apache.org/blog/">Blog</a>', rendered)
 
+    def test_rewrites_each_srcset_and_imagesrcset_candidate(self) -> None:
+        source = (
+            '<img srcset="/images/one.png 1x, /images/two.png 2x">'
+            '<link rel="preload" as="image" '
+            'imagesrcset="/images/three.png 400w, /images/four.png 800w">'
+            '<source srcset=/images/five.png>'
+            '<svg><use xlink:href="/images/sprite.svg#icon"></use></svg>'
+            '<button data-td-action-url="/docs/action/">action</button>'
+        )
+        rendered, count = versioning.rewrite_text_urls(
+            source,
+            rewrite,
+            markdown=False,
+        )
+        self.assertEqual(count, 7)
+        for name in ("one", "two", "three", "four", "five"):
+            self.assertIn(
+                f"/versions/1.7/images/{name}.png",
+                rendered,
+            )
+        self.assertIn(" 1x,", rendered)
+        self.assertIn(" 800w", rendered)
+        self.assertIn(
+            'xlink:href="/versions/1.7/images/sprite.svg#icon"',
+            rendered,
+        )
+        self.assertIn(
+            'data-td-action-url="/versions/1.7/docs/action/"',
+            rendered,
+        )
+
+    def test_markdown_rewrites_multiline_srcset_outside_fences(self) -> None:
+        source = (
+            "<img\n"
+            '  srcset="/images/one.png 1x,\n'
+            '          /images/two.png 2x">\n'
+            "```html\n"
+            "<img\n"
+            '  srcset="/images/example.png 1x,\n'
+            '          /images/example-2x.png 2x">\n'
+            "```\n"
+        )
+        rendered, count = versioning.rewrite_text_urls(
+            source,
+            rewrite,
+            markdown=True,
+        )
+        self.assertEqual(count, 2)
+        self.assertIn("/versions/1.7/images/one.png 1x", rendered)
+        self.assertIn("/versions/1.7/images/two.png 2x", rendered)
+        self.assertIn('srcset="/images/example.png 1x,', rendered)
+        self.assertIn("/images/example-2x.png 2x", rendered)
+
     def test_language_fallback_scopes_to_each_artifact_base(self) -> None:
         manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
         relative = "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html"
@@ -1577,7 +1656,13 @@ class VersionUrlTest(unittest.TestCase):
             "</form>"
             '<object data="/payload"></object>'
             '<area href="/map">'
-            '<svg><use href="/sprite.svg#icon"></use></svg>'
+            '<svg><use href="/sprite.svg#icon"></use>'
+            '<use xlink:href="/legacy.svg#icon"></use>'
+            '<image xlink:href="/legacy-image.svg"></image>'
+            '<a xlink:href="/legacy-link">legacy</a></svg>'
+            '<img srcset="/one.png 1x, /two.png 2x">'
+            '<link imagesrcset="/three.png 400w, /four.png 800w">'
+            '<button data-td-action-url="/action">action</button>'
         )
         self.assertEqual(
             parser.urls,
@@ -1588,6 +1673,14 @@ class VersionUrlTest(unittest.TestCase):
                 ("data", "/payload"),
                 ("href", "/map"),
                 ("href", "/sprite.svg#icon"),
+                ("xlink:href", "/legacy.svg#icon"),
+                ("xlink:href", "/legacy-image.svg"),
+                ("xlink:href", "/legacy-link"),
+                ("srcset", "/one.png"),
+                ("srcset", "/two.png"),
+                ("imagesrcset", "/three.png"),
+                ("imagesrcset", "/four.png"),
+                ("data-td-action-url", "/action"),
             ],
         )
 

@@ -1,0 +1,49 @@
+// Keep Bootstrap's built-in controls compatible with the site's no-data-URL
+// policy. The stylesheet is emitted under /scss/, while static assets are
+// published under /img/ for every version artifact.
+$form-check-input-checked-bg-image:
+  url("../img/bootstrap-controls/check-checked.svg");
+$form-check-radio-checked-bg-image:
+  url("../img/bootstrap-controls/radio-checked.svg");
+$form-check-input-indeterminate-bg-image:
+  url("../img/bootstrap-controls/check-indeterminate.svg");
+
+$form-switch-bg-image:
+  url("../img/bootstrap-controls/switch.svg");
+$form-switch-focus-bg-image:
+  url("../img/bootstrap-controls/switch-focus.svg");
+$form-switch-checked-bg-image:
+  url("../img/bootstrap-controls/switch-checked.svg");
+
+$form-select-indicator:
+  url("../img/bootstrap-controls/select.svg");
+$form-feedback-icon-valid:
+  url("../img/bootstrap-controls/validation-valid.svg");
+$form-feedback-icon-invalid:
+  url("../img/bootstrap-controls/validation-invalid.svg");
+
+$navbar-light-toggler-icon-bg:
+  url("../img/bootstrap-controls/navbar-light.svg");
+$navbar-dark-toggler-icon-bg:
+  url("../img/bootstrap-controls/navbar-dark.svg");
+
+$accordion-button-icon:
+  url("../img/bootstrap-controls/accordion.svg");
+$accordion-button-active-icon:
+  url("../img/bootstrap-controls/accordion-active.svg");
+
+$carousel-control-prev-icon-bg:
+  url("../img/bootstrap-controls/carousel-prev.svg");
+$carousel-control-next-icon-bg:
+  url("../img/bootstrap-controls/carousel-next.svg");
+$btn-close-bg:
+  url("../img/bootstrap-controls/close.svg");
+
+$form-select-indicator-dark:
+  url("../img/bootstrap-controls/select-dark.svg");
+$form-switch-bg-image-dark:
+  url("../img/bootstrap-controls/switch-dark.svg");
+$accordion-button-icon-dark:
+  url("../img/bootstrap-controls/accordion-dark.svg");
+$accordion-button-active-icon-dark:
+  url("../img/bootstrap-controls/accordion-active-dark.svg");

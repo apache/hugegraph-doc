@@ -49,6 +49,10 @@ SHELL_STATIC_FILES = (
     "favicon.svg",
     "img/social/hugegraph-default.png",
 )
+SHELL_STATIC_DIRS = (
+    "img/bootstrap-controls",
+    "img/home",
+)
 SHELL_CONTENT = (
     "content/en/_index.md",
     "content/cn/_index.md",
@@ -79,8 +83,18 @@ LATEST_SHARED_DOC_ROUTES = {
     "/cn/docs/guides/security/",
 }
 URL_ATTRIBUTE_RE = re.compile(
-    r"(?P<prefix>[\s<](?:href|src|action|formaction|data|poster|data-td-index-src|data-td-url|data-td-image-zoom)=)"
+    r"(?P<prefix>[\s<](?:href|xlink:href|src|action|formaction|data|poster|data-td-index-src|data-td-url|data-td-action-url|data-td-image-zoom)=)"
     r"(?P<quote>[\"']?)(?P<url>[^\s\"'<>`]+)(?P=quote)",
+    re.IGNORECASE,
+)
+URL_LIST_ATTRIBUTE_RE = re.compile(
+    r"(?P<prefix>[\s<](?:srcset|imagesrcset)=)"
+    r"(?P<quote>[\"'])(?P<value>.*?)(?P=quote)",
+    re.IGNORECASE | re.DOTALL,
+)
+URL_LIST_UNQUOTED_ATTRIBUTE_RE = re.compile(
+    r"(?P<prefix>[\s<](?:srcset|imagesrcset)=)"
+    r"(?P<value>[^\s\"'<>`]+)",
     re.IGNORECASE,
 )
 ACTION_MANIFEST_RE = re.compile(
@@ -165,6 +179,41 @@ LEGACY_IA_SECTIONS = {
 }
 
 
+def srcset_urls(value: str) -> list[str]:
+    """Return each URL candidate without treating data-URL commas as separators."""
+    urls: list[str] = []
+    position = 0
+    while position < len(value):
+        while position < len(value) and (
+            value[position].isspace() or value[position] == ","
+        ):
+            position += 1
+        if position == len(value):
+            break
+
+        start = position
+        is_data_url = value[start:].lower().startswith("data:")
+        while position < len(value) and not value[position].isspace():
+            if value[position] == "," and not is_data_url:
+                break
+            position += 1
+        token = value[start:position]
+        trailing_commas = len(token) - len(token.rstrip(","))
+        token = token.rstrip(",")
+        if token:
+            urls.append(token)
+        if position < len(value) and value[position] == ",":
+            position += 1
+            continue
+        if trailing_commas:
+            continue
+        while position < len(value) and value[position] != ",":
+            position += 1
+        if position < len(value):
+            position += 1
+    return urls
+
+
 class DocumentParser(html.parser.HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -185,11 +234,13 @@ class DocumentParser(html.parser.HTMLParser):
             )
         for attribute in (
             "href",
+            "xlink:href",
             "src",
             "action",
             "poster",
             "data-td-index-src",
             "data-td-url",
+            "data-td-action-url",
             "data-td-image-zoom",
         ):
             if values.get(attribute):
@@ -198,6 +249,12 @@ class DocumentParser(html.parser.HTMLParser):
             self.urls.append(("formaction", values["formaction"]))
         if tag.lower() == "object" and values.get("data"):
             self.urls.append(("data", values["data"]))
+        for attribute in ("srcset", "imagesrcset"):
+            if values.get(attribute):
+                self.urls.extend(
+                    (attribute, value)
+                    for value in srcset_urls(values[attribute])
+                )
         if tag == "link" and values.get("rel", "").lower() == "canonical":
             self.canonical.append(values.get("href", ""))
         if (
@@ -639,6 +696,12 @@ def overlay_shell(assembly: pathlib.Path, *, historical: bool, origin: str) -> N
         target = assembly / "static" / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
+    for relative in SHELL_STATIC_DIRS:
+        source = ROOT / "static" / relative
+        target = assembly / "static" / relative
+        if target.exists():
+            shutil.rmtree(target)
+        shutil.copytree(source, target)
     client_go_target = assembly / "static/client-go"
     if historical:
         if client_go_target.exists():
@@ -1992,6 +2055,47 @@ def validate_language_switch_contract(
             fail(f"language switch metadata mismatch in {relative}: {language}")
 
 
+def rewrite_srcset_urls(value: str, rewrite) -> tuple[str, int]:
+    """Rewrite each URL in a srcset-like list while preserving its descriptors."""
+    output: list[str] = []
+    cursor = 0
+    count = 0
+    for old in srcset_urls(value):
+        start = value.find(old, cursor)
+        if start < 0:
+            fail(f"cannot locate srcset URL candidate: {old}")
+        new = rewrite(old)
+        output.extend((value[cursor:start], new))
+        cursor = start + len(old)
+        count += old != new
+    output.append(value[cursor:])
+    return "".join(output), count
+
+
+def rewrite_url_list_attributes(text: str, rewrite) -> tuple[str, int]:
+    """Rewrite quoted and unquoted srcset/imagesrcset attribute candidates."""
+    count = 0
+
+    def replace_quoted(match: re.Match) -> str:
+        nonlocal count
+        value, changed = rewrite_srcset_urls(match.group("value"), rewrite)
+        count += changed
+        return (
+            f"{match.group('prefix')}{match.group('quote')}"
+            f"{value}{match.group('quote')}"
+        )
+
+    def replace_unquoted(match: re.Match) -> str:
+        nonlocal count
+        value, changed = rewrite_srcset_urls(match.group("value"), rewrite)
+        count += changed
+        return f"{match.group('prefix')}{value}"
+
+    text = URL_LIST_ATTRIBUTE_RE.sub(replace_quoted, text)
+    text = URL_LIST_UNQUOTED_ATTRIBUTE_RE.sub(replace_unquoted, text)
+    return text, count
+
+
 def rewrite_text_urls(text: str, rewrite, *, markdown: bool) -> tuple[str, int]:
     count = 0
 
@@ -2004,29 +2108,46 @@ def rewrite_text_urls(text: str, rewrite, *, markdown: bool) -> tuple[str, int]:
             f"{match.group('prefix')}{match.group('quote')}{new}{match.group('quote')}"
         )
 
+    def replace_destination(match: re.Match) -> str:
+        nonlocal count
+        old = match.group("url")
+        new = rewrite(old)
+        count += old != new
+        return f"{match.group('open')}{new}{match.group('close')}"
+
+    def rewrite_unfenced(source: str) -> str:
+        nonlocal count
+        source = URL_ATTRIBUTE_RE.sub(replace_attribute, source)
+        source, list_count = rewrite_url_list_attributes(source, rewrite)
+        count += list_count
+        return MARKDOWN_DESTINATION_RE.sub(replace_destination, source)
+
     if markdown:
         in_fence = False
-        lines = []
+        pending: list[str] = []
+        chunks: list[str] = []
         for line in text.splitlines(keepends=True):
             if re.match(r"^\s*(```|~~~)", line):
+                if pending:
+                    chunks.append(
+                        "".join(pending)
+                        if in_fence
+                        else rewrite_unfenced("".join(pending))
+                    )
+                    pending = []
+                chunks.append(line)
                 in_fence = not in_fence
-                lines.append(line)
-                continue
-            if not in_fence:
-
-                def replace_destination(match: re.Match) -> str:
-                    nonlocal count
-                    old = match.group("url")
-                    new = rewrite(old)
-                    count += old != new
-                    return f"{match.group('open')}{new}{match.group('close')}"
-
-                line = URL_ATTRIBUTE_RE.sub(replace_attribute, line)
-                line = MARKDOWN_DESTINATION_RE.sub(replace_destination, line)
-            lines.append(line)
-        text = "".join(lines)
+            else:
+                pending.append(line)
+        if pending:
+            chunks.append(
+                "".join(pending)
+                if in_fence
+                else rewrite_unfenced("".join(pending))
+            )
+        text = "".join(chunks)
     else:
-        text = URL_ATTRIBUTE_RE.sub(replace_attribute, text)
+        text = rewrite_unfenced(text)
     return text, count
 
 

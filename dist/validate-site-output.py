@@ -67,7 +67,7 @@ ASF_CSP_IMAGE_HOSTS = {
     "www.communityovercode.org",
 }
 ASF_CSP_IMAGE_SUFFIXES = (".apache.org", ".scarf.sh")
-UNSAFE_AUTHORED_ELEMENTS = {"script", "iframe", "object", "embed"}
+UNSAFE_AUTHORED_ELEMENTS = {"script", "iframe", "frame", "object", "embed"}
 ERROR_DOCUMENT_PATHS = {
     "404.html",
     "cn/404.html",
@@ -80,6 +80,7 @@ EXTERNAL_ACTIVE_RESOURCE_ATTRIBUTES = {
     ("script", "src"),
     ("link", "href"),
     ("iframe", "src"),
+    ("frame", "src"),
     ("object", "data"),
     ("embed", "src"),
     ("audio", "src"),
@@ -89,6 +90,26 @@ EXTERNAL_ACTIVE_RESOURCE_ATTRIBUTES = {
     ("button", "formaction"),
     ("input", "formaction"),
     ("use", "href"),
+    ("use", "xlink:href"),
+    ("mpath", "href"),
+    ("mpath", "xlink:href"),
+    ("textpath", "href"),
+    ("textpath", "xlink:href"),
+    ("tref", "href"),
+    ("tref", "xlink:href"),
+    ("cursor", "href"),
+    ("cursor", "xlink:href"),
+    ("animate", "href"),
+    ("animate", "xlink:href"),
+    ("animatemotion", "href"),
+    ("animatemotion", "xlink:href"),
+    ("animatetransform", "href"),
+    ("animatetransform", "xlink:href"),
+    ("set", "href"),
+    ("set", "xlink:href"),
+    ("script", "href"),
+    ("script", "xlink:href"),
+    ("link", "imagesrcset"),
 }
 LINK_RESOURCE_RELS = {
     "stylesheet",
@@ -96,16 +117,46 @@ LINK_RESOURCE_RELS = {
     "modulepreload",
     "icon",
     "apple-touch-icon",
+    "mask-icon",
+    "apple-touch-startup-image",
     "manifest",
     "prefetch",
     "prerender",
     "preconnect",
     "dns-prefetch",
 }
-PASSIVE_DATA_IMAGE_RE = re.compile(
-    r"^data:image/(?:png|jpeg|gif|webp|avif|bmp|x-icon);base64,[a-z0-9+/=]*$",
-    re.IGNORECASE,
-)
+LINK_METADATA_RELS = {"canonical"}
+SVG_ACTIVE_IRI_ELEMENTS = {
+    "use",
+    "script",
+    "mpath",
+    "textpath",
+    "tref",
+    "cursor",
+    "animate",
+    "animatemotion",
+    "animatetransform",
+    "set",
+}
+CSS_PRESENTATION_ATTRIBUTES = {
+    "clip-path",
+    "color-profile",
+    "cursor",
+    "fill",
+    "filter",
+    "marker",
+    "marker-start",
+    "marker-mid",
+    "marker-end",
+    "mask",
+    "stroke",
+}
+RUNTIME_ACTIVE_URL_ATTRIBUTES = {
+    "data-td-index-src",
+    "data-td-url",
+    "data-td-action-url",
+}
+RUNTIME_IMAGE_URL_ATTRIBUTES = {"data-td-image-zoom"}
 
 
 def is_inert_oink_diagram_source(tag: str, values: dict[str, str]) -> bool:
@@ -167,17 +218,195 @@ def css_http_resources(value: str) -> list[str]:
 
 
 def css_resource_urls(value: str) -> list[str]:
-    """Extract CSS url() and quoted @import resources in source order."""
-    pattern = re.compile(
-        r"url\(\s*(?P<quote>['\"]?)(?P<url>[^'\"\s)]+)(?P=quote)\s*\)"
-        r"|@import\s+(?P<import_quote>['\"])(?P<import_url>[^'\"]+)"
-        r"(?P=import_quote)",
-        re.IGNORECASE,
-    )
-    return [
-        match.group("url") or match.group("import_url")
-        for match in pattern.finditer(value)
-    ]
+    """Extract browser request URLs from CSS without regex token ambiguity."""
+
+    def consume_escape(source: str, position: int) -> tuple[str, int]:
+        position += 1
+        if position >= len(source):
+            return "", position
+        if source[position] in "\r\n\f":
+            if source[position] == "\r" and position + 1 < len(source):
+                position += source[position + 1] == "\n"
+            return "", position + 1
+        end = position
+        while (
+            end < len(source)
+            and end - position < 6
+            and source[end] in "0123456789abcdefABCDEF"
+        ):
+            end += 1
+        if end > position:
+            codepoint = int(source[position:end], 16)
+            if end < len(source) and source[end].isspace():
+                end += 1
+            if codepoint == 0 or codepoint > 0x10FFFF or 0xD800 <= codepoint <= 0xDFFF:
+                return "\N{REPLACEMENT CHARACTER}", end
+            return chr(codepoint), end
+        return source[position], position + 1
+
+    def skip_space_and_comments(source: str, position: int) -> int:
+        while position < len(source):
+            if source[position].isspace():
+                position += 1
+            elif source.startswith("/*", position):
+                closing = source.find("*/", position + 2)
+                position = len(source) if closing < 0 else closing + 2
+            else:
+                break
+        return position
+
+    def consume_name(source: str, position: int) -> tuple[str, int]:
+        decoded: list[str] = []
+        while position < len(source):
+            char = source[position]
+            if char == "\\":
+                escaped, position = consume_escape(source, position)
+                decoded.append(escaped)
+            elif char.isalnum() or char in "_-" or ord(char) >= 0x80:
+                decoded.append(char)
+                position += 1
+            else:
+                break
+        return "".join(decoded), position
+
+    def consume_string(source: str, position: int) -> tuple[str, int]:
+        quote = source[position]
+        position += 1
+        decoded: list[str] = []
+        while position < len(source):
+            char = source[position]
+            if char == quote:
+                return "".join(decoded), position + 1
+            if char == "\\":
+                escaped, position = consume_escape(source, position)
+                decoded.append(escaped)
+                continue
+            decoded.append(char)
+            position += 1
+        return "".join(decoded), position
+
+    def matching_paren(source: str, position: int) -> int:
+        depth = 1
+        while position < len(source):
+            if source.startswith("/*", position):
+                position = skip_space_and_comments(source, position)
+                continue
+            char = source[position]
+            if char in "'\"":
+                _string, position = consume_string(source, position)
+            elif char == "\\":
+                _escaped, position = consume_escape(source, position)
+            else:
+                depth += char == "("
+                depth -= char == ")"
+                position += 1
+                if depth == 0:
+                    return position - 1
+        return len(source)
+
+    def consume_url_function(source: str, position: int) -> tuple[str, int]:
+        position = skip_space_and_comments(source, position)
+        if position < len(source) and source[position] in "'\"":
+            resource, position = consume_string(source, position)
+            position = skip_space_and_comments(source, position)
+            closed = position < len(source) and source[position] == ")"
+            return resource, position + closed
+
+        decoded: list[str] = []
+        while position < len(source):
+            if source.startswith("/*", position):
+                position = skip_space_and_comments(source, position)
+                continue
+            char = source[position]
+            if char == ")":
+                return "".join(decoded).strip(), position + 1
+            if char.isspace():
+                position = skip_space_and_comments(source, position)
+                while position < len(source) and source[position] != ")":
+                    position += 1
+                return "".join(decoded), position + (position < len(source))
+            if char == "\\":
+                escaped, position = consume_escape(source, position)
+                decoded.append(escaped)
+                continue
+            decoded.append(char)
+            position += 1
+        return "".join(decoded).strip(), position
+
+    def scan(source: str) -> list[str]:
+        resources: list[str] = []
+        position = 0
+        while position < len(source):
+            if source.startswith("/*", position) or source[position].isspace():
+                position = skip_space_and_comments(source, position)
+                continue
+            if source[position] in "'\"":
+                _string, position = consume_string(source, position)
+                continue
+            if source[position] == "@":
+                name, after_name = consume_name(source, position + 1)
+                if name.lower() == "import":
+                    candidate = skip_space_and_comments(source, after_name)
+                    if candidate < len(source) and source[candidate] in "'\"":
+                        resource, position = consume_string(source, candidate)
+                        resources.append(resource)
+                        continue
+                position = max(after_name, position + 1)
+                continue
+            if (
+                source[position].isalnum()
+                or source[position] in "_-\\"
+                or ord(source[position]) >= 0x80
+            ):
+                name, after_name = consume_name(source, position)
+                opening = skip_space_and_comments(source, after_name)
+                if opening >= len(source) or source[opening] != "(":
+                    position = max(after_name, position + 1)
+                    continue
+                lowered = name.lower()
+                if lowered == "url":
+                    resource, position = consume_url_function(source, opening + 1)
+                    if resource:
+                        resources.append(resource)
+                    continue
+                if lowered in {"image-set", "-webkit-image-set"}:
+                    closing = matching_paren(source, opening + 1)
+                    body = source[opening + 1 : closing]
+                    candidate_start = 0
+                    depth = 0
+                    cursor = 0
+                    while cursor <= len(body):
+                        at_end = cursor == len(body)
+                        if not at_end and body.startswith("/*", cursor):
+                            cursor = skip_space_and_comments(body, cursor)
+                            continue
+                        if not at_end and body[cursor] in "'\"":
+                            _string, cursor = consume_string(body, cursor)
+                            continue
+                        if not at_end and body[cursor] == "\\":
+                            _escaped, cursor = consume_escape(body, cursor)
+                            continue
+                        if not at_end:
+                            depth += body[cursor] == "("
+                            depth -= body[cursor] == ")"
+                        if at_end or (body[cursor] == "," and depth == 0):
+                            candidate = body[candidate_start:cursor]
+                            first = skip_space_and_comments(candidate, 0)
+                            if first < len(candidate) and candidate[first] in "'\"":
+                                resource, _end = consume_string(candidate, first)
+                                resources.append(resource)
+                            else:
+                                resources.extend(scan(candidate))
+                            candidate_start = cursor + 1
+                        cursor += 1
+                    position = closing + (closing < len(source))
+                    continue
+                position = opening + 1
+                continue
+            position += 1
+        return resources
+
+    return scan(value)
 
 
 def css_external_resources(
@@ -388,7 +617,14 @@ def document_security_errors(
         f"{page_name}: external active resource is forbidden <{tag}> "
         f"{attribute}: {resource}"
         for tag, attribute, resource in parser.resources
-        if (tag, attribute) in EXTERNAL_ACTIVE_RESOURCE_ATTRIBUTES
+        if (
+            (tag, attribute) in EXTERNAL_ACTIVE_RESOURCE_ATTRIBUTES
+            or attribute in RUNTIME_ACTIVE_URL_ATTRIBUTES
+            or (
+                attribute in {"href", "xlink:href"}
+                and tag not in {"a", "image", "feimage"}
+            )
+        )
         and urllib.parse.urlsplit(resource.strip()).netloc
         and urllib.parse.urlsplit(resource.strip()).netloc != base_parts.netloc
         and urllib.parse.urlsplit(resource.strip()).scheme.lower() != "http"
@@ -425,9 +661,23 @@ class DocumentParser(html.parser.HTMLParser):
         self._in_action_manifest = False
         self._content_depth = 0
         self._in_style = False
+        self._svg_depth = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         tag = tag.lower()
+        in_svg = bool(self._svg_depth) or tag == "svg"
+        if tag == "svg":
+            self._svg_depth += 1
+        seen_attributes: set[str] = set()
+        duplicate_attributes: set[str] = set()
+        for key, _value in attrs:
+            attribute = key.lower()
+            if attribute in seen_attributes and attribute not in duplicate_attributes:
+                self.authored_violations.append(
+                    f"duplicate {attribute} attribute on <{tag}>"
+                )
+                duplicate_attributes.add(attribute)
+            seen_attributes.add(attribute)
         values = {key.lower(): value or "" for key, value in attrs}
         if tag == "nav" and "TableOfContents" in [
             value or "" for key, value in attrs if key.lower() == "id"
@@ -470,29 +720,82 @@ class DocumentParser(html.parser.HTMLParser):
         if tag in {"button", "input"} and values.get("formaction"):
             resource_attributes.append(("formaction", values["formaction"]))
             self.urls.append(("formaction", values["formaction"]))
-        if tag == "use" and values.get("href"):
-            resource_attributes.append(("href", values["href"]))
-            self.urls.append(("href", values["href"]))
+        if tag in SVG_ACTIVE_IRI_ELEMENTS | {"image", "feimage"}:
+            for attribute in ("href", "xlink:href"):
+                if not values.get(attribute):
+                    continue
+                if (attribute, values[attribute]) not in resource_attributes:
+                    resource_attributes.append((attribute, values[attribute]))
+                if (attribute, values[attribute]) not in self.urls:
+                    self.urls.append((attribute, values[attribute]))
+        if (
+            in_svg
+            and tag not in {"a", "image", "feimage", "link"}
+            and values.get("href")
+        ):
+            if ("href", values["href"]) not in resource_attributes:
+                resource_attributes.append(("href", values["href"]))
+            if ("href", values["href"]) not in self.urls:
+                self.urls.append(("href", values["href"]))
+        if tag == "a" and values.get("xlink:href"):
+            self.urls.append(("xlink:href", values["xlink:href"]))
+            self.navigation_urls.append((tag, "xlink:href", values["xlink:href"]))
+        elif (
+            values.get("xlink:href")
+            and tag not in SVG_ACTIVE_IRI_ELEMENTS | {"image", "feimage"}
+        ):
+            resource_attributes.append(("xlink:href", values["xlink:href"]))
+            self.urls.append(("xlink:href", values["xlink:href"]))
         if tag == "iframe" and values.get("src"):
             resource_attributes.append(("src", values["src"]))
+        if tag == "frame" and values.get("src"):
+            resource_attributes.append(("src", values["src"]))
+            self.urls.append(("src", values["src"]))
         if (
             tag == "input"
             and values.get("type", "").lower() == "image"
             and values.get("src")
         ):
             resource_attributes.append(("src", values["src"]))
-        if tag == "image" and values.get("href"):
-            resource_attributes.append(("href", values["href"]))
         if tag == "link" and values.get("href"):
             rel = set(values.get("rel", "").lower().split())
-            if rel & LINK_RESOURCE_RELS:
+            is_metadata = rel == LINK_METADATA_RELS or (
+                rel == {"alternate"} and bool(values.get("hreflang"))
+            )
+            if rel & LINK_RESOURCE_RELS or not is_metadata:
                 resource_attributes.append(("href", values["href"]))
             else:
                 self.navigation_urls.append((tag, "href", values["href"]))
-        if tag in {"a", "area"} and values.get("ping"):
+        if tag == "link" and values.get("imagesrcset"):
+            urls = srcset_urls(values["imagesrcset"])
+            resource_attributes.extend(
+                ("imagesrcset", url) for url in urls
+            )
+            self.urls.extend(("imagesrcset", url) for url in urls)
+            self.image_urls.extend(
+                (tag, "imagesrcset", url) for url in urls
+            )
+        if tag in {"a", "area"} and "ping" in values:
             self.authored_violations.append(f"forbidden ping attribute on <{tag}>")
-        if tag == "base" and values.get("href"):
+        if tag == "base" and "href" in values:
             self.authored_violations.append("forbidden base[href]")
+        if tag == "iframe" and "srcdoc" in values:
+            self.authored_violations.append("forbidden iframe[srcdoc]")
+        if "attributionsrc" in values:
+            self.authored_violations.append(
+                f"forbidden attributionsrc attribute on <{tag}>"
+            )
+        if tag in {"body", "table", "td", "th"} and values.get("background"):
+            resource_attributes.append(("background", values["background"]))
+            self.urls.append(("background", values["background"]))
+            self.image_urls.append((tag, "background", values["background"]))
+        for attribute in RUNTIME_ACTIVE_URL_ATTRIBUTES | RUNTIME_IMAGE_URL_ATTRIBUTES:
+            if not values.get(attribute):
+                continue
+            resource_attributes.append((attribute, values[attribute]))
+            self.urls.append((attribute, values[attribute]))
+            if attribute in RUNTIME_IMAGE_URL_ATTRIBUTES:
+                self.image_urls.append((tag, attribute, values[attribute]))
         self.resources.extend(
             (tag, attribute, url) for attribute, url in resource_attributes
         )
@@ -509,6 +812,7 @@ class DocumentParser(html.parser.HTMLParser):
                 self.image_urls.extend((tag, attribute, url) for url in urls)
                 if attribute == "srcset":
                     self.resources.extend((tag, attribute, url) for url in urls)
+                    self.urls.extend((attribute, url) for url in urls)
         if tag == "video" and values.get("poster"):
             self.image_urls.append((tag, "poster", values["poster"]))
         if (
@@ -517,12 +821,20 @@ class DocumentParser(html.parser.HTMLParser):
             and values.get("src")
         ):
             self.image_urls.append((tag, "src", values["src"]))
-        if tag == "image" and values.get("href"):
-            self.image_urls.append((tag, "href", values["href"]))
+        if tag in {"image", "feimage"}:
+            for attribute in ("href", "xlink:href"):
+                if values.get(attribute):
+                    self.image_urls.append((tag, attribute, values[attribute]))
 
         if values.get("style"):
             self.inline_css_sources.append(values["style"])
             self.inline_css_http_resources.extend(css_http_resources(values["style"]))
+        for attribute in CSS_PRESENTATION_ATTRIBUTES:
+            if values.get(attribute):
+                self.inline_css_sources.append(values[attribute])
+                self.inline_css_http_resources.extend(
+                    css_http_resources(values[attribute])
+                )
         if tag == "link" and values.get("rel", "").lower() == "canonical":
             self.canonical.append(values.get("href", ""))
         if (
@@ -546,10 +858,13 @@ class DocumentParser(html.parser.HTMLParser):
             self.inline_css_http_resources.extend(css_http_resources(data))
 
     def handle_endtag(self, tag: str) -> None:
+        tag = tag.lower()
         if tag == "script" and self._in_action_manifest:
             self._in_action_manifest = False
         if tag == "style":
             self._in_style = False
+        if tag == "svg" and self._svg_depth:
+            self._svg_depth -= 1
         if tag in {"main", "article"} and self._content_depth:
             self._content_depth -= 1
 
@@ -592,6 +907,44 @@ def internal_output_target(
     return output_path(root, parts.path or "/")
 
 
+def css_internal_output_target(
+    root: pathlib.Path,
+    stylesheet: pathlib.Path,
+    base_parts: urllib.parse.SplitResult,
+    url: str,
+) -> pathlib.Path | None:
+    """Resolve one same-origin CSS request against its emitted stylesheet."""
+
+    parts = urllib.parse.urlsplit(url)
+    if parts.netloc and parts.netloc != base_parts.netloc:
+        return None
+    decoded = urllib.parse.unquote(parts.path)
+    if not decoded:
+        return None if parts.fragment else stylesheet
+    if "\x00" in decoded or "\\" in decoded:
+        raise ValueError("contains a NUL or backslash")
+
+    if decoded.startswith("/"):
+        artifact_base = urllib.parse.unquote(base_parts.path).rstrip("/")
+        if artifact_base and (
+            decoded == artifact_base or decoded.startswith(artifact_base + "/")
+        ):
+            decoded = decoded[len(artifact_base) :] or "/"
+        candidate = root / decoded.lstrip("/")
+    else:
+        candidate = stylesheet.parent / decoded
+    candidate = candidate.resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("escapes output directory") from exc
+    if decoded.endswith("/") or (
+        not candidate.is_file() and not pathlib.PurePosixPath(decoded).suffix
+    ):
+        candidate /= "index.html"
+    return candidate
+
+
 def refresh_target(parser: DocumentParser) -> str | None:
     refresh = [
         item.get("content", "")
@@ -614,7 +967,6 @@ def rendered_url_shape_error(
     attribute: str,
     *,
     allow_contact: bool = False,
-    allow_data_image: bool = False,
 ) -> str | None:
     """Reject URL spellings that browsers and RFC parsers interpret differently."""
     if any(
@@ -633,12 +985,6 @@ def rendered_url_shape_error(
         return f"{page_name}: malformed URL in {attribute}: {value}: {exc}"
     if parts.scheme.lower() in {"http", "https"} and not parts.netloc:
         return f"{page_name}: HTTP(S) URL has no authority in {attribute}: {value}"
-    if (
-        parts.scheme.lower() == "data"
-        and allow_data_image
-        and PASSIVE_DATA_IMAGE_RE.fullmatch(value)
-    ):
-        return None
     allowed_schemes = {"", "http", "https"}
     if allow_contact:
         allowed_schemes.update({"mailto", "tel"})
@@ -652,27 +998,16 @@ def document_url_shape_errors(
     page_name: str,
 ) -> list[str]:
     """Apply the browser-safe URL shape contract to every rendered URL token."""
-    tokens: list[tuple[str, str, bool, bool]] = [
-        (f"{tag}[{attribute}]", value, tag in {"a", "area"}, False)
+    tokens: list[tuple[str, str, bool]] = [
+        (f"{tag}[{attribute}]", value, tag in {"a", "area"})
         for tag, attribute, value in parser.navigation_urls
     ]
     tokens.extend(
-        (
-            f"{tag}[{attribute}]",
-            value,
-            False,
-            (
-                (tag == "img" and attribute in {"src", "srcset"})
-                or (tag == "source" and attribute == "srcset")
-                or (tag == "video" and attribute == "poster")
-                or (tag == "input" and attribute == "src")
-                or (tag == "image" and attribute == "href")
-            ),
-        )
+        (f"{tag}[{attribute}]", value, False)
         for tag, attribute, value in parser.resources
     )
     tokens.extend(
-        ("inline CSS", value, False, True)
+        ("inline CSS", value, False)
         for source in parser.inline_css_sources
         for value in css_resource_urls(source)
     )
@@ -681,12 +1016,12 @@ def document_url_shape_errors(
     except ValueError as exc:
         return [f"{page_name}: {exc}"]
     if alias_target:
-        tokens.append(("meta refresh", alias_target, False, False))
+        tokens.append(("meta refresh", alias_target, False))
 
     errors = []
-    seen: set[tuple[str, str, bool, bool]] = set()
-    for attribute, value, allow_contact, allow_data_image in tokens:
-        key = (attribute, value, allow_contact, allow_data_image)
+    seen: set[tuple[str, str, bool]] = set()
+    for attribute, value, allow_contact in tokens:
+        key = (attribute, value, allow_contact)
         if key in seen:
             continue
         seen.add(key)
@@ -695,7 +1030,6 @@ def document_url_shape_errors(
             page_name,
             attribute,
             allow_contact=allow_contact,
-            allow_data_image=allow_data_image,
         )
         if error:
             errors.append(error)
@@ -952,7 +1286,6 @@ def main() -> int:
                     resource,
                     stylesheet_name,
                     "CSS resource",
-                    allow_data_image=True,
                 )
             )
         ]
@@ -968,6 +1301,22 @@ def main() -> int:
                 f"{stylesheet.relative_to(root)}: external CSS resource is forbidden: "
                 f"{resource}"
             )
+        for resource in css_resource_urls(stylesheet_text):
+            try:
+                target = css_internal_output_target(
+                    root, stylesheet, base_parts, resource
+                )
+            except ValueError as exc:
+                errors.append(
+                    f"{stylesheet_name}: unsafe internal CSS resource "
+                    f"{resource}: {exc}"
+                )
+                continue
+            if target is not None and not target.is_file():
+                errors.append(
+                    f"{stylesheet_name}: broken internal CSS resource {resource} -> "
+                    f"{target.relative_to(root)}"
+                )
 
     if args.security_only:
         if errors:

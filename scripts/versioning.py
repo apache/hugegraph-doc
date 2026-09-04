@@ -349,12 +349,11 @@ def prepare_output_directory(path: pathlib.Path, label: str) -> pathlib.Path:
     }
     runner_temp = os.environ.get("RUNNER_TEMP")
     if runner_temp:
-        runner_temp_root = pathlib.Path(runner_temp).expanduser()
-        if runner_temp_root.is_symlink():
-            fail(
-                "RUNNER_TEMP must not be a symbolic link: "
-                f"{runner_temp_root}"
-            )
+        runner_temp_root = require_no_symlinked_output_components(
+            pathlib.Path(runner_temp).expanduser(),
+            "RUNNER_TEMP",
+            controlled_roots,
+        )
         controlled_roots.add(runner_temp_root)
     raw_absolute = require_no_symlinked_output_components(
         raw, label, controlled_roots

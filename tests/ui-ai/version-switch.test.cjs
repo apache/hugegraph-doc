@@ -4,8 +4,8 @@ const path = require('node:path');
 const test = require('node:test');
 
 const shell = require('../../assets/js/hugegraph-shell.js');
-const versionLink = fs.readFileSync(
-  path.resolve(__dirname, '../../layouts/_partials/version-link.html'),
+const versionTarget = fs.readFileSync(
+  path.resolve(__dirname, '../../layouts/_partials/version-target.html'),
   'utf8',
 );
 
@@ -65,11 +65,11 @@ test('version targets reject executable URL schemes', () => {
 
 test('route lookup uses the unscoped Hugo permalink in every version build', () => {
   assert.match(
-    versionLink,
+    versionTarget,
     /\$relative := strings\.TrimPrefix "\/" \$p\.RelPermalink/,
   );
   assert.equal(
-    versionLink.includes(
+    versionTarget.includes(
       '$relative := strings.TrimPrefix $basePath $p.RelPermalink',
     ),
     false,

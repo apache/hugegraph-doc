@@ -1,0 +1,23 @@
+{{- $outputFormat := lower (.Store.Get "tdOutputFormat" | default "html") -}}
+{{- $context := partialCached "actions/context.html" . .Site.BaseURL .Site.Language.Lang .RelPermalink $outputFormat -}}
+{{- $versionOptions := partial "version-options.html" . -}}
+{{- $actions := slice -}}
+{{- range $context.actions -}}
+  {{- $action := . -}}
+  {{- if eq .id "switch_version" -}}
+    {{- $action = merge . (dict
+      "options" $versionOptions
+      "available" (gt (len $versionOptions) 0)
+      "disabledReason" (cond (gt (len $versionOptions) 0) "" (printf "%s: %s" .title (T "ui_action_unavailable")))
+    ) -}}
+  {{- end -}}
+  {{- $actions = $actions | append $action -}}
+{{- end -}}
+{{- return (dict
+  "version" 1
+  "language" .Site.Language.Lang
+  "actions" $actions
+  "commands" (partialCached "actions/site-commands.html" . .Site.Language.Lang .Site.BaseURL)
+  "quickLinks" (partialCached "actions/quick-links.html" . .Site.Language.Lang .Site.BaseURL)
+  "rootOrder" (partialCached "actions/root-order.html" . .Site.Language.Lang .Site.BaseURL)
+) -}}

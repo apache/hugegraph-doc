@@ -1,44 +1,13 @@
 {{- $p := .page -}}
 {{- $version := .version -}}
 {{- $versionID := $version.version | default ($version.name | urlize) -}}
-{{- $versionURL := printf "%s/" (strings.TrimSuffix "/" ($version.url | default "")) -}}
-{{- $target := $versionURL -}}
-{{- $equivalent := false -}}
-{{- $fallback := false -}}
-{{- $relative := strings.TrimPrefix "/" $p.RelPermalink -}}
-{{- $locale := $p.Site.Language.Lang -}}
-{{- $docsPrefix := cond (eq $locale "cn") "cn/docs/" "docs/" -}}
-{{- $docsSuffix := cond (eq $locale "cn") "/cn/docs" "/docs" -}}
-{{- $root := strings.TrimSuffix $docsSuffix (strings.TrimSuffix "/" $versionURL) -}}
-{{- if strings.HasPrefix $relative $docsPrefix -}}
-  {{- $pages := hugo.Data.version_routes.pages | default dict -}}
-  {{- $currentVersion := $p.Site.Params.version | default "latest" -}}
-  {{- $logicalID := "" -}}
-  {{- range $candidateID, $candidateRoutes := $pages -}}
-    {{- if eq (index $candidateRoutes $currentVersion) $relative -}}
-      {{- $logicalID = $candidateID -}}
-    {{- end -}}
-  {{- end -}}
-  {{- $routes := cond (ne $logicalID "") (index $pages $logicalID) nil -}}
-  {{- $path := false -}}
-  {{- with $routes -}}
-    {{- $path = index . $versionID -}}
-  {{- end -}}
-  {{- if $path -}}
-    {{- $target = printf "%s/%s" $root $path -}}
-    {{- $equivalent = true -}}
-  {{- else -}}
-    {{- $docsRoot := cond (eq $locale "cn") "cn/docs/" "docs/" -}}
-    {{- $target = printf "%s/%s#hg-version-fallback" $root $docsRoot -}}
-    {{- $fallback = true -}}
-  {{- end -}}
-{{- end -}}
+{{- $target := partial "version-target.html" (dict "page" $p "version" $version) -}}
 <a class="{{ .class }}"
   data-hg-version-id="{{ $versionID }}"
-  data-hg-version-equivalent="{{ $equivalent }}"
-  data-hg-version-fallback="{{ $fallback }}"
+  data-hg-version-equivalent="{{ $target.equivalent }}"
+  data-hg-version-fallback="{{ $target.fallback }}"
   {{- if .active }} aria-current="page"{{ end }}
-  href="{{ $target }}">
+  href="{{ $target.url }}">
   {{- if ne .icon false -}}
     {{- partialCached "shell/icon.html" "code-branch" .iconKey -}}
   {{- end -}}

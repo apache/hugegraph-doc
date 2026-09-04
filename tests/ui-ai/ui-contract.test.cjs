@@ -104,6 +104,10 @@ test('all three version selector surfaces expose one stable route contract', () 
   );
   assert.match(
     read('layouts/_partials/version-link.html'),
+    /partial "version-target\.html"/,
+  );
+  assert.match(
+    read('layouts/_partials/version-target.html'),
     /strings\.TrimSuffix \$docsSuffix/,
   );
 });

@@ -119,30 +119,44 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
     def test_copy_failure_preserves_last_good_bundle(self):
         with tempfile.TemporaryDirectory(prefix="community-copy-test-") as directory:
             root = pathlib.Path(directory)
-            roster_path, avatar_dir, candidates = root / "roster.json", root / "avatars", root / "candidates"
+            roster_path, avatar_dir = root / "roster.json", root / "avatars"
             avatar_dir.mkdir()
-            candidates.mkdir()
             roster_path.write_bytes(b"last-good\n")
             (avatar_dir / "old.webp").write_bytes(b"old")
-            (candidates / "new.webp").write_bytes(b"new")
             candidate = {"roles": {"pmc": [{"avatar": "/img/community/avatars/new.webp"}], "committers": []}}
             with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
-                 mock.patch.object(roster.shutil, "copyfile", side_effect=OSError("copy failed")):
+                 mock.patch.object(roster, "_copy_candidate", side_effect=OSError("copy failed")):
                 with self.assertRaisesRegex(OSError, "copy failed"):
-                    roster._commit_bundle(candidate, candidates)
+                    roster._commit_bundle(candidate, {"new.webp": b"new"})
             self.assertEqual(b"last-good\n", roster_path.read_bytes())
             self.assertEqual(b"old", (avatar_dir / "old.webp").read_bytes())
+
+    def test_candidate_cleanup_failure_does_not_publish_roster(self):
+        with tempfile.TemporaryDirectory(prefix="community-cleanup-test-") as directory:
+            root = pathlib.Path(directory)
+            roster_path, map_path = root / "roster.json", root / "github-map.json"
+            roster_path.write_bytes(b"last-good\n")
+            map_path.write_text('{"schema_version": 1, "mappings": {}}')
+            candidate = {"roles": {"pmc": [], "committers": []}}
+            with mock.patch.object(roster, "DATA_DIR", root), \
+                 mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                 mock.patch.object(roster, "MAP_PATH", map_path), \
+                 mock.patch.object(roster, "_fetch_json", return_value={}), \
+                 mock.patch.object(roster, "build_roster", return_value=candidate), \
+                 mock.patch.object(roster, "_install_avatars"), \
+                 mock.patch.object(roster.shutil, "rmtree", side_effect=OSError("cleanup failed")):
+                with self.assertRaisesRegex(OSError, "cleanup failed"):
+                    roster.refresh()
+            self.assertEqual(b"last-good\n", roster_path.read_bytes())
 
     def test_unlink_failure_rolls_back_roster_and_avatars(self):
         with tempfile.TemporaryDirectory(prefix="community-unlink-test-") as directory:
             root = pathlib.Path(directory)
-            roster_path, avatar_dir, candidates = root / "roster.json", root / "avatars", root / "candidates"
+            roster_path, avatar_dir = root / "roster.json", root / "avatars"
             avatar_dir.mkdir()
-            candidates.mkdir()
             roster_path.write_bytes(b"last-good\n")
             (avatar_dir / "old.webp").write_bytes(b"old")
-            (candidates / "new.webp").write_bytes(b"new")
             candidate = {"roles": {"pmc": [{"avatar": "/img/community/avatars/new.webp"}], "committers": []}}
             real_unlink, failed = roster._unlink, False
 
@@ -157,7 +171,7 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
                  mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
                  mock.patch.object(roster, "_unlink", side_effect=fail_once):
                 with self.assertRaisesRegex(OSError, "unlink failed"):
-                    roster._commit_bundle(candidate, candidates)
+                    roster._commit_bundle(candidate, {"new.webp": b"new"})
             self.assertEqual(b"last-good\n", roster_path.read_bytes())
             self.assertEqual(b"old", (avatar_dir / "old.webp").read_bytes())
             self.assertFalse((avatar_dir / "new.webp").exists())

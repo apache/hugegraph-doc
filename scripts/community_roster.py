@@ -275,7 +275,7 @@ def validate_bundle(warn_after_days: int) -> list[str]:
         tail = entries[1:] if role == "pmc" else entries
         actual_order = [(p.get("name", "").casefold(), p.get("asf_id", "").casefold()) for p in tail]
         if actual_order != sorted(actual_order):
-            raise RosterError(f"roster.json: {role} must be sorted by public name casefold")
+            raise RosterError(f"roster.json: {role} must be sorted by public name and ASF ID casefold")
         for person in entries:
             if any(key not in person for key in ("asf_id", "name", "initials", "chair", "profile_url")):
                 raise RosterError(f"roster.json: incomplete member {person!r}")
@@ -364,7 +364,14 @@ def _unlink(path: pathlib.Path) -> None:
     path.unlink()
 
 
-def _commit_bundle(candidate: dict, candidate_avatars: pathlib.Path) -> None:
+def _copy_candidate(raw: bytes, destination: pathlib.Path) -> None:
+    with destination.open("xb") as stream:
+        stream.write(raw)
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
+def _commit_bundle(candidate: dict, candidate_avatars: dict[str, bytes]) -> None:
     """Install one bundle or restore the exact prior roster/avatar state."""
     old_roster = ROSTER_PATH.read_bytes() if ROSTER_PATH.exists() else None
     AVATAR_DIR.mkdir(parents=True, exist_ok=True)
@@ -379,13 +386,13 @@ def _commit_bundle(candidate: dict, candidate_avatars: pathlib.Path) -> None:
     installed: list[pathlib.Path] = []
     roster_replaced = False
     try:
-        for avatar in sorted(candidate_avatars.glob("*.webp")):
-            destination = AVATAR_DIR / avatar.name
+        for name, avatar in sorted(candidate_avatars.items()):
+            destination = AVATAR_DIR / name
             if destination.exists():
                 continue
-            staged = AVATAR_DIR / f".{avatar.name}.candidate"
+            staged = AVATAR_DIR / f".{name}.candidate"
             try:
-                shutil.copyfile(avatar, staged)
+                _copy_candidate(avatar, staged)
                 os.replace(staged, destination)
             finally:
                 if staged.exists():
@@ -418,10 +425,16 @@ def _commit_bundle(candidate: dict, candidate_avatars: pathlib.Path) -> None:
 def refresh() -> None:
     source_data = {key: _fetch_json(url) for key, url in SOURCES.items()}
     candidate = build_roster(source_data["committee"], source_data["projects"], source_data["people"], _read_json(MAP_PATH))
-    with tempfile.TemporaryDirectory(prefix=".community-refresh-", dir=DATA_DIR) as work:
-        candidate_avatars = pathlib.Path(work) / "avatars"
+    work = pathlib.Path(tempfile.mkdtemp(prefix=".community-refresh-", dir=DATA_DIR))
+    try:
+        candidate_avatars = work / "avatars"
         _install_avatars(candidate, candidate_avatars)
-        _commit_bundle(candidate, candidate_avatars)
+        avatar_bytes = {path.name: path.read_bytes() for path in candidate_avatars.glob("*.webp")}
+    finally:
+        # Candidate cleanup is deliberately completed before the checked-in
+        # bundle changes, so cleanup failure cannot publish a new roster.
+        shutil.rmtree(work)
+    _commit_bundle(candidate, avatar_bytes)
 
 
 def main() -> int:

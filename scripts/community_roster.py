@@ -110,13 +110,36 @@ def _webp_dimensions(raw: bytes) -> tuple[int, int]:
     raise RosterError(f"avatar uses unsupported WebP chunk {chunk!r}")
 
 
+def _strip_webp_metadata(raw: bytes) -> bytes:
+    """Remove optional metadata chunks while preserving the image bitstream."""
+    _webp_dimensions(raw)
+    chunks: list[bytes] = []
+    cursor = 12
+    while cursor + 8 <= len(raw):
+        kind = raw[cursor : cursor + 4]
+        size = int.from_bytes(raw[cursor + 4 : cursor + 8], "little")
+        end = cursor + 8 + size + (size % 2)
+        if end > len(raw):
+            raise RosterError("avatar has a truncated WebP chunk")
+        chunk = bytearray(raw[cursor:end])
+        if kind not in {b"EXIF", b"XMP ", b"ICCP"}:
+            if kind == b"VP8X":
+                chunk[8] &= ~0x2C
+            chunks.append(bytes(chunk))
+        cursor = end
+    if cursor != len(raw):
+        raise RosterError("avatar has trailing WebP data")
+    payload = b"WEBP" + b"".join(chunks)
+    return b"RIFF" + len(payload).to_bytes(4, "little") + payload
+
+
 def _avatar_bytes(user_id: int) -> bytes:
     request = urllib.request.Request(
         f"https://avatars.githubusercontent.com/u/{user_id}?s=128&v=4",
         headers={"Accept": "image/webp", "User-Agent": "apache-hugegraph-doc-community-roster/1"},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
-        raw = response.read()
+        raw = _strip_webp_metadata(response.read())
     if _webp_dimensions(raw) != (128, 128):
         raise RosterError(f"GitHub avatar for numeric user ID {user_id} is not 128x128 WebP")
     return raw
@@ -247,6 +270,8 @@ def validate_bundle(warn_after_days: int) -> list[str]:
             raw = (ROOT / "static" / avatar.lstrip("/")).read_bytes()
             if hashlib.sha256(raw).hexdigest() != filename[:-5] or _webp_dimensions(raw) != (128, 128):
                 raise RosterError(f"roster.json: invalid avatar {avatar}")
+            if any(marker in raw for marker in (b"EXIF", b"XMP ", b"ICCP")):
+                raise RosterError(f"roster.json: avatar contains metadata {avatar}")
             if person["profile_url"] != f"https://github.com/{expected['login']}":
                 raise RosterError(f"roster.json: mapped profile URL mismatch")
         elif avatar:
@@ -264,7 +289,14 @@ def validate_bundle(warn_after_days: int) -> list[str]:
 
 def validate_rendered_outputs() -> None:
     with tempfile.TemporaryDirectory(prefix="hugegraph-community-site-") as destination:
-        result = subprocess.run(["hugo", "--quiet", "--destination", destination], cwd=ROOT, text=True, capture_output=True)
+        environment = {**os.environ, "GOPROXY": "off"}
+        result = subprocess.run(
+            ["hugo", "--quiet", "--destination", destination],
+            cwd=ROOT,
+            env=environment,
+            text=True,
+            capture_output=True,
+        )
         if result.returncode:
             raise RosterError(f"Hugo render failed:\n{result.stderr.strip()}")
         expected = {

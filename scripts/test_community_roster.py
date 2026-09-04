@@ -35,6 +35,15 @@ class CommunityRosterTests(unittest.TestCase):
         with self.assertRaisesRegex(roster.RosterError, "duplicate GitHub user_id"):
             roster._validate_mapping(mapping, {"one", "two"})
 
+    def test_avatar_metadata_is_stripped(self):
+        vp8x = b"VP8X" + (10).to_bytes(4, "little") + bytes([0x2C]) + b"\0" * 9
+        exif = b"EXIF" + (4).to_bytes(4, "little") + b"meta"
+        payload = b"WEBP" + vp8x + exif
+        raw = b"RIFF" + len(payload).to_bytes(4, "little") + payload
+        stripped = roster._strip_webp_metadata(raw)
+        self.assertNotIn(b"EXIF", stripped)
+        self.assertEqual(0, stripped[20] & 0x2C)
+
     def test_checked_in_bundle_validates(self):
         self.assertEqual([], roster.validate_bundle(90))
 

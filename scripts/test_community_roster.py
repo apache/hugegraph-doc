@@ -76,6 +76,16 @@ class CommunityContentContractTests(unittest.TestCase):
             text = (ROOT / "content" / language / "docs/_index.md").read_text(encoding="utf-8")
             self.assertIn("LLMSFULL", text.split("---", 2)[1])
 
+    def test_component_pilots_are_bilingual_and_scoped(self):
+        for language in ("en", "cn"):
+            server = (ROOT / "content" / language / "docs/quickstart/hugegraph/hugegraph-server.md").read_text()
+            config = (ROOT / "content" / language / "docs/config/config-guide.md").read_text()
+            vertex = (ROOT / "content" / language / "docs/clients/restful-api/vertex.md").read_text()
+            self.assertIn("{.steps}", server)
+            self.assertIn('filename="conf/gremlin-server.yaml"', config)
+            self.assertIn(".full-width", vertex)
+            self.assertIn("{#vertex-id-strategy", vertex)
+
 
 if __name__ == "__main__":
     unittest.main()

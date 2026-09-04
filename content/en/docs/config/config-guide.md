@@ -23,7 +23,7 @@ Now let's introduce these three configuration files one by one.
 
 The main structure of `gremlin-server.yaml` is shown below. Some imports are omitted from this example; refer to the file included in the release package for the complete content.
 
-```yaml
+```yaml {filename="conf/gremlin-server.yaml" wrap=true collapse=18}
 # host and port of gremlin server, need to be consistent with host and port in rest-server.properties
 #host: 127.0.0.1
 #port: 8182

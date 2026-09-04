@@ -23,7 +23,7 @@ HugeGraphServer 内部集成了 GremlinServer 和 RestServer，而 gremlin-serve
 
 `gremlin-server.yaml` 的主要结构如下。示例省略了部分导入项；完整内容以发布包中的文件为准。
 
-```yaml
+```yaml {filename="conf/gremlin-server.yaml" wrap=true collapse=18}
 # host and port of gremlin server, need to be consistent with host and port in rest-server.properties
 #host: 127.0.0.1
 #port: 8182

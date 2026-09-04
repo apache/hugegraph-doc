@@ -32,10 +32,11 @@ HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行�
 
 有四种方式可以部署 Server 服务：
 
-- 方式 1：使用 Docker 容器 (便于**测试**)
-- 方式 2：下载 tar 包
-- 方式 3：源码编译
-- 方式 4：使用 tools 工具部署 (Outdated)
+1. 使用 Docker 容器进行测试或开发。
+1. 下载二进制 tar 包。
+1. 从源码编译。
+1. 使用已过时的一键部署工具。
+{.steps}
 
 > 不要把 Gremlin、Cypher 等查询接口直接暴露到公网。生产环境应启用[认证与授权](/cn/docs/config/config-authentication/)，限制网络访问并保留审计日志；部署建议见[安全指南](/cn/docs/guides/security/)。
 
@@ -66,7 +67,7 @@ HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行�
 - **单节点快速启动**（预构建镜像）：`docker/docker-compose.yml`
 - **单节点开发构建**（从源码构建）：`docker/docker-compose.dev.yml`
 
-```bash
+```bash {filename="docker/docker-compose.yml" wrap=true}
 cd hugegraph/docker
 # 注意版本号请随时保持更新 → 1.x.0
 HUGEGRAPH_VERSION=1.7.0 docker compose up -d
@@ -84,7 +85,7 @@ HUGEGRAPH_VERSION=1.7.0 docker compose up -d
 
 ### 3.2 下载 tar 包
 
-```bash
+```bash {filename="download-release.sh" wrap=true collapse=2}
 # 1.7.0 是项目孵化期发布的历史版本，因此文件名仍带 incubating
 wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
@@ -96,7 +97,7 @@ tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 
 下载 HugeGraph 源代码
 
-```bash
+```bash {filename="build-from-source.sh" wrap=true collapse=2}
 git clone https://github.com/apache/hugegraph.git
 ```
 

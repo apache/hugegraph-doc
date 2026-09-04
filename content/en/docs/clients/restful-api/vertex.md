@@ -5,7 +5,7 @@ weight: 7
 description: "Vertex REST API: Create, query, update, and delete vertex data in the graph with support for batch operations and conditional filtering."
 ---
 
-### 2.1 Vertex
+### 2.1 Vertex {#vertex-api}
 
 In vertex types, the `Id` strategy determines the type of the vertex `Id`, with the corresponding relationships as follows:
 
@@ -16,6 +16,7 @@ In vertex types, the `Id` strategy determines the type of the vertex `Id`, with 
 | CUSTOMIZE_STRING | string  |
 | CUSTOMIZE_NUMBER | number  |
 | CUSTOMIZE_UUID   | uuid    |
+{#vertex-id-strategy .full-width caption="Vertex ID strategies"}
 
 For the `GET/PUT/DELETE` API of a vertex, the id part in the URL should be passed as the id value with type information. This type information is indicated by whether the JSON string is enclosed in quotes, meaning:
 
@@ -41,7 +42,7 @@ schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("
 schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 ```
 
-#### 2.1.1 Create a vertex
+#### 2.1.1 Create a vertex {#create-vertex}
 
 ##### Method & Url
 
@@ -51,7 +52,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 ##### Request Body
 
-```json
+```json {filename="request.json" wrap=true}
 {
     "label": "person",
     "properties": {
@@ -69,7 +70,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 ##### Response Body
 
-```json
+```json {filename="response.json" wrap=true}
 {
     "id": "1:marko",
     "label": "person",

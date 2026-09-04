@@ -5,7 +5,7 @@ weight: 7
 description: "Vertex（顶点）REST 接口:创建、查询、更新和删除图中的顶点数据,支持批量操作和条件过滤。"
 ---
 
-### 2.1 Vertex
+### 2.1 Vertex {#vertex-api}
 
 顶点类型中的 `Id` 策略决定了顶点的 `Id` 类型，其对应的 `id` 类型如下：
 
@@ -16,6 +16,7 @@ description: "Vertex（顶点）REST 接口:创建、查询、更新和删除图
 | CUSTOMIZE_STRING | string  |
 | CUSTOMIZE_NUMBER | number  |
 | CUSTOMIZE_UUID   | uuid    |
+{#vertex-id-strategy .full-width caption="顶点 ID 策略"}
 
 顶点的 `GET/PUT/DELETE` API 中 url 的 id 部分应该传入带有类型信息的 id 值，这个类型信息通过 json 串是否带引号来表示，也就是说：
 
@@ -41,7 +42,7 @@ schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("
 schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 ```
 
-#### 2.1.1 创建一个顶点
+#### 2.1.1 创建一个顶点 {#create-vertex}
 
 ##### Params
 
@@ -58,7 +59,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 ##### Request Body
 
-```json
+```json {filename="request.json" wrap=true}
 {
     "label": "person",
     "properties": {
@@ -76,7 +77,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 ##### Response Body
 
-```json
+```json {filename="response.json" wrap=true}
 {
     "id": "1:marko",
     "label": "person",

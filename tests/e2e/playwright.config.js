@@ -1,6 +1,7 @@
 const { defineConfig } = require("@playwright/test");
 
 const siteRoot = process.env.SITE_ROOT;
+const aiSiteRoot = process.env.AI_SITE_ROOT;
 if (!siteRoot) {
   throw new Error("SITE_ROOT must point to an aggregate site artifact");
 }
@@ -20,10 +21,20 @@ module.exports = defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure"
   },
-  webServer: {
-    command: `python3 -m http.server 4173 --bind 127.0.0.1 --directory ${JSON.stringify(siteRoot)}`,
-    url: "http://127.0.0.1:4173/",
-    reuseExistingServer: false,
-    timeout: 30_000
-  }
+  webServer: [
+    {
+      command: `python3 -m http.server 4173 --bind 127.0.0.1 --directory ${JSON.stringify(siteRoot)}`,
+      url: "http://127.0.0.1:4173/",
+      reuseExistingServer: false,
+      timeout: 30_000
+    },
+    ...(aiSiteRoot
+      ? [{
+          command: `python3 -m http.server 4174 --bind 127.0.0.1 --directory ${JSON.stringify(aiSiteRoot)}`,
+          url: "http://127.0.0.1:4174/",
+          reuseExistingServer: false,
+          timeout: 30_000
+        }]
+      : [])
+  ]
 });

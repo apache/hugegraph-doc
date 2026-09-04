@@ -12,7 +12,10 @@ const states = [
 for (const [name, url, viewport, theme] of states) {
   test(`capture advisory ${name}`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    await page.addInitScript((value) => localStorage.setItem("td-theme", value), theme);
+    await page.addInitScript(
+      (value) => localStorage.setItem("td-color-theme", value),
+      theme
+    );
     await page.goto(url);
     await expect(page.locator("body")).toBeVisible();
     const directory = path.join(__dirname, "visual-results");

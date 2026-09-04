@@ -186,6 +186,13 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.13"
+      - name: Fetch immutable resolved source
+        env:
+          RESOLVED_SHA: ${{ matrix.version.sha }}
+        run: |
+          [[ "$RESOLVED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin "$RESOLVED_SHA"
+          git cat-file -e "$RESOLVED_SHA^{commit}"
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: go.mod
@@ -282,6 +289,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions: { contents: read }
+    env:
+      HUGO_CACHEDIR: /tmp/hugo-cache-${{ github.run_id }}-${{ github.run_attempt }}-e2e
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -292,6 +301,15 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: tests/e2e/package-lock.json
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Setup Hugo Extended
+        uses: peaceiris/actions-hugo@2752ce1d29631191ea3f27c23495fa06139a5b78 # v3.2.1
+        with:
+          hugo-version: ${{ env.HUGO_VERSION }}
+          extended: true
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: hugegraph-site-${{ needs.prepare.outputs.artifact_prefix }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -301,10 +319,22 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium
+      - name: Build manifest-derived AI fixture
+        run: |
+          python3 scripts/versioning.py config \
+            --version latest \
+            --site-origin http://127.0.0.1:4174/ \
+            --historical-origin "$PRODUCTION_ORIGIN" \
+            --output "${RUNNER_TEMP}/ai-version-config.json"
+          hugo \
+            --config "hugo.yaml,${RUNNER_TEMP}/ai-version-config.json,tests/e2e/ai-enabled.yaml" \
+            --destination "${RUNNER_TEMP}/ai-site" \
+            --cleanDestinationDir --gc --minify --environment production
       - name: Run blocking Chromium contracts
         working-directory: tests/e2e
         env:
           SITE_ROOT: ${{ github.workspace }}/public-site
+          AI_SITE_ROOT: ${{ runner.temp }}/ai-site
           EXPECTED_VERSIONS: ${{ needs.prepare.outputs.selection }}
         run: npm run test:ci
       - name: Upload E2E report

@@ -6,10 +6,11 @@
   },
   "scripts": {
     "test": "playwright test",
-    "test:ci": "playwright test versioning.spec.js search-ranking.spec.js --reporter=line,html",
+    "test:ci": "node --test workflow-contract.test.cjs && playwright test versioning.spec.js search-ranking.spec.js platform.spec.js ai.spec.js accessibility.spec.js --reporter=line,html",
     "test:visual": "playwright test visual.spec.js --reporter=line"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@playwright/test": "1.62.1"
   }
 }

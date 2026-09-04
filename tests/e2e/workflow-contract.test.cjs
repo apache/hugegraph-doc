@@ -32,6 +32,17 @@ test("event plan fixes origins, branches, confirmations, and five-version order"
   assert.doesNotMatch(workflow, /permissions:\s*write-all/);
 });
 
+test("concurrency serializes every writer to the same ASF target", () => {
+  assert.match(
+    workflow,
+    /group: \$\{\{ github\.workflow \}\}-\$\{\{[\s\S]*inputs\.operation == 'staging-next'[\s\S]*'asf-staging-oink'[\s\S]*'asf-site'[\s\S]*\}\}/
+  );
+  assert.doesNotMatch(
+    workflow,
+    /group:[^\n]*(?:inputs\.operation \|\| 'automatic'|github\.ref)/
+  );
+});
+
 test("prepare pins Hugo and WebP tools before source validators", () => {
   const setupHugo = workflow.indexOf("name: Setup Hugo Extended");
   const setupWebp = workflow.indexOf("name: Install WebP validators");

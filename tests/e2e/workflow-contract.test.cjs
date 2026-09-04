@@ -43,6 +43,17 @@ test("concurrency serializes every writer to the same ASF target", () => {
   );
 });
 
+test("aggregate binds the option-looking artifact suffix", () => {
+  assert.match(
+    workflow,
+    /--artifact-suffix="-\$\{GITHUB_RUN_ID\}-\$\{GITHUB_RUN_ATTEMPT\}"/
+  );
+  assert.doesNotMatch(
+    workflow,
+    /--artifact-suffix\s+"-\$\{GITHUB_RUN_ID\}-\$\{GITHUB_RUN_ATTEMPT\}"/
+  );
+});
+
 test("prepare pins Hugo and WebP tools before source validators", () => {
   const setupHugo = workflow.indexOf("name: Setup Hugo Extended");
   const setupWebp = workflow.indexOf("name: Install WebP validators");

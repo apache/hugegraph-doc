@@ -85,7 +85,27 @@ EXTERNAL_ACTIVE_RESOURCE_ATTRIBUTES = {
     ("audio", "src"),
     ("video", "src"),
     ("track", "src"),
+    ("form", "action"),
+    ("button", "formaction"),
+    ("input", "formaction"),
+    ("use", "href"),
 }
+LINK_RESOURCE_RELS = {
+    "stylesheet",
+    "preload",
+    "modulepreload",
+    "icon",
+    "apple-touch-icon",
+    "manifest",
+    "prefetch",
+    "prerender",
+    "preconnect",
+    "dns-prefetch",
+}
+PASSIVE_DATA_IMAGE_RE = re.compile(
+    r"^data:image/(?:png|jpeg|gif|webp|avif|bmp|x-icon);base64,[a-z0-9+/=]*$",
+    re.IGNORECASE,
+)
 
 
 def is_inert_oink_diagram_source(tag: str, values: dict[str, str]) -> bool:
@@ -391,6 +411,7 @@ class DocumentParser(html.parser.HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.urls: list[tuple[str, str]] = []
+        self.navigation_urls: list[tuple[str, str, str]] = []
         self.canonical: list[str] = []
         self.hreflang: list[tuple[str, str]] = []
         self.meta: list[dict[str, str]] = []
@@ -427,7 +448,10 @@ class DocumentParser(html.parser.HTMLParser):
                         f"authored {attribute} event attribute on <{tag}>"
                     )
 
-        if tag in {"a", "link"} and values.get("href"):
+        if tag in {"a", "area"} and values.get("href"):
+            self.urls.append(("href", values["href"]))
+            self.navigation_urls.append((tag, "href", values["href"]))
+        if tag == "link" and values.get("href"):
             self.urls.append(("href", values["href"]))
         if tag in {"img", "script", "source"} and values.get("src"):
             self.urls.append(("src", values["src"]))
@@ -439,6 +463,16 @@ class DocumentParser(html.parser.HTMLParser):
             resource_attributes.append(("poster", values["poster"]))
         if tag == "object" and values.get("data"):
             resource_attributes.append(("data", values["data"]))
+            self.urls.append(("data", values["data"]))
+        if tag == "form" and values.get("action"):
+            resource_attributes.append(("action", values["action"]))
+            self.urls.append(("action", values["action"]))
+        if tag in {"button", "input"} and values.get("formaction"):
+            resource_attributes.append(("formaction", values["formaction"]))
+            self.urls.append(("formaction", values["formaction"]))
+        if tag == "use" and values.get("href"):
+            resource_attributes.append(("href", values["href"]))
+            self.urls.append(("href", values["href"]))
         if tag == "iframe" and values.get("src"):
             resource_attributes.append(("src", values["src"]))
         if (
@@ -451,15 +485,14 @@ class DocumentParser(html.parser.HTMLParser):
             resource_attributes.append(("href", values["href"]))
         if tag == "link" and values.get("href"):
             rel = set(values.get("rel", "").lower().split())
-            if rel & {
-                "stylesheet",
-                "preload",
-                "modulepreload",
-                "icon",
-                "apple-touch-icon",
-                "manifest",
-            }:
+            if rel & LINK_RESOURCE_RELS:
                 resource_attributes.append(("href", values["href"]))
+            else:
+                self.navigation_urls.append((tag, "href", values["href"]))
+        if tag in {"a", "area"} and values.get("ping"):
+            self.authored_violations.append(f"forbidden ping attribute on <{tag}>")
+        if tag == "base" and values.get("href"):
+            self.authored_violations.append("forbidden base[href]")
         self.resources.extend(
             (tag, attribute, url) for attribute, url in resource_attributes
         )
@@ -581,6 +614,7 @@ def rendered_url_shape_error(
     attribute: str,
     *,
     allow_contact: bool = False,
+    allow_data_image: bool = False,
 ) -> str | None:
     """Reject URL spellings that browsers and RFC parsers interpret differently."""
     if any(
@@ -599,6 +633,12 @@ def rendered_url_shape_error(
         return f"{page_name}: malformed URL in {attribute}: {value}: {exc}"
     if parts.scheme.lower() in {"http", "https"} and not parts.netloc:
         return f"{page_name}: HTTP(S) URL has no authority in {attribute}: {value}"
+    if (
+        parts.scheme.lower() == "data"
+        and allow_data_image
+        and PASSIVE_DATA_IMAGE_RE.fullmatch(value)
+    ):
+        return None
     allowed_schemes = {"", "http", "https"}
     if allow_contact:
         allowed_schemes.update({"mailto", "tel"})
@@ -612,15 +652,27 @@ def document_url_shape_errors(
     page_name: str,
 ) -> list[str]:
     """Apply the browser-safe URL shape contract to every rendered URL token."""
-    tokens: list[tuple[str, str, bool]] = [
-        (attribute, value, True) for attribute, value in parser.urls
+    tokens: list[tuple[str, str, bool, bool]] = [
+        (f"{tag}[{attribute}]", value, tag in {"a", "area"}, False)
+        for tag, attribute, value in parser.navigation_urls
     ]
     tokens.extend(
-        (f"{tag}[{attribute}]", value, False)
+        (
+            f"{tag}[{attribute}]",
+            value,
+            False,
+            (
+                (tag == "img" and attribute in {"src", "srcset"})
+                or (tag == "source" and attribute == "srcset")
+                or (tag == "video" and attribute == "poster")
+                or (tag == "input" and attribute == "src")
+                or (tag == "image" and attribute == "href")
+            ),
+        )
         for tag, attribute, value in parser.resources
     )
     tokens.extend(
-        ("inline CSS", value, False)
+        ("inline CSS", value, False, True)
         for source in parser.inline_css_sources
         for value in css_resource_urls(source)
     )
@@ -629,12 +681,12 @@ def document_url_shape_errors(
     except ValueError as exc:
         return [f"{page_name}: {exc}"]
     if alias_target:
-        tokens.append(("meta refresh", alias_target, False))
+        tokens.append(("meta refresh", alias_target, False, False))
 
     errors = []
-    seen: set[tuple[str, str, bool]] = set()
-    for attribute, value, allow_contact in tokens:
-        key = (attribute, value, allow_contact)
+    seen: set[tuple[str, str, bool, bool]] = set()
+    for attribute, value, allow_contact, allow_data_image in tokens:
+        key = (attribute, value, allow_contact, allow_data_image)
         if key in seen:
             continue
         seen.add(key)
@@ -643,6 +695,7 @@ def document_url_shape_errors(
             page_name,
             attribute,
             allow_contact=allow_contact,
+            allow_data_image=allow_data_image,
         )
         if error:
             errors.append(error)
@@ -899,6 +952,7 @@ def main() -> int:
                     resource,
                     stylesheet_name,
                     "CSS resource",
+                    allow_data_image=True,
                 )
             )
         ]

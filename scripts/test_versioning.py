@@ -1568,6 +1568,29 @@ class VersionUrlTest(unittest.TestCase):
         self.assertFalse(versioning.require_safe_url_scheme("tel:+1", "x"))
         self.assertTrue(versioning.require_safe_url_scheme("/docs/", "x"))
 
+    def test_document_parser_captures_active_navigation_urls(self) -> None:
+        parser = versioning.DocumentParser()
+        parser.feed(
+            '<form action="/submit">'
+            '<button formaction="/button-submit">go</button>'
+            '<input formaction="/input-submit">'
+            "</form>"
+            '<object data="/payload"></object>'
+            '<area href="/map">'
+            '<svg><use href="/sprite.svg#icon"></use></svg>'
+        )
+        self.assertEqual(
+            parser.urls,
+            [
+                ("action", "/submit"),
+                ("formaction", "/button-submit"),
+                ("formaction", "/input-submit"),
+                ("data", "/payload"),
+                ("href", "/map"),
+                ("href", "/sprite.svg#icon"),
+            ],
+        )
+
     def test_rejects_resolved_manifest_drift(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             manifest = json.loads(

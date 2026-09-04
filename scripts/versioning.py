@@ -79,7 +79,7 @@ LATEST_SHARED_DOC_ROUTES = {
     "/cn/docs/guides/security/",
 }
 URL_ATTRIBUTE_RE = re.compile(
-    r"(?P<prefix>[\s<](?:href|src|action|poster|data-td-index-src|data-td-url|data-td-image-zoom)=)"
+    r"(?P<prefix>[\s<](?:href|src|action|formaction|data|poster|data-td-index-src|data-td-url|data-td-image-zoom)=)"
     r"(?P<quote>[\"']?)(?P<url>[^\s\"'<>`]+)(?P=quote)",
     re.IGNORECASE,
 )
@@ -194,6 +194,10 @@ class DocumentParser(html.parser.HTMLParser):
         ):
             if values.get(attribute):
                 self.urls.append((attribute, values[attribute]))
+        if tag.lower() in {"button", "input"} and values.get("formaction"):
+            self.urls.append(("formaction", values["formaction"]))
+        if tag.lower() == "object" and values.get("data"):
+            self.urls.append(("data", values["data"]))
         if tag == "link" and values.get("rel", "").lower() == "canonical":
             self.canonical.append(values.get("href", ""))
         if (

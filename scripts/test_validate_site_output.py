@@ -425,6 +425,18 @@ class SiteOutputSecurityTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
+            (root / "boundary.html").write_text(
+                (
+                    '<form action="https://evil.example/collect">'
+                    '<button formaction="https://evil.example/button">go</button>'
+                    '<input formaction="https://evil.example/input">'
+                    "</form>"
+                    '<a href="/docs/" ping="https://evil.example/ping">ping</a>'
+                    '<area href="/docs/" ping="https://evil.example/ping">'
+                    '<base href="https://evil.example/">'
+                ),
+                encoding="utf-8",
+            )
             (root / "site.css").write_text(
                 ".hero{background:url(https:///docs/introduction/)}",
                 encoding="utf-8",
@@ -454,6 +466,121 @@ class SiteOutputSecurityTest(unittest.TestCase):
             self.assertIn("unsafe backslash URL", result.stdout)
             self.assertIn("forbidden URL scheme", result.stdout)
             self.assertIn("site.css", result.stdout)
+
+    def test_security_only_rejects_unreviewed_request_attributes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = pathlib.Path(temp_name)
+            (root / "index.html").write_text(
+                (
+                    '<form action="javascript:alert(1)">'
+                    '<button formaction="javascript:alert(1)">go</button>'
+                    '<input formaction="https://evil.example/submit">'
+                    "</form>"
+                    '<a href="/docs/" ping="https://evil.example/ping">ping</a>'
+                    '<area href="/docs/" ping="https://evil.example/ping">'
+                    '<base href="https://evil.example/">'
+                    '<svg><use href="javascript:alert(1)"></use></svg>'
+                ),
+                encoding="utf-8",
+            )
+            (root / "external-boundary.html").write_text(
+                (
+                    '<form action="https://evil.example/collect">'
+                    '<button formaction="https://evil.example/button">go</button>'
+                    '<input formaction="https://evil.example/input">'
+                    "</form>"
+                    '<a href="/docs/" ping="https://evil.example/ping">ping</a>'
+                    '<area href="/docs/" ping="https://evil.example/ping">'
+                    '<base href="https://evil.example/">'
+                    '<link rel="prefetch" href="https://evil.example/payload">'
+                    '<link rel="prerender" href="https://evil.example/page">'
+                    '<link rel="preconnect" href="https://evil.example/">'
+                    '<link rel="dns-prefetch" href="https://evil.example/">'
+                ),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(VALIDATOR_PATH),
+                    str(root),
+                    "https://hugegraph.apache.org/",
+                    "--security-only",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("forbidden ping attribute", result.stdout)
+            self.assertIn("forbidden base[href]", result.stdout)
+            self.assertIn("forbidden URL scheme in form[action]", result.stdout)
+            self.assertIn("forbidden URL scheme in button[formaction]", result.stdout)
+            self.assertIn("external active resource", result.stdout)
+            self.assertIn(
+                "external active resource is forbidden <link> href: "
+                "https://evil.example/payload",
+                result.stdout,
+            )
+            self.assertIn(
+                "external active resource is forbidden <link> href: "
+                "https://evil.example/page",
+                result.stdout,
+            )
+            self.assertIn("forbidden URL scheme in use[href]", result.stdout)
+
+    def test_security_only_allows_passive_data_images_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = pathlib.Path(temp_name)
+            data_image = "data:image/png;base64,AAAA"
+            (root / "index.html").write_text(
+                (
+                    f'<img src="{data_image}" srcset="{data_image} 1x">'
+                    f'<picture><source srcset="{data_image} 1x"></picture>'
+                    f'<video poster="{data_image}"></video>'
+                    f'<style>.hero{{background:url({data_image})}}</style>'
+                ),
+                encoding="utf-8",
+            )
+            (root / "site.css").write_text(
+                f".hero{{background:url({data_image})}}",
+                encoding="utf-8",
+            )
+
+            allowed = subprocess.run(
+                [
+                    sys.executable,
+                    str(VALIDATOR_PATH),
+                    str(root),
+                    "https://hugegraph.apache.org/",
+                    "--security-only",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(allowed.returncode, 0, allowed.stdout + allowed.stderr)
+
+            (root / "active.html").write_text(
+                f'<script src="{data_image}"></script>',
+                encoding="utf-8",
+            )
+            rejected = subprocess.run(
+                [
+                    sys.executable,
+                    str(VALIDATOR_PATH),
+                    str(root),
+                    "https://hugegraph.apache.org/",
+                    "--security-only",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(rejected.returncode, 1)
+            self.assertIn("forbidden URL scheme in script[src]", rejected.stdout)
 
     def test_css_http_resources_are_detected(self) -> None:
         parser = parse(

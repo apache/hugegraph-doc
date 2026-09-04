@@ -45,15 +45,17 @@ for (const version of VERSION_IDS.slice(1)) {
   }
 }
 
-test("1.0 flat Server URL remains a static alias", async ({ page }) => {
+test("1.0 flat Server URL remains a static alias", async ({ request }) => {
   test.skip(!EXPECTED_IDS.includes("1.0"), "latest-only staging artifact");
-  await page.goto("/versions/1.0/docs/quickstart/hugegraph-server/");
-  await expect(page.locator('meta[http-equiv="refresh"]')).toHaveAttribute(
-    "content",
-    /quickstart\/hugegraph\/hugegraph-server/
+  const response = await request.get(
+    "/versions/1.0/docs/quickstart/hugegraph-server/"
   );
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
-    "href",
-    /versions\/1\.0\/docs\/quickstart\/hugegraph\/hugegraph-server\//
+  expect(response.ok()).toBeTruthy();
+  const body = await response.text();
+  expect(body).toMatch(
+    /http-equiv="refresh"[^>]+quickstart\/hugegraph\/hugegraph-server/
+  );
+  expect(body).toMatch(
+    /rel="canonical"[^>]+versions\/1\.0\/docs\/quickstart\/hugegraph\/hugegraph-server\//
   );
 });

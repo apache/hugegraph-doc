@@ -430,7 +430,14 @@ def validate_rendered_outputs(destination: pathlib.Path) -> None:
         if not path.is_file():
             raise RosterError(f"rendered output is missing {relative}")
         rendered = path.read_text(encoding="utf-8")
-        if any(marker not in rendered for marker in markers):
+        if relative.endswith(".html"):
+            has_markers = all(
+                re.search(rf'data-community-role=(?:"{role}"|{role})(?:\s|>)', rendered)
+                for role in ("pmc", "committers")
+            )
+        else:
+            has_markers = all(marker in rendered for marker in markers)
+        if not has_markers:
             raise RosterError(f"rendered output {relative} is missing Community markers")
         positions = [rendered.find(url.replace("&", "&amp;") if relative.endswith(".html") else url) for url in urls]
         if any(position < 0 for position in positions) or positions != sorted(positions):
@@ -487,9 +494,11 @@ def _commit_bundle(candidate: dict, candidate_avatars: dict[str, bytes]) -> None
         for name, avatar in sorted(candidate_avatars.items()):
             _validate_avatar_blob(name, avatar)
             destination = AVATAR_DIR / name
-            if destination.exists():
+            if destination.exists() or destination.is_symlink():
                 previous = destination.read_bytes()
                 try:
+                    if destination.is_symlink():
+                        raise RosterError(f"candidate destination is a symlink: {destination}")
                     _validate_avatar_blob(name, previous)
                     continue
                 except RosterError:

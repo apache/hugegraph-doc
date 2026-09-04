@@ -459,30 +459,44 @@ class CommunityContentContractTests(unittest.TestCase):
             for marker in markers:
                 self.assertIn(marker, rendered)
 
+    def test_explicit_artifact_validator_accepts_prebuilt_site(self):
+        roster.validate_rendered_outputs(self.site)
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/community_roster.py",
+                "validate",
+                "--warn-after-days",
+                "90",
+                "--artifact",
+                str(self.site),
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+        )
+        self.assertEqual(0, result.returncode, result.stderr)
+
     def test_fixed_metadata_is_present_in_actual_offline_indexes(self):
-        relative_refs = [
-            "docs/introduction/",
-            "docs/quickstart/hugegraph/hugegraph-server/",
-            "docs/quickstart/hugegraph/hugegraph-hstore/",
-            "docs/quickstart/hugegraph/hugegraph-pd/",
-            "docs/quickstart/computing/hugegraph-computer/",
-            "docs/quickstart/toolchain/hugegraph-loader/",
-            "docs/quickstart/toolchain/hugegraph-hubble/",
-            "docs/clients/",
-            "docs/clients/restful-api/",
-            "docs/config/config-guide/",
-            "docs/config/config-authentication/",
-            "docs/download/download/",
-        ]
-        for language, prefix in (("en", "/"), ("cn", "/cn/")):
+        fixture = json.loads(
+            (ROOT / "scripts/fixtures/community_search_queries.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(24, len(fixture))
+        self.assertEqual(24, len({(item["locale"], item["query"]) for item in fixture}))
+        for language in ("en", "cn"):
             indexes = list(self.site.glob(f"offline-search-index.{language}.*.json"))
             self.assertEqual(1, len(indexes))
             records = {record["ref"]: record for record in json.loads(indexes[0].read_text())}
-            for relative in relative_refs:
-                ref = prefix + relative
+            for item in (entry for entry in fixture if entry["locale"] == language):
+                ref = item["expected_ref"]
                 self.assertIn(ref, records)
                 self.assertTrue(records[ref]["keywords"], ref)
                 self.assertGreater(records[ref]["boost"], 1, ref)
+                normalized_query = item["query"].casefold()
+                searchable = " ".join(
+                    [records[ref]["title"], *records[ref]["keywords"]]
+                ).casefold()
+                self.assertIn(normalized_query, searchable, ref)
 
 
 if __name__ == "__main__":

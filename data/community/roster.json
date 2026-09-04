@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "project": "hugegraph",
-  "retrieved_at": "2026-09-04T11:03:16Z",
+  "retrieved_at": "2026-09-04T12:12:42Z",
   "source": {
     "committee": "https://whimsy.apache.org/public/committee-info.json",
     "projects": "https://whimsy.apache.org/public/public_ldap_projects.json",

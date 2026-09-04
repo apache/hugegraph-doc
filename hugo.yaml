@@ -17,10 +17,6 @@ languages:
     params:
       description: Apache HugeGraph documentation and project updates.
       version_menu: Releases
-      versions:
-        - { version: latest, name: latest, url: 'https://hugegraph.apache.org/docs/', pagelinks: false }
-        - { version: '1.7', name: '1.7', url: 'https://hugegraph.apache.org/versions/1.7/docs/', pagelinks: false }
-        - { version: '1.5', name: '1.5', url: 'https://hugegraph.apache.org/versions/1.5/docs/', pagelinks: false }
     menus:
       main:
         - { identifier: docs, name: Documentation, pageRef: /docs, weight: 10 }
@@ -43,10 +39,6 @@ languages:
     params:
       description: Apache HugeGraph 中文文档与项目动态。
       version_menu: 版本
-      versions:
-        - { version: latest, name: latest, url: 'https://hugegraph.apache.org/cn/docs/', pagelinks: false }
-        - { version: '1.7', name: '1.7', url: 'https://hugegraph.apache.org/versions/1.7/cn/docs/', pagelinks: false }
-        - { version: '1.5', name: '1.5', url: 'https://hugegraph.apache.org/versions/1.5/cn/docs/', pagelinks: false }
     menus:
       main:
         - { identifier: docs, name: 文档, pageRef: /docs, weight: 10 }

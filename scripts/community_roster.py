@@ -481,12 +481,15 @@ class _CommunityLinkParser(html.parser.HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.role_stack: list[str | None] = []
+        self.section_order: list[str] = []
         self.links = {"pmc": [], "committers": []}
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = dict(attrs)
         if tag == "section":
             role = attributes.get("data-community-role")
+            if role in self.links:
+                self.section_order.append(role)
             self.role_stack.append(role if role in self.links else None)
         elif tag == "a" and self.role_stack and self.role_stack[-1]:
             href = attributes.get("href")
@@ -502,6 +505,8 @@ def _rendered_role_links(rendered: str, html_output: bool) -> dict[str, list[str
     if html_output:
         parser = _CommunityLinkParser()
         parser.feed(rendered)
+        if parser.section_order != ["pmc", "committers"]:
+            return {"pmc": [], "committers": []}
         return parser.links
     starts = {}
     for role, heading in (("pmc", "PMC"), ("committers", "Committers")):

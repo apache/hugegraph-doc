@@ -5,8 +5,7 @@
 {{- $target := $versionURL -}}
 {{- $equivalent := false -}}
 {{- $fallback := false -}}
-{{- $basePath := (urls.Parse $p.Site.BaseURL).Path | default "/" -}}
-{{- $relative := strings.TrimPrefix $basePath $p.RelPermalink -}}
+{{- $relative := strings.TrimPrefix "/" $p.RelPermalink -}}
 {{- $locale := $p.Site.Language.Lang -}}
 {{- $docsPrefix := cond (eq $locale "cn") "cn/docs/" "docs/" -}}
 {{- $docsSuffix := cond (eq $locale "cn") "/cn/docs" "/docs" -}}

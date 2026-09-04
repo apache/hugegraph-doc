@@ -1,7 +1,13 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const test = require('node:test');
 
 const shell = require('../../assets/js/hugegraph-shell.js');
+const versionLink = fs.readFileSync(
+  path.resolve(__dirname, '../../layouts/_partials/version-link.html'),
+  'utf8',
+);
 
 function classList() {
   const values = new Set();
@@ -54,6 +60,19 @@ test('version targets reject executable URL schemes', () => {
       { href: 'https://hugegraph.apache.org/docs/', search: '', hash: '' },
     ),
     '',
+  );
+});
+
+test('route lookup uses the unscoped Hugo permalink in every version build', () => {
+  assert.match(
+    versionLink,
+    /\$relative := strings\.TrimPrefix "\/" \$p\.RelPermalink/,
+  );
+  assert.equal(
+    versionLink.includes(
+      '$relative := strings.TrimPrefix $basePath $p.RelPermalink',
+    ),
+    false,
   );
 });
 

@@ -159,7 +159,7 @@ HugeGraphServer 启动时会连接后端存储并检查其版本信息。如果�
 
 **注:** 如果想要开启 HugeGraph 权限系统，在启动 Server 之前应按照 [Server 鉴权配置](/cn/docs/config/config-authentication/) 进行配置。(尤其是生产环境/外网环境须开启)
 
-##### 5.1.1 分布式存储 (HStore)
+#### 5.1.1 分布式存储 (HStore)
 
 <details>
 <summary>点击展开/折叠 分布式存储 配置及启动方法</summary>
@@ -283,7 +283,7 @@ curl http://localhost:8081/graphspaces/DEFAULT/graphs
 bin/stop-hugegraph.sh
 ```
 
-###### Docker 分布式集群
+##### Docker 分布式集群
 
 通过 Docker-Compose 运行完整的分布式集群（3 PD + 3 Store + 3 Server）：
 
@@ -312,7 +312,7 @@ curl http://localhost:8620/v1/stores
 完整的环境变量参考、端口表和故障排查指南请参阅 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 </details>
 
-##### 5.1.2 RocksDB / ToplingDB
+#### 5.1.2 RocksDB / ToplingDB
 
 以下从本地 properties 文件启动图的示例要求在 `conf/rest-server.properties` 中设置：
 
@@ -358,7 +358,7 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 
 </details>
 
-##### 5.1.3 HBase
+#### 5.1.3 HBase
 
 <details>
 <summary>点击展开/折叠 HBase 配置及启动方法</summary>
@@ -400,7 +400,7 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 
 </details>
 
-##### 5.1.4 启动 server 的时候创建示例图
+#### 5.1.4 启动 server 的时候创建示例图
 
 在启动脚本时携带 `-p true` 参数，表示开启 preload，即创建示例图。
 

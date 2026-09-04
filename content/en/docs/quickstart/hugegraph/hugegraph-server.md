@@ -177,7 +177,7 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 
 **Note:** Configure [Server Authentication](/docs/config/config-authentication/) before starting HugeGraphServer if you need Auth mode (especially for production or public network environments).
 
-##### 5.1.1 Distributed Storage (HStore)
+#### 5.1.1 Distributed Storage (HStore)
 
 > [!DETAILS]- Click to expand/collapse Distributed Storage configuration and startup method
 > > Distributed storage is a new feature introduced after HugeGraph 1.5.0, which implements distributed data storage and computation based on HugeGraph-PD and HugeGraph-Store components.
@@ -327,7 +327,7 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 >
 > See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full environment variable reference, port table, and troubleshooting guide.
 
-##### 5.1.2 RocksDB / ToplingDB
+#### 5.1.2 RocksDB / ToplingDB
 
 > [!DETAILS]- Click to expand/collapse RocksDB configuration and startup methods
 > > RocksDB is an embedded database that does not require manual installation and deployment. GCC version >= 4.3.0 (GLIBCXX_3.4.10) is required. If not, GCC needs to be upgraded in advance
@@ -359,7 +359,7 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 > **ToplingDB (Beta)**: As a high-performance alternative to RocksDB, please refer to the configuration guide: [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="en">}})
 
 
-##### 5.1.3 HBase
+#### 5.1.3 HBase
 > [!DETAILS]- Click to expand/collapse HBase configuration and startup methods
 > > users need to install HBase by themselves, requiring version 2.0 or above,[download link](https://hbase.apache.org/downloads.html)
 >
@@ -394,7 +394,7 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 > Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 > ```
 >
-##### 5.1.4 Create an example graph when startup
+#### 5.1.4 Create an example graph when startup
 Pass the `-p true` argument when starting the script to enable `preload`, which creates a sample graph.
 
 ```

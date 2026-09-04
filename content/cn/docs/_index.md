@@ -44,4 +44,11 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。Server 负责�
 - **HugeGraph Computer**：仓库内包含分布式 Computer 引擎和内存计算引擎 Vermeer
 - **HugeGraph-AI**：包含 GraphRAG、图机器学习、Python Client 和 Vermeer Python Client
 
-部署 Server 时可以使用单机 RocksDB 后端，也可以使用由 PD 和 Store 组成的 HStore 分布式后端。各组件的适用范围和启动方式见[系统介绍](introduction/)及对应快速开始文档。
+### 部署模式
+
+| 模式 | 核心组件 | 适用场景 | 数据规模 |
+|---|---|---|---|
+| **单机模式** | Server + RocksDB | 开发、测试和中小规模数据 | ≤ 2 TB |
+| **分布式模式** | Server + PD + Store（HStore） | 生产环境、水平扩展和多副本部署 | ≤ 1 PB |
+
+各组件的适用范围和启动方式见[系统介绍](introduction/)及对应快速开始文档。

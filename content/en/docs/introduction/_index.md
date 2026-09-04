@@ -101,8 +101,8 @@ HugeGraph supports two primary deployment modes:
 
 | Mode | Core Components | Suitable Scenarios | Data Scale | High Availability (HA) |
 |------|-----------------|--------------------|------------|------------------------|
-| **Standalone** | Server + RocksDB | Development, testing, small to medium-scale data | < 2 TB | Basic |
-| **Distributed** | Server + PD (3-5 nodes) + Store (3+ nodes) | Production environments, horizontal scaling | Up to 1 PB | ✅ |
+| **Standalone** | Server + RocksDB | Development, testing, small to medium-scale data | ≤ 2 TB | Basic |
+| **Distributed** | Server + PD (3-5 nodes) + Store (3+ nodes) | Production environments, horizontal scaling | ≤ 1 PB | ✅ |
 
 **Docker Quick Experience:**
 

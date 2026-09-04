@@ -1,27 +1,26 @@
 ---
-title: "HugeGraph-Server Quick Start"
-linkTitle: "安装/构建 HugeGraph-Server"
+title: "HugeGraph Server 快速开始"
+linkTitle: "安装/构建 HugeGraph Server"
 weight: 1
 aliases:
   - /docs/quickstart/hugegraph-server/
 ---
 
-## 1 HugeGraph-Server 概述
+## 1 HugeGraph Server 概述
 
-HugeGraph-Server 是 HugeGraph 项目的核心部分，包含 graph-core、backend、API 等子模块。
+`apache/hugegraph` 是 HugeGraph 图数据库的主仓库，包含 `hugegraph-server`、`hugegraph-pd`、`hugegraph-store` 等一级模块。本页介绍其中的 `hugegraph-server` 模块及其运行服务。
 
-Core 模块是 Tinkerpop 接口的实现，Backend 模块用于管理数据存储，1.7.0+ 版本支持的后端包括：RocksDB（单机默认）、HStore（分布式）和 HBase。API 模块提供 HTTP Server，将 Client 的 HTTP 请求转化为对 Core 的调用。
+`hugegraph-server` 模块包含 `hugegraph-core`、`hugegraph-api`、`hugegraph-dist` 和存储适配等子模块。Core 实现属性图模型、事务与 TinkerPop 接口，API 提供 HTTP 服务并将客户端请求交给 Core 处理。图数据由 RocksDB（单机默认）、HStore（分布式）或 HBase 后端保存。
 
 > ⚠️ **版本说明**：本文以 HugeGraph 1.7.0 至 `master` 分支的代码为参考，仅介绍 RocksDB、HStore 和 HBase。其他旧后端的使用与配置请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
 
-> 文档中会出现 `HugeGraph-Server` 与 `HugeGraphServer` 两种写法，其他组件也类似。
-> 两者在含义上并无明显差异，可简单区分为：`HugeGraph-Server` 表示服务端相关组件代码，`HugeGraphServer` 表示服务进程。
+> 名称说明：`HugeGraph` 表示整个项目或主仓库，`hugegraph-server` 表示仓库中的 Server 模块，`HugeGraphServer` 是服务进程的 Java 类名。下文使用“Server 服务”表示运行中的图数据库服务。
 
 ## 2 依赖
 
 ### 2.1 安装 Java 11 (JDK 11)
 
-HugeGraph-Server 1.7.0 的源码以 Java 11 编译，运行和源码构建均需使用 Java 11 或更高版本。
+HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行和源码构建均需使用 Java 11 或更高版本。
 
 **在继续阅读前，请先执行 `java -version` 命令确认 JDK 版本。**
 
@@ -29,7 +28,7 @@ HugeGraph-Server 1.7.0 的源码以 Java 11 编译，运行和源码构建均需
 
 ## 3 部署
 
-有四种方式可以部署 HugeGraph-Server 组件：
+有四种方式可以部署 Server 服务：
 
 - 方式 1：使用 Docker 容器 (便于**测试**)
 - 方式 2：下载 tar 包
@@ -43,7 +42,7 @@ HugeGraph-Server 1.7.0 的源码以 Java 11 编译，运行和源码构建均需
 
 可参考 [Docker 部署方式](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
-可以使用 `docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0` 快速启动一个内置 `RocksDB` 后端的 `HugeGraph-Server` 实例。
+可以使用 `docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0` 快速启动一个使用 `RocksDB` 后端的 Server 实例。
 
 可选项：
 
@@ -118,7 +117,7 @@ mvn package -DskipTests
 > [!DETAILS]- 过时的 tools 工具安装
 > #### 3.4 使用 tools 工具部署 (Outdated)
 >
-> HugeGraph-Tools 提供了一键部署的命令行工具，用户可以使用该工具快速地一键下载、解压、配置并启动 HugeGraph-Server 和 HugeGraph-Hubble，最新的 HugeGraph-Toolchain 中已经包含所有的这些工具，直接下载它解压就有工具包集合了
+> HugeGraph-Tools 提供一键部署命令，可以下载、解压、配置并启动 Server 服务和 HugeGraph-Hubble。HugeGraph-Toolchain 发布包中已包含这些工具。
 >
 > ```bash
 > # download toolchain package, it includes loader + tool + hubble, please check the latest version (here is 1.7.0)
@@ -136,7 +135,7 @@ mvn package -DskipTests
 > bin/hugegraph deploy -v {hugegraph-version} -p {install-path} [-u {download-path-prefix}]
 > ```
 >
-> `{hugegraph-version}` 表示要部署的 HugeGraphServer 及 HugeGraphStudio 的版本，用户可查看 `conf/version-mapping.yaml` 文件获取版本信息，`{install-path}` 指定 HugeGraphServer 及 HugeGraphStudio 的安装目录，`{download-path-prefix}` 可选，指定 HugeGraphServer 及 HugeGraphStudio tar 包的下载地址，不提供时使用默认下载地址，比如要启动 0.6 版本的 HugeGraph-Server 及 HugeGraphStudio 将上述命令写为 `bin/hugegraph deploy -v 0.6 -p services` 即可。
+> `{hugegraph-version}` 表示要部署的 Server 服务及 HugeGraphStudio 版本，可在 `conf/version-mapping.yaml` 中查看版本信息。`{install-path}` 指定安装目录，`{download-path-prefix}` 可选，用于指定 tar 包下载地址。例如部署 0.6 版本时，可以执行 `bin/hugegraph deploy -v 0.6 -p services`。
 
 ## 4 配置
 
@@ -171,7 +170,7 @@ HugeGraphServer 启动时会连接后端存储并检查其版本信息。如果�
 
 确保 PD 和 Store 服务均已启动后
 
-1. 修改 HugeGraph-Server 的 `hugegraph.properties` 配置：
+1. 修改 Server 服务的 `hugegraph.properties` 配置：
 
 ```properties
 backend=hstore
@@ -198,7 +197,7 @@ task.scheduler_type=distributed
 pd.peers=127.0.0.1:8686
 ```
 
-2. 修改 HugeGraph-Server 的 `rest-server.properties` 配置：
+2. 修改 Server 服务的 `rest-server.properties` 配置：
 
 ```properties
 usePD=true
@@ -211,7 +210,7 @@ pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
 # auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
 ```
 
-如果配置多个 HugeGraph-Server 节点，需要为每个节点修改 `rest-server.properties` 配置文件，例如：
+如果配置多个 Server 节点，需要为每个节点修改 `rest-server.properties` 配置文件，例如：
 
 节点 1（主节点）：
 ```properties
@@ -264,7 +263,7 @@ bin/start-hugegraph.sh
 使用分布式存储引擎的启动顺序为：
 1. 启动 HugeGraph-PD
 2. 启动 HugeGraph-Store
-3. 启动 HugeGraph-Server
+3. 启动 Server 服务
 
 HStore 的元数据和存储由 PD、Store 管理，`init-store` 会跳过该后端，不需要单独执行初始化脚本。
 
@@ -276,7 +275,7 @@ curl http://localhost:8081/graphspaces/DEFAULT/graphs
 ```
 
 停止服务的顺序应该与启动顺序相反：
-1. 停止 HugeGraph-Server
+1. 停止 Server 服务
 2. 停止 HugeGraph-Store
 3. 停止 HugeGraph-PD
 
@@ -423,7 +422,7 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 
 ### 5.2 使用 Docker
 
-在 [3.1 使用 Docker 容器](#31-使用-docker-容器-便于测试) 中，我们已经介绍了如何使用 `docker` 部署 `hugegraph-server`。还可以通过切换后端存储或设置参数，在 Server 启动时加载样例图。
+在 [3.1 使用 Docker 容器](#31-使用-docker-容器-便于测试) 中，我们已经介绍了如何使用 `docker` 部署 Server 服务。还可以通过切换后端存储或设置参数，在 Server 启动时加载样例图。
 
 #### 5.2.1 启动 server 的时候创建示例图
 

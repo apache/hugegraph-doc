@@ -586,7 +586,7 @@ class VersionUrlTest(unittest.TestCase):
     def test_historical_pages_are_noindex_and_aliases_are_locale_aware(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             output = Path(temp_name)
-            for language_prefix in ("", "cn/"):
+            for index, language_prefix in enumerate(("", "cn/")):
                 target = (
                     output
                     / language_prefix
@@ -594,10 +594,19 @@ class VersionUrlTest(unittest.TestCase):
                 )
                 target.parent.mkdir(parents=True)
                 target.write_text(
-                    '<meta name="robots" content="index, follow">',
+                    '<meta name="robots" content="index, follow">'
+                    if index == 0
+                    else '<meta name="robots" content="noindex, nofollow">',
                     encoding="utf-8",
                 )
+            error_page = output / "404.html"
+            error_page.write_text(
+                '<meta name="robots" content="noindex,nofollow">', encoding="utf-8"
+            )
             self.assertEqual(versioning.mark_historical_pages_noindex(output), 2)
+            self.assertIn(
+                "noindex,nofollow", error_page.read_text(encoding="utf-8")
+            )
             self.assertEqual(
                 versioning.write_historical_route_aliases(
                     output, ORIGIN, "versions/1.0"

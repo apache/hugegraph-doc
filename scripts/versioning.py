@@ -98,9 +98,8 @@ HREFLANG_LINK_RE = re.compile(
     r"(?=[^>]*\bhreflang=)[^>]*>",
     re.IGNORECASE,
 )
-INDEX_FOLLOW_META_RE = re.compile(
-    r"<meta\b(?=[^>]*\bname=[\"']?robots(?:[\"'\s>]|$))"
-    r"(?=[^>]*\bcontent=[\"']?index\s*,?\s*follow(?:[\"'\s>]|$))[^>]*>",
+ROBOTS_META_RE = re.compile(
+    r"<meta\b(?=[^>]*\bname=[\"']?robots(?:[\"'\s>]|$))[^>]*>",
     re.IGNORECASE,
 )
 MARKDOWN_DESTINATION_RE = re.compile(
@@ -2108,8 +2107,10 @@ def mark_historical_pages_noindex(output: pathlib.Path) -> int:
     """Apply the archive indexing policy to every rendered historical page."""
     changed = 0
     for path in sorted(output.rglob("*.html")):
+        if path.name == "404.html":
+            continue
         source = path.read_text(encoding="utf-8")
-        rendered, count = INDEX_FOLLOW_META_RE.subn(
+        rendered, count = ROBOTS_META_RE.subn(
             '<meta name="robots" content="noindex,follow">', source
         )
         if count:

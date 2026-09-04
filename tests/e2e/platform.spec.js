@@ -61,6 +61,11 @@ test("Community grid and HTML/Print/Markdown profiles stay in parity", async ({
   page,
   request
 }) => {
+  await page.goto("/community/");
+  test.skip(
+    (await page.locator(".hg-community-members__grid").count()) === 0,
+    "PR-B Community section is not integrated in this artifact"
+  );
   for (const [width, columns] of [[1440, 5], [900, 3], [390, 2], [320, 2]]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/community/");

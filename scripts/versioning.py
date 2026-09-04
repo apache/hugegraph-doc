@@ -64,7 +64,10 @@ VERSION_REFS = {
     "latest": "master",
     "1.7": "release-1.7.0",
     "1.5": "release-1.5.0",
+    "1.3": "release-1.3.0",
+    "1.0": "release-1.0.0",
 }
+VERSION_ORDER = ("latest", "1.7", "1.5", "1.3", "1.0")
 KNOWN_HISTORICAL_ROUTES = {
     "/docs/quickstart/hugegraph-loader": "/docs/quickstart/toolchain/hugegraph-loader/",
     "/cn/docs/quickstart/hugegraph-loader": "/cn/docs/quickstart/toolchain/hugegraph-loader/",
@@ -74,6 +77,10 @@ KNOWN_HISTORICAL_ROUTES_BY_PUBLISH_PATH = {
         "/docs/introduction": "/docs/introduction/readme/",
         "/cn/docs/introduction": "/cn/docs/introduction/readme/",
     },
+}
+LATEST_SHARED_DOC_ROUTES = {
+    "/docs/guides/security/",
+    "/cn/docs/guides/security/",
 }
 URL_ATTRIBUTE_RE = re.compile(
     r"(?P<prefix>[\s<](?:href|src|action|poster|data-td-index-src|data-td-url|data-td-image-zoom)=)"
@@ -85,6 +92,11 @@ ACTION_MANIFEST_RE = re.compile(
     r"(?P<body>.*?)"
     r"(?P<close></script>)",
     re.IGNORECASE | re.DOTALL,
+)
+HREFLANG_LINK_RE = re.compile(
+    r"<link\b(?=[^>]*\brel=[\"']?alternate(?:[\"'\s>]|$))"
+    r"(?=[^>]*\bhreflang=)[^>]*>",
+    re.IGNORECASE,
 )
 MARKDOWN_DESTINATION_RE = re.compile(
     r"(?P<open>\]\(\s*<?)(?P<url>(?:https?://[^\s)>]+|/[^\s)>]+))(?P<close>>?[^)]*\))"
@@ -121,6 +133,35 @@ DOCS_NAV_EXPECTED_STATS = {
         "scopedLinks": 10,
         "treeSha256": "70b2a46f047b3c88a6b1b937eb79676a7f68437485b3248e5f84b9c621d5ad06",
     },
+    "1.3": {
+        "groups": 5,
+        "pages": 68,
+        "removed": 22,
+        "scopedLinks": 10,
+        "treeSha256": "78700dfe484d5177f00c9fe657ae12f3ceecca9bbb592cc8626b782a7b9be61a",
+    },
+    "1.0": {
+        "groups": 5,
+        "pages": 59,
+        "removed": 21,
+        "scopedLinks": 10,
+        "treeSha256": "52f0c3b5bef6e9db39a37bbd52b7993128951f592d88a835ec7e3c107edec399",
+    },
+}
+LEGACY_IA_ROUTE_MAP = {
+    "introduction/README.md": "introduction/readme.md",
+    "quickstart/hugegraph-server.md": "quickstart/hugegraph/hugegraph-server.md",
+    "quickstart/hugegraph-hubble.md": "quickstart/toolchain/hugegraph-hubble.md",
+    "quickstart/hugegraph-loader.md": "quickstart/toolchain/hugegraph-loader.md",
+    "quickstart/hugegraph-tools.md": "quickstart/toolchain/hugegraph-tools.md",
+    "quickstart/hugegraph-computer.md": "quickstart/computing/hugegraph-computer.md",
+    "quickstart/hugegraph-client.md": "quickstart/client/hugegraph-client.md",
+}
+LEGACY_IA_SECTIONS = {
+    "quickstart/hugegraph": ("HugeGraph", "HugeGraph"),
+    "quickstart/toolchain": ("Toolchain", "Toolchain"),
+    "quickstart/computing": ("Graph computing", "图计算"),
+    "quickstart/client": ("Clients", "客户端"),
 }
 
 
@@ -301,8 +342,8 @@ def load_manifest(path: pathlib.Path) -> dict:
         entry["publishPath"] = publish_path
         ids.add(version_id)
         paths.add(publish_path)
-    if [entry["id"] for entry in versions] != ["latest", "1.7", "1.5"]:
-        fail("version order must be latest, 1.7, 1.5")
+    if tuple(entry["id"] for entry in versions) != VERSION_ORDER:
+        fail(f"version order must be {', '.join(VERSION_ORDER)}")
     if data.get("repository") != REPOSITORY_URL:
         fail(f"versions manifest repository must be {REPOSITORY_URL}")
     return data
@@ -351,8 +392,21 @@ def resolve_remote(repository: str, ref: str) -> str:
     return rows[0][0]
 
 
+def selected_version_ids(raw: str | None) -> tuple[str, ...]:
+    if raw is None:
+        return VERSION_ORDER
+    selected = tuple(part.strip() for part in raw.split(",") if part.strip())
+    if not selected or len(set(selected)) != len(selected):
+        fail("selected versions must be a non-empty unique comma-separated list")
+    unknown = set(selected) - set(VERSION_ORDER)
+    if unknown:
+        fail(f"unknown selected versions: {', '.join(sorted(unknown))}")
+    return tuple(version for version in VERSION_ORDER if version in selected)
+
+
 def prepare(args: argparse.Namespace) -> None:
     manifest = load_manifest(args.manifest)
+    selected = selected_version_ids(args.select)
     resolved = []
     for entry in manifest["versions"]:
         item = dict(entry)
@@ -372,7 +426,7 @@ def prepare(args: argparse.Namespace) -> None:
         "schemaVersion": 1,
         "repository": manifest["repository"],
         "versions": resolved,
-        "include": resolved,
+        "include": [item for item in resolved if item["id"] in selected],
     }
     rendered = json.dumps(
         result, ensure_ascii=False, sort_keys=True, separators=(",", ":")
@@ -492,16 +546,21 @@ def strip_menu_frontmatter(path: pathlib.Path) -> None:
     if not path.is_file():
         return
     lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-    if not lines or lines[0].strip() != "---":
+    opening_index = next(
+        (index for index, line in enumerate(lines) if line.strip()), None
+    )
+    if opening_index is None or lines[opening_index].strip() != "---":
         fail(f"cannot remove menu from non-YAML front matter: {path}")
     try:
         closing_index = next(
-            index for index, line in enumerate(lines[1:], 1) if line.strip() == "---"
+            index
+            for index, line in enumerate(lines[opening_index + 1 :], opening_index + 1)
+            if line.strip() == "---"
         )
     except StopIteration:
         fail(f"unterminated YAML front matter: {path}")
-    frontmatter = lines[1:closing_index]
-    output = [lines[0]]
+    frontmatter = lines[opening_index + 1 : closing_index]
+    output = lines[: opening_index + 1]
     index = 0
     while index < len(frontmatter):
         line = frontmatter[index]
@@ -544,6 +603,65 @@ def ensure_frontmatter(
         encoding="utf-8",
     )
     return 1
+
+
+def add_frontmatter_alias(path: pathlib.Path, alias: str) -> None:
+    source = path.read_text(encoding="utf-8")
+    opening = source.find("---")
+    if opening < 0 or source[:opening].strip():
+        fail(f"cannot add route alias without YAML front matter: {path}")
+    closing = source.find("\n---", opening + 3)
+    if closing < 0:
+        fail(f"unterminated YAML front matter: {path}")
+    frontmatter = source[opening + 3 : closing]
+    if re.search(r"(?m)^aliases\s*:", frontmatter):
+        fail(f"historical page already declares aliases: {path}")
+    source = source[:closing] + f"\naliases:\n  - {alias}\n" + source[closing:]
+    path.write_text(source, encoding="utf-8")
+
+
+def migrate_legacy_information_architecture(
+    assembly: pathlib.Path, version: str
+) -> int:
+    """Move 1.3/1.0 flat pages into the current five-group route hierarchy."""
+    if version not in {"1.3", "1.0"}:
+        return 0
+    changed = 0
+    for language in ("en", "cn"):
+        docs = assembly / "content" / language / "docs"
+        for section, titles in LEGACY_IA_SECTIONS.items():
+            index = docs / section / "_index.md"
+            if not index.exists():
+                index.parent.mkdir(parents=True, exist_ok=True)
+                title = titles[0] if language == "en" else titles[1]
+                index.write_text(
+                    f'---\ntitle: "{title}"\nlinkTitle: "{title}"\n---\n',
+                    encoding="utf-8",
+                )
+                changed += 1
+        for old_relative, new_relative in LEGACY_IA_ROUTE_MAP.items():
+            source = docs / old_relative
+            if not source.is_file():
+                continue
+            target = docs / new_relative
+            if target.exists():
+                if not source.samefile(target):
+                    fail(f"historical route migration target already exists: {target}")
+                intermediate = source.with_name(source.name + ".route-migration-tmp")
+                source.rename(intermediate)
+                source = intermediate
+            target.parent.mkdir(parents=True, exist_ok=True)
+            source.rename(target)
+            old_route = "/docs/"
+            old_route += old_relative.removesuffix(".md").replace("/README", "")
+            add_frontmatter_alias(target, old_route + "/")
+            changed += 1
+        summary = docs / "SUMMARY.md"
+        text = summary.read_text(encoding="utf-8")
+        for old_relative, new_relative in LEGACY_IA_ROUTE_MAP.items():
+            text = text.replace(old_relative, new_relative)
+        summary.write_text(text, encoding="utf-8")
+    return changed
 
 
 def ensure_search_metadata(
@@ -765,9 +883,9 @@ def materialize_docs_navigation(
 
 
 LEGACY_WECHAT_IMAGE_RE = re.compile(
-    r'<img\b(?=[^>]*\bsrc="(?:https://github\.com/apache/hugegraph-doc/'
+    r'<img\b(?=[^>]*\bsrc="(?:https://github\.com/apache/(?:incubator-)?hugegraph-doc/'
     r"blob/master/assets/images/wechat\.png\?raw=true|https://raw\.githubusercontent\.com/"
-    r'apache/hugegraph-doc/master/assets/images/wechat\.png)")'
+    r'apache/(?:incubator-)?hugegraph-doc/master/assets/images/wechat\.png)")'
     r'(?=[^>]*\bwidth="(?P<width>200|300)")[^>]*?/?>',
     re.IGNORECASE,
 )
@@ -1055,10 +1173,19 @@ def apply_exact_legacy_content_fixes(assembly: pathlib.Path, version: str) -> in
     return fixed
 
 
+def first_existing_path(assembly: pathlib.Path, candidates: tuple[str, ...]) -> pathlib.Path:
+    """Resolve one version-specific content path without guessing missing files."""
+    matches = [assembly / candidate for candidate in candidates if (assembly / candidate).is_file()]
+    if len(matches) != 1:
+        fail(f"expected exactly one historical path, found {len(matches)}: {candidates!r}")
+    return matches[0]
+
+
 def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
     fixed = 0
-    if version in {"1.7", "1.5"}:
-        fixed += apply_exact_legacy_content_fixes(assembly, version)
+    if version in {"1.7", "1.5", "1.3", "1.0"}:
+        if version in LEGACY_EXACT_CONTENT_FIXES:
+            fixed += apply_exact_legacy_content_fixes(assembly, version)
         for language in ("en", "cn"):
             language_prefix = "/cn" if language == "cn" else ""
             legacy_metadata = (
@@ -1074,15 +1201,14 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
                 ),
             )
             for relative, title, link_title in legacy_metadata:
-                fixed += ensure_frontmatter(
-                    assembly / f"content/{language}/docs/{relative}",
-                    title=title,
-                    link_title=link_title,
-                    weight=100,
-                )
-            fixed += ensure_search_excluded(
-                assembly / f"content/{language}/docs/CLA.md"
-            )
+                page = assembly / f"content/{language}/docs/{relative}"
+                if page.is_file():
+                    fixed += ensure_frontmatter(
+                        page, title=title, link_title=link_title, weight=100
+                    )
+            cla = assembly / f"content/{language}/docs/CLA.md"
+            if cla.is_file():
+                fixed += ensure_search_excluded(cla)
             search_metadata = (
                 (
                     "config/config-option.md",
@@ -1098,16 +1224,20 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
                 ),
             )
             for relative, keywords in search_metadata:
-                fixed += ensure_search_metadata(
-                    assembly / f"content/{language}/docs/{relative}",
-                    keywords=keywords,
-                    boost=1.5,
-                )
+                page = assembly / f"content/{language}/docs/{relative}"
+                if page.is_file():
+                    fixed += ensure_search_metadata(page, keywords=keywords, boost=1.5)
             summary_path = assembly / f"content/{language}/docs/SUMMARY.md"
-            fixed += repair_historical_performance_routes(summary_path)
+            if version in {"1.7", "1.5"}:
+                fixed += repair_historical_performance_routes(summary_path)
             fixed += normalize_historical_server_headings(
-                assembly
-                / f"content/{language}/docs/quickstart/hugegraph/hugegraph-server.md"
+                first_existing_path(
+                    assembly,
+                    (
+                        f"content/{language}/docs/quickstart/hugegraph/hugegraph-server.md",
+                        f"content/{language}/docs/quickstart/hugegraph-server.md",
+                    ),
+                )
             )
             replacements = []
             if language == "cn":
@@ -1119,6 +1249,15 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
                 )
             replacements.extend(
                 [
+                    ("/en/docs/", "/docs/"),
+                    (
+                        "/dcos/clients/restful-api",
+                        f"{language_prefix}/docs/clients/restful-api/",
+                    ),
+                    (
+                        "/docs/quickstart/hugegraph-studio",
+                        f"{language_prefix}/docs/quickstart/toolchain/hugegraph-hubble",
+                    ),
                     (
                         "/docs/quickstart/hugegraph-server",
                         f"{language_prefix}/docs/quickstart/hugegraph/hugegraph-server",
@@ -1126,6 +1265,10 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
                     (
                         "/clients/gremlin-console.html",
                         f"{language_prefix}/docs/clients/gremlin-console/",
+                    ),
+                    (
+                        "/clients/hugegraph-api.html",
+                        f"{language_prefix}/docs/clients/restful-api/",
                     ),
                     (
                         "./hugegraph-style.xml",
@@ -1215,12 +1358,23 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
     return fixed
 
 
-def version_urls(manifest: dict, origin: str, language: str = "en") -> list[dict]:
+def version_urls(
+    manifest: dict,
+    origin: str,
+    language: str = "en",
+    historical_origin: str | None = None,
+) -> list[dict]:
     if language not in {"en", "cn"}:
         fail(f"unsupported version-menu language: {language}")
     language_prefix = "cn/" if language == "cn" else ""
     urls = []
     for entry in manifest["versions"]:
+        entry_origin = (
+            historical_origin
+            if entry.get("archived", entry["id"] != "latest")
+            and historical_origin is not None
+            else origin
+        )
         path = (
             f"{entry['publishPath']}/{language_prefix}docs/"
             if entry["publishPath"]
@@ -1230,20 +1384,25 @@ def version_urls(manifest: dict, origin: str, language: str = "en") -> list[dict
             {
                 "version": entry["id"],
                 "name": entry["name"],
-                "url": urllib.parse.urljoin(origin.rstrip("/") + "/", path),
+                "url": urllib.parse.urljoin(entry_origin.rstrip("/") + "/", path),
                 "pagelinks": False,
             }
         )
     return urls
 
 
-def language_version_params(manifest: dict, origin: str, language: str) -> dict:
+def language_version_params(
+    manifest: dict,
+    origin: str,
+    language: str,
+    historical_origin: str | None = None,
+) -> dict:
     """Build language-preserving version selector and archive-banner params."""
     if language not in {"en", "cn"}:
         fail(f"unsupported version-menu language: {language}")
     return {
         "version_menu": "Releases" if language == "en" else "版本",
-        "versions": version_urls(manifest, origin, language),
+        "versions": version_urls(manifest, origin, language, historical_origin),
         "url_latest_version": urllib.parse.urljoin(
             origin.rstrip("/") + "/",
             "cn/docs/" if language == "cn" else "docs/",
@@ -1557,6 +1716,51 @@ def scope_language_fallback_urls(
     return changed
 
 
+def normalize_language_switch_urls(
+    action_data: dict,
+    relative: str,
+    artifact_base: str,
+    output: pathlib.Path,
+) -> int:
+    """Keep language choices on an equivalent page or the same-version locale root."""
+    actions = action_data.get("actions")
+    if not isinstance(actions, list):
+        return 0
+    switches = [
+        action
+        for action in actions
+        if isinstance(action, dict) and action.get("id") == "switch_language"
+    ]
+    if len(switches) != 1 or not isinstance(switches[0].get("options"), list):
+        return 0
+    english_relative = relative.removeprefix("cn/")
+    chinese_relative = "cn/" + english_relative
+    candidates = {"en-US": english_relative, "zh-CN": chinese_relative}
+    roots = {"en-US": "", "zh-CN": "cn/"}
+    changed = 0
+    for option in switches[0]["options"]:
+        language = option.get("id")
+        candidate = candidates.get(language)
+        if candidate is None:
+            continue
+        target = output / candidate
+        route = candidate
+        if not target.is_file():
+            route = roots[language]
+        elif route.endswith("index.html"):
+            route = route[: -len("index.html")]
+        new_url = (
+            "/" + route
+            if not target.is_file()
+            and urllib.parse.urlsplit(artifact_base).path == "/"
+            else urllib.parse.urljoin(artifact_base, route)
+        )
+        if option.get("url") != new_url:
+            option["url"] = new_url
+            changed += 1
+    return changed
+
+
 def validate_language_switch_contract(
     action_data: dict,
     relative: str,
@@ -1665,12 +1869,68 @@ def scope_version_artifact(
     artifact_base = base_url(origin, entry["publishPath"])
 
     def rewrite(value: str) -> str:
-        return rewrite_internal_url(
+        rewritten = rewrite_internal_url(
             value,
             origin=origin,
             publish_path=entry["publishPath"],
             allowed_paths=allowed_paths,
         )
+        if entry.get("archived", bool(entry.get("publishPath"))):
+            original = urllib.parse.urlsplit(value)
+            original_path = original.path.rstrip("/") + "/"
+            version_prefix = "/" + entry["publishPath"]
+            if original_path.startswith(version_prefix + "/"):
+                original_path = original_path[len(version_prefix) :]
+            rewritten_parts = urllib.parse.urlsplit(rewritten)
+            scoped_relative = (
+                rewritten_parts.path[len("/" + entry["publishPath"]) :]
+                if rewritten_parts.path.startswith("/" + entry["publishPath"])
+                else rewritten_parts.path
+            )
+            if (
+                original_path in LATEST_SHARED_DOC_ROUTES
+                and not target_exists(output, scoped_relative)
+            ):
+                return urllib.parse.urlunsplit(
+                    (
+                        urllib.parse.urlsplit(CANONICAL_ORIGIN).scheme,
+                        urllib.parse.urlsplit(CANONICAL_ORIGIN).netloc,
+                        original_path,
+                        original.query,
+                        original.fragment,
+                    )
+                )
+            if not target_exists(output, scoped_relative):
+                counterpart = (
+                    "/cn" + scoped_relative
+                    if scoped_relative.startswith("/docs/")
+                    else scoped_relative.removeprefix("/cn")
+                    if scoped_relative.startswith("/cn/docs/")
+                    else ""
+                )
+                if counterpart and target_exists(output, counterpart):
+                    counterpart_path = "/" + entry["publishPath"] + counterpart
+                    return urllib.parse.urlunsplit(
+                        (
+                            urllib.parse.urlsplit(origin).scheme,
+                            urllib.parse.urlsplit(origin).netloc,
+                            counterpart_path,
+                            original.query,
+                            original.fragment,
+                        )
+                    )
+                if re.match(
+                    r"^/(?:cn/)?docs/changelog/hugegraph-0\.[^/]+-release-notes/?$",
+                    scoped_relative,
+                ):
+                    language_prefix = "/cn" if scoped_relative.startswith("/cn/") else ""
+                    changelog = f"{language_prefix}/docs/changelog/"
+                    if target_exists(output, changelog):
+                        return urllib.parse.urljoin(
+                            base_url(origin, entry["publishPath"]),
+                            changelog.lstrip("/"),
+                        )
+        return rewritten
 
     stats = {"files": 0, "urls": 0, "manifests": 0, "searchRefs": 0}
     for path in sorted(output.rglob("*")):
@@ -1710,8 +1970,11 @@ def scope_version_artifact(
         def replace_manifest(match: re.Match) -> str:
             data = json.loads(match.group("body"))
             rewritten = rewrite_json_urls(data, rewrite)
-            scope_language_fallback_urls(
-                rewritten, path.relative_to(output).as_posix(), artifact_base
+            normalize_language_switch_urls(
+                rewritten,
+                path.relative_to(output).as_posix(),
+                artifact_base,
+                output,
             )
             stats["manifests"] += 1
             return (
@@ -1785,6 +2048,75 @@ def write_historical_home_redirects(output: pathlib.Path, origin: str) -> int:
             encoding="utf-8",
         )
     return len(targets)
+
+
+def exclude_historical_sitemaps(output: pathlib.Path) -> int:
+    """Keep archived pages directly reachable without advertising them for indexing."""
+    removed = 0
+    for path in sorted(output.rglob("sitemap.xml")):
+        path.unlink()
+        removed += 1
+    robots = output / "robots.txt"
+    if robots.is_file():
+        robots.write_text("User-agent: *\nAllow: /\n", encoding="utf-8")
+    return removed
+
+
+def remove_non_equivalent_hreflang(
+    output: pathlib.Path, origin: str, publish_path: str
+) -> int:
+    """Remove Hugo language fallbacks from hreflang while keeping real translations."""
+    removed = 0
+    prefix = "/" + publish_path.strip("/") if publish_path else ""
+    origin_parts = urllib.parse.urlsplit(origin.rstrip("/") + "/")
+    for path in sorted(output.rglob("*.html")):
+        relative = path.relative_to(output).as_posix()
+        if relative in {"404.html", "cn/404.html"} or "_print/" in relative:
+            continue
+        current_url = public_url_for_file(path, output, origin, publish_path)
+        current_path = urllib.parse.urlsplit(current_url).path
+        cn_prefix = prefix + "/cn/"
+        if current_path.startswith(cn_prefix):
+            english_path = prefix + current_path[len(prefix + "/cn") :]
+        else:
+            english_path = current_path
+        chinese_path = (
+            prefix + "/cn/"
+            if english_path.rstrip("/") == prefix
+            else prefix + "/cn" + english_path[len(prefix) :]
+        )
+        expected_paths = {"en-US": english_path, "zh-CN": chinese_path}
+
+        def keep_equivalent(match: re.Match) -> str:
+            nonlocal removed
+            parser = DocumentParser()
+            parser.feed(match.group(0))
+            if len(parser.hreflang) != 1:
+                fail(f"cannot parse hreflang link in {relative}: {match.group(0)}")
+            language, href = parser.hreflang[0]
+            expected_path = expected_paths.get(language)
+            href_parts = urllib.parse.urlsplit(
+                urllib.parse.urljoin(current_url, href)
+            )
+            local_relative = (
+                expected_path[len(prefix) :] if prefix and expected_path else expected_path
+            )
+            if (
+                expected_path is not None
+                and href_parts.scheme == origin_parts.scheme
+                and href_parts.netloc == origin_parts.netloc
+                and href_parts.path == expected_path
+                and target_exists(output, local_relative or "/")
+            ):
+                return match.group(0)
+            removed += 1
+            return ""
+
+        source = path.read_text(encoding="utf-8")
+        rendered = HREFLANG_LINK_RE.sub(keep_equivalent, source)
+        if rendered != source:
+            path.write_text(rendered, encoding="utf-8")
+    return removed
 
 
 def public_url_for_file(
@@ -1972,6 +2304,9 @@ def validate_artifact(args: argparse.Namespace) -> None:
         ):
             fail(f"unsafe same-site URL authority in {source_name}: {value}")
         if parsed_host == canonical_host and parsed_host != origin_host:
+            if re.match(r"^/versions/(?:1\.7|1\.5|1\.3|1\.0)/(?:cn/)?docs(?:/|$)", parsed.path):
+                checked_urls += 1
+                return
             fail(f"production-origin URL leaked into staging {source_name}: {value}")
         if parsed.netloc and parsed_host != origin_host:
             return
@@ -1998,6 +2333,10 @@ def validate_artifact(args: argparse.Namespace) -> None:
             )
         path = parsed.path or "/"
         normalized = path.rstrip("/") or "/"
+        normalized_with_slash = normalized.rstrip("/") + "/"
+        if normalized_with_slash in LATEST_SHARED_DOC_ROUTES:
+            checked_urls += 1
+            return
         if (
             parsed.netloc
             and (normalized in allowed_paths or is_latest_shared_path(normalized))
@@ -2167,7 +2506,12 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 None,
             )
             language = "cn" if relative.startswith("cn/") else "en"
-            expected_options = version_urls(manifest, args.site_origin, language)
+            expected_options = version_urls(
+                manifest,
+                args.site_origin,
+                language,
+                getattr(args, "historical_origin", None),
+            )
             if switch is None or [
                 (
                     item.get("id"),
@@ -2272,7 +2616,7 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 if english_path.rstrip("/") == prefix
                 else prefix + "/cn" + english_path[len(prefix) :]
             )
-            expected_hreflang = {
+            equivalent_urls = {
                 "en-US": urllib.parse.urlunsplit(
                     (origin_parts.scheme, origin_parts.netloc, english_path, "", "")
                 ),
@@ -2280,10 +2624,15 @@ def validate_artifact(args: argparse.Namespace) -> None:
                     (origin_parts.scheme, origin_parts.netloc, chinese_path, "", "")
                 ),
             }
-            for language, fallback_path in HREFLANG_FALLBACKS.get(relative, {}).items():
-                expected_hreflang[language] = urllib.parse.urljoin(
-                    expected_base, fallback_path.lstrip("/")
-                )
+            equivalent_paths = {
+                "en-US": english_path[len(prefix) :] if prefix else english_path,
+                "zh-CN": chinese_path[len(prefix) :] if prefix else chinese_path,
+            }
+            expected_hreflang = {
+                language: url
+                for language, url in equivalent_urls.items()
+                if target_exists(root, equivalent_paths[language])
+            }
             if actual_hreflang != expected_hreflang:
                 fail(
                     f"hreflang mismatch in {relative}: "
@@ -2292,7 +2641,12 @@ def validate_artifact(args: argparse.Namespace) -> None:
             validate_language_switch_contract(
                 action_data,
                 relative,
-                expected_hreflang,
+                {
+                    "en-US": expected_hreflang.get("en-US", expected_base),
+                    "zh-CN": expected_hreflang.get(
+                        "zh-CN", urllib.parse.urljoin(expected_base, "cn/")
+                    ),
+                },
                 current_path,
                 "zh-CN" if relative.startswith("cn/") else "en-US",
             )
@@ -2393,7 +2747,12 @@ def build(args: argparse.Namespace) -> None:
                 "version": entry["id"],
                 "version_menu": "Releases",
                 "version_menu_pagelinks": False,
-                "versions": version_urls(manifest, args.site_origin, "en"),
+                "versions": version_urls(
+                    manifest,
+                    args.site_origin,
+                    "en",
+                    args.historical_origin,
+                ),
                 "archived_version": bool(entry["archived"]),
                 "url_latest_version": urllib.parse.urljoin(
                     args.site_origin.rstrip("/") + "/", "docs/"
@@ -2409,7 +2768,10 @@ def build(args: argparse.Namespace) -> None:
         )
         for language in ("en", "cn"):
             language_overrides[language]["params"] = language_version_params(
-                manifest, args.site_origin, language
+                manifest,
+                args.site_origin,
+                language,
+                args.historical_origin,
             )
         override["languages"] = language_overrides
         override_path = assembly / "version-config.json"
@@ -2463,6 +2825,9 @@ def build(args: argparse.Namespace) -> None:
             cwd=assembly,
             check=True,
         )
+        route_migrations = migrate_legacy_information_architecture(
+            assembly, entry["id"]
+        )
         known_fixes = apply_known_legacy_fixes(assembly, entry["id"])
         docs_navigation = materialize_docs_navigation(assembly, entry["publishPath"])
         subprocess.run(
@@ -2501,6 +2866,12 @@ def build(args: argparse.Namespace) -> None:
             go_directory + os.pathsep + build_environment.get("PATH", "")
         )
         subprocess.run(command, cwd=assembly, check=True, env=build_environment)
+        non_equivalent_hreflang = remove_non_equivalent_hreflang(
+            output, args.site_origin, entry["publishPath"]
+        )
+        historical_sitemaps = (
+            exclude_historical_sitemaps(output) if entry["archived"] else 0
+        )
         url_scoping = scope_version_artifact(
             output,
             manifest,
@@ -2541,10 +2912,13 @@ def build(args: argparse.Namespace) -> None:
                         for item in migration_data.get("files", [])
                     ),
                     "knownFixes": known_fixes,
+                    "routeMigrations": route_migrations,
                     "residual": 0,
                 },
                 "docsNavigation": docs_navigation,
                 "urlScoping": url_scoping,
+                "historicalSitemapsRemoved": historical_sitemaps,
+                "nonEquivalentHreflangRemoved": non_equivalent_hreflang,
             }
         )
         (output / ".version.json").write_text(
@@ -2565,13 +2939,6 @@ def write_aggregate_sitemap(output: pathlib.Path, origin: str, manifest: dict) -
         urllib.parse.urljoin(origin.rstrip("/") + "/", "en/sitemap.xml"),
         urllib.parse.urljoin(origin.rstrip("/") + "/", "cn/sitemap.xml"),
     ]
-    for entry in manifest["versions"]:
-        if entry["publishPath"]:
-            locations.append(
-                urllib.parse.urljoin(
-                    origin.rstrip("/") + "/", entry["publishPath"] + "/sitemap.xml"
-                )
-            )
     root = ET.Element(
         "sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
     )
@@ -2647,12 +3014,18 @@ def validate_output_security(output: pathlib.Path, site_origin: str) -> None:
 
 def aggregate(args: argparse.Namespace) -> None:
     manifest = load_resolved_manifest(args.resolved_manifest)
+    selected = selected_version_ids(getattr(args, "select", None))
     output = prepare_output_directory(args.output, "aggregate output")
     output.mkdir(parents=True)
     seen: set[str] = set()
     resolved = []
     for entry in manifest["versions"]:
-        source = args.artifacts / f"{args.artifact_prefix}{entry['id']}"
+        if entry["id"] not in selected:
+            continue
+        source = args.artifacts / (
+            f"{args.artifact_prefix}{entry['id']}"
+            f"{getattr(args, 'artifact_suffix', '')}"
+        )
         metadata_path = source / ".version.json"
         if not metadata_path.is_file():
             fail(f"missing version metadata: {metadata_path}")
@@ -2720,6 +3093,7 @@ def parser() -> argparse.ArgumentParser:
     prepare_parser = commands.add_parser("prepare")
     prepare_parser.add_argument("--local", action="store_true")
     prepare_parser.add_argument("--latest-sha", default="HEAD")
+    prepare_parser.add_argument("--select")
     prepare_parser.add_argument("--output", type=pathlib.Path)
     prepare_parser.set_defaults(func=prepare)
 
@@ -2727,6 +3101,7 @@ def parser() -> argparse.ArgumentParser:
     build_parser.add_argument("--version", required=True)
     build_parser.add_argument("--sha", required=True)
     build_parser.add_argument("--site-origin", required=True)
+    build_parser.add_argument("--historical-origin")
     build_parser.add_argument("--output", type=pathlib.Path, required=True)
     build_parser.set_defaults(func=build)
 
@@ -2734,16 +3109,19 @@ def parser() -> argparse.ArgumentParser:
     validate_parser.add_argument("--version", required=True)
     validate_parser.add_argument("--sha", required=True)
     validate_parser.add_argument("--site-origin", required=True)
+    validate_parser.add_argument("--historical-origin")
     validate_parser.add_argument("--artifact", type=pathlib.Path, required=True)
     validate_parser.set_defaults(func=validate_artifact)
 
     aggregate_parser = commands.add_parser("aggregate")
     aggregate_parser.add_argument("--artifacts", type=pathlib.Path, required=True)
     aggregate_parser.add_argument("--artifact-prefix", default="")
+    aggregate_parser.add_argument("--artifact-suffix", default="")
     aggregate_parser.add_argument(
         "--resolved-manifest", type=pathlib.Path, required=True
     )
     aggregate_parser.add_argument("--site-origin", required=True)
+    aggregate_parser.add_argument("--select")
     aggregate_parser.add_argument("--output", type=pathlib.Path, required=True)
     aggregate_parser.add_argument("--asf-profile")
     aggregate_parser.add_argument("--asf-whoami")

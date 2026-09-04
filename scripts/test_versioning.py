@@ -26,6 +26,10 @@ ALLOWED_PATHS = {
     "/versions/1.7/cn/docs",
     "/versions/1.5/docs",
     "/versions/1.5/cn/docs",
+    "/versions/1.3/docs",
+    "/versions/1.3/cn/docs",
+    "/versions/1.0/docs",
+    "/versions/1.0/cn/docs",
 }
 
 
@@ -180,6 +184,8 @@ class VersionUrlTest(unittest.TestCase):
                 {"id": "latest", "name": "latest", "publishPath": ""},
                 {"id": "1.7", "name": "1.7", "publishPath": "versions/1.7"},
                 {"id": "1.5", "name": "1.5", "publishPath": "versions/1.5"},
+                {"id": "1.3", "name": "1.3", "publishPath": "versions/1.3"},
+                {"id": "1.0", "name": "1.0", "publishPath": "versions/1.0"},
             ]
         }
         self.assertEqual(
@@ -188,6 +194,8 @@ class VersionUrlTest(unittest.TestCase):
                 f"{ORIGIN}docs/",
                 f"{ORIGIN}versions/1.7/docs/",
                 f"{ORIGIN}versions/1.5/docs/",
+                f"{ORIGIN}versions/1.3/docs/",
+                f"{ORIGIN}versions/1.0/docs/",
             ],
         )
         self.assertEqual(
@@ -196,6 +204,8 @@ class VersionUrlTest(unittest.TestCase):
                 f"{ORIGIN}cn/docs/",
                 f"{ORIGIN}versions/1.7/cn/docs/",
                 f"{ORIGIN}versions/1.5/cn/docs/",
+                f"{ORIGIN}versions/1.3/cn/docs/",
+                f"{ORIGIN}versions/1.0/cn/docs/",
             ],
         )
         self.assertEqual(

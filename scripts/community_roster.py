@@ -139,7 +139,25 @@ def _avatar_bytes(user_id: int) -> bytes:
         headers={"Accept": "image/webp", "User-Agent": "apache-hugegraph-doc-community-roster/1"},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
-        raw = _strip_webp_metadata(response.read())
+        raw = response.read()
+    try:
+        raw = _strip_webp_metadata(raw)
+    except RosterError:
+        converter = shutil.which("cwebp")
+        if not converter:
+            raise RosterError("mapped avatars require cwebp when GitHub does not return WebP")
+        with tempfile.TemporaryDirectory(prefix="hugegraph-avatar-") as work:
+            source = pathlib.Path(work) / "source"
+            target = pathlib.Path(work) / "avatar.webp"
+            source.write_bytes(raw)
+            result = subprocess.run(
+                [converter, "-quiet", "-resize", "128", "128", "-metadata", "none", str(source), "-o", str(target)],
+                text=True,
+                capture_output=True,
+            )
+            if result.returncode:
+                raise RosterError(f"cwebp failed for numeric GitHub user ID {user_id}: {result.stderr.strip()}")
+            raw = _strip_webp_metadata(target.read_bytes())
     if _webp_dimensions(raw) != (128, 128):
         raise RosterError(f"GitHub avatar for numeric user ID {user_id} is not 128x128 WebP")
     return raw

@@ -1101,6 +1101,16 @@ class VersionUrlTest(unittest.TestCase):
                 versioning.prepare_output_directory(symlink, "fixture")
         with self.assertRaises(SystemExit):
             versioning.prepare_output_directory(versioning.ROOT, "fixture")
+        with self.assertRaises(SystemExit):
+            versioning.prepare_output_directory(versioning.ROOT.parent, "fixture")
+        checkout_child = versioning.ROOT / ".test-output-must-not-be-deleted"
+        checkout_child.mkdir(exist_ok=True)
+        try:
+            with self.assertRaises(SystemExit):
+                versioning.prepare_output_directory(checkout_child, "fixture")
+            self.assertTrue(checkout_child.is_dir())
+        finally:
+            checkout_child.rmdir()
 
 
 if __name__ == "__main__":

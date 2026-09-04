@@ -239,6 +239,13 @@ def prepare_output_directory(path: pathlib.Path, label: str) -> pathlib.Path:
         allowed_roots.add(pathlib.Path(runner_temp).resolve())
     if not any(root != output and root in output.parents for root in allowed_roots):
         fail(f"{label} must be below a controlled temporary directory: {output}")
+    repository_root = ROOT.resolve()
+    if (
+        output == repository_root
+        or output in repository_root.parents
+        or repository_root in output.parents
+    ):
+        fail(f"{label} must be outside the repository checkout: {output}")
     if output.exists():
         if output.is_symlink() or not output.is_dir():
             fail(f"{label} is not a removable directory: {output}")

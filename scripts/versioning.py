@@ -2965,6 +2965,27 @@ def validate_artifact_alias_target(
     return path
 
 
+def validate_historical_home_alias_target(
+    value: str,
+    relative: str,
+    site_origin: str,
+) -> None:
+    """Allow only the two reviewed archive-home redirects to shared latest pages."""
+    suffixes = {
+        "index.html": "",
+        "cn/index.html": "cn/",
+    }
+    suffix = suffixes.get(relative)
+    if suffix is None:
+        fail(f"unexpected historical home alias path: {relative}")
+    expected = urllib.parse.urljoin(site_origin.rstrip("/") + "/", suffix)
+    if value != expected:
+        fail(
+            f"historical home alias target changed in {relative}: "
+            f"{value} != {expected}"
+        )
+
+
 def iter_json_strings(value):
     if isinstance(value, dict):
         for item in value.values():
@@ -3487,13 +3508,20 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 fail(f"historical page must be noindex,follow: {relative}: {robots!r}")
         if alias_target:
             if relative != "client-go/index.html":
-                validate_artifact_alias_target(
-                    alias_target,
-                    root,
-                    entry,
-                    expected_base,
-                    relative,
-                )
+                if entry["archived"] and relative in {"index.html", "cn/index.html"}:
+                    validate_historical_home_alias_target(
+                        alias_target,
+                        relative,
+                        args.site_origin,
+                    )
+                else:
+                    validate_artifact_alias_target(
+                        alias_target,
+                        root,
+                        entry,
+                        expected_base,
+                        relative,
+                    )
                 checked_urls += 1
         action_data = {}
         manifests = list(ACTION_MANIFEST_RE.finditer(text))

@@ -2122,6 +2122,37 @@ class VersionUrlTest(unittest.TestCase):
                     "docs/old/index.html",
                 )
 
+    def test_historical_home_aliases_allow_only_exact_shared_roots(self) -> None:
+        for origin in (ORIGIN, STAGING_ORIGIN):
+            with self.subTest(origin=origin):
+                versioning.validate_historical_home_alias_target(
+                    origin,
+                    "index.html",
+                    origin,
+                )
+                versioning.validate_historical_home_alias_target(
+                    f"{origin}cn/",
+                    "cn/index.html",
+                    origin,
+                )
+
+        invalid = (
+            ("https://evil.example/", "index.html"),
+            (f"{ORIGIN}cn/", "index.html"),
+            (ORIGIN, "cn/index.html"),
+            (f"{ORIGIN}docs/", "index.html"),
+            ("mailto:dev@example.com", "index.html"),
+        )
+        for value, relative in invalid:
+            with self.subTest(value=value, relative=relative), self.assertRaises(
+                SystemExit
+            ):
+                versioning.validate_historical_home_alias_target(
+                    value,
+                    relative,
+                    ORIGIN,
+                )
+
     def test_version_routes_reject_external_and_protocol_aliases(self) -> None:
         def page(root: Path, relative: str, *, redirect: str | None = None) -> None:
             target = root / relative / "index.html"

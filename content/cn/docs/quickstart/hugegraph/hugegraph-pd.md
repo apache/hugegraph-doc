@@ -28,7 +28,7 @@ HugeGraph-PD（Placement Driver）是 HugeGraph 分布式版本的元数据管�
 从 Apache HugeGraph 官方下载页面下载最新版本的 HugeGraph-PD：
 
 ```bash
-# 1.7.0 是毕业前发布的历史制品，文件名和目录名仍带 incubating
+# 1.7.0 是项目孵化期发布的历史版本，因此文件名和目录名仍带 incubating
 wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0

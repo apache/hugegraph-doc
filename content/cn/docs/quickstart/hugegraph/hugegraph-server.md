@@ -84,7 +84,7 @@ HUGEGRAPH_VERSION=1.7.0 docker compose up -d
 ### 3.2 下载 tar 包
 
 ```bash
-# 1.7.0 是毕业前发布的历史制品，文件名仍带 incubating
+# 1.7.0 是项目孵化期发布的历史版本，因此文件名仍带 incubating
 wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 ```

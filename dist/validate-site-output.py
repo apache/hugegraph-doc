@@ -579,6 +579,8 @@ def rendered_url_shape_error(
     value: str,
     page_name: str,
     attribute: str,
+    *,
+    allow_contact: bool = False,
 ) -> str | None:
     """Reject URL spellings that browsers and RFC parsers interpret differently."""
     if any(
@@ -597,6 +599,11 @@ def rendered_url_shape_error(
         return f"{page_name}: malformed URL in {attribute}: {value}: {exc}"
     if parts.scheme.lower() in {"http", "https"} and not parts.netloc:
         return f"{page_name}: HTTP(S) URL has no authority in {attribute}: {value}"
+    allowed_schemes = {"", "http", "https"}
+    if allow_contact:
+        allowed_schemes.update({"mailto", "tel"})
+    if parts.scheme.lower() not in allowed_schemes:
+        return f"{page_name}: forbidden URL scheme in {attribute}: {value}"
     return None
 
 
@@ -605,13 +612,15 @@ def document_url_shape_errors(
     page_name: str,
 ) -> list[str]:
     """Apply the browser-safe URL shape contract to every rendered URL token."""
-    tokens: list[tuple[str, str]] = list(parser.urls)
+    tokens: list[tuple[str, str, bool]] = [
+        (attribute, value, True) for attribute, value in parser.urls
+    ]
     tokens.extend(
-        (f"{tag}[{attribute}]", value)
+        (f"{tag}[{attribute}]", value, False)
         for tag, attribute, value in parser.resources
     )
     tokens.extend(
-        ("inline CSS", value)
+        ("inline CSS", value, False)
         for source in parser.inline_css_sources
         for value in css_resource_urls(source)
     )
@@ -620,16 +629,21 @@ def document_url_shape_errors(
     except ValueError as exc:
         return [f"{page_name}: {exc}"]
     if alias_target:
-        tokens.append(("meta refresh", alias_target))
+        tokens.append(("meta refresh", alias_target, False))
 
     errors = []
-    seen: set[tuple[str, str]] = set()
-    for attribute, value in tokens:
-        key = (attribute, value)
+    seen: set[tuple[str, str, bool]] = set()
+    for attribute, value, allow_contact in tokens:
+        key = (attribute, value, allow_contact)
         if key in seen:
             continue
         seen.add(key)
-        error = rendered_url_shape_error(value, page_name, attribute)
+        error = rendered_url_shape_error(
+            value,
+            page_name,
+            attribute,
+            allow_contact=allow_contact,
+        )
         if error:
             errors.append(error)
     return errors
@@ -822,7 +836,12 @@ def main() -> int:
                     )
 
         for attribute, raw_url in parser.urls:
-            if rendered_url_shape_error(raw_url, page_name, attribute):
+            if rendered_url_shape_error(
+                raw_url,
+                page_name,
+                attribute,
+                allow_contact=True,
+            ):
                 continue
             url = raw_url
             lower_url = url.lower()

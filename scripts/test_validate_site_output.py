@@ -417,6 +417,11 @@ class SiteOutputSecurityTest(unittest.TestCase):
                     '<object data="https:///docs/introduction/"></object>'
                     '<video poster="https:///docs/introduction/"></video>'
                     '<style>.hero{background:url(https:///docs/introduction/)}</style>'
+                    '<a href="javascript:alert(1)">active link</a>'
+                    '<script src="javascript:alert(1)"></script>'
+                    '<iframe src="javascript:alert(1)"></iframe>'
+                    '<object data="javascript:alert(1)"></object>'
+                    '<a href="mailto:dev@example.com">allowed contact</a>'
                 ),
                 encoding="utf-8",
             )
@@ -447,6 +452,7 @@ class SiteOutputSecurityTest(unittest.TestCase):
             )
             self.assertIn("unsafe whitespace/control URL", result.stdout)
             self.assertIn("unsafe backslash URL", result.stdout)
+            self.assertIn("forbidden URL scheme", result.stdout)
             self.assertIn("site.css", result.stdout)
 
     def test_css_http_resources_are_detected(self) -> None:

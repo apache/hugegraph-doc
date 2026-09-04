@@ -1,50 +1,50 @@
-# HugeGraph-Server Quick Start
+# HugeGraph Server Quick Start
 
 LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-## 1 HugeGraph-Server Overview
+## 1 HugeGraph Server Overview
 
-`HugeGraph-Server` is the core server component of the HugeGraph project. It includes submodules such as graph-core, backend, and API.
+`apache/hugegraph` is the main repository for the HugeGraph graph database. Its top-level modules include `hugegraph-server`, `hugegraph-pd`, and `hugegraph-store`. This page describes the `hugegraph-server` module and the service it runs.
 
-The Core module implements the TinkerPop interfaces. The Backend module manages data storage. Starting from 1.7.0, supported backends include RocksDB (the default standalone backend), HStore (distributed), HBase, and Memory. The API module provides an HTTP server that converts client requests into calls to the Core module.
+The `hugegraph-server` module contains `hugegraph-core`, `hugegraph-api`, `hugegraph-dist`, and storage adapters. Core implements the property graph model, transactions, and TinkerPop interfaces. API provides the HTTP service and delegates client requests to Core. Graph data is stored in RocksDB (the default standalone backend), HStore (distributed), or HBase.
 
-> ⚠️ **Important Change**: Starting from version 1.7.0, legacy backends such as MySQL, PostgreSQL, Cassandra, and ScyllaDB have been removed. If you need to use these backends, please use version 1.5.x or earlier.
+> ⚠️ **Version note**: This page follows HugeGraph 1.7.0 through the `master` branch and covers only RocksDB, HStore, and HBase. For other legacy backends and their configuration, see the [HugeGraph 1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md).
 
-> The documentation uses both `HugeGraph-Server` and `HugeGraphServer`, and the same pattern applies to other components. The two names are nearly interchangeable: `HugeGraph-Server` usually refers to the server-side codebase, while `HugeGraphServer` refers to the running service process.
+> Naming: `HugeGraph` means the overall project or main repository, `hugegraph-server` is the Server module in that repository, and `HugeGraphServer` is the Java class for the service process. This page uses "Server service" for a running graph database service.
 
 ## 2 Dependency for Building/Running
 
 ### 2.1 Install Java 11 (JDK 11)
 
-Use Java 11 to run `HugeGraph-Server`. Versions earlier than 1.5.0 kept basic compatibility with Java 8, but Java 11 is recommended.
+The `hugegraph-server` module in HugeGraph 1.7.0 is compiled with Java 11. Running and building it from source require Java 11 or later.
 
 **Before continuing, run `java -version` to confirm your JDK version.**
 
-> Note: Running HugeGraph-Server on Java 8 loses some security protections and may reduce performance. Please upgrade as soon as possible. Java 8 is no longer supported starting from 1.7.0.
+> Java 8 is no longer supported starting from 1.7.0.
 
 ## 3 Deploy
 
-There are four ways to deploy HugeGraph-Server components:
+There are four ways to deploy the Server service:
 
 - Method 1: Use Docker container (Convenient for Test/Dev)
 - Method 2: Download the binary tarball
 - Method 3: Source code compilation
 - Method 4: One-click deployment
 
-> ⚠️ **SEC Reminder**: Due to the high flexibility of graph query languages (like Gremlin/Cypher), exposing native query endpoints directly presents potential security risks. Therefore, **please avoid exposing any query-related endpoints directly in public network environments**. In production environments, it is imperative to enable the **[Authentication System (Auth)](/docs/config/config-authentication/)** combined with an **IP Whitelist** to establish a dual assurance mechanism, along with an Audit Log to track specific query statements. It is strongly recommended to adopt a **[Containerized Environment (Docker/K8s)](#31-use-docker-container-convenient-for-testdev)** for deployment to achieve better system-level security isolation.
+> Do not expose Gremlin, Cypher, or other query endpoints directly to the public Internet. In production, enable [authentication and authorization](/docs/config/config-authentication/), restrict network access, and retain audit logs. See the [Security Guide](/docs/guides/security/) for deployment guidance.
 
 ### 3.1 Use Docker container (Convenient for Test/Dev)
 
 <!-- 3.1 is linked by another place. if change 3.1's title, please check -->
 You can refer to the [Docker deployment guide](https://github.com/apache/hugegraph/blob/master/docker/README.md).
 
-You can use `docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0` to quickly start a `HugeGraph-Server` instance with a built-in `RocksDB` backend.
+You can use `docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0` to quickly start a Server instance using the `RocksDB` backend.
 
 Optional:
 1. You can use `docker exec -it server bash` to enter the container for troubleshooting or other maintenance operations.
-2. You can use `docker run -itd --name=server -p 8080:8080 -e PRELOAD="true" hugegraph/hugegraph:1.7.0` to preload a **built-in** sample graph at startup. You can verify it through the `RESTful API`. See [5.1.8](#518-create-an-example-graph-when-startup) for details.
+2. You can use `docker run -itd --name=server -p 8080:8080 -e PRELOAD="true" hugegraph/hugegraph:1.7.0` to preload a **built-in** sample graph at startup. You can verify it through the `RESTful API`. See [5.1.4](#514-create-an-example-graph-when-startup) for details.
 3. You can use `-e PASSWORD=xxx` to enable authentication mode and set the admin password. See [Config Authentication](/docs/config/config-authentication#use-docker-to-enable-authentication-mode) for details.
 
 If you use Docker Desktop, you can set the options as follows:
@@ -80,13 +80,13 @@ See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/RE
 
 You could download the binary tarball from the download page of the ASF site like this:
 ```bash
-# use the latest version, here is 1.7.0 for example
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz
-tar zxf *hugegraph*.tar.gz
+# 1.7.0 is a historical release from the incubation period, so its file name still includes "incubating"
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 
 # (Optional) verify the integrity with SHA512 (recommended)
-shasum -a 512 apache-hugegraph-incubating-{version}.tar.gz
-curl https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz.sha512
+shasum -a 512 apache-hugegraph-incubating-1.7.0.tar.gz
+curl https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.sha512
 ```
 
 ### 3.3 Source code compilation
@@ -119,37 +119,18 @@ cd *hugegraph
 mvn package -DskipTests -ntp
 ```
 
-The execution log is as follows:
 
-```bash
-......
-[INFO] Reactor Summary for hugegraph 1.5.0:
-[INFO] 
-[INFO] hugegraph .......................................... SUCCESS [  2.405 s]
-[INFO] hugegraph-core ..................................... SUCCESS [ 13.405 s]
-[INFO] hugegraph-api ...................................... SUCCESS [ 25.943 s]
-[INFO] hugegraph-cassandra ................................ SUCCESS [ 54.270 s]
-[INFO] hugegraph-scylladb ................................. SUCCESS [  1.032 s]
-[INFO] hugegraph-rocksdb .................................. SUCCESS [ 34.752 s]
-[INFO] hugegraph-mysql .................................... SUCCESS [  1.778 s]
-[INFO] hugegraph-palo ..................................... SUCCESS [  1.070 s]
-[INFO] hugegraph-hbase .................................... SUCCESS [ 32.124 s]
-[INFO] hugegraph-postgresql ............................... SUCCESS [  1.823 s]
-[INFO] hugegraph-dist ..................................... SUCCESS [ 17.426 s]
-[INFO] hugegraph-example .................................. SUCCESS [  1.941 s]
-[INFO] hugegraph-test ..................................... SUCCESS [01:01 min]
-[INFO] ------------------------------------------------------------------------
+A successful build includes the following line:
+
+```text
 [INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-......
 ```
 
-After successful execution, `*hugegraph-*.tar.gz` files will be generated in the hugegraph directory, which is the tarball generated by compilation.
-
+After a successful build, the generated distribution is the `*hugegraph-*.tar.gz` file in the repository root.
 > [!DETAILS]- Outdated tools
 > #### 3.4 One-click deployment (Outdated)
 >
-> `HugeGraph-Tools` provides a command-line tool for one-click deployment, users can use this tool to quickly download, decompress, configure and start `HugeGraphServer` and `HugeGraph-Hubble` with one click.
+> HugeGraph-Tools provides a one-click deployment command that downloads, extracts, configures, and starts the Server service and HugeGraph-Hubble. These tools are included in the HugeGraph-Toolchain distribution.
 >
 > Of course, you should download the tarball of `HugeGraph-Toolchain` first.
 >
@@ -171,7 +152,7 @@ After successful execution, `*hugegraph-*.tar.gz` files will be generated in the
 > bin/hugegraph deploy -v {hugegraph-version} -p {install-path} [-u {download-path-prefix}]
 > ```
 >
-> `{hugegraph-version}` indicates the version of HugeGraphServer and HugeGraphStudio to be deployed, users can view the `conf/version-mapping.yaml` file for version information, `{install-path}` specify the installation directory of HugeGraphServer and HugeGraphStudio, `{download-path-prefix}` optional, specify the download address of HugeGraphServer and HugeGraphStudio tarball, use default download URL if not provided, for example, to start HugeGraph-Server and HugeGraphStudio version 0.6, write the above command as `bin/hugegraph deploy -v 0.6 -p services`.
+> `{hugegraph-version}` is the Server service and HugeGraphStudio version; see `conf/version-mapping.yaml` for supported mappings. `{install-path}` is the installation directory, while `{download-path-prefix}` optionally overrides the tarball download location. For example, deploy version 0.6 with `bin/hugegraph deploy -v 0.6 -p services`.
 
 ## 4 Config
 
@@ -344,29 +325,7 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 >
 > See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full environment variable reference, port table, and troubleshooting guide.
 
-#### 5.1.2 Memory
-
-> [!DETAILS]- Click to expand/collapse Memory configuration and startup methods
-> Update hugegraph.properties
->
-> ```properties
-> backend=memory
-> serializer=text
-> ```
->
-> > The data of the Memory backend is stored in memory and cannot be persisted. It does not need to initialize the backend. This is the only backend that does not require initialization.
->
-> Start server
->
-> ```bash
-> bin/start-hugegraph.sh
-> Starting HugeGraphServer...
-> Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
-> ```
->
-> The prompted url is the same as the restserver.url configured in rest-server.properties
-
-#### 5.1.3 RocksDB / ToplingDB
+#### 5.1.2 RocksDB / ToplingDB
 
 > [!DETAILS]- Click to expand/collapse RocksDB configuration and startup methods
 > > RocksDB is an embedded database that does not require manual installation and deployment. GCC version >= 4.3.0 (GLIBCXX_3.4.10) is required. If not, GCC needs to be upgraded in advance
@@ -397,108 +356,8 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 >
 > **ToplingDB (Beta)**: As a high-performance alternative to RocksDB, please refer to the configuration guide: [ToplingDB Quick Start](https://hugegraph.apache.org/blog/2025/10/09/toplingdb-quick-start/)
 
-#### 5.1.4 Cassandra
 
-> ⚠️ **Deprecated**: This backend has been removed starting from HugeGraph 1.7.0. If you need to use it, please refer to version 1.5.x documentation.
-
-> [!DETAILS]- Click to expand/collapse Cassandra configuration and startup methods
-> > users need to install Cassandra by themselves, requiring version 3.0 or above, [download link](http://cassandra.apache.org/download/)
->
-> Update hugegraph.properties
->
-> ```properties
-> backend=cassandra
-> serializer=cassandra
->
-> # cassandra backend config
-> cassandra.host=localhost
-> cassandra.port=9042
-> cassandra.username=
-> cassandra.password=
-> #cassandra.connect_timeout=5
-> #cassandra.read_timeout=20
->
-> #cassandra.keyspace.strategy=SimpleStrategy
-> #cassandra.keyspace.replication=3
-> ```
->
-> Initialize the database (required on the first startup, or a new configuration was manually added under 'conf/graphs/')
->
->
-> ```bash
-> cd *hugegraph-${version}
-> bin/init-store.sh
-> Initing HugeGraph Store...
-> 2017-12-01 11:26:51 1424  [main] [INFO ] org.apache.hugegraph.HugeGraph [] - Opening backend store: 'cassandra'
-> 2017-12-01 11:26:52 2389  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph, try init keyspace later
-> 2017-12-01 11:26:52 2472  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph, try init keyspace later
-> 2017-12-01 11:26:52 2557  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph, try init keyspace later
-> 2017-12-01 11:26:53 2797  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_graph
-> 2017-12-01 11:26:53 2945  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_schema
-> 2017-12-01 11:26:53 3044  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_index
-> 2017-12-01 11:26:53 3046  [pool-3-thread-1] [INFO ] org.apache.hugegraph.backend.Transaction [] - Clear cache on event 'store.init'
-> 2017-12-01 11:26:59 9720  [main] [INFO ] org.apache.hugegraph.HugeGraph [] - Opening backend store: 'cassandra'
-> 2017-12-01 11:27:00 9805  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph1, try init keyspace later
-> 2017-12-01 11:27:00 9886  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph1, try init keyspace later
-> 2017-12-01 11:27:00 9955  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph1, try init keyspace later
-> 2017-12-01 11:27:00 10175 [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_graph
-> 2017-12-01 11:27:00 10321 [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_schema
-> 2017-12-01 11:27:00 10413 [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_index
-> 2017-12-01 11:27:00 10413 [pool-3-thread-1] [INFO ] org.apache.hugegraph.backend.Transaction [] - Clear cache on event 'store.init'
-> ```
->
-> Start server
->
-> ```bash
-> bin/start-hugegraph.sh
-> Starting HugeGraphServer...
-> Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
-> ```
-
-#### 5.1.5 ScyllaDB
-
-> ⚠️ **Deprecated**: This backend has been removed starting from HugeGraph 1.7.0. If you need to use it, please refer to version 1.5.x documentation.
-
-> [!DETAILS]- Click to expand/collapse ScyllaDB configuration and startup methods
-> > users need to install ScyllaDB by themselves, version 2.1 or above is recommended, [download link](https://docs.scylladb.com/getting-started/)
->
-> Update hugegraph.properties
->
-> ```properties
-> backend=scylladb
-> serializer=scylladb
->
-> # cassandra backend config
-> cassandra.host=localhost
-> cassandra.port=9042
-> cassandra.username=
-> cassandra.password=
-> #cassandra.connect_timeout=5
-> #cassandra.read_timeout=20
->
-> #cassandra.keyspace.strategy=SimpleStrategy
-> #cassandra.keyspace.replication=3
-> ```
->
-> Since the scylladb database itself is an "optimized version" based on cassandra, if the user does not have scylladb installed, they can also use cassandra as the backend storage directly. They only need to change the backend and serializer to scylladb, and the host and post point to the seeds and port of the cassandra cluster. Yes, but it is not recommended to do so, it will not take advantage of scylladb itself.
->
-> Initialize the database (required on the first startup, or a new configuration was manually added under 'conf/graphs/')
->
-> ```bash
-> cd *hugegraph-${version}
-> bin/init-store.sh
-> ```
->
-> Start server
->
-> ```bash
-> bin/start-hugegraph.sh
-> Starting HugeGraphServer...
-> Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
-> ```
-
-#### 5.1.6 HBase
-
+#### 5.1.3 HBase
 > [!DETAILS]- Click to expand/collapse HBase configuration and startup methods
 > > users need to install HBase by themselves, requiring version 2.0 or above,[download link](https://hbase.apache.org/downloads.html)
 >
@@ -533,53 +392,7 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 > Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 > ```
 >
-> > for more other backend configurations, please refer to[introduction to configuration options](/docs/config/config-option)
-
-#### 5.1.7 MySQL
-
-> ⚠️ **Deprecated**: This backend has been removed starting from HugeGraph 1.7.0. If you need to use it, please refer to version 1.5.x documentation.
-
-> [!DETAILS]- Click to expand/collapse MySQL configuration and startup methods
-> > Because MySQL is licensed under the GPL and incompatible with the Apache License, users must install MySQL themselves, [download link](https://dev.mysql.com/downloads/mysql/)
->
-> Download the MySQL [driver package](https://repo1.maven.org/maven2/mysql/mysql-connector-java/), such as `mysql-connector-java-8.0.30.jar`, and place it in the `lib` directory of HugeGraph-Server.
->
-> Update `hugegraph.properties` to configure the database URL, username, and password.
-> `store` is the database name; it will be created automatically if it doesn't exist.
->
-> ```properties
-> backend=mysql
-> serializer=mysql
->
-> store=hugegraph
->
-> # mysql backend config
-> jdbc.driver=com.mysql.cj.jdbc.Driver
-> jdbc.url=jdbc:mysql://127.0.0.1:3306
-> jdbc.username=
-> jdbc.password=
-> jdbc.reconnect_max_times=3
-> jdbc.reconnect_interval=3
-> jdbc.ssl_mode=false
-> ```
->
-> Initialize the database (required for first startup or when manually adding new configurations to `conf/graphs/`)
->
-> ```bash
-> cd *hugegraph-${version}
-> bin/init-store.sh
-> ```
->
-> Start server
->
-> ```bash
-> bin/start-hugegraph.sh
-> Starting HugeGraphServer...
-> Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
-> ```
-
-#### 5.1.8 Create an example graph when startup
-
+#### 5.1.4 Create an example graph when startup
 Pass the `-p true` argument when starting the script to enable `preload`, which creates a sample graph.
 
 ```
@@ -591,7 +404,7 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 And use the RESTful API to request `HugeGraphServer` and get the following result:
 
 ```javascript
-> curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+> curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices" | gunzip
 
 {"vertices":[{"id":"2:lop","label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"2:ripple","label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199}}]}
 ```
@@ -603,70 +416,8 @@ This indicates the successful creation of the sample graph.
 
 In [3.1 Use Docker container](#31-use-docker-container-convenient-for-testdev), we introduced how to deploy `hugegraph-server` with Docker. You can also switch storage backends or preload a sample graph by setting the corresponding parameters.
 
-#### 5.2.1 Uses Cassandra as storage
 
-> ⚠️ **Deprecated**: Cassandra backend has been removed starting from HugeGraph 1.7.0. If you need to use it, please refer to version 1.5.x documentation.
-
-> [!DETAILS]- Click to expand/collapse Cassandra configuration and startup methods
-> When using Docker, we can use Cassandra as the backend storage. We highly recommend using docker-compose directly to manage both the server and Cassandra.
->
-> The sample `docker-compose.yml` can be obtained on [GitHub](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/example/docker-compose-cassandra.yml), and you can start it with `docker-compose up -d`. (If using Cassandra 4.0 as the backend storage, it takes approximately two minutes to initialize. Please be patient.)
->
-> ```yaml
-> version: "3"
->
-> services:
->   graph:
->     image: hugegraph/hugegraph
->     container_name: cas-server
->     ports:
->       - 8080:8080
->     environment:
->       hugegraph.backend: cassandra
->       hugegraph.serializer: cassandra
->       hugegraph.cassandra.host: cas-cassandra
->       hugegraph.cassandra.port: 9042
->     networks:
->       - ca-network
->     depends_on:
->       - cassandra
->     healthcheck:
->       test: ["CMD", "bin/gremlin-console.sh", "--" ,"-e", "scripts/remote-connect.groovy"]
->       interval: 10s
->       timeout: 30s
->       retries: 3
->
->   cassandra:
->     image: cassandra:4
->     container_name: cas-cassandra
->     ports:
->       - 7000:7000
->       - 9042:9042
->     security_opt:
->       - seccomp:unconfined
->     networks:
->       - ca-network
->     healthcheck:
->       test: ["CMD", "cqlsh", "--execute", "describe keyspaces;"]
->       interval: 10s
->       timeout: 30s
->       retries: 5
->
-> networks:
->   ca-network:
->
-> volumes:
->   hugegraph-data:
-> ```
->
-> In this YAML file, configuration parameters related to Cassandra need to be passed as environment variables in the format of `hugegraph.<parameter_name>`.
->
-> Specifically, the `hugegraph.properties` file contains settings such as `backend=xxx` and `cassandra.host=xxx`. To pass these settings through environment variables, prepend `hugegraph.` to the configuration keys, for example `hugegraph.backend` and `hugegraph.cassandra.host`.
->
-> Refer to [4 Config](#4-config) for the remaining settings.
-
-#### 5.2.2 Create an example graph when starting a server
-
+#### 5.2.1 Create an example graph when starting a server
 Set the environment variable `PRELOAD=true` when starting Docker so that sample data is loaded during startup.
 
 1. Use `docker run`
@@ -697,7 +448,7 @@ Set the environment variable `PRELOAD=true` when starting Docker so that sample 
 And use the RESTful API to request `HugeGraphServer` and get the following result:
 
 ```javascript
-> curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+> curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices" | gunzip
 
 {"vertices":[{"id":"2:lop","label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"2:ripple","label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199}}]}
 ```
@@ -719,7 +470,7 @@ jps
 `curl` request `RESTfulAPI`
 
 ```bash
-echo `curl -o /dev/null -s -w %{http_code} "http://localhost:8080/graphs/hugegraph/graph/vertices"`
+echo `curl -o /dev/null -s -w %{http_code} "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"`
 ```
 
 Return 200, which means the server starts normally.
@@ -737,7 +488,7 @@ The RESTful API of HugeGraphServer includes various types of resources, typicall
 #### 6.2.1 Get vertices and its related properties in `hugegraph`
 
 ```bash
-curl http://localhost:8080/graphs/hugegraph/graph/vertices 
+curl http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 ```
 
 _explanation_
@@ -745,7 +496,7 @@ _explanation_
 1. Since there are many vertices and edges in the graph, for list-type requests, such as getting all vertices, getting all edges, etc., the server will compress the data and return it, so when use curl, you get a bunch of garbled characters, you can redirect to gunzip for decompression. It is recommended to use the Chrome browser + Restlet plugin to send HTTP requests for testing.
 
     ```
-    curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+    curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices" | gunzip
     ```
 
 2. The current default configuration of HugeGraphServer can only be accessed locally, and the configuration can be modified so that it can be accessed on other machines.
@@ -835,8 +586,8 @@ Currently, HugeGraph supports setting authentication information in two forms: B
 ## 7 Stop Server
 
 ```bash
-$cd *hugegraph-${version}
-$bin/stop-hugegraph.sh
+cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-server-incubating-1.7.0
+bin/stop-hugegraph.sh
 ```
 
 ## 8 Debug Server with IntelliJ IDEA

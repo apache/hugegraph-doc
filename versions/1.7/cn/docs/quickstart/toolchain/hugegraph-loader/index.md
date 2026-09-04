@@ -24,7 +24,7 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 ### 2 获取 HugeGraph-Loader
 
-有两种方式可以获取 HugeGraph-Loader：
+可以通过以下三种方式获取 HugeGraph-Loader：
 
 - 使用 Docker 镜像 (便于**测试**)
 - 下载已编译的压缩包
@@ -77,8 +77,10 @@ services:
 下载最新版本的 `HugeGraph-Toolchain` Release 包，里面包含了 `loader + tool + hubble` 全套工具，如果你已经下载，可跳过重复步骤
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
-tar zxf *hugegraph*.tar.gz
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
+tar zxf "${ARCHIVE}.tar.gz"
 ```
 
 #### 2.3 克隆源码编译安装
@@ -89,8 +91,10 @@ tar zxf *hugegraph*.tar.gz
 # 1. get from github
 git clone https://github.com/apache/hugegraph-toolchain.git
 
-# 2. get from direct url (please choose the **latest release** version)
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}-src.tar.gz
+# 2. 下载发布版源码包
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
 ```
 
 > [!DETAILS]- 点击展开/折叠 手动安装 ojdbc 方法
@@ -107,8 +111,8 @@ wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph
 编译生成 tar 包：
 
 ```bash
-cd hugegraph-loader
-mvn clean package -DskipTests
+cd hugegraph-toolchain
+mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 ```
 
 ### 3 使用流程
@@ -128,7 +132,7 @@ mvn clean package -DskipTests
 "软件"有："名字"、"售卖价格"等属性；边"认识"有："日期"属性等。
 
 <div style="text-align: center;">
-  <img src="/versions/1.7/docs/images/demo-graph-model.png" alt="image">
+  <img src="/versions/1.7/docs/images/demo-graph-model.png" alt="由“认识”和“创建”边连接人物与软件顶点的示例图">
   <p>示例图模型</p>
 </div>
 
@@ -791,47 +795,71 @@ schema: 必填
 
 ##### 3.4.1 参数说明
 
-| 参数                        | 默认值       | 是否必传 | 描述信息                                                              |
-|---------------------------|-----------|------|-------------------------------------------------------------------|
-| `-f` 或 `--file`           |           | Y    | 配置脚本的路径                                                           |
-| `-g` 或 `--graph`          |           | Y    | 图名称                                                           |
-| `-gs` 或 `--graphspace`    | DEFAULT   |      | 图空间                                                            |
-| `-s` 或 `--schema`         |           | Y    | schema 文件路径                                                       |
-| `-h` 或 `--host` 或 `-i`   | localhost |      | HugeGraphServer 的地址                                               |
-| `-p` 或 `--port`           | 8080      |      | HugeGraphServer 的端口号                                              |
-| `--username`              | null      |      | 当 HugeGraphServer 开启了权限认证时，当前图的 username                          |
-| `--password`              | null      |      | 当 HugeGraphServer 开启了权限认证时，当前图的 password                          |
-| `--create-graph`          | false     |      | 是否在图不存在时自动创建                                              |
-| `--token`                 | null      |      | 当 HugeGraphServer 开启了权限认证时，当前图的 token                             |
-| `--protocol`              | http      |      | 向服务端发请求的协议，可选 http 或 https                                        |
-| `--pd-peers`              |           |      | PD 服务节点地址                                                       |
-| `--pd-token`              |           |      | 访问 PD 服务的 token                                                  |
-| `--meta-endpoints`        |           |      | 元信息存储服务地址                                                     |
-| `--direct`                | false     |      | 是否直连 HugeGraph-Store                                              |
-| `--route-type`            | NODE_PORT |      | 路由选择方式（可选值：NODE_PORT / DDS / BOTH）                               |
-| `--cluster`               | hg        |      | 集群名                                                               |
-| `--trust-store-file`      |           |      | 请求协议为 https 时，客户端的证书文件路径                                          |
-| `--trust-store-password`  |           |      | 请求协议为 https 时，客户端证书密码                                             |
-| `--clear-all-data`        | false     |      | 导入数据前是否清除服务端的原有数据                                                 |
-| `--clear-timeout`         | 240       |      | 导入数据前清除服务端的原有数据的超时时间                                              |
-| `--incremental-mode`      | false     |      | 是否使用断点续导模式，仅输入源为 FILE 和 HDFS 支持该模式，启用该模式能从上一次导入停止的地方开始导入           |
-| `--failure-mode`          | false     |      | 失败模式为 true 时，会导入之前失败了的数据，一般来说失败数据文件需要在人工更正编辑好后，再次进行导入             |
-| `--batch-insert-threads`  | CPUs      |      | 批量插入线程池大小 (CPUs 是当前 OS 可用**逻辑核**个数)                             |
-| `--single-insert-threads` | 8         |      | 单条插入线程池的大小                                                        |
-| `--max-conn`              | 4 * CPUs  |      | HugeClient 与 HugeGraphServer 的最大 HTTP 连接数，**调整线程**的时候建议同时调整此项     |
-| `--max-conn-per-route`    | 2 * CPUs  |      | HugeClient 与 HugeGraphServer 每个路由的最大 HTTP 连接数，**调整线程**的时候建议同时调整此项 |
-| `--batch-size`            | 500       |      | 导入数据时每个批次包含的数据条数                                                  |
-| `--max-parse-errors`      | 1         |      | 最多允许多少行数据解析错误，达到该值则程序退出                                           |
-| `--max-insert-errors`     | 500       |      | 最多允许多少行数据插入错误，达到该值则程序退出                                           |
-| `--timeout`               | 60        |      | 插入结果返回的超时时间（秒）                                                    |
-| `--shutdown-timeout`      | 10        |      | 多线程停止的等待时间（秒）                                                     |
-| `--retry-times`           | 0         |      | 发生特定异常时的重试次数                                                      |
-| `--retry-interval`        | 10        |      | 重试之前的间隔时间（秒）                                                      |
-| `--check-vertex`          | false     |      | 插入边时是否检查边所连接的顶点是否存在                                               |
-| `--print-progress`        | true      |      | 是否在控制台实时打印导入条数                                                    |
-| `--dry-run`               | false     |      | 打开该模式，只解析不导入，通常用于测试                                               |
-| `--help`                  | false     |      | 打印帮助信息                                                            |                                                  
-
+| 参数                                      | 默认值         | 是否必传 | 描述信息                                                              |
+|-----------------------------------------|-------------|------|-------------------------------------------------------------------|
+| `-f` 或 `--file`                         |             | Y    | 配置脚本的路径                                                           |
+| `-g` 或 `--graph`                        | hugegraph   |      | 图名称                                                               |
+| `--graphspace`                          | DEFAULT     |      | 图空间                                                               |
+| `-s` 或 `--schema`                       |             |      | schema 文件路径；已有 Schema 时可以不传                                      |
+| `-h` 或 `--host` 或 `-i`                  | localhost   |      | HugeGraphServer 的地址                                               |
+| `-p` 或 `--port`                         | 8080        |      | HugeGraphServer 的端口号                                              |
+| `--username`                            | null        |      | 当 HugeGraphServer 开启了权限认证时，当前图的 username                          |
+| `--password`                            | null        |      | 当 HugeGraphServer 开启了权限认证时，当前图的 password                          |
+| `--create-graph`                        | false       |      | 是否在图不存在时自动创建                                                      |
+| `--token`                               | null        |      | 当 HugeGraphServer 开启了权限认证时，当前图的 token                             |
+| `--protocol`                            | http        |      | 向服务端发请求的协议，可选 http 或 https                                        |
+| `--pd-peers`                            |             |      | PD 服务节点地址                                                         |
+| `--pd-token`                            |             |      | 访问 PD 服务的 token                                                   |
+| `--meta-endpoints`                      |             |      | 元信息存储服务地址                                                         |
+| `--direct`                              | false       |      | 是否直连 HugeGraph-Store                                              |
+| `--route-type`                          | NODE_PORT   |      | 路由选择方式（可选值：NODE_PORT / DDS / BOTH）                                |
+| `--cluster`                             | hg          |      | 集群名                                                               |
+| `--trust-store-file`                    |             |      | 请求协议为 https 时，客户端的证书文件路径                                          |
+| `--trust-store-password`                |             |      | 请求协议为 https 时，客户端证书密码                                             |
+| `--clear-all-data`                      | false       |      | 导入数据前是否清除服务端的原有数据                                                 |
+| `--clear-timeout`                       | 240         |      | 导入数据前清除服务端的原有数据的超时时间                                              |
+| `--incremental-mode`                    | false       |      | 是否使用断点续导模式，仅输入源为 FILE 和 HDFS 支持该模式，启用该模式能从上一次导入停止的地方开始导入          |
+| `--failure-mode`                        | false       |      | 失败模式为 true 时，会导入之前失败了的数据，一般来说失败数据文件需要在人工更正编辑好后，再次进行导入             |
+| `--batch-insert-threads`                | CPUs        |      | 批量插入线程池大小 (CPUs 是当前 OS 可用**逻辑核**个数)                               |
+| `--single-insert-threads`               | 8           |      | 单条插入线程池的大小                                                        |
+| `--max-conn`                            | 4 * CPUs    |      | HugeClient 与 HugeGraphServer 的最大 HTTP 连接数，**调整线程**的时候建议同时调整此项     |
+| `--max-conn-per-route`                  | 2 * CPUs    |      | HugeClient 与 HugeGraphServer 每个路由的最大 HTTP 连接数，**调整线程**的时候建议同时调整此项 |
+| `--batch-size`                          | 500         |      | 导入数据时每个批次包含的数据条数                                                  |
+| `--max-parse-errors`                    | 1           |      | 最多允许多少行数据解析错误，达到该值则程序退出                                           |
+| `--max-insert-errors`                   | 500         |      | 最多允许多少行数据插入错误，达到该值则程序退出                                           |
+| `--timeout`                             | 60          |      | 插入结果返回的超时时间（秒）                                                    |
+| `--shutdown-timeout`                    | 10          |      | 多线程停止的等待时间（秒）                                                     |
+| `--retry-times`                         | 3           |      | 发生超时时的最大重试次数                                                       |
+| `--retry-interval`                      | 10          |      | 重试之前的间隔时间（秒）                                                      |
+| `--check-vertex`                        | false       |      | 插入边时是否检查边所连接的顶点是否存在                                               |
+| `--print-progress`                      | true        |      | 是否在控制台实时打印导入条数                                                    |
+| `--dry-run`                             | false       |      | 打开该模式，只解析不导入，通常用于测试                                               |
+| `--help` 或 `-help`                      | false       |      | 打印帮助信息                                                            |
+| `--parser-threads` 或 `--parallel-count` | max(2,CPUs/2) |      | 并行读取管线数；`--parallel-count` 已弃用                                     |
+| `--start-file`                          | 0           |      | 用于部分（分片）导入的起始文件索引                                                 |
+| `--end-file`                            | -1          |      | 用于部分导入的截止文件索引                                                     |
+| `--scatter-sources`                     | false       |      | 分散（并行）读取多个数据源以优化 I/O 性能                                           |
+| `--cdc-flush-interval`                  | 30000       |      | Flink CDC 的数据刷新间隔                                                 |
+| `--cdc-sink-parallelism`                | 1           |      | Flink CDC 写入端（Sink）的并行度                                           |
+| `--max-read-errors`                     | 1           |      | 程序退出前允许的最大读取错误行数                                                  |
+| `--max-read-lines`                      | -1L         |      | 最大读取行数限制；一旦达到此行数，导入任务将停止                                          |
+| `--test-mode`                           | false       |      | 是否开启测试模式                                                          |
+| `--use-prefilter`                       | false       |      | 是否预先过滤顶点                                                          |
+| `--short-id`                            | []          |      | 将自定义 ID 映射为更短的 ID                                                 |
+| `--vertex-edge-limit`                   | -1L         |      | 单个顶点的最大边数限制                                                       |
+| `--sink-type`                           | true        |      | 是否输出至不同的存储                                                        |
+| `--vertex-partitions`                   | 64          |      | HBase 顶点表的预分区数量                                                   |
+| `--edge-partitions`                     | 64          |      | HBase 边表的预分区数量                                                    |
+| `--vertex-table-name`                   |             |      | HBase 顶点表名称                                                       |
+| `--edge-table-name`                     |             |      | HBase 边表名称                                                        |
+| `--hbase-zk-quorum`                     |             |      | HBase Zookeeper 集群地址                                              |
+| `--hbase-zk-port`                       |             |      | HBase Zookeeper 端口号                                               |
+| `--hbase-zk-parent`                     |             |      | HBase Zookeeper 根路径                                               |
+| `--restore`                             | false       |      | 将图模式设置为恢复模式 (RESTORING)                                           |
+| `--backend`                             | hstore      |      | 自动创建图（如果不存在）时的后端存储类型                                              |
+| `--serializer`                          | binary      |      | 自动创建图（如果不存在）时的序列化器类型                                              |
+| `--scheduler-type`                      | distributed |      | 自动创建图（如果不存在）时的任务调度器类型                                             |
+| `--batch-failure-fallback`              | true        |      | 批量插入失败时是否回退至单条插入模式                                                |
 ##### 3.4.2 断点续导模式
 
 通常情况下，Loader 任务都需要较长时间执行，如果因为某些原因导致导入中断进程退出，而下次希望能从中断的点继续导，这就是使用断点续导的场景。
@@ -875,7 +903,7 @@ bin/hugegraph-loader -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} -h 
 
 ### 4 完整示例
 
-下面给出的是 hugegraph-loader 包中 example 目录下的例子。([GitHub 地址](https://github.com/apache/incubator-hugegraph-toolchain/tree/master/hugegraph-loader/assembly/static/example/file))
+下面给出的是 hugegraph-loader 包中 example 目录下的例子。([GitHub 地址](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-loader/assembly/static/example/file))
 
 #### 4.1 准备数据
 
@@ -1140,7 +1168,7 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 
 #### 4.6 使用 spark-loader 导入
 > Spark 版本：Spark 3+，其他版本未测试。
-> HugeGraph Toolchain 版本：toolchain-1.0.0
+> 当前源码使用 Spark 3.2.2 和 Scala 2.12；其他组合需自行验证。
 > 
 `spark-loader` 的参数分为两部分，注意：因二者参数名缩写存在重合部分，请使用参数全称。两种参数之间无需保证先后顺序。
 - hugegraph 参数（参考：[hugegraph-loader 参数说明](https://hugegraph.apache.org/versions/1.7/cn/docs/quickstart/toolchain/hugegraph-loader/#341-%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E) ）

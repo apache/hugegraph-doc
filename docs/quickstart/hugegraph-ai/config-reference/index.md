@@ -4,393 +4,151 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-This document provides a comprehensive reference for all configuration options in HugeGraph-LLM.
+HugeGraph-LLM reads runtime settings from `hugegraph-llm/.env`. Prompts are stored separately in `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml` and are not written to `.env`.
 
-## Configuration Files
-
-- **Environment File**: `.env` (created from template or auto-generated)
-- **Prompt Configuration**: `src/hugegraph_llm/resources/demo/config_prompt.yaml`
-
-> [!TIP]
-> Run `python -m hugegraph_llm.config.generate --update` to auto-generate or update configuration files with defaults.
-
-## Environment Variables Overview
-
-### 1. Language and Model Type Selection
+Create or update the files from configuration-class defaults with:
 
 ```bash
-# Prompt language (affects system prompts and generated text)
-LANGUAGE=EN                     # Options: EN | CN
-
-# LLM Type for different tasks
-CHAT_LLM_TYPE=openai           # Chat/RAG: openai | litellm | ollama/local
-EXTRACT_LLM_TYPE=openai        # Entity extraction: openai | litellm | ollama/local
-TEXT2GQL_LLM_TYPE=openai       # Text2Gremlin: openai | litellm | ollama/local
-
-# Embedding type
-EMBEDDING_TYPE=openai          # Options: openai | litellm | ollama/local
-
-# Reranker type (optional)
-RERANKER_TYPE=                 # Options: cohere | siliconflow | (empty for none)
+cd hugegraph-ai/hugegraph-llm
+python -m hugegraph_llm.config.generate --update
 ```
 
-### 2. OpenAI Configuration
+`.env` contains keys and passwords. Do not commit it to version control.
 
-Each LLM task (chat, extract, text2gql) has independent configuration:
+## Basic Options
 
-#### 2.1 Chat LLM (RAG Answer Generation)
+| Setting | Default | Description |
+|---|---|---|
+| `LANGUAGE` | `EN` | Prompt language: `EN` or `CN` |
+| `CHAT_LLM_TYPE` | `openai` | Answer model: `openai`, `litellm`, or `ollama/local` |
+| `EXTRACT_LLM_TYPE` | `openai` | Information extraction model; same choices as above |
+| `TEXT2GQL_LLM_TYPE` | `openai` | Text2Gremlin model; same choices as above |
+| `EMBEDDING_TYPE` | `openai` | Embedding model; same choices as above, or empty |
+| `RERANKER_TYPE` | empty | `cohere` or `siliconflow` |
+| `KEYWORD_EXTRACT_TYPE` | `llm` | `llm`, `textrank`, or `hybrid` |
+| `WINDOW_SIZE` | `3` | TextRank window size, from 1 to 10 |
+| `HYBRID_LLM_WEIGHTS` | `0.5` | Weight of LLM results in hybrid mode, from 0 to 1 |
+
+## OpenAI-Compatible APIs
+
+Chat, extraction, and Text2Gremlin can use different endpoints, keys, and models.
+
+| Purpose | API base | Key | Model | Default maximum tokens |
+|---|---|---|---|---|
+| Answer | `OPENAI_CHAT_API_BASE` | `OPENAI_CHAT_API_KEY` | `OPENAI_CHAT_LANGUAGE_MODEL` | `OPENAI_CHAT_TOKENS=8192` |
+| Extraction | `OPENAI_EXTRACT_API_BASE` | `OPENAI_EXTRACT_API_KEY` | `OPENAI_EXTRACT_LANGUAGE_MODEL` | `OPENAI_EXTRACT_TOKENS=256` |
+| Text2Gremlin | `OPENAI_TEXT2GQL_API_BASE` | `OPENAI_TEXT2GQL_API_KEY` | `OPENAI_TEXT2GQL_LANGUAGE_MODEL` | `OPENAI_TEXT2GQL_TOKENS=4096` |
+| Embedding | `OPENAI_EMBEDDING_API_BASE` | `OPENAI_EMBEDDING_API_KEY` | `OPENAI_EMBEDDING_MODEL` | Not applicable |
+
+The default API base is `https://api.openai.com/v1`. The default language model for all three tasks is `gpt-4.1-mini`, and the default embedding model is `text-embedding-3-small`.
+
+`OPENAI_BASE_URL` and `OPENAI_API_KEY` provide general fallback values. Embeddings also support `OPENAI_EMBEDDING_BASE_URL` and `OPENAI_EMBEDDING_API_KEY` as fallback values.
+
+## LiteLLM
+
+| Purpose | API base | Key | Model | Default maximum tokens |
+|---|---|---|---|---|
+| Answer | `LITELLM_CHAT_API_BASE` | `LITELLM_CHAT_API_KEY` | `LITELLM_CHAT_LANGUAGE_MODEL` | `LITELLM_CHAT_TOKENS=8192` |
+| Extraction | `LITELLM_EXTRACT_API_BASE` | `LITELLM_EXTRACT_API_KEY` | `LITELLM_EXTRACT_LANGUAGE_MODEL` | `LITELLM_EXTRACT_TOKENS=256` |
+| Text2Gremlin | `LITELLM_TEXT2GQL_API_BASE` | `LITELLM_TEXT2GQL_API_KEY` | `LITELLM_TEXT2GQL_LANGUAGE_MODEL` | `LITELLM_TEXT2GQL_TOKENS=4096` |
+| Embedding | `LITELLM_EMBEDDING_API_BASE` | `LITELLM_EMBEDDING_API_KEY` | `LITELLM_EMBEDDING_MODEL` | Not applicable |
+
+The default language model is `openai/gpt-4.1-mini`, and the default embedding model is `openai/text-embedding-3-small`. Model names generally use the `provider/model` form; supported values depend on the LiteLLM service.
+
+## Ollama
+
+| Purpose | Host | Port | Model |
+|---|---|---|---|
+| Answer | `OLLAMA_CHAT_HOST` | `OLLAMA_CHAT_PORT` | `OLLAMA_CHAT_LANGUAGE_MODEL` |
+| Extraction | `OLLAMA_EXTRACT_HOST` | `OLLAMA_EXTRACT_PORT` | `OLLAMA_EXTRACT_LANGUAGE_MODEL` |
+| Text2Gremlin | `OLLAMA_TEXT2GQL_HOST` | `OLLAMA_TEXT2GQL_PORT` | `OLLAMA_TEXT2GQL_LANGUAGE_MODEL` |
+| Embedding | `OLLAMA_EMBEDDING_HOST` | `OLLAMA_EMBEDDING_PORT` | `OLLAMA_EMBEDDING_MODEL` |
+
+The default host is `127.0.0.1` and the default port is `11434`. Model names have no defaults; pull the required models in Ollama before use.
+
+## Reranking
+
+| Setting | Default | Description |
+|---|---|---|
+| `COHERE_BASE_URL` | `https://api.cohere.com/v1/rerank` | Cohere rerank endpoint; `CO_API_URL` is a fallback |
+| `RERANKER_API_KEY` | empty | Cohere or SiliconFlow key |
+| `RERANKER_MODEL` | empty | Model name supported by the service |
+
+## HugeGraph Connection and Retrieval Limits
+
+| Setting | Default | Description |
+|---|---|---|
+| `GRAPH_URL` | `127.0.0.1:8080` | HugeGraph address; it is not split into IP and port |
+| `GRAPH_NAME` | `hugegraph` | Graph name |
+| `GRAPH_USER` | `admin` | User name |
+| `GRAPH_PWD` | `xxx` | Password |
+| `GRAPH_SPACE` | empty | GraphSpace name |
+| `LIMIT_PROPERTY` | `False` | Whether to limit returned properties; read as a string by the configuration class |
+| `MAX_GRAPH_PATH` | `10` | Maximum graph path length |
+| `MAX_GRAPH_ITEMS` | `30` | Maximum number of graph retrieval items |
+| `EDGE_LIMIT_PRE_LABEL` | `8` | Result limit for each edge label |
+| `VECTOR_DIS_THRESHOLD` | `0.9` | Results beyond this vector-distance threshold are ignored |
+| `TOPK_PER_KEYWORD` | `1` | Candidates per keyword |
+| `TOPK_RETURN_RESULTS` | `20` | Results returned after reranking |
+
+## External Vector Databases
+
+The default implementation can use local FAISS. After enabling optional dependencies, the following settings are also available:
+
+| Setting | Default |
+|---|---|
+| `QDRANT_HOST` | empty |
+| `QDRANT_PORT` | `6333` |
+| `QDRANT_API_KEY` | empty |
+| `MILVUS_HOST` | empty |
+| `MILVUS_PORT` | `19530` |
+| `MILVUS_USER` | empty |
+| `MILVUS_PASSWORD` | empty |
 
 ```bash
-OPENAI_CHAT_API_BASE=https://api.openai.com/v1
-OPENAI_CHAT_API_KEY=sk-your-api-key-here
-OPENAI_CHAT_LANGUAGE_MODEL=gpt-4o-mini
-OPENAI_CHAT_TOKENS=8192        # Max tokens for chat responses
+cd hugegraph-ai
+uv sync --package hugegraph-llm --extra vectordb
 ```
 
-#### 2.2 Extract LLM (Entity & Relation Extraction)
+## Login and Log API
 
-```bash
-OPENAI_EXTRACT_API_BASE=https://api.openai.com/v1
-OPENAI_EXTRACT_API_KEY=sk-your-api-key-here
-OPENAI_EXTRACT_LANGUAGE_MODEL=gpt-4o-mini
-OPENAI_EXTRACT_TOKENS=1024     # Max tokens for extraction
-```
+| Setting | Default | Description |
+|---|---|---|
+| `ENABLE_LOGIN` | `False` | Whether to require a Bearer token; read as a string by the configuration class |
+| `USER_TOKEN` | `4321` | Token for the Web UI and regular APIs |
+| `ADMIN_TOKEN` | `xxxx` | Administrator token used by `/logs` |
 
-#### 2.3 Text2GQL LLM (Natural Language to Gremlin)
+`/logs` returns 403 when `ADMIN_TOKEN` is empty or still set to `xxxx`. Replace both the user and administrator tokens in production.
 
-```bash
-OPENAI_TEXT2GQL_API_BASE=https://api.openai.com/v1
-OPENAI_TEXT2GQL_API_KEY=sk-your-api-key-here
-OPENAI_TEXT2GQL_LANGUAGE_MODEL=gpt-4o-mini
-OPENAI_TEXT2GQL_TOKENS=4096    # Max tokens for query generation
-```
+## Minimal OpenAI Configuration
 
-#### 2.4 Embedding Model
-
-```bash
-OPENAI_EMBEDDING_API_BASE=https://api.openai.com/v1
-OPENAI_EMBEDDING_API_KEY=sk-your-api-key-here
-OPENAI_EMBEDDING_MODEL=text-embedding-3-small
-```
-
-> [!NOTE]
-> You can use different API keys/endpoints for each task to optimize costs or use specialized models.
-
-### 3. LiteLLM Configuration (Multi-Provider Support)
-
-LiteLLM enables unified access to 100+ LLM providers (OpenAI, Anthropic, Google, Azure, etc.).
-
-#### 3.1 Chat LLM
-
-```bash
-LITELLM_CHAT_API_BASE=http://localhost:4000       # LiteLLM proxy URL
-LITELLM_CHAT_API_KEY=sk-litellm-key              # LiteLLM API key
-LITELLM_CHAT_LANGUAGE_MODEL=anthropic/claude-3-5-sonnet-20241022
-LITELLM_CHAT_TOKENS=8192
-```
-
-#### 3.2 Extract LLM
-
-```bash
-LITELLM_EXTRACT_API_BASE=http://localhost:4000
-LITELLM_EXTRACT_API_KEY=sk-litellm-key
-LITELLM_EXTRACT_LANGUAGE_MODEL=openai/gpt-4o-mini
-LITELLM_EXTRACT_TOKENS=256
-```
-
-#### 3.3 Text2GQL LLM
-
-```bash
-LITELLM_TEXT2GQL_API_BASE=http://localhost:4000
-LITELLM_TEXT2GQL_API_KEY=sk-litellm-key
-LITELLM_TEXT2GQL_LANGUAGE_MODEL=openai/gpt-4o-mini
-LITELLM_TEXT2GQL_TOKENS=4096
-```
-
-#### 3.4 Embedding
-
-```bash
-LITELLM_EMBEDDING_API_BASE=http://localhost:4000
-LITELLM_EMBEDDING_API_KEY=sk-litellm-key
-LITELLM_EMBEDDING_MODEL=openai/text-embedding-3-small
-```
-
-**Model Format**: `provider/model-name`
-
-Examples:
-- `openai/gpt-4o-mini`
-- `anthropic/claude-3-5-sonnet-20241022`
-- `google/gemini-2.0-flash-exp`
-- `azure/gpt-4`
-
-See [LiteLLM Providers](https://docs.litellm.ai/docs/providers) for the complete list.
-
-### 4. Ollama Configuration (Local Deployment)
-
-Run local LLMs with Ollama for privacy and cost control.
-
-#### 4.1 Chat LLM
-
-```bash
-OLLAMA_CHAT_HOST=127.0.0.1
-OLLAMA_CHAT_PORT=11434
-OLLAMA_CHAT_LANGUAGE_MODEL=llama3.1:8b
-```
-
-#### 4.2 Extract LLM
-
-```bash
-OLLAMA_EXTRACT_HOST=127.0.0.1
-OLLAMA_EXTRACT_PORT=11434
-OLLAMA_EXTRACT_LANGUAGE_MODEL=llama3.1:8b
-```
-
-#### 4.3 Text2GQL LLM
-
-```bash
-OLLAMA_TEXT2GQL_HOST=127.0.0.1
-OLLAMA_TEXT2GQL_PORT=11434
-OLLAMA_TEXT2GQL_LANGUAGE_MODEL=qwen2.5-coder:7b
-```
-
-#### 4.4 Embedding
-
-```bash
-OLLAMA_EMBEDDING_HOST=127.0.0.1
-OLLAMA_EMBEDDING_PORT=11434
-OLLAMA_EMBEDDING_MODEL=nomic-embed-text
-```
-
-> [!TIP]
-> Download models: `ollama pull llama3.1:8b` or `ollama pull qwen2.5-coder:7b`
-
-### 5. Reranker Configuration
-
-Rerankers improve RAG accuracy by reordering retrieved results based on relevance.
-
-#### 5.1 Cohere Reranker
-
-```bash
-RERANKER_TYPE=cohere
-COHERE_BASE_URL=https://api.cohere.com/v1/rerank
-RERANKER_API_KEY=your-cohere-api-key
-RERANKER_MODEL=rerank-english-v3.0
-```
-
-Available models:
-- `rerank-english-v3.0` (English)
-- `rerank-multilingual-v3.0` (100+ languages)
-
-#### 5.2 SiliconFlow Reranker
-
-```bash
-RERANKER_TYPE=siliconflow
-RERANKER_API_KEY=your-siliconflow-api-key
-RERANKER_MODEL=BAAI/bge-reranker-v2-m3
-```
-
-### 6. HugeGraph Connection
-
-Configure connection to your HugeGraph server instance.
-
-```bash
-# Server connection
-GRAPH_IP=127.0.0.1
-GRAPH_PORT=8080
-GRAPH_NAME=hugegraph            # Graph instance name
-GRAPH_USER=admin                # Username
-GRAPH_PWD=admin-password        # Password
-GRAPH_SPACE=                    # Graph space (optional, for multi-tenancy)
-```
-
-### 7. Query Parameters
-
-Control graph traversal behavior and result limits.
-
-```bash
-# Graph traversal limits
-MAX_GRAPH_PATH=10               # Max path depth for graph queries
-MAX_GRAPH_ITEMS=30              # Max items to retrieve from graph
-EDGE_LIMIT_PRE_LABEL=8          # Max edges per label type
-
-# Property filtering
-LIMIT_PROPERTY=False            # Limit properties in results (True/False)
-```
-
-### 8. Vector Search Configuration
-
-Configure vector similarity search parameters.
-
-```bash
-# Vector search thresholds
-VECTOR_DIS_THRESHOLD=0.9        # Min cosine similarity (0-1, higher = stricter)
-TOPK_PER_KEYWORD=1              # Top-K results per extracted keyword
-```
-
-### 9. Rerank Configuration
-
-```bash
-# Rerank result limits
-TOPK_RETURN_RESULTS=20          # Number of top results after reranking
-```
-
-## Configuration Priority
-
-The system loads configuration in the following order (later sources override earlier ones):
-
-1. **Default Values** (in `*_config.py` files)
-2. **Environment Variables** (from `.env` file)
-3. **Runtime Updates** (via Web UI or API calls)
-
-## Example Configurations
-
-### Minimal Setup (OpenAI)
-
-```bash
-# Language
+```properties
 LANGUAGE=EN
-
-# LLM Types
 CHAT_LLM_TYPE=openai
 EXTRACT_LLM_TYPE=openai
 TEXT2GQL_LLM_TYPE=openai
 EMBEDDING_TYPE=openai
 
-# OpenAI Credentials (single key for all tasks)
-OPENAI_API_BASE=https://api.openai.com/v1
-OPENAI_API_KEY=sk-your-api-key-here
-OPENAI_LANGUAGE_MODEL=gpt-4o-mini
+OPENAI_API_KEY=your-api-key
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_CHAT_LANGUAGE_MODEL=gpt-4.1-mini
+OPENAI_EXTRACT_LANGUAGE_MODEL=gpt-4.1-mini
+OPENAI_TEXT2GQL_LANGUAGE_MODEL=gpt-4.1-mini
 OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
-# HugeGraph Connection
-GRAPH_IP=127.0.0.1
-GRAPH_PORT=8080
+GRAPH_URL=127.0.0.1:8080
 GRAPH_NAME=hugegraph
 GRAPH_USER=admin
-GRAPH_PWD=admin
+GRAPH_PWD=your-password
 ```
 
-### Production Setup (LiteLLM + Reranker)
+## Configuration Loading
 
-```bash
-# Bilingual support
-LANGUAGE=EN
+Configuration classes supply code defaults and then apply overrides from `.env` and the process environment. The Web UI and configuration APIs can update current settings at runtime and write supported fields back to `.env`. Restart the service after editing `.env` manually; prompt YAML can be refreshed by the page-loading logic.
 
-# LiteLLM for flexibility
-CHAT_LLM_TYPE=litellm
-EXTRACT_LLM_TYPE=litellm
-TEXT2GQL_LLM_TYPE=litellm
-EMBEDDING_TYPE=litellm
+Configuration definitions are in:
 
-# LiteLLM Proxy
-LITELLM_CHAT_API_BASE=http://localhost:4000
-LITELLM_CHAT_API_KEY=sk-litellm-master-key
-LITELLM_CHAT_LANGUAGE_MODEL=anthropic/claude-3-5-sonnet-20241022
-LITELLM_CHAT_TOKENS=8192
-
-LITELLM_EXTRACT_API_BASE=http://localhost:4000
-LITELLM_EXTRACT_API_KEY=sk-litellm-master-key
-LITELLM_EXTRACT_LANGUAGE_MODEL=openai/gpt-4o-mini
-LITELLM_EXTRACT_TOKENS=256
-
-LITELLM_TEXT2GQL_API_BASE=http://localhost:4000
-LITELLM_TEXT2GQL_API_KEY=sk-litellm-master-key
-LITELLM_TEXT2GQL_LANGUAGE_MODEL=openai/gpt-4o-mini
-LITELLM_TEXT2GQL_TOKENS=4096
-
-LITELLM_EMBEDDING_API_BASE=http://localhost:4000
-LITELLM_EMBEDDING_API_KEY=sk-litellm-master-key
-LITELLM_EMBEDDING_MODEL=openai/text-embedding-3-small
-
-# Cohere Reranker for better accuracy
-RERANKER_TYPE=cohere
-COHERE_BASE_URL=https://api.cohere.com/v1/rerank
-RERANKER_API_KEY=your-cohere-key
-RERANKER_MODEL=rerank-multilingual-v3.0
-
-# HugeGraph with authentication
-GRAPH_IP=prod-hugegraph.example.com
-GRAPH_PORT=8080
-GRAPH_NAME=production_graph
-GRAPH_USER=rag_user
-GRAPH_PWD=secure-password
-GRAPH_SPACE=prod_space
-
-# Optimized query parameters
-MAX_GRAPH_PATH=15
-MAX_GRAPH_ITEMS=50
-VECTOR_DIS_THRESHOLD=0.85
-TOPK_RETURN_RESULTS=30
-```
-
-### Local/Offline Setup (Ollama)
-
-```bash
-# Language
-LANGUAGE=EN
-
-# All local models via Ollama
-CHAT_LLM_TYPE=ollama/local
-EXTRACT_LLM_TYPE=ollama/local
-TEXT2GQL_LLM_TYPE=ollama/local
-EMBEDDING_TYPE=ollama/local
-
-# Ollama endpoints
-OLLAMA_CHAT_HOST=127.0.0.1
-OLLAMA_CHAT_PORT=11434
-OLLAMA_CHAT_LANGUAGE_MODEL=llama3.1:8b
-
-OLLAMA_EXTRACT_HOST=127.0.0.1
-OLLAMA_EXTRACT_PORT=11434
-OLLAMA_EXTRACT_LANGUAGE_MODEL=llama3.1:8b
-
-OLLAMA_TEXT2GQL_HOST=127.0.0.1
-OLLAMA_TEXT2GQL_PORT=11434
-OLLAMA_TEXT2GQL_LANGUAGE_MODEL=qwen2.5-coder:7b
-
-OLLAMA_EMBEDDING_HOST=127.0.0.1
-OLLAMA_EMBEDDING_PORT=11434
-OLLAMA_EMBEDDING_MODEL=nomic-embed-text
-
-# No reranker for offline setup
-RERANKER_TYPE=
-
-# Local HugeGraph
-GRAPH_IP=127.0.0.1
-GRAPH_PORT=8080
-GRAPH_NAME=hugegraph
-GRAPH_USER=admin
-GRAPH_PWD=admin
-```
-
-## Configuration Validation
-
-After modifying `.env`, verify your configuration:
-
-1. **Via Web UI**: Visit `http://localhost:8001` and check the settings panel
-2. **Via Python**:
-```python
-from hugegraph_llm.config import settings
-print(settings.llm_config)
-print(settings.hugegraph_config)
-```
-3. **Via REST API**:
-```bash
-curl http://localhost:8001/config
-```
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "API key not found" | Check `*_API_KEY` is set correctly in `.env` |
-| "Connection refused" | Verify `GRAPH_IP` and `GRAPH_PORT` are correct |
-| "Model not found" | For Ollama: run `ollama pull <model-name>` |
-| "Rate limit exceeded" | Reduce `MAX_GRAPH_ITEMS` or use different API keys |
-| "Embedding dimension mismatch" | Delete existing vectors and rebuild with correct model |
-
-## See Also
-
-- [HugeGraph-LLM Overview](./hugegraph-llm.md)
-- [REST API Reference](./rest-api.md)
-- [Quick Start Guide](./quick_start.md)
+- `hugegraph-llm/src/hugegraph_llm/config/llm_config.py`
+- `hugegraph-llm/src/hugegraph_llm/config/hugegraph_config.py`
+- `hugegraph-llm/src/hugegraph_llm/config/admin_config.py`
+- `hugegraph-llm/src/hugegraph_llm/config/prompt_config.py`

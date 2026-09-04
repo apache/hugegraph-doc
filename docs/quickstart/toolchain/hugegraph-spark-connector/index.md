@@ -6,7 +6,7 @@ LLMS index: [llms.txt](/llms.txt)
 
 ### 1 HugeGraph-Spark-Connector Overview
 
-HugeGraph-Spark-Connector is a Spark connector application for reading and writing HugeGraph data in Spark standard format.
+HugeGraph-Spark-Connector uses the Spark DataFrame API to write bulk data to HugeGraph. The current implementation provides vertex and edge writers.
 
 ### 2 Environment Requirements
 
@@ -20,18 +20,20 @@ HugeGraph-Spark-Connector is a Spark connector application for reading and writi
 #### 3.1 Build without executing tests
 
 ```bash
-mvn clean package -DskipTests
+git clone https://github.com/apache/hugegraph-toolchain.git
+cd hugegraph-toolchain
+mvn clean package -pl hugegraph-spark-connector -am -DskipTests -ntp
 ```
 
 #### 3.2 Build with default tests
 
 ```bash
-mvn clean package
+mvn clean package -pl hugegraph-spark-connector -am -ntp
 ```
 
 ### 4 Usage
 
-First add the dependency in your pom.xml:
+Add the dependency to `pom.xml`, replacing `${revision}` with the release version you use:
 
 ```xml
 <dependency>
@@ -144,7 +146,7 @@ Client Configs are used to configure hugegraph-client.
 |----------------------|---------------|----------------------------------------------------------------------------------------------|
 | `host`               | `localhost`   | Address of HugeGraphServer                                                                   |
 | `port`               | `8080`        | Port of HugeGraphServer                                                                      |
-| `graph`              | `hugegraph`   | Graph space name                                                                             |
+| `graph`              | `hugegraph`   | Graph name                                                                                   |
 | `protocol`           | `http`        | Protocol for sending requests to the server, optional `http` or `https`                      |
 | `username`           | `null`        | Username of the current graph when HugeGraphServer enables permission authentication         |
 | `token`              | `null`        | Token of the current graph when HugeGraphServer has enabled authorization authentication     |
@@ -156,7 +158,7 @@ Client Configs are used to configure hugegraph-client.
 
 #### 5.2 Graph Data Configs
 
-Graph Data Configs are used to set graph space configuration.
+Graph Data Configs describe how DataFrame columns map to vertices or edges.
 
 | Parameter         | Default Value | Description                                                                                                                                                                                                                                                                                                                                                                                                                |
 |-------------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

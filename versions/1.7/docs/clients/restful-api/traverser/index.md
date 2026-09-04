@@ -216,7 +216,7 @@ The K-out API allows you to find vertices that are exactly "depth" steps away fr
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/kout?source="1:marko"&max_depth=2
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kout?source="1:marko"&max_depth=2
 ```
 
 ###### Response Status
@@ -290,7 +290,7 @@ The K-out API allows you to find vertices that are exactly "depth" steps away fr
 ###### Method & Url
 
 ```
-POST http://localhost:8080/graphs/{graph}/traversers/kout
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kout
 ```
 
 ###### Request Body
@@ -457,7 +457,7 @@ Find all vertices that are reachable within depth steps, including the starting 
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/kneighbor?source=“1:marko”&max_depth=2
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighbor?source=%221:marko%22&max_depth=2
 ```
 
 ###### Response Status
@@ -532,7 +532,7 @@ Find all vertices that are reachable within depth steps from the starting vertex
 ###### Method & Url
 
 ```
-POST http://localhost:8080/graphs/{graph}/traversers/kneighbor
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighbor
 ```
 
 ###### Request Body
@@ -758,7 +758,7 @@ Retrieve the common neighbors of two vertices.
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/sameneighbors?vertex=“1:marko”&other="1:josh"
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/sameneighbors?vertex=%221:marko%22&other=%221:josh%22
 ```
 
 ###### Response Status
@@ -802,7 +802,7 @@ Compute the Jaccard similarity between two vertices (the intersection of the nei
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/jaccardsimilarity?vertex="1:marko"&other="1:josh"
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/jaccardsimilarity?vertex="1:marko"&other="1:josh"
 ```
 
 ###### Response Status
@@ -848,7 +848,7 @@ Compute the N vertices with the highest Jaccard similarity to a specified vertex
 ###### Method & Url
 
 ```
-POST http://localhost:8080/graphs/{graph}/traversers/jaccardsimilarity
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/jaccardsimilarity
 ```
 
 ###### Request Body
@@ -908,7 +908,7 @@ Find the shortest path between a starting vertex and a target vertex based on th
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/shortestpath?source="1:marko"&target="2:ripple"&max_depth=3
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/shortestpath?source="1:marko"&target="2:ripple"&max_depth=3
 ```
 
 ###### Response Status
@@ -958,7 +958,7 @@ Find all shortest paths between a starting vertex and a target vertex based on t
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/allshortestpaths?source="A"&target="Z"&max_depth=10
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/allshortestpaths?source="A"&target="Z"&max_depth=10
 ```
 
 ###### Response Status
@@ -1022,7 +1022,7 @@ Find a weighted shortest path between a starting vertex and a target vertex base
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/weightedshortestpath?source="1:marko"&target="2:ripple"&weight="weight"&with_vertex=true
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/weightedshortestpath?source="1:marko"&target="2:ripple"&weight="weight"&with_vertex=true
 ```
 
 ###### Response Status
@@ -1107,7 +1107,7 @@ Starting from a vertex, find the shortest paths from that vertex to other vertic
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/singlesourceshortestpath?source="1:marko"&with_vertex=true
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/singlesourceshortestpath?source="1:marko"&with_vertex=true
 ```
 
 ###### Response Status
@@ -1259,7 +1259,7 @@ Finds the shortest paths between pairs of specified vertices.
 ###### Method & Url
 
 ```
-POST http://localhost:8080/graphs/{graph}/traversers/multinodeshortestpath
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/multinodeshortestpath
 ```
 
 ###### Request Body
@@ -1487,7 +1487,7 @@ Finds all paths based on conditions such as the starting vertex, destination ver
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/paths?source="1:marko"&target="1:josh"&max_depth=5
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/paths?source="1:marko"&target="1:josh"&max_depth=5
 ```
 
 ###### Response Status
@@ -1562,7 +1562,7 @@ Finds all paths based on conditions such as the starting vertex, destination ver
 ###### Method & Url
 
 ```
-POST http://localhost:8080/graphs/{graph}/traversers/paths
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/paths
 ```
 
 ###### Request Body
@@ -1661,7 +1661,7 @@ Finds all paths that meet the specified conditions based on a batch of starting 
 ###### Method & Url
 
 ```
-POST http://localhost:8080/graphs/{graph}/traversers/customizedpaths
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/customizedpaths
 ```
 
 ###### Request Body
@@ -1852,7 +1852,7 @@ Finds all paths that meet the specified conditions based on a batch of starting 
 ###### Method & Url
 
 ```
-POST http://localhost:8080/graphs/{graph}/traversers/templatepaths
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/templatepaths
 ```
 
 ###### Request Body
@@ -2016,7 +2016,7 @@ Finds the intersection points based on the specified conditions, including start
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/crosspoints?source="2:lop"&target="2:ripple"&max_depth=5&direction=IN
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/crosspoints?source="2:lop"&target="2:ripple"&max_depth=5&direction=IN
 ```
 
 ###### Response Status
@@ -2086,7 +2086,7 @@ Finds the intersection of destination vertices that satisfy the specified condit
 ###### Method & Url
 
 ```
-POST http://localhost:8080/graphs/{graph}/traversers/customizedcrosspoints
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/customizedcrosspoints
 ```
 
 ###### Request Body
@@ -2256,7 +2256,7 @@ For example: 1 -> 25 -> 775 -> 14690 -> 25, where the cycle is 25 -> 775 -> 1469
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/rings?source="1:marko"&max_depth=2
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/rings?source="1:marko"&max_depth=2
 ```
 
 ###### Response Status
@@ -2325,7 +2325,7 @@ For example: 1 -> 25 -> 775 -> 14690 -> 2289 -> 18379, where 18379 is the bounda
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/traversers/rays?source="1:marko"&max_depth=2&direction=OUT
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/rays?source="1:marko"&max_depth=2&direction=OUT
 ```
 
 ###### Response Status

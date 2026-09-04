@@ -13,10 +13,10 @@
 
 ## Documentation index
 
-- [Introduction](https://hugegraph.apache.org/docs/introduction/index.md)
+- [System Introduction](https://hugegraph.apache.org/docs/introduction/index.md)
 - [Quick Start](https://hugegraph.apache.org/docs/quickstart/index.md)
   - [HugeGraph-LLM](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-llm/index.md)
-  - [Install/Build HugeGraph-Server](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/index.md)
+  - [Install/Build HugeGraph Server](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/index.md)
   - [Java-Client](https://hugegraph.apache.org/docs/quickstart/client/hugegraph-client/index.md)
   - [Vermeer: Memory-First Computing Framework](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-vermeer/index.md)
   - [Visual with HugeGraph-Hubble](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md)
@@ -28,9 +28,9 @@
   - [Computer Config Reference](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-computer-config/index.md)
   - [Go Client](https://hugegraph.apache.org/docs/quickstart/client/hugegraph-client-go/index.md)
   - [Install/Build HugeGraph-Store](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-hstore/index.md)
+  - [LLM Workflow](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/quick_start/index.md)
   - [Manage with HugeGraph-Tools](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-tools/index.md)
   - [Configuration Reference](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/config-reference/index.md)
-  - [GraphRAG UI Details](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/quick_start/index.md)
   - [Read/Write Graph Data with Spark Connector](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-spark-connector/index.md)
   - [REST API](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/rest-api/index.md)
 - [Server Config](https://hugegraph.apache.org/docs/config/index.md)
@@ -38,7 +38,7 @@
   - [Server Complete Configuration Manual](https://hugegraph.apache.org/docs/config/config-option/index.md)
   - [Config Authentication](https://hugegraph.apache.org/docs/config/config-authentication/index.md)
   - [Config HTTPS](https://hugegraph.apache.org/docs/config/config-https/index.md)
-- [API](https://hugegraph.apache.org/docs/clients/index.md)
+- [Clients and APIs](https://hugegraph.apache.org/docs/clients/index.md)
   - [Graphspace](https://hugegraph.apache.org/docs/clients/restful-api/graphspace/index.md): Graphspace REST API: Multi-tenancy and resource isolation for creating, viewing, updating, and deleting graph spaces with prerequisites and constraints.
   - [Schema](https://hugegraph.apache.org/docs/clients/restful-api/schema/index.md): Schema REST API: Query the complete schema definition of a graph, including property keys, vertex labels, edge labels, and index labels.
   - [HugeGraph Java Client](https://hugegraph.apache.org/docs/clients/hugegraph-client/index.md)
@@ -69,7 +69,7 @@
   - [Docker Cluster](https://hugegraph.apache.org/docs/guides/hugegraph-docker-cluster/index.md)
   - [FAQ](https://hugegraph.apache.org/docs/guides/faq/index.md)
   - [Security](https://hugegraph.apache.org/docs/guides/security/index.md)
-- [QUERY LANGUAGE](https://hugegraph.apache.org/docs/language/index.md)
+- [Query Languages](https://hugegraph.apache.org/docs/language/index.md)
   - [Gremlin Query Language](https://hugegraph.apache.org/docs/language/hugegraph-gremlin/index.md)
   - [HugeGraph Examples](https://hugegraph.apache.org/docs/language/hugegraph-example/index.md)
 - [PERFORMANCE](https://hugegraph.apache.org/docs/performance/index.md)
@@ -79,8 +79,8 @@
   - [HugeGraph-Loader Performance](https://hugegraph.apache.org/docs/performance/hugegraph-loader-performance/index.md)
   - [HugeGraph 0.4.4 Benchmark](https://hugegraph.apache.org/docs/performance/hugegraph-benchmark-0.4.4/index.md)
 - [Contribution Guidelines](https://hugegraph.apache.org/docs/contribution-guidelines/index.md)
-  - [How to Contribute to HugeGraph](https://hugegraph.apache.org/docs/contribution-guidelines/contribute/index.md)
-  - [Subscribe Mailing Lists](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/index.md)
+  - [Contribution Process](https://hugegraph.apache.org/docs/contribution-guidelines/contribute/index.md)
+  - [Mailing List](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/index.md)
   - [Validate Apache Release](https://hugegraph.apache.org/docs/contribution-guidelines/validate-release/index.md)
   - [Setup Server in IDEA](https://hugegraph.apache.org/docs/contribution-guidelines/hugegraph-server-idea-setup/index.md)
   - [Apache HugeGraph Committer Guide](https://hugegraph.apache.org/docs/contribution-guidelines/committer-guidelines/index.md)

@@ -23,7 +23,7 @@ It will be explained in detail below.
 
 ### 2 Get HugeGraph-Loader
 
-There are two ways to get HugeGraph-Loader:
+HugeGraph-Loader is available in the following three ways:
 
 - Use docker image (Convenient for Test/Dev)
 - Download the compiled tarball
@@ -65,8 +65,10 @@ The specific data loading process can be referenced under [4.5 User Docker to lo
 Download the latest version of the HugeGraph-Toolchain release package:
 
 ```bash
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
-tar zxf *hugegraph*.tar.gz
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
+tar zxf "${ARCHIVE}.tar.gz"
 ```
 
 #### 2.3 Clone source code to compile and install
@@ -77,8 +79,10 @@ Clone the latest version of HugeGraph-Loader source package:
 # 1. get from github
 git clone https://github.com/apache/hugegraph-toolchain.git
 
-# 2. get from direct  (e.g. here is 1.0.0, please choose the latest version)
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}-src.tar.gz
+# 2. Download a released source package
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
 ```
 
 > [!DETAILS]- How to install OJDBC
@@ -95,8 +99,8 @@ wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain
 Compile and generate tar package:
 
 ```bash
-cd hugegraph-loader
-mvn clean package -DskipTests
+cd hugegraph-toolchain
+mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 ```
 
 ### 3 How to use
@@ -781,9 +785,9 @@ The import process is controlled by commands submitted by the user, and the user
 | Parameter                                | Default value | Required or not | Description                                                                                                                                                                               |
 |------------------------------------------|---------------|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `-f` or `--file`                         |               | Y               | Path to configure script                                                                                                                                                                  |
-| `-g` or `--graph`                        |               | Y               | Graph name                                                                                                                                                                                |
+| `-g` or `--graph`                        | hugegraph     |                 | Graph name                                                                                                                                                                                |
 | `--graphspace`                           | DEFAULT       |                 | Graph space name                                                                                                                                                                          |
-| `-s` or `--schema`                       |               | Y               | Schema file path                                                                                                                                                                          |
+| `-s` or `--schema`                       |               |                 | Schema file path; optional when the Schema already exists                                                                                                                                 |
 | `-h` or `--host` or `-i`                 | localhost     |                 | Address of HugeGraphServer                                                                                                                                                                |
 | `-p` or `--port`                         | 8080          |                 | Port number of HugeGraphServer                                                                                                                                                            |
 | `--username`                             | null          |                 | When HugeGraphServer enables permission authentication, the username of the current graph                                                                                                 |
@@ -812,13 +816,13 @@ The import process is controlled by commands submitted by the user, and the user
 | `--max-insert-errors`                    | 500           |                 | The maximum number of data insertion errors allowed (per row); the program exits when this value is reached                                                                               |
 | `--timeout`                              | 60            |                 | Timeout (seconds) for insert result return                                                                                                                                                |
 | `--shutdown-timeout`                     | 10            |                 | Waiting time for multithreading to stop (seconds)                                                                                                                                         |
-| `--retry-times`                          | 0             |                 | Number of retries when a specific exception occurs                                                                                                                                        |
+| `--retry-times`                          | 3             |                 | Maximum number of retries after a timeout                                                                                                                                                 |
 | `--retry-interval`                       | 10            |                 | Interval before retry (seconds)                                                                                                                                                           |
 | `--check-vertex`                         | false         |                 | Whether to check if the vertices connected by the edge exist when inserting the edge                                                                                                      |
 | `--print-progress`                       | true          |                 | Whether to print the number of imported items in real time on the console                                                                                                                 |
 | `--dry-run`                              | false         |                 | Enable this mode to only parse data without importing; usually used for testing                                                                                                           |
 | `--help` or `-help`                      | false         |                 | Print help information                                                                                                     |
-| `--parser-threads` or `--parallel-count` | max(2,CPUS) |      | Parallel read pipelines for data files                             |
+| `--parser-threads` or `--parallel-count` | max(2,CPUs/2) |      | Number of parallel read pipelines; `--parallel-count` is deprecated    |
 | `--start-file`                           | 0           |      | Start file index for partial loading                               |
 | `--end-file`                             | -1          |      | End file index for partial loading                                 |
 | `--scatter-sources`                      | false       |      | Scatter multiple sources for I/O optimization                      |
@@ -1148,8 +1152,7 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 The results of the execution will be similar to those shown in [4.5.1](#451-use-docker-exec-to-load-data-directly).
 
 #### 4.6 Import data by spark-loader
-> Spark version: Spark 3+, other versions has not been tested.  
-> HugeGraph Toolchain version: toolchain-1.0.0
+> The current source uses Spark 3.2.2 and Scala 2.12. Other combinations need independent verification.
 > 
 The parameters of `spark-loader` are divided into two parts. Note: Because the abbreviations of 
 these two-parameter names have overlapping parts, please use the full name of the parameter. 

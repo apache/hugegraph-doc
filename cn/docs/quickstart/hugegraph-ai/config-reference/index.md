@@ -4,393 +4,153 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-本文档提供 HugeGraph-LLM 所有配置选项的完整参考。
+HugeGraph-LLM 从 `hugegraph-llm/.env` 读取运行配置。提示词单独保存在 `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml`，不会写入 `.env`。
 
-## 配置文件
-
-- **环境文件**：`.env`（从模板创建或自动生成)
-- **提示词配置**：`src/hugegraph_llm/resources/demo/config_prompt.yaml`
-
-> [!TIP]
-> 运行 `python -m hugegraph_llm.config.generate --update` 可自动生成或更新带有默认值的配置文件。
-
-## 环境变量概览
-
-### 1. 语言和模型类型选择
+运行以下命令可按配置类的默认值创建或更新文件：
 
 ```bash
-# 提示词语言（影响系统提示词和生成文本）
-LANGUAGE=EN                     # 选项: EN | CN
-
-# 不同任务的 LLM 类型
-CHAT_LLM_TYPE=openai           # 对话/RAG: openai | litellm | ollama/local
-EXTRACT_LLM_TYPE=openai        # 实体抽取: openai | litellm | ollama/local
-TEXT2GQL_LLM_TYPE=openai       # 文本转 Gremlin: openai | litellm | ollama/local
-
-# 嵌入模型类型
-EMBEDDING_TYPE=openai          # 选项: openai | litellm | ollama/local
-
-# Reranker 类型（可选）
-RERANKER_TYPE=                 # 选项: cohere | siliconflow | (留空表示无)
+cd hugegraph-ai/hugegraph-llm
+python -m hugegraph_llm.config.generate --update
 ```
 
-### 2. OpenAI 配置
+`.env` 包含密钥和密码，不要提交到版本库。
 
-每个 LLM 任务（chat、extract、text2gql）都有独立配置：
+## 基础选项
 
-#### 2.1 Chat LLM（RAG 答案生成）
+| 配置项 | 默认值 | 说明 |
+|---|---|---|
+| `LANGUAGE` | `EN` | 提示词语言，可选 `EN`、`CN` |
+| `CHAT_LLM_TYPE` | `openai` | 回答模型，可选 `openai`、`litellm`、`ollama/local` |
+| `EXTRACT_LLM_TYPE` | `openai` | 信息抽取模型，取值同上 |
+| `TEXT2GQL_LLM_TYPE` | `openai` | Text2Gremlin 模型，取值同上 |
+| `EMBEDDING_TYPE` | `openai` | 嵌入模型，取值同上，也可以留空 |
+| `RERANKER_TYPE` | 空 | 可选 `cohere`、`siliconflow` |
+| `KEYWORD_EXTRACT_TYPE` | `llm` | 可选 `llm`、`textrank`、`hybrid` |
+| `WINDOW_SIZE` | `3` | TextRank 滑窗，范围 1 到 10 |
+| `HYBRID_LLM_WEIGHTS` | `0.5` | hybrid 模式中 LLM 结果的权重，范围 0 到 1 |
+
+## OpenAI 兼容接口
+
+聊天、抽取和 Text2Gremlin 可以使用不同端点、密钥和模型。
+
+| 用途 | API 地址 | 密钥 | 模型 | 最大 token 默认值 |
+|---|---|---|---|---|
+| 回答 | `OPENAI_CHAT_API_BASE` | `OPENAI_CHAT_API_KEY` | `OPENAI_CHAT_LANGUAGE_MODEL` | `OPENAI_CHAT_TOKENS=8192` |
+| 抽取 | `OPENAI_EXTRACT_API_BASE` | `OPENAI_EXTRACT_API_KEY` | `OPENAI_EXTRACT_LANGUAGE_MODEL` | `OPENAI_EXTRACT_TOKENS=256` |
+| Text2Gremlin | `OPENAI_TEXT2GQL_API_BASE` | `OPENAI_TEXT2GQL_API_KEY` | `OPENAI_TEXT2GQL_LANGUAGE_MODEL` | `OPENAI_TEXT2GQL_TOKENS=4096` |
+| 嵌入 | `OPENAI_EMBEDDING_API_BASE` | `OPENAI_EMBEDDING_API_KEY` | `OPENAI_EMBEDDING_MODEL` | 不适用 |
+
+API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `gpt-4.1-mini`，嵌入模型默认是 `text-embedding-3-small`。
+
+`OPENAI_BASE_URL` 和 `OPENAI_API_KEY` 可作为通用回退值。嵌入模型另有 `OPENAI_EMBEDDING_BASE_URL` 和 `OPENAI_EMBEDDING_API_KEY` 回退值。
+
+## LiteLLM
+
+| 用途 | API 地址 | 密钥 | 模型 | 最大 token 默认值 |
+|---|---|---|---|---|
+| 回答 | `LITELLM_CHAT_API_BASE` | `LITELLM_CHAT_API_KEY` | `LITELLM_CHAT_LANGUAGE_MODEL` | `LITELLM_CHAT_TOKENS=8192` |
+| 抽取 | `LITELLM_EXTRACT_API_BASE` | `LITELLM_EXTRACT_API_KEY` | `LITELLM_EXTRACT_LANGUAGE_MODEL` | `LITELLM_EXTRACT_TOKENS=256` |
+| Text2Gremlin | `LITELLM_TEXT2GQL_API_BASE` | `LITELLM_TEXT2GQL_API_KEY` | `LITELLM_TEXT2GQL_LANGUAGE_MODEL` | `LITELLM_TEXT2GQL_TOKENS=4096` |
+| 嵌入 | `LITELLM_EMBEDDING_API_BASE` | `LITELLM_EMBEDDING_API_KEY` | `LITELLM_EMBEDDING_MODEL` | 不适用 |
+
+三个语言模型默认是 `openai/gpt-4.1-mini`，嵌入模型默认是 `openai/text-embedding-3-small`。模型名通常使用 `供应商/模型` 格式，具体取值由 LiteLLM 服务决定。
+
+## Ollama
+
+| 用途 | 主机 | 端口 | 模型 |
+|---|---|---|---|
+| 回答 | `OLLAMA_CHAT_HOST` | `OLLAMA_CHAT_PORT` | `OLLAMA_CHAT_LANGUAGE_MODEL` |
+| 抽取 | `OLLAMA_EXTRACT_HOST` | `OLLAMA_EXTRACT_PORT` | `OLLAMA_EXTRACT_LANGUAGE_MODEL` |
+| Text2Gremlin | `OLLAMA_TEXT2GQL_HOST` | `OLLAMA_TEXT2GQL_PORT` | `OLLAMA_TEXT2GQL_LANGUAGE_MODEL` |
+| 嵌入 | `OLLAMA_EMBEDDING_HOST` | `OLLAMA_EMBEDDING_PORT` | `OLLAMA_EMBEDDING_MODEL` |
+
+主机默认是 `127.0.0.1`，端口默认是 `11434`，模型名没有默认值。使用前先在 Ollama 中拉取对应模型。
+
+## 重排序
+
+| 配置项 | 默认值 | 说明 |
+|---|---|---|
+| `COHERE_BASE_URL` | `https://api.cohere.com/v1/rerank` | Cohere rerank 接口；`CO_API_URL` 可作为回退值 |
+| `RERANKER_API_KEY` | 空 | Cohere 或 SiliconFlow 密钥 |
+| `RERANKER_MODEL` | 空 | 服务端支持的模型名 |
+
+## HugeGraph 连接与召回限制
+
+| 配置项 | 默认值 | 说明 |
+|---|---|---|
+| `GRAPH_URL` | `127.0.0.1:8080` | HugeGraph 地址，不拆分为 IP 和端口 |
+| `GRAPH_NAME` | `hugegraph` | 图名 |
+| `GRAPH_USER` | `admin` | 用户名 |
+| `GRAPH_PWD` | `xxx` | 密码 |
+| `GRAPH_SPACE` | 空 | GraphSpace 名称 |
+| `LIMIT_PROPERTY` | `False` | 是否限制返回属性；配置类按字符串读取 |
+| `MAX_GRAPH_PATH` | `10` | 最大图路径长度 |
+| `MAX_GRAPH_ITEMS` | `30` | 图召回的最大项目数 |
+| `EDGE_LIMIT_PRE_LABEL` | `8` | 每个边标签的返回上限 |
+| `VECTOR_DIS_THRESHOLD` | `0.9` | 向量距离阈值；超过阈值的结果会被忽略 |
+| `TOPK_PER_KEYWORD` | `1` | 每个关键词的候选数 |
+| `TOPK_RETURN_RESULTS` | `20` | 重排序后返回的结果数 |
+
+## 外部向量数据库
+
+默认实现可以使用本地 FAISS。启用可选依赖后还可配置：
+
+| 配置项 | 默认值 |
+|---|---|
+| `QDRANT_HOST` | 空 |
+| `QDRANT_PORT` | `6333` |
+| `QDRANT_API_KEY` | 空 |
+| `MILVUS_HOST` | 空 |
+| `MILVUS_PORT` | `19530` |
+| `MILVUS_USER` | 空 |
+| `MILVUS_PASSWORD` | 空 |
+
+安装对应依赖：
 
 ```bash
-OPENAI_CHAT_API_BASE=https://api.openai.com/v1
-OPENAI_CHAT_API_KEY=sk-your-api-key-here
-OPENAI_CHAT_LANGUAGE_MODEL=gpt-4o-mini
-OPENAI_CHAT_TOKENS=8192        # 对话响应的最大 tokens
+cd hugegraph-ai
+uv sync --package hugegraph-llm --extra vectordb
 ```
 
-#### 2.2 Extract LLM（实体和关系抽取）
+## 登录与日志接口
 
-```bash
-OPENAI_EXTRACT_API_BASE=https://api.openai.com/v1
-OPENAI_EXTRACT_API_KEY=sk-your-api-key-here
-OPENAI_EXTRACT_LANGUAGE_MODEL=gpt-4o-mini
-OPENAI_EXTRACT_TOKENS=1024     # 抽取任务的最大 tokens
-```
+| 配置项 | 默认值 | 说明 |
+|---|---|---|
+| `ENABLE_LOGIN` | `False` | 是否要求 Bearer token；配置类按字符串读取 |
+| `USER_TOKEN` | `4321` | Web 页面和普通 API 的 token |
+| `ADMIN_TOKEN` | `xxxx` | `/logs` 使用的管理员 token |
 
-#### 2.3 Text2GQL LLM（自然语言转 Gremlin）
+`ADMIN_TOKEN` 为空或仍为 `xxxx` 时，`/logs` 会直接返回 403。生产环境应同时替换用户 token 和管理员 token。
 
-```bash
-OPENAI_TEXT2GQL_API_BASE=https://api.openai.com/v1
-OPENAI_TEXT2GQL_API_KEY=sk-your-api-key-here
-OPENAI_TEXT2GQL_LANGUAGE_MODEL=gpt-4o-mini
-OPENAI_TEXT2GQL_TOKENS=4096    # 查询生成的最大 tokens
-```
+## 最小 OpenAI 配置
 
-#### 2.4 嵌入模型
-
-```bash
-OPENAI_EMBEDDING_API_BASE=https://api.openai.com/v1
-OPENAI_EMBEDDING_API_KEY=sk-your-api-key-here
-OPENAI_EMBEDDING_MODEL=text-embedding-3-small
-```
-
-> [!NOTE]
-> 您可以为每个任务使用不同的 API 密钥/端点，以优化成本或使用专用模型。
-
-### 3. LiteLLM 配置（多供应商支持）
-
-LiteLLM 支持统一访问 100 多个 LLM 供应商（OpenAI、Anthropic、Google、Azure 等）。
-
-#### 3.1 Chat LLM
-
-```bash
-LITELLM_CHAT_API_BASE=http://localhost:4000       # LiteLLM 代理 URL
-LITELLM_CHAT_API_KEY=sk-litellm-key              # LiteLLM API 密钥
-LITELLM_CHAT_LANGUAGE_MODEL=anthropic/claude-3-5-sonnet-20241022
-LITELLM_CHAT_TOKENS=8192
-```
-
-#### 3.2 Extract LLM
-
-```bash
-LITELLM_EXTRACT_API_BASE=http://localhost:4000
-LITELLM_EXTRACT_API_KEY=sk-litellm-key
-LITELLM_EXTRACT_LANGUAGE_MODEL=openai/gpt-4o-mini
-LITELLM_EXTRACT_TOKENS=256
-```
-
-#### 3.3 Text2GQL LLM
-
-```bash
-LITELLM_TEXT2GQL_API_BASE=http://localhost:4000
-LITELLM_TEXT2GQL_API_KEY=sk-litellm-key
-LITELLM_TEXT2GQL_LANGUAGE_MODEL=openai/gpt-4o-mini
-LITELLM_TEXT2GQL_TOKENS=4096
-```
-
-#### 3.4 嵌入模型
-
-```bash
-LITELLM_EMBEDDING_API_BASE=http://localhost:4000
-LITELLM_EMBEDDING_API_KEY=sk-litellm-key
-LITELLM_EMBEDDING_MODEL=openai/text-embedding-3-small
-```
-
-**模型格式**: `供应商/模型名称`
-
-示例：
-- `openai/gpt-4o-mini`
-- `anthropic/claude-3-5-sonnet-20241022`
-- `google/gemini-2.0-flash-exp`
-- `azure/gpt-4`
-
-完整列表请参阅 [LiteLLM Providers](https://docs.litellm.ai/docs/providers)。
-
-### 4. Ollama 配置（本地部署）
-
-使用 Ollama 运行本地 LLM，确保隐私和成本控制。
-
-#### 4.1 Chat LLM
-
-```bash
-OLLAMA_CHAT_HOST=127.0.0.1
-OLLAMA_CHAT_PORT=11434
-OLLAMA_CHAT_LANGUAGE_MODEL=llama3.1:8b
-```
-
-#### 4.2 Extract LLM
-
-```bash
-OLLAMA_EXTRACT_HOST=127.0.0.1
-OLLAMA_EXTRACT_PORT=11434
-OLLAMA_EXTRACT_LANGUAGE_MODEL=llama3.1:8b
-```
-
-#### 4.3 Text2GQL LLM
-
-```bash
-OLLAMA_TEXT2GQL_HOST=127.0.0.1
-OLLAMA_TEXT2GQL_PORT=11434
-OLLAMA_TEXT2GQL_LANGUAGE_MODEL=qwen2.5-coder:7b
-```
-
-#### 4.4 嵌入模型
-
-```bash
-OLLAMA_EMBEDDING_HOST=127.0.0.1
-OLLAMA_EMBEDDING_PORT=11434
-OLLAMA_EMBEDDING_MODEL=nomic-embed-text
-```
-
-> [!TIP]
-> 下载模型：`ollama pull llama3.1:8b` 或 `ollama pull qwen2.5-coder:7b`
-
-### 5. Reranker 配置
-
-Reranker 通过根据相关性重新排序检索结果来提高 RAG 准确性。
-
-#### 5.1 Cohere Reranker
-
-```bash
-RERANKER_TYPE=cohere
-COHERE_BASE_URL=https://api.cohere.com/v1/rerank
-RERANKER_API_KEY=your-cohere-api-key
-RERANKER_MODEL=rerank-english-v3.0
-```
-
-可用模型：
-- `rerank-english-v3.0`（英文）
-- `rerank-multilingual-v3.0`（100+ 种语言）
-
-#### 5.2 SiliconFlow Reranker
-
-```bash
-RERANKER_TYPE=siliconflow
-RERANKER_API_KEY=your-siliconflow-api-key
-RERANKER_MODEL=BAAI/bge-reranker-v2-m3
-```
-
-### 6. HugeGraph 连接
-
-配置与 HugeGraph 服务器实例的连接。
-
-```bash
-# 服务器连接
-GRAPH_IP=127.0.0.1
-GRAPH_PORT=8080
-GRAPH_NAME=hugegraph            # 图实例名称
-GRAPH_USER=admin                # 用户名
-GRAPH_PWD=admin-password        # 密码
-GRAPH_SPACE=                    # 图空间（可选，用于多租户）
-```
-
-### 7. 查询参数
-
-控制图遍历行为和结果限制。
-
-```bash
-# 图遍历限制
-MAX_GRAPH_PATH=10               # 图查询的最大路径深度
-MAX_GRAPH_ITEMS=30              # 从图中检索的最大项数
-EDGE_LIMIT_PRE_LABEL=8          # 每个标签类型的最大边数
-
-# 属性过滤
-LIMIT_PROPERTY=False            # 限制结果中的属性（True/False）
-```
-
-### 8. 向量搜索配置
-
-配置向量相似性搜索参数。
-
-```bash
-# 向量搜索阈值
-VECTOR_DIS_THRESHOLD=0.9        # 最小余弦相似度（0-1，越高越严格）
-TOPK_PER_KEYWORD=1              # 每个提取关键词的 Top-K 结果
-```
-
-### 9. Rerank 配置
-
-```bash
-# Rerank 结果限制
-TOPK_RETURN_RESULTS=20          # 重排序后的 top 结果数
-```
-
-## 配置优先级
-
-系统按以下顺序加载配置（后面的来源覆盖前面的）：
-
-1. **默认值**（在 `*_config.py` 文件中）
-2. **环境变量**（来自 `.env` 文件）
-3. **运行时更新**（通过 Web UI 或 API 调用）
-
-## 配置示例
-
-### 最小配置（OpenAI）
-
-```bash
-# 语言
-LANGUAGE=EN
-
-# LLM 类型
+```properties
+LANGUAGE=CN
 CHAT_LLM_TYPE=openai
 EXTRACT_LLM_TYPE=openai
 TEXT2GQL_LLM_TYPE=openai
 EMBEDDING_TYPE=openai
 
-# OpenAI 凭据（所有任务共用一个密钥）
-OPENAI_API_BASE=https://api.openai.com/v1
-OPENAI_API_KEY=sk-your-api-key-here
-OPENAI_LANGUAGE_MODEL=gpt-4o-mini
+OPENAI_API_KEY=your-api-key
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_CHAT_LANGUAGE_MODEL=gpt-4.1-mini
+OPENAI_EXTRACT_LANGUAGE_MODEL=gpt-4.1-mini
+OPENAI_TEXT2GQL_LANGUAGE_MODEL=gpt-4.1-mini
 OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
-# HugeGraph 连接
-GRAPH_IP=127.0.0.1
-GRAPH_PORT=8080
+GRAPH_URL=127.0.0.1:8080
 GRAPH_NAME=hugegraph
 GRAPH_USER=admin
-GRAPH_PWD=admin
+GRAPH_PWD=your-password
 ```
 
-### 生产环境配置（LiteLLM + Reranker）
+## 配置加载
 
-```bash
-# 双语支持
-LANGUAGE=EN
+配置类先提供代码默认值，再从 `.env` 和进程环境读取覆盖值。Web 页面和配置 API 可以在运行时更新当前设置，并把受支持的字段同步回 `.env`。手工改动 `.env` 后应重启服务；提示词 YAML 可由页面加载逻辑刷新。
 
-# 灵活使用 LiteLLM
-CHAT_LLM_TYPE=litellm
-EXTRACT_LLM_TYPE=litellm
-TEXT2GQL_LLM_TYPE=litellm
-EMBEDDING_TYPE=litellm
+配置定义位于：
 
-# LiteLLM 代理
-LITELLM_CHAT_API_BASE=http://localhost:4000
-LITELLM_CHAT_API_KEY=sk-litellm-master-key
-LITELLM_CHAT_LANGUAGE_MODEL=anthropic/claude-3-5-sonnet-20241022
-LITELLM_CHAT_TOKENS=8192
-
-LITELLM_EXTRACT_API_BASE=http://localhost:4000
-LITELLM_EXTRACT_API_KEY=sk-litellm-master-key
-LITELLM_EXTRACT_LANGUAGE_MODEL=openai/gpt-4o-mini
-LITELLM_EXTRACT_TOKENS=256
-
-LITELLM_TEXT2GQL_API_BASE=http://localhost:4000
-LITELLM_TEXT2GQL_API_KEY=sk-litellm-master-key
-LITELLM_TEXT2GQL_LANGUAGE_MODEL=openai/gpt-4o-mini
-LITELLM_TEXT2GQL_TOKENS=4096
-
-LITELLM_EMBEDDING_API_BASE=http://localhost:4000
-LITELLM_EMBEDDING_API_KEY=sk-litellm-master-key
-LITELLM_EMBEDDING_MODEL=openai/text-embedding-3-small
-
-# Cohere Reranker 提高准确性
-RERANKER_TYPE=cohere
-COHERE_BASE_URL=https://api.cohere.com/v1/rerank
-RERANKER_API_KEY=your-cohere-key
-RERANKER_MODEL=rerank-multilingual-v3.0
-
-# 带认证的 HugeGraph
-GRAPH_IP=prod-hugegraph.example.com
-GRAPH_PORT=8080
-GRAPH_NAME=production_graph
-GRAPH_USER=rag_user
-GRAPH_PWD=secure-password
-GRAPH_SPACE=prod_space
-
-# 优化的查询参数
-MAX_GRAPH_PATH=15
-MAX_GRAPH_ITEMS=50
-VECTOR_DIS_THRESHOLD=0.85
-TOPK_RETURN_RESULTS=30
-```
-
-### 本地/离线配置（Ollama）
-
-```bash
-# 语言
-LANGUAGE=EN
-
-# 全部通过 Ollama 使用本地模型
-CHAT_LLM_TYPE=ollama/local
-EXTRACT_LLM_TYPE=ollama/local
-TEXT2GQL_LLM_TYPE=ollama/local
-EMBEDDING_TYPE=ollama/local
-
-# Ollama 端点
-OLLAMA_CHAT_HOST=127.0.0.1
-OLLAMA_CHAT_PORT=11434
-OLLAMA_CHAT_LANGUAGE_MODEL=llama3.1:8b
-
-OLLAMA_EXTRACT_HOST=127.0.0.1
-OLLAMA_EXTRACT_PORT=11434
-OLLAMA_EXTRACT_LANGUAGE_MODEL=llama3.1:8b
-
-OLLAMA_TEXT2GQL_HOST=127.0.0.1
-OLLAMA_TEXT2GQL_PORT=11434
-OLLAMA_TEXT2GQL_LANGUAGE_MODEL=qwen2.5-coder:7b
-
-OLLAMA_EMBEDDING_HOST=127.0.0.1
-OLLAMA_EMBEDDING_PORT=11434
-OLLAMA_EMBEDDING_MODEL=nomic-embed-text
-
-# 离线环境不使用 reranker
-RERANKER_TYPE=
-
-# 本地 HugeGraph
-GRAPH_IP=127.0.0.1
-GRAPH_PORT=8080
-GRAPH_NAME=hugegraph
-GRAPH_USER=admin
-GRAPH_PWD=admin
-```
-
-## 配置验证
-
-修改 `.env` 后，验证配置：
-
-1. **通过 Web UI**：访问 `http://localhost:8001` 并检查设置面板
-2. **通过 Python**：
-```python
-from hugegraph_llm.config import settings
-print(settings.llm_config)
-print(settings.hugegraph_config)
-```
-3. **通过 REST API**：
-```bash
-curl http://localhost:8001/config
-```
-
-## 故障排除
-
-| 问题 | 解决方案 |
-|------|---------|
-| "API key not found" | 检查 `.env` 中的 `*_API_KEY` 是否正确设置 |
-| "Connection refused" | 验证 `GRAPH_IP` 和 `GRAPH_PORT` 是否正确 |
-| "Model not found" | 对于 Ollama：运行 `ollama pull <模型名称>` |
-| "Rate limit exceeded" | 减少 `MAX_GRAPH_ITEMS` 或使用不同的 API 密钥 |
-| "Embedding dimension mismatch" | 删除现有向量并使用正确模型重建 |
-
-## 另见
-
-- [HugeGraph-LLM 概述](./hugegraph-llm.md)
-- [REST API 参考](./rest-api.md)
-- [快速入门指南](./quick_start.md)
+- `hugegraph-llm/src/hugegraph_llm/config/llm_config.py`
+- `hugegraph-llm/src/hugegraph_llm/config/hugegraph_config.py`
+- `hugegraph-llm/src/hugegraph_llm/config/admin_config.py`
+- `hugegraph-llm/src/hugegraph_llm/config/prompt_config.py`

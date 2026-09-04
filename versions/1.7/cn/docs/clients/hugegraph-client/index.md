@@ -13,7 +13,7 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 
 HugeGraph-Client 是操作 graph 的总入口，用户必须先创建出 HugeGraph-Client 对象，与 HugeGraph-Server 建立连接（伪连接）后，才能获取到 schema、graph 以及 gremlin 的操作入口对象。
 
-目前 HugeGraph-Client 只允许连接服务端已存在的图，无法自定义图进行创建。1.7.0 版本后，client 支持 graphSpace 设置，默认为DEFAULT。其创建方法如下：
+HugeGraph-Client 连接服务端已有的图。构造器支持传入 GraphSpace；使用双参数构造器或传入空值时，GraphSpace 默认为 `DEFAULT`。
 
 ```java
 // HugeGraphServer 地址："http://localhost:8080"
@@ -47,7 +47,7 @@ SchemaManager schema = hugeClient.schema()
 schema = graph.schema()
 ```
 
-下面分别对三种元数据的定义过程进行介绍。
+下面分别介绍四种元数据的定义过程。
 
 #### 2.2 PropertyKey
 
@@ -457,8 +457,7 @@ Edge knows1 = marko.addEdge("knows", vadas, "city", "Beijing");
 **注意：当 frequency 为 multiple 时必须要设置 sortKeys 对应属性类型的值。**
 
 ### 4 图管理
-client支持一个物理部署中多个 GraphSpace，每个 GraphSpace 下可以含多个图（graph）。
-- 兼容：不指定 GraphSpace 时，默认使用 "DEFAULT" 空间
+Client 支持管理一个物理部署中的多个 GraphSpace，每个 GraphSpace 可以包含多个图。不指定 GraphSpace 时使用 `DEFAULT`。
 
 #### 4.1 创建GraphSpace
 
@@ -479,11 +478,14 @@ spaceManager.createGraphSpace(graphSpace);
 
 | 类别 | 接口 | 描述 |
 |------|------|------|
-| Manager - 查询 | listGraphSpace() | 获取所有 GraphSpace 列表 |
+| Manager - 查询 | listGraphSpace() | 获取所有 GraphSpace 名称 |
+| | listProfile() / listProfile(String prefix) | 获取 GraphSpace 概要 |
 | | getGraphSpace(String name) | 获取指定 GraphSpace |
+| | getDefault() | 获取默认 GraphSpace |
 | Manager - 创建/更新 | createGraphSpace(GraphSpace) | 创建 GraphSpace |
-| | updateGraphSpace(String, GraphSpace) | 更新配置 |
-| Manager - 删除 | removeGraphSpace(String) | 删除指定 GraphSpace |
+| | updateGraphSpace(GraphSpace) | 更新配置 |
+| | setDefault(String name) | 设置默认 GraphSpace |
+| Manager - 删除 | deleteGraphSpace(String name) | 删除指定 GraphSpace |
 | GraphSpace - 属性 | getName() / getDescription() | 获取名称/描述 |
 | | getGraphNumber() | 获取图数量 |
 | GraphSpace - 配置 | setDescription(String) | 设置描述 |

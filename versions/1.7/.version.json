@@ -3,30 +3,30 @@
   "baseURL": "https://hugegraph.apache.org/versions/1.7/",
   "docsNavigation": {
     "groups": 5,
-    "pages": 80,
-    "removed": 10,
+    "pages": 85,
+    "removed": 5,
     "scopedLinks": 10,
-    "treeSha256": "a764c50bbeca08da1fc23869758f3b5646e7071607214fedb03a8fcc16e0b1c0"
+    "treeSha256": "78abae8934d1245bd9b18754547d23a328506b22db4a1e6e8e9e38e94818df57"
   },
   "githubBranch": "release-1.7.0",
   "id": "1.7",
   "migration": {
-    "changed": 4,
-    "files": 197,
+    "changed": 1,
+    "files": 209,
     "findings": 0,
-    "knownFixes": 135,
+    "knownFixes": 23,
     "residual": 0
   },
   "name": "1.7",
   "publishPath": "versions/1.7",
   "ref": "release-1.7.0",
-  "sha": "a036f550bf412ea2950271390888d63bbffef6ba",
+  "sha": "4211f768b64a709168b7f92ea2eab15b9d89e3b3",
   "urlScoping": {
-    "files": 380,
+    "files": 406,
     "historicalHomeRedirects": 2,
-    "manifests": 205,
+    "manifests": 219,
     "searchFingerprints": 2,
-    "searchRefs": 145,
-    "urls": 1619
+    "searchRefs": 171,
+    "urls": 1880
   }
 }

@@ -6,7 +6,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ## Apache HugeGraph 文档
 
-Apache HugeGraph 是一套完整的图数据库生态系统，支持 OLTP 实时查询、OLAP 离线分析和 AI 智能应用。
+Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核心引擎负责属性图管理、事务处理与实时查询，Computer 和 Vermeer 运行图算法，HugeGraph-AI 提供 GraphRAG、图机器学习和 Python 客户端。
 
 ### 按场景快速导航
 
@@ -14,7 +14,7 @@ Apache HugeGraph 是一套完整的图数据库生态系统，支持 OLTP 实时
 |----------|-----------|
 | **运行图查询** (OLTP) | [HugeGraph Server 快速开始](quickstart/hugegraph/hugegraph-server) |
 | **大规模图计算** (OLAP) | [图计算引擎](quickstart/computing/hugegraph-computer) |
-| **构建 AI/RAG 应用** | [HugeGraph-AI](quickstart/hugegraph-ai/quick_start) |
+| **构建 Graph + AI 应用** | [HugeGraph-AI](quickstart/hugegraph-ai/quick_start) |
 | **批量导入数据** | [HugeGraph Loader](quickstart/toolchain/hugegraph-loader) |
 | **可视化管理图** | [Hubble Web UI](quickstart/toolchain/hugegraph-hubble) |
 
@@ -26,46 +26,45 @@ Apache HugeGraph 是一套完整的图数据库生态系统，支持 OLTP 实时
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
 │  │ HugeGraph   │  │ HugeGraph   │  │ HugeGraph-AI            │  │
-│  │ Server      │  │ Computer    │  │ (GraphRAG/ML/Python)    │  │
+│  │ Core Engine │  │ Computer    │  │ (GraphRAG/ML/Python)    │  │
 │  │ (OLTP)      │  │ (OLAP)      │  │                         │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 │         │               │                    │                   │
 │  ┌──────┴───────────────┴────────────────────┴──────────────┐   │
 │  │              HugeGraph Toolchain                          │   │
-│  │  Hubble (UI) | Loader | Client (Java/Go/Python) | Tools   │   │
+│  │  Hubble (UI) | Loader | Client (Java/Go/Py) | Tools      │   │
 │  └───────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 核心组件
 
-- **HugeGraph Server** - 图数据库核心，REST API + Gremlin + Cypher 支持
-- **HugeGraph Toolchain** - 客户端 SDK、数据导入、可视化、运维工具
-- **HugeGraph Computer** - 分布式图计算 (Vermeer 高性能内存版 / Computer 海量存储外存版)
-- **HugeGraph-AI** - GraphRAG、知识图谱构建、20+ 图机器学习算法
+- **HugeGraph 核心引擎（OLTP）**：通过 HugeGraph Server 提供 REST API，并支持 Gremlin 和 Cypher 查询
+- **HugeGraph Toolchain**：包含 Java/Go Client、Loader、Hubble、Spark Connector 和 Tools；Python Client 位于 HugeGraph-AI，Rust Client 正在开发中
+- **HugeGraph Computer**：仓库内包含分布式 Computer 引擎和内存计算引擎 Vermeer
+- **HugeGraph-AI**：包含 GraphRAG、图机器学习、Python Client 和 Vermeer Python Client
 
 ### 部署模式
 
-| 模式 | 适用场景 | 数据规模 |
-|-----|---------|---------|
-| **单机版** | 极速稳定、存算一体 | < 4TB |
-| **分布式** | 海量存储、存算分离 | < 1000TB |
-| **Docker** | 快速体验 | 任意 |
+| 模式 | 核心组件 | 适用场景 | 数据规模 |
+|---|---|---|---|
+| **单机模式** | Server + RocksDB | 开发、测试和中小规模数据 | ≤ 2 TB |
+| **分布式模式** | Server + PD + Store（HStore） | 生产环境、水平扩展和多副本部署 | ≤ 1 PB |
 
-[📖 详细介绍](introduction/)
+各组件的适用范围和启动方式见[系统介绍](introduction/)及对应快速开始文档。
 
 ---
 
 本节页面：
 
-- [Introduction with HugeGraph](/cn/docs/introduction/)
+- [Apache HugeGraph 介绍](/cn/docs/introduction/)
 - [下载 Apache HugeGraph](/cn/docs/download/download/)
 - [Quick Start](/cn/docs/quickstart/)
 - [HugeGraph-Server 配置](/cn/docs/config/)
-- [API](/cn/docs/clients/)
-- [GUIDES](/cn/docs/guides/)
-- [QUERY LANGUAGE](/cn/docs/language/)
+- [客户端与 API](/cn/docs/clients/)
+- [使用指南](/cn/docs/guides/)
+- [查询语言](/cn/docs/language/)
 - [PERFORMANCE](/cn/docs/performance/)
-- [Contribution Guidelines](/cn/docs/contribution-guidelines/)
+- [贡献指南](/cn/docs/contribution-guidelines/)
 - [CHANGELOGS](/cn/docs/changelog/)
-- [Contributor Agreement](/cn/docs/cla/)
+- [Apache 贡献者协议](/cn/docs/cla/)

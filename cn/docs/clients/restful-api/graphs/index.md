@@ -69,7 +69,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 ```javascript
 {
     "name": "hugegraph",
-    "backend": "cassandra"
+    "backend": "rocksdb"
 }
 ```
 
@@ -284,8 +284,8 @@ gremlin.graph=org.apache.hugegraph.HugeFactory
 
 #vertex.default_label=vertex
 
-backend=cassandra
-serializer=cassandra
+backend=rocksdb
+serializer=binary
 
 store=hugegraph
 ...=

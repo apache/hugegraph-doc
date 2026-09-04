@@ -4,66 +4,26 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-A HugeGraph Client SDK tool based on the Go language.
+HugeGraph Go Client is the Go SDK in the Toolchain repository. It currently provides APIs for version queries, schemas, vertices, edges, and Gremlin.
 
-## Software Architecture
+> This module is still under development. Refer to the source code under [`hugegraph-client-go/api/v1`](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-client-go/api/v1) for the currently available interfaces.
 
-(Software architecture description)
+## Requirements
 
-## Installation Tutorial
+- Go 1.19 or later
+- An accessible HugeGraph Server; examples use `http://127.0.0.1:8080`
+
+## Installation
+
+Run the following command in a Go module project:
 
 ```shell
 go get github.com/apache/hugegraph-toolchain/hugegraph-client-go
 ```
 
-## Implemented APIs
+## Initialize the Client
 
-| API     | Description             |
-|---------|-------------------------|
-| schema  | Get schema information  |
-| version | Get version information |
-
-## Usage Instructions
-
-### 1. Initialize the Client
-
-```go
-package main
-
-import (
-	"log"
-	"os"
-
-	"github.com/apache/hugegraph-toolchain/hugegraph-client-go"
-	"github.com/apache/hugegraph-toolchain/hugegraph-client-go/hgtransport"
-)
-
-func main() {
-	client, err := hugegraph.NewCommonClient(hugegraph.Config{
-		Host:     "127.0.0.1",
-		Port:     8080,
-		Graph:    "hugegraph",
-		Username: "", // Fill in the username according to the actual situation
-		Password: "", // Fill in the password according to the actual situation
-		Logger: &hgtransport.ColorLogger{
-			Output:             os.Stdout,
-			EnableRequestBody:  true,
-			EnableResponseBody: true,
-		},
-	})
-
-	if err != nil {
-		log.Fatalf("Error creating the client: %s\n", err)
-	}
-
-	// Use the client for operations...
-	_ = client // Avoid "imported and not used" error
-}
-```
-
-### 2. Get HugeGraph Version
-
-#### Get Version Information Using SDK
+`NewCommonClient` requires `Host` to be an IP address. Leave the username and password empty when authentication is disabled. Current server graph resource paths include a graph space; use `DEFAULT` for the default space. Leaving `GraphSpace` empty applies only to older servers that still use the `/graphs/{graph}` path.
 
 ```go
 package main
@@ -71,93 +31,47 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/apache/hugegraph-toolchain/hugegraph-client-go"
-	"github.com/apache/hugegraph-toolchain/hugegraph-client-go/hgtransport"
+	hugegraph "github.com/apache/hugegraph-toolchain/hugegraph-client-go"
 )
 
-// initClient initializes and returns a HugeGraph client instance
-func initClient() *hugegraph.CommonClient {
+func main() {
 	client, err := hugegraph.NewCommonClient(hugegraph.Config{
-		Host:     "127.0.0.1",
-		Port:     8080,
-		Graph:    "hugegraph",
-		Username: "",
-		Password: "",
-		Logger: &hgtransport.ColorLogger{
-			Output:             os.Stdout,
-			EnableRequestBody:  true,
-			EnableResponseBody: true,
-		},
+		Host:       "127.0.0.1",
+		Port:       8080,
+		GraphSpace: "DEFAULT",
+		Graph:      "hugegraph",
+		Username:   "",
+		Password:   "",
 	})
 	if err != nil {
-		log.Fatalf("Error creating the client: %s\n", err)
-	}
-	return client
-}
-
-func getVersion() {
-	client := initClient()
-	// Assume client has a Version method that returns version information and an error
-	// res, err := client.Version() // Actual call
-	// Simulate return, as the client.Version() return type in the original README does not fully match the usage here
-	type VersionInfo struct {
-		Versions struct {
-			Version string `json:"version"`
-			Core    string `json:"core"`
-			Gremlin string `json:"gremlin"`
-			API     string `json:"api"`
-		} `json:"versions"`
-		// Body io.ReadCloser // Assume there is a Body to close, adjust according to the actual SDK
+		log.Fatal(err)
 	}
 
-	// Simulate API call and return
-	res := &VersionInfo{
-		Versions: struct {
-			Version string `json:"version"`
-			Core    string `json:"core"`
-			Gremlin string `json:"gremlin"`
-			API     string `json:"api"`
-		}{
-			Version: "1.0.0", // Example version
-			Core:    "1.0.0",
-			Gremlin: "3.x.x",
-			API:     "v1",
-		},
+	response, err := client.Version()
+	if err != nil {
+		log.Fatal(err)
 	}
-	// err := error(nil) // Assume no error
+	defer response.Body.Close()
 
-	// if err != nil {
-	// 	log.Fatalf("Error getting the response: %s\n", err)
-	// }
-	// defer res.Body.Close() // If there is a Body, it needs to be closed
-
-	fmt.Println(res.Versions)
-	fmt.Println(res.Versions.Version)
-}
-
-func main() {
-	getVersion()
+	fmt.Println(response.Versions.Version)
 }
 ```
 
-#### Structure of the Return Value
+The `Versions` value returned by `Version()` includes the HugeGraph Server, Core, Gremlin, and REST API versions. The `NewDefaultCommonClient()` helper in the source connects to the `hugegraph` graph at `127.0.0.1:8080` with `admin`/`pa` authentication. Production code should normally pass an explicit configuration instead.
 
-```go
-package main
+## Available Entry Points
 
-// VersionResponse defines the structure returned by the version API
-type VersionResponse struct {
-	Versions struct {
-		Version string `json:"version"` // hugegraph version
-		Core    string `json:"core"`    // hugegraph core version
-		Gremlin string `json:"gremlin"` // hugegraph gremlin version
-		API     string `json:"api"`     // hugegraph api version
-	} `json:"versions"`
-}
-```
+`CommonClient` currently exposes the following entry points:
 
-## API Reference
+| Entry point | Purpose |
+|---|---|
+| `Version()` | Query the server version |
+| `Schema()` | Query the complete schema |
+| `Propertykey` | Manage property keys |
+| `VertexLabel` | Manage vertex labels |
+| `EdgeLabel` | Manage edge labels |
+| `Vertex` | Create vertices in single or batch mode and update vertex properties |
+| `Gremlin` | Execute Gremlin through GET or POST |
 
-<!-- Links to more detailed API documentation can be added here -->
+For complete usage, see the tests in each API directory, such as [`version_test.go`](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/api/v1/version_test.go) and [`vertexlabel_test.go`](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/api/v1/vertexlabel/vertexlabel_test.go).

@@ -29,10 +29,10 @@ There are two ways to deploy the HugeGraph-Store component:
 Download the latest version of HugeGraph-Store from the Apache HugeGraph official download page:
 
 ```bash
-# Replace {version} with the latest version number, e.g., 1.5.0
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
-tar zxf apache-hugegraph-incubating-{version}.tar.gz
-cd apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{version}
+# 1.7.0 is a historical release from the incubation period, so its file and directory names still include "incubating"
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
+cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-store-incubating-1.7.0
 ```
 
 #### 3.2 Compile from source
@@ -45,9 +45,9 @@ git clone https://github.com/apache/hugegraph.git
 cd hugegraph
 mvn clean install -DskipTests=true
 
-# 3. After successful compilation, the Store module build artifacts will be located at
-#    apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{version}
-#    target/apache-hugegraph-incubating-{version}.tar.gz
+# 3. After a successful build, the Store directory and complete distribution package are located at
+#    hugegraph-store/apache-hugegraph-store-{version}
+#    target/apache-hugegraph-{version}.tar.gz
 ```
 
 #### 3.3 Docker Deployment
@@ -277,7 +277,7 @@ curl http://localhost:8520/actuator/health
 
 If it returns `{"status":"UP"}`, it indicates that the Store service has been successfully started.
 
-Additionally, you can check the status of Store nodes in the cluster through the PD API:
+You can also check Store node status through the PD API:
 
 ```bash
 curl http://localhost:8620/v1/stores
@@ -298,7 +298,7 @@ The example below shows a single Store node. If all three nodes are configured c
         "raftAddress": "127.0.0.1:8510",
         "version": "",
         "state": "Up",
-        "deployPath": "/Users/{your_user_name}/hugegraph/apache-hugegraph-incubating-1.5.0/apache-hugegraph-store-incubating-1.5.0/lib/hg-store-node-1.5.0.jar",
+        "deployPath": "/Users/{your_user_name}/hugegraph/hugegraph-store/apache-hugegraph-store-{version}/lib/hg-store-node-{version}.jar",
         "dataPath": "./storage",
         "startTimeStamp": 1754027127969,
         "registedTimeStamp": 1754027127969,

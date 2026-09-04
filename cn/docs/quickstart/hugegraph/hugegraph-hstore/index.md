@@ -29,10 +29,10 @@ HugeGraph-Store 是 HugeGraph 分布式版本的存储节点组件，负责实�
 从 Apache HugeGraph 官方下载页面下载最新版本的 HugeGraph-Store：
 
 ```bash
-# 用最新版本号替换 {version}，例如 1.5.0
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
-tar zxf apache-hugegraph-incubating-{version}.tar.gz
-cd apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{version}
+# 1.7.0 是项目孵化期发布的历史版本，因此文件名和目录名仍带 incubating
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
+cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-hstore-incubating-1.7.0
 ```
 
 #### 3.2 源码编译
@@ -45,9 +45,9 @@ git clone https://github.com/apache/hugegraph.git
 cd hugegraph
 mvn clean install -DskipTests=true
 
-# 3. 编译成功后，Store 模块的构建产物将位于
-#    apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{version}
-#    target/apache-hugegraph-incubating-{version}.tar.gz
+# 3. 编译成功后，Store 目录和完整发布包分别位于
+#    hugegraph-store/apache-hugegraph-store-{version}
+#    target/apache-hugegraph-{version}.tar.gz
 ```
 
 #### 3.3 Docker 部署
@@ -277,7 +277,7 @@ curl http://localhost:8520/actuator/health
 
 如果返回 `{"status":"UP"}`，则表示 Store 服务已成功启动。
 
-此外，可以通过 PD 的 API 查看集群中的 Store 节点状态：
+也可以通过 PD API 查看集群中的 Store 节点状态：
 
 ```bash
 curl http://localhost:8620/v1/stores
@@ -297,7 +297,7 @@ curl http://localhost:8620/v1/stores
         "raftAddress": "127.0.0.1:8510",
         "version": "",
         "state": "Up",
-        "deployPath": "/Users/{your_user_name}/hugegraph/apache-hugegraph-incubating-1.5.0/apache-hugegraph-store-incubating-1.5.0/lib/hg-store-node-1.5.0.jar",
+        "deployPath": "/Users/{your_user_name}/hugegraph/hugegraph-store/apache-hugegraph-store-{version}/lib/hg-store-node-{version}.jar",
         "dataPath": "./storage",
         "startTimeStamp": 1754027127969,
         "registedTimeStamp": 1754027127969,

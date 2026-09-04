@@ -13,13 +13,13 @@
 
 ## Documentation index
 
-- [Introduction](https://hugegraph.apache.org/cn/docs/introduction/index.md)
-- [Quick Start](https://hugegraph.apache.org/cn/docs/quickstart/index.md)
+- [系统介绍](https://hugegraph.apache.org/cn/docs/introduction/index.md)
+- [快速开始](https://hugegraph.apache.org/cn/docs/quickstart/index.md)
   - [HugeGraph-LLM](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/index.md)
   - [Java 客户端](https://hugegraph.apache.org/cn/docs/quickstart/client/hugegraph-client/index.md)
   - [Vermeer: 高性能内存图计算框架](https://hugegraph.apache.org/cn/docs/quickstart/computing/hugegraph-vermeer/index.md)
   - [使用 Hubble 实现图可视化](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-hubble/index.md)
-  - [安装/构建 HugeGraph-Server](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/index.md)
+  - [安装/构建 HugeGraph Server](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/index.md)
   - [HugeGraph-ML](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/hugegraph-ml/index.md)
   - [Python 客户端](https://hugegraph.apache.org/cn/docs/quickstart/client/hugegraph-client-python/index.md)
   - [使用 Computer 进行 OLAP 分析](https://hugegraph.apache.org/cn/docs/quickstart/computing/hugegraph-computer/index.md)
@@ -27,9 +27,9 @@
   - [安装/构建 HugeGraph-PD](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-pd/index.md)
   - [Computer 配置参考](https://hugegraph.apache.org/cn/docs/quickstart/computing/hugegraph-computer-config/index.md)
   - [Go 客户端](https://hugegraph.apache.org/cn/docs/quickstart/client/hugegraph-client-go/index.md)
+  - [LLM 使用流程](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/quick_start/index.md)
   - [使用 HugeGraph-Tools 导出/管理图](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-tools/index.md)
   - [安装/构建 HugeGraph-Store](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-hstore/index.md)
-  - [GraphRAG UI Details](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/quick_start/index.md)
   - [使用 Spark Connector 读写图数据](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-spark-connector/index.md)
   - [配置参考](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/config-reference/index.md)
   - [REST API](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/rest-api/index.md)
@@ -38,7 +38,7 @@
   - [Server 完整配置手册](https://hugegraph.apache.org/cn/docs/config/config-option/index.md)
   - [权限配置](https://hugegraph.apache.org/cn/docs/config/config-authentication/index.md)
   - [配置 HTTPS](https://hugegraph.apache.org/cn/docs/config/config-https/index.md)
-- [API](https://hugegraph.apache.org/cn/docs/clients/index.md)
+- [客户端与 API](https://hugegraph.apache.org/cn/docs/clients/index.md)
   - [Graphspace](https://hugegraph.apache.org/cn/docs/clients/restful-api/graphspace/index.md): Graphspace（图空间）REST 接口：多租户与资源隔离的创建、查看、更新与删除，以及使用前置条件与限制。
   - [Schema](https://hugegraph.apache.org/cn/docs/clients/restful-api/schema/index.md): Schema（图模式）REST 接口:查询图的完整模式定义,包括属性键、顶点标签、边标签和索引标签的统一视图。
   - [HugeGraph Java Client](https://hugegraph.apache.org/cn/docs/clients/hugegraph-client/index.md)
@@ -60,7 +60,7 @@
   - [Authentication](https://hugegraph.apache.org/cn/docs/clients/restful-api/auth/index.md): Authentication（认证鉴权）REST 接口:管理用户、角色、权限和访问控制,实现细粒度的图数据安全机制。
   - [Metrics](https://hugegraph.apache.org/cn/docs/clients/restful-api/metrics/index.md): Metrics（监控指标）REST 接口:获取系统运行时的性能指标、统计信息和健康状态数据。
   - [Other](https://hugegraph.apache.org/cn/docs/clients/restful-api/other/index.md): Other（其他接口）REST 接口:提供系统版本查询和 API 版本信息等辅助功能。
-- [GUIDES](https://hugegraph.apache.org/cn/docs/guides/index.md)
+- [使用指南](https://hugegraph.apache.org/cn/docs/guides/index.md)
   - [架构概览](https://hugegraph.apache.org/cn/docs/guides/architectural/index.md)
   - [设计理念(legacy)](https://hugegraph.apache.org/cn/docs/guides/desgin-concept/index.md)
   - [HugeGraph Plugin](https://hugegraph.apache.org/cn/docs/guides/custom-plugin/index.md)
@@ -69,7 +69,7 @@
   - [Docker 集群](https://hugegraph.apache.org/cn/docs/guides/hugegraph-docker-cluster/index.md)
   - [FAQ](https://hugegraph.apache.org/cn/docs/guides/faq/index.md)
   - [安全公告](https://hugegraph.apache.org/cn/docs/guides/security/index.md)
-- [QUERY LANGUAGE](https://hugegraph.apache.org/cn/docs/language/index.md)
+- [查询语言](https://hugegraph.apache.org/cn/docs/language/index.md)
   - [Gremlin Query Language](https://hugegraph.apache.org/cn/docs/language/hugegraph-gremlin/index.md)
   - [HugeGraph Examples](https://hugegraph.apache.org/cn/docs/language/hugegraph-example/index.md)
 - [PERFORMANCE](https://hugegraph.apache.org/cn/docs/performance/index.md)
@@ -78,9 +78,9 @@
   - [v0.5.6 Cluster(Cassandra)](https://hugegraph.apache.org/cn/docs/performance/api-performance/hugegraph-api-0.5.6-cassandra/index.md)
   - [HugeGraph-Loader 性能](https://hugegraph.apache.org/cn/docs/performance/hugegraph-loader-performance/index.md)
   - [HugeGraph 0.4.4 性能测试](https://hugegraph.apache.org/cn/docs/performance/hugegraph-benchmark-0.4.4/index.md)
-- [Contribution Guidelines](https://hugegraph.apache.org/cn/docs/contribution-guidelines/index.md)
-  - [如何参与 HugeGraph 社区](https://hugegraph.apache.org/cn/docs/contribution-guidelines/contribute/index.md)
-  - [订阅社区邮箱](https://hugegraph.apache.org/cn/docs/contribution-guidelines/subscribe/index.md)
+- [贡献指南](https://hugegraph.apache.org/cn/docs/contribution-guidelines/index.md)
+  - [贡献流程](https://hugegraph.apache.org/cn/docs/contribution-guidelines/contribute/index.md)
+  - [邮件列表](https://hugegraph.apache.org/cn/docs/contribution-guidelines/subscribe/index.md)
   - [验证 Apache 发版](https://hugegraph.apache.org/cn/docs/contribution-guidelines/validate-release/index.md)
   - [在 IDEA 中配置 Server 开发环境](https://hugegraph.apache.org/cn/docs/contribution-guidelines/hugegraph-server-idea-setup/index.md)
   - [Apache HugeGraph Committer 指南](https://hugegraph.apache.org/cn/docs/contribution-guidelines/committer-guidelines/index.md)
@@ -92,7 +92,7 @@
   - [Release-1.0.0](https://hugegraph.apache.org/cn/docs/changelog/hugegraph-1.0.0-release-notes/index.md)
   - [Release-0.12.0](https://hugegraph.apache.org/cn/docs/changelog/hugegraph-0.12.0-release-notes/index.md)
 - [Download](https://hugegraph.apache.org/cn/docs/download/download/index.md)
-- [Contributor Agreement](https://hugegraph.apache.org/cn/docs/cla/index.md)
+- [贡献者协议](https://hugegraph.apache.org/cn/docs/cla/index.md)
 
 ## Site locales
 

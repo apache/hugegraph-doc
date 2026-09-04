@@ -69,20 +69,16 @@ For more Gremlin statements, please refer to [Tinkerpop Official Website](http:/
 
 ### 2 Client/Server mode
 
-Because Gremlin-Console can only connect to HugeGraph-Server through WebSocket, HugeGraph-Server provides HTTP connections by default, so modify the configuration of gremlin-server first.
-
-**NOTE: After changing the connection method to WebSocket, HugeGraph-Client, HugeGraph-Loader, HugeGraph-Hubble and other supporting tools cannot be used.**
+Gremlin Console connects to HugeGraph Server through WebSocket. The default configuration uses `WsAndHttpChannelizer`, which handles both WebSocket and HTTP requests, so there is no need to switch the Channelizer.
 
 ```yaml
 # vim conf/gremlin-server.yaml
 # ......
-# If you want to start gremlin-server for gremlin-console (web-socket),
-# please change `HttpChannelizer` to `WebSocketChannelizer` or comment this line.
-channelizer: org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer
+channelizer: org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer
 # ......
 ```
 
-Modify `channelizer: org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer` to `channelizer: org.apache.tinkerpop.gremlin.server.channel.WebSocketChannelizer` or comment directly, and then follow the [steps](/docs/quickstart/hugegraph/hugegraph-server) to start the Server.
+Confirm that `host` and `port` match the settings in `remote.yaml`, and then follow the [steps](/docs/quickstart/hugegraph/hugegraph-server) to start HugeGraph Server.
 
 Then enter Gremlin-Console:
 

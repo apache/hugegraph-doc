@@ -14,6 +14,6 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 本节页面：
 
-- [HugeGraph-Server Quick Start](/cn/docs/quickstart/hugegraph/hugegraph-server/)
+- [HugeGraph Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/)
 - [HugeGraph-PD Quick Start](/cn/docs/quickstart/hugegraph/hugegraph-pd/)
 - [HugeGraph-Store Quick Start](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)

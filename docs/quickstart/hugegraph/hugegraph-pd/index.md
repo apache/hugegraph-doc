@@ -28,10 +28,10 @@ There are two ways to deploy the HugeGraph-PD component:
 Download the latest version of HugeGraph-PD from the Apache HugeGraph official download page:
 
 ```bash
-# Replace {version} with the latest version number, e.g., 1.5.0
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
-tar zxf apache-hugegraph-incubating-{version}.tar.gz
-cd apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version}
+# 1.7.0 is a historical release from the incubation period, so its file and directory names still include "incubating"
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
+cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 ```
 
 #### 3.2 Compile from source
@@ -44,9 +44,9 @@ git clone https://github.com/apache/hugegraph.git
 cd hugegraph
 mvn clean install -DskipTests=true
 
-# 3. After successful compilation, the PD module build artifacts will be located at
-#    apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version}
-#    target/apache-hugegraph-incubating-{version}.tar.gz
+# 3. After a successful build, the PD directory and complete distribution package are located at
+#    hugegraph-pd/apache-hugegraph-pd-{version}
+#    target/apache-hugegraph-{version}.tar.gz
 ```
 
 #### 3.3 Docker Deployment
@@ -193,7 +193,7 @@ curl http://localhost:8620/actuator/health
 
 If it returns `{"status":"UP"}`, it indicates that the PD service has been successfully started.
 
-Additionally, you can verify Store node status through the PD API:
+You can also verify Store node status through the PD API:
 
 ```bash
 curl http://localhost:8620/v1/stores

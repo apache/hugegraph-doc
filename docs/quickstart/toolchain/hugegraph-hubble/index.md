@@ -6,50 +6,35 @@ LLMS index: [llms.txt](/llms.txt)
 
 ### 1 HugeGraph-Hubble Overview
 
-> **Note:** The current version of Hubble has not yet added Auth/Login related interfaces and 
-> standalone protection, it will be added in the next Release version (＞ 1.5). 
-> Please be careful not to expose it in a public network environment or untrusted networks to 
-> avoid related SEC issues (you can also use IP & port **whitelist** + HTTPS)
+> ⚠️ **Security notice**: As of the 1.7.0 release, Hubble does not provide Auth/Login protection. This feature is planned for the 1.8.0 release. Do not expose Hubble to the public Internet or untrusted networks; restrict access with IP/port allowlists and HTTPS.
 
 > **Testing Guide**: For running HugeGraph-Hubble tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/toolchain-local-test)
 
-**HugeGraph-Hubble** is HugeGraph's one-stop visual analysis platform. The platform covers the whole 
-process from data modeling, to efficient data import, to real-time and offline analysis of data, and 
-unified management of graphs, realizing the whole process wizard of graph application. It is designed 
-to improve the user's use fluency, lower the user's use threshold, and provide a more efficient and easy-to-use user experience.
+HugeGraph-Hubble is HugeGraph's web management interface. It manages graph connections and schemas, imports data, runs Gremlin queries, and visualizes query results.
 
 The platform mainly includes the following modules:
 
 ##### Graph Management
 
-The graph management module realizes the unified management of multiple graphs and graph access, editing, deletion, and query by creating graph and connecting the platform and graph data.
+Graph Management creates and maintains connections, switches between graphs, and provides access, editing, deletion, and query operations.
 
 ##### Metadata Modeling
 
-The metadata modeling module realizes the construction and management of graph models by creating attribute libraries, vertex types, edge types, and index types. The platform provides two modes, list mode and graph mode, which can display the metadata model in real time, which is more intuitive. At the same time, it also provides a metadata reuse function across graphs, which saves the tedious and repetitive creation process of the same metadata, greatly improves modeling efficiency and enhances ease of use.
+Metadata Modeling manages PropertyKeys, VertexLabels, EdgeLabels, and IndexLabels. It provides list and graph views and supports reusing metadata across graphs.
 
 ##### Graph Analysis
 
-By inputting the graph traversal language Gremlin, high-performance general analysis of graph data can be realized, and functions such as customized multidimensional path query of vertices can be provided, and three kinds of graph result display methods are provided, including: graph form, table form, Json form, and multidimensional display. The data form meets the needs of various scenarios used by users. It provides functions such as running records and collection of common statements, realizing the traceability of graph operations, and the reuse and sharing of query input, which is fast and efficient. It supports the export of graph data, and the export format is JSON format.
+Graph Analysis runs Gremlin and path queries and displays results as a graph, table, or JSON. It also keeps execution history and saved statements, and exports query results as JSON.
 
 ##### Task Management
 
-For Gremlin tasks that need to traverse the whole graph, index creation and reconstruction, 
-and other time-consuming asynchronous tasks, the platform provides corresponding task management 
-functions to achieve unified management and result viewing of asynchronous tasks.
+Task Management displays background tasks such as asynchronous Gremlin jobs and index creation or rebuilding.
 
 ##### Data Import
 
-> "Note: The data import function is currently suitable for preliminary use. For formal data import,
-> please use [hugegraph-loader](/docs/quickstart/toolchain/hugegraph-loader), which has much better performance, stability, and functionality." 
+> The data import page is intended for small-scale trials. For bulk or production imports, use [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader).
 
-Data import is to convert the user's business data into the vertices and edges of the graph and 
-insert it into the graph database. The platform provides a wizard-style visual import module. 
-By creating import tasks, the management of import tasks and the parallel operation of multiple 
-import tasks are realized. Improve import performance. After entering the import task, you only 
-need to follow the platform step prompts, upload files as needed, and fill in the content to easily
-implement the import process of graph data. At the same time, it supports breakpoint resuming, 
-error retry mechanism, etc., which reduces import costs and improves efficiency.
+The data import page guides you through creating a task, uploading files, and mapping fields. Multiple import tasks can run in parallel, with resumable uploads and error retries.
 
 
 ### 2 Deploy
@@ -101,9 +86,11 @@ services:
 `hubble` is in the `toolchain` project. First, download the binary tar tarball
 
 ```bash
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
-tar -xvf apache-hugegraph-toolchain-incubating-{version}.tar.gz 
-cd apache-hugegraph-toolchain-incubating-{version}.tar.gz/apache-hugegraph-hubble-incubating-{version}
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
+tar -xvf "${ARCHIVE}.tar.gz"
+cd "${ARCHIVE}/apache-hugegraph-hubble-incubating-${VERSION}"
 ```
 
 Run `hubble`
@@ -112,22 +99,11 @@ Run `hubble`
 bin/start-hubble.sh
 ```
 
-Then, we can see:
-
-```shell
-starting HugeGraphHubble ..............timed out with http status 502
-2023-08-30 20:38:34 [main] [INFO ] o.a.h.HugeGraphHubble [] - Starting HugeGraphHubble v1.0.0 on cpu05 with PID xxx (~/apache-hugegraph-toolchain-incubating-1.0.0/apache-hugegraph-hubble-incubating-1.0.0/lib/hubble-be-1.0.0.jar started by $USER in ~/apache-hugegraph-toolchain-incubating-1.0.0/apache-hugegraph-hubble-incubating-1.0.0)
-...
-2023-08-30 20:38:38 [main] [INFO ] c.z.h.HikariDataSource [] - hugegraph-hubble-HikariCP - Start completed.
-2023-08-30 20:38:41 [main] [INFO ] o.a.c.h.Http11NioProtocol [] - Starting ProtocolHandler ["http-nio-0.0.0.0-8088"]
-2023-08-30 20:38:41 [main] [INFO ] o.a.h.HugeGraphHubble [] - Started HugeGraphHubble in 7.379 seconds (JVM running for 8.499)
-```
-
-Then use a web browser to access `ip:8088` and you can see the `Hubble` page. You can stop the service using bin/stop-hubble.sh.
+After startup, open `http://<host>:8088`. Run `bin/stop-hubble.sh` to stop the service.
 
 #### 2.3 Source code compilation
 
-**Note**: The plugin `frontend-maven-plugin` has been added to `hugegraph-hubble/hubble-be/pom.xml`. To compile hubble, you do not need to install `Nodejs V16.x` and `yarn` environment in your local environment in advance. You can directly execute the following steps.
+Hubble's build uses `frontend-maven-plugin` in `hugegraph-hubble/hubble-dist/pom.xml` to install Node.js 18.20.8 and Yarn 1.22.21, so neither tool needs to be installed beforehand.
 
 Download the toolchain source code.
 
@@ -139,11 +115,11 @@ Compile `hubble`. It depends on the loader and client, so you need to build thes
 
 ```shell
 cd hugegraph-toolchain
-sudo pip install -r hugegraph-hubble/hubble-dist/assembly/travis/requirements.txt
+python -m pip install -r hugegraph-hubble/hubble-dist/assembly/travis/requirements.txt
 mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 cd hugegraph-hubble
 mvn -e compile package -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -ntp
-cd apache-hugegraph-hubble-incubating*
+cd apache-hugegraph-hubble-*
 ```
 
 Run `hubble`
@@ -571,7 +547,17 @@ HugeGraph-Hubble can be configured through the `conf/hugegraph-hubble.properties
 | `hubble.host` | `0.0.0.0` | The address that Hubble service binds to |
 | `hubble.port` | `8088` | The port that Hubble service listens on |
 
-#### 5.2 Gremlin Query Limits
+#### 5.2 Server and PD
+
+| Configuration | Default | Description |
+|---------------|---------|-------------|
+| `pd.enabled` | `false` | Whether to discover services through PD; keep `false` for a standalone Server |
+| `server.direct_url` | `http://127.0.0.1:8080` | Server address used when `pd.enabled=false` |
+| `pd.peers` | `127.0.0.1:8686` | PD node address |
+| `pd.server` | `127.0.0.1:8620` | PD service address |
+| `route.type` | `NODE_PORT` | Service routing mode: `NODE_PORT`, `DDS`, or `BOTH` |
+
+#### 5.3 Gremlin Query Limits
 
 These settings control query result limits to prevent memory issues:
 

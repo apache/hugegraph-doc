@@ -12,7 +12,7 @@ HugeGraph-Tools is an automated deployment, management and backup/restore compon
 
 ### 2 Get HugeGraph-Tools
 
-There are two ways to get HugeGraph-Tools:
+HugeGraph-Tools is included in the Toolchain distribution. You can download the distribution or build it from source.
 
 - Download the compiled tarball
 - Clone source code then compile and install
@@ -22,8 +22,10 @@ There are two ways to get HugeGraph-Tools:
 Download the latest version of the HugeGraph-Toolchain package:
 
 ```bash
-wget https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0.tar.gz
-tar zxf *hugegraph*.tar.gz
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
+tar zxf "${ARCHIVE}.tar.gz"
 ```
 
 #### 2.2 Clone source code to compile and install
@@ -35,15 +37,17 @@ Download the latest version of the HugeGraph-Tools source package:
 # 1. get from github
 git clone https://github.com/apache/hugegraph-toolchain.git
 
-# 2. get from direct  (e.g. here is 1.0.0, please choose the latest version)
-wget https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz
+# 2. Download a released source package
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
 ```
 
 Compile and generate tar package:
 
 ```bash
-cd hugegraph-tools
-mvn package -DskipTests
+cd hugegraph-toolchain
+mvn package -pl hugegraph-tools -am -DskipTests -ntp
 ```
 
 Generate tar package hugegraph-tools-${version}.tar.gz
@@ -75,6 +79,7 @@ Usage: hugegraph [options] [command] [command options]
 - --user，When HugeGraph-Server opens authentication, pass username
 - --password，When HugeGraph-Server opens authentication, pass the user's password
 - --timeout，Timeout when connecting to HugeGraph-Server, the default is 30s
+- --protocol, connection protocol, either http or https; the default is http
 - --trust-store-file，The path of the certificate file, when --url uses https, the truststore file used by HugeGraph-Client, the default is empty, which means using the built-in truststore file conf/hugegraph.truststore of hugegraph-tools
 - --trust-store-password，The password of the certificate file, when --url uses https, the password of the truststore used by HugeGraph-Client, the default is empty, representing the password of the built-in truststore file of hugegraph-tools
 
@@ -185,7 +190,7 @@ Another way is to set the environment variable in the bin/hugegraph script:
 - migrate, migrate the currently connected graph to another HugeGraphServer
   - --target-graph, the name of the target graph, the default is hugegraph
   - --target-url, the HugeGraphServer where the target graph is located, the default is http://127.0.0.1:8081
-  - --target-username, the username to access the target map
+  - --target-user, the username used to access the target graph
   - --target-password, the password to access the target map
   - --target-timeout, the timeout for accessing the target map
   - --target-trust-store-file, access the truststore file used by the target graph
@@ -202,9 +207,8 @@ Another way is to set the environment variable in the bin/hugegraph script:
   - --directory or -d, required, specifies the directory of the backup data
   - --backup-num, optional, specifies the number of latest backups to save, defaults to 3
   - --interval, an optional item, specifies the backup cycle, the format is the same as the Linux crontab format
-- dump, export all the vertices and edges of the entire graph, and store them in `vertex vertex-edge1 vertex-edge2...`JSON format by default.
-  Users can also customize the storage format, just need to be in `hugegraph-tools/src/main/java/com/baidu/hugegraph/formatter`
-  Implement a class inherited from `Formatter` in the directory, such as `CustomFormatter`, and specify this class as formatter when using it, for example
+- dump, export all vertices and edges in the graph, using the `vertex vertex-edge1 vertex-edge2...` JSON format by default.
+  To customize the format, implement a `Formatter` subclass such as `CustomFormatter` under `hugegraph-tools/src/main/java/org/apache/hugegraph/formatter`, then select it when running the command:
   `bin/hugegraph dump -f CustomFormatter`
   - --formatter or -f, specify the formatter to use, the default is JsonFormatter
   - --directory or -d, the directory where schema or data is stored, the default is the current directory
@@ -235,13 +239,13 @@ Another way is to set the environment variable in the bin/hugegraph script:
 ##### 3.8 Install the deployment type
 
 - deploy, one-click download, install and start HugeGraph-Server and HugeGraph-Studio
-  - -v, required, specifies the version number of HugeGraph-Server and HugeGraph-Studio installed, the latest is 0.9
+  - -v, required, specifies the HugeGraph-Server and HugeGraph-Studio version to install
   - -p, required, specifies the installed HugeGraph-Server and HugeGraph-Studio directories
   - -u, optional, specifies the link to download the HugeGraph-Server and HugeGraph-Studio compressed packages
 - clear, clean up HugeGraph-Server and HugeGraph-Studio directories and tarballs
   - -p, required, specifies the directory of HugeGraph-Server and HugeGraph-Studio to be cleaned
 - start-all, start HugeGraph-Server and HugeGraph-Studio with one click, and start monitoring, automatically pull up the service when the service dies
-  - -v, required, specifies the version number of HugeGraph-Server and HugeGraph-Studio to be started, the latest is 0.9
+  - -v, required, specifies the installed HugeGraph-Server and HugeGraph-Studio version to start
   - -p, required, specifies the directory where HugeGraph-Server and HugeGraph-Studio are installed
 - stop-all, close HugeGraph-Server and HugeGraph-Studio with one click
 
@@ -581,8 +585,6 @@ Usage: hugegraph [options] [command] [command options]
 ###### 3. Set and show graph mode
 
 ```bash
-./bin/hugegraph --url http://127.0.0.1:8080 --graph hugegraph graph-mode-set -m RESTORING MERGING NONE
-
 ./bin/hugegraph --url http://127.0.0.1:8080 --graph hugegraph graph-mode-set -m RESTORING
 
 ./bin/hugegraph --url http://127.0.0.1:8080 --graph hugegraph graph-mode-get
@@ -605,7 +607,7 @@ Usage: hugegraph [options] [command] [command options]
 ###### 6. Periodic Backup Graph
 
 ```bash
-./bin/hugegraph --url http://127.0.0.1:8080 --graph hugegraph --interval */2 * * * * schedule-backup -d ./backup-0.10.2
+./bin/hugegraph --url http://127.0.0.1:8080 --graph hugegraph schedule-backup -d ./backup --interval "*/2 * * * *"
 ```
 
 ###### 7. Recovery Graph

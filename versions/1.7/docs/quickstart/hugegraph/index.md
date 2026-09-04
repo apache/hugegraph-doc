@@ -14,6 +14,6 @@ LLMS index: [llms.txt](/versions/1.7/llms.txt)
 
 Section pages:
 
-- [HugeGraph-Server Quick Start](/versions/1.7/docs/quickstart/hugegraph/hugegraph-server/)
+- [HugeGraph Server Quick Start](/versions/1.7/docs/quickstart/hugegraph/hugegraph-server/)
 - [HugeGraph-PD Quick Start](/versions/1.7/docs/quickstart/hugegraph/hugegraph-pd/)
 - [HugeGraph-Store Quick Start](/versions/1.7/docs/quickstart/hugegraph/hugegraph-hstore/)

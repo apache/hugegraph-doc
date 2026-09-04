@@ -11,7 +11,7 @@
   "githubBranch": "master",
   "id": "latest",
   "migration": {
-    "changed": 0,
+    "changed": 1,
     "files": 234,
     "findings": 0,
     "knownFixes": 0,
@@ -20,7 +20,7 @@
   "name": "latest",
   "publishPath": "",
   "ref": "master",
-  "sha": "b1ed7eb84fec60bfb4e963257687071ac0d78d4a",
+  "sha": "d88167dd797efafea50cec59909d57849703fde5",
   "urlScoping": {
     "files": 0,
     "historicalHomeRedirects": 0,

@@ -5,7 +5,7 @@ LLMS index: [llms.txt](/llms.txt)
 ---
 
 > Note: this doc will be updated continuously.
-> You need to use Java11 in runtime verification, we will drop Java8 support from version 1.5.0 (And currently doesn't support Java17)
+> Use Java 11 for runtime verification. Since version 1.5.0, components other than the client no longer support Java 8.
 >
 > Graduation note: Apache HugeGraph graduated in January 2026. Official release voting is now completed within the HugeGraph community (PMC binding votes on `dev@hugegraph.apache.org`), and no longer requires Incubator `general@incubator.apache.org` approval.
 
@@ -100,7 +100,7 @@ Do you really want to set this key to ultimate trust? (y/N) y # slect y, then q 
 
 # (Optional) You could also use the command to trust one user in non-interactive mode:
 echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key $USER trust
-# Or use the script to auto import all public gpg keys (be carefully):
+# Or trust all currently imported GPG public keys (review them carefully first):
 for key in $(gpg --no-tty --list-keys --with-colons | awk -F: '/^pub/ {print $5}'); do
   echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key "$key" trust
 done
@@ -141,7 +141,7 @@ After decompressing `*hugegraph*src.tar.gz`, Do the following checks:
 # java --version
 
 # try to compile in the Unix env to check if it works well (-P is optional)
-mvn clean package -P stage -DskipTests -Dcheckstyle.skip=true
+mvn clean package -DskipTests -Dcheckstyle.skip=true -P stage
 ```
 
 ##### B. binary package

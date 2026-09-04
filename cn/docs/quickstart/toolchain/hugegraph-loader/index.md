@@ -24,7 +24,7 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 ### 2 获取 HugeGraph-Loader
 
-有两种方式可以获取 HugeGraph-Loader：
+可以通过以下三种方式获取 HugeGraph-Loader：
 
 - 使用 Docker 镜像 (便于**测试**)
 - 下载已编译的压缩包
@@ -77,8 +77,10 @@ services:
 下载最新版本的 `HugeGraph-Toolchain` Release 包，里面包含了 `loader + tool + hubble` 全套工具，如果你已经下载，可跳过重复步骤
 
 ```bash
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
-tar zxf *hugegraph*.tar.gz
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
+tar zxf "${ARCHIVE}.tar.gz"
 ```
 
 #### 2.3 克隆源码编译安装
@@ -89,8 +91,10 @@ tar zxf *hugegraph*.tar.gz
 # 1. get from github
 git clone https://github.com/apache/hugegraph-toolchain.git
 
-# 2. get from direct url (please choose the **latest release** version)
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}-src.tar.gz
+# 2. 下载发布版源码包
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
 ```
 
 > [!DETAILS]- 点击展开/折叠 手动安装 ojdbc 方法
@@ -107,8 +111,8 @@ wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-toolchain
 编译生成 tar 包：
 
 ```bash
-cd hugegraph-loader
-mvn clean package -DskipTests
+cd hugegraph-toolchain
+mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 ```
 
 ### 3 使用流程
@@ -794,9 +798,9 @@ schema: 必填
 | 参数                                      | 默认值         | 是否必传 | 描述信息                                                              |
 |-----------------------------------------|-------------|------|-------------------------------------------------------------------|
 | `-f` 或 `--file`                         |             | Y    | 配置脚本的路径                                                           |
-| `-g` 或 `--graph`                        |             | Y    | 图名称                                                               |
+| `-g` 或 `--graph`                        | hugegraph   |      | 图名称                                                               |
 | `--graphspace`                          | DEFAULT     |      | 图空间                                                               |
-| `-s` 或 `--schema`                       |             | Y    | schema 文件路径                                                       |
+| `-s` 或 `--schema`                       |             |      | schema 文件路径；已有 Schema 时可以不传                                      |
 | `-h` 或 `--host` 或 `-i`                  | localhost   |      | HugeGraphServer 的地址                                               |
 | `-p` 或 `--port`                         | 8080        |      | HugeGraphServer 的端口号                                              |
 | `--username`                            | null        |      | 当 HugeGraphServer 开启了权限认证时，当前图的 username                          |
@@ -825,13 +829,13 @@ schema: 必填
 | `--max-insert-errors`                   | 500         |      | 最多允许多少行数据插入错误，达到该值则程序退出                                           |
 | `--timeout`                             | 60          |      | 插入结果返回的超时时间（秒）                                                    |
 | `--shutdown-timeout`                    | 10          |      | 多线程停止的等待时间（秒）                                                     |
-| `--retry-times`                         | 0           |      | 发生特定异常时的重试次数                                                      |
+| `--retry-times`                         | 3           |      | 发生超时时的最大重试次数                                                       |
 | `--retry-interval`                      | 10          |      | 重试之前的间隔时间（秒）                                                      |
 | `--check-vertex`                        | false       |      | 插入边时是否检查边所连接的顶点是否存在                                               |
 | `--print-progress`                      | true        |      | 是否在控制台实时打印导入条数                                                    |
 | `--dry-run`                             | false       |      | 打开该模式，只解析不导入，通常用于测试                                               |
 | `--help` 或 `-help`                      | false       |      | 打印帮助信息                                                            |                                                  
-| `--parser-threads` 或 `--parallel-count` | max(2,CPUS) |      | 并行读取数据文件最大线程数                                                     |
+| `--parser-threads` 或 `--parallel-count` | max(2,CPUs/2) |      | 并行读取管线数；`--parallel-count` 已弃用                                     |
 | `--start-file`                          | 0           |      | 用于部分（分片）导入的起始文件索引                                                 |
 | `--end-file`                            | -1          |      | 用于部分导入的截止文件索引                                                     |
 | `--scatter-sources`                     | false       |      | 分散（并行）读取多个数据源以优化 I/O 性能                                           |
@@ -1164,7 +1168,7 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 
 #### 4.6 使用 spark-loader 导入
 > Spark 版本：Spark 3+，其他版本未测试。
-> HugeGraph Toolchain 版本：toolchain-1.0.0
+> 当前源码使用 Spark 3.2.2 和 Scala 2.12；其他组合需自行验证。
 > 
 `spark-loader` 的参数分为两部分，注意：因二者参数名缩写存在重合部分，请使用参数全称。两种参数之间无需保证先后顺序。
 - hugegraph 参数（参考：[hugegraph-loader 参数说明](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-loader/#341-%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E) ）

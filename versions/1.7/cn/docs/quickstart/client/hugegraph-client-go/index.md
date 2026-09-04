@@ -4,66 +4,26 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 
 ---
 
-基于 Go 语言的 HugeGraph Client SDK 工具。
+HugeGraph Go Client 是 Toolchain 仓库中的 Go SDK，目前提供版本查询、Schema、顶点、边和 Gremlin API。
 
-## 软件架构
+> 该模块仍在开发中。接口范围以 [`hugegraph-client-go/api/v1`](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-client-go/api/v1) 下的源码为准。
 
-(软件架构说明)
+## 环境要求
 
-## 安装教程
+- Go 1.19 或更高版本
+- 可访问的 HugeGraph Server，默认示例地址为 `http://127.0.0.1:8080`
+
+## 安装
+
+在 Go module 项目中执行：
 
 ```shell
-go get github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go
+go get github.com/apache/hugegraph-toolchain/hugegraph-client-go
 ```
 
-## 已实现 API
+## 初始化客户端
 
-| API     | 说明          |
-|---------|-------------|
-| schema  | 获取模型 schema |
-| version | 获取版本信息      |
-
-## 使用说明
-
-### 1. 初始化客户端
-
-```go
-package main
-
-import (
-	"log"
-	"os"
-
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
-)
-
-func main() {
-	client, err := hugegraph.NewCommonClient(hugegraph.Config{
-		Host:     "127.0.0.1",
-		Port:     8080,
-		Graph:    "hugegraph",
-		Username: "", // 根据实际情况填写用户名
-		Password: "", // 根据实际情况填写密码
-		Logger: &hgtransport.ColorLogger{
-			Output:             os.Stdout,
-			EnableRequestBody:  true,
-			EnableResponseBody: true,
-		},
-	})
-
-	if err != nil {
-		log.Fatalf("Error creating the client: %s\n", err)
-	}
-
-	// 使用 client 进行操作...
-	_ = client // 避免 "imported and not used" 错误
-}
-```
-
-### 2. 获取 HugeGraph 版本
-
-#### 使用 SDK 获取版本信息
+`NewCommonClient` 要求 `Host` 是 IP 地址；未启用认证时，用户名和密码留空。当前 Server 的图资源路径包含图空间，默认填写 `DEFAULT`。将 `GraphSpace` 留空只适用于仍使用 `/graphs/{graph}` 路径的旧版 Server。
 
 ```go
 package main
@@ -71,93 +31,47 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
-	"github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
+	hugegraph "github.com/apache/hugegraph-toolchain/hugegraph-client-go"
 )
 
-// initClient 初始化并返回一个 HugeGraph 客户端实例
-func initClient() *hugegraph.CommonClient {
+func main() {
 	client, err := hugegraph.NewCommonClient(hugegraph.Config{
-		Host:     "127.0.0.1",
-		Port:     8080,
-		Graph:    "hugegraph",
-		Username: "",
-		Password: "",
-		Logger: &hgtransport.ColorLogger{
-			Output:             os.Stdout,
-			EnableRequestBody:  true,
-			EnableResponseBody: true,
-		},
+		Host:       "127.0.0.1",
+		Port:       8080,
+		GraphSpace: "DEFAULT",
+		Graph:      "hugegraph",
+		Username:   "",
+		Password:   "",
 	})
 	if err != nil {
-		log.Fatalf("Error creating the client: %s\n", err)
-	}
-	return client
-}
-
-func getVersion() {
-	client := initClient()
-	// 假设 client 有一个 Version 方法返回版本信息和一个错误
-	// res, err := client.Version() // 实际调用
-	// 模拟返回，因为原始 README 中的 client.Version() 返回类型与此处使用不完全匹配
-	type VersionInfo struct {
-		Versions struct {
-			Version string `json:"version"`
-			Core    string `json:"core"`
-			Gremlin string `json:"gremlin"`
-			API     string `json:"api"`
-		} `json:"versions"`
-		// Body io.ReadCloser // 假设有 Body 用于关闭，根据实际 SDK 调整
+		log.Fatal(err)
 	}
 
-	// 模拟 API 调用和返回
-	res := &VersionInfo{
-		Versions: struct {
-			Version string `json:"version"`
-			Core    string `json:"core"`
-			Gremlin string `json:"gremlin"`
-			API     string `json:"api"`
-		}{
-			Version: "1.0.0", // 示例版本
-			Core:    "1.0.0",
-			Gremlin: "3.x.x",
-			API:     "v1",
-		},
+	response, err := client.Version()
+	if err != nil {
+		log.Fatal(err)
 	}
-	// err := error(nil) // 假设没有错误
+	defer response.Body.Close()
 
-	// if err != nil {
-	// 	log.Fatalf("Error getting the response: %s\n", err)
-	// }
-	// defer res.Body.Close() // 如果有 Body，需要关闭
-
-	fmt.Println(res.Versions)
-	fmt.Println(res.Versions.Version)
-}
-
-func main() {
-	getVersion()
+	fmt.Println(response.Versions.Version)
 }
 ```
 
-#### 返回值的结构
+`Version()` 返回的 `Versions` 包含 HugeGraph Server、Core、Gremlin 和 REST API 版本。若使用源码提供的 `NewDefaultCommonClient()`，默认连接 `127.0.0.1:8080` 下的 `hugegraph` 图，并使用 `admin`/`pa` 认证；生产代码通常应显式传入配置。
 
-```go
-package main
+## 已实现的入口
 
-// VersionResponse 定义了版本 API 返回的结构体
-type VersionResponse struct {
-	Versions struct {
-		Version string `json:"version"` // hugegraph version
-		Core    string `json:"core"`    // hugegraph core version
-		Gremlin string `json:"gremlin"` // hugegraph gremlin version
-		API     string `json:"api"`     // hugegraph api version
-	} `json:"versions"`
-}
-```
+`CommonClient` 当前公开以下入口：
 
-## API 文档参考
+| 入口 | 用途 |
+|---|---|
+| `Version()` | 查询服务端版本 |
+| `Schema()` | 查询完整 Schema |
+| `Propertykey` | 管理 PropertyKey |
+| `VertexLabel` | 管理 VertexLabel |
+| `EdgeLabel` | 管理 EdgeLabel |
+| `Vertex` | 创建、批量创建和更新顶点属性 |
+| `Gremlin` | 通过 GET 或 POST 执行 Gremlin |
 
-<!-- 可以在此部分添加指向更详细 API 文档的链接 -->
+完整调用方式可参考各 API 目录中的测试，例如 [`version_test.go`](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/api/v1/version_test.go) 和 [`vertexlabel_test.go`](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/api/v1/vertexlabel/vertexlabel_test.go)。

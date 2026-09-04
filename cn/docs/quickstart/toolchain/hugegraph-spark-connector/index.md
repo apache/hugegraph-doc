@@ -6,7 +6,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ### 1 HugeGraph-Spark-Connector 概述
 
-HugeGraph-Spark-Connector 是一个用于在 Spark 中以标准格式读写 HugeGraph 数据的连接器应用程序。
+HugeGraph-Spark-Connector 使用 Spark DataFrame API 将批量数据写入 HugeGraph。当前实现提供顶点和边的写入器。
 
 ### 2 环境要求
 
@@ -19,19 +19,23 @@ HugeGraph-Spark-Connector 是一个用于在 Spark 中以标准格式读写 Huge
 
 #### 3.1 不执行测试的编译
 
+以下命令均在仓库根目录执行。
+
 ```bash
-mvn clean package -DskipTests
+git clone https://github.com/apache/hugegraph-toolchain.git
+cd hugegraph-toolchain
+mvn clean package -pl hugegraph-spark-connector -am -DskipTests -ntp
 ```
 
 #### 3.2 执行默认测试的编译
 
 ```bash
-mvn clean package
+mvn clean package -pl hugegraph-spark-connector -am -ntp
 ```
 
 ### 4 使用方法
 
-首先在你的 pom.xml 中添加依赖：
+先在 `pom.xml` 中添加依赖，并将 `${revision}` 换成实际使用的发布版本：
 
 ```xml
 <dependency>
@@ -144,7 +148,7 @@ df.write
 |----------------------|------------|-------------------------------------------------------|
 | `host`               | `localhost` | HugeGraphServer 的地址                                  |
 | `port`               | `8080`      | HugeGraphServer 的端口                                  |
-| `graph`              | `hugegraph` | 图空间名称                                                 |
+| `graph`              | `hugegraph` | 图名称                                                    |
 | `protocol`           | `http`      | 向服务器发送请求的协议，可选 `http` 或 `https`                       |
 | `username`           | `null`      | 当 HugeGraphServer 开启权限认证时，当前图的用户名                      |
 | `token`              | `null`      | 当 HugeGraphServer 开启权限认证时，当前图的 token                   |
@@ -156,7 +160,7 @@ df.write
 
 #### 5.2 图数据配置
 
-图数据配置用于设置图空间的配置。
+图数据配置用于说明 DataFrame 如何映射到顶点或边。
 
 | 参数                | 默认值   | 说明                                                                                                                                                  |
 |-------------------|-------|----------------------------------------------------------------------------------------------------------------------------------------------------|

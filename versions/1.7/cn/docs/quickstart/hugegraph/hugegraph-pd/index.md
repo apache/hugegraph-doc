@@ -6,13 +6,13 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 
 ### 1 HugeGraph-PD 概述
 
-HugeGraph-PD (Placement Driver) 是 HugeGraph 分布式版本的元数据管理组件，负责管理图数据的分布和存储节点的协调。它在分布式 HugeGraph 中扮演着核心角色，维护集群状态并协调 HugeGraph-Store 存储节点。
+HugeGraph-PD（Placement Driver）是 HugeGraph 分布式版本的元数据管理组件，负责管理图数据的分布和存储节点的协调。它在分布式 HugeGraph 中扮演着核心角色，维护集群状态并协调 HugeGraph-Store 存储节点。
 
 ### 2 依赖
 
 #### 2.1 前置条件
 
-- 操作系统：Linux 或 MacOS（Windows 尚未经过完整测试）
+- 操作系统：Linux 或 macOS（Windows 尚未经过完整测试）
 - Java 版本：≥ 11
 - Maven 版本：≥ 3.5.0
 
@@ -28,10 +28,10 @@ HugeGraph-PD (Placement Driver) 是 HugeGraph 分布式版本的元数据管理�
 从 Apache HugeGraph 官方下载页面下载最新版本的 HugeGraph-PD：
 
 ```bash
-# 用最新版本号替换 {version}，例如 1.5.0
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
-tar zxf apache-hugegraph-incubating-{version}.tar.gz
-cd apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version}
+# 1.7.0 是项目孵化期发布的历史版本，因此文件名和目录名仍带 incubating
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
+cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 ```
 
 #### 3.2 源码编译
@@ -44,10 +44,60 @@ git clone https://github.com/apache/hugegraph.git
 cd hugegraph
 mvn clean install -DskipTests=true
 
-# 3. 编译成功后，PD 模块的构建产物将位于
-#    apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version}
-#    target/apache-hugegraph-incubating-{version}.tar.gz
+# 3. 编译成功后，PD 目录和完整发布包分别位于
+#    hugegraph-pd/apache-hugegraph-pd-{version}
+#    target/apache-hugegraph-{version}.tar.gz
 ```
+
+#### 3.3 Docker 部署
+
+HugeGraph-PD Docker 镜像已发布在 Docker Hub，镜像名为 `hugegraph/pd`。
+> 注: 后续步骤皆假设你本地**已拉取** `hugegraph` 主仓库代码 (至少是 docker 目录)
+
+使用 docker-compose 模式部署完整的 3 节点集群（PD + Store + Server）：
+
+```bash
+cd hugegraph/docker
+# 注意版本号请随时保持更新 → 1.x.0
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+```
+
+通过 `docker run` 运行单个 PD 节点时，通过环境变量提供配置：
+
+```bash
+docker run -d \
+  -p 8620:8620 \
+  -p 8686:8686 \
+  -p 8610:8610 \
+  -e HG_PD_GRPC_HOST=<your-ip> \
+  -e HG_PD_RAFT_ADDRESS=<your-ip>:8610 \
+  -e HG_PD_RAFT_PEERS_LIST=<your-ip>:8610 \
+  -e HG_PD_INITIAL_STORE_LIST=<store-ip>:8500 \
+  -v /path/to/data:/hugegraph-pd/pd_data \
+  --name hugegraph-pd \
+  hugegraph/pd:1.7.0
+```
+
+**环境变量参考：**
+
+| 变量 | 必填 | 默认值 | 描述 |
+|------|------|--------|------|
+| `HG_PD_GRPC_HOST` | 是 | — | 本节点的 gRPC 主机名/IP（Docker 中使用 `pd0`，裸机使用 `192.168.1.10`） |
+| `HG_PD_RAFT_ADDRESS` | 是 | — | 本节点的 Raft 地址（如 `pd0:8610`） |
+| `HG_PD_RAFT_PEERS_LIST` | 是 | — | 所有 PD 节点的 Raft 地址（如 `pd0:8610,pd1:8610,pd2:8610`） |
+| `HG_PD_INITIAL_STORE_LIST` | 是 | — | 预期的 Store gRPC 地址（如 `store0:8500,store1:8500,store2:8500`） |
+| `HG_PD_GRPC_PORT` | 否 | `8686` | gRPC 服务端口 |
+| `HG_PD_REST_PORT` | 否 | `8620` | REST API 端口 |
+| `HG_PD_DATA_PATH` | 否 | `/hugegraph-pd/pd_data` | 元数据存储路径 |
+| `HG_PD_INITIAL_STORE_COUNT` | 否 | `1` | 集群可用所需的最小 Store 数量 |
+
+> **注意**：在 Docker 桥接网络中，`HG_PD_GRPC_HOST` 和 `HG_PD_RAFT_ADDRESS` 应使用容器主机名（如 `pd0`）而非 IP 地址。
+
+> **已弃用的别名**：`GRPC_HOST`、`RAFT_ADDRESS`、`RAFT_PEERS`、`PD_INITIAL_STORE_LIST` 仍可使用，但会输出弃用警告。新部署请使用 `HG_PD_*` 名称。
+
+运行时日志可通过 `docker logs <container-name>`（如 `docker logs hg-pd0`）直接查看，无需进入容器。
+
+完整的集群部署指南请参阅 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
 ### 4 配置
 
@@ -72,7 +122,7 @@ pd:
   data-path: ./pd_data
   # 自动扩容的检查周期（秒）
   patrol-interval: 1800
-  # 初始 store 列表，在列表内的 store 自动激活
+  # 集群可用所需的最小 Store 数量
   initial-store-count: 1
   # store 的配置信息，格式为 IP:gRPC端口
   initial-store-list: 127.0.0.1:8500
@@ -113,10 +163,15 @@ partition:
 ./bin/start-hugegraph-pd.sh
 ```
 
+启动脚本支持 `-d` 参数控制守护进程模式：
+
+- `-d true`（默认）：以后台守护进程方式运行，脚本立即返回。
+- `-d false`：以前台模式运行——脚本通过 `exec` 替换为 Java 进程，容器/进程管理器的进程即为 Java 本身。在 Docker 或进程管理器（systemd、supervisord）下运行时请使用此参数，以便在崩溃时自动检测并重启服务。
+
 启动成功后，可以在 `logs/hugegraph-pd-stdout.log` 中看到类似以下的日志：
 
 ```
-2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
+YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
 ```
 
 #### 5.2 停止 PD
@@ -136,3 +191,11 @@ curl http://localhost:8620/actuator/health
 ```
 
 如果返回 `{"status":"UP"}`，则表示 PD 服务已成功启动。
+
+也可以通过 PD API 查看 Store 节点状态：
+
+```bash
+curl http://localhost:8620/v1/stores
+```
+
+如果响应中 `state` 为 `Up`，说明对应的 Store 节点运行正常。在一个健康的 3 节点部署中，`storeId` 列表应包含 3 个 ID，且 `stateCountMap.Up`、`numOfService` 和 `numOfNormalService` 都应为 `3`。

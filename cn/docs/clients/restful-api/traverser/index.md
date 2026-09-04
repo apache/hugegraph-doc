@@ -457,7 +457,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kout
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighbor?source=“1:marko”&max_depth=2
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighbor?source=%221:marko%22&max_depth=2
 ```
 
 ###### Response Status
@@ -756,7 +756,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighb
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/sameneighbors?vertex=“1:marko”&other="1:josh"
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/sameneighbors?vertex=%221:marko%22&other=%221:josh%22
 ```
 
 ###### Response Status

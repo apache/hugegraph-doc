@@ -34,7 +34,8 @@ const FALLBACK_CASES = {
 };
 
 const metadataFixture = path.resolve(__dirname, "../../scripts/fixtures/community_search_queries.json");
-const cases = fs.existsSync(metadataFixture)
+const siteRoot = process.env.SITE_ROOT;
+const rawCases = fs.existsSync(metadataFixture)
   ? Object.groupBy(
       JSON.parse(fs.readFileSync(metadataFixture, "utf8")).map((entry) => [
         entry.query,
@@ -43,10 +44,28 @@ const cases = fs.existsSync(metadataFixture)
       ([query, expectedRef]) => (expectedRef.startsWith("/cn/") ? "cn" : "en")
     )
   : FALLBACK_CASES;
+const cases = Object.fromEntries(
+  Object.entries(rawCases).map(([locale, localeCases]) => {
+    const indexName = fs
+      .readdirSync(siteRoot)
+      .find((name) => name.startsWith(`offline-search-index.${locale}.`) && name.endsWith(".json"));
+    if (!indexName) throw new Error(`missing ${locale} offline search index`);
+    const records = JSON.parse(fs.readFileSync(path.join(siteRoot, indexName), "utf8"));
+    const titles = new Map(records.map((record) => [record.ref, record.title]));
+    return [
+      locale,
+      localeCases.map(([query, expectedRef]) => {
+        const expectedTitle = titles.get(expectedRef);
+        if (!expectedTitle) throw new Error(`missing search record ${expectedRef}`);
+        return [query, expectedRef, expectedTitle];
+      })
+    ];
+  })
+);
 
 for (const [locale, localeCases] of Object.entries(cases)) {
   test(`summary Lunr ranks fixed ${locale} entry queries`, async ({ page }) => {
-    for (const [query, expectedRef] of localeCases) {
+    for (const [query, expectedRef, expectedTitle] of localeCases) {
       await page.goto(locale === "cn" ? "/cn/docs/" : "/docs/");
       await page.locator("[data-td-shell-search-open]").first().click();
       const input = page.locator(".td-shell-search__input");
@@ -56,21 +75,16 @@ for (const [locale, localeCases] of Object.entries(cases)) {
         .first()
         .locator('[role="option"]');
       await expect(pageResults.first(), `no Lunr results for ${query}`).toBeVisible();
-      const paths = await pageResults.evaluateAll((rows) =>
-        rows.slice(0, 3).map((row) => {
-          const link = row.matches("a[href]") ? row : row.querySelector("a[href]");
-          return link ? new URL(link.href).pathname : "";
-        })
+      const titles = await pageResults.evaluateAll((rows) =>
+        rows
+          .slice(0, 3)
+          .map((row) => row.querySelector(".td-shell-search__item-title")?.textContent.trim())
       );
       expect(
-        paths.includes(expectedRef),
+        titles.includes(expectedTitle),
         `${query} must rank ${expectedRef} in the top three`
       ).toBe(true);
-      const target = page
-        .locator("#td-shell-search-results .td-shell-search__group")
-        .first()
-        .locator(`a[role="option"][href="${expectedRef}"]`)
-        .first();
+      const target = pageResults.filter({ hasText: expectedTitle }).first();
       await target.click();
       await expect(page).toHaveURL((url) => url.pathname === expectedRef);
     }

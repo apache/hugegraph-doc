@@ -5,7 +5,9 @@ for (const locale of ["en", "cn"]) {
   test(`latest ${locale} sidebar persists and isolates collapse`, async ({ page }) => {
     await page.goto(`${prefix}/docs/introduction/`);
     const toggle = page
-      .locator("#td-shell-sidebar li [data-td-shell-tree-toggle][aria-expanded=false]")
+      .locator(
+        '#td-shell-sidebar li [data-td-shell-tree-toggle][aria-expanded=false][aria-controls*="_nav"]'
+      )
       .first();
     await toggle.click();
     const target = await toggle.getAttribute("aria-controls");

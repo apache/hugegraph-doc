@@ -6,7 +6,7 @@ weight: 2
 
 ### 1 HugeGraph-PD 概述
 
-HugeGraph-PD (Placement Driver) 是 HugeGraph 分布式版本的元数据管理组件，负责管理图数据的分布和存储节点的协调。它在分布式 HugeGraph 中扮演着核心角色，维护集群状态并协调 HugeGraph-Store 存储节点。
+HugeGraph-PD（Placement Driver）管理分布式集群的元数据、分区和 Store 节点调度。
 
 ### 2 依赖
 
@@ -28,10 +28,10 @@ HugeGraph-PD (Placement Driver) 是 HugeGraph 分布式版本的元数据管理�
 从 Apache HugeGraph 官方下载页面下载最新版本的 HugeGraph-PD：
 
 ```bash
-# 用最新版本号替换 {version}，例如 1.5.0
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
-tar zxf apache-hugegraph-incubating-{version}.tar.gz
-cd apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version}
+# 1.7.0 是毕业前发布的历史制品，文件名和目录名仍带 incubating
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
+cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 ```
 
 #### 3.2 源码编译
@@ -44,9 +44,9 @@ git clone https://github.com/apache/hugegraph.git
 cd hugegraph
 mvn clean install -DskipTests=true
 
-# 3. 编译成功后，PD 模块的构建产物将位于
-#    apache-hugegraph-incubating-{version}/apache-hugegraph-pd-incubating-{version}
-#    target/apache-hugegraph-incubating-{version}.tar.gz
+# 3. 编译成功后，PD 目录和完整发布包分别位于
+#    hugegraph-pd/apache-hugegraph-pd-{version}
+#    target/apache-hugegraph-{version}.tar.gz
 ```
 
 #### 3.3 Docker 部署
@@ -192,7 +192,7 @@ curl http://localhost:8620/actuator/health
 
 如果返回 `{"status":"UP"}`，则表示 PD 服务已成功启动。
 
-此外，也可以通过 PD API 查看 Store 节点状态：
+也可以通过 PD API 查看 Store 节点状态：
 
 ```bash
 curl http://localhost:8620/v1/stores

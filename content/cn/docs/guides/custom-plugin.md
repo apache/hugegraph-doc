@@ -6,9 +6,7 @@ weight: 3
 
 ### 背景
 
-1. HugeGraph 不仅开源开放，而且要做到简单易用，一般用户无需更改源码也能轻松增加插件扩展功能。
-2. HugeGraph 支持多种内置存储后端，也允许用户无需更改现有源码的情况下扩展自定义后端。
-3. HugeGraph 支持全文检索，全文检索功能涉及到各语言分词，目前已内置 8 种中文分词器，也允许用户无需更改现有源码的情况下扩展自定义分词器。
+HugeGraph 通过 Java SPI 加载插件。插件可以注册后端、序列化器、配置项和分词器，无需修改 Server 源码。
 
 ### 可扩展维度
 
@@ -52,11 +50,15 @@ maven pom.xml 详细内容如下：
 
     <name>hugegraph-plugin-demo</name>
 
+    <properties>
+        <hugegraph.version>1.7.0</hugegraph.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-core</artifactId>
-            <version>${project.version}</version>
+            <version>${hugegraph.version}</version>
         </dependency>
     </dependencies>
 </project>

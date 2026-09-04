@@ -19,11 +19,11 @@ Core 模块是 Tinkerpop 接口的实现，Backend 模块用于管理数据存�
 
 #### 2.1 安装 Java 11 (JDK 11)
 
-建议在 Java 11 环境中运行 `HugeGraph-Server`（1.5.0 之前的版本仍保留对 Java 8 的基本兼容）。
+HugeGraph-Server 1.7.0 的源码以 Java 11 编译，运行和源码构建均需使用 Java 11 或更高版本。
 
 **在继续阅读前，请先执行 `java -version` 命令确认 JDK 版本。**
 
-> 注：使用 Java 8 启动 HugeGraph-Server 会失去部分**安全性**保障，也会影响性能表现。请尽早升级或迁移，1.7.0 起已不再支持 Java 8。
+> 1.7.0 起不再支持 Java 8。
 
 ### 3 部署
 
@@ -34,7 +34,7 @@ Core 模块是 Tinkerpop 接口的实现，Backend 模块用于管理数据存�
 - 方式 3：源码编译
 - 方式 4：使用 tools 工具部署 (Outdated)
 
-> ⚠️ **SEC 提醒**：由于图查询语言 (如 Gremlin/Cypher) 的高度灵活性，直接暴露原生查询接口会带来潜在的安全隐患，因此**请避免直接在公网环境中暴露任何查询相关接口**。生产环境中务必开启 **[鉴权体系 (Auth)](/cn/docs/config/config-authentication/)** 配合 **IP 白名单** 构成双重保障机制，同时建议辅以 Audit Log (审计日志) 追踪具体查询语句。推荐整体采用 **[容器化环境 (Docker/K8s)](#31-使用-docker-容器-便于测试)** 进行部署以获得更好的系统级安全隔离。
+> 不要把 Gremlin、Cypher 等查询接口直接暴露到公网。生产环境应启用[认证与授权](/cn/docs/config/config-authentication/)，限制网络访问并保留审计日志；部署建议见[安全指南](/cn/docs/guides/security/)。
 
 #### 3.1 使用 Docker 容器 (便于**测试**)
 <!-- 3.1 is linked by another place. if change 3.1's title, please check -->
@@ -82,9 +82,9 @@ HUGEGRAPH_VERSION=1.7.0 docker compose up -d
 #### 3.2 下载 tar 包
 
 ```bash
-# use the latest version, here is 1.7.0 for example
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz
-tar zxf *hugegraph*.tar.gz
+# 1.7.0 是毕业前发布的历史制品，文件名仍带 incubating
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 ```
 
 #### 3.3 源码编译
@@ -105,29 +105,10 @@ cd hugegraph
 mvn package -DskipTests
 ```
 
-执行日志如下：
+构建成功时日志中会出现：
 
 ```bash
-......
-[INFO] Reactor Summary for hugegraph 1.5.0:
-[INFO] 
-[INFO] hugegraph .......................................... SUCCESS [  2.405 s]
-[INFO] hugegraph-core ..................................... SUCCESS [ 13.405 s]
-[INFO] hugegraph-api ...................................... SUCCESS [ 25.943 s]
-[INFO] hugegraph-cassandra ................................ SUCCESS [ 54.270 s]
-[INFO] hugegraph-scylladb ................................. SUCCESS [  1.032 s]
-[INFO] hugegraph-rocksdb .................................. SUCCESS [ 34.752 s]
-[INFO] hugegraph-mysql .................................... SUCCESS [  1.778 s]
-[INFO] hugegraph-palo ..................................... SUCCESS [  1.070 s]
-[INFO] hugegraph-hbase .................................... SUCCESS [ 32.124 s]
-[INFO] hugegraph-postgresql ............................... SUCCESS [  1.823 s]
-[INFO] hugegraph-dist ..................................... SUCCESS [ 17.426 s]
-[INFO] hugegraph-example .................................. SUCCESS [  1.941 s]
-[INFO] hugegraph-test ..................................... SUCCESS [01:01 min]
-[INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-......
 ```
 
 执行成功后，在 hugegraph 目录下生成 `*hugegraph-*.tar.gz` 文件，就是编译生成的 tar 包。
@@ -222,6 +203,8 @@ pd.peers=127.0.0.1:8686
 
 ```properties
 usePD=true
+# 从 graphs 目录加载上面的 hugegraph.properties；源码默认值为 false
+graph.load_from_local_config=true
 # 注意，1.7.0 必须在 rest-server.properties 配置 pd.peers
 pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
 
@@ -273,13 +256,6 @@ host: 127.0.0.1
 port: 8182
 ```
 
-初始化数据库：
-
-```bash
-cd *hugegraph-${version}
-bin/init-store.sh
-```
-
 启动 Server：
 
 ```bash
@@ -289,13 +265,14 @@ bin/start-hugegraph.sh
 使用分布式存储引擎的启动顺序为：
 1. 启动 HugeGraph-PD
 2. 启动 HugeGraph-Store
-3. 初始化数据库（仅首次）
-4. 启动 HugeGraph-Server
+3. 启动 HugeGraph-Server
+
+HStore 的元数据和存储由 PD、Store 管理，`init-store` 会跳过该后端，不需要单独执行初始化脚本。
 
 验证服务是否正常启动：
 
 ```bash
-curl http://localhost:8081/graphs
+curl http://localhost:8081/graphspaces/DEFAULT/graphs
 # 应返回：{"graphs":["hugegraph"]}
 ```
 
@@ -339,6 +316,14 @@ curl http://localhost:8620/v1/stores
 
 ##### 5.1.2 RocksDB / ToplingDB
 
+以下从本地 properties 文件启动图的示例要求在 `conf/rest-server.properties` 中设置：
+
+```properties
+graph.load_from_local_config=true
+```
+
+当前源码默认值是 `false`，上游发布模板尚未写出该选项。
+
 <details>
 <summary>点击展开/折叠 RocksDB 配置及启动方法</summary>
 
@@ -357,7 +342,7 @@ rocksdb.wal_path=.
 初始化数据库（第一次启动时或在 `conf/graphs/` 下手动添加了新配置时需要进行初始化）
 
 ```bash
-cd *hugegraph-${version}
+cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-server-incubating-1.7.0
 bin/init-store.sh
 ```
 
@@ -401,7 +386,7 @@ hbase.port=2181
 初始化数据库（第一次启动时或在 `conf/graphs/` 下手动添加了新配置时需要进行初始化）
 
 ```bash
-cd *hugegraph-${version}
+cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-server-incubating-1.7.0
 bin/init-store.sh
 ```
 
@@ -418,6 +403,9 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 </details>
 
 ##### 5.1.4 MySQL
+
+<details>
+<summary>1.5.x 历史后端：MySQL 与 Cassandra</summary>
 
 > ⚠️ **已废弃**: 此后端从 HugeGraph 1.7.0 版本开始已移除。如需使用，请参考 1.5.x 版本文档。
 
@@ -449,7 +437,7 @@ jdbc.ssl_mode=false
 初始化数据库（第一次启动时或在 `conf/graphs/` 下手动添加了新配置时需要进行初始化）
 
 ```bash
-cd *hugegraph-${version}
+cd apache-hugegraph-incubating-1.5.0/apache-hugegraph-server-incubating-1.5.0
 bin/init-store.sh
 ```
 
@@ -493,7 +481,7 @@ cassandra.password=
 初始化数据库（第一次启动时或在 `conf/graphs/` 下手动添加了新配置时需要进行初始化）
 
 ```bash
-cd *hugegraph-${version}
+cd apache-hugegraph-incubating-1.5.0/apache-hugegraph-server-incubating-1.5.0
 bin/init-store.sh
 Initing HugeGraph Store...
 2017-12-01 11:26:51 1424  [main] [INFO ] org.apache.hugegraph.HugeGraph [] - Opening backend store: 'cassandra'
@@ -521,6 +509,8 @@ bin/start-hugegraph.sh
 Starting HugeGraphServer...
 Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 ```
+
+</details>
 
 </details>
 
@@ -552,6 +542,9 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 
 ##### 5.1.7 ScyllaDB
 
+<details>
+<summary>1.5.x 历史后端：ScyllaDB</summary>
+
 > ⚠️ **已废弃**: 此后端从 HugeGraph 1.7.0 版本开始已移除。如需使用，请参考 1.5.x 版本文档。
 
 <details>
@@ -582,7 +575,7 @@ cassandra.password=
 初始化数据库（第一次启动时或在 `conf/graphs/` 下手动添加了新配置时需要进行初始化）
 
 ```bash
-cd *hugegraph-${version}
+cd apache-hugegraph-incubating-1.5.0/apache-hugegraph-server-incubating-1.5.0
 bin/init-store.sh
 ```
 
@@ -593,6 +586,8 @@ bin/start-hugegraph.sh
 Starting HugeGraphServer...
 Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 ```
+
+</details>
 
 </details>
 
@@ -609,7 +604,7 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 并且使用 RESTful API 请求 `HugeGraphServer` 得到如下结果：
 
 ```javascript
-> curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+> curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices" | gunzip
 
 {"vertices":[{"id":"2:lop","label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"2:ripple","label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199}}]}
 ```
@@ -618,7 +613,7 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 
 #### 5.2 使用 Docker
 
-在 [3.1 使用 Docker 容器](#31-使用-docker-容器-便于测试) 中，我们已经介绍了如何使用 `docker` 部署 `hugegraph-server`。此外，也可以通过切换后端存储或设置参数，在 Server 启动时加载样例图。
+在 [3.1 使用 Docker 容器](#31-使用-docker-容器-便于测试) 中，我们已经介绍了如何使用 `docker` 部署 `hugegraph-server`。还可以通过切换后端存储或设置参数，在 Server 启动时加载样例图。
 
 ##### 5.2.1 使用 Cassandra 作为后端
 
@@ -718,7 +713,7 @@ volumes:
 使用 RESTful API 请求 `HugeGraphServer` 得到如下结果：
 
 ```javascript
-> curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+> curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices" | gunzip
 
 {"vertices":[{"id":"2:lop","label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"2:ripple","label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199}}]}
 ```
@@ -740,7 +735,7 @@ jps
 `curl` 请求 RESTful API
 
 ```bash
-echo `curl -o /dev/null -s -w %{http_code} "http://localhost:8080/graphs/hugegraph/graph/vertices"`
+echo `curl -o /dev/null -s -w %{http_code} "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"`
 ```
 
 返回结果 200，代表 server 启动正常
@@ -758,7 +753,7 @@ HugeGraphServer 的 RESTful API 包括多种类型的资源，典型的包括 gr
 ##### 6.2.1 获取 `hugegraph` 的顶点及相关属性
 
 ```bash
-curl http://localhost:8080/graphs/hugegraph/graph/vertices 
+curl http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 ```
 
 _说明_
@@ -766,7 +761,7 @@ _说明_
 1. 由于图的点和边很多，对于 list 型的请求，比如获取所有顶点，获取所有边等，Server 会将数据压缩再返回，所以使用 curl 时得到一堆乱码，可以重定向至 `gunzip` 进行解压。推荐使用 Chrome 浏览器 + Restlet 插件发送 HTTP 请求进行测试。
 
     ```
-    curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+    curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices" | gunzip
     ```
 
 2. 当前 HugeGraphServer 的默认配置只能是本机访问，可以修改配置，使其能在其他机器访问。
@@ -856,8 +851,8 @@ _说明_
 ### 7 停止 Server
 
 ```bash
-$cd *hugegraph-${version}
-$bin/stop-hugegraph.sh
+cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-server-incubating-1.7.0
+bin/stop-hugegraph.sh
 ```
 
 ### 8 使用 IntelliJ IDEA 调试 Server

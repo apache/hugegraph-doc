@@ -12,10 +12,10 @@ weight: 2
 |-------------------------|--------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
 | host                    | 127.0.0.1                                                                                                    | The host or ip of Gremlin Server.                                               |
 | port                    | 8182                                                                                                         | The listening port of Gremlin Server.                                           |
-| graphs                  | hugegraph: conf/hugegraph.properties                                                                         | The map of graphs with name and config file path.                               |
-| scriptEvaluationTimeout | 30000                                                                                                        | The timeout for gremlin script execution(millisecond).                          |
-| channelizer             | org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer                                                  | Indicates the protocol which the Gremlin Server provides service.               |
-| authentication          | authenticator: org.apache.hugegraph.auth.StandardAuthenticator, config: {tokens: conf/rest-server.properties} | The authenticator and config(contains tokens path) of authentication mechanism. |
+| graphs                  | {}                                                                                                           | 图由 Server 动态加载，不要在此处配置。                                           |
+| evaluationTimeout       | 30000                                                                                                        | Gremlin 脚本执行超时，单位为毫秒。                                               |
+| channelizer             | org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer                                             | 同时处理 WebSocket 和 HTTP 请求。                                                |
+| authentication          | 未配置                                                                                                        | 启用认证时配置认证器、处理器和 `rest-server.properties` 路径。                   |
 
 ### Rest Server & API 配置项
 
@@ -23,12 +23,13 @@ weight: 2
 
 | config option                      | default value                                    | description                                                                                                                                                                                                   |
 |------------------------------------|--------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| graphs                             | [hugegraph:conf/hugegraph.properties]            | The map of graphs' name and config file.                                                                                                                                                                      |
-| server.id                          | server-1                                         | The id of rest server, used for license verification.                                                                                                                                                         |
+| graphs                             | ./conf/graphs                                    | 图配置 properties 文件所在目录。                                                                                                                                                                             |
+| graph.load_from_local_config       | false                                            | 是否在 Server 启动时读取 `graphs` 目录；使用本地图配置时需设为 `true`。                                                                                                                                        |
+| server.id                          | 空字符串                                         | The id of rest server, used for license verification.                                                                                                                                                         |
 | server.role                        | master                                           | The role of nodes in the cluster, available types are [master, worker, computer]                                                                                                                              |
 | restserver.url                     | http://127.0.0.1:8080                            | The url for listening of rest server.                                                                                                                                                                         |
-| ssl.keystore_file                  | server.keystore                                  | The path of server keystore file used when https protocol is enabled.                                                                                                                                         |
-| ssl.keystore_password              |                                                  | The password of the path of the server keystore file used when the https protocol is enabled.                                                                                                                 |
+| ssl.keystore_file                  | conf/hugegraph-server.keystore                   | The path of server keystore file used when https protocol is enabled.                                                                                                                                         |
+| ssl.keystore_password              | hugegraph                                        | The password of the path of the server keystore file used when the https protocol is enabled.                                                                                                                 |
 | restserver.max_worker_threads      | 2 * CPUs                                         | The maximum worker threads of rest server.                                                                                                                                                                    |
 | restserver.min_free_memory         | 64                                               | The minimum free memory(MB) of rest server, requests will be rejected when the available memory of system is lower than this value.                                                                           |
 | restserver.request_timeout         | 30                                               | The time in seconds within which a request must complete, -1 means no timeout.                                                                                                                                |
@@ -43,12 +44,13 @@ weight: 2
 | batch.max_write_threads            | 0                                                | The maximum threads for batch writing, if the value is 0, the actual value will be set to batch.max_write_ratio * restserver.max_worker_threads.                                                              |
 | auth.authenticator                 |                                                  | The class path of authenticator implementation. e.g., org.apache.hugegraph.auth.StandardAuthenticator, or a custom implementation.                                                        |
 | auth.graph_store                   | hugegraph                                        | The name of graph used to store authentication information, like users, only for org.apache.hugegraph.auth.StandardAuthenticator.                                                                              |
+| auth.admin_pa                      | pa                                               | PD 模式下内置 admin 用户的初始密码，仅首次创建该用户时生效；部署前必须修改。                                                                                                                                   |
 | auth.audit_log_rate                | 1000.0                                           | The max rate of audit log output per user, default value is 1000 records per second.                                                                                                                          |
 | auth.cache_capacity                | 10240                                            | The max cache capacity of each auth cache item.                                                                                                                                                               |
 | auth.cache_expire                  | 600                                              | The expiration time in seconds of vertex cache.                                                                                                                                                               |
 | auth.remote_url                    |                                                  | If the address is empty, it provide auth service, otherwise it is auth client and also provide auth service through rpc forwarding. The remote url can be set to multiple addresses, which are concat by ','. |
 | auth.token_expire                  | 86400                                            | The expiration time in seconds after token created                                                                                                                                                            |
-| auth.token_secret                  | FXQXbJtbCLxODc6tGci732pkH1cyf8Qg                 | Secret key of HS256 algorithm.                                                                                                                                                                                |
+| auth.token_secret                  | 启动时随机生成                                   | HS256 的密钥；需要跨重启保持既有 token 有效时应显式配置。                                                                                                                                                     |
 | exception.allow_trace              | true                                             | Whether to allow exception trace stack.                                                                                                                                                                       |
 | memory_monitor.threshold           | 0.85                                             | The threshold of JVM(in-heap) memory usage monitoring , 1 means disabling this function.                                                                                                                                                                                |
 | memory_monitor.period              | 2000                                             | The period in ms of JVM(in-heap) memory usage monitoring.                                                                                                                                                     |
@@ -62,6 +64,7 @@ weight: 2
 |------------------|------------------------|--------------------------------------------|
 | pd.peers         | 127.0.0.1:8686         | PD server addresses (comma separated).     |
 | meta.endpoints   | http://127.0.0.1:2379  | Meta service endpoints.                    |
+| usePD            | false                   | 是否通过 PD 管理分布式元数据。              |
 
 ### 基本配置项
 
@@ -218,6 +221,7 @@ weight: 2
 | arthas.telnetPort  | 8562          | Arthas telnet port.   |
 | arthas.httpPort    | 8561          | Arthas HTTP port.     |
 | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
+| arthas.disabledCommands | jad      | Disabled Arthas commands, separated by commas. |
 
 </details>
 
@@ -340,4 +344,3 @@ weight: 2
 > - `jdbc.url=jdbc:postgresql://localhost:5432/`
 
 </details>
-

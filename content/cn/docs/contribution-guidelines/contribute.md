@@ -1,180 +1,84 @@
 ---
-title: "如何参与 HugeGraph 社区"
-linkTitle: "如何参与 HugeGraph 社区"
+title: "参与 HugeGraph 社区"
+linkTitle: "贡献流程"
 weight: 1
 ---
 
-> TODO: translate this article to Chinese
+## 选择贡献方式
 
-Thanks for taking the time to contribute! As an open source project, HugeGraph is looking forward to be contributed from everyone, and we are also grateful to all the contributors.
+可以通过 [GitHub Issues](https://github.com/apache/hugegraph/issues) 报告问题，也可以提交代码、测试或文档。准备较大的改动前，建议先创建 Issue 并说明范围，避免重复工作。
 
-The following is a contribution guide for HugeGraph:
+下面以 `apache/hugegraph` 为例。其他 HugeGraph 仓库的流程相同，但构建和测试命令应以各仓库的 `README.md`、`AGENTS.md` 和 CI 配置为准。
 
-<img width="884" alt="image" src="https://user-images.githubusercontent.com/9625821/159643158-8bf72c0a-93c3-4a58-8912-7b2ab20ced1d.png">
+## 准备仓库
 
-## 1. Preparation
+先在 GitHub 上 fork [apache/hugegraph](https://github.com/apache/hugegraph)，再克隆自己的 fork：
 
-**建议**: 使用 [GitHub desktop](https://desktop.github.com/) 可以大幅简化和改善你提交 PR/Commit 的过程, 特别适合新人
-
-We can contribute by reporting issues, submitting code patches or any other feedback.
-
-Before submitting the code, we need to do some preparation:
-
-1. Sign up or login to GitHub:  [https://github.com](https://github.com)
-
-2. Fork HugeGraph repo from GitHub: [https://github.com/apache/hugegraph/fork](https://github.com/apache/hugegraph/fork)
-
-3. Clone code from fork repo to local: [https://github.com/${GITHUB_USER_NAME}/hugegraph](https://github.com/${GITHUB_USER_NAME}/hugegraph)
-
-   ```shell
-   # clone code from remote to local repo
-   git clone https://github.com/${GITHUB_USER_NAME}/hugegraph
-   ```
-
-4. Configure local HugeGraph repo
-
-   ```shell
-   cd hugegraph
-
-   # add upstream to synchronize the latest code
-   git remote add hugegraph https://github.com/apache/hugegraph
-
-   # set name and email to push code to github
-   git config user.name "{full-name}" # like "Jermy Li"
-   git config user.email "{email-address-of-github}" # like "jermy@apache.org"
-   ```
-   
-## 2. Create an Issue on GitHub
-
-If you encounter bugs or have any questions, please go to [GitHub Issues](https://github.com/apache/hugegraph/issues) to report them and feel free to [create an issue](https://github.com/apache/hugegraph/issues/new).
-
-## 3. Make changes of code locally
-
-#### 3.1 Create a new branch
-
-Please don't use master branch for development. We should create a new branch instead:
-
-```shell
-# checkout master branch
-git checkout master
-# pull the latest code from official hugegraph
-git pull hugegraph
-# create new branch: bugfix-branch
-git checkout -b bugfix-branch
+```bash
+git clone https://github.com/<your-name>/hugegraph.git
+cd hugegraph
+git remote add upstream https://github.com/apache/hugegraph.git
+git fetch upstream master
 ```
 
-#### 3.2 Change the code
+不要直接在 `master` 上开发。每项改动使用单独分支：
 
-Assume that we need to modify some files like "HugeGraph.java" and "HugeFactory.java":
-
-```shell
-# modify code to fix a bug
-vim hugegraph-core/src/main/java/org/apache/hugegraph/HugeGraph.java
-vim hugegraph-core/src/main/java/org/apache/hugegraph/HugeFactory.java
-# run test locally (optional)
-mvn test -Pcore-test,memory
-```
-Note: In order to be consistent with the code style easily, if you use IDEA as your IDE, you can import our code style configuration file.
-
-##### 3.2.1 添加第三方依赖
-
-如果我们要在 `HugeGraph` 项目中添加新的第三方依赖, 我们需要做下面的几件事情：
-1. 找到第三方依赖的仓库，将依赖的 `license` 文件放到 [./hugegraph-dist/release-docs/licenses/](https://github.com/apache/hugegraph/tree/master/hugegraph-server/hugegraph-dist/release-docs/licenses) 路径下。
-2. 在[./hugegraph-dist/release-docs/LICENSE](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/release-docs/LICENSE) 中声明该依赖的 `LICENSE` 信息。
-3. 找到仓库里的 NOTICE 文件，将其追加到 [./hugegraph-dist/release-docs/NOTICE](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/release-docs/NOTICE) 文件后面（如果没有NOTICE文件则跳过这一步）。
-4. 本地执行[./hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh) 脚本来更新依赖列表[known-dependencies.txt](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/scripts/dependency/known-dependencies.txt) (或者手动更新)。
-
-**例如**：在项目中引入了第三方新依赖 -> `ant-1.9.1.jar`
-- 项目源码位于：https://github.com/apache/ant/tree/rel/1.9.1
-- LICENSE 文件：https://github.com/apache/ant/blob/rel/1.9.1/LICENSE
-- NOTICE 文件：https://github.com/apache/ant/blob/rel/1.9.1/NOTICE
-
-`ant-1.9.1.jar` 的 license 信息需要在 LICENSE 文件中指定，notice 信息需要在 NOTICE 文件中指定。 ant-1.9.1.jar 对应的详细 LICENSE 文件需要复制到我们的 licenses/ 目录下。最后更新 known-dependencies.txt 文件。
-
-#### 3.3 Commit changes to git repo
-
-After the code has been completed, we submit them to the local git repo:
-
-```shell
-# add files to local git index
-git add hugegraph-core/src/main/java/org/apache/hugegraph/HugeGraph.java
-git add hugegraph-core/src/main/java/org/apache/hugegraph/HugeFactory.java
-# commit to local git repo
-git commit
+```bash
+git switch master
+git merge --ff-only upstream/master
+git switch -c fix/<short-description>
 ```
 
-Please edit the commit message after running `git commit`, we can explain what and how to fix a bug or implement a feature, the following is an example:
+## 修改和验证
 
-```sh
-Fix bug: run deploy multiple times 
+HugeGraph Server 的代码位于 `hugegraph-server/`。例如，核心模块路径是：
 
-fix #ISSUE_ID
+```text
+hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/
 ```
 
->  Please remember to fill in the issue id, which was generated by GitHub after issue creation.
+先运行与改动直接相关的测试。Server 常用测试入口如下：
 
-#### 3.4 Push commit to GitHub fork repo
+```bash
+# Core 测试，使用内存后端
+mvn test -pl hugegraph-server/hugegraph-test -am -P core-test,memory
 
-Push the local commit to GitHub fork repo:
+# API 测试，使用 RocksDB 后端
+mvn test -pl hugegraph-server/hugegraph-test -am -P api-test,rocksdb
 
-```shell
-# push the local commit to fork repo
-git push origin bugfix-branch:bugfix-branch
+# 格式化并检查编译
+mvn editorconfig:format
+mvn clean compile -Dmaven.javadoc.skip=true
 ```
 
-Note that since GitHub requires submitting code through `username + token` (instead of using `username + password` directly), you need to create a GitHub token from https://github.com/settings/tokens:
-<img width="1280" alt="image" src="https://user-images.githubusercontent.com/9625821/163524204-7fe0e6bf-9c8b-4b1a-ac65-6a0ac423eb16.png">
+提交第三方依赖时，还要同步发行包中的许可证信息：
 
-## 4. Create a Pull Request
+1. 把依赖的许可证文件放入 `hugegraph-server/hugegraph-dist/release-docs/licenses/`。
+2. 更新 `hugegraph-server/hugegraph-dist/release-docs/LICENSE`；依赖包含 NOTICE 时，同时更新 `NOTICE`。
+3. 运行 `hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh`，更新已知依赖清单。
 
-Go to the web page of GitHub fork repo, there would be a chance to create a Pull Request after pushing to a new branch, just click button "Compare & pull request" to do it. Then edit the description for proposed changes, which can just be copied from the commit message.
+## 提交 Pull Request
 
-Note: please make sure the email address you used to submit the code is bound to the GitHub account. For how to bind the email address, please refer to https://github.com/settings/emails:
-<img width="1280" alt="image" src="https://user-images.githubusercontent.com/9625821/163522445-2a50a72a-dea2-434f-9868-3a0d40d0d037.png">
+提交信息使用 `type(module): message` 格式，例如：
 
-## 5. Code review
-
- Maintainers will start the code review after all the **automatic** checks are passed:
-
-- Check: Contributor License Agreement is signed
-- Check: Travis CI builds is passed (automatically Test and Deploy)
-
-The commit will be accepted and merged if there is no problem after review.
-
-Please click on "Details" to find the problem if any check does not pass.
-
-If there are checks not passed or changes requested, then continue to modify the code and push again.
-
-## 6. More changes after review 
-
-If we have not passed the review, don't be discouraged. Usually a commit needs to be reviewed several times before being accepted! Please follow the review comments and make further changes.
-
-After the further changes, we submit them to the local repo:
-
-```shell
-# commit all updated files in a new commit,
-# please feel free to enter any appropriate commit message, note that
-# we will squash all commits in the pull request as one commit when
-# merging into the master branch.
-git commit -a
+```bash
+git add <changed-files>
+git commit -m "fix(core): handle empty vertex query"
+git push -u origin fix/<short-description>
 ```
 
-> If there are conflicts that prevent the code from being merged, we need to rebase on master branch:
->
-> ```shell
-> # synchronize the latest code
-> git checkout master
-> git pull hugegraph
-> # rebase on master
-> git checkout bugfix-branch
-> git rebase -i master
-> ```
+然后从 fork 分支向 `apache/hugegraph:master` 创建 Pull Request。说明问题、修改方法和实际运行的验证命令；界面变化应附截图。
 
-And push it to GitHub fork repo again:
+## 处理 Review
 
-```shell
-# force push the local commit to fork repo
-git push -f origin bugfix-branch:bugfix-branch
+CI 失败或 reviewer 要求修改时，在原分支继续提交并推送。需要同步上游时，可以 rebase：
+
+```bash
+git fetch upstream master
+git rebase upstream/master
+git push --force-with-lease
 ```
 
-GitHub will automatically update the Pull Request after we push it, just wait for code review.
+不要使用普通 `--force` 覆盖远端分支。完成所有 CI 和 review 要求后，由项目 maintainer 合并 Pull Request。
+
+Contributor Agreement 使用 ASF 官方流程，见[贡献者协议](/cn/docs/CLA/)。

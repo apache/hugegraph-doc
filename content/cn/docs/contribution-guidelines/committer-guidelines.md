@@ -123,7 +123,7 @@ I believe making him/her a Committer will enhance the work for HugeGraph.
 
 So, I am happy to call VOTE to accept xxx as a HugeGraph Committer.
  
-Voting will continue for at least 72 hours or until the required number of votes is reached.
+Voting will remain open for one week.
  
 Please vote accordingly:
 [ ] +1 approve
@@ -133,7 +133,7 @@ Please vote accordingly:
 Thanks!
 ```
 
-然后 PMC 成员回复 +1 或 -1 的邮件回复表达意见，一般来说至少需要 ≥3 票 +1 才能结束投票。
+投票应保持开放一周。通过需要至少 3 票 `+1`，并且没有否决票；提前达到 3 票也不能提前结束。
 
 ## 宣布投票结果 (RESULT)
 

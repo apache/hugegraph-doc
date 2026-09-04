@@ -269,6 +269,7 @@ jobs:
         env:
           PREFIX: ${{ needs.prepare.outputs.artifact_prefix }}
           SITE_ORIGIN: ${{ needs.prepare.outputs.site_origin }}
+          HISTORICAL_ORIGIN: ${{ needs.prepare.outputs.historical_origin }}
           SELECTION: ${{ needs.prepare.outputs.selection }}
         run: |
           extra=()
@@ -279,7 +280,8 @@ jobs:
             --artifacts version-artifacts --artifact-prefix "$PREFIX-" \
             --artifact-suffix "-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
             --resolved-manifest resolved/resolved-versions.json \
-            --site-origin "$SITE_ORIGIN" --select "$SELECTION" \
+            --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
+            --select "$SELECTION" \
             --output "${RUNNER_TEMP}/public-site" "${extra[@]}"
       - name: Upload publishable aggregate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

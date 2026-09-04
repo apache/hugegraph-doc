@@ -1155,6 +1155,7 @@ class VersionUrlTest(unittest.TestCase):
                 artifacts=temp / "artifacts",
                 artifact_prefix="",
                 site_origin=ORIGIN,
+                historical_origin="https://hugegraph.apache.org",
                 output=output,
                 asf_profile="oink",
                 asf_whoami="asf-staging-oink",
@@ -1178,7 +1179,9 @@ class VersionUrlTest(unittest.TestCase):
                     return_value={"versions": [entry]},
                 ),
                 mock.patch.object(versioning, "require_metadata_matches"),
-                mock.patch.object(versioning, "validate_artifact"),
+                mock.patch.object(
+                    versioning, "validate_artifact"
+                ) as validate_artifact,
                 mock.patch.object(versioning, "write_error_documents", return_value=1),
                 mock.patch.object(versioning, "sitemap_locations", return_value=[]),
                 mock.patch.object(
@@ -1190,6 +1193,11 @@ class VersionUrlTest(unittest.TestCase):
                 versioning.aggregate(args)
 
             security_scan.assert_called_once_with(output.resolve(), ORIGIN)
+            validate_args = validate_artifact.call_args.args[0]
+            self.assertEqual(
+                validate_args.historical_origin,
+                "https://hugegraph.apache.org",
+            )
 
     def test_output_cleanup_is_limited_to_temporary_descendants(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:

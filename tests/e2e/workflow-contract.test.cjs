@@ -40,4 +40,8 @@ test("prepare pins Hugo and WebP tools before source validators", () => {
   assert.ok(setupWebp >= 0 && setupWebp < validators);
   assert.match(workflow, /apt-get install --yes --no-install-recommends webp/);
   assert.match(workflow, /command -v cwebp[\s\S]*command -v dwebp/);
+  assert.match(
+    workflow,
+    /aggregate[\s\S]*--historical-origin "\$HISTORICAL_ORIGIN"/,
+  );
 });

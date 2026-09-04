@@ -3224,6 +3224,7 @@ def aggregate(args: argparse.Namespace) -> None:
                 version=entry["id"],
                 sha=entry["sha"],
                 site_origin=args.site_origin,
+                historical_origin=getattr(args, "historical_origin", None),
                 artifact=source,
             )
         )
@@ -3315,6 +3316,7 @@ def parser() -> argparse.ArgumentParser:
         "--resolved-manifest", type=pathlib.Path, required=True
     )
     aggregate_parser.add_argument("--site-origin", required=True)
+    aggregate_parser.add_argument("--historical-origin")
     aggregate_parser.add_argument("--select")
     aggregate_parser.add_argument("--output", type=pathlib.Path, required=True)
     aggregate_parser.add_argument("--asf-profile")

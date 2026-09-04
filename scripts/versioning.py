@@ -37,6 +37,7 @@ from typing import NoReturn
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 URL_CONTRACT = ROOT / "dist/url-contract.json"
+VERSION_ROUTES = ROOT / "data/version_routes.json"
 CANONICAL_ORIGIN = "https://hugegraph.apache.org/"
 SHELL_FILES = ("go.mod", "go.sum", "hugo.yaml")
 SHELL_DIRS = ("assets", "data", "i18n", "layouts")
@@ -1929,6 +1930,307 @@ def rewrite_text_urls(text: str, rewrite, *, markdown: bool) -> tuple[str, int]:
     return text, count
 
 
+def normalize_logical_docs_route(version: str, relative: str) -> str:
+    """Normalize reviewed route moves without treating aliases as pages."""
+    normalized = relative.strip("/")
+    normalized = normalized.replace(
+        "performance/api-preformance", "performance/api-performance"
+    )
+    if version == "1.5" and normalized == "introduction/readme":
+        return "introduction"
+    return normalized
+
+
+def docs_target_parts(target: str) -> tuple[str, str]:
+    """Return locale and relative Docs path for one route-map target."""
+    normalized = target.strip("/")
+    if normalized == "docs":
+        return "en", ""
+    if normalized.startswith("docs/"):
+        return "en", normalized.removeprefix("docs/")
+    if normalized == "cn/docs":
+        return "cn", ""
+    if normalized.startswith("cn/docs/"):
+        return "cn", normalized.removeprefix("cn/docs/")
+    fail(f"route-map target is outside Docs: {target}")
+
+
+def canonical_docs_pages(root: pathlib.Path, version: str) -> dict[str, str]:
+    """Inventory canonical Docs pages, excluding redirect aliases and print views."""
+    pages: dict[str, str] = {}
+    for language, docs_root in (
+        ("en", root / "docs"),
+        ("cn", root / "cn/docs"),
+    ):
+        if not docs_root.is_dir():
+            fail(f"route-map Docs root is missing for {version}: {docs_root}")
+        for path in sorted(docs_root.rglob("index.html")):
+            document = DocumentParser()
+            document.feed(path.read_text(encoding="utf-8"))
+            if refresh_target(document):
+                continue
+            relative = path.parent.relative_to(docs_root).as_posix()
+            relative = "" if relative == "." else relative
+            logical_relative = normalize_logical_docs_route(version, relative)
+            logical_id = f"{language}:{logical_relative}"
+            target = (
+                ("cn/docs/" if language == "cn" else "docs/")
+                + (relative.rstrip("/") + "/" if relative else "")
+            )
+            previous = pages.get(logical_id)
+            if previous is not None and previous != target:
+                fail(
+                    f"ambiguous canonical route for {version} {logical_id}: "
+                    f"{previous} and {target}"
+                )
+            pages[logical_id] = target
+    return pages
+
+
+def generate_version_routes(artifact_roots: dict[str, pathlib.Path]) -> dict:
+    """Generate the reviewed cross-version logical page map deterministically."""
+    if set(artifact_roots) != set(VERSION_ORDER):
+        fail(
+            "route-map artifacts must contain exactly: "
+            + ", ".join(VERSION_ORDER)
+        )
+    inventories = {
+        version: canonical_docs_pages(artifact_roots[version], version)
+        for version in VERSION_ORDER
+    }
+    logical_ids = sorted(
+        {logical_id for pages in inventories.values() for logical_id in pages}
+    )
+    result = {
+        "schemaVersion": 1,
+        "versions": list(VERSION_ORDER),
+        "pages": {
+            logical_id: {
+                version: inventories[version].get(logical_id)
+                for version in VERSION_ORDER
+            }
+            for logical_id in logical_ids
+        },
+    }
+    validate_version_routes(result)
+    return result
+
+
+def validate_version_routes(data: dict) -> dict:
+    """Fail closed on route-map shape, ordering, locale, and target syntax."""
+    if not isinstance(data, dict) or set(data) != {
+        "schemaVersion",
+        "versions",
+        "pages",
+    }:
+        fail("invalid version route-map top-level fields")
+    if data["schemaVersion"] != 1 or data["versions"] != list(VERSION_ORDER):
+        fail("invalid version route-map schema or version order")
+    pages = data["pages"]
+    if not isinstance(pages, dict) or not pages:
+        fail("version route-map pages must be a non-empty object")
+    for logical_id, targets in pages.items():
+        if (
+            not isinstance(logical_id, str)
+            or ":" not in logical_id
+            or logical_id.split(":", 1)[0] not in {"en", "cn"}
+        ):
+            fail(f"invalid version route-map logical ID: {logical_id!r}")
+        language, relative = logical_id.split(":", 1)
+        if (
+            relative.startswith("/")
+            or relative.endswith("/")
+            or ".." in pathlib.PurePosixPath(relative).parts
+        ):
+            fail(f"invalid version route-map logical path: {logical_id}")
+        if not isinstance(targets, dict) or list(targets) != list(VERSION_ORDER):
+            fail(f"invalid version route-map target order: {logical_id}")
+        for version, target in targets.items():
+            if target is None:
+                continue
+            if (
+                not isinstance(target, str)
+                or target.startswith("/")
+                or not target.endswith("/")
+                or "?" in target
+                or "#" in target
+                or ".." in pathlib.PurePosixPath(target).parts
+                or target.startswith("versions/")
+            ):
+                fail(
+                    f"invalid version route-map target for "
+                    f"{logical_id} {version}: {target!r}"
+                )
+            target_language, target_relative = docs_target_parts(target)
+            if target_language != language:
+                fail(
+                    f"version route-map target changes locale: "
+                    f"{logical_id} -> {target}"
+                )
+            if normalize_logical_docs_route(version, target_relative) != relative:
+                fail(
+                    f"version route-map target/logical mismatch for "
+                    f"{logical_id} {version}: {target}"
+                )
+    return data
+
+
+def load_version_routes(path: pathlib.Path = VERSION_ROUTES) -> dict:
+    if not path.is_file():
+        fail(f"version route-map is missing: {path}")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        fail(f"cannot load version route-map {path}: {error}")
+    return validate_version_routes(data)
+
+
+def canonical_docs_target(text: str, entry: dict) -> str | None:
+    """Resolve the current canonical page to an unscoped route-map target."""
+    document = DocumentParser()
+    document.feed(text)
+    if len(document.canonical) != 1:
+        return None
+    path = urllib.parse.urlsplit(document.canonical[0]).path
+    prefix = "/" + entry["publishPath"].strip("/") if entry["publishPath"] else ""
+    if prefix and (path == prefix or path.startswith(prefix + "/")):
+        path = path[len(prefix) :] or "/"
+    normalized = path.strip("/")
+    if normalized == "docs" or normalized.startswith("docs/"):
+        return normalized + "/"
+    if normalized == "cn/docs" or normalized.startswith("cn/docs/"):
+        return normalized + "/"
+    return None
+
+
+def logical_id_for_target(
+    route_map: dict, version: str, target: str
+) -> str | None:
+    matches = [
+        logical_id
+        for logical_id, targets in route_map["pages"].items()
+        if targets[version] == target
+    ]
+    if len(matches) > 1:
+        fail(f"ambiguous route-map target for {version}: {target}")
+    return matches[0] if matches else None
+
+
+def version_switch_options(
+    manifest: dict,
+    route_map: dict,
+    current_version: str,
+    current_target: str | None,
+    origin: str,
+    historical_origin: str | None = None,
+    *,
+    language: str | None = None,
+) -> list[dict]:
+    """Return page-aware version choices with explicit missing-page fallbacks."""
+    validate_version_routes(route_map)
+    logical_id = None
+    if current_target is not None:
+        target_language, _ = docs_target_parts(current_target)
+        language = target_language
+        logical_id = logical_id_for_target(route_map, current_version, current_target)
+        if logical_id is None:
+            fail(
+                f"current canonical Docs page is absent from route-map: "
+                f"{current_version} {current_target}"
+            )
+    if language not in {"en", "cn"}:
+        fail(f"version switch locale is unavailable: {language!r}")
+    options = []
+    for entry in manifest["versions"]:
+        entry_origin = (
+            historical_origin
+            if entry.get("archived", entry["id"] != "latest")
+            and historical_origin is not None
+            else origin
+        )
+        equivalent = False
+        fallback = False
+        if logical_id is not None:
+            target = route_map["pages"][logical_id][entry["id"]]
+            if target is not None:
+                equivalent = True
+                url = urllib.parse.urljoin(entry_origin.rstrip("/") + "/", (
+                    f"{entry['publishPath'].rstrip('/')}/{target}"
+                    if entry["publishPath"]
+                    else target
+                ))
+            else:
+                fallback = True
+                root = "cn/docs/" if language == "cn" else "docs/"
+                path = (
+                    f"{entry['publishPath'].rstrip('/')}/{root}"
+                    if entry["publishPath"]
+                    else root
+                )
+                url = (
+                    urllib.parse.urljoin(entry_origin.rstrip("/") + "/", path)
+                    + "#hg-version-fallback"
+                )
+        else:
+            root = "cn/docs/" if language == "cn" else "docs/"
+            path = (
+                f"{entry['publishPath'].rstrip('/')}/{root}"
+                if entry["publishPath"]
+                else root
+            )
+            url = urllib.parse.urljoin(entry_origin.rstrip("/") + "/", path)
+        options.append(
+            {
+                "id": entry["id"],
+                "title": entry["name"],
+                "url": url,
+                "active": entry["id"] == current_version,
+                "available": True,
+                "disabledReason": "",
+                "equivalent": equivalent,
+                "fallback": fallback,
+            }
+        )
+    return options
+
+
+def reviewed_version_route_urls(
+    manifest: dict,
+    route_map: dict,
+    origin: str,
+    historical_origin: str | None,
+) -> set[str]:
+    """Return only cross-version destinations authorized by the route-map."""
+    validate_version_routes(route_map)
+    urls: set[str] = set()
+    for logical_id, targets in route_map["pages"].items():
+        language = logical_id.split(":", 1)[0]
+        if not any(target is not None for target in targets.values()):
+            fail(f"route-map page has no targets: {logical_id}")
+        for entry in manifest["versions"]:
+            entry_origin = (
+                historical_origin
+                if entry.get("archived", entry["id"] != "latest")
+                and historical_origin is not None
+                else origin
+            )
+            target = targets[entry["id"]]
+            if target is None:
+                target = "cn/docs/" if language == "cn" else "docs/"
+                fragment = "#hg-version-fallback"
+            else:
+                fragment = ""
+            path = (
+                f"{entry['publishPath'].rstrip('/')}/{target}"
+                if entry["publishPath"]
+                else target
+            )
+            urls.add(
+                urllib.parse.urljoin(entry_origin.rstrip("/") + "/", path) + fragment
+            )
+    return urls
+
+
 def scope_version_artifact(
     output: pathlib.Path,
     manifest: dict,
@@ -1937,10 +2239,12 @@ def scope_version_artifact(
     historical_origin: str | None = None,
 ) -> dict:
     """Repair URL fields Hugo cannot canonify, then return auditable counts."""
-    if not entry["publishPath"] and origin.rstrip("/") == CANONICAL_ORIGIN.rstrip("/"):
-        return {"files": 0, "urls": 0, "manifests": 0, "searchRefs": 0}
+    route_map = load_version_routes()
     allowed_paths = allowed_version_paths(manifest)
     artifact_base = base_url(origin, entry["publishPath"])
+    reviewed_selector_urls = reviewed_version_route_urls(
+        manifest, route_map, origin, historical_origin
+    )
     historical_selector_urls: set[str] = set()
     if historical_origin is not None:
         for language in ("en", "cn"):
@@ -1953,7 +2257,7 @@ def scope_version_artifact(
                     )
 
     def rewrite(value: str) -> str:
-        if value in historical_selector_urls:
+        if value in reviewed_selector_urls or value in historical_selector_urls:
             return value
         rewritten = rewrite_internal_url(
             value,
@@ -2052,16 +2356,40 @@ def scope_version_artifact(
             rewrite,
             markdown=path.suffix in {".md", ".txt"},
         )
+        current_target = (
+            canonical_docs_target(rendered, entry) if path.suffix == ".html" else None
+        )
+        relative = path.relative_to(output).as_posix()
+        language = "cn" if relative.startswith(("cn/", "cn\\")) else "en"
 
         def replace_manifest(match: re.Match) -> str:
             data = json.loads(match.group("body"))
             rewritten = rewrite_json_urls(data, rewrite)
             normalize_language_switch_urls(
                 rewritten,
-                path.relative_to(output).as_posix(),
+                relative,
                 artifact_base,
                 output,
             )
+            switch = next(
+                (
+                    action
+                    for action in rewritten.get("actions", [])
+                    if isinstance(action, dict)
+                    and action.get("id") == "switch_version"
+                ),
+                None,
+            )
+            if switch is not None:
+                switch["options"] = version_switch_options(
+                    manifest,
+                    route_map,
+                    entry["id"],
+                    current_target,
+                    origin,
+                    historical_origin,
+                    language=language,
+                )
             stats["manifests"] += 1
             return (
                 match.group("open")
@@ -2345,6 +2673,7 @@ def require_docs_navigation_json(data: dict, source: str, language: str) -> None
 
 def validate_artifact(args: argparse.Namespace) -> None:
     manifest = load_manifest(args.manifest)
+    route_map = load_version_routes()
     entry = next(
         (item for item in manifest["versions"] if item["id"] == args.version), None
     )
@@ -2387,6 +2716,12 @@ def validate_artifact(args: argparse.Namespace) -> None:
     canonical_host = same_site_host(canonical_parts)
     prefix = "/" + entry["publishPath"].strip("/") if entry["publishPath"] else ""
     allowed_paths = allowed_version_paths(manifest)
+    reviewed_route_urls = reviewed_version_route_urls(
+        manifest,
+        route_map,
+        args.site_origin,
+        getattr(args, "historical_origin", None),
+    )
     current_docs = (prefix + "/docs").rstrip("/") or "/docs"
     checked_urls = 0
     canonical_pages = 0
@@ -2434,6 +2769,9 @@ def validate_artifact(args: argparse.Namespace) -> None:
     def validate_url(value: str, source: pathlib.Path) -> None:
         nonlocal checked_urls
         if not value or value.startswith(("#", "?")):
+            return
+        if value in reviewed_route_urls:
+            checked_urls += 1
             return
         source_name = source.relative_to(root).as_posix()
         require_safe_url_syntax(value)
@@ -2659,29 +2997,17 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 None,
             )
             language = "cn" if relative.startswith("cn/") else "en"
-            expected_options = version_urls(
+            current_target = canonical_docs_target(text, entry)
+            expected_options = version_switch_options(
                 manifest,
+                route_map,
+                entry["id"],
+                current_target,
                 args.site_origin,
-                language,
                 getattr(args, "historical_origin", None),
+                language=language,
             )
-            if switch is None or [
-                (
-                    item.get("id"),
-                    item.get("title"),
-                    str(item.get("url", "")).rstrip("/"),
-                    item.get("active"),
-                )
-                for item in switch.get("options", [])
-            ] != [
-                (
-                    item["version"],
-                    item["name"],
-                    item["url"].rstrip("/"),
-                    item["version"] == entry["id"],
-                )
-                for item in expected_options
-            ]:
+            if switch is None or switch.get("options") != expected_options:
                 fail(f"version switch contract mismatch in {path.relative_to(root)}")
             if (
                 entry["archived"]
@@ -3204,6 +3530,53 @@ def validate_output_security(output: pathlib.Path, site_origin: str) -> None:
     )
 
 
+def validate_aggregate_version_routes(
+    output: pathlib.Path,
+    route_map: dict,
+    selected: set[str],
+    publish_paths: dict[str, str],
+) -> None:
+    """Prove every selected route target exists and every selected null is real."""
+    validate_version_routes(route_map)
+    selected = set(selected)
+    unknown = selected.difference(VERSION_ORDER)
+    if unknown:
+        fail(f"cannot validate unknown route-map versions: {sorted(unknown)!r}")
+    for version in VERSION_ORDER:
+        if version not in selected:
+            continue
+        if version not in publish_paths:
+            fail(f"route-map publish path is missing for {version}")
+        version_root = output / publish_paths[version]
+        actual = canonical_docs_pages(version_root, version)
+        for logical_id, targets in route_map["pages"].items():
+            expected = targets[version]
+            observed = actual.get(logical_id)
+            if expected is None:
+                if observed is not None:
+                    fail(
+                        f"route-map null target exists for "
+                        f"{version} {logical_id}: {observed}"
+                    )
+                continue
+            if observed is None:
+                fail(
+                    f"route-map target is missing for "
+                    f"{version} {logical_id}: {expected}"
+                )
+            if observed != expected:
+                fail(
+                    f"route-map target drift for {version} {logical_id}: "
+                    f"{observed} != {expected}"
+                )
+        extras = sorted(set(actual).difference(route_map["pages"]))
+        if extras:
+            fail(
+                f"canonical Docs pages are absent from route-map for "
+                f"{version}: {extras}"
+            )
+
+
 def aggregate(args: argparse.Namespace) -> None:
     manifest = load_resolved_manifest(args.resolved_manifest)
     selected = selected_version_ids(getattr(args, "select", None))
@@ -3271,11 +3644,37 @@ def aggregate(args: argparse.Namespace) -> None:
         + "\n",
         encoding="utf-8",
     )
+    route_map = load_version_routes()
+    (metadata_dir / "version-routes.json").write_text(
+        json.dumps(route_map, ensure_ascii=False, sort_keys=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    validate_aggregate_version_routes(
+        output,
+        route_map,
+        selected,
+        {entry["id"]: entry["publishPath"] for entry in manifest["versions"]},
+    )
     validate_output_security(output, args.site_origin)
     print(
         f"aggregated {len(resolved)} versions and {len(seen)} files "
         f"with {error_documents} error documents -> {output}"
     )
+
+
+def generate_routes(args: argparse.Namespace) -> None:
+    roots = {
+        version: args.artifacts
+        / f"{args.artifact_prefix}{version}{args.artifact_suffix}"
+        for version in VERSION_ORDER
+    }
+    data = generate_version_routes(roots)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        json.dumps(data, ensure_ascii=False, sort_keys=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"generated {len(data['pages'])} logical version routes -> {args.output}")
 
 
 def parser() -> argparse.ArgumentParser:
@@ -3327,6 +3726,15 @@ def parser() -> argparse.ArgumentParser:
     aggregate_parser.add_argument("--asf-profile")
     aggregate_parser.add_argument("--asf-whoami")
     aggregate_parser.set_defaults(func=aggregate)
+
+    routes_parser = commands.add_parser("routes")
+    routes_parser.add_argument("--artifacts", type=pathlib.Path, required=True)
+    routes_parser.add_argument("--artifact-prefix", default="")
+    routes_parser.add_argument("--artifact-suffix", default="")
+    routes_parser.add_argument(
+        "--output", type=pathlib.Path, default=VERSION_ROUTES
+    )
+    routes_parser.set_defaults(func=generate_routes)
     return result
 
 

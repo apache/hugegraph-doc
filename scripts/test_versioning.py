@@ -854,13 +854,7 @@ class VersionUrlTest(unittest.TestCase):
         self.assertIn('<a href="https://hugegraph.apache.org/blog/">Blog</a>', rendered)
 
     def test_language_fallback_scopes_to_each_artifact_base(self) -> None:
-        manifest = {
-            "versions": [
-                {"publishPath": ""},
-                {"publishPath": "versions/1.7"},
-                {"publishPath": "versions/1.5"},
-            ]
-        }
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
         relative = "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html"
         for publish_path, expected_url in (
             ("", "/"),
@@ -902,7 +896,11 @@ class VersionUrlTest(unittest.TestCase):
                     versioning.scope_version_artifact(
                         output,
                         manifest,
-                        {"publishPath": publish_path},
+                        next(
+                            entry
+                            for entry in manifest["versions"]
+                            if entry["publishPath"] == publish_path
+                        ),
                         STAGING_ORIGIN,
                     )
 
@@ -1171,6 +1169,9 @@ class VersionUrlTest(unittest.TestCase):
                     asf_text,
                 )
                 self.assertTrue((path / "build-metadata/versions.json").is_file())
+                self.assertTrue(
+                    (path / "build-metadata/version-routes.json").is_file()
+                )
 
             with (
                 mock.patch.object(
@@ -1185,6 +1186,9 @@ class VersionUrlTest(unittest.TestCase):
                 mock.patch.object(versioning, "write_error_documents", return_value=1),
                 mock.patch.object(versioning, "sitemap_locations", return_value=[]),
                 mock.patch.object(
+                    versioning, "validate_aggregate_version_routes"
+                ) as validate_routes,
+                mock.patch.object(
                     versioning,
                     "validate_output_security",
                     side_effect=assert_complete_aggregate,
@@ -1193,6 +1197,7 @@ class VersionUrlTest(unittest.TestCase):
                 versioning.aggregate(args)
 
             security_scan.assert_called_once_with(output.resolve(), ORIGIN)
+            validate_routes.assert_called_once()
             validate_args = validate_artifact.call_args.args[0]
             self.assertEqual(
                 validate_args.historical_origin,
@@ -1373,6 +1378,162 @@ class VersionUrlTest(unittest.TestCase):
             ):
                 versioning.prepare_output_directory(output, "fixture")
             remove.assert_not_called()
+
+    def test_version_routes_generate_canonical_pages_and_known_equivalents(
+        self,
+    ) -> None:
+        def page(root: Path, relative: str, *, redirect: str | None = None) -> None:
+            target = root / relative / "index.html"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            refresh = (
+                f'<meta http-equiv="refresh" content="0; url={redirect}">'
+                if redirect
+                else ""
+            )
+            target.write_text(f"<html><head>{refresh}</head></html>", encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            roots = {}
+            for version in versioning.VERSION_ORDER:
+                roots[version] = temp / version
+                page(roots[version], "docs")
+                page(roots[version], "cn/docs")
+                spelling = (
+                    "api-performance" if version == "latest" else "api-preformance"
+                )
+                page(roots[version], f"docs/performance/{spelling}")
+            page(roots["latest"], "docs/introduction")
+            page(
+                roots["latest"],
+                "docs/introduction/readme",
+                redirect="/docs/introduction/",
+            )
+            page(roots["1.5"], "docs/introduction/readme")
+
+            routes = versioning.generate_version_routes(roots)
+
+            self.assertEqual(routes["versions"], list(versioning.VERSION_ORDER))
+            self.assertEqual(
+                routes["pages"]["en:performance/api-performance"]["latest"],
+                "docs/performance/api-performance/",
+            )
+            self.assertEqual(
+                routes["pages"]["en:performance/api-performance"]["1.7"],
+                "docs/performance/api-preformance/",
+            )
+            self.assertEqual(
+                routes["pages"]["en:introduction"]["1.5"],
+                "docs/introduction/readme/",
+            )
+            self.assertNotIn("en:introduction/readme", routes["pages"])
+            versioning.validate_version_routes(routes)
+
+    def test_version_switch_options_use_equivalent_page_or_explicit_fallback(
+        self,
+    ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        routes = {
+            "schemaVersion": 1,
+            "versions": list(versioning.VERSION_ORDER),
+            "pages": {
+                "en:config": {
+                    "latest": "docs/config/",
+                    "1.7": "docs/config/",
+                    "1.5": None,
+                    "1.3": "docs/config/",
+                    "1.0": None,
+                }
+            },
+        }
+        options = versioning.version_switch_options(
+            manifest,
+            routes,
+            "latest",
+            "docs/config/",
+            STAGING_ORIGIN,
+            historical_origin=ORIGIN,
+        )
+        self.assertEqual(
+            set(options[0]),
+            {
+                "id",
+                "title",
+                "url",
+                "active",
+                "available",
+                "disabledReason",
+                "equivalent",
+                "fallback",
+            },
+        )
+        self.assertEqual(options[0]["url"], f"{STAGING_ORIGIN}docs/config/")
+        self.assertTrue(options[0]["equivalent"])
+        self.assertFalse(options[0]["fallback"])
+        self.assertEqual(options[1]["url"], f"{ORIGIN}versions/1.7/docs/config/")
+        self.assertEqual(
+            options[2]["url"],
+            f"{ORIGIN}versions/1.5/docs/#hg-version-fallback",
+        )
+        self.assertFalse(options[2]["equivalent"])
+        self.assertTrue(options[2]["fallback"])
+
+        non_docs = versioning.version_switch_options(
+            manifest,
+            routes,
+            "latest",
+            None,
+            STAGING_ORIGIN,
+            historical_origin=ORIGIN,
+            language="cn",
+        )
+        self.assertEqual(non_docs[1]["url"], f"{ORIGIN}versions/1.7/cn/docs/")
+        self.assertFalse(non_docs[1]["equivalent"])
+        self.assertFalse(non_docs[1]["fallback"])
+
+    def test_aggregate_version_routes_reject_missing_targets_and_false_nulls(
+        self,
+    ) -> None:
+        routes = {
+            "schemaVersion": 1,
+            "versions": list(versioning.VERSION_ORDER),
+            "pages": {
+                "en:config": {
+                    "latest": "docs/config/",
+                    "1.7": None,
+                    "1.5": None,
+                    "1.3": None,
+                    "1.0": None,
+                }
+            },
+        }
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            (output / "cn/docs").mkdir(parents=True)
+            target = output / "docs/config/index.html"
+            target.parent.mkdir(parents=True)
+            target.write_text("<html></html>", encoding="utf-8")
+            versioning.validate_aggregate_version_routes(
+                output, routes, {"latest"}, {"latest": ""}
+            )
+            target.unlink()
+            with self.assertRaisesRegex(SystemExit, "route-map target is missing"):
+                versioning.validate_aggregate_version_routes(
+                    output, routes, {"latest"}, {"latest": ""}
+                )
+
+            target.write_text("<html></html>", encoding="utf-8")
+            hidden = output / "versions/1.7/docs/config/index.html"
+            hidden.parent.mkdir(parents=True)
+            hidden.write_text("<html></html>", encoding="utf-8")
+            (output / "versions/1.7/cn/docs").mkdir(parents=True)
+            with self.assertRaisesRegex(SystemExit, "route-map null target exists"):
+                versioning.validate_aggregate_version_routes(
+                    output,
+                    routes,
+                    {"latest", "1.7"},
+                    {"latest": "", "1.7": "versions/1.7"},
+                )
 
 
 if __name__ == "__main__":

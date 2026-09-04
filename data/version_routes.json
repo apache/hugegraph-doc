@@ -1,0 +1,1377 @@
+{
+  "schemaVersion": 1,
+  "versions": [
+    "latest",
+    "1.7",
+    "1.5",
+    "1.3",
+    "1.0"
+  ],
+  "pages": {
+    "cn:": {
+      "latest": "cn/docs/",
+      "1.7": "cn/docs/",
+      "1.5": "cn/docs/",
+      "1.3": "cn/docs/",
+      "1.0": "cn/docs/"
+    },
+    "cn:changelog": {
+      "latest": "cn/docs/changelog/",
+      "1.7": "cn/docs/changelog/",
+      "1.5": "cn/docs/changelog/",
+      "1.3": "cn/docs/changelog/",
+      "1.0": "cn/docs/changelog/"
+    },
+    "cn:changelog/hugegraph-0.10.4-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/changelog/hugegraph-0.10.4-release-notes/"
+    },
+    "cn:changelog/hugegraph-0.11.2-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/changelog/hugegraph-0.11.2-release-notes/"
+    },
+    "cn:changelog/hugegraph-0.12.0-release-notes": {
+      "latest": "cn/docs/changelog/hugegraph-0.12.0-release-notes/",
+      "1.7": "cn/docs/changelog/hugegraph-0.12.0-release-notes/",
+      "1.5": "cn/docs/changelog/hugegraph-0.12.0-release-notes/",
+      "1.3": "cn/docs/changelog/hugegraph-0.12.0-release-notes/",
+      "1.0": "cn/docs/changelog/hugegraph-0.12.0-release-notes/"
+    },
+    "cn:changelog/hugegraph-0.2-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/changelog/hugegraph-0.2-release-notes/"
+    },
+    "cn:changelog/hugegraph-0.2.4-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/changelog/hugegraph-0.2.4-release-notes/"
+    },
+    "cn:changelog/hugegraph-0.3.3-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/changelog/hugegraph-0.3.3-release-notes/"
+    },
+    "cn:changelog/hugegraph-0.4.4-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/changelog/hugegraph-0.4.4-release-notes/"
+    },
+    "cn:changelog/hugegraph-0.5.6-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/changelog/hugegraph-0.5.6-release-notes/"
+    },
+    "cn:changelog/hugegraph-0.6.1-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/changelog/hugegraph-0.6.1-release-notes/"
+    },
+    "cn:changelog/hugegraph-0.7.4-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/changelog/hugegraph-0.7.4-release-notes/"
+    },
+    "cn:changelog/hugegraph-0.8.0-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/changelog/hugegraph-0.8.0-release-notes/"
+    },
+    "cn:changelog/hugegraph-0.9.2-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/changelog/hugegraph-0.9.2-release-notes/"
+    },
+    "cn:changelog/hugegraph-1.0.0-release-notes": {
+      "latest": "cn/docs/changelog/hugegraph-1.0.0-release-notes/",
+      "1.7": "cn/docs/changelog/hugegraph-1.0.0-release-notes/",
+      "1.5": "cn/docs/changelog/hugegraph-1.0.0-release-notes/",
+      "1.3": "cn/docs/changelog/hugegraph-1.0.0-release-notes/",
+      "1.0": "cn/docs/changelog/hugegraph-1.0.0-release-notes/"
+    },
+    "cn:changelog/hugegraph-1.2.0-release-notes": {
+      "latest": "cn/docs/changelog/hugegraph-1.2.0-release-notes/",
+      "1.7": "cn/docs/changelog/hugegraph-1.2.0-release-notes/",
+      "1.5": "cn/docs/changelog/hugegraph-1.2.0-release-notes/",
+      "1.3": "cn/docs/changelog/hugegraph-1.2.0-release-notes/",
+      "1.0": null
+    },
+    "cn:changelog/hugegraph-1.3.0-release-notes": {
+      "latest": "cn/docs/changelog/hugegraph-1.3.0-release-notes/",
+      "1.7": "cn/docs/changelog/hugegraph-1.3.0-release-notes/",
+      "1.5": "cn/docs/changelog/hugegraph-1.3.0-release-notes/",
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:changelog/hugegraph-1.5.0-release-notes": {
+      "latest": "cn/docs/changelog/hugegraph-1.5.0-release-notes/",
+      "1.7": "cn/docs/changelog/hugegraph-1.5.0-release-notes/",
+      "1.5": "cn/docs/changelog/hugegraph-1.5.0-release-notes/",
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:changelog/hugegraph-1.7.0-release-notes": {
+      "latest": "cn/docs/changelog/hugegraph-1.7.0-release-notes/",
+      "1.7": "cn/docs/changelog/hugegraph-1.7.0-release-notes/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:cla": {
+      "latest": "cn/docs/cla/",
+      "1.7": "cn/docs/cla/",
+      "1.5": "cn/docs/cla/",
+      "1.3": "cn/docs/cla/",
+      "1.0": "cn/docs/cla/"
+    },
+    "cn:clients": {
+      "latest": "cn/docs/clients/",
+      "1.7": "cn/docs/clients/",
+      "1.5": "cn/docs/clients/",
+      "1.3": "cn/docs/clients/",
+      "1.0": "cn/docs/clients/"
+    },
+    "cn:clients/gremlin-console": {
+      "latest": "cn/docs/clients/gremlin-console/",
+      "1.7": "cn/docs/clients/gremlin-console/",
+      "1.5": "cn/docs/clients/gremlin-console/",
+      "1.3": "cn/docs/clients/gremlin-console/",
+      "1.0": "cn/docs/clients/gremlin-console/"
+    },
+    "cn:clients/hugegraph-client": {
+      "latest": "cn/docs/clients/hugegraph-client/",
+      "1.7": "cn/docs/clients/hugegraph-client/",
+      "1.5": "cn/docs/clients/hugegraph-client/",
+      "1.3": "cn/docs/clients/hugegraph-client/",
+      "1.0": "cn/docs/clients/hugegraph-client/"
+    },
+    "cn:clients/restful-api": {
+      "latest": "cn/docs/clients/restful-api/",
+      "1.7": "cn/docs/clients/restful-api/",
+      "1.5": "cn/docs/clients/restful-api/",
+      "1.3": "cn/docs/clients/restful-api/",
+      "1.0": "cn/docs/clients/restful-api/"
+    },
+    "cn:clients/restful-api/auth": {
+      "latest": "cn/docs/clients/restful-api/auth/",
+      "1.7": "cn/docs/clients/restful-api/auth/",
+      "1.5": "cn/docs/clients/restful-api/auth/",
+      "1.3": "cn/docs/clients/restful-api/auth/",
+      "1.0": "cn/docs/clients/restful-api/auth/"
+    },
+    "cn:clients/restful-api/cypher": {
+      "latest": "cn/docs/clients/restful-api/cypher/",
+      "1.7": "cn/docs/clients/restful-api/cypher/",
+      "1.5": "cn/docs/clients/restful-api/cypher/",
+      "1.3": "cn/docs/clients/restful-api/cypher/",
+      "1.0": null
+    },
+    "cn:clients/restful-api/edge": {
+      "latest": "cn/docs/clients/restful-api/edge/",
+      "1.7": "cn/docs/clients/restful-api/edge/",
+      "1.5": "cn/docs/clients/restful-api/edge/",
+      "1.3": "cn/docs/clients/restful-api/edge/",
+      "1.0": "cn/docs/clients/restful-api/edge/"
+    },
+    "cn:clients/restful-api/edgelabel": {
+      "latest": "cn/docs/clients/restful-api/edgelabel/",
+      "1.7": "cn/docs/clients/restful-api/edgelabel/",
+      "1.5": "cn/docs/clients/restful-api/edgelabel/",
+      "1.3": "cn/docs/clients/restful-api/edgelabel/",
+      "1.0": "cn/docs/clients/restful-api/edgelabel/"
+    },
+    "cn:clients/restful-api/graphs": {
+      "latest": "cn/docs/clients/restful-api/graphs/",
+      "1.7": "cn/docs/clients/restful-api/graphs/",
+      "1.5": "cn/docs/clients/restful-api/graphs/",
+      "1.3": "cn/docs/clients/restful-api/graphs/",
+      "1.0": "cn/docs/clients/restful-api/graphs/"
+    },
+    "cn:clients/restful-api/graphspace": {
+      "latest": "cn/docs/clients/restful-api/graphspace/",
+      "1.7": "cn/docs/clients/restful-api/graphspace/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:clients/restful-api/gremlin": {
+      "latest": "cn/docs/clients/restful-api/gremlin/",
+      "1.7": "cn/docs/clients/restful-api/gremlin/",
+      "1.5": "cn/docs/clients/restful-api/gremlin/",
+      "1.3": "cn/docs/clients/restful-api/gremlin/",
+      "1.0": "cn/docs/clients/restful-api/gremlin/"
+    },
+    "cn:clients/restful-api/indexlabel": {
+      "latest": "cn/docs/clients/restful-api/indexlabel/",
+      "1.7": "cn/docs/clients/restful-api/indexlabel/",
+      "1.5": "cn/docs/clients/restful-api/indexlabel/",
+      "1.3": "cn/docs/clients/restful-api/indexlabel/",
+      "1.0": "cn/docs/clients/restful-api/indexlabel/"
+    },
+    "cn:clients/restful-api/metrics": {
+      "latest": "cn/docs/clients/restful-api/metrics/",
+      "1.7": "cn/docs/clients/restful-api/metrics/",
+      "1.5": "cn/docs/clients/restful-api/metrics/",
+      "1.3": "cn/docs/clients/restful-api/metrics/",
+      "1.0": null
+    },
+    "cn:clients/restful-api/other": {
+      "latest": "cn/docs/clients/restful-api/other/",
+      "1.7": "cn/docs/clients/restful-api/other/",
+      "1.5": "cn/docs/clients/restful-api/other/",
+      "1.3": "cn/docs/clients/restful-api/other/",
+      "1.0": "cn/docs/clients/restful-api/other/"
+    },
+    "cn:clients/restful-api/propertykey": {
+      "latest": "cn/docs/clients/restful-api/propertykey/",
+      "1.7": "cn/docs/clients/restful-api/propertykey/",
+      "1.5": "cn/docs/clients/restful-api/propertykey/",
+      "1.3": "cn/docs/clients/restful-api/propertykey/",
+      "1.0": "cn/docs/clients/restful-api/propertykey/"
+    },
+    "cn:clients/restful-api/rank": {
+      "latest": "cn/docs/clients/restful-api/rank/",
+      "1.7": "cn/docs/clients/restful-api/rank/",
+      "1.5": "cn/docs/clients/restful-api/rank/",
+      "1.3": "cn/docs/clients/restful-api/rank/",
+      "1.0": "cn/docs/clients/restful-api/rank/"
+    },
+    "cn:clients/restful-api/rebuild": {
+      "latest": "cn/docs/clients/restful-api/rebuild/",
+      "1.7": "cn/docs/clients/restful-api/rebuild/",
+      "1.5": "cn/docs/clients/restful-api/rebuild/",
+      "1.3": "cn/docs/clients/restful-api/rebuild/",
+      "1.0": "cn/docs/clients/restful-api/rebuild/"
+    },
+    "cn:clients/restful-api/schema": {
+      "latest": "cn/docs/clients/restful-api/schema/",
+      "1.7": "cn/docs/clients/restful-api/schema/",
+      "1.5": "cn/docs/clients/restful-api/schema/",
+      "1.3": "cn/docs/clients/restful-api/schema/",
+      "1.0": "cn/docs/clients/restful-api/schema/"
+    },
+    "cn:clients/restful-api/task": {
+      "latest": "cn/docs/clients/restful-api/task/",
+      "1.7": "cn/docs/clients/restful-api/task/",
+      "1.5": "cn/docs/clients/restful-api/task/",
+      "1.3": "cn/docs/clients/restful-api/task/",
+      "1.0": "cn/docs/clients/restful-api/task/"
+    },
+    "cn:clients/restful-api/traverser": {
+      "latest": "cn/docs/clients/restful-api/traverser/",
+      "1.7": "cn/docs/clients/restful-api/traverser/",
+      "1.5": "cn/docs/clients/restful-api/traverser/",
+      "1.3": "cn/docs/clients/restful-api/traverser/",
+      "1.0": "cn/docs/clients/restful-api/traverser/"
+    },
+    "cn:clients/restful-api/variable": {
+      "latest": "cn/docs/clients/restful-api/variable/",
+      "1.7": "cn/docs/clients/restful-api/variable/",
+      "1.5": "cn/docs/clients/restful-api/variable/",
+      "1.3": "cn/docs/clients/restful-api/variable/",
+      "1.0": "cn/docs/clients/restful-api/variable/"
+    },
+    "cn:clients/restful-api/vertex": {
+      "latest": "cn/docs/clients/restful-api/vertex/",
+      "1.7": "cn/docs/clients/restful-api/vertex/",
+      "1.5": "cn/docs/clients/restful-api/vertex/",
+      "1.3": "cn/docs/clients/restful-api/vertex/",
+      "1.0": "cn/docs/clients/restful-api/vertex/"
+    },
+    "cn:clients/restful-api/vertexlabel": {
+      "latest": "cn/docs/clients/restful-api/vertexlabel/",
+      "1.7": "cn/docs/clients/restful-api/vertexlabel/",
+      "1.5": "cn/docs/clients/restful-api/vertexlabel/",
+      "1.3": "cn/docs/clients/restful-api/vertexlabel/",
+      "1.0": "cn/docs/clients/restful-api/vertexlabel/"
+    },
+    "cn:config": {
+      "latest": "cn/docs/config/",
+      "1.7": "cn/docs/config/",
+      "1.5": "cn/docs/config/",
+      "1.3": "cn/docs/config/",
+      "1.0": "cn/docs/config/"
+    },
+    "cn:config/config-authentication": {
+      "latest": "cn/docs/config/config-authentication/",
+      "1.7": "cn/docs/config/config-authentication/",
+      "1.5": "cn/docs/config/config-authentication/",
+      "1.3": "cn/docs/config/config-authentication/",
+      "1.0": "cn/docs/config/config-authentication/"
+    },
+    "cn:config/config-computer": {
+      "latest": null,
+      "1.7": "cn/docs/config/config-computer/",
+      "1.5": "cn/docs/config/config-computer/",
+      "1.3": "cn/docs/config/config-computer/",
+      "1.0": "cn/docs/config/config-computer/"
+    },
+    "cn:config/config-guide": {
+      "latest": "cn/docs/config/config-guide/",
+      "1.7": "cn/docs/config/config-guide/",
+      "1.5": "cn/docs/config/config-guide/",
+      "1.3": "cn/docs/config/config-guide/",
+      "1.0": "cn/docs/config/config-guide/"
+    },
+    "cn:config/config-https": {
+      "latest": "cn/docs/config/config-https/",
+      "1.7": "cn/docs/config/config-https/",
+      "1.5": "cn/docs/config/config-https/",
+      "1.3": "cn/docs/config/config-https/",
+      "1.0": "cn/docs/config/config-https/"
+    },
+    "cn:config/config-option": {
+      "latest": "cn/docs/config/config-option/",
+      "1.7": "cn/docs/config/config-option/",
+      "1.5": "cn/docs/config/config-option/",
+      "1.3": "cn/docs/config/config-option/",
+      "1.0": "cn/docs/config/config-option/"
+    },
+    "cn:contribution-guidelines": {
+      "latest": "cn/docs/contribution-guidelines/",
+      "1.7": "cn/docs/contribution-guidelines/",
+      "1.5": "cn/docs/contribution-guidelines/",
+      "1.3": "cn/docs/contribution-guidelines/",
+      "1.0": null
+    },
+    "cn:contribution-guidelines/committer-guidelines": {
+      "latest": "cn/docs/contribution-guidelines/committer-guidelines/",
+      "1.7": "cn/docs/contribution-guidelines/committer-guidelines/",
+      "1.5": "cn/docs/contribution-guidelines/committer-guidelines/",
+      "1.3": "cn/docs/contribution-guidelines/committer-guidelines/",
+      "1.0": null
+    },
+    "cn:contribution-guidelines/contribute": {
+      "latest": "cn/docs/contribution-guidelines/contribute/",
+      "1.7": "cn/docs/contribution-guidelines/contribute/",
+      "1.5": "cn/docs/contribution-guidelines/contribute/",
+      "1.3": "cn/docs/contribution-guidelines/contribute/",
+      "1.0": null
+    },
+    "cn:contribution-guidelines/hugegraph-server-idea-setup": {
+      "latest": "cn/docs/contribution-guidelines/hugegraph-server-idea-setup/",
+      "1.7": "cn/docs/contribution-guidelines/hugegraph-server-idea-setup/",
+      "1.5": "cn/docs/contribution-guidelines/hugegraph-server-idea-setup/",
+      "1.3": "cn/docs/contribution-guidelines/hugegraph-server-idea-setup/",
+      "1.0": null
+    },
+    "cn:contribution-guidelines/subscribe": {
+      "latest": "cn/docs/contribution-guidelines/subscribe/",
+      "1.7": "cn/docs/contribution-guidelines/subscribe/",
+      "1.5": "cn/docs/contribution-guidelines/subscribe/",
+      "1.3": "cn/docs/contribution-guidelines/subscribe/",
+      "1.0": null
+    },
+    "cn:contribution-guidelines/validate-release": {
+      "latest": "cn/docs/contribution-guidelines/validate-release/",
+      "1.7": "cn/docs/contribution-guidelines/validate-release/",
+      "1.5": "cn/docs/contribution-guidelines/validate-release/",
+      "1.3": "cn/docs/contribution-guidelines/validate-release/",
+      "1.0": null
+    },
+    "cn:download/download": {
+      "latest": "cn/docs/download/download/",
+      "1.7": "cn/docs/download/download/",
+      "1.5": "cn/docs/download/download/",
+      "1.3": "cn/docs/download/download/",
+      "1.0": "cn/docs/download/download/"
+    },
+    "cn:guides": {
+      "latest": "cn/docs/guides/",
+      "1.7": "cn/docs/guides/",
+      "1.5": "cn/docs/guides/",
+      "1.3": "cn/docs/guides/",
+      "1.0": "cn/docs/guides/"
+    },
+    "cn:guides/architectural": {
+      "latest": "cn/docs/guides/architectural/",
+      "1.7": "cn/docs/guides/architectural/",
+      "1.5": "cn/docs/guides/architectural/",
+      "1.3": "cn/docs/guides/architectural/",
+      "1.0": "cn/docs/guides/architectural/"
+    },
+    "cn:guides/backup-restore": {
+      "latest": "cn/docs/guides/backup-restore/",
+      "1.7": "cn/docs/guides/backup-restore/",
+      "1.5": "cn/docs/guides/backup-restore/",
+      "1.3": "cn/docs/guides/backup-restore/",
+      "1.0": "cn/docs/guides/backup-restore/"
+    },
+    "cn:guides/custom-plugin": {
+      "latest": "cn/docs/guides/custom-plugin/",
+      "1.7": "cn/docs/guides/custom-plugin/",
+      "1.5": "cn/docs/guides/custom-plugin/",
+      "1.3": "cn/docs/guides/custom-plugin/",
+      "1.0": "cn/docs/guides/custom-plugin/"
+    },
+    "cn:guides/desgin-concept": {
+      "latest": "cn/docs/guides/desgin-concept/",
+      "1.7": "cn/docs/guides/desgin-concept/",
+      "1.5": "cn/docs/guides/desgin-concept/",
+      "1.3": "cn/docs/guides/desgin-concept/",
+      "1.0": "cn/docs/guides/desgin-concept/"
+    },
+    "cn:guides/faq": {
+      "latest": "cn/docs/guides/faq/",
+      "1.7": "cn/docs/guides/faq/",
+      "1.5": "cn/docs/guides/faq/",
+      "1.3": "cn/docs/guides/faq/",
+      "1.0": "cn/docs/guides/faq/"
+    },
+    "cn:guides/hugegraph-docker-cluster": {
+      "latest": "cn/docs/guides/hugegraph-docker-cluster/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:guides/security": {
+      "latest": "cn/docs/guides/security/",
+      "1.7": "cn/docs/guides/security/",
+      "1.5": "cn/docs/guides/security/",
+      "1.3": "cn/docs/guides/security/",
+      "1.0": null
+    },
+    "cn:guides/toolchain-local-test": {
+      "latest": "cn/docs/guides/toolchain-local-test/",
+      "1.7": "cn/docs/guides/toolchain-local-test/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:introduction": {
+      "latest": "cn/docs/introduction/",
+      "1.7": "cn/docs/introduction/",
+      "1.5": "cn/docs/introduction/readme/",
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:introduction/readme": {
+      "latest": null,
+      "1.7": "cn/docs/introduction/readme/",
+      "1.5": null,
+      "1.3": "cn/docs/introduction/readme/",
+      "1.0": "cn/docs/introduction/readme/"
+    },
+    "cn:language": {
+      "latest": "cn/docs/language/",
+      "1.7": "cn/docs/language/",
+      "1.5": "cn/docs/language/",
+      "1.3": "cn/docs/language/",
+      "1.0": "cn/docs/language/"
+    },
+    "cn:language/hugegraph-example": {
+      "latest": "cn/docs/language/hugegraph-example/",
+      "1.7": "cn/docs/language/hugegraph-example/",
+      "1.5": "cn/docs/language/hugegraph-example/",
+      "1.3": "cn/docs/language/hugegraph-example/",
+      "1.0": "cn/docs/language/hugegraph-example/"
+    },
+    "cn:language/hugegraph-gremlin": {
+      "latest": "cn/docs/language/hugegraph-gremlin/",
+      "1.7": "cn/docs/language/hugegraph-gremlin/",
+      "1.5": "cn/docs/language/hugegraph-gremlin/",
+      "1.3": "cn/docs/language/hugegraph-gremlin/",
+      "1.0": "cn/docs/language/hugegraph-gremlin/"
+    },
+    "cn:performance": {
+      "latest": "cn/docs/performance/",
+      "1.7": "cn/docs/performance/",
+      "1.5": "cn/docs/performance/",
+      "1.3": "cn/docs/performance/",
+      "1.0": "cn/docs/performance/"
+    },
+    "cn:performance/api-performance": {
+      "latest": "cn/docs/performance/api-performance/",
+      "1.7": "cn/docs/performance/api-preformance/",
+      "1.5": "cn/docs/performance/api-preformance/",
+      "1.3": "cn/docs/performance/api-preformance/",
+      "1.0": "cn/docs/performance/api-preformance/"
+    },
+    "cn:performance/api-performance/hugegraph-api-0.2": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/performance/api-preformance/hugegraph-api-0.2/"
+    },
+    "cn:performance/api-performance/hugegraph-api-0.4.4": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "cn/docs/performance/api-preformance/hugegraph-api-0.4.4/"
+    },
+    "cn:performance/api-performance/hugegraph-api-0.5.6-cassandra": {
+      "latest": "cn/docs/performance/api-performance/hugegraph-api-0.5.6-cassandra/",
+      "1.7": "cn/docs/performance/api-preformance/hugegraph-api-0.5.6-cassandra/",
+      "1.5": "cn/docs/performance/api-preformance/hugegraph-api-0.5.6-cassandra/",
+      "1.3": "cn/docs/performance/api-preformance/hugegraph-api-0.5.6-cassandra/",
+      "1.0": "cn/docs/performance/api-preformance/hugegraph-api-0.5.6-cassandra/"
+    },
+    "cn:performance/api-performance/hugegraph-api-0.5.6-rocksdb": {
+      "latest": "cn/docs/performance/api-performance/hugegraph-api-0.5.6-rocksdb/",
+      "1.7": "cn/docs/performance/api-preformance/hugegraph-api-0.5.6-rocksdb/",
+      "1.5": "cn/docs/performance/api-preformance/hugegraph-api-0.5.6-rocksdb/",
+      "1.3": "cn/docs/performance/api-preformance/hugegraph-api-0.5.6-rocksdb/",
+      "1.0": "cn/docs/performance/api-preformance/hugegraph-api-0.5.6-rocksdb/"
+    },
+    "cn:performance/hugegraph-benchmark-0.4.4": {
+      "latest": "cn/docs/performance/hugegraph-benchmark-0.4.4/",
+      "1.7": "cn/docs/performance/hugegraph-benchmark-0.4.4/",
+      "1.5": "cn/docs/performance/hugegraph-benchmark-0.4.4/",
+      "1.3": "cn/docs/performance/hugegraph-benchmark-0.4.4/",
+      "1.0": "cn/docs/performance/hugegraph-benchmark-0.4.4/"
+    },
+    "cn:performance/hugegraph-benchmark-0.5.6": {
+      "latest": "cn/docs/performance/hugegraph-benchmark-0.5.6/",
+      "1.7": "cn/docs/performance/hugegraph-benchmark-0.5.6/",
+      "1.5": "cn/docs/performance/hugegraph-benchmark-0.5.6/",
+      "1.3": "cn/docs/performance/hugegraph-benchmark-0.5.6/",
+      "1.0": "cn/docs/performance/hugegraph-benchmark-0.5.6/"
+    },
+    "cn:performance/hugegraph-loader-performance": {
+      "latest": "cn/docs/performance/hugegraph-loader-performance/",
+      "1.7": "cn/docs/performance/hugegraph-loader-performance/",
+      "1.5": "cn/docs/performance/hugegraph-loader-performance/",
+      "1.3": "cn/docs/performance/hugegraph-loader-performance/",
+      "1.0": "cn/docs/performance/hugegraph-loader-performance/"
+    },
+    "cn:quickstart": {
+      "latest": "cn/docs/quickstart/",
+      "1.7": "cn/docs/quickstart/",
+      "1.5": "cn/docs/quickstart/",
+      "1.3": "cn/docs/quickstart/",
+      "1.0": "cn/docs/quickstart/"
+    },
+    "cn:quickstart/client": {
+      "latest": "cn/docs/quickstart/client/",
+      "1.7": "cn/docs/quickstart/client/",
+      "1.5": "cn/docs/quickstart/client/",
+      "1.3": "cn/docs/quickstart/client/",
+      "1.0": "cn/docs/quickstart/client/"
+    },
+    "cn:quickstart/client/hugegraph-client": {
+      "latest": "cn/docs/quickstart/client/hugegraph-client/",
+      "1.7": "cn/docs/quickstart/client/hugegraph-client/",
+      "1.5": "cn/docs/quickstart/client/hugegraph-client/",
+      "1.3": "cn/docs/quickstart/client/hugegraph-client/",
+      "1.0": "cn/docs/quickstart/client/hugegraph-client/"
+    },
+    "cn:quickstart/client/hugegraph-client-go": {
+      "latest": "cn/docs/quickstart/client/hugegraph-client-go/",
+      "1.7": "cn/docs/quickstart/client/hugegraph-client-go/",
+      "1.5": "cn/docs/quickstart/client/hugegraph-client-go/",
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/client/hugegraph-client-python": {
+      "latest": "cn/docs/quickstart/client/hugegraph-client-python/",
+      "1.7": "cn/docs/quickstart/client/hugegraph-client-python/",
+      "1.5": "cn/docs/quickstart/client/hugegraph-client-python/",
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/computing": {
+      "latest": "cn/docs/quickstart/computing/",
+      "1.7": "cn/docs/quickstart/computing/",
+      "1.5": "cn/docs/quickstart/computing/",
+      "1.3": "cn/docs/quickstart/computing/",
+      "1.0": "cn/docs/quickstart/computing/"
+    },
+    "cn:quickstart/computing/hugegraph-computer": {
+      "latest": "cn/docs/quickstart/computing/hugegraph-computer/",
+      "1.7": "cn/docs/quickstart/computing/hugegraph-computer/",
+      "1.5": "cn/docs/quickstart/computing/hugegraph-computer/",
+      "1.3": "cn/docs/quickstart/computing/hugegraph-computer/",
+      "1.0": "cn/docs/quickstart/computing/hugegraph-computer/"
+    },
+    "cn:quickstart/computing/hugegraph-computer-config": {
+      "latest": "cn/docs/quickstart/computing/hugegraph-computer-config/",
+      "1.7": "cn/docs/quickstart/computing/hugegraph-computer-config/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/computing/hugegraph-vermeer": {
+      "latest": "cn/docs/quickstart/computing/hugegraph-vermeer/",
+      "1.7": "cn/docs/quickstart/computing/hugegraph-vermeer/",
+      "1.5": "cn/docs/quickstart/computing/hugegraph-vermeer/",
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/hugegraph": {
+      "latest": "cn/docs/quickstart/hugegraph/",
+      "1.7": "cn/docs/quickstart/hugegraph/",
+      "1.5": "cn/docs/quickstart/hugegraph/",
+      "1.3": "cn/docs/quickstart/hugegraph/",
+      "1.0": "cn/docs/quickstart/hugegraph/"
+    },
+    "cn:quickstart/hugegraph-ai": {
+      "latest": "cn/docs/quickstart/hugegraph-ai/",
+      "1.7": "cn/docs/quickstart/hugegraph-ai/",
+      "1.5": "cn/docs/quickstart/hugegraph-ai/",
+      "1.3": "cn/docs/quickstart/hugegraph-ai/",
+      "1.0": null
+    },
+    "cn:quickstart/hugegraph-ai/config-reference": {
+      "latest": "cn/docs/quickstart/hugegraph-ai/config-reference/",
+      "1.7": "cn/docs/quickstart/hugegraph-ai/config-reference/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/hugegraph-ai/hugegraph-llm": {
+      "latest": "cn/docs/quickstart/hugegraph-ai/hugegraph-llm/",
+      "1.7": "cn/docs/quickstart/hugegraph-ai/hugegraph-llm/",
+      "1.5": "cn/docs/quickstart/hugegraph-ai/hugegraph-llm/",
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/hugegraph-ai/hugegraph-ml": {
+      "latest": "cn/docs/quickstart/hugegraph-ai/hugegraph-ml/",
+      "1.7": "cn/docs/quickstart/hugegraph-ai/hugegraph-ml/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/hugegraph-ai/quick_start": {
+      "latest": "cn/docs/quickstart/hugegraph-ai/quick_start/",
+      "1.7": "cn/docs/quickstart/hugegraph-ai/quick_start/",
+      "1.5": "cn/docs/quickstart/hugegraph-ai/quick_start/",
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/hugegraph-ai/rest-api": {
+      "latest": "cn/docs/quickstart/hugegraph-ai/rest-api/",
+      "1.7": "cn/docs/quickstart/hugegraph-ai/rest-api/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/hugegraph/hugegraph-hstore": {
+      "latest": "cn/docs/quickstart/hugegraph/hugegraph-hstore/",
+      "1.7": "cn/docs/quickstart/hugegraph/hugegraph-hstore/",
+      "1.5": "cn/docs/quickstart/hugegraph/hugegraph-hstore/",
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/hugegraph/hugegraph-pd": {
+      "latest": "cn/docs/quickstart/hugegraph/hugegraph-pd/",
+      "1.7": "cn/docs/quickstart/hugegraph/hugegraph-pd/",
+      "1.5": "cn/docs/quickstart/hugegraph/hugegraph-pd/",
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/hugegraph/hugegraph-server": {
+      "latest": "cn/docs/quickstart/hugegraph/hugegraph-server/",
+      "1.7": "cn/docs/quickstart/hugegraph/hugegraph-server/",
+      "1.5": "cn/docs/quickstart/hugegraph/hugegraph-server/",
+      "1.3": "cn/docs/quickstart/hugegraph/hugegraph-server/",
+      "1.0": "cn/docs/quickstart/hugegraph/hugegraph-server/"
+    },
+    "cn:quickstart/toolchain": {
+      "latest": "cn/docs/quickstart/toolchain/",
+      "1.7": "cn/docs/quickstart/toolchain/",
+      "1.5": "cn/docs/quickstart/toolchain/",
+      "1.3": "cn/docs/quickstart/toolchain/",
+      "1.0": "cn/docs/quickstart/toolchain/"
+    },
+    "cn:quickstart/toolchain/hugegraph-hubble": {
+      "latest": "cn/docs/quickstart/toolchain/hugegraph-hubble/",
+      "1.7": "cn/docs/quickstart/toolchain/hugegraph-hubble/",
+      "1.5": "cn/docs/quickstart/toolchain/hugegraph-hubble/",
+      "1.3": "cn/docs/quickstart/toolchain/hugegraph-hubble/",
+      "1.0": "cn/docs/quickstart/toolchain/hugegraph-hubble/"
+    },
+    "cn:quickstart/toolchain/hugegraph-loader": {
+      "latest": "cn/docs/quickstart/toolchain/hugegraph-loader/",
+      "1.7": "cn/docs/quickstart/toolchain/hugegraph-loader/",
+      "1.5": "cn/docs/quickstart/toolchain/hugegraph-loader/",
+      "1.3": "cn/docs/quickstart/toolchain/hugegraph-loader/",
+      "1.0": "cn/docs/quickstart/toolchain/hugegraph-loader/"
+    },
+    "cn:quickstart/toolchain/hugegraph-spark-connector": {
+      "latest": "cn/docs/quickstart/toolchain/hugegraph-spark-connector/",
+      "1.7": "cn/docs/quickstart/toolchain/hugegraph-spark-connector/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/toolchain/hugegraph-tools": {
+      "latest": "cn/docs/quickstart/toolchain/hugegraph-tools/",
+      "1.7": "cn/docs/quickstart/toolchain/hugegraph-tools/",
+      "1.5": "cn/docs/quickstart/toolchain/hugegraph-tools/",
+      "1.3": "cn/docs/quickstart/toolchain/hugegraph-tools/",
+      "1.0": "cn/docs/quickstart/toolchain/hugegraph-tools/"
+    },
+    "en:": {
+      "latest": "docs/",
+      "1.7": "docs/",
+      "1.5": "docs/",
+      "1.3": "docs/",
+      "1.0": "docs/"
+    },
+    "en:changelog": {
+      "latest": "docs/changelog/",
+      "1.7": "docs/changelog/",
+      "1.5": "docs/changelog/",
+      "1.3": "docs/changelog/",
+      "1.0": "docs/changelog/"
+    },
+    "en:changelog/hugegraph-0.12.0-release-notes": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "docs/changelog/hugegraph-0.12.0-release-notes/"
+    },
+    "en:changelog/hugegraph-1.0.0-release-notes": {
+      "latest": "docs/changelog/hugegraph-1.0.0-release-notes/",
+      "1.7": "docs/changelog/hugegraph-1.0.0-release-notes/",
+      "1.5": "docs/changelog/hugegraph-1.0.0-release-notes/",
+      "1.3": "docs/changelog/hugegraph-1.0.0-release-notes/",
+      "1.0": "docs/changelog/hugegraph-1.0.0-release-notes/"
+    },
+    "en:changelog/hugegraph-1.2.0-release-notes": {
+      "latest": "docs/changelog/hugegraph-1.2.0-release-notes/",
+      "1.7": "docs/changelog/hugegraph-1.2.0-release-notes/",
+      "1.5": "docs/changelog/hugegraph-1.2.0-release-notes/",
+      "1.3": "docs/changelog/hugegraph-1.2.0-release-notes/",
+      "1.0": null
+    },
+    "en:changelog/hugegraph-1.3.0-release-notes": {
+      "latest": "docs/changelog/hugegraph-1.3.0-release-notes/",
+      "1.7": "docs/changelog/hugegraph-1.3.0-release-notes/",
+      "1.5": "docs/changelog/hugegraph-1.3.0-release-notes/",
+      "1.3": null,
+      "1.0": null
+    },
+    "en:changelog/hugegraph-1.5.0-release-notes": {
+      "latest": "docs/changelog/hugegraph-1.5.0-release-notes/",
+      "1.7": "docs/changelog/hugegraph-1.5.0-release-notes/",
+      "1.5": "docs/changelog/hugegraph-1.5.0-release-notes/",
+      "1.3": null,
+      "1.0": null
+    },
+    "en:changelog/hugegraph-1.7.0-release-notes": {
+      "latest": "docs/changelog/hugegraph-1.7.0-release-notes/",
+      "1.7": "docs/changelog/hugegraph-1.7.0-release-notes/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:cla": {
+      "latest": "docs/cla/",
+      "1.7": "docs/cla/",
+      "1.5": "docs/cla/",
+      "1.3": "docs/cla/",
+      "1.0": "docs/cla/"
+    },
+    "en:clients": {
+      "latest": "docs/clients/",
+      "1.7": "docs/clients/",
+      "1.5": "docs/clients/",
+      "1.3": "docs/clients/",
+      "1.0": "docs/clients/"
+    },
+    "en:clients/gremlin-console": {
+      "latest": "docs/clients/gremlin-console/",
+      "1.7": "docs/clients/gremlin-console/",
+      "1.5": "docs/clients/gremlin-console/",
+      "1.3": "docs/clients/gremlin-console/",
+      "1.0": "docs/clients/gremlin-console/"
+    },
+    "en:clients/hugegraph-client": {
+      "latest": "docs/clients/hugegraph-client/",
+      "1.7": "docs/clients/hugegraph-client/",
+      "1.5": "docs/clients/hugegraph-client/",
+      "1.3": "docs/clients/hugegraph-client/",
+      "1.0": "docs/clients/hugegraph-client/"
+    },
+    "en:clients/restful-api": {
+      "latest": "docs/clients/restful-api/",
+      "1.7": "docs/clients/restful-api/",
+      "1.5": "docs/clients/restful-api/",
+      "1.3": "docs/clients/restful-api/",
+      "1.0": "docs/clients/restful-api/"
+    },
+    "en:clients/restful-api/auth": {
+      "latest": "docs/clients/restful-api/auth/",
+      "1.7": "docs/clients/restful-api/auth/",
+      "1.5": "docs/clients/restful-api/auth/",
+      "1.3": "docs/clients/restful-api/auth/",
+      "1.0": "docs/clients/restful-api/auth/"
+    },
+    "en:clients/restful-api/cypher": {
+      "latest": "docs/clients/restful-api/cypher/",
+      "1.7": "docs/clients/restful-api/cypher/",
+      "1.5": "docs/clients/restful-api/cypher/",
+      "1.3": "docs/clients/restful-api/cypher/",
+      "1.0": null
+    },
+    "en:clients/restful-api/edge": {
+      "latest": "docs/clients/restful-api/edge/",
+      "1.7": "docs/clients/restful-api/edge/",
+      "1.5": "docs/clients/restful-api/edge/",
+      "1.3": "docs/clients/restful-api/edge/",
+      "1.0": "docs/clients/restful-api/edge/"
+    },
+    "en:clients/restful-api/edgelabel": {
+      "latest": "docs/clients/restful-api/edgelabel/",
+      "1.7": "docs/clients/restful-api/edgelabel/",
+      "1.5": "docs/clients/restful-api/edgelabel/",
+      "1.3": "docs/clients/restful-api/edgelabel/",
+      "1.0": "docs/clients/restful-api/edgelabel/"
+    },
+    "en:clients/restful-api/graphs": {
+      "latest": "docs/clients/restful-api/graphs/",
+      "1.7": "docs/clients/restful-api/graphs/",
+      "1.5": "docs/clients/restful-api/graphs/",
+      "1.3": "docs/clients/restful-api/graphs/",
+      "1.0": "docs/clients/restful-api/graphs/"
+    },
+    "en:clients/restful-api/graphspace": {
+      "latest": "docs/clients/restful-api/graphspace/",
+      "1.7": "docs/clients/restful-api/graphspace/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:clients/restful-api/gremlin": {
+      "latest": "docs/clients/restful-api/gremlin/",
+      "1.7": "docs/clients/restful-api/gremlin/",
+      "1.5": "docs/clients/restful-api/gremlin/",
+      "1.3": "docs/clients/restful-api/gremlin/",
+      "1.0": "docs/clients/restful-api/gremlin/"
+    },
+    "en:clients/restful-api/indexlabel": {
+      "latest": "docs/clients/restful-api/indexlabel/",
+      "1.7": "docs/clients/restful-api/indexlabel/",
+      "1.5": "docs/clients/restful-api/indexlabel/",
+      "1.3": "docs/clients/restful-api/indexlabel/",
+      "1.0": "docs/clients/restful-api/indexlabel/"
+    },
+    "en:clients/restful-api/metrics": {
+      "latest": "docs/clients/restful-api/metrics/",
+      "1.7": "docs/clients/restful-api/metrics/",
+      "1.5": "docs/clients/restful-api/metrics/",
+      "1.3": "docs/clients/restful-api/metrics/",
+      "1.0": null
+    },
+    "en:clients/restful-api/other": {
+      "latest": "docs/clients/restful-api/other/",
+      "1.7": "docs/clients/restful-api/other/",
+      "1.5": "docs/clients/restful-api/other/",
+      "1.3": "docs/clients/restful-api/other/",
+      "1.0": "docs/clients/restful-api/other/"
+    },
+    "en:clients/restful-api/propertykey": {
+      "latest": "docs/clients/restful-api/propertykey/",
+      "1.7": "docs/clients/restful-api/propertykey/",
+      "1.5": "docs/clients/restful-api/propertykey/",
+      "1.3": "docs/clients/restful-api/propertykey/",
+      "1.0": "docs/clients/restful-api/propertykey/"
+    },
+    "en:clients/restful-api/rank": {
+      "latest": "docs/clients/restful-api/rank/",
+      "1.7": "docs/clients/restful-api/rank/",
+      "1.5": "docs/clients/restful-api/rank/",
+      "1.3": "docs/clients/restful-api/rank/",
+      "1.0": "docs/clients/restful-api/rank/"
+    },
+    "en:clients/restful-api/rebuild": {
+      "latest": "docs/clients/restful-api/rebuild/",
+      "1.7": "docs/clients/restful-api/rebuild/",
+      "1.5": "docs/clients/restful-api/rebuild/",
+      "1.3": "docs/clients/restful-api/rebuild/",
+      "1.0": "docs/clients/restful-api/rebuild/"
+    },
+    "en:clients/restful-api/schema": {
+      "latest": "docs/clients/restful-api/schema/",
+      "1.7": "docs/clients/restful-api/schema/",
+      "1.5": "docs/clients/restful-api/schema/",
+      "1.3": "docs/clients/restful-api/schema/",
+      "1.0": "docs/clients/restful-api/schema/"
+    },
+    "en:clients/restful-api/task": {
+      "latest": "docs/clients/restful-api/task/",
+      "1.7": "docs/clients/restful-api/task/",
+      "1.5": "docs/clients/restful-api/task/",
+      "1.3": "docs/clients/restful-api/task/",
+      "1.0": "docs/clients/restful-api/task/"
+    },
+    "en:clients/restful-api/traverser": {
+      "latest": "docs/clients/restful-api/traverser/",
+      "1.7": "docs/clients/restful-api/traverser/",
+      "1.5": "docs/clients/restful-api/traverser/",
+      "1.3": "docs/clients/restful-api/traverser/",
+      "1.0": "docs/clients/restful-api/traverser/"
+    },
+    "en:clients/restful-api/variable": {
+      "latest": "docs/clients/restful-api/variable/",
+      "1.7": "docs/clients/restful-api/variable/",
+      "1.5": "docs/clients/restful-api/variable/",
+      "1.3": "docs/clients/restful-api/variable/",
+      "1.0": "docs/clients/restful-api/variable/"
+    },
+    "en:clients/restful-api/vertex": {
+      "latest": "docs/clients/restful-api/vertex/",
+      "1.7": "docs/clients/restful-api/vertex/",
+      "1.5": "docs/clients/restful-api/vertex/",
+      "1.3": "docs/clients/restful-api/vertex/",
+      "1.0": "docs/clients/restful-api/vertex/"
+    },
+    "en:clients/restful-api/vertexlabel": {
+      "latest": "docs/clients/restful-api/vertexlabel/",
+      "1.7": "docs/clients/restful-api/vertexlabel/",
+      "1.5": "docs/clients/restful-api/vertexlabel/",
+      "1.3": "docs/clients/restful-api/vertexlabel/",
+      "1.0": "docs/clients/restful-api/vertexlabel/"
+    },
+    "en:config": {
+      "latest": "docs/config/",
+      "1.7": "docs/config/",
+      "1.5": "docs/config/",
+      "1.3": "docs/config/",
+      "1.0": "docs/config/"
+    },
+    "en:config/config-authentication": {
+      "latest": "docs/config/config-authentication/",
+      "1.7": "docs/config/config-authentication/",
+      "1.5": "docs/config/config-authentication/",
+      "1.3": "docs/config/config-authentication/",
+      "1.0": "docs/config/config-authentication/"
+    },
+    "en:config/config-computer": {
+      "latest": null,
+      "1.7": "docs/config/config-computer/",
+      "1.5": "docs/config/config-computer/",
+      "1.3": "docs/config/config-computer/",
+      "1.0": "docs/config/config-computer/"
+    },
+    "en:config/config-guide": {
+      "latest": "docs/config/config-guide/",
+      "1.7": "docs/config/config-guide/",
+      "1.5": "docs/config/config-guide/",
+      "1.3": "docs/config/config-guide/",
+      "1.0": "docs/config/config-guide/"
+    },
+    "en:config/config-https": {
+      "latest": "docs/config/config-https/",
+      "1.7": "docs/config/config-https/",
+      "1.5": "docs/config/config-https/",
+      "1.3": "docs/config/config-https/",
+      "1.0": "docs/config/config-https/"
+    },
+    "en:config/config-option": {
+      "latest": "docs/config/config-option/",
+      "1.7": "docs/config/config-option/",
+      "1.5": "docs/config/config-option/",
+      "1.3": "docs/config/config-option/",
+      "1.0": "docs/config/config-option/"
+    },
+    "en:contribution-guidelines": {
+      "latest": "docs/contribution-guidelines/",
+      "1.7": "docs/contribution-guidelines/",
+      "1.5": "docs/contribution-guidelines/",
+      "1.3": "docs/contribution-guidelines/",
+      "1.0": "docs/contribution-guidelines/"
+    },
+    "en:contribution-guidelines/committer-guidelines": {
+      "latest": "docs/contribution-guidelines/committer-guidelines/",
+      "1.7": "docs/contribution-guidelines/committer-guidelines/",
+      "1.5": "docs/contribution-guidelines/committer-guidelines/",
+      "1.3": "docs/contribution-guidelines/committer-guidelines/",
+      "1.0": null
+    },
+    "en:contribution-guidelines/contribute": {
+      "latest": "docs/contribution-guidelines/contribute/",
+      "1.7": "docs/contribution-guidelines/contribute/",
+      "1.5": "docs/contribution-guidelines/contribute/",
+      "1.3": "docs/contribution-guidelines/contribute/",
+      "1.0": "docs/contribution-guidelines/contribute/"
+    },
+    "en:contribution-guidelines/hugegraph-server-idea-setup": {
+      "latest": "docs/contribution-guidelines/hugegraph-server-idea-setup/",
+      "1.7": "docs/contribution-guidelines/hugegraph-server-idea-setup/",
+      "1.5": "docs/contribution-guidelines/hugegraph-server-idea-setup/",
+      "1.3": "docs/contribution-guidelines/hugegraph-server-idea-setup/",
+      "1.0": null
+    },
+    "en:contribution-guidelines/subscribe": {
+      "latest": "docs/contribution-guidelines/subscribe/",
+      "1.7": "docs/contribution-guidelines/subscribe/",
+      "1.5": "docs/contribution-guidelines/subscribe/",
+      "1.3": "docs/contribution-guidelines/subscribe/",
+      "1.0": "docs/contribution-guidelines/subscribe/"
+    },
+    "en:contribution-guidelines/validate-release": {
+      "latest": "docs/contribution-guidelines/validate-release/",
+      "1.7": "docs/contribution-guidelines/validate-release/",
+      "1.5": "docs/contribution-guidelines/validate-release/",
+      "1.3": "docs/contribution-guidelines/validate-release/",
+      "1.0": "docs/contribution-guidelines/validate-release/"
+    },
+    "en:download/download": {
+      "latest": "docs/download/download/",
+      "1.7": "docs/download/download/",
+      "1.5": "docs/download/download/",
+      "1.3": "docs/download/download/",
+      "1.0": "docs/download/download/"
+    },
+    "en:guides": {
+      "latest": "docs/guides/",
+      "1.7": "docs/guides/",
+      "1.5": "docs/guides/",
+      "1.3": "docs/guides/",
+      "1.0": "docs/guides/"
+    },
+    "en:guides/architectural": {
+      "latest": "docs/guides/architectural/",
+      "1.7": "docs/guides/architectural/",
+      "1.5": "docs/guides/architectural/",
+      "1.3": "docs/guides/architectural/",
+      "1.0": "docs/guides/architectural/"
+    },
+    "en:guides/backup-restore": {
+      "latest": "docs/guides/backup-restore/",
+      "1.7": "docs/guides/backup-restore/",
+      "1.5": "docs/guides/backup-restore/",
+      "1.3": "docs/guides/backup-restore/",
+      "1.0": "docs/guides/backup-restore/"
+    },
+    "en:guides/custom-plugin": {
+      "latest": "docs/guides/custom-plugin/",
+      "1.7": "docs/guides/custom-plugin/",
+      "1.5": "docs/guides/custom-plugin/",
+      "1.3": "docs/guides/custom-plugin/",
+      "1.0": "docs/guides/custom-plugin/"
+    },
+    "en:guides/desgin-concept": {
+      "latest": "docs/guides/desgin-concept/",
+      "1.7": "docs/guides/desgin-concept/",
+      "1.5": "docs/guides/desgin-concept/",
+      "1.3": "docs/guides/desgin-concept/",
+      "1.0": "docs/guides/desgin-concept/"
+    },
+    "en:guides/faq": {
+      "latest": "docs/guides/faq/",
+      "1.7": "docs/guides/faq/",
+      "1.5": "docs/guides/faq/",
+      "1.3": "docs/guides/faq/",
+      "1.0": "docs/guides/faq/"
+    },
+    "en:guides/hugegraph-docker-cluster": {
+      "latest": "docs/guides/hugegraph-docker-cluster/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:guides/security": {
+      "latest": "docs/guides/security/",
+      "1.7": "docs/guides/security/",
+      "1.5": "docs/guides/security/",
+      "1.3": "docs/guides/security/",
+      "1.0": null
+    },
+    "en:guides/toolchain-local-test": {
+      "latest": "docs/guides/toolchain-local-test/",
+      "1.7": "docs/guides/toolchain-local-test/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:introduction": {
+      "latest": "docs/introduction/",
+      "1.7": "docs/introduction/",
+      "1.5": "docs/introduction/readme/",
+      "1.3": null,
+      "1.0": null
+    },
+    "en:introduction/readme": {
+      "latest": null,
+      "1.7": "docs/introduction/readme/",
+      "1.5": null,
+      "1.3": "docs/introduction/readme/",
+      "1.0": "docs/introduction/readme/"
+    },
+    "en:language": {
+      "latest": "docs/language/",
+      "1.7": "docs/language/",
+      "1.5": "docs/language/",
+      "1.3": "docs/language/",
+      "1.0": "docs/language/"
+    },
+    "en:language/hugegraph-example": {
+      "latest": "docs/language/hugegraph-example/",
+      "1.7": "docs/language/hugegraph-example/",
+      "1.5": "docs/language/hugegraph-example/",
+      "1.3": "docs/language/hugegraph-example/",
+      "1.0": "docs/language/hugegraph-example/"
+    },
+    "en:language/hugegraph-gremlin": {
+      "latest": "docs/language/hugegraph-gremlin/",
+      "1.7": "docs/language/hugegraph-gremlin/",
+      "1.5": "docs/language/hugegraph-gremlin/",
+      "1.3": "docs/language/hugegraph-gremlin/",
+      "1.0": "docs/language/hugegraph-gremlin/"
+    },
+    "en:performance": {
+      "latest": "docs/performance/",
+      "1.7": "docs/performance/",
+      "1.5": "docs/performance/",
+      "1.3": "docs/performance/",
+      "1.0": "docs/performance/"
+    },
+    "en:performance/api-performance": {
+      "latest": "docs/performance/api-performance/",
+      "1.7": "docs/performance/api-preformance/",
+      "1.5": "docs/performance/api-preformance/",
+      "1.3": "docs/performance/api-preformance/",
+      "1.0": "docs/performance/api-preformance/"
+    },
+    "en:performance/api-performance/hugegraph-api-0.2": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "docs/performance/api-preformance/hugegraph-api-0.2/"
+    },
+    "en:performance/api-performance/hugegraph-api-0.4.4": {
+      "latest": null,
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": "docs/performance/api-preformance/hugegraph-api-0.4.4/"
+    },
+    "en:performance/api-performance/hugegraph-api-0.5.6-cassandra": {
+      "latest": "docs/performance/api-performance/hugegraph-api-0.5.6-cassandra/",
+      "1.7": "docs/performance/api-preformance/hugegraph-api-0.5.6-cassandra/",
+      "1.5": "docs/performance/api-preformance/hugegraph-api-0.5.6-cassandra/",
+      "1.3": "docs/performance/api-preformance/hugegraph-api-0.5.6-cassandra/",
+      "1.0": "docs/performance/api-preformance/hugegraph-api-0.5.6-cassandra/"
+    },
+    "en:performance/api-performance/hugegraph-api-0.5.6-rocksdb": {
+      "latest": "docs/performance/api-performance/hugegraph-api-0.5.6-rocksdb/",
+      "1.7": "docs/performance/api-preformance/hugegraph-api-0.5.6-rocksdb/",
+      "1.5": "docs/performance/api-preformance/hugegraph-api-0.5.6-rocksdb/",
+      "1.3": "docs/performance/api-preformance/hugegraph-api-0.5.6-rocksdb/",
+      "1.0": "docs/performance/api-preformance/hugegraph-api-0.5.6-rocksdb/"
+    },
+    "en:performance/hugegraph-benchmark-0.4.4": {
+      "latest": "docs/performance/hugegraph-benchmark-0.4.4/",
+      "1.7": "docs/performance/hugegraph-benchmark-0.4.4/",
+      "1.5": "docs/performance/hugegraph-benchmark-0.4.4/",
+      "1.3": "docs/performance/hugegraph-benchmark-0.4.4/",
+      "1.0": "docs/performance/hugegraph-benchmark-0.4.4/"
+    },
+    "en:performance/hugegraph-benchmark-0.5.6": {
+      "latest": "docs/performance/hugegraph-benchmark-0.5.6/",
+      "1.7": "docs/performance/hugegraph-benchmark-0.5.6/",
+      "1.5": "docs/performance/hugegraph-benchmark-0.5.6/",
+      "1.3": "docs/performance/hugegraph-benchmark-0.5.6/",
+      "1.0": "docs/performance/hugegraph-benchmark-0.5.6/"
+    },
+    "en:performance/hugegraph-loader-performance": {
+      "latest": "docs/performance/hugegraph-loader-performance/",
+      "1.7": "docs/performance/hugegraph-loader-performance/",
+      "1.5": "docs/performance/hugegraph-loader-performance/",
+      "1.3": "docs/performance/hugegraph-loader-performance/",
+      "1.0": "docs/performance/hugegraph-loader-performance/"
+    },
+    "en:quickstart": {
+      "latest": "docs/quickstart/",
+      "1.7": "docs/quickstart/",
+      "1.5": "docs/quickstart/",
+      "1.3": "docs/quickstart/",
+      "1.0": "docs/quickstart/"
+    },
+    "en:quickstart/client": {
+      "latest": "docs/quickstart/client/",
+      "1.7": "docs/quickstart/client/",
+      "1.5": "docs/quickstart/client/",
+      "1.3": "docs/quickstart/client/",
+      "1.0": "docs/quickstart/client/"
+    },
+    "en:quickstart/client/hugegraph-client": {
+      "latest": "docs/quickstart/client/hugegraph-client/",
+      "1.7": "docs/quickstart/client/hugegraph-client/",
+      "1.5": "docs/quickstart/client/hugegraph-client/",
+      "1.3": "docs/quickstart/client/hugegraph-client/",
+      "1.0": "docs/quickstart/client/hugegraph-client/"
+    },
+    "en:quickstart/client/hugegraph-client-go": {
+      "latest": "docs/quickstart/client/hugegraph-client-go/",
+      "1.7": "docs/quickstart/client/hugegraph-client-go/",
+      "1.5": "docs/quickstart/client/hugegraph-client-go/",
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/client/hugegraph-client-python": {
+      "latest": "docs/quickstart/client/hugegraph-client-python/",
+      "1.7": "docs/quickstart/client/hugegraph-client-python/",
+      "1.5": "docs/quickstart/client/hugegraph-client-python/",
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/computing": {
+      "latest": "docs/quickstart/computing/",
+      "1.7": "docs/quickstart/computing/",
+      "1.5": "docs/quickstart/computing/",
+      "1.3": "docs/quickstart/computing/",
+      "1.0": "docs/quickstart/computing/"
+    },
+    "en:quickstart/computing/hugegraph-computer": {
+      "latest": "docs/quickstart/computing/hugegraph-computer/",
+      "1.7": "docs/quickstart/computing/hugegraph-computer/",
+      "1.5": "docs/quickstart/computing/hugegraph-computer/",
+      "1.3": "docs/quickstart/computing/hugegraph-computer/",
+      "1.0": "docs/quickstart/computing/hugegraph-computer/"
+    },
+    "en:quickstart/computing/hugegraph-computer-config": {
+      "latest": "docs/quickstart/computing/hugegraph-computer-config/",
+      "1.7": "docs/quickstart/computing/hugegraph-computer-config/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/computing/hugegraph-vermeer": {
+      "latest": "docs/quickstart/computing/hugegraph-vermeer/",
+      "1.7": "docs/quickstart/computing/hugegraph-vermeer/",
+      "1.5": "docs/quickstart/computing/hugegraph-vermeer/",
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/hugegraph": {
+      "latest": "docs/quickstart/hugegraph/",
+      "1.7": "docs/quickstart/hugegraph/",
+      "1.5": "docs/quickstart/hugegraph/",
+      "1.3": "docs/quickstart/hugegraph/",
+      "1.0": "docs/quickstart/hugegraph/"
+    },
+    "en:quickstart/hugegraph-ai": {
+      "latest": "docs/quickstart/hugegraph-ai/",
+      "1.7": "docs/quickstart/hugegraph-ai/",
+      "1.5": "docs/quickstart/hugegraph-ai/",
+      "1.3": "docs/quickstart/hugegraph-ai/",
+      "1.0": null
+    },
+    "en:quickstart/hugegraph-ai/config-reference": {
+      "latest": "docs/quickstart/hugegraph-ai/config-reference/",
+      "1.7": "docs/quickstart/hugegraph-ai/config-reference/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/hugegraph-ai/hugegraph-llm": {
+      "latest": "docs/quickstart/hugegraph-ai/hugegraph-llm/",
+      "1.7": "docs/quickstart/hugegraph-ai/hugegraph-llm/",
+      "1.5": "docs/quickstart/hugegraph-ai/hugegraph-llm/",
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/hugegraph-ai/hugegraph-ml": {
+      "latest": "docs/quickstart/hugegraph-ai/hugegraph-ml/",
+      "1.7": "docs/quickstart/hugegraph-ai/hugegraph-ml/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/hugegraph-ai/quick_start": {
+      "latest": "docs/quickstart/hugegraph-ai/quick_start/",
+      "1.7": "docs/quickstart/hugegraph-ai/quick_start/",
+      "1.5": "docs/quickstart/hugegraph-ai/quick_start/",
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/hugegraph-ai/rest-api": {
+      "latest": "docs/quickstart/hugegraph-ai/rest-api/",
+      "1.7": "docs/quickstart/hugegraph-ai/rest-api/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/hugegraph/hugegraph-hstore": {
+      "latest": "docs/quickstart/hugegraph/hugegraph-hstore/",
+      "1.7": "docs/quickstart/hugegraph/hugegraph-hstore/",
+      "1.5": "docs/quickstart/hugegraph/hugegraph-hstore/",
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/hugegraph/hugegraph-pd": {
+      "latest": "docs/quickstart/hugegraph/hugegraph-pd/",
+      "1.7": "docs/quickstart/hugegraph/hugegraph-pd/",
+      "1.5": "docs/quickstart/hugegraph/hugegraph-pd/",
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/hugegraph/hugegraph-server": {
+      "latest": "docs/quickstart/hugegraph/hugegraph-server/",
+      "1.7": "docs/quickstart/hugegraph/hugegraph-server/",
+      "1.5": "docs/quickstart/hugegraph/hugegraph-server/",
+      "1.3": "docs/quickstart/hugegraph/hugegraph-server/",
+      "1.0": "docs/quickstart/hugegraph/hugegraph-server/"
+    },
+    "en:quickstart/toolchain": {
+      "latest": "docs/quickstart/toolchain/",
+      "1.7": "docs/quickstart/toolchain/",
+      "1.5": "docs/quickstart/toolchain/",
+      "1.3": "docs/quickstart/toolchain/",
+      "1.0": "docs/quickstart/toolchain/"
+    },
+    "en:quickstart/toolchain/hugegraph-hubble": {
+      "latest": "docs/quickstart/toolchain/hugegraph-hubble/",
+      "1.7": "docs/quickstart/toolchain/hugegraph-hubble/",
+      "1.5": "docs/quickstart/toolchain/hugegraph-hubble/",
+      "1.3": "docs/quickstart/toolchain/hugegraph-hubble/",
+      "1.0": "docs/quickstart/toolchain/hugegraph-hubble/"
+    },
+    "en:quickstart/toolchain/hugegraph-loader": {
+      "latest": "docs/quickstart/toolchain/hugegraph-loader/",
+      "1.7": "docs/quickstart/toolchain/hugegraph-loader/",
+      "1.5": "docs/quickstart/toolchain/hugegraph-loader/",
+      "1.3": "docs/quickstart/toolchain/hugegraph-loader/",
+      "1.0": "docs/quickstart/toolchain/hugegraph-loader/"
+    },
+    "en:quickstart/toolchain/hugegraph-spark-connector": {
+      "latest": "docs/quickstart/toolchain/hugegraph-spark-connector/",
+      "1.7": "docs/quickstart/toolchain/hugegraph-spark-connector/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/toolchain/hugegraph-tools": {
+      "latest": "docs/quickstart/toolchain/hugegraph-tools/",
+      "1.7": "docs/quickstart/toolchain/hugegraph-tools/",
+      "1.5": "docs/quickstart/toolchain/hugegraph-tools/",
+      "1.3": "docs/quickstart/toolchain/hugegraph-tools/",
+      "1.0": "docs/quickstart/toolchain/hugegraph-tools/"
+    }
+  }
+}

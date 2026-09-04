@@ -12,6 +12,9 @@ weight: 1
 
 ## 准备仓库
 
+![在 GitHub 上 Fork HugeGraph 仓库](/images/docs/contribution/github-fork.png)
+{width="884" height="462"}
+
 先在 GitHub 上 fork [apache/hugegraph](https://github.com/apache/hugegraph)，再克隆自己的 fork：
 
 ```bash
@@ -51,6 +54,11 @@ mvn editorconfig:format
 mvn clean compile -Dmaven.javadoc.skip=true
 ```
 
+Note that since GitHub requires submitting code through `username + token` (instead of using `username + password` directly), you need to create a GitHub token from https://github.com/settings/tokens:
+
+![使用个人访问令牌认证 Git 推送](/images/docs/contribution/github-authentication.png)
+{width="1280" height="422"}
+
 提交第三方依赖时，还要同步发行包中的许可证信息：
 
 1. 把依赖的许可证文件放入 `hugegraph-server/hugegraph-dist/release-docs/licenses/`。
@@ -58,6 +66,11 @@ mvn clean compile -Dmaven.javadoc.skip=true
 3. 运行 `hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh`，更新已知依赖清单。
 
 ## 提交 Pull Request
+
+Note: please make sure the email address you used to submit the code is bound to the GitHub account. For how to bind the email address, please refer to https://github.com/settings/emails:
+
+![在 GitHub 中验证提交邮箱](/images/docs/contribution/github-email.png)
+{width="1280" height="592"}
 
 提交信息使用 `type(module): message` 格式，例如：
 

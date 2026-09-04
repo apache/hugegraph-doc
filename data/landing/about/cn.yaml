@@ -1,0 +1,25 @@
+sections:
+  - type: hero
+    data:
+      eyebrow: Apache HugeGraph
+      title: 连接图数据与图智能的一体化生态
+      lead: HugeGraph 是 Apache 顶级项目，覆盖事务型图存储、分布式分析、可视化、数据导入和图智能。
+      actions:
+        - { label: 阅读文档, url: /cn/docs/, style: primary }
+        - { label: 加入社区, url: /cn/community/, style: ghost }
+  - type: cards
+    data:
+      title: 项目组件
+      columns: 3
+      items:
+        - { title: Server, desc: 支持多种存储后端的实时 OLTP 图查询。, icon: fa-solid fa-database }
+        - { title: Computer 与 Vermeer, desc: 分布式与内存型 OLAP 图计算。, icon: fa-solid fa-chart-line }
+        - { title: Toolchain, desc: 客户端、Loader、Hubble 与运维工具。, icon: fa-solid fa-toolbox }
+        - { title: HugeGraph-AI, desc: GraphRAG、知识图谱与图学习。, icon: fa-solid fa-brain }
+  - type: cta
+    data:
+      title: 在 Apache 社区中开放协作
+      desc: 通过 Apache HugeGraph 社区关注开发、报告问题并参与贡献。
+      actions:
+        - { label: 在 GitHub 查看, url: 'https://github.com/apache/hugegraph', external: true, style: primary }
+

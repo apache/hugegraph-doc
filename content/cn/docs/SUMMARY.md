@@ -1,3 +1,8 @@
+---
+title: "旧版 GitBook 目录"
+draft: true
+---
+
 # HugeGraph 中文文档
 
 - [系统介绍](introduction/_index)

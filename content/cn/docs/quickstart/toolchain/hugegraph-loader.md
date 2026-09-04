@@ -97,20 +97,16 @@ export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
 wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
 ```
 
-<details>
-<summary>点击展开/折叠 手动安装 ojdbc 方法</summary>
-
-由于 Oracle ojdbc license 的限制，需要手动安装 ojdbc 到本地 maven 仓库。
-访问 [Oracle jdbc 下载](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html) 页面。选择 Oracle Database 12c Release 2 (12.2.0.1) drivers，如下图所示。
-
-打开链接后，选择“ojdbc8.jar”
-
-把 ojdbc8 安装到本地 maven 仓库，进入`ojdbc8.jar`所在目录，执行以下命令。
-```
-mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-```
-
-</details>
+> [!DETAILS]- 点击展开/折叠 手动安装 ojdbc 方法
+> 由于 Oracle ojdbc license 的限制，需要手动安装 ojdbc 到本地 maven 仓库。
+> 访问 [Oracle jdbc 下载](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html) 页面。选择 Oracle Database 12c Release 2 (12.2.0.1) drivers，如下图所示。
+>
+> 打开链接后，选择“ojdbc8.jar”
+>
+> 把 ojdbc8 安装到本地 maven 仓库，进入`ojdbc8.jar`所在目录，执行以下命令。
+> ```
+> mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
+> ```
 
 编译生成 tar 包：
 
@@ -136,7 +132,7 @@ mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 "软件"有："名字"、"售卖价格"等属性；边"认识"有："日期"属性等。
 
 <div style="text-align: center;">
-  <img src="/docs/images/demo-graph-model.png" alt="image">
+  <img src="/docs/images/demo-graph-model.png" alt="由“认识”和“创建”边连接人物与软件顶点的示例图">
   <p>示例图模型</p>
 </div>
 
@@ -299,302 +295,290 @@ Office,388
 > 注意：0.11.0 版本以前的映射文件与 0.11.0 以后的格式变化较大，为表述方便，下面称 0.11.0 以前的映射文件（格式）为 1.0 版本，0.11.0 以后的为 2.0 版本。并且若无特殊说明，“映射文件”表示的是 2.0 版本的。
 
 
-<details>
-<summary>点击展开/折叠 2.0 版本的映射文件的框架</summary>
-
-```json
-{
-  "version": "2.0",
-  "structs": [
-    {
-      "id": "1",
-      "input": {
-      },
-      "vertices": [
-        {},
-        {}
-      ],
-      "edges": [
-        {},
-        {}
-      ]
-    }
-  ]
-}
-```
-
-</details>
+> [!DETAILS]- 点击展开/折叠 2.0 版本的映射文件的框架
+> ```json
+> {
+>   "version": "2.0",
+>   "structs": [
+>     {
+>       "id": "1",
+>       "input": {
+>       },
+>       "vertices": [
+>         {},
+>         {}
+>       ],
+>       "edges": [
+>         {},
+>         {}
+>       ]
+>     }
+>   ]
+> }
+> ```
 <br/>
 
 这里直接给出两个版本的映射文件（描述了上面图模型和数据文件）
 
-<details>
-<summary>点击展开/折叠 2.0 版本的映射文件</summary>
-
-```json
-{
-  "version": "2.0",
-  "structs": [
-    {
-      "id": "1",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "vertex_person.csv",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "CSV",
-        "delimiter": ",",
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": [
-          "name",
-          "age",
-          "city"
-        ],
-        "charset": "UTF-8",
-        "list_format": {
-          "start_symbol": "[",
-          "elem_delimiter": "|",
-          "end_symbol": "]"
-        }
-      },
-      "vertices": [
-        {
-          "label": "person",
-          "skip": false,
-          "id": null,
-          "unfold": false,
-          "field_mapping": {},
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ],
-      "edges": []
-    },
-    {
-      "id": "2",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "vertex_software.csv",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "CSV",
-        "delimiter": ",",
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": null,
-        "charset": "UTF-8",
-        "list_format": {
-          "start_symbol": "",
-          "elem_delimiter": ",",
-          "end_symbol": ""
-        }
-      },
-      "vertices": [
-        {
-          "label": "software",
-          "skip": false,
-          "id": null,
-          "unfold": false,
-          "field_mapping": {},
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ],
-      "edges": []
-    },
-    {
-      "id": "3",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "edge_knows.json",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "JSON",
-        "delimiter": null,
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": null,
-        "charset": "UTF-8",
-        "list_format": null
-      },
-      "vertices": [],
-      "edges": [
-        {
-          "label": "knows",
-          "skip": false,
-          "source": [
-            "source_name"
-          ],
-          "unfold_source": false,
-          "target": [
-            "target_name"
-          ],
-          "unfold_target": false,
-          "field_mapping": {
-            "source_name": "name",
-            "target_name": "name"
-          },
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ]
-    },
-    {
-      "id": "4",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "edge_created.json",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "JSON",
-        "delimiter": null,
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": null,
-        "charset": "UTF-8",
-        "list_format": null
-      },
-      "vertices": [],
-      "edges": [
-        {
-          "label": "created",
-          "skip": false,
-          "source": [
-            "source_name"
-          ],
-          "unfold_source": false,
-          "target": [
-            "target_name"
-          ],
-          "unfold_target": false,
-          "field_mapping": {
-            "source_name": "name",
-            "target_name": "name"
-          },
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ]
-    }
-  ]
-}
-```
-
-</details>
+> [!DETAILS]- 点击展开/折叠 2.0 版本的映射文件
+> ```json
+> {
+>   "version": "2.0",
+>   "structs": [
+>     {
+>       "id": "1",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "vertex_person.csv",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "CSV",
+>         "delimiter": ",",
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": [
+>           "name",
+>           "age",
+>           "city"
+>         ],
+>         "charset": "UTF-8",
+>         "list_format": {
+>           "start_symbol": "[",
+>           "elem_delimiter": "|",
+>           "end_symbol": "]"
+>         }
+>       },
+>       "vertices": [
+>         {
+>           "label": "person",
+>           "skip": false,
+>           "id": null,
+>           "unfold": false,
+>           "field_mapping": {},
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ],
+>       "edges": []
+>     },
+>     {
+>       "id": "2",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "vertex_software.csv",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "CSV",
+>         "delimiter": ",",
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": null,
+>         "charset": "UTF-8",
+>         "list_format": {
+>           "start_symbol": "",
+>           "elem_delimiter": ",",
+>           "end_symbol": ""
+>         }
+>       },
+>       "vertices": [
+>         {
+>           "label": "software",
+>           "skip": false,
+>           "id": null,
+>           "unfold": false,
+>           "field_mapping": {},
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ],
+>       "edges": []
+>     },
+>     {
+>       "id": "3",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "edge_knows.json",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "JSON",
+>         "delimiter": null,
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": null,
+>         "charset": "UTF-8",
+>         "list_format": null
+>       },
+>       "vertices": [],
+>       "edges": [
+>         {
+>           "label": "knows",
+>           "skip": false,
+>           "source": [
+>             "source_name"
+>           ],
+>           "unfold_source": false,
+>           "target": [
+>             "target_name"
+>           ],
+>           "unfold_target": false,
+>           "field_mapping": {
+>             "source_name": "name",
+>             "target_name": "name"
+>           },
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ]
+>     },
+>     {
+>       "id": "4",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "edge_created.json",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "JSON",
+>         "delimiter": null,
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": null,
+>         "charset": "UTF-8",
+>         "list_format": null
+>       },
+>       "vertices": [],
+>       "edges": [
+>         {
+>           "label": "created",
+>           "skip": false,
+>           "source": [
+>             "source_name"
+>           ],
+>           "unfold_source": false,
+>           "target": [
+>             "target_name"
+>           ],
+>           "unfold_target": false,
+>           "field_mapping": {
+>             "source_name": "name",
+>             "target_name": "name"
+>           },
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ]
+>     }
+>   ]
+> }
+> ```
 <br/>
 
-<details>
-<summary>点击展开/折叠 1.0 版本的映射文件</summary>
-
-```json
-{
-  "vertices": [
-    {
-      "label": "person",
-      "input": {
-        "type": "file",
-        "path": "vertex_person.csv",
-        "format": "CSV",
-        "header": ["name", "age", "city"],
-        "charset": "UTF-8"
-      }
-    },
-    {
-      "label": "software",
-      "input": {
-        "type": "file",
-        "path": "vertex_software.csv",
-        "format": "CSV"
-      }
-    }
-  ],
-  "edges": [
-    {
-      "label": "knows",
-      "source": ["source_name"],
-      "target": ["target_name"],
-      "input": {
-        "type": "file",
-        "path": "edge_knows.json",
-        "format": "JSON"
-      },
-      "field_mapping": {
-        "source_name": "name",
-        "target_name": "name"
-      }
-    },
-    {
-      "label": "created",
-      "source": ["source_name"],
-      "target": ["target_name"],
-      "input": {
-        "type": "file",
-        "path": "edge_created.json",
-        "format": "JSON"
-      },
-      "field_mapping": {
-        "source_name": "name",
-        "target_name": "name"
-      }
-    }
-  ]
-}
-```
-
-</details>
+> [!DETAILS]- 点击展开/折叠 1.0 版本的映射文件
+> ```json
+> {
+>   "vertices": [
+>     {
+>       "label": "person",
+>       "input": {
+>         "type": "file",
+>         "path": "vertex_person.csv",
+>         "format": "CSV",
+>         "header": ["name", "age", "city"],
+>         "charset": "UTF-8"
+>       }
+>     },
+>     {
+>       "label": "software",
+>       "input": {
+>         "type": "file",
+>         "path": "vertex_software.csv",
+>         "format": "CSV"
+>       }
+>     }
+>   ],
+>   "edges": [
+>     {
+>       "label": "knows",
+>       "source": ["source_name"],
+>       "target": ["target_name"],
+>       "input": {
+>         "type": "file",
+>         "path": "edge_knows.json",
+>         "format": "JSON"
+>       },
+>       "field_mapping": {
+>         "source_name": "name",
+>         "target_name": "name"
+>       }
+>     },
+>     {
+>       "label": "created",
+>       "source": ["source_name"],
+>       "target": ["target_name"],
+>       "input": {
+>         "type": "file",
+>         "path": "edge_created.json",
+>         "format": "JSON"
+>       },
+>       "field_mapping": {
+>         "source_name": "name",
+>         "target_name": "name"
+>       }
+>     }
+>   ]
+> }
+> ```
 <br/> 
 
 映射文件 1.0 版本是以顶点和边为中心，设置输入源；而 2.0 版本是以输入源为中心，设置顶点和边映射。有些输入源（比如一个文件）既能生成顶点，也能生成边，如果用 1.0 版的格式写，就需要在 vertex 和 edge 映射块中各写一次 input 块，这两次的 input 块是完全一样的；而 2.0 版本只需要写一次 input。所以 2.0 版相比于 1.0 版，能省掉一些 input 的重复书写。
@@ -960,104 +944,98 @@ id|name|lang|price|ISBN
 
 #### 4.2 编写 schema
 
-<details>
-<summary>点击展开/折叠 schema 文件：example/file/schema.groovy</summary>
-
-```groovy
-schema.propertyKey("name").asText().ifNotExist().create();
-schema.propertyKey("age").asInt().ifNotExist().create();
-schema.propertyKey("city").asText().ifNotExist().create();
-schema.propertyKey("weight").asDouble().ifNotExist().create();
-schema.propertyKey("lang").asText().ifNotExist().create();
-schema.propertyKey("date").asText().ifNotExist().create();
-schema.propertyKey("price").asDouble().ifNotExist().create();
-
-schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
-schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
-
-schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
-schema.indexLabel("personByCity").onV("person").by("city").secondary().ifNotExist().create();
-schema.indexLabel("personByAgeAndCity").onV("person").by("age", "city").secondary().ifNotExist().create();
-schema.indexLabel("softwareByPrice").onV("software").by("price").range().ifNotExist().create();
-
-schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date", "weight").ifNotExist().create();
-schema.edgeLabel("created").sourceLabel("person").targetLabel("software").properties("date", "weight").ifNotExist().create();
-
-schema.indexLabel("createdByDate").onE("created").by("date").secondary().ifNotExist().create();
-schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
-schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();
-```
-</details>
+> [!DETAILS]- 点击展开/折叠 schema 文件：example/file/schema.groovy
+> ```groovy
+> schema.propertyKey("name").asText().ifNotExist().create();
+> schema.propertyKey("age").asInt().ifNotExist().create();
+> schema.propertyKey("city").asText().ifNotExist().create();
+> schema.propertyKey("weight").asDouble().ifNotExist().create();
+> schema.propertyKey("lang").asText().ifNotExist().create();
+> schema.propertyKey("date").asText().ifNotExist().create();
+> schema.propertyKey("price").asDouble().ifNotExist().create();
+>
+> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
+> schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
+>
+> schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
+> schema.indexLabel("personByCity").onV("person").by("city").secondary().ifNotExist().create();
+> schema.indexLabel("personByAgeAndCity").onV("person").by("age", "city").secondary().ifNotExist().create();
+> schema.indexLabel("softwareByPrice").onV("software").by("price").range().ifNotExist().create();
+>
+> schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date", "weight").ifNotExist().create();
+> schema.edgeLabel("created").sourceLabel("person").targetLabel("software").properties("date", "weight").ifNotExist().create();
+>
+> schema.indexLabel("createdByDate").onE("created").by("date").secondary().ifNotExist().create();
+> schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
+> schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();
+> ```
 
 #### 4.3 编写输入源映射文件`example/file/struct.json`
 
-<details>
-<summary>点击展开/折叠 源映射文件 example/file/struct.json</summary>
-
-```json
-{
-  "vertices": [
-    {
-      "label": "person",
-      "input": {
-        "type": "file",
-        "path": "example/file/vertex_person.csv",
-        "format": "CSV",
-        "header": ["name", "age", "city"],
-        "charset": "UTF-8",
-        "skipped_line": {
-          "regex": "(^#|^//).*"
-        }
-      },
-      "null_values": ["NULL", "null", ""]
-    },
-    {
-      "label": "software",
-      "input": {
-        "type": "file",
-        "path": "example/file/vertex_software.txt",
-        "format": "TEXT",
-        "delimiter": "|",
-        "charset": "GBK"
-      },
-      "id": "id",
-      "ignored": ["ISBN"]
-    }
-  ],
-  "edges": [
-    {
-      "label": "knows",
-      "source": ["source_name"],
-      "target": ["target_name"],
-      "input": {
-        "type": "file",
-        "path": "example/file/edge_knows.json",
-        "format": "JSON",
-        "date_format": "yyyyMMdd"
-      },
-      "field_mapping": {
-        "source_name": "name",
-        "target_name": "name"
-      }
-    },
-    {
-      "label": "created",
-      "source": ["source_name"],
-      "target": ["target_id"],
-      "input": {
-        "type": "file",
-        "path": "example/file/edge_created.json",
-        "format": "JSON",
-        "date_format": "yyyy-MM-dd"
-      },
-      "field_mapping": {
-        "source_name": "name"
-      }
-    }
-  ]
-}
-```
-</details>
+> [!DETAILS]- 点击展开/折叠 源映射文件 example/file/struct.json
+> ```json
+> {
+>   "vertices": [
+>     {
+>       "label": "person",
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/vertex_person.csv",
+>         "format": "CSV",
+>         "header": ["name", "age", "city"],
+>         "charset": "UTF-8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*"
+>         }
+>       },
+>       "null_values": ["NULL", "null", ""]
+>     },
+>     {
+>       "label": "software",
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/vertex_software.txt",
+>         "format": "TEXT",
+>         "delimiter": "|",
+>         "charset": "GBK"
+>       },
+>       "id": "id",
+>       "ignored": ["ISBN"]
+>     }
+>   ],
+>   "edges": [
+>     {
+>       "label": "knows",
+>       "source": ["source_name"],
+>       "target": ["target_name"],
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/edge_knows.json",
+>         "format": "JSON",
+>         "date_format": "yyyyMMdd"
+>       },
+>       "field_mapping": {
+>         "source_name": "name",
+>         "target_name": "name"
+>       }
+>     },
+>     {
+>       "label": "created",
+>       "source": ["source_name"],
+>       "target": ["target_id"],
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/edge_created.json",
+>         "format": "JSON",
+>         "date_format": "yyyy-MM-dd"
+>       },
+>       "field_mapping": {
+>         "source_name": "name"
+>       }
+>     }
+>   ]
+> }
+> ```
 
 #### 4.4 执行命令导入
 

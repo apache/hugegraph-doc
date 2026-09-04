@@ -1,10 +1,39 @@
-{{ define "main"}}
-    <main id="main">
-      <div>
-       <h1 id="title">Not found</h1>
-       <p>Oops! This page doesn't exist. Try going back to our <a href="{{ "/" | relURL }}">home page</a>.</p>
-
-       <p>You can learn how to make a 404 page like this in <a href="https://gohugo.io/templates/404/">Custom 404 Pages</a>.</p>      
-      </div>
-    </main>
-{{ end }}
+{{- /* Keep OINK's complete interactive 404 shell and add an explicit local
+     search recovery action beside the home-page escape hatch. */ -}}
+{{- .Page.Store.Set "tdOutputFormat" "html" -}}
+{{- .Page.Store.Set "tdIsErrorDocument" true -}}
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage"
+    dir="{{ .Site.Language.Direction | default "ltr" }}"
+    lang="{{ partial "language-tag.html" . }}"
+    data-td-typography="{{ partial "typography-preset.html" .Site }}"
+    {{- $darkMode := partialCached "dark-mode-config.html" "dark-mode-global" -}}
+    {{- if $darkMode.enable }} data-td-theme-init{{ end }}>
+  <head>
+    {{- $head := partial "head.html" . -}}
+    {{- $head = replaceRE `(?i)<meta\s+name=["']robots["']\s+content=["'][^"']*["']\s*/?>` `<meta name="robots" content="noindex, nofollow">` $head -}}
+    {{- $title := printf "<title>%s | %s</title>" (T "error_404_title") .Site.Title -}}
+    {{- replaceRE `(?s)<title>.*?</title>` $title $head | safeHTML -}}
+  </head>
+  <body class="td-404">
+    {{ partial "skip-link.html" . }}
+    {{ if partial "shell/navbar-enabled.html" . }}{{ partial "navbar.html" . }}{{ end }}
+    <div class="container-fluid td-default td-outer">
+      <main id="td-main-content" class="td-main" tabindex="-1">
+        <div class="td-content">
+          <h1>{{ T "error_404_title" }}</h1>
+          <p>{{ T "error_404_body" }}</p>
+          <p class="d-flex flex-wrap gap-2">
+            {{- if partial "shell/search-enabled.html" . }}
+            <button type="button" class="btn btn-primary" data-td-shell-search-open
+              aria-controls="td-shell-search" aria-expanded="false">{{ T "ui_search" }}</button>
+            {{- end }}
+            <a class="btn btn-outline-primary" href="{{ .Site.Home.RelPermalink }}">{{ T "error_404_home" }}</a>
+          </p>
+        </div>
+      </main>
+      {{ partial "footer.html" . }}
+    </div>
+    {{ partial "scripts.html" . }}
+  </body>
+</html>

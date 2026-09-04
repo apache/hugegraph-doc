@@ -1,8 +1,7 @@
 ---
-title: Community
-menu:
-  main:
-    weight: 40
+title: 社区
+linkTitle: 社区
+layout: landing
+landing: community
+outputs: [HTML, print, markdown]
 ---
-
-查看 [项目成熟度](/community/maturity/) 评估。

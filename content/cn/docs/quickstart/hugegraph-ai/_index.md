@@ -6,6 +6,8 @@ weight: 3
 
 `hugegraph-ai` 提供 HugeGraph 的 Python 客户端、图机器学习工具，以及面向知识图谱构建和 GraphRAG 的 LLM 工具。
 
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) · [Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
+
 ## 模块
 
 - [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm)：知识图谱构建、GraphRAG 和自然语言图查询。

@@ -1,0 +1,50 @@
+{{- /* OINK v1.0.0 override: separate the visible lockup from the SEO title. */ -}}
+{{- $name := .Site.Params.brand_name | default .Site.Title -}}
+{{- $logoPath := .Site.Params.logo | default "icons/logo.svg" -}}
+{{- $logoURL := (partial "content/url.html" (dict
+  "name" "shell" "parameter" "logo" "position" "site configuration"
+  "value" $logoPath "kind" "image"
+)).href -}}
+{{- with resources.Get $logoPath -}}
+  {{- $logoURL = .RelPermalink -}}
+{{- end -}}
+{{- $wordmarkPath := .Site.Params.wordmark | default "" -}}
+{{- $wordmarkURL := "" -}}
+{{- if $wordmarkPath -}}
+  {{- $wordmarkURL = (partial "content/url.html" (dict
+    "name" "shell" "parameter" "wordmark" "position" "site configuration"
+    "value" $wordmarkPath "kind" "image"
+  )).href -}}
+  {{- with resources.Get $wordmarkPath -}}
+    {{- $wordmarkURL = .RelPermalink -}}
+  {{- end -}}
+{{- end -}}
+{{- $projectRepo := .Site.Params.github_project_repo | default .Site.Params.github_repo -}}
+{{- $docsSection := strings.Trim (.Site.Params.ui.docs_section | default "docs") "/" -}}
+{{- $blogSection := strings.Trim (.Site.Params.ui.blog_section | default "blog") "/" -}}
+{{- $docsRoot := "section" -}}
+{{- if isset .Site.Params.ui "docs_sidebar_root" -}}
+  {{- $rawDocsRoot := index .Site.Params.ui "docs_sidebar_root" -}}
+  {{- if ne (printf "%T" $rawDocsRoot) "string" -}}
+    {{- warnf "params.ui.docs_sidebar_root must be a string: home or section; got %v; using section" $rawDocsRoot -}}
+  {{- else -}}
+    {{- $docsRoot = lower $rawDocsRoot -}}
+  {{- end -}}
+{{- end -}}
+{{- if not (in (slice "home" "section") $docsRoot) -}}
+  {{- warnf "params.ui.docs_sidebar_root must be home or section; got %q; using section" $docsRoot -}}
+  {{- $docsRoot = "section" -}}
+{{- end -}}
+{{- $shellTypes := .Site.Params.ui.shell_types | default (slice "docs" "book" "blog" "swagger") -}}
+{{- $quickLinks := .Site.Params.ui.quick_links | default (slice $docsSection $blogSection) -}}
+{{- return dict
+  "brandName" $name
+  "logoURL" $logoURL
+  "wordmarkURL" $wordmarkURL
+  "projectRepo" $projectRepo
+  "docsSection" $docsSection
+  "docsRoot" $docsRoot
+  "blogSection" $blogSection
+  "shellTypes" $shellTypes
+  "quickLinks" $quickLinks
+-}}

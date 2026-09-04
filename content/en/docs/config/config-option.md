@@ -2,6 +2,11 @@
 title: "Server Complete Configuration Manual"
 linkTitle: "Server Complete Configuration Manual"
 weight: 2
+search_keywords:
+  - gremlin.graph
+  - rest-server.properties
+  - hugegraph.properties
+search_boost: 1.5
 ---
 
 ### Gremlin Server Config Options
@@ -53,6 +58,7 @@ Corresponding configuration file `rest-server.properties`
 | memory_monitor.threshold           | 0.85                                             | The threshold of JVM(in-heap) memory usage monitoring , 1 means disabling this function.                                                                                                                      |
 | memory_monitor.period              | 2000                                             | The period in ms of JVM(in-heap) memory usage monitoring.                                                                                                                                                     |
 | log.slow_query_threshold           | 1000                                             | Slow query log threshold in milliseconds, 0 means disabled.                                                                                                                                                   |
+| log.slow_query_body_limit          | 512                                              | Maximum bytes of a request body recorded in the slow query log, 0 means disabled. The recorded prefix may contain sensitive Gremlin or Cypher literals.                                                       |
 
 ### PD/Meta Config Options (Distributed Mode)
 
@@ -195,55 +201,43 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | rocksdb.level0_stop_writes_trigger              | 36                                                                                                                                   | Hard limit on number of level-0 files for stopping writes.                                                                                                                                                                                                                                                                                                                                            |
 | rocksdb.soft_pending_compaction_bytes_limit     | 68719476736                                                                                                                          | The soft limit to impose on pending compaction in bytes.                                                                                                                                                                                                                                                                                                                                              |
 
-<details>
-<summary><b>K8s Config Options (Optional)</b></summary>
+> [!DETAILS]- **K8s Config Options (Optional)**
+> Corresponding configuration file `rest-server.properties`
+>
+> | config option    | default value                 | description                              |
+> |------------------|-------------------------------|------------------------------------------|
+> | server.use_k8s   | false                         | Whether to enable K8s multi-tenancy mode. |
+> | k8s.namespace    | hugegraph-computer-system     | K8s namespace for compute jobs.          |
+> | k8s.kubeconfig   |                               | Path to kubeconfig file.                 |
 
-Corresponding configuration file `rest-server.properties`
+> [!DETAILS]- **Arthas Diagnostic Config Options (Optional)**
+> Corresponding configuration file `rest-server.properties`
+>
+> | config option      | default value | description           |
+> |--------------------|---------------|-----------------------|
+> | arthas.telnetPort  | 8562          | Arthas telnet port.   |
+> | arthas.httpPort    | 8561          | Arthas HTTP port.     |
+> | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
 
-| config option    | default value                 | description                              |
-|------------------|-------------------------------|------------------------------------------|
-| server.use_k8s   | false                         | Whether to enable K8s multi-tenancy mode. |
-| k8s.namespace    | hugegraph-computer-system     | K8s namespace for compute jobs.          |
-| k8s.kubeconfig   |                               | Path to kubeconfig file.                 |
-
-</details>
-
-<details>
-<summary><b>Arthas Diagnostic Config Options (Optional)</b></summary>
-
-Corresponding configuration file `rest-server.properties`
-
-| config option      | default value | description           |
-|--------------------|---------------|-----------------------|
-| arthas.telnetPort  | 8562          | Arthas telnet port.   |
-| arthas.httpPort    | 8561          | Arthas HTTP port.     |
-| arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
-
-</details>
-
-<details>
-<summary><b>HBase Backend Config Options</b></summary>
-
-| config option             | default value                  | description                                                              |
-|---------------------------|--------------------------------|--------------------------------------------------------------------------|
-| backend                   |                                | Must be set to `hbase`.                                                  |
-| serializer                |                                | Must be set to `hbase`.                                                  |
-| hbase.hosts               | localhost                      | The hostnames or ip addresses of HBase zookeeper, separated with commas. |
-| hbase.port                | 2181                           | The port address of HBase zookeeper.                                     |
-| hbase.threads_max         | 64                             | The max threads num of hbase connections.                                |
-| hbase.znode_parent        | /hbase                         | The znode parent path of HBase zookeeper.                                |
-| hbase.zk_retry            | 3                              | The recovery retry times of HBase zookeeper.                             |
-| hbase.aggregation_timeout | 43200                          | The timeout in seconds of waiting for aggregation.                       |
-| hbase.kerberos_enable     | false                          | Is Kerberos authentication enabled for HBase.                            |
-| hbase.kerberos_keytab     |                                | The HBase's key tab file for kerberos authentication.                    |
-| hbase.kerberos_principal  |                                | The HBase's principal for kerberos authentication.                       |
-| hbase.krb5_conf           | etc/krb5.conf                  | Kerberos configuration file, including KDC IP, default realm, etc.       |
-| hbase.hbase_site          | /etc/hbase/conf/hbase-site.xml | The HBase's configuration file                                           |
-| hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
-| hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
-| hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
-
-</details>
+> [!DETAILS]- **HBase Backend Config Options**
+> | config option             | default value                  | description                                                              |
+> |---------------------------|--------------------------------|--------------------------------------------------------------------------|
+> | backend                   |                                | Must be set to `hbase`.                                                  |
+> | serializer                |                                | Must be set to `hbase`.                                                  |
+> | hbase.hosts               | localhost                      | The hostnames or ip addresses of HBase zookeeper, separated with commas. |
+> | hbase.port                | 2181                           | The port address of HBase zookeeper.                                     |
+> | hbase.threads_max         | 64                             | The max threads num of hbase connections.                                |
+> | hbase.znode_parent        | /hbase                         | The znode parent path of HBase zookeeper.                                |
+> | hbase.zk_retry            | 3                              | The recovery retry times of HBase zookeeper.                             |
+> | hbase.aggregation_timeout | 43200                          | The timeout in seconds of waiting for aggregation.                       |
+> | hbase.kerberos_enable     | false                          | Is Kerberos authentication enabled for HBase.                            |
+> | hbase.kerberos_keytab     |                                | The HBase's key tab file for kerberos authentication.                    |
+> | hbase.kerberos_principal  |                                | The HBase's principal for kerberos authentication.                       |
+> | hbase.krb5_conf           | etc/krb5.conf                  | Kerberos configuration file, including KDC IP, default realm, etc.       |
+> | hbase.hbase_site          | /etc/hbase/conf/hbase-site.xml | The HBase's configuration file                                           |
+> | hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
+> | hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
+> | hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
 
 
 ---
@@ -252,71 +246,54 @@ Corresponding configuration file `rest-server.properties`
 
 The following backend stores are no longer supported in version 1.7.0+ and are only available in version 1.5.x and earlier:
 
-<details>
-<summary><b>Cassandra Backend Config Options</b></summary>
+> [!DETAILS]- **Cassandra Backend Config Options**
+> | config option                  | default value  | description                                                                                                                                    |
+> |--------------------------------|----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+> | backend                        |                | Must be set to `cassandra`.                                                                                                                    |
+> | serializer                     |                | Must be set to `cassandra`.                                                                                                                    |
+> | cassandra.host                 | localhost      | The seeds hostname or ip address of cassandra cluster.                                                                                         |
+> | cassandra.port                 | 9042           | The seeds port address of cassandra cluster.                                                                                                   |
+> | cassandra.connect_timeout      | 5              | The cassandra driver connect server timeout(seconds).                                                                                          |
+> | cassandra.read_timeout         | 20             | The cassandra driver read from server timeout(seconds).                                                                                        |
+> | cassandra.keyspace.strategy    | SimpleStrategy | The replication strategy of keyspace, valid value is SimpleStrategy or NetworkTopologyStrategy.                                                |
+> | cassandra.keyspace.replication | [3]            | The keyspace replication factor of SimpleStrategy, like '[3]'.Or replicas in each datacenter of NetworkTopologyStrategy, like '[dc1:2,dc2:1]'. |
+> | cassandra.username             |                | The username to use to login to cassandra cluster.                                                                                             |
+> | cassandra.password             |                | The password corresponding to cassandra.username.                                                                                              |
+> | cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
+> | cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
+> | cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
 
-| config option                  | default value  | description                                                                                                                                    |
-|--------------------------------|----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| backend                        |                | Must be set to `cassandra`.                                                                                                                    |
-| serializer                     |                | Must be set to `cassandra`.                                                                                                                    |
-| cassandra.host                 | localhost      | The seeds hostname or ip address of cassandra cluster.                                                                                         |
-| cassandra.port                 | 9042           | The seeds port address of cassandra cluster.                                                                                                   |
-| cassandra.connect_timeout      | 5              | The cassandra driver connect server timeout(seconds).                                                                                          |
-| cassandra.read_timeout         | 20             | The cassandra driver read from server timeout(seconds).                                                                                        |
-| cassandra.keyspace.strategy    | SimpleStrategy | The replication strategy of keyspace, valid value is SimpleStrategy or NetworkTopologyStrategy.                                                |
-| cassandra.keyspace.replication | [3]            | The keyspace replication factor of SimpleStrategy, like '[3]'.Or replicas in each datacenter of NetworkTopologyStrategy, like '[dc1:2,dc2:1]'. |
-| cassandra.username             |                | The username to use to login to cassandra cluster.                                                                                             |
-| cassandra.password             |                | The password corresponding to cassandra.username.                                                                                              |
-| cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
-| cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
-| cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
+> [!DETAILS]- **ScyllaDB Backend Config Options**
+> | config option | default value | description                |
+> |---------------|---------------|----------------------------|
+> | backend       |               | Must be set to `scylladb`. |
+> | serializer    |               | Must be set to `scylladb`. |
+>
+> Other options are consistent with the Cassandra backend.
 
-</details>
+> [!DETAILS]- **MySQL & PostgreSQL Backend Config Options**
+> | config option                    | default value               | description                                                                         |
+> |----------------------------------|-----------------------------|-------------------------------------------------------------------------------------|
+> | backend                          |                             | Must be set to `mysql`.                                                             |
+> | serializer                       |                             | Must be set to `mysql`.                                                             |
+> | jdbc.driver                      | com.mysql.jdbc.Driver       | The JDBC driver class to connect database.                                          |
+> | jdbc.url                         | jdbc:mysql://127.0.0.1:3306 | The url of database in JDBC format.                                                 |
+> | jdbc.username                    | root                        | The username to login database.                                                     |
+> | jdbc.password                    | ******                      | The password corresponding to jdbc.username.                                        |
+> | jdbc.ssl_mode                    | false                       | The SSL mode of connections with database.                                          |
+> | jdbc.reconnect_interval          | 3                           | The interval(seconds) between reconnections when the database connection fails.     |
+> | jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
+> | jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
+> | jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
 
-<details>
-<summary><b>ScyllaDB Backend Config Options</b></summary>
-
-| config option | default value | description                |
-|---------------|---------------|----------------------------|
-| backend       |               | Must be set to `scylladb`. |
-| serializer    |               | Must be set to `scylladb`. |
-
-Other options are consistent with the Cassandra backend.
-
-</details>
-
-<details>
-<summary><b>MySQL & PostgreSQL Backend Config Options</b></summary>
-
-| config option                    | default value               | description                                                                         |
-|----------------------------------|-----------------------------|-------------------------------------------------------------------------------------|
-| backend                          |                             | Must be set to `mysql`.                                                             |
-| serializer                       |                             | Must be set to `mysql`.                                                             |
-| jdbc.driver                      | com.mysql.jdbc.Driver       | The JDBC driver class to connect database.                                          |
-| jdbc.url                         | jdbc:mysql://127.0.0.1:3306 | The url of database in JDBC format.                                                 |
-| jdbc.username                    | root                        | The username to login database.                                                     |
-| jdbc.password                    | ******                      | The password corresponding to jdbc.username.                                        |
-| jdbc.ssl_mode                    | false                       | The SSL mode of connections with database.                                          |
-| jdbc.reconnect_interval          | 3                           | The interval(seconds) between reconnections when the database connection fails.     |
-| jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
-| jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
-| jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
-
-</details>
-
-<details>
-<summary><b>PostgreSQL Backend Config Options</b></summary>
-
-| config option | default value | description                  |
-|---------------|---------------|------------------------------|
-| backend       |               | Must be set to `postgresql`. |
-| serializer    |               | Must be set to `postgresql`. |
-
-Other options are consistent with the MySQL backend.
-
-> The driver and url of the PostgreSQL backend should be set to:
-> - `jdbc.driver=org.postgresql.Driver`
-> - `jdbc.url=jdbc:postgresql://localhost:5432/`
-
-</details>
-
+> [!DETAILS]- **PostgreSQL Backend Config Options**
+> | config option | default value | description                  |
+> |---------------|---------------|------------------------------|
+> | backend       |               | Must be set to `postgresql`. |
+> | serializer    |               | Must be set to `postgresql`. |
+>
+> Other options are consistent with the MySQL backend.
+>
+> > The driver and url of the PostgreSQL backend should be set to:
+> > - `jdbc.driver=org.postgresql.Driver`
+> > - `jdbc.url=jdbc:postgresql://localhost:5432/`

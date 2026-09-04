@@ -14,26 +14,25 @@ For the HugeGraph database project, visit [apache/hugegraph](https://github.com/
 
 ## Quick Start
 
-Only **3 steps** to run the documentation website locally:
+Only **3 steps** are needed to run the documentation website locally.
 
-**Prerequisites:** [Hugo Extended](https://github.com/gohugoio/hugo/releases) v0.95+ and Node.js v16+
+**Prerequisites:** Go 1.27+ and [Hugo Extended](https://github.com/gohugoio/hugo/releases) 0.165.0. OINK does not require Node.js, npm, PostCSS, or a vendored theme checkout.
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/apache/hugegraph-doc.git
 cd hugegraph-doc
 
-# 2. Install dependencies
-npm install
+# 2. Verify the pinned theme module
+hugo mod graph
 
-# 3. Start development server (auto-reload)
+# 3. Start the development server (auto-reload)
 hugo server
 ```
 
 Open http://localhost:1313 to preview.
 
-> **Troubleshooting:** If you see `TOCSS: failed to transform "scss/main.scss"`,
-> install Hugo **Extended** version, not the standard version.
+The module graph must resolve `github.com/pgsty/oink@v1.0.0`. For a production-equivalent check, run the strict build command shown below.
 
 ## Repository Structure
 
@@ -51,12 +50,13 @@ hugegraph-doc/
 │   │   └── community/          #    Community pages
 │   └── en/                     # 🇺🇸 English documentation (mirrors cn/ structure)
 │
-├── themes/docsy/               # 🎨 Docsy theme (git submodule)
-├── assets/                     # 🖼️  Custom assets (fonts, images, scss)
+├── data/                       # 🧭 Landing-page and footer data
+├── i18n/cn.yaml                # 🌐 OINK interface strings for the /cn/ locale
+├── assets/                     # 🖼️  Project brand assets
 ├── layouts/                    # 📐 Hugo template overrides
 ├── static/                     # 📁 Static files
-├── config.toml                 # ⚙️  Site configuration
-└── package.json                # 📦 Node.js dependencies
+├── go.mod / go.sum             # 📌 Pinned OINK module
+└── hugo.yaml                   # ⚙️  Site configuration
 ```
 
 ## Contributing
@@ -78,17 +78,14 @@ hugegraph-doc/
 
 ### Detailed Guide
 
-See [contribution.md](./contribution.md) for:
-- Platform-specific Hugo installation
-- Docsy theme customization
-- Translation tips
+See [contribution.md](./contribution.md) for the pinned toolchain, strict build, OINK customization, and translation rules.
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
 | `hugo server` | Start dev server (hot reload) |
-| `hugo --minify` | Build production to `./public/` |
+| `hugo --cleanDestinationDir --gc --minify --environment production --printPathWarnings --printI18nWarnings --panicOnWarning` | Strict production build to `./public/` |
 | `hugo server -p 8080` | Custom port |
 
 ---
@@ -101,17 +98,17 @@ See [contribution.md](./contribution.md) for:
 
 ### 快速开始
 
-只需 **3 步**即可在本地启动文档网站：
+只需 **3 步**即可在本地启动文档网站。
 
-**前置条件：** [Hugo Extended](https://github.com/gohugoio/hugo/releases) v0.95+ 和 Node.js v16+
+**前置条件：** Go 1.27+ 和 [Hugo Extended](https://github.com/gohugoio/hugo/releases) 0.165.0。OINK 不需要 Node.js、npm、PostCSS 或检出到仓库内的主题副本。
 
 ```bash
 # 1. 克隆仓库
 git clone https://github.com/apache/hugegraph-doc.git
 cd hugegraph-doc
 
-# 2. 安装依赖
-npm install
+# 2. 检查固定的主题模块
+hugo mod graph
 
 # 3. 启动开发服务器（支持热重载）
 hugo server
@@ -119,8 +116,7 @@ hugo server
 
 打开 http://localhost:1313 预览网站。
 
-> **常见问题：** 如果遇到 `TOCSS: failed to transform "scss/main.scss"` 错误，
-> 说明你需要安装 Hugo **Extended** 版本，而不是标准版本。
+模块图必须解析为 `github.com/pgsty/oink@v1.0.0`。需要执行与生产一致的检查时，请运行下方的严格构建命令。
 
 ### 仓库结构
 
@@ -138,12 +134,13 @@ hugegraph-doc/
 │   │   └── community/          #    社区页面
 │   └── en/                     # 🇺🇸 英文文档（与 cn/ 结构一致）
 │
-├── themes/docsy/               # 🎨 Docsy 主题 (git submodule)
-├── assets/                     # 🖼️  自定义资源 (fonts, images, scss)
+├── data/                       # 🧭 首页与页尾数据
+├── i18n/cn.yaml                # 🌐 /cn/ 语言的 OINK 界面文案
+├── assets/                     # 🖼️  项目品牌资源
 ├── layouts/                    # 📐 Hugo 模板覆盖
 ├── static/                     # 📁 静态文件
-├── config.toml                 # ⚙️  站点配置
-└── package.json                # 📦 Node.js 依赖
+├── go.mod / go.sum             # 📌 固定的 OINK 模块
+└── hugo.yaml                   # ⚙️  站点配置
 ```
 
 ### 如何贡献
@@ -165,17 +162,14 @@ hugegraph-doc/
 
 #### 详细指南
 
-查看 [contribution.md](./contribution.md) 了解：
-- 各平台 Hugo 安装方法
-- Docsy 主题定制
-- 翻译技巧
+查看 [contribution.md](./contribution.md) 了解固定工具链、严格构建、OINK 定制和翻译要求。
 
 ### 常用命令
 
 | 命令 | 说明 |
 |------|------|
 | `hugo server` | 启动开发服务器（热重载） |
-| `hugo --minify` | 构建生产版本到 `./public/` |
+| `hugo --cleanDestinationDir --gc --minify --environment production --printPathWarnings --printI18nWarnings --panicOnWarning` | 严格构建生产版本到 `./public/` |
 | `hugo server -p 8080` | 指定端口 |
 
 ---

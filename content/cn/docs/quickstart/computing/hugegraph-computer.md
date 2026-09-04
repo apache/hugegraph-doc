@@ -32,6 +32,8 @@ mvn clean package -DskipTests
 
 ## 本地运行 PageRank
 
+> 您可以使用 `-c` 参数指定配置文件，更多 computer 配置请看：[Computer Config Options](/cn/docs/quickstart/computing/hugegraph-computer-config#computer-配置选项)
+
 先启动 HugeGraph Server 和 etcd。然后在分发目录编辑 `conf/computer.properties`：
 
 ```properties
@@ -69,6 +71,8 @@ bin/start-computer.sh -d local -r worker
 - `-d, --drive`：选择 `local`、`k8s` 或 `yarn`。
 - `-r, --role`：选择 `master` 或 `worker`。
 
+如果没有启用 OLAP 索引，则需要启用，更多参考：[modify-graphs-read-mode](/cn/docs/clients/restful-api/graphs/#634-设置某个图的读模式该操作需要管理员权限)
+
 计算结果写回 HugeGraph OLAP 属性后，需要让 Server 的图读取模式包含 OLAP 数据，再查询对应属性。具体写回类和属性名由算法参数及 `output.*` 配置决定。
 
 ## 在 Kubernetes 中提交作业
@@ -79,6 +83,51 @@ bin/start-computer.sh -d local -r worker
 kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/master/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
 kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/master/computer/computer-k8s-operator/manifest/hugegraph-computer-operator.yaml
 ```
+
+### 3.2 在 Kubernetes 中运行 PageRank 算法
+
+> 要使用 HugeGraph-Computer 运行算法，您需要先部署 HugeGraph-Server
+
+#### 3.2.1 安装 HugeGraph-Computer CRD
+
+```bash
+# Kubernetes version >= v1.16
+kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/master/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
+
+# Kubernetes version < v1.16
+kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/master/computer-k8s-operator/manifest/hugegraph-computer-crd.v1beta1.yaml
+```
+
+#### 3.2.2 显示 CRD
+
+```bash
+kubectl get crd
+
+NAME                                        CREATED AT
+hugegraphcomputerjobs.hugegraph.apache.org   2021-09-16T08:01:08Z
+```
+
+#### 3.2.3 安装 hugegraph-computer-operator&etcd-server
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/master/computer-k8s-operator/manifest/hugegraph-computer-operator.yaml
+```
+
+#### 3.2.4 等待 hugegraph-computer-operator&etcd-server 部署完成
+
+```bash
+kubectl get pod -n hugegraph-computer-operator-system
+
+NAME                                                              READY   STATUS    RESTARTS   AGE
+hugegraph-computer-operator-controller-manager-58c5545949-jqvzl   1/1     Running   0          15h
+hugegraph-computer-operator-etcd-28lm67jxk5                       1/1     Running   0          15h
+```
+
+#### 3.2.5 提交作业
+
+> 更多 computer crd spec 请看：[Computer CRD](/docs/quickstart/computing/hugegraph-computer-config#hugegraph-computer-crd)
+>
+> 更多 Computer 配置请看：[Computer Config Options](/cn/docs/quickstart/computing/hugegraph-computer-config#computer-配置选项)
 
 提交 PageRank 示例：
 

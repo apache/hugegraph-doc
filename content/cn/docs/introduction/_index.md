@@ -3,8 +3,9 @@ title: "Apache HugeGraph 介绍"
 linkTitle: "系统介绍"
 weight: 1
 aliases:
-  - /cn/docs/introduction/readme/
-  - /cn/docs/introduction/README/
+  # Hugo 0.165 prefixes aliases with the current language path.
+  - /docs/introduction/readme/
+  - /docs/introduction/README/
 ---
 
 ## Apache HugeGraph 是什么
@@ -91,3 +92,7 @@ HugeGraph-AI 要求 Python 3.10 或更高版本，使用 `uv` 管理工作区。
 - 开发者邮件列表：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)
 - [邮件列表订阅方法](/cn/docs/contribution-guidelines/subscribe/)
 - 安全问题：[security@hugegraph.apache.org](mailto:security@hugegraph.apache.org)
+- 微信公众号：Apache HugeGraph
+
+![微信公众号二维码](/images/docs/community/wechat.png)
+{width="300" height="94"}

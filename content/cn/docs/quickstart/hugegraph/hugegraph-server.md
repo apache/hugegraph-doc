@@ -2,9 +2,11 @@
 title: "HugeGraph-Server Quick Start"
 linkTitle: "安装/构建 HugeGraph-Server"
 weight: 1
+aliases:
+  - /docs/quickstart/hugegraph-server/
 ---
 
-### 1 HugeGraph-Server 概述
+## 1 HugeGraph-Server 概述
 
 HugeGraph-Server 是 HugeGraph 项目的核心部分，包含 graph-core、backend、API 等子模块。
 
@@ -15,9 +17,9 @@ Core 模块是 Tinkerpop 接口的实现，Backend 模块用于管理数据存�
 > 文档中会出现 `HugeGraph-Server` 与 `HugeGraphServer` 两种写法，其他组件也类似。
 > 两者在含义上并无明显差异，可简单区分为：`HugeGraph-Server` 表示服务端相关组件代码，`HugeGraphServer` 表示服务进程。
 
-### 2 依赖
+## 2 依赖
 
-#### 2.1 安装 Java 11 (JDK 11)
+### 2.1 安装 Java 11 (JDK 11)
 
 HugeGraph-Server 1.7.0 的源码以 Java 11 编译，运行和源码构建均需使用 Java 11 或更高版本。
 
@@ -25,7 +27,7 @@ HugeGraph-Server 1.7.0 的源码以 Java 11 编译，运行和源码构建均需
 
 > 1.7.0 起不再支持 Java 8。
 
-### 3 部署
+## 3 部署
 
 有四种方式可以部署 HugeGraph-Server 组件：
 
@@ -36,7 +38,7 @@ HugeGraph-Server 1.7.0 的源码以 Java 11 编译，运行和源码构建均需
 
 > 不要把 Gremlin、Cypher 等查询接口直接暴露到公网。生产环境应启用[认证与授权](/cn/docs/config/config-authentication/)，限制网络访问并保留审计日志；部署建议见[安全指南](/cn/docs/guides/security/)。
 
-#### 3.1 使用 Docker 容器 (便于**测试**)
+### 3.1 使用 Docker 容器 (便于**测试**)
 <!-- 3.1 is linked by another place. if change 3.1's title, please check -->
 
 可参考 [Docker 部署方式](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
@@ -51,7 +53,7 @@ HugeGraph-Server 1.7.0 的源码以 Java 11 编译，运行和源码构建均需
 
 如果使用 Docker Desktop，则可以按如下方式设置相关选项：
 <div style="text-align: center;">
-    <img src="/docs/images/images-server/31docker-option.jpg" alt="image" style="width:33%;">
+    <img src="/docs/images/images-server/31docker-option.jpg" alt="Docker Desktop 中 HugeGraph 容器的运行设置" style="width:33%;">
 </div>
 
 
@@ -79,7 +81,7 @@ HUGEGRAPH_VERSION=1.7.0 docker compose up -d
 >
 > 2. 推荐使用 `release tag` (如 `1.7.0/1.x.0`) 以获取稳定版。使用 `latest` tag 可以使用开发中的最新功能。
 
-#### 3.2 下载 tar 包
+### 3.2 下载 tar 包
 
 ```bash
 # 1.7.0 是毕业前发布的历史制品，文件名仍带 incubating
@@ -87,7 +89,7 @@ wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 ```
 
-#### 3.3 源码编译
+### 3.3 源码编译
 
 源码编译前请确保本机有安装 `wget/curl` 命令
 
@@ -113,41 +115,38 @@ mvn package -DskipTests
 
 执行成功后，在 hugegraph 目录下生成 `*hugegraph-*.tar.gz` 文件，就是编译生成的 tar 包。
 
-<details>
-<summary>过时的 tools 工具安装</summary>
+> [!DETAILS]- 过时的 tools 工具安装
+> #### 3.4 使用 tools 工具部署 (Outdated)
+>
+> HugeGraph-Tools 提供了一键部署的命令行工具，用户可以使用该工具快速地一键下载、解压、配置并启动 HugeGraph-Server 和 HugeGraph-Hubble，最新的 HugeGraph-Toolchain 中已经包含所有的这些工具，直接下载它解压就有工具包集合了
+>
+> ```bash
+> # download toolchain package, it includes loader + tool + hubble, please check the latest version (here is 1.7.0)
+> wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz
+> tar zxf *hugegraph-*.tar.gz
+> # enter the tool's package
+> cd *hugegraph*/*tool*
+> ```
+>
+> > 注：`${version}` 为版本号，最新版本号可参考 [Download 页面](/docs/download/download)，或直接从 Download 页面点击链接下载
+>
+> HugeGraph-Tools 的总入口脚本是 `bin/hugegraph`，用户可以使用 `help` 子命令查看其用法，这里只介绍一键部署的命令。
+>
+> ```bash
+> bin/hugegraph deploy -v {hugegraph-version} -p {install-path} [-u {download-path-prefix}]
+> ```
+>
+> `{hugegraph-version}` 表示要部署的 HugeGraphServer 及 HugeGraphStudio 的版本，用户可查看 `conf/version-mapping.yaml` 文件获取版本信息，`{install-path}` 指定 HugeGraphServer 及 HugeGraphStudio 的安装目录，`{download-path-prefix}` 可选，指定 HugeGraphServer 及 HugeGraphStudio tar 包的下载地址，不提供时使用默认下载地址，比如要启动 0.6 版本的 HugeGraph-Server 及 HugeGraphStudio 将上述命令写为 `bin/hugegraph deploy -v 0.6 -p services` 即可。
 
-#### 3.4 使用 tools 工具部署 (Outdated)
-
-HugeGraph-Tools 提供了一键部署的命令行工具，用户可以使用该工具快速地一键下载、解压、配置并启动 HugeGraph-Server 和 HugeGraph-Hubble，最新的 HugeGraph-Toolchain 中已经包含所有的这些工具，直接下载它解压就有工具包集合了
-
-```bash
-# download toolchain package, it includes loader + tool + hubble, please check the latest version (here is 1.7.0)
-wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz
-tar zxf *hugegraph-*.tar.gz
-# enter the tool's package
-cd *hugegraph*/*tool*
-```
-
-> 注：`${version}` 为版本号，最新版本号可参考 [Download 页面](/docs/download/download)，或直接从 Download 页面点击链接下载
-
-HugeGraph-Tools 的总入口脚本是 `bin/hugegraph`，用户可以使用 `help` 子命令查看其用法，这里只介绍一键部署的命令。
-
-```bash
-bin/hugegraph deploy -v {hugegraph-version} -p {install-path} [-u {download-path-prefix}]
-```
-
-`{hugegraph-version}` 表示要部署的 HugeGraphServer 及 HugeGraphStudio 的版本，用户可查看 `conf/version-mapping.yaml` 文件获取版本信息，`{install-path}` 指定 HugeGraphServer 及 HugeGraphStudio 的安装目录，`{download-path-prefix}` 可选，指定 HugeGraphServer 及 HugeGraphStudio tar 包的下载地址，不提供时使用默认下载地址，比如要启动 0.6 版本的 HugeGraph-Server 及 HugeGraphStudio 将上述命令写为 `bin/hugegraph deploy -v 0.6 -p services` 即可。
-</details>
-
-### 4 配置
+## 4 配置
 
 如果需要快速启动 HugeGraph 仅用于测试，那么只需要进行少数几个配置项的修改即可（见下一节）。
 
 详细的配置介绍请参考[配置文档](/docs/config/config-guide)及[配置项介绍](/docs/config/config-option)。
 
-### 5 启动
+## 5 启动
 
-#### 5.1 使用启动脚本启动
+### 5.1 使用启动脚本启动
 
 启动流程分为“首次启动”和“非首次启动”。首次启动前需要先初始化后端数据库，然后再启动服务。
 
@@ -409,8 +408,43 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 
 > ⚠️ **已废弃**: 此后端从 HugeGraph 1.7.0 版本开始已移除。如需使用，请参考 1.5.x 版本文档。
 
-<details>
-<summary>点击展开/折叠 MySQL 配置及启动方法</summary>
+> [!DETAILS]- 点击展开/折叠 MySQL 配置及启动方法
+> > 由于 MySQL 是在 GPL 协议下，与 Apache 协议不兼容，用户需自行安装 MySQL，[下载地址](https://dev.mysql.com/downloads/mysql/)
+>
+> 下载 MySQL 的[驱动包](https://repo1.maven.org/maven2/mysql/mysql-connector-java/)，比如 `mysql-connector-java-8.0.30.jar`，并放入 HugeGraph-Server 的 `lib` 目录下。
+>
+> 修改 `hugegraph.properties`，配置数据库 URL，用户名和密码，`store` 是数据库名，如果没有会被自动创建。
+>
+> ```properties
+> backend=mysql
+> serializer=mysql
+>
+> store=hugegraph
+>
+> # mysql backend config
+> jdbc.driver=com.mysql.cj.jdbc.Driver
+> jdbc.url=jdbc:mysql://127.0.0.1:3306
+> jdbc.username=
+> jdbc.password=
+> jdbc.reconnect_max_times=3
+> jdbc.reconnect_interval=3
+> jdbc.ssl_mode=false
+> ```
+>
+> 初始化数据库（第一次启动时或在 `conf/graphs/` 下手动添加了新配置时需要进行初始化）
+>
+> ```bash
+> cd *hugegraph-${version}
+> bin/init-store.sh
+> ```
+>
+> 启动 server
+>
+> ```bash
+> bin/start-hugegraph.sh
+> Starting HugeGraphServer...
+> Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
+> ```
 
 > 由于 MySQL 是在 GPL 协议下，与 Apache 协议不兼容，用户需自行安装 MySQL，[下载地址](https://dev.mysql.com/downloads/mysql/)
 
@@ -455,12 +489,80 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 
 > ⚠️ **已废弃**: 此后端从 HugeGraph 1.7.0 版本开始已移除。如需使用，请参考 1.5.x 版本文档。
 
-<details>
-<summary>点击展开/折叠 Cassandra 配置及启动方法</summary>
+> [!DETAILS]- 点击展开/折叠 Cassandra 配置及启动方法
+> > 用户需自行安装 Cassandra，要求版本 3.0 以上，[下载地址](http://cassandra.apache.org/download/)
+>
+> 修改 hugegraph.properties
+>
+> ```properties
+> backend=cassandra
+> serializer=cassandra
+>
+> # cassandra backend config
+> cassandra.host=localhost
+> cassandra.port=9042
+> cassandra.username=
+> cassandra.password=
+> #cassandra.connect_timeout=5
+> #cassandra.read_timeout=20
+>
+> #cassandra.keyspace.strategy=SimpleStrategy
+> #cassandra.keyspace.replication=3
+> ```
+>
+> 初始化数据库（第一次启动时或在 `conf/graphs/` 下手动添加了新配置时需要进行初始化）
+>
+> ```bash
+> cd *hugegraph-${version}
+> bin/init-store.sh
+> Initing HugeGraph Store...
+> 2017-12-01 11:26:51 1424  [main] [INFO ] org.apache.hugegraph.HugeGraph [] - Opening backend store: 'cassandra'
+> 2017-12-01 11:26:52 2389  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph, try init keyspace later
+> 2017-12-01 11:26:52 2472  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph, try init keyspace later
+> 2017-12-01 11:26:52 2557  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph, try init keyspace later
+> 2017-12-01 11:26:53 2797  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_graph
+> 2017-12-01 11:26:53 2945  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_schema
+> 2017-12-01 11:26:53 3044  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_index
+> 2017-12-01 11:26:53 3046  [pool-3-thread-1] [INFO ] org.apache.hugegraph.backend.Transaction [] - Clear cache on event 'store.init'
+> 2017-12-01 11:26:59 9720  [main] [INFO ] org.apache.hugegraph.HugeGraph [] - Opening backend store: 'cassandra'
+> 2017-12-01 11:27:00 9805  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph1, try init keyspace later
+> 2017-12-01 11:27:00 9886  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph1, try init keyspace later
+> 2017-12-01 11:27:00 9955  [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Failed to connect keyspace: hugegraph1, try init keyspace later
+> 2017-12-01 11:27:00 10175 [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_graph
+> 2017-12-01 11:27:00 10321 [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_schema
+> 2017-12-01 11:27:00 10413 [main] [INFO ] org.apache.hugegraph.backend.store.cassandra.CassandraStore [] - Store initialized: huge_index
+> 2017-12-01 11:27:00 10413 [pool-3-thread-1] [INFO ] org.apache.hugegraph.backend.Transaction [] - Clear cache on event 'store.init'
+> ```
+>
+> 启动 server
+>
+> ```bash
+> bin/start-hugegraph.sh
+> Starting HugeGraphServer...
+> Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
+> ```
 
-> 用户需自行安装 Cassandra，要求版本 3.0 以上，[下载地址](http://cassandra.apache.org/download/)
+#### 5.1.6 Memory
 
-修改 hugegraph.properties
+> [!DETAILS]- 点击展开/折叠 Memory 配置及启动方法
+> 修改 hugegraph.properties
+>
+> ```properties
+> backend=memory
+> serializer=text
+> ```
+>
+> > Memory 后端的数据是保存在内存中无法持久化的，不需要初始化后端，这也是唯一一个不需要初始化的后端。
+>
+> 启动 server
+>
+> ```bash
+> bin/start-hugegraph.sh
+> Starting HugeGraphServer...
+> Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
+> ```
+>
+> 提示的 url 与 rest-server.properties 中配置的 restserver.url 一致
 
 ```properties
 backend=cassandra
@@ -547,8 +649,43 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
 
 > ⚠️ **已废弃**: 此后端从 HugeGraph 1.7.0 版本开始已移除。如需使用，请参考 1.5.x 版本文档。
 
-<details>
-<summary>点击展开/折叠 ScyllaDB 配置及启动方法</summary>
+> [!DETAILS]- 点击展开/折叠 ScyllaDB 配置及启动方法
+> > 用户需自行安装 ScyllaDB，推荐版本 2.1 以上，[下载地址](https://docs.scylladb.com/getting-started/)
+>
+> 修改 hugegraph.properties
+>
+> ```properties
+> backend=scylladb
+> serializer=scylladb
+>
+> # cassandra backend config
+> cassandra.host=localhost
+> cassandra.port=9042
+> cassandra.username=
+> cassandra.password=
+> #cassandra.connect_timeout=5
+> #cassandra.read_timeout=20
+>
+> #cassandra.keyspace.strategy=SimpleStrategy
+> #cassandra.keyspace.replication=3
+> ```
+>
+> 由于 scylladb 数据库本身就是基于 cassandra 的"优化版"，如果用户未安装 scylladb，也可以直接使用 cassandra 作为后端存储，只需要把 backend 和 serializer 修改为 scylladb，host 和 post 指向 cassandra 集群的 seeds 和 port 即可，但是并不建议这样做，这样发挥不出 scylladb 本身的优势了。
+>
+> 初始化数据库（第一次启动时或在 `conf/graphs/` 下手动添加了新配置时需要进行初始化）
+>
+> ```bash
+> cd *hugegraph-${version}
+> bin/init-store.sh
+> ```
+>
+> 启动 server
+>
+> ```bash
+> bin/start-hugegraph.sh
+> Starting HugeGraphServer...
+> Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
+> ```
 
 > 用户需自行安装 ScyllaDB，推荐版本 2.1 以上，[下载地址](https://docs.scylladb.com/getting-started/)
 
@@ -611,77 +748,73 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 
 代表创建示例图成功。
 
-#### 5.2 使用 Docker
+### 5.2 使用 Docker
 
 在 [3.1 使用 Docker 容器](#31-使用-docker-容器-便于测试) 中，我们已经介绍了如何使用 `docker` 部署 `hugegraph-server`。还可以通过切换后端存储或设置参数，在 Server 启动时加载样例图。
 
-##### 5.2.1 使用 Cassandra 作为后端
+#### 5.2.1 使用 Cassandra 作为后端
 
 > ⚠️ **已废弃**: Cassandra 后端从 HugeGraph 1.7.0 版本开始已移除。如需使用，请参考 1.5.x 版本文档。
 
-<details>
-<summary>点击展开/折叠 Cassandra 配置及启动方法</summary>
+> [!DETAILS]- 点击展开/折叠 Cassandra 配置及启动方法
+> 在使用 Docker 的时候，我们可以使用 Cassandra 作为后端存储。我们更加推荐直接使用 docker-compose 来对于 server 以及 Cassandra 进行统一管理
+>
+> 样例的 `docker-compose.yml` 可以在 [github](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/example/docker-compose-cassandra.yml) 中获取，使用 `docker-compose up -d` 启动。(如果使用 cassandra 4.0 版本作为后端存储，则需要大约两个分钟初始化，请耐心等待)
+>
+> ```yaml
+> version: "3"
+>
+> services:
+>   server:
+>     image: hugegraph/hugegraph
+>     container_name: cas-server
+>     ports:
+>       - 8080:8080
+>     environment:
+>       hugegraph.backend: cassandra
+>       hugegraph.serializer: cassandra
+>       hugegraph.cassandra.host: cas-cassandra
+>       hugegraph.cassandra.port: 9042
+>     networks:
+>       - ca-network
+>     depends_on:
+>       - cassandra
+>     healthcheck:
+>       test: ["CMD", "bin/gremlin-console.sh", "--" ,"-e", "scripts/remote-connect.groovy"]
+>       interval: 10s
+>       timeout: 30s
+>       retries: 3
+>
+>   cassandra:
+>     image: cassandra:4
+>     container_name: cas-cassandra
+>     ports:
+>       - 7000:7000
+>       - 9042:9042
+>     security_opt:
+>       - seccomp:unconfined
+>     networks:
+>       - ca-network
+>     healthcheck:
+>       test: ["CMD", "cqlsh", "--execute", "describe keyspaces;"]
+>       interval: 10s
+>       timeout: 30s
+>       retries: 5
+>
+> networks:
+>   ca-network:
+>
+> volumes:
+>   hugegraph-data:
+> ```
+>
+> 在这个 yaml 中，需要在环境变量中以 `hugegraph.<parameter_name>`的形式进行参数传递，配置 Cassandra 相关的参数。
+>
+> 具体来说，在 `hugegraph.properties` 配置文件中，提供了 `backend=xxx`、`cassandra.host=xxx` 等配置项。为了通过环境变量传递这些配置，需要在配置项前加上 `hugegraph.`，例如 `hugegraph.backend` 和 `hugegraph.cassandra.host`。
+>
+> 其他配置可以参照 [4 配置](#4-配置)
 
-在使用 Docker 的时候，我们可以使用 Cassandra 作为后端存储。我们更加推荐直接使用 docker-compose 来对于 server 以及 Cassandra 进行统一管理
-
-样例的 `docker-compose.yml` 可以在 [github](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/example/docker-compose-cassandra.yml) 中获取，使用 `docker-compose up -d` 启动。(如果使用 cassandra 4.0 版本作为后端存储，则需要大约两个分钟初始化，请耐心等待)
-
-```yaml
-version: "3"
-
-services:
-  server:
-    image: hugegraph/hugegraph
-    container_name: cas-server
-    ports:
-      - 8080:8080
-    environment:
-      hugegraph.backend: cassandra
-      hugegraph.serializer: cassandra
-      hugegraph.cassandra.host: cas-cassandra
-      hugegraph.cassandra.port: 9042
-    networks:
-      - ca-network
-    depends_on:
-      - cassandra
-    healthcheck:
-      test: ["CMD", "bin/gremlin-console.sh", "--" ,"-e", "scripts/remote-connect.groovy"]
-      interval: 10s
-      timeout: 30s
-      retries: 3
-
-  cassandra:
-    image: cassandra:4
-    container_name: cas-cassandra
-    ports:
-      - 7000:7000
-      - 9042:9042
-    security_opt:
-      - seccomp:unconfined
-    networks:
-      - ca-network
-    healthcheck:
-      test: ["CMD", "cqlsh", "--execute", "describe keyspaces;"]
-      interval: 10s
-      timeout: 30s
-      retries: 5
-
-networks:
-  ca-network:
-
-volumes:
-  hugegraph-data:
-```
-
-在这个 yaml 中，需要在环境变量中以 `hugegraph.<parameter_name>`的形式进行参数传递，配置 Cassandra 相关的参数。
-
-具体来说，在 `hugegraph.properties` 配置文件中，提供了 `backend=xxx`、`cassandra.host=xxx` 等配置项。为了通过环境变量传递这些配置，需要在配置项前加上 `hugegraph.`，例如 `hugegraph.backend` 和 `hugegraph.cassandra.host`。
-
-其他配置可以参照 [4 配置](#4-配置)
-
-</details>
-
-##### 5.2.2 启动 server 的时候创建示例图
+#### 5.2.2 启动 server 的时候创建示例图
 
 在 Docker 启动时设置环境变量 `PRELOAD=true`，即可在启动脚本执行过程中加载样例数据。
 
@@ -721,9 +854,9 @@ volumes:
 代表创建示例图成功。
 
 
-### 6 访问 Server
+## 6 访问 Server
 
-#### 6.1 服务启动状态校验
+### 6.1 服务启动状态校验
 
 `jps` 查看服务进程
 
@@ -740,7 +873,7 @@ echo `curl -o /dev/null -s -w %{http_code} "http://localhost:8080/graphspaces/DE
 
 返回结果 200，代表 server 启动正常
 
-#### 6.2 请求 Server
+### 6.2 请求 Server
 
 HugeGraphServer 的 RESTful API 包括多种类型的资源，典型的包括 graph、schema、gremlin、traverser 和 task
 
@@ -750,7 +883,7 @@ HugeGraphServer 的 RESTful API 包括多种类型的资源，典型的包括 gr
 - `traverser` 包含各种高级查询，包括最短路径、交叉点、N 步可达邻居等
 - `task` 包含异步任务的查询和删除
 
-##### 6.2.1 获取 `hugegraph` 的顶点及相关属性
+#### 6.2.1 获取 `hugegraph` 的顶点及相关属性
 
 ```bash
 curl http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
@@ -833,28 +966,28 @@ _说明_
 另外也可以通过访问 `localhost:8080/swagger-ui/index.html` 查看 API。
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui.png" alt="image">
+  <img src="/docs/images/images-server/swagger-ui.png" alt="Swagger UI 中的 HugeGraph RESTful API 接口列表">
 </div>
 
 在使用 Swagger UI 调试 HugeGraph 提供的 API 时，如果 HugeGraph Server 开启了鉴权模式，可以在 Swagger 页面输入鉴权信息。
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="image">
+  <img src="/docs/images/images-server/swagger-ui-where-set-auth-example.png" alt="HugeGraph Swagger UI 中的 Authorize 按钮">
 </div>
 
 当前 HugeGraph 支持基于 Basic 和 Bearer 两种形式设置鉴权信息。
 
 <div style="text-align: center;">
-  <img src="/docs/images/images-server/swagger-ui-set-auth-example.png" alt="image">
+  <img src="/docs/images/images-server/swagger-ui-set-auth-example.png" alt="Swagger UI 授权对话框中的 Basic 和 Bearer 凭据输入框">
 </div>
 
-### 7 停止 Server
+## 7 停止 Server
 
 ```bash
 cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-server-incubating-1.7.0
 bin/stop-hugegraph.sh
 ```
 
-### 8 使用 IntelliJ IDEA 调试 Server
+## 8 使用 IntelliJ IDEA 调试 Server
 
 请参考[在 IDEA 中配置 Server 开发环境](/docs/contribution-guidelines/hugegraph-server-idea-setup)

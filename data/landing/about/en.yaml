@@ -1,0 +1,25 @@
+sections:
+  - type: hero
+    data:
+      eyebrow: Apache HugeGraph
+      title: One ecosystem for graph data and graph intelligence
+      lead: HugeGraph is an Apache top-level project that covers transactional graph storage, distributed analytics, visualization, data loading, and graph AI.
+      actions:
+        - { label: Read the documentation, url: /docs/, style: primary }
+        - { label: Join the community, url: /community/, style: ghost }
+  - type: cards
+    data:
+      title: The project family
+      columns: 3
+      items:
+        - { title: Server, desc: Real-time OLTP graph queries with pluggable storage., icon: fa-solid fa-database }
+        - { title: Computer and Vermeer, desc: Distributed and in-memory OLAP graph processing., icon: fa-solid fa-chart-line }
+        - { title: Toolchain, desc: Clients, Loader, Hubble, and operational tools., icon: fa-solid fa-toolbox }
+        - { title: HugeGraph-AI, desc: GraphRAG, knowledge graphs, and graph learning., icon: fa-solid fa-brain }
+  - type: cta
+    data:
+      title: Built in the open at Apache
+      desc: Follow development, report issues, and contribute through the Apache HugeGraph community.
+      actions:
+        - { label: View on GitHub, url: 'https://github.com/apache/hugegraph', external: true, style: primary }
+

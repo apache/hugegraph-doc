@@ -68,11 +68,15 @@ flowchart TD
 3. 把问题、Schema、示例和已匹配顶点填入提示词。
 4. 调用 LLM 生成 Gremlin，并按所选输出类型决定是否执行。
 
+![RAG 查询范围选择](/images/docs/hugegraph-ai/quick-start-03.jpg)
+
 自定义提示词必须包含 `{query}`、`{schema}`、`{example}` 和 `{vertices}`。缺少任一占位符时，REST API 会拒绝请求。
 
 ## 4. 图工具与管理工具
 
 `Graph Tools` 标签页用于直接执行图操作。`Admin Tools` 提供日志等管理能力。启用登录后，页面和 API 需要使用 `USER_TOKEN`；日志接口还要求单独配置安全的 `ADMIN_TOKEN`。
+
+![RAG 界面中抽取的关键词](/images/docs/hugegraph-ai/quick-start-04.png)
 
 ## 5. 提示词语言
 

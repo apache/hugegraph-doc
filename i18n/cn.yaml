@@ -1,0 +1,236 @@
+# Alert labels
+callout_caution: 注意
+callout_important: 重要
+callout_note: 说明
+callout_tip: 提示
+callout_warning: 警告
+callout_success: 成功
+callout_danger: 危险
+callout_question: 问题
+callout_example: 示例
+callout_quote: 引用
+callout_details: 详情
+
+# UI strings. Buttons and similar.
+ui_pager_prev: 上一页
+ui_pager_next: 下一页
+ui_search: 搜索…
+ui_search_empty: 未找到结果
+ui_search_loading: 正在加载搜索索引……
+ui_search_results: '找到 {count} 条结果'
+ui_search_nav: 选择
+ui_search_open: 打开
+ui_search_close: 关闭
+ui_palette_actions: 操作
+ui_palette_page_actions: 页面操作
+ui_palette_preferences: 偏好设置
+ui_palette_commands: 命令
+ui_palette_quick_links: 快速链接
+ui_palette_no_commands: 未找到匹配命令
+ui_palette_choose: 请选择一项
+ui_palette_action_failed: 无法完成此操作
+ui_palette_pages: 页面
+ui_palette_index_unavailable: 页面索引暂不可用，操作仍可使用
+ui_sidebar_nav: 章节导航
+ui_heading_self_link: 标题锚点
+ui_field_self_link: 链接到此字段
+ui_preview_source: Markdown
+ui_preview_rendered: 渲染结果
+ui_main_nav: 主导航
+ui_home: 首页
+ui_sidebar_expand: 展开侧栏
+ui_sidebar_collapse: 收起侧栏
+ui_drawer_open: 打开导航
+ui_drawer_close: 关闭导航
+ui_root_menu_label: 选择栏目
+ui_tags_title: 标签
+ui_tag_title: 标签
+ui_categories_title: 分类
+ui_category_title: 分类
+ui_modules_title: 模块
+ui_module_title: 模块
+ui_authors_title: 作者
+ui_author_title: 作者
+ui_theme_toggle: 切换配色
+ui_language: 语言切换
+ui_theme: 主题颜色
+ui_theme_auto: 跟随系统
+ui_theme_light: 亮色
+ui_theme_dark: 暗色
+ui_toc_hide: 隐藏目录
+ui_toc_show: 显示目录
+ui_language_select: 选择语言
+ui_language_switch: 切换语言
+ui_skip_to_content: 跳转到主要内容
+ui_page_actions: 操作
+ui_open_in_chatgpt: 在 ChatGPT 中打开
+ui_open_in_claude: 在 Claude 中打开
+ui_open_in_prompt: 请阅读 %s 的内容，以便我就此向你提问。
+ui_copy_markdown: 复制 Markdown 文本
+ui_copy_success: 已复制 Markdown
+ui_copy_error: 无法复制 Markdown
+ui_share: 分享
+ui_share_email: 邮件
+ui_copy_link: 复制链接
+ui_copy_link_success: 已复制链接
+ui_copy_link_error: 无法复制链接
+ui_code_copy: 复制
+ui_code_copy_label: 复制代码
+ui_code_copied: 已复制
+ui_code_copy_error: 复制失败
+ui_code_show_all: 显示全部 {{ .Count }} 行
+ui_code_collapse: 收起代码
+ui_tabs_label: 选项卡
+ui_pricing_featured: 推荐
+ui_pricing_included: 包含
+ui_pricing_excluded: 不包含
+ui_marquee_pause: 暂停滚动
+ui_kbd_with: 加
+ui_keyboard_shortcuts: 键盘快捷键
+ui_shortcut_tree_move: 在侧栏中移动
+ui_shortcut_tree_toggle: 收起或展开章节
+ui_shortcut_tree_open: 打开当前页面
+ui_shortcut_heading_move: 上一个或下一个标题
+ui_shortcut_page_move: 上一页或下一页
+ui_shortcut_search: 搜索
+ui_shortcut_commands: 命令面板
+ui_shortcut_reading_mode: 专注阅读模式
+ui_shortcut_language: 切换语言
+ui_shortcut_theme: 切换主题
+ui_shortcut_route: 切换顶层页面
+ui_page_annotation: 页面信息
+ui_backlinks: 反链
+ui_backlinks_more: "再显示 {{ . }} 条"
+ui_field_required: 必填
+ui_action_unavailable: 暂不可用
+ui_image_zoom_dialog: 图片预览
+ui_image_zoom_open: 打开图片预览
+ui_image_zoom_close: 关闭图片预览
+ui_print_page: 打印此页面
+ui_sidebar_expand_section: 展开章节
+ui_sidebar_collapse_section: 收起章节
+ui_asciinema_timer: 播放时间
+ui_openapi_spec: OpenAPI 规格文件
+ui_release_view: 查看发布
+ui_release_source: 源码
+ui_release_compare: 比较变更
+ui_release_released: 发布于
+ui_release_checksums: 校验和
+ui_assets_file: 文件
+ui_assets_checksum: 校验和
+ui_assets_copy: 复制校验和
+ui_assets_copied: 已复制
+ui_assets_copy_all: 复制全部校验和
+ui_assets_download: 下载资产
+ui_download_channels: 下载渠道
+ui_download_unpublished: 待发布
+
+# Used in sentences such as "All Tags"
+ui_all: 全部
+
+# Footer text
+footer_all_rights_reserved: 保留所有权利
+
+ui_footer_collapse: 收起页脚链接
+ui_footer_expand: 展开页脚链接
+
+# Post (blog, article, etc.)
+post_last_mod: 最后修改
+post_upstream: "{{ .work }}，{{ .copyright }}，依 {{ .license }} 授权使用，详见{{ .notice }}。"
+post_upstream_adapted: 本页改编自 {{ .work }}，{{ .copyright }}，依 {{ .license }} 授权，详见{{ .notice }}与{{ .history }}。
+post_upstream_adapted_plain: 本页改编自 {{ .work }}，{{ .copyright }}，依 {{ .license }} 授权，详见{{ .notice }}。
+post_upstream_notice: 归属声明
+post_upstream_history: 修改历史
+post_translated: 本页为译文，如有出入以{{ .original }}为准。
+post_translated_original: 原文
+post_edit_this: 编辑当前页面
+post_view_markdown: 查阅 Markdown 源码
+post_create_child_page: 添加子页面
+post_create_issue: 提交文档议题
+post_create_project_issue: 提交项目议题
+post_reading_time: 分钟阅读
+post_less_than_a_minute_read: 1分钟内可阅读完
+post_word_count: '{{ .Count }} 字'
+post_reading_minutes: '{{ .Minutes }} 分钟'
+post_read_original: 阅读原文
+
+# Print support
+print_printable_section: 这是本节的多页打印视图。
+print_click_to_print: 点击此处打印
+print_show_regular: 返回本页常规视图
+print_entire_section: 打印完整章节
+
+# Feedback
+feedback_question: 这篇文档解决了你的问题吗？
+feedback_positive: 是
+feedback_negative: 否
+feedback_thanks: 感谢反馈，我们会据此改进这篇文档。
+feedback_reason_prompt: 哪里没有解决？（可选）
+feedback_reason_missing: 缺少必要信息
+feedback_reason_outdated: 内容错误或已过时
+feedback_reason_failed: 操作步骤没有生效
+feedback_reason_unclear: 内容难以理解
+feedback_details: 在评论区补充详情
+feedback_change: 修改反馈
+
+# Table of contents
+toc_on_this_page: 目录
+
+# Error pages
+error_404_title: 页面不存在
+error_404_body: >-
+  抱歉，该页面不存在。可以从首页重新开始。
+error_404_home: 返回首页
+
+# Version banner
+version_banner_archived: >-
+  文档 {{ .Version }} 版本已不再积极维护，你当前浏览的是一份归档快照。
+version_banner_latest: 最新文档请参阅 {{ .Link }}。
+version_banner_latest_link: 最新版本
+
+# Comments
+comments_noscript: 加载评论需要启用 JavaScript。
+comments_noscript_link: 在 GitHub 上查看讨论。
+
+# LLM 页面操作
+ui_open_in_prompt_label: 就本页提问
+ui_view_history: 查阅编辑历史
+ui_table_scroll: "可横向滚动的表格"
+ui_filetree_divider: "拖动以调整目录树备注列宽度"
+book_figure: 图
+book_table: 表
+book_equation: 公式
+book_example: 示例
+book_toc: 全书目录
+book_draft: 草稿
+book_draft_notice: 本章仍在修订中。
+contributors_count: 位贡献者
+
+# Article series
+ui_series_title: 系列
+ui_series_part: 第 {{ .Part }} / 共 {{ .Total }} 篇
+
+# Replace these values with reviewed translations when available.
+ui_list_separator: 、
+
+# Footer text
+post_meta_by_in: "{{ .Authors }} 发布于 {{ .Section }}"
+post_meta_in: "发布于 {{ .Section }}"
+
+# Replace these values with reviewed translations when available.
+ui_blog_index_toggle: 切换布局
+
+# Markdown output
+markdown_llms_index: "LLMS 索引："
+markdown_backlinks: "反链："
+markdown_section_pages: "本节页面："
+
+# Explicit English fallbacks for untranslated OINK UI strings.
+# Replace these values with reviewed translations when available.
+ui_diagram_expand: 放大图表
+ui_diagram_zoom_dialog: 图表预览
+ui_diagram_zoom_close: 关闭图表预览
+ui_diagram_zoom_in: 放大
+ui_diagram_zoom_out: 缩小
+ui_diagram_zoom_reset: 复位视图
+ui_diagram_error: 图表无法渲染

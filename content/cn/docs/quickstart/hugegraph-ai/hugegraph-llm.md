@@ -8,6 +8,8 @@ HugeGraph-LLM 用于知识图谱构建、GraphRAG 和自然语言图查询。演
 
 ## 环境要求
 
+> AI 总结项目文档：[Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
+
 - Python 3.10 或 3.11
 - `uv` 0.7 或更高版本
 - HugeGraph Server 1.5 或更高版本
@@ -70,6 +72,8 @@ Schema 可以是内联 JSON，也可以是现有图名。通过 REST API 使用�
 ### GraphRAG
 
 查询流程可以组合直接回答、chunk 向量召回和图召回。图召回先抽取关键词并匹配顶点，再尝试 Text2Gremlin；生成或执行失败时可回退到预定义的图遍历方式。请求参数可控制返回数量、向量距离阈值、模板数量和重排序方式。
+
+![知识图谱构建器](/images/docs/hugegraph-ai/gradio-kg.jpg)
 
 ### Text2Gremlin
 

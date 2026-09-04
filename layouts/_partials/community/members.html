@@ -6,7 +6,7 @@
 -}}
 {{- $copy := index $labels $page.Language.Lang | default (index $labels "en") -}}
 {{- $style := resources.Get "scss/community-members.scss" | toCSS | minify | fingerprint -}}
-<link rel="stylesheet" href="{{ $style.RelPermalink }}" integrity="{{ $style.Data.Integrity }}">
+<link rel="stylesheet" href="{{ $style.RelPermalink }}" integrity="{{ $style.Data.Integrity }}" crossorigin="anonymous">
 <section id="project-members" class="td-landing-section hg-community-members" aria-labelledby="project-members-title">
   <div class="td-site-container">
     <div class="td-landing-section__header">

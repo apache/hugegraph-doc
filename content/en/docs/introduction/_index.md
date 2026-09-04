@@ -3,7 +3,7 @@ title: "Apache HugeGraph Introduction"
 linkTitle: "System Introduction"
 weight: 1
 search_keywords: [HugeGraph overview, graph database introduction, architecture]
-search_boost: 1.6
+search_boost: 3
 aliases:
   # Hugo 0.165 prefixes aliases with the current language path.
   - /docs/introduction/readme/

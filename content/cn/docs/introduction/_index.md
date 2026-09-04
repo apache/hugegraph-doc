@@ -3,7 +3,7 @@ title: "Apache HugeGraph 介绍"
 linkTitle: "系统介绍"
 weight: 1
 search_keywords: [HugeGraph 介绍, 图数据库简介, 系统架构]
-search_boost: 1.6
+search_boost: 3
 aliases:
   # Hugo 0.165 prefixes aliases with the current language path.
   - /docs/introduction/readme/

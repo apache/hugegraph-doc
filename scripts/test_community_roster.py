@@ -1,0 +1,53 @@
+import importlib.util
+import pathlib
+import unittest
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+SPEC = importlib.util.spec_from_file_location("community_roster", ROOT / "scripts" / "community_roster.py")
+roster = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader
+SPEC.loader.exec_module(roster)
+
+
+class CommunityRosterTests(unittest.TestCase):
+    def fixture(self):
+        return (
+            {"committees": {"hugegraph": {"chair": {"chair": {"name": "Chair Person"}}, "roster": {"chair": {}, "zeta": {}}}}},
+            {"projects": {"hugegraph": {"owners": ["zeta", "chair"], "members": ["other", "zeta", "chair"]}}},
+            {"people": {"chair": {"name": "Chair Person"}, "zeta": {"name": "Alpha Owner"}, "other": {"name": "Beta Committer"}}},
+            {"schema_version": 1, "mappings": {}},
+        )
+
+    def test_build_roster_derives_roles_and_order(self):
+        candidate = roster.build_roster(*self.fixture())
+        self.assertEqual(["chair", "zeta"], [p["asf_id"] for p in candidate["roles"]["pmc"]])
+        self.assertEqual(["other"], [p["asf_id"] for p in candidate["roles"]["committers"]])
+        self.assertTrue(candidate["roles"]["pmc"][0]["chair"])
+
+    def test_build_roster_rejects_committee_ldap_drift(self):
+        committee, projects, people, mapping = self.fixture()
+        committee["committees"]["hugegraph"]["roster"].pop("zeta")
+        with self.assertRaisesRegex(roster.RosterError, "disagree"):
+            roster.build_roster(committee, projects, people, mapping)
+
+    def test_mapping_requires_unique_numeric_ids(self):
+        mapping = {"schema_version": 1, "mappings": {"one": {"login": "same", "user_id": 1}, "two": {"login": "other", "user_id": 1}}}
+        with self.assertRaisesRegex(roster.RosterError, "duplicate GitHub user_id"):
+            roster._validate_mapping(mapping, {"one", "two"})
+
+    def test_checked_in_bundle_validates(self):
+        self.assertEqual([], roster.validate_bundle(90))
+
+    def test_fetch_failure_preserves_last_good(self):
+        original, old_fetch = roster.ROSTER_PATH.read_bytes(), roster._fetch_json
+        try:
+            roster._fetch_json = lambda _url: (_ for _ in ()).throw(OSError("network down"))
+            with self.assertRaises(OSError):
+                roster.refresh()
+        finally:
+            roster._fetch_json = old_fetch
+        self.assertEqual(original, roster.ROSTER_PATH.read_bytes())
+
+
+if __name__ == "__main__":
+    unittest.main()

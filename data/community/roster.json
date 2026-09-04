@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "project": "hugegraph",
+  "retrieved_at": "2026-09-04T11:03:16Z",
+  "source": {
+    "committee": "https://whimsy.apache.org/public/committee-info.json",
+    "projects": "https://whimsy.apache.org/public/public_ldap_projects.json",
+    "people": "https://whimsy.apache.org/public/public_ldap_people.json",
+    "chair": "jermy",
+    "owners": [
+      "hxd",
+      "jermy",
+      "jin",
+      "lidongdai",
+      "linary",
+      "liyu",
+      "ming",
+      "ningjiang",
+      "panjuan",
+      "vaughn",
+      "vgalaxies",
+      "zhaocong"
+    ],
+    "members": [
+      "guoshoujing",
+      "hxd",
+      "jermy",
+      "jin",
+      "jsong010123",
+      "leizou",
+      "lidongdai",
+      "linary",
+      "liuxiaocs",
+      "liyu",
+      "ming",
+      "ningjiang",
+      "panjuan",
+      "pengjunzhi",
+      "spica",
+      "vaughn",
+      "vgalaxies",
+      "vichayturen",
+      "wangjing",
+      "yangjiaqi",
+      "zhangyi89817",
+      "zhaocong"
+    ]
+  },
+  "roles": {
+    "pmc": [
+      {
+        "asf_id": "jermy",
+        "name": "Jermy Li",
+        "initials": "JL",
+        "chair": true,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=jermy"
+      },
+      {
+        "asf_id": "zhaocong",
+        "name": "Cong Zhao",
+        "initials": "CZ",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=zhaocong"
+      },
+      {
+        "asf_id": "jin",
+        "name": "Imba Jin",
+        "initials": "IJ",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=jin"
+      },
+      {
+        "asf_id": "panjuan",
+        "name": "Juan Pan",
+        "initials": "JP",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=panjuan"
+      },
+      {
+        "asf_id": "lidongdai",
+        "name": "Lidong Dai",
+        "initials": "LD",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=lidongdai"
+      },
+      {
+        "asf_id": "linary",
+        "name": "NingRui Li",
+        "initials": "NL",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=linary"
+      },
+      {
+        "asf_id": "ming",
+        "name": "Simon",
+        "initials": "S",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=ming"
+      },
+      {
+        "asf_id": "ningjiang",
+        "name": "Willem Ning Jiang",
+        "initials": "WN",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=ningjiang"
+      },
+      {
+        "asf_id": "hxd",
+        "name": "Xiangdong Huang",
+        "initials": "XH",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=hxd"
+      },
+      {
+        "asf_id": "vaughn",
+        "name": "Yan Zhang",
+        "initials": "YZ",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=vaughn"
+      },
+      {
+        "asf_id": "liyu",
+        "name": "Yu Li",
+        "initials": "YL",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=liyu"
+      },
+      {
+        "asf_id": "vgalaxies",
+        "name": "Yuchen Ding",
+        "initials": "YD",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=vgalaxies"
+      }
+    ],
+    "committers": [
+      {
+        "asf_id": "yangjiaqi",
+        "name": "Jacky Yang",
+        "initials": "JY",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=yangjiaqi"
+      },
+      {
+        "asf_id": "jsong010123",
+        "name": "Jason",
+        "initials": "J",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=jsong010123"
+      },
+      {
+        "asf_id": "wangjing",
+        "name": "Jing Wang",
+        "initials": "JW",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=wangjing"
+      },
+      {
+        "asf_id": "pengjunzhi",
+        "name": "Junzhi Peng",
+        "initials": "JP",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=pengjunzhi"
+      },
+      {
+        "asf_id": "vichayturen",
+        "name": "Kaiyichen Wei",
+        "initials": "KW",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=vichayturen"
+      },
+      {
+        "asf_id": "leizou",
+        "name": "Lei Zou",
+        "initials": "LZ",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=leizou"
+      },
+      {
+        "asf_id": "guoshoujing",
+        "name": "Shoujing Guo",
+        "initials": "SG",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=guoshoujing"
+      },
+      {
+        "asf_id": "liuxiaocs",
+        "name": "Xiao Liu",
+        "initials": "XL",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=liuxiaocs"
+      },
+      {
+        "asf_id": "zhangyi89817",
+        "name": "Yi Zhang",
+        "initials": "YZ",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=zhangyi89817"
+      },
+      {
+        "asf_id": "spica",
+        "name": "Zhe Wang",
+        "initials": "ZW",
+        "chair": false,
+        "profile_url": "https://people.apache.org/phonebook.html?uid=spica"
+      }
+    ]
+  }
+}

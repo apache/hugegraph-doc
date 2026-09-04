@@ -583,6 +583,42 @@ class VersionUrlTest(unittest.TestCase):
                     self.assertNotIn(old, rendered)
                     self.assertEqual(rendered.count(new), expected_count)
 
+    def test_historical_pages_are_noindex_and_aliases_are_locale_aware(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            for language_prefix in ("", "cn/"):
+                target = (
+                    output
+                    / language_prefix
+                    / "docs/quickstart/hugegraph/hugegraph-server/index.html"
+                )
+                target.parent.mkdir(parents=True)
+                target.write_text(
+                    '<meta name="robots" content="index, follow">',
+                    encoding="utf-8",
+                )
+            self.assertEqual(versioning.mark_historical_pages_noindex(output), 2)
+            self.assertEqual(
+                versioning.write_historical_route_aliases(
+                    output, ORIGIN, "versions/1.0"
+                ),
+                2,
+            )
+            for language_prefix in ("", "cn/"):
+                alias = (
+                    output
+                    / language_prefix
+                    / "docs/quickstart/hugegraph-server/index.html"
+                )
+                body = alias.read_text(encoding="utf-8")
+                self.assertIn('content="noindex,follow"', body)
+                self.assertIn(
+                    f"{ORIGIN}versions/1.0/{language_prefix}"
+                    "docs/quickstart/hugegraph/hugegraph-server/",
+                    body,
+                )
+            self.assertFalse((output / "cn/cn").exists())
+
     def test_exact_legacy_content_fixes_fail_closed_on_count_drift(self) -> None:
         language, relative, old, _, _ = versioning.LEGACY_EXACT_CONTENT_FIXES["1.5"][0]
         for source in ("no expected anchor", f"{old}\n{old}"):

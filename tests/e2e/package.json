@@ -10,6 +10,6 @@
     "test:visual": "playwright test visual.spec.js --reporter=line"
   },
   "devDependencies": {
-    "@playwright/test": "1.55.0"
+    "@playwright/test": "1.62.1"
   }
 }

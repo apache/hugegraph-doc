@@ -98,6 +98,11 @@ HREFLANG_LINK_RE = re.compile(
     r"(?=[^>]*\bhreflang=)[^>]*>",
     re.IGNORECASE,
 )
+INDEX_FOLLOW_META_RE = re.compile(
+    r"<meta\b(?=[^>]*\bname=[\"']?robots(?:[\"'\s>]|$))"
+    r"(?=[^>]*\bcontent=[\"']?index\s*,?\s*follow(?:[\"'\s>]|$))[^>]*>",
+    re.IGNORECASE,
+)
 MARKDOWN_DESTINATION_RE = re.compile(
     r"(?P<open>\]\(\s*<?)(?P<url>(?:https?://[^\s)>]+|/[^\s)>]+))(?P<close>>?[^)]*\))"
 )
@@ -692,9 +697,6 @@ def migrate_legacy_information_architecture(
                 source = intermediate
             target.parent.mkdir(parents=True, exist_ok=True)
             source.rename(target)
-            old_route = "/docs/"
-            old_route += old_relative.removesuffix(".md").replace("/README", "")
-            add_frontmatter_alias(target, old_route + "/")
             changed += 1
         summary = docs / "SUMMARY.md"
         text = summary.read_text(encoding="utf-8")
@@ -2102,6 +2104,53 @@ def exclude_historical_sitemaps(output: pathlib.Path) -> int:
     return removed
 
 
+def mark_historical_pages_noindex(output: pathlib.Path) -> int:
+    """Apply the archive indexing policy to every rendered historical page."""
+    changed = 0
+    for path in sorted(output.rglob("*.html")):
+        source = path.read_text(encoding="utf-8")
+        rendered, count = INDEX_FOLLOW_META_RE.subn(
+            '<meta name="robots" content="noindex,follow">', source
+        )
+        if count:
+            path.write_text(rendered, encoding="utf-8")
+            changed += count
+    return changed
+
+
+def write_historical_route_aliases(
+    output: pathlib.Path, origin: str, publish_path: str
+) -> int:
+    """Create deterministic locale-aware redirects for migrated flat routes."""
+    written = 0
+    site_base = base_url(origin, publish_path)
+    for language_prefix in ("", "cn/"):
+        for old_relative, new_relative in LEGACY_IA_ROUTE_MAP.items():
+            old_route = language_prefix + "docs/" + old_relative.removesuffix(".md")
+            old_route = old_route.replace("/README", "")
+            new_route = language_prefix + "docs/" + new_relative.removesuffix(".md")
+            target = output / new_route / "index.html"
+            if not target.is_file():
+                continue
+            alias = output / old_route / "index.html"
+            if alias.exists():
+                fail(f"historical alias collides with rendered output: {alias}")
+            alias.parent.mkdir(parents=True, exist_ok=True)
+            target_url = urllib.parse.urljoin(site_base, new_route.rstrip("/") + "/")
+            escaped = html.escape(target_url, quote=True)
+            alias.write_text(
+                "<!doctype html>\n"
+                '<html><head><meta charset="utf-8">\n'
+                '<meta name="robots" content="noindex,follow">\n'
+                f'<link rel="canonical" href="{escaped}">\n'
+                f'<meta http-equiv="refresh" content="0; url={escaped}">\n'
+                f'</head><body><a href="{escaped}">Continue</a></body></html>\n',
+                encoding="utf-8",
+            )
+            written += 1
+    return written
+
+
 def remove_non_equivalent_hreflang(
     output: pathlib.Path, origin: str, publish_path: str
 ) -> int:
@@ -2507,6 +2556,14 @@ def validate_artifact(args: argparse.Namespace) -> None:
         document.feed(text)
         require_toc_accessible_name(document, relative)
         alias_target = refresh_target(document)
+        if entry["archived"] and relative not in {"404.html", "cn/404.html"}:
+            robots = [
+                re.sub(r"\s+", "", item.get("content", "").lower())
+                for item in document.meta
+                if item.get("name", "").lower() == "robots"
+            ]
+            if robots != ["noindex,follow"]:
+                fail(f"historical page must be noindex,follow: {relative}: {robots!r}")
         if alias_target:
             validate_url(alias_target, path)
         action_data = {}
@@ -2932,6 +2989,16 @@ def build(args: argparse.Namespace) -> None:
             go_directory + os.pathsep + build_environment.get("PATH", "")
         )
         subprocess.run(command, cwd=assembly, check=True, env=build_environment)
+        route_aliases = (
+            write_historical_route_aliases(
+                output, args.site_origin, entry["publishPath"]
+            )
+            if entry["id"] in {"1.3", "1.0"}
+            else 0
+        )
+        archived_noindex = (
+            mark_historical_pages_noindex(output) if entry["archived"] else 0
+        )
         non_equivalent_hreflang = remove_non_equivalent_hreflang(
             output, args.site_origin, entry["publishPath"]
         )
@@ -2984,6 +3051,8 @@ def build(args: argparse.Namespace) -> None:
                 "docsNavigation": docs_navigation,
                 "urlScoping": url_scoping,
                 "historicalSitemapsRemoved": historical_sitemaps,
+                "historicalNoindexPages": archived_noindex,
+                "historicalRouteAliases": route_aliases,
                 "nonEquivalentHreflangRemoved": non_equivalent_hreflang,
             }
         )

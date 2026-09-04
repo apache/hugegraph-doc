@@ -1,0 +1,9 @@
+{{- /* Docs and Blog use OINK's on-demand image preview in every version. */ -}}
+{{- $enabled := in (slice "docs" "blog") .Section -}}
+{{- if isset .Params "image_zoom" -}}
+  {{- $enabled = partial "validate.html" (dict
+      "value" (index .Params "image_zoom") "kind" "bool"
+      "fallback" $enabled "key" "front matter image_zoom"
+      "where" .Path) -}}
+{{- end -}}
+{{- return (dict "enable" $enabled) -}}

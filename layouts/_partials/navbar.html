@@ -54,7 +54,7 @@
            the fixed controls — version, language, theme, GitHub. */ -}}
       <div class="td-nav-links td-nav-util-zone">
         {{- if $drawerMode }}
-        <button class="td-nav-util hg-sidebar-restore" type="button"
+        <button class="td-nav-util hg-sidebar-restore" type="button" hidden
           data-td-shell-sidebar-toggle title="{{ T "ui_sidebar_expand" }}"
           aria-label="{{ T "ui_sidebar_expand" }}" aria-controls="td-shell-sidebar">
           {{- partialCached "shell/icon.html" "panel-left" "sidebar-restore" -}}

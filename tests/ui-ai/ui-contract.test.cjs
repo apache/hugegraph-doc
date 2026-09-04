@@ -14,6 +14,19 @@ test('disabled AI emits no widget or adapter markup', () => {
   assert.equal(config.includes('widget.kapa.ai'), false);
 });
 
+test('Kapa active resource is dynamic, exact-hosted, and never wildcarded', () => {
+  const adapter = read('assets/js/kapa-adapter.js');
+  const hook = read('layouts/_partials/hooks/body-end.html');
+  assert.match(
+    adapter,
+    /https:\/\/widget\.kapa\.ai\/kapa-widget\.bundle\.js/,
+  );
+  assert.equal(adapter.includes('*.kapa.ai'), false);
+  assert.equal(adapter.includes('https://*'), false);
+  assert.equal(hook.includes('<script src="https://'), false);
+  assert.equal(hook.includes('widget.kapa.ai'), false);
+});
+
 test('theme color and social fallback have one configuration authority', () => {
   const config = read('hugo.yaml');
   const css = read('assets/scss/_styles_project.scss');
@@ -38,10 +51,35 @@ test('documentation menu has five groups and no duplicate version panel', () => 
   assert.equal(navbarItem.includes('$hasVersionLinks'), false);
 });
 
+test('backlinks are limited to latest documentation', () => {
+  const partial = read('layouts/_partials/backlinks-sources.html');
+  assert.match(partial, /Params\.version/);
+  assert.match(partial, /"latest"/);
+  assert.match(partial, /\.Section "docs"/);
+});
+
+test('image zoom is limited to docs and blog', () => {
+  const partial = read('layouts/_partials/content/image-zoom-config.html');
+  assert.match(partial, /slice "docs" "blog"/);
+});
+
 test('shell persistence uses the version and locale scoped key', () => {
   const source = read('assets/js/hugegraph-shell.js');
   assert.match(source, /oink\.sidebar\.v1\./);
   assert.match(source, /config\.version/);
   assert.match(source, /config\.locale/);
   assert.match(source, /sidebar\.inert = isolated/);
+});
+
+test('social fallback asset is exactly 1200 by 630 pixels', () => {
+  const image = fs.readFileSync(
+    path.join(root, 'static/img/social/hugegraph-default.png'),
+  );
+  assert.deepEqual(
+    [...image.subarray(12, 16)],
+    [0x49, 0x48, 0x44, 0x52],
+    'PNG must start with an IHDR chunk',
+  );
+  assert.equal(image.readUInt32BE(16), 1200);
+  assert.equal(image.readUInt32BE(20), 630);
 });

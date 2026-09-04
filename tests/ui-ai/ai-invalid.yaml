@@ -1,0 +1,8 @@
+params:
+  ai_search:
+    enabled: true
+    provider: kapa
+    website_id: test-website-id
+    source_groups:
+      en: test-latest-en
+      cn: ''

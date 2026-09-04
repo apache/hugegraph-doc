@@ -130,6 +130,7 @@
       var drawerOpen =
         html.getAttribute('data-td-shell-drawer') === 'open';
       var isolated = desktop.matches ? collapsed : !drawerOpen;
+      if (restore) restore.hidden = !desktop.matches || !collapsed;
       sidebar.inert = isolated;
       if (isolated) sidebar.setAttribute('aria-hidden', 'true');
       else sidebar.removeAttribute('aria-hidden');

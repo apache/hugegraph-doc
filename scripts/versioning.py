@@ -2924,8 +2924,13 @@ def validate_artifact_alias_target(
         not value
         or not value.startswith(("http://", "https://", "/"))
         or any(char in value for char in ("?", "#", "%", "\\"))
+        or any(
+            char.isspace() or ord(char) < 0x20 or ord(char) == 0x7F
+            for char in value
+        )
     ):
         fail(f"alias target is not canonical in {source}: {value}")
+    absolute_http = value.startswith(("http://", "https://"))
     require_safe_url_syntax(value)
     if not require_safe_url_scheme(value, source):
         fail(f"alias target uses a non-HTTP protocol in {source}: {value}")
@@ -2943,6 +2948,8 @@ def validate_artifact_alias_target(
         or base.fragment
     ):
         fail(f"artifact baseURL is malformed for {entry['id']}: {expected_base}")
+    if absolute_http and (not target.scheme or not target.netloc):
+        fail(f"absolute alias target has no authority in {source}: {value}")
     if target.netloc and (
         target.scheme.lower() != base.scheme.lower()
         or target.netloc.lower() != base.netloc.lower()

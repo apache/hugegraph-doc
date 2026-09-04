@@ -2075,6 +2075,8 @@ class VersionUrlTest(unittest.TestCase):
 
             invalid = (
                 "https://evil.example/docs/current/",
+                "https:///docs/current/",
+                "http:///docs/current/",
                 "mailto:dev@example.com",
                 "tel:+123",
                 "docs/current/",
@@ -2084,6 +2086,7 @@ class VersionUrlTest(unittest.TestCase):
                 "/docs/%63urrent/",
                 "/docs/./current/",
                 "/docs//current/",
+                "/docs/current/\t",
             )
             for value in invalid:
                 with self.subTest(value=value), self.assertRaises(SystemExit):

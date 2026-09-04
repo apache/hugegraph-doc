@@ -12,6 +12,7 @@
 {{- if $ai.enabled -}}
   {{- $lang := .Site.Language.Lang -}}
   {{- $sourceGroup := index $ai.sourceGroups $lang -}}
+  {{- $themeColor := index .Site.Params.ui "theme_color" -}}
   {{- $historical := ne (.Site.Params.version | default "latest") "latest" -}}
   {{- $labels := cond (eq $lang "cn")
       (dict "ask" "询问 AI" "description" "由 Kapa 提供；仅发送你的问题。" "latest" "回答基于 latest 文档" "retry" "重试" "error" "AI 暂时不可用，本地搜索不受影响。")
@@ -21,6 +22,7 @@
     "websiteId" $ai.websiteID
     "sourceGroupId" $sourceGroup
     "locale" (cond (eq $lang "cn") "zh" "en")
+    "themeColor" $themeColor
     "historical" $historical
     "labels" $labels
   -}}

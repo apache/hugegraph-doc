@@ -30,10 +30,15 @@ test('Kapa active resource is dynamic, exact-hosted, and never wildcarded', () =
 test('theme color and social fallback have one configuration authority', () => {
   const config = read('hugo.yaml');
   const css = read('assets/scss/_styles_project.scss');
+  const hook = read('layouts/_partials/hooks/body-end.html');
+  const adapter = read('assets/js/kapa-adapter.js');
   assert.match(config, /theme_color: '#532fc9'/);
   assert.match(config, /images: \[\/img\/social\/hugegraph-default\.png\]/);
   assert.equal(css.includes('$hg-navbar-purple'), false);
   assert.equal(css.includes('#532fc9'), false);
+  assert.match(hook, /"themeColor"\s+\$themeColor/);
+  assert.equal(adapter.includes("'data-project-color': '#532fc9'"), false);
+  assert.match(adapter, /'data-project-color': config\.themeColor/);
 });
 
 test('documentation menu has five groups and no duplicate version panel', () => {
@@ -53,9 +58,22 @@ test('documentation menu has five groups and no duplicate version panel', () => 
 
 test('backlinks are limited to latest documentation', () => {
   const partial = read('layouts/_partials/backlinks-sources.html');
+  const renderer = read('layouts/_partials/backlinks.html');
   assert.match(partial, /Params\.version/);
   assert.match(partial, /"latest"/);
   assert.match(partial, /\.Section "docs"/);
+  assert.match(renderer, /\$shown := first 5/);
+  assert.match(renderer, /\$rest := after 5/);
+  assert.match(renderer, /<details class="td-shell-backlinks__more">/);
+});
+
+test('search retry reconciliation keeps an existing failure control stable', () => {
+  const source = read('assets/js/hugegraph-shell.js');
+  assert.match(source, /if \(failed && existing\) return existing/);
+  assert.equal(
+    source.includes("if (existing) existing.remove();\n      var failure"),
+    false,
+  );
 });
 
 test('image zoom is limited to docs and blog', () => {

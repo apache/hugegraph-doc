@@ -57,6 +57,44 @@ test("disabled AI emits no UI or Kapa request", async ({ page }) => {
   await expect(page.locator("[data-hg-ask-ai]")).toHaveCount(0);
 });
 
+test("search index failure keeps one stable, focusable retry control", async ({
+  page
+}) => {
+  let attempts = 0;
+  await page.route("**/offline-search-index.en.*.json", async (route) => {
+    attempts += 1;
+    if (attempts === 1) await route.abort("failed");
+    else await route.continue();
+  });
+  await page.goto("/docs/");
+  await page.locator("[data-td-shell-search-open]").first().click();
+  await page.locator(".td-shell-search__input").fill("server");
+  const retry = page.locator("[data-hg-search-retry]");
+  await expect(retry).toHaveCount(1);
+  const mutations = await retry.evaluate((node) => {
+    window.__hgRetryNode = node;
+    window.__hgRetryMutations = 0;
+    new MutationObserver(() => { window.__hgRetryMutations += 1; })
+      .observe(node.parentNode, { childList: true, subtree: true });
+    return window.__hgRetryMutations;
+  });
+  expect(mutations).toBe(0);
+  await page.waitForTimeout(250);
+  expect(await page.evaluate(() => window.__hgRetryMutations)).toBe(0);
+  expect(
+    await retry.evaluate((node) => node === window.__hgRetryNode)
+  ).toBe(true);
+
+  const button = retry.locator("button");
+  await button.focus();
+  await expect(button).toBeFocused();
+  await button.click();
+  await expect.poll(() => attempts).toBe(2);
+  await expect(page.locator('[role="option"]').first()).toBeVisible();
+  await expect(page.locator(".td-shell-search__input")).toBeFocused();
+  await expect(retry).toHaveCount(0);
+});
+
 test("Community grid and HTML/Print/Markdown profiles stay in parity", async ({
   page,
   request

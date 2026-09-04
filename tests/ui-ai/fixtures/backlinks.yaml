@@ -1,0 +1,5 @@
+enableGitInfo: false
+disableLanguages: [cn]
+languages:
+  en:
+    contentDir: tests/ui-ai/fixtures/backlinks/content/en

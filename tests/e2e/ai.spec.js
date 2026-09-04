@@ -4,7 +4,7 @@ const AI_ORIGIN = "http://127.0.0.1:4174";
 const mockBundle = `
 (function () {
   var queued = window.Kapa && window.Kapa.q ? window.Kapa.q.slice() : [];
-  window.__kapaCalls = [];
+  window.__kapaCalls = window.__kapaCalls || [];
   window.Kapa = function (method, value) {
     window.__kapaCalls.push([method, value]);
     if (method === 'render' && value && value.onRender) value.onRender();
@@ -22,7 +22,7 @@ for (const [locale, route, source, language] of [
 ]) {
   test(`AI tail is click-gated and locale-bound for ${locale}`, async ({ page }) => {
     const requests = [];
-    await page.route("https://widget.kapa.ai/kapa-widget.bundle.js", async (route) => {
+    await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", async (route) => {
       requests.push(route.request().url());
       await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
     });
@@ -61,7 +61,7 @@ for (const [locale, route, source, language] of [
 
 test("AI 500 remains non-blocking and retry issues one fresh request", async ({ page }) => {
   let attempts = 0;
-  await page.route("https://widget.kapa.ai/kapa-widget.bundle.js", async (route) => {
+  await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", async (route) => {
     attempts += 1;
     if (attempts === 1) await route.fulfill({ status: 500, body: "failed" });
     else await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
@@ -74,4 +74,49 @@ test("AI 500 remains non-blocking and retry issues one fresh request", async ({ 
   await launcher.click();
   await expect.poll(() => attempts).toBe(2);
   await expect(launcher).toHaveAttribute("data-hg-ai-state", "ready");
+});
+
+test("AI pending timeout discards stale state and retry waits for a fresh bundle", async ({
+  page
+}) => {
+  let attempts = 0;
+  let releaseStale;
+  const staleGate = new Promise((resolve) => { releaseStale = resolve; });
+  await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", async (route) => {
+    attempts += 1;
+    if (attempts === 1) {
+      await staleGate;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "text/javascript",
+      body: mockBundle
+    });
+  });
+  await page.goto(AI_ORIGIN + "/docs/");
+  const launcher = page.locator(".hg-ask-ai-launcher");
+  await launcher.click();
+  await expect.poll(() => attempts).toBe(1);
+  await expect(launcher).toHaveAttribute("data-hg-ai-state", "error", {
+    timeout: 7_000
+  });
+  await launcher.click();
+  await expect.poll(() => attempts).toBe(2);
+  await expect(launcher).toHaveAttribute("data-hg-ai-state", "ready");
+  expect(
+    await page.locator("script[data-hg-kapa-widget]").getAttribute("src")
+  ).toContain("?hg-retry=2");
+  expect(
+    await page.evaluate(() =>
+      (window.__kapaCalls || []).filter(([method]) => method === "open").length
+    )
+  ).toBe(1);
+
+  releaseStale();
+  await page.waitForTimeout(250);
+  expect(
+    await page.evaluate(() =>
+      (window.__kapaCalls || []).filter(([method]) => method === "open").length
+    )
+  ).toBe(1);
 });

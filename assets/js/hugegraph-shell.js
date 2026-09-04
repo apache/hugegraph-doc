@@ -171,7 +171,6 @@
     function sync() {
       scheduled = false;
       var existing = list.querySelector('[data-hg-search-retry]');
-      if (existing) existing.remove();
       var failure = root.dataset.tdTIndexUnavailable || '';
       var failed =
         failure &&
@@ -182,7 +181,9 @@
               return node.textContent.trim() === failure;
             },
           ));
-      if (!failed) return;
+      if (failed && existing) return existing;
+      if (existing) existing.remove();
+      if (!failed) return null;
 
       var notice = documentObject.createElement('div');
       notice.className = 'hg-search-retry';
@@ -204,6 +205,7 @@
       notice.appendChild(text);
       notice.appendChild(button);
       list.appendChild(notice);
+      return notice;
     }
 
     function schedule() {

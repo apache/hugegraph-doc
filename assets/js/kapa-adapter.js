@@ -32,16 +32,26 @@
     throw new Error('Kapa API is unavailable');
   }
 
-  function preinitialize(windowObject) {
-    if (windowObject.Kapa) return;
+  function preinitialize(windowObject, force) {
+    if (!force && windowObject.Kapa) return windowObject.Kapa;
+    if (
+      force &&
+      windowObject.Kapa &&
+      windowObject.Kapa.hgKapaPreinitialized &&
+      Array.isArray(windowObject.Kapa.q)
+    ) {
+      windowObject.Kapa.q.length = 0;
+    }
     var queue = function () {
       queue.c(arguments);
     };
     queue.q = [];
+    queue.hgKapaPreinitialized = true;
     queue.c = function (args) {
       queue.q.push(args);
     };
     windowObject.Kapa = queue;
+    return queue;
   }
 
   function scriptAttributes(config) {
@@ -50,7 +60,7 @@
       'data-source-group-ids-include': config.sourceGroupId,
       'data-language': config.locale,
       'data-project-name': 'Apache HugeGraph',
-      'data-project-color': '#532fc9',
+      'data-project-color': config.themeColor,
       'data-project-color-dark': '#9f83ff',
       'data-surface-color': '#ffffff',
       'data-surface-elevated-color': '#f6f4fb',
@@ -58,7 +68,7 @@
       'data-text-color': '#24212d',
       'data-text-muted-color': '#686275',
       'data-border-color': '#d9d4e4',
-      'data-anchor-color': '#532fc9',
+      'data-anchor-color': config.themeColor,
       'data-surface-color-dark': '#17151d',
       'data-surface-elevated-color-dark': '#221f2b',
       'data-surface-hover-color-dark': '#302b3d',
@@ -90,6 +100,8 @@
     var attempt = 0;
     var timer = 0;
     var lastTrigger = null;
+    var activeScript = null;
+    var activeQueue = null;
     var status = documentObject.querySelector('[data-hg-ai-status]');
 
     function renderState(next, message) {
@@ -116,9 +128,35 @@
       });
     }
 
+    function discardAttempt(serial) {
+      if (
+        activeScript &&
+        activeScript.dataset.hgKapaAttempt === String(serial)
+      ) {
+        activeScript.remove();
+        activeScript = null;
+      }
+      if (
+        activeQueue &&
+        activeQueue.hgKapaPreinitialized &&
+        Array.isArray(activeQueue.q)
+      ) {
+        activeQueue.q.length = 0;
+        if (windowObject.Kapa === activeQueue) {
+          try {
+            delete windowObject.Kapa;
+          } catch (_) {
+            windowObject.Kapa = undefined;
+          }
+        }
+      }
+      activeQueue = null;
+    }
+
     function fail(serial) {
       if (serial !== attempt || state !== 'loading') return;
       windowObject.clearTimeout(timer);
+      discardAttempt(serial);
       renderState('error', config.labels.error);
     }
 
@@ -129,35 +167,46 @@
       openWidget(query, submit);
     }
 
-    function ensureScript(serial, query, submit) {
-      var script = documentObject.querySelector(
-        'script[data-hg-kapa-widget]',
-      );
-      if (!script) {
-        preinitialize(windowObject);
-        script = documentObject.createElement('script');
-        script.async = true;
-        script.src = BUNDLE_URL;
-        script.dataset.hgKapaWidget = '';
-        var attrs = scriptAttributes(config);
-        Object.keys(attrs).forEach(function (name) {
-          script.setAttribute(name, attrs[name]);
-        });
-        script.addEventListener('error', function () {
-          script.remove();
-          fail(serial);
-        }, { once: true });
-        documentObject.head.appendChild(script);
+    function ensureScript(serial, query, submit, retrying) {
+      var loaded = false;
+      var rendered = false;
+      activeQueue = preinitialize(windowObject, retrying);
+      if (retrying) {
+        invokeKapa(windowObject, 'onModalClose', restoreFocus);
       }
+      var script = documentObject.createElement('script');
+      activeScript = script;
+      script.async = true;
+      script.src =
+        BUNDLE_URL + (retrying ? '?hg-retry=' + encodeURIComponent(serial) : '');
+      script.dataset.hgKapaWidget = '';
+      script.dataset.hgKapaAttempt = String(serial);
+      var attrs = scriptAttributes(config);
+      Object.keys(attrs).forEach(function (name) {
+        script.setAttribute(name, attrs[name]);
+      });
+      function finish() {
+        if (loaded && rendered) ready(serial, query, submit);
+      }
+      script.addEventListener('load', function () {
+        loaded = true;
+        finish();
+      }, { once: true });
+      script.addEventListener('error', function () {
+        fail(serial);
+      }, { once: true });
       try {
         invokeKapa(windowObject, 'render', {
           onRender: function () {
-            ready(serial, query, submit);
+            rendered = true;
+            finish();
           },
         });
       } catch (_) {
         fail(serial);
+        return;
       }
+      documentObject.head.appendChild(script);
     }
 
     function activate(query, submit, trigger) {
@@ -168,20 +217,23 @@
         openWidget(query, Boolean(submit && query));
         return;
       }
+      var retrying = state === 'error';
       var serial = ++attempt;
       renderState('loading', '');
       timer = windowObject.setTimeout(function () {
         fail(serial);
       }, TIMEOUT_MS);
-      ensureScript(serial, query, Boolean(submit && query));
+      ensureScript(serial, query, Boolean(submit && query), retrying);
     }
 
-    preinitialize(windowObject);
-    invokeKapa(windowObject, 'onModalClose', function () {
+    function restoreFocus() {
       if (lastTrigger && typeof lastTrigger.focus === 'function') {
         lastTrigger.focus();
       }
-    });
+    }
+
+    activeQueue = preinitialize(windowObject);
+    invokeKapa(windowObject, 'onModalClose', restoreFocus);
 
     return {
       activate: activate,

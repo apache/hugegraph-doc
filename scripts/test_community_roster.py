@@ -299,6 +299,21 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
                     roster.refresh()
             self.assertEqual(b"last-good\n", roster_path.read_bytes())
 
+    def test_atomic_roster_write_failure_keeps_last_good_selected(self):
+        with tempfile.TemporaryDirectory(prefix="community-write-test-") as directory:
+            root = pathlib.Path(directory)
+            roster_path, avatar_dir = root / "roster.json", root / "avatars"
+            avatar_dir.mkdir()
+            roster_path.write_bytes(b"last-good\n")
+            candidate = {"roles": {"pmc": [{"avatar": "/img/community/avatars/new.webp"}], "committers": []}}
+            with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                 mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
+                 mock.patch.object(roster, "_validate_avatar_blob"), \
+                 mock.patch.object(roster, "_atomic_write", side_effect=OSError("write failed")):
+                with self.assertRaisesRegex(OSError, "write failed"):
+                    roster._commit_bundle(candidate, {"new.webp": b"new"})
+            self.assertEqual(b"last-good\n", roster_path.read_bytes())
+
     def test_orphan_unlink_failure_is_a_successful_commit_warning(self):
         with tempfile.TemporaryDirectory(prefix="community-unlink-test-") as directory:
             root = pathlib.Path(directory)

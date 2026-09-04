@@ -478,8 +478,7 @@ def _validate_avatar_blob(name: str, raw: bytes) -> None:
 
 
 def _commit_bundle(candidate: dict, candidate_avatars: dict[str, bytes]) -> None:
-    """Install one bundle or restore the exact prior roster/avatar state."""
-    old_roster = ROSTER_PATH.read_bytes() if ROSTER_PATH.exists() else None
+    """Install verified immutable assets, then atomically publish the roster."""
     AVATAR_DIR.mkdir(parents=True, exist_ok=True)
     referenced = {
         pathlib.PurePosixPath(person["avatar"]).name
@@ -488,43 +487,29 @@ def _commit_bundle(candidate: dict, candidate_avatars: dict[str, bytes]) -> None
         if person.get("avatar")
     }
     existing = {path.name: path for path in AVATAR_DIR.glob("*.webp")}
-    installed: list[pathlib.Path] = []
-    replaced: dict[pathlib.Path, bytes] = {}
-    try:
-        for name, avatar in sorted(candidate_avatars.items()):
-            _validate_avatar_blob(name, avatar)
-            destination = AVATAR_DIR / name
-            if destination.exists() or destination.is_symlink():
-                previous = destination.read_bytes()
-                try:
-                    if destination.is_symlink():
-                        raise RosterError(f"candidate destination is a symlink: {destination}")
-                    _validate_avatar_blob(name, previous)
-                    continue
-                except RosterError:
-                    replaced[destination] = previous
-            staged = AVATAR_DIR / f".{name}.candidate"
+    for name, avatar in sorted(candidate_avatars.items()):
+        _validate_avatar_blob(name, avatar)
+        destination = AVATAR_DIR / name
+        if destination.exists() or destination.is_symlink():
             try:
-                _copy_candidate(avatar, staged)
-                os.replace(staged, destination)
-            finally:
-                if staged.exists():
-                    _unlink(staged)
-            if destination not in replaced:
-                installed.append(destination)
-        raw = (json.dumps(candidate, indent=2, ensure_ascii=False) + "\n").encode()
-        _atomic_write(ROSTER_PATH, raw)
-    except Exception:
-        if old_roster is not None:
-            _atomic_write(ROSTER_PATH, old_roster)
-        for path, raw in replaced.items():
-            _atomic_write(path, raw)
-        for path in installed:
-            try:
-                _unlink(path)
-            except OSError:
+                if destination.is_symlink():
+                    raise RosterError(f"candidate destination is a symlink: {destination}")
+                _validate_avatar_blob(name, destination.read_bytes())
+                continue
+            except RosterError:
                 pass
-        raise
+        staged = AVATAR_DIR / f".{name}.candidate"
+        try:
+            _copy_candidate(avatar, staged)
+            os.replace(staged, destination)
+        finally:
+            if staged.exists():
+                _unlink(staged)
+    raw = (json.dumps(candidate, indent=2, ensure_ascii=False) + "\n").encode()
+    # This atomic replace is the commit point. Failures before it leave the
+    # last-good roster selected; installed content-addressed assets are safe
+    # unreferenced candidates.
+    _atomic_write(ROSTER_PATH, raw)
     for name in sorted(set(existing) - referenced):
         try:
             _unlink(AVATAR_DIR / name)

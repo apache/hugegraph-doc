@@ -35,3 +35,7 @@ python3 scripts/community_roster.py validate \
 ```
 
 The artifact option never invokes Hugo or downloads modules itself.
+
+Once the verified assets and roster are published, removal of an unreferenced
+old avatar is best effort. A cleanup failure emits an Actions warning but does
+not invalidate or roll back the complete new bundle.

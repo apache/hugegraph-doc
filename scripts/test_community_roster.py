@@ -3,6 +3,7 @@ import importlib.util
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -112,7 +113,7 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
             roster._validate_webp(raw)
 
     def test_network_response_contracts_are_bounded_and_allowlisted(self):
-        with self.assertRaisesRegex(roster.RosterError, "redirect target"):
+        with self.assertRaisesRegex(roster.RosterError, "not allowlisted"):
             roster._read_bounded_response(
                 FakeResponse(b"{}", url="https://evil.example/data", content_type="application/json"),
                 expected_hosts={"whimsy.apache.org"},
@@ -137,13 +138,25 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
                 kind="JSON source",
             )
 
+    def test_redirect_is_rejected_before_following_disallowed_host(self):
+        handler = roster._AllowlistedRedirectHandler({"whimsy.apache.org"}, "JSON source")
+        with self.assertRaisesRegex(roster.RosterError, "not allowlisted"):
+            handler.redirect_request(
+                mock.Mock(),
+                None,
+                302,
+                "Found",
+                {},
+                "http://127.0.0.1/private",
+            )
+
     def test_malformed_json_and_encoder_timeout_are_roster_errors(self):
         response = FakeResponse(
             b"{bad",
             url="https://whimsy.apache.org/public/committee-info.json",
             content_type="application/json",
         )
-        with mock.patch.object(roster.urllib.request, "urlopen", return_value=response):
+        with mock.patch.object(roster, "_open_allowlisted", return_value=response):
             with self.assertRaisesRegex(roster.RosterError, "malformed JSON"):
                 roster._fetch_json(roster.SOURCES["committee"])
         avatar = FakeResponse(
@@ -151,11 +164,26 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
             url="https://avatars.githubusercontent.com/u/1?s=128&v=4",
             content_type="image/png",
         )
-        with mock.patch.object(roster.urllib.request, "urlopen", return_value=avatar), \
+        with mock.patch.object(roster, "_open_allowlisted", return_value=avatar), \
              mock.patch.object(roster.shutil, "which", return_value="/fake/cwebp"), \
              mock.patch.object(roster.subprocess, "run", side_effect=subprocess.TimeoutExpired("cwebp", 20)):
             with self.assertRaisesRegex(roster.RosterError, "cwebp failed"):
                 roster._avatar_bytes(1)
+
+    def test_nested_source_schema_errors_are_roster_errors(self):
+        committee, projects, people, mapping = self.fixture()
+        projects["projects"] = []
+        with self.assertRaisesRegex(roster.RosterError, "projects and committees objects"):
+            roster.build_roster(committee, projects, people, mapping)
+        committee, projects, people, mapping = self.fixture()
+        projects["projects"]["hugegraph"]["owners"] = [[]]
+        with self.assertRaisesRegex(roster.RosterError, "invalid ASF ID"):
+            roster.build_roster(committee, projects, people, mapping)
+        with tempfile.TemporaryDirectory(prefix="community-json-root-") as directory:
+            path = pathlib.Path(directory) / "array.json"
+            path.write_text("[]")
+            with self.assertRaisesRegex(roster.RosterError, "JSON root must be an object"):
+                roster._read_json(path)
 
     def test_checked_in_bundle_validates(self):
         self.assertEqual([], roster.validate_bundle(90))
@@ -170,6 +198,8 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
             map_path.write_text(roster.MAP_PATH.read_text())
             with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "MAP_PATH", map_path), \
+                 mock.patch.object(roster, "ROOT", root), \
+                 mock.patch.object(roster, "DATA_DIR", root), \
                  mock.patch.object(roster, "AVATAR_DIR", root / "avatars"):
                 with self.assertRaisesRegex(roster.RosterError, "unmapped profile URL mismatch"):
                     roster.validate_bundle(90)
@@ -184,6 +214,8 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
             map_path.write_text(roster.MAP_PATH.read_text())
             with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "MAP_PATH", map_path), \
+                 mock.patch.object(roster, "ROOT", root), \
+                 mock.patch.object(roster, "DATA_DIR", root), \
                  mock.patch.object(roster, "AVATAR_DIR", root / "avatars"):
                 with self.assertRaisesRegex(roster.RosterError, "chair must be boolean"):
                     roster.validate_bundle(90)
@@ -206,6 +238,8 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
                 map_path.write_text(json.dumps(mapping))
                 with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                      mock.patch.object(roster, "MAP_PATH", map_path), \
+                     mock.patch.object(roster, "ROOT", root), \
+                     mock.patch.object(roster, "DATA_DIR", root), \
                      mock.patch.object(roster, "AVATAR_DIR", root / "avatars"):
                     with self.assertRaisesRegex(roster.RosterError, "needs a local avatar"):
                         roster.validate_bundle(90)
@@ -230,9 +264,49 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
             map_path.write_text(json.dumps(mapping))
             with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "MAP_PATH", map_path), \
+                 mock.patch.object(roster, "ROOT", root), \
+                 mock.patch.object(roster, "DATA_DIR", root), \
                  mock.patch.object(roster, "AVATAR_DIR", avatar_dir):
                 with self.assertRaisesRegex(roster.RosterError, "must not be a symlink"):
                     roster.validate_bundle(90)
+
+    def test_avatar_directory_parent_symlink_is_rejected(self):
+        with tempfile.TemporaryDirectory(prefix="community-avatar-parent-") as directory:
+            root = pathlib.Path(directory)
+            outside = root / "outside"
+            outside.mkdir()
+            avatar_link = root / "static" / "img" / "community" / "avatars"
+            avatar_link.parent.mkdir(parents=True)
+            avatar_link.symlink_to(outside, target_is_directory=True)
+            with mock.patch.object(roster, "ROOT", root), \
+                 mock.patch.object(roster, "DATA_DIR", root / "data" / "community"), \
+                 mock.patch.object(roster, "ROSTER_PATH", root / "data" / "community" / "roster.json"), \
+                 mock.patch.object(roster, "MAP_PATH", root / "data" / "community" / "github-map.json"), \
+                 mock.patch.object(roster, "AVATAR_DIR", avatar_link):
+                with self.assertRaisesRegex(roster.RosterError, "symlink path components"):
+                    roster._validate_repo_paths()
+
+    def test_member_name_and_initials_must_be_non_empty_and_derived(self):
+        base = json.loads(roster.ROSTER_PATH.read_text())
+        mapping = json.loads(roster.MAP_PATH.read_text())
+        for field, value, message in (
+            ("name", "", "name must be non-empty"),
+            ("initials", "", "initials mismatch"),
+        ):
+            with self.subTest(field=field), tempfile.TemporaryDirectory(prefix="community-identity-") as directory:
+                root = pathlib.Path(directory)
+                candidate = json.loads(json.dumps(base))
+                candidate["roles"]["committers"][0][field] = value
+                roster_path, map_path = root / "roster.json", root / "github-map.json"
+                roster_path.write_text(json.dumps(candidate))
+                map_path.write_text(json.dumps(mapping))
+                with mock.patch.object(roster, "ROOT", root), \
+                     mock.patch.object(roster, "DATA_DIR", root), \
+                     mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                     mock.patch.object(roster, "MAP_PATH", map_path), \
+                     mock.patch.object(roster, "AVATAR_DIR", root / "avatars"):
+                    with self.assertRaisesRegex(roster.RosterError, message):
+                        roster.validate_bundle(90)
 
     def test_validator_rejects_same_name_out_of_asf_id_order(self):
         committee, projects, people, mapping = self.fixture()
@@ -250,6 +324,8 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
             map_path.write_text(json.dumps(mapping))
             with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "MAP_PATH", map_path), \
+                 mock.patch.object(roster, "ROOT", root), \
+                 mock.patch.object(roster, "DATA_DIR", root), \
                  mock.patch.object(roster, "AVATAR_DIR", root / "avatars"):
                 with self.assertRaisesRegex(roster.RosterError, "sorted by public name"):
                     roster.validate_bundle(90)
@@ -274,6 +350,7 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
             candidate = {"roles": {"pmc": [{"avatar": "/img/community/avatars/new.webp"}], "committers": []}}
             with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
+                 mock.patch.object(roster, "_validate_repo_paths"), \
                  mock.patch.object(roster, "_validate_avatar_blob"), \
                  mock.patch.object(roster, "_copy_candidate", side_effect=OSError("copy failed")):
                 with self.assertRaisesRegex(OSError, "copy failed"):
@@ -291,6 +368,7 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
             with mock.patch.object(roster, "DATA_DIR", root), \
                  mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "MAP_PATH", map_path), \
+                 mock.patch.object(roster, "_validate_repo_paths"), \
                  mock.patch.object(roster, "_fetch_json", return_value={}), \
                  mock.patch.object(roster, "build_roster", return_value=candidate), \
                  mock.patch.object(roster, "_install_avatars"), \
@@ -308,6 +386,7 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
             candidate = {"roles": {"pmc": [{"avatar": "/img/community/avatars/new.webp"}], "committers": []}}
             with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
+                 mock.patch.object(roster, "_validate_repo_paths"), \
                  mock.patch.object(roster, "_validate_avatar_blob"), \
                  mock.patch.object(roster, "_atomic_write", side_effect=OSError("write failed")):
                 with self.assertRaisesRegex(OSError, "write failed"):
@@ -333,6 +412,7 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
 
             with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
+                 mock.patch.object(roster, "_validate_repo_paths"), \
                  mock.patch.object(roster, "_validate_avatar_blob"), \
                  mock.patch.object(roster, "_unlink", side_effect=fail_once):
                 roster._commit_bundle(candidate, {"new.webp": b"new"})
@@ -353,6 +433,7 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
             candidate = {"roles": {"pmc": [{"avatar": f"/img/community/avatars/{name}"}], "committers": []}}
             with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
+                 mock.patch.object(roster, "_validate_repo_paths"), \
                  mock.patch.object(roster, "_validate_webp"):
                 roster._commit_bundle(candidate, {name: raw})
             self.assertEqual(raw, destination.read_bytes())
@@ -362,6 +443,11 @@ class CommunityContentContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._site = tempfile.TemporaryDirectory(prefix="community-content-site-")
+        hugo_version = subprocess.check_output(["hugo", "version"], text=True)
+        if "hugo v0.165.0+extended" not in hugo_version:
+            raise RuntimeError(
+                f"Community render contracts require Hugo v0.165.0 Extended: {hugo_version.strip()}"
+            )
         environment = {**os.environ, "GOPROXY": "off"}
         subprocess.run(
             ["hugo", "--quiet", "--destination", cls._site.name],
@@ -458,6 +544,8 @@ class CommunityContentContractTests(unittest.TestCase):
             self.assertNotIn("td-page-meta__footer", rendered)
             positions = [rendered.index(marker) for marker in markers]
             self.assertEqual(positions, sorted(positions))
+            member_heading = "项目成员" if relative.startswith("cn/") else "Project members"
+            self.assertRegex(rendered, rf"(?m)^## {member_heading}$")
         about = {
             "about/index.md": (
                 "## One ecosystem for graph data and graph intelligence",
@@ -491,6 +579,29 @@ class CommunityContentContractTests(unittest.TestCase):
             capture_output=True,
         )
         self.assertEqual(0, result.returncode, result.stderr)
+
+    def test_artifact_validator_rejects_swapped_role_sections(self):
+        with tempfile.TemporaryDirectory(prefix="community-role-output-") as directory:
+            destination = pathlib.Path(directory)
+            for relative in (
+                "community/index.html",
+                "_print/community/index.html",
+                "community/index.md",
+                "cn/community/index.html",
+                "cn/_print/community/index.html",
+                "cn/community/index.md",
+            ):
+                target = destination / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(self.site / relative, target)
+            path = destination / "community/index.html"
+            rendered = path.read_text(encoding="utf-8")
+            rendered = rendered.replace('data-community-role="pmc"', 'data-community-role="temporary"', 1)
+            rendered = rendered.replace('data-community-role="committers"', 'data-community-role="pmc"', 1)
+            rendered = rendered.replace('data-community-role="temporary"', 'data-community-role="committers"', 1)
+            path.write_text(rendered, encoding="utf-8")
+            with self.assertRaisesRegex(roster.RosterError, "role order drift"):
+                roster.validate_rendered_outputs(destination)
 
     def test_fixed_metadata_is_present_in_actual_offline_indexes(self):
         fixture = json.loads(

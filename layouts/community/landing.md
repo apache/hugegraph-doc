@@ -5,24 +5,25 @@
 {{- .Store.Set "tdOutputFormat" "markdown" -}}
 # {{ .Title }}
 
-{{- with .Description }}
+{{ with .Description }}
 > {{ . }}
 
-{{- end }}
+{{ end }}
 
-{{- $page := . -}}
+{{ $page := . -}}
 {{- $landing := partial "landing/data.html" . -}}
+{{- $chunks := slice -}}
 {{- range $entry := ($landing.sections | default slice) -}}
   {{- $resolved := partial "landing/entry.html" (dict "home" $landing "entry" $entry) -}}
   {{- if and $resolved.enabled $resolved.data -}}
     {{- if eq $resolved.type "community-members" -}}
-      {{- partial "community/members.md" (dict "page" $page) -}}
+      {{- $chunks = $chunks | append (partial "community/members.md" (dict "page" $page) | strings.TrimSpace) -}}
     {{- else -}}
       {{- $text := partial "landing/text.html" (dict "page" $page "data" (dict "sections" (slice $entry))) | strings.TrimSpace -}}
       {{- with $text }}
-{{ . | safeHTML }}
-
+        {{- $chunks = $chunks | append . -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
+{{ delimit $chunks "\n\n" | safeHTML }}

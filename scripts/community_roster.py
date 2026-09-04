@@ -44,16 +44,50 @@ class RosterError(ValueError):
 
 def _read_json(path: pathlib.Path) -> dict:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        result = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise RosterError(f"{path.relative_to(ROOT)}: invalid JSON: {exc}") from exc
+        raise RosterError(f"{path}: invalid JSON: {exc}") from exc
+    if not isinstance(result, dict):
+        raise RosterError(f"{path}: JSON root must be an object")
+    return result
+
+
+def _validate_remote_url(url: str, expected_hosts: set[str], kind: str) -> None:
+    try:
+        parsed = urllib.parse.urlparse(url)
+        port = parsed.port
+    except ValueError as exc:
+        raise RosterError(f"{kind}: malformed URL: {url}") from exc
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname not in expected_hosts
+        or port not in (None, 443)
+        or parsed.username is not None
+        or parsed.password is not None
+    ):
+        raise RosterError(f"{kind}: URL is not allowlisted: {url}")
+
+
+class _AllowlistedRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def __init__(self, expected_hosts: set[str], kind: str):
+        super().__init__()
+        self.expected_hosts = expected_hosts
+        self.kind = kind
+
+    def redirect_request(self, request, fp, code, msg, headers, newurl):
+        _validate_remote_url(newurl, self.expected_hosts, self.kind)
+        return super().redirect_request(request, fp, code, msg, headers, newurl)
+
+
+def _open_allowlisted(request: urllib.request.Request, expected_hosts: set[str], kind: str):
+    _validate_remote_url(request.full_url, expected_hosts, kind)
+    opener = urllib.request.build_opener(_AllowlistedRedirectHandler(expected_hosts, kind))
+    return opener.open(request, timeout=30)
 
 
 def _read_bounded_response(response, *, expected_hosts: set[str], content_types: set[str], limit: int, kind: str) -> bytes:
     final_url = response.geturl()
-    parsed = urllib.parse.urlparse(final_url)
-    if parsed.scheme != "https" or parsed.hostname not in expected_hosts:
-        raise RosterError(f"{kind}: redirect target is not allowlisted: {final_url}")
+    _validate_remote_url(final_url, expected_hosts, kind)
     content_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
     if content_type not in content_types and not (kind == "JSON source" and content_type.endswith("+json")):
         raise RosterError(f"{kind}: unsupported Content-Type {content_type!r}")
@@ -65,7 +99,7 @@ def _read_bounded_response(response, *, expected_hosts: set[str], content_types:
 
 def _fetch_json(url: str) -> dict:
     request = urllib.request.Request(url, headers={"User-Agent": "apache-hugegraph-doc-community-roster/1"})
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with _open_allowlisted(request, {"whimsy.apache.org"}, "JSON source") as response:
         if response.status != 200:
             raise RosterError(f"{url}: HTTP {response.status}")
         raw = _read_bounded_response(
@@ -87,7 +121,10 @@ def _fetch_json(url: str) -> dict:
 def _person_name(people: dict, asf_id: str) -> str:
     if not ASF_ID_PATTERN.fullmatch(asf_id):
         raise RosterError(f"invalid ASF ID {asf_id!r}")
-    record = people.get("people", {}).get(asf_id)
+    records = people.get("people")
+    if not isinstance(records, dict):
+        raise RosterError("people source must contain a people object")
+    record = records.get(asf_id)
     name = record.get("name") if isinstance(record, dict) else None
     if isinstance(name, list):
         name = name[0] if name else ""
@@ -231,7 +268,7 @@ def _avatar_bytes(user_id: int) -> bytes:
         f"https://avatars.githubusercontent.com/u/{user_id}?s=128&v=4",
         headers={"Accept": "image/webp", "User-Agent": "apache-hugegraph-doc-community-roster/1"},
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with _open_allowlisted(request, {"avatars.githubusercontent.com"}, "GitHub avatar") as response:
         raw = _read_bounded_response(
             response,
             expected_hosts={"avatars.githubusercontent.com"},
@@ -279,18 +316,26 @@ def _member(asf_id: str, name: str, chair: bool, mapping: dict | None) -> dict:
 
 
 def build_roster(committee_data: dict, projects_data: dict, people_data: dict, mapping_data: dict) -> dict:
-    project = projects_data.get("projects", {}).get(PROJECT)
-    committee = committee_data.get("committees", {}).get(PROJECT)
+    projects = projects_data.get("projects")
+    committees = committee_data.get("committees")
+    if not isinstance(projects, dict) or not isinstance(committees, dict):
+        raise RosterError("ASF sources must contain projects and committees objects")
+    project = projects.get(PROJECT)
+    committee = committees.get(PROJECT)
     if not isinstance(project, dict) or not isinstance(committee, dict):
         raise RosterError("ASF sources do not contain the HugeGraph project")
     owners, members = project.get("owners"), project.get("members")
     chair_map, committee_roster = committee.get("chair"), committee.get("roster")
     if not isinstance(owners, list) or not isinstance(members, list):
         raise RosterError("LDAP project owners/members must be arrays")
+    if any(not isinstance(item, str) or not ASF_ID_PATTERN.fullmatch(item) for item in owners + members):
+        raise RosterError("LDAP project owners/members contain an invalid ASF ID")
     if not isinstance(chair_map, dict) or len(chair_map) != 1:
         raise RosterError("committee source must name exactly one Chair")
     if not isinstance(committee_roster, dict):
         raise RosterError("committee roster must be an object")
+    if any(not isinstance(item, str) or not ASF_ID_PATTERN.fullmatch(item) for item in [*chair_map, *committee_roster]):
+        raise RosterError("committee source contains an invalid ASF ID")
     owner_ids, member_ids = set(owners), set(members)
     chair = next(iter(chair_map))
     if not owner_ids <= member_ids:
@@ -337,6 +382,7 @@ def _install_avatars(candidate: dict, target: pathlib.Path) -> None:
 
 
 def validate_bundle(warn_after_days: int) -> list[str]:
+    _validate_repo_paths()
     roster, mapping = _read_json(ROSTER_PATH), _read_json(MAP_PATH)
     if roster.get("schema_version") != SCHEMA_VERSION or roster.get("project") != PROJECT:
         raise RosterError("roster.json: unsupported schema_version or project")
@@ -351,10 +397,10 @@ def validate_bundle(warn_after_days: int) -> list[str]:
     owners, members, chair = source.get("owners"), source.get("members"), source.get("chair")
     if not isinstance(owners, list) or not isinstance(members, list):
         raise RosterError("roster.json: source owners/members must be arrays")
+    if any(not isinstance(asf_id, str) or not ASF_ID_PATTERN.fullmatch(asf_id) for asf_id in owners + members):
+        raise RosterError("roster.json: source owners/members contain an invalid ASF ID")
     if owners != sorted(set(owners)) or members != sorted(set(members)):
         raise RosterError("roster.json: source owners/members must be sorted and unique")
-    if any(not isinstance(asf_id, str) or not ASF_ID_PATTERN.fullmatch(asf_id) for asf_id in members):
-        raise RosterError("roster.json: source members contain an invalid ASF ID")
     if not set(owners) <= set(members) or chair not in owners:
         raise RosterError("roster.json: invalid owners/members/Chair relationship")
     pmc, committers = roles["pmc"], roles["committers"]
@@ -379,6 +425,10 @@ def validate_bundle(warn_after_days: int) -> list[str]:
         for person in entries:
             if any(key not in person for key in ("asf_id", "name", "initials", "chair", "profile_url")):
                 raise RosterError(f"roster.json: incomplete member {person!r}")
+            if not isinstance(person["name"], str) or not person["name"].strip():
+                raise RosterError(f"roster.json: member name must be non-empty for {person['asf_id']!r}")
+            if person["initials"] != _initials(person["name"]):
+                raise RosterError(f"roster.json: member initials mismatch for {person['asf_id']!r}")
             if type(person["chair"]) is not bool:
                 raise RosterError(f"roster.json: chair must be boolean for {person['asf_id']!r}")
     mappings = _validate_mapping(mapping, set(ids))
@@ -424,7 +474,7 @@ def validate_rendered_outputs(destination: pathlib.Path) -> None:
         "cn/_print/community/index.html": ('data-community-role="pmc"', 'data-community-role="committers"'),
         "cn/community/index.md": ("## 项目成员", "### PMC", "### Committers"),
     }
-    urls = [p["profile_url"] for role in ("pmc", "committers") for p in _read_json(ROSTER_PATH)["roles"][role]]
+    roster_roles = _read_json(ROSTER_PATH)["roles"]
     for relative, markers in expected.items():
         path = destination / relative
         if not path.is_file():
@@ -439,9 +489,38 @@ def validate_rendered_outputs(destination: pathlib.Path) -> None:
             has_markers = all(marker in rendered for marker in markers)
         if not has_markers:
             raise RosterError(f"rendered output {relative} is missing Community markers")
-        positions = [rendered.find(url.replace("&", "&amp;") if relative.endswith(".html") else url) for url in urls]
-        if any(position < 0 for position in positions) or positions != sorted(positions):
-            raise RosterError(f"rendered output {relative} has role/link parity drift")
+        role_starts = {}
+        for role in ("pmc", "committers"):
+            pattern = (
+                rf'<section[^>]*data-community-role=(?:"{role}"|{role})(?:\s|>)'
+                if relative.endswith(".html")
+                else rf"(?m)^### {role.upper() if role == 'pmc' else 'Committers'}\s*$"
+            )
+            match = re.search(pattern, rendered)
+            if not match:
+                raise RosterError(f"rendered output {relative} is missing {role} section")
+            role_starts[role] = match.start()
+        if role_starts["pmc"] >= role_starts["committers"]:
+            raise RosterError(f"rendered output {relative} has role order drift")
+        segments = {
+            "pmc": rendered[role_starts["pmc"] : role_starts["committers"]],
+            "committers": rendered[role_starts["committers"] :],
+        }
+        for role, entries in roster_roles.items():
+            own_urls = [
+                person["profile_url"].replace("&", "&amp;") if relative.endswith(".html") else person["profile_url"]
+                for person in entries
+            ]
+            other_role = "committers" if role == "pmc" else "pmc"
+            other_urls = [
+                person["profile_url"].replace("&", "&amp;") if relative.endswith(".html") else person["profile_url"]
+                for person in roster_roles[other_role]
+            ]
+            positions = [segments[role].find(url) for url in own_urls]
+            if any(position < 0 for position in positions) or positions != sorted(positions):
+                raise RosterError(f"rendered output {relative} has {role} link parity drift")
+            if any(url in segments[role] for url in other_urls):
+                raise RosterError(f"rendered output {relative} mixes Community roles")
 
 
 def _atomic_write(path: pathlib.Path, raw: bytes) -> None:
@@ -477,8 +556,36 @@ def _validate_avatar_blob(name: str, raw: bytes) -> None:
     _validate_webp(raw, expected_dimensions=(128, 128))
 
 
+def _assert_repo_path(path: pathlib.Path, label: str) -> None:
+    root = ROOT.absolute()
+    candidate = path.absolute()
+    try:
+        relative = candidate.relative_to(root)
+    except ValueError as exc:
+        raise RosterError(f"{label} must stay inside the repository") from exc
+    current = root
+    if current.is_symlink():
+        raise RosterError("repository root must not be a symlink")
+    for part in relative.parts:
+        current /= part
+        if current.is_symlink():
+            raise RosterError(f"{label} must not contain symlink path components")
+    try:
+        candidate.resolve(strict=False).relative_to(root.resolve(strict=True))
+    except (OSError, ValueError) as exc:
+        raise RosterError(f"{label} resolves outside the repository") from exc
+
+
+def _validate_repo_paths() -> None:
+    _assert_repo_path(DATA_DIR, "community data directory")
+    _assert_repo_path(ROSTER_PATH, "community roster")
+    _assert_repo_path(MAP_PATH, "GitHub mapping")
+    _assert_repo_path(AVATAR_DIR, "community avatar directory")
+
+
 def _commit_bundle(candidate: dict, candidate_avatars: dict[str, bytes]) -> None:
     """Install verified immutable assets, then atomically publish the roster."""
+    _validate_repo_paths()
     AVATAR_DIR.mkdir(parents=True, exist_ok=True)
     referenced = {
         pathlib.PurePosixPath(person["avatar"]).name
@@ -522,6 +629,7 @@ def _commit_bundle(candidate: dict, candidate_avatars: dict[str, bytes]) -> None
 
 
 def refresh() -> None:
+    _validate_repo_paths()
     source_data = {key: _fetch_json(url) for key, url in SOURCES.items()}
     candidate = build_roster(source_data["committee"], source_data["projects"], source_data["people"], _read_json(MAP_PATH))
     work = pathlib.Path(tempfile.mkdtemp(prefix=".community-refresh-", dir=DATA_DIR))

@@ -1,0 +1,37 @@
+{{- $page := .page -}}
+{{- $data := hugo.Data.community.roster -}}
+{{- $labels := dict
+  "en" (dict "title" "Project members" "lead" "Current Apache HugeGraph PMC members and Committers, sourced from public ASF records." "chair" "Chair" "pmc" "PMC" "committers" "Committers")
+  "cn" (dict "title" "项目成员" "lead" "Apache HugeGraph 当前的 PMC 成员与 Committers，数据来自 ASF 公开记录。" "chair" "主席" "pmc" "PMC" "committers" "Committers")
+-}}
+{{- $copy := index $labels $page.Language.Lang | default (index $labels "en") -}}
+{{- $style := resources.Get "scss/community-members.scss" | toCSS | minify | fingerprint -}}
+<link rel="stylesheet" href="{{ $style.RelPermalink }}" integrity="{{ $style.Data.Integrity }}">
+<section id="project-members" class="td-landing-section hg-community-members" aria-labelledby="project-members-title">
+  <div class="td-site-container">
+    <div class="td-landing-section__header">
+      <h2 id="project-members-title">{{ $copy.title }}</h2>
+      <p>{{ $copy.lead }}</p>
+    </div>
+    {{- range $role := slice "pmc" "committers" }}
+      {{- $members := index $data.roles $role }}
+      <section class="hg-community-members__role" data-community-role="{{ $role }}" aria-labelledby="project-members-{{ $role }}">
+        <h3 id="project-members-{{ $role }}">{{ index $copy $role }}</h3>
+        <ul class="td-landing-contributor-grid hg-community-members__grid" role="list">
+          {{- range $members }}
+          <li class="td-landing-contributor hg-community-member">
+            <a class="hg-community-member__link" href="{{ .profile_url }}" aria-label="{{ .name }} ({{ .asf_id }})">
+              <span class="td-landing-contributor__avatar hg-community-member__avatar" aria-hidden="true">
+                <span class="hg-community-member__initials">{{ .initials }}</span>
+                {{- with .avatar }}<img src="{{ . }}" alt="" width="128" height="128" loading="lazy" decoding="async">{{ end }}
+              </span>
+              <span class="hg-community-member__identity">{{ with .github }}@{{ .login }}{{ else }}{{ .asf_id }}{{ end }}</span>
+              {{- if .chair }}<span class="hg-community-member__role-label">{{ $copy.chair }}</span>{{ end }}
+            </a>
+          </li>
+          {{- end }}
+        </ul>
+      </section>
+    {{- end }}
+  </div>
+</section>

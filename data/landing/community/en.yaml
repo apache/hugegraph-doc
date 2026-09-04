@@ -34,6 +34,10 @@ sections:
             - [Security policy](/docs/guides/security/) — follow the project's security reporting process.
             - [Contribution guidelines](/docs/contribution-guidelines/) — learn how to contribute code and documentation.
 
+  - type: community-members
+    data:
+      id: project-members
+
   - type: cta
     data:
       title: Learn how the project works

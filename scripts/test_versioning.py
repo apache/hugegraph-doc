@@ -1691,6 +1691,114 @@ class VersionUrlTest(unittest.TestCase):
         self.assertFalse(non_docs[1]["equivalent"])
         self.assertFalse(non_docs[1]["fallback"])
 
+    def test_scope_preserves_hugo_version_options_instead_of_rebuilding_them(
+        self,
+    ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        latest = manifest["versions"][0]
+        authored_options = [
+            {
+                "id": entry["id"],
+                "title": entry["name"],
+                "url": (
+                    f"{ORIGIN}{entry['publishPath'].rstrip('/')}/docs/"
+                    if entry["publishPath"]
+                    else f"{ORIGIN}docs/"
+                ),
+                "active": entry["id"] == latest["id"],
+                "available": True,
+                "disabledReason": "",
+                "equivalent": True,
+                "fallback": False,
+            }
+            for entry in manifest["versions"]
+        ]
+        action_data = {
+            "actions": [{"id": "switch_version", "options": authored_options}]
+        }
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            page = output / "docs/index.html"
+            page.parent.mkdir(parents=True)
+            page.write_text(
+                '<link rel="canonical" href="https://hugegraph.apache.org/docs/">'
+                '<script type="application/json" id="td-action-manifest">'
+                + json.dumps(action_data)
+                + "</script>",
+                encoding="utf-8",
+            )
+            with (
+                mock.patch.object(
+                    versioning,
+                    "version_switch_options",
+                    side_effect=AssertionError(
+                        "scope must not rebuild Hugo-authored version options"
+                    ),
+                ),
+                mock.patch.object(
+                    versioning,
+                    "load_version_routes",
+                    return_value=json.loads(
+                        (versioning.ROOT / "data/version_routes.json").read_text(
+                            encoding="utf-8"
+                        )
+                    ),
+                ),
+            ):
+                versioning.scope_version_artifact(
+                    output,
+                    manifest,
+                    latest,
+                    ORIGIN,
+                    historical_origin=ORIGIN,
+                )
+
+            rendered = page.read_text(encoding="utf-8")
+            scoped = json.loads(
+                versioning.ACTION_MANIFEST_RE.search(rendered).group("body")
+            )
+            self.assertEqual(scoped["actions"][0]["options"], authored_options)
+
+    def test_version_validator_compares_palette_with_every_native_anchor(
+        self,
+    ) -> None:
+        option = {
+            "id": "1.7",
+            "title": "1.7",
+            "url": f"{ORIGIN}versions/1.7/docs/config/",
+            "active": False,
+            "available": True,
+            "disabledReason": "",
+            "equivalent": True,
+            "fallback": False,
+        }
+        parser = versioning.DocumentParser()
+        parser.feed(
+            '<a data-hg-version-id="1.7" data-hg-version-equivalent="true" '
+            'data-hg-version-fallback="false" '
+            f'href="{option["url"]}">1.7</a>'
+            '<a data-hg-version-id="1.7" data-hg-version-equivalent="true" '
+            'data-hg-version-fallback="false" aria-current="page" '
+            f'href="{option["url"]}">1.7</a>'
+        )
+
+        with self.assertRaisesRegex(SystemExit, "native version link mismatch"):
+            versioning.require_version_switch_matches_native(
+                parser, [option], "docs/config/index.html"
+            )
+
+        active = dict(option, active=True)
+        parser.version_links[0]["aria-current"] = "page"
+        versioning.require_version_switch_matches_native(
+            parser, [active], "docs/config/index.html"
+        )
+
+        parser.version_links[1]["href"] = f"{ORIGIN}docs/"
+        with self.assertRaisesRegex(SystemExit, "native version link mismatch"):
+            versioning.require_version_switch_matches_native(
+                parser, [active], "docs/config/index.html"
+            )
+
     def test_aggregate_version_routes_reject_missing_targets_and_false_nulls(
         self,
     ) -> None:

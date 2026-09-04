@@ -170,6 +170,7 @@ class DocumentParser(html.parser.HTMLParser):
         self.hreflang: list[tuple[str, str]] = []
         self.meta: list[dict[str, str]] = []
         self.toc_nav_labels: list[list[str]] = []
+        self.version_links: list[dict[str, str]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = {key.lower(): value or "" for key, value in attrs}
@@ -200,6 +201,8 @@ class DocumentParser(html.parser.HTMLParser):
             self.hreflang.append((values["hreflang"], values.get("href", "")))
         if tag == "meta":
             self.meta.append(values)
+        if tag == "a" and "data-hg-version-id" in values:
+            self.version_links.append(values)
 
 
 def refresh_target(parser: DocumentParser) -> str | None:
@@ -245,6 +248,64 @@ def require_toc_accessible_name(parser: DocumentParser, relative: str) -> None:
             f"TableOfContents nav in {relative} must have exactly one localized "
             f"aria-label {expected!r}, found {labels!r}"
         )
+
+
+def require_version_switch_matches_native(
+    parser: DocumentParser, options: list[dict], relative: str
+) -> None:
+    """Require every native version link to match its Palette option."""
+    if not isinstance(options, list):
+        fail(f"version switch options are invalid in {relative}")
+    by_id: dict[str, dict] = {}
+    for option in options:
+        version_id = option.get("id") if isinstance(option, dict) else None
+        if (
+            not isinstance(version_id, str)
+            or not version_id
+            or version_id in by_id
+            or not isinstance(option.get("url"), str)
+            or not isinstance(option.get("available"), bool)
+            or not isinstance(option.get("active"), bool)
+            or not isinstance(option.get("equivalent"), bool)
+            or not isinstance(option.get("fallback"), bool)
+        ):
+            fail(f"version switch options are invalid in {relative}")
+        by_id[version_id] = option
+
+    expected_ids = {
+        version_id
+        for version_id, option in by_id.items()
+        if option["available"]
+    }
+    observed_ids = {
+        link.get("data-hg-version-id", "") for link in parser.version_links
+    }
+    if observed_ids != expected_ids:
+        fail(
+            f"native version link set mismatch in {relative}: "
+            f"{sorted(observed_ids)!r} != {sorted(expected_ids)!r}"
+        )
+
+    for link in parser.version_links:
+        version_id = link["data-hg-version-id"]
+        option = by_id[version_id]
+        observed = {
+            "url": link.get("href", ""),
+            "equivalent": link.get("data-hg-version-equivalent") == "true",
+            "fallback": link.get("data-hg-version-fallback") == "true",
+            "active": link.get("aria-current") == "page",
+        }
+        expected = {
+            "url": option["url"],
+            "equivalent": option["equivalent"],
+            "fallback": option["fallback"],
+            "active": option["active"],
+        }
+        if observed != expected:
+            fail(
+                f"native version link mismatch in {relative} for "
+                f"{version_id}: {observed!r} != {expected!r}"
+            )
 
 
 def require_safe_url_scheme(value: str, source: str) -> bool:
@@ -2389,11 +2450,7 @@ def scope_version_artifact(
             rewrite,
             markdown=path.suffix in {".md", ".txt"},
         )
-        current_target = (
-            canonical_docs_target(rendered, entry) if path.suffix == ".html" else None
-        )
         relative = path.relative_to(output).as_posix()
-        language = "cn" if relative.startswith(("cn/", "cn\\")) else "en"
 
         def replace_manifest(match: re.Match) -> str:
             data = json.loads(match.group("body"))
@@ -2404,25 +2461,6 @@ def scope_version_artifact(
                 artifact_base,
                 output,
             )
-            switch = next(
-                (
-                    action
-                    for action in rewritten.get("actions", [])
-                    if isinstance(action, dict)
-                    and action.get("id") == "switch_version"
-                ),
-                None,
-            )
-            if switch is not None:
-                switch["options"] = version_switch_options(
-                    manifest,
-                    route_map,
-                    entry["id"],
-                    current_target,
-                    origin,
-                    historical_origin,
-                    language=language,
-                )
             stats["manifests"] += 1
             return (
                 match.group("open")
@@ -3051,6 +3089,10 @@ def validate_artifact(args: argparse.Namespace) -> None:
             )
             if switch is None or switch.get("options") != expected_options:
                 fail(f"version switch contract mismatch in {path.relative_to(root)}")
+            if not relative.startswith(("_print/", "cn/_print/")):
+                require_version_switch_matches_native(
+                    document, expected_options, relative
+                )
             if (
                 entry["archived"]
                 and relative not in archive_exceptions

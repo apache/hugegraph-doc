@@ -8,22 +8,28 @@ aliases:
   - /docs/introduction/README/
 ---
 
-## Apache HugeGraph 是什么
+## 什么是 Apache HugeGraph？
 
-Apache HugeGraph 由多个独立仓库组成，覆盖图数据库、图计算和图 AI。各组件可以单独使用，也可以通过 HugeGraph Server 的 REST API 或分布式存储接口协作。
+[Apache HugeGraph](https://hugegraph.apache.org/) 是一套易用、高效、通用的开源**全栈图系统**（[GitHub](https://github.com/apache/hugegraph)），覆盖**图数据库**（OLTP 实时查询）、**图计算**（OLAP 大规模分析）与**图 AI**（GraphRAG / 图机器学习）三大领域。
+
+HugeGraph 支持百亿以上的顶点和边的快速存储与查询，具备出色的 OLTP 性能。其图引擎兼容 [Apache TinkerPop 3](https://tinkerpop.apache.org) 框架，同时支持 [Gremlin](https://tinkerpop.apache.org/gremlin.html) 和 [Cypher](https://en.wikipedia.org/wiki/Cypher)（OpenCypher 标准）查询语言。
+
+**典型应用场景：** 深度关系探索、关联分析、路径搜索、特征抽取、社区检测、知识图谱等。  
+**适用领域：** 网络安全、电信反欺诈、金融风控、广告推荐、社交网络、智能问答等。
+
+## 生态系统全景
 
 ```text
-应用与工具
-  ├─ HugeGraph Toolchain：Client、Loader、Hubble、Spark Connector、Tools
-  └─ HugeGraph-AI：GraphRAG、图机器学习、Python Client
-                         │
-图数据库                 ▼
-  HugeGraph Server：REST API、Gremlin、Cypher
-       ├─ RocksDB 等单机后端
-       └─ HStore 分布式后端 → PD + Store
-                         │
-图计算                   ▼
-  HugeGraph-Computer：Vermeer（Go）与 Computer（Java）
+┌────────────────────────────────────────────────────────────────────┐
+│            Apache HugeGraph - Full-Stack Graph System             │
+├──────────────────┬────────────────────┬────────────────────────────┤
+│  Graph DB (OLTP) │    Graph Compute   │          Graph AI          │
+│  HugeGraph       │  Vermeer (Memory)  │       HugeGraph-AI         │
+│  Server          │  Computer (Dist.)  │     GraphRAG / GNN / Py    │
+├──────────────────┴────────────────────┴────────────────────────────┤
+│                       HugeGraph Toolchain                          │
+│ Hubble | Loader | Client (Java/Go/Python; Rust WIP) | Spark | Tools│
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 ## HugeGraph Server

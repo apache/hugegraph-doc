@@ -2048,6 +2048,111 @@ class VersionUrlTest(unittest.TestCase):
             ):
                 versioning.generate_version_routes(roots, manifest)
 
+    def test_artifact_alias_targets_are_local_scoped_and_present(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            target = root / "docs/current/index.html"
+            target.parent.mkdir(parents=True)
+            target.write_text("current", encoding="utf-8")
+            latest = versioning.load_manifest(
+                versioning.ROOT / "versions.json"
+            )["versions"][0]
+
+            for value in (
+                "/docs/current/",
+                f"{ORIGIN}docs/current/",
+            ):
+                self.assertEqual(
+                    versioning.validate_artifact_alias_target(
+                        value,
+                        root,
+                        latest,
+                        ORIGIN,
+                        "docs/old/index.html",
+                    ),
+                    "/docs/current/",
+                )
+
+            invalid = (
+                "https://evil.example/docs/current/",
+                "mailto:dev@example.com",
+                "tel:+123",
+                "docs/current/",
+                "/docs/missing/",
+                "/docs/current/?next=1",
+                "/docs/current/#next",
+                "/docs/%63urrent/",
+                "/docs/./current/",
+                "/docs//current/",
+            )
+            for value in invalid:
+                with self.subTest(value=value), self.assertRaises(SystemExit):
+                    versioning.validate_artifact_alias_target(
+                        value,
+                        root,
+                        latest,
+                        ORIGIN,
+                        "docs/old/index.html",
+                    )
+
+            archived = next(
+                entry
+                for entry in versioning.load_manifest(
+                    versioning.ROOT / "versions.json"
+                )["versions"]
+                if entry["id"] == "1.7"
+            )
+            archived_base = f"{ORIGIN}versions/1.7/"
+            self.assertEqual(
+                versioning.validate_artifact_alias_target(
+                    f"{archived_base}docs/current/",
+                    root,
+                    archived,
+                    archived_base,
+                    "docs/old/index.html",
+                ),
+                "/versions/1.7/docs/current/",
+            )
+            with self.assertRaisesRegex(SystemExit, "escapes version"):
+                versioning.validate_artifact_alias_target(
+                    "/docs/current/",
+                    root,
+                    archived,
+                    archived_base,
+                    "docs/old/index.html",
+                )
+
+    def test_version_routes_reject_external_and_protocol_aliases(self) -> None:
+        def page(root: Path, relative: str, *, redirect: str | None = None) -> None:
+            target = root / relative / "index.html"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            refresh = (
+                f'<meta http-equiv="refresh" content="0; url={redirect}">'
+                if redirect
+                else ""
+            )
+            target.write_text(
+                f"<html><head>{refresh}</head></html>", encoding="utf-8"
+            )
+
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        for redirect in (
+            "https://evil.example/docs/current/",
+            "mailto:dev@example.com",
+            "tel:+123",
+        ):
+            with self.subTest(redirect=redirect), tempfile.TemporaryDirectory() as name:
+                temp = Path(name)
+                roots = {}
+                for entry in manifest["versions"]:
+                    roots[entry["id"]] = temp / entry["id"]
+                    page(roots[entry["id"]], "docs")
+                    page(roots[entry["id"]], "cn/docs")
+                page(roots["latest"], "docs/old", redirect=redirect)
+                page(roots["latest"], "docs/current")
+                with self.assertRaises(SystemExit):
+                    versioning.generate_version_routes(roots, manifest)
+
     def test_version_routes_accept_alias_chain_to_same_version_canonical(
         self,
     ) -> None:

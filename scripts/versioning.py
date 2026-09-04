@@ -2080,6 +2080,14 @@ def docs_alias_equivalence_edges(
     """Return locale-preserving logical edges declared by static Docs aliases."""
     version = entry["id"]
     prefix = "/" + entry["publishPath"].strip("/") if entry["publishPath"] else ""
+    metadata_path = root / ".version.json"
+    if metadata_path.is_file():
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        expected_base = metadata.get("baseURL")
+        if not isinstance(expected_base, str) or not expected_base:
+            fail(f"route-map artifact baseURL is missing for {version}")
+    else:
+        expected_base = base_url("https://artifact.invalid/", entry["publishPath"])
     aliases: dict[str, tuple[str, str, pathlib.Path]] = {}
     for language, docs_root in (
         ("en", root / "docs"),
@@ -2093,10 +2101,13 @@ def docs_alias_equivalence_edges(
             redirect = refresh_target(document)
             if redirect is None:
                 continue
-            require_safe_url_syntax(redirect)
-            if not require_safe_url_scheme(redirect, path.as_posix()):
-                continue
-            target_path = urllib.parse.urlsplit(redirect).path
+            target_path = validate_artifact_alias_target(
+                redirect,
+                root,
+                entry,
+                expected_base,
+                path.relative_to(root).as_posix(),
+            )
             if prefix and (
                 target_path == prefix or target_path.startswith(prefix + "/")
             ):
@@ -2901,6 +2912,59 @@ def target_exists(root: pathlib.Path, relative: str) -> bool:
     return candidate.is_file() or (candidate / "index.html").is_file()
 
 
+def validate_artifact_alias_target(
+    value: str,
+    root: pathlib.Path,
+    entry: dict,
+    expected_base: str,
+    source: str,
+) -> str:
+    """Require an ordinary refresh alias to resolve inside its version artifact."""
+    if (
+        not value
+        or not value.startswith(("http://", "https://", "/"))
+        or any(char in value for char in ("?", "#", "%", "\\"))
+    ):
+        fail(f"alias target is not canonical in {source}: {value}")
+    require_safe_url_syntax(value)
+    if not require_safe_url_scheme(value, source):
+        fail(f"alias target uses a non-HTTP protocol in {source}: {value}")
+    try:
+        target = urllib.parse.urlsplit(value)
+        base = urllib.parse.urlsplit(expected_base)
+        require_safe_http_authority(target, value)
+        require_safe_http_authority(base, expected_base)
+    except (TypeError, ValueError) as exc:
+        fail(f"alias target is malformed in {source}: {value}: {exc}")
+    if (
+        base.scheme.lower() not in {"http", "https"}
+        or not base.netloc
+        or base.query
+        or base.fragment
+    ):
+        fail(f"artifact baseURL is malformed for {entry['id']}: {expected_base}")
+    if target.netloc and (
+        target.scheme.lower() != base.scheme.lower()
+        or target.netloc.lower() != base.netloc.lower()
+    ):
+        fail(f"alias target leaves the configured origin in {source}: {value}")
+    path = target.path
+    segments = path.split("/")
+    if (
+        not path.startswith("/")
+        or "//" in path
+        or any(segment in {".", ".."} for segment in segments)
+    ):
+        fail(f"alias target path is unsafe in {source}: {value}")
+    prefix = "/" + entry["publishPath"].strip("/") if entry["publishPath"] else ""
+    if prefix and not (path == prefix or path.startswith(prefix + "/")):
+        fail(f"alias target escapes version {entry['id']} in {source}: {value}")
+    relative = path[len(prefix) :] if prefix else path
+    if not target_exists(root, relative):
+        fail(f"alias target is missing in {source}: {value}")
+    return path
+
+
 def iter_json_strings(value):
     if isinstance(value, dict):
         for item in value.values():
@@ -3422,7 +3486,15 @@ def validate_artifact(args: argparse.Namespace) -> None:
             if robots != ["noindex,follow"]:
                 fail(f"historical page must be noindex,follow: {relative}: {robots!r}")
         if alias_target:
-            validate_url(alias_target, path)
+            if relative != "client-go/index.html":
+                validate_artifact_alias_target(
+                    alias_target,
+                    root,
+                    entry,
+                    expected_base,
+                    relative,
+                )
+                checked_urls += 1
         action_data = {}
         manifests = list(ACTION_MANIFEST_RE.finditer(text))
         if manifests:

@@ -527,10 +527,19 @@ class CommunityContentContractTests(unittest.TestCase):
                 self.assertIn("search_keywords:", text, f"{language}/{relative}")
                 self.assertIn("search_boost:", text, f"{language}/{relative}")
 
-    def test_docs_roots_leave_llmsfull_to_core_platform_lane(self):
+    def test_docs_roots_respect_core_platform_llmsfull_ownership(self):
+        versions = {
+            entry["id"]
+            for entry in json.loads((ROOT / "versions.json").read_text(encoding="utf-8"))["versions"]
+        }
+        core_platform_integrated = {"1.3", "1.0"} <= versions
         for language in ("en", "cn"):
             text = (ROOT / "content" / language / "docs/_index.md").read_text(encoding="utf-8")
-            self.assertNotIn("LLMSFULL", text.split("---", 2)[1])
+            frontmatter = text.split("---", 2)[1]
+            if core_platform_integrated:
+                self.assertIn("outputs: [HTML, RSS, print, markdown, LLMSFULL]", frontmatter)
+            else:
+                self.assertNotIn("LLMSFULL", frontmatter)
 
     def test_component_pilots_are_bilingual_and_scoped(self):
         for language in ("en", "cn"):

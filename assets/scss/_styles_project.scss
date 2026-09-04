@@ -548,8 +548,8 @@
 .hg-ask-ai-launcher {
   position: fixed;
   z-index: 1040;
-  inset-inline-end: max(1rem, env(safe-area-inset-right));
-  inset-block-end: max(1rem, env(safe-area-inset-bottom));
+  inset-inline-end: unquote('max(1rem, env(safe-area-inset-right))');
+  inset-block-end: unquote('max(1rem, env(safe-area-inset-bottom))');
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -581,8 +581,10 @@
 .hg-ai-status:not(:empty) {
   position: fixed;
   z-index: 1039;
-  inset-inline-end: max(1rem, env(safe-area-inset-right));
-  inset-block-end: calc(max(1rem, env(safe-area-inset-bottom)) + 3.4rem);
+  inset-inline-end: unquote('max(1rem, env(safe-area-inset-right))');
+  inset-block-end: unquote(
+    'calc(max(1rem, env(safe-area-inset-bottom)) + 3.4rem)'
+  );
   width: min(18rem, calc(100vw - 2rem));
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--bs-border-color);

@@ -782,6 +782,40 @@ class VersionUrlTest(unittest.TestCase):
                     allowed_paths=ALLOWED_PATHS,
                 )
 
+    def test_latest_staging_scope_preserves_production_history_selector(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        latest = manifest["versions"][0]
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            history_url = f"{ORIGIN}versions/1.7/docs/"
+            page = output / "index.html"
+            page.write_text(
+                f'<a href="{ORIGIN}docs/">latest</a>'
+                f'<a href="{history_url}">1.7</a>',
+                encoding="utf-8",
+            )
+            llms = output / "llms-full.txt"
+            llms.write_text(
+                f"# Corpus\n\n- [Latest]({ORIGIN}docs/)\n"
+                f"- [1.7]({history_url})\n",
+                encoding="utf-8",
+            )
+
+            versioning.scope_version_artifact(
+                output,
+                manifest,
+                latest,
+                STAGING_ORIGIN,
+                historical_origin=ORIGIN,
+            )
+
+            rendered = page.read_text(encoding="utf-8")
+            self.assertIn(f'href="{STAGING_ORIGIN}docs/"', rendered)
+            self.assertIn(f'href="{history_url}"', rendered)
+            rendered_llms = llms.read_text(encoding="utf-8")
+            self.assertIn(f"]({STAGING_ORIGIN}docs/)", rendered_llms)
+            self.assertIn(f"]({history_url})", rendered_llms)
+
     def test_rejects_non_selector_cross_version_url(self) -> None:
         with self.assertRaises(SystemExit):
             rewrite("/versions/1.5/docs/config/")
@@ -1199,6 +1233,26 @@ class VersionUrlTest(unittest.TestCase):
             ):
                 versioning.prepare_output_directory(sibling, "fixture")
             remove.assert_not_called()
+
+    def test_output_cleanup_rejects_existing_parent_symlink_before_resolve(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            target = temp / "target"
+            target.mkdir()
+            linked_parent = temp / "linked-parent"
+            linked_parent.symlink_to(target, target_is_directory=True)
+            output = linked_parent / "output"
+            output.mkdir()
+            sentinel = output / "sentinel"
+            sentinel.write_text("keep", encoding="utf-8")
+
+            with self.assertRaisesRegex(SystemExit, "symbolic link"):
+                versioning.prepare_output_directory(output, "fixture")
+
+            self.assertEqual(sentinel.read_text(encoding="utf-8"), "keep")
+            self.assertTrue(output.is_dir())
 
     def test_output_cleanup_rejects_registered_sibling_worktree(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:

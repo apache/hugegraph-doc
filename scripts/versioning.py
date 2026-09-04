@@ -316,18 +316,45 @@ def require_output_outside_git_checkouts(output: pathlib.Path, label: str) -> No
             fail(f"{label} must be outside every Git checkout: {output}")
 
 
+def require_no_symlinked_output_components(
+    path: pathlib.Path,
+    label: str,
+    controlled_roots: set[pathlib.Path],
+) -> pathlib.Path:
+    """Reject existing symlinks below a trusted temp root before resolution."""
+    absolute = pathlib.Path(os.path.abspath(os.fspath(path)))
+    lexical_roots = {
+        pathlib.Path(os.path.abspath(os.fspath(root))) for root in controlled_roots
+    }
+    lexical_roots.update(root.resolve() for root in controlled_roots)
+    anchors = [
+        root
+        for root in lexical_roots
+        if absolute == root or root in absolute.parents
+    ]
+    anchor = max(anchors, key=lambda item: len(item.parts)) if anchors else None
+    candidate = absolute
+    while candidate != anchor and candidate != candidate.parent:
+        if candidate.is_symlink():
+            fail(f"{label} must not contain a symbolic link: {candidate}")
+        candidate = candidate.parent
+    return absolute
+
+
 def prepare_output_directory(path: pathlib.Path, label: str) -> pathlib.Path:
     raw = path.expanduser()
-    if raw.is_symlink():
-        fail(f"{label} must not be a symbolic link: {raw}")
-    output = raw.resolve()
-    allowed_roots = {
-        pathlib.Path(tempfile.gettempdir()).resolve(),
-        pathlib.Path("/tmp").resolve(),
+    controlled_roots = {
+        pathlib.Path(tempfile.gettempdir()),
+        pathlib.Path("/tmp"),
     }
     runner_temp = os.environ.get("RUNNER_TEMP")
     if runner_temp:
-        allowed_roots.add(pathlib.Path(runner_temp).resolve())
+        controlled_roots.add(pathlib.Path(runner_temp))
+    raw_absolute = require_no_symlinked_output_components(
+        raw, label, controlled_roots
+    )
+    output = raw_absolute.resolve()
+    allowed_roots = {root.resolve() for root in controlled_roots}
     if not any(root != output and root in output.parents for root in allowed_roots):
         fail(f"{label} must be below a controlled temporary directory: {output}")
     require_output_outside_git_checkouts(output, label)
@@ -1902,14 +1929,27 @@ def scope_version_artifact(
     manifest: dict,
     entry: dict,
     origin: str,
+    historical_origin: str | None = None,
 ) -> dict:
     """Repair URL fields Hugo cannot canonify, then return auditable counts."""
     if not entry["publishPath"] and origin.rstrip("/") == CANONICAL_ORIGIN.rstrip("/"):
         return {"files": 0, "urls": 0, "manifests": 0, "searchRefs": 0}
     allowed_paths = allowed_version_paths(manifest)
     artifact_base = base_url(origin, entry["publishPath"])
+    historical_selector_urls: set[str] = set()
+    if historical_origin is not None:
+        for language in ("en", "cn"):
+            for item in version_urls(
+                manifest, origin, language, historical_origin
+            ):
+                if item["version"] != "latest":
+                    historical_selector_urls.update(
+                        (item["url"], item["url"].rstrip("/"))
+                    )
 
     def rewrite(value: str) -> str:
+        if value in historical_selector_urls:
+            return value
         rewritten = rewrite_internal_url(
             value,
             origin=origin,
@@ -1999,13 +2039,13 @@ def scope_version_artifact(
             )
             stats["files"] += 1
             continue
-        if path.suffix not in {".html", ".md", ".xml"}:
+        if path.suffix not in {".html", ".md", ".xml", ".txt"}:
             continue
         original = path.read_text(encoding="utf-8")
         rendered, changed = rewrite_text_urls(
             original,
             rewrite,
-            markdown=path.suffix == ".md",
+            markdown=path.suffix in {".md", ".txt"},
         )
 
         def replace_manifest(match: re.Match) -> str:
@@ -3021,6 +3061,7 @@ def build(args: argparse.Namespace) -> None:
             manifest,
             entry,
             args.site_origin,
+            args.historical_origin,
         )
         url_scoping["historicalHomeRedirects"] = (
             write_historical_home_redirects(output, args.site_origin)

@@ -3,7 +3,12 @@
   its text renderer unchanged; only the nested roster uses the site partial.
 */ -}}
 {{- .Store.Set "tdOutputFormat" "markdown" -}}
-{{- partial "page-meta-lastmod.html" . }}
+# {{ .Title }}
+
+{{- with .Description }}
+> {{ . }}
+
+{{- end }}
 
 {{- $page := . -}}
 {{- $landing := partial "landing/data.html" . -}}

@@ -272,6 +272,9 @@ class CommunityContentContractTests(unittest.TestCase):
         }
         for relative, markers in expected.items():
             rendered = (self.site / relative).read_text(encoding="utf-8")
+            expected_title = "# 社区" if relative.startswith("cn/") else "# Community"
+            self.assertTrue(rendered.startswith(expected_title + "\n"))
+            self.assertNotIn("td-page-meta__footer", rendered)
             positions = [rendered.index(marker) for marker in markers]
             self.assertEqual(positions, sorted(positions))
         about = {

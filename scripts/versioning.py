@@ -2075,12 +2075,12 @@ def canonical_docs_pages(root: pathlib.Path, version: str) -> dict[str, str]:
 
 
 def docs_alias_equivalence_edges(
-    root: pathlib.Path, entry: dict
+    root: pathlib.Path, entry: dict, canonical_pages: dict[str, str]
 ) -> set[tuple[str, str]]:
     """Return locale-preserving logical edges declared by static Docs aliases."""
     version = entry["id"]
     prefix = "/" + entry["publishPath"].strip("/") if entry["publishPath"] else ""
-    edges: set[tuple[str, str]] = set()
+    aliases: dict[str, tuple[str, str, pathlib.Path]] = {}
     for language, docs_root in (
         ("en", root / "docs"),
         ("cn", root / "cn/docs"),
@@ -2112,16 +2112,52 @@ def docs_alias_equivalence_edges(
                 )
             source_relative = path.parent.relative_to(docs_root).as_posix()
             source_relative = "" if source_relative == "." else source_relative
+            source_route = (
+                ("cn/docs/" if language == "cn" else "docs/")
+                + (source_relative.rstrip("/") + "/" if source_relative else "")
+            )
+            target_route = (
+                ("cn/docs/" if target_language == "cn" else "docs/")
+                + (target_relative.rstrip("/") + "/" if target_relative else "")
+            )
             source_id = (
                 f"{language}:"
                 f"{normalize_logical_docs_route(version, source_relative)}"
             )
-            target_id = (
-                f"{target_language}:"
-                f"{normalize_logical_docs_route(version, target_relative)}"
-            )
-            if source_id != target_id:
-                edges.add(tuple(sorted((source_id, target_id))))
+            previous = aliases.get(source_route)
+            alias = (source_id, target_route, path)
+            if previous is not None and previous != alias:
+                fail(
+                    f"route-map alias is ambiguous for {version}: "
+                    f"{source_route}"
+                )
+            aliases[source_route] = alias
+
+    canonical_ids_by_target = {
+        target: logical_id for logical_id, target in canonical_pages.items()
+    }
+    canonical_targets = set(canonical_ids_by_target)
+    edges: set[tuple[str, str]] = set()
+    for source_route, (source_id, target_route, path) in aliases.items():
+        visited = {source_route}
+        candidate = target_route
+        while candidate not in canonical_targets:
+            if candidate in visited:
+                fail(
+                    f"route-map alias cycle for {version}: "
+                    f"{path.relative_to(root)} -> {candidate}"
+                )
+            visited.add(candidate)
+            chained = aliases.get(candidate)
+            if chained is None:
+                fail(
+                    f"route-map alias target is missing for {version}: "
+                    f"{path.relative_to(root)} -> {candidate}"
+                )
+            candidate = chained[1]
+        target_id = canonical_ids_by_target[candidate]
+        if source_id != target_id:
+            edges.add(tuple(sorted((source_id, target_id))))
     return edges
 
 
@@ -2172,7 +2208,11 @@ def generate_version_routes(
     entries = {entry["id"]: entry for entry in manifest["versions"]}
     alias_edges = set().union(
         *(
-            docs_alias_equivalence_edges(artifact_roots[version], entries[version])
+            docs_alias_equivalence_edges(
+                artifact_roots[version],
+                entries[version],
+                inventories[version],
+            )
             for version in version_ids
         )
     )
@@ -2253,6 +2293,12 @@ def validate_version_routes(data: dict, manifest: dict) -> dict:
     equivalents = data["equivalents"]
     if not isinstance(equivalents, list):
         fail("version route-map equivalents must be an array")
+    if not all(
+        isinstance(group, list)
+        and all(isinstance(logical_id, str) for logical_id in group)
+        for group in equivalents
+    ):
+        fail("invalid version route-map equivalent group types")
     if equivalents != sorted(equivalents):
         fail("version route-map equivalent groups must be ordered")
     seen_equivalents: set[str] = set()
@@ -2262,7 +2308,6 @@ def validate_version_routes(data: dict, manifest: dict) -> dict:
             or len(group) < 2
             or group != sorted(group)
             or len(group) != len(set(group))
-            or not all(isinstance(logical_id, str) for logical_id in group)
         ):
             fail(f"invalid version route-map equivalent group: {group!r}")
         missing = set(group).difference(pages)

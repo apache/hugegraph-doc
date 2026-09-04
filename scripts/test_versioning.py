@@ -1824,6 +1824,97 @@ class VersionUrlTest(unittest.TestCase):
                     manifest,
                 )
 
+    def test_version_routes_reject_alias_target_missing_from_its_artifact(
+        self,
+    ) -> None:
+        def page(root: Path, relative: str, *, redirect: str | None = None) -> None:
+            target = root / relative / "index.html"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            refresh = (
+                f'<meta http-equiv="refresh" content="0; url={redirect}">'
+                if redirect
+                else ""
+            )
+            target.write_text(
+                f"<html><head>{refresh}</head></html>", encoding="utf-8"
+            )
+
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            roots = {}
+            for entry in manifest["versions"]:
+                version = entry["id"]
+                roots[version] = temp / version
+                page(roots[version], "docs")
+                page(roots[version], "cn/docs")
+            page(
+                roots["latest"],
+                "docs/introduction",
+                redirect="/docs/renamed/",
+            )
+            page(roots["1.5"], "docs/introduction")
+            page(roots["1.5"], "docs/renamed")
+
+            with self.assertRaisesRegex(
+                SystemExit, "alias target is missing"
+            ):
+                versioning.generate_version_routes(roots, manifest)
+
+    def test_version_routes_accept_alias_chain_to_same_version_canonical(
+        self,
+    ) -> None:
+        def page(root: Path, relative: str, *, redirect: str | None = None) -> None:
+            target = root / relative / "index.html"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            refresh = (
+                f'<meta http-equiv="refresh" content="0; url={redirect}">'
+                if redirect
+                else ""
+            )
+            target.write_text(
+                f"<html><head>{refresh}</head></html>", encoding="utf-8"
+            )
+
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            roots = {}
+            for entry in manifest["versions"]:
+                version = entry["id"]
+                roots[version] = temp / version
+                page(roots[version], "docs")
+                page(roots[version], "cn/docs")
+            page(roots["latest"], "docs/old", redirect="/docs/middle/")
+            page(roots["latest"], "docs/middle", redirect="/docs/current/")
+            page(roots["latest"], "docs/current")
+            page(roots["1.7"], "docs/old")
+
+            routes = versioning.generate_version_routes(roots, manifest)
+
+            self.assertEqual(
+                routes["equivalents"],
+                [["en:current", "en:old"]],
+            )
+
+    def test_version_route_equivalents_reject_mixed_types_cleanly(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        versions = list(versioning.manifest_version_ids(manifest))
+        routes = {
+            "schemaVersion": 1,
+            "versions": versions,
+            "pages": {
+                "en:": {
+                    version: "docs/" for version in versions
+                },
+            },
+            "equivalents": [["en:", 7]],
+        }
+        with self.assertRaisesRegex(
+            SystemExit, "invalid version route-map equivalent group"
+        ):
+            versioning.validate_version_routes(routes, manifest)
+
     def test_version_switch_options_use_equivalent_page_or_explicit_fallback(
         self,
     ) -> None:

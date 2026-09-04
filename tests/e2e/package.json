@@ -1,0 +1,15 @@
+{
+  "name": "hugegraph-doc-e2e",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:ci": "playwright test versioning.spec.js search-ranking.spec.js --reporter=line,html",
+    "test:visual": "playwright test visual.spec.js --reporter=line"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
+  }
+}

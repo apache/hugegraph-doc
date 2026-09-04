@@ -3,6 +3,10 @@ public-staging/
 resources/
 node_modules/
 package-lock.json
+!/tests/e2e/package-lock.json
+/tests/e2e/playwright-report/
+/tests/e2e/test-results/
+/tests/e2e/visual-results/
 .hugo_build.lock
 nohup.out
 *.log

@@ -318,6 +318,43 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
+  visual:
+    needs: [prepare, aggregate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: tests/e2e/package-lock.json
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: hugegraph-site-${{ needs.prepare.outputs.artifact_prefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: public-site
+      - name: Capture advisory visual states
+        working-directory: tests/e2e
+        env:
+          SITE_ROOT: ${{ github.workspace }}/public-site
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run test:visual
+      - name: Upload advisory visual evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: visual-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tests/e2e/visual-results
+          retention-days: 7
+          if-no-files-found: warn
+
   # Required check name in .asf.yaml. It gates artifacts without write access.
   deploy:
     if: always()

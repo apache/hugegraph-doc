@@ -53,6 +53,13 @@
       {{- /* Right zone: the search box leads as the elastic boundary before
            the fixed controls — version, language, theme, GitHub. */ -}}
       <div class="td-nav-links td-nav-util-zone">
+        {{- if $drawerMode }}
+        <button class="td-nav-util hg-sidebar-restore" type="button"
+          data-td-shell-sidebar-toggle title="{{ T "ui_sidebar_expand" }}"
+          aria-label="{{ T "ui_sidebar_expand" }}" aria-controls="td-shell-sidebar">
+          {{- partialCached "shell/icon.html" "panel-left" "sidebar-restore" -}}
+        </button>
+        {{- end }}
         {{- if $localSearch }}
         <button type="button" class="td-nav-search-box" data-td-shell-search-open
           title="{{ T "ui_search" }}" aria-label="{{ T "ui_search" }}"

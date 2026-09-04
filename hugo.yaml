@@ -24,6 +24,11 @@ languages:
     menus:
       main:
         - { identifier: docs, name: Documentation, pageRef: /docs, weight: 10 }
+        - { identifier: docs-start, parent: docs, name: Get Started, pageRef: /docs/quickstart, weight: 11, params: { icon: 'fa-solid fa-rocket' } }
+        - { identifier: docs-components, parent: docs, name: Components, pageRef: /docs/quickstart/hugegraph, weight: 12, params: { icon: 'fa-solid fa-cubes' } }
+        - { identifier: docs-develop, parent: docs, name: Develop, pageRef: /docs/clients, weight: 13, params: { icon: 'fa-solid fa-code' } }
+        - { identifier: docs-operate, parent: docs, name: Operate, pageRef: /docs/config, weight: 14, params: { icon: 'fa-solid fa-screwdriver-wrench' } }
+        - { identifier: docs-reference, parent: docs, name: Reference, pageRef: /docs/changelog, weight: 15, params: { icon: 'fa-solid fa-book-open' } }
         - { identifier: download, name: Download, pageRef: /docs/download/download, weight: 20 }
         - { identifier: blog, name: Blog, pageRef: /blog, weight: 30 }
         - { identifier: community, name: Community, pageRef: /community, weight: 40 }
@@ -45,6 +50,11 @@ languages:
     menus:
       main:
         - { identifier: docs, name: 文档, pageRef: /docs, weight: 10 }
+        - { identifier: docs-start, parent: docs, name: 开始, pageRef: /docs/quickstart, weight: 11, params: { icon: 'fa-solid fa-rocket' } }
+        - { identifier: docs-components, parent: docs, name: 组件, pageRef: /docs/quickstart/hugegraph, weight: 12, params: { icon: 'fa-solid fa-cubes' } }
+        - { identifier: docs-develop, parent: docs, name: 开发, pageRef: /docs/clients, weight: 13, params: { icon: 'fa-solid fa-code' } }
+        - { identifier: docs-operate, parent: docs, name: 运维, pageRef: /docs/config, weight: 14, params: { icon: 'fa-solid fa-screwdriver-wrench' } }
+        - { identifier: docs-reference, parent: docs, name: 参考, pageRef: /docs/changelog, weight: 15, params: { icon: 'fa-solid fa-book-open' } }
         - { identifier: download, name: 下载, pageRef: /docs/download/download, weight: 20 }
         - { identifier: blog, name: 博客, pageRef: /blog, weight: 30 }
         - { identifier: community, name: 社区, pageRef: /community, weight: 40 }
@@ -86,6 +96,7 @@ outputs:
 
 params:
   description: Apache HugeGraph is a full-stack graph database ecosystem for OLTP, OLAP, and graph AI.
+  images: [/img/social/hugegraph-default.png]
   github_repo: https://github.com/apache/hugegraph-doc
   github_project_repo: https://github.com/apache/hugegraph
   github_branch: master
@@ -102,12 +113,22 @@ params:
   offline_search_index: summary
   offline_search_summary_length: 70
   offline_search_max_results: 10
+  # Optional enhancement: keep disabled until both reviewed latest-only Kapa
+  # source groups and the staging CSP/corpus acceptance gates pass.
+  ai_search:
+    enabled: false
+    provider: kapa
+    website_id: 0b277570-4740-451e-96fa-1e4ac1ac5e88
+    source_groups:
+      en: ''
+      cn: ''
   footer_center_info: ''
   # The compact ASF footer owns the legal line; global controls stay in header.
   copyright: false
   print:
     toc: true
   ui:
+    theme_color: '#532fc9'
     dark_mode:
       enable: true
       show_menu: true
@@ -120,6 +141,8 @@ params:
     wide_nav_sections: [community]
     sidebar_icon_policy: groups
     sidebar_item_overflow: wrap
+    backlinks: true
+    image_zoom: true
     page_context_menu:
       enable: true
       assistant_links: false

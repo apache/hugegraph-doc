@@ -2738,6 +2738,63 @@ def validate_artifact(args: argparse.Namespace) -> None:
     )
 
 
+def derived_version_config(
+    manifest: dict,
+    entry: dict,
+    site_origin: str,
+    historical_origin: str | None = None,
+) -> dict:
+    """Derive every Hugo version-menu value from versions.json."""
+    override = {
+        "baseURL": base_url(site_origin, entry["publishPath"]),
+        "canonifyURLs": True,
+        "params": {
+            "version": entry["id"],
+            "version_menu": "Releases",
+            "version_menu_pagelinks": False,
+            "versions": version_urls(
+                manifest, site_origin, "en", historical_origin
+            ),
+            "archived_version": bool(entry["archived"]),
+            "url_latest_version": urllib.parse.urljoin(
+                site_origin.rstrip("/") + "/", "docs/"
+            ),
+            "github_repo": "https://github.com/apache/hugegraph-doc",
+            "github_branch": entry["githubBranch"],
+        },
+    }
+    language_overrides = (
+        historical_language_menus(site_origin)
+        if entry["archived"]
+        else {"en": {}, "cn": {}}
+    )
+    for language in ("en", "cn"):
+        language_overrides[language]["params"] = language_version_params(
+            manifest,
+            site_origin,
+            language,
+            historical_origin,
+        )
+    override["languages"] = language_overrides
+    return override
+
+
+def render_config(args: argparse.Namespace) -> None:
+    """Write the manifest-derived override used by direct Hugo commands."""
+    manifest = load_manifest(args.manifest)
+    entry = next(
+        (item for item in manifest["versions"] if item["id"] == args.version), None
+    )
+    if entry is None:
+        fail(f"unknown version {args.version}")
+    override = derived_version_config(
+        manifest, entry, args.site_origin, args.historical_origin
+    )
+    rendered = json.dumps(override, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    args.output.write_text(rendered, encoding="utf-8")
+    print(f"rendered Hugo config for {entry['id']} -> {args.output}")
+
+
 def build(args: argparse.Namespace) -> None:
     manifest = load_manifest(args.manifest)
     entry = next(
@@ -2780,40 +2837,9 @@ def build(args: argparse.Namespace) -> None:
             origin=args.site_origin,
         )
         site_base = base_url(args.site_origin, entry["publishPath"])
-        override = {
-            "baseURL": site_base,
-            "canonifyURLs": True,
-            "params": {
-                "version": entry["id"],
-                "version_menu": "Releases",
-                "version_menu_pagelinks": False,
-                "versions": version_urls(
-                    manifest,
-                    args.site_origin,
-                    "en",
-                    args.historical_origin,
-                ),
-                "archived_version": bool(entry["archived"]),
-                "url_latest_version": urllib.parse.urljoin(
-                    args.site_origin.rstrip("/") + "/", "docs/"
-                ),
-                "github_repo": "https://github.com/apache/hugegraph-doc",
-                "github_branch": entry["githubBranch"],
-            },
-        }
-        language_overrides = (
-            historical_language_menus(args.site_origin)
-            if entry["archived"]
-            else {"en": {}, "cn": {}}
+        override = derived_version_config(
+            manifest, entry, args.site_origin, args.historical_origin
         )
-        for language in ("en", "cn"):
-            language_overrides[language]["params"] = language_version_params(
-                manifest,
-                args.site_origin,
-                language,
-                args.historical_origin,
-            )
-        override["languages"] = language_overrides
         override_path = assembly / "version-config.json"
         override_path.write_text(
             json.dumps(override, ensure_ascii=False), encoding="utf-8"
@@ -3136,6 +3162,13 @@ def parser() -> argparse.ArgumentParser:
     prepare_parser.add_argument("--select")
     prepare_parser.add_argument("--output", type=pathlib.Path)
     prepare_parser.set_defaults(func=prepare)
+
+    config_parser = commands.add_parser("config")
+    config_parser.add_argument("--version", default="latest")
+    config_parser.add_argument("--site-origin", default=CANONICAL_ORIGIN)
+    config_parser.add_argument("--historical-origin")
+    config_parser.add_argument("--output", type=pathlib.Path, required=True)
+    config_parser.set_defaults(func=render_config)
 
     build_parser = commands.add_parser("build")
     build_parser.add_argument("--version", required=True)

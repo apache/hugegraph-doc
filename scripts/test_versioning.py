@@ -223,6 +223,24 @@ class VersionUrlTest(unittest.TestCase):
             f"{ORIGIN}cn/docs/",
         )
 
+    def test_direct_hugo_config_is_derived_from_five_version_manifest(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        latest = manifest["versions"][0]
+        config = versioning.derived_version_config(manifest, latest, ORIGIN)
+        expected = ["latest", "1.7", "1.5", "1.3", "1.0"]
+        self.assertEqual(
+            [item["version"] for item in config["params"]["versions"]], expected
+        )
+        for language in ("en", "cn"):
+            self.assertEqual(
+                [
+                    item["version"]
+                    for item in config["languages"][language]["params"]["versions"]
+                ],
+                expected,
+            )
+        self.assertNotIn("1.2", json.dumps(config))
+
     def test_write_error_documents_keeps_localized_404_status_targets(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             output = Path(temp_name)

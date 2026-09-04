@@ -49,6 +49,14 @@ draft: true
 - [Gremlin](language/hugegraph-gremlin)
 - [示例](language/hugegraph-example)
 
+## Performance
+
+- [HugeGraph Benchmark Performance](performance/hugegraph-benchmark-0.5.6)
+- [HugeGraph API Performance-Outdated](performance/api-performance)
+  - [v0.5.6 Stand-alone (RocksDB)](performance/api-performance/hugegraph-api-0.5.6-rocksdb)
+  - [v0.5.6 Cluster (Cassandra)](performance/api-performance/hugegraph-api-0.5.6-cassandra)
+- [HugeGraph-Loader Performance](performance/hugegraph-loader-performance)
+
 ## 参与贡献
 
 - [贡献流程](contribution-guidelines/contribute)

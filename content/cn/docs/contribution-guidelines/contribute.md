@@ -94,4 +94,4 @@ git push --force-with-lease
 
 不要使用普通 `--force` 覆盖远端分支。完成所有 CI 和 review 要求后，由项目 maintainer 合并 Pull Request。
 
-Contributor Agreement 使用 ASF 官方流程，见[贡献者协议](/cn/docs/CLA/)。
+Contributor Agreement 使用 ASF 官方流程，见[贡献者协议](/cn/docs/cla/)。

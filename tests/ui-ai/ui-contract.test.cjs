@@ -39,6 +39,10 @@ test('theme color and social fallback have one configuration authority', () => {
   assert.match(hook, /"themeColor"\s+\$themeColor/);
   assert.equal(adapter.includes("'data-project-color': '#532fc9'"), false);
   assert.match(adapter, /'data-project-color': config\.themeColor/);
+  assert.equal(adapter.includes("'data-project-color-dark': '#9f83ff'"), false);
+  assert.equal(adapter.includes("'data-anchor-color-dark': '#b6a3ff'"), false);
+  assert.match(adapter, /'data-project-color-dark': mixWithWhite\(config\.themeColor, 48\)/);
+  assert.match(adapter, /'data-anchor-color-dark': mixWithWhite\(config\.themeColor, 60\)/);
 });
 
 test('documentation menu has five groups and no duplicate version panel', () => {

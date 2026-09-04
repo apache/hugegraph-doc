@@ -14,6 +14,16 @@
     return String(value || '').trim();
   }
 
+  function mixWithWhite(color, percentage) {
+    var match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color);
+    if (!match) throw new Error('Kapa theme color must be a six-digit hexadecimal color');
+    var weight = percentage / 100;
+    return '#' + match.slice(1).map(function (channel) {
+      var mixed = Math.round(parseInt(channel, 16) * (1 - weight) + 255 * weight);
+      return mixed.toString(16).padStart(2, '0');
+    }).join('');
+  }
+
   function readConfig(documentObject) {
     var node = documentObject.getElementById('hg-ai-config');
     if (!node) return null;
@@ -61,7 +71,7 @@
       'data-language': config.locale,
       'data-project-name': 'Apache HugeGraph',
       'data-project-color': config.themeColor,
-      'data-project-color-dark': '#9f83ff',
+      'data-project-color-dark': mixWithWhite(config.themeColor, 48),
       'data-surface-color': '#ffffff',
       'data-surface-elevated-color': '#f6f4fb',
       'data-surface-hover-color': '#eeeafd',
@@ -75,7 +85,7 @@
       'data-text-color-dark': '#f0edf7',
       'data-text-muted-color-dark': '#b6afc2',
       'data-border-color-dark': '#494254',
-      'data-anchor-color-dark': '#b6a3ff',
+      'data-anchor-color-dark': mixWithWhite(config.themeColor, 60),
       'data-color-scheme-selector': "[data-bs-theme='dark']",
       'data-font-family':
         '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
@@ -111,7 +121,8 @@
         button.disabled = next === 'loading';
         if (next === 'loading') button.setAttribute('aria-busy', 'true');
         else button.removeAttribute('aria-busy');
-        if (message) button.title = message;
+        if (message) button.setAttribute('title', message);
+        else button.removeAttribute('title');
       });
       if (status) {
         status.textContent = message || '';

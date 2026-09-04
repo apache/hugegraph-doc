@@ -28,6 +28,9 @@ for (const [locale, route, source, language] of [
     });
     await page.goto(AI_ORIGIN + route);
     expect(requests).toEqual([]);
+    await page.evaluate(() =>
+      document.documentElement.setAttribute("data-bs-theme", "dark")
+    );
     const launcher = page.locator(".hg-ask-ai-launcher");
     await expect(launcher).toBeVisible();
 
@@ -52,6 +55,12 @@ for (const [locale, route, source, language] of [
     const script = page.locator("script[data-hg-kapa-widget]");
     await expect(script).toHaveAttribute("data-language", language);
     await expect(script).toHaveAttribute("data-source-group-ids-include", source);
+    await expect(script).toHaveAttribute("data-project-color", "#532fc9");
+    await expect(script).toHaveAttribute("data-project-color-dark", "#a693e3");
+    await expect(script).toHaveAttribute("data-anchor-color-dark", "#baace9");
+    await expect(script).toHaveAttribute(
+      "data-color-scheme-selector", "[data-bs-theme='dark']"
+    );
     const calls = await page.evaluate(() => window.__kapaCalls);
     expect(calls).toContainEqual([
       "open", { mode: "ai", query: "server auth", submit: true }
@@ -71,9 +80,11 @@ test("AI 500 remains non-blocking and retry issues one fresh request", async ({ 
   await launcher.dblclick();
   await expect.poll(() => attempts).toBe(1);
   await expect(launcher).toHaveAttribute("data-hg-ai-state", "error");
+  await expect(launcher).toHaveAttribute("title", /unavailable/i);
   await launcher.click();
   await expect.poll(() => attempts).toBe(2);
   await expect(launcher).toHaveAttribute("data-hg-ai-state", "ready");
+  await expect(launcher).not.toHaveAttribute("title", /unavailable/i);
 });
 
 test("AI pending timeout discards stale state and retry waits for a fresh bundle", async ({

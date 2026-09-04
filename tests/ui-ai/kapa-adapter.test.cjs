@@ -122,6 +122,10 @@ test('uses one fixed bundle and explicit privacy-safe widget settings', () => {
   assert.equal(attrs['data-source-group-ids-include'], 'source-cn');
   assert.equal(attrs['data-project-color'], '#123456');
   assert.equal(attrs['data-anchor-color'], '#123456');
+  assert.equal(attrs['data-project-color-dark'], '#8495a7');
+  assert.equal(attrs['data-anchor-color-dark'], '#a0aebb');
+  assert.notEqual(attrs['data-project-color-dark'], '#9f83ff');
+  assert.notEqual(attrs['data-anchor-color-dark'], '#b6a3ff');
 });
 
 test('sends only the trimmed query after explicit activation and render', () => {
@@ -205,8 +209,10 @@ test('a pending timeout retries with a fresh script and ignores the late attempt
   h.fireTimeout();
   assert.equal(controller.getState(), 'error');
   assert.equal(h.scripts[0].removed, true);
+  assert.equal(h.trigger.attrs.title, 'unavailable');
 
   controller.activate('second', true, h.trigger);
+  assert.equal(h.trigger.attrs.title, undefined);
   assert.equal(h.scripts.length, 2);
   assert.match(h.scripts[1].src, /\?hg-retry=2$/);
   staleRender();
@@ -220,6 +226,7 @@ test('a pending timeout retries with a fresh script and ignores the late attempt
   h.scripts[1].fire('load');
   h.fireRender();
   assert.equal(controller.getState(), 'ready');
+  assert.equal(h.trigger.attrs.title, undefined);
   assert.deepEqual(h.calls.at(-1), [
     'open',
     { mode: 'ai', query: 'second', submit: true },

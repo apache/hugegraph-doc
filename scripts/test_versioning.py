@@ -716,7 +716,16 @@ class VersionUrlTest(unittest.TestCase):
     def test_maps_known_historical_routes(self) -> None:
         self.assertEqual(
             rewrite("https://hugegraph.apache.org/versions/1.7/docs/introduction/"),
-            "https://hugegraph.apache.org/versions/1.7/docs/introduction/readme/",
+            "https://hugegraph.apache.org/versions/1.7/docs/introduction/",
+        )
+        self.assertEqual(
+            versioning.rewrite_internal_url(
+                "https://hugegraph.apache.org/versions/1.5/docs/introduction/",
+                origin=ORIGIN,
+                publish_path="versions/1.5",
+                allowed_paths=ALLOWED_PATHS,
+            ),
+            "https://hugegraph.apache.org/versions/1.5/docs/introduction/readme/",
         )
         self.assertEqual(
             rewrite("/docs/quickstart/hugegraph-loader#usage"),

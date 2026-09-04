@@ -66,10 +66,14 @@ VERSION_REFS = {
     "1.5": "release-1.5.0",
 }
 KNOWN_HISTORICAL_ROUTES = {
-    "/docs/introduction": "/docs/introduction/readme/",
-    "/cn/docs/introduction": "/cn/docs/introduction/readme/",
     "/docs/quickstart/hugegraph-loader": "/docs/quickstart/toolchain/hugegraph-loader/",
     "/cn/docs/quickstart/hugegraph-loader": "/cn/docs/quickstart/toolchain/hugegraph-loader/",
+}
+KNOWN_HISTORICAL_ROUTES_BY_PUBLISH_PATH = {
+    "versions/1.5": {
+        "/docs/introduction": "/docs/introduction/readme/",
+        "/cn/docs/introduction": "/cn/docs/introduction/readme/",
+    },
 }
 URL_ATTRIBUTE_RE = re.compile(
     r"(?P<prefix>[\s<](?:href|src|action|poster|data-td-index-src|data-td-url|data-td-image-zoom)=)"
@@ -1413,7 +1417,11 @@ def rewrite_internal_url(
         else path
     )
     normalized_internal = internal_path.rstrip("/") or "/"
-    mapped_path = KNOWN_HISTORICAL_ROUTES.get(normalized_internal)
+    mapped_path = KNOWN_HISTORICAL_ROUTES_BY_PUBLISH_PATH.get(
+        publish_path.strip("/"), {}
+    ).get(normalized_internal)
+    if mapped_path is None:
+        mapped_path = KNOWN_HISTORICAL_ROUTES.get(normalized_internal)
     if mapped_path is not None:
         scoped_path = prefix + mapped_path
         if absolute:

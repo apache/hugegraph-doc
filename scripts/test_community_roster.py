@@ -1,3 +1,4 @@
+import hashlib
 import importlib.util
 import json
 import os
@@ -13,6 +14,26 @@ SPEC = importlib.util.spec_from_file_location("community_roster", ROOT / "script
 roster = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader
 SPEC.loader.exec_module(roster)
+
+
+class FakeResponse:
+    def __init__(self, raw, *, url, content_type, status=200):
+        self.raw = raw
+        self.url = url
+        self.headers = {"Content-Type": content_type}
+        self.status = status
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def geturl(self):
+        return self.url
+
+    def read(self, limit=-1):
+        return self.raw if limit < 0 else self.raw[:limit]
 
 
 class CommunityRosterTests(unittest.TestCase):
@@ -60,14 +81,81 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
         with self.assertRaisesRegex(roster.RosterError, "duplicate GitHub user_id"):
             roster._validate_mapping(mapping, {"one", "two"})
 
+    def test_mapping_rejects_invalid_identity_characters(self):
+        with self.assertRaisesRegex(roster.RosterError, "invalid ASF ID"):
+            roster._validate_mapping(
+                {"schema_version": 1, "mappings": {"Bad ID": {"login": "valid", "user_id": 1}}},
+                {"Bad ID"},
+            )
+        with self.assertRaisesRegex(roster.RosterError, "invalid GitHub login"):
+            roster._validate_mapping(
+                {"schema_version": 1, "mappings": {"valid": {"login": "bad/login", "user_id": 1}}},
+                {"valid"},
+            )
+
     def test_avatar_metadata_is_stripped(self):
-        vp8x = b"VP8X" + (10).to_bytes(4, "little") + bytes([0x2C]) + b"\0" * 9
+        vp8x = b"VP8X" + (10).to_bytes(4, "little") + bytes([0x2D]) + b"\0" * 9
         exif = b"EXIF" + (4).to_bytes(4, "little") + b"meta"
-        payload = b"WEBP" + vp8x + exif
+        iccp = b"ICCP" + (4).to_bytes(4, "little") + b"icc!"
+        payload = b"WEBP" + vp8x + exif + iccp
         raw = b"RIFF" + len(payload).to_bytes(4, "little") + payload
         stripped = roster._strip_webp_metadata(raw)
         self.assertNotIn(b"EXIF", stripped)
-        self.assertEqual(0, stripped[20] & 0x2C)
+        self.assertNotIn(b"ICCP", stripped)
+        self.assertEqual(0, stripped[20] & 0x2D)
+
+    def test_truncated_vp8x_without_image_bitstream_is_rejected(self):
+        vp8x = b"VP8X" + (10).to_bytes(4, "little") + b"\0" * 10
+        payload = b"WEBP" + vp8x
+        raw = b"RIFF" + len(payload).to_bytes(4, "little") + payload
+        with self.assertRaisesRegex(roster.RosterError, "no decodable"):
+            roster._validate_webp(raw)
+
+    def test_network_response_contracts_are_bounded_and_allowlisted(self):
+        with self.assertRaisesRegex(roster.RosterError, "redirect target"):
+            roster._read_bounded_response(
+                FakeResponse(b"{}", url="https://evil.example/data", content_type="application/json"),
+                expected_hosts={"whimsy.apache.org"},
+                content_types={"application/json"},
+                limit=10,
+                kind="JSON source",
+            )
+        with self.assertRaisesRegex(roster.RosterError, "Content-Type"):
+            roster._read_bounded_response(
+                FakeResponse(b"{}", url="https://whimsy.apache.org/data", content_type="text/html"),
+                expected_hosts={"whimsy.apache.org"},
+                content_types={"application/json"},
+                limit=10,
+                kind="JSON source",
+            )
+        with self.assertRaisesRegex(roster.RosterError, "exceeds"):
+            roster._read_bounded_response(
+                FakeResponse(b"x" * 11, url="https://whimsy.apache.org/data", content_type="application/json"),
+                expected_hosts={"whimsy.apache.org"},
+                content_types={"application/json"},
+                limit=10,
+                kind="JSON source",
+            )
+
+    def test_malformed_json_and_encoder_timeout_are_roster_errors(self):
+        response = FakeResponse(
+            b"{bad",
+            url="https://whimsy.apache.org/public/committee-info.json",
+            content_type="application/json",
+        )
+        with mock.patch.object(roster.urllib.request, "urlopen", return_value=response):
+            with self.assertRaisesRegex(roster.RosterError, "malformed JSON"):
+                roster._fetch_json(roster.SOURCES["committee"])
+        avatar = FakeResponse(
+            b"not-an-image",
+            url="https://avatars.githubusercontent.com/u/1?s=128&v=4",
+            content_type="image/png",
+        )
+        with mock.patch.object(roster.urllib.request, "urlopen", return_value=avatar), \
+             mock.patch.object(roster.shutil, "which", return_value="/fake/cwebp"), \
+             mock.patch.object(roster.subprocess, "run", side_effect=subprocess.TimeoutExpired("cwebp", 20)):
+            with self.assertRaisesRegex(roster.RosterError, "cwebp failed"):
+                roster._avatar_bytes(1)
 
     def test_checked_in_bundle_validates(self):
         self.assertEqual([], roster.validate_bundle(90))
@@ -84,6 +172,66 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
                  mock.patch.object(roster, "MAP_PATH", map_path), \
                  mock.patch.object(roster, "AVATAR_DIR", root / "avatars"):
                 with self.assertRaisesRegex(roster.RosterError, "unmapped profile URL mismatch"):
+                    roster.validate_bundle(90)
+
+    def test_chair_values_must_be_strict_booleans(self):
+        with tempfile.TemporaryDirectory(prefix="community-chair-test-") as directory:
+            root = pathlib.Path(directory)
+            candidate = json.loads(roster.ROSTER_PATH.read_text())
+            candidate["roles"]["committers"][0]["chair"] = 0
+            roster_path, map_path = root / "roster.json", root / "github-map.json"
+            roster_path.write_text(json.dumps(candidate))
+            map_path.write_text(roster.MAP_PATH.read_text())
+            with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                 mock.patch.object(roster, "MAP_PATH", map_path), \
+                 mock.patch.object(roster, "AVATAR_DIR", root / "avatars"):
+                with self.assertRaisesRegex(roster.RosterError, "chair must be boolean"):
+                    roster.validate_bundle(90)
+
+    def test_avatar_path_rejects_extra_segments_and_symlinks(self):
+        base = json.loads(roster.ROSTER_PATH.read_text())
+        asf_id = base["roles"]["committers"][0]["asf_id"]
+        mapping = {"schema_version": 1, "mappings": {asf_id: {"login": "valid-user", "user_id": 1}}}
+        for avatar in (
+            "/img/community/avatars/extra/" + "a" * 64 + ".webp",
+            "/img/community/avatars/../" + "a" * 64 + ".webp",
+        ):
+            with self.subTest(avatar=avatar), tempfile.TemporaryDirectory(prefix="community-avatar-path-") as directory:
+                root = pathlib.Path(directory)
+                candidate = json.loads(json.dumps(base))
+                member = next(p for p in candidate["roles"]["committers"] if p["asf_id"] == asf_id)
+                member.update(github=mapping["mappings"][asf_id], avatar=avatar, profile_url="https://github.com/valid-user")
+                roster_path, map_path = root / "roster.json", root / "github-map.json"
+                roster_path.write_text(json.dumps(candidate))
+                map_path.write_text(json.dumps(mapping))
+                with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                     mock.patch.object(roster, "MAP_PATH", map_path), \
+                     mock.patch.object(roster, "AVATAR_DIR", root / "avatars"):
+                    with self.assertRaisesRegex(roster.RosterError, "needs a local avatar"):
+                        roster.validate_bundle(90)
+        with tempfile.TemporaryDirectory(prefix="community-avatar-link-") as directory:
+            root = pathlib.Path(directory)
+            avatar_dir = root / "avatars"
+            avatar_dir.mkdir()
+            raw = b"target"
+            digest = hashlib.sha256(raw).hexdigest()
+            target = root / "target.webp"
+            target.write_bytes(raw)
+            (avatar_dir / f"{digest}.webp").symlink_to(target)
+            candidate = json.loads(json.dumps(base))
+            member = next(p for p in candidate["roles"]["committers"] if p["asf_id"] == asf_id)
+            member.update(
+                github=mapping["mappings"][asf_id],
+                avatar=f"/img/community/avatars/{digest}.webp",
+                profile_url="https://github.com/valid-user",
+            )
+            roster_path, map_path = root / "roster.json", root / "github-map.json"
+            roster_path.write_text(json.dumps(candidate))
+            map_path.write_text(json.dumps(mapping))
+            with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                 mock.patch.object(roster, "MAP_PATH", map_path), \
+                 mock.patch.object(roster, "AVATAR_DIR", avatar_dir):
+                with self.assertRaisesRegex(roster.RosterError, "must not be a symlink"):
                     roster.validate_bundle(90)
 
     def test_validator_rejects_same_name_out_of_asf_id_order(self):
@@ -126,6 +274,7 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
             candidate = {"roles": {"pmc": [{"avatar": "/img/community/avatars/new.webp"}], "committers": []}}
             with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
+                 mock.patch.object(roster, "_validate_avatar_blob"), \
                  mock.patch.object(roster, "_copy_candidate", side_effect=OSError("copy failed")):
                 with self.assertRaisesRegex(OSError, "copy failed"):
                     roster._commit_bundle(candidate, {"new.webp": b"new"})
@@ -150,7 +299,7 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
                     roster.refresh()
             self.assertEqual(b"last-good\n", roster_path.read_bytes())
 
-    def test_unlink_failure_rolls_back_roster_and_avatars(self):
+    def test_orphan_unlink_failure_is_a_successful_commit_warning(self):
         with tempfile.TemporaryDirectory(prefix="community-unlink-test-") as directory:
             root = pathlib.Path(directory)
             roster_path, avatar_dir = root / "roster.json", root / "avatars"
@@ -169,12 +318,29 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
 
             with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
                  mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
+                 mock.patch.object(roster, "_validate_avatar_blob"), \
                  mock.patch.object(roster, "_unlink", side_effect=fail_once):
-                with self.assertRaisesRegex(OSError, "unlink failed"):
-                    roster._commit_bundle(candidate, {"new.webp": b"new"})
-            self.assertEqual(b"last-good\n", roster_path.read_bytes())
+                roster._commit_bundle(candidate, {"new.webp": b"new"})
+            self.assertNotEqual(b"last-good\n", roster_path.read_bytes())
             self.assertEqual(b"old", (avatar_dir / "old.webp").read_bytes())
-            self.assertFalse((avatar_dir / "new.webp").exists())
+            self.assertEqual(b"new", (avatar_dir / "new.webp").read_bytes())
+
+    def test_corrupt_existing_candidate_destination_is_replaced(self):
+        with tempfile.TemporaryDirectory(prefix="community-replace-test-") as directory:
+            root = pathlib.Path(directory)
+            roster_path, avatar_dir = root / "roster.json", root / "avatars"
+            avatar_dir.mkdir()
+            roster_path.write_bytes(b"last-good\n")
+            raw = b"new"
+            name = f"{__import__('hashlib').sha256(raw).hexdigest()}.webp"
+            destination = avatar_dir / name
+            destination.write_bytes(b"corrupt")
+            candidate = {"roles": {"pmc": [{"avatar": f"/img/community/avatars/{name}"}], "committers": []}}
+            with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                 mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
+                 mock.patch.object(roster, "_validate_webp"):
+                roster._commit_bundle(candidate, {name: raw})
+            self.assertEqual(raw, destination.read_bytes())
 
 
 class CommunityContentContractTests(unittest.TestCase):

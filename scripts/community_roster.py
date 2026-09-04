@@ -9,12 +9,14 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import shutil
 import struct
 import subprocess
 import sys
 import tempfile
 import urllib.error
+import urllib.parse
 import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -29,6 +31,11 @@ SOURCES = {
     "projects": "https://whimsy.apache.org/public/public_ldap_projects.json",
     "people": "https://whimsy.apache.org/public/public_ldap_people.json",
 }
+JSON_LIMIT = 16 * 1024 * 1024
+AVATAR_LIMIT = 5 * 1024 * 1024
+ASF_ID_PATTERN = re.compile(r"^[a-z][a-z0-9._-]*$")
+GITHUB_LOGIN_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
+AVATAR_PATH_PATTERN = re.compile(r"^/img/community/avatars/([0-9a-f]{64})\.webp$")
 
 
 class RosterError(ValueError):
@@ -42,15 +49,44 @@ def _read_json(path: pathlib.Path) -> dict:
         raise RosterError(f"{path.relative_to(ROOT)}: invalid JSON: {exc}") from exc
 
 
+def _read_bounded_response(response, *, expected_hosts: set[str], content_types: set[str], limit: int, kind: str) -> bytes:
+    final_url = response.geturl()
+    parsed = urllib.parse.urlparse(final_url)
+    if parsed.scheme != "https" or parsed.hostname not in expected_hosts:
+        raise RosterError(f"{kind}: redirect target is not allowlisted: {final_url}")
+    content_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+    if content_type not in content_types and not (kind == "JSON source" and content_type.endswith("+json")):
+        raise RosterError(f"{kind}: unsupported Content-Type {content_type!r}")
+    raw = response.read(limit + 1)
+    if len(raw) > limit:
+        raise RosterError(f"{kind}: response exceeds {limit} bytes")
+    return raw
+
+
 def _fetch_json(url: str) -> dict:
     request = urllib.request.Request(url, headers={"User-Agent": "apache-hugegraph-doc-community-roster/1"})
     with urllib.request.urlopen(request, timeout=30) as response:
         if response.status != 200:
             raise RosterError(f"{url}: HTTP {response.status}")
-        return json.load(response)
+        raw = _read_bounded_response(
+            response,
+            expected_hosts={"whimsy.apache.org"},
+            content_types={"application/json"},
+            limit=JSON_LIMIT,
+            kind="JSON source",
+        )
+    try:
+        result = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RosterError(f"{url}: malformed JSON: {exc}") from exc
+    if not isinstance(result, dict):
+        raise RosterError(f"{url}: JSON root must be an object")
+    return result
 
 
 def _person_name(people: dict, asf_id: str) -> str:
+    if not ASF_ID_PATTERN.fullmatch(asf_id):
+        raise RosterError(f"invalid ASF ID {asf_id!r}")
     record = people.get("people", {}).get(asf_id)
     name = record.get("name") if isinstance(record, dict) else None
     if isinstance(name, list):
@@ -78,6 +114,8 @@ def _validate_mapping(data: dict, roster_ids: set[str] | None = None) -> dict:
     logins: set[str] = set()
     user_ids: set[int] = set()
     for asf_id, mapping in mappings.items():
+        if not ASF_ID_PATTERN.fullmatch(asf_id):
+            raise RosterError(f"github-map.json: invalid ASF ID {asf_id!r}")
         if roster_ids is not None and asf_id not in roster_ids:
             raise RosterError(f"github-map.json: unknown ASF ID {asf_id!r}")
         if not isinstance(mapping, dict):
@@ -85,6 +123,8 @@ def _validate_mapping(data: dict, roster_ids: set[str] | None = None) -> dict:
         login, user_id = mapping.get("login"), mapping.get("user_id")
         if not isinstance(login, str) or not login.strip() or login != login.strip():
             raise RosterError(f"github-map.json: {asf_id!r} needs a reviewed login")
+        if not GITHUB_LOGIN_PATTERN.fullmatch(login) or "--" in login:
+            raise RosterError(f"github-map.json: invalid GitHub login {login!r}")
         if not isinstance(user_id, int) or isinstance(user_id, bool) or user_id <= 0:
             raise RosterError(f"github-map.json: {asf_id!r} needs a positive numeric user_id")
         if login.casefold() in logins:
@@ -114,6 +154,55 @@ def _webp_dimensions(raw: bytes) -> tuple[int, int]:
     raise RosterError(f"avatar uses unsupported WebP chunk {chunk!r}")
 
 
+def _webp_chunk_kinds(raw: bytes) -> list[bytes]:
+    if len(raw) < 20 or raw[:4] != b"RIFF" or raw[8:12] != b"WEBP":
+        raise RosterError("avatar is not a WebP image")
+    if int.from_bytes(raw[4:8], "little") != len(raw) - 8:
+        raise RosterError("avatar has an invalid RIFF length")
+    kinds: list[bytes] = []
+    cursor = 12
+    while cursor + 8 <= len(raw):
+        kind = raw[cursor : cursor + 4]
+        size = int.from_bytes(raw[cursor + 4 : cursor + 8], "little")
+        cursor += 8 + size + (size % 2)
+        if cursor > len(raw):
+            raise RosterError("avatar has a truncated WebP chunk")
+        kinds.append(kind)
+    if cursor != len(raw):
+        raise RosterError("avatar has trailing WebP data")
+    return kinds
+
+
+def _validate_webp(raw: bytes, expected_dimensions: tuple[int, int] | None = None) -> tuple[int, int]:
+    dimensions = _webp_dimensions(raw)
+    kinds = _webp_chunk_kinds(raw)
+    if not any(kind in {b"VP8 ", b"VP8L"} for kind in kinds):
+        raise RosterError("avatar has no decodable WebP image bitstream")
+    if any(kind in {b"EXIF", b"XMP ", b"ICCP"} for kind in kinds):
+        raise RosterError("avatar contains metadata")
+    if expected_dimensions and dimensions != expected_dimensions:
+        raise RosterError(f"avatar dimensions are {dimensions}, expected {expected_dimensions}")
+    decoder = shutil.which("dwebp")
+    if not decoder:
+        raise RosterError("validating mapped avatars requires dwebp")
+    with tempfile.TemporaryDirectory(prefix="hugegraph-avatar-decode-") as work:
+        source = pathlib.Path(work) / "avatar.webp"
+        target = pathlib.Path(work) / "avatar.ppm"
+        source.write_bytes(raw)
+        try:
+            result = subprocess.run(
+                [decoder, str(source), "-o", str(target)],
+                text=True,
+                capture_output=True,
+                timeout=20,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise RosterError(f"dwebp could not decode avatar: {exc}") from exc
+        if result.returncode or not target.is_file():
+            raise RosterError(f"dwebp rejected avatar: {result.stderr.strip()}")
+    return dimensions
+
+
 def _strip_webp_metadata(raw: bytes) -> bytes:
     """Remove optional metadata chunks while preserving the image bitstream."""
     _webp_dimensions(raw)
@@ -128,7 +217,7 @@ def _strip_webp_metadata(raw: bytes) -> bytes:
         chunk = bytearray(raw[cursor:end])
         if kind not in {b"EXIF", b"XMP ", b"ICCP"}:
             if kind == b"VP8X":
-                chunk[8] &= ~0x2C
+                chunk[8] &= ~0x2D
             chunks.append(bytes(chunk))
         cursor = end
     if cursor != len(raw):
@@ -143,7 +232,13 @@ def _avatar_bytes(user_id: int) -> bytes:
         headers={"Accept": "image/webp", "User-Agent": "apache-hugegraph-doc-community-roster/1"},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
-        raw = response.read()
+        raw = _read_bounded_response(
+            response,
+            expected_hosts={"avatars.githubusercontent.com"},
+            content_types={"image/png", "image/jpeg", "image/webp"},
+            limit=AVATAR_LIMIT,
+            kind="GitHub avatar",
+        )
     try:
         raw = _strip_webp_metadata(raw)
     except RosterError:
@@ -154,16 +249,19 @@ def _avatar_bytes(user_id: int) -> bytes:
             source = pathlib.Path(work) / "source"
             target = pathlib.Path(work) / "avatar.webp"
             source.write_bytes(raw)
-            result = subprocess.run(
-                [converter, "-quiet", "-resize", "128", "128", "-metadata", "none", str(source), "-o", str(target)],
-                text=True,
-                capture_output=True,
-            )
+            try:
+                result = subprocess.run(
+                    [converter, "-quiet", "-resize", "128", "128", "-metadata", "none", str(source), "-o", str(target)],
+                    text=True,
+                    capture_output=True,
+                    timeout=20,
+                )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                raise RosterError(f"cwebp failed for numeric GitHub user ID {user_id}: {exc}") from exc
             if result.returncode:
                 raise RosterError(f"cwebp failed for numeric GitHub user ID {user_id}: {result.stderr.strip()}")
             raw = _strip_webp_metadata(target.read_bytes())
-    if _webp_dimensions(raw) != (128, 128):
-        raise RosterError(f"GitHub avatar for numeric user ID {user_id} is not 128x128 WebP")
+    _validate_webp(raw, expected_dimensions=(128, 128))
     return raw
 
 
@@ -255,6 +353,8 @@ def validate_bundle(warn_after_days: int) -> list[str]:
         raise RosterError("roster.json: source owners/members must be arrays")
     if owners != sorted(set(owners)) or members != sorted(set(members)):
         raise RosterError("roster.json: source owners/members must be sorted and unique")
+    if any(not isinstance(asf_id, str) or not ASF_ID_PATTERN.fullmatch(asf_id) for asf_id in members):
+        raise RosterError("roster.json: source members contain an invalid ASF ID")
     if not set(owners) <= set(members) or chair not in owners:
         raise RosterError("roster.json: invalid owners/members/Chair relationship")
     pmc, committers = roles["pmc"], roles["committers"]
@@ -279,22 +379,25 @@ def validate_bundle(warn_after_days: int) -> list[str]:
         for person in entries:
             if any(key not in person for key in ("asf_id", "name", "initials", "chair", "profile_url")):
                 raise RosterError(f"roster.json: incomplete member {person!r}")
+            if type(person["chair"]) is not bool:
+                raise RosterError(f"roster.json: chair must be boolean for {person['asf_id']!r}")
     mappings = _validate_mapping(mapping, set(ids))
     for person in people:
         expected, avatar = mappings.get(person["asf_id"]), person.get("avatar")
         if expected != person.get("github"):
             raise RosterError(f"roster.json: GitHub mapping drift for {person['asf_id']!r}")
         if expected:
-            if not isinstance(avatar, str) or not avatar.startswith("/img/community/avatars/"):
+            match = AVATAR_PATH_PATTERN.fullmatch(avatar) if isinstance(avatar, str) else None
+            if not match:
                 raise RosterError(f"roster.json: mapped member {person['asf_id']!r} needs a local avatar")
-            filename = pathlib.PurePosixPath(avatar).name
-            if len(filename) != 69 or not filename.endswith(".webp"):
-                raise RosterError(f"roster.json: avatar filename must be a SHA-256 digest")
-            raw = (ROOT / "static" / avatar.lstrip("/")).read_bytes()
-            if hashlib.sha256(raw).hexdigest() != filename[:-5] or _webp_dimensions(raw) != (128, 128):
+            filename = f"{match.group(1)}.webp"
+            path = AVATAR_DIR / filename
+            if path.is_symlink():
+                raise RosterError(f"roster.json: avatar must not be a symlink {avatar}")
+            raw = path.read_bytes()
+            if hashlib.sha256(raw).hexdigest() != match.group(1):
                 raise RosterError(f"roster.json: invalid avatar {avatar}")
-            if any(marker in raw for marker in (b"EXIF", b"XMP ", b"ICCP")):
-                raise RosterError(f"roster.json: avatar contains metadata {avatar}")
+            _validate_webp(raw, expected_dimensions=(128, 128))
             if person["profile_url"] != f"https://github.com/{expected['login']}":
                 raise RosterError(f"roster.json: mapped profile URL mismatch")
         elif avatar:
@@ -312,37 +415,26 @@ def validate_bundle(warn_after_days: int) -> list[str]:
     return [f"community roster is {age.days} days old (threshold: {warn_after_days})"] if age > dt.timedelta(days=warn_after_days) else []
 
 
-def validate_rendered_outputs() -> None:
-    with tempfile.TemporaryDirectory(prefix="hugegraph-community-site-") as destination:
-        environment = {**os.environ, "GOPROXY": "off"}
-        result = subprocess.run(
-            ["hugo", "--quiet", "--destination", destination],
-            cwd=ROOT,
-            env=environment,
-            text=True,
-            capture_output=True,
-        )
-        if result.returncode:
-            raise RosterError(f"Hugo render failed:\n{result.stderr.strip()}")
-        expected = {
-            "community/index.html": ('data-community-role="pmc"', 'data-community-role="committers"'),
-            "_print/community/index.html": ('data-community-role="pmc"', 'data-community-role="committers"'),
-            "community/index.md": ("## Project members", "### PMC", "### Committers"),
-            "cn/community/index.html": ('data-community-role="pmc"', 'data-community-role="committers"'),
-            "cn/_print/community/index.html": ('data-community-role="pmc"', 'data-community-role="committers"'),
-            "cn/community/index.md": ("## 项目成员", "### PMC", "### Committers"),
-        }
-        urls = [p["profile_url"] for role in ("pmc", "committers") for p in _read_json(ROSTER_PATH)["roles"][role]]
-        for relative, markers in expected.items():
-            path = pathlib.Path(destination) / relative
-            if not path.is_file():
-                raise RosterError(f"rendered output is missing {relative}")
-            rendered = path.read_text(encoding="utf-8")
-            if any(marker not in rendered for marker in markers):
-                raise RosterError(f"rendered output {relative} is missing Community markers")
-            positions = [rendered.find(url.replace("&", "&amp;") if relative.endswith(".html") else url) for url in urls]
-            if any(position < 0 for position in positions) or positions != sorted(positions):
-                raise RosterError(f"rendered output {relative} has role/link parity drift")
+def validate_rendered_outputs(destination: pathlib.Path) -> None:
+    expected = {
+        "community/index.html": ('data-community-role="pmc"', 'data-community-role="committers"'),
+        "_print/community/index.html": ('data-community-role="pmc"', 'data-community-role="committers"'),
+        "community/index.md": ("## Project members", "### PMC", "### Committers"),
+        "cn/community/index.html": ('data-community-role="pmc"', 'data-community-role="committers"'),
+        "cn/_print/community/index.html": ('data-community-role="pmc"', 'data-community-role="committers"'),
+        "cn/community/index.md": ("## 项目成员", "### PMC", "### Committers"),
+    }
+    urls = [p["profile_url"] for role in ("pmc", "committers") for p in _read_json(ROSTER_PATH)["roles"][role]]
+    for relative, markers in expected.items():
+        path = destination / relative
+        if not path.is_file():
+            raise RosterError(f"rendered output is missing {relative}")
+        rendered = path.read_text(encoding="utf-8")
+        if any(marker not in rendered for marker in markers):
+            raise RosterError(f"rendered output {relative} is missing Community markers")
+        positions = [rendered.find(url.replace("&", "&amp;") if relative.endswith(".html") else url) for url in urls]
+        if any(position < 0 for position in positions) or positions != sorted(positions):
+            raise RosterError(f"rendered output {relative} has role/link parity drift")
 
 
 def _atomic_write(path: pathlib.Path, raw: bytes) -> None:
@@ -371,6 +463,13 @@ def _copy_candidate(raw: bytes, destination: pathlib.Path) -> None:
         os.fsync(stream.fileno())
 
 
+def _validate_avatar_blob(name: str, raw: bytes) -> None:
+    match = re.fullmatch(r"([0-9a-f]{64})\.webp", name)
+    if not match or hashlib.sha256(raw).hexdigest() != match.group(1):
+        raise RosterError(f"candidate avatar name/hash mismatch: {name}")
+    _validate_webp(raw, expected_dimensions=(128, 128))
+
+
 def _commit_bundle(candidate: dict, candidate_avatars: dict[str, bytes]) -> None:
     """Install one bundle or restore the exact prior roster/avatar state."""
     old_roster = ROSTER_PATH.read_bytes() if ROSTER_PATH.exists() else None
@@ -382,14 +481,19 @@ def _commit_bundle(candidate: dict, candidate_avatars: dict[str, bytes]) -> None
         if person.get("avatar")
     }
     existing = {path.name: path for path in AVATAR_DIR.glob("*.webp")}
-    orphan_bytes = {name: path.read_bytes() for name, path in existing.items() if name not in referenced}
     installed: list[pathlib.Path] = []
-    roster_replaced = False
+    replaced: dict[pathlib.Path, bytes] = {}
     try:
         for name, avatar in sorted(candidate_avatars.items()):
+            _validate_avatar_blob(name, avatar)
             destination = AVATAR_DIR / name
             if destination.exists():
-                continue
+                previous = destination.read_bytes()
+                try:
+                    _validate_avatar_blob(name, previous)
+                    continue
+                except RosterError:
+                    replaced[destination] = previous
             staged = AVATAR_DIR / f".{name}.candidate"
             try:
                 _copy_candidate(avatar, staged)
@@ -397,29 +501,30 @@ def _commit_bundle(candidate: dict, candidate_avatars: dict[str, bytes]) -> None
             finally:
                 if staged.exists():
                     _unlink(staged)
-            installed.append(destination)
+            if destination not in replaced:
+                installed.append(destination)
         raw = (json.dumps(candidate, indent=2, ensure_ascii=False) + "\n").encode()
         _atomic_write(ROSTER_PATH, raw)
-        roster_replaced = True
-        for name in sorted(orphan_bytes):
-            _unlink(AVATAR_DIR / name)
     except Exception:
-        if roster_replaced:
-            if old_roster is None:
-                try:
-                    _unlink(ROSTER_PATH)
-                except OSError:
-                    pass
-            else:
-                _atomic_write(ROSTER_PATH, old_roster)
-        for name, raw in orphan_bytes.items():
-            _atomic_write(AVATAR_DIR / name, raw)
+        if old_roster is not None:
+            _atomic_write(ROSTER_PATH, old_roster)
+        for path, raw in replaced.items():
+            _atomic_write(path, raw)
         for path in installed:
             try:
                 _unlink(path)
             except OSError:
                 pass
         raise
+    for name in sorted(set(existing) - referenced):
+        try:
+            _unlink(AVATAR_DIR / name)
+        except OSError as exc:
+            print(
+                f"::warning file=static/img/community/avatars/{name}::"
+                f"could not remove unreferenced avatar: {exc}",
+                file=sys.stderr,
+            )
 
 
 def refresh() -> None:
@@ -443,7 +548,7 @@ def main() -> int:
     commands.add_parser("refresh")
     validate = commands.add_parser("validate")
     validate.add_argument("--warn-after-days", type=int, default=90)
-    validate.add_argument("--skip-render", action="store_true")
+    validate.add_argument("--artifact", type=pathlib.Path, help="validate a prebuilt Hugo artifact")
     args = parser.parse_args()
     try:
         if args.command == "refresh":
@@ -454,8 +559,8 @@ def main() -> int:
                 raise RosterError("--warn-after-days must be non-negative")
             for warning in validate_bundle(args.warn_after_days):
                 print(f"::warning file=data/community/roster.json::{warning}")
-            if not args.skip_render:
-                validate_rendered_outputs()
+            if args.artifact:
+                validate_rendered_outputs(args.artifact.resolve())
     except (OSError, RosterError, urllib.error.URLError) as exc:
         print(f"community roster: {exc}", file=sys.stderr)
         return 1

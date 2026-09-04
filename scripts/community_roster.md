@@ -22,3 +22,16 @@ Mapped avatars are downloaded during refresh, converted with `cwebp` when
 needed, stripped of metadata, checked as 128 by 128 WebP, and stored under a
 SHA-256 content-addressed filename. Unmapped members render initials and link
 to the ASF phonebook without requiring JavaScript.
+
+The fixed `validate` command is fully offline and checks checked-in data,
+identity rules, and local avatar files. Render the site separately, then opt in
+to artifact checks:
+
+```bash
+hugo --destination /safe/prebuilt/site
+python3 scripts/community_roster.py validate \
+  --warn-after-days 90 \
+  --artifact /safe/prebuilt/site
+```
+
+The artifact option never invokes Hugo or downloads modules itself.

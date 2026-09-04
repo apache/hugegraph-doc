@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import pathlib
 import subprocess
 import sys
@@ -149,6 +150,98 @@ class SiteOutputSecurityTest(unittest.TestCase):
                 "versions/1.5/cn/404.html: error document must not declare hreflang",
             ],
         )
+
+    def test_error_document_paths_follow_all_manifest_versions(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = pathlib.Path(temp_name)
+            manifest = {
+                "versions": [
+                    {"id": "latest", "publishPath": ""},
+                    {"id": "1.7", "publishPath": "versions/1.7"},
+                    {"id": "1.5", "publishPath": "versions/1.5"},
+                    {"id": "1.3", "publishPath": "versions/1.3"},
+                    {"id": "1.0", "publishPath": "versions/1.0"},
+                ]
+            }
+            metadata = root / "build-metadata"
+            metadata.mkdir()
+            (metadata / "versions.json").write_text(
+                json.dumps(manifest), encoding="utf-8"
+            )
+
+            self.assertEqual(
+                VALIDATOR.error_document_paths(root),
+                {
+                    "404.html",
+                    "cn/404.html",
+                    "versions/1.7/404.html",
+                    "versions/1.7/cn/404.html",
+                    "versions/1.5/404.html",
+                    "versions/1.5/cn/404.html",
+                    "versions/1.3/404.html",
+                    "versions/1.3/cn/404.html",
+                    "versions/1.0/404.html",
+                    "versions/1.0/cn/404.html",
+                },
+            )
+
+    def test_all_modes_reject_old_version_error_page_seo(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = pathlib.Path(temp_name)
+            manifest = {
+                "versions": [
+                    {"id": "latest", "publishPath": ""},
+                    {"id": "1.3", "publishPath": "versions/1.3"},
+                    {"id": "1.0", "publishPath": "versions/1.0"},
+                ]
+            }
+            metadata = root / "build-metadata"
+            metadata.mkdir()
+            (metadata / "versions.json").write_text(
+                json.dumps(manifest), encoding="utf-8"
+            )
+            unsafe = (
+                '<meta name="robots" content="index, follow">'
+                '<link rel="canonical" href="https://example.com/404.html">'
+                '<link rel="alternate" hreflang="en-US" '
+                'href="https://example.com/404.html">'
+            )
+            for version in ("1.3", "1.0"):
+                for language in ("", "cn/"):
+                    page = root / f"versions/{version}/{language}404.html"
+                    page.parent.mkdir(parents=True, exist_ok=True)
+                    page.write_text(unsafe, encoding="utf-8")
+
+            for extra_args in (["--security-only"], []):
+                result = subprocess.run(
+                    [
+                        sys.executable,
+                        str(VALIDATOR_PATH),
+                        str(root),
+                        "https://hugegraph.apache.org/",
+                        *extra_args,
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                for version in ("1.3", "1.0"):
+                    for language in ("", "cn/"):
+                        page_name = f"versions/{version}/{language}404.html"
+                        with self.subTest(mode=extra_args, page_name=page_name):
+                            self.assertIn(
+                                f"{page_name}: expected one robots noindex,nofollow",
+                                result.stdout,
+                            )
+                            self.assertIn(
+                                f"{page_name}: error document must not declare canonical",
+                                result.stdout,
+                            )
+                            self.assertIn(
+                                f"{page_name}: error document must not declare hreflang",
+                                result.stdout,
+                            )
 
     def test_nested_content_404_is_not_an_error_document_exception(self) -> None:
         parser = parse(

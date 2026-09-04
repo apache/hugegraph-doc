@@ -71,10 +71,6 @@ UNSAFE_AUTHORED_ELEMENTS = {"script", "iframe", "object", "embed"}
 ERROR_DOCUMENT_PATHS = {
     "404.html",
     "cn/404.html",
-    "versions/1.7/404.html",
-    "versions/1.7/cn/404.html",
-    "versions/1.5/404.html",
-    "versions/1.5/cn/404.html",
 }
 DOCS_NAV_GROUP_TITLES = {
     "en": ("Get Started", "Components", "Develop", "Operate", "Reference"),
@@ -199,10 +195,59 @@ def image_url_allowed_by_asf_csp(
     return hostname in ASF_CSP_IMAGE_HOSTS or hostname.endswith(ASF_CSP_IMAGE_SUFFIXES)
 
 
-def error_document_seo_errors(parser: DocumentParser, page_name: str) -> list[str]:
+def error_document_paths(root: pathlib.Path | None = None) -> set[str]:
+    """Return root and version-scoped error documents from the active manifest."""
+
+    manifest_paths = []
+    if root is not None:
+        manifest_paths.append(root / "build-metadata/versions.json")
+    manifest_paths.append(pathlib.Path(__file__).resolve().parents[1] / "versions.json")
+    manifest_path = next((path for path in manifest_paths if path.is_file()), None)
+    if manifest_path is None:
+        return set(ERROR_DOCUMENT_PATHS)
+
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"cannot parse version manifest {manifest_path}: {exc}") from exc
+    versions = manifest.get("versions")
+    if not isinstance(versions, list):
+        raise ValueError(f"version manifest {manifest_path} has no versions list")
+
+    paths = set(ERROR_DOCUMENT_PATHS)
+    for entry in versions:
+        publish_path = entry.get("publishPath") if isinstance(entry, dict) else None
+        if not isinstance(publish_path, str):
+            raise ValueError(
+                f"version manifest {manifest_path} has invalid publishPath"
+            )
+        if not publish_path:
+            continue
+        pure_path = pathlib.PurePosixPath(publish_path)
+        if (
+            pure_path.is_absolute()
+            or ".." in pure_path.parts
+            or pure_path.as_posix() != publish_path
+        ):
+            raise ValueError(
+                f"version manifest {manifest_path} has unsafe publishPath "
+                f"{publish_path!r}"
+            )
+        paths.add(f"{publish_path}/404.html")
+        paths.add(f"{publish_path}/cn/404.html")
+    return paths
+
+
+def error_document_seo_errors(
+    parser: DocumentParser,
+    page_name: str,
+    error_paths: set[str] | None = None,
+) -> list[str]:
     """Require error documents to stay out of indexes and canonical clusters."""
 
-    if page_name not in ERROR_DOCUMENT_PATHS:
+    if page_name not in (
+        error_paths if error_paths is not None else error_document_paths()
+    ):
         return []
 
     errors: list[str] = []
@@ -550,6 +595,11 @@ def main() -> int:
     base = args.expected_base_url.rstrip("/") + "/"
     base_parts = urllib.parse.urlsplit(base)
     errors: list[str] = []
+    try:
+        error_paths = error_document_paths(root)
+    except ValueError as exc:
+        errors.append(str(exc))
+        error_paths = set(ERROR_DOCUMENT_PATHS)
 
     if not root.is_dir():
         errors.append(f"missing output directory: {root}")
@@ -592,7 +642,7 @@ def main() -> int:
 
         page_name = page.relative_to(root).as_posix()
         errors.extend(document_security_errors(parser, page_name, base_parts))
-        errors.extend(error_document_seo_errors(parser, page_name))
+        errors.extend(error_document_seo_errors(parser, page_name, error_paths))
         if args.security_only:
             continue
         errors.extend(toc_accessibility_errors(parser, page_name))
@@ -601,7 +651,7 @@ def main() -> int:
         except ValueError as exc:
             errors.append(f"{page_name}: {exc}")
             alias_target = None
-        is_error_document = page_name in ERROR_DOCUMENT_PATHS
+        is_error_document = page_name in error_paths
         if not is_error_document and page_name != "client-go/index.html":
             if len(parser.canonical) != 1:
                 errors.append(

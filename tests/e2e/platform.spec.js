@@ -20,7 +20,7 @@ for (const locale of ["en", "cn"]) {
       "aria-expanded", "true"
     );
 
-    await page.locator("[data-td-shell-sidebar-toggle]").first().click();
+    await page.locator(".td-shell-sidebar__collapse").click();
     await expect(page.locator("#td-shell-sidebar")).toHaveAttribute("aria-hidden", "true");
     await expect(page.locator("#td-shell-sidebar")).toHaveJSProperty("inert", true);
     const restore = page.locator(".hg-sidebar-restore");

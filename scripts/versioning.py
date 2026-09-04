@@ -3235,6 +3235,7 @@ def validate_artifact(args: argparse.Namespace) -> None:
     require_metadata_matches(expected_entry, metadata, metadata_path)
     if metadata.get("baseURL") != expected_base:
         fail(f"version metadata does not match {entry['id']} at {expected_base}")
+    validate_output_security(root, expected_base)
     validate_llms_full_outputs(root, entry, expected_base)
     docs_navigation = metadata.get("docsNavigation")
     expected_docs_navigation = DOCS_NAV_EXPECTED_STATS[entry["id"]]

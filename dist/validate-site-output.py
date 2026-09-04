@@ -600,6 +600,41 @@ def rendered_url_shape_error(
     return None
 
 
+def document_url_shape_errors(
+    parser: DocumentParser,
+    page_name: str,
+) -> list[str]:
+    """Apply the browser-safe URL shape contract to every rendered URL token."""
+    tokens: list[tuple[str, str]] = list(parser.urls)
+    tokens.extend(
+        (f"{tag}[{attribute}]", value)
+        for tag, attribute, value in parser.resources
+    )
+    tokens.extend(
+        ("inline CSS", value)
+        for source in parser.inline_css_sources
+        for value in css_resource_urls(source)
+    )
+    try:
+        alias_target = refresh_target(parser)
+    except ValueError as exc:
+        return [f"{page_name}: {exc}"]
+    if alias_target:
+        tokens.append(("meta refresh", alias_target))
+
+    errors = []
+    seen: set[tuple[str, str]] = set()
+    for attribute, value in tokens:
+        key = (attribute, value)
+        if key in seen:
+            continue
+        seen.add(key)
+        error = rendered_url_shape_error(value, page_name, attribute)
+        if error:
+            errors.append(error)
+    return errors
+
+
 def main() -> int:
     argument_parser = argparse.ArgumentParser(
         description="Validate a generated HugeGraph documentation artifact."
@@ -666,12 +701,12 @@ def main() -> int:
             continue
 
         page_name = page.relative_to(root).as_posix()
+        shape_errors = document_url_shape_errors(parser, page_name)
+        errors.extend(shape_errors)
+        if shape_errors:
+            continue
         errors.extend(document_security_errors(parser, page_name, base_parts))
         errors.extend(error_document_seo_errors(parser, page_name, error_paths))
-        for attribute, raw_url in parser.urls:
-            shape_error = rendered_url_shape_error(raw_url, page_name, attribute)
-            if shape_error:
-                errors.append(shape_error)
         if args.security_only:
             continue
         errors.extend(toc_accessibility_errors(parser, page_name))
@@ -835,6 +870,21 @@ def main() -> int:
             stylesheet_text = stylesheet.read_text(encoding="utf-8")
         except (OSError, UnicodeError) as exc:
             errors.append(f"cannot parse {stylesheet.relative_to(root)}: {exc}")
+            continue
+        stylesheet_name = stylesheet.relative_to(root).as_posix()
+        shape_errors = [
+            error
+            for resource in css_resource_urls(stylesheet_text)
+            if (
+                error := rendered_url_shape_error(
+                    resource,
+                    stylesheet_name,
+                    "CSS resource",
+                )
+            )
+        ]
+        errors.extend(shape_errors)
+        if shape_errors:
             continue
         for resource in css_http_resources(stylesheet_text):
             errors.append(

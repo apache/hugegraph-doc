@@ -1519,6 +1519,37 @@ class VersionUrlTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 versioning.validate_artifact(args)
 
+    def test_validate_command_runs_complete_rendered_security_scan(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            artifact = Path(temp_name) / "artifact"
+            artifact.mkdir()
+            entry = json.loads(
+                (versioning.ROOT / "versions.json").read_text(encoding="utf-8")
+            )["versions"][0]
+            sha = "a" * 40
+            metadata = dict(entry)
+            metadata.update({"sha": sha, "baseURL": ORIGIN})
+            (artifact / ".version.json").write_text(
+                json.dumps(metadata), encoding="utf-8"
+            )
+            args = argparse.Namespace(
+                manifest=versioning.ROOT / "versions.json",
+                version="latest",
+                sha=sha,
+                site_origin=ORIGIN,
+                artifact=artifact,
+            )
+            with (
+                mock.patch.object(
+                    versioning,
+                    "validate_output_security",
+                    side_effect=SystemExit("unsafe rendered resource"),
+                ) as scan,
+                self.assertRaisesRegex(SystemExit, "unsafe rendered resource"),
+            ):
+                versioning.validate_artifact(args)
+            scan.assert_called_once_with(artifact.resolve(), ORIGIN)
+
     def test_rejects_active_and_ambiguous_url_schemes(self) -> None:
         for value in (
             "javascript:alert(1)",

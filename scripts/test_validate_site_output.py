@@ -413,7 +413,15 @@ class SiteOutputSecurityTest(unittest.TestCase):
                     '<a href="http:docs/introduction/">opaque</a>'
                     '<a href="/docs/introduction/\t">control</a>'
                     '<a href="/docs\\introduction/">backslash</a>'
+                    '<img srcset="https:///docs/introduction/ 1x">'
+                    '<object data="https:///docs/introduction/"></object>'
+                    '<video poster="https:///docs/introduction/"></video>'
+                    '<style>.hero{background:url(https:///docs/introduction/)}</style>'
                 ),
+                encoding="utf-8",
+            )
+            (root / "site.css").write_text(
+                ".hero{background:url(https:///docs/introduction/)}",
                 encoding="utf-8",
             )
 
@@ -432,8 +440,14 @@ class SiteOutputSecurityTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
             self.assertIn("HTTP(S) URL has no authority", result.stdout)
+            self.assertGreaterEqual(
+                result.stdout.count("HTTP(S) URL has no authority"),
+                6,
+                result.stdout,
+            )
             self.assertIn("unsafe whitespace/control URL", result.stdout)
             self.assertIn("unsafe backslash URL", result.stdout)
+            self.assertIn("site.css", result.stdout)
 
     def test_css_http_resources_are_detected(self) -> None:
         parser = parse(

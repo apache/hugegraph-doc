@@ -506,7 +506,7 @@ def _rendered_role_links(rendered: str, html_output: bool) -> dict[str, list[str
         parser = _CommunityLinkParser()
         parser.feed(rendered)
         if parser.section_order != ["pmc", "committers"]:
-            return {"pmc": [], "committers": []}
+            raise RosterError("Community role section order drift")
         return parser.links
     starts = {}
     for role, heading in (("pmc", "PMC"), ("committers", "Committers")):

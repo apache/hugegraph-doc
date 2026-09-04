@@ -3,6 +3,7 @@ import importlib.util
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -633,27 +634,48 @@ class CommunityContentContractTests(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
 
     def test_artifact_validator_rejects_swapped_role_sections(self):
-        with tempfile.TemporaryDirectory(prefix="community-role-output-") as directory:
-            destination = pathlib.Path(directory)
-            for relative in (
-                "community/index.html",
-                "_print/community/index.html",
-                "community/index.md",
-                "cn/community/index.html",
-                "cn/_print/community/index.html",
-                "cn/community/index.md",
-            ):
-                target = destination / relative
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(self.site / relative, target)
-            path = destination / "community/index.html"
-            rendered = path.read_text(encoding="utf-8")
-            rendered = rendered.replace('data-community-role="pmc"', 'data-community-role="temporary"', 1)
-            rendered = rendered.replace('data-community-role="committers"', 'data-community-role="pmc"', 1)
-            rendered = rendered.replace('data-community-role="temporary"', 'data-community-role="committers"', 1)
-            path.write_text(rendered, encoding="utf-8")
-            with self.assertRaisesRegex(roster.RosterError, "link parity drift"):
-                roster.validate_rendered_outputs(destination)
+        outputs = (
+            "community/index.html",
+            "_print/community/index.html",
+            "community/index.md",
+            "cn/community/index.html",
+            "cn/_print/community/index.html",
+            "cn/community/index.md",
+        )
+        for swapped_relative in (
+            "community/index.html",
+            "_print/community/index.html",
+            "cn/community/index.html",
+            "cn/_print/community/index.html",
+        ):
+            with self.subTest(output=swapped_relative), tempfile.TemporaryDirectory(
+                prefix="community-role-output-"
+            ) as directory:
+                destination = pathlib.Path(directory)
+                for relative in outputs:
+                    target = destination / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(self.site / relative, target)
+                path = destination / swapped_relative
+                rendered = path.read_text(encoding="utf-8")
+                match = re.search(
+                    r'(<section[^>]*data-community-role=(?:"pmc"|pmc)[^>]*>.*?</section>)'
+                    r"(\s*)"
+                    r'(<section[^>]*data-community-role=(?:"committers"|committers)[^>]*>.*?</section>)',
+                    rendered,
+                    flags=re.DOTALL,
+                )
+                self.assertIsNotNone(match)
+                rendered = (
+                    rendered[: match.start()]
+                    + match.group(3)
+                    + match.group(2)
+                    + match.group(1)
+                    + rendered[match.end() :]
+                )
+                path.write_text(rendered, encoding="utf-8")
+                with self.assertRaisesRegex(roster.RosterError, "role section order drift"):
+                    roster.validate_rendered_outputs(destination)
 
     def test_artifact_validator_rejects_plain_text_profile_urls(self):
         with tempfile.TemporaryDirectory(prefix="community-fake-output-") as directory:

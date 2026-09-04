@@ -1,10 +1,12 @@
-const { test, expect } = require("@playwright/test");
+const { test, expect } = require("./artifact-test");
 
 for (const locale of ["en", "cn"]) {
   const prefix = locale === "cn" ? "/cn" : "";
   test(`latest ${locale} sidebar persists and isolates collapse`, async ({ page }) => {
     await page.goto(`${prefix}/docs/introduction/`);
-    const toggle = page.locator("[data-td-shell-tree-toggle][aria-controls]").last();
+    const toggle = page
+      .locator("#td-shell-sidebar li [data-td-shell-tree-toggle][aria-expanded=false]")
+      .first();
     await toggle.click();
     const target = await toggle.getAttribute("aria-controls");
     const key = `oink.sidebar.v1.latest.${locale}`;
@@ -32,7 +34,7 @@ for (const locale of ["en", "cn"]) {
     const opener = page.locator("[data-td-shell-drawer-open]");
     await opener.click();
     await expect(page.locator("html")).toHaveAttribute("data-td-shell-drawer", "open");
-    await page.locator("[data-td-shell-drawer-close]").click();
+    await page.locator("button[data-td-shell-drawer-close]").click();
     await expect(page.locator("#td-shell-sidebar")).toHaveJSProperty("inert", true);
     await expect(opener).toBeFocused();
     await expect(page.locator("html")).not.toHaveAttribute("data-td-shell-lock", "");

@@ -215,9 +215,11 @@
       syncing = false;
       if (!root || !input || !list || root.hidden) return;
       var old = list.querySelector('[data-hg-ai-search-tail]');
-      if (old) old.remove();
       var query = trimmedQuery(input.value);
-      if (!query || query.charAt(0) === '>') return;
+      if (!query || query.charAt(0) === '>') {
+        if (old) old.remove();
+        return;
+      }
       var choiceLabel = root.dataset.tdTChoice || '';
       if (
         choiceLabel &&
@@ -225,7 +227,10 @@
           list.querySelectorAll('.td-shell-search__group-label'),
           function (label) { return label.textContent.trim() === choiceLabel; },
         )
-      ) return;
+      ) {
+        if (old) old.remove();
+        return;
+      }
       var loading = root.dataset.tdTLoading || '';
       if (
         loading &&
@@ -233,7 +238,13 @@
           list.querySelectorAll('.td-shell-search__empty'),
           function (node) { return node.textContent.trim() === loading; },
         )
-      ) return;
+      ) {
+        if (old) old.remove();
+        return;
+      }
+      var oldButton = old && old.querySelector('[data-hg-ask-ai]');
+      if (oldButton && oldButton.dataset.hgAiQuery === query) return;
+      if (old) old.remove();
 
       var group = documentObject.createElement('div');
       group.className = 'td-shell-search__group hg-ai-search-tail';

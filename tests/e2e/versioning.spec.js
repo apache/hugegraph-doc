@@ -1,4 +1,4 @@
-const { test, expect } = require("@playwright/test");
+const { test, expect } = require("./artifact-test");
 
 const VERSION_IDS = ["latest", "1.7", "1.5", "1.3", "1.0"];
 const EXPECTED_IDS = (process.env.EXPECTED_VERSIONS || VERSION_IDS.join(",")).split(",");

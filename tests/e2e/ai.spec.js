@@ -1,4 +1,4 @@
-const { test, expect } = require("@playwright/test");
+const { test, expect } = require("./artifact-test");
 
 const AI_ORIGIN = "http://127.0.0.1:4174";
 const mockBundle = `

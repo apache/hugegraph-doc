@@ -1,4 +1,4 @@
-const { test, expect } = require("@playwright/test");
+const { test, expect } = require("./artifact-test");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -57,7 +57,10 @@ for (const [locale, localeCases] of Object.entries(cases)) {
         .locator('[role="option"]');
       await expect(pageResults.first(), `no Lunr results for ${query}`).toBeVisible();
       const paths = await pageResults.evaluateAll((rows) =>
-        rows.slice(0, 3).map((row) => new URL(row.href).pathname)
+        rows.slice(0, 3).map((row) => {
+          const link = row.matches("a[href]") ? row : row.querySelector("a[href]");
+          return link ? new URL(link.href).pathname : "";
+        })
       );
       expect(
         paths.includes(expectedRef),

@@ -2995,10 +2995,9 @@ def validate_llms_full_outputs(
         if not path.is_file():
             fail(f"{label} LLMSFULL output is missing: {path.relative_to(root)}")
         text = path.read_text(encoding="utf-8")
-        source, marker, index_link, forbidden = contracts[language]
+        canonical_source, marker, index_link, forbidden = contracts[language]
         if (
-            f"Source: {source}" not in text
-            or marker not in text
+            marker not in text
             or index_link not in text
             or forbidden in text
         ):
@@ -3013,18 +3012,25 @@ def validate_llms_full_outputs(
             or any(not value for value in sources)
         ):
             fail(f"{label} LLMSFULL source is missing or malformed")
-        if len(sources) != len(set(sources)):
-            fail(f"{label} LLMSFULL source is duplicated")
+        if sources[0] != canonical_source:
+            fail(f"{label} LLMSFULL canonical source is not first")
         expected_parts = urllib.parse.urlsplit(expected_base)
         locale_root = "cn/docs/" if language == "cn" else "docs/"
         expected_path_prefix = urllib.parse.urlsplit(
             urllib.parse.urljoin(expected_base, locale_root)
         ).path
+        canonical_sources: set[str] = set()
         for value in sources:
-            require_safe_url_syntax(value)
-            parts = urllib.parse.urlsplit(value)
-            require_safe_http_authority(parts, value)
+            if "?" in value or "#" in value or "%" in value:
+                fail(f"{label} LLMSFULL source is not canonical: {value}")
+            try:
+                require_safe_url_syntax(value)
+                parts = urllib.parse.urlsplit(value)
+                require_safe_http_authority(parts, value)
+            except (TypeError, ValueError) as exc:
+                fail(f"{label} LLMSFULL source is malformed: {value}: {exc}")
             decoded_path = urllib.parse.unquote(parts.path)
+            path_segments = parts.path.split("/")
             if (
                 any(char.isspace() for char in value)
                 or parts.scheme.lower() != expected_parts.scheme.lower()
@@ -3032,11 +3038,79 @@ def validate_llms_full_outputs(
                 or parts.query
                 or parts.fragment
                 or "\\" in decoded_path
+                or "//" in parts.path
+                or any(segment in {".", ".."} for segment in path_segments)
                 or not decoded_path.startswith(expected_path_prefix)
                 or not decoded_path.endswith(".md")
                 or ".." in pathlib.PurePosixPath(decoded_path).parts
             ):
                 fail(f"{label} LLMSFULL source is outside its artifact: {value}")
+            canonical = urllib.parse.urlunsplit(
+                (
+                    parts.scheme.lower(),
+                    parts.netloc.lower(),
+                    decoded_path,
+                    "",
+                    "",
+                )
+            )
+            if canonical in canonical_sources:
+                fail(f"{label} LLMSFULL source is duplicated: {value}")
+            canonical_sources.add(canonical)
+
+
+def validate_social_image_metadata(
+    document: DocumentParser,
+    relative: str,
+    root: pathlib.Path,
+    expected_base: str,
+) -> None:
+    """Require matching same-artifact Open Graph and Twitter image targets."""
+    values: dict[str, list[str]] = {"og:image": [], "twitter:image": []}
+    for item in document.meta:
+        if item.get("property", "").lower() == "og:image":
+            values["og:image"].append(item.get("content", ""))
+        if item.get("name", "").lower() == "twitter:image":
+            values["twitter:image"].append(item.get("content", ""))
+    if any(len(items) != 1 or not items[0] for items in values.values()):
+        fail(f"social image metadata is missing or duplicated in {relative}")
+    og_image = values["og:image"][0]
+    twitter_image = values["twitter:image"][0]
+    if og_image != twitter_image:
+        fail(f"social image metadata differs in {relative}")
+    value = og_image
+    if "?" in value or "#" in value or "%" in value or "\\" in value:
+        fail(f"social image URL is not canonical in {relative}: {value}")
+    try:
+        parts = urllib.parse.urlsplit(value)
+        base = urllib.parse.urlsplit(expected_base)
+        require_safe_http_authority(parts, value)
+    except (TypeError, ValueError) as exc:
+        fail(f"social image URL is malformed in {relative}: {value}: {exc}")
+    if parts.scheme:
+        if (
+            parts.scheme.lower() != "https"
+            or parts.netloc.lower() != base.netloc.lower()
+        ):
+            fail(f"social image URL is outside the artifact in {relative}: {value}")
+    elif parts.netloc or not value.startswith("/"):
+        fail(f"social image URL must be absolute in {relative}: {value}")
+    base_path = base.path.rstrip("/") + "/"
+    image_path = parts.path
+    if not image_path.startswith(base_path):
+        fail(f"social image URL is outside the artifact in {relative}: {value}")
+    artifact_relative = image_path[len(base_path) :]
+    suffix = pathlib.PurePosixPath(artifact_relative).suffix.lower()
+    if (
+        not artifact_relative
+        or artifact_relative.startswith("/")
+        or ".." in pathlib.PurePosixPath(artifact_relative).parts
+        or suffix not in {".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"}
+    ):
+        fail(f"social image URL is not an image in {relative}: {value}")
+    target = root / pathlib.PurePosixPath(artifact_relative)
+    if not target.is_file():
+        fail(f"social image target is missing in {relative}: {value}")
 
 
 def validate_artifact(args: argparse.Namespace) -> None:
@@ -3326,15 +3400,7 @@ def validate_artifact(args: argparse.Namespace) -> None:
             fail(f"404 page does not use the interactive OINK shell: {relative}")
         document = DocumentParser()
         document.feed(text)
-        for item in document.meta:
-            if (
-                item.get("property", "").lower() == "og:image"
-                or item.get("name", "").lower() == "twitter:image"
-            ):
-                social_url = item.get("content", "")
-                if not social_url:
-                    fail(f"social image URL is empty in {relative}")
-                validate_url(social_url, path)
+        validate_social_image_metadata(document, relative, root, expected_base)
         require_toc_accessible_name(document, relative)
         alias_target = refresh_target(document)
         if entry["archived"] and relative not in {"404.html", "cn/404.html"}:

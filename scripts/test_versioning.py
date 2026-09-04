@@ -158,8 +158,14 @@ class VersionUrlTest(unittest.TestCase):
             (artifact / ".version.json").write_text(
                 json.dumps(metadata), encoding="utf-8"
             )
+            social = artifact / "img/social/fallback.png"
+            social.parent.mkdir(parents=True)
+            social.write_bytes(b"png")
             (artifact / "index.html").write_text(
-                '<nav id="TableOfContents"></nav>', encoding="utf-8"
+                '<meta property="og:image" content="/img/social/fallback.png">'
+                '<meta name="twitter:image" content="/img/social/fallback.png">'
+                '<nav id="TableOfContents"></nav>',
+                encoding="utf-8",
             )
             en_llms = artifact / "docs/llms-full.txt"
             cn_llms = artifact / "cn/docs/llms-full.txt"
@@ -353,6 +359,11 @@ class VersionUrlTest(unittest.TestCase):
             "https://example.com/docs/config/index.md",
             "https://hugegraph.apache.org/versions/1.7/docs/config/index.md",
             "javascript:alert(1)",
+            "https://hugegraph.apache.org/docs/config/index.md?",
+            "https://hugegraph.apache.org/docs/config/index.md#",
+            "https://hugegraph.apache.org/docs/%63onfig/index.md",
+            "https://hugegraph.apache.org/docs/./config/index.md",
+            "https://[invalid/docs/config/index.md",
             "",
             "https://hugegraph.apache.org/docs/index.md",
         )
@@ -385,6 +396,98 @@ class VersionUrlTest(unittest.TestCase):
                         versioning.validate_llms_full_outputs(
                             root, latest, ORIGIN
                         )
+
+    def test_llms_full_contract_requires_canonical_source_first(self) -> None:
+        latest = versioning.load_manifest(
+            versioning.ROOT / "versions.json"
+        )["versions"][0]
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            en = root / "docs/llms-full.txt"
+            cn = root / "cn/docs/llms-full.txt"
+            en.parent.mkdir(parents=True)
+            cn.parent.mkdir(parents=True)
+            en.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/docs/config/index.md\n"
+                    "Source: https://hugegraph.apache.org/docs/index.md\n\n"
+                    "LLMS index: [llms.txt](/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            cn.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/cn/docs/index.md\n\n"
+                    "LLMS 索引： [llms.txt](/cn/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                SystemExit, "English LLMSFULL canonical source"
+            ):
+                versioning.validate_llms_full_outputs(root, latest, ORIGIN)
+
+    def test_social_image_metadata_requires_safe_matching_local_images(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            image = root / "img/social/fallback.png"
+            image.parent.mkdir(parents=True)
+            image.write_bytes(b"png")
+            non_image = root / "img/social/not-image.html"
+            non_image.write_text("not an image", encoding="utf-8")
+
+            def document(og: str, twitter: str) -> versioning.DocumentParser:
+                parser = versioning.DocumentParser()
+                parser.feed(
+                    f'<meta property="og:image" content="{og}">'
+                    f'<meta name="twitter:image" content="{twitter}">'
+                )
+                return parser
+
+            for value in (
+                "https://hugegraph.apache.org/img/social/fallback.png",
+                "/img/social/fallback.png",
+            ):
+                versioning.validate_social_image_metadata(
+                    document(value, value),
+                    "docs/index.html",
+                    root,
+                    ORIGIN,
+                )
+
+            invalid_pairs = (
+                ("mailto:test@example.com", "mailto:test@example.com"),
+                ("tel:+123", "tel:+123"),
+                ("javascript:alert(1)", "javascript:alert(1)"),
+                ("?image=/img/social/fallback.png", "?image=/img/social/fallback.png"),
+                ("#fallback.png", "#fallback.png"),
+                (
+                    "http://hugegraph.apache.org/img/social/fallback.png",
+                    "http://hugegraph.apache.org/img/social/fallback.png",
+                ),
+                (
+                    "https://example.com/img/social/fallback.png",
+                    "https://example.com/img/social/fallback.png",
+                ),
+                ("/img/social/missing.png", "/img/social/missing.png"),
+                ("/img/social/not-image.html", "/img/social/not-image.html"),
+                (
+                    "/img/social/fallback.png",
+                    "https://hugegraph.apache.org/img/social/fallback.png",
+                ),
+            )
+            for og, twitter in invalid_pairs:
+                with self.subTest(og=og, twitter=twitter), self.assertRaises(
+                    SystemExit
+                ):
+                    versioning.validate_social_image_metadata(
+                        document(og, twitter),
+                        "docs/index.html",
+                        root,
+                        ORIGIN,
+                    )
 
     def test_temporary_manifest_drives_prepare_config_and_route_order(self) -> None:
         manifest_data = {

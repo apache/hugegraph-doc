@@ -2,6 +2,7 @@
 title: "Documentation"
 linkTitle: "Documentation"
 weight: 20
+outputs: [HTML, RSS, print, markdown, LLMSFULL]
 ---
 
 ## Apache HugeGraph 文档

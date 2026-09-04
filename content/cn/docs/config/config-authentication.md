@@ -2,6 +2,8 @@
 title: "HugeGraph 内置用户权限与扩展权限配置及使用"
 linkTitle: "权限配置"
 weight: 3
+search_keywords: [HugeGraph 认证, 权限配置, StandardAuthenticator]
+search_boost: 1.7
 ---
 
 ### 概述

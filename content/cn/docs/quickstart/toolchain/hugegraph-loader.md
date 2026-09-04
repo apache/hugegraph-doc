@@ -2,6 +2,8 @@
 title: "HugeGraph-Loader Quick Start"
 linkTitle: "使用 Loader 实时/流式导入数据"
 weight: 2
+search_keywords: [HugeGraph Loader, 批量导入, 数据导入]
+search_boost: 1.6
 ---
 
 ### 1 HugeGraph-Loader 概述

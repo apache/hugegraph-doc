@@ -49,5 +49,33 @@ class CommunityRosterTests(unittest.TestCase):
         self.assertEqual(original, roster.ROSTER_PATH.read_bytes())
 
 
+class CommunityContentContractTests(unittest.TestCase):
+    def test_search_metadata_covers_fixed_bilingual_entries(self):
+        entries = [
+            "docs/introduction/_index.md",
+            "docs/quickstart/hugegraph/hugegraph-server.md",
+            "docs/quickstart/hugegraph/hugegraph-hstore.md",
+            "docs/quickstart/hugegraph/hugegraph-pd.md",
+            "docs/quickstart/computing/hugegraph-computer.md",
+            "docs/quickstart/toolchain/hugegraph-loader.md",
+            "docs/quickstart/toolchain/hugegraph-hubble.md",
+            "docs/clients/_index.md",
+            "docs/clients/restful-api/_index.md",
+            "docs/config/config-guide.md",
+            "docs/config/config-authentication.md",
+            "docs/download/download.md",
+        ]
+        for language in ("en", "cn"):
+            for relative in entries:
+                text = (ROOT / "content" / language / relative).read_text(encoding="utf-8")
+                self.assertIn("search_keywords:", text, f"{language}/{relative}")
+                self.assertIn("search_boost:", text, f"{language}/{relative}")
+
+    def test_docs_roots_enable_llmsfull_only_in_front_matter(self):
+        for language in ("en", "cn"):
+            text = (ROOT / "content" / language / "docs/_index.md").read_text(encoding="utf-8")
+            self.assertIn("LLMSFULL", text.split("---", 2)[1])
+
+
 if __name__ == "__main__":
     unittest.main()

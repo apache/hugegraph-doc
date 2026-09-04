@@ -2,6 +2,8 @@
 title: "下载 Apache HugeGraph"
 linkTitle: "Download"
 weight: 2
+search_keywords: [HugeGraph 下载, 发布包, SHA512]
+search_boost: 1.7
 ---
 
 > 指南:

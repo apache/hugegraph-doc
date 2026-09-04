@@ -2,6 +2,8 @@
 title: "HugeGraph Server 快速开始"
 linkTitle: "安装/构建 HugeGraph Server"
 weight: 1
+search_keywords: [HugeGraph Server, Server 快速开始, 图数据库服务]
+search_boost: 1.7
 aliases:
   - /docs/quickstart/hugegraph-server/
 ---

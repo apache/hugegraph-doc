@@ -2,6 +2,8 @@
 title: "HugeGraph Server Quick Start"
 linkTitle: "Install/Build HugeGraph Server"
 weight: 1
+search_keywords: [HugeGraph Server, server quickstart, graph database]
+search_boost: 1.7
 aliases:
   - /docs/quickstart/hugegraph-server/
 ---

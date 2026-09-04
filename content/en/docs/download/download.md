@@ -2,6 +2,8 @@
 title: "Download Apache HugeGraph"
 linkTitle: "Download"
 weight: 2
+search_keywords: [HugeGraph download, release artifacts, SHA512]
+search_boost: 1.7
 ---
 
 

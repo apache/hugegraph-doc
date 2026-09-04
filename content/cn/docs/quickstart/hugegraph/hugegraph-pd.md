@@ -2,6 +2,8 @@
 title: "HugeGraph-PD Quick Start"
 linkTitle: "安装/构建 HugeGraph-PD"
 weight: 2
+search_keywords: [HugeGraph PD, 元数据管理, 集群调度]
+search_boost: 1.6
 ---
 
 ### 1 HugeGraph-PD 概述

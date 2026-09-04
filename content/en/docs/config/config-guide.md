@@ -2,6 +2,8 @@
 title: "Server Startup Guide"
 linkTitle: "Server Startup Guide"
 weight: 1
+search_keywords: [HugeGraph configuration, server config, configuration guide]
+search_boost: 1.6
 ---
 
 ### 1 Overview

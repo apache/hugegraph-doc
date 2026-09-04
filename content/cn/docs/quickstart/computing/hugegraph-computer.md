@@ -2,6 +2,8 @@
 title: "HugeGraph-Computer Quick Start"
 linkTitle: "使用 Computer 进行 OLAP 分析"
 weight: 2
+search_keywords: [HugeGraph Computer, 图计算, OLAP]
+search_boost: 1.6
 ---
 
 ## 1 HugeGraph-Computer 概述

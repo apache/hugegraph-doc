@@ -2,6 +2,8 @@
 title: "HugeGraph-PD Quick Start"
 linkTitle: "Install/Build HugeGraph-PD"
 weight: 2
+search_keywords: [HugeGraph PD, placement driver, cluster metadata]
+search_boost: 1.6
 ---
 
 ### 1 HugeGraph-PD Overview

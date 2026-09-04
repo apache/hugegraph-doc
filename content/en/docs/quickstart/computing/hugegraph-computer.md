@@ -2,6 +2,8 @@
 title: "HugeGraph-Computer Quick Start"
 linkTitle: "Analysis with HugeGraph-Computer"
 weight: 2
+search_keywords: [HugeGraph Computer, graph computing, OLAP]
+search_boost: 1.6
 ---
 
 ## 1 HugeGraph-Computer Overview

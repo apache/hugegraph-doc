@@ -2,6 +2,8 @@
 title: "HugeGraph-Hubble Quick Start"
 linkTitle: "Visual with HugeGraph-Hubble"
 weight: 1
+search_keywords: [HugeGraph Hubble, graph visualization, web console]
+search_boost: 1.6
 ---
 
 ### 1 HugeGraph-Hubble Overview

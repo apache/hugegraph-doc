@@ -2,6 +2,8 @@
 title: "HugeGraph-Hubble Quick Start"
 linkTitle: "使用 Hubble 实现图可视化"
 weight: 1
+search_keywords: [HugeGraph Hubble, 图可视化, Web 管理界面]
+search_boost: 1.6
 ---
 
 ### 1 HugeGraph-Hubble 概述

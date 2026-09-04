@@ -2,6 +2,8 @@
 title: "Built-in User Authentication and Authorization Configuration and Usage in HugeGraph"
 linkTitle: "Config Authentication"
 weight: 3
+search_keywords: [HugeGraph authentication, authorization, StandardAuthenticator]
+search_boost: 1.7
 ---
 
 ### Overview

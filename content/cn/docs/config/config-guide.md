@@ -2,6 +2,8 @@
 title: "Server 启动指南"
 linkTitle: "Server 启动指南"
 weight: 1
+search_keywords: [HugeGraph 配置, Server 配置, 配置指南]
+search_boost: 1.6
 ---
 
 ### 1 概述

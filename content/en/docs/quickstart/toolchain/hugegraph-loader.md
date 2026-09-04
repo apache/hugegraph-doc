@@ -2,6 +2,8 @@
 title: "HugeGraph-Loader Quick Start"
 linkTitle: "Load data with HugeGraph-Loader"
 weight: 2
+search_keywords: [HugeGraph Loader, bulk import, data loading]
+search_boost: 1.6
 ---
 
 ### 1 HugeGraph-Loader Overview

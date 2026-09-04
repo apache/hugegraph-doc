@@ -32,55 +32,72 @@ HugeGraph 支持百亿以上的顶点和边的快速存储与查询，具备出�
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-## HugeGraph Server
+## HugeGraph Server（OLTP 图引擎）
 
-Server 是图数据库服务。`hugegraph-core` 实现属性图、Schema、查询和后端接口，`hugegraph-api` 提供 REST API。当前 REST 资源路径包含图空间与图名称，例如：
+HugeGraph Server 是图数据库的 OLTP 引擎和服务入口，负责属性图建模、事务处理、查询执行和 API 接入。图数据实际保存在配置的 RocksDB、HStore 或 HBase 后端中。
+
+- **属性图与 Schema**：支持 VertexLabel、EdgeLabel、PropertyKey 和 IndexLabel 管理
+- **查询语言**：支持 Gremlin（TinkerPop 3）和 Cypher（OpenCypher）
+- **REST API**：提供 Schema、图数据、查询、任务和运维接口
+- **索引与查询**：支持精确查询、范围查询和复合条件查询
+- **存储后端**：1.7.0 至 `master` 主要支持 RocksDB（单机）、HStore（分布式）和 HBase
+
+主要模块包括 `hugegraph-core`、存储后端模块和 `hugegraph-api`。Core 实现图模型、事务和查询逻辑，后端模块负责连接具体存储系统，API 模块负责 HTTP 接入。当前 REST 资源路径包含图空间与图名称，例如：
 
 ```text
 /graphspaces/{graphspace}/graphs/{graph}
 ```
 
-Server 支持 Gremlin 和 Cypher。单机部署通常使用 RocksDB；分布式部署使用 HStore，并由 PD 管理元数据和分区、Store 保存数据副本。
+单机部署通常使用 RocksDB。分布式部署使用 HStore，由 PD 管理集群元数据和分区调度，Store 保存图数据及其副本。HBase 可作为独立的后端存储。
 
 - [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/)
 - [PD 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-pd/)
 - [HStore 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [REST API](/cn/docs/clients/restful-api/)
 
-## Toolchain
+## HugeGraph Toolchain
 
-Toolchain 仓库包含以下模块：
+HugeGraph Toolchain 提供客户端、数据导入、可视化管理、Spark 集成和命令行运维工具，覆盖图应用从接入数据到日常管理的主要环节。
 
 | 模块 | 用途 |
 |---|---|
-| [Java Client](/cn/docs/quickstart/client/hugegraph-client/) | 调用 Server 的 Schema、图数据、Gremlin 和 Traverser API |
-| [Go Client](/cn/docs/quickstart/client/hugegraph-client-go/) | Go 语言客户端；当前仍处于开发阶段 |
-| [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) | 从文件、HDFS、JDBC、Kafka 或其他图读取数据并写入 HugeGraph |
-| [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) | 图管理 Web 界面和后端服务 |
-| [Spark Connector](/cn/docs/quickstart/toolchain/hugegraph-spark-connector/) | 在 Spark 作业中读写 HugeGraph |
-| [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/) | 图管理、备份和恢复命令 |
+| [Client](/cn/docs/quickstart/client/hugegraph-client/) | 封装 Schema 管理、图数据读写、Gremlin 和 Traverser API；支持 Java、[Python](/cn/docs/quickstart/client/hugegraph-client-python/) 和 [Go](/cn/docs/quickstart/client/hugegraph-client-go/)，Rust 客户端正在开发中 |
+| [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) | 从本地文件、HDFS、JDBC、Kafka 或其他图读取数据，转换为顶点和边后批量导入 HugeGraph |
+| [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) | 提供图连接、Schema、数据导入、Gremlin 查询和图形化结果展示的 Web 管理界面 |
+| [Spark Connector](/cn/docs/quickstart/toolchain/hugegraph-spark-connector/) | 在 Spark 作业中批量读写 HugeGraph，适合大数据离线处理 |
+| [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/) | 提供部署、图管理、备份恢复和 Gremlin 执行等命令行能力 |
 
-## 图计算
+## 图计算引擎（OLAP）
 
-HugeGraph-Computer 仓库包含两个实现：
+HugeGraph-Computer 仓库提供两种互补的 OLAP 图计算引擎：
 
-- Vermeer 使用 Go 编写，采用 master-worker 架构，图数据以内存存储为主，并提供 REST API、gRPC 和 Web UI。
-- Computer 使用 Java 编写，是 BSP/Pregel 风格的分布式计算框架，可部署到 Kubernetes 或 YARN。
+- **Vermeer**：使用 Go 编写，采用 master-worker 架构，以内存计算为主，提供 REST API、gRPC 和 Web UI，适合快速执行中小规模图分析任务。
+- **Computer**：使用 Java 编写，实现 BSP/Pregel 分布式计算模型，可运行在 Kubernetes、YARN 或本地进程中。数据超过内存阈值时可以落盘，适合更大规模的图计算任务。
 
-两者都能读取 HugeGraph 数据，但部署方式、配置和算法接口不同。
+两者都可以读取 HugeGraph 数据，但运行架构、资源需求、配置和算法接口不同。
 
 - [Vermeer 快速开始](/cn/docs/quickstart/computing/hugegraph-vermeer/)
 - [Computer 快速开始](/cn/docs/quickstart/computing/hugegraph-computer/)
 
-## HugeGraph-AI
+## HugeGraph-AI（Graph + AI）
 
-HugeGraph-AI 要求 Python 3.10 或更高版本，使用 `uv` 管理工作区。仓库包含 `hugegraph-llm`、`hugegraph-ml`、`hugegraph-python-client` 和 `vermeer-python-client`：
+HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库使用 Python 3.10 或更高版本，并通过 `uv` 管理工作区，主要包含以下模块：
 
-- `hugegraph-llm` 提供 GraphRAG、知识图谱构建和自然语言查询相关功能。
-- `hugegraph-ml` 包含图分类、节点分类、图嵌入和链接预测实现。
-- 两个 Python Client 分别连接 HugeGraph Server 和 Vermeer。
+- **hugegraph-llm**：提供 GraphRAG、知识图谱构建、自然语言查询和 Text2Gremlin
+- **hugegraph-ml**：提供节点分类、图分类、图嵌入、链接预测和欺诈检测等模型
+- **hugegraph-python-client**：通过 Python 管理 Schema、图数据和 Gremlin 查询
+- **vermeer-python-client**：通过 Python 调用 Vermeer 图计算服务
 
 [HugeGraph-AI 快速开始](/cn/docs/quickstart/hugegraph-ai/quick_start/)
+
+## 部署模式
+
+| 模式 | 核心组件 | 适用场景 | 数据规模 |
+|---|---|---|---|
+| **单机模式（OLTP）** | Server + RocksDB | 开发、测试和中小规模数据 | ≤ 2 TB |
+| **分布式模式（OLTP）** | Server + PD + Store（HStore） | 生产环境、水平扩展和多副本部署 | ≤ 1 PB |
+
+图计算属于 OLAP 任务，容量和资源需求取决于所选引擎、图结构与算法，不沿用上表的 OLTP 存储容量口径。
 
 ## 选择入口
 

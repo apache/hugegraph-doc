@@ -1,6 +1,12 @@
 import importlib.util
+import json
+import os
 import pathlib
+import subprocess
+import sys
+import tempfile
 import unittest
+from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("community_roster", ROOT / "scripts" / "community_roster.py")
@@ -23,6 +29,25 @@ class CommunityRosterTests(unittest.TestCase):
         self.assertEqual(["chair", "zeta"], [p["asf_id"] for p in candidate["roles"]["pmc"]])
         self.assertEqual(["other"], [p["asf_id"] for p in candidate["roles"]["committers"]])
         self.assertTrue(candidate["roles"]["pmc"][0]["chair"])
+
+    def test_same_names_use_asf_id_tiebreaker_across_hash_seeds(self):
+        program = f"""
+import importlib.util, json
+spec = importlib.util.spec_from_file_location("community_roster", {str(ROOT / "scripts/community_roster.py")!r})
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+committee = {{"committees": {{"hugegraph": {{"chair": {{"chair": {{}}}}, "roster": {{"chair": {{}}, "zeta": {{}}, "alpha": {{}}}}}}}}}}
+projects = {{"projects": {{"hugegraph": {{"owners": ["zeta", "chair", "alpha"], "members": ["zeta", "chair", "alpha"]}}}}}}
+people = {{"people": {{"chair": {{"name": "Chair"}}, "zeta": {{"name": "Same Name"}}, "alpha": {{"name": "Same Name"}}}}}}
+result = module.build_roster(committee, projects, people, {{"schema_version": 1, "mappings": {{}}}})
+print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
+"""
+        outputs = []
+        for seed in ("1", "777"):
+            environment = {**os.environ, "PYTHONHASHSEED": seed}
+            outputs.append(subprocess.check_output([sys.executable, "-c", program], env=environment, text=True))
+        self.assertEqual(outputs[0], outputs[1])
+        self.assertEqual(["chair", "alpha", "zeta"], json.loads(outputs[0]))
 
     def test_build_roster_rejects_committee_ldap_drift(self):
         committee, projects, people, mapping = self.fixture()
@@ -47,6 +72,40 @@ class CommunityRosterTests(unittest.TestCase):
     def test_checked_in_bundle_validates(self):
         self.assertEqual([], roster.validate_bundle(90))
 
+    def test_unmapped_profile_must_be_exact_phonebook_url(self):
+        with tempfile.TemporaryDirectory(prefix="community-profile-test-") as directory:
+            root = pathlib.Path(directory)
+            candidate = json.loads(roster.ROSTER_PATH.read_text())
+            candidate["roles"]["committers"][0]["profile_url"] = "https://example.invalid/profile"
+            roster_path, map_path = root / "roster.json", root / "github-map.json"
+            roster_path.write_text(json.dumps(candidate))
+            map_path.write_text(roster.MAP_PATH.read_text())
+            with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                 mock.patch.object(roster, "MAP_PATH", map_path), \
+                 mock.patch.object(roster, "AVATAR_DIR", root / "avatars"):
+                with self.assertRaisesRegex(roster.RosterError, "unmapped profile URL mismatch"):
+                    roster.validate_bundle(90)
+
+    def test_validator_rejects_same_name_out_of_asf_id_order(self):
+        committee, projects, people, mapping = self.fixture()
+        committee["committees"]["hugegraph"]["roster"]["alpha"] = {}
+        projects["projects"]["hugegraph"]["owners"].append("alpha")
+        projects["projects"]["hugegraph"]["members"].append("alpha")
+        people["people"]["zeta"]["name"] = "Same Name"
+        people["people"]["alpha"] = {"name": "Same Name"}
+        candidate = roster.build_roster(committee, projects, people, mapping)
+        candidate["roles"]["pmc"][1:] = reversed(candidate["roles"]["pmc"][1:])
+        with tempfile.TemporaryDirectory(prefix="community-order-test-") as directory:
+            root = pathlib.Path(directory)
+            roster_path, map_path = root / "roster.json", root / "github-map.json"
+            roster_path.write_text(json.dumps(candidate))
+            map_path.write_text(json.dumps(mapping))
+            with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                 mock.patch.object(roster, "MAP_PATH", map_path), \
+                 mock.patch.object(roster, "AVATAR_DIR", root / "avatars"):
+                with self.assertRaisesRegex(roster.RosterError, "sorted by public name"):
+                    roster.validate_bundle(90)
+
     def test_fetch_failure_preserves_last_good(self):
         original, old_fetch = roster.ROSTER_PATH.read_bytes(), roster._fetch_json
         try:
@@ -57,8 +116,72 @@ class CommunityRosterTests(unittest.TestCase):
             roster._fetch_json = old_fetch
         self.assertEqual(original, roster.ROSTER_PATH.read_bytes())
 
+    def test_copy_failure_preserves_last_good_bundle(self):
+        with tempfile.TemporaryDirectory(prefix="community-copy-test-") as directory:
+            root = pathlib.Path(directory)
+            roster_path, avatar_dir, candidates = root / "roster.json", root / "avatars", root / "candidates"
+            avatar_dir.mkdir()
+            candidates.mkdir()
+            roster_path.write_bytes(b"last-good\n")
+            (avatar_dir / "old.webp").write_bytes(b"old")
+            (candidates / "new.webp").write_bytes(b"new")
+            candidate = {"roles": {"pmc": [{"avatar": "/img/community/avatars/new.webp"}], "committers": []}}
+            with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                 mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
+                 mock.patch.object(roster.shutil, "copyfile", side_effect=OSError("copy failed")):
+                with self.assertRaisesRegex(OSError, "copy failed"):
+                    roster._commit_bundle(candidate, candidates)
+            self.assertEqual(b"last-good\n", roster_path.read_bytes())
+            self.assertEqual(b"old", (avatar_dir / "old.webp").read_bytes())
+
+    def test_unlink_failure_rolls_back_roster_and_avatars(self):
+        with tempfile.TemporaryDirectory(prefix="community-unlink-test-") as directory:
+            root = pathlib.Path(directory)
+            roster_path, avatar_dir, candidates = root / "roster.json", root / "avatars", root / "candidates"
+            avatar_dir.mkdir()
+            candidates.mkdir()
+            roster_path.write_bytes(b"last-good\n")
+            (avatar_dir / "old.webp").write_bytes(b"old")
+            (candidates / "new.webp").write_bytes(b"new")
+            candidate = {"roles": {"pmc": [{"avatar": "/img/community/avatars/new.webp"}], "committers": []}}
+            real_unlink, failed = roster._unlink, False
+
+            def fail_once(path):
+                nonlocal failed
+                if path.name == "old.webp" and not failed:
+                    failed = True
+                    raise OSError("unlink failed")
+                real_unlink(path)
+
+            with mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                 mock.patch.object(roster, "AVATAR_DIR", avatar_dir), \
+                 mock.patch.object(roster, "_unlink", side_effect=fail_once):
+                with self.assertRaisesRegex(OSError, "unlink failed"):
+                    roster._commit_bundle(candidate, candidates)
+            self.assertEqual(b"last-good\n", roster_path.read_bytes())
+            self.assertEqual(b"old", (avatar_dir / "old.webp").read_bytes())
+            self.assertFalse((avatar_dir / "new.webp").exists())
+
 
 class CommunityContentContractTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._site = tempfile.TemporaryDirectory(prefix="community-content-site-")
+        environment = {**os.environ, "GOPROXY": "off"}
+        subprocess.run(
+            ["hugo", "--quiet", "--destination", cls._site.name],
+            cwd=ROOT,
+            env=environment,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        cls.site = pathlib.Path(cls._site.name)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._site.cleanup()
+
     def test_search_metadata_covers_fixed_bilingual_entries(self):
         entries = [
             "docs/introduction/_index.md",
@@ -94,6 +217,73 @@ class CommunityContentContractTests(unittest.TestCase):
             self.assertIn('filename="conf/gremlin-server.yaml"', config)
             self.assertIn(".full-width", vertex)
             self.assertIn("{#vertex-id-strategy", vertex)
+
+    def test_component_pilots_render_in_html_print_and_markdown(self):
+        for prefix in ("", "cn/"):
+            outputs = {
+                "server_html": self.site / prefix / "docs/quickstart/hugegraph/hugegraph-server/index.html",
+                "server_print": self.site / prefix / "_print/docs/quickstart/hugegraph/index.html",
+                "server_md": self.site / prefix / "docs/quickstart/hugegraph/hugegraph-server/index.md",
+                "config_html": self.site / prefix / "docs/config/config-guide/index.html",
+                "config_print": self.site / prefix / "_print/docs/config/index.html",
+                "config_md": self.site / prefix / "docs/config/config-guide/index.md",
+                "vertex_html": self.site / prefix / "docs/clients/restful-api/vertex/index.html",
+                "vertex_print": self.site / prefix / "_print/docs/clients/restful-api/index.html",
+                "vertex_md": self.site / prefix / "docs/clients/restful-api/vertex/index.md",
+            }
+            rendered = {key: path.read_text(encoding="utf-8") for key, path in outputs.items()}
+            self.assertIn('class="steps"', rendered["server_html"])
+            self.assertIn('class="steps"', rendered["server_print"])
+            self.assertIn("{.steps}", rendered["server_md"])
+            for key in ("config_html", "config_print", "config_md"):
+                self.assertIn("conf/gremlin-server.yaml", rendered[key])
+            self.assertIn('id="vertex-id-strategy"', rendered["vertex_html"])
+            self.assertIn('id="vertex-id-strategy"', rendered["vertex_print"])
+            self.assertIn("{#vertex-id-strategy .full-width", rendered["vertex_md"])
+
+    def test_fixed_metadata_is_present_in_actual_offline_indexes(self):
+        relative_refs = [
+            "docs/introduction/",
+            "docs/quickstart/hugegraph/hugegraph-server/",
+            "docs/quickstart/hugegraph/hugegraph-hstore/",
+            "docs/quickstart/hugegraph/hugegraph-pd/",
+            "docs/quickstart/computing/hugegraph-computer/",
+            "docs/quickstart/toolchain/hugegraph-loader/",
+            "docs/quickstart/toolchain/hugegraph-hubble/",
+            "docs/clients/",
+            "docs/clients/restful-api/",
+            "docs/config/config-guide/",
+            "docs/config/config-authentication/",
+            "docs/download/download/",
+        ]
+        for language, prefix in (("en", "/"), ("cn", "/cn/")):
+            indexes = list(self.site.glob(f"offline-search-index.{language}.*.json"))
+            self.assertEqual(1, len(indexes))
+            records = {record["ref"]: record for record in json.loads(indexes[0].read_text())}
+            for relative in relative_refs:
+                ref = prefix + relative
+                self.assertIn(ref, records)
+                self.assertTrue(records[ref]["keywords"], ref)
+                self.assertGreater(records[ref]["boost"], 1, ref)
+
+    def test_llmsfull_outputs_exist_and_include_expected_documents(self):
+        outputs = {
+            self.site / "docs/llms-full.txt": (
+                "# HugeGraph Server Quick Start",
+                "# Server Startup Guide",
+                "# Vertex API",
+            ),
+            self.site / "cn/docs/llms-full.txt": (
+                "# HugeGraph Server 快速开始",
+                "# Server 启动指南",
+                "# Vertex API",
+            ),
+        }
+        for path, markers in outputs.items():
+            self.assertTrue(path.is_file())
+            rendered = path.read_text(encoding="utf-8")
+            for marker in markers:
+                self.assertIn(marker, rendered)
 
 
 if __name__ == "__main__":

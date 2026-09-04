@@ -65,6 +65,10 @@ def _initials(name: str) -> str:
     return "".join(part[0].upper() for part in parts[:2]) or "?"
 
 
+def _sort_key(asf_id: str, names: dict[str, str]) -> tuple[str, str]:
+    return names[asf_id].casefold(), asf_id.casefold()
+
+
 def _validate_mapping(data: dict, roster_ids: set[str] | None = None) -> dict:
     if data.get("schema_version") != SCHEMA_VERSION:
         raise RosterError("github-map.json: schema_version must be 1")
@@ -199,8 +203,8 @@ def build_roster(committee_data: dict, projects_data: dict, people_data: dict, m
         raise RosterError("committee roster and LDAP owners disagree")
     mappings = _validate_mapping(mapping_data, member_ids)
     names = {asf_id: _person_name(people_data, asf_id) for asf_id in member_ids}
-    pmc_ids = [chair] + sorted(owner_ids - {chair}, key=lambda item: names[item].casefold())
-    committer_ids = sorted(member_ids - owner_ids, key=lambda item: names[item].casefold())
+    pmc_ids = [chair] + sorted(owner_ids - {chair}, key=lambda item: _sort_key(item, names))
+    committer_ids = sorted(member_ids - owner_ids, key=lambda item: _sort_key(item, names))
     return {
         "schema_version": SCHEMA_VERSION,
         "project": PROJECT,
@@ -269,7 +273,8 @@ def validate_bundle(warn_after_days: int) -> list[str]:
         raise RosterError("roster.json: unique Chair must be first in PMC")
     for role, entries in roles.items():
         tail = entries[1:] if role == "pmc" else entries
-        if [p.get("name", "").casefold() for p in tail] != sorted(p.get("name", "").casefold() for p in tail):
+        actual_order = [(p.get("name", "").casefold(), p.get("asf_id", "").casefold()) for p in tail]
+        if actual_order != sorted(actual_order):
             raise RosterError(f"roster.json: {role} must be sorted by public name casefold")
         for person in entries:
             if any(key not in person for key in ("asf_id", "name", "initials", "chair", "profile_url")):
@@ -294,6 +299,8 @@ def validate_bundle(warn_after_days: int) -> list[str]:
                 raise RosterError(f"roster.json: mapped profile URL mismatch")
         elif avatar:
             raise RosterError(f"roster.json: unmapped member has an avatar")
+        elif person["profile_url"] != f"https://people.apache.org/phonebook.html?uid={person['asf_id']}":
+            raise RosterError(f"roster.json: unmapped profile URL mismatch for {person['asf_id']!r}")
     try:
         retrieved = dt.datetime.fromisoformat(roster["retrieved_at"].replace("Z", "+00:00"))
     except (KeyError, TypeError, ValueError) as exc:
@@ -338,25 +345,83 @@ def validate_rendered_outputs() -> None:
                 raise RosterError(f"rendered output {relative} has role/link parity drift")
 
 
+def _atomic_write(path: pathlib.Path, raw: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary_path = pathlib.Path(temporary)
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(raw)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path.exists():
+            temporary_path.unlink()
+
+
+def _unlink(path: pathlib.Path) -> None:
+    path.unlink()
+
+
+def _commit_bundle(candidate: dict, candidate_avatars: pathlib.Path) -> None:
+    """Install one bundle or restore the exact prior roster/avatar state."""
+    old_roster = ROSTER_PATH.read_bytes() if ROSTER_PATH.exists() else None
+    AVATAR_DIR.mkdir(parents=True, exist_ok=True)
+    referenced = {
+        pathlib.PurePosixPath(person["avatar"]).name
+        for role in candidate["roles"].values()
+        for person in role
+        if person.get("avatar")
+    }
+    existing = {path.name: path for path in AVATAR_DIR.glob("*.webp")}
+    orphan_bytes = {name: path.read_bytes() for name, path in existing.items() if name not in referenced}
+    installed: list[pathlib.Path] = []
+    roster_replaced = False
+    try:
+        for avatar in sorted(candidate_avatars.glob("*.webp")):
+            destination = AVATAR_DIR / avatar.name
+            if destination.exists():
+                continue
+            staged = AVATAR_DIR / f".{avatar.name}.candidate"
+            try:
+                shutil.copyfile(avatar, staged)
+                os.replace(staged, destination)
+            finally:
+                if staged.exists():
+                    _unlink(staged)
+            installed.append(destination)
+        raw = (json.dumps(candidate, indent=2, ensure_ascii=False) + "\n").encode()
+        _atomic_write(ROSTER_PATH, raw)
+        roster_replaced = True
+        for name in sorted(orphan_bytes):
+            _unlink(AVATAR_DIR / name)
+    except Exception:
+        if roster_replaced:
+            if old_roster is None:
+                try:
+                    _unlink(ROSTER_PATH)
+                except OSError:
+                    pass
+            else:
+                _atomic_write(ROSTER_PATH, old_roster)
+        for name, raw in orphan_bytes.items():
+            _atomic_write(AVATAR_DIR / name, raw)
+        for path in installed:
+            try:
+                _unlink(path)
+            except OSError:
+                pass
+        raise
+
+
 def refresh() -> None:
     source_data = {key: _fetch_json(url) for key, url in SOURCES.items()}
     candidate = build_roster(source_data["committee"], source_data["projects"], source_data["people"], _read_json(MAP_PATH))
     with tempfile.TemporaryDirectory(prefix=".community-refresh-", dir=DATA_DIR) as work:
-        work_path = pathlib.Path(work)
-        candidate_avatars = work_path / "avatars"
+        candidate_avatars = pathlib.Path(work) / "avatars"
         _install_avatars(candidate, candidate_avatars)
-        candidate_path = work_path / "roster.json"
-        candidate_path.write_text(json.dumps(candidate, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        AVATAR_DIR.mkdir(parents=True, exist_ok=True)
-        for avatar in candidate_avatars.glob("*.webp"):
-            destination = AVATAR_DIR / avatar.name
-            if not destination.exists():
-                shutil.copyfile(avatar, destination)
-        os.replace(candidate_path, ROSTER_PATH)
-        referenced = {pathlib.PurePosixPath(p["avatar"]).name for role in candidate["roles"].values() for p in role if p.get("avatar")}
-        for avatar in AVATAR_DIR.glob("*.webp"):
-            if avatar.name not in referenced:
-                avatar.unlink()
+        _commit_bundle(candidate, candidate_avatars)
 
 
 def main() -> int:

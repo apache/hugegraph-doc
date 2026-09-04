@@ -1262,6 +1262,34 @@ class VersionUrlTest(unittest.TestCase):
             self.assertEqual(sentinel.read_text(encoding="utf-8"), "keep")
             self.assertTrue(output.is_dir())
 
+    def test_output_cleanup_rejects_symlinked_runner_temp_before_resolve(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            target = temp / "target"
+            output = target / "output"
+            output.mkdir(parents=True)
+            sentinel = output / "sentinel"
+            sentinel.write_text("keep", encoding="utf-8")
+            runner_temp = temp / "runner-temp"
+            runner_temp.symlink_to(target, target_is_directory=True)
+
+            with (
+                mock.patch.dict(
+                    versioning.os.environ,
+                    {"RUNNER_TEMP": str(runner_temp)},
+                ),
+                self.assertRaisesRegex(SystemExit, "symbolic link"),
+            ):
+                versioning.prepare_output_directory(
+                    runner_temp / "output",
+                    "fixture",
+                )
+
+            self.assertEqual(sentinel.read_text(encoding="utf-8"), "keep")
+            self.assertTrue(output.is_dir())
+
     def test_output_cleanup_rejects_registered_sibling_worktree(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             sibling = Path(temp_name) / "registered-sibling"

@@ -24,13 +24,13 @@ This guide helps developers run HugeGraph toolchain tests locally.
 
 - **Operating System**: Linux / macOS (Windows use WSL2)
 - **JDK**: >= 11, configure `JAVA_HOME`
-- **Maven**: >= 3.5
+- **Maven**: >= 3.6
 - **Python**: >= 3.11 (only required for Hubble tests)
 
 ### 2.2 Clone Code
 
 ```bash
-git clone https://github.com/${GITHUB_USER_NAME}/hugegraph-toolchain.git
+git clone https://github.com/apache/hugegraph-toolchain.git
 cd hugegraph-toolchain
 ```
 
@@ -38,12 +38,12 @@ cd hugegraph-toolchain
 
 ### Deployment Options
 
-- **Script Deployment (Recommended)**: Precisely control Server version by specifying Commit ID, avoid interface incompatibility
-- **Docker Deployment**: Quick start, but may have version lag causing test failures
+- **Script Deployment**: Specify a Server commit to reproduce the server version used by CI
+- **Docker Deployment**: Suitable for quick checks; if tests fail, first verify compatibility between the image and Toolchain
 
 > For detailed installation instructions, refer to [Community Documentation](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/)
 
-### 3.1 Script Deployment (Recommended)
+### 3.1 Script Deployment
 
 #### Parameter Description
 
@@ -55,15 +55,15 @@ cd hugegraph-toolchain
 **1. Install HugeGraph Server**
 
 ```bash
-# Set version
-export COMMIT_ID="master"  # Or specific commit hash, e.g. "8b90977"
+# Set the Server baseline; use a full commit SHA for reproducible results
+export COMMIT_ID="master"
 
 # Execute installation (script located in /assembly/travis/ directory)
 hugegraph-client/assembly/travis/install-hugegraph-from-source.sh $COMMIT_ID
 ```
 
-- Default ports: http 8080, https 8443
-- Ensure ports are not occupied
+- The script starts HTTP and HTTPS instances on ports 8080 and 8443 and configures `admin`/`pa` authentication.
+- Ensure both ports are available before running it.
 
 **2. Install Optional Dependencies**
 
@@ -78,7 +78,7 @@ hugegraph-loader/assembly/travis/install-mysql.sh $DB_DATABASE $DB_PASS
 **3. Health Check**
 
 ```bash
-curl http://localhost:8080/graphs
+curl -u admin:pa http://localhost:8080/graphspaces/DEFAULT/graphs
 # Returns {"graphs":["hugegraph"]} indicates success
 ```
 
@@ -113,7 +113,7 @@ services:
       # If you need to persist data or mount configuration files, add volumes here
       # - ./hugegraph-data:/opt/hugegraph/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/graphs || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/graphspaces/DEFAULT/graphs || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -268,15 +268,14 @@ Start HugeGraph Server (refer to [Section 3](#3-deploy-test-environment))
 
 ##### Server Authentication Configuration
 
-> **Note**: Docker images <= 1.5.0 don't support authentication tests, need 1.6.0+
-
-ApiTest requires authentication configuration. Skip this if using script installation. Manual configuration needed for Docker:
+ApiTest requires authentication. No additional configuration is needed when using the script in Section 3.1. For a manually deployed Server, the authentication settings and test credentials must match the test code.
 
 ```bash
 # 1. Modify authentication mode
 cp conf/rest-server.properties conf/rest-server.properties.backup
-sed -i '/^auth.authenticator=/c\auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator' conf/rest-server.properties
+sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
 grep auth.authenticator conf/rest-server.properties
+sed -i 's|gremlin.graph=org.apache.hugegraph.HugeFactory|gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy|' conf/graphs/hugegraph.properties
 
 # 2. Set password
 # Note: Test code uses "pa" as default password, must match for tests to work
@@ -290,8 +289,7 @@ bin/start-hugegraph.sh
 
 ```bash
 # Check environment
-curl http://localhost:8080/graphs  # Should return {"graphs":["hugegraph"]}
-curl -u admin:pa http://localhost:8080/graphs  # Authentication test (pa is test default password)
+curl -u admin:pa http://localhost:8080/graphspaces/DEFAULT/graphs
 
 # Run tests
 cd hugegraph-client
@@ -353,10 +351,9 @@ python -m pip install -r hubble-dist/assembly/travis/requirements.txt
 ```bash
 mvn package -Dmaven.test.skip=true
 # Optional: Start and verify
-# Compatible with both historical (-incubating-) and TLP package naming
 cd apache-hugegraph-hubble*/bin
 ./start-hubble.sh -d && sleep 10
-curl http://localhost:8088/api/health
+curl http://localhost:8088/actuator/health
 ./stop-hubble.sh
 ```
 
@@ -366,11 +363,15 @@ curl http://localhost:8088/api/health
 # Unit tests
 mvn test -P unit-test -pl hugegraph-hubble/hubble-be -ntp
 
-# API tests (requires Server + Hubble running)
-curl http://localhost:8080/graphs  # Check Server
-curl http://localhost:8088/api/health  # Check Hubble
-cd hugegraph-hubble/hubble-dist
-./assembly/travis/run-api-test.sh
+# Legacy Python API tests (requires Server; the script installs and starts Hubble)
+curl -u admin:pa http://localhost:8080/graphspaces/DEFAULT/graphs  # Check Server
+cd hugegraph-hubble
+./hubble-dist/assembly/travis/run-api-test.sh
+
+# Full verification entry point used by current CI (build the Hubble tarball first)
+HUBBLE_TARBALL="$(ls target/apache-hugegraph-hubble-*.tar.gz | head -n 1)"
+hubble-dist/assembly/travis/verify-hubble-issue-694.sh \
+  "$HUBBLE_TARBALL" http://127.0.0.1:8080
 ```
 
 ### 4.4 hugegraph-spark-connector
@@ -407,39 +408,33 @@ mvn test -Dtest=FuncTestSuite -ntp  # Requires Server running
 
 ### Service Connection Issues
 
-**Symptoms**: Cannot connect to Server/MySQL/Hadoop
-
-**Troubleshooting**:
+If Server, MySQL, or Hadoop cannot be reached:
 - Confirm services are running (Server must be on port 8080)
 - Check port usage: `lsof -i:8080`
 - Docker check: `docker compose ps` and `docker compose logs`
 
 ### Configuration Issues
 
-**Symptoms**: File not found, parameter errors
-
-**Troubleshooting**:
+If files cannot be found or parameters are invalid:
 - Check environment variables: `echo $COMMIT_ID`
 - Script permissions: `chmod +x hugegraph-*/assembly/travis/*.sh`
 
 ### HDFS Test Failures
 
-**Troubleshooting**:
 - Confirm NameNode/DataNode running normally
 - Check Hadoop logs
 - Verify HDFS connection: `hdfs dfsadmin -report`
 
 ### JDBC Test Failures
 
-**Troubleshooting**:
 - Confirm MySQL running normally
 - Verify database connection: `mysql -u root -p$DB_PASS`
 - Check MySQL logs
 
 ## 6. References
 
-*   **HugeGraph GitHub Repository**: [https://github.com/apache/hugegraph](https://github.com/apache/hugegraph)
-*   **HugeGraph Toolchain GitHub Repository**: [https://github.com/apache/hugegraph-toolchain](https://github.com/apache/hugegraph-toolchain)
-*   **HugeGraph Server Official Documentation**: [https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/)
-*   **CI Script Path**: `.github/workflows/*-ci.yml` (CI configuration files in the HugeGraph toolchain project, which can be used as a reference)
-*   **Dependent Service Installation Scripts**: `hugegraph-*/assembly/travis/` (Installation scripts for CI and local testing in the HugeGraph toolchain project, can be used directly or as a reference)
+- **HugeGraph GitHub Repository**: [https://github.com/apache/hugegraph](https://github.com/apache/hugegraph)
+- **HugeGraph Toolchain GitHub Repository**: [https://github.com/apache/hugegraph-toolchain](https://github.com/apache/hugegraph-toolchain)
+- **HugeGraph Server Documentation**: [https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/)
+- **CI Configuration**: `.github/workflows/*-ci.yml`
+- **Dependency Installation Scripts**: `hugegraph-*/assembly/travis/`

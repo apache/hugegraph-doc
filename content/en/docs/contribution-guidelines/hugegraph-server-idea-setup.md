@@ -127,7 +127,7 @@ public String list(@Context GraphManager manager,
 Then use the RESTful API to request `HugeGraphServer`:
 
 ```bash
-curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices" | gunzip
 ```
 
 At this point, you can view detailed variable information in the debugger.

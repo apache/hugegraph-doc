@@ -1,182 +1,97 @@
 ---
-title: "How to Contribute to HugeGraph"
-linkTitle: "How to Contribute to HugeGraph"
+title: "Contribute to the HugeGraph Community"
+linkTitle: "Contribution Process"
 weight: 1
 ---
 
-Thanks for taking the time to contribute! As an open source project, HugeGraph is looking forward to be contributed from everyone, and we are also grateful to all the contributors.
+## Choose How to Contribute
 
-The following is a contribution guide for HugeGraph:
+You can report problems through [GitHub Issues](https://github.com/apache/hugegraph/issues), or contribute code, tests, or documentation. Before starting a substantial change, consider opening an issue that explains its scope to avoid duplicated work.
+
+The following example uses `apache/hugegraph`. The same process applies to other HugeGraph repositories, but follow each repository's `README.md`, `AGENTS.md`, and CI configuration for its build and test commands.
+
+## Prepare the Repository
 
 ![Fork the HugeGraph repository on GitHub](/images/docs/contribution/github-fork.png)
 {width="884" height="462"}
 
-## 1. Preparation
+Fork [apache/hugegraph](https://github.com/apache/hugegraph) on GitHub, then clone your fork:
 
-Optional: You can use [GitHub desktop](https://desktop.github.com/) to greatly simplify the commit and update process.
-
-We can contribute by reporting issues, submitting code patches or any other feedback.
-
-Before submitting the code, we need to do some preparation:
-
-1. Sign up or login to GitHub:  [https://github.com](https://github.com)
-
-2. Fork HugeGraph repo from GitHub: [https://github.com/apache/hugegraph/fork](https://github.com/apache/hugegraph/fork)
-
-3. Clone code from fork repo to local: [https://github.com/${GITHUB_USER_NAME}/hugegraph](https://github.com/${GITHUB_USER_NAME}/hugegraph)
-
-   ```shell
-   # clone code from remote to local repo
-   git clone https://github.com/${GITHUB_USER_NAME}/hugegraph
-   ```
-
-4. Configure local HugeGraph repo
-
-   ```shell
-   cd hugegraph
-
-   # add upstream to synchronize the latest code
-   git remote add hugegraph https://github.com/apache/hugegraph
-
-   # set name and email to push code to github
-   git config user.name "{full-name}" # like "Jermy Li"
-   git config user.email "{email-address-of-github}" # like "jermy@apache.org"
-   ```
-
-## 2. Create an Issue on GitHub
-
-If you encounter bugs or have any questions, please go to [GitHub Issues](https://github.com/apache/hugegraph/issues) to report them and feel free to [create an issue](https://github.com/apache/hugegraph/issues/new).
-
-## 3. Make changes of code locally
-
-#### 3.1 Create a new branch
-
-Please don't use master branch for development. We should create a new branch instead:
-
-```shell
-# checkout master branch
-git checkout master
-# pull the latest code from official hugegraph
-git pull hugegraph
-# create new branch: bugfix-branch
-git checkout -b bugfix-branch
+```bash
+git clone https://github.com/<your-name>/hugegraph.git
+cd hugegraph
+git remote add upstream https://github.com/apache/hugegraph.git
+git fetch upstream master
 ```
 
-#### 3.2 Change the code
+Do not develop directly on `master`. Use a separate branch for each change:
 
-Assume that we need to modify some files like "HugeGraph.java" and "HugeFactory.java":
-
-```shell
-# modify code to fix a bug
-vim hugegraph-core/src/main/java/org/apache/hugegraph/HugeGraph.java
-vim hugegraph-core/src/main/java/org/apache/hugegraph/HugeFactory.java
-# run test locally (optional)
-mvn test -Pcore-test,memory
-```
-Note: In order to be consistent with the code style easily, if you use IDEA as your IDE, you can import our code style configuration file.
-
-##### 3.2.1 Check licenses
-If we want to add new third-party dependencies to the `HugeGraph` project, we need to do the following things:
-1. Find the third-party dependent repository, put the dependent `license` file into [./hugegraph-dist/release-docs/licenses/](https://github.com/apache/hugegraph/tree/master/hugegraph-server/hugegraph-dist/release-docs/licenses) path.
-2. Declare the dependency in [./hugegraph-dist/release-docs/LICENSE](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/release-docs/LICENSE) `LICENSE` information.
-3. Find the NOTICE file in the repository and append it to [./hugegraph-dist/release-docs/NOTICE](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/release-docs/NOTICE) file (skip this step if there is no NOTICE file).
-4. Execute locally [./hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh) to update the dependency list [known-dependencies.txt](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/scripts/dependency/known-dependencies.txt) (or manually update) .
-
-**Example**: A new third-party dependency is introduced into the project -> `ant-1.9.1.jar`
-- The project source code is located at: https://github.com/apache/ant/tree/rel/1.9.1
-- LICENSE file: https://github.com/apache/ant/blob/rel/1.9.1/LICENSE
-- NOTICE file: https://github.com/apache/ant/blob/rel/1.9.1/NOTICE
-
-The license information of `ant-1.9.1.jar` needs to be specified in the LICENSE file, and the notice information needs to be specified in the NOTICE file. The detailed LICENSE file corresponding to ant-1.9.1.jar needs to be copied to our licenses/ directory. Finally update the known-dependencies.txt file.
-
-#### 3.3 Commit changes to git repo
-
-After the code has been completed, we submit them to the local git repo:
-
-```shell
-# add files to local git index
-git add hugegraph-core/src/main/java/org/apache/hugegraph/HugeGraph.java
-git add hugegraph-core/src/main/java/org/apache/hugegraph/HugeFactory.java
-# commit to local git repo
-git commit
+```bash
+git switch master
+git merge --ff-only upstream/master
+git switch -c fix/<short-description>
 ```
 
-Please edit the commit message after running `git commit`, we can explain what and how to fix a bug or implement a feature, the following is an example:
+## Make and Verify Changes
 
-```sh
-Fix bug: run deploy multiple times 
+HugeGraph Server code is under `hugegraph-server/`. For example, the core module is located at:
 
-fix #ISSUE_ID
+```text
+hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/
 ```
 
->  Please remember to fill in the issue id, which was generated by GitHub after issue creation.
+Run the tests directly related to your change first. Common Server test commands include:
 
-#### 3.4 Push commit to GitHub fork repo
+```bash
+# Core tests with the in-memory backend
+mvn test -pl hugegraph-server/hugegraph-test -am -P core-test,memory
 
-Push the local commit to GitHub fork repo:
+# API tests with the RocksDB backend
+mvn test -pl hugegraph-server/hugegraph-test -am -P api-test,rocksdb
 
-```shell
-# push the local commit to fork repo
-git push origin bugfix-branch:bugfix-branch
+# Format files and verify compilation
+mvn editorconfig:format
+mvn clean compile -Dmaven.javadoc.skip=true
 ```
 
-Note that since GitHub requires submitting code through `username + token` (instead of using `username + password` directly), you need to create a GitHub token from https://github.com/settings/tokens:
+GitHub requires a username and token for Git authentication instead of a username and password. Create a personal access token at https://github.com/settings/tokens:
 
-![Authenticate a Git push with a personal access token](/images/docs/contribution/github-authentication.png)
+![Authenticate Git pushes with a personal access token](/images/docs/contribution/github-authentication.png)
 {width="1280" height="422"}
 
-## 4. Create a Pull Request
+When adding a third-party dependency, also update the license information included in the distribution:
 
-Go to the web page of GitHub fork repo, there would be a chance to create a Pull Request after pushing to a new branch, just click button "Compare & pull request" to do it. Then edit the description for proposed changes, which can just be copied from the commit message.
+1. Add the dependency's license file to `hugegraph-server/hugegraph-dist/release-docs/licenses/`.
+2. Update `hugegraph-server/hugegraph-dist/release-docs/LICENSE`. If the dependency includes a NOTICE file, update `NOTICE` as well.
+3. Run `hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh` to update the known-dependency list.
 
-Note: please make sure the email address you used to submit the code is bound to the GitHub account. For how to bind the email address, please refer to https://github.com/settings/emails:
+## Submit a Pull Request
 
-![Verify the commit email address in GitHub](/images/docs/contribution/github-email.png)
+Make sure the email address used for your commits is associated with your GitHub account. See https://github.com/settings/emails for instructions:
+
+![Verify your commit email on GitHub](/images/docs/contribution/github-email.png)
 {width="1280" height="592"}
 
-## 5. Code review
+Use the `type(module): message` format for commit messages, for example:
 
- Maintainers will start the code review after all the **automatic** checks are passed:
-
-- Check: Contributor License Agreement is signed
-- Check: Travis CI builds is passed (automatically Test and Deploy)
-
-The commit will be accepted and merged if there is no problem after review.
-
-Please click on "Details" to find the problem if any check does not pass.
-
-If there are checks not passed or changes requested, then continue to modify the code and push again.
-
-## 6. More changes after review 
-
-If we have not passed the review, don't be discouraged. Usually a commit needs to be reviewed several times before being accepted! Please follow the review comments and make further changes.
-
-After the further changes, we submit them to the local repo:
-
-```shell
-# commit all updated files in a new commit,
-# please feel free to enter any appropriate commit message, note that
-# we will squash all commits in the pull request as one commit when
-# merging into the master branch.
-git commit -a
+```bash
+git add <changed-files>
+git commit -m "fix(core): handle empty vertex query"
+git push -u origin fix/<short-description>
 ```
 
-> If there are conflicts that prevent the code from being merged, we need to rebase on master branch:
->
-> ```shell
-> # synchronize the latest code
-> git checkout master
-> git pull hugegraph
-> # rebase on master
-> git checkout bugfix-branch
-> git rebase -i master
-> ```
+Then open a pull request from your fork branch to `apache/hugegraph:master`. Explain the problem, the implementation, and the validation commands you actually ran. Include screenshots for UI changes.
 
-And push it to GitHub fork repo again:
+## Address Review Feedback
 
-```shell
-# force push the local commit to fork repo
-git push -f origin bugfix-branch:bugfix-branch
+If CI fails or a reviewer requests changes, continue committing and pushing to the same branch. Rebase when you need to synchronize with upstream:
+
+```bash
+git fetch upstream master
+git rebase upstream/master
+git push --force-with-lease
 ```
 
-GitHub will automatically update the Pull Request after we push it, just wait for code review.
+Do not overwrite the remote branch with plain `--force`. After all CI and review requirements are satisfied, a project maintainer will merge the pull request.
+
+Contributor agreements follow the official ASF process. See the [Contributor Agreement]({{< ref path="/docs/CLA.md" lang="en" >}}).

@@ -4,13 +4,9 @@ linkTitle: "Computer Config Reference"
 weight: 3
 ---
 
-### Computer Config Options
+## Computer Config Options
 
-> **Default Value Notes:**
-> - Configuration items listed below show the **code default values** (defined in `ComputerOptions.java`)
-> - When the **packaged configuration file** (`conf/computer.properties` in the distribution) specifies a different value, it's noted as: `value (packaged: value)`
-> - Example: `300000 (packaged: 100000)` means the code default is 300000, but the distributed package defaults to 100000
-> - For production deployments, the packaged defaults take precedence unless you explicitly override them
+The defaults in the tables come from `ComputerOptions.java` in the `computer-api` module. When the distribution's `conf/computer.properties` explicitly overrides an option, the table shows "code default (packaged: actual value)". At runtime, values in the configuration file take precedence.
 
 ---
 
@@ -25,8 +21,8 @@ Core job settings for HugeGraph-Computer.
 | hugegraph.username | "" (empty) | The username for HugeGraph authentication (leave empty if authentication is disabled). |
 | hugegraph.password | "" (empty) | The password for HugeGraph authentication (leave empty if authentication is disabled). |
 | job.id | local_0001 (packaged: local_001) | The job identifier on YARN cluster or K8s cluster. |
-| job.namespace | "" (empty) | The job namespace that can separate different data sources. 🔒 **Managed by system - do not modify manually**. |
-| job.workers_count | 1 | The number of workers for computing one graph algorithm job. 🔒 **Managed by system - do not modify manually in K8s**. |
+| job.namespace | "" (empty) | The job namespace used to separate different data sources. This option is managed by the runtime system. |
+| job.workers_count | 1 | The number of workers for one graph algorithm job. In K8s, this option is set by the Operator. |
 | job.partitions_count | 1 | The number of partitions for computing one graph algorithm job. |
 | job.partitions_thread_nums | 4 | The number of threads for partition parallel compute. |
 
@@ -38,9 +34,9 @@ Algorithm-specific configuration for computation logic.
 
 | config option | default value | description |
 |---------------|---------------|-------------|
-| algorithm.params_class | org.apache.hugegraph.computer.core.config.Null | ⚠️ **REQUIRED** The class used to transfer algorithm parameters before the algorithm is run. |
-| algorithm.result_class | org.apache.hugegraph.computer.core.config.Null | The class of vertex's value, used to store the computation result for the vertex. |
-| algorithm.message_class | org.apache.hugegraph.computer.core.config.Null | The class of message passed when computing a vertex. |
+| algorithm.params_class | `ComputerOptions.Null` placeholder class | Required. The class used to pass algorithm parameters before the algorithm runs. |
+| algorithm.result_class | `ComputerOptions.Null` placeholder class | The vertex value class used to store computation results. |
+| algorithm.message_class | `ComputerOptions.Null` placeholder class | The message class passed while computing a vertex. |
 
 ---
 
@@ -53,8 +49,8 @@ Configuration for loading input data from HugeGraph or other sources.
 | config option | default value | description |
 |---------------|---------------|-------------|
 | input.source_type | hugegraph-server | The source type to load input data, allowed values: ['hugegraph-server', 'hugegraph-loader']. The 'hugegraph-loader' means use hugegraph-loader to load data from HDFS or file. If using 'hugegraph-loader', please configure 'input.loader_struct_path' and 'input.loader_schema_path'. |
-| input.loader_struct_path | "" (empty) | The struct path of loader input, only takes effect when input.source_type=loader is enabled. |
-| input.loader_schema_path | "" (empty) | The schema path of loader input, only takes effect when input.source_type=loader is enabled. |
+| input.loader_struct_path | "" (empty) | The structure path for Loader input. It takes effect only when `input.source_type=hugegraph-loader`. |
+| input.loader_schema_path | "" (empty) | The schema path for Loader input. It takes effect only when `input.source_type=hugegraph-loader`. |
 
 #### 3.2 Input Splits
 
@@ -235,8 +231,8 @@ Configuration for network communication between workers and master.
 
 | config option | default value | description |
 |---------------|---------------|-------------|
-| transport.server_host | 127.0.0.1 | 🔒 **Managed by system** The server hostname or IP to listen on to transfer data. Do not modify manually. |
-| transport.server_port | 0 | 🔒 **Managed by system** The server port to listen on to transfer data. The system will assign a random port if set to 0. Do not modify manually. |
+| transport.server_host | 127.0.0.1 | The hostname or IP that listens for transport data. This option is managed by the runtime system. |
+| transport.server_port | 0 | The port that listens for transport data; 0 assigns a random port. This option is managed by the runtime system. |
 | transport.server_threads | 4 | The number of transport threads for server. |
 
 #### 7.2 Client Configuration
@@ -326,7 +322,7 @@ Configuration for Bulk Synchronous Parallel (BSP) protocol and etcd coordination
 
 | config option | default value | description |
 |---------------|---------------|-------------|
-| bsp.etcd_endpoints | http://localhost:2379 | 🔒 **Managed by system in K8s** The endpoints to access etcd. For multiple endpoints, use comma-separated list: `http://host1:port1,http://host2:port2`. Do not modify manually in K8s deployments. |
+| bsp.etcd_endpoints | http://localhost:2379 | The etcd endpoints; separate multiple addresses with commas. In K8s deployments, this option is set by the Operator. |
 | bsp.max_super_step | 10 (packaged: 2) | The max super step of the algorithm. |
 | bsp.register_timeout | 300000 (packaged: 100000) | The max timeout (in ms) to wait for master and workers to register. |
 | bsp.wait_workers_timeout | 86400000 (24 hours) | The max timeout (in ms) to wait for workers BSP event. |
@@ -348,7 +344,7 @@ Configuration for performance optimization.
 
 ### 11. System Administration Configuration
 
-⚠️ **Configuration items managed by the system - users are prohibited from modifying these manually.**
+The following options are managed by the runtime system and should not be overridden in job configurations.
 
 The following configuration items are automatically managed by the K8s Operator, Driver, or runtime system. Manual modification will cause cluster communication failures or job scheduling errors.
 
@@ -394,7 +390,7 @@ The following configuration items are automatically managed by the K8s Operator,
 
 ### HugeGraph-Computer CRD
 
-> CRD: https://github.com/apache/hugegraph-computer/blob/master/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
+> CRD: https://github.com/apache/hugegraph-computer/blob/master/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
 
 | spec | default value | description | required |
 |-----------------|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|

@@ -56,6 +56,11 @@ example `scripts/hugo.sh server -p 8080`. Set `HG_DOC_VERSION`,
 `HG_DOC_SITE_ORIGIN`, or `HG_DOC_HISTORICAL_ORIGIN` only when validating a
 specific version or publication origin.
 
+The wrapper owns Hugo's configuration, environment, strict-warning, cleanup,
+and minification flags and rejects attempts to override them. Use `--baseURL`
+or `HG_DOC_SITE_ORIGIN` (not both) when changing the rendered origin; a server
+`--port` is reflected in the generated local origin.
+
 A successful command proves that Hugo rendered the configured outputs. It does not replace browser checks for navigation, search, language switching, accessibility, mobile layout, print, or Content Security Policy behavior.
 
 ## Repository structure

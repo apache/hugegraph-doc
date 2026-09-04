@@ -308,6 +308,49 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
                     with self.assertRaisesRegex(roster.RosterError, message):
                         roster.validate_bundle(90)
 
+    def test_local_roster_schema_errors_are_roster_errors(self):
+        base = json.loads(roster.ROSTER_PATH.read_text())
+        mapping = json.loads(roster.MAP_PATH.read_text())
+        mutations = (
+            ("asf_id", [], "invalid ASF ID"),
+            ("name", 123, "name must be non-empty"),
+            ("retrieved_at", None, "ISO-8601 UTC string"),
+        )
+        for field, value, message in mutations:
+            with self.subTest(field=field), tempfile.TemporaryDirectory(prefix="community-schema-") as directory:
+                root = pathlib.Path(directory)
+                candidate = json.loads(json.dumps(base))
+                if field == "retrieved_at":
+                    candidate[field] = value
+                else:
+                    candidate["roles"]["committers"][0][field] = value
+                roster_path, map_path = root / "roster.json", root / "github-map.json"
+                roster_path.write_text(json.dumps(candidate))
+                map_path.write_text(json.dumps(mapping))
+                with mock.patch.object(roster, "ROOT", root), \
+                     mock.patch.object(roster, "DATA_DIR", root), \
+                     mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                     mock.patch.object(roster, "MAP_PATH", map_path), \
+                     mock.patch.object(roster, "AVATAR_DIR", root / "avatars"):
+                    with self.assertRaisesRegex(roster.RosterError, message):
+                        roster.validate_bundle(90)
+
+    def test_refresh_validates_paths_before_creating_data_directory(self):
+        with tempfile.TemporaryDirectory(prefix="community-refresh-path-") as directory:
+            root = pathlib.Path(directory)
+            outside = root / "outside"
+            outside.mkdir()
+            (root / "data").symlink_to(outside, target_is_directory=True)
+            data_dir = root / "data" / "community"
+            with mock.patch.object(roster, "ROOT", root), \
+                 mock.patch.object(roster, "DATA_DIR", data_dir), \
+                 mock.patch.object(roster, "ROSTER_PATH", data_dir / "roster.json"), \
+                 mock.patch.object(roster, "MAP_PATH", data_dir / "github-map.json"), \
+                 mock.patch.object(roster, "AVATAR_DIR", root / "static" / "img" / "community" / "avatars"):
+                with self.assertRaisesRegex(roster.RosterError, "symlink path components"):
+                    roster.refresh()
+            self.assertFalse((outside / "community").exists())
+
     def test_validator_rejects_same_name_out_of_asf_id_order(self):
         committee, projects, people, mapping = self.fixture()
         committee["committees"]["hugegraph"]["roster"]["alpha"] = {}
@@ -600,7 +643,41 @@ class CommunityContentContractTests(unittest.TestCase):
             rendered = rendered.replace('data-community-role="committers"', 'data-community-role="pmc"', 1)
             rendered = rendered.replace('data-community-role="temporary"', 'data-community-role="committers"', 1)
             path.write_text(rendered, encoding="utf-8")
-            with self.assertRaisesRegex(roster.RosterError, "role order drift"):
+            with self.assertRaisesRegex(roster.RosterError, "link parity drift"):
+                roster.validate_rendered_outputs(destination)
+
+    def test_artifact_validator_rejects_plain_text_profile_urls(self):
+        with tempfile.TemporaryDirectory(prefix="community-fake-output-") as directory:
+            destination = pathlib.Path(directory)
+            roles = json.loads(roster.ROSTER_PATH.read_text())["roles"]
+            for relative in (
+                "community/index.html",
+                "_print/community/index.html",
+                "cn/community/index.html",
+                "cn/_print/community/index.html",
+            ):
+                path = destination / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(
+                    '<section data-community-role="pmc">'
+                    + " ".join(person["profile_url"] for person in roles["pmc"])
+                    + '</section><section data-community-role="committers">'
+                    + " ".join(person["profile_url"] for person in roles["committers"])
+                    + "</section>"
+                )
+            for relative, title in (
+                ("community/index.md", "Project members"),
+                ("cn/community/index.md", "项目成员"),
+            ):
+                path = destination / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(
+                    f"## {title}\n\n### PMC\n"
+                    + "\n".join(person["profile_url"] for person in roles["pmc"])
+                    + "\n\n### Committers\n"
+                    + "\n".join(person["profile_url"] for person in roles["committers"])
+                )
+            with self.assertRaisesRegex(roster.RosterError, "link parity drift"):
                 roster.validate_rendered_outputs(destination)
 
     def test_fixed_metadata_is_present_in_actual_offline_indexes(self):

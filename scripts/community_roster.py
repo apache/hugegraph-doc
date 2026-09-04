@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import html.parser
 import json
 import os
 import pathlib
@@ -403,12 +404,29 @@ def validate_bundle(warn_after_days: int) -> list[str]:
         raise RosterError("roster.json: source owners/members must be sorted and unique")
     if not set(owners) <= set(members) or chair not in owners:
         raise RosterError("roster.json: invalid owners/members/Chair relationship")
+    if not isinstance(chair, str) or not ASF_ID_PATTERN.fullmatch(chair):
+        raise RosterError("roster.json: source Chair must be a valid ASF ID")
     pmc, committers = roles["pmc"], roles["committers"]
     if not isinstance(pmc, list) or not isinstance(committers, list) or not pmc:
         raise RosterError("roster.json: invalid role arrays")
     people = pmc + committers
-    ids = [person.get("asf_id") for person in people if isinstance(person, dict)]
-    if len(ids) != len(people) or len(ids) != len(set(ids)) or set(ids) != set(members):
+    for person in people:
+        if not isinstance(person, dict):
+            raise RosterError("roster.json: every role entry must be an object")
+        asf_id = person.get("asf_id")
+        if not isinstance(asf_id, str) or not ASF_ID_PATTERN.fullmatch(asf_id):
+            raise RosterError("roster.json: role entry has an invalid ASF ID")
+        name = person.get("name")
+        if not isinstance(name, str) or not name.strip():
+            raise RosterError(f"roster.json: member name must be non-empty for {asf_id!r}")
+        if person.get("initials") != _initials(name):
+            raise RosterError(f"roster.json: member initials mismatch for {asf_id!r}")
+        if not isinstance(person.get("profile_url"), str):
+            raise RosterError(f"roster.json: member profile URL must be a string for {asf_id!r}")
+        if type(person.get("chair")) is not bool:
+            raise RosterError(f"roster.json: chair must be boolean for {asf_id!r}")
+    ids = [person["asf_id"] for person in people]
+    if len(ids) != len(set(ids)) or set(ids) != set(members):
         raise RosterError("roster.json: members must match unique source ASF IDs")
     if {p["asf_id"] for p in pmc} != set(owners):
         raise RosterError("roster.json: PMC must equal owners")
@@ -419,18 +437,9 @@ def validate_bundle(warn_after_days: int) -> list[str]:
         raise RosterError("roster.json: unique Chair must be first in PMC")
     for role, entries in roles.items():
         tail = entries[1:] if role == "pmc" else entries
-        actual_order = [(p.get("name", "").casefold(), p.get("asf_id", "").casefold()) for p in tail]
+        actual_order = [(p["name"].casefold(), p["asf_id"].casefold()) for p in tail]
         if actual_order != sorted(actual_order):
             raise RosterError(f"roster.json: {role} must be sorted by public name and ASF ID casefold")
-        for person in entries:
-            if any(key not in person for key in ("asf_id", "name", "initials", "chair", "profile_url")):
-                raise RosterError(f"roster.json: incomplete member {person!r}")
-            if not isinstance(person["name"], str) or not person["name"].strip():
-                raise RosterError(f"roster.json: member name must be non-empty for {person['asf_id']!r}")
-            if person["initials"] != _initials(person["name"]):
-                raise RosterError(f"roster.json: member initials mismatch for {person['asf_id']!r}")
-            if type(person["chair"]) is not bool:
-                raise RosterError(f"roster.json: chair must be boolean for {person['asf_id']!r}")
     mappings = _validate_mapping(mapping, set(ids))
     for person in people:
         expected, avatar = mappings.get(person["asf_id"]), person.get("avatar")
@@ -454,8 +463,11 @@ def validate_bundle(warn_after_days: int) -> list[str]:
             raise RosterError(f"roster.json: unmapped member has an avatar")
         elif person["profile_url"] != f"https://people.apache.org/phonebook.html?uid={person['asf_id']}":
             raise RosterError(f"roster.json: unmapped profile URL mismatch for {person['asf_id']!r}")
+    retrieved_at = roster.get("retrieved_at")
+    if not isinstance(retrieved_at, str):
+        raise RosterError("roster.json: retrieved_at must be an ISO-8601 UTC string")
     try:
-        retrieved = dt.datetime.fromisoformat(roster["retrieved_at"].replace("Z", "+00:00"))
+        retrieved = dt.datetime.fromisoformat(retrieved_at.replace("Z", "+00:00"))
     except (KeyError, TypeError, ValueError) as exc:
         raise RosterError("roster.json: retrieved_at must be ISO-8601 UTC") from exc
     now = dt.datetime.now(dt.timezone.utc)
@@ -463,6 +475,50 @@ def validate_bundle(warn_after_days: int) -> list[str]:
         raise RosterError("roster.json: retrieved_at is in the future or lacks a timezone")
     age = now - retrieved
     return [f"community roster is {age.days} days old (threshold: {warn_after_days})"] if age > dt.timedelta(days=warn_after_days) else []
+
+
+class _CommunityLinkParser(html.parser.HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.role_stack: list[str | None] = []
+        self.links = {"pmc": [], "committers": []}
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        if tag == "section":
+            role = attributes.get("data-community-role")
+            self.role_stack.append(role if role in self.links else None)
+        elif tag == "a" and self.role_stack and self.role_stack[-1]:
+            href = attributes.get("href")
+            if href:
+                self.links[self.role_stack[-1]].append(href)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "section" and self.role_stack:
+            self.role_stack.pop()
+
+
+def _rendered_role_links(rendered: str, html_output: bool) -> dict[str, list[str]]:
+    if html_output:
+        parser = _CommunityLinkParser()
+        parser.feed(rendered)
+        return parser.links
+    starts = {}
+    for role, heading in (("pmc", "PMC"), ("committers", "Committers")):
+        match = re.search(rf"(?m)^### {heading}\s*$", rendered)
+        if not match:
+            return {"pmc": [], "committers": []}
+        starts[role] = match.end()
+    if starts["pmc"] >= starts["committers"]:
+        return {"pmc": [], "committers": []}
+    segments = {
+        "pmc": rendered[starts["pmc"] : starts["committers"]],
+        "committers": rendered[starts["committers"] :],
+    }
+    return {
+        role: re.findall(r"(?m)^-\s+\[[^\]]+\]\(([^)\s]+)\)", segment)
+        for role, segment in segments.items()
+    }
 
 
 def validate_rendered_outputs(destination: pathlib.Path) -> None:
@@ -489,38 +545,11 @@ def validate_rendered_outputs(destination: pathlib.Path) -> None:
             has_markers = all(marker in rendered for marker in markers)
         if not has_markers:
             raise RosterError(f"rendered output {relative} is missing Community markers")
-        role_starts = {}
-        for role in ("pmc", "committers"):
-            pattern = (
-                rf'<section[^>]*data-community-role=(?:"{role}"|{role})(?:\s|>)'
-                if relative.endswith(".html")
-                else rf"(?m)^### {role.upper() if role == 'pmc' else 'Committers'}\s*$"
-            )
-            match = re.search(pattern, rendered)
-            if not match:
-                raise RosterError(f"rendered output {relative} is missing {role} section")
-            role_starts[role] = match.start()
-        if role_starts["pmc"] >= role_starts["committers"]:
-            raise RosterError(f"rendered output {relative} has role order drift")
-        segments = {
-            "pmc": rendered[role_starts["pmc"] : role_starts["committers"]],
-            "committers": rendered[role_starts["committers"] :],
-        }
+        rendered_links = _rendered_role_links(rendered, relative.endswith(".html"))
         for role, entries in roster_roles.items():
-            own_urls = [
-                person["profile_url"].replace("&", "&amp;") if relative.endswith(".html") else person["profile_url"]
-                for person in entries
-            ]
-            other_role = "committers" if role == "pmc" else "pmc"
-            other_urls = [
-                person["profile_url"].replace("&", "&amp;") if relative.endswith(".html") else person["profile_url"]
-                for person in roster_roles[other_role]
-            ]
-            positions = [segments[role].find(url) for url in own_urls]
-            if any(position < 0 for position in positions) or positions != sorted(positions):
+            expected_links = [person["profile_url"] for person in entries]
+            if rendered_links[role] != expected_links:
                 raise RosterError(f"rendered output {relative} has {role} link parity drift")
-            if any(url in segments[role] for url in other_urls):
-                raise RosterError(f"rendered output {relative} mixes Community roles")
 
 
 def _atomic_write(path: pathlib.Path, raw: bytes) -> None:
@@ -630,6 +659,7 @@ def _commit_bundle(candidate: dict, candidate_avatars: dict[str, bytes]) -> None
 
 def refresh() -> None:
     _validate_repo_paths()
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     source_data = {key: _fetch_json(url) for key, url in SOURCES.items()}
     candidate = build_roster(source_data["committee"], source_data["projects"], source_data["people"], _read_json(MAP_PATH))
     work = pathlib.Path(tempfile.mkdtemp(prefix=".community-refresh-", dir=DATA_DIR))
@@ -654,7 +684,6 @@ def main() -> int:
     args = parser.parse_args()
     try:
         if args.command == "refresh":
-            DATA_DIR.mkdir(parents=True, exist_ok=True)
             refresh()
         else:
             if args.warn_after_days < 0:

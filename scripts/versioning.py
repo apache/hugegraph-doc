@@ -2113,6 +2113,16 @@ def mark_historical_pages_noindex(output: pathlib.Path) -> int:
         rendered, count = ROBOTS_META_RE.subn(
             '<meta name="robots" content="noindex,follow">', source
         )
+        if count == 0:
+            rendered, count = re.subn(
+                r"</head>",
+                '<meta name="robots" content="noindex,follow"></head>',
+                rendered,
+                count=1,
+                flags=re.IGNORECASE,
+            )
+        if count != 1:
+            fail(f"historical page must contain one head/robots marker: {path}")
         if count:
             path.write_text(rendered, encoding="utf-8")
             changed += count

@@ -83,10 +83,12 @@
             {{- else }}
             {{- $url := strings.TrimSuffix "/" (.url | default "") }}
             {{- $isActive := or (eq .version $.Site.Params.version) (eq (strings.TrimSuffix "/" $.Site.BaseURL) $url) }}
-            {{- $path := cond (and $.Site.Params.version_menu_pagelinks (ne .pagelinks false)) $.RelPermalink "" }}
             {{- if $url }}
-            <a class="td-nav-hover-menu__option{{ if $isActive }} td-is-active{{ end }}"
-              {{- if $isActive }} aria-current="page"{{ end }} href="{{ $url }}{{ $path }}">{{ .name | default .version | markdownify }}</a>
+            {{- partial "version-link.html" (dict
+              "page" $ "version" . "active" $isActive "icon" false
+              "class" (printf "td-nav-hover-menu__option%s" (cond $isActive " td-is-active" ""))
+              "iconKey" (printf "navbar-version-%s" .version)
+            ) -}}
             {{- else }}
             <span class="td-nav-hover-menu__option td-is-disabled">{{ .name | default .version | markdownify }}</span>
             {{- end }}
@@ -169,10 +171,11 @@
           {{- range $.Site.Params.versions }}
             {{- $url := strings.TrimSuffix "/" (.url | default "") -}}
             {{- if $url }}
-            <a class="td-site-nav__menu-link td-site-nav__menu-child" href="{{ $url }}/">
-              <i class="fa-solid fa-code-branch" aria-hidden="true"></i>
-              <span>{{ .name | default .version }}</span>
-            </a>
+            {{- partial "version-link.html" (dict
+              "page" $ "version" . "active" (eq .version $.Site.Params.version)
+              "class" "td-site-nav__menu-link td-site-nav__menu-child"
+              "iconKey" (printf "landing-mobile-version-%s" .version)
+            ) -}}
             {{- end }}
           {{- end }}
         </div>

@@ -1,6 +1,17 @@
+{{- $basePath := (urls.Parse .Site.BaseURL).Path | default "/" -}}
+{{- $localePrefix := cond (eq .Site.Language.Lang "cn") "cn/" "" -}}
+{{- $docsRoot := printf "%s%sdocs/" $basePath $localePrefix -}}
+{{- $fallbackMessage := "" -}}
+{{- if eq .Site.Language.Lang "cn" -}}
+  {{- $fallbackMessage = "目标版本没有此页面，已转到该版本的文档首页。" -}}
+{{- else -}}
+  {{- $fallbackMessage = T "ui_version_fallback" -}}
+{{- end -}}
 {{- $shellConfig := dict
   "version" (.Site.Params.version | default "latest")
   "locale" .Site.Language.Lang
+  "docsRoot" $docsRoot
+  "versionFallbackMessage" $fallbackMessage
 -}}
 <script type="application/json" id="hg-shell-config">{{ $shellConfig | jsonify | safeJS }}</script>
 {{- $shell := resources.Get "js/hugegraph-shell.js" -}}

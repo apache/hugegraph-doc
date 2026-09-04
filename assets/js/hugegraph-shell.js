@@ -8,6 +8,8 @@
 (function (global) {
   'use strict';
 
+  var versionExecutorRegistries = new WeakSet();
+
   function readConfig(documentObject) {
     var node = documentObject.getElementById('hg-shell-config');
     if (!node) return { version: 'latest', locale: 'en' };
@@ -226,8 +228,100 @@
     schedule();
   }
 
+  function versionTarget(option, locationObject) {
+    if (!option || !option.url) return '';
+    try {
+      var target = new URL(option.url, locationObject.href);
+      if (target.protocol !== 'http:' && target.protocol !== 'https:')
+        return '';
+      if (option.equivalent === true && option.fallback !== true) {
+        target.search = locationObject.search || '';
+        target.hash = locationObject.hash || '';
+      }
+      return target.href;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function boolData(value) {
+    return value === true || value === 'true';
+  }
+
+  function initVersionSwitching(windowObject, documentObject) {
+    Array.prototype.forEach.call(
+      documentObject.querySelectorAll('a[data-hg-version-id]'),
+      function (anchor) {
+        var target = versionTarget(
+          {
+            url: anchor.getAttribute('href'),
+            equivalent: boolData(anchor.dataset.hgVersionEquivalent),
+            fallback: boolData(anchor.dataset.hgVersionFallback),
+          },
+          windowObject.location,
+        );
+        if (target) anchor.setAttribute('href', target);
+      },
+    );
+
+    var registry = windowObject.OinkActions;
+    if (
+      !registry ||
+      typeof registry.registerExecutor !== 'function' ||
+      versionExecutorRegistries.has(registry)
+    ) {
+      return;
+    }
+    registry.registerExecutor('switch_version', function (context) {
+      var target = versionTarget(
+        context && context.value,
+        windowObject.location,
+      );
+      if (target) windowObject.location.assign(target);
+      return { action: 'switch_version', url: target };
+    });
+    versionExecutorRegistries.add(registry);
+  }
+
+  function consumeVersionFallback(windowObject, documentObject, config) {
+    var locationObject = windowObject.location;
+    if (locationObject.hash !== '#hg-version-fallback' || !config.docsRoot)
+      return null;
+    var docsPath;
+    try {
+      docsPath = new URL(config.docsRoot, locationObject.href).pathname;
+    } catch (_) {
+      return null;
+    }
+    if (locationObject.pathname !== docsPath) return null;
+
+    windowObject.history.replaceState(
+      windowObject.history.state,
+      '',
+      locationObject.pathname + locationObject.search,
+    );
+    var notice = documentObject.createElement('div');
+    ['alert', 'alert-info', 'hg-version-fallback', 'd-print-none'].forEach(
+      function (name) {
+        notice.classList.add(name);
+      },
+    );
+    notice.dataset.hgVersionFallbackNotice = '';
+    notice.setAttribute('role', 'status');
+    notice.setAttribute('aria-live', 'polite');
+    notice.setAttribute('aria-atomic', 'true');
+    notice.textContent = config.versionFallbackMessage || '';
+    var container =
+      (documentObject.querySelector && documentObject.querySelector('main')) ||
+      documentObject.body;
+    if (container) container.prepend(notice);
+    return notice;
+  }
+
   function init(windowObject, documentObject) {
     var config = readConfig(documentObject);
+    consumeVersionFallback(windowObject, documentObject, config);
+    initVersionSwitching(windowObject, documentObject);
     initTreePersistence(windowObject, documentObject, config);
     initSidebarIsolation(windowObject, documentObject);
     initSearchRetry(windowObject, documentObject);
@@ -238,6 +332,9 @@
     readConfig: readConfig,
     safeStorage: safeStorage,
     setTreeExpanded: setTreeExpanded,
+    versionTarget: versionTarget,
+    initVersionSwitching: initVersionSwitching,
+    consumeVersionFallback: consumeVersionFallback,
   };
   global.HugeGraphShell = api;
   if (typeof module === 'object' && module.exports) module.exports = api;

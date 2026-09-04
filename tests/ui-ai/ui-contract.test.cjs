@@ -93,6 +93,21 @@ test('shell persistence uses the version and locale scoped key', () => {
   assert.match(source, /sidebar\.inert = isolated/);
 });
 
+test('all three version selector surfaces expose one stable route contract', () => {
+  const navbar = read('layouts/_partials/navbar.html');
+  const sidebar = read('layouts/_partials/shell/sidebar-panel.html');
+  assert.equal((navbar.match(/partial "version-link\.html"/g) || []).length, 2);
+  assert.equal((sidebar.match(/partial "version-link\.html"/g) || []).length, 1);
+  assert.match(
+    read('layouts/_partials/version-link.html'),
+    /data-hg-version-id=/,
+  );
+  assert.match(
+    read('layouts/_partials/version-link.html'),
+    /strings\.TrimSuffix \$docsSuffix/,
+  );
+});
+
 test('social fallback asset is exactly 1200 by 630 pixels', () => {
   const image = fs.readFileSync(
     path.join(root, 'static/img/social/hugegraph-default.png'),

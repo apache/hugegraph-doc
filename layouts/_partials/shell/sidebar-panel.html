@@ -66,10 +66,10 @@
         {{- range . }}
           {{- $url := strings.TrimSuffix "/" (.url | default "") -}}
           {{- if $url }}
-          <a href="{{ $url }}/"{{ if eq .version $.Site.Params.version }} aria-current="page"{{ end }}>
-            {{- partialCached "shell/icon.html" "code-branch" (printf "mobile-version-%s" .version) -}}
-            <span>{{ .name | default .version }}</span>
-          </a>
+          {{- partial "version-link.html" (dict
+            "page" $ "version" . "active" (eq .version $.Site.Params.version)
+            "class" "" "iconKey" (printf "mobile-version-%s" .version)
+          ) -}}
           {{- end }}
         {{- end }}
       </div>

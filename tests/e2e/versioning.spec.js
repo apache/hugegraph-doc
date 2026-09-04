@@ -7,6 +7,13 @@ async function actionManifest(page) {
   return page.locator("#td-action-manifest").evaluate((node) => JSON.parse(node.textContent));
 }
 
+async function versionOption(page, id) {
+  const manifest = await actionManifest(page);
+  return manifest.actions
+    .find((item) => item.id === "switch_version")
+    .options.find((item) => item.id === id);
+}
+
 test("aggregate records the immutable five-version manifest", async ({ request }) => {
   const response = await request.get("/build-metadata/versions.json");
   expect(response.ok()).toBeTruthy();
@@ -59,3 +66,94 @@ test("1.0 flat Server URL remains a static alias", async ({ request }) => {
     /rel="canonical"[^>]+versions\/1\.0\/docs\/quickstart\/hugegraph\/hugegraph-server\//
   );
 });
+
+test("desktop and mobile selectors preserve query and hash for an equivalent page", async ({
+  page
+}) => {
+  test.skip(!EXPECTED_IDS.includes("1.7"), "latest-only staging artifact");
+  await page.goto("/docs/quickstart/hugegraph/?query=server#server");
+  const option = await versionOption(page, "1.7");
+  expect(option.equivalent).toBe(true);
+  expect(option.fallback).toBe(false);
+
+  const desktop = page.locator(
+    ".td-nav-version-menu a[data-hg-version-id='1.7']"
+  );
+  const href = await desktop.getAttribute("href");
+  expect(new URL(href).search).toBe("?query=server");
+  expect(new URL(href).hash).toBe("#server");
+  expect(new URL(href).pathname).toBe(new URL(option.url).pathname);
+  await page.locator(".td-nav-version-menu [data-td-nav-hover-trigger]").hover();
+  await expect(desktop).toBeVisible();
+  await desktop.click();
+  await expect(page).toHaveURL((url) =>
+    url.pathname === new URL(option.url).pathname &&
+    url.search === "?query=server" &&
+    url.hash === "#server"
+  );
+
+  await page.goto("/docs/quickstart/hugegraph/?query=server#server");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator("[data-td-shell-drawer-open]").click();
+  const drawer = page.locator(
+    "#td-shell-sidebar a[data-hg-version-id='1.7']"
+  );
+  await expect(drawer).toHaveAttribute("href", href);
+  await drawer.click();
+  await expect(page).toHaveURL((url) =>
+    url.pathname === new URL(option.url).pathname &&
+    url.search === "?query=server" &&
+    url.hash === "#server"
+  );
+});
+
+test("Palette version choice uses the same equivalent target", async ({ page }) => {
+  test.skip(!EXPECTED_IDS.includes("1.7"), "latest-only staging artifact");
+  await page.goto("/docs/quickstart/hugegraph/?query=server#server");
+  const option = await versionOption(page, "1.7");
+  await page.locator("[data-td-shell-search-open]").first().click();
+  const input = page.locator(".td-shell-search__input");
+  await input.fill("Releases");
+  await page
+    .locator('[role="option"]')
+    .filter({ hasText: "Releases" })
+    .first()
+    .click();
+  await page
+    .locator('[role="option"]')
+    .filter({ hasText: /^1\.7$/ })
+    .click();
+  await expect(page).toHaveURL((url) =>
+    url.pathname === new URL(option.url).pathname &&
+    url.search === "?query=server" &&
+    url.hash === "#server"
+  );
+});
+
+for (const locale of ["en", "cn"]) {
+  test(`${locale} missing page falls back to its docs root once`, async ({ page }) => {
+    test.skip(!EXPECTED_IDS.includes("1.0"), "latest-only staging artifact");
+    const prefix = locale === "cn" ? "/cn" : "";
+    await page.goto(`${prefix}/docs/guides/security/?query=discard#discard`);
+    const option = await versionOption(page, "1.0");
+    expect(option.fallback).toBe(true);
+    expect(option.equivalent).toBe(false);
+    expect(new URL(option.url).pathname).toBe(`/versions/1.0${prefix}/docs/`);
+    expect(new URL(option.url).search).toBe("");
+    expect(new URL(option.url).hash).toBe("#hg-version-fallback");
+
+    await page.evaluate((target) => {
+      window.OinkActions.run("switch_version", { value: target });
+    }, option);
+    await page.waitForURL((url) => url.pathname === `/versions/1.0${prefix}/docs/`);
+    await expect(
+      page.locator("[data-hg-version-fallback-notice]")
+    ).toHaveCount(1);
+    expect(new URL(page.url()).search).toBe("");
+    expect(new URL(page.url()).hash).toBe("");
+    await page.reload();
+    await expect(
+      page.locator("[data-hg-version-fallback-notice]")
+    ).toHaveCount(0);
+  });
+}

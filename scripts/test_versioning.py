@@ -161,6 +161,28 @@ class VersionUrlTest(unittest.TestCase):
             (artifact / "index.html").write_text(
                 '<nav id="TableOfContents"></nav>', encoding="utf-8"
             )
+            en_llms = artifact / "docs/llms-full.txt"
+            cn_llms = artifact / "cn/docs/llms-full.txt"
+            en_llms.parent.mkdir(parents=True)
+            cn_llms.parent.mkdir(parents=True)
+            en_llms.write_text(
+                (
+                    f"Source: {ORIGIN}docs/index.md\n\n"
+                    "LLMS index: [llms.txt](/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            cn_llms.write_text(
+                (
+                    f"Source: {ORIGIN}cn/docs/index.md\n\n"
+                    "LLMS 索引： [llms.txt](/cn/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            (artifact / "llms.txt").write_text("English index\n", encoding="utf-8")
+            (artifact / "cn/llms.txt").write_text(
+                "中文索引\n", encoding="utf-8"
+            )
             contract = temp / "url-contract.json"
             contract.write_text(
                 json.dumps({"schemaVersion": 1, "routes": []}), encoding="utf-8"
@@ -265,6 +287,62 @@ class VersionUrlTest(unittest.TestCase):
                 expected,
             )
         self.assertNotIn("1.2", json.dumps(config))
+
+    def test_shell_static_files_include_scoped_social_fallback(self) -> None:
+        self.assertIn(
+            "img/social/hugegraph-default.png",
+            versioning.SHELL_STATIC_FILES,
+        )
+        self.assertTrue(
+            (
+                versioning.ROOT
+                / "static/img/social/hugegraph-default.png"
+            ).is_file()
+        )
+
+    def test_llms_full_contract_requires_latest_locales_and_forbids_history(
+        self,
+    ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        latest = manifest["versions"][0]
+        archived = manifest["versions"][-1]
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            en = root / "docs/llms-full.txt"
+            cn = root / "cn/docs/llms-full.txt"
+            en.parent.mkdir(parents=True)
+            cn.parent.mkdir(parents=True)
+            en.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/docs/index.md\n\n"
+                    "LLMS index: [llms.txt](/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            cn.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/cn/docs/index.md\n\n"
+                    "LLMS 索引： [llms.txt](/cn/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            versioning.validate_llms_full_outputs(root, latest, ORIGIN)
+
+            cn.unlink()
+            with self.assertRaisesRegex(SystemExit, "Chinese LLMSFULL"):
+                versioning.validate_llms_full_outputs(root, latest, ORIGIN)
+            cn.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/cn/docs/index.md\n\n"
+                    "LLMS index: [llms.txt](/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(SystemExit, "locale contract"):
+                versioning.validate_llms_full_outputs(root, latest, ORIGIN)
+
+            with self.assertRaisesRegex(SystemExit, "historical artifact"):
+                versioning.validate_llms_full_outputs(root, archived, ORIGIN)
 
     def test_temporary_manifest_drives_prepare_config_and_route_order(self) -> None:
         manifest_data = {
@@ -1365,6 +1443,7 @@ class VersionUrlTest(unittest.TestCase):
                         "schemaVersion": 1,
                         "versions": ["latest"],
                         "pages": {"en:": {"latest": "docs/"}},
+                        "equivalents": [],
                     },
                 ),
                 mock.patch.object(versioning, "require_metadata_matches"),
@@ -1594,17 +1673,31 @@ class VersionUrlTest(unittest.TestCase):
                 )
                 page(roots[version], f"docs/performance/{spelling}")
             page(roots["latest"], "docs/introduction")
+            page(roots["latest"], "cn/docs/introduction")
             page(
                 roots["latest"],
                 "docs/introduction/readme",
                 redirect="/docs/introduction/",
             )
+            page(
+                roots["latest"],
+                "cn/docs/introduction/readme",
+                redirect="/cn/docs/introduction/",
+            )
             for version in ("1.7", "1.5", "1.3", "1.0"):
                 page(roots[version], "docs/introduction/readme")
+                page(roots[version], "cn/docs/introduction/readme")
 
             routes = versioning.generate_version_routes(roots, manifest)
 
             self.assertEqual(routes["versions"], version_ids)
+            self.assertEqual(
+                routes["equivalents"],
+                [
+                    ["cn:introduction", "cn:introduction/readme"],
+                    ["en:introduction", "en:introduction/readme"],
+                ],
+            )
             self.assertEqual(
                 routes["pages"]["en:performance/api-performance"]["latest"],
                 "docs/performance/api-performance/",
@@ -1628,6 +1721,109 @@ class VersionUrlTest(unittest.TestCase):
             )
             versioning.validate_version_routes(routes, manifest)
 
+    def test_version_switch_resolves_unique_equivalent_logical_page(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        routes = json.loads(
+            (versioning.ROOT / "data/version_routes.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        for language, prefix in (("en", ""), ("cn", "cn/")):
+            with self.subTest(language=language, direction="latest-to-history"):
+                options = versioning.version_switch_options(
+                    manifest,
+                    routes,
+                    "latest",
+                    f"{prefix}docs/introduction/",
+                    ORIGIN,
+                    language=language,
+                )
+                for version in ("1.5", "1.3", "1.0"):
+                    option = next(item for item in options if item["id"] == version)
+                    self.assertEqual(
+                        option["url"],
+                        (
+                            f"{ORIGIN}versions/{version}/{prefix}"
+                            "docs/introduction/readme/"
+                        ),
+                    )
+                    self.assertTrue(option["equivalent"])
+                    self.assertFalse(option["fallback"])
+
+            with self.subTest(language=language, direction="history-to-latest"):
+                options = versioning.version_switch_options(
+                    manifest,
+                    routes,
+                    "1.7",
+                    f"{prefix}docs/introduction/readme/",
+                    ORIGIN,
+                    language=language,
+                )
+                latest = next(item for item in options if item["id"] == "latest")
+                self.assertEqual(
+                    latest["url"], f"{ORIGIN}{prefix}docs/introduction/"
+                )
+                self.assertTrue(latest["equivalent"])
+                self.assertFalse(latest["fallback"])
+
+            with self.subTest(language=language, direction="direct-wins"):
+                options = versioning.version_switch_options(
+                    manifest,
+                    routes,
+                    "1.7",
+                    f"{prefix}docs/introduction/",
+                    ORIGIN,
+                    language=language,
+                )
+                latest = next(item for item in options if item["id"] == "latest")
+                self.assertEqual(
+                    latest["url"], f"{ORIGIN}{prefix}docs/introduction/"
+                )
+                self.assertTrue(latest["equivalent"])
+                self.assertFalse(latest["fallback"])
+
+    def test_version_route_equivalents_reject_unsafe_or_ambiguous_groups(
+        self,
+    ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        versions = list(versioning.manifest_version_ids(manifest))
+        targets = {version: None for version in versions}
+        fixtures = (
+            [
+                ["en:introduction", "cn:introduction"],
+            ],
+            [
+                ["en:introduction", "en:introduction/readme"],
+                ["en:introduction/readme", "en:config"],
+            ],
+            [
+                [
+                    "en:introduction",
+                    "en:introduction/readme",
+                    "en:config",
+                ],
+            ],
+        )
+        pages = {
+            "en:introduction": dict(targets, latest="docs/introduction/"),
+            "en:introduction/readme": dict(
+                targets, **{"1.7": "docs/introduction/readme/"}
+            ),
+            "en:config": dict(targets, **{"1.7": "docs/config/"}),
+            "cn:introduction": dict(targets, latest="cn/docs/introduction/"),
+        }
+        for equivalents in fixtures:
+            with self.subTest(equivalents=equivalents), self.assertRaises(SystemExit):
+                versioning.validate_version_routes(
+                    {
+                        "schemaVersion": 1,
+                        "versions": versions,
+                        "pages": pages,
+                        "equivalents": equivalents,
+                    },
+                    manifest,
+                )
+
     def test_version_switch_options_use_equivalent_page_or_explicit_fallback(
         self,
     ) -> None:
@@ -1645,6 +1841,7 @@ class VersionUrlTest(unittest.TestCase):
                     "1.0": None,
                 }
             },
+            "equivalents": [],
         }
         options = versioning.version_switch_options(
             manifest,
@@ -1816,6 +2013,7 @@ class VersionUrlTest(unittest.TestCase):
                     "1.0": None,
                 }
             },
+            "equivalents": [],
         }
         with tempfile.TemporaryDirectory() as temp_name:
             output = Path(temp_name)

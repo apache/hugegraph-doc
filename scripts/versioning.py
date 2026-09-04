@@ -45,7 +45,10 @@ SHELL_CONTENT_DIRS = (
     "content/en/docs/_nav",
     "content/cn/docs/_nav",
 )
-SHELL_STATIC_FILES = ("favicon.svg",)
+SHELL_STATIC_FILES = (
+    "favicon.svg",
+    "img/social/hugegraph-default.png",
+)
 SHELL_CONTENT = (
     "content/en/_index.md",
     "content/cn/_index.md",
@@ -2071,6 +2074,84 @@ def canonical_docs_pages(root: pathlib.Path, version: str) -> dict[str, str]:
     return pages
 
 
+def docs_alias_equivalence_edges(
+    root: pathlib.Path, entry: dict
+) -> set[tuple[str, str]]:
+    """Return locale-preserving logical edges declared by static Docs aliases."""
+    version = entry["id"]
+    prefix = "/" + entry["publishPath"].strip("/") if entry["publishPath"] else ""
+    edges: set[tuple[str, str]] = set()
+    for language, docs_root in (
+        ("en", root / "docs"),
+        ("cn", root / "cn/docs"),
+    ):
+        if not docs_root.is_dir():
+            fail(f"route-map Docs root is missing for {version}: {docs_root}")
+        for path in sorted(docs_root.rglob("index.html")):
+            document = DocumentParser()
+            document.feed(path.read_text(encoding="utf-8"))
+            redirect = refresh_target(document)
+            if redirect is None:
+                continue
+            require_safe_url_syntax(redirect)
+            if not require_safe_url_scheme(redirect, path.as_posix()):
+                continue
+            target_path = urllib.parse.urlsplit(redirect).path
+            if prefix and (
+                target_path == prefix or target_path.startswith(prefix + "/")
+            ):
+                target_path = target_path[len(prefix) :] or "/"
+            try:
+                target_language, target_relative = docs_target_parts(target_path)
+            except SystemExit:
+                continue
+            if target_language != language:
+                fail(
+                    f"route-map alias changes locale for {version}: "
+                    f"{path.relative_to(root)} -> {redirect}"
+                )
+            source_relative = path.parent.relative_to(docs_root).as_posix()
+            source_relative = "" if source_relative == "." else source_relative
+            source_id = (
+                f"{language}:"
+                f"{normalize_logical_docs_route(version, source_relative)}"
+            )
+            target_id = (
+                f"{target_language}:"
+                f"{normalize_logical_docs_route(version, target_relative)}"
+            )
+            if source_id != target_id:
+                edges.add(tuple(sorted((source_id, target_id))))
+    return edges
+
+
+def equivalence_groups(
+    edges: set[tuple[str, str]], logical_ids: set[str]
+) -> list[list[str]]:
+    """Build deterministic disjoint components from reviewed alias edges."""
+    graph: dict[str, set[str]] = {}
+    for left, right in edges:
+        if left not in logical_ids or right not in logical_ids:
+            continue
+        graph.setdefault(left, set()).add(right)
+        graph.setdefault(right, set()).add(left)
+    groups = []
+    unseen = set(graph)
+    while unseen:
+        pending = [min(unseen)]
+        component = set()
+        while pending:
+            logical_id = pending.pop()
+            if logical_id in component:
+                continue
+            component.add(logical_id)
+            pending.extend(sorted(graph.get(logical_id, ()), reverse=True))
+        unseen.difference_update(component)
+        if len(component) > 1:
+            groups.append(sorted(component))
+    return sorted(groups)
+
+
 def generate_version_routes(
     artifact_roots: dict[str, pathlib.Path], manifest: dict
 ) -> dict:
@@ -2088,6 +2169,13 @@ def generate_version_routes(
     logical_ids = sorted(
         {logical_id for pages in inventories.values() for logical_id in pages}
     )
+    entries = {entry["id"]: entry for entry in manifest["versions"]}
+    alias_edges = set().union(
+        *(
+            docs_alias_equivalence_edges(artifact_roots[version], entries[version])
+            for version in version_ids
+        )
+    )
     result = {
         "schemaVersion": 1,
         "versions": list(version_ids),
@@ -2098,6 +2186,7 @@ def generate_version_routes(
             }
             for logical_id in logical_ids
         },
+        "equivalents": equivalence_groups(alias_edges, set(logical_ids)),
     }
     validate_version_routes(result, manifest)
     return result
@@ -2110,6 +2199,7 @@ def validate_version_routes(data: dict, manifest: dict) -> dict:
         "schemaVersion",
         "versions",
         "pages",
+        "equivalents",
     }:
         fail("invalid version route-map top-level fields")
     if data["schemaVersion"] != 1 or data["versions"] != list(version_ids):
@@ -2160,6 +2250,52 @@ def validate_version_routes(data: dict, manifest: dict) -> dict:
                     f"version route-map target/logical mismatch for "
                     f"{logical_id} {version}: {target}"
                 )
+    equivalents = data["equivalents"]
+    if not isinstance(equivalents, list):
+        fail("version route-map equivalents must be an array")
+    if equivalents != sorted(equivalents):
+        fail("version route-map equivalent groups must be ordered")
+    seen_equivalents: set[str] = set()
+    for group in equivalents:
+        if (
+            not isinstance(group, list)
+            or len(group) < 2
+            or group != sorted(group)
+            or len(group) != len(set(group))
+            or not all(isinstance(logical_id, str) for logical_id in group)
+        ):
+            fail(f"invalid version route-map equivalent group: {group!r}")
+        missing = set(group).difference(pages)
+        if missing:
+            fail(
+                "version route-map equivalent IDs are missing: "
+                + ", ".join(sorted(missing))
+            )
+        locales = {logical_id.split(":", 1)[0] for logical_id in group}
+        if len(locales) != 1:
+            fail(f"version route-map equivalent group changes locale: {group!r}")
+        overlap = seen_equivalents.intersection(group)
+        if overlap:
+            fail(
+                "version route-map equivalent ID is ambiguous: "
+                + ", ".join(sorted(overlap))
+            )
+        seen_equivalents.update(group)
+        for source_id in group:
+            for version in version_ids:
+                if pages[source_id][version] is not None:
+                    continue
+                candidates = [
+                    pages[candidate_id][version]
+                    for candidate_id in group
+                    if candidate_id != source_id
+                    and pages[candidate_id][version] is not None
+                ]
+                if len(candidates) > 1:
+                    fail(
+                        f"version route-map equivalent target is ambiguous for "
+                        f"{source_id} {version}: {candidates!r}"
+                    )
     return data
 
 
@@ -2207,6 +2343,35 @@ def logical_id_for_target(
     return matches[0] if matches else None
 
 
+def resolved_logical_target(
+    route_map: dict, logical_id: str, version: str
+) -> str | None:
+    """Prefer the canonical logical ID, then its unique reviewed equivalent."""
+    direct = route_map["pages"][logical_id][version]
+    if direct is not None:
+        return direct
+    group = next(
+        (
+            candidates
+            for candidates in route_map["equivalents"]
+            if logical_id in candidates
+        ),
+        (),
+    )
+    alternatives = [
+        route_map["pages"][candidate_id][version]
+        for candidate_id in group
+        if candidate_id != logical_id
+        and route_map["pages"][candidate_id][version] is not None
+    ]
+    if len(alternatives) > 1:
+        fail(
+            f"version route-map equivalent target is ambiguous for "
+            f"{logical_id} {version}: {alternatives!r}"
+        )
+    return alternatives[0] if alternatives else None
+
+
 def version_switch_options(
     manifest: dict,
     route_map: dict,
@@ -2241,7 +2406,9 @@ def version_switch_options(
         equivalent = False
         fallback = False
         if logical_id is not None:
-            target = route_map["pages"][logical_id][entry["id"]]
+            target = resolved_logical_target(
+                route_map, logical_id, entry["id"]
+            )
             if target is not None:
                 equivalent = True
                 url = urllib.parse.urljoin(entry_origin.rstrip("/") + "/", (
@@ -2303,7 +2470,9 @@ def reviewed_version_route_urls(
                 if entry["archived"] and historical_origin is not None
                 else origin
             )
-            target = targets[entry["id"]]
+            target = resolved_logical_target(
+                route_map, logical_id, entry["id"]
+            )
             if target is None:
                 target = "cn/docs/" if language == "cn" else "docs/"
                 fragment = "#hg-version-fallback"
@@ -2742,6 +2911,55 @@ def require_docs_navigation_json(data: dict, source: str, language: str) -> None
         fail(f"private Docs navigation route leaked into {source}")
 
 
+def validate_llms_full_outputs(
+    root: pathlib.Path, entry: dict, expected_base: str
+) -> None:
+    """Require locale-bound latest corpora and prohibit them in archives."""
+    outputs = {
+        "en": root / "docs/llms-full.txt",
+        "cn": root / "cn/docs/llms-full.txt",
+    }
+    if entry["archived"]:
+        leaked = [
+            path.relative_to(root).as_posix()
+            for path in outputs.values()
+            if path.exists()
+        ]
+        if leaked:
+            fail(
+                "historical artifact must not contain LLMSFULL output: "
+                + ", ".join(leaked)
+            )
+        return
+    contracts = {
+        "en": (
+            urllib.parse.urljoin(expected_base, "docs/index.md"),
+            "LLMS index:",
+            "](/llms.txt)",
+            "LLMS 索引：",
+        ),
+        "cn": (
+            urllib.parse.urljoin(expected_base, "cn/docs/index.md"),
+            "LLMS 索引：",
+            "](/cn/llms.txt)",
+            "LLMS index:",
+        ),
+    }
+    for language, path in outputs.items():
+        label = "English" if language == "en" else "Chinese"
+        if not path.is_file():
+            fail(f"{label} LLMSFULL output is missing: {path.relative_to(root)}")
+        text = path.read_text(encoding="utf-8")
+        source, marker, index_link, forbidden = contracts[language]
+        if (
+            f"Source: {source}" not in text
+            or marker not in text
+            or index_link not in text
+            or forbidden in text
+        ):
+            fail(f"{label} LLMSFULL locale contract is invalid")
+
+
 def validate_artifact(args: argparse.Namespace) -> None:
     manifest = load_manifest(args.manifest)
     route_map = load_version_routes(manifest=manifest)
@@ -2761,6 +2979,7 @@ def validate_artifact(args: argparse.Namespace) -> None:
     require_metadata_matches(expected_entry, metadata, metadata_path)
     if metadata.get("baseURL") != expected_base:
         fail(f"version metadata does not match {entry['id']} at {expected_base}")
+    validate_llms_full_outputs(root, entry, expected_base)
     docs_navigation = metadata.get("docsNavigation")
     expected_docs_navigation = DOCS_NAV_EXPECTED_STATS[entry["id"]]
     if docs_navigation != expected_docs_navigation:
@@ -3028,6 +3247,15 @@ def validate_artifact(args: argparse.Namespace) -> None:
             fail(f"404 page does not use the interactive OINK shell: {relative}")
         document = DocumentParser()
         document.feed(text)
+        for item in document.meta:
+            if (
+                item.get("property", "").lower() == "og:image"
+                or item.get("name", "").lower() == "twitter:image"
+            ):
+                social_url = item.get("content", "")
+                if not social_url:
+                    fail(f"social image URL is empty in {relative}")
+                validate_url(social_url, path)
         require_toc_accessible_name(document, relative)
         alias_target = refresh_target(document)
         if entry["archived"] and relative not in {"404.html", "cn/404.html"}:

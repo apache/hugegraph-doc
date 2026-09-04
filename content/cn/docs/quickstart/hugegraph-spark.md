@@ -5,7 +5,7 @@ draft: true
 weight: 100
 ---
 
-> Note: HugeGraph-Spark 已经停止维护, 不再更新, 请转向使用 hugegraph-computer, 感谢理解
+> HugeGraph-Spark 已停止维护。新的图计算任务请使用 [HugeGraph-Computer](/cn/docs/quickstart/computing/hugegraph-computer)。本文仅保留为旧版本使用记录。
 
 ### 1 HugeGraph-Spark 概述 (Deprecated)
 
@@ -13,7 +13,7 @@ HugeGraph-Spark 是一个连接 HugeGraph 和 Spark GraphX 的工具，能够读
 
 ### 2 环境依赖
 
-在使用 HugeGraph-Spark 前，需要依赖 HugeGraph Server 服务，下载和启动 Server 请参考 [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server)。另外，由于 HugeGraph-Spark 需要使用 Spark GraphX，所以还需要下载 spark，本文的示例使用的是 apache-spark-2.1.1。
+HugeGraph-Spark 依赖 HugeGraph Server，安装方法见 [HugeGraph-Server 快速入门](/cn/docs/quickstart/hugegraph/hugegraph-server)。它还依赖 Spark GraphX；下面保留的旧示例使用 Apache Spark 2.1.1。
 
 ```
 wget https://archive.apache.org/dist/spark/spark-2.1.1/spark-2.1.1-bin-hadoop2.7.tgz

@@ -6,8 +6,7 @@ weight: 3
 
 ### 概述
 
-HugeGraph 为了方便不同用户场景下的鉴权使用，目前内置了完备的`StandardAuthenticator`权限模式，支持多用户认证、
-以及细粒度的权限访问控制，采用基于“用户 - 用户组 - 操作 - 资源”的 4 层设计，灵活控制用户角色与权限 (支持多 GraphServer)
+HugeGraph 内置 `StandardAuthenticator`，支持多用户认证和基于“用户、用户组、操作、资源”的权限控制。
 
 `StandardAuthenticator` 模式的几个核心设计：
 - 初始化时创建超级管理员 (`admin`) 用户，后续通过超级管理员创建其它用户，新创建的用户被分配足够权限后，可以创建或管理更多的用户
@@ -28,15 +27,15 @@ HugeGraph 目前默认**未启用**用户认证功能，需通过修改配置文
 
 > ⚠️ **SEC 提醒：图查询语言 (Gremlin/Cypher) 的安全性**
 >
-> 出于图查询语言的灵活性可能带来的潜在系统安全隐患，**请避免直接在公网/外网环境暴露任何查询相关接口**。在实际生产部署时，请以此处的 **[鉴权认证体系](/cn/docs/config/config-authentication/)** 结合 **IP 白名单** 为安全双重保障机制，同时建议开启 Audit Log (审计日志) 以精准定位用户执行的具体查询语句。鉴于 Server 的无状态特性，整体架构上强烈推荐采用 **[容器化环境 (Docker/K8s)](/cn/docs/quickstart/hugegraph/hugegraph-server/#31-使用-docker-容器-便于测试)** 部署，以极低成本有效隔离底层系统的安全风险。
+> 鉴于图查询语言的灵活性可能带来的潜在系统安全隐患，不要把 Gremlin、Cypher 等查询接口直接暴露到公网。生产环境应同时启用[鉴权](/cn/docs/config/config-authentication/)、IP 白名单和审计日志，并通过 [Docker 或 Kubernetes](/cn/docs/quickstart/hugegraph/hugegraph-server/#31-使用-docker-容器-便于测试) 隔离 Server 进程。
 
-目前已内置实现了`StandardAuthenticator`模式，该模式支持多用户认证与细粒度权限控制。此外，开发者可以自定义实现`HugeAuthenticator`接口来对接自身的权限系统。
+`StandardAuthenticator` 支持多用户认证和细粒度权限控制。也可以实现 `HugeAuthenticator` 接口来接入已有的用户系统。
 
-用户认证方式均采用 [HTTP Basic Authentication](https://zh.wikipedia.org/wiki/HTTP%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81) ，简单说就是在发送 HTTP 请求时在 `Authentication` 设置选择 `Basic` 然后输入对应的用户名和密码，对应 HTTP 明文如下所示 :
+用户认证使用 [HTTP Basic Authentication](https://zh.wikipedia.org/wiki/HTTP%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81)。`Basic` 后面的值是 `用户名:密码` 的 Base64 编码。使用 curl 时可直接通过 `-u` 传入凭据：
 
-```http
-GET http://localhost:8080/graphs/hugegraph/schema/vertexlabels
-Authorization: Basic admin xxxx
+```bash
+curl -u 'admin:<password>' \
+  http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
 ```
 
 **警告**：在 1.5.0 之前版本的 HugeGraph-Server 在鉴权模式下存在 JWT 相关的安全隐患，请务必使用新版本或自行修改 JWT token 的 secretKey。
@@ -67,11 +66,13 @@ authentication: {
 }
 ```
 
-在配置文件`rest-server.properties`中配置`authenticator`及其`graph_store`信息：
+在 `rest-server.properties` 中配置认证器和权限数据存储图：
 
 ```properties
 auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
 auth.graph_store=hugegraph
+# PD 模式首次创建 admin 用户时可设置初始密码
+#auth.admin_pa=<your-admin-password>
 
 # auth client config
 # 如果是分开部署 GraphServer 和 AuthServer，还需要指定下面的配置，地址填写 AuthServer 的 IP:RPC 端口
@@ -86,7 +87,7 @@ auth.graph_store=hugegraph
 gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
 ```
 
-然后详细的权限 API 调用和说明请参考 [Authentication-API](/docs/clients/restful-api/auth) 文档。
+权限 API 的调用方式见 [Authentication API](/cn/docs/clients/restful-api/auth/) 文档。
 
 ### 自定义用户认证系统
 
@@ -94,20 +95,13 @@ gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
 
 ### 基于鉴权模式启动
 
-在鉴权配置完成后，需在首次执行 `init-store.sh` 时命令行中输入 `admin` 密码 (非 docker 部署模式下)
-
-如果基于 docker 镜像部署或者已经初始化 HugeGraph 并需要转换为鉴权模式，需要删除相关图数据并重新启动 HugeGraph, 若图已有业务数据，暂时**无法直接转换**鉴权模式 (hugegraph 版本 <= 1.2.0) 
-> 对于该功能的改进已经在最新版本发布 (Docker latest 可用)，可参考 [PR 2411](https://github.com/apache/hugegraph/pull/2411), 此时可无缝切换。 
+首次执行 `init-store.sh` 时，如果尚未创建 `admin` 用户，命令会要求输入管理员密码。对于已经初始化的持久化后端，`init-store.sh` 会补充认证所需的系统信息，无需删除原有图数据。
 
 ```bash
 # stop the hugeGraph firstly
 bin/stop-hugegraph.sh
 
-# delete the store data (here we use the default path for rocksdb)
-# Note: no need to delete data in the latest code (fixed in https://github.com/apache/hugegraph/pull/2411)
-rm -rf rocksdb-data/
-
-# init store again
+# 初始化认证系统信息；已有后端数据会被保留
 bin/init-store.sh
 
 # start hugeGraph again
@@ -126,7 +120,7 @@ bin/start-hugegraph.sh
 在 `docker run` 中添加环境变量 `PASSWORD=xxx`（密码可以自由设置）即可开启鉴权模式：：
 
 ```bash
-docker run -itd -e PASSWORD=xxx --name=server -p 8080:8080 hugegraph/hugegraph:1.5.0
+docker run -itd -e PASSWORD=xxx --name=server -p 8080:8080 hugegraph/hugegraph:1.7.0
 ```
 
 #### 2. 采用 docker-compose
@@ -137,7 +131,7 @@ docker run -itd -e PASSWORD=xxx --name=server -p 8080:8080 hugegraph/hugegraph:1
 version: '3'
 services:
   server:
-    image: hugegraph/hugegraph:1.5.0
+    image: hugegraph/hugegraph:1.7.0
     container_name: server
     ports:
       - 8080:8080

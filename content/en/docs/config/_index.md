@@ -4,9 +4,9 @@ linkTitle: "Server Config"
 weight: 4
 ---
 
-This section covers HugeGraph-Server configuration, including:
+This section covers HugeGraph-Server configuration files, available options, authentication, and HTTPS settings.
 
-- **[Server Startup Guide](config-guide)** - Understand config file structure and basic setup
-- **[Server Complete Configuration Manual](config-option)** - Complete list of configuration options
-- **[Authentication Config](config-authentication)** - User authentication and authorization
-- **[HTTPS Config](config-https)** - Enable HTTPS secure protocol
+- [Server Configuration Guide](config-guide)
+- [Server Configuration Options](config-option)
+- [Authentication and Authorization](config-authentication)
+- [HTTPS Configuration](config-https)

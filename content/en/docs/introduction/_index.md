@@ -1,146 +1,121 @@
 ---
-title: "Introduction with HugeGraph"
-linkTitle: "Introduction"
+title: "Apache HugeGraph Introduction"
+linkTitle: "System Introduction"
 weight: 1
 aliases:
+  # Hugo 0.165 prefixes aliases with the current language path.
   - /docs/introduction/readme/
   - /docs/introduction/README/
 ---
 
-### What is Apache HugeGraph?
+## What Is Apache HugeGraph?
 
-[Apache HugeGraph](https://hugegraph.apache.org/) is an easy-to-use, efficient, and general-purpose open-source **full-stack graph system** ([GitHub](https://github.com/apache/hugegraph)), covering three major areas: **Graph Database** (OLTP real-time queries), **Graph Computing** (OLAP large-scale analysis), and **Graph AI** (GraphRAG / Graph Machine Learning).
+[Apache HugeGraph](https://hugegraph.apache.org/) is an easy-to-use, efficient, general-purpose open-source **full-stack graph system** ([GitHub](https://github.com/apache/hugegraph)). It covers three major areas: **graph databases** (OLTP real-time queries), **graph computing** (OLAP large-scale analysis), and **graph AI** (GraphRAG and graph machine learning).
 
-HugeGraph supports the rapid storage and querying of tens of billions of vertices and edges, possessing excellent OLTP performance. Its graph engine is fully compliant with the [Apache TinkerPop 3](https://tinkerpop.apache.org) framework and supports both [Gremlin](https://tinkerpop.apache.org/gremlin.html) and [Cypher](https://en.wikipedia.org/wiki/Cypher) (OpenCypher standard) query languages.
+HugeGraph supports fast storage and queries for tens of billions of vertices and edges, with strong OLTP performance. Its graph engine is compatible with [Apache TinkerPop 3](https://tinkerpop.apache.org) and supports both [Gremlin](https://tinkerpop.apache.org/gremlin.html) and [Cypher](https://en.wikipedia.org/wiki/Cypher) (the OpenCypher standard).
 
-**Typical Application Scenarios:** Deep relationship exploration, association analysis, path search, feature extraction, community detection, knowledge graphs, etc.  
-**Applicable Fields:** Network security, telecom anti-fraud, financial risk control, personalized recommendations, social networks, intelligent Q&A, etc.
+**Typical use cases:** deep relationship exploration, association analysis, path search, feature extraction, community detection, and knowledge graphs.
+**Application areas:** network security, telecom anti-fraud, financial risk control, advertising and recommendations, social networks, and intelligent Q&A.
 
----
-
-### Ecosystem Overview
+## Ecosystem Overview
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│         Apache HugeGraph - Full-Stack Graph System           │
-├──────────────────┬────────────────────┬──────────────────────┤
-│  Graph DB (OLTP) │    Graph Compute   │       Graph AI       │
-│  HugeGraph       │  Vermeer (Memory)  │    HugeGraph-AI      │
-│  Server          │  Computer (Dist.)  │  GraphRAG/GNN/Py     │
-├──────────────────┴────────────────────┴──────────────────────┤
-│                    HugeGraph Toolchain                       │
-│  Hubble | Loader | Client(Java/Go/Py) | Spark | Tools        │
-└──────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│            Apache HugeGraph - Full-Stack Graph System             │
+├──────────────────┬────────────────────┬────────────────────────────┤
+│  Graph DB (OLTP) │    Graph Compute   │          Graph AI          │
+│  HugeGraph       │  Vermeer (Memory)  │       HugeGraph-AI         │
+│  Server          │  Computer (Dist.)  │     GraphRAG / GNN / Py    │
+├──────────────────┴────────────────────┴────────────────────────────┤
+│                       HugeGraph Toolchain                          │
+│ Hubble | Loader | Client (Java/Go/Python; Rust WIP) | Spark | Tools│
+└────────────────────────────────────────────────────────────────────┘
 ```
 
----
+## HugeGraph Server (OLTP Graph Engine)
 
-### Core Components
+HugeGraph Server is the OLTP engine and service entry point for the graph database. It handles property graph modeling, transaction processing, query execution, and API access. Graph data is stored in the configured RocksDB, HStore, or HBase backend.
 
-#### 🗄️ HugeGraph Server — Graph Engine (OLTP)
+- **Property graph and schema**: Manages VertexLabel, EdgeLabel, PropertyKey, and IndexLabel definitions
+- **Query languages**: Supports Gremlin (TinkerPop 3) and Cypher (OpenCypher)
+- **REST API**: Provides endpoints for schemas, graph data, queries, tasks, and operations
+- **Indexes and queries**: Supports exact, range, and compound-condition queries
+- **Storage backends**: Versions 1.7.0 through `master` primarily support RocksDB (standalone), HStore (distributed), and HBase
 
-The core module of the HugeGraph project, providing high-performance graph data storage and real-time query capabilities:
+The main modules include `hugegraph-core`, the storage backend modules, and `hugegraph-api`. Core implements the graph model, transactions, and query logic; backend modules connect to specific storage systems; and the API module provides HTTP access. Current REST resource paths include the graph space and graph name, for example:
 
-- **Core Engine**: Supports Property Graph modeling, including complete Schema management for VertexLabel, EdgeLabel, PropertyKey, and IndexLabel.
-- **Dual Query Languages**: Fully compatible with Gremlin (TinkerPop 3) and Cypher (OpenCypher).
-- **REST API**: Built-in REST Server, providing RESTful graph operation interfaces.
-- **Multi-type Indexes**: Exact query, range query, and complex condition combination queries.
-- **Pluggable Storage Backends**: For 1.7.0 and later, supports `RocksDB` (standalone default), `HStore` (distributed), `HBase`, and `Memory`; for 1.5.x or earlier, supports `MySQL` / `PostgreSQL` / `Cassandra`, etc.
-
-**Submodules:**
-- `Core`: Graph engine implementation, connecting downwards to Backend and upwards to API.
-- `Backend`: Adapter layer for multiple backend storages.
-- `API`: RESTful access layer, compatible with Gremlin/Cypher queries.
-
-📖 [Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server)
-
----
-
-#### 📊 Graph Computing Engine (OLAP)
-
-Provides two complementary graph analysis engines:
-
-- **Vermeer** (Recommended): High-performance pure in-memory graph computing engine, simple to deploy, fast response, suitable for small to medium-scale graph analysis and quick onboarding.
-- **HugeGraph-Computer**: Distributed OLAP engine based on the [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf) model, can run on Kubernetes / Yarn clusters, suitable for mega-scale graph algorithm tasks.
-
-📖 [Computing Quick Start](/docs/quickstart/computing/hugegraph-vermeer)
-
----
-
-#### 🤖 HugeGraph-AI — Graph AI Ecosystem
-
-An independent AI component of HugeGraph, bridging graphs with Large Language Models (LLMs):
-
-- **GraphRAG**: Graph-based Retrieval-Augmented Generation, enabling LLM intelligent Q&A.
-- **Knowledge Graph Construction**: Automatically extracting entities and relationships from unstructured text to build knowledge graphs.
-- **Graph Neural Networks**: Supports training and inference of GNN models.
-- **20+ Graph Machine Learning Algorithms**: Built-in rich graph analysis algorithms, continuously updated.
-- **Python Client**: Convenient Python SDK for AI applications.
-
-📖 [HugeGraph-AI Quick Start](/docs/quickstart/hugegraph-ai/quick_start)
-
----
-
-#### 🛠️ HugeGraph Toolchain
-
-A complete tool ecosystem surrounding the graph system ([toolchain repository](https://github.com/apache/hugegraph-toolchain)):
-
-| Tool | Description |
-|------|-------------|
-| [Hubble](/docs/quickstart/toolchain/hugegraph-hubble) | Web visualization platform: one-stop operation for data modeling → batch importing → online/offline analysis. |
-| [Loader](/docs/quickstart/toolchain/hugegraph-loader) | Data import tool: supports multiple data sources like local files, HDFS, MySQL, and formats like TXT/CSV/JSON. |
-| [Client](/docs/quickstart/client/hugegraph-client) | Multi-language SDKs: Java / Python / Go. |
-| [Spark-connector](/docs/quickstart/toolchain/hugegraph-spark-connector) | Spark integration: supports batch graph data read/write via Spark, suitable for big data offline processing. |
-| [Tools](/docs/quickstart/toolchain/hugegraph-tools) | Command-line operational tools: graph management, backup/restore, Gremlin execution, etc. |
-
----
-
-### Deployment Modes
-
-HugeGraph supports two primary deployment modes:
-
-| Mode | Core Components | Suitable Scenarios | Data Scale | High Availability (HA) |
-|------|-----------------|--------------------|------------|------------------------|
-| **Standalone** | Server + RocksDB | Development, testing, single-node production | < 4TB | Basic |
-| **Distributed** | Server + PD (3-5 nodes) + Store (3+ nodes) | Production environments, horizontal scaling | < 1000TB | ✅ |
-
-**Docker Quick Experience:**
-
-```bash
-docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
+```text
+/graphspaces/{graphspace}/graphs/{graph}
 ```
 
----
+Standalone deployments commonly use RocksDB. Distributed deployments use HStore: PD manages cluster metadata and partition scheduling, while Store persists graph data and replicas. HBase can be used as a separate storage backend.
 
-### Quick Start Navigation
+- [Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/)
+- [PD Quick Start](/docs/quickstart/hugegraph/hugegraph-pd/)
+- [HStore Quick Start](/docs/quickstart/hugegraph/hugegraph-hstore/)
+- [REST API](/docs/clients/restful-api/)
 
-| I want to... | Start Here |
-|--------------|------------|
-| 🚀 **Quick Experience** | [Docker Deployment](/docs/quickstart/hugegraph/hugegraph-server) |
-| 🔍 **Run Graph Queries** (OLTP) | [Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server) |
-| 📈 **Large-scale Graph Computing** (OLAP) | [Vermeer / Computer](/docs/quickstart/computing/hugegraph-computer) |
-| 🤖 **Build AI/RAG Applications** | [HugeGraph-AI](/docs/quickstart/hugegraph-ai/quick_start) |
-| 📥 **Batch Import Data** | [HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader) |
-| 🖥️ **Visual Management** | [Hubble Web UI](/docs/quickstart/toolchain/hugegraph-hubble) |
+## HugeGraph Toolchain
 
----
+HugeGraph Toolchain provides clients, data import, visual management, Spark integration, and command-line operations. Together, these tools cover the main stages of a graph application's lifecycle, from data ingestion to routine management.
 
-### System Features
+| Module | Purpose |
+|---|---|
+| [Client](/docs/quickstart/client/hugegraph-client/) | Wraps schema management, graph data reads and writes, Gremlin, and Traverser APIs; supports Java, [Python](/docs/quickstart/client/hugegraph-client-python/), and [Go](/docs/quickstart/client/hugegraph-client-go/), with a Rust client under development |
+| [Loader](/docs/quickstart/toolchain/hugegraph-loader/) | Reads data from local files, HDFS, JDBC, Kafka, or another graph, converts it into vertices and edges, and imports it into HugeGraph in batches |
+| [Hubble](/docs/quickstart/toolchain/hugegraph-hubble/) | Provides a web management interface for graph connections, schemas, data import, Gremlin queries, and visual results |
+| [Spark Connector](/docs/quickstart/toolchain/hugegraph-spark-connector/) | Reads and writes HugeGraph data in Spark jobs for offline big-data processing |
+| [Tools](/docs/quickstart/toolchain/hugegraph-tools/) | Provides command-line operations for deployment, graph management, backup and restore, and Gremlin execution |
 
-- **Easy to Use**: Dual Gremlin/Cypher query languages + RESTful API, comprehensive toolchain, extremely easy to get started.
-- **Efficient**: Deeply optimized graph storage and queries, millisecond-level response, supports thousands of concurrent online operations, fast import of billions of data records.
-- **Universal**: Supports both OLTP and OLAP modes, seamlessly integrates with Apache Hadoop, Spark, and Flink big data ecosystems.
-- **Scalable**: Distributed storage, multi-replica data, horizontal scaling, flexible expansion through pluggable backends.
-- **Open**: Apache 2.0 License, fully open-source, warmly welcoming community contributions.
+## Graph Computing Engines (OLAP)
 
----
+The HugeGraph-Computer repository provides two complementary OLAP graph computing engines:
 
-### Contact Us
+- **Vermeer**: Written in Go, it uses a master-worker architecture and primarily performs in-memory computation. It provides REST APIs, gRPC, and a web UI, and is suitable for fast small- and medium-scale graph analysis.
+- **Computer**: Written in Java, it implements the distributed BSP/Pregel computing model and can run on Kubernetes, YARN, or local processes. It can spill data to disk when memory thresholds are exceeded and is suitable for larger graph computing workloads.
 
-- [GitHub Issues](https://github.com/apache/hugegraph/issues): Feedback on usage issues and functional requirements (Recommended)
-- Email: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([How to subscribe](/docs/contribution-guidelines/subscribe/))
-- Security: [security@hugegraph.apache.org](mailto:security@hugegraph.apache.org) (Report security issues)
-- WeChat Public Account: Apache HugeGraph
+Both engines can read HugeGraph data, but their runtime architectures, resource requirements, configuration, and algorithm interfaces differ.
+
+- [Vermeer Quick Start](/docs/quickstart/computing/hugegraph-vermeer/)
+- [Computer Quick Start](/docs/quickstart/computing/hugegraph-computer/)
+
+## HugeGraph-AI (Graph + AI)
+
+HugeGraph-AI connects graph technology with large language models and graph machine learning frameworks. The repository uses Python 3.10 or later and manages its workspace with `uv`. Its main modules are:
+
+- **hugegraph-llm**: Provides GraphRAG, knowledge graph construction, natural-language queries, and Text2Gremlin
+- **hugegraph-ml**: Provides models for node classification, graph classification, graph embeddings, link prediction, and fraud detection
+- **hugegraph-python-client**: Manages schemas, graph data, and Gremlin queries from Python
+- **vermeer-python-client**: Calls Vermeer graph computing services from Python
+
+[HugeGraph-AI Quick Start](/docs/quickstart/hugegraph-ai/quick_start/)
+
+## Deployment Modes
+
+| Mode | Core Components | Suitable Scenarios | Data Scale |
+|---|---|---|---|
+| **Standalone (OLTP)** | Server + RocksDB | Development, testing, and small to medium-scale data | ≤ 2 TB |
+| **Distributed (OLTP)** | Server + PD + Store (HStore) | Production, horizontal scaling, and multi-replica deployment | ≤ 1 PB |
+
+Graph computing is an OLAP workload. Its capacity and resource requirements depend on the selected engine, graph structure, and algorithm, and do not use the OLTP storage capacity figures above.
+
+## Where to Start
+
+| Goal | Documentation |
+|---|---|
+| Start the graph database and run queries | [Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/) |
+| Import data in batches | [Loader](/docs/quickstart/toolchain/hugegraph-loader/) |
+| Manage graphs through a web interface | [Hubble](/docs/quickstart/toolchain/hugegraph-hubble/) |
+| Run graph algorithms | [Vermeer and Computer](/docs/quickstart/computing/) |
+| Build GraphRAG or graph machine learning applications | [HugeGraph-AI](/docs/quickstart/hugegraph-ai/) |
+
+## Community
+
+- [GitHub Issues](https://github.com/apache/hugegraph/issues)
+- Developer mailing list: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)
+- [How to subscribe to the mailing list](/docs/contribution-guidelines/subscribe/)
+- Security reports: [security@hugegraph.apache.org](mailto:security@hugegraph.apache.org)
+- WeChat public account: Apache HugeGraph
 
 ![WeChat QR Code](/images/docs/community/wechat.png)
 {width="300" height="94"}

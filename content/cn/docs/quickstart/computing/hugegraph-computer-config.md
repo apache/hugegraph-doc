@@ -4,13 +4,9 @@ linkTitle: "Computer 配置参考"
 weight: 3
 ---
 
-### Computer 配置选项
+## Computer 配置选项
 
-> **默认值说明:**
-> - 以下配置项显示的是**代码默认值**(定义在 `ComputerOptions.java` 中)
-> - 当**打包配置文件**(`conf/computer.properties` 分发包中)指定了不同的值时,会以 `值 (打包: 值)` 的形式标注
-> - 示例:`300000 (打包: 100000)` 表示代码默认值为 300000,但分发包默认值为 100000
-> - 对于生产环境部署,除非明确覆盖,否则打包默认值优先生效
+表格中的默认值来自 `computer-api` 模块的 `ComputerOptions.java`。分发包的 `conf/computer.properties` 显式覆盖某项时，表格以“代码默认值（打包：实际值）”标注；程序启动后以配置文件中的值为准。
 
 ---
 
@@ -25,8 +21,8 @@ HugeGraph-Computer 核心作业设置。
 | hugegraph.username | "" (空) | HugeGraph 认证用户名(如果未启用认证则留空)。 |
 | hugegraph.password | "" (空) | HugeGraph 认证密码(如果未启用认证则留空)。 |
 | job.id | local_0001 (打包: local_001) | YARN 集群或 K8s 集群上的作业标识符。 |
-| job.namespace | "" (空) | 作业命名空间,可以分隔不同的数据源。🔒 **由系统管理 - 不要手动修改**。 |
-| job.workers_count | 1 | 执行一个图算法作业的 Worker 数量。🔒 **在 K8s 中由系统管理 - 不要手动修改**。 |
+| job.namespace | "" (空) | 作业命名空间，可以分隔不同的数据源。该项由运行系统管理。 |
+| job.workers_count | 1 | 执行一个图算法作业的 Worker 数量。在 K8s 中由 Operator 设置。 |
 | job.partitions_count | 1 | 执行一个图算法作业的分区数量。 |
 | job.partitions_thread_nums | 4 | 分区并行计算的线程数量。 |
 
@@ -38,9 +34,9 @@ HugeGraph-Computer 核心作业设置。
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
-| algorithm.params_class | org.apache.hugegraph.computer.core.config.Null | ⚠️ **必填** 在算法运行前用于传递算法参数的类。 |
-| algorithm.result_class | org.apache.hugegraph.computer.core.config.Null | 顶点值的类,用于存储顶点的计算结果。 |
-| algorithm.message_class | org.apache.hugegraph.computer.core.config.Null | 计算顶点时传递的消息类。 |
+| algorithm.params_class | `ComputerOptions.Null` 占位类 | 必填。用于在算法运行前传递算法参数的类。 |
+| algorithm.result_class | `ComputerOptions.Null` 占位类 | 顶点值的类，用于存储顶点的计算结果。 |
+| algorithm.message_class | `ComputerOptions.Null` 占位类 | 计算顶点时传递的消息类。 |
 
 ---
 
@@ -53,8 +49,8 @@ HugeGraph-Computer 核心作业设置。
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
 | input.source_type | hugegraph-server | 加载输入数据的源类型,允许值:['hugegraph-server', 'hugegraph-loader']。'hugegraph-loader' 表示使用 hugegraph-loader 从 HDFS 或文件加载数据。如果使用 'hugegraph-loader',请配置 'input.loader_struct_path' 和 'input.loader_schema_path'。 |
-| input.loader_struct_path | "" (空) | Loader 输入的结构路径,仅在 input.source_type=loader 启用时生效。 |
-| input.loader_schema_path | "" (空) | Loader 输入的 schema 路径,仅在 input.source_type=loader 启用时生效。 |
+| input.loader_struct_path | "" (空) | Loader 输入的结构路径，仅在 `input.source_type=hugegraph-loader` 时生效。 |
+| input.loader_schema_path | "" (空) | Loader 输入的 Schema 路径，仅在 `input.source_type=hugegraph-loader` 时生效。 |
 
 #### 3.2 输入分片
 
@@ -235,8 +231,8 @@ Worker 和 Master 之间网络通信的配置。
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
-| transport.server_host | 127.0.0.1 | 🔒 **由系统管理** 监听传输数据的服务器主机名或 IP。不要手动修改。 |
-| transport.server_port | 0 | 🔒 **由系统管理** 监听传输数据的服务器端口。如果设置为 0,系统将分配一个随机端口。不要手动修改。 |
+| transport.server_host | 127.0.0.1 | 监听传输数据的主机名或 IP，由运行系统管理。 |
+| transport.server_port | 0 | 监听传输数据的端口；0 表示分配随机端口。该项由运行系统管理。 |
 | transport.server_threads | 4 | 服务器传输线程的数量。 |
 
 #### 7.2 客户端配置
@@ -326,7 +322,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
-| bsp.etcd_endpoints | http://localhost:2379 | 🔒 **在 K8s 中由系统管理** 访问 etcd 的端点。对于多个端点,使用逗号分隔列表:`http://host1:port1,http://host2:port2`。不要在 K8s 部署中手动修改。 |
+| bsp.etcd_endpoints | http://localhost:2379 | etcd 端点；多个地址用逗号分隔。K8s 部署中由 Operator 设置。 |
 | bsp.max_super_step | 10 (打包: 2) | 算法的最大超步数。 |
 | bsp.register_timeout | 300000 (打包: 100000) | 等待 master 和 worker 注册的最大超时时间(毫秒)。 |
 | bsp.wait_workers_timeout | 86400000 (24 小时) | 等待 worker BSP 事件的最大超时时间(毫秒)。 |
@@ -348,7 +344,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 
 ### 11. 系统管理配置
 
-⚠️ **由系统管理的配置项 - 禁止用户手动修改。**
+以下配置由运行系统管理，不应由作业配置覆盖。
 
 以下配置项由 K8s Operator、Driver 或运行时系统自动管理。手动修改将导致集群通信失败或作业调度错误。
 
@@ -394,7 +390,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 
 ### HugeGraph-Computer CRD
 
-> CRD: https://github.com/apache/hugegraph-computer/blob/master/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
+> CRD: https://github.com/apache/hugegraph-computer/blob/master/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
 
 | 字段 | 默认值 | 说明 | 必填 |
 |------|--------|------|------|

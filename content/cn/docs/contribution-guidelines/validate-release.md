@@ -116,7 +116,7 @@ for i in *.tar.gz; do echo $i; gpg --verify $i.asc $i ; done
 解压 `*hugegraph*src.tar.gz`后，进行如下检查：
 
 1. 包名/目录名应符合当前发版命名（历史版本可能仍包含 `incubating`），且不存在**空的**文件/文件夹
-2. 存在 `LICENSE` + `NOTICE` 且内容正常；历史 incubating 制品需检查 `DISCLAIMER`
+2. 存在 `LICENSE` + `NOTICE` 且内容正常；历史版本若在项目孵化期发布，还需检查 `DISCLAIMER`
 3. **不存在** 缺乏 License 的二进制文件
 4. 源码文件都包含标准 `ASF License` 头 (这个用插件跑一下为主)
 5. 检查每个父 / 子模块的 `pom.xml` 版本号是否一致 (且符合期望)
@@ -138,7 +138,7 @@ mvn clean package -DskipTests -Dcheckstyle.skip=true -P stage
 解压 `xxx-hugegraph.tar.gz`后，进行如下检查：
 
 1. 包名/目录名应符合当前发版命名（历史版本可能仍包含 `incubating`）
-2. 存在 `LICENSE` + `NOTICE` 且内容正常（历史 incubating 制品需检查 `DISCLAIMER`）
+2. 存在 `LICENSE` + `NOTICE` 且内容正常（历史版本若在项目孵化期发布，还需检查 `DISCLAIMER`）
 3. 服务启动
 
 ```bash

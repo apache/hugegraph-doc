@@ -66,10 +66,14 @@ VERSION_REFS = {
     "1.5": "release-1.5.0",
 }
 KNOWN_HISTORICAL_ROUTES = {
-    "/docs/introduction": "/docs/introduction/readme/",
-    "/cn/docs/introduction": "/cn/docs/introduction/readme/",
     "/docs/quickstart/hugegraph-loader": "/docs/quickstart/toolchain/hugegraph-loader/",
     "/cn/docs/quickstart/hugegraph-loader": "/cn/docs/quickstart/toolchain/hugegraph-loader/",
+}
+KNOWN_HISTORICAL_ROUTES_BY_PUBLISH_PATH = {
+    "versions/1.5": {
+        "/docs/introduction": "/docs/introduction/readme/",
+        "/cn/docs/introduction": "/cn/docs/introduction/readme/",
+    },
 }
 URL_ATTRIBUTE_RE = re.compile(
     r"(?P<prefix>[\s<](?:href|src|action|poster|data-td-index-src|data-td-url|data-td-image-zoom)=)"
@@ -105,10 +109,10 @@ DOCS_NAV_EXPECTED_STATS = {
     },
     "1.7": {
         "groups": 5,
-        "pages": 80,
-        "removed": 10,
+        "pages": 85,
+        "removed": 5,
         "scopedLinks": 10,
-        "treeSha256": "a764c50bbeca08da1fc23869758f3b5646e7071607214fedb03a8fcc16e0b1c0",
+        "treeSha256": "78abae8934d1245bd9b18754547d23a328506b22db4a1e6e8e9e38e94818df57",
     },
     "1.5": {
         "groups": 5,
@@ -1020,92 +1024,6 @@ LEGACY_EXACT_CONTENT_FIXES = {
             "#634-设置某个图的读模式该操作需要管理员权限",
             1,
         ),
-        (
-            "cn",
-            "docs/quickstart/hugegraph/hugegraph-server.md",
-            "#519-%E5%90%AF%E5%8A%A8-server-%E7%9A%84%E6%97%B6%E5%80%99"
-            "%E5%88%9B%E5%BB%BA%E7%A4%BA%E4%BE%8B%E5%9B%BE",
-            "#518-%E5%90%AF%E5%8A%A8-server-%E7%9A%84%E6%97%B6%E5%80%99"
-            "%E5%88%9B%E5%BB%BA%E7%A4%BA%E4%BE%8B%E5%9B%BE",
-            1,
-        ),
-        (
-            "en",
-            "docs/quickstart/hugegraph/hugegraph-server.md",
-            '<img src="/docs/images/images-server/31docker-option.jpg" '
-            'alt="image" style="width:33%;">',
-            '<img src="/docs/images/images-server/31docker-option.jpg" '
-            'alt="Docker Desktop settings for a HugeGraph container" '
-            'style="width:33%;">',
-            1,
-        ),
-        (
-            "en",
-            "docs/quickstart/hugegraph/hugegraph-server.md",
-            '<img src="/docs/images/images-server/swagger-ui.png" alt="image">',
-            '<img src="/docs/images/images-server/swagger-ui.png" '
-            'alt="HugeGraph RESTful API endpoints in Swagger UI">',
-            1,
-        ),
-        (
-            "en",
-            "docs/quickstart/hugegraph/hugegraph-server.md",
-            '<img src="/docs/images/images-server/'
-            'swagger-ui-where-set-auth-example.png" alt="image">',
-            '<img src="/docs/images/images-server/'
-            'swagger-ui-where-set-auth-example.png" '
-            'alt="Authorize button in the HugeGraph Swagger UI">',
-            1,
-        ),
-        (
-            "en",
-            "docs/quickstart/hugegraph/hugegraph-server.md",
-            '<img src="/docs/images/images-server/'
-            'swagger-ui-set-auth-example.png" alt="image">',
-            '<img src="/docs/images/images-server/'
-            'swagger-ui-set-auth-example.png" '
-            'alt="Basic and Bearer credential fields in the Swagger UI '
-            'authorization dialog">',
-            1,
-        ),
-        (
-            "cn",
-            "docs/quickstart/hugegraph/hugegraph-server.md",
-            '<img src="/docs/images/images-server/31docker-option.jpg" '
-            'alt="image" style="width:33%;">',
-            '<img src="/docs/images/images-server/31docker-option.jpg" '
-            'alt="Docker Desktop 中 HugeGraph 容器的运行设置" '
-            'style="width:33%;">',
-            1,
-        ),
-        (
-            "cn",
-            "docs/quickstart/hugegraph/hugegraph-server.md",
-            '<img src="/docs/images/images-server/swagger-ui.png" alt="image">',
-            '<img src="/docs/images/images-server/swagger-ui.png" '
-            'alt="Swagger UI 中的 HugeGraph RESTful API 接口列表">',
-            1,
-        ),
-        (
-            "cn",
-            "docs/quickstart/hugegraph/hugegraph-server.md",
-            '<img src="/docs/images/images-server/'
-            'swagger-ui-where-set-auth-example.png" alt="image">',
-            '<img src="/docs/images/images-server/'
-            'swagger-ui-where-set-auth-example.png" '
-            'alt="HugeGraph Swagger UI 中的 Authorize 按钮">',
-            1,
-        ),
-        (
-            "cn",
-            "docs/quickstart/hugegraph/hugegraph-server.md",
-            '<img src="/docs/images/images-server/'
-            'swagger-ui-set-auth-example.png" alt="image">',
-            '<img src="/docs/images/images-server/'
-            'swagger-ui-set-auth-example.png" '
-            'alt="Swagger UI 授权对话框中的 Basic 和 Bearer 凭据输入框">',
-            1,
-        ),
     ),
 }
 
@@ -1499,7 +1417,11 @@ def rewrite_internal_url(
         else path
     )
     normalized_internal = internal_path.rstrip("/") or "/"
-    mapped_path = KNOWN_HISTORICAL_ROUTES.get(normalized_internal)
+    mapped_path = KNOWN_HISTORICAL_ROUTES_BY_PUBLISH_PATH.get(
+        publish_path.strip("/"), {}
+    ).get(normalized_internal)
+    if mapped_path is None:
+        mapped_path = KNOWN_HISTORICAL_ROUTES.get(normalized_internal)
     if mapped_path is not None:
         scoped_path = prefix + mapped_path
         if absolute:

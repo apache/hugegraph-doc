@@ -70,6 +70,12 @@ jobs:
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
           extended: true
+      - name: Install WebP validators
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends webp
+          command -v cwebp
+          command -v dwebp
 
       - name: Resolve trusted event plan
         id: plan

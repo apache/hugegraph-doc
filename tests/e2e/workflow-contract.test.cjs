@@ -31,3 +31,13 @@ test("event plan fixes origins, branches, confirmations, and five-version order"
   assert.match(workflow, /production:asf-site\|staging:asf-staging-oink/);
   assert.doesNotMatch(workflow, /permissions:\s*write-all/);
 });
+
+test("prepare pins Hugo and WebP tools before source validators", () => {
+  const setupHugo = workflow.indexOf("name: Setup Hugo Extended");
+  const setupWebp = workflow.indexOf("name: Install WebP validators");
+  const validators = workflow.indexOf("name: Validate source and version tooling");
+  assert.ok(setupHugo >= 0 && setupHugo < validators);
+  assert.ok(setupWebp >= 0 && setupWebp < validators);
+  assert.match(workflow, /apt-get install --yes --no-install-recommends webp/);
+  assert.match(workflow, /command -v cwebp[\s\S]*command -v dwebp/);
+});

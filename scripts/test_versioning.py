@@ -569,6 +569,16 @@ class VersionUrlTest(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     versioning.apply_exact_legacy_content_fixes(assembly, "1.5")
 
+    def test_17_exact_fixes_exclude_updated_server_page(self) -> None:
+        server_path = "docs/quickstart/hugegraph/hugegraph-server.md"
+        self.assertNotIn(
+            server_path,
+            {
+                relative
+                for _, relative, _, _, _ in versioning.LEGACY_EXACT_CONTENT_FIXES["1.7"]
+            },
+        )
+
     def test_legacy_adapter_normalizes_server_headings_for_all_archives(
         self,
     ) -> None:

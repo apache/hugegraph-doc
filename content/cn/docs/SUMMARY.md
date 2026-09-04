@@ -1,81 +1,66 @@
-# HugeGraph Docs
-
-* [Download](download.md)
-
-## Quickstart
-* [Install HugeGraph-Server](quickstart/hugegraph-server.md)
-* [Load data with HugeGraph-Loader](quickstart/hugegraph-loader.md)
-* [Visual with HugeGraph-Hubble](quickstart/hugegraph-hubble.md)
-* [Develop with HugeGraph-Client](quickstart/hugegraph-client.md)
-* [Manage with HugeGraph-Tools](quickstart/hugegraph-tools.md)
-* [Analysis with HugeGraph-Computer](quickstart/hugegraph-computer.md)
-* [Display with HugeGraph-Studio](quickstart/hugegraph-studio.md)
-
-## Config
-* [Config Guide](config/config-guide.md)
-* [Config Options](config/config-option.md)
-* [Config Authentication](config/config-authentication.md)
-* [Config HTTPS](config/config-https.md)
-* [Config Computer](config/config-computer.md)
-
-## API
-* [RESTful API](clients/hugegraph-api.md)
-    * [Schema](clients/restful-api/schema.md)
-    * [PropertyKey](clients/restful-api/propertykey.md)
-    * [VertexLabel](clients/restful-api/vertexlabel.md)
-    * [EdgeLabel](clients/restful-api/edgelabel.md)
-    * [IndexLabel](clients/restful-api/indexlabel.md)
-    * [Rebuild](clients/restful-api/rebuild.md)
-    * [Vertex](clients/restful-api/vertex.md)
-    * [Edge](clients/restful-api/edge.md)
-    * [Traverser](clients/restful-api/traverser.md)
-    * [Rank](clients/restful-api/rank.md)
-    * [Variable](clients/restful-api/variable.md)
-    * [Graphs](clients/restful-api/graphs.md)
-    * [Task](clients/restful-api/task.md)
-    * [Gremlin](clients/restful-api/gremlin.md)
-    * [Cypher](clients/restful-api/cypher.md)
-    * [Authentication](clients/restful-api/auth.md)
-    * [Other](clients/restful-api/other.md)
-* [Java Client](clients/hugegraph-client.md)
-* [Gremlin Console](clients/gremlin-console.md)
-
-## Guides
-* [Architecture Overview](guides/architectural.md)
-* [Design Concepts](guides/desgin-concept.md)
-* [Custom Plugins](guides/custom-plugin.md)
-* [Backup Restore](guides/backup-restore.md)
-* [FAQ](guides/faq.md)
-
-## Query Language
-* [Gremlin Query Language](language/hugegraph-gremlin.md)
-* [HugeGraph Examples](language/hugegraph-example.md)
-
-## Performance
-* [HugeGraph Benchmark Performance](performance/hugegraph-benchmark-0.5.6.md)
-* [HugeGraph API Performance-Outdated](content/cn/docs/performance/api-preformance/_index.md)
-    * [v0.5.6 Stand-alone(RocksDB)](content/cn/docs/performance/api-preformance/hugegraph-api-0.5.6-RocksDB.md)
-    * [v0.5.6 Cluster(Cassandra)](content/cn/docs/performance/api-preformance/hugegraph-api-0.5.6-Cassandra.md)
-    * [v0.4.4](content/cn/docs/performance/api-preformance/hugegraph-api-0.4.4.md)
-    * [v0.2](content/cn/docs/performance/api-preformance/hugegraph-api-0.2.md)
-* [HugeGraph-Loader Performance](performance/hugegraph-loader-performance.md)
-
-## ChangeLogs
-* [Release-1.3.0](changelog/hugegraph-1.3.0-release-notes.md)
-* [Release-1.2.0](changelog/hugegraph-1.2.0-release-notes.md)
-* [Release-1.0.0](changelog/hugegraph-1.0.0-release-notes.md)
-
+---
+title: "旧版 GitBook 目录"
+draft: true
 ---
 
-* [Release-0.12.0](changelog/hugegraph-0.12.0-release-notes.md)
-* [Release-0.11.2](changelog/hugegraph-0.11.2-release-notes.md)
-* [Release-0.10.4](changelog/hugegraph-0.10.4-release-notes.md)
-* [Release-0.9.2](changelog/hugegraph-0.9.2-release-notes.md)
-* [Release-0.8.0](changelog/hugegraph-0.8.0-release-notes.md)
-* [Release-0.7.4](changelog/hugegraph-0.7.4-release-notes.md)
-* [Release-0.6.1](changelog/hugegraph-0.6.1-release-notes.md)
-* [Release-0.5.6](changelog/hugegraph-0.5.6-release-notes.md)
-* [Release-0.4.4](changelog/hugegraph-0.4.4-release-notes.md)
-* [Release-0.3.3](changelog/hugegraph-0.3.3-release-notes.md)
-* [Release-0.2.4](changelog/hugegraph-0.2.4-release-notes.md)
-* [Release-0.2](changelog/hugegraph-0.2-release-notes.md)
+# HugeGraph 中文文档
+
+- [系统介绍](introduction/_index)
+- [下载](download/download)
+
+## 快速开始
+
+- [HugeGraph Server](quickstart/hugegraph/hugegraph-server)
+- [PD](quickstart/hugegraph/hugegraph-pd)
+- [HStore](quickstart/hugegraph/hugegraph-hstore)
+- [Java Client](quickstart/client/hugegraph-client)
+- [Go Client](quickstart/client/hugegraph-client-go)
+- [Python Client](quickstart/client/hugegraph-client-python)
+- [Loader](quickstart/toolchain/hugegraph-loader)
+- [Hubble](quickstart/toolchain/hugegraph-hubble)
+- [Spark Connector](quickstart/toolchain/hugegraph-spark-connector)
+- [Tools](quickstart/toolchain/hugegraph-tools)
+- [Vermeer](quickstart/computing/hugegraph-vermeer)
+- [Computer](quickstart/computing/hugegraph-computer)
+- [HugeGraph-AI](quickstart/hugegraph-ai/quick_start)
+
+## Server 配置与 API
+
+- [配置指南](config/config-guide)
+- [配置选项](config/config-option)
+- [认证与授权](config/config-authentication)
+- [HTTPS](config/config-https)
+- [REST API](clients/restful-api/_index)
+- [Gremlin Console](clients/gremlin-console)
+
+## 使用指南
+
+- [架构](guides/architectural)
+- [设计](guides/desgin-concept)
+- [备份与恢复](guides/backup-restore)
+- [自定义插件](guides/custom-plugin)
+- [Docker 集群](guides/hugegraph-docker-cluster)
+- [安全](guides/security)
+- [Toolchain 本地测试](guides/toolchain-local-test)
+- [常见问题](guides/faq)
+
+## 查询语言
+
+- [Gremlin](language/hugegraph-gremlin)
+- [示例](language/hugegraph-example)
+
+## Performance
+
+- [HugeGraph Benchmark Performance](performance/hugegraph-benchmark-0.5.6)
+- [HugeGraph API Performance-Outdated](performance/api-performance)
+  - [v0.5.6 Stand-alone (RocksDB)](performance/api-performance/hugegraph-api-0.5.6-rocksdb)
+  - [v0.5.6 Cluster (Cassandra)](performance/api-performance/hugegraph-api-0.5.6-cassandra)
+- [HugeGraph-Loader Performance](performance/hugegraph-loader-performance)
+
+## 参与贡献
+
+- [贡献流程](contribution-guidelines/contribute)
+- [Contributor Agreement](CLA)
+- [邮件列表](contribution-guidelines/subscribe)
+- [Committer 指南](contribution-guidelines/committer-guidelines)
+- [版本验证](contribution-guidelines/validate-release)

@@ -4,18 +4,16 @@ linkTitle: "Java-Client"
 weight: 1
 ---
 
-### 1 Overview Of Hugegraph
+### 1 Overview
 
-[HugeGraph-Client](https://github.com/apache/hugegraph-toolchain) sends HTTP request to HugeGraph-Server to get and parse the execution result of Server. 
-We support HugeGraph-Client for Java/Go/[Python](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-python-client) language.
-You can use [Client-API](/docs/clients/hugegraph-client) to write code to operate HugeGraph, such as adding, deleting, modifying, and querying schema and graph data, or executing gremlin statements.
+[HugeGraph Java Client](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-client) translates Java APIs into REST requests to HugeGraph Server. It supports managing schemas and graph data, executing Gremlin queries, and calling Traverser APIs. See the [Client API](/docs/clients/hugegraph-client) for detailed interfaces; this page shows how to use the client in a Java project.
 
-> [HugeGraph client SDK tool based on Go language](https://github.com/apache/incubator-hugegraph-toolchain/blob/master/hugegraph-client-go/README.en.md) (version >=1.2.0)
+For other languages, use the [Go Client](/docs/quickstart/client/hugegraph-client-go) or the [Python Client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client) maintained in the HugeGraph-AI repository.
 
 ### 2 What You Need
 
-- Java 11 (also supports Java 8)
-- Maven 3.5+
+- JDK 11 (used by the current CI; the source target remains Java 8)
+- Maven 3.6+
 
 ### 3 How To Use
 
@@ -43,12 +41,12 @@ Using IDEA or Eclipse to create the project:
     <dependency>
         <groupId>org.apache.hugegraph</groupId>
         <artifactId>hugegraph-client</artifactId>
-        <!-- Update to the latest release version -->
+        <!-- Select a released version from the download page -->
         <version>1.7.0</version>
     </dependency>    
 </dependencies>
 ```
-> Note: The versions of all graph components remain consistent
+> Development versions of the client and server may differ. Check the corresponding release notes for compatibility before upgrading.
 
 #### 4.3 Example
 

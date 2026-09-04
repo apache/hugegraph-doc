@@ -5,13 +5,15 @@ draft: true
 weight: 8
 ---
 
-### 1 HugeGraph-Spark 概述 (Deprecated)
+> HugeGraph-Spark is no longer maintained. Use [HugeGraph-Computer](/docs/quickstart/computing/hugegraph-computer) for new graph computing workloads. This page is retained only as a reference for older versions.
 
-HugeGraph-Spark 是一个连接 HugeGraph 和 Spark GraphX 的工具，能够读取 HugeGraph 中的数据并转换成 Spark GraphX 的 RDD，然后执行 GraphX 中的各种图算法。 (WARNING: Deprecated Now! Use HugeGraph-Computer instead)
+### 1 HugeGraph-Spark Overview (Deprecated)
 
-### 2 环境依赖
+HugeGraph-Spark connects HugeGraph with Spark GraphX. It reads data from HugeGraph, converts it into Spark GraphX RDDs, and then runs GraphX graph algorithms. (Warning: this component is deprecated; use HugeGraph-Computer instead.)
 
-在使用 HugeGraph-Spark 前，需要依赖 HugeGraph Server 服务，下载和启动 Server 请参考 [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph-server)。另外，由于 HugeGraph-Spark 需要使用 Spark GraphX，所以还需要下载 spark，本文的示例使用的是 apache-spark-2.1.1。
+### 2 Requirements
+
+HugeGraph-Spark depends on HugeGraph Server; see [HugeGraph Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server) for installation. It also depends on Spark GraphX. The legacy example retained below uses Apache Spark 2.1.1.
 
 ```
 wget https://archive.apache.org/dist/spark/spark-2.1.1/spark-2.1.1-bin-hadoop2.7.tgz
@@ -19,94 +21,94 @@ tar -zxvf spark-2.1.1-bin-hadoop2.7.tgz
 cd spark-2.1.1-bin-hadoop2.7
 ```
 
-然后将 hugegraph-spark 的 jar 包拷贝到 spark 的 jars 目录下
+Then copy the HugeGraph-Spark JAR into Spark's `jars` directory:
 
 ```
 cp {dir}/hugegraph-spark-0.9.0.jar jars
 ```
 
-### 3 配置
+### 3 Configuration
 
-#### 3.1 配置项
+#### 3.1 Configuration Options
 
-可以通过 `spark-default.properties` 或者命令行修改相关配置：
+The following options can be set in `spark-default.properties` or on the command line:
 
-- spark.hugegraph.snapshot.dir: 首次加载 hugegraph 数据生成 RDD 时，会将数据序列化保存到 spark 能访问到的介质上，以便于下次直接从该位置读取数据生成 RDD。默认值为 file:///tmp/hugegraph-snapshot，还可以配置为 HDFS 的路径；
-- spark.hugegraph.name: 要访问的图的名字；
-- spark.hugegraph.server.url: HugeGraphServer 的地址，默认值为 http://localhost:8080；
-- spark.hugegraph.read.timeout: HugeClient 从 HugeGraphServer 获取数据的超时时间，单位为秒，默认值为 120；
-- spark.hugegraph.split.size: 从 HugeGraphServer 中获取顶点和边时数据分片的大小，以字节为单位，默认值为 16M；
-- spark.hugegraph.shard.page.size: 获取分片数据时，每个分页的大小，默认值为 500 条。
+- `spark.hugegraph.snapshot.dir`: When HugeGraph data is first loaded to create an RDD, the data is serialized to storage accessible to Spark so that subsequent runs can create an RDD directly from that location. The default is `file:///tmp/hugegraph-snapshot`; an HDFS path can also be used.
+- `spark.hugegraph.name`: The name of the graph to access.
+- `spark.hugegraph.server.url`: The HugeGraph Server URL. The default is `http://localhost:8080`.
+- `spark.hugegraph.read.timeout`: The timeout, in seconds, for HugeClient to retrieve data from HugeGraph Server. The default is 120.
+- `spark.hugegraph.split.size`: The data split size, in bytes, used when retrieving vertices and edges from HugeGraph Server. The default is 16 MB.
+- `spark.hugegraph.shard.page.size`: The page size used when retrieving split data. The default is 500 records.
 
-#### 3.2 配置入口
+#### 3.2 Where to Configure Options
 
-HugeGraph-Spark 提供了两种添加配置项的方法：
+HugeGraph-Spark provides two ways to add configuration options:
 
-1. 修改 conf/spark-defaults.conf
+1. Edit `conf/spark-defaults.conf`.
 
-  首次安装的用户需要将 spark-defaults.conf.default 文件拷贝一份，如下：
+   For a new installation, first copy `spark-defaults.conf.default`:
 
-  ```bash
-  cp conf/spark-defaults.conf.default conf/spark-defaults.conf
-  ```
+   ```bash
+   cp conf/spark-defaults.conf.default conf/spark-defaults.conf
+   ```
 
-  按需设置即可。
+   Then set the required options.
 
-2. 在命令行中修改
+2. Set options on the command line.
 
-  ```bash
-  bin/spark-shell --conf spark.hugegraph.snapshot.dir=file:///tmp/hugegraph-snapshot2
-  ```
+   ```bash
+   bin/spark-shell --conf spark.hugegraph.snapshot.dir=file:///tmp/hugegraph-snapshot2
+   ```
 
-### 4 使用
+### 4 Usage
 
-#### 4.1 生成 GraphX Graph RDD
+#### 4.1 Create a GraphX Graph RDD
 
-启动 scala shell
+Start the Scala shell:
 
 ```bash
 ./bin/spark-shell
 ```
 
-> 这种方式是以 local 模式启动，也支持 --master yarn 的模式运行。 
+> This command starts Spark in local mode. You can also run it with `--master yarn`.
 
-导入 hugegraph 相关类
+Import the HugeGraph classes:
 
 ```scala
 scala> import org.apache.hugegraph.spark._
 import org.apache.hugegraph.spark._
 ```
 
-初始化 graph 对象（GraphX RDD），并创建 snapshot
+Initialize the graph object (a GraphX RDD) and create a snapshot:
 
 ```scala
 scala> val graph = sc.hugeGraph("hugegraph", "http://localhost:8080")
 org.apache.spark.graphx.Graph[org.apache.hugegraph.spark.structure.HugeSparkVertex,org.apache.hugegraph.spark.structure.HugeSparkEdge] = org.apache.spark.graphx.impl.GraphImpl@1418a1bd
 ```
 
-如果已经配置过`spark.hugegraph.server.url`参数，可以省略第二个参数，直接通过`val graph = sc.hugeGraph("hugegraph")`调用即可。
+If `spark.hugegraph.server.url` is already configured, omit the second argument and call `val graph = sc.hugeGraph("hugegraph")` directly.
 
-这一步通常很快，因为只是获取了 HugeGraph 数据的分片信息，还没有真正的去执行 action 操作。
+This step is usually fast because it retrieves only the split metadata for HugeGraph data. No action has run yet.
 
-#### 4.2 使用 GraphX 进行图分析
+#### 4.2 Analyze the Graph with GraphX
 
-数据导入成功后可以对 graph 进行相关操作，示例如下：
+After the data is imported, run operations on the graph as shown below.
 
-##### 获取顶点个数
+##### Count Vertices
 
 ```scala
 graph.vertices.count()
 ```
 
-注意：第一次执行这一步可能会很耗时，因为这里才真正的读数据并保存。
+The first execution may take a long time because this is when the data is actually read and saved.
 
-##### 获取边个数
+##### Count Edges
 
 ```scala
 graph.edges.count()
 ```
 
-##### 出度 top 10
+##### Top 10 by Out-Degree
 
 ```scala
 val top10 = graph.outDegrees.top(10)
@@ -115,16 +117,16 @@ sc.makeRDD(top10).join(graph.vertices).collect().foreach(println)
 
 ##### PageRank
 
-PageRank 的结果仍为一个图，包含`vertices` 与 `edges`。
+The PageRank result is also a graph containing `vertices` and `edges`.
 
 ```scala
 val ranks = graph.pageRank(0.0001)
 ```
 
-获取 PageRank 的 top 10 的顶点。
+Get the top 10 PageRank vertices:
 
 ```scala
 val top10 = ranks.vertices.top(10)
 ```
 
-更多 GraphX 的 API 请参考 [spark graphx 官网](http://spark.apache.org/graphx/)。
+For more GraphX APIs, see the [Spark GraphX documentation](http://spark.apache.org/graphx/).

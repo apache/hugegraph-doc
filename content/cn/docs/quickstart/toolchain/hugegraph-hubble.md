@@ -6,40 +6,35 @@ weight: 1
 
 ### 1 HugeGraph-Hubble 概述
 
-> **特别注意:** 当前版本的 Hubble 还没有添加 Auth/Login 相关界面和接口和单独防护, 在下一个 Release 版 (＞ 1.5) 会加入, 
-> 请留意避免把它暴露在公网环境或不受信任的网络中，以免引起相关 SEC 问题 (另外也可以使用 **IP & 端口**白名单 + HTTPS)
+> ⚠️ **安全提醒**：截至 1.7.0 发布版，Hubble 尚未提供 Auth/Login 登录保护；相关功能计划随 1.8.0 发布。请勿将 Hubble 暴露在公网或不受信任的网络中，并使用 IP/端口白名单和 HTTPS 限制访问。
 >
 > **测试指南**：如需在本地运行 Hubble 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
 
-**HugeGraph-Hubble** 是 HugeGraph 的一站式可视化分析平台，平台涵盖了从数据建模，到数据快速导入，
-再到数据的在线、离线分析、以及图的统一管理的全过程，实现了图应用的全流程向导式操作，旨在提升用户的使用流畅度，
-降低用户的使用门槛，提供更为高效易用的使用体验。
+HugeGraph-Hubble 是 HugeGraph 的 Web 管理界面，可用于管理图连接和 Schema、导入数据、执行 Gremlin 查询并查看图形化结果。
 
 平台主要包括以下模块：
 
 ##### 图管理
 
-图管理模块通过图的创建，连接平台与图数据，实现多图的统一管理，并实现图的访问、编辑、删除、查询操作。
+图管理用于创建和维护连接，可在多个图之间切换，并执行访问、编辑、删除和查询操作。
 
 ##### 元数据建模
 
-元数据建模模块通过创建属性库，顶点类型，边类型，索引类型，实现图模型的构建与管理，平台提供两种模式，列表模式和图模式，可实时展示元数据模型，更加直观。同时还提供了跨图的元数据复用功能，省去相同元数据繁琐的重复创建过程，极大地提升建模效率，增强易用性。
+元数据建模用于管理 PropertyKey、VertexLabel、EdgeLabel 和 IndexLabel。页面提供列表与图两种视图，也可以在图之间复用元数据。
 
 ##### 图分析
 
-通过输入图遍历语言 Gremlin 可实现图数据的高性能通用分析，并提供顶点的定制化多维路径查询等功能，提供 3 种图结果展示方式，包括：图形式、表格形式、Json 形式，多维度展示数据形态，满足用户使用的多种场景需求。提供运行记录及常用语句收藏等功能，实现图操作的可追溯，以及查询输入的复用共享，快捷高效。支持图数据的导出，导出格式为 Json 格式。
+图分析页面可以执行 Gremlin 和路径查询，并用图、表格或 JSON 显示结果。页面还保存执行记录和收藏语句，查询结果可以导出为 JSON。
 
 ##### 任务管理
 
-对于需要遍历全图的 Gremlin 任务，索引的创建与重建等耗时较长的异步任务，平台提供相应的任务管理功能，实现异步任务的统一的管理与结果查看。
+任务管理页面用于查看 Gremlin 异步任务、索引创建和重建等后台任务。
 
 ##### 数据导入 (BETA)
 
-> 注: 数据导入功能目前适合初步试用，正式数据导入请使用 [hugegraph-loader](/cn/docs/quickstart/toolchain/hugegraph-loader), 性能/稳定性/功能全面许多
+> 数据导入页面适合小规模试用。大批量或生产导入请使用 [HugeGraph Loader](/cn/docs/quickstart/toolchain/hugegraph-loader)。
 
-数据导入是将用户的业务数据转化为图的顶点和边并插入图数据库中，平台提供了向导式的可视化导入模块，通过创建导入任务，
-实现导入任务的管理及多个导入任务的并行运行，提高导入效能。进入导入任务后，只需跟随平台步骤提示，按需上传文件，填写内容，
-就可轻松实现图数据的导入过程，同时支持断点续传，错误重试机制等，降低导入成本，提升效率。
+数据导入页面按步骤创建任务、上传文件并配置字段映射，可并行运行多个导入任务，也支持断点续传和错误重试。
 
 ### 2 部署
 
@@ -90,9 +85,11 @@ services:
 `hubble`项目在`toolchain`项目中，首先下载`toolchain`的 tar 包
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
-tar -xvf apache-hugegraph-toolchain-incubating-{version}.tar.gz 
-cd apache-hugegraph-toolchain-incubating-{version}.tar.gz/apache-hugegraph-hubble-incubating-{version}
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
+tar -xvf "${ARCHIVE}.tar.gz"
+cd "${ARCHIVE}/apache-hugegraph-hubble-incubating-${VERSION}"
 ```
 
 运行`hubble`
@@ -101,22 +98,11 @@ cd apache-hugegraph-toolchain-incubating-{version}.tar.gz/apache-hugegraph-hubbl
 bin/start-hubble.sh
 ```
 
-随后我们可以看到
-
-```shell
-starting HugeGraphHubble ..............timed out with http status 502
-2023-08-30 20:38:34 [main] [INFO ] o.a.h.HugeGraphHubble [] - Starting HugeGraphHubble v1.0.0 on cpu05 with PID xxx (~/apache-hugegraph-toolchain-incubating-1.0.0/apache-hugegraph-hubble-incubating-1.0.0/lib/hubble-be-1.0.0.jar started by $USER in ~/apache-hugegraph-toolchain-incubating-1.0.0/apache-hugegraph-hubble-incubating-1.0.0)
-...
-2023-08-30 20:38:38 [main] [INFO ] c.z.h.HikariDataSource [] - hugegraph-hubble-HikariCP - Start completed.
-2023-08-30 20:38:41 [main] [INFO ] o.a.c.h.Http11NioProtocol [] - Starting ProtocolHandler ["http-nio-0.0.0.0-8088"]
-2023-08-30 20:38:41 [main] [INFO ] o.a.h.HugeGraphHubble [] - Started HugeGraphHubble in 7.379 seconds (JVM running for 8.499)
-```
-
-然后使用浏览器访问 `ip:8088` 可看到`hubble`页面，通过`bin/stop-hubble.sh`则可以停止服务
+启动完成后访问 `http://<host>:8088`。停止服务时执行 `bin/stop-hubble.sh`。
 
 #### 2.3 源码编译
 
-**注意：** 目前已在 `hugegraph-hubble/hubble-be/pom.xml` 中引入插件 `frontend-maven-plugin`，编译 hubble 时不需要用户本地环境提前安装 `Nodejs V16.x` 与 `yarn` 环境，可直接按下述步骤执行
+Hubble 的构建由 `hugegraph-hubble/hubble-dist/pom.xml` 中的 `frontend-maven-plugin` 安装 Node.js 18.20.8 和 Yarn 1.22.21，无需预先安装这两个工具。
 
 下载 toolchain 源码包
 
@@ -128,12 +114,12 @@ git clone https://github.com/apache/hugegraph-toolchain.git
 
 ```shell
 cd hugegraph-toolchain
-sudo pip install -r hugegraph-hubble/hubble-dist/assembly/travis/requirements.txt
+python -m pip install -r hugegraph-hubble/hubble-dist/assembly/travis/requirements.txt
 mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 
 cd hugegraph-hubble
 mvn -e package -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -ntp
-cd apache-hugegraph-hubble-incubating*
+cd apache-hugegraph-hubble-*
 ```
 
 启动`hubble`
@@ -402,6 +388,8 @@ HugeGraph 支持 Apache TinkerPop3 的图遍历查询语言 Gremlin，Gremlin �
 
 Gremlin 查询后，下方为图结果展示区域，提供 3 种图结果展示方式，分别为：【图模式】、【表格模式】、【Json 模式】。
 
+> ⚠️ **SEC 提醒**：Hubble 允许在网页端直接输入并执行 Gremlin 原生查询语句，这赋予了使用者较高的操作权限。**请避免将 Hubble 服务暴露在公网环境**，建议在使用时确保图数据库服务端已开启 **[鉴权体系 (Auth)](/cn/docs/config/config-authentication/)** 并配合 **IP 白名单**进行严格的权限控制，防止未授权访问或恶意代码执行风险。
+
 支持缩放、居中、全屏、导出等操作。
 
 【图模式】
@@ -551,3 +539,36 @@ Hubble 上暂未提供可视化的 OLAP 算法执行，可调用 RESTful API 进
 <center>
   <img src="/docs/images/images-hubble/355任务详情.png" alt="image">
 </center>
+
+
+### 5 配置说明
+
+HugeGraph-Hubble 可以通过 `conf/hugegraph-hubble.properties` 文件进行配置。
+
+#### 5.1 服务器配置
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `hubble.host` | `0.0.0.0` | Hubble 服务绑定的地址 |
+| `hubble.port` | `8088` | Hubble 服务监听的端口 |
+
+#### 5.2 Server 与 PD
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `pd.enabled` | `false` | 是否通过 PD 发现服务；单机 Server 保持为 `false` |
+| `server.direct_url` | `http://127.0.0.1:8080` | `pd.enabled=false` 时连接的 Server 地址 |
+| `pd.peers` | `127.0.0.1:8686` | PD 节点地址 |
+| `pd.server` | `127.0.0.1:8620` | PD 服务地址 |
+| `route.type` | `NODE_PORT` | 服务路由方式，可选 `NODE_PORT`、`DDS` 或 `BOTH` |
+
+#### 5.3 Gremlin 查询限制
+
+这些设置控制查询结果限制，防止内存问题：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `gremlin.suffix_limit` | `250` | 查询后缀最大长度 |
+| `gremlin.vertex_degree_limit` | `100` | 显示的最大顶点度数 |
+| `gremlin.edges_total_limit` | `500` | 返回的最大边数 |
+| `gremlin.batch_query_ids` | `100` | ID 批量查询大小 |

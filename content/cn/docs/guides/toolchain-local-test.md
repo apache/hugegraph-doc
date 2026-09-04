@@ -24,13 +24,13 @@ weight: 4
 
 - **操作系统**：Linux / macOS（Windows 使用 WSL2）
 - **JDK**：>= 11，配置好 `JAVA_HOME`
-- **Maven**：>= 3.5
+- **Maven**：>= 3.6
 - **Python**：>= 3.11（仅 Hubble 测试需要）
 
 ### 2.2 克隆代码
 
 ```bash
-git clone https://github.com/${GITHUB_USER_NAME}/hugegraph-toolchain.git
+git clone https://github.com/apache/hugegraph-toolchain.git
 cd hugegraph-toolchain
 ```
 
@@ -38,12 +38,12 @@ cd hugegraph-toolchain
 
 ### 方式选择
 
-- **脚本部署（推荐）**：通过指定 Commit ID 精确控制 Server 版本，避免接口不兼容
-- **Docker 部署**：快速启动，但可能版本滞后导致测试失败
+- **脚本部署**：指定 Server Commit，可复现 CI 使用的服务端版本
+- **Docker 部署**：适合快速检查；测试失败时应先核对镜像与 Toolchain 的兼容性
 
 > 详细安装说明参考 [社区文档](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/)
 
-### 3.1 脚本部署（推荐）
+### 3.1 脚本部署
 
 #### 参数说明
 
@@ -55,15 +55,15 @@ cd hugegraph-toolchain
 **1. 安装 HugeGraph Server**
 
 ```bash
-# 设置版本
-export COMMIT_ID="master"  # 或特定 commit hash，如 "8b90977"
+# 设置 Server 基线；需要可复现结果时请使用完整 commit SHA
+export COMMIT_ID="master"
 
 # 执行安装（脚本位于 /assembly/travis/ 目录）
 hugegraph-client/assembly/travis/install-hugegraph-from-source.sh $COMMIT_ID
 ```
 
-- 默认端口：http 8080, https 8443
-- 确保端口未被占用
+- 脚本会启动 HTTP 8080 和 HTTPS 8443 两个实例，并配置 `admin`/`pa` 认证。
+- 执行前确认两个端口未被占用。
 
 **2. 安装可选依赖**
 
@@ -78,7 +78,7 @@ hugegraph-loader/assembly/travis/install-mysql.sh $DB_DATABASE $DB_PASS
 **3. 健康检查**
 
 ```bash
-curl http://localhost:8080/graphs
+curl -u admin:pa http://localhost:8080/graphspaces/DEFAULT/graphs
 # 返回 {"graphs":["hugegraph"]} 表示成功
 ```
 
@@ -113,7 +113,7 @@ services:
       # 如果需要持久化数据或挂载配置文件，可以在这里添加卷
       # - ./hugegraph-data:/opt/hugegraph/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/graphs || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/graphspaces/DEFAULT/graphs || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -267,15 +267,14 @@ mvn -e compile -pl hugegraph-client -Dmaven.javadoc.skip=true -ntp
 
 ##### Server 鉴权配置
 
-> **注意**：Docker 镜像 <= 1.5.0 不支持鉴权测试，需 1.6.0+
-
-ApiTest 需要鉴权配置，使用脚本安装可跳过。使用 Docker 需手动配置：
+ApiTest 需要认证。使用 3.1 节的脚本安装时无需重复配置；自行部署 Server 时，认证配置和测试凭证必须与测试代码一致。
 
 ```bash
 # 1. 修改鉴权模式
 cp conf/rest-server.properties conf/rest-server.properties.backup
-sed -i '/^auth.authenticator=/c\auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator' conf/rest-server.properties
+sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
 grep auth.authenticator conf/rest-server.properties
+sed -i 's|gremlin.graph=org.apache.hugegraph.HugeFactory|gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy|' conf/graphs/hugegraph.properties
 
 # 2. 设置密码
 # 注：测试代码中默认使用 "pa" 作为密码，设置时需与测试保持一致
@@ -289,8 +288,7 @@ bin/start-hugegraph.sh
 
 ```bash
 # 检查环境
-curl http://localhost:8080/graphs  # 应返回 {"graphs":["hugegraph"]}
-curl -u admin:pa http://localhost:8080/graphs  # 鉴权测试（密码 pa 是测试默认值）
+curl -u admin:pa http://localhost:8080/graphspaces/DEFAULT/graphs
 
 # 运行测试
 cd hugegraph-client
@@ -352,9 +350,9 @@ python -m pip install -r hubble-dist/assembly/travis/requirements.txt
 ```bash
 mvn package -Dmaven.test.skip=true
 # 可选：启动验证
-cd apache-hugegraph-hubble-incubating-*/bin
+cd apache-hugegraph-hubble*/bin
 ./start-hubble.sh -d && sleep 10
-curl http://localhost:8088/api/health
+curl http://localhost:8088/actuator/health
 ./stop-hubble.sh
 ```
 
@@ -364,11 +362,15 @@ curl http://localhost:8088/api/health
 # 单元测试
 mvn test -P unit-test -pl hugegraph-hubble/hubble-be -ntp
 
-# API测试（需 Server + Hubble 运行）
-curl http://localhost:8080/graphs  # 检查 Server
-curl http://localhost:8088/api/health  # 检查 Hubble
-cd hugegraph-hubble/hubble-dist
-./assembly/travis/run-api-test.sh
+# 旧版 Python API 测试（需 Server；脚本会安装并启动 Hubble）
+curl -u admin:pa http://localhost:8080/graphspaces/DEFAULT/graphs  # 检查 Server
+cd hugegraph-hubble
+./hubble-dist/assembly/travis/run-api-test.sh
+
+# 当前 CI 的完整验收入口（需先生成 Hubble tar 包）
+HUBBLE_TARBALL="$(ls target/apache-hugegraph-hubble-*.tar.gz | head -n 1)"
+hubble-dist/assembly/travis/verify-hubble-issue-694.sh \
+  "$HUBBLE_TARBALL" http://127.0.0.1:8080
 ```
 
 ### 4.4 hugegraph-spark-connector
@@ -405,39 +407,34 @@ mvn test -Dtest=FuncTestSuite -ntp  # 需 Server 运行
 
 ### 服务连接问题
 
-**症状**：无法连接 Server/MySQL/Hadoop
+无法连接 Server、MySQL 或 Hadoop 时：
 
-**排查**：
 - 确认服务已启动（Server 必须在 8080 端口）
 - 检查端口占用：`lsof -i:8080`
 - Docker 检查：`docker compose ps` 和 `docker compose logs`
 
 ### 配置问题
 
-**症状**：找不到文件、参数错误
-
-**排查**：
+找不到文件或参数错误时：
 - 检查环境变量：`echo $COMMIT_ID`
 - 脚本权限：`chmod +x hugegraph-*/assembly/travis/*.sh`
 
 ### HDFS 测试失败
 
-**排查**：
 - 确认 NameNode/DataNode 运行正常
 - 检查 Hadoop 日志
 - 验证 HDFS 连接：`hdfs dfsadmin -report`
 
 ### JDBC 测试失败
 
-**排查**：
 - 确认 MySQL 运行正常
 - 验证数据库连接：`mysql -u root -p$DB_PASS`
 - 检查 MySQL 日志
 
 ## 6. 参考资料
 
-*   **HugeGraph GitHub 仓库**：[https://github.com/apache/hugegraph](https://github.com/apache/hugegraph)
-*   **HugeGraph 工具链 GitHub 仓库**：[https://github.com/apache/hugegraph-toolchain](https://github.com/apache/hugegraph-toolchain)
-*   **HugeGraph Server 官方文档**：[https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/)
-*   **CI 脚本路径**：`.github/workflows/*-ci.yml`（HugeGraph 工具链项目中的 CI 配置文件，可作为参考）
-*   **依赖服务安装脚本**：`hugegraph-*/assembly/travis/`（HugeGraph 工具链项目中用于 CI 和本地测试的安装脚本，可直接使用或作为参考）
+- **HugeGraph GitHub 仓库**：[https://github.com/apache/hugegraph](https://github.com/apache/hugegraph)
+- **HugeGraph 工具链 GitHub 仓库**：[https://github.com/apache/hugegraph-toolchain](https://github.com/apache/hugegraph-toolchain)
+- **HugeGraph Server 文档**：[https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/)
+- **CI 配置**：`.github/workflows/*-ci.yml`
+- **依赖服务安装脚本**：`hugegraph-*/assembly/travis/`

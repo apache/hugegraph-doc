@@ -69,20 +69,16 @@ gremlin>
 
 ### 2 Client/Server 请求模式
 
-因为 Gremlin-Console 只能通过 WebSocket 连接 HugeGraph-Server，默认 HugeGraph-Server 是对外提供 HTTP 连接的，所以先修改 gremlin-server 的配置。
-
-**注意：将连接方式修改为 WebSocket 后，HugeGraph-Client、HugeGraph-Loader、HugeGraph-Hubble 等配套工具都不能使用了。**
+Gremlin-Console 通过 WebSocket 连接 HugeGraph-Server。默认配置使用 `WsAndHttpChannelizer`，可同时处理 WebSocket 和 HTTP 请求，无需切换 Channelizer。
 
 ```yaml
 # vim conf/gremlin-server.yaml
 # ......
-# If you want to start gremlin-server for gremlin-console (web-socket),
-# please change `HttpChannelizer` to `WebSocketChannelizer` or comment this line.
-channelizer: org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer
+channelizer: org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer
 # ......
 ```
 
-将 `channelizer: org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer` 修改成 `channelizer: org.apache.tinkerpop.gremlin.server.channel.WebSocketChannelizer` 或直接注释，然后按照[步骤](/cn/docs/quickstart/hugegraph/hugegraph-server/)启动 HugeGraph-Server。
+确认 `host`、`port` 与 `remote.yaml` 一致，然后按照[步骤](/cn/docs/quickstart/hugegraph/hugegraph-server/)启动 HugeGraph-Server。
 
 下面进入 Gremlin-Console：
 

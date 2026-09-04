@@ -23,7 +23,7 @@ It will be explained in detail below.
 
 ### 2 Get HugeGraph-Loader
 
-There are two ways to get HugeGraph-Loader:
+HugeGraph-Loader is available in the following three ways:
 
 - Use docker image (Convenient for Test/Dev)
 - Download the compiled tarball
@@ -65,8 +65,10 @@ The specific data loading process can be referenced under [4.5 User Docker to lo
 Download the latest version of the HugeGraph-Toolchain release package:
 
 ```bash
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
-tar zxf *hugegraph*.tar.gz
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
+tar zxf "${ARCHIVE}.tar.gz"
 ```
 
 #### 2.3 Clone source code to compile and install
@@ -77,30 +79,28 @@ Clone the latest version of HugeGraph-Loader source package:
 # 1. get from github
 git clone https://github.com/apache/hugegraph-toolchain.git
 
-# 2. get from direct  (e.g. here is 1.0.0, please choose the latest version)
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}-src.tar.gz
+# 2. Download a released source package
+export VERSION=1.7.0
+export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
+wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
 ```
 
-<details>
-<summary>click to fold/collapse hwo to install ojdbc</summary>
-
-Due to the license limitation of the `Oracle OJDBC`, you need to manually install ojdbc to the local maven repository.
-Visit the [Oracle jdbc downloads](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html) page. Select Oracle Database 12c Release 2 (12.2.0.1) drivers, as shown in the following figure.
-
-After opening the link, select "ojdbc8.jar".
-
-Install ojdbc8 to the local maven repository, enter the directory where `ojdbc8.jar` is located, and execute the following command.
-```
-mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-```
-
-</details>
+> [!DETAILS]- How to install OJDBC
+> Due to the license limitation of the `Oracle OJDBC`, you need to manually install ojdbc to the local maven repository.
+> Visit the [Oracle jdbc downloads](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html) page. Select Oracle Database 12c Release 2 (12.2.0.1) drivers, as shown in the following figure.
+>
+> After opening the link, select "ojdbc8.jar".
+>
+> Install ojdbc8 to the local maven repository, enter the directory where `ojdbc8.jar` is located, and execute the following command.
+> ```
+> mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
+> ```
 
 Compile and generate tar package:
 
 ```bash
-cd hugegraph-loader
-mvn clean package -DskipTests
+cd hugegraph-toolchain
+mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 ```
 
 ### 3 How to use
@@ -118,7 +118,7 @@ For example, if you want to create a graph with two types of vertices and two ty
 "Software" includes: "name", "sale price" and other attributes; side "knowledge" includes: "date" attribute and so on.
 
 <div style="text-align: center;">
-  <img src="/docs/images/demo-graph-model.png" alt="image">
+  <img src="/docs/images/demo-graph-model.png" alt="Example graph with person and software vertices connected by knows and created edges">
   <p>graph model example</p>
 </div>
 
@@ -282,302 +282,290 @@ In the simplest terms, each mapping block describes: where is the file to be imp
 
 
 
-<details>
-<summary>Click to expand/collapse the skeleton of the map file for version 2.0</summary>
-
-```json
-{
-  "version": "2.0",
-  "structs": [
-    {
-      "id": "1",
-      "input": {
-      },
-      "vertices": [
-        {},
-        {}
-      ],
-      "edges": [
-        {},
-        {}
-      ]
-    }
-  ]
-}
-```
-
-</details>
+> [!DETAILS]- Click to expand/collapse the skeleton of the map file for version 2.0
+> ```json
+> {
+>   "version": "2.0",
+>   "structs": [
+>     {
+>       "id": "1",
+>       "input": {
+>       },
+>       "vertices": [
+>         {},
+>         {}
+>       ],
+>       "edges": [
+>         {},
+>         {}
+>       ]
+>     }
+>   ]
+> }
+> ```
 <br/>
 
 Two versions of the mapping file are given directly here (the above graph model and data file are described)
 
-<details>
-<summary>Click to expand/collapse the mapping file for version 2.0</summary>
-
-```json
-{
-  "version": "2.0",
-  "structs": [
-    {
-      "id": "1",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "vertex_person.csv",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "CSV",
-        "delimiter": ",",
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": [
-          "name",
-          "age",
-          "city"
-        ],
-        "charset": "UTF-8",
-        "list_format": {
-          "start_symbol": "[",
-          "elem_delimiter": "|",
-          "end_symbol": "]"
-        }
-      },
-      "vertices": [
-        {
-          "label": "person",
-          "skip": false,
-          "id": null,
-          "unfold": false,
-          "field_mapping": {},
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ],
-      "edges": []
-    },
-    {
-      "id": "2",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "vertex_software.csv",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "CSV",
-        "delimiter": ",",
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": null,
-        "charset": "UTF-8",
-        "list_format": {
-          "start_symbol": "",
-          "elem_delimiter": ",",
-          "end_symbol": ""
-        }
-      },
-      "vertices": [
-        {
-          "label": "software",
-          "skip": false,
-          "id": null,
-          "unfold": false,
-          "field_mapping": {},
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ],
-      "edges": []
-    },
-    {
-      "id": "3",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "edge_knows.json",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "JSON",
-        "delimiter": null,
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": null,
-        "charset": "UTF-8",
-        "list_format": null
-      },
-      "vertices": [],
-      "edges": [
-        {
-          "label": "knows",
-          "skip": false,
-          "source": [
-            "source_name"
-          ],
-          "unfold_source": false,
-          "target": [
-            "target_name"
-          ],
-          "unfold_target": false,
-          "field_mapping": {
-            "source_name": "name",
-            "target_name": "name"
-          },
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ]
-    },
-    {
-      "id": "4",
-      "skip": false,
-      "input": {
-        "type": "FILE",
-        "path": "edge_created.json",
-        "file_filter": {
-          "extensions": [
-            "*"
-          ]
-        },
-        "format": "JSON",
-        "delimiter": null,
-        "date_format": "yyyy-MM-dd HH:mm:ss",
-        "time_zone": "GMT+8",
-        "skipped_line": {
-          "regex": "(^#|^//).*|"
-        },
-        "compression": "NONE",
-        "header": null,
-        "charset": "UTF-8",
-        "list_format": null
-      },
-      "vertices": [],
-      "edges": [
-        {
-          "label": "created",
-          "skip": false,
-          "source": [
-            "source_name"
-          ],
-          "unfold_source": false,
-          "target": [
-            "target_name"
-          ],
-          "unfold_target": false,
-          "field_mapping": {
-            "source_name": "name",
-            "target_name": "name"
-          },
-          "value_mapping": {},
-          "selected": [],
-          "ignored": [],
-          "null_values": [
-            ""
-          ],
-          "update_strategies": {}
-        }
-      ]
-    }
-  ]
-}
-```
-
-</details>
+> [!DETAILS]- Click to expand/collapse the mapping file for version 2.0
+> ```json
+> {
+>   "version": "2.0",
+>   "structs": [
+>     {
+>       "id": "1",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "vertex_person.csv",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "CSV",
+>         "delimiter": ",",
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": [
+>           "name",
+>           "age",
+>           "city"
+>         ],
+>         "charset": "UTF-8",
+>         "list_format": {
+>           "start_symbol": "[",
+>           "elem_delimiter": "|",
+>           "end_symbol": "]"
+>         }
+>       },
+>       "vertices": [
+>         {
+>           "label": "person",
+>           "skip": false,
+>           "id": null,
+>           "unfold": false,
+>           "field_mapping": {},
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ],
+>       "edges": []
+>     },
+>     {
+>       "id": "2",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "vertex_software.csv",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "CSV",
+>         "delimiter": ",",
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": null,
+>         "charset": "UTF-8",
+>         "list_format": {
+>           "start_symbol": "",
+>           "elem_delimiter": ",",
+>           "end_symbol": ""
+>         }
+>       },
+>       "vertices": [
+>         {
+>           "label": "software",
+>           "skip": false,
+>           "id": null,
+>           "unfold": false,
+>           "field_mapping": {},
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ],
+>       "edges": []
+>     },
+>     {
+>       "id": "3",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "edge_knows.json",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "JSON",
+>         "delimiter": null,
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": null,
+>         "charset": "UTF-8",
+>         "list_format": null
+>       },
+>       "vertices": [],
+>       "edges": [
+>         {
+>           "label": "knows",
+>           "skip": false,
+>           "source": [
+>             "source_name"
+>           ],
+>           "unfold_source": false,
+>           "target": [
+>             "target_name"
+>           ],
+>           "unfold_target": false,
+>           "field_mapping": {
+>             "source_name": "name",
+>             "target_name": "name"
+>           },
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ]
+>     },
+>     {
+>       "id": "4",
+>       "skip": false,
+>       "input": {
+>         "type": "FILE",
+>         "path": "edge_created.json",
+>         "file_filter": {
+>           "extensions": [
+>             "*"
+>           ]
+>         },
+>         "format": "JSON",
+>         "delimiter": null,
+>         "date_format": "yyyy-MM-dd HH:mm:ss",
+>         "time_zone": "GMT+8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*|"
+>         },
+>         "compression": "NONE",
+>         "header": null,
+>         "charset": "UTF-8",
+>         "list_format": null
+>       },
+>       "vertices": [],
+>       "edges": [
+>         {
+>           "label": "created",
+>           "skip": false,
+>           "source": [
+>             "source_name"
+>           ],
+>           "unfold_source": false,
+>           "target": [
+>             "target_name"
+>           ],
+>           "unfold_target": false,
+>           "field_mapping": {
+>             "source_name": "name",
+>             "target_name": "name"
+>           },
+>           "value_mapping": {},
+>           "selected": [],
+>           "ignored": [],
+>           "null_values": [
+>             ""
+>           ],
+>           "update_strategies": {}
+>         }
+>       ]
+>     }
+>   ]
+> }
+> ```
 <br/>
 
-<details>
-<summary>Click to expand/collapse the mapping file for version 1.0</summary>
-
-```json
-{
-  "vertices": [
-    {
-      "label": "person",
-      "input": {
-        "type": "file",
-        "path": "vertex_person.csv",
-        "format": "CSV",
-        "header": ["name", "age", "city"],
-        "charset": "UTF-8"
-      }
-    },
-    {
-      "label": "software",
-      "input": {
-        "type": "file",
-        "path": "vertex_software.csv",
-        "format": "CSV"
-      }
-    }
-  ],
-  "edges": [
-    {
-      "label": "knows",
-      "source": ["source_name"],
-      "target": ["target_name"],
-      "input": {
-        "type": "file",
-        "path": "edge_knows.json",
-        "format": "JSON"
-      },
-      "field_mapping": {
-        "source_name": "name",
-        "target_name": "name"
-      }
-    },
-    {
-      "label": "created",
-      "source": ["source_name"],
-      "target": ["target_name"],
-      "input": {
-        "type": "file",
-        "path": "edge_created.json",
-        "format": "JSON"
-      },
-      "field_mapping": {
-        "source_name": "name",
-        "target_name": "name"
-      }
-    }
-  ]
-}
-```
-
-</details>
+> [!DETAILS]- Click to expand/collapse the mapping file for version 1.0
+> ```json
+> {
+>   "vertices": [
+>     {
+>       "label": "person",
+>       "input": {
+>         "type": "file",
+>         "path": "vertex_person.csv",
+>         "format": "CSV",
+>         "header": ["name", "age", "city"],
+>         "charset": "UTF-8"
+>       }
+>     },
+>     {
+>       "label": "software",
+>       "input": {
+>         "type": "file",
+>         "path": "vertex_software.csv",
+>         "format": "CSV"
+>       }
+>     }
+>   ],
+>   "edges": [
+>     {
+>       "label": "knows",
+>       "source": ["source_name"],
+>       "target": ["target_name"],
+>       "input": {
+>         "type": "file",
+>         "path": "edge_knows.json",
+>         "format": "JSON"
+>       },
+>       "field_mapping": {
+>         "source_name": "name",
+>         "target_name": "name"
+>       }
+>     },
+>     {
+>       "label": "created",
+>       "source": ["source_name"],
+>       "target": ["target_name"],
+>       "input": {
+>         "type": "file",
+>         "path": "edge_created.json",
+>         "format": "JSON"
+>       },
+>       "field_mapping": {
+>         "source_name": "name",
+>         "target_name": "name"
+>       }
+>     }
+>   ]
+> }
+> ```
 <br/>
 
 The 1.0 version of the mapping file is centered on the vertex and edge, and sets the input source; while the 2.0 version is centered on the input source, and sets the vertex and edge mapping. Some input sources (such as a file) can generate both vertices and edges. If you write in the 1.0 format, you need to write an input block in each of the vertex and edge mapping blocks. The two input blocks are exactly the same; and the 2.0 version only needs to write input once. Therefore, compared with version 1.0, version 2.0 can save some repetitive writing of input.
@@ -794,47 +782,71 @@ The import process is controlled by commands submitted by the user, and the user
 
 ##### 3.4.1 Parameter description
 
-| Parameter                 | Default value | Required or not | Description                                                                                                                                                                               |
-|---------------------------|---------------|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `-f` or `--file`          |               | Y               | Path to configure script                                                                                                                                                                  |
-| `-g` or `--graph`         |               | Y               | Graph name                                                                                                                                                                                |
-| `-gs` or `--graphspace`   | DEFAULT       |                 | Graph space name                                                                                                                                                                          |
-| `-s` or `--schema`        |               | Y               | Schema file path                                                                                                                                                                          |
-| `-h` or `--host` or `-i`  | localhost     |                 | Address of HugeGraphServer                                                                                                                                                                |
-| `-p` or `--port`          | 8080          |                 | Port number of HugeGraphServer                                                                                                                                                            |
-| `--username`              | null          |                 | When HugeGraphServer enables permission authentication, the username of the current graph                                                                                                 |
-| `--password`              | null          |                 | When HugeGraphServer enables permission authentication, the password of the current graph                                                                                                 |
-| `--create-graph`          | false         |                 | Whether to automatically create the graph if it does not exist                                                                                                                            |
-| `--token`                 | null          |                 | When HugeGraphServer has enabled authorization authentication, the token of the current graph                                                                                             |
-| `--protocol`              | http          |                 | Protocol for sending requests to the server, optional http or https                                                                                                                       |
-| `--pd-peers`              |               |                 | PD service node addresses                                                                                                                                                                 |
-| `--pd-token`              |               |                 | Token for accessing PD service                                                                                                                                                            |
-| `--meta-endpoints`        |               |                 | Meta information storage service addresses                                                                                                                                                |
-| `--direct`                | false         |                 | Whether to directly connect to HugeGraph-Store                                                                                                                                            |
-| `--route-type`            | NODE_PORT     |                 | Route selection method (optional values: NODE_PORT / DDS / BOTH)                                                                                                                          |
-| `--cluster`               | hg            |                 | Cluster name                                                                                                                                                                              |
-| `--trust-store-file`      |               |                 | When the request protocol is https, the client's certificate file path                                                                                                                    |
-| `--trust-store-password`  |               |                 | When the request protocol is https, the client certificate password                                                                                                                       |
-| `--clear-all-data`        | false         |                 | Whether to clear the original data on the server before importing data                                                                                                                    |
-| `--clear-timeout`         | 240           |                 | Timeout for clearing the original data on the server before importing data                                                                                                                |
-| `--incremental-mode`      | false         |                 | Whether to use the breakpoint resume mode; only input sources FILE and HDFS support this mode. Enabling this mode allows starting the import from where the last import stopped          |
-| `--failure-mode`          | false         |                 | When failure mode is true, previously failed data will be imported. Generally, the failed data file needs to be manually corrected and edited before re-importing                        |
-| `--batch-insert-threads`  | CPUs          |                 | Batch insert thread pool size (CPUs is the number of **logical cores** available to the current OS)                                                                                       |
-| `--single-insert-threads` | 8             |                 | Size of single insert thread pool                                                                                                                                                         |
-| `--max-conn`              | 4 * CPUs      |                 | The maximum number of HTTP connections between HugeClient and HugeGraphServer; it is recommended to adjust this when **adjusting threads**                                                |
-| `--max-conn-per-route`    | 2 * CPUs      |                 | The maximum number of HTTP connections for each route between HugeClient and HugeGraphServer; it is recommended to adjust this item when **adjusting threads**                            |
-| `--batch-size`            | 500           |                 | The number of data items in each batch when importing data                                                                                                                                |
-| `--max-parse-errors`      | 1             |                 | The maximum number of data parsing errors allowed (per line); the program exits when this value is reached                                                                                |
-| `--max-insert-errors`     | 500           |                 | The maximum number of data insertion errors allowed (per row); the program exits when this value is reached                                                                               |
-| `--timeout`               | 60            |                 | Timeout (seconds) for insert result return                                                                                                                                                |
-| `--shutdown-timeout`      | 10            |                 | Waiting time for multithreading to stop (seconds)                                                                                                                                         |
-| `--retry-times`           | 0             |                 | Number of retries when a specific exception occurs                                                                                                                                        |
-| `--retry-interval`        | 10            |                 | Interval before retry (seconds)                                                                                                                                                           |
-| `--check-vertex`          | false         |                 | Whether to check if the vertices connected by the edge exist when inserting the edge                                                                                                      |
-| `--print-progress`        | true          |                 | Whether to print the number of imported items in real time on the console                                                                                                                 |
-| `--dry-run`               | false         |                 | Enable this mode to only parse data without importing; usually used for testing                                                                                                           |
-| `--help`                  | false         |                 | Print help information                                                                                                     |
-
+| Parameter                                | Default value | Required or not | Description                                                                                                                                                                               |
+|------------------------------------------|---------------|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `-f` or `--file`                         |               | Y               | Path to configure script                                                                                                                                                                  |
+| `-g` or `--graph`                        | hugegraph     |                 | Graph name                                                                                                                                                                                |
+| `--graphspace`                           | DEFAULT       |                 | Graph space name                                                                                                                                                                          |
+| `-s` or `--schema`                       |               |                 | Schema file path; optional when the Schema already exists                                                                                                                                 |
+| `-h` or `--host` or `-i`                 | localhost     |                 | Address of HugeGraphServer                                                                                                                                                                |
+| `-p` or `--port`                         | 8080          |                 | Port number of HugeGraphServer                                                                                                                                                            |
+| `--username`                             | null          |                 | When HugeGraphServer enables permission authentication, the username of the current graph                                                                                                 |
+| `--password`                             | null          |                 | When HugeGraphServer enables permission authentication, the password of the current graph                                                                                                 |
+| `--create-graph`                         | false         |                 | Whether to automatically create the graph if it does not exist                                                                                                                            |
+| `--token`                                | null          |                 | When HugeGraphServer has enabled authorization authentication, the token of the current graph                                                                                             |
+| `--protocol`                             | http          |                 | Protocol for sending requests to the server, optional http or https                                                                                                                       |
+| `--pd-peers`                             |               |                 | PD service node addresses                                                                                                                                                                 |
+| `--pd-token`                             |               |                 | Token for accessing PD service                                                                                                                                                            |
+| `--meta-endpoints`                       |               |                 | Meta information storage service addresses                                                                                                                                                |
+| `--direct`                               | false         |                 | Whether to directly connect to HugeGraph-Store                                                                                                                                            |
+| `--route-type`                           | NODE_PORT     |                 | Route selection method (optional values: NODE_PORT / DDS / BOTH)                                                                                                                          |
+| `--cluster`                              | hg            |                 | Cluster name                                                                                                                                                                              |
+| `--trust-store-file`                     |               |                 | When the request protocol is https, the client's certificate file path                                                                                                                    |
+| `--trust-store-password`                 |               |                 | When the request protocol is https, the client certificate password                                                                                                                       |
+| `--clear-all-data`                       | false         |                 | Whether to clear the original data on the server before importing data                                                                                                                    |
+| `--clear-timeout`                        | 240           |                 | Timeout for clearing the original data on the server before importing data                                                                                                                |
+| `--incremental-mode`                     | false         |                 | Whether to use the breakpoint resume mode; only input sources FILE and HDFS support this mode. Enabling this mode allows starting the import from where the last import stopped          |
+| `--failure-mode`                         | false         |                 | When failure mode is true, previously failed data will be imported. Generally, the failed data file needs to be manually corrected and edited before re-importing                        |
+| `--batch-insert-threads`                 | CPUs          |                 | Batch insert thread pool size (CPUs is the number of **logical cores** available to the current OS)                                                                                       |
+| `--single-insert-threads`                | 8             |                 | Size of single insert thread pool                                                                                                                                                         |
+| `--max-conn`                             | 4 * CPUs      |                 | The maximum number of HTTP connections between HugeClient and HugeGraphServer; it is recommended to adjust this when **adjusting threads**                                                |
+| `--max-conn-per-route`                   | 2 * CPUs      |                 | The maximum number of HTTP connections for each route between HugeClient and HugeGraphServer; it is recommended to adjust this item when **adjusting threads**                            |
+| `--batch-size`                           | 500           |                 | The number of data items in each batch when importing data                                                                                                                                |
+| `--max-parse-errors`                     | 1             |                 | The maximum number of data parsing errors allowed (per line); the program exits when this value is reached                                                                                |
+| `--max-insert-errors`                    | 500           |                 | The maximum number of data insertion errors allowed (per row); the program exits when this value is reached                                                                               |
+| `--timeout`                              | 60            |                 | Timeout (seconds) for insert result return                                                                                                                                                |
+| `--shutdown-timeout`                     | 10            |                 | Waiting time for multithreading to stop (seconds)                                                                                                                                         |
+| `--retry-times`                          | 3             |                 | Maximum number of retries after a timeout                                                                                                                                                 |
+| `--retry-interval`                       | 10            |                 | Interval before retry (seconds)                                                                                                                                                           |
+| `--check-vertex`                         | false         |                 | Whether to check if the vertices connected by the edge exist when inserting the edge                                                                                                      |
+| `--print-progress`                       | true          |                 | Whether to print the number of imported items in real time on the console                                                                                                                 |
+| `--dry-run`                              | false         |                 | Enable this mode to only parse data without importing; usually used for testing                                                                                                           |
+| `--help` or `-help`                      | false         |                 | Print help information                                                                                                     |
+| `--parser-threads` or `--parallel-count` | max(2,CPUs/2) |      | Number of parallel read pipelines; `--parallel-count` is deprecated    |
+| `--start-file`                           | 0           |      | Start file index for partial loading                               |
+| `--end-file`                             | -1          |      | End file index for partial loading                                 |
+| `--scatter-sources`                      | false       |      | Scatter multiple sources for I/O optimization                      |
+| `--cdc-flush-interval`                   | 30000       |      | The flush interval for Flink CDC                                   |
+| `--cdc-sink-parallelism`                 | 1           |      | The sink parallelism for Flink CDC                                 |
+| `--max-read-errors`                      | 1           |      | The maximum number of read error lines before exiting              |
+| `--max-read-lines`                       | -1L         |      | The maximum number of read lines, task stops when reached          |
+| `--test-mode`                            | false       |      | Whether the loader works in test mode                              |
+| `--use-prefilter`                        | false       |      | Whether to filter vertex in advance                                |
+| `--short-id`                             |             |      | Mapping customized ID to shorter ID                                |
+| `--vertex-edge-limit`                    | -1L         |      | The maximum number of vertex's edges                               |
+| `--sink-type`                            | true        |      | Sink to different storage type switch                              |
+| `--vertex-partitions`                    | 64          |      | The number of partitions of the HBase vertex table                 |
+| `--edge-partitions`                      | 64          |      | The number of partitions of the HBase edge table                   |
+| `--vertex-table-name`                    |             |      | HBase vertex table name                                            |
+| `--edge-table-name`                      |             |      | HBase edge table name                                              |
+| `--hbase-zk-quorum`                      |             |      | HBase ZooKeeper quorum                                             |
+| `--hbase-zk-port`                        |             |      | HBase ZooKeeper port                                               |
+| `--hbase-zk-parent`                      |             |      | HBase ZooKeeper parent                                             |
+| `--restore`                              | false       |      | Set graph mode to RESTORING                                        |
+| `--backend`                              | hstore      |      | The backend store type when creating graph if not exists           |
+| `--serializer`                           | binary      |      | The serializer type when creating graph if not exists              |
+| `--scheduler-type`                       | distributed |      | The task scheduler type when creating graph if not exists          |
+| `--batch-failure-fallback`               | true        |      | Whether to fallback to single insert when batch insert fails       |##### 3.4.2 Breakpoint Continuation Mode
 ##### 3.4.2 Breakpoint Continuation Mode
 
 Usually, the Loader task takes a long time to execute. If the import interrupt process exits for some reason, and next time you want to continue the import from the interrupted point, this is the scenario of using breakpoint continuation.
@@ -918,106 +930,98 @@ Edge file: `example/file/edge_created.json`
 
 #### 4.2 Write schema
 
-<details>
-<summary>Click to expand/collapse the schema file: example/file/schema.groovy</summary>
-
-```groovy
-schema.propertyKey("name").asText().ifNotExist().create();
-schema.propertyKey("age").asInt().ifNotExist().create();
-schema.propertyKey("city").asText().ifNotExist().create();
-schema.propertyKey("weight").asDouble().ifNotExist().create();
-schema.propertyKey("lang").asText().ifNotExist().create();
-schema.propertyKey("date").asText().ifNotExist().create();
-schema.propertyKey("price").asDouble().ifNotExist().create();
-
-schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
-schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
-
-schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
-schema.indexLabel("personByCity").onV("person").by("city").secondary().ifNotExist().create();
-schema.indexLabel("personByAgeAndCity").onV("person").by("age", "city").secondary().ifNotExist().create();
-schema.indexLabel("softwareByPrice").onV("software").by("price").range().ifNotExist().create();
-
-schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date", "weight").ifNotExist().create();
-schema.edgeLabel("created").sourceLabel("person").targetLabel("software").properties("date", "weight").ifNotExist().create();
-
-schema.indexLabel("createdByDate").onE("created").by("date").secondary().ifNotExist().create();
-schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
-schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();
-```
-
-</details>
+> [!DETAILS]- Click to expand/collapse the schema file: example/file/schema.groovy
+> ```groovy
+> schema.propertyKey("name").asText().ifNotExist().create();
+> schema.propertyKey("age").asInt().ifNotExist().create();
+> schema.propertyKey("city").asText().ifNotExist().create();
+> schema.propertyKey("weight").asDouble().ifNotExist().create();
+> schema.propertyKey("lang").asText().ifNotExist().create();
+> schema.propertyKey("date").asText().ifNotExist().create();
+> schema.propertyKey("price").asDouble().ifNotExist().create();
+>
+> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
+> schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
+>
+> schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
+> schema.indexLabel("personByCity").onV("person").by("city").secondary().ifNotExist().create();
+> schema.indexLabel("personByAgeAndCity").onV("person").by("age", "city").secondary().ifNotExist().create();
+> schema.indexLabel("softwareByPrice").onV("software").by("price").range().ifNotExist().create();
+>
+> schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date", "weight").ifNotExist().create();
+> schema.edgeLabel("created").sourceLabel("person").targetLabel("software").properties("date", "weight").ifNotExist().create();
+>
+> schema.indexLabel("createdByDate").onE("created").by("date").secondary().ifNotExist().create();
+> schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
+> schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();
+> ```
 
 #### 4.3 Write the input source mapping file `example/file/struct.json`
 
-<details>
-<summary>Click to expand/collapse the input source mapping file example/file/struct.json</summary>
-
-```json
-{
-  "vertices": [
-    {
-      "label": "person",
-      "input": {
-        "type": "file",
-        "path": "example/file/vertex_person.csv",
-        "format": "CSV",
-        "header": ["name", "age", "city"],
-        "charset": "UTF-8",
-        "skipped_line": {
-          "regex": "(^#|^//).*"
-        }
-      },
-      "null_values": ["NULL", "null", ""]
-    },
-    {
-      "label": "software",
-      "input": {
-        "type": "file",
-        "path": "example/file/vertex_software.txt",
-        "format": "TEXT",
-        "delimiter": "|",
-        "charset": "GBK"
-      },
-      "id": "id",
-      "ignored": ["ISBN"]
-    }
-  ],
-  "edges": [
-    {
-      "label": "knows",
-      "source": ["source_name"],
-      "target": ["target_name"],
-      "input": {
-        "type": "file",
-        "path": "example/file/edge_knows.json",
-        "format": "JSON",
-        "date_format": "yyyyMMdd"
-      },
-      "field_mapping": {
-        "source_name": "name",
-        "target_name": "name"
-      }
-    },
-    {
-      "label": "created",
-      "source": ["source_name"],
-      "target": ["target_id"],
-      "input": {
-        "type": "file",
-        "path": "example/file/edge_created.json",
-        "format": "JSON",
-        "date_format": "yyyy-MM-dd"
-      },
-      "field_mapping": {
-        "source_name": "name"
-      }
-    }
-  ]
-}
-```
-
-</details>
+> [!DETAILS]- Click to expand/collapse the input source mapping file example/file/struct.json
+> ```json
+> {
+>   "vertices": [
+>     {
+>       "label": "person",
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/vertex_person.csv",
+>         "format": "CSV",
+>         "header": ["name", "age", "city"],
+>         "charset": "UTF-8",
+>         "skipped_line": {
+>           "regex": "(^#|^//).*"
+>         }
+>       },
+>       "null_values": ["NULL", "null", ""]
+>     },
+>     {
+>       "label": "software",
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/vertex_software.txt",
+>         "format": "TEXT",
+>         "delimiter": "|",
+>         "charset": "GBK"
+>       },
+>       "id": "id",
+>       "ignored": ["ISBN"]
+>     }
+>   ],
+>   "edges": [
+>     {
+>       "label": "knows",
+>       "source": ["source_name"],
+>       "target": ["target_name"],
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/edge_knows.json",
+>         "format": "JSON",
+>         "date_format": "yyyyMMdd"
+>       },
+>       "field_mapping": {
+>         "source_name": "name",
+>         "target_name": "name"
+>       }
+>     },
+>     {
+>       "label": "created",
+>       "source": ["source_name"],
+>       "target": ["target_id"],
+>       "input": {
+>         "type": "file",
+>         "path": "example/file/edge_created.json",
+>         "format": "JSON",
+>         "date_format": "yyyy-MM-dd"
+>       },
+>       "field_mapping": {
+>         "source_name": "name"
+>       }
+>     }
+>   ]
+> }
+> ```
 
 #### 4.4 Command to import
 
@@ -1148,8 +1152,7 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 The results of the execution will be similar to those shown in [4.5.1](#451-use-docker-exec-to-load-data-directly).
 
 #### 4.6 Import data by spark-loader
-> Spark version: Spark 3+, other versions has not been tested.  
-> HugeGraph Toolchain version: toolchain-1.0.0
+> The current source uses Spark 3.2.2 and Scala 2.12. Other combinations need independent verification.
 > 
 The parameters of `spark-loader` are divided into two parts. Note: Because the abbreviations of 
 these two-parameter names have overlapping parts, please use the full name of the parameter. 

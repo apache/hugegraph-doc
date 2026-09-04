@@ -2,6 +2,11 @@
 title: "HugeGraph-Store Quick Start"
 linkTitle: "Install/Build HugeGraph-Store"
 weight: 3
+search_keywords:
+  - server.port
+  - REST port
+  - Store REST port
+search_boost: 1.5
 ---
 
 ### 1 HugeGraph-Store Overview
@@ -12,10 +17,10 @@ HugeGraph-Store is the storage node component of HugeGraph's distributed version
 
 #### 2.1 Requirements
 
-- Operating System: Linux or MacOS (Windows has not been fully tested)
+- Operating System: Linux or macOS (Windows has not been fully tested)
 - Java version: ≥ 11
 - Maven version: ≥ 3.5.0
-- Deployed HugeGraph-PD (for multi-node deployment)
+- Deploy HugeGraph-PD first for multi-node deployment
 
 ### 3 Deployment
 
@@ -29,10 +34,10 @@ There are two ways to deploy the HugeGraph-Store component:
 Download the latest version of HugeGraph-Store from the Apache HugeGraph official download page:
 
 ```bash
-# Replace {version} with the latest version number, e.g., 1.5.0
-wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-incubating-{version}.tar.gz  
-tar zxf apache-hugegraph-incubating-{version}.tar.gz
-cd apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{version}
+# 1.7.0 is a historical release from the incubation period, so its file and directory names still include "incubating"
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
+cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-store-incubating-1.7.0
 ```
 
 #### 3.2 Compile from source
@@ -45,10 +50,54 @@ git clone https://github.com/apache/hugegraph.git
 cd hugegraph
 mvn clean install -DskipTests=true
 
-# 3. After successful compilation, the Store module build artifacts will be located at
-#    apache-hugegraph-incubating-{version}/apache-hugegraph-hstore-incubating-{version}
-#    target/apache-hugegraph-incubating-{version}.tar.gz
+# 3. After a successful build, the Store directory and complete distribution package are located at
+#    hugegraph-store/apache-hugegraph-store-{version}
+#    target/apache-hugegraph-{version}.tar.gz
 ```
+
+#### 3.3 Docker Deployment
+
+The HugeGraph-Store Docker image is available on Docker Hub as `hugegraph/store`.
+
+> **Note**: The following steps assume you have already cloned or pulled the HugeGraph main repository locally, or at least have its `docker/` directory available.
+
+Use the compose file to deploy the complete 3-node cluster (PD + Store + Server):
+
+```bash
+cd hugegraph/docker
+# Keep the version aligned with the latest release, for example 1.x.0
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+```
+
+To run a single Store node via `docker run`:
+
+```bash
+docker run -d \
+  -p 8520:8520 \
+  -p 8500:8500 \
+  -p 8510:8510 \
+  -e HG_STORE_PD_ADDRESS=<pd-ip>:8686 \
+  -e HG_STORE_GRPC_HOST=<your-ip> \
+  -e HG_STORE_RAFT_ADDRESS=<your-ip>:8510 \
+  -v /path/to/storage:/hugegraph-store/storage \
+  --name hugegraph-store \
+  hugegraph/store:1.7.0
+```
+
+**Environment variable reference:**
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `HG_STORE_PD_ADDRESS` | Yes | — | PD gRPC addresses (e.g. `pd0:8686,pd1:8686,pd2:8686`) |
+| `HG_STORE_GRPC_HOST` | Yes | — | This node's hostname/IP for gRPC (e.g. `store0`) |
+| `HG_STORE_RAFT_ADDRESS` | Yes | — | This node's Raft address (e.g. `store0:8510`) |
+| `HG_STORE_GRPC_PORT` | No | `8500` | gRPC server port |
+| `HG_STORE_REST_PORT` | No | `8520` | REST API port |
+| `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | Data storage path |
+
+> **Note**: In Docker bridge networking, use container hostnames (e.g. `store0`) for `HG_STORE_GRPC_HOST` instead of IP addresses.
+
+> **Deprecated aliases**: `PD_ADDRESS`, `GRPC_HOST`, `RAFT_ADDRESS` still work but log a deprecation warning. Use the `HG_STORE_*` names for new deployments.
 
 ### 4 Configuration
 
@@ -113,10 +162,15 @@ Ensure that the PD service is already started, then in the Store installation di
 ./bin/start-hugegraph-store.sh
 ```
 
+The startup script supports a `-d` flag to control daemon mode:
+
+- `-d true` (default): run as a background daemon; the script returns immediately.
+- `-d false`: run in foreground — the script `exec`s Java, so the container/supervisor process IS Java. Use this when running under Docker or a process supervisor (systemd, supervisord) so crashes are detected and the service is restarted automatically.
+
 After successful startup, you can see logs similar to the following in `logs/hugegraph-store-server.log`:
 
 ```
-2024-xx-xx xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
+YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
 ```
 
 #### 5.2 Stop Store
@@ -188,6 +242,36 @@ pdserver:
   address: 127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
 ```
 
+#### 6.3 Docker Distributed Cluster Configuration
+
+The distributed Store cluster definition is included in `docker/docker-compose-3pd-3store-3server.yml`. Each Store node gets its own hostname and environment variables:
+
+```yaml
+# store0
+HG_STORE_PD_ADDRESS: pd0:8686,pd1:8686,pd2:8686
+HG_STORE_GRPC_HOST: store0
+HG_STORE_GRPC_PORT: "8500"
+HG_STORE_REST_PORT: "8520"
+HG_STORE_RAFT_ADDRESS: store0:8510
+HG_STORE_DATA_PATH: /hugegraph-store/storage
+
+# store1
+HG_STORE_PD_ADDRESS: pd0:8686,pd1:8686,pd2:8686
+HG_STORE_GRPC_HOST: store1
+HG_STORE_RAFT_ADDRESS: store1:8510
+
+# store2
+HG_STORE_PD_ADDRESS: pd0:8686,pd1:8686,pd2:8686
+HG_STORE_GRPC_HOST: store2
+HG_STORE_RAFT_ADDRESS: store2:8510
+```
+
+Store nodes start only after all PD nodes pass healthchecks (`/v1/health`), enforced via `depends_on: condition: service_healthy`.
+
+To view runtime logs for a running Store container use `docker logs <container-name>` (e.g. `docker logs hg-store0`).
+
+See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full setup guide.
+
 ### 7 Verify Store Service
 
 Confirm that the Store service is running properly:
@@ -198,8 +282,50 @@ curl http://localhost:8520/actuator/health
 
 If it returns `{"status":"UP"}`, it indicates that the Store service has been successfully started.
 
-Additionally, you can check the status of Store nodes in the cluster through the PD API:
+You can also check Store node status through the PD API:
 
 ```bash
-curl http://localhost:8620/pd/api/v1/stores
+curl http://localhost:8620/v1/stores
+```
+
+If Store is configured successfully, the response should include status information for the current node, and `state: "Up"` means the node is running normally.
+
+The example below shows a single Store node. If all three nodes are configured correctly and running, the `storeId` list should contain three IDs, and `stateCountMap.Up`, `numOfService`, and `numOfNormalService` should all be `3`.
+
+```javascript
+{
+  "message": "OK",
+  "data": {
+    "stores": [
+      {
+        "storeId": 8319292642220586694,
+        "address": "127.0.0.1:8500",
+        "raftAddress": "127.0.0.1:8510",
+        "version": "",
+        "state": "Up",
+        "deployPath": "/Users/{your_user_name}/hugegraph/hugegraph-store/apache-hugegraph-store-{version}/lib/hg-store-node-{version}.jar",
+        "dataPath": "./storage",
+        "startTimeStamp": 1754027127969,
+        "registedTimeStamp": 1754027127969,
+        "lastHeartBeat": 1754027909444,
+        "capacity": 494384795648,
+        "available": 346535829504,
+        "partitionCount": 0,
+        "graphSize": 0,
+        "keyCount": 0,
+        "leaderCount": 0,
+        "serviceName": "127.0.0.1:8500-store",
+        "serviceVersion": "",
+        "serviceCreatedTimeStamp": 1754027127000,
+        "partitions": []
+      }
+    ],
+    "stateCountMap": {
+      "Up": 1
+    },
+    "numOfService": 1,
+    "numOfNormalService": 1
+  },
+  "status": 0
+}
 ```

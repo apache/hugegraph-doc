@@ -1,11 +1,16 @@
 ---
-title: "HugeGraph Computing (OLAP)"
-linkTitle: "HugeGraph Computing (OLAP)"
+title: "HugeGraph 图计算（OLAP）"
+linkTitle: "图计算（OLAP）"
 weight: 4
 ---
 
-## 🚀 最佳实践：优先使用 DeepWiki 智能文档
+HugeGraph-Computer 仓库包含两套 OLAP 系统：Java 实现的分布式 BSP 框架 Computer，以及 Go 实现的内存图计算平台 Vermeer。
 
-> 为解决静态文档可能过时的问题，我们提供了 **实时更新、内容更全面** 的 DeepWiki。它相当于一个拥有项目最新知识的专家，非常适合**所有开发者**在开始项目前阅读和咨询。
+> DeepWiki 提供实时更新的项目文档，内容更全面准确，适合快速了解项目最新情况。
+>
+> 📖 [https://deepwiki.com/apache/hugegraph-computer/](https://deepwiki.com/apache/hugegraph-computer/)
 
-**👉 强烈推荐访问并对话：**[**incubator-hugegraph-computer**](https://deepwiki.com/apache/incubator-hugegraph-computer)
+- [Vermeer 快速入门](./hugegraph-vermeer.md)
+- [Computer 快速入门](./hugegraph-computer.md)
+- [Computer 配置参考](./hugegraph-computer-config.md)
+- [源代码](https://github.com/apache/hugegraph-computer)

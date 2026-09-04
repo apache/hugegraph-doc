@@ -7,6 +7,9 @@ const workflow = fs.readFileSync(
   path.resolve(__dirname, "../../.github/workflows/hugo.yml"),
   "utf8"
 );
+const versionManifest = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, "../../versions.json"), "utf8")
+);
 
 test("each build fetches and verifies its immutable matrix SHA", () => {
   assert.match(workflow, /RESOLVED_SHA: \$\{\{ matrix\.version\.sha \}\}/);
@@ -24,8 +27,24 @@ test("only publish receives write permission and deploy stays read-only", () => 
   assert.match(workflow, /publish:[\s\S]*?permissions: \{ contents: write \}/);
 });
 
-test("event plan fixes origins, branches, confirmations, and five-version order", () => {
-  assert.match(workflow, /selection="latest,1\.7,1\.5,1\.3,1\.0"/);
+test("event plan derives runtime selection from versions.json", () => {
+  assert.match(
+    workflow,
+    /all_selection="\$\(jq -er '\[\.versions\[\]\.id\] \| join\(","\)' versions\.json\)"/
+  );
+  assert.match(
+    workflow,
+    /latest_selection="\$\(jq -er '\[\.versions\[\] \| select\(\.archived == false\) \| \.id\] \| join\(","\)' versions\.json\)"/
+  );
+  assert.doesNotMatch(workflow, /selection="latest,1\.7,1\.5,1\.3,1\.0"/);
+  assert.match(workflow, /selection="\$all_selection"/);
+  assert.match(workflow, /selection="\$latest_selection"/);
+  assert.match(workflow, /test "\$candidate" = "\$latest_ref"/);
+  assert.deepEqual(
+    versionManifest.versions.map(({ id }) => id),
+    ["latest", "1.7", "1.5", "1.3", "1.0"],
+    "the reviewed manifest still declares the accepted five-version product order"
+  );
   assert.match(workflow, /test "\$CONFIRMATION" = "publish asf-staging-oink"/);
   assert.match(workflow, /test "\$CONFIRMATION" = "publish asf-site"/);
   assert.match(workflow, /production:asf-site\|staging:asf-staging-oink/);

@@ -20,7 +20,6 @@ on:
       candidate_branch:
         description: ASF repository branch used for latest
         required: true
-        default: master
         type: string
       confirmation:
         description: Fixed target confirmation from the runbook
@@ -88,7 +87,15 @@ jobs:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
-          selection="latest,1.7,1.5,1.3,1.0"
+          all_selection="$(jq -er '[.versions[].id] | join(",")' versions.json)"
+          latest_selection="$(jq -er '[.versions[] | select(.archived == false) | .id] | join(",")' versions.json)"
+          latest_ref="$(jq -er '[.versions[] | select(.archived == false) | .ref] | join(",")' versions.json)"
+          test -n "$all_selection"
+          test -n "$latest_selection"
+          test "${latest_selection#*,}" = "$latest_selection"
+          test -n "$latest_ref"
+          test "${latest_ref#*,}" = "$latest_ref"
+          selection="$all_selection"
           site_origin="$PRODUCTION_ORIGIN"
           historical_origin="$PRODUCTION_ORIGIN"
           artifact_prefix="production"
@@ -117,7 +124,7 @@ jobs:
                 artifact_prefix="staging"
                 publish_branch="asf-staging-oink"
                 if [[ "$SCOPE" == latest ]]; then
-                  selection="latest"
+                  selection="$latest_selection"
                 else
                   test "$SCOPE" = full
                   historical_origin="$STAGING_ORIGIN"
@@ -125,7 +132,7 @@ jobs:
                 ;;
               production-history-refresh)
                 test "$CONFIRMATION" = "publish asf-site"
-                test "$candidate" = master
+                test "$candidate" = "$latest_ref"
                 test "$SCOPE" = full
                 publish_branch="asf-site"
                 ;;

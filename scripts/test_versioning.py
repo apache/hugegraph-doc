@@ -181,11 +181,36 @@ class VersionUrlTest(unittest.TestCase):
     def test_version_urls_preserve_language_and_order(self) -> None:
         manifest = {
             "versions": [
-                {"id": "latest", "name": "latest", "publishPath": ""},
-                {"id": "1.7", "name": "1.7", "publishPath": "versions/1.7"},
-                {"id": "1.5", "name": "1.5", "publishPath": "versions/1.5"},
-                {"id": "1.3", "name": "1.3", "publishPath": "versions/1.3"},
-                {"id": "1.0", "name": "1.0", "publishPath": "versions/1.0"},
+                {
+                    "id": "latest",
+                    "name": "latest",
+                    "publishPath": "",
+                    "archived": False,
+                },
+                {
+                    "id": "1.7",
+                    "name": "1.7",
+                    "publishPath": "versions/1.7",
+                    "archived": True,
+                },
+                {
+                    "id": "1.5",
+                    "name": "1.5",
+                    "publishPath": "versions/1.5",
+                    "archived": True,
+                },
+                {
+                    "id": "1.3",
+                    "name": "1.3",
+                    "publishPath": "versions/1.3",
+                    "archived": True,
+                },
+                {
+                    "id": "1.0",
+                    "name": "1.0",
+                    "publishPath": "versions/1.0",
+                    "archived": True,
+                },
             ]
         }
         self.assertEqual(
@@ -240,6 +265,120 @@ class VersionUrlTest(unittest.TestCase):
                 expected,
             )
         self.assertNotIn("1.2", json.dumps(config))
+
+    def test_temporary_manifest_drives_prepare_config_and_route_order(self) -> None:
+        manifest_data = {
+            "schemaVersion": 1,
+            "repository": "https://github.com/apache/hugegraph-doc.git",
+            "versions": [
+                {
+                    "id": "latest",
+                    "name": "Next",
+                    "ref": "main-docs",
+                    "publishPath": "",
+                    "archived": False,
+                    "githubBranch": "main-docs",
+                },
+                {
+                    "id": "2.0",
+                    "name": "2.0",
+                    "ref": "release-2-docs",
+                    "publishPath": "versions/stable-two",
+                    "archived": True,
+                    "githubBranch": "release-2-docs",
+                },
+                {
+                    "id": "1.9",
+                    "name": "1.9",
+                    "ref": "release-19-docs",
+                    "publishPath": "versions/stable-nineteen",
+                    "archived": True,
+                    "githubBranch": "release-19-docs",
+                },
+            ],
+        }
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            manifest_path = temp / "versions.json"
+            manifest_path.write_text(json.dumps(manifest_data), encoding="utf-8")
+            manifest = versioning.load_manifest(manifest_path)
+            resolved_path = temp / "resolved.json"
+            args = argparse.Namespace(
+                manifest=manifest_path,
+                local=False,
+                latest_sha="a" * 40,
+                select=None,
+                output=resolved_path,
+            )
+            remote_shas = {
+                "release-2-docs": "b" * 40,
+                "release-19-docs": "c" * 40,
+            }
+            with (
+                mock.patch.object(versioning, "run", return_value="a" * 40),
+                mock.patch.object(
+                    versioning,
+                    "resolve_remote",
+                    side_effect=lambda _repository, ref: remote_shas[ref],
+                ),
+            ):
+                versioning.prepare(args)
+            resolved = json.loads(resolved_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                [entry["id"] for entry in resolved["include"]],
+                ["latest", "2.0", "1.9"],
+            )
+            self.assertEqual(
+                [entry["ref"] for entry in resolved["versions"]],
+                ["main-docs", "release-2-docs", "release-19-docs"],
+            )
+
+            config = versioning.derived_version_config(
+                manifest, manifest["versions"][0], ORIGIN
+            )
+            self.assertEqual(
+                [entry["version"] for entry in config["params"]["versions"]],
+                ["latest", "2.0", "1.9"],
+            )
+            self.assertEqual(
+                [entry["url"] for entry in config["params"]["versions"]],
+                [
+                    f"{ORIGIN}docs/",
+                    f"{ORIGIN}versions/stable-two/docs/",
+                    f"{ORIGIN}versions/stable-nineteen/docs/",
+                ],
+            )
+            config_path = temp / "version-config.json"
+            versioning.render_config(
+                argparse.Namespace(
+                    manifest=manifest_path,
+                    version=None,
+                    site_origin=ORIGIN,
+                    historical_origin=None,
+                    output=config_path,
+                )
+            )
+            rendered_config = json.loads(config_path.read_text(encoding="utf-8"))
+            self.assertEqual(rendered_config["params"]["version"], "latest")
+            self.assertEqual(
+                rendered_config["params"]["github_branch"], "main-docs"
+            )
+
+            roots = {}
+            for entry in manifest["versions"]:
+                root = temp / entry["id"]
+                roots[entry["id"]] = root
+                for relative in ("docs/guide", "cn/docs/guide"):
+                    page = root / relative / "index.html"
+                    page.parent.mkdir(parents=True, exist_ok=True)
+                    page.write_text("<html></html>", encoding="utf-8")
+            routes = versioning.generate_version_routes(roots, manifest)
+            self.assertEqual(routes["versions"], ["latest", "2.0", "1.9"])
+            self.assertEqual(
+                list(routes["pages"]["en:guide"]),
+                ["latest", "2.0", "1.9"],
+            )
+            versioning.validate_version_routes(routes, manifest)
 
     def test_write_error_documents_keeps_localized_404_status_targets(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
@@ -831,6 +970,7 @@ class VersionUrlTest(unittest.TestCase):
                 origin=ORIGIN,
                 publish_path="versions/1.5",
                 allowed_paths=ALLOWED_PATHS,
+                version_id="1.5",
             ),
             "https://hugegraph.apache.org/versions/1.5/docs/introduction/readme/",
         )
@@ -1110,6 +1250,15 @@ class VersionUrlTest(unittest.TestCase):
             path.write_text(json.dumps(manifest), encoding="utf-8")
             with self.assertRaises(SystemExit):
                 versioning.load_resolved_manifest(path)
+            manifest = json.loads(
+                (versioning.ROOT / "versions.json").read_text(encoding="utf-8")
+            )
+            for entry in manifest["versions"]:
+                entry["sha"] = "a" * 40
+            manifest["versions"].pop()
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "version order"):
+                versioning.load_resolved_manifest(path)
 
     def test_aggregate_rejects_metadata_sha_before_copy(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
@@ -1178,6 +1327,15 @@ class VersionUrlTest(unittest.TestCase):
                     versioning,
                     "load_resolved_manifest",
                     return_value={"versions": [entry]},
+                ),
+                mock.patch.object(
+                    versioning,
+                    "load_version_routes",
+                    return_value={
+                        "schemaVersion": 1,
+                        "versions": ["latest"],
+                        "pages": {"en:": {"latest": "docs/"}},
+                    },
                 ),
                 mock.patch.object(versioning, "require_metadata_matches"),
                 mock.patch.object(
@@ -1395,7 +1553,9 @@ class VersionUrlTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_name:
             temp = Path(temp_name)
             roots = {}
-            for version in versioning.VERSION_ORDER:
+            manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+            version_ids = [entry["id"] for entry in manifest["versions"]]
+            for version in version_ids:
                 roots[version] = temp / version
                 page(roots[version], "docs")
                 page(roots[version], "cn/docs")
@@ -1409,11 +1569,12 @@ class VersionUrlTest(unittest.TestCase):
                 "docs/introduction/readme",
                 redirect="/docs/introduction/",
             )
-            page(roots["1.5"], "docs/introduction/readme")
+            for version in ("1.7", "1.5", "1.3", "1.0"):
+                page(roots[version], "docs/introduction/readme")
 
-            routes = versioning.generate_version_routes(roots)
+            routes = versioning.generate_version_routes(roots, manifest)
 
-            self.assertEqual(routes["versions"], list(versioning.VERSION_ORDER))
+            self.assertEqual(routes["versions"], version_ids)
             self.assertEqual(
                 routes["pages"]["en:performance/api-performance"]["latest"],
                 "docs/performance/api-performance/",
@@ -1423,19 +1584,28 @@ class VersionUrlTest(unittest.TestCase):
                 "docs/performance/api-preformance/",
             )
             self.assertEqual(
-                routes["pages"]["en:introduction"]["1.5"],
+                routes["pages"]["en:introduction/readme"]["1.5"],
                 "docs/introduction/readme/",
             )
-            self.assertNotIn("en:introduction/readme", routes["pages"])
-            versioning.validate_version_routes(routes)
+            self.assertIsNone(routes["pages"]["en:introduction"]["1.5"])
+            self.assertEqual(
+                routes["pages"]["en:introduction/readme"]["1.7"],
+                "docs/introduction/readme/",
+            )
+            self.assertEqual(
+                routes["pages"]["en:introduction/readme"]["1.3"],
+                "docs/introduction/readme/",
+            )
+            versioning.validate_version_routes(routes, manifest)
 
     def test_version_switch_options_use_equivalent_page_or_explicit_fallback(
         self,
     ) -> None:
         manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        version_ids = versioning.manifest_version_ids(manifest)
         routes = {
             "schemaVersion": 1,
-            "versions": list(versioning.VERSION_ORDER),
+            "versions": list(version_ids),
             "pages": {
                 "en:config": {
                     "latest": "docs/config/",
@@ -1494,9 +1664,11 @@ class VersionUrlTest(unittest.TestCase):
     def test_aggregate_version_routes_reject_missing_targets_and_false_nulls(
         self,
     ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        version_ids = versioning.manifest_version_ids(manifest)
         routes = {
             "schemaVersion": 1,
-            "versions": list(versioning.VERSION_ORDER),
+            "versions": list(version_ids),
             "pages": {
                 "en:config": {
                     "latest": "docs/config/",
@@ -1514,12 +1686,12 @@ class VersionUrlTest(unittest.TestCase):
             target.parent.mkdir(parents=True)
             target.write_text("<html></html>", encoding="utf-8")
             versioning.validate_aggregate_version_routes(
-                output, routes, {"latest"}, {"latest": ""}
+                output, routes, {"latest"}, manifest
             )
             target.unlink()
             with self.assertRaisesRegex(SystemExit, "route-map target is missing"):
                 versioning.validate_aggregate_version_routes(
-                    output, routes, {"latest"}, {"latest": ""}
+                    output, routes, {"latest"}, manifest
                 )
 
             target.write_text("<html></html>", encoding="utf-8")
@@ -1532,7 +1704,7 @@ class VersionUrlTest(unittest.TestCase):
                     output,
                     routes,
                     {"latest", "1.7"},
-                    {"latest": "", "1.7": "versions/1.7"},
+                    manifest,
                 )
 
 

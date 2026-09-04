@@ -466,14 +466,14 @@
     "cn:introduction": {
       "latest": "cn/docs/introduction/",
       "1.7": "cn/docs/introduction/",
-      "1.5": "cn/docs/introduction/readme/",
+      "1.5": null,
       "1.3": null,
       "1.0": null
     },
     "cn:introduction/readme": {
       "latest": null,
       "1.7": "cn/docs/introduction/readme/",
-      "1.5": null,
+      "1.5": "cn/docs/introduction/readme/",
       "1.3": "cn/docs/introduction/readme/",
       "1.0": "cn/docs/introduction/readme/"
     },
@@ -1110,14 +1110,14 @@
     "en:introduction": {
       "latest": "docs/introduction/",
       "1.7": "docs/introduction/",
-      "1.5": "docs/introduction/readme/",
+      "1.5": null,
       "1.3": null,
       "1.0": null
     },
     "en:introduction/readme": {
       "latest": null,
       "1.7": "docs/introduction/readme/",
-      "1.5": null,
+      "1.5": "docs/introduction/readme/",
       "1.3": "docs/introduction/readme/",
       "1.0": "docs/introduction/readme/"
     },

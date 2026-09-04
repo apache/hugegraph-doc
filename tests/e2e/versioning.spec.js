@@ -130,6 +130,76 @@ test("Palette version choice uses the same equivalent target", async ({ page }) 
   );
 });
 
+test("historical selectors preserve the readme route across desktop, mobile, and Palette", async ({
+  page
+}) => {
+  test.skip(
+    !["1.7", "1.5", "1.3"].every((version) => EXPECTED_IDS.includes(version)),
+    "latest-only staging artifact"
+  );
+
+  await page.goto(
+    "/versions/1.7/docs/introduction/readme/?query=history#overview"
+  );
+  let option = await versionOption(page, "1.5");
+  expect(option.equivalent).toBe(true);
+  expect(option.fallback).toBe(false);
+  expect(new URL(option.url).pathname).toBe(
+    "/versions/1.5/docs/introduction/readme/"
+  );
+  const desktop = page.locator(
+    ".td-nav-version-menu a[data-hg-version-id='1.5']"
+  );
+  await page.locator(".td-nav-version-menu [data-td-nav-hover-trigger]").hover();
+  await desktop.click();
+  await expect(page).toHaveURL((url) =>
+    url.pathname === "/versions/1.5/docs/introduction/readme/" &&
+    url.search === "?query=history" &&
+    url.hash === "#overview"
+  );
+
+  await page.goto(
+    "/versions/1.7/cn/docs/introduction/readme/?query=history#overview"
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator("[data-td-shell-drawer-open]").click();
+  const mobile = page.locator(
+    "#td-shell-sidebar a[data-hg-version-id='1.3']"
+  );
+  await mobile.click();
+  await expect(page).toHaveURL((url) =>
+    url.pathname === "/versions/1.3/cn/docs/introduction/readme/" &&
+    url.search === "?query=history" &&
+    url.hash === "#overview"
+  );
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(
+    "/versions/1.3/docs/introduction/readme/?query=history#overview"
+  );
+  option = await versionOption(page, "1.5");
+  expect(new URL(option.url).pathname).toBe(
+    "/versions/1.5/docs/introduction/readme/"
+  );
+  await page.locator("[data-td-shell-search-open]").first().click();
+  const input = page.locator(".td-shell-search__input");
+  await input.fill("Releases");
+  await page
+    .locator('[role="option"]')
+    .filter({ hasText: "Releases" })
+    .first()
+    .click();
+  await page
+    .locator('[role="option"]')
+    .filter({ hasText: /^1\.5$/ })
+    .click();
+  await expect(page).toHaveURL((url) =>
+    url.pathname === "/versions/1.5/docs/introduction/readme/" &&
+    url.search === "?query=history" &&
+    url.hash === "#overview"
+  );
+});
+
 for (const locale of ["en", "cn"]) {
   test(`${locale} missing page falls back to its docs root once`, async ({ page }) => {
     test.skip(!EXPECTED_IDS.includes("1.0"), "latest-only staging artifact");

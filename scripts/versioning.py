@@ -61,20 +61,12 @@ MENU_CONTENT = tuple(
 )
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 REPOSITORY_URL = "https://github.com/apache/hugegraph-doc.git"
-VERSION_REFS = {
-    "latest": "master",
-    "1.7": "release-1.7.0",
-    "1.5": "release-1.5.0",
-    "1.3": "release-1.3.0",
-    "1.0": "release-1.0.0",
-}
-VERSION_ORDER = ("latest", "1.7", "1.5", "1.3", "1.0")
 KNOWN_HISTORICAL_ROUTES = {
     "/docs/quickstart/hugegraph-loader": "/docs/quickstart/toolchain/hugegraph-loader/",
     "/cn/docs/quickstart/hugegraph-loader": "/cn/docs/quickstart/toolchain/hugegraph-loader/",
 }
-KNOWN_HISTORICAL_ROUTES_BY_PUBLISH_PATH = {
-    "versions/1.5": {
+KNOWN_HISTORICAL_ROUTES_BY_VERSION = {
+    "1.5": {
         "/docs/introduction": "/docs/introduction/readme/",
         "/cn/docs/introduction": "/cn/docs/introduction/readme/",
     },
@@ -392,35 +384,61 @@ def load_manifest(path: pathlib.Path) -> dict:
     if not isinstance(versions, list) or not versions:
         fail("versions manifest must contain a non-empty versions array")
     ids: set[str] = set()
+    refs: set[str] = set()
     paths: set[str] = set()
-    for entry in versions:
+    unarchived = []
+    for index, entry in enumerate(versions):
         required = {"id", "name", "ref", "publishPath", "archived", "githubBranch"}
         if not isinstance(entry, dict) or not required.issubset(entry):
             fail(f"invalid version entry: {entry!r}")
         version_id = entry["id"]
-        expected_ref = VERSION_REFS.get(version_id)
-        if entry["ref"] != expected_ref:
-            fail(f"unexpected source ref for {version_id}: {entry['ref']}")
-        if entry["githubBranch"] != expected_ref:
-            fail(f"unexpected GitHub branch for {version_id}: {entry['githubBranch']}")
-        if entry["name"] != version_id:
-            fail(f"unexpected display name for {version_id}: {entry['name']}")
-        if entry["archived"] is not (version_id != "latest"):
-            fail(f"unexpected archive state for {version_id}: {entry['archived']}")
+        values = {
+            "id": version_id,
+            "name": entry["name"],
+            "ref": entry["ref"],
+            "githubBranch": entry["githubBranch"],
+        }
+        if not all(isinstance(value, str) and value for value in values.values()):
+            fail(f"version string fields must be non-empty: {entry!r}")
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", version_id):
+            fail(f"unsafe version id: {version_id!r}")
+        for field in ("ref", "githubBranch"):
+            value = entry[field]
+            if (
+                not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]*", value)
+                or value.endswith("/")
+                or "//" in value
+                or ".." in value
+            ):
+                fail(f"unsafe version {field}: {value!r}")
+        if not isinstance(entry["archived"], bool):
+            fail(f"version archived state must be boolean: {entry!r}")
+        if not isinstance(entry["publishPath"], str):
+            fail(f"version publishPath must be a string: {entry!r}")
         publish_path = entry["publishPath"].strip("/")
-        if version_id in ids or publish_path in paths:
+        if (
+            entry["publishPath"] != publish_path
+            or "\\" in publish_path
+            or "?" in publish_path
+            or "#" in publish_path
+        ):
+            fail(f"unsafe publish path for {version_id}: {entry['publishPath']!r}")
+        if version_id in ids or entry["ref"] in refs or publish_path in paths:
             fail(f"duplicate version id or publish path: {version_id}")
-        if version_id == "latest" and publish_path:
-            fail("latest must publish at the site root")
-        if version_id != "latest" and not publish_path.startswith("versions/"):
-            fail(f"historical version {version_id} must publish below versions/")
+        if not entry["archived"]:
+            unarchived.append(version_id)
+            if index != 0 or publish_path:
+                fail("the first manifest version must be the unarchived site root")
+        elif not publish_path.startswith("versions/"):
+            fail(f"archived version {version_id} must publish below versions/")
         if ".." in pathlib.PurePosixPath(publish_path).parts:
             fail(f"unsafe publish path for {version_id}: {publish_path}")
         entry["publishPath"] = publish_path
         ids.add(version_id)
+        refs.add(entry["ref"])
         paths.add(publish_path)
-    if tuple(entry["id"] for entry in versions) != VERSION_ORDER:
-        fail(f"version order must be {', '.join(VERSION_ORDER)}")
+    if len(unarchived) != 1:
+        fail("versions manifest must contain exactly one unarchived version")
     if data.get("repository") != REPOSITORY_URL:
         fail(f"versions manifest repository must be {REPOSITORY_URL}")
     return data
@@ -431,6 +449,8 @@ def load_resolved_manifest(path: pathlib.Path) -> dict:
     expected = load_manifest(ROOT / "versions.json")
     if resolved.get("repository") != expected.get("repository"):
         fail("resolved manifest repository does not match versions.json")
+    if manifest_version_ids(resolved) != manifest_version_ids(expected):
+        fail("resolved manifest version order does not match versions.json")
     fields = ("id", "name", "ref", "publishPath", "archived", "githubBranch")
     for expected_entry, resolved_entry in zip(
         expected["versions"], resolved["versions"]
@@ -469,25 +489,30 @@ def resolve_remote(repository: str, ref: str) -> str:
     return rows[0][0]
 
 
-def selected_version_ids(raw: str | None) -> tuple[str, ...]:
+def manifest_version_ids(manifest: dict) -> tuple[str, ...]:
+    return tuple(entry["id"] for entry in manifest["versions"])
+
+
+def selected_version_ids(raw: str | None, manifest: dict) -> tuple[str, ...]:
+    version_ids = manifest_version_ids(manifest)
     if raw is None:
-        return VERSION_ORDER
+        return version_ids
     selected = tuple(part.strip() for part in raw.split(",") if part.strip())
     if not selected or len(set(selected)) != len(selected):
         fail("selected versions must be a non-empty unique comma-separated list")
-    unknown = set(selected) - set(VERSION_ORDER)
+    unknown = set(selected) - set(version_ids)
     if unknown:
         fail(f"unknown selected versions: {', '.join(sorted(unknown))}")
-    return tuple(version for version in VERSION_ORDER if version in selected)
+    return tuple(version for version in version_ids if version in selected)
 
 
 def prepare(args: argparse.Namespace) -> None:
     manifest = load_manifest(args.manifest)
-    selected = selected_version_ids(args.select)
+    selected = selected_version_ids(args.select, manifest)
     resolved = []
     for entry in manifest["versions"]:
         item = dict(entry)
-        if entry["id"] == "latest":
+        if not entry["archived"]:
             sha = run(["git", "rev-parse", f"{args.latest_sha}^{{commit}}"])
         elif args.local:
             sha = run(
@@ -1445,8 +1470,7 @@ def version_urls(
     for entry in manifest["versions"]:
         entry_origin = (
             historical_origin
-            if entry.get("archived", entry["id"] != "latest")
-            and historical_origin is not None
+            if entry["archived"] and historical_origin is not None
             else origin
         )
         path = (
@@ -1607,6 +1631,7 @@ def rewrite_internal_url(
     origin: str,
     publish_path: str,
     allowed_paths: set[str],
+    version_id: str | None = None,
 ) -> str:
     """Scope a same-site absolute/root URL to one historical artifact."""
     if not value or value.startswith(("#", "?")):
@@ -1657,8 +1682,8 @@ def rewrite_internal_url(
         else path
     )
     normalized_internal = internal_path.rstrip("/") or "/"
-    mapped_path = KNOWN_HISTORICAL_ROUTES_BY_PUBLISH_PATH.get(
-        publish_path.strip("/"), {}
+    mapped_path = KNOWN_HISTORICAL_ROUTES_BY_VERSION.get(
+        version_id or "", {}
     ).get(normalized_internal)
     if mapped_path is None:
         mapped_path = KNOWN_HISTORICAL_ROUTES.get(normalized_internal)
@@ -1930,14 +1955,12 @@ def rewrite_text_urls(text: str, rewrite, *, markdown: bool) -> tuple[str, int]:
     return text, count
 
 
-def normalize_logical_docs_route(version: str, relative: str) -> str:
+def normalize_logical_docs_route(_version: str, relative: str) -> str:
     """Normalize reviewed route moves without treating aliases as pages."""
     normalized = relative.strip("/")
     normalized = normalized.replace(
         "performance/api-preformance", "performance/api-performance"
     )
-    if version == "1.5" and normalized == "introduction/readme":
-        return "introduction"
     return normalized
 
 
@@ -1987,44 +2010,48 @@ def canonical_docs_pages(root: pathlib.Path, version: str) -> dict[str, str]:
     return pages
 
 
-def generate_version_routes(artifact_roots: dict[str, pathlib.Path]) -> dict:
+def generate_version_routes(
+    artifact_roots: dict[str, pathlib.Path], manifest: dict
+) -> dict:
     """Generate the reviewed cross-version logical page map deterministically."""
-    if set(artifact_roots) != set(VERSION_ORDER):
+    version_ids = manifest_version_ids(manifest)
+    if set(artifact_roots) != set(version_ids):
         fail(
             "route-map artifacts must contain exactly: "
-            + ", ".join(VERSION_ORDER)
+            + ", ".join(version_ids)
         )
     inventories = {
         version: canonical_docs_pages(artifact_roots[version], version)
-        for version in VERSION_ORDER
+        for version in version_ids
     }
     logical_ids = sorted(
         {logical_id for pages in inventories.values() for logical_id in pages}
     )
     result = {
         "schemaVersion": 1,
-        "versions": list(VERSION_ORDER),
+        "versions": list(version_ids),
         "pages": {
             logical_id: {
                 version: inventories[version].get(logical_id)
-                for version in VERSION_ORDER
+                for version in version_ids
             }
             for logical_id in logical_ids
         },
     }
-    validate_version_routes(result)
+    validate_version_routes(result, manifest)
     return result
 
 
-def validate_version_routes(data: dict) -> dict:
+def validate_version_routes(data: dict, manifest: dict) -> dict:
     """Fail closed on route-map shape, ordering, locale, and target syntax."""
+    version_ids = manifest_version_ids(manifest)
     if not isinstance(data, dict) or set(data) != {
         "schemaVersion",
         "versions",
         "pages",
     }:
         fail("invalid version route-map top-level fields")
-    if data["schemaVersion"] != 1 or data["versions"] != list(VERSION_ORDER):
+    if data["schemaVersion"] != 1 or data["versions"] != list(version_ids):
         fail("invalid version route-map schema or version order")
     pages = data["pages"]
     if not isinstance(pages, dict) or not pages:
@@ -2043,7 +2070,7 @@ def validate_version_routes(data: dict) -> dict:
             or ".." in pathlib.PurePosixPath(relative).parts
         ):
             fail(f"invalid version route-map logical path: {logical_id}")
-        if not isinstance(targets, dict) or list(targets) != list(VERSION_ORDER):
+        if not isinstance(targets, dict) or list(targets) != list(version_ids):
             fail(f"invalid version route-map target order: {logical_id}")
         for version, target in targets.items():
             if target is None:
@@ -2075,14 +2102,17 @@ def validate_version_routes(data: dict) -> dict:
     return data
 
 
-def load_version_routes(path: pathlib.Path = VERSION_ROUTES) -> dict:
+def load_version_routes(
+    path: pathlib.Path = VERSION_ROUTES, manifest: dict | None = None
+) -> dict:
+    manifest = manifest or load_manifest(ROOT / "versions.json")
     if not path.is_file():
         fail(f"version route-map is missing: {path}")
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         fail(f"cannot load version route-map {path}: {error}")
-    return validate_version_routes(data)
+    return validate_version_routes(data, manifest)
 
 
 def canonical_docs_target(text: str, entry: dict) -> str | None:
@@ -2127,7 +2157,7 @@ def version_switch_options(
     language: str | None = None,
 ) -> list[dict]:
     """Return page-aware version choices with explicit missing-page fallbacks."""
-    validate_version_routes(route_map)
+    validate_version_routes(route_map, manifest)
     logical_id = None
     if current_target is not None:
         target_language, _ = docs_target_parts(current_target)
@@ -2144,8 +2174,7 @@ def version_switch_options(
     for entry in manifest["versions"]:
         entry_origin = (
             historical_origin
-            if entry.get("archived", entry["id"] != "latest")
-            and historical_origin is not None
+            if entry["archived"] and historical_origin is not None
             else origin
         )
         equivalent = False
@@ -2201,7 +2230,7 @@ def reviewed_version_route_urls(
     historical_origin: str | None,
 ) -> set[str]:
     """Return only cross-version destinations authorized by the route-map."""
-    validate_version_routes(route_map)
+    validate_version_routes(route_map, manifest)
     urls: set[str] = set()
     for logical_id, targets in route_map["pages"].items():
         language = logical_id.split(":", 1)[0]
@@ -2210,8 +2239,7 @@ def reviewed_version_route_urls(
         for entry in manifest["versions"]:
             entry_origin = (
                 historical_origin
-                if entry.get("archived", entry["id"] != "latest")
-                and historical_origin is not None
+                if entry["archived"] and historical_origin is not None
                 else origin
             )
             target = targets[entry["id"]]
@@ -2239,7 +2267,7 @@ def scope_version_artifact(
     historical_origin: str | None = None,
 ) -> dict:
     """Repair URL fields Hugo cannot canonify, then return auditable counts."""
-    route_map = load_version_routes()
+    route_map = load_version_routes(manifest=manifest)
     allowed_paths = allowed_version_paths(manifest)
     artifact_base = base_url(origin, entry["publishPath"])
     reviewed_selector_urls = reviewed_version_route_urls(
@@ -2247,11 +2275,14 @@ def scope_version_artifact(
     )
     historical_selector_urls: set[str] = set()
     if historical_origin is not None:
+        archived_ids = {
+            item["id"] for item in manifest["versions"] if item["archived"]
+        }
         for language in ("en", "cn"):
             for item in version_urls(
                 manifest, origin, language, historical_origin
             ):
-                if item["version"] != "latest":
+                if item["version"] in archived_ids:
                     historical_selector_urls.update(
                         (item["url"], item["url"].rstrip("/"))
                     )
@@ -2264,6 +2295,7 @@ def scope_version_artifact(
             origin=origin,
             publish_path=entry["publishPath"],
             allowed_paths=allowed_paths,
+            version_id=entry["id"],
         )
         if entry.get("archived", bool(entry.get("publishPath"))):
             original = urllib.parse.urlsplit(value)
@@ -2673,7 +2705,7 @@ def require_docs_navigation_json(data: dict, source: str, language: str) -> None
 
 def validate_artifact(args: argparse.Namespace) -> None:
     manifest = load_manifest(args.manifest)
-    route_map = load_version_routes()
+    route_map = load_version_routes(manifest=manifest)
     entry = next(
         (item for item in manifest["versions"] if item["id"] == args.version), None
     )
@@ -2787,7 +2819,16 @@ def validate_artifact(args: argparse.Namespace) -> None:
         ):
             fail(f"unsafe same-site URL authority in {source_name}: {value}")
         if parsed_host == canonical_host and parsed_host != origin_host:
-            if re.match(r"^/versions/(?:1\.7|1\.5|1\.3|1\.0)/(?:cn/)?docs(?:/|$)", parsed.path):
+            historical_docs_prefixes = tuple(
+                "/" + item["publishPath"] + suffix
+                for item in manifest["versions"]
+                if item["archived"]
+                for suffix in ("/docs", "/cn/docs")
+            )
+            if any(
+                parsed.path == prefix or parsed.path.startswith(prefix + "/")
+                for prefix in historical_docs_prefixes
+            ):
                 checked_urls += 1
                 return
             fail(f"production-origin URL leaked into staging {source_name}: {value}")
@@ -3221,11 +3262,12 @@ def derived_version_config(
 def render_config(args: argparse.Namespace) -> None:
     """Write the manifest-derived override used by direct Hugo commands."""
     manifest = load_manifest(args.manifest)
+    version_id = args.version or manifest["versions"][0]["id"]
     entry = next(
-        (item for item in manifest["versions"] if item["id"] == args.version), None
+        (item for item in manifest["versions"] if item["id"] == version_id), None
     )
     if entry is None:
-        fail(f"unknown version {args.version}")
+        fail(f"unknown version {version_id}")
     override = derived_version_config(
         manifest, entry, args.site_origin, args.historical_origin
     )
@@ -3534,15 +3576,19 @@ def validate_aggregate_version_routes(
     output: pathlib.Path,
     route_map: dict,
     selected: set[str],
-    publish_paths: dict[str, str],
+    manifest: dict,
 ) -> None:
     """Prove every selected route target exists and every selected null is real."""
-    validate_version_routes(route_map)
+    validate_version_routes(route_map, manifest)
+    version_ids = manifest_version_ids(manifest)
+    publish_paths = {
+        entry["id"]: entry["publishPath"] for entry in manifest["versions"]
+    }
     selected = set(selected)
-    unknown = selected.difference(VERSION_ORDER)
+    unknown = selected.difference(version_ids)
     if unknown:
         fail(f"cannot validate unknown route-map versions: {sorted(unknown)!r}")
-    for version in VERSION_ORDER:
+    for version in version_ids:
         if version not in selected:
             continue
         if version not in publish_paths:
@@ -3579,7 +3625,7 @@ def validate_aggregate_version_routes(
 
 def aggregate(args: argparse.Namespace) -> None:
     manifest = load_resolved_manifest(args.resolved_manifest)
-    selected = selected_version_ids(getattr(args, "select", None))
+    selected = selected_version_ids(getattr(args, "select", None), manifest)
     output = prepare_output_directory(args.output, "aggregate output")
     output.mkdir(parents=True)
     seen: set[str] = set()
@@ -3644,7 +3690,7 @@ def aggregate(args: argparse.Namespace) -> None:
         + "\n",
         encoding="utf-8",
     )
-    route_map = load_version_routes()
+    route_map = load_version_routes(manifest=manifest)
     (metadata_dir / "version-routes.json").write_text(
         json.dumps(route_map, ensure_ascii=False, sort_keys=False, indent=2) + "\n",
         encoding="utf-8",
@@ -3653,7 +3699,7 @@ def aggregate(args: argparse.Namespace) -> None:
         output,
         route_map,
         selected,
-        {entry["id"]: entry["publishPath"] for entry in manifest["versions"]},
+        manifest,
     )
     validate_output_security(output, args.site_origin)
     print(
@@ -3663,12 +3709,14 @@ def aggregate(args: argparse.Namespace) -> None:
 
 
 def generate_routes(args: argparse.Namespace) -> None:
+    manifest = load_manifest(args.manifest)
+    version_ids = manifest_version_ids(manifest)
     roots = {
         version: args.artifacts
         / f"{args.artifact_prefix}{version}{args.artifact_suffix}"
-        for version in VERSION_ORDER
+        for version in version_ids
     }
-    data = generate_version_routes(roots)
+    data = generate_version_routes(roots, manifest)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(data, ensure_ascii=False, sort_keys=False, indent=2) + "\n",
@@ -3690,7 +3738,7 @@ def parser() -> argparse.ArgumentParser:
     prepare_parser.set_defaults(func=prepare)
 
     config_parser = commands.add_parser("config")
-    config_parser.add_argument("--version", default="latest")
+    config_parser.add_argument("--version")
     config_parser.add_argument("--site-origin", default=CANONICAL_ORIGIN)
     config_parser.add_argument("--historical-origin")
     config_parser.add_argument("--output", type=pathlib.Path, required=True)

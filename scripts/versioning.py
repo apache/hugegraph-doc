@@ -2313,10 +2313,11 @@ def scope_version_artifact(
                 original_path in LATEST_SHARED_DOC_ROUTES
                 and not target_exists(output, scoped_relative)
             ):
+                shared_origin = urllib.parse.urlsplit(origin.rstrip("/") + "/")
                 return urllib.parse.urlunsplit(
                     (
-                        urllib.parse.urlsplit(CANONICAL_ORIGIN).scheme,
-                        urllib.parse.urlsplit(CANONICAL_ORIGIN).netloc,
+                        shared_origin.scheme,
+                        shared_origin.netloc,
                         original_path,
                         original.query,
                         original.fragment,

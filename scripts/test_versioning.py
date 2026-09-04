@@ -955,6 +955,36 @@ class VersionUrlTest(unittest.TestCase):
             self.assertIn(f"]({STAGING_ORIGIN}docs/)", rendered_llms)
             self.assertIn(f"]({history_url})", rendered_llms)
 
+    def test_full_staging_missing_latest_shared_route_uses_staging_origin(
+        self,
+    ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        oldest = next(entry for entry in manifest["versions"] if entry["id"] == "1.0")
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            page = output / "docs/index.html"
+            page.parent.mkdir(parents=True)
+            page.write_text(
+                '<a href="/docs/guides/security/?from=archive#report">Security</a>',
+                encoding="utf-8",
+            )
+
+            versioning.scope_version_artifact(
+                output,
+                manifest,
+                oldest,
+                STAGING_ORIGIN,
+                historical_origin=STAGING_ORIGIN,
+            )
+
+            self.assertIn(
+                (
+                    f'href="{STAGING_ORIGIN}'
+                    'docs/guides/security/?from=archive#report"'
+                ),
+                page.read_text(encoding="utf-8"),
+            )
+
     def test_rejects_non_selector_cross_version_url(self) -> None:
         with self.assertRaises(SystemExit):
             rewrite("/versions/1.5/docs/config/")

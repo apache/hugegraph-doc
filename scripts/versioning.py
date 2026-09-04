@@ -3064,6 +3064,8 @@ def validate_social_image_metadata(
     relative: str,
     root: pathlib.Path,
     expected_base: str,
+    *,
+    allow_missing: bool = False,
 ) -> None:
     """Require matching same-artifact Open Graph and Twitter image targets."""
     values: dict[str, list[str]] = {"og:image": [], "twitter:image": []}
@@ -3072,6 +3074,8 @@ def validate_social_image_metadata(
             values["og:image"].append(item.get("content", ""))
         if item.get("name", "").lower() == "twitter:image":
             values["twitter:image"].append(item.get("content", ""))
+    if allow_missing and not values["og:image"] and not values["twitter:image"]:
+        return
     if any(len(items) != 1 or not items[0] for items in values.values()):
         fail(f"social image metadata is missing or duplicated in {relative}")
     og_image = values["og:image"][0]
@@ -3400,9 +3404,15 @@ def validate_artifact(args: argparse.Namespace) -> None:
             fail(f"404 page does not use the interactive OINK shell: {relative}")
         document = DocumentParser()
         document.feed(text)
-        validate_social_image_metadata(document, relative, root, expected_base)
-        require_toc_accessible_name(document, relative)
         alias_target = refresh_target(document)
+        validate_social_image_metadata(
+            document,
+            relative,
+            root,
+            expected_base,
+            allow_missing=alias_target is not None,
+        )
+        require_toc_accessible_name(document, relative)
         if entry["archived"] and relative not in {"404.html", "cn/404.html"}:
             robots = [
                 re.sub(r"\s+", "", item.get("content", "").lower())

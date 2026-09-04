@@ -489,6 +489,48 @@ class VersionUrlTest(unittest.TestCase):
                         ORIGIN,
                     )
 
+    def test_social_image_metadata_allows_only_redirects_to_omit_both_tags(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            empty = versioning.DocumentParser()
+            empty.feed('<meta http-equiv="refresh" content="0; url=/docs/">')
+
+            versioning.validate_social_image_metadata(
+                empty,
+                "docs/alias/index.html",
+                root,
+                ORIGIN,
+                allow_missing=True,
+            )
+
+            with self.assertRaisesRegex(
+                SystemExit, "social image metadata is missing or duplicated"
+            ):
+                versioning.validate_social_image_metadata(
+                    empty,
+                    "docs/index.html",
+                    root,
+                    ORIGIN,
+                )
+
+            partial = versioning.DocumentParser()
+            partial.feed(
+                '<meta http-equiv="refresh" content="0; url=/docs/">'
+                '<meta property="og:image" content="/img/social/fallback.png">'
+            )
+            with self.assertRaisesRegex(
+                SystemExit, "social image metadata is missing or duplicated"
+            ):
+                versioning.validate_social_image_metadata(
+                    partial,
+                    "docs/alias/index.html",
+                    root,
+                    ORIGIN,
+                    allow_missing=True,
+                )
+
     def test_temporary_manifest_drives_prepare_config_and_route_order(self) -> None:
         manifest_data = {
             "schemaVersion": 1,

@@ -7,8 +7,8 @@ weight: 6
 - 如何选择后端存储? 选 RocksDB 还是分布式存储?
 
   HugeGraph 支持多种部署模式，根据数据规模和场景选择：
-  - **单机模式**：Server + RocksDB，适合开发测试和小于 1 TB 的数据
-  - **分布式模式**：HugeGraph-PD + HugeGraph-Store（HStore），用于需要水平扩展和多副本的部署
+  - **单机模式**：Server + RocksDB，适合开发测试和小于 2 TB 的中小规模数据
+  - **分布式模式**：HugeGraph-PD + HugeGraph-Store（HStore），用于需要水平扩展和多副本的部署，支持 1 PB 以内的数据规模
 
   1.7.0 支持 RocksDB、HStore、HBase 和 Memory。Cassandra、ScyllaDB、MySQL、PostgreSQL 等旧后端需使用 1.5.x 或更早版本。
 

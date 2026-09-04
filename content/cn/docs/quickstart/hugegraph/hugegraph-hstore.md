@@ -11,7 +11,7 @@ search_boost: 1.5
 
 ### 1 HugeGraph-Store 概述
 
-HugeGraph-Store 是分布式存储节点，负责保存图数据，并通过 HugeGraph-PD 获取分区和集群元数据。
+HugeGraph-Store 是 HugeGraph 分布式版本的存储节点组件，负责实际存储和管理图数据。它与 HugeGraph-PD 协同工作，共同构成 HugeGraph 的分布式存储引擎，提供高可用性和水平扩展能力。
 
 ### 2 依赖
 

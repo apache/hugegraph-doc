@@ -4,71 +4,206 @@ linkTitle: "验证 Apache 发版"
 weight: 3
 ---
 
-Apache HugeGraph 已毕业为顶级项目。候选版本在 `dev@hugegraph.apache.org` 投票，不再提交 Incubator `general@incubator.apache.org` 审批。当前发布包名称必须以 `apache-hugegraph` 开头，不能包含 `incubating`；旧版本归档中的名称不受此规则影响。
+> Note: 这篇文档会持续更新。
+> 你需要使用 Java11 验证测试 (如果希望测试功能/运行时)，从 1.5.0 版本开始 (除 client 外) 不再支持 Java8
+>
+> 毕业说明：Apache HugeGraph 已于 2026 年 1 月毕业。正式发版投票现由 HugeGraph 社区内部完成（`dev@hugegraph.apache.org` 上的 PMC binding 投票），不再需要 Incubator `general@incubator.apache.org` 审批。
 
-## 准备环境
+## 验证阶段
 
-验证脚本需要 Bash、Subversion、GnuPG、Java 和 Maven。运行功能测试时使用 Java 11；不同组件的额外依赖以候选版本说明为准。
+当内部的临时发布和打包工作完成后，其他的社区开发者 (尤其是 PMC)
+需要按 ASF 发版规范参与验证，可参考：
+- [ASF 发布策略](https://www.apache.org/legal/release-policy.html)
+- [Incubator 检查清单（历史参考）](https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist)
+确保某个人发布版本的"正确性 + 完整性", 这里需要**每个人**都尽量参与，然后后序**邮件回复**的时候说明自己
+**已检查**了哪些项。(下面是核心项)
 
-先从投票邮件确认版本号和发布经理的 Apache ID，然后在 `hugegraph-doc` 根目录运行：
+#### 1. 准备工作
+
+如果本地没有 svn 或 gpg 或 wget 环境，建议先安装一下 (windows 推荐使用 WSL2 环境，
+或者至少是 `git-bash`), 同时确保安装 Java(推荐 11) 和 maven 软件。
 
 ```bash
-# 从 ASF development distribution 下载并验证
-./dist/validate-release.sh <version> <apache-id>
+# 1. 安装svn
+# ubuntu/debian
+sudo apt install subversion -y
+# MacOS
+brew install subversion
+# 验证安装是否成功, 执行以下命令:
+svn --version
 
-# 验证已经下载到本地的候选包
-./dist/validate-release.sh <version> <apache-id> /path/to/release-files 11
+# 2. 安装gpg
+# ubuntu/debian
+sudo apt-get install gnupg -y
+# MacOS
+brew install gnupg
+# 验证安装是否成功, 执行以下命令:
+gpg --version
+
+# 3. 安装wget
+# ubuntu/debian
+sudo apt-get install wget -y
+# MacOS
+brew install wget
+
+# 4. 下载 hugegraph-svn 目录 (版本号注意填写此次验证版本)
+svn co https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/
+# (注) 如果出现 svn 下载某个文件速度很慢的情况, 可以考虑 wget 单个文件下载, 如下 (或考虑使用 VPN / 代理)
+wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
 ```
 
-脚本会检查 SHA-512、GPG 签名、包名、LICENSE、NOTICE、许可证类别、空文件、未声明的二进制文件，并尝试编译源码包和启动主要服务。完整参数见：
+#### 2. 检查 hash 值
+
+首先需要检查 `source + binary` 包的文件完整性，通过 `shasum` 进行校验，确保和发布到 apache/github 上的
+hash 值一致 (一般是 sha512)
 
 ```bash
-./dist/validate-release.sh --help
+执行命令:
+for i in *.tar.gz; do echo $i; shasum -a 512 --check  $i.sha512; done
 ```
 
-GitHub Actions 中的 `Validate Apache Release` workflow 使用同一发布目录，并在 Ubuntu 和 macOS 上执行对应检查。自动化结果不能替代人工检查。
+#### 3. 检查 gpg 签名
 
-## 人工检查
+这个就是为了确保发布的包是由**可信赖**的人上传的，假设 tom 签名后上传，其他人应该下载 A 的**公钥**
+然后进行**签名确认**, 相关命令：
 
-### 发布来源
+```bash
+# 1. 下载项目可信赖公钥到本地 (首次需要) & 导入
+curl  https://downloads.apache.org/hugegraph/KEYS > KEYS
+gpg --import KEYS
 
-- 候选包来自 `https://dist.apache.org/repos/dist/dev/hugegraph/<version>/`。
-- KEYS 文件来自 `https://downloads.apache.org/hugegraph/KEYS`。
-- 投票邮件中的 Git tag、commit 和下载目录相互对应。
+# 导入后可以看到如下输出, 这代表导入了 x 个用户公钥
+gpg: /home/ubuntu/.gnupg/trustdb.gpg: trustdb created
+gpg: key BA7E78F8A81A885E: public key "imbajin (apache mail) <jin@apache.org>" imported
+gpg: key 818108E7924549CC: public key "vaughn <vaughn@apache.org>" imported
+gpg: key 28DCAED849C4180E: public key "coderzc (CODE SIGNING KEY) <zhaocong@apache.org>" imported
+....
+gpg: Total number processed: x
+gpg:               imported: x
 
-### 源码包
+# 2. 信任发版用户 (你需要信任 n 个邮件里提到的 gpg 用户名, ＞1则依次执行相同操作)
+gpg --edit-key $USER # 这里填写具体用户名或者公钥串, 回车进入交互模式
+gpg> trust
+...输出选项..
+Your decision? 5 # 选择5
+Do you really want to set this key to ultimate trust? (y/N) y # 选择y, 然后 q 退出信任下一个用户
 
-- 根目录包含 LICENSE 和 NOTICE，内容与打包依赖一致。
-- 源文件带有适用的 ASF License 头；没有未声明的二进制文件。
-- Maven、Python、Go 等模块版本与候选版本一致。
-- 按各仓库 README 和 CI 配置编译源码，并记录操作系统、Java/Python/Go 版本和执行命令。
+# (可选) 你也可以直接使用非交互模式的如下命令:
+echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key $USER trust
+# 或者是信任所有当前导入过的 gpg 公钥 (请小心检查)
+for key in $(gpg --no-tty --list-keys --with-colons | awk -F: '/^pub/ {print $5}'); do
+  echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key "$key" trust
+done
 
-### 二进制包
+# 3. 检查签名(确保没有 Warning 输出, 每一个 source/binary 文件都提示 Good Signature)
+#单个文件验证
+gpg --verify xx.asc xxx-src.tar.gz
+gpg --verify xx.asc xxx.tar.gz # 注：目前没有  bin/binary  后缀
 
-- 解压后的目录名和文件版本正确。
-- Server、Loader、Hubble 等实际包含在候选版本中的程序可以启动或执行基本命令。
-- LICENSE 和 NOTICE 覆盖随包分发的第三方文件。
+# 一行脚本快速验证所有包 (推荐使用，请确保所有 gpg 公钥已经信任)
+for i in *.tar.gz; do echo $i; gpg --verify $i.asc $i ; done
+```
 
-历史 incubating 制品还需要检查 DISCLAIMER；毕业后的新制品不应包含 `incubating` 名称，也不把 DISCLAIMER 当作必需文件。
+先确认了整体的"完整性 + 一致性", 然后接下来确认具体的内容 (**关键**)
 
-## 回复投票
+#### 4. 检查压缩包内容
 
-回复必须列出实际完成的检查，不要只写结论。普通开发者使用 `non-binding`，PMC 成员使用 `binding`：
+这里检查准备工作下载的压缩包内容。分源码包 + 二进制包两个方面，源码包更为严格，挑核心的部分说 
+(完整的列表可参考官方 [Wiki](https://cwiki.apache.org/confluence/display/INCUBATOR/Incubator+Release+Checklist), 比较长)
 
-```text
-+1 (binding 或 non-binding)
+##### A. 源码包
 
+解压 `*hugegraph*src.tar.gz`后，进行如下检查：
+
+1. 包名/目录名应符合当前发版命名（历史版本可能仍包含 `incubating`），且不存在**空的**文件/文件夹
+2. 存在 `LICENSE` + `NOTICE` 且内容正常；历史 incubating 制品需检查 `DISCLAIMER`
+3. **不存在** 缺乏 License 的二进制文件
+4. 源码文件都包含标准 `ASF License` 头 (这个用插件跑一下为主)
+5. 检查每个父 / 子模块的 `pom.xml` 版本号是否一致 (且符合期望)
+6. 最后，确保源码可以正常 / 正确编译 (然后看看测试和规范)
+
+PMC 同学请特别注意认真检查 `LICENSE` + `NOTICE` 文件，确保文件严格遵循了 ASF 的发版要求， 
+大部分的发版问题都与之相关
+
+```bash
+# 请优先使用/切换到 `java 11` 版本进行后序的编译和运行操作 (注:`Computer` 仅支持 `java >= 11`) 
+# java --version
+
+# 尝试在 Unix 环境下编译测试是否正常
+mvn clean package -DskipTests -Dcheckstyle.skip=true -P stage
+```
+
+##### B. 二进制包
+
+解压 `xxx-hugegraph.tar.gz`后，进行如下检查：
+
+1. 包名/目录名应符合当前发版命名（历史版本可能仍包含 `incubating`）
+2. 存在 `LICENSE` + `NOTICE` 且内容正常（历史 incubating 制品需检查 `DISCLAIMER`）
+3. 服务启动
+
+```bash
+# hugegraph-server
+bin/start-hugegraph.sh
+
+# hugegraph-loader
+bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy
+
+# hugegraph-hubble
+bin/start-hubble.sh
+
+更多参考官网: https://hugegraph.apache.org/cn/docs/quickstart
+```
+
+**注:** 如果二进制包里面引入了第三方依赖, 则需要更新 LICENSE, 加入第三方依赖的 LICENSE; 若第三方依赖
+LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更新我们的 NOTICE 文件
+
+#### 5. 检查官网以及 github 等页面
+
+1. 确保官网至少满足 [apache website check](https://whimsy.apache.org/pods/project/hugegraph),
+   以及没有死链等
+2. 更新**下载链接**存在，以及版本更新说明页面更新
+3. ...
+
+## 邮件模板
+
+检查完成后，你应该按不同角色回复邮件：(普通开发者 & PMC 成员)
+
+```markdown
+[] +1 approve
+
+[] +0 no opinion
+
+[] -1 disapprove with the reason
+```
+
+```markdown
++1 (non-binding)
 I checked:
-- Download URL, tag and commit match
-- SHA-512 checksums and GPG signatures pass
-- LICENSE and NOTICE are present and consistent with package contents
-- Source package builds on <OS> with <runtime versions>
-- <services or commands actually tested>
+1. Download link/tag in mail are valid
+2. Checksum and GPG signatures are OK
+3. LICENSE & NOTICE & DISCLAIMER are exist
+4. Build successfully on XX OS version XXX
+5. No unexpected binary files
+6. Date is right in the NOTICE file
+7. Compile from source is fine under JavaX
+8. No empty file & directory found
+9. Test running xxx service OK
+10. ....
 ```
 
-如果投反对票，应附上可以复现的问题和对应文件。发现发布阻断问题后，停止当前候选版本并重新生成制品，不要在已投票的压缩包上直接替换文件。
+特别注意 PMC 成员必须使用 `binding` 标记回复邮件，这对于统计有效投票很重要;
 
-参考资料：
-
-- [ASF Release Policy](https://www.apache.org/legal/release-policy.html)
-- [HugeGraph KEYS](https://downloads.apache.org/hugegraph/KEYS)
+```markdown
++1 (binding)
+I checked:
+1. Download link/tag in mail are valid
+2. Checksum and GPG signatures are OK
+3. LICENSE & NOTICE & DISCLAIMER are exist
+4. Build successfully on XX OS Version XX
+5. No unexpected binary files
+6. Date is right in the NOTICE file
+7. Compile from source is fine under JavaXX
+8. No empty file & directory found
+9. Test running XXX service OK
+10. ....
+```

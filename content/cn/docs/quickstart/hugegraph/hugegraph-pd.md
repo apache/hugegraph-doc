@@ -6,7 +6,7 @@ weight: 2
 
 ### 1 HugeGraph-PD 概述
 
-HugeGraph-PD（Placement Driver）管理分布式集群的元数据、分区和 Store 节点调度。
+HugeGraph-PD（Placement Driver）是 HugeGraph 分布式版本的元数据管理组件，负责管理图数据的分布和存储节点的协调。它在分布式 HugeGraph 中扮演着核心角色，维护集群状态并协调 HugeGraph-Store 存储节点。
 
 ### 2 依赖
 

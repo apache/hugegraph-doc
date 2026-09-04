@@ -4,7 +4,7 @@ linkTitle: "RESTful API"
 weight: 1
 ---
 
-> **版本兼容性说明**
+> ⚠️ **版本兼容性说明**
 >
 > - 当前 API 的图资源路径以 `/graphspaces/{graphspace}/graphs/{graph}` 开头。
 > - HugeGraph 1.5.x 及更早版本使用 `/graphs/{graph}`。创建、克隆图等接口的请求格式也与当前版本不同。

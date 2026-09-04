@@ -27,7 +27,7 @@ HugeGraph 目前默认**未启用**用户认证功能，需通过修改配置文
 
 > ⚠️ **SEC 提醒：图查询语言 (Gremlin/Cypher) 的安全性**
 >
-> 不要把 Gremlin、Cypher 等查询接口直接暴露到公网。生产环境应同时启用[鉴权](/cn/docs/config/config-authentication/)、IP 白名单和审计日志，并通过 [Docker 或 Kubernetes](/cn/docs/quickstart/hugegraph/hugegraph-server/#31-使用-docker-容器-便于测试) 隔离 Server 进程。
+> 鉴于图查询语言的灵活性可能带来的潜在系统安全隐患，不要把 Gremlin、Cypher 等查询接口直接暴露到公网。生产环境应同时启用[鉴权](/cn/docs/config/config-authentication/)、IP 白名单和审计日志，并通过 [Docker 或 Kubernetes](/cn/docs/quickstart/hugegraph/hugegraph-server/#31-使用-docker-容器-便于测试) 隔离 Server 进程。
 
 `StandardAuthenticator` 支持多用户认证和细粒度权限控制。也可以实现 `HugeAuthenticator` 接口来接入已有的用户系统。
 

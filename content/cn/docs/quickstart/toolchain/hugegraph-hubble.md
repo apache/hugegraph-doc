@@ -6,7 +6,7 @@ weight: 1
 
 ### 1 HugeGraph-Hubble 概述
 
-Hubble 已提供登录页面和会话校验。部署时仍应限制网络访问，并为 HugeGraph Server 配置认证；不要把未加固的实例直接暴露在公网。
+> ⚠️ **安全提醒**：截至 1.7.0 发布版，Hubble 尚未提供 Auth/Login 登录保护；相关功能计划随 1.8.0 发布。请勿将 Hubble 暴露在公网或不受信任的网络中，并使用 IP/端口白名单和 HTTPS 限制访问。
 >
 > **测试指南**：如需在本地运行 Hubble 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
 

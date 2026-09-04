@@ -35,6 +35,7 @@ sections:
             - [贡献指南](/cn/docs/contribution-guidelines/) — 了解如何贡献代码和文档。
 
   - type: community-members
+    partial: landing/sections/community-members.html
     data:
       id: project-members
 

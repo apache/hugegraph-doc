@@ -217,10 +217,10 @@ class CommunityContentContractTests(unittest.TestCase):
                 self.assertIn("search_keywords:", text, f"{language}/{relative}")
                 self.assertIn("search_boost:", text, f"{language}/{relative}")
 
-    def test_docs_roots_enable_llmsfull_only_in_front_matter(self):
+    def test_docs_roots_leave_llmsfull_to_core_platform_lane(self):
         for language in ("en", "cn"):
             text = (ROOT / "content" / language / "docs/_index.md").read_text(encoding="utf-8")
-            self.assertIn("LLMSFULL", text.split("---", 2)[1])
+            self.assertNotIn("LLMSFULL", text.split("---", 2)[1])
 
     def test_component_pilots_are_bilingual_and_scoped(self):
         for language in ("en", "cn"):
@@ -255,6 +255,41 @@ class CommunityContentContractTests(unittest.TestCase):
             self.assertIn('id="vertex-id-strategy"', rendered["vertex_print"])
             self.assertIn("{#vertex-id-strategy .full-width", rendered["vertex_md"])
 
+    def test_community_markdown_follows_section_order_and_about_is_unchanged(self):
+        expected = {
+            "community/index.md": (
+                "## Join the Apache HugeGraph community",
+                "## Get involved",
+                "## Project members",
+                "## Learn how the project works",
+            ),
+            "cn/community/index.md": (
+                "## 加入 Apache HugeGraph 社区",
+                "## 参与社区",
+                "## 项目成员",
+                "## 了解项目运作方式",
+            ),
+        }
+        for relative, markers in expected.items():
+            rendered = (self.site / relative).read_text(encoding="utf-8")
+            positions = [rendered.index(marker) for marker in markers]
+            self.assertEqual(positions, sorted(positions))
+        about = {
+            "about/index.md": (
+                "## One ecosystem for graph data and graph intelligence",
+                "HugeGraph is an Apache top-level project",
+            ),
+            "cn/about/index.md": (
+                "## 连接图数据与图智能的一体化生态",
+                "HugeGraph 是 Apache 顶级项目",
+            ),
+        }
+        for relative, markers in about.items():
+            rendered = (self.site / relative).read_text(encoding="utf-8")
+            self.assertNotIn("Project members", rendered)
+            for marker in markers:
+                self.assertIn(marker, rendered)
+
     def test_fixed_metadata_is_present_in_actual_offline_indexes(self):
         relative_refs = [
             "docs/introduction/",
@@ -279,25 +314,6 @@ class CommunityContentContractTests(unittest.TestCase):
                 self.assertIn(ref, records)
                 self.assertTrue(records[ref]["keywords"], ref)
                 self.assertGreater(records[ref]["boost"], 1, ref)
-
-    def test_llmsfull_outputs_exist_and_include_expected_documents(self):
-        outputs = {
-            self.site / "docs/llms-full.txt": (
-                "# HugeGraph Server Quick Start",
-                "# Server Startup Guide",
-                "# Vertex API",
-            ),
-            self.site / "cn/docs/llms-full.txt": (
-                "# HugeGraph Server 快速开始",
-                "# Server 启动指南",
-                "# Vertex API",
-            ),
-        }
-        for path, markers in outputs.items():
-            self.assertTrue(path.is_file())
-            rendered = path.read_text(encoding="utf-8")
-            for marker in markers:
-                self.assertIn(marker, rendered)
 
 
 if __name__ == "__main__":

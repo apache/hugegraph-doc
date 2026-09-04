@@ -35,6 +35,7 @@ sections:
             - [Contribution guidelines](/docs/contribution-guidelines/) — learn how to contribute code and documentation.
 
   - type: community-members
+    partial: landing/sections/community-members.html
     data:
       id: project-members
 

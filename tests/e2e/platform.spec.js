@@ -64,7 +64,7 @@ test("search index failure keeps one stable, focusable retry control", async ({
   await page.route("**/offline-search-index.en.*.json", async (route) => {
     attempts += 1;
     if (attempts === 1) await route.abort("failed");
-    else await route.continue();
+    else await route.fallback();
   });
   await page.goto("/docs/");
   await page.locator("[data-td-shell-search-open]").first().click();

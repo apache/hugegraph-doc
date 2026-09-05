@@ -13,6 +13,8 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 - 本地磁盘文件或目录，支持 TEXT、CSV 和 JSON 格式的文件，支持压缩文件
 - HDFS 文件或目录，支持压缩文件
 - 主流关系型数据库，如 MySQL、PostgreSQL、Oracle、SQL Server
+- Kafka topic
+- 已有的 HugeGraph 图，用于把数据从一个图复制到另一个图
 
 本地磁盘文件和 HDFS 文件支持断点续传。
 
@@ -33,7 +35,7 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 #### 2.1 使用 Docker 镜像 (便于**测试**)
 
-我们可以使用 `docker run -itd --name loader hugegraph/loader:1.5.0` 部署 loader 服务。对于需要加载的数据，则可以通过挂载 `-v /path/to/data/file:/loader/file` 或者 `docker cp` 的方式将文件复制到 loader 容器内部。
+我们可以使用 `docker run -itd --name loader hugegraph/loader:1.7.0` 部署 loader 服务。对于需要加载的数据，则可以通过挂载 `-v /path/to/data/file:/loader/file` 或者 `docker cp` 的方式将文件复制到 loader 容器内部。
 
 或者使用 docker-compose 启动 loader, 启动命令为 `docker-compose up -d`, 样例的 docker-compose.yml 如下所示：
 
@@ -42,7 +44,7 @@ version: '3'
 
 services:
   server:
-    image: hugegraph/hugegraph:1.5.0
+    image: hugegraph/hugegraph:1.7.0
     container_name: server
     environment:
       - PASSWORD=xxx
@@ -50,13 +52,13 @@ services:
       - 8080:8080
 
   hubble:
-    image: hugegraph/hubble:1.5.0
+    image: hugegraph/hubble:1.7.0
     container_name: hubble
     ports:
       - 8088:8088
 
   loader:
-    image: hugegraph/loader:1.5.0
+    image: hugegraph/loader:1.7.0
     container_name: loader
     # mount your own data here
     # volumes:
@@ -70,7 +72,7 @@ services:
 > 
 > 1. hugegraph-loader 的 docker 镜像是一个便捷版本，用于快速启动 loader，并不是**官方发布物料包方式**。你可以从 [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub) 中得到更多细节。
 > 
-> 2. 推荐使用 `release tag` (如 `1.5.0`) 以获取稳定版。使用 `latest` tag 可以使用开发中的最新功能。
+> 2. 推荐使用 `release tag` (如 `1.7.0`) 以获取稳定版。使用 `latest` tag 可以使用开发中的最新功能。
 
 #### 2.2 下载已编译的压缩包
 
@@ -168,6 +170,7 @@ schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotE
 - HDFS 文件或目录
 - 部分关系型数据库
 - Kafka topic
+- 已有的 HugeGraph 图
 
 ##### 3.2.1 数据源结构
 
@@ -591,6 +594,12 @@ bin/mapping-convert.sh struct.json
 
 会在 struct.json 的同级目录下生成一个 struct-v2.json。
 
+bin 目录下还提供了 `utf8-bom-to-utf8.sh`，用于去掉单个数据文件、或目录下所有文件开头的 UTF-8 BOM。当 Windows 工具导出的 CSV 或 TEXT 文件因为首列表头带有不可见的 BOM 而解析失败时，可以用它处理：
+
+```bash
+bin/utf8-bom-to-utf8.sh /path/to/file-or-dir
+```
+
 ##### 3.3.2 输入源
 
 输入源目前分为五类：FILE、HDFS、JDBC、KAFKA 和 GRAPH，由`type`节点区分，我们称为本地文件输入源、HDFS 输入源、JDBC 输入源和 KAFKA 输入源，图数据源，下面分别介绍。
@@ -603,18 +612,21 @@ bin/mapping-convert.sh struct.json
     - type: 输入源类型，必须填 file 或 FILE； 
     - path: 本地文件或目录的路径，绝对路径或相对于映射文件的相对路径，建议使用绝对路径，必填；
     - file_filter: 从`path`中筛选复合条件的文件，复合结构，目前只支持配置扩展名，用子节点`extensions`表示，默认为"*"，表示保留所有文件；
-    - format: 本地文件的格式，可选值为 CSV、TEXT 及 JSON，必须大写，必填；               
-    - header: 文件各列的列名，如不指定则会以数据文件第一行作为 header；当文件本身有标题且又指定了 header，文件的第一行会被当作普通的数据行；JSON 文件不需要指定 header，选填；    
-    - delimiter: 文件行的列分隔符，默认以逗号`","`作为分隔符，`JSON`文件不需要指定，选填；     
+    - format: 本地文件的格式，可选值为 CSV、TEXT 及 JSON，必须大写，默认为 CSV，选填；               
+    - header: 文件各列的列名，如不指定则会以数据文件第一行作为 header；当文件本身有标题且又指定了 header，文件的第一行会被当作普通的数据行；JSON 文件不需要指定 header，选填；
+    - has_header: 对 CSV 和 TEXT 格式，如果某个文件的首行与 header 完全相同，该行会被丢弃，这样目录下每个分片文件重复的表头不会被当作数据导入。如果分片文件的首行是恰好与 header 相同的真实数据，可以设为 `false` 关闭这个检查，选填；
+    - delimiter: 文件行的列分隔符。默认值取决于`format`：CSV 为逗号`","`，TEXT 为制表符`"\t"`；CSV 只接受逗号。`JSON`文件不需要指定，选填；     
     - charset: 文件的编码字符集，默认`UTF-8`，选填；    
-    - date_format: 自定义的日期格式，默认值为 yyyy-MM-dd HH:mm:ss，选填；如果日期是以时间戳的形式呈现的，此项须写为`timestamp`（固定写法）； 
+    - date_format: 自定义的日期格式，默认值为 yyyy-MM-dd HH:mm:ss，选填；如果日期是以时间戳的形式呈现的，此项须写为`timestamp`（固定写法）；
+    - extra_date_formats: 备用日期格式列表，当某个值不符合`date_format`时会逐个尝试，默认为空，选填；
     - time_zone: 设置日期数据是处于哪个时区的，默认值为`GMT+8`，选填；
-    - skipped_line: 想跳过的行，复合结构，目前只能配置要跳过的行的正则表达式，用子节点`regex`描述，默认不跳过任何行，选填；
-    - compression: 文件的压缩格式，可选值为 NONE、GZIP、BZ2、XZ、LZMA、SNAPPY_RAW、SNAPPY_FRAMED、Z、DEFLATE、LZ4_BLOCK、LZ4_FRAMED、ORC 和 PARQUET，默认为 NONE，表示非压缩文件，选填；
+    - skipped_line: 想跳过的行，复合结构，目前只能配置要跳过的行的正则表达式，用子节点`regex`描述。默认正则为`(^#|^//).*|`，即跳过以`#`或`//`开头的行以及空行；如果需要保留这类行，把`regex`改为一个不匹配任何行的表达式即可，选填；
+    - compression: 文件的压缩格式，可选值为 NONE、GZIP、BZ2、XZ、LZMA、SNAPPY_RAW、SNAPPY_FRAMED、Z、DEFLATE、LZ4_BLOCK、LZ4_FRAMED、ORC 和 PARQUET，默认为 NONE，表示非压缩文件，选填；ORC 和 PARQUET 的 header 匹配不区分大小写；
     - list_format: 当文件 (非 JSON ) 的某列是集合结构时（对应图中的 PropertyKey 的 Cardinality 为 Set 或 List），可以用此项设置该列的起始符、分隔符、结束符，复合结构：
-        - start_symbol: 集合结构列的起始符 (默认值是 `[`, JSON 格式目前不支持指定)
-        - elem_delimiter: 集合结构列的分隔符 (默认值是 `|`, JSON 格式目前只支持原生`,`分隔)
-        - end_symbol: 集合结构列的结束符 (默认值是 `]`, JSON 格式目前不支持指定)
+        - start_symbol: 集合结构列的起始符 (默认值是空字符串 `""`, JSON 格式目前不支持指定)
+        - elem_delimiter: 集合结构列的分隔符 (默认值是 `|`, 且不能与`delimiter`相同; JSON 格式目前只支持原生`,`分隔)
+        - end_symbol: 集合结构列的结束符 (默认值是空字符串 `""`, JSON 格式目前不支持指定)
+        - ignored_elems: 拆分之后要丢弃的元素，默认值是 `[""]`，即忽略空元素
 
 ###### 3.3.2.2 HDFS 输入源
 
@@ -622,7 +634,16 @@ bin/mapping-convert.sh struct.json
 
 - type: 输入源类型，必须填 hdfs 或 HDFS，必填； 
 - path: HDFS 文件或目录的路径，必须是 HDFS 的绝对路径，必填； 
-- core_site_path: HDFS 集群的 core-site.xml 文件路径，重点要指明 NameNode 的地址（`fs.default.name`），以及文件系统的实现（`fs.hdfs.impl`）；
+- core_site_path: HDFS 集群的 core-site.xml 文件路径，重点要指明 NameNode 的地址（`fs.default.name`），以及文件系统的实现（`fs.hdfs.impl`），必填；
+- hdfs_site_path: HDFS 集群的 hdfs-site.xml 文件路径，选填；
+- dir_filter: 当`path`是目录时，决定递归进入哪些子目录，复合结构，选填：
+    - include_regex: 只读取目录名匹配该正则的目录，默认为空，即不作限制；
+    - exclude_regex: 跳过目录名匹配该正则的目录，默认为空；
+- kerberos_config: 访问开启了 Kerberos 认证的 HDFS 集群时的配置，复合结构，选填：
+    - enable: 是否使用 Kerberos 认证，默认为 false；
+    - krb5_conf: krb5.conf 文件路径，`enable` 为 true 时必填；
+    - principal: Kerberos principal，`enable` 为 true 时必填；
+    - keytab: keytab 文件路径，`enable` 为 true 时必填；
 
 ###### 3.3.2.3 JDBC 输入源
 
@@ -630,7 +651,7 @@ bin/mapping-convert.sh struct.json
 
 - type: 输入源类型，必须填 jdbc 或 JDBC，必填；
 - vendor: 数据库类型，可选项为 [MySQL、PostgreSQL、Oracle、SQLServer]，不区分大小写，必填；
-- driver: jdbc 使用的 driver 类型，必填；
+- driver: JDBC driver 类名，选填；不填时使用`vendor`对应的默认 driver，见下面各表；
 - url: jdbc 要连接的数据库的 url，必填；
 - database: 要连接的数据库名，必填；
 - schema: 要连接的 schema 名，不同的数据库要求不一样，下面详细说明；
@@ -638,6 +659,7 @@ bin/mapping-convert.sh struct.json
 - custom_sql: 自定义 SQL 语句，`custom_sql` 和 `table` 参数必须填其中一个；
 - username: 连接数据库的用户名，必填；
 - password: 连接数据库的密码，必填；
+- where: 附加到生成的 select 语句上的过滤条件，不需要写 where 关键字，选填；
 - batch_size: 按页获取表数据时的一页的大小，默认为 500，选填；
 
 **MYSQL**
@@ -668,7 +690,7 @@ schema: 可空，默认值为“public”
 | driver | oracle.jdbc.driver.OracleDriver  |
 | url    | jdbc:oracle:thin:@127.0.0.1:1521 |
 
-schema: 可空，默认值与用户名相同
+schema: 可空，默认值为大写形式的用户名
 
 **SQLSERVER**
 
@@ -683,34 +705,37 @@ schema: 必填
 ###### 3.3.2.4 Kafka 输入源
 
 - type：输入源类型，必须填 `kafka` 或 `KAFKA`，必填；
-- bootstrap_server：设置 kafka bootstrap server 列表；
-- topic：订阅的 topic；
-- group：Kafka 消费者组；
-- from_beginning：设置是否从头开始读取；
-- format：本地文件的格式，可选值为 CSV、TEXT 及 JSON，必须大写，必填；
-- header：文件各列的列名，如不指定则会以数据文件第一行作为 header；当文件本身有标题且又指定了 header，文件的第一行会被当作普通的数据行；JSON 文件不需要指定 header，选填；
-- delimiter：文件行的列分隔符，默认以逗号","作为分隔符，JSON 文件不需要指定，选填；
-- charset：文件的编码字符集，默认 UTF-8，选填；
+- bootstrap_server：kafka bootstrap server 列表，必填；
+- topic：订阅的 topic，必填；
+- group：Kafka 消费者组，必填；
+- from_beginning：是否从 topic 最早的 offset 开始读取（`auto.offset.reset=earliest`），否则从最新 offset 开始，默认为 false，选填；
+- format：每条消息的格式，可选值为 CSV、TEXT 及 JSON，必须大写，必填；
+- header：消息各列的列名；loader 不会从 topic 中读取表头行，因此 CSV 和 TEXT 格式必须指定，JSON 消息则不需要；
+- delimiter：消息的列分隔符，仅 TEXT 格式使用，CSV 固定以`,`分隔，选填；
+- charset：消息的编码字符集，默认 UTF-8，选填；
 - date_format：自定义的日期格式，默认值为 yyyy-MM-dd HH:mm:ss，选填；如果日期是以时间戳的形式呈现的，此项须写为 timestamp（固定写法）；
 - extra_date_formats：自定义的其他日期格式列表，默认为空，选填；列表中每一项都是一个 date_format 指定日期格式的备用日期格式；
 - time_zone：置日期数据是处于哪个时区的，默认值为 GMT+8，选填；
 - skipped_line：想跳过的行，复合结构，目前只能配置要跳过的行的正则表达式，用子节点 regex 描述，默认不跳过任何行，选填；
+- batch_size：单次拉取的最大记录数（`max.poll.records`），默认为 500，选填；
 - early_stop：某次从 Kafka broker 拉取的记录为空，停止任务，默认为 false，仅用于调试，选填；
 
 ###### 3.3.2.5 GRAPH 输入源
 
+GRAPH 输入源从另一个 HugeGraph 图（通过 HugeGraph-PD 访问）读取顶点和边，并写入目标图。当映射文件中出现 GRAPH 输入源时，该文件中所有未被跳过的输入源都必须是 GRAPH 类型，并且导入期间 loader 会把目标图切换为 `RESTORING` 模式。
+
 - type：输入源类型，必须填 `graph` 或 `GRAPH`，必填；
-- graphspace：源图空间名称，默认为 `DEFAULT`；
+- graphspace：源图空间名称，必填；
 - graph： 源图名称，必填；
-- username：HugeGraph 用户名；
-- password：HugeGraph 密码；
-- selected_vertices：要同步的顶点筛选规则；
-- ignored_vertices：要忽略的顶点筛选规则；
-- selected_edges：要同步的边筛选规则；
-- ignored_edges：要忽略的边筛选规则；
-- pd-peers：HugeGraph-PD 节点地址；
-- meta-endpoints：源集群 Meta服务端点；
-- cluster：源集群名称；
+- username：HugeGraph 用户名；为空时使用命令行参数 `--username`；
+- password：HugeGraph 密码；为空时使用命令行参数 `--password`；
+- selected_vertices：要复制的顶点 label 列表，每一项形如 `{"label": "...", "properties": [...], "query": {...}}`，其中 `properties` 限定要复制的属性，`query` 是传给源图的可选过滤条件；
+- ignored_vertices：要跳过的顶点 label 列表，每一项形如 `{"label": "...", "properties": [...]}`；
+- selected_edges：要复制的边 label 列表，每一项结构与 `selected_vertices` 相同；
+- ignored_edges：要跳过的边 label 列表，每一项结构与 `ignored_vertices` 相同；
+- pd-peers：源集群的 HugeGraph-PD 节点地址；为空时使用 `--pd-peers`；
+- meta-endpoints：源集群 Meta 服务端点；为空时使用 `--meta-endpoints`；
+- cluster：源集群名称；为空时使用 `--cluster`；
 - batch_size：批量读取源图数据的批次大小，默认为500；
 
 ##### 3.3.3 顶点和边映射
@@ -720,6 +745,7 @@ schema: 必填
 **相同部分的节点**
 
 - label: 待导入的顶点/边数据所属的`label`，必填；                                                                                   
+- skip: 是否跳过该顶点/边映射，输入源和其他映射不受影响，默认为 false，选填；
 - field_mapping: 将输入源列的列名映射为顶点/边的属性名，选填；
 - value_mapping: 将输入源的数据值映射为顶点/边的属性值，选填；
 - selected: 选择某些列插入，其他未选中的不插入，不能与`ignored`同时存在，选填；                                                                           
@@ -822,8 +848,8 @@ schema: 必填
 | `--failure-mode`                        | false       |      | 失败模式为 true 时，会导入之前失败了的数据，一般来说失败数据文件需要在人工更正编辑好后，再次进行导入             |
 | `--batch-insert-threads`                | CPUs        |      | 批量插入线程池大小 (CPUs 是当前 OS 可用**逻辑核**个数)                               |
 | `--single-insert-threads`               | 8           |      | 单条插入线程池的大小                                                        |
-| `--max-conn`                            | 4 * CPUs    |      | HugeClient 与 HugeGraphServer 的最大 HTTP 连接数，**调整线程**的时候建议同时调整此项     |
-| `--max-conn-per-route`                  | 2 * CPUs    |      | HugeClient 与 HugeGraphServer 每个路由的最大 HTTP 连接数，**调整线程**的时候建议同时调整此项 |
+| `--max-conn`                            | 4 * CPUs    |      | HugeClient 与 HugeGraphServer 的最大 HTTP 连接数；保持默认值时会自动提升到 4 * `--batch-insert-threads` |
+| `--max-conn-per-route`                  | 2 * CPUs    |      | HugeClient 与 HugeGraphServer 每个路由的最大 HTTP 连接数；保持默认值时会自动提升到 2 * `--batch-insert-threads` |
 | `--batch-size`                          | 500         |      | 导入数据时每个批次包含的数据条数                                                  |
 | `--max-parse-errors`                    | 1           |      | 最多允许多少行数据解析错误，达到该值则程序退出                                           |
 | `--max-insert-errors`                   | 500         |      | 最多允许多少行数据插入错误，达到该值则程序退出                                           |
@@ -845,49 +871,52 @@ schema: 必填
 | `--max-read-lines`                      | -1L         |      | 最大读取行数限制；一旦达到此行数，导入任务将停止                                          |
 | `--test-mode`                           | false       |      | 是否开启测试模式                                                          |
 | `--use-prefilter`                       | false       |      | 是否预先过滤顶点                                                          |
-| `--short-id`                            | []          |      | 将自定义 ID 映射为更短的 ID                                                 |
+| `--short-id`                            |             |      | 将自定义顶点 ID 映射为更短的生成 ID，格式为 `label:field:type`，其中 `type` 可选 boolean、byte、int、long、float、double、text、blob、date、uuid；可以重复指定以覆盖多个 label |
 | `--vertex-edge-limit`                   | -1L         |      | 单个顶点的最大边数限制                                                       |
-| `--sink-type`                           | true        |      | 是否输出至不同的存储                                                        |
-| `--vertex-partitions`                   | 64          |      | HBase 顶点表的预分区数量                                                   |
-| `--edge-partitions`                     | 64          |      | HBase 边表的预分区数量                                                    |
-| `--vertex-table-name`                   |             |      | HBase 顶点表名称                                                       |
-| `--edge-table-name`                     |             |      | HBase 边表名称                                                        |
-| `--hbase-zk-quorum`                     |             |      | HBase Zookeeper 集群地址                                              |
-| `--hbase-zk-port`                       |             |      | HBase Zookeeper 端口号                                               |
-| `--hbase-zk-parent`                     |             |      | HBase Zookeeper 根路径                                               |
+| `--sink-type`                           | true        |      | 仅 `spark-loader` 使用：true 通过 HugeGraph server API 写入，false 生成 HFile 并直接 bulkload 到 HBase |
+| `--vertex-partitions`                   | 64          |      | HBase 顶点表的预分区数量，配合 `--sink-type false` 使用 |
+| `--edge-partitions`                     | 64          |      | HBase 边表的预分区数量，配合 `--sink-type false` 使用 |
+| `--vertex-table-name`                   |             |      | HBase 顶点表名称，配合 `--sink-type false` 使用 |
+| `--edge-table-name`                     |             |      | HBase 边表名称，配合 `--sink-type false` 使用 |
+| `--hbase-zk-quorum`                     |             |      | HBase Zookeeper 集群地址，配合 `--sink-type false` 使用 |
+| `--hbase-zk-port`                       |             |      | HBase Zookeeper 端口号，配合 `--sink-type false` 使用 |
+| `--hbase-zk-parent`                     |             |      | HBase Zookeeper 根路径，配合 `--sink-type false` 使用 |
 | `--restore`                             | false       |      | 将图模式设置为恢复模式 (RESTORING)                                           |
 | `--backend`                             | hstore      |      | 自动创建图（如果不存在）时的后端存储类型                                              |
 | `--serializer`                          | binary      |      | 自动创建图（如果不存在）时的序列化器类型                                              |
 | `--scheduler-type`                      | distributed |      | 自动创建图（如果不存在）时的任务调度器类型                                             |
 | `--batch-failure-fallback`              | true        |      | 批量插入失败时是否回退至单条插入模式                                                |
+
+> 参数少于三个时 loader 会直接打印用法并退出，因此只传 `-f struct.json` 是不够的。
+
 ##### 3.4.2 断点续导模式
 
 通常情况下，Loader 任务都需要较长时间执行，如果因为某些原因导致导入中断进程退出，而下次希望能从中断的点继续导，这就是使用断点续导的场景。
 
 用户设置命令行参数 --incremental-mode 为 true 即打开了断点续导模式。断点续导的关键在于进度文件，导入进程退出的时候，会把退出时刻的导入进度
-记录到进度文件中，进度文件位于 `${struct}` 目录下，文件名形如 `load-progress ${date}` ，${struct} 为映射文件的前缀，${date} 为导入开始
-的时刻。比如：在 `2019-10-10 12:30:30` 开始的一次导入任务，使用的映射文件为 `struct-example.json`，则进度文件的路径为与 struct-example.json 
-同级的 `struct-example/load-progress 2019-10-10 12:30:30`。
+记录到进度文件中，进度文件位于 `${struct}` 目录下，文件名形如 `load-progress_${timestamp}` ，${struct} 为映射文件的前缀，${timestamp} 为导入开始
+的时刻，格式为 `yyyyMMdd-HHmmss`。比如：在 `2019-10-10 12:30:30` 开始的一次导入任务，使用的映射文件为 `struct-example.json`，则进度文件的路径为与 struct-example.json 
+同级的 `struct-example/load-progress_20191010-123030`。当目录下存在多个进度文件时，续导会读取按文件名排序的最后一个，也就是最新的那个。
 
 > 注意：进度文件的生成与 --incremental-mode 是否打开无关，每次导入结束都会生成一个进度文件。
 
 如果数据文件格式都是合法的，是用户自己停止（CTRL + C 或 kill，kill -9 不支持）的导入任务，也就是说没有错误记录的情况下，下一次导入只需要设置
 为断点续导即可。
 
-但如果是因为太多数据不合法或者网络异常，达到了 --max-parse-errors 或 --max-insert-errors 的限制，Loader 会把这些插入失败的原始行记录到
-失败文件中，用户对失败文件中的数据行修改后，设置 --reload-failure 为 true 即可把这些"失败文件"也当作输入源进行导入（不影响正常的文件的导入），
-当然如果修改后的数据行仍然有问题，则会被再次记录到失败文件中（不用担心会有重复行）。
+但如果是因为太多数据不合法或者网络异常，达到了 --max-read-errors、--max-parse-errors 或 --max-insert-errors 的限制，Loader 会把这些失败的原始行记录到
+失败文件中，用户对失败文件中的数据行修改后，设置 --failure-mode 为 true 即可把这些"失败文件"也当作输入源进行导入（不影响正常的文件的导入），
+当然如果修改后的数据行仍然有问题，则会被再次记录到失败文件中（不用担心会有重复行，关闭文件时会去重）。失败模式下上述三个错误上限会被解除，因此会扫描整个失败文件。
 
-每个顶点映射或边映射有数据插入失败时都会产生自己的失败文件，失败文件又分为解析失败文件（后缀 .parse-error）和插入失败文件（后缀 .insert-error），
-它们被保存在 `${struct}/current` 目录下。比如映射文件中有一个顶点映射 person 和边映射 knows，它们各有一些错误行，当 Loader 退出后，在 
-`${struct}/current` 目录下会看到如下文件：
+每个输入源（即映射文件 `structs` 中的每一项）都会有自己的失败文件，文件名为该输入源的 `id` 加后缀 `.error`，保存在 `${struct}/failure-data` 目录下。
+每一条失败记录写为两行：一行以 `#### READ ERROR:`、`#### PARSE ERROR:` 或 `#### INSERT ERROR:` 开头的提示行，紧接着是原始数据行。当输入源有 header 时，header 会以 JSON 形式写入同目录下的 `${id}.header` 文件，以便失败文件能按正确的列重新读取。
+比如映射文件中 id 为 `1` 的输入源包含顶点映射 person，id 为 `3` 的输入源包含边映射 knows，它们各有一些错误行，当 Loader 退出后，在 `${struct}/failure-data` 目录下会看到如下文件：
 
-- person-b4cd32ab.parse-error: 顶点映射 person 解析错误的数据
-- person-b4cd32ab.insert-error: 顶点映射 person 插入错误的数据
-- knows-eb6b2bac.parse-error: 边映射 knows 解析错误的数据
-- knows-eb6b2bac.insert-error: 边映射 knows 插入错误的数据
+- 1.error: 输入源 1 的失败数据行，每行前面都有对应的提示行
+- 1.header: 输入源 1 的 header，仅当该输入源有 header 时才会生成
+- 3.error: 输入源 3 的失败数据行
+- 3.header: 输入源 3 的 header
 
-> .parse-error 和 .insert-error 并不总是一起存在的，只有存在解析出错的行才会有 .parse-error 文件，只有存在插入出错的行才会有 .insert-error 文件。
+> 内容为空的 `.error` 文件会在 Loader 退出时删除，因此只有真正出现失败行的输入源才会留下文件。增量模式下新的失败行会追加到已有文件，其他模式下该文件会被重新写入。
 
 ##### 3.4.3 logs 目录文件说明
 
@@ -895,11 +924,13 @@ schema: 必填
 
 ##### 3.4.4 执行命令
 
-运行 bin/hugegraph-loader 并传入参数
+运行 bin/hugegraph-loader.sh 并传入参数
 
 ```bash
-bin/hugegraph-loader -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} -h {HOST} -p {PORT}
+bin/hugegraph-loader.sh -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} -h {HOST} -p {PORT}
 ```
+
+脚本在设置了 `JAVA_HOME` 时使用其中的 JVM，否则使用 `PATH` 上的 `java`。它会把 `JVM_OPTS` 环境变量的内容，以及 `-Xmx10g` 和由 `lib/` 生成的 classpath 一起传给 JVM，因此需要追加 JVM 参数时可以设置 `JVM_OPTS`。日志由 `conf/log4j2.xml` 配置。
 
 ### 4 完整示例
 
@@ -1180,4 +1211,40 @@ sh bin/hugegraph-spark-loader.sh --master yarn \
 --deploy-mode cluster --name spark-hugegraph-loader --file ./hugegraph.json \
 --username admin --token admin --host xx.xx.xx.xx --port 8093 \
 --graph graph-test --num-executors 6 --executor-cores 16 --executor-memory 15g
+```
+
+`bin/hugegraph-spark-loader.sh` 通过 `${SPARK_HOME}/bin/spark-submit` 提交 `org.apache.hugegraph.loader.spark.HugeGraphSparkLoader`，因此 `SPARK_HOME` 必须指向一个 Spark 安装目录。`lib/` 下的所有 jar 都会加入 classpath。Spark 应用名默认为 `hugegraph-spark-loader`，可以通过 `APP_NAME` 环境变量修改。
+
+`bin/get-params.sh` 负责拆分命令行：只有下列参数会交给 loader，其余参数原样传给 `spark-submit`。该拆分只识别参数全称，因此 `-f`、`-g` 这类缩写不会被识别。
+
+```
+--graph --schema --host --port --username --token --protocol
+--trust-store-file --trust-store-password --clear-all-data --clear-timeout
+--incremental-mode --failure-mode --batch-insert-threads --single-insert-threads
+--max-conn --max-conn-per-route --batch-size --max-parse-errors --max-insert-errors
+--timeout --shutdown-timeout --retry-times --retry-interval --check-vertex
+--print-progress --dry-run --sink-type --vertex-partitions --edge-partitions --help
+```
+
+`--file` 单独处理：使用 `--deploy-mode cluster` 时，映射文件会通过 `--files` 分发到 executor，loader 只收到它的文件名；其他情况下路径原样传入。
+
+该模式下 loader 只读取 FILE、HDFS 和 JDBC 输入源，KAFKA 和 GRAPH 输入源会被拒绝。
+
+默认情况下（`--sink-type true`），每个 Spark 分区各自创建一个 HugeClient，通过 HugeGraph server API 写入顶点和边。使用 `--sink-type false` 时，loader 会生成 HFile 并直接 bulkload 到 HBase，此时表名和 ZooKeeper 配置取自 `--vertex-table-name`、`--edge-table-name`、`--hbase-zk-quorum`、`--hbase-zk-port`、`--hbase-zk-parent`、`--vertex-partitions` 和 `--edge-partitions`。
+
+#### 4.7 使用 flink-cdc-loader 导入
+
+> 当前源码使用 Flink 1.13.5、flink-connector-mysql-cdc 2.2.1 和 Scala 2.12；其他组合需自行验证。
+
+`bin/hugegraph-flinkcdc-loader.sh` 通过 `${FLINK_HOME}/bin/flink run` 提交 `org.apache.hugegraph.loader.flink.HugeGraphFlinkCDCLoader`，因此必须设置 `FLINK_HOME`。该任务用 Flink CDC 捕获 MySQL 的变更事件并应用到图上，从而让图与源表保持同步。
+
+映射文件格式与命令行 loader 相同，但每个输入源都必须是 MySQL 的 JDBC 输入源：loader 从中读取 `url`、`database`、`table`、`username` 和 `password`，并从 `url` 解析出主机和端口。顶点和边映射的用法不变。[3.4.1](#341-参数说明) 中的 `--cdc-flush-interval` 和 `--cdc-sink-parallelism` 只在该模式下生效。
+
+命令行同样由 `bin/get-params.sh` 按 4.6 的方式拆分，非 loader 参数会传给 `flink run`。
+
+示例：
+
+```bash
+sh bin/hugegraph-flinkcdc-loader.sh --file ./mysql-cdc.json \
+--host xx.xx.xx.xx --port 8080 --graph hugegraph --username admin --token admin
 ```

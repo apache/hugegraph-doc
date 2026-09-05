@@ -28,6 +28,51 @@ If the above process of creating HugeClient fails, an exception will be thrown, 
 
 When operating through `gremlin` in `HugeGraph-Hubble`(or `HugeGraph-Studio`), `HugeClient` is not required and can be ignored.
 
+#### 1.1 Builder options
+
+The builder accepts the following options. Every timeout is expressed in seconds and converted to milliseconds internally.
+
+| interface                                                    | description                                                                             | default             |
+|--------------------------------------------------------------|-----------------------------------------------------------------------------------------|---------------------|
+| `configUrl(String url)`                                       | Server address, normally passed to `builder(...)` already                               | required            |
+| `configGraph(String graph)`                                   | Graph name, normally passed to `builder(...)` already                                   | required            |
+| `configGraphSpace(String graphSpace)`                         | GraphSpace name, a null or empty value falls back to `DEFAULT`                          | `DEFAULT`           |
+| `configUser(String username, String password)`                | Credentials for the server, a null value is stored as an empty string                   | empty, no auth      |
+| `configToken(String token)`                                   | Token used instead of username and password                                             | empty               |
+| `configTimeout(int seconds)`                                  | Request timeout, passing `0` restores the default                                       | 20                  |
+| `configConnectTimeout(Integer seconds)`                       | Connect timeout, left unset so that `configTimeout` applies                             | unset               |
+| `configReadTimeout(Integer seconds)`                          | Read timeout, left unset so that `configTimeout` applies                                | unset               |
+| `configPool(int maxConns, int maxConnsPerRoute)`              | Connection pool sizes, passing `0` for either one restores its default                  | 4 x CPUs, 2 x CPUs  |
+| `configIdleTime(int seconds)`                                 | Idle connection keep-alive, must be greater than 0                                      | 30                  |
+| `configSSL(String trustStoreFile, String trustStorePassword)` | Truststore used for HTTPS connections                                                   | empty               |
+| `configHttpBuilder(Consumer<OkHttpClient.Builder> consumer)`  | Callback that receives the underlying OkHttp builder for further customization          | none                |
+| `graphRequired(boolean graphRequired)`                        | Whether `build()` rejects an empty url or graph name                                    | true                |
+
+On `build()`, the client reads the server API version and rejects anything outside the range `[0.38, 0.81)`.
+
+#### 1.2 Operation entries
+
+Besides schema, graph and gremlin, HugeClient exposes the following entries. The graph-scoped ones are only available when a graph name was supplied; when the client is built with an empty graph name they return null until `assignGraph(graphSpace, graph)` is called.
+
+| interface             | returns                | scope      | description                                                                     |
+|-----------------------|------------------------|------------|---------------------------------------------------------------------------------|
+| `schema()`            | `SchemaManager`        | graph      | Manage PropertyKey, VertexLabel, EdgeLabel and IndexLabel                       |
+| `graph()`             | `GraphManager`         | graph      | Add, query, update and delete vertices and edges, single or batch               |
+| `gremlin()`           | `GremlinManager`       | graph      | Run Gremlin statements, synchronously or as an async task                       |
+| `cypher()`            | `CypherManager`        | graph      | Run Cypher statements, synchronously or as an async task                        |
+| `traverser()`         | `TraverserManager`     | graph      | RESTful traversals such as shortest path, k-out, k-neighbor and crosspoints     |
+| `variables()`         | `VariablesManager`     | graph      | Get, set, list and remove graph variables                                       |
+| `job()`               | `JobManager`           | graph      | Rebuild the index of a VertexLabel, EdgeLabel or IndexLabel                     |
+| `task()`              | `TaskManager`          | graph      | List, get, cancel, delete and wait on async tasks                               |
+| `computer()`          | `ComputerManager`      | graph      | Create, cancel, list and get computer jobs                                      |
+| `graphs()`            | `GraphsManager`        | graphspace | Create, clone, list, reload, clear and drop graphs, read and set the graph mode |
+| `graphSpace()`        | `GraphSpaceManager`    | server     | Manage GraphSpaces, see section 4                                               |
+| `auth()`              | `AuthManager`          | server     | Manage users, groups, targets, belongs and accesses                             |
+| `metrics()`           | `MetricsManager`       | server     | Read backend, system and statistics metrics                                     |
+| `versionManager()`    | `VersionManager`       | server     | Read the core, gremlin and API versions of the server                           |
+
+The client also reports what the connected server supports, so callers can branch on a capability instead of on a version string: `supportsGraphSpace()`, `supportsCypher()`, `supportsGraphCreate()`, `supportsDefaultRole()` and `isServerAuthEnabled()`.
+
 ### 2 Schema
 
 #### 2.1 SchemaManager
@@ -54,7 +99,7 @@ The definition process of the 4 kinds of schema is described below.
 
 PropertyKey is used to standardize the property constraints of vertices and edges, and properties of properties are not currently supported.
 
-The constraint information that PropertyKey allows to define includes: name, datatype, cardinality, and userdata, which are introduced one by one below.
+The constraint information that PropertyKey allows to define includes: name, datatype, cardinality, aggregateType, writeType and userdata, which are introduced one by one below.
 
 - name: The name of the property, used to distinguish different PropertyKeys, PropertyKeys with the same name are not allowed.
 
@@ -69,7 +114,7 @@ The constraint information that PropertyKey allows to define includes: name, dat
 | asText()    | String     |
 | asInt()     | Integer    |
 | asDate()    | Date       |
-| asUuid()    | UUID       |
+| asUUID()    | UUID       |
 | asBoolean() | Boolean    |
 | asByte()    | Byte       |
 | asBlob()    | Byte[]     |
@@ -84,6 +129,31 @@ The constraint information that PropertyKey allows to define includes: name, dat
 | valueSingle() | single      | single value                                |
 | valueList()   | list        | multi-values that allow duplicate value     |
 | valueSet()    | set         | multi-values that not allow duplicate value |
+
+- aggregateType: How repeated writes of the same property are combined. The default is none, which keeps the last written value. The numeric options require a number datatype:
+
+| interface   | aggregateType | description                                     |
+|-------------|---------------|-------------------------------------------------|
+| calcSum()   | sum           | accumulate the written values                   |
+| calcMax()   | max           | keep the greatest value                         |
+| calcMin()   | min           | keep the smallest value                         |
+| calcOld()   | old           | keep the first written value and ignore updates |
+
+`aggregateType(AggregateType type)` sets the same thing directly, and `AggregateType.NONE` restores the default.
+
+- writeType: Whether the property belongs to the OLTP graph or to an OLAP computing result, and for OLAP whether it carries an index. The default is oltp:
+
+| writeType      | description                          |
+|----------------|--------------------------------------|
+| OLTP           | ordinary graph property              |
+| OLAP_COMMON    | OLAP property without index          |
+| OLAP_SECONDARY | OLAP property with a secondary index |
+| OLAP_RANGE     | OLAP property with a range index     |
+
+| interface                        | description                            |
+|----------------------------------|----------------------------------------|
+| writeType(WriteType writeType)   | set the write type with the enum value |
+| writeType(String name)           | set the write type by enum name        |
 
 - userdata: Users can add some constraints or additional information by themselves, and then check whether the incoming properties satisfy the constraints, or extract additional information when necessary:
 
@@ -132,7 +202,7 @@ schema.getPropertyKey("name").userdata()
 
 VertexLabel is used to define the vertex type and describe the constraint information of the vertex.
 
-The constraint information that VertexLabel allows to define include: name, idStrategy, properties, primaryKeys and nullableKeys, which are introduced one by one below.
+The constraint information that VertexLabel allows to define include: name, idStrategy, properties, primaryKeys, nullableKeys and ttl, which are introduced one by one below.
 
 - name: The name of the VertexLabel, used to distinguish different VertexLabels, VertexLabels with the same name are not allowed.
 
@@ -147,6 +217,7 @@ The constraint information that VertexLabel allows to define include: name, idSt
 | useAutomaticId       | AUTOMATIC        | generate id automatically by Snowflake algorithm        |
 | useCustomizeStringId | CUSTOMIZE_STRING | passed id by user, must be string type                  |
 | useCustomizeNumberId | CUSTOMIZE_NUMBER | passed id by user, must be number type                  |
+| useCustomizeUuidId   | CUSTOMIZE_UUID   | passed id by user, must be UUID type                    |
 | usePrimaryKeyId      | PRIMARY_KEY      | choose some important prop as primary key to splice id  |
 
 - properties: define the properties of the vertex, the incoming parameter is the name of the PropertyKey.
@@ -168,6 +239,8 @@ Note that the selection of the ID strategy and the setting of primaryKeys have s
 | unset primaryKeys | AUTOMATIC      | CUSTOMIZE_STRING     | CUSTOMIZE_NUMBER     | ERROR           |
 | set primaryKeys   | ERROR          | ERROR                | ERROR                | PRIMARY_KEY     |
 
+The client itself only checks that the ID strategy is set once, so calling two of these methods on the same builder fails locally. The combinations above are validated by the server.
+
 - nullableKeys: For properties set by the properties(...) method, all of them are non-nullable by default, that is, the property must be assigned a value when creating a vertex, which may impose too strict integrity requirements on user data. In order to avoid such strong constraints, the user can set some properties to be nullable through this method, so that the properties can be unassigned when adding vertices.
 
 | interface                          | description               |
@@ -175,6 +248,13 @@ Note that the selection of the ID strategy and the setting of primaryKeys have s
 | nullableKeys(String... properties) | allow to pass multi props |
 
 Note: primaryKeys and nullableKeys cannot intersect, because a property cannot be both primary and nullable.
+
+- ttl: Time to live of the vertices of this label. The default is 0, which means they never expire. The client rejects a negative value. By default the countdown is relative to the moment the vertex is written; ttlStartTime instead names a date property of the label that the countdown is measured from.
+
+| interface                        | description                                         |
+|----------------------------------|-----------------------------------------------------|
+| ttl(long ttl)                    | set the time to live, 0 disables expiry             |
+| ttlStartTime(String property)    | name the date property the countdown starts from    |
 
 - enableLabelIndex: The user can specify whether to create an index for the label. If you don't create it, you can't globally search for the vertices and edges of the specified label. If you create it, you can search globally, like `g.V().hasLabel('person'), g.E().has('label', 'person')` query, but the performance will be slower when inserting data, and it will take up more storage space. This defaults to true.
 
@@ -199,6 +279,8 @@ schema.vertexLabel("person").useAutomaticId().properties("name", "age").ifNotExi
 schema.vertexLabel("person").useCustomizeStringId().properties("name", "age").ifNotExist().create();
 // Use Customize_Number Id strategy
 schema.vertexLabel("person").useCustomizeNumberId().properties("name", "age").ifNotExist().create();
+// Use Customize_Uuid Id strategy
+schema.vertexLabel("person").useCustomizeUuidId().properties("name", "age").ifNotExist().create();
 
 // Use PrimaryKey Id strategy
 schema.vertexLabel("person").properties("name", "age").primaryKeys("name").ifNotExist().create();
@@ -232,6 +314,8 @@ schema.getVertexLabel("person").name()
 schema.getVertexLabel("person").properties()
 schema.getVertexLabel("person").nullableKeys()
 schema.getVertexLabel("person").userdata()
+schema.getVertexLabel("person").ttl()
+schema.getVertexLabel("person").ttlStartTime()
 ```
 
 #### 2.4 EdgeLabel
@@ -240,7 +324,7 @@ schema.getVertexLabel("person").userdata()
 
 EdgeLabel is used to define the edge type and describe the constraint information of the edge.
 
-The constraint information that EdgeLabel allows to define include: name, sourceLabel, targetLabel, frequency, properties, sortKeys and nullableKeys, which are introduced one by one below.
+The constraint information that EdgeLabel allows to define include: name, sourceLabel, targetLabel, frequency, properties, sortKeys, nullableKeys and ttl, which are introduced one by one below.
 
 - name: The name of the EdgeLabel, used to distinguish different EdgeLabels, EdgeLabels with the same name are not allowed.
 
@@ -248,14 +332,15 @@ The constraint information that EdgeLabel allows to define include: name, source
 |------------------------|-------|----------|
 | edgeLabel(String name) | name  | y        |
 
-- sourceLabel: The name of the source vertex type of the edge link, only one is allowed;
+- sourceLabel and targetLabel: The names of the source and the target vertex type of the edge link. Setting both is the same as declaring one link pair.
 
-- targetLabel: The name of the target vertex type of the edge link, only one is allowed;
+- link: An EdgeLabel holds a set of source and target pairs, so `link(...)` can be called more than once to let the same edge type connect several pairs of vertex types. Once a pair has been added this way, `sourceLabel(...)` and `targetLabel(...)` are rejected, and the `sourceLabel()` and `targetLabel()` getters only work on a label that has exactly one pair. Use `links()` to read them all.
 
-| interface                 | param | must set |
-|---------------------------|-------|----------|
-| sourceLabel(String label) | label | y        |
-| targetLabel(String label) | label | y        |
+| interface                                    | param                    | must set                  |
+|----------------------------------------------|--------------------------|---------------------------|
+| link(String sourceLabel, String targetLabel) | sourceLabel, targetLabel | y, or set the two below   |
+| sourceLabel(String label)                    | label                    | y, unless link() was used |
+| targetLabel(String label)                    | label                    | y, unless link() was used |
 
 - frequency: Indicating the number of times a relationship occurs between two specific vertices, which can be single (single) or multiple (frequency), the default is single.
 
@@ -279,6 +364,16 @@ The constraint information that EdgeLabel allows to define include: name, source
 - nullableKeys: Consistent with the concept of nullableKeys in vertices.
 
 Note: sortKeys and nullableKeys also cannot intersect.
+
+- ttl: Consistent with the concept of ttl in vertices, with the same `ttl(long ttl)` and `ttlStartTime(String property)` methods and the same default of 0.
+
+- edge label type: An EdgeLabel is normal by default. It can instead be declared as the parent of a family of edge labels, as a child of such a parent, or as a general label:
+
+| interface                     | edgeLabelType | description                                    |
+|-------------------------------|---------------|------------------------------------------------|
+| asBase()                      | PARENT        | declare the label as a parent label            |
+| withBase(String parentLabel)  | SUB           | declare the label as a child of 'parentLabel'  |
+| asGeneral()                   | GENERAL       | declare the label as a general label           |
 
 - enableLabelIndex: It is consistent with the concept of enableLabelIndex in the vertex.
 
@@ -322,6 +417,11 @@ schema.getEdgeLabel("knows").name()
 schema.getEdgeLabel("knows").properties()
 schema.getEdgeLabel("knows").nullableKeys()
 schema.getEdgeLabel("knows").userdata()
+schema.getEdgeLabel("knows").ttl()
+schema.getEdgeLabel("knows").ttlStartTime()
+schema.getEdgeLabel("knows").edgeLabelType()
+// All the source and target pairs, safe to call when there is more than one
+schema.getEdgeLabel("knows").links()
 ```
 
 #### 2.5 IndexLabel
@@ -416,15 +516,15 @@ schema.getIndexLabel("personByAge").name()
 Vertices are the most basic elements of a graph, and there can be many vertices in a graph. Here is an example of adding vertices:
 
 ```java
-Vertex marko = graph.addVertex(T.label, "person", "name", "marko", "age", 29);
-Vertex lop = graph.addVertex(T.label, "software", "name", "lop", "lang", "java", "price", 328);
+Vertex marko = graph.addVertex(T.LABEL, "person", "name", "marko", "age", 29);
+Vertex lop = graph.addVertex(T.LABEL, "software", "name", "lop", "lang", "java", "price", 328);
 ```
 
 - The key to adding vertices is the vertex properties. The number of parameters of the vertex adding function must be an even number and satisfy the order of `key1 -> val1, key2 -> val2 ...`, and the order between key-value pairs is free .
-- The parameter must contain a special key-value pair, namely `T.label -> "val"`, which is used to define the category of the vertex, so that the program can obtain the schema definition of the VertexLabel from the cache or backend, and then do subsequent constraint checks. The label in the example is defined as person.
+- The parameter must contain a special key-value pair, namely `T.LABEL -> "val"`, which is used to define the category of the vertex, so that the program can obtain the schema definition of the VertexLabel from the cache or backend, and then do subsequent constraint checks. The label in the example is defined as person. `T.LABEL` is the constant `"label"`, so the plain string works just as well.
 - If the vertex type's ID policy is `AUTOMATIC`, users are not allowed to pass in id key-value pairs.
-- If the ID policy of the vertex type is `CUSTOMIZE_STRING`, the user needs to pass in the value of the id of the String type. The key-value pair is like: `"T.id", "123456"`.
-- If the ID policy of the vertex type is `CUSTOMIZE_NUMBER`, the user needs to pass in the value of the id of the Number type. The key-value pair is like: `"T.id", 123456`.
+- If the ID policy of the vertex type is `CUSTOMIZE_STRING`, the user needs to pass in the value of the id of the String type. The key-value pair is like: `T.ID, "123456"`.
+- If the ID policy of the vertex type is `CUSTOMIZE_NUMBER`, the user needs to pass in the value of the id of the Number type. The key-value pair is like: `T.ID, 123456`.
 - If the ID policy of the vertex type is `PRIMARY_KEY`, the parameters must also contain the name and value of the properties corresponding to the `primaryKeys`, if not set an exception will be thrown. For example, the `primaryKeys` of `person` is `name`, in the example, the value of `name` is set to `marko`.
 - For properties that are not nullableKeys, a value must be assigned.
 - The remaining parameters are the settings of other properties of the vertex, but they are not required.
@@ -447,6 +547,8 @@ Edge knows1 = marko.addEdge("knows", vadas, "city", "Beijing");
 
 ### 4 GraphSpace
 The client can manage multiple GraphSpaces in one physical deployment, and each GraphSpace can contain multiple graphs. When no GraphSpace is specified, it uses `DEFAULT`.
+
+GraphSpaces need a server of core version 1.7.0 or later. Against an older server the client falls back to a legacy profile, and `hugeClient.supportsGraphSpace()` returns false.
 
 #### 4.1 Create GraphSpace
 
@@ -476,10 +578,17 @@ spaceManager.createGraphSpace(graphSpace);
 |           | updateGraphSpace(GraphSpace) | Update configuration |
 |           | setDefault(String name) | Set the default GraphSpace |
 | Manager - Delete | deleteGraphSpace(String name) | Delete the specified GraphSpace |
-| GraphSpace - Properties | getName() / getDescription() | Get name / description |
-|           | getGraphNumber() | Get the number of graphs |
-| GraphSpace - Configuration | setDescription(String) | Set description |
-|           | setMaxGraphNumber(int) | Set the maximum number of graphs |
+| Manager - Default role | setDefaultRole(String name, String user, String role) | Grant a default role, optionally scoped to a graph with a fourth argument |
+|           | checkDefaultRole(String name, String user, String role) | Check a default role, optionally scoped to a graph with a fourth argument |
+|           | deleteDefaultRole(String name, String user, String role) | Revoke a default role, optionally scoped to a graph with a fourth argument |
+| GraphSpace - Properties | getName() / getNickname() / getDescription() | Get name / nickname / description |
+|           | getGraphNumberUsed() / getRoleNumberUsed() | Get the number of graphs / roles in use |
+|           | getCpuUsed() / getMemoryUsed() / getStorageUsed() | Get the resources in use |
+|           | getCreateTime() / getUpdateTime() | Get the creation / update time |
+| GraphSpace - Configuration | setDescription(String) / setNickname(String) | Set description / nickname |
+|           | setMaxGraphNumber(int) / setMaxRoleNumber(int) | Set the maximum number of graphs / roles |
+|           | setCpuLimit(int) / setMemoryLimit(int) / setStorageLimit(int) | Set the resource quotas |
+|           | setConfigs(Map&lt;String, Object&gt;) | Set extra configuration entries |
 
 ### 5 Simple Example
 

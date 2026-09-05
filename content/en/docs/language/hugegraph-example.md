@@ -46,12 +46,13 @@ There are six types of relationships: father, mother, brother, battled, lives, a
 | father  | edge | character           | character           | -      |
 | mother  | edge | character           | character           | -      |
 | brother | edge | character           | character           | -      |
+| battled | edge | character           | character           | time   |
 | pet     | edge | character           | character           | -      |
 | lives   | edge | character           | location            | reason |
 
-In HugeGraph, each edge label can only act on one pair of source and target vertex labels. In other words, if a relationship called "father" is defined in the graph to connect character to character, then "father" cannot be used to connect to other vertex labels.
+An edge label can be linked to more than one pair of source and target vertex labels: call `link(sourceLabel, targetLabel)` once per pair when creating it. The deprecated `sourceLabel()` and `targetLabel()` builder methods accept only a single pair.
 
-Therefore, in this example, the original TitanDB's monster, god, human, and demigod are all represented using the same `vertex label: character` in HugeGraph, with an additional `type` attribute to indicate the type of character. The `edge labels` remain consistent with the original TitanDB. Of course, to satisfy the `edge label` constraints, adjustments can be made to the `name` of the `edge label`.
+In this example, the original TitanDB's monster, god, human, and demigod are all represented using the same `vertex label: character` in HugeGraph, with an additional `type` attribute to indicate the type of character. The `edge labels` remain consistent with the original TitanDB.
 
 ### 2 Graph Schema and Data Ingest Examples
 
@@ -118,7 +119,7 @@ cerberus.addEdge("lives", tartarus)
 
 #### 2.3 Indices
 
-HugeGraph by default automatically generates IDs. However, if a user specifies the `primaryKeys` field list for a `VertexLabel` through `primaryKeys`, the ID strategy for that `VertexLabel` will automatically switch to the `primaryKeys` strategy. Once the `primaryKeys` strategy is enabled, HugeGraph generates `VertexId` by concatenating `vertexLabel+primaryKeys`, which allows for automatic deduplication. Additionally, there is no need to create extra indexes to use the properties in `primaryKeys` for fast querying. For example, both "character" and "location" have the `primaryKeys("name")` attribute, so without creating additional indexes, vertices can be queried using `g.V().hasLabel('character') .has('name','hercules')`.
+HugeGraph by default automatically generates IDs. However, if a user specifies the `primaryKeys` field list for a `VertexLabel` through `primaryKeys`, the ID strategy for that `VertexLabel` will automatically switch to the `primaryKeys` strategy. Once the `primaryKeys` strategy is enabled, HugeGraph generates `VertexId` by concatenating `vertexLabel+primaryKeys`, which allows for automatic deduplication. Additionally, there is no need to create extra indexes to use the properties in `primaryKeys` for fast querying. For example, both "character" and "location" have the `primaryKeys("name")` attribute, so without creating additional indexes, vertices can be queried using `g.V().hasLabel('character').has('name','hercules')`.
 
 ### 3 Graph Traversal Examples
 
@@ -158,7 +159,7 @@ g.V().hasLabel('character').has('name','pluto').out('lives').in('lives').values(
 
 ```groovy
 pluto = g.V().hasLabel('character').has('name', 'pluto')
-g.V(pluto).out('lives').in('lives').where(is(neq(pluto)).values('name')
+g.V(pluto).out('lives').in('lives').where(is(neq(pluto))).values('name')
 
 // use 'as'
 g.V().hasLabel('character').has('name', 'pluto').as('x').out('lives').in('lives').where(neq('x')).values('name')

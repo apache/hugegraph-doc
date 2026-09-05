@@ -22,7 +22,7 @@ weight: 6
   
 - Do all backends need to be executed before use init-store, and can the serialization options be filled in at will?
 
-  Memory and HStore do not use `init-store`; persistent local backends such as RocksDB and HBase must be initialized before first use. The serializer must match the backend—for example, RocksDB uses `binary`.
+  Memory and HStore do not use `init-store`; persistent local backends such as RocksDB and HBase must be initialized before first use. The serializer must match the backend, for example RocksDB uses `binary`.
 
 - Execution `init-store` error: ```Exception in thread "main" java.lang.UnsatisfiedLinkError: /tmp/librocksdbjni3226083071221514754.so: /usr/lib64/libstdc++.so.6: version `GLIBCXX_3.4.10' not found (required by /tmp/librocksdbjni3226083071221514754.so)```
 
@@ -75,15 +75,15 @@ weight: 6
 
 - How to delete all data from a graph
 
-  An administrator can call `DELETE /graphspaces/{graphspace}/graphs/{graph}/clear`. The request must include the `confirm_message` required by the source code; see the [Graph API](../clients/restful-api/graphs) for the exact format. This operation removes schemas, vertices, edges, and indexes.
+  An administrator can call `DELETE /graphspaces/{graphspace}/graphs/{graph}/clear?confirm_message=I'm sure to delete all data`. The `confirm_message` query parameter must match that value exactly, otherwise the request is rejected. See the [Graph API](../clients/restful-api/graphs) for details. This operation removes schemas, vertices, edges, and indexes.
 
 - The database has been cleared and `init-store` has been executed, but when trying to add a schema, the prompt "xxx has existed" appeared.
 
   There is a cache in the `HugeGraphServer`, and it is necessary to restart the `Server` when the database is cleared, otherwise the residual cache will be inconsistent.
 
-- An error is reported during the process of inserting vertices or edges: `Id max length is 128, but got xxx {yyy}` or `Big id max length is 32768, but got xxx`
+- An error is reported during the process of inserting vertices or edges: `The max length of vertex id is 16384, but got xxx {yyy}` or `The max length of edge id is 65536, but got xxx {yyy}`
 
-  In order to ensure query performance, the current backend storage limits the length of the id column. The vertex id cannot exceed 128 bytes, the edge id cannot exceed 32768 bytes, and the index id cannot exceed 128 bytes.
+  In order to ensure query performance, the current backend storage limits the length of the id column. The vertex id cannot exceed 16384 bytes and the edge id cannot exceed 65536 bytes. An index id longer than 32 bytes is stored as a hash instead of being rejected.
 
 - Is there support for nested attributes, and if not, are there any alternatives?
 
@@ -91,7 +91,7 @@ weight: 6
 
 - Can an `EdgeLabel` connect multiple pairs of `VertexLabel`, such as "investment" relationship, which can be "individual" investing in "enterprise", or "enterprise" investing in "enterprise"?
 
-  An `EdgeLabel` does not support connecting multiple pairs of `VertexLabels`, users need to split the `EdgeLabel` into finer details, such as: "personal investment", "enterprise investment".
+  Yes. Call `link(sourceLabel, targetLabel)` once per pair when building the `EdgeLabel`; every pair is kept, so one "investment" label can cover both "individual" to "enterprise" and "enterprise" to "enterprise". The older `sourceLabel()` and `targetLabel()` builder methods are deprecated and accept only a single pair.
 
 - Prompt `HTTP 415 Unsupported Media Type` when sending a request through `RestAPI`
 

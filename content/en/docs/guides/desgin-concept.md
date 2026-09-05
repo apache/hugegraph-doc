@@ -36,12 +36,13 @@ analysis, so EdgeCut is suitable for OLTP graph query, and VertexCut is more sui
 
 ### 3. VertexId Strategy
 
-Vertex of HugeGraph supports three ID strategies. Different VertexLabels in the same graph database can use different Id strategies. Currently, the Id strategies 
+Vertex of HugeGraph supports four ID strategies. Different VertexLabels in the same graph database can use different Id strategies. Currently, the Id strategies 
 supported by HugeGraph are:
 
 - Automatic generation (AUTOMATIC): Use the Snowflake algorithm to automatically generate a globally unique Id, Long type;
 - Primary Key (PRIMARY_KEY): Generate Id through VertexLabel+PrimaryKeyValues, String type;
 - Custom (CUSTOMIZE_STRING|CUSTOMIZE_NUMBER): User-defined Id, which is divided into two types: String and Long, and you need to ensure the uniqueness of the Id yourself;
+- Custom UUID (CUSTOMIZE_UUID): User-defined Id in UUID form, you need to ensure the uniqueness of the Id yourself;
 
 The default Id policy is AUTOMATIC, if the user calls the primaryKeys() method and sets the correct PrimaryKeys, the PRIMARY_KEY policy is automatically enabled. 
 After enabling the PRIMARY_KEY strategy, HugeGraph can implement data deduplication based on PrimaryKeys.
@@ -83,6 +84,15 @@ schema.vertexLabel("person")
 graph.addVertex(T.label, "person", T.id, 123456, "name", "marko","age", 18, "city", "Beijing");
  ```
 
+ 5. CUSTOMIZE_UUID ID Policy
+ ```java
+schema.vertexLabel("person")
+      .useCustomizeUuidId()
+      .properties("name", "age", "city")
+      .create();
+graph.addVertex(T.label, "person", T.id, UUID.randomUUID(), "name", "marko","age", 18, "city", "Beijing");
+ ```
+
 If users need Vertex deduplication, there are three options:
 
 1. Adopt PRIMARY_KEY strategy, automatic overwriting, suitable for batch insertion of large amount of data, users cannot know whether overwriting has occurred
@@ -92,16 +102,16 @@ If users need Vertex deduplication, there are three options:
 ### 4. EdgeId policy
 
 The EdgeId of HugeGraph is composed of `srcVertexId` + `edgeLabel` + `sortKey` + `tgtVertexId`.  Among them `sortKey` is an important concept of HugeGraph.
-There are two reasons for adding Edge sortKeyas the unique ID of Edge:
+There are two reasons for adding `sortKey` to Edge as the unique ID of Edge:
 
-1. If there are multiple edges of the same Label between two vertices, they can be sortKeydistinguished by
-2. For SuperNode nodes, it can be sortKeysorted and truncated by.
+1. If there are multiple edges of the same Label between two vertices, they can be distinguished by `sortKey`
+2. For SuperNode nodes, edges can be sorted and truncated by `sortKey`.
 
 Since EdgeId is composed of `srcVertexId` + `edgeLabel` + `sortKey` + `tgtVertexId`, HugeGraph will automatically overwrite when the same Edge is inserted 
 multiple times to achieve deduplication. It should be noted that the properties of Edge will also be overwritten in the batch insert mode.
 
 In addition, because HugeGraph's EdgeId adopts an automatic deduplication strategy, HugeGraph considers that there is only one edge in the case of self-loop 
-(a vertex has an edge pointing to itself). The graph has two edges.
+(a vertex has an edge pointing to itself), while a graph database that uses the AUTOMATIC strategy (TitanDB for example) considers that the graph has two edges.
 
 > The edges of HugeGraph only support directed edges, and undirected edges can be realized by creating two edges, Out and In.
 
@@ -109,9 +119,9 @@ In addition, because HugeGraph's EdgeId adopts an automatic deduplication strate
 
 ##### TinkerPop transaction overview
 
-A TinkerPop transaction refers to a unit of work that performs operations on the database. A set of operations within a transaction either succeeds or all fail. For a detailed introduction, please refer to the official documentation of TinkerPop: http://tinkerpop.apache.org/docs/current/reference/#transactions：http://tinkerpop.apache.org/docs/current/reference/#transactions
+A TinkerPop transaction refers to a unit of work that performs operations on the database. A set of operations within a transaction either succeeds or all fail. For a detailed introduction, please refer to the official documentation of TinkerPop: http://tinkerpop.apache.org/docs/current/reference/#transactions
 
-##### TinkerPop transaction overview
+##### TinkerPop transaction interfaces
 
 - open open transaction
 - commit commit transaction
@@ -206,7 +216,7 @@ Example: One transaction cannot read another transaction's uncommitted content
 
 - The server internally realizes isolation by binding transactions to threads (ThreadLocal)
 - The uncommitted content of this transaction overwrites the old data in chronological order for this transaction to query the latest version of data
-- The bottom layer relies on the back-end database to ensure transaction atomicity (for example, the batch interface of Cassandra/RocksDB guarantees atomicity)
+- The bottom layer relies on the back-end database to ensure transaction atomicity (for example, the batch interface of RocksDB guarantees atomicity)
 
 ###### Notice 
 

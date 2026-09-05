@@ -46,12 +46,13 @@ HugeGraph 相对于 TitanDB 而言，其主要特点如下：
 | father  | edge | character           | character           | -      |
 | mother  | edge | character           | character           | -      |
 | brother | edge | character           | character           | -      |
+| battled | edge | character           | character           | time   |
 | pet     | edge | character           | character           | -      |
 | lives   | edge | character           | location            | reason |
 
-在 HugeGraph 中，每个 edge label 只能作用于一对 source vertex label 和 target vertex label。也就是说，如果一个图内定义了一种关系 father 连接 character 和 character，那 farther 就不能再连接其他的 vertex labels。
+一个 edge label 可以连接多对 source vertex label 和 target vertex label：创建时对每一对顶点标签各调用一次 `link(sourceLabel, targetLabel)` 即可。已废弃的 `sourceLabel()` 和 `targetLabel()` 构建方法只支持单一配对。
 
-因此本例子将原TitanDB中的monster, god, human, demigod均使用相同的`vertex label: character`来表示, 同时增加属性type来标识人物的类型。`edge label`与原TitanDB保持一致。当然为了满足`edge label`约束，也可以通过调整`edge label`的`name`来实现。
+本例子将原TitanDB中的monster, god, human, demigod均使用相同的`vertex label: character`来表示, 同时增加属性type来标识人物的类型。`edge label`与原TitanDB保持一致。
 
 ### 2 Graph Schema and Data Ingest Examples
 
@@ -158,7 +159,7 @@ g.V().hasLabel('character').has('name','pluto').out('lives').in('lives').values(
 
 ```groovy
 pluto = g.V().hasLabel('character').has('name', 'pluto')
-g.V(pluto).out('lives').in('lives').where(is(neq(pluto)).values('name')
+g.V(pluto).out('lives').in('lives').where(is(neq(pluto))).values('name')
 
 // use 'as'
 g.V().hasLabel('character').has('name', 'pluto').as('x').out('lives').in('lives').where(neq('x')).values('name')

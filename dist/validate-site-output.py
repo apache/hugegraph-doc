@@ -670,12 +670,12 @@ class DocumentParser(html.parser.HTMLParser):
         self._in_content_marker = False
         self._in_style = False
         self._svg_depth = 0
-        self._media_depth = 0
+        self._media_elements: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         tag = tag.lower()
         if tag in {"audio", "video"}:
-            self._media_depth += 1
+            self._media_elements.append(tag)
         in_svg = bool(self._svg_depth) or tag == "svg"
         if tag == "svg":
             self._svg_depth += 1
@@ -697,14 +697,14 @@ class DocumentParser(html.parser.HTMLParser):
         )
         if content_marker == "start":
             self._content_markers[0] += 1
-            if self._in_content_marker or self._content_markers[0] > 1:
+            if self._in_content_marker:
                 self.authored_violations.append(
-                    "duplicate or nested authored-content start marker"
+                    "nested authored-content start marker"
                 )
             self._in_content_marker = True
         elif content_marker == "end":
             self._content_markers[1] += 1
-            if not self._in_content_marker or self._content_markers[1] > 1:
+            if not self._in_content_marker:
                 self.authored_violations.append(
                     "unexpected authored-content end marker"
                 )
@@ -828,7 +828,7 @@ class DocumentParser(html.parser.HTMLParser):
                 self.image_urls.append((tag, attribute, values[attribute]))
         resource_tag = (
             "media-source"
-            if tag == "source" and self._media_depth
+            if tag == "source" and self._media_elements
             else tag
         )
         self.resources.extend(
@@ -836,7 +836,7 @@ class DocumentParser(html.parser.HTMLParser):
             for attribute, url in resource_attributes
         )
 
-        if tag == "img" or (tag == "source" and not self._media_depth):
+        if tag == "img" or (tag == "source" and not self._media_elements):
             for attribute in ("src", "srcset"):
                 if not values.get(attribute):
                     continue
@@ -909,8 +909,17 @@ class DocumentParser(html.parser.HTMLParser):
             self._in_style = False
         if tag == "svg" and self._svg_depth:
             self._svg_depth -= 1
-        if tag in {"audio", "video"} and self._media_depth:
-            self._media_depth -= 1
+        if tag in {"audio", "video"}:
+            if self._media_elements and self._media_elements[-1] == tag:
+                self._media_elements.pop()
+            elif self._media_elements:
+                self.authored_violations.append(
+                    f"mismatched </{tag}> inside <{self._media_elements[-1]}>"
+                )
+            else:
+                self.authored_violations.append(
+                    f"unmatched </{tag}>"
+                )
         if tag in {"main", "article"} and self._content_depth:
             self._content_depth -= 1
 

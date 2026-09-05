@@ -871,11 +871,13 @@ class SiteOutputSecurityTest(unittest.TestCase):
             '<video><source src="https://www.apache.org/video.mp4" '
             'srcset="https://www.apache.org/video-hd.mp4 2x"></video>'
             '<audio><source src="https://www.apache.org/audio.mp3"></audio>'
+            '<video></audio>'
+            '<source src="https://www.apache.org/mismatched.mp4"></video>'
         )
         errors = VALIDATOR.document_security_errors(parser, "index.html", BASE)
         self.assertEqual(
             sum("external active resource" in error for error in errors),
-            3,
+            4,
             errors,
         )
         self.assertFalse(
@@ -905,6 +907,19 @@ class SiteOutputSecurityTest(unittest.TestCase):
         )
         self.assertTrue(
             VALIDATOR.document_security_errors(spoofed, "index.html", BASE)
+        )
+
+        sequential = parse(
+            '<template data-hg-authored-content="start"></template>'
+            "<p>one</p>"
+            '<template data-hg-authored-content="end"></template>'
+            '<template data-hg-authored-content="start"></template>'
+            "<p>two</p>"
+            '<template data-hg-authored-content="end"></template>'
+        )
+        self.assertEqual(
+            VALIDATOR.document_security_errors(sequential, "print.html", BASE),
+            [],
         )
 
     def test_link_rel_is_fail_closed_for_request_capable_and_unknown_values(self) -> None:

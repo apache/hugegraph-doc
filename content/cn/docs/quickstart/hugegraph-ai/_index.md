@@ -15,14 +15,31 @@ weight: 3
 - [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client)：管理 Schema、图数据和 Gremlin 查询的 Python SDK。
 - [vermeer-python-client](https://github.com/apache/hugegraph-ai/tree/main/vermeer-python-client)：调用 Vermeer 图计算服务的 Python SDK。
 
-仓库使用 `uv` workspace 管理 LLM 和 Python 客户端。HugeGraph-ML 是路径依赖模块，不在 workspace members 中。
+仓库使用 `uv` workspace，其成员是 `hugegraph-llm` 和 `hugegraph-python-client`。`hugegraph-ml` 和 `vermeer-python-client` 是可编辑的路径依赖，不在 workspace members 中。当前仓库版本为 `1.7.0`。
 
 ## 环境要求
 
-- HugeGraph-LLM：Python 3.10 或 3.11
-- HugeGraph-ML、Python 客户端：Python 3.10 或更高版本
+- HugeGraph-LLM：Python 3.10 或 3.11（`>=3.10,<3.12`）
+- HugeGraph-ML：Python 3.10 或更高版本
+- HugeGraph Python 客户端、Vermeer Python 客户端：Python 3.9 或更高版本
 - `uv` 0.7 或更高版本
-- HugeGraph Server 1.5 或更高版本
+- HugeGraph Server 1.3 或更高版本（推荐 1.5 或更高版本）
+
+## 可选依赖组
+
+根项目为每个模块声明一个 extra，另有几个组合项：
+
+| Extra | 安装内容 |
+|---|---|
+| `llm` | `hugegraph-llm` |
+| `ml` | `hugegraph-ml` |
+| `python-client` | `hugegraph-python-client` |
+| `vermeer` | `vermeer-python-client` |
+| `dev` | pytest、pytest-cov、coverage、pylint、ruff、mypy、ty、pre-commit |
+| `nk-llm` | `hugegraph-llm`、`hugegraph-python-client`，以及编译镜像所需的 Nuitka |
+| `all` | 四个模块包 |
+
+`hugegraph-llm` 自身还声明了 `vectordb` extra，用于安装 `pymilvus` 和 `qdrant-client`。
 
 ## Docker Compose 部署
 
@@ -70,6 +87,7 @@ cd hugegraph-ml/src
 ## 后续阅读
 
 - [HugeGraph-LLM](./hugegraph-llm.md)
+- [HugeGraph-LLM 使用流程](./quick_start.md)
 - [配置参考](./config-reference.md)
 - [REST API](./rest-api.md)
 - [HugeGraph-ML](./hugegraph-ml.md)

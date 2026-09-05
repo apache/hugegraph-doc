@@ -34,20 +34,20 @@ Restore 有两种模式：
 bin/hugegraph backup -t all -d data
 ```
 
-该命令将 http://127.0.0.1 的 hugegraph 图的全部元数据和图数据备份到data目录下。
+该命令将 http://127.0.0.1:8080（默认 --url）的 hugegraph 图的全部元数据和图数据备份到data目录下。
 
-> Backup 在三种图模式下都可以正常工作
+> Backup 在任意图模式下都可以正常工作，它不会检查图模式
 
 #### Restore
 
-Restore 有两种模式： RESTORING 和 MERGING，备份之前首先要根据需要设置图模式。
+Restore 有两种模式： RESTORING 和 MERGING，恢复之前首先要根据需要设置图模式，图处于其他模式时 restore 命令会失败。
 
 ##### 步骤1：查看并设置图模式
 
 ```bash
 bin/hugegraph graph-mode-get
 ```
-该命令用于查看当前图模式，包括：NONE、RESTORING、MERGING。
+该命令用于查看当前图模式，包括：NONE、RESTORING、MERGING、LOADING。
 
 ```bash
 bin/hugegraph graph-mode-set -m RESTORING
@@ -59,7 +59,7 @@ bin/hugegraph graph-mode-set -m RESTORING
 ```bash
 bin/hugegraph restore -t all -d data
 ```
-该命令将data目录下的全部元数据和图数据重新导入到 http://127.0.0.1 的 hugegraph 图中。
+该命令将data目录下的全部元数据和图数据重新导入到 http://127.0.0.1:8080 的 hugegraph 图中。
 
 ##### 步骤3：恢复图模式
 

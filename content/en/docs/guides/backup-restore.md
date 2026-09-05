@@ -34,20 +34,20 @@ You can use [hugegraph-tools](/docs/quickstart/toolchain/hugegraph-tools) to bac
 bin/hugegraph backup -t all -d data
 ```
 
-This command backs up all the metadata and graph data of the hugegraph graph of http://127.0.0.1 to the data directory.
+This command backs up all the metadata and graph data of the hugegraph graph of http://127.0.0.1:8080 (the default --url) to the data directory.
 
-> Backup works fine in all three graph modes
+> Backup works in any graph mode, it does not check the graph mode
 
 #### Restore
 
-Restore has two modes: RESTORING and MERGING. Before backup, you must first set the graph mode according to your needs.
+Restore has two modes: RESTORING and MERGING. Before restore, you must first set the graph mode according to your needs, the restore command fails when the graph is in any other mode.
 
 ##### Step 1: View and set graph mode
 
 ```bash
 bin/hugegraph graph-mode-get
 ```
-This command is used to view the current graph mode, including: NONE, RESTORING, MERGING.
+This command is used to view the current graph mode, including: NONE, RESTORING, MERGING, LOADING.
 
 ```bash
 bin/hugegraph graph-mode-set -m RESTORING
@@ -60,7 +60,7 @@ This command is used to set the graph mode. Before Restore, it can be set to RES
 ```bash
 bin/hugegraph restore -t all -d data
 ```
-This command re-imports all metadata and graph data in the data directory to the hugegraph graph at http://127.0.0.1.
+This command re-imports all metadata and graph data in the data directory to the hugegraph graph at http://127.0.0.1:8080.
 
 ##### Step 3: Restoring Graph Mode
 

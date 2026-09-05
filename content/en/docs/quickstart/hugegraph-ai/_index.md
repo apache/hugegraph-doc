@@ -15,14 +15,31 @@ weight: 3
 - [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client): a Python SDK for managing schemas and graph data and running Gremlin queries.
 - [vermeer-python-client](https://github.com/apache/hugegraph-ai/tree/main/vermeer-python-client): a Python SDK for the Vermeer graph computing service.
 
-The repository uses a `uv` workspace to manage the LLM and Python client packages. HugeGraph-ML is a path dependency rather than a workspace member.
+The repository uses a `uv` workspace whose members are `hugegraph-llm` and `hugegraph-python-client`. `hugegraph-ml` and `vermeer-python-client` are editable path dependencies rather than workspace members. The current repository version is `1.7.0`.
 
 ## Requirements
 
-- HugeGraph-LLM: Python 3.10 or 3.11
-- HugeGraph-ML and the Python clients: Python 3.10 or later
+- HugeGraph-LLM: Python 3.10 or 3.11 (`>=3.10,<3.12`)
+- HugeGraph-ML: Python 3.10 or later
+- HugeGraph Python client and Vermeer Python client: Python 3.9 or later
 - `uv` 0.7 or later
-- HugeGraph Server 1.5 or later
+- HugeGraph Server 1.3 or later (1.5 or later recommended)
+
+## Optional Dependency Groups
+
+The root project declares one extra per module plus a few combined ones:
+
+| Extra | Installs |
+|---|---|
+| `llm` | `hugegraph-llm` |
+| `ml` | `hugegraph-ml` |
+| `python-client` | `hugegraph-python-client` |
+| `vermeer` | `vermeer-python-client` |
+| `dev` | pytest, pytest-cov, coverage, pylint, ruff, mypy, ty, pre-commit |
+| `nk-llm` | `hugegraph-llm`, `hugegraph-python-client`, and Nuitka for the compiled image |
+| `all` | all four module packages |
+
+`hugegraph-llm` itself declares a `vectordb` extra that adds `pymilvus` and `qdrant-client`.
 
 ## Deploy with Docker Compose
 
@@ -70,6 +87,7 @@ Example scripts are under `hugegraph-ml/src/hugegraph_ml/examples/`.
 ## Next Steps
 
 - [HugeGraph-LLM](./hugegraph-llm.md)
+- [HugeGraph-LLM workflow](./quick_start.md)
 - [Configuration reference](./config-reference.md)
 - [REST API](./rest-api.md)
 - [HugeGraph-ML](./hugegraph-ml.md)

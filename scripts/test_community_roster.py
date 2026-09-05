@@ -78,6 +78,19 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
         with self.assertRaisesRegex(roster.RosterError, "disagree"):
             roster.build_roster(committee, projects, people, mapping)
 
+    def test_build_roster_rejects_duplicate_ldap_ids(self):
+        for field in ("owners", "members"):
+            with self.subTest(field=field):
+                committee, projects, people, mapping = self.fixture()
+                projects["projects"]["hugegraph"][field].append(
+                    projects["projects"]["hugegraph"][field][0]
+                )
+                with self.assertRaisesRegex(
+                    roster.RosterError,
+                    rf"LDAP project {field} contains duplicate ASF IDs",
+                ):
+                    roster.build_roster(committee, projects, people, mapping)
+
     def test_mapping_requires_unique_numeric_ids(self):
         mapping = {"schema_version": 1, "mappings": {"one": {"login": "same", "user_id": 1}, "two": {"login": "other", "user_id": 1}}}
         with self.assertRaisesRegex(roster.RosterError, "duplicate GitHub user_id"):
@@ -383,6 +396,41 @@ print(json.dumps([person["asf_id"] for person in result["roles"]["pmc"]]))
         finally:
             roster._fetch_json = old_fetch
         self.assertEqual(original, roster.ROSTER_PATH.read_bytes())
+
+    def test_refresh_duplicate_ldap_ids_preserves_last_good(self):
+        for field in ("owners", "members"):
+            with self.subTest(field=field), tempfile.TemporaryDirectory(
+                prefix="community-duplicate-test-"
+            ) as directory:
+                root = pathlib.Path(directory)
+                data_dir = root / "data"
+                roster_path, map_path = data_dir / "roster.json", data_dir / "github-map.json"
+                data_dir.mkdir()
+                roster_path.write_bytes(b"last-good\n")
+                committee, projects, people, mapping = self.fixture()
+                projects["projects"]["hugegraph"][field].append(
+                    projects["projects"]["hugegraph"][field][0]
+                )
+                sources = {
+                    roster.SOURCES["committee"]: committee,
+                    roster.SOURCES["projects"]: projects,
+                    roster.SOURCES["people"]: people,
+                }
+                map_path.write_text(json.dumps(mapping))
+                with mock.patch.object(roster, "ROOT", root), \
+                     mock.patch.object(roster, "DATA_DIR", data_dir), \
+                     mock.patch.object(roster, "ROSTER_PATH", roster_path), \
+                     mock.patch.object(roster, "MAP_PATH", map_path), \
+                     mock.patch.object(roster, "AVATAR_DIR", root / "avatars"), \
+                     mock.patch.object(roster, "_fetch_json", side_effect=sources.__getitem__), \
+                     mock.patch.object(roster, "_commit_bundle") as commit:
+                    with self.assertRaisesRegex(
+                        roster.RosterError,
+                        rf"LDAP project {field} contains duplicate ASF IDs",
+                    ):
+                        roster.refresh()
+                commit.assert_not_called()
+                self.assertEqual(b"last-good\n", roster_path.read_bytes())
 
     def test_copy_failure_preserves_last_good_bundle(self):
         with tempfile.TemporaryDirectory(prefix="community-copy-test-") as directory:

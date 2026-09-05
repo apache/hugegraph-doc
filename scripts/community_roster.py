@@ -331,6 +331,9 @@ def build_roster(committee_data: dict, projects_data: dict, people_data: dict, m
         raise RosterError("LDAP project owners/members must be arrays")
     if any(not isinstance(item, str) or not ASF_ID_PATTERN.fullmatch(item) for item in owners + members):
         raise RosterError("LDAP project owners/members contain an invalid ASF ID")
+    for field, asf_ids in (("owners", owners), ("members", members)):
+        if len(asf_ids) != len(set(asf_ids)):
+            raise RosterError(f"LDAP project {field} contains duplicate ASF IDs")
     if not isinstance(chair_map, dict) or len(chair_map) != 1:
         raise RosterError("committee source must name exactly one Chair")
     if not isinstance(committee_roster, dict):

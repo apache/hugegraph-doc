@@ -26,6 +26,10 @@ ALLOWED_PATHS = {
     "/versions/1.7/cn/docs",
     "/versions/1.5/docs",
     "/versions/1.5/cn/docs",
+    "/versions/1.3/docs",
+    "/versions/1.3/cn/docs",
+    "/versions/1.0/docs",
+    "/versions/1.0/cn/docs",
 }
 
 
@@ -154,8 +158,36 @@ class VersionUrlTest(unittest.TestCase):
             (artifact / ".version.json").write_text(
                 json.dumps(metadata), encoding="utf-8"
             )
+            social = artifact / "img/social/fallback.png"
+            social.parent.mkdir(parents=True)
+            social.write_bytes(b"png")
             (artifact / "index.html").write_text(
-                '<nav id="TableOfContents"></nav>', encoding="utf-8"
+                '<meta property="og:image" content="/img/social/fallback.png">'
+                '<meta name="twitter:image" content="/img/social/fallback.png">'
+                '<nav id="TableOfContents"></nav>',
+                encoding="utf-8",
+            )
+            en_llms = artifact / "docs/llms-full.txt"
+            cn_llms = artifact / "cn/docs/llms-full.txt"
+            en_llms.parent.mkdir(parents=True)
+            cn_llms.parent.mkdir(parents=True)
+            en_llms.write_text(
+                (
+                    f"Source: {ORIGIN}docs/index.md\n\n"
+                    "LLMS index: [llms.txt](/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            cn_llms.write_text(
+                (
+                    f"Source: {ORIGIN}cn/docs/index.md\n\n"
+                    "LLMS 索引： [llms.txt](/cn/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            (artifact / "llms.txt").write_text("English index\n", encoding="utf-8")
+            (artifact / "cn/llms.txt").write_text(
+                "中文索引\n", encoding="utf-8"
             )
             contract = temp / "url-contract.json"
             contract.write_text(
@@ -177,9 +209,36 @@ class VersionUrlTest(unittest.TestCase):
     def test_version_urls_preserve_language_and_order(self) -> None:
         manifest = {
             "versions": [
-                {"id": "latest", "name": "latest", "publishPath": ""},
-                {"id": "1.7", "name": "1.7", "publishPath": "versions/1.7"},
-                {"id": "1.5", "name": "1.5", "publishPath": "versions/1.5"},
+                {
+                    "id": "latest",
+                    "name": "latest",
+                    "publishPath": "",
+                    "archived": False,
+                },
+                {
+                    "id": "1.7",
+                    "name": "1.7",
+                    "publishPath": "versions/1.7",
+                    "archived": True,
+                },
+                {
+                    "id": "1.5",
+                    "name": "1.5",
+                    "publishPath": "versions/1.5",
+                    "archived": True,
+                },
+                {
+                    "id": "1.3",
+                    "name": "1.3",
+                    "publishPath": "versions/1.3",
+                    "archived": True,
+                },
+                {
+                    "id": "1.0",
+                    "name": "1.0",
+                    "publishPath": "versions/1.0",
+                    "archived": True,
+                },
             ]
         }
         self.assertEqual(
@@ -188,6 +247,8 @@ class VersionUrlTest(unittest.TestCase):
                 f"{ORIGIN}docs/",
                 f"{ORIGIN}versions/1.7/docs/",
                 f"{ORIGIN}versions/1.5/docs/",
+                f"{ORIGIN}versions/1.3/docs/",
+                f"{ORIGIN}versions/1.0/docs/",
             ],
         )
         self.assertEqual(
@@ -196,6 +257,8 @@ class VersionUrlTest(unittest.TestCase):
                 f"{ORIGIN}cn/docs/",
                 f"{ORIGIN}versions/1.7/cn/docs/",
                 f"{ORIGIN}versions/1.5/cn/docs/",
+                f"{ORIGIN}versions/1.3/cn/docs/",
+                f"{ORIGIN}versions/1.0/cn/docs/",
             ],
         )
         self.assertEqual(
@@ -212,6 +275,401 @@ class VersionUrlTest(unittest.TestCase):
             ],
             f"{ORIGIN}cn/docs/",
         )
+
+    def test_direct_hugo_config_is_derived_from_five_version_manifest(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        latest = manifest["versions"][0]
+        config = versioning.derived_version_config(manifest, latest, ORIGIN)
+        expected = ["latest", "1.7", "1.5", "1.3", "1.0"]
+        self.assertEqual(
+            [item["version"] for item in config["params"]["versions"]], expected
+        )
+        for language in ("en", "cn"):
+            self.assertEqual(
+                [
+                    item["version"]
+                    for item in config["languages"][language]["params"]["versions"]
+                ],
+                expected,
+            )
+        self.assertNotIn("1.2", json.dumps(config))
+
+    def test_shell_static_assets_include_all_shared_resources(self) -> None:
+        self.assertIn(
+            "img/social/hugegraph-default.png",
+            versioning.SHELL_STATIC_FILES,
+        )
+        self.assertTrue(
+            (
+                versioning.ROOT
+                / "static/img/social/hugegraph-default.png"
+            ).is_file()
+        )
+        self.assertIn("img/bootstrap-controls", versioning.SHELL_STATIC_DIRS)
+        self.assertIn("img/home", versioning.SHELL_STATIC_DIRS)
+        controls = (
+            versioning.ROOT / "static/img/bootstrap-controls"
+        )
+        self.assertEqual(len(list(controls.glob("*.svg"))), 20)
+
+        with tempfile.TemporaryDirectory() as temp_name:
+            assembly = Path(temp_name)
+            versioning.overlay_shell(
+                assembly,
+                historical=True,
+                origin=ORIGIN,
+            )
+            copied = assembly / "static/img/bootstrap-controls"
+            self.assertEqual(
+                sorted(path.name for path in copied.glob("*.svg")),
+                sorted(path.name for path in controls.glob("*.svg")),
+            )
+            self.assertEqual(
+                sorted(
+                    path.name
+                    for path in (assembly / "static/img/home").glob("*.jpg")
+                ),
+                ["hugegraph-hero-1920.jpg", "hugegraph-hero-960.jpg"],
+            )
+
+    def test_llms_full_contract_requires_latest_locales_and_forbids_history(
+        self,
+    ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        latest = manifest["versions"][0]
+        archived = manifest["versions"][-1]
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            en = root / "docs/llms-full.txt"
+            cn = root / "cn/docs/llms-full.txt"
+            en.parent.mkdir(parents=True)
+            cn.parent.mkdir(parents=True)
+            en.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/docs/index.md\n\n"
+                    "LLMS index: [llms.txt](/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            cn.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/cn/docs/index.md\n\n"
+                    "LLMS 索引： [llms.txt](/cn/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            versioning.validate_llms_full_outputs(root, latest, ORIGIN)
+
+            cn.unlink()
+            with self.assertRaisesRegex(SystemExit, "Chinese LLMSFULL"):
+                versioning.validate_llms_full_outputs(root, latest, ORIGIN)
+            cn.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/cn/docs/index.md\n\n"
+                    "LLMS index: [llms.txt](/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(SystemExit, "locale contract"):
+                versioning.validate_llms_full_outputs(root, latest, ORIGIN)
+
+            with self.assertRaisesRegex(SystemExit, "historical artifact"):
+                versioning.validate_llms_full_outputs(root, archived, ORIGIN)
+
+    def test_llms_full_contract_validates_every_source_line(self) -> None:
+        latest = versioning.load_manifest(
+            versioning.ROOT / "versions.json"
+        )["versions"][0]
+        invalid_sources = (
+            "https://hugegraph.apache.org/cn/docs/config/index.md",
+            "https://example.com/docs/config/index.md",
+            "https://hugegraph.apache.org/versions/1.7/docs/config/index.md",
+            "javascript:alert(1)",
+            "https://hugegraph.apache.org/docs/config/index.md?",
+            "https://hugegraph.apache.org/docs/config/index.md#",
+            "https://hugegraph.apache.org/docs/%63onfig/index.md",
+            "https://hugegraph.apache.org/docs/./config/index.md",
+            "https://[invalid/docs/config/index.md",
+            "",
+            "https://hugegraph.apache.org/docs/index.md",
+        )
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            en = root / "docs/llms-full.txt"
+            cn = root / "cn/docs/llms-full.txt"
+            en.parent.mkdir(parents=True)
+            cn.parent.mkdir(parents=True)
+            cn.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/cn/docs/index.md\n\n"
+                    "LLMS 索引： [llms.txt](/cn/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            for invalid in invalid_sources:
+                with self.subTest(source=invalid):
+                    en.write_text(
+                        (
+                            "Source: https://hugegraph.apache.org/docs/index.md\n"
+                            f"Source: {invalid}\n\n"
+                            "LLMS index: [llms.txt](/llms.txt)\n"
+                        ),
+                        encoding="utf-8",
+                    )
+                    with self.assertRaisesRegex(
+                        SystemExit, "English LLMSFULL source"
+                    ):
+                        versioning.validate_llms_full_outputs(
+                            root, latest, ORIGIN
+                        )
+
+    def test_llms_full_contract_requires_canonical_source_first(self) -> None:
+        latest = versioning.load_manifest(
+            versioning.ROOT / "versions.json"
+        )["versions"][0]
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            en = root / "docs/llms-full.txt"
+            cn = root / "cn/docs/llms-full.txt"
+            en.parent.mkdir(parents=True)
+            cn.parent.mkdir(parents=True)
+            en.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/docs/config/index.md\n"
+                    "Source: https://hugegraph.apache.org/docs/index.md\n\n"
+                    "LLMS index: [llms.txt](/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            cn.write_text(
+                (
+                    "Source: https://hugegraph.apache.org/cn/docs/index.md\n\n"
+                    "LLMS 索引： [llms.txt](/cn/llms.txt)\n"
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                SystemExit, "English LLMSFULL canonical source"
+            ):
+                versioning.validate_llms_full_outputs(root, latest, ORIGIN)
+
+    def test_social_image_metadata_requires_safe_matching_local_images(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            image = root / "img/social/fallback.png"
+            image.parent.mkdir(parents=True)
+            image.write_bytes(b"png")
+            non_image = root / "img/social/not-image.html"
+            non_image.write_text("not an image", encoding="utf-8")
+
+            def document(og: str, twitter: str) -> versioning.DocumentParser:
+                parser = versioning.DocumentParser()
+                parser.feed(
+                    f'<meta property="og:image" content="{og}">'
+                    f'<meta name="twitter:image" content="{twitter}">'
+                )
+                return parser
+
+            for value in (
+                "https://hugegraph.apache.org/img/social/fallback.png",
+                "/img/social/fallback.png",
+            ):
+                versioning.validate_social_image_metadata(
+                    document(value, value),
+                    "docs/index.html",
+                    root,
+                    ORIGIN,
+                )
+
+            invalid_pairs = (
+                ("mailto:test@example.com", "mailto:test@example.com"),
+                ("tel:+123", "tel:+123"),
+                ("javascript:alert(1)", "javascript:alert(1)"),
+                ("?image=/img/social/fallback.png", "?image=/img/social/fallback.png"),
+                ("#fallback.png", "#fallback.png"),
+                (
+                    "http://hugegraph.apache.org/img/social/fallback.png",
+                    "http://hugegraph.apache.org/img/social/fallback.png",
+                ),
+                (
+                    "https://example.com/img/social/fallback.png",
+                    "https://example.com/img/social/fallback.png",
+                ),
+                ("/img/social/missing.png", "/img/social/missing.png"),
+                ("/img/social/not-image.html", "/img/social/not-image.html"),
+                (
+                    "/img/social/fallback.png",
+                    "https://hugegraph.apache.org/img/social/fallback.png",
+                ),
+            )
+            for og, twitter in invalid_pairs:
+                with self.subTest(og=og, twitter=twitter), self.assertRaises(
+                    SystemExit
+                ):
+                    versioning.validate_social_image_metadata(
+                        document(og, twitter),
+                        "docs/index.html",
+                        root,
+                        ORIGIN,
+                    )
+
+    def test_social_image_metadata_allows_only_redirects_to_omit_both_tags(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            empty = versioning.DocumentParser()
+            empty.feed('<meta http-equiv="refresh" content="0; url=/docs/">')
+
+            versioning.validate_social_image_metadata(
+                empty,
+                "docs/alias/index.html",
+                root,
+                ORIGIN,
+                allow_missing=True,
+            )
+
+            with self.assertRaisesRegex(
+                SystemExit, "social image metadata is missing or duplicated"
+            ):
+                versioning.validate_social_image_metadata(
+                    empty,
+                    "docs/index.html",
+                    root,
+                    ORIGIN,
+                )
+
+            partial = versioning.DocumentParser()
+            partial.feed(
+                '<meta http-equiv="refresh" content="0; url=/docs/">'
+                '<meta property="og:image" content="/img/social/fallback.png">'
+            )
+            with self.assertRaisesRegex(
+                SystemExit, "social image metadata is missing or duplicated"
+            ):
+                versioning.validate_social_image_metadata(
+                    partial,
+                    "docs/alias/index.html",
+                    root,
+                    ORIGIN,
+                    allow_missing=True,
+                )
+
+    def test_temporary_manifest_drives_prepare_config_and_route_order(self) -> None:
+        manifest_data = {
+            "schemaVersion": 1,
+            "repository": "https://github.com/apache/hugegraph-doc.git",
+            "versions": [
+                {
+                    "id": "latest",
+                    "name": "Next",
+                    "ref": "main-docs",
+                    "publishPath": "",
+                    "archived": False,
+                    "githubBranch": "main-docs",
+                },
+                {
+                    "id": "2.0",
+                    "name": "2.0",
+                    "ref": "release-2-docs",
+                    "publishPath": "versions/stable-two",
+                    "archived": True,
+                    "githubBranch": "release-2-docs",
+                },
+                {
+                    "id": "1.9",
+                    "name": "1.9",
+                    "ref": "release-19-docs",
+                    "publishPath": "versions/stable-nineteen",
+                    "archived": True,
+                    "githubBranch": "release-19-docs",
+                },
+            ],
+        }
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            manifest_path = temp / "versions.json"
+            manifest_path.write_text(json.dumps(manifest_data), encoding="utf-8")
+            manifest = versioning.load_manifest(manifest_path)
+            resolved_path = temp / "resolved.json"
+            args = argparse.Namespace(
+                manifest=manifest_path,
+                local=False,
+                latest_sha="a" * 40,
+                select=None,
+                output=resolved_path,
+            )
+            remote_shas = {
+                "release-2-docs": "b" * 40,
+                "release-19-docs": "c" * 40,
+            }
+            with (
+                mock.patch.object(versioning, "run", return_value="a" * 40),
+                mock.patch.object(
+                    versioning,
+                    "resolve_remote",
+                    side_effect=lambda _repository, ref: remote_shas[ref],
+                ),
+            ):
+                versioning.prepare(args)
+            resolved = json.loads(resolved_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                [entry["id"] for entry in resolved["include"]],
+                ["latest", "2.0", "1.9"],
+            )
+            self.assertEqual(
+                [entry["ref"] for entry in resolved["versions"]],
+                ["main-docs", "release-2-docs", "release-19-docs"],
+            )
+
+            config = versioning.derived_version_config(
+                manifest, manifest["versions"][0], ORIGIN
+            )
+            self.assertEqual(
+                [entry["version"] for entry in config["params"]["versions"]],
+                ["latest", "2.0", "1.9"],
+            )
+            self.assertEqual(
+                [entry["url"] for entry in config["params"]["versions"]],
+                [
+                    f"{ORIGIN}docs/",
+                    f"{ORIGIN}versions/stable-two/docs/",
+                    f"{ORIGIN}versions/stable-nineteen/docs/",
+                ],
+            )
+            config_path = temp / "version-config.json"
+            versioning.render_config(
+                argparse.Namespace(
+                    manifest=manifest_path,
+                    version=None,
+                    site_origin=ORIGIN,
+                    historical_origin=None,
+                    output=config_path,
+                )
+            )
+            rendered_config = json.loads(config_path.read_text(encoding="utf-8"))
+            self.assertEqual(rendered_config["params"]["version"], "latest")
+            self.assertEqual(
+                rendered_config["params"]["github_branch"], "main-docs"
+            )
+
+            roots = {}
+            for entry in manifest["versions"]:
+                root = temp / entry["id"]
+                roots[entry["id"]] = root
+                for relative in ("docs/guide", "cn/docs/guide"):
+                    page = root / relative / "index.html"
+                    page.parent.mkdir(parents=True, exist_ok=True)
+                    page.write_text("<html></html>", encoding="utf-8")
+            routes = versioning.generate_version_routes(roots, manifest)
+            self.assertEqual(routes["versions"], ["latest", "2.0", "1.9"])
+            self.assertEqual(
+                list(routes["pages"]["en:guide"]),
+                ["latest", "2.0", "1.9"],
+            )
+            versioning.validate_version_routes(routes, manifest)
 
     def test_write_error_documents_keeps_localized_404_status_targets(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
@@ -555,6 +1013,51 @@ class VersionUrlTest(unittest.TestCase):
                     self.assertNotIn(old, rendered)
                     self.assertEqual(rendered.count(new), expected_count)
 
+    def test_historical_pages_are_noindex_and_aliases_are_locale_aware(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            for index, language_prefix in enumerate(("", "cn/")):
+                target = (
+                    output
+                    / language_prefix
+                    / "docs/quickstart/hugegraph/hugegraph-server/index.html"
+                )
+                target.parent.mkdir(parents=True)
+                target.write_text(
+                    '<meta name="robots" content="index, follow">'
+                    if index == 0
+                    else '<meta name="robots" content="noindex, nofollow">',
+                    encoding="utf-8",
+                )
+            error_page = output / "404.html"
+            error_page.write_text(
+                '<meta name="robots" content="noindex,nofollow">', encoding="utf-8"
+            )
+            self.assertEqual(versioning.mark_historical_pages_noindex(output), 2)
+            self.assertIn(
+                "noindex,nofollow", error_page.read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                versioning.write_historical_route_aliases(
+                    output, ORIGIN, "versions/1.0"
+                ),
+                2,
+            )
+            for language_prefix in ("", "cn/"):
+                alias = (
+                    output
+                    / language_prefix
+                    / "docs/quickstart/hugegraph-server/index.html"
+                )
+                body = alias.read_text(encoding="utf-8")
+                self.assertIn('content="noindex,follow"', body)
+                self.assertIn(
+                    f"{ORIGIN}versions/1.0/{language_prefix}"
+                    "docs/quickstart/hugegraph/hugegraph-server/",
+                    body,
+                )
+            self.assertFalse((output / "cn/cn").exists())
+
     def test_exact_legacy_content_fixes_fail_closed_on_count_drift(self) -> None:
         language, relative, old, _, _ = versioning.LEGACY_EXACT_CONTENT_FIXES["1.5"][0]
         for source in ("no expected anchor", f"{old}\n{old}"):
@@ -709,6 +1212,70 @@ class VersionUrlTest(unittest.TestCase):
                     allowed_paths=ALLOWED_PATHS,
                 )
 
+    def test_latest_staging_scope_preserves_production_history_selector(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        latest = manifest["versions"][0]
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            history_url = f"{ORIGIN}versions/1.7/docs/"
+            page = output / "index.html"
+            page.write_text(
+                f'<a href="{ORIGIN}docs/">latest</a>'
+                f'<a href="{history_url}">1.7</a>',
+                encoding="utf-8",
+            )
+            llms = output / "llms-full.txt"
+            llms.write_text(
+                f"# Corpus\n\n- [Latest]({ORIGIN}docs/)\n"
+                f"- [1.7]({history_url})\n",
+                encoding="utf-8",
+            )
+
+            versioning.scope_version_artifact(
+                output,
+                manifest,
+                latest,
+                STAGING_ORIGIN,
+                historical_origin=ORIGIN,
+            )
+
+            rendered = page.read_text(encoding="utf-8")
+            self.assertIn(f'href="{STAGING_ORIGIN}docs/"', rendered)
+            self.assertIn(f'href="{history_url}"', rendered)
+            rendered_llms = llms.read_text(encoding="utf-8")
+            self.assertIn(f"]({STAGING_ORIGIN}docs/)", rendered_llms)
+            self.assertIn(f"]({history_url})", rendered_llms)
+
+    def test_full_staging_missing_latest_shared_route_uses_staging_origin(
+        self,
+    ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        oldest = next(entry for entry in manifest["versions"] if entry["id"] == "1.0")
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            page = output / "docs/index.html"
+            page.parent.mkdir(parents=True)
+            page.write_text(
+                '<a href="/docs/guides/security/?from=archive#report">Security</a>',
+                encoding="utf-8",
+            )
+
+            versioning.scope_version_artifact(
+                output,
+                manifest,
+                oldest,
+                STAGING_ORIGIN,
+                historical_origin=STAGING_ORIGIN,
+            )
+
+            self.assertIn(
+                (
+                    f'href="{STAGING_ORIGIN}'
+                    'docs/guides/security/?from=archive#report"'
+                ),
+                page.read_text(encoding="utf-8"),
+            )
+
     def test_rejects_non_selector_cross_version_url(self) -> None:
         with self.assertRaises(SystemExit):
             rewrite("/versions/1.5/docs/config/")
@@ -724,6 +1291,7 @@ class VersionUrlTest(unittest.TestCase):
                 origin=ORIGIN,
                 publish_path="versions/1.5",
                 allowed_paths=ALLOWED_PATHS,
+                version_id="1.5",
             ),
             "https://hugegraph.apache.org/versions/1.5/docs/introduction/readme/",
         )
@@ -746,14 +1314,61 @@ class VersionUrlTest(unittest.TestCase):
         self.assertIn('<a href="/docs/">example</a>', rendered)
         self.assertIn('<a href="https://hugegraph.apache.org/blog/">Blog</a>', rendered)
 
+    def test_rewrites_each_srcset_and_imagesrcset_candidate(self) -> None:
+        source = (
+            '<img srcset="/images/one.png 1x, /images/two.png 2x">'
+            '<link rel="preload" as="image" '
+            'imagesrcset="/images/three.png 400w, /images/four.png 800w">'
+            '<source srcset=/images/five.png>'
+            '<svg><use xlink:href="/images/sprite.svg#icon"></use></svg>'
+            '<button data-td-action-url="/docs/action/">action</button>'
+        )
+        rendered, count = versioning.rewrite_text_urls(
+            source,
+            rewrite,
+            markdown=False,
+        )
+        self.assertEqual(count, 7)
+        for name in ("one", "two", "three", "four", "five"):
+            self.assertIn(
+                f"/versions/1.7/images/{name}.png",
+                rendered,
+            )
+        self.assertIn(" 1x,", rendered)
+        self.assertIn(" 800w", rendered)
+        self.assertIn(
+            'xlink:href="/versions/1.7/images/sprite.svg#icon"',
+            rendered,
+        )
+        self.assertIn(
+            'data-td-action-url="/versions/1.7/docs/action/"',
+            rendered,
+        )
+
+    def test_markdown_rewrites_multiline_srcset_outside_fences(self) -> None:
+        source = (
+            "<img\n"
+            '  srcset="/images/one.png 1x,\n'
+            '          /images/two.png 2x">\n'
+            "```html\n"
+            "<img\n"
+            '  srcset="/images/example.png 1x,\n'
+            '          /images/example-2x.png 2x">\n'
+            "```\n"
+        )
+        rendered, count = versioning.rewrite_text_urls(
+            source,
+            rewrite,
+            markdown=True,
+        )
+        self.assertEqual(count, 2)
+        self.assertIn("/versions/1.7/images/one.png 1x", rendered)
+        self.assertIn("/versions/1.7/images/two.png 2x", rendered)
+        self.assertIn('srcset="/images/example.png 1x,', rendered)
+        self.assertIn("/images/example-2x.png 2x", rendered)
+
     def test_language_fallback_scopes_to_each_artifact_base(self) -> None:
-        manifest = {
-            "versions": [
-                {"publishPath": ""},
-                {"publishPath": "versions/1.7"},
-                {"publishPath": "versions/1.5"},
-            ]
-        }
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
         relative = "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html"
         for publish_path, expected_url in (
             ("", "/"),
@@ -795,7 +1410,11 @@ class VersionUrlTest(unittest.TestCase):
                     versioning.scope_version_artifact(
                         output,
                         manifest,
-                        {"publishPath": publish_path},
+                        next(
+                            entry
+                            for entry in manifest["versions"]
+                            if entry["publishPath"] == publish_path
+                        ),
                         STAGING_ORIGIN,
                     )
 
@@ -979,6 +1598,37 @@ class VersionUrlTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 versioning.validate_artifact(args)
 
+    def test_validate_command_runs_complete_rendered_security_scan(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            artifact = Path(temp_name) / "artifact"
+            artifact.mkdir()
+            entry = json.loads(
+                (versioning.ROOT / "versions.json").read_text(encoding="utf-8")
+            )["versions"][0]
+            sha = "a" * 40
+            metadata = dict(entry)
+            metadata.update({"sha": sha, "baseURL": ORIGIN})
+            (artifact / ".version.json").write_text(
+                json.dumps(metadata), encoding="utf-8"
+            )
+            args = argparse.Namespace(
+                manifest=versioning.ROOT / "versions.json",
+                version="latest",
+                sha=sha,
+                site_origin=ORIGIN,
+                artifact=artifact,
+            )
+            with (
+                mock.patch.object(
+                    versioning,
+                    "validate_output_security",
+                    side_effect=SystemExit("unsafe rendered resource"),
+                ) as scan,
+                self.assertRaisesRegex(SystemExit, "unsafe rendered resource"),
+            ):
+                versioning.validate_artifact(args)
+            scan.assert_called_once_with(artifact.resolve(), ORIGIN)
+
     def test_rejects_active_and_ambiguous_url_schemes(self) -> None:
         for value in (
             "javascript:alert(1)",
@@ -986,12 +1636,53 @@ class VersionUrlTest(unittest.TestCase):
             "file:///etc/passwd",
             "ftp://example.org/file",
             "//example.org/path",
+            "https:///docs/introduction/",
+            "https:////docs/introduction/",
+            "http:docs/introduction/",
+            "/docs/introduction/\t",
         ):
             with self.subTest(value=value), self.assertRaises(SystemExit):
                 versioning.require_safe_url_scheme(value, "fixture.html")
         self.assertFalse(versioning.require_safe_url_scheme("mailto:dev@x.org", "x"))
         self.assertFalse(versioning.require_safe_url_scheme("tel:+1", "x"))
         self.assertTrue(versioning.require_safe_url_scheme("/docs/", "x"))
+
+    def test_document_parser_captures_active_navigation_urls(self) -> None:
+        parser = versioning.DocumentParser()
+        parser.feed(
+            '<form action="/submit">'
+            '<button formaction="/button-submit">go</button>'
+            '<input formaction="/input-submit">'
+            "</form>"
+            '<object data="/payload"></object>'
+            '<area href="/map">'
+            '<svg><use href="/sprite.svg#icon"></use>'
+            '<use xlink:href="/legacy.svg#icon"></use>'
+            '<image xlink:href="/legacy-image.svg"></image>'
+            '<a xlink:href="/legacy-link">legacy</a></svg>'
+            '<img srcset="/one.png 1x, /two.png 2x">'
+            '<link imagesrcset="/three.png 400w, /four.png 800w">'
+            '<button data-td-action-url="/action">action</button>'
+        )
+        self.assertEqual(
+            parser.urls,
+            [
+                ("action", "/submit"),
+                ("formaction", "/button-submit"),
+                ("formaction", "/input-submit"),
+                ("data", "/payload"),
+                ("href", "/map"),
+                ("href", "/sprite.svg#icon"),
+                ("xlink:href", "/legacy.svg#icon"),
+                ("xlink:href", "/legacy-image.svg"),
+                ("xlink:href", "/legacy-link"),
+                ("srcset", "/one.png"),
+                ("srcset", "/two.png"),
+                ("imagesrcset", "/three.png"),
+                ("imagesrcset", "/four.png"),
+                ("data-td-action-url", "/action"),
+            ],
+        )
 
     def test_rejects_resolved_manifest_drift(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
@@ -1004,6 +1695,15 @@ class VersionUrlTest(unittest.TestCase):
             path = Path(temp_name) / "resolved.json"
             path.write_text(json.dumps(manifest), encoding="utf-8")
             with self.assertRaises(SystemExit):
+                versioning.load_resolved_manifest(path)
+            manifest = json.loads(
+                (versioning.ROOT / "versions.json").read_text(encoding="utf-8")
+            )
+            for entry in manifest["versions"]:
+                entry["sha"] = "a" * 40
+            manifest["versions"].pop()
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "version order"):
                 versioning.load_resolved_manifest(path)
 
     def test_aggregate_rejects_metadata_sha_before_copy(self) -> None:
@@ -1048,6 +1748,7 @@ class VersionUrlTest(unittest.TestCase):
                 artifacts=temp / "artifacts",
                 artifact_prefix="",
                 site_origin=ORIGIN,
+                historical_origin="https://hugegraph.apache.org",
                 output=output,
                 asf_profile="oink",
                 asf_whoami="asf-staging-oink",
@@ -1063,6 +1764,9 @@ class VersionUrlTest(unittest.TestCase):
                     asf_text,
                 )
                 self.assertTrue((path / "build-metadata/versions.json").is_file())
+                self.assertTrue(
+                    (path / "build-metadata/version-routes.json").is_file()
+                )
 
             with (
                 mock.patch.object(
@@ -1070,10 +1774,25 @@ class VersionUrlTest(unittest.TestCase):
                     "load_resolved_manifest",
                     return_value={"versions": [entry]},
                 ),
+                mock.patch.object(
+                    versioning,
+                    "load_version_routes",
+                    return_value={
+                        "schemaVersion": 1,
+                        "versions": ["latest"],
+                        "pages": {"en:": {"latest": "docs/"}},
+                        "equivalents": [],
+                    },
+                ),
                 mock.patch.object(versioning, "require_metadata_matches"),
-                mock.patch.object(versioning, "validate_artifact"),
+                mock.patch.object(
+                    versioning, "validate_artifact"
+                ) as validate_artifact,
                 mock.patch.object(versioning, "write_error_documents", return_value=1),
                 mock.patch.object(versioning, "sitemap_locations", return_value=[]),
+                mock.patch.object(
+                    versioning, "validate_aggregate_version_routes"
+                ) as validate_routes,
                 mock.patch.object(
                     versioning,
                     "validate_output_security",
@@ -1083,6 +1802,12 @@ class VersionUrlTest(unittest.TestCase):
                 versioning.aggregate(args)
 
             security_scan.assert_called_once_with(output.resolve(), ORIGIN)
+            validate_routes.assert_called_once()
+            validate_args = validate_artifact.call_args.args[0]
+            self.assertEqual(
+                validate_args.historical_origin,
+                "https://hugegraph.apache.org",
+            )
 
     def test_output_cleanup_is_limited_to_temporary_descendants(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
@@ -1101,6 +1826,790 @@ class VersionUrlTest(unittest.TestCase):
                 versioning.prepare_output_directory(symlink, "fixture")
         with self.assertRaises(SystemExit):
             versioning.prepare_output_directory(versioning.ROOT, "fixture")
+        with self.assertRaises(SystemExit):
+            versioning.prepare_output_directory(versioning.ROOT.parent, "fixture")
+        checkout_child = versioning.ROOT / ".test-output-must-not-be-deleted"
+        checkout_child.mkdir(exist_ok=True)
+        try:
+            with self.assertRaises(SystemExit):
+                versioning.prepare_output_directory(checkout_child, "fixture")
+            self.assertTrue(checkout_child.is_dir())
+        finally:
+            checkout_child.rmdir()
+
+    def test_output_cleanup_rejects_sibling_checkout_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            sibling = Path(temp_name) / "sibling-worktree"
+            sibling.mkdir()
+            (sibling / ".git").write_text(
+                "gitdir: /tmp/fixture.git/worktrees/sibling\n",
+                encoding="utf-8",
+            )
+            with (
+                mock.patch.object(versioning.shutil, "rmtree") as remove,
+                self.assertRaisesRegex(SystemExit, "Git checkout"),
+            ):
+                versioning.prepare_output_directory(sibling, "fixture")
+            remove.assert_not_called()
+
+    def test_output_cleanup_rejects_existing_parent_symlink_before_resolve(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            target = temp / "target"
+            target.mkdir()
+            linked_parent = temp / "linked-parent"
+            linked_parent.symlink_to(target, target_is_directory=True)
+            output = linked_parent / "output"
+            output.mkdir()
+            sentinel = output / "sentinel"
+            sentinel.write_text("keep", encoding="utf-8")
+
+            with self.assertRaisesRegex(SystemExit, "symbolic link"):
+                versioning.prepare_output_directory(output, "fixture")
+
+            self.assertEqual(sentinel.read_text(encoding="utf-8"), "keep")
+            self.assertTrue(output.is_dir())
+
+    def test_output_cleanup_rejects_symlinked_runner_temp_before_resolve(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            target = temp / "target"
+            output = target / "output"
+            output.mkdir(parents=True)
+            sentinel = output / "sentinel"
+            sentinel.write_text("keep", encoding="utf-8")
+            runner_temp = temp / "runner-temp"
+            runner_temp.symlink_to(target, target_is_directory=True)
+
+            with (
+                mock.patch.dict(
+                    versioning.os.environ,
+                    {"RUNNER_TEMP": str(runner_temp)},
+                ),
+                self.assertRaisesRegex(SystemExit, "symbolic link"),
+            ):
+                versioning.prepare_output_directory(
+                    runner_temp / "output",
+                    "fixture",
+                )
+
+            self.assertEqual(sentinel.read_text(encoding="utf-8"), "keep")
+            self.assertTrue(output.is_dir())
+
+    def test_output_cleanup_rejects_symlink_above_runner_temp_before_resolve(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            target = temp / "target"
+            runner_temp_target = target / "runner-temp"
+            output = runner_temp_target / "output"
+            output.mkdir(parents=True)
+            sentinel = output / "sentinel"
+            sentinel.write_text("keep", encoding="utf-8")
+            linked_parent = temp / "linked-parent"
+            linked_parent.symlink_to(target, target_is_directory=True)
+            runner_temp = linked_parent / "runner-temp"
+
+            with (
+                mock.patch.dict(
+                    versioning.os.environ,
+                    {"RUNNER_TEMP": str(runner_temp)},
+                ),
+                self.assertRaisesRegex(SystemExit, "symbolic link"),
+            ):
+                versioning.prepare_output_directory(
+                    runner_temp / "output",
+                    "fixture",
+                )
+
+            self.assertEqual(sentinel.read_text(encoding="utf-8"), "keep")
+            self.assertTrue(output.is_dir())
+
+    def test_output_cleanup_accepts_real_runner_temp_below_tmp_alias(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory(dir="/tmp") as temp_name:
+            runner_temp = Path(temp_name) / "runner-temp"
+            output = runner_temp / "output"
+            output.mkdir(parents=True)
+            (output / "stale").write_text("remove", encoding="utf-8")
+
+            with mock.patch.dict(
+                versioning.os.environ,
+                {"RUNNER_TEMP": str(runner_temp)},
+            ):
+                self.assertEqual(
+                    versioning.prepare_output_directory(output, "fixture"),
+                    output.resolve(),
+                )
+
+            self.assertFalse(output.exists())
+
+    def test_output_cleanup_rejects_registered_sibling_worktree(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            sibling = Path(temp_name) / "registered-sibling"
+            sibling.mkdir()
+            with (
+                mock.patch.object(
+                    versioning,
+                    "registered_worktree_roots",
+                    return_value=(versioning.ROOT.resolve(), sibling.resolve()),
+                ),
+                mock.patch.object(versioning.shutil, "rmtree") as remove,
+                self.assertRaisesRegex(SystemExit, "Git checkout"),
+            ):
+                versioning.prepare_output_directory(sibling, "fixture")
+            remove.assert_not_called()
+
+    def test_output_cleanup_fails_closed_when_worktrees_cannot_be_enumerated(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name) / "output"
+            output.mkdir()
+            with (
+                mock.patch.object(
+                    versioning,
+                    "registered_worktree_roots",
+                    side_effect=SystemExit("cannot enumerate protected Git worktrees"),
+                ),
+                mock.patch.object(versioning.shutil, "rmtree") as remove,
+                self.assertRaisesRegex(SystemExit, "cannot enumerate"),
+            ):
+                versioning.prepare_output_directory(output, "fixture")
+            remove.assert_not_called()
+
+    def test_version_routes_generate_canonical_pages_and_known_equivalents(
+        self,
+    ) -> None:
+        def page(root: Path, relative: str, *, redirect: str | None = None) -> None:
+            target = root / relative / "index.html"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            refresh = (
+                f'<meta http-equiv="refresh" content="0; url={redirect}">'
+                if redirect
+                else ""
+            )
+            target.write_text(f"<html><head>{refresh}</head></html>", encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            roots = {}
+            manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+            version_ids = [entry["id"] for entry in manifest["versions"]]
+            for version in version_ids:
+                roots[version] = temp / version
+                page(roots[version], "docs")
+                page(roots[version], "cn/docs")
+                spelling = (
+                    "api-performance" if version == "latest" else "api-preformance"
+                )
+                page(roots[version], f"docs/performance/{spelling}")
+            page(roots["latest"], "docs/introduction")
+            page(roots["latest"], "cn/docs/introduction")
+            page(
+                roots["latest"],
+                "docs/introduction/readme",
+                redirect="/docs/introduction/",
+            )
+            page(
+                roots["latest"],
+                "cn/docs/introduction/readme",
+                redirect="/cn/docs/introduction/",
+            )
+            for version in ("1.7", "1.5", "1.3", "1.0"):
+                page(roots[version], "docs/introduction/readme")
+                page(roots[version], "cn/docs/introduction/readme")
+
+            routes = versioning.generate_version_routes(roots, manifest)
+
+            self.assertEqual(routes["versions"], version_ids)
+            self.assertEqual(
+                routes["equivalents"],
+                [
+                    ["cn:introduction", "cn:introduction/readme"],
+                    ["en:introduction", "en:introduction/readme"],
+                ],
+            )
+            self.assertEqual(
+                routes["pages"]["en:performance/api-performance"]["latest"],
+                "docs/performance/api-performance/",
+            )
+            self.assertEqual(
+                routes["pages"]["en:performance/api-performance"]["1.7"],
+                "docs/performance/api-preformance/",
+            )
+            self.assertEqual(
+                routes["pages"]["en:introduction/readme"]["1.5"],
+                "docs/introduction/readme/",
+            )
+            self.assertIsNone(routes["pages"]["en:introduction"]["1.5"])
+            self.assertEqual(
+                routes["pages"]["en:introduction/readme"]["1.7"],
+                "docs/introduction/readme/",
+            )
+            self.assertEqual(
+                routes["pages"]["en:introduction/readme"]["1.3"],
+                "docs/introduction/readme/",
+            )
+            versioning.validate_version_routes(routes, manifest)
+
+    def test_version_switch_resolves_unique_equivalent_logical_page(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        routes = json.loads(
+            (versioning.ROOT / "data/version_routes.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        for language, prefix in (("en", ""), ("cn", "cn/")):
+            with self.subTest(language=language, direction="latest-to-history"):
+                options = versioning.version_switch_options(
+                    manifest,
+                    routes,
+                    "latest",
+                    f"{prefix}docs/introduction/",
+                    ORIGIN,
+                    language=language,
+                )
+                for version in ("1.5", "1.3", "1.0"):
+                    option = next(item for item in options if item["id"] == version)
+                    self.assertEqual(
+                        option["url"],
+                        (
+                            f"{ORIGIN}versions/{version}/{prefix}"
+                            "docs/introduction/readme/"
+                        ),
+                    )
+                    self.assertTrue(option["equivalent"])
+                    self.assertFalse(option["fallback"])
+
+            with self.subTest(language=language, direction="history-to-latest"):
+                options = versioning.version_switch_options(
+                    manifest,
+                    routes,
+                    "1.7",
+                    f"{prefix}docs/introduction/readme/",
+                    ORIGIN,
+                    language=language,
+                )
+                latest = next(item for item in options if item["id"] == "latest")
+                self.assertEqual(
+                    latest["url"], f"{ORIGIN}{prefix}docs/introduction/"
+                )
+                self.assertTrue(latest["equivalent"])
+                self.assertFalse(latest["fallback"])
+
+            with self.subTest(language=language, direction="direct-wins"):
+                options = versioning.version_switch_options(
+                    manifest,
+                    routes,
+                    "1.7",
+                    f"{prefix}docs/introduction/",
+                    ORIGIN,
+                    language=language,
+                )
+                latest = next(item for item in options if item["id"] == "latest")
+                self.assertEqual(
+                    latest["url"], f"{ORIGIN}{prefix}docs/introduction/"
+                )
+                self.assertTrue(latest["equivalent"])
+                self.assertFalse(latest["fallback"])
+
+    def test_version_route_equivalents_reject_unsafe_or_ambiguous_groups(
+        self,
+    ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        versions = list(versioning.manifest_version_ids(manifest))
+        targets = {version: None for version in versions}
+        fixtures = (
+            [
+                ["en:introduction", "cn:introduction"],
+            ],
+            [
+                ["en:introduction", "en:introduction/readme"],
+                ["en:introduction/readme", "en:config"],
+            ],
+            [
+                [
+                    "en:introduction",
+                    "en:introduction/readme",
+                    "en:config",
+                ],
+            ],
+        )
+        pages = {
+            "en:introduction": dict(targets, latest="docs/introduction/"),
+            "en:introduction/readme": dict(
+                targets, **{"1.7": "docs/introduction/readme/"}
+            ),
+            "en:config": dict(targets, **{"1.7": "docs/config/"}),
+            "cn:introduction": dict(targets, latest="cn/docs/introduction/"),
+        }
+        for equivalents in fixtures:
+            with self.subTest(equivalents=equivalents), self.assertRaises(SystemExit):
+                versioning.validate_version_routes(
+                    {
+                        "schemaVersion": 1,
+                        "versions": versions,
+                        "pages": pages,
+                        "equivalents": equivalents,
+                    },
+                    manifest,
+                )
+
+    def test_version_routes_reject_alias_target_missing_from_its_artifact(
+        self,
+    ) -> None:
+        def page(root: Path, relative: str, *, redirect: str | None = None) -> None:
+            target = root / relative / "index.html"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            refresh = (
+                f'<meta http-equiv="refresh" content="0; url={redirect}">'
+                if redirect
+                else ""
+            )
+            target.write_text(
+                f"<html><head>{refresh}</head></html>", encoding="utf-8"
+            )
+
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            roots = {}
+            for entry in manifest["versions"]:
+                version = entry["id"]
+                roots[version] = temp / version
+                page(roots[version], "docs")
+                page(roots[version], "cn/docs")
+            page(
+                roots["latest"],
+                "docs/introduction",
+                redirect="/docs/renamed/",
+            )
+            page(roots["1.5"], "docs/introduction")
+            page(roots["1.5"], "docs/renamed")
+
+            with self.assertRaisesRegex(
+                SystemExit, "alias target is missing"
+            ):
+                versioning.generate_version_routes(roots, manifest)
+
+    def test_artifact_alias_targets_are_local_scoped_and_present(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            target = root / "docs/current/index.html"
+            target.parent.mkdir(parents=True)
+            target.write_text("current", encoding="utf-8")
+            latest = versioning.load_manifest(
+                versioning.ROOT / "versions.json"
+            )["versions"][0]
+
+            for value in (
+                "/docs/current/",
+                f"{ORIGIN}docs/current/",
+            ):
+                self.assertEqual(
+                    versioning.validate_artifact_alias_target(
+                        value,
+                        root,
+                        latest,
+                        ORIGIN,
+                        "docs/old/index.html",
+                    ),
+                    "/docs/current/",
+                )
+
+            invalid = (
+                "https://evil.example/docs/current/",
+                "https:///docs/current/",
+                "http:///docs/current/",
+                "mailto:dev@example.com",
+                "tel:+123",
+                "docs/current/",
+                "/docs/missing/",
+                "/docs/current/?next=1",
+                "/docs/current/#next",
+                "/docs/%63urrent/",
+                "/docs/./current/",
+                "/docs//current/",
+                "/docs/current/\t",
+            )
+            for value in invalid:
+                with self.subTest(value=value), self.assertRaises(SystemExit):
+                    versioning.validate_artifact_alias_target(
+                        value,
+                        root,
+                        latest,
+                        ORIGIN,
+                        "docs/old/index.html",
+                    )
+
+            archived = next(
+                entry
+                for entry in versioning.load_manifest(
+                    versioning.ROOT / "versions.json"
+                )["versions"]
+                if entry["id"] == "1.7"
+            )
+            archived_base = f"{ORIGIN}versions/1.7/"
+            self.assertEqual(
+                versioning.validate_artifact_alias_target(
+                    f"{archived_base}docs/current/",
+                    root,
+                    archived,
+                    archived_base,
+                    "docs/old/index.html",
+                ),
+                "/versions/1.7/docs/current/",
+            )
+            with self.assertRaisesRegex(SystemExit, "escapes version"):
+                versioning.validate_artifact_alias_target(
+                    "/docs/current/",
+                    root,
+                    archived,
+                    archived_base,
+                    "docs/old/index.html",
+                )
+
+    def test_historical_home_aliases_allow_only_exact_shared_roots(self) -> None:
+        for origin in (ORIGIN, STAGING_ORIGIN):
+            with self.subTest(origin=origin):
+                versioning.validate_historical_home_alias_target(
+                    origin,
+                    "index.html",
+                    origin,
+                )
+                versioning.validate_historical_home_alias_target(
+                    f"{origin}cn/",
+                    "cn/index.html",
+                    origin,
+                )
+
+        invalid = (
+            ("https://evil.example/", "index.html"),
+            (f"{ORIGIN}cn/", "index.html"),
+            (ORIGIN, "cn/index.html"),
+            (f"{ORIGIN}docs/", "index.html"),
+            ("mailto:dev@example.com", "index.html"),
+        )
+        for value, relative in invalid:
+            with self.subTest(value=value, relative=relative), self.assertRaises(
+                SystemExit
+            ):
+                versioning.validate_historical_home_alias_target(
+                    value,
+                    relative,
+                    ORIGIN,
+                )
+
+    def test_version_routes_reject_external_and_protocol_aliases(self) -> None:
+        def page(root: Path, relative: str, *, redirect: str | None = None) -> None:
+            target = root / relative / "index.html"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            refresh = (
+                f'<meta http-equiv="refresh" content="0; url={redirect}">'
+                if redirect
+                else ""
+            )
+            target.write_text(
+                f"<html><head>{refresh}</head></html>", encoding="utf-8"
+            )
+
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        for redirect in (
+            "https://evil.example/docs/current/",
+            "mailto:dev@example.com",
+            "tel:+123",
+        ):
+            with self.subTest(redirect=redirect), tempfile.TemporaryDirectory() as name:
+                temp = Path(name)
+                roots = {}
+                for entry in manifest["versions"]:
+                    roots[entry["id"]] = temp / entry["id"]
+                    page(roots[entry["id"]], "docs")
+                    page(roots[entry["id"]], "cn/docs")
+                page(roots["latest"], "docs/old", redirect=redirect)
+                page(roots["latest"], "docs/current")
+                with self.assertRaises(SystemExit):
+                    versioning.generate_version_routes(roots, manifest)
+
+    def test_version_routes_accept_alias_chain_to_same_version_canonical(
+        self,
+    ) -> None:
+        def page(root: Path, relative: str, *, redirect: str | None = None) -> None:
+            target = root / relative / "index.html"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            refresh = (
+                f'<meta http-equiv="refresh" content="0; url={redirect}">'
+                if redirect
+                else ""
+            )
+            target.write_text(
+                f"<html><head>{refresh}</head></html>", encoding="utf-8"
+            )
+
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp = Path(temp_name)
+            roots = {}
+            for entry in manifest["versions"]:
+                version = entry["id"]
+                roots[version] = temp / version
+                page(roots[version], "docs")
+                page(roots[version], "cn/docs")
+            page(roots["latest"], "docs/old", redirect="/docs/middle/")
+            page(roots["latest"], "docs/middle", redirect="/docs/current/")
+            page(roots["latest"], "docs/current")
+            page(roots["1.7"], "docs/old")
+
+            routes = versioning.generate_version_routes(roots, manifest)
+
+            self.assertEqual(
+                routes["equivalents"],
+                [["en:current", "en:old"]],
+            )
+
+    def test_version_route_equivalents_reject_mixed_types_cleanly(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        versions = list(versioning.manifest_version_ids(manifest))
+        routes = {
+            "schemaVersion": 1,
+            "versions": versions,
+            "pages": {
+                "en:": {
+                    version: "docs/" for version in versions
+                },
+            },
+            "equivalents": [["en:", 7]],
+        }
+        with self.assertRaisesRegex(
+            SystemExit, "invalid version route-map equivalent group"
+        ):
+            versioning.validate_version_routes(routes, manifest)
+
+    def test_version_switch_options_use_equivalent_page_or_explicit_fallback(
+        self,
+    ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        version_ids = versioning.manifest_version_ids(manifest)
+        routes = {
+            "schemaVersion": 1,
+            "versions": list(version_ids),
+            "pages": {
+                "en:config": {
+                    "latest": "docs/config/",
+                    "1.7": "docs/config/",
+                    "1.5": None,
+                    "1.3": "docs/config/",
+                    "1.0": None,
+                }
+            },
+            "equivalents": [],
+        }
+        options = versioning.version_switch_options(
+            manifest,
+            routes,
+            "latest",
+            "docs/config/",
+            STAGING_ORIGIN,
+            historical_origin=ORIGIN,
+        )
+        self.assertEqual(
+            set(options[0]),
+            {
+                "id",
+                "title",
+                "url",
+                "active",
+                "available",
+                "disabledReason",
+                "equivalent",
+                "fallback",
+            },
+        )
+        self.assertEqual(options[0]["url"], f"{STAGING_ORIGIN}docs/config/")
+        self.assertTrue(options[0]["equivalent"])
+        self.assertFalse(options[0]["fallback"])
+        self.assertEqual(options[1]["url"], f"{ORIGIN}versions/1.7/docs/config/")
+        self.assertEqual(
+            options[2]["url"],
+            f"{ORIGIN}versions/1.5/docs/#hg-version-fallback",
+        )
+        self.assertFalse(options[2]["equivalent"])
+        self.assertTrue(options[2]["fallback"])
+
+        non_docs = versioning.version_switch_options(
+            manifest,
+            routes,
+            "latest",
+            None,
+            STAGING_ORIGIN,
+            historical_origin=ORIGIN,
+            language="cn",
+        )
+        self.assertEqual(non_docs[1]["url"], f"{ORIGIN}versions/1.7/cn/docs/")
+        self.assertFalse(non_docs[1]["equivalent"])
+        self.assertFalse(non_docs[1]["fallback"])
+
+    def test_scope_preserves_hugo_version_options_instead_of_rebuilding_them(
+        self,
+    ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        latest = manifest["versions"][0]
+        authored_options = [
+            {
+                "id": entry["id"],
+                "title": entry["name"],
+                "url": (
+                    f"{ORIGIN}{entry['publishPath'].rstrip('/')}/docs/"
+                    if entry["publishPath"]
+                    else f"{ORIGIN}docs/"
+                ),
+                "active": entry["id"] == latest["id"],
+                "available": True,
+                "disabledReason": "",
+                "equivalent": True,
+                "fallback": False,
+            }
+            for entry in manifest["versions"]
+        ]
+        action_data = {
+            "actions": [{"id": "switch_version", "options": authored_options}]
+        }
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            page = output / "docs/index.html"
+            page.parent.mkdir(parents=True)
+            page.write_text(
+                '<link rel="canonical" href="https://hugegraph.apache.org/docs/">'
+                '<script type="application/json" id="td-action-manifest">'
+                + json.dumps(action_data)
+                + "</script>",
+                encoding="utf-8",
+            )
+            with (
+                mock.patch.object(
+                    versioning,
+                    "version_switch_options",
+                    side_effect=AssertionError(
+                        "scope must not rebuild Hugo-authored version options"
+                    ),
+                ),
+                mock.patch.object(
+                    versioning,
+                    "load_version_routes",
+                    return_value=json.loads(
+                        (versioning.ROOT / "data/version_routes.json").read_text(
+                            encoding="utf-8"
+                        )
+                    ),
+                ),
+            ):
+                versioning.scope_version_artifact(
+                    output,
+                    manifest,
+                    latest,
+                    ORIGIN,
+                    historical_origin=ORIGIN,
+                )
+
+            rendered = page.read_text(encoding="utf-8")
+            scoped = json.loads(
+                versioning.ACTION_MANIFEST_RE.search(rendered).group("body")
+            )
+            self.assertEqual(scoped["actions"][0]["options"], authored_options)
+
+    def test_version_validator_compares_palette_with_every_native_anchor(
+        self,
+    ) -> None:
+        option = {
+            "id": "1.7",
+            "title": "1.7",
+            "url": f"{ORIGIN}versions/1.7/docs/config/",
+            "active": False,
+            "available": True,
+            "disabledReason": "",
+            "equivalent": True,
+            "fallback": False,
+        }
+        parser = versioning.DocumentParser()
+        parser.feed(
+            '<a data-hg-version-id="1.7" data-hg-version-equivalent="true" '
+            'data-hg-version-fallback="false" '
+            f'href="{option["url"]}">1.7</a>'
+            '<a data-hg-version-id="1.7" data-hg-version-equivalent="true" '
+            'data-hg-version-fallback="false" aria-current="page" '
+            f'href="{option["url"]}">1.7</a>'
+        )
+
+        with self.assertRaisesRegex(SystemExit, "native version link mismatch"):
+            versioning.require_version_switch_matches_native(
+                parser, [option], "docs/config/index.html"
+            )
+
+        active = dict(option, active=True)
+        parser.version_links[0]["aria-current"] = "page"
+        versioning.require_version_switch_matches_native(
+            parser, [active], "docs/config/index.html"
+        )
+
+        parser.version_links[1]["href"] = f"{ORIGIN}docs/"
+        with self.assertRaisesRegex(SystemExit, "native version link mismatch"):
+            versioning.require_version_switch_matches_native(
+                parser, [active], "docs/config/index.html"
+            )
+
+    def test_aggregate_version_routes_reject_missing_targets_and_false_nulls(
+        self,
+    ) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        version_ids = versioning.manifest_version_ids(manifest)
+        routes = {
+            "schemaVersion": 1,
+            "versions": list(version_ids),
+            "pages": {
+                "en:config": {
+                    "latest": "docs/config/",
+                    "1.7": None,
+                    "1.5": None,
+                    "1.3": None,
+                    "1.0": None,
+                }
+            },
+            "equivalents": [],
+        }
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            (output / "cn/docs").mkdir(parents=True)
+            target = output / "docs/config/index.html"
+            target.parent.mkdir(parents=True)
+            target.write_text("<html></html>", encoding="utf-8")
+            versioning.validate_aggregate_version_routes(
+                output, routes, {"latest"}, manifest
+            )
+            target.unlink()
+            with self.assertRaisesRegex(SystemExit, "route-map target is missing"):
+                versioning.validate_aggregate_version_routes(
+                    output, routes, {"latest"}, manifest
+                )
+
+            target.write_text("<html></html>", encoding="utf-8")
+            hidden = output / "versions/1.7/docs/config/index.html"
+            hidden.parent.mkdir(parents=True)
+            hidden.write_text("<html></html>", encoding="utf-8")
+            (output / "versions/1.7/cn/docs").mkdir(parents=True)
+            with self.assertRaisesRegex(SystemExit, "route-map null target exists"):
+                versioning.validate_aggregate_version_routes(
+                    output,
+                    routes,
+                    {"latest", "1.7"},
+                    manifest,
+                )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,15 @@
+{{- $p := .page -}}
+{{- $version := .version -}}
+{{- $versionID := $version.version | default ($version.name | urlize) -}}
+{{- $target := partial "version-target.html" (dict "page" $p "version" $version) -}}
+<a class="{{ .class }}"
+  data-hg-version-id="{{ $versionID }}"
+  data-hg-version-equivalent="{{ $target.equivalent }}"
+  data-hg-version-fallback="{{ $target.fallback }}"
+  {{- if .active }} aria-current="page"{{ end }}
+  href="{{ $target.url }}">
+  {{- if ne .icon false -}}
+    {{- partialCached "shell/icon.html" "code-branch" .iconKey -}}
+  {{- end -}}
+  <span>{{ $version.name | default $version.version | markdownify }}</span>
+</a>

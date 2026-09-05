@@ -1,0 +1,8 @@
+params:
+  ai_search:
+    enabled: true
+    provider: kapa
+    website_id: 0b277570-4740-451e-96fa-1e4ac1ac5e88
+    source_groups:
+      en: e2e-source-en
+      cn: e2e-source-cn

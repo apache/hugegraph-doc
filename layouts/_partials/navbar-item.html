@@ -6,7 +6,6 @@
 {{- $mode := .mode -}}
 {{- $index := .index -}}
 {{- $hasChildren := $entry.HasChildren -}}
-{{- $hasVersionLinks := and (eq $entry.Identifier "docs") (gt (len ($page.Site.Params.versions | default slice)) 0) -}}
 {{- $taxonomyPage := false -}}
 {{- with $entry.Page -}}
   {{- if eq .Kind "taxonomy" }}{{ $taxonomyPage = . }}{{ end -}}
@@ -28,7 +27,7 @@
     {{- end -}}
   {{- end -}}
 {{- end -}}
-{{- $hasPanel := or $hasChildren $taxonomyPage $hasVersionLinks -}}
+{{- $hasPanel := or $hasChildren $taxonomyPage -}}
 {{- $key := $entry.Identifier | default $entry.Name | urlize -}}
 {{- $panelID := printf "td-navbar-%s-%s-%d" $mode $key $index -}}
 
@@ -53,19 +52,6 @@
       {{ partialCached "navbar-taxonomy-tags.html"
           (dict "page" $page "taxonomyPage" $taxonomyPage)
           $page.Site.Language.Lang $taxonomyPage.RelPermalink }}
-    {{- else if $hasVersionLinks -}}
-      {{- range $page.Site.Params.versions -}}
-        {{- $url := strings.TrimSuffix "/" (.url | default "") -}}
-        {{- if $url -}}
-          {{- $isActive := eq .version $page.Site.Params.version -}}
-          <a class="td-nav-menu__item-link{{ if $isActive }} active{{ end }}" href="{{ $url }}/"
-             data-td-navbar-level="1" data-td-navbar-kind="version"
-             {{- if $isActive }} aria-current="page"{{ end }}>
-            <i class="fa-solid fa-code-branch" aria-hidden="true"></i>
-            <span class="td-navbar-entry__label">{{ .name | default .version }}</span>
-          </a>
-        {{- end -}}
-      {{- end -}}
     {{- else -}}
       {{ partial "navbar-group-items.html" (dict "page" $page "items" $entry.Children "mode" "desktop" "top" $entry "depth" 1) }}
     {{- end }}

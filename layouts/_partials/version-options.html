@@ -1,0 +1,22 @@
+{{- $p := . -}}
+{{- $options := slice -}}
+{{- $baseURL := strings.TrimSuffix "/" $p.Site.BaseURL -}}
+{{- range $p.Site.Params.versions -}}
+  {{- if ne .name "---" -}}
+    {{- $versionID := .version | default (.name | urlize) -}}
+    {{- $rawURL := .url | default "" -}}
+    {{- $available := ne $rawURL "" -}}
+    {{- $target := partial "version-target.html" (dict "page" $p "version" .) -}}
+    {{- $options = $options | append (dict
+      "id" $versionID
+      "title" (.name | default .version | plainify)
+      "url" $target.url
+      "active" (or (eq .version $p.Site.Params.version) (eq $baseURL (strings.TrimSuffix "/" $rawURL)))
+      "available" $available
+      "disabledReason" (cond $available "" (printf "URL %s" (T "ui_field_required")))
+      "equivalent" $target.equivalent
+      "fallback" $target.fallback
+    ) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $options -}}

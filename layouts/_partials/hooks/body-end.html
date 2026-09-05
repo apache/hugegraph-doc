@@ -1,0 +1,54 @@
+{{- $basePath := (urls.Parse .Site.BaseURL).Path | default "/" -}}
+{{- $localePrefix := cond (eq .Site.Language.Lang "cn") "cn/" "" -}}
+{{- $docsRoot := printf "%s%sdocs/" $basePath $localePrefix -}}
+{{- $fallbackMessage := "" -}}
+{{- if eq .Site.Language.Lang "cn" -}}
+  {{- $fallbackMessage = "目标版本没有此页面，已转到该版本的文档首页。" -}}
+{{- else -}}
+  {{- $fallbackMessage = T "ui_version_fallback" -}}
+{{- end -}}
+{{- $shellConfig := dict
+  "version" (.Site.Params.version | default "latest")
+  "locale" .Site.Language.Lang
+  "docsRoot" $docsRoot
+  "versionFallbackMessage" $fallbackMessage
+-}}
+<script type="application/json" id="hg-shell-config">{{ $shellConfig | jsonify | safeJS }}</script>
+{{- $shell := resources.Get "js/hugegraph-shell.js" -}}
+{{- if hugo.IsProduction }}{{ $shell = $shell | minify | fingerprint }}{{ end }}
+<script src="{{ $shell.RelPermalink }}"
+  {{- with $shell.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}></script>
+
+{{- $ai := partial "ai/config.html" . -}}
+{{- if $ai.enabled -}}
+  {{- $lang := .Site.Language.Lang -}}
+  {{- $sourceGroup := index $ai.sourceGroups $lang -}}
+  {{- $themeColor := index .Site.Params.ui "theme_color" -}}
+  {{- $historical := ne (.Site.Params.version | default "latest") "latest" -}}
+  {{- $labels := cond (eq $lang "cn")
+      (dict "ask" "询问 AI" "description" "由 Kapa 提供；仅发送你的问题。" "latest" "回答基于 latest 文档" "retry" "重试" "error" "AI 暂时不可用，本地搜索不受影响。")
+      (dict "ask" "Ask AI" "description" "Powered by Kapa; only your question is sent." "latest" "Answers use the latest documentation" "retry" "Retry" "error" "AI is temporarily unavailable. Local search is unaffected.")
+  -}}
+  {{- $clientConfig := dict
+    "websiteId" $ai.websiteID
+    "sourceGroupId" $sourceGroup
+    "locale" (cond (eq $lang "cn") "zh" "en")
+    "themeColor" $themeColor
+    "historical" $historical
+    "labels" $labels
+  -}}
+<script type="application/json" id="hg-ai-config">{{ $clientConfig | jsonify | safeJS }}</script>
+<button type="button" class="hg-ask-ai-launcher d-print-none" data-hg-ask-ai
+  data-hg-ai-submit="false" aria-describedby="hg-ai-disclosure">
+  <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+  <span>{{ index $labels "ask" }}</span>
+</button>
+<p class="visually-hidden" id="hg-ai-disclosure">
+  {{ index $labels "description" }}{{ if $historical }} {{ index $labels "latest" }}.{{ end }}
+</p>
+<div class="hg-ai-status visually-hidden" role="status" aria-live="polite" data-hg-ai-status></div>
+  {{- $adapter := resources.Get "js/kapa-adapter.js" -}}
+  {{- if hugo.IsProduction }}{{ $adapter = $adapter | minify | fingerprint }}{{ end }}
+<script src="{{ $adapter.RelPermalink }}"
+  {{- with $adapter.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}></script>
+{{- end -}}

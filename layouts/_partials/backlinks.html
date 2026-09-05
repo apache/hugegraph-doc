@@ -1,0 +1,50 @@
+{{- /* Keep the right rail compact: five backlinks remain immediately visible
+       and any additional sources use a native, keyboard-accessible disclosure.
+       Input: dict "page" . "sources" (from backlinks-sources.html). */ -}}
+{{- $p := .page -}}
+{{- $sources := .sources -}}
+{{- with $sources -}}
+{{- $shown := first 5 . -}}
+{{- $rest := after 5 . -}}
+<div class="td-shell-aside-group td-shell-backlinks">
+  <button type="button" class="td-shell-tree__row td-shell-aside-group__head"
+    data-td-shell-tree-toggle data-td-shell-aside-keep-open
+    aria-expanded="true" aria-controls="td-shell-backlinks-children"
+    aria-label="{{ T "ui_sidebar_collapse_section" }}: {{ T "ui_backlinks" }}"
+    data-td-label-expand="{{ T "ui_sidebar_expand_section" }}: {{ T "ui_backlinks" }}"
+    data-td-label-collapse="{{ T "ui_sidebar_collapse_section" }}: {{ T "ui_backlinks" }}">
+    <span class="td-shell-aside-group__icon" aria-hidden="true">
+      {{- partialCached "shell/icon.html" "link" "link" -}}
+    </span>
+    <span class="td-shell-aside-group__title">{{ T "ui_backlinks" }}</span>
+    <span class="td-shell-tree__chevron" aria-hidden="true">
+      {{- partialCached "shell/icon.html" "chevron-down" "chevron-down" -}}
+    </span>
+  </button>
+  <div id="td-shell-backlinks-children" class="td-shell-tree__children td-is-open">
+    <div class="td-shell-tree__children-inner">
+      <ul class="td-shell-backlinks__list">
+        {{- range $shown }}
+        <li class="td-shell-backlinks__item"><a href="{{ .RelPermalink }}"
+          {{- with .Description | plainify | strings.TrimSpace }} title="{{ . }}"{{ end }}>
+          {{- .LinkTitle | default .Title -}}
+        </a></li>
+        {{- end }}
+      </ul>
+      {{- with $rest }}
+      <details class="td-shell-backlinks__more">
+        <summary>{{ T "ui_backlinks_more" (len .) }}</summary>
+        <ul class="td-shell-backlinks__list">
+          {{- range . }}
+          <li class="td-shell-backlinks__item"><a href="{{ .RelPermalink }}"
+            {{- with .Description | plainify | strings.TrimSpace }} title="{{ . }}"{{ end }}>
+            {{- .LinkTitle | default .Title -}}
+          </a></li>
+          {{- end }}
+        </ul>
+      </details>
+      {{- end }}
+    </div>
+  </div>
+</div>
+{{- end -}}

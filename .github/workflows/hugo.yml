@@ -4,230 +4,449 @@ on:
   pull_request:
   push:
     branches: [master]
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Fixed deployment operation
+        required: true
+        type: choice
+        options: [staging-next, production-history-refresh]
+      scope:
+        description: Versions to build
+        required: true
+        default: latest
+        type: choice
+        options: [latest, full]
+      candidate_branch:
+        description: ASF repository branch used for latest
+        required: true
+        type: string
+      confirmation:
+        description: Fixed target confirmation from the runbook
+        required: true
+        type: string
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || (inputs.operation == 'staging-next' && 'asf-staging-oink' || 'asf-site') }}
   cancel-in-progress: true
 
 env:
   HUGO_VERSION: 0.165.0
   HUGO_ENVIRONMENT: production
-  HUGO_CACHEDIR: /tmp/hugo_cache
+  PRODUCTION_ORIGIN: https://hugegraph.apache.org/
+  STAGING_ORIGIN: https://hugegraph-oink.staged.apache.org/
 
 jobs:
   prepare:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    timeout-minutes: 10
+    permissions: { contents: read }
+    env:
+      HUGO_CACHEDIR: /tmp/hugo-cache-${{ github.run_id }}-${{ github.run_attempt }}-prepare
     outputs:
       versions: ${{ steps.matrix.outputs.versions }}
+      selection: ${{ steps.plan.outputs.selection }}
+      site_origin: ${{ steps.plan.outputs.site_origin }}
+      historical_origin: ${{ steps.plan.outputs.historical_origin }}
+      artifact_prefix: ${{ steps.plan.outputs.artifact_prefix }}
+      publish_branch: ${{ steps.plan.outputs.publish_branch }}
+      latest_sha: ${{ steps.plan.outputs.latest_sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.13"
-
-      - name: Validate source and version tooling
-        run: |
-          bash dist/validate-links.sh
-          python3 -m unittest discover -s scripts -p 'test_*.py' -v
-
-      - name: Resolve immutable version matrix
-        id: matrix
-        env:
-          LATEST_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          python3 scripts/versioning.py prepare \
-            --latest-sha "$LATEST_SHA" \
-            --output resolved-versions.json
-          echo "versions=$(jq -c '.include' resolved-versions.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Upload resolved version manifest
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: resolved-versions-${{ github.sha }}
-          path: resolved-versions.json
-          if-no-files-found: error
-
-  build:
-    needs: prepare
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        version: ${{ fromJSON(needs.prepare.outputs.versions) }}
-        site:
-          - name: production
-            origin: https://hugegraph.apache.org/
-          - name: staging
-            origin: https://hugegraph-oink.staged.apache.org/
-    name: Build ${{ matrix.site.name }} / ${{ matrix.version.id }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: "3.13"
-
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: go.mod
           cache: true
-
       - name: Setup Hugo Extended
         uses: peaceiris/actions-hugo@2752ce1d29631191ea3f27c23495fa06139a5b78 # v3.2.1
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
           extended: true
-
-      - name: Cache Hugo resources
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ${{ env.HUGO_CACHEDIR }}
-          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ matrix.version.id }}-${{ hashFiles('go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ matrix.version.id }}-
-
-      - name: Verify pinned OINK module
+      - name: Install WebP validators
         run: |
-          go mod verify
-          go list -m all
-          test "$(go list -m -f '{{ .Path }}')" = "github.com/apache/hugegraph-doc"
-          test "$(go list -m all | wc -l)" -eq 2
-          test "$(go list -m -f '{{ .Path }}@{{ .Version }}' github.com/pgsty/oink)" = "github.com/pgsty/oink@v1.0.0"
-          test -z "$(go list -m -f '{{ with .Replace }}{{ .Path }}@{{ .Version }}{{ end }}' github.com/pgsty/oink)"
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends webp
+          command -v cwebp
+          command -v dwebp
 
-      - name: Build isolated version artifact
+      - name: Resolve trusted event plan
+        id: plan
         env:
-          OINK_PYTHON: python3
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          OPERATION: ${{ inputs.operation }}
+          SCOPE: ${{ inputs.scope }}
+          CANDIDATE_BRANCH: ${{ inputs.candidate_branch }}
+          CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          python3 scripts/versioning.py build \
-            --version "${{ matrix.version.id }}" \
-            --sha "${{ matrix.version.sha }}" \
-            --site-origin "${{ matrix.site.origin }}" \
-            --output "${RUNNER_TEMP}/version-public"
-          python3 scripts/versioning.py validate \
-            --version "${{ matrix.version.id }}" \
-            --sha "${{ matrix.version.sha }}" \
-            --site-origin "${{ matrix.site.origin }}" \
-            --artifact "${RUNNER_TEMP}/version-public"
+          set -euo pipefail
+          all_selection="$(jq -er '[.versions[].id] | join(",")' versions.json)"
+          latest_selection="$(jq -er '[.versions[] | select(.archived == false) | .id] | join(",")' versions.json)"
+          latest_ref="$(jq -er '[.versions[] | select(.archived == false) | .ref] | join(",")' versions.json)"
+          test -n "$all_selection"
+          test -n "$latest_selection"
+          test "${latest_selection#*,}" = "$latest_selection"
+          test -n "$latest_ref"
+          test "${latest_ref#*,}" = "$latest_ref"
+          selection="$all_selection"
+          site_origin="$PRODUCTION_ORIGIN"
+          historical_origin="$PRODUCTION_ORIGIN"
+          artifact_prefix="production"
+          publish_branch=""
+          latest_sha="$EVENT_SHA"
 
-      - name: Upload isolated version artifact
+          if [[ "$EVENT_NAME" == workflow_dispatch ]]; then
+            test "$GITHUB_REF" = refs/heads/master
+            candidate="$CANDIDATE_BRANCH"
+            test -n "$candidate"
+            [[ "$candidate" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]
+            [[ "$candidate" != refs/* && "$candidate" != */ && "$candidate" != *//* ]]
+            [[ "$candidate" != *..* ]]
+            [[ ! "$candidate" =~ ^[0-9a-fA-F]{40}$ ]]
+            [[ "$candidate" != asf-site && "$candidate" != asf-staging-oink ]]
+            resolved="$(git ls-remote --heads origin "refs/heads/$candidate")"
+            test "$(wc -l <<<"$resolved" | tr -d ' ')" = 1
+            latest_sha="$(awk '{print $1}' <<<"$resolved")"
+            [[ "$latest_sha" =~ ^[0-9a-f]{40}$ ]]
+            git fetch --no-tags origin "$latest_sha"
+
+            case "$OPERATION" in
+              staging-next)
+                test "$CONFIRMATION" = "publish asf-staging-oink"
+                site_origin="$STAGING_ORIGIN"
+                artifact_prefix="staging"
+                publish_branch="asf-staging-oink"
+                if [[ "$SCOPE" == latest ]]; then
+                  selection="$latest_selection"
+                else
+                  test "$SCOPE" = full
+                  historical_origin="$STAGING_ORIGIN"
+                fi
+                ;;
+              production-history-refresh)
+                test "$CONFIRMATION" = "publish asf-site"
+                test "$candidate" = "$latest_ref"
+                test "$SCOPE" = full
+                publish_branch="asf-site"
+                ;;
+              *) exit 1 ;;
+            esac
+          elif [[ "$EVENT_NAME" == push ]]; then
+            test "$GITHUB_REF" = refs/heads/master
+            publish_branch="asf-site"
+          else
+            test "$EVENT_NAME" = pull_request
+          fi
+
+          {
+            echo "selection=$selection"
+            echo "site_origin=$site_origin"
+            echo "historical_origin=$historical_origin"
+            echo "artifact_prefix=$artifact_prefix"
+            echo "publish_branch=$publish_branch"
+            echo "latest_sha=$latest_sha"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Validate source and version tooling
+        run: |
+          bash dist/validate-links.sh
+          PYTHONDONTWRITEBYTECODE=1 \
+            python3 -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Resolve immutable version matrix
+        id: matrix
+        env:
+          LATEST_SHA: ${{ steps.plan.outputs.latest_sha }}
+          SELECTION: ${{ steps.plan.outputs.selection }}
+        run: |
+          python3 scripts/versioning.py prepare \
+            --latest-sha "$LATEST_SHA" --select "$SELECTION" \
+            --output resolved-versions.json
+          echo "versions=$(jq -c '.include' resolved-versions.json)" >> "$GITHUB_OUTPUT"
+      - name: Upload resolved version manifest
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: ${{ matrix.site.name }}-${{ matrix.version.id }}
-          path: ${{ runner.temp }}/version-public
-          include-hidden-files: true
+          name: resolved-versions-${{ github.run_id }}-${{ github.run_attempt }}
+          path: resolved-versions.json
+          retention-days: 7
           if-no-files-found: error
 
-  # Keep this job id aligned with the required `deploy` status in .asf.yaml.
-  # It produces deployable artifacts but does not publish untrusted PR code.
-  deploy:
-    if: always()
-    needs: [prepare, build]
+  build:
+    needs: prepare
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    timeout-minutes: 20
+    permissions: { contents: read }
+    env:
+      HUGO_CACHEDIR: /tmp/hugo-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.version.id }}
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        version: ${{ fromJSON(needs.prepare.outputs.versions) }}
+    name: Build ${{ matrix.version.id }}
     steps:
-      - name: Require every version build to succeed
-        env:
-          PREPARE_RESULT: ${{ needs.prepare.result }}
-          BUILD_RESULT: ${{ needs.build.result }}
-        run: |
-          test "$PREPARE_RESULT" = success
-          test "$BUILD_RESULT" = success
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.13"
-
-      - name: Download resolved version manifest
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: resolved-versions-${{ github.sha }}
-          path: resolved
-
-      - name: Download production versions
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          pattern: production-*
-          path: version-artifacts
-
-      - name: Download staging versions
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          pattern: staging-*
-          path: version-artifacts
-
-      - name: Aggregate production and staging sites
+      - name: Fetch immutable resolved source
+        env:
+          RESOLVED_SHA: ${{ matrix.version.sha }}
         run: |
-          python3 scripts/versioning.py aggregate \
-            --artifacts version-artifacts \
-            --artifact-prefix production- \
-            --resolved-manifest resolved/resolved-versions.json \
-            --site-origin https://hugegraph.apache.org/ \
-            --output "${RUNNER_TEMP}/public-production"
-          python3 scripts/versioning.py aggregate \
-            --artifacts version-artifacts \
-            --artifact-prefix staging- \
-            --resolved-manifest resolved/resolved-versions.json \
-            --site-origin https://hugegraph-oink.staged.apache.org/ \
-            --asf-profile oink \
-            --asf-whoami asf-staging-oink \
-            --output "${RUNNER_TEMP}/public-staging"
-
-      - name: Upload production aggregate
+          [[ "$RESOLVED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin "$RESOLVED_SHA"
+          git cat-file -e "$RESOLVED_SHA^{commit}"
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Setup Hugo Extended
+        uses: peaceiris/actions-hugo@2752ce1d29631191ea3f27c23495fa06139a5b78 # v3.2.1
+        with:
+          hugo-version: ${{ env.HUGO_VERSION }}
+          extended: true
+      - name: Cache Hugo resources
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ env.HUGO_CACHEDIR }}
+          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ matrix.version.id }}-${{ hashFiles('go.sum') }}
+          restore-keys: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ matrix.version.id }}-
+      - name: Verify pinned OINK module
+        run: |
+          go mod verify
+          test "$(go list -m -f '{{ .Path }}')" = "github.com/apache/hugegraph-doc"
+          test "$(go list -m all | wc -l)" -eq 2
+          test "$(go list -m -f '{{ .Path }}@{{ .Version }}' github.com/pgsty/oink)" = "github.com/pgsty/oink@v1.0.0"
+          test -z "$(go list -m -f '{{ with .Replace }}{{ .Path }}@{{ .Version }}{{ end }}' github.com/pgsty/oink)"
+      - name: Build isolated version artifact
+        env:
+          OINK_PYTHON: python3
+          SITE_ORIGIN: ${{ needs.prepare.outputs.site_origin }}
+          HISTORICAL_ORIGIN: ${{ needs.prepare.outputs.historical_origin }}
+        run: |
+          python3 scripts/versioning.py build \
+            --version "${{ matrix.version.id }}" --sha "${{ matrix.version.sha }}" \
+            --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
+            --output "${RUNNER_TEMP}/version-public"
+          python3 scripts/versioning.py validate \
+            --version "${{ matrix.version.id }}" --sha "${{ matrix.version.sha }}" \
+            --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
+            --artifact "${RUNNER_TEMP}/version-public"
+      - name: Upload isolated version artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: hugegraph-site-production-${{ github.sha }}
-          path: ${{ runner.temp }}/public-production
+          name: ${{ needs.prepare.outputs.artifact_prefix }}-${{ matrix.version.id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/version-public
           include-hidden-files: true
+          retention-days: 1
           if-no-files-found: error
 
-      - name: Upload ASF staging aggregate
+  aggregate:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: resolved-versions-${{ github.run_id }}-${{ github.run_attempt }}
+          path: resolved
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: ${{ needs.prepare.outputs.artifact_prefix }}-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: version-artifacts
+      - name: Assemble publishable site
+        env:
+          PREFIX: ${{ needs.prepare.outputs.artifact_prefix }}
+          SITE_ORIGIN: ${{ needs.prepare.outputs.site_origin }}
+          HISTORICAL_ORIGIN: ${{ needs.prepare.outputs.historical_origin }}
+          SELECTION: ${{ needs.prepare.outputs.selection }}
+        run: |
+          extra=()
+          if [[ "$PREFIX" == staging ]]; then
+            extra+=(--asf-profile oink --asf-whoami asf-staging-oink)
+          fi
+          python3 scripts/versioning.py aggregate \
+            --artifacts version-artifacts --artifact-prefix "$PREFIX-" \
+            --artifact-suffix="-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --resolved-manifest resolved/resolved-versions.json \
+            --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
+            --select "$SELECTION" \
+            --output "${RUNNER_TEMP}/public-site" "${extra[@]}"
+      - name: Upload publishable aggregate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: hugegraph-site-staging-${{ github.sha }}
-          path: ${{ runner.temp }}/public-staging
+          name: hugegraph-site-${{ needs.prepare.outputs.artifact_prefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/public-site
           include-hidden-files: true
+          retention-days: ${{ github.event_name == 'pull_request' && 1 || 7 }}
           if-no-files-found: error
+
+  e2e:
+    needs: [prepare, aggregate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: { contents: read }
+    env:
+      HUGO_CACHEDIR: /tmp/hugo-cache-${{ github.run_id }}-${{ github.run_attempt }}-e2e
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: tests/e2e/package-lock.json
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Setup Hugo Extended
+        uses: peaceiris/actions-hugo@2752ce1d29631191ea3f27c23495fa06139a5b78 # v3.2.1
+        with:
+          hugo-version: ${{ env.HUGO_VERSION }}
+          extended: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: hugegraph-site-${{ needs.prepare.outputs.artifact_prefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: public-site
+      - name: Install Chromium test workspace
+        working-directory: tests/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Build manifest-derived AI fixture
+        run: |
+          python3 scripts/versioning.py config \
+            --version latest \
+            --site-origin http://127.0.0.1:4174/ \
+            --historical-origin "$PRODUCTION_ORIGIN" \
+            --output "${RUNNER_TEMP}/ai-version-config.json"
+          hugo \
+            --config "hugo.yaml,${RUNNER_TEMP}/ai-version-config.json,tests/e2e/ai-enabled.yaml" \
+            --destination "${RUNNER_TEMP}/ai-site" \
+            --cleanDestinationDir --gc --minify --environment production
+      - name: Run blocking Chromium contracts
+        working-directory: tests/e2e
+        env:
+          SITE_ROOT: ${{ github.workspace }}/public-site
+          AI_SITE_ROOT: ${{ runner.temp }}/ai-site
+          EXPECTED_VERSIONS: ${{ needs.prepare.outputs.selection }}
+        run: npm run test:ci
+      - name: Upload E2E report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            tests/e2e/playwright-report
+            tests/e2e/test-results
+          retention-days: 7
+          if-no-files-found: warn
+
+  visual:
+    needs: [prepare, aggregate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: tests/e2e/package-lock.json
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: hugegraph-site-${{ needs.prepare.outputs.artifact_prefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: public-site
+      - name: Capture advisory visual states
+        working-directory: tests/e2e
+        env:
+          SITE_ROOT: ${{ github.workspace }}/public-site
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run test:visual
+      - name: Upload advisory visual evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: visual-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tests/e2e/visual-results
+          retention-days: 7
+          if-no-files-found: warn
+
+  # Required check name in .asf.yaml. It gates artifacts without write access.
+  deploy:
+    if: always()
+    needs: [prepare, build, aggregate, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: { contents: read }
+    steps:
+      - name: Require all blocking jobs to succeed
+        env:
+          PREPARE_RESULT: ${{ needs.prepare.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          AGGREGATE_RESULT: ${{ needs.aggregate.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+        run: |
+          test "$PREPARE_RESULT" = success
+          test "$BUILD_RESULT" = success
+          test "$AGGREGATE_RESULT" = success
+          test "$E2E_RESULT" = success
 
   publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    needs: deploy
+    if: needs.prepare.outputs.publish_branch != ''
+    needs: [prepare, deploy]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    timeout-minutes: 10
+    permissions: { contents: write }
     steps:
-      - name: Download reviewed production aggregate
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: hugegraph-site-production-${{ github.sha }}
-          path: public-production
-
-      - name: Publish clean aggregate to asf-site
+          name: hugegraph-site-${{ needs.prepare.outputs.artifact_prefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: public-site
+      - name: Verify fixed publication target
+        env:
+          TARGET: ${{ needs.prepare.outputs.publish_branch }}
+          PREFIX: ${{ needs.prepare.outputs.artifact_prefix }}
+        run: |
+          case "$PREFIX:$TARGET" in
+            production:asf-site|staging:asf-staging-oink) ;;
+            *) exit 1 ;;
+          esac
+          test -f public-site/build-metadata/versions.json
+      - name: Publish clean aggregate
         uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public-production
-          publish_branch: asf-site
+          publish_dir: ./public-site
+          publish_branch: ${{ needs.prepare.outputs.publish_branch }}
           keep_files: false
           force_orphan: false
-          commit_message: ${{ github.event.head_commit.message }}
+          commit_message: Deploy ${{ needs.prepare.outputs.artifact_prefix }} site from run ${{ github.run_id }} attempt ${{ github.run_attempt }}

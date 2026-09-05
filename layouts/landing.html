@@ -1,0 +1,6 @@
+{{ define "main" -}}
+<template data-hg-authored-content="start"></template>
+{{- $landing := partial "landing/data.html" . -}}
+{{- partial "landing/render.html" (dict "page" . "data" $landing) -}}
+<template data-hg-authored-content="end"></template>
+{{- end }}

@@ -1,0 +1,13 @@
+{{- if and .IsPage (eq .Section "blog") -}}
+<section class="td-share d-print-none" data-td-share data-td-page-context
+  data-td-t-copied="{{ T "ui_copy_link_success" }}"
+  data-td-t-copy-error="{{ T "ui_copy_link_error" }}">
+  <div class="td-share__items" role="group" aria-label="{{ T "ui_share" }}">
+    <button type="button" class="td-share__item td-share__item--copy"
+      data-td-action="copy_link" data-td-action-url="{{ .Permalink }}">
+      <span class="td-share__icon"><i class="fa-solid fa-link" aria-hidden="true"></i></span>
+      <span>{{ T "ui_copy_link" }}</span>
+    </button>
+  </div>
+</section>
+{{- end -}}

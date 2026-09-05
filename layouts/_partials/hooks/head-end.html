@@ -1,0 +1,5 @@
+{{- $themeColor := index .Site.Params.ui "theme_color" | default "" -}}
+{{- if not (findRE `^#[0-9a-fA-F]{6}$` $themeColor) -}}
+  {{- errorf "params.ui.theme_color must be a six-digit hexadecimal color" -}}
+{{- end }}
+<style>:root { --hg-theme-color: {{ $themeColor | safeCSS }}; }</style>

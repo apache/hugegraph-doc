@@ -27,7 +27,7 @@ cd hugegraph-doc
 hugo mod graph
 
 # 3. Start the development server (auto-reload)
-hugo server
+scripts/hugo.sh server
 ```
 
 Open http://localhost:1313 to preview.
@@ -84,9 +84,9 @@ See [contribution.md](./contribution.md) for the pinned toolchain, strict build,
 
 | Command | Description |
 |---------|-------------|
-| `hugo server` | Start dev server (hot reload) |
-| `hugo --cleanDestinationDir --gc --minify --environment production --printPathWarnings --printI18nWarnings --panicOnWarning` | Strict production build to `./public/` |
-| `hugo server -p 8080` | Custom port |
+| `scripts/hugo.sh server` | Start the manifest-aware dev server (hot reload) |
+| `scripts/hugo.sh build` | Strict, production-equivalent build to `./public/` |
+| `scripts/hugo.sh server -p 8080` | Start the dev server on a custom port |
 
 ---
 
@@ -111,7 +111,7 @@ cd hugegraph-doc
 hugo mod graph
 
 # 3. 启动开发服务器（支持热重载）
-hugo server
+scripts/hugo.sh server
 ```
 
 打开 http://localhost:1313 预览网站。
@@ -168,9 +168,9 @@ hugegraph-doc/
 
 | 命令 | 说明 |
 |------|------|
-| `hugo server` | 启动开发服务器（热重载） |
-| `hugo --cleanDestinationDir --gc --minify --environment production --printPathWarnings --printI18nWarnings --panicOnWarning` | 严格构建生产版本到 `./public/` |
-| `hugo server -p 8080` | 指定端口 |
+| `scripts/hugo.sh server` | 启动读取版本清单的开发服务器（支持热重载） |
+| `scripts/hugo.sh build` | 严格构建与生产等价的站点到 `./public/` |
+| `scripts/hugo.sh server -p 8080` | 在指定端口启动开发服务器 |
 
 ---
 

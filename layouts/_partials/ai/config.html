@@ -1,0 +1,33 @@
+{{- $raw := .Site.Params.ai_search | default dict -}}
+{{- $enabled := false -}}
+{{- $provider := "" -}}
+{{- $websiteID := "" -}}
+{{- $sourceGroups := dict -}}
+{{- if reflect.IsMap $raw -}}
+  {{- $enabled = index $raw "enabled" | default false -}}
+  {{- if ne (printf "%T" $enabled) "bool" -}}
+    {{- errorf "params.ai_search.enabled must be a boolean" -}}
+  {{- end -}}
+  {{- $provider = index $raw "provider" | default "" -}}
+  {{- $websiteID = index $raw "website_id" | default "" -}}
+  {{- $sourceGroups = index $raw "source_groups" | default dict -}}
+{{- else -}}
+  {{- errorf "params.ai_search must be a map" -}}
+{{- end -}}
+{{- $enGroup := "" -}}
+{{- $cnGroup := "" -}}
+{{- if reflect.IsMap $sourceGroups -}}
+  {{- $enGroup = index $sourceGroups "en" | default "" -}}
+  {{- $cnGroup = index $sourceGroups "cn" | default "" -}}
+{{- end -}}
+{{- if $enabled -}}
+  {{- if ne $provider "kapa" }}{{ errorf "params.ai_search.provider must be kapa when AI search is enabled" }}{{ end -}}
+  {{- if not $websiteID }}{{ errorf "params.ai_search.website_id is required when AI search is enabled" }}{{ end -}}
+  {{- if or (not $enGroup) (not $cnGroup) }}{{ errorf "params.ai_search.source_groups.en and .cn are required when AI search is enabled" }}{{ end -}}
+{{- end -}}
+{{- return (dict
+  "enabled" $enabled
+  "provider" $provider
+  "websiteID" $websiteID
+  "sourceGroups" (dict "en" $enGroup "cn" $cnGroup)
+) -}}

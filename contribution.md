@@ -37,7 +37,7 @@ The module graph must contain exactly the pinned `github.com/pgsty/oink@v1.0.0` 
 ```bash
 git clone https://github.com/apache/hugegraph-doc.git
 cd hugegraph-doc
-hugo server
+scripts/hugo.sh server
 ```
 
 Open <http://localhost:1313/>. The local preview includes the language-aware search index so search behavior can be checked before publication.
@@ -47,13 +47,19 @@ Open <http://localhost:1313/>. The local preview includes the language-aware sea
 Run the same warning-strict build used by CI:
 
 ```bash
-hugo --cleanDestinationDir --gc --minify \
-  --environment production \
-  --printPathWarnings \
-  --printI18nWarnings \
-  --panicOnWarning \
-  --logLevel info
+scripts/hugo.sh build
 ```
+
+The wrapper derives the complete version menu from `versions.json` before
+starting Hugo. Additional Hugo arguments are passed through unchanged, for
+example `scripts/hugo.sh server -p 8080`. Set `HG_DOC_VERSION`,
+`HG_DOC_SITE_ORIGIN`, or `HG_DOC_HISTORICAL_ORIGIN` only when validating a
+specific version or publication origin.
+
+The wrapper owns Hugo's configuration, environment, strict-warning, cleanup,
+and minification flags and rejects attempts to override them. Use `--baseURL`
+or `HG_DOC_SITE_ORIGIN` (not both) when changing the rendered origin; a server
+`--port` is reflected in the generated local origin.
 
 A successful command proves that Hugo rendered the configured outputs. It does not replace browser checks for navigation, search, language switching, accessibility, mobile layout, print, or Content Security Policy behavior.
 
@@ -71,4 +77,3 @@ OINK is a module dependency. Do not copy or edit generated module-cache files. S
 ## 中文说明
 
 提交前请同时检查中英文页面、公开 URL、搜索结果和语言切换。视觉或导航变更必须提供修改前后的桌面与移动端截图。构建成功只证明模板可以渲染，不能替代真实浏览器、无障碍、打印和 CSP 检查。
-

@@ -37,6 +37,7 @@ from typing import NoReturn
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 URL_CONTRACT = ROOT / "dist/url-contract.json"
+VERSION_ROUTES = ROOT / "data/version_routes.json"
 CANONICAL_ORIGIN = "https://hugegraph.apache.org/"
 SHELL_FILES = ("go.mod", "go.sum", "hugo.yaml")
 SHELL_DIRS = ("assets", "data", "i18n", "layouts")
@@ -44,7 +45,14 @@ SHELL_CONTENT_DIRS = (
     "content/en/docs/_nav",
     "content/cn/docs/_nav",
 )
-SHELL_STATIC_FILES = ("favicon.svg",)
+SHELL_STATIC_FILES = (
+    "favicon.svg",
+    "img/social/hugegraph-default.png",
+)
+SHELL_STATIC_DIRS = (
+    "img/bootstrap-controls",
+    "img/home",
+)
 SHELL_CONTENT = (
     "content/en/_index.md",
     "content/cn/_index.md",
@@ -60,24 +68,33 @@ MENU_CONTENT = tuple(
 )
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 REPOSITORY_URL = "https://github.com/apache/hugegraph-doc.git"
-VERSION_REFS = {
-    "latest": "master",
-    "1.7": "release-1.7.0",
-    "1.5": "release-1.5.0",
-}
 KNOWN_HISTORICAL_ROUTES = {
     "/docs/quickstart/hugegraph-loader": "/docs/quickstart/toolchain/hugegraph-loader/",
     "/cn/docs/quickstart/hugegraph-loader": "/cn/docs/quickstart/toolchain/hugegraph-loader/",
 }
-KNOWN_HISTORICAL_ROUTES_BY_PUBLISH_PATH = {
-    "versions/1.5": {
+KNOWN_HISTORICAL_ROUTES_BY_VERSION = {
+    "1.5": {
         "/docs/introduction": "/docs/introduction/readme/",
         "/cn/docs/introduction": "/cn/docs/introduction/readme/",
     },
 }
+LATEST_SHARED_DOC_ROUTES = {
+    "/docs/guides/security/",
+    "/cn/docs/guides/security/",
+}
 URL_ATTRIBUTE_RE = re.compile(
-    r"(?P<prefix>[\s<](?:href|src|action|poster|data-td-index-src|data-td-url|data-td-image-zoom)=)"
+    r"(?P<prefix>[\s<](?:href|xlink:href|src|action|formaction|data|poster|data-td-index-src|data-td-url|data-td-action-url|data-td-image-zoom)=)"
     r"(?P<quote>[\"']?)(?P<url>[^\s\"'<>`]+)(?P=quote)",
+    re.IGNORECASE,
+)
+URL_LIST_ATTRIBUTE_RE = re.compile(
+    r"(?P<prefix>[\s<](?:srcset|imagesrcset)=)"
+    r"(?P<quote>[\"'])(?P<value>.*?)(?P=quote)",
+    re.IGNORECASE | re.DOTALL,
+)
+URL_LIST_UNQUOTED_ATTRIBUTE_RE = re.compile(
+    r"(?P<prefix>[\s<](?:srcset|imagesrcset)=)"
+    r"(?P<value>[^\s\"'<>`]+)",
     re.IGNORECASE,
 )
 ACTION_MANIFEST_RE = re.compile(
@@ -85,6 +102,15 @@ ACTION_MANIFEST_RE = re.compile(
     r"(?P<body>.*?)"
     r"(?P<close></script>)",
     re.IGNORECASE | re.DOTALL,
+)
+HREFLANG_LINK_RE = re.compile(
+    r"<link\b(?=[^>]*\brel=[\"']?alternate(?:[\"'\s>]|$))"
+    r"(?=[^>]*\bhreflang=)[^>]*>",
+    re.IGNORECASE,
+)
+ROBOTS_META_RE = re.compile(
+    r"<meta\b(?=[^>]*\bname=[\"']?robots(?:[\"'\s>]|$))[^>]*>",
+    re.IGNORECASE,
 )
 MARKDOWN_DESTINATION_RE = re.compile(
     r"(?P<open>\]\(\s*<?)(?P<url>(?:https?://[^\s)>]+|/[^\s)>]+))(?P<close>>?[^)]*\))"
@@ -121,7 +147,71 @@ DOCS_NAV_EXPECTED_STATS = {
         "scopedLinks": 10,
         "treeSha256": "70b2a46f047b3c88a6b1b937eb79676a7f68437485b3248e5f84b9c621d5ad06",
     },
+    "1.3": {
+        "groups": 5,
+        "pages": 68,
+        "removed": 22,
+        "scopedLinks": 10,
+        "treeSha256": "78700dfe484d5177f00c9fe657ae12f3ceecca9bbb592cc8626b782a7b9be61a",
+    },
+    "1.0": {
+        "groups": 5,
+        "pages": 59,
+        "removed": 21,
+        "scopedLinks": 10,
+        "treeSha256": "52f0c3b5bef6e9db39a37bbd52b7993128951f592d88a835ec7e3c107edec399",
+    },
 }
+LEGACY_IA_ROUTE_MAP = {
+    "introduction/README.md": "introduction/readme.md",
+    "quickstart/hugegraph-server.md": "quickstart/hugegraph/hugegraph-server.md",
+    "quickstart/hugegraph-hubble.md": "quickstart/toolchain/hugegraph-hubble.md",
+    "quickstart/hugegraph-loader.md": "quickstart/toolchain/hugegraph-loader.md",
+    "quickstart/hugegraph-tools.md": "quickstart/toolchain/hugegraph-tools.md",
+    "quickstart/hugegraph-computer.md": "quickstart/computing/hugegraph-computer.md",
+    "quickstart/hugegraph-client.md": "quickstart/client/hugegraph-client.md",
+}
+LEGACY_IA_SECTIONS = {
+    "quickstart/hugegraph": ("HugeGraph", "HugeGraph"),
+    "quickstart/toolchain": ("Toolchain", "Toolchain"),
+    "quickstart/computing": ("Graph computing", "图计算"),
+    "quickstart/client": ("Clients", "客户端"),
+}
+
+
+def srcset_urls(value: str) -> list[str]:
+    """Return each URL candidate without treating data-URL commas as separators."""
+    urls: list[str] = []
+    position = 0
+    while position < len(value):
+        while position < len(value) and (
+            value[position].isspace() or value[position] == ","
+        ):
+            position += 1
+        if position == len(value):
+            break
+
+        start = position
+        is_data_url = value[start:].lower().startswith("data:")
+        while position < len(value) and not value[position].isspace():
+            if value[position] == "," and not is_data_url:
+                break
+            position += 1
+        token = value[start:position]
+        trailing_commas = len(token) - len(token.rstrip(","))
+        token = token.rstrip(",")
+        if token:
+            urls.append(token)
+        if position < len(value) and value[position] == ",":
+            position += 1
+            continue
+        if trailing_commas:
+            continue
+        while position < len(value) and value[position] != ",":
+            position += 1
+        if position < len(value):
+            position += 1
+    return urls
 
 
 class DocumentParser(html.parser.HTMLParser):
@@ -132,6 +222,7 @@ class DocumentParser(html.parser.HTMLParser):
         self.hreflang: list[tuple[str, str]] = []
         self.meta: list[dict[str, str]] = []
         self.toc_nav_labels: list[list[str]] = []
+        self.version_links: list[dict[str, str]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = {key.lower(): value or "" for key, value in attrs}
@@ -143,15 +234,27 @@ class DocumentParser(html.parser.HTMLParser):
             )
         for attribute in (
             "href",
+            "xlink:href",
             "src",
             "action",
             "poster",
             "data-td-index-src",
             "data-td-url",
+            "data-td-action-url",
             "data-td-image-zoom",
         ):
             if values.get(attribute):
                 self.urls.append((attribute, values[attribute]))
+        if tag.lower() in {"button", "input"} and values.get("formaction"):
+            self.urls.append(("formaction", values["formaction"]))
+        if tag.lower() == "object" and values.get("data"):
+            self.urls.append(("data", values["data"]))
+        for attribute in ("srcset", "imagesrcset"):
+            if values.get(attribute):
+                self.urls.extend(
+                    (attribute, value)
+                    for value in srcset_urls(values[attribute])
+                )
         if tag == "link" and values.get("rel", "").lower() == "canonical":
             self.canonical.append(values.get("href", ""))
         if (
@@ -162,6 +265,8 @@ class DocumentParser(html.parser.HTMLParser):
             self.hreflang.append((values["hreflang"], values.get("href", "")))
         if tag == "meta":
             self.meta.append(values)
+        if tag == "a" and "data-hg-version-id" in values:
+            self.version_links.append(values)
 
 
 def refresh_target(parser: DocumentParser) -> str | None:
@@ -209,15 +314,80 @@ def require_toc_accessible_name(parser: DocumentParser, relative: str) -> None:
         )
 
 
+def require_version_switch_matches_native(
+    parser: DocumentParser, options: list[dict], relative: str
+) -> None:
+    """Require every native version link to match its Palette option."""
+    if not isinstance(options, list):
+        fail(f"version switch options are invalid in {relative}")
+    by_id: dict[str, dict] = {}
+    for option in options:
+        version_id = option.get("id") if isinstance(option, dict) else None
+        if (
+            not isinstance(version_id, str)
+            or not version_id
+            or version_id in by_id
+            or not isinstance(option.get("url"), str)
+            or not isinstance(option.get("available"), bool)
+            or not isinstance(option.get("active"), bool)
+            or not isinstance(option.get("equivalent"), bool)
+            or not isinstance(option.get("fallback"), bool)
+        ):
+            fail(f"version switch options are invalid in {relative}")
+        by_id[version_id] = option
+
+    expected_ids = {
+        version_id
+        for version_id, option in by_id.items()
+        if option["available"]
+    }
+    observed_ids = {
+        link.get("data-hg-version-id", "") for link in parser.version_links
+    }
+    if observed_ids != expected_ids:
+        fail(
+            f"native version link set mismatch in {relative}: "
+            f"{sorted(observed_ids)!r} != {sorted(expected_ids)!r}"
+        )
+
+    for link in parser.version_links:
+        version_id = link["data-hg-version-id"]
+        option = by_id[version_id]
+        observed = {
+            "url": link.get("href", ""),
+            "equivalent": link.get("data-hg-version-equivalent") == "true",
+            "fallback": link.get("data-hg-version-fallback") == "true",
+            "active": link.get("aria-current") == "page",
+        }
+        expected = {
+            "url": option["url"],
+            "equivalent": option["equivalent"],
+            "fallback": option["fallback"],
+            "active": option["active"],
+        }
+        if observed != expected:
+            fail(
+                f"native version link mismatch in {relative} for "
+                f"{version_id}: {observed!r} != {expected!r}"
+            )
+
+
 def require_safe_url_scheme(value: str, source: str) -> bool:
     """Reject active or ambiguous schemes; return whether target validation applies."""
     if value.startswith("//"):
         fail(f"protocol-relative URL in {source}: {value}")
-    scheme = urllib.parse.urlsplit(value).scheme.lower()
+    if any(
+        char.isspace() or ord(char) < 0x20 or ord(char) == 0x7F for char in value
+    ):
+        fail(f"whitespace/control URL in {source}: {value}")
+    parts = urllib.parse.urlsplit(value)
+    scheme = parts.scheme.lower()
     if scheme in {"mailto", "tel"}:
         return False
     if scheme not in {"", "http", "https"}:
         fail(f"forbidden URL scheme in {source}: {value}")
+    if scheme in {"http", "https"} and not parts.netloc:
+        fail(f"HTTP(S) URL has no authority in {source}: {value}")
     return True
 
 
@@ -225,20 +395,99 @@ def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 
+def registered_worktree_roots() -> tuple[pathlib.Path, ...]:
+    """Enumerate every checkout sharing this repository, failing closed."""
+    try:
+        result = subprocess.run(
+            ["git", "worktree", "list", "--porcelain", "-z"],
+            cwd=ROOT,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except OSError as exc:
+        fail(f"cannot enumerate protected Git worktrees: {exc}")
+    if result.returncode != 0:
+        detail = os.fsdecode(result.stderr).strip()
+        fail(f"cannot enumerate protected Git worktrees: {detail or result.returncode}")
+    roots = []
+    for field in result.stdout.split(b"\0"):
+        if not field.startswith(b"worktree "):
+            continue
+        raw = os.fsdecode(field.removeprefix(b"worktree "))
+        path = pathlib.Path(raw)
+        if not raw or not path.is_absolute():
+            fail(f"invalid Git worktree path: {raw!r}")
+        roots.append(path.resolve())
+    if not roots:
+        fail("cannot enumerate protected Git worktrees: no checkout paths")
+    return tuple(roots)
+
+
+def require_output_outside_git_checkouts(output: pathlib.Path, label: str) -> None:
+    """Reject registered, prunable, and unregistered checkout paths."""
+    protected = set(registered_worktree_roots())
+    protected.add(ROOT.resolve())
+    for checkout in protected:
+        if (
+            output == checkout
+            or output in checkout.parents
+            or checkout in output.parents
+        ):
+            fail(f"{label} must be outside every Git checkout: {output}")
+    for candidate in (output, *output.parents):
+        marker = candidate / ".git"
+        if marker.exists() or marker.is_symlink():
+            fail(f"{label} must be outside every Git checkout: {output}")
+
+
+def require_no_symlinked_output_components(
+    path: pathlib.Path,
+    label: str,
+    controlled_roots: set[pathlib.Path],
+) -> pathlib.Path:
+    """Reject existing symlinks below a trusted temp root before resolution."""
+    absolute = pathlib.Path(os.path.abspath(os.fspath(path)))
+    lexical_roots = {
+        pathlib.Path(os.path.abspath(os.fspath(root))) for root in controlled_roots
+    }
+    lexical_roots.update(root.resolve() for root in controlled_roots)
+    anchors = [
+        root
+        for root in lexical_roots
+        if absolute == root or root in absolute.parents
+    ]
+    anchor = max(anchors, key=lambda item: len(item.parts)) if anchors else None
+    candidate = absolute
+    while candidate != anchor and candidate != candidate.parent:
+        if candidate.is_symlink():
+            fail(f"{label} must not contain a symbolic link: {candidate}")
+        candidate = candidate.parent
+    return absolute
+
+
 def prepare_output_directory(path: pathlib.Path, label: str) -> pathlib.Path:
     raw = path.expanduser()
-    if raw.is_symlink():
-        fail(f"{label} must not be a symbolic link: {raw}")
-    output = raw.resolve()
-    allowed_roots = {
-        pathlib.Path(tempfile.gettempdir()).resolve(),
-        pathlib.Path("/tmp").resolve(),
+    controlled_roots = {
+        pathlib.Path(tempfile.gettempdir()),
+        pathlib.Path("/tmp"),
     }
     runner_temp = os.environ.get("RUNNER_TEMP")
     if runner_temp:
-        allowed_roots.add(pathlib.Path(runner_temp).resolve())
+        runner_temp_root = require_no_symlinked_output_components(
+            pathlib.Path(runner_temp).expanduser(),
+            "RUNNER_TEMP",
+            controlled_roots,
+        )
+        controlled_roots.add(runner_temp_root)
+    raw_absolute = require_no_symlinked_output_components(
+        raw, label, controlled_roots
+    )
+    output = raw_absolute.resolve()
+    allowed_roots = {root.resolve() for root in controlled_roots}
     if not any(root != output and root in output.parents for root in allowed_roots):
         fail(f"{label} must be below a controlled temporary directory: {output}")
+    require_output_outside_git_checkouts(output, label)
     if output.exists():
         if output.is_symlink() or not output.is_dir():
             fail(f"{label} is not a removable directory: {output}")
@@ -267,35 +516,61 @@ def load_manifest(path: pathlib.Path) -> dict:
     if not isinstance(versions, list) or not versions:
         fail("versions manifest must contain a non-empty versions array")
     ids: set[str] = set()
+    refs: set[str] = set()
     paths: set[str] = set()
-    for entry in versions:
+    unarchived = []
+    for index, entry in enumerate(versions):
         required = {"id", "name", "ref", "publishPath", "archived", "githubBranch"}
         if not isinstance(entry, dict) or not required.issubset(entry):
             fail(f"invalid version entry: {entry!r}")
         version_id = entry["id"]
-        expected_ref = VERSION_REFS.get(version_id)
-        if entry["ref"] != expected_ref:
-            fail(f"unexpected source ref for {version_id}: {entry['ref']}")
-        if entry["githubBranch"] != expected_ref:
-            fail(f"unexpected GitHub branch for {version_id}: {entry['githubBranch']}")
-        if entry["name"] != version_id:
-            fail(f"unexpected display name for {version_id}: {entry['name']}")
-        if entry["archived"] is not (version_id != "latest"):
-            fail(f"unexpected archive state for {version_id}: {entry['archived']}")
+        values = {
+            "id": version_id,
+            "name": entry["name"],
+            "ref": entry["ref"],
+            "githubBranch": entry["githubBranch"],
+        }
+        if not all(isinstance(value, str) and value for value in values.values()):
+            fail(f"version string fields must be non-empty: {entry!r}")
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", version_id):
+            fail(f"unsafe version id: {version_id!r}")
+        for field in ("ref", "githubBranch"):
+            value = entry[field]
+            if (
+                not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]*", value)
+                or value.endswith("/")
+                or "//" in value
+                or ".." in value
+            ):
+                fail(f"unsafe version {field}: {value!r}")
+        if not isinstance(entry["archived"], bool):
+            fail(f"version archived state must be boolean: {entry!r}")
+        if not isinstance(entry["publishPath"], str):
+            fail(f"version publishPath must be a string: {entry!r}")
         publish_path = entry["publishPath"].strip("/")
-        if version_id in ids or publish_path in paths:
+        if (
+            entry["publishPath"] != publish_path
+            or "\\" in publish_path
+            or "?" in publish_path
+            or "#" in publish_path
+        ):
+            fail(f"unsafe publish path for {version_id}: {entry['publishPath']!r}")
+        if version_id in ids or entry["ref"] in refs or publish_path in paths:
             fail(f"duplicate version id or publish path: {version_id}")
-        if version_id == "latest" and publish_path:
-            fail("latest must publish at the site root")
-        if version_id != "latest" and not publish_path.startswith("versions/"):
-            fail(f"historical version {version_id} must publish below versions/")
+        if not entry["archived"]:
+            unarchived.append(version_id)
+            if index != 0 or publish_path:
+                fail("the first manifest version must be the unarchived site root")
+        elif not publish_path.startswith("versions/"):
+            fail(f"archived version {version_id} must publish below versions/")
         if ".." in pathlib.PurePosixPath(publish_path).parts:
             fail(f"unsafe publish path for {version_id}: {publish_path}")
         entry["publishPath"] = publish_path
         ids.add(version_id)
+        refs.add(entry["ref"])
         paths.add(publish_path)
-    if [entry["id"] for entry in versions] != ["latest", "1.7", "1.5"]:
-        fail("version order must be latest, 1.7, 1.5")
+    if len(unarchived) != 1:
+        fail("versions manifest must contain exactly one unarchived version")
     if data.get("repository") != REPOSITORY_URL:
         fail(f"versions manifest repository must be {REPOSITORY_URL}")
     return data
@@ -306,6 +581,8 @@ def load_resolved_manifest(path: pathlib.Path) -> dict:
     expected = load_manifest(ROOT / "versions.json")
     if resolved.get("repository") != expected.get("repository"):
         fail("resolved manifest repository does not match versions.json")
+    if manifest_version_ids(resolved) != manifest_version_ids(expected):
+        fail("resolved manifest version order does not match versions.json")
     fields = ("id", "name", "ref", "publishPath", "archived", "githubBranch")
     for expected_entry, resolved_entry in zip(
         expected["versions"], resolved["versions"]
@@ -344,12 +621,30 @@ def resolve_remote(repository: str, ref: str) -> str:
     return rows[0][0]
 
 
+def manifest_version_ids(manifest: dict) -> tuple[str, ...]:
+    return tuple(entry["id"] for entry in manifest["versions"])
+
+
+def selected_version_ids(raw: str | None, manifest: dict) -> tuple[str, ...]:
+    version_ids = manifest_version_ids(manifest)
+    if raw is None:
+        return version_ids
+    selected = tuple(part.strip() for part in raw.split(",") if part.strip())
+    if not selected or len(set(selected)) != len(selected):
+        fail("selected versions must be a non-empty unique comma-separated list")
+    unknown = set(selected) - set(version_ids)
+    if unknown:
+        fail(f"unknown selected versions: {', '.join(sorted(unknown))}")
+    return tuple(version for version in version_ids if version in selected)
+
+
 def prepare(args: argparse.Namespace) -> None:
     manifest = load_manifest(args.manifest)
+    selected = selected_version_ids(args.select, manifest)
     resolved = []
     for entry in manifest["versions"]:
         item = dict(entry)
-        if entry["id"] == "latest":
+        if not entry["archived"]:
             sha = run(["git", "rev-parse", f"{args.latest_sha}^{{commit}}"])
         elif args.local:
             sha = run(
@@ -365,7 +660,7 @@ def prepare(args: argparse.Namespace) -> None:
         "schemaVersion": 1,
         "repository": manifest["repository"],
         "versions": resolved,
-        "include": resolved,
+        "include": [item for item in resolved if item["id"] in selected],
     }
     rendered = json.dumps(
         result, ensure_ascii=False, sort_keys=True, separators=(",", ":")
@@ -401,6 +696,12 @@ def overlay_shell(assembly: pathlib.Path, *, historical: bool, origin: str) -> N
         target = assembly / "static" / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
+    for relative in SHELL_STATIC_DIRS:
+        source = ROOT / "static" / relative
+        target = assembly / "static" / relative
+        if target.exists():
+            shutil.rmtree(target)
+        shutil.copytree(source, target)
     client_go_target = assembly / "static/client-go"
     if historical:
         if client_go_target.exists():
@@ -485,16 +786,21 @@ def strip_menu_frontmatter(path: pathlib.Path) -> None:
     if not path.is_file():
         return
     lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-    if not lines or lines[0].strip() != "---":
+    opening_index = next(
+        (index for index, line in enumerate(lines) if line.strip()), None
+    )
+    if opening_index is None or lines[opening_index].strip() != "---":
         fail(f"cannot remove menu from non-YAML front matter: {path}")
     try:
         closing_index = next(
-            index for index, line in enumerate(lines[1:], 1) if line.strip() == "---"
+            index
+            for index, line in enumerate(lines[opening_index + 1 :], opening_index + 1)
+            if line.strip() == "---"
         )
     except StopIteration:
         fail(f"unterminated YAML front matter: {path}")
-    frontmatter = lines[1:closing_index]
-    output = [lines[0]]
+    frontmatter = lines[opening_index + 1 : closing_index]
+    output = lines[: opening_index + 1]
     index = 0
     while index < len(frontmatter):
         line = frontmatter[index]
@@ -537,6 +843,62 @@ def ensure_frontmatter(
         encoding="utf-8",
     )
     return 1
+
+
+def add_frontmatter_alias(path: pathlib.Path, alias: str) -> None:
+    source = path.read_text(encoding="utf-8")
+    opening = source.find("---")
+    if opening < 0 or source[:opening].strip():
+        fail(f"cannot add route alias without YAML front matter: {path}")
+    closing = source.find("\n---", opening + 3)
+    if closing < 0:
+        fail(f"unterminated YAML front matter: {path}")
+    frontmatter = source[opening + 3 : closing]
+    if re.search(r"(?m)^aliases\s*:", frontmatter):
+        fail(f"historical page already declares aliases: {path}")
+    source = source[:closing] + f"\naliases:\n  - {alias}\n" + source[closing:]
+    path.write_text(source, encoding="utf-8")
+
+
+def migrate_legacy_information_architecture(
+    assembly: pathlib.Path, version: str
+) -> int:
+    """Move 1.3/1.0 flat pages into the current five-group route hierarchy."""
+    if version not in {"1.3", "1.0"}:
+        return 0
+    changed = 0
+    for language in ("en", "cn"):
+        docs = assembly / "content" / language / "docs"
+        for section, titles in LEGACY_IA_SECTIONS.items():
+            index = docs / section / "_index.md"
+            if not index.exists():
+                index.parent.mkdir(parents=True, exist_ok=True)
+                title = titles[0] if language == "en" else titles[1]
+                index.write_text(
+                    f'---\ntitle: "{title}"\nlinkTitle: "{title}"\n---\n',
+                    encoding="utf-8",
+                )
+                changed += 1
+        for old_relative, new_relative in LEGACY_IA_ROUTE_MAP.items():
+            source = docs / old_relative
+            if not source.is_file():
+                continue
+            target = docs / new_relative
+            if target.exists():
+                if not source.samefile(target):
+                    fail(f"historical route migration target already exists: {target}")
+                intermediate = source.with_name(source.name + ".route-migration-tmp")
+                source.rename(intermediate)
+                source = intermediate
+            target.parent.mkdir(parents=True, exist_ok=True)
+            source.rename(target)
+            changed += 1
+        summary = docs / "SUMMARY.md"
+        text = summary.read_text(encoding="utf-8")
+        for old_relative, new_relative in LEGACY_IA_ROUTE_MAP.items():
+            text = text.replace(old_relative, new_relative)
+        summary.write_text(text, encoding="utf-8")
+    return changed
 
 
 def ensure_search_metadata(
@@ -758,9 +1120,9 @@ def materialize_docs_navigation(
 
 
 LEGACY_WECHAT_IMAGE_RE = re.compile(
-    r'<img\b(?=[^>]*\bsrc="(?:https://github\.com/apache/hugegraph-doc/'
+    r'<img\b(?=[^>]*\bsrc="(?:https://github\.com/apache/(?:incubator-)?hugegraph-doc/'
     r"blob/master/assets/images/wechat\.png\?raw=true|https://raw\.githubusercontent\.com/"
-    r'apache/hugegraph-doc/master/assets/images/wechat\.png)")'
+    r'apache/(?:incubator-)?hugegraph-doc/master/assets/images/wechat\.png)")'
     r'(?=[^>]*\bwidth="(?P<width>200|300)")[^>]*?/?>',
     re.IGNORECASE,
 )
@@ -1048,10 +1410,19 @@ def apply_exact_legacy_content_fixes(assembly: pathlib.Path, version: str) -> in
     return fixed
 
 
+def first_existing_path(assembly: pathlib.Path, candidates: tuple[str, ...]) -> pathlib.Path:
+    """Resolve one version-specific content path without guessing missing files."""
+    matches = [assembly / candidate for candidate in candidates if (assembly / candidate).is_file()]
+    if len(matches) != 1:
+        fail(f"expected exactly one historical path, found {len(matches)}: {candidates!r}")
+    return matches[0]
+
+
 def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
     fixed = 0
-    if version in {"1.7", "1.5"}:
-        fixed += apply_exact_legacy_content_fixes(assembly, version)
+    if version in {"1.7", "1.5", "1.3", "1.0"}:
+        if version in LEGACY_EXACT_CONTENT_FIXES:
+            fixed += apply_exact_legacy_content_fixes(assembly, version)
         for language in ("en", "cn"):
             language_prefix = "/cn" if language == "cn" else ""
             legacy_metadata = (
@@ -1067,15 +1438,14 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
                 ),
             )
             for relative, title, link_title in legacy_metadata:
-                fixed += ensure_frontmatter(
-                    assembly / f"content/{language}/docs/{relative}",
-                    title=title,
-                    link_title=link_title,
-                    weight=100,
-                )
-            fixed += ensure_search_excluded(
-                assembly / f"content/{language}/docs/CLA.md"
-            )
+                page = assembly / f"content/{language}/docs/{relative}"
+                if page.is_file():
+                    fixed += ensure_frontmatter(
+                        page, title=title, link_title=link_title, weight=100
+                    )
+            cla = assembly / f"content/{language}/docs/CLA.md"
+            if cla.is_file():
+                fixed += ensure_search_excluded(cla)
             search_metadata = (
                 (
                     "config/config-option.md",
@@ -1091,16 +1461,20 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
                 ),
             )
             for relative, keywords in search_metadata:
-                fixed += ensure_search_metadata(
-                    assembly / f"content/{language}/docs/{relative}",
-                    keywords=keywords,
-                    boost=1.5,
-                )
+                page = assembly / f"content/{language}/docs/{relative}"
+                if page.is_file():
+                    fixed += ensure_search_metadata(page, keywords=keywords, boost=1.5)
             summary_path = assembly / f"content/{language}/docs/SUMMARY.md"
-            fixed += repair_historical_performance_routes(summary_path)
+            if version in {"1.7", "1.5"}:
+                fixed += repair_historical_performance_routes(summary_path)
             fixed += normalize_historical_server_headings(
-                assembly
-                / f"content/{language}/docs/quickstart/hugegraph/hugegraph-server.md"
+                first_existing_path(
+                    assembly,
+                    (
+                        f"content/{language}/docs/quickstart/hugegraph/hugegraph-server.md",
+                        f"content/{language}/docs/quickstart/hugegraph-server.md",
+                    ),
+                )
             )
             replacements = []
             if language == "cn":
@@ -1112,6 +1486,15 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
                 )
             replacements.extend(
                 [
+                    ("/en/docs/", "/docs/"),
+                    (
+                        "/dcos/clients/restful-api",
+                        f"{language_prefix}/docs/clients/restful-api/",
+                    ),
+                    (
+                        "/docs/quickstart/hugegraph-studio",
+                        f"{language_prefix}/docs/quickstart/toolchain/hugegraph-hubble",
+                    ),
                     (
                         "/docs/quickstart/hugegraph-server",
                         f"{language_prefix}/docs/quickstart/hugegraph/hugegraph-server",
@@ -1119,6 +1502,10 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
                     (
                         "/clients/gremlin-console.html",
                         f"{language_prefix}/docs/clients/gremlin-console/",
+                    ),
+                    (
+                        "/clients/hugegraph-api.html",
+                        f"{language_prefix}/docs/clients/restful-api/",
                     ),
                     (
                         "./hugegraph-style.xml",
@@ -1208,12 +1595,22 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
     return fixed
 
 
-def version_urls(manifest: dict, origin: str, language: str = "en") -> list[dict]:
+def version_urls(
+    manifest: dict,
+    origin: str,
+    language: str = "en",
+    historical_origin: str | None = None,
+) -> list[dict]:
     if language not in {"en", "cn"}:
         fail(f"unsupported version-menu language: {language}")
     language_prefix = "cn/" if language == "cn" else ""
     urls = []
     for entry in manifest["versions"]:
+        entry_origin = (
+            historical_origin
+            if entry["archived"] and historical_origin is not None
+            else origin
+        )
         path = (
             f"{entry['publishPath']}/{language_prefix}docs/"
             if entry["publishPath"]
@@ -1223,20 +1620,25 @@ def version_urls(manifest: dict, origin: str, language: str = "en") -> list[dict
             {
                 "version": entry["id"],
                 "name": entry["name"],
-                "url": urllib.parse.urljoin(origin.rstrip("/") + "/", path),
+                "url": urllib.parse.urljoin(entry_origin.rstrip("/") + "/", path),
                 "pagelinks": False,
             }
         )
     return urls
 
 
-def language_version_params(manifest: dict, origin: str, language: str) -> dict:
+def language_version_params(
+    manifest: dict,
+    origin: str,
+    language: str,
+    historical_origin: str | None = None,
+) -> dict:
     """Build language-preserving version selector and archive-banner params."""
     if language not in {"en", "cn"}:
         fail(f"unsupported version-menu language: {language}")
     return {
         "version_menu": "Releases" if language == "en" else "版本",
-        "versions": version_urls(manifest, origin, language),
+        "versions": version_urls(manifest, origin, language, historical_origin),
         "url_latest_version": urllib.parse.urljoin(
             origin.rstrip("/") + "/",
             "cn/docs/" if language == "cn" else "docs/",
@@ -1367,6 +1769,7 @@ def rewrite_internal_url(
     origin: str,
     publish_path: str,
     allowed_paths: set[str],
+    version_id: str | None = None,
 ) -> str:
     """Scope a same-site absolute/root URL to one historical artifact."""
     if not value or value.startswith(("#", "?")):
@@ -1417,8 +1820,8 @@ def rewrite_internal_url(
         else path
     )
     normalized_internal = internal_path.rstrip("/") or "/"
-    mapped_path = KNOWN_HISTORICAL_ROUTES_BY_PUBLISH_PATH.get(
-        publish_path.strip("/"), {}
+    mapped_path = KNOWN_HISTORICAL_ROUTES_BY_VERSION.get(
+        version_id or "", {}
     ).get(normalized_internal)
     if mapped_path is None:
         mapped_path = KNOWN_HISTORICAL_ROUTES.get(normalized_internal)
@@ -1550,6 +1953,51 @@ def scope_language_fallback_urls(
     return changed
 
 
+def normalize_language_switch_urls(
+    action_data: dict,
+    relative: str,
+    artifact_base: str,
+    output: pathlib.Path,
+) -> int:
+    """Keep language choices on an equivalent page or the same-version locale root."""
+    actions = action_data.get("actions")
+    if not isinstance(actions, list):
+        return 0
+    switches = [
+        action
+        for action in actions
+        if isinstance(action, dict) and action.get("id") == "switch_language"
+    ]
+    if len(switches) != 1 or not isinstance(switches[0].get("options"), list):
+        return 0
+    english_relative = relative.removeprefix("cn/")
+    chinese_relative = "cn/" + english_relative
+    candidates = {"en-US": english_relative, "zh-CN": chinese_relative}
+    roots = {"en-US": "", "zh-CN": "cn/"}
+    changed = 0
+    for option in switches[0]["options"]:
+        language = option.get("id")
+        candidate = candidates.get(language)
+        if candidate is None:
+            continue
+        target = output / candidate
+        route = candidate
+        if not target.is_file():
+            route = roots[language]
+        elif route.endswith("index.html"):
+            route = route[: -len("index.html")]
+        new_url = (
+            "/" + route
+            if not target.is_file()
+            and urllib.parse.urlsplit(artifact_base).path == "/"
+            else urllib.parse.urljoin(artifact_base, route)
+        )
+        if option.get("url") != new_url:
+            option["url"] = new_url
+            changed += 1
+    return changed
+
+
 def validate_language_switch_contract(
     action_data: dict,
     relative: str,
@@ -1607,6 +2055,47 @@ def validate_language_switch_contract(
             fail(f"language switch metadata mismatch in {relative}: {language}")
 
 
+def rewrite_srcset_urls(value: str, rewrite) -> tuple[str, int]:
+    """Rewrite each URL in a srcset-like list while preserving its descriptors."""
+    output: list[str] = []
+    cursor = 0
+    count = 0
+    for old in srcset_urls(value):
+        start = value.find(old, cursor)
+        if start < 0:
+            fail(f"cannot locate srcset URL candidate: {old}")
+        new = rewrite(old)
+        output.extend((value[cursor:start], new))
+        cursor = start + len(old)
+        count += old != new
+    output.append(value[cursor:])
+    return "".join(output), count
+
+
+def rewrite_url_list_attributes(text: str, rewrite) -> tuple[str, int]:
+    """Rewrite quoted and unquoted srcset/imagesrcset attribute candidates."""
+    count = 0
+
+    def replace_quoted(match: re.Match) -> str:
+        nonlocal count
+        value, changed = rewrite_srcset_urls(match.group("value"), rewrite)
+        count += changed
+        return (
+            f"{match.group('prefix')}{match.group('quote')}"
+            f"{value}{match.group('quote')}"
+        )
+
+    def replace_unquoted(match: re.Match) -> str:
+        nonlocal count
+        value, changed = rewrite_srcset_urls(match.group("value"), rewrite)
+        count += changed
+        return f"{match.group('prefix')}{value}"
+
+    text = URL_LIST_ATTRIBUTE_RE.sub(replace_quoted, text)
+    text = URL_LIST_UNQUOTED_ATTRIBUTE_RE.sub(replace_unquoted, text)
+    return text, count
+
+
 def rewrite_text_urls(text: str, rewrite, *, markdown: bool) -> tuple[str, int]:
     count = 0
 
@@ -1619,30 +2108,573 @@ def rewrite_text_urls(text: str, rewrite, *, markdown: bool) -> tuple[str, int]:
             f"{match.group('prefix')}{match.group('quote')}{new}{match.group('quote')}"
         )
 
+    def replace_destination(match: re.Match) -> str:
+        nonlocal count
+        old = match.group("url")
+        new = rewrite(old)
+        count += old != new
+        return f"{match.group('open')}{new}{match.group('close')}"
+
+    def rewrite_unfenced(source: str) -> str:
+        nonlocal count
+        source = URL_ATTRIBUTE_RE.sub(replace_attribute, source)
+        source, list_count = rewrite_url_list_attributes(source, rewrite)
+        count += list_count
+        return MARKDOWN_DESTINATION_RE.sub(replace_destination, source)
+
     if markdown:
         in_fence = False
-        lines = []
+        pending: list[str] = []
+        chunks: list[str] = []
         for line in text.splitlines(keepends=True):
             if re.match(r"^\s*(```|~~~)", line):
+                if pending:
+                    chunks.append(
+                        "".join(pending)
+                        if in_fence
+                        else rewrite_unfenced("".join(pending))
+                    )
+                    pending = []
+                chunks.append(line)
                 in_fence = not in_fence
-                lines.append(line)
-                continue
-            if not in_fence:
-
-                def replace_destination(match: re.Match) -> str:
-                    nonlocal count
-                    old = match.group("url")
-                    new = rewrite(old)
-                    count += old != new
-                    return f"{match.group('open')}{new}{match.group('close')}"
-
-                line = URL_ATTRIBUTE_RE.sub(replace_attribute, line)
-                line = MARKDOWN_DESTINATION_RE.sub(replace_destination, line)
-            lines.append(line)
-        text = "".join(lines)
+            else:
+                pending.append(line)
+        if pending:
+            chunks.append(
+                "".join(pending)
+                if in_fence
+                else rewrite_unfenced("".join(pending))
+            )
+        text = "".join(chunks)
     else:
-        text = URL_ATTRIBUTE_RE.sub(replace_attribute, text)
+        text = rewrite_unfenced(text)
     return text, count
+
+
+def normalize_logical_docs_route(_version: str, relative: str) -> str:
+    """Normalize reviewed route moves without treating aliases as pages."""
+    normalized = relative.strip("/")
+    normalized = normalized.replace(
+        "performance/api-preformance", "performance/api-performance"
+    )
+    return normalized
+
+
+def docs_target_parts(target: str) -> tuple[str, str]:
+    """Return locale and relative Docs path for one route-map target."""
+    normalized = target.strip("/")
+    if normalized == "docs":
+        return "en", ""
+    if normalized.startswith("docs/"):
+        return "en", normalized.removeprefix("docs/")
+    if normalized == "cn/docs":
+        return "cn", ""
+    if normalized.startswith("cn/docs/"):
+        return "cn", normalized.removeprefix("cn/docs/")
+    fail(f"route-map target is outside Docs: {target}")
+
+
+def canonical_docs_pages(root: pathlib.Path, version: str) -> dict[str, str]:
+    """Inventory canonical Docs pages, excluding redirect aliases and print views."""
+    pages: dict[str, str] = {}
+    for language, docs_root in (
+        ("en", root / "docs"),
+        ("cn", root / "cn/docs"),
+    ):
+        if not docs_root.is_dir():
+            fail(f"route-map Docs root is missing for {version}: {docs_root}")
+        for path in sorted(docs_root.rglob("index.html")):
+            document = DocumentParser()
+            document.feed(path.read_text(encoding="utf-8"))
+            if refresh_target(document):
+                continue
+            relative = path.parent.relative_to(docs_root).as_posix()
+            relative = "" if relative == "." else relative
+            logical_relative = normalize_logical_docs_route(version, relative)
+            logical_id = f"{language}:{logical_relative}"
+            target = (
+                ("cn/docs/" if language == "cn" else "docs/")
+                + (relative.rstrip("/") + "/" if relative else "")
+            )
+            previous = pages.get(logical_id)
+            if previous is not None and previous != target:
+                fail(
+                    f"ambiguous canonical route for {version} {logical_id}: "
+                    f"{previous} and {target}"
+                )
+            pages[logical_id] = target
+    return pages
+
+
+def docs_alias_equivalence_edges(
+    root: pathlib.Path, entry: dict, canonical_pages: dict[str, str]
+) -> set[tuple[str, str]]:
+    """Return locale-preserving logical edges declared by static Docs aliases."""
+    version = entry["id"]
+    prefix = "/" + entry["publishPath"].strip("/") if entry["publishPath"] else ""
+    metadata_path = root / ".version.json"
+    if metadata_path.is_file():
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        expected_base = metadata.get("baseURL")
+        if not isinstance(expected_base, str) or not expected_base:
+            fail(f"route-map artifact baseURL is missing for {version}")
+    else:
+        expected_base = base_url("https://artifact.invalid/", entry["publishPath"])
+    aliases: dict[str, tuple[str, str, pathlib.Path]] = {}
+    for language, docs_root in (
+        ("en", root / "docs"),
+        ("cn", root / "cn/docs"),
+    ):
+        if not docs_root.is_dir():
+            fail(f"route-map Docs root is missing for {version}: {docs_root}")
+        for path in sorted(docs_root.rglob("index.html")):
+            document = DocumentParser()
+            document.feed(path.read_text(encoding="utf-8"))
+            redirect = refresh_target(document)
+            if redirect is None:
+                continue
+            target_path = validate_artifact_alias_target(
+                redirect,
+                root,
+                entry,
+                expected_base,
+                path.relative_to(root).as_posix(),
+            )
+            if prefix and (
+                target_path == prefix or target_path.startswith(prefix + "/")
+            ):
+                target_path = target_path[len(prefix) :] or "/"
+            try:
+                target_language, target_relative = docs_target_parts(target_path)
+            except SystemExit:
+                continue
+            if target_language != language:
+                fail(
+                    f"route-map alias changes locale for {version}: "
+                    f"{path.relative_to(root)} -> {redirect}"
+                )
+            source_relative = path.parent.relative_to(docs_root).as_posix()
+            source_relative = "" if source_relative == "." else source_relative
+            source_route = (
+                ("cn/docs/" if language == "cn" else "docs/")
+                + (source_relative.rstrip("/") + "/" if source_relative else "")
+            )
+            target_route = (
+                ("cn/docs/" if target_language == "cn" else "docs/")
+                + (target_relative.rstrip("/") + "/" if target_relative else "")
+            )
+            source_id = (
+                f"{language}:"
+                f"{normalize_logical_docs_route(version, source_relative)}"
+            )
+            previous = aliases.get(source_route)
+            alias = (source_id, target_route, path)
+            if previous is not None and previous != alias:
+                fail(
+                    f"route-map alias is ambiguous for {version}: "
+                    f"{source_route}"
+                )
+            aliases[source_route] = alias
+
+    canonical_ids_by_target = {
+        target: logical_id for logical_id, target in canonical_pages.items()
+    }
+    canonical_targets = set(canonical_ids_by_target)
+    edges: set[tuple[str, str]] = set()
+    for source_route, (source_id, target_route, path) in aliases.items():
+        visited = {source_route}
+        candidate = target_route
+        while candidate not in canonical_targets:
+            if candidate in visited:
+                fail(
+                    f"route-map alias cycle for {version}: "
+                    f"{path.relative_to(root)} -> {candidate}"
+                )
+            visited.add(candidate)
+            chained = aliases.get(candidate)
+            if chained is None:
+                fail(
+                    f"route-map alias target is missing for {version}: "
+                    f"{path.relative_to(root)} -> {candidate}"
+                )
+            candidate = chained[1]
+        target_id = canonical_ids_by_target[candidate]
+        if source_id != target_id:
+            edges.add(tuple(sorted((source_id, target_id))))
+    return edges
+
+
+def equivalence_groups(
+    edges: set[tuple[str, str]], logical_ids: set[str]
+) -> list[list[str]]:
+    """Build deterministic disjoint components from reviewed alias edges."""
+    graph: dict[str, set[str]] = {}
+    for left, right in edges:
+        if left not in logical_ids or right not in logical_ids:
+            continue
+        graph.setdefault(left, set()).add(right)
+        graph.setdefault(right, set()).add(left)
+    groups = []
+    unseen = set(graph)
+    while unseen:
+        pending = [min(unseen)]
+        component = set()
+        while pending:
+            logical_id = pending.pop()
+            if logical_id in component:
+                continue
+            component.add(logical_id)
+            pending.extend(sorted(graph.get(logical_id, ()), reverse=True))
+        unseen.difference_update(component)
+        if len(component) > 1:
+            groups.append(sorted(component))
+    return sorted(groups)
+
+
+def generate_version_routes(
+    artifact_roots: dict[str, pathlib.Path], manifest: dict
+) -> dict:
+    """Generate the reviewed cross-version logical page map deterministically."""
+    version_ids = manifest_version_ids(manifest)
+    if set(artifact_roots) != set(version_ids):
+        fail(
+            "route-map artifacts must contain exactly: "
+            + ", ".join(version_ids)
+        )
+    inventories = {
+        version: canonical_docs_pages(artifact_roots[version], version)
+        for version in version_ids
+    }
+    logical_ids = sorted(
+        {logical_id for pages in inventories.values() for logical_id in pages}
+    )
+    entries = {entry["id"]: entry for entry in manifest["versions"]}
+    alias_edges = set().union(
+        *(
+            docs_alias_equivalence_edges(
+                artifact_roots[version],
+                entries[version],
+                inventories[version],
+            )
+            for version in version_ids
+        )
+    )
+    result = {
+        "schemaVersion": 1,
+        "versions": list(version_ids),
+        "pages": {
+            logical_id: {
+                version: inventories[version].get(logical_id)
+                for version in version_ids
+            }
+            for logical_id in logical_ids
+        },
+        "equivalents": equivalence_groups(alias_edges, set(logical_ids)),
+    }
+    validate_version_routes(result, manifest)
+    return result
+
+
+def validate_version_routes(data: dict, manifest: dict) -> dict:
+    """Fail closed on route-map shape, ordering, locale, and target syntax."""
+    version_ids = manifest_version_ids(manifest)
+    if not isinstance(data, dict) or set(data) != {
+        "schemaVersion",
+        "versions",
+        "pages",
+        "equivalents",
+    }:
+        fail("invalid version route-map top-level fields")
+    if data["schemaVersion"] != 1 or data["versions"] != list(version_ids):
+        fail("invalid version route-map schema or version order")
+    pages = data["pages"]
+    if not isinstance(pages, dict) or not pages:
+        fail("version route-map pages must be a non-empty object")
+    for logical_id, targets in pages.items():
+        if (
+            not isinstance(logical_id, str)
+            or ":" not in logical_id
+            or logical_id.split(":", 1)[0] not in {"en", "cn"}
+        ):
+            fail(f"invalid version route-map logical ID: {logical_id!r}")
+        language, relative = logical_id.split(":", 1)
+        if (
+            relative.startswith("/")
+            or relative.endswith("/")
+            or ".." in pathlib.PurePosixPath(relative).parts
+        ):
+            fail(f"invalid version route-map logical path: {logical_id}")
+        if not isinstance(targets, dict) or list(targets) != list(version_ids):
+            fail(f"invalid version route-map target order: {logical_id}")
+        for version, target in targets.items():
+            if target is None:
+                continue
+            if (
+                not isinstance(target, str)
+                or target.startswith("/")
+                or not target.endswith("/")
+                or "?" in target
+                or "#" in target
+                or ".." in pathlib.PurePosixPath(target).parts
+                or target.startswith("versions/")
+            ):
+                fail(
+                    f"invalid version route-map target for "
+                    f"{logical_id} {version}: {target!r}"
+                )
+            target_language, target_relative = docs_target_parts(target)
+            if target_language != language:
+                fail(
+                    f"version route-map target changes locale: "
+                    f"{logical_id} -> {target}"
+                )
+            if normalize_logical_docs_route(version, target_relative) != relative:
+                fail(
+                    f"version route-map target/logical mismatch for "
+                    f"{logical_id} {version}: {target}"
+                )
+    equivalents = data["equivalents"]
+    if not isinstance(equivalents, list):
+        fail("version route-map equivalents must be an array")
+    if not all(
+        isinstance(group, list)
+        and all(isinstance(logical_id, str) for logical_id in group)
+        for group in equivalents
+    ):
+        fail("invalid version route-map equivalent group types")
+    if equivalents != sorted(equivalents):
+        fail("version route-map equivalent groups must be ordered")
+    seen_equivalents: set[str] = set()
+    for group in equivalents:
+        if (
+            not isinstance(group, list)
+            or len(group) < 2
+            or group != sorted(group)
+            or len(group) != len(set(group))
+        ):
+            fail(f"invalid version route-map equivalent group: {group!r}")
+        missing = set(group).difference(pages)
+        if missing:
+            fail(
+                "version route-map equivalent IDs are missing: "
+                + ", ".join(sorted(missing))
+            )
+        locales = {logical_id.split(":", 1)[0] for logical_id in group}
+        if len(locales) != 1:
+            fail(f"version route-map equivalent group changes locale: {group!r}")
+        overlap = seen_equivalents.intersection(group)
+        if overlap:
+            fail(
+                "version route-map equivalent ID is ambiguous: "
+                + ", ".join(sorted(overlap))
+            )
+        seen_equivalents.update(group)
+        for source_id in group:
+            for version in version_ids:
+                if pages[source_id][version] is not None:
+                    continue
+                candidates = [
+                    pages[candidate_id][version]
+                    for candidate_id in group
+                    if candidate_id != source_id
+                    and pages[candidate_id][version] is not None
+                ]
+                if len(candidates) > 1:
+                    fail(
+                        f"version route-map equivalent target is ambiguous for "
+                        f"{source_id} {version}: {candidates!r}"
+                    )
+    return data
+
+
+def load_version_routes(
+    path: pathlib.Path = VERSION_ROUTES, manifest: dict | None = None
+) -> dict:
+    manifest = manifest or load_manifest(ROOT / "versions.json")
+    if not path.is_file():
+        fail(f"version route-map is missing: {path}")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        fail(f"cannot load version route-map {path}: {error}")
+    return validate_version_routes(data, manifest)
+
+
+def canonical_docs_target(text: str, entry: dict) -> str | None:
+    """Resolve the current canonical page to an unscoped route-map target."""
+    document = DocumentParser()
+    document.feed(text)
+    if len(document.canonical) != 1:
+        return None
+    path = urllib.parse.urlsplit(document.canonical[0]).path
+    prefix = "/" + entry["publishPath"].strip("/") if entry["publishPath"] else ""
+    if prefix and (path == prefix or path.startswith(prefix + "/")):
+        path = path[len(prefix) :] or "/"
+    normalized = path.strip("/")
+    if normalized == "docs" or normalized.startswith("docs/"):
+        return normalized + "/"
+    if normalized == "cn/docs" or normalized.startswith("cn/docs/"):
+        return normalized + "/"
+    return None
+
+
+def logical_id_for_target(
+    route_map: dict, version: str, target: str
+) -> str | None:
+    matches = [
+        logical_id
+        for logical_id, targets in route_map["pages"].items()
+        if targets[version] == target
+    ]
+    if len(matches) > 1:
+        fail(f"ambiguous route-map target for {version}: {target}")
+    return matches[0] if matches else None
+
+
+def resolved_logical_target(
+    route_map: dict, logical_id: str, version: str
+) -> str | None:
+    """Prefer the canonical logical ID, then its unique reviewed equivalent."""
+    direct = route_map["pages"][logical_id][version]
+    if direct is not None:
+        return direct
+    group = next(
+        (
+            candidates
+            for candidates in route_map["equivalents"]
+            if logical_id in candidates
+        ),
+        (),
+    )
+    alternatives = [
+        route_map["pages"][candidate_id][version]
+        for candidate_id in group
+        if candidate_id != logical_id
+        and route_map["pages"][candidate_id][version] is not None
+    ]
+    if len(alternatives) > 1:
+        fail(
+            f"version route-map equivalent target is ambiguous for "
+            f"{logical_id} {version}: {alternatives!r}"
+        )
+    return alternatives[0] if alternatives else None
+
+
+def version_switch_options(
+    manifest: dict,
+    route_map: dict,
+    current_version: str,
+    current_target: str | None,
+    origin: str,
+    historical_origin: str | None = None,
+    *,
+    language: str | None = None,
+) -> list[dict]:
+    """Return page-aware version choices with explicit missing-page fallbacks."""
+    validate_version_routes(route_map, manifest)
+    logical_id = None
+    if current_target is not None:
+        target_language, _ = docs_target_parts(current_target)
+        language = target_language
+        logical_id = logical_id_for_target(route_map, current_version, current_target)
+        if logical_id is None:
+            fail(
+                f"current canonical Docs page is absent from route-map: "
+                f"{current_version} {current_target}"
+            )
+    if language not in {"en", "cn"}:
+        fail(f"version switch locale is unavailable: {language!r}")
+    options = []
+    for entry in manifest["versions"]:
+        entry_origin = (
+            historical_origin
+            if entry["archived"] and historical_origin is not None
+            else origin
+        )
+        equivalent = False
+        fallback = False
+        if logical_id is not None:
+            target = resolved_logical_target(
+                route_map, logical_id, entry["id"]
+            )
+            if target is not None:
+                equivalent = True
+                url = urllib.parse.urljoin(entry_origin.rstrip("/") + "/", (
+                    f"{entry['publishPath'].rstrip('/')}/{target}"
+                    if entry["publishPath"]
+                    else target
+                ))
+            else:
+                fallback = True
+                root = "cn/docs/" if language == "cn" else "docs/"
+                path = (
+                    f"{entry['publishPath'].rstrip('/')}/{root}"
+                    if entry["publishPath"]
+                    else root
+                )
+                url = (
+                    urllib.parse.urljoin(entry_origin.rstrip("/") + "/", path)
+                    + "#hg-version-fallback"
+                )
+        else:
+            root = "cn/docs/" if language == "cn" else "docs/"
+            path = (
+                f"{entry['publishPath'].rstrip('/')}/{root}"
+                if entry["publishPath"]
+                else root
+            )
+            url = urllib.parse.urljoin(entry_origin.rstrip("/") + "/", path)
+        options.append(
+            {
+                "id": entry["id"],
+                "title": entry["name"],
+                "url": url,
+                "active": entry["id"] == current_version,
+                "available": True,
+                "disabledReason": "",
+                "equivalent": equivalent,
+                "fallback": fallback,
+            }
+        )
+    return options
+
+
+def reviewed_version_route_urls(
+    manifest: dict,
+    route_map: dict,
+    origin: str,
+    historical_origin: str | None,
+) -> set[str]:
+    """Return only cross-version destinations authorized by the route-map."""
+    validate_version_routes(route_map, manifest)
+    urls: set[str] = set()
+    for logical_id, targets in route_map["pages"].items():
+        language = logical_id.split(":", 1)[0]
+        if not any(target is not None for target in targets.values()):
+            fail(f"route-map page has no targets: {logical_id}")
+        for entry in manifest["versions"]:
+            entry_origin = (
+                historical_origin
+                if entry["archived"] and historical_origin is not None
+                else origin
+            )
+            target = resolved_logical_target(
+                route_map, logical_id, entry["id"]
+            )
+            if target is None:
+                target = "cn/docs/" if language == "cn" else "docs/"
+                fragment = "#hg-version-fallback"
+            else:
+                fragment = ""
+            path = (
+                f"{entry['publishPath'].rstrip('/')}/{target}"
+                if entry["publishPath"]
+                else target
+            )
+            urls.add(
+                urllib.parse.urljoin(entry_origin.rstrip("/") + "/", path) + fragment
+            )
+    return urls
 
 
 def scope_version_artifact(
@@ -1650,20 +2682,96 @@ def scope_version_artifact(
     manifest: dict,
     entry: dict,
     origin: str,
+    historical_origin: str | None = None,
 ) -> dict:
     """Repair URL fields Hugo cannot canonify, then return auditable counts."""
-    if not entry["publishPath"] and origin.rstrip("/") == CANONICAL_ORIGIN.rstrip("/"):
-        return {"files": 0, "urls": 0, "manifests": 0, "searchRefs": 0}
+    route_map = load_version_routes(manifest=manifest)
     allowed_paths = allowed_version_paths(manifest)
     artifact_base = base_url(origin, entry["publishPath"])
+    reviewed_selector_urls = reviewed_version_route_urls(
+        manifest, route_map, origin, historical_origin
+    )
+    historical_selector_urls: set[str] = set()
+    if historical_origin is not None:
+        archived_ids = {
+            item["id"] for item in manifest["versions"] if item["archived"]
+        }
+        for language in ("en", "cn"):
+            for item in version_urls(
+                manifest, origin, language, historical_origin
+            ):
+                if item["version"] in archived_ids:
+                    historical_selector_urls.update(
+                        (item["url"], item["url"].rstrip("/"))
+                    )
 
     def rewrite(value: str) -> str:
-        return rewrite_internal_url(
+        if value in reviewed_selector_urls or value in historical_selector_urls:
+            return value
+        rewritten = rewrite_internal_url(
             value,
             origin=origin,
             publish_path=entry["publishPath"],
             allowed_paths=allowed_paths,
+            version_id=entry["id"],
         )
+        if entry.get("archived", bool(entry.get("publishPath"))):
+            original = urllib.parse.urlsplit(value)
+            original_path = original.path.rstrip("/") + "/"
+            version_prefix = "/" + entry["publishPath"]
+            if original_path.startswith(version_prefix + "/"):
+                original_path = original_path[len(version_prefix) :]
+            rewritten_parts = urllib.parse.urlsplit(rewritten)
+            scoped_relative = (
+                rewritten_parts.path[len("/" + entry["publishPath"]) :]
+                if rewritten_parts.path.startswith("/" + entry["publishPath"])
+                else rewritten_parts.path
+            )
+            if (
+                original_path in LATEST_SHARED_DOC_ROUTES
+                and not target_exists(output, scoped_relative)
+            ):
+                shared_origin = urllib.parse.urlsplit(origin.rstrip("/") + "/")
+                return urllib.parse.urlunsplit(
+                    (
+                        shared_origin.scheme,
+                        shared_origin.netloc,
+                        original_path,
+                        original.query,
+                        original.fragment,
+                    )
+                )
+            if not target_exists(output, scoped_relative):
+                counterpart = (
+                    "/cn" + scoped_relative
+                    if scoped_relative.startswith("/docs/")
+                    else scoped_relative.removeprefix("/cn")
+                    if scoped_relative.startswith("/cn/docs/")
+                    else ""
+                )
+                if counterpart and target_exists(output, counterpart):
+                    counterpart_path = "/" + entry["publishPath"] + counterpart
+                    return urllib.parse.urlunsplit(
+                        (
+                            urllib.parse.urlsplit(origin).scheme,
+                            urllib.parse.urlsplit(origin).netloc,
+                            counterpart_path,
+                            original.query,
+                            original.fragment,
+                        )
+                    )
+                if re.match(
+                    r"^/(?:cn/)?docs/changelog/hugegraph-0\.[^/]+-release-notes/?$",
+                    scoped_relative,
+                ):
+                    language_prefix = "/cn" if scoped_relative.startswith("/cn/") else ""
+                    changelog = f"{language_prefix}/docs/changelog/"
+                    if target_exists(output, changelog):
+                        return urllib.parse.urljoin(
+                            base_url(origin, entry["publishPath"]),
+                            changelog.lstrip("/"),
+                        )
+        return rewritten
 
     stats = {"files": 0, "urls": 0, "manifests": 0, "searchRefs": 0}
     for path in sorted(output.rglob("*")):
@@ -1691,20 +2799,24 @@ def scope_version_artifact(
             )
             stats["files"] += 1
             continue
-        if path.suffix not in {".html", ".md", ".xml"}:
+        if path.suffix not in {".html", ".md", ".xml", ".txt"}:
             continue
         original = path.read_text(encoding="utf-8")
         rendered, changed = rewrite_text_urls(
             original,
             rewrite,
-            markdown=path.suffix == ".md",
+            markdown=path.suffix in {".md", ".txt"},
         )
+        relative = path.relative_to(output).as_posix()
 
         def replace_manifest(match: re.Match) -> str:
             data = json.loads(match.group("body"))
             rewritten = rewrite_json_urls(data, rewrite)
-            scope_language_fallback_urls(
-                rewritten, path.relative_to(output).as_posix(), artifact_base
+            normalize_language_switch_urls(
+                rewritten,
+                relative,
+                artifact_base,
+                output,
             )
             stats["manifests"] += 1
             return (
@@ -1780,6 +2892,134 @@ def write_historical_home_redirects(output: pathlib.Path, origin: str) -> int:
     return len(targets)
 
 
+def exclude_historical_sitemaps(output: pathlib.Path) -> int:
+    """Keep archived pages directly reachable without advertising them for indexing."""
+    removed = 0
+    for path in sorted(output.rglob("sitemap.xml")):
+        path.unlink()
+        removed += 1
+    robots = output / "robots.txt"
+    if robots.is_file():
+        robots.write_text("User-agent: *\nAllow: /\n", encoding="utf-8")
+    return removed
+
+
+def mark_historical_pages_noindex(output: pathlib.Path) -> int:
+    """Apply the archive indexing policy to every rendered historical page."""
+    changed = 0
+    for path in sorted(output.rglob("*.html")):
+        if path.name == "404.html":
+            continue
+        source = path.read_text(encoding="utf-8")
+        rendered, count = ROBOTS_META_RE.subn(
+            '<meta name="robots" content="noindex,follow">', source
+        )
+        if count == 0:
+            rendered, count = re.subn(
+                r"</head>",
+                '<meta name="robots" content="noindex,follow"></head>',
+                rendered,
+                count=1,
+                flags=re.IGNORECASE,
+            )
+        if count != 1:
+            fail(f"historical page must contain one head/robots marker: {path}")
+        if count:
+            path.write_text(rendered, encoding="utf-8")
+            changed += count
+    return changed
+
+
+def write_historical_route_aliases(
+    output: pathlib.Path, origin: str, publish_path: str
+) -> int:
+    """Create deterministic locale-aware redirects for migrated flat routes."""
+    written = 0
+    site_base = base_url(origin, publish_path)
+    for language_prefix in ("", "cn/"):
+        for old_relative, new_relative in LEGACY_IA_ROUTE_MAP.items():
+            old_route = language_prefix + "docs/" + old_relative.removesuffix(".md")
+            old_route = old_route.replace("/README", "")
+            new_route = language_prefix + "docs/" + new_relative.removesuffix(".md")
+            target = output / new_route / "index.html"
+            if not target.is_file():
+                continue
+            alias = output / old_route / "index.html"
+            if alias.exists():
+                fail(f"historical alias collides with rendered output: {alias}")
+            alias.parent.mkdir(parents=True, exist_ok=True)
+            target_url = urllib.parse.urljoin(site_base, new_route.rstrip("/") + "/")
+            escaped = html.escape(target_url, quote=True)
+            alias.write_text(
+                "<!doctype html>\n"
+                '<html><head><meta charset="utf-8">\n'
+                '<meta name="robots" content="noindex,follow">\n'
+                f'<link rel="canonical" href="{escaped}">\n'
+                f'<meta http-equiv="refresh" content="0; url={escaped}">\n'
+                f'</head><body><a href="{escaped}">Continue</a></body></html>\n',
+                encoding="utf-8",
+            )
+            written += 1
+    return written
+
+
+def remove_non_equivalent_hreflang(
+    output: pathlib.Path, origin: str, publish_path: str
+) -> int:
+    """Remove Hugo language fallbacks from hreflang while keeping real translations."""
+    removed = 0
+    prefix = "/" + publish_path.strip("/") if publish_path else ""
+    origin_parts = urllib.parse.urlsplit(origin.rstrip("/") + "/")
+    for path in sorted(output.rglob("*.html")):
+        relative = path.relative_to(output).as_posix()
+        if relative in {"404.html", "cn/404.html"} or "_print/" in relative:
+            continue
+        current_url = public_url_for_file(path, output, origin, publish_path)
+        current_path = urllib.parse.urlsplit(current_url).path
+        cn_prefix = prefix + "/cn/"
+        if current_path.startswith(cn_prefix):
+            english_path = prefix + current_path[len(prefix + "/cn") :]
+        else:
+            english_path = current_path
+        chinese_path = (
+            prefix + "/cn/"
+            if english_path.rstrip("/") == prefix
+            else prefix + "/cn" + english_path[len(prefix) :]
+        )
+        expected_paths = {"en-US": english_path, "zh-CN": chinese_path}
+
+        def keep_equivalent(match: re.Match) -> str:
+            nonlocal removed
+            parser = DocumentParser()
+            parser.feed(match.group(0))
+            if len(parser.hreflang) != 1:
+                fail(f"cannot parse hreflang link in {relative}: {match.group(0)}")
+            language, href = parser.hreflang[0]
+            expected_path = expected_paths.get(language)
+            href_parts = urllib.parse.urlsplit(
+                urllib.parse.urljoin(current_url, href)
+            )
+            local_relative = (
+                expected_path[len(prefix) :] if prefix and expected_path else expected_path
+            )
+            if (
+                expected_path is not None
+                and href_parts.scheme == origin_parts.scheme
+                and href_parts.netloc == origin_parts.netloc
+                and href_parts.path == expected_path
+                and target_exists(output, local_relative or "/")
+            ):
+                return match.group(0)
+            removed += 1
+            return ""
+
+        source = path.read_text(encoding="utf-8")
+        rendered = HREFLANG_LINK_RE.sub(keep_equivalent, source)
+        if rendered != source:
+            path.write_text(rendered, encoding="utf-8")
+    return removed
+
+
 def public_url_for_file(
     path: pathlib.Path,
     root: pathlib.Path,
@@ -1802,6 +3042,87 @@ def target_exists(root: pathlib.Path, relative: str) -> bool:
         return False
     candidate = root.joinpath(*parts)
     return candidate.is_file() or (candidate / "index.html").is_file()
+
+
+def validate_artifact_alias_target(
+    value: str,
+    root: pathlib.Path,
+    entry: dict,
+    expected_base: str,
+    source: str,
+) -> str:
+    """Require an ordinary refresh alias to resolve inside its version artifact."""
+    if (
+        not value
+        or not value.startswith(("http://", "https://", "/"))
+        or any(char in value for char in ("?", "#", "%", "\\"))
+        or any(
+            char.isspace() or ord(char) < 0x20 or ord(char) == 0x7F
+            for char in value
+        )
+    ):
+        fail(f"alias target is not canonical in {source}: {value}")
+    absolute_http = value.startswith(("http://", "https://"))
+    require_safe_url_syntax(value)
+    if not require_safe_url_scheme(value, source):
+        fail(f"alias target uses a non-HTTP protocol in {source}: {value}")
+    try:
+        target = urllib.parse.urlsplit(value)
+        base = urllib.parse.urlsplit(expected_base)
+        require_safe_http_authority(target, value)
+        require_safe_http_authority(base, expected_base)
+    except (TypeError, ValueError) as exc:
+        fail(f"alias target is malformed in {source}: {value}: {exc}")
+    if (
+        base.scheme.lower() not in {"http", "https"}
+        or not base.netloc
+        or base.query
+        or base.fragment
+    ):
+        fail(f"artifact baseURL is malformed for {entry['id']}: {expected_base}")
+    if absolute_http and (not target.scheme or not target.netloc):
+        fail(f"absolute alias target has no authority in {source}: {value}")
+    if target.netloc and (
+        target.scheme.lower() != base.scheme.lower()
+        or target.netloc.lower() != base.netloc.lower()
+    ):
+        fail(f"alias target leaves the configured origin in {source}: {value}")
+    path = target.path
+    segments = path.split("/")
+    if (
+        not path.startswith("/")
+        or "//" in path
+        or any(segment in {".", ".."} for segment in segments)
+    ):
+        fail(f"alias target path is unsafe in {source}: {value}")
+    prefix = "/" + entry["publishPath"].strip("/") if entry["publishPath"] else ""
+    if prefix and not (path == prefix or path.startswith(prefix + "/")):
+        fail(f"alias target escapes version {entry['id']} in {source}: {value}")
+    relative = path[len(prefix) :] if prefix else path
+    if not target_exists(root, relative):
+        fail(f"alias target is missing in {source}: {value}")
+    return path
+
+
+def validate_historical_home_alias_target(
+    value: str,
+    relative: str,
+    site_origin: str,
+) -> None:
+    """Allow only the two reviewed archive-home redirects to shared latest pages."""
+    suffixes = {
+        "index.html": "",
+        "cn/index.html": "cn/",
+    }
+    suffix = suffixes.get(relative)
+    if suffix is None:
+        fail(f"unexpected historical home alias path: {relative}")
+    expected = urllib.parse.urljoin(site_origin.rstrip("/") + "/", suffix)
+    if value != expected:
+        fail(
+            f"historical home alias target changed in {relative}: "
+            f"{value} != {expected}"
+        )
 
 
 def iter_json_strings(value):
@@ -1859,8 +3180,170 @@ def require_docs_navigation_json(data: dict, source: str, language: str) -> None
         fail(f"private Docs navigation route leaked into {source}")
 
 
+def validate_llms_full_outputs(
+    root: pathlib.Path, entry: dict, expected_base: str
+) -> None:
+    """Require locale-bound latest corpora and prohibit them in archives."""
+    outputs = {
+        "en": root / "docs/llms-full.txt",
+        "cn": root / "cn/docs/llms-full.txt",
+    }
+    if entry["archived"]:
+        leaked = [
+            path.relative_to(root).as_posix()
+            for path in outputs.values()
+            if path.exists()
+        ]
+        if leaked:
+            fail(
+                "historical artifact must not contain LLMSFULL output: "
+                + ", ".join(leaked)
+            )
+        return
+    contracts = {
+        "en": (
+            urllib.parse.urljoin(expected_base, "docs/index.md"),
+            "LLMS index:",
+            "](/llms.txt)",
+            "LLMS 索引：",
+        ),
+        "cn": (
+            urllib.parse.urljoin(expected_base, "cn/docs/index.md"),
+            "LLMS 索引：",
+            "](/cn/llms.txt)",
+            "LLMS index:",
+        ),
+    }
+    for language, path in outputs.items():
+        label = "English" if language == "en" else "Chinese"
+        if not path.is_file():
+            fail(f"{label} LLMSFULL output is missing: {path.relative_to(root)}")
+        text = path.read_text(encoding="utf-8")
+        canonical_source, marker, index_link, forbidden = contracts[language]
+        if (
+            marker not in text
+            or index_link not in text
+            or forbidden in text
+        ):
+            fail(f"{label} LLMSFULL locale contract is invalid")
+        source_rows = [
+            line for line in text.splitlines() if line.startswith("Source:")
+        ]
+        sources = [line.removeprefix("Source:").strip() for line in source_rows]
+        if (
+            not sources
+            or any(not line.startswith("Source: ") for line in source_rows)
+            or any(not value for value in sources)
+        ):
+            fail(f"{label} LLMSFULL source is missing or malformed")
+        if sources[0] != canonical_source:
+            fail(f"{label} LLMSFULL canonical source is not first")
+        expected_parts = urllib.parse.urlsplit(expected_base)
+        locale_root = "cn/docs/" if language == "cn" else "docs/"
+        expected_path_prefix = urllib.parse.urlsplit(
+            urllib.parse.urljoin(expected_base, locale_root)
+        ).path
+        canonical_sources: set[str] = set()
+        for value in sources:
+            if "?" in value or "#" in value or "%" in value:
+                fail(f"{label} LLMSFULL source is not canonical: {value}")
+            try:
+                require_safe_url_syntax(value)
+                parts = urllib.parse.urlsplit(value)
+                require_safe_http_authority(parts, value)
+            except (TypeError, ValueError) as exc:
+                fail(f"{label} LLMSFULL source is malformed: {value}: {exc}")
+            decoded_path = urllib.parse.unquote(parts.path)
+            path_segments = parts.path.split("/")
+            if (
+                any(char.isspace() for char in value)
+                or parts.scheme.lower() != expected_parts.scheme.lower()
+                or parts.netloc != expected_parts.netloc
+                or parts.query
+                or parts.fragment
+                or "\\" in decoded_path
+                or "//" in parts.path
+                or any(segment in {".", ".."} for segment in path_segments)
+                or not decoded_path.startswith(expected_path_prefix)
+                or not decoded_path.endswith(".md")
+                or ".." in pathlib.PurePosixPath(decoded_path).parts
+            ):
+                fail(f"{label} LLMSFULL source is outside its artifact: {value}")
+            canonical = urllib.parse.urlunsplit(
+                (
+                    parts.scheme.lower(),
+                    parts.netloc.lower(),
+                    decoded_path,
+                    "",
+                    "",
+                )
+            )
+            if canonical in canonical_sources:
+                fail(f"{label} LLMSFULL source is duplicated: {value}")
+            canonical_sources.add(canonical)
+
+
+def validate_social_image_metadata(
+    document: DocumentParser,
+    relative: str,
+    root: pathlib.Path,
+    expected_base: str,
+    *,
+    allow_missing: bool = False,
+) -> None:
+    """Require matching same-artifact Open Graph and Twitter image targets."""
+    values: dict[str, list[str]] = {"og:image": [], "twitter:image": []}
+    for item in document.meta:
+        if item.get("property", "").lower() == "og:image":
+            values["og:image"].append(item.get("content", ""))
+        if item.get("name", "").lower() == "twitter:image":
+            values["twitter:image"].append(item.get("content", ""))
+    if allow_missing and not values["og:image"] and not values["twitter:image"]:
+        return
+    if any(len(items) != 1 or not items[0] for items in values.values()):
+        fail(f"social image metadata is missing or duplicated in {relative}")
+    og_image = values["og:image"][0]
+    twitter_image = values["twitter:image"][0]
+    if og_image != twitter_image:
+        fail(f"social image metadata differs in {relative}")
+    value = og_image
+    if "?" in value or "#" in value or "%" in value or "\\" in value:
+        fail(f"social image URL is not canonical in {relative}: {value}")
+    try:
+        parts = urllib.parse.urlsplit(value)
+        base = urllib.parse.urlsplit(expected_base)
+        require_safe_http_authority(parts, value)
+    except (TypeError, ValueError) as exc:
+        fail(f"social image URL is malformed in {relative}: {value}: {exc}")
+    if parts.scheme:
+        if (
+            parts.scheme.lower() != "https"
+            or parts.netloc.lower() != base.netloc.lower()
+        ):
+            fail(f"social image URL is outside the artifact in {relative}: {value}")
+    elif parts.netloc or not value.startswith("/"):
+        fail(f"social image URL must be absolute in {relative}: {value}")
+    base_path = base.path.rstrip("/") + "/"
+    image_path = parts.path
+    if not image_path.startswith(base_path):
+        fail(f"social image URL is outside the artifact in {relative}: {value}")
+    artifact_relative = image_path[len(base_path) :]
+    suffix = pathlib.PurePosixPath(artifact_relative).suffix.lower()
+    if (
+        not artifact_relative
+        or artifact_relative.startswith("/")
+        or ".." in pathlib.PurePosixPath(artifact_relative).parts
+        or suffix not in {".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"}
+    ):
+        fail(f"social image URL is not an image in {relative}: {value}")
+    target = root / pathlib.PurePosixPath(artifact_relative)
+    if not target.is_file():
+        fail(f"social image target is missing in {relative}: {value}")
+
+
 def validate_artifact(args: argparse.Namespace) -> None:
     manifest = load_manifest(args.manifest)
+    route_map = load_version_routes(manifest=manifest)
     entry = next(
         (item for item in manifest["versions"] if item["id"] == args.version), None
     )
@@ -1877,6 +3360,8 @@ def validate_artifact(args: argparse.Namespace) -> None:
     require_metadata_matches(expected_entry, metadata, metadata_path)
     if metadata.get("baseURL") != expected_base:
         fail(f"version metadata does not match {entry['id']} at {expected_base}")
+    validate_output_security(root, expected_base)
+    validate_llms_full_outputs(root, entry, expected_base)
     docs_navigation = metadata.get("docsNavigation")
     expected_docs_navigation = DOCS_NAV_EXPECTED_STATS[entry["id"]]
     if docs_navigation != expected_docs_navigation:
@@ -1903,6 +3388,12 @@ def validate_artifact(args: argparse.Namespace) -> None:
     canonical_host = same_site_host(canonical_parts)
     prefix = "/" + entry["publishPath"].strip("/") if entry["publishPath"] else ""
     allowed_paths = allowed_version_paths(manifest)
+    reviewed_route_urls = reviewed_version_route_urls(
+        manifest,
+        route_map,
+        args.site_origin,
+        getattr(args, "historical_origin", None),
+    )
     current_docs = (prefix + "/docs").rstrip("/") or "/docs"
     checked_urls = 0
     canonical_pages = 0
@@ -1951,6 +3442,9 @@ def validate_artifact(args: argparse.Namespace) -> None:
         nonlocal checked_urls
         if not value or value.startswith(("#", "?")):
             return
+        if value in reviewed_route_urls:
+            checked_urls += 1
+            return
         source_name = source.relative_to(root).as_posix()
         require_safe_url_syntax(value)
         if not require_safe_url_scheme(value, source_name):
@@ -1965,6 +3459,18 @@ def validate_artifact(args: argparse.Namespace) -> None:
         ):
             fail(f"unsafe same-site URL authority in {source_name}: {value}")
         if parsed_host == canonical_host and parsed_host != origin_host:
+            historical_docs_prefixes = tuple(
+                "/" + item["publishPath"] + suffix
+                for item in manifest["versions"]
+                if item["archived"]
+                for suffix in ("/docs", "/cn/docs")
+            )
+            if any(
+                parsed.path == prefix or parsed.path.startswith(prefix + "/")
+                for prefix in historical_docs_prefixes
+            ):
+                checked_urls += 1
+                return
             fail(f"production-origin URL leaked into staging {source_name}: {value}")
         if parsed.netloc and parsed_host != origin_host:
             return
@@ -1991,6 +3497,10 @@ def validate_artifact(args: argparse.Namespace) -> None:
             )
         path = parsed.path or "/"
         normalized = path.rstrip("/") or "/"
+        normalized_with_slash = normalized.rstrip("/") + "/"
+        if normalized_with_slash in LATEST_SHARED_DOC_ROUTES:
+            checked_urls += 1
+            return
         if (
             parsed.netloc
             and (normalized in allowed_paths or is_latest_shared_path(normalized))
@@ -2119,10 +3629,40 @@ def validate_artifact(args: argparse.Namespace) -> None:
             fail(f"404 page does not use the interactive OINK shell: {relative}")
         document = DocumentParser()
         document.feed(text)
-        require_toc_accessible_name(document, relative)
         alias_target = refresh_target(document)
+        validate_social_image_metadata(
+            document,
+            relative,
+            root,
+            expected_base,
+            allow_missing=alias_target is not None,
+        )
+        require_toc_accessible_name(document, relative)
+        if entry["archived"] and relative not in {"404.html", "cn/404.html"}:
+            robots = [
+                re.sub(r"\s+", "", item.get("content", "").lower())
+                for item in document.meta
+                if item.get("name", "").lower() == "robots"
+            ]
+            if robots != ["noindex,follow"]:
+                fail(f"historical page must be noindex,follow: {relative}: {robots!r}")
         if alias_target:
-            validate_url(alias_target, path)
+            if relative != "client-go/index.html":
+                if entry["archived"] and relative in {"index.html", "cn/index.html"}:
+                    validate_historical_home_alias_target(
+                        alias_target,
+                        relative,
+                        args.site_origin,
+                    )
+                else:
+                    validate_artifact_alias_target(
+                        alias_target,
+                        root,
+                        entry,
+                        expected_base,
+                        relative,
+                    )
+                checked_urls += 1
         action_data = {}
         manifests = list(ACTION_MANIFEST_RE.finditer(text))
         if manifests:
@@ -2160,25 +3700,22 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 None,
             )
             language = "cn" if relative.startswith("cn/") else "en"
-            expected_options = version_urls(manifest, args.site_origin, language)
-            if switch is None or [
-                (
-                    item.get("id"),
-                    item.get("title"),
-                    str(item.get("url", "")).rstrip("/"),
-                    item.get("active"),
-                )
-                for item in switch.get("options", [])
-            ] != [
-                (
-                    item["version"],
-                    item["name"],
-                    item["url"].rstrip("/"),
-                    item["version"] == entry["id"],
-                )
-                for item in expected_options
-            ]:
+            current_target = canonical_docs_target(text, entry)
+            expected_options = version_switch_options(
+                manifest,
+                route_map,
+                entry["id"],
+                current_target,
+                args.site_origin,
+                getattr(args, "historical_origin", None),
+                language=language,
+            )
+            if switch is None or switch.get("options") != expected_options:
                 fail(f"version switch contract mismatch in {path.relative_to(root)}")
+            if not relative.startswith(("_print/", "cn/_print/")):
+                require_version_switch_matches_native(
+                    document, expected_options, relative
+                )
             if (
                 entry["archived"]
                 and relative not in archive_exceptions
@@ -2265,7 +3802,7 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 if english_path.rstrip("/") == prefix
                 else prefix + "/cn" + english_path[len(prefix) :]
             )
-            expected_hreflang = {
+            equivalent_urls = {
                 "en-US": urllib.parse.urlunsplit(
                     (origin_parts.scheme, origin_parts.netloc, english_path, "", "")
                 ),
@@ -2273,10 +3810,15 @@ def validate_artifact(args: argparse.Namespace) -> None:
                     (origin_parts.scheme, origin_parts.netloc, chinese_path, "", "")
                 ),
             }
-            for language, fallback_path in HREFLANG_FALLBACKS.get(relative, {}).items():
-                expected_hreflang[language] = urllib.parse.urljoin(
-                    expected_base, fallback_path.lstrip("/")
-                )
+            equivalent_paths = {
+                "en-US": english_path[len(prefix) :] if prefix else english_path,
+                "zh-CN": chinese_path[len(prefix) :] if prefix else chinese_path,
+            }
+            expected_hreflang = {
+                language: url
+                for language, url in equivalent_urls.items()
+                if target_exists(root, equivalent_paths[language])
+            }
             if actual_hreflang != expected_hreflang:
                 fail(
                     f"hreflang mismatch in {relative}: "
@@ -2285,7 +3827,12 @@ def validate_artifact(args: argparse.Namespace) -> None:
             validate_language_switch_contract(
                 action_data,
                 relative,
-                expected_hreflang,
+                {
+                    "en-US": expected_hreflang.get("en-US", expected_base),
+                    "zh-CN": expected_hreflang.get(
+                        "zh-CN", urllib.parse.urljoin(expected_base, "cn/")
+                    ),
+                },
                 current_path,
                 "zh-CN" if relative.startswith("cn/") else "en-US",
             )
@@ -2337,6 +3884,64 @@ def validate_artifact(args: argparse.Namespace) -> None:
     )
 
 
+def derived_version_config(
+    manifest: dict,
+    entry: dict,
+    site_origin: str,
+    historical_origin: str | None = None,
+) -> dict:
+    """Derive every Hugo version-menu value from versions.json."""
+    override = {
+        "baseURL": base_url(site_origin, entry["publishPath"]),
+        "canonifyURLs": True,
+        "params": {
+            "version": entry["id"],
+            "version_menu": "Releases",
+            "version_menu_pagelinks": False,
+            "versions": version_urls(
+                manifest, site_origin, "en", historical_origin
+            ),
+            "archived_version": bool(entry["archived"]),
+            "url_latest_version": urllib.parse.urljoin(
+                site_origin.rstrip("/") + "/", "docs/"
+            ),
+            "github_repo": "https://github.com/apache/hugegraph-doc",
+            "github_branch": entry["githubBranch"],
+        },
+    }
+    language_overrides = (
+        historical_language_menus(site_origin)
+        if entry["archived"]
+        else {"en": {}, "cn": {}}
+    )
+    for language in ("en", "cn"):
+        language_overrides[language]["params"] = language_version_params(
+            manifest,
+            site_origin,
+            language,
+            historical_origin,
+        )
+    override["languages"] = language_overrides
+    return override
+
+
+def render_config(args: argparse.Namespace) -> None:
+    """Write the manifest-derived override used by direct Hugo commands."""
+    manifest = load_manifest(args.manifest)
+    version_id = args.version or manifest["versions"][0]["id"]
+    entry = next(
+        (item for item in manifest["versions"] if item["id"] == version_id), None
+    )
+    if entry is None:
+        fail(f"unknown version {version_id}")
+    override = derived_version_config(
+        manifest, entry, args.site_origin, args.historical_origin
+    )
+    rendered = json.dumps(override, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    args.output.write_text(rendered, encoding="utf-8")
+    print(f"rendered Hugo config for {entry['id']} -> {args.output}")
+
+
 def build(args: argparse.Namespace) -> None:
     manifest = load_manifest(args.manifest)
     entry = next(
@@ -2379,32 +3984,9 @@ def build(args: argparse.Namespace) -> None:
             origin=args.site_origin,
         )
         site_base = base_url(args.site_origin, entry["publishPath"])
-        override = {
-            "baseURL": site_base,
-            "canonifyURLs": True,
-            "params": {
-                "version": entry["id"],
-                "version_menu": "Releases",
-                "version_menu_pagelinks": False,
-                "versions": version_urls(manifest, args.site_origin, "en"),
-                "archived_version": bool(entry["archived"]),
-                "url_latest_version": urllib.parse.urljoin(
-                    args.site_origin.rstrip("/") + "/", "docs/"
-                ),
-                "github_repo": "https://github.com/apache/hugegraph-doc",
-                "github_branch": entry["githubBranch"],
-            },
-        }
-        language_overrides = (
-            historical_language_menus(args.site_origin)
-            if entry["archived"]
-            else {"en": {}, "cn": {}}
+        override = derived_version_config(
+            manifest, entry, args.site_origin, args.historical_origin
         )
-        for language in ("en", "cn"):
-            language_overrides[language]["params"] = language_version_params(
-                manifest, args.site_origin, language
-            )
-        override["languages"] = language_overrides
         override_path = assembly / "version-config.json"
         override_path.write_text(
             json.dumps(override, ensure_ascii=False), encoding="utf-8"
@@ -2456,6 +4038,9 @@ def build(args: argparse.Namespace) -> None:
             cwd=assembly,
             check=True,
         )
+        route_migrations = migrate_legacy_information_architecture(
+            assembly, entry["id"]
+        )
         known_fixes = apply_known_legacy_fixes(assembly, entry["id"])
         docs_navigation = materialize_docs_navigation(assembly, entry["publishPath"])
         subprocess.run(
@@ -2494,11 +4079,28 @@ def build(args: argparse.Namespace) -> None:
             go_directory + os.pathsep + build_environment.get("PATH", "")
         )
         subprocess.run(command, cwd=assembly, check=True, env=build_environment)
+        route_aliases = (
+            write_historical_route_aliases(
+                output, args.site_origin, entry["publishPath"]
+            )
+            if entry["id"] in {"1.3", "1.0"}
+            else 0
+        )
+        archived_noindex = (
+            mark_historical_pages_noindex(output) if entry["archived"] else 0
+        )
+        non_equivalent_hreflang = remove_non_equivalent_hreflang(
+            output, args.site_origin, entry["publishPath"]
+        )
+        historical_sitemaps = (
+            exclude_historical_sitemaps(output) if entry["archived"] else 0
+        )
         url_scoping = scope_version_artifact(
             output,
             manifest,
             entry,
             args.site_origin,
+            args.historical_origin,
         )
         url_scoping["historicalHomeRedirects"] = (
             write_historical_home_redirects(output, args.site_origin)
@@ -2534,10 +4136,15 @@ def build(args: argparse.Namespace) -> None:
                         for item in migration_data.get("files", [])
                     ),
                     "knownFixes": known_fixes,
+                    "routeMigrations": route_migrations,
                     "residual": 0,
                 },
                 "docsNavigation": docs_navigation,
                 "urlScoping": url_scoping,
+                "historicalSitemapsRemoved": historical_sitemaps,
+                "historicalNoindexPages": archived_noindex,
+                "historicalRouteAliases": route_aliases,
+                "nonEquivalentHreflangRemoved": non_equivalent_hreflang,
             }
         )
         (output / ".version.json").write_text(
@@ -2558,13 +4165,6 @@ def write_aggregate_sitemap(output: pathlib.Path, origin: str, manifest: dict) -
         urllib.parse.urljoin(origin.rstrip("/") + "/", "en/sitemap.xml"),
         urllib.parse.urljoin(origin.rstrip("/") + "/", "cn/sitemap.xml"),
     ]
-    for entry in manifest["versions"]:
-        if entry["publishPath"]:
-            locations.append(
-                urllib.parse.urljoin(
-                    origin.rstrip("/") + "/", entry["publishPath"] + "/sitemap.xml"
-                )
-            )
     root = ET.Element(
         "sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
     )
@@ -2638,14 +4238,71 @@ def validate_output_security(output: pathlib.Path, site_origin: str) -> None:
     )
 
 
+def validate_aggregate_version_routes(
+    output: pathlib.Path,
+    route_map: dict,
+    selected: set[str],
+    manifest: dict,
+) -> None:
+    """Prove every selected route target exists and every selected null is real."""
+    validate_version_routes(route_map, manifest)
+    version_ids = manifest_version_ids(manifest)
+    publish_paths = {
+        entry["id"]: entry["publishPath"] for entry in manifest["versions"]
+    }
+    selected = set(selected)
+    unknown = selected.difference(version_ids)
+    if unknown:
+        fail(f"cannot validate unknown route-map versions: {sorted(unknown)!r}")
+    for version in version_ids:
+        if version not in selected:
+            continue
+        if version not in publish_paths:
+            fail(f"route-map publish path is missing for {version}")
+        version_root = output / publish_paths[version]
+        actual = canonical_docs_pages(version_root, version)
+        for logical_id, targets in route_map["pages"].items():
+            expected = targets[version]
+            observed = actual.get(logical_id)
+            if expected is None:
+                if observed is not None:
+                    fail(
+                        f"route-map null target exists for "
+                        f"{version} {logical_id}: {observed}"
+                    )
+                continue
+            if observed is None:
+                fail(
+                    f"route-map target is missing for "
+                    f"{version} {logical_id}: {expected}"
+                )
+            if observed != expected:
+                fail(
+                    f"route-map target drift for {version} {logical_id}: "
+                    f"{observed} != {expected}"
+                )
+        extras = sorted(set(actual).difference(route_map["pages"]))
+        if extras:
+            fail(
+                f"canonical Docs pages are absent from route-map for "
+                f"{version}: {extras}"
+            )
+
+
 def aggregate(args: argparse.Namespace) -> None:
     manifest = load_resolved_manifest(args.resolved_manifest)
+    selected = selected_version_ids(getattr(args, "select", None), manifest)
     output = prepare_output_directory(args.output, "aggregate output")
     output.mkdir(parents=True)
     seen: set[str] = set()
     resolved = []
     for entry in manifest["versions"]:
-        source = args.artifacts / f"{args.artifact_prefix}{entry['id']}"
+        if entry["id"] not in selected:
+            continue
+        source = args.artifacts / (
+            f"{args.artifact_prefix}{entry['id']}"
+            f"{getattr(args, 'artifact_suffix', '')}"
+        )
         metadata_path = source / ".version.json"
         if not metadata_path.is_file():
             fail(f"missing version metadata: {metadata_path}")
@@ -2657,6 +4314,7 @@ def aggregate(args: argparse.Namespace) -> None:
                 version=entry["id"],
                 sha=entry["sha"],
                 site_origin=args.site_origin,
+                historical_origin=getattr(args, "historical_origin", None),
                 artifact=source,
             )
         )
@@ -2698,11 +4356,39 @@ def aggregate(args: argparse.Namespace) -> None:
         + "\n",
         encoding="utf-8",
     )
+    route_map = load_version_routes(manifest=manifest)
+    (metadata_dir / "version-routes.json").write_text(
+        json.dumps(route_map, ensure_ascii=False, sort_keys=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    validate_aggregate_version_routes(
+        output,
+        route_map,
+        selected,
+        manifest,
+    )
     validate_output_security(output, args.site_origin)
     print(
         f"aggregated {len(resolved)} versions and {len(seen)} files "
         f"with {error_documents} error documents -> {output}"
     )
+
+
+def generate_routes(args: argparse.Namespace) -> None:
+    manifest = load_manifest(args.manifest)
+    version_ids = manifest_version_ids(manifest)
+    roots = {
+        version: args.artifacts
+        / f"{args.artifact_prefix}{version}{args.artifact_suffix}"
+        for version in version_ids
+    }
+    data = generate_version_routes(roots, manifest)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        json.dumps(data, ensure_ascii=False, sort_keys=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"generated {len(data['pages'])} logical version routes -> {args.output}")
 
 
 def parser() -> argparse.ArgumentParser:
@@ -2713,13 +4399,22 @@ def parser() -> argparse.ArgumentParser:
     prepare_parser = commands.add_parser("prepare")
     prepare_parser.add_argument("--local", action="store_true")
     prepare_parser.add_argument("--latest-sha", default="HEAD")
+    prepare_parser.add_argument("--select")
     prepare_parser.add_argument("--output", type=pathlib.Path)
     prepare_parser.set_defaults(func=prepare)
+
+    config_parser = commands.add_parser("config")
+    config_parser.add_argument("--version")
+    config_parser.add_argument("--site-origin", default=CANONICAL_ORIGIN)
+    config_parser.add_argument("--historical-origin")
+    config_parser.add_argument("--output", type=pathlib.Path, required=True)
+    config_parser.set_defaults(func=render_config)
 
     build_parser = commands.add_parser("build")
     build_parser.add_argument("--version", required=True)
     build_parser.add_argument("--sha", required=True)
     build_parser.add_argument("--site-origin", required=True)
+    build_parser.add_argument("--historical-origin")
     build_parser.add_argument("--output", type=pathlib.Path, required=True)
     build_parser.set_defaults(func=build)
 
@@ -2727,20 +4422,33 @@ def parser() -> argparse.ArgumentParser:
     validate_parser.add_argument("--version", required=True)
     validate_parser.add_argument("--sha", required=True)
     validate_parser.add_argument("--site-origin", required=True)
+    validate_parser.add_argument("--historical-origin")
     validate_parser.add_argument("--artifact", type=pathlib.Path, required=True)
     validate_parser.set_defaults(func=validate_artifact)
 
     aggregate_parser = commands.add_parser("aggregate")
     aggregate_parser.add_argument("--artifacts", type=pathlib.Path, required=True)
     aggregate_parser.add_argument("--artifact-prefix", default="")
+    aggregate_parser.add_argument("--artifact-suffix", default="")
     aggregate_parser.add_argument(
         "--resolved-manifest", type=pathlib.Path, required=True
     )
     aggregate_parser.add_argument("--site-origin", required=True)
+    aggregate_parser.add_argument("--historical-origin")
+    aggregate_parser.add_argument("--select")
     aggregate_parser.add_argument("--output", type=pathlib.Path, required=True)
     aggregate_parser.add_argument("--asf-profile")
     aggregate_parser.add_argument("--asf-whoami")
     aggregate_parser.set_defaults(func=aggregate)
+
+    routes_parser = commands.add_parser("routes")
+    routes_parser.add_argument("--artifacts", type=pathlib.Path, required=True)
+    routes_parser.add_argument("--artifact-prefix", default="")
+    routes_parser.add_argument("--artifact-suffix", default="")
+    routes_parser.add_argument(
+        "--output", type=pathlib.Path, default=VERSION_ROUTES
+    )
+    routes_parser.set_defaults(func=generate_routes)
     return result
 
 

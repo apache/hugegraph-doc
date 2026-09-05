@@ -40,14 +40,14 @@ This command backs up all the metadata and graph data of the hugegraph graph of 
 
 #### Restore
 
-Restore has two modes: RESTORING and MERGING. Before backup, you must first set the graph mode according to your needs.
+Restore has two modes: RESTORING and MERGING. Before restoring, you must first set the graph mode according to your needs.
 
 ##### Step 1: View and set graph mode
 
 ```bash
 bin/hugegraph graph-mode-get
 ```
-This command is used to view the current graph mode, including: NONE, RESTORING, MERGING.
+This command is used to view the current graph mode, including: NONE, RESTORING, MERGING, LOADING.
 
 ```bash
 bin/hugegraph graph-mode-set -m RESTORING
@@ -125,9 +125,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 }
 ```
 
-> Legal graph modes include: NONE, RESTORING, MERGING
+> Legal graph modes include: NONE, RESTORING, MERGING, LOADING
 
-##### Set the mode of a graph. ""This operation requires administrator privileges**
+##### Set the mode of a graph. **This operation requires administrator privileges**
 
 ###### Method & Url
 
@@ -141,7 +141,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 "RESTORING"
 ```
 
-> Legal graph modes include: NONE, RESTORING, MERGING
+> Legal graph modes include: NONE, RESTORING, MERGING, LOADING
 
 ###### Response Status
 

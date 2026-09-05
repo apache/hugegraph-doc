@@ -41,7 +41,7 @@ curl -u 'admin:<password>' \
   http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
 ```
 
-**Warning**: Versions of HugeGraph-Server prior to 1.5.0 have a JWT-related security vulnerability in the Auth mode. 
+**Warning**: Versions of HugeGraph-Server prior to 1.5.0 have a JWT-related security vulnerability in the Auth mode.
 Users are advised to update to a newer version or manually set the JWT token's secretKey. It can be set in the `rest-server.properties` file by setting the `auth.token_secret` information:
 
 ```properties
@@ -54,6 +54,10 @@ You can also generate it with the following command:
 RANDOM_STRING=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)
 echo "auth.token_secret=${RANDOM_STRING}" >> rest-server.properties
 ```
+
+Since 1.5.0 the option defaults to a key generated randomly at startup, so it does not have to be configured. Set it
+explicitly when tokens have to survive a restart, or when more than one server must accept the same token. Tokens expire
+after `auth.token_expire` seconds (default 86400).
 
 #### StandardAuthenticator Mode
 The `StandardAuthenticator` mode supports user authentication and permission control by storing user information in the database backend. This
@@ -75,7 +79,7 @@ Configure the authenticator and the graph that stores authorization data in `res
 ```properties
 auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
 auth.graph_store=hugegraph
-# The initial admin password can be set when the admin user is first created in PD mode
+# The password of the built-in admin account, default is pa, it takes effect on the first startup
 #auth.admin_pa=<your-admin-password>
 
 # Auth Client Config

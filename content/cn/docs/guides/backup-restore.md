@@ -40,14 +40,14 @@ bin/hugegraph backup -t all -d data
 
 #### Restore
 
-Restore 有两种模式： RESTORING 和 MERGING，备份之前首先要根据需要设置图模式。
+Restore 有两种模式： RESTORING 和 MERGING，恢复之前首先要根据需要设置图模式。
 
 ##### 步骤1：查看并设置图模式
 
 ```bash
 bin/hugegraph graph-mode-get
 ```
-该命令用于查看当前图模式，包括：NONE、RESTORING、MERGING。
+该命令用于查看当前图模式，包括：NONE、RESTORING、MERGING、LOADING。
 
 ```bash
 bin/hugegraph graph-mode-set -m RESTORING
@@ -122,7 +122,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 }
 ```
 
-> 合法的图模式包括：NONE，RESTORING，MERGING
+> 合法的图模式包括：NONE，RESTORING，MERGING，LOADING
 
 ##### 设置某个图的模式. **该操作需要管理员权限**
 
@@ -138,7 +138,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 "RESTORING"
 ```
 
-> 合法的图模式包括：NONE，RESTORING，MERGING
+> 合法的图模式包括：NONE，RESTORING，MERGING，LOADING
 
 ###### Response Status
 

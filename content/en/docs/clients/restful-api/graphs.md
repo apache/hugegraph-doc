@@ -138,7 +138,7 @@ Clone a `non-auth` mode graph (set `Content-Type: application/json`)
 ##### Response Status
 
 ```javascript
-200
+201
 ```
 
 ##### Response Body
@@ -146,7 +146,9 @@ Clone a `non-auth` mode graph (set `Content-Type: application/json`)
 ```javascript
 {
     "name": "cloneGraph",
-    "backend": "rocksdb"
+    "nickname": "cloneGraph",
+    "backend": "rocksdb",
+    "description": ""
 }
 ```
 
@@ -175,7 +177,16 @@ Create a graph (set `Content-Type: application/json`)
 
 **Note**!!
 1. In version 1.7.0, dynamic graph creation would cause a NPE. This issue has been fixed in [PR#2912](https://github.com/apache/hugegraph/pull/2912). The current master version and versions after 1.7.0 do not have this problem.
-2. For version 1.7.0 and earlier, if the backend is hstore, you must add "task.scheduler_type": "distributed" in the request body. Also ensure HugeGraph-Server is properly configured with PD, see [HStore Configuration](/docs/quickstart/hugegraph/hugegraph-server/#511-distributed-storage-hstore).
+2. If the backend is hstore, ensure HugeGraph-Server is properly configured with PD, see [HStore Configuration](/docs/quickstart/hugegraph/hugegraph-server/#511-distributed-storage-hstore). On 1.7.0 and earlier the request body also had to set `"task.scheduler_type": "distributed"`. That key is now deprecated and ignored: the scheduler is selected from the backend type, hstore uses the distributed scheduler and other backends use the local one.
+
+**Optional fields and their defaults:**
+- `gremlin.graph` defaults to `org.apache.hugegraph.HugeFactory`
+- `backend` defaults to `hstore` when the server runs in PD mode, and to `rocksdb` otherwise
+- `serializer` defaults to `binary`
+- `store` defaults to the graph name
+- `nickname` sets a display name for the graph, it must be unique inside the graphspace
+- `schema` names a [schema template](./graphspace) to initialize the graph with, it is stored as `schema.init_template`
+- `description` is returned as-is in the response
 
 **RocksDB Example:**
 
@@ -190,7 +201,7 @@ Create a graph (set `Content-Type: application/json`)
 }
 ```
 
-**HStore Example (for version 1.7.0 and earlier):**
+**HStore Example:**
 
 ```javascript
 {
@@ -198,7 +209,6 @@ Create a graph (set `Content-Type: application/json`)
   "backend": "hstore",
   "serializer": "binary",
   "store": "hugegraph2",
-  "task.scheduler_type": "distributed",
   "pd.peers": "127.0.0.1:8686"
 }
 ```
@@ -208,7 +218,7 @@ Create a graph (set `Content-Type: application/json`)
 ##### Response Status
 
 ```javascript
-200
+201
 ```
 
 ##### Response Body
@@ -216,7 +226,9 @@ Create a graph (set `Content-Type: application/json`)
 ```javascript
 {
   "name": "hugegraph2",
-  "backend": "rocksdb"
+  "nickname": "hugegraph2",
+  "backend": "rocksdb",
+  "description": ""
 }
 ```
 
@@ -248,6 +260,214 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/graphA?confirm_message=I
 ```
 
 > Note: For HugeGraph 1.5.0 and earlier versions, if you need to create or drop a graph, please still use the legacy `text/plain` (properties) style request body instead of JSON.
+
+#### 6.1.7 List the graphs of the graphspace with their configuration
+
+Returns one entry per graph the current user can read, each carrying the graph configuration (keys that look like passwords, secrets, tokens, credentials or private keys are left out) plus the fields below. Graphs marked as default for the current user come first.
+
+##### Params
+
+**Path parameters**
+
+- graphspace: Graphspace name
+
+**Query parameters**
+
+- prefix: Return only the graphs whose name or nickname starts with this prefix
+
+##### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/profile
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+`default_update_time` is only present when the graph is a default graph of the current user, and `create_time` only when the graph records one.
+
+```javascript
+[
+  {
+    "backend": "rocksdb",
+    "serializer": "binary",
+    "store": "hugegraph",
+    "name": "hugegraph",
+    "nickname": "hugegraph",
+    "graphspace_nickname": "DEFAULT",
+    "default": true,
+    "default_update_time": "2024-05-01 12:30:00",
+    "create_time": "2024-05-01 12:00:00"
+  }
+]
+```
+
+#### 6.1.8 Update the nickname of a graph, **this operation requires administrator privileges**
+
+##### Params
+
+**Path parameters**
+
+- graphspace: Graphspace name
+- graph: Graph name
+
+**Request parameters**
+
+- action: Must be `update`
+- update: Container for the fields to update. `name` is required and must match the graph name in the path, `nickname` is the new display name and must be unique inside the graphspace.
+
+##### Method & Url
+
+```
+PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
+```
+
+##### Request Body
+
+```javascript
+{
+  "action": "update",
+  "update": {
+    "name": "hugegraph",
+    "nickname": "MyGraph"
+  }
+}
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+```javascript
+{
+  "hugegraph": "updated"
+}
+```
+
+#### 6.1.9 Manage the default graphs of the current user
+
+A default graph is recorded per user, so the endpoints below act on behalf of the calling user. They need the authentication system, a server started in standalone mode without it answers `400` with `GraphSpace management is not supported in standalone mode`.
+
+##### Set a graph as default
+
+##### Method & Url
+
+```
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/default
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+```javascript
+{
+  "default_graph": [
+    "hugegraph"
+  ]
+}
+```
+
+##### Unset a default graph
+
+##### Method & Url
+
+```
+DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/default
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+```javascript
+{
+  "default_graph": []
+}
+```
+
+##### Get the default graphs
+
+##### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/default
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+```javascript
+{
+  "default_graph": [
+    "hugegraph"
+  ]
+}
+```
+
+#### 6.1.10 Reload the graphs of the graphspace
+
+Reloads the graphs the server holds, which is useful after the graph configuration has changed outside the server.
+
+##### Params
+
+**Path parameters**
+
+- graphspace: Graphspace name
+
+**Request parameters**
+
+- action: Must be `reload`
+
+##### Method & Url
+
+```
+PUT http://localhost:8080/graphspaces/DEFAULT/graphs/manage
+```
+
+##### Request Body
+
+```javascript
+{
+  "action": "reload"
+}
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+```javascript
+{
+  "graphs": "reloaded"
+}
+```
 
 ### 6.2 Conf
 
@@ -346,7 +566,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 }
 ```
 
-> Allowed graph mode values are: NONE, RESTORING, MERGING
+> Allowed graph mode values are: NONE, RESTORING, MERGING, LOADING
 
 #### 6.3.2 Modify graph mode. **This operation requires administrator privileges**
 
@@ -369,7 +589,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 "RESTORING"
 ```
 
-> Allowed graph mode values are: NONE, RESTORING, MERGING
+> Allowed graph mode values are: NONE, RESTORING, MERGING, LOADING
 
 ##### Response Status
 
@@ -435,7 +655,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 "OLTP_ONLY"
 ```
 
-> Allowed read mode values are: ALL, OLTP_ONLY, OLAP_ONLY
+> Allowed read mode values are: ALL, OLTP_ONLY. The API rejects OLAP_ONLY with `Graph-read-mode could be ALL or OLTP_ONLY`.
 
 ##### Response Status
 
@@ -543,5 +763,163 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/compact
   "servers": {
     "local": "OK"
   }
+}
+```
+
+### 6.6 Raft
+
+These endpoints only work when the graph runs in raft mode, see the `raft.mode` option in [Config Options](/docs/config/config-option/). On a graph that does not, they answer `400` with `Allowed <operation> operation only when working on raft mode`.
+
+##### Params
+
+**Path parameters**
+
+- graphspace: Graphspace name
+- graph: Graph name
+
+**Query parameters**
+
+- group: Raft group name, default is `default`
+- endpoint: Address of the peer, in the `host:port` form. Required by `transfer_leader`, `set_leader`, `add_peer` and `remove_peer`.
+
+#### 6.6.1 List the peers of a raft group
+
+##### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/list_peers
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+The key of the returned object is the raft group name.
+
+```javascript
+{
+  "default": [
+    "127.0.0.1:8281",
+    "127.0.0.1:8282",
+    "127.0.0.1:8283"
+  ]
+}
+```
+
+#### 6.6.2 Get the leader of a raft group
+
+##### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/get_leader
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+```javascript
+{
+  "default": "127.0.0.1:8281"
+}
+```
+
+#### 6.6.3 Transfer the leadership of a raft group
+
+##### Method & Url
+
+```
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/transfer_leader?endpoint=127.0.0.1:8282
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+```javascript
+{
+  "default": "127.0.0.1:8282"
+}
+```
+
+#### 6.6.4 Set the leader of a raft group
+
+##### Method & Url
+
+```
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/set_leader?endpoint=127.0.0.1:8282
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+```javascript
+{
+  "default": "127.0.0.1:8282"
+}
+```
+
+#### 6.6.5 Add a peer to a raft group
+
+This schedules an asynchronous task, see [Task API](./task).
+
+##### Method & Url
+
+```
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/add_peer?endpoint=127.0.0.1:8284
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+```javascript
+{
+  "task_id": 1
+}
+```
+
+#### 6.6.6 Remove a peer from a raft group
+
+This schedules an asynchronous task, see [Task API](./task).
+
+##### Method & Url
+
+```
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/remove_peer?endpoint=127.0.0.1:8284
+```
+
+##### Response Status
+
+```javascript
+200
+```
+
+##### Response Body
+
+```javascript
+{
+  "task_id": 2
 }
 ```

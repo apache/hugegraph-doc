@@ -21,7 +21,11 @@ ssl.keystore_file=conf/hugegraph-server.keystore
 ssl.keystore_password=******
 ```
 
-The server's `conf` directory already includes a keystore file named `hugegraph-server.keystore`, and the password for this file is `hugegraph`. These are the default values when enabling the HTTPS protocol. Users can generate their own keystore file and password, and then modify the values of `ssl.keystore_file` and `ssl.keystore_password`.
+The keystore file is not shipped inside the distribution, because it carries no license declaration. When `restserver.url`
+starts with `https` and `conf/hugegraph-server.keystore` is missing, `bin/start-hugegraph.sh` downloads it from the
+`binary-1.5` branch of the hugegraph-doc repository before starting the server. The password of that file is `hugegraph`.
+Both values are the defaults of `ssl.keystore_file` and `ssl.keystore_password`; users can generate their own keystore
+file and password and then change the two options.
 
 ### Client Configuration
 

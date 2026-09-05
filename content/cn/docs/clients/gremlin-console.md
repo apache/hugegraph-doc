@@ -109,41 +109,33 @@ serializer: {
 }
 ```
 
+如果 Server 开启了鉴权模式，需要在同一个文件中补上凭据：
+
+```yaml
+username: admin
+password: pa
+```
+
+`conf` 目录下还提供了 `remote-objects.yaml` 和 `gremlin-driver-settings.yaml`，它们使用相同的 host、port 和序列化器配置。
+
 ```groovy
 gremlin> :remote connect tinkerpop.server conf/remote.yaml
 ==>Configured localhost/127.0.0.1:8182
 ```
 
-连接成功之后，如果在启动 HugeGraph-Server 的过程中导入了示例图，就可以在 Gremlin-Console 中直接进行查询：
+Server 端的图以图空间限定名绑定，因此图空间 `DEFAULT` 下的图 `hugegraph` 绑定名为 `DEFAULT-hugegraph`，其 traversal source 绑定名为 `__g_DEFAULT-hugegraph`。裸写 `hugegraph` 在 Server 端无法解析，而 `DEFAULT-hugegraph` 又不是合法的 Groovy 标识符，所以远程脚本需要通过别名访问 traversal source。如果启动 HugeGraph-Server 时预加载了示例图，查询方式如下：
 
 ```groovy
-gremlin> :> hugegraph.traversal().V()
-==>[id:2:lop,label:software,type:vertex,properties:[name:lop,lang:java,price:328]]
-==>[id:1:josh,label:person,type:vertex,properties:[name:josh,age:32,city:Beijing]]
-==>[id:1:marko,label:person,type:vertex,properties:[name:marko,age:29,city:Beijing]]
-==>[id:1:peter,label:person,type:vertex,properties:[name:peter,age:35,city:Shanghai]]
-==>[id:1:vadas,label:person,type:vertex,properties:[name:vadas,age:27,city:Hongkong]]
-==>[id:2:ripple,label:software,type:vertex,properties:[name:ripple,lang:java,price:199]]
-```
-
-> 注意：在 Client/Server 模式下，所有和 Server 有关的操作都要加上 `:> `，如果不加，表示在 console 本地操作。
-
-还可以把多条语句放在一个字符串变量中，然后一次性发给 Server：
-
-```groovy
-gremlin> script = """
-......1> graph = hugegraph;
-......2> g = graph.traversal();
-......3> g.V().toList().size();
-......4> """
-==>
-graph = hugegraph;
-g = graph.traversal();
-g.V().toList().size();
-
-gremlin> :> @script
+gremlin> import org.apache.tinkerpop.gremlin.driver.Cluster
+gremlin> cluster = Cluster.open('conf/remote.yaml')
+gremlin> client = cluster.connect().alias(['g': '__g_DEFAULT-hugegraph'])
+gremlin> client.submit('g.V().count()').all().get()[0].object
 ==>6
-gremlin> 
+gremlin> client.submit('g.V().toList().size()').all().get()[0].object
+==>6
+gremlin> client.close(); cluster.close()
 ```
+
+> 注意：在 Client/Server 模式下，所有和 Server 有关的操作都要加上 `:> `，如果不加，表示在 console 本地操作。`:> ` 发送的脚本不带别名，因此只能使用 Server 自身已绑定的名称。
 
 更多关于 Gremlin-Console 的使用，请参考 [Tinkerpop 官网](http://tinkerpop.apache.org/docs/current/reference/)。

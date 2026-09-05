@@ -48,6 +48,8 @@ scriptEngines: {
           org.apache.hugegraph.backend.id.IdGenerator,
           org.apache.hugegraph.type.define.Directions,
           org.apache.hugegraph.type.define.NodeRole,
+          org.apache.hugegraph.masterelection.GlobalMasterInfo,
+          org.apache.hugegraph.util.DateUtil,
           org.apache.hugegraph.traversal.algorithm.CollectionPathsTraverser,
           org.apache.hugegraph.traversal.algorithm.CountTraverser,
           org.apache.hugegraph.traversal.algorithm.CustomizedCrosspointsTraverser,
@@ -72,7 +74,6 @@ scriptEngines: {
           org.apache.hugegraph.traversal.optimize.ConditionP,
           org.apache.hugegraph.traversal.optimize.Text,
           org.apache.hugegraph.traversal.optimize.TraversalUtil,
-          org.apache.hugegraph.util.DateUtil,
           org.opencypher.gremlin.traversal.CustomFunctions,
           org.opencypher.gremlin.traversal.CustomPredicate
         ],
@@ -138,9 +139,9 @@ In most cases, you only need to pay attention to `channelizer`, `host`, and `por
 
 - `channelizer`: The default `WsAndHttpChannelizer` supports both WebSocket and HTTP. Gremlin Console uses WebSocket, while HugeGraph Client, Loader, and Hubble use HTTP.
 
-By default, the GremlinServer serves at `localhost:8182`. If you need to modify it, configure the `host` and `port` settings.
+By default, the GremlinServer serves at `127.0.0.1:8182`. If you need to modify it, configure the `host` and `port` settings.
 
-- `host`: The hostname or IP address of the machine where the GremlinServer is deployed. Currently, HugeGraphServer does not support distributed deployment, and GremlinServer is not directly exposed to users.
+- `host`: The hostname or IP address of the machine where the GremlinServer is deployed. GremlinServer is not directly exposed to users, the RestServer forwards Gremlin requests to it.
 - `port`: The port number of the machine where the GremlinServer is deployed.
 
 Additionally, you need to add the corresponding configuration `gremlinserver.url=http://host:port` in `rest-server.properties`.
@@ -155,7 +156,7 @@ The following is an example of the available `rest-server.properties` options. T
 restserver.url=http://127.0.0.1:8080
 #restserver.enable_graphspaces_filter=false
 # gremlin server url, need to be consistent with host and port in gremlin-server.yaml
-#gremlinserver.url=http://127.0.0.1:8182
+#gremlinserver.url=127.0.0.1:8182
 
 graphs=./conf/graphs
 graph.load_from_local_config=true
@@ -195,32 +196,40 @@ memory_monitor.period=2000
 
 > The current upstream template still uses `arthas.telnet_port`, `arthas.http_port`, and `arthas.disabled_commands`, but `ServerOptions` reads the camelCase names shown in the example above. Custom configurations should use `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands`.
 
-> The `gremlinserver.url` configuration option is the URL at which the GremlinServer provides services to the RestServer. By default, it is set to `http://localhost:8182`. If you need to modify it, it should match the `host` and `port` settings in `gremlin-server.yaml`.
+> The `gremlinserver.url` configuration option is the URL at which the GremlinServer provides services to the RestServer. By default, it is set to `http://127.0.0.1:8182`. If you need to modify it, it should match the `host` and `port` settings in `gremlin-server.yaml`. The value may omit the scheme, as the template does, because `http://` is prepended when it is missing.
 
 ### 4. hugegraph.properties
 
 `hugegraph.properties` is a type of file. If the system has multiple graphs, there will be multiple similar files. This file is used to configure parameters related to graph storage and querying. The default content of the file is as follows:
 
 ```properties
-# gremlin entrence to create graph
+# gremlin entrance to create graph
+# auth config: org.apache.hugegraph.auth.HugeFactoryAuthProxy
 gremlin.graph=org.apache.hugegraph.HugeFactory
 
 # cache config
 #schema.cache_capacity=100000
 # vertex-cache default is 1000w, 10min expired
+vertex.cache_type=l2
 #vertex.cache_capacity=10000000
 #vertex.cache_expire=600
 # edge-cache default is 100w, 10min expired
+edge.cache_type=l2
 #edge.cache_capacity=1000000
 #edge.cache_expire=600
 
+
 # schema illegal name template
 #schema.illegal_name_regex=\s+|~.*
+
+#vertex.default_label=vertex
 
 # NOTE: since 1.7.0, only hstore, rocksdb, hbase, memory are supported for backend.
 # if you want to use Cassandra/MySql/PG... as backend, please use version < 1.7.0
 backend=rocksdb
 serializer=binary
+# The process-wide max capacity of one serialization buffer in bytes
+#serializer.buffer_max_capacity=134217728
 
 store=hugegraph
 
@@ -232,7 +241,7 @@ task.schedule_period=10
 task.retry=0
 task.wait_timeout=10
 
-# if use 'ikanalyzer', need download jar from 'https://github.com/apache/hugegraph-doc/raw/ik_binary/dist/server/ikanalyzer-2012_u6.jar' to lib directory
+# search config
 search.text_analyzer=jieba
 search.text_analyzer_mode=INDEX
 
@@ -245,16 +254,34 @@ search.text_analyzer_mode=INDEX
 #hbase.port=2181
 #hbase.znode_parent=/hbase
 #hbase.threads_max=64
+# IMPORTANT: recommend to modify the HBase partition number
+#            by the actual/env data amount & RS amount before init store
+#            It will influence the load speed a lot
+#hbase.enable_partition=true
+#hbase.vertex_partitions=10
+#hbase.edge_partitions=30
+
+# WARNING: These raft configurations are deprecated, please use the latest version instead.
+# raft.mode=false
+
+# memory management config
+#memory.mode=off-heap
+#memory.max_capacity=1073741824
+#memory.one_query_max_capacity=104857600
+#memory.alignment=8
 ```
 
 Pay attention to the following uncommented items:
 
-- `gremlin.graph`: The entry point for GremlinServer startup. Users should not modify this item.
+- `gremlin.graph`: The entry point for GremlinServer startup. Users should not modify this item, except to switch it to `org.apache.hugegraph.auth.HugeFactoryAuthProxy` when authentication is enabled.
+- `vertex.cache_type` / `edge.cache_type`: The cache implementation, allowed values are `l1` and `l2`. The default is `l2`.
 - `backend`: The storage backend. Version 1.7.0 supports `memory`, `rocksdb`, `hstore`, and `hbase`.
 - `serializer`: The serializer used when writing schemas, vertices, and edges to the backend. RocksDB uses `binary`.
 - `store`: The storage name used by the graph in the backend.
-- `rocksdb.data_path`: This item is only meaningful when the backend is set to `rocksdb`. It specifies the data directory for RocksDB.
-- `rocksdb.wal_path`: This item is only meaningful when the backend is set to `rocksdb`. It specifies the log directory for RocksDB.
+- `task.schedule_period`, `task.retry`, `task.wait_timeout`: Scheduling period (in seconds), retry count, and wait timeout (in seconds) for asynchronous tasks. The scheduler itself is picked from the backend, `hstore` uses the distributed scheduler and every other backend uses the local one. The old `task.scheduler_type` key is ignored.
+- `search.text_analyzer` / `search.text_analyzer_mode`: The analyzer used for full-text indexes and its mode. Available analyzers are `ansj`, `hanlp`, `smartcn`, `jieba`, `jcseg`, `mmseg4j`, and `ikanalyzer`, and each one accepts its own set of modes.
+- `rocksdb.data_path`: This item is only meaningful when the backend is set to `rocksdb`. It specifies the data directory for RocksDB, and defaults to `rocksdb-data/data`.
+- `rocksdb.wal_path`: This item is only meaningful when the backend is set to `rocksdb`. It specifies the log directory for RocksDB, and defaults to `rocksdb-data/wal`.
 
 ### 5. Multi-Graph Configuration
 
@@ -315,8 +342,8 @@ Initialization finished.
 ```bash
 $ ./bin/start-hugegraph.sh
 
-Starting HugeGraphServer...
-Connecting to HugeGraphServer (http://127.0.0.1:8080/graphspaces/DEFAULT/graphs)...OK
+Starting HugeGraphServer in daemon mode...
+Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)...OK
 Started [pid 21614]
 ```
 

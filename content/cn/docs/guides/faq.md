@@ -75,15 +75,15 @@ weight: 6
 
 - 如何删除图中的全部数据
 
-  管理员可调用 `DELETE /graphspaces/{graphspace}/graphs/{graph}/clear`。请求必须携带源码要求的 `confirm_message`，具体格式见 [Graph API](../clients/restful-api/graphs)。该操作会清除 schema、顶点、边和索引。
+  管理员可调用 `DELETE /graphspaces/{graphspace}/graphs/{graph}/clear?confirm_message=I'm sure to delete all data`。`confirm_message` 查询参数必须与该值完全一致，否则请求会被拒绝，详见 [Graph API](../clients/restful-api/graphs)。该操作会清除 schema、顶点、边和索引。
 
 - 清空了数据库，并且执行了`init-store`，但是添加`schema`时提示"xxx has existed"
 
   `HugeGraphServer`内是有缓存的，清空数据库的同时是需要重启`Server`的，否则残留的缓存会产生不一致。
 
-- 插入顶点或边的过程中报错：`Id max length is 128, but got xxx {yyy}` 或 `Big id max length is 32768, but got xxx`
+- 插入顶点或边的过程中报错：`The max length of vertex id is 16384, but got xxx {yyy}` 或 `The max length of edge id is 65536, but got xxx {yyy}`
 
-  为了保证查询性能，目前的后端存储对id列的长度做了限制，顶点id不能超过128字节，边id长度不能超过32768字节，索引id不能超过128字节。
+  为了保证查询性能，目前的后端存储对id列的长度做了限制，顶点id不能超过16384字节，边id长度不能超过65536字节；索引id超过32字节时会转为哈希存储，而不是报错。
 
 - 是否支持嵌套属性，如果不支持，是否有什么替代方案
 
@@ -91,7 +91,7 @@ weight: 6
 
 - 一个`EdgeLabel`是否可以连接多对`VertexLabel`，比如"投资"关系，可以是"个人"投资"企业"，也可以是"企业"投资"企业"
 
-  一个`EdgeLabel`不支持连接多对`VertexLabel`，需要用户将`EdgeLabel`拆分得更细一点，如："个人投资"，"企业投资"。
+  可以。创建`EdgeLabel`时对每一对顶点标签各调用一次`link(sourceLabel, targetLabel)`，所有配对都会被保留，因此同一个"投资"标签可以同时覆盖"个人"投资"企业"和"企业"投资"企业"。旧的`sourceLabel()`和`targetLabel()`构建方法已废弃，且只支持单一配对。
 
 - 通过`RestAPI`发送请求时提示`HTTP 415 Unsupported Media Type`
 

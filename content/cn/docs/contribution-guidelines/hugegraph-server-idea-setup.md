@@ -30,12 +30,14 @@ git clone https://github.com/apache/hugegraph.git
 为了避免配置文件的更改影响 Git 的追踪，建议将所需的配置文件拷贝到一个单独的文件夹中：
 
 ```bash
-cp -r hugegraph-dist/src/assembly/static/scripts hugegraph-dist/src/assembly/static/conf path-to-your-directory
+cp -r hugegraph-server/hugegraph-dist/src/assembly/static/scripts \
+      hugegraph-server/hugegraph-dist/src/assembly/static/conf \
+      path-to-your-directory
 ```
 
-将 `path-to-your-directory` 替换为你创建的文件夹的路径。
+将 `path-to-your-directory` 替换为你创建的文件夹的路径。命令需在仓库根目录执行，`hugegraph-dist` 模块位于顶层的 `hugegraph-server` 目录之下。
 
-> 在引入 ToplingDB 后，开发者需执行 `preload-topling.sh` 脚本，该脚本会将相关动态库和 Web Server 所需的静态资源自动解压至与 `bin` 同级的 `library` 目录中 (静态资源会同时拷贝到 `/dev/shm/rocksdb_resource` 中)。
+> ToplingDB 不在 `master` 的发布包中。在包含它的构建里，开发者需执行 `preload-topling.sh` 脚本，该脚本会将相关动态库和 Web Server 所需的静态资源自动解压至与 `bin` 同级的 `library` 目录中 (静态资源会同时拷贝到 `/dev/shm/rocksdb_resource` 中)。
 
 #### 2. `InitStore` 类初始化图
 
@@ -53,11 +55,11 @@ rocksdb.wal_path=.
 - 在 `Use classpath of module` 中选择 `hugegraph-dist`
 - 将 `Main class` 设置为 `org.apache.hugegraph.cmd.InitStore`
 - 设置运行参数为 `conf/rest-server.properties`，这里的路径是相对于工作路径的，需要将工作路径设置为 `path-to-your-directory`
-- (可选) ToplingDB 需要通过 `LD_PRELOAD` 机制预加载动态库，开发者需设置两个环境变量：`LD_LIBRARY_PATH` 指向 `preload-topling.sh` 解压出的 `library` 目录，`LD_PRELOAD` 设置为 `libjemalloc.so:librocksdbjni-linux64.so`，以确保相关库在运行时被正确加载
+- (可选，仅 ToplingDB 构建) ToplingDB 需要通过 `LD_PRELOAD` 机制预加载动态库，开发者需设置两个环境变量：`LD_LIBRARY_PATH` 指向 `preload-topling.sh` 解压出的 `library` 目录，`LD_PRELOAD` 设置为 `libjemalloc.so:librocksdbjni-linux64.so`，以确保相关库在运行时被正确加载
   - LD_LIBRARY_PATH=/path/to/your/library:$LD_LIBRARY_PATH
   - LD_PRELOAD=libjemalloc.so:librocksdbjni-linux64.so
 
-> 若在 **Java 11** 环境下为 HugeGraph-Server 配置了**用户认证** (authenticator)，需要参考二进制包的脚本[配置](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/init-store.sh#L52)，添加下述 **VM options**:
+> 若在 **Java 11** 环境下为 HugeGraph-Server 配置了**用户认证** (authenticator)，需要参考二进制包的脚本[配置](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/init-store.sh#L49)，添加下述 **VM options**:
 >
 > ```bash
 > --add-exports=java.base/jdk.internal.reflect=ALL-UNNAMED
@@ -93,7 +95,9 @@ rocksdb.wal_path=.
 - 将 `Main class` 设置为 `org.apache.hugegraph.dist.HugeGraphServer`
 - 设置运行参数为 `conf/gremlin-server.yaml conf/rest-server.properties`，同样地，这里的路径是相对于工作路径的，需要将工作路径设置为 `path-to-your-directory`
 
-> 类似的，若在 **Java 11** 环境下为 HugeGraph-Server 配置了**用户认证** (authenticator)，同样需要参考二进制包的脚本[配置](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/hugegraph-server.sh#L124)，添加下述 **VM options**:
+> 二进制包中的 `bin/hugegraph-server.sh` 并不直接启动该类，而是启动 `org.apache.hugegraph.bootstrap.HugeGraphServerBootstrap`：它在两个配置文件路径之前多接收一个 `true`/`false` 的安全检查开关，为 `true` 时安装 `HugeSecurityManager`，随后再交给 `HugeGraphServer`。从 IDEA 直接运行 `HugeGraphServer` 会跳过这层包装，因此不会安装 security manager，这通常正是调试时想要的效果。
+
+> 类似的，若在 **Java 11** 环境下为 HugeGraph-Server 配置了**用户认证** (authenticator)，同样需要参考二进制包的脚本[配置](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/hugegraph-server.sh#L132)，添加下述 **VM options**:
 >
 > ```bash
 > --add-exports=java.base/jdk.internal.reflect=ALL-UNNAMED --add-modules=jdk.unsupported --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
@@ -135,7 +139,7 @@ curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
 
 #### 5. Log4j2 日志配置
 
-默认情况下，运行 `InitStore` 和 `HugeGraphServer` 时，读取的 Log4j2 配置文件路径为 `hugegraph-dist/src/main/resources/log4j2.xml`，而不是 `path-to-your-directory/conf/log4j2.xml`，这个配置文件是使用**脚本**启动 HugeGraph-Server 时读取的。
+默认情况下，运行 `InitStore` 和 `HugeGraphServer` 时，读取的 Log4j2 配置文件路径为 `hugegraph-server/hugegraph-dist/src/main/resources/log4j2.xml`，而不是 `path-to-your-directory/conf/log4j2.xml`，这个配置文件是使用**脚本**启动 HugeGraph-Server 时读取的。
 
 为了避免同时维护两份配置文件，可以考虑在 **IntelliJ IDEA** 运行与调试 HugeGraph-Server 时，修改读取的 Log4j2 配置文件路径：
 

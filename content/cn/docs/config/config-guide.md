@@ -48,6 +48,8 @@ scriptEngines: {
           org.apache.hugegraph.backend.id.IdGenerator,
           org.apache.hugegraph.type.define.Directions,
           org.apache.hugegraph.type.define.NodeRole,
+          org.apache.hugegraph.masterelection.GlobalMasterInfo,
+          org.apache.hugegraph.util.DateUtil,
           org.apache.hugegraph.traversal.algorithm.CollectionPathsTraverser,
           org.apache.hugegraph.traversal.algorithm.CountTraverser,
           org.apache.hugegraph.traversal.algorithm.CustomizedCrosspointsTraverser,
@@ -72,7 +74,6 @@ scriptEngines: {
           org.apache.hugegraph.traversal.optimize.ConditionP,
           org.apache.hugegraph.traversal.optimize.Text,
           org.apache.hugegraph.traversal.optimize.TraversalUtil,
-          org.apache.hugegraph.util.DateUtil,
           org.opencypher.gremlin.traversal.CustomFunctions,
           org.opencypher.gremlin.traversal.CustomPredicate
         ],
@@ -138,9 +139,9 @@ ssl: {
 
 - channelizer：默认的 `WsAndHttpChannelizer` 同时支持 WebSocket 和 HTTP。Gremlin-Console 使用 WebSocket，HugeGraph-Client、Loader 和 Hubble 使用 HTTP；
 
-默认 GremlinServer 是服务在 localhost:8182，如果需要修改，配置 host、port 即可
+默认 GremlinServer 是服务在 127.0.0.1:8182，如果需要修改，配置 host、port 即可
 
-- host：部署 GremlinServer 机器的机器名或 IP，目前 HugeGraphServer 不支持分布式部署，且 GremlinServer 不直接暴露给用户;
+- host：部署 GremlinServer 机器的机器名或 IP，GremlinServer 不直接暴露给用户，由 RestServer 转发 Gremlin 请求;
 - port：部署 GremlinServer 机器的端口；
 
 同时需要在 rest-server.properties 中增加对应的配置项 gremlinserver.url=http://host:port
@@ -155,7 +156,7 @@ ssl: {
 restserver.url=http://127.0.0.1:8080
 #restserver.enable_graphspaces_filter=false
 # gremlin server url, need to be consistent with host and port in gremlin-server.yaml
-#gremlinserver.url=http://127.0.0.1:8182
+#gremlinserver.url=127.0.0.1:8182
 
 graphs=./conf/graphs
 graph.load_from_local_config=true
@@ -195,32 +196,40 @@ memory_monitor.period=2000
 
 > 当前上游模板中的 Arthas 键仍写作 `arthas.telnet_port`、`arthas.http_port` 和 `arthas.disabled_commands`，但 `ServerOptions` 读取的是下方示例中的 camelCase 名称。自定义配置应使用 `arthas.telnetPort`、`arthas.httpPort` 和 `arthas.disabledCommands`。
 
-> 配置项 gremlinserver.url 是 GremlinServer 为 RestServer 提供服务的 url，该配置项默认为 http://localhost:8182，如需修改，需要和 gremlin-server.yaml 中的 host 和 port 相匹配；
+> 配置项 gremlinserver.url 是 GremlinServer 为 RestServer 提供服务的 url，该配置项默认为 http://127.0.0.1:8182，如需修改，需要和 gremlin-server.yaml 中的 host 和 port 相匹配；该值可以像模板那样省略协议前缀，缺失时会自动补上 `http://`。
 
 ### 4 hugegraph.properties
 
 hugegraph.properties 是一类文件，因为如果系统存在多个图，则会有多个相似的文件。该文件用来配置与图存储和查询相关的参数，文件的默认内容如下：
 
 ```properties
-# gremlin entrence to create graph
+# gremlin entrance to create graph
+# auth config: org.apache.hugegraph.auth.HugeFactoryAuthProxy
 gremlin.graph=org.apache.hugegraph.HugeFactory
 
 # cache config
 #schema.cache_capacity=100000
 # vertex-cache default is 1000w, 10min expired
+vertex.cache_type=l2
 #vertex.cache_capacity=10000000
 #vertex.cache_expire=600
 # edge-cache default is 100w, 10min expired
+edge.cache_type=l2
 #edge.cache_capacity=1000000
 #edge.cache_expire=600
 
+
 # schema illegal name template
 #schema.illegal_name_regex=\s+|~.*
+
+#vertex.default_label=vertex
 
 # NOTE: since 1.7.0, only hstore, rocksdb, hbase, memory are supported for backend.
 # if you want to use Cassandra/MySql/PG... as backend, please use version < 1.7.0
 backend=rocksdb
 serializer=binary
+# The process-wide max capacity of one serialization buffer in bytes
+#serializer.buffer_max_capacity=134217728
 
 store=hugegraph
 
@@ -232,7 +241,7 @@ task.schedule_period=10
 task.retry=0
 task.wait_timeout=10
 
-# if use 'ikanalyzer', need download jar from 'https://github.com/apache/hugegraph-doc/raw/ik_binary/dist/server/ikanalyzer-2012_u6.jar' to lib directory
+# search config
 search.text_analyzer=jieba
 search.text_analyzer_mode=INDEX
 
@@ -245,17 +254,34 @@ search.text_analyzer_mode=INDEX
 #hbase.port=2181
 #hbase.znode_parent=/hbase
 #hbase.threads_max=64
+# IMPORTANT: recommend to modify the HBase partition number
+#            by the actual/env data amount & RS amount before init store
+#            It will influence the load speed a lot
+#hbase.enable_partition=true
+#hbase.vertex_partitions=10
+#hbase.edge_partitions=30
 
+# WARNING: These raft configurations are deprecated, please use the latest version instead.
+# raft.mode=false
+
+# memory management config
+#memory.mode=off-heap
+#memory.max_capacity=1073741824
+#memory.one_query_max_capacity=104857600
+#memory.alignment=8
 ```
 
 重点关注未注释的几项：
 
-- gremlin.graph：GremlinServer 的启动入口，用户不要修改此项；
+- gremlin.graph：GremlinServer 的启动入口，用户不要修改此项；开启鉴权时才改为 `org.apache.hugegraph.auth.HugeFactoryAuthProxy`；
+- vertex.cache_type / edge.cache_type：缓存实现，可选值为 `l1` 和 `l2`，默认 `l2`；
 - backend：使用的后端存储。1.7.0 支持 memory、rocksdb、hstore 和 hbase；
 - serializer：schema、vertex 和 edge 写入后端时使用的序列化器。RocksDB 使用 binary；
 - store：图在后端使用的存储名称；
-- rocksdb.data_path：backend 为 rocksdb 时此项才有意义，rocksdb 的数据目录
-- rocksdb.wal_path：backend 为 rocksdb 时此项才有意义，rocksdb 的日志目录
+- task.schedule_period、task.retry、task.wait_timeout：异步任务的调度周期（秒）、重试次数和等待超时（秒）。调度器由后端决定，`hstore` 使用分布式调度器，其余后端使用本地调度器；旧的 `task.scheduler_type` 键已被忽略；
+- search.text_analyzer / search.text_analyzer_mode：全文索引使用的分词器及其模式。可选分词器为 `ansj`、`hanlp`、`smartcn`、`jieba`、`jcseg`、`mmseg4j` 和 `ikanalyzer`，每种分词器有各自的模式取值；
+- rocksdb.data_path：backend 为 rocksdb 时此项才有意义，rocksdb 的数据目录，默认为 `rocksdb-data/data`
+- rocksdb.wal_path：backend 为 rocksdb 时此项才有意义，rocksdb 的日志目录，默认为 `rocksdb-data/wal`
 
 ### 5 多图配置
 
@@ -316,8 +342,8 @@ Initialization finished.
 ```bash
 $ ./bin/start-hugegraph.sh
 
-Starting HugeGraphServer...
-Connecting to HugeGraphServer (http://127.0.0.1:8080/graphspaces/DEFAULT/graphs)...OK
+Starting HugeGraphServer in daemon mode...
+Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)...OK
 Started [pid 21614]
 ```
 

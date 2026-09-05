@@ -864,6 +864,49 @@ class SiteOutputSecurityTest(unittest.TestCase):
             ),
         )
 
+    def test_media_sources_are_not_treated_as_csp_images(self) -> None:
+        parser = parse(
+            '<picture><source srcset="https://www.apache.org/image.webp 1x">'
+            '<img src="https://www.apache.org/image.png"></picture>'
+            '<video><source src="https://www.apache.org/video.mp4" '
+            'srcset="https://www.apache.org/video-hd.mp4 2x"></video>'
+            '<audio><source src="https://www.apache.org/audio.mp3"></audio>'
+        )
+        errors = VALIDATOR.document_security_errors(parser, "index.html", BASE)
+        self.assertEqual(
+            sum("external active resource" in error for error in errors),
+            3,
+            errors,
+        )
+        self.assertFalse(
+            any("image.webp" in error or "image.png" in error for error in errors),
+            errors,
+        )
+
+    def test_authored_content_markers_survive_premature_container_closures(
+        self,
+    ) -> None:
+        parser = parse(
+            '<main><article><template data-hg-authored-content="start"></template>'
+            '</article></main><script src="/escaped.js"></script>'
+            '<template data-hg-authored-content="end"></template>'
+        )
+        self.assertIn("authored <script>", parser.authored_violations)
+
+        spoofed = parse(
+            '<template data-hg-authored-content="start"></template>'
+            '<template data-hg-authored-content="end"></template>'
+            '<script src="/escaped.js"></script>'
+            '<template data-hg-authored-content="end"></template>'
+        )
+        self.assertIn(
+            "unexpected authored-content end marker",
+            spoofed.authored_violations,
+        )
+        self.assertTrue(
+            VALIDATOR.document_security_errors(spoofed, "index.html", BASE)
+        )
+
     def test_link_rel_is_fail_closed_for_request_capable_and_unknown_values(self) -> None:
         parser = parse(
             '<link rel="canonical" href="https://hugegraph-oink.staged.apache.org/">'

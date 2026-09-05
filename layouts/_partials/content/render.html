@@ -1,0 +1,5 @@
+{{- /* Mark the exact authored-content boundary for the publication scanner. */ -}}
+{{- $content := .Content -}}
+{{- partial "code/register-rendered-ids.html" (dict "page" . "content" $content) -}}
+{{- partial "content/register-derived.html" (dict "page" . "html" $content "raw" .RawContent) -}}
+{{- return (printf "<template data-hg-authored-content=\"start\"></template>%s<template data-hg-authored-content=\"end\"></template>" $content | safeHTML) -}}

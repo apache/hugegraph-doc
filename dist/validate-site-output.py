@@ -86,6 +86,8 @@ EXTERNAL_ACTIVE_RESOURCE_ATTRIBUTES = {
     ("audio", "src"),
     ("video", "src"),
     ("track", "src"),
+    ("media-source", "src"),
+    ("media-source", "srcset"),
     ("form", "action"),
     ("button", "formaction"),
     ("input", "formaction"),
@@ -598,6 +600,10 @@ def document_security_errors(
         f"{page_name}: unsafe content markup: {violation}"
         for violation in parser.authored_violations
     ]
+    if parser._content_markers[0] != parser._content_markers[1]:
+        errors.append(
+            f"{page_name}: unsafe content markup: unbalanced authored-content markers"
+        )
     errors.extend(
         f"{page_name}: mixed-content CSS resource: {resource}"
         for resource in parser.inline_css_http_resources
@@ -660,11 +666,16 @@ class DocumentParser(html.parser.HTMLParser):
         self.action_manifest = ""
         self._in_action_manifest = False
         self._content_depth = 0
+        self._content_markers = [0, 0]
+        self._in_content_marker = False
         self._in_style = False
         self._svg_depth = 0
+        self._media_depth = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         tag = tag.lower()
+        if tag in {"audio", "video"}:
+            self._media_depth += 1
         in_svg = bool(self._svg_depth) or tag == "svg"
         if tag == "svg":
             self._svg_depth += 1
@@ -679,6 +690,25 @@ class DocumentParser(html.parser.HTMLParser):
                 duplicate_attributes.add(attribute)
             seen_attributes.add(attribute)
         values = {key.lower(): value or "" for key, value in attrs}
+        content_marker = (
+            values.get("data-hg-authored-content")
+            if tag == "template"
+            else None
+        )
+        if content_marker == "start":
+            self._content_markers[0] += 1
+            if self._in_content_marker or self._content_markers[0] > 1:
+                self.authored_violations.append(
+                    "duplicate or nested authored-content start marker"
+                )
+            self._in_content_marker = True
+        elif content_marker == "end":
+            self._content_markers[1] += 1
+            if not self._in_content_marker or self._content_markers[1] > 1:
+                self.authored_violations.append(
+                    "unexpected authored-content end marker"
+                )
+            self._in_content_marker = False
         if tag == "nav" and "TableOfContents" in [
             value or "" for key, value in attrs if key.lower() == "id"
         ]:
@@ -687,7 +717,7 @@ class DocumentParser(html.parser.HTMLParser):
             )
         if tag in {"main", "article"}:
             self._content_depth += 1
-        if self._content_depth:
+        if self._content_depth or self._in_content_marker:
             if tag in UNSAFE_AUTHORED_ELEMENTS and not is_inert_oink_diagram_source(
                 tag, values
             ):
@@ -796,11 +826,17 @@ class DocumentParser(html.parser.HTMLParser):
             self.urls.append((attribute, values[attribute]))
             if attribute in RUNTIME_IMAGE_URL_ATTRIBUTES:
                 self.image_urls.append((tag, attribute, values[attribute]))
+        resource_tag = (
+            "media-source"
+            if tag == "source" and self._media_depth
+            else tag
+        )
         self.resources.extend(
-            (tag, attribute, url) for attribute, url in resource_attributes
+            (resource_tag, attribute, url)
+            for attribute, url in resource_attributes
         )
 
-        if tag in {"img", "source"}:
+        if tag == "img" or (tag == "source" and not self._media_depth):
             for attribute in ("src", "srcset"):
                 if not values.get(attribute):
                     continue
@@ -811,8 +847,16 @@ class DocumentParser(html.parser.HTMLParser):
                 )
                 self.image_urls.extend((tag, attribute, url) for url in urls)
                 if attribute == "srcset":
-                    self.resources.extend((tag, attribute, url) for url in urls)
+                    self.resources.extend(
+                        (resource_tag, attribute, url) for url in urls
+                    )
                     self.urls.extend((attribute, url) for url in urls)
+        elif tag == "source" and values.get("srcset"):
+            urls = srcset_urls(values["srcset"])
+            self.resources.extend(
+                (resource_tag, "srcset", url) for url in urls
+            )
+            self.urls.extend(("srcset", url) for url in urls)
         if tag == "video" and values.get("poster"):
             self.image_urls.append((tag, "poster", values["poster"]))
         if (
@@ -865,6 +909,8 @@ class DocumentParser(html.parser.HTMLParser):
             self._in_style = False
         if tag == "svg" and self._svg_depth:
             self._svg_depth -= 1
+        if tag in {"audio", "video"} and self._media_depth:
+            self._media_depth -= 1
         if tag in {"main", "article"} and self._content_depth:
             self._content_depth -= 1
 

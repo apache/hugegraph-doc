@@ -26,83 +26,32 @@ script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_dir=$(dirname "$script_dir")
 cd "$repo_dir"
 
-reject_argument() {
-  printf 'scripts/hugo.sh: argument is owned by the wrapper: %s\n' "$1" >&2
-  exit 2
-}
-
+# Sniff the documented origin/port spellings so the generated version config
+# stays aligned with the origin Hugo itself will use. Every argument is still
+# forwarded to Hugo unchanged; pflag's last-wins handling resolves overrides.
 port=
 base_url=
-port_set=false
-base_url_set=false
-expect_value=
+previous=
 for argument in "$@"; do
-  if [ -n "$expect_value" ]; then
-    case "$argument" in
-      -*) printf 'scripts/hugo.sh: missing value for %s\n' "$expect_value" >&2; exit 2 ;;
-    esac
-    case "$expect_value" in
-      baseURL) base_url=$argument; base_url_set=true ;;
-      port) port=$argument; port_set=true ;;
-    esac
-    expect_value=
-    continue
-  fi
+  case "$previous" in
+    --baseURL|-b) base_url=$argument ;;
+    --port|-p) port=$argument ;;
+  esac
   case "$argument" in
-    --config|--config=*|-c|-c?*|\
-    --configDir|--configDir=*|\
-    --environment|--environment=*|-e|-e?*|\
-    --cleanDestinationDir|--cleanDestinationDir=*|\
-    --gc|--gc=*|\
-    --minify|--minify=*|\
-    --panicOnWarning|--panicOnWarning=*|\
-    --printPathWarnings|--printPathWarnings=*|\
-    --printI18nWarnings|--printI18nWarnings=*|\
-    --logLevel|--logLevel=*|\
-    --appendPort|--appendPort=*)
-      reject_argument "$argument"
-      ;;
-    --baseURL|-b) expect_value=baseURL ;;
-    --baseURL=*) base_url=${argument#*=}; base_url_set=true ;;
-    -b=*) base_url=${argument#-b=}; base_url_set=true ;;
-    -b?*) base_url=${argument#-b}; base_url_set=true ;;
-    --port|-p) expect_value=port ;;
-    --port=*) port=${argument#*=}; port_set=true ;;
-    -p=*) port=${argument#-p=}; port_set=true ;;
-    -p?*) port=${argument#-p}; port_set=true ;;
+    --baseURL=*) base_url=${argument#*=} ;;
+    -b=*) base_url=${argument#-b=} ;;
+    -b?*) base_url=${argument#-b} ;;
+    --port=*) port=${argument#*=} ;;
+    -p=*) port=${argument#-p=} ;;
+    -p?*) port=${argument#-p} ;;
   esac
+  previous=$argument
 done
-if [ -n "$expect_value" ]; then
-  printf 'scripts/hugo.sh: missing value for %s\n' "$expect_value" >&2
-  exit 2
-fi
-if [ "$base_url_set" = true ] && [ -z "$base_url" ]; then
-  printf '%s\n' "scripts/hugo.sh: --baseURL cannot be empty" >&2
-  exit 2
-fi
-if [ "$port_set" = true ] && [ -z "$port" ]; then
-  printf '%s\n' "scripts/hugo.sh: --port cannot be empty" >&2
-  exit 2
-fi
-if [ "$base_url_set" = true ] && [ -n "${HG_DOC_SITE_ORIGIN:-}" ]; then
-  printf '%s\n' \
-    "scripts/hugo.sh: use either --baseURL or HG_DOC_SITE_ORIGIN, not both" >&2
-  exit 2
-fi
-if [ "$mode" = "build" ] && [ "$port_set" = true ]; then
-  printf '%s\n' "scripts/hugo.sh: --port is valid only in server mode" >&2
-  exit 2
-fi
-if [ -n "$port" ]; then
-  case "$port" in
-    *[!0-9]*) printf 'scripts/hugo.sh: invalid port: %s\n' "$port" >&2; exit 2 ;;
-  esac
-fi
 
-if [ -n "${HG_DOC_SITE_ORIGIN:-}" ]; then
-  site_origin=$HG_DOC_SITE_ORIGIN
-elif [ -n "$base_url" ]; then
+if [ -n "$base_url" ]; then
   site_origin=$base_url
+elif [ -n "${HG_DOC_SITE_ORIGIN:-}" ]; then
+  site_origin=$HG_DOC_SITE_ORIGIN
 elif [ "$mode" = "server" ]; then
   site_origin="http://localhost:${port:-1313}/"
 else

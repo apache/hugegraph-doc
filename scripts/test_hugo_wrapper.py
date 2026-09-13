@@ -124,11 +124,13 @@ grep -q '"versions":\\[1,2,3,4,5\\]' "$generated"
         args = calls[0]["args"]
         self.assertEqual(args[args.index("--version") + 1], "1.7")
 
-    def test_base_url_and_port_keep_generated_and_hugo_origins_aligned(self) -> None:
+    def test_base_url_flag_wins_over_environment_and_pins_the_origin(self) -> None:
         calls = self.run_wrapper(
             "server",
             "--baseURL=https://preview.example/docs/",
-            "-p=1414",
+            environment_overrides={
+                "HG_DOC_SITE_ORIGIN": "https://other.example/"
+            },
         )
         config_args = calls[0]["args"]
         self.assertEqual(
@@ -137,54 +139,7 @@ grep -q '"versions":\\[1,2,3,4,5\\]' "$generated"
         )
         hugo_args = calls[1]["args"]
         self.assertIn("--appendPort=false", hugo_args)
-        self.assertEqual(
-            hugo_args[-2:],
-            ["--baseURL=https://preview.example/docs/", "-p=1414"],
-        )
-
-    def test_owned_hugo_arguments_are_rejected_before_any_tool_runs(self) -> None:
-        cases = (
-            ("build", "--config", "other.yaml"),
-            ("build", "--config=other.yaml"),
-            ("build", "-c", "other.yaml"),
-            ("build", "-cother.yaml"),
-            ("build", "--configDir", "config"),
-            ("build", "--environment", "development"),
-            ("build", "--environment=development"),
-            ("build", "-e", "development"),
-            ("build", "-edevelopment"),
-            ("build", "--panicOnWarning=false"),
-            ("build", "--cleanDestinationDir=false"),
-            ("build", "--gc=false"),
-            ("build", "--minify=false"),
-            ("build", "--printPathWarnings=false"),
-            ("build", "--printI18nWarnings=false"),
-            ("build", "--logLevel", "error"),
-            ("build", "--port", "1414"),
-            ("server", "--config", "other.yaml"),
-            ("server", "--appendPort=true"),
-            ("server", "--baseURL="),
-            ("server", "--port="),
-            ("server", "--baseURL", "file:///tmp/site"),
-        )
-        for args in cases:
-            with self.subTest(args=args):
-                self.log.unlink(missing_ok=True)
-                result = self.invoke_wrapper(*args)
-                self.assertNotEqual(result.returncode, 0)
-                self.assertEqual(self.calls(), [])
-
-    def test_site_origin_environment_cannot_conflict_with_base_url(self) -> None:
-        result = self.invoke_wrapper(
-            "server",
-            "--baseURL",
-            "https://preview.example/",
-            environment_overrides={
-                "HG_DOC_SITE_ORIGIN": "https://other.example/"
-            },
-        )
-        self.assertNotEqual(result.returncode, 0)
-        self.assertEqual(self.calls(), [])
+        self.assertEqual(hugo_args[-1], "--baseURL=https://preview.example/docs/")
 
     def test_build_enforces_the_warning_strict_production_contract(self) -> None:
         calls = self.run_wrapper("build", "--destination", "custom-public")

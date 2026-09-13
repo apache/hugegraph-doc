@@ -51,7 +51,7 @@ hugegraph-doc/
 │   └── en/                     # 🇺🇸 English documentation (mirrors cn/ structure)
 │
 ├── data/                       # 🧭 Landing-page and footer data
-├── i18n/cn.yaml                # 🌐 OINK interface strings for the /cn/ locale
+├── i18n/zh-CN.yaml             # 🌐 OINK interface strings for the /cn/ locale
 ├── assets/                     # 🖼️  Project brand assets
 ├── layouts/                    # 📐 Hugo template overrides
 ├── static/                     # 📁 Static files
@@ -135,7 +135,7 @@ hugegraph-doc/
 │   └── en/                     # 🇺🇸 英文文档（与 cn/ 结构一致）
 │
 ├── data/                       # 🧭 首页与页尾数据
-├── i18n/cn.yaml                # 🌐 /cn/ 语言的 OINK 界面文案
+├── i18n/zh-CN.yaml             # 🌐 /cn/ 语言的 OINK 界面文案
 ├── assets/                     # 🖼️  项目品牌资源
 ├── layouts/                    # 📐 Hugo 模板覆盖
 ├── static/                     # 📁 静态文件

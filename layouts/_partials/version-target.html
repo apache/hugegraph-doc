@@ -15,11 +15,16 @@
 {{- if and $rawURL (strings.HasPrefix $relative $docsPrefix) -}}
   {{- $pages := hugo.Data.version_routes.pages | default dict -}}
   {{- $currentVersion := $p.Site.Params.version | default "latest" -}}
-  {{- $logicalID := "" -}}
-  {{- range $candidateID, $candidateRoutes := $pages -}}
-    {{- if eq (index $candidateRoutes $currentVersion) $relative -}}
-      {{- $logicalID = $candidateID -}}
+  {{- $logicalID := $p.Store.Get "hgVersionLogicalID" -}}
+  {{- if eq $logicalID nil -}}
+    {{- $logicalID = "" -}}
+    {{- range $candidateID, $candidateRoutes := $pages -}}
+      {{- if eq (index $candidateRoutes $currentVersion) $relative -}}
+        {{- $logicalID = $candidateID -}}
+        {{- break -}}
+      {{- end -}}
     {{- end -}}
+    {{- $p.Store.Set "hgVersionLogicalID" $logicalID -}}
   {{- end -}}
   {{- $routes := cond (ne $logicalID "") (index $pages $logicalID) nil -}}
   {{- $path := false -}}

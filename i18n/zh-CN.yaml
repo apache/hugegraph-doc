@@ -234,3 +234,9 @@ ui_diagram_zoom_in: 放大
 ui_diagram_zoom_out: 缩小
 ui_diagram_zoom_reset: 复位视图
 ui_diagram_error: 图表无法渲染
+ui_version_fallback: 目标版本没有此页面，已转到该版本的文档首页。
+ui_ask_ai: 询问 AI
+ui_ask_ai_description: 由 Kapa 提供；仅发送你的问题。
+ui_ask_ai_latest: 回答基于 latest 文档
+ui_retry: 重试
+ui_ai_error: AI 暂时不可用，本地搜索不受影响。

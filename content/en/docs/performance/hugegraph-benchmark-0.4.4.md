@@ -4,6 +4,12 @@ linkTitle: "HugeGraph 0.4.4 Benchmark"
 weight: 100
 ---
 
+> ⚠️ **Historical data — do not use it to evaluate current releases**
+>
+> This page records a HugeGraph 0.4.4 benchmark whose data was collected in 2018. The test environment, software versions, and implementation differ substantially from current releases, so these results are provided for historical reference only and must not be used to assess current performance.
+>
+> A benchmark report for a current release will be added later, after which this page will be archived. Use the updated report for current performance conclusions.
+
 ### 1 测试环境
 
 #### 1.1 硬件信息

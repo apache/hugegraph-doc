@@ -76,13 +76,13 @@
           "page": "/docs/quickstart/computing",
           "children": [
             {
+              "page": "/docs/quickstart/computing/hugegraph-vermeer"
+            },
+            {
               "page": "/docs/quickstart/computing/hugegraph-computer"
             },
             {
               "page": "/docs/quickstart/computing/hugegraph-computer-config"
-            },
-            {
-              "page": "/docs/quickstart/computing/hugegraph-vermeer"
             }
           ]
         },
@@ -453,6 +453,11 @@
           "url": "/docs/quickstart/computing/",
           "children": [
             {
+              "page": "/docs/quickstart/computing/hugegraph-vermeer",
+              "url": "/docs/quickstart/computing/hugegraph-vermeer/",
+              "children": []
+            },
+            {
               "page": "/docs/quickstart/computing/hugegraph-computer",
               "url": "/docs/quickstart/computing/hugegraph-computer/",
               "children": []
@@ -460,11 +465,6 @@
             {
               "page": "/docs/quickstart/computing/hugegraph-computer-config",
               "url": "/docs/quickstart/computing/hugegraph-computer-config/",
-              "children": []
-            },
-            {
-              "page": "/docs/quickstart/computing/hugegraph-vermeer",
-              "url": "/docs/quickstart/computing/hugegraph-vermeer/",
               "children": []
             }
           ]
@@ -1329,9 +1329,9 @@
       "/docs/quickstart/toolchain/export-migration/hugegraph-tools"
     ],
     "/docs/quickstart/computing/": [
+      "/docs/quickstart/computing/hugegraph-vermeer",
       "/docs/quickstart/computing/hugegraph-computer",
-      "/docs/quickstart/computing/hugegraph-computer-config",
-      "/docs/quickstart/computing/hugegraph-vermeer"
+      "/docs/quickstart/computing/hugegraph-computer-config"
     ],
     "/docs/quickstart/hugegraph-ai/": [
       "/docs/quickstart/hugegraph-ai/quick_start",

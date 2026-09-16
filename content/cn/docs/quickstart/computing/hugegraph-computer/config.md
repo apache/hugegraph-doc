@@ -2,6 +2,8 @@
 title: "HugeGraph-Computer 配置参考"
 linkTitle: "Computer 配置参考"
 weight: 3
+aliases:
+  - /docs/quickstart/computing/hugegraph-computer-config/
 ---
 
 ## Computer 配置选项

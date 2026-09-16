@@ -366,6 +366,10 @@ class VersionUrlTest(unittest.TestCase):
                 "/docs/introduction/readme",
                 "/docs/quickstart/toolchain",
                 "/docs/quickstart/toolchain/hugegraph-loader",
+                "/docs/quickstart/computing",
+                "/docs/quickstart/computing/hugegraph-vermeer",
+                "/docs/quickstart/computing/hugegraph-computer",
+                "/docs/quickstart/computing/hugegraph-computer-config",
                 "/docs/clients",
                 "/docs/clients/gremlin-console",
                 "/docs/config",
@@ -404,6 +408,17 @@ class VersionUrlTest(unittest.TestCase):
             all_pages = list(_walk_docs_nav_pages(nav["sections"]))
             self.assertIn("/docs/introduction/readme", all_pages)
             self.assertIn("/docs/performance/api-preformance", all_pages)
+            self.assertIn(
+                "/docs/quickstart/computing/hugegraph-computer-config", all_pages
+            )
+            self.assertEqual(
+                nav["children_by_url"]["/docs/quickstart/computing/"],
+                [
+                    "/docs/quickstart/computing/hugegraph-vermeer",
+                    "/docs/quickstart/computing/hugegraph-computer",
+                    "/docs/quickstart/computing/hugegraph-computer-config",
+                ],
+            )
             self.assertNotIn("/docs/introduction", all_pages)
             self.assertIn(
                 "/docs/introduction/readme/",

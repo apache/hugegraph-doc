@@ -11,6 +11,6 @@ The HugeGraph-Computer repository contains two OLAP systems: Computer, a distrib
 > 📖 [https://deepwiki.com/apache/hugegraph-computer/](https://deepwiki.com/apache/hugegraph-computer/)
 
 - [Vermeer Quick Start](./hugegraph-vermeer.md)
-- [Computer Quick Start](./hugegraph-computer.md)
-- [Computer Configuration Reference](./hugegraph-computer-config.md)
+- [Computer Quick Start](./hugegraph-computer/)
+- [Computer Configuration Reference](./hugegraph-computer/config.md)
 - [Source code](https://github.com/apache/hugegraph-computer)

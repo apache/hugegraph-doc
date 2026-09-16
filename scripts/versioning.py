@@ -105,7 +105,7 @@ DOCS_NAV_EXPECTED_STATS = {
         "pages": 90,
         "removed": 4,
         "scopedLinks": 0,
-        "treeSha256": "3ab63e46d029d226eccb16c23e4f4e41fbd25e87fcd2eb3b1d674146f7a3e5a2",
+        "treeSha256": "acaa1ffdb01aa392dd241c9fee55f1e71fbd63b37ab1253f467b35008d1b88ad",
     },
     "1.7": {
         "groups": 5,
@@ -687,21 +687,27 @@ def materialize_docs_navigation(
 
     routes = docs_content_routes(assembly, "en") & docs_content_routes(assembly, "cn")
     groups_for_materialization = groups
-    # Releases before the ToolChain regrouping still store these pages at the
-    # flat paths. Keep their sidebar populated with the historical layout
-    # instead of dropping the entire ToolChain branch when building archives.
+    # Releases before the ToolChain or Computer regrouping still store these
+    # pages at flat paths. Keep their sidebars populated with the historical
+    # layout instead of dropping entries when building archives.
     regrouped_toolchain = (
         "/docs/quickstart/toolchain/visualization" in routes
         and "/docs/quickstart/toolchain/import" in routes
         and "/docs/quickstart/toolchain/export-migration" in routes
     )
-    if not regrouped_toolchain:
+    regrouped_computing = (
+        "/docs/quickstart/computing/hugegraph-computer/config" in routes
+    )
+    if not regrouped_toolchain or not regrouped_computing:
         groups_for_materialization = json.loads(json.dumps(groups))
         for group in groups_for_materialization:
             if group.get("id") != "components":
                 continue
             for node in group.get("children", []):
-                if node.get("page") == "/docs/quickstart/toolchain":
+                if (
+                    node.get("page") == "/docs/quickstart/toolchain"
+                    and not regrouped_toolchain
+                ):
                     node["children"] = [
                         {"page": "/docs/quickstart/toolchain/hugegraph-hubble"},
                         {"page": "/docs/quickstart/toolchain/hugegraph-loader"},
@@ -710,7 +716,17 @@ def materialize_docs_navigation(
                         },
                         {"page": "/docs/quickstart/toolchain/hugegraph-tools"},
                     ]
-                    break
+                if (
+                    node.get("page") == "/docs/quickstart/computing"
+                    and not regrouped_computing
+                ):
+                    node["children"] = [
+                        {"page": "/docs/quickstart/computing/hugegraph-vermeer"},
+                        {"page": "/docs/quickstart/computing/hugegraph-computer"},
+                        {
+                            "page": "/docs/quickstart/computing/hugegraph-computer-config"
+                        },
+                    ]
     seen_pages: set[str] = set()
     removed = 0
 

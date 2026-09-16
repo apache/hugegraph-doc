@@ -11,6 +11,6 @@ HugeGraph-Computer 仓库包含两套 OLAP 系统：Java 实现的分布式 BSP 
 > 📖 [https://deepwiki.com/apache/hugegraph-computer/](https://deepwiki.com/apache/hugegraph-computer/)
 
 - [Vermeer 快速入门](./hugegraph-vermeer.md)
-- [Computer 快速入门](./hugegraph-computer.md)
-- [Computer 配置参考](./hugegraph-computer-config.md)
+- [Computer 快速入门](./hugegraph-computer/)
+- [Computer 配置参考](./hugegraph-computer/config.md)
 - [源代码](https://github.com/apache/hugegraph-computer)

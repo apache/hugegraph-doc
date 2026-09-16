@@ -10,3 +10,9 @@ weight: 4
 - [Server 配置选项](config-option)
 - [认证与授权](config-authentication)
 - [HTTPS 配置](config-https)
+
+## 后端配置
+
+- [HBase 后端配置](config-backend-hbase)
+- [HStore 后端配置](config-backend-hstore)
+- [RocksDB 后端配置](config-backend-rocksdb)

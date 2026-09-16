@@ -75,15 +75,22 @@ Behavior worth knowing before you connect:
 
 ## End-to-End Example
 
-The module ships a runnable demo at `vermeer-python-client/src/pyvermeer/demo/task_demo.py`. The version below adds the polling step and reads the HugeGraph password from the environment:
+The module ships a runnable demo at `vermeer-python-client/src/pyvermeer/demo/task_demo.py`. The version below adds task polling with timeout and failure handling, waits for a successful load before reading the graph, and reads the HugeGraph password from the environment:
 
 ```python
 import os
+import time
 
 from pyvermeer.client.client import PyVermeerClient
 from pyvermeer.structure.task_data import TaskCreateRequest
 
-client = PyVermeerClient(ip="127.0.0.1", port=6688, token="", log_level="INFO")
+client = PyVermeerClient(
+    ip="127.0.0.1",
+    port=6688,
+    token="",
+    timeout=(0.5, 15.0),
+    log_level="INFO",
+)
 
 # List the tasks the master knows about
 tasks = client.tasks.get_tasks()
@@ -105,15 +112,34 @@ create_response = client.tasks.create_task(
     )
 )
 print(create_response.errcode, create_response.message)
+if create_response.errcode != 0:
+    raise RuntimeError(f"Could not create load task: {create_response.message}")
 
-# Read the task back and check its state
+# Poll this load task until it succeeds, fails, or times out
 task_id = create_response.task.id
-task = client.tasks.get_task(task_id)
-print(task.task.state)
+poll_timeout = 300.0
+deadline = time.monotonic() + poll_timeout
+while time.monotonic() < deadline:
+    task = client.tasks.get_task(task_id)
+    if task.errcode != 0:
+        raise RuntimeError(f"Could not read task {task_id}: {task.message}")
+    state = task.task.state
+    print(task_id, state)
+    if state == "loaded":
+        break
+    if state in ("error", "canceled"):
+        raise RuntimeError(f"Load task {task_id} ended with state {state}")
+    remaining = deadline - time.monotonic()
+    if remaining > 0:
+        time.sleep(min(1.0, remaining))
+else:
+    raise TimeoutError(f"Load task {task_id} did not finish within {poll_timeout}s")
 
 # Once the graph is loaded, inspect it
 print(client.graph.get_graph("DEFAULT-example").to_dict())
 ```
+
+A load task succeeds with state `loaded`; `error` or `canceled` stops the example without reading the graph. Adjust `poll_timeout` (300 seconds here) for your data size. The polling deadline is independent of HTTP connect and read timeouts, and an in-flight request and SDK retries can extend the actual wait beyond it. A timeout stops the client from waiting; it does not cancel the server-side task.
 
 Never hardcode a real HugeGraph password into a script or a configuration file. Read it from an environment variable or a credential store, as above.
 

@@ -6,7 +6,7 @@ weight: 5
 
 SeaTunnel connects data sources such as databases and Kafka to HugeGraph. It can also migrate vertices and edges between two HugeGraph graphs. The connector has two parts: **Source reads data and Sink writes data**, with SeaTunnel transform components available between them.
 
-> **Version requirement: This guide targets SeaTunnel 3.0+ (dev branch).** All examples use `mappings`. SeaTunnel **2.3.13 includes only the HugeGraph Sink**, which uses the legacy `schema_config` and cannot run the configurations in this guide.
+> **Version requirement: This guide targets SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release).** All examples use `mappings`.
 
 [![Loader imports data directly with graph mappings; SeaTunnel 3.0+ combines Source, Transform, and Sink, and both support JDBC, Kafka, and graph data](/docs/images/seatunnel/seatunnel-vs-loader-en.png)](/docs/images/seatunnel/seatunnel-vs-loader-en.png)
 
@@ -18,37 +18,27 @@ Click a diagram to view the original size.
 
 | Comparison | HugeGraph-Loader | SeaTunnel |
 | --- | --- | --- |
-| Job configuration | JSON mapping file describing the source, vertices, and edges | HOCON job file combining Source, Transform, and Sink |
+| Job configuration | JSON mapping file describing the source, vertices, and edges | [HOCON job file](https://seatunnel.apache.org/docs/introduction/concepts/config/) combining Source, Transform, and Sink |
 | Best for | Directly importing data into HugeGraph when field and value mappings are enough | Connecting HugeGraph to an existing SeaTunnel pipeline or reusing its connectors and transforms |
 | Runtime setup | Use Loader; Spark Loader and Flink CDC integrations are also available | Prepare matching engine and connector versions; this guide uses Zeta in local mode |
 
 **Choose by the work you need to complete, not only by the data source or batch/stream mode.** Both tools support JDBC, Kafka, and graph data. Loader also provides field/value mappings and Spark or Flink CDC integrations. Use Loader for a direct graph import; if a SeaTunnel job already exists, adding HugeGraph to that pipeline is usually simpler.
 
-For new SeaTunnel jobs, use the 3.0+ development version and `mappings`. This guide was checked against commit [`35b2716`](https://github.com/apache/seatunnel/commit/35b2716cde7d4c91a24fc618a8d9cae90e213db3), which corresponds to `3.0.0-SNAPSHOT`. Recheck the connector configuration when using another commit.
-
-| Capability | Version used by this guide | 2.3.13 |
-| --- | --- | --- |
-| Write to HugeGraph | Sink with `mappings` | Sink with `schema_config` |
-| Read HugeGraph vertices and edges | Source supported | Not supported |
-| Create missing graph schema automatically | Enabled by default through `mappings` | Create the schema first |
-
-If you must use 2.3.13, follow the [2.3.13 Sink documentation](https://github.com/apache/seatunnel/blob/2.3.13/docs/en/connectors/sink/HugeGraph.md) and do not mix it with the examples in this guide.
+For new SeaTunnel jobs, use [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) and `mappings`. Recheck the connector configuration when using another version.
 
 ## 2 Prepare the environment
 
 ### 2.1 Get SeaTunnel 3.0+
 
-Install JDK 11 and set `JAVA_HOME`. Clone the development branch and build a distribution by following the upstream [development setup guide](https://github.com/apache/seatunnel/blob/35b2716cde7d4c91a24fc618a8d9cae90e213db3/docs/en/developer/setup.md):
+The SeaTunnel 3.0+ setup guide lists JDK 8 and JDK 11 as supported. This guide uses JDK 11 and sets `JAVA_HOME`. Clone the [SeaTunnel 3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) branch and build a distribution by following the upstream [development setup guide](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/developer/setup.md):
 
 ```bash
-git clone --branch dev https://github.com/apache/seatunnel.git
+git clone --branch 3.0.0-release https://github.com/apache/seatunnel.git
 cd seatunnel
-# Pin to the checked commit when reproducing this guide
-git checkout 35b2716cde7d4c91a24fc618a8d9cae90e213db3
 ./mvnw clean package -pl seatunnel-dist -am -Dmaven.test.skip=true
 ```
 
-Extract the binary package from `seatunnel-dist/target/`. Run the remaining commands from the extracted SeaTunnel installation directory. When updating the feature set, switch to another commit as needed. Keep the engine and connector plugins from the same build, and do not mix in 2.3.13 JARs.
+Extract the binary package from `seatunnel-dist/target/`. Run the remaining commands from the extracted SeaTunnel installation directory. When updating the feature set, switch to another version as needed. Keep the engine and connector plugins from the same build, and do not mix different plugin versions.
 
 This guide uses the bundled **Zeta engine in local mode**. Check that `connectors/` contains HugeGraph and the JDBC or Kafka connector required by each example. If a custom build does not include them, add the plugins produced by that same build. The JDBC examples also require the MySQL driver JAR in `lib/`, with driver class `com.mysql.cj.jdbc.Driver`.
 
@@ -402,11 +392,11 @@ This example checks endpoints and makes write errors fail the job. The default `
 
 > **Why preserve IDs?** A HugeGraph `PRIMARY_KEY` ID contains the internal ID of the vertex label, and that internal ID can differ between graphs. For example, a source vertex can be `1:marko`, while regenerating the primary key in the target graph can produce `2:marko`. Reusing the source edge endpoints after regenerating vertex IDs can connect edges to the wrong vertices. This example stores the original ID as a string, which changes the target graph's ID strategy.
 
-When Source reads every label, omit `label` to read all labels of `label_type` (default `VERTEX`). It produces one output table per label. Bind each Sink mapping to its table with `sourceTable`, for example `sourceTable = "default.person"`; use the full table name shown in the Writer log for the exact value. Do not reuse the single-label configuration from this section. See the [HugeGraph Source documentation](https://github.com/apache/seatunnel/blob/35b2716cde7d4c91a24fc618a8d9cae90e213db3/docs/en/connectors/source/HugeGraph.md) for other limitations.
+When Source reads every label, omit `label` to read all labels of `label_type` (default `VERTEX`). It produces one output table per label. Bind each Sink mapping to its table with `sourceTable`, for example `sourceTable = "default.person"`; use the full table name shown in the Writer log for the exact value. Do not reuse the single-label configuration from this section. See the [HugeGraph Source documentation](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md) for other limitations.
 
 ## 6 Common configuration and troubleshooting
 
-The following table applies to the version pinned by this guide:
+The following table applies to the SeaTunnel 3.0+ version used by this guide:
 
 | Configuration | Purpose |
 | --- | --- |
@@ -422,21 +412,25 @@ The following table applies to the version pinned by this guide:
 
 Use these checks when a job fails:
 
-- **`mappings` is unknown or HugeGraph Source is missing:** Check that you did not use a 2.3.13 distribution or an old plugin.
+- **`mappings` is unknown or HugeGraph Source is missing:** Check that the engine and HugeGraph connector come from the same SeaTunnel 3.0+ build.
 - **Connection failure:** Check the host, port, graph space, authentication details, and whether the SeaTunnel runtime can reach the service.
 - **Schema incompatibility:** Check the ID strategy, property types, and edge endpoints. Automatic creation does not change an existing `PRIMARY_KEY` label into `CUSTOMIZE_STRING`.
 - **Small Kafka batches do not appear promptly:** Confirm that the job uses Zeta and set `sink.flush.interval` in `env`. In this version, `batch_interval_ms` is retained only for compatibility and cannot replace it.
 
 ## 7 Choosing a tool
 
-Choose a tool based on the work to complete. Use [Tools](/docs/quickstart/toolchain/hugegraph-tools/) for graph management, Gremlin, backup, or cloning. Use [Loader](/docs/quickstart/toolchain/hugegraph-loader/) for a direct graph import. Choose SeaTunnel when you need to reuse a Source, Transform, and Sink pipeline. For SeaTunnel graph reads and migrations, prepare the environment using the version pinned by this guide.
+Choose a tool based on the work to complete. Use [Tools](/docs/quickstart/toolchain/hugegraph-tools/) for graph management, Gremlin, backup, or cloning. Use [Loader](/docs/quickstart/toolchain/hugegraph-loader/) for a direct graph import. Choose SeaTunnel when you need to reuse a Source, Transform, and Sink pipeline. For SeaTunnel graph reads and migrations, prepare the environment using the SeaTunnel 3.0+ version used by this guide.
 
 [![Choosing a tool: Tools for graph management, Loader for direct imports, and SeaTunnel for reusable data pipelines](/docs/images/seatunnel/seatunnel-tool-choice-en.png)](/docs/images/seatunnel/seatunnel-tool-choice-en.png)
 
 ## 8 References
 
-- [HugeGraph Sink](https://github.com/apache/seatunnel/blob/35b2716cde7d4c91a24fc618a8d9cae90e213db3/docs/en/connectors/sink/HugeGraph.md)
-- [HugeGraph Source](https://github.com/apache/seatunnel/blob/35b2716cde7d4c91a24fc618a8d9cae90e213db3/docs/en/connectors/source/HugeGraph.md)
-- [JDBC Source](https://github.com/apache/seatunnel/blob/35b2716cde7d4c91a24fc618a8d9cae90e213db3/docs/en/connectors/source/Jdbc.md)
-- [Kafka Source](https://github.com/apache/seatunnel/blob/35b2716cde7d4c91a24fc618a8d9cae90e213db3/docs/en/connectors/source/Kafka.md)
+- [HugeGraph Sink](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/sink/HugeGraph.md)
+- [HugeGraph Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md)
+- [JDBC Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Jdbc.md)
+- [Kafka Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Kafka.md)
 - [SeaTunnel local deployment](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
+
+## 9 Legacy version note
+
+This guide targets SeaTunnel 3.0+. Its Source, `mappings`, and graph migration examples do not apply to 2.3.13. That legacy version provides only the HugeGraph Sink, uses `schema_config`, and requires the graph schema to be created in advance. If you must use 2.3.13, follow the [official Sink documentation](https://github.com/apache/seatunnel/blob/2.3.13/docs/en/connectors/sink/HugeGraph.md) instead of copying this guide's configuration.

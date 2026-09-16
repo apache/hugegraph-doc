@@ -12,7 +12,7 @@ weight: 3
 ## 使用场景
 
 当要批量插入的图数据（包括顶点和边）条数为 billion 级别及以下，或者总数据量小于 TB 时，
-可以采用 [HugeGraph-Loader](/cn/docs/quickstart/toolchain/hugegraph-loader) 工具持续、高速导入图数据
+可以采用 [HugeGraph-Loader](/cn/docs/quickstart/toolchain/import/hugegraph-loader) 工具持续、高速导入图数据
 
 ## 性能
 

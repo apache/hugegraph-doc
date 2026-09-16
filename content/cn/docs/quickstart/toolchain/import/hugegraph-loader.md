@@ -2,6 +2,8 @@
 title: "HugeGraph-Loader Quick Start"
 linkTitle: "使用 Loader 实时/流式导入数据"
 weight: 2
+aliases:
+  - /docs/quickstart/toolchain/hugegraph-loader/
 ---
 
 ### 1 HugeGraph-Loader 概述

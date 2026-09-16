@@ -26,7 +26,7 @@ Restore 有两种模式：
 
 ## 使用方法
 
-可以使用[hugegraph-tools](/cn/docs/quickstart/toolchain/hugegraph-tools)进行图的备份和恢复。
+可以使用[hugegraph-tools](/cn/docs/quickstart/toolchain/export-migration/hugegraph-tools)进行图的备份和恢复。
 
 #### Backup
 
@@ -72,7 +72,7 @@ bin/hugegraph graph-mode-set -m NONE
 
 #### 帮助
 
-备份和恢复命令的详细使用方式可以参考[hugegraph-tools文档](/cn/docs/quickstart/toolchain/hugegraph-tools)。
+备份和恢复命令的详细使用方式可以参考[hugegraph-tools文档](/cn/docs/quickstart/toolchain/export-migration/hugegraph-tools)。
 
 ## Backup/Restore使用和实现的API说明
 

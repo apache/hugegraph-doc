@@ -2,6 +2,8 @@
 title: "HugeGraph-Hubble Quick Start"
 linkTitle: "使用 Hubble 实现图可视化"
 weight: 1
+aliases:
+  - /docs/quickstart/toolchain/hugegraph-hubble/
 ---
 
 ### 1 HugeGraph-Hubble 概述
@@ -26,7 +28,7 @@ HugeGraph-Hubble 是 HugeGraph 的 Web 管理界面。它连接到一个 HugeGra
 
 ##### 数据导入
 
-> 数据导入页面适合小规模试用。大批量或生产导入请使用 [HugeGraph Loader](/cn/docs/quickstart/toolchain/hugegraph-loader)。
+> 数据导入页面适合小规模试用。大批量或生产导入请使用 [HugeGraph Loader](/cn/docs/quickstart/toolchain/import/hugegraph-loader)。
 
 数据源支持 FILE、HDFS、JDBC 和 KAFKA 四种类型。导入任务分四步配置，可以执行一次、按 cron 周期执行，或对 Kafka 源持续实时执行。
 
@@ -323,7 +325,7 @@ bin/start-hubble.sh -d
 
 #### 4.3	数据导入
 
-> **注意**：目前推荐使用 [hugegraph-loader](/cn/docs/quickstart/toolchain/hugegraph-loader) 进行正式数据导入，hubble 内置的导入用来做**测试**和**简单上手**
+> **注意**：目前推荐使用 [hugegraph-loader](/cn/docs/quickstart/toolchain/import/hugegraph-loader) 进行正式数据导入，hubble 内置的导入用来做**测试**和**简单上手**
 
 数据导入的使用流程如下：
 

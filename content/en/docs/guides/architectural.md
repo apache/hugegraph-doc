@@ -17,9 +17,9 @@ Below is the overall architecture diagram of HugeGraph:
 HugeGraph consists of three layers of functionality: the application layer, the graph engine layer, and the storage layer.
 
 - Application Layer:
-  - [Hubble](/docs/quickstart/toolchain/hugegraph-hubble): A one-stop visual analysis platform that covers the entire process from data modeling to rapid data import, online and offline analysis, and unified graph management, realizing wizard-style operations for the entire graph application process.
-  - [Loader](/docs/quickstart/toolchain/hugegraph-loader): A data import component that can transform data from multiple data sources into graph vertices and edges and batch import them into the graph database.
-  - [Tools](/docs/quickstart/toolchain/hugegraph-tools): Command-line tools for deploying, managing, and backing up/restoring data in HugeGraph.
+  - [Hubble](/docs/quickstart/toolchain/visualization/hugegraph-hubble): A one-stop visual analysis platform that covers the entire process from data modeling to rapid data import, online and offline analysis, and unified graph management, realizing wizard-style operations for the entire graph application process.
+  - [Loader](/docs/quickstart/toolchain/import/hugegraph-loader): A data import component that can transform data from multiple data sources into graph vertices and edges and batch import them into the graph database.
+  - [Tools](/docs/quickstart/toolchain/export-migration/hugegraph-tools): Command-line tools for deploying, managing, and backing up/restoring data in HugeGraph.
   - [Computer](/docs/quickstart/computing/hugegraph-computer): A distributed graph processing system (OLAP), which is an implementation of [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf) and can run on Kubernetes.
   - [Client](/docs/quickstart/client/hugegraph-client): Client SDKs encapsulate the core operations for connecting to HugeGraph Server, managing schemas, reading and writing graph data, and running queries. HugeGraph currently provides [Java](/docs/quickstart/client/hugegraph-client/), [Python](/docs/quickstart/client/hugegraph-client-python/), and [Go](/docs/quickstart/client/hugegraph-client-go/) clients, while a Rust client is under development.
 - [Graph Engine Layer](/docs/quickstart/hugegraph/hugegraph-server):

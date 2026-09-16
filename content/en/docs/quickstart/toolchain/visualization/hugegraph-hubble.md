@@ -2,6 +2,8 @@
 title: "HugeGraph-Hubble Quick Start"
 linkTitle: "Visual with HugeGraph-Hubble"
 weight: 1
+aliases:
+  - /docs/quickstart/toolchain/hugegraph-hubble/
 ---
 
 ### 1 HugeGraph-Hubble Overview
@@ -26,7 +28,7 @@ Metadata Modeling manages PropertyKeys, VertexLabels, EdgeLabels and IndexLabels
 
 ##### Data Import
 
-> The data import page is intended for small-scale trials. For bulk or production imports, use [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader).
+> The data import page is intended for small-scale trials. For bulk or production imports, use [HugeGraph Loader](/docs/quickstart/toolchain/import/hugegraph-loader).
 
 Data Sources register FILE, HDFS, JDBC and KAFKA sources. Import tasks are configured in four steps and can run once, on a cron schedule, or continuously for Kafka.
 
@@ -319,7 +321,7 @@ Displays vertex and edge indexes for vertex types and edge types. Secondary, ran
 
 #### 4.3 Data Import
 
-> **Note**: currently, we recommend to use [hugegraph-loader](/docs/quickstart/toolchain/hugegraph-loader) to import data formally. The built-in import of `hubble` is used for **testing** and **getting started**.
+> **Note**: currently, we recommend to use [hugegraph-loader](/docs/quickstart/toolchain/import/hugegraph-loader) to import data formally. The built-in import of `hubble` is used for **testing** and **getting started**.
 
 The usage process of data import is as follows:
 

@@ -2,6 +2,8 @@
 title: "HugeGraph-Loader Quick Start"
 linkTitle: "Load data with HugeGraph-Loader"
 weight: 2
+aliases:
+  - /docs/quickstart/toolchain/hugegraph-loader/
 ---
 
 ### 1 HugeGraph-Loader Overview

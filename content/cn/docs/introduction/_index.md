@@ -63,11 +63,11 @@ HugeGraph Toolchain 提供客户端、数据导入、可视化管理、Spark 集
 | 模块 | 用途 |
 |---|---|
 | [Client](/cn/docs/quickstart/client/hugegraph-client/) | 封装 Schema 管理、图数据读写、Gremlin 和 Traverser API；支持 Java、[Python](/cn/docs/quickstart/client/hugegraph-client-python/) 和 [Go](/cn/docs/quickstart/client/hugegraph-client-go/)，Rust 客户端正在开发中 |
-| [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) | 从本地文件、HDFS、JDBC、Kafka 或其他图读取数据，转换为顶点和边后批量导入 HugeGraph |
-| [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) | 提供图连接、Schema、数据导入、Gremlin 查询和图形化结果展示的 Web 管理界面 |
-| [Spark Connector](/cn/docs/quickstart/toolchain/hugegraph-spark-connector/) | 在 Spark 作业中批量读写 HugeGraph，适合大数据离线处理 |
+| [Loader](/cn/docs/quickstart/toolchain/import/hugegraph-loader/) | 从本地文件、HDFS、JDBC、Kafka 或其他图读取数据，转换为顶点和边后批量导入 HugeGraph |
+| [Hubble](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble/) | 提供图连接、Schema、数据导入、Gremlin 查询和图形化结果展示的 Web 管理界面 |
+| [Spark Connector](/cn/docs/quickstart/toolchain/import/hugegraph-spark-connector/) | 在 Spark 作业中批量读写 HugeGraph，适合大数据离线处理 |
 | [SeaTunnel Connector](/cn/docs/quickstart/toolchain/hugegraph-seatunnel-connector/) | 通过 SeaTunnel 3.0+ 的 Source 和 Sink 导入或迁移图数据 |
-| [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/) | 提供部署、图管理、备份恢复和 Gremlin 执行等命令行能力 |
+| [Tools](/cn/docs/quickstart/toolchain/export-migration/hugegraph-tools/) | 提供部署、图管理、备份恢复和 Gremlin 执行等命令行能力 |
 
 ## 图计算引擎（OLAP）
 
@@ -106,8 +106,8 @@ HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库�
 | 需求 | 文档 |
 |---|---|
 | 启动图数据库并执行查询 | [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/) |
-| 批量导入数据 | [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) |
-| 使用 Web 界面管理图 | [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) |
+| 批量导入数据 | [Loader](/cn/docs/quickstart/toolchain/import/hugegraph-loader/) |
+| 使用 Web 界面管理图 | [Hubble](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble/) |
 | 运行图算法 | [Vermeer 与 Computer](/cn/docs/quickstart/computing/) |
 | 构建 GraphRAG 或图机器学习应用 | [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/) |
 

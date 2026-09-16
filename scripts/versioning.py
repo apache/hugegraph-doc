@@ -112,14 +112,14 @@ DOCS_NAV_EXPECTED_STATS = {
         "pages": 85,
         "removed": 5,
         "scopedLinks": 10,
-        "treeSha256": "78abae8934d1245bd9b18754547d23a328506b22db4a1e6e8e9e38e94818df57",
+        "treeSha256": "584396f3ff09a3f0ab0574efd248c0af00c9e57fe3cdd80fb54140117dcd603d",
     },
     "1.5": {
         "groups": 5,
         "pages": 77,
         "removed": 13,
         "scopedLinks": 10,
-        "treeSha256": "70b2a46f047b3c88a6b1b937eb79676a7f68437485b3248e5f84b9c621d5ad06",
+        "treeSha256": "d6cdcfbdf2cd77a3eefd7c760b56b7f580684a2f77381a3664927b503a47da39",
     },
 }
 

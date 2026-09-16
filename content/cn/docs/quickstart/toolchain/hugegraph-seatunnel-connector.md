@@ -30,7 +30,7 @@ SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph，也可以在
 
 ### 2.1 获取 SeaTunnel 3.0+
 
-SeaTunnel 3.0+ 官方开发文档列出 JDK 8 和 JDK 11；本文统一使用 JDK 11，并设置 `JAVA_HOME`。从 [SeaTunnel 3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) 获取源码，按上游[开发环境文档](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/developer/setup.md)构建发行包：
+SeaTunnel 3.0+ 官方开发文档列出 JDK 8 和 JDK 11，JDK 17 不是最低要求；本文统一使用 JDK 11，并设置 `JAVA_HOME`。从 [SeaTunnel 3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) 获取源码，按上游[开发环境文档](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/developer/setup.md)构建发行包：
 
 ```bash
 git clone --branch 3.0.0-release https://github.com/apache/seatunnel.git

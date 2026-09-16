@@ -30,7 +30,7 @@ For new SeaTunnel jobs, use [3.0+](https://github.com/apache/seatunnel/tree/3.0.
 
 ### 2.1 Get SeaTunnel 3.0+
 
-The SeaTunnel 3.0+ setup guide lists JDK 8 and JDK 11 as supported. This guide uses JDK 11 and sets `JAVA_HOME`. Clone the [SeaTunnel 3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) branch and build a distribution by following the upstream [development setup guide](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/developer/setup.md):
+The SeaTunnel 3.0+ setup guide lists JDK 8 and JDK 11 as supported; JDK 17 is not the minimum requirement. This guide uses JDK 11 and sets `JAVA_HOME`. Clone the [SeaTunnel 3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) branch and build a distribution by following the upstream [development setup guide](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/developer/setup.md):
 
 ```bash
 git clone --branch 3.0.0-release https://github.com/apache/seatunnel.git

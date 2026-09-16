@@ -686,6 +686,31 @@ def materialize_docs_navigation(
     scoped_links = scope_docs_nav_group_links(assembly, publish_path)
 
     routes = docs_content_routes(assembly, "en") & docs_content_routes(assembly, "cn")
+    groups_for_materialization = groups
+    # Releases before the ToolChain regrouping still store these pages at the
+    # flat paths. Keep their sidebar populated with the historical layout
+    # instead of dropping the entire ToolChain branch when building archives.
+    regrouped_toolchain = (
+        "/docs/quickstart/toolchain/visualization" in routes
+        and "/docs/quickstart/toolchain/import" in routes
+        and "/docs/quickstart/toolchain/export-migration" in routes
+    )
+    if not regrouped_toolchain:
+        groups_for_materialization = json.loads(json.dumps(groups))
+        for group in groups_for_materialization:
+            if group.get("id") != "components":
+                continue
+            for node in group.get("children", []):
+                if node.get("page") == "/docs/quickstart/toolchain":
+                    node["children"] = [
+                        {"page": "/docs/quickstart/toolchain/hugegraph-hubble"},
+                        {"page": "/docs/quickstart/toolchain/hugegraph-loader"},
+                        {
+                            "page": "/docs/quickstart/toolchain/hugegraph-spark-connector"
+                        },
+                        {"page": "/docs/quickstart/toolchain/hugegraph-tools"},
+                    ]
+                    break
     seen_pages: set[str] = set()
     removed = 0
 
@@ -714,7 +739,7 @@ def materialize_docs_navigation(
             **({"group": node["id"]} if group else {}),
         }
 
-    sections = [adapt(group, group=True) for group in groups]
+    sections = [adapt(group, group=True) for group in groups_for_materialization]
     if any(section is None for section in sections):
         fail("one or more Docs navigation group pages are missing")
 

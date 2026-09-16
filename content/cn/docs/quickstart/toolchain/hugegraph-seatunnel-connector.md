@@ -6,7 +6,7 @@ weight: 5
 
 SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph，也可以在两张 HugeGraph 图之间迁移顶点和边。连接器分为两部分：**Source 负责读取，Sink 负责写入**，中间可以接 SeaTunnel 的数据转换组件。
 
-> **版本要求：本文面向 SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)。** 所有示例使用 `mappings`。
+> **版本要求：本文面向 SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)。** 所有示例使用 `mappings`
 
 [![Loader 与 SeaTunnel 的工作流对比：直接导入图数据与复用 Source、Transform、Sink 管道](/cn/docs/images/seatunnel/seatunnel-vs-loader-zh.png)](/cn/docs/images/seatunnel/seatunnel-vs-loader-zh.png)
 
@@ -395,7 +395,7 @@ sink {
 
 本例打开端点检查，并让写入错误直接导致任务失败。默认的 `check_vertex = false` 不保证最终一致：缺少端点可能产生悬空边，因此不能用任务成功代替迁移结果检查。
 
-> **为什么保留 ID？** HugeGraph 的 `PRIMARY_KEY` ID 包含顶点标签的内部 ID，两张图可能不同。例如源图顶点是 `1:marko`，目标图重新按主键生成的可能是 `2:marko`。如果重新生成顶点 ID 后仍复用源图的边端点，边就会连错。本例将原 ID 保存为字符串，因此会改变目标图的 ID 策略。
+> **为什么保留 ID？** HugeGraph 的 `PRIMARY_KEY` ID 包含顶点标签的内部 ID，两张图可能不同。例如源图顶点是 `1:marko`，目标图重新按主键生成的可能是 `2:marko`。如果重新生成顶点 ID 后仍复用源图的边端点，边就会连错。本例将原 ID 保存为字符串，因此会改变目标图的 ID 策略
 
 若要一次读取全部标签，省略 Source 的 `label` 后会读取 `label_type`（默认 `VERTEX`）下的全部 label，每个 label 输出一张表。这时需用 `sourceTable` 将各 Sink 映射绑定到对应表，例如 `sourceTable = "default.person"`；具体值以 Writer 日志中的完整表名为准。不能直接套用本节的单标签配置。其他限制见 [HugeGraph Source 文档](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md)。
 

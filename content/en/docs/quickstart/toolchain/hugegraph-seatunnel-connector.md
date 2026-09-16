@@ -6,7 +6,7 @@ weight: 5
 
 SeaTunnel connects data sources such as databases and Kafka to HugeGraph. It can also migrate vertices and edges between two HugeGraph graphs. The connector has two parts: **Source reads data and Sink writes data**, with SeaTunnel transform components available between them.
 
-> **Version requirement: This guide targets SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release).** All examples use `mappings`.
+> **Version requirement: This guide targets SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release).** All examples use `mappings`
 
 [![Loader imports data directly with graph mappings; SeaTunnel 3.0+ combines Source, Transform, and Sink, and both support JDBC, Kafka, and graph data](/docs/images/seatunnel/seatunnel-vs-loader-en.png)](/docs/images/seatunnel/seatunnel-vs-loader-en.png)
 
@@ -395,7 +395,7 @@ sink {
 
 This example checks endpoints and makes write errors fail the job. The default `check_vertex = false` does not guarantee a consistent result: a missing endpoint can create a dangling edge, so a successful job is not a substitute for checking the migrated graph.
 
-> **Why preserve IDs?** A HugeGraph `PRIMARY_KEY` ID contains the internal ID of the vertex label, and that internal ID can differ between graphs. For example, a source vertex can be `1:marko`, while regenerating the primary key in the target graph can produce `2:marko`. Reusing the source edge endpoints after regenerating vertex IDs can connect edges to the wrong vertices. This example stores the original ID as a string, which changes the target graph's ID strategy.
+> **Why preserve IDs?** A HugeGraph `PRIMARY_KEY` ID contains the internal ID of the vertex label, and that internal ID can differ between graphs. For example, a source vertex can be `1:marko`, while regenerating the primary key in the target graph can produce `2:marko`. Reusing the source edge endpoints after regenerating vertex IDs can connect edges to the wrong vertices. This example stores the original ID as a string, which changes the target graph's ID strategy
 
 When Source reads every label, omit `label` to read all labels of `label_type` (default `VERTEX`). It produces one output table per label. Bind each Sink mapping to its table with `sourceTable`, for example `sourceTable = "default.person"`; use the full table name shown in the Writer log for the exact value. Do not reuse the single-label configuration from this section. See the [HugeGraph Source documentation](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md) for other limitations.
 

@@ -413,7 +413,8 @@ The following table applies to the SeaTunnel 3.0+ version used by this guide:
 | `batch_size` | Number of records per batch; default 500 |
 | `env.sink.flush.interval` | Zeta scheduled flush interval in milliseconds |
 | `check_vertex` | Check edge endpoints; the edge job in this guide sets it to `true` |
-| `batch_failure_fallback` | Default `false`, so a batch failure fails the job; set `true` to retry records one by one and allow failed records to be skipped |
+| `batch_failure_fallback` | Default `false`, so a batch failure fails the job; set `true` to retry records one by one, with skips capped by `max_insert_errors` |
+| `max_insert_errors` | Number of failed records that one-by-one fallback may skip; default `0` (skip none), `-1` for unlimited |
 
 Use these checks when a job fails:
 

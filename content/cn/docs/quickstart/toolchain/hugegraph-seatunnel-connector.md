@@ -413,7 +413,8 @@ sink {
 | `batch_size` | 单批记录数，默认 500 |
 | `env.sink.flush.interval` | Zeta 定时刷新间隔，单位毫秒 |
 | `check_vertex` | 写边时检查端点，本文的边任务设为 `true` |
-| `batch_failure_fallback` | 默认 `false`，批量失败会使任务失败；设为 `true` 才启用逐条回退并允许跳过失败记录 |
+| `batch_failure_fallback` | 默认 `false`，批量失败会使任务失败；设为 `true` 后逐条重试，最多跳过 `max_insert_errors` 条失败记录 |
+| `max_insert_errors` | 逐条回退时允许跳过的失败记录数；默认 `0`（不跳过），`-1` 表示不限制 |
 
 遇到问题时可按下面检查：
 

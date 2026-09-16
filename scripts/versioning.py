@@ -105,7 +105,7 @@ DOCS_NAV_EXPECTED_STATS = {
         "pages": 90,
         "removed": 4,
         "scopedLinks": 0,
-        "treeSha256": "acaa1ffdb01aa392dd241c9fee55f1e71fbd63b37ab1253f467b35008d1b88ad",
+        "treeSha256": "ba41b61ef10a7eb4cad87047ee04810b90880cf8e2f8ce7d9e97085255dfa265",
     },
     "1.7": {
         "groups": 5,
@@ -698,35 +698,63 @@ def materialize_docs_navigation(
     regrouped_computing = (
         "/docs/quickstart/computing/hugegraph-computer/config" in routes
     )
-    if not regrouped_toolchain or not regrouped_computing:
+    regrouped_benchmark = (
+        "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4"
+        in routes
+    )
+    if not regrouped_toolchain or not regrouped_computing or not regrouped_benchmark:
         groups_for_materialization = json.loads(json.dumps(groups))
         for group in groups_for_materialization:
-            if group.get("id") != "components":
+            if group.get("id") == "components":
+                for node in group.get("children", []):
+                    if (
+                        node.get("page") == "/docs/quickstart/toolchain"
+                        and not regrouped_toolchain
+                    ):
+                        node["children"] = [
+                            {"page": "/docs/quickstart/toolchain/hugegraph-hubble"},
+                            {"page": "/docs/quickstart/toolchain/hugegraph-loader"},
+                            {
+                                "page": "/docs/quickstart/toolchain/hugegraph-spark-connector"
+                            },
+                            {"page": "/docs/quickstart/toolchain/hugegraph-tools"},
+                        ]
+                    if (
+                        node.get("page") == "/docs/quickstart/computing"
+                        and not regrouped_computing
+                    ):
+                        node["children"] = [
+                            {"page": "/docs/quickstart/computing/hugegraph-vermeer"},
+                            {"page": "/docs/quickstart/computing/hugegraph-computer"},
+                            {
+                                "page": "/docs/quickstart/computing/hugegraph-computer-config"
+                            },
+                        ]
+                continue
+            if group.get("id") != "operate" or regrouped_benchmark:
                 continue
             for node in group.get("children", []):
-                if (
-                    node.get("page") == "/docs/quickstart/toolchain"
-                    and not regrouped_toolchain
-                ):
-                    node["children"] = [
-                        {"page": "/docs/quickstart/toolchain/hugegraph-hubble"},
-                        {"page": "/docs/quickstart/toolchain/hugegraph-loader"},
-                        {
-                            "page": "/docs/quickstart/toolchain/hugegraph-spark-connector"
-                        },
-                        {"page": "/docs/quickstart/toolchain/hugegraph-tools"},
-                    ]
-                if (
-                    node.get("page") == "/docs/quickstart/computing"
-                    and not regrouped_computing
-                ):
-                    node["children"] = [
-                        {"page": "/docs/quickstart/computing/hugegraph-vermeer"},
-                        {"page": "/docs/quickstart/computing/hugegraph-computer"},
-                        {
-                            "page": "/docs/quickstart/computing/hugegraph-computer-config"
-                        },
-                    ]
+                if node.get("page") != "/docs/performance":
+                    continue
+                for index, child in enumerate(node.get("children", [])):
+                    if (
+                        child.get("page")
+                        == "/docs/performance/hugegraph-benchmark-0.5.6"
+                        and any(
+                            item.get("page")
+                            == "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4"
+                            for item in child.get("children", [])
+                        )
+                    ):
+                        node["children"][index : index + 1] = [
+                            {
+                                "page": "/docs/performance/hugegraph-benchmark-0.4.4"
+                            },
+                            {
+                                "page": "/docs/performance/hugegraph-benchmark-0.5.6"
+                            },
+                        ]
+                        break
     seen_pages: set[str] = set()
     removed = 0
 

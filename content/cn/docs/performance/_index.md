@@ -10,5 +10,4 @@ weight: 8
 
 当前可查阅的 benchmark 页面：
 
-- [HugeGraph 0.4.4 性能测试](hugegraph-benchmark-0.4.4/)：数据来自 2018 年，页面顶部已标注历史数据。
-- [HugeGraph 0.5.6 性能测试](hugegraph-benchmark-0.5.6/)：历史报告，等待按统一方法重新测试。
+- [HugeGraph 0.5.6 性能测试](hugegraph-benchmark-0.5.6/)：历史报告，等待按统一方法重新测试；其中收录 [HugeGraph 0.4.4 历史性能测试](hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4/)。

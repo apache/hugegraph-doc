@@ -280,10 +280,12 @@
               ]
             },
             {
-              "page": "/docs/performance/hugegraph-benchmark-0.4.4"
-            },
-            {
-              "page": "/docs/performance/hugegraph-benchmark-0.5.6"
+              "page": "/docs/performance/hugegraph-benchmark-0.5.6",
+              "children": [
+                {
+                  "page": "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4"
+                }
+              ]
             },
             {
               "page": "/docs/performance/hugegraph-loader-performance"
@@ -748,14 +750,15 @@
               ]
             },
             {
-              "page": "/docs/performance/hugegraph-benchmark-0.4.4",
-              "url": "/docs/performance/hugegraph-benchmark-0.4.4/",
-              "children": []
-            },
-            {
               "page": "/docs/performance/hugegraph-benchmark-0.5.6",
               "url": "/docs/performance/hugegraph-benchmark-0.5.6/",
-              "children": []
+              "children": [
+                {
+                  "page": "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4",
+                  "url": "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4/",
+                  "children": []
+                }
+              ]
             },
             {
               "page": "/docs/performance/hugegraph-loader-performance",
@@ -1218,15 +1221,16 @@
       "/docs/performance/api-performance/",
       "/docs/performance/api-performance/hugegraph-api-0.5.6-rocksdb/"
     ],
-    "/docs/performance/hugegraph-benchmark-0.4.4/": [
-      "@group/operate",
-      "/docs/performance/",
-      "/docs/performance/hugegraph-benchmark-0.4.4/"
-    ],
     "/docs/performance/hugegraph-benchmark-0.5.6/": [
       "@group/operate",
       "/docs/performance/",
       "/docs/performance/hugegraph-benchmark-0.5.6/"
+    ],
+    "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4/": [
+      "@group/operate",
+      "/docs/performance/",
+      "/docs/performance/hugegraph-benchmark-0.5.6/",
+      "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4/"
     ],
     "/docs/performance/hugegraph-loader-performance/": [
       "@group/operate",
@@ -1388,13 +1392,15 @@
     ],
     "/docs/performance/": [
       "/docs/performance/api-performance",
-      "/docs/performance/hugegraph-benchmark-0.4.4",
       "/docs/performance/hugegraph-benchmark-0.5.6",
       "/docs/performance/hugegraph-loader-performance"
     ],
     "/docs/performance/api-performance/": [
       "/docs/performance/api-performance/hugegraph-api-0.5.6-cassandra",
       "/docs/performance/api-performance/hugegraph-api-0.5.6-rocksdb"
+    ],
+    "/docs/performance/hugegraph-benchmark-0.5.6/": [
+      "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4"
     ],
     "/docs/changelog/": [
       "/docs/changelog/hugegraph-1.0.0-release-notes",

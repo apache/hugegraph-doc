@@ -377,6 +377,8 @@ class VersionUrlTest(unittest.TestCase):
                 "/docs/performance",
                 "/docs/performance/api-preformance",
                 "/docs/performance/api-preformance/hugegraph-api-0.2",
+                "/docs/performance/hugegraph-benchmark-0.4.4",
+                "/docs/performance/hugegraph-benchmark-0.5.6",
                 "/docs/changelog",
                 "/docs/changelog/hugegraph-1.5.0-release-notes",
             )
@@ -408,6 +410,12 @@ class VersionUrlTest(unittest.TestCase):
             all_pages = list(_walk_docs_nav_pages(nav["sections"]))
             self.assertIn("/docs/introduction/readme", all_pages)
             self.assertIn("/docs/performance/api-preformance", all_pages)
+            self.assertIn("/docs/performance/hugegraph-benchmark-0.4.4", all_pages)
+            self.assertIn("/docs/performance/hugegraph-benchmark-0.5.6", all_pages)
+            self.assertNotIn(
+                "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4",
+                all_pages,
+            )
             self.assertIn(
                 "/docs/quickstart/computing/hugegraph-computer-config", all_pages
             )

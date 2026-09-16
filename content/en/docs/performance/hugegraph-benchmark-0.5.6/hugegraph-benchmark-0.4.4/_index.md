@@ -1,14 +1,16 @@
 ---
-title: "HugeGraph 0.4.4 性能测试"
-linkTitle: "HugeGraph 0.4.4 性能测试"
+title: "HugeGraph 0.4.4 Benchmark"
+linkTitle: "HugeGraph 0.4.4 Benchmark"
 weight: 100
+aliases:
+  - /docs/performance/hugegraph-benchmark-0.4.4/
 ---
 
-> ⚠️ **历史数据，暂不作为当前版本性能依据**
+> ⚠️ **Historical data — do not use it to evaluate current releases**
 >
-> 本页面记录的是 HugeGraph 0.4.4 的性能测试，数据来自 2018 年。测试环境、软件版本和实现与当前版本差异很大，测试结果仅供历史参考，不能直接用于评估当前版本的性能。
+> This page records a HugeGraph 0.4.4 benchmark whose data was collected in 2018. The test environment, software versions, and implementation differ substantially from current releases, so these results are provided for historical reference only and must not be used to assess current performance.
 >
-> 后续将补充基于最新版本的性能测试报告，并归档本页面。当前版本的性能结论请以更新后的报告为准。
+> A benchmark report for a current release will be added later, after which this page will be archived. Use the updated report for current performance conclusions.
 
 ### 1 测试环境
 

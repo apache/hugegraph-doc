@@ -14,6 +14,8 @@ master 是负责通信、转发、汇总的节点，计算量和占用资源量�
 
 该框架的运行配置可以通过命令行参数传入，也可以通过位于 `config/` 目录下的配置文件指定，`--env` 参数可以指定使用哪个配置文件，例如 `--env=master` 指定使用 `master.ini`。需要注意 master 需要指定监听的端口号，worker 需要指定监听端口号和 master 的 `ip:port`。
 
+master 默认 HTTP 端口为 `6688`，用于 REST API 和 Python 客户端；worker 连接 master 使用 gRPC 端口 `6689`。下面的 Docker 示例通过 `6688:6688` 发布 HTTP 端口，请保留 master 配置中的 `http_peer=0.0.0.0:6688`。
+
 ### 1.2 运行方法
 
 1. **方案一：Docker Compose（推荐）**
@@ -25,6 +27,8 @@ services:
   vermeer-master:
     image: hugegraph/vermeer
     container_name: vermeer-master
+    ports:
+      - "6688:6688"
     volumes:
       - ~/.config:/go/bin/config # Change here to your actual config path
     command: --env=master
@@ -99,6 +103,7 @@ CONFIG_DIR=/home/user/config
 docker run -d \
   --name vermeer-master \
   --network vermeer_network --ip 172.20.0.10 \
+  -p 6688:6688 \
   -v ${CONFIG_DIR}:/go/bin/config \
   hugegraph/vermeer \
   --env=master
@@ -138,6 +143,14 @@ go build
 
 在进入文件夹目录后输入 `./vermeer --env=master` 或 `./vermeer --env=worker01`
 
+启动 master 后，在宿主机验证 HTTP 端口：
+
+```shell
+curl --fail --show-error http://localhost:6688/graphs
+```
+
+请求应返回 HTTP 200，JSON 响应中的 `errcode` 为 `0`。
+
 ## 二、任务创建类 rest api
 
 ### 2.1 简介
@@ -162,7 +175,7 @@ vermeer提供三种加载方式：
 **request 示例：**
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "load",
  "graph": "testdb",
@@ -184,7 +197,7 @@ POST http://localhost:8688/tasks/create
 ⚠️ 安全警告：切勿在配置文件或代码中存储真实密码。请改用环境变量或安全的凭据管理系统。
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
   "task_type": "load",
   "graph": "testdb",
@@ -206,7 +219,7 @@ POST http://localhost:8688/tasks/create
 **request 示例：**
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
   "task_type": "load",
   "graph": "testdb",
@@ -237,7 +250,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -268,7 +281,7 @@ PageRank 算法适用于网页排序、社交网络重点人物发掘等场景�
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -290,7 +303,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -312,7 +325,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -334,7 +347,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -356,7 +369,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -378,7 +391,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -404,7 +417,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -425,7 +438,7 @@ K-Core 算法，标记所有度数为 K 的顶点，适用于图的剪枝，查�
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -447,7 +460,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -469,7 +482,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -494,7 +507,7 @@ Vermeer 上实现的分布式 Louvain 算法受节点顺序、并行计算等因
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -519,7 +532,7 @@ Jaccard index , 又称为 Jaccard 相似系数（Jaccard similarity coefficient�
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -544,7 +557,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -569,7 +582,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -592,7 +605,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -612,7 +625,7 @@ POST http://localhost:8688/tasks/create
 在有向图的数学理论中，如果一个图的每一个顶点都可从该图其他任意一点到达，则称该图是强连通的。在任意有向图中能够实现强连通的部分我们称其为强连通分量。它表明各个点之间的连通性，区分不同的连通社区。
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",

@@ -11,7 +11,7 @@ The module does not pin a Vermeer server version. It talks to the Vermeer master
 ## Requirements
 
 - Python 3.9 or later for the module on its own. The HugeGraph-AI repository as a whole requires Python 3.10 or later.
-- A running Vermeer master reachable over HTTP. The demo shipped with the module uses port `8688`.
+- A running Vermeer master reachable over HTTP on its default port `6688`. Docker deployments must publish `6688:6688`; see the [Vermeer quick start](../computing/hugegraph-vermeer.md).
 - `uv` (recommended) or `pip`
 
 Runtime dependencies: `requests`, `urllib3`, `python-dateutil`, `decorator`, `rich`, and `setuptools`.
@@ -47,7 +47,7 @@ from pyvermeer.client.client import PyVermeerClient
 
 client = PyVermeerClient(
     ip="127.0.0.1",
-    port=8688,
+    port=6688,
     token="",
     timeout=(0.5, 15.0),
     log_level="INFO",
@@ -83,7 +83,7 @@ import os
 from pyvermeer.client.client import PyVermeerClient
 from pyvermeer.structure.task_data import TaskCreateRequest
 
-client = PyVermeerClient(ip="127.0.0.1", port=8688, token="", log_level="INFO")
+client = PyVermeerClient(ip="127.0.0.1", port=6688, token="", log_level="INFO")
 
 # List the tasks the master knows about
 tasks = client.tasks.get_tasks()
@@ -117,7 +117,7 @@ print(client.graph.get_graph("DEFAULT-example").to_dict())
 
 Never hardcode a real HugeGraph password into a script or a configuration file. Read it from an environment variable or a credential store, as above.
 
-After installing the module you can also run the shipped demo as is:
+The bundled `task_demo.py` uses `8688`. Before running it, change the `PyVermeerClient` `port` to `6688` to match the default master HTTP port:
 
 ```bash
 python vermeer-python-client/src/pyvermeer/demo/task_demo.py

@@ -1,4 +1,4 @@
-# HugeGraph-Tools Quick Start
+# Tools Quick Start
 
 LLMS index: [llms.txt](/llms.txt)
 

@@ -1,4 +1,4 @@
-# HugeGraph-Tools Quick Start
+# Tools Quick Start
 
 LLMS 索引： [llms.txt](/cn/llms.txt)
 

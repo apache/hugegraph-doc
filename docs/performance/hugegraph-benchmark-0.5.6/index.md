@@ -11,6 +11,8 @@ LLMS index: [llms.txt](/llms.txt)
 > **autonomous distributed storage** and **enhanced computational push down capabilities**. Alternatively, 
 > you may wait for the community to update the data with these enhancements.
 
+The [HugeGraph 0.4.4 historical benchmark](/docs/performance/hugegraph-benchmark-0.4.4/) in this directory uses data collected in 2018 and is provided for historical reference only.
+
 ### 1 Test environment
 
 #### 1.1 Hardware information

@@ -94,7 +94,7 @@ algorithm.params_class=org.apache.hugegraph.computer.algorithm.centrality.pagera
 
 #### 3.1.4 Start master node
 
-> You can use `-c`  parameter specify the configuration file, more computer config please see:[Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config#computer-config-options)
+> You can use the `-c` parameter to specify the configuration file. For more computer configuration options, see [Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config/#computer-config-options)
 
 ```bash
 cd hugegraph-computer
@@ -168,9 +168,9 @@ hugegraph-computer-operator-etcd-28lm67jxk5                       1/1     Runnin
 
 #### 3.2.5 Submit a job
 
-> More computer crd please see: [Computer CRD](/docs/quickstart/computing/hugegraph-computer-config#hugegraph-computer-crd)
+> For more information about the computer CRD, see [Computer CRD](/docs/quickstart/computing/hugegraph-computer-config/#hugegraph-computer-crd)
 >
-> More computer config please see: [Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config#computer-config-options)
+> For more computer configuration options, see [Computer Config Options](/docs/quickstart/computing/hugegraph-computer-config/#computer-config-options)
 
 **Basic Example:**
 

@@ -143,10 +143,18 @@ A load task succeeds with state `loaded`; `error` or `canceled` stops the exampl
 
 Never hardcode a real HugeGraph password into a script or a configuration file. Read it from an environment variable or a credential store, as above.
 
-The bundled `task_demo.py` uses `8688`. Before running it, change the `PyVermeerClient` `port` to `6688` to match the default master HTTP port:
+The bundled `task_demo.py` uses `8688`. Before running it, change the `PyVermeerClient` `port` to `6688` to match the default master HTTP port. Use the command corresponding to your installation directory:
+
+**Repository-root installation** (from `hugegraph-ai/`):
 
 ```bash
 python vermeer-python-client/src/pyvermeer/demo/task_demo.py
+```
+
+**Standalone installation** (from `hugegraph-ai/vermeer-python-client/`):
+
+```bash
+python src/pyvermeer/demo/task_demo.py
 ```
 
 ## API Surface

@@ -18,6 +18,15 @@ master 默认 HTTP 端口为 `6688`，用于 REST API 和 Python 客户端；wor
 
 ### 1.2 运行方法
 
+下面两种 Docker 启动方式都需要先准备一个宿主机配置目录，包含项目提供的 `master.ini` 和 `worker.ini`。在 `worker.ini` 已有的 `[default]` 节中修改 `master_peer`，保留其余配置：
+
+```ini
+[default]
+master_peer=vermeer-master:6689
+```
+
+在 worker 容器内，默认的 `127.0.0.1:6689` 指向 worker 自身。两个示例中的 `vermeer-master` 都会在共享 Docker 网络内解析到 master 容器。请保留 `master.ini` 中的 `grpc_peer=0.0.0.0:6689`，并将上述配置目录挂载到两个容器的 `/go/bin/config`。仅发布 HTTP 端口 `6688` 不会配置 worker 的 gRPC 连接。
+
 1. **方案一：Docker Compose（推荐）**
 
 确保docker-compose.yaml存在于您的项目根目录中。如果没有，以下是一个示例：
@@ -40,7 +49,7 @@ services:
     image: hugegraph/vermeer
     container_name: vermeer-worker
     volumes:
-      - ~/:/go/bin/config # Change here to your actual config path
+      - ~/.config:/go/bin/config # Change here to your actual config path
     command: --env=worker
     networks:
       vermeer_network:
@@ -55,7 +64,7 @@ networks:
 ```
 
 修改 docker-compose.yaml
-- **Volume**：例如将两处 ~/:/go/bin/config 改为 /home/user/config:/go/bin/config（或您自己的配置目录）。
+- **Volume**：将两处 `~/.config:/go/bin/config` 改为 `/home/user/config:/go/bin/config`（或上面准备的配置目录）。
 - **Subnet**：根据实际情况修改子网IP。请注意，每个容器需要访问的端口在config文件中指定，具体请参照项目`config`文件夹下内容。
 
 在项目目录构建镜像并启动（或者先用 docker build 再 docker-compose up）
@@ -79,7 +88,7 @@ docker-compose down
 
 2. **方案二：通过 docker run 单独启动（手动创建网络并分配静态 IP）**
 
-确保CONFIG_DIR对Docker进程具有适当的读取/执行权限。
+将 `CONFIG_DIR` 设为上面准备的配置目录，其中 `worker.ini` 已设置 `master_peer=vermeer-master:6689`。确保该目录对 Docker 进程具有适当的读取/执行权限。
 
 构建镜像：
 

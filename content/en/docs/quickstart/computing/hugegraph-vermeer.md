@@ -18,6 +18,15 @@ The default master HTTP port is `6688` for REST API and Python clients. Workers 
 
 ### 1.2 Running Method
 
+For both Docker options below, prepare a host configuration directory containing the provided `master.ini` and `worker.ini` files. In the existing `[default]` section of `worker.ini`, change `master_peer` as follows, keeping the other settings:
+
+```ini
+[default]
+master_peer=vermeer-master:6689
+```
+
+Inside the worker container, the shipped `127.0.0.1:6689` points to the worker itself. `vermeer-master` resolves to the master container on the shared Docker network in both examples. Keep `grpc_peer=0.0.0.0:6689` in `master.ini`, and mount this configuration directory at `/go/bin/config` in both containers. Publishing HTTP port `6688` alone does not configure the worker's gRPC connection.
+
 1.  **Option 1: Docker Compose (Recommended)**
 
 Please ensure that `docker-compose.yaml` exists in your project root directory. If it doesn't, here is an example:
@@ -40,7 +49,7 @@ services:
     image: hugegraph/vermeer
     container_name: vermeer-worker
     volumes:
-      - ~/:/go/bin/config # Change here to your actual config path
+      - ~/.config:/go/bin/config # Change here to your actual config path
     command: --env=worker
     networks:
       vermeer_network:
@@ -56,7 +65,7 @@ networks:
 
 Modify `docker-compose.yaml`
 
-- **Volume**: For example, change both instances of `~/:/go/bin/config` to `/home/user/config:/go/bin/config` (or your own configuration directory).
+- **Volume**: Change both instances of `~/.config:/go/bin/config` to `/home/user/config:/go/bin/config` (or the configuration directory prepared above).
 - **Subnet**: Modify the subnet IP based on your actual situation. Note that the ports each container needs to access are specified in the config file. Please refer to the contents of the project's `config` folder for details.
 
 Build the Image and Start in the Project Directory (or `docker build` first, then `docker-compose up`)
@@ -80,7 +89,7 @@ docker-compose down
 
 2.  **Option 2: Start individually via `docker run` (Manually create network and assign static IP)**
 
-Ensure the CONFIG_DIR has proper read/execute permissions for the Docker process.
+Set `CONFIG_DIR` to the configuration directory prepared above, with `master_peer=vermeer-master:6689` in `worker.ini`. Ensure it has proper read/execute permissions for the Docker process.
 
 Build the image:
 

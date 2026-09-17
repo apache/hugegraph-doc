@@ -143,10 +143,18 @@ print(client.graph.get_graph("DEFAULT-example").to_dict())
 
 不要把真实的 HugeGraph 密码写死在脚本或配置文件中，请像上面这样从环境变量或凭据管理系统读取。
 
-模块自带的 `task_demo.py` 使用 `8688`。运行前，请将其中 `PyVermeerClient` 的 `port` 改为 `6688`，与默认 master HTTP 端口保持一致：
+模块自带的 `task_demo.py` 使用 `8688`。运行前，请将其中 `PyVermeerClient` 的 `port` 改为 `6688`，与默认 master HTTP 端口保持一致。根据安装后所在的目录选择对应命令：
+
+**仓库根目录安装**（在 `hugegraph-ai/` 下运行）：
 
 ```bash
 python vermeer-python-client/src/pyvermeer/demo/task_demo.py
+```
+
+**独立安装**（在 `hugegraph-ai/vermeer-python-client/` 下运行）：
+
+```bash
+python src/pyvermeer/demo/task_demo.py
 ```
 
 ## API 概览

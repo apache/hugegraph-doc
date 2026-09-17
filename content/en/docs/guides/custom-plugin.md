@@ -8,8 +8,8 @@ weight: 3
 
 1. HugeGraph is not only open source and open, but also simple and easy to use. General users can easily add plug-in extension functions without changing the source code.
 2. HugeGraph supports a variety of built-in storage backends, and also allows users to extend custom backends without changing the existing source code.
-3. HugeGraph supports full-text search. The full-text search function involves word segmentation in various languages. Currently, there are 8 built-in Chinese word 
-breakers, and it also allows users to expand custom word breakers without changing the existing source code.
+3. HugeGraph supports full-text search. The full-text search function involves word segmentation in various languages. Currently, there are 7 built-in word 
+breakers (ansj, hanlp, smartcn, jieba, jcseg, mmseg4j, ikanalyzer), and it also allows users to expand custom word breakers without changing the existing source code.
 
 ### Scalable dimension
 
@@ -23,7 +23,7 @@ Currently, the plug-in method provides extensions in the following dimensions:
 ### Plug-in implementation mechanism
 
 1. HugeGraph provides a plug-in interface HugeGraphPlugin, which supports plug-in through the Java SPI mechanism
-2. HugeGraph provides four extension registration functions: registerOptions(), registerBackend(), registerSerializer(),registerAnalyzer()
+2. HugeGraph provides four extension registration functions as static methods on HugeGraphPlugin: registerOptions(), registerBackend(), registerSerializer(), registerAnalyzer()
 3. The plug-in implementer implements the corresponding Options, Backend, Serializer or Analyzer interface
 4. The plug-in implementer implements register()the method of the HugeGraphPlugin interface, registers the specific 
 implementation class listed in the above point 3 in this method, and packs it into a jar package
@@ -85,13 +85,18 @@ public class RocksDBStoreProvider extends AbstractBackendStoreProvider {
     }
 
     @Override
-    protected BackendStore newSchemaStore(String store) {
-        return new RocksDBSchemaStore(this, this.database(), store);
+    protected BackendStore newSchemaStore(HugeConfig config, String store) {
+        return new RocksDBStore.RocksDBSchemaStore(this, this.database(), store);
     }
 
     @Override
-    protected BackendStore newGraphStore(String store) {
-        return new RocksDBGraphStore(this, this.database(), store);
+    protected BackendStore newGraphStore(HugeConfig config, String store) {
+        return new RocksDBStore.RocksDBGraphStore(this, this.database(), store);
+    }
+
+    @Override
+    protected BackendStore newSystemStore(HugeConfig config, String store) {
+        return new RocksDBStore.RocksDBSystemStore(this, this.database(), store);
     }
 
     @Override
@@ -100,8 +105,8 @@ public class RocksDBStoreProvider extends AbstractBackendStoreProvider {
     }
 
     @Override
-    public String version() {
-        return "1.0";
+    public String driverVersion() {
+        return "1.11";
     }
 }
 ```
@@ -113,41 +118,59 @@ The BackendStore interface is defined as follows:
 ```java
 public interface BackendStore {
     // Store name
-    public String store();
+    String store();
+
+    // Stored version
+    String storedVersion();
 
     // Database name
-    public String database();
+    String database();
 
     // Get the parent provider
-    public BackendStoreProvider provider();
+    BackendStoreProvider provider();
+
+    // Get the system schema store
+    SystemSchemaStore systemSchemaStore();
+
+    // Whether it is the storage of schema
+    boolean isSchemaStore();
 
     // Open/close database
-    public void open(HugeConfig config);
-    public void close();
+    void open(HugeConfig config);
+    void close();
+    boolean opened();
 
     // Initialize/clear database
-    public void init();
-    public void clear();
+    void init();
+    void clear(boolean clearSpace);
+    boolean initialized();
+
+    // Delete all data of database (keep table structure)
+    void truncate();
 
     // Add/delete data
-    public void mutate(BackendMutation mutation);
+    void mutate(BackendMutation mutation);
 
     // Query data
-    public Iterator<BackendEntry> query(Query query);
+    Iterator<BackendEntry> query(Query query);
+    Number queryNumber(Query query);
 
     // Transaction
-    public void beginTx();
-    public void commitTx();
-    public void rollbackTx();
+    void beginTx();
+    void commitTx();
+    void rollbackTx();
 
     // Get metadata by key
-    public <R> R metadata(HugeType type, String meta, Object[] args);
+    <R> R metadata(HugeType type, String meta, Object[] args);
 
     // Backend features
-    public BackendFeatures features();
+    BackendFeatures features();
 
-    // Generate an id for a specific type
-    public Id nextId(HugeType type);
+    // Increase next id for specific type
+    void increaseCounter(HugeType type, long increment);
+
+    // Get current counter for a specific type
+    long getCounter(HugeType type);
 }
 ```
  
@@ -158,27 +181,29 @@ The serializer must inherit the abstract class: `org.apache.hugegraph.backend.se
 
 ```java
 public interface GraphSerializer {
-    public BackendEntry writeVertex(HugeVertex vertex);
-    public BackendEntry writeVertexProperty(HugeVertexProperty<?> prop);
-    public HugeVertex readVertex(HugeGraph graph, BackendEntry entry);
-    public BackendEntry writeEdge(HugeEdge edge);
-    public BackendEntry writeEdgeProperty(HugeEdgeProperty<?> prop);
-    public HugeEdge readEdge(HugeGraph graph, BackendEntry entry);
-    public BackendEntry writeIndex(HugeIndex index);
-    public HugeIndex readIndex(HugeGraph graph, ConditionQuery query, BackendEntry entry);
-    public BackendEntry writeId(HugeType type, Id id);
-    public Query writeQuery(Query query);
+    BackendEntry writeVertex(HugeVertex vertex);
+    BackendEntry writeOlapVertex(HugeVertex vertex);
+    BackendEntry writeVertexProperty(HugeVertexProperty<?> prop);
+    HugeVertex readVertex(HugeGraph graph, BackendEntry entry);
+    BackendEntry writeEdge(HugeEdge edge);
+    BackendEntry writeEdgeProperty(HugeEdgeProperty<?> prop);
+    HugeEdge readEdge(HugeGraph graph, BackendEntry entry);
+    CIter<Edge> readEdges(HugeGraph graph, BackendEntry bytesEntry);
+    BackendEntry writeIndex(HugeIndex index);
+    HugeIndex readIndex(HugeGraph graph, ConditionQuery query, BackendEntry entry);
+    BackendEntry writeId(HugeType type, Id id);
+    Query writeQuery(Query query);
 }
 
 public interface SchemaSerializer {
-    public BackendEntry writeVertexLabel(VertexLabel vertexLabel);
-    public VertexLabel readVertexLabel(HugeGraph graph, BackendEntry entry);
-    public BackendEntry writeEdgeLabel(EdgeLabel edgeLabel);
-    public EdgeLabel readEdgeLabel(HugeGraph graph, BackendEntry entry);
-    public BackendEntry writePropertyKey(PropertyKey propertyKey);
-    public PropertyKey readPropertyKey(HugeGraph graph, BackendEntry entry);
-    public BackendEntry writeIndexLabel(IndexLabel indexLabel);
-    public IndexLabel readIndexLabel(HugeGraph graph, BackendEntry entry);
+    BackendEntry writeVertexLabel(VertexLabel vertexLabel);
+    VertexLabel readVertexLabel(HugeGraph graph, BackendEntry entry);
+    BackendEntry writeEdgeLabel(EdgeLabel edgeLabel);
+    EdgeLabel readEdgeLabel(HugeGraph graph, BackendEntry entry);
+    BackendEntry writePropertyKey(PropertyKey propertyKey);
+    PropertyKey readPropertyKey(HugeGraph graph, BackendEntry entry);
+    BackendEntry writeIndexLabel(IndexLabel indexLabel);
+    IndexLabel readIndexLabel(HugeGraph graph, BackendEntry entry);
 }
 ```
 
@@ -214,7 +239,7 @@ public class RocksDBOptions extends OptionHolder {
                     "rocksdb.data_path",
                     "The path for storing data of RocksDB.",
                     disallowEmpty(),
-                    "rocksdb-data"
+                    "rocksdb-data/data"
             );
 
     public static final ConfigOption<String> WAL_PATH =
@@ -222,7 +247,7 @@ public class RocksDBOptions extends OptionHolder {
                     "rocksdb.wal_path",
                     "The path for storing WAL of RocksDB.",
                     disallowEmpty(),
-                    "rocksdb-data"
+                    "rocksdb-data/wal"
             );
 
     public static final ConfigListOption<String> DATA_DISKS =
@@ -230,9 +255,13 @@ public class RocksDBOptions extends OptionHolder {
                     "rocksdb.data_disks",
                     false,
                     "The optimized disks for storing data of RocksDB. " +
-                    "The format of each element: `STORE/TABLE: /path/to/disk`." +
-                    "Allowed keys are [graph/vertex, graph/edge_out, graph/edge_in, " +
-                    "graph/secondary_index, graph/range_index]",
+                    "The format of each element: `STORE/TABLE: /path/disk`." +
+                    "Allowed keys are [g/vertex, g/edge_out, g/edge_in, " +
+                    "g/vertex_label_index, g/edge_label_index, " +
+                    "g/range_int_index, g/range_float_index, " +
+                    "g/range_long_index, g/range_double_index, " +
+                    "g/secondary_index, g/search_index, g/shard_index, " +
+                    "g/unique_index, g/olap]",
                     null,
                     String.class,
                     ImmutableList.of()
@@ -270,13 +299,13 @@ items defined above inside it. The interface `org.apache.hugegraph.plugin.HugeGr
 ```java
 public interface HugeGraphPlugin {
 
-    public String name();
+    String name();
 
-    public void register();
+    void register();
 
-    public String supportsMinVersion();
+    String supportsMinVersion();
 
-    public String supportsMaxVersion();
+    String supportsMaxVersion();
 }
 ```
  
@@ -303,6 +332,16 @@ public class DemoPlugin implements HugeGraphPlugin {
     @Override
     public void register() {
         HugeGraphPlugin.registerAnalyzer("demo", SpaceAnalyzer.class.getName());
+    }
+
+    @Override
+    public String supportsMinVersion() {
+        return "1.7.0";
+    }
+
+    @Override
+    public String supportsMaxVersion() {
+        return "1.8.0";
     }
 }
 ```

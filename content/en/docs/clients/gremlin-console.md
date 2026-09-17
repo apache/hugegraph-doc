@@ -109,41 +109,33 @@ serializer: {
 }
 ```
 
+If the Server runs in auth mode, add the credentials to the same file:
+
+```yaml
+username: admin
+password: pa
+```
+
+The `conf` directory also ships `remote-objects.yaml` and `gremlin-driver-settings.yaml`, which carry the same host, port, and serializer settings.
+
 ```groovy
 gremlin> :remote connect tinkerpop.server conf/remote.yaml
 ==>Configured localhost/127.0.0.1:8182
 ```
 
-After a successful connection, if the sample graph `example.groovy` is imported during the startup of HugeGraph-Server, you can directly perform queries in the console.
+Server-side graphs are bound under a graphspace-qualified name, so the graph `hugegraph` in graphspace `DEFAULT` is bound as `DEFAULT-hugegraph` and its traversal source as `__g_DEFAULT-hugegraph`. A bare `hugegraph` does not resolve on the Server, and `DEFAULT-hugegraph` is not a valid Groovy identifier, so a remote script reaches the traversal source through an alias. If the sample graph was preloaded when HugeGraph-Server started, a query looks like this:
 
 ```groovy
-gremlin> :> hugegraph.traversal().V()
-==>[id:2:lop,label:software,type:vertex,properties:[name:lop,lang:java,price:328]]
-==>[id:1:josh,label:person,type:vertex,properties:[name:josh,age:32,city:Beijing]]
-==>[id:1:marko,label:person,type:vertex,properties:[name:marko,age:29,city:Beijing]]
-==>[id:1:peter,label:person,type:vertex,properties:[name:peter,age:35,city:Shanghai]]
-==>[id:1:vadas,label:person,type:vertex,properties:[name:vadas,age:27,city:Hongkong]]
-==>[id:2:ripple,label:software,type:vertex,properties:[name:ripple,lang:java,price:199]]
-```
-
-> NOTE: In Client/Server mode, all operations related to the Server should be prefixed with `:> `. If not added, it indicates local console operations.
-
-You can also put multiple statements in a single string variable and send them to the Server at once:
-
-```groovy
-gremlin> script = """
-......1> graph = hugegraph;
-......2> g = graph.traversal();
-......3> g.V().toList().size();
-......4> """
-==>
-graph = hugegraph;
-g = graph.traversal();
-g.V().toList().size();
-
-gremlin> :> @script
+gremlin> import org.apache.tinkerpop.gremlin.driver.Cluster
+gremlin> cluster = Cluster.open('conf/remote.yaml')
+gremlin> client = cluster.connect().alias(['g': '__g_DEFAULT-hugegraph'])
+gremlin> client.submit('g.V().count()').all().get()[0].object
 ==>6
-gremlin> 
+gremlin> client.submit('g.V().toList().size()').all().get()[0].object
+==>6
+gremlin> client.close(); cluster.close()
 ```
+
+> NOTE: In Client/Server mode, all operations related to the Server should be prefixed with `:> `. If not added, it indicates local console operations. A `:> ` script carries no alias, so it can only use names the Server itself has bound.
 
 For more information on the use of Gremlin-Console, please refer to [Tinkerpop Official Website](http://tinkerpop.apache.org/docs/current/reference/)

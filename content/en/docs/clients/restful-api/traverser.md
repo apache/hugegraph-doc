@@ -35,10 +35,6 @@ The Traverser API supported by HugeGraph includes:
 - Paths API: It finds all paths between two vertices. There are two versions:
     - The basic version uses the GET method to find all paths between a given starting vertex and an ending vertex.
     - The advanced version uses the POST method to find all paths that meet certain conditions between a set of starting vertices and a set of ending vertices.
-### 3.2 Detailed Explanation of Traverser API
-
-In the following, we provide a detailed explanation of the Traverser API:
-
 - Customized Paths API: It traverses all paths that pass through a batch of vertices according to a specific pattern.
 - Template Path API: It specifies a starting point, an ending point, and the path information between them to find matching paths.
 - Crosspoints API: It finds the intersection (common ancestors or common descendants) between two vertices.
@@ -46,6 +42,10 @@ In the following, we provide a detailed explanation of the Traverser API:
 - Rings API: It finds the cyclic paths that can be reached from a starting vertex.
 - Rays API: It finds the paths from a starting vertex that reach the boundaries (i.e., paths without cycles).
 - Fusiform Similarity API: It finds the fusiform similar vertices to a given vertex.
+- Adamic-Adar API: It computes the Adamic-Adar index of two vertices.
+- Resource Allocation API: It computes the resource allocation index of two vertices.
+- Edge Existence API: It returns the edges that exist between two given vertices.
+- Count API: It counts the vertices reached after a series of traversal steps, without returning them.
 - Vertices API:
 	- Batch querying vertices by ID.
 	- Getting the partitions of vertices.
@@ -3050,3 +3050,213 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges/
 
 - Querying edges based on ID list, suitable for batch retrieval of edges.
 - Retrieving shard information and querying edges based on shards, useful for traversing all edges.
+
+#### 3.2.24 Adamic-Adar
+
+##### 3.2.24.1 Function Introduction
+
+Compute the [Adamic-Adar](https://en.wikipedia.org/wiki/Adamic/Adar_index) index of two vertices: the sum of the reciprocal of the logarithm of the degree of each common neighbor.
+
+###### Params
+
+- vertex: ID of one vertex, required.
+- other: ID of another vertex, required. It must differ from `vertex`.
+- direction: Direction in which the vertex expands outward (OUT, IN, BOTH). Optional, default is BOTH.
+- label: Edge type. Optional, default represents all edge labels.
+- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Optional, default is 10000.
+- limit: Maximum number of common neighbors taken into account. Optional, default is 10000000.
+
+##### 3.2.24.2 Usage Method
+
+###### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/adamicadar?vertex="1:marko"&other="1:josh"
+```
+
+###### Response Status
+
+```json
+200
+```
+
+###### Response Body
+
+Common neighbors with a degree of 0 are skipped, so the result is 0.0 when the two vertices share no neighbor.
+
+```json
+{
+    "adamic_adar": 0.9102392266268373
+}
+```
+
+##### 3.2.24.3 Use Cases
+
+Predict whether a link is likely to appear between two vertices, where rare common neighbors weigh more than popular ones.
+
+#### 3.2.25 Resource Allocation
+
+##### 3.2.25.1 Function Introduction
+
+Compute the resource allocation index of two vertices: the sum of the reciprocal of the degree of each common neighbor.
+
+###### Params
+
+- vertex: ID of one vertex, required.
+- other: ID of another vertex, required. It must differ from `vertex`.
+- direction: Direction in which the vertex expands outward (OUT, IN, BOTH). Optional, default is BOTH.
+- label: Edge type. Optional, default represents all edge labels.
+- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Optional, default is 10000.
+- limit: Maximum number of common neighbors taken into account. Optional, default is 10000000.
+
+##### 3.2.25.2 Usage Method
+
+###### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/resourceallocation?vertex="1:marko"&other="1:josh"
+```
+
+###### Response Status
+
+```json
+200
+```
+
+###### Response Body
+
+```json
+{
+    "resource_allocation": 0.3333333333333333
+}
+```
+
+##### 3.2.25.3 Use Cases
+
+Link prediction, as an alternative to Adamic-Adar with a stronger penalty on high-degree common neighbors.
+
+#### 3.2.26 Edge Existence
+
+##### 3.2.26.1 Function Introduction
+
+Return the edges that exist between a source vertex and a target vertex.
+
+###### Params
+
+- source: ID of the source vertex, required.
+- target: ID of the target vertex, required.
+- label: Edge type. Optional, default represents all edge labels.
+- sort_values: Value of the sort keys, required for edge labels of the `MULTIPLE` frequency to pick one of several parallel edges. Optional, default is an empty string.
+- limit: Maximum number of edges to be returned. Optional, default is 100.
+
+##### 3.2.26.2 Usage Method
+
+###### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/edgeexist?source="1:marko"&target="2:lop"
+```
+
+###### Response Status
+
+```json
+200
+```
+
+###### Response Body
+
+```json
+{
+    "edges":[
+        {
+            "id":"S1:marko>2>>S2:lop",
+            "label":"created",
+            "type":"edge",
+            "inVLabel":"software",
+            "outVLabel":"person",
+            "inV":"2:lop",
+            "outV":"1:marko",
+            "properties":{
+                "weight":0.4,
+                "date":"20171210"
+            }
+        }
+    ]
+}
+```
+
+##### 3.2.26.3 Use Cases
+
+Check whether two vertices are directly connected, and get the properties of the connecting edges in one request.
+
+#### 3.2.27 Count
+
+##### 3.2.27.1 Function Introduction
+
+Count the vertices reached from a starting vertex after a series of traversal steps, without returning the vertices themselves.
+
+###### Params
+
+- source: ID of the starting vertex, required.
+- steps: Steps of the traversal, required. Each step accepts the following fields:
+    - direction: Direction in which the vertex expands outward (OUT, IN, BOTH). Optional, default is BOTH.
+    - labels: List of edge labels of the step. Optional, default represents all edge labels.
+    - properties: Property filter of the edges of the step. Optional.
+    - max_degree: Maximum number of adjacent edges to traverse for each vertex in this step. Optional, default is 10000.
+    - skip_degree: Threshold above which a super vertex is skipped in this step. Optional, default is 100000.
+- contains_traversed: Whether to also count the vertices reached by the intermediate steps. Optional, default is false.
+- dedup_size: Maximum number of vertices kept for deduplication, `-1` means no limit. Optional, default is 1000000.
+
+##### 3.2.27.2 Usage Method
+
+###### Method & Url
+
+```
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/count
+```
+
+###### Request Body
+
+```json
+{
+    "source": "1:marko",
+    "steps": [
+        {
+            "direction": "BOTH",
+            "labels": [],
+            "max_degree": 100,
+            "skip_degree": 100
+        },
+        {
+            "direction": "BOTH",
+            "labels": [],
+            "max_degree": 100,
+            "skip_degree": 100
+        },
+        {
+            "direction": "BOTH",
+            "labels": [],
+            "max_degree": 100,
+            "skip_degree": 100
+        }
+    ]
+}
+```
+
+###### Response Status
+
+```json
+200
+```
+
+###### Response Body
+
+```json
+{
+    "count": 3
+}
+```
+
+##### 3.2.27.3 Use Cases
+
+Get the size of a multi-step neighborhood when only the number matters, so the vertices do not have to be serialized and transferred.

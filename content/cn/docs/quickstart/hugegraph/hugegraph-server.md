@@ -14,7 +14,7 @@ aliases:
 
 > ⚠️ **版本说明**：本文以 HugeGraph 1.7.0 至 `master` 分支的代码为参考，仅介绍 RocksDB、HStore 和 HBase。其他旧后端的使用与配置请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
 
-> 名称说明：`HugeGraph` 表示整个项目或主仓库，`hugegraph-server` 表示仓库中的 Server 模块，`HugeGraphServer` 是服务进程的 Java 类名。下文使用“Server 服务”表示运行中的图数据库服务。
+> 名称说明：`HugeGraph` 表示整个项目或主仓库，`hugegraph-server` 表示仓库中的 Server 模块，`HugeGraphServer` 是服务进程的 Java 类名。下文的 Server 服务指运行中的图数据库服务。
 
 ## 2 依赖
 
@@ -24,7 +24,11 @@ HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行�
 
 **在继续阅读前，请先执行 `java -version` 命令确认 JDK 版本。**
 
-> 1.7.0 起不再支持 Java 8。
+> 1.7.0 起不再支持 Java 8。`bin/hugegraph-server.sh` 在低于 Java 11 的环境下会直接拒绝启动。
+
+> 安全检查默认开启，会安装 `HugeSecurityManager`，它要求 Java 11 到 23。JDK 24 移除了 Security Manager（[JEP 486](https://openjdk.org/jeps/486)），因此在 Java 24 及更高版本上必须关闭该检查后再启动服务：`bin/start-hugegraph.sh -s false`。
+
+> 源码构建还需要 Maven 3.5.0 或更高版本。
 
 ## 3 部署
 
@@ -59,18 +63,24 @@ HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行�
 > **注意**：Docker Compose 文件使用桥接网络（`hg-net`），适用于 Linux 和 Mac（Docker Desktop）。如需运行 3 节点分布式集群，请为 Docker Desktop 分配至少 **12 GB** 内存（设置 → 资源 → 内存）。Linux 上 Docker 直接使用宿主机内存。
 
 如果希望通过一个配置文件统一管理 HugeGraph 的多个服务实例，则可以使用 `docker compose`。
-[`docker/`](https://github.com/apache/hugegraph/tree/master/docker) 目录下提供了两个 compose 文件：
+[`docker/`](https://github.com/apache/hugegraph/tree/master/docker) 目录下提供了四个 compose 文件：
 
-- **单节点快速启动**（预构建镜像）：`docker/docker-compose.yml`
-- **单节点开发构建**（从源码构建）：`docker/docker-compose.dev.yml`
+| 拓扑 | compose 文件 | 服务 |
+|---|---|---|
+| 单机（推荐从这里开始） | `docker-compose.yml` | 1 个 RocksDB Server + 1 个 Hubble |
+| 最小 HStore | `docker-compose-hstore.yml` | 1 PD + 1 Store + 1 Server + 1 Hubble |
+| HA 参考 | `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble |
+| 最小 HStore 拓扑的源码构建覆盖文件 | `docker-compose.dev.yml` | （需与 `docker-compose-hstore.yml` 一起使用） |
 
 ```bash
 cd hugegraph/docker
 # 注意版本号请随时保持更新 → 1.x.0
-HUGEGRAPH_VERSION=1.7.0 docker compose up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
 ```
 
-如需开启鉴权，可在 compose 文件的环境变量中添加 `PASSWORD=xxx`，或在 `docker run` 命令中传入 `-e PASSWORD=xxx`。
+单机拓扑将 Server 暴露在 `8080` 端口，Hubble 暴露在 `127.0.0.1:8088`。`HUGEGRAPH_VERSION` 决定 Server、PD 和 Store 的镜像 tag，Hubble 由 `HUBBLE_IMAGE` 单独选择。
+
+compose 文件从 `HUGEGRAPH_ADMIN_PASSWORD` 读取管理员密码，从 `HUGEGRAPH_AUTH_TOKEN_SECRET` 读取 JWT 密钥，通常放在 `docker/.env` 文件中。`HUGEGRAPH_ADMIN_PASSWORD` 非空即开启鉴权，Hubble 会自动识别该模式。若直接使用 `docker run`，则改为传入 `-e PASSWORD=xxx`。
 
 完整的部署指南请参阅 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
@@ -114,6 +124,12 @@ mvn package -DskipTests
 
 执行成功后，在 hugegraph 目录下生成 `*hugegraph-*.tar.gz` 文件，就是编译生成的 tar 包。
 
+默认构建会打包 `rocksdb`、`hbase` 和 `hstore` 三个后端模块，并把它们记录在 `hugegraph-dist` jar 内的 `backend.properties` 资源的 `backends` 配置项中。若只需要包含 RocksDB 的精简发布包，可加上 `-Drocksdb-only`：
+
+```bash
+mvn package -DskipTests -ntp -Drocksdb-only
+```
+
 > [!DETAILS]- 过时的 tools 工具安装
 > #### 3.4 使用 tools 工具部署 (Outdated)
 >
@@ -147,7 +163,7 @@ mvn package -DskipTests
 
 ### 5.1 使用启动脚本启动
 
-启动流程分为“首次启动”和“非首次启动”。首次启动前需要先初始化后端数据库，然后再启动服务。
+启动流程分为首次启动和非首次启动两种情况。首次启动前需要先初始化后端数据库，然后再启动服务。
 
 如果服务曾被手动停止，或因其他原因需要再次启动，由于后端数据库已持久化存在，通常可以直接启动服务。
 
@@ -175,7 +191,6 @@ HugeGraphServer 启动时会连接后端存储并检查其版本信息。如果�
 ```properties
 backend=hstore
 serializer=binary
-task.scheduler_type=distributed
 
 # PD 服务地址，多个 PD 地址用逗号分割，配置 PD 的 RPC 端口
 pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
@@ -190,12 +205,13 @@ backend=hstore
 serializer=binary
 store=hugegraph
 
-# 指定任务调度器（1.7.0及之前，hstore 存储必须）
-task.scheduler_type=distributed
-
 # pd config
 pd.peers=127.0.0.1:8686
 ```
+
+发布包中自带该后端的模板文件 `conf/graphs/hstore.properties.template`，可将其复制覆盖 `conf/graphs/hugegraph.properties` 后修改 `pd.peers`。
+
+任务调度器由后端决定，无需配置 `task.scheduler_type`：`hstore` 使用分布式调度器，其余后端使用本地调度器。为兼容旧配置，该键仍可存在，但会被忽略并打印一条警告日志。
 
 2. 修改 Server 服务的 `rest-server.properties` 配置：
 
@@ -265,7 +281,7 @@ bin/start-hugegraph.sh
 2. 启动 HugeGraph-Store
 3. 启动 Server 服务
 
-HStore 的元数据和存储由 PD、Store 管理，`init-store` 会跳过该后端，不需要单独执行初始化脚本。
+HStore 的元数据和存储由 PD、Store 管理，`init-store` 会跳过该后端。开启鉴权时，执行 `init-store` 仍会创建内置的 `admin` 账号。如果该账号已由存储侧持有，可在 `rest-server.properties` 中设置 `init_store.enabled=false` 以整体跳过这一步，Docker 的 HStore 拓扑即采用这种方式。
 
 验证服务是否正常启动：
 
@@ -290,16 +306,26 @@ bin/stop-hugegraph.sh
 
 ```bash
 cd hugegraph/docker
-HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d --wait
 ```
 
 服务通过 `hg-net` 桥接网络上的容器主机名进行通信。配置通过环境变量注入：
 
 ```yaml
-# Server 配置
+# Server 配置，server0、server1、server2 共用
 HG_SERVER_BACKEND: hstore
 HG_SERVER_PD_PEERS: pd0:8686,pd1:8686,pd2:8686
+HG_SERVER_CLUSTER: hg
+HG_SERVER_USE_PD: "true"
+HG_SERVER_MIN_FREE_MEMORY: "0"
+HG_SERVER_INIT_STORE_ENABLED: "false"
+HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET: "true"
+STORE_REST: store0:8520
+# 每个节点单独设置，例如 server0
+HG_SERVER_REST_URL: http://server0:8080
 ```
+
+该拓扑设置了 `HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET: "true"`，因此在只提供密码而没有共享 JWT 密钥时 Server 会拒绝启动。启动前请在 `docker/.env` 中同时写入 `HUGEGRAPH_ADMIN_PASSWORD` 和 `HUGEGRAPH_AUTH_TOKEN_SECRET`。完整的变量说明见 [Docker 集群指南](/cn/docs/guides/hugegraph-docker-cluster/)。
 
 验证集群：
 ```bash
@@ -348,8 +374,9 @@ bin/init-store.sh
 
 ```bash
 bin/start-hugegraph.sh
-Starting HugeGraphServer...
+Starting HugeGraphServer in daemon mode...
 Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
+Started [pid 21614]
 ```
 
 提示的 url 与 `rest-server.properties` 中配置的 `restserver.url` 一致
@@ -392,8 +419,9 @@ bin/init-store.sh
 
 ```bash
 bin/start-hugegraph.sh
-Starting HugeGraphServer...
+Starting HugeGraphServer in daemon mode...
 Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
+Started [pid 21614]
 ```
 
 > 更多其它后端配置可参考[配置项介绍](/docs/config/config-option)
@@ -419,6 +447,23 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 ```
 
 代表创建示例图成功。
+
+#### 5.1.5 启动脚本的参数
+
+`bin/start-hugegraph.sh` 支持以下参数。每个参数都需要带值，即写作 `-d false`，不能只写 `-d`。
+
+| 参数 | 取值 | 默认值 | 作用 |
+|---|---|---|---|
+| `-d` | `true`、`false` | `true` | 守护进程模式。`-d false` 时脚本留在前台，并把 `SIGTERM`/`SIGINT` 转发给服务进程 |
+| `-g` | `zgc` 或 `ZGC` | 不填则用 G1GC | 选择垃圾回收器。只接受 ZGC，其他取值会直接终止启动；ZGC 需要 Java 11 及以上 |
+| `-m` | `true`、`false` | `false` | 安装基于 crontab 的监控任务（`bin/start-monitor.sh`），仅用于虚拟机和物理机部署 |
+| `-p` | `true`、`false` | `false` | 预加载示例图，见 5.1.4 |
+| `-s` | `true`、`false` | `true` | 开启安全检查（`HugeSecurityManager`）。要求 Java 11 到 23，且 `conf/java-security.properties` 可读 |
+| `-j` | JVM 参数 | 空 | 追加到服务命令行的额外 JVM 参数 |
+| `-t` | 秒 | `30` | 判定启动失败前等待服务响应的时长 |
+| `-y` | `true`、`false` | `false` | 开启 OpenTelemetry agent 上报链路追踪 |
+
+`bin/stop-hugegraph.sh` 支持 `-m true|false`（默认 `true`），用于控制停止服务时是否同时移除 crontab 监控任务。
 
 ### 5.2 使用 Docker
 
@@ -446,12 +491,12 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
           - PRELOAD=true
           - PASSWORD=xxx
         volumes:
-          - /path/to/yourscript:/hugegraph/scripts/example.groovy
+          - /path/to/yourscript:/hugegraph-server/scripts/example.groovy
         ports:
           - 8080:8080
     ```
 
-    使用命令 `docker-compose up -d` 启动容器
+    使用命令 `docker compose up -d` 启动容器
 
 使用 RESTful API 请求 `HugeGraphServer` 得到如下结果：
 

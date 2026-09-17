@@ -12,6 +12,8 @@ Currently supported data sources include:
 - Local disk file or directory, supports TEXT, CSV and JSON format files, supports compressed files
 - HDFS file or directory supports compressed files
 - Mainstream relational databases, such as MySQL, PostgreSQL, Oracle, SQL Server
+- Kafka topic
+- An existing HugeGraph graph, used to copy data from one graph into another
 
 Local disk files and HDFS files support resumable uploads.
 
@@ -31,7 +33,7 @@ HugeGraph-Loader is available in the following three ways:
 
 #### 2.1 Use Docker image (Convenient for Test/Dev)
 
-We can deploy the loader service using `docker run -itd --name loader hugegraph/loader:1.5.0`. For the data that needs to be loaded, it can be copied into the loader container either by mounting `-v /path/to/data/file:/loader/file` or by using `docker cp`.
+We can deploy the loader service using `docker run -itd --name loader hugegraph/loader:1.7.0`. For the data that needs to be loaded, it can be copied into the loader container either by mounting `-v /path/to/data/file:/loader/file` or by using `docker cp`.
 
 Alternatively, to start the loader using docker-compose, the command is `docker-compose up -d`. An example of the docker-compose.yml is as follows:
 
@@ -40,13 +42,19 @@ version: '3'
 
 services:
   server:
-    image: hugegraph/hugegraph:1.3.0
+    image: hugegraph/hugegraph:1.7.0
     container_name: server
     ports:
       - 8080:8080
 
+  hubble:
+    image: hugegraph/hubble:1.7.0
+    container_name: hubble
+    ports:
+      - 8088:8088
+
   loader:
-    image: hugegraph/loader:1.3.0
+    image: hugegraph/loader:1.7.0
     container_name: loader
     # mount your own data here
     # volumes:
@@ -58,7 +66,7 @@ The specific data loading process can be referenced under [4.5 User Docker to lo
 > Note: 
 > 1. The docker image of hugegraph-loader is a convenience release to start hugegraph-loader quickly, but not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 > 
-> 2. Recommend to use `release tag`(like `1.5.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
+> 2. Recommend to use `release tag`(like `1.7.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
 
 #### 2.2 Download the compiled archive
 
@@ -154,6 +162,7 @@ The data sources currently supported by HugeGraph-Loader include:
 - HDFS file or directory
 - Partial relational database
 - Kafka topic
+- An existing HugeGraph graph
 
 ##### 3.2.1 Data source structure
 
@@ -578,6 +587,12 @@ bin/mapping-convert.sh struct.json
 
 A struct-v2.json will be generated in the same directory as struct.json.
 
+The bin directory also ships `utf8-bom-to-utf8.sh`, which strips the UTF-8 BOM from a single data file, or from every file under a directory. It is useful when a CSV or TEXT file exported by a Windows tool fails to parse because its first header column carries an invisible BOM:
+
+```bash
+bin/utf8-bom-to-utf8.sh /path/to/file-or-dir
+```
+
 ##### 3.3.2 Input Source
 
 Input sources are currently divided into five categories: FILE, HDFS, JDBC, KAFKA and GRAPH, which are distinguished by the `type` node. We call them local file input sources, HDFS input sources, JDBC input sources, KAFKA input sources and GRAPH input source, which are described below.
@@ -590,18 +605,21 @@ Input sources are currently divided into five categories: FILE, HDFS, JDBC, KAFK
     - type: an input source type, file or FILE must be filled;
     - path: the path of the local file or directory, the absolute path or the relative path relative to the mapping file, it is recommended to use the absolute path, required;
     - file_filter: filter files with compound conditions from `path`, compound structure, currently only supports configuration extensions, represented by child node `extensions`, the default is "*", which means to keep all files;
-    - format: the format of the local file, the optional values ​​are CSV, TEXT and JSON, which must be uppercase and required;               
-    - header: the column name of each column of the file, if not specified, the first line of the data file will be used as the header; when the file itself has a header and the header is specified, the first line of the file will be treated as a normal data line; JSON The file does not need to specify a header, optional;    
-    - delimiter: The column delimiter of the file line, the default is comma `","` as the delimiter, the `JSON` file does not need to be specified, optional;     
+    - format: the format of the local file, the optional values are CSV, TEXT and JSON, which must be uppercase, the default is CSV, optional;               
+    - header: the column name of each column of the file, if not specified, the first line of the data file will be used as the header; when the file itself has a header and the header is specified, the first line of the file will be treated as a normal data line; JSON The file does not need to specify a header, optional;
+    - has_header: for CSV and TEXT, the first line of every file is dropped when it is identical to the header, so a header repeated in each part file of a directory is not imported as data. Set this to `false` to turn that check off when the first line of a file is real data that happens to equal the header, optional;
+    - delimiter: The column delimiter of the file line. The default depends on `format`: a comma `","` for CSV and a tab `"\t"` for TEXT; a CSV file accepts no other delimiter. The `JSON` file does not need to be specified, optional;     
     - charset: the encoded character set of the file, the default is `UTF-8`, optional;    
     - date_format: custom date format, the default value is yyyy-MM-dd HH:mm:ss, optional; if the date is presented in the form of a timestamp, this item must be written as `timestamp` (fixed writing);
+    - extra_date_formats: a list of fallback date formats, tried when a value does not match `date_format`, empty by default, optional;
     - time_zone: Set which time zone the date data is in, the default value is `GMT+8`, optional;
-    - skipped_line: The line to be skipped, compound structure, currently only the regular expression of the line to be skipped can be configured, described by the child node `regex`, no line is skipped by default, optional;
-    - compression: The compression format of the file, the optional values ​​are NONE, GZIP, BZ2, XZ, LZMA, SNAPPY_RAW, SNAPPY_FRAMED, Z, DEFLATE, LZ4_BLOCK, LZ4_FRAMED, ORC and PARQUET, the default is NONE, which means a non-compressed file, optional;
+    - skipped_line: The line to be skipped, compound structure, currently only the regular expression of the line to be skipped can be configured, described by the child node `regex`. The default regex is `(^#|^//).*|`, which skips lines starting with `#` or `//` and empty lines; to keep such lines, set `regex` to a pattern that matches nothing, optional;
+    - compression: The compression format of the file, the optional values ​​are NONE, GZIP, BZ2, XZ, LZMA, SNAPPY_RAW, SNAPPY_FRAMED, Z, DEFLATE, LZ4_BLOCK, LZ4_FRAMED, ORC and PARQUET, the default is NONE, which means a non-compressed file, optional; for ORC and PARQUET the header is matched case-insensitively;
     - list_format: When a column of the file (non-JSON) is a collection structure (the Cardinality of the PropertyKey in the corresponding figure is Set or List), you can use this item to set the start character, separator, and end character of the column, compound structure :
-        - start_symbol: The start character of the collection structure column (the default value is `[`, JSON format currently does not support specification)
-        - elem_delimiter: the delimiter of the collection structure column (the default value is `|`, JSON format currently only supports native `,` delimiter)
-        - end_symbol: the end character of the collection structure column (the default value is `]`, the JSON format does not currently support specification)
+        - start_symbol: The start character of the collection structure column (the default value is the empty string `""`, JSON format currently does not support specification)
+        - elem_delimiter: the delimiter of the collection structure column (the default value is `|`, and it must differ from `delimiter`; JSON format currently only supports native `,` delimiter)
+        - end_symbol: the end character of the collection structure column (the default value is the empty string `""`, the JSON format does not currently support specification)
+        - ignored_elems: the elements dropped after the column is split, the default value is `[""]`, so empty elements are ignored
 
 ###### 3.3.2.2 HDFS input source
 
@@ -609,7 +627,16 @@ The nodes and meanings of the above `local file input source` are basically appl
 
 - type: input source type, must fill in hdfs or HDFS, required;
 - path: the path of the HDFS file or directory, it must be the absolute path of HDFS, required;
-- core_site_path: the path of the core-site.xml file of the HDFS cluster, the key point is to specify the address of the NameNode (`fs.default.name`) and the implementation of the file system (`fs.hdfs.impl`);
+- core_site_path: the path of the core-site.xml file of the HDFS cluster, the key point is to specify the address of the NameNode (`fs.default.name`) and the implementation of the file system (`fs.hdfs.impl`), required;
+- hdfs_site_path: the path of the hdfs-site.xml file of the HDFS cluster, optional;
+- dir_filter: when `path` is a directory, decides which sub-directories are walked into, compound structure, optional:
+    - include_regex: only directories whose name matches this regular expression are read, empty by default, which places no restriction;
+    - exclude_regex: directories whose name matches this regular expression are skipped, empty by default;
+- kerberos_config: how to authenticate against a Kerberos-secured HDFS cluster, compound structure, optional:
+    - enable: whether to authenticate with Kerberos, the default is false;
+    - krb5_conf: the path of the krb5.conf file, required when `enable` is true;
+    - principal: the Kerberos principal, required when `enable` is true;
+    - keytab: the path of the keytab file, required when `enable` is true;
 
 ###### 3.3.2.3 JDBC input source
 
@@ -617,7 +644,7 @@ As mentioned above, it supports multiple relational databases, but because their
 
 - type: input source type, must fill in jdbc or JDBC, required;
 - vendor: database type, optional options are [MySQL, PostgreSQL, Oracle, SQLServer], case-insensitive, required;
-- driver: the type of driver used by jdbc, required;
+- driver: the JDBC driver class, optional; when it is left out, the default driver of the `vendor` listed in the tables below is used;
 - url: the url of the database that jdbc wants to connect to, required;
 - database: the name of the database to be connected, required;
 - schema: The name of the schema to be connected, different databases have different requirements, and the details are explained below;
@@ -625,6 +652,7 @@ As mentioned above, it supports multiple relational databases, but because their
 - custom_sql: custom SQL statement, at least one of `table` or `custom_sql` is required;
 - username: username to connect to the database, required;
 - password: password for connecting to the database, required;
+- where: an extra condition appended to the generated `select` statement, written without the `where` keyword, optional;
 - batch_size: The size of one page when obtaining table data by page, the default is 500, optional;
 
 **MYSQL**
@@ -655,7 +683,7 @@ schema: nullable, default is "public"
 | driver | oracle.jdbc.driver.OracleDriver  |
 | url    | jdbc:oracle:thin:@127.0.0.1:1521 |
 
-schema: nullable, the default value is the same as the username
+schema: nullable, the default value is the username in upper case
 
 **SQLSERVER**
 
@@ -670,34 +698,37 @@ schema: required
 ###### 3.3.2.4 Kafka input source
 
 - type: input source type, `kafka` or `KAFKA`, required;
-- bootstrap_server: set the list of kafka bootstrap servers;
-- topic: the topic to subscribe to;
-- group: group of Kafka consumers;
-- from_beginning: set whether to read from the beginning;
-- format: format of the local file, options are CSV, TEXT and JSON, must be uppercase, required;
-- header: column name of each column of the file, if not specified, the first line of the data file will be used as the header; when the file itself has a header and the header is specified, the first line of the file will be treated as an ordinary data line; JSON files do not need to specify the header, optional;
-- delimiter: delimiter of the file line, default is comma "," as delimiter, JSON files do not need to specify, optional;
-- charset: encoding charset of the file, default is UTF-8, optional;
+- bootstrap_server: the list of kafka bootstrap servers, required;
+- topic: the topic to subscribe to, required;
+- group: group of Kafka consumers, required;
+- from_beginning: whether to start from the earliest offset of the topic (`auto.offset.reset=earliest`) instead of the latest one, default is false, optional;
+- format: format of each message, options are CSV, TEXT and JSON, must be uppercase, required;
+- header: column name of each column of a message; no header line is read from the topic, so it has to be given for CSV and TEXT, while JSON messages do not need it;
+- delimiter: delimiter of the message columns, used by TEXT only, since CSV always splits on `,`, optional;
+- charset: encoding charset of the messages, default is UTF-8, optional;
 - date_format: customized date format, default value is yyyy-MM-dd HH:mm:ss, optional; if the date is presented in the form of timestamp, this item must be written as timestamp (fixed);
 - extra_date_formats: a customized list of another date formats, empty by default, optional; each item in the list is an alternate date format to the date_format specified date format;
 - time_zone: set which time zone the date data is in, default is GMT+8, optional;
 - skipped_line: the line you want to skip, composite structure, currently can only configure the regular expression of the line to be skipped, described by the child node regex, the default is not to skip any line, optional;
+- batch_size: the maximum number of records fetched in one poll (`max.poll.records`), default is 500, optional;
 - early_stop: the record pulled from Kafka broker at a certain time is empty, stop the task, default is false, only for debugging, optional;
 
 ###### 3.3.2.5 GRAPH input Source
 
+The GRAPH input source reads vertices and edges out of another HugeGraph graph, reached through HugeGraph-PD, and writes them into the target graph. When a mapping file contains a GRAPH input source, every input source in it that is not skipped has to be a GRAPH input source as well, and the loader puts the target graph into `RESTORING` mode for the duration of the import.
+
 - type: Data source type; must be filled in as `graph` or `GRAPH` (required);
-- graphspace: Source graphSpace name; default is `DEFAULT`;
+- graphspace: Source graphSpace name (required);
 - graph: Source graph name (required);
-- username: HugeGraph username;
-- password: HugeGraph password;
-- selected_vertices: Filtering rules for vertices to be synchronized;
-- ignored_vertices: Filtering rules for vertices to be ignored;
-- selected_edges: Filtering rules for edges to be synchronized;
-- ignored_edges: Filtering rules for edges to be ignored;
-- pd-peers: HugeGraph-PD node addresses;
-- meta-endpoints: Meta service endpoints of the source cluster;
-- cluster: Source cluster name;
+- username: HugeGraph username; the `--username` command-line option is used when this is empty;
+- password: HugeGraph password; the `--password` command-line option is used when this is empty;
+- selected_vertices: the vertex labels to copy, each item written as `{"label": "...", "properties": [...], "query": {...}}`, where `properties` narrows the copied properties and `query` is an optional filter passed to the source graph;
+- ignored_vertices: the vertex labels to skip, each item written as `{"label": "...", "properties": [...]}`;
+- selected_edges: the edge labels to copy, items have the same shape as in `selected_vertices`;
+- ignored_edges: the edge labels to skip, items have the same shape as in `ignored_vertices`;
+- pd-peers: HugeGraph-PD node addresses of the source cluster; the `--pd-peers` option is used when this is empty;
+- meta-endpoints: Meta service endpoints of the source cluster; the `--meta-endpoints` option is used when this is empty;
+- cluster: Source cluster name; the `--cluster` option is used when this is empty;
 - batch_size: Batch size for reading data from the source graph; default is 500;
 
 ##### 3.3.3 Vertex and Edge Mapping
@@ -707,6 +738,7 @@ The nodes of vertex and edge mapping (a key in the JSON file) have a lot of the 
 **Nodes of the same section**
 
 - label: `label` to which the vertex/edge data to be imported belongs, required;                                                                                   
+- skip: whether to skip this vertex/edge mapping while the input source and the other mappings stay active, the default is false, optional;
 - field_mapping: Map the column name of the input source column to the attribute name of the vertex/edge, optional;
 - value_mapping: map the data value of the input source to the attribute value of the vertex/edge, optional;
 - selected: select some columns to insert, other unselected ones are not inserted, cannot exist at the same time as `ignored`, optional;                                                                           
@@ -809,8 +841,8 @@ The import process is controlled by commands submitted by the user, and the user
 | `--failure-mode`                         | false         |                 | When failure mode is true, previously failed data will be imported. Generally, the failed data file needs to be manually corrected and edited before re-importing                        |
 | `--batch-insert-threads`                 | CPUs          |                 | Batch insert thread pool size (CPUs is the number of **logical cores** available to the current OS)                                                                                       |
 | `--single-insert-threads`                | 8             |                 | Size of single insert thread pool                                                                                                                                                         |
-| `--max-conn`                             | 4 * CPUs      |                 | The maximum number of HTTP connections between HugeClient and HugeGraphServer; it is recommended to adjust this when **adjusting threads**                                                |
-| `--max-conn-per-route`                   | 2 * CPUs      |                 | The maximum number of HTTP connections for each route between HugeClient and HugeGraphServer; it is recommended to adjust this item when **adjusting threads**                            |
+| `--max-conn`                             | 4 * CPUs      |                 | The maximum number of HTTP connections between HugeClient and HugeGraphServer; while it is left at its default, it is raised automatically to 4 * `--batch-insert-threads`               |
+| `--max-conn-per-route`                   | 2 * CPUs      |                 | The maximum number of HTTP connections for each route between HugeClient and HugeGraphServer; while it is left at its default, it is raised automatically to 2 * `--batch-insert-threads` |
 | `--batch-size`                           | 500           |                 | The number of data items in each batch when importing data                                                                                                                                |
 | `--max-parse-errors`                     | 1             |                 | The maximum number of data parsing errors allowed (per line); the program exits when this value is reached                                                                                |
 | `--max-insert-errors`                    | 500           |                 | The maximum number of data insertion errors allowed (per row); the program exits when this value is reached                                                                               |
@@ -832,48 +864,52 @@ The import process is controlled by commands submitted by the user, and the user
 | `--max-read-lines`                       | -1L         |      | The maximum number of read lines, task stops when reached          |
 | `--test-mode`                            | false       |      | Whether the loader works in test mode                              |
 | `--use-prefilter`                        | false       |      | Whether to filter vertex in advance                                |
-| `--short-id`                             |             |      | Mapping customized ID to shorter ID                                |
+| `--short-id`                             |             |      | Map a customized vertex ID to a shorter generated ID, written as `label:field:type`, where `type` is one of boolean, byte, int, long, float, double, text, blob, date and uuid; repeat the option to cover several labels |
 | `--vertex-edge-limit`                    | -1L         |      | The maximum number of vertex's edges                               |
-| `--sink-type`                            | true        |      | Sink to different storage type switch                              |
-| `--vertex-partitions`                    | 64          |      | The number of partitions of the HBase vertex table                 |
-| `--edge-partitions`                      | 64          |      | The number of partitions of the HBase edge table                   |
-| `--vertex-table-name`                    |             |      | HBase vertex table name                                            |
-| `--edge-table-name`                      |             |      | HBase edge table name                                              |
-| `--hbase-zk-quorum`                      |             |      | HBase ZooKeeper quorum                                             |
-| `--hbase-zk-port`                        |             |      | HBase ZooKeeper port                                               |
-| `--hbase-zk-parent`                      |             |      | HBase ZooKeeper parent                                             |
+| `--sink-type`                            | true        |      | `spark-loader` only: true writes through the HugeGraph server API, false generates HFiles and bulk-loads them into HBase |
+| `--vertex-partitions`                    | 64          |      | The number of partitions of the HBase vertex table, used with `--sink-type false` |
+| `--edge-partitions`                      | 64          |      | The number of partitions of the HBase edge table, used with `--sink-type false` |
+| `--vertex-table-name`                    |             |      | HBase vertex table name, used with `--sink-type false` |
+| `--edge-table-name`                      |             |      | HBase edge table name, used with `--sink-type false` |
+| `--hbase-zk-quorum`                      |             |      | HBase ZooKeeper quorum, used with `--sink-type false` |
+| `--hbase-zk-port`                        |             |      | HBase ZooKeeper port, used with `--sink-type false` |
+| `--hbase-zk-parent`                      |             |      | HBase ZooKeeper parent, used with `--sink-type false` |
 | `--restore`                              | false       |      | Set graph mode to RESTORING                                        |
 | `--backend`                              | hstore      |      | The backend store type when creating graph if not exists           |
 | `--serializer`                           | binary      |      | The serializer type when creating graph if not exists              |
 | `--scheduler-type`                       | distributed |      | The task scheduler type when creating graph if not exists          |
-| `--batch-failure-fallback`               | true        |      | Whether to fallback to single insert when batch insert fails       |##### 3.4.2 Breakpoint Continuation Mode
+| `--batch-failure-fallback`               | true        |      | Whether to fallback to single insert when batch insert fails       |
+
+> The loader prints its usage and exits when it is given fewer than three arguments, so `-f struct.json` on its own is not enough.
+
 ##### 3.4.2 Breakpoint Continuation Mode
 
 Usually, the Loader task takes a long time to execute. If the import interrupt process exits for some reason, and next time you want to continue the import from the interrupted point, this is the scenario of using breakpoint continuation.
 
 The user sets the command line parameter --incremental-mode to true to open the breakpoint resume mode. The key to breakpoint continuation lies in the progress file. When the import process exits, the import progress at the time of exit will be recorded.
-Recorded in the progress file, the progress file is located in the `${struct}` directory, the file name is like `load-progress ${date}`, ${struct} is the prefix of the mapping file, and ${date} is the start of the import
-moment. For example, for an import task started at `2019-10-10 12:30:30`, the mapping file used is `struct-example.json`, then the path of the progress file is the same as struct-example.json
-Sibling `struct-example/load-progress 2019-10-10 12:30:30`.
+Recorded in the progress file, the progress file is located in the `${struct}` directory, the file name is like `load-progress_${timestamp}`, ${struct} is the prefix of the mapping file, and ${timestamp} is the start of the import
+moment, formatted as `yyyyMMdd-HHmmss`. For example, for an import task started at `2019-10-10 12:30:30`, the mapping file used is `struct-example.json`, then the path of the progress file is the same as struct-example.json
+Sibling `struct-example/load-progress_20191010-123030`. When the directory holds several progress files, the resumed import reads the last one in name order, which is the most recent one.
 
 > Note: The generation of progress files is independent of whether --incremental-mode is turned on or not, and a progress file is generated at the end of each import.
 
 If the data file formats are all legal and the import task is stopped by the user (CTRL + C or kill, kill -9 is not supported), that is to say, if there is no error record, the next import only needs to be set to 
 Continue for the breakpoint.
 
-But if the limit of --max-parse-errors or --max-insert-errors is reached because too much data is invalid or network abnormality is reached, Loader will record these original rows that failed to insert into
-In the failed file, after the user modifies the data lines in the failed file, set --reload-failure to true to import these "failed files" as input sources (does not affect the normal file import),
-Of course, if there is still a problem with the modified data line, it will be logged again to the failure file (don't worry about duplicate lines).
+But if the limit of --max-read-errors, --max-parse-errors or --max-insert-errors is reached because too much data is invalid or network abnormality is reached, Loader will record these original rows that failed into
+the failure file, after the user modifies the data lines in the failure file, set --failure-mode to true to import these "failure files" as input sources (does not affect the normal file import),
+Of course, if there is still a problem with the modified data line, it will be logged again to the failure file (don't worry about duplicate lines, they are dropped when the file is closed). Failure mode lifts the three error limits above, so the whole failure file is scanned.
 
-Each vertex map or edge map will generate its own failure file when data insertion fails. The failure file is divided into a parsing failure file (suffix .parse-error) and an insertion failure file (suffix .insert-error).
-They are stored in the `${struct}/current` directory. For example, there is a vertex mapping person, and an edge mapping knows in the mapping file, each of which has some error lines. When the Loader exits, you will see the following files in the `${struct}/current` directory:
+Each input source, that is each item of `structs` in the mapping file, gets its own failure file. The file is named after the `id` of that input source with the suffix `.error` and is stored in the `${struct}/failure-data` directory.
+Every failed line is written as a pair of lines: a tip line starting with `#### READ ERROR:`, `#### PARSE ERROR:` or `#### INSERT ERROR:`, followed by the original data line. When the input source has a header, that header is written as JSON to a sibling `${id}.header` file, so the failure file can be read back with the right columns.
+For example, if the mapping file has an input source with id `1` holding a vertex mapping person and an input source with id `3` holding an edge mapping knows, each of which has some error lines, you will see the following files in the `${struct}/failure-data` directory when the Loader exits:
 
-- person-b4cd32ab.parse-error: Vertex map person parses wrong data
-- person-b4cd32ab.insert-error: Vertex map person inserts wrong data
-- knows-eb6b2bac.parse-error: edge map knows parses wrong data
-- knows-eb6b2bac.insert-error: edge map knows inserts wrong data
+- 1.error: the failed lines of input source 1, each preceded by its tip line
+- 1.header: the header of input source 1, written only when that input source has a header
+- 3.error: the failed lines of input source 3
+- 3.header: the header of input source 3
 
-> .parse-error and .insert-error do not always exist together. Only lines with parsing errors will have .parse-error files, and only lines with insertion errors will have .insert-error files.
+> A `.error` file that turns out to be empty is deleted when the Loader exits, so only the input sources that really had failed lines leave a file behind. In incremental mode new failures are appended to the existing file, otherwise the file is rewritten from scratch.
 
 ##### 3.4.3 logs directory file description
 
@@ -881,11 +917,13 @@ The log and error data during program execution will be written into the hugegra
 
 ##### 3.4.4 Execute command
 
-Run bin/hugegraph-loader and pass in parameters
+Run bin/hugegraph-loader.sh and pass in parameters
 
 ```bash
-bin/hugegraph-loader -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} -h {HOST} -p {PORT}
+bin/hugegraph-loader.sh -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} -h {HOST} -p {PORT}
 ```
+
+The script runs the JVM under `JAVA_HOME` when that variable is set, and `java` from the `PATH` otherwise. It passes the contents of the `JVM_OPTS` environment variable, then `-Xmx10g` and the class path built from `lib/`, to that JVM, so `JVM_OPTS` is the place to add JVM flags. Logging is configured by `conf/log4j2.xml`.
 
 ### 4 Complete example
 
@@ -1166,4 +1204,40 @@ sh bin/hugegraph-spark-loader.sh --master yarn \
 --deploy-mode cluster --name spark-hugegraph-loader --file ./hugegraph.json \
 --username admin --token admin --host xx.xx.xx.xx --port 8093 \
 --graph graph-test --num-executors 6 --executor-cores 16 --executor-memory 15g
-````
+```
+
+`bin/hugegraph-spark-loader.sh` submits `org.apache.hugegraph.loader.spark.HugeGraphSparkLoader` through `${SPARK_HOME}/bin/spark-submit`, so `SPARK_HOME` has to point at a Spark installation. Every jar under `lib/` is put on the class path. The Spark application name defaults to `hugegraph-spark-loader` and can be changed through the `APP_NAME` environment variable.
+
+`bin/get-params.sh` splits the command line: only the options below are handed to the loader, every other argument is passed to `spark-submit` unchanged. The splitter matches long option names only, so short forms such as `-f` and `-g` are not recognised.
+
+```
+--graph --schema --host --port --username --token --protocol
+--trust-store-file --trust-store-password --clear-all-data --clear-timeout
+--incremental-mode --failure-mode --batch-insert-threads --single-insert-threads
+--max-conn --max-conn-per-route --batch-size --max-parse-errors --max-insert-errors
+--timeout --shutdown-timeout --retry-times --retry-interval --check-vertex
+--print-progress --dry-run --sink-type --vertex-partitions --edge-partitions --help
+```
+
+`--file` is treated separately: with `--deploy-mode cluster` the mapping file is shipped to the executors through `--files` and the loader receives only its base name, otherwise the path is passed through as written.
+
+In this mode the loader reads FILE, HDFS and JDBC input sources; a KAFKA or GRAPH input source is rejected.
+
+By default (`--sink-type true`) each Spark partition opens a HugeClient and writes vertices and edges through the HugeGraph server API. With `--sink-type false` the loader generates HFiles and bulk-loads them into HBase instead, taking the table names and ZooKeeper settings from `--vertex-table-name`, `--edge-table-name`, `--hbase-zk-quorum`, `--hbase-zk-port`, `--hbase-zk-parent`, `--vertex-partitions` and `--edge-partitions`.
+
+#### 4.7 Import data by flink-cdc-loader
+
+> The current source uses Flink 1.13.5 with flink-connector-mysql-cdc 2.2.1 and Scala 2.12. Other combinations need independent verification.
+
+`bin/hugegraph-flinkcdc-loader.sh` submits `org.apache.hugegraph.loader.flink.HugeGraphFlinkCDCLoader` through `${FLINK_HOME}/bin/flink run`, so `FLINK_HOME` has to be set. The job captures MySQL change events with Flink CDC and applies them to the graph, which keeps the graph in step with the source tables.
+
+The mapping file uses the same format as for the command-line loader, but every input source has to be a JDBC input source over MySQL: the loader takes `url`, `database`, `table`, `username` and `password` from it and parses the host and port out of `url`. Vertex and edge mappings work as usual. `--cdc-flush-interval` and `--cdc-sink-parallelism` in [3.4.1](#341-parameter-description) apply to this mode only.
+
+The command line is split by `bin/get-params.sh` in the same way as for `spark-loader`, with the arguments that are not loader options going to `flink run`.
+
+Example:
+
+```bash
+sh bin/hugegraph-flinkcdc-loader.sh --file ./mysql-cdc.json \
+--host xx.xx.xx.xx --port 8080 --graph hugegraph --username admin --token admin
+```

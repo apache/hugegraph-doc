@@ -53,6 +53,9 @@ RANDOM_STRING=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)
 echo "auth.token_secret=${RANDOM_STRING}" >> rest-server.properties
 ```
 
+由于默认值在每次启动时随机生成，当 token 需要在重启后继续有效、或者需要被多个服务节点接受时，必须显式配置该项。token 的有效期由
+`auth.token_expire` 决定，默认为 86400 秒。
+
 #### StandardAuthenticator 模式
 `StandardAuthenticator`模式是通过在数据库后端存储用户信息来支持用户认证和权限控制，该实现基于数据库存储的用户的名称与密码进行认证（密码已被加密），基于用户的角色来细粒度控制用户权限。下面是具体的配置流程（重启服务生效）：
 
@@ -71,7 +74,7 @@ authentication: {
 ```properties
 auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
 auth.graph_store=hugegraph
-# PD 模式首次创建 admin 用户时可设置初始密码
+# 内置 admin 账号的密码，默认为 pa，在首次启动时生效
 #auth.admin_pa=<your-admin-password>
 
 # auth client config

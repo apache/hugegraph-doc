@@ -411,10 +411,12 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 
 - label: 顶点的类型
 - properties: 属性键值对（查询属性的前提是该属性已经建立了索引）
-- limit: 查询结果的最大数目
+- keep_start_p: 默认为 false，设置为 true 时不会自动转义范围匹配表达式，例如 `properties={"age":"P.gt(18)"}` 会被当作精确匹配，即 age 属性等于字符串 "P.gt(18)"
+- offset: 偏移量，默认为 0
+- limit: 查询结果的最大数目，默认为 100
 - page: 分页的页号
 
-以上参数都是可选的，但如果提供了 page 参数，就必须同时提供 limit 参数，并且不能再提供其他参数。`label, properties`和`limit`之间可以任意组合。
+以上参数都是可选的，page 不能与非 0 的 offset 同时使用，其余参数之间可以任意组合。
 
 属性键值对由属性名称和属性值组成 JSON 格式的对象，可以使用多个属性键值对作为查询条件，属性值支持精确匹配和范围匹配，精确匹配的形式如`properties={"age":29}`，范围匹配的形式如`properties={"age":"P.gt(29)"}`，范围匹配支持以下表达式：
 

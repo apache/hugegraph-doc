@@ -26,6 +26,9 @@ export VERSION=1.7.0
 export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
 wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
 tar zxf "${ARCHIVE}.tar.gz"
+# hugegraph-tools 位于 toolchain 发布包的子目录中，
+# 其版本后缀与发布包本身一致
+cd "${ARCHIVE}/apache-hugegraph-tools-incubating-${VERSION}"
 ```
 
 #### 2.2 下载源码编译安装
@@ -50,14 +53,14 @@ cd hugegraph-toolchain
 mvn package -pl hugegraph-tools -am -DskipTests -ntp
 ```
 
-生成 tar 包 hugegraph-tools-${version}.tar.gz
+生成的 tar 包位于 `hugegraph-tools/target/apache-hugegraph-tools-${version}.tar.gz`，同时会在 `hugegraph-tools/apache-hugegraph-tools-${version}` 生成解压后的目录（包含 `bin/` 和 `lib/`）
 
 
 ### 3 使用
 
 #### 3.1 功能概览
 
-解压后，进入 hugegraph-tools 目录，可以使用`bin/hugegraph`或者`bin/hugegraph help`来查看 usage 信息。主要分为：
+解压后，进入 apache-hugegraph-tools-${version} 目录，可以使用`bin/hugegraph`或者`bin/hugegraph help`来查看 usage 信息，使用`bin/hugegraph help <子命令>`查看单个子命令的 usage。主要分为：
 
 - 图管理类，graph-mode-set、graph-mode-get、graph-list、graph-get、graph-clear、graph-create、graph-clone 和 graph-drop
 - 异步任务管理类，task-list、task-get、task-delete、task-cancel 和 task-clear
@@ -79,9 +82,11 @@ Usage: hugegraph [options] [command] [command options]
 - --user，当 HugeGraph-Server 开启认证时，传递用户名
 - --password，当 HugeGraph-Server 开启认证时，传递用户的密码
 - --timeout，连接 HugeGraph-Server 时的超时时间，默认是 30s
-- --protocol，连接协议，可选 http 或 https，默认是 http
 - --trust-store-file，证书文件的路径，当 --url 使用 https 时，HugeGraph-Client 使用的 truststore 文件，默认为空，代表使用 hugegraph-tools 内置的 truststore 文件 conf/hugegraph.truststore
 - --trust-store-password，证书文件的密码，当 --url 使用 https 时，HugeGraph-Client 使用的 truststore 的密码，默认为空，代表使用 hugegraph-tools 内置的 truststore 文件的密码
+- --throw-mode，HugeGraph-Tools 出错时是否直接抛出异常，而不是打印错误信息后退出，默认为 false（主要用于测试）
+
+> 连接协议由 --url 的 scheme 决定：使用 `https://...` 即通过 https 连接。--trust-store-file 和 --trust-store-password 只能在 --url 使用 https 时设置，--user 和 --password 必须同时提供或同时省略。
 
 上述全局变量，也可以通过环境变量来设置。一种方式是在命令行使用 export 设置临时环境变量，在该命令行关闭之前均有效
 
@@ -111,6 +116,8 @@ Usage: hugegraph [options] [command] [command options]
 #export HUGEGRAPH_TRUST_STORE_PASSWORD=
 ```
 
+`bin/hugegraph` 还会读取 `JAVA_HOME`（未设置时打印警告，https 需要它）和 `JAVA_OPTIONS`（JVM 参数，为空时脚本使用 `-Xms512m`，并根据机器空闲内存计算 `-Xmx`）。
+
 ##### 3.3 图管理类，graph-mode-set、graph-mode-get、graph-list、graph-get、graph-clear、graph-create、graph-clone和graph-drop
 
 - graph-mode-set，设置图的 restore mode
@@ -121,27 +128,29 @@ Usage: hugegraph [options] [command] [command options]
 - graph-clear，清除某个图的全部 schema 和 data
     - --confirm-message 或者 -c，必填项，删除确认信息，需要手动输入，二次确认防止误删，"I'm sure to delete all data"，包括双引号
 - graph-create，使用配置文件创建新图
-    - --name 或者 -n，选填项，新图的名称，默认为 hugegraph
-    - --file 或者 -f，必填项，图配置文件的路径
+    - --name 或者 -n，选填项，新图的名称，默认为 g
+    - --file 或者 -f，图配置文件的路径，文件内容会作为新图的配置发送给 HugeGraph-Server
 - graph-clone，克隆已存在的图
-    - --name 或者 -n，选填项，新克隆图的名称，默认为 hugegraph
+    - --name 或者 -n，选填项，新克隆图的名称，默认为 g
     - --clone-graph-name，选填项，要克隆的源图名称，默认为 hugegraph
 - graph-drop，删除图（不同于 graph-clear，这会完全删除图）
     - --confirm-message 或者 -c，必填项，确认消息 "I'm sure to drop the graph"，包括双引号
 
+> graph-create、graph-clone、graph-clear 和 graph-drop 会将 --timeout 提升到至少 300 秒。
+
 > 当需要把备份的图原样恢复到一个新的图中的时候，需要先将图模式设置为 RESTORING 模式；当需要将备份的图合并到已存在的图中时，需要先将图模式设置为 MERGING 模式。
 
-##### 3.4 异步任务管理类，task-list、task-get和task-delete
+##### 3.4 异步任务管理类，task-list、task-get、task-delete、task-cancel 和 task-clear
 
 - task-list，列出某个图中的异步任务，可以根据任务的状态过滤
-    - --status，选填项，指定要查看的任务的状态，即按状态过滤任务
-    - --limit，选填项，指定要获取的任务的数目，默认为 -1，意思为获取全部符合条件的任务
+    - --status，选填项，指定要查看的任务的状态，即按状态过滤任务，合法值包括 [UNKNOWN, NEW, QUEUED, RESTORING, RUNNING, SUCCESS, CANCELLED, FAILED]（不区分大小写）
+    - --limit，选填项，指定要获取的任务的数目，默认为 -1，意思为获取全部符合条件的任务，显式传入的值必须为正数
 - task-get，获取某个异步任务的详细信息
     - --task-id，必填项，指定异步任务的 ID
 - task-delete，删除某个异步任务的信息
     - --task-id，必填项，指定异步任务的 ID
 - task-cancel，取消某个异步任务的执行
-    - --task-id，要取消的异步任务的 ID
+    - --task-id，必填项，要取消的异步任务的 ID
 - task-clear，清理完成的异步任务
     - --force，选填项，设置时，表示清理全部异步任务，未执行完成的先取消，然后清除所有异步任务。默认只清理已完成的异步任务
 
@@ -166,25 +175,27 @@ Usage: hugegraph [options] [command] [command options]
 - backup，将某张图中的 schema 或者 data 备份到 HugeGraph 系统之外，以 JSON 形式存在本地磁盘或者 HDFS
     - --format，备份的格式，可选值包括 [json, text]，默认为 json
     - --all-properties，是否备份顶点/边全部的属性，仅在 --format 为 text 是有效，默认 false
-    - --label，要备份的顶点/边的类型，仅在 --format 为 text 是有效，只有备份顶点或者边的时候有效
+    - --label，要备份的顶点 label 或者边 label，仅在 --format 为 text 时生效；设置该项时，--huge-types 必须只包含一种类型，且该类型必须是 vertex 或者 edge，否则命令会失败
     - --properties，要备份的顶点/边的属性，逗号分隔，仅在 --format 为 text 是有效，只有备份顶点或者边的时候有效
     - --compress，备份时是否压缩数据，默认为 true
     - --directory 或者 -d，存储 schema 或者 data 的目录，本地目录时，默认为'./{graphName}'，HDFS 时，默认为 '{fs.default.name}/{graphName}'
-    - --huge-types 或者 -t，要备份的数据类型，逗号分隔，可选值为 'all' 或者 一个或多个 [vertex,edge,vertex_label,edge_label,property_key,index_label] 的组合，'all' 代表全部6种类型，即顶点、边和所有schema
-    - --log 或者 -l，指定日志目录，默认为当前目录
+    - --huge-types 或者 -t，要备份的数据类型，逗号分隔，可选值为 'all' 或者 一个或多个 [vertex,edge,vertex_label,edge_label,property_key,index_label] 的组合，'all' 代表全部6种类型，即顶点、边和所有schema，'schema' 代表 4 种 schema 类型 [vertex_label, edge_label, property_key, index_label]
+    - --log 或者 -l，指定日志目录，默认为 ./logs
     - --retry，指定失败重试次数，默认为 3
     - --thread-num 或者 -T，使用的线程数，默认为 Math.min(10, Math.max(4, CPUs / 2))
-    - --split-size 或者 -s，指定在备份时对顶点或者边分块的大小，默认为 1048576
-    - -D，用 -Dkey=value 的模式指定动态参数，用来备份数据到 HDFS 时，指定 HDFS 的配置项，例如：-Dfs.default.name=hdfs://localhost:9000 
+    - --split-size 或者 -s，指定在备份时对顶点或者边分块的大小，默认为 1048576，且不能小于 1048576（1M）
+    - -D，用 -Dkey=value 的模式指定动态参数，用来备份数据到 HDFS 时，指定 HDFS 的配置项，例如：-Dfs.default.name=hdfs://localhost:9000
+    > 当 --timeout 小于 120 秒时，backup（以及 migrate 中的备份步骤）会使用 120 秒
 - restore，将 JSON 格式存储的 schema 或者 data 恢复到一个新图中（RESTORING 模式）或者合并到已存在的图中（MERGING 模式）
     - --directory 或者 -d，存储 schema 或者 data 的目录，本地目录时，默认为'./{graphName}'，HDFS 时，默认为 '{fs.default.name}/{graphName}'
     - --clean，是否在恢复图完成后删除 --directory 指定的目录，默认为 false
-    - --huge-types 或者 -t，要恢复的数据类型，逗号分隔，可选值为 'all' 或者 一个或多个 [vertex,edge,vertex_label,edge_label,property_key,index_label] 的组合，'all' 代表全部6种类型，即顶点、边和所有schema
-    - --log 或者 -l，指定日志目录，默认为当前目录
+    - --huge-types 或者 -t，要恢复的数据类型，逗号分隔，可选值为 'all' 或者 一个或多个 [vertex,edge,vertex_label,edge_label,property_key,index_label] 的组合，'all' 代表全部6种类型，即顶点、边和所有schema，'schema' 代表 4 种 schema 类型 [vertex_label, edge_label, property_key, index_label]
+    - --log 或者 -l，指定日志目录，默认为 ./logs
     - --retry，指定失败重试次数，默认为 3
     - --thread-num 或者 -T，使用的线程数，默认为 Math.min(10, Math.max(4, CPUs / 2))
     - -D，用 -Dkey=value 的模式指定动态参数，用来从 HDFS 恢复图时，指定 HDFS 的配置项，例如：-Dfs.default.name=hdfs://localhost:9000
     > 只有当 --format 为 json 执行 backup 时，才可以使用 restore 命令恢复
+    > restore 要求图处于 RESTORING 或 MERGING 模式（先用 graph-mode-set 设置），否则命令会失败
 - migrate，将当前连接的图迁移至另一个 HugeGraphServer 中
     - --target-graph，目标图的名字，默认为 hugegraph
     - --target-url，目标图所在的 HugeGraphServer，默认为 http://127.0.0.1:8081
@@ -194,60 +205,61 @@ Usage: hugegraph [options] [command] [command options]
     - --target-trust-store-file，访问目标图使用的 truststore 文件
     - --target-trust-store-password，访问目标图使用的 truststore 的密码
     - --directory 或者 -d，迁移过程中，存储源图的 schema 或者 data 的目录，本地目录时，默认为'./{graphName}'，HDFS 时，默认为 '{fs.default.name}/{graphName}'
-    - --huge-types 或者 -t，要迁移的数据类型，逗号分隔，可选值为 'all' 或者 一个或多个 [vertex,edge,vertex_label,edge_label,property_key,index_label] 的组合，'all' 代表全部6种类型，即顶点、边和所有schema
-    - --log 或者 -l，指定日志目录，默认为当前目录
+    - --huge-types 或者 -t，要迁移的数据类型，逗号分隔，可选值为 'all' 或者 一个或多个 [vertex,edge,vertex_label,edge_label,property_key,index_label] 的组合，'all' 代表全部6种类型，即顶点、边和所有schema，'schema' 代表 4 种 schema 类型 [vertex_label, edge_label, property_key, index_label]
+    - --log 或者 -l，指定日志目录，默认为 ./logs
     - --retry，指定失败重试次数，默认为 3
-    - --split-size 或者 -s，指定迁移过程中对源图进行备份时顶点或者边分块的大小，默认为 1048576
+    - --thread-num 或者 -T，使用的线程数，默认为 Math.min(10, Math.max(4, CPUs / 2))
+    - --split-size 或者 -s，指定迁移过程中对源图进行备份时顶点或者边分块的大小，默认为 1048576，且不能小于 1048576（1M）
     - -D，用 -Dkey=value 的模式指定动态参数，用来在迁移图过程中需要备份数据到 HDFS 时，指定 HDFS 的配置项，例如：-Dfs.default.name=hdfs://localhost:9000
-    - --graph-mode 或者 -m，将源图恢复到目标图时将目标图设置的模式，合法值包括 [RESTORING, MERGING]
+    - --graph-mode 或者 -m，将源图恢复到目标图时将目标图设置的模式，合法值包括 [RESTORING, MERGING]，默认为 RESTORING。迁移期间目标图会被切换到该模式，迁移结束后恢复为原来的模式
     - --keep-local-data，是否保留在迁移图的过程中产生的源图的备份，默认为 false，即默认迁移图结束后不保留产生的源图备份
 - schedule-backup，周期性对图执行备份操作，并保留一定数目的最新备份（目前仅支持本地文件系统）
     - --directory 或者 -d，必填项，指定备份数据的目录
     - --backup-num，选填项，指定保存的最新的备份的数目，默认为 3
-    - --interval，选填项，指定进行备份的周期，格式同 Linux crontab 格式
+    - --interval，选填项，指定进行备份的周期，格式同 Linux crontab 格式，默认为 "0 0 * * *"（每天 00:00）
+    > schedule-backup 会添加一条 crontab 任务，定期执行 `backup -t all` 并写入 `{directory}/{graph}/hugegraph-backup-{yyMMddHHmm}/`，只保留最新的 --backup-num 份备份。相对路径的 --directory 会相对于 hugegraph-tools 的根目录解析，且 `{directory}/{graph}` 必须尚不存在
 - dump，把整张图的顶点和边全部导出，默认以 `vertex vertex-edge1 vertex-edge2...` 的 JSON 格式存储。
 用户也可以自定义存储格式。在 `hugegraph-tools/src/main/java/org/apache/hugegraph/formatter` 下实现一个继承自 `Formatter` 的类，例如 `CustomFormatter`，使用时指定该类为 formatter：
 `bin/hugegraph dump -f CustomFormatter`
     - --formatter 或者 -f，指定使用的 formatter，默认为 JsonFormatter
-    - --directory 或者 -d，存储 schema 或者 data 的目录，默认为当前目录
-    - --log 或者 -l，指定日志目录，默认为当前目录
+    - --directory 或者 -d，存储 schema 或者 data 的目录，本地目录时，默认为'./{graphName}'，HDFS 时，默认为 '{fs.default.name}/{graphName}'
+    - --log 或者 -l，指定日志目录，默认为 ./logs
     - --retry，指定失败重试次数，默认为 3
-    - --split-size 或者 -s，指定在备份时对顶点或者边分块的大小，默认为 1048576
+    - --thread-num 或者 -T，使用的线程数，默认为 Math.min(10, Math.max(4, CPUs / 2))
+    - --split-size 或者 -s，指定在备份时对顶点或者边分块的大小，默认为 1048576，且不能小于 1048576（1M）
     - -D，用 -Dkey=value 的模式指定动态参数，用来备份数据到 HDFS 时，指定 HDFS 的配置项，例如：-Dfs.default.name=hdfs://localhost:9000
 
 ##### 3.7 认证数据备份/恢复类
 
 - auth-backup，备份认证数据到指定目录
-    - --types 或者 -t，要备份的认证数据类型，逗号分隔，可选值为 'all' 或者一个或多个 [user, group, target, belong, access] 的组合，'all' 代表全部5种类型
-    - --directory 或者 -d，备份数据存储目录，默认为当前目录
-    - --log 或者 -l，指定日志目录，默认为当前目录
+    - --types 或者 -t，要备份的认证数据类型，逗号分隔，可选值为 'all' 或者一个或多个 [user, group, target, belong, access] 的组合，'all' 代表全部5种类型；包含 'belong' 时必须同时包含 'user' 和 'group'，包含 'access' 时必须同时包含 'group' 和 'target'
+    - --directory，备份数据存储目录，本地目录时，默认为 './auth-backup-restore'，HDFS 时，默认为 '{fs.default.name}/auth-backup-restore'（该选项没有 -d 短写）
     - --retry，指定失败重试次数，默认为 3
-    - --thread-num 或者 -T，使用的线程数，默认为 Math.min(10, Math.max(4, CPUs / 2))
     - -D，用 -Dkey=value 的模式指定动态参数，用来备份数据到 HDFS 时，指定 HDFS 的配置项，例如：-Dfs.default.name=hdfs://localhost:9000
 - auth-restore，从指定目录恢复认证数据
-    - --types 或者 -t，要恢复的认证数据类型，逗号分隔，可选值为 'all' 或者一个或多个 [user, group, target, belong, access] 的组合，'all' 代表全部5种类型
-    - --directory 或者 -d，备份数据存储目录，默认为当前目录
-    - --log 或者 -l，指定日志目录，默认为当前目录
+    - --types 或者 -t，要恢复的认证数据类型，逗号分隔，可选值为 'all' 或者一个或多个 [user, group, target, belong, access] 的组合，'all' 代表全部5种类型；包含 'belong' 时必须同时包含 'user' 和 'group'，包含 'access' 时必须同时包含 'group' 和 'target'
+    - --directory，备份数据存储目录，本地目录时，默认为 './auth-backup-restore'，HDFS 时，默认为 '{fs.default.name}/auth-backup-restore'（该选项没有 -d 短写）
     - --retry，指定失败重试次数，默认为 3
-    - --thread-num 或者 -T，使用的线程数，默认为 Math.min(10, Math.max(4, CPUs / 2))
     - --strategy，冲突处理策略，可选值为 [stop, ignore]，默认为 stop。stop 表示遇到冲突时停止恢复，ignore 表示忽略冲突继续恢复
-    - --init-password，恢复用户时设置的初始密码，恢复用户数据时必填
+    - --init-password，恢复用户时设置的初始密码，当 --types 包含 user 时必填
     - -D，用 -Dkey=value 的模式指定动态参数，用来从 HDFS 恢复数据时，指定 HDFS 的配置项，例如：-Dfs.default.name=hdfs://localhost:9000
 
 ##### 3.8 安装部署类
 
 - deploy，一键下载、安装和启动 HugeGraph-Server 和 HugeGraph-Studio
-    - -v，必填项，指定要安装的 HugeGraph-Server 和 HugeGraph-Studio 版本
+    - -v，必填项，指定要安装的 HugeGraph-Server 和 HugeGraph-Studio 版本，必须是 bin/version-map.yaml 中列出的版本之一（0.6、0.7、0.8、0.9、0.10），脚本据此映射到对应的 server 和 studio 发布版本
     - -p，必填项，指定安装的 HugeGraph-Server 和 HugeGraph-Studio 目录
     - -u，选填项，指定下载 HugeGraph-Server 和 HugeGraph-Studio 压缩包的链接
-- clear，清理 HugeGraph-Server 和 HugeGraph-Studio 目录和tar包
+- clear，清理 HugeGraph-Server 和 HugeGraph-Studio 目录和tar包（若对应的 server 或 studio 进程仍在运行则拒绝执行，删除每一项前都会提示确认）
     - -p，必填项，指定要清理的 HugeGraph-Server 和 HugeGraph-Studio 的目录
-- start-all，一键启动 HugeGraph-Server 和 HugeGraph-Studio，并启动监控，服务死掉时自动拉起服务
-    - -v，必填项，指定已安装的 HugeGraph-Server 和 HugeGraph-Studio 版本
+- start-all，一键启动 HugeGraph-Server 和 HugeGraph-Studio
+    - -v，必填项，指定已安装的 HugeGraph-Server 和 HugeGraph-Studio 版本，取值同 deploy
     - -p，必填项，指定安装了 HugeGraph-Server 和 HugeGraph-Studio 的目录
 - stop-all，一键关闭 HugeGraph-Server 和 HugeGraph-Studio
 
-> deploy命令中有可选参数 -u，提供时会使用指定的下载地址替代默认下载地址下载 tar 包，并且将地址写入`~/hugegraph-download-url-prefix`文件中；之后如果不指定地址时，会优先从`~/hugegraph-download-url-prefix`指定的地址下载 tar 包；如果 -u 和`~/hugegraph-download-url-prefix`都没有时，会从默认下载地址进行下载
+> deploy、start-all、clear 和 stop-all 由 `bin/hugegraph` 直接转交给 `bin/deploy.sh`、`bin/start-all.sh`、`bin/clear.sh` 和 `bin/stop-all.sh` 执行，因此 3.2 中的全局变量和环境变量对它们不生效。
+
+> deploy命令中有可选参数 -u，提供时会使用指定的下载地址替代默认下载地址下载 tar 包，并且将地址写入`~/hugegraph-download-url-prefix`文件中；之后如果不指定地址时，会优先从`~/hugegraph-download-url-prefix`指定的地址下载 tar 包；如果 -u 和`~/hugegraph-download-url-prefix`都没有时，会从默认下载地址 `https://github.com/hugegraph` 进行下载
 
 ##### 3.9 具体命令参数
 
@@ -261,6 +273,9 @@ Usage: hugegraph [options] [command] [command options]
       Default: hugegraph
     --password
       Password of user
+    --throw-mode
+      Whether the hugegraph-tools work to throw an exception
+      Default: false
     --timeout
       Connection timeout
       Default: 30
@@ -275,6 +290,25 @@ Usage: hugegraph [options] [command] [command options]
     --user
       Name of user
   Commands:
+    graph-create      Create graph with config
+      Usage: graph-create [options]
+        Options:
+          --file, -f
+            Creating graph config file
+          --name, -n
+            The name of new created graph, default is g
+            Default: g
+
+    graph-clone      Clone graph
+      Usage: graph-clone [options]
+        Options:
+          --clone-graph-name
+            The name of cloned graph, default is hugegraph
+            Default: hugegraph
+          --name, -n
+            The name of new created graph, default is g
+            Default: g
+
     graph-list      List all graphs
       Usage: graph-list
 
@@ -286,6 +320,13 @@ Usage: hugegraph [options] [command] [command options]
         Options:
         * --confirm-message, -c
             Confirm message of graph clear is "I'm sure to delete all data". 
+            (Note: include "")
+
+    graph-drop      Drop graph
+      Usage: graph-drop [options]
+        Options:
+        * --confirm-message, -c
+            Confirm message of graph clear is "I'm sure to drop the graph". 
             (Note: include "")
 
     graph-mode-set      Set graph mode
@@ -370,7 +411,7 @@ Usage: hugegraph [options] [command] [command options]
             Gremlin script to be executed, exclusive to --file
 
     backup      Backup graph schema/data. If directory is on HDFS, use -D to 
-            set HDFS params. For exmaple:
+            set HDFS params. For example: 
             -Dfs.default.name=hdfs://localhost:9000 
       Usage: backup [options]
         Options:
@@ -387,17 +428,19 @@ Usage: hugegraph [options] [command] [command options]
             File format, valid is [json, text]
             Default: json
           --huge-types, -t
-            Type of schema/data. Concat with ',' if more than one. 'all' means 
-            all vertices, edges and schema, in other words, 'all' equals with 
-            'vertex,edge,vertex_label,edge_label,property_key,index_label' 
+            Type of schema/data. Concat with ',' if more than one. Other types 
+            include 'all' and 'schema'. 'all' means all vertices, edges and 
+            schema. In other words, 'all' equals with 'vertex, edge, 
+            vertex_label, edge_label, property_key, index_label'. 'schema' 
+            equals with 'vertex_label, edge_label, property_key, index_label'.
             Default: [PROPERTY_KEY, VERTEX_LABEL, EDGE_LABEL, INDEX_LABEL, VERTEX, EDGE]
           --label
-            Vertex or edge label, only valid when type is vertex or edge
+            Vertex label or edge label, only valid when type is vertex or edge
           --log, -l
             Directory of log
             Default: ./logs
           --properties
-            Vertex or edge properties to backup, only valid when type is
+            Vertex or edge properties to backup, only valid when type is 
             vertex or edge
             Default: []
           --retry
@@ -406,6 +449,10 @@ Usage: hugegraph [options] [command] [command options]
           --split-size, -s
             Split size of shard
             Default: 1048576
+          --thread-num, -T
+            Threads number to use, default is Math.min(10, Math.max(4, CPUs / 
+            2)) 
+            Default: 0
           -D
             HDFS config parameters
             Syntax: -Dkey=value
@@ -444,6 +491,10 @@ Usage: hugegraph [options] [command] [command options]
           --split-size, -s
             Split size of shard
             Default: 1048576
+          --thread-num, -T
+            Threads number to use, default is Math.min(10, Math.max(4, CPUs / 
+            2)) 
+            Default: 0
           -D
             HDFS config parameters
             Syntax: -Dkey=value
@@ -451,7 +502,7 @@ Usage: hugegraph [options] [command] [command options]
 
     restore      Restore graph schema/data. If directory is on HDFS, use -D to 
             set HDFS params if needed. For 
-            exmaple:-Dfs.default.name=hdfs://localhost:9000 
+            example:-Dfs.default.name=hdfs://localhost:9000 
       Usage: restore [options]
         Options:
           --clean
@@ -461,9 +512,11 @@ Usage: hugegraph [options] [command] [command options]
             Directory of graph schema/data, default is './{graphname}' in 
             local file system or '{fs.default.name}/{graphname}' in HDFS
           --huge-types, -t
-            Type of schema/data. Concat with ',' if more than one. 'all' means 
-            all vertices, edges and schema, in other words, 'all' equals with 
-            'vertex,edge,vertex_label,edge_label,property_key,index_label' 
+            Type of schema/data. Concat with ',' if more than one. Other types 
+            include 'all' and 'schema'. 'all' means all vertices, edges and 
+            schema. In other words, 'all' equals with 'vertex, edge, 
+            vertex_label, edge_label, property_key, index_label'. 'schema' 
+            equals with 'vertex_label, edge_label, property_key, index_label'.
             Default: [PROPERTY_KEY, VERTEX_LABEL, EDGE_LABEL, INDEX_LABEL, VERTEX, EDGE]
           --log, -l
             Directory of log
@@ -471,6 +524,10 @@ Usage: hugegraph [options] [command] [command options]
           --retry
             Retry times, default is 3
             Default: 3
+          --thread-num, -T
+            Threads number to use, default is Math.min(10, Math.max(4, CPUs / 
+            2)) 
+            Default: 0
           -D
             HDFS config parameters
             Syntax: -Dkey=value
@@ -488,9 +545,11 @@ Usage: hugegraph [options] [command] [command options]
             Default: RESTORING
             Possible Values: [NONE, RESTORING, MERGING, LOADING]
           --huge-types, -t
-            Type of schema/data. Concat with ',' if more than one. 'all' means 
-            all vertices, edges and schema, in other words, 'all' equals with 
-            'vertex,edge,vertex_label,edge_label,property_key,index_label' 
+            Type of schema/data. Concat with ',' if more than one. Other types 
+            include 'all' and 'schema'. 'all' means all vertices, edges and 
+            schema. In other words, 'all' equals with 'vertex, edge, 
+            vertex_label, edge_label, property_key, index_label'. 'schema' 
+            equals with 'vertex_label, edge_label, property_key, index_label'.
             Default: [PROPERTY_KEY, VERTEX_LABEL, EDGE_LABEL, INDEX_LABEL, VERTEX, EDGE]
           --keep-local-data
             Whether to keep the local directory of graph data after restored
@@ -521,6 +580,10 @@ Usage: hugegraph [options] [command] [command options]
             Default: http://127.0.0.1:8081
           --target-user
             The username of target graph to migrate
+          --thread-num, -T
+            Threads number to use, default is Math.min(10, Math.max(4, CPUs / 
+            2)) 
+            Default: 0
           -D
             HDFS config parameters
             Syntax: -Dkey=value
@@ -553,9 +616,66 @@ Usage: hugegraph [options] [command] [command options]
     stop-all      Stop HugeGraph-Server and HugeGraph-Studio
       Usage: stop-all
 
+    auth-backup      null
+      Usage: auth-backup [options]
+        Options:
+          --directory
+            Directory of auth information, default is 
+            './{auth-backup-restore}' in local file system or 
+            '{fs.default.name}/{auth-backup-restore}' in HDFS
+          --retry
+            Retry times, default is 3
+            Default: 3
+          --types, -t
+            Type of auth data to restore and backup, concat with ',' if more 
+            than one. 'all' means all auth information. In other words, 'all' 
+            equals with 'user, group, target, belong, access'. In addition, 
+            'belong' or 'access' can not backup or restore alone, if type 
+            contains 'belong' then should contains 'user' and 'group'. If type 
+            contains 'access' then should contains 'group' and 'target'.
+            Default: [TARGET, GROUP, USER, ACCESS, BELONG]
+          -D
+            HDFS config parameters
+            Syntax: -Dkey=value
+            Default: {}
+
+    auth-restore      null
+      Usage: auth-restore [options]
+        Options:
+          --directory
+            Directory of auth information, default is 
+            './{auth-backup-restore}' in local file system or 
+            '{fs.default.name}/{auth-backup-restore}' in HDFS
+          --init-password
+            Init user password, if restore type include 'user', please specify 
+            the init-password of users.
+            Default: <empty string>
+          --retry
+            Retry times, default is 3
+            Default: 3
+          --strategy
+            The strategy needs to be chosen in the event of a conflict when 
+            restoring. Valid strategies include 'stop' and 'ignore', default 
+            is 'stop'. 'stop' means if there a conflict, stop restore. 
+            'ignore' means if there a conflict, ignore and continue to 
+            restore. 
+            Default: STOP
+            Possible Values: [STOP, IGNORE]
+          --types, -t
+            Type of auth data to restore and backup, concat with ',' if more 
+            than one. 'all' means all auth information. In other words, 'all' 
+            equals with 'user, group, target, belong, access'. In addition, 
+            'belong' or 'access' can not backup or restore alone, if type 
+            contains 'belong' then should contains 'user' and 'group'. If type 
+            contains 'access' then should contains 'group' and 'target'.
+            Default: [TARGET, GROUP, USER, ACCESS, BELONG]
+          -D
+            HDFS config parameters
+            Syntax: -Dkey=value
+            Default: {}
+
     help      Print usage
       Usage: help
-
 ```
 
 ##### 3.10 具体命令示例

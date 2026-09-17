@@ -149,7 +149,7 @@ A random walk based PersonalRank algorithm should be likes this:
 **Optional**:
 - alpha: the probability of going out for one vertex in each iteration，similar to the alpha of PageRank,required, value range is (0, 1], default 0.85.
 - max_degree: in query process, the max iteration number of adjacency edge for a vertex, default `10000`
-- max_depth: iteration number,range [2, 50], default `5`
+- max_depth: iteration number,range [2, 5000], default `5`
 - with_label：result filter,default `BOTH_LABEL`,optional list as follows:
     - SAME_LABEL：Only keep vertex which has the same type as source vertex
     - OTHER_LABEL：Only keep vertex which has different type as source vertex (the another part in bipartite graph)
@@ -311,7 +311,8 @@ In graph words:  to go out from the starting point, get the probability of going
 	- labels：a list of edge types, will union all edge types
 	- max_degree：in query process, the max iteration number of adjacency edge for a vertex, default `10000` 
         (Note: before v0.12 step only support degree as parameter name, from v0.12, use max_degree, compatible with degree)
-	- top： retains only the top N results with the highest weight in each layer of the results, default 100, max 1000 
+	- skip_degree: the threshold above which a super vertex is skipped in this layer, default `0` (no skipping)
+	- top： retains only the top N results with the highest weight in each layer of the results, default 10, max 1000 
 - capacity: the maximum number of vertexes visited during the traversal, optional, default 10000000
 
 ##### 4.2.2.2 Usage

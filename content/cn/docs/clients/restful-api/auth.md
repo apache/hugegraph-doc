@@ -26,7 +26,7 @@ city: Beijing})
 描述：用户'boss'拥有对'graph1'图中北京人的读权限。
 
 ##### 接口说明：
-用户认证与权限控制接口包括 5 类：UserAPI、GroupAPI、TargetAPI、BelongAPI、AccessAPI。
+用户认证与权限控制的核心接口包括 5 类：UserAPI、GroupAPI、TargetAPI、BelongAPI、AccessAPI。除此之外，ManagerAPI 用于授予图空间级别的管理角色，LoginAPI 用于签发和校验 token，ProjectAPI 用于把多个图归为一组从而一次性授权。
 **注意**: 1.5.0 及之前，group/target 等 id 的格式类似 -69:grant，1.7.0 及之后，id 和 name 一致，如 admin [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
 
 ### 10.2 用户（User）API
@@ -38,10 +38,13 @@ city: Beijing})
 
 - user_name: 用户名称
 - user_password: 用户密码
+- user_nickname: 用户昵称
 - user_phone: 用户手机号
-- user_email: 用户邮箱  
+- user_email: 用户邮箱
+- user_avatar: 用户头像地址
+- user_description: 用户描述
 
-其中 user_name 和 user_password 为必填。
+其中 user_name 和 user_password 为必填，其余为选填。
 
 ##### Request Body
 
@@ -101,12 +104,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 204
 ```
 
-##### Response Body
-
-```json
-1
-```
-
 #### 10.2.3 修改用户
 
 ##### Params
@@ -120,7 +117,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 ```
 
 ##### Request Body
-修改 user_name、user_password 和 user_phone
+修改 user_password 和 user_phone。`user_name` 不可修改，传了也必须与已有名称一致。
 ```json
 {
     "user_name": "test",
@@ -136,7 +133,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 ```
 
 ##### Response Body
-返回结果是包含修改过的内容在内的整个用户组对象
+返回结果是包含修改过的内容在内的整个用户对象
 ```json
 {
     "user_password": "******",
@@ -153,7 +150,8 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 
 ##### Params
 
-- limit: 返回结果条数的上限
+- name: 只返回该名称的用户，传该参数时返回的是单个用户对象而不是列表，用户不存在时返回 `404`
+- limit: 返回结果条数的上限，默认为 100
 
 
 ##### Method & Url
@@ -207,16 +205,12 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/admin
 
 ```json
 {
-    "users": [
-        {
-            "user_password": "******",
-            "user_update": "2020-11-11 11:41:12.254",
-            "user_name": "admin",
-            "user_creator": "system",
-          "id": "admin",
-            "user_create": "2020-11-11 11:41:12.254"
-        }
-    ]
+    "user_password": "******",
+    "user_update": "2020-11-11 11:41:12.254",
+    "user_name": "admin",
+    "user_creator": "system",
+    "id": "admin",
+    "user_create": "2020-11-11 11:41:12.254"
 }
 ```
 
@@ -315,12 +309,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
 
 ```json
 204
-```
-
-##### Response Body
-
-```json
-1
 ```
 
 #### 10.3.3 修改用户组
@@ -517,12 +505,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
 
 ```json
 204
-```
-
-##### Response Body
-
-```json
-1
 ```
 
 #### 10.4.3 修改资源
@@ -743,12 +725,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:gr
 204
 ```
 
-##### Response Body
-
-```json
-1
-```
-
 #### 10.5.3 修改关联角色
 关联角色只能修改描述，不能修改 user 和 group 属性，如果需要修改关联角色，需要删除原来关联关系，新增关联角色。
 
@@ -794,7 +770,11 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:grant
 
 ##### Params
 
-- limit: 返回结果条数的上限
+- user: 只返回该用户的关联关系
+- group: 只返回该角色的关联关系
+- limit: 返回结果条数的上限，默认为 100
+
+`user` 和 `group` 不能同时使用。
 
 
 ##### Method & Url
@@ -931,12 +911,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S
 204
 ```
 
-##### Response Body
-
-```json
-1
-```
-
 #### 10.6.3 修改赋权
 赋权只能修改描述，不能修改用户组、资源和权限许可，如果需要修改赋权的关系，可以删除原来的赋权关系，新增赋权。
 
@@ -983,7 +957,11 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S-77
 
 ##### Params
 
-- limit: 返回结果条数的上限
+- group: 只返回该角色的赋权记录
+- target: 只返回该资源上的赋权记录
+- limit: 返回结果条数的上限，默认为 100
+
+`group` 和 `target` 不能同时使用。
 
 ##### Method & Url
 
@@ -1051,18 +1029,20 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>11>S-77
 
 **重要提示**：在使用以下 API 之前，需要先创建图空间（graphspace）。请参考 [Graphspace API](./graphspace) 创建名为 `gs1` 的图空间。文档中的示例均假设已存在名为 `gs1` 的图空间
 
+**重要提示**：管理员相关接口只在 PD 模式下可用，单机模式下会返回 `400` 和 `GraphSpace management is not supported in standalone mode` 错误信息。
+
 1. 图空间管理员 API 用于在 graphspace 维度给用户授予/回收管理员角色，并查询当前用户或其他用户在该 graphspace 下的角色信息。角色类型可取 `SPACE`、`SPACE_MEMBER`、`ADMIN` 。
 
 #### 10.7.1 检查当前登录用户是否拥有某个角色
 
 ##### Params
 
-- type: 需要校验的角色类型，可选
+- type: 需要校验的角色类型，必填，取值为 `SPACE`、`SPACE_MEMBER`、`ADMIN` 之一
 
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/gs1/auth/managers/check?type=WRITE
+GET http://localhost:8080/graphspaces/gs1/auth/managers/check?type=SPACE_MEMBER
 ```
 
 ##### Response Status
@@ -1074,16 +1054,16 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers/check?type=WRITE
 ##### Response Body
 
 ```json
-"true"
+{
+  "check": true
+}
 ```
-
-返回 `true/false` 字符串表示是否拥有对应角色。
 
 #### 10.7.2 查询图空间管理员列表
 
 ##### Params
 
-- type: 角色类型，可选，按角色过滤
+- type: 角色类型，必填，取值为 `SPACE`、`SPACE_MEMBER`、`ADMIN` 之一。`SPACE` 返回图空间管理员，`SPACE_MEMBER` 返回图空间成员，`ADMIN` 返回整个集群的管理员
 
 ##### Method & Url
 
@@ -1101,12 +1081,8 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers?type=SPACE
 
 ```json
 {
-  "managers": [
-    {
-      "user": "admin",
-      "type": "SPACE",
-      "create_time": "2024-01-10 09:30:00"
-    }
+  "admins": [
+    "admin"
   ]
 }
 ```
@@ -1114,6 +1090,13 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers?type=SPACE
 #### 10.7.3 授权/创建图空间管理员
 
 - 下面在 gs1 下，将用户 boss 授权为 SPACE_MEMBER 角色
+
+##### Params
+
+- user: 用户或角色名称，必填
+- type: 角色类型，必填，取值为 `SPACE`、`SPACE_MEMBER`、`ADMIN` 之一
+
+> 把已经是图空间成员的用户授权为 `SPACE` 时会先回收其成员角色，反之同理。只有管理员可以授予 `ADMIN`。
 
 ##### Request Body
 
@@ -1142,8 +1125,7 @@ POST http://localhost:8080/graphspaces/gs1/auth/managers
 {
   "user": "boss",
   "type": "SPACE_MEMBER",
-  "manager_creator": "admin",
-  "manager_create": "2024-01-10 09:45:12"
+  "graphspace": "gs1"
 }
 ```
 
@@ -1153,8 +1135,8 @@ POST http://localhost:8080/graphspaces/gs1/auth/managers
 
 ##### Params
 
-- user: 需要删除的用户 Id
-- type: 需要删除的角色类型
+- user: 需要删除的用户名称，内置的 `admin` 用户不能从 `ADMIN` 中移除
+- type: 需要删除的角色类型，取值为 `SPACE`、`SPACE_MEMBER`、`ADMIN` 之一
 
 ##### Method & Url
 
@@ -1168,17 +1150,11 @@ DELETE http://localhost:8080/graphspaces/gs1/auth/managers?user=boss&type=SPACE_
 204
 ```
 
-##### Response Body
-
-```json
-1
-```
-
 #### 10.7.5 查询指定用户在图空间中的角色
 
 ##### Params
 
-- user: 用户 Id
+- user: 用户名称
 
 ##### Method & Url
 
@@ -1194,13 +1170,330 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers/role?user=boss
 
 ##### Response Body
 
+返回的角色取自 `ADMIN`、`SPACE`、`SPACE_MEMBER`；用户在该图空间下不具备其中任何角色时返回 `NONE`。
+
 ```json
 {
-  "roles": {
-    "boss": [
-      "READ",
-      "SPACE_MEMBER"
-    ]
-  }
+  "user": "boss",
+  "graphspace": "gs1",
+  "roles": [
+    "SPACE_MEMBER"
+  ]
 }
+```
+
+#### 10.7.6 检查当前登录用户是否拥有某个默认角色
+
+默认角色是图空间的内置角色，参见 [Graphspace API](./graphspace)。`role` 的合法取值为 `space`、`space_member`、`analyst` 和 `observer`；`graph` 只在 `role=observer` 时生效。
+
+##### Params
+
+- role: 默认角色名称，必填
+- graph: 图名称，选填，只在 `role=observer` 时使用
+
+##### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/gs1/auth/managers/default?role=analyst
+```
+
+##### Response Status
+
+```json
+200
+```
+
+##### Response Body
+
+```json
+{
+  "check": true
+}
+```
+
+### 10.8 登录（Login）API
+
+除了 HTTP Basic 认证之外，服务还可以签发 JWT token，之后通过 `Authorization: Bearer <token>` 请求头携带。登录相关接口不带图空间前缀。
+
+token 使用 `auth.token_secret` 配置项签名，有效期为 `auth.token_expire` 秒（默认 86400）。该密钥的默认值在启动时随机生成，因此当 token 需要在重启后继续有效、或者需要被多个服务节点接受时，必须显式配置该项。
+
+#### 10.8.1 登录并获取 token
+
+##### Params
+
+- user_name: 用户名称，必填
+- user_password: 用户密码，必填
+- token_expire: token 有效期（秒），选填
+
+##### Request Body
+
+```json
+{
+    "user_name": "test",
+    "user_password": "******"
+}
+```
+
+##### Method & Url
+
+```
+POST http://localhost:8080/auth/login
+```
+
+##### Response Status
+
+```json
+200
+```
+
+用户名或密码错误时返回 `401`。
+
+##### Response Body
+
+```json
+{
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX25hbWUiOiJ0ZXN0IiwidXNlcl9pZCI6InRlc3QiLCJleHAiOjE3MTIxMjM0NTZ9.PBs0iBt0PtqvLDpJvKrPHkyIzT1TICz9zJmMy8FvXVo"
+}
+```
+
+#### 10.8.2 登出并使 token 失效
+
+需要失效的 token 从请求头中获取，无需请求体。
+
+##### Params
+
+**请求头说明：**
+
+- Authorization: `Bearer <token>`，必填。只接受 Bearer 方式，其他方式返回 `400`。
+
+##### Method & Url
+
+```
+DELETE http://localhost:8080/auth/logout
+```
+
+##### Response Status
+
+```json
+204
+```
+
+token 非法或已过期时返回 `401`。
+
+#### 10.8.3 校验 token
+
+##### Params
+
+**请求头说明：**
+
+- Authorization: `Bearer <token>`，必填
+
+##### Method & Url
+
+```
+GET http://localhost:8080/auth/verify
+```
+
+##### Response Status
+
+```json
+200
+```
+
+token 非法或已过期时返回 `401`。
+
+##### Response Body
+
+```json
+{
+    "user_name": "test",
+    "user_id": "test"
+}
+```
+
+### 10.9 项目（Project）API
+
+项目把一组图和一个管理员角色、一个操作员角色绑定在一起，从而可以一次性对这组图授权。创建项目时会同时生成它的 `project_target`、`project_admin_group` 和 `project_op_group`，这些字段会在响应中返回，但不能由客户端设置。
+
+#### 10.9.1 创建项目
+
+##### Params
+
+- project_name: 项目名称，必填
+- project_description: 项目描述，选填
+
+创建时不能传 `project_graphs`，请使用下面的 `add_graph` 操作。
+
+##### Request Body
+
+```json
+{
+    "project_name": "test_project",
+    "project_description": "this is a good project"
+}
+```
+
+##### Method & Url
+
+```
+POST http://localhost:8080/graphspaces/DEFAULT/auth/projects
+```
+
+##### Response Status
+
+```json
+201
+```
+
+##### Response Body
+
+```json
+{
+    "project_name": "test_project",
+    "project_description": "this is a good project",
+    "project_target": "project_test_project",
+    "project_admin_group": "project_test_project_admin",
+    "project_op_group": "project_test_project_op",
+    "project_create": "2024-01-10 09:30:00.000",
+    "project_update": "2024-01-10 09:30:00.000",
+    "project_creator": "admin",
+    "id": "test_project"
+}
+```
+
+#### 10.9.2 向项目中添加或移除图
+
+##### Params
+
+- id: 项目 Id
+- action: `add_graph` 表示添加，`remove_graph` 表示移除
+
+##### Request Body
+
+```json
+{
+    "project_graphs": [
+        "hugegraph"
+    ]
+}
+```
+
+##### Method & Url
+
+```
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project?action=add_graph
+```
+
+##### Response Status
+
+```json
+200
+```
+
+##### Response Body
+
+返回整个项目对象，其中包含更新后的图列表。
+
+#### 10.9.3 修改项目描述
+
+##### Params
+
+- id: 项目 Id
+
+不传 `action` 时表示修改描述，此时请求体中不能带 `project_graphs`。
+
+##### Request Body
+
+```json
+{
+    "project_description": "update desc"
+}
+```
+
+##### Method & Url
+
+```
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
+```
+
+##### Response Status
+
+```json
+200
+```
+
+#### 10.9.4 查询项目列表
+
+##### Params
+
+- limit: 返回结果条数的上限，默认为 100
+
+##### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/auth/projects
+```
+
+##### Response Status
+
+```json
+200
+```
+
+##### Response Body
+
+```json
+{
+    "projects": [
+        {
+            "project_name": "test_project",
+            "project_description": "this is a good project",
+            "project_target": "project_test_project",
+            "project_admin_group": "project_test_project_admin",
+            "project_op_group": "project_test_project_op",
+            "project_create": "2024-01-10 09:30:00.000",
+            "project_update": "2024-01-10 09:30:00.000",
+            "project_creator": "admin",
+            "id": "test_project"
+        }
+    ]
+}
+```
+
+#### 10.9.5 查询某个项目
+
+##### Params
+
+- id: 项目 Id
+
+##### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
+```
+
+##### Response Status
+
+```json
+200
+```
+
+#### 10.9.6 删除项目
+
+##### Params
+
+- id: 项目 Id
+
+删除前需要先把项目中的图全部移除。
+
+##### Method & Url
+
+```
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
+```
+
+##### Response Status
+
+```json
+204
 ```

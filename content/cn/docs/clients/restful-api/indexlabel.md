@@ -175,3 +175,53 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexla
 注：
 
 > 可以通过`GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1`（其中"1"是 task_id）来查询异步任务的执行状态，更多[异步任务 RESTful API](./task)
+
+#### 1.5.5 为已存在的 IndexLabel 添加或移除 userdata
+
+该方式只能修改 `user_data`，请求体中不能带 `base_type`、`base_value` 和 `index_type`。
+
+##### Params
+
+- action: 表示当前行为是添加还是移除，取值为 `append`（添加）和 `eliminate`（移除）
+
+##### Method & Url
+
+```
+PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabels/personByCity?action=append
+```
+
+##### Request Body
+
+```json
+{
+    "name": "personByCity",
+    "user_data": {
+        "comment": "index on city"
+    }
+}
+```
+
+##### Response Status
+
+```json
+200
+```
+
+##### Response Body
+
+```json
+{
+    "id": 1,
+    "base_type": "VERTEX_LABEL",
+    "base_value": "person",
+    "name": "personByCity",
+    "fields": [
+        "city"
+    ],
+    "index_type": "SECONDARY",
+    "user_data": {
+        "comment": "index on city",
+        "~create_time": "2022-05-13 13:47:23.745"
+    }
+}
+```

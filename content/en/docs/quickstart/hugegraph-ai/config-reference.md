@@ -6,12 +6,20 @@ weight: 4
 
 HugeGraph-LLM reads runtime settings from `hugegraph-llm/.env`. Prompts are stored separately in `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml` and are not written to `.env`.
 
+The `.env` path is resolved in this order:
+
+1. `HUGEGRAPH_LLM_ENV_PATH`, if that environment variable is set. A leading `~` is expanded.
+2. `hugegraph-llm/.env`, when the package runs from a source checkout.
+3. `.env` in the current working directory, for an installed package.
+
 Create or update the files from configuration-class defaults with:
 
 ```bash
 cd hugegraph-ai/hugegraph-llm
 python -m hugegraph_llm.config.generate --update
 ```
+
+`--update` is on by default, so running the module without arguments does the same thing. The command writes the HugeGraph, admin, LLM, and index settings, then regenerates the prompt YAML. If `.env` already exists, it asks for confirmation before overwriting.
 
 `.env` contains keys and passwords. Do not commit it to version control.
 
@@ -91,24 +99,27 @@ The default host is `127.0.0.1` and the default port is `11434`. Model names hav
 | `TOPK_PER_KEYWORD` | `1` | Candidates per keyword |
 | `TOPK_RETURN_RESULTS` | `20` | Results returned after reranking |
 
-## External Vector Databases
+## Vector Index Backend
 
-The default implementation can use local FAISS. After enabling optional dependencies, the following settings are also available:
+| Setting | Default | Description |
+|---|---|---|
+| `CUR_VECTOR_INDEX` | `Faiss` | Active vector store: `Faiss`, `Milvus`, or `Qdrant` |
+| `QDRANT_HOST` | empty | |
+| `QDRANT_PORT` | `6333` | |
+| `QDRANT_API_KEY` | empty | |
+| `MILVUS_HOST` | empty | |
+| `MILVUS_PORT` | `19530` | |
+| `MILVUS_USER` | empty | |
+| `MILVUS_PASSWORD` | empty | |
 
-| Setting | Default |
-|---|---|
-| `QDRANT_HOST` | empty |
-| `QDRANT_PORT` | `6333` |
-| `QDRANT_API_KEY` | empty |
-| `MILVUS_HOST` | empty |
-| `MILVUS_PORT` | `19530` |
-| `MILVUS_USER` | empty |
-| `MILVUS_PASSWORD` | empty |
+FAISS is local and needs no extra dependency. Selecting `Milvus` or `Qdrant` without the optional dependencies raises an error that names the missing package, so install them first:
 
 ```bash
 cd hugegraph-ai
 uv sync --package hugegraph-llm --extra vectordb
 ```
+
+The same choice is available in the `5. Set up the vector engine.` panel of the Web UI, which also persists the connection settings for the selected engine.
 
 ## Login and Log API
 
@@ -146,9 +157,13 @@ GRAPH_PWD=your-password
 
 Configuration classes supply code defaults and then apply overrides from `.env` and the process environment. The Web UI and configuration APIs can update current settings at runtime and write supported fields back to `.env`. Restart the service after editing `.env` manually; prompt YAML can be refreshed by the page-loading logic.
 
+Unknown keys in `.env` are ignored rather than rejected, and empty values fall back to the code default. Keys are matched case-insensitively.
+
 Configuration definitions are in:
 
 - `hugegraph-llm/src/hugegraph_llm/config/llm_config.py`
 - `hugegraph-llm/src/hugegraph_llm/config/hugegraph_config.py`
+- `hugegraph-llm/src/hugegraph_llm/config/index_config.py`
 - `hugegraph-llm/src/hugegraph_llm/config/admin_config.py`
 - `hugegraph-llm/src/hugegraph_llm/config/prompt_config.py`
+- `hugegraph-llm/src/hugegraph_llm/config/models/base_config.py` for the loading and file-sync behaviour

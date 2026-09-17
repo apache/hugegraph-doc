@@ -24,7 +24,11 @@ The `hugegraph-server` module in HugeGraph 1.7.0 is compiled with Java 11. Runni
 
 **Before continuing, run `java -version` to confirm your JDK version.**
 
-> Java 8 is no longer supported starting from 1.7.0.
+> Java 8 is no longer supported starting from 1.7.0. `bin/hugegraph-server.sh` refuses to start on anything older than Java 11.
+
+> The security check is on by default and installs `HugeSecurityManager`, which needs Java 11 to 23. JDK 24 removed the Security Manager ([JEP 486](https://openjdk.org/jeps/486)), so on Java 24 or later you must start the service with the check disabled: `bin/start-hugegraph.sh -s false`.
+
+> Building from source also needs Maven 3.5.0 or later.
 
 ## 3 Deploy
 
@@ -57,18 +61,24 @@ If you use Docker Desktop, you can set the options as follows:
 > **Note**: The Docker Compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least **12 GB** of memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.
 
 If you want a single, unified setup for multiple HugeGraph services, you can use `docker compose`.
-Two compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory:
+Four compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory:
 
-- **Single-node quickstart** (pre-built images): `docker/docker-compose.yml`
-- **Single-node dev build** (build from source): `docker/docker-compose.dev.yml`
+| Topology | Compose file | Services |
+|---|---|---|
+| Standalone (start here) | `docker-compose.yml` | 1 RocksDB Server + 1 Hubble |
+| Minimal HStore | `docker-compose-hstore.yml` | 1 PD + 1 Store + 1 Server + 1 Hubble |
+| HA reference | `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble |
+| Source build override for the minimal HStore topology | `docker-compose.dev.yml` | (used together with `docker-compose-hstore.yml`) |
 
 ```bash
 cd hugegraph/docker
 # Keep the version aligned with the latest release, for example 1.x.0
-HUGEGRAPH_VERSION=1.7.0 docker compose up -d
+HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
 ```
 
-To enable authentication, add `PASSWORD=xxx` to the service environment in the compose file or pass `-e PASSWORD=xxx` to `docker run`.
+The standalone topology publishes the Server on port `8080` and Hubble on `127.0.0.1:8088`. `HUGEGRAPH_VERSION` selects the Server, PD, and Store image tags; Hubble is selected separately with `HUBBLE_IMAGE`.
+
+The compose files read the administrator password from `HUGEGRAPH_ADMIN_PASSWORD` and the JWT secret from `HUGEGRAPH_AUTH_TOKEN_SECRET`, normally kept in a `docker/.env` file. A non-empty `HUGEGRAPH_ADMIN_PASSWORD` turns authentication on, and Hubble detects that mode by itself. With plain `docker run`, pass `-e PASSWORD=xxx` instead.
 
 See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full setup guide.
 
@@ -129,6 +139,13 @@ A successful build includes the following line:
 ```
 
 After a successful build, the generated distribution is the `*hugegraph-*.tar.gz` file in the repository root.
+
+The default build bundles the `rocksdb`, `hbase`, and `hstore` backend modules, and records them in the `backends` option of the `backend.properties` resource inside the `hugegraph-dist` jar. To build a smaller distribution that carries RocksDB only, add `-Drocksdb-only`:
+
+```bash
+mvn package -DskipTests -ntp -Drocksdb-only
+```
+
 > [!DETAILS]- Outdated tools
 > #### 3.4 One-click deployment (Outdated)
 >
@@ -189,7 +206,6 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 > ```properties
 > backend=hstore
 > serializer=binary
-> task.scheduler_type=distributed
 >
 > # PD service address, multiple PD addresses are separated by commas, configure PD's RPC port
 > pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
@@ -204,17 +220,20 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 > serializer=binary
 > store=hugegraph
 >
-> # Specify the task scheduler (for versions 1.7.0 and earlier, hstore storage is required)
-> task.scheduler_type=distributed
->
 > # pd config
 > pd.peers=127.0.0.1:8686
 > ```
+>
+> A ready-made template for this backend ships as `conf/graphs/hstore.properties.template`. Copy it over `conf/graphs/hugegraph.properties` and adjust `pd.peers`.
+>
+> The task scheduler is picked from the backend, so `task.scheduler_type` does not need to be set. `hstore` uses the distributed scheduler and every other backend uses the local one. The key is still accepted for upgrade compatibility, but it is ignored and logs a warning.
 >
 > Then enable PD discovery in `rest-server.properties` (required for every HugeGraph-Server node):
 >
 > ```properties
 > usePD=true
+> # load the hugegraph.properties above from the graphs directory; the source default is false
+> graph.load_from_local_config=true
 >
 > # notice: must have this conf in 1.7.0
 > pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
@@ -273,6 +292,8 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 > bin/init-store.sh
 > ```
 >
+> PD and Store own the metadata and the store for the `hstore` backend, so `init-store` skips graphs configured with it. Running it still creates the built-in `admin` account when authentication is on. In a deployment where the storage side already holds that account, set `init_store.enabled=false` in `rest-server.properties` to skip the whole step, which is what the Docker HStore topologies do.
+>
 > Start the Server:
 >
 > ```bash
@@ -288,7 +309,7 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 > Verify that the service is started properly:
 >
 > ```bash
-> curl http://localhost:8081/graphs
+> curl http://localhost:8081/graphspaces/DEFAULT/graphs
 > # Should return: {"graphs":["hugegraph"]}
 > ```
 >
@@ -307,16 +328,26 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 >
 > ```bash
 > cd hugegraph/docker
-> HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+> HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d --wait
 > ```
 >
 > Services communicate via container hostnames on the `hg-net` bridge network. Configuration is injected via environment variables:
 >
 > ```yaml
-> # Server configuration
+> # Server configuration, shared by server0, server1 and server2
 > HG_SERVER_BACKEND: hstore
 > HG_SERVER_PD_PEERS: pd0:8686,pd1:8686,pd2:8686
+> HG_SERVER_CLUSTER: hg
+> HG_SERVER_USE_PD: "true"
+> HG_SERVER_MIN_FREE_MEMORY: "0"
+> HG_SERVER_INIT_STORE_ENABLED: "false"
+> HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET: "true"
+> STORE_REST: store0:8520
+> # per node, for example on server0
+> HG_SERVER_REST_URL: http://server0:8080
 > ```
+>
+> Because this topology sets `HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET: "true"`, the Servers refuse to start when a password is supplied without a shared JWT secret. Put both `HUGEGRAPH_ADMIN_PASSWORD` and `HUGEGRAPH_AUTH_TOKEN_SECRET` in `docker/.env` before starting it. The full variable reference is in the [Docker Cluster guide](/docs/guides/hugegraph-docker-cluster/).
 >
 > Verify the cluster:
 > ```bash
@@ -352,8 +383,9 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 >
 > ```bash
 > bin/start-hugegraph.sh
-> Starting HugeGraphServer...
+> Starting HugeGraphServer in daemon mode...
 > Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
+> Started [pid 21614]
 > ```
 >
 > **ToplingDB (Beta)**: As a high-performance alternative to RocksDB, please refer to the configuration guide: [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="en">}})
@@ -390,8 +422,9 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 >
 > ```bash
 > bin/start-hugegraph.sh
-> Starting HugeGraphServer...
+> Starting HugeGraphServer in daemon mode...
 > Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
+> Started [pid 21614]
 > ```
 >
 #### 5.1.4 Create an example graph when startup
@@ -413,6 +446,22 @@ And use the RESTful API to request `HugeGraphServer` and get the following resul
 
 This indicates the successful creation of the sample graph.
 
+#### 5.1.5 Startup script options
+
+`bin/start-hugegraph.sh` accepts the following options. Every one of them takes a value, so write `-d false`, not a bare `-d`.
+
+| Option | Values | Default | Purpose |
+|---|---|---|---|
+| `-d` | `true`, `false` | `true` | Daemon mode. With `-d false` the script stays in the foreground and forwards `SIGTERM`/`SIGINT` to the server. |
+| `-g` | `zgc` or `ZGC` | omit for G1GC | Garbage collector to use. Only ZGC is accepted, any other value aborts the startup. ZGC needs Java 11 or later. |
+| `-m` | `true`, `false` | `false` | Install the cron-based monitor task (`bin/start-monitor.sh`). For VM and bare-metal deployments only. |
+| `-p` | `true`, `false` | `false` | Preload the sample graph, as in 5.1.4. |
+| `-s` | `true`, `false` | `true` | Run with the security check (`HugeSecurityManager`) enabled. It requires Java 11 to 23 and a readable `conf/java-security.properties`. |
+| `-j` | JVM options | empty | Extra JVM options appended to the server command line. |
+| `-t` | seconds | `30` | How long to wait for the service to answer before reporting a failed startup. |
+| `-y` | `true`, `false` | `false` | Enable the OpenTelemetry agent for traces. |
+
+`bin/stop-hugegraph.sh` accepts `-m true|false` (default `true`), which controls whether the cron monitor task is removed along with the service.
 
 ### 5.2 Use Docker to startup
 
@@ -440,12 +489,12 @@ Set the environment variable `PRELOAD=true` when starting Docker so that sample 
           - PRELOAD=true
           - PASSWORD=xxx
         volumes:
-          - /path/to/yourscript:/hugegraph/scripts/example.groovy
+          - /path/to/yourscript:/hugegraph-server/scripts/example.groovy
         ports:
           - 8080:8080
     ```
 
-    Use `docker-compose up -d` to start the container.
+    Use `docker compose up -d` to start the container.
 
 And use the RESTful API to request `HugeGraphServer` and get the following result:
 

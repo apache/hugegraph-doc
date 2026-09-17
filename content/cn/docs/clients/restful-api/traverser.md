@@ -42,6 +42,10 @@ HugeGraph 支持的 Traverser API 包括：
 - Rings API，从起始顶点出发，可到达的环路路径
 - Rays API，从起始顶点出发，可到达边界的路径（即无环路径）
 - Fusiform Similarity API，查找一个顶点的梭形相似点
+- Adamic-Adar API，计算两个顶点的 Adamic-Adar 指标
+- Resource Allocation API，计算两个顶点的资源分配指标
+- Edge Existence API，查询两个顶点之间存在的边
+- Count API，统计经过若干步遍历后可达的顶点数量，不返回顶点本身
 - Vertices API
     - 按 ID 批量查询顶点；
 	- 获取顶点的分区；
@@ -3040,3 +3044,213 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges/
 
 - 按 id 列表查询边，可用于批量查询边
 - 获取分片和按分片查询边，可以用来遍历全部边
+
+#### 3.2.24 Adamic-Adar
+
+##### 3.2.24.1 功能介绍
+
+计算两个顶点的 [Adamic-Adar](https://en.wikipedia.org/wiki/Adamic/Adar_index) 指标，即每个共同邻居的度取对数后倒数之和。
+
+###### Params
+
+- vertex：一个顶点 id，必填项
+- other：另一个顶点 id，必填项，不能与 `vertex` 相同
+- direction：顶点向外发散的方向（OUT,IN,BOTH），选填项，默认是 BOTH
+- label：边的类型，选填项，默认代表所有 edge label
+- max_degree：查询过程中，单个顶点遍历的最大邻接边数目，选填项，默认为 10000
+- limit：参与计算的共同邻居的最大数目，选填项，默认为 10000000
+
+##### 3.2.24.2 使用方法
+
+###### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/adamicadar?vertex="1:marko"&other="1:josh"
+```
+
+###### Response Status
+
+```json
+200
+```
+
+###### Response Body
+
+度为 0 的共同邻居会被跳过，因此两个顶点没有共同邻居时结果为 0.0。
+
+```json
+{
+    "adamic_adar": 0.9102392266268373
+}
+```
+
+##### 3.2.24.3 适用场景
+
+预测两个顶点之间是否可能出现连边，其中冷门的共同邻居比热门的共同邻居权重更高。
+
+#### 3.2.25 Resource Allocation
+
+##### 3.2.25.1 功能介绍
+
+计算两个顶点的资源分配指标，即每个共同邻居的度的倒数之和。
+
+###### Params
+
+- vertex：一个顶点 id，必填项
+- other：另一个顶点 id，必填项，不能与 `vertex` 相同
+- direction：顶点向外发散的方向（OUT,IN,BOTH），选填项，默认是 BOTH
+- label：边的类型，选填项，默认代表所有 edge label
+- max_degree：查询过程中，单个顶点遍历的最大邻接边数目，选填项，默认为 10000
+- limit：参与计算的共同邻居的最大数目，选填项，默认为 10000000
+
+##### 3.2.25.2 使用方法
+
+###### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/resourceallocation?vertex="1:marko"&other="1:josh"
+```
+
+###### Response Status
+
+```json
+200
+```
+
+###### Response Body
+
+```json
+{
+    "resource_allocation": 0.3333333333333333
+}
+```
+
+##### 3.2.25.3 适用场景
+
+连边预测，相比 Adamic-Adar 对高度数的共同邻居惩罚更强。
+
+#### 3.2.26 Edge Existence
+
+##### 3.2.26.1 功能介绍
+
+查询起点和终点之间存在的边。
+
+###### Params
+
+- source：起始顶点 id，必填项
+- target：目标顶点 id，必填项
+- label：边的类型，选填项，默认代表所有 edge label
+- sort_values：排序键的取值，当 edge label 的 frequency 为 MULTIPLE 时用于从多条平行边中选定一条，选填项，默认为空字符串
+- limit：返回的边的最大数目，选填项，默认为 100
+
+##### 3.2.26.2 使用方法
+
+###### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/edgeexist?source="1:marko"&target="2:lop"
+```
+
+###### Response Status
+
+```json
+200
+```
+
+###### Response Body
+
+```json
+{
+    "edges":[
+        {
+            "id":"S1:marko>2>>S2:lop",
+            "label":"created",
+            "type":"edge",
+            "inVLabel":"software",
+            "outVLabel":"person",
+            "inV":"2:lop",
+            "outV":"1:marko",
+            "properties":{
+                "weight":0.4,
+                "date":"20171210"
+            }
+        }
+    ]
+}
+```
+
+##### 3.2.26.3 适用场景
+
+判断两个顶点之间是否直接相连，并在一次请求中拿到连接边的属性。
+
+#### 3.2.27 Count
+
+##### 3.2.27.1 功能介绍
+
+统计从起始顶点出发，经过若干步遍历后可达的顶点数量，不返回顶点本身。
+
+###### Params
+
+- source：起始顶点 id，必填项
+- steps：遍历的步骤，必填项，每个 step 支持以下字段：
+    - direction：顶点向外发散的方向（OUT,IN,BOTH），选填项，默认是 BOTH
+    - labels：当前 step 的边类型列表，选填项，默认代表所有 edge label
+    - properties：当前 step 的边属性过滤条件，选填项
+    - max_degree：当前 step 中单个顶点遍历的最大邻接边数目，选填项，默认为 10000
+    - skip_degree：当前 step 中跳过超级点的阈值，选填项，默认为 100000
+- contains_traversed：是否把中间各步到达的顶点也计入结果，选填项，默认为 false
+- dedup_size：用于去重的顶点数上限，`-1` 表示不限制，选填项，默认为 1000000
+
+##### 3.2.27.2 使用方法
+
+###### Method & Url
+
+```
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/count
+```
+
+###### Request Body
+
+```json
+{
+    "source": "1:marko",
+    "steps": [
+        {
+            "direction": "BOTH",
+            "labels": [],
+            "max_degree": 100,
+            "skip_degree": 100
+        },
+        {
+            "direction": "BOTH",
+            "labels": [],
+            "max_degree": 100,
+            "skip_degree": 100
+        },
+        {
+            "direction": "BOTH",
+            "labels": [],
+            "max_degree": 100,
+            "skip_degree": 100
+        }
+    ]
+}
+```
+
+###### Response Status
+
+```json
+200
+```
+
+###### Response Body
+
+```json
+{
+    "count": 3
+}
+```
+
+##### 3.2.27.3 适用场景
+
+只关心多步邻居的规模时使用，避免序列化和传输大量顶点。

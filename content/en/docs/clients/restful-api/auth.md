@@ -21,7 +21,7 @@ user(name=boss) -belong-> group(name=all) -access(read)-> target(graph=graph1, r
 Description: User 'boss' has read permission for people in the 'graph1' graph from Beijing.
 
 ##### Interface Description:
-The user authentication and access control interface includes 5 categories: UserAPI, GroupAPI, TargetAPI, BelongAPI, AccessAPI.
+The core of user authentication and access control is 5 categories: UserAPI, GroupAPI, TargetAPI, BelongAPI, AccessAPI. Alongside them, ManagerAPI grants graphspace-level manager roles, LoginAPI issues and verifies tokens, and ProjectAPI groups several graphs so that permissions can be granted for the whole set at once.
 **Note** Before 1.5.0, the format of ids such as group/target was similar to -69:grant. After 1.7.0, the id and name were consistent. Such as admin [HugeGraph 1.5 x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
 
 ### 10.2 User (User) API
@@ -33,10 +33,13 @@ The user interface includes APIs for creating users, deleting users, modifying u
 
 - user_name: User name
 - user_password: User password
+- user_nickname: User nickname
 - user_phone: User phone number
 - user_email: User email
+- user_avatar: URL of the user avatar
+- user_description: User description
 
-Both user_name and user_password are required.
+Both user_name and user_password are required, the rest are optional.
 
 ##### Request Body
 
@@ -96,12 +99,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 204
 ```
 
-##### Response Body
-
-```json
-1
-```
-
 #### 10.2.3 Modify User
 
 ##### Params
@@ -115,7 +112,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 ```
 
 ##### Request Body
-Modify user_name, user_password, and user_phone.
+Modify user_password and user_phone. `user_name` can not be changed, and when it is passed it must match the existing name.
 
 ```json
 {
@@ -149,7 +146,8 @@ The returned result is the entire user object including the modified content.
 
 ##### Params
 
-- limit: Upper limit of the number of results returned
+- name: Return only the user with this name. When it is given, the response is a single user object instead of a list, and `404` is returned if no such user exists.
+- limit: Upper limit of the number of results returned, default is 100
 
 
 ##### Method & Url
@@ -203,16 +201,12 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/admin
 
 ```json
 {
-    "users": [
-        {
-            "user_password": "******",
-            "user_update": "2020-11-11 11:41:12.254",
-            "user_name": "admin",
-            "user_creator": "system",
-            "id": "admin",
-            "user_create": "2020-11-11 11:41:12.254"
-        }
-    ]
+    "user_password": "******",
+    "user_update": "2020-11-11 11:41:12.254",
+    "user_name": "admin",
+    "user_creator": "system",
+    "id": "admin",
+    "user_create": "2020-11-11 11:41:12.254"
 }
 ```
 
@@ -311,12 +305,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
 
 ```json
 204
-```
-
-##### Response Body
-
-```json
-1
 ```
 
 #### 10.3.3 Modify Group
@@ -511,12 +499,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
 
 ```json
 204
-```
-
-##### Response Body
-
-```json
-1
 ```
 
 #### 10.4.3 Modify Resource
@@ -738,12 +720,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:gr
 204
 ```
 
-##### Response Body
-
-```json
-1
-```
-
 #### 10.5.3 Modify an Association of Roles
 
 An association of roles can only be modified for its description. The `user` and `group` properties cannot be modified. If you need to modify an association of roles, you need to delete the existing association and create a new one.
@@ -790,7 +766,11 @@ The response includes the modified content as well as the entire association of 
 
 ##### Params
 
-- limit: Upper limit on the number of results to return
+- user: Return only the associations of this user
+- group: Return only the associations of this group
+- limit: Upper limit on the number of results to return, default is 100
+
+`user` and `group` can not be used together.
 
 
 ##### Method & Url
@@ -926,12 +906,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S
 204
 ```
 
-##### Response Body
-
-```json
-1
-```
-
 #### 10.6.3 Modify Authorization
 
 Authorization can only be modified for its description. User group, resource, and permission cannot be modified. If you need to modify the authorization relationship, delete the original authorization and create a new one.
@@ -983,7 +957,11 @@ The response includes the modified content as well as the entire authorization o
 
 ##### Params
 
-- limit: The maximum number of results to return
+- group: Return only the authorizations of this group
+- target: Return only the authorizations on this resource
+- limit: The maximum number of results to return, default is 100
+
+`group` and `target` can not be used together.
 
 ##### Method & Url
 
@@ -1051,18 +1029,20 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>11>S-77
 
 > **Note**: Before using the following APIs, you need to create a graphspace first. For example, create a graphspace named `gs1` via the [Graphspace API](./graphspace). The examples below assume that `gs1` already exists.
 
+> **Note**: The manager APIs only work when the server runs in PD mode. In standalone mode they return `400` with the message `GraphSpace management is not supported in standalone mode`.
+
 1. The graphspace manager API is used to grant/revoke manager roles for users at the graphspace level, and to query the roles of the current user or other users in a graphspace. Supported role types include `SPACE`, `SPACE_MEMBER`, and `ADMIN`.
 
 #### 10.7.1 Check whether the current login user has a specific role
 
 ##### Params
 
-- type: Role type to check, optional
+- type: Role type to check, required, one of `SPACE`, `SPACE_MEMBER`, `ADMIN`
 
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/gs1/auth/managers/check?type=WRITE
+GET http://localhost:8080/graphspaces/gs1/auth/managers/check?type=SPACE_MEMBER
 ```
 
 ##### Response Status
@@ -1074,16 +1054,16 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers/check?type=WRITE
 ##### Response Body
 
 ```json
-"true"
+{
+  "check": true
+}
 ```
-
-The API returns the string `true` or `false` indicating whether the current user has the given role.
 
 #### 10.7.2 List graphspace managers
 
 ##### Params
 
-- type: Role type, optional, used to filter by role
+- type: Role type, required, one of `SPACE`, `SPACE_MEMBER`, `ADMIN`. `SPACE` lists the managers of the graphspace, `SPACE_MEMBER` lists its members, and `ADMIN` lists the administrators of the whole cluster.
 
 ##### Method & Url
 
@@ -1101,12 +1081,8 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers?type=SPACE
 
 ```json
 {
-  "managers": [
-    {
-      "user": "admin",
-      "type": "SPACE",
-      "create_time": "2024-01-10 09:30:00"
-    }
+  "admins": [
+    "admin"
   ]
 }
 ```
@@ -1114,6 +1090,13 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers?type=SPACE
 #### 10.7.3 Grant/create a graphspace manager
 
 - The following example grants user `boss` the `SPACE_MEMBER` role in graphspace `gs1`.
+
+##### Params
+
+- user: User or group name, required
+- type: Role type, required, one of `SPACE`, `SPACE_MEMBER`, `ADMIN`
+
+> Granting `SPACE` to a user that is already a space member revokes the member role first, and the other way round. Only an administrator can grant `ADMIN`.
 
 ##### Request Body
 
@@ -1142,8 +1125,7 @@ POST http://localhost:8080/graphspaces/gs1/auth/managers
 {
   "user": "boss",
   "type": "SPACE_MEMBER",
-  "manager_creator": "admin",
-  "manager_create": "2024-01-10 09:45:12"
+  "graphspace": "gs1"
 }
 ```
 
@@ -1153,8 +1135,8 @@ POST http://localhost:8080/graphspaces/gs1/auth/managers
 
 ##### Params
 
-- user: User ID to revoke
-- type: Role type to revoke
+- user: User name to revoke. The built-in `admin` user can not be removed from `ADMIN`.
+- type: Role type to revoke, one of `SPACE`, `SPACE_MEMBER`, `ADMIN`
 
 ##### Method & Url
 
@@ -1168,17 +1150,11 @@ DELETE http://localhost:8080/graphspaces/gs1/auth/managers?user=boss&type=SPACE_
 204
 ```
 
-##### Response Body
-
-```json
-1
-```
-
 #### 10.7.5 Query roles of a specific user in a graphspace
 
 ##### Params
 
-- user: User ID
+- user: User name
 
 ##### Method & Url
 
@@ -1194,13 +1170,330 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers/role?user=boss
 
 ##### Response Body
 
+The returned roles are a subset of `ADMIN`, `SPACE` and `SPACE_MEMBER`; `NONE` is returned when the user holds none of them in this graphspace.
+
 ```json
 {
-  "roles": {
-    "boss": [
-      "READ",
-      "SPACE_MEMBER"
-    ]
-  }
+  "user": "boss",
+  "graphspace": "gs1",
+  "roles": [
+    "SPACE_MEMBER"
+  ]
 }
+```
+
+#### 10.7.6 Check whether the current login user holds a default role
+
+Default roles are the built-in roles of a graphspace, see [Graphspace API](./graphspace). Valid `role` values are `space`, `space_member`, `analyst` and `observer`; `graph` is only taken into account for the `observer` role.
+
+##### Params
+
+- role: Default role name, required
+- graph: Graph name, optional, only used with `role=observer`
+
+##### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/gs1/auth/managers/default?role=analyst
+```
+
+##### Response Status
+
+```json
+200
+```
+
+##### Response Body
+
+```json
+{
+  "check": true
+}
+```
+
+### 10.8 Login (Login) API
+
+Besides HTTP Basic authentication, the server can hand out a JWT token that is then passed as `Authorization: Bearer <token>`. The login endpoints are not scoped to a graphspace.
+
+The token is signed with the `auth.token_secret` option and expires after `auth.token_expire` seconds (default 86400). The default secret is generated randomly at startup, so set it explicitly when tokens must stay valid across a restart or must be accepted by more than one server.
+
+#### 10.8.1 Log in and get a token
+
+##### Params
+
+- user_name: User name, required
+- user_password: User password, required
+- token_expire: Token lifetime in seconds, optional
+
+##### Request Body
+
+```json
+{
+    "user_name": "test",
+    "user_password": "******"
+}
+```
+
+##### Method & Url
+
+```
+POST http://localhost:8080/auth/login
+```
+
+##### Response Status
+
+```json
+200
+```
+
+Wrong credentials return `401`.
+
+##### Response Body
+
+```json
+{
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX25hbWUiOiJ0ZXN0IiwidXNlcl9pZCI6InRlc3QiLCJleHAiOjE3MTIxMjM0NTZ9.PBs0iBt0PtqvLDpJvKrPHkyIzT1TICz9zJmMy8FvXVo"
+}
+```
+
+#### 10.8.2 Log out and invalidate the token
+
+The token to invalidate is taken from the request header, no request body is needed.
+
+##### Params
+
+**Request header**
+
+- Authorization: `Bearer <token>`, required. Only the Bearer scheme is accepted, other schemes return `400`.
+
+##### Method & Url
+
+```
+DELETE http://localhost:8080/auth/logout
+```
+
+##### Response Status
+
+```json
+204
+```
+
+An invalid or expired token returns `401`.
+
+#### 10.8.3 Verify a token
+
+##### Params
+
+**Request header**
+
+- Authorization: `Bearer <token>`, required
+
+##### Method & Url
+
+```
+GET http://localhost:8080/auth/verify
+```
+
+##### Response Status
+
+```json
+200
+```
+
+An invalid or expired token returns `401`.
+
+##### Response Body
+
+```json
+{
+    "user_name": "test",
+    "user_id": "test"
+}
+```
+
+### 10.9 Project (Project) API
+
+A project groups a set of graphs together with an admin group and an op group, so that permissions can be granted for the whole set at once. Creating a project also creates its `project_target`, `project_admin_group` and `project_op_group`, which are returned in the response but can not be set by the client.
+
+#### 10.9.1 Create Project
+
+##### Params
+
+- project_name: Project name, required
+- project_description: Project description, optional
+
+`project_graphs` can not be passed on creation, use the `add_graph` action below.
+
+##### Request Body
+
+```json
+{
+    "project_name": "test_project",
+    "project_description": "this is a good project"
+}
+```
+
+##### Method & Url
+
+```
+POST http://localhost:8080/graphspaces/DEFAULT/auth/projects
+```
+
+##### Response Status
+
+```json
+201
+```
+
+##### Response Body
+
+```json
+{
+    "project_name": "test_project",
+    "project_description": "this is a good project",
+    "project_target": "project_test_project",
+    "project_admin_group": "project_test_project_admin",
+    "project_op_group": "project_test_project_op",
+    "project_create": "2024-01-10 09:30:00.000",
+    "project_update": "2024-01-10 09:30:00.000",
+    "project_creator": "admin",
+    "id": "test_project"
+}
+```
+
+#### 10.9.2 Add graphs to or remove graphs from a project
+
+##### Params
+
+- id: Project ID
+- action: `add_graph` to add graphs, `remove_graph` to remove them
+
+##### Request Body
+
+```json
+{
+    "project_graphs": [
+        "hugegraph"
+    ]
+}
+```
+
+##### Method & Url
+
+```
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project?action=add_graph
+```
+
+##### Response Status
+
+```json
+200
+```
+
+##### Response Body
+
+The whole project object is returned, including the updated graph list.
+
+#### 10.9.3 Modify the description of a project
+
+##### Params
+
+- id: Project ID
+
+Leave `action` out to update the description. `project_graphs` must not be present in this case.
+
+##### Request Body
+
+```json
+{
+    "project_description": "update desc"
+}
+```
+
+##### Method & Url
+
+```
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
+```
+
+##### Response Status
+
+```json
+200
+```
+
+#### 10.9.4 Query Project List
+
+##### Params
+
+- limit: The maximum number of results to return, default is 100
+
+##### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/auth/projects
+```
+
+##### Response Status
+
+```json
+200
+```
+
+##### Response Body
+
+```json
+{
+    "projects": [
+        {
+            "project_name": "test_project",
+            "project_description": "this is a good project",
+            "project_target": "project_test_project",
+            "project_admin_group": "project_test_project_admin",
+            "project_op_group": "project_test_project_op",
+            "project_create": "2024-01-10 09:30:00.000",
+            "project_update": "2024-01-10 09:30:00.000",
+            "project_creator": "admin",
+            "id": "test_project"
+        }
+    ]
+}
+```
+
+#### 10.9.5 Query a Specific Project
+
+##### Params
+
+- id: Project ID
+
+##### Method & Url
+
+```
+GET http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
+```
+
+##### Response Status
+
+```json
+200
+```
+
+#### 10.9.6 Delete Project
+
+##### Params
+
+- id: Project ID
+
+Remove all graphs from the project before deleting it.
+
+##### Method & Url
+
+```
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
+```
+
+##### Response Status
+
+```json
+204
 ```

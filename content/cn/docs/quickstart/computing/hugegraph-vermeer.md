@@ -14,17 +14,30 @@ master 是负责通信、转发、汇总的节点，计算量和占用资源量�
 
 该框架的运行配置可以通过命令行参数传入，也可以通过位于 `config/` 目录下的配置文件指定，`--env` 参数可以指定使用哪个配置文件，例如 `--env=master` 指定使用 `master.ini`。需要注意 master 需要指定监听的端口号，worker 需要指定监听端口号和 master 的 `ip:port`。
 
+master 默认 HTTP 端口为 `6688`，用于 REST API 和 Python 客户端；worker 连接 master 使用 gRPC 端口 `6689`。下面的 Docker 示例通过 `6688:6688` 发布 HTTP 端口，请保留 master 配置中的 `http_peer=0.0.0.0:6688`。
+
 ### 1.2 运行方法
+
+下面两种 Docker 启动方式都需要先准备一个宿主机配置目录，包含项目提供的 `master.ini` 和 `worker.ini`。在 `worker.ini` 已有的 `[default]` 节中修改 `master_peer`，保留其余配置：
+
+```ini
+[default]
+master_peer=vermeer-master:6689
+```
+
+在 worker 容器内，默认的 `127.0.0.1:6689` 指向 worker 自身。两个示例中的 `vermeer-master` 都会在共享 Docker 网络内解析到 master 容器。请保留 `master.ini` 中的 `grpc_peer=0.0.0.0:6689`，并将上述配置目录挂载到两个容器的 `/go/bin/config`。仅发布 HTTP 端口 `6688` 不会配置 worker 的 gRPC 连接。
 
 1. **方案一：Docker Compose（推荐）**
 
-确保docker-compose.yaml存在于您的项目根目录中。如果没有，以下是一个示例：
+在 Vermeer 根目录执行以下步骤。可以使用仓库已有的 `docker-compose.yaml`，也可以根据下面的示例创建。无论使用哪一种，都必须在启动服务前完成下文要求的端口和挂载配置修改：
 
 ```yaml
 services:
   vermeer-master:
     image: hugegraph/vermeer
     container_name: vermeer-master
+    ports:
+      - "6688:6688"
     volumes:
       - ~/.config:/go/bin/config # Change here to your actual config path
     command: --env=master
@@ -36,7 +49,7 @@ services:
     image: hugegraph/vermeer
     container_name: vermeer-worker
     volumes:
-      - ~/:/go/bin/config # Change here to your actual config path
+      - ~/.config:/go/bin/config # Change here to your actual config path
     command: --env=worker
     networks:
       vermeer_network:
@@ -50,8 +63,10 @@ networks:
         - subnet: 172.20.0.0/24 # Define the subnet for your network
 ```
 
-修改 docker-compose.yaml
-- **Volume**：例如将两处 ~/:/go/bin/config 改为 /home/user/config:/go/bin/config（或您自己的配置目录）。
+启动前，无论使用仓库自带的文件还是上面的示例，都需要修改 `docker-compose.yaml`：
+
+- **Ports**：在 `services.vermeer-master` 下补上 `ports: ["6688:6688"]`（如果尚无此映射），让宿主机上的 curl 和 Python 客户端能够访问 master 的 HTTP API。
+- **Volumes**：将 `vermeer-master` 和 `vermeer-worker` 中挂载到 `/go/bin/config` 的条目都设为 `/home/user/config:/go/bin/config`，其中 `/home/user/config` 应替换为上面准备的配置目录的绝对路径。不论原挂载使用的是 `~/`（仓库自带文件）还是 `~/.config`（上面的示例），都需要替换。
 - **Subnet**：根据实际情况修改子网IP。请注意，每个容器需要访问的端口在config文件中指定，具体请参照项目`config`文件夹下内容。
 
 在项目目录构建镜像并启动（或者先用 docker build 再 docker-compose up）
@@ -75,7 +90,7 @@ docker-compose down
 
 2. **方案二：通过 docker run 单独启动（手动创建网络并分配静态 IP）**
 
-确保CONFIG_DIR对Docker进程具有适当的读取/执行权限。
+将 `CONFIG_DIR` 设为上面准备的配置目录，其中 `worker.ini` 已设置 `master_peer=vermeer-master:6689`。确保该目录对 Docker 进程具有适当的读取/执行权限。
 
 构建镜像：
 
@@ -99,6 +114,7 @@ CONFIG_DIR=/home/user/config
 docker run -d \
   --name vermeer-master \
   --network vermeer_network --ip 172.20.0.10 \
+  -p 6688:6688 \
   -v ${CONFIG_DIR}:/go/bin/config \
   hugegraph/vermeer \
   --env=master
@@ -138,6 +154,14 @@ go build
 
 在进入文件夹目录后输入 `./vermeer --env=master` 或 `./vermeer --env=worker01`
 
+启动 master 后，在宿主机验证 HTTP 端口：
+
+```shell
+curl --fail --show-error http://localhost:6688/graphs
+```
+
+请求应返回 HTTP 200，JSON 响应中的 `errcode` 为 `0`。
+
 ## 二、任务创建类 rest api
 
 ### 2.1 简介
@@ -162,7 +186,7 @@ vermeer提供三种加载方式：
 **request 示例：**
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "load",
  "graph": "testdb",
@@ -184,7 +208,7 @@ POST http://localhost:8688/tasks/create
 ⚠️ 安全警告：切勿在配置文件或代码中存储真实密码。请改用环境变量或安全的凭据管理系统。
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
   "task_type": "load",
   "graph": "testdb",
@@ -206,7 +230,7 @@ POST http://localhost:8688/tasks/create
 **request 示例：**
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
   "task_type": "load",
   "graph": "testdb",
@@ -237,7 +261,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -268,7 +292,7 @@ PageRank 算法适用于网页排序、社交网络重点人物发掘等场景�
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -290,7 +314,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -312,7 +336,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -334,7 +358,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -356,7 +380,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -378,7 +402,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -404,7 +428,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -425,7 +449,7 @@ K-Core 算法，标记所有度数为 K 的顶点，适用于图的剪枝，查�
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -447,7 +471,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -469,7 +493,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -494,7 +518,7 @@ Vermeer 上实现的分布式 Louvain 算法受节点顺序、并行计算等因
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -519,7 +543,7 @@ Jaccard index , 又称为 Jaccard 相似系数（Jaccard similarity coefficient�
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -544,7 +568,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -569,7 +593,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -592,7 +616,7 @@ POST http://localhost:8688/tasks/create
 request 示例：
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -612,7 +636,7 @@ POST http://localhost:8688/tasks/create
 在有向图的数学理论中，如果一个图的每一个顶点都可从该图其他任意一点到达，则称该图是强连通的。在任意有向图中能够实现强连通的部分我们称其为强连通分量。它表明各个点之间的连通性，区分不同的连通社区。
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",

@@ -6,12 +6,20 @@ weight: 4
 
 HugeGraph-LLM 从 `hugegraph-llm/.env` 读取运行配置。提示词单独保存在 `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml`，不会写入 `.env`。
 
+`.env` 路径按以下顺序解析：
+
+1. 若设置了环境变量 `HUGEGRAPH_LLM_ENV_PATH`，则使用该路径，开头的 `~` 会被展开。
+2. 从源码运行时，使用 `hugegraph-llm/.env`。
+3. 以已安装的包运行时，使用当前工作目录下的 `.env`。
+
 运行以下命令可按配置类的默认值创建或更新文件：
 
 ```bash
 cd hugegraph-ai/hugegraph-llm
 python -m hugegraph_llm.config.generate --update
 ```
+
+`--update` 默认开启，因此不带参数运行效果相同。该命令会写入 HugeGraph、管理员、LLM 和索引配置，然后重新生成提示词 YAML。若 `.env` 已存在，会先询问是否覆盖。
 
 `.env` 包含密钥和密码，不要提交到版本库。
 
@@ -91,26 +99,27 @@ API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `g
 | `TOPK_PER_KEYWORD` | `1` | 每个关键词的候选数 |
 | `TOPK_RETURN_RESULTS` | `20` | 重排序后返回的结果数 |
 
-## 外部向量数据库
+## 向量索引后端
 
-默认实现可以使用本地 FAISS。启用可选依赖后还可配置：
+| 配置项 | 默认值 | 说明 |
+|---|---|---|
+| `CUR_VECTOR_INDEX` | `Faiss` | 当前使用的向量库：`Faiss`、`Milvus` 或 `Qdrant` |
+| `QDRANT_HOST` | 空 | |
+| `QDRANT_PORT` | `6333` | |
+| `QDRANT_API_KEY` | 空 | |
+| `MILVUS_HOST` | 空 | |
+| `MILVUS_PORT` | `19530` | |
+| `MILVUS_USER` | 空 | |
+| `MILVUS_PASSWORD` | 空 | |
 
-| 配置项 | 默认值 |
-|---|---|
-| `QDRANT_HOST` | 空 |
-| `QDRANT_PORT` | `6333` |
-| `QDRANT_API_KEY` | 空 |
-| `MILVUS_HOST` | 空 |
-| `MILVUS_PORT` | `19530` |
-| `MILVUS_USER` | 空 |
-| `MILVUS_PASSWORD` | 空 |
-
-安装对应依赖：
+FAISS 在本地运行，无需额外依赖。未安装可选依赖就选择 `Milvus` 或 `Qdrant` 时，会报错并指出缺少的包，因此需要先安装：
 
 ```bash
 cd hugegraph-ai
 uv sync --package hugegraph-llm --extra vectordb
 ```
+
+Web 页面的 `5. Set up the vector engine.` 面板提供同样的选择，并会保存所选引擎的连接配置。
 
 ## 登录与日志接口
 
@@ -148,9 +157,13 @@ GRAPH_PWD=your-password
 
 配置类先提供代码默认值，再从 `.env` 和进程环境读取覆盖值。Web 页面和配置 API 可以在运行时更新当前设置，并把受支持的字段同步回 `.env`。手工改动 `.env` 后应重启服务；提示词 YAML 可由页面加载逻辑刷新。
 
+`.env` 中的未知键会被忽略而不是报错，空值会回退到代码默认值，键名匹配不区分大小写。
+
 配置定义位于：
 
 - `hugegraph-llm/src/hugegraph_llm/config/llm_config.py`
 - `hugegraph-llm/src/hugegraph_llm/config/hugegraph_config.py`
+- `hugegraph-llm/src/hugegraph_llm/config/index_config.py`
 - `hugegraph-llm/src/hugegraph_llm/config/admin_config.py`
 - `hugegraph-llm/src/hugegraph_llm/config/prompt_config.py`
+- `hugegraph-llm/src/hugegraph_llm/config/models/base_config.py`：加载与文件同步逻辑

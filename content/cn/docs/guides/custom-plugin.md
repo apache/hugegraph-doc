@@ -8,7 +8,7 @@ weight: 3
 
 1. HugeGraph 不仅开源开放，而且要做到简单易用，一般用户无需更改源码也能轻松增加插件扩展功能。
 2. HugeGraph 支持多种内置存储后端，也允许用户无需更改现有源码的情况下扩展自定义后端。
-3. HugeGraph 支持全文检索，全文检索功能涉及到各语言分词，目前已内置 8 种中文分词器，也允许用户无需更改现有源码的情况下扩展自定义分词器。
+3. HugeGraph 支持全文检索，全文检索功能涉及到各语言分词，目前已内置 7 种分词器（ansj、hanlp、smartcn、jieba、jcseg、mmseg4j、ikanalyzer），也允许用户无需更改现有源码的情况下扩展自定义分词器。
 
 ### 可扩展维度
 
@@ -22,7 +22,7 @@ weight: 3
 ### 插件实现机制
 
 1. HugeGraph 提供插件接口 HugeGraphPlugin，通过 Java SPI 机制支持插件化
-2. HugeGraph 提供了 4 个扩展项注册函数：`registerOptions()`、`registerBackend()`、`registerSerializer()`、`registerAnalyzer()`
+2. HugeGraph 在 HugeGraphPlugin 接口上以静态方法提供了 4 个扩展项注册函数：`registerOptions()`、`registerBackend()`、`registerSerializer()`、`registerAnalyzer()`
 3. 插件实现者实现相应的 Options、Backend、Serializer 或 Analyzer 的接口
 4. 插件实现者实现 HugeGraphPlugin 接口的`register()`方法，在该方法中注册上述第 3 点所列的具体实现类，并打成 jar 包
 5. 插件使用者将 jar 包放在 HugeGraph Server 安装目录的`plugins`目录下，修改相关配置项为插件自定义值，重启即可生效
@@ -82,13 +82,18 @@ public class RocksDBStoreProvider extends AbstractBackendStoreProvider {
     }
 
     @Override
-    protected BackendStore newSchemaStore(String store) {
-        return new RocksDBSchemaStore(this, this.database(), store);
+    protected BackendStore newSchemaStore(HugeConfig config, String store) {
+        return new RocksDBStore.RocksDBSchemaStore(this, this.database(), store);
     }
 
     @Override
-    protected BackendStore newGraphStore(String store) {
-        return new RocksDBGraphStore(this, this.database(), store);
+    protected BackendStore newGraphStore(HugeConfig config, String store) {
+        return new RocksDBStore.RocksDBGraphStore(this, this.database(), store);
+    }
+
+    @Override
+    protected BackendStore newSystemStore(HugeConfig config, String store) {
+        return new RocksDBStore.RocksDBSystemStore(this, this.database(), store);
     }
 
     @Override
@@ -97,8 +102,8 @@ public class RocksDBStoreProvider extends AbstractBackendStoreProvider {
     }
 
     @Override
-    public String version() {
-        return "1.0";
+    public String driverVersion() {
+        return "1.11";
     }
 }
 ```
@@ -110,41 +115,59 @@ BackendStore 接口定义如下：
 ```java
 public interface BackendStore {
     // Store name
-    public String store();
+    String store();
+
+    // Stored version
+    String storedVersion();
 
     // Database name
-    public String database();
+    String database();
 
     // Get the parent provider
-    public BackendStoreProvider provider();
+    BackendStoreProvider provider();
+
+    // Get the system schema store
+    SystemSchemaStore systemSchemaStore();
+
+    // Whether it is the storage of schema
+    boolean isSchemaStore();
 
     // Open/close database
-    public void open(HugeConfig config);
-    public void close();
+    void open(HugeConfig config);
+    void close();
+    boolean opened();
 
     // Initialize/clear database
-    public void init();
-    public void clear();
+    void init();
+    void clear(boolean clearSpace);
+    boolean initialized();
+
+    // Delete all data of database (keep table structure)
+    void truncate();
 
     // Add/delete data
-    public void mutate(BackendMutation mutation);
+    void mutate(BackendMutation mutation);
 
     // Query data
-    public Iterator<BackendEntry> query(Query query);
+    Iterator<BackendEntry> query(Query query);
+    Number queryNumber(Query query);
 
     // Transaction
-    public void beginTx();
-    public void commitTx();
-    public void rollbackTx();
+    void beginTx();
+    void commitTx();
+    void rollbackTx();
 
     // Get metadata by key
-    public <R> R metadata(HugeType type, String meta, Object[] args);
+    <R> R metadata(HugeType type, String meta, Object[] args);
 
     // Backend features
-    public BackendFeatures features();
+    BackendFeatures features();
 
-    // Generate an id for a specific type
-    public Id nextId(HugeType type);
+    // Increase next id for specific type
+    void increaseCounter(HugeType type, long increment);
+
+    // Get current counter for a specific type
+    long getCounter(HugeType type);
 }
 ```
  
@@ -155,27 +178,29 @@ public interface BackendStore {
 
 ```java
 public interface GraphSerializer {
-    public BackendEntry writeVertex(HugeVertex vertex);
-    public BackendEntry writeVertexProperty(HugeVertexProperty<?> prop);
-    public HugeVertex readVertex(HugeGraph graph, BackendEntry entry);
-    public BackendEntry writeEdge(HugeEdge edge);
-    public BackendEntry writeEdgeProperty(HugeEdgeProperty<?> prop);
-    public HugeEdge readEdge(HugeGraph graph, BackendEntry entry);
-    public BackendEntry writeIndex(HugeIndex index);
-    public HugeIndex readIndex(HugeGraph graph, ConditionQuery query, BackendEntry entry);
-    public BackendEntry writeId(HugeType type, Id id);
-    public Query writeQuery(Query query);
+    BackendEntry writeVertex(HugeVertex vertex);
+    BackendEntry writeOlapVertex(HugeVertex vertex);
+    BackendEntry writeVertexProperty(HugeVertexProperty<?> prop);
+    HugeVertex readVertex(HugeGraph graph, BackendEntry entry);
+    BackendEntry writeEdge(HugeEdge edge);
+    BackendEntry writeEdgeProperty(HugeEdgeProperty<?> prop);
+    HugeEdge readEdge(HugeGraph graph, BackendEntry entry);
+    CIter<Edge> readEdges(HugeGraph graph, BackendEntry bytesEntry);
+    BackendEntry writeIndex(HugeIndex index);
+    HugeIndex readIndex(HugeGraph graph, ConditionQuery query, BackendEntry entry);
+    BackendEntry writeId(HugeType type, Id id);
+    Query writeQuery(Query query);
 }
 
 public interface SchemaSerializer {
-    public BackendEntry writeVertexLabel(VertexLabel vertexLabel);
-    public VertexLabel readVertexLabel(HugeGraph graph, BackendEntry entry);
-    public BackendEntry writeEdgeLabel(EdgeLabel edgeLabel);
-    public EdgeLabel readEdgeLabel(HugeGraph graph, BackendEntry entry);
-    public BackendEntry writePropertyKey(PropertyKey propertyKey);
-    public PropertyKey readPropertyKey(HugeGraph graph, BackendEntry entry);
-    public BackendEntry writeIndexLabel(IndexLabel indexLabel);
-    public IndexLabel readIndexLabel(HugeGraph graph, BackendEntry entry);
+    BackendEntry writeVertexLabel(VertexLabel vertexLabel);
+    VertexLabel readVertexLabel(HugeGraph graph, BackendEntry entry);
+    BackendEntry writeEdgeLabel(EdgeLabel edgeLabel);
+    EdgeLabel readEdgeLabel(HugeGraph graph, BackendEntry entry);
+    BackendEntry writePropertyKey(PropertyKey propertyKey);
+    PropertyKey readPropertyKey(HugeGraph graph, BackendEntry entry);
+    BackendEntry writeIndexLabel(IndexLabel indexLabel);
+    IndexLabel readIndexLabel(HugeGraph graph, BackendEntry entry);
 }
 ```
 
@@ -211,7 +236,7 @@ public class RocksDBOptions extends OptionHolder {
                     "rocksdb.data_path",
                     "The path for storing data of RocksDB.",
                     disallowEmpty(),
-                    "rocksdb-data"
+                    "rocksdb-data/data"
             );
 
     public static final ConfigOption<String> WAL_PATH =
@@ -219,7 +244,7 @@ public class RocksDBOptions extends OptionHolder {
                     "rocksdb.wal_path",
                     "The path for storing WAL of RocksDB.",
                     disallowEmpty(),
-                    "rocksdb-data"
+                    "rocksdb-data/wal"
             );
 
     public static final ConfigListOption<String> DATA_DISKS =
@@ -227,9 +252,13 @@ public class RocksDBOptions extends OptionHolder {
                     "rocksdb.data_disks",
                     false,
                     "The optimized disks for storing data of RocksDB. " +
-                    "The format of each element: `STORE/TABLE: /path/to/disk`." +
-                    "Allowed keys are [graph/vertex, graph/edge_out, graph/edge_in, " +
-                    "graph/secondary_index, graph/range_index]",
+                    "The format of each element: `STORE/TABLE: /path/disk`." +
+                    "Allowed keys are [g/vertex, g/edge_out, g/edge_in, " +
+                    "g/vertex_label_index, g/edge_label_index, " +
+                    "g/range_int_index, g/range_float_index, " +
+                    "g/range_long_index, g/range_double_index, " +
+                    "g/secondary_index, g/search_index, g/shard_index, " +
+                    "g/unique_index, g/olap]",
                     null,
                     String.class,
                     ImmutableList.of()
@@ -267,13 +296,13 @@ public class SpaceAnalyzer implements Analyzer {
 ```java
 public interface HugeGraphPlugin {
 
-    public String name();
+    String name();
 
-    public void register();
+    void register();
 
-    public String supportsMinVersion();
+    String supportsMinVersion();
 
-    public String supportsMaxVersion();
+    String supportsMaxVersion();
 }
 ```
  
@@ -300,6 +329,16 @@ public class DemoPlugin implements HugeGraphPlugin {
     @Override
     public void register() {
         HugeGraphPlugin.registerAnalyzer("demo", SpaceAnalyzer.class.getName());
+    }
+
+    @Override
+    public String supportsMinVersion() {
+        return "1.7.0";
+    }
+
+    @Override
+    public String supportsMaxVersion() {
+        return "1.8.0";
     }
 }
 ```

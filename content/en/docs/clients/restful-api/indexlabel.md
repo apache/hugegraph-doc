@@ -175,3 +175,53 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexla
 Note:
 
 > You can query the execution status of an asynchronous task by using `GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1` (where "1" is the task_id). For more information, refer to the [Asynchronous Task RESTful API](./task).
+
+#### 1.5.5 Add or remove userdata for an existing IndexLabel
+
+Only `user_data` can be changed this way, `base_type`, `base_value` and `index_type` must be left out of the request body.
+
+##### Params
+
+- action: Indicates whether the current action is to add or remove userdata. Possible values are `append` (add) and `eliminate` (remove).
+
+##### Method & Url
+
+```
+PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabels/personByCity?action=append
+```
+
+##### Request Body
+
+```json
+{
+    "name": "personByCity",
+    "user_data": {
+        "comment": "index on city"
+    }
+}
+```
+
+##### Response Status
+
+```json
+200
+```
+
+##### Response Body
+
+```json
+{
+    "id": 1,
+    "base_type": "VERTEX_LABEL",
+    "base_value": "person",
+    "name": "personByCity",
+    "fields": [
+        "city"
+    ],
+    "index_type": "SECONDARY",
+    "user_data": {
+        "comment": "index on city",
+        "~create_time": "2022-05-13 13:47:23.745"
+    }
+}
+```

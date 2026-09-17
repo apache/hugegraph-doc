@@ -30,12 +30,14 @@ git clone https://github.com/apache/hugegraph.git
 To avoid the impact of configuration file changes on Git tracking, it is recommended to copy the required configuration files to a separate folder. Run the following command to copy the files:
 
 ```bash
-cp -r hugegraph-dist/src/assembly/static/scripts hugegraph-dist/src/assembly/static/conf path-to-your-directory
+cp -r hugegraph-server/hugegraph-dist/src/assembly/static/scripts \
+      hugegraph-server/hugegraph-dist/src/assembly/static/conf \
+      path-to-your-directory
 ```
 
-Replace `path-to-your-directory` with the path to the directory where you want to copy the files.
+Replace `path-to-your-directory` with the path to the directory where you want to copy the files. Run the command from the repository root, the `hugegraph-dist` module lives under the top-level `hugegraph-server` directory.
 
-> After introducing ToplingDB, developers need to execute the `preload-topling.sh` script, which automatically extracts the required dynamic libraries and Web Server static resources into the `library` directory located alongside the `bin` directory (the static resources will also be copied to `/dev/shm/rocksdb_resource` ).
+> ToplingDB is not part of the `master` distribution. In a build that includes it, developers need to execute the `preload-topling.sh` script, which automatically extracts the required dynamic libraries and Web Server static resources into the `library` directory located alongside the `bin` directory (the static resources will also be copied to `/dev/shm/rocksdb_resource` ).
 
 #### 2. Configure `InitStore` to initialize the graph
 
@@ -53,11 +55,11 @@ Next, open the `Run/Debug Configurations` panel in IntelliJ IDEA and create a ne
 - Select `hugegraph-dist` as the `Use classpath of module`.
 - Set the `Main class` to `org.apache.hugegraph.cmd.InitStore`.
 - Set the program arguments to `conf/rest-server.properties`. Note that the path here is relative to the working directory, so make sure to set the working directory to `path-to-your-directory`.
-- ToplingDB requires preloading dynamic libraries via the `LD_PRELOAD` mechanism. Developers need to set two environment variables: `LD_LIBRARY_PATH` should point to the `library` directory extracted by `preload-topling.sh`, and `LD_PRELOAD` should be set to `libjemalloc.so:librocksdbjni-linux64.so` to ensure the necessary libraries are correctly loaded at runtime.
+- (Optional, ToplingDB builds only) ToplingDB requires preloading dynamic libraries via the `LD_PRELOAD` mechanism. Developers need to set two environment variables: `LD_LIBRARY_PATH` should point to the `library` directory extracted by `preload-topling.sh`, and `LD_PRELOAD` should be set to `libjemalloc.so:librocksdbjni-linux64.so` to ensure the necessary libraries are correctly loaded at runtime.
   - LD_LIBRARY_PATH=/path/to/your/library:$LD_LIBRARY_PATH
   - LD_PRELOAD=libjemalloc.so:librocksdbjni-linux64.so
 
-> If **user authentication** (authenticator) is configured for HugeGraph-Server in the **Java 11** environment, you need to refer to the script [configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/init-store.sh#L52) in the binary package and add the following **VM options**:
+> If **user authentication** (authenticator) is configured for HugeGraph-Server in the **Java 11** environment, you need to refer to the script [configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/init-store.sh#L49) in the binary package and add the following **VM options**:
 >
 > ```bash
 > --add-exports=java.base/jdk.internal.reflect=ALL-UNNAMED
@@ -93,7 +95,9 @@ Similarly, open the `Run/Debug Configurations` panel in IntelliJ IDEA and create
 - Set the `Main class` to `org.apache.hugegraph.dist.HugeGraphServer`.
 - Set the program arguments to `conf/gremlin-server.yaml conf/rest-server.properties`. Similarly, note that the path here is relative to the working directory, so make sure to set the working directory to `path-to-your-directory`.
 
-> Similarly, if **user authentication** (authenticator) is configured for HugeGraph-Server in the **Java 11** environment, you need to refer to the script [configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/hugegraph-server.sh#L124) in the binary package and add the following **VM options**:
+> `bin/hugegraph-server.sh` in the binary package does not start this class directly. It starts `org.apache.hugegraph.bootstrap.HugeGraphServerBootstrap`, which takes a leading `true`/`false` security-check flag before the two configuration paths, installs `HugeSecurityManager` when that flag is `true`, and then hands over to `HugeGraphServer`. Running `HugeGraphServer` from IDEA skips that wrapper, so the security manager is not installed, which is normally what you want while debugging.
+
+> Similarly, if **user authentication** (authenticator) is configured for HugeGraph-Server in the **Java 11** environment, you need to refer to the script [configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/bin/hugegraph-server.sh#L132) in the binary package and add the following **VM options**:
 >
 > ```bash
 > --add-exports=java.base/jdk.internal.reflect=ALL-UNNAMED --add-modules=jdk.unsupported --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
@@ -134,7 +138,7 @@ At this point, you can view detailed variable information in the debugger.
 
 #### 5. Log4j2 Configuration
 
-By default, when running `InitStore` and `HugeGraphServer`, the Log4j2 configuration file path read is `hugegraph-dist/src/main/resources/log4j2.xml`, not `path-to-your-directory/conf/log4j2.xml`. This configuration file is read when starting HugeGraph-Server using the **script**.
+By default, when running `InitStore` and `HugeGraphServer`, the Log4j2 configuration file path read is `hugegraph-server/hugegraph-dist/src/main/resources/log4j2.xml`, not `path-to-your-directory/conf/log4j2.xml`. This configuration file is read when starting HugeGraph-Server using the **script**.
 
 To avoid maintaining two separate configuration files, you can modify the Log4j2 configuration file path when running and debugging HugeGraph-Server in **IntelliJ IDEA**:
 

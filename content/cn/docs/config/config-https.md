@@ -21,8 +21,9 @@ ssl.keystore_file=conf/hugegraph-server.keystore
 ssl.keystore_password=******
 ```
 
-服务端的 conf 目录下已经给出了一个 keystore 文件`hugegraph-server.keystore`，该文件的密码为`hugegraph`，
-这两项都是在开启了 https 协议时的默认值，用户可以生成自己的 keystore 文件及密码，然后修改`ssl.keystore_file`和`ssl.keystore_password`的值。
+由于 keystore 文件没有声明许可证，发行包中并不包含它。当 `restserver.url` 以 `https` 开头而 `conf/hugegraph-server.keystore`
+不存在时，`bin/start-hugegraph.sh` 会在启动前从 hugegraph-doc 仓库的 `binary-1.5` 分支下载该文件，其密码为 `hugegraph`。
+这两项都是 `ssl.keystore_file` 和 `ssl.keystore_password` 的默认值，用户可以生成自己的 keystore 文件及密码，然后修改这两个配置项。
 
 ### 客户端配置
 

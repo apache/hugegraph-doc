@@ -729,6 +729,20 @@
       "1.3": "cn/docs/quickstart/toolchain/",
       "1.0": "cn/docs/quickstart/toolchain/"
     },
+    "cn:quickstart/toolchain/export-migration": {
+      "latest": "cn/docs/quickstart/toolchain/export-migration/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/toolchain/export-migration/hugegraph-seatunnel-source": {
+      "latest": "cn/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "cn:quickstart/toolchain/hugegraph-hubble": {
       "latest": "cn/docs/quickstart/toolchain/hugegraph-hubble/",
       "1.7": "cn/docs/quickstart/toolchain/hugegraph-hubble/",
@@ -756,6 +770,27 @@
       "1.5": "cn/docs/quickstart/toolchain/hugegraph-tools/",
       "1.3": "cn/docs/quickstart/toolchain/hugegraph-tools/",
       "1.0": "cn/docs/quickstart/toolchain/hugegraph-tools/"
+    },
+    "cn:quickstart/toolchain/import": {
+      "latest": "cn/docs/quickstart/toolchain/import/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/toolchain/import/hugegraph-seatunnel-connector": {
+      "latest": "cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:quickstart/toolchain/visualization": {
+      "latest": "cn/docs/quickstart/toolchain/visualization/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
     },
     "en:": {
       "latest": "docs/",
@@ -1401,6 +1436,20 @@
       "1.3": "docs/quickstart/toolchain/",
       "1.0": "docs/quickstart/toolchain/"
     },
+    "en:quickstart/toolchain/export-migration": {
+      "latest": "docs/quickstart/toolchain/export-migration/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/toolchain/export-migration/hugegraph-seatunnel-source": {
+      "latest": "docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "en:quickstart/toolchain/hugegraph-hubble": {
       "latest": "docs/quickstart/toolchain/hugegraph-hubble/",
       "1.7": "docs/quickstart/toolchain/hugegraph-hubble/",
@@ -1428,6 +1477,27 @@
       "1.5": "docs/quickstart/toolchain/hugegraph-tools/",
       "1.3": "docs/quickstart/toolchain/hugegraph-tools/",
       "1.0": "docs/quickstart/toolchain/hugegraph-tools/"
+    },
+    "en:quickstart/toolchain/import": {
+      "latest": "docs/quickstart/toolchain/import/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/toolchain/import/hugegraph-seatunnel-connector": {
+      "latest": "docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/toolchain/visualization": {
+      "latest": "docs/quickstart/toolchain/visualization/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
     }
   },
   "equivalents": [

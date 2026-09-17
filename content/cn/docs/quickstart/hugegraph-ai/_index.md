@@ -92,3 +92,4 @@ cd hugegraph-ml/src
 - [REST API](./rest-api.md)
 - [HugeGraph-ML](./hugegraph-ml.md)
 - [Python 客户端](../client/hugegraph-client-python.md)
+- [Vermeer Python 客户端](./vermeer-python-client.md)

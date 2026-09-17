@@ -11,7 +11,7 @@ weight: 6
 ## 环境要求
 
 - 单独使用该模块需要 Python 3.9 或更高版本；HugeGraph-AI 仓库整体要求 Python 3.10 或更高版本
-- 一个可通过 HTTP 访问的 Vermeer master。模块自带的示例使用端口 `8688`
+- 一个可通过 HTTP 访问的 Vermeer master。默认 HTTP 端口为 `6688`；Docker 部署需发布 `6688:6688`，见 [Vermeer 快速开始](../computing/hugegraph-vermeer.md)。
 - `uv`（推荐）或 `pip`
 
 运行时依赖：`requests`、`urllib3`、`python-dateutil`、`decorator`、`rich` 和 `setuptools`。
@@ -47,7 +47,7 @@ from pyvermeer.client.client import PyVermeerClient
 
 client = PyVermeerClient(
     ip="127.0.0.1",
-    port=8688,
+    port=6688,
     token="",
     timeout=(0.5, 15.0),
     log_level="INFO",
@@ -75,15 +75,22 @@ client = PyVermeerClient(
 
 ## 端到端示例
 
-模块自带一个可运行的示例：`vermeer-python-client/src/pyvermeer/demo/task_demo.py`。下面的版本在其基础上增加了任务状态查询，并从环境变量读取 HugeGraph 密码：
+模块自带一个可运行的示例：`vermeer-python-client/src/pyvermeer/demo/task_demo.py`。下面的版本在其基础上增加了带超时和失败处理的任务状态轮询，等待加载成功后再读取图，并从环境变量读取 HugeGraph 密码：
 
 ```python
 import os
+import time
 
 from pyvermeer.client.client import PyVermeerClient
 from pyvermeer.structure.task_data import TaskCreateRequest
 
-client = PyVermeerClient(ip="127.0.0.1", port=8688, token="", log_level="INFO")
+client = PyVermeerClient(
+    ip="127.0.0.1",
+    port=6688,
+    token="",
+    timeout=(0.5, 15.0),
+    log_level="INFO",
+)
 
 # 列出 master 上的任务
 tasks = client.tasks.get_tasks()
@@ -105,22 +112,49 @@ create_response = client.tasks.create_task(
     )
 )
 print(create_response.errcode, create_response.message)
+if create_response.errcode != 0:
+    raise RuntimeError(f"Could not create load task: {create_response.message}")
 
-# 回查任务并读取状态
+# 轮询本次创建的加载任务，直到成功、失败或超时
 task_id = create_response.task.id
-task = client.tasks.get_task(task_id)
-print(task.task.state)
+poll_timeout = 300.0
+deadline = time.monotonic() + poll_timeout
+while time.monotonic() < deadline:
+    task = client.tasks.get_task(task_id)
+    if task.errcode != 0:
+        raise RuntimeError(f"Could not read task {task_id}: {task.message}")
+    state = task.task.state
+    print(task_id, state)
+    if state == "loaded":
+        break
+    if state in ("error", "canceled"):
+        raise RuntimeError(f"Load task {task_id} ended with state {state}")
+    remaining = deadline - time.monotonic()
+    if remaining > 0:
+        time.sleep(min(1.0, remaining))
+else:
+    raise TimeoutError(f"Load task {task_id} did not finish within {poll_timeout}s")
 
 # 图加载完成后查看图信息
 print(client.graph.get_graph("DEFAULT-example").to_dict())
 ```
 
+加载任务以 `loaded` 表示成功；`error` 或 `canceled` 会中止示例，不再读取图。可按数据量调整 `poll_timeout`（此处为 300 秒）。轮询期限与 HTTP 连接、读取超时相互独立，已发出的请求及 SDK 重试可能使实际等待时间超过该期限。超时只停止客户端等待，不会取消服务端任务。
+
 不要把真实的 HugeGraph 密码写死在脚本或配置文件中，请像上面这样从环境变量或凭据管理系统读取。
 
-安装模块后，也可以直接运行自带的示例：
+模块自带的 `task_demo.py` 使用 `8688`。运行前，请将其中 `PyVermeerClient` 的 `port` 改为 `6688`，与默认 master HTTP 端口保持一致。根据安装后所在的目录选择对应命令：
+
+**仓库根目录安装**（在 `hugegraph-ai/` 下运行）：
 
 ```bash
 python vermeer-python-client/src/pyvermeer/demo/task_demo.py
+```
+
+**独立安装**（在 `hugegraph-ai/vermeer-python-client/` 下运行）：
+
+```bash
+python src/pyvermeer/demo/task_demo.py
 ```
 
 ## API 概览

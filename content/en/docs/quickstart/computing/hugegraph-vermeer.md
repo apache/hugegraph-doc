@@ -14,45 +14,59 @@ The master is responsible for communication, forwarding, and aggregation, with m
 
 The framework's runtime configuration can be passed via command-line parameters or specified in configuration files located in the `config/` directory. The `--env` parameter can specify which configuration file to use, e.g., `--env=master` specifies using `master.ini`. Note that the master needs to specify the listening port, and the worker needs to specify the listening port and the master's `ip:port`.
 
+The default master HTTP port is `6688` for REST API and Python clients. Workers connect to the master through gRPC port `6689`. The Docker examples below publish HTTP with `6688:6688`; keep `http_peer=0.0.0.0:6688` in the master configuration.
+
 ### 1.2 Running Method
+
+For both Docker options below, prepare a host configuration directory containing the provided `master.ini` and `worker.ini` files. In the existing `[default]` section of `worker.ini`, change `master_peer` as follows, keeping the other settings:
+
+```ini
+[default]
+master_peer=vermeer-master:6689
+```
+
+Inside the worker container, the shipped `127.0.0.1:6689` points to the worker itself. `vermeer-master` resolves to the master container on the shared Docker network in both examples. Keep `grpc_peer=0.0.0.0:6689` in `master.ini`, and mount this configuration directory at `/go/bin/config` in both containers. Publishing HTTP port `6688` alone does not configure the worker's gRPC connection.
 
 1.  **Option 1: Docker Compose (Recommended)**
 
-Please ensure that `docker-compose.yaml` exists in your project root directory. If it doesn't, here is an example:
+Run the following steps from the Vermeer root directory. You can use the repository's existing `docker-compose.yaml` or create one from the example below. In either case, apply the required port and volume changes below before starting the services:
 
 ```yaml
 services:
-  vermeer-master:
-    image: hugegraph/vermeer
-    container_name: vermeer-master
-    volumes:
-      - ~/.config:/go/bin/config # Change here to your actual config path
-    command: --env=master
-    networks:
-      vermeer_network:
-        ipv4_address: 172.20.0.10 # Assign a static IP for the master
+  vermeer-master:
+    image: hugegraph/vermeer
+    container_name: vermeer-master
+    ports:
+      - "6688:6688"
+    volumes:
+      - ~/.config:/go/bin/config # Change here to your actual config path
+    command: --env=master
+    networks:
+      vermeer_network:
+        ipv4_address: 172.20.0.10 # Assign a static IP for the master
 
-  vermeer-worker:
-    image: hugegraph/vermeer
-    container_name: vermeer-worker
-    volumes:
-      - ~/:/go/bin/config # Change here to your actual config path
-    command: --env=worker
-    networks:
-      vermeer_network:
-        ipv4_address: 172.20.0.11 # Assign a static IP for the worker
+  vermeer-worker:
+    image: hugegraph/vermeer
+    container_name: vermeer-worker
+    volumes:
+      - ~/.config:/go/bin/config # Change here to your actual config path
+    command: --env=worker
+    networks:
+      vermeer_network:
+        ipv4_address: 172.20.0.11 # Assign a static IP for the worker
 
 networks:
-  vermeer_network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/24 # Define the subnet for your network
+  vermeer_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24 # Define the subnet for your network
 ```
 
-Modify `docker-compose.yaml`
+Before starting, update `docker-compose.yaml` whether you use the repository's file or the example above:
 
-- **Volume**: For example, change both instances of `~/:/go/bin/config` to `/home/user/config:/go/bin/config` (or your own configuration directory).
+- **Ports**: Under `services.vermeer-master`, add `ports: ["6688:6688"]` if this mapping is missing, so host-side curl and Python clients can reach the master HTTP API.
+- **Volumes**: In both `vermeer-master` and `vermeer-worker`, set the bind mount for `/go/bin/config` to `/home/user/config:/go/bin/config`, replacing `/home/user/config` with the absolute configuration directory prepared above. Replace the existing mount regardless of whether it uses `~/` (the repository's file) or `~/.config` (the example above).
 - **Subnet**: Modify the subnet IP based on your actual situation. Note that the ports each container needs to access are specified in the config file. Please refer to the contents of the project's `config` folder for details.
 
 Build the Image and Start in the Project Directory (or `docker build` first, then `docker-compose up`)
@@ -76,7 +90,7 @@ docker-compose down
 
 2.  **Option 2: Start individually via `docker run` (Manually create network and assign static IP)**
 
-Ensure the CONFIG_DIR has proper read/execute permissions for the Docker process.
+Set `CONFIG_DIR` to the configuration directory prepared above, with `master_peer=vermeer-master:6689` in `worker.ini`. Ensure it has proper read/execute permissions for the Docker process.
 
 Build the image:
 
@@ -100,6 +114,7 @@ CONFIG_DIR=/home/user/config
 docker run -d \
   --name vermeer-master \
   --network vermeer_network --ip 172.20.0.10 \
+  -p 6688:6688 \
   -v ${CONFIG_DIR}:/go/bin/config \
   hugegraph/vermeer \
   --env=master
@@ -139,6 +154,14 @@ go build
 
 Enter the directory and input `./vermeer --env=master` or `./vermeer --env=worker01`.
 
+After starting the master, check its HTTP port from the host:
+
+```shell
+curl --fail --show-error http://localhost:6688/graphs
+```
+
+The request should return HTTP 200 with `errcode` set to `0` in the JSON response.
+
 ## 2. Task Creation REST API
 
 ### 2.1 Introduction
@@ -163,7 +186,7 @@ You can obtain the dataset in advance, such as the Twitter-2010 dataset. Acquisi
 **Request Example:**
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "load",
  "graph": "testdb",
@@ -185,7 +208,7 @@ POST http://localhost:8688/tasks/create
 ⚠️ Security Warning: Never store real passwords in configuration files or code. Use environment variables or a secure credential management system instead.
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
   "task_type": "load",
   "graph": "testdb",
@@ -207,7 +230,7 @@ POST http://localhost:8688/tasks/create
 **Request Example:**
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
   "task_type": "load",
   "graph": "testdb",
@@ -238,7 +261,7 @@ Refer to the Vermeer parameter list document for specific parameters.
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -267,7 +290,7 @@ The PageRank algorithm is suitable for scenarios such as web page ranking and id
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -289,7 +312,7 @@ The weakly connected components algorithm calculates all connected subgraphs in 
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -311,7 +334,7 @@ The label propagation algorithm is a graph clustering algorithm commonly used in
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -333,7 +356,7 @@ The degree centrality algorithm calculates the degree centrality value of each n
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -355,7 +378,7 @@ Closeness centrality is used to calculate the inverse of the shortest distance f
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -377,7 +400,7 @@ The betweenness centrality algorithm determines the value of a node as a "bridge
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -403,7 +426,7 @@ Note: This algorithm is for undirected graphs and ignores edge directions.
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -424,7 +447,7 @@ The K-Core algorithm marks all vertices with a degree of K, suitable for graph p
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -446,7 +469,7 @@ The single source the shortest path algorithm calculates the shortest distance f
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -468,7 +491,7 @@ Starting from a point, get the k-layer nodes of this point.
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -493,7 +516,7 @@ The distributed Louvain algorithm implemented on Vermeer is affected by factors 
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -518,7 +541,7 @@ The Jaccard index, also known as the Jaccard similarity coefficient, is used to 
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -543,7 +566,7 @@ Since the calculation requires using out-degree, load.use_out_degree needs to be
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -568,7 +591,7 @@ Calculate the k-degree neighbors of all nodes in the graph (excluding themselves
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -591,7 +614,7 @@ The clustering coefficient represents the coefficient of the clustering degree o
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",
@@ -613,7 +636,7 @@ In the mathematical theory of directed graphs, if every vertex of a graph can be
 Request example:
 
 ```javascript
-POST http://localhost:8688/tasks/create
+POST http://localhost:6688/tasks/create
 {
  "task_type": "compute",
  "graph": "testdb",

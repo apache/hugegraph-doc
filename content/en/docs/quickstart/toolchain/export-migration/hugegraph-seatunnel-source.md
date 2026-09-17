@@ -1,6 +1,6 @@
 ---
-title: "Export and Migrate Graph Data with SeaTunnel"
-linkTitle: "SeaTunnel Source: Export / Migration"
+title: "Export and Migrate Graph Data with SeaTunnel Source"
+linkTitle: "Export and migrate with SeaTunnel Source"
 weight: 2
 ---
 

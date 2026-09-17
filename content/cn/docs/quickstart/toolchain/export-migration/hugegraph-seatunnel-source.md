@@ -1,6 +1,6 @@
 ---
-title: "使用 SeaTunnel 导出与迁移图数据"
-linkTitle: "SeaTunnel Source：图导出/迁移"
+title: "使用 SeaTunnel Source 导出与迁移图数据"
+linkTitle: "使用 SeaTunnel Source 导出/迁移图数据"
 weight: 2
 ---
 

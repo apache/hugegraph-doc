@@ -323,6 +323,27 @@
       "1.3": "cn/docs/config/config-authentication/",
       "1.0": "cn/docs/config/config-authentication/"
     },
+    "cn:config/config-backend-hbase": {
+      "latest": "cn/docs/config/config-backend-hbase/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:config/config-backend-hstore": {
+      "latest": "cn/docs/config/config-backend-hstore/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:config/config-backend-rocksdb": {
+      "latest": "cn/docs/config/config-backend-rocksdb/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "cn:config/config-computer": {
       "latest": null,
       "1.7": "cn/docs/config/config-computer/",
@@ -673,6 +694,13 @@
       "1.3": null,
       "1.0": null
     },
+    "cn:quickstart/hugegraph-ai/vermeer-python-client": {
+      "latest": "cn/docs/quickstart/hugegraph-ai/vermeer-python-client/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "cn:quickstart/hugegraph/hugegraph-hstore": {
       "latest": "cn/docs/quickstart/hugegraph/hugegraph-hstore/",
       "1.7": "cn/docs/quickstart/hugegraph/hugegraph-hstore/",
@@ -966,6 +994,27 @@
       "1.5": "docs/config/config-authentication/",
       "1.3": "docs/config/config-authentication/",
       "1.0": "docs/config/config-authentication/"
+    },
+    "en:config/config-backend-hbase": {
+      "latest": "docs/config/config-backend-hbase/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:config/config-backend-hstore": {
+      "latest": "docs/config/config-backend-hstore/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:config/config-backend-rocksdb": {
+      "latest": "docs/config/config-backend-rocksdb/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
     },
     "en:config/config-computer": {
       "latest": null,
@@ -1313,6 +1362,13 @@
     "en:quickstart/hugegraph-ai/rest-api": {
       "latest": "docs/quickstart/hugegraph-ai/rest-api/",
       "1.7": "docs/quickstart/hugegraph-ai/rest-api/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/hugegraph-ai/vermeer-python-client": {
+      "latest": "docs/quickstart/hugegraph-ai/vermeer-python-client/",
+      "1.7": null,
       "1.5": null,
       "1.3": null,
       "1.0": null

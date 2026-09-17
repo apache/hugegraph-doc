@@ -66,7 +66,7 @@ HugeGraph Toolchain provides clients, data import, visual management, Spark inte
 | [Loader](/docs/quickstart/toolchain/import/hugegraph-loader/) | Reads data from local files, HDFS, JDBC, Kafka, or another graph, converts it into vertices and edges, and imports it into HugeGraph in batches |
 | [Hubble](/docs/quickstart/toolchain/visualization/hugegraph-hubble/) | Provides a web management interface for graph connections, schemas, data import, Gremlin queries, and visual results |
 | [Spark Connector](/docs/quickstart/toolchain/import/hugegraph-spark-connector/) | Reads and writes HugeGraph data in Spark jobs for offline big-data processing |
-| [SeaTunnel Connector](/docs/quickstart/toolchain/hugegraph-seatunnel-connector/) | Imports or migrates graph data through SeaTunnel 3.0+ Source and Sink |
+| [SeaTunnel Sink](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/) | Imports data into HugeGraph through SeaTunnel 3.0+; see the [Source guide](/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/) for exports and migrations |
 | [Tools](/docs/quickstart/toolchain/export-migration/hugegraph-tools/) | Provides command-line operations for deployment, graph management, backup and restore, and Gremlin execution |
 
 ## Graph Computing Engines (OLAP)

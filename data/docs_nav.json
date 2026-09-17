@@ -55,6 +55,9 @@
                   "page": "/docs/quickstart/toolchain/import/hugegraph-loader"
                 },
                 {
+                  "page": "/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector"
+                },
+                {
                   "page": "/docs/quickstart/toolchain/import/hugegraph-spark-connector"
                 }
               ]
@@ -64,11 +67,11 @@
               "children": [
                 {
                   "page": "/docs/quickstart/toolchain/export-migration/hugegraph-tools"
+                },
+                {
+                  "page": "/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source"
                 }
               ]
-            },
-            {
-              "page": "/docs/quickstart/toolchain/hugegraph-seatunnel-connector"
             }
           ]
         },
@@ -428,6 +431,11 @@
                   "children": []
                 },
                 {
+                  "page": "/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector",
+                  "url": "/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/",
+                  "children": []
+                },
+                {
                   "page": "/docs/quickstart/toolchain/import/hugegraph-spark-connector",
                   "url": "/docs/quickstart/toolchain/import/hugegraph-spark-connector/",
                   "children": []
@@ -442,13 +450,13 @@
                   "page": "/docs/quickstart/toolchain/export-migration/hugegraph-tools",
                   "url": "/docs/quickstart/toolchain/export-migration/hugegraph-tools/",
                   "children": []
+                },
+                {
+                  "page": "/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source",
+                  "url": "/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/",
+                  "children": []
                 }
               ]
-            },
-            {
-              "page": "/docs/quickstart/toolchain/hugegraph-seatunnel-connector",
-              "url": "/docs/quickstart/toolchain/hugegraph-seatunnel-connector/",
-              "children": []
             }
           ]
         },
@@ -916,6 +924,12 @@
       "/docs/quickstart/toolchain/import/",
       "/docs/quickstart/toolchain/import/hugegraph-loader/"
     ],
+    "/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/": [
+      "@group/components",
+      "/docs/quickstart/toolchain/",
+      "/docs/quickstart/toolchain/import/",
+      "/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/"
+    ],
     "/docs/quickstart/toolchain/import/hugegraph-spark-connector/": [
       "@group/components",
       "/docs/quickstart/toolchain/",
@@ -933,10 +947,11 @@
       "/docs/quickstart/toolchain/export-migration/",
       "/docs/quickstart/toolchain/export-migration/hugegraph-tools/"
     ],
-    "/docs/quickstart/toolchain/hugegraph-seatunnel-connector/": [
+    "/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/": [
       "@group/components",
       "/docs/quickstart/toolchain/",
-      "/docs/quickstart/toolchain/hugegraph-seatunnel-connector/"
+      "/docs/quickstart/toolchain/export-migration/",
+      "/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/"
     ],
     "/docs/quickstart/computing/": [
       "@group/components",
@@ -1323,18 +1338,19 @@
     "/docs/quickstart/toolchain/": [
       "/docs/quickstart/toolchain/visualization",
       "/docs/quickstart/toolchain/import",
-      "/docs/quickstart/toolchain/export-migration",
-      "/docs/quickstart/toolchain/hugegraph-seatunnel-connector"
+      "/docs/quickstart/toolchain/export-migration"
     ],
     "/docs/quickstart/toolchain/visualization/": [
       "/docs/quickstart/toolchain/visualization/hugegraph-hubble"
     ],
     "/docs/quickstart/toolchain/import/": [
       "/docs/quickstart/toolchain/import/hugegraph-loader",
+      "/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector",
       "/docs/quickstart/toolchain/import/hugegraph-spark-connector"
     ],
     "/docs/quickstart/toolchain/export-migration/": [
-      "/docs/quickstart/toolchain/export-migration/hugegraph-tools"
+      "/docs/quickstart/toolchain/export-migration/hugegraph-tools",
+      "/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source"
     ],
     "/docs/quickstart/computing/": [
       "/docs/quickstart/computing/hugegraph-vermeer",

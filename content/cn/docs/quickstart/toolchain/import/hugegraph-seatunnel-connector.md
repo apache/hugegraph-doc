@@ -1,10 +1,12 @@
 ---
-title: "使用 SeaTunnel 导入与迁移图数据"
-linkTitle: "SeaTunnel 数据集成"
-weight: 5
+title: "使用 SeaTunnel 导入图数据"
+linkTitle: "SeaTunnel Sink：图导入"
+weight: 2
+aliases:
+  - /docs/quickstart/toolchain/hugegraph-seatunnel-connector/
 ---
 
-SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph，也可以在两张 HugeGraph 图之间迁移顶点和边。连接器分为两部分：**Source 负责读取，Sink 负责写入**，中间可以接 SeaTunnel 的数据转换组件。
+SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph。连接器分为两部分：**Source 负责读取，Sink 负责写入**，中间可以接 SeaTunnel 的数据转换组件。需要从 HugeGraph 导出或迁移数据时，请查看[SeaTunnel Source 导出与迁移文档](/cn/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/)。
 
 > **版本要求：本文面向 SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)。** 所有示例使用 `mappings`
 
@@ -269,137 +271,7 @@ sink {
 
 HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可能重放记录。使用 `PRIMARY_KEY` 能让相同 `name` 落到同一个顶点，但不等于所有更新操作都具备 exactly-once 语义。定时刷新由 Zeta 提供，不适用于 Spark 或 Flink 引擎。
 
-## 5 迁移 HugeGraph 图（graph2graph）
-
-下面从源图迁移 `person` 顶点和 `knows` 边。请使用独立的目标图：本节采用 `CUSTOMIZE_STRING` 保留顶点 ID，不要复用前面已经创建为 `PRIMARY_KEY` 的 `person` 标签。
-
-这两个任务只迁移指定标签和属性，不会完整复制源图的索引、TTL 等全部 Schema 配置。运行期间应暂停源图写入，避免两个任务读到不同时间的数据；完成后核对顶点、边数量及抽样属性。
-
-[![跨图迁移时重建主键可能改变顶点 ID；使用 CUSTOMIZE_STRING 保留原 ID，确保边端点匹配](/cn/docs/images/seatunnel/seatunnel-preserve-ids-zh.png)](/cn/docs/images/seatunnel/seatunnel-preserve-ids-zh.png)
-
-### 5.1 先迁移顶点
-
-Source 自动补充 `~id` 保留列，Sink 把原 ID 作为字符串保存。无需在 `schema.fields` 中声明 `~id`，手动声明保留列会被拒绝。
-
-<details>
-<summary>展开配置，保存为 config/graph2graph-person.conf</summary>
-
-```hocon
-env {
-  job.mode = "BATCH"
-}
-
-source {
-  HugeGraph {
-    host = "source-hugegraph"
-    port = 8080
-    graph_name = "hugegraph"
-    graph_space = "DEFAULT"
-    label = "person"
-    label_type = "VERTEX"
-    schema = {
-      fields = {
-        name = "string"
-        age = "int"
-      }
-    }
-  }
-}
-
-sink {
-  HugeGraph {
-    host = "target-hugegraph"
-    port = 8080
-    graph_name = "hugegraph"
-    graph_space = "DEFAULT"
-    batch_failure_fallback = false
-    mappings = [
-      {
-        type = "VERTEX"
-        label = "person"
-        idStrategy = "CUSTOMIZE_STRING"
-        idFields = ["~id"]
-        properties = ["name", "age"]
-      }
-    ]
-  }
-}
-```
-
-</details>
-
-```bash
-./bin/seatunnel.sh --config ./config/graph2graph-person.conf -m local
-```
-
-### 5.2 再迁移边
-
-确认顶点任务成功后，使用 Source 自动补充的 `~source_id` 和 `~target_id` 定位端点。因为上一任务保留了原 ID，这两列可以直接引用目标图中的顶点。
-
-<details>
-<summary>展开配置，保存为 config/graph2graph-knows.conf</summary>
-
-```hocon
-env {
-  job.mode = "BATCH"
-}
-
-source {
-  HugeGraph {
-    host = "source-hugegraph"
-    port = 8080
-    graph_name = "hugegraph"
-    graph_space = "DEFAULT"
-    label = "knows"
-    label_type = "EDGE"
-    schema = {
-      fields = {
-        since = "int"
-      }
-    }
-  }
-}
-
-sink {
-  HugeGraph {
-    host = "target-hugegraph"
-    port = 8080
-    graph_name = "hugegraph"
-    graph_space = "DEFAULT"
-    check_vertex = true
-    batch_failure_fallback = false
-    mappings = [
-      {
-        type = "EDGE"
-        label = "knows"
-        sourceConfig = {
-          label = "person"
-          idFields = ["~source_id"]
-        }
-        targetConfig = {
-          label = "person"
-          idFields = ["~target_id"]
-        }
-        properties = ["since"]
-      }
-    ]
-  }
-}
-```
-
-</details>
-
-```bash
-./bin/seatunnel.sh --config ./config/graph2graph-knows.conf -m local
-```
-
-本例打开端点检查，并让写入错误直接导致任务失败。默认的 `check_vertex = false` 不保证最终一致：缺少端点可能产生悬空边，因此不能用任务成功代替迁移结果检查。
-
-> **为什么保留 ID？** HugeGraph 的 `PRIMARY_KEY` ID 包含顶点标签的内部 ID，两张图可能不同。例如源图顶点是 `1:marko`，目标图重新按主键生成的可能是 `2:marko`。如果重新生成顶点 ID 后仍复用源图的边端点，边就会连错。本例将原 ID 保存为字符串，因此会改变目标图的 ID 策略
-
-若要一次读取全部标签，省略 Source 的 `label` 后会读取 `label_type`（默认 `VERTEX`）下的全部 label，每个 label 输出一张表。这时需用 `sourceTable` 将各 Sink 映射绑定到对应表，例如 `sourceTable = "default.person"`；具体值以 Writer 日志中的完整表名为准。不能直接套用本节的单标签配置。其他限制见 [HugeGraph Source 文档](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md)。
-
-## 6 常用配置与排错
+## 5 常用配置与排错
 
 下表适用于本文使用的 SeaTunnel 3.0+ 版本：
 
@@ -423,13 +295,13 @@ sink {
 - **Schema 不兼容**：检查标签的 ID 策略、属性类型和边端点。自动创建不会把已有 `PRIMARY_KEY` 标签改成 `CUSTOMIZE_STRING`。
 - **Kafka 少量数据未及时出现**：确认使用 Zeta，并在 `env` 中设置 `sink.flush.interval`。此版本的 `batch_interval_ms` 仅为兼容保留，不能代替它。
 
-## 7 选型小结
+## 6 选型小结
 
 选工具时，先看要完成的工作：图管理、Gremlin、备份或克隆可用 [Tools](/cn/docs/quickstart/toolchain/export-migration/hugegraph-tools/)；直接导入图可先看 [Loader](/cn/docs/quickstart/toolchain/import/hugegraph-loader/)；需要复用 Source、Transform、Sink 管道时选 SeaTunnel。使用 SeaTunnel 的图读取和迁移能力时，请按本文使用的 3.0+ 版本准备环境。
 
 [![按工作流选择工具：图管理用 Tools，直接导入用 Loader，复用数据管道用 SeaTunnel](/cn/docs/images/seatunnel/seatunnel-tool-choice-zh.png)](/cn/docs/images/seatunnel/seatunnel-tool-choice-zh.png)
 
-## 8 参考文档
+## 7 参考文档
 
 - [HugeGraph Sink](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/sink/HugeGraph.md)
 - [HugeGraph Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md)
@@ -437,6 +309,6 @@ sink {
 - [Kafka Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Kafka.md)
 - [SeaTunnel 本地部署](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
 
-## 9 旧版本说明
+## 8 旧版本说明
 
 本文面向 SeaTunnel 3.0+，文中的 Source、`mappings` 和图迁移示例不适用于 2.3.13。2.3.13 已过时，仅提供 HugeGraph Sink，配置使用 `schema_config`，并且需要提前创建图模型。如必须使用 2.3.13，请参考[官方 Sink 文档](https://github.com/apache/seatunnel/blob/2.3.13/docs/zh/connectors/sink/HugeGraph.md)，不要套用本文配置。

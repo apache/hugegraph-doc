@@ -1,10 +1,12 @@
 ---
-title: "Import and Migrate Graph Data with SeaTunnel"
-linkTitle: "SeaTunnel Data Integration"
-weight: 5
+title: "Import Graph Data with SeaTunnel"
+linkTitle: "SeaTunnel Sink: Graph Import"
+weight: 2
+aliases:
+  - /docs/quickstart/toolchain/hugegraph-seatunnel-connector/
 ---
 
-SeaTunnel connects data sources such as databases and Kafka to HugeGraph. It can also migrate vertices and edges between two HugeGraph graphs. The connector has two parts: **Source reads data and Sink writes data**, with SeaTunnel transform components available between them.
+SeaTunnel connects data sources such as databases and Kafka to HugeGraph. The connector has two parts: **Source reads data and Sink writes data**, with SeaTunnel transform components available between them. To export or migrate data from HugeGraph, see the [SeaTunnel Source export and migration guide](/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/).
 
 > **Version requirement: This guide targets SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release).** All examples use `mappings`
 
@@ -269,137 +271,7 @@ Use the Gremlin query from section 3.1 to check the data. The streaming job keep
 
 HugeGraph Sink writes with **at-least-once** semantics, so recovery can replay records. `PRIMARY_KEY` sends the same `name` to the same vertex, but it does not make every update exactly-once. Scheduled flushing is provided by Zeta and does not apply to Spark or Flink engines.
 
-## 5 Migrate a HugeGraph graph (graph2graph)
-
-The following example migrates `person` vertices and `knows` edges from a source graph. Use a separate target graph. This section uses `CUSTOMIZE_STRING` to preserve vertex IDs. Do not reuse the `person` label created earlier with `PRIMARY_KEY`.
-
-These two jobs migrate only the selected labels and properties. They do not copy every source schema setting, such as indexes and TTLs. Pause writes to the source graph during the migration so both jobs read a consistent point in time. Afterward, compare vertex and edge counts and sample properties.
-
-[![Regenerating a primary key can change 1:marko to 2:marko; CUSTOMIZE_STRING preserves the original ID so edge endpoints still resolve](/docs/images/seatunnel/seatunnel-preserve-ids-en.png)](/docs/images/seatunnel/seatunnel-preserve-ids-en.png)
-
-### 5.1 Migrate vertices first
-
-Source adds a `~id` column for the original ID, and Sink stores it as a string. Do not declare `~id` in `schema.fields`; manually declaring this reserved column is rejected.
-
-<details>
-<summary>Expand the configuration and save it as config/graph2graph-person.conf</summary>
-
-```hocon
-env {
-  job.mode = "BATCH"
-}
-
-source {
-  HugeGraph {
-    host = "source-hugegraph"
-    port = 8080
-    graph_name = "hugegraph"
-    graph_space = "DEFAULT"
-    label = "person"
-    label_type = "VERTEX"
-    schema = {
-      fields = {
-        name = "string"
-        age = "int"
-      }
-    }
-  }
-}
-
-sink {
-  HugeGraph {
-    host = "target-hugegraph"
-    port = 8080
-    graph_name = "hugegraph"
-    graph_space = "DEFAULT"
-    batch_failure_fallback = false
-    mappings = [
-      {
-        type = "VERTEX"
-        label = "person"
-        idStrategy = "CUSTOMIZE_STRING"
-        idFields = ["~id"]
-        properties = ["name", "age"]
-      }
-    ]
-  }
-}
-```
-
-</details>
-
-```bash
-./bin/seatunnel.sh --config ./config/graph2graph-person.conf -m local
-```
-
-### 5.2 Migrate edges second
-
-After the vertex job succeeds, use the `~source_id` and `~target_id` columns added by Source to locate endpoints. Because the previous job preserved the original IDs, these columns can refer directly to vertices in the target graph.
-
-<details>
-<summary>Expand the configuration and save it as config/graph2graph-knows.conf</summary>
-
-```hocon
-env {
-  job.mode = "BATCH"
-}
-
-source {
-  HugeGraph {
-    host = "source-hugegraph"
-    port = 8080
-    graph_name = "hugegraph"
-    graph_space = "DEFAULT"
-    label = "knows"
-    label_type = "EDGE"
-    schema = {
-      fields = {
-        since = "int"
-      }
-    }
-  }
-}
-
-sink {
-  HugeGraph {
-    host = "target-hugegraph"
-    port = 8080
-    graph_name = "hugegraph"
-    graph_space = "DEFAULT"
-    check_vertex = true
-    batch_failure_fallback = false
-    mappings = [
-      {
-        type = "EDGE"
-        label = "knows"
-        sourceConfig = {
-          label = "person"
-          idFields = ["~source_id"]
-        }
-        targetConfig = {
-          label = "person"
-          idFields = ["~target_id"]
-        }
-        properties = ["since"]
-      }
-    ]
-  }
-}
-```
-
-</details>
-
-```bash
-./bin/seatunnel.sh --config ./config/graph2graph-knows.conf -m local
-```
-
-This example checks endpoints and makes write errors fail the job. The default `check_vertex = false` does not guarantee a consistent result: a missing endpoint can create a dangling edge, so a successful job is not a substitute for checking the migrated graph.
-
-> **Why preserve IDs?** A HugeGraph `PRIMARY_KEY` ID contains the internal ID of the vertex label, and that internal ID can differ between graphs. For example, a source vertex can be `1:marko`, while regenerating the primary key in the target graph can produce `2:marko`. Reusing the source edge endpoints after regenerating vertex IDs can connect edges to the wrong vertices. This example stores the original ID as a string, which changes the target graph's ID strategy
-
-When Source reads every label, omit `label` to read all labels of `label_type` (default `VERTEX`). It produces one output table per label. Bind each Sink mapping to its table with `sourceTable`, for example `sourceTable = "default.person"`; use the full table name shown in the Writer log for the exact value. Do not reuse the single-label configuration from this section. See the [HugeGraph Source documentation](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md) for other limitations.
-
-## 6 Common configuration and troubleshooting
+## 5 Common configuration and troubleshooting
 
 The following table applies to the SeaTunnel 3.0+ version used by this guide:
 
@@ -423,13 +295,13 @@ Use these checks when a job fails:
 - **Schema incompatibility:** Check the ID strategy, property types, and edge endpoints. Automatic creation does not change an existing `PRIMARY_KEY` label into `CUSTOMIZE_STRING`.
 - **Small Kafka batches do not appear promptly:** Confirm that the job uses Zeta and set `sink.flush.interval` in `env`. In this version, `batch_interval_ms` is retained only for compatibility and cannot replace it.
 
-## 7 Choosing a tool
+## 6 Choosing a tool
 
 Choose a tool based on the work to complete. Use [Tools](/docs/quickstart/toolchain/export-migration/hugegraph-tools/) for graph management, Gremlin, backup, or cloning. Use [Loader](/docs/quickstart/toolchain/import/hugegraph-loader/) for a direct graph import. Choose SeaTunnel when you need to reuse a Source, Transform, and Sink pipeline. For SeaTunnel graph reads and migrations, prepare the environment using the SeaTunnel 3.0+ version used by this guide.
 
 [![Choosing a tool: Tools for graph management, Loader for direct imports, and SeaTunnel for reusable data pipelines](/docs/images/seatunnel/seatunnel-tool-choice-en.png)](/docs/images/seatunnel/seatunnel-tool-choice-en.png)
 
-## 8 References
+## 7 References
 
 - [HugeGraph Sink](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/sink/HugeGraph.md)
 - [HugeGraph Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md)
@@ -437,6 +309,6 @@ Choose a tool based on the work to complete. Use [Tools](/docs/quickstart/toolch
 - [Kafka Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Kafka.md)
 - [SeaTunnel local deployment](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
 
-## 9 Legacy version note
+## 8 Legacy version note
 
 This guide targets SeaTunnel 3.0+. Its Source, `mappings`, and graph migration examples do not apply to 2.3.13. That legacy version provides only the HugeGraph Sink, uses `schema_config`, and requires the graph schema to be created in advance. If you must use 2.3.13, follow the [official Sink documentation](https://github.com/apache/seatunnel/blob/2.3.13/docs/en/connectors/sink/HugeGraph.md) instead of copying this guide's configuration.

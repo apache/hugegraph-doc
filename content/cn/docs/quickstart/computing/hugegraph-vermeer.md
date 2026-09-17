@@ -29,7 +29,7 @@ master_peer=vermeer-master:6689
 
 1. **方案一：Docker Compose（推荐）**
 
-确保docker-compose.yaml存在于您的项目根目录中。如果没有，以下是一个示例：
+在 Vermeer 根目录执行以下步骤。可以使用仓库已有的 `docker-compose.yaml`，也可以根据下面的示例创建。无论使用哪一种，都必须在启动服务前完成下文要求的端口和挂载配置修改：
 
 ```yaml
 services:
@@ -63,8 +63,10 @@ networks:
         - subnet: 172.20.0.0/24 # Define the subnet for your network
 ```
 
-修改 docker-compose.yaml
-- **Volume**：将两处 `~/.config:/go/bin/config` 改为 `/home/user/config:/go/bin/config`（或上面准备的配置目录）。
+启动前，无论使用仓库自带的文件还是上面的示例，都需要修改 `docker-compose.yaml`：
+
+- **Ports**：在 `services.vermeer-master` 下补上 `ports: ["6688:6688"]`（如果尚无此映射），让宿主机上的 curl 和 Python 客户端能够访问 master 的 HTTP API。
+- **Volumes**：将 `vermeer-master` 和 `vermeer-worker` 中挂载到 `/go/bin/config` 的条目都设为 `/home/user/config:/go/bin/config`，其中 `/home/user/config` 应替换为上面准备的配置目录的绝对路径。不论原挂载使用的是 `~/`（仓库自带文件）还是 `~/.config`（上面的示例），都需要替换。
 - **Subnet**：根据实际情况修改子网IP。请注意，每个容器需要访问的端口在config文件中指定，具体请参照项目`config`文件夹下内容。
 
 在项目目录构建镜像并启动（或者先用 docker build 再 docker-compose up）

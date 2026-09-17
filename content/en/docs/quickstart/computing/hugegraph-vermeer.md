@@ -29,7 +29,7 @@ Inside the worker container, the shipped `127.0.0.1:6689` points to the worker i
 
 1.  **Option 1: Docker Compose (Recommended)**
 
-Please ensure that `docker-compose.yaml` exists in your project root directory. If it doesn't, here is an example:
+Run the following steps from the Vermeer root directory. You can use the repository's existing `docker-compose.yaml` or create one from the example below. In either case, apply the required port and volume changes below before starting the services:
 
 ```yaml
 services:
@@ -63,9 +63,10 @@ networks:
         - subnet: 172.20.0.0/24 # Define the subnet for your network
 ```
 
-Modify `docker-compose.yaml`
+Before starting, update `docker-compose.yaml` whether you use the repository's file or the example above:
 
-- **Volume**: Change both instances of `~/.config:/go/bin/config` to `/home/user/config:/go/bin/config` (or the configuration directory prepared above).
+- **Ports**: Under `services.vermeer-master`, add `ports: ["6688:6688"]` if this mapping is missing, so host-side curl and Python clients can reach the master HTTP API.
+- **Volumes**: In both `vermeer-master` and `vermeer-worker`, set the bind mount for `/go/bin/config` to `/home/user/config:/go/bin/config`, replacing `/home/user/config` with the absolute configuration directory prepared above. Replace the existing mount regardless of whether it uses `~/` (the repository's file) or `~/.config` (the example above).
 - **Subnet**: Modify the subnet IP based on your actual situation. Note that the ports each container needs to access are specified in the config file. Please refer to the contents of the project's `config` folder for details.
 
 Build the Image and Start in the Project Directory (or `docker build` first, then `docker-compose up`)

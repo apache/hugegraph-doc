@@ -31,11 +31,12 @@ HugeGraph目前采用EdgeCut的分区方案。
 
 ### 3. VertexId 策略
 
-HugeGraph的Vertex支持三种ID策略，在同一个图数据库中不同的VertexLabel可以使用不同的Id策略，目前HugeGraph支持的Id策略分别是：
+HugeGraph的Vertex支持四种ID策略，在同一个图数据库中不同的VertexLabel可以使用不同的Id策略，目前HugeGraph支持的Id策略分别是：
 
 - 自动生成（AUTOMATIC）：使用Snowflake算法自动生成全局唯一Id，Long类型；
 - 主键（PRIMARY_KEY）：通过VertexLabel+PrimaryKeyValues生成Id，String类型；
 - 自定义（CUSTOMIZE_STRING|CUSTOMIZE_NUMBER）：用户自定义Id，分为String和Long类型两种，需自己保证Id的唯一性；
+- 自定义UUID（CUSTOMIZE_UUID）：用户自定义UUID形式的Id，需自己保证Id的唯一性；
 
 默认的Id策略是AUTOMATIC，如果用户调用primaryKeys()方法并设置了正确的PrimaryKeys，则自动启用PRIMARY_KEY策略。
 启用PRIMARY_KEY策略后HugeGraph能根据PrimaryKeys实现数据去重。
@@ -75,6 +76,15 @@ schema.vertexLabel("person")
       .properties("name", "age", "city")
       .create();
 graph.addVertex(T.label, "person", T.id, 123456, "name", "marko","age", 18, "city", "Beijing");
+ ```
+
+ 5. CUSTOMIZE_UUID ID策略
+ ```java
+schema.vertexLabel("person")
+      .useCustomizeUuidId()
+      .properties("name", "age", "city")
+      .create();
+graph.addVertex(T.label, "person", T.id, UUID.randomUUID(), "name", "marko","age", 18, "city", "Beijing");
  ```
 
 如果用户需要Vertex去重，有三种方案分别是：
@@ -200,7 +210,7 @@ TinkerPop transaction事务是指对数据库执行操作的工作单元，一�
 
 - 服务端内部通过将事务与线程绑定实现隔离（ThreadLocal）
 - 本事务未提交的内容按照时间顺序覆盖老数据以供本事务查询最新版本数据
-- 底层依赖后端数据库保证事务原子性操作（如Cassandra/RocksDB的batch接口均保证原子性）
+- 底层依赖后端数据库保证事务原子性操作（如RocksDB的batch接口保证原子性）
 
 ###### *注意*
 

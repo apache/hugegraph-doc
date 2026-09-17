@@ -8,7 +8,7 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-### 2.1 Vertex
+### 2.1 Vertex {#vertex-api}
 
 In vertex types, the `Id` strategy determines the type of the vertex `Id`, with the corresponding relationships as follows:
 
@@ -19,6 +19,7 @@ In vertex types, the `Id` strategy determines the type of the vertex `Id`, with 
 | CUSTOMIZE_STRING | string  |
 | CUSTOMIZE_NUMBER | number  |
 | CUSTOMIZE_UUID   | uuid    |
+{#vertex-id-strategy .full-width caption="Vertex ID strategies"}
 
 For the `GET/PUT/DELETE` API of a vertex, the id part in the URL should be passed as the id value with type information. This type information is indicated by whether the JSON string is enclosed in quotes, meaning:
 
@@ -44,7 +45,7 @@ schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("
 schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 ```
 
-#### 2.1.1 Create a vertex
+#### 2.1.1 Create a vertex {#create-vertex}
 
 ##### Method & Url
 
@@ -54,7 +55,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 ##### Request Body
 
-```json
+```json {title="request.json" wrap=true}
 {
     "label": "person",
     "properties": {
@@ -72,7 +73,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 ##### Response Body
 
-```json
+```json {title="response.json" wrap=true}
 {
     "id": "1:marko",
     "label": "person",
@@ -370,10 +371,12 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 
 - label: Vertex type
 - properties: Property key-value pairs (precondition: indexes are created for property queries)
-- limit: Maximum number of results
+- keep_start_p: Default is false. When set to true, the range matching input expression will not be automatically escaped. For example, `properties={"age":"P.gt(18)"}` will be interpreted as an exact match, i.e., the age property is equal to the string "P.gt(18)"
+- offset: Offset, default is 0
+- limit: Maximum number of results, default is 100
 - page: Page number
 
-All of the above parameters are optional. If the `page` parameter is provided, the `limit` parameter must also be provided, and no other parameters are allowed. `label, properties`, and `limit` can be combined in any way.
+All of the above parameters are optional. `page` can not be combined with a non-zero `offset`, everything else can be combined in any way.
 
 Property key-value pairs consist of the property name and value in JSON format. Multiple property key-value pairs are allowed as query conditions. The property value supports exact matching, range matching, and fuzzy matching. For exact matching, use the format `properties={"age":29}`, for range matching, use the format `properties={"age":"P.gt(29)"}`, and for fuzzy matching, use the format `properties={"city": "P.textcontains("ChengDu China")}`. The following expressions are supported for range matching:
 

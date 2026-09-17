@@ -26,20 +26,22 @@ user(name=xx) -belong-> group(name=xx) -access(read)-> target(graph=graph1, reso
 
 By default, HugeGraph does **not enable** user authentication, and it needs to be enabled by modifying the configuration file.
 
-> ⚠️ **SEC Reminder: Security of Graph Query Languages (Gremlin/Cypher)**
->
-> Due to potential system security risks brought about by the flexibility of graph query languages, **please avoid exposing any query-related endpoints directly to public/external network environments**. In actual production deployments, please use the **[Authentication System](/docs/config/config-authentication/)** outlined here combined with an **IP Whitelist** as a dual-security mechanism, and we recommend enabling Audit Logs to pinpoint the exact queries executed by users. Given the stateless nature of the Server, it is strongly recommended overall to use a **[Containerized Environment (Docker/K8s)](/docs/quickstart/hugegraph/hugegraph-server/#31-use-docker-container-convenient-for-testdev)** architecture to effectively isolate underlying system safety risks at a minimal cost.
+> Because the flexibility of graph query languages can introduce potential system security risks, do not expose Gremlin,
+> Cypher, or other query endpoints directly to the public network. In production, enable
+> [authentication](/docs/config/config-authentication/), an IP allowlist, and audit logging, and isolate the Server
+> process with [Docker or Kubernetes](/docs/quickstart/hugegraph/hugegraph-server/#31-use-docker-container-convenient-for-testdev).
 
 You need to modify the configuration file to enable this feature. HugeGraph provides built-in authentication mode: `StandardAuthenticator`. This mode supports multi-user authentication and fine-grained permission control. Additionally, developers can implement their own `HugeAuthenticator` interface to integrate with their existing authentication systems.
 
-HugeGraph authentication modes adopt [HTTP Basic Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication). In simple terms, when sending an HTTP request, you need to set the `Authentication` header to `Basic` and provide the corresponding username and password. The corresponding HTTP plaintext format is as follows:
+HugeGraph uses [HTTP Basic Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication). The value after
+`Basic` is the Base64 encoding of `username:password`. With curl, pass the credentials directly through `-u`:
 
-```http
-GET http://localhost:8080/graphs/hugegraph/schema/vertexlabels
-Authorization: Basic admin xxxx
+```bash
+curl -u 'admin:<password>' \
+  http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
 ```
 
-**Warning**: Versions of HugeGraph-Server prior to 1.5.0 have a JWT-related security vulnerability in the Auth mode. 
+**Warning**: Versions of HugeGraph-Server prior to 1.5.0 have a JWT-related security vulnerability in the Auth mode.
 Users are advised to update to a newer version or manually set the JWT token's secretKey. It can be set in the `rest-server.properties` file by setting the `auth.token_secret` information:
 
 ```properties
@@ -52,6 +54,10 @@ You can also generate it with the following command:
 RANDOM_STRING=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)
 echo "auth.token_secret=${RANDOM_STRING}" >> rest-server.properties
 ```
+
+Since 1.5.0 the option defaults to a key generated randomly at startup, so it does not have to be configured. Set it
+explicitly when tokens have to survive a restart, or when more than one server must accept the same token. Tokens expire
+after `auth.token_expire` seconds (default 86400).
 
 #### StandardAuthenticator Mode
 The `StandardAuthenticator` mode supports user authentication and permission control by storing user information in the database backend. This
@@ -68,11 +74,13 @@ authentication: {
 }
 ```
 
-Configure the `authenticator` and `graph_store` information in the `rest-server.properties` configuration file:
+Configure the authenticator and the graph that stores authorization data in `rest-server.properties`:
 
 ```properties
 auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
 auth.graph_store=hugegraph
+# The password of the built-in admin account, default is pa, it takes effect on the first startup
+#auth.admin_pa=<your-admin-password>
 
 # Auth Client Config
 # If GraphServer and AuthServer are deployed separately, you also need to specify the following configuration. Fill in the IP:RPC port of AuthServer.
@@ -87,7 +95,7 @@ In the `hugegraph{n}.properties` configuration file, configure the `gremlin.grap
 gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
 ```
 
-For detailed API calls and explanations regarding permissions, please refer to the [Authentication-API](/docs/clients/restful-api/auth) documentation.
+For authorization API usage, see the [Authentication API](/docs/clients/restful-api/auth/) documentation.
 
 ### Custom User Authentication System
 
@@ -97,23 +105,15 @@ and then modify the `authenticator` configuration item in the configuration file
 
 ### Switching authentication mode
 
-After the authentication configuration completed, enter the **admin password** on the **command line** when executing `init store.sh` for the first time. (For non-Docker mode)
-
-If deployed based on Docker image or if HugeGraph has already been initialized and needs to be converted to authentication mode, 
-relevant graph data needs to be deleted and HugeGraph needs to be restarted. If there is already business data in the diagram, 
-it is temporarily **not possible** to directly convert the authentication mode (version<=1.2.0)
-
-> Improvements for this feature have been included in the latest release (available in the latest docker image), please refer to [PR 2411](https://github.com/apache/hugegraph/pull/2411). Seamless switching is now available.
+When `init-store.sh` is run for the first time and the `admin` user does not yet exist, the command prompts for the
+administrator password. For an initialized persistent backend, `init-store.sh` adds the system metadata required for
+authentication without deleting existing graph data.
 
 ```bash
 # stop the hugeGraph firstly
 bin/stop-hugegraph.sh
 
-# delete the store data (here we use the default path for rocksdb)
-# there is no need to delete in the latest version (fixed in https://github.com/apache/hugegraph/pull/2411)
-rm -rf rocksdb-data/
-
-# init store again
+# Initialize authentication system metadata; existing backend data is preserved
 bin/init-store.sh
 
 # start hugeGraph again
@@ -132,7 +132,7 @@ The steps are as follows:
 To enable authentication mode, add the environment variable `PASSWORD=xxx` (you can freely set the password) in the `docker run` command:
 
 ```bash
-docker run -itd -e PASSWORD=xxx --name=server -p 8080:8080 hugegraph/hugegraph:1.5.0
+docker run -itd -e PASSWORD=xxx --name=server -p 8080:8080 hugegraph/hugegraph:1.7.0
 ```
 
 #### 2. Use docker-compose
@@ -143,7 +143,7 @@ Use `docker-compose` and set the environment variable `PASSWORD=xxx`:
 version: '3'
 services:
   server:
-    image: hugegraph/hugegraph:1.5.0
+    image: hugegraph/hugegraph:1.7.0
     container_name: server
     ports:
       - 8080:8080
@@ -162,3 +162,16 @@ bin/enable-auth.sh
 ```
 
 Then follow [Switching authentication mode](#switching-authentication-mode)
+
+---
+
+Backlinks:
+
+- [Release-1.3.0](/docs/changelog/hugegraph-1.3.0-release-notes/)
+- [Authentication](/docs/clients/restful-api/auth/)
+- [Gremlin](/docs/clients/restful-api/gremlin/)
+- [Server Config](/docs/config/)
+- [Security](/docs/guides/security/)
+- [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
+- [Visual with HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)

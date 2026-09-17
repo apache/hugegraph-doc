@@ -4,6 +4,12 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
+> ⚠️ **Historical data — do not use it to evaluate current releases**
+>
+> This page records a HugeGraph 0.4.4 benchmark whose data was collected in 2018. The test environment, software versions, and implementation differ substantially from current releases, so these results are provided for historical reference only and must not be used to assess current performance.
+>
+> A benchmark report for a current release will be added later, after which this page will be archived. Use the updated report for current performance conclusions.
+
 ### 1 测试环境
 
 #### 1.1 硬件信息
@@ -205,3 +211,9 @@ _说明_
 
 - HugeGraph在使用Cassandra后端时，性能略优于Titan，随着数据规模的增大，优势越来越明显，数据规模20000时，比Titan快30%
 - HugeGraph在使用RocksDB后端时，性能远高于Titan和HugeGraph的Cassandra后端，分别比两者快了6倍和4倍
+
+---
+
+Backlinks:
+
+- [PERFORMANCE](/docs/performance/)

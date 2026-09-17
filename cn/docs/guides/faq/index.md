@@ -7,38 +7,34 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 - 如何选择后端存储? 选 RocksDB 还是分布式存储?
 
   HugeGraph 支持多种部署模式，根据数据规模和场景选择：
-  - **单机模式**：Server + RocksDB，适合开发测试和中小规模数据（< 4TB）
-  - **分布式模式**：HugeGraph-PD + HugeGraph-Store (HStore)，支持水平扩展和高可用（< 1000TB 数据规模），适合生产环境和大规模图数据应用
+  - **单机模式**：Server + RocksDB，适合开发测试和中小规模数据（≤ 2 TB）
+  - **分布式模式**：HugeGraph-PD + HugeGraph-Store（HStore），用于需要水平扩展和多副本的部署，支持 ≤ 1 PB 的数据规模
 
-  注：Cassandra、HBase、MySQL 等后端仅在 HugeGraph <= 1.5 版本中可用，官方后续不再单独维护
+  1.7.0 支持 RocksDB、HStore、HBase 和 Memory。Cassandra、ScyllaDB、MySQL、PostgreSQL 等旧后端需使用 1.5.x 或更早版本。
 
 - 启动服务时提示：`xxx (core dumped) xxx`
 
-  请检查JDK版本是否为 Java11 (至少是Java8)
+  请先确认 JDK 版本不低于 Java 11。HugeGraph 1.7.0 不再支持 Java 8。
 
 - 启动服务成功了，但是操作图时有类似于"无法连接到后端或连接未打开"的提示
 
-  第一次启动服务前，需要先使用`init-store`初始化后端，后续版本会将提示得更清晰直接。
+  RocksDB、HBase 等本地持久化后端首次启动前需要使用 `init-store` 初始化。HStore 由 PD、Store 管理，不执行该脚本。
 
 - 所有的后端在使用前都需要执行`init-store`吗，序列化的选择可以随意填写么?
   
-  除了`memory`不需要，其他后端均需要，如：`cassandra`、`hbase`和`rocksdb`等，序列化需一一对应不可随意填写。
+  Memory 和 HStore 不执行 `init-store`；RocksDB、HBase 等本地持久化后端首次使用前需要初始化。序列化器必须与后端匹配，例如 RocksDB 使用 `binary`。
 
 - 执行`init-store`报错：```Exception in thread "main" java.lang.UnsatisfiedLinkError: /tmp/librocksdbjni3226083071221514754.so: /usr/lib64/libstdc++.so.6: version `GLIBCXX_3.4.10' not found (required by /tmp/librocksdbjni3226083071221514754.so)```
 
   RocksDB需要 gcc 4.3.0 (GLIBCXX_3.4.10) 及以上版本
 
-- 执行`init-store.sh`时报错：`NoHostAvailableException`
-
-  `NoHostAvailableException` 是指无法连接到`Cassandra`服务，如果确定是要使用`cassandra`后端，请先安装并启动这个服务。至于这个提示本身可能不够直白，我们会更新到文档进行说明的。
-
 - `bin`目录下包含`start-hugegraph.sh`、`start-restserver.sh`和`start-gremlinserver.sh`三个似乎与启动有关的脚本，到底该使用哪个
 
-  自0.3.3版本以来，已经把 GremlinServer 和 RestServer 合并为 HugeGraphServer 了，使用`start-hugegraph.sh`启动即可，后两个在后续版本会被删掉。
+  当前发布包只保留 `start-hugegraph.sh` 作为 Server 启动脚本。GremlinServer 和 REST Server 由同一进程启动。
 
 - 配置了两个图，名字是`hugegraph`和`hugegraph1`，而启动服务的命令是`start-hugegraph.sh`，是只打开了`hugegraph`这个图吗
 
-  `start-hugegraph.sh`会打开所有`gremlin-server.yaml`的`graphs`下的图，这二者并无名字上的直接关系
+  脚本名称与图名无关。需要从 `graphs` 目录加载多个本地图时，在 `rest-server.properties` 中设置 `graph.load_from_local_config=true`；该选项的源码默认值是 `false`。
 
 - 服务启动成功后，使用`curl`查询所有顶点时返回乱码
 
@@ -77,17 +73,17 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
   持续地导入数据会使`Server`的压力过大，然后导致有些请求超时。可以通过调整`Loader`的参数来适当缓解`Server`压力（如：重试次数，重试间隔，错误容忍数等），降低该问题出现频率。
 
-- 如何删除全部的顶点和边，RESTful API中没有这样的接口，调用`gremlin`的`g.V().drop()`会报错`Vertices in transaction have reached capacity xxx`
+- 如何删除图中的全部数据
 
-  目前确实没有好办法删除全部的数据，用户如果是自己部署的`Server`和后端，可以直接清空数据库，重启`Server`。可以使用paging API或scan API先获取所有数据，再逐条删除。
+  管理员可调用 `DELETE /graphspaces/{graphspace}/graphs/{graph}/clear?confirm_message=I'm sure to delete all data`。`confirm_message` 查询参数必须与该值完全一致，否则请求会被拒绝，详见 [Graph API](../clients/restful-api/graphs)。该操作会清除 schema、顶点、边和索引。
 
 - 清空了数据库，并且执行了`init-store`，但是添加`schema`时提示"xxx has existed"
 
   `HugeGraphServer`内是有缓存的，清空数据库的同时是需要重启`Server`的，否则残留的缓存会产生不一致。
 
-- 插入顶点或边的过程中报错：`Id max length is 128, but got xxx {yyy}` 或 `Big id max length is 32768, but got xxx`
+- 插入顶点或边的过程中报错：`The max length of vertex id is 16384, but got xxx {yyy}` 或 `The max length of edge id is 65536, but got xxx {yyy}`
 
-  为了保证查询性能，目前的后端存储对id列的长度做了限制，顶点id不能超过128字节，边id长度不能超过32768字节，索引id不能超过128字节。
+  为了保证查询性能，目前的后端存储对id列的长度做了限制，顶点id不能超过16384字节，边id长度不能超过65536字节；索引id超过32字节时会转为哈希存储，而不是报错。
 
 - 是否支持嵌套属性，如果不支持，是否有什么替代方案
 
@@ -95,7 +91,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 - 一个`EdgeLabel`是否可以连接多对`VertexLabel`，比如"投资"关系，可以是"个人"投资"企业"，也可以是"企业"投资"企业"
 
-  一个`EdgeLabel`不支持连接多对`VertexLabel`，需要用户将`EdgeLabel`拆分得更细一点，如："个人投资"，"企业投资"。
+  可以。创建`EdgeLabel`时对每一对顶点标签各调用一次`link(sourceLabel, targetLabel)`，所有配对都会被保留，因此同一个"投资"标签可以同时覆盖"个人"投资"企业"和"企业"投资"企业"。旧的`sourceLabel()`和`targetLabel()`构建方法已废弃，且只支持单一配对。
 
 - 通过`RestAPI`发送请求时提示`HTTP 415 Unsupported Media Type`
 

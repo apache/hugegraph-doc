@@ -153,3 +153,9 @@ Continuously increasing the concurrency level to test the upper limit of the ser
 ###### Conclusion：
 
 - Concurrency is 13,000, throughput is 12,225. The concurrency capacity for querying edges by ID is 13,000, with an average delay of 12ms.
+
+---
+
+Backlinks:
+
+- [HugeGraph-API Performance](/docs/performance/api-performance/)

@@ -6,13 +6,13 @@ LLMS index: [llms.txt](/llms.txt)
 
 > ⚠️ **Version compatibility notes**
 >
-> - HugeGraph 1.7.0+ introduces graphspaces, and REST paths follow `/graphspaces/{graphspace}/graphs/{graph}`.
-> - HugeGraph 1.5.x and earlier still rely on the legacy `/graphs/{graph}` path, and the create/clone graph APIs require `Content-Type: text/plain`; 1.7.0+ expects JSON bodies.
-> - The default graphspace name is `DEFAULT`, which you can use directly if you do not need multi-tenant isolation.
-> - **Note**: Before version 1.5.0, the format of ids such as group/target was similar to -69:grant. After version 1.7.0, the id and name were consistent, such as admin [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
+> - Current graph resource paths begin with `/graphspaces/{graphspace}/graphs/{graph}`.
+> - HugeGraph 1.5.x and earlier use `/graphs/{graph}`. The request formats of APIs such as graph creation and cloning also differ from the current version.
+> - The default graph space is `DEFAULT`.
+> - See the [HugeGraph 1.5.x RESTful API documentation](https://github.com/apache/hugegraph-doc/tree/release-1.5.0) for older versions.
 
 
-Besides the documentation below, you can also open `swagger-ui` at `localhost:8080/swagger-ui/index.html` to explore the RESTful API. [Here is an example](/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example)
+After starting Server, open `http://localhost:8080/swagger-ui/index.html` to view the OpenAPI page for the current version. [See the usage example](/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example).
 
 [comment]: <> (- Graph Schema)
 
@@ -76,4 +76,11 @@ Section pages:
 - [Cypher API](/docs/clients/restful-api/cypher/): Cypher REST API: Execute OpenCypher declarative graph query language via HTTP interface.
 - [Authentication API](/docs/clients/restful-api/auth/): Authentication REST API: Manage users, roles, permissions, and access control to implement fine-grained graph data security.
 - [Metrics API](/docs/clients/restful-api/metrics/): Metrics REST API: Retrieve runtime performance metrics, statistics, and health status data of the system.
-- [Other API](/docs/clients/restful-api/other/): Other REST API: Provide auxiliary functions such as system version query and API version information.
+- [Other API](/docs/clients/restful-api/other/): Other REST API: Provide auxiliary functions such as version query, API listing, exception trace switch, IP allowlist and the Arthas agent.
+
+---
+
+Backlinks:
+
+- [System Introduction](/docs/introduction/)
+- [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)

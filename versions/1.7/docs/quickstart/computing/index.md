@@ -4,11 +4,16 @@ LLMS index: [llms.txt](/versions/1.7/llms.txt)
 
 ---
 
-## 🚀 Best practice: Prioritize using DeepWiki intelligent documents
+The HugeGraph-Computer repository contains two OLAP systems: Computer, a distributed BSP framework implemented in Java, and Vermeer, an in-memory graph computing platform implemented in Go.
 
-> To address the issue of outdated static documents, we provide DeepWiki with **real-time updates and more comprehensive content**. It is equivalent to an expert with the latest knowledge of the project, which is very suitable for **all developers** to read and consult before starting the project.
+> DeepWiki provides real-time updated project documentation with more comprehensive and accurate content, suitable for quickly understanding the latest project information.
+>
+> 📖 [https://deepwiki.com/apache/hugegraph-computer/](https://deepwiki.com/apache/hugegraph-computer/)
 
-**👉 Strongly recommend visiting and having a conversation with:** [**incubator-hugegraph-computer**](https://deepwiki.com/apache/incubator-hugegraph-computer)
+- [Vermeer Quick Start](./hugegraph-vermeer.md)
+- [Computer Quick Start](./hugegraph-computer.md)
+- [Computer Configuration Reference](./hugegraph-computer-config.md)
+- [Source code](https://github.com/apache/hugegraph-computer)
 
 ---
 
@@ -16,3 +21,4 @@ Section pages:
 
 - [HugeGraph-Vermeer Quick Start](/versions/1.7/docs/quickstart/computing/hugegraph-vermeer/)
 - [HugeGraph-Computer Quick Start](/versions/1.7/docs/quickstart/computing/hugegraph-computer/)
+- [HugeGraph-Computer Configuration Reference](/versions/1.7/docs/quickstart/computing/hugegraph-computer-config/)

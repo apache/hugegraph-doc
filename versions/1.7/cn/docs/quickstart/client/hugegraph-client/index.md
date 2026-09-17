@@ -6,17 +6,14 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 
 ### 1 HugeGraph-Client 概述
 
-[HugeGraph-Client](https://github.com/apache/hugegraph-toolchain) 向 HugeGraph-Server 发出 HTTP 请求，获取并解析 Server 的执行结果。
-提供了 Java/Go/[Python](https://github.com/apache/incubator-hugegraph-ai/tree/main/hugegraph-python-client) 版，
-用户可以使用 [Client-API](/versions/1.7/cn/docs/clients/hugegraph-client) 编写代码操作 HugeGraph，比如元数据和图数据的增删改查，或者执行 gremlin 语句等。
-后文主要是 Java 使用示例 (其他语言 SDK 可参考对应 `READEME` 页面)
+[HugeGraph Java Client](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-client) 将 Java API 转换为 HugeGraph Server 的 REST 请求，支持管理 Schema 和图数据、执行 Gremlin 及调用 Traverser API。详细接口见 [Client API](/versions/1.7/cn/docs/clients/hugegraph-client)，本文给出 Java 项目的接入示例。
 
-> 现在已经支持基于 Go/Python 语言的 HugeGraph [Client SDK](https://github.com/apache/incubator-hugegraph-toolchain/blob/master/hugegraph-client-go/README.md) (version >=1.2.0)
+其他语言可使用 [Go Client](/versions/1.7/cn/docs/quickstart/client/hugegraph-client-go) 或 HugeGraph-AI 仓库中的 [Python Client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client)。
 
 ### 2 环境要求
 
-- java 11 (兼容 java 8)
-- maven 3.5+
+- JDK 11（当前 CI 使用版本；源码目标版本为 Java 8）
+- Maven 3.6+
 
 ### 3 使用流程
 
@@ -47,12 +44,12 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
     <dependency>
         <groupId>org.apache.hugegraph</groupId>
         <artifactId>hugegraph-client</artifactId>
-        <!-- Update to the latest release version -->
+        <!-- 请按下载页选择已发布版本 -->
         <version>1.7.0</version>
     </dependency>
 </dependencies>
 ```
-> 注：Graph 所有组件版本号均保持一致
+> Client 与 Server 的开发版本可能不同。升级前应按对应发布说明核对兼容性。
 
 #### 4.3 Example
 

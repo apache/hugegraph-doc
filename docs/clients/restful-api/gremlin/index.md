@@ -265,3 +265,9 @@ Note:
 Note:
 
 > You can query the execution status of an asynchronous task by using `GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2` (where "2" is the task_id). For more information, refer to the [Asynchronous Task RESTful API](./task).
+
+---
+
+Backlinks:
+
+- [Task](/docs/clients/restful-api/task/)

@@ -4,12 +4,18 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-本节介绍 HugeGraph-Server 的配置方法，包括：
+本节介绍 HugeGraph-Server 的配置文件、可用选项、认证和 HTTPS 设置。
 
-- **[Server 启动指南](config-guide)** - 了解配置文件结构和基本配置方法
-- **[Server 完整配置手册](config-option)** - 完整的配置选项列表和说明
-- **[权限配置](config-authentication)** - 用户认证和授权配置
-- **[HTTPS 配置](config-https)** - 启用 HTTPS 安全协议
+- [Server 配置指南](config-guide)
+- [Server 配置选项](config-option)
+- [认证与授权](config-authentication)
+- [HTTPS 配置](config-https)
+
+## 后端配置
+
+- [HBase 后端配置](config-backend-hbase)
+- [HStore 后端配置](config-backend-hstore)
+- [RocksDB 后端配置](config-backend-rocksdb)
 
 ---
 
@@ -19,3 +25,6 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 - [Server 完整配置手册](/cn/docs/config/config-option/)
 - [HugeGraph 内置用户权限与扩展权限配置及使用](/cn/docs/config/config-authentication/)
 - [配置 HugeGraphServer 使用 https 协议](/cn/docs/config/config-https/)
+- [配置 RocksDB 后端](/cn/docs/config/config-backend-rocksdb/)
+- [配置 HStore 分布式后端](/cn/docs/config/config-backend-hstore/)
+- [配置 HBase 后端](/cn/docs/config/config-backend-hbase/)

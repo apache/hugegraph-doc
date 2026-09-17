@@ -150,3 +150,9 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 ###### 结论：
 
 - 并发 12000，吞吐量是 10688，边的按 id 查询的并发能力为 12000，平均延时为 63ms
+
+---
+
+反链：
+
+- [HugeGraph-API 性能](/cn/docs/performance/api-performance/)

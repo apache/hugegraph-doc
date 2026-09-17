@@ -4,6 +4,10 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
+This section covers HugeGraph architecture, design, backup and restore, plugin development, security settings, and frequently asked questions.
+
+---
+
 Section pages:
 
 - [HugeGraph Architecture Overview](/docs/guides/architectural/)

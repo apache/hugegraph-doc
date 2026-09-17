@@ -4,305 +4,188 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-> 本文为中文翻译版本，内容基于英文版进行，我们欢迎您随时提出修改建议。我们推荐您阅读 [AI 仓库 README](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm#readme) 以获取最新信息，官网会定期同步更新。
+HugeGraph-LLM 用于知识图谱构建、GraphRAG 和自然语言图查询。演示服务把 Gradio 页面和 FastAPI 接口挂在同一个进程上，默认监听 `8001` 端口。
 
-> **连接图数据库与大语言模型的桥梁**
+## 环境要求
 
 > AI 总结项目文档：[Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
 
-## 🎯 概述
+- Python 3.10 或 3.11（`>=3.10,<3.12`）
+- `uv` 0.7 或更高版本
+- HugeGraph Server 1.3 或更高版本（推荐 1.5 或更高版本）
 
-HugeGraph-LLM 是一个功能强大的工具包，它融合了图数据库和大型语言模型的优势，实现了 HugeGraph 与 LLM 之间的无缝集成，助力开发者构建智能应用。
+## Docker Compose 部署
 
-### 核心功能
-- 🏗️ **知识图谱构建**：利用 LLM 和 HugeGraph 自动构建知识图谱。
-- 🗣️ **自然语言查询**：通过自然语言（Gremlin/Cypher）操作图数据库。
-- 🔍 **图增强 RAG**：借助知识图谱提升问答准确性（GraphRAG 和 Graph Agent）。
-
-更多源码文档，请访问我们的 [DeepWiki](https://deepwiki.com/apache/hugegraph-ai) 页面（推荐）。
-
-## 📋 环境要求
-
-> [!IMPORTANT]
-> - **Python**：3.10+（未在 3.12 版本测试）
-> - **HugeGraph Server**：1.3+（推荐 1.5+）
-> - **UV 包管理器**：0.7+
-
-## 🚀 快速开始
-
-请选择您偏好的部署方式：
-
-### 方案一：Docker Compose（推荐）
-
-这是同时启动 HugeGraph Server 和 RAG 服务的最快方法：
+在 HugeGraph-AI 仓库根目录准备环境文件：
 
 ```bash
-# 1. 设置环境
-cp docker/env.template docker/.env
-# 编辑 docker/.env，将 PROJECT_PATH 设置为您的实际项目路径
-
-# 2. 部署服务
-cd docker
-docker-compose -f docker-compose-network.yml up -d
-
-# 3. 验证部署
-docker-compose -f docker-compose-network.yml ps
-
-# 4. 访问服务
-# HugeGraph Server: http://localhost:8080
-# RAG 服务: http://localhost:8001
-```
-
-### 方案二：独立 Docker 容器
-
-如果您希望对各组件进行更精细的控制：
-
-#### 可用镜像
-- **`hugegraph/rag`**：开发镜像，可访问源代码
-- **`hugegraph/rag-bin`**：生产优化的二进制文件（使用 Nuitka 编译）
-
-```bash
-# 1. 创建网络
-docker network create -d bridge hugegraph-net
-
-# 2. 启动 HugeGraph Server
-docker run -itd --name=server -p 8080:8080 --network hugegraph-net hugegraph/hugegraph
-
-# 3. 启动 RAG 服务
-docker pull hugegraph/rag:latest
-docker run -itd --name rag \
-  -v /path/to/your/hugegraph-llm/.env:/home/work/hugegraph-llm/.env \
-  -p 8001:8001 --network hugegraph-net hugegraph/rag
-
-# 4. 监控日志
-docker logs -f rag
-```
-
-### 方案三：从源码构建
-
-适用于开发和自定义场景：
-
-```bash
-# 1. 启动 HugeGraph Server
-docker run -itd --name=server -p 8080:8080 hugegraph/hugegraph
-
-# 2. 安装 UV 包管理器
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# 3. 克隆并设置项目
 git clone https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai/hugegraph-llm
-
-# 4. 创建虚拟环境并安装依赖
-uv venv && source .venv/bin/activate
-uv pip install -e .
-
-# 5. 启动 RAG 演示
-python -m hugegraph_llm.demo.rag_demo.app
-# 访问: http://127.0.0.1:8001
-
-# 6. (可选) 自定义主机/端口
-python -m hugegraph_llm.demo.rag_demo.app --host 127.0.0.1 --port 18001
+cd hugegraph-ai
+cp docker/env.template docker/.env
+# 编辑 docker/.env，将 PROJECT_PATH 改为当前仓库的绝对路径
+touch hugegraph-llm/.env
+cd docker
+docker compose -f docker-compose-network.yml up -d
+docker compose -f docker-compose-network.yml ps
 ```
 
-#### 额外设置（可选）
+启动后可访问：
+
+- HugeGraph Server：`http://localhost:8080`
+- RAG 服务和 Web 页面：`http://localhost:8001`
+
+Compose 文件会把 `${PROJECT_PATH}/hugegraph-llm/.env` 挂载到容器内的 `/home/work/hugegraph-llm/.env`，因此该文件必须在容器启动前存在。资源目录 `hugegraph-llm/src/hugegraph_llm/resources` 也可以用同样方式挂载，该挂载默认被注释掉。
+
+## 容器镜像
+
+| 镜像 | 构建文件 | 内容 |
+|---|---|---|
+| `hugegraph/rag` | `docker/Dockerfile.llm` | 包含源码的 Python 3.10 运行环境，入口是 `python -m hugegraph_llm.demo.rag_demo.app --host 0.0.0.0 --port 8001` |
+| `hugegraph/rag-bin` | `docker/Dockerfile.nk` | 基于 `nk-llm` extra 用 Nuitka 编译的二进制，入口是 `./app.dist/app.bin` |
+
+两个镜像都暴露 `8001` 端口，以非 root 用户 `work` 运行，为 `hugegraph-llm/src/hugegraph_llm/resources` 声明数据卷，并使用 `curl -f http://localhost:8001/` 作为健康检查。
+
+`scripts/build_llm_image.sh` 会用 `docker/Dockerfile.llm` 构建并打上 `hugegraph/graphrag:1.7.0` 标签。
+
+## Kubernetes 部署
+
+`docker/charts/hg-llm` 是 RAG 服务的 Helm chart，部署 `hugegraph/graphrag` 镜像。默认发布 `NodePort` 类型的 Service，把节点端口 `8039` 和服务端口 `8080` 映射到容器端口 `8001`，名称固定为 `hg-llm-service`。Ingress 和水平自动扩缩容已定义但默认关闭。
+
+chart 中 `image.tag` 仍默认为 `v0.0.1`，因此需要通过 `--set image.tag=1.7.0` 或修改 `values.yaml` 指向实际构建的标签。
+
+chart 的 `values.yaml` 中，`.env` 和提示词 YAML 的挂载默认被注释掉。要使用自定义配置，先创建两个 ConfigMap，再取消对应 `volumes` 和 `volumeMounts` 段落的注释：
 
 ```bash
-# 下载 NLTK 停用词以优化文本处理
-python ./hugegraph_llm/operators/common_op/nltk_helper.py
-
-# 更新配置文件
-python -m hugegraph_llm.config.generate --update
+kubectl create configmap hugegraph-llm-env --from-file=/path/to/.env
+kubectl create configmap hugegraph-llm-prompt-config --from-file=/path/to/config_prompt.yaml
 ```
 
-> [!TIP]
-> 查看我们的[快速入门指南](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-llm/quick_start.md)获取详细用法示例和查询逻辑解释。
+## 从源码启动
 
-## 💡 用法示例
+依赖应从仓库根目录按 workspace 安装：
 
-### 知识图谱构建
+```bash
+git clone https://github.com/apache/hugegraph-ai.git
+cd hugegraph-ai
+uv sync --extra llm
+source .venv/bin/activate
+cd hugegraph-llm
+python -m hugegraph_llm.demo.rag_demo.app
+```
 
-#### 交互式 Web 界面
+自定义监听地址和端口：
 
-使用 Gradio 界面进行可视化知识图谱构建：
+```bash
+python -m hugegraph_llm.demo.rag_demo.app \
+  --host 127.0.0.1 \
+  --port 18001
+```
 
-**输入选项：**
-- **文本**：直接输入文本用于 RAG 索引创建
-- **文件**：上传 TXT 或 DOCX 文件（支持多选）
+设置 `HG_DEV_RELOAD=1` 可让 uvicorn 以自动重载方式启动，便于开发调试。
 
-**Schema 配置：**
-- **自定义 Schema**：遵循我们[模板](https://github.com/apache/hugegraph-ai/blob/aff3bbe25fa91c3414947a196131be812c20ef11/hugegraph-llm/src/hugegraph_llm/config/config_data.py#L125)的 JSON 格式
-- **HugeGraph Schema**：使用现有图实例的 Schema（例如，“hugegraph”）
+服务以 `hugegraph-llm/.env` 保存模型、HugeGraph 和登录配置。提示词放在 `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml`。缺少文件时，配置代码会按默认值创建。
+
+`.env` 路径按以下顺序解析：先看是否设置了 `HUGEGRAPH_LLM_ENV_PATH`；未设置时，从源码运行则使用 `hugegraph-llm/.env`；否则使用当前工作目录下的 `.env`。
+
+## 主要功能
+
+### 构建 RAG 索引
+
+Web 页面的第一个标签页可以处理文本或文件，并执行以下操作：
+
+1. 切分文本并写入 chunk 向量索引。
+2. 按给定 Schema 从文本抽取顶点和边。
+3. 将抽取结果写入 HugeGraph，并更新顶点向量索引。
+
+文本可以在 `text` 子页直接输入，也可以在 `file` 子页上传。上传支持 `.txt`、`.docx` 和 `.pdf`，并可一次选择多个文件。加密 PDF 以及没有可提取文本层的扫描件 PDF 会被拒绝。
+
+Schema 可以是内联 JSON，也可以是现有图名。通过 REST API 使用图名时，必须同时传入匹配的 `client_config.graph`；内联 JSON 不会连接 HugeGraph，也不能附带 `client_config`。
+
+该标签页还提供两个生成器。`Graph Schema Generator` 根据查询示例和少样本示例生成 Schema。`Graph Extraction Prompt Generator` 根据描述的场景和选定的参考示例生成抽取提示词。`Graph Extraction Split Type` 下拉框可在抽取前选择 `document`、`paragraph` 或 `sentence` 粒度。
+
+### GraphRAG
+
+查询流程可以组合直接回答、chunk 向量召回和图召回。图召回先抽取关键词并匹配顶点，再尝试 Text2Gremlin；生成或执行失败时可回退到预定义的图遍历方式。请求参数可控制返回数量、向量距离阈值、模板数量和重排序方式。
+
+同一标签页还有批量回归测试面板，可从 `.xlsx` 或 `.csv` 文件读取问题、逐条作答，并返回可下载的结果文件。上传控件旁提供模板文件下载。
 
 ![知识图谱构建器](/images/docs/hugegraph-ai/gradio-kg.jpg)
 
-#### 代码构建
+### Text2Gremlin
 
-使用 `KgBuilder` 类通过代码构建知识图谱：
+`POST /text2gremlin` 根据自然语言、图 Schema 和可选示例生成 Gremlin。自定义提示词必须保留 `{query}`、`{schema}`、`{example}` 和 `{vertices}` 四个占位符。
 
-```python
-from hugegraph_llm.models.llms.init_llm import LLMs
-from hugegraph_llm.operators.kg_construction_task import KgBuilder
+对应的页面标签可以先用问题与 Gremlin 对照文件（`.json` 或 `.csv`）构建示例向量索引。未上传文件时使用内置的 `resources/demo/text2gremlin.csv`。
 
-# 初始化并链式操作
-TEXT = "在此处输入您的文本内容..."
-builder = KgBuilder(LLMs().get_chat_llm())
+### 图工具与管理工具
 
-(
-    builder
-    .import_schema(from_hugegraph="talent_graph").print_result()
-    .chunk_split(TEXT).print_result()
-    .extract_info(extract_type="property_graph").print_result()
-    .commit_to_hugegraph()
-    .run()
-)
-```
+`Graph Tools` 标签页可直接执行 Gremlin 查询、手动触发图备份，以及初始化 HugeGraph 演示数据。`Admin Tools` 标签页在校验 `ADMIN_TOKEN` 后展示 `logs/llm-server.log` 的末尾内容，并可刷新或清空该文件。
 
-**工作流：**
-```mermaid
-graph LR
-    A[导入 Schema] --> B[文本分块]
-    B --> C[提取信息]
-    C --> D[提交到 HugeGraph]
-    D --> E[执行工作流]
-    
-    style A fill:#fff2cc
-    style B fill:#d5e8d4
-    style C fill:#dae8fc
-    style D fill:#f8cecc
-    style E fill:#e1d5e7
-```
+进程运行期间还有两个后台任务：每天 01:00 执行图备份的定时任务，以及持续更新顶点 id 向量的任务。
 
-### 图增强 RAG
+## 模型与向量后端
 
-利用 HugeGraph 进行检索增强生成：
+聊天、信息抽取和 Text2Gremlin 可以分别使用 OpenAI 兼容接口、Ollama 或 LiteLLM。嵌入模型可独立选择，同样支持这三种提供方。重排序支持 Cohere 和 SiliconFlow。
 
-```python
-from hugegraph_llm.operators.graph_rag_task import RAGPipeline
-
-# 初始化 RAG 工作流
-graph_rag = RAGPipeline()
-
-# 执行 RAG 工作流
-(
-    graph_rag
-    .extract_keywords(text="给我讲讲 Al Pacino 的故事。")
-    .keywords_to_vid()
-    .query_graphdb(max_deep=2, max_graph_items=30)
-    .merge_dedup_rerank()
-    .synthesize_answer(vector_only_answer=False, graph_only_answer=True)
-    .run(verbose=True)
-)
-```
-
-**RAG 工作流：**
-```mermaid
-graph TD
-    A[用户查询] --> B[提取关键词]
-    B --> C[匹配图节点]
-    C --> D[检索图上下文]
-    D --> E[重排序结果]
-    E --> F[生成答案]
-    
-    style A fill:#e3f2fd
-    style B fill:#f3e5f5
-    style C fill:#e8f5e8
-    style D fill:#fff3e0
-    style E fill:#fce4ec
-    style F fill:#e0f2f1
-```
-
-## 🔧 配置
-
-运行演示后,将自动生成配置文件：
-
-- **环境**：`hugegraph-llm/.env`
-- **提示**：`hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml`
-
-> [!NOTE]
-> 使用 Web 界面时，配置更改会自动保存。对于手动更改，刷新页面即可加载更新。
-
-### LLM 提供商配置
-
-本项目使用 [LiteLLM](https://docs.litellm.ai/docs/providers) 实现多提供商 LLM 支持，可统一访问 OpenAI、Anthropic、Google、Cohere 以及 100 多个其他提供商。
-
-#### 方案一：直接 LLM 连接（OpenAI、Ollama）
+默认向量索引使用 FAISS。`CUR_VECTOR_INDEX` 可选 `Faiss`、`Milvus` 或 `Qdrant`，Web 页面的 `5. Set up the vector engine.` 面板提供同样的选择。Milvus 和 Qdrant 需要安装可选依赖：
 
 ```bash
-# .env 配置
-chat_llm_type=openai           # 或 ollama/local
-openai_api_key=sk-xxx
-openai_api_base=https://api.openai.com/v1
-openai_language_model=gpt-4o-mini
-openai_max_tokens=4096
+cd hugegraph-ai
+uv sync --package hugegraph-llm --extra vectordb
 ```
 
-#### 方案二：LiteLLM 多提供商支持
+页面操作流程见[使用流程](./quick_start.md)，完整环境变量见[配置参考](./config-reference.md)，HTTP 请求格式见[REST API](./rest-api.md)。
 
-LiteLLM 作为多个 LLM 提供商的统一代理：
+## 程序化调用
 
-```bash
-# .env 配置
-chat_llm_type=litellm
-extract_llm_type=litellm
-text2gql_llm_type=litellm
-
-# LiteLLM 设置
-litellm_api_base=http://localhost:4000  # LiteLLM 代理服务器
-litellm_api_key=sk-1234                  # LiteLLM API 密钥
-
-# 模型选择（提供商/模型格式）
-litellm_language_model=anthropic/claude-3-5-sonnet-20241022
-litellm_max_tokens=4096
-```
-
-**支持的提供商**：OpenAI、Anthropic、Google（Gemini）、Azure、Cohere、Bedrock、Vertex AI、Hugging Face 等。
-
-完整提供商列表和配置详情，请访问 [LiteLLM Providers](https://docs.litellm.ai/docs/providers)。
-
-### Reranker 配置
-
-Reranker 通过重新排序检索结果来提高 RAG 准确性。支持的提供商：
-
-```bash
-# Cohere Reranker
-reranker_type=cohere
-cohere_api_key=your-cohere-key
-cohere_rerank_model=rerank-english-v3.0
-
-# SiliconFlow Reranker
-reranker_type=siliconflow
-siliconflow_api_key=your-siliconflow-key
-siliconflow_rerank_model=BAAI/bge-reranker-v2-m3
-```
-
-### Text2Gremlin 配置
-
-将自然语言转换为 Gremlin 查询：
+原有的 `RAGPipeline` 和 `KgBuilder` 类已被流水线调度器取代。通过 `SchedulerSingleton` 按名称调用流程：
 
 ```python
-from hugegraph_llm.operators.graph_rag_task import Text2GremlinPipeline
+from hugegraph_llm.flows.scheduler import SchedulerSingleton
 
-# 初始化工作流
-text2gremlin = Text2GremlinPipeline()
-
-# 生成 Gremlin 查询
-result = (
-    text2gremlin
-    .query_to_gremlin(query="查找所有由 Francis Ford Coppola 执导的电影")
-    .execute_gremlin_query()
-    .run()
+scheduler = SchedulerSingleton.get_instance()
+res = scheduler.schedule_flow(
+    "rag_graph_only",
+    query="Tell me about Al Pacino.",
+    graph_only_answer=True,
+    vector_only_answer=False,
+    raw_answer=False,
+    gremlin_tmpl_num=-1,
+    gremlin_prompt=None,
 )
+print(res.get("graph_only_answer"))
 ```
 
-**REST API 端点**：有关 HTTP 端点详情，请参阅 [REST API 文档](./rest-api.md)。
+已注册的流程名包括 `rag_raw`、`rag_vector_only`、`rag_graph_only`、`rag_graph_vector`、`text2gremlin`、`build_examples_index`、`build_vector_index`、`graph_extract`、`import_graph_data`、`update_vid_embeddings`、`get_graph_index_info`、`build_schema` 和 `prompt_generate`。`schedule_stream_flow` 是对应的异步流式版本。
 
-## 📚 其他资源
+## 开发检查
 
-- **图可视化**：使用 [HugeGraph Hubble](https://hub.docker.com/r/hugegraph/hubble) 进行数据分析和 Schema 管理
-- **API 文档**：浏览我们的 REST API 端点以进行集成
-- **社区**：加入我们的讨论并为项目做出贡献
+先在仓库根目录安装模块和开发工具，再运行与 CI 一致的检查：
+
+```bash
+cd hugegraph-ai
+uv sync --extra llm --extra dev
+uv run ruff format --check .
+uv run ruff check .
+
+cd hugegraph-llm
+SKIP_EXTERNAL_SERVICES=true uv run pytest src/tests/config/ src/tests/document/ src/tests/middleware/ \
+  src/tests/operators/ src/tests/models/ src/tests/indices/ src/tests/test_utils.py -v --tb=short
+SKIP_EXTERNAL_SERVICES=true uv run pytest src/tests/integration/test_graph_rag_pipeline.py \
+  src/tests/integration/test_kg_construction.py src/tests/integration/test_rag_pipeline.py -v --tb=short
+```
+
+Git hook 通过 pre-commit 启用：
+
+```bash
+cd hugegraph-ai
+pre-commit install
+pre-commit run --all-files
+```
 
 ---
 
-**许可证**：Apache License 2.0 | **社区**：[Apache HugeGraph](https://hugegraph-oink.staged.apache.org/)
+反链：
+
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)
+- [LLM 使用流程](/cn/docs/quickstart/hugegraph-ai/quick_start/)

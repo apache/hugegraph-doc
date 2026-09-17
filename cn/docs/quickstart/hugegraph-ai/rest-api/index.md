@@ -1,428 +1,284 @@
-# REST API 参考
+# HugeGraph-LLM REST API
 
 LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-HugeGraph-LLM 提供 REST API 端点，用于将 RAG 和 Text2Gremlin 功能集成到您的应用程序中。
+HugeGraph-LLM 演示进程同时提供 Web 页面和 REST API。默认地址是 `http://localhost:8001`：
 
-## 基础 URL
-
-```
-http://localhost:8001
-```
-
-启动服务时更改主机/端口：
 ```bash
-python -m hugegraph_llm.demo.rag_demo.app --host 127.0.0.1 --port 8001
+cd hugegraph-ai/hugegraph-llm
+python -m hugegraph_llm.demo.rag_demo.app \
+  --host 127.0.0.1 \
+  --port 8001
 ```
+
+所有接口都使用 `POST`：
+
+| 路径 | 成功状态码 | 用途 |
+|---|---|---|
+| `/rag` | 200 | 按所选召回方式回答问题 |
+| `/rag/graph` | 200 | 只做图召回，不生成最终答案 |
+| `/graph/extract` | 200 | 从文本抽取顶点和边 |
+| `/text2gremlin` | 200 | 由自然语言生成 Gremlin |
+| `/config/graph` | 201 | 更新 HugeGraph 连接 |
+| `/config/llm` | 201 | 更新语言模型 |
+| `/config/embedding` | 201 | 更新嵌入模型 |
+| `/config/rerank` | 201 | 更新重排序模型 |
+| `/logs` | 200 | 流式返回服务日志 |
 
 ## 认证
 
-目前 API 支持可选的基于令牌的认证：
+在 `.env` 中启用登录：
 
-```bash
-# 在 .env 中启用认证
-ENABLE_LOGIN=true
-USER_TOKEN=your-user-token
-ADMIN_TOKEN=your-admin-token
+```properties
+ENABLE_LOGIN=True
+USER_TOKEN=replace-with-a-secret
 ```
 
-在请求头中传递令牌：
-```bash
-Authorization: Bearer <token>
+启用后，请求需要 Bearer token：
+
+```http
+Authorization: Bearer replace-with-a-secret
 ```
 
----
+同一开关也会给 Gradio 页面加上基础认证，用户名固定为 `rag`，密码是 `USER_TOKEN`。token 不正确时返回 401，并带上 `WWW-Authenticate: Bearer` 响应头。`ENABLE_LOGIN` 保持 `False` 时所有接口都不做鉴权。
 
-## RAG 端点
+## RAG
 
-### 1. 完整 RAG 查询
+### `POST /rag`
 
-**POST** `/rag`
-
-执行完整的 RAG 工作流，包括关键词提取、图检索、向量搜索、重排序和答案生成。
-
-#### 请求体
-
-```json
-{
-  "query": "给我讲讲阿尔·帕西诺的电影",
-  "raw_answer": false,
-  "vector_only": false,
-  "graph_only": true,
-  "graph_vector_answer": false,
-  "graph_ratio": 0.5,
-  "rerank_method": "cohere",
-  "near_neighbor_first": false,
-  "gremlin_tmpl_num": 5,
-  "max_graph_items": 30,
-  "topk_return_results": 20,
-  "vector_dis_threshold": 0.9,
-  "topk_per_keyword": 1,
-  "custom_priority_info": "",
-  "answer_prompt": "",
-  "keywords_extract_prompt": "",
-  "gremlin_prompt": "",
-  "client_config": {
-    "url": "127.0.0.1:8080",
-    "graph": "hugegraph",
-    "user": "admin",
-    "pwd": "admin",
-    "gs": ""
-  }
-}
-```
-
-**参数说明：**
-
-| 字段 | 类型 | 必需 | 默认值 | 描述 |
-|-----|------|------|-------|------|
-| `query` | string | 是 | - | 用户的自然语言问题 |
-| `raw_answer` | boolean | 否 | false | 返回 LLM 答案而不检索 |
-| `vector_only` | boolean | 否 | false | 仅使用向量搜索（无图） |
-| `graph_only` | boolean | 否 | false | 仅使用图检索（无向量） |
-| `graph_vector_answer` | boolean | 否 | false | 结合图和向量结果 |
-| `graph_ratio` | float | 否 | 0.5 | 图与向量结果的比例（0-1） |
-| `rerank_method` | string | 否 | "" | 重排序器："cohere"、"siliconflow"、"" |
-| `near_neighbor_first` | boolean | 否 | false | 优先选择直接邻居 |
-| `gremlin_tmpl_num` | integer | 否 | 5 | 尝试的 Gremlin 模板数量 |
-| `max_graph_items` | integer | 否 | 30 | 图检索的最大项数 |
-| `topk_return_results` | integer | 否 | 20 | 重排序后的 Top-K |
-| `vector_dis_threshold` | float | 否 | 0.9 | 向量相似度阈值（0-1） |
-| `topk_per_keyword` | integer | 否 | 1 | 每个关键词的 Top-K 向量 |
-| `custom_priority_info` | string | 否 | "" | 要优先考虑的自定义上下文 |
-| `answer_prompt` | string | 否 | "" | 自定义答案生成提示词 |
-| `keywords_extract_prompt` | string | 否 | "" | 自定义关键词提取提示词 |
-| `gremlin_prompt` | string | 否 | "" | 自定义 Gremlin 生成提示词 |
-| `client_config` | object | 否 | null | 覆盖图连接设置 |
-
-#### 响应
-
-```json
-{
-  "query": "给我讲讲阿尔·帕西诺的电影",
-  "graph_only": {
-    "answer": "阿尔·帕西诺主演了《教父》（1972 年），由弗朗西斯·福特·科波拉执导...",
-    "context": ["《教父》是 1972 年的犯罪电影...", "..."],
-    "graph_paths": ["..."],
-    "keywords": ["阿尔·帕西诺", "电影"]
-  }
-}
-```
-
-#### 示例（curl）
+根据开关返回一种或多种回答。未显式指定时只启用 `graph_only`。
 
 ```bash
 curl -X POST http://localhost:8001/rag \
-  -H "Content-Type: application/json" \
+  -H 'Content-Type: application/json' \
   -d '{
-    "query": "给我讲讲阿尔·帕西诺",
+    "query": "Al Pacino 出演过哪些电影？",
+    "raw_answer": false,
+    "vector_only": false,
     "graph_only": true,
-    "max_graph_items": 30
+    "graph_vector_answer": false,
+    "max_graph_items": 30,
+    "topk_return_results": 20,
+    "vector_dis_threshold": 0.9,
+    "topk_per_keyword": 1,
+    "gremlin_tmpl_num": 1,
+    "client_config": {
+      "url": "127.0.0.1:8080",
+      "graph": "hugegraph",
+      "user": "admin",
+      "pwd": "admin",
+      "gs": "DEFAULT"
+    }
   }'
 ```
 
-### 2. 仅图检索
-
-**POST** `/rag/graph`
-
-检索图上下文而不生成答案。用于调试或自定义处理。
-
-#### 请求体
+响应只包含已启用的回答字段：
 
 ```json
 {
-  "query": "阿尔·帕西诺的电影",
-  "max_graph_items": 30,
-  "topk_return_results": 20,
-  "vector_dis_threshold": 0.9,
-  "topk_per_keyword": 1,
-  "gremlin_tmpl_num": 5,
-  "rerank_method": "cohere",
-  "near_neighbor_first": false,
-  "custom_priority_info": "",
-  "gremlin_prompt": "",
-  "get_vertex_only": false,
-  "client_config": {
-    "url": "127.0.0.1:8080",
-    "graph": "hugegraph",
-    "user": "admin",
-    "pwd": "admin",
-    "gs": ""
-  }
+  "query": "Al Pacino 出演过哪些电影？",
+  "graph_only": "..."
 }
 ```
 
-**额外参数：**
+其他可选参数包括 `graph_ratio`（默认 `0.5`）、`rerank_method`（`bleu` 或 `reranker`，默认 `bleu`）、`near_neighbor_first`（默认 `false`）、`custom_priority_info`，以及三个自定义提示词字段 `answer_prompt`、`keywords_extract_prompt` 和 `gremlin_prompt`。省略提示词字段时使用 `config_prompt.yaml` 中的值。
 
-| 字段 | 类型 | 默认值 | 描述 |
-|-----|------|-------|------|
-| `get_vertex_only` | boolean | false | 仅返回顶点 ID，不返回完整详情 |
+`gremlin_tmpl_num` 决定图召回阶段 Text2Gremlin 的执行方式：小于 0 表示跳过 Text2Gremlin，直接使用预定义的图遍历；等于 0 表示不带示例生成 Gremlin；大于 0 表示从示例索引中取相应数量的示例。
 
-#### 响应
+`query` 为空或只有空白字符时返回 400。
 
-```json
-{
-  "graph_recall": {
-    "query": "阿尔·帕西诺的电影",
-    "keywords": ["阿尔·帕西诺", "电影"],
-    "match_vids": ["1:阿尔·帕西诺", "2:教父"],
-    "graph_result_flag": true,
-    "gremlin": "g.V('1:阿尔·帕西诺').outE().inV().limit(30)",
-    "graph_result": [
-      {"id": "1:阿尔·帕西诺", "label": "person", "properties": {"name": "阿尔·帕西诺"}},
-      {"id": "2:教父", "label": "movie", "properties": {"title": "教父"}}
-    ],
-    "vertex_degree_list": [5, 12]
-  }
-}
-```
+### `POST /rag/graph`
 
-#### 示例（curl）
+只执行图召回，不生成最终自然语言答案：
 
 ```bash
 curl -X POST http://localhost:8001/rag/graph \
-  -H "Content-Type: application/json" \
+  -H 'Content-Type: application/json' \
   -d '{
-    "query": "阿尔·帕西诺",
-    "max_graph_items": 30,
-    "get_vertex_only": false
+    "query": "Al Pacino 出演过哪些电影？",
+    "get_vertex_only": false,
+    "gremlin_tmpl_num": 1,
+    "rerank_method": "bleu"
   }'
 ```
 
----
+响应的 `graph_recall` 可能包含 `query`、`keywords`、`match_vids`、`graph_result_flag`、`gremlin`、`graph_result` 和 `vertex_degree_list`。设置 `get_vertex_only=true` 可在顶点匹配后提前返回，此时接口会把 `match_vids` 替换为完整的顶点详情。
 
-## Text2Gremlin 端点
+`query` 为空返回 400，请求类型错误返回 400，其他失败返回 500。
 
-### 3. 自然语言转 Gremlin
+## 图抽取
 
-**POST** `/text2gremlin`
+### `POST /graph/extract`
 
-将自然语言查询转换为可执行的 Gremlin 命令。
+使用内联 Schema 时不会连接 HugeGraph：
 
-#### 请求体
+```bash
+curl -X POST http://localhost:8001/graph/extract \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "texts": ["Alice 在 Acme 工作。"],
+    "schema": {
+      "vertexlabels": [
+        {"name": "person", "properties": ["name"]},
+        {"name": "company", "properties": ["name"]}
+      ],
+      "edgelabels": [
+        {
+          "name": "works_at",
+          "source_label": "person",
+          "target_label": "company",
+          "properties": []
+        }
+      ]
+    },
+    "language": "zh",
+    "split_type": "sentence",
+    "include_meta": true
+  }'
+```
+
+请求字段：
+
+| 字段 | 默认值 | 说明 |
+|---|---|---|
+| `texts` | 必填 | 字符串或字符串数组；空白项会被丢弃，全部为空时报错 |
+| `schema` | 必填 | 内联 JSON 对象或字符串，或现有图名 |
+| `example_prompt` | 提示词 YAML 中的值 | 抽取提示词头部 |
+| `extract_type` | `property_graph` | 目前仅接受该值 |
+| `language` | `zh` | `zh` 或 `en`，用于文本切分 |
+| `split_type` | `document` | `document`、`paragraph` 或 `sentence` |
+| `include_meta` | `false` | 在 `meta` 中加入 `vertex_count`、`edge_count` 和 `text_count` |
+| `client_config` | 无 | 仅在 `schema` 为图名时允许传入 |
+
+内联 Schema 必须是包含 `vertexlabels` 和 `edgelabels` 两个列表的对象。每个顶点标签需要非空的 `name` 和非空的 `properties` 列表；每条边标签需要非空的 `name`、`source_label` 和 `target_label`。`propertykeys` 可选，若存在必须是列表。
+
+若 `schema` 传现有图名，必须同时传入 `client_config`，且 `client_config.graph` 必须和图名相同。这里的 `client_config` 只接受 `graph`、`user`、`pwd` 和 `gs`，未知字段会被拒绝，且没有 `url` 字段：
 
 ```json
 {
-  "query": "查找所有由弗朗西斯·福特·科波拉执导的电影",
-  "example_num": 5,
-  "gremlin_prompt": "",
-  "output_types": ["GREMLIN", "RESULT"],
+  "texts": "Alice 在 Acme 工作。",
+  "schema": "hugegraph",
   "client_config": {
-    "url": "127.0.0.1:8080",
     "graph": "hugegraph",
     "user": "admin",
     "pwd": "admin",
-    "gs": ""
+    "gs": "DEFAULT"
   }
 }
 ```
 
-**参数说明：**
+成功响应固定包含 `status`（始终为 `succeeded`）、`result.vertices`、`result.edges`、`warnings` 和 `meta`。`include_meta` 不为 `true` 时 `meta` 为空。
 
-| 字段 | 类型 | 必需 | 默认值 | 描述 |
-|-----|------|------|-------|------|
-| `query` | string | 是 | - | 自然语言查询 |
-| `example_num` | integer | 否 | 5 | 使用的示例模板数量 |
-| `gremlin_prompt` | string | 否 | "" | Gremlin 生成的自定义提示词 |
-| `output_types` | array | 否 | null | 输出类型：["GREMLIN", "RESULT", "CYPHER"] |
-| `client_config` | object | 否 | null | 图连接覆盖 |
+## Text2Gremlin
 
-**输出类型：**
-- `GREMLIN`：生成的 Gremlin 查询
-- `RESULT`：图的执行结果
-- `CYPHER`：Cypher 查询（如果请求）
-
-#### 响应
-
-```json
-{
-  "gremlin": "g.V().has('person','name','弗朗西斯·福特·科波拉').out('directed').hasLabel('movie').values('title')",
-  "result": [
-    "教父",
-    "教父 2",
-    "现代启示录"
-  ]
-}
-```
-
-#### 示例（curl）
+### `POST /text2gremlin`
 
 ```bash
 curl -X POST http://localhost:8001/text2gremlin \
-  -H "Content-Type: application/json" \
+  -H 'Content-Type: application/json' \
   -d '{
-    "query": "查找所有由弗朗西斯·福特·科波拉执导的电影",
-    "output_types": ["GREMLIN", "RESULT"]
+    "query": "查找所有 person 顶点",
+    "example_num": 1,
+    "output_types": ["template_gremlin", "template_execution_result"]
   }'
 ```
 
----
+`output_types` 可包含：
 
-## 配置端点
+- `match_result`
+- `template_gremlin`
+- `raw_gremlin`
+- `template_execution_result`
+- `raw_execution_result`
 
-### 4. 更新图连接
+省略该字段时默认只返回 `template_gremlin`；传空数组表示由实现返回全部输出。自定义 `gremlin_prompt` 必须包含 `{query}`、`{schema}`、`{example}` 和 `{vertices}`，缺少占位符时请求校验失败，并会列出缺失的占位符。
 
-**POST** `/config/graph`
+`example_num` 默认是 `0`，表示不使用模板，取值会被限制在 0 到 10 之间。`client_config` 只在单次请求内覆盖 HugeGraph 连接，生成时使用的 Schema 是当前生效的图名。`query` 为空返回 400，生成失败返回 500。
 
-动态更新 HugeGraph 连接设置。
+## 运行时配置
 
-#### 请求体
+### `POST /config/graph`
 
 ```json
 {
   "url": "127.0.0.1:8080",
-  "name": "hugegraph",
+  "graph": "hugegraph",
   "user": "admin",
   "pwd": "admin",
-  "gs": ""
+  "gs": "DEFAULT"
 }
 ```
 
-#### 响应
+`user` 和 `pwd` 默认是空字符串，`gs` 可选。
 
-```json
-{
-  "status_code": 201,
-  "message": "图配置更新成功"
-}
-```
+### `POST /config/llm` 与 `POST /config/embedding`
 
-### 5. 更新 LLM 配置
-
-**POST** `/config/llm`
-
-运行时更新聊天/提取 LLM 设置。
-
-#### 请求体（OpenAI）
+两个端点使用同一个请求模型。`/config/llm` 会把 `chat_llm_type`、`extract_llm_type` 和 `text2gql_llm_type` 一起设为相同的值；要分别设置各任务的类型，只能通过 `.env` 或 Web 页面。OpenAI 或 LiteLLM 示例：
 
 ```json
 {
   "llm_type": "openai",
-  "api_key": "sk-your-api-key",
+  "api_key": "your-key",
   "api_base": "https://api.openai.com/v1",
-  "language_model": "gpt-4o-mini",
-  "max_tokens": 4096
+  "language_model": "gpt-4.1-mini",
+  "max_tokens": "4096"
 }
 ```
 
-#### 请求体（Ollama）
+Ollama 请求仍要提供公共字段；`api_key` 和 `api_base` 可传空字符串：
 
 ```json
 {
   "llm_type": "ollama/local",
+  "api_key": "",
+  "api_base": "",
+  "language_model": "qwen2.5:7b",
   "host": "127.0.0.1",
-  "port": 11434,
-  "language_model": "llama3.1:8b"
+  "port": "11434"
 }
 ```
 
-### 6. 更新嵌入配置
-
-**POST** `/config/embedding`
-
-更新嵌入模型设置。
-
-#### 请求体
-
-```json
-{
-  "llm_type": "openai",
-  "api_key": "sk-your-api-key",
-  "api_base": "https://api.openai.com/v1",
-  "language_model": "text-embedding-3-small"
-}
-```
-
-### 7. 更新 Reranker 配置
-
-**POST** `/config/rerank`
-
-配置重排序器设置。
-
-#### 请求体（Cohere）
-
-```json
-{
-  "reranker_type": "cohere",
-  "api_key": "your-cohere-key",
-  "reranker_model": "rerank-multilingual-v3.0",
-  "cohere_base_url": "https://api.cohere.com/v1/rerank"
-}
-```
-
-#### 请求体（SiliconFlow）
+### `POST /config/rerank`
 
 ```json
 {
   "reranker_type": "siliconflow",
-  "api_key": "your-siliconflow-key",
-  "reranker_model": "BAAI/bge-reranker-v2-m3"
+  "reranker_model": "BAAI/bge-reranker-v2-m3",
+  "api_key": "your-key"
 }
 ```
 
----
+`reranker_type` 可选 `cohere`、`siliconflow`。Cohere 还可以传 `cohere_base_url`。
 
-## 错误响应
+四个配置端点成功时都返回 201。它们会改动进程当前配置，并可能同步到 `.env`。`/config/llm`、`/config/embedding` 和 `/config/rerank` 在应用过程中抛出异常时会回滚到原有取值，`/config/graph` 不会。
 
-所有端点返回标准 HTTP 状态码：
+`/rag`、`/rag/graph` 和 `/text2gremlin` 的 `client_config` 只在单次请求期间覆盖 HugeGraph 连接，且仅应用请求中实际出现的字段。当前实现仍会临时改动进程全局设置，不适合用不同连接并发发起长请求。
 
-| 代码 | 含义 |
-|-----|------|
-| 200 | 成功 |
-| 201 | 已创建（配置已更新） |
-| 400 | 错误请求（无效参数） |
-| 500 | 内部服务器错误 |
-| 501 | 未实现 |
+## 日志
 
-错误响应格式：
+### `POST /logs`
+
+该接口要求 `.env` 中的 `ADMIN_TOKEN` 已改成安全值。请求体示例：
+
 ```json
 {
-  "detail": "描述错误的消息"
+  "admin_token": "replace-with-an-admin-secret",
+  "log_file": "llm-server.log"
 }
 ```
 
----
+`log_file` 默认是 `llm-server.log`，只能是 `logs/` 目录下的文件名，不能是绝对路径、不能包含路径分隔符，也不能解析为 `.` 或 `..`。非法文件名返回 400。
 
-## Python 客户端示例
+`ADMIN_TOKEN` 未设置或仍是占位值时，在比对 token 之前就返回 403；token 不匹配时返回内容为 `Invalid admin_token` 的 403 响应。
 
-```python
-import requests
-
-BASE_URL = "http://localhost:8001"
-
-# 1. 配置图连接
-graph_config = {
-    "url": "127.0.0.1:8080",
-    "name": "hugegraph",
-    "user": "admin",
-    "pwd": "admin"
-}
-requests.post(f"{BASE_URL}/config/graph", json=graph_config)
-
-# 2. 执行 RAG 查询
-rag_request = {
-    "query": "给我讲讲阿尔·帕西诺",
-    "graph_only": True,
-    "max_graph_items": 30
-}
-response = requests.post(f"{BASE_URL}/rag", json=rag_request)
-print(response.json())
-
-# 3. 从自然语言生成 Gremlin
-text2gql_request = {
-    "query": "查找所有与阿尔·帕西诺合作的导演",
-    "output_types": ["GREMLIN", "RESULT"]
-}
-response = requests.post(f"{BASE_URL}/text2gremlin", json=text2gql_request)
-print(response.json())
-```
+成功时返回 `text/plain` 流：先回放文件末尾 125 行，然后像 `tail -f` 一样持续输出新内容。
 
 ---
 
-## 另见
+反链：
 
-- [配置参考](./config-reference.md) - 完整的 .env 配置指南
-- [HugeGraph-LLM 概述](./hugegraph-llm.md) - 架构和功能
-- [快速入门指南](./quick_start.md) - Web UI 入门
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-LLM](/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/)
+- [LLM 使用流程](/cn/docs/quickstart/hugegraph-ai/quick_start/)

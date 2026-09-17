@@ -1,269 +1,104 @@
-# GraphRAG UI Details
+# HugeGraph-LLM Workflow
 
 LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-> Follow up [main doc](../) to introduce the basic UI function & details, welcome to update and improve at any time, thanks
+This page explains the processing flow in the HugeGraph-LLM Web UI. See [HugeGraph-LLM](./hugegraph-llm.md) for startup instructions.
 
-# 1. Core Logic of the Project
+## 0. Configuration Panel
 
-## Build RAG Index Responsibilities:
+Above the tabs sits a collapsible configuration panel with five sections: `1. Set up the HugeGraph server.`, `2. Set up the LLM.`, `3. Set up the Embedding.`, `4. Set up the Reranker.`, and `5. Set up the vector engine.`. Each section has its own apply button, and applying a change writes the supported fields back to `.env`. The header also shows the current prompt language.
 
-- Split and vectorize text
-- Extract text into a graph (construct a knowledge graph) and vectorize the vertices
+## 1. Build RAG Indexes
 
-## (Graph)RAG & User Functions Responsibilities:
-
-- Retrieve relevant content from the constructed knowledge graph and vector database based on the query to supplement the prompt.
-
-# 2. (Processing Flow) Build RAG Index
-
-Construct a knowledge graph, chunk vector, and graph vid vector from the text.
-
-![GraphRAG index construction flow](/images/docs/hugegraph-ai/quick-start-01.png)
+The first tab splits documents into a chunk vector index. It also extracts vertices and edges according to a schema, writes them to HugeGraph, and maintains a vertex vector index.
 
 ```mermaid
-graph TD;
-    A[Raw Text] --> B[Text Segmentation]
-    B --> C[Vectorization]
-    C --> D[Store in Vector Database]
-
-    A --> F[Text Segmentation]
-    F --> G[LLM extracts graph based on schema \nand segmented text]
-    G --> H[Store graph in Graph Database, \nautomatically vectorize vertices \nand store in Vector Database]
-    
-    I[Retrieve vertices from Graph Database] --> J[Vectorize vertices and store in Vector Database \nNote: Incremental update]
-
+flowchart TD
+    A[Input document] --> B[Split text]
+    B --> C[Generate chunk vectors]
+    C --> D[Write vector index]
+    B --> E[LLM extracts vertices and edges from schema]
+    E --> F[Write to HugeGraph]
+    F --> G[Update vertex vector index]
 ```
 
-### Four Input Fields:
+Input comes from either the `text` sub-tab or the `file` sub-tab. Uploads accept `.txt`, `.docx`, and `.pdf`, and several files can be selected at once.
 
-- **Doc(s):** Input text
-- **Schema:** The schema of the graph, which can be provided as a JSON-formatted schema or as the graph name (if it exists in the database).
-- **Graph** **Extract Prompt Header:** The header of the prompt
-- **Output**: Display results
+Common operations are `Import into Vector`, `Extract Graph Data (1)`, `Load into GraphDB (2)`, and `Update Vid Embedding`. `Load into GraphDB (2)` also refreshes the vertex vector index, so the separate `Update Vid Embedding` step is only needed when the graph already held data. The `Graph Extraction Split Type` dropdown next to these buttons chooses `document`, `paragraph`, or `sentence`. `document` keeps the whole input as one unit; the other two split long documents before extraction.
 
-### Buttons:
+The page can also inspect or clear chunk indexes, vertex indexes, and graph data. Clearing removes existing data, so first confirm that the current graph and indexes are not still used by other queries.
 
-- **Get RAG Info**
+Two collapsed helpers sit below the main controls:
 
-  - **Get Vector Index Info:** Retrieve vector index information
+- `Graph Schema Generator` takes query examples and a few-shot example and produces a schema for the Graph Schema field.
+- `Graph Extraction Prompt Generator` takes an expected scenario, such as social relationships or a financial knowledge graph, and a selected reference example, and produces a Graph Extract Prompt Header.
 
-  - **Get** **Graph** **Index Info:** Retrieve graph index information
+## 2. GraphRAG Queries
 
-- **Clear RAG Data**
-  - **Clear Chunks Vector Index:** Clear chunk vector
-  - **Clear Graph Vid Vector Index**: Clear graph vid vector
-  - **Clear Graph Data**: Clear Graph Data
-- **Import into** **Vector**: Convert the text in Doc(s) into vectors (requires chunking the text first and then converting the chunks into vectors)
-- **Extract** **Graph** **Data (1):** Extract graph data from Doc(s) based on the Schema, using the Graph Extract Prompt Header and chunked content as the prompt
-- **Load into GraphDB (2):** Store the extracted graph data into the database (automatically calls Update Vid Embedding to store vectors in the vector database)
-- **Update Vid Embedding:** Convert graph vid into vectors
-
-### Execution Flow:
-
-1. Input text into the **Doc(s)** field.
-2. Click the **Import into** **Vector** button to split and vectorize the text, storing it in the vector database.
-3. Input the graph **Schema** into the Schema field.
-4. Click the **Extract** **Graph** **Data (1)** button to extract the text into a graph.
-5. Click the **Load into GraphDB (2)** button to store the extracted graph into the graph database (this automatically calls **Update Vid Embedding** to store the vectors in the vector database).
-6. Click the **Update** **Vid** **Embedding** button to vectorize the graph vertices and store them in the vector database.
-
-# 3. (Processing Flow) (Graph)RAG & User Functions
-
-The **Import into** **Vector** button in the previous module converts text (chunks) into vectors, and the **Update Vid Embedding** button converts graph vid into vectors. These vectors are stored separately to supplement the context for queries (answer generation) in this module. In other words, the previous module prepares the data for RAG (vectorization), while this module executes RAG.
-
-This module consists of two parts:
-
-- **HugeGraph RAG** **Query**
-- **(Batch) Back-testing**
-
-The first part handles single queries, while the second part handles multiple queries at once. Below is an explanation of the first part.
-
-![HugeGraph RAG query interface](/images/docs/hugegraph-ai/quick-start-02.png)
-
+The second tab can answer directly with the LLM, use only chunk-vector retrieval, use only graph retrieval, or combine graph and vector retrieval.
 
 ```mermaid
-graph TD;
-    A[Question] --> B[Vectorize the question and search \nfor the most similar chunk in the Vector Database &#40chunk&#41]
-
-    A --> F[Extract keywords using LLM]
-    F --> G[Match vertices precisely in Graph Database \nusing keywords; perform fuzzy matching in \nVector Database &#40graph vid&#41]
-    G --> H[Generate Gremlin query using matched vertices and query with LLM]
-    H --> I[Execute Gremlin query; if successful, finish; if failed, fallback to BFS]
-    
-    B --> J[Sort results]
-    I --> J
-    J --> K[Generate answer]
+flowchart TD
+    Q[Question] --> V[Query chunk vector index]
+    Q --> K[Extract keywords]
+    K --> M[Match graph vertices]
+    M --> T[Generate and execute Gremlin]
+    T -->|Failure| B[Fallback to BFS graph traversal]
+    T --> R[Prepare graph results]
+    B --> R
+    V --> S[Merge and rerank]
+    R --> S
+    S --> A[Generate answer]
 ```
 
+Graph retrieval first matches HugeGraph vertices exactly by keyword and then uses vector similarity if no exact match exists. The matched vertices are passed to Text2Gremlin. If generation or execution fails, the pipeline can fall back to a predefined traversal.
 
+`Template Num` controls how Text2Gremlin participates in graph retrieval:
 
-### Input Fields:
+- A negative value skips Text2Gremlin entirely, so graph retrieval goes straight to the predefined traversal.
+- `0` generates Gremlin without any examples (zero-shot).
+- A positive value retrieves that many similar examples from the example index and uses the template-guided result. The example count is clamped to the range 0 to 10.
 
-- **Question:** Input the query
-- **Query** **Prompt:** The prompt template used to ask the final question to the LLM
-- **Keywords Extraction Prompt:** The prompt template for extracting keywords from the question
-- **Template Num:** < 0 means disable text2gql; = 0 means no template(zero-shot); > 0 means using the specified number of templates
+Other controls on this tab are `Rerank method` (`bleu` or `reranker`), `Graph Ratio`, `Near neighbor first`, and `Query related information`, plus editable `Query Prompt` and `Keywords Extraction Prompt` fields.
 
-### Query Scope Selection:
+Below the single-question panel is a batch back-testing panel. Upload an `.xlsx` or `.csv` file of questions, set `Max Lines To Show`, and click `Generate Answer (Batch)`. The answers appear in a preview table and can be downloaded as a file. A template file is offered next to the upload control.
 
-- **Basic** **LLM** **Answer:** Does not use RAG functionality
-- **Vector-only Answer:** Uses only vector-based retrieval (queries chunk vectors in the vector database)
-- **Graph-only Answer:** Uses only graph-based retrieval (queries graph vid vectors in the vector database and the graph database)
-- **Graph-Vector Answer:** Uses both graph-based and vector-based retrieval
+## 3. Text2Gremlin
 
-![RAG query scope selection](/images/docs/hugegraph-ai/quick-start-03.jpg)
+The third tab has two parts. The upper part builds the example vector index from a `.json` or `.csv` file of question and Gremlin pairs; the bundled `resources/demo/text2gremlin.csv` is used when no file is uploaded.
 
-### Execution Flow:
+The lower part reads the graph schema, retrieves similar natural-language and Gremlin examples, fills the prompt with the question, schema, examples, and matched vertices, then generates Gremlin and optionally executes it. `Number of refer examples` sets how many examples are retrieved, from 0 to 10, and defaults to 2. The results appear in four fields: Gremlin with a template, Gremlin without a template, and the execution output for each.
 
-#### **Graph-only Answer:**
+![RAG query scope selector](/images/docs/hugegraph-ai/quick-start-03.jpg)
 
-- Extract keywords from the **question** using the **Keywords Extraction Prompt**.
+A custom prompt must contain `{query}`, `{schema}`, `{example}`, and `{vertices}`. The REST API rejects a request if any placeholder is missing.
 
-![Extracted keywords in the RAG interface](/images/docs/hugegraph-ai/quick-start-04.png)
+## 4. Graph and Administration Tools
 
+`Graph Tools` runs a Gremlin query directly against the configured graph, triggers a manual graph backup, and can initialize demo data in HugeGraph through a beta action. A background job also backs up the graph every day at 01:00, and a second background task keeps vertex-id embeddings up to date while the process runs.
 
-- Use the extracted keywords to:
+`Admin Tools` is password protected. Entering the configured `ADMIN_TOKEN` reveals the tail of `logs/llm-server.log`, which refreshes every 60 seconds, along with buttons to refresh or clear it. Access is refused while `ADMIN_TOKEN` is empty or still set to the placeholder `xxxx`.
 
-  - First, perform an exact match in the graph database.
+When `ENABLE_LOGIN=True`, the Web UI asks for basic credentials with the fixed user name `rag` and `USER_TOKEN` as the password, and the REST API requires `USER_TOKEN` as a Bearer token. The log endpoint additionally requires a separately configured, secure `ADMIN_TOKEN`.
 
-  - If no match is found, perform a fuzzy match in the vector database (graph vid vector) to retrieve relevant vertices.
+![Keywords extracted in the RAG UI](/images/docs/hugegraph-ai/quick-start-04.png)
 
-- **text2gql:** Call the text2gql-related interface, using the matched vertices as entities to convert the **question** into a Gremlin query and execute it in the graph database.
+## 5. Prompt Language
 
-- **BFS:** If text2gql fails (LLM-generated queries might be invalid), fall back to executing a graph query using a predefined **Gremlin query template** (essentially a BFS traversal).
+Set `LANGUAGE=EN` or `LANGUAGE=CN` in `hugegraph-llm/.env`, then restart the service. This selects the language of built-in prompts; it does not translate input documents and is not a field in the `/rag` request body.
 
-#### **Vector-only Answer:**
+## 6. REST Calls
 
-- Convert the **query** into a vector.
+The Web UI and REST API use the same pipeline. For application integration, use `/rag`, `/rag/graph`, `/graph/extract`, and `/text2gremlin`; see the [REST API](./rest-api.md) for request formats.
 
-- Search for the most similar content in the **chunk vector** dataset in the vector database.
+---
 
-#### **Sorting and Answer Generation:**
+Backlinks:
 
-- After executing the retrieval, sort the search (retrieval) results to construct the final **prompt**.
-
-- Generate answers based on different prompt configurations and display them in different output fields:
-  - **Basic** **LLM** **Answer**
-  - **Vector-only Answer**
-  - **Graph-only Answer**
-  - **Graph-Vector Answer**
-
-![Comparison of RAG answer modes](/images/docs/hugegraph-ai/quick-start-05.jpg)
-
-# 4. (Processing Flow) Text2Gremlin
-
-Converts natural language queries into Gremlin queries.
-
-This module consists of two parts:
-
-- **Build** **Vector** **Template Index (Optional):** Vectorizes query/gremlin pairs from sample files and stores them in the vector database for reference when generating Gremlin queries.
-- **Natural Language to Gremlin:** Converts natural language queries into Gremlin queries.
-
-The first part is straightforward, so the focus is on the second part.
-
-![Text2Gremlin interface](/images/docs/hugegraph-ai/quick-start-06.png)
-
-
-```mermaid
-graph TD;
-    A[Gremlin Pairs File] --> C[Vectorize query]
-    C --> D[Store in Vector Database]
-    
-    F[Natural Language Query] --> G[Search for the most similar query \nin the Vector Database \n&#40If no Gremlin pairs exist in the Vector Database, \ndefault files will be automatically vectorized&#41 \nand retrieve the corresponding Gremlin]
-    G --> H[Add the matched pair to the prompt \nand use LLM to generate the Gremlin \ncorresponding to the Natural Language Query]
-```
-
-### Input Fields for the Second Part:
-
-- **Natural Language** **Query**: Input the natural language text to be converted into Gremlin.
-
-![Natural language query input](/images/docs/hugegraph-ai/quick-start-07.png)
-
-- **Schema:** Input the graph schema.
-
-### Execution Flow:
-
-1. Input the **query** (natural language) into the **Natural Language Query** field.
-
-2. Input the **graph** **schema** into the **Schema** field.
-
-3. Click the **Text2Gremlin** button, and the following execution logic applies:
-
-   1. Convert the **query** into a vector.
-
-   2. Construct the **prompt**:
-
-      - Retrieve the **graph schema**.
-      - Query the vector database for example vectors, retrieving query-gremlin pairs similar to the input query (if the vector database lacks examples, it automatically initializes with examples from the **resources** folder).
-
-![Generated Gremlin query](/images/docs/hugegraph-ai/quick-start-08.png)
-
-
-      - Generate the Gremlin query using the constructed prompt.
-
-# 5. Graph Tools
-
-Input Gremlin queries to execute corresponding operations.
-
-# 6. Language Switching (v1.5.0+)
-
-HugeGraph-LLM supports bilingual prompts for improved accuracy across languages.
-
-### Switching Between English and Chinese
-
-The system language affects:
-- **System prompts**: Internal prompts used by the LLM
-- **Keyword extraction**: Language-specific extraction logic
-- **Answer generation**: Response formatting and style
-
-#### Configuration Method 1: Environment Variable
-
-Edit your `.env` file:
-
-```bash
-# English prompts (default)
-LANGUAGE=EN
-
-# Chinese prompts
-LANGUAGE=CN
-```
-
-Restart the service after changing the language setting.
-
-#### Configuration Method 2: Web UI (Dynamic)
-
-If available in your deployment, use the settings panel in the Web UI to switch languages without restarting:
-
-1. Navigate to the **Settings** or **Configuration** tab
-2. Select **Language**: `EN` or `CN`
-3. Click **Save** - changes apply immediately
-
-#### Language-Specific Behavior
-
-| Language | Keyword Extraction | Answer Style | Use Case |
-|----------|-------------------|--------------|----------|
-| `EN` | English NLP models | Professional, concise | International users, English documents |
-| `CN` | Chinese NLP models | Natural Chinese phrasing | Chinese users, Chinese documents |
-
-> [!TIP]
-> Match the `LANGUAGE` setting to your primary document language for best RAG accuracy.
-
-### REST API Language Override
-
-When using the REST API, you can specify custom prompts per request to override the default language setting:
-
-```bash
-curl -X POST http://localhost:8001/rag \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "告诉我关于阿尔·帕西诺的信息",
-    "graph_only": true,
-    "keywords_extract_prompt": "请从以下文本中提取关键实体...",
-    "answer_prompt": "请根据以下上下文回答问题..."
-  }'
-```
-
-See the [REST API Reference](./rest-api.md) for complete parameter details.
+- [Documentation](/docs/)
+- [System Introduction](/docs/introduction/)
+- [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-LLM](/docs/quickstart/hugegraph-ai/hugegraph-llm/)
+- [Vermeer Client](/docs/quickstart/hugegraph-ai/vermeer-python-client/)

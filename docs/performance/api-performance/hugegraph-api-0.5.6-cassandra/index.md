@@ -149,3 +149,9 @@ Continuously increase the concurrency and test the upper limit of the pressure t
 ###### Conclusion:
 
 - For edge ID-based queries, the server's concurrent capacity is up to 12,000, with a throughput of 10,688 and an average latency of 63ms.
+
+---
+
+Backlinks:
+
+- [HugeGraph-API Performance](/docs/performance/api-performance/)

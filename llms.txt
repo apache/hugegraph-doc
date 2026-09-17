@@ -13,32 +13,38 @@
 
 ## Documentation index
 
-- [Introduction](https://hugegraph-oink.staged.apache.org/docs/introduction/index.md)
+- [System Introduction](https://hugegraph-oink.staged.apache.org/docs/introduction/index.md)
 - [Quick Start](https://hugegraph-oink.staged.apache.org/docs/quickstart/index.md)
   - [HugeGraph-LLM](https://hugegraph-oink.staged.apache.org/docs/quickstart/hugegraph-ai/hugegraph-llm/index.md)
-  - [Install/Build HugeGraph-Server](https://hugegraph-oink.staged.apache.org/docs/quickstart/hugegraph/hugegraph-server/index.md)
+  - [Install/Build HugeGraph Server](https://hugegraph-oink.staged.apache.org/docs/quickstart/hugegraph/hugegraph-server/index.md)
   - [Java-Client](https://hugegraph-oink.staged.apache.org/docs/quickstart/client/hugegraph-client/index.md)
   - [Vermeer: Memory-First Computing Framework](https://hugegraph-oink.staged.apache.org/docs/quickstart/computing/hugegraph-vermeer/index.md)
-  - [Visual with HugeGraph-Hubble](https://hugegraph-oink.staged.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md)
+  - [Visual with HugeGraph-Hubble](https://hugegraph-oink.staged.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md): Deploy HugeGraph-Hubble for graph visualization, schema management, data import, and Gremlin or Cypher queries.
   - [Analysis with HugeGraph-Computer](https://hugegraph-oink.staged.apache.org/docs/quickstart/computing/hugegraph-computer/index.md)
+  - [Export and migrate with SeaTunnel Source](https://hugegraph-oink.staged.apache.org/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/index.md)
   - [HugeGraph-ML](https://hugegraph-oink.staged.apache.org/docs/quickstart/hugegraph-ai/hugegraph-ml/index.md)
+  - [Import graph data with SeaTunnel Sink](https://hugegraph-oink.staged.apache.org/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/index.md)
   - [Install/Build HugeGraph-PD](https://hugegraph-oink.staged.apache.org/docs/quickstart/hugegraph/hugegraph-pd/index.md)
   - [Load data with HugeGraph-Loader](https://hugegraph-oink.staged.apache.org/docs/quickstart/toolchain/hugegraph-loader/index.md)
   - [Python Client](https://hugegraph-oink.staged.apache.org/docs/quickstart/client/hugegraph-client-python/index.md)
   - [Computer Config Reference](https://hugegraph-oink.staged.apache.org/docs/quickstart/computing/hugegraph-computer-config/index.md)
   - [Go Client](https://hugegraph-oink.staged.apache.org/docs/quickstart/client/hugegraph-client-go/index.md)
   - [Install/Build HugeGraph-Store](https://hugegraph-oink.staged.apache.org/docs/quickstart/hugegraph/hugegraph-hstore/index.md)
-  - [Manage with HugeGraph-Tools](https://hugegraph-oink.staged.apache.org/docs/quickstart/toolchain/hugegraph-tools/index.md)
+  - [LLM Workflow](https://hugegraph-oink.staged.apache.org/docs/quickstart/hugegraph-ai/quick_start/index.md)
+  - [Manage with Tools](https://hugegraph-oink.staged.apache.org/docs/quickstart/toolchain/hugegraph-tools/index.md)
   - [Configuration Reference](https://hugegraph-oink.staged.apache.org/docs/quickstart/hugegraph-ai/config-reference/index.md)
-  - [GraphRAG UI Details](https://hugegraph-oink.staged.apache.org/docs/quickstart/hugegraph-ai/quick_start/index.md)
   - [Read/Write Graph Data with Spark Connector](https://hugegraph-oink.staged.apache.org/docs/quickstart/toolchain/hugegraph-spark-connector/index.md)
   - [REST API](https://hugegraph-oink.staged.apache.org/docs/quickstart/hugegraph-ai/rest-api/index.md)
+  - [Vermeer Client](https://hugegraph-oink.staged.apache.org/docs/quickstart/hugegraph-ai/vermeer-python-client/index.md)
 - [Server Config](https://hugegraph-oink.staged.apache.org/docs/config/index.md)
   - [Server Startup Guide](https://hugegraph-oink.staged.apache.org/docs/config/config-guide/index.md)
   - [Server Complete Configuration Manual](https://hugegraph-oink.staged.apache.org/docs/config/config-option/index.md)
   - [Config Authentication](https://hugegraph-oink.staged.apache.org/docs/config/config-authentication/index.md)
   - [Config HTTPS](https://hugegraph-oink.staged.apache.org/docs/config/config-https/index.md)
-- [API](https://hugegraph-oink.staged.apache.org/docs/clients/index.md)
+  - [Config RocksDB Backend](https://hugegraph-oink.staged.apache.org/docs/config/config-backend-rocksdb/index.md)
+  - [Config HStore Backend](https://hugegraph-oink.staged.apache.org/docs/config/config-backend-hstore/index.md)
+  - [Config HBase Backend](https://hugegraph-oink.staged.apache.org/docs/config/config-backend-hbase/index.md)
+- [Clients and APIs](https://hugegraph-oink.staged.apache.org/docs/clients/index.md): Connect to HugeGraph with the Java client, REST API, Gremlin Console, and other client libraries.
   - [Graphspace](https://hugegraph-oink.staged.apache.org/docs/clients/restful-api/graphspace/index.md): Graphspace REST API: Multi-tenancy and resource isolation for creating, viewing, updating, and deleting graph spaces with prerequisites and constraints.
   - [Schema](https://hugegraph-oink.staged.apache.org/docs/clients/restful-api/schema/index.md): Schema REST API: Query the complete schema definition of a graph, including property keys, vertex labels, edge labels, and index labels.
   - [HugeGraph Java Client](https://hugegraph-oink.staged.apache.org/docs/clients/hugegraph-client/index.md)
@@ -59,7 +65,7 @@
   - [Cypher](https://hugegraph-oink.staged.apache.org/docs/clients/restful-api/cypher/index.md): Cypher REST API: Execute OpenCypher declarative graph query language via HTTP interface.
   - [Authentication](https://hugegraph-oink.staged.apache.org/docs/clients/restful-api/auth/index.md): Authentication REST API: Manage users, roles, permissions, and access control to implement fine-grained graph data security.
   - [Metrics](https://hugegraph-oink.staged.apache.org/docs/clients/restful-api/metrics/index.md): Metrics REST API: Retrieve runtime performance metrics, statistics, and health status data of the system.
-  - [Other](https://hugegraph-oink.staged.apache.org/docs/clients/restful-api/other/index.md): Other REST API: Provide auxiliary functions such as system version query and API version information.
+  - [Other](https://hugegraph-oink.staged.apache.org/docs/clients/restful-api/other/index.md): Other REST API: Provide auxiliary functions such as version query, API listing, exception trace switch, IP allowlist and the Arthas agent.
 - [GUIDES](https://hugegraph-oink.staged.apache.org/docs/guides/index.md)
   - [Architecture Overview](https://hugegraph-oink.staged.apache.org/docs/guides/architectural/index.md)
   - [Design Concepts](https://hugegraph-oink.staged.apache.org/docs/guides/desgin-concept/index.md)
@@ -69,7 +75,7 @@
   - [Docker Cluster](https://hugegraph-oink.staged.apache.org/docs/guides/hugegraph-docker-cluster/index.md)
   - [FAQ](https://hugegraph-oink.staged.apache.org/docs/guides/faq/index.md)
   - [Security](https://hugegraph-oink.staged.apache.org/docs/guides/security/index.md)
-- [QUERY LANGUAGE](https://hugegraph-oink.staged.apache.org/docs/language/index.md)
+- [Query Languages](https://hugegraph-oink.staged.apache.org/docs/language/index.md)
   - [Gremlin Query Language](https://hugegraph-oink.staged.apache.org/docs/language/hugegraph-gremlin/index.md)
   - [HugeGraph Examples](https://hugegraph-oink.staged.apache.org/docs/language/hugegraph-example/index.md)
 - [PERFORMANCE](https://hugegraph-oink.staged.apache.org/docs/performance/index.md)
@@ -79,8 +85,8 @@
   - [HugeGraph-Loader Performance](https://hugegraph-oink.staged.apache.org/docs/performance/hugegraph-loader-performance/index.md)
   - [HugeGraph 0.4.4 Benchmark](https://hugegraph-oink.staged.apache.org/docs/performance/hugegraph-benchmark-0.4.4/index.md)
 - [Contribution Guidelines](https://hugegraph-oink.staged.apache.org/docs/contribution-guidelines/index.md)
-  - [How to Contribute to HugeGraph](https://hugegraph-oink.staged.apache.org/docs/contribution-guidelines/contribute/index.md)
-  - [Subscribe Mailing Lists](https://hugegraph-oink.staged.apache.org/docs/contribution-guidelines/subscribe/index.md)
+  - [Contribution Process](https://hugegraph-oink.staged.apache.org/docs/contribution-guidelines/contribute/index.md)
+  - [Mailing List](https://hugegraph-oink.staged.apache.org/docs/contribution-guidelines/subscribe/index.md)
   - [Validate Apache Release](https://hugegraph-oink.staged.apache.org/docs/contribution-guidelines/validate-release/index.md)
   - [Setup Server in IDEA](https://hugegraph-oink.staged.apache.org/docs/contribution-guidelines/hugegraph-server-idea-setup/index.md)
   - [Apache HugeGraph Committer Guide](https://hugegraph-oink.staged.apache.org/docs/contribution-guidelines/committer-guidelines/index.md)
@@ -92,6 +98,10 @@
   - [Release-1.0.0](https://hugegraph-oink.staged.apache.org/docs/changelog/hugegraph-1.0.0-release-notes/index.md)
 - [Download](https://hugegraph-oink.staged.apache.org/docs/download/download/index.md)
 - [Contributor Agreement](https://hugegraph-oink.staged.apache.org/docs/cla/index.md)
+
+## Full-text bundles
+
+- [Documentation](https://hugegraph-oink.staged.apache.org/docs/llms-full.txt)
 
 ## Site locales
 

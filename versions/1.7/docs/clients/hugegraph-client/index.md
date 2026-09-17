@@ -12,7 +12,7 @@ The `gremlin(groovy)` written by the user in `HugeGraph-Studio` can refer to the
 
 HugeGraph-Client is the general entry for operating graph. Users must first create a HugeGraph-Client object and establish a connection (pseudo connection) with HugeGraph-Server before they can obtain the operation entry objects of schema, graph and gremlin.
 
-Currently, HugeGraph-Client only allows connections to existing graphs on the server, and cannot create custom graphs. After version 1.7.0, client has supported setting graphSpace, the default value for graphSpace is DEFAULT. Its creation method is as follows:
+HugeGraph-Client connects to an existing graph on the server. Its builder accepts a GraphSpace; the two-argument builder, or an empty GraphSpace value, uses `DEFAULT`.
 
 ```java
 // HugeGraphServer address: "http://localhost:8080"
@@ -446,8 +446,7 @@ Edge knows1 = marko.addEdge("knows", vadas, "city", "Beijing");
 **Note: When frequency is multiple, the value of the property type corresponding to sortKeys must be set.**
 
 ### 4 GraphSpace
-The client supports multiple GraphSpaces in one physical deployment, and each GraphSpace can contain multiple graphs.
-- Compatibility: When no GraphSpace is specified, the "DEFAULT" space is used by default.
+The client can manage multiple GraphSpaces in one physical deployment, and each GraphSpace can contain multiple graphs. When no GraphSpace is specified, it uses `DEFAULT`.
 
 #### 4.1 Create GraphSpace
 
@@ -469,11 +468,14 @@ spaceManager.createGraphSpace(graphSpace);
 
 | Category | Interface | Description |
 |----------|-----------|-------------|
-| Manager - Query | listGraphSpace() | Get the list of all GraphSpaces |
+| Manager - Query | listGraphSpace() | Get all GraphSpace names |
+|           | listProfile() / listProfile(String prefix) | Get GraphSpace profiles |
 |           | getGraphSpace(String name) | Get the specified GraphSpace |
+|           | getDefault() | Get the default GraphSpace |
 | Manager - Create/Update | createGraphSpace(GraphSpace) | Create a GraphSpace |
-|           | updateGraphSpace(String, GraphSpace) | Update configuration |
-| Manager - Delete | removeGraphSpace(String) | Delete the specified GraphSpace |
+|           | updateGraphSpace(GraphSpace) | Update configuration |
+|           | setDefault(String name) | Set the default GraphSpace |
+| Manager - Delete | deleteGraphSpace(String name) | Delete the specified GraphSpace |
 | GraphSpace - Properties | getName() / getDescription() | Get name / description |
 |           | getGraphNumber() | Get the number of graphs |
 | GraphSpace - Configuration | setDescription(String) | Set description |

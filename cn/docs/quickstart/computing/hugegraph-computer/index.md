@@ -65,7 +65,7 @@ mvn clean package -DskipTests
 
 #### 3.1.3 启动 master 节点
 
-> 您可以使用 `-c` 参数指定配置文件，更多 computer 配置请看：[Computer Config Options](/cn/docs/quickstart/computing/hugegraph-computer-config#computer-配置选项)
+> 您可以使用 `-c` 参数指定配置文件，更多 computer 配置请看：[Computer 配置选项](/cn/docs/quickstart/computing/hugegraph-computer-config/#computer-配置选项)
 
 ```bash
 cd hugegraph-computer
@@ -85,7 +85,7 @@ bin/start-computer.sh -d local -r worker
 如果没有启用 OLAP 索引，则需要启用，更多参考：[modify-graphs-read-mode](/cn/docs/clients/restful-api/graphs/#634-设置某个图的读模式该操作需要管理员权限)
 
 ```http
-PUT http://localhost:8080/graphs/hugegraph/graph_read_mode
+PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 "ALL"
 ```
@@ -93,7 +93,7 @@ PUT http://localhost:8080/graphs/hugegraph/graph_read_mode
 3.1.5.2 查询 `page_rank` 属性值：
 
 ```bash
-curl "http://localhost:8080/graphs/hugegraph/graph/vertices?page&limit=3" | gunzip
+curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?page&limit=3" | gunzip
 ```
 
 ### 3.2 在 Kubernetes 中运行 PageRank 算法
@@ -137,9 +137,9 @@ hugegraph-computer-operator-etcd-28lm67jxk5                       1/1     Runnin
 
 #### 3.2.5 提交作业
 
-> 更多 computer crd spec 请看：[Computer CRD](/docs/quickstart/computing/hugegraph-computer-config#hugegraph-computer-crd)
+> 更多 computer crd spec 请看：[Computer CRD](/cn/docs/quickstart/computing/hugegraph-computer-config/#hugegraph-computer-crd)
 >
-> 更多 Computer 配置请看：[Computer Config Options](/cn/docs/quickstart/computing/hugegraph-computer-config#computer-配置选项)
+> 更多 Computer 配置请看：[Computer 配置选项](/cn/docs/quickstart/computing/hugegraph-computer-config/#computer-配置选项)
 
 ```yaml
 cat <<EOF | kubectl apply --filename -
@@ -237,3 +237,13 @@ TODO
 ## 6 注意事项
 
 - 如果 computer-k8s 模块下面的某些类不存在，你需要运行`mvn compile`来提前生成对应的类。
+
+---
+
+反链：
+
+- [Documentation](/cn/docs/)
+- [Task](/cn/docs/clients/restful-api/task/)
+- [架构概览](/cn/docs/guides/architectural/)
+- [系统介绍](/cn/docs/introduction/)
+- [图计算（OLAP）](/cn/docs/quickstart/computing/)

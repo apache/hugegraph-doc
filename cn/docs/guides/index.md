@@ -1,6 +1,10 @@
-# GUIDES
+# 使用指南
 
 LLMS 索引： [llms.txt](/cn/llms.txt)
+
+---
+
+本节说明 HugeGraph 的架构、设计、备份恢复、插件开发、安全设置和常见问题。
 
 ---
 

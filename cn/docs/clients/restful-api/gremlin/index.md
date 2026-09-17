@@ -269,3 +269,9 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/gremlin
 注：
 
 > 可以通过`GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2`（其中"2"是 task_id）来查询异步任务的执行状态，更多[异步任务 RESTful API](./task)
+
+---
+
+反链：
+
+- [Task](/cn/docs/clients/restful-api/task/)

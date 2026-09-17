@@ -43,3 +43,9 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 ### [HugeGraph-Toolchain](https://github.com/apache/hugegraph-toolchain) 仓库 (Hubble/Loader/Client/Tools/..)
 
 - [CVE-2024-27347](https://www.cve.org/CVERecord?id=CVE-2024-27347): HugeGraph-Hubble - SSRF in Hubble connection page
+
+---
+
+反链：
+
+- [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)

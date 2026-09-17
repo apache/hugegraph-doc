@@ -4,286 +4,251 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-HugeGraph-ML 将 HugeGraph 与流行的图学习库集成，支持直接在图数据上进行端到端的机器学习工作流。
-
-## 概述
-
-`hugegraph-ml` 提供了统一接口，用于将图神经网络和机器学习算法应用于存储在 HugeGraph 中的数据。它通过无缝转换 HugeGraph 数据到主流 ML 框架兼容格式，消除了复杂的数据导出/导入流程。
-
-### 核心功能
-
-- **直接 HugeGraph 集成**：无需手动导出即可直接从 HugeGraph 查询图数据
-- **21 种算法实现**：全面覆盖节点分类、图分类、嵌入和链接预测
-- **DGL 后端**：利用深度图库（DGL）进行高效训练
-- **端到端工作流**：从数据加载到模型训练和评估
-- **模块化任务**：可复用的常见 ML 场景任务抽象
+HugeGraph-ML 从 HugeGraph 读取图数据并转换为 DGL 图，供节点嵌入、节点分类、图分类、链接预测和欺诈检测等任务使用。模型实现位于 `hugegraph-ml/src/hugegraph_ml/models/`。
 
 ## 环境要求
 
-- **Python**：3.9+（独立模块）
-- **HugeGraph Server**：1.0+（推荐：1.5+）
-- **UV 包管理器**：0.7+（用于依赖管理）
+- Python 3.10 或更高版本
+- HugeGraph Server 1.0 或更高版本，推荐 1.5 及以上版本
+- `uv` 0.7 或更高版本
+
+所有服务端访问都通过同一仓库中的 `hugegraph-python-client`（即 `pyhugegraph` 包）完成。`HugeGraph2DGL` 使用 Gremlin 接口的 `g.V().hasLabel(...)` 和 `g.E().hasLabel(...)` 拉取点边，数据集导入函数则通过 schema 接口和顶点、边的批量接口写入，每批 500 条。
+
+ML 依赖在仓库根目录的 `[tool.uv] constraint-dependencies` 中固定版本：
+
+| 依赖 | 版本约束 |
+|---|---|
+| `torch` | `==2.2.0` |
+| `dgl` | `~=2.1.0` |
+| `ogb` | `~=1.3.6` |
+| `torchdata` | `~=0.7.0` |
+| `catboost` | `~=1.2.3` |
+| `category-encoders` | `~=2.6.3` |
+| `numpy` | `~=1.24.4` |
+| `pandas` | `~=2.2.3` |
+
+上述约束安装的是 CPU 版本。每个任务都有 `gpu` 参数，默认值 `-1` 表示使用 CPU；只有自行安装 CUDA 版的 `torch` 和 `dgl` 之后，才可以传入设备编号。
 
 ## 安装
 
-### 1. 启动 HugeGraph Server
-
-```bash
-# 方案一：Docker（推荐）
-docker run -itd --name=hugegraph -p 8080:8080 hugegraph/hugegraph
-
-# 方案二：二进制包
-# 参见 https://hugegraph.apache.org/docs/download/download/
-```
-
-### 2. 克隆并设置
-
 ```bash
 git clone https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai/hugegraph-ml
-```
-
-### 3. 安装依赖
-
-```bash
-# uv sync 自动创建 .venv 并安装所有依赖
-uv sync
-
-# 激活虚拟环境
+cd hugegraph-ai
+uv sync --extra ml
 source .venv/bin/activate
+cd hugegraph-ml/src
 ```
 
-### 4. 导航到源代码目录
+HugeGraph-ML 是根项目的路径依赖，但不属于 `uv` workspace members。应在仓库根目录选择 `ml` extra，不要在子目录建立另一套锁文件。
 
-```bash
-cd ./src
-```
+## 已实现模型
 
-> [!NOTE]
-> 所有示例均假定您在已激活的虚拟环境中。
+下列模块均位于 `hugegraph-ml/src/hugegraph_ml/models/`。`models/__init__.py` 不做任何再导出，需要直接从模块文件导入。
 
-## 已实现算法
+| 模型 | 模块 | 入口类 | 用途 | 论文 |
+|---|---|---|---|---|
+| AGNN | `agnn.py` | `AGNN` | 节点分类 | [1803.03735](https://arxiv.org/abs/1803.03735) |
+| APPNP | `appnp.py` | `APPNP` | 节点分类 | [1810.05997](https://arxiv.org/abs/1810.05997) |
+| ARMA | `arma.py` | `ARMA4NC` | 节点分类 | [1901.01343](https://arxiv.org/abs/1901.01343) |
+| BGNN | `bgnn.py` | `BGNNPredictor` | 梯度提升与 GNN 结合处理节点特征，自带示例执行回归任务 | [2101.08543](https://arxiv.org/abs/2101.08543) |
+| BGRL | `bgrl.py` | `BGRL` | 自监督节点嵌入 | [2102.06514](https://arxiv.org/abs/2102.06514) |
+| CARE-GNN | `care_gnn.py` | `CAREGNN` | 欺诈检测 | [2008.08692](https://arxiv.org/abs/2008.08692) |
+| Cluster-GCN | `cluster_gcn.py` | `SAGE` | 基于子图采样的节点分类 | [1905.07953](https://arxiv.org/abs/1905.07953) |
+| C&S | `correct_and_smooth.py` | `MLP`、`CorrectAndSmooth`、`LabelPropagation` | 对基础预测结果做校正与平滑 | [2010.13993](https://arxiv.org/abs/2010.13993) |
+| DAGNN | `dagnn.py` | `DAGNN` | 节点分类 | [2007.09296](https://arxiv.org/abs/2007.09296) |
+| DeeperGCN | `deepergcn.py` | `DeeperGCN` | 带边特征的节点分类 | [2006.07739](https://arxiv.org/abs/2006.07739) |
+| DGI | `dgi.py` | `DGI` | 自监督节点嵌入 | [1809.10341](https://arxiv.org/abs/1809.10341) |
+| DiffPool | `diffpool.py` | `DiffPool` | 图分类 | [1806.08804](https://arxiv.org/abs/1806.08804) |
+| GATNE | `gatne.py` | `DGLGATNE` | 异构网络嵌入 | [1905.01669](https://arxiv.org/abs/1905.01669) |
+| GIN | `gin_global_pool.py` | `GIN` | 图分类 | |
+| GRACE | `grace.py` | `GRACE` | 自监督节点嵌入 | [2006.04131](https://arxiv.org/abs/2006.04131) |
+| GRAND | `grand.py` | `GRAND` | 节点分类 | [2005.11079](https://arxiv.org/abs/2005.11079) |
+| JKNet | `jknet.py` | `JKNet` | 节点分类 | [1806.03536](https://arxiv.org/abs/1806.03536) |
+| MLP | `mlp.py` | `MLPClassifier` | 基于已学习嵌入的下游分类器 | |
+| P-GNN | `pgnn.py` | `PGNN` | 链接预测 | [you19b](http://proceedings.mlr.press/v97/you19b/you19b.pdf) |
+| SEAL | `seal.py` | `DGCNN`、`SEALData` | 链接预测 | [1802.09691](https://arxiv.org/abs/1802.09691) |
 
-HugeGraph-ML 目前实现了跨多个类别的 **21 种图机器学习算法**：
+`GIN` 的 `pooling` 参数可取 `sum`（默认）、`mean`、`max`、`global_attention` 和 `set2set`。
 
-### 节点分类（11 种算法）
+## 读取图数据
 
-基于网络结构和特征预测图节点的标签。
-
-| 算法 | 论文 | 描述 |
-|-----|------|------|
-| **GCN** | [Kipf & Welling, 2017](https://arxiv.org/abs/1609.02907) | 图卷积网络 |
-| **GAT** | [Veličković et al., 2018](https://arxiv.org/abs/1710.10903) | 图注意力网络 |
-| **GraphSAGE** | [Hamilton et al., 2017](https://arxiv.org/abs/1706.02216) | 归纳式表示学习 |
-| **APPNP** | [Klicpera et al., 2019](https://arxiv.org/abs/1810.05997) | 个性化 PageRank 传播 |
-| **AGNN** | [Thekumparampil et al., 2018](https://arxiv.org/abs/1803.03735) | 基于注意力的 GNN |
-| **ARMA** | [Bianchi et al., 2019](https://arxiv.org/abs/1901.01343) | 自回归移动平均滤波器 |
-| **DAGNN** | [Liu et al., 2020](https://arxiv.org/abs/2007.09296) | 深度自适应图神经网络 |
-| **DeeperGCN** | [Li et al., 2020](https://arxiv.org/abs/2006.07739) | 非常深的 GCN 架构 |
-| **GRAND** | [Feng et al., 2020](https://arxiv.org/abs/2005.11079) | 图随机神经网络 |
-| **JKNet** | [Xu et al., 2018](https://arxiv.org/abs/1806.03536) | 跳跃知识网络 |
-| **Cluster-GCN** | [Chiang et al., 2019](https://arxiv.org/abs/1905.07953) | 通过聚类实现可扩展 GCN 训练 |
-
-### 图分类（2 种算法）
-
-基于结构和节点特征对整个图进行分类。
-
-| 算法 | 论文 | 描述 |
-|-----|------|------|
-| **DiffPool** | [Ying et al., 2018](https://arxiv.org/abs/1806.08804) | 可微分图池化 |
-| **GIN** | [Xu et al., 2019](https://arxiv.org/abs/1810.00826) | 图同构网络 |
-
-### 图嵌入（3 种算法）
-
-学习用于下游任务的无监督节点表示。
-
-| 算法 | 论文 | 描述 |
-|-----|------|------|
-| **DGI** | [Veličković et al., 2019](https://arxiv.org/abs/1809.10341) | 深度图信息最大化（对比学习） |
-| **BGRL** | [Thakoor et al., 2021](https://arxiv.org/abs/2102.06514) | 自举图表示学习 |
-| **GRACE** | [Zhu et al., 2020](https://arxiv.org/abs/2006.04131) | 图对比学习 |
-
-### 链接预测（3 种算法）
-
-预测图中缺失或未来的连接。
-
-| 算法 | 论文 | 描述 |
-|-----|------|------|
-| **SEAL** | [Zhang & Chen, 2018](https://arxiv.org/abs/1802.09691) | 子图提取和标注 |
-| **P-GNN** | [You et al., 2019](http://proceedings.mlr.press/v97/you19b/you19b.pdf) | 位置感知 GNN |
-| **GATNE** | [Cen et al., 2019](https://arxiv.org/abs/1905.01669) | 属性多元异构网络嵌入 |
-
-### 欺诈检测（2 种算法）
-
-检测图中的异常节点（例如欺诈账户）。
-
-| 算法 | 论文 | 描述 |
-|-----|------|------|
-| **CARE-GNN** | [Dou et al., 2020](https://arxiv.org/abs/2008.08692) | 抗伪装 GNN |
-| **BGNN** | [Zheng et al., 2021](https://arxiv.org/abs/2101.08543) | 二部图神经网络 |
-
-### 后处理（1 种算法）
-
-通过标签传播改进预测。
-
-| 算法 | 论文 | 描述 |
-|-----|------|------|
-| **C&S** | [Huang et al., 2020](https://arxiv.org/abs/2010.13993) | 校正与平滑（预测优化） |
-
-## 使用示例
-
-### 示例 1：使用 DGI 进行节点嵌入
-
-使用深度图信息最大化（DGI）在 Cora 数据集上进行无监督节点嵌入。
-
-#### 步骤 1：导入数据集（如需）
-
-```python
-from hugegraph_ml.utils.dgl2hugegraph_utils import import_graph_from_dgl
-
-# 从 DGL 导入 Cora 数据集到 HugeGraph
-import_graph_from_dgl("cora")
-```
-
-#### 步骤 2：转换图数据
+`hugegraph-ml/src/hugegraph_ml/data/hugegraph2dgl.py` 中的 `HugeGraph2DGL` 会创建 `PyHugeClient`，并把查询结果转换为 DGL 对象：
 
 ```python
 from hugegraph_ml.data.hugegraph2dgl import HugeGraph2DGL
 
-# 将 HugeGraph 数据转换为 DGL 格式
-hg2d = HugeGraph2DGL()
-graph = hg2d.convert_graph(vertex_label="CORA_vertex", edge_label="CORA_edge")
-```
-
-#### 步骤 3：初始化模型
-
-```python
-from hugegraph_ml.models.dgi import DGI
-
-# 创建 DGI 模型
-model = DGI(n_in_feats=graph.ndata["feat"].shape[1])
-```
-
-#### 步骤 4：训练并生成嵌入
-
-```python
-from hugegraph_ml.tasks.node_embed import NodeEmbed
-
-# 训练模型并生成节点嵌入
-node_embed_task = NodeEmbed(graph=graph, model=model)
-embedded_graph = node_embed_task.train_and_embed(
-    add_self_loop=True,
-    n_epochs=300,
-    patience=30
+hg2d = HugeGraph2DGL(
+    url="http://127.0.0.1:8080",
+    graph="hugegraph",
+    user="",
+    pwd="",
+    graphspace=None,
 )
 ```
 
-#### 步骤 5：下游任务（节点分类）
+| 方法 | 返回值 | 说明 |
+|---|---|---|
+| `convert_graph(vertex_label, edge_label, feat_key="feat", label_key="label", mask_keys=None)` | `dgl.DGLGraph` | `mask_keys` 为空时取 `["train_mask", "val_mask", "test_mask"]` |
+| `convert_hetero_graph(vertex_labels, edge_labels, feat_key="feat", label_key="label", mask_keys=None)` | DGL 异构图 | 参数为标签列表 |
+| `convert_graph_dataset(graph_vertex_label, vertex_label, edge_label, feat_key="feat", label_key="label")` | `HugeGraphDataset` | `info` 中写入 `n_graphs`、`max_n_nodes`、`n_feat_dim`、`n_classes` |
+| `convert_graph_nx(vertex_label, edge_label)` | `networkx.Graph` | P-GNN 使用 |
+| `convert_graph_with_edge_feat(vertex_label, edge_label, node_feat_key="feat", edge_feat_key="edge_feat", label_key="label", mask_keys=None)` | `dgl.DGLGraph` | 同时填充 `edata["feat"]` |
+| `convert_graph_ogb(vertex_label, edge_label, split_label)` | `(dgl.DGLGraph, split_edge)` | SEAL 使用 |
+| `convert_hetero_graph_bgnn(vertex_labels, edge_labels, feat_key="feat", label_key="class", cat_key="cat_features", mask_keys=None)` | DGL 异构图 | BGNN 使用 |
+
+节点特征写入 `ndata["feat"]`，标签写入 `ndata["label"]`，各掩码写入 `ndata[<mask key>]`。`NodeEmbed` 只要求 `feat`；`NodeClassify`、`NodeClassifyWithEdge` 和 `NodeClassifyWithSample` 要求 `feat`、`label`、`train_mask`、`val_mask` 和 `test_mask`，缺少任意一项都会抛出 `ValueError`。
+
+## 导入示例数据集
+
+`hugegraph_ml.utils.dgl2hugegraph_utils` 负责把 DGL、OGB 和 NetworkX 数据集写入 HugeGraph，供转换层读取。这些函数都接受与 `HugeGraph2DGL` 相同的 `url`、`graph`、`user`、`pwd` 和 `graphspace` 参数，并且多数会先把数据集名转为大写再匹配。
+
+| 函数 | 支持的数据集 | 创建的标签 |
+|---|---|---|
+| `import_graph_from_dgl` | `CORA`、`CITESEER`、`PUBMED` | `<NAME>_vertex`、`<NAME>_edge` |
+| `import_graphs_from_dgl` | `MUTAG`、`COLLAB`、`NCI1`、`PROTEINS`、`PTC`、`ENZYMES`、`DD` | `<NAME>_graph_vertex`、`<NAME>_vertex`、`<NAME>_edge` |
+| `import_hetero_graph_from_dgl` | `ACM` | `<NAME>_<ntype>_v`、`<NAME>_<etype>_e` |
+| `import_hetero_graph_from_dgl_no_feat` | `AMAZONGATNE` | `<NAME>_<ntype>_v`、`<NAME>_<etype>_e` |
+| `import_hetero_graph_from_dgl_bgnn` | `AVAZU` | `<NAME>_<ntype>_v`、`<NAME>_<etype>_e` |
+| `import_graph_from_nx` | `CAVEMAN` | `<NAME>_vertex`、`<NAME>_edge` |
+| `import_graph_from_dgl_with_edge_feat` | `CORA`、`CITESEER`、`PUBMED` | `<NAME>_edge_feat_vertex`、`<NAME>_edge_feat_edge` |
+| `import_graph_from_ogb` | `ogbl-collab`，不做大写转换 | `<NAME>_vertex`、`<NAME>_edge` |
+| `import_split_edge_from_ogb` | `ogbl-collab`，不做大写转换 | `<NAME>_split_edge` |
+
+传入其他名称会抛出 `ValueError("dataset not supported")`。`import_split_edge_from_ogb` 还需要顶点导入返回的 `idx_to_vertex_id` 映射和 `max_nodes` 上限。
+
+`clear_all_data()` 会清空目标图中的全部点和边。测试 fixture 先调用它，再导入 `CORA`、`MUTAG` 和 `ACM`，结束时再次调用。
+
+`AMAZONGATNE` 和 `AVAZU` 不会自动下载，压缩包地址写在 `import_hetero_graph_from_dgl_no_feat` 和 `import_hetero_graph_from_dgl_bgnn` 上方的注释里。
+
+## 任务
+
+任务类位于 `hugegraph-ml/src/hugegraph_ml/tasks/`，均接收转换后的图和模型实例。
+
+| 类 | 模块 | 入口方法 |
+|---|---|---|
+| `NodeEmbed` | `node_embed.py` | `train_and_embed(add_self_loop=True, lr=1e-3, weight_decay=0, n_epochs=200, patience=inf, gpu=-1)`，返回 `ndata["feat"]` 被替换为嵌入结果的图 |
+| `NodeClassify` | `node_classify.py` | 先 `train(lr, weight_decay, n_epochs, patience, early_stopping_monitor, gpu)`，再 `evaluate()` 返回 `{"accuracy": ..., "loss": ...}` |
+| `NodeClassifyWithEdge` | `node_classify_with_edge.py` | 结构相同，适用于同时读取 `edata["feat"]` 的模型 |
+| `NodeClassifyWithSample` | `node_classify_with_sample.py` | 基于 `ClusterGCNSampler` 分区的训练，仅使用 CPU，没有 `gpu` 参数 |
+| `GraphClassify` | `graph_classify.py` | `train(batch_size=20, lr, weight_decay, n_epochs, patience, early_stopping_monitor, clip=2.0, gpu)`，在 `HugeGraphDataset` 上按 70/20/10 划分 |
+| `DetectorCaregnn` | `fraud_detector_caregnn.py` | CARE-GNN 训练，`evaluate()` 输出 recall 和 ROC AUC，并读取 `ndata["feature"]` 而非 `ndata["feat"]` |
+| `HeteroSampleEmbedGATNE` | `hetero_sample_embed_gatne.py` | `train_and_embed(lr=1e-3, n_epochs=200, gpu=-1)` |
+| `LinkPredictionPGNN` | `link_prediction_pgnn.py` | `train(lr, weight_decay, n_epochs, gpu)` |
+| `LinkPredictionSeal` | `link_prediction_seal.py` | 构造函数内部已调用 `data_prepare()`，随后执行 `train(lr=1e-3, n_epochs=200, gpu=-1)` |
+
+`patience` 默认值为 `float("inf")`。`utils/early_stopping.py` 中的 `EarlyStopping` 可以监控 `loss` 或 `accuracy`，保存最优权重并在训练结束时恢复。
+
+## 可运行示例
+
+脚本位于 `hugegraph-ml/src/hugegraph_ml/examples/`。在 `hugegraph-ml/src` 目录下执行：
+
+```bash
+python ./hugegraph_ml/examples/dgi_example.py
+```
+
+每个脚本同时提供同名函数，可以导入后用较小的 epoch 数调用。
+
+| 脚本 | 模型 | 任务 | 读取的标签 |
+|---|---|---|---|
+| `agnn_example.py` | `AGNN` | `NodeClassify` | `CORA_vertex`、`CORA_edge` |
+| `appnp_example.py` | `APPNP` | `NodeClassify` | `CORA_vertex`、`CORA_edge` |
+| `arma_example.py` | `ARMA4NC` | `NodeClassify` | `CORA_vertex`、`CORA_edge` |
+| `bgnn_example.py` | `BGNNPredictor` | 模型自带的 `fit()` | `AVAZU__N_v`、`AVAZU__E_e` |
+| `bgrl_example.py` | `BGRL` | `NodeEmbed`、`NodeClassify` | `CORA_vertex`、`CORA_edge` |
+| `care_gnn_example.py` | `CAREGNN` | `DetectorCaregnn` | `AMAZON_user_v` 以及 `AMAZON_net_upu_e`、`AMAZON_net_usu_e`、`AMAZON_net_uvu_e` |
+| `cluster_gcn_example.py` | `SAGE` | `NodeClassifyWithSample` | `CORA_vertex`、`CORA_edge` |
+| `correct_and_smooth_example.py` | `correct_and_smooth` 中的 `MLP` | `NodeClassify` | `CORA_vertex`、`CORA_edge` |
+| `dagnn_example.py` | `DAGNN` | `NodeClassify` | `CORA_vertex`、`CORA_edge` |
+| `deepergcn_example.py` | `DeeperGCN` | `NodeClassifyWithEdge` | 通过 `convert_graph_with_edge_feat` 读取 `CORA_vertex`、`CORA_edge` |
+| `dgi_example.py` | `DGI` | `NodeEmbed`、`NodeClassify` | `CORA_vertex`、`CORA_edge` |
+| `diffpool_example.py` | `DiffPool` | `GraphClassify` | `MUTAG_graph_vertex`、`MUTAG_vertex`、`MUTAG_edge` |
+| `gatne_example.py` | `DGLGATNE` | `HeteroSampleEmbedGATNE` | `AMAZONGATNE__N_v`、`AMAZONGATNE_1_e`、`AMAZONGATNE_2_e` |
+| `gin_example.py` | `GIN` | `GraphClassify` | `MUTAG_graph_vertex`、`MUTAG_vertex`、`MUTAG_edge` |
+| `grace_example.py` | `GRACE` | `NodeEmbed`、`NodeClassify` | `CORA_vertex`、`CORA_edge` |
+| `grand_example.py` | `GRAND` | `NodeClassify` | `CORA_vertex`、`CORA_edge` |
+| `jknet_example.py` | `JKNet` | `NodeClassify` | `CORA_vertex`、`CORA_edge` |
+| `pgnn_example.py` | `PGNN` | `LinkPredictionPGNN` | `CAVEMAN_vertex`、`CAVEMAN_edge` |
+| `seal_example.py` | `DGCNN` | `LinkPredictionSeal` | `ogbl-collab_vertex`、`ogbl-collab_edge`、`ogbl-collab_split_edge` |
+
+## DGI 节点嵌入示例
+
+先把 DGL 的 Cora 数据集导入 HugeGraph。数据集名会先转为大写，因此 `cora` 和 `CORA` 都会生成 `CORA_vertex` 和 `CORA_edge` 标签：
 
 ```python
+from hugegraph_ml.utils.dgl2hugegraph_utils import import_graph_from_dgl
+
+import_graph_from_dgl("cora")
+```
+
+读取图并训练 DGI：
+
+```python
+from hugegraph_ml.data.hugegraph2dgl import HugeGraph2DGL
+from hugegraph_ml.models.dgi import DGI
 from hugegraph_ml.models.mlp import MLPClassifier
 from hugegraph_ml.tasks.node_classify import NodeClassify
+from hugegraph_ml.tasks.node_embed import NodeEmbed
 
-# 使用嵌入进行节点分类
-model = MLPClassifier(
-    n_in_feat=embedded_graph.ndata["feat"].shape[1],
-    n_out_feat=embedded_graph.ndata["label"].unique().shape[0]
+hg2d = HugeGraph2DGL()
+graph = hg2d.convert_graph(
+    vertex_label="CORA_vertex",
+    edge_label="CORA_edge",
 )
-node_clf_task = NodeClassify(graph=embedded_graph, model=model)
-node_clf_task.train(lr=1e-3, n_epochs=400, patience=40)
-print(node_clf_task.evaluate())
+
+embed_model = DGI(n_in_feats=graph.ndata["feat"].shape[1])
+embed_task = NodeEmbed(graph=graph, model=embed_model)
+embedded_graph = embed_task.train_and_embed(
+    add_self_loop=True,
+    n_epochs=300,
+    patience=30,
+)
+
+classifier = MLPClassifier(
+    n_in_feat=embedded_graph.ndata["feat"].shape[1],
+    n_out_feat=embedded_graph.ndata["label"].unique().shape[0],
+)
+classify_task = NodeClassify(graph=embedded_graph, model=classifier)
+classify_task.train(lr=1e-3, n_epochs=400, patience=40)
+print(classify_task.evaluate())
 ```
 
-**预期输出：**
-```python
-{'accuracy': 0.82, 'loss': 0.5714246034622192}
-```
+`evaluate()` 返回类似 `{'accuracy': 0.82, 'loss': 0.5714246034622192}` 的字典。完整脚本是 `hugegraph-ml/src/hugegraph_ml/examples/dgi_example.py`。
 
-**完整示例**：参见 [dgi_example.py](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/dgi_example.py)
-
-### 示例 2：使用 GRAND 进行节点分类
-
-使用 GRAND 模型直接对节点进行分类（无需单独的嵌入步骤）。
+## GRAND 节点分类示例
 
 ```python
 from hugegraph_ml.data.hugegraph2dgl import HugeGraph2DGL
 from hugegraph_ml.models.grand import GRAND
 from hugegraph_ml.tasks.node_classify import NodeClassify
 
-# 加载图
-hg2d = HugeGraph2DGL()
-graph = hg2d.convert_graph(vertex_label="CORA_vertex", edge_label="CORA_edge")
-
-# 初始化 GRAND 模型
-model = GRAND(
-    n_in_feats=graph.ndata["feat"].shape[1],
-    n_out_feats=graph.ndata["label"].unique().shape[0]
-)
-
-# 训练和评估
-node_clf_task = NodeClassify(graph=graph, model=model)
-node_clf_task.train(lr=1e-2, n_epochs=1500, patience=100)
-print(node_clf_task.evaluate())
-```
-
-**完整示例**：参见 [grand_example.py](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/src/hugegraph_ml/examples/grand_example.py)
-
-## 核心组件
-
-### HugeGraph2DGL 转换器
-
-无缝将 HugeGraph 数据转换为 DGL 图格式：
-
-```python
-from hugegraph_ml.data.hugegraph2dgl import HugeGraph2DGL
-
 hg2d = HugeGraph2DGL()
 graph = hg2d.convert_graph(
-    vertex_label="person",      # 要提取的顶点标签
-    edge_label="knows",         # 要提取的边标签
-    directed=False              # 图的方向性
+    vertex_label="CORA_vertex",
+    edge_label="CORA_edge",
 )
+model = GRAND(
+    n_in_feats=graph.ndata["feat"].shape[1],
+    n_out_feats=graph.ndata["label"].unique().shape[0],
+)
+task = NodeClassify(graph, model)
+task.train(lr=1e-2, weight_decay=5e-4, n_epochs=2000, patience=100)
+print(task.evaluate())
 ```
 
-### 任务抽象
+GRAND 每次增强采样都会返回一组 logits，`NodeClassify` 会对列表中的每个元素分别应用掩码后再计算损失。完整脚本是 `hugegraph-ml/src/hugegraph_ml/examples/grand_example.py`。
 
-用于常见 ML 工作流的可复用任务对象：
+## 排查问题
 
-| 任务 | 类 | 用途 |
-|-----|-----|------|
-| 节点嵌入 | `NodeEmbed` | 生成无监督节点嵌入 |
-| 节点分类 | `NodeClassify` | 预测节点标签 |
-| 图分类 | `GraphClassify` | 预测图级标签 |
-| 链接预测 | `LinkPredict` | 预测缺失边 |
+- 连接失败：检查 HugeGraph Server 地址、端口和认证信息。
+- Schema 不匹配：示例默认使用 `CORA_vertex` 和 `CORA_edge`，自有数据需要传入实际标签。
+- `ValueError: Graph is missing required node attribute ...`：节点分类任务需要 `ndata` 中包含 `feat`、`label`、`train_mask`、`val_mask` 和 `test_mask`。请导入带掩码的数据集，或给 `convert_graph` 传入自定义的 `mask_keys`。
+- `ValueError: dataset not supported`：导入函数只接受上表列出的名称，且 `import_graph_from_ogb` 匹配 `ogbl-collab` 时不做大写转换。
+- DGL 或 PyTorch 导入失败：回到仓库根目录重新执行 `uv sync --extra ml`，并确认当前 Python 来自根目录 `.venv`。
+- `bgrl_example.py` 目前在导入阶段就会失败：它从 `hugegraph_ml.models.bgrl` 导入 `MLP_Predictor`，而该模块中的类名是 `MLPPredictor`。
+- `care_gnn_example.py` 读取 `AMAZON_user_v` 和三个 `AMAZON_net_*_e` 边标签，仓库内没有对应的导入函数，需要自行准备该数据集后再运行。
 
-## 最佳实践
+---
 
-1. **从小数据集开始**：在扩展之前先在小图（例如 Cora、Citeseer）上测试您的流程
-2. **使用早停**：设置 `patience` 参数以避免过拟合
-3. **调整超参数**：根据数据集大小调整学习率、隐藏维度和周期数
-4. **监控 GPU 内存**：大图可能需要批量训练（例如 Cluster-GCN）
-5. **验证 Schema**：确保顶点/边标签与您的 HugeGraph schema 匹配
+反链：
 
-## 故障排除
-
-| 问题 | 解决方案 |
-|-----|---------|
-| 连接 HugeGraph "Connection refused" | 验证服务器是否在 8080 端口运行 |
-| CUDA 内存不足 | 减少批大小或使用仅 CPU 模式 |
-| 模型收敛问题 | 尝试不同的学习率（1e-2、1e-3、1e-4） |
-| DGL 的 ImportError | 运行 `uv sync` 重新安装依赖 |
-
-## 贡献
-
-添加新算法：
-
-1. 在 `src/hugegraph_ml/models/your_model.py` 创建模型文件
-2. 继承基础模型类并实现 `forward()` 方法
-3. 在 `src/hugegraph_ml/examples/` 添加示例脚本
-4. 更新此文档并添加算法详情
-
-## 另见
-
-- [HugeGraph-AI 概述](../_index.md) - 完整 AI 生态系统
-- [HugeGraph-LLM](./hugegraph-llm.md) - RAG 和知识图谱构建
-- [GitHub 仓库](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml) - 源代码和示例
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)

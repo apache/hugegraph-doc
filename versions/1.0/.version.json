@@ -1,0 +1,37 @@
+{
+  "archived": true,
+  "baseURL": "https://hugegraph-oink.staged.apache.org/versions/1.0/",
+  "docsNavigation": {
+    "groups": 5,
+    "pages": 59,
+    "removed": 21,
+    "scopedLinks": 10,
+    "treeSha256": "bd45db511d9b6728e1523bd3c5ebd9d18912ee85aeabf79c77bcca7e511f977a"
+  },
+  "githubBranch": "release-1.0.0",
+  "historicalNoindexPages": 189,
+  "historicalRouteAliases": 14,
+  "historicalSitemapsRemoved": 3,
+  "id": "1.0",
+  "migration": {
+    "changed": 0,
+    "files": 158,
+    "findings": 0,
+    "knownFixes": 72,
+    "residual": 0,
+    "routeMigrations": 22
+  },
+  "name": "1.0",
+  "nonEquivalentHreflangRemoved": 15,
+  "publishPath": "versions/1.0",
+  "ref": "release-1.0.0",
+  "sha": "b787a1f379511282b55933a05cb2daf693b9c388",
+  "urlScoping": {
+    "files": 324,
+    "historicalHomeRedirects": 2,
+    "manifests": 176,
+    "searchFingerprints": 2,
+    "searchRefs": 114,
+    "urls": 1396
+  }
+}

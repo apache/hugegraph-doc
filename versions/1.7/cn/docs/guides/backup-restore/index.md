@@ -105,7 +105,7 @@ Restore 时存在两种不同的模式： Restoring 和 Merging，另外，还�
 ###### Method & Url
 
 ```
-GET http://localhost:8080/graphs/{graph}/mode
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 ```
 
 ###### Response Status
@@ -129,7 +129,7 @@ GET http://localhost:8080/graphs/{graph}/mode
 ###### Method & Url
 
 ```
-PUT http://localhost:8080/graphs/{graph}/mode
+PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 ```
 
 ###### Request Body

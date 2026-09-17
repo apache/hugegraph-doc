@@ -1,5 +1,7 @@
 # 社区
 
+
+
 ## 加入 Apache HugeGraph 社区
 
 Apache HugeGraph 是一个开放的开源项目，社区中的每个人都可以使用、改进并从中受益。欢迎加入我们，通过以下方式了解项目动态并参与社区。
@@ -27,6 +29,38 @@ Apache HugeGraph 是一个开放的开源项目，社区中的每个人都可以
 - [安全策略](/cn/docs/guides/security/) — 了解项目的安全问题报告流程。
 - [贡献指南](/cn/docs/contribution-guidelines/) — 了解如何贡献代码和文档。
 
+## 项目成员
+
+Apache HugeGraph 当前的 PMC 成员与 Committers，数据来自 ASF 公开记录。
+
+### PMC
+
+- [jermy](https://people.apache.org/phonebook.html?uid=jermy) — 主席
+- [zhaocong](https://people.apache.org/phonebook.html?uid=zhaocong)
+- [jin](https://people.apache.org/phonebook.html?uid=jin)
+- [panjuan](https://people.apache.org/phonebook.html?uid=panjuan)
+- [lidongdai](https://people.apache.org/phonebook.html?uid=lidongdai)
+- [linary](https://people.apache.org/phonebook.html?uid=linary)
+- [ming](https://people.apache.org/phonebook.html?uid=ming)
+- [ningjiang](https://people.apache.org/phonebook.html?uid=ningjiang)
+- [hxd](https://people.apache.org/phonebook.html?uid=hxd)
+- [vaughn](https://people.apache.org/phonebook.html?uid=vaughn)
+- [liyu](https://people.apache.org/phonebook.html?uid=liyu)
+- [vgalaxies](https://people.apache.org/phonebook.html?uid=vgalaxies)
+
+
+### Committers
+
+- [yangjiaqi](https://people.apache.org/phonebook.html?uid=yangjiaqi)
+- [jsong010123](https://people.apache.org/phonebook.html?uid=jsong010123)
+- [wangjing](https://people.apache.org/phonebook.html?uid=wangjing)
+- [pengjunzhi](https://people.apache.org/phonebook.html?uid=pengjunzhi)
+- [vichayturen](https://people.apache.org/phonebook.html?uid=vichayturen)
+- [leizou](https://people.apache.org/phonebook.html?uid=leizou)
+- [guoshoujing](https://people.apache.org/phonebook.html?uid=guoshoujing)
+- [liuxiaocs](https://people.apache.org/phonebook.html?uid=liuxiaocs)
+- [zhangyi89817](https://people.apache.org/phonebook.html?uid=zhangyi89817)
+- [spica](https://people.apache.org/phonebook.html?uid=spica)
 
 ## 了解项目运作方式
 

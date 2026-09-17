@@ -1,4 +1,4 @@
-# HugeGraph Config Options
+# Server Complete Configuration Manual
 
 LLMS index: [llms.txt](/versions/1.7/llms.txt)
 
@@ -12,10 +12,10 @@ Corresponding configuration file `gremlin-server.yaml`
 |-------------------------|--------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
 | host                    | 127.0.0.1                                                                                                    | The host or ip of Gremlin Server.                                               |
 | port                    | 8182                                                                                                         | The listening port of Gremlin Server.                                           |
-| graphs                  | hugegraph: conf/hugegraph.properties                                                                         | The map of graphs with name and config file path.                               |
-| scriptEvaluationTimeout | 30000                                                                                                        | The timeout for gremlin script execution(millisecond).                          |
-| channelizer             | org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer                                                  | Indicates the protocol which the Gremlin Server provides service.               |
-| authentication          | authenticator: org.apache.hugegraph.auth.StandardAuthenticator, config: {tokens: conf/rest-server.properties} | The authenticator and config(contains tokens path) of authentication mechanism. |
+| graphs                  | {}                                                                                                           | Graphs are loaded dynamically by the Server; do not configure them here.        |
+| evaluationTimeout       | 30000                                                                                                        | Gremlin script evaluation timeout in milliseconds.                              |
+| channelizer             | org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer                                             | Handles both WebSocket and HTTP requests.                                       |
+| authentication          | Not configured                                                                                               | When enabling authentication, configure the authenticator, handler, and path to `rest-server.properties`. |
 
 ### Rest Server & API Config Options
 
@@ -23,12 +23,13 @@ Corresponding configuration file `rest-server.properties`
 
 | config option                      | default value                                    | description                                                                                                                                                                                                   |
 |------------------------------------|--------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| graphs                             | [hugegraph:conf/hugegraph.properties]            | The map of graphs' name and config file.                                                                                                                                                                      |
-| server.id                          | server-1                                         | The id of rest server, used for license verification.                                                                                                                                                         |
+| graphs                             | ./conf/graphs                                    | Directory containing graph configuration properties files.                                                                                                                                                    |
+| graph.load_from_local_config       | false                                            | Whether to read the `graphs` directory when the Server starts; set to `true` when using local graph configuration.                                                                                            |
+| server.id                          | Empty string                                     | The id of rest server, used for license verification.                                                                                                                                                         |
 | server.role                        | master                                           | The role of nodes in the cluster, available types are [master, worker, computer]                                                                                                                              |
 | restserver.url                     | http://127.0.0.1:8080                            | The url for listening of rest server.                                                                                                                                                                         |
-| ssl.keystore_file                  | server.keystore                                  | The path of server keystore file used when https protocol is enabled.                                                                                                                                         |
-| ssl.keystore_password              |                                                  | The password of the path of the server keystore file used when the https protocol is enabled.                                                                                                                 |
+| ssl.keystore_file                  | conf/hugegraph-server.keystore                   | The path of server keystore file used when https protocol is enabled.                                                                                                                                         |
+| ssl.keystore_password              | hugegraph                                        | The password of the server keystore file used when the https protocol is enabled.                                                                                                                             |
 | restserver.max_worker_threads      | 2 * CPUs                                         | The maximum worker threads of rest server.                                                                                                                                                                    |
 | restserver.min_free_memory         | 64                                               | The minimum free memory(MB) of rest server, requests will be rejected when the available memory of system is lower than this value.                                                                           |
 | restserver.request_timeout         | 30                                               | The time in seconds within which a request must complete, -1 means no timeout.                                                                                                                                |
@@ -37,21 +38,34 @@ Corresponding configuration file `rest-server.properties`
 | gremlinserver.url                  | http://127.0.0.1:8182                            | The url of gremlin server.                                                                                                                                                                                    |
 | gremlinserver.max_route            | 8                                                | The max route number for gremlin server.                                                                                                                                                                      |
 | gremlinserver.timeout              | 30                                               | The timeout in seconds of waiting for gremlin server.                                                                                                                                                         |
-| batch.max_edges_per_batch          | 500                                              | The maximum number of edges submitted per batch.                                                                                                                                                              |
-| batch.max_vertices_per_batch       | 500                                              | The maximum number of vertices submitted per batch.                                                                                                                                                           |
-| batch.max_write_ratio              | 50                                               | The maximum thread ratio for batch writing, only take effect if the batch.max_write_threads is 0.                                                                                                             |
+| batch.max_edges_per_batch          | 2500                                             | The maximum number of edges submitted per batch.                                                                                                                                                              |
+| batch.max_vertices_per_batch       | 2500                                             | The maximum number of vertices submitted per batch.                                                                                                                                                           |
+| batch.max_write_ratio              | 70                                               | The maximum thread ratio for batch writing, only take effect if the batch.max_write_threads is 0.                                                                                                             |
 | batch.max_write_threads            | 0                                                | The maximum threads for batch writing, if the value is 0, the actual value will be set to batch.max_write_ratio * restserver.max_worker_threads.                                                              |
 | auth.authenticator                 |                                                  | The class path of authenticator implementation. e.g., org.apache.hugegraph.auth.StandardAuthenticator, or a custom implementation.                                                        |
 | auth.graph_store                   | hugegraph                                        | The name of graph used to store authentication information, like users, only for org.apache.hugegraph.auth.StandardAuthenticator.                                                                              |
+| auth.admin_pa                      | pa                                               | Initial password for the built-in admin user in PD mode. It only applies when the user is first created and must be changed before deployment.                                                                 |
 | auth.audit_log_rate                | 1000.0                                           | The max rate of audit log output per user, default value is 1000 records per second.                                                                                                                          |
 | auth.cache_capacity                | 10240                                            | The max cache capacity of each auth cache item.                                                                                                                                                               |
 | auth.cache_expire                  | 600                                              | The expiration time in seconds of vertex cache.                                                                                                                                                               |
 | auth.remote_url                    |                                                  | If the address is empty, it provide auth service, otherwise it is auth client and also provide auth service through rpc forwarding. The remote url can be set to multiple addresses, which are concat by ','. |
 | auth.token_expire                  | 86400                                            | The expiration time in seconds after token created                                                                                                                                                            |
-| auth.token_secret                  | FXQXbJtbCLxODc6tGci732pkH1cyf8Qg                 | Secret key of HS256 algorithm.                                                                                                                                                                                |
-| exception.allow_trace              | false                                            | Whether to allow exception trace stack.                                                                                                                                                                       |
-| memory_monitor.threshold           | 0.85                                             | The threshold of JVM(in-heap) memory usage monitoring , 1 means disabling this function.                                                                                                                      |                                                                                                                                     
+| auth.token_secret                  | Randomly generated at startup                    | HS256 secret; configure it explicitly if existing tokens must remain valid across restarts.                                                                                                                   |
+| exception.allow_trace              | true                                             | Whether to allow exception trace stack.                                                                                                                                                                       |
+| memory_monitor.threshold           | 0.85                                             | The threshold of JVM(in-heap) memory usage monitoring , 1 means disabling this function.                                                                                                                      |
 | memory_monitor.period              | 2000                                             | The period in ms of JVM(in-heap) memory usage monitoring.                                                                                                                                                     |
+| log.slow_query_threshold           | 1000                                             | Slow query log threshold in milliseconds, 0 means disabled.                                                                                                                                                   |
+| log.slow_query_body_limit          | 512                                              | Maximum bytes of a request body recorded in the slow query log, 0 means disabled. The recorded prefix may contain sensitive Gremlin or Cypher literals.                                                       |
+
+### PD/Meta Config Options (Distributed Mode)
+
+Corresponding configuration file `rest-server.properties`
+
+| config option    | default value          | description                                |
+|------------------|------------------------|--------------------------------------------|
+| pd.peers         | 127.0.0.1:8686         | PD server addresses (comma separated).     |
+| meta.endpoints   | http://127.0.0.1:2379  | Meta service endpoints.                    |
+| usePD            | false                   | Whether to use PD to manage distributed metadata. |
 
 ### Basic Config Options
 
@@ -60,7 +74,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | config option                         | default value                                | description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 |---------------------------------------|----------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | gremlin.graph                         | org.apache.hugegraph.HugeFactory              | Gremlin entrance to create graph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| backend                               | rocksdb                                      | The data store type, available values are [memory, rocksdb, cassandra, scylladb, hbase, mysql].                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| backend                               | rocksdb                                      | The data store type. For version 1.7.0+: [memory, rocksdb, hstore, hbase]. Note: cassandra, scylladb, mysql, postgresql were removed in 1.7.0 (use <= 1.5.x for legacy backends).                                                                                                                                                                                                                                                                                                                                                                                                              |
 | serializer                            | binary                                       | The serializer for backend store, available values are [text, binary, cassandra, hbase, mysql].                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | store                                 | hugegraph                                    | The database name like Cassandra Keyspace.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | store.connection_detect_interval      | 600                                          | The interval in seconds for detecting connections, if the idle time of a connection exceeds this value, detect it and reconnect if needed before using, value 0 means detecting every time.                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -129,51 +143,6 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | raft.rpc_buf_high_water_mark          | 20971520                                     | The ChannelOutboundBuffer's high water mark of netty, only when buffer size exceed this size, the method ChannelOutboundBuffer.isWritable() will return false, it means that the downstream pressure is too great to process the request or network is very congestion, upstream needs to limit rate at this time.                                                                                                                                                                                                                                                                               |
 | raft.read_strategy                    | ReadOnlyLeaseBased                           | The linearizability of read strategy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
-### RPC server Config Options
-
-| config option               | default value                           | description                                                                                                                                                                                                   |
-|-----------------------------|-----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| rpc.client_connect_timeout  | 20                                      | The timeout(in seconds) of rpc client connect to rpc server.                                                                                                                                                  |
-| rpc.client_load_balancer    | consistentHash                          | The rpc client uses a load-balancing algorithm to access multiple rpc servers in one cluster. Default value is 'consistentHash', means forwarding by request parameters.                                      |
-| rpc.client_read_timeout     | 40                                      | The timeout(in seconds) of rpc client read from rpc server.                                                                                                                                                   |
-| rpc.client_reconnect_period | 10                                      | The period(in seconds) of rpc client reconnect to rpc server.                                                                                                                                                 |
-| rpc.client_retries          | 3                                       | Failed retry number of rpc client calls to rpc server.                                                                                                                                                        |
-| rpc.config_order            | 999                                     | Sofa rpc configuration file loading order, the larger the more later loading.                                                                                                                                 |
-| rpc.logger_impl             | com.alipay.sofa.rpc.log.SLF4JLoggerImpl | Sofa rpc log implementation class.                                                                                                                                                                            |
-| rpc.protocol                | bolt                                    | Rpc communication protocol, client and server need to be specified the same value.                                                                                                                            |
-| rpc.remote_url              |                                         | The remote urls of rpc peers, it can be set to multiple addresses, which are concat by ',', empty value means not enabled.                                                                                    |
-| rpc.server_adaptive_port    | false                                   | Whether the bound port is adaptive, if it's enabled, when the port is in use, automatically +1 to detect the next available port. Note that this process is not atomic, so there may still be port conflicts. |
-| rpc.server_host             |                                         | The hosts/ips bound by rpc server to provide services, empty value means not enabled.                                                                                                                         |
-| rpc.server_port             | 8090                                    | The port bound by rpc server to provide services.                                                                                                                                                             |
-| rpc.server_timeout          | 30                                      | The timeout(in seconds) of rpc server execution.                                                                                                                                                              |
-
-### Cassandra Backend Config Options
-
-| config option                  | default value  | description                                                                                                                                    |
-|--------------------------------|----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| backend                        |                | Must be set to `cassandra`.                                                                                                                    |
-| serializer                     |                | Must be set to `cassandra`.                                                                                                                    |
-| cassandra.host                 | localhost      | The seeds hostname or ip address of cassandra cluster.                                                                                         |
-| cassandra.port                 | 9042           | The seeds port address of cassandra cluster.                                                                                                   |
-| cassandra.connect_timeout      | 5              | The cassandra driver connect server timeout(seconds).                                                                                          |
-| cassandra.read_timeout         | 20             | The cassandra driver read from server timeout(seconds).                                                                                        |
-| cassandra.keyspace.strategy    | SimpleStrategy | The replication strategy of keyspace, valid value is SimpleStrategy or NetworkTopologyStrategy.                                                |
-| cassandra.keyspace.replication | [3]            | The keyspace replication factor of SimpleStrategy, like '[3]'.Or replicas in each datacenter of NetworkTopologyStrategy, like '[dc1:2,dc2:1]'. |
-| cassandra.username             |                | The username to use to login to cassandra cluster.                                                                                             |
-| cassandra.password             |                | The password corresponding to cassandra.username.                                                                                              |
-| cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
-| cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
-| cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
-
-### ScyllaDB Backend Config Options
-
-| config option | default value | description                |
-|---------------|---------------|----------------------------|
-| backend       |               | Must be set to `scylladb`. |
-| serializer    |               | Must be set to `scylladb`. |
-
-Other options are consistent with the Cassandra backend.
-
 ### RocksDB Backend Config Options
 
 | config option                                   | default value                                                                                                                        | description                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -230,52 +199,100 @@ Other options are consistent with the Cassandra backend.
 | rocksdb.level0_stop_writes_trigger              | 36                                                                                                                                   | Hard limit on number of level-0 files for stopping writes.                                                                                                                                                                                                                                                                                                                                            |
 | rocksdb.soft_pending_compaction_bytes_limit     | 68719476736                                                                                                                          | The soft limit to impose on pending compaction in bytes.                                                                                                                                                                                                                                                                                                                                              |
 
-### HBase Backend Config Options
+> [!DETAILS]- **K8s Config Options (Optional)**
+> Corresponding configuration file `rest-server.properties`
+>
+> | config option    | default value                 | description                              |
+> |------------------|-------------------------------|------------------------------------------|
+> | server.use_k8s   | false                         | Whether to enable K8s multi-tenancy mode. |
+> | k8s.namespace    | hugegraph-computer-system     | K8s namespace for compute jobs.          |
+> | k8s.kubeconfig   |                               | Path to kubeconfig file.                 |
 
-| config option             | default value                  | description                                                              |
-|---------------------------|--------------------------------|--------------------------------------------------------------------------|
-| backend                   |                                | Must be set to `hbase`.                                                  |
-| serializer                |                                | Must be set to `hbase`.                                                  |
-| hbase.hosts               | localhost                      | The hostnames or ip addresses of HBase zookeeper, separated with commas. |
-| hbase.port                | 2181                           | The port address of HBase zookeeper.                                     |
-| hbase.threads_max         | 64                             | The max threads num of hbase connections.                                |
-| hbase.znode_parent        | /hbase                         | The znode parent path of HBase zookeeper.                                |
-| hbase.zk_retry            | 3                              | The recovery retry times of HBase zookeeper.                             |
-| hbase.aggregation_timeout | 43200                          | The timeout in seconds of waiting for aggregation.                       |
-| hbase.kerberos_enable     | false                          | Is Kerberos authentication enabled for HBase.                            |
-| hbase.kerberos_keytab     |                                | The HBase's key tab file for kerberos authentication.                    |
-| hbase.kerberos_principal  |                                | The HBase's principal for kerberos authentication.                       |
-| hbase.krb5_conf           | etc/krb5.conf                  | Kerberos configuration file, including KDC IP, default realm, etc.       |
-| hbase.hbase_site          | /etc/hbase/conf/hbase-site.xml | The HBase's configuration file                                           |
-| hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
-| hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
-| hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
+> [!DETAILS]- **Arthas Diagnostic Config Options (Optional)**
+> Corresponding configuration file `rest-server.properties`
+>
+> | config option      | default value | description           |
+> |--------------------|---------------|-----------------------|
+> | arthas.telnetPort  | 8562          | Arthas telnet port.   |
+> | arthas.httpPort    | 8561          | Arthas HTTP port.     |
+> | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
+> | arthas.disabledCommands | jad      | Disabled Arthas commands, separated by commas. |
 
-### MySQL & PostgreSQL Backend Config Options
+> [!DETAILS]- **HBase Backend Config Options**
+> | config option             | default value                  | description                                                              |
+> |---------------------------|--------------------------------|--------------------------------------------------------------------------|
+> | backend                   |                                | Must be set to `hbase`.                                                  |
+> | serializer                |                                | Must be set to `hbase`.                                                  |
+> | hbase.hosts               | localhost                      | The hostnames or ip addresses of HBase zookeeper, separated with commas. |
+> | hbase.port                | 2181                           | The port address of HBase zookeeper.                                     |
+> | hbase.threads_max         | 64                             | The max threads num of hbase connections.                                |
+> | hbase.znode_parent        | /hbase                         | The znode parent path of HBase zookeeper.                                |
+> | hbase.zk_retry            | 3                              | The recovery retry times of HBase zookeeper.                             |
+> | hbase.aggregation_timeout | 43200                          | The timeout in seconds of waiting for aggregation.                       |
+> | hbase.kerberos_enable     | false                          | Is Kerberos authentication enabled for HBase.                            |
+> | hbase.kerberos_keytab     |                                | The HBase's key tab file for kerberos authentication.                    |
+> | hbase.kerberos_principal  |                                | The HBase's principal for kerberos authentication.                       |
+> | hbase.krb5_conf           | etc/krb5.conf                  | Kerberos configuration file, including KDC IP, default realm, etc.       |
+> | hbase.hbase_site          | /etc/hbase/conf/hbase-site.xml | The HBase's configuration file                                           |
+> | hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
+> | hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
+> | hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
 
-| config option                    | default value               | description                                                                         |
-|----------------------------------|-----------------------------|-------------------------------------------------------------------------------------|
-| backend                          |                             | Must be set to `mysql`.                                                             |
-| serializer                       |                             | Must be set to `mysql`.                                                             |
-| jdbc.driver                      | com.mysql.jdbc.Driver       | The JDBC driver class to connect database.                                          |
-| jdbc.url                         | jdbc:mysql://127.0.0.1:3306 | The url of database in JDBC format.                                                 |
-| jdbc.username                    | root                        | The username to login database.                                                     |
-| jdbc.password                    | ******                      | The password corresponding to jdbc.username.                                        |
-| jdbc.ssl_mode                    | false                       | The SSL mode of connections with database.                                          |
-| jdbc.reconnect_interval          | 3                           | The interval(seconds) between reconnections when the database connection fails.     |
-| jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
-| jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
-| jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
 
-### PostgreSQL Backend Config Options
+---
 
-| config option | default value | description                  |
-|---------------|---------------|------------------------------|
-| backend       |               | Must be set to `postgresql`. |
-| serializer    |               | Must be set to `postgresql`. |
+## ≤ 1.5 Version Config (Legacy)
 
-Other options are consistent with the MySQL backend.
+The following backend stores are no longer supported in version 1.7.0+ and are only available in version 1.5.x and earlier:
 
-> The driver and url of the PostgreSQL backend should be set to:
-> - `jdbc.driver=org.postgresql.Driver`
-> - `jdbc.url=jdbc:postgresql://localhost:5432/`
+> [!DETAILS]- **Cassandra Backend Config Options**
+> | config option                  | default value  | description                                                                                                                                    |
+> |--------------------------------|----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+> | backend                        |                | Must be set to `cassandra`.                                                                                                                    |
+> | serializer                     |                | Must be set to `cassandra`.                                                                                                                    |
+> | cassandra.host                 | localhost      | The seeds hostname or ip address of cassandra cluster.                                                                                         |
+> | cassandra.port                 | 9042           | The seeds port address of cassandra cluster.                                                                                                   |
+> | cassandra.connect_timeout      | 5              | The cassandra driver connect server timeout(seconds).                                                                                          |
+> | cassandra.read_timeout         | 20             | The cassandra driver read from server timeout(seconds).                                                                                        |
+> | cassandra.keyspace.strategy    | SimpleStrategy | The replication strategy of keyspace, valid value is SimpleStrategy or NetworkTopologyStrategy.                                                |
+> | cassandra.keyspace.replication | [3]            | The keyspace replication factor of SimpleStrategy, like '[3]'.Or replicas in each datacenter of NetworkTopologyStrategy, like '[dc1:2,dc2:1]'. |
+> | cassandra.username             |                | The username to use to login to cassandra cluster.                                                                                             |
+> | cassandra.password             |                | The password corresponding to cassandra.username.                                                                                              |
+> | cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
+> | cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
+> | cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
+
+> [!DETAILS]- **ScyllaDB Backend Config Options**
+> | config option | default value | description                |
+> |---------------|---------------|----------------------------|
+> | backend       |               | Must be set to `scylladb`. |
+> | serializer    |               | Must be set to `scylladb`. |
+>
+> Other options are consistent with the Cassandra backend.
+
+> [!DETAILS]- **MySQL & PostgreSQL Backend Config Options**
+> | config option                    | default value               | description                                                                         |
+> |----------------------------------|-----------------------------|-------------------------------------------------------------------------------------|
+> | backend                          |                             | Must be set to `mysql`.                                                             |
+> | serializer                       |                             | Must be set to `mysql`.                                                             |
+> | jdbc.driver                      | com.mysql.jdbc.Driver       | The JDBC driver class to connect database.                                          |
+> | jdbc.url                         | jdbc:mysql://127.0.0.1:3306 | The url of database in JDBC format.                                                 |
+> | jdbc.username                    | root                        | The username to login database.                                                     |
+> | jdbc.password                    | ******                      | The password corresponding to jdbc.username.                                        |
+> | jdbc.ssl_mode                    | false                       | The SSL mode of connections with database.                                          |
+> | jdbc.reconnect_interval          | 3                           | The interval(seconds) between reconnections when the database connection fails.     |
+> | jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
+> | jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
+> | jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
+
+> [!DETAILS]- **PostgreSQL Backend Config Options**
+> | config option | default value | description                  |
+> |---------------|---------------|------------------------------|
+> | backend       |               | Must be set to `postgresql`. |
+> | serializer    |               | Must be set to `postgresql`. |
+>
+> Other options are consistent with the MySQL backend.
+>
+> > The driver and url of the PostgreSQL backend should be set to:
+> > - `jdbc.driver=org.postgresql.Driver`
+> > - `jdbc.url=jdbc:postgresql://localhost:5432/`

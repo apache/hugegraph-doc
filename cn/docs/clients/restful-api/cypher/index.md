@@ -10,6 +10,8 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ### 9.1 Cypher
 
+> Cypher 接口必须携带 `Authorization` 请求头，`Basic` 或 `Bearer` 均可。即使服务未开启鉴权，不带该请求头的请求也会返回 `401`。凭证会通过 `conf/remote-objects.yaml` 转发给 Gremlin Server。
+
 #### 9.1.1 向 HugeGraphServer 发送 Cypher 语句（GET），同步执行
 
 ##### Method & Url
@@ -131,3 +133,9 @@ match(n:person) return n.name as name order by n.name limit 1
 
 
 ```
+
+---
+
+反链：
+
+- [查询语言](/cn/docs/language/)

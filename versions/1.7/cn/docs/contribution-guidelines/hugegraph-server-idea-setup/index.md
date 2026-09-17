@@ -128,7 +128,7 @@ public String list(@Context GraphManager manager,
 然后，使用 RESTful API 请求 `HugeGraphServer`：
 
 ```bash
-curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices" | gunzip
 ```
 
 此时，可以在调试器中查看详细的变量信息。

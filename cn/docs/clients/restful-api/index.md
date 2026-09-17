@@ -6,12 +6,12 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 > ⚠️ **版本兼容性说明**
 >
-> - HugeGraph 1.7.0+ 引入了图空间功能，API 路径格式为：`/graphspaces/{graphspace}/graphs/{graph}`
-> - HugeGraph 1.5.x 及之前版本使用旧路径：`/graphs/{graph}`, 以及创建/克隆图的 api 使用 text/plain 作为 Content-Type, 1.7.0 及之后使用 json
-> - 默认图空间名称为 `DEFAULT`,可直接使用
+> - 当前 API 的图资源路径以 `/graphspaces/{graphspace}/graphs/{graph}` 开头。
+> - HugeGraph 1.5.x 及更早版本使用 `/graphs/{graph}`。创建、克隆图等接口的请求格式也与当前版本不同。
+> - 默认图空间名是 `DEFAULT`。
 > - 旧版本 doc 参考：[HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
 
-除了下方的文档，你还可以通过 `localhost:8080/swagger-ui/index.html` 访问 `swagger-ui` 以查看 `RESTful API`。[示例可以参考此处](/cn/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example)
+Server 启动后，可访问 `http://localhost:8080/swagger-ui/index.html` 查看当前版本的 OpenAPI 页面。[使用示例](/cn/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example)
 
 [comment]: <> (- Graph Schema)
 
@@ -75,4 +75,11 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 - [Cypher API](/cn/docs/clients/restful-api/cypher/): Cypher（图查询语言）REST 接口:通过 HTTP 接口执行 OpenCypher 声明式图查询语言。
 - [Authentication API](/cn/docs/clients/restful-api/auth/): Authentication（认证鉴权）REST 接口:管理用户、角色、权限和访问控制,实现细粒度的图数据安全机制。
 - [Metrics API](/cn/docs/clients/restful-api/metrics/): Metrics（监控指标）REST 接口:获取系统运行时的性能指标、统计信息和健康状态数据。
-- [Other API](/cn/docs/clients/restful-api/other/): Other（其他接口）REST 接口:提供系统版本查询和 API 版本信息等辅助功能。
+- [Other API](/cn/docs/clients/restful-api/other/): Other（其他接口）REST 接口:提供版本查询、API 列表、异常堆栈开关、IP 白名单和 Arthas 诊断代理等辅助功能。
+
+---
+
+反链：
+
+- [系统介绍](/cn/docs/introduction/)
+- [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)

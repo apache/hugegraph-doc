@@ -43,3 +43,9 @@ The general process for handling security vulnerabilities is as follows:
 ### HugeGraph-Toolchain project (Hubble/Loader/Client/Tools/..)
 
 - [CVE-2024-27347](https://www.cve.org/CVERecord?id=CVE-2024-27347): HugeGraph-Hubble - SSRF in Hubble connection page
+
+---
+
+Backlinks:
+
+- [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)

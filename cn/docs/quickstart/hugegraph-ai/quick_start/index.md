@@ -1,252 +1,136 @@
-# GraphRAG UI Details
+# HugeGraph-LLM 使用流程
 
 LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-> 接续[主文档](../)介绍基础 UI 功能及详情，欢迎随时更新和改进，谢谢
+本文说明 HugeGraph-LLM Web 页面的处理流程。服务启动方式见 [HugeGraph-LLM](./hugegraph-llm.md)。
 
-# 1. 项目核心逻辑
+## 0. 配置面板
 
-## 构建 RAG 索引职责：
+标签页上方是可折叠的配置面板，共五个部分：`1. Set up the HugeGraph server.`、`2. Set up the LLM.`、`3. Set up the Embedding.`、`4. Set up the Reranker.` 和 `5. Set up the vector engine.`。每部分都有独立的应用按钮，应用后会把受支持的字段写回 `.env`。页面顶部还会显示当前提示词语言。
 
-- 文本分割和向量化
-- 从文本中提取图（构建知识图谱）并对顶点进行向量化
+## 1. 构建 RAG 索引
 
-## (Graph)RAG 和用户功能职责：
+第一个标签页负责两类索引：
 
-- 根据查询从构建的知识图谱和向量数据库中检索相关内容，用于补充提示词。
-
-# 2. （处理流程）构建 RAG 索引
-
-从文本构建知识图谱、分块向量和图顶点向量。
-
-![GraphRAG 索引构建流程](/images/docs/hugegraph-ai/quick-start-01.png)
+- 将文档切分后写入 chunk 向量索引。
+- 按 Schema 从文档抽取顶点和边，写入 HugeGraph，并维护顶点向量索引。
 
 ```mermaid
-graph TD;
-    A[原始文本] --> B[文本分割]
-    B --> C[向量化]
-    C --> D[存储到向量数据库]
-
-    A --> F[文本分割]
-    F --> G[LLM 基于 schema 和分割后的文本提取图]
-    G --> H[将图存储到图数据库，\n自动对顶点进行向量化\n并存储到向量数据库]
-    
-    I[从图数据库检索顶点] --> J[对顶点进行向量化并存储到向量数据库\n注意：增量更新]
-
+flowchart TD
+    A[输入文档] --> B[文本切分]
+    B --> C[生成 chunk 向量]
+    C --> D[写入向量索引]
+    B --> E[LLM 按 Schema 抽取顶点和边]
+    E --> F[写入 HugeGraph]
+    F --> G[更新顶点向量索引]
 ```
 
-### 四个输入字段：
+输入来自 `text` 子页或 `file` 子页。上传支持 `.txt`、`.docx` 和 `.pdf`，可一次选择多个文件。
 
-- **文档：** 输入文本
-- **Schema：** 图的 schema，可以以 JSON 格式的 schema 提供，或提供图名称（如果数据库中已存在）。
-- **图提取提示词头部：** 提示词的头部
-- **输出：** 显示结果
+页面包含文档、Schema、抽取提示词和结果区域。常用操作有：
 
-### 按钮：
+1. `Import into Vector`：切分文档并建立 chunk 向量索引。
+2. `Extract Graph Data (1)`：按 Schema 抽取图数据。
+3. `Load into GraphDB (2)`：把抽取结果写入 HugeGraph，并自动更新顶点向量。
+4. `Update Vid Embedding`：重新生成顶点向量，通常只在图中已有数据时才需要单独执行。
 
-- **获取 RAG 信息**
-  - **获取向量索引信息：** 检索向量索引信息
-  - **获取图索引信息：** 检索图索引信息
+这些按钮旁的 `Graph Extraction Split Type` 下拉框可选 `document`、`paragraph` 或 `sentence`。`document` 把输入整体作为一个单元，另外两种会在抽取前先切分长文档。
 
-- **清除 RAG 数据**
-  - **清除分块向量索引：** 清除分块向量
-  - **清除图顶点向量索引：** 清除图顶点向量
-  - **清除图数据：** 清除图数据
-- **导入到向量：** 将文档中的文本转换为向量（需要先对文本进行分块，然后将分块转换为向量）
-- **提取图数据 (1)：** 基于 Schema，使用图提取提示词头部和分块内容作为提示词，从文档中提取图数据
-- **加载到图数据库 (2)：** 将提取的图数据存储到数据库（自动调用更新顶点嵌入以将向量存储到向量数据库）
-- **更新顶点嵌入：** 将图顶点转换为向量
+页面还可以查看或清除 chunk 索引、顶点索引和图数据。清除操作会删除已有数据，执行前先确认当前图和索引是否仍被其他查询使用。
 
-### 执行流程：
+主控件下方还有两个折叠的辅助工具：
 
-1. 在**文档**字段中输入文本。
-2. 点击**导入到向量**按钮，对文本进行分割和向量化，存储到向量数据库。
-3. 在 Schema 字段中输入图的 **Schema**。
-4. 点击**提取图数据 (1)** 按钮，将文本提取为图。
-5. 点击**加载到图数据库 (2)** 按钮，将提取的图存储到图数据库（这会自动调用**更新顶点嵌入**以将向量存储到向量数据库）。
-6. 点击**更新顶点嵌入**按钮，将图顶点向量化并存储到向量数据库。
+- `Graph Schema Generator`：根据查询示例和少样本示例生成 Schema，填入 Graph Schema 字段。
+- `Graph Extraction Prompt Generator`：根据期望场景（例如社交关系、金融知识图谱）和选定的参考示例生成 Graph Extract Prompt Header。
 
-# 3. （处理流程）(Graph)RAG 和用户功能
+## 2. GraphRAG 查询
 
-前一个模块中的**导入到向量**按钮将文本（分块）转换为向量，**更新顶点嵌入**按钮将图顶点转换为向量。这些向量分别存储，用于在本模块中补充查询（答案生成）的上下文。换句话说，前一个模块为 RAG 准备数据（向量化），而本模块执行 RAG。
+第二个标签页提供四种回答范围：
 
-本模块包含两个部分：
-
-- **HugeGraph RAG 查询**
-- **（批量）回测**
-
-第一部分处理单个查询，第二部分同时处理多个查询。以下是第一部分的说明。
-
-![HugeGraph RAG 查询界面](/images/docs/hugegraph-ai/quick-start-02.png)
+- 直接使用 LLM 回答。
+- 只使用 chunk 向量召回。
+- 只使用图召回。
+- 合并图召回与向量召回。
 
 ```mermaid
-graph TD;
-    A[问题] --> B[将问题向量化并在向量数据库中搜索最相似的分块]
-
-    A --> F[使用 LLM 提取关键词]
-    F --> G[在图数据库中使用关键词精确匹配顶点；\n在向量数据库中执行模糊匹配（图顶点）]
-    G --> H[使用匹配的顶点和查询通过 LLM 生成 Gremlin 查询]
-    H --> I[执行 Gremlin 查询；如果成功则完成；如果失败则回退到 BFS]
-    
-    B --> J[对结果排序]
-    I --> J
-    J --> K[生成答案]
+flowchart TD
+    Q[问题] --> V[查询 chunk 向量索引]
+    Q --> K[抽取关键词]
+    K --> M[匹配图顶点]
+    M --> T[生成并执行 Gremlin]
+    T -->|失败| B[BFS 图遍历回退]
+    T --> R[整理图结果]
+    B --> R
+    V --> S[合并与重排序]
+    R --> S
+    S --> A[生成答案]
 ```
 
-### 输入字段：
+图召回先用关键词精确匹配 HugeGraph 顶点，找不到时再用顶点向量做近似匹配。匹配结果会进入 Text2Gremlin；生成或执行失败时，流程可以回退到预定义的图遍历。
 
-- **问题：** 输入查询
-- **查询提示词：** 用于向 LLM 提出最终问题的提示词模板
-- **关键词提取提示词：** 用于从问题中提取关键词的提示词模板
-- **模板数量：** < 0 表示禁用 text2gql；= 0 表示不使用模板（零样本）；> 0 表示使用指定数量的模板
+`Template Num` 控制 Text2Gremlin 在图召回中的参与方式：
 
-### 查询范围选择：
+- 小于 0：完全跳过 Text2Gremlin，图召回直接使用预定义的图遍历。
+- 等于 0：不带任何示例生成 Gremlin（zero-shot）。
+- 大于 0：从示例索引中取相应数量的相近示例，并采用带模板的生成结果。示例数量会被限制在 0 到 10 之间。
 
-- **基础 LLM 答案：** 不使用 RAG 功能
-- **仅向量答案：** 仅使用基于向量的检索（在向量数据库中查询分块向量）
-- **仅图答案：** 仅使用基于图的检索（在向量数据库中查询图顶点向量和图数据库）
-- **图-向量答案：** 同时使用基于图和基于向量的检索
+该标签页的其他控件还有 `Rerank method`（`bleu` 或 `reranker`）、`Graph Ratio`、`Near neighbor first` 和 `Query related information`，以及可编辑的 `Query Prompt` 和 `Keywords Extraction Prompt`。
+
+单条问答面板下方是批量回归测试面板。上传 `.xlsx` 或 `.csv` 问题文件，设置 `Max Lines To Show`，点击 `Generate Answer (Batch)`。答案会显示在预览表格中，并可下载为文件。上传控件旁提供模板文件下载。
+
+## 3. Text2Gremlin
+
+第三个标签页分为两部分。上半部分用问题与 Gremlin 对照文件（`.json` 或 `.csv`）构建示例向量索引；未上传文件时使用内置的 `resources/demo/text2gremlin.csv`。
+
+下半部分把自然语言转换成 Gremlin：
+
+1. 读取当前图的 Schema。
+2. 从示例向量索引取回相近的自然语言与 Gremlin 对。
+3. 把问题、Schema、示例和已匹配顶点填入提示词。
+4. 调用 LLM 生成 Gremlin，并按所选输出类型决定是否执行。
+
+`Number of refer examples` 设置取回的示例数量，范围 0 到 10，默认 2。结果显示在四个字段中：带模板的 Gremlin、不带模板的 Gremlin，以及两者各自的执行输出。
 
 ![RAG 查询范围选择](/images/docs/hugegraph-ai/quick-start-03.jpg)
 
-### 执行流程：
+自定义提示词必须包含 `{query}`、`{schema}`、`{example}` 和 `{vertices}`。缺少任一占位符时，REST API 会拒绝请求。
 
-#### **仅图答案：**
+## 4. 图工具与管理工具
 
-- 使用**关键词提取提示词**从**问题**中提取关键词。
+`Graph Tools` 标签页可直接对当前图执行 Gremlin 查询、手动触发图备份，并通过 beta 操作初始化 HugeGraph 演示数据。后台还有两个任务：每天 01:00 自动备份图数据，以及在进程运行期间持续更新顶点 id 向量。
+
+`Admin Tools` 需要密码。输入已配置的 `ADMIN_TOKEN` 后可查看 `logs/llm-server.log` 的末尾内容（每 60 秒自动刷新），并可手动刷新或清空该文件。`ADMIN_TOKEN` 为空或仍是占位值 `xxxx` 时，访问会被拒绝。
+
+设置 `ENABLE_LOGIN=True` 后，Web 页面会要求基础认证，用户名固定为 `rag`，密码是 `USER_TOKEN`；REST API 则要求把 `USER_TOKEN` 作为 Bearer token。日志接口还要求单独配置安全的 `ADMIN_TOKEN`。
 
 ![RAG 界面中抽取的关键词](/images/docs/hugegraph-ai/quick-start-04.png)
 
-- 使用提取的关键词：
-  - 首先，在图数据库中进行精确匹配。
-  - 如果未找到匹配，在向量数据库（图顶点向量）中进行模糊匹配以检索相关顶点。
+## 5. 提示词语言
 
-- **text2gql：** 调用 text2gql 相关接口，使用匹配的顶点作为实体，将**问题**转换为 Gremlin 查询并在图数据库中执行。
+在 `hugegraph-llm/.env` 中设置：
 
-- **BFS：** 如果 text2gql 失败（LLM 生成的查询可能无效），回退到使用预定义的**Gremlin 查询模板**执行图查询（本质上是 BFS 遍历）。
-
-#### **仅向量答案：**
-
-- 将**查询**转换为向量。
-- 在向量数据库的**分块向量**数据集中搜索最相似的内容。
-
-#### **排序和答案生成：**
-
-- 执行检索后，对搜索结果进行排序以构建最终的**提示词**。
-- 基于不同的提示词配置生成答案，并在不同的输出字段中显示：
-  - **基础 LLM 答案**
-  - **仅向量答案**
-  - **仅图答案**
-  - **图-向量答案**
-
-![RAG 回答模式对比](/images/docs/hugegraph-ai/quick-start-05.jpg)
-
-# 4. （处理流程）Text2Gremlin
-
-将自然语言查询转换为 Gremlin 查询。
-
-本模块包含两个部分：
-
-- **构建向量模板索引（可选）：** 将示例文件中的查询/gremlin 对进行向量化并存储到向量数据库中，用于生成 Gremlin 查询时参考。
-- **自然语言转 Gremlin：** 将自然语言查询转换为 Gremlin 查询。
-
-第一部分较为简单，因此重点介绍第二部分。
-
-![Text2Gremlin 界面](/images/docs/hugegraph-ai/quick-start-06.png)
-
-```mermaid
-graph TD;
-    A[Gremlin 对文件] --> C[向量化查询]
-    C --> D[存储到向量数据库]
-    
-    F[自然语言查询] --> G[在向量数据库中搜索最相似的查询\n（如果向量数据库中不存在 Gremlin 对，\n将自动使用默认文件进行向量化）\n并检索对应的 Gremlin]
-    G --> H[将匹配的对添加到提示词中\n并使用 LLM 生成与自然语言查询\n对应的 Gremlin]
-```
-
-### 第二部分的输入字段：
-
-- **自然语言查询：** 输入要转换为 Gremlin 的自然语言文本。
-
-![自然语言查询输入](/images/docs/hugegraph-ai/quick-start-07.png)
-
-- **Schema：** 输入图 schema。
-
-### 执行流程：
-
-1. 在**自然语言查询**字段中输入**查询**（自然语言）。
-2. 在**Schema**字段中输入**图 schema**。
-3. 点击**Text2Gremlin**按钮，执行以下逻辑：
-   1. 将**查询**转换为向量。
-   2. 构建**提示词**：
-      - 检索**图 schema**。
-      - 在向量数据库中查询示例向量，检索与输入查询相似的查询-gremlin 对（如果向量数据库中缺少示例，将自动使用**resources**文件夹中的示例进行初始化）。
-
-![生成的 Gremlin 查询](/images/docs/hugegraph-ai/quick-start-08.png)
-
-      - 使用构建的提示词生成 Gremlin 查询。
-
-# 5. 图工具
-
-输入 Gremlin 查询以执行相应操作。
-
-# 6. 语言切换 (v1.5.0+)
-
-HugeGraph-LLM 支持双语提示词，以提高跨语言的准确性。
-
-### 在英文和中文之间切换
-
-系统语言影响：
-- **系统提示词**：LLM 使用的内部提示词
-- **关键词提取**：特定语言的提取逻辑
-- **答案生成**：响应格式和风格
-
-#### 配置方法一：环境变量
-
-编辑您的 `.env` 文件：
-
-```bash
-# 英文提示词（默认）
+```properties
+# 英文提示词
 LANGUAGE=EN
 
 # 中文提示词
 LANGUAGE=CN
 ```
 
-更改语言设置后重启服务。
+修改后重启服务。该配置选择内置提示词语言，不会自动翻译输入文档，也不是 `/rag` 请求体字段。
 
-#### 配置方法二：Web UI（动态）
+## 6. REST 调用
 
-如果您的部署中可用，使用 Web UI 中的设置面板切换语言，无需重启：
+Web 页面和 REST API 使用同一套流程。需要程序集成时使用 `/rag`、`/rag/graph`、`/graph/extract` 和 `/text2gremlin`；请求结构见 [REST API](./rest-api.md)。
 
-1. 导航到**设置**或**配置**选项卡
-2. 选择**语言**：`EN` 或 `CN`
-3. 点击**保存** - 更改立即生效
+---
 
-#### 特定语言的行为
+反链：
 
-| 语言 | 关键词提取 | 答案风格 | 使用场景 |
-|-----|-----------|---------|---------|
-| `EN` | 英文 NLP 模型 | 专业、简洁 | 国际用户、英文文档 |
-| `CN` | 中文 NLP 模型 | 自然的中文表达 | 中文用户、中文文档 |
-
-> [!TIP]
-> 将 `LANGUAGE` 设置与您的主要文档语言匹配，以获得最佳 RAG 准确性。
-
-### REST API 语言覆盖
-
-使用 REST API 时，您可以为每个请求指定自定义提示词，以覆盖默认语言设置：
-
-```bash
-curl -X POST http://localhost:8001/rag \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "告诉我关于阿尔·帕西诺的信息",
-    "graph_only": true,
-    "keywords_extract_prompt": "请从以下文本中提取关键实体...",
-    "answer_prompt": "请根据以下上下文回答问题..."
-  }'
-```
-
-完整参数详情请参阅 [REST API 参考](./rest-api.md)。
+- [Documentation](/cn/docs/)
+- [系统介绍](/cn/docs/introduction/)
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-LLM](/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/)
+- [Vermeer 客户端](/cn/docs/quickstart/hugegraph-ai/vermeer-python-client/)

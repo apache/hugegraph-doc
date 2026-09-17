@@ -27,7 +27,7 @@ SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph。连接器分
 | 任务覆盖 | ✅ 直接导入图数据 | ✅ 备份、恢复和导出 | ✅ 导入、导出与迁移，可组合 Source、Transform、Sink |
 | 任务配置 | JSON 映射文件，描述输入源、顶点和边 | 命令行参数和运维命令 | [HOCON 作业文件](https://seatunnel.apache.org/docs/introduction/concepts/config/)<sup>[3]</sup>，组合 Source、Transform 和 Sink |
 | 默认部署 | ✅ 单机 CLI；⚠️ 可借助 Spark Loader 扩展 | ✅ 单机 CLI | ✅ 单机；✅ 分布式 |
-| 执行引擎 | ⚠️ 以 CLI 为主，Spark Loader 是独立扩展 | ❌ 不提供 Spark/Flink 执行引擎 | ✅ HugeGraph Source/Sink 支持 Zeta、Spark、Flink<sup>[1][2][4][5][6][7]</sup> |
+| 执行引擎 | ⚠️ 以 CLI 为主，Spark Loader 是独立扩展 | ❌ 不提供 Spark/Flink 执行引擎 | ✅ HugeGraph Source/Sink 支持 Zeta、Spark、Flink<sup>[1][2][7][8][9][10]</sup> |
 | 前端与可观测性 | ❌ 无内置前端，查看 CLI 日志 | ❌ 无内置前端，查看 CLI 日志 | ✅ 内置 Web UI 作业面板，方便查看任务状态和运行情况 |
 | 输入与输出 | ⚠️ 围绕图导入，支持常见文件、JDBC、Kafka 等 | ⚠️ 围绕图数据和备份文件，支持常见存储 | ✅ 数十种连接器，含 JDBC、Kafka、SQL-CDC 等 |
 | 调度与资源管理 | ❌ 无统一的跨任务调度和资源分配机制 | ❌ 无统一的跨任务调度和资源分配机制 | ⚠️ 可结合 DolphinScheduler 做调度和任务管理 |
@@ -46,7 +46,7 @@ Loader 和 Tools 的优势是专注、直接、上手快。需要直接导入图
 
 ### 2.1 获取 SeaTunnel 3.0+
 
-SeaTunnel 3.0+ 官方开发文档列出 JDK 8 和 JDK 11；本文统一使用 JDK 11，并设置 `JAVA_HOME`。从 [SeaTunnel 3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)<sup>[8]</sup> 获取源码，按上游[开发环境文档](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/developer/setup.md)<sup>[9]</sup>构建发行包：
+SeaTunnel 3.0+ 官方开发文档列出 JDK 8 和 JDK 11；本文统一使用 JDK 11，并设置 `JAVA_HOME`。从 [SeaTunnel 3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)<sup>[4]</sup> 获取源码，按上游[开发环境文档](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/developer/setup.md)<sup>[5]</sup>构建发行包：
 
 ```bash
 git clone --branch 3.0.0-release https://github.com/apache/seatunnel.git
@@ -56,7 +56,7 @@ cd seatunnel
 
 解压 `seatunnel-dist/target/` 中生成的二进制包，后续命令都在解压后的 SeaTunnel 安装目录执行。需要更新功能时，可以切换到其他版本；引擎与连接器插件应来自同一次构建，避免混用不同版本的 JAR。
 
-本文使用 SeaTunnel 自带的 **Zeta 引擎和 local 模式**<sup>[4][10]</sup>。确认安装目录的 `connectors/` 中包含 HugeGraph，以及所需的 JDBC 或 Kafka 连接器<sup>[11][12]</sup>；如果自定义构建没有包含它们，需补齐同一次构建产出的插件。JDBC 示例还需要将 MySQL 驱动 JAR 放入 `lib/`，驱动类为 `com.mysql.cj.jdbc.Driver`。
+本文使用 SeaTunnel 自带的 **Zeta 引擎和 local 模式**<sup>[6][7]</sup>。确认安装目录的 `connectors/` 中包含 HugeGraph，以及所需的 JDBC 或 Kafka 连接器<sup>[11][12]</sup>；如果自定义构建没有包含它们，需补齐同一次构建产出的插件。JDBC 示例还需要将 MySQL 驱动 JAR 放入 `lib/`，驱动类为 `com.mysql.cj.jdbc.Driver`。
 
 ### 2.2 准备 HugeGraph 和数据源
 
@@ -312,20 +312,25 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 
 ## 7 参考文档
 
-1. [HugeGraph Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md)
-2. [HugeGraph Sink](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/sink/HugeGraph.md)
-3. [HOCON 作业文件配置说明](https://seatunnel.apache.org/docs/introduction/concepts/config/)
-4. [SeaTunnel 引擎概览](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/overview.md)
-5. [SeaTunnel Spark 引擎](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/spark.md)
-6. [SeaTunnel Flink 引擎](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/flink.md)
-7. [Connector V2 多引擎说明](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/introduction/concepts/connector-v2-features.md)
-8. [SeaTunnel 3.0.0-release 分支](https://github.com/apache/seatunnel/tree/3.0.0-release)
-9. [SeaTunnel 开发环境文档](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/developer/setup.md)
-10. [SeaTunnel 本地部署](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
-11. [JDBC Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Jdbc.md)
-12. [Kafka Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Kafka.md)
-13. [MySQL CDC Source](https://seatunnel.apache.org/docs/connectors/source/MySQL-CDC/)
-14. [SeaTunnel 2.3.13 HugeGraph Sink](https://github.com/apache/seatunnel/blob/2.3.13/docs/zh/connectors/sink/HugeGraph.md)
+1. **HugeGraph 连接器**
+   - <sup>[1]</sup> [HugeGraph Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md)
+   - <sup>[2]</sup> [HugeGraph Sink](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/sink/HugeGraph.md)
+2. **配置与部署**
+   - <sup>[3]</sup> [HOCON 作业文件配置说明](https://seatunnel.apache.org/docs/introduction/concepts/config/)
+   - <sup>[4]</sup> [SeaTunnel 3.0.0-release 分支](https://github.com/apache/seatunnel/tree/3.0.0-release)
+   - <sup>[5]</sup> [SeaTunnel 开发环境文档](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/developer/setup.md)
+   - <sup>[6]</sup> [SeaTunnel 本地部署](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
+3. **执行引擎**
+   - <sup>[7]</sup> [SeaTunnel 引擎概览](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/overview.md)
+   - <sup>[8]</sup> [SeaTunnel Spark 引擎](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/spark.md)
+   - <sup>[9]</sup> [SeaTunnel Flink 引擎](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/flink.md)
+   - <sup>[10]</sup> [Connector V2 多引擎说明](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/introduction/concepts/connector-v2-features.md)
+4. **数据源连接器**
+   - <sup>[11]</sup> [JDBC Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Jdbc.md)
+   - <sup>[12]</sup> [Kafka Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Kafka.md)
+   - <sup>[13]</sup> [MySQL CDC Source](https://seatunnel.apache.org/docs/connectors/source/MySQL-CDC/)
+5. **旧版本兼容**
+   - <sup>[14]</sup> [SeaTunnel 2.3.13 HugeGraph Sink](https://github.com/apache/seatunnel/blob/2.3.13/docs/zh/connectors/sink/HugeGraph.md)
 
 > **旧版本说明**
 >

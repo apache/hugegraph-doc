@@ -4,7 +4,7 @@ linkTitle: "使用 SeaTunnel Source 导出/迁移图数据"
 weight: 2
 ---
 
-HugeGraph Source 负责从图中读取顶点和边，结果可以交给 HugeGraph Sink 或其他 SeaTunnel Sink。本文介绍 `graph2graph` 和 `graph2any` 两类任务。
+如果你需要把数据从一张 HugeGraph 图复制到另一张图，使用 `graph2graph`：HugeGraph Source 从源图（A 图）读取顶点和边，数据经过可选的 Transform 后，由 HugeGraph Sink 写入目标图（B 图）。数据方向是 `A 图 → HugeGraph Source →（可选 Transform）→ HugeGraph Sink → B 图`。如果要把图数据导出到文件、JDBC、Kafka 等其他系统，则使用 `graph2any`，由下游 Sink 接收 Source 读取的数据。本文介绍这两类任务。
 
 > **版本要求：本文面向 SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)**
 

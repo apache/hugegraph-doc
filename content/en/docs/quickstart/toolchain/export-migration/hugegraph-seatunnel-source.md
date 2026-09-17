@@ -4,7 +4,7 @@ linkTitle: "Export and migrate with SeaTunnel Source"
 weight: 2
 ---
 
-The HugeGraph Source reads vertices and edges from a graph and sends them to the HugeGraph Sink or another SeaTunnel Sink. This page covers `graph2graph` and `graph2any` jobs.
+If you need to copy data from one HugeGraph graph to another, use `graph2graph`: HugeGraph Source reads vertices and edges from the source graph (graph A), and HugeGraph Sink writes them to the target graph (graph B), with an optional Transform in between. The data path is `graph A → HugeGraph Source → (optional Transform) → HugeGraph Sink → graph B`. If you need to export graph data to a file, JDBC, Kafka, or another system, use `graph2any`, where a downstream Sink receives the records read by HugeGraph Source. This page covers both job types.
 
 > **Version requirement: This guide targets SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)**
 

@@ -152,14 +152,14 @@ DOCS_NAV_EXPECTED_STATS = {
         "pages": 68,
         "removed": 22,
         "scopedLinks": 10,
-        "treeSha256": "78700dfe484d5177f00c9fe657ae12f3ceecca9bbb592cc8626b782a7b9be61a",
+        "treeSha256": "e8c9b0a64dac6dd3e47827ec5072697eb7d3ed79659e0b5c4a9c5df8e1408d38",
     },
     "1.0": {
         "groups": 5,
         "pages": 59,
         "removed": 21,
         "scopedLinks": 10,
-        "treeSha256": "52f0c3b5bef6e9db39a37bbd52b7993128951f592d88a835ec7e3c107edec399",
+        "treeSha256": "bd45db511d9b6728e1523bd3c5ebd9d18912ee85aeabf79c77bcca7e511f977a",
     },
 }
 LEGACY_IA_ROUTE_MAP = {

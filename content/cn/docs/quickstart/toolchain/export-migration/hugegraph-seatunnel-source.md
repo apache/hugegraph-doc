@@ -182,7 +182,7 @@ sink {
 
 导出边时，将 Source 的 `label` 改为边标签、`label_type` 改为 `EDGE`，并在 `schema.fields` 中声明边属性。Source 会额外输出 `~source_id`、`~source_label`、`~target_id` 和 `~target_label`，这些保留列可直接写入文件或交给下游转换步骤。
 
-本页只介绍数据行的读取和写出，不会自动复制源图的索引、TTL 或其他 Schema 设置。完整 Source 参数和通用环境说明请回到[SeaTunnel 图导入文档](../import/hugegraph-seatunnel-connector/)<sup>[3]</sup>。
+本页只介绍数据行的读取和写出，不会自动复制源图的索引、TTL 或其他 Schema 设置。完整 Source 参数和通用环境说明请回到[SeaTunnel 图导入文档](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)<sup>[3]</sup>。
 
 ## 3 参考文档
 

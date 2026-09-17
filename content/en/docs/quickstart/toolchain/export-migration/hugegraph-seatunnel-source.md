@@ -182,7 +182,7 @@ Save this as `config/graph2file-person.conf` and run it from the SeaTunnel insta
 
 To export edges, change the Source `label` to an edge label, set `label_type = "EDGE"`, and declare the edge properties in `schema.fields`. Source also outputs the reserved columns `~source_id`, `~source_label`, `~target_id`, and `~target_label`; write them to the file or pass them to downstream transforms as needed.
 
-This page covers row reads and writes. It does not copy source indexes, TTLs, or other schema settings. For the complete Source options and shared environment guidance, return to the [SeaTunnel graph import guide](../import/hugegraph-seatunnel-connector/)<sup>[3]</sup>.
+This page covers row reads and writes. It does not copy source indexes, TTLs, or other schema settings. For the complete Source options and shared environment guidance, return to the [SeaTunnel graph import guide](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)<sup>[3]</sup>.
 
 ## 3 References
 

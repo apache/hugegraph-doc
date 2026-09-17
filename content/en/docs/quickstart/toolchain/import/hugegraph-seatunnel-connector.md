@@ -312,25 +312,34 @@ Choose a tool based on the work to complete. Use [Tools](/docs/quickstart/toolch
 
 ## 7 References
 
-1. **HugeGraph connectors**
-   - <sup>[1]</sup> [HugeGraph Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md)
-   - <sup>[2]</sup> [HugeGraph Sink](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/sink/HugeGraph.md)
-2. **Configuration and deployment**
-   - <sup>[3]</sup> [HOCON job configuration](https://seatunnel.apache.org/docs/introduction/concepts/config/)
-   - <sup>[4]</sup> [SeaTunnel 3.0.0-release branch](https://github.com/apache/seatunnel/tree/3.0.0-release)
-   - <sup>[5]</sup> [SeaTunnel development setup](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/developer/setup.md)
-   - <sup>[6]</sup> [SeaTunnel local deployment](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
-3. **Execution engines**
-   - <sup>[7]</sup> [SeaTunnel Engine Overview](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/overview.md)
-   - <sup>[8]</sup> [SeaTunnel Spark Engine](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/spark.md)
-   - <sup>[9]</sup> [SeaTunnel Flink Engine](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/flink.md)
-   - <sup>[10]</sup> [Connector V2 multi-engine support](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/introduction/concepts/connector-v2-features.md)
-4. **Data source connectors**
-   - <sup>[11]</sup> [JDBC Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Jdbc.md)
-   - <sup>[12]</sup> [Kafka Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Kafka.md)
-   - <sup>[13]</sup> [MySQL CDC Source](https://seatunnel.apache.org/docs/connectors/source/MySQL-CDC/)
-5. **Legacy compatibility**
-   - <sup>[14]</sup> [SeaTunnel 2.3.13 HugeGraph Sink](https://github.com/apache/seatunnel/blob/2.3.13/docs/en/connectors/sink/HugeGraph.md)
+**HugeGraph connectors**
+
+<p><sup>[1]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md">HugeGraph Source</a><br>
+<sup>[2]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/sink/HugeGraph.md">HugeGraph Sink</a></p>
+
+**Configuration and deployment**
+
+<p><sup>[3]</sup> <a href="https://seatunnel.apache.org/docs/introduction/concepts/config/">HOCON job configuration</a><br>
+<sup>[4]</sup> <a href="https://github.com/apache/seatunnel/tree/3.0.0-release">SeaTunnel 3.0.0-release branch</a><br>
+<sup>[5]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/developer/setup.md">SeaTunnel development setup</a><br>
+<sup>[6]</sup> <a href="https://seatunnel.apache.org/docs/getting-started/locally/deployment/">SeaTunnel local deployment</a></p>
+
+**Execution engines**
+
+<p><sup>[7]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/overview.md">SeaTunnel Engine Overview</a><br>
+<sup>[8]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/spark.md">SeaTunnel Spark Engine</a><br>
+<sup>[9]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/flink.md">SeaTunnel Flink Engine</a><br>
+<sup>[10]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/introduction/concepts/connector-v2-features.md">Connector V2 multi-engine support</a></p>
+
+**Data source connectors**
+
+<p><sup>[11]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Jdbc.md">JDBC Source</a><br>
+<sup>[12]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Kafka.md">Kafka Source</a><br>
+<sup>[13]</sup> <a href="https://seatunnel.apache.org/docs/connectors/source/MySQL-CDC/">MySQL CDC Source</a></p>
+
+**Legacy compatibility**
+
+<p><sup>[14]</sup> <a href="https://github.com/apache/seatunnel/blob/2.3.13/docs/en/connectors/sink/HugeGraph.md">SeaTunnel 2.3.13 HugeGraph Sink</a></p>
 
 > **Legacy version note**
 >

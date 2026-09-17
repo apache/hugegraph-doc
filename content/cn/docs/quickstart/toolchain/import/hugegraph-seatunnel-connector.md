@@ -312,25 +312,34 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 
 ## 7 参考文档
 
-1. **HugeGraph 连接器**
-   - <sup>[1]</sup> [HugeGraph Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md)
-   - <sup>[2]</sup> [HugeGraph Sink](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/sink/HugeGraph.md)
-2. **配置与部署**
-   - <sup>[3]</sup> [HOCON 作业文件配置说明](https://seatunnel.apache.org/docs/introduction/concepts/config/)
-   - <sup>[4]</sup> [SeaTunnel 3.0.0-release 分支](https://github.com/apache/seatunnel/tree/3.0.0-release)
-   - <sup>[5]</sup> [SeaTunnel 开发环境文档](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/developer/setup.md)
-   - <sup>[6]</sup> [SeaTunnel 本地部署](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
-3. **执行引擎**
-   - <sup>[7]</sup> [SeaTunnel 引擎概览](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/overview.md)
-   - <sup>[8]</sup> [SeaTunnel Spark 引擎](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/spark.md)
-   - <sup>[9]</sup> [SeaTunnel Flink 引擎](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/flink.md)
-   - <sup>[10]</sup> [Connector V2 多引擎说明](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/introduction/concepts/connector-v2-features.md)
-4. **数据源连接器**
-   - <sup>[11]</sup> [JDBC Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Jdbc.md)
-   - <sup>[12]</sup> [Kafka Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Kafka.md)
-   - <sup>[13]</sup> [MySQL CDC Source](https://seatunnel.apache.org/docs/connectors/source/MySQL-CDC/)
-5. **旧版本兼容**
-   - <sup>[14]</sup> [SeaTunnel 2.3.13 HugeGraph Sink](https://github.com/apache/seatunnel/blob/2.3.13/docs/zh/connectors/sink/HugeGraph.md)
+**HugeGraph 连接器**
+
+<p><sup>[1]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md">HugeGraph Source</a><br>
+<sup>[2]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/sink/HugeGraph.md">HugeGraph Sink</a></p>
+
+**配置与部署**
+
+<p><sup>[3]</sup> <a href="https://seatunnel.apache.org/docs/introduction/concepts/config/">HOCON 作业文件配置说明</a><br>
+<sup>[4]</sup> <a href="https://github.com/apache/seatunnel/tree/3.0.0-release">SeaTunnel 3.0.0-release 分支</a><br>
+<sup>[5]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/developer/setup.md">SeaTunnel 开发环境文档</a><br>
+<sup>[6]</sup> <a href="https://seatunnel.apache.org/docs/getting-started/locally/deployment/">SeaTunnel 本地部署</a></p>
+
+**执行引擎**
+
+<p><sup>[7]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/overview.md">SeaTunnel 引擎概览</a><br>
+<sup>[8]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/spark.md">SeaTunnel Spark 引擎</a><br>
+<sup>[9]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/flink.md">SeaTunnel Flink 引擎</a><br>
+<sup>[10]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/introduction/concepts/connector-v2-features.md">Connector V2 多引擎说明</a></p>
+
+**数据源连接器**
+
+<p><sup>[11]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Jdbc.md">JDBC Source</a><br>
+<sup>[12]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Kafka.md">Kafka Source</a><br>
+<sup>[13]</sup> <a href="https://seatunnel.apache.org/docs/connectors/source/MySQL-CDC/">MySQL CDC Source</a></p>
+
+**旧版本兼容**
+
+<p><sup>[14]</sup> <a href="https://github.com/apache/seatunnel/blob/2.3.13/docs/zh/connectors/sink/HugeGraph.md">SeaTunnel 2.3.13 HugeGraph Sink</a></p>
 
 > **旧版本说明**
 >

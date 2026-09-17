@@ -8,7 +8,7 @@ If you need to copy data from one HugeGraph graph to another, use `graph2graph`:
 
 > **Version requirement: This guide targets SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)**
 
-Before starting, complete the [shared environment and configuration steps on the import page](../import/hugegraph-seatunnel-connector/#2-prepare-the-environment). They cover JDK, HOCON, plugin installation, and the sample graph model.
+Before starting, complete the [shared environment and configuration steps on the import page](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/#2-prepare-the-environment). They cover JDK, HOCON, plugin installation, and the sample graph model.
 
 ## 1 Migrate a HugeGraph graph (graph2graph)
 
@@ -193,4 +193,4 @@ This page covers row reads and writes. It does not copy source indexes, TTLs, or
 
 **Related guide**
 
-<p><sup>[3]</sup> <a href="../import/hugegraph-seatunnel-connector/">SeaTunnel graph import guide</a></p>
+<p><sup>[3]</sup> <a href="/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/">SeaTunnel graph import guide</a></p>

@@ -8,7 +8,7 @@ weight: 2
 
 > **版本要求：本文面向 SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)**
 
-开始前请先完成[导入页中的通用环境准备和配置](../import/hugegraph-seatunnel-connector/#2-准备环境)，其中包含 JDK、HOCON、插件安装和图模型说明。
+开始前请先完成[导入页中的通用环境准备和配置](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/#2-准备环境)，其中包含 JDK、HOCON、插件安装和图模型说明。
 
 ## 1 迁移 HugeGraph 图（graph2graph）
 
@@ -193,4 +193,4 @@ sink {
 
 **关联文档**
 
-<p><sup>[3]</sup> <a href="../import/hugegraph-seatunnel-connector/">SeaTunnel 图导入文档</a></p>
+<p><sup>[3]</sup> <a href="/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/">SeaTunnel 图导入文档</a></p>

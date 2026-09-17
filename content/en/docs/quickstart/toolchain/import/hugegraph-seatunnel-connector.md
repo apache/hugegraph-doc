@@ -311,6 +311,6 @@ Choose a tool based on the work to complete. Use [Tools](/docs/quickstart/toolch
 - [Kafka Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Kafka.md)
 - [SeaTunnel local deployment](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
 
-## 8 Legacy version note
-
-This guide targets SeaTunnel 3.0+. Its Source, `mappings`, and graph migration examples do not apply to 2.3.13. That legacy version provides only the HugeGraph Sink, uses `schema_config`, and requires the graph schema to be created in advance. If you must use 2.3.13, follow the [official Sink documentation](https://github.com/apache/seatunnel/blob/2.3.13/docs/en/connectors/sink/HugeGraph.md) instead of copying this guide's configuration.
+> **Legacy version note**
+>
+> This guide targets SeaTunnel 3.0+. Its Source, `mappings`, and graph migration examples do not apply to 2.3.13. That legacy version provides only the HugeGraph Sink, uses `schema_config`, and requires the graph schema to be created in advance. If you must use 2.3.13, follow the [official Sink documentation](https://github.com/apache/seatunnel/blob/2.3.13/docs/en/connectors/sink/HugeGraph.md) instead of copying this guide's configuration

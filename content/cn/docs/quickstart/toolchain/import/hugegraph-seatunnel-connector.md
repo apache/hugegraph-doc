@@ -311,6 +311,6 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 - [Kafka Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Kafka.md)
 - [SeaTunnel 本地部署](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
 
-## 8 旧版本说明
-
-本文面向 SeaTunnel 3.0+，文中的 Source、`mappings` 和图迁移示例不适用于 2.3.13。2.3.13 已过时，仅提供 HugeGraph Sink，配置使用 `schema_config`，并且需要提前创建图模型。如必须使用 2.3.13，请参考[官方 Sink 文档](https://github.com/apache/seatunnel/blob/2.3.13/docs/zh/connectors/sink/HugeGraph.md)，不要套用本文配置。
+> **旧版本说明**
+>
+> 本文面向 SeaTunnel 3.0+，文中的 Source、`mappings` 和图迁移示例不适用于 2.3.13。2.3.13 已过时，仅提供 HugeGraph Sink，配置使用 `schema_config`，并且需要提前创建图模型。如必须使用 2.3.13，请参考[官方 Sink 文档](https://github.com/apache/seatunnel/blob/2.3.13/docs/zh/connectors/sink/HugeGraph.md)，不要套用本文配置

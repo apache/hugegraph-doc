@@ -141,6 +141,36 @@ grep -q '"versions":\\[1,2,3,4,5\\]' "$generated"
         self.assertIn("--appendPort=false", hugo_args)
         self.assertEqual(hugo_args[-1], "--baseURL=https://preview.example/docs/")
 
+    def test_documented_origin_and_port_spellings_drive_generated_config(self) -> None:
+        cases = (
+            (("--baseURL", "https://long.example/"), "https://long.example/", True),
+            (("-b", "https://short.example/"), "https://short.example/", True),
+            (("-b=https://equals.example/",), "https://equals.example/", True),
+            (("-bhttps://cluster.example/",), "https://cluster.example/", True),
+            (("--port", "1414"), "http://localhost:1414/", False),
+            (("--port=1515",), "http://localhost:1515/", False),
+            (("-p=1616",), "http://localhost:1616/", False),
+            (("-p1717",), "http://localhost:1717/", False),
+        )
+        for args, expected_origin, environment_set in cases:
+            with self.subTest(args=args):
+                self.log.unlink(missing_ok=True)
+                environment_overrides = (
+                    {"HG_DOC_SITE_ORIGIN": "https://environment.example/"}
+                    if environment_set
+                    else None
+                )
+                calls = self.run_wrapper(
+                    "server",
+                    *args,
+                    environment_overrides=environment_overrides,
+                )
+                config_args = calls[0]["args"]
+                self.assertEqual(
+                    config_args[config_args.index("--site-origin") + 1],
+                    expected_origin,
+                )
+
     def test_build_enforces_the_warning_strict_production_contract(self) -> None:
         calls = self.run_wrapper("build", "--destination", "custom-public")
         args = calls[1]["args"]

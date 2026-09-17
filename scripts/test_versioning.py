@@ -824,6 +824,10 @@ class VersionUrlTest(unittest.TestCase):
                 "/docs/introduction/readme",
                 "/docs/quickstart/toolchain",
                 "/docs/quickstart/toolchain/hugegraph-loader",
+                "/docs/quickstart/computing",
+                "/docs/quickstart/computing/hugegraph-vermeer",
+                "/docs/quickstart/computing/hugegraph-computer",
+                "/docs/quickstart/computing/hugegraph-computer-config",
                 "/docs/clients",
                 "/docs/clients/gremlin-console",
                 "/docs/config",
@@ -831,6 +835,8 @@ class VersionUrlTest(unittest.TestCase):
                 "/docs/performance",
                 "/docs/performance/api-preformance",
                 "/docs/performance/api-preformance/hugegraph-api-0.2",
+                "/docs/performance/hugegraph-benchmark-0.4.4",
+                "/docs/performance/hugegraph-benchmark-0.5.6",
                 "/docs/changelog",
                 "/docs/changelog/hugegraph-1.5.0-release-notes",
             )
@@ -862,6 +868,28 @@ class VersionUrlTest(unittest.TestCase):
             all_pages = list(_walk_docs_nav_pages(nav["sections"]))
             self.assertIn("/docs/introduction/readme", all_pages)
             self.assertIn("/docs/performance/api-preformance", all_pages)
+            self.assertIn("/docs/performance/hugegraph-benchmark-0.4.4", all_pages)
+            self.assertIn("/docs/performance/hugegraph-benchmark-0.5.6", all_pages)
+            self.assertNotIn(
+                "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4",
+                all_pages,
+            )
+            self.assertIn(
+                "/docs/quickstart/computing/hugegraph-computer-config", all_pages
+            )
+            self.assertEqual(
+                nav["children_by_url"]["/docs/quickstart/computing/"],
+                [
+                    "/docs/quickstart/computing/hugegraph-vermeer",
+                    "/docs/quickstart/computing/hugegraph-computer",
+                ],
+            )
+            self.assertEqual(
+                nav["children_by_url"][
+                    "/docs/quickstart/computing/hugegraph-computer/"
+                ],
+                ["/docs/quickstart/computing/hugegraph-computer-config"],
+            )
             self.assertNotIn("/docs/introduction", all_pages)
             self.assertIn(
                 "/docs/introduction/readme/",
@@ -1071,6 +1099,23 @@ class VersionUrlTest(unittest.TestCase):
                 path.write_text(source, encoding="utf-8")
                 with self.assertRaises(SystemExit):
                     versioning.apply_exact_legacy_content_fixes(assembly, "1.5")
+
+    def test_exact_legacy_content_fixes_accept_already_normalized_content(self) -> None:
+        language, relative, _, new, expected_count = (
+            versioning.LEGACY_EXACT_CONTENT_FIXES["1.7"][0]
+        )
+        with tempfile.TemporaryDirectory() as temp_name:
+            assembly = Path(temp_name)
+            path = assembly / "content" / language / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            source = "\n".join([new] * expected_count) + "\n"
+            path.write_text(source, encoding="utf-8")
+
+            self.assertEqual(
+                versioning.apply_exact_legacy_content_fixes(assembly, "1.7"),
+                0,
+            )
+            self.assertEqual(path.read_text(encoding="utf-8"), source)
 
     def test_17_exact_fixes_exclude_updated_server_page(self) -> None:
         server_path = "docs/quickstart/hugegraph/hugegraph-server.md"

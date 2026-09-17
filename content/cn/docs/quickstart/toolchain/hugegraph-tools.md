@@ -1,6 +1,6 @@
 ---
-title: "HugeGraph-Tools Quick Start"
-linkTitle: "使用 HugeGraph-Tools 导出/管理图"
+title: "Tools Quick Start"
+linkTitle: "使用 Tools 导出/管理图"
 weight: 3
 ---
 

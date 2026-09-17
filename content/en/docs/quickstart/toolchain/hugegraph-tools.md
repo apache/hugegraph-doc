@@ -1,6 +1,6 @@
 ---
-title: "HugeGraph-Tools Quick Start"
-linkTitle: "Manage with HugeGraph-Tools"
+title: "Tools Quick Start"
+linkTitle: "Manage with Tools"
 weight: 3
 ---
 

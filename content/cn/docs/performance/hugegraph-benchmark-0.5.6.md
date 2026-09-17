@@ -2,12 +2,15 @@
 title: "HugeGraph BenchMark Performance"
 linkTitle: "HugeGraph 基准测试"
 weight: 1
+sidebar_expanded: true
 ---
 
 > **Note:** 
 > 
 > 当前的性能指标测试基于很早期的版本。**最新版本**在性能和功能上都有显著的改进。我们鼓励您参考最新的发布版本，
 > 该版本具有**自主分布式存储**和**增强的计算推下能力**。或者，您可以等待社区更新相关测试数据 (也欢迎反馈共建)。
+
+同目录下的 [HugeGraph 0.4.4 历史性能测试]({{< relref path="/docs/performance/hugegraph-benchmark-0.4.4.md" lang="cn" >}}) 数据来自 2018 年，仅用于历史参考。
 
 ### 1 测试环境
 

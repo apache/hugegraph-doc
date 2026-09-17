@@ -128,24 +128,24 @@ DOCS_NAV_GROUP_TITLES = {
 DOCS_NAV_EXPECTED_STATS = {
     "latest": {
         "groups": 5,
-        "pages": 86,
+        "pages": 91,
         "removed": 4,
         "scopedLinks": 0,
-        "treeSha256": "b252d700e9547f7468410edde28de6659018cdb0b2b0b379c125a32c3f802b79",
+        "treeSha256": "3314337a4c679484d29ebb8e613d5e85dc8bb9020a7465c13b95441b0856f485",
     },
     "1.7": {
         "groups": 5,
         "pages": 85,
         "removed": 5,
         "scopedLinks": 10,
-        "treeSha256": "78abae8934d1245bd9b18754547d23a328506b22db4a1e6e8e9e38e94818df57",
+        "treeSha256": "c87538b82b0e3506eef59417411686ddc188e0f33d0e3a1cda687de8d6f88747",
     },
     "1.5": {
         "groups": 5,
         "pages": 77,
         "removed": 13,
         "scopedLinks": 10,
-        "treeSha256": "70b2a46f047b3c88a6b1b937eb79676a7f68437485b3248e5f84b9c621d5ad06",
+        "treeSha256": "ac29ab8f0e7020496a3a1afe480687043d751e32c93ffb848e2210e3500cd483",
     },
     "1.3": {
         "groups": 5,
@@ -1048,6 +1048,78 @@ def materialize_docs_navigation(
     scoped_links = scope_docs_nav_group_links(assembly, publish_path)
 
     routes = docs_content_routes(assembly, "en") & docs_content_routes(assembly, "cn")
+    groups_for_materialization = groups
+    # Releases before the ToolChain regrouping still store those pages at flat
+    # paths. Keep their sidebars populated with the historical layout instead
+    # of dropping entries when building archives. Computer and benchmark keep
+    # their public flat URLs, so their authored parent-child relationships are
+    # safe to retain across both current and historical builds.
+    regrouped_toolchain = (
+        "/docs/quickstart/toolchain/visualization" in routes
+        and "/docs/quickstart/toolchain/import" in routes
+        and "/docs/quickstart/toolchain/export-migration" in routes
+    )
+    regrouped_computing = (
+        "/docs/quickstart/computing/hugegraph-computer" in routes
+        and "/docs/quickstart/computing/hugegraph-computer-config" in routes
+    )
+    regrouped_benchmark = (
+        "/docs/performance/hugegraph-benchmark-0.5.6" in routes
+        and "/docs/performance/hugegraph-benchmark-0.4.4" in routes
+    )
+    if not regrouped_toolchain or not regrouped_computing or not regrouped_benchmark:
+        groups_for_materialization = json.loads(json.dumps(groups))
+        for group in groups_for_materialization:
+            if group.get("id") == "components":
+                for node in group.get("children", []):
+                    if (
+                        node.get("page") == "/docs/quickstart/toolchain"
+                        and not regrouped_toolchain
+                    ):
+                        node["children"] = [
+                            {"page": "/docs/quickstart/toolchain/hugegraph-hubble"},
+                            {"page": "/docs/quickstart/toolchain/hugegraph-loader"},
+                            {
+                                "page": "/docs/quickstart/toolchain/hugegraph-spark-connector"
+                            },
+                            {"page": "/docs/quickstart/toolchain/hugegraph-tools"},
+                        ]
+                    if (
+                        node.get("page") == "/docs/quickstart/computing"
+                        and not regrouped_computing
+                    ):
+                        node["children"] = [
+                            {"page": "/docs/quickstart/computing/hugegraph-vermeer"},
+                            {"page": "/docs/quickstart/computing/hugegraph-computer"},
+                            {
+                                "page": "/docs/quickstart/computing/hugegraph-computer-config"
+                            },
+                        ]
+                continue
+            if group.get("id") != "operate" or regrouped_benchmark:
+                continue
+            for node in group.get("children", []):
+                if node.get("page") != "/docs/performance":
+                    continue
+                for index, child in enumerate(node.get("children", [])):
+                    if (
+                        child.get("page")
+                        == "/docs/performance/hugegraph-benchmark-0.5.6"
+                        and any(
+                            item.get("page")
+                            == "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4"
+                            for item in child.get("children", [])
+                        )
+                    ):
+                        node["children"][index : index + 1] = [
+                            {
+                                "page": "/docs/performance/hugegraph-benchmark-0.4.4"
+                            },
+                            {
+                                "page": "/docs/performance/hugegraph-benchmark-0.5.6"
+                            },
+                        ]
+                        break
     seen_pages: set[str] = set()
     removed = 0
 
@@ -1076,7 +1148,7 @@ def materialize_docs_navigation(
             **({"group": node["id"]} if group else {}),
         }
 
-    sections = [adapt(group, group=True) for group in groups]
+    sections = [adapt(group, group=True) for group in groups_for_materialization]
     if any(section is None for section in sections):
         fail("one or more Docs navigation group pages are missing")
 
@@ -1400,6 +1472,10 @@ def apply_exact_legacy_content_fixes(assembly: pathlib.Path, version: str) -> in
         path = assembly / "content" / language / relative
         source = path.read_text(encoding="utf-8")
         count = source.count(old)
+        if count == 0 and source.count(new) == expected_count:
+            # A newer source snapshot may already contain this normalized
+            # historical link. Treat that state as idempotently repaired.
+            continue
         if count != expected_count:
             fail(
                 f"expected {expected_count} exact historical content match(es) "

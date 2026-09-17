@@ -52,6 +52,7 @@ draft: true
 ## Performance
 
 - [HugeGraph Benchmark Performance](performance/hugegraph-benchmark-0.5.6)
+  - [HugeGraph 0.4.4 Historical Benchmark](performance/hugegraph-benchmark-0.4.4)
 - [HugeGraph API Performance-Outdated](performance/api-performance)
   - [v0.5.6 Stand-alone (RocksDB)](performance/api-performance/hugegraph-api-0.5.6-rocksdb)
   - [v0.5.6 Cluster (Cassandra)](performance/api-performance/hugegraph-api-0.5.6-cassandra)

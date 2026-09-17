@@ -29,6 +29,7 @@ HugeGraph 支持百亿以上的顶点和边的快速存储与查询，具备出�
 ├──────────────────┴────────────────────┴────────────────────────────┤
 │                       HugeGraph Toolchain                          │
 │ Hubble | Loader | Client (Java/Go/Python; Rust WIP) | Spark | Tools│
+│ SeaTunnel 3.0+: Source + Sink                                      │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -65,6 +66,7 @@ HugeGraph Toolchain 提供客户端、数据导入、可视化管理、Spark 集
 | [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) | 从本地文件、HDFS、JDBC、Kafka 或其他图读取数据，转换为顶点和边后批量导入 HugeGraph |
 | [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) | 提供图连接、Schema、数据导入、Gremlin 查询和图形化结果展示的 Web 管理界面 |
 | [Spark Connector](/cn/docs/quickstart/toolchain/hugegraph-spark-connector/) | 在 Spark 作业中批量读写 HugeGraph，适合大数据离线处理 |
+| [SeaTunnel Sink](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/) | 通过 SeaTunnel 3.0+ 将数据导入 HugeGraph；导出与迁移请查看 [Source 文档](/cn/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/) |
 | [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/) | 提供部署、图管理、备份恢复和 Gremlin 执行等命令行能力 |
 
 ## 图计算引擎（OLAP）

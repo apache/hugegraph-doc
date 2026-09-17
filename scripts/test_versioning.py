@@ -424,8 +424,13 @@ class VersionUrlTest(unittest.TestCase):
                 [
                     "/docs/quickstart/computing/hugegraph-vermeer",
                     "/docs/quickstart/computing/hugegraph-computer",
-                    "/docs/quickstart/computing/hugegraph-computer-config",
                 ],
+            )
+            self.assertEqual(
+                nav["children_by_url"][
+                    "/docs/quickstart/computing/hugegraph-computer/"
+                ],
+                ["/docs/quickstart/computing/hugegraph-computer-config"],
             )
             self.assertNotIn("/docs/introduction", all_pages)
             self.assertIn(

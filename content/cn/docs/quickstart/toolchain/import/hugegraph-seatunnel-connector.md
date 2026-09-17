@@ -16,7 +16,7 @@ SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph。连接器分
 
 ## 1 与 Loader 和 Tools 的区别
 
-[HugeGraph-Loader](/cn/docs/quickstart/toolchain/import/hugegraph-loader/) 适合把常见数据直接导入 HugeGraph；[HugeGraph-Tools](/cn/docs/quickstart/toolchain/export-migration/hugegraph-tools/) 主要用于单机图管理、备份和导出；SeaTunnel 则把任务组织成 **Source → Transform → Sink**，适合复用已有的连接器、转换步骤和数据处理管道。
+[HugeGraph-Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) 适合把常见数据直接导入 HugeGraph；[HugeGraph-Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/) 主要用于单机图管理、备份和导出；SeaTunnel 则把任务组织成 **Source → Transform → Sink**，适合复用已有的连接器、转换步骤和数据处理管道。
 
 > **表格标记**
 >
@@ -306,7 +306,7 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 
 ## 6 选型小结
 
-选工具时，先看要完成的工作：图管理、Gremlin、备份或克隆可用 [Tools](/cn/docs/quickstart/toolchain/export-migration/hugegraph-tools/)；直接导入图可先看 [Loader](/cn/docs/quickstart/toolchain/import/hugegraph-loader/)；需要复用 Source、Transform、Sink 管道时选 SeaTunnel。使用 SeaTunnel 的图读取和迁移能力时，请按本文使用的 3.0+ 版本准备环境。
+选工具时，先看要完成的工作：图管理、Gremlin、备份或克隆可用 [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/)；直接导入图可先看 [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/)；需要复用 Source、Transform、Sink 管道时选 SeaTunnel。使用 SeaTunnel 的图读取和迁移能力时，请按本文使用的 3.0+ 版本准备环境。
 
 [![按工作流选择工具：图管理用 Tools，直接导入用 Loader，复用数据管道用 SeaTunnel](/cn/docs/images/seatunnel/seatunnel-tool-choice-zh.png)](/cn/docs/images/seatunnel/seatunnel-tool-choice-zh.png)
 

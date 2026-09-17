@@ -10,4 +10,4 @@ weight: 8
 
 Available benchmark pages:
 
-- [HugeGraph 0.5.6 Benchmark](hugegraph-benchmark-0.5.6/) — historical report, pending a rerun with the unified methodology; it contains the [HugeGraph 0.4.4 historical benchmark](hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4/).
+- [HugeGraph 0.5.6 Benchmark](hugegraph-benchmark-0.5.6/) — historical report, pending a rerun with the unified methodology; it contains the [HugeGraph 0.4.4 historical benchmark](hugegraph-benchmark-0.4.4/).

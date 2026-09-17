@@ -17,9 +17,9 @@ weight: 1
 HugeGraph 包括三个层次的功能，分别是应用程序层、图引擎层和存储层。
 
 - 应用程序层：
-  - [Hubble](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble/): 一站式可视化分析平台，平台涵盖了从数据建模，到数据快速导入，再到数据的在线、离线分析、以及图的统一管理的全过程，实现了图应用的全流程向导式操作。
-  - [Loader](/cn/docs/quickstart/toolchain/import/hugegraph-loader/): 数据导入组件，能够将多种数据源的数据转化为图的顶点和边并批量导入到图数据库中。
-  - [Tools](/cn/docs/quickstart/toolchain/export-migration/hugegraph-tools/): 命令行工具，用于部署、管理和备份/恢复 HugeGraph 中的数据。
+  - [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/): 一站式可视化分析平台，平台涵盖了从数据建模，到数据快速导入，再到数据的在线、离线分析、以及图的统一管理的全过程，实现了图应用的全流程向导式操作。
+  - [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/): 数据导入组件，能够将多种数据源的数据转化为图的顶点和边并批量导入到图数据库中。
+  - [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/): 命令行工具，用于部署、管理和备份/恢复 HugeGraph 中的数据。
   - [Computer](/cn/docs/quickstart/computing/hugegraph-computer/): 分布式图处理系统 (OLAP)，它是 [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf) 的一个实现，可以运行在 Kubernetes 上。
   - [Client](/cn/docs/quickstart/client/hugegraph-client/)：客户端 SDK 封装了 HugeGraph Server 的连接、Schema 管理、图数据读写和查询等核心操作。目前支持 [Java](/cn/docs/quickstart/client/hugegraph-client/)、[Python](/cn/docs/quickstart/client/hugegraph-client-python/) 和 [Go](/cn/docs/quickstart/client/hugegraph-client-go/) 版本，Rust 客户端正在开发中。
 - [图引擎层](/cn/docs/quickstart/hugegraph/hugegraph-server/)：

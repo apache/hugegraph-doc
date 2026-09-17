@@ -2,8 +2,6 @@
 title: "HugeGraph-Computer Configuration Reference"
 linkTitle: "Computer Config Reference"
 weight: 3
-aliases:
-  - /docs/quickstart/computing/hugegraph-computer-config/
 ---
 
 ## Computer Config Options

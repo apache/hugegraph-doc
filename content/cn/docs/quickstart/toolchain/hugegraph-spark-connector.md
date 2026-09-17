@@ -2,8 +2,6 @@
 title: "HugeGraph-Spark-Connector Quick Start"
 linkTitle: "使用 Spark Connector 读写图数据"
 weight: 4
-aliases:
-  - /docs/quickstart/toolchain/hugegraph-spark-connector/
 ---
 
 ### 1 HugeGraph-Spark-Connector 概述

@@ -2,8 +2,6 @@
 title: "HugeGraph-Spark-Connector Quick Start"
 linkTitle: "Read/Write Graph Data with Spark Connector"
 weight: 4
-aliases:
-  - /docs/quickstart/toolchain/hugegraph-spark-connector/
 ---
 
 ### 1 HugeGraph-Spark-Connector Overview

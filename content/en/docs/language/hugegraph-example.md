@@ -179,7 +179,7 @@ g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place
 g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place').by('name')
 ```
 
-It is recommended to use [HugeGraph-Hubble](/docs/quickstart/toolchain/visualization/hugegraph-hubble) to execute the above code visually. Additionally, the code can be executed through various other methods such as HugeGraph-Client, HugeGraph-Api, GremlinConsole, and GremlinDriver.
+It is recommended to use [HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph-hubble) to execute the above code visually. Additionally, the code can be executed through various other methods such as HugeGraph-Client, HugeGraph-Api, GremlinConsole, and GremlinDriver.
 
 #### 3.2 Summary
 

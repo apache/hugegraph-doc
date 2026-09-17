@@ -63,11 +63,11 @@ HugeGraph Toolchain provides clients, data import, visual management, Spark inte
 | Module | Purpose |
 |---|---|
 | [Client](/docs/quickstart/client/hugegraph-client/) | Wraps schema management, graph data reads and writes, Gremlin, and Traverser APIs; supports Java, [Python](/docs/quickstart/client/hugegraph-client-python/), and [Go](/docs/quickstart/client/hugegraph-client-go/), with a Rust client under development |
-| [Loader](/docs/quickstart/toolchain/import/hugegraph-loader/) | Reads data from local files, HDFS, JDBC, Kafka, or another graph, converts it into vertices and edges, and imports it into HugeGraph in batches |
-| [Hubble](/docs/quickstart/toolchain/visualization/hugegraph-hubble/) | Provides a web management interface for graph connections, schemas, data import, Gremlin queries, and visual results |
-| [Spark Connector](/docs/quickstart/toolchain/import/hugegraph-spark-connector/) | Reads and writes HugeGraph data in Spark jobs for offline big-data processing |
+| [Loader](/docs/quickstart/toolchain/hugegraph-loader/) | Reads data from local files, HDFS, JDBC, Kafka, or another graph, converts it into vertices and edges, and imports it into HugeGraph in batches |
+| [Hubble](/docs/quickstart/toolchain/hugegraph-hubble/) | Provides a web management interface for graph connections, schemas, data import, Gremlin queries, and visual results |
+| [Spark Connector](/docs/quickstart/toolchain/hugegraph-spark-connector/) | Reads and writes HugeGraph data in Spark jobs for offline big-data processing |
 | [SeaTunnel Sink](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/) | Imports data into HugeGraph through SeaTunnel 3.0+; see the [Source guide](/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/) for exports and migrations |
-| [Tools](/docs/quickstart/toolchain/export-migration/hugegraph-tools/) | Provides command-line operations for deployment, graph management, backup and restore, and Gremlin execution |
+| [Tools](/docs/quickstart/toolchain/hugegraph-tools/) | Provides command-line operations for deployment, graph management, backup and restore, and Gremlin execution |
 
 ## Graph Computing Engines (OLAP)
 
@@ -106,8 +106,8 @@ Graph computing is an OLAP workload. Its capacity and resource requirements depe
 | Goal | Documentation |
 |---|---|
 | Start the graph database and run queries | [Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/) |
-| Import data in batches | [Loader](/docs/quickstart/toolchain/import/hugegraph-loader/) |
-| Manage graphs through a web interface | [Hubble](/docs/quickstart/toolchain/visualization/hugegraph-hubble/) |
+| Import data in batches | [Loader](/docs/quickstart/toolchain/hugegraph-loader/) |
+| Manage graphs through a web interface | [Hubble](/docs/quickstart/toolchain/hugegraph-hubble/) |
 | Run graph algorithms | [Vermeer and Computer](/docs/quickstart/computing/) |
 | Build GraphRAG or graph machine learning applications | [HugeGraph-AI](/docs/quickstart/hugegraph-ai/) |
 

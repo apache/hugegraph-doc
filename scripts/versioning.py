@@ -105,7 +105,7 @@ DOCS_NAV_EXPECTED_STATS = {
         "pages": 91,
         "removed": 4,
         "scopedLinks": 0,
-        "treeSha256": "44ccf2443207575f15c09af0f5b7c254da179a0c00724bff70f7214b70c95606",
+        "treeSha256": "3314337a4c679484d29ebb8e613d5e85dc8bb9020a7465c13b95441b0856f485",
     },
     "1.7": {
         "groups": 5,
@@ -687,20 +687,23 @@ def materialize_docs_navigation(
 
     routes = docs_content_routes(assembly, "en") & docs_content_routes(assembly, "cn")
     groups_for_materialization = groups
-    # Releases before the ToolChain or Computer regrouping still store these
-    # pages at flat paths. Keep their sidebars populated with the historical
-    # layout instead of dropping entries when building archives.
+    # Releases before the ToolChain regrouping still store those pages at flat
+    # paths. Keep their sidebars populated with the historical layout instead
+    # of dropping entries when building archives. Computer and benchmark keep
+    # their public flat URLs, so their authored parent-child relationships are
+    # safe to retain across both current and historical builds.
     regrouped_toolchain = (
         "/docs/quickstart/toolchain/visualization" in routes
         and "/docs/quickstart/toolchain/import" in routes
         and "/docs/quickstart/toolchain/export-migration" in routes
     )
     regrouped_computing = (
-        "/docs/quickstart/computing/hugegraph-computer/config" in routes
+        "/docs/quickstart/computing/hugegraph-computer" in routes
+        and "/docs/quickstart/computing/hugegraph-computer-config" in routes
     )
     regrouped_benchmark = (
-        "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4"
-        in routes
+        "/docs/performance/hugegraph-benchmark-0.5.6" in routes
+        and "/docs/performance/hugegraph-benchmark-0.4.4" in routes
     )
     if not regrouped_toolchain or not regrouped_computing or not regrouped_benchmark:
         groups_for_materialization = json.loads(json.dumps(groups))

@@ -26,7 +26,7 @@ Restore has two modes:
 
 ## Instructions
 
-You can use [hugegraph-tools](/docs/quickstart/toolchain/export-migration/hugegraph-tools) to backup and restore the graph.
+You can use [hugegraph-tools](/docs/quickstart/toolchain/hugegraph-tools) to backup and restore the graph.
 
 #### Backup
 
@@ -73,7 +73,7 @@ So far, a complete graph backup and graph recovery process is over.
 
 #### help
 
-For detailed usage of backup and restore commands, please refer to the [hugegraph-tools documentation](/docs/quickstart/toolchain/export-migration/hugegraph-tools).
+For detailed usage of backup and restore commands, please refer to the [hugegraph-tools documentation](/docs/quickstart/toolchain/hugegraph-tools).
 
 ## API description for Backup/Restore usage and implementation
 

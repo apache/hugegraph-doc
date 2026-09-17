@@ -2,8 +2,6 @@
 title: "Tools Quick Start"
 linkTitle: "Manage with Tools"
 weight: 3
-aliases:
-  - /docs/quickstart/toolchain/hugegraph-tools/
 ---
 
 ### 1 HugeGraph-Tools Overview

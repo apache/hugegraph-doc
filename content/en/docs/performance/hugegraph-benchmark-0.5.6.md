@@ -12,7 +12,7 @@ sidebar_expanded: true
 > **autonomous distributed storage** and **enhanced computational push down capabilities**. Alternatively, 
 > you may wait for the community to update the data with these enhancements.
 
-The [HugeGraph 0.4.4 historical benchmark](hugegraph-benchmark-0.4.4/) in this directory uses data collected in 2018 and is provided for historical reference only.
+The [HugeGraph 0.4.4 historical benchmark]({{< relref path="/docs/performance/hugegraph-benchmark-0.4.4.md" lang="en" >}}) in this directory uses data collected in 2018 and is provided for historical reference only.
 
 ### 1 Test environment
 

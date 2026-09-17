@@ -44,7 +44,7 @@
               "page": "/docs/quickstart/toolchain/visualization",
               "children": [
                 {
-                  "page": "/docs/quickstart/toolchain/visualization/hugegraph-hubble"
+                  "page": "/docs/quickstart/toolchain/hugegraph-hubble"
                 }
               ]
             },
@@ -52,13 +52,13 @@
               "page": "/docs/quickstart/toolchain/import",
               "children": [
                 {
-                  "page": "/docs/quickstart/toolchain/import/hugegraph-loader"
+                  "page": "/docs/quickstart/toolchain/hugegraph-loader"
                 },
                 {
                   "page": "/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector"
                 },
                 {
-                  "page": "/docs/quickstart/toolchain/import/hugegraph-spark-connector"
+                  "page": "/docs/quickstart/toolchain/hugegraph-spark-connector"
                 }
               ]
             },
@@ -66,7 +66,7 @@
               "page": "/docs/quickstart/toolchain/export-migration",
               "children": [
                 {
-                  "page": "/docs/quickstart/toolchain/export-migration/hugegraph-tools"
+                  "page": "/docs/quickstart/toolchain/hugegraph-tools"
                 },
                 {
                   "page": "/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source"
@@ -85,7 +85,7 @@
               "page": "/docs/quickstart/computing/hugegraph-computer",
               "children": [
                 {
-                  "page": "/docs/quickstart/computing/hugegraph-computer/config"
+                  "page": "/docs/quickstart/computing/hugegraph-computer-config"
                 }
               ]
             }
@@ -286,7 +286,7 @@
               "page": "/docs/performance/hugegraph-benchmark-0.5.6",
               "children": [
                 {
-                  "page": "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4"
+                  "page": "/docs/performance/hugegraph-benchmark-0.4.4"
                 }
               ]
             },
@@ -415,8 +415,8 @@
               "url": "/docs/quickstart/toolchain/visualization/",
               "children": [
                 {
-                  "page": "/docs/quickstart/toolchain/visualization/hugegraph-hubble",
-                  "url": "/docs/quickstart/toolchain/visualization/hugegraph-hubble/",
+                  "page": "/docs/quickstart/toolchain/hugegraph-hubble",
+                  "url": "/docs/quickstart/toolchain/hugegraph-hubble/",
                   "children": []
                 }
               ]
@@ -426,8 +426,8 @@
               "url": "/docs/quickstart/toolchain/import/",
               "children": [
                 {
-                  "page": "/docs/quickstart/toolchain/import/hugegraph-loader",
-                  "url": "/docs/quickstart/toolchain/import/hugegraph-loader/",
+                  "page": "/docs/quickstart/toolchain/hugegraph-loader",
+                  "url": "/docs/quickstart/toolchain/hugegraph-loader/",
                   "children": []
                 },
                 {
@@ -436,8 +436,8 @@
                   "children": []
                 },
                 {
-                  "page": "/docs/quickstart/toolchain/import/hugegraph-spark-connector",
-                  "url": "/docs/quickstart/toolchain/import/hugegraph-spark-connector/",
+                  "page": "/docs/quickstart/toolchain/hugegraph-spark-connector",
+                  "url": "/docs/quickstart/toolchain/hugegraph-spark-connector/",
                   "children": []
                 }
               ]
@@ -447,8 +447,8 @@
               "url": "/docs/quickstart/toolchain/export-migration/",
               "children": [
                 {
-                  "page": "/docs/quickstart/toolchain/export-migration/hugegraph-tools",
-                  "url": "/docs/quickstart/toolchain/export-migration/hugegraph-tools/",
+                  "page": "/docs/quickstart/toolchain/hugegraph-tools",
+                  "url": "/docs/quickstart/toolchain/hugegraph-tools/",
                   "children": []
                 },
                 {
@@ -474,8 +474,8 @@
               "url": "/docs/quickstart/computing/hugegraph-computer/",
               "children": [
                 {
-                  "page": "/docs/quickstart/computing/hugegraph-computer/config",
-                  "url": "/docs/quickstart/computing/hugegraph-computer/config/",
+                  "page": "/docs/quickstart/computing/hugegraph-computer-config",
+                  "url": "/docs/quickstart/computing/hugegraph-computer-config/",
                   "children": []
                 }
               ]
@@ -762,8 +762,8 @@
               "url": "/docs/performance/hugegraph-benchmark-0.5.6/",
               "children": [
                 {
-                  "page": "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4",
-                  "url": "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4/",
+                  "page": "/docs/performance/hugegraph-benchmark-0.4.4",
+                  "url": "/docs/performance/hugegraph-benchmark-0.4.4/",
                   "children": []
                 }
               ]
@@ -907,22 +907,22 @@
       "/docs/quickstart/toolchain/",
       "/docs/quickstart/toolchain/visualization/"
     ],
-    "/docs/quickstart/toolchain/visualization/hugegraph-hubble/": [
+    "/docs/quickstart/toolchain/hugegraph-hubble/": [
       "@group/components",
       "/docs/quickstart/toolchain/",
       "/docs/quickstart/toolchain/visualization/",
-      "/docs/quickstart/toolchain/visualization/hugegraph-hubble/"
+      "/docs/quickstart/toolchain/hugegraph-hubble/"
     ],
     "/docs/quickstart/toolchain/import/": [
       "@group/components",
       "/docs/quickstart/toolchain/",
       "/docs/quickstart/toolchain/import/"
     ],
-    "/docs/quickstart/toolchain/import/hugegraph-loader/": [
+    "/docs/quickstart/toolchain/hugegraph-loader/": [
       "@group/components",
       "/docs/quickstart/toolchain/",
       "/docs/quickstart/toolchain/import/",
-      "/docs/quickstart/toolchain/import/hugegraph-loader/"
+      "/docs/quickstart/toolchain/hugegraph-loader/"
     ],
     "/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/": [
       "@group/components",
@@ -930,22 +930,22 @@
       "/docs/quickstart/toolchain/import/",
       "/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/"
     ],
-    "/docs/quickstart/toolchain/import/hugegraph-spark-connector/": [
+    "/docs/quickstart/toolchain/hugegraph-spark-connector/": [
       "@group/components",
       "/docs/quickstart/toolchain/",
       "/docs/quickstart/toolchain/import/",
-      "/docs/quickstart/toolchain/import/hugegraph-spark-connector/"
+      "/docs/quickstart/toolchain/hugegraph-spark-connector/"
     ],
     "/docs/quickstart/toolchain/export-migration/": [
       "@group/components",
       "/docs/quickstart/toolchain/",
       "/docs/quickstart/toolchain/export-migration/"
     ],
-    "/docs/quickstart/toolchain/export-migration/hugegraph-tools/": [
+    "/docs/quickstart/toolchain/hugegraph-tools/": [
       "@group/components",
       "/docs/quickstart/toolchain/",
       "/docs/quickstart/toolchain/export-migration/",
-      "/docs/quickstart/toolchain/export-migration/hugegraph-tools/"
+      "/docs/quickstart/toolchain/hugegraph-tools/"
     ],
     "/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/": [
       "@group/components",
@@ -967,11 +967,11 @@
       "/docs/quickstart/computing/",
       "/docs/quickstart/computing/hugegraph-computer/"
     ],
-    "/docs/quickstart/computing/hugegraph-computer/config/": [
+    "/docs/quickstart/computing/hugegraph-computer-config/": [
       "@group/components",
       "/docs/quickstart/computing/",
       "/docs/quickstart/computing/hugegraph-computer/",
-      "/docs/quickstart/computing/hugegraph-computer/config/"
+      "/docs/quickstart/computing/hugegraph-computer-config/"
     ],
     "/docs/quickstart/hugegraph-ai/": [
       "@group/components",
@@ -1241,11 +1241,11 @@
       "/docs/performance/",
       "/docs/performance/hugegraph-benchmark-0.5.6/"
     ],
-    "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4/": [
+    "/docs/performance/hugegraph-benchmark-0.4.4/": [
       "@group/operate",
       "/docs/performance/",
       "/docs/performance/hugegraph-benchmark-0.5.6/",
-      "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4/"
+      "/docs/performance/hugegraph-benchmark-0.4.4/"
     ],
     "/docs/performance/hugegraph-loader-performance/": [
       "@group/operate",
@@ -1341,15 +1341,15 @@
       "/docs/quickstart/toolchain/export-migration"
     ],
     "/docs/quickstart/toolchain/visualization/": [
-      "/docs/quickstart/toolchain/visualization/hugegraph-hubble"
+      "/docs/quickstart/toolchain/hugegraph-hubble"
     ],
     "/docs/quickstart/toolchain/import/": [
-      "/docs/quickstart/toolchain/import/hugegraph-loader",
+      "/docs/quickstart/toolchain/hugegraph-loader",
       "/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector",
-      "/docs/quickstart/toolchain/import/hugegraph-spark-connector"
+      "/docs/quickstart/toolchain/hugegraph-spark-connector"
     ],
     "/docs/quickstart/toolchain/export-migration/": [
-      "/docs/quickstart/toolchain/export-migration/hugegraph-tools",
+      "/docs/quickstart/toolchain/hugegraph-tools",
       "/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source"
     ],
     "/docs/quickstart/computing/": [
@@ -1357,7 +1357,7 @@
       "/docs/quickstart/computing/hugegraph-computer"
     ],
     "/docs/quickstart/computing/hugegraph-computer/": [
-      "/docs/quickstart/computing/hugegraph-computer/config"
+      "/docs/quickstart/computing/hugegraph-computer-config"
     ],
     "/docs/quickstart/hugegraph-ai/": [
       "/docs/quickstart/hugegraph-ai/quick_start",
@@ -1416,7 +1416,7 @@
       "/docs/performance/api-performance/hugegraph-api-0.5.6-rocksdb"
     ],
     "/docs/performance/hugegraph-benchmark-0.5.6/": [
-      "/docs/performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4"
+      "/docs/performance/hugegraph-benchmark-0.4.4"
     ],
     "/docs/changelog/": [
       "/docs/changelog/hugegraph-1.0.0-release-notes",

@@ -16,10 +16,10 @@ draft: true
 - [Java Client](quickstart/client/hugegraph-client)
 - [Go Client](quickstart/client/hugegraph-client-go)
 - [Python Client](quickstart/client/hugegraph-client-python)
-- [Loader](quickstart/toolchain/import/hugegraph-loader)
-- [Hubble](quickstart/toolchain/visualization/hugegraph-hubble)
-- [Spark Connector](quickstart/toolchain/import/hugegraph-spark-connector)
-- [Tools](quickstart/toolchain/export-migration/hugegraph-tools)
+- [Loader](quickstart/toolchain/hugegraph-loader)
+- [Hubble](quickstart/toolchain/hugegraph-hubble)
+- [Spark Connector](quickstart/toolchain/hugegraph-spark-connector)
+- [Tools](quickstart/toolchain/hugegraph-tools)
 - [Vermeer](quickstart/computing/hugegraph-vermeer)
 - [Computer](quickstart/computing/hugegraph-computer)
 - [HugeGraph-AI](quickstart/hugegraph-ai/quick_start)
@@ -52,7 +52,7 @@ draft: true
 ## Performance
 
 - [HugeGraph Benchmark Performance](performance/hugegraph-benchmark-0.5.6)
-  - [HugeGraph 0.4.4 Historical Benchmark](performance/hugegraph-benchmark-0.5.6/hugegraph-benchmark-0.4.4)
+  - [HugeGraph 0.4.4 Historical Benchmark](performance/hugegraph-benchmark-0.4.4)
 - [HugeGraph API Performance-Outdated](performance/api-performance)
   - [v0.5.6 Stand-alone (RocksDB)](performance/api-performance/hugegraph-api-0.5.6-rocksdb)
   - [v0.5.6 Cluster (Cassandra)](performance/api-performance/hugegraph-api-0.5.6-cassandra)

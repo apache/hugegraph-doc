@@ -16,7 +16,7 @@ Click a diagram to view the original size.
 
 ## 1 Loader, Tools, and SeaTunnel
 
-[HugeGraph-Loader](/docs/quickstart/toolchain/import/hugegraph-loader/) is suited to direct imports from common data sources. [HugeGraph-Tools](/docs/quickstart/toolchain/export-migration/hugegraph-tools/) focuses on standalone graph management, backup, and export. SeaTunnel organizes a job as **Source → Transform → Sink**, so you can reuse existing connectors, transforms, and data pipelines.
+[HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/) is suited to direct imports from common data sources. [HugeGraph-Tools](/docs/quickstart/toolchain/hugegraph-tools/) focuses on standalone graph management, backup, and export. SeaTunnel organizes a job as **Source → Transform → Sink**, so you can reuse existing connectors, transforms, and data pipelines.
 
 > **Table legend**
 >
@@ -306,7 +306,7 @@ Use these checks when a job fails:
 
 ## 6 Choosing a tool
 
-Choose a tool based on the work to complete. Use [Tools](/docs/quickstart/toolchain/export-migration/hugegraph-tools/) for graph management, Gremlin, backup, or cloning. Use [Loader](/docs/quickstart/toolchain/import/hugegraph-loader/) for a direct graph import. Choose SeaTunnel when you need to reuse a Source, Transform, and Sink pipeline. For SeaTunnel graph reads and migrations, prepare the environment using the SeaTunnel 3.0+ version used by this guide.
+Choose a tool based on the work to complete. Use [Tools](/docs/quickstart/toolchain/hugegraph-tools/) for graph management, Gremlin, backup, or cloning. Use [Loader](/docs/quickstart/toolchain/hugegraph-loader/) for a direct graph import. Choose SeaTunnel when you need to reuse a Source, Transform, and Sink pipeline. For SeaTunnel graph reads and migrations, prepare the environment using the SeaTunnel 3.0+ version used by this guide.
 
 [![Choosing a tool: Tools for graph management, Loader for direct imports, and SeaTunnel for reusable data pipelines](/docs/images/seatunnel/seatunnel-tool-choice-en.png)](/docs/images/seatunnel/seatunnel-tool-choice-en.png)
 

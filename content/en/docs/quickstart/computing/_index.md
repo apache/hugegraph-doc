@@ -12,5 +12,5 @@ The HugeGraph-Computer repository contains two OLAP systems: Vermeer, an in-memo
 
 - [Vermeer Quick Start](./hugegraph-vermeer.md)
 - [Computer Quick Start](./hugegraph-computer/)
-- [Computer Configuration Reference](./hugegraph-computer/config.md)
+- [Computer Configuration Reference](./hugegraph-computer-config.md)
 - [Source code](https://github.com/apache/hugegraph-computer)

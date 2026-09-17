@@ -2,8 +2,6 @@
 title: "Tools Quick Start"
 linkTitle: "使用 Tools 导出/管理图"
 weight: 3
-aliases:
-  - /docs/quickstart/toolchain/hugegraph-tools/
 ---
 
 ### 1 HugeGraph-Tools概述

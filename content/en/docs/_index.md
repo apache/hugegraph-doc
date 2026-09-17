@@ -15,8 +15,8 @@ Apache HugeGraph includes graph database, graph computing, and graph AI componen
 | **Run graph queries** (OLTP) | [HugeGraph Server Quickstart](quickstart/hugegraph/hugegraph-server) |
 | **Large-scale graph computing** (OLAP) | [Graph Computing Engine](quickstart/computing/hugegraph-computer) |
 | **Build Graph + AI applications** | [HugeGraph-AI](quickstart/hugegraph-ai/quick_start) |
-| **Batch import data** | [HugeGraph Loader](quickstart/toolchain/import/hugegraph-loader) |
-| **Visualize and manage graphs** | [Hubble Web UI](quickstart/toolchain/visualization/hugegraph-hubble) |
+| **Batch import data** | [HugeGraph Loader](quickstart/toolchain/hugegraph-loader) |
+| **Visualize and manage graphs** | [Hubble Web UI](quickstart/toolchain/hugegraph-hubble) |
 
 ### Ecosystem Overview
 

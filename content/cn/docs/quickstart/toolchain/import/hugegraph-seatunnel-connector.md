@@ -1,6 +1,6 @@
 ---
-title: "使用 SeaTunnel 导入图数据"
-linkTitle: "SeaTunnel Sink：图导入"
+title: "使用 SeaTunnel Sink 导入图数据"
+linkTitle: "使用 SeaTunnel Sink 导入图数据"
 weight: 2
 aliases:
   - /docs/quickstart/toolchain/hugegraph-seatunnel-connector/
@@ -18,18 +18,20 @@ SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph。连接器分
 
 [HugeGraph-Loader](/cn/docs/quickstart/toolchain/import/hugegraph-loader/) 适合把常见数据直接导入 HugeGraph；[HugeGraph-Tools](/cn/docs/quickstart/toolchain/export-migration/hugegraph-tools/) 主要用于单机图管理、备份和导出；SeaTunnel 则把任务组织成 **Source → Transform → Sink**，适合复用已有的连接器、转换步骤和数据处理管道。
 
+**表格标记**：✅ 原生支持；⚠️ 有条件支持，或需要额外组件/外部平台；❌ 不提供该能力。
+
 | 对比点 | Loader | Tools | SeaTunnel |
 | --- | --- | --- | --- |
-| 主要场景 | 批量导入图数据，描述记录如何生成顶点和边 | 单机备份、恢复、导出和图运维 | 把 HugeGraph 接入可复用的数据集成管道 |
+| 任务覆盖 | ✅ 直接导入图数据 | ✅ 备份、恢复和导出 | ✅ 导入、导出与迁移，可组合 Source、Transform、Sink |
 | 任务配置 | JSON 映射文件，描述输入源、顶点和边 | 命令行参数和运维命令 | [HOCON 作业文件](https://seatunnel.apache.org/docs/introduction/concepts/config/)，组合 Source、Transform 和 Sink |
-| 默认部署 | 单机 CLI；可借助 Spark Loader 扩展 | 单机 CLI | 支持 local 和 distributed 模式，可扩展引擎与连接器 |
-| 前端与可观测性 | 无内置前端，主要查看 CLI 日志 | 无内置前端，主要查看 CLI 日志 | 提供内置 Web UI 作业面板，方便查看任务状态和运行情况 |
-| 输入与输出 | 围绕图导入，覆盖常见文件、JDBC、Kafka 等 | 围绕图数据和备份文件，覆盖常见存储 | 连接器生态可覆盖数十种输入和输出类型 |
-| 调度与资源管理 | 没有统一的跨任务调度和资源分配机制 | 没有统一的跨任务调度和资源分配机制 | 可结合 DolphinScheduler 做调度和任务管理 |
-| 易用性 | 专注导入，配置简单；后续提供二进制 CLI 后更方便快速使用 | 命令直接，适合单机运维 | 配置和运行组件较多，适合长期数据管道 |
-| 高性能导入 | 支持 bypass-server 等优化；特定后端和硬件条件下，实测峰值可达 100～200 万条/秒，需按实际场景压测 | 重点是备份和导出，不以批量导入吞吐为主要目标 | 依靠并行度、分布式引擎和连接器扩展吞吐 |
+| 默认部署 | ✅ 单机 CLI；⚠️ 可借助 Spark Loader 扩展 | ✅ 单机 CLI | ✅ 单机；✅ 分布式 |
+| 前端与可观测性 | ❌ 无内置前端，查看 CLI 日志 | ❌ 无内置前端，查看 CLI 日志 | ✅ 内置 Web UI 作业面板，方便查看任务状态和运行情况 |
+| 输入与输出 | ⚠️ 围绕图导入，支持常见文件、JDBC、Kafka 等 | ⚠️ 围绕图数据和备份文件，支持常见存储 | ✅ 数十种连接器，含 JDBC、Kafka、SQL-CDC 等 |
+| 调度与资源管理 | ❌ 无统一的跨任务调度和资源分配机制 | ❌ 无统一的跨任务调度和资源分配机制 | ⚠️ 可结合 DolphinScheduler 做调度和任务管理 |
+| 易用性 | ✅ 专注导入，配置简单；后续提供二进制 CLI 后更方便快速使用 | ✅ 命令直接，适合单机运维 | ⚠️ 配置和运行组件较多，适合长期数据管道 |
+| 高性能导入 | ✅ 支持 bypass-server 等优化；特定后端和硬件条件下，实测峰值可达 100～200 万条/秒，需按实际场景压测 | ⚠️ 重点是备份和导出，不以批量导入吞吐为主要目标 | ✅ 依靠并行度、分布式引擎和连接器扩展吞吐 |
 
-三者都可能接触 JDBC、Kafka 或图数据，但选型不要只看数据源。默认情况下，Loader 和 Tools 都在单机运行；SeaTunnel 同时支持单机和分布式部署，可随着数据量和任务数量扩展。Tools 的 `schedule-backup` 可以创建 crontab 任务，但它不是统一的任务编排和资源管理平台。
+SeaTunnel 覆盖 Loader 的图导入和 Tools 的导出、迁移场景，可以把两类任务放进同一条可扩展管道，还支持 SQL-CDC 和数十种输入输出类型。默认情况下，Loader 和 Tools 都在单机运行；SeaTunnel 同时支持单机和分布式部署，可随着数据量和任务数量扩展。Tools 的 `schedule-backup` 可以创建 crontab 任务，但它不负责统一的任务编排和资源管理。
 
 Loader 和 Tools 的优势是专注、直接、上手快。需要直接导入图数据时可先用 Loader；需要备份、恢复、导出或日常运维时可用 Tools。如果已经有 SeaTunnel 作业，通常在原管道中接入 HugeGraph 更方便。需要更高导入吞吐时，Loader 的 bypass-server 和其他导入优化更合适；Loader 在特定后端、数据规模和硬件条件下实测峰值可达 100～200 万条/秒，不能直接当作通用性能承诺，仍需单独压测。新建 SeaTunnel 任务使用 [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) 和 `mappings`。使用其他版本时，请重新核对连接器配置。
 

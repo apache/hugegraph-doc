@@ -1,6 +1,6 @@
 ---
-title: "Import Graph Data with SeaTunnel"
-linkTitle: "SeaTunnel Sink: Graph Import"
+title: "Import Graph Data with SeaTunnel Sink"
+linkTitle: "Import graph data with SeaTunnel Sink"
 weight: 2
 aliases:
   - /docs/quickstart/toolchain/hugegraph-seatunnel-connector/
@@ -18,20 +18,22 @@ Click a diagram to view the original size.
 
 [HugeGraph-Loader](/docs/quickstart/toolchain/import/hugegraph-loader/) is suited to direct imports from common data sources. [HugeGraph-Tools](/docs/quickstart/toolchain/export-migration/hugegraph-tools/) focuses on standalone graph management, backup, and export. SeaTunnel organizes a job as **Source → Transform → Sink**, so you can reuse existing connectors, transforms, and data pipelines.
 
+**Table legend**: ✅ supported natively; ⚠️ conditional support or requires an extra component/external platform; ❌ not provided.
+
 | Comparison | Loader | Tools | SeaTunnel |
 | --- | --- | --- | --- |
-| Main use | Batch graph imports that describe how records become vertices and edges | Standalone backup, restore, export, and graph operations | Connecting HugeGraph to a reusable data integration pipeline |
+| Task coverage | ✅ Direct graph imports | ✅ Backup, restore, and export | ✅ Import, export, and migration with composable Source, Transform, and Sink stages |
 | Job configuration | JSON mapping file describing the source, vertices, and edges | Command-line options and operations | [HOCON job file](https://seatunnel.apache.org/docs/introduction/concepts/config/) combining Source, Transform, and Sink |
-| Default deployment | Standalone CLI; Spark Loader can extend it | Standalone CLI | Supports local and distributed modes, with expandable engines and connectors |
-| Frontend and observability | No built-in frontend; inspect CLI logs | No built-in frontend; inspect CLI logs | Built-in Web UI job panel for task status and runtime information |
-| Input and output | Focused on graph imports and common files, JDBC, Kafka, and similar sources | Focused on graph data and backup files in common storage | Connector ecosystem can cover dozens of input and output types |
-| Scheduling and resource management | No unified cross-task scheduling or resource allocation | No unified cross-task scheduling or resource allocation | Can integrate with DolphinScheduler for scheduling and task management |
-| Simplicity | Focused and simple; a future binary CLI will make quick use easier | Direct commands for standalone operations | More runtime components, suited to long-lived data pipelines |
-| High-throughput import | Supports bypass-server and other optimizations; measured peaks can reach 1–2 million records/s with specific backends and hardware, so benchmark the actual setup | Focuses on backup and export rather than bulk-import throughput | Scales throughput through parallelism, distributed engines, and connectors |
+| Default deployment | ✅ Standalone CLI; ⚠️ Spark Loader can extend it | ✅ Standalone CLI | ✅ Standalone; ✅ distributed |
+| Frontend and observability | ❌ No built-in frontend; inspect CLI logs | ❌ No built-in frontend; inspect CLI logs | ✅ Built-in Web UI job panel for task status and runtime information |
+| Input and output | ⚠️ Focused on graph imports and common files, JDBC, Kafka, and similar sources | ⚠️ Focused on graph data and backup files in common storage | ✅ Dozens of connectors, including JDBC, Kafka, and SQL-CDC |
+| Scheduling and resource management | ❌ No unified cross-task scheduling or resource allocation | ❌ No unified cross-task scheduling or resource allocation | ⚠️ Can integrate with DolphinScheduler for scheduling and task management |
+| Simplicity | ✅ Focused and simple; a future binary CLI will make quick use easier | ✅ Direct commands for standalone operations | ⚠️ More runtime components, suited to long-lived data pipelines |
+| High-throughput import | ✅ Supports bypass-server and other optimizations; measured peaks can reach 1-2 million records/s with specific backends and hardware, so benchmark the actual setup | ⚠️ Focuses on backup and export rather than bulk-import throughput | ✅ Scales throughput through parallelism, distributed engines, and connectors |
 
-All three can work with JDBC, Kafka, or graph data, so choose by the work to complete rather than by the source alone. Loader and Tools normally run on one machine, while SeaTunnel supports both standalone and distributed deployments and scales with data and task volume. Tools' `schedule-backup` can create a crontab entry, but it is not a unified workflow and resource management platform.
+SeaTunnel covers Loader's graph-import and Tools' export and migration scenarios in one expandable pipeline, and it also supports SQL-CDC and dozens of input and output types. Loader and Tools normally run on one machine, while SeaTunnel supports both standalone and distributed deployments and scales with data and task volume. Tools' `schedule-backup` can create a crontab entry, but it does not provide unified workflow orchestration and resource management.
 
-Loader and Tools are focused, direct, and quick to start. Use Loader for a direct graph import; use Tools for backup, restore, export, or daily operations. If a SeaTunnel job already exists, adding HugeGraph to that pipeline is usually simpler. For higher import throughput, Loader's bypass-server path and other import optimizations are a better fit; measured peaks of 1–2 million records/s require a specific backend, data set, and hardware configuration and are not a general performance guarantee. For new SeaTunnel jobs, use [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) and `mappings`. Recheck the connector configuration when using another version.
+Loader and Tools are focused, direct, and quick to start. Use Loader for a direct graph import; use Tools for backup, restore, export, or daily operations. If a SeaTunnel job already exists, adding HugeGraph to that pipeline is usually simpler. For higher import throughput, Loader's bypass-server path and other import optimizations are a better fit; measured peaks of 1-2 million records/s require a specific backend, data set, and hardware configuration and are not a general performance guarantee. For new SeaTunnel jobs, use [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) and `mappings`. Recheck the connector configuration when using another version.
 
 ## 2 Prepare the environment
 

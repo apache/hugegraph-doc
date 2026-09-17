@@ -25,6 +25,7 @@ SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph。连接器分
 | 任务覆盖 | ✅ 直接导入图数据 | ✅ 备份、恢复和导出 | ✅ 导入、导出与迁移，可组合 Source、Transform、Sink |
 | 任务配置 | JSON 映射文件，描述输入源、顶点和边 | 命令行参数和运维命令 | [HOCON 作业文件](https://seatunnel.apache.org/docs/introduction/concepts/config/)，组合 Source、Transform 和 Sink |
 | 默认部署 | ✅ 单机 CLI；⚠️ 可借助 Spark Loader 扩展 | ✅ 单机 CLI | ✅ 单机；✅ 分布式 |
+| 执行引擎 | ⚠️ 以 CLI 为主，Spark Loader 是独立扩展 | ❌ 不提供 Spark/Flink 执行引擎 | ✅ HugeGraph Source/Sink 支持 Zeta、Spark、Flink |
 | 前端与可观测性 | ❌ 无内置前端，查看 CLI 日志 | ❌ 无内置前端，查看 CLI 日志 | ✅ 内置 Web UI 作业面板，方便查看任务状态和运行情况 |
 | 输入与输出 | ⚠️ 围绕图导入，支持常见文件、JDBC、Kafka 等 | ⚠️ 围绕图数据和备份文件，支持常见存储 | ✅ 数十种连接器，含 JDBC、Kafka、SQL-CDC 等 |
 | 调度与资源管理 | ❌ 无统一的跨任务调度和资源分配机制 | ❌ 无统一的跨任务调度和资源分配机制 | ⚠️ 可结合 DolphinScheduler 做调度和任务管理 |
@@ -32,6 +33,10 @@ SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph。连接器分
 | 高性能导入 | ✅ 支持 bypass-server 等优化；特定后端和硬件条件下，实测峰值可达 100～200 万条/秒，需按实际场景压测 | ⚠️ 重点是备份和导出，不以批量导入吞吐为主要目标 | ✅ 依靠并行度、分布式引擎和连接器扩展吞吐 |
 
 SeaTunnel 覆盖 Loader 的图导入和 Tools 的导出、迁移场景，可以把两类任务放进同一条可扩展管道，还支持 SQL-CDC 和数十种输入输出类型。默认情况下，Loader 和 Tools 都在单机运行；SeaTunnel 同时支持单机和分布式部署，可随着数据量和任务数量扩展。Tools 的 `schedule-backup` 可以创建 crontab 任务，但它不负责统一的任务编排和资源管理。
+
+> **已有 Spark/Flink 每日任务**
+>
+> HugeGraph Source 和 Sink 在 SeaTunnel 3.0.0-release 中都支持 SeaTunnel Engine（Zeta）、Spark 和 Flink。若把每日任务改成 SeaTunnel 作业，并用对应引擎提交，数据可以在 Source → Transform → Sink 之间直接传递，不需要先落盘再交给 Loader。若保留现有 Spark/Flink DAG，SeaTunnel 不会自动接管内存中的 DataFrame 或 Stream，需要改造成 SeaTunnel 作业，或让 Source 读取已有系统中的数据
 
 Loader 和 Tools 的优势是专注、直接、上手快。需要直接导入图数据时可先用 Loader；需要备份、恢复、导出或日常运维时可用 Tools。如果已经有 SeaTunnel 作业，通常在原管道中接入 HugeGraph 更方便。需要更高导入吞吐时，Loader 的 bypass-server 和其他导入优化更合适；Loader 在特定后端、数据规模和硬件条件下实测峰值可达 100～200 万条/秒，不能直接当作通用性能承诺，仍需单独压测。新建 SeaTunnel 任务使用 [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) 和 `mappings`。使用其他版本时，请重新核对连接器配置。
 
@@ -309,6 +314,10 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 - [HugeGraph Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md)
 - [JDBC Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Jdbc.md)
 - [Kafka Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/Kafka.md)
+- [SeaTunnel 引擎概览](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/overview.md)
+- [SeaTunnel Spark 引擎](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/spark.md)
+- [SeaTunnel Flink 引擎](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/engines/flink.md)
+- [Connector V2 多引擎说明](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/introduction/concepts/connector-v2-features.md)
 - [SeaTunnel 本地部署](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
 
 > **旧版本说明**

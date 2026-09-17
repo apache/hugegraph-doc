@@ -25,6 +25,7 @@ Click a diagram to view the original size.
 | Task coverage | ✅ Direct graph imports | ✅ Backup, restore, and export | ✅ Import, export, and migration with composable Source, Transform, and Sink stages |
 | Job configuration | JSON mapping file describing the source, vertices, and edges | Command-line options and operations | [HOCON job file](https://seatunnel.apache.org/docs/introduction/concepts/config/) combining Source, Transform, and Sink |
 | Default deployment | ✅ Standalone CLI; ⚠️ Spark Loader can extend it | ✅ Standalone CLI | ✅ Standalone; ✅ distributed |
+| Execution engine | ⚠️ Mainly CLI; Spark Loader is a separate extension | ❌ Does not provide a Spark/Flink execution engine | ✅ HugeGraph Source and Sink support Zeta, Spark, and Flink |
 | Frontend and observability | ❌ No built-in frontend; inspect CLI logs | ❌ No built-in frontend; inspect CLI logs | ✅ Built-in Web UI job panel for task status and runtime information |
 | Input and output | ⚠️ Focused on graph imports and common files, JDBC, Kafka, and similar sources | ⚠️ Focused on graph data and backup files in common storage | ✅ Dozens of connectors, including JDBC, Kafka, and SQL-CDC |
 | Scheduling and resource management | ❌ No unified cross-task scheduling or resource allocation | ❌ No unified cross-task scheduling or resource allocation | ⚠️ Can integrate with DolphinScheduler for scheduling and task management |
@@ -32,6 +33,10 @@ Click a diagram to view the original size.
 | High-throughput import | ✅ Supports bypass-server and other optimizations; measured peaks can reach 1-2 million records/s with specific backends and hardware, so benchmark the actual setup | ⚠️ Focuses on backup and export rather than bulk-import throughput | ✅ Scales throughput through parallelism, distributed engines, and connectors |
 
 SeaTunnel covers Loader's graph-import and Tools' export and migration scenarios in one expandable pipeline, and it also supports SQL-CDC and dozens of input and output types. Loader and Tools normally run on one machine, while SeaTunnel supports both standalone and distributed deployments and scales with data and task volume. Tools' `schedule-backup` can create a crontab entry, but it does not provide unified workflow orchestration and resource management.
+
+> **Existing Spark/Flink daily jobs**
+>
+> Both HugeGraph Source and Sink list SeaTunnel Engine (Zeta), Spark, and Flink as supported engines in SeaTunnel 3.0.0-release. If you express the daily job as a SeaTunnel job and submit it to that engine, records can move directly from Source to Transform to Sink without an intermediate file. If you keep the existing Spark/Flink DAG, SeaTunnel does not automatically take over its in-memory DataFrame or stream. Adapt it into a SeaTunnel job or expose the data through a Source connector
 
 Loader and Tools are focused, direct, and quick to start. Use Loader for a direct graph import; use Tools for backup, restore, export, or daily operations. If a SeaTunnel job already exists, adding HugeGraph to that pipeline is usually simpler. For higher import throughput, Loader's bypass-server path and other import optimizations are a better fit; measured peaks of 1-2 million records/s require a specific backend, data set, and hardware configuration and are not a general performance guarantee. For new SeaTunnel jobs, use [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) and `mappings`. Recheck the connector configuration when using another version.
 
@@ -309,6 +314,10 @@ Choose a tool based on the work to complete. Use [Tools](/docs/quickstart/toolch
 - [HugeGraph Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md)
 - [JDBC Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Jdbc.md)
 - [Kafka Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Kafka.md)
+- [SeaTunnel Engine Overview](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/overview.md)
+- [SeaTunnel Spark Engine](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/spark.md)
+- [SeaTunnel Flink Engine](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/flink.md)
+- [Connector V2 multi-engine support](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/introduction/concepts/connector-v2-features.md)
 - [SeaTunnel local deployment](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
 
 > **Legacy version note**

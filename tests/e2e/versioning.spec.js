@@ -116,7 +116,7 @@ test("Palette version choice uses the same equivalent target", async ({ page }) 
   await input.fill("Releases");
   await page
     .locator('[role="option"]')
-    .filter({ hasText: "Releases" })
+    .filter({ hasText: /^Releases$/ })
     .first()
     .click();
   await page
@@ -186,7 +186,7 @@ test("historical selectors preserve the readme route across desktop, mobile, and
   await input.fill("Releases");
   await page
     .locator('[role="option"]')
-    .filter({ hasText: "Releases" })
+    .filter({ hasText: /^Releases$/ })
     .first()
     .click();
   await page
@@ -249,7 +249,7 @@ test("introduction aliases resolve bidirectionally without merging canonical pag
   await page.locator(".td-shell-search__input").fill("Releases");
   await page
     .locator('[role="option"]')
-    .filter({ hasText: "Releases" })
+    .filter({ hasText: /^Releases$/ })
     .first()
     .click();
   await page

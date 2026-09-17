@@ -142,7 +142,7 @@ sink {
 
 ## 2 导出到其他系统（graph2any）
 
-`graph2any` 使用 HugeGraph Source 读取顶点或边，再交给下游 Sink。下面示例将 `person` 顶点导出为本地 JSON 文件；导出到 JDBC、Kafka 等系统时，替换 `LocalFile` 及其配置即可。
+`graph2any` 使用 HugeGraph Source<sup>[1]</sup> 读取顶点或边，再交给下游 Sink。下面示例将 `person` 顶点导出为本地 JSON 文件；导出到 JDBC、Kafka 等系统时，替换 `LocalFile`<sup>[2]</sup> 及其配置即可。
 
 ```hocon
 env {
@@ -182,10 +182,15 @@ sink {
 
 导出边时，将 Source 的 `label` 改为边标签、`label_type` 改为 `EDGE`，并在 `schema.fields` 中声明边属性。Source 会额外输出 `~source_id`、`~source_label`、`~target_id` 和 `~target_label`，这些保留列可直接写入文件或交给下游转换步骤。
 
-本页只介绍数据行的读取和写出，不会自动复制源图的索引、TTL 或其他 Schema 设置。完整 Source 参数和通用环境说明请回到[SeaTunnel 图导入文档](../import/hugegraph-seatunnel-connector/)。
+本页只介绍数据行的读取和写出，不会自动复制源图的索引、TTL 或其他 Schema 设置。完整 Source 参数和通用环境说明请回到[SeaTunnel 图导入文档](../import/hugegraph-seatunnel-connector/)<sup>[3]</sup>。
 
 ## 3 参考文档
 
-- [HugeGraph Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md)
-- [LocalFile Sink](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/sink/LocalFile.md)
-- [SeaTunnel 图导入文档](../import/hugegraph-seatunnel-connector/)
+**连接器**
+
+<p><sup>[1]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md">HugeGraph Source</a><br>
+<sup>[2]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/sink/LocalFile.md">LocalFile Sink</a></p>
+
+**关联文档**
+
+<p><sup>[3]</sup> <a href="../import/hugegraph-seatunnel-connector/">SeaTunnel 图导入文档</a></p>

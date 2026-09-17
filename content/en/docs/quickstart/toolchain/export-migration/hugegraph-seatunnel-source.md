@@ -142,7 +142,7 @@ When Source reads every label, omit `label` to read all labels of `label_type` (
 
 ## 2 Export to another system (graph2any)
 
-`graph2any` uses HugeGraph Source to read vertices or edges and sends them to a downstream Sink. The example below exports `person` vertices to local JSON files; to export to JDBC, Kafka, or another system, replace `LocalFile` and its options.
+`graph2any` uses HugeGraph Source<sup>[1]</sup> to read vertices or edges and sends them to a downstream Sink. The example below exports `person` vertices to local JSON files; to export to JDBC, Kafka, or another system, replace `LocalFile`<sup>[2]</sup> and its options.
 
 ```hocon
 env {
@@ -182,10 +182,15 @@ Save this as `config/graph2file-person.conf` and run it from the SeaTunnel insta
 
 To export edges, change the Source `label` to an edge label, set `label_type = "EDGE"`, and declare the edge properties in `schema.fields`. Source also outputs the reserved columns `~source_id`, `~source_label`, `~target_id`, and `~target_label`; write them to the file or pass them to downstream transforms as needed.
 
-This page covers row reads and writes. It does not copy source indexes, TTLs, or other schema settings. For the complete Source options and shared environment guidance, return to the [SeaTunnel graph import guide](../import/hugegraph-seatunnel-connector/).
+This page covers row reads and writes. It does not copy source indexes, TTLs, or other schema settings. For the complete Source options and shared environment guidance, return to the [SeaTunnel graph import guide](../import/hugegraph-seatunnel-connector/)<sup>[3]</sup>.
 
 ## 3 References
 
-- [HugeGraph Source](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md)
-- [LocalFile Sink](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/sink/LocalFile.md)
-- [SeaTunnel graph import guide](../import/hugegraph-seatunnel-connector/)
+**Connectors**
+
+<p><sup>[1]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md">HugeGraph Source</a><br>
+<sup>[2]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/sink/LocalFile.md">LocalFile Sink</a></p>
+
+**Related guide**
+
+<p><sup>[3]</sup> <a href="../import/hugegraph-seatunnel-connector/">SeaTunnel graph import guide</a></p>

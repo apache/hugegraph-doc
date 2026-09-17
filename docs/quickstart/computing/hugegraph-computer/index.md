@@ -114,7 +114,7 @@ bin/start-computer.sh -d local -r worker
 If the OLAP index is not enabled, it needs to be enabled. More reference: [modify-graphs-read-mode](/docs/clients/restful-api/graphs/#634-modify-graphs-read-mode-this-operation-requires-administrator-privileges)
 
 ```http
-PUT http://localhost:8080/graphs/hugegraph/graph_read_mode
+PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 "ALL"
 ```
@@ -122,7 +122,7 @@ PUT http://localhost:8080/graphs/hugegraph/graph_read_mode
 3.1.6.2 Query `page_rank` property value:
 
 ```bash
-curl "http://localhost:8080/graphs/hugegraph/graph/vertices?page&limit=3" | gunzip
+curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?page&limit=3" | gunzip
 ```
 
 ---

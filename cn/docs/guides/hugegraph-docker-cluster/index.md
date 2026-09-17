@@ -163,6 +163,7 @@ PD 和 Store 的入口脚本会把各自的变量拼成 `SPRING_APPLICATION_JSON
 | `PASSWORD` | （无） | `auth.admin_pa`，并执行 `bin/enable-auth.sh` 开启鉴权模式 |
 | `PRELOAD` | （无） | 为 `true` 时从 `scripts/example.groovy` 预加载示例图 |
 | `JAVA_OPTS` | 镜像中已设置 | 传给 `bin/start-hugegraph.sh -j` |
+| `HG_SERVER_STARTUP_TIMEOUT_S` | `120`（秒） | 传给 `bin/start-hugegraph.sh -t`，允许范围为 `1`–`86400`；详见下文的 Server 启动等待超时 |
 | `STORE_REST` | `store:8520` | `wait-partition.sh` 轮询的 Store REST 地址，仅 hstore 后端使用 |
 | `HG_SERVER_PD_REST_ENDPOINT` | 由 `pd.peers` 把 `:8686` 改写为 `:8620` 得到 | `wait-storage.sh` 轮询的 PD REST 地址 |
 | `PD_AUTH_USER` / `PD_AUTH_PASSWORD` | `store` / `admin` | `wait-storage.sh` 访问 PD REST API 使用的凭据 |
@@ -245,6 +246,21 @@ PD 和 Store 的入口脚本会把各自的变量拼成 `SPRING_APPLICATION_JSON
 - **PD 和 Store 容器**：入口脚本向启动脚本传入 `-d false` 参数，启动脚本通过 `exec` 直接替换为 Java 进程。容器进程即为 Java 进程，当 Java 退出（崩溃或正常关闭）时，容器立即退出，Docker 的重启策略随即触发。
 - **Server 容器**：入口脚本使用 `tail --pid=$PID -f /dev/null` 阻塞，直到 Java 退出。`SIGTERM`/`SIGINT` 信号陷阱会将 `docker stop` 信号转发给 Java 并等待其正常关闭（退出码 0）。若 Java 崩溃，入口脚本以退出码 1 退出，从而触发重启策略。
 - 所有镜像中的 PID 1 均为 `dumb-init`，负责将 Docker 信号转发给入口脚本进程。
+
+### Server 启动等待超时
+
+`HG_SERVER_STARTUP_TIMEOUT_S` 控制 Server 启动脚本等待 REST 服务响应的时长，未设置时默认 **120 秒**。取值必须是不带前导零的十进制整数，范围为 **1–86400 秒**。空字符串、`0`、负数、小数和超出范围的值都会使入口脚本记录错误并以退出码 `1` 退出。
+
+入口脚本通过 `bin/start-hugegraph.sh -t` 传入该值。如果 Server 在等待期限内未就绪，或进程提前退出，启动失败，容器以退出码 `1` 退出；配置的重启策略可能会重新启动容器。此时长不包括此前的存储初始化或等待后端就绪的时间。
+
+例如，在 HugeGraph 仓库的 `docker/` 目录下，将单机 Server 的启动等待时间增加到 300 秒（Compose 文件会将该变量传入容器）：
+
+```bash
+HG_SERVER_STARTUP_TIMEOUT_S=300 HUGEGRAPH_VERSION=latest \
+  docker compose -f docker-compose.yml up -d --wait
+```
+
+该设置与 Docker 健康检查的 `start_period`、`interval`、`timeout` 和 `retries` 相互独立。健康检查参数决定何时将容器标记为 `unhealthy`；仅增加健康检查的等待时间，不会延长 Server 启动脚本的等待期限。调整此变量也不会自动修改健康检查参数，启动较慢时应分别检查这两组设置。
 
 ### 健康检查端点
 

@@ -11,6 +11,12 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 - [认证与授权](config-authentication)
 - [HTTPS 配置](config-https)
 
+## 后端配置
+
+- [HBase 后端配置](config-backend-hbase)
+- [HStore 后端配置](config-backend-hstore)
+- [RocksDB 后端配置](config-backend-rocksdb)
+
 ---
 
 本节页面：

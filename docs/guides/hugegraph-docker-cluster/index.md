@@ -163,6 +163,7 @@ Unlike PD and Store, the Server entrypoint requires nothing: every variable belo
 | `PASSWORD` | (none) | `auth.admin_pa`, and runs `bin/enable-auth.sh` to turn auth mode on |
 | `PRELOAD` | (none) | `true` preloads the sample graph from `scripts/example.groovy` |
 | `JAVA_OPTS` | set in the image | passed to `bin/start-hugegraph.sh -j` |
+| `HG_SERVER_STARTUP_TIMEOUT_S` | `120` (seconds) | passed to `bin/start-hugegraph.sh -t`, accepts `1`–`86400`; see Server Startup Timeout below |
 | `STORE_REST` | `store:8520` | Store REST endpoint that `wait-partition.sh` polls, hstore backend only |
 | `HG_SERVER_PD_REST_ENDPOINT` | derived by rewriting `:8686` to `:8620` in `pd.peers` | PD REST peers that `wait-storage.sh` polls |
 | `PD_AUTH_USER` / `PD_AUTH_PASSWORD` | `store` / `admin` | credentials `wait-storage.sh` uses against the PD REST API |
@@ -245,6 +246,21 @@ The entrypoints now supervise Java directly:
 - **PD and Store containers**: the entrypoint passes `-d false` to the startup script, which `exec`s Java directly. The container process IS the Java process: when Java exits (crash or clean shutdown), the container exits immediately and Docker's restart policy fires.
 - **Server container**: the entrypoint uses `tail --pid=$PID -f /dev/null` to block until Java exits. A `SIGTERM`/`SIGINT` trap forwards `docker stop` signals to Java and waits for clean shutdown (exits 0). If Java crashes, the entrypoint exits 1 so the restart policy fires.
 - `dumb-init` (PID 1 in all images) forwards signals from Docker to the entrypoint process.
+
+### Server Startup Timeout
+
+`HG_SERVER_STARTUP_TIMEOUT_S` controls how long the Server startup script waits for the REST service to respond. It defaults to **120 seconds** when unset. The value must be a decimal integer without leading zeros, in the range **1–86400 seconds**. An empty string, `0`, a negative number, a fractional value, or an out-of-range value makes the entrypoint log an error and exit with code `1`.
+
+The entrypoint passes this value to `bin/start-hugegraph.sh -t`. If the Server is not ready within that wait or its process exits early, startup fails and the container exits with code `1`; the configured restart policy may restart it. This budget does not include earlier storage initialization or waiting for the backend to become ready.
+
+For example, from the HugeGraph repository's `docker/` directory, increase the standalone Server startup wait to 300 seconds (the Compose file forwards this variable to the container):
+
+```bash
+HG_SERVER_STARTUP_TIMEOUT_S=300 HUGEGRAPH_VERSION=latest \
+  docker compose -f docker-compose.yml up -d --wait
+```
+
+This setting is independent of Docker health-check settings: `start_period`, `interval`, `timeout`, and `retries`. Those settings determine when the container is marked `unhealthy`; increasing only the health-check budget does not extend the Server startup script's deadline. Changing this variable does not automatically adjust health checks either, so review both settings when startup is slow.
 
 ### Health Check Endpoints
 

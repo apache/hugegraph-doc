@@ -85,7 +85,7 @@ bin/start-computer.sh -d local -r worker
 如果没有启用 OLAP 索引，则需要启用，更多参考：[modify-graphs-read-mode](/cn/docs/clients/restful-api/graphs/#634-设置某个图的读模式该操作需要管理员权限)
 
 ```http
-PUT http://localhost:8080/graphs/hugegraph/graph_read_mode
+PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 "ALL"
 ```
@@ -93,7 +93,7 @@ PUT http://localhost:8080/graphs/hugegraph/graph_read_mode
 3.1.5.2 查询 `page_rank` 属性值：
 
 ```bash
-curl "http://localhost:8080/graphs/hugegraph/graph/vertices?page&limit=3" | gunzip
+curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?page&limit=3" | gunzip
 ```
 
 ### 3.2 在 Kubernetes 中运行 PageRank 算法

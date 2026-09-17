@@ -597,6 +597,23 @@ class VersionUrlTest(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     versioning.apply_exact_legacy_content_fixes(assembly, "1.5")
 
+    def test_exact_legacy_content_fixes_accept_already_normalized_content(self) -> None:
+        language, relative, _, new, expected_count = (
+            versioning.LEGACY_EXACT_CONTENT_FIXES["1.7"][0]
+        )
+        with tempfile.TemporaryDirectory() as temp_name:
+            assembly = Path(temp_name)
+            path = assembly / "content" / language / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            source = "\n".join([new] * expected_count) + "\n"
+            path.write_text(source, encoding="utf-8")
+
+            self.assertEqual(
+                versioning.apply_exact_legacy_content_fixes(assembly, "1.7"),
+                0,
+            )
+            self.assertEqual(path.read_text(encoding="utf-8"), source)
+
     def test_17_exact_fixes_exclude_updated_server_page(self) -> None:
         server_path = "docs/quickstart/hugegraph/hugegraph-server.md"
         self.assertNotIn(

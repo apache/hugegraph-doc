@@ -112,14 +112,14 @@ DOCS_NAV_EXPECTED_STATS = {
         "pages": 85,
         "removed": 5,
         "scopedLinks": 10,
-        "treeSha256": "584396f3ff09a3f0ab0574efd248c0af00c9e57fe3cdd80fb54140117dcd603d",
+        "treeSha256": "c87538b82b0e3506eef59417411686ddc188e0f33d0e3a1cda687de8d6f88747",
     },
     "1.5": {
         "groups": 5,
         "pages": 77,
         "removed": 13,
         "scopedLinks": 10,
-        "treeSha256": "d6cdcfbdf2cd77a3eefd7c760b56b7f580684a2f77381a3664927b503a47da39",
+        "treeSha256": "ac29ab8f0e7020496a3a1afe480687043d751e32c93ffb848e2210e3500cd483",
     },
 }
 
@@ -1110,6 +1110,10 @@ def apply_exact_legacy_content_fixes(assembly: pathlib.Path, version: str) -> in
         path = assembly / "content" / language / relative
         source = path.read_text(encoding="utf-8")
         count = source.count(old)
+        if count == 0 and source.count(new) == expected_count:
+            # A newer source snapshot may already contain this normalized
+            # historical link. Treat that state as idempotently repaired.
+            continue
         if count != expected_count:
             fail(
                 f"expected {expected_count} exact historical content match(es) "

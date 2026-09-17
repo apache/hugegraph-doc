@@ -8,7 +8,7 @@ HugeGraph Source 负责从图中读取顶点和边，结果可以交给 HugeGrap
 
 > **版本要求：本文面向 SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)**
 
-开始前请先完成[导入页中的通用环境准备和配置](../import/hugegraph-seatunnel-connector/#2-准备环境)，其中包含 JDK、HOCON、插件安装和图模型说明。2.3.13 的兼容说明也放在该页末尾。
+开始前请先完成[导入页中的通用环境准备和配置](../import/hugegraph-seatunnel-connector/#2-准备环境)，其中包含 JDK、HOCON、插件安装和图模型说明。
 
 ## 1 迁移 HugeGraph 图（graph2graph）
 

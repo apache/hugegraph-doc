@@ -8,7 +8,7 @@ The HugeGraph Source reads vertices and edges from a graph and sends them to the
 
 > **Version requirement: This guide targets SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)**
 
-Before starting, complete the [shared environment and configuration steps on the import page](../import/hugegraph-seatunnel-connector/#2-prepare-the-environment). They cover JDK, HOCON, plugin installation, and the sample graph model. The 2.3.13 compatibility note is also kept there.
+Before starting, complete the [shared environment and configuration steps on the import page](../import/hugegraph-seatunnel-connector/#2-prepare-the-environment). They cover JDK, HOCON, plugin installation, and the sample graph model.
 
 ## 1 Migrate a HugeGraph graph (graph2graph)
 

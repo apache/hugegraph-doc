@@ -27,11 +27,11 @@ Click a diagram to view the original size.
 | Input and output | Focused on graph imports and common files, JDBC, Kafka, and similar sources | Focused on graph data and backup files in common storage | Connector ecosystem can cover dozens of input and output types |
 | Scheduling and resource management | No unified cross-task scheduling or resource allocation | No unified cross-task scheduling or resource allocation | Can integrate with DolphinScheduler for scheduling and task management |
 | Simplicity | Focused and simple; a future binary CLI will make quick use easier | Direct commands for standalone operations | More runtime components, suited to long-lived data pipelines |
-| High-throughput import | Supports bypass-server and other optimizations; some scenarios reach million-level throughput, but measure the actual setup | Focuses on backup and export rather than bulk-import throughput | Scales throughput through parallelism, distributed engines, and connectors |
+| High-throughput import | Supports bypass-server and other optimizations; measured peaks can reach 1–2 million records/s with specific backends and hardware, so benchmark the actual setup | Focuses on backup and export rather than bulk-import throughput | Scales throughput through parallelism, distributed engines, and connectors |
 
 All three can work with JDBC, Kafka, or graph data, so choose by the work to complete rather than by the source alone. Loader and Tools normally run on one machine, while SeaTunnel supports both standalone and distributed deployments and scales with data and task volume. Tools' `schedule-backup` can create a crontab entry, but it is not a unified workflow and resource management platform.
 
-Loader and Tools are focused, direct, and quick to start. Use Loader for a direct graph import; use Tools for backup, restore, export, or daily operations. If a SeaTunnel job already exists, adding HugeGraph to that pipeline is usually simpler. For higher import throughput, Loader's bypass-server path and other import optimizations are a better fit; million-level throughput must be benchmarked against the backend, data, and hardware. For new SeaTunnel jobs, use [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) and `mappings`. Recheck the connector configuration when using another version.
+Loader and Tools are focused, direct, and quick to start. Use Loader for a direct graph import; use Tools for backup, restore, export, or daily operations. If a SeaTunnel job already exists, adding HugeGraph to that pipeline is usually simpler. For higher import throughput, Loader's bypass-server path and other import optimizations are a better fit; measured peaks of 1–2 million records/s require a specific backend, data set, and hardware configuration and are not a general performance guarantee. For new SeaTunnel jobs, use [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) and `mappings`. Recheck the connector configuration when using another version.
 
 ## 2 Prepare the environment
 
@@ -285,8 +285,8 @@ The following table applies to the SeaTunnel 3.0+ version used by this guide:
 | `batch_size` | Number of records per batch; default 500 |
 | `env.sink.flush.interval` | Zeta scheduled flush interval in milliseconds |
 | `check_vertex` | Check edge endpoints; the edge job in this guide sets it to `true` |
-| `batch_failure_fallback` | Default `false`, so a batch failure fails the job; set `true` to retry records one by one, with skips capped by `max_insert_errors` |
-| `max_insert_errors` | Number of failed records that one-by-one fallback may skip; default `0` (skip none), `-1` for unlimited |
+| [`batch_failure_fallback`](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/sink/HugeGraph.md) | Defaults to `true`, so a failed batch falls back to record-by-record retries, capped by `max_insert_errors`; the examples explicitly set `false` so a batch failure stops the job |
+| `max_insert_errors` | Number of failed records that record-by-record fallback may skip; default `500`, `-1` for unlimited, and only applies when `batch_failure_fallback` is enabled |
 
 Use these checks when a job fails:
 

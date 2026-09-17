@@ -27,11 +27,11 @@ SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph。连接器分
 | 输入与输出 | 围绕图导入，覆盖常见文件、JDBC、Kafka 等 | 围绕图数据和备份文件，覆盖常见存储 | 连接器生态可覆盖数十种输入和输出类型 |
 | 调度与资源管理 | 没有统一的跨任务调度和资源分配机制 | 没有统一的跨任务调度和资源分配机制 | 可结合 DolphinScheduler 做调度和任务管理 |
 | 易用性 | 专注导入，配置简单；后续提供二进制 CLI 后更方便快速使用 | 命令直接，适合单机运维 | 配置和运行组件较多，适合长期数据管道 |
-| 高性能导入 | 支持 bypass-server 等优化，适合追求极限吞吐；部分场景可达百万级，实际速度以实测为准 | 重点是备份和导出，不以批量导入吞吐为主要目标 | 依靠并行度、分布式引擎和连接器扩展吞吐 |
+| 高性能导入 | 支持 bypass-server 等优化；特定后端和硬件条件下，实测峰值可达 100～200 万条/秒，需按实际场景压测 | 重点是备份和导出，不以批量导入吞吐为主要目标 | 依靠并行度、分布式引擎和连接器扩展吞吐 |
 
 三者都可能接触 JDBC、Kafka 或图数据，但选型不要只看数据源。默认情况下，Loader 和 Tools 都在单机运行；SeaTunnel 同时支持单机和分布式部署，可随着数据量和任务数量扩展。Tools 的 `schedule-backup` 可以创建 crontab 任务，但它不是统一的任务编排和资源管理平台。
 
-Loader 和 Tools 的优势是专注、直接、上手快。需要直接导入图数据时可先用 Loader；需要备份、恢复、导出或日常运维时可用 Tools。如果已经有 SeaTunnel 作业，通常在原管道中接入 HugeGraph 更方便。需要更高导入吞吐时，Loader 的 bypass-server 和其他导入优化更合适；百万级吞吐必须结合后端、数据规模和硬件单独压测。新建 SeaTunnel 任务使用 [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) 和 `mappings`。使用其他版本时，请重新核对连接器配置。
+Loader 和 Tools 的优势是专注、直接、上手快。需要直接导入图数据时可先用 Loader；需要备份、恢复、导出或日常运维时可用 Tools。如果已经有 SeaTunnel 作业，通常在原管道中接入 HugeGraph 更方便。需要更高导入吞吐时，Loader 的 bypass-server 和其他导入优化更合适；Loader 在特定后端、数据规模和硬件条件下实测峰值可达 100～200 万条/秒，不能直接当作通用性能承诺，仍需单独压测。新建 SeaTunnel 任务使用 [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) 和 `mappings`。使用其他版本时，请重新核对连接器配置。
 
 ## 2 准备环境
 
@@ -285,8 +285,8 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 | `batch_size` | 单批记录数，默认 500 |
 | `env.sink.flush.interval` | Zeta 定时刷新间隔，单位毫秒 |
 | `check_vertex` | 写边时检查端点，本文的边任务设为 `true` |
-| `batch_failure_fallback` | 默认 `false`，批量失败会使任务失败；设为 `true` 后逐条重试，最多跳过 `max_insert_errors` 条失败记录 |
-| `max_insert_errors` | 逐条回退时允许跳过的失败记录数；默认 `0`（不跳过），`-1` 表示不限制 |
+| [`batch_failure_fallback`](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/sink/HugeGraph.md) | 默认 `true`，批量失败后逐条重试，最多跳过 `max_insert_errors` 条失败记录；本文示例显式设为 `false`，让批量失败直接终止任务 |
+| `max_insert_errors` | 逐条回退时允许跳过的失败记录数；默认 `500`，`-1` 表示不限制，仅在开启 `batch_failure_fallback` 时生效 |
 
 遇到问题时可按下面检查：
 

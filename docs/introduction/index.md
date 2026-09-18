@@ -117,3 +117,9 @@ Graph computing is an OLAP workload. Its capacity and resource requirements depe
 
 ![WeChat QR Code](/images/docs/community/wechat.png)
 {width="300" height="94"}
+
+---
+
+Backlinks:
+
+- [Documentation](/docs/)

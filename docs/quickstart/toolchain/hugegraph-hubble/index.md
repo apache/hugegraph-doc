@@ -672,3 +672,14 @@ These keys drive the Cluster Overview and Node details pages.
 | `dashboard.address` | `127.0.0.1:8092` | Optional external dashboard; empty hides the entry |
 
 > The `operations.store.allowed_targets` default covers local testing only. A production deployment must list every trusted Store scheme, host and port explicitly, because discovery never adds an origin to this allowlist. HTTPS origins keep their configured hostname for TLS SNI and certificate verification. Supply the PD and Store passwords through a protected deployment configuration rather than the packaged file.
+
+---
+
+Backlinks:
+
+- [Documentation](/docs/)
+- [Architecture Overview](/docs/guides/architectural/)
+- [System Introduction](/docs/introduction/)
+- [HugeGraph Examples](/docs/language/hugegraph-example/)
+- [HugeGraph ToolChain](/docs/quickstart/toolchain/)
+- [Graph visualization](/docs/quickstart/toolchain/visualization/)

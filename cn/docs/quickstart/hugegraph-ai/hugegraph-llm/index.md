@@ -182,3 +182,10 @@ cd hugegraph-ai
 pre-commit install
 pre-commit run --all-files
 ```
+
+---
+
+反链：
+
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)
+- [LLM 使用流程](/cn/docs/quickstart/hugegraph-ai/quick_start/)

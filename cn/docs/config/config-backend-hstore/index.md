@@ -224,3 +224,9 @@ curl http://localhost:8080/metrics/backend
 响应中的 `nodes` 就是 PD 返回的活跃 Store 数量。`nodes` 为 `0` 说明 Server 连上了 PD，但 PD 中没有状态为
 `Up` 的 Store，通常是 Store 节点还没注册，或者因为不在 PD 的 `pd.initial-store-list` 中而注册成了
 `Pending`。
+
+---
+
+反链：
+
+- [Server 配置](/cn/docs/config/)

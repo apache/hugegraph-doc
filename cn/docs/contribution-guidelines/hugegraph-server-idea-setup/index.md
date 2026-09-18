@@ -176,3 +176,9 @@ curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
 3. ["package sun.misc does not exist" compilation error](https://youtrack.jetbrains.com/issue/IDEA-180033)
 4. [Cannot compile: java: package sun.misc does not exist](https://youtrack.jetbrains.com/issue/IDEA-201168)
 5. [The code-style config for HugeGraph in IDEA](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
+
+---
+
+反链：
+
+- [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)

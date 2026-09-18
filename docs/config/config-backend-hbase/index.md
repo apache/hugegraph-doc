@@ -178,3 +178,9 @@ The HBase backend does not support these features:
 - Snapshots. Creating or resuming a backend snapshot throws `UnsupportedOperationException`.
 
 Supported features include TTL on vertices and edges, paged queries, order-by queries, range conditions, and sorting by input ids.
+
+---
+
+Backlinks:
+
+- [Server Config](/docs/config/)

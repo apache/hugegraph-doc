@@ -238,3 +238,9 @@ GRAND returns a list of logits per augmentation sample, and `NodeClassify` masks
 - DGL or PyTorch import failures: rerun `uv sync --extra ml` from the repository root and confirm that Python comes from the root `.venv`.
 - `bgrl_example.py` currently fails on import: it asks for `MLP_Predictor` from `hugegraph_ml.models.bgrl`, but that module defines the class as `MLPPredictor`.
 - `care_gnn_example.py` reads `AMAZON_user_v` and the three `AMAZON_net_*_e` edge labels. No bundled importer creates them, so load that dataset yourself before running the script.
+
+---
+
+Backlinks:
+
+- [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)

@@ -359,3 +359,11 @@ public class BatchExample {
 #### 4.5 详细 API 说明
 
 示例说明见[HugeGraph-Client 基本 API 介绍](/cn/docs/clients/hugegraph-client)
+
+---
+
+反链：
+
+- [HugeGraph Java Client](/cn/docs/clients/hugegraph-client/)
+- [架构概览](/cn/docs/guides/architectural/)
+- [系统介绍](/cn/docs/introduction/)

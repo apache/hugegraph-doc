@@ -1500,3 +1500,10 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 ```json
 204
 ```
+
+---
+
+Backlinks:
+
+- [Graphspace](/docs/clients/restful-api/graphspace/)
+- [Config Authentication](/docs/config/config-authentication/)

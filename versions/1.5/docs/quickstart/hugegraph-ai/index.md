@@ -132,7 +132,7 @@ Python client for HugeGraph operations:
 
 ## 📚 Learn More
 
-- [Project Homepage](https://hugegraph.apache.org/versions/1.5/docs/quickstart/hugegraph-ai/)
+- [Project Homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/)
 - [LLM Quick Start Guide](https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/quick_start.md)
 - [DeepWiki AI Documentation](https://deepwiki.com/apache/incubator-hugegraph-ai)
 
@@ -144,7 +144,7 @@ Python client for HugeGraph operations:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [contribution guidelines](https://hugegraph.apache.org/versions/1.5/docs/contribution-guidelines/) for details.
+We welcome contributions! Please see our [contribution guidelines](https://hugegraph.apache.org/docs/contribution-guidelines/) for details.
 
 **Development Setup:**
 - Use [GitHub Desktop](https://desktop.github.com/) for easier PR management
@@ -160,7 +160,7 @@ hugegraph-ai is licensed under [Apache 2.0 License](https://github.com/apache/in
 ## 📞 Contact Us
 
 - **GitHub Issues**: [Report bugs or request features](https://github.com/apache/incubator-hugegraph-ai/issues) (fastest response)
-- **Email**: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscription required](https://hugegraph.apache.org/versions/1.5/docs/contribution-guidelines/subscribe/))
+- **Email**: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscription required](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/))
 - **WeChat**: Follow "Apache HugeGraph" official account
 
 ![Apache HugeGraph WeChat QR Code](/versions/1.5/images/docs/community/wechat.png){width="200" height="63"}

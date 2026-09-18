@@ -428,3 +428,14 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > > PostgreSQL 后端的 driver 和 url 应该设置为：
 > > - `jdbc.driver=org.postgresql.Driver`
 > > - `jdbc.url=jdbc:postgresql://localhost:5432/`
+
+---
+
+反链：
+
+- [ToplingDB Quick Start](/cn/blog/2025/10/09/toplingdb-quick-start/)
+- [Graphs](/cn/docs/clients/restful-api/graphs/)
+- [Other](/cn/docs/clients/restful-api/other/)
+- [Server 配置](/cn/docs/config/)
+- [配置 RocksDB 后端](/cn/docs/config/config-backend-rocksdb/)
+- [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)

@@ -1241,3 +1241,16 @@ Example:
 sh bin/hugegraph-flinkcdc-loader.sh --file ./mysql-cdc.json \
 --host xx.xx.xx.xx --port 8080 --graph hugegraph --username admin --token admin
 ```
+
+---
+
+Backlinks:
+
+- [Documentation](/docs/)
+- [Architecture Overview](/docs/guides/architectural/)
+- [System Introduction](/docs/introduction/)
+- [HugeGraph-Loader Performance](/docs/performance/hugegraph-loader-performance/)
+- [HugeGraph ToolChain](/docs/quickstart/toolchain/)
+- [Visual with HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Graph import](/docs/quickstart/toolchain/import/)
+- [Import graph data with SeaTunnel Sink](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)

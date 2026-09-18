@@ -652,3 +652,11 @@ POST http://localhost:6688/tasks/create
 ```
 
 > 🚧, 后续随时更新完善，欢迎随时提出建议和意见。
+
+---
+
+反链：
+
+- [系统介绍](/cn/docs/introduction/)
+- [图计算（OLAP）](/cn/docs/quickstart/computing/)
+- [Vermeer 客户端](/cn/docs/quickstart/hugegraph-ai/vermeer-python-client/)

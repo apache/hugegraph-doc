@@ -23,3 +23,10 @@ You can browse public messages in the [ASF Mailing List Archives](https://lists.
 3. Unsubscription is complete when you receive a message whose subject contains `GOODBYE`.
 
 For general ASF mailing-list guidance, see [Apache Mailing Lists](https://apache.org/foundation/mailinglists.html).
+
+---
+
+Backlinks:
+
+- [Apache HugeGraph Committer Guide](/docs/contribution-guidelines/committer-guidelines/)
+- [System Introduction](/docs/introduction/)

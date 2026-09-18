@@ -271,3 +271,9 @@ WAL 且不做 sync，因为状态机可以通过快照加 raft 日志恢复，�
 `bin/hugegraph-server.sh`、`bin/init-store.sh` 和 `bin/dump-store.sh` 启动 JVM 之前把它加入
 `LD_PRELOAD`。如果找不到，这些脚本会以
 `RISC-V RocksDB requires libatomic.so.1; install libatomic1` 退出，安装 `libatomic1` 包即可解决。
+
+---
+
+反链：
+
+- [Server 配置](/cn/docs/config/)

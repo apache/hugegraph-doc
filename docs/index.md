@@ -68,3 +68,9 @@ Section pages:
 - [Contribution Guidelines](/docs/contribution-guidelines/)
 - [CHANGELOGS](/docs/changelog/)
 - [Apache Contributor Agreements](/docs/cla/)
+
+---
+
+Backlinks:
+
+- [Apache HugeGraph Committer Guide](/docs/contribution-guidelines/committer-guidelines/)

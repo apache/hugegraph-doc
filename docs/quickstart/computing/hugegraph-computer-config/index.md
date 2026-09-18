@@ -442,3 +442,10 @@ The following configuration items are automatically managed by the K8s Operator,
 | k8s.log4j_xml_path | | The log4j.xml path for computer job. |
 | k8s.namespace | hugegraph-computer-system | The namespace of hugegraph-computer system. |
 | k8s.pull_secret_names | [] | The names of pull-secret for pulling image. |
+
+---
+
+Backlinks:
+
+- [HugeGraph Computing (OLAP)](/docs/quickstart/computing/)
+- [Analysis with HugeGraph-Computer](/docs/quickstart/computing/hugegraph-computer/)

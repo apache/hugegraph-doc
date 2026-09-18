@@ -642,3 +642,24 @@ bin/stop-hugegraph.sh
 ## 8 Debug Server with IntelliJ IDEA
 
 Please refer to [Setup Server in IDEA](/docs/contribution-guidelines/hugegraph-server-idea-setup)
+
+---
+
+Backlinks:
+
+- [Maturity](/community/maturity/)
+- [Documentation](/docs/)
+- [Gremlin Console](/docs/clients/gremlin-console/)
+- [RESTful API](/docs/clients/restful-api/)
+- [Graphs](/docs/clients/restful-api/graphs/)
+- [Gremlin](/docs/clients/restful-api/gremlin/)
+- [Config Authentication](/docs/config/config-authentication/)
+- [Setup Server in IDEA](/docs/contribution-guidelines/hugegraph-server-idea-setup/)
+- [Download](/docs/download/download/)
+- [Architecture Overview](/docs/guides/architectural/)
+- [Security](/docs/guides/security/)
+- [Toolchain Local Testing](/docs/guides/toolchain-local-test/)
+- [System Introduction](/docs/introduction/)
+- [Java-Client](/docs/quickstart/client/hugegraph-client/)
+- [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
+- [Import graph data with SeaTunnel Sink](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)

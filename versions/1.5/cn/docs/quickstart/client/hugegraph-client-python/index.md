@@ -174,7 +174,7 @@ res = g.exec("g.V().limit(5)")
 print(res)
 ```
 
-其他信息正在建设中 🚧 (欢迎为此添加更多文档，用户可以参考 [java-client-doc](https://hugegraph.apache.org/versions/1.5/docs/clients/hugegraph-client/) 获取类似用法)
+其他信息正在建设中 🚧 (欢迎为此添加更多文档，用户可以参考 [java-client-doc](https://hugegraph.apache.org/docs/clients/hugegraph-client/) 获取类似用法)
 
 ## API 文档参考
 
@@ -182,7 +182,7 @@ print(res)
 
 ## 贡献
 
-* 欢迎为 `hugegraph-python-client` 做出贡献。请参阅 [贡献指南](https://hugegraph.apache.org/versions/1.5/docs/contribution-guidelines/) 获取更多信息。
+* 欢迎为 `hugegraph-python-client` 做出贡献。请参阅 [贡献指南](https://hugegraph.apache.org/docs/contribution-guidelines/) 获取更多信息。
 * 代码格式：请在提交 PR 前运行 `./style/code_format_and_analysis.sh` 来格式化您的代码。
 
 感谢所有已经为 `hugegraph-python-client` 做出贡献的人！

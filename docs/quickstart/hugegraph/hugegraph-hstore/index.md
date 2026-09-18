@@ -573,3 +573,11 @@ The example below shows a single Store node. If all three nodes are configured c
   "status": 0
 }
 ```
+
+---
+
+Backlinks:
+
+- [Config HStore Backend](/docs/config/config-backend-hstore/)
+- [System Introduction](/docs/introduction/)
+- [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)

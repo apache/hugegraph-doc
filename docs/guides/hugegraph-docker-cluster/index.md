@@ -276,3 +276,9 @@ All four Docker images now include a `HEALTHCHECK` instruction. `docker ps` show
 The Compose files define their own health checks on top of these, so `--wait` and `depends_on: condition: service_healthy` work without relying on the image defaults. Those Compose checks use a shorter start period (30 to 120 seconds depending on the service and topology) and more retries.
 
 > **Note**: The `-m true` flag (cron-based monitor) in `start-hugegraph.sh` is for VM/bare-metal deployments only. It is not installed or used in Docker images. Docker users should rely on the built-in `HEALTHCHECK` and Docker's restart policy instead.
+
+---
+
+Backlinks:
+
+- [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)

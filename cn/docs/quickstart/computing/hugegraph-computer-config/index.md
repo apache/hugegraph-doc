@@ -442,3 +442,10 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | k8s.log4j_xml_path | | computer 作业的 log4j.xml 路径。 |
 | k8s.namespace | hugegraph-computer-system | hugegraph-computer 系统的命名空间。 |
 | k8s.pull_secret_names | [] | 拉取镜像的 pull-secret 名称。 |
+
+---
+
+反链：
+
+- [图计算（OLAP）](/cn/docs/quickstart/computing/)
+- [使用 Computer 进行 OLAP 分析](/cn/docs/quickstart/computing/hugegraph-computer/)

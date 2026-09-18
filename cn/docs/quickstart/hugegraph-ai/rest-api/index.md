@@ -274,3 +274,11 @@ Ollama 请求仍要提供公共字段；`api_key` 和 `api_base` 可传空字符
 `ADMIN_TOKEN` 未设置或仍是占位值时，在比对 token 之前就返回 403；token 不匹配时返回内容为 `Invalid admin_token` 的 403 响应。
 
 成功时返回 `text/plain` 流：先回放文件末尾 125 行，然后像 `tail -f` 一样持续输出新内容。
+
+---
+
+反链：
+
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-LLM](/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/)
+- [LLM 使用流程](/cn/docs/quickstart/hugegraph-ai/quick_start/)

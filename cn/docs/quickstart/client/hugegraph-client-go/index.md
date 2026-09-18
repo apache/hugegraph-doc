@@ -128,3 +128,11 @@ fmt.Println(resp.StatusCode, resp.Data.Status.Code, resp.Data.Result.Data)
 > `Vertex` 相关操作的入参是 `internal/model` 包中的 `model.Vertex[any]`。Go 不允许从其他 module 导入 `internal` 包，因此目前 `Vertex` API 只能在客户端 module 内部调用；其测试文件也已全部注释。
 
 完整调用方式可参考各 API 目录中的测试，例如 [`version_test.go`](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/api/v1/version_test.go)、[`gemlin_test.go`](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/api/v1/gremlin/gemlin_test.go) 和 [`vertexlabel_test.go`](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/api/v1/vertexlabel/vertexlabel_test.go)。
+
+---
+
+反链：
+
+- [架构概览](/cn/docs/guides/architectural/)
+- [系统介绍](/cn/docs/introduction/)
+- [Java 客户端](/cn/docs/quickstart/client/hugegraph-client/)

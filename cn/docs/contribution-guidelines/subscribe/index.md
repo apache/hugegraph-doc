@@ -23,3 +23,10 @@ HugeGraph 使用 `dev@hugegraph.apache.org` 讨论开发和使用问题。向列
 3. 收到主题包含 `GOODBYE` 的邮件后，退订完成。
 
 ASF 邮件列表的通用说明见 [Apache Mailing Lists](https://apache.org/foundation/mailinglists.html)。
+
+---
+
+反链：
+
+- [Apache HugeGraph Committer 指南](/cn/docs/contribution-guidelines/committer-guidelines/)
+- [系统介绍](/cn/docs/introduction/)

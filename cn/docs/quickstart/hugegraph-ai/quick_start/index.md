@@ -124,3 +124,13 @@ LANGUAGE=CN
 ## 6. REST 调用
 
 Web 页面和 REST API 使用同一套流程。需要程序集成时使用 `/rag`、`/rag/graph`、`/graph/extract` 和 `/text2gremlin`；请求结构见 [REST API](./rest-api.md)。
+
+---
+
+反链：
+
+- [Documentation](/cn/docs/)
+- [系统介绍](/cn/docs/introduction/)
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-LLM](/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/)
+- [Vermeer 客户端](/cn/docs/quickstart/hugegraph-ai/vermeer-python-client/)

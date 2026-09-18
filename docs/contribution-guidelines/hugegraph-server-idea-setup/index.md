@@ -174,3 +174,9 @@ This is because Log4j2 uses asynchronous loggers. You can refer to the [official
 3. ["package sun.misc does not exist" compilation error](https://youtrack.jetbrains.com/issue/IDEA-180033)
 4. [Cannot compile: java: package sun.misc does not exist](https://youtrack.jetbrains.com/issue/IDEA-201168)
 5. [The code-style config for HugeGraph in IDEA](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
+
+---
+
+Backlinks:
+
+- [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)

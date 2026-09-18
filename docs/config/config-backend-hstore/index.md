@@ -241,3 +241,9 @@ curl http://localhost:8080/metrics/backend
 The `nodes` value in the response is the count of active stores PD returns. A `nodes` value of `0` means the
 Server reached PD but PD has no store in state `Up`, which usually means the Store nodes have not registered
 yet, or registered as `Pending` because they are not in PD's `pd.initial-store-list`.
+
+---
+
+Backlinks:
+
+- [Server Config](/docs/config/)

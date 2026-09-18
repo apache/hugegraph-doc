@@ -572,3 +572,11 @@ PD 的 REST 端口默认开启 basic 认证：用户名必须是 `hg`、`store`�
   "status": 0
 }
 ```
+
+---
+
+反链：
+
+- [配置 HStore 后端](/cn/docs/config/config-backend-hstore/)
+- [系统介绍](/cn/docs/introduction/)
+- [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)

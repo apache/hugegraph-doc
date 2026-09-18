@@ -167,3 +167,10 @@ GRAPH_PWD=your-password
 - `hugegraph-llm/src/hugegraph_llm/config/admin_config.py`
 - `hugegraph-llm/src/hugegraph_llm/config/prompt_config.py`
 - `hugegraph-llm/src/hugegraph_llm/config/models/base_config.py`：加载与文件同步逻辑
+
+---
+
+反链：
+
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-LLM](/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/)

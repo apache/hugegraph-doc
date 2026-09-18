@@ -99,6 +99,10 @@
 - [Download](https://hugegraph.apache.org/docs/download/download/index.md)
 - [Contributor Agreement](https://hugegraph.apache.org/docs/cla/index.md)
 
+## Full-text bundles
+
+- [Documentation](https://hugegraph.apache.org/docs/llms-full.txt)
+
 ## Site locales
 
 - [English](https://hugegraph.apache.org/index.md)

@@ -92,3 +92,13 @@ Set `LANGUAGE=EN` or `LANGUAGE=CN` in `hugegraph-llm/.env`, then restart the ser
 ## 6. REST Calls
 
 The Web UI and REST API use the same pipeline. For application integration, use `/rag`, `/rag/graph`, `/graph/extract`, and `/text2gremlin`; see the [REST API](./rest-api.md) for request formats.
+
+---
+
+Backlinks:
+
+- [Documentation](/docs/)
+- [System Introduction](/docs/introduction/)
+- [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-LLM](/docs/quickstart/hugegraph-ai/hugegraph-llm/)
+- [Vermeer Client](/docs/quickstart/hugegraph-ai/vermeer-python-client/)

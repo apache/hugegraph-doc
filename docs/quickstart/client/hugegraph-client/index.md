@@ -354,3 +354,11 @@ Before running Example, you need to start the Server. For the startup process, s
 #### 4.5 More Information About Client-API
 
 See[Introduce basic API of HugeGraph-Client](/docs/clients/hugegraph-client).
+
+---
+
+Backlinks:
+
+- [HugeGraph Java Client](/docs/clients/hugegraph-client/)
+- [Architecture Overview](/docs/guides/architectural/)
+- [System Introduction](/docs/introduction/)

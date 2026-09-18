@@ -438,3 +438,12 @@ If files cannot be found or parameters are invalid:
 - **HugeGraph Server Documentation**: [https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/)
 - **CI Configuration**: `.github/workflows/*-ci.yml`
 - **Dependency Installation Scripts**: `hugegraph-*/assembly/travis/`
+
+---
+
+Backlinks:
+
+- [HugeGraph ToolChain](/docs/quickstart/toolchain/)
+- [Visual with HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
+- [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)

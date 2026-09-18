@@ -569,3 +569,11 @@ All paths below are relative to `http://<pd-host>:8620` and need the Basic heade
 The two `log` endpoints take a time range as `{"startTime": "...", "endTime": "..."}`; `yyyy-MM-dd HH:mm:ss` and `yyyy-MM-dd` are among the accepted formats.
 
 PD registers its own meters under the `hg` prefix, so `/actuator/prometheus` exposes `hg_up`, `hg_graphs`, `hg_stores` and `hg_terms` alongside the standard JVM metrics, plus per-graph partition and size meters once graphs exist.
+
+---
+
+Backlinks:
+
+- [Config HStore Backend](/docs/config/config-backend-hstore/)
+- [System Introduction](/docs/introduction/)
+- [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)

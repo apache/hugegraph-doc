@@ -173,3 +173,9 @@ Please check the release details in each repository:
 - [Toolchain Release Notes](https://github.com/apache/hugegraph-toolchain/releases/tag/1.0.0)
 - [Computer Release Notes](https://github.com/apache/hugegraph-computer/releases/tag/1.0.0)
 - [Commons Release Notes](https://github.com/apache/hugegraph-commons/releases/tag/1.0.0)
+
+---
+
+Backlinks:
+
+- [Download](/docs/download/download/)

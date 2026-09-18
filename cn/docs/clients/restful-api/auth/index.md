@@ -1500,3 +1500,10 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 ```json
 204
 ```
+
+---
+
+反链：
+
+- [Graphspace](/cn/docs/clients/restful-api/graphspace/)
+- [权限配置](/cn/docs/config/config-authentication/)

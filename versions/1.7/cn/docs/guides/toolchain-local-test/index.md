@@ -41,7 +41,7 @@ cd hugegraph-toolchain
 - **脚本部署**：指定 Server Commit，可复现 CI 使用的服务端版本
 - **Docker 部署**：适合快速检查；测试失败时应先核对镜像与 Toolchain 的兼容性
 
-> 详细安装说明参考 [社区文档](https://hugegraph.apache.org/versions/1.7/cn/docs/quickstart/hugegraph/hugegraph-server/)
+> 详细安装说明参考 [社区文档](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/)
 
 ### 3.1 脚本部署
 
@@ -435,6 +435,6 @@ mvn test -Dtest=FuncTestSuite -ntp  # 需 Server 运行
 
 - **HugeGraph GitHub 仓库**：[https://github.com/apache/hugegraph](https://github.com/apache/hugegraph)
 - **HugeGraph 工具链 GitHub 仓库**：[https://github.com/apache/hugegraph-toolchain](https://github.com/apache/hugegraph-toolchain)
-- **HugeGraph Server 文档**：[https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/](https://hugegraph.apache.org/versions/1.7/cn/docs/quickstart/hugegraph/hugegraph-server/)
+- **HugeGraph Server 文档**：[https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/)
 - **CI 配置**：`.github/workflows/*-ci.yml`
 - **依赖服务安装脚本**：`hugegraph-*/assembly/travis/`

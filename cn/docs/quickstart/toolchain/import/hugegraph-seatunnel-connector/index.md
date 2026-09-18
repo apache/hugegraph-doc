@@ -338,3 +338,12 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 > **旧版本说明**
 >
 > 本文面向 SeaTunnel 3.0+，文中的 Source、`mappings` 和图迁移示例不适用于 2.3.13。2.3.13 已过时，仅提供 HugeGraph Sink，配置使用 `schema_config`，并且需要提前创建图模型。如必须使用 2.3.13，请参考[官方 Sink 文档](https://github.com/apache/seatunnel/blob/2.3.13/docs/zh/connectors/sink/HugeGraph.md)<sup>[14]</sup>，不要套用本文配置
+
+---
+
+反链：
+
+- [系统介绍](/cn/docs/introduction/)
+- [HugeGraph 工具链](/cn/docs/quickstart/toolchain/)
+- [使用 SeaTunnel Source 导出/迁移图数据](/cn/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/)
+- [图导入](/cn/docs/quickstart/toolchain/import/)

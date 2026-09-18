@@ -167,3 +167,10 @@ Configuration definitions are in:
 - `hugegraph-llm/src/hugegraph_llm/config/admin_config.py`
 - `hugegraph-llm/src/hugegraph_llm/config/prompt_config.py`
 - `hugegraph-llm/src/hugegraph_llm/config/models/base_config.py` for the loading and file-sync behaviour
+
+---
+
+Backlinks:
+
+- [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-LLM](/docs/quickstart/hugegraph-ai/hugegraph-llm/)

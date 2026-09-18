@@ -389,3 +389,11 @@ uv run pytest hugegraph-python-client/src/tests -m "integration and hugegraph"
 CI runs the integration job against the `hugegraph/hugegraph:1.7.0` image. `HUGEGRAPH_GRAPHSPACE` is also read when you need a non-default space.
 
 The source code and tests are under `hugegraph-python-client/src/pyhugegraph/` and `hugegraph-python-client/src/tests/`. A runnable example is at `hugegraph-python-client/src/pyhugegraph/example/hugegraph_example.py`.
+
+---
+
+Backlinks:
+
+- [Architecture Overview](/docs/guides/architectural/)
+- [System Introduction](/docs/introduction/)
+- [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)

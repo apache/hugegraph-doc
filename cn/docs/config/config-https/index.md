@@ -115,3 +115,9 @@ keytool -import -alias serverkey -file server.crt -keystore client.truststore
 ```
 
 client.truststore 是给客户端⽤的，其中保存着受信任的证书
+
+---
+
+反链：
+
+- [Server 配置](/cn/docs/config/)

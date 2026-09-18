@@ -242,7 +242,7 @@ Of course, the candidate may also choose to decline the invitation, in which cas
 
 Once the invitation is accepted, the candidate needs to complete the following tasks:
 
-- Subscribe to dev@hugegraph.apache.org, for specific steps/filtering configurations, please refer to the [documentation](https://hugegraph.apache.org/versions/1.5/docs/contribution-guidelines/subscribe/)
+- Subscribe to dev@hugegraph.apache.org, for specific steps/filtering configurations, please refer to the [documentation](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/)
 - Sign the [ICLA](https://www.apache.org/licenses/icla.pdf), follow the steps below↓
 
 ### ICLA Signing Process

@@ -606,3 +606,10 @@ DELETE http://localhost:8080/graphspaces/gs1/schematemplates/template1
 ```json
 204
 ```
+
+---
+
+反链：
+
+- [Authentication](/cn/docs/clients/restful-api/auth/)
+- [Graphs](/cn/docs/clients/restful-api/graphs/)

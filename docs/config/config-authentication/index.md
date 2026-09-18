@@ -162,3 +162,16 @@ bin/enable-auth.sh
 ```
 
 Then follow [Switching authentication mode](#switching-authentication-mode)
+
+---
+
+Backlinks:
+
+- [Release-1.3.0](/docs/changelog/hugegraph-1.3.0-release-notes/)
+- [Authentication](/docs/clients/restful-api/auth/)
+- [Gremlin](/docs/clients/restful-api/gremlin/)
+- [Server Config](/docs/config/)
+- [Security](/docs/guides/security/)
+- [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
+- [Visual with HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)

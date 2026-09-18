@@ -274,3 +274,11 @@ This endpoint requires `ADMIN_TOKEN` in `.env` to be changed to a secure value. 
 An unset or placeholder `ADMIN_TOKEN` returns 403 before the token is even compared, and a wrong token returns a 403 body with the message `Invalid admin_token`.
 
 The successful response is a `text/plain` stream that first replays the last 125 lines of the file and then follows it, in the manner of `tail -f`.
+
+---
+
+Backlinks:
+
+- [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-LLM](/docs/quickstart/hugegraph-ai/hugegraph-llm/)
+- [LLM Workflow](/docs/quickstart/hugegraph-ai/quick_start/)

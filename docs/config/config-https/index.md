@@ -117,3 +117,9 @@ keytool -import -alias serverkey -file server.crt -keystore client.truststore
 ```
 
 `client.truststore` is for the client's use and contains the trusted certificate.
+
+---
+
+Backlinks:
+
+- [Server Config](/docs/config/)

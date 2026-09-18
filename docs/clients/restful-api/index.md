@@ -77,3 +77,10 @@ Section pages:
 - [Authentication API](/docs/clients/restful-api/auth/): Authentication REST API: Manage users, roles, permissions, and access control to implement fine-grained graph data security.
 - [Metrics API](/docs/clients/restful-api/metrics/): Metrics REST API: Retrieve runtime performance metrics, statistics, and health status data of the system.
 - [Other API](/docs/clients/restful-api/other/): Other REST API: Provide auxiliary functions such as version query, API listing, exception trace switch, IP allowlist and the Arthas agent.
+
+---
+
+Backlinks:
+
+- [System Introduction](/docs/introduction/)
+- [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)

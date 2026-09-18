@@ -244,7 +244,7 @@ xxx
 
 一旦邀请被接受，候选人需要完成以下事项：
 
-- 订阅 dev@hugegraph.apache.org，具体步骤/过滤等配置请参考[文档](https://hugegraph.apache.org/versions/1.7/docs/contribution-guidelines/subscribe/)
+- 订阅 dev@hugegraph.apache.org，具体步骤/过滤等配置请参考[文档](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/)
 - 签署 [ICLA](https://www.apache.org/licenses/icla.pdf)，具体步骤见下↓
 
 ### ICLA 签署流程

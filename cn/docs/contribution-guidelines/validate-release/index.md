@@ -207,3 +207,9 @@ I checked:
 9. Test running XXX service OK
 10. ....
 ```
+
+---
+
+反链：
+
+- [Download](/cn/docs/download/download/)

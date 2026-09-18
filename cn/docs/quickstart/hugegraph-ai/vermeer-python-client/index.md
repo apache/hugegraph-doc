@@ -234,3 +234,9 @@ except (ConnectError, TimeOutError) as error:
 - [Vermeer 图计算引擎](https://github.com/apache/hugegraph-computer/tree/master/vermeer)
 - [Vermeer 快速开始](../computing/hugegraph-vermeer.md)
 - [HugeGraph-AI 快速开始](./quick_start.md)
+
+---
+
+反链：
+
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)

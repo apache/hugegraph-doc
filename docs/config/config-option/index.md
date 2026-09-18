@@ -429,3 +429,14 @@ The following backend stores are no longer supported in version 1.7.0+ and are o
 > > The driver and url of the PostgreSQL backend should be set to:
 > > - `jdbc.driver=org.postgresql.Driver`
 > > - `jdbc.url=jdbc:postgresql://localhost:5432/`
+
+---
+
+Backlinks:
+
+- [ToplingDB Quick Start](/blog/2025/10/09/toplingdb-quick-start/)
+- [Graphs](/docs/clients/restful-api/graphs/)
+- [Other](/docs/clients/restful-api/other/)
+- [Server Config](/docs/config/)
+- [Config RocksDB Backend](/docs/config/config-backend-rocksdb/)
+- [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)

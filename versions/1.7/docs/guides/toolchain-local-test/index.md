@@ -41,7 +41,7 @@ cd hugegraph-toolchain
 - **Script Deployment**: Specify a Server commit to reproduce the server version used by CI
 - **Docker Deployment**: Suitable for quick checks; if tests fail, first verify compatibility between the image and Toolchain
 
-> For detailed installation instructions, refer to [Community Documentation](https://hugegraph.apache.org/versions/1.7/docs/quickstart/hugegraph/hugegraph-server/)
+> For detailed installation instructions, refer to [Community Documentation](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/)
 
 ### 3.1 Script Deployment
 
@@ -435,6 +435,6 @@ If files cannot be found or parameters are invalid:
 
 - **HugeGraph GitHub Repository**: [https://github.com/apache/hugegraph](https://github.com/apache/hugegraph)
 - **HugeGraph Toolchain GitHub Repository**: [https://github.com/apache/hugegraph-toolchain](https://github.com/apache/hugegraph-toolchain)
-- **HugeGraph Server Documentation**: [https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/](https://hugegraph.apache.org/versions/1.7/docs/quickstart/hugegraph/hugegraph-server/)
+- **HugeGraph Server Documentation**: [https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/)
 - **CI Configuration**: `.github/workflows/*-ci.yml`
 - **Dependency Installation Scripts**: `hugegraph-*/assembly/travis/`

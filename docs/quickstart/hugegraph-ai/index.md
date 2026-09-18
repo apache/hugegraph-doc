@@ -104,3 +104,9 @@ Section pages:
 - [Configuration Reference](/docs/quickstart/hugegraph-ai/config-reference/)
 - [HugeGraph-LLM REST API](/docs/quickstart/hugegraph-ai/rest-api/)
 - [Vermeer Python Client](/docs/quickstart/hugegraph-ai/vermeer-python-client/)
+
+---
+
+Backlinks:
+
+- [System Introduction](/docs/introduction/)

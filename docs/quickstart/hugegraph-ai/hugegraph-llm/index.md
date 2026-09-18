@@ -173,3 +173,10 @@ cd hugegraph-ai
 pre-commit install
 pre-commit run --all-files
 ```
+
+---
+
+Backlinks:
+
+- [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)
+- [LLM Workflow](/docs/quickstart/hugegraph-ai/quick_start/)

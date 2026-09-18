@@ -389,3 +389,11 @@ uv run pytest hugegraph-python-client/src/tests -m "integration and hugegraph"
 CI 的集成测试作业使用 `hugegraph/hugegraph:1.7.0` 镜像。需要非默认空间时，还可以设置 `HUGEGRAPH_GRAPHSPACE`。
 
 源码与测试位于 `hugegraph-python-client/src/pyhugegraph/` 和 `hugegraph-python-client/src/tests/`，可直接运行的示例在 `hugegraph-python-client/src/pyhugegraph/example/hugegraph_example.py`。
+
+---
+
+反链：
+
+- [架构概览](/cn/docs/guides/architectural/)
+- [系统介绍](/cn/docs/introduction/)
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)

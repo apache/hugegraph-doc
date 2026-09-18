@@ -211,3 +211,9 @@ _说明_
 
 - HugeGraph在使用Cassandra后端时，性能略优于Titan，随着数据规模的增大，优势越来越明显，数据规模20000时，比Titan快30%
 - HugeGraph在使用RocksDB后端时，性能远高于Titan和HugeGraph的Cassandra后端，分别比两者快了6倍和4倍
+
+---
+
+Backlinks:
+
+- [PERFORMANCE](/docs/performance/)

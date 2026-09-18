@@ -568,3 +568,11 @@ curl -u store:admin http://localhost:8620/v1/stores
 两个 `log` 接口接受形如 `{"startTime": "...", "endTime": "..."}` 的时间范围，`yyyy-MM-dd HH:mm:ss` 和 `yyyy-MM-dd` 都是可接受的格式。
 
 PD 以 `hg` 前缀注册自己的指标，因此 `/actuator/prometheus` 除标准 JVM 指标外还会暴露 `hg_up`、`hg_graphs`、`hg_stores` 和 `hg_terms`，在存在图之后还会有按图统计的分区和大小指标。
+
+---
+
+反链：
+
+- [配置 HStore 后端](/cn/docs/config/config-backend-hstore/)
+- [系统介绍](/cn/docs/introduction/)
+- [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)

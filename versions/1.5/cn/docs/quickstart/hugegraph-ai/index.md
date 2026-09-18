@@ -132,7 +132,7 @@ from pyhugegraph.client import PyHugeClient
 
 ## 📚 了解更多
 
-- [项目主页](https://hugegraph.apache.org/versions/1.5/docs/quickstart/hugegraph-ai/)
+- [项目主页](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/)
 - [LLM 快速入门指南](https://github.com/apache/incubator-hugegraph-ai/blob/main/hugegraph-llm/quick_start.md)
 - [DeepWiki AI 文档](https://deepwiki.com/apache/incubator-hugegraph-ai)
 
@@ -144,7 +144,7 @@ from pyhugegraph.client import PyHugeClient
 
 ## 🤝 贡献
 
-我们欢迎贡献！详情请参阅我们的[贡献指南](https://hugegraph.apache.org/versions/1.5/docs/contribution-guidelines/)。
+我们欢迎贡献！详情请参阅我们的[贡献指南](https://hugegraph.apache.org/docs/contribution-guidelines/)。
 
 **开发设置：**
 - 使用 [GitHub Desktop](https://desktop.github.com/) 更轻松地管理 PR
@@ -160,7 +160,7 @@ hugegraph-ai 采用 [Apache 2.0 许可证](https://github.com/apache/incubator-h
 ## 📞 联系我们
 
 - **GitHub Issues**：[报告错误或请求功能](https://github.com/apache/incubator-hugegraph-ai/issues)（响应最快）
-- **电子邮件**：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)（[需要订阅](https://hugegraph.apache.org/versions/1.5/docs/contribution-guidelines/subscribe/)）
+- **电子邮件**：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)（[需要订阅](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/)）
 - **微信**：关注“Apache HugeGraph”官方公众号
 
 ![Apache HugeGraph 微信公众号二维码](/versions/1.5/images/docs/community/wechat.png){width="200" height="63"}

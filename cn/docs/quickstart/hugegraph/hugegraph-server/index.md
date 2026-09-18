@@ -632,3 +632,23 @@ bin/stop-hugegraph.sh
 ## 8 使用 IntelliJ IDEA 调试 Server
 
 请参考[在 IDEA 中配置 Server 开发环境](/docs/contribution-guidelines/hugegraph-server-idea-setup)
+
+---
+
+反链：
+
+- [Documentation](/cn/docs/)
+- [Gremlin Console](/cn/docs/clients/gremlin-console/)
+- [RESTful API](/cn/docs/clients/restful-api/)
+- [Graphs](/cn/docs/clients/restful-api/graphs/)
+- [Gremlin](/cn/docs/clients/restful-api/gremlin/)
+- [权限配置](/cn/docs/config/config-authentication/)
+- [在 IDEA 中配置 Server 开发环境](/cn/docs/contribution-guidelines/hugegraph-server-idea-setup/)
+- [Download](/cn/docs/download/download/)
+- [架构概览](/cn/docs/guides/architectural/)
+- [安全公告](/cn/docs/guides/security/)
+- [Toolchain本地测试](/cn/docs/guides/toolchain-local-test/)
+- [系统介绍](/cn/docs/introduction/)
+- [Java 客户端](/cn/docs/quickstart/client/hugegraph-client/)
+- [使用 Loader 实时/流式导入数据](/cn/docs/quickstart/toolchain/hugegraph-loader/)
+- [使用 SeaTunnel Sink 导入图数据](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)

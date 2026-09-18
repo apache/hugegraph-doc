@@ -300,3 +300,9 @@ to `LD_PRELOAD` before `bin/hugegraph-server.sh`, `bin/init-store.sh` and `bin/d
 JVM. If it is missing, those scripts stop with
 `RISC-V RocksDB requires libatomic.so.1; install libatomic1`, and installing the `libatomic1` package
 fixes it.
+
+---
+
+Backlinks:
+
+- [Server Config](/docs/config/)

@@ -234,3 +234,9 @@ The source lives under `vermeer-python-client/src/pyvermeer/`. The module curren
 - [Vermeer graph computing engine](https://github.com/apache/hugegraph-computer/tree/master/vermeer)
 - [Vermeer quick start](../computing/hugegraph-vermeer.md)
 - [HugeGraph-AI quick start](./quick_start.md)
+
+---
+
+Backlinks:
+
+- [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)

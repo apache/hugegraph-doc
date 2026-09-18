@@ -22,3 +22,9 @@ HugeGraph-Computer 仓库包含两套 OLAP 系统：Go 实现的内存图计算�
 - [HugeGraph-Vermeer Quick Start](/cn/docs/quickstart/computing/hugegraph-vermeer/)
 - [HugeGraph-Computer Quick Start](/cn/docs/quickstart/computing/hugegraph-computer/)
 - [HugeGraph-Computer 配置参考](/cn/docs/quickstart/computing/hugegraph-computer-config/)
+
+---
+
+反链：
+
+- [系统介绍](/cn/docs/introduction/)

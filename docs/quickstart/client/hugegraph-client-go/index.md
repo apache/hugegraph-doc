@@ -128,3 +128,11 @@ fmt.Println(resp.StatusCode, resp.Data.Status.Code, resp.Data.Result.Data)
 > The `Vertex` operations take `model.Vertex[any]` values from the `internal/model` package. Go does not allow importing an `internal` package from another module, so at the moment the `Vertex` API can only be called from code inside the client module itself; its test file is also fully commented out.
 
 For complete usage, see the tests in each API directory, such as [`version_test.go`](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/api/v1/version_test.go), [`gemlin_test.go`](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/api/v1/gremlin/gemlin_test.go), and [`vertexlabel_test.go`](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-client-go/api/v1/vertexlabel/vertexlabel_test.go).
+
+---
+
+Backlinks:
+
+- [Architecture Overview](/docs/guides/architectural/)
+- [System Introduction](/docs/introduction/)
+- [Java-Client](/docs/quickstart/client/hugegraph-client/)

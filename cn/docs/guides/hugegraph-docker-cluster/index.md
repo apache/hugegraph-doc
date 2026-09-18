@@ -276,3 +276,9 @@ HG_SERVER_STARTUP_TIMEOUT_S=300 HUGEGRAPH_VERSION=latest \
 Compose 文件在此之上还定义了自己的健康检查，因此 `--wait` 和 `depends_on: condition: service_healthy` 不依赖镜像内置的检查。Compose 中的检查使用更短的启动期（视服务和拓扑为 30 到 120 秒）和更多的重试次数。
 
 > **注意**：`start-hugegraph.sh` 中的 `-m true` 标志（基于 cron 的监控）仅适用于虚拟机/裸机部署，Docker 镜像中未安装也不使用该功能。Docker 用户应依赖内置的 `HEALTHCHECK` 和 Docker 重启策略。
+
+---
+
+反链：
+
+- [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)

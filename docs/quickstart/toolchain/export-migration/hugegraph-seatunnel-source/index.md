@@ -186,3 +186,12 @@ This page covers row reads and writes. It does not copy source indexes, TTLs, or
 **Related guide**
 
 <p><sup>[3]</sup> <a href="/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/">SeaTunnel graph import guide</a></p>
+
+---
+
+Backlinks:
+
+- [System Introduction](/docs/introduction/)
+- [HugeGraph ToolChain](/docs/quickstart/toolchain/)
+- [Graph export / migration](/docs/quickstart/toolchain/export-migration/)
+- [Import graph data with SeaTunnel Sink](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)

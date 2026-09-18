@@ -68,3 +68,9 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 - [贡献指南](/cn/docs/contribution-guidelines/)
 - [CHANGELOGS](/cn/docs/changelog/)
 - [Apache 贡献者协议](/cn/docs/cla/)
+
+---
+
+反链：
+
+- [Apache HugeGraph Committer 指南](/cn/docs/contribution-guidelines/committer-guidelines/)

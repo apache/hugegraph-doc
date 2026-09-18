@@ -178,3 +178,9 @@ HBase 后端不支持以下特性：
 - 快照。创建或恢复后端快照会抛出 `UnsupportedOperationException`。
 
 已支持的特性包括顶点和边的 TTL、分页查询、order by 查询、范围条件，以及按输入 id 排序。
+
+---
+
+反链：
+
+- [Server 配置](/cn/docs/config/)

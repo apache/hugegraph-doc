@@ -604,3 +604,10 @@ spaceManager.createGraphSpace(graphSpace);
 ### 5 简单示例
 
 简单示例见[HugeGraph-Client](/cn/docs/quickstart/client/hugegraph-client)
+
+---
+
+反链：
+
+- [Java 客户端](/cn/docs/quickstart/client/hugegraph-client/)
+- [使用 Loader 实时/流式导入数据](/cn/docs/quickstart/toolchain/hugegraph-loader/)

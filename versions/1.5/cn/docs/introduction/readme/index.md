@@ -64,7 +64,7 @@ HugeGraph 支持多用户并行操作，用户可输入 Gremlin 查询语句，�
 ### Contact Us
 
 - [GitHub Issues](https://github.com/apache/incubator-hugegraph/issues): 使用途中出现问题或提供功能性建议，可通过此反馈 (推荐)
-- 邮件反馈：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([邮箱订阅方式](https://hugegraph.apache.org/versions/1.5/docs/contribution-guidelines/subscribe/))
+- 邮件反馈：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([邮箱订阅方式](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/))
 - SEC 反馈： [security@hugegraph.apache.org](mailto:security@hugegraph.apache.org) (报告安全相关问题)
 - 微信公众号：Apache HugeGraph, 欢迎扫描下方二维码加入我们！
 

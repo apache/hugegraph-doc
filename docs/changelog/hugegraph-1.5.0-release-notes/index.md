@@ -160,3 +160,9 @@ Please check the release details/contributor in each repository:
 - [Toolchain Release Notes](https://github.com/apache/hugegraph-toolchain/releases)
 - [Computer Release Notes](https://github.com/apache/hugegraph-computer/releases)
 - [AI Release Notes](https://github.com/apache/hugegraph-ai/releases)
+
+---
+
+Backlinks:
+
+- [Download](/docs/download/download/)

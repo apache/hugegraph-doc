@@ -593,3 +593,10 @@ spaceManager.createGraphSpace(graphSpace);
 ### 5 Simple Example
 
 Simple examples can reference [HugeGraph-Client](/docs/quickstart/client/hugegraph-client)
+
+---
+
+Backlinks:
+
+- [Java-Client](/docs/quickstart/client/hugegraph-client/)
+- [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)

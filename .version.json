@@ -9,22 +9,28 @@
     "treeSha256": "3314337a4c679484d29ebb8e613d5e85dc8bb9020a7465c13b95441b0856f485"
   },
   "githubBranch": "master",
+  "historicalNoindexPages": 0,
+  "historicalRouteAliases": 0,
+  "historicalSitemapsRemoved": 0,
   "id": "latest",
   "migration": {
     "changed": 5,
     "files": 252,
     "findings": 0,
     "knownFixes": 0,
-    "residual": 0
+    "residual": 0,
+    "routeMigrations": 0
   },
   "name": "latest",
+  "nonEquivalentHreflangRemoved": 2,
   "publishPath": "",
   "ref": "master",
-  "sha": "3287b608dbb5f2b57b2403352791ad56183ef891",
+  "sha": "5748d37241e1162e0c21b38fa564265c145769cd",
   "urlScoping": {
-    "files": 0,
+    "files": 284,
     "historicalHomeRedirects": 0,
-    "manifests": 0,
+    "manifests": 282,
+    "searchFingerprints": 2,
     "searchRefs": 0,
     "urls": 0
   }

@@ -678,3 +678,14 @@ HugeGraph-Hubble 可以通过 `conf/hugegraph-hubble.properties` 文件进行配
 | `dashboard.address` | `127.0.0.1:8092` | 可选的外部监控面板地址，留空则隐藏入口 |
 
 > `operations.store.allowed_targets` 的默认值仅适用于本地测试。生产部署必须显式列出每一个受信任的 Store 协议、主机和端口，服务发现不会向该白名单追加来源。HTTPS 来源会保留其配置的主机名用于 TLS SNI 与证书校验。PD 和 Store 的密码请通过受保护的部署配置提供，不要写入打包的配置文件。
+
+---
+
+反链：
+
+- [Documentation](/cn/docs/)
+- [架构概览](/cn/docs/guides/architectural/)
+- [系统介绍](/cn/docs/introduction/)
+- [HugeGraph Examples](/cn/docs/language/hugegraph-example/)
+- [HugeGraph 工具链](/cn/docs/quickstart/toolchain/)
+- [图可视化](/cn/docs/quickstart/toolchain/visualization/)

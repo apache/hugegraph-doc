@@ -1,4 +1,2 @@
 User-agent: *
 Allow: /
-
-Sitemap: https://hugegraph.apache.org/versions/1.7/sitemap.xml

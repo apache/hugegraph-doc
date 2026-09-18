@@ -246,3 +246,9 @@ GRAND 每次增强采样都会返回一组 logits，`NodeClassify` 会对列表�
 - DGL 或 PyTorch 导入失败：回到仓库根目录重新执行 `uv sync --extra ml`，并确认当前 Python 来自根目录 `.venv`。
 - `bgrl_example.py` 目前在导入阶段就会失败：它从 `hugegraph_ml.models.bgrl` 导入 `MLP_Predictor`，而该模块中的类名是 `MLPPredictor`。
 - `care_gnn_example.py` 读取 `AMAZON_user_v` 和三个 `AMAZON_net_*_e` 边标签，仓库内没有对应的导入函数，需要自行准备该数据集后再运行。
+
+---
+
+反链：
+
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)

@@ -1,0 +1,29 @@
+{
+  "plugins": [
+    "toggle-chapters",
+    "theme-cuav"
+  ],
+  "pluginsConfig": {
+    "prism": {
+      "lang": {
+        "flow": "typescript"
+      }
+    },
+    "theme-cuav": {
+      "useGitbookIcon": false,
+      "iconPath": "../images/favicon.ico",
+      "showGitBookLink": false,
+      "navbar": {
+        "brand": {
+          "logo": {
+            "alt": "HugeGraph Database",
+            "path": "../images/logo.png"
+          }
+        }
+      }
+    }
+  },
+  "styles": {
+    "website": "styles/website.css"
+  }
+}

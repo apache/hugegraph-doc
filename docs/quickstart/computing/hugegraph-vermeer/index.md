@@ -653,3 +653,11 @@ POST http://localhost:6688/tasks/create
 
 > 🚧, further updates and improvements will be made at any time. Suggestions and feedback are welcome.
 ```
+
+---
+
+Backlinks:
+
+- [System Introduction](/docs/introduction/)
+- [HugeGraph Computing (OLAP)](/docs/quickstart/computing/)
+- [Vermeer Client](/docs/quickstart/hugegraph-ai/vermeer-python-client/)

@@ -117,3 +117,9 @@ HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库�
 
 ![微信公众号二维码](/images/docs/community/wechat.png)
 {width="300" height="94"}
+
+---
+
+反链：
+
+- [Documentation](/cn/docs/)

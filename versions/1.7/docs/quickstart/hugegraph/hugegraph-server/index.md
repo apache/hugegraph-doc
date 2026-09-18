@@ -10,7 +10,7 @@ LLMS index: [llms.txt](/versions/1.7/llms.txt)
 
 The `hugegraph-server` module contains `hugegraph-core`, `hugegraph-api`, `hugegraph-dist`, and storage adapters. Core implements the property graph model, transactions, and TinkerPop interfaces. API provides the HTTP service and delegates client requests to Core. Graph data is stored in RocksDB (the default standalone backend), HStore (distributed), or HBase.
 
-> ⚠️ **Version note**: This page follows HugeGraph 1.7.0 through the `master` branch and covers only RocksDB, HStore, and HBase. For other legacy backends and their configuration, see the [HugeGraph 1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md).
+> ⚠️ **Version note**: This page follows HugeGraph 1.7.0 through the `master` branch and covers only RocksDB, HStore, and HBase. For other legacy backends and their configuration, see the [HugeGraph 1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/docs/quickstart/hugegraph/hugegraph-server.md).
 
 > Naming: `HugeGraph` means the overall project or main repository, `hugegraph-server` is the Server module in that repository, and `HugeGraphServer` is the Java class for the service process. This page uses "Server service" for a running graph database service.
 

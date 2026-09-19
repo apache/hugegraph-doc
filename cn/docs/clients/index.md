@@ -1,5 +1,9 @@
 # 客户端与 API
 
+> 通过 Java 客户端、REST API、Gremlin Console 和其他客户端库连接 HugeGraph。
+
+---
+
 LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---

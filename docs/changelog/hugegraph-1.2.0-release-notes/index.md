@@ -241,9 +241,3 @@ Please check the release details in each repository:
 - [Toolchain Release Notes](https://github.com/apache/hugegraph-toolchain/releases)
 - [Computer Release Notes](https://github.com/apache/hugegraph-computer/releases)
 - [Commons Release Notes](https://github.com/apache/hugegraph-commons/releases)
-
----
-
-Backlinks:
-
-- [Download](/docs/download/download/)

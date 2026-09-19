@@ -25,7 +25,7 @@ Source repository: <i class="fab fa-github"></i> [apache/hugegraph-toolchain](ht
 Section pages:
 
 - [Graph visualization](/docs/quickstart/toolchain/visualization/)
-- [HugeGraph-Hubble Quick Start](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [HugeGraph-Hubble Quick Start](/docs/quickstart/toolchain/hugegraph-hubble/): Deploy HugeGraph-Hubble for graph visualization, schema management, data import, and Gremlin or Cypher queries.
 - [Graph import](/docs/quickstart/toolchain/import/)
 - [HugeGraph-Loader Quick Start](/docs/quickstart/toolchain/hugegraph-loader/)
 - [Graph export and migration](/docs/quickstart/toolchain/export-migration/)

@@ -107,7 +107,7 @@ Graph computing is an OLAP workload. Its capacity and resource requirements depe
 | Run graph algorithms | [Vermeer and Computer](/docs/quickstart/computing/) |
 | Build GraphRAG or graph machine learning applications | [HugeGraph-AI](/docs/quickstart/hugegraph-ai/) |
 
-## Community
+## Community {#community}
 
 - [GitHub Issues](https://github.com/apache/hugegraph/issues)
 - Developer mailing list: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)

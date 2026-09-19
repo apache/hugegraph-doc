@@ -107,7 +107,7 @@ HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库�
 | 运行图算法 | [Vermeer 与 Computer](/cn/docs/quickstart/computing/) |
 | 构建 GraphRAG 或图机器学习应用 | [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/) |
 
-## 社区
+## 社区 {#community}
 
 - [GitHub Issues](https://github.com/apache/hugegraph/issues)
 - 开发者邮件列表：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)

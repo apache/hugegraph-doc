@@ -24,7 +24,7 @@ HugeGraph Toolchain 包含 Java/Go 客户端、Loader、Hubble、Tools、Spark C
 
 本节页面：
 
-- [HugeGraph-Hubble Quick Start](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
+- [HugeGraph-Hubble Quick Start](/cn/docs/quickstart/toolchain/hugegraph-hubble/): 部署 HugeGraph-Hubble，进行图可视化、元数据管理、数据导入，以及 Gremlin 或 Cypher 查询。
 - [图可视化](/cn/docs/quickstart/toolchain/visualization/)
 - [HugeGraph-Loader Quick Start](/cn/docs/quickstart/toolchain/hugegraph-loader/)
 - [图导入](/cn/docs/quickstart/toolchain/import/)

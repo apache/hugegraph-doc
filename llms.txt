@@ -19,7 +19,7 @@
   - [Install/Build HugeGraph Server](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/index.md)
   - [Java-Client](https://hugegraph.apache.org/docs/quickstart/client/hugegraph-client/index.md)
   - [Vermeer: Memory-First Computing Framework](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-vermeer/index.md)
-  - [Visual with HugeGraph-Hubble](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md)
+  - [Visual with HugeGraph-Hubble](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md): Deploy HugeGraph-Hubble for graph visualization, schema management, data import, and Gremlin or Cypher queries.
   - [Analysis with HugeGraph-Computer](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-computer/index.md)
   - [Export and migrate with SeaTunnel Source](https://hugegraph.apache.org/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/index.md)
   - [HugeGraph-ML](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-ml/index.md)
@@ -44,7 +44,7 @@
   - [Config RocksDB Backend](https://hugegraph.apache.org/docs/config/config-backend-rocksdb/index.md)
   - [Config HStore Backend](https://hugegraph.apache.org/docs/config/config-backend-hstore/index.md)
   - [Config HBase Backend](https://hugegraph.apache.org/docs/config/config-backend-hbase/index.md)
-- [Clients and APIs](https://hugegraph.apache.org/docs/clients/index.md)
+- [Clients and APIs](https://hugegraph.apache.org/docs/clients/index.md): Connect to HugeGraph with the Java client, REST API, Gremlin Console, and other client libraries.
   - [Graphspace](https://hugegraph.apache.org/docs/clients/restful-api/graphspace/index.md): Graphspace REST API: Multi-tenancy and resource isolation for creating, viewing, updating, and deleting graph spaces with prerequisites and constraints.
   - [Schema](https://hugegraph.apache.org/docs/clients/restful-api/schema/index.md): Schema REST API: Query the complete schema definition of a graph, including property keys, vertex labels, edge labels, and index labels.
   - [HugeGraph Java Client](https://hugegraph.apache.org/docs/clients/hugegraph-client/index.md)

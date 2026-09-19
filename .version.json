@@ -14,7 +14,7 @@
   "historicalSitemapsRemoved": 0,
   "id": "latest",
   "migration": {
-    "changed": 5,
+    "changed": 10,
     "files": 252,
     "findings": 0,
     "knownFixes": 0,
@@ -25,7 +25,7 @@
   "nonEquivalentHreflangRemoved": 2,
   "publishPath": "",
   "ref": "master",
-  "sha": "5748d37241e1162e0c21b38fa564265c145769cd",
+  "sha": "a7dad55a26a84d778a77cb6fd0f00d4d8c17d887",
   "urlScoping": {
     "files": 284,
     "historicalHomeRedirects": 0,

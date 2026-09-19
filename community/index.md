@@ -1,5 +1,7 @@
 # Community
 
+
+
 ## Join the Apache HugeGraph community
 
 Apache HugeGraph is an open source project that anyone in the community can use, improve, and enjoy. We'd love you to join us! Here are a few ways to find out what's happening and get involved.
@@ -7,6 +9,39 @@ Apache HugeGraph is an open source project that anyone in the community can use,
 [Contribute](/docs/contribution-guidelines/)
 
 [View on GitHub](https://github.com/apache/hugegraph)
+
+## Project members
+
+Current Apache HugeGraph PMC members and Committers, sourced from ASF records. [(Note: How to become a HugeGraph Committer)](/docs/contribution-guidelines/committer-guidelines/)
+
+### PMC
+
+- [Jermy Li](https://github.com/javeme)
+- [Imba Jin](https://github.com/imbajin)
+- [coderzc](https://github.com/coderzc)
+- [davidzollo](https://github.com/davidzollo)
+- [carp84](https://github.com/carp84)
+- [jixuan1989](https://github.com/jixuan1989)
+- [Linary](https://github.com/Linary)
+- [simon824](https://github.com/simon824)
+- [tristaZero](https://github.com/tristaZero)
+- [VGalaxies](https://github.com/VGalaxies)
+- [Willem Ning Jiang](https://github.com/WillemJiang)
+- [zyxxoo](https://github.com/zyxxoo)
+
+
+### Committers
+
+- [corgiboygsj](https://github.com/corgiboygsj)
+- [Jacky Yang](https://github.com/JackyYangPassion)
+- [Jason](https://github.com/MrJs133)
+- Kaiyichen Wei
+- [liuxiaocs7](https://github.com/liuxiaocs7)
+- [Pengzna](https://github.com/Pengzna)
+- Thespica
+- [wanganjuan](https://github.com/wanganjuan)
+- Yi Zhang
+- [z7658329](https://github.com/z7658329)
 
 ## Get involved
 
@@ -23,10 +58,9 @@ Apache HugeGraph is an open source project that anyone in the community can use,
 
 - [GitHub](https://github.com/apache/hugegraph) — development takes place in the Apache HugeGraph repositories.
 - [Developer mailing list](/docs/contribution-guidelines/subscribe/) — discuss project and community topics.
-- [Security mailing list](mailto:security@hugegraph.apache.org) — report security issues privately.
-- [Security policy](/docs/guides/security/) — follow the project's security reporting process.
+- [Security reporting](mailto:security@hugegraph.apache.org) and [security policy](/docs/guides/security/) — report issues and follow the project's process.
 - [Contribution guidelines](/docs/contribution-guidelines/) — learn how to contribute code and documentation.
-
+- [Committer resources](https://infra.apache.org/committers.html) — ASF tools, services, and guidance for project committers.
 
 ## Learn how the project works
 

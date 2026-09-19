@@ -65,7 +65,7 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 - [下载 Apache HugeGraph](/cn/docs/download/download/)
 - [Quick Start](/cn/docs/quickstart/)
 - [HugeGraph-Server 配置](/cn/docs/config/)
-- [客户端与 API](/cn/docs/clients/)
+- [客户端与 API](/cn/docs/clients/): 通过 Java 客户端、REST API、Gremlin Console 和其他客户端库连接 HugeGraph。
 - [使用指南](/cn/docs/guides/)
 - [查询语言](/cn/docs/language/)
 - [PERFORMANCE](/cn/docs/performance/)
@@ -216,7 +216,7 @@ HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库�
 | 运行图算法 | [Vermeer 与 Computer](/cn/docs/quickstart/computing/) |
 | 构建 GraphRAG 或图机器学习应用 | [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/) |
 
-## 社区
+## 社区 {#community}
 
 - [GitHub Issues](https://github.com/apache/hugegraph/issues)
 - 开发者邮件列表：[dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)
@@ -272,10 +272,11 @@ HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行�
 
 有四种方式可以部署 Server 服务：
 
-- 方式 1：使用 Docker 容器 (便于**测试**)
-- 方式 2：下载 tar 包
-- 方式 3：源码编译
-- 方式 4：使用 tools 工具部署 (Outdated)
+1. 使用 Docker 容器进行测试或开发。
+1. 下载二进制 tar 包。
+1. 从源码编译。
+1. 使用已过时的一键部署工具。
+{.steps}
 
 > 不要把 Gremlin、Cypher 等查询接口直接暴露到公网。生产环境应启用[认证与授权](/cn/docs/config/config-authentication/)，限制网络访问并保留审计日志；部署建议见[安全指南](/cn/docs/guides/security/)。
 
@@ -310,7 +311,7 @@ HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行�
 | HA 参考 | `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble |
 | 最小 HStore 拓扑的源码构建覆盖文件 | `docker-compose.dev.yml` | （需与 `docker-compose-hstore.yml` 一起使用） |
 
-```bash
+```bash {wrap=true}
 cd hugegraph/docker
 # 注意版本号请随时保持更新 → 1.x.0
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
@@ -330,7 +331,7 @@ compose 文件从 `HUGEGRAPH_ADMIN_PASSWORD` 读取管理员密码，从 `HUGEGR
 
 ### 3.2 下载 tar 包
 
-```bash
+```bash {title="download-release.sh" wrap=true collapse=2}
 # 1.7.0 是项目孵化期发布的历史版本，因此文件名仍带 incubating
 wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
@@ -342,7 +343,7 @@ tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 
 下载 HugeGraph 源代码
 
-```bash
+```bash {title="build-from-source.sh" wrap=true collapse=2}
 git clone https://github.com/apache/hugegraph.git
 ```
 
@@ -2603,7 +2604,7 @@ HugeGraph Toolchain 包含 Java/Go 客户端、Loader、Hubble、Tools、Spark C
 
 本节页面：
 
-- [HugeGraph-Hubble Quick Start](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
+- [HugeGraph-Hubble Quick Start](/cn/docs/quickstart/toolchain/hugegraph-hubble/): 部署 HugeGraph-Hubble，进行图可视化、元数据管理、数据导入，以及 Gremlin 或 Cypher 查询。
 - [图可视化](/cn/docs/quickstart/toolchain/visualization/)
 - [HugeGraph-Loader Quick Start](/cn/docs/quickstart/toolchain/hugegraph-loader/)
 - [图导入](/cn/docs/quickstart/toolchain/import/)
@@ -2638,6 +2639,10 @@ Source: https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-hubb
 ================
 
 # HugeGraph-Hubble Quick Start
+
+> 部署 HugeGraph-Hubble，进行图可视化、元数据管理、数据导入，以及 Gremlin 或 Cypher 查询。
+
+---
 
 LLMS 索引： [llms.txt](/cn/llms.txt)
 
@@ -8859,6 +8864,10 @@ Source: https://hugegraph.apache.org/cn/docs/clients/index.md
 
 # 客户端与 API
 
+> 通过 Java 客户端、REST API、Gremlin Console 和其他客户端库连接 HugeGraph。
+
+---
+
 LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
@@ -14265,7 +14274,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-### 2.1 Vertex
+## 2.1 Vertex {#vertex-api}
 
 顶点类型中的 `Id` 策略决定了顶点的 `Id` 类型，其对应的 `id` 类型如下：
 
@@ -14276,6 +14285,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 | CUSTOMIZE_STRING | string  |
 | CUSTOMIZE_NUMBER | number  |
 | CUSTOMIZE_UUID   | uuid    |
+{#vertex-id-strategy .full-width caption="顶点 ID 策略"}
 
 顶点的 `GET/PUT/DELETE` API 中 url 的 id 部分应该传入带有类型信息的 id 值，这个类型信息通过 json 串是否带引号来表示，也就是说：
 
@@ -14301,24 +14311,24 @@ schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("
 schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 ```
 
-#### 2.1.1 创建一个顶点
+### 2.1.1 创建一个顶点 {#create-vertex}
 
-##### Params
+#### Params
 
 **路径参数说明：**
 
 - graphspace: 图空间名称
 - graph: 图名称
 
-##### Method & Url
+#### Method & Url
 
 ```
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 ```
 
-##### Request Body
+#### Request Body
 
-```json
+```json {title="request.json" wrap=true}
 {
     "label": "person",
     "properties": {
@@ -14328,15 +14338,15 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 }
 ```
 
-##### Response Status
+#### Response Status
 
 ```json
 201
 ```
 
-##### Response Body
+#### Response Body
 
-```json
+```json {title="response.json" wrap=true}
 {
     "id": "1:marko",
     "label": "person",
@@ -14348,22 +14358,22 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 }
 ```
 
-#### 2.1.2 创建多个顶点
+### 2.1.2 创建多个顶点
 
-##### Params
+#### Params
 
 **路径参数说明：**
 
 - graphspace: 图空间名称
 - graph: 图名称
 
-##### Method & Url
+#### Method & Url
 
 ```
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/batch
 ```
 
-##### Request Body
+#### Request Body
 
 ```json
 [
@@ -14385,13 +14395,13 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/b
 ]
 ```
 
-##### Response Status
+#### Response Status
 
 ```json
 201
 ```
 
-##### Response Body
+#### Response Body
 
 ```json
 [
@@ -14400,9 +14410,9 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/b
 ]
 ```
 
-#### 2.1.3 更新顶点属性
+### 2.1.3 更新顶点属性
 
-##### Params
+#### Params
 
 **路径参数说明：**
 
@@ -14410,13 +14420,13 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/b
 - graph: 图名称
 - id: 顶点 id，需要包含引号，例如"1:marko"
 
-##### Method & Url
+#### Method & Url
 
 ```
 PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1:marko"?action=append
 ```
 
-##### Request Body
+#### Request Body
 
 ```json
 {
@@ -14430,13 +14440,13 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 
 > 注意：属性的取值有三种类别，分别为 single、set 和 list。single 表示增加或更新属性值，set 或 list 表示追加属性值。
 
-##### Response Status
+#### Response Status
 
 ```json
 200
 ```
 
-##### Response Body
+#### Response Body
 
 ```json
 {
@@ -14451,9 +14461,9 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 }
 ```
 
-#### 2.1.4 批量更新顶点属性
+### 2.1.4 批量更新顶点属性
 
-##### 功能说明
+#### 功能说明
 
 批量更新顶点的属性时，可以选择多种更新策略，如下：
 
@@ -14506,20 +14516,20 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 curl -H "Content-Type: application/json" -d '[{"label":"person","properties":{"name":"josh","age":32,"city":"Beijing","weight":0.1,"hobby":["reading","football"]}},{"label":"software","properties":{"name":"lop","lang":"java","price":328}}]' http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/batch
 ```
 
-##### Params
+#### Params
 
 **路径参数说明：**
 
 - graphspace: 图空间名称
 - graph: 图名称
 
-##### Method & Url
+#### Method & Url
 
 ```
 PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/batch
 ```
 
-##### Request Body
+#### Request Body
 
 ```json
 {
@@ -14557,13 +14567,13 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/ba
 }
 ```
 
-##### Response Status
+#### Response Status
 
 ```json
 200
 ```
 
-##### Response Body
+#### Response Body
 
 ```json
 {
@@ -14609,9 +14619,9 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/ba
 
 其他更新策略的使用方式与此类似，此处不再详述。
 
-#### 2.1.5 删除顶点属性
+### 2.1.5 删除顶点属性
 
-##### Params
+#### Params
 
 **路径参数说明：**
 
@@ -14619,13 +14629,13 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/ba
 - graph: 图名称
 - id: 顶点 id，需要包含引号，例如"1:marko"
 
-##### Method & Url
+#### Method & Url
 
 ```
 PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1:marko"?action=eliminate
 ```
 
-##### Request Body
+#### Request Body
 
 ```json
 {
@@ -14638,13 +14648,13 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 
 > 注意：这里会直接删除属性（删除 key 和所有 value），无论其属性的取值是 single、set 或 list。
 
-##### Response Status
+#### Response Status
 
 ```json
 200
 ```
 
-##### Response Body
+#### Response Body
 
 ```json
 {
@@ -14658,9 +14668,9 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 }
 ```
 
-#### 2.1.6 获取符合条件的顶点
+### 2.1.6 获取符合条件的顶点
 
-##### Params
+#### Params
 
 **路径参数说明：**
 
@@ -14695,19 +14705,19 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 
 **查询所有 age 为 29 且 label 为 person 的顶点**
 
-##### Method & Url
+#### Method & Url
 
 ```
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?label=person&properties={"age":29}&limit=1
 ```
 
-##### Response Status
+#### Response Status
 
 ```json
 200
 ```
 
-##### Response Body
+#### Response Body
 
 ```json
 {
@@ -14733,19 +14743,19 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?la
 curl -H "Content-Type: application/json" -d '[{"label":"person","properties":{"name":"peter","age":29,"city":"Shanghai"}},{"label":"person","properties":{"name":"vadas","age":27,"city":"Hongkong"}}]' http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/batch
 ```
 
-##### Method & Url
+#### Method & Url
 
 ```
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?page&limit=3
 ```
 
-##### Response Status
+#### Response Status
 
 ```json
 200
 ```
 
-##### Response Body
+#### Response Body
 
 ```json
 {
@@ -14794,19 +14804,19 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?pa
 
 **分页查询所有顶点，获取下一页（page 带上上一页返回的 page 值），限定 3 条**
 
-##### Method & Url
+#### Method & Url
 
 ```
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?page=CIYxOnBldGVyAAAAAAAAAAM=&limit=3
 ```
 
-##### Response Status
+#### Response Status
 
 ```json
 200
 ```
 
-##### Response Body
+#### Response Body
 
 ```json
 {
@@ -14848,9 +14858,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?pa
 
 当`"page": null`时，表示已经没有下一页了（注：如果后端使用的是 Cassandra，为了提高性能，当返回的页数刚好是最后一页时，返回的 `page` 值可能不为空，但是如果用这个 `page` 值再请求下一页数据时，就会返回 `空数据` 和 `page = null`，其他情况也类似）
 
-#### 2.1.7 根据 Id 获取顶点
+### 2.1.7 根据 Id 获取顶点
 
-##### Params
+#### Params
 
 **路径参数说明：**
 
@@ -14858,19 +14868,19 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?pa
 - graph: 图名称
 - id: 顶点 id，需要包含引号，例如"1:marko"
 
-##### Method & Url
+#### Method & Url
 
 ```
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1:marko"
 ```
 
-##### Response Status
+#### Response Status
 
 ```json
 200
 ```
 
-##### Response Body
+#### Response Body
 
 ```json
 {
@@ -14884,9 +14894,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 }
 ```
 
-#### 2.1.8 根据 Id 删除顶点
+### 2.1.8 根据 Id 删除顶点
 
-##### Params
+#### Params
 
 **路径参数说明：**
 
@@ -14900,13 +14910,13 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 
 **仅根据 Id 删除顶点**
 
-##### Method & Url
+#### Method & Url
 
 ```
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1:marko"
 ```
 
-##### Response Status
+#### Response Status
 
 ```json
 204
@@ -14916,13 +14926,13 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 通过指定 Label 参数和 Id 来删除顶点时，一般来说其性能比仅根据 Id 删除会更好。
 
-##### Method & Url
+#### Method & Url
 
 ```
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1:marko"?label=person
 ```
 
-##### Response Status
+#### Response Status
 
 ```json
 204
@@ -24052,7 +24062,7 @@ HugeGraphServer 内部集成了 GremlinServer 和 RestServer，而 gremlin-serve
 
 `gremlin-server.yaml` 的主要结构如下。示例省略了部分导入项；完整内容以发布包中的文件为准。
 
-```yaml
+```yaml {title="conf/gremlin-server.yaml" wrap=true collapse=18}
 # host and port of gremlin server, need to be consistent with host and port in rest-server.properties
 #host: 127.0.0.1
 #port: 8182
@@ -26574,12 +26584,6 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 - [Computer Release Notes](https://github.com/apache/hugegraph-computer/releases/tag/1.0.0)
 - [Commons Release Notes](https://github.com/apache/hugegraph-commons/releases/tag/1.0.0)
 
----
-
-反链：
-
-- [Download](/cn/docs/download/download/)
-
 
 ================
 Source: https://hugegraph.apache.org/cn/docs/changelog/hugegraph-1.2.0-release-notes/index.md
@@ -26830,12 +26834,6 @@ Please check the release details in each repository:
 - [Computer Release Notes](https://github.com/apache/hugegraph-computer/releases)
 - [Commons Release Notes](https://github.com/apache/hugegraph-commons/releases)
 
----
-
-反链：
-
-- [Download](/cn/docs/download/download/)
-
 
 ================
 Source: https://hugegraph.apache.org/cn/docs/changelog/hugegraph-1.3.0-release-notes/index.md
@@ -26991,12 +26989,6 @@ Please check the release details/contributor in each repository:
 - [Toolchain Release Notes](https://github.com/apache/hugegraph-toolchain/releases)
 - [AI Release Notes](https://github.com/apache/hugegraph-ai/releases)
 - [Commons Release Notes](https://github.com/apache/hugegraph-commons/releases)
-
----
-
-反链：
-
-- [Download](/cn/docs/download/download/)
 
 
 ================
@@ -27165,12 +27157,6 @@ Please check the release details/contributor in each repository:
 - [Toolchain Release Notes](https://github.com/apache/hugegraph-toolchain/releases)
 - [Computer Release Notes](https://github.com/apache/hugegraph-computer/releases)
 - [AI Release Notes](https://github.com/apache/hugegraph-ai/releases)
-
----
-
-反链：
-
-- [Download](/cn/docs/download/download/)
 
 
 ================
@@ -27435,12 +27421,6 @@ Please check the release details/contributor in each repository:
 - [Computer Release Notes](https://github.com/apache/hugegraph-computer/releases)
 - [AI Release Notes](https://github.com/apache/hugegraph-ai/releases)
 
----
-
-反链：
-
-- [Download](/cn/docs/download/download/)
-
 
 ================
 Source: https://hugegraph.apache.org/cn/docs/download/download/index.md
@@ -27459,25 +27439,97 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 > - 检查哈希 (SHA512)、签名的说明在 [版本验证](/docs/contribution-guidelines/validate-release/) 页面, 也可参考 [ASF 验证说明](https://www.apache.org/dyn/closer.cgi#verify)
 > - 注: HugeGraph 所有组件版本号已保持一致, `client/loader/hubble/common` 等 maven 仓库版本号同理, 依赖引用可参考 [maven 示例](https://github.com/apache/hugegraph-toolchain#maven-dependencies)
 > - 兼容说明: HugeGraph 于 2026 年 1 月毕业后，下载路径已从 `/incubator/hugegraph` 迁移到 `/hugegraph`。历史版本的发布文件名可能仍包含 `-incubating-`。
+> - 从源码构建请参考 [编译构建说明](/cn/docs/quickstart/hugegraph/hugegraph-server/)
 
-### 最新版本 1.7.0
+### 最新版本
 
-- Release Date: 2025-11-28
-- [Release Notes](/docs/changelog/hugegraph-1.7.0-release-notes/)
-
-#### 二进制包
-
-| Server                                                                                                                                                                                                                                                                                                                                                                | Toolchain                                                                                                                                                                                                                                                                                                                                                                                           |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[Binary](https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.sha512)] | [[Binary](https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz.sha512)] |
-
-#### 源码包
-
-Please refer to [build from source](/docs/quickstart/hugegraph/hugegraph-server/).
-
-| Server                                                                                                                                                                                                                                                                                                                                                                            | Toolchain                                                                                                                                                                                                                                                                                                                                                                                                       | AI                                                                                                                                                                                                                                                                                                                                                                                         | Computer                                                                                                                                                                                                                                                                                                                                                                                                    |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-ai-incubating-1.7.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-ai-incubating-1.7.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-ai-incubating-1.7.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.sha512)] |
+<section class="hg-asf-release" id="hg-dl-1-7-0">
+  <ul class="hg-asf-release__meta">
+    <li><strong>版本:</strong> 1.7.0</li>
+    <li><strong>发布日期:</strong> 2025-11-28</li>
+    <li><a href="/cn/docs/changelog/hugegraph-1.7.0-release-notes/">发布说明</a></li>
+  </ul>
+  <div class="td-asset-list td-asset-list--static hg-asf-release__assets">
+    <div class="td-asset-list__table-wrap" tabindex="0" role="region" data-td-asset-table-scroll
+      aria-label="下载资产 · Apache HugeGraph 1.7.0">
+      <table class="td-asset-list__table">
+        <caption class="visually-hidden">下载资产 · Apache HugeGraph 1.7.0</caption>
+        <thead>
+          <tr>
+            <th scope="col">组件</th>
+            <th scope="col">类型</th>
+            <th scope="col">下载 (ASF 镜像)</th>
+            <th scope="col">ASC</th>
+            <th scope="col">SHA512</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Server</td>
+            <td>二进制</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-incubating-1.7.0.tar.gz"><code>apache-hugegraph-incubating-1.7.0.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.asc" aria-label="ASC: apache-hugegraph-incubating-1.7.0.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-incubating-1.7.0.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Toolchain</td>
+            <td>二进制</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-toolchain-incubating-1.7.0.tar.gz"><code>apache-hugegraph-toolchain-incubating-1.7.0.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz.asc" aria-label="ASC: apache-hugegraph-toolchain-incubating-1.7.0.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-toolchain-incubating-1.7.0.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Server</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-incubating-1.7.0-src.tar.gz"><code>apache-hugegraph-incubating-1.7.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-incubating-1.7.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-incubating-1.7.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Toolchain</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-toolchain-incubating-1.7.0-src.tar.gz"><code>apache-hugegraph-toolchain-incubating-1.7.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-toolchain-incubating-1.7.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-toolchain-incubating-1.7.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-toolchain-incubating-1.7.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>AI</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-ai-incubating-1.7.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-ai-incubating-1.7.0-src.tar.gz"><code>apache-hugegraph-ai-incubating-1.7.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-ai-incubating-1.7.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-ai-incubating-1.7.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-ai-incubating-1.7.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-ai-incubating-1.7.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Computer</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-computer-incubating-1.7.0-src.tar.gz"><code>apache-hugegraph-computer-incubating-1.7.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-computer-incubating-1.7.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-computer-incubating-1.7.0-src.tar.gz">SHA512</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<p class="hg-asf-release__note">源码归档是 Apache 软件基金会的正式发布物；二进制软件包是基于源码构建的便利用品。所有文件均通过 ASF 镜像分发，签名与校验和托管在 downloads.apache.org。GitHub 自动生成的源码归档不是 ASF 正式发布版本。</p>
 
 ---
 
@@ -27489,78 +27541,361 @@ Please refer to [build from source](/docs/quickstart/hugegraph/hugegraph-server/
 > 2. `1.3.0` 是最后一个兼容 Java8 的主版本, 请尽早使用/迁移运行时为 Java11 (低版本 Java 有潜在更多的 SEC 风险和性能影响)
 > 3. 从版本 `1.5.0` 开始，需要 Java11 运行时环境
 
-#### 1.5.0
-
-- Release Date: 2024-12-10
-- [Release Notes](/docs/changelog/hugegraph-1.5.0-release-notes/)
-
-##### 二进制包
-
-| Server                                                                                                                                                                                                                                                                                                                                                                | Toolchain                                                                                                                                                                                                                                                                                                                                                                                           |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[Binary](https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0.tar.gz.sha512)] | [[Binary](https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0.tar.gz.sha512)] |
-
-##### 源码包
-
-Please refer to [build from source](/docs/quickstart/hugegraph/hugegraph-server/).
-
-| Server                                                                                                                                                                                                                                                                                                                                                                            | Toolchain                                                                                                                                                                                                                                                                                                                                                                                                       | AI                                                                                                                                                                                                                                                                                                                                                                                         | Computer                                                                                                                                                                                                                                                                                                                                                                                                    |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-ai-incubating-1.5.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-ai-incubating-1.5.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-ai-incubating-1.5.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-computer-incubating-1.5.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-computer-incubating-1.5.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-computer-incubating-1.5.0-src.tar.gz.sha512)] |
-
-#### 1.3.0
-
-- Release Date: 2024-04-01
-- [Release Notes](/docs/changelog/hugegraph-1.3.0-release-notes/)
-
-##### 二进制包
-
-| Server                                                                                                                                                                                                                                                                                                                                                                | Toolchain                                                                                                                                                                                                                                                                                                                                                                                           |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[Binary](https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0.tar.gz.sha512)] | [[Binary](https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0.tar.gz.sha512)] |
-
-##### 源码包
-
-Please refer to [build from source](/docs/quickstart/hugegraph/hugegraph-server/).
-
-| Server                                                                                                                                                                                                                                                                                                                                                                            | Toolchain                                                                                                                                                                                                                                                                                                                                                                                                       | AI                                                                                                                                                                                                                                                                                                                                                                                         | Common                                                                                                                                                                                                                                                                                                                                                                                                    |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-ai-incubating-1.3.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-ai-incubating-1.3.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-ai-incubating-1.3.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-commons-incubating-1.3.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-commons-incubating-1.3.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-commons-incubating-1.3.0-src.tar.gz.sha512)] |
-
-
-#### 1.2.0
-
-- Release Date: 2023-12-28
-- [Release Notes](/docs/changelog/hugegraph-1.2.0-release-notes/)
-
-##### 二进制包
-
-| Server                                                                                                                                                                                                                                                                                                                                                                | Toolchain                                                                                                                                                                                                                                                                                                                                                                                           |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[Binary](https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0.tar.gz.sha512)] | [[Binary](https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0.tar.gz.sha512)] |
-
-##### 源码包
-
-| Server                                                                                                                                                                                                                                                                                                                                                                            | Toolchain                                                                                                                                                                                                                                                                                                                                                                                                       | Computer                                                                                                                                                                                                                                                                                                                                                                                                     | Common                                                                                                                                                                                                                                                                                                                                                                                                    |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-computer-incubating-1.2.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-computer-incubating-1.2.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-computer-incubating-1.2.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-commons-incubating-1.2.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-commons-incubating-1.2.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-commons-incubating-1.2.0-src.tar.gz.sha512)] |
-
-#### 1.0.0
-
-- Release Date: 2023-02-22
-- [Release Notes](/docs/changelog/hugegraph-1.0.0-release-notes/)
-
-##### 二进制包
-
-| Server                                                                                                                                                                                                                                                                                                                                                                | Toolchain                                                                                                                                                                                                                                                                                                                                                                                           | Computer                                                                                                                                                                                                                                                                                                                                                                                         |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[Binary](https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0.tar.gz.sha512)] | [[Binary](https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0.tar.gz.sha512)] | [[Binary](https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0.tar.gz.sha512)] |
-
-##### 源码包
-
-| Server                                                                                                                                                                                                                                                                                                                                                                            | Toolchain                                                                                                                                                                                                                                                                                                                                                                                                       | Computer                                                                                                                                                                                                                                                                                                                                                                                                     | Common                                                                                                                                                                                                                                                                                                                                                                                                    |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0-src.tar.gz.sha512)] | [[Source](https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-commons-incubating-1.0.0-src.tar.gz?action=download)] [[Sign](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-commons-incubating-1.0.0-src.tar.gz.asc)] [[SHA512](https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-commons-incubating-1.0.0-src.tar.gz.sha512)] |
+<section class="hg-asf-release" id="hg-dl-1-5-0">
+  <h4 class="hg-asf-release__heading">1.5.0</h4>
+  <ul class="hg-asf-release__meta">
+    <li><strong>版本:</strong> 1.5.0</li>
+    <li><strong>发布日期:</strong> 2024-12-10</li>
+    <li><a href="/cn/docs/changelog/hugegraph-1.5.0-release-notes/">发布说明</a></li>
+  </ul>
+  <div class="td-asset-list td-asset-list--static hg-asf-release__assets">
+    <div class="td-asset-list__table-wrap" tabindex="0" role="region" data-td-asset-table-scroll
+      aria-label="下载资产 · Apache HugeGraph 1.5.0">
+      <table class="td-asset-list__table">
+        <caption class="visually-hidden">下载资产 · Apache HugeGraph 1.5.0</caption>
+        <thead>
+          <tr>
+            <th scope="col">组件</th>
+            <th scope="col">类型</th>
+            <th scope="col">下载 (ASF 镜像)</th>
+            <th scope="col">ASC</th>
+            <th scope="col">SHA512</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Server</td>
+            <td>二进制</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-incubating-1.5.0.tar.gz"><code>apache-hugegraph-incubating-1.5.0.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0.tar.gz.asc" aria-label="ASC: apache-hugegraph-incubating-1.5.0.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-incubating-1.5.0.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Toolchain</td>
+            <td>二进制</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-toolchain-incubating-1.5.0.tar.gz"><code>apache-hugegraph-toolchain-incubating-1.5.0.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0.tar.gz.asc" aria-label="ASC: apache-hugegraph-toolchain-incubating-1.5.0.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-toolchain-incubating-1.5.0.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Server</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-incubating-1.5.0-src.tar.gz"><code>apache-hugegraph-incubating-1.5.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-incubating-1.5.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-incubating-1.5.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-incubating-1.5.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Toolchain</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-toolchain-incubating-1.5.0-src.tar.gz"><code>apache-hugegraph-toolchain-incubating-1.5.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-toolchain-incubating-1.5.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-toolchain-incubating-1.5.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-toolchain-incubating-1.5.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>AI</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-ai-incubating-1.5.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-ai-incubating-1.5.0-src.tar.gz"><code>apache-hugegraph-ai-incubating-1.5.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-ai-incubating-1.5.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-ai-incubating-1.5.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-ai-incubating-1.5.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-ai-incubating-1.5.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Computer</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.5.0/apache-hugegraph-computer-incubating-1.5.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-computer-incubating-1.5.0-src.tar.gz"><code>apache-hugegraph-computer-incubating-1.5.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-computer-incubating-1.5.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-computer-incubating-1.5.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.5.0/apache-hugegraph-computer-incubating-1.5.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-computer-incubating-1.5.0-src.tar.gz">SHA512</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section><section class="hg-asf-release" id="hg-dl-1-3-0">
+  <h4 class="hg-asf-release__heading">1.3.0</h4>
+  <ul class="hg-asf-release__meta">
+    <li><strong>版本:</strong> 1.3.0</li>
+    <li><strong>发布日期:</strong> 2024-04-01</li>
+    <li><a href="/cn/docs/changelog/hugegraph-1.3.0-release-notes/">发布说明</a></li>
+  </ul>
+  <div class="td-asset-list td-asset-list--static hg-asf-release__assets">
+    <div class="td-asset-list__table-wrap" tabindex="0" role="region" data-td-asset-table-scroll
+      aria-label="下载资产 · Apache HugeGraph 1.3.0">
+      <table class="td-asset-list__table">
+        <caption class="visually-hidden">下载资产 · Apache HugeGraph 1.3.0</caption>
+        <thead>
+          <tr>
+            <th scope="col">组件</th>
+            <th scope="col">类型</th>
+            <th scope="col">下载 (ASF 镜像)</th>
+            <th scope="col">ASC</th>
+            <th scope="col">SHA512</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Server</td>
+            <td>二进制</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-incubating-1.3.0.tar.gz"><code>apache-hugegraph-incubating-1.3.0.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0.tar.gz.asc" aria-label="ASC: apache-hugegraph-incubating-1.3.0.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-incubating-1.3.0.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Toolchain</td>
+            <td>二进制</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-toolchain-incubating-1.3.0.tar.gz"><code>apache-hugegraph-toolchain-incubating-1.3.0.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0.tar.gz.asc" aria-label="ASC: apache-hugegraph-toolchain-incubating-1.3.0.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-toolchain-incubating-1.3.0.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Server</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-incubating-1.3.0-src.tar.gz"><code>apache-hugegraph-incubating-1.3.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-incubating-1.3.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-incubating-1.3.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-incubating-1.3.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Toolchain</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-toolchain-incubating-1.3.0-src.tar.gz"><code>apache-hugegraph-toolchain-incubating-1.3.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-toolchain-incubating-1.3.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-toolchain-incubating-1.3.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-toolchain-incubating-1.3.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>AI</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-ai-incubating-1.3.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-ai-incubating-1.3.0-src.tar.gz"><code>apache-hugegraph-ai-incubating-1.3.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-ai-incubating-1.3.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-ai-incubating-1.3.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-ai-incubating-1.3.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-ai-incubating-1.3.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Common</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.3.0/apache-hugegraph-commons-incubating-1.3.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-commons-incubating-1.3.0-src.tar.gz"><code>apache-hugegraph-commons-incubating-1.3.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-commons-incubating-1.3.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-commons-incubating-1.3.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.3.0/apache-hugegraph-commons-incubating-1.3.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-commons-incubating-1.3.0-src.tar.gz">SHA512</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section><section class="hg-asf-release" id="hg-dl-1-2-0">
+  <h4 class="hg-asf-release__heading">1.2.0</h4>
+  <ul class="hg-asf-release__meta">
+    <li><strong>版本:</strong> 1.2.0</li>
+    <li><strong>发布日期:</strong> 2023-12-28</li>
+    <li><a href="/cn/docs/changelog/hugegraph-1.2.0-release-notes/">发布说明</a></li>
+  </ul>
+  <div class="td-asset-list td-asset-list--static hg-asf-release__assets">
+    <div class="td-asset-list__table-wrap" tabindex="0" role="region" data-td-asset-table-scroll
+      aria-label="下载资产 · Apache HugeGraph 1.2.0">
+      <table class="td-asset-list__table">
+        <caption class="visually-hidden">下载资产 · Apache HugeGraph 1.2.0</caption>
+        <thead>
+          <tr>
+            <th scope="col">组件</th>
+            <th scope="col">类型</th>
+            <th scope="col">下载 (ASF 镜像)</th>
+            <th scope="col">ASC</th>
+            <th scope="col">SHA512</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Server</td>
+            <td>二进制</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-incubating-1.2.0.tar.gz"><code>apache-hugegraph-incubating-1.2.0.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0.tar.gz.asc" aria-label="ASC: apache-hugegraph-incubating-1.2.0.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-incubating-1.2.0.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Toolchain</td>
+            <td>二进制</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-toolchain-incubating-1.2.0.tar.gz"><code>apache-hugegraph-toolchain-incubating-1.2.0.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0.tar.gz.asc" aria-label="ASC: apache-hugegraph-toolchain-incubating-1.2.0.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-toolchain-incubating-1.2.0.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Server</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-incubating-1.2.0-src.tar.gz"><code>apache-hugegraph-incubating-1.2.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-incubating-1.2.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-incubating-1.2.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-incubating-1.2.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Toolchain</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-toolchain-incubating-1.2.0-src.tar.gz"><code>apache-hugegraph-toolchain-incubating-1.2.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-toolchain-incubating-1.2.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-toolchain-incubating-1.2.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-toolchain-incubating-1.2.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Computer</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-computer-incubating-1.2.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-computer-incubating-1.2.0-src.tar.gz"><code>apache-hugegraph-computer-incubating-1.2.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-computer-incubating-1.2.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-computer-incubating-1.2.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-computer-incubating-1.2.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-computer-incubating-1.2.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Common</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.2.0/apache-hugegraph-commons-incubating-1.2.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-commons-incubating-1.2.0-src.tar.gz"><code>apache-hugegraph-commons-incubating-1.2.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-commons-incubating-1.2.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-commons-incubating-1.2.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.2.0/apache-hugegraph-commons-incubating-1.2.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-commons-incubating-1.2.0-src.tar.gz">SHA512</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section><section class="hg-asf-release" id="hg-dl-1-0-0">
+  <h4 class="hg-asf-release__heading">1.0.0</h4>
+  <ul class="hg-asf-release__meta">
+    <li><strong>版本:</strong> 1.0.0</li>
+    <li><strong>发布日期:</strong> 2023-02-22</li>
+    <li><a href="/cn/docs/changelog/hugegraph-1.0.0-release-notes/">发布说明</a></li>
+  </ul>
+  <div class="td-asset-list td-asset-list--static hg-asf-release__assets">
+    <div class="td-asset-list__table-wrap" tabindex="0" role="region" data-td-asset-table-scroll
+      aria-label="下载资产 · Apache HugeGraph 1.0.0">
+      <table class="td-asset-list__table">
+        <caption class="visually-hidden">下载资产 · Apache HugeGraph 1.0.0</caption>
+        <thead>
+          <tr>
+            <th scope="col">组件</th>
+            <th scope="col">类型</th>
+            <th scope="col">下载 (ASF 镜像)</th>
+            <th scope="col">ASC</th>
+            <th scope="col">SHA512</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Server</td>
+            <td>二进制</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-incubating-1.0.0.tar.gz"><code>apache-hugegraph-incubating-1.0.0.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0.tar.gz.asc" aria-label="ASC: apache-hugegraph-incubating-1.0.0.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-incubating-1.0.0.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Toolchain</td>
+            <td>二进制</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-toolchain-incubating-1.0.0.tar.gz"><code>apache-hugegraph-toolchain-incubating-1.0.0.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0.tar.gz.asc" aria-label="ASC: apache-hugegraph-toolchain-incubating-1.0.0.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-toolchain-incubating-1.0.0.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Computer</td>
+            <td>二进制</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-computer-incubating-1.0.0.tar.gz"><code>apache-hugegraph-computer-incubating-1.0.0.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0.tar.gz.asc" aria-label="ASC: apache-hugegraph-computer-incubating-1.0.0.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-computer-incubating-1.0.0.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Server</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-incubating-1.0.0-src.tar.gz"><code>apache-hugegraph-incubating-1.0.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-incubating-1.0.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-incubating-1.0.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-incubating-1.0.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Toolchain</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz"><code>apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-toolchain-incubating-1.0.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Computer</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-computer-incubating-1.0.0-src.tar.gz"><code>apache-hugegraph-computer-incubating-1.0.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-computer-incubating-1.0.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-computer-incubating-1.0.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-computer-incubating-1.0.0-src.tar.gz">SHA512</a></td>
+          </tr>
+          <tr>
+            <td>Common</td>
+            <td>源码</td>
+            <td class="td-asset-list__file">
+              <a href="https://www.apache.org/dyn/closer.lua/hugegraph/1.0.0/apache-hugegraph-commons-incubating-1.0.0-src.tar.gz?action=download" dir="auto"
+                aria-label="下载资产: apache-hugegraph-commons-incubating-1.0.0-src.tar.gz"><code>apache-hugegraph-commons-incubating-1.0.0-src.tar.gz</code></a>
+            </td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-commons-incubating-1.0.0-src.tar.gz.asc" aria-label="ASC: apache-hugegraph-commons-incubating-1.0.0-src.tar.gz">ASC</a></td>
+            <td><a href="https://downloads.apache.org/hugegraph/1.0.0/apache-hugegraph-commons-incubating-1.0.0-src.tar.gz.sha512" aria-label="SHA512: apache-hugegraph-commons-incubating-1.0.0-src.tar.gz">SHA512</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
 
 ---
 

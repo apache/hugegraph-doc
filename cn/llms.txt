@@ -18,7 +18,7 @@
   - [HugeGraph-LLM](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/index.md)
   - [Java 客户端](https://hugegraph.apache.org/cn/docs/quickstart/client/hugegraph-client/index.md)
   - [Vermeer: 高性能内存图计算框架](https://hugegraph.apache.org/cn/docs/quickstart/computing/hugegraph-vermeer/index.md)
-  - [使用 Hubble 实现图可视化](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-hubble/index.md)
+  - [使用 Hubble 实现图可视化](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-hubble/index.md): 部署 HugeGraph-Hubble，进行图可视化、元数据管理、数据导入，以及 Gremlin 或 Cypher 查询。
   - [安装/构建 HugeGraph Server](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/index.md)
   - [HugeGraph-ML](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/hugegraph-ml/index.md)
   - [Python 客户端](https://hugegraph.apache.org/cn/docs/quickstart/client/hugegraph-client-python/index.md)
@@ -44,7 +44,7 @@
   - [配置 RocksDB 后端](https://hugegraph.apache.org/cn/docs/config/config-backend-rocksdb/index.md)
   - [配置 HStore 后端](https://hugegraph.apache.org/cn/docs/config/config-backend-hstore/index.md)
   - [配置 HBase 后端](https://hugegraph.apache.org/cn/docs/config/config-backend-hbase/index.md)
-- [客户端与 API](https://hugegraph.apache.org/cn/docs/clients/index.md)
+- [客户端与 API](https://hugegraph.apache.org/cn/docs/clients/index.md): 通过 Java 客户端、REST API、Gremlin Console 和其他客户端库连接 HugeGraph。
   - [Graphspace](https://hugegraph.apache.org/cn/docs/clients/restful-api/graphspace/index.md): Graphspace（图空间）REST 接口：多租户与资源隔离的创建、查看、更新与删除，以及使用前置条件与限制。
   - [Schema](https://hugegraph.apache.org/cn/docs/clients/restful-api/schema/index.md): Schema（图模式）REST 接口:查询图的完整模式定义,包括属性键、顶点标签、边标签和索引标签的统一视图。
   - [HugeGraph Java Client](https://hugegraph.apache.org/cn/docs/clients/hugegraph-client/index.md)

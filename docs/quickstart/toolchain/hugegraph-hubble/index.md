@@ -1,5 +1,9 @@
 # HugeGraph-Hubble Quick Start
 
+> Deploy HugeGraph-Hubble for graph visualization, schema management, data import, and Gremlin or Cypher queries.
+
+---
+
 LLMS index: [llms.txt](/llms.txt)
 
 ---

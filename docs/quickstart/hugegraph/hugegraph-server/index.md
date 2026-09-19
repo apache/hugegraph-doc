@@ -32,10 +32,11 @@ The `hugegraph-server` module in HugeGraph 1.7.0 is compiled with Java 11. Runni
 
 There are four ways to deploy the Server service:
 
-- Method 1: Use Docker container (Convenient for Test/Dev)
-- Method 2: Download the binary tarball
-- Method 3: Source code compilation
-- Method 4: One-click deployment
+1. Use a Docker container for test or development.
+1. Download the binary tarball.
+1. Compile the source code.
+1. Use the legacy one-click deployment tool.
+{.steps}
 
 > Do not expose Gremlin, Cypher, or other query endpoints directly to the public Internet. In production, enable [authentication and authorization](/docs/config/config-authentication/), restrict network access, and retain audit logs. See the [Security Guide](/docs/guides/security/) for deployment guidance.
 
@@ -68,7 +69,7 @@ Four compose files are available in the [`docker/`](https://github.com/apache/hu
 | HA reference | `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble |
 | Source build override for the minimal HStore topology | `docker-compose.dev.yml` | (used together with `docker-compose-hstore.yml`) |
 
-```bash
+```bash {wrap=true}
 cd hugegraph/docker
 # Keep the version aligned with the latest release, for example 1.x.0
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
@@ -89,7 +90,7 @@ See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/RE
 ### 3.2 Download the binary tarball
 
 You could download the binary tarball from the download page of the ASF site like this:
-```bash
+```bash {title="download-and-verify.sh" wrap=true collapse=5}
 # 1.7.0 is a historical release from the incubation period, so its file name still includes "incubating"
 wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
@@ -107,7 +108,7 @@ Download HugeGraph **source code** in either of the following 2 ways (so as the 
 - download the stable/release version from the ASF site
 - clone the unstable/latest version by GitBox(ASF) or GitHub
 
-```bash
+```bash {title="build-from-source.sh" wrap=true collapse=5}
 # Way 1. download release package from the ASF site
 wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-src-{version}.tar.gz
 tar zxf *hugegraph*.tar.gz

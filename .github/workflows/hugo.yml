@@ -234,7 +234,8 @@ jobs:
           go mod verify
           test "$(go list -m -f '{{ .Path }}')" = "github.com/apache/hugegraph-doc"
           test "$(go list -m all | wc -l)" -eq 2
-          test "$(go list -m -f '{{ .Path }}@{{ .Version }}' github.com/pgsty/oink)" = "github.com/pgsty/oink@v1.0.0"
+          required_version="$(go mod edit -json | jq -er '[.Require[] | select(.Path == "github.com/pgsty/oink") | .Version] | select(length == 1) | .[0]')"
+          test "$(go list -m -f '{{ .Path }}@{{ .Version }}' github.com/pgsty/oink)" = "github.com/pgsty/oink@$required_version"
           test -z "$(go list -m -f '{{ with .Replace }}{{ .Path }}@{{ .Version }}{{ end }}' github.com/pgsty/oink)"
       - name: Build isolated version artifact
         env:

@@ -1,7 +1,11 @@
 const { test, expect } = require('./artifact-test');
 
+const expectedVersions = (process.env.EXPECTED_VERSIONS || 'latest,1.7,1.5,1.3,1.0').split(',');
+
 for (const prefix of ['', '/cn', '/versions/1.7', '/versions/1.7/cn']) {
   test(`print preserves authored content after theme upgrade: ${prefix || 'en'}`, async ({ page }) => {
+    const versionId = prefix.startsWith('/versions/1.7') ? '1.7' : 'latest';
+    test.skip(!expectedVersions.includes(versionId), 'version not selected for this artifact');
     await page.goto(`${prefix}/docs/introduction/`);
     const excerpt = (await page.locator('.td-content p').first().innerText()).trim();
     expect(excerpt.length).toBeGreaterThan(10);

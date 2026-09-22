@@ -112,8 +112,8 @@ params:
     provider: kapa
     website_id: 0b277570-4740-451e-96fa-1e4ac1ac5e88
     source_groups:
-      en: ''
-      cn: ''
+      en: 32769e2a-abfc-42f6-891f-09af6c123eb2
+      cn: ddce6795-32c8-40ac-8b27-73d73facd042
   footer_center_info: ''
   # The compact ASF footer owns the legal line; global controls stay in header.
   copyright: false

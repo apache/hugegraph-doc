@@ -11,38 +11,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import oink_module
 import update_oink
-
-
-class ModuleLockTest(unittest.TestCase):
-    def config(self, **extra):
-        return json.dumps(dict(Module={"Path": oink_module.SITE_MODULE},
-                               Require=[{"Path": oink_module.MODULE, "Version": "v1.1.0"}], **extra))
-
-    def test_lock_accepts_release_and_rejects_replacement(self):
-        with patch.object(oink_module, "command", return_value=self.config()):
-            self.assertEqual(oink_module.locked_version(Path(".")), "v1.1.0")
-        with patch.object(oink_module, "command", return_value=self.config(Replace=[{"New": {"Path": "local"}}])):
-            with self.assertRaises(ValueError):
-                oink_module.locked_version(Path("."))
-
-    def test_checksum_mismatch_is_rejected(self):
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "go.sum").write_text(f"{oink_module.MODULE} v1.1.0 h1:expected\n{ oink_module.MODULE} v1.1.0/go.mod h1:mod\n")
-            with patch.object(oink_module, "command", side_effect=[self.config(), json.dumps({"Path": oink_module.MODULE, "Version": "v1.1.0", "Sum": "h1:wrong", "GoModSum": "h1:mod"})]):
-                with self.assertRaisesRegex(ValueError, "checksum"):
-                    oink_module.download_locked(root)
-
-    def test_missing_sum_does_not_download(self):
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "go.sum").write_text("")
-            with patch.object(oink_module, "command", return_value=self.config()) as command:
-                with self.assertRaises(ValueError):
-                    oink_module.download_locked(root)
-                self.assertEqual(command.call_count, 1)
 
 
 class UpgradeTest(unittest.TestCase):

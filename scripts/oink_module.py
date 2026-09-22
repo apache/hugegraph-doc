@@ -39,6 +39,8 @@ def download_locked(root):
     version = locked_version(root)
     sums = {}
     for line in (root / "go.sum").read_text().splitlines():
+        if not line.strip():
+            continue
         path, revision, digest = line.split()
         sums[(path, revision)] = digest
     expected = [sums.get((MODULE, version)), sums.get((MODULE, version + "/go.mod"))]

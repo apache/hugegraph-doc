@@ -29,6 +29,9 @@ python3 scripts/oink_module.py
 For theme updates and breaking-change recovery, follow
 [scripts/oink-upgrade.md](scripts/oink-upgrade.md).
 
+For Kapa staging, consent/CSP checks and production activation, follow
+[scripts/kapa-rollout.md](scripts/kapa-rollout.md).
+
 ## Local preview
 
 ```bash

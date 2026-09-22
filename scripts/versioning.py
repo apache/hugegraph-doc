@@ -34,6 +34,8 @@ import urllib.parse
 import xml.etree.ElementTree as ET
 from typing import NoReturn
 
+from oink_module import download_locked
+
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 URL_CONTRACT = ROOT / "dist/url-contract.json"
@@ -4068,30 +4070,10 @@ def build(args: argparse.Namespace) -> None:
             json.dumps(override, ensure_ascii=False), encoding="utf-8"
         )
         hugo = os.environ.get("HUGO_BIN", "hugo")
-        go = os.environ.get("GO_BIN", "go")
-        go_executable = shutil.which(go)
+        go_executable = shutil.which(os.environ.get("GO_BIN", "go"))
         if go_executable is None:
-            fail(f"Go executable is unavailable: {go}")
-        module_result = subprocess.run(
-            [
-                go_executable,
-                "mod",
-                "download",
-                "-json",
-                "github.com/pgsty/oink@v1.0.0",
-            ],
-            cwd=assembly,
-            check=True,
-            stdout=subprocess.PIPE,
-            text=True,
-        )
-        module = json.loads(module_result.stdout)
-        if (
-            module.get("Path") != "github.com/pgsty/oink"
-            or module.get("Version") != "v1.0.0"
-            or module.get("Sum") != "h1:E+WHFP9zSRT+5RKoIkWNp+ASRGS1BKG+rDEi9by/BjE="
-        ):
-            fail(f"unexpected OINK module metadata: {module!r}")
+            fail("Go executable is unavailable")
+        module = download_locked(assembly)
         migration_script = pathlib.Path(module["Dir"]) / "bin/migrations/oink06.py"
         if not migration_script.is_file():
             fail(f"pinned OINK migration tool is absent: {migration_script}")

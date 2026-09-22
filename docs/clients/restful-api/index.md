@@ -1,5 +1,9 @@
 # HugeGraph RESTful API
 
+> HugeGraph RESTful API reference for graph, schema, vertex, and edge operations.
+
+---
+
 LLMS index: [llms.txt](/llms.txt)
 
 ---

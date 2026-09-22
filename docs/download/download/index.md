@@ -101,7 +101,7 @@ LLMS index: [llms.txt](/llms.txt)
     </div>
   </div>
 </section>
-<p class="hg-asf-release__note">All packages on this page are official Apache Software Foundation releases served from ASF mirrors, with signatures and checksums hosted on downloads.apache.org. Source archives generated automatically by GitHub are not ASF releases.</p>
+<p class="hg-asf-release__note">Source archives are the official Apache Software Foundation releases; binary packages are convenience builds made from them. All files are served from ASF mirrors, with signatures and checksums hosted on downloads.apache.org. Source archives generated automatically by GitHub are not ASF releases.</p>
 
 ---
 

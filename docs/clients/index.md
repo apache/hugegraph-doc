@@ -14,6 +14,6 @@ This section covers the REST API, Gremlin Console, and client libraries. The cur
 
 Section pages:
 
-- [HugeGraph RESTful API](/docs/clients/restful-api/)
+- [HugeGraph RESTful API](/docs/clients/restful-api/): HugeGraph RESTful API reference for graph, schema, vertex, and edge operations.
 - [HugeGraph Java Client](/docs/clients/hugegraph-client/)
 - [Gremlin-Console](/docs/clients/gremlin-console/)

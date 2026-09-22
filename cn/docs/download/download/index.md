@@ -11,7 +11,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 > - 检查哈希 (SHA512)、签名的说明在 [版本验证](/docs/contribution-guidelines/validate-release/) 页面, 也可参考 [ASF 验证说明](https://www.apache.org/dyn/closer.cgi#verify)
 > - 注: HugeGraph 所有组件版本号已保持一致, `client/loader/hubble/common` 等 maven 仓库版本号同理, 依赖引用可参考 [maven 示例](https://github.com/apache/hugegraph-toolchain#maven-dependencies)
 > - 兼容说明: HugeGraph 于 2026 年 1 月毕业后，下载路径已从 `/incubator/hugegraph` 迁移到 `/hugegraph`。历史版本的发布文件名可能仍包含 `-incubating-`。
-> - 从源码构建请参考 [编译构建说明](/docs/quickstart/hugegraph/hugegraph-server/)
+> - 从源码构建请参考 [编译构建说明](/cn/docs/quickstart/hugegraph/hugegraph-server/)
 
 ### 最新版本
 
@@ -101,7 +101,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
     </div>
   </div>
 </section>
-<p class="hg-asf-release__note">本页所列软件包均为 Apache 软件基金会正式发布版本，通过 ASF 镜像分发，签名与校验和托管在 downloads.apache.org。GitHub 自动生成的源码归档不是 ASF 正式发布版本。</p>
+<p class="hg-asf-release__note">源码归档是 Apache 软件基金会的正式发布物；二进制软件包是基于源码构建的便利用品。所有文件均通过 ASF 镜像分发，签名与校验和托管在 downloads.apache.org。GitHub 自动生成的源码归档不是 ASF 正式发布版本。</p>
 
 ---
 

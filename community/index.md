@@ -10,6 +10,39 @@ Apache HugeGraph is an open source project that anyone in the community can use,
 
 [View on GitHub](https://github.com/apache/hugegraph)
 
+## Project members
+
+Current Apache HugeGraph PMC members and Committers, sourced from ASF records. [(Note: How to become a HugeGraph Committer)](/docs/contribution-guidelines/committer-guidelines/)
+
+### PMC
+
+- [Jermy Li](https://github.com/javeme)
+- [Imba Jin](https://github.com/imbajin)
+- [coderzc](https://github.com/coderzc)
+- [davidzollo](https://github.com/davidzollo)
+- [carp84](https://github.com/carp84)
+- [jixuan1989](https://github.com/jixuan1989)
+- [Linary](https://github.com/Linary)
+- [simon824](https://github.com/simon824)
+- [tristaZero](https://github.com/tristaZero)
+- [VGalaxies](https://github.com/VGalaxies)
+- [Willem Ning Jiang](https://github.com/WillemJiang)
+- [zyxxoo](https://github.com/zyxxoo)
+
+
+### Committers
+
+- [corgiboygsj](https://github.com/corgiboygsj)
+- [Jacky Yang](https://github.com/JackyYangPassion)
+- [Jason](https://github.com/MrJs133)
+- Kaiyichen Wei
+- [liuxiaocs7](https://github.com/liuxiaocs7)
+- [Pengzna](https://github.com/Pengzna)
+- Thespica
+- [wanganjuan](https://github.com/wanganjuan)
+- Yi Zhang
+- [z7658329](https://github.com/z7658329)
+
 ## Get involved
 
 - **Learn and connect** — Using or want to use Apache HugeGraph? Find out more here:
@@ -25,42 +58,9 @@ Apache HugeGraph is an open source project that anyone in the community can use,
 
 - [GitHub](https://github.com/apache/hugegraph) — development takes place in the Apache HugeGraph repositories.
 - [Developer mailing list](/docs/contribution-guidelines/subscribe/) — discuss project and community topics.
-- [Security mailing list](mailto:security@hugegraph.apache.org) — report security issues privately.
-- [Security policy](/docs/guides/security/) — follow the project's security reporting process.
+- [Security reporting](mailto:security@hugegraph.apache.org) and [security policy](/docs/guides/security/) — report issues and follow the project's process.
 - [Contribution guidelines](/docs/contribution-guidelines/) — learn how to contribute code and documentation.
-
-## Project members
-
-Current Apache HugeGraph PMC members and Committers, sourced from public ASF records.
-
-### PMC
-
-- [jermy](https://people.apache.org/phonebook.html?uid=jermy) — Chair
-- [zhaocong](https://people.apache.org/phonebook.html?uid=zhaocong)
-- [jin](https://people.apache.org/phonebook.html?uid=jin)
-- [panjuan](https://people.apache.org/phonebook.html?uid=panjuan)
-- [lidongdai](https://people.apache.org/phonebook.html?uid=lidongdai)
-- [linary](https://people.apache.org/phonebook.html?uid=linary)
-- [ming](https://people.apache.org/phonebook.html?uid=ming)
-- [ningjiang](https://people.apache.org/phonebook.html?uid=ningjiang)
-- [hxd](https://people.apache.org/phonebook.html?uid=hxd)
-- [vaughn](https://people.apache.org/phonebook.html?uid=vaughn)
-- [liyu](https://people.apache.org/phonebook.html?uid=liyu)
-- [vgalaxies](https://people.apache.org/phonebook.html?uid=vgalaxies)
-
-
-### Committers
-
-- [yangjiaqi](https://people.apache.org/phonebook.html?uid=yangjiaqi)
-- [jsong010123](https://people.apache.org/phonebook.html?uid=jsong010123)
-- [wangjing](https://people.apache.org/phonebook.html?uid=wangjing)
-- [pengjunzhi](https://people.apache.org/phonebook.html?uid=pengjunzhi)
-- [vichayturen](https://people.apache.org/phonebook.html?uid=vichayturen)
-- [leizou](https://people.apache.org/phonebook.html?uid=leizou)
-- [guoshoujing](https://people.apache.org/phonebook.html?uid=guoshoujing)
-- [liuxiaocs](https://people.apache.org/phonebook.html?uid=liuxiaocs)
-- [zhangyi89817](https://people.apache.org/phonebook.html?uid=zhangyi89817)
-- [spica](https://people.apache.org/phonebook.html?uid=spica)
+- [Committer resources](https://infra.apache.org/committers.html) — ASF tools, services, and guidance for project committers.
 
 ## Learn how the project works
 

@@ -71,7 +71,7 @@ HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行�
 | HA 参考 | `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble |
 | 最小 HStore 拓扑的源码构建覆盖文件 | `docker-compose.dev.yml` | （需与 `docker-compose-hstore.yml` 一起使用） |
 
-```bash {title="docker/docker-compose.yml" wrap=true}
+```bash {wrap=true}
 cd hugegraph/docker
 # 注意版本号请随时保持更新 → 1.x.0
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait

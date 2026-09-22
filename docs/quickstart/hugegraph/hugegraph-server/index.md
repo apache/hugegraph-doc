@@ -69,7 +69,7 @@ Four compose files are available in the [`docker/`](https://github.com/apache/hu
 | HA reference | `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble |
 | Source build override for the minimal HStore topology | `docker-compose.dev.yml` | (used together with `docker-compose-hstore.yml`) |
 
-```bash {title="docker/docker-compose.yml" wrap=true}
+```bash {wrap=true}
 cd hugegraph/docker
 # Keep the version aligned with the latest release, for example 1.x.0
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait

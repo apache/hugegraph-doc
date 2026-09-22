@@ -41,9 +41,9 @@ test("only publish receives write permission", () => {
 test("build consumers check out the immutable prepared source SHA", () => {
   assert.match(workflow, /echo "source_sha=\$latest_sha"/);
   const refs = [...workflow.matchAll(/^\s+ref: \$\{\{([^}]+)\}\}/gm)].map((match) => match[1]);
-  assert.equal(refs.length, 5);
+  assert.equal(refs.length, 4);
   assert.doesNotMatch(refs[0], /candidate_branch/);
-  assert.equal(refs.slice(1).filter((ref) => ref.includes("needs.prepare.outputs.source_sha")).length, 4);
+  assert.equal(refs.slice(1).filter((ref) => ref.includes("needs.prepare.outputs.source_sha")).length, 3);
   assert.doesNotMatch(workflow, /test \"\$GITHUB_REF\" = \"refs\/heads\/\$candidate\"/);
   assert.match(workflow, /test \"\$GITHUB_REF\" = \"refs\/heads\/master\"/);
 });
@@ -56,4 +56,42 @@ test("dependency artifacts keep stable names across selective reruns", () => {
   assert.match(workflow, /name: hugegraph-site-\$\{\{ needs\.prepare\.outputs\.artifact_prefix \}\}-\$\{\{ github\.run_id \}\}/);
   assert.doesNotMatch(workflow, /name: (?:resolved-versions|hugegraph-site-[^\n]+)-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.equal((workflow.match(/\n\s+overwrite: true/g) ?? []).length, 3);
+});
+
+function jobBody(name) {
+  const body = workflow.match(new RegExp(`^  ${name}:\\n([\\s\\S]*?)(?=^  [a-z_]+:|$(?![\\s\\S]))`, "m"));
+  assert.ok(body, `missing job ${name}`);
+  return body[1];
+}
+
+test("superseded runs can cancel reporting and the required gate", () => {
+  assert.match(workflow, /group:.*format\('pr-\{0\}', github.event.pull_request.number\)/);
+  assert.match(workflow, /cancel-in-progress: true/);
+  assert.doesNotMatch(workflow, /if: always\(\)/);
+  assert.match(jobBody("deploy"), /if: \$\{\{ !cancelled\(\) \}\}/);
+});
+
+test("assembly runs blocking browser tests on its local artifact", () => {
+  const aggregate = jobBody("aggregate");
+  assert.doesNotMatch(workflow, /^  e2e:/m);
+  assert.match(aggregate, /SITE_ROOT: \$\{\{ runner.temp \}\}\/public-site/);
+  assert.match(aggregate, /run: npm run test:ci/);
+  assert.doesNotMatch(aggregate, /continue-on-error:/);
+  assert.match(jobBody("deploy"), /needs: \[prepare, build, aggregate\]/);
+  assert.match(jobBody("publish"), /needs: \[prepare, deploy\]/);
+});
+
+test("required gate rejects failed, skipped and cancelled prerequisites", () => {
+  const { spawnSync } = require("node:child_process");
+  const gate = jobBody("deploy").split("        run: |\n")[1]
+    .split("\n").filter(line => line.startsWith("          "))
+    .map(line => line.slice(10)).join("\n");
+  const success = { PREPARE_RESULT: "success", BUILD_RESULT: "success", AGGREGATE_RESULT: "success" };
+  const run = env => spawnSync("bash", ["-e", "-c", gate], {env: {...process.env, ...env}}).status;
+  assert.equal(run(success), 0);
+  for (const key of Object.keys(success)) {
+    for (const result of ["failure", "skipped", "cancelled"]) {
+      assert.notEqual(run({...success, [key]: result}), 0, `${key}=${result}`);
+    }
+  }
 });

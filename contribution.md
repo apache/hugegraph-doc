@@ -65,6 +65,19 @@ the generated local origin.
 
 A successful command proves that Hugo rendered the configured outputs. It does not replace browser checks for navigation, search, language switching, accessibility, mobile layout, print, or Content Security Policy behavior.
 
+## CI queue and reruns
+
+Each PR has its own concurrency group; a new commit cancels its previous run.
+Cancelled runs skip report uploads and the final gate instead of holding the
+queue with `always()`. A queued job with no runner has not started testing;
+repeated reruns do not resolve runner capacity shortages.
+
+Version builds remain parallel. Site assembly and blocking browser tests share
+one runner and the same local artifact. The required `deploy` check still
+requires all blocking jobs to succeed; visual captures remain advisory and
+publication alone receives write permission. For a test failure, rerun failed
+jobs after inspecting the cause; artifact names remain stable within the run.
+
 ## Repository structure
 
 - `content/en/` and `content/cn/` contain the bilingual source pages.

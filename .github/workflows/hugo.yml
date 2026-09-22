@@ -28,6 +28,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || (inputs.operation == 'staging-next' && 'asf-staging-oink' || 'asf-site') }}
+  # A newer commit supersedes previous work for the same PR or publish target.
   cancel-in-progress: true
 
 env:
@@ -256,11 +257,14 @@ jobs:
           if-no-files-found: error
           overwrite: true
 
+  # Assembly and browser checks are serial; reuse one runner and its local output.
   aggregate:
     needs: [prepare, build]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     permissions: { contents: read }
+    env:
+      HUGO_CACHEDIR: /tmp/hugo-cache-${{ github.run_id }}-${{ github.run_attempt }}-aggregate
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -309,18 +313,6 @@ jobs:
           if-no-files-found: error
           overwrite: true
 
-  e2e:
-    needs: [prepare, aggregate]
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions: { contents: read }
-    env:
-      HUGO_CACHEDIR: /tmp/hugo-cache-${{ github.run_id }}-${{ github.run_attempt }}-e2e
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ needs.prepare.outputs.source_sha }}
-          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "24"
@@ -335,10 +327,6 @@ jobs:
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
           extended: true
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: hugegraph-site-${{ needs.prepare.outputs.artifact_prefix }}-${{ github.run_id }}
-          path: public-site
       - name: Install Chromium test workspace
         working-directory: tests/e2e
         run: |
@@ -358,12 +346,12 @@ jobs:
       - name: Run blocking Chromium contracts
         working-directory: tests/e2e
         env:
-          SITE_ROOT: ${{ github.workspace }}/public-site
+          SITE_ROOT: ${{ runner.temp }}/public-site
           AI_SITE_ROOT: ${{ runner.temp }}/ai-site
           EXPECTED_VERSIONS: ${{ needs.prepare.outputs.selection }}
         run: npm run test:ci
       - name: Upload E2E report
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-${{ github.run_id }}-${{ github.run_attempt }}
@@ -402,7 +390,7 @@ jobs:
           npx playwright install --with-deps chromium
           npm run test:visual
       - name: Upload advisory visual evidence
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: visual-evidence-${{ github.run_id }}-${{ github.run_attempt }}
@@ -412,8 +400,8 @@ jobs:
 
   # Required check name in .asf.yaml. It gates artifacts without write access.
   deploy:
-    if: always()
-    needs: [prepare, build, aggregate, e2e]
+    if: ${{ !cancelled() }}
+    needs: [prepare, build, aggregate]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: { contents: read }
@@ -423,12 +411,10 @@ jobs:
           PREPARE_RESULT: ${{ needs.prepare.result }}
           BUILD_RESULT: ${{ needs.build.result }}
           AGGREGATE_RESULT: ${{ needs.aggregate.result }}
-          E2E_RESULT: ${{ needs.e2e.result }}
         run: |
           test "$PREPARE_RESULT" = success
           test "$BUILD_RESULT" = success
           test "$AGGREGATE_RESULT" = success
-          test "$E2E_RESULT" = success
 
   publish:
     if: needs.prepare.outputs.publish_branch != ''

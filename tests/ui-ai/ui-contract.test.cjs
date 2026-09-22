@@ -90,7 +90,9 @@ test('shell persistence uses the version and locale scoped key', () => {
   assert.match(source, /oink\.sidebar\.v2\./);
   assert.match(source, /config\.version/);
   assert.match(source, /config\.locale/);
-  assert.match(source, /sidebar\.inert = isolated/);
+  assert.match(source, /sidebar\.ready\.then/);
+  assert.match(source, /oink:sidebar-disclosure/);
+  assert.doesNotMatch(source, /initSidebarIsolation|setTreeExpanded/);
 });
 
 test('all three version selector surfaces expose one stable route contract', () => {

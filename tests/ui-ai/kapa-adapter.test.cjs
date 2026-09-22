@@ -295,114 +295,90 @@ test('init succeeds without search shell and binds standalone triggers', () => {
   assert.equal(h.trigger.dataset.hgAiBound, '');
 });
 
-test('init wires search shell Enter handler and updates noResults text', () => {
-  global.MutationObserver = class {
-    observe() {}
-    disconnect() {}
-  };
+test('registers native search rows with localized title and historical notice', async () => {
   const h = harness();
-  h.trigger.addEventListener = (name, cb) => {};
-  const configNode = {
-    textContent: JSON.stringify({
-      websiteId: 'test-id',
-      sourceGroupId: 'test-group',
-      locale: 'en',
-      themeColor: '#532fc9',
-      historical: false,
-      labels: { ask: 'Ask AI', noResults: 'No documentation results found' },
-    }),
-  };
-  const emptyNode = {
-    className: 'td-shell-search__empty',
-    textContent: 'old empty',
-  };
-  const tailBtn = {
-    dataset: { hgAskAi: '' },
-    addEventListener() {},
-  };
-  const tailGroup = {
-    dataset: { hgAiSearchTail: '' },
-    querySelector(sel) {
-      if (sel === '[data-hg-ask-ai]') return tailBtn;
-      return null;
-    },
-    remove() {},
-  };
-  const list = {
-    className: 'td-shell-search__list',
-    querySelector(sel) {
-      if (sel === '.td-shell-search__empty') return emptyNode;
-      if (sel === '.td-shell-search__item:not(.hg-ai-search-tail__button)') return null;
-      if (sel === '[data-hg-ai-search-tail] [data-hg-ask-ai]') return tailBtn;
-      if (sel === '[data-hg-ai-search-tail]') return tailGroup;
-      return null;
-    },
-    querySelectorAll(sel) {
-      if (sel === '.td-shell-search__empty') return [emptyNode];
-      if (sel === '.td-shell-search__group-label') return [];
-      return [];
-    },
-    appendChild() {},
-  };
-  const inputListeners = new Map();
-  const input = {
-    value: 'graph query',
-    addEventListener(event, handler) {
-      inputListeners.set(event, handler);
-    },
-  };
-  const root = {
-    dataset: {},
-    hidden: false,
-    querySelector(sel) {
-      if (sel === '.td-shell-search__input') return input;
-      if (sel === '.td-shell-search__list') return list;
-      return null;
-    },
-  };
-  const doc = {
-    ...h.documentObject,
-    getElementById(id) {
-      if (id === 'hg-ai-config') return configNode;
-      if (id === 'td-shell-search') return root;
-      return null;
-    },
-    createElement(name) {
-      if (name === 'script') return h.documentObject.createElement('script');
-      return {
-        className: '',
-        dataset: {},
-        setAttribute() {},
-        appendChild() {},
-        addEventListener() {},
-      };
-    },
-  };
-
-  const controller = adapter.init(h.windowObject, doc);
-  assert.ok(controller);
-
-  // Assert empty node text was updated
-  assert.equal(emptyNode.textContent, 'No documentation results found');
-
-  // Trigger Enter on input
-  const keydown = inputListeners.get('keydown');
-  assert.ok(keydown);
-  let prevented = false;
-  keydown({
-    key: 'Enter',
-    preventDefault() { prevented = true; },
-    stopImmediatePropagation() {},
+  let extension;
+  h.windowObject.OinkCommandPalette = { registerSearchTail(value) { extension = value; } };
+  h.trigger.addEventListener = () => {};
+  h.documentObject.getElementById = (id) => id === 'hg-ai-config' ? {
+    textContent: JSON.stringify({ ...h.config, historical: true,
+      labels: { ask: 'Ask AI', latest: 'Answers use latest docs' } }),
+  } : null;
+  adapter.init(h.windowObject, h.documentObject);
+  assert.equal(extension.id, 'hugegraph-ai');
+  assert.deepEqual(extension.rows({ query: '<graph>' }), [{
+    id: 'ask', title: 'Ask AI: “<graph>”',
+    description: 'Answers use latest docs.', icon: 'fa-solid fa-wand-magic-sparkles',
+  }]);
+  const abort = new AbortController();
+  let handedOff = false;
+  const completion = extension.activate({}, {
+    query: 'graph query', signal: abort.signal,
+    handoff() { handedOff = true; return true; },
   });
-  assert.equal(prevented, true);
+  assert.equal(handedOff, true);
+  assert.equal(h.scripts.length, 0);
   h.continueConsent();
-  h.installBundle();
   h.scripts[0].fire('load');
   h.fireRender();
-  assert.deepEqual(h.calls.at(-1), [
-    'open',
-    { mode: 'ai', query: 'graph query', submit: true },
-  ]);
+  await completion;
+  assert.deepEqual(h.calls.at(-1), ['open', { mode: 'ai', query: 'graph query', submit: true }]);
+});
+
+test('search cancellation during consent or loading prevents stale widget opens', async () => {
+  for (const stage of ['consent', 'loading']) {
+    const h = harness();
+    const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
+    const abort = new AbortController();
+    const completion = controller.activate('private', true, h.trigger, {
+      signal: abort.signal, handoff() { return true; },
+    });
+    if (stage === 'loading') h.continueConsent();
+    abort.abort();
+    await completion;
+    assert.equal(controller.getState(), 'idle');
+    if (stage === 'loading') {
+      h.scripts[0].fire('load');
+      h.fireRender();
+      assert.equal(h.scripts[0].removed, true);
+    }
+    assert.equal(h.calls.some(([method]) => method === 'open'), false);
+    assert.equal(h.trigger.focused, undefined, 'cancellation must not steal new palette focus');
+  }
+});
+
+test('search handoff refuses stale activation and load failure rejects completion', async () => {
+  const h = harness();
+  const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
+  await controller.activate('stale', true, h.trigger, {
+    signal: new AbortController().signal, handoff() { return false; },
+  });
+  assert.equal(controller.getState(), 'idle');
+  const completion = controller.activate('retry', true, h.trigger, {
+    signal: new AbortController().signal, handoff() { return true; },
+  });
+  h.continueConsent();
+  h.scripts[0].fire('error');
+  await assert.rejects(completion, /unavailable/);
+  assert.equal(controller.getState(), 'error');
 });
 
 
+test('an aborted load retries with fresh callbacks and restores launcher focus on close', async () => {
+  const h = harness();
+  const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
+  const abort = new AbortController();
+  const completion = controller.activate('cancelled', true, h.trigger, {
+    signal: abort.signal, handoff() { return true; },
+  });
+  h.continueConsent();
+  abort.abort();
+  await completion;
+  controller.activate('fresh', true, h.trigger);
+  h.installBundle();
+  h.scripts[1].fire('load');
+  h.fireRender();
+  assert.deepEqual(h.calls.at(-1), ['open', { mode: 'ai', query: 'fresh', submit: true }]);
+  h.calls.filter(([method]) => method === 'onModalClose').at(-1)[1]();
+  assert.equal(h.trigger.focused, true);
+});

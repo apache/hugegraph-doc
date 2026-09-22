@@ -2,7 +2,6 @@ ui_version_fallback: This page is not available in the selected version. You hav
 ui_ask_ai: Ask AI
 ui_ask_ai_description: Powered by Kapa; only your question is sent.
 ui_ask_ai_latest: Answers use the latest documentation
-ui_ask_ai_no_results: No results found. Try AI mode.
 ui_retry: Retry
 ui_ai_error: AI is temporarily unavailable. Local search is unaffected.
 ui_more_versions: More versions
@@ -20,7 +19,6 @@ download_component_ai: AI
 download_component_computer: Computer
 download_component_commons: Common
 download_asf_note: Source archives are the official Apache Software Foundation releases; binary packages are convenience builds made from them. All files are served from ASF mirrors, with signatures and checksums hosted on downloads.apache.org. Source archives generated automatically by GitHub are not ASF releases.
-ui_assets_download: Download asset
 
 ui_ai_consent_description: "Continuing loads Kapa, a third-party service. Your question will be sent to Kapa to generate an answer."
 ui_ai_consent_continue: "Continue to Ask AI"

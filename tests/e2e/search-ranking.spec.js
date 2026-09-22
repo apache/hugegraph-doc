@@ -65,9 +65,9 @@ const cases = Object.fromEntries(
 );
 
 for (const [locale, localeCases] of Object.entries(cases)) {
-  test(`summary Lunr ranks fixed ${locale} entry queries`, async ({ page }) => {
-    test.skip(!metadataIntegrated, "PR-B search metadata fixture is not integrated");
-    for (const [query, expectedRef, expectedTitle] of localeCases) {
+  for (const [query, expectedRef, expectedTitle] of localeCases) {
+    test(`summary Lunr ranks ${locale}: ${query}`, async ({ page }) => {
+      test.skip(!metadataIntegrated, "PR-B search metadata fixture is not integrated");
       await page.goto(locale === "cn" ? "/cn/docs/" : "/docs/");
       await page.locator("[data-td-shell-search-open]").first().click();
       const input = page.locator(".td-shell-search__input");
@@ -98,6 +98,6 @@ for (const [locale, localeCases] of Object.entries(cases)) {
       const target = pageResults.filter({ hasText: expectedTitle }).first();
       await target.click();
       await expect(page).toHaveURL((url) => url.pathname === expectedRef);
-    }
-  });
+    });
+  }
 }

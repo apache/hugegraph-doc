@@ -507,30 +507,6 @@
   display: none;
 }
 
-.td-nav-util.hg-sidebar-restore {
-  display: none;
-}
-
-.hg-sidebar-edge {
-  position: fixed;
-  inset-inline-start: 0;
-  top: 64px;
-  bottom: 0;
-  width: 16px;
-  z-index: 121;
-  border-inline-start: 3px solid var(--bs-border-color);
-
-  &:hover { border-inline-start-color: var(--bs-primary); }
-}
-
-@media (min-width: 768px) {
-  [data-td-shell-sidebar='collapsed'] {
-    .td-nav-util.hg-sidebar-restore:not([hidden]) {
-      display: inline-flex;
-    }
-  }
-}
-
 .hg-version-overflow {
   color: var(--bs-body-color);
   summary {
@@ -554,42 +530,6 @@
   background: var(--bs-tertiary-bg);
   color: var(--bs-secondary-color);
   font-size: 0.84rem;
-}
-
-.hg-ai-search-tail {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-  margin-inline: -6px;
-  padding-inline: 6px;
-  background: var(--td-shell-popover);
-  box-shadow: 0 -8px 16px color-mix(in srgb, var(--td-shell-popover) 88%, transparent);
-  border-block-start: 1px solid var(--bs-border-color);
-
-  &__button {
-    width: 100%;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    text-align: start;
-
-    &:hover,
-    &:focus-visible {
-      background: var(--hg-theme-color-soft);
-      color: inherit;
-    }
-  }
-}
-
-/* Keep the optional Ask AI tail discoverable without changing the OINK theme. */
-.td-shell-search__panel {
-  max-height: unquote('min(84vh, 720px)');
-}
-
-@media (max-width: 767.98px) {
-  .td-shell-search__panel {
-    max-height: unquote('min(86vh, 680px)');
-  }
 }
 
 .hg-ask-ai-launcher {

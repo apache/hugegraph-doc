@@ -231,11 +231,7 @@ jobs:
           restore-keys: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ matrix.version.id }}-
       - name: Verify pinned OINK module
         run: |
-          go mod verify
-          test "$(go list -m -f '{{ .Path }}')" = "github.com/apache/hugegraph-doc"
-          test "$(go list -m all | wc -l)" -eq 2
-          test "$(go list -m -f '{{ .Path }}@{{ .Version }}' github.com/pgsty/oink)" = "github.com/pgsty/oink@v1.0.0"
-          test -z "$(go list -m -f '{{ with .Replace }}{{ .Path }}@{{ .Version }}{{ end }}' github.com/pgsty/oink)"
+          python3 scripts/update_oink.py --check-baseline
       - name: Build isolated version artifact
         env:
           OINK_PYTHON: python3

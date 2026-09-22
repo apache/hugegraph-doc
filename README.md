@@ -32,7 +32,7 @@ scripts/hugo.sh server
 
 Open http://localhost:1313 to preview.
 
-The module graph must resolve `github.com/pgsty/oink@v1.0.0`. For a production-equivalent check, run the strict build command shown below.
+The module graph must resolve the OINK version pinned in `go.mod`; verify it with `python3 scripts/oink_module.py`. For a production-equivalent check, run the strict build command shown below.
 
 ## Repository Structure
 
@@ -51,7 +51,7 @@ hugegraph-doc/
 │   └── en/                     # 🇺🇸 English documentation (mirrors cn/ structure)
 │
 ├── data/                       # 🧭 Landing-page and footer data
-├── i18n/zh-CN.yaml             # 🌐 OINK interface strings for the /cn/ locale
+├── i18n/zh-CN.yaml             # 🌐 HugeGraph labels for the /cn/ locale
 ├── assets/                     # 🖼️  Project brand assets
 ├── layouts/                    # 📐 Hugo template overrides
 ├── static/                     # 📁 Static files
@@ -79,6 +79,7 @@ hugegraph-doc/
 ### Detailed Guide
 
 See [contribution.md](./contribution.md) for the pinned toolchain, strict build, OINK customization, and translation rules.
+For theme updates, compatibility review and rollback, use the [OINK upgrade SOP](./scripts/oink-upgrade.md).
 
 ## Commands
 
@@ -87,6 +88,7 @@ See [contribution.md](./contribution.md) for the pinned toolchain, strict build,
 | `scripts/hugo.sh server` | Start the manifest-aware dev server (hot reload) |
 | `scripts/hugo.sh build` | Strict, production-equivalent build to `./public/` |
 | `scripts/hugo.sh server -p 8080` | Start the dev server on a custom port |
+| `scripts/update-oink.sh v1.1.0` | Update the theme and run compatibility checks (see the SOP) |
 
 ---
 
@@ -116,7 +118,7 @@ scripts/hugo.sh server
 
 打开 http://localhost:1313 预览网站。
 
-模块图必须解析为 `github.com/pgsty/oink@v1.0.0`。需要执行与生产一致的检查时，请运行下方的严格构建命令。
+模块图必须解析为 `go.mod` 固定的 OINK 版本，可运行 `python3 scripts/oink_module.py` 校验。需要执行与生产一致的检查时，请运行下方的严格构建命令。
 
 ### 仓库结构
 
@@ -135,7 +137,7 @@ hugegraph-doc/
 │   └── en/                     # 🇺🇸 英文文档（与 cn/ 结构一致）
 │
 ├── data/                       # 🧭 首页与页尾数据
-├── i18n/zh-CN.yaml             # 🌐 /cn/ 语言的 OINK 界面文案
+├── i18n/zh-CN.yaml             # 🌐 /cn/ 语言的 HugeGraph 专属文案
 ├── assets/                     # 🖼️  项目品牌资源
 ├── layouts/                    # 📐 Hugo 模板覆盖
 ├── static/                     # 📁 静态文件
@@ -163,6 +165,7 @@ hugegraph-doc/
 #### 详细指南
 
 查看 [contribution.md](./contribution.md) 了解固定工具链、严格构建、OINK 定制和翻译要求。
+主题升级、兼容适配和回退请按 [OINK 升级 SOP](./scripts/oink-upgrade.md) 操作。
 
 ### 常用命令
 
@@ -171,6 +174,7 @@ hugegraph-doc/
 | `scripts/hugo.sh server` | 启动读取版本清单的开发服务器（支持热重载） |
 | `scripts/hugo.sh build` | 严格构建与生产等价的站点到 `./public/` |
 | `scripts/hugo.sh server -p 8080` | 在指定端口启动开发服务器 |
+| `scripts/update-oink.sh v1.1.0` | 更新主题并执行兼容检查（详见升级 SOP） |
 
 ---
 

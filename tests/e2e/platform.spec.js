@@ -21,28 +21,28 @@ for (const locale of ["en", "cn"]) {
     );
 
     await page.locator(".td-shell-sidebar__collapse").click();
-    await expect(page.locator("#td-shell-sidebar")).toHaveAttribute("aria-hidden", "true");
-    await expect(page.locator("#td-shell-sidebar")).toHaveJSProperty("inert", true);
-    const restore = page.locator(".hg-sidebar-restore");
+    await expect(page.locator(".td-shell-sidebar__panel")).toHaveAttribute("aria-hidden", "true");
+    await expect(page.locator(".td-shell-sidebar__panel > *").first()).toHaveJSProperty("inert", true);
+    const restore = page.locator(".td-shell-float [data-td-shell-sidebar-toggle]");
     await expect(restore).toBeVisible();
-    const edge = page.locator(".hg-sidebar-edge");
-    const panel = page.locator(".td-shell-sidebar__panel");
+    await expect(restore).toBeFocused();
     await page.waitForTimeout(200);
-    await edge.dispatchEvent("pointerenter", { pointerType: "mouse" });
+    await page.mouse.move(2, 200);
     await expect(page.locator("#td-shell-sidebar")).toHaveClass(
       /td-shell-sidebar--overlay/
     );
     const previewBox = await page.locator(".td-shell-sidebar__panel").boundingBox();
     expect(previewBox.x).toBeLessThanOrEqual(1);
     expect(previewBox.y).toBeLessThanOrEqual(1);
-    await panel.dispatchEvent("pointerenter", { pointerType: "mouse" });
-    await panel.dispatchEvent("pointerleave", { pointerType: "mouse" });
+    await page.mouse.move(900, 300);
     await expect.poll(
       () => page.locator("#td-shell-sidebar").getAttribute("class"),
       { timeout: 1500 }
     ).not.toContain("td-shell-sidebar--overlay");
-    await restore.click();
-    await expect(page.locator("#td-shell-sidebar")).not.toHaveAttribute(
+    await restore.focus();
+    await restore.press("Enter");
+    await expect(page.locator(".td-shell-sidebar__collapse")).toBeFocused();
+    await expect(page.locator(".td-shell-sidebar__panel")).not.toHaveAttribute(
       "aria-hidden", "true"
     );
   });
@@ -54,7 +54,7 @@ for (const locale of ["en", "cn"]) {
     await opener.click();
     await expect(page.locator("html")).toHaveAttribute("data-td-shell-drawer", "open");
     await page.locator("button[data-td-shell-drawer-close]").click();
-    await expect(page.locator("#td-shell-sidebar")).toHaveJSProperty("inert", true);
+    await expect(page.locator(".td-shell-sidebar__panel > *").first()).toHaveJSProperty("inert", true);
     await expect(opener).toBeFocused();
     await expect(page.locator("html")).not.toHaveAttribute("data-td-shell-lock", "");
   });

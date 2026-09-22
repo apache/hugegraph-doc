@@ -28,14 +28,16 @@ for (const [name, url, viewport, theme, state] of states) {
       await expect(page.locator('[role="option"]').first()).toBeVisible();
     } else if (state === "collapse") {
       await page.locator(".td-shell-sidebar__collapse").click();
-      await expect(page.locator("#td-shell-sidebar")).toHaveAttribute("aria-hidden", "true");
+      await expect(page.locator("html")).toHaveAttribute("data-td-shell-sidebar", "collapsed");
     } else if (state === "drawer") {
       await page.locator("[data-td-shell-drawer-open]").click();
       await expect(page.locator("html")).toHaveAttribute("data-td-shell-drawer", "open");
     }
     const directory = path.join(__dirname, "visual-results");
     fs.mkdirSync(directory, { recursive: true });
+    await page.evaluate(() => document.fonts.ready);
     await page.screenshot({
+      animations: "disabled",
       path: path.join(directory, `${name}.png`),
       fullPage: true
     });

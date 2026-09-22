@@ -37,17 +37,15 @@ for (const [locale, route, source, language] of [
     await page.locator("[data-td-shell-search-open]").first().click();
     const input = page.locator(".td-shell-search__input");
     await input.fill("  server auth  ");
-    const tail = page.locator("[data-hg-ai-search-tail]");
+    const tail = page.getByRole("option").filter({ hasText: /Ask AI|询问 AI|问 AI/ });
     await expect(tail).toBeVisible();
-    await expect(tail.locator("[data-hg-ask-ai]")).toHaveAttribute(
-      "data-hg-ai-query", "server auth"
-    );
+    await expect(tail).toContainText("server auth");
     await input.fill("");
     await expect(tail).toHaveCount(0);
     await input.fill(">theme");
     await expect(tail).toHaveCount(0);
     await input.fill("server auth");
-    await tail.locator("[data-hg-ask-ai]").click();
+    await tail.click();
     await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
     expect(requests).toEqual([]);
     await page.locator("[data-hg-ai-consent] [data-hg-ai-continue]").click();
@@ -164,4 +162,65 @@ test("AI pending timeout discards stale state and retry waits for a fresh bundle
       (window.__kapaCalls || []).filter(([method]) => method === "open").length
     )
   ).toBe(1);
+});
+
+
+test("native AI row supports keyboard selection, IME, and consent focus handoff", async ({ page }) => {
+  const requests = [];
+  await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", async (route) => {
+    requests.push(route.request().url());
+    await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
+  });
+  await page.goto(AI_ORIGIN + "/docs/");
+  await page.locator("[data-td-shell-search-open]").first().click();
+  const input = page.locator(".td-shell-search__input");
+  await input.fill("server");
+  const tail = page.getByRole("option").filter({ hasText: "Ask AI:" });
+  await expect(tail).toBeVisible();
+  await input.press("Control+End");
+  await expect(tail).toHaveAttribute("aria-selected", "true");
+  await input.dispatchEvent("keydown", { key: "Enter", isComposing: true });
+  await expect(page.locator("[data-hg-ai-consent]")).toBeHidden();
+  await input.press("Enter");
+  await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
+  await expect(page.locator("#td-shell-search")).toBeHidden();
+  await page.locator("[data-hg-ai-cancel]").click();
+  await expect(page.locator(".hg-ask-ai-launcher")).toBeFocused();
+  expect(requests).toEqual([]);
+
+  await page.locator("[data-td-shell-search-open]").first().click();
+  await input.fill("zzzxqnonexistentzzzxq");
+  await expect(tail).toBeVisible();
+  await expect(tail).toHaveAttribute("aria-selected", "true");
+  await input.press("Enter");
+  await page.locator("[data-hg-ai-continue]").click();
+  await expect.poll(() => page.evaluate(() => window.__kapaCalls || [])).toContainEqual([
+    "open", { mode: "ai", query: "zzzxqnonexistentzzzxq", submit: true }
+  ]);
+});
+
+test("reopening native search cancels a pending AI handoff", async ({ page }) => {
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  let requested = false;
+  await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", async (route) => {
+    requested = true;
+    await gate;
+    await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
+  });
+  await page.goto(AI_ORIGIN + "/docs/");
+  await page.locator("[data-td-shell-search-open]").first().click();
+  const input = page.locator(".td-shell-search__input");
+  await input.fill("zzzxqnonexistentzzzxq");
+  await expect(page.getByRole("option").filter({ hasText: "Ask AI:" })).toBeVisible();
+  await input.press("Enter");
+  await page.locator("[data-hg-ai-continue]").click();
+  await expect.poll(() => requested).toBe(true);
+  await page.locator("[data-td-shell-search-open]").first().click();
+  await expect(input).toBeFocused();
+  release();
+  await expect(page.locator(".hg-ask-ai-launcher")).toHaveAttribute("data-hg-ai-state", "idle");
+  await page.waitForTimeout(250);
+  expect(await page.evaluate(() => (window.__kapaCalls || []).filter(([method]) => method === "open"))).toEqual([]);
+  await expect(input).toBeFocused();
 });

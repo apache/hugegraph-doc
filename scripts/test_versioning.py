@@ -1780,11 +1780,41 @@ class VersionUrlTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 versioning.aggregate(args)
 
+    def test_aggregate_flattened_artifact_checks_identity_and_selection(self) -> None:
+        for changed_field, select in [(None, "latest"), ("id", "latest"),
+                                       ("sha", "latest"), (None, None)]:
+            with self.subTest(field=changed_field, select=select), tempfile.TemporaryDirectory() as directory:
+                temp = Path(directory)
+                manifest = json.loads((versioning.ROOT / "versions.json").read_text())
+                for entry in manifest["versions"]:
+                    entry["sha"] = "a" * 40
+                resolved = temp / "resolved.json"
+                resolved.write_text(json.dumps(manifest))
+                artifacts = temp / "artifacts"
+                artifacts.mkdir()
+                metadata = dict(manifest["versions"][0])
+                if changed_field:
+                    metadata[changed_field] = "wrong" if changed_field == "id" else "b" * 40
+                (artifacts / ".version.json").write_text(json.dumps(metadata))
+                args = argparse.Namespace(resolved_manifest=resolved, artifacts=artifacts,
+                                          artifact_prefix="staging-", artifact_suffix="-123",
+                                          select=select, site_origin=ORIGIN,
+                                          output=temp / "aggregate", asf_profile=None, asf_whoami=None)
+                with mock.patch.object(versioning, "validate_artifact", side_effect=RuntimeError("validated source")) as validate:
+                    if changed_field or select is None:
+                        with self.assertRaises(SystemExit):
+                            versioning.aggregate(args)
+                        validate.assert_not_called()
+                    else:
+                        with self.assertRaisesRegex(RuntimeError, "validated source"):
+                            versioning.aggregate(args)
+                        self.assertEqual(validate.call_args.args[0].artifact, artifacts)
+
     def test_aggregate_security_scan_runs_after_metadata_is_written(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             temp = Path(temp_name)
             output = temp / "aggregate"
-            source = temp / "artifacts/latest"
+            source = temp / "artifacts"
             source.mkdir(parents=True)
             entry = {"id": "latest", "publishPath": "", "sha": "a" * 40}
             (source / ".version.json").write_text(json.dumps(entry), encoding="utf-8")

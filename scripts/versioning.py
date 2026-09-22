@@ -4361,6 +4361,10 @@ def aggregate(args: argparse.Namespace) -> None:
             f"{args.artifact_prefix}{entry['id']}"
             f"{getattr(args, 'artifact_suffix', '')}"
         )
+        # download-artifact flattens a single match into its destination.
+        # Never use that layout to satisfy a multi-version selection.
+        if not source.exists() and len(selected) == 1:
+            source = args.artifacts
         metadata_path = source / ".version.json"
         if not metadata_path.is_file():
             fail(f"missing version metadata: {metadata_path}")

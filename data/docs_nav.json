@@ -218,6 +218,12 @@
             },
             {
               "page": "/docs/language/hugegraph-cypher"
+            },
+            {
+              "page": "/docs/language/cypher-compatibility"
+            },
+            {
+              "page": "/docs/language/migrate-from-neo4j"
             }
           ]
         },
@@ -673,6 +679,16 @@
             {
               "page": "/docs/language/hugegraph-cypher",
               "url": "/docs/language/hugegraph-cypher/",
+              "children": []
+            },
+            {
+              "page": "/docs/language/cypher-compatibility",
+              "url": "/docs/language/cypher-compatibility/",
+              "children": []
+            },
+            {
+              "page": "/docs/language/migrate-from-neo4j",
+              "url": "/docs/language/migrate-from-neo4j/",
               "children": []
             }
           ]
@@ -1334,6 +1350,16 @@
       "@group/develop",
       "/docs/language/",
       "/docs/language/hugegraph-cypher/"
+    ],
+    "/docs/language/cypher-compatibility/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/cypher-compatibility/"
+    ],
+    "/docs/language/migrate-from-neo4j/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/migrate-from-neo4j/"
     ]
   },
   "children_by_url": {
@@ -1412,7 +1438,9 @@
     ],
     "/docs/language/": [
       "/docs/language/hugegraph-gremlin",
-      "/docs/language/hugegraph-cypher"
+      "/docs/language/hugegraph-cypher",
+      "/docs/language/cypher-compatibility",
+      "/docs/language/migrate-from-neo4j"
     ],
     "/docs/config/": [
       "/docs/config/config-guide",

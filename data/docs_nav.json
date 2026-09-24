@@ -215,6 +215,9 @@
           "children": [
             {
               "page": "/docs/language/hugegraph-gremlin"
+            },
+            {
+              "page": "/docs/language/hugegraph-cypher"
             }
           ]
         },
@@ -665,6 +668,11 @@
             {
               "page": "/docs/language/hugegraph-gremlin",
               "url": "/docs/language/hugegraph-gremlin/",
+              "children": []
+            },
+            {
+              "page": "/docs/language/hugegraph-cypher",
+              "url": "/docs/language/hugegraph-cypher/",
               "children": []
             }
           ]
@@ -1321,6 +1329,11 @@
     "/docs/cla/": [
       "@group/reference",
       "/docs/cla/"
+    ],
+    "/docs/language/hugegraph-cypher/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/hugegraph-cypher/"
     ]
   },
   "children_by_url": {
@@ -1398,7 +1411,8 @@
       "/docs/quickstart/client/hugegraph-client-go"
     ],
     "/docs/language/": [
-      "/docs/language/hugegraph-gremlin"
+      "/docs/language/hugegraph-gremlin",
+      "/docs/language/hugegraph-cypher"
     ],
     "/docs/config/": [
       "/docs/config/config-guide",

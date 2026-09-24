@@ -4254,8 +4254,10 @@ def copy_without_collision(
 def write_error_documents(output: pathlib.Path, seen: set[str]) -> int:
     """Install localized Apache error documents beside every generated 404 page."""
     template = (ROOT / ".htaccess").read_text(encoding="utf-8")
-    if template != (
+    directives = "\n".join(line for line in template.splitlines() if not line.startswith("#")) + "\n"
+    if directives != (
         'RedirectMatch 404 "(?i)(?:^|/)\\.git(?:/|$)"\nErrorDocument 404 /404.html\n'
+        'SetEnv CSP_PROJECT_DOMAINS "https://widget.kapa.ai https://proxy.kapa.ai https://kapa-widget-proxy-la7dkmplpq-uc.a.run.app https://hcaptcha.com https://*.hcaptcha.com"\n'
     ):
         fail("unexpected root .htaccess contract")
     root_page = output / "404.html"

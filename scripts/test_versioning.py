@@ -686,9 +686,10 @@ class VersionUrlTest(unittest.TestCase):
             seen: set[str] = set()
             self.assertEqual(versioning.write_error_documents(output, seen), 4)
             self.assertEqual(
-                (output / ".htaccess").read_text(encoding="utf-8"),
+                "\n".join(line for line in (output / ".htaccess").read_text(encoding="utf-8").splitlines() if not line.startswith("#")) + "\n",
                 'RedirectMatch 404 "(?i)(?:^|/)\\.git(?:/|$)"\n'
-                "ErrorDocument 404 /404.html\n",
+                "ErrorDocument 404 /404.html\n"
+                'SetEnv CSP_PROJECT_DOMAINS "https://widget.kapa.ai https://proxy.kapa.ai https://kapa-widget-proxy-la7dkmplpq-uc.a.run.app https://hcaptcha.com https://*.hcaptcha.com"\n',
             )
             self.assertEqual(
                 (output / "cn/.htaccess").read_text(encoding="utf-8"),

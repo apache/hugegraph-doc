@@ -52,7 +52,7 @@ API 测试夹具使用强类型 Schema，并为 `city` 建立 `SECONDARY` 索引
 `CypherApiTest` 通过 20/20，`CypherClientTest` 通过 7/7，`CypherOpProcessorTest` 通过 4/4，均无跳过。
 相关 Gremlin 测试通过 10 项，另有一项 `testClearAndInit` 因后端不共享而不适用；Login 测试通过 3/3。
 EditorConfig 格式检查和仓库根目录 clean compile 均通过。代码改动位于
-[草稿 PR #238](https://github.com/hugegraph/hugegraph/pull/238)。固定测试提交
+[PR #238](https://github.com/hugegraph/hugegraph/pull/238)。固定测试提交
 [`c3b2f3e`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/docs/cypher-compatibility.md)
 中的兼容性说明包含逐方法测试映射和验证记录。该提交的测试源码：
 [`CypherApiTest`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/CypherApiTest.java)、

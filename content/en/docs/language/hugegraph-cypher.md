@@ -117,12 +117,14 @@ Every Cypher statement is translated to Gremlin internally. When a Cypher featur
 | `MATCH (n) DETACH DELETE n` | `g.V().drop()` |
 | `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
 
+Tip: `EXPLAIN MATCH (n:person) RETURN n` is accepted and returns the translated Gremlin in `result.data[0].translation` — the fastest way to obtain the equivalent traversal for the table above. `PROFILE` is not supported.
+
 ### Known limitations
 
 Cypher support in HugeGraph is bounded by the transpiler layer, which is based on openCypher 9 era tooling. Known gaps:
 
-- **No parameterized queries** — the API accepts a raw statement string only; `$param` placeholders are not supported. Sanitize/escape values on the client side before interpolating them into the statement.
-- **Partial clause coverage** — some openCypher constructs are not translated (for example `MERGE ... ON CREATE SET`, map projections, some `WHERE` predicate forms such as `NOT ... IN`, and certain `datetime()`/regex functions). Unsupported constructs fail at translation time with an error from the transpiler.
+- **No parameterized queries in released versions** — the API accepts a raw statement string only. A statement using `$param` still runs: a missing binding evaluates to `null`, so the query returns no rows (or writes null values) rather than failing. Sanitize/escape values on the client side before interpolating them into the statement. JSON-bound parameters (`{"cypher": ..., "parameters": {...}}`) are on the way in [PR #238](https://github.com/hugegraph/hugegraph/pull/238).
+- **Partial clause coverage** — some openCypher constructs are not translated (for example map projections and certain `datetime()` functions). Unsupported constructs fail at translation time with an error from the transpiler. Constructs such as `MERGE ... ON CREATE SET`, `=~` regex predicates, and `NOT ... IN` do translate, but they are not verified end-to-end on HugeGraph — see the [compatibility notes](/docs/language/cypher-compatibility/).
 - **No `CALL` procedures** — HugeGraph graph algorithms (shortest path, k-out, personalrank, etc.) are not exposed as Cypher procedures; use the [traverser REST APIs](/docs/clients/restful-api/traverser/) or Gremlin instead.
 - **Single statement per request** — multi-statement scripts are not supported; send one statement per call.
 

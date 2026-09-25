@@ -117,12 +117,14 @@ MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
 | `MATCH (n) DETACH DELETE n` | `g.V().drop()` |
 | `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
 
+提示：`EXPLAIN MATCH (n:person) RETURN n` 会被接受，并在 `result.data[0].translation` 中返回翻译后的 Gremlin —— 这是获得上表等价写法的最快方式。`PROFILE` 不受支持。
+
 ### 已知限制
 
 HugeGraph 的 Cypher 能力受转译层约束，该层基于 openCypher 9 时代的工具链。已知缺口：
 
-- **不支持参数化查询** —— API 只接受原始语句字符串，不支持 `$param` 占位符。请在客户端先对值做转义/净化再拼接到语句中。
-- **子句覆盖不完整** —— 部分 openCypher 结构无法翻译（例如 `MERGE ... ON CREATE SET`、map projection、某些 `WHERE` 谓词形式如 `NOT ... IN`，以及部分 `datetime()`/正则函数）。不支持的结构会在翻译阶段报错。
+- **已发布版本不支持参数化查询** —— API 只接受原始语句字符串。使用 `$param` 的语句不会报错：缺失的绑定会被求值为 `null`，查询返回空结果（或写入 null 值）。请在客户端先对值做转义/净化再拼接到语句中。JSON 绑定参数（`{"cypher": ..., "parameters": {...}}`）将随 [PR #238](https://github.com/hugegraph/hugegraph/pull/238) 落地。
+- **子句覆盖不完整** —— 部分 openCypher 结构无法翻译（例如 map projection、部分 `datetime()` 函数）。不支持的结构会在翻译阶段报错。`MERGE ... ON CREATE SET`、`=~` 正则谓词、`NOT ... IN` 等结构可以翻译，但尚未在 HugeGraph 上端到端验证 —— 见[兼容性说明](/cn/docs/language/cypher-compatibility/)。
 - **不支持 `CALL` 过程** —— HugeGraph 的图算法（最短路径、k-out、personalrank 等）未暴露为 Cypher 过程；请改用 [traverser REST API](/cn/docs/clients/restful-api/traverser/) 或 Gremlin。
 - **每次请求仅一条语句** —— 不支持多语句脚本，请每次调用发送一条语句。
 

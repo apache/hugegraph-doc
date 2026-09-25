@@ -55,7 +55,7 @@ Acceptance results are limited to these test cases:
 `CypherApiTest` passed 20/20, `CypherClientTest` 7/7, and `CypherOpProcessorTest` 4/4, with no skips.
 Related Gremlin tests passed 10 cases with one inapplicable `testClearAndInit` skip for a non-shared backend;
 Login tests passed 3/3. EditorConfig formatting and the repository-root clean compile passed.
-The code change is in [draft PR #238](https://github.com/hugegraph/hugegraph/pull/238). The compatibility
+The code change is in [PR #238](https://github.com/hugegraph/hugegraph/pull/238). The compatibility
 note at tested source commit [`c3b2f3e`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/docs/cypher-compatibility.md)
 contains the method-level mapping and verification record. Test sources at that commit:
 [`CypherApiTest`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/CypherApiTest.java),

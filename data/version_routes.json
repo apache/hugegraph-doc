@@ -505,6 +505,20 @@
       "1.3": "cn/docs/language/",
       "1.0": "cn/docs/language/"
     },
+    "cn:language/cypher-compatibility": {
+      "latest": "cn/docs/language/cypher-compatibility/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:language/hugegraph-cypher": {
+      "latest": "cn/docs/language/hugegraph-cypher/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "cn:language/hugegraph-example": {
       "latest": "cn/docs/language/hugegraph-example/",
       "1.7": "cn/docs/language/hugegraph-example/",
@@ -518,6 +532,13 @@
       "1.5": "cn/docs/language/hugegraph-gremlin/",
       "1.3": "cn/docs/language/hugegraph-gremlin/",
       "1.0": "cn/docs/language/hugegraph-gremlin/"
+    },
+    "cn:language/migrate-from-neo4j": {
+      "latest": "cn/docs/language/migrate-from-neo4j/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
     },
     "cn:performance": {
       "latest": "cn/docs/performance/",
@@ -1212,6 +1233,20 @@
       "1.3": "docs/language/",
       "1.0": "docs/language/"
     },
+    "en:language/cypher-compatibility": {
+      "latest": "docs/language/cypher-compatibility/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:language/hugegraph-cypher": {
+      "latest": "docs/language/hugegraph-cypher/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "en:language/hugegraph-example": {
       "latest": "docs/language/hugegraph-example/",
       "1.7": "docs/language/hugegraph-example/",
@@ -1225,6 +1260,13 @@
       "1.5": "docs/language/hugegraph-gremlin/",
       "1.3": "docs/language/hugegraph-gremlin/",
       "1.0": "docs/language/hugegraph-gremlin/"
+    },
+    "en:language/migrate-from-neo4j": {
+      "latest": "docs/language/migrate-from-neo4j/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
     },
     "en:performance": {
       "latest": "docs/performance/",
@@ -1494,48 +1536,6 @@
     },
     "en:quickstart/toolchain/visualization": {
       "latest": "docs/quickstart/toolchain/visualization/",
-      "1.7": null,
-      "1.5": null,
-      "1.3": null,
-      "1.0": null
-    },
-    "cn:language/hugegraph-cypher": {
-      "latest": "cn/docs/language/hugegraph-cypher/",
-      "1.7": null,
-      "1.5": null,
-      "1.3": null,
-      "1.0": null
-    },
-    "en:language/hugegraph-cypher": {
-      "latest": "docs/language/hugegraph-cypher/",
-      "1.7": null,
-      "1.5": null,
-      "1.3": null,
-      "1.0": null
-    },
-    "cn:language/cypher-compatibility": {
-      "latest": "cn/docs/language/cypher-compatibility/",
-      "1.7": null,
-      "1.5": null,
-      "1.3": null,
-      "1.0": null
-    },
-    "en:language/cypher-compatibility": {
-      "latest": "docs/language/cypher-compatibility/",
-      "1.7": null,
-      "1.5": null,
-      "1.3": null,
-      "1.0": null
-    },
-    "cn:language/migrate-from-neo4j": {
-      "latest": "cn/docs/language/migrate-from-neo4j/",
-      "1.7": null,
-      "1.5": null,
-      "1.3": null,
-      "1.0": null
-    },
-    "en:language/migrate-from-neo4j": {
-      "latest": "docs/language/migrate-from-neo4j/",
       "1.7": null,
       "1.5": null,
       "1.3": null,

@@ -14,7 +14,10 @@ description: "Authentication REST API: Manage users, roles, permissions, and acc
 > (`/graphs/{graph}/auth/groups`) like the other auth APIs. The
 > `/graphspaces/{graphspace}/auth/groups` forms below need a build that includes
 > [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096), which is newer
-> than the 1.7.0 release. On 1.7.0 the prefixed group path returns 404.
+> than the 1.7.0 release. On 1.7.0 that route is unregistered rather than 404:
+> `AuthenticationFilter` is `@PreMatching`, so it runs before route matching and answers
+> 401 (no credentials) or 403 (IP outside the white list); 404 comes back only when
+> authentication is disabled.
 
 ### 10.1 User Authentication and Access Control
 
@@ -256,12 +259,19 @@ The group interface includes APIs for creating groups, deleting groups, modifyin
 > `GroupAPI` itself is served at `/auth/groups` with no GraphSpace prefix, and that is
 > the only group path on 1.7.0. The `/graphspaces/DEFAULT/auth/groups` form used below
 > needs a build containing [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096).
+>
+> On the GraphSpace form the server generates the persisted group name:
+> `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 hex digits, so a group in
+> `DEFAULT` is addressed as `~hubble_role:v1:REVGQVVMVA:<32 hex>`, and its `id` is that
+> same value. The request's `group_name` is only a client label. Pass the id returned by
+> the create response to the requests below; the `-69:all` form is the 1.5.x one and
+> identifies no GraphSpace group.
 
 #### 10.3.1 Create Group
 
 ##### Params
 
-- group_name: Group name
+- group_name: Client label only — the GraphSpace API generates the persisted name
 - group_description: Group description
 
 ##### Request Body
@@ -291,10 +301,10 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ```json
 {
     "group_creator": "admin",
-    "group_name": "all",
+    "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_create": "2020-11-11 15:46:08.791",
     "group_update": "2020-11-11 15:46:08.791",
-    "id": "-69:all",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_description": "group can do anything"
 }
 ```
@@ -309,7 +319,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Response Status
@@ -327,14 +337,15 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Request Body
-Modify group_description
+Modify group_description. On the GraphSpace form `group_name` is omitted here, or equal
+to the generated name: any other value is rejected with "The name of group can't be
+updated".
 ```json
 {
-    "group_name": "grant",
     "group_description": "grant"
 }
 ```
@@ -351,10 +362,10 @@ The returned result is the entire group object including the modified content.
 ```json
 {
     "group_creator": "admin",
-    "group_name": "grant",
+    "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_create": "2020-11-12 09:50:58.458",
     "group_update": "2020-11-12 09:57:58.155",
-    "id": "-69:grant",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_description": "grant"
 }
 ```
@@ -384,10 +395,10 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
     "groups": [
         {
             "group_creator": "admin",
-            "group_name": "all",
+            "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
             "group_create": "2020-11-11 15:46:08.791",
             "group_update": "2020-11-11 15:46:08.791",
-            "id": "-69:all",
+            "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
             "group_description": "group can do anything"
         }
     ]
@@ -403,7 +414,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:all
+GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Response Status
@@ -417,10 +428,10 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:all
 ```json
 {
     "group_creator": "admin",
-    "group_name": "all",
+    "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_create": "2020-11-11 15:46:08.791",
     "group_update": "2020-11-11 15:46:08.791",
-    "id": "-69:all",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_description": "group can do anything"
 }
 ```

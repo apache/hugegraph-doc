@@ -13,7 +13,9 @@ description: "Authentication（认证鉴权）REST 接口:管理用户、角色�
 > 而 1.5.x 的用户组路径与其他 Auth API 一样带有 graph 名称（`/graphs/{graph}/auth/groups`）。
 > 下文的 `/graphspaces/{graphspace}/auth/groups` 形式需要包含
 > [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 的构建，晚于 1.7.0 发布版。
-> 在 1.7.0 上带前缀的用户组路径会返回 404。
+> 在 1.7.0 上该路由并未注册，而不是直接返回 404：`AuthenticationFilter` 标注了 `@PreMatching`，
+> 在路由匹配之前执行，开启鉴权时会先返回 401（缺少凭据）或 403（IP 不在白名单内），
+> 只在关闭鉴权时才返回 404。
 
 ### 10.1 用户认证与权限控制
 
@@ -259,12 +261,18 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 > `GroupAPI` 本身挂载在 `/auth/groups`，不带 GraphSpace 前缀，这也是 1.7.0 上唯一的用户组路径；
 > 下文的 `/graphspaces/DEFAULT/auth/groups` 形式需要包含
 > [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 的构建。
+>
+> 在 GraphSpace 形式下，持久化的用户组名由服务端生成：
+> `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 位十六进制，
+> 因此 `DEFAULT` 中的用户组形如 `~hubble_role:v1:REVGQVVMVA:<32 位十六进制>`，其 `id` 即该值。
+> 请求体中的 `group_name` 仅是客户端标签。下文各请求请使用创建响应返回的 id；
+> `-69:all` 是 1.5.x 的格式，在 GraphSpace 用户组中不标识任何对象。
 
 #### 10.3.1 创建用户组
 
 ##### Params
 
-- group_name: 用户组名称
+- group_name: 仅作为客户端标签 —— GraphSpace 形式下持久化的名称由服务端生成
 - group_description: 用户组描述
 
 ##### Request Body
@@ -294,10 +302,10 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ```json
 {
     "group_creator": "admin",
-    "group_name": "all",
+    "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_create": "2020-11-11 15:46:08.791",
     "group_update": "2020-11-11 15:46:08.791",
-    "id": "-69:all",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_description": "group can do anything"
 }
 ```
@@ -312,7 +320,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Response Status
@@ -330,14 +338,14 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Request Body
-修改 group_description
+修改 group_description。GraphSpace 形式下这里的 `group_name` 应当省略，或等于服务端生成的名称，
+传入其他值会被拒绝并提示 "The name of group can't be updated"。
 ```json
 {
-    "group_name": "grant",
     "group_description": "grant"
 }
 ```
@@ -353,10 +361,10 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
 ```json
 {
     "group_creator": "admin",
-    "group_name": "grant",
+    "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_create": "2020-11-12 09:50:58.458",
     "group_update": "2020-11-12 09:57:58.155",
-    "id": "-69:grant",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_description": "grant"
 }
 ```
@@ -386,10 +394,10 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
     "groups": [
         {
             "group_creator": "admin",
-            "group_name": "all",
+            "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
             "group_create": "2020-11-11 15:46:08.791",
             "group_update": "2020-11-11 15:46:08.791",
-            "id": "-69:all",
+            "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
             "group_description": "group can do anything"
         }
     ]
@@ -405,7 +413,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:all
+GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Response Status
@@ -419,10 +427,10 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:all
 ```json
 {
     "group_creator": "admin",
-    "group_name": "all",
+    "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_create": "2020-11-11 15:46:08.791",
     "group_update": "2020-11-11 15:46:08.791",
-    "id": "-69:all",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_description": "group can do anything"
 }
 ```

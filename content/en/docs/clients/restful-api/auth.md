@@ -9,10 +9,12 @@ description: "Authentication REST API: Manage users, roles, permissions, and acc
 > - 1.7.0+: Auth API paths use GraphSpace format, such as `/graphspaces/DEFAULT/auth/users`, and group/target IDs match their names (e.g., `admin`)
 > - 1.5.x and earlier: Auth API paths include graph name, and group/target IDs use format like `-69:grant`. See [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
 >
-> Group paths are the exception: `GroupAPI` is mounted at `/auth/groups` in every
-> version, and the `/graphspaces/{graphspace}/auth/groups` forms below need a build
-> that includes [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096),
-> which is newer than the 1.7.0 release. On 1.7.0 the prefixed group path returns 404.
+> Group paths are the exception in 1.7.0: there `GroupAPI` is served at `/auth/groups`
+> with no GraphSpace prefix, while on 1.5.x it carried the graph name
+> (`/graphs/{graph}/auth/groups`) like the other auth APIs. The
+> `/graphspaces/{graphspace}/auth/groups` forms below need a build that includes
+> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096), which is newer
+> than the 1.7.0 release. On 1.7.0 the prefixed group path returns 404.
 
 ### 10.1 User Authentication and Access Control
 

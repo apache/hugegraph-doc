@@ -1,0 +1,16 @@
+.page-inner {
+    position: relative;
+    margin: 0 auto;
+    max-width: 80% !important;
+    padding: 20px 50px 40px 50px !important;
+}
+
+.background-inverse {
+    background: #3071a9 !important;
+}
+
+.navbar-inverse .navbar-brand .bg-inverse, .navbar-inverse .navbar-toggler .bg-inverse {
+    color: #fff;
+    background-color: #3071a9 !important;
+}
+

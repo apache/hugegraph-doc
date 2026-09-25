@@ -8,6 +8,11 @@ description: "Authentication（认证鉴权）REST 接口:管理用户、角色�
 > **版本变更说明**:
 > - 1.7.0+: Auth API 路径使用 GraphSpace 格式，如 `/graphspaces/DEFAULT/auth/users`，且 group/target 等 id 格式与 name 一致（如 `admin`）
 > - 1.5.x 及更早: Auth API 路径包含 graph 名称，group/target 等 id 格式类似 `-69:grant`。参考 [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
+>
+> 用户组路径是例外：`GroupAPI` 在所有版本中都挂载于 `/auth/groups`，不带 GraphSpace 前缀；
+> 下文的 `/graphspaces/{graphspace}/auth/groups` 形式需要包含
+> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 的构建，晚于 1.7.0 发布版。
+> 在 1.7.0 上带前缀的用户组路径会返回 404。
 
 ### 10.1 用户认证与权限控制
 
@@ -248,7 +253,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 
 ### 10.3 用户组（Group）API
 用户组会赋予相应的资源权限，用户会被分配不同的用户组，即可拥有不同的资源权限。  
-用户组接口包括：创建用户组，删除用户组，修改用户组，和查询用户组相关信息接口。
+用户组接口包括：创建用户组，删除用户组，修改用户组，和查询用户组相关信息接口。  
+
+> `GroupAPI` 本身挂载在 `/auth/groups`，不带 GraphSpace 前缀，这也是 1.7.0 上唯一的用户组路径；
+> 下文的 `/graphspaces/DEFAULT/auth/groups` 形式需要包含
+> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 的构建。
 
 #### 10.3.1 创建用户组
 

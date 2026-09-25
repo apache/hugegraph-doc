@@ -382,3 +382,83 @@ test('an aborted load retries with fresh callbacks and restores launcher focus o
   h.calls.filter(([method]) => method === 'onModalClose').at(-1)[1]();
   assert.equal(h.trigger.focused, true);
 });
+
+test('widget API failures settle palette activation and permit a fresh retry', async () => {
+  for (const failingMethod of ['setSourceGroupIDs', 'open']) {
+    for (const stage of ['initial load', 'ready reopen']) {
+      const h = harness();
+      const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
+      if (stage === 'ready reopen') {
+        controller.activate('', false, h.trigger);
+        h.continueConsent();
+        h.scripts[0].fire('load');
+        h.fireRender();
+      }
+      const originalKapa = h.windowObject.Kapa;
+      h.windowObject.Kapa = (method, value) => {
+        if (method === failingMethod) throw new Error('vendor failure');
+        return originalKapa(method, value);
+      };
+      const abort = new AbortController();
+      const completion = controller.activate('failing', true, h.trigger, {
+        signal: abort.signal, handoff() { return true; },
+      });
+      if (stage === 'initial load') {
+        h.continueConsent();
+        h.scripts[0].fire('load');
+        h.fireRender();
+      }
+      await assert.rejects(completion, /unavailable/);
+      assert.equal(controller.getState(), 'error');
+      assert.equal(h.trigger.disabled, false);
+      assert.equal(h.scripts[0].removed, true);
+      // Settlement must release the old cancellation listener.
+      abort.abort();
+      assert.equal(controller.getState(), 'error');
+
+      const retry = controller.activate('recovered', true, h.trigger, {
+        signal: new AbortController().signal, handoff() { return true; },
+      });
+      h.installBundle();
+      h.scripts[1].fire('load');
+      h.fireRender();
+      await retry;
+      assert.equal(controller.getState(), 'ready');
+      assert.deepEqual(h.calls.at(-1), ['open', {
+        mode: 'ai', query: 'recovered', submit: true,
+      }]);
+    }
+  }
+});
+
+test('stale activation refreshes the palette query and cancellation context', () => {
+  for (const query of ['fresh question', '', '   ', '> theme']) {
+    const h = harness();
+    let extension;
+    const refreshed = [];
+    const activated = [];
+    h.windowObject.OinkCommandPalette = {
+      registerSearchTail(value) { extension = value; },
+      instance: {
+        render(value) { refreshed.push(value); },
+        rows() { return query === 'fresh question' ? [
+          { type: 'page' }, { type: 'extension', owner: { id: 'hugegraph-ai' } },
+        ] : []; },
+        activate(index) { activated.push(index); },
+      },
+    };
+    h.trigger.addEventListener = () => {};
+    h.documentObject.getElementById = () => ({ textContent: JSON.stringify(h.config) });
+    const originalQuery = h.documentObject.querySelector;
+    h.documentObject.querySelector = selector =>
+      selector === '#td-shell-search .td-shell-search__input' ? { value: query } : originalQuery(selector);
+    adapter.init(h.windowObject, h.documentObject);
+    extension.activate({}, {
+      query: 'stale question', signal: new AbortController().signal,
+      handoff() { assert.fail('stale context must not hand off'); },
+    });
+    assert.deepEqual(refreshed, [query.trim()]);
+    assert.deepEqual(activated, query === 'fresh question' ? [1] : []);
+    assert.equal(h.scripts.length, 0);
+  }
+});

@@ -54,7 +54,7 @@ class UpgradeTest(unittest.TestCase):
             baseline = root / "baseline.json"
             original = json.dumps({"version": "v1.0.0", "files": {"a": "old"}})
             baseline.write_text(original)
-            with patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), \
+            with patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), patch.object(update_oink, "prune_checksums"), \
                  patch.object(update_oink, "download_locked", return_value={"Dir": d}), \
                  patch.object(update_oink, "snapshot", return_value={"a": "new"}), \
                  patch.object(update_oink.tempfile, "mkdtemp", return_value=d), \
@@ -68,7 +68,7 @@ class UpgradeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             baseline = Path(d) / "baseline.json"
             baseline.write_text(json.dumps({"version": "v1.1.0", "files": {"a": "same"}}))
-            with patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), \
+            with patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), patch.object(update_oink, "prune_checksums"), \
                  patch.object(update_oink, "locked_version", return_value="v1.1.0"), \
                  patch.object(update_oink, "command") as command, \
                  patch.object(update_oink, "download_locked", return_value={"Dir": d}), \
@@ -86,7 +86,7 @@ class UpgradeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             baseline = Path(d) / "baseline.json"
             baseline.write_text(json.dumps({"version": "v1.0.0", "files": {"a": "old"}}))
-            with patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), \
+            with patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), patch.object(update_oink, "prune_checksums"), \
                  patch.object(update_oink, "download_locked", return_value={"Dir": d}), \
                  patch.object(update_oink, "snapshot", return_value={"a": "new"}), \
                  patch.object(update_oink.tempfile, "mkdtemp", return_value=d), \

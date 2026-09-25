@@ -144,13 +144,19 @@
     }
 
     function openWidget(query, submit) {
-      invokeKapa(windowObject, 'setSourceGroupIDs', [config.sourceGroupId]);
-      invokeKapa(windowObject, 'open', {
-        mode: 'ai',
-        query: query,
-        submit: submit,
-      });
-      settle();
+      try {
+        invokeKapa(windowObject, 'setSourceGroupIDs', [config.sourceGroupId]);
+        invokeKapa(windowObject, 'open', {
+          mode: 'ai',
+          query: query,
+          submit: submit,
+        });
+        settle();
+      } catch (_) {
+        discardAttempt(attempt);
+        renderState('error', config.labels.error);
+        settle(new Error(config.labels.error));
+      }
     }
 
     function discardAttempt(serial) {
@@ -365,9 +371,25 @@
           }];
         },
         activate: function (_, context) {
+          // OINK debounces row rendering; Enter can activate an older row.
+          var input = documentObject.querySelector('#td-shell-search .td-shell-search__input');
+          var query = trimmedQuery(input ? input.value : context.query);
+          if (query !== context.query) {
+            // Refresh OINK's cancellation token as well as the submitted text;
+            // otherwise its pending render aborts a handoff for the old query.
+            var instance = palette.instance;
+            instance.render(query);
+            var rows = instance.rows();
+            var index = rows.findIndex(function (row) {
+              return row.type === 'extension' && row.owner.id === 'hugegraph-ai';
+            });
+            if (index >= 0) instance.activate(index);
+            return;
+          }
+          if (!query || query.charAt(0) === '>') return;
           // Search options are ephemeral and become hidden on handoff.
           var trigger = documentObject.querySelector('.hg-ask-ai-launcher');
-          return controller.activate(context.query, true, trigger, context);
+          return controller.activate(query, true, trigger, context);
         },
       });
     }

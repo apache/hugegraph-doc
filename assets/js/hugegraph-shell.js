@@ -36,20 +36,26 @@
     if (!sidebar) return;
     return sidebar.ready.then(function () {
       var buttons = Array.prototype.slice.call(documentObject.querySelectorAll(
-        '#td-shell-sidebar [data-td-shell-tree-toggle][aria-controls]',
+        '#td-shell-sidebar [data-td-shell-tree-toggle][aria-controls], ' +
+        '[data-td-shell-aside] [data-td-shell-tree-toggle][aria-controls]',
       ));
       if (!buttons.length) return;
       var storage = safeStorage(windowObject);
-      var key = 'oink.sidebar.v2.' + String(config.version || 'latest') +
-        '.' + String(config.locale || 'en');
+      var scope = String(config.version || 'latest') + '.' + String(config.locale || 'en');
+      var key = 'oink.sidebar.v3.' + scope;
       var valid = new Set(buttons.map(function (button) {
         return button.getAttribute('aria-controls');
       }));
       var remembered = new Set();
       var hasSavedState = false;
+      var legacyState = false;
       if (storage) {
         try {
           var stored = storage.getItem(key);
+          if (stored === null) {
+            stored = storage.getItem('oink.sidebar.v2.' + scope);
+            legacyState = stored !== null;
+          }
           var parsed = JSON.parse(stored || '[]');
           if (Array.isArray(parsed)) {
             hasSavedState = stored !== null;
@@ -62,8 +68,12 @@
       var docsRoot = /(?:^|\/)(?:cn\/)?docs\/?$/.test(windowObject.location.pathname);
       buttons.forEach(function (button) {
         var id = button.getAttribute('aria-controls');
-        var defaultOpen = !hasSavedState && docsRoot &&
-          /_nav(?:start|components)-children$/.test(id);
+        var isAside = Boolean(button.closest('[data-td-shell-aside]'));
+        // v2 stored only the main tree: an absent aside id was not a choice
+        // to collapse it. v3 records both, including an explicitly empty set.
+        var defaultOpen = isAside
+          ? (!hasSavedState || legacyState) && sidebar.getState(id).expanded
+          : !hasSavedState && docsRoot && /_nav(?:start|components)-children$/.test(id);
         // OINK preserves the active path and owns DOM, inert and ARIA state.
         sidebar.setExpanded(id, remembered.has(id) || defaultOpen, { source: 'api' });
       });
@@ -82,7 +92,7 @@
       documentObject.addEventListener('oink:sidebar-disclosure', function (event) {
         if (event.detail && event.detail.source === 'user' && valid.has(event.detail.id)) persist();
       });
-      if (!hasSavedState) persist();
+      if (!hasSavedState || legacyState) persist();
     });
   }
 

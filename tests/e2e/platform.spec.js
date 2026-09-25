@@ -4,7 +4,7 @@ for (const locale of ["en", "cn"]) {
   const prefix = locale === "cn" ? "/cn" : "";
   test(`latest ${locale} sidebar persists and isolates collapse`, async ({ page }) => {
     await page.goto(`${prefix}/docs/introduction/`);
-    const key = `oink.sidebar.v2.latest.${locale}`;
+    const key = `oink.sidebar.v3.latest.${locale}`;
     await expect.poll(() => page.evaluate((name) => localStorage.getItem(name), key))
       .not.toBeNull();
     const toggle = page
@@ -63,7 +63,7 @@ for (const locale of ["en", "cn"]) {
 for (const locale of ["en", "cn"]) {
   const prefix = locale === "cn" ? "/cn" : "";
   test(`latest ${locale} docs home opens start and components by default`, async ({ page }) => {
-    const key = `oink.sidebar.v2.latest.${locale}`;
+    const key = `oink.sidebar.v3.latest.${locale}`;
     await page.goto(`${prefix}/docs/`);
     await page.evaluate((name) => localStorage.removeItem(name), key);
     await page.reload();

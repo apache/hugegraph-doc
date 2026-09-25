@@ -40,6 +40,22 @@ openCypher 9 子集 —— 用法见 [HugeGraph Cypher](/cn/docs/language/hugegr
 图例：✅ 已在文档路径验证 · ⚠️ 部分支持或未在 HugeGraph 验证 —— 先测试 ·
 ❌ Cypher API 不可达。
 
+### 开发分支实测
+
+在
+[`hugegraph/hugegraph@27a7c9b42274d6d4f95eabed6d2051d393ae0eaf`](https://github.com/hugegraph/hugegraph/commit/27a7c9b42274d6d4f95eab6d2051d393ae0eaf)
+上，使用 Java `17.0.20.1`、TinkerPop `3.8.1`、RocksDB 和 `translation-1.0.4`，
+对实际 Cypher 路径进行了 9 条 Cypher 请求的样例验证。legacy GET 和纯文本 POST、
+基础节点与边的 `CREATE`、`SET`、`DELETE` 请求以及 native REST 回读通过。
+
+本次单语句写原子性检查未通过。第一轮中，失败的双节点 `CREATE` 后即时
+native 回读未见前缀；后续聚合/排序读暴露了前缀，native 全量列表也予以
+确认。第二轮复现中，即时 native 回读和之后 7 次成功的只读 count/native
+回读均未见前缀；第 8 次 count 后，native 全量列表首次显示
+`baseline_repro_prefix_v2`。两轮都观察到残留；触发条件仍在调查，尚无修复
+验证。本样例不能证明完整写事务或 openCypher 兼容性。详见[本 PR 的基线
+结果](https://github.com/apache/hugegraph-doc/pull/499#issuecomment-5826172378)。
+
 ### 失败行为
 
 不支持的写法在翻译期报错，响应 `status.message` 携带转译器错误。无法表达的

@@ -44,6 +44,25 @@ for testing your own workload.
 Legend: ✅ verified on the documented path · ⚠️ partial or not verified on
 HugeGraph — test first · ❌ not reachable through the Cypher API.
 
+### Development-branch runtime check
+
+A sample of nine Cypher requests was run at
+[`hugegraph/hugegraph@27a7c9b42274d6d4f95eabed6d2051d393ae0eaf`](https://github.com/hugegraph/hugegraph/commit/27a7c9b42274d6d4f95eabed6d2051d393ae0eaf)
+with Java `17.0.20.1`, TinkerPop `3.8.1`, RocksDB, and `translation-1.0.4`. The
+legacy GET and raw-text POST paths, basic node and edge `CREATE`, `SET`, and
+`DELETE` requests, and native REST readback passed.
+
+The tested single-statement write-atomicity check failed. After a failed
+two-node `CREATE`, the first run's immediate native readback did not show the
+prefix; later aggregate/sort reads exposed it, and a full native listing
+confirmed it. In a second reproduction, neither the immediate native read nor
+seven subsequent successful read-only count/native reads showed the prefix. It
+appeared on the eighth count and in the following full native listing as
+`baseline_repro_prefix_v2`. The residue appeared in both runs. Its trigger is
+under investigation and no fix is verified. This sample does not establish
+full write-transaction or openCypher compatibility. See [the baseline results
+on this PR](https://github.com/apache/hugegraph-doc/pull/499#issuecomment-5826172378).
+
 ### Failure behaviour
 
 Unsupported constructs fail at translation time; the response

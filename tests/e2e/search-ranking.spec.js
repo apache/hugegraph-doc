@@ -67,7 +67,7 @@ const cases = Object.fromEntries(
 for (const [locale, localeCases] of Object.entries(cases)) {
   for (const [query, expectedRef, expectedTitle] of localeCases) {
     test(`summary Lunr ranks ${locale}: ${query}`, async ({ page }) => {
-      test.skip(!metadataIntegrated, "PR-B search metadata fixture is not integrated");
+      test.skip(!metadataIntegrated, "Search metadata fixture is unavailable");
       await page.goto(locale === "cn" ? "/cn/docs/" : "/docs/");
       await page.locator("[data-td-shell-search-open]").first().click();
       const input = page.locator(".td-shell-search__input");

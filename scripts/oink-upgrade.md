@@ -21,7 +21,7 @@ Use the tagged source when checking API details; issue proposals are background.
 Start from a clean worktree with the Go and Hugo versions documented in
 [contribution.md](../contribution.md), Python 3, and Node.js satisfying
 `tests/e2e/package.json`. Network access is needed for modules, archived content,
-npm and Chromium. Local ports 4173 and 4174 must be available.
+npm and Chromium. Local ports 4173, 4174 and 4175 must be available.
 
 ```sh
 scripts/update-oink.sh v1.1.0

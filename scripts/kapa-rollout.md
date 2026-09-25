@@ -56,8 +56,8 @@ Kapa 服务获准使用不等于任意附带服务或域名都获准。
 
 ## 发布顺序
 
-部署前核对可信 `master` workflow 支持候选分支的主题版本；旧的 OINK 1.0
-硬编码会阻止 1.1 staging。前置修复见 [#497](https://github.com/apache/hugegraph-doc/pull/497)。
+部署前核对可信 `master` workflow 支持候选分支的主题模块约束。
+现有流程通过模块图验证兼容性，不依赖固定的主题版本号。
 不要绕过 `--ref master`；也不要为了解除 staging 阻塞而先合并主题升级，
 因为 `master` push 会触发正式站发布。
 
@@ -70,7 +70,8 @@ Kapa 服务获准使用不等于任意附带服务或域名都获准。
 2. **准备真实配置。** 获取并审核两个 source group、项目 ID、语料范围及域名许可。
    当前 workflow 没有 AI 专用开关，不能把测试 fixture 当作 staging 配置。
    使用单独的 staging 候选分支承载真实配置和经批准的 CSP 生成改动，
-   仅通过 `staging-next` 发布；不要将该分支的 `enabled=true` 合入生产 `master`。
+   先通过 `staging-next` 验证；生产启用配置在发布 PR 中审核，
+   不把 staging 特有的站点地址或发布 profile 带入生产。
 3. **真实 staging 验收。** 按下表记录网络、交互和回答证据；存在失败时保留原生搜索，
    修复后重新验证受影响项。只做 latest 部署时，历史版本跳转到生产，不能声称已验收
    staging 历史页面；历史提示需在完整 staging 产物上验证。
@@ -96,7 +97,8 @@ Kapa 服务获准使用不等于任意附带服务或域名都获准。
 | 回退 | 发布 AI 关闭的已知配置后，新页面访问无第三方 AI 请求，原生搜索保持可用 |
 
 现有 `tests/e2e/ai.spec.js` 验证的是模拟 bundle 的适配行为，
-`tests/e2e/platform.spec.js` 覆盖关闭状态。保留这些回归，并另附真实服务证据。
+`tests/e2e/platform.spec.js` 覆盖开启状态的授权前零请求，以及独立 disabled fixture
+中的中英文关闭状态。CI 和 OINK 升级验证器都会构建对应夹具；保留这些回归，并另附真实服务证据。
 
 ## 记录与回退
 

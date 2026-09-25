@@ -4070,10 +4070,15 @@ def build(args: argparse.Namespace) -> None:
             json.dumps(override, ensure_ascii=False), encoding="utf-8"
         )
         hugo = os.environ.get("HUGO_BIN", "hugo")
-        go_executable = shutil.which(os.environ.get("GO_BIN", "go"))
+        go = os.environ.get("GO_BIN", "go")
+        go_executable = shutil.which(go)
         if go_executable is None:
-            fail("Go executable is unavailable")
-        module = download_locked(assembly)
+            fail(f"Go executable is unavailable: {go}")
+        go_executable = str(pathlib.Path(go_executable).resolve())
+        try:
+            module = download_locked(assembly, go_executable)
+        except (ValueError, OSError, subprocess.CalledProcessError) as error:
+            fail(f"OINK module verification failed: {error}")
         migration_script = pathlib.Path(module["Dir"]) / "bin/migrations/oink06.py"
         if not migration_script.is_file():
             fail(f"pinned OINK migration tool is absent: {migration_script}")

@@ -33,7 +33,7 @@ def snapshot(root, upstream):
     paths = set(WATCH)
     # Project SCSS depends on upstream selectors even without a same-name override.
     paths.update(str(p.relative_to(upstream)) for p in (upstream / "assets/scss").rglob("*.scss"))
-    for folder in ("layouts", "assets", "i18n"):
+    for folder in ("layouts", "assets", "i18n", "data"):
         def key(relative):
             name = relative.as_posix()
             # Locale filenames are case-insensitive; record the upstream spelling
@@ -51,6 +51,21 @@ def snapshot(root, upstream):
 
 def changes(previous, current):
     return [p for p in sorted(previous.keys() | current.keys()) if previous.get(p) != current.get(p)]
+
+
+def describe_changes(previous, current):
+    return [f"{'added' if p not in previous else 'removed' if p not in current else 'changed'}: {p}"
+            for p in changes(previous, current)]
+
+
+def prune_checksums(root, version):
+    """Keep only target checksums after go get; do not use go mod tidy."""
+    path = root / "go.sum"
+    lines = [line for line in path.read_text().splitlines()
+             if line.split()[:2] in [[MODULE, version], [MODULE, version + "/go.mod"]]]
+    if len(lines) != 2 or len({line.split()[1] for line in lines}) != 2:
+        raise ValueError(f"expected both target checksums before cleanup: {MODULE}@{version}")
+    path.write_text("\n".join(lines) + "\n")
 
 
 def preflight(root, target, resume):
@@ -107,9 +122,12 @@ def main():
     if args.check_baseline:
         module = download_locked(ROOT)
         baseline = json.loads(BASELINE.read_text())
-        if (baseline["version"] != module["Version"]
-                or changes(baseline["files"], snapshot(ROOT, Path(module["Dir"])))):
-            raise ValueError("OINK upstream files differ from reviewed baseline; follow scripts/oink-upgrade.md")
+        changed = describe_changes(baseline["files"], snapshot(ROOT, Path(module["Dir"])))
+        if baseline["version"] != module["Version"] or changed:
+            detail = "; ".join(changed) or "no file changes"
+            raise ValueError(f"OINK baseline differs (reviewed {baseline['version']}, pinned {module['Version']}): "
+                             f"{detail}; local override additions/removals also require review; "
+                             "follow scripts/oink-upgrade.md")
         print("Reviewed OINK upstream baseline matches")
         return
     if args.version is None:
@@ -120,11 +138,14 @@ def main():
     print(f"Upgrade artifacts and review report: {work}", flush=True)
     if not args.resume and locked_version(ROOT) != args.version:
         command(["get", MODULE + "@" + args.version], ROOT)
+        prune_checksums(ROOT, args.version)
+    elif args.resume:
+        prune_checksums(ROOT, args.version)
     module = download_locked(ROOT)
     current = snapshot(ROOT, Path(module["Dir"]))
     changed = changes(previous["files"], current)
     report = {"from": previous["version"], "to": args.version, "reviewRequired": changed,
-              "scope": "same-name overrides, sidebar/search interfaces and upstream SCSS; not a full compatibility proof"}
+              "scope": "same-name layouts/assets/translations/data overrides, sidebar/search interfaces and upstream SCSS; not a full compatibility proof"}
     (work / "review.json").write_text(json.dumps(report, indent=2) + "\n")
     if changed and not args.accept_reviewed:
         raise ValueError(f"review required for {len(changed)} upstream files; inspect {work / 'review.json'}, adapt, then rerun with --resume --accept-reviewed")
@@ -137,5 +158,6 @@ if __name__ == "__main__":
     try:
         main()
     except (ValueError, subprocess.CalledProcessError) as error:
-        print(f"OINK upgrade incomplete: {error}. Changes and artifacts are retained.", file=sys.stderr)
+        print(f"OINK check failed: {error}" if "--check-baseline" in sys.argv else
+              f"OINK upgrade incomplete: {error}. Changes and artifacts are retained.", file=sys.stderr)
         sys.exit(1)

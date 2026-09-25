@@ -27,7 +27,8 @@ npm and Chromium. Local ports 4173 and 4174 must be available.
 scripts/update-oink.sh v1.1.0
 ```
 
-Use an explicit release tag. The command updates the lock files, validates module
+Use an explicit release tag. The command updates the lock files, removes old-version
+checksums from `go.sum`, validates module
 identity, reports upstream changes affecting customizations, then reuses the
 strict build, Python/link tests, all historical builds, aggregate validation
 (which validates each version artifact once),
@@ -86,11 +87,17 @@ git diff -- go.mod go.sum layouts assets scripts .github/workflows/hugo.yml
 | Brand and layout | `assets/scss/`, `data/`, `i18n/` | Bilingual desktop/mobile, dark/light and print captures |
 
 `scripts/oink-overrides.json` records upstream hashes, not copies of upstream
-code. The generated inventory covers same-name local layouts/assets/translations,
+code. The generated inventory covers same-name local layouts/assets/translations/data,
 the sidebar/search/surface interface files and upstream SCSS used by local CSS.
 New, removed or changed upstream files in that inventory require review. Site-only
 hooks are listed above; their behavior is checked by tests rather than inferred
 from matching filenames. Template hashes alone never prove full compatibility.
+
+Adding or removing a same-name local override changes the inventory even without
+a theme upgrade. The read-only `--check-baseline` diagnostic names added, removed,
+and changed paths. Review those changes, then run
+`scripts/update-oink.sh <pinned-version> --resume --accept-reviewed` to validate
+and record the revised inventory; use the version currently pinned in `go.mod`.
 
 For this initial 1.1 migration the baseline is generated after manual review and
 is accepted with the repository's full migration verification. Future runs update

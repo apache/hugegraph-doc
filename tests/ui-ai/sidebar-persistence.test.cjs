@@ -2,11 +2,13 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const shell = require('../../assets/js/hugegraph-shell.js');
 
-function fixture({ saved, blocked = false, pathname = '/docs/', version = 'latest', locale = 'en' } = {}) {
-  const key = `oink.sidebar.v2.${version}.${locale}`;
+function fixture({ saved, legacy, asideExpanded = false, blocked = false, pathname = '/docs/', version = 'latest', locale = 'en' } = {}) {
+  const key = `oink.sidebar.v3.${version}.${locale}`;
   const values = new Map(saved === undefined ? [] : [[key, saved]]);
-  const ids = ['root_navstart-children', 'root_navcomponents-children', 'root_navdevelop-children', 'active'];
+  if (legacy !== undefined) values.set(`oink.sidebar.v2.${version}.${locale}`, legacy);
+  const ids = ['root_navstart-children', 'root_navcomponents-children', 'root_navdevelop-children', 'active', 'aside-toc'];
   const states = new Map(ids.map(id => [id, false]));
+  states.set('aside-toc', asideExpanded);
   const calls = [];
   const listeners = new Map();
   let ready;
@@ -19,10 +21,14 @@ function fixture({ saved, blocked = false, pathname = '/docs/', version = 'lates
     getState(id) { return { id, expanded: states.get(id) }; },
   };
   const doc = {
-    querySelectorAll() {
-      return ids.map(id => ({
+    querySelectorAll(selector) {
+      const selected = ids.filter(id => id !== 'aside-toc' || selector.includes('[data-td-shell-aside]'));
+      return selected.map(id => ({
         getAttribute() { return id; },
-        closest() { return { classList: { contains() { return id === 'active'; } } }; },
+        closest(selector) {
+          if (selector === '[data-td-shell-aside]') return id === 'aside-toc' ? {} : null;
+          return { classList: { contains() { return id === 'active'; } } };
+        },
       }));
     },
     addEventListener(name, listener) { listeners.set(name, listener); },
@@ -66,7 +72,7 @@ test('preserves stored empty choices and ignores automatic and non-sidebar event
   assert.equal(f.states.get('root_navstart-children'), false);
   f.change('root_navdevelop-children', true, 'responsive');
   assert.equal(f.values.get(f.key), '[]');
-  f.change('aside-toc', true, 'user');
+  f.change('unrelated-disclosure', true, 'user');
   assert.equal(f.values.get(f.key), '[]');
   f.change('root_navdevelop-children', true, 'user');
   assert.deepEqual(JSON.parse(f.values.get(f.key)), ['root_navdevelop-children']);
@@ -80,7 +86,7 @@ test('restores compatible stored ids and discards stale ids', async () => {
   await f.initialized;
   assert.equal(f.states.get('root_navdevelop-children'), true);
   assert.equal(f.states.get('root_navstart-children'), false);
-  assert.equal(f.calls.length, 4);
+  assert.equal(f.calls.length, 5);
 });
 
 for (const options of [{ blocked: true }, { saved: '{bad' }, { saved: '{}' }]) {
@@ -91,5 +97,34 @@ for (const options of [{ blocked: true }, { saved: '{bad' }, { saved: '{}' }]) {
     assert.equal(f.states.get('root_navstart-children'), true);
     assert.equal(f.states.get('active'), true);
     assert.doesNotThrow(() => f.change('root_navdevelop-children', true, 'user'));
+  });
+}
+
+test('restores and saves aside TOC disclosures through the same API', async () => {
+  const f = fixture({ saved: '["aside-toc"]', pathname: '/docs/introduction/' });
+  f.ready();
+  await f.initialized;
+  assert.equal(f.states.get('aside-toc'), true);
+  f.change('aside-toc', false, 'user');
+  assert.equal(f.values.get(f.key), '[]');
+  f.change('aside-toc', true, 'user');
+  assert.deepEqual(JSON.parse(f.values.get(f.key)), ['aside-toc']);
+});
+
+for (const legacy of ['[]', '["root_navdevelop-children"]']) {
+  test(`migrates main-tree v2 preferences without collapsing the aside: ${legacy}`, async () => {
+    const f = fixture({ legacy, asideExpanded: true });
+    f.ready();
+    await f.initialized;
+    assert.equal(f.states.get('aside-toc'), true);
+    assert.equal(f.states.get('root_navstart-children'), false);
+    assert.equal(f.states.get('root_navdevelop-children'), legacy !== '[]');
+    assert.deepEqual(JSON.parse(f.values.get(f.key)), [...JSON.parse(legacy), 'aside-toc']);
+    f.change('aside-toc', false, 'user');
+    const reloaded = fixture({ saved: f.values.get(f.key), legacy, asideExpanded: true });
+    reloaded.ready();
+    await reloaded.initialized;
+    assert.equal(reloaded.states.get('aside-toc'), false);
+    assert.equal(reloaded.states.get('root_navdevelop-children'), legacy !== '[]');
   });
 }

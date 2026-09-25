@@ -48,6 +48,16 @@ test("build consumers check out the immutable prepared source SHA", () => {
   assert.match(workflow, /test \"\$GITHUB_REF\" = \"refs\/heads\/master\"/);
 });
 
+test("trusted workflow bounds the candidate module graph without pinning its version", () => {
+  const step = workflow.split("      - name: Verify pinned OINK module\n")[1]
+    .split("      - name:")[0];
+  assert.match(step, /go list -m -f '\{\{ \.Path \}\}'.*github\.com\/apache\/hugegraph-doc/);
+  assert.match(step, /go list -m all \| wc -l.*-eq 2/);
+  assert.match(step, /test -z .*\.Replace.*github\.com\/pgsty\/oink/);
+  assert.doesNotMatch(step, /github\.com\/pgsty\/oink@v/);
+  assert.match(step, /python3 scripts\/update_oink\.py --check-baseline/);
+});
+
 test("dependency artifacts keep stable names across selective reruns", () => {
   assert.match(workflow, /name: resolved-versions-\$\{\{ github\.run_id \}\}/);
   assert.match(workflow, /name: \$\{\{ needs\.prepare\.outputs\.artifact_prefix \}\}-\$\{\{ matrix\.version\.id \}\}-\$\{\{ github\.run_id \}\}/);

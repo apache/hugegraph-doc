@@ -91,6 +91,7 @@
       'data-font-family':
         '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
       'data-modal-content-border-radius': '12px',
+      'data-modal-z-index': '1050',
       'data-modal-content-border': '1px solid #d9d4e4',
       'data-modal-content-border-dark': '1px solid #494254',
       'data-launcher-button-hidden': 'true',

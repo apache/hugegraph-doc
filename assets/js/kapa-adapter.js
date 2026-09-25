@@ -70,6 +70,7 @@
       'data-source-group-ids-include': config.sourceGroupId,
       'data-language': config.locale,
       'data-project-name': 'Apache HugeGraph',
+      'data-project-logo': '/img/logo.svg',
       'data-project-color': config.themeColor,
       'data-project-color-dark': mixWithWhite(config.themeColor, 48),
       'data-surface-color': '#ffffff',

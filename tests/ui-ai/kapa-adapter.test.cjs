@@ -131,6 +131,7 @@ test('uses one fixed bundle and explicit privacy-safe widget settings', () => {
     themeColor: '#123456',
   });
   assert.equal(attrs['data-render-on-load'], 'false');
+  assert.equal(attrs['data-project-logo'], '/img/logo.svg');
   assert.equal(attrs['data-launcher-button-hidden'], 'true');
   assert.equal(attrs['data-search-mode-enabled'], 'false');
   assert.equal(attrs['data-modal-open-on-command-k'], 'false');

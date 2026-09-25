@@ -86,17 +86,46 @@ for (const locale of ["en", "cn"]) {
   });
 }
 
-test("disabled AI emits no UI or Kapa request", async ({ page }) => {
+for (const route of ["/docs/", "/cn/docs/"]) {
+  test(`disabled AI emits no UI or third-party request at ${route}`, async ({ page }) => {
+    expect(process.env.AI_DISABLED_SITE_ROOT, "Build the AI-disabled fixture").toBeTruthy();
+    const requests = [];
+    page.on("request", (request) => {
+      if (/kapa\.ai|hcaptcha\.com|kapa-widget-proxy/.test(request.url())) {
+        requests.push(request.url());
+      }
+    });
+    await page.goto("http://127.0.0.1:4175" + route);
+    await page.locator("[data-td-shell-search-open]").first().click();
+    await page.locator(".td-shell-search__input").fill("server");
+    await expect(page.locator('[role="option"]').first()).toBeVisible();
+    await expect(page.locator("[data-hg-ask-ai]")).toHaveCount(0);
+    await expect(page.locator('script[src*="kapa-adapter"]')).toHaveCount(0);
+    expect(requests).toEqual([]);
+  });
+}
+
+test("enabled AI makes no third-party request before consent", async ({ page }) => {
   const kapaRequests = [];
   page.on("request", (request) => {
-    if (request.url().includes("kapa.ai")) kapaRequests.push(request.url());
+    if (/kapa\.ai|hcaptcha\.com|kapa-widget-proxy/.test(request.url())) {
+      kapaRequests.push(request.url());
+    }
   });
   await page.goto("/docs/");
   await page.locator("[data-td-shell-search-open]").first().click();
   await page.locator(".td-shell-search__input").fill("server");
   await expect(page.locator('[role="option"]').first()).toBeVisible();
   expect(kapaRequests).toEqual([]);
-  await expect(page.locator("[data-hg-ask-ai]")).toHaveCount(0);
+  await page.locator(".td-shell-search__input").press("Escape");
+  const launcher = page.locator("[data-hg-ask-ai]").first();
+  await expect(launcher).toBeVisible();
+  await launcher.click();
+  await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
+  await page.locator("[data-hg-ai-cancel]").click();
+  await expect(page.locator("[data-hg-ai-consent]")).not.toBeVisible();
+  await expect(launcher).toBeFocused();
+  expect(kapaRequests).toEqual([]);
 });
 
 test("search index failure keeps one stable, focusable retry control", async ({

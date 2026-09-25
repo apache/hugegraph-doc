@@ -99,13 +99,15 @@ def validate(work):
          "--historical-origin", historical, "--output", work / "site"])
     run([py, "-m", "unittest", "scripts.test_download_data.DownloadDataTest.test_rendered_download_pages_have_verified_rows", "-v"],
         env=dict(os.environ, DOWNLOAD_PUBLIC_DIR=str(work / "site")))
-    run([*cli, "config", "--version", "latest", "--site-origin", "http://127.0.0.1:4174/",
-         "--historical-origin", historical, "--output", work / "ai.json"])
-    run([os.environ.get("HUGO_BIN", "hugo"), "--config",
-         f"hugo.yaml,{work / 'ai.json'},tests/e2e/ai-enabled.yaml",
-         "--destination", work / "ai", "--cleanDestinationDir", "--gc", "--minify",
-         "--environment", "production", "--panicOnWarning"])
-    env = dict(os.environ, SITE_ROOT=str(work / "site"), AI_SITE_ROOT=str(work / "ai"))
+    for name, port, config in [("ai", 4174, "ai-enabled"), ("ai-disabled", 4175, "ai-disabled")]:
+        run([*cli, "config", "--version", "latest", "--site-origin", f"http://127.0.0.1:{port}/",
+             "--historical-origin", historical, "--output", work / f"{name}.json"])
+        run([os.environ.get("HUGO_BIN", "hugo"), "--config",
+             f"hugo.yaml,{work / f'{name}.json'},tests/e2e/{config}.yaml",
+             "--destination", work / name, "--cleanDestinationDir", "--gc", "--minify",
+             "--environment", "production", "--panicOnWarning"])
+    env = dict(os.environ, SITE_ROOT=str(work / "site"), AI_SITE_ROOT=str(work / "ai"),
+               AI_DISABLED_SITE_ROOT=str(work / "ai-disabled"))
     run(["npm", "ci"], cwd=ROOT / "tests/e2e")
     run(["npx", "playwright", "install", "chromium"], cwd=ROOT / "tests/e2e")
     run(["npm", "run", "test:ci"], cwd=ROOT / "tests/e2e", env=env)

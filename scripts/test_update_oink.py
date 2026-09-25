@@ -18,6 +18,23 @@ from update_oink import describe_changes, prune_checksums, snapshot
 
 
 class UpgradeInventoryTest(unittest.TestCase):
+    def test_validation_builds_both_ai_modes_before_browser_tests(self):
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory)
+            (work / "resolved.json").write_text(json.dumps({"versions": []}))
+            with patch.object(update_oink, "run") as run:
+                update_oink.validate(work)
+            calls = run.call_args_list
+            browser = next(call for call in calls if call.args[0] == ["npm", "run", "test:ci"])
+            for name, config, variable in [("ai", "ai-enabled", "AI_SITE_ROOT"),
+                                            ("ai-disabled", "ai-disabled", "AI_DISABLED_SITE_ROOT")]:
+                self.assertEqual(browser.kwargs["env"][variable], str(work / name))
+                builds = [call for call in calls if "--destination" in call.args[0]
+                          and call.args[0][call.args[0].index("--destination") + 1] == work / name]
+                self.assertEqual(len(builds), 1)
+                self.assertIn(f"tests/e2e/{config}.yaml", str(builds[0].args[0]))
+                self.assertLess(calls.index(builds[0]), calls.index(browser))
+
     def test_resume_cleans_interrupted_upgrade_before_validation(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

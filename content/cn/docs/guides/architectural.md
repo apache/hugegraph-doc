@@ -8,6 +8,10 @@ weight: 1
 
 HugeGraph 生态由职责不同的图数据库、图计算、图 AI 和工具链组件组成。HugeGraph Server 提供 OLTP 图数据库服务；HugeGraph-Computer 与 Vermeer 是独立的 OLAP 图计算引擎；HugeGraph-AI 提供图 AI 能力。Toolchain 中的客户端、数据导入、可视化和运维工具为应用及运维人员提供配套入口。
 
+![HugeGraph 架构总览图：展示 Toolchain、AI、Computer、Vermeer 与 Server、PD、Store 的关系](/cn/docs/images/design/hugegraph-architecture-cn.png)
+
+图：Server 以 HStore 后端为例；RocksDB、HBase 等独立后端见下方 Mermaid。Vermeer 和 HugeGraph-Computer 是独立的 OLAP 引擎，虚线表示可选接入。
+
 ## 生态接入
 
 ```mermaid

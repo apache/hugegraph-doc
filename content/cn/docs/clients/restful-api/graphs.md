@@ -7,7 +7,9 @@ description: "Graphs（图管理）REST 接口:管理图实例的生命周期,�
 
 ### 6.1 Graphs
 
-**重要提醒**：1.7.0 及之后，动态创建图必须开启鉴权模式。非鉴权模式请参考[图配置文件](https://hugegraph.apache.org/cn/docs/config/config-guide/#4-hugegraphproperties)，通过配置文件静态创建图。
+> 本页介绍当前 master 的 Graphs API。历史版本的路径和请求体请切换到对应多版本页面：
+> [1.7 版 Graphs API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/graphs/) 或
+> [1.5 版 Graphs API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/graphs/)。
 
 启用鉴权时，创建、克隆、删除、清空、修改图显示名、读取图配置、设置读模式和手动压缩等操作要求图空间管理权限（`space`）；管理员可按权限继承规则满足。创建或恢复快照、设置数据模式允许图空间管理者或该图所有者操作；列表、详情、数据模式读取和读模式读取按图读取权限校验。Raft API 另要求图空间成员权限。
 
@@ -177,9 +179,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph-xx
 - 鉴权模式：`"gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy"`（推荐）
 - 非鉴权模式：`"gremlin.graph": "org.apache.hugegraph.HugeFactory"`
 
-**注意**！！
-1. 在 1.7.0 版本中，动态创建图会导致 NPE 错误。该问题已在 [PR#2912](https://github.com/apache/hugegraph/pull/2912) 中修复。当前 master 版本和 1.7.0 之前的版本不受此问题影响。
-2. 如果 backend 是 hstore，请确保 HugeGraph-Server 已正确配置 PD，参见 [HStore 配置](/cn/docs/quickstart/hugegraph/hugegraph-server/#511-分布式存储-hstore)。1.7.0 及之前版本还需要在请求体中设置 `"task.scheduler_type": "distributed"`，该配置项现已废弃并被忽略：调度器由后端类型决定，hstore 使用分布式调度器，其他后端使用本地调度器。
+**注意**：如果 backend 是 hstore，请确保 HugeGraph-Server 已正确配置 PD，参见 [HStore 配置](/cn/docs/quickstart/hugegraph/hugegraph-server/#511-分布式存储-hstore)。调度器由后端类型决定：hstore 使用分布式调度器，其他后端使用本地调度器。
 
 **选填字段及其默认值：**
 - `gremlin.graph` 默认为 `org.apache.hugegraph.HugeFactory`
@@ -262,8 +262,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/graphA?confirm_message=I
 ```javascript
 204
 ```
-
-> 注意：对于 HugeGraph 1.5.0 及之前版本，如需创建或删除图，请继续使用旧的 `text/plain`（properties）格式请求体，而不是 JSON。
 
 #### 6.1.7 列出图空间中全部的图及其配置
 

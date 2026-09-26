@@ -300,7 +300,7 @@ public class Loader {
 - steps: 表示从起始顶点走过的路径规则，是一组 Step 的列表，每个 Step 对应结果中的一层，必填项。每个 Step 的结构如下：
 	- direction：表示边的方向（OUT, IN, BOTH），默认是 BOTH
 	- labels：边的类型列表，多个边类型取并集
-    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000 (注：0.12 版之前 step 内仅支持 degree 作为参数名，0.12 开始统一使用 max_degree, 并向下兼容 degree 写法)
+    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000；当前也兼容参数名 `degree`。
 	- skip_degree：当前层跳过超级点的阈值，默认为 0，表示不跳过
 	- top：在结果中每一层只保留权重最高的前 N 个结果，默认为 10，最大值为 1000
 - capacity: 遍历过程中最大的访问的顶点数目，选填项，默认为 10000000

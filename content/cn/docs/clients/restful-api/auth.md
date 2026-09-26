@@ -5,7 +5,9 @@ weight: 16
 description: "Authentication（认证鉴权）REST 接口:管理用户、角色、权限和访问控制,实现细粒度的图数据安全机制。"
 ---
 
-> **版本说明**：本页介绍当前 `master` 的接口。历史用法请切换到 [1.7 版认证 API](/versions/1.7/cn/docs/clients/restful-api/auth/) 或 [1.5 版认证 API](/versions/1.5/cn/docs/clients/restful-api/auth/)。
+> **版本说明**：本页介绍当前 `master` 的接口。历史用法请切换到对应多版本页面：
+> [1.7 版认证 API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/auth/) 或
+> [1.5 版认证 API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/auth/)。
 >
 > 用户、图空间用户组、资源、关联和赋权接口使用 `/graphspaces/{graphspace}/auth/...`。登录、登出和 token 校验仍使用 `/auth/login`、`/auth/logout`、`/auth/verify`；图空间默认角色接口位于 `/graphspaces/{graphspace}/role`。源码保留顶层 `/auth/groups`，本页组接口示例使用图空间范围接口。
 
@@ -250,9 +252,6 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 用户组会赋予相应的资源权限，用户会被分配不同的用户组，即可拥有不同的资源权限。  
 用户组接口包括：创建用户组，删除用户组，修改用户组，和查询用户组相关信息接口。  
 
-> 本节的 GraphSpace 用户组路径只在当前 `master` 中提供；1.7.0 的用户组接口只有 `/auth/groups`。该路径由
-> [PR #3096](https://github.com/apache/hugegraph/pull/3096) 加入。
->
 > GraphSpace 用户组名由服务端生成，格式为 `~hubble_role:v1:` + GraphSpace 名称的 base64url 编码 + `:` + 32 个十六进制字符。
 > 例如，`DEFAULT` 的名称和 ID 都是 `~hubble_role:v1:REVGQVVMVA:<32 hex>`。请求中的 `group_name` 只是客户端标签；后续请求请用创建响应返回的 ID。
 

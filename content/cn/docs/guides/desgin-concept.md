@@ -12,9 +12,11 @@ weight: 2
 RDF和Property Graph都是最基础、最有名的图表示模式，都能够表示各种图的实体关系建模。
 RDF是W3C标准，而Property Graph是工业标准，受到广大图数据库厂商的广泛支持。HugeGraph目前采用Property Graph。
 
-HugeGraph对应的存储概念模型也是参考Property Graph而设计的。下图是旧版存储概念示意图，仅供历史参考，不表示 HugeGraph 1.7.0 的当前内部数据布局。
+HugeGraph采用属性图模型。下图以人物和图书为例，展示顶点与有向边各自的标签和属性；这是逻辑模型示意，不描述 HugeGraph 1.7.0 的内部数据布局。
 
-![image](/docs/images/design/PropertyGraph.png)
+![属性图逻辑模型示意：人物顶点经“阅读”有向边连接图书顶点，顶点与边均有各自的标签和属性](/docs/images/design/PropertyGraphModel.png)
+
+_图：顶点和边分别携带自己的标签与属性。_
 
 在HugeGraph内部，每个顶点 / 边由唯一的 VertexId / EdgeId 标识，属性存储在对应点 / 边内部。而顶点与顶点之间的关系 / 映射则是通过边来存储的。
 

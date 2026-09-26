@@ -37,7 +37,7 @@ PD 监听三个端口：
 
 #### 3.1 下载 tar 包
 
-从 Apache HugeGraph 官方下载页面下载最新版本的 HugeGraph-PD：
+Apache 下载页目前提供 1.7.0 的完整二进制包，其中包含 PD、Store 和 Server；没有单独列出 PD 二进制包。下载前请在 [官方 Apache HugeGraph 下载页](https://hugegraph.apache.org/cn/docs/download/download/)核对版本、签名和 SHA512。1.7.0 是孵化期发布的历史版本，归档文件和解压目录仍带 `incubating`：
 
 ```bash
 # 1.7.0 是项目孵化期发布的历史版本，因此文件名和目录名仍带 incubating
@@ -72,136 +72,59 @@ mvn clean package -pl hugegraph-pd/hg-pd-dist -am -DskipTests
 
 #### 3.3 Docker 部署
 
-HugeGraph-PD Docker 镜像已发布在 Docker Hub，镜像名为 `hugegraph/pd`。
-> 注: 后续步骤皆假设你本地**已拉取** `hugegraph` 主仓库代码 (至少是 docker 目录)
-
-使用 docker-compose 模式部署完整的 3 节点集群（PD + Store + Server）：
+`HG_PD_*` 环境变量和 `/v1/ready` 是当前主线源码提供的功能；server 的 `1.7.0` 发布源码标签尚无这些 Docker 环境变量映射或 readiness API。本文下面的 Docker 示例仅适用于从当前主线源码构建并标记为 `local` 的镜像；使用 1.7.0 发布资产时，应以该版本随包配置和说明为准：
 
 ```bash
-cd hugegraph/docker
-# 注意版本号请随时保持更新 → 1.x.0
-HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+# 在 hugegraph 仓库根目录执行
+docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
 ```
 
-单 PD、单 Store、单 Server 的最小拓扑对应 `docker-compose-hstore.yml`。
-
-通过 `docker run` 运行单个 PD 节点时，通过环境变量提供配置：
+单独运行当前主线构建的 PD 时，先设置部署专用密钥，并把示例地址替换为容器可达的真实地址：
 
 ```bash
+export HG_PD_AUTH_SECRET_KEY="$(openssl rand -hex 24)"
 docker run -d \
-  -p 8620:8620 \
-  -p 8686:8686 \
-  -p 8610:8610 \
-  -e HG_PD_GRPC_HOST=<your-ip> \
-  -e HG_PD_RAFT_ADDRESS=<your-ip>:8610 \
-  -e HG_PD_RAFT_PEERS_LIST=<your-ip>:8610 \
-  -e HG_PD_INITIAL_STORE_LIST=<store-ip>:8500 \
+  -p 8620:8620 -p 8686:8686 -p 8610:8610 \
+  -e HG_PD_GRPC_HOST=192.168.1.10 \
+  -e HG_PD_RAFT_ADDRESS=192.168.1.10:8610 \
+  -e HG_PD_RAFT_PEERS_LIST=192.168.1.10:8610 \
+  -e HG_PD_INITIAL_STORE_LIST=192.168.1.20:8500 \
+  -e HG_PD_AUTH_SECRET_KEY="$HG_PD_AUTH_SECRET_KEY" \
   -v /path/to/data:/hugegraph-pd/pd_data \
   --name hugegraph-pd \
-  hugegraph/pd:1.7.0
+  hugegraph/pd:local
 ```
-
-**环境变量参考：**
 
 | 变量 | 必填 | 默认值 | 对应配置项 | 描述 |
 |------|------|--------|------------|------|
-| `HG_PD_GRPC_HOST` | 是 | 无 | `grpc.host` | 本节点的 gRPC 主机名/IP（Docker 中使用 `pd0`，裸机使用 `192.168.1.10`） |
-| `HG_PD_RAFT_ADDRESS` | 是 | 无 | `raft.address` | 本节点的 Raft 地址（如 `pd0:8610`） |
-| `HG_PD_RAFT_PEERS_LIST` | 是 | 无 | `raft.peers-list` | 所有 PD 节点的 Raft 地址（如 `pd0:8610,pd1:8610,pd2:8610`） |
-| `HG_PD_INITIAL_STORE_LIST` | 是 | 无 | `pd.initial-store-list` | 预期的 Store gRPC 地址（如 `store0:8500,store1:8500,store2:8500`） |
-| `HG_PD_GRPC_PORT` | 否 | `8686` | `grpc.port` | gRPC 服务端口 |
-| `HG_PD_REST_PORT` | 否 | `8620` | `server.port` | REST API 端口 |
-| `HG_PD_DATA_PATH` | 否 | `/hugegraph-pd/pd_data` | `pd.data-path` | 元数据存储路径 |
-| `HG_PD_INITIAL_STORE_COUNT` | 否 | `1` | `pd.initial-store-count` | 集群可用所需的最小 Store 数量 |
+| `HG_PD_GRPC_HOST` | 是 | 无 | `grpc.host` | 本节点对外公布的 gRPC 主机名/IP；容器网络中应使用容器主机名。 |
+| `HG_PD_RAFT_ADDRESS` | 是 | 无 | `raft.address` | 本节点 Raft 地址。 |
+| `HG_PD_RAFT_PEERS_LIST` | 是 | 无 | `raft.peers-list` | 所有 PD 节点的 Raft 地址，含本节点。 |
+| `HG_PD_INITIAL_STORE_LIST` | 是 | 无 | `pd.initial-store-list` | 预期的 Store gRPC 地址。 |
+| `HG_PD_AUTH_SECRET_KEY` | 是 | 无 | `auth.secret-key` | REST Basic 密码；所有 PD REST 客户端都必须使用同一密钥。 |
+| `HG_PD_GRPC_PORT` | 否 | `8686` | `grpc.port` | gRPC 服务端口。 |
+| `HG_PD_REST_PORT` | 否 | `8620` | `server.port` | REST API 端口。 |
+| `HG_PD_DATA_PATH` | 否 | `/hugegraph-pd/pd_data` | `pd.data-path` | 元数据存储路径。 |
+| `HG_PD_INITIAL_STORE_COUNT` | 否 | `1` | `pd.initial-store-count` | 集群可用所需的最小 Store 数量。 |
+| `HG_PD_ACTUATOR_EXPOSURE` | 否 | `health,metrics,prometheus` | `management.endpoints.web.exposure.include` | 公开的 Actuator 端点白名单；不允许设置为 `*`。 |
 
-缺少上述四个必填变量中的任意一个时，entrypoint 会拒绝启动。它把这些值转换成 `SPRING_APPLICATION_JSON` 覆盖项，因此无需修改镜像内的 `conf/application.yml`；未被 `HG_PD_*` 变量覆盖的配置项仍沿用该文件中的值。`JAVA_OPTS` 会透传给 JVM。
+当前主线 entrypoint 要求以上五个必填变量，生成 `SPRING_APPLICATION_JSON` 覆盖项后再启动 PD；其他配置继续从镜像内的 `conf/application.yml` 读取。`JAVA_OPTS` 会透传给 JVM。旧变量 `GRPC_HOST`、`RAFT_ADDRESS`、`RAFT_PEERS`、`PD_INITIAL_STORE_LIST` 仍可用，但会输出弃用警告。
 
-> **注意**：在 Docker 桥接网络中，`HG_PD_GRPC_HOST` 和 `HG_PD_RAFT_ADDRESS` 应使用容器主机名（如 `pd0`）而非 IP 地址。
+PD 镜像的 Docker `HEALTHCHECK` 每 15 秒检查 `/v1/health`，它只表示 REST 监听器有响应，不代表 Raft 已形成多数派。Compose 示例中的健康检查也使用这个存活接口；需要在启动 Store 前另行检查 `/v1/ready`。容器以前台方式运行，Java 退出会让容器退出；只有配置了 Docker 重启策略时容器才会自动重启。Docker 日志可通过 `docker logs <container-name>` 查看。
 
-> **已弃用的别名**：`GRPC_HOST`、`RAFT_ADDRESS`、`RAFT_PEERS`、`PD_INITIAL_STORE_LIST` 仍可使用，但会输出弃用警告。新部署请使用 `HG_PD_*` 名称。
-
-镜像内置 `HEALTHCHECK`，每 15 秒探测 `8620` 端口上的 `GET /v1/health`，启动宽限期 90 秒、重试 3 次，因此 `docker ps` 能反映真实的 PD 健康状态。entrypoint 以 `-d false` 调用启动脚本，容器进程就是 Java 进程本身，Java 退出时容器随之退出并触发 Docker 的重启策略。镜像还设置了 `STDOUT_MODE=true`，因此运行时日志可通过 `docker logs <container-name>`（如 `docker logs hg-pd0`）直接查看，无需进入容器。
-
-完整的集群部署指南请参阅 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
+当前主线 Compose 的完整启动和最小拓扑见 [Store 页面](./hugegraph-hstore.md#33-docker-部署)及 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。Compose 文件的服务配置来自主线源码；若启动包含 Hubble 的完整拓扑，先按 `docker/README.md` 生成未跟踪的 Hubble 配置文件。
 
 ### 4 配置
 
-PD 的主要配置文件为 `conf/application.yml`，以下是发布包中自带的内容：
-
-```yaml
-spring:
-  application:
-    name: hugegraph-pd
-
-management:
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-
-logging:
-  config: 'file:./conf/log4j2.xml'
-
-license:
-  verify-path: ./conf/verify-license.json
-  license-path: ./conf/hugegraph.license
-
-grpc:
-  # 集群模式下的 gRPC 端口
-  port: 8686
-  # 部署时需改为本机实际的 IPv4 地址
-  host: 127.0.0.1
-
-server:
-  # REST 服务端口号
-  port: 8620
-
-pd:
-  # 存储路径
-  data-path: ./pd_data
-  # 自动扩容的检查周期（秒）
-  patrol-interval: 1800
-  # 集群可用所需的最小 Store 数量
-  initial-store-count: 1
-  # store 的配置信息，格式为 IP:gRPC端口
-  initial-store-list: 127.0.0.1:8500
-
-raft:
-  # 本节点的 raft 地址
-  address: 127.0.0.1:8610
-  # 集群中所有 PD 节点的 raft 地址
-  peers-list: 127.0.0.1:8610
-
-store:
-  # store 下线时间（秒）。超过该时间，认为 store 永久不可用，分配副本到其他机器
-  max-down-time: 172800
-  # 是否开启 store 监控数据存储
-  monitor_data_enabled: true
-  # 监控数据的间隔
-  monitor_data_interval: 1 minute
-  # 监控数据的保留时间
-  monitor_data_retention: 1 day
-
-partition:
-  # 默认每个分区副本数
-  default-shard-count: 1
-  # 默认每机器最大副本数
-  store-max-shard-count: 12
-```
-
-`conf/application.yml.template` 是另一份带占位符（`$GRPC_PORT$`、`$RAFT_ADDRESS$` 等）的副本，供自动生成配置的部署工具使用，PD 本身不读取它。启动脚本通过 `-Dspring.config.location` 指定的始终是 `conf/application.yml`。
+PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安装包版本相同的源文件，不要把发布版和主线配置混用： [1.7.0 发布标签配置](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml)；[当前主线配置](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml)。主线 `application.yml` 将 `auth.secret-key` 留空，REST 受保护接口在未设置密钥时会拒绝请求；`application.yml.template` 不由 PD 启动脚本读取。
 
 #### 4.1 配置项参考
 
-`conf/application.yml` 中未出现的配置项会回退到下表的内置默认值；没有内置默认值的配置项必须存在，否则 PD 无法启动。
+以下表格核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 中的 `hg-pd-dist` 配置和 Java 默认注入值，不是 1.7.0 发布标签的全部行为。1.7.0 二进制包请使用其标签对应的原始配置；主线源码构建包则以 [主线配置文件](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) 为准。
 
 **gRPC 与 REST**
 
-| 配置项 | 发布包中的值 | 内置默认值 | 描述 |
+| 配置项 | 主线目录值 | 内置默认值 | 描述 |
 |--------|--------------|------------|------|
 | `grpc.host` | `127.0.0.1` | 无，必填 | 本 PD 对外公布的 gRPC 地址。Store 和 Server 会连到这个地址，因此分布式部署时必须填可访问的 IPv4 地址或主机名，不能用 `127.0.0.1` 或 `0.0.0.0`。 |
 | `grpc.port` | `8686` | 无，必填 | gRPC 端口。 |
@@ -211,7 +134,7 @@ partition:
 
 **Raft**
 
-| 配置项 | 发布包中的值 | 内置默认值 | 描述 |
+| 配置项 | 主线目录值 | 内置默认值 | 描述 |
 |--------|--------------|------------|------|
 | `raft.address` | `127.0.0.1:8610` | 无，必填 | 本节点的 Raft 地址，格式为 `host:port`。每个节点必须不同，且必须出现在 `raft.peers-list` 中。 |
 | `raft.peers-list` | `127.0.0.1:8610` | 无，必填 | 逗号分隔的全部 PD 节点 Raft 地址（含本节点）。所有节点上必须完全一致。 |
@@ -222,7 +145,7 @@ partition:
 
 **PD 核心**
 
-| 配置项 | 发布包中的值 | 内置默认值 | 描述 |
+| 配置项 | 主线目录值 | 内置默认值 | 描述 |
 |--------|--------------|------------|------|
 | `pd.data-path` | `./pd_data` | 无，必填 | 元数据目录。`rocksdb/` 子目录存放 RocksDB 数据，`pd_raft/` 子目录存放 Raft 日志、元信息和快照。 |
 | `pd.patrol-interval` | `1800` | `300` | 巡检周期（秒）。巡检会检查各 Store 上的分区健康状况并平衡分区数量。 |
@@ -232,7 +155,7 @@ partition:
 
 **Store 管理**
 
-| 配置项 | 发布包中的值 | 内置默认值 | 描述 |
+| 配置项 | 主线目录值 | 内置默认值 | 描述 |
 |--------|--------------|------------|------|
 | `store.keepAlive-timeout` | 未设置 | `300` | 心跳超时时间（秒）。超过该时间未收到心跳，Store 视为临时不可用，其分区 leader 转移到其他副本。 |
 | `store.max-down-time` | `172800` | `1800` | 超过该时间（秒）后 Store 视为永久不可用，其副本重新分配到其他机器。 |
@@ -242,7 +165,7 @@ partition:
 
 **分区**
 
-| 配置项 | 发布包中的值 | 内置默认值 | 描述 |
+| 配置项 | 主线目录值 | 内置默认值 | 描述 |
 |--------|--------------|------------|------|
 | `partition.default-shard-count` | `1` | `3` | 每个分区的副本数。生产集群建议设为 `3`。 |
 | `partition.store-max-shard-count` | `12` | `24` | 单个 Store 最多承载的分区副本数。 |
@@ -255,14 +178,14 @@ partition:
 
 **服务发现、License 与监控**
 
-| 配置项 | 发布包中的值 | 内置默认值 | 描述 |
+| 配置项 | 主线目录值 | 内置默认值 | 描述 |
 |--------|--------------|------------|------|
 | `discovery.heartbeat-try-count` | 未设置 | `3` | 客户端注册后连续丢失多少次心跳就删除其注册信息。 |
-| `license.verify-path` | `./conf/verify-license.json` | 无，必填 | License 校验描述文件路径，由 `/v1/license` 接口读取。 |
-| `license.license-path` | `./conf/hugegraph.license` | 无，必填 | License 文件路径。发布包只带 `verify-license.json`，不带 license 文件，因此在提供该文件之前 license 接口会返回错误。 |
-| `auth.secret-key` | 未设置 | 内置常量 | 用于给内部客户端签发 PD token 的 HS256 密钥。 |
+| `license.verify-path` | `./conf/verify-license.json` | 无，配置键必填 | PD 发行目录随包提供该 JSON 文件；当前主线代码没有读取此配置项的运行时位置。 |
+| `license.license-path` | `./conf/hugegraph.license` | 无，配置键必填 | 目标路径不会随包带入 license 文件；内部 gRPC `putLicense` 会把上传内容写到此处。当前主线的 REST `GET /v1/license` 返回空对象，不因文件缺失而阻止 PD 启动。 |
+| `auth.secret-key` | 空 | 空 | 当前主线的 PD REST Basic 密码；合法用户名为 `hg`、`store`、`hubble`、`vermeer`。Docker 镜像要求设置；裸机 PD 可在密钥为空时启动，但受保护 REST 请求都会被拒绝。 |
 | `management.metrics.export.prometheus.enabled` | `true` | Spring Boot 默认值 | 是否暴露 `/actuator/prometheus`。 |
-| `management.endpoints.web.exposure.include` | `"*"` | Spring Boot 默认值 | 需要暴露的 actuator 端点。 |
+| `management.endpoints.web.exposure.include` | `health,metrics,prometheus` | Spring Boot 默认只暴露 `health` | Actuator 暴露白名单；这些端点不经过 PD REST Basic 拦截器。 |
 | `logging.config` | `file:./conf/log4j2.xml` | 无 | Log4j2 配置文件，会写出 `logs/hugegraph-pd.log`、`logs/hugegraph-pd_raft.log` 和 `logs/audit-hugegraph-pd.log`。 |
 
 **线程池**
@@ -278,7 +201,7 @@ partition:
 
 #### 4.2 单节点配置
 
-发布包自带的 `conf/application.yml` 本身就是一份可用的单节点配置，适用于开发和测试：单节点 PD 不存在 Raft 多数派可失，`partition.default-shard-count: 1` 表示每个分区只有一个副本。
+在主线源码构建的发布目录中，以 `conf/application.yml` 为基础，只需按节点改写 gRPC/Raft 地址和数据路径，并设置 `auth.secret-key`。以下值仅适用于开发测试；单节点 PD 不提供多数派容错，`partition.default-shard-count: 1` 表示每个分区只有一个副本。
 
 ```yaml
 grpc:
@@ -295,7 +218,11 @@ pd:
   initial-store-list: 127.0.0.1:8500
 partition:
   default-shard-count: 1
+auth:
+  secret-key: 替换为部署专用密钥
 ```
+
+可以用 `openssl rand -hex 24` 生成部署密钥；使用 Docker 时通过 `HG_PD_AUTH_SECRET_KEY` 传入。1.7.0 发布标签的认证行为不同，详见“REST API 认证”。
 
 #### 4.3 三节点集群配置
 
@@ -343,6 +270,9 @@ raft:
 在 Docker 桥接网络中，同样的配置来自环境变量，并使用容器主机名而非 IP 地址：
 
 ```yaml
+# 所有 PD 节点共用同一个密钥，实际部署从私密环境变量注入
+HG_PD_AUTH_SECRET_KEY: ${HG_PD_AUTH_SECRET_KEY:?set HG_PD_AUTH_SECRET_KEY}
+
 # pd0
 HG_PD_GRPC_HOST: pd0
 HG_PD_RAFT_ADDRESS: pd0:8610
@@ -411,11 +341,28 @@ YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer 
 
 请按以下顺序启动各组件：
 
-1. **全部 PD 节点**。它们组成 Raft 组并选出 leader。等到每个节点都能响应 `GET /v1/health` 再继续。
+1. **全部 PD 节点**。它们组成 Raft 组并选出 leader。对每个节点检查 `GET /v1/ready`；仅当 HTTP 状态为 `200` 且响应中的 `ready` 为 `true` 时，再启动 Store。`GET /v1/health` 只检查 REST 监听器是否存活。
 2. **全部 Store 节点**。每个 Store 通过 gRPC 向 PD 注册，PD 会自动激活 `pd.initial-store-list` 中列出的 Store。等到 `GET /v1/stores` 中每个 Store 的 `state` 都是 `Up` 再继续。
 3. **全部 Server 节点**。Server 读取 `pd.peers`，并依赖 PD 报告至少有一个存活的 Store 才能完成分区分配。
 
-Docker Compose 的各个拓扑正是这样编排的：Store 容器通过 `depends_on` 加 `condition: service_healthy` 等待 PD 的 `/v1/health` 健康检查，Server 容器以同样方式等待 Store 的健康检查，Server 的 entrypoint 还会轮询 PD 的 `/v1/stores`，直到有 Store 报告 `Up` 才启动 HugeGraph。
+```mermaid
+sequenceDiagram
+    participant 运维者
+    participant PD
+    participant Store
+    participant Server
+    运维者->>PD: GET /v1/ready（逐个检查 PD）
+    PD-->>运维者: 200 且 ready=true
+    运维者->>Store: 启动 Store
+    Store->>PD: gRPC 注册与心跳
+    运维者->>PD: GET /v1/stores（Basic 认证）
+    PD-->>运维者: 每个目标 Store 状态为 Up
+    运维者->>Server: 启动 Server
+    Server->>PD: gRPC 查询分区与服务发现
+    Server->>Store: gRPC 访问图数据
+```
+
+主线 Compose 中 Store 的 `depends_on: condition: service_healthy` 只等待 PD `/v1/health` 存活检查，Server 同样只等待 Store REST 存活检查；Server entrypoint 还会轮询 PD `/v1/stores`，直到有 Store 报告 `Up` 才启动 HugeGraph。`docker compose up --wait` 因而不能替代 PD Raft 就绪与 Store 注册状态检查。
 
 停止时顺序相反：先停 Server，再停 Store，最后停 PD。
 
@@ -423,23 +370,24 @@ Docker Compose 的各个拓扑正是这样编排的：Store 容器通过 `depend
 
 #### 7.1 REST API 认证
 
-除 `/actuator/*`、`/v1/health` 和 `/v1/prom/targets/*` 之外，PD 的所有 REST 路径都要求带 HTTP Basic `Authorization` 头，且用户名必须是内部服务名 `hg`、`store`、`hubble`、`vermeer` 之一。不带该头的请求会得到：
+当前主线除 `/actuator/*`、`/v1/health`、`/v1/ready` 和 `/v1/prom/targets/*` 之外，所有 PD REST 路径都要求 HTTP Basic `Authorization`。用户名必须是内部服务名 `hg`、`store`、`hubble`、`vermeer` 之一，密码必须等于 `auth.secret-key`；无密钥或密码不匹配时会返回 HTTP `401`。用启动 PD 时的同一密钥检查 Store 列表：
 
 ```json
-{"status": -1, "error": "Unauthorized!"}
+{"status": -1, "error": "Unauthorized"}
 ```
-
-目前不校验密码，任意值均可。Server 自带的 `bin/wait-storage.sh` 使用 `store:admin`，并支持用 `PD_AUTH_USER` 和 `PD_AUTH_PASSWORD` 覆盖，因此下面的示例使用同样的凭据：
 
 ```bash
-curl -u store:admin http://localhost:8620/v1/stores
+curl -u "store:${HG_PD_AUTH_SECRET_KEY:?请先设置 PD 部署密钥}" \
+  http://localhost:8620/v1/stores
 ```
+
+`bin/wait-storage.sh` 通过 `PD_AUTH_USER`、`PD_AUTH_PASSWORD` 配置同一凭据。1.7.0 发布标签的认证实现只检查用户名是否属于内部服务名，不比较密码；不要把该旧版行为套用到当前主线源码构建包。
 
 > **警告**：该校验只用于区分 HugeGraph 自身组件与其他流量。请勿把 PD 的 REST 或 gRPC 端口暴露到不可信网络，应通过防火墙规则或安全组加以限制，并保持 `raft.ip-whitelist.enabled` 开启，使 Raft 端口只接受配置中的 peer。
 
 #### 7.2 健康检查
 
-`GET /v1/health` 不需要凭据，Docker 健康检查用的就是它。它返回 `200` 且响应体为空：
+`GET /v1/health` 不需要凭据，返回 `200` 且响应体为空，只表示 PD REST 监听器已启动：
 
 ```bash
 curl -i http://localhost:8620/v1/health
@@ -451,14 +399,19 @@ Spring Boot actuator 端点同样可用，输出更直观：
 curl http://localhost:8620/actuator/health
 ```
 
-如果返回 `{"status":"UP"}`，则表示 PD 服务已成功启动。
+`/actuator/health` 的 `{"status":"UP"}` 也不代表 PD Raft 集群已有可用 leader。主线新增的 `GET /v1/ready` 会在 PD Raft 节点已激活并能看到 leader 时返回 HTTP `200` 和 `ready:true`；尚未就绪时返回 HTTP `503` 和 `ready:false`：
+
+```bash
+curl -i http://localhost:8620/v1/ready
+```
 
 #### 7.3 集群与成员状态
 
 查看 PD 成员以及当前的 Raft leader：
 
 ```bash
-curl -u store:admin http://localhost:8620/v1/members
+curl -u "store:${HG_PD_AUTH_SECRET_KEY:?请先设置 PD 部署密钥}" \
+  http://localhost:8620/v1/members
 ```
 
 响应中包含 `pdList`、选出的 `pdLeader`、`numOfService`、`numOfNormalService` 和 `stateCountMap`。健康的 3 节点 PD 集群中，`numOfService` 和 `numOfNormalService` 都应为 `3`，且恰好有一个成员的 `role` 为 `Leader`。
@@ -470,7 +423,8 @@ curl -u store:admin http://localhost:8620/v1/members
 也可以通过 PD API 查看 Store 节点状态：
 
 ```bash
-curl -u store:admin http://localhost:8620/v1/stores
+curl -u "store:${HG_PD_AUTH_SECRET_KEY:?请先设置 PD 部署密钥}" \
+  http://localhost:8620/v1/stores
 ```
 
 如果响应中 `state` 为 `Up`，说明对应的 Store 节点运行正常。下面的示例只有一个 Store 节点。在一个健康的 3 节点部署中，`storeId` 列表应包含 3 个 ID，且 `stateCountMap.Up`、`numOfService` 和 `numOfNormalService` 都应为 `3`。
@@ -520,7 +474,8 @@ curl -u store:admin http://localhost:8620/v1/stores
 | 方法与路径 | 描述 |
 |------------|------|
 | `GET /` | 集群简要统计：leader、状态、成员数、Store 数、图数量、分区数 |
-| `GET /v1/health` | 健康检查，无需认证 |
+| `GET /v1/health` | 存活检查；HTTP 200 不代表 Raft 就绪，无需认证 |
+| `GET /v1/ready` | Raft readiness；HTTP 200 且 `ready:true` 表示本节点已激活并看到 leader，无需认证（当前主线） |
 | `GET /v1/cluster` | 集群完整统计：PD 成员、Store、图、分区 |
 | `GET /v1/members` | PD 成员列表，含角色和选出的 leader |
 | `POST /v1/members/change` | 修改 Raft peer 列表，请求体 `{"peerList": "..."}` |
@@ -552,7 +507,7 @@ curl -u store:admin http://localhost:8620/v1/stores
 | `POST /v1/registry` | 注册一个服务实例用于服务发现 |
 | `POST /v1/registryInfo` | 查询已注册的实例 |
 | `GET /v1/allInfo` | 所有已注册的实例 |
-| `GET /v1/license` | License 信息 |
+| `GET /v1/license` | 旧接口，当前主线返回空对象 |
 | `GET /v1/license/machineInfo` | License 校验看到的 IP 和 MAC 地址 |
 | `GET /v1/task/patrolStores` | 立即执行 Store 巡检任务 |
 | `GET /v1/task/patrolPartitions` | 立即执行分区巡检任务 |

@@ -14,9 +14,23 @@ aliases:
 
 `hugegraph-server` 模块包含 `hugegraph-core`、`hugegraph-api`、`hugegraph-dist` 和存储适配等子模块。Core 实现属性图模型、事务与 TinkerPop 接口，API 提供 HTTP 服务并将客户端请求交给 Core 处理。图数据由 RocksDB（单机默认）、HStore（分布式）或 HBase 后端保存。
 
-> ⚠️ **版本说明**：本文以 HugeGraph 1.7.0 至 `master` 分支的代码为参考，仅介绍 RocksDB、HStore 和 HBase。其他旧后端的使用与配置请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
+> ⚠️ **版本说明**：本文区分已发布版本与开发主线。下载示例使用 ASF 发布的 HugeGraph 1.7.0 安装包；源码构建、配置默认值和启动行为以 `apache/hugegraph` 的 `master` 分支为准。主线源码构建出的包不是 ASF 发布包，即使包内版本号相同也不代表与 1.7.0 发布包相同。本文介绍 RocksDB、HStore 和 HBase；其他旧后端请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
 
 > 名称说明：`HugeGraph` 表示整个项目或主仓库，`hugegraph-server` 表示仓库中的 Server 模块，`HugeGraphServer` 是服务进程的 Java 类名。下文的 Server 服务指运行中的图数据库服务。
+
+```mermaid
+flowchart TD
+    A{选择安装来源}
+    A -->|已发布版本| R["HugeGraph 1.7.0 tar 包"]
+    R --> V[SHA-512 校验]
+    V --> X[解压并使用随包配置]
+    A -->|开发主线| M["master 源码"]
+    M --> B["mvn package -DskipTests"]
+    B --> C[设置 RocksDB 和 graph.load_from_local_config=true]
+    C --> I[bin/init-store.sh]
+    I --> S["bin/start-hugegraph.sh -p true"]
+    S --> Q["请求 /versions 和图顶点接口"]
+```
 
 ## 2 依赖
 
@@ -93,22 +107,39 @@ compose 文件从 `HUGEGRAPH_ADMIN_PASSWORD` 读取管理员密码，从 `HUGEGR
 >
 > 2. 推荐使用 `release tag` (如 `1.7.0/1.x.0`) 以获取稳定版。使用 `latest` tag 可以使用开发中的最新功能。
 
-### 3.2 下载 tar 包
+### 3.2 下载已发布的 tar 包
+
+以下示例针对 HugeGraph 1.7.0。使用其他版本时，请先在 [ASF 下载目录](https://downloads.apache.org/hugegraph/) 确认该版本及对应文件名；不要把 `master` 源码构建包当作已发布的二进制包。
 
 ```bash {filename="download-release.sh" wrap=true collapse=2}
-# 1.7.0 是项目孵化期发布的历史版本，因此文件名仍带 incubating
+cd /path/to/downloads
 wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.sha512
+sha512sum -c apache-hugegraph-incubating-1.7.0.tar.gz.sha512
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 ```
 
-### 3.3 源码编译
+SHA-512 校验通过后再解压。也可按 Apache 发布流程验证 PGP 签名：
+
+```bash
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.asc
+wget https://downloads.apache.org/hugegraph/KEYS
+gpg --import KEYS
+gpg --verify apache-hugegraph-incubating-1.7.0.tar.gz.asc apache-hugegraph-incubating-1.7.0.tar.gz
+```
+
+只应信任通过 Apache 项目渠道核实的发布者密钥；签名验证可与 SHA-512 校验一起使用。
+
+### 3.3 从 `master` 源码构建
+
+下面的命令构建的是开发主线，不是 1.7.0 发布包。
 
 源码编译前请确保本机有安装 `wget/curl` 命令
 
 下载 HugeGraph 源代码
 
 ```bash {filename="build-from-source.sh" wrap=true collapse=2}
-git clone https://github.com/apache/hugegraph.git
+git clone --branch master https://github.com/apache/hugegraph.git
 ```
 
 编译打包生成 tar 包
@@ -116,7 +147,7 @@ git clone https://github.com/apache/hugegraph.git
 ```bash
 cd hugegraph
 # (Optional) use "-P stage" param if you build failed with the latest code(during pre-release period)
-mvn package -DskipTests
+mvn package -DskipTests -ntp
 ```
 
 构建成功时日志中会出现：
@@ -125,7 +156,13 @@ mvn package -DskipTests
 [INFO] BUILD SUCCESS
 ```
 
-执行成功后，在 hugegraph 目录下生成 `*hugegraph-*.tar.gz` 文件，就是编译生成的 tar 包。
+执行成功后，根目录 `target/` 下会生成主线聚合包（当前仓库版本属性为 1.7.0）：
+
+```text
+target/apache-hugegraph-1.7.0.tar.gz
+```
+
+该文件名中的版本号来自源码的 `revision` 属性；它不会把主线构建变成 ASF 发布物料。构建过程还会在仓库根目录生成 `apache-hugegraph-1.7.0/` 聚合目录，其中的 Server 子目录名由 Server 模块的 `final.name` 决定，例如当前为 `apache-hugegraph-server-1.7.0`。若只保留了 tar 包，则先执行 `tar zxf target/apache-hugegraph-1.7.0.tar.gz` 再进入该目录。
 
 默认构建会打包 `rocksdb`、`hbase` 和 `hstore` 三个后端模块，并把它们记录在 `hugegraph-dist` jar 内的 `backend.properties` 资源的 `backends` 配置项中。若只需要包含 RocksDB 的精简发布包，可加上 `-Drocksdb-only`：
 
@@ -158,7 +195,9 @@ mvn package -DskipTests -ntp -Drocksdb-only
 
 ## 4 配置
 
-如果需要快速启动 HugeGraph 仅用于测试，那么只需要进行少数几个配置项的修改即可（见下一节）。
+Server 的 tar 包随包提供 `conf/rest-server.properties`、`conf/gremlin-server.yaml` 和 `conf/graphs/hugegraph.properties`；源码构建包从 `hugegraph-server/hugegraph-dist/src/assembly/static/conf/` 装配这些文件。解压后在 Server 安装目录内编辑配置，无需另行生成。发行包版本之间可能有默认值差异，下面涉及的默认值和启动行为按 `master` 主线说明。
+
+单机 RocksDB 快速开始只需确认 `conf/graphs/hugegraph.properties` 使用 `backend=rocksdb`、`serializer=binary`，并在 `conf/rest-server.properties` 设置 `graph.load_from_local_config=true`，让 Server 从 `conf/graphs/` 加载本地图配置。源码默认值为 `false`，不显式开启时，本地图配置不会加载。
 
 详细的配置介绍请参考[配置文档](/docs/config/config-guide)及[配置项介绍](/docs/config/config-option)。
 
@@ -351,38 +390,38 @@ graph.load_from_local_config=true
 
 当前源码默认值是 `false`，上游发布模板尚未写出该选项。
 
+从 `master` 构建的单机最小流程如下。此例启用内置样例数据，以便后续请求能验证图数据读写路径。
+
 <details>
 <summary>点击展开/折叠 RocksDB 配置及启动方法</summary>
 
 
 > RocksDB 是一个嵌入式的数据库，不需要手动安装部署，要求 GCC 版本 >= 4.3.0（GLIBCXX_3.4.10），如不满足，需要提前升级 GCC
 
-修改 `hugegraph.properties`
+主线包内的 `conf/graphs/hugegraph.properties` 默认已设置 `backend=rocksdb` 和 `serializer=binary`。使用默认数据目录时无需修改；若改过后端或数据路径，先确认配置，再初始化存储。
 
-```properties
-backend=rocksdb
-serializer=binary
-rocksdb.data_path=.
-rocksdb.wal_path=.
-```
-
-初始化数据库（第一次启动时或在 `conf/graphs/` 下手动添加了新配置时需要进行初始化）
+初始化数据库（首次启动，或在 `conf/graphs/` 下添加了新图配置后）：
 
 ```bash
-cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-server-incubating-1.7.0
+cd apache-hugegraph-1.7.0/apache-hugegraph-server-1.7.0
 bin/init-store.sh
 ```
 
-启动 server
+启动 Server 并加载内置样例图：
 
 ```bash
-bin/start-hugegraph.sh
-Starting HugeGraphServer in daemon mode...
-Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
-Started [pid 21614]
+bin/start-hugegraph.sh -p true
 ```
 
-提示的 url 与 `rest-server.properties` 中配置的 `restserver.url` 一致
+启动脚本会按 `rest-server.properties` 中的 `restserver.url` 轮询 `/graphs`，超时或进程失败时以非零状态退出。随后先检查服务版本，再读取样例顶点：
+
+```bash
+curl -fsS http://127.0.0.1:8080/versions
+curl --compressed -fsS \
+  http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
+```
+
+第一条请求应返回包含 `versions` 的 JSON；第二条应返回包含 `vertices` 的 JSON，且样例数据中可见 `marko`、`lop` 等顶点。仅检查进程存在或 HTTP 状态码，不足以证明图后端和业务请求正常。
 
 **ToplingDB (Beta)**: 作为 RocksDB 的高性能替代方案，配置方式请参考: [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="cn">}})
 
@@ -526,10 +565,10 @@ jps
 `curl` 请求 RESTful API
 
 ```bash
-echo `curl -o /dev/null -s -w %{http_code} "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"`
+curl -fsS http://127.0.0.1:8080/versions
 ```
 
-返回结果 200，代表 server 启动正常
+返回包含 `versions` 的 JSON（HTTP 2xx）可确认 REST API 已响应。`jps` 中出现 `HugeGraphServer` 只表示进程存在；要确认图后端可用，请按单机流程加载样例图后请求顶点接口。
 
 ### 6.2 请求 Server
 
@@ -549,13 +588,13 @@ curl http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 _说明_
 
-1. 由于图的点和边很多，对于 list 型的请求，比如获取所有顶点，获取所有边等，Server 会将数据压缩再返回，所以使用 curl 时得到一堆乱码，可以重定向至 `gunzip` 进行解压。推荐使用 Chrome 浏览器 + Restlet 插件发送 HTTP 请求进行测试。
+1. 对于顶点、边等列表请求，Server 可以压缩响应。使用 `curl --compressed` 可自动解压：
 
     ```
-    curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices" | gunzip
+    curl --compressed -fsS "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
     ```
 
-2. 当前 HugeGraphServer 的默认配置只能是本机访问，可以修改配置，使其能在其他机器访问。
+2. 默认监听地址为 `127.0.0.1`，其他机器无法直接访问。若确需在受控网络中远程访问，可调整绑定地址并配置防火墙；不要将 Gremlin、Cypher 等接口直接暴露到公网。
 
     ```
     vim conf/rest-server.properties

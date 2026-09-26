@@ -8,7 +8,7 @@ search_boost: 1.6
 
 ### 1 概述
 
-配置文件的目录为 hugegraph-release/conf，所有关于服务和图本身的配置都在此目录下。
+默认配置位于发行包解压目录的 `conf/` 下。HBase、Kerberos 和 HTTPS 等外部文件可以由用户提供到其他路径，详见对应的后端、认证和 HTTPS 页面。
 
 主要的配置文件包括：gremlin-server.yaml、rest-server.properties 和 hugegraph.properties
 
@@ -19,122 +19,33 @@ HugeGraphServer 内部集成了 GremlinServer 和 RestServer，而 gremlin-serve
 
 下面对这三个配置文件逐一介绍。
 
+发行包把默认配置放在安装目录的 `conf/` 下；这些文件来自 Server 仓库的静态发行素材，构建时随包复制。未在配置文件中出现的选项采用代码定义的默认值；配置文件显式写入的值会覆盖该默认值。
+本页的默认文件行为按固定 Server 主线 `2f827d6` 核对；实际使用的发布包应以其自身版本对应的配置文件和入口脚本为准。
+
+| 文件 | 来源和用途 | 装载行为 |
+|------|------------|----------|
+| `conf/gremlin-server.yaml` | 随发行包提供；配置 Gremlin Server。 | `start-hugegraph.sh` 将它作为 Server 启动参数传入。 |
+| `conf/rest-server.properties` | 按固定 Server 主线构建时随发行包提供；配置 REST Server、PD、认证等。 | 启动脚本和 Server 进程读取；对应主线构建的容器入口脚本也会在启动前更新其中受支持的选项。 |
+| `conf/graphs/hugegraph.properties` | 随发行包提供的默认图配置，使用 RocksDB。 | `init-store.sh` 扫描该目录；Server 启动时是否加载本地图配置由 `graph.load_from_local_config` 控制，默认值为 `false`。 |
+| `conf/graphs/hstore.properties.template` | 随发行包提供的 HStore 模板；其他图配置由用户按需创建。 | HStore 镜像在构建时把模板改名为 `hugegraph.properties`；裸发行包用户可复制模板并修改。 |
+
+完整的默认文件见固定的 Server 源码：[gremlin-server.yaml](https://github.com/apache/hugegraph/blob/2f827d6e8c9c62ae858f2fc122b3a192d015e2f4/hugegraph-server/hugegraph-dist/src/assembly/static/conf/gremlin-server.yaml)、[rest-server.properties](https://github.com/apache/hugegraph/blob/2f827d6e8c9c62ae858f2fc122b3a192d015e2f4/hugegraph-server/hugegraph-dist/src/assembly/static/conf/rest-server.properties)、[hugegraph.properties](https://github.com/apache/hugegraph/blob/2f827d6e8c9c62ae858f2fc122b3a192d015e2f4/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hugegraph.properties) 和 [hstore.properties.template](https://github.com/apache/hugegraph/blob/2f827d6e8c9c62ae858f2fc122b3a192d015e2f4/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hstore.properties.template)。
+
+以下 Docker 环境变量行为仅适用于从固定主线 `2f827d6` 构建的镜像，不会把任意环境变量名转换为配置项。该版本的入口脚本在初始化和启动前处理 `HG_SERVER_BACKEND`、`HG_SERVER_PD_PEERS`、`HG_SERVER_USE_PD`、`HG_SERVER_CLUSTER`、`HG_SERVER_REST_URL`、`HG_SERVER_MIN_FREE_MEMORY`、`HG_SERVER_AUTH_TOKEN_SECRET`、`HG_SERVER_INIT_STORE_ENABLED` 和 `PASSWORD`；历史发布镜像需按各自 tag 对应的 entrypoint 核实支持项。见 [Docker entrypoint](https://github.com/apache/hugegraph/blob/2f827d6e8c9c62ae858f2fc122b3a192d015e2f4/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh)。
+
 ### 2 gremlin-server.yaml
 
-`gremlin-server.yaml` 的主要结构如下。示例省略了部分导入项；完整内容以发布包中的文件为准。
+只展示启动时常调整的选项；完整文件及序列化器、插件配置见上方源码链接。
 
-```yaml {filename="conf/gremlin-server.yaml" wrap=true collapse=18}
-# host and port of gremlin server, need to be consistent with host and port in rest-server.properties
+发行包中的 `host` 和 `port` 默认行是注释；未指定时使用 `127.0.0.1:8182`。若要修改监听地址，取消注释并设置这两项：
+
+```yaml
 #host: 127.0.0.1
 #port: 8182
-
-# Gremlin 查询中的超时时间（以毫秒为单位）
 evaluationTimeout: 30000
-
 channelizer: org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer
-# 不要在此处设置图形，此功能将在支持动态添加图形后再进行处理
-graphs: {
-}
-scriptEngines: {
-  gremlin-groovy: {
-    staticImports: [
-      org.opencypher.gremlin.process.traversal.CustomPredicates.*',
-      org.opencypher.gremlin.traversal.CustomFunctions.*
-    ],
-    plugins: {
-      org.apache.hugegraph.plugin.HugeGraphGremlinPlugin: {},
-      org.apache.tinkerpop.gremlin.server.jsr223.GremlinServerGremlinPlugin: {},
-      org.apache.tinkerpop.gremlin.jsr223.ImportGremlinPlugin: {
-        classImports: [
-          java.lang.Math,
-          org.apache.hugegraph.backend.id.IdGenerator,
-          org.apache.hugegraph.type.define.Directions,
-          org.apache.hugegraph.type.define.NodeRole,
-          org.apache.hugegraph.masterelection.GlobalMasterInfo,
-          org.apache.hugegraph.util.DateUtil,
-          org.apache.hugegraph.traversal.algorithm.CollectionPathsTraverser,
-          org.apache.hugegraph.traversal.algorithm.CountTraverser,
-          org.apache.hugegraph.traversal.algorithm.CustomizedCrosspointsTraverser,
-          org.apache.hugegraph.traversal.algorithm.CustomizePathsTraverser,
-          org.apache.hugegraph.traversal.algorithm.FusiformSimilarityTraverser,
-          org.apache.hugegraph.traversal.algorithm.HugeTraverser,
-          org.apache.hugegraph.traversal.algorithm.JaccardSimilarTraverser,
-          org.apache.hugegraph.traversal.algorithm.KneighborTraverser,
-          org.apache.hugegraph.traversal.algorithm.KoutTraverser,
-          org.apache.hugegraph.traversal.algorithm.MultiNodeShortestPathTraverser,
-          org.apache.hugegraph.traversal.algorithm.NeighborRankTraverser,
-          org.apache.hugegraph.traversal.algorithm.PathsTraverser,
-          org.apache.hugegraph.traversal.algorithm.PersonalRankTraverser,
-          org.apache.hugegraph.traversal.algorithm.SameNeighborTraverser,
-          org.apache.hugegraph.traversal.algorithm.ShortestPathTraverser,
-          org.apache.hugegraph.traversal.algorithm.SingleSourceShortestPathTraverser,
-          org.apache.hugegraph.traversal.algorithm.SubGraphTraverser,
-          org.apache.hugegraph.traversal.algorithm.TemplatePathsTraverser,
-          org.apache.hugegraph.traversal.algorithm.steps.EdgeStep,
-          org.apache.hugegraph.traversal.algorithm.steps.RepeatEdgeStep,
-          org.apache.hugegraph.traversal.algorithm.steps.WeightedEdgeStep,
-          org.apache.hugegraph.traversal.optimize.ConditionP,
-          org.apache.hugegraph.traversal.optimize.Text,
-          org.apache.hugegraph.traversal.optimize.TraversalUtil,
-          org.opencypher.gremlin.traversal.CustomFunctions,
-          org.opencypher.gremlin.traversal.CustomPredicate
-        ],
-        methodImports: [
-          java.lang.Math#*,
-          org.opencypher.gremlin.traversal.CustomPredicate#*,
-          org.opencypher.gremlin.traversal.CustomFunctions#*
-        ]
-      },
-      org.apache.tinkerpop.gremlin.jsr223.ScriptFileGremlinPlugin: {
-        files: [scripts/empty-sample.groovy]
-      }
-    }
-  }
-}
-serializers:
-  - { className: org.apache.tinkerpop.gremlin.driver.ser.GraphBinaryMessageSerializerV1,
-      config: {
-        serializeResultToString: false,
-        ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
-      }
-  }
-  - { className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV1d0,
-      config: {
-        serializeResultToString: false,
-        ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
-      }
-  }
-  - { className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV2d0,
-      config: {
-        serializeResultToString: false,
-        ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
-      }
-  }
-  - { className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV3d0,
-      config: {
-        serializeResultToString: false,
-        ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
-      }
-  }
-metrics: {
-  consoleReporter: {enabled: false, interval: 180000},
-  csvReporter: {enabled: false, interval: 180000, fileName: ./metrics/gremlin-server-metrics.csv},
-  jmxReporter: {enabled: false},
-  slf4jReporter: {enabled: false, interval: 180000},
-  gangliaReporter: {enabled: false, interval: 180000, addressingMode: MULTICAST},
-  graphiteReporter: {enabled: false, interval: 180000}
-}
-maxInitialLineLength: 4096
-maxHeaderSize: 8192
-maxChunkSize: 8192
-maxContentLength: 65536
-maxAccumulationBufferComponents: 1024
-resultIterationBatchSize: 64
-writeBufferLowWaterMark: 32768
-writeBufferHighWaterMark: 65536
-ssl: {
-  enabled: false
-}
+graphs: {}
+ssl: { enabled: false }
 ```
 
 通常只需关注 `channelizer`、`host` 和 `port`。图不在 Gremlin Server 的 `graphs` 段加载；是否读取本地图配置由 `rest-server.properties` 中的 `graph.load_from_local_config` 控制。
@@ -202,75 +113,13 @@ memory_monitor.period=2000
 
 ### 4 hugegraph.properties
 
-hugegraph.properties 是一类文件，因为如果系统存在多个图，则会有多个相似的文件。该文件用来配置与图存储和查询相关的参数，文件的默认内容如下：
+hugegraph.properties 是随发行包提供的默认图配置；每个额外的图都应在 `conf/graphs` 下提供自己的 properties 文件。这里展示选择默认 RocksDB 后端所需的关键配置，完整文件见上方源码链接。
 
 ```properties
-# gremlin entrance to create graph
-# auth config: org.apache.hugegraph.auth.HugeFactoryAuthProxy
 gremlin.graph=org.apache.hugegraph.HugeFactory
-
-# cache config
-#schema.cache_capacity=100000
-# vertex-cache default is 1000w, 10min expired
-vertex.cache_type=l2
-#vertex.cache_capacity=10000000
-#vertex.cache_expire=600
-# edge-cache default is 100w, 10min expired
-edge.cache_type=l2
-#edge.cache_capacity=1000000
-#edge.cache_expire=600
-
-
-# schema illegal name template
-#schema.illegal_name_regex=\s+|~.*
-
-#vertex.default_label=vertex
-
-# NOTE: since 1.7.0, only hstore, rocksdb, hbase, memory are supported for backend.
-# if you want to use Cassandra/MySql/PG... as backend, please use version < 1.7.0
 backend=rocksdb
 serializer=binary
-# The process-wide max capacity of one serialization buffer in bytes
-#serializer.buffer_max_capacity=134217728
-
 store=hugegraph
-
-# pd config
-#pd.peers=127.0.0.1:8686
-
-# task config
-task.schedule_period=10
-task.retry=0
-task.wait_timeout=10
-
-# search config
-search.text_analyzer=jieba
-search.text_analyzer_mode=INDEX
-
-# rocksdb backend config
-#rocksdb.data_path=/path/to/disk
-#rocksdb.wal_path=/path/to/disk
-
-# hbase backend config
-#hbase.hosts=localhost
-#hbase.port=2181
-#hbase.znode_parent=/hbase
-#hbase.threads_max=64
-# IMPORTANT: recommend to modify the HBase partition number
-#            by the actual/env data amount & RS amount before init store
-#            It will influence the load speed a lot
-#hbase.enable_partition=true
-#hbase.vertex_partitions=10
-#hbase.edge_partitions=30
-
-# WARNING: These raft configurations are deprecated, please use the latest version instead.
-# raft.mode=false
-
-# memory management config
-#memory.mode=off-heap
-#memory.max_capacity=1073741824
-#memory.one_query_max_capacity=104857600
-#memory.alignment=8
 ```
 
 重点关注未注释的几项：

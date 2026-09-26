@@ -113,7 +113,7 @@ hstore 的 Docker 镜像会自动套用这份模板：它删除 `conf/graphs/hug
 因此容器启动时就已经选好了 `hstore` 后端。
 
 本地构建的发行包默认编译了 `hstore` provider。`rocksdb-only` 这个 Maven profile 会把编译进去的后端列表
-收窄为只有 `rocksdb`，用这种方式构建出来的发行包会以 `Unsupported backend type` 拒绝 `backend=hstore`。
+收窄为只有 `rocksdb`，`backend=hstore` 在 provider 工厂检查后会报 `Not exists BackendStoreProvider: hstore`。
 
 ### 4 hstore 配置项
 
@@ -148,17 +148,17 @@ PD 对该值的处理方式：
 ### 5 只在 hstore 模式下生效的其他配置项
 
 下列配置项位于公共的 `rest-server.properties` 和图属性文件中，但只有在使用 PD 和 `hstore` 后端时才生效，
-或者才会改变行为。source 列给出该配置项在 HugeGraph master 分支上的声明位置（文件与行号）。
+或者才会改变行为。source 列给出该配置项在本轮核对的 Server 主线提交 `2f827d6` 中的声明位置（文件与行号）。
 
 | 配置项                       | 文件                   | 默认值         | 在 hstore 模式下的作用                                            | source                       |
 |------------------------------|------------------------|----------------|-------------------------------------------------------------------|------------------------------|
 | pd.peers                     | rest-server.properties | 127.0.0.1:8686 | 用于元数据、服务发现和系统图的 PD 地址                            | `ServerOptions.java:195-201` |
 | pd.peers                     | {graph}.properties     | 127.0.0.1:8686 | 后端适配层自身使用的 PD 地址                                      | `CoreOptions.java:649-654`   |
-| usePD                        | rest-server.properties | false          | Server 启动时是否从 PD 加载元数据                                 | `ServerOptions.java:390-396` |
+| usePD                        | rest-server.properties | false          | Server 启动时是否从 PD 加载元数据                                 | `ServerOptions.java:401-407` |
 | cluster                      | rest-server.properties | hg-test        | 集群名，作为所有 PD 元数据 key 的前缀                             | `ServerOptions.java:187-193` |
-| init_store.enabled           | rest-server.properties | true           | PD/Store 部署下应设为 `false`，元数据已由存储侧负责               | `ServerOptions.java:371-380` |
-| graph.load_from_local_config | rest-server.properties | false          | 启动时是否在 PD 中的图配置之外，额外扫描 `conf/graphs`            | `ServerOptions.java:355-361` |
-| auth.graph_store             | rest-server.properties | hugegraph      | 保存权限数据的图，关闭 init-store 时会校验它使用 `hstore` 后端    | `ServerOptions.java:591-598` |
+| init_store.enabled           | rest-server.properties | true           | PD/Store 部署下应设为 `false`，元数据已由存储侧负责               | `ServerOptions.java:382-390` |
+| graph.load_from_local_config | rest-server.properties | false          | 启动时是否在 PD 中的图配置之外，额外扫描 `conf/graphs`            | `ServerOptions.java:366-372` |
+| auth.graph_store             | rest-server.properties | hugegraph      | 保存权限数据的图，关闭 init-store 时会校验它使用 `hstore` 后端    | `ServerOptions.java:602-609` |
 | graphspace                   | {graph}.properties     | DEFAULT        | PD 看到的图名的第一段                                             | `CoreOptions.java:679-685`   |
 
 `init-store.sh` 从不初始化 `hstore` 图。在开启的路径上，它扫描 `conf/graphs` 并跳过后端为 `hstore` 的每一个

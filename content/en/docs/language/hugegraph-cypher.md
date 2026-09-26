@@ -53,14 +53,18 @@ The examples below assume a graph with `person` vertices (`name`, `age`, `city` 
 ```cypher
 // All persons named "marko"
 MATCH (n:person) WHERE n.name = 'marko' RETURN n
+```
 
+```cypher
 // Projection with ordering and limit
 MATCH (n:person)
 WHERE n.age > 30
 RETURN n.name AS name, n.age AS age
 ORDER BY age DESC
 LIMIT 10
+```
 
+```cypher
 // Relationship pattern
 MATCH (a:person)-[:knows]->(b:person)
 WHERE a.name = 'marko'
@@ -72,7 +76,9 @@ RETURN b.name AS friend
 ```cypher
 // Create a vertex
 CREATE (n:person {name: 'josh', age: 32, city: 'beijing'})
+```
 
+```cypher
 // Create two vertices and an edge between them
 CREATE (a:person {name: 'peter'})-[:knows]->(b:person {name: 'lop'})
 ```
@@ -92,7 +98,9 @@ REMOVE n.city
 MATCH (a:person)-[r:knows]->(b:person)
 WHERE a.name = 'peter' AND b.name = 'lop'
 DELETE r
+```
 
+```cypher
 // Delete a vertex and all its edges
 MATCH (n:person) WHERE n.name = 'josh'
 DETACH DELETE n
@@ -101,7 +109,12 @@ DETACH DELETE n
 #### Aggregation
 
 ```cypher
+// Total count
 MATCH (n:person) RETURN count(n) AS total
+```
+
+```cypher
+// Grouped count
 MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
 ```
 
@@ -117,7 +130,7 @@ Every Cypher statement is translated to Gremlin internally. When a Cypher featur
 | `MATCH (n) DETACH DELETE n` | `g.V().drop()` |
 | `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
 
-Tip: `EXPLAIN MATCH (n:person) RETURN n` is accepted and returns the translated Gremlin in `result.data[0].translation` — the fastest way to obtain the equivalent traversal for the table above. `PROFILE` is not supported.
+Tip: `EXPLAIN MATCH (n:person) RETURN n` is parsed with the `EXPLAIN` option, and the translated Gremlin is expected in `result.data[0].translation` — translator-level behavior, not yet verified end-to-end on a server (see the [compatibility notes](/docs/language/cypher-compatibility/)). It remains the quickest way to draft the equivalent traversal for the table above. `PROFILE` is not supported.
 
 ### Known limitations
 

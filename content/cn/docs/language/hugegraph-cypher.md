@@ -53,14 +53,18 @@ ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.nam
 ```cypher
 // 所有名为 "marko" 的 person
 MATCH (n:person) WHERE n.name = 'marko' RETURN n
+```
 
+```cypher
 // 投影 + 排序 + 限制条数
 MATCH (n:person)
 WHERE n.age > 30
 RETURN n.name AS name, n.age AS age
 ORDER BY age DESC
 LIMIT 10
+```
 
+```cypher
 // 关系模式
 MATCH (a:person)-[:knows]->(b:person)
 WHERE a.name = 'marko'
@@ -72,7 +76,9 @@ RETURN b.name AS friend
 ```cypher
 // 创建顶点
 CREATE (n:person {name: 'josh', age: 32, city: 'beijing'})
+```
 
+```cypher
 // 创建两个顶点及它们之间的边
 CREATE (a:person {name: 'peter'})-[:knows]->(b:person {name: 'lop'})
 ```
@@ -92,7 +98,9 @@ REMOVE n.city
 MATCH (a:person)-[r:knows]->(b:person)
 WHERE a.name = 'peter' AND b.name = 'lop'
 DELETE r
+```
 
+```cypher
 // 删除顶点及其所有边
 MATCH (n:person) WHERE n.name = 'josh'
 DETACH DELETE n
@@ -101,7 +109,12 @@ DETACH DELETE n
 #### 聚合
 
 ```cypher
+// 总数
 MATCH (n:person) RETURN count(n) AS total
+```
+
+```cypher
+// 按城市分组计数
 MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
 ```
 
@@ -117,7 +130,7 @@ MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
 | `MATCH (n) DETACH DELETE n` | `g.V().drop()` |
 | `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
 
-提示：`EXPLAIN MATCH (n:person) RETURN n` 会被接受，并在 `result.data[0].translation` 中返回翻译后的 Gremlin —— 这是获得上表等价写法的最快方式。`PROFILE` 不受支持。
+提示：`EXPLAIN MATCH (n:person) RETURN n` 会以 `EXPLAIN` 选项解析，翻译后的 Gremlin 预期出现在 `result.data[0].translation` 中 —— 这是转译层行为，尚未在服务器上端到端验证（见[兼容性说明](/cn/docs/language/cypher-compatibility/)）。它仍是起草上表等价写法的最快方式。`PROFILE` 不受支持。
 
 ### 已知限制
 

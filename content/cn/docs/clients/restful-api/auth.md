@@ -6,8 +6,12 @@ description: "Authentication（认证鉴权）REST 接口:管理用户、角色�
 ---
 
 > **版本变更说明**:
-> - 1.7.0+: 图空间范围的 Auth API 路径使用 GraphSpace 格式，如 `/graphspaces/DEFAULT/auth/users`。资源 ID 与资源名一致；GraphSpace 用户组 ID 由服务端生成。用户组路径会因版本而异，见下文。
-> - 1.5.x 及更早: 图范围的 Auth API 路径包含 graph 名称，部分用户组和资源 ID 使用 `-69:grant`、`-77:grant` 这类格式。参考 [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
+> - 1.7.0+: 图空间范围的 Auth API 使用 GraphSpace 路径，如
+>   `/graphspaces/DEFAULT/auth/users`。资源 ID 与名称一致，GraphSpace 用户组 ID
+>   由服务端生成。用户组路径会因版本而异，见下文。
+> - 1.5.x 及更早：图范围 Auth API 路径包含 graph 名称；部分用户组和资源 ID
+>   使用 `-69:grant`、`-77:grant` 这类格式。参考
+>   [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)。
 >
 > 用户组路径会随版本变化。1.7.0 的 `GroupAPI` 挂载于 `/auth/groups`；
 > 1.5.x 使用 `/graphs/{graph}/auth/groups`。下文的 GraphSpace 路径
@@ -37,7 +41,9 @@ city: Beijing})
 
 ##### 接口说明：
 用户认证与权限控制的核心接口包括 5 类：UserAPI、GroupAPI、TargetAPI、BelongAPI、AccessAPI。除此之外，ManagerAPI 用于授予图空间级别的管理角色，LoginAPI 用于签发和校验 token，ProjectAPI 用于把多个图归为一组从而一次性授权。
-**注意**: 1.5.x 及更早版本中的部分用户组和资源 ID 使用 `-69:grant`、`-77:grant` 这类格式。GraphSpace 用户组 ID 由服务端生成，见下文。参考 [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)。
+**注意**: 1.5.x 及更早版本中的部分用户组和资源 ID 使用
+`-69:grant`、`-77:grant` 这类格式。GraphSpace 用户组 ID 由服务端生成，见下文。
+参考 [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)。
 
 ### 10.2 用户（User）API
 用户接口包括：创建用户，删除用户，修改用户，和查询用户相关信息接口。
@@ -685,7 +691,8 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/grant
 关联用户和用户组的关系，一个用户可以关联一个或者多个用户组。用户组拥有相关资源的权限，不同用户组的资源权限可以理解为不同的角色。即给用户关联角色。  
 关联角色接口包括：用户关联角色的创建、删除、修改和查询。
 
-> 下例中的用户组 ID 沿用 10.3 的示例返回值；实际调用时请使用自己创建响应中的 ID。后续请求请使用创建关联关系时返回的 `id`，并在 URL 路径中将 `>` 编码为 `%3E`。
+> 下例中的用户组 ID 沿用 10.3 的示例返回值，实际调用时请使用自己创建响应中的 ID。
+> 后续请求请使用创建关联关系响应中的 `id`，并在 URL 路径中将 `>` 编码为 `%3E`。
 
 #### 10.5.1 创建用户的关联角色
 
@@ -739,7 +746,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/boss-%3Eug-%3E~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
 ##### Response Status
@@ -758,7 +765,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/boss-%3Eug-%3E~hub
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/boss-%3Eug-%3E~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
 ##### Request Body
@@ -838,7 +845,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/boss-%3Eug-%3E~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
+GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
 ##### Response Status
@@ -864,7 +871,8 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/boss-%3Eug-%3E~hubble
 给用户组赋予资源的权限，主要包含：读操作 (READ)、写操作 (WRITE)、删除操作 (DELETE)、执行操作 (EXECUTE) 等。  
 赋权接口包括：赋权的创建、删除、修改和查询。
 
-> 下例沿用 10.3 创建的用户组 ID 和 10.4 创建的资源 ID。实际调用时请使用各自创建响应中的 ID；用户组 ID 由服务端生成。后续请求请复制创建赋权响应中的 `id`，并在 URL 路径中将 `>` 编码为 `%3E`。
+> 下例沿用 10.3 创建的用户组 ID 和 10.4 创建的资源 ID。实际调用时请使用各自创建响应中的 ID；
+> 用户组 ID 由服务端生成。后续请求请复制创建赋权响应中的 `id`，并在 URL 路径中将 `>` 编码为 `%3E`。
 
 #### 10.6.1 创建赋权 (用户组赋予资源的权限)
 
@@ -927,7 +935,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94-%3E1-%3Eall
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
 ##### Response Status
@@ -946,7 +954,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/~hubble_role:v1:R
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94-%3E1-%3Eall
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
 ##### Request Body
@@ -1027,7 +1035,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94-%3E1-%3Eall
+GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
 ##### Response Status

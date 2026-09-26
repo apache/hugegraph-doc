@@ -24,6 +24,8 @@ Computer 支持从 HugeGraph 或 HDFS 读取图数据，并可将结果写回 Hu
 | etcd | `http://127.0.0.1:2379` | BSP 作业协调；以 `bsp.etcd_endpoints` 为准。 |
 | Computer master RPC | TCP `8190` | worker 连接 master；发行配置中的端口。 |
 | Computer worker 数据传输 | 本地默认由系统分配；K8s Operator 默认 `8099` | worker 之间传输顶点和消息。跨主机时需保证公告地址和端口可达。 |
+| MinIO（K8s 清单） | HTTP `9000` | 用于输入分区快照；清单会部署服务，作业默认 `snapshot.write=false`、`snapshot.load=false`，不启用快照时不需要作业访问它。 |
+| cert-manager（K8s） | 集群内服务 | Operator 清单使用 `cert-manager.io/v1` 的 `Certificate`、`Issuer` 和 CA 注入功能；部署 Operator 前必须先安装兼容版本。 |
 | HDFS | 按集群配置 | 仅当输入或输出配置为 HDFS 时需要。 |
 
 Kubernetes 作业中的 `hugegraph.url` 必须是各计算 Pod 都能访问的地址，不能填仅在个人电脑上可用的 `localhost`。如果启用了 HugeGraph 认证，应在配置中填写用户名和密码，并为 REST 查询使用对应凭据。
@@ -79,7 +81,28 @@ bin/start-computer.sh -d local -r worker
 
 master 会等待配置要求的 worker 注册后运行作业。查看两个终端输出；默认日志配置也会在当前发行目录的 `logs/` 下写入 master 和 worker 日志。只有进程启动成功并不代表计算完成，应确认 master 日志中输入、超步计算和输出阶段均正常结束。
 
-PageRank 参数类将结果写回 HugeGraph，属性名为 `page_rank`。若图当前读模式不显示 OLAP 写入，可由管理员把读模式设为 `ALL`：
+PageRank 参数类将结果写回 HugeGraph，属性名为 `page_rank`。运行前先检查图中每个目标顶点类型都允许此属性；Computer 会按 `DOUBLE`、`OLAP_COMMON` 创建属性键，但不会把它加入顶点类型。若属性键不存在，可先创建：
+
+```bash
+curl --fail --request POST \
+  --header 'Content-Type: application/json' \
+  --data '{"name":"page_rank","data_type":"DOUBLE","cardinality":"SINGLE","write_type":"OLAP_COMMON"}' \
+  'http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/propertykeys'
+```
+
+如果该属性键已存在，确认其类型为 `DOUBLE` 且 `write_type` 为 `OLAP_COMMON`。先列出图中的顶点类型，再对每个要计算的类型添加可空的 `page_rank` 属性；把示例中的 `person` 替换为实际类型名：
+
+```bash
+curl --fail --compressed \
+  'http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels'
+
+curl --fail --request PUT \
+  --header 'Content-Type: application/json' \
+  --data '{"name":"person","properties":["page_rank"],"nullable_keys":["page_rank"]}' \
+  'http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels/person?action=append'
+```
+
+若图当前读模式不显示 OLAP 写入，可由管理员把读模式设为 `ALL`：
 
 ```bash
 curl --fail --request PUT \
@@ -95,19 +118,32 @@ curl --fail --compressed \
   'http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?limit=3'
 ```
 
-需要认证时，在 `curl` 命令中添加 `--user "$HG_USER:$HG_PASSWORD"`。读模式接口和权限说明见[图读模式 REST API](/cn/docs/clients/restful-api/graphs/#634-设置某个图的读模式该操作需要管理员权限)。
+需要认证时，在 `curl` 命令中添加 `--user "$HG_USER:$HG_PASSWORD"`。读模式接口和权限说明见[图读模式 REST API](/cn/docs/clients/restful-api/graphs/#634-设置某个图的读模式)。
 
 ## 5. 在 Kubernetes 中运行 PageRank
 
-先确保 HugeGraph-Server 对计算 Pod 可达。Computer Operator 清单会部署 Operator 和 etcd；清单配置的 etcd 服务地址会由 Operator 注入作业配置。CRD 和 Operator 清单应使用同一 Computer 发行版本。下面以 1.7.0 的 `v1` CRD 为例：
+先确保 HugeGraph-Server 对计算 Pod 可达。Computer Operator 清单会部署 Operator、etcd 和 MinIO（供快照功能使用），但不会安装 cert-manager。清单包含 cert-manager `Certificate`、`Issuer` 资源和 CA 注入标注，因此应用 Operator 清单前必须安装与集群版本兼容的 cert-manager，并等待 controller、cainjector 和 webhook 就绪。以下命令以适配 Kubernetes 1.33–1.36 的 cert-manager 1.21.2 为例，其他集群版本应按 [cert-manager 支持矩阵](https://cert-manager.io/docs/releases/)选择兼容版本。CRD 和 Operator 清单应使用同一 Computer 发行版本。下面以 1.7.0 的 `v1` CRD 为例：
 
 ```bash
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.21.2/cert-manager.yaml
+kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s
+kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=120s
+kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
+
 kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/1.7.0/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
 kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/1.7.0/computer/computer-k8s-operator/manifest/hugegraph-computer-operator.yaml
 kubectl get pods -n hugegraph-computer-operator-system --watch
 ```
 
-确认 Operator 和 etcd Pod 已就绪后，提交 `HugeGraphComputerJob`。替换镜像为集群可拉取且包含对应版本运行时与内置算法 JAR 的镜像，并把 HugeGraph 地址改成 Pod 可访问的服务地址。分区数必须不小于 worker 数量。
+确认 cert-manager、Operator 和 etcd Pod 已就绪后，提交 `HugeGraphComputerJob`。替换镜像为集群可拉取且包含对应版本运行时与内置算法 JAR 的镜像，并把 HugeGraph 地址改成 Pod 可访问的服务地址。分区数必须不小于 worker 数量。下面为小图示例设置 Master `1Gi`、Worker `2Gi` 内存及 `500m` CPU 限制；实际作业应按图规模和运行配置调整。
+
+Operator 清单默认 `AUTO_DESTROY_POD=true`，作业完成后会删除 CR 和计算资源。短作业可能在用户读取最终状态前就被清理。需要保留 CR、Pod 和日志时，先在 Java Operator 的 `controller` 容器设置 `AUTO_DESTROY_POD=false`；同一 Deployment 中名为 `manager` 的 Go 容器不是此配置入口：
+
+```bash
+kubectl set env deployment/hugegraph-computer-operator-controller-manager \
+  -n hugegraph-computer-operator-system \
+  --containers=controller AUTO_DESTROY_POD=false
+```
 
 ```yaml
 apiVersion: operator.hugegraph.apache.org/v1
@@ -122,6 +158,10 @@ spec:
   jarFile: /hugegraph/hugegraph-computer/algorithm/builtin-algorithm.jar
   pullPolicy: IfNotPresent
   workerInstances: 1
+  masterCpu: 500m
+  workerCpu: 500m
+  masterMemory: 1Gi
+  workerMemory: 2Gi
   computerConf:
     job.partitions_count: "1"
     algorithm.params_class: org.apache.hugegraph.computer.algorithm.centrality.pagerank.PageRankParams
@@ -142,7 +182,16 @@ kubectl logs --follow <master-pod-name> -n hugegraph-computer-operator-system
 kubectl logs --follow <worker-pod-name> -n hugegraph-computer-operator-system
 ```
 
-随附 Operator 清单默认启用 `AUTO_DESTROY_POD=true`。Operator 观察到作业结束后会删除作业 CR 及其计算资源，因此应在运行期间观察状态并收集日志。需要保留 CR 和 Pod 以便排查时，在 Operator 部署中将 `AUTO_DESTROY_POD` 设为 `false`；保留后可用 `kubectl get hcjob pagerank-sample -n hugegraph-computer-operator-system -o yaml` 查看最终状态。PageRank 写回 HugeGraph 后按上一节设置读模式并查询。若改用 HDFS 输出，结果位于 `output.hdfs_path_prefix/<job.id>/` 下，文件名和分区布局由作业配置决定。
+保留 CR 和 Pod 时，可在确认 `SUCCEEDED` 并查询完写回结果后手动清理；清理 CR 会让 Operator 删除关联计算资源。需要恢复清理策略时，在 Java `controller` 容器重新设为 `true`：
+
+```bash
+kubectl delete hcjob pagerank-sample -n hugegraph-computer-operator-system
+kubectl set env deployment/hugegraph-computer-operator-controller-manager \
+  -n hugegraph-computer-operator-system \
+  --containers=controller AUTO_DESTROY_POD=true
+```
+
+PageRank 写回 HugeGraph 后按上一节设置读模式并查询。若改用 HDFS 输出，结果位于 `output.hdfs_path_prefix/<job.id>/` 下，文件名和分区布局由作业配置决定。
 
 完整 CRD 字段见[Computer 配置参考中的 CRD 说明](/cn/docs/quickstart/computing/hugegraph-computer-config/#hugegraph-computer-crd)。
 

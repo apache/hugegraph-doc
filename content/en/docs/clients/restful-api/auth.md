@@ -5,16 +5,15 @@ weight: 16
 description: "Authentication REST API: Manage users, roles, permissions, and access control to implement fine-grained graph data security."
 ---
 
-> **Version Change Notice**:
-> - 1.7.0+: GraphSpace-scoped Auth paths use `/graphspaces/{graphspace}/auth/...`; target IDs match names, while GraphSpace group IDs are server-generated.
-> - 1.5.x and earlier: Graph-scoped Auth paths include the graph name; see [1.5.x REST API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0).
+> **Version Change Notice**: This page tracks current `master`. For release behavior, see
+> [HugeGraph 1.7 REST API](/versions/1.7/docs/clients/restful-api/auth/).
 >
-> On 1.7.0, `GroupAPI` is `/auth/groups`; 1.5.x used `/graphs/{graph}/auth/groups`. The GraphSpace route was added by
-> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) after 1.7.0 and coexists with `/auth/groups` on `master`.
+> On 1.7.0, `GroupAPI` is served at `/auth/groups`. Current `master` also serves GraphSpace groups at
+> `/graphspaces/{graphspace}/auth/groups`, added by [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096).
 >
-> On 1.7.0 the GraphSpace route is unregistered. `AuthenticationFilter` is `@PreMatching`, so it runs before route matching:
-> missing or invalid credentials can return 401; an IP outside the white list can return 403. If the filter accepts the
-> request, the unmatched path returns 404. A 404 can also occur when authentication is disabled.
+> On 1.7.0, the GraphSpace group route is unregistered. `AuthenticationFilter` is `@PreMatching`, so it runs before route
+> matching: missing or invalid credentials can return 401; a non-whitelisted IP can return 403; an accepted request reaches
+> route matching and returns 404. A 404 can also occur when authentication is disabled.
 
 ### 10.1 User Authentication and Access Control
 
@@ -29,8 +28,6 @@ Description: User 'boss' has read permission for people in the 'graph1' graph fr
 
 ##### Interface Description:
 The core of user authentication and access control is 5 categories: UserAPI, GroupAPI, TargetAPI, BelongAPI, AccessAPI. Alongside them, ManagerAPI grants graphspace-level manager roles, LoginAPI issues and verifies tokens, and ProjectAPI groups several graphs so that permissions can be granted for the whole set at once.
-**Note** Legacy 1.5.x group/target IDs include `-69:grant` and `-77:grant`; GraphSpace group IDs are server-generated.
-
 ### 10.2 User (User) API
 The user interface includes APIs for creating users, deleting users, modifying users, and querying user-related information.
 
@@ -253,12 +250,12 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 Groups grant corresponding resource permissions, and users are assigned to different groups, thereby having different resource permissions.
 The group interface includes APIs for creating groups, deleting groups, modifying groups, and querying group-related information.
 
-> `GroupAPI` remains at `/auth/groups`, the only group route on 1.7.0. The `/graphspaces/DEFAULT/auth/groups` route was
-> added by [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) and coexists with it on `master`.
+> `GroupAPI` remains at `/auth/groups`, the only group route on 1.7.0. Current `master` also serves `/graphspaces/DEFAULT/auth/groups`,
+> added by [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096).
 >
 > The GraphSpace API generates each persisted group name as `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 hex digits.
 > For `DEFAULT`, the name and ID look like `~hubble_role:v1:REVGQVVMVA:<32 hex>`; request `group_name` is only a client
-> label. Use the ID from the create response below; `-69:all` is a 1.5.x format, not a GraphSpace group ID.
+> label. Use the ID returned by the create response below.
 
 #### 10.3.1 Create Group
 

@@ -5,15 +5,14 @@ weight: 16
 description: "Authentication（认证鉴权）REST 接口:管理用户、角色、权限和访问控制,实现细粒度的图数据安全机制。"
 ---
 
-> **版本变更说明**:
-> - 1.7.0+: 图空间范围的 Auth API 使用 GraphSpace 路径；资源 ID 与名称一致，GraphSpace 用户组 ID 由服务端生成。
-> - 1.5.x 及更早：图范围 Auth API 路径包含 graph 名称；部分用户组/资源 ID 使用旧格式，见 [1.5.x API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)。
+> **版本说明**：本文跟随当前 `master`；1.7 发布版行为见
+> [HugeGraph 1.7 REST API](/versions/1.7/cn/docs/clients/restful-api/auth/)。
 >
-> 1.7.0 的 `GroupAPI` 挂载于 `/auth/groups`，1.5.x 使用 `/graphs/{graph}/auth/groups`。GraphSpace 用户组路由由
-> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 在 1.7.0 后加入，并与当前 `master` 的 `/auth/groups` 并存。
+> 1.7.0 的 `GroupAPI` 挂载于 `/auth/groups`。当前 `master` 还通过
+> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 提供 `/graphspaces/{graphspace}/auth/groups`。
 >
-> 1.7.0 上 GraphSpace 路由未注册。`AuthenticationFilter` 标注了 `@PreMatching`，会在路由匹配前执行：缺少或无效凭据
-> 可能返回 401；IP 白名单拒绝可能返回 403。过滤器接受请求后，未匹配的路径返回 404；关闭鉴权时也可能返回 404。
+> 1.7.0 上 GraphSpace 用户组路由未注册。`AuthenticationFilter` 标注了 `@PreMatching`，会在路由匹配前执行：
+> 缺少或无效凭据可能返回 401，IP 白名单拒绝可能返回 403；过滤器接受请求后，未匹配的路径返回 404。关闭鉴权时也可能返回 404。
 
 ### 10.1 用户认证与权限控制
 
@@ -33,8 +32,6 @@ city: Beijing})
 
 ##### 接口说明：
 用户认证与权限控制的核心接口包括 5 类：UserAPI、GroupAPI、TargetAPI、BelongAPI、AccessAPI。除此之外，ManagerAPI 用于授予图空间级别的管理角色，LoginAPI 用于签发和校验 token，ProjectAPI 用于把多个图归为一组从而一次性授权。
-**注意**: 1.5.x 及更早版本中的用户组/资源 ID 使用 `-69:grant`、`-77:grant` 等旧格式；GraphSpace 用户组 ID 由服务端生成。
-
 ### 10.2 用户（User）API
 用户接口包括：创建用户，删除用户，修改用户，和查询用户相关信息接口。
 
@@ -256,12 +253,12 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 用户组会赋予相应的资源权限，用户会被分配不同的用户组，即可拥有不同的资源权限。  
 用户组接口包括：创建用户组，删除用户组，修改用户组，和查询用户组相关信息接口。  
 
-> `GroupAPI` 仍挂载在 `/auth/groups`，这是 1.7.0 上唯一的用户组路由。`/graphspaces/DEFAULT/auth/groups` 由
-> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 加入，当前 `master` 同时提供这两种路径。
+> `GroupAPI` 仍挂载在 `/auth/groups`，这是 1.7.0 上唯一的用户组路由。当前 `master` 还提供
+> `/graphspaces/DEFAULT/auth/groups`，该路由由 [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 加入。
 >
 > GraphSpace 用户组名由服务端按 `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 位十六进制生成。
 > `DEFAULT` 中的名称和 ID 形如 `~hubble_role:v1:REVGQVVMVA:<32 hex>`；`group_name` 仅是客户端标签。下文请使用
-> 创建响应中的 ID；`-69:all` 是 1.5.x 格式，不能标识 GraphSpace 用户组。
+> 创建响应中的 ID。
 
 #### 10.3.1 创建用户组
 

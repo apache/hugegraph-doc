@@ -6,22 +6,14 @@ description: "Authentication（认证鉴权）REST 接口:管理用户、角色�
 ---
 
 > **版本变更说明**:
-> - 1.7.0+: 图空间范围的 Auth API 使用 GraphSpace 路径，如
->   `/graphspaces/DEFAULT/auth/users`。资源 ID 与名称一致，GraphSpace 用户组 ID
->   由服务端生成。用户组路径会因版本而异，见下文。
-> - 1.5.x 及更早：图范围 Auth API 路径包含 graph 名称；部分用户组和资源 ID
->   使用 `-69:grant`、`-77:grant` 这类格式。参考
->   [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)。
+> - 1.7.0+: 图空间范围的 Auth API 使用 GraphSpace 路径；资源 ID 与名称一致，GraphSpace 用户组 ID 由服务端生成。
+> - 1.5.x 及更早：图范围 Auth API 路径包含 graph 名称；部分用户组/资源 ID 使用旧格式，见 [1.5.x API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)。
 >
-> 用户组路径会随版本变化。1.7.0 的 `GroupAPI` 挂载于 `/auth/groups`；
-> 1.5.x 使用 `/graphs/{graph}/auth/groups`。下文的 GraphSpace 路径
-> `/graphspaces/{graphspace}/auth/groups` 由
-> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 在 1.7.0 发布后加入，
-> 在当前 `master` 中与 `/auth/groups` 并存。
+> 1.7.0 的 `GroupAPI` 挂载于 `/auth/groups`，1.5.x 使用 `/graphs/{graph}/auth/groups`。GraphSpace 用户组路由由
+> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 在 1.7.0 后加入，并与当前 `master` 的 `/auth/groups` 并存。
 >
-> 在 1.7.0 上，GraphSpace 路由未注册。`AuthenticationFilter` 标注了 `@PreMatching`，
-> 会在路由匹配前执行：缺少或无效凭据可能返回 401，IP 不在白名单内可能返回 403。
-> 如果过滤器接受请求，后续路由匹配会因该路径未注册而返回 404；关闭鉴权时也可能返回 404。
+> 1.7.0 上 GraphSpace 路由未注册。`AuthenticationFilter` 标注了 `@PreMatching`，会在路由匹配前执行：缺少或无效凭据
+> 可能返回 401；IP 白名单拒绝可能返回 403。过滤器接受请求后，未匹配的路径返回 404；关闭鉴权时也可能返回 404。
 
 ### 10.1 用户认证与权限控制
 
@@ -41,9 +33,7 @@ city: Beijing})
 
 ##### 接口说明：
 用户认证与权限控制的核心接口包括 5 类：UserAPI、GroupAPI、TargetAPI、BelongAPI、AccessAPI。除此之外，ManagerAPI 用于授予图空间级别的管理角色，LoginAPI 用于签发和校验 token，ProjectAPI 用于把多个图归为一组从而一次性授权。
-**注意**: 1.5.x 及更早版本中的部分用户组和资源 ID 使用
-`-69:grant`、`-77:grant` 这类格式。GraphSpace 用户组 ID 由服务端生成，见下文。
-参考 [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)。
+**注意**: 1.5.x 及更早版本中的用户组/资源 ID 使用 `-69:grant`、`-77:grant` 等旧格式；GraphSpace 用户组 ID 由服务端生成。
 
 ### 10.2 用户（User）API
 用户接口包括：创建用户，删除用户，修改用户，和查询用户相关信息接口。
@@ -266,16 +256,12 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 用户组会赋予相应的资源权限，用户会被分配不同的用户组，即可拥有不同的资源权限。  
 用户组接口包括：创建用户组，删除用户组，修改用户组，和查询用户组相关信息接口。  
 
-> `GroupAPI` 仍挂载在 `/auth/groups`。这是 1.7.0 上唯一的用户组路由；下文的
-> `/graphspaces/DEFAULT/auth/groups` 由
-> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 加入，当前 `master`
-> 同时提供这两种路径。
+> `GroupAPI` 仍挂载在 `/auth/groups`，这是 1.7.0 上唯一的用户组路由。`/graphspaces/DEFAULT/auth/groups` 由
+> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 加入，当前 `master` 同时提供这两种路径。
 >
-> 在 GraphSpace 形式下，持久化的用户组名由服务端生成：
-> `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 位十六进制，
-> 因此 `DEFAULT` 中的用户组形如 `~hubble_role:v1:REVGQVVMVA:<32 位十六进制>`，其 `id` 即该值。
-> 请求体中的 `group_name` 仅是客户端标签。下文各请求请使用创建响应返回的 id；
-> `-69:all` 是 1.5.x 的格式，在 GraphSpace 用户组中不标识任何对象。
+> GraphSpace 用户组名由服务端按 `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 位十六进制生成。
+> `DEFAULT` 中的名称和 ID 形如 `~hubble_role:v1:REVGQVVMVA:<32 hex>`；`group_name` 仅是客户端标签。下文请使用
+> 创建响应中的 ID；`-69:all` 是 1.5.x 格式，不能标识 GraphSpace 用户组。
 
 #### 10.3.1 创建用户组
 
@@ -691,8 +677,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/grant
 关联用户和用户组的关系，一个用户可以关联一个或者多个用户组。用户组拥有相关资源的权限，不同用户组的资源权限可以理解为不同的角色。即给用户关联角色。  
 关联角色接口包括：用户关联角色的创建、删除、修改和查询。
 
-> 下例中的用户组 ID 沿用 10.3 的示例返回值，实际调用时请使用自己创建响应中的 ID。
-> 后续请求请使用创建关联关系响应中的 `id`，并在 URL 路径中将 `>` 编码为 `%3E`。
+> 用户组 ID 沿用 10.3 示例；实际调用时请使用自己的响应 ID。后续请求使用 Belong 响应中的 `id`，并将 URL 中的 `>` 编码为 `%3E`。
 
 #### 10.5.1 创建用户的关联角色
 
@@ -871,8 +856,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 给用户组赋予资源的权限，主要包含：读操作 (READ)、写操作 (WRITE)、删除操作 (DELETE)、执行操作 (EXECUTE) 等。  
 赋权接口包括：赋权的创建、删除、修改和查询。
 
-> 下例沿用 10.3 创建的用户组 ID 和 10.4 创建的资源 ID。实际调用时请使用各自创建响应中的 ID；
-> 用户组 ID 由服务端生成。后续请求请复制创建赋权响应中的 `id`，并在 URL 路径中将 `>` 编码为 `%3E`。
+> 使用 10.3 返回的用户组 ID 和 10.4 返回的资源 ID；实际调用时请使用自己的响应值。后续请求使用 Access 响应中的 `id`，并将 URL 中的 `>` 编码为 `%3E`。
 
 #### 10.6.1 创建赋权 (用户组赋予资源的权限)
 

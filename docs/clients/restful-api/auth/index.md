@@ -8,9 +8,15 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-> **Version Change Notice**:
-> - 1.7.0+: Auth API paths use GraphSpace format, such as `/graphspaces/DEFAULT/auth/users`, and group/target IDs match their names (e.g., `admin`)
-> - 1.5.x and earlier: Auth API paths include graph name, and group/target IDs use format like `-69:grant`. See [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
+> **Version Change Notice**: This page tracks current `master`. For release behavior, see
+> [HugeGraph 1.7 REST API](https://hugegraph.apache.org/versions/1.7/docs/clients/restful-api/auth/).
+>
+> On 1.7.0, `GroupAPI` is served at `/auth/groups`. Current `master` also serves GraphSpace groups at
+> `/graphspaces/{graphspace}/auth/groups`, added by [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096).
+>
+> On 1.7.0, the GraphSpace group route is unregistered. `AuthenticationFilter` is `@PreMatching`, so it runs before route
+> matching: missing or invalid credentials can return 401; a non-whitelisted IP can return 403; an accepted request reaches
+> route matching and returns 404. A 404 can also occur when authentication is disabled.
 
 ### 10.1 User Authentication and Access Control
 
@@ -25,8 +31,6 @@ Description: User 'boss' has read permission for people in the 'graph1' graph fr
 
 ##### Interface Description:
 The core of user authentication and access control is 5 categories: UserAPI, GroupAPI, TargetAPI, BelongAPI, AccessAPI. Alongside them, ManagerAPI grants graphspace-level manager roles, LoginAPI issues and verifies tokens, and ProjectAPI groups several graphs so that permissions can be granted for the whole set at once.
-**Note** Before 1.5.0, the format of ids such as group/target was similar to -69:grant. After 1.7.0, the id and name were consistent. Such as admin [HugeGraph 1.5 x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
-
 ### 10.2 User (User) API
 The user interface includes APIs for creating users, deleting users, modifying users, and querying user-related information.
 
@@ -249,11 +253,18 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 Groups grant corresponding resource permissions, and users are assigned to different groups, thereby having different resource permissions.
 The group interface includes APIs for creating groups, deleting groups, modifying groups, and querying group-related information.
 
+> `GroupAPI` remains at `/auth/groups`, the only group route on 1.7.0. Current `master` also serves `/graphspaces/DEFAULT/auth/groups`,
+> added by [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096).
+>
+> The GraphSpace API generates each persisted group name as `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 hex digits.
+> For `DEFAULT`, the name and ID look like `~hubble_role:v1:REVGQVVMVA:<32 hex>`; request `group_name` is only a client
+> label. Use the ID returned by the create response below.
+
 #### 10.3.1 Create Group
 
 ##### Params
 
-- group_name: Group name
+- group_name: Client label only — the GraphSpace API generates the persisted name
 - group_description: Group description
 
 ##### Request Body
@@ -283,10 +294,10 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ```json
 {
     "group_creator": "admin",
-    "group_name": "all",
+    "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_create": "2020-11-11 15:46:08.791",
     "group_update": "2020-11-11 15:46:08.791",
-    "id": "-69:all",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_description": "group can do anything"
 }
 ```
@@ -301,7 +312,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Response Status
@@ -319,14 +330,15 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Request Body
-Modify group_description
+Modify group_description. On the GraphSpace form `group_name` is omitted here, or equal
+to the generated name: any other value is rejected with "The name of group can't be
+updated".
 ```json
 {
-    "group_name": "grant",
     "group_description": "grant"
 }
 ```
@@ -343,10 +355,10 @@ The returned result is the entire group object including the modified content.
 ```json
 {
     "group_creator": "admin",
-    "group_name": "grant",
+    "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_create": "2020-11-12 09:50:58.458",
     "group_update": "2020-11-12 09:57:58.155",
-    "id": "-69:grant",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_description": "grant"
 }
 ```
@@ -376,10 +388,10 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
     "groups": [
         {
             "group_creator": "admin",
-            "group_name": "all",
+            "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
             "group_create": "2020-11-11 15:46:08.791",
             "group_update": "2020-11-11 15:46:08.791",
-            "id": "-69:all",
+            "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
             "group_description": "group can do anything"
         }
     ]
@@ -395,7 +407,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:all
+GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Response Status
@@ -409,10 +421,10 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:all
 ```json
 {
     "group_creator": "admin",
-    "group_name": "all",
+    "group_name": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_create": "2020-11-11 15:46:08.791",
     "group_update": "2020-11-11 15:46:08.791",
-    "id": "-69:all",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "group_description": "group can do anything"
 }
 ```
@@ -481,7 +493,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/targets
             "properties": null
         }
     ],
-    "id": "-77:all",
+    "id": "all",
     "target_update": "2020-11-11 15:32:01.192"
 }
 ```
@@ -495,7 +507,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/targets
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/gremlin
 ```
 
 ##### Response Status
@@ -513,7 +525,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/gremlin
 ```
 
 ##### Request Body
@@ -554,7 +566,7 @@ The response contains the entire target group object, including the modified con
             "properties": null
         }
     ],
-    "id": "-77:gremlin",
+    "id": "gremlin",
     "target_update": "2020-11-12 09:37:12.780"
 }
 ```
@@ -595,7 +607,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
                     "properties": null
                 }
             ],
-            "id": "-77:all",
+            "id": "all",
             "target_update": "2020-11-11 15:32:01.192"
         },
         {
@@ -611,7 +623,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
                     "properties": null
                 }
             ],
-            "id": "-77:grant",
+            "id": "grant",
             "target_update": "2020-11-11 15:43:24.841"
         }
     ]
@@ -627,7 +639,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:grant
+GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/grant
 ```
 
 ##### Response Status
@@ -652,7 +664,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:grant
             "properties": null
         }
     ],
-    "id": "-77:grant",
+    "id": "grant",
     "target_update": "2020-11-11 15:43:24.841"
 }
 ```
@@ -661,6 +673,8 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:grant
 
 The association between users and user groups allows a user to be associated with one or more user groups. User groups have permissions for related resources, and the permissions for different user groups can be understood as different roles. In other words, users are associated with roles.  
 The API for associating roles includes creating, deleting, modifying, and querying the association of roles for users.
+
+> Use your actual group ID from 10.3. For later requests, use the Belong response `id` and URL-encode `>` as `%3E` in URLs.
 
 #### 10.5.1 Create an Association of Roles for a User
 
@@ -675,7 +689,7 @@ The API for associating roles includes creating, deleting, modifying, and queryi
 ```json
 {
     "user": "boss",
-    "group": "-69:all"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94"
 }
 ```
 
@@ -699,9 +713,9 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/belongs
     "belong_create": "2020-11-11 16:19:35.422",
     "belong_creator": "admin",
     "belong_update": "2020-11-11 16:19:35.422",
-    "id": "Sboss>-82>>S-69:all",
+    "id": "boss->ug->~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "user": "boss",
-    "group": "-69:all"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94"
 }
 ```
 
@@ -714,7 +728,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:grant
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
 ##### Response Status
@@ -734,7 +748,7 @@ An association of roles can only be modified for its description. The `user` and
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:grant
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
 ##### Request Body
@@ -759,9 +773,9 @@ The response includes the modified content as well as the entire association of 
     "belong_create": "2020-11-12 10:40:21.720",
     "belong_creator": "admin",
     "belong_update": "2020-11-12 10:42:47.265",
-    "id": "Sboss>-82>>S-69:grant",
+    "id": "boss->ug->~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "user": "boss",
-    "group": "-69:grant"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94"
 }
 ```
 
@@ -797,9 +811,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs
             "belong_create": "2020-11-11 16:19:35.422",
             "belong_creator": "admin",
             "belong_update": "2020-11-11 16:19:35.422",
-            "id": "Sboss>-82>>S-69:all",
+            "id": "boss->ug->~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
             "user": "boss",
-            "group": "-69:all"
+            "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94"
         }
     ]
 }
@@ -814,7 +828,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:all
+GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
 ##### Response Status
@@ -830,15 +844,17 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:all
     "belong_create": "2020-11-11 16:19:35.422",
     "belong_creator": "admin",
     "belong_update": "2020-11-11 16:19:35.422",
-    "id": "Sboss>-82>>S-69:all",
+    "id": "boss->ug->~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
     "user": "boss",
-    "group": "-69:all"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94"
 }
 ```
 
 ### 10.6 Authorization (Access) API
 Grant permissions to user groups for resources, including operations such as READ, WRITE, DELETE, EXECUTE, etc.
 The authorization API includes: creating, deleting, modifying, and querying permissions.
+
+> Use your actual group ID from 10.3 and target ID from 10.4. For later requests, use the Access response `id` and URL-encode `>` as `%3E` in URLs.
 
 #### 10.6.1 Create Authorization (Granting permissions to user groups for resources)
 
@@ -859,8 +875,8 @@ Access permissions:
 
 ```json
 {
-    "group": "-69:all",
-    "target": "-77:all",
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
+    "target": "all",
     "access_permission": "READ"
 }
 ```
@@ -883,11 +899,11 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 {
     "access_permission": "READ",
     "access_create": "2020-11-11 15:54:54.008",
-    "id": "S-69:all>-88>11>S-77:all",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94->1->all",
     "access_update": "2020-11-11 15:54:54.008",
     "access_creator": "admin",
-  "group": "-69:all",
-  "target": "-77:all"
+  "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
+  "target": "all"
 }
 ```
 
@@ -900,7 +916,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S-77:all
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
 ##### Response Status
@@ -920,7 +936,7 @@ Authorization can only be modified for its description. User group, resource, an
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S-77:all
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
 ##### Request Body
@@ -946,13 +962,13 @@ The response includes the modified content as well as the entire authorization o
 ```json
 {
   "access_description": "test",
-  "access_permission": "WRITE",
+  "access_permission": "READ",
   "access_create": "2020-11-12 10:12:03.074",
-  "id": "S-69:all>-88>12>S-77:all",
+  "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94->1->all",
   "access_update": "2020-11-12 10:16:18.637",
   "access_creator": "admin",
-  "group": "-69:all",
-  "target": "-77:all"
+  "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
+  "target": "all"
 }
 ```
 
@@ -986,11 +1002,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses
     {
       "access_permission": "READ",
       "access_create": "2020-11-11 15:54:54.008",
-      "id": "S-69:all>-88>11>S-77:all",
+      "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94->1->all",
       "access_update": "2020-11-11 15:54:54.008",
       "access_creator": "admin",
-      "group": "-69:all",
-      "target": "-77:all"
+      "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
+      "target": "all"
     }
   ]
 }
@@ -1005,7 +1021,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>11>S-77:all
+GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
 ##### Response Status
@@ -1020,11 +1036,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>11>S-77
 {
   "access_permission": "READ",
   "access_create": "2020-11-11 15:54:54.008",
-  "id": "S-69:all>-88>11>S-77:all",
+  "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94->1->all",
   "access_update": "2020-11-11 15:54:54.008",
   "access_creator": "admin",
-    "group": "-69:all",
-    "target": "-77:all"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
+    "target": "all"
 }
 ```
 

@@ -54,9 +54,6 @@ Toolchain 的主要组件如下：
 
 下图保留作历史参考，其中 Server 同时承担 OLTP 与 OLAP、以及多种旧后端的标注不代表 HugeGraph 1.7.0 的当前实现。
 
-<details>
-<summary>展开旧版架构图</summary>
-
-<img src="/docs/images/design/architectural-revised.png" alt="旧版 HugeGraph 架构图，仅用于历史参考">
-
-</details>
+> [!DETAILS]- 展开旧版架构图
+>
+> ![旧版 HugeGraph 架构图，仅用于历史参考](/docs/images/design/architectural-revised.png)

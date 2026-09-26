@@ -6,16 +6,18 @@ description: "Authentication（认证鉴权）REST 接口:管理用户、角色�
 ---
 
 > **版本变更说明**:
-> - 1.7.0+: Auth API 路径使用 GraphSpace 格式，如 `/graphspaces/DEFAULT/auth/users`，且 group/target 等 id 格式与 name 一致（如 `admin`）
-> - 1.5.x 及更早: Auth API 路径包含 graph 名称，group/target 等 id 格式类似 `-69:grant`。参考 [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
+> - 1.7.0+: 图空间范围的 Auth API 路径使用 GraphSpace 格式，如 `/graphspaces/DEFAULT/auth/users`。资源 ID 与资源名一致；GraphSpace 用户组 ID 由服务端生成。用户组路径会因版本而异，见下文。
+> - 1.5.x 及更早: 图范围的 Auth API 路径包含 graph 名称，部分用户组和资源 ID 使用 `-69:grant`、`-77:grant` 这类格式。参考 [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
 >
-> 用户组路径在 1.7.0 上是例外：该版本的 `GroupAPI` 挂载于 `/auth/groups`，不带 GraphSpace 前缀，
-> 而 1.5.x 的用户组路径与其他 Auth API 一样带有 graph 名称（`/graphs/{graph}/auth/groups`）。
-> 下文的 `/graphspaces/{graphspace}/auth/groups` 形式需要包含
-> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 的构建，晚于 1.7.0 发布版。
-> 在 1.7.0 上该路由并未注册，而不是直接返回 404：`AuthenticationFilter` 标注了 `@PreMatching`，
-> 在路由匹配之前执行，开启鉴权时会先返回 401（缺少凭据）或 403（IP 不在白名单内），
-> 只在关闭鉴权时才返回 404。
+> 用户组路径会随版本变化。1.7.0 的 `GroupAPI` 挂载于 `/auth/groups`；
+> 1.5.x 使用 `/graphs/{graph}/auth/groups`。下文的 GraphSpace 路径
+> `/graphspaces/{graphspace}/auth/groups` 由
+> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 在 1.7.0 发布后加入，
+> 在当前 `master` 中与 `/auth/groups` 并存。
+>
+> 在 1.7.0 上，GraphSpace 路由未注册。`AuthenticationFilter` 标注了 `@PreMatching`，
+> 会在路由匹配前执行：缺少或无效凭据可能返回 401，IP 不在白名单内可能返回 403。
+> 如果过滤器接受请求，后续路由匹配会因该路径未注册而返回 404；关闭鉴权时也可能返回 404。
 
 ### 10.1 用户认证与权限控制
 
@@ -35,7 +37,7 @@ city: Beijing})
 
 ##### 接口说明：
 用户认证与权限控制的核心接口包括 5 类：UserAPI、GroupAPI、TargetAPI、BelongAPI、AccessAPI。除此之外，ManagerAPI 用于授予图空间级别的管理角色，LoginAPI 用于签发和校验 token，ProjectAPI 用于把多个图归为一组从而一次性授权。
-**注意**: 1.5.0 及之前，group/target 等 id 的格式类似 -69:grant，1.7.0 及之后，id 和 name 一致，如 admin [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
+**注意**: 1.5.x 及更早版本中的部分用户组和资源 ID 使用 `-69:grant`、`-77:grant` 这类格式。GraphSpace 用户组 ID 由服务端生成，见下文。参考 [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)。
 
 ### 10.2 用户（User）API
 用户接口包括：创建用户，删除用户，修改用户，和查询用户相关信息接口。
@@ -258,9 +260,10 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 用户组会赋予相应的资源权限，用户会被分配不同的用户组，即可拥有不同的资源权限。  
 用户组接口包括：创建用户组，删除用户组，修改用户组，和查询用户组相关信息接口。  
 
-> `GroupAPI` 本身挂载在 `/auth/groups`，不带 GraphSpace 前缀，这也是 1.7.0 上唯一的用户组路径；
-> 下文的 `/graphspaces/DEFAULT/auth/groups` 形式需要包含
-> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 的构建。
+> `GroupAPI` 仍挂载在 `/auth/groups`。这是 1.7.0 上唯一的用户组路由；下文的
+> `/graphspaces/DEFAULT/auth/groups` 由
+> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 加入，当前 `master`
+> 同时提供这两种路径。
 >
 > 在 GraphSpace 形式下，持久化的用户组名由服务端生成：
 > `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 位十六进制，
@@ -501,7 +504,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/targets
             "properties": null
         }
     ],
-    "id": "-77:all",
+    "id": "all",
     "target_update": "2020-11-11 15:32:01.192"
 }
 ```
@@ -516,7 +519,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/targets
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/gremlin
 ```
 
 ##### Response Status
@@ -535,7 +538,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/gremlin
 ```
 
 ##### Request Body
@@ -575,7 +578,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
             "properties": null
         }
     ],
-    "id": "-77:gremlin",
+    "id": "gremlin",
     "target_update": "2020-11-12 09:37:12.780"
 }
 ```
@@ -616,7 +619,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
                     "properties": null
                 }
             ],
-            "id": "-77:all",
+            "id": "all",
             "target_update": "2020-11-11 15:32:01.192"
         },
         {
@@ -632,7 +635,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
                     "properties": null
                 }
             ],
-            "id": "-77:grant",
+            "id": "grant",
             "target_update": "2020-11-11 15:43:24.841"
         }
     ]
@@ -648,7 +651,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:grant
+GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/grant
 ```
 
 ##### Response Status
@@ -673,7 +676,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:grant
             "properties": null
         }
     ],
-    "id": "-77:grant",
+    "id": "grant",
     "target_update": "2020-11-11 15:43:24.841"
 }
 ```
@@ -681,6 +684,8 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:grant
 ### 10.5 关联角色（Belong）API
 关联用户和用户组的关系，一个用户可以关联一个或者多个用户组。用户组拥有相关资源的权限，不同用户组的资源权限可以理解为不同的角色。即给用户关联角色。  
 关联角色接口包括：用户关联角色的创建、删除、修改和查询。
+
+> 下例中的用户组 ID 沿用 10.3 的示例返回值；实际调用时请使用自己创建响应中的 ID。后续请求请使用创建关联关系时返回的 `id`，并在 URL 路径中将 `>` 编码为 `%3E`。
 
 #### 10.5.1 创建用户的关联角色
 
@@ -695,7 +700,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:grant
 ```json
 {
   "user": "boss",
-    "group": "-69:all"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94"
 }
 ```
 
@@ -719,9 +724,9 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/belongs
     "belong_create": "2020-11-11 16:19:35.422",
     "belong_creator": "admin",
     "belong_update": "2020-11-11 16:19:35.422",
-  "id": "Sboss>-82>>S-69:all",
+  "id": "boss->ug->~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
   "user": "boss",
-    "group": "-69:all"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94"
 }
 ```
 
@@ -734,7 +739,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:grant
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/boss-%3Eug-%3E~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Response Status
@@ -753,7 +758,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:gr
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:grant
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/boss-%3Eug-%3E~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Request Body
@@ -778,9 +783,9 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:grant
     "belong_create": "2020-11-12 10:40:21.720",
     "belong_creator": "admin",
     "belong_update": "2020-11-12 10:42:47.265",
-  "id": "Sboss>-82>>S-69:grant",
+  "id": "boss->ug->~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
   "user": "boss",
-    "group": "-69:grant"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94"
 }
 ```
 
@@ -816,9 +821,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs
             "belong_create": "2020-11-11 16:19:35.422",
             "belong_creator": "admin",
             "belong_update": "2020-11-11 16:19:35.422",
-          "id": "Sboss>-82>>S-69:all",
+          "id": "boss->ug->~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
           "user": "boss",
-            "group": "-69:all"
+            "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94"
         }
     ]
 }
@@ -833,7 +838,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:all
+GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/boss-%3Eug-%3E~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94
 ```
 
 ##### Response Status
@@ -849,15 +854,17 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:all
     "belong_create": "2020-11-11 16:19:35.422",
     "belong_creator": "admin",
     "belong_update": "2020-11-11 16:19:35.422",
-  "id": "Sboss>-82>>S-69:all",
+  "id": "boss->ug->~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
   "user": "boss",
-    "group": "-69:all"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94"
 }
 ```
 
 ### 10.6 赋权（Access）API
 给用户组赋予资源的权限，主要包含：读操作 (READ)、写操作 (WRITE)、删除操作 (DELETE)、执行操作 (EXECUTE) 等。  
 赋权接口包括：赋权的创建、删除、修改和查询。
+
+> 下例沿用 10.3 创建的用户组 ID 和 10.4 创建的资源 ID。实际调用时请使用各自创建响应中的 ID；用户组 ID 由服务端生成。后续请求请复制创建赋权响应中的 `id`，并在 URL 路径中将 `>` 编码为 `%3E`。
 
 #### 10.6.1 创建赋权 (用户组赋予资源的权限)
 
@@ -878,8 +885,8 @@ access_permission：
 
 ```json
 {
-    "group": "-69:all",
-    "target": "-77:all",
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
+    "target": "all",
     "access_permission": "READ"
 }
 ```
@@ -902,11 +909,11 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 {
     "access_permission": "READ",
     "access_create": "2020-11-11 15:54:54.008",
-    "id": "S-69:all>-88>11>S-77:all",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94->1->all",
     "access_update": "2020-11-11 15:54:54.008",
     "access_creator": "admin",
-    "group": "-69:all",
-    "target": "-77:all"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
+    "target": "all"
 }
 ```
 
@@ -920,7 +927,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S-77:all
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94-%3E1-%3Eall
 ```
 
 ##### Response Status
@@ -939,7 +946,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S-77:all
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94-%3E1-%3Eall
 ```
 
 ##### Request Body
@@ -961,13 +968,13 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S-77
 ```json
 {
     "access_description": "test",
-    "access_permission": "WRITE",
+    "access_permission": "READ",
     "access_create": "2020-11-12 10:12:03.074",
-    "id": "S-69:all>-88>12>S-77:all",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94->1->all",
     "access_update": "2020-11-12 10:16:18.637",
     "access_creator": "admin",
-    "group": "-69:all",
-    "target": "-77:all"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
+    "target": "all"
 }
 ```
 
@@ -1001,11 +1008,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses
         {
             "access_permission": "READ",
             "access_create": "2020-11-11 15:54:54.008",
-            "id": "S-69:all>-88>11>S-77:all",
+            "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94->1->all",
             "access_update": "2020-11-11 15:54:54.008",
             "access_creator": "admin",
-            "group": "-69:all",
-            "target": "-77:all"
+            "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
+            "target": "all"
         }
     ]
 }
@@ -1020,7 +1027,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>11>S-77:all
+GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94-%3E1-%3Eall
 ```
 
 ##### Response Status
@@ -1035,11 +1042,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>11>S-77
 {
     "access_permission": "READ",
     "access_create": "2020-11-11 15:54:54.008",
-    "id": "S-69:all>-88>11>S-77:all",
+    "id": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94->1->all",
     "access_update": "2020-11-11 15:54:54.008",
     "access_creator": "admin",
-    "group": "-69:all",
-    "target": "-77:all"
+    "group": "~hubble_role:v1:REVGQVVMVA:3a5d8f1c94b74e0fa6c2d18e5b0f7c94",
+    "target": "all"
 }
 ```
 

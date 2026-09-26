@@ -215,6 +215,15 @@
           "children": [
             {
               "page": "/docs/language/hugegraph-gremlin"
+            },
+            {
+              "page": "/docs/language/hugegraph-cypher"
+            },
+            {
+              "page": "/docs/language/cypher-compatibility"
+            },
+            {
+              "page": "/docs/language/migrate-from-neo4j"
             }
           ]
         },
@@ -665,6 +674,21 @@
             {
               "page": "/docs/language/hugegraph-gremlin",
               "url": "/docs/language/hugegraph-gremlin/",
+              "children": []
+            },
+            {
+              "page": "/docs/language/hugegraph-cypher",
+              "url": "/docs/language/hugegraph-cypher/",
+              "children": []
+            },
+            {
+              "page": "/docs/language/cypher-compatibility",
+              "url": "/docs/language/cypher-compatibility/",
+              "children": []
+            },
+            {
+              "page": "/docs/language/migrate-from-neo4j",
+              "url": "/docs/language/migrate-from-neo4j/",
               "children": []
             }
           ]
@@ -1321,6 +1345,21 @@
     "/docs/cla/": [
       "@group/reference",
       "/docs/cla/"
+    ],
+    "/docs/language/hugegraph-cypher/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/hugegraph-cypher/"
+    ],
+    "/docs/language/cypher-compatibility/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/cypher-compatibility/"
+    ],
+    "/docs/language/migrate-from-neo4j/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/migrate-from-neo4j/"
     ]
   },
   "children_by_url": {
@@ -1398,7 +1437,10 @@
       "/docs/quickstart/client/hugegraph-client-go"
     ],
     "/docs/language/": [
-      "/docs/language/hugegraph-gremlin"
+      "/docs/language/hugegraph-gremlin",
+      "/docs/language/hugegraph-cypher",
+      "/docs/language/cypher-compatibility",
+      "/docs/language/migrate-from-neo4j"
     ],
     "/docs/config/": [
       "/docs/config/config-guide",

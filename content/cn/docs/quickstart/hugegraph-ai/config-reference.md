@@ -4,13 +4,23 @@ linkTitle: "配置参考"
 weight: 4
 ---
 
-HugeGraph-LLM 从 `hugegraph-llm/.env` 读取运行配置。提示词单独保存在 `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml`，不会写入 `.env`。
+HugeGraph-LLM 从 `.env` 读取运行配置，提示词单独保存在 `config_prompt.yaml`。两者使用不同的路径解析规则；不要把提示词文件当作 `.env` 的一部分。
 
 `.env` 路径按以下顺序解析：
 
 1. 若设置了环境变量 `HUGEGRAPH_LLM_ENV_PATH`，则使用该路径，开头的 `~` 会被展开。
 2. 从源码运行时，使用 `hugegraph-llm/.env`。
 3. 以已安装的包运行时，使用当前工作目录下的 `.env`。
+
+该路径在导入配置模块时确定。设置 `HUGEGRAPH_LLM_ENV_PATH` 时，需在启动 Python 进程前设置；不能只把它写进将要读取的 `.env` 文件。覆盖路径使用相对路径时，以进程当前工作目录为基准。
+
+提示词 YAML 路径按以下顺序解析：
+
+1. 若进程环境中设置了 `HUGEGRAPH_LLM_PROMPT_CONFIG_PATH`，使用该路径，并展开开头的 `~`。
+2. 从源码运行时，使用 `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml`。
+3. 以已安装的包运行时，使用 `${XDG_CONFIG_HOME:-~/.config}/hugegraph-llm/config_prompt.yaml`。
+
+覆盖路径的环境变量也要在进程启动前设置。相对路径以进程当前工作目录为基准。源码 Docker 镜像通过 `PYTHONPATH` 指向源码目录，因此默认提示词路径仍位于 `hugegraph-llm/src/hugegraph_llm/resources/demo/`。
 
 运行以下命令可按配置类的默认值创建或更新文件：
 
@@ -19,7 +29,7 @@ cd hugegraph-ai/hugegraph-llm
 python -m hugegraph_llm.config.generate --update
 ```
 
-`--update` 默认开启，因此不带参数运行效果相同。该命令会写入 HugeGraph、管理员、LLM 和索引配置，然后重新生成提示词 YAML。若 `.env` 已存在，会先询问是否覆盖。
+`--update` 默认开启，因此不带参数运行效果相同。配置模块首次导入时会为缺失的 `.env` 和提示词 YAML 按默认值创建文件；文件已存在时，生成器会交互询问是否覆盖。该命令会处理 HugeGraph、管理员、LLM、索引配置及提示词 YAML，不会在无确认的情况下覆盖已有文件。
 
 `.env` 包含密钥和密码，不要提交到版本库。
 
@@ -155,9 +165,9 @@ GRAPH_PWD=your-password
 
 ## 配置加载
 
-配置类先提供代码默认值，再从 `.env` 和进程环境读取覆盖值。Web 页面和配置 API 可以在运行时更新当前设置，并把受支持的字段同步回 `.env`。手工改动 `.env` 后应重启服务；提示词 YAML 可由页面加载逻辑刷新。
+配置类先提供代码默认值。当前实现会在初始化时把所选 `.env` 中的值写入进程环境，再初始化配置对象；若 shell 中已经有同名变量，文件中的值会覆盖它。缺少的键使用配置类默认值，空值会被忽略，未知键会被忽略。Web 页面和配置 API 可以在运行时更新当前设置，并把受支持的字段同步回 `.env`。手工改动 `.env` 后应重启服务；提示词 YAML 会在服务启动或页面加载时读取。
 
-`.env` 中的未知键会被忽略而不是报错，空值会回退到代码默认值，键名匹配不区分大小写。
+键名匹配不区分大小写。
 
 配置定义位于：
 

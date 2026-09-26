@@ -15,15 +15,16 @@ weight: 3
 - [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client)：管理 Schema、图数据和 Gremlin 查询的 Python SDK。
 - [vermeer-python-client](https://github.com/apache/hugegraph-ai/tree/main/vermeer-python-client)：调用 Vermeer 图计算服务的 Python SDK。
 
-仓库使用 `uv` workspace，其成员是 `hugegraph-llm` 和 `hugegraph-python-client`。`hugegraph-ml` 和 `vermeer-python-client` 是可编辑的路径依赖，不在 workspace members 中。当前仓库版本为 `1.7.0`。
+仓库使用 `uv` workspace，其成员是 `hugegraph-llm` 和 `hugegraph-python-client`。`hugegraph-ml` 和 `vermeer-python-client` 是可编辑的路径依赖，不在 workspace members 中。当前仓库版本为 `1.7.0`。客户端源码目录叫 `hugegraph-python-client`，但发行包名是 `hugegraph-python`。
 
 ## 环境要求
 
-- HugeGraph-LLM：Python 3.10 或 3.11（`>=3.10,<3.12`）
+- HugeGraph-AI 根目录 workspace：Python 3.10 或更高版本；HugeGraph-LLM 还要求低于 3.12
 - HugeGraph-ML：Python 3.10 或更高版本
-- HugeGraph Python 客户端、Vermeer Python 客户端：Python 3.9 或更高版本
+- PyPI 上的 `hugegraph-python` 1.5.0：Python 3.9 或更高版本；当前仓库源码随 workspace 使用 Python 3.10 或更高版本
+- Vermeer Python 客户端：Python 3.9 或更高版本
 - `uv` 0.7 或更高版本
-- HugeGraph Server 1.3 或更高版本（推荐 1.5 或更高版本）
+- HugeGraph Server 1.5.0 或更高版本；当前 workspace 的 Python 客户端会拒绝可探测到的更低版本
 
 ## 可选依赖组
 
@@ -33,7 +34,7 @@ weight: 3
 |---|---|
 | `llm` | `hugegraph-llm` |
 | `ml` | `hugegraph-ml` |
-| `python-client` | `hugegraph-python-client` |
+| `python-client` | `hugegraph-python`（源码目录 `hugegraph-python-client`）|
 | `vermeer` | `vermeer-python-client` |
 | `dev` | pytest、pytest-cov、coverage、pylint、ruff、mypy、ty、pre-commit |
 | `nk-llm` | `hugegraph-llm`、`hugegraph-python-client`，以及编译镜像所需的 Nuitka |
@@ -51,6 +52,7 @@ cd hugegraph-ai
 cp docker/env.template docker/.env
 # 编辑 docker/.env，将 PROJECT_PATH 改为当前仓库的绝对路径
 touch hugegraph-llm/.env
+# 在 hugegraph-llm/.env 中设置 GRAPH_URL=server:8080，并填写匹配 Server 的账号
 cd docker
 docker compose -f docker-compose-network.yml up -d
 ```
@@ -71,7 +73,8 @@ cd hugegraph-llm
 python -m hugegraph_llm.demo.rag_demo.app
 ```
 
-`uv sync` 会创建根目录下的 `.venv`。不要在 `hugegraph-llm` 子目录另建一套环境，否则容易绕过 workspace 锁定的依赖。
+`uv sync` 会在仓库根目录创建 `.venv`。从根目录安装可让 `uv` 一起解析 workspace 成员和路径依赖。
+当前仓库不跟踪 `uv.lock`；`uv sync` 会按 `pyproject.toml` 中的依赖声明和版本约束解析依赖。
 
 ## 安装 ML 依赖
 

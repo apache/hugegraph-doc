@@ -1,241 +1,157 @@
 ---
-title: "HugeGraph-Computer Quick Start"
+title: "HugeGraph-Computer 快速开始"
 linkTitle: "使用 Computer 进行 OLAP 分析"
 weight: 2
 search_keywords: [HugeGraph Computer, 图计算, OLAP]
 search_boost: 1.6
 ---
 
-## 1 HugeGraph-Computer 概述
+## 1. 组件说明
 
-[`HugeGraph-Computer`](https://github.com/apache/hugegraph-computer) 是分布式图处理系统 (OLAP). 它是 [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf)的一个实现。它可以运行在 Kubernetes(K8s)/Yarn 上。(它侧重可支持百亿~千亿的图数据量下进行图计算, 会使用磁盘进行排序和加速, 这是它和 Vermeer 相对最大的区别之一)
+[`HugeGraph-Computer`](https://github.com/apache/hugegraph-computer) 是基于 BSP（Bulk Synchronous Parallel，批量同步并行）模型的 Java 分布式图计算框架，算法按超步迭代运行。它可由 Kubernetes Operator 或 YARN 调度，也可在单机上启动 master 和 worker 进程进行小规模试跑。
 
-### 特性
+它与同一仓库中的 Vermeer 是两套实现：Computer 使用 Java/BSP 运行时，面向分布式计算；Vermeer 是 Go 实现的内存图计算平台，采用 master-worker 结构。两者共享 HugeGraph 数据源，但部署和任务配置不能互换。
 
-- 支持分布式 MPP 图计算，集成 HugeGraph 作为图输入输出存储。
-- 算法基于 BSP(Bulk Synchronous Parallel) 模型，通过多次并行迭代进行计算，每一次迭代都是一次超步。
-- 自动内存管理。该框架永远不会出现 OOM（内存不足），因为如果它没有足够的内存来容纳所有数据，它会将一些数据拆分到磁盘。
-- 边的部分或超级节点的消息可以在内存中，所以你永远不会丢失它。
-- 您可以从 HDFS 或 HugeGraph 或任何其他系统加载数据。
-- 您可以将结果输出到 HDFS 或 HugeGraph，或任何其他系统。
-- 易于开发新算法。您只需要像在单个服务器中一样专注于仅顶点处理，而不必担心消息传输和内存存储管理。
+Computer 支持从 HugeGraph 或 HDFS 读取图数据，并可将结果写回 HugeGraph 或 HDFS。运行时可把部分数据溢写到磁盘；能否完成任务仍取决于输入规模、资源和配置，不应把溢写能力理解为不受资源限制。
 
-## 2 依赖
+## 2. 前置条件与连接
 
-### 2.1 安装 Java 11 (JDK 11)
+构建和运行需要 JDK 11 或更高版本。源码构建还需要 Maven 3.5 或更高版本。PageRank 示例要求一个已启动且包含待计算图数据的 HugeGraph-Server，以及可供 master、worker 访问的 etcd。
 
-**必须**在 ≥ `Java 11` 的环境上启动 `Computer`，然后自行配置。
+| 服务 | 示例地址或端口 | 用途 |
+|------|----------------|------|
+| HugeGraph-Server | `http://127.0.0.1:8080` | 读取图数据并写回算法结果；以 `hugegraph.url` 为准。 |
+| etcd | `http://127.0.0.1:2379` | BSP 作业协调；以 `bsp.etcd_endpoints` 为准。 |
+| Computer master RPC | TCP `8190` | worker 连接 master；发行配置中的端口。 |
+| Computer worker 数据传输 | 本地默认由系统分配；K8s Operator 默认 `8099` | worker 之间传输顶点和消息。跨主机时需保证公告地址和端口可达。 |
+| HDFS | 按集群配置 | 仅当输入或输出配置为 HDFS 时需要。 |
 
-**在往下阅读之前务必执行 `java -version` 命令查看 jdk 版本**
+Kubernetes 作业中的 `hugegraph.url` 必须是各计算 Pod 都能访问的地址，不能填仅在个人电脑上可用的 `localhost`。如果启用了 HugeGraph 认证，应在配置中填写用户名和密码，并为 REST 查询使用对应凭据。
 
-## 3 开始
+更多配置项见[Computer 配置参考](/cn/docs/quickstart/computing/hugegraph-computer-config/)。
 
-### 3.1 在本地运行 PageRank 算法
+## 3. 获取源码并构建发行包
 
-> 要使用 HugeGraph-Computer 运行算法，必须装有 Java 11 或更高版本。
->
-> 还需要首先部署 HugeGraph-Server 和 [Etcd](https://etcd.io/docs/v3.5/quickstart/).
-
-有两种方式可以获取 HugeGraph-Computer：
-
-- 下载已编译的压缩包
-- 克隆源码编译打包
-
-#### 3.1.1 下载已编译的压缩包
-
-下载最新版本的 HugeGraph-Computer release 包：
+Apache 1.7.0 发行目录提供 Computer 源码包 `apache-hugegraph-computer-incubating-1.7.0-src.tar.gz`，不是单独的预编译 Computer 二进制包。下载时同时取得同目录下的 `.sha512` 和 `.asc` 文件。首次验签前还需取得 Apache 项目 [`KEYS`](https://downloads.apache.org/hugegraph/KEYS) 并导入公钥；应先核对密钥指纹来自 Apache 项目发布渠道，再验证签名。后续版本请从 [Apache HugeGraph 下载目录](https://downloads.apache.org/hugegraph/)选择与运行环境匹配的版本。
 
 ```bash
-wget https://downloads.apache.org/hugegraph/${version}/apache-hugegraph-computer-incubating-${version}.tar.gz
-tar zxvf apache-hugegraph-computer-incubating-${version}.tar.gz -C hugegraph-computer
-```
-
-#### 3.1.2 克隆源码编译打包
-
-克隆最新版本的 HugeGraph-Computer 源码包：
-
-```bash
-$ git clone https://github.com/apache/hugegraph-computer.git
-```
-
-编译生成 tar 包：
-
-```bash
-cd hugegraph-computer
+curl -fLO https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz
+curl -fLO https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.sha512
+curl -fLO https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.asc
+curl -fLO https://downloads.apache.org/hugegraph/KEYS
+shasum -a 512 -c apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.sha512
+gpg --import KEYS
+gpg --verify apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.asc apache-hugegraph-computer-incubating-1.7.0-src.tar.gz
+tar -xzf apache-hugegraph-computer-incubating-1.7.0-src.tar.gz
+cd apache-hugegraph-computer-incubating-1.7.0-src/computer
 mvn clean package -DskipTests
+tar -xzf target/apache-hugegraph-computer-1.7.0.tar.gz
+cd apache-hugegraph-computer-1.7.0
 ```
 
-#### 3.1.3 启动 master 节点
-
-> 您可以使用 `-c` 参数指定配置文件，更多 computer 配置请看：[Computer 配置选项](/cn/docs/quickstart/computing/hugegraph-computer-config/#computer-配置选项)
+也可以克隆源码后从 Maven 聚合工程目录构建：
 
 ```bash
-cd hugegraph-computer
+git clone https://github.com/apache/hugegraph-computer.git
+cd hugegraph-computer/computer
+mvn clean package -DskipTests
+tar -xzf target/apache-hugegraph-computer-1.7.0.tar.gz
+cd apache-hugegraph-computer-1.7.0
+```
+
+发行包由 `computer/computer-dist` 组装，包含 `bin/start-computer.sh`、运行依赖 `lib/`、内置算法 `algorithm/builtin-algorithm.jar` 及默认配置 `conf/computer.properties`、`conf/log4j2.xml`。源码默认配置位于 `computer/computer-dist/src/assembly/static/conf/computer.properties`。在 Maven 聚合工程 `computer/` 中运行 `package` 后，tar 包位于 `computer/target/`，发行目录位于 `computer/apache-hugegraph-computer-1.7.0/`。
+
+## 4. 单机运行 PageRank
+
+先编辑发行目录中的 `conf/computer.properties`，按实际环境修改 HugeGraph 地址、图名和认证信息，并确认 `bsp.etcd_endpoints` 指向可访问的 etcd。默认配置已选择内置 `PageRankParams`；master 和 worker 必须使用同一份配置及相同的 `job.id`。每个并行作业应使用不同的 `job.id`。
+
+在两个终端中都从发行目录启动进程。启动脚本默认读取 `conf/computer.properties`，也可用 `-c` 指定配置文件。
+
+```bash
+# 终端一：启动 master
 bin/start-computer.sh -d local -r master
 ```
 
-#### 3.1.4 启动 worker 节点
-
 ```bash
+# 终端二：启动 worker
 bin/start-computer.sh -d local -r worker
 ```
 
-#### 3.1.5 查询算法结果
+master 会等待配置要求的 worker 注册后运行作业。查看两个终端输出；默认日志配置也会在当前发行目录的 `logs/` 下写入 master 和 worker 日志。只有进程启动成功并不代表计算完成，应确认 master 日志中输入、超步计算和输出阶段均正常结束。
 
-2.5.1 为 server 启用 `OLAP` 索引查询
-
-如果没有启用 OLAP 索引，则需要启用，更多参考：[modify-graphs-read-mode](/cn/docs/clients/restful-api/graphs/#634-设置某个图的读模式该操作需要管理员权限)
-
-```http
-PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
-
-"ALL"
-```
-
-3.1.5.2 查询 `page_rank` 属性值：
+PageRank 参数类将结果写回 HugeGraph，属性名为 `page_rank`。若图当前读模式不显示 OLAP 写入，可由管理员把读模式设为 `ALL`：
 
 ```bash
-curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?page&limit=3" | gunzip
+curl --fail --request PUT \
+  --header 'Content-Type: application/json' \
+  --data '"ALL"' \
+  'http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode'
 ```
 
-### 3.2 在 Kubernetes 中运行 PageRank 算法
-
-> 要使用 HugeGraph-Computer 运行算法，您需要先部署 HugeGraph-Server
-
-#### 3.2.1 安装 HugeGraph-Computer CRD
+查询顶点以确认结果属性：
 
 ```bash
-# Kubernetes version >= v1.16
-kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/master/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
-
-# Kubernetes version < v1.16
-kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/master/computer-k8s-operator/manifest/hugegraph-computer-crd.v1beta1.yaml
+curl --fail --compressed \
+  'http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?limit=3'
 ```
 
-#### 3.2.2 显示 CRD
+需要认证时，在 `curl` 命令中添加 `--user "$HG_USER:$HG_PASSWORD"`。读模式接口和权限说明见[图读模式 REST API](/cn/docs/clients/restful-api/graphs/#634-设置某个图的读模式该操作需要管理员权限)。
+
+## 5. 在 Kubernetes 中运行 PageRank
+
+先确保 HugeGraph-Server 对计算 Pod 可达。Computer Operator 清单会部署 Operator 和 etcd；清单配置的 etcd 服务地址会由 Operator 注入作业配置。CRD 和 Operator 清单应使用同一 Computer 发行版本。下面以 1.7.0 的 `v1` CRD 为例：
 
 ```bash
-kubectl get crd
-
-NAME                                        CREATED AT
-hugegraphcomputerjobs.hugegraph.apache.org   2021-09-16T08:01:08Z
+kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/1.7.0/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
+kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/1.7.0/computer/computer-k8s-operator/manifest/hugegraph-computer-operator.yaml
+kubectl get pods -n hugegraph-computer-operator-system --watch
 ```
 
-#### 3.2.3 安装 hugegraph-computer-operator&etcd-server
-
-```bash
-kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/master/computer-k8s-operator/manifest/hugegraph-computer-operator.yaml
-```
-
-#### 3.2.4 等待 hugegraph-computer-operator&etcd-server 部署完成
-
-```bash
-kubectl get pod -n hugegraph-computer-operator-system
-
-NAME                                                              READY   STATUS    RESTARTS   AGE
-hugegraph-computer-operator-controller-manager-58c5545949-jqvzl   1/1     Running   0          15h
-hugegraph-computer-operator-etcd-28lm67jxk5                       1/1     Running   0          15h
-```
-
-#### 3.2.5 提交作业
-
-> 更多 computer crd spec 请看：[Computer CRD](/cn/docs/quickstart/computing/hugegraph-computer-config/#hugegraph-computer-crd)
->
-> 更多 Computer 配置请看：[Computer 配置选项](/cn/docs/quickstart/computing/hugegraph-computer-config/#computer-配置选项)
+确认 Operator 和 etcd Pod 已就绪后，提交 `HugeGraphComputerJob`。替换镜像为集群可拉取且包含对应版本运行时与内置算法 JAR 的镜像，并把 HugeGraph 地址改成 Pod 可访问的服务地址。分区数必须不小于 worker 数量。
 
 ```yaml
-cat <<EOF | kubectl apply --filename -
-apiVersion: hugegraph.apache.org/v1
+apiVersion: operator.hugegraph.apache.org/v1
 kind: HugeGraphComputerJob
 metadata:
   namespace: hugegraph-computer-operator-system
-  name: &jobName pagerank-sample
+  name: pagerank-sample
 spec:
-  jobId: *jobName
+  jobId: pagerank-sample
   algorithmName: page_rank
-  image: hugegraph/hugegraph-computer:latest # algorithm image url
-  jarFile: /hugegraph/hugegraph-computer/algorithm/builtin-algorithm.jar # algorithm jar path
-  pullPolicy: Always
-  workerCpu: "4"
-  workerMemory: "4Gi"
-  workerInstances: 5
+  image: registry.example.com/hugegraph-computer:1.7.0
+  jarFile: /hugegraph/hugegraph-computer/algorithm/builtin-algorithm.jar
+  pullPolicy: IfNotPresent
+  workerInstances: 1
   computerConf:
-    job.partitions_count: "20"
+    job.partitions_count: "1"
     algorithm.params_class: org.apache.hugegraph.computer.algorithm.centrality.pagerank.PageRankParams
-    hugegraph.url: http://${hugegraph-server-host}:${hugegraph-server-port} # hugegraph server url
-    hugegraph.name: hugegraph # hugegraph graph name
-EOF
+    hugegraph.url: http://hugegraph-server:8080
+    hugegraph.name: hugegraph
 ```
-
-#### 3.2.6 显示作业
 
 ```bash
-kubectl get hcjob/pagerank-sample -n hugegraph-computer-operator-system
-
-NAME               JOBID              JOBSTATUS
-pagerank-sample    pagerank-sample    RUNNING
+kubectl apply -f pagerank-job.yaml
+kubectl get hcjob pagerank-sample -n hugegraph-computer-operator-system --watch
 ```
 
-#### 3.2.7 显示节点日志
+作业状态为 `SUCCEEDED` 表示运行完成。另开终端在作业运行期间查看 Pod 和日志；若状态为 `FAILED`，应在资源清理前收集诊断信息：
 
 ```bash
-# Show the master log
-kubectl logs -l component=pagerank-sample-master -n hugegraph-computer-operator-system
-
-# Show the worker log
-kubectl logs -l component=pagerank-sample-worker -n hugegraph-computer-operator-system
-
-# Show diagnostic log of a job
-# 注意: 诊断日志仅在作业失败时存在，并且只会保存一小时。
-kubectl get event --field-selector reason=ComputerJobFailed --field-selector involvedObject.name=pagerank-sample -n hugegraph-computer-operator-system
+kubectl get pods -n hugegraph-computer-operator-system
+kubectl logs --follow <master-pod-name> -n hugegraph-computer-operator-system
+kubectl logs --follow <worker-pod-name> -n hugegraph-computer-operator-system
 ```
 
-#### 3.2.8 显示作业的成功事件
+随附 Operator 清单默认启用 `AUTO_DESTROY_POD=true`。Operator 观察到作业结束后会删除作业 CR 及其计算资源，因此应在运行期间观察状态并收集日志。需要保留 CR 和 Pod 以便排查时，在 Operator 部署中将 `AUTO_DESTROY_POD` 设为 `false`；保留后可用 `kubectl get hcjob pagerank-sample -n hugegraph-computer-operator-system -o yaml` 查看最终状态。PageRank 写回 HugeGraph 后按上一节设置读模式并查询。若改用 HDFS 输出，结果位于 `output.hdfs_path_prefix/<job.id>/` 下，文件名和分区布局由作业配置决定。
 
-> NOTE: it will only be saved for one hour
+完整 CRD 字段见[Computer 配置参考中的 CRD 说明](/cn/docs/quickstart/computing/hugegraph-computer-config/#hugegraph-computer-crd)。
 
-```bash
-kubectl get event --field-selector reason=ComputerJobSucceed --field-selector involvedObject.name=pagerank-sample -n hugegraph-computer-operator-system
-```
+## 6. 内置算法与开发入口
 
-#### 3.2.9 查询算法结果
+当前源码中的内置算法包括：
 
-如果输出到 `Hugegraph-Server` 则与 Locally 模式一致，如果输出到 `HDFS` ，请检查 `hugegraph-computerresults{jobId}`目录下的结果文件。
+- 中心性：PageRank、Betweenness Centrality、Closeness Centrality、Degree Centrality。
+- 社区与结构：Clustering Coefficient、K-core、LPA、Triangle Count、WCC。
+- 路径与采样：环检测、带过滤的环检测、单源最短路径、Random Walk。
 
-## 4 内置算法文档
-
-### 4.1 支持的算法列表：
-
-#### 中心性算法：
-
-* PageRank
-* BetweennessCentrality
-* ClosenessCentrality
-* DegreeCentrality
-
-#### 社区算法：
-
-* ClusteringCoefficient
-* Kcore
-* Lpa
-* TriangleCount
-* Wcc
-
-#### 路径算法：
-
-* RingsDetection
-* RingsDetectionWithFilter
-
-更多算法请看：[Built-In algorithms](https://github.com/apache/hugegraph-computer/tree/master/computer-algorithm/src/main/java/org/apache/hugegraph/computer/algorithm)
-
-### 4.2 算法描述
-
-TODO
-
-## 5 算法开发指南
-
-TODO
-
-## 6 注意事项
-
-- 如果 computer-k8s 模块下面的某些类不存在，你需要运行`mvn compile`来提前生成对应的类。
+算法实现位于 [`computer/computer-algorithm`](https://github.com/apache/hugegraph-computer/tree/1.7.0/computer/computer-algorithm)。自定义算法需要遵循 Computer API 并打包为可加载的 JAR；模块划分和开发入口见[Computer README](https://github.com/apache/hugegraph-computer/blob/1.7.0/computer/README.md)。

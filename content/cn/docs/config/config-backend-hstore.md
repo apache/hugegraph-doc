@@ -157,7 +157,7 @@ PD 对该值的处理方式：
 | usePD                        | rest-server.properties | false          | Server 启动时是否从 PD 加载元数据                                 | `ServerOptions.java:401-407` |
 | cluster                      | rest-server.properties | hg-test        | 集群名，作为所有 PD 元数据 key 的前缀                             | `ServerOptions.java:187-193` |
 | init_store.enabled           | rest-server.properties | true           | PD/Store 部署下应设为 `false`，元数据已由存储侧负责               | `ServerOptions.java:382-390` |
-| graph.load_from_local_config | rest-server.properties | false          | 启动时是否在 PD 中的图配置之外，额外扫描 `conf/graphs`            | `ServerOptions.java:366-372` |
+| graph.load_from_local_config | rest-server.properties | false          | 控制管理器构造阶段预加载及 `reload()` 重扫本地图配置；应用初始化仍扫描并尝试加载，因此 `false` 不是阻止本地配置加载的安全开关 | `ServerOptions.java:366-372` |
 | auth.graph_store             | rest-server.properties | hugegraph      | 保存权限数据的图，关闭 init-store 时会校验它使用 `hstore` 后端    | `ServerOptions.java:602-609` |
 | graphspace                   | {graph}.properties     | DEFAULT        | PD 看到的图名的第一段                                             | `CoreOptions.java:679-685`   |
 

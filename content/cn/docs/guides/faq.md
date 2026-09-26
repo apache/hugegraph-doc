@@ -34,7 +34,7 @@ weight: 6
 
 - 配置了两个图，名字是`hugegraph`和`hugegraph1`，而启动服务的命令是`start-hugegraph.sh`，是只打开了`hugegraph`这个图吗
 
-  脚本名称与图名无关。需要从 `graphs` 目录加载多个本地图时，在 `rest-server.properties` 中设置 `graph.load_from_local_config=true`；该选项的源码默认值是 `false`。
+  脚本名称与图名无关。Server 默认从 `conf/graphs` 扫描并加载本地图配置，目录可在 `conf/rest-server.properties` 的 `graphs` 配置项中修改。`graph.load_from_local_config` 的默认值是 `false`，只控制图管理器构造阶段的预加载及 `reload()` 重扫，不能用于禁止启动时加载；需要加载多个本地图时，为每个图准备独立配置文件。详见[服务端配置说明](/cn/docs/config/config-guide/)。
 
 - 服务启动成功后，使用`curl`查询所有顶点时返回乱码
 

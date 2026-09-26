@@ -21,12 +21,14 @@ description: "Gremlin（图查询语言）REST 接口:通过 HTTP 接口执行 G
 - language: 发送语句的语言类型，默认为`gremlin-groovy`
 - aliases: 为存在于图空间的已有变量添加别名
 
-**查询顶点**
+此 REST 代理的 GET 查询不能可靠地传递含 JSON 花括号的 aliases 参数；当前图绑定名带连字符，也不能直接作为 Groovy 变量。以下用简单表达式示范 GET。需要选择图执行遍历时，请使用下方带 aliases 的 POST 示例。
 
 ##### Method & Url
 
 ```
-GET http://127.0.0.1:8080/gremlin?gremlin=hugegraph.traversal().V('1:marko')
+curl --compressed --get \
+  --data-urlencode "gremlin=1+1" \
+  http://127.0.0.1:8080/gremlin
 ```
 
 ##### Response Status
@@ -39,57 +41,25 @@ GET http://127.0.0.1:8080/gremlin?gremlin=hugegraph.traversal().V('1:marko')
 
 ```json
 {
-	"requestId": "c6ef47a8-b634-4b07-9d38-6b3b69a3a556",
-	"status": {
-		"message": "",
-		"code": 200,
-		"attributes": {}
-	},
-	"result": {
-		"data": [{
-			"id": "1:marko",
-			"label": "person",
-			"type": "vertex",
-			"properties": {
-				"city": [{
-					"id": "1:marko>city",
-					"value": "Beijing"
-				}],
-				"name": [{
-					"id": "1:marko>name",
-					"value": "marko"
-				}],
-				"age": [{
-					"id": "1:marko>age",
-					"value": 29
-				}]
-			}
-		}],
-		"meta": {}
-	}
+	"requestId": "<request_id>",
+	"status": {"message": "", "code": 200, "attributes": {}},
+	"result": {"data": [2], "meta": {}}
 }
 ```
 
 #### 8.1.2 向 HugeGraphServer 发送 gremlin 语句（POST），同步执行
 
-##### Method & Url
+**查询顶点数**
 
+##### 可执行请求命令
+
+```bash
+curl --compressed -sS -X POST http://127.0.0.1:8080/gremlin \
+  -H 'Content-Type: application/json' \
+  --data-binary '{"gremlin":"g.V().count()","aliases":{"g":"__g_DEFAULT-hugegraph"}}'
 ```
-POST http://localhost:8080/gremlin
-```
 
-**查询顶点**
-
-##### Request Body
-
-```json
-{
-	"gremlin": "hugegraph.traversal().V('1:marko')",
-	"bindings": {},
-	"language": "gremlin-groovy",
-	"aliases": {}
-}
-```
+`/gremlin` 是顶层接口。图空间 `DEFAULT` 中图 `hugegraph` 对应的 traversal source 名为 `__g_DEFAULT-hugegraph`，请求通过 `aliases` 映射为脚本中的 `g`。若使用不同图空间或图名，应按 Server 绑定名调整 alias。批量结果可能以 gzip 返回，curl 使用 `--compressed` 可自动解压。
 
 ##### Response Status
 
@@ -101,43 +71,13 @@ POST http://localhost:8080/gremlin
 
 ```json
 {
-	"requestId": "c6ef47a8-b634-4b07-9d38-6b3b69a3a556",
-	"status": {
-		"message": "",
-		"code": 200,
-		"attributes": {}
-	},
-	"result": {
-		"data": [{
-			"id": "1:marko",
-			"label": "person",
-			"type": "vertex",
-			"properties": {
-				"city": [{
-					"id": "1:marko>city",
-					"value": "Beijing"
-				}],
-				"name": [{
-					"id": "1:marko>name",
-					"value": "marko"
-				}],
-				"age": [{
-					"id": "1:marko>age",
-					"value": 29
-				}]
-			}
-		}],
-		"meta": {}
-	}
+	"requestId": "<request_id>",
+	"status": {"message": "", "code": 200, "attributes": {}},
+	"result": {"data": [6], "meta": {}}
 }
 ```
 
-注意：
-
-> 这里是直接使用图对象（hugegraph），先获取其遍历器（traversal()），再获取顶点。
-> 不能直接写成`graph.traversal().V()`或`g.V()`，可以通过`"aliases": {"graph": "hugegraph", "g": "__g_hugegraph"}`
-> 为图和遍历器添加别名后使用别名操作。其中，`hugegraph`是原生存在的变量，`__g_hugegraph`是`HugeGraphServer`额外添加的变量，
-> 每个图都会存在一个对应的这样格式（__g_${graph}）的遍历器对象。
+顶点数取决于当前图中的数据；上面的 `6` 仅为示例结果。
 
 > 响应体的结构与其他 Vertex 或 Edge 的 RESTful API 的结构有区别，用户可能需要自行解析。
 
@@ -147,12 +87,11 @@ POST http://localhost:8080/gremlin
 
 ```json
 {
-	"gremlin": "g.E('S1:marko>2>>S2:lop')",
+	"gremlin": "g.E().hasLabel('created').limit(1)",
 	"bindings": {},
 	"language": "gremlin-groovy",
 	"aliases": {
-		"graph": "hugegraph", 
-		"g": "__g_hugegraph"
+		"g": "__g_DEFAULT-hugegraph"
 	}
 }
 ```
@@ -167,7 +106,7 @@ POST http://localhost:8080/gremlin
 
 ```json
 {
-	"requestId": "3f117cd4-eedc-4e08-a106-ee01d7bb8249",
+	"requestId": "<request_id>",
 	"status": {
 		"message": "",
 		"code": 200,
@@ -175,22 +114,24 @@ POST http://localhost:8080/gremlin
 	},
 	"result": {
 		"data": [{
-			"id": "S1:marko>2>>S2:lop",
+			"id": "<edge_id>",
 			"label": "created",
 			"type": "edge",
-			"inVLabel": "software",
 			"outVLabel": "person",
-			"inV": "2:lop",
-			"outV": "1:marko",
+			"inVLabel": "software",
+			"outV": "<source_vertex_id>",
+			"inV": "<target_vertex_id>",
 			"properties": {
 				"weight": 0.4,
-				"date": "20171210"
+				"date": "<date>"
 			}
 		}],
 		"meta": {}
 	}
 }
 ```
+
+边 ID、端点和属性值取决于当前图中的数据。
 
 #### 8.1.3 向 HugeGraphServer 发送 gremlin 语句（POST），异步执行
 
@@ -215,8 +156,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/gremlin
 
 注意：
 
-> 异步执行 Gremlin 语句暂不支持 aliases，可以使用 `graph` 代表要操作的图，也可以直接使用图的名字，例如 `hugegraph`;
-> 另外`g`代表 traversal，等价于 `graph.traversal()` 或者 `hugegraph.traversal()`
+> 异步请求不能自行传入 `aliases` 字段；Server 会自动绑定 `graph`（当前图对象）和 `g`（当前遍历源），并把 URL 中的图名作为 `graph` 的别名。因此脚本可以使用 `graph` 或 `g`，也可以使用当前请求路径中的图名。
 
 ##### Response Status
 
@@ -242,7 +182,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/gremlin
 
 ```json
 {
-	"gremlin": "g.E('S1:marko>2>>S2:lop')",
+	"gremlin": "g.E().hasLabel('created').limit(1)",
 	"bindings": {},
 	"language": "gremlin-groovy",
 	"aliases": {}

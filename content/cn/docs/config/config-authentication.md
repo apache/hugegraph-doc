@@ -40,23 +40,33 @@ curl -u 'admin:<password>' \
   http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
 ```
 
+Basic Authentication 只对 `用户名:密码` 做 Base64 编码，不会加密凭据。通过 HTTP 发送时应使用 HTTPS；相关设置见 [HTTPS 配置](config-https)。
+
 **警告**：在 1.5.0 之前版本的 HugeGraph-Server 在鉴权模式下存在 JWT 相关的安全隐患，请务必使用新版本或自行修改 JWT token 的 secretKey。
 
-修改方式为在配置文件`rest-server.properties`中重写`auth.token_secret`信息：(1.5.0 后会默认生成随机值则无需配置)
+`auth.token_secret` 由认证数据图的配置读取。默认认证图名为 `hugegraph`，因此配置文件通常是
+`conf/graphs/hugegraph.properties`；如果修改了 `auth.graph_store`，应改为对应图的 properties 文件。
+源码默认会生成 32 个随机字节并以 Base64 编码，但该值不会写回配置文件；重启后或多个 Server 节点之间
+无法依赖各自生成的默认值保持一致。若需要令已有 token 在重启后继续有效，或让多个节点验证同一 token，
+请为认证图显式配置同一个强随机密钥：
+
+Server 将配置字符串按 UTF-8 编码后交给 JJWT 的 HS256 签名器，密钥至少需要 32 字节；这是字节长度要求，不代表任意 32 字符串都具有足够随机性。下面的命令在本机生成 32 个随机字节并以 Base64 编码。
 
 ```properties
-auth.token_secret=XXXX   #这里为 32 位 String，由 a-z，A-Z 和 0-9 组成
+# 在每个 Server 节点的认证图配置中填写同一个值
+auth.token_secret=<本机生成的密钥>
 ```
 
-也可以通过下面的命令实现：
+可在本机终端生成密钥，再通过安全方式填入认证图配置；不要把实际密钥提交到代码库或公开日志：
 
-```shell
-RANDOM_STRING=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)
-echo "auth.token_secret=${RANDOM_STRING}" >> rest-server.properties
+```bash
+openssl rand -base64 32
 ```
 
 由于默认值在每次启动时随机生成，当 token 需要在重启后继续有效、或者需要被多个服务节点接受时，必须显式配置该项。token 的有效期由
 `auth.token_expire` 决定，默认为 86400 秒。
+
+`auth.token_expire` 和 `auth.token_secret` 都属于 `auth.graph_store` 指定的认证数据图配置；`rest-server.properties` 中的同名项不会覆盖认证图配置。
 
 #### StandardAuthenticator 模式
 `StandardAuthenticator`模式是通过在数据库后端存储用户信息来支持用户认证和权限控制，该实现基于数据库存储的用户的名称与密码进行认证（密码已被加密），基于用户的角色来细粒度控制用户权限。下面是具体的配置流程（重启服务生效）：
@@ -76,7 +86,8 @@ authentication: {
 ```properties
 auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
 auth.graph_store=hugegraph
-# 内置 admin 账号的密码，默认为 pa，在首次启动时生效
+# Server 启动路径首次创建内置 admin 账号时使用，默认值为公开的 pa，生产部署前务必显式设置强密码
+# 本地持久化后端首次启用 StandardAuthenticator 时，init-store.sh 会交互式读取密码
 #auth.admin_pa=<your-admin-password>
 
 # auth client config

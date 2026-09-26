@@ -24,7 +24,7 @@ Computer 支持从 HugeGraph 或 HDFS 读取图数据，并可将结果写回 Hu
 | etcd | `http://127.0.0.1:2379` | BSP 作业协调；以 `bsp.etcd_endpoints` 为准。 |
 | Computer master RPC | TCP `8190` | worker 连接 master；发行配置中的端口。 |
 | Computer worker 数据传输 | 本地默认由系统分配；K8s Operator 默认 `8099` | worker 之间传输顶点和消息。跨主机时需保证公告地址和端口可达。 |
-| MinIO（K8s 清单） | HTTP `9000` | 用于输入分区快照；清单会部署服务，作业默认 `snapshot.write=false`、`snapshot.load=false`，不启用快照时不需要作业访问它。 |
+| MinIO（K8s 清单） | HTTP `9000` | 用于输入分区快照。Computer 1.7.0 清单把 Service 的 `9000` 错映射到 MinIO Console 的 `9090`；启用快照前需将 `targetPort` 改为 `9000`。默认 `snapshot.write=false`、`snapshot.load=false`，不启用快照时无需访问 MinIO。 |
 | cert-manager（K8s） | 集群内服务 | Operator 清单使用 `cert-manager.io/v1` 的 `Certificate`、`Issuer` 和 CA 注入功能；部署 Operator 前必须先安装兼容版本。 |
 | HDFS | 按集群配置 | 仅当输入或输出配置为 HDFS 时需要。 |
 
@@ -133,6 +133,15 @@ kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout
 kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/1.7.0/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
 kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/1.7.0/computer/computer-k8s-operator/manifest/hugegraph-computer-operator.yaml
 kubectl get pods -n hugegraph-computer-operator-system --watch
+```
+
+若要启用 MinIO 快照，需先修正 Computer 1.7.0 清单中的 Service 端口映射：S3 API 监听 `9000`，而 `9090` 是 Console 端口。等待 Pod 就绪并退出上面的监视命令后，执行以下命令，再将 `snapshot.minio_endpoint` 设为 `http://hugegraph-computer-operator-minio.hugegraph-computer-operator-system.svc:9000`。默认不启用快照时可跳过此步骤。
+
+```bash
+kubectl patch service hugegraph-computer-operator-minio \
+  -n hugegraph-computer-operator-system \
+  --type=json \
+  -p='[{"op":"replace","path":"/spec/ports/0/targetPort","value":9000}]'
 ```
 
 确认 cert-manager、Operator 和 etcd Pod 已就绪后，提交 `HugeGraphComputerJob`。替换镜像为集群可拉取且包含对应版本运行时与内置算法 JAR 的镜像，并把 HugeGraph 地址改成 Pod 可访问的服务地址。分区数必须不小于 worker 数量。下面为小图示例设置 Master `1Gi`、Worker `2Gi` 内存及 `500m` CPU 限制；实际作业应按图规模和运行配置调整。

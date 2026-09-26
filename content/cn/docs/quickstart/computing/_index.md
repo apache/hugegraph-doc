@@ -16,7 +16,7 @@ flowchart TB
     Workers -.->|REST| Server["Server"]
 ```
 
-当 `load_type=hugegraph` 时，Vermeer Master 通过 PD 查询分区元数据，Workers 直接扫描 HStore Store 分区。仅当 `output.type=hugegraph` 时，Workers 才通过 Server REST API 写回结果；其他数据源或输出配置不需要对应连接。
+当 `load.type=hugegraph` 时，Vermeer Master 通过 PD 查询分区元数据，Workers 直接扫描 HStore Store 分区。仅当 `output.type=hugegraph` 时，Workers 才通过 Server REST API 写回结果；其他数据源或输出配置不需要对应连接。
 
 ### Java Computer
 

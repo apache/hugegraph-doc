@@ -14,7 +14,7 @@ RDF是W3C标准，而Property Graph是工业标准，受到广大图数据库厂
 
 HugeGraph采用属性图模型。下图以人物和图书为例，展示顶点与有向边各自的标签和属性；这是逻辑模型示意，不描述 HugeGraph 1.7.0 的内部数据布局。
 
-![属性图逻辑模型示意：人物顶点经“阅读”有向边连接图书顶点，顶点与边均有各自的标签和属性](/docs/images/design/PropertyGraphModel.png)
+![属性图逻辑模型示意：人物顶点经“阅读”有向边连接图书顶点，顶点与边均有各自的标签和属性](/cn/docs/images/design/PropertyGraphModel.png)
 
 _图：顶点和边分别携带自己的标签与属性。_
 

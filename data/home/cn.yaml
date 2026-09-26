@@ -10,7 +10,7 @@ hero:
   align: center
   class: hg-home-hero
   title: Apache HugeGraph
-  lead: HugeGraph 是一套全栈图系统，覆盖 [图数据库](docs/quickstart/hugegraph/hugegraph-server/)、[图计算](docs/quickstart/computing/hugegraph-computer/) 与 [图 AI](docs/quickstart/hugegraph-ai/)。
+  lead: HugeGraph 是一套全栈图系统，覆盖 [图数据库](docs/quickstart/hugegraph/hugegraph-server/)、[图计算](docs/quickstart/computing/hugegraph-vermeer/) 与 [图 AI](docs/quickstart/hugegraph-ai/)。
   note: 支持从数据存储、实时查询到离线分析的完整图数据处理能力，并支持 [Gremlin](docs/language/hugegraph-gremlin/) 与 [Cypher](docs/clients/restful-api/cypher/) 查询语言。
   actions:
     - { label: 了解更多, url: docs/, icon: fa-solid fa-circle-arrow-right, style: primary }
@@ -35,7 +35,7 @@ capabilities:
       desc: 在图存储和图计算方面做了深度优化，提供 [**批量导入工具**](docs/quickstart/toolchain/hugegraph-loader/)，轻松完成百亿级数据快速导入，通过优化过的查询达到图检索的毫秒级响应，支持数千用户并发的在线实时操作。
     - title: 通用
       icon: fa-solid fa-arrow-right-arrow-left
-      desc: 支持 Apache Gremlin 标准图查询语言和 Property Graph 标准图建模方法，支持基于图的 OLTP 和 [**OLAP 图计算**](docs/quickstart/computing/hugegraph-computer/)方案。集成 Apache Hadoop 及 Apache Spark 大数据平台，也可插件式轻松扩展后端存储引擎。
+      desc: 支持 Apache Gremlin 标准图查询语言和 Property Graph 标准图建模方法，支持基于图的 OLTP 和 [**OLAP 图计算**](docs/quickstart/computing/hugegraph-vermeer/)方案。集成 Apache Hadoop 及 Apache Spark 大数据平台，也可插件式轻松扩展后端存储引擎。
     - title: 智能化
       icon: fa-solid fa-brain
       desc: 集成 LLM 实现 [**GraphRAG 能力**](docs/quickstart/hugegraph-ai/)、自动化知识图谱构建，内置 20+ 图机器学习算法，轻松构建 AI 驱动的图应用。

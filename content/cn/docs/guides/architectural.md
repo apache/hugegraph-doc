@@ -47,8 +47,8 @@ Toolchain 的主要组件如下：
 
 ## 独立图计算引擎
 
-- [HugeGraph-Computer](/cn/docs/quickstart/computing/hugegraph-computer/)：基于 BSP/Pregel 模型的分布式图计算引擎。
-- [Vermeer](/cn/docs/quickstart/computing/hugegraph-vermeer/)：提供另一种独立的图计算服务及算法接口。
+- [Vermeer（默认入口）](/cn/docs/quickstart/computing/hugegraph-vermeer/)：提供独立的图计算服务及算法接口。
+- [HugeGraph-Computer](/cn/docs/quickstart/computing/hugegraph-computer/)：基于 BSP/Pregel 模型的 Java 分布式图计算引擎。
 
 ## 历史架构图
 

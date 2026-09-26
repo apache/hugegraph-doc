@@ -14,9 +14,23 @@ aliases:
 
 `hugegraph-server` 模块包含 `hugegraph-core`、`hugegraph-api`、`hugegraph-dist` 和存储适配等子模块。Core 实现属性图模型、事务与 TinkerPop 接口，API 提供 HTTP 服务并将客户端请求交给 Core 处理。图数据由 RocksDB（单机默认）、HStore（分布式）或 HBase 后端保存。
 
-> ⚠️ **版本说明**：本文以 HugeGraph 1.7.0 至 `master` 分支的代码为参考，仅介绍 RocksDB、HStore 和 HBase。其他旧后端的使用与配置请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
+> ⚠️ **版本说明**：本文区分已发布版本与开发主线。下载示例使用 ASF 发布的 HugeGraph 1.7.0 安装包；源码构建、配置默认值和启动行为以 `apache/hugegraph` 的 `master` 分支为准。主线源码构建出的包不是 ASF 发布包，即使包内版本号相同也不代表与 1.7.0 发布包相同。本文介绍 RocksDB、HStore 和 HBase；其他旧后端请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
 
 > 名称说明：`HugeGraph` 表示整个项目或主仓库，`hugegraph-server` 表示仓库中的 Server 模块，`HugeGraphServer` 是服务进程的 Java 类名。下文的 Server 服务指运行中的图数据库服务。
+
+```mermaid
+flowchart TD
+    A{选择安装来源}
+    A -->|已发布版本| R["HugeGraph 1.7.0 tar 包"]
+    R --> V[SHA-512 校验]
+    V --> X[解压并使用随包配置]
+    A -->|开发主线| M["master 源码"]
+    M --> B["mvn package -DskipTests"]
+    B --> C[确认 conf/graphs 中的 RocksDB 配置]
+    C --> I[bin/init-store.sh]
+    I --> S["bin/start-hugegraph.sh -p true"]
+    S --> Q["请求 /versions 和图顶点接口"]
+```
 
 ## 2 依赖
 
@@ -71,8 +85,8 @@ HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行�
 | 拓扑 | compose 文件 | 服务 |
 |---|---|---|
 | 单机（推荐从这里开始） | `docker-compose.yml` | 1 个 RocksDB Server + 1 个 Hubble |
-| 最小 HStore | `docker-compose-hstore.yml` | 1 PD + 1 Store + 1 Server + 1 Hubble |
-| HA 参考 | `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble |
+| 最小 HStore（当前主线） | `docker-compose-hstore.yml` | 1 PD + 1 Store + 1 Server + 1 Hubble；需使用主线构建的本地镜像 |
+| HA 参考（当前主线） | `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble；需使用主线构建的本地镜像 |
 | 最小 HStore 拓扑的源码构建覆盖文件 | `docker-compose.dev.yml` | （需与 `docker-compose-hstore.yml` 一起使用） |
 
 ```bash {wrap=true}
@@ -83,7 +97,9 @@ HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
 
 单机拓扑将 Server 暴露在 `8080` 端口，Hubble 暴露在 `127.0.0.1:8088`。`HUGEGRAPH_VERSION` 决定 Server、PD 和 Store 的镜像 tag，Hubble 由 `HUBBLE_IMAGE` 单独选择。
 
-compose 文件从 `HUGEGRAPH_ADMIN_PASSWORD` 读取管理员密码，从 `HUGEGRAPH_AUTH_TOKEN_SECRET` 读取 JWT 密钥，通常放在 `docker/.env` 文件中。`HUGEGRAPH_ADMIN_PASSWORD` 非空即开启鉴权，Hubble 会自动识别该模式。若直接使用 `docker run`，则改为传入 `-e PASSWORD=xxx`。
+单机 `docker-compose.yml` 示例使用 HugeGraph 1.7.0 版本镜像 `hugegraph/hugegraph:1.7.0`；该文件引用的 `docker/conf/hubble/standalone.properties` 已随源码提供。Compose 文件从 `HUGEGRAPH_ADMIN_PASSWORD` 读取管理员密码，从 `HUGEGRAPH_AUTH_TOKEN_SECRET` 读取 JWT 密钥，通常放在 `docker/.env` 文件中。`HUGEGRAPH_ADMIN_PASSWORD` 非空即开启鉴权，Hubble 会自动识别该模式。若直接使用 `docker run`，则改为传入 `-e PASSWORD=xxx`。HStore Compose 文件属于当前主线，不能与 1.7.0 的 PD/Store/Server 发布镜像混用，见下文。
+
+**JWT 密钥的版本差异**：当前主线构建的 Server 镜像会把 `HUGEGRAPH_AUTH_TOKEN_SECRET` 映射到 `HG_SERVER_AUTH_TOKEN_SECRET`，并写入 Server 启动配置；跨重建时应在 `.env` 中保留同一密钥。1.7.0 镜像的 [Docker 入口脚本](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh)只处理 `PASSWORD` 等旧变量，不会读取 `HG_SERVER_AUTH_TOKEN_SECRET`。如需在 1.7.0 中固定 JWT 密钥，须将 [`auth.token_secret`](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/config/AuthOptions.java) 持久写入该版本的 `conf/graphs/hugegraph.properties`；若保留默认随机密钥，不应假定已有 JWT 在 Server 重启后仍有效。
 
 完整的部署指南请参阅 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
@@ -93,22 +109,39 @@ compose 文件从 `HUGEGRAPH_ADMIN_PASSWORD` 读取管理员密码，从 `HUGEGR
 >
 > 2. 推荐使用 `release tag` (如 `1.7.0/1.x.0`) 以获取稳定版。使用 `latest` tag 可以使用开发中的最新功能。
 
-### 3.2 下载 tar 包
+### 3.2 下载已发布的 tar 包
+
+以下示例针对 HugeGraph 1.7.0。使用其他版本时，请先在 [ASF 下载目录](https://downloads.apache.org/hugegraph/) 确认该版本及对应文件名；不要把 `master` 源码构建包当作已发布的二进制包。
 
 ```bash {filename="download-release.sh" wrap=true collapse=2}
-# 1.7.0 是项目孵化期发布的历史版本，因此文件名仍带 incubating
+cd /path/to/downloads
 wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.sha512
+sha512sum -c apache-hugegraph-incubating-1.7.0.tar.gz.sha512
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 ```
 
-### 3.3 源码编译
+SHA-512 校验通过后再解压。也可按 Apache 发布流程验证 PGP 签名：
+
+```bash
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.asc
+wget https://downloads.apache.org/hugegraph/KEYS
+gpg --import KEYS
+gpg --verify apache-hugegraph-incubating-1.7.0.tar.gz.asc apache-hugegraph-incubating-1.7.0.tar.gz
+```
+
+只应信任通过 Apache 项目渠道核实的发布者密钥；签名验证可与 SHA-512 校验一起使用。
+
+### 3.3 从 `master` 源码构建
+
+下面的命令构建的是开发主线，不是 1.7.0 发布包。
 
 源码编译前请确保本机有安装 `wget/curl` 命令
 
 下载 HugeGraph 源代码
 
 ```bash {filename="build-from-source.sh" wrap=true collapse=2}
-git clone https://github.com/apache/hugegraph.git
+git clone --branch master https://github.com/apache/hugegraph.git
 ```
 
 编译打包生成 tar 包
@@ -116,7 +149,7 @@ git clone https://github.com/apache/hugegraph.git
 ```bash
 cd hugegraph
 # (Optional) use "-P stage" param if you build failed with the latest code(during pre-release period)
-mvn package -DskipTests
+mvn package -DskipTests -ntp
 ```
 
 构建成功时日志中会出现：
@@ -125,7 +158,13 @@ mvn package -DskipTests
 [INFO] BUILD SUCCESS
 ```
 
-执行成功后，在 hugegraph 目录下生成 `*hugegraph-*.tar.gz` 文件，就是编译生成的 tar 包。
+执行成功后，根目录 `target/` 下会生成主线聚合包（当前仓库版本属性为 1.7.0）：
+
+```text
+target/apache-hugegraph-1.7.0.tar.gz
+```
+
+该文件名中的版本号来自源码的 `revision` 属性；它不会把主线构建变成 ASF 发布物料。构建过程还会在仓库根目录生成 `apache-hugegraph-1.7.0/` 聚合目录，其中的 Server 子目录名由 Server 模块的 `final.name` 决定，例如当前为 `apache-hugegraph-server-1.7.0`。若只保留了 tar 包，则先执行 `tar zxf target/apache-hugegraph-1.7.0.tar.gz` 再进入该目录。
 
 默认构建会打包 `rocksdb`、`hbase` 和 `hstore` 三个后端模块，并把它们记录在 `hugegraph-dist` jar 内的 `backend.properties` 资源的 `backends` 配置项中。若只需要包含 RocksDB 的精简发布包，可加上 `-Drocksdb-only`：
 
@@ -158,7 +197,9 @@ mvn package -DskipTests -ntp -Drocksdb-only
 
 ## 4 配置
 
-如果需要快速启动 HugeGraph 仅用于测试，那么只需要进行少数几个配置项的修改即可（见下一节）。
+Server 的 tar 包随包提供 `conf/rest-server.properties`、`conf/gremlin-server.yaml` 和 `conf/graphs/hugegraph.properties`；源码构建包从 `hugegraph-server/hugegraph-dist/src/assembly/static/conf/` 装配这些文件。解压后在 Server 安装目录内编辑配置，无需另行生成。发行包版本之间可能有默认值差异，下面涉及的默认值和启动行为按 `master` 主线说明。
+
+单机 RocksDB 快速开始只需确认 `conf/graphs/hugegraph.properties` 使用 `backend=rocksdb`、`serializer=binary`。正常 Server 初始化会扫描 `conf/graphs/` 并加载本地图配置，无需额外设置 `graph.load_from_local_config=true`。该选项默认值为 `false`，控制构造阶段的提前加载和 `reload()` 时是否重新扫描本地配置。
 
 详细的配置介绍请参考[配置文档](/docs/config/config-guide)及[配置项介绍](/docs/config/config-option)。
 
@@ -197,6 +238,7 @@ serializer=binary
 
 # PD 服务地址，多个 PD 地址用逗号分割，配置 PD 的 RPC 端口
 pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
+pd.cluster=hg
 ```
 
 ```properties
@@ -210,9 +252,12 @@ store=hugegraph
 
 # pd config
 pd.peers=127.0.0.1:8686
+pd.cluster=hg
 ```
 
 发布包中自带该后端的模板文件 `conf/graphs/hstore.properties.template`，可将其复制覆盖 `conf/graphs/hugegraph.properties` 后修改 `pd.peers`。
+
+此例的 `rest-server.properties` 使用 `cluster=hg`，图配置使用 `pd.cluster=hg`，与下方主线 Compose 拓扑选用同一集群名。它们位于不同配置文件，分别供 Server 进程和图配置使用；按部署实际选择集群名，不要把两个键当成同一个配置项。类似地，两个文件中的 `pd.peers` 也属于各自的配置范围；本例都填写同一组 PD RPC 地址。
 
 任务调度器由后端决定，无需配置 `task.scheduler_type`：`hstore` 使用分布式调度器，其余后端使用本地调度器。为兼容旧配置，该键仍可存在，但会被忽略并打印一条警告日志。
 
@@ -220,14 +265,16 @@ pd.peers=127.0.0.1:8686
 
 ```properties
 usePD=true
-# 从 graphs 目录加载上面的 hugegraph.properties；源码默认值为 false
-graph.load_from_local_config=true
-# 注意，1.7.0 必须在 rest-server.properties 配置 pd.peers
+# 本例与图配置的 pd.cluster 共用集群名 hg
+cluster=hg
+# 配置 Server 进程连接的 PD 地址；替换为实际 PD RPC 地址
 pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
 
 # 若需要 auth 
 # auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
 ```
+
+以下地址示例适用于在同一台主机运行多个 Server 进程；`127.0.0.1` 仅用于本机场景。跨主机部署时，将 `restserver.url`、`gremlinserver.url`、`pd.peers`、Gremlin `host` 和 `rpc.server_host` 替换为各节点可路由的 IP 或 DNS；`rpc.server_host` 公布的地址和端口必须能被其他节点互达。
 
 如果配置多个 Server 节点，需要为每个节点修改 `rest-server.properties` 配置文件，例如：
 
@@ -302,39 +349,60 @@ curl http://localhost:8081/graphspaces/DEFAULT/graphs
 bin/stop-hugegraph.sh
 ```
 
-##### Docker 分布式集群
+##### Docker HStore 高可用集群（当前主线）
 
-通过 Docker-Compose 运行完整的分布式集群（3 PD + 3 Store + 3 Server）：
-
+`docker-compose-3pd-3store-3server.yml` 使用当前主线的 `HG_PD_*`、`HG_STORE_*` 和 `HG_SERVER_*` 环境变量；1.7.0 发布镜像不支持这套配置。先从同一份主线源码构建 PD、Store 和 Server 镜像，并使用相同的本地 `local` 标签：
 
 ```bash
-cd hugegraph/docker
-HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d --wait
+# 在 hugegraph 仓库根目录执行
+docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
+docker build -f hugegraph-store/Dockerfile -t hugegraph/store:local .
+docker build -f hugegraph-server/Dockerfile-hstore -t hugegraph/server:local .
+
+cd docker
 ```
 
-服务通过 `hg-net` 桥接网络上的容器主机名进行通信。配置通过环境变量注入：
+先在 `docker/` 目录创建认证环境并生成 HStore Hubble 配置。用自己设置的管理员密码替换示例文本；因 `.env` 使用单引号包裹，密码不能含单引号或换行。脚本生成 JWT 与 PD 随机密钥，并将 PD 密钥写入两个 HStore Compose 会挂载的未跟踪 `.local.properties` 文件：
 
-```yaml
-# Server 配置，server0、server1、server2 共用
-HG_SERVER_BACKEND: hstore
-HG_SERVER_PD_PEERS: pd0:8686,pd1:8686,pd2:8686
-HG_SERVER_CLUSTER: hg
-HG_SERVER_USE_PD: "true"
-HG_SERVER_MIN_FREE_MEMORY: "0"
-HG_SERVER_INIT_STORE_ENABLED: "false"
-HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET: "true"
-STORE_REST: store0:8520
-# 每个节点单独设置，例如 server0
-HG_SERVER_REST_URL: http://server0:8080
+```bash
+(
+  set -eu
+  command -v openssl >/dev/null
+  jwt_secret="$(openssl rand -hex 32)"
+  pd_secret="$(openssl rand -hex 24)"
+  umask 077
+  test ! -e .env || {
+    echo ".env already exists; edit it instead of overwriting it" >&2
+    exit 1
+  }
+  printf "HUGEGRAPH_ADMIN_PASSWORD='%s'\nHUGEGRAPH_AUTH_TOKEN_SECRET='%s'\nHG_PD_AUTH_SECRET_KEY='%s'\n" \
+    'replace-with-your-password' "${jwt_secret}" "${pd_secret}" > .env
+  HG_PD_AUTH_SECRET_KEY="${pd_secret}" ./set-hubble-pd-password.sh hstore
+  HG_PD_AUTH_SECRET_KEY="${pd_secret}" ./set-hubble-pd-password.sh hstore-ha
+)
 ```
 
-该拓扑设置了 `HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET: "true"`，因此在只提供密码而没有共享 JWT 密钥时 Server 会拒绝启动。启动前请在 `docker/.env` 中同时写入 `HUGEGRAPH_ADMIN_PASSWORD` 和 `HUGEGRAPH_AUTH_TOKEN_SECRET`。完整的变量说明见 [Docker 集群指南](/cn/docs/guides/hugegraph-docker-cluster/)。
+然后在 `docker/` 目录启动 HA 拓扑。`HUGEGRAPH_VERSION=local` 令 PD、Store 和 Server 使用刚构建的本地镜像；该 Compose 文件的 `pull_policy: missing` 会优先使用已存在的本地标签。Hubble 仍由 `HUBBLE_IMAGE` 独立选择：
+
+```bash
+set -a
+. ./.env
+set +a
+HUGEGRAPH_VERSION=local docker compose \
+  -f docker-compose-3pd-3store-3server.yml \
+  up -d --wait pd0 pd1 pd2 store0 store1 store2 server0 server1 server2 hubble
+```
+
+`HG_PD_AUTH_SECRET_KEY` 应只为新数据目录生成一次；重启或复用已有数据目录时，继续使用原值。不要提交 `.env` 或生成的 `conf/hubble/*.local.properties`。服务通过 `hg-net` 桥接网络上的容器主机名通信。Server 拓扑要求共享 JWT 密钥；不要只设置管理员密码而遗漏 `HUGEGRAPH_AUTH_TOKEN_SECRET`。完整的环境变量说明见 [Docker 集群指南](/cn/docs/guides/hugegraph-docker-cluster/) 和仓库 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
 验证集群：
 ```bash
-curl http://localhost:8080/versions
-curl http://localhost:8620/v1/stores
+curl -fsS http://localhost:8080/versions
+curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?请先加载 .env}" \
+  http://localhost:8620/v1/stores
 ```
+
+当前主线的 PD `/v1/stores` REST 接口需要 HTTP Basic 认证；此处用生成后已加载的 `HG_PD_AUTH_SECRET_KEY` 作为 `hg` 用户密码。
 
 运行时日志可通过 `docker logs <container-name>`（如 `docker logs hg-pd0`）直接查看，无需进入容器。
 
@@ -343,13 +411,7 @@ curl http://localhost:8620/v1/stores
 
 #### 5.1.2 RocksDB / ToplingDB
 
-以下从本地 properties 文件启动图的示例要求在 `conf/rest-server.properties` 中设置：
-
-```properties
-graph.load_from_local_config=true
-```
-
-当前源码默认值是 `false`，上游发布模板尚未写出该选项。
+从 `master` 构建的单机最小流程如下。此例启用内置样例数据，以便后续请求能验证图数据读写路径。
 
 <details>
 <summary>点击展开/折叠 RocksDB 配置及启动方法</summary>
@@ -357,32 +419,30 @@ graph.load_from_local_config=true
 
 > RocksDB 是一个嵌入式的数据库，不需要手动安装部署，要求 GCC 版本 >= 4.3.0（GLIBCXX_3.4.10），如不满足，需要提前升级 GCC
 
-修改 `hugegraph.properties`
+主线包内的 `conf/graphs/hugegraph.properties` 默认已设置 `backend=rocksdb` 和 `serializer=binary`。使用默认数据目录时无需修改；若改过后端或数据路径，先确认配置，再初始化存储。
 
-```properties
-backend=rocksdb
-serializer=binary
-rocksdb.data_path=.
-rocksdb.wal_path=.
-```
-
-初始化数据库（第一次启动时或在 `conf/graphs/` 下手动添加了新配置时需要进行初始化）
+初始化数据库（首次启动，或在 `conf/graphs/` 下添加了新图配置后）：
 
 ```bash
-cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-server-incubating-1.7.0
+cd apache-hugegraph-1.7.0/apache-hugegraph-server-1.7.0
 bin/init-store.sh
 ```
 
-启动 server
+启动 Server 并加载内置样例图：
 
 ```bash
-bin/start-hugegraph.sh
-Starting HugeGraphServer in daemon mode...
-Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
-Started [pid 21614]
+bin/start-hugegraph.sh -p true
 ```
 
-提示的 url 与 `rest-server.properties` 中配置的 `restserver.url` 一致
+启动脚本会按 `rest-server.properties` 中的 `restserver.url` 轮询 `/graphs`，超时或进程失败时以非零状态退出。随后先检查服务版本，再读取样例顶点：
+
+```bash
+curl -fsS http://127.0.0.1:8080/versions
+curl --compressed -fsS \
+  http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
+```
+
+第一条请求应返回包含 `versions` 的 JSON；第二条应返回包含 `vertices` 的 JSON，且样例数据中可见 `marko`、`lop` 等顶点。仅检查进程存在或 HTTP 状态码，不足以证明图后端和业务请求正常。
 
 **ToplingDB (Beta)**: 作为 RocksDB 的高性能替代方案，配置方式请参考: [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="cn">}})
 
@@ -526,10 +586,10 @@ jps
 `curl` 请求 RESTful API
 
 ```bash
-echo `curl -o /dev/null -s -w %{http_code} "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"`
+curl -fsS http://127.0.0.1:8080/versions
 ```
 
-返回结果 200，代表 server 启动正常
+返回包含 `versions` 的 JSON（HTTP 2xx）可确认 REST API 已响应。`jps` 中出现 `HugeGraphServer` 只表示进程存在；要确认图后端可用，请按单机流程加载样例图后请求顶点接口。
 
 ### 6.2 请求 Server
 
@@ -549,13 +609,13 @@ curl http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 _说明_
 
-1. 由于图的点和边很多，对于 list 型的请求，比如获取所有顶点，获取所有边等，Server 会将数据压缩再返回，所以使用 curl 时得到一堆乱码，可以重定向至 `gunzip` 进行解压。推荐使用 Chrome 浏览器 + Restlet 插件发送 HTTP 请求进行测试。
+1. 对于顶点、边等列表请求，Server 可以压缩响应。使用 `curl --compressed` 可自动解压：
 
     ```
-    curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices" | gunzip
+    curl --compressed -fsS "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
     ```
 
-2. 当前 HugeGraphServer 的默认配置只能是本机访问，可以修改配置，使其能在其他机器访问。
+2. 默认监听地址为 `127.0.0.1`，其他机器无法直接访问。若确需在受控网络中远程访问，可调整绑定地址并配置防火墙；不要将 Gremlin、Cypher 等接口直接暴露到公网。
 
     ```
     vim conf/rest-server.properties

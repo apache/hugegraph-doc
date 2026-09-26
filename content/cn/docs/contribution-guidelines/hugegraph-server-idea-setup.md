@@ -4,7 +4,7 @@ linkTitle: "在 IDEA 中配置 Server 开发环境"
 weight: 4
 ---
 
-> 注意：下述配置仅供参考，基于[这个版本](https://github.com/apache/hugegraph/commit/a946ad1de4e8f922251a5241ffc957c33379677f)，在 Linux 和 macOS 平台下进行了测试。
+> **适用范围**：下述 IDEA 配置基于 2023-05-31 的 HugeGraph 1.0.0 源码提交 [a946ad1](https://github.com/apache/hugegraph/commit/a946ad1de4e8f922251a5241ffc957c33379677f)，仅作为历史调试步骤保留。当前主线的源码目录和验证入口见[贡献流程](/cn/docs/contribution-guidelines/contribute/)与 [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/)；不要从本页推断当前模块清单。
 
 ### 背景
 
@@ -37,7 +37,7 @@ cp -r hugegraph-server/hugegraph-dist/src/assembly/static/scripts \
 
 将 `path-to-your-directory` 替换为你创建的文件夹的路径。命令需在仓库根目录执行，`hugegraph-dist` 模块位于顶层的 `hugegraph-server` 目录之下。
 
-> ToplingDB 不在 `master` 的发布包中。在包含它的构建里，开发者需执行 `preload-topling.sh` 脚本，该脚本会将相关动态库和 Web Server 所需的静态资源自动解压至与 `bin` 同级的 `library` 目录中 (静态资源会同时拷贝到 `/dev/shm/rocksdb_resource` 中)。
+> 下列 ToplingDB 步骤仅适用于历史定制构建。当前主线源码不包含 `preload-topling.sh` 或 ToplingDB 模块，按当前主线调试时跳过此说明。
 
 #### 2. `InitStore` 类初始化图
 

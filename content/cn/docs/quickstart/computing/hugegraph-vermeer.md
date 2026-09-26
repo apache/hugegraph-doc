@@ -1,5 +1,5 @@
 ---
-title: "HugeGraph-Vermeer Quick Start"
+title: "HugeGraph-Vermeer 快速开始"
 linkTitle: "Vermeer: 高性能内存图计算框架"
 weight: 1
 ---
@@ -8,28 +8,64 @@ weight: 1
 
 ### 1.1 运行架构
 
-Vermeer 是一个 `Go`编写的高性能内存优先的图计算框架 (一次启动，任意执行)，支持 15+ OLAP 图算法的极速计算 (大部分秒~分钟级别完成执行)，包含 master 和 worker 两种角色。master 目前只有一个 (可增加 HA)，worker 可以有多个。
+Vermeer 是使用 Go 编写、以内存为主的图计算框架，支持 15+ OLAP 图算法。当前由一个 master 调度，可连接多个 worker。
 
 master 是负责通信、转发、汇总的节点，计算量和占用资源量较少。worker 是计算节点，用于存储图数据和运行计算任务，占用大量内存和 cpu。grpc 和 rest 模块分别负责内部通信和外部调用。
 
-该框架的运行配置可以通过命令行参数传入，也可以通过位于 `config/` 目录下的配置文件指定，`--env` 参数可以指定使用哪个配置文件，例如 `--env=master` 指定使用 `master.ini`。需要注意 master 需要指定监听的端口号，worker 需要指定监听端口号和 master 的 `ip:port`。
+启动时，程序先设置内置默认值，再读取工作目录下 `config/<env>.ini` 的 `[default]` 节，最后由显式命令行参数覆盖对应配置；例如 `--env=master` 读取 `config/master.ini`。Docker 镜像把仓库中的配置复制到 `/go/bin/config/`，并以 `/go/bin/` 为工作目录。挂载宿主机目录到 `/go/bin/config` 会遮住镜像自带文件，因此该目录必须包含实际使用的 ini 文件。配置读取器不从环境变量取值。
 
-master 默认 HTTP 端口为 `6688`，用于 REST API 和 Python 客户端；worker 连接 master 使用 gRPC 端口 `6689`。下面的 Docker 示例通过 `6688:6688` 发布 HTTP 端口，请保留 master 配置中的 `http_peer=0.0.0.0:6688`。
+默认端口如下：
+
+| 角色 | 配置键 | 默认地址 | 用途 |
+|---|---|---|---|
+| master | `http_peer` | `0.0.0.0:6688` | REST API；宿主机客户端访问此端口 |
+| master | `grpc_peer` | `0.0.0.0:6689` | worker 连接 master 的 gRPC 端口 |
+| worker | `http_peer` | `0.0.0.0:6788` | worker HTTP 服务 |
+| worker | `grpc_peer` | `0.0.0.0:6789` | worker gRPC 监听地址，同时会通告给 master 供节点间通信 |
+
+Docker 示例只把 master 的 HTTP 端口发布为 `6688:6688`；master 和 worker 的 gRPC 端口留在容器网络内部。
+
+```mermaid
+flowchart LR
+  Client["curl / Python 客户端"] -->|"HTTP :6688"| Master["master"]
+  Worker["worker"] <-->|"双向 gRPC：master :6689，worker :6789"| Master
+  Master -->|"gRPC 查询分区"| PD["HugeGraph PD"]
+  Worker -->|"gRPC 扫描分区"| Store["HugeGraph Store"]
+```
 
 ### 1.2 运行方法
 
-下面两种 Docker 启动方式都需要先准备一个宿主机配置目录，包含项目提供的 `master.ini` 和 `worker.ini`。在 `worker.ini` 已有的 `[default]` 节中修改 `master_peer`，保留其余配置：
+下面两种 Docker 启动方式都需要先准备一个宿主机配置目录。请在 Vermeer 仓库根目录执行，将项目提供的 [`master.ini`](https://github.com/apache/hugegraph-computer/blob/04985bbc9907c7b6c9a8fe8833323df049f9bd9b/vermeer/config/master.ini) 和 [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/04985bbc9907c7b6c9a8fe8833323df049f9bd9b/vermeer/config/worker.ini) 模板复制到该目录；挂载会覆盖镜像里的 `/go/bin/config`，所以不要把空目录或整个用户主目录挂进去：
+
+```shell
+CONFIG_DIR="$HOME/vermeer-config"
+mkdir -p "$CONFIG_DIR"
+cp config/master.ini config/worker.ini "$CONFIG_DIR/"
+```
+
+`master.ini` 保留 HTTP/gRPC 监听地址 `0.0.0.0:6688` 和 `0.0.0.0:6689`。Compose 示例为网络分配固定地址 `172.20.0.10`（master）和 `172.20.0.11`（worker），因此将复制后的 `worker.ini` 中这些配置设为：
 
 ```ini
 [default]
-master_peer=vermeer-master:6689
+http_peer=0.0.0.0:6788
+grpc_peer=172.20.0.11:6789
+master_peer=172.20.0.10:6689
+run_mode=worker
+worker_group=$
 ```
 
-在 worker 容器内，默认的 `127.0.0.1:6689` 指向 worker 自身。两个示例中的 `vermeer-master` 都会在共享 Docker 网络内解析到 master 容器。请保留 `master.ini` 中的 `grpc_peer=0.0.0.0:6689`，并将上述配置目录挂载到两个容器的 `/go/bin/config`。仅发布 HTTP 端口 `6688` 不会配置 worker 的 gRPC 连接。
+此单 worker 示例将 `worker_group` 设为 `$`，表示未绑定命名组时使用的通用组；请在 ini 文件中原样写入美元符号。仓库模板默认是 `worker_group=default`，若保留命名组，需先将它绑定到任务所在的空间或图，再提交任务。例如默认空间为 `$DEFAULT` 时，可执行：
+
+```shell
+curl --fail --show-error -X POST \
+  'http://localhost:6688/admin/workers/alloc/default/%24DEFAULT'
+```
+
+该接口响应 `errcode=0` 表示绑定成功；启用 token 鉴权时还需带上授权请求头。`master_peer` 必须指向 worker 所在网络能访问的 master gRPC 地址。`grpc_peer` 同时用于 worker 监听和向 master 通告自己的地址，不能设为不可从其他容器访问的 `0.0.0.0`。如果更改网络子网或地址，需同步修改此处的 IP；多个 worker 还需要各自唯一且可互相访问的 `grpc_peer` 地址。
 
 1. **方案一：Docker Compose（推荐）**
 
-在 Vermeer 根目录执行以下步骤。可以使用仓库已有的 `docker-compose.yaml`，也可以根据下面的示例创建。无论使用哪一种，都必须在启动服务前完成下文要求的端口和挂载配置修改：
+在 Vermeer 仓库根目录运行。可以修改仓库已有的 `docker-compose.yaml`，也可以使用下面的配置。仓库文件当前将整个 `~/` 挂载到配置目录且没有发布 master HTTP 端口，运行前必须按示例更换挂载路径并增加端口映射：
 
 ```yaml
 services:
@@ -39,37 +75,33 @@ services:
     ports:
       - "6688:6688"
     volumes:
-      - ~/.config:/go/bin/config # Change here to your actual config path
+      - /home/user/vermeer-config:/go/bin/config:ro
     command: --env=master
     networks:
       vermeer_network:
-        ipv4_address: 172.20.0.10 # Assign a static IP for the master
+        ipv4_address: 172.20.0.10 # master 固定地址
 
   vermeer-worker:
     image: hugegraph/vermeer
     container_name: vermeer-worker
     volumes:
-      - ~/.config:/go/bin/config # Change here to your actual config path
+      - /home/user/vermeer-config:/go/bin/config:ro
     command: --env=worker
     networks:
       vermeer_network:
-        ipv4_address: 172.20.0.11 # Assign a static IP for the worker
+        ipv4_address: 172.20.0.11 # worker 固定地址
 
 networks:
   vermeer_network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/24 # Define the subnet for your network
+        - subnet: 172.20.0.0/24 # 按需更换子网
 ```
 
-启动前，无论使用仓库自带的文件还是上面的示例，都需要修改 `docker-compose.yaml`：
+把 `/home/user/vermeer-config` 换成上面实际的配置目录绝对路径。若修改 `vermeer_network` 的子网或固定 IP，也要同步更新 `worker.ini` 中的 `grpc_peer` 和 `master_peer`。不要复用默认 `worker.ini` 的 `grpc_peer=0.0.0.0:6789` 作为容器间通告地址。
 
-- **Ports**：在 `services.vermeer-master` 下补上 `ports: ["6688:6688"]`（如果尚无此映射），让宿主机上的 curl 和 Python 客户端能够访问 master 的 HTTP API。
-- **Volumes**：将 `vermeer-master` 和 `vermeer-worker` 中挂载到 `/go/bin/config` 的条目都设为 `/home/user/config:/go/bin/config`，其中 `/home/user/config` 应替换为上面准备的配置目录的绝对路径。不论原挂载使用的是 `~/`（仓库自带文件）还是 `~/.config`（上面的示例），都需要替换。
-- **Subnet**：根据实际情况修改子网IP。请注意，每个容器需要访问的端口在config文件中指定，具体请参照项目`config`文件夹下内容。
-
-在项目目录构建镜像并启动（或者先用 docker build 再 docker-compose up）
+在项目目录构建镜像并启动：
 
 ```shell
 # 构建镜像（在项目根 vermeer 目录）
@@ -90,7 +122,7 @@ docker-compose down
 
 2. **方案二：通过 docker run 单独启动（手动创建网络并分配静态 IP）**
 
-将 `CONFIG_DIR` 设为上面准备的配置目录，其中 `worker.ini` 已设置 `master_peer=vermeer-master:6689`。确保该目录对 Docker 进程具有适当的读取/执行权限。
+将 `CONFIG_DIR` 设为上面准备的配置目录，并确保复制后的 `worker.ini` 已按固定容器地址设置 `grpc_peer` 和 `master_peer`。该示例中的 `CONFIG_DIR` 需替换为实际的绝对路径。
 
 构建镜像：
 
@@ -109,13 +141,13 @@ docker network create --driver bridge \
 运行 master（调整 CONFIG_DIR 为您的绝对配置路径，可以根据实际情况调整IP）：
 
 ```shell
-CONFIG_DIR=/home/user/config
+CONFIG_DIR=/home/user/vermeer-config
 
 docker run -d \
   --name vermeer-master \
   --network vermeer_network --ip 172.20.0.10 \
   -p 6688:6688 \
-  -v ${CONFIG_DIR}:/go/bin/config \
+  -v ${CONFIG_DIR}:/go/bin/config:ro \
   hugegraph/vermeer \
   --env=master
 ```
@@ -126,7 +158,7 @@ docker run -d \
 docker run -d \
   --name vermeer-worker \
   --network vermeer_network --ip 172.20.0.11 \
-  -v ${CONFIG_DIR}:/go/bin/config \
+  -v ${CONFIG_DIR}:/go/bin/config:ro \
   hugegraph/vermeer \
   --env=worker
 ```
@@ -152,7 +184,7 @@ docker network rm vermeer_network
 go build
 ```
 
-在进入文件夹目录后输入 `./vermeer --env=master` 或 `./vermeer --env=worker01`
+从 Vermeer 仓库根目录启动，例如 `./vermeer --env=master` 和 `./vermeer --env=worker01`。`worker01.ini` 中的 `grpc_peer` 应填写可由 master 和其他 worker 访问、且本机可以绑定的地址；`master_peer` 指向 master 的 gRPC 监听地址。
 
 启动 master 后，在宿主机验证 HTTP 端口：
 
@@ -166,20 +198,23 @@ curl --fail --show-error http://localhost:6688/graphs
 
 ### 2.1 简介
 
-此类 rest api 提供所有创建任务的功能，包括读取图数据和多种计算功能，提供异步返回和同步返回两种接口。返回的内容均包含所创建任务的信息。使用 vermeer 的整体流程是先创建读取图的任务，待图读取完毕后创建计算任务执行计算。图不会自动被删除，在一个图上运行多个计算任务无需多次重复读取，如需删除可用删除图接口。任务状态可分为读取任务状态和计算任务状态。通常情况下客户端仅需了解创建、任务中、任务结束和任务错误四种状态。图状态是图是否可用的判断依据，若图正在读取中或图状态错误，无法使用该图创建计算任务。图删除接口仅在 loaded 和 error 状态且该图无计算任务时可用。
+创建任务的流程是先提交 `load` 任务，等待图加载完成，再提交 `compute` 任务。同一张已加载的图可重复用于计算，不会因任务完成而自动删除。异步接口返回创建结果和任务信息（包括任务 ID），不代表任务已经完成；同步接口会一直等待任务进入成功或失败状态，调用方及代理的 HTTP 超时需足够长。任务状态可通过查询接口读取：加载成功为 `loaded`，计算成功为 `complete`，失败为 `error`，取消为 `canceled`，其余状态仍在等待或执行中。图在加载中或错误状态时不能用于计算；删除图要求图处于可删除状态且当前未被使用。
 
 可以使用的 url 如下：
 
-- 异步返回接口 POST http://master_ip:port/tasks/create 仅返回任务创建是否成功，需通过主动查询任务状态判断是否完成。
-- 同步返回接口 POST http://master_ip:port/tasks/create/sync 在任务结束后返回。
+- 异步接口：`POST http://master_ip:port/tasks/create`，从响应的 `task.id` 取得任务 ID。
+- 同步接口：`POST http://master_ip:port/tasks/create/sync`，等待该任务结束后返回。
+- 查询单个任务：`GET http://master_ip:port/task/{task_id}`；响应中的 `errcode` 为 `0` 表示查询成功，再按 `task.state` 判断业务状态。异步任务应在客户端设置轮询截止时间；到时只停止客户端等待，不会自动取消服务端任务。
 
 ### 2.2 加载图数据
 
-具体参数参考 Vermeer 参数列表文档。
+以下示例列出常用的加载参数；引擎会按具体加载器读取参数，未被加载器使用的键不会改变行为。
 
 vermeer提供三种加载方式：
 
 1. 从本地加载
+
+`load.vertex_files` 和 `load.edge_files` 是“worker 地址主机部分到文件路径”的映射；路径由对应 worker 进程读取。容器部署时，数据文件必须先挂载进 worker 容器，并填写容器内路径。在上面的 Compose 示例中，应将主机数据目录挂到 worker 的 `/data`（例如增加 `- /host/data:/data:ro`），并把映射键设为 `grpc_peer` 中的 `172.20.0.11`；其他部署则使用各自 worker 上报地址的主机部分。
 
 可以预先获取数据集，例如 twitter-2010 数据集。获取方式：https://snap.stanford.edu/data/twitter-2010.html，第一个 twitter-2010.txt.gz 即可。
 
@@ -193,8 +228,8 @@ POST http://localhost:6688/tasks/create
  "params": {
   "load.parallel": "50",
   "load.type": "local",
-  "load.vertex_files": "{\"localhost\":\"data/twitter-2010.v_[0,99]\"}",
-  "load.edge_files": "{\"localhost\":\"data/twitter-2010.e_[0,99]\"}",
+  "load.vertex_files": "{\"172.20.0.11\":\"/data/twitter-2010.v_[0,99]\"}",
+  "load.edge_files": "{\"172.20.0.11\":\"/data/twitter-2010.e_[0,99]\"}",
   "load.use_out_degree": "1",
   "load.use_outedge": "1"
  }
@@ -215,7 +250,7 @@ POST http://localhost:6688/tasks/create
   "params": {
     "load.parallel": "50",
     "load.type": "hugegraph",
-    "load.hg_pd_peers": "[\"<your-hugegraph-ip>:8686\"]",
+    "load.hg_pd_peers": "[\"<pd-address-reachable-from-vermeer>:8686\"]",
     "load.hugegraph_name": "DEFAULT/hugegraph2/g",
     "load.hugegraph_username": "admin",
     "load.hugegraph_password": "<your-password-here>",
@@ -224,6 +259,8 @@ POST http://localhost:6688/tasks/create
   }
 }
 ```
+
+Vermeer master 使用 `load.hg_pd_peers` 连接 PD 并查询分区，worker 再连接 PD 返回的 Store 地址读取数据。因此这些服务地址必须能从对应的 Vermeer 容器或主机访问；在 Docker 容器里，`127.0.0.1` 指向容器自身，不能用来代替宿主机或另一容器的地址。
 
 3. 从hdfs加载
 
@@ -254,9 +291,9 @@ POST http://localhost:6688/tasks/create
 
 ### 2.3 输出计算结果
 
-所有的 vermeer 计算任务均支持多种结果输出方式，可自定义输出方式：local、hdfs、afs 或 hugegraph，在发送请求时的 params 参数下加入对应参数，即可生效。指定 output.need_statistics 为 1 时，支持计算结果统计信息输出，结果会写在接口任务信息内。统计模式算子目前支持 "count" 和 "modularity" 。但仅针对社区发现算法适用。
+当前有实际写入器的结果方式为 `local`、`hdfs` 和 `hugegraph`，通过 `output.type` 指定；`none` 表示不写出结果。源码保留 `afs` 类型常量，但当前主线没有注册 AFS 加载器或写入器。指定 `output.need_statistics` 为 `1` 时，统计结果会写入任务信息；统计算子的适用范围取决于对应算法实现。
 
-具体参数参考 Vermeer 参数列表文档。
+以下示例列出常用的计算和结果输出参数；算法支持的参数以 Vermeer 当前实现为准。
 
 request 示例：
 
@@ -275,6 +312,8 @@ POST http://localhost:6688/tasks/create
   }
 }
 ```
+
+`output.type=local` 的结果写在执行任务的 worker 本地文件系统中；容器部署时，如需从宿主机读取结果，请将 worker 的输出目录挂载出来。
 
 ## 三、支持的算法
 
@@ -603,7 +642,7 @@ POST http://localhost:6688/tasks/create
  "output.type":"local",
  "output.parallel":"10",
  "output.file_path":"result/kout",
- "compute.max_step":"2"，
+ "compute.max_step":"2",
  "compute.filter":"risk_level==1"
  }
 }

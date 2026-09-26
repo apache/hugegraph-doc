@@ -100,7 +100,9 @@ Restore 时存在两种不同的模式： Restoring 和 Merging，另外，还�
 
 实现的设置图模式的 RESTful API 如下：
 
-##### 查看某个图的模式. **该操作需要管理员权限**
+##### 查看某个图的模式
+
+启用鉴权时需要图读取权限（`space_member` 或该图的所有者）。
 
 ###### Method & Url
 
@@ -124,7 +126,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 
 > 合法的图模式包括：NONE，RESTORING，MERGING，LOADING
 
-##### 设置某个图的模式. **该操作需要管理员权限**
+##### 设置某个图的模式
+
+启用鉴权时需要图空间管理权限（`space`）；管理员可按权限继承规则满足。
 
 ###### Method & Url
 

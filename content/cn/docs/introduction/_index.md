@@ -73,14 +73,14 @@ HugeGraph Toolchain 提供客户端、数据导入、可视化管理、Spark 集
 
 ## 图计算引擎（OLAP）
 
-HugeGraph-Computer 仓库提供两种互补的 OLAP 图计算引擎：
+HugeGraph-Computer 仓库提供两种互补的 OLAP 图计算引擎。通用图算法任务默认建议从 Vermeer 开始；需要 Java BSP/Pregel 计算模型时，可使用 Computer：
 
-- **Vermeer**：使用 Go 编写，采用 master-worker 架构，以内存计算为主，提供 REST API、gRPC 和 Web UI，适合快速执行中小规模图分析任务。
+- **Vermeer（默认入口）**：使用 Go 编写，采用 master-worker 架构，以内存计算为主，提供 REST API、gRPC 和 Web UI，适合快速执行中小规模图分析任务。
 - **Computer**：使用 Java 编写，实现 BSP/Pregel 分布式计算模型，可运行在 Kubernetes、YARN 或本地进程中。数据超过内存阈值时可以落盘，适合更大规模的图计算任务。
 
 两者都可以读取 HugeGraph 数据，但运行架构、资源需求、配置和算法接口不同。
 
-- [Vermeer 快速开始](/cn/docs/quickstart/computing/hugegraph-vermeer/)
+- [Vermeer 快速开始（默认入口）](/cn/docs/quickstart/computing/hugegraph-vermeer/)
 - [Computer 快速开始](/cn/docs/quickstart/computing/hugegraph-computer/)
 
 ## HugeGraph-AI（Graph + AI）
@@ -110,7 +110,7 @@ HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库�
 | 启动图数据库并执行查询 | [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/) |
 | 批量导入数据 | [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) |
 | 使用 Web 界面管理图 | [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) |
-| 运行图算法 | [Vermeer 与 Computer](/cn/docs/quickstart/computing/) |
+| 运行图算法 | [Vermeer（默认入口）](/cn/docs/quickstart/computing/hugegraph-vermeer/) |
 | 构建 GraphRAG 或图机器学习应用 | [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/) |
 
 ## 社区 {#community}

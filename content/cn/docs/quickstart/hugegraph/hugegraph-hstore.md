@@ -35,7 +35,7 @@ HugeGraph-Store 是 HugeGraph 分布式版本的存储节点组件，负责实�
 
 #### 3.1 下载 tar 包
 
-从 Apache HugeGraph 官方下载页面下载最新版本的 HugeGraph-Store：
+Apache 下载页目前提供 1.7.0 的完整二进制包，其中包含 PD、Store 和 Server；没有单独列出 Store 二进制包。下载前请在 [官方 Apache HugeGraph 下载页](https://hugegraph.apache.org/cn/docs/download/download/)核对版本、签名和 SHA512。1.7.0 是孵化期发布的历史版本，归档文件和解压目录仍带 `incubating`：
 
 ```bash
 # 1.7.0 是项目孵化期发布的历史版本，因此文件名和目录名仍带 incubating
@@ -70,157 +70,96 @@ mvn clean package -pl hugegraph-store/hg-store-dist -am -DskipTests
 
 #### 3.3 Docker 部署
 
-HugeGraph-Store Docker 镜像已发布在 Docker Hub，镜像名是 `hugegraph/store`。
-
-> 注: 后续步骤皆假设你本地**已拉取** `hugegraph` 主仓库代码 (至少是 docker 目录)
-
-有两个 compose 文件包含 Store：
-
-| Compose 文件 | 拓扑 | 用途 |
-|--------------|------|------|
-| `docker-compose-hstore.yml` | 1 PD + 1 Store + 1 Server + 1 Hubble | 最小分布式部署 |
-| `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble | 多节点参考部署 |
+`HG_STORE_*` 环境变量映射是当前主线源码提供的功能；server 的 `1.7.0` 发布源码标签尚无这些映射。本文下面的 Docker 示例仅适用于从当前主线源码构建并使用同一个本地标签的 PD、Store 和 HStore Server 镜像：
 
 ```bash
-cd hugegraph/docker
-# 注意版本号请随时保持更新 → 1.x.0
-
-# 最小分布式部署
-HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-hstore.yml up -d --wait
-
-# 或者多节点集群
-HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+# 在 hugegraph 仓库根目录执行
+docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
+docker build -f hugegraph-store/Dockerfile -t hugegraph/store:local .
+docker build -f hugegraph-server/Dockerfile-hstore -t hugegraph/server:local .
 ```
 
-通过 `docker run` 运行单个 Store 节点：
+首次启动前，按 [docker/README.md 的认证环境步骤](https://github.com/apache/hugegraph/blob/master/docker/README.md#create-the-authentication-environment) 在 `docker/` 创建 `.env`。
+该步骤使用 `umask 077` 并拒绝覆盖已有文件；若 `.env` 已存在，应保留原文件并编辑补全缺少的项。
+不要为已初始化的数据目录重新生成 `HG_PD_AUTH_SECRET_KEY`。此文件由仓库 `.gitignore` 忽略，仍不要提交。
+每次在新 shell 执行 Compose 或 PD REST 命令前，都从 `docker/` 目录加载同一文件：
+
+```bash
+# 在 hugegraph 仓库根目录执行
+cd docker
+set -a; . ./.env; set +a
+: "${HG_PD_AUTH_SECRET_KEY:?请在 .env 中设置 HG_PD_AUTH_SECRET_KEY}"
+# 只启动 PD、Store、Server，不启动可选 Hubble 服务
+HUGEGRAPH_VERSION=local HUGEGRAPH_PULL_POLICY=never \
+  docker compose -f docker-compose-hstore.yml \
+  up -d --wait pd store server
+```
+
+后续重启或调用 PD REST 时，先按上面的方式加载同一个密钥；不要为已初始化的数据目录重新生成新值。`HUGEGRAPH_VERSION=local` 和 `HUGEGRAPH_PULL_POLICY=never` 是此 Compose 命令的参数，每次运行 Compose 生命周期命令时都要显式带上。
+
+若要启动 Compose 文件中的 Hubble 服务，需使用拓扑对应的未跟踪配置文件。
+最小拓扑 `docker-compose-hstore.yml` 使用 `conf/hubble/hstore.local.properties`；
+HA 拓扑 `docker-compose-3pd-3store-3server.yml` 使用 `conf/hubble/hstore-ha.local.properties`。
+上述 README 初始化步骤会用共享 PD 密钥生成两份文件。若文件缺失或需更新，先从 `docker/` 目录载入已有 `.env`，再执行对应命令：
+
+```bash
+set -a; . ./.env; set +a
+./set-hubble-pd-password.sh hstore      # 最小拓扑
+./set-hubble-pd-password.sh hstore-ha  # HA 拓扑
+```
+
+多节点拓扑中的服务名是 `pd0`–`pd2`、`store0`–`store2` 和 `server0`–`server2`。该主线 Compose 文件也应使用上述本地构建的同标签镜像，不能将 `HUGEGRAPH_VERSION=1.7.0` 发布镜像与主线 Compose 文件混用。
+
+单独运行当前主线构建的 Store 时，将示例地址换成 Store 与 PD 均可路由的实际地址：
 
 ```bash
 docker run -d \
-  -p 8520:8520 \
-  -p 8500:8500 \
-  -p 8510:8510 \
-  -e HG_STORE_PD_ADDRESS=<pd-ip>:8686 \
-  -e HG_STORE_GRPC_HOST=<your-ip> \
-  -e HG_STORE_RAFT_ADDRESS=<your-ip>:8510 \
+  -p 8520:8520 -p 8500:8500 -p 8510:8510 \
+  -e HG_STORE_PD_ADDRESS=192.168.1.10:8686 \
+  -e HG_STORE_GRPC_HOST=192.168.1.20 \
+  -e HG_STORE_RAFT_ADDRESS=192.168.1.20:8510 \
   -v /path/to/storage:/hugegraph-store/storage \
   --name hugegraph-store \
-  hugegraph/store:1.7.0
+  hugegraph/store:local
 ```
 
-**环境变量参考：**
+**当前主线 Docker 环境变量：**
 
 | 变量 | 必填 | 默认值 | 对应配置项 | 描述 |
 |------|------|--------|------------|------|
-| `HG_STORE_PD_ADDRESS` | 是 | n/a | `pdserver.address` | PD gRPC 地址（如 `pd0:8686,pd1:8686,pd2:8686`） |
-| `HG_STORE_GRPC_HOST` | 是 | n/a | `grpc.host` | 本节点的 gRPC 主机名/IP（如 `store0`） |
-| `HG_STORE_RAFT_ADDRESS` | 是 | n/a | `raft.address` | 本节点的 Raft 地址（如 `store0:8510`） |
-| `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` | gRPC 服务端口 |
-| `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` | REST API 端口 |
-| `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` | 数据存储路径 |
+| `HG_STORE_PD_ADDRESS` | 是 | 无 | `pdserver.address` | PD gRPC 地址，多个地址用逗号分隔。 |
+| `HG_STORE_GRPC_HOST` | 是 | 无 | `grpc.host` | 本节点对外公布的 gRPC 主机名/IP；容器网络中应使用容器主机名。 |
+| `HG_STORE_RAFT_ADDRESS` | 是 | 无 | `raft.address` | 本节点的 Raft 地址。 |
+| `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` | gRPC 服务端口。 |
+| `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` | REST API 端口。 |
+| `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` | 数据存储路径。 |
 
-入口脚本会把这些变量转换为 `SPRING_APPLICATION_JSON`，覆盖在 `conf/application.yml` 之上，然后执行 `bin/start-hugegraph-store.sh -d false -j "$JAVA_OPTS"`。上表未覆盖的配置项仍需要修改 `conf/application.yml`，或者自行提供 `SPRING_APPLICATION_JSON`。
+当前主线 entrypoint 将这些变量写入 `SPRING_APPLICATION_JSON`，覆盖镜像内 `conf/application.yml`；其余配置仍从该文件和 `application-pd.yml` 读取，然后以前台方式启动 Java。旧变量 `PD_ADDRESS`、`GRPC_HOST`、`RAFT_ADDRESS` 仍可用，但会输出弃用警告。
 
-镜像细节：
-
-- `JAVA_OPTS` 默认值为 `-XX:+UnlockExperimentalVMOptions -XX:+UseContainerSupport -XX:MaxRAMPercentage=50 -XshowSettings:vm`
-- `STDOUT_MODE=true`，因此 Java 日志输出到容器 stdout，而不是 `logs/hugegraph-store-server.log`
-- `HEALTHCHECK` 在 90 秒启动期后每 15 秒访问一次 `GET http://localhost:8520/v1/health`
-- 镜像只声明了 `EXPOSE 8520`；如果需要从 Docker 网络之外访问 8500 和 8510，请自行发布这两个端口
-
-> **注意**：在 Docker 桥接网络中，`HG_STORE_GRPC_HOST` 应使用容器主机名（如 `store0`）而非 IP 地址。
-
-> **已弃用的别名**：`PD_ADDRESS`、`GRPC_HOST`、`RAFT_ADDRESS` 仍可使用，但会输出弃用警告。新部署请使用 `HG_STORE_*` 名称。
+PD 和 Store 的 Docker `HEALTHCHECK` 都检查 `/v1/health`，只说明本地 REST 监听器有响应。Compose 的 `depends_on` 也以此作为启动门槛，因此还需单独检查 PD `/v1/ready` 与 PD `/v1/stores` 中的 Store `Up` 状态。Store 镜像默认设置 `STDOUT_MODE=true`；其 Dockerfile 只声明 `EXPOSE 8520`，从 Docker 网络外访问 gRPC `8500` 或 Raft `8510` 时需另行发布端口。
 
 ### 4 配置
 
-Store 从 `conf/` 读取两个配置文件：
+Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [application.yml](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-store/hg-store-dist/src/assembly/static/conf/application.yml) 和 [application-pd.yml](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-store/hg-store-dist/src/assembly/static/conf/application-pd.yml)；当前主线文件见 [application.yml](https://github.com/apache/hugegraph/blob/master/hugegraph-store/hg-store-dist/src/assembly/static/conf/application.yml) 和 [application-pd.yml](https://github.com/apache/hugegraph/blob/master/hugegraph-store/hg-store-dist/src/assembly/static/conf/application-pd.yml)。主线默认配置把 `spring.profiles.include: pd` 加载的 RocksDB 设置放在第二个文件中；启动脚本指定 `application.yml`。
 
 - `application.yml`，主配置文件（PD 地址、各端口、Raft、数据路径）
 - `application-pd.yml`，由 `application.yml` 中的 `spring.profiles.include: pd` 引入，包含 RocksDB 内存设置和 Actuator 暴露配置
 
 #### 4.1 application.yml
 
-发布包中自带的文件内容如下：
-
-```yaml
-pdserver:
-  # PD service address, multiple PD addresses separated by commas
-  address: localhost:8686
-
-management:
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-
-grpc:
-  # grpc service address
-  host: 127.0.0.1
-  port: 8500
-  netty-server:
-    max-inbound-message-size: 1000MB
-raft:
-  # raft cache queue size
-  disruptorBufferSize: 1024
-  address: 127.0.0.1:8510
-  max-log-file-size: 600000000000
-  # Snapshot generation interval, in seconds
-  snapshotInterval: 1800
-server:
-  # rest service address
-  port: 8520
-
-app:
-  # Storage path, support multiple paths, separated by commas
-  data-path: ./storage
-  #raft-path: ./storage
-
-spring:
-  application:
-    name: store-node-grpc-server
-  profiles:
-    active: default
-    include: pd
-
-logging:
-  config: 'file:./conf/log4j2.xml'
-  level:
-    root: info
-```
+以下配置参考表核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 的发行目录值和 Java 默认注入值；1.7.0 发布包请使用其版本标签对应的配置文件，不要跨版本覆盖。
 
 #### 4.2 application-pd.yml
 
-```yaml
-management:
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-
-rocksdb:
-  # rocksdb total memory usage, force flush to disk when reaching this value
-  total_memory_size: 32000000000
-  # memtable size used by rocksdb
-  write_buffer_size: 32000000
-  # For each rocksdb, the number of memtables reaches this value for writing to disk.
-  min_write_buffer_number_to_merge: 16
-```
+此文件只保存 `rocksdb` 参数和 Actuator 暴露设置。主线默认配置暴露所有 Actuator 端点且没有 PD 式 Basic 认证保护；请将 Store REST 端口限制在可信网络中，不要直接暴露到不可信网络。
 
 #### 4.3 配置项参考
 
-下表中「模板值」是上面两个文件中的取值，「代码默认值」是配置项缺失时节点使用的回退值；模板未列出的配置项应以代码默认值为准。
+下表中「当前主线目录值」来自前述两个主线配置文件，「代码默认值」是配置项缺失时节点使用的回退值；目录中未列出的配置项应以代码默认值为准。
 
 **核心**
 
-| 配置项 | 模板值 | 代码默认值 | 说明 |
+| 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
 | `pdserver.address` | `localhost:8686` | 必填 | PD gRPC 地址，多个地址用逗号分隔。Store 在此注册并获取分区分配。必须填写 PD 的 `grpc.port`，不是 PD 的 REST 端口。 |
 | `grpc.host` | `127.0.0.1` | 必填 | 本节点对外公布的 gRPC 地址。应设置为可路由的 IP 或主机名，`127.0.0.1` 只适用于单机部署。 |
@@ -231,7 +170,7 @@ rocksdb:
 
 **Raft**
 
-| 配置项 | 模板值 | 代码默认值 | 说明 |
+| 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
 | `raft.address` | `127.0.0.1:8510` | 必填 | 本节点的 Raft 服务地址，格式为 `host:port`，必须能被其他 Store 节点访问。这里不需要配置 peer 列表：分区 Raft 组的成员由 PD 下发。 |
 | `raft.disruptorBufferSize` | `1024` | `0` | Raft 任务队列大小。设为 `0` 时按 `rocksdb.total_memory_size` 推导：将该内存量的 GB 数取最接近的 2 的幂，再乘以 32。 |
@@ -249,7 +188,7 @@ rocksdb:
 
 **存储与标签**
 
-| 配置项 | 模板值 | 代码默认值 | 说明 |
+| 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
 | `app.data-path` | `./storage` | `store` | RocksDB 数据目录。用逗号分隔多个路径可将分区分散到多块磁盘。 |
 | `app.raft-path` | 已注释 | 空 | Raft 日志和快照目录。为空时回退到 `app.data-path`。 |
@@ -259,7 +198,7 @@ rocksdb:
 
 **RocksDB**
 
-| 配置项 | 模板值 | 代码默认值 | 说明 |
+| 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
 | `rocksdb.total_memory_size` | `32000000000` | `51539607552` | 本节点所有 RocksDB 实例共享的内存预算。缺失或为 `0` 时使用 JVM 最大堆内存。 |
 | `rocksdb.write_buffer_size` | `32000000` | `33554432` | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`。 |
@@ -387,11 +326,11 @@ YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started Store
 
 #### 5.4 启动顺序
 
-1. **先启动 PD**。每个 Store 的 `grpc.host:grpc.port` 都应出现在 PD 的 `pd.initial-store-list` 中，否则 PD 只会把该节点登记为 `Pending` 而不会置为 `Up`，分区分配也就无法完成。
+1. **先启动全部 PD 节点**。每个 Store 的 `grpc.host:grpc.port` 都应出现在 PD 的 `pd.initial-store-list` 中，否则 PD 只会把该节点登记为 `Pending` 而不会置为 `Up`，分区分配也就无法完成。当前主线应先对每个 PD 检查 `/v1/ready` 返回 HTTP `200` 且 `ready:true`；`/v1/health` 只是存活检查。
 2. **再启动 Store**。Store 早于 PD 启动并不致命：心跳线程会持续重试注册，并在 PD 可用之前打印 `store heartbeat error: PD UNREACHABLE`。
 3. **最后启动 HugeGraph-Server**，此时所有 Store 节点都应上报 `state: "Up"`。Server 需要分区就绪之后才能初始化或打开图。
 
-compose 文件用 `depends_on: condition: service_healthy` 表达同样的顺序：Store 等待所有 PD 健康检查通过，Server 等待所有 Store 健康检查通过。
+主线 Compose 用 `depends_on: condition: service_healthy` 等待本地健康检查，但 PD 和 Store 的 Docker 健康检查都只访问 `/v1/health`，不能证明 Raft 多数派或 Store 注册已就绪。Server entrypoint 会等待 PD 至少报告一个 `Up` 的 Store；运维时仍应检查 PD `/v1/ready` 和 `/v1/stores`。
 
 ### 6 多节点部署示例
 
@@ -498,7 +437,7 @@ Store 节点仅在所有 PD 节点通过健康检查后才会启动，其中 doc
 curl http://localhost:8520/actuator/health
 ```
 
-如果返回 `{"status":"UP"}`，则表示 Store 服务已成功启动。
+如果返回 `{"status":"UP"}`，表示 Store 本地应用健康检查通过；它本身不证明已在 PD 注册为 `Up`。
 
 `GET /v1/health` 是 Docker 镜像和 compose 文件使用的轻量检查接口，它返回 HTTP 200 且响应体为空，因此应使用 `curl -fsS` 并检查退出码，而不是检查输出内容：
 
@@ -516,7 +455,7 @@ Store 节点在 `server.port` 上提供以下只读接口：
 | GET | `/actuator/health` | Spring Boot Actuator 健康检查，返回 `{"status":"UP"}` |
 | GET | `/actuator/prometheus` | Prometheus 抓取接口 |
 | GET | `/` | 节点概览，包含 `leaderCount` 和 `partitionCount` |
-| GET | `/-/state` | 节点状态，取值为 `STARTING`、`ONLINE`、`STOPPING` |
+| GET | `/-/state` | 运维设置的节点状态标志，取值为 `STARTING`、`ONLINE`、`STOPPING`；此标志不表示 PD 注册状态 |
 | GET | `/-/echo?name=<text>` | 回显检查 |
 | GET | `/-/scan` | 当前扫描流的状态 |
 | GET | `/v1/partitions` | 本节点上的所有 Raft 组及分区指标。加上 `?flags=accurate` 可获取精确的 key 数量，但更慢。 |
@@ -525,7 +464,7 @@ Store 节点在 `server.port` 上提供以下只读接口：
 | GET | `/metrics/drive` | 数据路径所在磁盘的指标 |
 | GET | `/metrics/raft` | JRaft 节点指标，需要 `raft.metrics: true` |
 
-Actuator 和 Prometheus 之所以可访问，是因为自带配置设置了 `management.endpoints.web.exposure.include: "*"` 和 `management.metrics.export.prometheus.enabled: true`。
+主线发行目录的 Store 配置将 `management.endpoints.web.exposure.include` 设为 `"*"`，并启用 Prometheus；Actuator 端点没有 PD REST Basic 认证保护，请限制 Store REST 端口的网络可达范围。
 
 节点还提供一批会修改状态或执行重负载操作的运维接口：`PUT /-/state`、`GET /-/cleaner`、`GET /v1/partition/dump/{id}`、`GET /v1/partition/clean/{id}`、`POST /v1/compat?id=<partition>`、`GET /v1/arthasstart`、`POST /raft/options`，以及 `/fix/*` 和 `/test/*` 两组接口。请仅在排查问题时使用，并且不要把 REST 端口暴露到不可信网络。
 
@@ -534,10 +473,11 @@ Actuator 和 Prometheus 之所以可访问，是因为自带配置设置了 `man
 也可以通过 PD API 查看集群中的 Store 节点状态：
 
 ```bash
-curl -u store:admin http://localhost:8620/v1/stores
+curl -u "store:${HG_PD_AUTH_SECRET_KEY:?请先设置 PD 部署密钥}" \
+  http://localhost:8620/v1/stores
 ```
 
-PD 的 REST 端口默认开启 basic 认证：用户名必须是 `hg`、`store`、`hubble`、`vermeer` 之一，密码目前还不校验。不带凭据的请求会返回 `{"status":-1,"error":"Unauthorized!"}`。只有 `/v1/health`、`/actuator/*` 和 `/v1/prom/targets/*` 不需要认证。
+对于当前主线源码构建包，PD REST 用户名必须是 `hg`、`store`、`hubble`、`vermeer` 之一，密码必须与 PD 的 `auth.secret-key` 相同；`HG_PD_AUTH_SECRET_KEY` 会同时配置 Compose 中的 PD 和 Server。`/v1/health`、`/v1/ready`、`/actuator/*` 和 `/v1/prom/targets/*` 不需要认证。1.7.0 发布标签的实现只校验用户名，不比较密码；不要把这一旧行为用于主线源码构建包。
 
 如果 Store 配置成功，上述接口响应中应包含当前节点的状态信息，其中 `state` 为 `Up` 表示节点运行正常。如果节点长期停留在 `Pending`，通常是因为它没有出现在 PD 的 `pd.initial-store-list` 中。
 
@@ -579,3 +519,29 @@ PD 的 REST 端口默认开启 basic 认证：用户名必须是 `hg`、`store`�
   "status": 0
 }
 ```
+
+#### 7.3 最小图读写验证
+
+确认 Store 已在 PD 中显示为 `Up` 后，再启动配置为 HStore 后端、连接同一 PD 集群的 Server。Server 配置步骤见 [Server 快速开始](./hugegraph-server.md)。确认 `GET /versions` 可访问且默认图 `hugegraph` 已加载后，可以创建一个属性键、顶点标签和顶点，再读取该顶点：
+
+```bash
+SERVER_URL=http://localhost:8080
+GRAPH_URL="$SERVER_URL/graphspaces/DEFAULT/graphs/hugegraph"
+
+# 这些名称在当前图空间中必须唯一；已存在时换一组名称再执行
+curl -fsS -X POST "$GRAPH_URL/schema/propertykeys" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"pd_store_demo_name","data_type":"TEXT","cardinality":"SINGLE","properties":[]}'
+
+curl -fsS -X POST "$GRAPH_URL/schema/vertexlabels" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"pd_store_demo_vertex","id_strategy":"CUSTOMIZE_STRING","properties":["pd_store_demo_name"],"primary_keys":[],"nullable_keys":[]}'
+
+curl -fsS -X POST "$GRAPH_URL/graph/vertices" \
+  -H 'Content-Type: application/json' \
+  -d '{"id":"pd-store-demo-1","label":"pd_store_demo_vertex","properties":{"pd_store_demo_name":"stored in HStore"}}'
+
+curl -fsS "$GRAPH_URL/graph/vertices/%22pd-store-demo-1%22"
+```
+
+最后一个响应应包含顶点 ID `pd-store-demo-1` 和属性 `pd_store_demo_name`。若 Server 开启了认证，以上请求还需按其认证配置增加凭据。

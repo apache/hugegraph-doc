@@ -18,14 +18,14 @@ weight: 2
 
 ## 安装
 
-发布到 PyPI 的包名是 `hugegraph-python`：
+发布到 PyPI 的发行包名是 `hugegraph-python`：
 
 ```bash
 uv pip install hugegraph-python
 # 也可以使用 pip install hugegraph-python
 ```
 
-> PyPI 上的发布版本落后于仓库代码。在源码中该发行包声明为 `hugegraph-python-client`，版本号与 HugeGraph-AI 其他模块保持一致，需要最新代码时请从源码安装。
+截至 2026-09-26，PyPI 最新发布版本是 `hugegraph-python` 1.5.0，要求 Python 3.9 或更高版本；详见 [PyPI 发布页](https://pypi.org/project/hugegraph-python/)。当前仓库源码版本为 1.7.0，目录名是 `hugegraph-python-client`，但项目元数据中的发行包名仍为 `hugegraph-python`，并要求 Python 3.10 或更高版本。需要当前源码时，请从 HugeGraph-AI workspace 安装。
 
 如需使用仓库中的最新代码，请从 HugeGraph-AI 仓库根目录同步 workspace。`hugegraph-python-client` 是 workspace 成员，通过 `python-client` extra 暴露，因此仅执行 `uv sync` 不会安装它：
 

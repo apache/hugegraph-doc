@@ -14,7 +14,7 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 | 我想要... | 从这里开始 |
 |----------|-----------|
 | **运行图查询** (OLTP) | [HugeGraph Server 快速开始](quickstart/hugegraph/hugegraph-server) |
-| **大规模图计算** (OLAP) | [图计算引擎](quickstart/computing/hugegraph-computer) |
+| **运行图算法** (OLAP) | [Vermeer（默认入口）](quickstart/computing/hugegraph-vermeer) |
 | **构建 Graph + AI 应用** | [HugeGraph-AI](quickstart/hugegraph-ai/quick_start) |
 | **批量导入数据** | [HugeGraph Loader](quickstart/toolchain/hugegraph-loader) |
 | **可视化管理图** | [Hubble Web UI](quickstart/toolchain/hugegraph-hubble) |
@@ -26,9 +26,9 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 │                    Apache HugeGraph 生态                         │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │ HugeGraph   │  │ HugeGraph   │  │ HugeGraph-AI            │  │
+│  │ HugeGraph   │  │ Vermeer*    │  │ HugeGraph-AI            │  │
 │  │ Core Engine │  │ Computer    │  │ (GraphRAG/ML/Python)    │  │
-│  │ (OLTP)      │  │ (OLAP)      │  │                         │  │
+│  │ (OLTP)      │  │ (Java BSP)  │  │                         │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 │         │               │                    │                   │
 │  ┌──────┴───────────────┴────────────────────┴──────────────┐   │
@@ -37,6 +37,8 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 │  └───────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+* Vermeer 为默认图计算入口；Computer 用于 Java BSP 作业。
 
 ### 核心组件
 

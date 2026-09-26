@@ -9,6 +9,8 @@ search_keywords:
 search_boost: 1.5
 ---
 
+表格中的默认值指选项未在配置文件中显式设置时采用的源码默认值；发行包配置文件可能写入不同的值并覆盖它，实际运行值应以对应安装包的配置文件为准。
+
 ### Gremlin Server 配置项
 
 对应配置文件`gremlin-server.yaml`
@@ -34,7 +36,7 @@ search_boost: 1.5
 | config option                          | default value                                    | description                                                                                                                                                                                                   |
 |----------------------------------------|--------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | graphs                                 | ./conf/graphs                                    | 图配置 properties 文件所在目录。                                                                                                                                                                                |
-| graph.load_from_local_config           | false                                            | 是否在 Server 启动时读取 `graphs` 目录；使用本地图配置时需设为 `true`。                                                                                                                        |
+| graph.load_from_local_config           | false                                            | 控制管理器构造阶段是否预加载本地图配置，以及 `reload()` 时是否重扫。应用初始化仍会扫描并尝试加载 `graphs` 目录，因此 `false` 不是阻止本地配置加载的安全开关。 |
 | graphs.enable_dynamic_create_drop      | true                                             | Whether to enable create or drop graph dynamically.                                                                                                                                                           |
 | init_store.enabled                     | true                                             | Whether init-store initializes the local backend stores and the built-in admin account. Set false in distributed deployments (PD/HStore) where the storage side already owns the metadata.                     |
 | server.id                              | 空字符串                                         | The optional legacy id of hugegraph-server.                                                                                                                                                                   |
@@ -67,13 +69,8 @@ search_boost: 1.5
 | raft.group_peers                       | 127.0.0.1:8090                                   | The rpc address of raft group initial peers.                                                                                                                                                                  |
 | auth.authenticator                     |                                                  | The class path of authenticator implementation. e.g., org.apache.hugegraph.auth.StandardAuthenticator, or a custom implementation.                                                        |
 | auth.graph_store                       | hugegraph                                        | The name of graph used to store authentication information, like users, only for org.apache.hugegraph.auth.StandardAuthenticator.                                                                              |
-| auth.admin_pa                          | pa                                               | 内置 admin 账户的初始密码，仅首次启动时生效；部署前必须修改。                                                                                                                                                      |
-| auth.audit_log_rate                    | 1000.0                                           | The max rate of audit log output per user, default value is 1000 records per second.                                                                                                                          |
-| auth.cache_capacity                    | 10240                                            | The max cache capacity of each auth cache item.                                                                                                                                                               |
-| auth.cache_expire                      | 600                                              | The expiration time in seconds of auth cache in auth client and auth server.                                                                                                                                  |
+| auth.admin_pa                          | pa                                               | Server 启动路径初始化内置 admin 账户时使用，默认值为公开的 `pa`，生产部署前必须显式设置强密码。本地持久化后端首次初始化由 `init-store.sh` 交互式读取密码。                                                                                                                                                      |
 | auth.remote_url                        |                                                  | If the address is empty, it provide auth service, otherwise it is auth client and also provide auth service through rpc forwarding. The remote url can be set to multiple addresses, which are concat by ','. |
-| auth.token_expire                      | 86400                                            | The expiration time in seconds after token created                                                                                                                                                            |
-| auth.token_secret                      | 启动时随机生成                                   | HS256 的密钥；需要跨重启保持既有 token 有效时应显式配置。                                                                                                                                                                       |
 | exception.allow_trace                  | true                                             | Whether to allow exception trace stack.                                                                                                                                                                       |
 | memory_monitor.threshold               | 0.85                                             | Threshold for JVM memory usage monitoring, 1 means disabling the memory monitoring task.                                                                                                                      |
 | memory_monitor.period                  | 2000                                             | The period in ms of JVM memory usage monitoring, in each period we will detect the jvm memory usage and take corresponding actions.                                                                            |
@@ -101,6 +98,7 @@ search_boost: 1.5
 | usePD                | false                 | Whether use pd.                                                 |
 | pd.peers             | 127.0.0.1:8686        | The pd server peers, separated with commas.                     |
 | cluster              | hg-test               | The cluster name.                                               |
+| pd.stores_wait_timeout | 300                 | 等待 PD 中达到 `pd.initial-store-count` 的 Store 处于活跃状态的秒数，之后才打开 hstore 图；范围为 `0..2147483647`，`0` 表示不等待。 |
 | metrics.data_to_pd   | true                  | Whether to report metrics data to pd.                           |
 | meta.endpoints       | http://127.0.0.1:2379 | meta 端点的 URL。当前代码中没有任何地方读取该配置项，设置后不会生效；meta 连接由 `pd.peers` 建立。 |
 | meta.use_ca          | false                 | Whether to use ca to meta server.                               |
@@ -114,6 +112,18 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 |-------------------------|---------------|-----------------------------------------------------------------|
 | hstore.partition_count  | 0             | Number of partitions, which PD controls partitions based on.    |
 | hstore.shard_count      | 0             | Number of copies, which PD controls partition copies based on.  |
+
+### 认证数据图配置项
+
+以下选项写在 `auth.graph_store` 指定图的 properties 文件中，默认文件为 `conf/graphs/hugegraph.properties`。`auth.authenticator`、`auth.graph_store`、`auth.admin_pa` 和 `auth.remote_url` 则配置在上方的 `rest-server.properties` 表中。
+
+| config option | default value | description |
+|---------------|---------------|-------------|
+| auth.audit_log_rate                    | 1000.0                                           | 每用户认证审计日志的最大输出速率，单位为条/秒，取值为非负数。                                                                                                                          |
+| auth.cache_capacity                    | 10240                                            | 每个认证缓存的容量上限，取非负整数。                                                                                                                                                               |
+| auth.cache_expire                      | 600                                              | 认证客户端和服务端缓存的过期时间，单位为秒，取非负整数。                                                                                                                                  |
+| auth.token_expire                      | 86400                                            | JWT token 的有效期，单位为秒，取非负整数。                                                                                                                                                            |
+| auth.token_secret                      | 32 个随机字节经 Base64 编码                         | 认证数据图的配置项；默认密钥不写回文件。若需跨重启或跨节点验证 token，应在每个节点的认证图配置中设置同一个强随机值。HS256 密钥按 UTF-8 字节计至少 32 字节。                                                                                                                                 |
 
 ### 基本配置项
 
@@ -132,6 +142,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 | alias.graph.id                        |                                              | The graph alias id.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | graph.read_mode                       | OLTP_ONLY                                    | The graph read mode, which could be ALL &#124; OLTP_ONLY &#124; OLAP_ONLY.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | pd.peers                              | 127.0.0.1:8686                               | The addresses of pd nodes, separated with commas. Only used by the hstore backend.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| pd.cluster                            | hg                                           | 图连接 PD 元数据时使用的集群名前缀，适用于 `usePD=false`；若 Server 以 `usePD=true` 启动，则优先使用 REST 配置中的 `cluster`。此值在进程内绑定一次。                                                                                                                                                                                                                                                                                                                                                                                                            |
 | schema.illegal_name_regex             | .*\s+$&#124;~.*                              | The regex specified the illegal format for schema name.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | schema.cache_capacity                 | 10000                                        | The max cache size(items) of schema cache.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | schema.init_template                  |                                              | The template schema used to init graph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -323,6 +334,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | server.default_olap_k8s_namespace | hugegraph-computer-system | The default olap namespace for HugeGraph default graph space.                                 |
 > | k8s.internal_algorithm        | [page-rank, degree-centrality, wcc, triangle-count, rings, rings-with-filter, betweenness-centrality, closeness-centrality, lpa, links, kcore, louvain, clustering-coefficient, ppr, subgraph-match] | The names of the built-in k8s algorithms.        |
 > | k8s.algorithms                | See `ServerOptions.K8S_ALGORITHMS` | The `name:paramsClass` mapping of the built-in k8s algorithms.                              |
+> | k8s.internal_algorithm_image_url | 空 | K8s 内置算法使用的镜像地址。 |
 
 > [!DETAILS]- **Arthas 诊断配置项 (可选)**
 > 对应配置文件`rest-server.properties`

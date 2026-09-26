@@ -7,7 +7,11 @@ description: "Graphs（图管理）REST 接口:管理图实例的生命周期,�
 
 ### 6.1 Graphs
 
-**重要提醒**：1.7.0 及之后，动态创建图必须开启鉴权模式。非鉴权模式请参考[图配置文件](https://hugegraph.apache.org/cn/docs/config/config-guide/#4-hugegraphproperties)，通过配置文件静态创建图。
+> 本页介绍当前 master 的 Graphs API。历史版本的路径和请求体请切换到对应多版本页面：
+> [1.7 版 Graphs API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/graphs/) 或
+> [1.5 版 Graphs API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/graphs/)。
+
+启用鉴权时，创建、克隆、删除、清空、修改图显示名、读取图配置、设置读模式和手动压缩等操作要求图空间管理权限（`space`）；管理员可按权限继承规则满足。创建或恢复快照、设置数据模式允许图空间管理者或该图所有者操作；列表、详情、数据模式读取和读模式读取按图读取权限校验。Raft API 另要求图空间成员权限。
 
 #### 6.1.1 列出图空间中全部的图
 
@@ -70,7 +74,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 }
 ```
 
-#### 6.1.3 清空某个图的全部数据，包括 schema、vertex、edge 和 index 等，**该操作需要管理员权限**
+#### 6.1.3 清空某个图的全部数据，包括 schema、vertex、edge 和 index 等
 
 ##### Params
 
@@ -97,7 +101,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 204
 ```
 
-#### 6.1.4 克隆一个图 (**管理员权限**)
+#### 6.1.4 克隆一个图
 
 ##### Params
 
@@ -152,7 +156,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_nam
 }
 ```
 
-#### 6.1.5 创建一个图，**该操作需要管理员权限**
+#### 6.1.5 创建一个图
 
 ##### Params
 
@@ -175,9 +179,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph-xx
 - 鉴权模式：`"gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy"`（推荐）
 - 非鉴权模式：`"gremlin.graph": "org.apache.hugegraph.HugeFactory"`
 
-**注意**！！
-1. 在 1.7.0 版本中，动态创建图会导致 NPE 错误。该问题已在 [PR#2912](https://github.com/apache/hugegraph/pull/2912) 中修复。当前 master 版本和 1.7.0 之前的版本不受此问题影响。
-2. 如果 backend 是 hstore，请确保 HugeGraph-Server 已正确配置 PD，参见 [HStore 配置](/cn/docs/quickstart/hugegraph/hugegraph-server/#511-分布式存储-hstore)。1.7.0 及之前版本还需要在请求体中设置 `"task.scheduler_type": "distributed"`，该配置项现已废弃并被忽略：调度器由后端类型决定，hstore 使用分布式调度器，其他后端使用本地调度器。
+**注意**：如果 backend 是 hstore，请确保 HugeGraph-Server 已正确配置 PD，参见 [HStore 配置](/cn/docs/quickstart/hugegraph/hugegraph-server/#511-分布式存储-hstore)。调度器由后端类型决定：hstore 使用分布式调度器，其他后端使用本地调度器。
 
 **选填字段及其默认值：**
 - `gremlin.graph` 默认为 `org.apache.hugegraph.HugeFactory`
@@ -234,6 +236,8 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph-xx
 
 #### 6.1.6 删除某个图及其全部数据
 
+启用鉴权时需要图空间管理权限（`space`）。
+
 ##### Params
 
 **路径参数说明：**
@@ -258,8 +262,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/graphA?confirm_message=I
 ```javascript
 204
 ```
-
-> 注意：对于 HugeGraph 1.5.0 及之前版本，如需创建或删除图，请继续使用旧的 `text/plain`（properties）格式请求体，而不是 JSON。
 
 #### 6.1.7 列出图空间中全部的图及其配置
 
@@ -307,7 +309,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/profile
 ]
 ```
 
-#### 6.1.8 修改某个图的显示名，**该操作需要管理员权限**
+#### 6.1.8 修改某个图的显示名
 
 ##### Params
 
@@ -471,7 +473,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/manage
 
 ### 6.2 Conf
 
-#### 6.2.1 查看某个图的配置，**该操作需要管理员权限**
+#### 6.2.1 查看某个图的配置
 
 ##### Method & Url
 
@@ -530,7 +532,9 @@ Restore 时存在两种不同的模式：Restoring 和 Merging
 正常情况下，图模式为 None，当需要 Restore 图时，需要根据需要临时修改图模式为 Restoring 模式或者 Merging
 模式，并在完成 Restore 时，恢复图模式为 None。
 
-#### 6.3.1 查看某个图的模式。
+#### 6.3.1 查看某个图的模式
+
+启用鉴权时需要图读取权限（`space_member` 或该图的所有者）。
 
 ##### Method & Url
 
@@ -554,7 +558,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 
 > 合法的图模式包括：NONE，RESTORING，MERGING，LOADING
 
-#### 6.3.2 设置某个图的模式。**该操作需要管理员权限**
+#### 6.3.2 设置某个图的模式
+
+启用鉴权时需要图空间管理权限（`space`）或该图所有者权限；管理员可按权限继承规则满足。
 
 ##### Method & Url
 
@@ -584,7 +590,9 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 }
 ```
 
-#### 6.3.3 查看某个图的读模式。
+#### 6.3.3 查看某个图的读模式
+
+启用鉴权时需要图读取权限（`space_member` 或该图的所有者）。
 
 ##### Params
 
@@ -610,7 +618,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 }
 ```
 
-#### 6.3.4 设置某个图的读模式。**该操作需要管理员权限**
+#### 6.3.4 设置某个图的读模式
+
+启用鉴权时需要图空间管理权限（`space`）；管理员可按权限继承规则满足。
 
 ##### Params
 
@@ -648,6 +658,8 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 #### 6.4.1 创建快照
 
+启用鉴权时需要图空间管理权限（`space`）或该图所有者权限；管理员可按权限继承规则满足。
+
 ##### Params
 
 - name: 图的名称
@@ -673,6 +685,8 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_create
 ```
 
 #### 6.4.2 快照恢复
+
+启用鉴权时需要图空间管理权限（`space`）或该图所有者权限；管理员可按权限继承规则满足。
 
 ##### Params
 
@@ -700,7 +714,9 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_resume
 
 ### 6.5 Compact
 
-#### 6.5.1 手动压缩图，**该操作需要管理员权限**
+#### 6.5.1 手动压缩图
+
+启用鉴权时需要图空间管理权限（`space`）；管理员可按权限继承规则满足。
 
 ##### Params
 
@@ -733,6 +749,8 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/compact
 ### 6.6 Raft
 
 以下接口只在图运行于 raft 模式时可用，参见 [配置项](/cn/docs/config/config-option/) 中的 `raft.mode`。未开启 raft 模式的图会返回 `400` 和 `Allowed <operation> operation only when working on raft mode`。
+
+启用鉴权时需要图空间成员权限（`space_member`）；管理员可按权限继承规则满足。
 
 ##### Params
 

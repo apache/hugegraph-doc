@@ -35,7 +35,7 @@ weight: 3
 
 ##### 1.2 添加`hugegraph-core` Jar 包依赖
 
-maven pom.xml 详细内容如下：
+maven pom.xml 详细内容如下。`hugegraph.version` 应与要兼容的 Server 版本一致；此处以当前主线版本 1.7.0 为例：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -52,11 +52,15 @@ maven pom.xml 详细内容如下：
 
     <name>hugegraph-plugin-demo</name>
 
+    <properties>
+        <hugegraph.version>1.7.0</hugegraph.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-core</artifactId>
-            <version>${project.version}</version>
+            <version>${hugegraph.version}</version>
         </dependency>
     </dependencies>
 </project>
@@ -110,7 +114,7 @@ public class RocksDBStoreProvider extends AbstractBackendStoreProvider {
 
 ###### 2.1.2 实现接口 BackendStore
 
-BackendStore 接口定义如下：
+BackendStore 的核心抽象方法如下（接口默认辅助方法略）：
 
 ```java
 public interface BackendStore {
@@ -150,6 +154,9 @@ public interface BackendStore {
 
     // Query data
     Iterator<BackendEntry> query(Query query);
+    Iterator<Iterator<BackendEntry>> query(Iterator<Query> queries,
+                                           Function<Query, Query> queryWriter,
+                                           HugeGraph hugeGraph);
     Number queryNumber(Query query);
 
     // Transaction

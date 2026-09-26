@@ -1,17 +1,22 @@
 ---
-title: "HugeGraph Design Concepts"
+title: "HugeGraph 设计理念"
 linkTitle: "设计理念(legacy)"
 weight: 2
 ---
 
-### 1. Property Graph
-常见的图数据表示模型有两种，分别是RDF（Resource Description Framework）模型和属性图（Property Graph）模型。
+### 1. 属性图模型
+
+> **版本说明**：本页保留早期设计内容。属性图模型和顶点 ID 策略仍与 HugeGraph 1.7.0 源码相符；图示、分区结论及事务实现描述按各节注明的范围阅读，不能直接当作当前部署或存储实现说明。
+
+常见的图数据表示模型有两种，分别是RDF（Resource Description Framework）模型和属性图模型。
 RDF和Property Graph都是最基础、最有名的图表示模式，都能够表示各种图的实体关系建模。
 RDF是W3C标准，而Property Graph是工业标准，受到广大图数据库厂商的广泛支持。HugeGraph目前采用Property Graph。
 
-HugeGraph对应的存储概念模型也是参考Property Graph而设计的，具体示例详见下图：（*此图为旧版设计已过时，请忽略它，后续更新*）
+HugeGraph采用属性图模型。下图以人物和图书为例，展示顶点与有向边各自的标签和属性；这是逻辑模型示意，不描述 HugeGraph 1.7.0 的内部数据布局。
 
-![image](/docs/images/design/PropertyGraph.png)
+![属性图逻辑模型示意：人物顶点经“阅读”有向边连接图书顶点，顶点与边均有各自的标签和属性](/cn/docs/images/design/PropertyGraphModel.png)
+
+_图：顶点和边分别携带自己的标签与属性。_
 
 在HugeGraph内部，每个顶点 / 边由唯一的 VertexId / EdgeId 标识，属性存储在对应点 / 边内部。而顶点与顶点之间的关系 / 映射则是通过边来存储的。
 
@@ -20,6 +25,9 @@ HugeGraph对应的存储概念模型也是参考Property Graph而设计的，具
 从经验来看顶点属性的修改需求较多，而边的属性修改需求较少，例如PageRank和Graph Cluster等计算都需要频繁修改顶点的属性值。
 
 ### 2. 图分区方案
+
+> **版本说明**：Edge Cut 与 Vertex Cut 的比较属于历史设计背景。当前主线的 PD 与 Store 源码没有把“HugeGraph 采用 Edge Cut”定义为实现契约，因此下文该结论不适用于描述 HugeGraph 1.7.0 的实际分区与副本机制；当前分布式部署请参考 [HStore 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)。
+
 对于分布式图数据库而言，图的分区存储方式有两种：分别是边分割存储（Edge Cut）和点分割存储（Vertex Cut），如下图所示。
 使用Edge Cut方式存储图时，任何一个顶点只会出现在一台机器上，而边可能分布在不同机器上，这种存储方式有可能导致边多次存储。
 使用Vertex Cut方式存储图时，任何一条边只会出现在一台机器上，而每相同的一个点可能分布到不同机器上，这种存储方式可能会导致顶点多次存储。
@@ -27,7 +35,7 @@ HugeGraph对应的存储概念模型也是参考Property Graph而设计的，具
 ![image](/docs/images/design/GraphCut.png)
 
 采用EdgeCut分区方案可以支持高性能的插入和更新操作，而VertexCut分区方案更适合静态图查询分析，因此EdgeCut适合OLTP图查询，VertexCut更适合OLAP的图查询。
-HugeGraph目前采用EdgeCut的分区方案。
+早期设计资料曾记载 HugeGraph 采用 Edge Cut。此处保留该历史结论，不将其视为当前分区实现说明。
 
 ### 3. VertexId 策略
 
@@ -95,6 +103,8 @@ graph.addVertex(T.label, "person", T.id, UUID.randomUUID(), "name", "marko","age
 
 ### 4. EdgeId 策略
 
+> **当前实现提示**：本节的四项组合是历史简化描述。当前 `EdgeId` 还区分边方向及父、子边标签；其实际字段见 Server 源码中的 `EdgeId` 实现。需要依赖 ID 格式或持久化键时，应以对应版本源码为准。
+
 HugeGraph的EdgeId是由`srcVertexId`+`edgeLabel`+`sortKey`+`tgtVertexId`四部分组合而成。其中`sortKey`是HugeGraph的一个重要概念。
 在Edge中加入`sortKey`作为Edge的唯一标识的原因有两个：
 
@@ -109,11 +119,13 @@ HugeGraph的EdgeId是由`srcVertexId`+`edgeLabel`+`sortKey`+`tgtVertexId`四部�
 
 > HugeGraph的边仅支持有向边，无向边可以创建Out和In两条边来实现。
 
-### 5. HugeGraph transaction overview
+### 5. HugeGraph 事务概览
+
+> **版本范围**：下文关于 HugeGraph 隔离级别、线程绑定和后端原子性的描述保留为历史实现说明。本轮仅确认写操作 API 会调用服务端提交逻辑，未逐项核实 1.7.0 各后端的事务隔离与失败回滚边界；不要把这些历史描述当作跨后端保证。
 
 ##### TinkerPop事务概述
 
-TinkerPop transaction事务是指对数据库执行操作的工作单元，一个事务内的一组操作要么执行成功，要么全部失败。
+TinkerPop 事务是对数据库执行操作的工作单元，一个事务内的一组操作要么执行成功，要么全部失败。
 详细介绍请参考TinkerPop官方文档：http://tinkerpop.apache.org/docs/current/reference/#transactions
 
 ##### TinkerPop事务操作接口
@@ -214,7 +226,6 @@ TinkerPop transaction事务是指对数据库执行操作的工作单元，一�
 
 ###### *注意*
 
-> RESTful API暂时未暴露事务接口
+> REST API 未提供独立的事务生命周期接口；写操作接口会在服务端调用相应的事务提交逻辑。
 
 > TinkerPop API允许打开事务，请求完成时会自动关闭(Gremlin Server强制关闭)
-

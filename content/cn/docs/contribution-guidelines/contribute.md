@@ -40,6 +40,19 @@ HugeGraph Server 的代码位于 `hugegraph-server/`。例如，核心模块路�
 hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/
 ```
 
+当前主仓库根目录的 Maven 模块如下；Server 的存储适配器 `hugegraph-server/hugegraph-hstore/` 与独立的存储节点项目 `hugegraph-store/` 是不同模块。
+
+| 路径 | 子模块 |
+|---|---|
+| `hugegraph-server/` | `hugegraph-core/`、`hugegraph-api/`、`hugegraph-example/`、`hugegraph-dist/`、`hugegraph-test/`、`hugegraph-rocksdb/`、`hugegraph-hbase/`、`hugegraph-hstore/` |
+| `hugegraph-pd/` | `hg-pd-common/`、`hg-pd-client/`、`hg-pd-core/`、`hg-pd-service/`、`hg-pd-dist/`、`hg-pd-cli/`、`hg-pd-grpc/`、`hg-pd-test/` |
+| `hugegraph-store/` | `hg-store-common/`、`hg-store-client/`、`hg-store-core/`、`hg-store-node/`、`hg-store-dist/`、`hg-store-cli/`、`hg-store-grpc/`、`hg-store-rocksdb/`、`hg-store-test/` |
+| `hugegraph-commons/` | `hugegraph-common/`、`hugegraph-rpc/` |
+| `hugegraph-cluster-test/` | `hugegraph-clustertest-minicluster/`、`hugegraph-clustertest-dist/`、`hugegraph-clustertest-test/` |
+| 独立根模块 | `hugegraph-struct/`、`install-dist/` |
+
+上述名称来自根 `pom.xml` 及各子项目 `pom.xml`；代码结构以正在使用的分支为准。
+
 先运行与改动直接相关的测试。Server 常用测试入口如下：
 
 ```bash
@@ -54,7 +67,7 @@ mvn editorconfig:format
 mvn clean compile -Dmaven.javadoc.skip=true
 ```
 
-Note that since GitHub requires submitting code through `username + token` (instead of using `username + password` directly), you need to create a GitHub token from https://github.com/settings/tokens:
+GitHub 已不支持通过用户名和密码直接推送代码。需要使用个人访问令牌时，请在[令牌设置页](https://github.com/settings/tokens)创建并按需授权：
 
 ![使用个人访问令牌认证 Git 推送](/images/docs/contribution/github-authentication.png)
 {width="1280" height="422"}
@@ -67,7 +80,7 @@ Note that since GitHub requires submitting code through `username + token` (inst
 
 ## 提交 Pull Request
 
-Note: please make sure the email address you used to submit the code is bound to the GitHub account. For how to bind the email address, please refer to https://github.com/settings/emails:
+提交代码所用的邮箱需要绑定到 GitHub 账号。请在[邮箱设置页](https://github.com/settings/emails)完成绑定：
 
 ![在 GitHub 中验证提交邮箱](/images/docs/contribution/github-email.png)
 {width="1280" height="592"}

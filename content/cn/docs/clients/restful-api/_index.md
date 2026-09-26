@@ -6,12 +6,11 @@ search_keywords: [HugeGraph REST API, RESTful API, OpenAPI]
 search_boost: 1.7
 ---
 
-> ⚠️ **版本兼容性说明**
+> 本目录介绍当前 master 的 REST API。历史版本用法请切换到对应的多版本文档：
+> [HugeGraph 1.7 RESTful API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/) 或
+> [HugeGraph 1.5 RESTful API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/)。
 >
-> - 当前 API 的图资源路径以 `/graphspaces/{graphspace}/graphs/{graph}` 开头。
-> - HugeGraph 1.5.x 及更早版本使用 `/graphs/{graph}`。创建、克隆图等接口的请求格式也与当前版本不同。
-> - 默认图空间名是 `DEFAULT`。
-> - 旧版本 doc 参考：[HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
+> 默认图空间名是 `DEFAULT`。
 
 Server 启动后，可访问 `http://localhost:8080/swagger-ui/index.html` 查看当前版本的 OpenAPI 页面。[使用示例](/cn/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example)
 

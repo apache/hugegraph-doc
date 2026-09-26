@@ -31,80 +31,127 @@ HugeGraph 通过 Docker-Compose 可快速运行完整的分布式集群版（PD 
 
 > 注: 后续步骤皆为假设你本地**已拉取** `hugegraph` 主仓库代码 (至少是 docker 目录)
 
+本页的 HStore 与 HA Compose 操作按当前主线文件编写，必须使用从同一主线源码构建的 PD、Store 和 Server 镜像；不要把这些 Compose 文件与 `1.7.0` 标签的 HStore 组件镜像混用。单机示例单独固定 `hugegraph/hugegraph:1.7.0` 镜像标签。
+
 ## 鉴权环境
 
-所有拓扑都从 Compose 环境读取管理员密码和共享 JWT 密钥，通常放在 `docker/.env` 文件中：
+以下 `.env` 模板对应当前主线 Compose。尖括号内容和 `replace-with-your-password` 都是占位，必须替换为真实值后才能载入或启动；可参考[主线 docker/README.md 的鉴权环境步骤](https://github.com/apache/hugegraph/blob/master/docker/README.md#create-the-authentication-environment)生成 `.env`，并先替换其中的管理员密码占位：
 
 ```bash
 HUGEGRAPH_ADMIN_PASSWORD='replace-with-your-password'
 HUGEGRAPH_AUTH_TOKEN_SECRET='<32 字节随机值，例如 openssl rand -hex 32>'
+HG_PD_AUTH_SECRET_KEY='<24 字节随机值，例如 openssl rand -hex 24>'
 ```
 
-`HUGEGRAPH_ADMIN_PASSWORD` 非空即开启 Server 鉴权，Hubble 通过 Server API 自动识别该模式。不设置或设为空值则关闭鉴权，这只适用于可信的本地环境。保持同一个 JWT 密钥可以在容器重建后继续使用已签发的 token，多 Server 拓扑中的每个副本都会收到同一个密钥。HA 拓扑设置了 `HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET: "true"`，因此只提供密码而没有共享密钥时会快速失败。请不要提交 `.env`。
+在主线 HStore 和 HA 拓扑中，`HG_PD_AUTH_SECRET_KEY` 是 PD REST Basic 鉴权密码，所有 PD 节点、Server 和 Hubble 都必须使用同一个值。当前主线 PD Docker 镜像要求设置该密钥。Hubble 不会直接读取 `.env`，启动前还要用该值生成拓扑对应的本地配置文件，见下文。不要提交 `.env` 或生成的 `.local.properties`。
 
-`HUGEGRAPH_ADMIN_PASSWORD` 只在第一次以鉴权模式启动时初始化内置的 `admin` 账号。之后修改它不会轮换已有密码，请使用用户 API 修改。
+`HUGEGRAPH_ADMIN_PASSWORD` 非空时会以 `PASSWORD` 启用 Server 鉴权，Hubble 通过 Server API 自动识别该模式；该密码只在首次初始化内置 `admin` 账号。不设置或设为空值则关闭鉴权，这只适用于可信的本地环境。
+
+当前主线 Compose 会把 `HUGEGRAPH_AUTH_TOKEN_SECRET` 传给 `HG_SERVER_AUTH_TOKEN_SECRET`。同一密钥可让主线多 Server 副本验证相同 token，并在容器重建后继续验证已签发 token；HA Compose 还要求显式提供该密钥。`hugegraph/hugegraph:1.7.0` 单机镜像的 Docker 入口脚本只根据 `PASSWORD` 开启鉴权，不读取 `HG_SERVER_AUTH_TOKEN_SECRET`，因此不要把 `.env` 中该变量视为该镜像的固定 JWT 配置。若在 1.7.0 中需要固定 JWT secret，请在其认证图配置 `conf/graphs/hugegraph.properties` 中显式设置 `auth.token_secret`，并确保该配置随容器替换保留；认证图路径及密钥生成说明见[鉴权配置指南](/cn/docs/config/config-authentication/)。
+
+之后修改 `HUGEGRAPH_ADMIN_PASSWORD` 不会轮换已有密码，请使用用户 API 修改。
 
 ## 单节点快速启动
 
+本节固定使用 `hugegraph/hugegraph:1.7.0` 单机镜像标签；HStore/HA 示例使用当前主线构建镜像，不能照搬本节的版本号。
+
 ```bash
-cd hugegraph/docker
- # 注意版本号请随时保持更新 → 1.x.0 
+cd "$(git rev-parse --show-toplevel)/docker"
+# 单机 RocksDB Server 镜像示例
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
 ```
 
 验证：
 ```bash
-curl http://localhost:8080/versions
-curl http://localhost:8088/about        # Hubble
+curl -fsS http://localhost:8080/versions
+curl -fsS http://localhost:8088/about        # Hubble
 ```
 
 Hubble 默认只发布在宿主机回环地址（`127.0.0.1:8088`）。只有在 HTTPS 反向代理和可信网络管控之后才应设置 `HUBBLE_PUBLISH_HOST`。
 
-## 最小 HStore 快速启动
+## 最小 HStore 快速启动（当前主线镜像）
+
+从 HugeGraph Server 主线仓库根目录构建 PD、Store 和 HStore Server 镜像：
 
 ```bash
-cd hugegraph/docker
-HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-hstore.yml up -d --wait
+cd "$(git rev-parse --show-toplevel)"
+docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
+docker build -f hugegraph-store/Dockerfile -t hugegraph/store:local .
+docker build -f hugegraph-server/Dockerfile-hstore -t hugegraph/server:local .
+```
+
+从仓库根目录执行以下命令进入 `docker/`，载入 `.env` 并生成最小拓扑所需的 Hubble 配置。缺少 `hstore.local.properties` 时，Compose 不会为只读 bind mount 自动创建有效配置；先生成文件再启动：
+
+```bash
+cd "$(git rev-parse --show-toplevel)/docker"
+set -a; . ./.env; set +a
+./set-hubble-pd-password.sh hstore
+HUGEGRAPH_VERSION=local HUGEGRAPH_PULL_POLICY=never \
+  docker compose -f docker-compose-hstore.yml up -d --wait
 ```
 
 验证：
 ```bash
-curl http://localhost:8620/v1/health    # PD
-curl http://localhost:8520/v1/health    # Store
-curl http://localhost:8080/versions     # Server
-curl http://localhost:8088/about        # Hubble
+set -a; . ./.env; set +a
+curl -fsS http://localhost:8620/v1/health    # PD
+curl -fsS http://localhost:8520/v1/health    # Store
+curl -fsS http://localhost:8080/versions     # Server
+curl -fsS http://localhost:8088/about        # Hubble
+curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?请先载入 .env}" \
+  http://localhost:8620/v1/stores       # PD REST 认证后查看 Store 注册状态
 ```
 
 若要从本地源码构建该拓扑而不是拉取镜像，可加上开发覆盖文件，并在后续所有生命周期命令中同时带上这两个文件：
 
 ```bash
+cd "$(git rev-parse --show-toplevel)/docker"
+set -a; . ./.env; set +a
+./set-hubble-pd-password.sh hstore
 docker compose -f docker-compose-hstore.yml -f docker-compose.dev.yml up -d --build --wait
 ```
 
-## 3 节点集群快速启动
+覆盖文件为本地构建生成 `dev` 标签的镜像；如果已经按上文构建 `local` 标签镜像，则使用基础 Compose 文件和 `HUGEGRAPH_VERSION=local` 启动，不要同时混用两个版本标签。
+
+## 3 节点集群快速启动（当前主线镜像）
+
+HA Compose 文件不包含源码构建覆盖层。先按最小 HStore 一节从同一主线源码构建 `hugegraph/pd:local`、`hugegraph/store:local` 和 `hugegraph/server:local`，然后在 `docker/` 目录载入 `.env`，生成 HA Hubble 配置并启动：
 
 ```bash
-cd hugegraph/docker
-HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d --wait
+cd "$(git rev-parse --show-toplevel)/docker"
+set -a; . ./.env; set +a
+./set-hubble-pd-password.sh hstore-ha
+HUGEGRAPH_VERSION=local \
+  docker compose -f docker-compose-3pd-3store-3server.yml up -d --wait
 ```
+
+HA Hubble bind-mount `conf/hubble/hstore-ha.local.properties`；必须在启动前生成。该文件与最小 HStore 使用的 `hstore.local.properties` 分开生成，但两者从同一 `.env` 读取同一个 `HG_PD_AUTH_SECRET_KEY`。
 
 默认内置的启动顺序：
 1. PD (节点)最先启动，且必须通过 `/v1/health` 健康检查
 2. Store (节点)在所有 PD 健康后再启动
 3. Server (节点)在所有 Store + PD 健康后最后启动
 
-验证集群正常：(重要)
+验证集群正常：PD 的 `/v1/health` 和 `/v1/ready` 是无需认证的探针；查询 Store 注册和分区数据属于受保护的 PD REST 管理接口，需用用户名 `hg` 和 `.env` 中的 `HG_PD_AUTH_SECRET_KEY` 进行 Basic 认证。
+
 ```bash
-curl http://localhost:8620/v1/health      # PD 健康检查
-curl http://localhost:8520/v1/health      # Store 健康检查
-curl http://localhost:8080/versions        # Server
-curl http://localhost:8620/v1/stores       # 已注册的 Store
-curl http://localhost:8620/v1/partitions   # 分区分配
+set -a; . ./.env; set +a
+curl -fsS http://localhost:8620/v1/health      # PD 健康检查
+curl -fsS http://localhost:8520/v1/health      # Store 健康检查
+curl -fsS http://localhost:8080/versions        # Server
+for port in 8620 8621 8622; do
+  curl -fsS "http://localhost:${port}/v1/ready" | grep -q '"ready":true'
+done
+curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?请先载入 .env}" \
+  http://localhost:8620/v1/stores          # 认证后查看已注册的 Store
+curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?请先载入 .env}" \
+  http://localhost:8620/v1/partitions      # 认证后查看分区分配
+curl -fsS http://localhost:8088/about           # Hubble
 ```
 
 开启鉴权后，图列表接口应拒绝匿名请求并接受管理员：
 
 ```bash
+set -a; . ./.env; set +a
 curl -o /dev/null -w '%{http_code}\n' \
   http://localhost:8080/graphspaces/DEFAULT/graphs                      # 期望 401
 curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
@@ -115,7 +162,7 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 ## 环境变量参考
 
-PD 和 Store 的入口脚本会把各自的变量拼成 `SPRING_APPLICATION_JSON`，并在启动时打印生效值，因此 `docker logs` 中能看到容器实际解析出的配置。Server 的入口脚本则直接改写 `conf/graphs/hugegraph.properties` 和 `conf/rest-server.properties` 中的键。
+以下 PD、Store、Server 和 Compose 变量表描述当前主线镜像入口及 Compose 文件，不是 `hugegraph/hugegraph:1.7.0` 单机镜像的环境变量契约。PD 和 Store 的入口脚本会把各自的变量拼成 `SPRING_APPLICATION_JSON`，并在启动时打印部分非敏感配置摘要；PD 密钥不会打印在该摘要中。`docker logs` 可用于核对日志列出的配置项，但不要以日志中未显示密钥来判断是否生效。Server 的入口脚本则直接改写 `conf/graphs/hugegraph.properties` 和 `conf/rest-server.properties` 中的键。
 
 ### PD 变量
 
@@ -129,6 +176,7 @@ PD 和 Store 的入口脚本会把各自的变量拼成 `SPRING_APPLICATION_JSON
 | `HG_PD_REST_PORT` | 否 | `8620` | `server.port` |
 | `HG_PD_DATA_PATH` | 否 | `/hugegraph-pd/pd_data` | `pd.data-path` |
 | `HG_PD_INITIAL_STORE_COUNT` | 否 | `1` | `pd.initial-store-count` |
+| `HG_PD_AUTH_SECRET_KEY` | 是（当前主线 Docker） | 无 | `auth.secret-key`；PD REST Basic 密码，也供 Server 与 Hubble 使用 |
 
 > **已弃用的别名**：`GRPC_HOST` → `HG_PD_GRPC_HOST`、`RAFT_ADDRESS` → `HG_PD_RAFT_ADDRESS`、`RAFT_PEERS` → `HG_PD_RAFT_PEERS_LIST`、`PD_INITIAL_STORE_LIST` → `HG_PD_INITIAL_STORE_LIST`。只有当新名称未设置时才会把旧名称映射过去，并打印一条警告日志。任一必填变量缺失时，入口脚本以退出码 2 退出。
 
@@ -166,7 +214,8 @@ PD 和 Store 的入口脚本会把各自的变量拼成 `SPRING_APPLICATION_JSON
 | `HG_SERVER_STARTUP_TIMEOUT_S` | `120`（秒） | 传给 `bin/start-hugegraph.sh -t`，允许范围为 `1`–`86400`；详见下文的 Server 启动等待超时 |
 | `STORE_REST` | `store:8520` | `wait-partition.sh` 轮询的 Store REST 地址，仅 hstore 后端使用 |
 | `HG_SERVER_PD_REST_ENDPOINT` | 由 `pd.peers` 把 `:8686` 改写为 `:8620` 得到 | `wait-storage.sh` 轮询的 PD REST 地址 |
-| `PD_AUTH_USER` / `PD_AUTH_PASSWORD` | `store` / `admin` | `wait-storage.sh` 访问 PD REST API 使用的凭据 |
+| `PD_AUTH_USER` | `store` | `wait-storage.sh` 访问 PD REST API 的 Basic 用户名 |
+| `PD_AUTH_PASSWORD` | 空 | PD REST Basic 密码；启用 PD REST 鉴权时须与 `HG_PD_AUTH_SECRET_KEY` 相同 |
 | `WAIT_PARTITION_TIMEOUT_S` | `120` | `wait-partition.sh` 等待分区分配的时长 |
 
 > **已弃用的别名**：`BACKEND` → `HG_SERVER_BACKEND`、`PD_PEERS` → `HG_SERVER_PD_PEERS`
@@ -189,7 +238,8 @@ PD 和 Store 的入口脚本会把各自的变量拼成 `SPRING_APPLICATION_JSON
 | `HUBBLE_PULL_POLICY` | `missing` | Hubble 镜像的 `pull_policy` |
 | `HUBBLE_PUBLISH_HOST` | `127.0.0.1` | Hubble `8088` 端口发布到的宿主机网卡 |
 | `HUGEGRAPH_ADMIN_PASSWORD` | （无） | 以 `PASSWORD` 传给 Server |
-| `HUGEGRAPH_AUTH_TOKEN_SECRET` | （无） | 以 `HG_SERVER_AUTH_TOKEN_SECRET` 传给 Server |
+| `HUGEGRAPH_AUTH_TOKEN_SECRET` | （无） | 当前主线 Compose 以 `HG_SERVER_AUTH_TOKEN_SECRET` 传给 Server；1.7.0 镜像不读取该变量 |
+| `HG_PD_AUTH_SECRET_KEY` | （无） | HStore 拓扑 PD REST Basic 密码；由 Compose 传给 PD 和 Server，并用于生成 Hubble 本地配置 |
 
 ## 端口参考
 
@@ -225,7 +275,14 @@ PD 和 Store 的入口脚本会把各自的变量拼成 `SPRING_APPLICATION_JSON
 
 2. **Raft 选举超时**：检查所有 PD 节点的 `HG_PD_RAFT_PEERS_LIST` 是否一致。验证连通性：`docker exec hg-pd0 ping pd1`
 
-3. **分区分配未完成**：检查 `curl http://localhost:8620/v1/stores`，3 个 Store 必须都显示 `"state":"Up"` 才能完成分区分配
+3. **分区分配未完成**：在 `docker/` 目录先载入 `.env`，再用 PD REST Basic 认证检查 Store：
+
+   ```bash
+   set -a; . ./.env; set +a
+   curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?请先载入 .env}" http://localhost:8620/v1/stores
+   ```
+
+   3 个 Store 都显示 `"state":"Up"` 后，PD 才能为集群完成分区分配。
 
 4. **连接被拒**：确保 `HG_*` 环境变量使用容器主机名（`pd0`、`store0`），而非 `127.0.0.1`
 
@@ -235,7 +292,7 @@ PD 和 Store 的入口脚本会把各自的变量拼成 `SPRING_APPLICATION_JSON
 
 ## 容器监控与健康检查
 
-> **版本说明**：本节描述的行为**不包含在 `1.7.0` 镜像中**。请使用 `HUGEGRAPH_VERSION=latest` 或等待下一个发布版本。
+> **版本说明**：本节描述当前主线 Docker 镜像的行为，**不包含在 `1.7.0` 镜像中**。可使用上文从主线构建并标记为 `local` 的镜像，或包含这些改动的 `latest` 镜像。
 
 ### 进程监控模型
 

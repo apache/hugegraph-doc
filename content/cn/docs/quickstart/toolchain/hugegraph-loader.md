@@ -162,7 +162,7 @@ schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").ifNotExist
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
 
-> 关于 schema 的详细说明请参考 [hugegraph-client](/docs/clients/hugegraph-client) 中对应部分。
+> 关于 schema 的详细说明请参考 [HugeGraph Java Client](/cn/docs/clients/hugegraph-client/) 中对应部分。
 
 #### 3.2 准备数据
 
@@ -612,7 +612,7 @@ bin/utf8-bom-to-utf8.sh /path/to/file-or-dir
 - skip: 是否跳过该输入源，由于 JSON 文件无法添加注释，如果某次导入时不想导入某个输入源，但又不想删除该输入源的配置，则可以设置为 true 将其跳过，默认为 false，非必填；
 - input: 输入源映射块，复合结构
     - type: 输入源类型，必须填 file 或 FILE； 
-    - path: 本地文件或目录的路径，绝对路径或相对于映射文件的相对路径，建议使用绝对路径，必填；
+    - path: 本地文件或目录的路径，绝对路径或相对于 Loader 进程当前工作目录的相对路径，必填；为避免工作目录不同导致找不到文件，建议使用绝对路径；
     - file_filter: 从`path`中筛选复合条件的文件，复合结构，目前只支持配置扩展名，用子节点`extensions`表示，默认为"*"，表示保留所有文件；
     - format: 本地文件的格式，可选值为 CSV、TEXT 及 JSON，必须大写，默认为 CSV，选填；               
     - header: 文件各列的列名，如不指定则会以数据文件第一行作为 header；当文件本身有标题且又指定了 header，文件的第一行会被当作普通的数据行；JSON 文件不需要指定 header，选填；
@@ -710,7 +710,7 @@ schema: 必填
 - bootstrap_server：kafka bootstrap server 列表，必填；
 - topic：订阅的 topic，必填；
 - group：Kafka 消费者组，必填；
-- from_beginning：是否从 topic 最早的 offset 开始读取（`auto.offset.reset=earliest`），否则从最新 offset 开始，默认为 false，选填；
+- from_beginning：设置 Kafka 的 `auto.offset.reset`；`true` 对应 `earliest`，`false` 对应 `latest`，默认为 `false`。该策略仅在消费组没有已提交 offset，或已提交 offset 不再有效时生效；已有有效 offset 时会从该 offset 继续读取；
 - format：每条消息的格式，可选值为 CSV、TEXT 及 JSON，必须大写，必填；
 - header：消息各列的列名；loader 不会从 topic 中读取表头行，因此 CSV 和 TEXT 格式必须指定，JSON 消息则不需要；
 - delimiter：消息的列分隔符，仅 TEXT 格式使用，CSV 固定以`,`分隔，选填；
@@ -718,7 +718,7 @@ schema: 必填
 - date_format：自定义的日期格式，默认值为 yyyy-MM-dd HH:mm:ss，选填；如果日期是以时间戳的形式呈现的，此项须写为 timestamp（固定写法）；
 - extra_date_formats：自定义的其他日期格式列表，默认为空，选填；列表中每一项都是一个 date_format 指定日期格式的备用日期格式；
 - time_zone：置日期数据是处于哪个时区的，默认值为 GMT+8，选填；
-- skipped_line：想跳过的行，复合结构，目前只能配置要跳过的行的正则表达式，用子节点 regex 描述，默认不跳过任何行，选填；
+- skipped_line：当前 master 的 KafkaReader 未实现该过滤，配置此字段不会跳过 Kafka 消息；每条消息仍会直接交给所选格式的解析器，空行或注释行可能因此触发解析错误。需要过滤时请在写入 Kafka 前或消费侧预处理；
 - batch_size：单次拉取的最大记录数（`max.poll.records`），默认为 500，选填；
 - early_stop：某次从 Kafka broker 拉取的记录为空，停止任务，默认为 false，仅用于调试，选填；
 
@@ -933,6 +933,59 @@ bin/hugegraph-loader.sh -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} 
 ```
 
 脚本在设置了 `JAVA_HOME` 时使用其中的 JVM，否则使用 `PATH` 上的 `java`。它会把 `JVM_OPTS` 环境变量的内容，以及 `-Xmx10g` 和由 `lib/` 生成的 classpath 一起传给 JVM，因此需要追加 JVM 参数时可以设置 `JVM_OPTS`。日志由 `conf/log4j2.xml` 配置。
+
+#### 3.4.5 最小本地文件导入示例
+
+先确保 HugeGraph Server 已启动，当前用户可以访问 `DEFAULT` 图空间中的 `hugegraph` 图，并有权限创建 Schema 和写入数据。若 Server 已启用认证，在命令中增加对应的 `--username`、`--password` 或 `--token`。本例只需本地文件，不依赖 Kafka、HDFS 或 JDBC。
+
+进入解压后的 Loader 安装目录，再创建数据、Schema 和 2.0 格式的映射文件：
+
+```bash
+mkdir -p demo-loader
+
+cat > demo-loader/people.csv <<'EOF'
+docs-smoke-alice,29
+docs-smoke-bob,31
+EOF
+
+cat > demo-loader/schema.groovy <<'EOF'
+schema.propertyKey("docs_name").asText().ifNotExist().create()
+schema.propertyKey("docs_age").asInt().ifNotExist().create()
+schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age").primaryKeys("docs_name").ifNotExist().create()
+EOF
+
+cat > demo-loader/struct.json <<'EOF'
+{
+  "version": "2.0",
+  "structs": [
+    {
+      "id": "people",
+      "input": {
+        "type": "FILE",
+        "path": "demo-loader/people.csv",
+        "format": "CSV",
+        "header": ["docs_name", "docs_age"]
+      },
+      "vertices": [
+        {"label": "docs_smoke_person"}
+      ],
+      "edges": []
+    }
+  ]
+}
+EOF
+```
+
+`people.csv` 没有表头行，列名由映射文件的 `header` 提供。映射文件中的本地路径相对于运行命令时的工作目录。仍在 Loader 安装目录中执行导入；如果 Server 在其他容器中，请把 `--host` 改为 Loader 能访问到的 Server 地址。
+
+```bash
+bin/hugegraph-loader.sh \
+  --graphspace DEFAULT --graph hugegraph \
+  --file demo-loader/struct.json --schema demo-loader/schema.groovy \
+  --host 127.0.0.1 --port 8080
+```
+
+本例用独立的 `docs_smoke_person` 标签和 `docs_*` 属性，避免与预置的 `person` 样例数据冲突。成功时统计中应显示顶点写入成功数为 `2`、边写入成功数为 `0`。也可以在 Hubble 的 Gremlin 工作台查询 `g.V().hasLabel('docs_smoke_person').values('docs_name')`，结果应包含 `docs-smoke-alice` 和 `docs-smoke-bob`。
 
 ### 4 完整示例
 

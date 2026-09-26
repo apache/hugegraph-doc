@@ -39,7 +39,7 @@ HugeGraphServer 内部集成了 GremlinServer 和 RestServer，而 gremlin-serve
 
 发行包中的 `host` 和 `port` 默认行是注释；未指定时使用 `127.0.0.1:8182`。若要修改监听地址，取消注释并设置这两项：
 
-```yaml
+```yaml {filename="conf/gremlin-server.yaml"}
 #host: 127.0.0.1
 #port: 8182
 evaluationTimeout: 30000

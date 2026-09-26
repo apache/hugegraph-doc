@@ -77,18 +77,30 @@ mvn clean package -pl hugegraph-store/hg-store-dist -am -DskipTests
 docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
 docker build -f hugegraph-store/Dockerfile -t hugegraph/store:local .
 docker build -f hugegraph-server/Dockerfile-hstore -t hugegraph/server:local .
+```
 
-# 只启动 PD、Store、Server，不启动需要额外 Hubble 配置的可选 Hubble 服务
-export HG_PD_AUTH_SECRET_KEY="$(openssl rand -hex 24)"
+首次启动前，按 [docker/README.md 的认证环境步骤](https://github.com/apache/hugegraph/blob/master/docker/README.md#create-the-authentication-environment) 在 `docker/` 创建 `.env`。
+该步骤使用 `umask 077` 并拒绝覆盖已有文件；若 `.env` 已存在，应保留原文件并编辑补全缺少的项。
+不要为已初始化的数据目录重新生成 `HG_PD_AUTH_SECRET_KEY`。此文件由仓库 `.gitignore` 忽略，仍不要提交。
+每次在新 shell 执行 Compose 或 PD REST 命令前，都从 `docker/` 目录加载同一文件：
+
+```bash
+# 在 hugegraph 仓库根目录执行
 cd docker
+set -a; . ./.env; set +a
+: "${HG_PD_AUTH_SECRET_KEY:?请在 .env 中设置 HG_PD_AUTH_SECRET_KEY}"
+# 只启动 PD、Store、Server，不启动可选 Hubble 服务
 HUGEGRAPH_VERSION=local HUGEGRAPH_PULL_POLICY=never \
   docker compose -f docker-compose-hstore.yml \
   up -d --wait pd store server
 ```
 
-后续重启或调用 PD REST 时复用同一个 `HG_PD_AUTH_SECRET_KEY`；不要为已初始化的数据目录重新生成新值。
+后续重启或调用 PD REST 时，先按上面的方式加载同一个密钥；不要为已初始化的数据目录重新生成新值。`HUGEGRAPH_VERSION=local` 和 `HUGEGRAPH_PULL_POLICY=never` 是此 Compose 命令的参数，每次运行 Compose 生命周期命令时都要显式带上。
 
-若要启动 Compose 文件中的 Hubble 服务，按 [docker/README.md 的认证环境步骤](https://github.com/apache/hugegraph/blob/master/docker/README.md#create-the-authentication-environment) 生成 `.env` 和拓扑对应的未跟踪配置文件：最小拓扑 `docker-compose-hstore.yml` 使用 `conf/hubble/hstore.local.properties`；HA 拓扑 `docker-compose-3pd-3store-3server.yml` 使用 `conf/hubble/hstore-ha.local.properties`。README 生成 `.env` 时分别调用 `./set-hubble-pd-password.sh hstore` 和 `./set-hubble-pd-password.sh hstore-ha`，将共享的 PD 密钥写入两份配置；单独重生成时先从 `docker/` 目录载入 `.env`，再执行对应命令：
+若要启动 Compose 文件中的 Hubble 服务，需使用拓扑对应的未跟踪配置文件。
+最小拓扑 `docker-compose-hstore.yml` 使用 `conf/hubble/hstore.local.properties`；
+HA 拓扑 `docker-compose-3pd-3store-3server.yml` 使用 `conf/hubble/hstore-ha.local.properties`。
+上述 README 初始化步骤会用共享 PD 密钥生成两份文件。若文件缺失或需更新，先从 `docker/` 目录载入已有 `.env`，再执行对应命令：
 
 ```bash
 set -a; . ./.env; set +a

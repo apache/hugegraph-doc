@@ -22,7 +22,7 @@ weight: 3
 - HugeGraph-AI 根目录 workspace：Python 3.10 或更高版本；HugeGraph-LLM 还要求低于 3.12
 - HugeGraph-ML：Python 3.10 或更高版本
 - PyPI 上的 `hugegraph-python` 1.5.0：Python 3.9 或更高版本；当前仓库源码随 workspace 使用 Python 3.10 或更高版本
-- Vermeer Python 客户端：Python 3.9 或更高版本
+- Vermeer Python 客户端：当前源码要求 Python 3.10 或更高版本；发行元数据仍声明 `>=3.9`，详见[客户端页](/cn/docs/quickstart/hugegraph-ai/vermeer-python-client/)
 - `uv` 0.7 或更高版本
 - HugeGraph Server 1.5.0 或更高版本；当前 workspace 的 Python 客户端会拒绝可探测到的更低版本
 

@@ -99,6 +99,8 @@ HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
 
 单机 `docker-compose.yml` 示例使用 HugeGraph 1.7.0 版本镜像 `hugegraph/hugegraph:1.7.0`；该文件引用的 `docker/conf/hubble/standalone.properties` 已随源码提供。Compose 文件从 `HUGEGRAPH_ADMIN_PASSWORD` 读取管理员密码，从 `HUGEGRAPH_AUTH_TOKEN_SECRET` 读取 JWT 密钥，通常放在 `docker/.env` 文件中。`HUGEGRAPH_ADMIN_PASSWORD` 非空即开启鉴权，Hubble 会自动识别该模式。若直接使用 `docker run`，则改为传入 `-e PASSWORD=xxx`。HStore Compose 文件属于当前主线，不能与 1.7.0 的 PD/Store/Server 发布镜像混用，见下文。
 
+**JWT 密钥的版本差异**：当前主线构建的 Server 镜像会把 `HUGEGRAPH_AUTH_TOKEN_SECRET` 映射到 `HG_SERVER_AUTH_TOKEN_SECRET`，并写入 Server 启动配置；跨重建时应在 `.env` 中保留同一密钥。1.7.0 镜像的 [Docker 入口脚本](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh)只处理 `PASSWORD` 等旧变量，不会读取 `HG_SERVER_AUTH_TOKEN_SECRET`。如需在 1.7.0 中固定 JWT 密钥，须将 [`auth.token_secret`](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/config/AuthOptions.java) 持久写入该版本的 `conf/graphs/hugegraph.properties`；若保留默认随机密钥，不应假定已有 JWT 在 Server 重启后仍有效。
+
 完整的部署指南请参阅 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
 > 注意：

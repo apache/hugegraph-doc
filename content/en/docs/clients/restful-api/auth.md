@@ -6,7 +6,7 @@ description: "Authentication REST API: Manage users, roles, permissions, and acc
 ---
 
 > **Version Change Notice**: This page tracks current `master`. For release behavior, see
-> [HugeGraph 1.7 REST API](/versions/1.7/docs/clients/restful-api/auth/).
+> [HugeGraph 1.7 REST API](https://hugegraph.apache.org/versions/1.7/docs/clients/restful-api/auth/).
 >
 > On 1.7.0, `GroupAPI` is served at `/auth/groups`. Current `master` also serves GraphSpace groups at
 > `/graphspaces/{graphspace}/auth/groups`, added by [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096).

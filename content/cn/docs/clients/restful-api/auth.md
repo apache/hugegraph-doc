@@ -5,14 +5,14 @@ weight: 16
 description: "Authentication（认证鉴权）REST 接口:管理用户、角色、权限和访问控制,实现细粒度的图数据安全机制。"
 ---
 
-> **版本说明**：本文跟随当前 `master`；1.7 发布版行为见
-> [HugeGraph 1.7 REST API](/versions/1.7/cn/docs/clients/restful-api/auth/)。
+> **版本说明**：本页介绍当前 `master` 的接口；1.7 发布版见
+> [1.7 版 REST API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/auth/)。
 >
-> 1.7.0 的 `GroupAPI` 挂载于 `/auth/groups`。当前 `master` 还通过
-> [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 提供 `/graphspaces/{graphspace}/auth/groups`。
+> 1.7.0 中，用户组接口只有 `/auth/groups`。当前 `master` 还提供 GraphSpace 用户组接口
+> `/graphspaces/{graphspace}/auth/groups`，由 [PR #3096](https://github.com/apache/hugegraph/pull/3096) 加入。
 >
-> 1.7.0 上 GraphSpace 用户组路由未注册。`AuthenticationFilter` 标注了 `@PreMatching`，会在路由匹配前执行：
-> 缺少或无效凭据可能返回 401，IP 白名单拒绝可能返回 403；过滤器接受请求后，未匹配的路径返回 404。关闭鉴权时也可能返回 404。
+> 1.7.0 没有注册带 GraphSpace 前缀的用户组接口。`AuthenticationFilter` 会先检查白名单和凭据，再匹配路由：IP 不在白名单内返回 403，
+> 缺少或无效凭据返回 401。检查通过后，因路由不存在会返回 404；关闭鉴权且白名单检查通过时，也会返回 404。
 
 ### 10.1 用户认证与权限控制
 
@@ -253,12 +253,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 用户组会赋予相应的资源权限，用户会被分配不同的用户组，即可拥有不同的资源权限。  
 用户组接口包括：创建用户组，删除用户组，修改用户组，和查询用户组相关信息接口。  
 
-> `GroupAPI` 仍挂载在 `/auth/groups`，这是 1.7.0 上唯一的用户组路由。当前 `master` 还提供
-> `/graphspaces/DEFAULT/auth/groups`，该路由由 [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096) 加入。
+> 本节的 GraphSpace 用户组路径只在当前 `master` 中提供；1.7.0 的用户组接口只有 `/auth/groups`。该路径由
+> [PR #3096](https://github.com/apache/hugegraph/pull/3096) 加入。
 >
-> GraphSpace 用户组名由服务端按 `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 位十六进制生成。
-> `DEFAULT` 中的名称和 ID 形如 `~hubble_role:v1:REVGQVVMVA:<32 hex>`；`group_name` 仅是客户端标签。下文请使用
-> 创建响应中的 ID。
+> GraphSpace 用户组名由服务端生成，格式为 `~hubble_role:v1:` + GraphSpace 名称的 base64url 编码 + `:` + 32 个十六进制字符。
+> 例如，`DEFAULT` 的名称和 ID 都是 `~hubble_role:v1:REVGQVVMVA:<32 hex>`。请求中的 `group_name` 只是客户端标签；后续请求请用创建响应返回的 ID。
 
 #### 10.3.1 创建用户组
 
@@ -674,7 +673,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/grant
 关联用户和用户组的关系，一个用户可以关联一个或者多个用户组。用户组拥有相关资源的权限，不同用户组的资源权限可以理解为不同的角色。即给用户关联角色。  
 关联角色接口包括：用户关联角色的创建、删除、修改和查询。
 
-> 用户组 ID 沿用 10.3 示例；实际调用时请使用自己的响应 ID。后续请求使用 Belong 响应中的 `id`，并将 URL 中的 `>` 编码为 `%3E`。
+> 下例沿用 10.3 的用户组 ID。实际调用时请换成自己创建响应中的 ID。后续操作使用 Belong 创建响应里的 `id`，并将 URL 路径中的 `>` 编码为 `%3E`。
 
 #### 10.5.1 创建用户的关联角色
 
@@ -853,7 +852,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 给用户组赋予资源的权限，主要包含：读操作 (READ)、写操作 (WRITE)、删除操作 (DELETE)、执行操作 (EXECUTE) 等。  
 赋权接口包括：赋权的创建、删除、修改和查询。
 
-> 使用 10.3 返回的用户组 ID 和 10.4 返回的资源 ID；实际调用时请使用自己的响应值。后续请求使用 Access 响应中的 `id`，并将 URL 中的 `>` 编码为 `%3E`。
+> 下例使用 10.3 和 10.4 返回的用户组 ID、资源 ID。实际调用时请换成自己的响应值。后续操作使用 Access 创建响应里的 `id`，并将 URL 路径中的 `>` 编码为 `%3E`。
 
 #### 10.6.1 创建赋权 (用户组赋予资源的权限)
 

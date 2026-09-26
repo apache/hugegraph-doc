@@ -1,5 +1,5 @@
 ---
-title: "HugeGraph-Vermeer Quick Start"
+title: "HugeGraph-Vermeer 快速开始"
 linkTitle: "Vermeer: 高性能内存图计算框架"
 weight: 1
 ---

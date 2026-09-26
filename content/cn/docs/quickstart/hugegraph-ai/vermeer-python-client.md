@@ -167,19 +167,23 @@ wait_task(compute_response.task.id, success_state="complete")
 
 不要把真实的 HugeGraph 密码写死在脚本或配置文件中，请像上面这样从环境变量或凭据管理系统读取。
 
-模块自带的 `task_demo.py` 使用 `8688`。运行前，请将其中 `PyVermeerClient` 的 `port` 改为 `6688`，与默认 master HTTP 端口保持一致。根据安装后所在的目录选择对应命令：
+### 保存并运行文档中的端到端示例
 
-**仓库根目录安装**（在 `hugegraph-ai/` 下运行）：
-
-```bash
-python vermeer-python-client/src/pyvermeer/demo/task_demo.py
-```
-
-**独立安装**（在 `hugegraph-ai/vermeer-python-client/` 下运行）：
+将上方完整的增强示例代码保存为 `vermeer_client_example.py`，放在 `hugegraph-ai/` 仓库根目录。在该目录使用已安装 `vermeer` extra 的 workspace 环境运行：
 
 ```bash
-python src/pyvermeer/demo/task_demo.py
+uv sync --extra vermeer
+export VERMEER_PD_PEERS='["hugegraph-pd:8686"]'
+read -s -r HUGEGRAPH_PASSWORD
+export HUGEGRAPH_PASSWORD
+uv run --extra vermeer python vermeer_client_example.py
 ```
+
+输入密码后按回车。将 `hugegraph-pd:8686` 替换为 Vermeer master 可访问的 PD 地址；若 master 启用了 token 鉴权，还要从本机凭据管理方式设置 `VERMEER_TOKEN`。上述命令运行的是文档增强示例，不是包内原始 demo。
+
+### 包内原始 demo
+
+`vermeer-python-client/src/pyvermeer/demo/task_demo.py` 是另一份精简示例：它把客户端端口写为 `8688`，把 PD 地址写为 `127.0.0.1:8686`，并使用 `xxx` 占位用户名和密码。它不会读取本页增强示例使用的环境变量，也没有任务状态轮询或 PageRank 计算。若运行该文件，需单独调整其中的服务地址和 HugeGraph 凭据；不能用它替代上面的文档示例命令。
 
 ## API 概览
 

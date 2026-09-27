@@ -8,7 +8,7 @@ description: "Graphs（图管理）REST 接口:管理图实例的生命周期,�
 ### 6.1 Graphs
 
 > [!WARNING]
-> 生产环境必须启用 [Server 认证与授权](/cn/docs/config/config-authentication/)，结合 IP 白名单、审计日志（audit_log）及最小权限控制图管理接口的访问。下文非鉴权配置仅用于隔离的本地测试。
+> 生产环境必须启用 [Server 认证与授权](/cn/docs/config/config-authentication/)，通过 IP 白名单及最小权限控制图管理接口的访问，并保留 `audit-*.log` 审计记录。下文非鉴权配置仅用于隔离的本地测试。
 
 > 本页介绍当前 master 的 Graphs API。历史版本的路径和请求体请切换到对应多版本页面： [1.7 版 Graphs API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/graphs/) 或
 > [1.5 版 Graphs API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/graphs/)。

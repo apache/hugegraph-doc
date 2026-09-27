@@ -20,7 +20,7 @@ description: "Graphspace（图空间）REST 接口：多租户与资源隔离的
 > [!WARNING]
 > **限制图空间列表和详情接口的访问**
 >
-> `GET /graphspaces` 和 `GET /graphspaces/{graphspace}` 均未声明 `@RolesAllowed`；Server 未启用鉴权时这两个接口可匿名调用，启用鉴权后也没有方法级管理员角色限制。详情响应包含 `dp_username` 和 `dp_password`。生产环境必须将 `white_ip.status` 设为 `enable` 并通过 [IP 白名单 API](/cn/docs/clients/restful-api/other/) 启用、维护名单。网关必须按调用者身份或角色，仅允许管理员和可信运维调用方访问这两条路径；只限制来源 IP 范围仍会让同一网段的普通已认证业务账号读取 DP 凭据。网关须记录这两条路径的调用身份、来源和结果；Server `audit-*.log` 用于鉴权授权记录，不能替代这两条路径的网关访问审计。业务账号须按最小权限授权。
+> `GET /graphspaces` 和 `GET /graphspaces/{graphspace}` 均未声明 `@RolesAllowed`；Server 未启用鉴权时这两个接口可匿名调用，启用鉴权后也没有方法级管理员角色限制。详情响应包含 `dp_username` 和 `dp_password`。生产环境必须将 `white_ip.status` 设为 `enable` 并通过 [IP 白名单 API](/cn/docs/clients/restful-api/other/) 启用、维护名单。网关必须按调用者身份或角色，仅允许管理员和可信运维调用方访问这两条路径；只限制来源 IP 范围仍会让同一网段的普通已认证业务账号读取 DP 凭据。Server 网络策略必须仅允许可信网关的出口地址访问 API 端口，阻断客户端绕过网关的直连路径。网关须记录这两条路径的调用身份、来源和结果；Server `audit-*.log` 用于鉴权授权记录，不能替代这两条路径的网关访问审计。业务账号须按最小权限授权。
 
 #### 2.0.1 创建一个图空间
 

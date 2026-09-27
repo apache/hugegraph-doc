@@ -38,7 +38,7 @@ flowchart LR
 ### 1.2 运行方法
 
 > [!WARNING]
-> 生产环境必须启用 HugeGraph Server [认证与授权](/cn/docs/config/config-authentication/)、IP 白名单和最小权限授权，并保留审计日志（audit_log）。Server Auth 不会保护 Vermeer、PD 和 Store 的独立接口；这些 HTTP、gRPC 端口必须限制在可信网络及调用方范围内，Vermeer 对外入口需配置访问控制。
+> 生产环境必须启用 HugeGraph Server [认证与授权](/cn/docs/config/config-authentication/)、IP 白名单和最小权限授权，并保留 `audit-*.log` 审计记录。Server Auth 不会保护 Vermeer、PD 和 Store 的独立接口；这些 HTTP、gRPC 端口必须限制在可信网络及调用方范围内，Vermeer 对外入口需配置访问控制。
 
 下面两种 Docker 启动方式都需要先准备一个宿主机配置目录。请在 Vermeer 仓库根目录执行，将项目提供的 [`master.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/master.ini) 和 [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/worker.ini) 模板复制到该目录；挂载会覆盖镜像里的 `/go/bin/config`，所以不要把空目录或整个用户主目录挂进去：
 

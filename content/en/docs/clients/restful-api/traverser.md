@@ -266,7 +266,7 @@ The K-out API allows you to find vertices that are exactly "depth" steps away fr
     - vertex_steps: The step set of vertices, supporting label and properties filtering for the vertex. If vertex_steps is empty, the vertex is not filtered.
         - label: Vertex types.
         - properties: Filter vertices based on property values.
-    - max_degree: Maximum number of adjacent edges to traverse for a single vertex, default is 10000 (Note: Prior to version 0.12, the parameter name was "degree" instead of "max_degree". Starting from version 0.12, "max_degree" is used uniformly, while still supporting the "degree" syntax for backward compatibility).
+    - max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
     - skip_degree: Sets the minimum number of edges to skip super vertices during the query process. If the number of adjacent edges for a vertex is greater than skip_degree, the vertex is completely skipped. Optional. If enabled, it should satisfy the constraint `skip_degree >= max_degree`. Default is 0 (not enabled), indicating no skipping of any vertices (Note: Enabling this configuration means that during traversal, an attempt will be made to access skip_degree edges of a vertex, not just max_degree edges. This incurs additional traversal overhead and may have a significant impact on query performance. Please enable it only after understanding the implications).
 - max_depth: Number of steps, required.
 - nearest: When nearest is true, it means the shortest path length from the starting vertex to the result vertex is equal to depth, and there is no shorter path. When nearest is false, it means there is a path of length depth from the starting vertex to the result vertex (not necessarily the shortest and can contain cycles). Optional, default is true.
@@ -511,7 +511,7 @@ Find all vertices that are reachable within depth steps from the starting vertex
     - vertex_steps: The step set of vertices, supporting label and properties filtering for the vertex. If vertex_steps is empty, the vertex is not filtered.
         - label: Vertex types.
         - properties: Filter vertices based on property values.
-    - max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Before version 0.12, the parameter name within the step only supported "degree." Starting from version 0.12, it is unified as "max_degree" and is backward compatible with the "degree" notation.)
+    - max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
     - skip_degree: Used to set the minimum number of edges to discard super vertices during the query process. When the number of adjacent edges for a vertex exceeds skip_degree, the vertex is completely discarded. This is an optional parameter. If enabled, it should satisfy the constraint `skip_degree >= max_degree`. Default is 0 (not enabled), which means no vertices are skipped. (Note: When this configuration is enabled, the traversal will attempt to access skip_degree edges for each vertex, not just max_degree edges. This incurs additional traversal overhead and may significantly impact query performance. Please make sure to understand this before enabling.)
 - max_depth: Number of steps, required.
 - count_only: Boolean value. If true, only the count of results is returned without the actual results. If false, the specific results are returned. Default is false.
@@ -839,7 +839,7 @@ Compute the N vertices with the highest Jaccard similarity to a specified vertex
 	- direction: Direction of the edges (OUT, IN, BOTH). Optional, default is BOTH.
 	- labels: List of edge types.
 	- properties: Filter edges based on property values.
-	- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Prior to version 0.12, the parameter name inside "step" was "degree". Starting from version 0.12, it is unified as "max_degree" and still compatible with "degree" notation.)
+	- max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
 	- skip_degree: Used to set the minimum number of edges to skip super vertices during the query process. If the number of adjacent edges for a vertex is greater than skip_degree, the vertex is completely skipped. Optional, default is 0 (not enabled), which means no skipping. (Note: When this configuration is enabled, the traversal will attempt to access skip_degree edges of a vertex, not just max_degree edges. This incurs additional traversal overhead and may have a significant impact on query performance. Please enable it after understanding and confirming.)
 - top: Return the top N vertices with the highest Jaccard similarity for a starting vertex. Optional, default is 100.
 - capacity: Maximum number of vertices to be visited during the traversal process. Optional, default is 10000000.
@@ -1249,7 +1249,7 @@ Finds the shortest paths between pairs of specified vertices.
 	- direction: Represents the direction of the edges (OUT, IN, BOTH). Default is BOTH.
 	- labels: List of edge types.
 	- properties: Filters the edges based on property values.
-	- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Before version 0.12, the step only supported "degree" as the parameter name. Starting from version 0.12, "max_degree" is used uniformly, and "degree" is still supported for backward compatibility.)
+	- max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
 	- skip_degree: Used to set the minimum number of edges to skip super vertices during the query process. If the number of adjacent edges for a vertex is greater than skip_degree, the vertex is completely skipped. Optional, default is 0 (not enabled), which means no skipping. (Note: When this configuration is enabled, the traversal will attempt to access skip_degree edges of a vertex, not just max_degree edges. This incurs additional traversal overhead and may have a significant impact on query performance. Please enable it after understanding and confirming.)
 - max_depth: Number of steps, required.
 - capacity: Maximum number of vertices to be visited during the traversal process. Optional, default is 10000000.
@@ -1550,7 +1550,7 @@ Finds all paths based on conditions such as the starting vertex, destination ver
 	- direction: Represents the direction of edges (OUT, IN, BOTH). The default is BOTH.
 	- labels: List of edge types.
 	- properties: Filters edges based on property values.
-	- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Prior to version 0.12, step only supported degree as a parameter name. Starting from version 0.12, max_degree is used uniformly and degree writing is backward compatible.)
+	- max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
 	- skip_degree: Used to set the minimum number of edges to be discarded for super vertices during the query process. When the number of adjacent edges for a vertex is greater than skip_degree, the vertex is completely discarded. Optional, if enabled, it must satisfy the constraint `skip_degree >= max_degree`. Default is 0 (not enabled), which means no points are skipped. (Note: When this configuration is enabled, the traversal will attempt to visit skip_degree edges of a vertex, not just max_degree edges. This incurs additional traversal overhead and may have a significant impact on query performance. Please make sure to understand before enabling it.)
 - max_depth: Number of steps, required.
 - nearest: When nearest is true, it means the shortest path length from the starting vertex to the result vertex is depth, and there is no shorter path. When nearest is false, it means there is a path of length depth from the starting vertex to the result vertex (not necessarily the shortest path and can have cycles). Optional, default is true.
@@ -1647,7 +1647,7 @@ Finds all paths that meet the specified conditions based on a batch of starting 
 	- properties: Filters edges based on property values.
 	- weight_by: Calculates the weight of edges based on the specified property. It is effective when sort_by is not NONE and is mutually exclusive with default_weight.
 	- default_weight: The default weight to be used when there is no property to calculate the weight of edges. It is effective when sort_by is not NONE and is mutually exclusive with weight_by.
-	- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Prior to version 0.12, step only supported degree as a parameter name. Starting from version 0.12, max_degree is used uniformly and degree writing is backward compatible.)
+	- max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
 	- sample: Used when sampling is needed for the edges that meet the conditions of a specific step. -1 means no sampling, and the default is to sample 100 edges.
 - sort_by: Sorts the paths based on their weights. Optional, default is NONE:
 	- NONE: No sorting, default value.
@@ -1839,7 +1839,7 @@ Finds all paths that meet the specified conditions based on a batch of starting 
 	- labels: List of edge types.
 	- properties: Filters edges based on property values.
 	- max_times: The number of times the current step can be repeated. When set to N, it means the starting vertices can pass through the current step 1-N times.
-	- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Prior to version 0.12, step only supported degree as a parameter name. Starting from version 0.12, max_degree is used uniformly and degree writing is backward compatible.)
+	- max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
 	- skip_degree: Used to set the minimum number of edges to discard super vertices during the query process. When the number of adjacent edges of a vertex is greater than skip_degree, the vertex is completely discarded. Optional. If enabled, it must satisfy the `skip_degree >= max_degree` constraint. Default is 0 (not enabled), which means no points are skipped. (Note: After enabling this configuration, traversing will attempt to access a vertex's skip_degree edges, not just max_degree edges. This incurs additional traversal overhead and may have a significant impact on query performance. Please ensure understanding before enabling.)
 - with_ring: Boolean value, true to include cycles; false to exclude cycles. Default is false.
 - capacity: Maximum number of vertices to be visited during the traversal process. Optional, default is 10000000.

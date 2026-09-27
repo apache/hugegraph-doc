@@ -14,8 +14,13 @@ HugeGraph implements multi-tenancy through graph spaces, which isolate compute/s
 1. Graphspace currently only works in HStore mode.
 2. In non-HStore mode you can only use the default graphspace `DEFAULT`; creating/deleting/updating other graphspaces is not supported.
 3. Set `usePD=true` in `rest-server.properties` and `backend=hstore` in `hugegraph.properties`.
-4. Graphspace enables strict authentication by default (default credential: `admin:pa`, see the `auth.admin_pa` option). Change the password immediately to avoid unauthorized access.
+4. Production requires Server authentication and authorization, and `auth=true` for new graph spaces. Replace the public default administrator password `pa` configured by `auth.admin_pa`.
 5. Every endpoint on this page requires PD mode. In standalone mode they answer `400` with the message `GraphSpace management is not supported in standalone mode`.
+
+> [!WARNING]
+> **Restrict graph-space listing and detail endpoints**
+>
+> `GET /graphspaces` and `GET /graphspaces/{graphspace}` have no `@RolesAllowed` annotation. They are anonymous when Server authentication is disabled and lack method-level administrator checks when it is enabled. Detail responses contain `dp_username` and `dp_password`. In production, set `white_ip.status=enable` and maintain the [IP allowlist](/docs/clients/restful-api/other/). A gateway must restrict both paths by caller identity or role to administrators and trusted operators; restricting only source IPs still lets ordinary authenticated accounts on that network read DP credentials. Server network policy must allow only trusted gateway egress addresses to the API port, blocking direct client bypass. Record caller identity, source, and outcome at the gateway. Server `audit-*.log` files record authentication and authorization but do not replace gateway access auditing for these paths. Grant business accounts minimum permissions.
 
 #### 2.0.1 Create a graphspace
 
@@ -36,7 +41,7 @@ Note: CPU/memory and Kubernetes-related capabilities are not publicly available 
 | description                  | No       | String  |         |                                                                                | Description                                                                       |
 | cpu_limit                    | Yes      | Int     |         | > 0                                                                            | CPU cores for the graphspace                                                      |
 | memory_limit                 | Yes      | Int     |         | > 0 (GB)                                                                       | Memory quota in GB                                                                |
-| storage_limit                | Yes      | Int     |         | > 0                                                                            | Maximum disk usage                                                                |
+| storage_limit                | Yes      | Int     |         | > 0                                                                            | Maximum disk usage, in GB                                                                |
 | compute_cpu_limit            | No       | Int     | 0       | >= 0                                                                           | Extra HugeGraph-Computer CPU cores; falls back to `cpu_limit` if unset or 0       |
 | compute_memory_limit         | No       | Int     | 0       | >= 0                                                                           | Extra HugeGraph-Computer memory in GB; falls back to `memory_limit` if unset or 0 |
 | oltp_namespace               | No       | String  | ""      |                                                                                | Kubernetes namespace for OLTP HugeGraph-Server                                    |
@@ -180,7 +185,7 @@ GET http://localhost:8080/graphspaces/gs1
 }
 ```
 
-> `dp_username` and `dp_password` are derived from the graphspace name and are only returned by this endpoint.
+> The `dp_username` and `dp_password` values above are documentation examples. Real detail responses contain the graph space's DP credentials and must be protected as sensitive credentials.
 
 #### 2.0.4 Update a graphspace
 
@@ -204,7 +209,7 @@ GET http://localhost:8080/graphspaces/gs1
 | description                  | No       | String |                                                         | Description                                                                       |
 | cpu_limit                    | Yes      | Int    | > 0                                                     | CPU cores for OLTP HugeGraph-Server                                               |
 | memory_limit                 | Yes      | Int    | > 0 (GB)                                                | Memory quota (GB) for OLTP HugeGraph-Server                                       |
-| storage_limit                | Yes      | Int    | > 0                                                     | Maximum disk usage                                                                |
+| storage_limit                | Yes      | Int    | > 0                                                     | Maximum disk usage, in GB                                                                |
 | compute_cpu_limit            | No       | Int    | >= 0                                                    | Extra HugeGraph-Computer CPU cores; falls back to `cpu_limit` if unset or 0       |
 | compute_memory_limit         | No       | Int    | >= 0                                                    | Extra HugeGraph-Computer memory in GB; falls back to `memory_limit` if unset or 0 |
 | oltp_namespace               | Yes      | String |                                                         | Kubernetes namespace for OLTP HugeGraph-Server                                    |

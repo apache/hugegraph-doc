@@ -605,7 +605,7 @@ Input sources are currently divided into five categories: FILE, HDFS, JDBC, KAFK
 - skip: whether to skip the input source, because the JSON file cannot add comments, if you do not want to import an input source during a certain import, but do not want to delete the configuration of the input source, you can set it to true to skip it, the default is false, not required;
 - input: input source map block, composite structure
     - type: an input source type, file or FILE must be filled;
-    - path: the path of the local file or directory, the absolute path or the relative path relative to the mapping file, it is recommended to use the absolute path, required;
+    - path: the path of the local file or directory, an absolute path or a path relative to the Loader process working directory (not the mapping file). An absolute path is recommended; required;
     - file_filter: filter files with compound conditions from `path`, compound structure, currently only supports configuration extensions, represented by child node `extensions`, the default is "*", which means to keep all files;
     - format: the format of the local file, the optional values are CSV, TEXT and JSON, which must be uppercase, the default is CSV, optional;               
     - header: the column name of each column of the file, if not specified, the first line of the data file will be used as the header; when the file itself has a header and the header is specified, the first line of the file will be treated as a normal data line; JSON The file does not need to specify a header, optional;
@@ -703,7 +703,7 @@ schema: required
 - bootstrap_server: the list of kafka bootstrap servers, required;
 - topic: the topic to subscribe to, required;
 - group: group of Kafka consumers, required;
-- from_beginning: whether to start from the earliest offset of the topic (`auto.offset.reset=earliest`) instead of the latest one, default is false, optional;
+- from_beginning: sets `auto.offset.reset` to `earliest` when true, or `latest` when false (default). It applies only when no valid committed offset exists; otherwise consumption resumes from the committed offset. Optional;
 - format: format of each message, options are CSV, TEXT and JSON, must be uppercase, required;
 - header: column name of each column of a message; no header line is read from the topic, so it has to be given for CSV and TEXT, while JSON messages do not need it;
 - delimiter: delimiter of the message columns, used by TEXT only, since CSV always splits on `,`, optional;
@@ -711,7 +711,7 @@ schema: required
 - date_format: customized date format, default value is yyyy-MM-dd HH:mm:ss, optional; if the date is presented in the form of timestamp, this item must be written as timestamp (fixed);
 - extra_date_formats: a customized list of another date formats, empty by default, optional; each item in the list is an alternate date format to the date_format specified date format;
 - time_zone: set which time zone the date data is in, default is GMT+8, optional;
-- skipped_line: the line you want to skip, composite structure, currently can only configure the regular expression of the line to be skipped, described by the child node regex, the default is not to skip any line, optional;
+- skipped_line: current master `KafkaReader` does not implement this filter. Kafka messages go directly to the parser, so configuring this field does not skip blank or comment messages; preprocess them upstream or in the consumer to avoid parse failures;
 - batch_size: the maximum number of records fetched in one poll (`max.poll.records`), default is 500, optional;
 - early_stop: the record pulled from Kafka broker at a certain time is empty, stop the task, default is false, only for debugging, optional;
 
@@ -926,6 +926,60 @@ bin/hugegraph-loader.sh -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} 
 ```
 
 The script runs the JVM under `JAVA_HOME` when that variable is set, and `java` from the `PATH` otherwise. It passes the contents of the `JVM_OPTS` environment variable, then `-Xmx10g` and the class path built from `lib/`, to that JVM, so `JVM_OPTS` is the place to add JVM flags. Logging is configured by `conf/log4j2.xml`.
+
+#### 3.4.5 Minimal Local-File Import
+
+
+First start HugeGraph Server and ensure the current user can access `hugegraph` in graphspace `DEFAULT`, create schema, and write data. If authentication is enabled, add the appropriate `--username`, `--password`, or `--token`. This example requires only local files, without Kafka, HDFS, or JDBC.
+
+From the extracted Loader installation directory, create data, schema, and a version 2.0 mapping file:
+
+```bash
+mkdir -p demo-loader
+
+cat > demo-loader/people.csv <<'EOF'
+docs-smoke-alice,29
+docs-smoke-bob,31
+EOF
+
+cat > demo-loader/schema.groovy <<'EOF'
+schema.propertyKey("docs_name").asText().ifNotExist().create()
+schema.propertyKey("docs_age").asInt().ifNotExist().create()
+schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age").primaryKeys("docs_name").ifNotExist().create()
+EOF
+
+cat > demo-loader/struct.json <<'EOF'
+{
+  "version": "2.0",
+  "structs": [
+    {
+      "id": "people",
+      "input": {
+        "type": "FILE",
+        "path": "demo-loader/people.csv",
+        "format": "CSV",
+        "header": ["docs_name", "docs_age"]
+      },
+      "vertices": [
+        {"label": "docs_smoke_person"}
+      ],
+      "edges": []
+    }
+  ]
+}
+EOF
+```
+
+The CSV has no header row; `input.header` in the mapping supplies column names. `input.path` is relative to the Loader process working directory, so keep running from the installation directory. If Server runs in another container, set `--host` to a Server address reachable by Loader:
+
+```bash
+bin/hugegraph-loader.sh \
+  --graphspace DEFAULT --graph hugegraph \
+  --file demo-loader/struct.json --schema demo-loader/schema.groovy \
+  --host 127.0.0.1 --port 8080
+```
+
+Expected result: two vertices and zero edges imported. This example uses dedicated schema names to avoid conflicts with a preloaded `person` label. In Hubble, run `g.V().hasLabel('docs_smoke_person').values('docs_name')` to confirm `docs-smoke-alice` and `docs-smoke-bob`.
 
 ### 4 Complete example
 

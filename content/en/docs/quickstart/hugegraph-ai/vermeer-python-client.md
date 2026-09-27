@@ -10,7 +10,7 @@ The module does not pin a Vermeer server version. It talks to the Vermeer master
 
 ## Requirements
 
-- Python 3.9 or later for the module on its own. The HugeGraph-AI repository as a whole requires Python 3.10 or later.
+- Current source requires Python 3.10 or later because its type annotations use Python 3.10 features, although packaging metadata still declares `>=3.9`.
 - A running Vermeer master reachable over HTTP on its default port `6688`. Docker deployments must publish `6688:6688`; see the [Vermeer quick start](../computing/hugegraph-vermeer.md).
 - `uv` (recommended) or `pip`
 
@@ -64,18 +64,20 @@ Constructor parameters:
 | `timeout` | `(float, float)` or `None` | `None` | Connect and read timeouts in seconds |
 | `log_level` | `str` | `"INFO"` | Level applied to the shared `VermeerClient` logger |
 
+For a client running on the host, use a master address reachable from that host. For a container client, use its container-network address. The client connects only to the master HTTP API; PD and Store addresses must be reachable from the Vermeer nodes that perform loading.
+
 Behavior worth knowing before you connect:
 
 - `token` may be an empty string when the master does not check authorization, but it cannot be `None`. The session raises `ValueError("Vermeer Token must be provided.")` in that case.
 - `timeout` is a `(connect, read)` pair. `VermeerConfig` has its own default of `(0.5, 15.0)`, but the client always forwards its own argument, so omitting `timeout` stores `None` and the request waits without a deadline. Pass the pair explicitly if you want one.
 - The base URL is always built as `http://{ip}:{port}/`, so the client speaks plain HTTP.
 - Every request sets `Content-Type: application/json` and serializes `params` into the request body, including for `GET` requests.
-- The underlying session retries up to 3 times with a backoff factor of `0.1` on HTTP 500, 502, and 504.
+- The session configures up to 3 retries on HTTP 500, 502, and 504 with backoff factor `0.1`. Status retries follow urllib3's default allowed methods, which exclude `POST`; do not rely on automatic retries for task submission.
 - `log_level` sets the level of the shared logger named `VermeerClient`. Its console handler is fixed at `INFO`, so `DEBUG` records are not printed to the console today.
 
 ## End-to-End Example
 
-The module ships a runnable demo at `vermeer-python-client/src/pyvermeer/demo/task_demo.py`. The version below adds task polling with timeout and failure handling, waits for a successful load before reading the graph, and reads the HugeGraph password from the environment:
+The module ships `vermeer-python-client/src/pyvermeer/demo/task_demo.py`. This extended example polls with a deadline, waits for loading, reads the graph, and submits PageRank. It reads PD peers and the HugeGraph password from environment variables. The worker group must match the task-space allocation; a single-worker quick start can use `worker_group=$`. Bind a named group to the task space first, as shown in the [Vermeer quick start](../computing/hugegraph-vermeer.md).
 
 ```python
 import os
@@ -87,22 +89,22 @@ from pyvermeer.structure.task_data import TaskCreateRequest
 client = PyVermeerClient(
     ip="127.0.0.1",
     port=6688,
-    token="",
+    token=os.getenv("VERMEER_TOKEN", ""),
     timeout=(0.5, 15.0),
     log_level="INFO",
 )
 
-# List the tasks the master knows about
+# List tasks on the master
 tasks = client.tasks.get_tasks()
 print(tasks.to_dict())
 
-# Load a graph from HugeGraph into Vermeer
+# Load graph data from HugeGraph into Vermeer
 create_response = client.tasks.create_task(
     create_task=TaskCreateRequest(
         task_type="load",
         graph_name="DEFAULT-example",
         params={
-            "load.hg_pd_peers": '["127.0.0.1:8686"]',
+            "load.hg_pd_peers": os.environ["VERMEER_PD_PEERS"],
             "load.hugegraph_name": "DEFAULT/example/g",
             "load.hugegraph_username": "admin",
             "load.hugegraph_password": os.environ["HUGEGRAPH_PASSWORD"],
@@ -115,47 +117,73 @@ print(create_response.errcode, create_response.message)
 if create_response.errcode != 0:
     raise RuntimeError(f"Could not create load task: {create_response.message}")
 
-# Poll this load task until it succeeds, fails, or times out
-task_id = create_response.task.id
-poll_timeout = 300.0
-deadline = time.monotonic() + poll_timeout
-while time.monotonic() < deadline:
-    task = client.tasks.get_task(task_id)
-    if task.errcode != 0:
-        raise RuntimeError(f"Could not read task {task_id}: {task.message}")
-    state = task.task.state
-    print(task_id, state)
-    if state == "loaded":
-        break
-    if state in ("error", "canceled"):
-        raise RuntimeError(f"Load task {task_id} ended with state {state}")
-    remaining = deadline - time.monotonic()
-    if remaining > 0:
+def wait_task(task_id, success_state, poll_timeout=300.0):
+    deadline = time.monotonic() + poll_timeout
+    while True:
+        response = client.tasks.get_task(task_id)
+        if response.errcode != 0:
+            raise RuntimeError(f"Could not read task {task_id}: {response.message}")
+        task = response.task
+        print(task_id, task.state)
+        if task.state == success_state:
+            return task
+        if task.state in ("error", "canceled"):
+            raise RuntimeError(f"Task {task_id} ended with state {task.state}")
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError(f"Task {task_id} did not finish within {poll_timeout}s")
         time.sleep(min(1.0, remaining))
-else:
-    raise TimeoutError(f"Load task {task_id} did not finish within {poll_timeout}s")
 
-# Once the graph is loaded, inspect it
+
+# Wait for loading before reading the graph
+wait_task(create_response.task.id, success_state="loaded")
+
+# Inspect the loaded graph
 print(client.graph.get_graph("DEFAULT-example").to_dict())
+
+# Submit PageRank on the loaded graph
+compute_response = client.tasks.create_task(
+    create_task=TaskCreateRequest(
+        task_type="compute",
+        graph_name="DEFAULT-example",
+        params={
+            "compute.algorithm": "pagerank",
+            "compute.parallel": "10",
+            "compute.max_step": "10",
+            "output.type": "local",
+            "output.parallel": "1",
+            "output.file_path": "result/pagerank",
+        },
+    )
+)
+if compute_response.errcode != 0:
+    raise RuntimeError(f"Could not create compute task: {compute_response.message}")
+wait_task(compute_response.task.id, success_state="complete")
 ```
 
-A load task succeeds with state `loaded`; `error` or `canceled` stops the example without reading the graph. Adjust `poll_timeout` (300 seconds here) for your data size. The polling deadline is independent of HTTP connect and read timeouts, and an in-flight request and SDK retries can extend the actual wait beyond it. A timeout stops the client from waiting; it does not cancel the server-side task.
+Loading succeeds with `loaded`; computation succeeds with `complete`. `error` or `canceled` stops the example. Set `VERMEER_PD_PEERS` to a JSON array string, for example `export VERMEER_PD_PEERS='["hugegraph-pd:8686"]'`. The master must reach these PD addresses, and workers must reach the Store addresses returned by PD. Set `VERMEER_TOKEN` only if the master uses token authentication; an empty string works without it.
 
-Never hardcode a real HugeGraph password into a script or a configuration file. Read it from an environment variable or a credential store, as above.
+`output.type=local` writes results to the executing worker's local filesystem with file-name prefix `result/pagerank`. Mount its result directory to read container output from the host. `poll_timeout` is the client polling deadline; requests between checks remain subject to HTTP timeouts and SDK retries, so completion can exceed that deadline. A timeout stops client waiting, not the Server task.
 
-The bundled `task_demo.py` uses `8688`. Before running it, change the `PyVermeerClient` `port` to `6688` to match the default master HTTP port. Use the command corresponding to your installation directory:
+Never hardcode a real HugeGraph password into a script or configuration file. Use an environment variable or credential store.
 
-**Repository-root installation** (from `hugegraph-ai/`):
+### Save and Run the Documentation Example
+
+Save the complete extended example above as `vermeer_client_example.py` at the `hugegraph-ai/` repository root. Run it with the workspace's `vermeer` extra:
 
 ```bash
-python vermeer-python-client/src/pyvermeer/demo/task_demo.py
+uv sync --extra vermeer
+export VERMEER_PD_PEERS='["hugegraph-pd:8686"]'
+read -s -r HUGEGRAPH_PASSWORD
+export HUGEGRAPH_PASSWORD
+uv run --extra vermeer python vermeer_client_example.py
 ```
 
-**Standalone installation** (from `hugegraph-ai/vermeer-python-client/`):
+Enter the password and press Enter. Replace `hugegraph-pd:8686` with a PD address reachable from the Vermeer master. If token authentication is enabled, supply `VERMEER_TOKEN` through your local credential-management method. These commands run the extended documentation example, not the bundled demo.
 
-```bash
-python src/pyvermeer/demo/task_demo.py
-```
+### Original Bundled Demo
+
+`vermeer-python-client/src/pyvermeer/demo/task_demo.py` is a separate minimal example. It hardcodes client port `8688`, PD address `127.0.0.1:8686`, and placeholder credentials `xxx`. It does not read the extended example's environment variables, poll task state, or compute PageRank. Adjust its addresses and credentials separately if running it; it does not replace the documentation commands above.
 
 ## API Surface
 
@@ -187,8 +215,10 @@ python src/pyvermeer/demo/task_demo.py
 Every response type extends `BaseResponse` and exposes `errcode` and `message`, plus a `to_dict()` helper. `errcode` is `0` on success and `1` on error; `-1` means the field was missing from the response body.
 
 - `GraphsResponse.graphs` and `GraphResponse.graph` yield `VermeerGraph` objects with `name`, `space_name`, `status`, `create_time`, `update_time`, `vertex_count`, `edge_count`, `workers`, `worker_group`, `use_out_edges`, `use_property`, `use_out_degree`, `use_undirected`, `on_disk`, and `backend_option`.
-- `TasksResponse.tasks`, `TaskResponse.task`, and `TaskCreateResponse.task` yield `TaskInfo` objects with `id`, `state`, `create_user`, `create_type`, `create_time`, `start_time`, `update_time`, `graph_name`, `space_name`, `type`, `params`, and `workers`.
+- `TasksResponse.tasks`, `TaskResponse.task`, and `TaskCreateResponse.task` yield `TaskInfo` objects with `id`, `state`, `create_user`, `create_type`, `create_time`, `start_time`, `update_time`, `graph_name`, `space_name`, `params`, `workers`, and `error_message`.
 - Timestamps are parsed with `python-dateutil` into `datetime` objects. An empty timestamp string becomes `None`.
+
+Server returns the task type as `task_type`, but SDK `TaskInfo.type` reads `type`, so that property is currently empty. The SDK also drops Server `statistics_result`. Use `TaskInfo.state` for polling. This is a field-contract mismatch in current source.
 
 ### Task Parameters
 
@@ -226,7 +256,7 @@ Run the formatting and static checks from the root of the HugeGraph-AI repositor
 ./style/code_format_and_analysis.sh
 ```
 
-The source lives under `vermeer-python-client/src/pyvermeer/`. The module currently ships no test suite.
+The source lives under `vermeer-python-client/src/pyvermeer/`. A few structure tests are available under `src/tests/structure/test_task_data.py`; they do not cover HTTP API integration.
 
 ## References
 

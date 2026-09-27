@@ -4,7 +4,7 @@ linkTitle: "Configuration Reference"
 weight: 4
 ---
 
-HugeGraph-LLM reads runtime settings from `hugegraph-llm/.env`. Prompts are stored separately in `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml` and are not written to `.env`.
+HugeGraph-LLM reads runtime configuration from `.env` and prompts from `config_prompt.yaml`. These files have different path-resolution rules; the prompt file is not part of `.env`.
 
 The `.env` path is resolved in this order:
 
@@ -12,14 +12,24 @@ The `.env` path is resolved in this order:
 2. `hugegraph-llm/.env`, when the package runs from a source checkout.
 3. `.env` in the current working directory, for an installed package.
 
-Create or update the files from configuration-class defaults with:
+The path is selected when the configuration module is imported. Set `HUGEGRAPH_LLM_ENV_PATH` before starting Python, not inside the `.env` file that will be loaded. Relative overrides are resolved against the process working directory.
+
+The prompt YAML path is resolved in this order:
+
+1. `HUGEGRAPH_LLM_PROMPT_CONFIG_PATH` from the process environment, expanding a leading `~`.
+2. `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml` when running from source.
+3. `${XDG_CONFIG_HOME:-~/.config}/hugegraph-llm/config_prompt.yaml` for an installed package.
+
+Set path overrides before starting the process. Relative paths use its working directory. The source Docker image points `PYTHONPATH` at the source tree, so its default prompt path remains under `hugegraph-llm/src/hugegraph_llm/resources/demo/`.
+
+Create or update files from configuration-class defaults with:
 
 ```bash
 cd hugegraph-ai/hugegraph-llm
 python -m hugegraph_llm.config.generate --update
 ```
 
-`--update` is on by default, so running the module without arguments does the same thing. The command writes the HugeGraph, admin, LLM, and index settings, then regenerates the prompt YAML. If `.env` already exists, it asks for confirmation before overwriting.
+`--update` is enabled by default, so running without arguments has the same effect. On first configuration-module import, missing `.env` and prompt YAML files are created from defaults. The generator asks interactively before overwriting existing files. It handles HugeGraph, administrator, LLM, index, and prompt settings without overwriting existing files silently.
 
 `.env` contains keys and passwords. Do not commit it to version control.
 
@@ -129,7 +139,10 @@ The same choice is available in the `5. Set up the vector engine.` panel of the 
 | `USER_TOKEN` | `4321` | Token for the Web UI and regular APIs |
 | `ADMIN_TOKEN` | `xxxx` | Administrator token used by `/logs` |
 
-`/logs` returns 403 when `ADMIN_TOKEN` is empty or still set to `xxxx`. Replace both the user and administrator tokens in production.
+`/logs` returns 403 when `ADMIN_TOKEN` is empty or still set to `xxxx`.
+
+> [!WARNING]
+> In production, set `ENABLE_LOGIN=True`, replace `USER_TOKEN` and `ADMIN_TOKEN`, and enforce a source IP allowlist at the firewall or network entry point. This protects only HugeGraph-LLM. Separately enable [Server authentication and authorization](/docs/config/config-authentication/), retain Server audit logs (normally `audit-*.log`), and grant `GRAPH_USER` minimum required permissions. The two services use different credentials.
 
 ## Minimal OpenAI Configuration
 
@@ -155,9 +168,9 @@ GRAPH_PWD=your-password
 
 ## Configuration Loading
 
-Configuration classes supply code defaults and then apply overrides from `.env` and the process environment. The Web UI and configuration APIs can update current settings at runtime and write supported fields back to `.env`. Restart the service after editing `.env` manually; prompt YAML can be refreshed by the page-loading logic.
+Configuration classes supply code defaults. During initialization, values from the selected `.env` are written into the process environment before the configuration objects are created, overriding same-named shell variables. Missing keys use defaults; empty values and unknown keys are ignored. The Web UI and configuration APIs can update settings and write supported fields back to `.env`. Restart after manual `.env` edits; prompt YAML is read at service startup or page load.
 
-Unknown keys in `.env` are ignored rather than rejected, and empty values fall back to the code default. Keys are matched case-insensitively.
+Keys are matched case-insensitively.
 
 Configuration definitions are in:
 

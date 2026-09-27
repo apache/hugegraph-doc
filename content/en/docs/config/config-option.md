@@ -9,6 +9,8 @@ search_keywords:
 search_boost: 1.5
 ---
 
+Defaults in these tables are source-code defaults used when an option is not explicitly set. Distribution files can specify different values and override them; use the configuration shipped with your installed release to determine effective settings.
+
 ### Gremlin Server Config Options
 
 Corresponding configuration file `gremlin-server.yaml`
@@ -67,13 +69,8 @@ Corresponding configuration file `rest-server.properties`
 | raft.group_peers                       | 127.0.0.1:8090                                   | The rpc address of raft group initial peers.                                                                                                                                                                  |
 | auth.authenticator                     |                                                  | The class path of authenticator implementation. e.g., org.apache.hugegraph.auth.StandardAuthenticator, or a custom implementation.                                                        |
 | auth.graph_store                       | hugegraph                                        | The name of graph used to store authentication information, like users, only for org.apache.hugegraph.auth.StandardAuthenticator.                                                                              |
-| auth.admin_pa                          | pa                                               | The default password for built-in admin account, takes effect on first startup. It must be changed before deployment.                                                                                          |
-| auth.audit_log_rate | 1000.0 | Maximum audit records per user per second. Non-negative values are truncated to integers: `1.9` becomes `1`; `0` or values below `1` suppress audit logging. Use a positive integer to retain audit records. |
-| auth.cache_capacity                    | 10240                                            | The max cache capacity of each auth cache item.                                                                                                                                                               |
-| auth.cache_expire                      | 600                                              | The expiration time in seconds of auth cache in auth client and auth server.                                                                                                                                  |
+| auth.admin_pa | pa | Used when the Server startup path initializes admin. Explicitly set a strong password before production deployment; the public default is `pa`. On local persistent backends, `init-store.sh` prompts for the initial password. |
 | auth.remote_url                        |                                                  | If the address is empty, it provide auth service, otherwise it is auth client and also provide auth service through rpc forwarding. The remote url can be set to multiple addresses, which are concat by ','. |
-| auth.token_expire                      | 86400                                            | The expiration time in seconds after token created                                                                                                                                                            |
-| auth.token_secret                      | Randomly generated at startup                    | HS256 secret; configure it explicitly if existing tokens must remain valid across restarts.                                                                                                                   |
 | exception.allow_trace                  | true                                             | Whether to allow exception trace stack.                                                                                                                                                                       |
 | memory_monitor.threshold               | 0.85                                             | Threshold for JVM memory usage monitoring, 1 means disabling the memory monitoring task.                                                                                                                      |
 | memory_monitor.period                  | 2000                                             | The period in ms of JVM memory usage monitoring, in each period we will detect the jvm memory usage and take corresponding actions.                                                                            |
@@ -101,6 +98,7 @@ Corresponding configuration file `rest-server.properties`
 | usePD                | false                 | Whether use pd.                                                 |
 | pd.peers             | 127.0.0.1:8686        | The pd server peers, separated with commas.                     |
 | cluster              | hg-test               | The cluster name.                                               |
+| pd.stores_wait_timeout | 300 | Seconds to wait for at least `pd.initial-store-count` active Stores before opening an HStore graph. Range: `0..2147483647`; `0` disables waiting. |
 | metrics.data_to_pd   | true                  | Whether to report metrics data to pd.                           |
 | meta.endpoints       | http://127.0.0.1:2379 | The URL of meta endpoints. No code reads this option, so setting it has no effect; the meta connection is built from `pd.peers`. |
 | meta.use_ca          | false                 | Whether to use ca to meta server.                               |
@@ -115,6 +113,18 @@ The HStore backend also reads two options from the graph configuration file `{gr
 |-------------------------|---------------|-----------------------------------------------------------------|
 | hstore.partition_count  | 0             | Number of partitions, which PD controls partitions based on.    |
 | hstore.shard_count      | 0             | Number of copies, which PD controls partition copies based on.  |
+
+### Authentication Graph Config Options
+
+Write these options in the properties file for the graph specified by `auth.graph_store`, normally `conf/graphs/hugegraph.properties`. Configure `auth.authenticator`, `auth.graph_store`, `auth.admin_pa`, and `auth.remote_url` in the `rest-server.properties` table above.
+
+| config option | default value | description |
+|---------------|---------------|-------------|
+| auth.audit_log_rate | 1000.0 | Maximum audit records per user per second. Non-negative values are truncated to integers: `1.9` becomes `1`; `0` or values below `1` suppress audit logging. Use a positive integer to retain audit records. |
+| auth.cache_capacity | 10240 | Maximum entries per authentication cache; a non-negative integer. |
+| auth.cache_expire | 600 | Authentication client and Server cache expiration in seconds; a non-negative integer. |
+| auth.token_expire | 86400 | JWT lifetime in seconds; a non-negative integer. |
+| auth.token_secret | 32 random bytes encoded as Base64 | Authentication graph setting; the default is not written back to the file. Explicitly set the same strong random value on every node to validate tokens across restarts or nodes. HS256 requires at least 32 UTF-8 bytes. |
 
 ### Basic Config Options
 
@@ -133,6 +143,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | alias.graph.id                        |                                              | The graph alias id.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | graph.read_mode                       | OLTP_ONLY                                    | The graph read mode, which could be ALL &#124; OLTP_ONLY &#124; OLAP_ONLY.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | pd.peers                              | 127.0.0.1:8686                               | The addresses of pd nodes, separated with commas. Only used by the hstore backend.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| pd.cluster | hg | Cluster prefix used for graph-level PD metadata connections when `usePD=false`. With `usePD=true`, the REST `cluster` setting takes precedence. This value is bound once per process. |
 | schema.illegal_name_regex             | .*\s+$&#124;~.*                              | The regex specified the illegal format for schema name.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | schema.cache_capacity                 | 10000                                        | The max cache size(items) of schema cache.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | schema.init_template                  |                                              | The template schema used to init graph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -324,6 +335,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | server.default_olap_k8s_namespace | hugegraph-computer-system | The default olap namespace for HugeGraph default graph space.                                 |
 > | k8s.internal_algorithm        | [page-rank, degree-centrality, wcc, triangle-count, rings, rings-with-filter, betweenness-centrality, closeness-centrality, lpa, links, kcore, louvain, clustering-coefficient, ppr, subgraph-match] | The names of the built-in k8s algorithms.        |
 > | k8s.algorithms                | See `ServerOptions.K8S_ALGORITHMS` | The `name:paramsClass` mapping of the built-in k8s algorithms.                              |
+> | k8s.internal_algorithm_image_url | Empty | Image URL for built-in Kubernetes algorithms. |
 
 > [!DETAILS]- **Arthas Diagnostic Config Options (Optional)**
 > Corresponding configuration file `rest-server.properties`

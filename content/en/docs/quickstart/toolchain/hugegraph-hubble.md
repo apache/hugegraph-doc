@@ -9,7 +9,10 @@ search_boost: 1.6
 
 ### 1 HugeGraph-Hubble Overview
 
-> ⚠️ **Security notice**: Hubble listens on plain HTTP. Do not expose it to the public Internet or untrusted networks; terminate HTTPS in front of it and restrict access with IP/port allowlists. Hubble keeps no account database of its own: when the connected HugeGraph Server has authentication enabled, Hubble shows a sign-in page and forwards the credentials to the Server; when the Server allows anonymous access, there is no sign-in and the account pages are hidden.
+> [!WARNING]
+> **Restrict Hubble and Server access in production**
+>
+> Hubble listens on plain HTTP and must not be exposed directly to the Internet or untrusted networks. Terminate HTTPS at a trusted entry point, restrict source IPs for both Hubble and Server, and enable Server authentication and authorization with minimum permissions. Retain and restrict access to Server `audit-*.log` files. `auth.audit_log_rate` is a per-user rate limit, not a dedicated audit-log switch. Hubble has no separate account database; if Server allows anonymous access, Hubble has no login step.
 
 > **Version note**: This page follows hugegraph-toolchain `master`. Features that depend on newer Server, PD or Store versions are marked below and are unavailable on older Servers.
 
@@ -427,7 +430,10 @@ Each statement can run in one of two modes. Immediate returns the result inline 
 
 After the query, below is the graph result display area, which provides 3 kinds of graph result display modes: [Graph Mode], [Table Mode], [Json Mode]. The graph canvas can be rendered in 2D or 3D.
 
-> ⚠️ **SEC Reminder**: Hubble allows the direct input and execution of native Gremlin query statements on the web interface, which grants users relatively high operational privileges. **Please avoid exposing the Hubble service to public network environments**. It is recommended to ensure that the graph database server has enabled the **[Authentication System (Auth)](/docs/config/config-authentication/)** combined with an **IP Whitelist** for strict permission control when in use, preventing unauthorized access or malware execution risks.
+> [!WARNING]
+> **Hubble's native query interface grants high privileges**
+>
+> Hubble lets users enter and execute native Gremlin queries. In production, do not expose Hubble publicly. Enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum permissions for permitted operations. Standard Server configuration writes authentication-proxy authorization records to `audit-*.log`; retain these files and restrict read access.
 
 Support zoom, center, full screen, layout and style configuration, legend, minimap, undo and redo, and export operations. The canvas can be exported as JSON, CSV or an image, and a previously exported canvas can be imported again.
 

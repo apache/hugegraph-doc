@@ -6,7 +6,17 @@ weight: 4
 
 ### Overview
 
-By default, HugeGraphServer uses the HTTP protocol. However, if you have security requirements for your requests, you can configure it to use HTTPS.
+HugeGraphServer uses HTTP by default and can be configured to use HTTPS.
+
+> [!WARNING]
+> **HTTPS does not replace Server authentication or access control**
+>
+> HTTPS protects transport but does not restrict caller permissions. In production, use HTTPS and enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum permissions. Retain and protect Server `audit-*.log` files. If a reverse proxy terminates TLS, also restrict network access to the Server backend port.
+
+> [!WARNING]
+> **Use a dedicated Server certificate in production**
+>
+> If `conf/hugegraph-server.keystore` is missing at startup, the script downloads a shared demonstration keystore with the public password `hugegraph`. Use a dedicated certificate and keystore password in production, and restrict read access to private-key files.
 
 ### Server Configuration
 

@@ -310,7 +310,7 @@ In graph words:  to go out from the starting point, get the probability of going
 	- direction：the direction of edge（OUT, IN, BOTH）, BOTH for default.
 	- labels：a list of edge types, will union all edge types
 	- max_degree：in query process, the max iteration number of adjacency edge for a vertex, default `10000` 
-        (Note: before v0.12 step only support degree as parameter name, from v0.12, use max_degree, compatible with degree)
+        - max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
 	- skip_degree: the threshold above which a super vertex is skipped in this layer, default `0` (no skipping)
 	- top： retains only the top N results with the highest weight in each layer of the results, default 10, max 1000 
 - capacity: the maximum number of vertexes visited during the traversal, optional, default 10000000

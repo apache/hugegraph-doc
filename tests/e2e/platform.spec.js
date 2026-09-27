@@ -1,5 +1,100 @@
 const { test, expect } = require("./artifact-test");
 
+const preferenceOrigin = "https://hugegraph.apache.org";
+
+test.describe("language defaults and remembered manual choices", () => {
+  test.use({ locale: "zh-CN" });
+
+  test("browser language chooses the homepage and preserves query and hash", async ({ page }) => {
+    await page.goto(preferenceOrigin + "/?source=preview#overview");
+    await expect(page).toHaveURL(/\/cn\/\?source=preview#overview$/);
+    expect(await page.evaluate(() => localStorage.getItem("hg-language"))).toBeNull();
+  });
+
+  test("explicit English links keep their language", async ({ page }) => {
+    await page.goto(preferenceOrigin + "/docs/guides/architectural/");
+    await expect(page).toHaveURL(/\/docs\/guides\/architectural\/$/);
+    await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
+  });
+
+  test("manual English selection overrides the browser default on return", async ({ page }) => {
+    await page.goto(preferenceOrigin + "/cn/");
+    await page.locator(".td-language-selector a[hreflang='en-US']").first().click();
+    await expect(page).toHaveURL(/^https:\/\/hugegraph\.apache\.org\/$/);
+    expect(await page.evaluate(() => localStorage.getItem("hg-language"))).toBe("en");
+    await page.goto(preferenceOrigin + "/");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
+  });
+
+  test("palette language selection is remembered", async ({ page }) => {
+    await page.goto(preferenceOrigin + "/cn/docs/");
+    expect(await page.evaluate(() => window.OinkActions.run("switch_language", {
+      value: { url: "javascript:alert(1)" }
+    }).then(() => false, () => true))).toBe(true);
+    await page.evaluate(() => {
+      const actions = window.OinkActions;
+      return actions.run("switch_language", {
+        value: actions.get("switch_language").options.find(option => !option.active)
+      });
+    });
+    await expect(page).toHaveURL(/^https:\/\/hugegraph\.apache\.org\/docs\/$/);
+    expect(await page.evaluate(() => localStorage.getItem("hg-language"))).toBe("en");
+    await page.goto(preferenceOrigin + "/");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
+  });
+
+  test("native language shortcuts are remembered without handling typed input", async ({ page }) => {
+    await page.goto(preferenceOrigin + "/cn/docs/");
+    await page.keyboard.press("l");
+    await expect(page).toHaveURL(/^https:\/\/hugegraph\.apache\.org\/docs\/$/);
+    expect(await page.evaluate(() => localStorage.getItem("hg-language"))).toBe("en");
+    await page.goto(preferenceOrigin + "/");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
+    await page.locator("[data-td-shell-search-open]").first().click();
+    await page.locator(".td-shell-search__input").fill("l");
+    await expect(page).toHaveURL(/^https:\/\/hugegraph\.apache\.org\/$/);
+  });
+
+  test("blocked storage keeps both automatic and manual language navigation usable", async ({ page }) => {
+    await page.addInitScript(() => {
+      Storage.prototype.getItem = Storage.prototype.setItem = () => { throw new Error("blocked"); };
+    });
+    const errors = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.goto(preferenceOrigin + "/");
+    await expect(page).toHaveURL(/\/cn\/$/);
+    await page.locator(".td-language-selector a[hreflang='en-US']").first().click();
+    await expect(page).toHaveURL(/^https:\/\/hugegraph\.apache\.org\/$/);
+    expect(errors).toEqual([]);
+  });
+});
+
+test.describe("unsupported browser language", () => {
+  test.use({ locale: "fr-FR" });
+  test("uses English while explicit Chinese URLs remain Chinese", async ({ page }) => {
+    await page.goto(preferenceOrigin + "/");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
+    await page.goto(preferenceOrigin + "/cn/docs/");
+    await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+  });
+});
+
+test("theme follows the system until an explicit preference is saved", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/docs/");
+  await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "light");
+  await page.locator("[data-td-theme-toggle]").first().click();
+  await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
+  await page.evaluate(() => window.OinkActions.run("switch_theme", { value: "auto" }));
+  await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "light");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
+});
+
 for (const locale of ["en", "cn"]) {
   const prefix = locale === "cn" ? "/cn" : "";
   test(`latest ${locale} sidebar persists and isolates collapse`, async ({ page }) => {

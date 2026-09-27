@@ -1,8 +1,8 @@
 ---
-title: "HugeGraph Server 快速开始"
+title: "HugeGraph Server 快速上手"
 linkTitle: "安装/构建 HugeGraph Server"
 weight: 1
-search_keywords: [HugeGraph Server, Server 快速开始, 图数据库服务]
+search_keywords: [HugeGraph Server, Server 快速上手, 图数据库服务]
 search_boost: 1.7
 aliases:
   - /docs/quickstart/hugegraph-server/
@@ -56,7 +56,10 @@ HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行�
 1. 使用已过时的一键部署工具。
 {.steps}
 
-> 不要把 Gremlin、Cypher 等查询接口直接暴露到公网。生产环境应启用[认证与授权](/cn/docs/config/config-authentication/)，限制网络访问并保留审计日志；部署建议见[安全指南](/cn/docs/guides/security/)。
+> [!WARNING]
+> **生产环境必须启用鉴权并限制网络访问**
+>
+> HugeGraph 默认不启用用户认证。生产环境必须启用[认证与授权](/cn/docs/config/config-authentication/)、启用并维护 IP 白名单，并按最小权限为用户授权；不得将 Gremlin、Cypher 等查询接口直接暴露到公网。必须保留并限制读取 Server 标准配置生成的 `audit-*.log`。`auth.audit_log_rate` 只限制每用户日志输出速率，不是审计日志的启停开关。部署安全要求见[安全指南](/cn/docs/guides/security/)。
 
 ### 3.1 使用 Docker 容器 (便于**测试**)
 <!-- 3.1 is linked by another place. if change 3.1's title, please check -->
@@ -79,8 +82,7 @@ HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行�
 
 > **注意**：Docker Compose 文件使用桥接网络（`hg-net`），适用于 Linux 和 Mac（Docker Desktop）。如需运行 3 节点分布式集群，请为 Docker Desktop 分配至少 **12 GB** 内存（设置 → 资源 → 内存）。Linux 上 Docker 直接使用宿主机内存。
 
-如果希望通过一个配置文件统一管理 HugeGraph 的多个服务实例，则可以使用 `docker compose`。
-[`docker/`](https://github.com/apache/hugegraph/tree/master/docker) 目录下提供了四个 compose 文件：
+如果希望通过一个配置文件统一管理 HugeGraph 的多个服务实例，则可以使用 `docker compose`。 [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) 目录下提供了四个 compose 文件：
 
 | 拓扑 | compose 文件 | 服务 |
 |---|---|---|
@@ -199,7 +201,7 @@ mvn package -DskipTests -ntp -Drocksdb-only
 
 Server 的 tar 包随包提供 `conf/rest-server.properties`、`conf/gremlin-server.yaml` 和 `conf/graphs/hugegraph.properties`；源码构建包从 `hugegraph-server/hugegraph-dist/src/assembly/static/conf/` 装配这些文件。解压后在 Server 安装目录内编辑配置，无需另行生成。发行包版本之间可能有默认值差异，下面涉及的默认值和启动行为按 `master` 主线说明。
 
-单机 RocksDB 快速开始只需确认 `conf/graphs/hugegraph.properties` 使用 `backend=rocksdb`、`serializer=binary`。正常 Server 初始化会扫描 `conf/graphs/` 并加载本地图配置，无需额外设置 `graph.load_from_local_config=true`。该选项默认值为 `false`，控制构造阶段的提前加载和 `reload()` 时是否重新扫描本地配置。
+单机 RocksDB 快速上手只需确认 `conf/graphs/hugegraph.properties` 使用 `backend=rocksdb`、`serializer=binary`。正常 Server 初始化会扫描 `conf/graphs/` 并加载本地图配置，无需额外设置 `graph.load_from_local_config=true`。该选项默认值为 `false`，控制构造阶段的提前加载和 `reload()` 时是否重新扫描本地配置。
 
 详细的配置介绍请参考[配置文档](/docs/config/config-guide)及[配置项介绍](/docs/config/config-option)。
 
@@ -217,7 +219,10 @@ HugeGraphServer 启动时会连接后端存储并检查其版本信息。如果�
 
 由于各种后端所需的配置（hugegraph.properties）及启动步骤略有不同，下面逐一对各后端的配置及启动做介绍。
 
-**注:** 如果想要开启 HugeGraph 权限系统，在启动 Server 之前应按照 [Server 鉴权配置](/cn/docs/config/config-authentication/) 进行配置。(尤其是生产环境/外网环境须开启)
+> [!WARNING]
+> **生产环境启动 Server 前必须完成鉴权配置**
+>
+> 按照 [Server 鉴权配置](/cn/docs/config/config-authentication/) 启用认证与授权并设置非默认强管理员密码；同时启用 IP 白名单，为业务用户配置最小权限。
 
 #### 5.1.1 分布式存储 (HStore)
 
@@ -270,7 +275,7 @@ cluster=hg
 # 配置 Server 进程连接的 PD 地址；替换为实际 PD RPC 地址
 pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
 
-# 若需要 auth 
+# 本地测试可按需启用；生产环境必须启用鉴权
 # auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
 ```
 
@@ -444,7 +449,7 @@ curl --compressed -fsS \
 
 第一条请求应返回包含 `versions` 的 JSON；第二条应返回包含 `vertices` 的 JSON，且样例数据中可见 `marko`、`lop` 等顶点。仅检查进程存在或 HTTP 状态码，不足以证明图后端和业务请求正常。
 
-**ToplingDB (Beta)**: 作为 RocksDB 的高性能替代方案，配置方式请参考: [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="cn">}})
+**ToplingDB (Beta)**: 作为 RocksDB 的高性能替代方案，配置方式请参考: [ToplingDB 快速上手]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="cn">}})
 
 </details>
 
@@ -615,7 +620,12 @@ _说明_
     curl --compressed -fsS "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
     ```
 
-2. 默认监听地址为 `127.0.0.1`，其他机器无法直接访问。若确需在受控网络中远程访问，可调整绑定地址并配置防火墙；不要将 Gremlin、Cypher 等接口直接暴露到公网。
+2. 默认监听地址为 `127.0.0.1`，其他机器无法直接访问。
+
+> [!WARNING]
+> **调整 Server 监听地址**
+>
+> 若将地址调整为 `0.0.0.0`，Server 将监听所有网卡。生产环境必须启用认证与授权、IP 白名单及最小权限授权，并保留和保护审计日志；不得将 Gremlin、Cypher 等接口直接暴露到公网。
 
     ```
     vim conf/rest-server.properties

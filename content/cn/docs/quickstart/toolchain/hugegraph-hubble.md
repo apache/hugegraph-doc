@@ -1,5 +1,5 @@
 ---
-title: "HugeGraph-Hubble Quick Start"
+title: "HugeGraph-Hubble 快速上手"
 description: "部署 HugeGraph-Hubble，进行图可视化、元数据管理、数据导入，以及 Gremlin 或 Cypher 查询。"
 linkTitle: "使用 Hubble 实现图可视化"
 weight: 1
@@ -9,7 +9,10 @@ search_boost: 1.6
 
 ### 1 HugeGraph-Hubble 概述
 
-> ⚠️ **安全提醒**：Hubble 监听的是明文 HTTP 端口，请勿将其暴露在公网或不受信任的网络中；应在其前面终结 HTTPS，并使用 IP/端口白名单限制访问。Hubble 自身不保存账号库：当所连接的 HugeGraph Server 开启了鉴权时，Hubble 会显示登录页并把凭据转发给 Server；当 Server 允许匿名访问时，则没有登录环节，账号相关页面也会隐藏。
+> [!WARNING]
+> **生产环境必须限制 Hubble 和 Server 的访问**
+>
+> Hubble 监听明文 HTTP 端口，不得直接暴露到公网或不受信任的网络。生产部署必须在可信入口终结 HTTPS、限制 Hubble 和 Server 的来源 IP，并在 HugeGraph Server 启用认证与授权、按最小权限配置账号。保留 Server 标准配置生成的 `audit-*.log` 并限制读取权限；`auth.audit_log_rate` 是每用户日志速率上限，不是审计日志开关。Hubble 不保存独立账号库：Server 允许匿名访问时，Hubble 也没有登录环节。
 >
 > **版本说明**：本页对应 hugegraph-toolchain `master`。下文标注了依赖较新 Server、PD 或 Store 版本的功能，这些功能在旧版 Server 上不可用。
 >
@@ -431,7 +434,10 @@ HugeGraph 支持 Apache TinkerPop3 的图遍历查询语言 Gremlin，Gremlin �
 
 查询后，下方为图结果展示区域，提供 3 种图结果展示方式，分别为：【图模式】、【表格模式】、【Json 模式】。图画布支持 2D 与 3D 渲染。
 
-> ⚠️ **SEC 提醒**：Hubble 允许在网页端直接输入并执行 Gremlin 原生查询语句，这赋予了使用者较高的操作权限。**请避免将 Hubble 服务暴露在公网环境**，建议在使用时确保图数据库服务端已开启 **[鉴权体系 (Auth)](/cn/docs/config/config-authentication/)** 并配合 **IP 白名单**进行严格的权限控制，防止未授权访问或恶意代码执行风险。
+> [!WARNING]
+> **Hubble 原生查询入口具有高权限**
+>
+> Hubble 允许用户在网页端输入并执行 Gremlin 原生查询语句。生产环境不得将 Hubble 暴露在公网；必须在 Server 启用 **[鉴权体系 (Auth)](/cn/docs/config/config-authentication/)**、启用 IP 白名单，并按最小权限控制用户可执行的操作。Server 标准配置会记录鉴权代理的授权操作到 `audit-*.log`，部署时必须保留并限制读取权限。
 
 支持缩放、居中、全屏、布局与样式配置、图例、缩略图、撤销与重做、导出等操作。画布可导出为 JSON、CSV 或图片，导出的画布也可以再次导入。
 

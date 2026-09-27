@@ -40,7 +40,7 @@ flowchart TB
 
 Server 的 REST API 和 Gremlin 接口把请求交给 Core，再由存储后端适配器执行读写。RocksDB 和 HBase 是独立后端；HStore 适配器从 PD 获取集群元数据和分区信息，并向 Store 节点发送图数据操作。PD 管理集群元数据与分区，不承载图数据读写路径。
 
-截至 HugeGraph 1.7.0，Server 提供 RocksDB、HBase、HStore 和内存后端实现。内存后端主要用于测试或临时使用，不属于正式持久化部署选项；生产部署方式见 [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
+当前 Server 提供 RocksDB、HBase、HStore 和内存后端实现。内存后端主要用于测试或临时使用，不属于正式持久化部署选项；生产部署方式见 [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
 
 Toolchain 的主要组件如下：
 
@@ -56,7 +56,7 @@ Toolchain 的主要组件如下：
 
 ## 历史架构图
 
-下图保留作历史参考，其中 Server 同时承担 OLTP 与 OLAP、以及多种旧后端的标注不代表 HugeGraph 1.7.0 的当前实现。
+下图保留作历史参考，其中 Server 同时承担 OLTP 与 OLAP、以及多种旧后端的标注不代表 当前主线实现。
 
 > [!DETAILS]- 展开旧版架构图
 >

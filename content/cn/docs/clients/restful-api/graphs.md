@@ -7,8 +7,7 @@ description: "Graphs（图管理）REST 接口:管理图实例的生命周期,�
 
 ### 6.1 Graphs
 
-> 本页介绍当前 master 的 Graphs API。历史版本的路径和请求体请切换到对应多版本页面：
-> [1.7 版 Graphs API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/graphs/) 或
+> 本页介绍当前 master 的 Graphs API。历史版本的路径和请求体请切换到对应多版本页面： [1.7 版 Graphs API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/graphs/) 或
 > [1.5 版 Graphs API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/graphs/)。
 
 启用鉴权时，创建、克隆、删除、清空、修改图显示名、读取图配置、设置读模式和手动压缩等操作要求图空间管理权限（`space`）；管理员可按权限继承规则满足。创建或恢复快照、设置数据模式允许图空间管理者或该图所有者操作；列表、详情、数据模式读取和读模式读取按图读取权限校验。Raft API 另要求图空间成员权限。
@@ -529,8 +528,7 @@ Restore 时存在两种不同的模式：Restoring 和 Merging
     - 元数据（schema）创建时不允许指定 ID
     - 图数据（vertex）在 id strategy 为 Automatic 时，允许指定 ID
 
-正常情况下，图模式为 None，当需要 Restore 图时，需要根据需要临时修改图模式为 Restoring 模式或者 Merging
-模式，并在完成 Restore 时，恢复图模式为 None。
+正常情况下，图模式为 None，当需要 Restore 图时，需要根据需要临时修改图模式为 Restoring 模式或者 Merging 模式，并在完成 Restore 时，恢复图模式为 None。
 
 #### 6.3.1 查看某个图的模式
 

@@ -31,6 +31,6 @@ flowchart TB
 作业配置可由 Kubernetes Operator 或 YARN 提交。Workers 通过 REST API 从 HugeGraph Server 读取图数据，并可按输出配置写回计算结果；选择 HDFS 输入或输出时，Workers 直接访问 HDFS。Master 使用 etcd 协调 BSP 作业。
 
 - [Vermeer 快速入门（默认入口）](./hugegraph-vermeer.md)
-- [Computer 快速开始](./hugegraph-computer/)
+- [Computer 快速上手](./hugegraph-computer/)
 - [Computer 配置参考](./hugegraph-computer-config.md)
 - [Computer 源码](https://github.com/apache/hugegraph-computer)

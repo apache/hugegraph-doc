@@ -1,7 +1,7 @@
 ---
 date: 2025-10-09
-title: "ToplingDB Quick Start"
-linkTitle: "ToplingDB Quick Start"
+title: "ToplingDB 快速上手"
+linkTitle: "ToplingDB 快速上手"
 ---
 
 ## 前置条件

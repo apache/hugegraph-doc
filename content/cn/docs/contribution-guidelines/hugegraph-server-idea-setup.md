@@ -4,20 +4,18 @@ linkTitle: "在 IDEA 中配置 Server 开发环境"
 weight: 4
 ---
 
-> **适用范围**：下述 IDEA 配置基于 2023-05-31 的 HugeGraph 1.0.0 源码提交 [a946ad1](https://github.com/apache/hugegraph/commit/a946ad1de4e8f922251a5241ffc957c33379677f)，仅作为历史调试步骤保留。当前主线的源码目录和验证入口见[贡献流程](/cn/docs/contribution-guidelines/contribute/)与 [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/)；不要从本页推断当前模块清单。
+> **适用范围**：下述 IDEA 配置基于 HugeGraph [1.2.0 发布标签](https://github.com/apache/hugegraph/tree/1.2.0)，仅作为历史调试步骤保留。当前主线的源码目录和验证入口见[贡献流程](/cn/docs/contribution-guidelines/contribute/)与 [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/)；不要从本页推断当前模块清单。
 
 ### 背景
 
-在 [Quick Start](/docs/quickstart/hugegraph/hugegraph-server/) 部分已经介绍了使用**脚本**启停 HugeGraph-Server 的流程。下面以 Linux 平台为例，
-介绍使用 **IntelliJ IDEA** 运行与调试 HugeGraph-Server 的流程。
+在 [快速上手](/docs/quickstart/hugegraph/hugegraph-server/) 部分已经介绍了使用**脚本**启停 HugeGraph-Server 的流程。下面以 Linux 平台为例，介绍使用 **IntelliJ IDEA** 运行与调试 HugeGraph-Server 的流程。
 
 本地启动的核心与**脚本启动**是一样的：
 
 1. 初始化数据库后端，执行 `InitStore` 类初始化图
 2. 启动 HugeGraph-Server，执行 `HugeGraphServer` 类加载初始化的图信息启动
 
-在执行下述流程之前，请确保已经克隆了 HugeGraph 的源代码，并且已经配置了 Java 11 环境 & 可以参考这个
-[配置文档](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
+在执行下述流程之前，请确保已经克隆了 HugeGraph 的源代码，并且已经配置了 Java 11 环境 & 可以参考这个 [配置文档](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
 
 ```bash
 git clone https://github.com/apache/hugegraph.git
@@ -119,7 +117,7 @@ rocksdb.wal_path=.
 
 #### 4. 调试 `HugeGraphServer` (可选)
 
-在完成上述配置后，可以尝试对 `HugeGraphServer` 进行调试。在调试模式下运行 `HugeGraphServer`，并在以下[位置](https://github.com/apache/hugegraph/blob/a946ad1de4e8f922251a5241ffc957c33379677f/hugegraph-api/src/main/java/org/apache/hugegraph/api/graph/VertexAPI.java#L238)设置断点：
+在完成上述配置后，可以尝试对 `HugeGraphServer` 进行调试。在调试模式下运行 `HugeGraphServer`，并在以下[位置](https://github.com/apache/hugegraph/blob/1.2.0/hugegraph-server/hugegraph-api/src/main/java/org/apache/hugegraph/api/graph/VertexAPI.java#L238)设置断点：
 
 ```java
 public String list(@Context GraphManager manager,
@@ -171,7 +169,7 @@ curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
 
 ##### 参考
 
-1. [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/)
+1. [HugeGraph-Server 快速上手](/docs/quickstart/hugegraph/hugegraph-server/)
 2. [hugegraph-server 本地调试文档 (Win/Unix)](https://gist.github.com/imbajin/1661450f000cd62a67e46d4f1abfe82c)
 3. ["package sun.misc does not exist" compilation error](https://youtrack.jetbrains.com/issue/IDEA-180033)
 4. [Cannot compile: java: package sun.misc does not exist](https://youtrack.jetbrains.com/issue/IDEA-201168)

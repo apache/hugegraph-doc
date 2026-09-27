@@ -180,8 +180,7 @@ public interface BackendStore {
  
 ###### 2.1.3 扩展自定义序列化器
 
-序列化器必须继承抽象类：`org.apache.hugegraph.backend.serializer.AbstractSerializer`(`implements GraphSerializer, SchemaSerializer`)
-主要接口的定义如下：
+序列化器必须继承抽象类：`org.apache.hugegraph.backend.serializer.AbstractSerializer`(`implements GraphSerializer, SchemaSerializer`) 主要接口的定义如下：
 
 ```java
 public interface GraphSerializer {
@@ -297,8 +296,7 @@ public class SpaceAnalyzer implements Analyzer {
  
 #### 3. 实现插件接口，并进行注册
 
-插件注册入口为`HugeGraphPlugin.register()`，自定义插件必须实现该接口方法，在其内部注册上述定义好的扩展项。
-接口`org.apache.hugegraph.plugin.HugeGraphPlugin`定义如下：
+插件注册入口为`HugeGraphPlugin.register()`，自定义插件必须实现该接口方法，在其内部注册上述定义好的扩展项。接口`org.apache.hugegraph.plugin.HugeGraphPlugin`定义如下：
 
 ```java
 public interface HugeGraphPlugin {
@@ -358,5 +356,4 @@ public class DemoPlugin implements HugeGraphPlugin {
  
 #### 5. 打 Jar 包
 
-通过 maven 打包，在项目目录下执行命令`mvn package`，在 target 目录下会生成 Jar 包文件。
-使用时将该 Jar 包拷到`plugins`目录，重启服务即可生效。
+通过 maven 打包，在项目目录下执行命令`mvn package`，在 target 目录下会生成 Jar 包文件。使用时将该 Jar 包拷到`plugins`目录，重启服务即可生效。

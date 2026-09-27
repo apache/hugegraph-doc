@@ -1,5 +1,5 @@
 ---
-title: "HugeGraph-Store Quick Start"
+title: "HugeGraph-Store 快速上手"
 linkTitle: "安装/构建 HugeGraph-Store"
 weight: 3
 search_keywords:
@@ -80,8 +80,7 @@ docker build -f hugegraph-server/Dockerfile-hstore -t hugegraph/server:local .
 ```
 
 首次启动前，按 [docker/README.md 的认证环境步骤](https://github.com/apache/hugegraph/blob/master/docker/README.md#create-the-authentication-environment) 在 `docker/` 创建 `.env`。
-该步骤使用 `umask 077` 并拒绝覆盖已有文件；若 `.env` 已存在，应保留原文件并编辑补全缺少的项。
-不要为已初始化的数据目录重新生成 `HG_PD_AUTH_SECRET_KEY`。此文件由仓库 `.gitignore` 忽略，仍不要提交。
+该步骤使用 `umask 077` 并拒绝覆盖已有文件；若 `.env` 已存在，应保留原文件并编辑补全缺少的项。不要为已初始化的数据目录重新生成 `HG_PD_AUTH_SECRET_KEY`。此文件由仓库 `.gitignore` 忽略，仍不要提交。
 每次在新 shell 执行 Compose 或 PD REST 命令前，都从 `docker/` 目录加载同一文件：
 
 ```bash
@@ -97,8 +96,7 @@ HUGEGRAPH_VERSION=local HUGEGRAPH_PULL_POLICY=never \
 
 后续重启或调用 PD REST 时，先按上面的方式加载同一个密钥；不要为已初始化的数据目录重新生成新值。`HUGEGRAPH_VERSION=local` 和 `HUGEGRAPH_PULL_POLICY=never` 是此 Compose 命令的参数，每次运行 Compose 生命周期命令时都要显式带上。
 
-若要启动 Compose 文件中的 Hubble 服务，需使用拓扑对应的未跟踪配置文件。
-最小拓扑 `docker-compose-hstore.yml` 使用 `conf/hubble/hstore.local.properties`；
+若要启动 Compose 文件中的 Hubble 服务，需使用拓扑对应的未跟踪配置文件。最小拓扑 `docker-compose-hstore.yml` 使用 `conf/hubble/hstore.local.properties`；
 HA 拓扑 `docker-compose-3pd-3store-3server.yml` 使用 `conf/hubble/hstore-ha.local.properties`。
 上述 README 初始化步骤会用共享 PD 密钥生成两份文件。若文件缺失或需更新，先从 `docker/` 目录载入已有 `.env`，再执行对应命令：
 
@@ -151,7 +149,12 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 #### 4.2 application-pd.yml
 
-此文件只保存 `rocksdb` 参数和 Actuator 暴露设置。主线默认配置暴露所有 Actuator 端点且没有 PD 式 Basic 认证保护；请将 Store REST 端口限制在可信网络中，不要直接暴露到不可信网络。
+此文件只保存 `rocksdb` 参数和 Actuator 暴露设置。
+
+> [!WARNING]
+> **生产环境分别保护 Server 与 Store 端口**
+>
+> 生产环境的 Server 图 API 必须按 [Server 认证与授权配置](/cn/docs/config/config-authentication/)启用 Auth、IP 白名单和最小权限授权，并保留、保护 Server `audit-*.log`。这些设置不保护 Store：主线默认配置暴露所有 Actuator 端点，且没有 PD 式 Basic 认证保护；必须将 Store REST、gRPC 和 Raft 端口限制在集群与受信运维网络内。
 
 #### 4.3 配置项参考
 
@@ -522,7 +525,7 @@ curl -u "store:${HG_PD_AUTH_SECRET_KEY:?请先设置 PD 部署密钥}" \
 
 #### 7.3 最小图读写验证
 
-确认 Store 已在 PD 中显示为 `Up` 后，再启动配置为 HStore 后端、连接同一 PD 集群的 Server。Server 配置步骤见 [Server 快速开始](./hugegraph-server.md)。确认 `GET /versions` 可访问且默认图 `hugegraph` 已加载后，可以创建一个属性键、顶点标签和顶点，再读取该顶点：
+确认 Store 已在 PD 中显示为 `Up` 后，再启动配置为 HStore 后端、连接同一 PD 集群的 Server。Server 配置步骤见 [Server 快速上手](./hugegraph-server.md)。确认 `GET /versions` 可访问且默认图 `hugegraph` 已加载后，可以创建一个属性键、顶点标签和顶点，再读取该顶点：
 
 ```bash
 SERVER_URL=http://localhost:8080

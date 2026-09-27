@@ -53,9 +53,9 @@ HugeGraph Server 是图数据库的 OLTP 引擎和服务入口，负责属性图
 
 单机部署通常使用 RocksDB。分布式部署使用 HStore，由 PD 管理集群元数据和分区调度，Store 保存图数据及其副本。HBase 可作为独立的后端存储。
 
-- [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/)
-- [PD 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-pd/)
-- [HStore 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)
+- [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/)
+- [PD 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-pd/)
+- [HStore 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [REST API](/cn/docs/clients/restful-api/)
 
 ## HugeGraph Toolchain
@@ -80,8 +80,8 @@ HugeGraph-Computer 仓库提供两种互补的 OLAP 图计算引擎。通用图�
 
 两者都可以读取 HugeGraph 数据，但运行架构、资源需求、配置和算法接口不同。
 
-- [Vermeer 快速开始（默认入口）](/cn/docs/quickstart/computing/hugegraph-vermeer/)
-- [Computer 快速开始](/cn/docs/quickstart/computing/hugegraph-computer/)
+- [Vermeer 快速上手（默认入口）](/cn/docs/quickstart/computing/hugegraph-vermeer/)
+- [Computer 快速上手](/cn/docs/quickstart/computing/hugegraph-computer/)
 
 ## HugeGraph-AI（Graph + AI）
 
@@ -92,7 +92,7 @@ HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库�
 - **hugegraph-python-client**：通过 Python 管理 Schema、图数据和 Gremlin 查询
 - **vermeer-python-client**：通过 Python 调用 Vermeer 图计算服务
 
-[HugeGraph-AI 快速开始](/cn/docs/quickstart/hugegraph-ai/quick_start/)
+[HugeGraph-AI 快速上手](/cn/docs/quickstart/hugegraph-ai/quick_start/)
 
 ## 部署模式
 
@@ -107,7 +107,7 @@ HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库�
 
 | 需求 | 文档 |
 |---|---|
-| 启动图数据库并执行查询 | [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/) |
+| 启动图数据库并执行查询 | [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/) |
 | 批量导入数据 | [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) |
 | 使用 Web 界面管理图 | [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) |
 | 运行图算法 | [Vermeer（默认入口）](/cn/docs/quickstart/computing/hugegraph-vermeer/) |

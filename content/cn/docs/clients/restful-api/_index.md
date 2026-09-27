@@ -6,8 +6,7 @@ search_keywords: [HugeGraph REST API, RESTful API, OpenAPI]
 search_boost: 1.7
 ---
 
-> 本目录介绍当前 master 的 REST API。历史版本用法请切换到对应的多版本文档：
-> [HugeGraph 1.7 RESTful API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/) 或
+> 本目录介绍当前 master 的 REST API。历史版本用法请切换到对应的多版本文档： [HugeGraph 1.7 RESTful API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/) 或
 > [HugeGraph 1.5 RESTful API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/)。
 >
 > 默认图空间名是 `DEFAULT`。

@@ -11,7 +11,7 @@ weight: 6
 ## 环境要求
 
 - 当前源码实际要求 Python 3.10 或更高版本；虽然该模块打包元数据声明 `>=3.9`，代码中的类型标注使用了 Python 3.10 语法
-- 一个可通过 HTTP 访问的 Vermeer master。默认 HTTP 端口为 `6688`；Docker 部署需发布 `6688:6688`，见 [Vermeer 快速开始](../computing/hugegraph-vermeer.md)。
+- 一个可通过 HTTP 访问的 Vermeer master。默认 HTTP 端口为 `6688`；Docker 部署需发布 `6688:6688`，见 [Vermeer 快速上手](../computing/hugegraph-vermeer.md)。
 - `uv`（推荐）或 `pip`
 
 运行时依赖：`requests`、`urllib3`、`python-dateutil`、`decorator`、`rich` 和 `setuptools`。
@@ -77,7 +77,7 @@ client = PyVermeerClient(
 
 ## 端到端示例
 
-模块自带一个可运行的示例：`vermeer-python-client/src/pyvermeer/demo/task_demo.py`。下面的版本在其基础上增加了有截止时间的任务轮询，先等待加载成功、再读取图并提交 PageRank 计算；PD 地址和 HugeGraph 密码从环境变量读取。服务端 worker group 也必须与任务空间的分配匹配；单 worker 快速开始可将 `worker_group` 设为 `$`，保留命名组时先按 [Vermeer 快速开始](../computing/hugegraph-vermeer.md) 将该组绑定到任务空间。
+模块自带一个可运行的示例：`vermeer-python-client/src/pyvermeer/demo/task_demo.py`。下面的版本在其基础上增加了有截止时间的任务轮询，先等待加载成功、再读取图并提交 PageRank 计算；PD 地址和 HugeGraph 密码从环境变量读取。服务端 worker group 也必须与任务空间的分配匹配；单 worker 快速上手可将 `worker_group` 设为 `$`，保留命名组时先按 [Vermeer 快速上手](../computing/hugegraph-vermeer.md) 将该组绑定到任务空间。
 
 ```python
 import os
@@ -222,7 +222,7 @@ uv run --extra vermeer python vermeer_client_example.py
 
 ### 任务参数
 
-客户端不会校验 `params`，键和值都会原样传给 Vermeer，因此可用的参数名由引擎决定，而不是由 SDK 决定。加载参数以及各算法的参数请参考 [Vermeer 快速开始](../computing/hugegraph-vermeer.md)。
+客户端不会校验 `params`，键和值都会原样传给 Vermeer，因此可用的参数名由引擎决定，而不是由 SDK 决定。加载参数以及各算法的参数请参考 [Vermeer 快速上手](../computing/hugegraph-vermeer.md)。
 
 使用流程与直接调用 REST API 相同：先创建 `load` 任务把图读入 Vermeer，等待任务完成，再针对已加载的图创建计算任务。
 
@@ -262,5 +262,5 @@ except (ConnectError, TimeOutError) as error:
 
 - [GitHub 上的 vermeer-python-client](https://github.com/apache/hugegraph-ai/tree/main/vermeer-python-client)
 - [Vermeer 图计算引擎](https://github.com/apache/hugegraph-computer/tree/master/vermeer)
-- [Vermeer 快速开始](../computing/hugegraph-vermeer.md)
-- [HugeGraph-AI 快速开始](./quick_start.md)
+- [Vermeer 快速上手](../computing/hugegraph-vermeer.md)
+- [HugeGraph-AI 快速上手](./quick_start.md)

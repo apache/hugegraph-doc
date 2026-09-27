@@ -27,9 +27,10 @@ user(name=xx) -belong-> group(name=xx) -access(read)-> target(graph=graph1, reso
 
 HugeGraph 目前默认**未启用**用户认证功能，需通过修改配置文件来启用该功能。
 
-> ⚠️ **SEC 提醒：图查询语言 (Gremlin/Cypher) 的安全性**
+> [!WARNING]
+> **生产环境必须启用鉴权**
 >
-> 鉴于图查询语言的灵活性可能带来的潜在系统安全隐患，不要把 Gremlin、Cypher 等查询接口直接暴露到公网。生产环境应同时启用[鉴权](/cn/docs/config/config-authentication/)、IP 白名单和审计日志，并通过 [Docker 或 Kubernetes](/cn/docs/quickstart/hugegraph/hugegraph-server/#31-使用-docker-容器-便于测试) 隔离 Server 进程。
+> HugeGraph 默认不启用用户认证。生产环境必须启用认证与授权、设置非默认强管理员密码、启用并维护 Server IP 白名单，并按最小权限为用户授权；不得将 Gremlin、Cypher 等查询接口直接暴露到公网。Server 标准配置会将鉴权代理记录写入 `audit-*.log`，部署时必须保留并限制这些日志的读取权限。`auth.audit_log_rate` 只限制每用户的日志输出速率，不是审计日志的启停开关。
 
 `StandardAuthenticator` 支持多用户认证和细粒度权限控制。也可以实现 `HugeAuthenticator` 接口来接入已有的用户系统。
 
@@ -40,15 +41,18 @@ curl -u 'admin:<password>' \
   http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
 ```
 
-Basic Authentication 只对 `用户名:密码` 做 Base64 编码，不会加密凭据。通过 HTTP 发送时应使用 HTTPS；相关设置见 [HTTPS 配置](config-https)。
+> [!WARNING]
+> **保护 Basic Authentication 凭据**
+>
+> Basic Authentication 只对 `用户名:密码` 做 Base64 编码，不会加密凭据。通过网络发送时必须使用 HTTPS；相关设置见 [HTTPS 配置](config-https)。
 
-**警告**：在 1.5.0 之前版本的 HugeGraph-Server 在鉴权模式下存在 JWT 相关的安全隐患，请务必使用新版本或自行修改 JWT token 的 secretKey。
+> [!WARNING]
+> **旧版本 JWT 风险**
+>
+> HugeGraph-Server 1.5.0 之前的版本在鉴权模式下存在 JWT 相关安全隐患。使用受影响版本时必须升级，或按该版本要求修改 JWT token 的 `secretKey`。
 
-`auth.token_secret` 由认证数据图的配置读取。默认认证图名为 `hugegraph`，因此配置文件通常是
-`conf/graphs/hugegraph.properties`；如果修改了 `auth.graph_store`，应改为对应图的 properties 文件。
-源码默认会生成 32 个随机字节并以 Base64 编码，但该值不会写回配置文件；重启后或多个 Server 节点之间
-无法依赖各自生成的默认值保持一致。若需要令已有 token 在重启后继续有效，或让多个节点验证同一 token，
-请为认证图显式配置同一个强随机密钥：
+`auth.token_secret` 由认证数据图的配置读取。默认认证图名为 `hugegraph`，因此配置文件通常是 `conf/graphs/hugegraph.properties`；如果修改了 `auth.graph_store`，应改为对应图的 properties 文件。
+源码默认会生成 32 个随机字节并以 Base64 编码，但该值不会写回配置文件；重启后或多个 Server 节点之间无法依赖各自生成的默认值保持一致。若需要令已有 token 在重启后继续有效，或让多个节点验证同一 token，请为认证图显式配置同一个强随机密钥：
 
 Server 将配置字符串按 UTF-8 编码后交给 JJWT 的 HS256 签名器，密钥至少需要 32 字节；这是字节长度要求，不代表任意 32 字符串都具有足够随机性。下面的命令在本机生成 32 个随机字节并以 Base64 编码。
 
@@ -63,8 +67,7 @@ auth.token_secret=<本机生成的密钥>
 openssl rand -base64 32
 ```
 
-由于默认值在每次启动时随机生成，当 token 需要在重启后继续有效、或者需要被多个服务节点接受时，必须显式配置该项。token 的有效期由
-`auth.token_expire` 决定，默认为 86400 秒。
+由于默认值在每次启动时随机生成，当 token 需要在重启后继续有效、或者需要被多个服务节点接受时，必须显式配置该项。token 的有效期由 `auth.token_expire` 决定，默认为 86400 秒。
 
 `auth.token_expire` 和 `auth.token_secret` 都属于 `auth.graph_store` 指定的认证数据图配置；`rest-server.properties` 中的同名项不会覆盖认证图配置。
 

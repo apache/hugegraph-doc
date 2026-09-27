@@ -73,8 +73,7 @@ cd hugegraph-llm
 python -m hugegraph_llm.demo.rag_demo.app
 ```
 
-`uv sync` 会在仓库根目录创建 `.venv`。从根目录安装可让 `uv` 一起解析 workspace 成员和路径依赖。
-当前仓库不跟踪 `uv.lock`；`uv sync` 会按 `pyproject.toml` 中的依赖声明和版本约束解析依赖。
+`uv sync` 会在仓库根目录创建 `.venv`。从根目录安装可让 `uv` 一起解析 workspace 成员和路径依赖。当前仓库不跟踪 `uv.lock`；`uv sync` 会按 `pyproject.toml` 中的依赖声明和版本约束解析依赖。
 
 ## 安装 ML 依赖
 

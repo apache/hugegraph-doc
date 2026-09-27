@@ -14,8 +14,13 @@ description: "Graphspace（图空间）REST 接口：多租户与资源隔离的
 1. 目前图空间功能只支持在 hstore 模式下使用。
 2. 如果非 hstore 模式，则只能使用默认的图空间 `DEFAULT`，且不支持创建、删除和更新图空间的操作。
 3. 注意在 rest-server.properties 中，设置 `usePD=true`，并且 hugegraph.properties 中，设置 `backend=hstore`
-4. 生产环境建议启用鉴权，并修改默认管理员密码 `pa`（由 `auth.admin_pa` 配置）。创建、更新、删除图空间及管理角色的接口执行权限校验；列表与详情接口本身没有 `RolesAllowed` 角色注解，仍应结合实际鉴权配置控制暴露范围。
+4. 生产环境必须启用 Server 认证与授权，并将新建图空间的 `auth` 设为 `true`。生产管理员密码必须替换公开默认值 `pa`（由 `auth.admin_pa` 配置）。
 5. 本页所有接口都只在 PD 模式下可用，单机模式下会返回 `400` 和 `GraphSpace management is not supported in standalone mode` 错误信息。
+
+> [!WARNING]
+> **限制图空间列表和详情接口的访问**
+>
+> `GET /graphspaces` 和 `GET /graphspaces/{graphspace}` 均未声明 `@RolesAllowed`；Server 未启用鉴权时这两个接口可匿名调用，启用鉴权后也没有方法级管理员角色限制。详情响应包含 `dp_username` 和 `dp_password`。生产环境必须将 `white_ip.status` 设为 `enable` 并通过 [IP 白名单 API](/cn/docs/clients/restful-api/other/) 启用、维护名单。网关必须按调用者身份或角色，仅允许管理员和可信运维调用方访问这两条路径；只限制来源 IP 范围仍会让同一网段的普通已认证业务账号读取 DP 凭据。网关须记录这两条路径的调用身份、来源和结果；Server `audit-*.log` 用于鉴权授权记录，不能替代这两条路径的网关访问审计。业务账号须按最小权限授权。
 
 #### 2.0.1 创建一个图空间
 
@@ -175,12 +180,12 @@ GET http://localhost:8080/graphspaces/gs1
   "creator": "admin",
   "create_time": "2024-05-01 12:00:00",
   "update_time": "2024-05-01 12:00:00",
-  "dp_username": "<敏感字段，值已省略>",
-  "dp_password": "<敏感字段，值已省略>"
+  "dp_username": "gs1_dp",
+  "dp_password": "a1b2c3d4e5f60718"
 }
 ```
 
-> 该详情响应包含 `dp_username` 和 `dp_password`。请按敏感凭据保护，勿公开响应、写入日志或贴入工单。
+> 上述 `dp_username` 和 `dp_password` 是文档示例值。实际详情响应会返回对应图空间的 DP 凭据，应按敏感凭据保护。
 
 #### 2.0.4 更新某个图空间
 

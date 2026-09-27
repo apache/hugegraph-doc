@@ -1,5 +1,5 @@
 ---
-title: "HugeGraph-Spark-Connector Quick Start"
+title: "HugeGraph-Spark-Connector 快速上手"
 linkTitle: "使用 Spark Connector 读写图数据"
 weight: 4
 ---

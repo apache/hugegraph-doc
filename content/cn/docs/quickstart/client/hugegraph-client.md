@@ -353,8 +353,7 @@ public class BatchExample {
 
 #### 4.4 运行 Example
 
-运行 Example 之前需要启动 Server,
-启动过程见[HugeGraph-Server Quick Start](/cn/docs/quickstart/hugegraph/hugegraph-server)
+运行 Example 之前需要启动 Server, 启动过程见[HugeGraph-Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server)
 
 #### 4.5 详细 API 说明
 

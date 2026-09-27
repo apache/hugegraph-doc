@@ -4,7 +4,10 @@ linkTitle: "HugeGraph-LLM"
 weight: 1
 ---
 
-HugeGraph-LLM 用于知识图谱构建、GraphRAG 和自然语言图查询。演示服务把 Gradio 页面和 FastAPI 接口挂在同一个进程上，入口默认监听 `0.0.0.0:8001`；从本机访问可用 `http://localhost:8001`。仅需本机访问时，可显式指定 `--host 127.0.0.1`。
+HugeGraph-LLM 用于知识图谱构建、GraphRAG 和自然语言图查询。演示服务把 Gradio 页面和 FastAPI 接口挂在同一个进程上，直接从源码启动时默认只监听本机 `127.0.0.1:8001`，可用 `http://localhost:8001` 访问。若显式启动源码入口且只需本机访问，可指定 `--host 127.0.0.1`；源码 Docker 镜像的 `Dockerfile.llm` 会覆盖默认值并监听 `0.0.0.0:8001`，不要在容器内改为 loopback，否则容器外无法通过映射端口访问。
+
+> [!WARNING]
+> 生产环境必须为 HugeGraph-LLM 启用自身的登录认证（`ENABLE_LOGIN=True`，并替换 `USER_TOKEN`、`ADMIN_TOKEN`），同时在防火墙或网络入口设置来源 IP 白名单。HugeGraph Server 还必须单独开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（`audit_log`），为 `GRAPH_USER` 配置只具备该服务所需权限的账号。AI 服务 token 只认证 LLM 页面和 API，不能替代 HugeGraph Server 认证。
 
 ## 环境要求
 
@@ -46,7 +49,7 @@ Compose 文件会把 `${PROJECT_PATH}/hugegraph-llm/.env` 挂载到容器内的 
 | `docker/Dockerfile.llm` | 源码运行镜像构建配方，入口是 `python -m hugegraph_llm.demo.rag_demo.app --host 0.0.0.0 --port 8001` |
 | `docker/Dockerfile.nk` | 基于 `nk-llm` extra 用 Nuitka 编译的二进制镜像构建配方，入口是 `./app.dist/app.bin` |
 
-Compose 文件引用未指定标签的 `hugegraph/rag`，因此会使用可变的 `latest` 标签。2026-09-26 查询 Docker Hub 时，该仓库列出 `hugegraph/rag:1.7.0`（linux/amd64）；若要固定到此版本，需把 Compose 中的 `image` 改为该标签，见 [Docker Hub 标签页](https://hub.docker.com/r/hugegraph/rag/tags)。`scripts/build_llm_image.sh` 则以 `docker/Dockerfile.llm` 在本地构建 `hugegraph/graphrag:1.7.0`。这两个镜像名不同，构建出的镜像不会自动替代 Compose 引用的镜像。该脚本只构建镜像，不会推送。两个 Dockerfile 都声明 `8001` 端口、以非 root 用户 `work` 运行，并用 `curl -f http://localhost:8001/` 做镜像健康检查；两者都为资源目录声明数据卷。
+Compose 文件引用未指定标签的 `hugegraph/rag`，Docker 会使用默认的 `latest` 标签。`scripts/build_llm_image.sh` 则以 `docker/Dockerfile.llm` 在本地构建 `hugegraph/graphrag:1.7.0`。Compose 引用的 `hugegraph/rag:latest` 与本地构建的 `hugegraph/graphrag:1.7.0` 是不同镜像；本地构建不会自动替换 Compose 所用镜像。要在 Compose 中运行本地构建结果，需将 Compose 的 `image` 改为 `hugegraph/graphrag:1.7.0`。该脚本只构建镜像，不会推送。两个 Dockerfile 都声明 `8001` 端口、以非 root 用户 `work` 运行，并用 `curl -f http://localhost:8001/` 做镜像健康检查；两者都为资源目录声明数据卷。
 
 `scripts/build_llm_image.sh` 会用 `docker/Dockerfile.llm` 构建并打上 `hugegraph/graphrag:1.7.0` 标签。
 

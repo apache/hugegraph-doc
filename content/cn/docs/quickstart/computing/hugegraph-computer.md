@@ -1,5 +1,5 @@
 ---
-title: "HugeGraph-Computer 快速开始"
+title: "HugeGraph-Computer 快速上手"
 linkTitle: "使用 Computer 进行 OLAP 分析"
 weight: 2
 search_keywords: [HugeGraph Computer, 图计算, OLAP]
@@ -30,38 +30,42 @@ Computer 支持从 HugeGraph 或 HDFS 读取图数据，并可将结果写回 Hu
 
 Kubernetes 作业中的 `hugegraph.url` 必须是各计算 Pod 都能访问的地址，不能填仅在个人电脑上可用的 `localhost`。如果启用了 HugeGraph 认证，应在配置中填写用户名和密码，并为 REST 查询使用对应凭据。
 
+> [!WARNING]
+> 生产环境必须为 HugeGraph Server 开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（`audit_log`），为 Computer 使用只具备作业所需读写权限的专用账号，并为 Server 网络入口设置来源 IP 白名单。`hugegraph.username` 和 `hugegraph.password` 只是 Computer 连接 Server 的凭据，不能替代 Server 端认证。
+
 更多配置项见[Computer 配置参考](/cn/docs/quickstart/computing/hugegraph-computer-config/)。
 
 ## 3. 获取源码并构建发行包
 
-Apache 1.7.0 发行目录提供 Computer 源码包 `apache-hugegraph-computer-incubating-1.7.0-src.tar.gz`，不是单独的预编译 Computer 二进制包。下载时同时取得同目录下的 `.sha512` 和 `.asc` 文件。首次验签前还需取得 Apache 项目 [`KEYS`](https://downloads.apache.org/hugegraph/KEYS) 并导入公钥；应先核对密钥指纹来自 Apache 项目发布渠道，再验证签名。后续版本请从 [Apache HugeGraph 下载目录](https://downloads.apache.org/hugegraph/)选择与运行环境匹配的版本。
+Apache HugeGraph 下载目录按版本提供 Computer 源码包，不提供单独的预编译 Computer 二进制包。下面以 `VERSION=1.7.0` 为例；该发布版的源码包和构建产物文件名含 `-incubating-`，其他版本请按下载目录中的实际文件名调整。
 
 ```bash
-curl -fLO https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz
-curl -fLO https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.sha512
-curl -fLO https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.asc
+VERSION=1.7.0 # 替换为要下载的发布版本
+ARCHIVE="apache-hugegraph-computer-incubating-${VERSION}-src.tar.gz"
+DOWNLOAD_BASE="https://downloads.apache.org/hugegraph/${VERSION}"
+curl -fLO "${DOWNLOAD_BASE}/${ARCHIVE}"
+curl -fLO "${DOWNLOAD_BASE}/${ARCHIVE}.sha512"
+curl -fLO "${DOWNLOAD_BASE}/${ARCHIVE}.asc"
 curl -fLO https://downloads.apache.org/hugegraph/KEYS
-shasum -a 512 -c apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.sha512
+shasum -a 512 -c "${ARCHIVE}.sha512"
 gpg --import KEYS
-gpg --verify apache-hugegraph-computer-incubating-1.7.0-src.tar.gz.asc apache-hugegraph-computer-incubating-1.7.0-src.tar.gz
-tar -xzf apache-hugegraph-computer-incubating-1.7.0-src.tar.gz
-cd apache-hugegraph-computer-incubating-1.7.0-src/computer
+gpg --verify "${ARCHIVE}.asc" "${ARCHIVE}"
+tar -xzf "${ARCHIVE}"
+cd "apache-hugegraph-computer-incubating-${VERSION}-src/computer"
 mvn clean package -DskipTests
-tar -xzf target/apache-hugegraph-computer-1.7.0.tar.gz
-cd apache-hugegraph-computer-1.7.0
+tar -xzf "target/apache-hugegraph-computer-incubating-${VERSION}.tar.gz"
+cd "apache-hugegraph-computer-incubating-${VERSION}"
 ```
 
-也可以克隆源码后从 Maven 聚合工程目录构建：
+从当前 master 构建时可直接克隆并打包：
 
 ```bash
 git clone https://github.com/apache/hugegraph-computer.git
 cd hugegraph-computer/computer
 mvn clean package -DskipTests
-tar -xzf target/apache-hugegraph-computer-1.7.0.tar.gz
-cd apache-hugegraph-computer-1.7.0
 ```
 
-发行包由 `computer/computer-dist` 组装，包含 `bin/start-computer.sh`、运行依赖 `lib/`、内置算法 `algorithm/builtin-algorithm.jar` 及默认配置 `conf/computer.properties`、`conf/log4j2.xml`。源码默认配置位于 `computer/computer-dist/src/assembly/static/conf/computer.properties`。在 Maven 聚合工程 `computer/` 中运行 `package` 后，tar 包位于 `computer/target/`，发行目录位于 `computer/apache-hugegraph-computer-1.7.0/`。
+发行包由 `computer/computer-dist` 组装，包含 `bin/start-computer.sh`、运行依赖 `lib/`、内置算法 `algorithm/builtin-algorithm.jar` 及默认配置 `conf/computer.properties`、`conf/log4j2.xml`。源码默认配置位于 `computer/computer-dist/src/assembly/static/conf/computer.properties`。1.7.0 发布源码的构建产物带 `-incubating-`，当前 master 的发行名不带该标记，且版本号由源码 POM 决定；不要混用两种源码对应的 tar 包名。
 
 ## 4. 单机运行 PageRank
 
@@ -122,37 +126,28 @@ curl --fail --compressed \
 
 ## 5. 在 Kubernetes 中运行 PageRank
 
-先确保 HugeGraph-Server 对计算 Pod 可达。Computer Operator 清单会部署 Operator、etcd 和 MinIO（供快照功能使用），但不会安装 cert-manager。清单包含 cert-manager `Certificate`、`Issuer` 资源和 CA 注入标注，因此应用 Operator 清单前必须安装与集群版本兼容的 cert-manager，并等待 controller、cainjector 和 webhook 就绪。以下命令以适配 Kubernetes 1.33–1.36 的 cert-manager 1.21.2 为例，其他集群版本应按 [cert-manager 支持矩阵](https://cert-manager.io/docs/releases/)选择兼容版本。CRD 和 Operator 清单应使用同一 Computer 发行版本。下面以 1.7.0 的 `v1` CRD 为例：
+先确保 HugeGraph-Server 对计算 Pod 可达，并按 [cert-manager 官方安装文档](https://cert-manager.io/docs/installation/)安装与集群兼容的 cert-manager。Computer Operator 清单会部署 Operator、etcd 和 MinIO；CRD 与 Operator 清单应使用同一 Computer 发行版本。下面以 1.7.0 发布版为例：
 
 ```bash
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.21.2/cert-manager.yaml
-kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s
-kubectl rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=120s
-kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
-
-kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/1.7.0/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
-kubectl apply -f https://raw.githubusercontent.com/apache/hugegraph-computer/1.7.0/computer/computer-k8s-operator/manifest/hugegraph-computer-operator.yaml
-kubectl get pods -n hugegraph-computer-operator-system --watch
+VERSION=1.7.0 # CRD 和 Operator 清单使用同一发布版本
+kubectl apply -f "https://raw.githubusercontent.com/apache/hugegraph-computer/${VERSION}/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml"
+kubectl apply -f "https://raw.githubusercontent.com/apache/hugegraph-computer/${VERSION}/computer/computer-k8s-operator/manifest/hugegraph-computer-operator.yaml"
 ```
 
-若要启用 MinIO 快照，需先修正 Computer 1.7.0 清单中的 Service 端口映射：S3 API 监听 `9000`，而 `9090` 是 Console 端口。等待 Pod 就绪并退出上面的监视命令后，执行以下命令，再将 `snapshot.minio_endpoint` 设为 `http://hugegraph-computer-operator-minio.hugegraph-computer-operator-system.svc:9000`。默认不启用快照时可跳过此步骤。
+> [!DETAILS]- 可选：启用 MinIO 快照（1.7.0）
+>
+> 1.7.0 清单中的 MinIO Service 把 S3 API 的 `9000` 端口映射到了 Console 的 `9090`；启用快照时先修正映射，并将 `snapshot.minio_endpoint` 设为 `http://hugegraph-computer-operator-minio.hugegraph-computer-operator-system.svc:9000`。默认不启用快照时可跳过。
+>
+> ```bash
+> kubectl patch service hugegraph-computer-operator-minio \
+>   -n hugegraph-computer-operator-system \
+>   --type=json \
+>   -p='[{"op":"replace","path":"/spec/ports/0/targetPort","value":9000}]'
+> ```
 
-```bash
-kubectl patch service hugegraph-computer-operator-minio \
-  -n hugegraph-computer-operator-system \
-  --type=json \
-  -p='[{"op":"replace","path":"/spec/ports/0/targetPort","value":9000}]'
-```
+替换 HugeGraph 地址为计算 Pod 可访问的服务地址后，提交 `HugeGraphComputerJob`。示例使用官方 Docker Hub 的 `hugegraph/hugegraph-computer:latest`，并引用镜像内置的 PageRank JAR；自定义算法 JAR 可预置在镜像内通过 `jarFile` 指定，也可用 `remoteJarUri` 从 HTTP(S) 地址下载。分区数需不小于 worker 数量。
 
-确认 cert-manager、Operator 和 etcd Pod 已就绪后，提交 `HugeGraphComputerJob`。替换镜像为集群可拉取且包含对应版本运行时与内置算法 JAR 的镜像，并把 HugeGraph 地址改成 Pod 可访问的服务地址。分区数必须不小于 worker 数量。下面为小图示例设置 Master `1Gi`、Worker `2Gi` 内存及 `500m` CPU 限制；实际作业应按图规模和运行配置调整。
-
-Operator 清单默认 `AUTO_DESTROY_POD=true`，作业完成后会删除 CR 和计算资源。短作业可能在用户读取最终状态前就被清理。需要保留 CR、Pod 和日志时，先在 Java Operator 的 `controller` 容器设置 `AUTO_DESTROY_POD=false`；同一 Deployment 中名为 `manager` 的 Go 容器不是此配置入口：
-
-```bash
-kubectl set env deployment/hugegraph-computer-operator-controller-manager \
-  -n hugegraph-computer-operator-system \
-  --containers=controller AUTO_DESTROY_POD=false
-```
+将以下 YAML 保存为 `pagerank-job.yaml`，然后应用该文件：
 
 ```yaml
 apiVersion: operator.hugegraph.apache.org/v1
@@ -163,7 +158,7 @@ metadata:
 spec:
   jobId: pagerank-sample
   algorithmName: page_rank
-  image: registry.example.com/hugegraph-computer:1.7.0
+  image: hugegraph/hugegraph-computer:latest # 官方 Docker Hub 镜像
   jarFile: /hugegraph/hugegraph-computer/algorithm/builtin-algorithm.jar
   pullPolicy: IfNotPresent
   workerInstances: 1
@@ -183,22 +178,35 @@ kubectl apply -f pagerank-job.yaml
 kubectl get hcjob pagerank-sample -n hugegraph-computer-operator-system --watch
 ```
 
-作业状态为 `SUCCEEDED` 表示运行完成。另开终端在作业运行期间查看 Pod 和日志；若状态为 `FAILED`，应在资源清理前收集诊断信息：
+`SUCCEEDED` 表示作业完成。Operator 默认会在作业完成后删除 CR 和计算资源；需要保留结果或排查失败作业时，可按需展开下方说明。
 
-```bash
-kubectl get pods -n hugegraph-computer-operator-system
-kubectl logs --follow <master-pod-name> -n hugegraph-computer-operator-system
-kubectl logs --follow <worker-pod-name> -n hugegraph-computer-operator-system
-```
-
-保留 CR 和 Pod 时，可在确认 `SUCCEEDED` 并查询完写回结果后手动清理；清理 CR 会让 Operator 删除关联计算资源。需要恢复清理策略时，在 Java `controller` 容器重新设为 `true`：
-
-```bash
-kubectl delete hcjob pagerank-sample -n hugegraph-computer-operator-system
-kubectl set env deployment/hugegraph-computer-operator-controller-manager \
-  -n hugegraph-computer-operator-system \
-  --containers=controller AUTO_DESTROY_POD=true
-```
+> [!DETAILS]- 可选：保留作业状态、查看日志或清理资源
+>
+> Operator 默认 `AUTO_DESTROY_POD=true`，短作业的 CR 和 Pod 可能在查看前被清理。若要保留它们，请在提交作业前关闭该选项，并等待 Controller 新 Pod 就绪后再提交；该设置必须改在 Java Operator 的 `controller` 容器中：
+>
+> ```bash
+> kubectl set env deployment/hugegraph-computer-operator-controller-manager \
+>   -n hugegraph-computer-operator-system \
+>   --containers=controller AUTO_DESTROY_POD=false
+> kubectl rollout status deployment/hugegraph-computer-operator-controller-manager \
+>   -n hugegraph-computer-operator-system --timeout=120s
+> ```
+>
+> 查看运行信息或失败日志：
+>
+> ```bash
+> kubectl logs --follow <master-pod-name> -n hugegraph-computer-operator-system
+> kubectl logs --follow <worker-pod-name> -n hugegraph-computer-operator-system
+> ```
+>
+> 查询完结果后删除 CR 以清理关联资源，并恢复默认策略：
+>
+> ```bash
+> kubectl delete hcjob pagerank-sample -n hugegraph-computer-operator-system
+> kubectl set env deployment/hugegraph-computer-operator-controller-manager \
+>   -n hugegraph-computer-operator-system \
+>   --containers=controller AUTO_DESTROY_POD=true
+> ```
 
 PageRank 写回 HugeGraph 后按上一节设置读模式并查询。若改用 HDFS 输出，结果位于 `output.hdfs_path_prefix/<job.id>/` 下，文件名和分区布局由作业配置决定。
 
@@ -212,4 +220,4 @@ PageRank 写回 HugeGraph 后按上一节设置读模式并查询。若改用 HD
 - 社区与结构：Clustering Coefficient、K-core、LPA、Triangle Count、WCC。
 - 路径与采样：环检测、带过滤的环检测、单源最短路径、Random Walk。
 
-算法实现位于 [`computer/computer-algorithm`](https://github.com/apache/hugegraph-computer/tree/1.7.0/computer/computer-algorithm)。自定义算法需要遵循 Computer API 并打包为可加载的 JAR；模块划分和开发入口见[Computer README](https://github.com/apache/hugegraph-computer/blob/1.7.0/computer/README.md)。
+算法实现位于 [`computer/computer-algorithm`](https://github.com/apache/hugegraph-computer/tree/master/computer/computer-algorithm)。自定义算法需要遵循 Computer API 并打包为可加载的 JAR；模块划分和开发入口见[Computer README](https://github.com/apache/hugegraph-computer/blob/master/computer/README.md)。

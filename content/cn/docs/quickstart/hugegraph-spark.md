@@ -1,5 +1,5 @@
 ---
-title: "HugeGraph-Spark Quick Start"
+title: "HugeGraph-Spark 快速上手"
 linkTitle: "(Deprecated) Analysis with HugeGraph-Spark"
 draft: true
 weight: 100

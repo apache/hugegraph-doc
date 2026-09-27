@@ -139,7 +139,10 @@ Web 页面的 `5. Set up the vector engine.` 面板提供同样的选择，并�
 | `USER_TOKEN` | `4321` | Web 页面和普通 API 的 token |
 | `ADMIN_TOKEN` | `xxxx` | `/logs` 使用的管理员 token |
 
-`ADMIN_TOKEN` 为空或仍为 `xxxx` 时，`/logs` 会直接返回 403。生产环境应同时替换用户 token 和管理员 token。
+`ADMIN_TOKEN` 为空或仍为 `xxxx` 时，`/logs` 会直接返回 403。
+
+> [!WARNING]
+> 生产环境必须设置 `ENABLE_LOGIN=True`，替换 `USER_TOKEN` 和 `ADMIN_TOKEN`，并通过防火墙或网络入口设置来源 IP 白名单。这只保护 HugeGraph-LLM；HugeGraph Server 还必须单独开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（`audit_log`），为 `GRAPH_USER` 设置最小必要权限。两端使用不同的认证凭据。
 
 ## 最小 OpenAI 配置
 

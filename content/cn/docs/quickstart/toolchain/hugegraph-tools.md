@@ -1,5 +1,5 @@
 ---
-title: "Tools Quick Start"
+title: "Tools 快速上手"
 linkTitle: "使用 Tools 导出/管理图"
 weight: 3
 ---

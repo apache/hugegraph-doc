@@ -44,6 +44,9 @@ Authorization: Bearer replace-with-a-secret
 
 同一开关也会给 Gradio 页面加上基础认证，用户名固定为 `rag`，密码是 `USER_TOKEN`。token 不正确时返回 401，并带上 `WWW-Authenticate: Bearer` 响应头。`ENABLE_LOGIN` 保持 `False` 时所有接口都不做鉴权。
 
+> [!WARNING]
+> 生产环境必须启用 HugeGraph-LLM 自身的登录认证，并在防火墙或网络入口设置来源 IP 白名单。该认证只保护 HugeGraph-LLM 的页面和 REST API；HugeGraph Server 还必须单独开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（`audit_log`），为 `GRAPH_USER` 配置最小必要权限。`USER_TOKEN` 不会替代 Server 认证。
+
 ## RAG
 
 ### `POST /rag`

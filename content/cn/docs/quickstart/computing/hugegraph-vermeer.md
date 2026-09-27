@@ -1,14 +1,16 @@
 ---
-title: "HugeGraph-Vermeer 快速开始"
+title: "HugeGraph-Vermeer 快速上手"
 linkTitle: "Vermeer: 高性能内存图计算框架"
 weight: 1
+description: "Vermeer 高性能内存图计算：一次启动、多次执行，支持 15+ OLAP 算法及秒到分钟级计算，涵盖部署、数据加载、PageRank 和社区发现。"
+search_keywords: [Vermeer, 高性能图计算, 内存图计算, OLAP, PageRank, 社区发现]
 ---
 
 ## 一、Vermeer 概述
 
 ### 1.1 运行架构
 
-Vermeer 是使用 Go 编写、以内存为主的图计算框架，支持 15+ OLAP 图算法。当前由一个 master 调度，可连接多个 worker。
+Vermeer 是使用 Go 编写的高性能内存优先图计算框架，支持一次启动、多次执行，以及 15+ OLAP 图算法的极速计算，大部分算法可在秒到分钟级完成。实际耗时取决于图规模、算法参数和可用资源。当前由一个 master 调度，可连接多个 worker。
 
 master 是负责通信、转发、汇总的节点，计算量和占用资源量较少。worker 是计算节点，用于存储图数据和运行计算任务，占用大量内存和 cpu。grpc 和 rest 模块分别负责内部通信和外部调用。
 
@@ -35,7 +37,7 @@ flowchart LR
 
 ### 1.2 运行方法
 
-下面两种 Docker 启动方式都需要先准备一个宿主机配置目录。请在 Vermeer 仓库根目录执行，将项目提供的 [`master.ini`](https://github.com/apache/hugegraph-computer/blob/04985bbc9907c7b6c9a8fe8833323df049f9bd9b/vermeer/config/master.ini) 和 [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/04985bbc9907c7b6c9a8fe8833323df049f9bd9b/vermeer/config/worker.ini) 模板复制到该目录；挂载会覆盖镜像里的 `/go/bin/config`，所以不要把空目录或整个用户主目录挂进去：
+下面两种 Docker 启动方式都需要先准备一个宿主机配置目录。请在 Vermeer 仓库根目录执行，将项目提供的 [`master.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/master.ini) 和 [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/worker.ini) 模板复制到该目录；挂载会覆盖镜像里的 `/go/bin/config`，所以不要把空目录或整个用户主目录挂进去：
 
 ```shell
 CONFIG_DIR="$HOME/vermeer-config"

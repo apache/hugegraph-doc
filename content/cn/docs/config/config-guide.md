@@ -19,6 +19,11 @@ HugeGraphServer 内部集成了 GremlinServer 和 RestServer，而 gremlin-serve
 
 下面对这三个配置文件逐一介绍。
 
+> [!WARNING]
+> **生产环境必须配置 Server 鉴权与网络边界**
+>
+> 本页的认证配置属于 HugeGraph Server。生产环境必须按 [Server 认证与授权配置](/cn/docs/config/config-authentication/)启用 Auth、配置 IP 白名单和最小权限，并保留、保护 Server `audit-*.log`。示例中注释掉的认证配置表示默认未启用。
+
 发行包把默认配置放在安装目录的 `conf/` 下；这些文件来自 Server 仓库的静态发行素材，构建时随包复制。未在配置文件中出现的选项采用代码定义的默认值；配置文件显式写入的值会覆盖该默认值。
 本页的默认文件行为按固定 Server 主线 `2f827d6` 核对；实际使用的发布包应以其自身版本对应的配置文件和入口脚本为准。
 
@@ -29,9 +34,9 @@ HugeGraphServer 内部集成了 GremlinServer 和 RestServer，而 gremlin-serve
 | `conf/graphs/hugegraph.properties` | 随发行包提供的默认图配置，使用 RocksDB。 | `init-store.sh` 和 Server 应用初始化都会扫描该目录；初始化阶段会尝试加载其中的图配置。`graph.load_from_local_config` 默认 `false`，只控制管理器构造阶段预加载及 `reload()` 重扫。 |
 | `conf/graphs/hstore.properties.template` | 随发行包提供的 HStore 模板；其他图配置由用户按需创建。 | HStore 镜像在构建时把模板改名为 `hugegraph.properties`；裸发行包用户可复制模板并修改。 |
 
-完整的默认文件见固定的 Server 源码：[gremlin-server.yaml](https://github.com/apache/hugegraph/blob/2f827d6e8c9c62ae858f2fc122b3a192d015e2f4/hugegraph-server/hugegraph-dist/src/assembly/static/conf/gremlin-server.yaml)、[rest-server.properties](https://github.com/apache/hugegraph/blob/2f827d6e8c9c62ae858f2fc122b3a192d015e2f4/hugegraph-server/hugegraph-dist/src/assembly/static/conf/rest-server.properties)、[hugegraph.properties](https://github.com/apache/hugegraph/blob/2f827d6e8c9c62ae858f2fc122b3a192d015e2f4/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hugegraph.properties) 和 [hstore.properties.template](https://github.com/apache/hugegraph/blob/2f827d6e8c9c62ae858f2fc122b3a192d015e2f4/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hstore.properties.template)。
+完整的默认文件见Server 主线源码：[gremlin-server.yaml](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/gremlin-server.yaml)、[rest-server.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/rest-server.properties)、[hugegraph.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hugegraph.properties) 和 [hstore.properties.template](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hstore.properties.template)。
 
-以下 Docker 环境变量行为仅适用于从固定主线 `2f827d6` 构建的镜像，不会把任意环境变量名转换为配置项。该版本的入口脚本在初始化和启动前处理 `HG_SERVER_BACKEND`、`HG_SERVER_PD_PEERS`、`HG_SERVER_USE_PD`、`HG_SERVER_CLUSTER`、`HG_SERVER_REST_URL`、`HG_SERVER_MIN_FREE_MEMORY`、`HG_SERVER_AUTH_TOKEN_SECRET`、`HG_SERVER_INIT_STORE_ENABLED` 和 `PASSWORD`；历史发布镜像需按各自 tag 对应的 entrypoint 核实支持项。见 [Docker entrypoint](https://github.com/apache/hugegraph/blob/2f827d6e8c9c62ae858f2fc122b3a192d015e2f4/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh)。
+以下 Docker 环境变量行为仅适用于从 `master` 主线构建的镜像，不会把任意环境变量名转换为配置项。该版本的入口脚本在初始化和启动前处理 `HG_SERVER_BACKEND`、`HG_SERVER_PD_PEERS`、`HG_SERVER_USE_PD`、`HG_SERVER_CLUSTER`、`HG_SERVER_REST_URL`、`HG_SERVER_MIN_FREE_MEMORY`、`HG_SERVER_AUTH_TOKEN_SECRET`、`HG_SERVER_INIT_STORE_ENABLED` 和 `PASSWORD`；历史发布镜像需按各自 tag 对应的 entrypoint 核实支持项。见 [Docker entrypoint](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh)。
 
 ### 2 gremlin-server.yaml
 
@@ -61,7 +66,7 @@ ssl: { enabled: false }
 
 ### 3 rest-server.properties
 
-下面是可用的 `rest-server.properties` 示例。固定主线模板未写出 `graph.load_from_local_config`，源码默认值为 `false`。示例中设为 `true` 是可选的：它开启管理器构造阶段预加载和 `reload()` 重扫；Server 应用初始化阶段仍会扫描并尝试加载本地图配置。
+下面是可用的 `rest-server.properties` 示例。主线模板未写出 `graph.load_from_local_config`，源码默认值为 `false`。示例中设为 `true` 是可选的：它开启管理器构造阶段预加载和 `reload()` 重扫；Server 应用初始化阶段仍会扫描并尝试加载本地图配置。
 
 ```properties
 # bind url

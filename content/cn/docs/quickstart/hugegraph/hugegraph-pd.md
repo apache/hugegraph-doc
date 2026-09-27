@@ -1,5 +1,5 @@
 ---
-title: "HugeGraph-PD Quick Start"
+title: "HugeGraph-PD 快速上手"
 linkTitle: "安装/构建 HugeGraph-PD"
 weight: 2
 search_keywords: [HugeGraph PD, 元数据管理, 集群调度]
@@ -383,7 +383,10 @@ curl -u "store:${HG_PD_AUTH_SECRET_KEY:?请先设置 PD 部署密钥}" \
 
 `bin/wait-storage.sh` 通过 `PD_AUTH_USER`、`PD_AUTH_PASSWORD` 配置同一凭据。1.7.0 发布标签的认证实现只检查用户名是否属于内部服务名，不比较密码；不要把该旧版行为套用到当前主线源码构建包。
 
-> **警告**：该校验只用于区分 HugeGraph 自身组件与其他流量。请勿把 PD 的 REST 或 gRPC 端口暴露到不可信网络，应通过防火墙规则或安全组加以限制，并保持 `raft.ip-whitelist.enabled` 开启，使 Raft 端口只接受配置中的 peer。
+> [!WARNING]
+> **生产环境分别保护 Server 与 PD 端口**
+>
+> 生产环境的 Server 图 API 必须按 [Server 认证与授权配置](/cn/docs/config/config-authentication/)启用 Auth、IP 白名单和最小权限授权，并保留、保护 Server `audit-*.log`。这些设置不保护 PD：当前主线 PD REST 使用 `auth.secret-key`；1.7.0 的认证实现仅检查用户名是否属于内部服务名，不比较密码。Raft 端口应保持 `raft.ip-whitelist.enabled` 并只允许配置的 peer，PD REST 与 gRPC 端口也必须限制在受信网络内。PD 的 `/v1/health`、`/v1/ready` 和 Actuator 探针无需 Basic 认证，须由网络策略限制可达范围；主线默认日志配置生成的 `logs/audit-hugegraph-pd.log` 也须纳入日志保护。
 
 #### 7.2 健康检查
 

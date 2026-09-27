@@ -10,12 +10,15 @@ weight: 3
 
 ### 配置文件从哪里来
 
-- 源码模板：[`computer/computer-dist/src/assembly/static/conf/computer.properties`](https://github.com/apache/hugegraph-computer/blob/1.7.0/computer/computer-dist/src/assembly/static/conf/computer.properties)；日志配置模板为同目录的 `log4j2.xml`。Maven `package` 阶段将模板复制进发行目录的 `conf/`，并将运行依赖和内置算法 JAR 装入 `lib/`、`algorithm/`。模板由源码维护，没有单独的配置生成命令。
+- 源码模板：[`computer/computer-dist/src/assembly/static/conf/computer.properties`](https://github.com/apache/hugegraph-computer/blob/master/computer/computer-dist/src/assembly/static/conf/computer.properties)；日志配置模板为同目录的 `log4j2.xml`。Maven `package` 阶段将模板复制进发行目录的 `conf/`，并将运行依赖和内置算法 JAR 装入 `lib/`、`algorithm/`。模板由源码维护，没有单独的配置生成命令。
 - 单机、YARN：启动脚本默认读取发行目录的 `conf/computer.properties`，可使用 `bin/start-computer.sh -c <配置文件路径>` 覆盖；master 和 worker 应读到同一组作业参数。
 - Kubernetes Operator：用户在 CRD 的 `spec.computerConf` 中提供键值；Operator 将它写成 ConfigMap，挂载为容器内的 `computer.properties`。Operator 会补入作业 ID、worker 数量、Pod 地址和未指定时的 etcd 地址，并在未指定或设为 `0` 时将数据传输端口设为 `8099`、master RPC 端口设为 `8190`。`transport.server_host` 与 `rpc.server_host` 会被设置为 Pod IP。作业容器启动脚本只对 `${POD_IP}`、`${HOSTNAME}`、`${POD_NAME}`、`${POD_NAMESPACE}` 做环境变量替换。
-- Kubernetes 作业镜像必须包含 Computer 运行时及所需算法 JAR；CRD 的 `jarFile` 可指向镜像内 JAR，`remoteJarUri` 可让启动脚本从 HTTP(S) 地址下载算法 JAR。示例与字段见[Computer 快速开始](/cn/docs/quickstart/computing/hugegraph-computer/)及下方 CRD 表。
+- Kubernetes 作业镜像必须包含 Computer 运行时。算法 JAR 可以预置在镜像内并由 CRD 的 `jarFile` 指向，也可以通过 `remoteJarUri` 设置 HTTP(S) 地址，让启动脚本下载并加载。示例与字段见[Computer 快速上手](/cn/docs/quickstart/computing/hugegraph-computer/)及下方 CRD 表。
 
-Apache 1.7.0 下载目录中的独立 Computer 包是源码归档 `apache-hugegraph-computer-incubating-1.7.0-src.tar.gz`。从源码构建时，在仓库的 `computer/` Maven 聚合工程目录运行 `mvn clean package -DskipTests`；发行包位于该目录下的 `target/apache-hugegraph-computer-1.7.0.tar.gz`，解压后发行目录也位于 `computer/` 下。不要把 `-src.tar.gz` 当作可直接启动的二进制发行包。
+Apache HugeGraph 下载目录提供各发布版本的 Computer 源码包，不提供单独的预编译二进制包。1.7.0 的发布源码包名含 `-incubating-`；在该 tag 的 `computer/` Maven 聚合工程运行 `mvn clean package -DskipTests` 后，发行包也带 `-incubating-`。当前 master 的发行名不含该标记，版本号由 POM 决定。源码包不能作为已构建发行包直接启动。
+
+> [!WARNING]
+> 表格中的空 HugeGraph 凭据和 MinIO 示例密钥仅适用于本地或演示环境。生产环境必须为 HugeGraph Server 开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（`audit_log`），为 Computer 配置最小必要权限的 Server 账号，并为 Server 网络入口设置来源 IP 白名单；不要将示例 MinIO 密钥用于生产。
 
 ---
 
@@ -406,13 +409,13 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 
 ### HugeGraph-Computer CRD
 
-> CRD: https://github.com/apache/hugegraph-computer/blob/1.7.0/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
+> 1.7.0 CRD: https://github.com/apache/hugegraph-computer/blob/1.7.0/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
 
 | 字段 | 默认值 | 说明 | 必填 |
 |------|--------|------|------|
 | algorithmName | | 算法名称。 | true |
 | jobId | | 作业 ID。 | true |
-| image | | Computer 作业使用的容器镜像；需包含运行时及目标算法 JAR，或配合 `remoteJarUri` 提供算法 JAR。 | true |
+| image | | Computer 作业使用的容器镜像，必须包含 Computer 运行时。目标算法 JAR 可预置在镜像内，或通过 `remoteJarUri` 下载。 | true |
 | computerConf | | computer 配置选项的映射。 | true |
 | workerInstances | | worker 实例数量,将覆盖 'job.workers_count' 选项。 | true |
 | pullPolicy | 未设置时由 Kubernetes 按镜像标签决定：`latest` 为 `Always`，其他标签为 `IfNotPresent` | 可显式设置 `Always`、`Never` 或 `IfNotPresent`；CRD 未提供默认值。详见 [镜像拉取策略](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy)。 | false |

@@ -5,8 +5,7 @@ weight: 16
 description: "Authentication（认证鉴权）REST 接口:管理用户、角色、权限和访问控制,实现细粒度的图数据安全机制。"
 ---
 
-> **版本说明**：本页介绍当前 `master` 的接口。历史用法请切换到对应多版本页面：
-> [1.7 版认证 API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/auth/) 或
+> **版本说明**：本页介绍当前 `master` 的接口。历史用法请切换到对应多版本页面： [1.7 版认证 API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/auth/) 或
 > [1.5 版认证 API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/auth/)。
 >
 > 用户、图空间用户组、资源、关联和赋权接口使用 `/graphspaces/{graphspace}/auth/...`。登录、登出和 token 校验仍使用 `/auth/login`、`/auth/logout`、`/auth/verify`；图空间默认角色接口位于 `/graphspaces/{graphspace}/role`。源码保留顶层 `/auth/groups`，本页组接口示例使用图空间范围接口。
@@ -18,10 +17,8 @@ description: "Authentication（认证鉴权）REST 接口:管理用户、角色�
 > 开启权限及相关配置请先参考 [权限配置](/cn/docs/config/config-authentication/) 文档
 
 ##### 用户认证与权限控制概述：
-HugeGraph 支持多用户认证、以及细粒度的权限访问控制，采用基于“用户 - 用户组 - 操作 - 资源”的 4 层设计，灵活控制用户角色与权限。 
-资源描述了图数据库中的数据，比如符合某一类条件的顶点，每一个资源包括 type、label、properties 三个要素，共有 18 种 type、
-任意 label、任意 properties 的组合形成的资源，一个资源的内部条件是且关系，多个资源之间的条件是或关系。用户可以属于一个或多个用户组，
-每个用户组可以拥有对任意个资源的操作权限，操作类型包括：读、写、删除、执行等种类。HugeGraph 支持动态创建用户、用户组、资源，
+HugeGraph 支持多用户认证、以及细粒度的权限访问控制，采用基于“用户 - 用户组 - 操作 - 资源”的 4 层设计，灵活控制用户角色与权限。  资源描述了图数据库中的数据，比如符合某一类条件的顶点，每一个资源包括 type、label、properties 三个要素，共有 18 种 type、
+任意 label、任意 properties 的组合形成的资源，一个资源的内部条件是且关系，多个资源之间的条件是或关系。用户可以属于一个或多个用户组，每个用户组可以拥有对任意个资源的操作权限，操作类型包括：读、写、删除、执行等种类。HugeGraph 支持动态创建用户、用户组、资源，
 支持动态分配或取消权限。初始化数据库时超级管理员用户被创建，后续可通过超级管理员创建各类角色用户，新创建的用户如果被分配足够权限后，可以由其创建或管理更多的用户。
 
 ##### 举例说明：
@@ -330,8 +327,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 ```
 
 ##### Request Body
-修改 group_description。GraphSpace 形式下这里的 `group_name` 应当省略，或等于服务端生成的名称，
-传入其他值会被拒绝并提示 "The name of group can't be updated"。
+修改 group_description。GraphSpace 形式下这里的 `group_name` 应当省略，或等于服务端生成的名称，传入其他值会被拒绝并提示 "The name of group can't be updated"。
 ```json
 {
     "group_description": "grant"

@@ -1,5 +1,5 @@
 ---
-title: "HugeGraph-Loader Quick Start"
+title: "HugeGraph-Loader 快速上手"
 linkTitle: "使用 Loader 实时/流式导入数据"
 weight: 2
 search_keywords: [HugeGraph Loader, 批量导入, 数据导入]
@@ -22,7 +22,7 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 后面会具体说明。
 
-> **注意**：使用 HugeGraph-Loader 需要依赖 HugeGraph Server 服务，下载和启动 Server 请参考 [HugeGraph-Server Quick Start](/cn/docs/quickstart/hugegraph/hugegraph-server)
+> **注意**：使用 HugeGraph-Loader 需要依赖 HugeGraph Server 服务，下载和启动 Server 请参考 [HugeGraph-Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server)
 > 
 > **测试指南**：如需在本地运行 Loader 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
 
@@ -132,8 +132,7 @@ mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 
 这一步是建模的过程，用户需要对自己已有的数据和想要创建的图模型有一个清晰的构想，然后编写 schema 建立图模型。
 
-比如想创建一个拥有两类顶点及两类边的图，顶点是"人"和"软件"，边是"人认识人"和"人创造软件"，并且这些顶点和边都带有一些属性，比如顶点"人"有："姓名"、"年龄"等属性，
-"软件"有："名字"、"售卖价格"等属性；边"认识"有："日期"属性等。
+比如想创建一个拥有两类顶点及两类边的图，顶点是"人"和"软件"，边是"人认识人"和"人创造软件"，并且这些顶点和边都带有一些属性，比如顶点"人"有："姓名"、"年龄"等属性， "软件"有："名字"、"售卖价格"等属性；边"认识"有："日期"属性等。
 
 <div style="text-align: center;">
   <img src="/docs/images/demo-graph-model.png" alt="由“认识”和“创建”边连接人物与软件顶点的示例图">
@@ -902,8 +901,7 @@ GRAPH 输入源从另一个 HugeGraph 图（通过 HugeGraph-PD 访问）读取�
 
 > 注意：进度文件的生成与 --incremental-mode 是否打开无关，每次导入结束都会生成一个进度文件。
 
-如果数据文件格式都是合法的，是用户自己停止（CTRL + C 或 kill，kill -9 不支持）的导入任务，也就是说没有错误记录的情况下，下一次导入只需要设置
-为断点续导即可。
+如果数据文件格式都是合法的，是用户自己停止（CTRL + C 或 kill，kill -9 不支持）的导入任务，也就是说没有错误记录的情况下，下一次导入只需要设置为断点续导即可。
 
 但如果是因为太多数据不合法或者网络异常，达到了 --max-read-errors、--max-parse-errors 或 --max-insert-errors 的限制，Loader 会把这些失败的原始行记录到
 失败文件中，用户对失败文件中的数据行修改后，设置 --failure-mode 为 true 即可把这些"失败文件"也当作输入源进行导入（不影响正常的文件的导入），
@@ -1253,8 +1251,7 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 执行的结果如 [4.5.1](#451-使用-docker-exec-直接导入数据) 所示
 
 #### 4.6 使用 spark-loader 导入
-> Spark 版本：Spark 3+，其他版本未测试。
-> 当前源码使用 Spark 3.2.2 和 Scala 2.12；其他组合需自行验证。
+> Spark 版本：Spark 3+，其他版本未测试。当前源码使用 Spark 3.2.2 和 Scala 2.12；其他组合需自行验证。
 > 
 `spark-loader` 的参数分为两部分，注意：因二者参数名缩写存在重合部分，请使用参数全称。两种参数之间无需保证先后顺序。
 - hugegraph 参数（参考：[hugegraph-loader 参数说明](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-loader/#341-%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E) ）

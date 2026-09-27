@@ -51,6 +51,11 @@ HG_PD_AUTH_SECRET_KEY='<24 字节随机值，例如 openssl rand -hex 24>'
 
 之后修改 `HUGEGRAPH_ADMIN_PASSWORD` 不会轮换已有密码，请使用用户 API 修改。
 
+> [!WARNING]
+> **生产环境的组件访问控制**
+>
+> 生产环境必须按 [Server 认证与授权配置](/cn/docs/config/config-authentication/) 为图 API 启用 Server Auth，启用并维护 Server IP 白名单、按最小权限授权，并保留、限制读取 Server `audit-*.log`。PD 的 REST 凭据与 PD/Store 的 gRPC、Raft、REST 网络边界独立配置；Server Auth 不会保护这些端口。仅向集群节点和受信运维入口开放 PD/Store 端口。
+
 ## 单节点快速启动
 
 本节固定使用 `hugegraph/hugegraph:1.7.0` 单机镜像标签；HStore/HA 示例使用当前主线构建镜像，不能照搬本节的版本号。
@@ -139,7 +144,7 @@ curl -fsS http://localhost:8620/v1/health      # PD 健康检查
 curl -fsS http://localhost:8520/v1/health      # Store 健康检查
 curl -fsS http://localhost:8080/versions        # Server
 for port in 8620 8621 8622; do
-  curl -fsS "http://localhost:${port}/v1/ready" | grep -q '"ready":true'
+  curl -fsS "http://localhost:${port}/v1/ready" | grep -q '"ready":true' || exit 1
 done
 curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?请先载入 .env}" \
   http://localhost:8620/v1/stores          # 认证后查看已注册的 Store

@@ -187,14 +187,11 @@ ToplingDB 提供了一个 RocksDB 原生没有的 MemTable 类型，通过以下
 
 ### mem_cap
 
-`mem_cap` 是指在内存地址空间中，为 CSPP 预留的空间大小，这些内存可以只是**保留地址空间，并未实际分配的**。
-`mem_cap` 真正占用的内存大小约为 `write_buffer_size` 。
+`mem_cap` 是指在内存地址空间中，为 CSPP 预留的空间大小，这些内存可以只是**保留地址空间，并未实际分配的**。 `mem_cap` 真正占用的内存大小约为 `write_buffer_size` 。
 
 #### mem_cap 设计背景
 
-CSPP 的底层算法为了支持高并发写入，采用了预分配内存的策略。
-当预分配的内存被写满时，新的写入操作将无法继续。
-然而，RocksDB 本身缺乏一种机制，使得 memtable 能够主动反馈 '预分配内存已满，需要切换到新的 memtable' 。
+CSPP 的底层算法为了支持高并发写入，采用了预分配内存的策略。当预分配的内存被写满时，新的写入操作将无法继续。然而，RocksDB 本身缺乏一种机制，使得 memtable 能够主动反馈 '预分配内存已满，需要切换到新的 memtable' 。
 由于其函数调用链路复杂，难以通过重构来实现这一机制，因此 `CSPP` 只能通过参数设计来适配 RocksDB 的行为。
 
 #### mem_cap 核心思路
@@ -210,8 +207,7 @@ ToplingDB 将 `mem_cap` 设置为远大于 `write_buffer_size`，从而避免 Ro
 
 ### use_vm
 
-在使用 malloc/posix_memalign 分配内存时，地址空间可能是已经实际分配的（位于堆空间中，已有对应的物理页面），而 CSPP 在分配时只需要获得保留的地址空间。
-`use_vm` 选项为 `true` 时会强制使用 `mmap` 分配内存，从而保证分配的一定时是保留地址空间，但并不实际占用物理页面。
+在使用 malloc/posix_memalign 分配内存时，地址空间可能是已经实际分配的（位于堆空间中，已有对应的物理页面），而 CSPP 在分配时只需要获得保留的地址空间。 `use_vm` 选项为 `true` 时会强制使用 `mmap` 分配内存，从而保证分配的一定时是保留地址空间，但并不实际占用物理页面。
 `use_vm` 默认值为 `true`。如果用户物理内存空间充足，建议关闭此选项，`mmap` 分配的虚拟内存空间在建立对物理地址的映射时会触发大量minor page fault，可能会影响性能。
 
 ### convert_to_sst
@@ -275,6 +271,6 @@ ToplingDB 在 RocksDB 的基础上增加了以下能力：
 
 ## 相关文档
 
-- [ToplingDB 快速开始](/cn/blog/2025/10/09/toplingdb-quick-start/) – 如何在 HugeGraph 中启用 ToplingDB
+- [ToplingDB 快速上手](/cn/blog/2025/10/09/toplingdb-quick-start/) – 如何在 HugeGraph 中启用 ToplingDB
 - [RocksDB 官方配置文档](https://github.com/facebook/rocksdb/wiki/Setup-Options-and-Basic-Tuning) – 了解基础配置项
 - [SidePlugin Wiki](https://github.com/topling/sideplugin-wiki-en/wiki) – ToplingDB 完整配置参考

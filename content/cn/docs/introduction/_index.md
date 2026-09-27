@@ -80,7 +80,7 @@ HugeGraph-Computer 仓库提供两种互补的 OLAP 图计算引擎。通用图�
 
 两者都可以读取 HugeGraph 数据，但运行架构、资源需求、配置和算法接口不同。
 
-- [Vermeer 快速上手（默认入口）](/cn/docs/quickstart/computing/hugegraph-vermeer/)
+- [Vermeer 快速上手](/cn/docs/quickstart/computing/hugegraph-vermeer/)
 - [Computer 快速上手](/cn/docs/quickstart/computing/hugegraph-computer/)
 
 ## HugeGraph-AI（Graph + AI）
@@ -98,7 +98,7 @@ HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库�
 
 | 模式 | 核心组件 | 适用场景 | 数据规模 |
 |---|---|---|---|
-| **单机模式（OLTP）** | Server + RocksDB | 开发、测试和中小规模数据 | ≤ 2 TB |
+| **单机模式（OLTP）** | Server + RocksDB | 开发、测试、Graph AI 和中小规模生产环境 | ≤ 2 TB |
 | **分布式模式（OLTP）** | Server + PD + Store（HStore） | 生产环境、水平扩展和多副本部署 | ≤ 1 PB |
 
 图计算属于 OLAP 任务，容量和资源需求取决于所选引擎、图结构与算法，不沿用上表的 OLTP 存储容量口径。
@@ -108,9 +108,9 @@ HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库�
 | 需求 | 文档 |
 |---|---|
 | 启动图数据库并执行查询 | [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/) |
-| 批量导入数据 | [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) |
+| 批量导入数据 | [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/)、[SeaTunnel](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/) |
 | 使用 Web 界面管理图 | [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) |
-| 运行图算法 | [Vermeer（默认入口）](/cn/docs/quickstart/computing/hugegraph-vermeer/) |
+| 运行图算法 | [HugeGraph Computing](/cn/docs/quickstart/computing/hugegraph-vermeer/) |
 | 构建 GraphRAG 或图机器学习应用 | [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/) |
 
 ## 社区 {#community}

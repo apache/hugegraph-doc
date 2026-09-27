@@ -14,9 +14,9 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 | 我想要... | 从这里开始 |
 |----------|-----------|
 | **运行图查询** (OLTP) | [HugeGraph Server 快速上手](quickstart/hugegraph/hugegraph-server) |
-| **运行图算法** (OLAP) | [Vermeer（默认入口）](quickstart/computing/hugegraph-vermeer) |
+| **运行图算法** (OLAP) | [HugeGraph Computing](quickstart/computing/hugegraph-vermeer) |
 | **构建 Graph + AI 应用** | [HugeGraph-AI](quickstart/hugegraph-ai/quick_start) |
-| **批量导入数据** | [HugeGraph Loader](quickstart/toolchain/hugegraph-loader) |
+| **批量导入数据** | [HugeGraph Loader](quickstart/toolchain/hugegraph-loader)、[SeaTunnel](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/) |
 | **可视化管理图** | [Hubble Web UI](quickstart/toolchain/hugegraph-hubble) |
 
 ### 生态系统一览
@@ -51,7 +51,7 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 
 | 模式 | 核心组件 | 适用场景 | 数据规模 |
 |---|---|---|---|
-| **单机模式** | Server + RocksDB | 开发、测试和中小规模数据 | ≤ 2 TB |
+| **单机模式** | Server + RocksDB | 开发、测试、Graph AI 和中小规模生产环境 | ≤ 2 TB |
 | **分布式模式** | Server + PD + Store（HStore） | 生产环境、水平扩展和多副本部署 | ≤ 1 PB |
 
 各组件的适用范围和启动方式见[系统介绍](introduction/)及对应快速上手文档。

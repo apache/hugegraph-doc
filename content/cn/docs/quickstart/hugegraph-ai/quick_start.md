@@ -106,7 +106,7 @@ flowchart TD
 设置 `ENABLE_LOGIN=True` 后，Web 页面会要求基础认证，用户名固定为 `rag`，密码是 `USER_TOKEN`；REST API 则要求把 `USER_TOKEN` 作为 Bearer token。日志接口还要求单独配置安全的 `ADMIN_TOKEN`。
 
 > [!WARNING]
-> 生产环境必须启用 HugeGraph-LLM 自身的登录认证，并替换 `USER_TOKEN` 和 `ADMIN_TOKEN`，同时在防火墙或网络入口设置来源 IP 白名单。HugeGraph Server 还必须单独开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（`audit_log`），为 `GRAPH_USER` 配置最小必要权限。AI 服务 token 不会替代 HugeGraph Server 认证。
+> 生产环境必须启用 HugeGraph-LLM 自身的登录认证，并替换 `USER_TOKEN` 和 `ADMIN_TOKEN`，同时在防火墙或网络入口设置来源 IP 白名单。HugeGraph Server 还必须单独开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（标准日志文件为 `audit-*.log`），为 `GRAPH_USER` 配置最小必要权限。AI 服务 token 不会替代 HugeGraph Server 认证。
 
 ![RAG 界面中抽取的关键词](/images/docs/hugegraph-ai/quick-start-04.png)
 

@@ -31,7 +31,7 @@ Computer 支持从 HugeGraph 或 HDFS 读取图数据，并可将结果写回 Hu
 Kubernetes 作业中的 `hugegraph.url` 必须是各计算 Pod 都能访问的地址，不能填仅在个人电脑上可用的 `localhost`。如果启用了 HugeGraph 认证，应在配置中填写用户名和密码，并为 REST 查询使用对应凭据。
 
 > [!WARNING]
-> 生产环境必须为 HugeGraph Server 开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（`audit_log`），为 Computer 使用只具备作业所需读写权限的专用账号，并为 Server 网络入口设置来源 IP 白名单。`hugegraph.username` 和 `hugegraph.password` 只是 Computer 连接 Server 的凭据，不能替代 Server 端认证。
+> 生产环境必须为 HugeGraph Server 开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（标准日志文件为 `audit-*.log`），为 Computer 使用只具备作业所需读写权限的专用账号，并为 Server 网络入口设置来源 IP 白名单。`hugegraph.username` 和 `hugegraph.password` 只是 Computer 连接 Server 的凭据，不能替代 Server 端认证。
 
 更多配置项见[Computer 配置参考](/cn/docs/quickstart/computing/hugegraph-computer-config/)。
 
@@ -132,6 +132,8 @@ curl --fail --compressed \
 VERSION=1.7.0 # CRD 和 Operator 清单使用同一发布版本
 kubectl apply -f "https://raw.githubusercontent.com/apache/hugegraph-computer/${VERSION}/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml"
 kubectl apply -f "https://raw.githubusercontent.com/apache/hugegraph-computer/${VERSION}/computer/computer-k8s-operator/manifest/hugegraph-computer-operator.yaml"
+kubectl rollout status deployment/hugegraph-computer-operator-controller-manager \
+  -n hugegraph-computer-operator-system --timeout=120s
 ```
 
 > [!DETAILS]- 可选：启用 MinIO 快照（1.7.0）

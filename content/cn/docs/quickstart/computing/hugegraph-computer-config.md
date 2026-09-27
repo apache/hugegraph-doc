@@ -18,7 +18,7 @@ weight: 3
 Apache HugeGraph 下载目录提供各发布版本的 Computer 源码包，不提供单独的预编译二进制包。1.7.0 的发布源码包名含 `-incubating-`；在该 tag 的 `computer/` Maven 聚合工程运行 `mvn clean package -DskipTests` 后，发行包也带 `-incubating-`。当前 master 的发行名不含该标记，版本号由 POM 决定。源码包不能作为已构建发行包直接启动。
 
 > [!WARNING]
-> 表格中的空 HugeGraph 凭据和 MinIO 示例密钥仅适用于本地或演示环境。生产环境必须为 HugeGraph Server 开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（`audit_log`），为 Computer 配置最小必要权限的 Server 账号，并为 Server 网络入口设置来源 IP 白名单；不要将示例 MinIO 密钥用于生产。
+> 表格中的空 HugeGraph 凭据和 MinIO 示例密钥仅适用于本地或演示环境。生产环境必须为 HugeGraph Server 开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（标准日志文件为 `audit-*.log`），为 Computer 配置最小必要权限的 Server 账号，并为 Server 网络入口设置来源 IP 白名单；不要将示例 MinIO 密钥用于生产。
 
 ---
 

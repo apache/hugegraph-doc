@@ -7,6 +7,9 @@ description: "Graphs（图管理）REST 接口:管理图实例的生命周期,�
 
 ### 6.1 Graphs
 
+> [!WARNING]
+> 生产环境必须启用 [Server 认证与授权](/cn/docs/config/config-authentication/)，结合 IP 白名单、审计日志（audit_log）及最小权限控制图管理接口的访问。下文非鉴权配置仅用于隔离的本地测试。
+
 > 本页介绍当前 master 的 Graphs API。历史版本的路径和请求体请切换到对应多版本页面： [1.7 版 Graphs API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/graphs/) 或
 > [1.5 版 Graphs API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/graphs/)。
 
@@ -175,7 +178,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph-xx
 创建一个图（设置 `Content-Type: application/json`）
 
 **`gremlin.graph` 配置说明：**
-- 鉴权模式：`"gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy"`（推荐）
+- 鉴权模式：`"gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy"`（生产环境必须使用）
 - 非鉴权模式：`"gremlin.graph": "org.apache.hugegraph.HugeFactory"`
 
 **注意**：如果 backend 是 hstore，请确保 HugeGraph-Server 已正确配置 PD，参见 [HStore 配置](/cn/docs/quickstart/hugegraph/hugegraph-server/#511-分布式存储-hstore)。调度器由后端类型决定：hstore 使用分布式调度器，其他后端使用本地调度器。

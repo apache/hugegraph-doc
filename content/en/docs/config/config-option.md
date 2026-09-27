@@ -39,7 +39,6 @@ Corresponding configuration file `rest-server.properties`
 | init_store.enabled                     | true                                             | Whether init-store initializes the local backend stores and the built-in admin account. Set false in distributed deployments (PD/HStore) where the storage side already owns the metadata.                     |
 | server.id                              | Empty string                                     | The optional legacy id of hugegraph-server.                                                                                                                                                                   |
 | server.role                            | master                                           | The role of nodes in the cluster, available types are [master, worker, computer]                                                                                                                              |
-| server.role_election                   | false                                            | Whether to enable role election, if enabled, the server will elect a master node in the cluster.                                                                                                               |
 | server.node_id                         | node-id1                                         | The node id of the server.                                                                                                                                                                                    |
 | server.node_role                       | worker                                           | The node role of the server.                                                                                                                                                                                  |
 | server.graphspace                       | DEFAULT                                          | The graph space of the server.                                                                                                                                                                                |
@@ -79,18 +78,6 @@ Corresponding configuration file `rest-server.properties`
 | memory_monitor.period                  | 2000                                             | The period in ms of JVM memory usage monitoring, in each period we will detect the jvm memory usage and take corresponding actions.                                                                            |
 | log.slow_query_threshold               | 1000                                             | The threshold time(ms) of logging slow query, 0 means logging slow query is disabled.                                                                                                                          |
 | log.slow_query_body_limit              | 512                                              | The max bytes of request body recorded in the slow query log, 0 means the body is not recorded. The recorded prefix is written as-is and may contain sensitive Gremlin or Cypher literals.                      |
-
-> [!DETAILS]- **Role Election Config Options (Optional)**
-> Corresponding configuration file `rest-server.properties`, only used when `server.role_election=true`.
->
-> | config option                  | default value         | description                                                                                                                                                                    |
-> |--------------------------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-> | server.role.node_external_url  | http://127.0.0.1:8080 | The url of external accessibility.                                                                                                                                             |
-> | server.role.base_timeout       | 500                   | The role state machine candidate state base timeout time, in ms.                                                                                                                |
-> | server.role.random_timeout     | 1000                  | The random timeout in ms that be used when candidate node request to become master state to reduce competitive voting.                                                          |
-> | server.role.heartbeat_interval | 2                     | The role state machine heartbeat interval second time.                                                                                                                         |
-> | server.role.fail_count         | 5                     | When the node failed count of update or query heartbeat is reaches this threshold, the node will become abdication state to guardsafe property.                                 |
-> | server.role.master_dead_times  | 10                    | When the worker node detects that the number of times the master node fails to update heartbeat reaches this threshold, the worker node will become to a candidate node.        |
 
 ### PD/Meta Config Options (Distributed Mode)
 

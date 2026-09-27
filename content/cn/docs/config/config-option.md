@@ -39,7 +39,6 @@ search_boost: 1.5
 | init_store.enabled                     | true                                             | Whether init-store initializes the local backend stores and the built-in admin account. Set false in distributed deployments (PD/HStore) where the storage side already owns the metadata.                     |
 | server.id                              | 空字符串                                         | The optional legacy id of hugegraph-server.                                                                                                                                                                   |
 | server.role                            | master                                           | The role of nodes in the cluster, available types are [master, worker, computer]                                                                                                                              |
-| server.role_election                   | false                                            | Whether to enable role election, if enabled, the server will elect a master node in the cluster.                                                                                                               |
 | server.node_id                         | node-id1                                         | The node id of the server.                                                                                                                                                                                    |
 | server.node_role                       | worker                                           | The node role of the server.                                                                                                                                                                                  |
 | server.graphspace                       | DEFAULT                                          | The graph space of the server.                                                                                                                                                                                |
@@ -79,18 +78,6 @@ search_boost: 1.5
 | memory_monitor.period                  | 2000                                             | The period in ms of JVM memory usage monitoring, in each period we will detect the jvm memory usage and take corresponding actions.                                                                            |
 | log.slow_query_threshold               | 1000                                             | The threshold time(ms) of logging slow query, 0 means logging slow query is disabled.                                                                                                                          |
 | log.slow_query_body_limit              | 512                                              | 慢查询日志记录的请求体最大字节数，0 表示不记录。记录的前缀原样写入，可能包含敏感的 Gremlin 或 Cypher 字面量。                      |
-
-> [!DETAILS]- **角色选举配置项 (可选)**
-> 对应配置文件`rest-server.properties`，仅在 `server.role_election=true` 时生效。
->
-> | config option                  | default value         | description                                                                                                                                                                    |
-> |--------------------------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-> | server.role.node_external_url  | http://127.0.0.1:8080 | The url of external accessibility.                                                                                                                                             |
-> | server.role.base_timeout       | 500                   | The role state machine candidate state base timeout time, in ms.                                                                                                                |
-> | server.role.random_timeout     | 1000                  | The random timeout in ms that be used when candidate node request to become master state to reduce competitive voting.                                                          |
-> | server.role.heartbeat_interval | 2                     | The role state machine heartbeat interval second time.                                                                                                                         |
-> | server.role.fail_count         | 5                     | When the node failed count of update or query heartbeat is reaches this threshold, the node will become abdication state to guardsafe property.                                 |
-> | server.role.master_dead_times  | 10                    | When the worker node detects that the number of times the master node fails to update heartbeat reaches this threshold, the worker node will become to a candidate node.        |
 
 ### PD/Meta 配置项 (分布式模式)
 

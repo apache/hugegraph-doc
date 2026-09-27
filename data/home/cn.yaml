@@ -19,9 +19,9 @@ hero:
 introduction:
   class: hg-home-introduction
   body: |-
-    HugeGraph 最高支持千亿级图数据高速导入与毫秒级实时查询，可与 Spark、Flink 等大数据平台深度集成，并可通过 [HugeGraph 工具链](docs/quickstart/toolchain/)快速完成导入、可视化与运维。
+    HugeGraph 最高支持千亿级图数据高速导入与毫秒级实时查询，可与 Spark/Flink/Seatunnel 等大数据平台无缝集成，并可通过 [HugeGraph 工具链](docs/quickstart/toolchain/)快速完成导入、可视化与运维。
 
-    在 AI 时代，通过与大语言模型 (LLM) 结合，为智能问答、推荐系统、风控反欺诈、知识图谱等场景提供强大的图计算能力。
+    在 AI 时代，通过与大语言模型 (LLM) 结合，为智能问答、推荐系统、风控反欺诈、知识图谱等场景提供强大的 Graph AI 和图计算能力。
 
 capabilities:
   class: hg-home-capabilities

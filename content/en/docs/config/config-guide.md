@@ -137,7 +137,7 @@ ssl: {
 }
 ```
 
-In most cases, you only need to pay attention to `channelizer`, `host`, and `port`. Graphs are not loaded from the Gremlin Server `graphs` section. Whether local graph configurations are loaded is controlled by `graph.load_from_local_config` in `rest-server.properties`.
+In most cases, you only need to pay attention to `channelizer`, `host`, and `port`. Graphs are not loaded from the Gremlin Server `graphs` section. Server application initialization scans the `graphs` directory configured in `rest-server.properties` and attempts to load its local graph configurations, even when `graph.load_from_local_config=false`.
 
 - `channelizer`: The default `WsAndHttpChannelizer` supports both WebSocket and HTTP. Gremlin Console uses WebSocket, while HugeGraph Client, Loader, and Hubble use HTTP.
 
@@ -150,7 +150,7 @@ Additionally, you need to add the corresponding configuration `gremlinserver.url
 
 ### 3. rest-server.properties
 
-The following is an example of the available `rest-server.properties` options. The current upstream release template does not include `graph.load_from_local_config`, whose source-code default is `false`; set it explicitly to `true` when using local graph configurations under `conf/graphs`.
+The following is an example of the available `rest-server.properties` options. The current master template omits `graph.load_from_local_config`; its source-code default is `false`. Setting it to `true` is optional: it enables preloading in the manager constructor and rescanning on `reload()`. Application initialization still scans and attempts to load local graph configurations.
 
 ```properties
 # bind url
@@ -193,8 +193,8 @@ memory_monitor.period=2000
 ```
 
 - `restserver.url`: The URL at which the RestServer provides its services. Modify it according to the actual environment. If you can't connet to server from other IP address, try to modify it as specific IP; or modify it as `http://0.0.0.0` to listen all network interfaces as a convenient solution, but need to take care of the network area that might access.
-- `graphs`: The directory containing graph configuration files. The default is `./conf/graphs`. `init-store` scans this directory; the Server loads its properties files only when `graph.load_from_local_config=true`.
-- `graph.load_from_local_config`: Whether the Server reads local graph configurations at startup. Its default value in the source code is `false`.
+- `graphs`: The directory containing graph configuration files. The default is `./conf/graphs`. Both `init-store` and Server application initialization scan this directory; application initialization attempts to load its properties files.
+- `graph.load_from_local_config`: Controls local graph preloading in the manager constructor and rescanning on `reload()`. The source-code default is `false`. It does not prevent local loading during application initialization and is not a security isolation switch.
 
 > The current upstream template still uses `arthas.telnet_port`, `arthas.http_port`, and `arthas.disabled_commands`, but `ServerOptions` reads the camelCase names shown in the example above. Custom configurations should use `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands`.
 
@@ -292,6 +292,8 @@ A Server can load multiple graphs, with a separate properties file for each grap
 **[Optional]: Modify `rest-server.properties`**
 
 You can modify the graph profile directory in the `graphs` option of `rest-server.properties`. The default configuration is `graphs=./conf/graphs`, if you want to change it to another directory then adjust the `graphs` option, e.g. adjust it to `graphs=/etc/hugegraph/graphs`, example is as follows:
+
+Setting `graph.load_from_local_config=true` below is optional: it enables manager preloading and rescanning on `reload()`. Application initialization still reads local graph configurations from this directory.
 
 ```properties
 graphs=./conf/graphs

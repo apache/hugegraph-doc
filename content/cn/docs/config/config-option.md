@@ -119,7 +119,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 
 | config option | default value | description |
 |---------------|---------------|-------------|
-| auth.audit_log_rate                    | 1000.0                                           | 每用户认证审计日志的最大输出速率，单位为条/秒，取值为非负数。                                                                                                                          |
+| auth.audit_log_rate | 1000.0 | 每用户认证审计日志的最大输出速率，单位为条/秒，取非负数。运行时截断为整数：`1.9` 按 `1` 条/秒，`0` 或小于 `1` 的值会抑制审计日志；建议使用正整数。 |
 | auth.cache_capacity                    | 10240                                            | 每个认证缓存的容量上限，取非负整数。                                                                                                                                                               |
 | auth.cache_expire                      | 600                                              | 认证客户端和服务端缓存的过期时间，单位为秒，取非负整数。                                                                                                                                  |
 | auth.token_expire                      | 86400                                            | JWT token 的有效期，单位为秒，取非负整数。                                                                                                                                                            |

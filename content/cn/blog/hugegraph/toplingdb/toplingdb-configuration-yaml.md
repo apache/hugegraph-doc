@@ -271,6 +271,6 @@ ToplingDB 在 RocksDB 的基础上增加了以下能力：
 
 ## 相关文档
 
-- [ToplingDB 快速上手](/cn/blog/2025/10/09/toplingdb-quick-start/) – 如何在 HugeGraph 中启用 ToplingDB
+- [ToplingDB 快速上手]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="cn">}}) – 如何在 HugeGraph 中启用 ToplingDB
 - [RocksDB 官方配置文档](https://github.com/facebook/rocksdb/wiki/Setup-Options-and-Basic-Tuning) – 了解基础配置项
 - [SidePlugin Wiki](https://github.com/topling/sideplugin-wiki-en/wiki) – ToplingDB 完整配置参考

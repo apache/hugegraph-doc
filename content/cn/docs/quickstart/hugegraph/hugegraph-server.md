@@ -369,6 +369,9 @@ cd docker
 
 先在 `docker/` 目录创建认证环境并生成 HStore Hubble 配置。用自己设置的管理员密码替换示例文本；因 `.env` 使用单引号包裹，密码不能含单引号或换行。脚本生成 JWT 与 PD 随机密钥，并将 PD 密钥写入两个 HStore Compose 会挂载的未跟踪 `.local.properties` 文件：
 
+> [!WARNING]
+> `umask 077` 保护新建的 `.env`，但 `set-hubble-pd-password.sh` 会将生成的 `.local.properties` 权限设为 `0644`，本机其他用户也能读取其中的 PD 密钥。下面示例仅适用于本机用户均可信的环境；共享主机必须先按 Hubble 运行用户设置文件属主与读取权限，确保 Hubble 可读且其他非授权用户不可读。不提交文件不能替代文件权限保护。
+
 ```bash
 (
   set -eu

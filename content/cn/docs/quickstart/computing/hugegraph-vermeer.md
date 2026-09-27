@@ -25,7 +25,7 @@ master 是负责通信、转发、汇总的节点，计算量和占用资源量�
 | worker | `http_peer` | `0.0.0.0:6788` | worker HTTP 服务 |
 | worker | `grpc_peer` | `0.0.0.0:6789` | worker gRPC 监听地址，同时会通告给 master 供节点间通信 |
 
-Docker 示例只把 master 的 HTTP 端口发布为 `6688:6688`；master 和 worker 的 gRPC 端口留在容器网络内部。
+Docker 示例只把 master 的 HTTP 端口发布到宿主机回环地址 `127.0.0.1:6688:6688`；master 和 worker 的 gRPC 端口留在容器网络内部。
 
 ```mermaid
 flowchart LR
@@ -39,6 +39,8 @@ flowchart LR
 
 > [!WARNING]
 > 生产环境必须启用 HugeGraph Server [认证与授权](/cn/docs/config/config-authentication/)、IP 白名单和最小权限授权，并保留 `audit-*.log` 审计记录。Server Auth 不会保护 Vermeer、PD 和 Store 的独立接口；这些 HTTP、gRPC 端口必须限制在可信网络及调用方范围内，Vermeer 对外入口需配置访问控制。
+>
+> Vermeer 的 `master.ini` 默认 `auth=none`，普通及管理 API 均未启用鉴权。本机快速上手只发布回环端口；远程访问前必须启用 `auth=token`，或通过受保护网络、网关将访问限制到可信调用方。
 
 下面两种 Docker 启动方式都需要先准备一个宿主机配置目录。请在 Vermeer 仓库根目录执行，将项目提供的 [`master.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/master.ini) 和 [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/worker.ini) 模板复制到该目录；挂载会覆盖镜像里的 `/go/bin/config`，所以不要把空目录或整个用户主目录挂进去：
 
@@ -78,7 +80,7 @@ services:
     image: hugegraph/vermeer
     container_name: vermeer-master
     ports:
-      - "6688:6688"
+      - "127.0.0.1:6688:6688"
     volumes:
       - /home/user/vermeer-config:/go/bin/config:ro
     command: --env=master
@@ -151,7 +153,7 @@ CONFIG_DIR=/home/user/vermeer-config
 docker run -d \
   --name vermeer-master \
   --network vermeer_network --ip 172.20.0.10 \
-  -p 6688:6688 \
+  -p 127.0.0.1:6688:6688 \
   -v ${CONFIG_DIR}:/go/bin/config:ro \
   hugegraph/vermeer \
   --env=master

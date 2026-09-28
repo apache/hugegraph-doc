@@ -416,11 +416,20 @@ It is not possible to delete an attribute that is not set as nullable.
 - vertex_id: Vertex ID
 - direction: Edge direction (OUT | IN | BOTH), default is BOTH
 - label: Edge label
-- properties: Key-value pairs of properties (requires pre-built indexes for property queries)
+- properties: Key-value pairs of properties (see index coverage below)
 - keep_start_p: Default is false. When set to true, the range matching input expression will not be automatically escaped. For example, `properties={"age":"P.gt(0.8)"}` will be interpreted as an exact match, i.e., the age property is equal to "P.gt(0.8)"
 - offset: Offset, default is 0
 - limit: Number of queries, default is 100
 - page: Page number
+
+Without `vertex_id`, a `properties` query searches edges globally. The specified `label` needs a property index compatible with the query
+conditions. If `label` is omitted, every edge label that declares all queried properties needs compatible index coverage, even if that label
+currently has no edges. A parent edge label's property index can also cover its sub-labels; a label index alone does not index the properties.
+No compatible index produces an index error; partial coverage also produces an
+index error instead of silently omitting matches. With complete coverage, the query uses the indexes. Specify `label` when querying only one
+edge label, or create compatible property indexes to cover every candidate label. The query does not automatically fall back to a full scan.
+
+With `vertex_id`, the query filters that vertex's adjacent edges; the global index-coverage requirement above does not apply.
 
 Key-value pairs of properties consist of the property name and value in JSON format. Multiple key-value pairs are allowed as query conditions. Property values support exact matching and range matching. For exact matching, it is in the form `properties={"weight":0.8}`. For range matching, it is in the form `properties={"age":"P.gt(0.8)"}`. The expressions supported by range matching are as follows:
 

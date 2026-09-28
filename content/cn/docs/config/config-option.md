@@ -79,6 +79,8 @@ search_boost: 1.5
 | log.slow_query_threshold               | 1000                                             | The threshold time(ms) of logging slow query, 0 means logging slow query is disabled.                                                                                                                          |
 | log.slow_query_body_limit              | 512                                              | 慢查询日志记录的请求体最大字节数，0 表示不记录。记录的前缀原样写入，可能包含敏感的 Gremlin 或 Cypher 字面量。                      |
 
+角色选举配置项 `server.role_election` 和 `server.role.*` 仅适用于 1.7.0 及更早版本。之后的版本不再读取这些配置项：若仍然设置，服务可以正常启动，并为每个配置项输出一条警告日志。
+
 ### PD/Meta 配置项 (分布式模式)
 
 对应配置文件`rest-server.properties`

@@ -79,6 +79,8 @@ Corresponding configuration file `rest-server.properties`
 | log.slow_query_threshold               | 1000                                             | The threshold time(ms) of logging slow query, 0 means logging slow query is disabled.                                                                                                                          |
 | log.slow_query_body_limit              | 512                                              | The max bytes of request body recorded in the slow query log, 0 means the body is not recorded. The recorded prefix is written as-is and may contain sensitive Gremlin or Cypher literals.                      |
 
+The role election options `server.role_election` and `server.role.*` apply to version 1.7.0 and earlier only. Later versions no longer read them: a server that still sets them starts normally and logs a warning for each key.
+
 ### PD/Meta Config Options (Distributed Mode)
 
 Corresponding configuration file `rest-server.properties`

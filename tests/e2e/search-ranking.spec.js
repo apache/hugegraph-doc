@@ -68,6 +68,9 @@ for (const [locale, localeCases] of Object.entries(cases)) {
   for (const [query, expectedRef, expectedTitle] of localeCases) {
     test(`summary Lunr ranks ${locale}: ${query}`, async ({ page }) => {
       test.skip(!metadataIntegrated, "Search metadata fixture is unavailable");
+      // Search uses the JSON index; loading documentation images adds no signal
+      // and can leave unrelated image requests in flight during navigation.
+      await page.route(/\.(?:png|jpe?g|webp|svg)(?:\?.*)?$/i, (route) => route.abort());
       await page.goto(locale === "cn" ? "/cn/docs/" : "/docs/");
       await page.locator("[data-td-shell-search-open]").first().click();
       const input = page.locator(".td-shell-search__input");

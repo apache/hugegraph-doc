@@ -4,6 +4,7 @@ linkTitle: "Load data with HugeGraph-Loader"
 weight: 2
 search_keywords: [HugeGraph Loader, bulk import, data loading]
 search_boost: 1.6
+description: "Bulk import graph data into HugeGraph with Loader from files, HDFS, relational databases, Kafka, and other HugeGraph graphs."
 ---
 
 ### 1 HugeGraph-Loader Overview

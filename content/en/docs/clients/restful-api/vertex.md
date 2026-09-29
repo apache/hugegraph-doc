@@ -375,11 +375,14 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 
 All of the above parameters are optional. `page` can not be combined with a non-zero `offset`, everything else can be combined in any way.
 
-For a `properties` query, the specified `label` needs a property index compatible with the query conditions. If `label` is omitted, every
-vertex label that declares all queried properties needs a compatible index, even if that label currently has no vertices. A label index alone
-does not index the properties. No compatible index produces an index error; partial coverage also produces an index error instead of silently
-omitting matches. With complete coverage, the query uses the indexes. Specify `label` when querying only one vertex label, or create compatible
-property indexes for every candidate label. The query does not automatically fall back to a full scan.
+If `label` selects a vertex label with the `PRIMARY_KEY` ID strategy and `properties` supplies exact values for all its primary-key fields,
+the query looks up the vertex by ID. Additional property conditions are checked on that vertex and do not need a property index.
+
+For other `properties` queries, the specified `label` needs a property index compatible with the query conditions. If `label` is omitted,
+every vertex label that declares all queried properties needs a compatible index, even if that label currently has no vertices. A label index
+alone does not index the properties. No compatible index produces an index error; partial coverage also produces an index error instead of
+silently omitting matches. With complete coverage, the query uses the indexes. Specify `label` when querying only one vertex label, or create
+compatible property indexes for every candidate label. The query does not automatically fall back to a full scan.
 
 Property key-value pairs consist of the property name and value in JSON format. Multiple property key-value pairs are allowed as query conditions. The property value supports exact matching, range matching, and fuzzy matching. For exact matching, use the format `properties={"age":29}`, for range matching, use the format `properties={"age":"P.gt(29)"}`, and for fuzzy matching, use the format `properties={"city": "P.textcontains("ChengDu China")}`. The following expressions are supported for range matching:
 

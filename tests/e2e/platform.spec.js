@@ -214,8 +214,7 @@ test("enabled AI makes no third-party request before consent", async ({ page }) 
   expect(kapaRequests).toEqual([]);
   await page.locator(".td-shell-search__input").press("Escape");
   const launcher = page.locator("[data-hg-ask-ai]").first();
-  await expect(launcher).toBeVisible();
-  await launcher.click();
+  await expect(launcher).toBeHidden();
   await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
   await page.locator("[data-hg-ai-cancel]").click();
   await expect(page.locator("[data-hg-ai-consent]")).not.toBeVisible();

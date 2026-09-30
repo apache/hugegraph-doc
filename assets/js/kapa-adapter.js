@@ -133,15 +133,29 @@
     var widgetConfig = Object.assign({}, config, {
       exampleQuestions: pickExampleQuestions(config.exampleQuestions),
     });
-    var consentKey = 'hg-ai-consent:v1:' + config.websiteId;
+    var consentKey = 'hg-ai-consent:v2:' + config.websiteId;
     var consented = false;
     try {
-      consented = windowObject.sessionStorage.getItem(consentKey) === 'granted';
+      consented = windowObject.localStorage.getItem(consentKey) === 'granted';
     } catch (_) {
       // Storage may be disabled; consent still works for this page only.
     }
     var pending = null;
     var consent = documentObject.querySelector('[data-hg-ai-consent]');
+    var launcher = documentObject.querySelector('.hg-ask-ai-launcher');
+    if (consent) consent.hidden = consented;
+    function renderLauncher(hidden) {
+      if (!launcher) return;
+      launcher.hidden = hidden;
+      if (consented) launcher.setAttribute('aria-haspopup', 'dialog');
+      else launcher.removeAttribute('aria-haspopup');
+    }
+    renderLauncher(!consented);
+
+    function dismissConsent() {
+      if (consent) consent.hidden = true;
+      renderLauncher(false);
+    }
     var attempt = 0;
     var timer = 0;
     var lastTrigger = null;
@@ -292,7 +306,8 @@
     function cancelConsent() {
       pending = null;
       renderState('idle', '');
-      if (consent && consent.open) consent.close();
+      dismissConsent();
+      if (!lastTrigger) lastTrigger = launcher;
       restoreFocus();
       settle();
     }
@@ -310,13 +325,13 @@
             if (state === 'loading') discardAttempt(attempt);
             attempt += 1;
             pending = null;
-            if (consent && consent.open) consent.close();
+            dismissConsent();
             renderState('idle', '');
             settle();
           };
           context.signal.addEventListener('abort', operation.abort, { once: true });
         });
-        // Transfer focus before opening a dialog; OINK keeps cancellation alive
+        // Transfer focus to the inline notice; OINK keeps cancellation alive
         // until this promise settles, including when search is opened again.
         if (!context.handoff()) {
           settle();
@@ -328,19 +343,21 @@
         return completion;
       }
       // Fail closed if the local consent panel is unavailable.
-      if (!consent || typeof consent.showModal !== 'function') {
+      if (!consent) {
         renderState('error', config.labels.error);
         settle(new Error(config.labels.error));
         return completion;
       }
       pending = { query: trimmedQuery(query), submit: submit };
       renderState('consent', '');
-      consent.showModal();
+      renderLauncher(true);
+      consent.hidden = false;
+      consent.querySelector('[data-hg-ai-continue]').focus();
       return completion;
     }
 
     if (consent) {
-      // Keep the underlying search palette from consuming modal keyboard events.
+      // Keep pending search handoff keyboard events within the consent notice.
       consent.addEventListener('keydown', function (event) {
         event.stopPropagation();
         if (event.key === 'Escape') {
@@ -349,23 +366,20 @@
         }
       });
       consent.querySelector('[data-hg-ai-continue]').addEventListener('click', function () {
-        if (!pending) return;
-        var request = pending;
+        if (consented || state === 'loading') return;
+        var request = pending || { query: '', submit: false };
+        if (!pending) lastTrigger = launcher;
         pending = null;
         consented = true;
         try {
-          windowObject.sessionStorage.setItem(consentKey, 'granted');
+          windowObject.localStorage.setItem(consentKey, 'granted');
         } catch (_) {
           // Never bypass initial consent when persistence is unavailable.
         }
-        consent.close();
+        dismissConsent();
         load(request.query, request.submit);
       });
       consent.querySelector('[data-hg-ai-cancel]').addEventListener('click', cancelConsent);
-      consent.addEventListener('cancel', function (event) {
-        event.preventDefault();
-        cancelConsent();
-      });
     }
 
     function restoreFocus() {

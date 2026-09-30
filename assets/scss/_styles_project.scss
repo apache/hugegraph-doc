@@ -533,6 +533,7 @@
 }
 
 .hg-ask-ai-launcher {
+  &[hidden] { display: none; }
   position: fixed;
   z-index: 1040;
   inset-inline-end: unquote('max(1rem, env(safe-area-inset-right))');
@@ -864,23 +865,29 @@
 }
 
 
-// Local disclosure renders before any third-party AI resource is requested.
+// The first-use notice stays beside the AI entry without blocking the page.
 .hg-ai-consent {
+  position: fixed;
+  z-index: 1040;
+  inset-inline-end: unquote('max(1rem, env(safe-area-inset-right))');
+  inset-block-end: unquote('calc(max(1rem, env(safe-area-inset-bottom)) + 4rem)');
   width: calc(100% - 2rem);
-  max-width: 28rem;
-  padding: 1.5rem;
+  max-width: 22rem;
+  padding: 1rem;
   border: 1px solid var(--bs-border-color);
   border-radius: .75rem;
   background: var(--bs-body-bg);
   color: var(--bs-body-color);
-  box-shadow: 0 .75rem 3rem rgba(0, 0, 0, .2);
-  &::backdrop { background: rgba(0, 0, 0, .4); }
-  h2 { font-size: 1.25rem; }
+  box-shadow: 0 .25rem 1rem rgba(0, 0, 0, .12);
+  font-size: .85rem;
+
+  &[hidden] { display: none; }
+  p { margin-bottom: .6rem; }
   .hg-ai-consent-actions {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: .75rem;
-    margin-top: 1.25rem;
+    gap: .5rem;
+    .btn { font-size: inherit; }
   }
 }

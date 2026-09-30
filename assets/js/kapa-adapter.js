@@ -106,7 +106,13 @@
       'data-bot-protection-mechanism': 'hcaptcha',
       'data-example-questions': (config.exampleQuestions || []).join(','),
       'data-example-questions-col-span': '12',
-      'data-chat-disclaimer': '[' + config.labels.community + '](' + config.communityURL + ')',
+      'data-answer-cta-button-enabled': 'true',
+      'data-answer-cta-button-text': config.labels.community,
+      'data-answer-cta-button-link': config.communityURL,
+      'data-answer-cta-button-background-color': 'transparent',
+      'data-answer-cta-button-border': 'none',
+      'data-answer-cta-button-font-weight': '400',
+      'data-answer-cta-button-font-size': '.8rem',
     };
   }
 
@@ -128,20 +134,6 @@
     var activeQueue = null;
     var operation = null;
     var status = documentObject.querySelector('[data-hg-ai-status]');
-    var revoke = documentObject.querySelector('[data-hg-ai-revoke]');
-    if (revoke) {
-      revoke.hidden = !consented;
-      revoke.addEventListener('click', function () {
-        consented = false;
-        try {
-          windowObject.sessionStorage.removeItem(consentKey);
-        } catch (_) {
-          // With storage disabled, the in-page grant is all we can clear.
-        }
-        // A full navigation terminates any loaded vendor state and callbacks.
-        windowObject.location.reload();
-      });
-    }
 
     function renderState(next, message) {
       state = next;
@@ -351,7 +343,6 @@
         } catch (_) {
           // Never bypass initial consent when persistence is unavailable.
         }
-        if (revoke) revoke.hidden = false;
         consent.close();
         load(request.query, request.submit);
       });

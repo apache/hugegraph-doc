@@ -42,8 +42,8 @@ HTML 抓取分别从 `/docs/` 与 `/cn/docs/` 开始，用锚定到站点和语�
 
 首次同意仅在当前标签页的浏览会话中保存，并由同源中英文及历史页面复用。
 即使已同意，页面加载也不会请求 Kapa；再次点击 Ask AI 时才加载服务。
-用户可通过页脚撤回 AI 授权，清除会话记录并刷新页面；存储不可用时仅对当前页面有效。
-Widget 提供本地化的启动、导入和鉴权示例问题，以及普通 GitHub Discussions 链接；
+存储不可用时仅对当前页面有效。
+Widget 提供本地化的启动、导入和鉴权示例问题，回答后显示低调的 GitHub Discussions 求助链接；
 点击社区链接不会自动提交问题或转交会话。
 
 [ASF CSP 文档](https://infra.apache.org/tools/csp.html) 要求新增域名有 VP Data Privacy

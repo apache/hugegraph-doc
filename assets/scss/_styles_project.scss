@@ -585,21 +585,6 @@
   font-size: 0.78rem;
 }
 
-.hg-ai-revoke {
-  margin-top: .6rem;
-  padding: .5rem;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-decoration: underline;
-  text-underline-offset: .16em;
-
-  &[hidden] {
-    display: none;
-  }
-}
-
 @media (max-width: 767.98px) {
   .td-shell-chrome .td-site-nav__menu-toggle {
     border: 1px solid rgba(255, 255, 255, 0.42);

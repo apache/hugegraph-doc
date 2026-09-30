@@ -23,7 +23,6 @@ function harness(storage = new Map()) {
   };
   const consentListeners = new Map();
   const continueButton = { addEventListener(name, callback) { consentListeners.set(`continue:${name}`, callback); } };
-  const revokeButton = { hidden: true, addEventListener(name, callback) { consentListeners.set(`revoke:${name}`, callback); } };
   const cancelButton = { addEventListener(name, callback) { consentListeners.set(`cancel:${name}`, callback); } };
   const consent = {
     open: false,
@@ -40,7 +39,6 @@ function harness(storage = new Map()) {
     activeElement: trigger,
     querySelector(selector) {
       if (selector === '[data-hg-ai-status]') return status;
-      if (selector === '[data-hg-ai-revoke]') return revokeButton;
       if (selector === '[data-hg-ai-consent]') return consent;
       if (selector === 'script[data-hg-kapa-widget]') {
         return scripts.find((script) => !script.removed) || null;
@@ -77,7 +75,6 @@ function harness(storage = new Map()) {
       setItem(key, value) { storage.set(key, value); },
       removeItem(key) { storage.delete(key); },
     },
-    location: { reload() { windowObject.reloaded = true; } },
     setKapaImplementation() {
       this.Kapa = function (method, value) {
         calls.push([method, value]);
@@ -107,8 +104,6 @@ function harness(storage = new Map()) {
   return {
     calls,
     storage,
-    revokeButton,
-    revokeConsent() { consentListeners.get('revoke:click')(); },
     config,
     documentObject,
     fireRender(index = renderCallbacks.length - 1) { renderCallbacks[index](); },
@@ -148,8 +143,11 @@ test('uses one fixed bundle and explicit privacy-safe widget settings', () => {
   });
   assert.equal(attrs['data-example-questions'], '如何启动 HugeGraph？,如何导入数据？');
   assert.equal(attrs['data-example-questions-col-span'], '12');
-  assert.equal(attrs['data-chat-disclaimer'], '[向社区求助](https://github.com/apache/hugegraph/discussions)');
-  assert.equal(Object.keys(attrs).some(name => /answer-cta|handoff|email/.test(name)), false);
+  assert.equal(attrs['data-answer-cta-button-enabled'], 'true');
+  assert.equal(attrs['data-answer-cta-button-text'], '向社区求助');
+  assert.equal(attrs['data-answer-cta-button-link'], 'https://github.com/apache/hugegraph/discussions');
+  assert.equal(attrs['data-chat-disclaimer'], undefined);
+  assert.equal(Object.keys(attrs).some(name => /handoff|email/.test(name)), false);
   assert.equal(attrs['data-render-on-load'], 'false');
   assert.equal(attrs['data-project-logo'], '/img/logo.svg');
   assert.ok(Number(attrs['data-modal-z-index']) > 1040, 'modal must cover the site launcher');
@@ -489,31 +487,20 @@ test('stale activation refreshes the palette query and cancellation context', ()
 test('session consent survives language navigation but never loads before activation', () => {
   const first = harness();
   const controller = adapter.createController(first.windowObject, first.documentObject, first.config);
-  assert.equal(first.revokeButton.hidden, true);
   controller.activate('', false, first.trigger);
   first.continueConsent();
-  assert.equal(first.revokeButton.hidden, false);
   const next = harness(first.storage);
   next.config.locale = 'zh';
   next.config.sourceGroupId = 'source-cn';
   next.config.labels.community = '向社区求助';
   const nextController = adapter.createController(next.windowObject, next.documentObject, next.config);
-  assert.equal(next.revokeButton.hidden, false);
   assert.equal(nextController.getState(), 'idle');
   assert.equal(next.scripts.length, 0);
   nextController.activate('', false, next.trigger);
   assert.equal(nextController.getState(), 'loading');
   assert.equal(next.scripts[0].attrs['data-source-group-ids-include'], 'source-cn');
-  assert.equal(next.scripts[0].attrs['data-chat-disclaimer'], '[向社区求助](https://github.com/apache/hugegraph/discussions)');
-  next.revokeConsent();
-  assert.equal(next.windowObject.reloaded, true);
-  const revoked = harness(first.storage);
-  const revokedController = adapter.createController(revoked.windowObject, revoked.documentObject, revoked.config);
-  assert.equal(revoked.scripts.length, 0);
-  assert.equal(revoked.revokeButton.hidden, true);
-  revokedController.activate('', false, revoked.trigger);
-  assert.equal(revokedController.getState(), 'consent');
-  assert.equal(revoked.scripts.length, 0);
+  assert.equal(next.scripts[0].attrs['data-answer-cta-button-text'], '向社区求助');
+
 });
 
 test('consent is scoped to website id and rejects obsolete or malformed grants', () => {
@@ -547,8 +534,6 @@ test('unavailable session storage leaves consent explicit and usable for this pa
     assert.equal(h.scripts.length, 0);
     h.continueConsent();
     assert.equal(controller.getState(), 'loading');
-    h.revokeConsent();
-    assert.equal(h.windowObject.reloaded, true);
     assert.equal(h.storage.size, 0);
   }
 });

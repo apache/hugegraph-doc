@@ -20,11 +20,10 @@ download_component_computer: Computer
 download_component_commons: Common
 download_asf_note: Source archives are the official Apache Software Foundation releases; binary packages are convenience builds made from them. All files are served from ASF mirrors, with signatures and checksums hosted on downloads.apache.org. Source archives generated automatically by GitHub are not ASF releases.
 
-ui_ai_consent_description: "Continuing loads Kapa, a third-party service. Your question will be sent to Kapa to generate an answer. Your consent is remembered for this browsing session. You can withdraw consent in the page footer."
+ui_ai_consent_description: "Continuing loads Kapa, a third-party service. Your question will be sent to Kapa to generate an answer. Your consent is remembered for this browsing session."
 ui_ai_consent_continue: "Continue to Ask AI"
 ui_ai_consent_cancel: "Cancel"
 ui_ai_privacy: "Privacy policy"
-ui_ai_consent_revoke: "Withdraw AI consent"
 ui_ai_community: "Ask the community on GitHub"
 ui_ai_example_start: "How do I start HugeGraph Server?"
 ui_ai_example_import: "How do I import data with HugeGraph Loader?"

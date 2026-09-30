@@ -58,10 +58,12 @@ for (const [locale, route, source, language] of [
     const config = await page.locator("#hg-ai-config").evaluate(node => JSON.parse(node.textContent));
     expect(config.exampleQuestions).toHaveLength(3);
     await expect(script).toHaveAttribute("data-example-questions", config.exampleQuestions.join(","));
-    await expect(script).toHaveAttribute("data-chat-disclaimer",
-      `[${config.labels.community}](https://github.com/apache/hugegraph/discussions)`);
+    await expect(script).not.toHaveAttribute("data-chat-disclaimer");
+    await expect(script).toHaveAttribute("data-answer-cta-button-enabled", "true");
+    await expect(script).toHaveAttribute("data-answer-cta-button-text", config.labels.community);
+    await expect(script).toHaveAttribute("data-answer-cta-button-link", "https://github.com/apache/hugegraph/discussions");
     expect(await script.evaluate(node => Array.from(node.attributes).some(attr =>
-      /answer-cta|handoff|email/.test(attr.name)))).toBe(false);
+      /handoff|email/.test(attr.name)))).toBe(false);
     await expect(script).toHaveAttribute("data-user-analytics-cookie-enabled", "false");
     await expect(script).toHaveAttribute("data-user-analytics-fingerprint-enabled", "false");
     await expect(script).toHaveAttribute("data-source-group-ids-include", source);
@@ -235,36 +237,33 @@ test("reopening native search cancels a pending AI handoff", async ({ page }) =>
 });
 
 
-test("consent survives same-tab language navigation and resets without loading AI", async ({ page }) => {
+test("consent survives same-tab language navigation and reload without loading AI", async ({ page }) => {
   const requests = [];
   await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", async route => {
     requests.push(route.request().url());
     await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
   });
   await page.goto(AI_ORIGIN + "/docs/");
-  await expect(page.locator("[data-hg-ai-revoke]")).toBeHidden();
+  await expect(page.locator("[data-hg-ai-revoke]")).toHaveCount(0);
   await page.locator(".hg-ask-ai-launcher").click();
   await page.locator("[data-hg-ai-continue]").click();
   await expect.poll(() => requests.length).toBe(1);
-  await expect(page.locator("[data-hg-ai-revoke]")).toBeVisible();
 
   await page.goto(AI_ORIGIN + "/cn/docs/");
   expect(requests).toHaveLength(1);
   await expect(page.locator("script[data-hg-kapa-widget]")).toHaveCount(0);
-  await expect(page.locator("[data-hg-ai-revoke]")).toBeVisible();
   await page.locator(".hg-ask-ai-launcher").click();
   await expect(page.locator("[data-hg-ai-consent]")).toBeHidden();
   await expect.poll(() => requests.length).toBe(2);
   await expect(page.locator("script[data-hg-kapa-widget]")).toHaveAttribute("data-language", "zh");
 
-  await page.locator("[data-hg-ai-revoke]").click();
-  await expect(page.locator("[data-hg-ai-revoke]")).toBeHidden();
+  await page.reload();
   await expect(page.locator("script[data-hg-kapa-widget]")).toHaveCount(0);
   expect(requests).toHaveLength(2);
-  expect(await page.evaluate(() => window.__kapaCalls)).toBeUndefined();
   await page.locator(".hg-ask-ai-launcher").click();
-  await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
-  expect(requests).toHaveLength(2);
+  await expect(page.locator("[data-hg-ai-consent]")).toBeHidden();
+  await expect.poll(() => requests.length).toBe(3);
+
 });
 
 test("blocked session storage requires fresh consent after navigation", async ({ page }) => {

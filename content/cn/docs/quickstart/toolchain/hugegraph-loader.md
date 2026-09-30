@@ -43,6 +43,8 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 或者使用 docker-compose 启动 loader, 启动命令为 `docker-compose up -d`, 样例的 docker-compose.yml 如下所示：
 
+以下组合用于本地匿名试用，Server API 只发布到本机。
+
 ```yaml
 version: '3'
 
@@ -50,10 +52,8 @@ services:
   server:
     image: hugegraph/hugegraph:latest
     container_name: server
-    environment:
-      - PASSWORD=xxx
     ports:
-      - 8080:8080
+      - 127.0.0.1:8080:8080
 
   loader:
     image: hugegraph/loader:latest

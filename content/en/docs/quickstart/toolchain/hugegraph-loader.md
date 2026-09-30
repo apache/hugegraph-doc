@@ -43,6 +43,8 @@ We can deploy the loader service using `docker run -itd --name loader hugegraph/
 
 Alternatively, to start the loader using docker-compose, the command is `docker-compose up -d`. An example of the docker-compose.yml is as follows:
 
+This combination is for local anonymous testing; the Server API is published only on the local host.
+
 ```yaml
 version: '3'
 
@@ -51,7 +53,7 @@ services:
     image: hugegraph/hugegraph:latest
     container_name: server
     ports:
-      - 8080:8080
+      - 127.0.0.1:8080:8080
 
   loader:
     image: hugegraph/loader:latest

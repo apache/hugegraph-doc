@@ -14,14 +14,9 @@ For HStore, read the shared operations here first, then follow the [distributed 
 This guide follows Toolchain `master` (currently `1.8.0`); Docker `latest` is mutable, so check the actual running versions.
 
 > [!WARNING]
-> **The deployment below is for a local trial.** Hubble accepts native queries that can modify data. In production,
-> terminate HTTPS at a trusted entry point, restrict network access to Hubble and Server, and enable
-> [Server authentication and authorization](/docs/config/config-authentication/).
-> Retain Server's `audit-*.log` with restricted access; `auth.audit_log_rate` is a rate limit, not an audit switch.
+> Do not expose Hubble or Server directly to the public network. In production, use HTTPS, containers,
+> [authentication and authorization](/docs/config/config-authentication/), and an access allowlist.
 
-
-Screenshots were captured on 2026-10-01 with Docker `latest`: Hubble `/about` reports `3.0.0` and Server core is `1.7.0` (RocksDB).
-The sample and import below were exercised; availability of newer master features still depends on Server capabilities.
 
 ## Start the standalone pair
 
@@ -64,82 +59,128 @@ Personal and account-management pages depend on the authentication mode and your
 
 Use `latest` to try current features, and pin a published image version or digest for production.
 Images are convenience distributions; official release archives are on the [download page](/docs/download/download/).
+The algorithm and account examples use Hubble `1.8.0` with Server `1.7.0`; available controls depend on Server capabilities.
 Compose's `server-data` and `hubble-data` retain graph data and Hubble metadata respectively. For further persistence and production settings,
 see the [Server deployment guide](/docs/quickstart/hugegraph/hugegraph-server/).
 
-## Learn the workspace with a sample graph
+## Home: find the right starting point
 
-Open **Graph Overview** and select the default graph `hugegraph`. Standalone mode has only the `DEFAULT` GraphSpace,
-so you usually do not need to select a space. The top graph selector determines which graph each operation affects;
-check it before a query and after switching pages.
+Home groups the workspace into graph overview, data preparation, and graph queries. Use it to understand the workflow,
+then return to any section through the sidebar. The top graph selector determines the target of queries, schema operations, and async tasks;
+check the current graph after changing pages. Standalone mode has only the `DEFAULT` GraphSpace and needs no PD configuration.
 
-In the graph's **More actions** menu, load the **People & Software Demo Graph**. Samples add their schema and missing elements without clearing existing data.
-Use an empty graph for your first run to avoid conflicting schema names. Graph names, aliases, and labels affect the queries that follow.
+| Section | Purpose |
+|---|---|
+| Graph Overview and details | Select a graph, load samples, inspect its size, then model or query it |
+| Schema configuration | Define properties, vertex/edge labels, and indexes |
+| GQL Traversal | Write queries and explore graph, table, and JSON results |
+| Built-in Algorithms | Explore neighbors, paths, and similarity with parameter forms |
+| Async Tasks | Track background queries, schema changes, and index operations |
+| Data Source Management | Upload files or configure external readers |
+| Data Import | Map source fields to the graph model and run or schedule ingestion |
+| Profile and Account Management | Update personal details/passwords and manage accounts or space members according to permissions |
+| Operations | Inspect Server nodes; PD mode also includes cluster overview and PD/Store nodes |
+
+## Graph Overview and details: get to know a graph
+
+Select the default graph `hugegraph` in **Graph Overview**. The overview provides graph entry points and action menus.
+Graph details show schema and data statistics, with routes to modeling, data preparation, and queries.
+Statistics describe overall size; update them after importing or modifying data.
+
+Load the **People & Software Demo Graph** from the graph's **More actions** menu. Samples add their schema and missing elements
+without clearing existing data. Start with an empty graph to avoid conflicting schema names.
+The remaining examples explore the people and software in this graph.
 
 ![Graph overview with the person/software sample](/docs/images/hubble/overview.jpg)
 
-| Task | Starting point |
+Graph creation depends on Server capabilities. Its form accepts a name, optional alias, and schema or sample;
+it does not configure a Server host or account per graph. The connection comes from Hubble configuration.
+User-defined schema templates require PD mode; see the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
+
+## Schema modeling: define the shape of your data
+
+Schema determines valid properties and relationships, vertex ID generation, and query indexes.
+Open the graph's schema configuration. List view is useful for maintaining definitions; graph view helps explain how labels connect.
+
+| Definition | What to decide |
 |---|---|
-| View graphs, load a sample, inspect data size | Graph Overview and graph details |
-| Define properties, vertex/edge labels, and indexes | The graph's schema configuration |
-| Run Gremlin / Cypher and explore results | GQL Traversal |
-| Upload a file and configure its reader | Data Source Management |
-| Configure mappings, run or schedule imports | Data Import |
-| Track background queries and index tasks | Async Tasks |
+| Properties | Data type and cardinality; distinguish numbers from text |
+| Vertex labels | Properties, nullable properties, ID strategy, and primary keys |
+| Edge labels | Source/target labels, properties, frequency, and sort keys |
+| Vertex / edge indexes | Index type and fields that match filtering and range queries |
 
-Graph creation is available only when Server exposes that capability. The form accepts a name, optional alias, and schema or sample;
-it does not configure a Server host or account per graph. The connection comes from Hubble's configuration.
-Query the sample first, then inspect its schema to understand how the model relates to the data.
+In the person/software sample, `person` generates IDs from the primary key `name`, with nullable `age` and `city`.
+`software` has custom numeric IDs, and `created` connects people to software. This matches the
+[Loader example](/docs/quickstart/toolchain/hugegraph-loader/).
 
-## Query and explore relationships
+![Vertex labels with primary-key and numeric ID strategies](/docs/images/hubble/schema.jpg)
 
-Open **GQL Traversal**, confirm `hugegraph` is selected, and run this Gremlin query in immediate mode:
+For a new model, define properties, vertex labels, edge labels, then indexes. Associated-property and index information help inspect dependencies.
+Schema deletion and index creation/rebuild may submit background tasks. Acceptance of an operation is only the first step;
+confirm its final status in **Async Tasks**.
+
+## GQL workspace: query and explore relationships
+
+Open **GQL Traversal** and confirm `hugegraph` is selected. The workspace puts the editor and results together,
+with immediate or async execution, query favorites, and reusable execution history. Start with this Gremlin query:
 
 ```groovy
 g.V().hasLabel('person').valueMap()
 ```
 
-It returns person properties, best inspected in the table or JSON view. To visualize person-to-software relationships, run:
+Inspect person properties in table or JSON view. To visualize the people-to-software relationships, run:
 
 ```groovy
 g.V().hasLabel('person').outE('created').inV().path()
 ```
 
-Click a vertex or edge in the graph to inspect its ID, label, and properties; double-click a vertex to expand its neighbors.
-The canvas toolbar provides layout, styling, filtering, exporting, and **New** actions.
-Changing the presentation does not modify stored data; adding/editing elements or executing Gremlin writes does.
-
 ![Gremlin path query and graph result](/docs/images/hubble/query.jpg)
 
-Use `Ctrl` / `Command` + `Enter` to execute. Save frequently used queries as favorites, or load them from execution history.
-For longer queries, choose asynchronous execution and inspect status/results in **Async Tasks**.
-Immediate queries are suitable for small explorations; avoid returning an entire large graph at once.
+Graph results support 2D / 3D. Click a vertex or edge to inspect its ID, label, and properties; double-click a vertex to expand its neighbors.
+Layout, styling, and filtering help highlight relevant relationships, while export helps share results.
+Use **New** to create elements, or edit existing data when authorized. Layout, colors, and display limits only change presentation;
+adding/editing elements and Gremlin writes change Server data.
 
-The Cypher tab is available only when Server supports it. Text2GQL is currently a UI preview with no model or query service connected.
-The canvas supports 2D/3D, while table and JSON views help verify raw results.
-Built-in algorithm forms cover neighbor exploration, paths, and similarity; OLAP batch algorithms additionally require Computer or Vermeer,
-so starting the two containers in this example does not provide those external compute environments.
+Use `Ctrl` / `Command` + `Enter` to execute. Immediate mode suits small explorations; submit long queries asynchronously
+and avoid returning an entire large graph. Cypher is available only when Server supports it.
+Text2GQL is currently a UI preview with no model or query service connected; it cannot generate executable queries.
 
-## Understand the schema before adding data
+## Built-in algorithms: explore with parameter forms
 
-Open the graph's schema configuration from Graph Overview. Schema defines the labels/properties that can be written,
-vertex ID strategies, and indexes. Switch between list and graph views; the list separates properties, vertex labels,
-edge labels, vertex indexes, and edge indexes.
+Use **Built-in Algorithms** when you prefer a form to writing traversal code. Search for an algorithm and supply its parameters.
+Neighbor exploration answers what surrounds a vertex, path algorithms connect two vertices, and similarity/ranking algorithms compare or select vertices.
+Start with a known vertex ID and limit direction, edge labels, depth, and result size before attempting broader computation.
 
-In the person/software sample, `person` generates its ID from the primary key `name`, with nullable `age` and `city`.
-`software` has custom numeric IDs, and `created` links people to software. This matches
-the [Loader example](/docs/quickstart/toolchain/hugegraph-loader/).
+Forms provide parameter guidance and documentation links, and restore common parameters when navigating away and back.
+Results use graph or algorithm-specific panels. Consult the help and documentation links beside the algorithm title for definitions and parameters.
+While the parameter form is focused, `Ctrl` / `Command` + `Enter` runs the current algorithm.
 
-![Vertex labels with primary-key and numeric ID strategies](/docs/images/hubble/schema.jpg)
+OLAP batch algorithms require external compute services such as Computer or Vermeer.
+The two containers in this example provide online graph operations, not those compute services.
 
-For your own model, define properties, then vertex labels, edge labels, and indexes. Distinguish numeric and text values,
-declare nullable properties, and choose primary-key or custom IDs. Edges must reference existing vertex labels;
-indexes should match your queries. Schema deletion and index creation/rebuild may submit background tasks,
-whose completion is visible in **Async Tasks**.
+For example, select K-neighbor (GET) with `source=1:marko`, `max_depth=1`, and `limit=20`.
+After parameter validation, use the run button on the card or the form shortcut to explore one-hop neighbors.
 
-### Add two people from CSV
+![Built-in neighbor algorithm parameters and graph result](/docs/images/hubble/algorithms.jpg)
 
-Save a UTF-8 file named `people.csv`:
+## Async Tasks: confirm background results
+
+**Async Tasks** lists background work for the current graph, including async queries and some schema/index operations.
+Filter by task type and status, inspect IDs, creation times, and execution states, open successful query results, or expand failure information.
+Completed task records can be deleted where the interface permits. These tasks are separate from import execution history.
+
+For example, submit `g.V().count()` asynchronously, confirm success in the list, then inspect the returned count.
+A successful submission means the request was accepted, not that computation or indexing has finished.
+Use task errors and Server logs together when diagnosing failures.
+
+## Data Source Management: prepare the input
+
+A data source defines where data comes from and how to parse it, and can be referenced by import tasks.
+Hubble supports FILE, HDFS, JDBC, and Kafka, each with its own path, connection, or subscription settings.
+FILE is an easy starting point: upload a file, configure its format, delimiter, encoding, and header, and check column names before mapping.
+Hubble configuration controls upload limits and permitted extensions.
+
+Save this UTF-8 file as `people.csv` for the person example:
 
 ```csv
 name,age,city
@@ -147,31 +188,97 @@ docs_alice,28,Beijing
 docs_bob,32,Shanghai
 ```
 
-Create a FILE data source in **Data Sources** and upload the file. Select CSV (comma separation and UTF-8 by default),
-and the column names `name,age,city`. Header, delimiter, and encoding are data source settings, not mapping settings.
+Create a FILE data source and upload it. Select CSV (comma separation and UTF-8 by default), with column names `name,age,city`.
+Header, delimiter, and encoding belong to the data source, not mapping settings. The source fields must match the file.
 
-Create an import task in **Data Import**, completing these four sections:
+## Data Import: turn fields into a queryable graph
 
-1. **Basic Information**: choose `DEFAULT` / `hugegraph` and the new data source.
-2. **Source Fields**: select the detected `name`, `age`, and `city` fields and move them to the selected list on the right.
-3. **Mapping Fields**: add a `person` vertex mapping and use **Auto Match**, then verify the three matching fields and properties.
-4. **Schedule**: choose one-time execution and confirm; the task is submitted immediately. Check its status in the list.
+**Data Import** converts source rows into vertices and edges. Its four configuration sections identify the target, select fields,
+map them to the graph, and choose execution timing. Use the preceding data source to create a person import into `DEFAULT` / `hugegraph`:
+
+| Section | Settings for this example |
+|---|---|
+| Basic Information | Target graph, new data source, and a recognizable task name |
+| Source Fields | Select `name`, `age`, and `city`, moving them to the selected field list |
+| Mapping Fields | Add a `person` vertex mapping; use **Auto Match** for same-name properties, then verify types |
+| Schedule | Choose one-time execution; confirmation submits the task immediately |
 
 `person` uses PRIMARY_KEY, so do not select a separate ID column. Custom ID strategies require an ID column;
-AUTOMATIC lets Server generate IDs, and PRIMARY_KEY derives IDs from mapped primary-key properties.
-Edge mappings also require source and target fields.
+AUTOMATIC lets Server generate IDs, while PRIMARY_KEY derives them from mapped primary-key properties.
+Edge mappings need source/target fields that follow the corresponding vertex ID rules.
 
-
-Inspect the execution instance's status, imported count, and error message in execution history, then verify in the query workspace:
+The task list manages configuration and execution entry points; execution history in task details shows each instance's state, count, and errors.
+Periodic schedules and real-time Kafka tasks are also available; choose an execution mode compatible with the source.
+After completion, verify the result in the GQL workspace:
 
 ```groovy
 g.V().hasLabel('person').has('name', within('docs_alice', 'docs_bob')).valueMap()
 ```
 
-The result should include both new people. If the import fails, check source fields, numeric types, nullable properties,
-and target schema before creating another task. Hubble also supports HDFS, JDBC, Kafka, periodic schedules,
-and real-time Kafka tasks. Use Hubble imports for small trials; use [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/)
-for production bulk ingestion.
+The result should include both new people. Import counts are not necessarily counts of newly created vertices:
+reruns may update existing elements, and header processing can affect reader counts.
+If the import fails, check source fields, numeric types, nullable properties, and target schema.
+Use Hubble for small trials and [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/) for production bulk ingestion.
+
+## Profile and account permissions
+
+Hubble uses Server authentication and accounts, with no separate user database. Anonymous mode hides **Profile** and **Account Management**.
+After authentication is enabled, Profile shows the current account's details and permissions and allows changing your password.
+Editing details such as a nickname requires Server support for the personal-profile API. Changing a password ends the current session;
+sign in again with the new password.
+
+### Standalone account management
+
+In standalone mode, the administrator can create, inspect, edit, delete, and batch-create accounts.
+Ordinary standalone accounts created through Hubble receive read, write, delete, and execute permissions across all graphs;
+they are not read-only or isolated to one graph. Configure finer resource permissions through
+[Server authentication and authorization](/docs/config/config-authentication/) rather than relying on GraphSpace presets.
+
+### GraphSpace permissions in PD mode
+
+With a Server supporting default-role APIs, global accounts and space access can be managed separately.
+The administrator manages global accounts; a space administrator manages members only within authorized spaces.
+Ordinary members do not receive account-management or operations entry points.
+The following presets are for PD mode, and are not universally editable on older or standalone Servers:
+
+| Preset | Scope and purpose |
+|---|---|
+| `SUPER_ADMIN` | Global account, GraphSpace, and operations management; grant or revoke super-administrator access |
+| `GS_ADMIN` | Manage authorized spaces and their members, without granting other-space or global super-administrator access |
+| `GS_READ_WRITE` | Read and write graph data within authorized spaces, without managing global accounts |
+| `GS_READ_ONLY` | Read graph data within authorized spaces, without writes |
+
+An account may have different permissions in different spaces. Select a space before adding an existing account or changing member permissions.
+Before replacing custom permissions with a preset, inspect the grants that need to be retained; complex permissions may not match a single preset.
+After changes, refresh permission context or sign in again and verify menus and space selection. Server still validates every request.
+Older Servers may hide or disable unsupported operations; a visible button alone does not establish resource authorization.
+See the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/) for space management.
+
+![Authenticated account list in PD mode](/docs/images/hubble/accounts.jpg)
+
+## Operations: inspect the standalone Server
+
+Standalone **Operations** provides **Node Information** for Server only, with no PD/Store nodes or cluster overview.
+Search nodes, filter health status, and open node details to inspect available version, system, JVM, and Server-backend metrics.
+When metrics are unavailable or stale, use collection state and the last successful observation time;
+a missing value is neither zero nor proof of health.
+
+Anonymous mode can read operations information. With authentication enabled, operations are available only to administrators with the capability.
+This is an observation and diagnosis interface, not a start/stop or scaling console.
+The distributed supplement covers cluster overview and the PD/Store node hierarchy.
+
+## Keyboard shortcuts and graph interactions
+
+Use the topbar shortcut-help button to see key bindings. Their scope differs: typing `?` in an input does not trigger global help.
+
+| Action | Key or gesture | Scope |
+|---|---|---|
+| Open / close shortcut help | `?` | Outside inputs and editors |
+| Execute query | `Ctrl` / `Command` + `Enter` | Query editor |
+| Run current algorithm | `Ctrl` / `Command` + `Enter` | Algorithm parameter form |
+| Toggle graph fullscreen | `F` | Click to focus the graph canvas first; not a global binding |
+| Inspect element details | Click a vertex or edge | Graph result |
+| Expand neighboring relationships | Double-click a vertex | Graph result |
 
 ## Diagnose connection and result issues
 

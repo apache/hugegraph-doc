@@ -7,6 +7,9 @@ search_boost: 1.6
 description: "Bulk import graph data into HugeGraph with Loader from files, HDFS, relational databases, Kafka, and other HugeGraph graphs."
 ---
 
+This guide follows Toolchain `master` (currently `1.8.0`). Released packages and Docker `latest` may differ from source;
+check the version you use and build from source for unreleased functionality.
+
 ### 1 HugeGraph-Loader Overview
 
 HugeGraph-Loader is the data import component of HugeGraph, which can convert data from various data sources into graph vertices and edges and import them into the graph database in batches.
@@ -36,7 +39,7 @@ HugeGraph-Loader is available in the following three ways:
 
 #### 2.1 Use Docker image (Convenient for Test/Dev)
 
-We can deploy the loader service using `docker run -itd --name loader hugegraph/loader:1.7.0`. For the data that needs to be loaded, it can be copied into the loader container either by mounting `-v /path/to/data/file:/loader/file` or by using `docker cp`.
+We can deploy the loader service using `docker run -itd --name loader hugegraph/loader:latest`. For the data that needs to be loaded, it can be copied into the loader container either by mounting `-v /path/to/data/file:/loader/file` or by using `docker cp`.
 
 Alternatively, to start the loader using docker-compose, the command is `docker-compose up -d`. An example of the docker-compose.yml is as follows:
 
@@ -45,19 +48,13 @@ version: '3'
 
 services:
   server:
-    image: hugegraph/hugegraph:1.7.0
+    image: hugegraph/hugegraph:latest
     container_name: server
     ports:
       - 8080:8080
 
-  hubble:
-    image: hugegraph/hubble:1.7.0
-    container_name: hubble
-    ports:
-      - 8088:8088
-
   loader:
-    image: hugegraph/loader:1.7.0
+    image: hugegraph/loader:latest
     container_name: loader
     # mount your own data here
     # volumes:
@@ -69,43 +66,20 @@ The specific data loading process can be referenced under [4.5 User Docker to lo
 > Note: 
 > 1. The docker image of hugegraph-loader is a convenience release to start hugegraph-loader quickly, but not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 > 
-> 2. Recommend to use `release tag`(like `1.7.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
+> 2. Pin a published version tag or image digest in production. `latest` is mutable and does not guarantee alignment with `master`.
 
 #### 2.2 Download the compiled archive
 
-Download the latest version of the HugeGraph-Toolchain release package:
-
-```bash
-export VERSION=1.7.0
-export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
-wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
-tar zxf "${ARCHIVE}.tar.gz"
-```
+Choose a published Toolchain archive from the [download page](/docs/download/download) and extract it.
+A release may not include all `master` functionality; use the source build below for the implementation described here.
 
 #### 2.3 Clone source code to compile and install
 
-Clone the latest version of HugeGraph-Loader source package:
+Clone the `master` branch:
 
 ```bash
-# 1. get from github
-git clone https://github.com/apache/hugegraph-toolchain.git
-
-# 2. Download a released source package
-export VERSION=1.7.0
-export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
-wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
+git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
 ```
-
-> [!DETAILS]- How to install OJDBC
-> Due to the license limitation of the `Oracle OJDBC`, you need to manually install ojdbc to the local maven repository.
-> Visit the [Oracle jdbc downloads](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html) page. Select Oracle Database 12c Release 2 (12.2.0.1) drivers, as shown in the following figure.
->
-> After opening the link, select "ojdbc8.jar".
->
-> Install ojdbc8 to the local maven repository, enter the directory where `ojdbc8.jar` is located, and execute the following command.
-> ```
-> mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-> ```
 
 Compile and generate tar package:
 
@@ -113,6 +87,9 @@ Compile and generate tar package:
 cd hugegraph-toolchain
 mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 ```
+
+For Oracle input, obtain a JDBC driver JAR compatible with your Oracle/JDK versions and place it in the extracted Loader `lib/` directory.
+The startup script loads JARs there; installing a driver only in the local Maven repository does not put it on Loader’s runtime classpath.
 
 ### 3 How to use
 The basic process of using HugeGraph-Loader is divided into the following steps:
@@ -150,7 +127,7 @@ schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name
 schema.vertexLabel("software").properties("name", "price").primaryKeys("name").ifNotExist().create();
 
 // Create the knows edge type, which goes from person to person
-schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").ifNotExist().create();
+schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date").ifNotExist().create();
 // Create the created edge type, which points from person to software
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
@@ -609,7 +586,8 @@ Input sources are currently divided into five categories: FILE, HDFS, JDBC, KAFK
     - path: the path of the local file or directory, an absolute path or a path relative to the Loader process working directory (not the mapping file). An absolute path is recommended; required;
     - file_filter: filter files with compound conditions from `path`, compound structure, currently only supports configuration extensions, represented by child node `extensions`, the default is "*", which means to keep all files;
     - format: the format of the local file, the optional values are CSV, TEXT and JSON, which must be uppercase, the default is CSV, optional;               
-    - header: the column name of each column of the file, if not specified, the first line of the data file will be used as the header; when the file itself has a header and the header is specified, the first line of the file will be treated as a normal data line; JSON The file does not need to specify a header, optional;
+    - header: column names; if omitted, the first data line supplies them. With an explicit header, an identical first line is still skipped by default
+      (see has_header). JSON does not require a header; optional;
     - has_header: for CSV and TEXT, the first line of every file is dropped when it is identical to the header, so a header repeated in each part file of a directory is not imported as data. Set this to `false` to turn that check off when the first line of a file is real data that happens to equal the header, optional;
     - delimiter: The column delimiter of the file line. The default depends on `format`: a comma `","` for CSV and a tab `"\t"` for TEXT; a CSV file accepts no other delimiter. The `JSON` file does not need to be specified, optional;     
     - charset: the encoded character set of the file, the default is `UTF-8`, optional;    
@@ -833,7 +811,7 @@ The import process is controlled by commands submitted by the user, and the user
 | `--pd-peers`                             |               |                 | PD service node addresses                                                                                                                                                                 |
 | `--pd-token`                             |               |                 | Token for accessing PD service                                                                                                                                                            |
 | `--meta-endpoints`                       |               |                 | Meta information storage service addresses                                                                                                                                                |
-| `--direct`                               | false         |                 | Whether to directly connect to HugeGraph-Store                                                                                                                                            |
+| `--direct`                               | false         |                 | Store direct mode is disabled in current master; imports still use Server API. Keep the default                                                                                                                                            |
 | `--route-type`                           | NODE_PORT     |                 | Route selection method (optional values: NODE_PORT / DDS / BOTH)                                                                                                                          |
 | `--cluster`                              | hg            |                 | Cluster name                                                                                                                                                                              |
 | `--trust-store-file`                     |               |                 | When the request protocol is https, the client's certificate file path                                                                                                                    |
@@ -1017,10 +995,10 @@ Edge file: `example/file/edge_knows.json`
 Edge file: `example/file/edge_created.json`
 
 ```json
-{"aname": "marko", "bname": "lop", "date": "20171210", "weight": 0.4}
-{"aname": "josh", "bname": "lop", "date": "20091111", "weight": 0.4}
-{"aname": "josh", "bname": "ripple", "date": "20171210", "weight": 1.0}
-{"aname": "peter", "bname": "lop", "date": "20170324", "weight": 0.2}
+{"source_name": "marko", "target_id": 1, "date": "2017-12-10", "weight": 0.4}
+{"source_name": "josh", "target_id": 1, "date": "2009-11-11", "weight": 0.4}
+{"source_name": "josh", "target_id": 2, "date": "2017-12-10", "weight": 1.0}
+{"source_name": "peter", "target_id": 1, "date": "2017-03-24", "weight": 0.2}
 ```
 
 #### 4.2 Write schema
@@ -1035,8 +1013,8 @@ Edge file: `example/file/edge_created.json`
 > schema.propertyKey("date").asText().ifNotExist().create();
 > schema.propertyKey("price").asDouble().ifNotExist().create();
 >
-> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
-> schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
+> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").nullableKeys("age", "city").ifNotExist().create();
+> schema.vertexLabel("software").useCustomizeNumberId().properties("name", "lang", "price").ifNotExist().create();
 >
 > schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 > schema.indexLabel("personByCity").onV("person").by("city").secondary().ifNotExist().create();
@@ -1050,6 +1028,10 @@ Edge file: `example/file/edge_created.json`
 > schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
 > schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();
 > ```
+
+`person` uses `name` as its primary key. Tom’s `age` and `city` are removed by `null_values`, so both properties must be nullable.
+`software` uses custom numeric IDs: mapping `id` supplies the vertex ID and `created.target_id` supplies the edge’s target ID.
+Run this example in an empty graph without these schema labels; `ifNotExist()` does not replace incompatible existing definitions.
 
 #### 4.3 Write the input source mapping file `example/file/struct.json`
 
@@ -1195,6 +1177,9 @@ If loading a custom dataset, following the previous example, you would use:
 docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f /loader/dataset/struct.json -s /loader/dataset/schema.groovy -h server -p 8080
 ```
 
+Also update every `input.path` in the custom `struct.json` to its actual container path, such as `/loader/dataset/vertex_person.csv`.
+Changing only `-f` and `-s` does not change where Loader looks for data files.
+
 > If `loader` and `server` are in the same Docker network, you can specify `-h {server_container_name}`; otherwise, you need to specify the IP of the `server` host (in our example, `server_container_name` is `server`).
 
 Then we can see the result:
@@ -1227,12 +1212,14 @@ meter metrics
 
 You can also use `curl` or `hubble` to observe the import result. Here's an example using `curl`:
 
+These requests use the GraphSpace-aware Server API. For an older Server, omit `/graphspaces/DEFAULT` from the path.
+
 ```bash
-> curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+curl --compressed "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
 {"vertices":[{"id":1,"label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328.0}},{"id":2,"label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199.0}},{"id":"1:tom","label":"person","type":"vertex","properties":{"name":"tom"}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"1:li,nary","label":"person","type":"vertex","properties":{"name":"li,nary","age":26,"city":"Wu,han"}}]}
 ```
 
-If you want to check the import result of edges, you can use `curl "http://localhost:8080/graphs/hugegraph/graph/edges" | gunzip`.
+If you want to check the import result of edges, you can use `curl --compressed "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/edges"`.
 
 ##### 4.5.2 Enter the docker container to load data
 

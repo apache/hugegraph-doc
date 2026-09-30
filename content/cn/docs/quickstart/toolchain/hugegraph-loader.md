@@ -6,6 +6,8 @@ search_keywords: [HugeGraph Loader, 批量导入, 数据导入]
 search_boost: 1.6
 ---
 
+本文以 Toolchain `master`（当前版本为 `1.8.0`）为准。发布版和 Docker `latest` 可能与源码不同；使用时请核对版本，未发布的版本请按下文从源码构建。
+
 ### 1 HugeGraph-Loader 概述
 
 HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源的数据转化为图的顶点和边并批量导入到图数据库中。
@@ -37,7 +39,7 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 #### 2.1 使用 Docker 镜像 (便于**测试**)
 
-我们可以使用 `docker run -itd --name loader hugegraph/loader:1.7.0` 部署 loader 服务。对于需要加载的数据，则可以通过挂载 `-v /path/to/data/file:/loader/file` 或者 `docker cp` 的方式将文件复制到 loader 容器内部。
+我们可以使用 `docker run -itd --name loader hugegraph/loader:latest` 部署 loader 服务。对于需要加载的数据，则可以通过挂载 `-v /path/to/data/file:/loader/file` 或者 `docker cp` 的方式将文件复制到 loader 容器内部。
 
 或者使用 docker-compose 启动 loader, 启动命令为 `docker-compose up -d`, 样例的 docker-compose.yml 如下所示：
 
@@ -46,21 +48,15 @@ version: '3'
 
 services:
   server:
-    image: hugegraph/hugegraph:1.7.0
+    image: hugegraph/hugegraph:latest
     container_name: server
     environment:
       - PASSWORD=xxx
     ports:
       - 8080:8080
 
-  hubble:
-    image: hugegraph/hubble:1.7.0
-    container_name: hubble
-    ports:
-      - 8088:8088
-
   loader:
-    image: hugegraph/loader:1.7.0
+    image: hugegraph/loader:latest
     container_name: loader
     # mount your own data here
     # volumes:
@@ -74,43 +70,20 @@ services:
 > 
 > 1. hugegraph-loader 的 docker 镜像是一个便捷版本，用于快速启动 loader，并不是**官方发布物料包方式**。你可以从 [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub) 中得到更多细节。
 > 
-> 2. 推荐使用 `release tag` (如 `1.7.0`) 以获取稳定版。使用 `latest` tag 可以使用开发中的最新功能。
+> 2. 生产环境应固定已发布的版本标签或镜像 digest。`latest` 是可变标签，不能据此判断其与 `master` 一致。
 
 #### 2.2 下载已编译的压缩包
 
-下载最新版本的 `HugeGraph-Toolchain` Release 包，里面包含了 `loader + tool + hubble` 全套工具，如果你已经下载，可跳过重复步骤
-
-```bash
-export VERSION=1.7.0
-export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
-wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
-tar zxf "${ARCHIVE}.tar.gz"
-```
+从 [下载页面](/cn/docs/download/download) 选择已发布的 Toolchain 压缩包并解压。
+发布包不一定包含 `master` 的全部功能；需要本文对应实现时，使用下一节的源码构建方式。
 
 #### 2.3 克隆源码编译安装
 
-克隆最新版本的 HugeGraph-Loader 源码包：
+克隆 `master` 分支：
 
 ```bash
-# 1. get from github
-git clone https://github.com/apache/hugegraph-toolchain.git
-
-# 2. 下载发布版源码包
-export VERSION=1.7.0
-export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
-wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
+git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
 ```
-
-> [!DETAILS]- 点击展开/折叠 手动安装 ojdbc 方法
-> 由于 Oracle ojdbc license 的限制，需要手动安装 ojdbc 到本地 maven 仓库。
-> 访问 [Oracle jdbc 下载](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html) 页面。选择 Oracle Database 12c Release 2 (12.2.0.1) drivers，如下图所示。
->
-> 打开链接后，选择“ojdbc8.jar”
->
-> 把 ojdbc8 安装到本地 maven 仓库，进入`ojdbc8.jar`所在目录，执行以下命令。
-> ```
-> mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-> ```
 
 编译生成 tar 包：
 
@@ -118,6 +91,9 @@ wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
 cd hugegraph-toolchain
 mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 ```
+
+如需读取 Oracle 数据，按所用 Oracle/JDK 版本准备兼容的 JDBC 驱动 JAR，并放入解压后 Loader 的 `lib/` 目录。
+启动脚本会加载该目录中的 JAR；仅将驱动安装到 Maven 本地仓库并不会让运行中的 Loader 找到它。
 
 ### 3 使用流程
 
@@ -156,7 +132,7 @@ schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name
 schema.vertexLabel("software").properties("name", "price").primaryKeys("name").ifNotExist().create();
 
 // 创建 knows 边类型，这类边是从 person 指向 person 的
-schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").ifNotExist().create();
+schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date").ifNotExist().create();
 // 创建 created 边类型，这类边是从 person 指向 software 的
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
@@ -614,7 +590,7 @@ bin/utf8-bom-to-utf8.sh /path/to/file-or-dir
     - path: 本地文件或目录的路径，绝对路径或相对于 Loader 进程当前工作目录的相对路径，必填；为避免工作目录不同导致找不到文件，建议使用绝对路径；
     - file_filter: 从`path`中筛选复合条件的文件，复合结构，目前只支持配置扩展名，用子节点`extensions`表示，默认为"*"，表示保留所有文件；
     - format: 本地文件的格式，可选值为 CSV、TEXT 及 JSON，必须大写，默认为 CSV，选填；               
-    - header: 文件各列的列名，如不指定则会以数据文件第一行作为 header；当文件本身有标题且又指定了 header，文件的第一行会被当作普通的数据行；JSON 文件不需要指定 header，选填；
+    - header: 文件各列的列名，如不指定则以数据文件第一行作为 header；显式指定时，首行若与 header 完全相同，默认仍会跳过，详见 has_header；JSON 文件不需要指定 header，选填；
     - has_header: 对 CSV 和 TEXT 格式，如果某个文件的首行与 header 完全相同，该行会被丢弃，这样目录下每个分片文件重复的表头不会被当作数据导入。如果分片文件的首行是恰好与 header 相同的真实数据，可以设为 `false` 关闭这个检查，选填；
     - delimiter: 文件行的列分隔符。默认值取决于`format`：CSV 为逗号`","`，TEXT 为制表符`"\t"`；CSV 只接受逗号。`JSON`文件不需要指定，选填；     
     - charset: 文件的编码字符集，默认`UTF-8`，选填；    
@@ -838,7 +814,7 @@ GRAPH 输入源从另一个 HugeGraph 图（通过 HugeGraph-PD 访问）读取�
 | `--pd-peers`                            |             |      | PD 服务节点地址                                                         |
 | `--pd-token`                            |             |      | 访问 PD 服务的 token                                                   |
 | `--meta-endpoints`                      |             |      | 元信息存储服务地址                                                         |
-| `--direct`                              | false       |      | 是否直连 HugeGraph-Store                                              |
+| `--direct`                              | false       |      | 当前 master 未启用 Store 直连，仍经 Server API 导入；保留默认值                                              |
 | `--route-type`                          | NODE_PORT   |      | 路由选择方式（可选值：NODE_PORT / DDS / BOTH）                                |
 | `--cluster`                             | hg          |      | 集群名                                                               |
 | `--trust-store-file`                    |             |      | 请求协议为 https 时，客户端的证书文件路径                                          |
@@ -1020,10 +996,10 @@ id|name|lang|price|ISBN
 边文件：`example/file/edge_created.json`
 
 ```json
-{"aname": "marko", "bname": "lop", "date": "20171210", "weight": 0.4}
-{"aname": "josh", "bname": "lop", "date": "20091111", "weight": 0.4}
-{"aname": "josh", "bname": "ripple", "date": "20171210", "weight": 1.0}
-{"aname": "peter", "bname": "lop", "date": "20170324", "weight": 0.2}
+{"source_name": "marko", "target_id": 1, "date": "2017-12-10", "weight": 0.4}
+{"source_name": "josh", "target_id": 1, "date": "2009-11-11", "weight": 0.4}
+{"source_name": "josh", "target_id": 2, "date": "2017-12-10", "weight": 1.0}
+{"source_name": "peter", "target_id": 1, "date": "2017-03-24", "weight": 0.2}
 ```
 
 #### 4.2 编写 schema
@@ -1038,8 +1014,8 @@ id|name|lang|price|ISBN
 > schema.propertyKey("date").asText().ifNotExist().create();
 > schema.propertyKey("price").asDouble().ifNotExist().create();
 >
-> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
-> schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
+> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").nullableKeys("age", "city").ifNotExist().create();
+> schema.vertexLabel("software").useCustomizeNumberId().properties("name", "lang", "price").ifNotExist().create();
 >
 > schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 > schema.indexLabel("personByCity").onV("person").by("city").secondary().ifNotExist().create();
@@ -1053,6 +1029,10 @@ id|name|lang|price|ISBN
 > schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
 > schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();
 > ```
+
+`person` 使用 `name` 作为主键；Tom 的 `age` 和 `city` 会被 `null_values` 去掉，因此这两个属性必须允许为空。
+`software` 使用自定义数值 ID，映射中的 `id` 和 `created.target_id` 分别对应顶点 ID 及边的目标 ID。
+请在未包含同名 Schema 的空图中执行，避免 `ifNotExist()` 保留已有的不兼容定义。
 
 #### 4.3 编写输入源映射文件`example/file/struct.json`
 
@@ -1198,6 +1178,9 @@ docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f example/file/stru
 docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f /loader/dataset/struct.json -s /loader/dataset/schema.groovy -h server -p 8080
 ```
 
+自定义数据集的 `struct.json` 还需将每个 `input.path` 改为容器内实际路径，例如 `/loader/dataset/vertex_person.csv`。
+只修改 `-f` 和 `-s` 不会改变数据文件的解析路径。
+
 
 > 如果 `loader` 和 `server`位于同一 docker 网络，则可以指定 `-h {server_container_name}`, 否则需要指定 `server`的宿主机的 ip (在我们的例子中， `server_container_name` 为 `server`).
 
@@ -1231,12 +1214,14 @@ meter metrics
 
 也可以使用 `curl` 或者 `hubble`观察导入结果，此处以 `curl` 为例：
 
+以下使用支持 GraphSpace 的 Server API；旧版 Server 的路径需去掉 `/graphspaces/DEFAULT`。
+
 ```bash
-> curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+curl --compressed "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
 {"vertices":[{"id":1,"label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328.0}},{"id":2,"label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199.0}},{"id":"1:tom","label":"person","type":"vertex","properties":{"name":"tom"}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"1:li,nary","label":"person","type":"vertex","properties":{"name":"li,nary","age":26,"city":"Wu,han"}}]}
 ```
 
-如果想检查边的导入结果，可以使用 `curl "http://localhost:8080/graphs/hugegraph/graph/edges" | gunzip`
+如果想检查边的导入结果，可以使用 `curl --compressed "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/edges"`
 
 ##### 4.5.2 进入 docker 容器进行导入
 

@@ -44,12 +44,19 @@ weight: 1
     <dependency>
         <groupId>org.apache.hugegraph</groupId>
         <artifactId>hugegraph-client</artifactId>
-        <!-- 请按下载页选择已发布版本 -->
-        <version>1.7.0</version>
+        <!-- 与本文的 Toolchain master 对应 -->
+        <version>1.8.0</version>
     </dependency>
 </dependencies>
 ```
-> Client 与 Server 的开发版本可能不同。升级前应按对应发布说明核对兼容性。
+本文以 Toolchain `master`（`1.8.0`）为准。若此版本尚未发布到 Maven 仓库，在 Toolchain 源码根目录运行以下命令，
+将 Client 及其父 POM 安装到本地 Maven 仓库后，再构建示例工程。源码构建的依赖仍需能够从配置的 Maven 仓库获取。
+
+```bash
+mvn install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+```
+
+Client 与 Server 的版本不必相同；升级前核对服务端 API 兼容范围及所需功能。旧版 Client 不一定提供本文使用的接口。
 
 #### 4.3 Example
 

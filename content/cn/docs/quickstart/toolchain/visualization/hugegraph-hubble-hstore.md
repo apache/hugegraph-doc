@@ -10,6 +10,11 @@ search_keywords: [HugeGraph Hubble, HStore, PD, GraphSpace, 集群管理]
 [Hubble 基础与单机指南](/cn/docs/quickstart/toolchain/hugegraph-hubble/)。
 内容以 Toolchain `master` 为准；本篇配置与功能经源码核查，未进行分布式环境运行验证。
 
+主仓库的 [docker/docker-compose-hstore.yml](https://github.com/apache/hugegraph/blob/master/docker/docker-compose-hstore.yml)
+已提供 PD、Store、Server 与 Hubble 的组合。按同目录 [Docker README](https://github.com/apache/hugegraph/blob/master/docker/README.md)
+准备 `.env` 和生成的 Hubble 本地配置，再从 `docker/` 目录启动；不要另维护一份部署 YAML。
+下文配置用于解释连接差异，不能替代 README 中 PD 凭据及服务就绪的要求。
+
 ## 连接分布式集群
 
 Hubble 仍通过 **Server 的图 API** 管理数据。区别在于，分布式模式通过 PD 发现 Server，

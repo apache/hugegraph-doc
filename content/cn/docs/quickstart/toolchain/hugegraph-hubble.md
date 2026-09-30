@@ -14,7 +14,7 @@ Hubble 是 HugeGraph 的 Web 管理与图可视化界面。你可以在同一个
 本文以 Toolchain `master`（当前为 `1.8.0`）为准；Docker `latest` 是可变标签，使用时应核对实际版本。
 
 > [!WARNING]
-> **示例只在本机开放端口。** Hubble 提供可修改数据的原生查询入口。生产环境应在可信入口终结 HTTPS，
+> **以下组合用于本地试用。** Hubble 提供可修改数据的原生查询入口。生产环境应在可信入口终结 HTTPS，
 > 限制 Hubble 与 Server 的网络访问，并在 Server 开启 [认证与授权](/cn/docs/config/config-authentication/)。
 > 保留 Server 的 `audit-*.log` 并限制读取权限；`auth.audit_log_rate` 是速率上限，不是审计开关。
 
@@ -24,64 +24,43 @@ Hubble 是 HugeGraph 的 Web 管理与图可视化界面。你可以在同一个
 
 ## 启动单机组合
 
-准备 Docker 和 Docker Compose，在一个空目录中保存以下两个文件。Server 保存图数据，Hubble 提供界面；
-它们通过同一个 Docker 网络通信，因此 Hubble 使用 `server:8080`，而不是容器内的 `127.0.0.1`。
-
-`hugegraph-hubble.properties`：
-
-```properties
-server.host=0.0.0.0
-server.port=8088
-pd.enabled=false
-server.direct_url=http://server:8080
-dashboard.address=
-```
-
-`compose.yaml`：
-
-```yaml
-services:
-  server:
-    image: hugegraph/hugegraph:latest
-    ports:
-      - "127.0.0.1:18080:8080"
-    networks: [graph]
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8080/versions"]
-      interval: 5s
-      timeout: 5s
-      retries: 36
-      start_period: 30s
-  hubble:
-    image: hugegraph/hubble:latest
-    depends_on:
-      server:
-        condition: service_healthy
-    ports:
-      - "127.0.0.1:18088:8088"
-    networks: [graph]
-    volumes:
-      - ./hugegraph-hubble.properties:/hubble/conf/hugegraph-hubble.properties:ro
-networks:
-  graph:
-```
+直接使用主仓库 [docker/docker-compose.yml](https://github.com/apache/hugegraph/blob/master/docker/docker-compose.yml)，
+无需另外编写一份 Compose。文件已经组合了 RocksDB Server 与 Hubble，并配置网络、健康检查和数据卷；
+部署细节见同目录的 [README](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
 ```bash
-export HUBBLE_DEMO_PROJECT="hubble-demo-$(date +%Y%m%d-%H%M%S)"
-docker compose ls
-docker compose -p "$HUBBLE_DEMO_PROJECT" pull
-docker compose -p "$HUBBLE_DEMO_PROJECT" up -d
-docker compose -p "$HUBBLE_DEMO_PROJECT" ps
-curl -fsS http://127.0.0.1:18080/versions
+git clone --branch master --single-branch --depth 1 https://github.com/apache/hugegraph.git
+cd hugegraph/docker
 ```
 
-项目名跨目录共享：确认生成的名称未被其他项目使用，后续命令在同一终端沿用该变量；另开终端时恢复本次项目名。
+如果已有主仓库，直接进入它的 `docker/` 目录。Compose 挂载该目录下的
+[`conf/hubble/standalone.properties`](https://github.com/apache/hugegraph/blob/master/docker/conf/hubble/standalone.properties)，
+其中 `pd.enabled=false`、`server.direct_url=http://server:8080`：两个服务在同一 Docker 网络中通信，不需要填写每图 Server 地址。
+不要只下载 YAML 后从其他目录启动，否则相对配置文件路径可能不存在。
 
-Server 健康后，打开 <http://127.0.0.1:18088>。此示例没有配置 Server 认证，Hubble 直接进入首页；
-Server 开启认证时，使用 Server 账号登录，Hubble 没有独立账号库。个人中心与账号管理只在相应认证和权限条件下显示。
+Hubble 默认只在宿主机回环地址开放 `8088`；Server 默认发布 `8080`。仅本机试用时，将 Compose 中 Server 的
+`ports` 改为 `127.0.0.1:8080:8080`，避免对其他机器开放匿名接口。
+
+为本次试用选一个未被使用的项目名，后续命令在同一终端沿用这些变量；另开终端时恢复本次项目名。
+
+```bash
+export HUGEGRAPH_VERSION=latest
+export HUBBLE_IMAGE=hugegraph/hubble:latest
+export HUBBLE_DEMO_PROJECT="hubble-demo-$(date +%Y%m%d-%H%M%S)"
+docker compose ls
+docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml pull
+docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml up -d --wait
+docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml ps
+curl -fsS http://127.0.0.1:8080/versions
+```
+
+服务健康后，打开 <http://127.0.0.1:8088>。全新目录未配置 `HUGEGRAPH_ADMIN_PASSWORD` 时，Server 允许匿名访问，
+Hubble 直接进入首页。需要认证时，按 Docker README 配置 `.env` 中的管理员密码与 JWT 密钥，使用 Server 账号登录；
+Hubble 没有独立账号库。个人中心与账号管理只在相应认证和权限条件下显示，不要覆盖已有 `.env`。
 
 `latest` 便于体验当前功能，正式部署应固定镜像版本或 digest。镜像是便捷分发物，正式发布包见 [下载页](/cn/docs/download/download/)。
-Server 镜像会自动创建匿名卷，此示例仅用于试用；持久化与生产配置见 [Server 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
+Compose 的 `server-data` 和 `hubble-data` 分别保存图数据与 Hubble 元数据；更多持久化与生产配置见
+[Server 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
 
 ## 先用一张示例图认识工作台
 
@@ -183,7 +162,7 @@ Hubble 导入适合小规模体验，大批量正式导入请使用 [HugeGraph L
 
 | 现象 | 先检查 |
 |---|---|
-| Hubble 页面打不开 | `docker compose -p "$HUBBLE_DEMO_PROJECT" ps` 与 `docker compose -p "$HUBBLE_DEMO_PROJECT" logs hubble`；确认配置中的 `server.host=0.0.0.0` |
+| Hubble 页面打不开 | 检查容器状态及 `docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml logs hubble` |
 | 页面打开但无法访问图 | Server 是否健康，`server.direct_url` 是否能从 Hubble 容器访问，两个容器是否在同一网络 |
 | 出现登录页或没有写操作入口 | Server 的认证模式和当前账号权限；Hubble 不单独开启认证 |
 | 查询没有预期数据 | 顶部当前图、示例是否加载成功、标签和属性是否一致；区分画布展示与 Server 数据 |
@@ -195,13 +174,14 @@ FILE 上传默认允许 `csv,txt`，单文件 1 GB、总量 10 GB；需要覆盖
 
 ## 停止试用环境或从源码构建
 
-不再需要示例时，在保存 Compose 文件的目录执行：
+不再需要示例时，在主仓库的 `docker/` 目录执行：
 
 ```bash
-docker compose -p "${HUBBLE_DEMO_PROJECT:?}" down --volumes
+docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volumes
 ```
 
-这会删除该项目的容器、网络和匿名卷，示例数据也会丢失。已有持久化配置需按自己的数据保留要求处理。
+这会删除该项目的容器、网络、命名卷与匿名卷，示例图和 Hubble 导入任务也会丢失。
+若想保留数据，下线时省略 `--volumes`，以后用同一项目名启动。
 
 需要与 master 精确一致的产物时，使用 JDK 11 和 Maven 从 Toolchain 构建。
 Maven 插件会安装所需的 Node/Yarn，无需预先安装；以下命令不执行测试：

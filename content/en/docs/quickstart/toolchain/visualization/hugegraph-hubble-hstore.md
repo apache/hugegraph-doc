@@ -10,6 +10,12 @@ This guide covers the differences between HStore + PD and standalone RocksDB.
 For modeling, importing data, and querying, see the [Hubble standalone guide](/docs/quickstart/toolchain/hugegraph-hubble/).
 The configuration and features below were checked against Toolchain `master`; they have not been verified in a running distributed environment.
 
+The main repository's [docker/docker-compose-hstore.yml](https://github.com/apache/hugegraph/blob/master/docker/docker-compose-hstore.yml)
+already combines PD, Store, Server, and Hubble. Follow the adjacent
+[Docker README](https://github.com/apache/hugegraph/blob/master/docker/README.md) to prepare `.env` and generated Hubble local configuration,
+then start it from `docker/`; do not maintain another deployment YAML.
+The settings below explain connection differences and do not replace the README's PD credential and service-readiness requirements.
+
 ## Connect to a distributed cluster
 
 Hubble still manages graph data through the **Server graph API**. In distributed mode, it discovers Servers through PD

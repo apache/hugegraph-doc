@@ -14,7 +14,7 @@ For HStore, read the shared operations here first, then follow the [distributed 
 This guide follows Toolchain `master` (currently `1.8.0`); Docker `latest` is mutable, so check the actual running versions.
 
 > [!WARNING]
-> **The example exposes ports on your machine only.** Hubble accepts native queries that can modify data. In production,
+> **The deployment below is for a local trial.** Hubble accepts native queries that can modify data. In production,
 > terminate HTTPS at a trusted entry point, restrict network access to Hubble and Server, and enable
 > [Server authentication and authorization](/docs/config/config-authentication/).
 > Retain Server's `audit-*.log` with restricted access; `auth.audit_log_rate` is a rate limit, not an audit switch.
@@ -25,68 +25,47 @@ The sample and import below were exercised; availability of newer master feature
 
 ## Start the standalone pair
 
-Install Docker and Docker Compose, then save the two files below in an empty directory. Server stores graph data and Hubble provides the UI.
-They communicate over one Docker network, so Hubble uses `server:8080`, not `127.0.0.1` inside its container.
-
-`hugegraph-hubble.properties`:
-
-```properties
-server.host=0.0.0.0
-server.port=8088
-pd.enabled=false
-server.direct_url=http://server:8080
-dashboard.address=
-```
-
-`compose.yaml`:
-
-```yaml
-services:
-  server:
-    image: hugegraph/hugegraph:latest
-    ports:
-      - "127.0.0.1:18080:8080"
-    networks: [graph]
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8080/versions"]
-      interval: 5s
-      timeout: 5s
-      retries: 36
-      start_period: 30s
-  hubble:
-    image: hugegraph/hubble:latest
-    depends_on:
-      server:
-        condition: service_healthy
-    ports:
-      - "127.0.0.1:18088:8088"
-    networks: [graph]
-    volumes:
-      - ./hugegraph-hubble.properties:/hubble/conf/hugegraph-hubble.properties:ro
-networks:
-  graph:
-```
+Use the main repository's [docker/docker-compose.yml](https://github.com/apache/hugegraph/blob/master/docker/docker-compose.yml)
+instead of writing another Compose file. It already combines RocksDB Server and Hubble, with networking, health checks, and data volumes.
+See the adjacent [README](https://github.com/apache/hugegraph/blob/master/docker/README.md) for deployment details.
 
 ```bash
-export HUBBLE_DEMO_PROJECT="hubble-demo-$(date +%Y%m%d-%H%M%S)"
-docker compose ls
-docker compose -p "$HUBBLE_DEMO_PROJECT" pull
-docker compose -p "$HUBBLE_DEMO_PROJECT" up -d
-docker compose -p "$HUBBLE_DEMO_PROJECT" ps
-curl -fsS http://127.0.0.1:18080/versions
+git clone --branch master --single-branch --depth 1 https://github.com/apache/hugegraph.git
+cd hugegraph/docker
 ```
 
-Project names are shared across directories: check that the generated name is unused. Keep the same variable in this terminal;
-restore this project name if you use another terminal.
+If you already have the main repository, enter its `docker/` directory. Compose mounts
+[`conf/hubble/standalone.properties`](https://github.com/apache/hugegraph/blob/master/docker/conf/hubble/standalone.properties)
+from that directory. It sets `pd.enabled=false` and `server.direct_url=http://server:8080`;
+both services communicate over one Docker network, without a Server address configured per graph.
+Do not download only the YAML and start it from another directory: relative configuration files may be missing.
 
-Once Server is healthy, open <http://127.0.0.1:18088>. This example does not configure Server authentication, so Hubble opens the home page directly.
-If Server authentication is enabled, sign in with a Server account; Hubble has no separate account database.
-Personal and account-management pages appear only when the authentication mode and your permissions support them.
+Hubble defaults to host loopback port `8088`; Server publishes `8080`. For a trial on your machine only, change Server's
+`ports` entry to `127.0.0.1:8080:8080` to avoid exposing the anonymous API to other machines.
+
+Choose an unused project name for this trial and keep these variables in the same terminal.
+Restore this project name if you use another terminal.
+
+```bash
+export HUGEGRAPH_VERSION=latest
+export HUBBLE_IMAGE=hugegraph/hubble:latest
+export HUBBLE_DEMO_PROJECT="hubble-demo-$(date +%Y%m%d-%H%M%S)"
+docker compose ls
+docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml pull
+docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml up -d --wait
+docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml ps
+curl -fsS http://127.0.0.1:8080/versions
+```
+
+Once services are healthy, open <http://127.0.0.1:8088>. In a fresh directory without `HUGEGRAPH_ADMIN_PASSWORD`,
+Server allows anonymous access and Hubble opens the home page directly. For authentication, follow the Docker README to configure
+an administrator password and JWT secret in `.env`, then sign in with a Server account. Hubble has no separate account database.
+Personal and account-management pages depend on the authentication mode and your permissions. Do not overwrite an existing `.env`.
 
 Use `latest` to try current features, and pin a published image version or digest for production.
 Images are convenience distributions; official release archives are on the [download page](/docs/download/download/).
-The Server image creates an anonymous volume; this example is for testing only. For persistence and production settings, see
-the [Server deployment guide](/docs/quickstart/hugegraph/hugegraph-server/).
+Compose's `server-data` and `hubble-data` retain graph data and Hubble metadata respectively. For further persistence and production settings,
+see the [Server deployment guide](/docs/quickstart/hugegraph/hugegraph-server/).
 
 ## Learn the workspace with a sample graph
 
@@ -198,7 +177,7 @@ for production bulk ingestion.
 
 | Symptom | Check first |
 |---|---|
-| The Hubble page does not open | `docker compose -p "$HUBBLE_DEMO_PROJECT" ps` and `docker compose -p "$HUBBLE_DEMO_PROJECT" logs hubble`; verify `server.host=0.0.0.0` |
+| The Hubble page does not open | Check container status and `docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml logs hubble` |
 | The page opens but graphs are unavailable | Server health, a `server.direct_url` reachable from Hubble, and a shared network |
 | Login appears or write actions are missing | Server authentication and account permissions; Hubble has no independent authentication switch |
 | Expected data is missing | Current graph, sample load result, matching labels/properties; distinguish canvas display from stored data |
@@ -210,14 +189,14 @@ FILE uploads allow `csv,txt` by default, with 1 GB per file and 10 GB total. Ove
 
 ## Stop the trial or build from source
 
-When finished, run this in the directory containing your Compose file:
+When finished, run this in the main repository's `docker/` directory:
 
 ```bash
-docker compose -p "${HUBBLE_DEMO_PROJECT:?}" down --volumes
+docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volumes
 ```
 
-This removes the project's containers, network, and anonymous volume, losing the example data.
-Handle any persistent storage separately according to your data-retention requirements.
+This removes the project's containers, network, named volumes, and anonymous volume, losing the sample data and Hubble import tasks.
+To retain data, omit `--volumes` when taking the deployment down and reuse the same project name when starting it again.
 
 To obtain an exact master build, use JDK 11 and Maven. The Maven plugin installs the required Node/Yarn;
 you do not need to install them separately. These commands skip tests:

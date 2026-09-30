@@ -56,8 +56,11 @@ for (const [locale, route, source, language] of [
     const script = page.locator("script[data-hg-kapa-widget]");
     await expect(script).toHaveAttribute("data-language", language);
     const config = await page.locator("#hg-ai-config").evaluate(node => JSON.parse(node.textContent));
-    expect(config.exampleQuestions).toHaveLength(3);
-    await expect(script).toHaveAttribute("data-example-questions", config.exampleQuestions.join(","));
+    expect(config.exampleQuestions).toHaveLength(36);
+    const displayed = (await script.getAttribute("data-example-questions")).split(",");
+    expect(displayed).toHaveLength(3);
+    expect(new Set(displayed).size).toBe(3);
+    expect(displayed.every(question => config.exampleQuestions.includes(question))).toBe(true);
     await expect(script).not.toHaveAttribute("data-chat-disclaimer");
     await expect(script).toHaveAttribute("data-answer-cta-button-enabled", "true");
     await expect(script).toHaveAttribute("data-answer-cta-button-text", config.labels.community);

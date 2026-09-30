@@ -64,6 +64,18 @@
     return queue;
   }
 
+  function pickExampleQuestions(questions, random) {
+    var choices = Array.from(new Set(questions || []));
+    random = random || Math.random;
+    for (var i = choices.length - 1; i > 0; i--) {
+      var j = Math.floor(random() * (i + 1));
+      var value = choices[i];
+      choices[i] = choices[j];
+      choices[j] = value;
+    }
+    return choices.slice(0, 3);
+  }
+
   function scriptAttributes(config) {
     return {
       'data-website-id': config.websiteId,
@@ -118,6 +130,9 @@
 
   function createController(windowObject, documentObject, config) {
     var state = 'idle';
+    var widgetConfig = Object.assign({}, config, {
+      exampleQuestions: pickExampleQuestions(config.exampleQuestions),
+    });
     var consentKey = 'hg-ai-consent:v1:' + config.websiteId;
     var consented = false;
     try {
@@ -230,7 +245,7 @@
         BUNDLE_URL + (retrying ? '?hg-retry=' + encodeURIComponent(serial) : '');
       script.dataset.hgKapaWidget = '';
       script.dataset.hgKapaAttempt = String(serial);
-      var attrs = scriptAttributes(config);
+      var attrs = scriptAttributes(widgetConfig);
       Object.keys(attrs).forEach(function (name) {
         script.setAttribute(name, attrs[name]);
       });
@@ -427,6 +442,7 @@
     preinitialize: preinitialize,
     readConfig: readConfig,
     scriptAttributes: scriptAttributes,
+    pickExampleQuestions: pickExampleQuestions,
     trimmedQuery: trimmedQuery,
   };
   global.HugeGraphKapa = api;

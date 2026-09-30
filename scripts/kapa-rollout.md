@@ -43,7 +43,8 @@ HTML 抓取分别从 `/docs/` 与 `/cn/docs/` 开始，用锚定到站点和语�
 首次同意仅在当前标签页的浏览会话中保存，并由同源中英文及历史页面复用。
 即使已同意，页面加载也不会请求 Kapa；再次点击 Ask AI 时才加载服务。
 存储不可用时仅对当前页面有效。
-Widget 提供本地化的服务启动、数据导入和服务与可视化快速启动示例问题，回答后显示低调的 GitHub Discussions 求助链接；
+Widget 从 `data/ai/questions.yaml` 的 36 组中英文常见问题中随机抽取 3 条，当前页面内保持不变，回答后显示低调的 GitHub Discussions 求助链接；
+问题池按 Server 16、AI 10、Toolchain 7、Computing 3 分配，每条等概率抽取，因此展示比重由各类题数决定。
 点击社区链接不会自动提交问题或转交会话。
 
 [ASF CSP 文档](https://infra.apache.org/tools/csp.html) 要求新增域名有 VP Data Privacy

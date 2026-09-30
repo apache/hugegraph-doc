@@ -537,3 +537,28 @@ test('unavailable session storage leaves consent explicit and usable for this pa
     assert.equal(h.storage.size, 0);
   }
 });
+
+
+test('random examples select three distinct pool entries without mutating the pool', () => {
+  const pool = ['one', 'two', 'three', 'four', 'five'];
+  assert.deepEqual(adapter.pickExampleQuestions(pool, () => 0.999), ['one', 'two', 'three']);
+  assert.deepEqual(adapter.pickExampleQuestions(pool, () => 0), ['two', 'three', 'four']);
+  assert.deepEqual(pool, ['one', 'two', 'three', 'four', 'five']);
+  assert.deepEqual(adapter.pickExampleQuestions(['one', 'one', 'two'], () => 0.999), ['one', 'two']);
+  assert.deepEqual(adapter.pickExampleQuestions([], () => 0), []);
+});
+
+test('a page retains its sampled examples when the widget load is retried', () => {
+  const h = harness();
+  h.config.exampleQuestions = ['one', 'two', 'three', 'four', 'five'];
+  const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
+  controller.activate('', false, h.trigger);
+  h.continueConsent();
+  const selected = h.scripts[0].attrs['data-example-questions'].split(',');
+  assert.equal(selected.length, 3);
+  assert.equal(new Set(selected).size, 3);
+  assert.ok(selected.every(question => h.config.exampleQuestions.includes(question)));
+  h.fireTimeout();
+  controller.activate('', false, h.trigger);
+  assert.equal(h.scripts[1].attrs['data-example-questions'], selected.join(','));
+});

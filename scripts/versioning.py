@@ -130,10 +130,10 @@ DOCS_NAV_GROUP_TITLES = {
 DOCS_NAV_EXPECTED_STATS = {
     "latest": {
         "groups": 5,
-        "pages": 91,
+        "pages": 92,
         "removed": 4,
         "scopedLinks": 0,
-        "treeSha256": "3314337a4c679484d29ebb8e613d5e85dc8bb9020a7465c13b95441b0856f485",
+        "treeSha256": "15de4de385857f877b46083de8e65d2887769d811687c4fe7ade3069401fc929",
     },
     "1.7": {
         "groups": 5,

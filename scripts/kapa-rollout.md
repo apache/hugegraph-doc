@@ -40,6 +40,12 @@ HTML 抓取分别从 `/docs/` 与 `/cn/docs/` 开始，用锚定到站点和语�
 用户同意后才加载第三方脚本；`data-consent-required=false` 用于避免 widget 再次弹窗，
 不表示跳过本站授权。保留禁用分析 cookie、指纹及反馈的现有配置。
 
+首次同意仅在当前标签页的浏览会话中保存，并由同源中英文及历史页面复用。
+即使已同意，页面加载也不会请求 Kapa；再次点击 Ask AI 时才加载服务。
+用户可通过页脚撤回 AI 授权，清除会话记录并刷新页面；存储不可用时仅对当前页面有效。
+Widget 提供本地化的启动、导入和鉴权示例问题，以及普通 GitHub Discussions 链接；
+点击社区链接不会自动提交问题或转交会话。
+
 [ASF CSP 文档](https://infra.apache.org/tools/csp.html) 要求新增域名有 VP Data Privacy
 批准依据。核对 Kapa 及其 hCaptcha 依赖的具体域名和许可范围，再修改产物根目录的
 `.htaccess`，并在注释中注明依据。不要手改后会被构建覆盖的产物，也不要添加未经核对的通配域名。

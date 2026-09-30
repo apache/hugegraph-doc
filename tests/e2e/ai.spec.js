@@ -55,6 +55,15 @@ for (const [locale, route, source, language] of [
     ]);
     const script = page.locator("script[data-hg-kapa-widget]");
     await expect(script).toHaveAttribute("data-language", language);
+    const config = await page.locator("#hg-ai-config").evaluate(node => JSON.parse(node.textContent));
+    expect(config.exampleQuestions).toHaveLength(3);
+    await expect(script).toHaveAttribute("data-example-questions", config.exampleQuestions.join(","));
+    await expect(script).toHaveAttribute("data-chat-disclaimer",
+      `[${config.labels.community}](https://github.com/apache/hugegraph/discussions)`);
+    expect(await script.evaluate(node => Array.from(node.attributes).some(attr =>
+      /answer-cta|handoff|email/.test(attr.name)))).toBe(false);
+    await expect(script).toHaveAttribute("data-user-analytics-cookie-enabled", "false");
+    await expect(script).toHaveAttribute("data-user-analytics-fingerprint-enabled", "false");
     await expect(script).toHaveAttribute("data-source-group-ids-include", source);
     await expect(script).toHaveAttribute("data-project-color", "#532fc9");
     await expect(script).toHaveAttribute("data-project-color-dark", "#a693e3");
@@ -223,4 +232,61 @@ test("reopening native search cancels a pending AI handoff", async ({ page }) =>
   await page.waitForTimeout(250);
   expect(await page.evaluate(() => (window.__kapaCalls || []).filter(([method]) => method === "open"))).toEqual([]);
   await expect(input).toBeFocused();
+});
+
+
+test("consent survives same-tab language navigation and resets without loading AI", async ({ page }) => {
+  const requests = [];
+  await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", async route => {
+    requests.push(route.request().url());
+    await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
+  });
+  await page.goto(AI_ORIGIN + "/docs/");
+  await expect(page.locator("[data-hg-ai-revoke]")).toBeHidden();
+  await page.locator(".hg-ask-ai-launcher").click();
+  await page.locator("[data-hg-ai-continue]").click();
+  await expect.poll(() => requests.length).toBe(1);
+  await expect(page.locator("[data-hg-ai-revoke]")).toBeVisible();
+
+  await page.goto(AI_ORIGIN + "/cn/docs/");
+  expect(requests).toHaveLength(1);
+  await expect(page.locator("script[data-hg-kapa-widget]")).toHaveCount(0);
+  await expect(page.locator("[data-hg-ai-revoke]")).toBeVisible();
+  await page.locator(".hg-ask-ai-launcher").click();
+  await expect(page.locator("[data-hg-ai-consent]")).toBeHidden();
+  await expect.poll(() => requests.length).toBe(2);
+  await expect(page.locator("script[data-hg-kapa-widget]")).toHaveAttribute("data-language", "zh");
+
+  await page.locator("[data-hg-ai-revoke]").click();
+  await expect(page.locator("[data-hg-ai-revoke]")).toBeHidden();
+  await expect(page.locator("script[data-hg-kapa-widget]")).toHaveCount(0);
+  expect(requests).toHaveLength(2);
+  expect(await page.evaluate(() => window.__kapaCalls)).toBeUndefined();
+  await page.locator(".hg-ask-ai-launcher").click();
+  await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
+  expect(requests).toHaveLength(2);
+});
+
+test("blocked session storage requires fresh consent after navigation", async ({ page }) => {
+  const requests = [];
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "sessionStorage", {
+      get() { throw new DOMException("Storage disabled", "SecurityError"); },
+    });
+  });
+  await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", async route => {
+    requests.push(route.request().url());
+    await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
+  });
+  await page.goto(AI_ORIGIN + "/docs/");
+  await page.locator(".hg-ask-ai-launcher").click();
+  await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
+  expect(requests).toHaveLength(0);
+  await page.locator("[data-hg-ai-continue]").click();
+  await expect.poll(() => requests.length).toBe(1);
+  await page.goto(AI_ORIGIN + "/cn/docs/");
+  await expect(page.locator("script[data-hg-kapa-widget]")).toHaveCount(0);
+  await page.locator(".hg-ask-ai-launcher").click();
+  await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
+  expect(requests).toHaveLength(1);
 });

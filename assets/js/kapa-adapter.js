@@ -104,12 +104,21 @@
       'data-exit-feedback-enabled': 'false',
       'data-user-satisfaction-feedback-enabled': 'false',
       'data-bot-protection-mechanism': 'hcaptcha',
+      'data-example-questions': (config.exampleQuestions || []).join(','),
+      'data-example-questions-col-span': '12',
+      'data-chat-disclaimer': '[' + config.labels.community + '](' + config.communityURL + ')',
     };
   }
 
   function createController(windowObject, documentObject, config) {
     var state = 'idle';
+    var consentKey = 'hg-ai-consent:v1:' + config.websiteId;
     var consented = false;
+    try {
+      consented = windowObject.sessionStorage.getItem(consentKey) === 'granted';
+    } catch (_) {
+      // Storage may be disabled; consent still works for this page only.
+    }
     var pending = null;
     var consent = documentObject.querySelector('[data-hg-ai-consent]');
     var attempt = 0;
@@ -119,6 +128,20 @@
     var activeQueue = null;
     var operation = null;
     var status = documentObject.querySelector('[data-hg-ai-status]');
+    var revoke = documentObject.querySelector('[data-hg-ai-revoke]');
+    if (revoke) {
+      revoke.hidden = !consented;
+      revoke.addEventListener('click', function () {
+        consented = false;
+        try {
+          windowObject.sessionStorage.removeItem(consentKey);
+        } catch (_) {
+          // With storage disabled, the in-page grant is all we can clear.
+        }
+        // A full navigation terminates any loaded vendor state and callbacks.
+        windowObject.location.reload();
+      });
+    }
 
     function renderState(next, message) {
       state = next;
@@ -323,6 +346,12 @@
         var request = pending;
         pending = null;
         consented = true;
+        try {
+          windowObject.sessionStorage.setItem(consentKey, 'granted');
+        } catch (_) {
+          // Never bypass initial consent when persistence is unavailable.
+        }
+        if (revoke) revoke.hidden = false;
         consent.close();
         load(request.query, request.submit);
       });

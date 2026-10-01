@@ -6,22 +6,34 @@ weight: 3
 
 ### 范围
 
+**本页没有任何描述适用于已发布的 HugeGraph 版本。** 已发布版本在
+`/graphspaces/{graphspace}/graphs/{graph}/cypher` 上只提供两种请求形式：`GET ?cypher=<URL 编码的语句>`
+和 `POST application/json`（请求体为原始 Cypher 文本）。已发布版本不接受绑定参数，引用 `$param` 的语句
+不会报错，而是返回空结果——参见[已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)。
+
 本页记录当前 Cypher 开发改动实际验证过的用例，不代表完整支持 openCypher 或 Neo4j，也不代表所有已发布
 版本的 HugeGraph 都具备相同行为。测试代码基于
-[`hugegraph/hugegraph@27a7c9b`](https://github.com/hugegraph/hugegraph/commit/27a7c9b42274d6d4f95eabed6d2051d393ae0eaf)，
-使用 Java `17.0.20.1`、TinkerPop `3.8.1`、`org.opencypher.gremlin:translation:1.0.4` 和 RocksDB。
+[`apache/hugegraph@27a7c9b`](https://github.com/apache/hugegraph/commit/27a7c9b42274d6d4f95eabed6d2051d393ae0eaf)，
+这是一个 TinkerPop 3.8 开发提交，**不是 `master` 的祖先**：它已分叉，领先 10 个提交、落后 5 个提交。
+`master` 当前的 `tinkerpop.version` 为 `3.5.1`，其 `CypherAPI` 只接受 `@Consumes(APPLICATION_JSON)`
+和原始 `String cypher` 请求体。测试栈使用 Java `17.0.20.1`、TinkerPop `3.8.1`、
+`org.opencypher.gremlin:translation:1.0.4` 和 RocksDB。
 
 接口路径为 `/graphspaces/{graphspace}/graphs/{graph}/cypher`。一般用法见
 [HugeGraph Cypher 指南](/cn/docs/language/hugegraph-cypher/)。
 
 ### 请求形式与参数
 
-| 请求 | 已验证行为 | 测试方法 |
-|---|---|---|
-| `GET ?cypher=<URL 编码的语句>` | 保留原有查询参数形式 | `testGet` |
-| `POST application/json`，请求体为原始 Cypher 文本 | 保留旧的原始文本请求形式 | `testPost` |
-| `POST text/plain`，请求体为原始 Cypher 文本 | 支持纯文本请求 | `testPlainTextPost` |
-| `POST application/json`，请求体为 JSON 对象 | 查询语句与参数分开传入 | `testParameters` |
+| 请求 | 是否存在于已发布版本 | 测试栈上已验证行为 | 测试方法 |
+|---|---|---|---|
+| `GET ?cypher=<URL 编码的语句>` | 是 | 保留原有查询参数形式 | `testGet` |
+| `POST application/json`，请求体为原始 Cypher 文本 | 是 | 保留旧的原始文本请求形式 | `testPost` |
+| `POST text/plain`，请求体为原始 Cypher 文本 | 否 — 由 [#238](https://github.com/hugegraph/hugegraph/pull/238) 引入 | 支持纯文本请求 | `testPlainTextPost` |
+| `POST application/json`，请求体为 JSON 对象 | 否 — 由 [#238](https://github.com/hugegraph/hugegraph/pull/238) 引入 | 查询语句与参数分开传入 | `testParameters` |
+
+因此下面的 JSON 对象形式**在任何已发布的 HugeGraph 版本中都不可用**，它只描述尚未合并的改动。
+在已发布版本上，引用 `$param` 的语句会把该参数绑定为 `null` 并返回空结果——参见
+[已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)。
 
 ```json
 {
@@ -52,7 +64,8 @@ API 测试夹具使用强类型 Schema，并为 `city` 建立 `SECONDARY` 索引
 `CypherApiTest` 通过 20/20，`CypherClientTest` 通过 7/7，`CypherOpProcessorTest` 通过 4/4，均无跳过。
 相关 Gremlin 测试通过 10 项，另有一项 `testClearAndInit` 因后端不共享而不适用；Login 测试通过 3/3。
 EditorConfig 格式检查和仓库根目录 clean compile 均通过。代码改动位于
-[PR #238](https://github.com/hugegraph/hugegraph/pull/238)。固定测试提交
+[PR #238](https://github.com/hugegraph/hugegraph/pull/238)，该 PR **尚未合并**，基于贡献者 fork 的
+`task/tp381-3-upgrade-validation` 分支。固定测试提交
 [`c3b2f3e`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/docs/cypher-compatibility.md)
 中的兼容性说明包含逐方法测试映射和验证记录。该提交的测试源码：
 [`CypherApiTest`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/CypherApiTest.java)、

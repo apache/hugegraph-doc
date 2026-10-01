@@ -6,22 +6,36 @@ weight: 3
 
 ### Scope
 
+**No statement on this page describes a released HugeGraph version.** A released build exposes exactly two
+request forms on `/graphspaces/{graphspace}/graphs/{graph}/cypher`: `GET ?cypher=<URL-encoded statement>`
+and `POST application/json` with a raw Cypher body. Released versions accept no bound parameters, and a
+statement that references `$param` returns no rows rather than failing — see
+[Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
+
 This page records the cases verified for the current Cypher development change. It does not claim full
 openCypher or Neo4j compatibility, or compatibility across every released HugeGraph version. The tested
-working tree is based on [`hugegraph/hugegraph@27a7c9b`](https://github.com/hugegraph/hugegraph/commit/27a7c9b42274d6d4f95eabed6d2051d393ae0eaf)
-and uses Java `17.0.20.1`, TinkerPop `3.8.1`, `org.opencypher.gremlin:translation:1.0.4`, and RocksDB.
+working tree is based on
+[`apache/hugegraph@27a7c9b`](https://github.com/apache/hugegraph/commit/27a7c9b42274d6d4f95eabed6d2051d393ae0eaf),
+a TinkerPop 3.8 development commit that is **not an ancestor of `master`**: it has diverged, 10 commits
+ahead and 5 behind. `master` currently declares `tinkerpop.version` `3.5.1` and its `CypherAPI` accepts
+`@Consumes(APPLICATION_JSON)` with a raw `String cypher` body only. The tested tree used Java
+`17.0.20.1`, TinkerPop `3.8.1`, `org.opencypher.gremlin:translation:1.0.4`, and RocksDB.
 
 The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. General usage is covered in the
 [HugeGraph Cypher guide](/docs/language/hugegraph-cypher/).
 
 ### Request forms and parameters
 
-| Request | Verified contract | Test method |
-|---|---|---|
-| `GET ?cypher=<URL-encoded statement>` | Existing query-string form | `testGet` |
-| `POST application/json` with raw Cypher text | Legacy raw-body form remains available | `testPost` |
-| `POST text/plain` with raw Cypher text | Plain-text form | `testPlainTextPost` |
-| `POST application/json` with a JSON object | Query and bindings are sent separately | `testParameters` |
+| Request | In a released version | Verified contract on the tested tree | Test method |
+|---|---|---|---|
+| `GET ?cypher=<URL-encoded statement>` | Yes | Existing query-string form | `testGet` |
+| `POST application/json` with raw Cypher text | Yes | Legacy raw-body form remains available | `testPost` |
+| `POST text/plain` with raw Cypher text | No — introduced by [#238](https://github.com/hugegraph/hugegraph/pull/238) | Plain-text form | `testPlainTextPost` |
+| `POST application/json` with a JSON object | No — introduced by [#238](https://github.com/hugegraph/hugegraph/pull/238) | Query and bindings are sent separately | `testParameters` |
+
+The JSON object form below is therefore **not available in any released HugeGraph version**; it describes the
+open change only. On released versions a statement using `$param` runs with that binding bound to `null` and
+returns no rows — see [Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
 
 ```json
 {
@@ -55,7 +69,8 @@ Acceptance results are limited to these test cases:
 `CypherApiTest` passed 20/20, `CypherClientTest` 7/7, and `CypherOpProcessorTest` 4/4, with no skips.
 Related Gremlin tests passed 10 cases with one inapplicable `testClearAndInit` skip for a non-shared backend;
 Login tests passed 3/3. EditorConfig formatting and the repository-root clean compile passed.
-The code change is in [PR #238](https://github.com/hugegraph/hugegraph/pull/238). The compatibility
+The code change is in [PR #238](https://github.com/hugegraph/hugegraph/pull/238), which is **open and
+unmerged**, based on the `task/tp381-3-upgrade-validation` branch of the contributor fork. The compatibility
 note at tested source commit [`c3b2f3e`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/docs/cypher-compatibility.md)
 contains the method-level mapping and verification record. Test sources at that commit:
 [`CypherApiTest`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/CypherApiTest.java),

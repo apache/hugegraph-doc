@@ -25,6 +25,4 @@ ui_ai_consent_description: "同意后将把你的问题发送给第三方 Kapa �
 ui_ai_consent_continue: "同意并打开 Ask AI"
 ui_ai_consent_cancel: "暂不使用"
 ui_ai_privacy: "隐私政策"
-ui_ai_revoke: "撤回 AI 授权"
-ui_ai_revoke_error: "未能撤回 AI 授权，授权仍有效。请清除此网站的浏览器数据以撤回授权。"
 ui_ai_community: "前往 GitHub 向社区提问"

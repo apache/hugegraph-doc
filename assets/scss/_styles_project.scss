@@ -865,11 +865,22 @@
 }
 
 
-// The first-use notice stays beside the AI entry without blocking the page.
-.hg-ai-revoke {
-  font-size: inherit;
-  &[hidden] { display: none; }
+// Keep the search action visible while documentation results scroll.
+.td-shell-search__group[aria-labelledby="td-shell-search-group-actions"] {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--bs-body-bg);
+  border-top: 1px solid var(--bs-border-color);
+  box-shadow: 0 -.25rem .75rem rgba(0, 0, 0, .06);
+
+  .td-shell-search__item {
+    color: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), .08);
+  }
 }
+
+// The first-use notice opens beside the AI entry after explicit activation.
 
 .hg-ai-consent {
   position: fixed;

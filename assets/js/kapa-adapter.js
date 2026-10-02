@@ -141,8 +141,6 @@
       // Storage may be disabled; consent still works for this page only.
     }
     var consented = choice === 'granted';
-    var grantPersisted = consented;
-    var dismissed = choice === 'dismissed';
     windowObject.addEventListener('storage', function (event) {
       if (event.key !== consentKey && event.key !== null) return;
       if ((consented && event.newValue !== 'granted') ||
@@ -155,14 +153,14 @@
     var pending = null;
     var consent = documentObject.querySelector('[data-hg-ai-consent]');
     var launcher = documentObject.querySelector('.hg-ask-ai-launcher');
-    if (consent) consent.hidden = consented || dismissed;
+    if (consent) consent.hidden = true;
     function renderLauncher(hidden) {
       if (!launcher) return;
       launcher.hidden = hidden;
       if (consented) launcher.setAttribute('aria-haspopup', 'dialog');
       else launcher.removeAttribute('aria-haspopup');
     }
-    renderLauncher(!consented && !dismissed);
+    renderLauncher(false);
 
     function dismissConsent() {
       if (consent) consent.hidden = true;
@@ -175,23 +173,6 @@
     var activeQueue = null;
     var operation = null;
     var status = documentObject.querySelector('[data-hg-ai-status]');
-    var revoke = documentObject.querySelector('[data-hg-ai-revoke]');
-    if (revoke) {
-      revoke.hidden = !consented;
-      revoke.addEventListener('click', function () {
-        if (!consented) return;
-        if (grantPersisted) {
-          try {
-            windowObject.localStorage.removeItem(consentKey);
-          } catch (_) {
-            renderState(state, config.labels.revokeError);
-            return;
-          }
-        }
-        // Navigation terminates the vendor's loaded state and pending callbacks.
-        windowObject.location.reload();
-      });
-    }
 
     function renderState(next, message) {
       state = next;
@@ -412,11 +393,9 @@
         consented = true;
         try {
           windowObject.localStorage.setItem(consentKey, 'granted');
-          grantPersisted = true;
         } catch (_) {
           // Never bypass initial consent when persistence is unavailable.
         }
-        if (revoke) revoke.hidden = false;
         dismissConsent();
         load(request.query, request.submit);
       });

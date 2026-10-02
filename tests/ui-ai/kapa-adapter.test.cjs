@@ -25,7 +25,6 @@ function harness(storage = new Map()) {
   const consentListeners = new Map();
   const continueButton = { focus() { this.focused = true; }, addEventListener(name, callback) { consentListeners.set(`continue:${name}`, callback); } };
   const cancelButton = { addEventListener(name, callback) { consentListeners.set(`cancel:${name}`, callback); } };
-  const revoke = { hidden: true, addEventListener(name, cb) { consentListeners.set(`revoke:${name}`, cb); } };
   const consent = {
     hidden: false,
     addEventListener(name, callback) { consentListeners.set(`dialog:${name}`, callback); },
@@ -40,7 +39,6 @@ function harness(storage = new Map()) {
     querySelector(selector) {
       if (selector === '[data-hg-ai-status]') return status;
       if (selector === '[data-hg-ai-consent]') return consent;
-      if (selector === '[data-hg-ai-revoke]') return revoke;
       if (selector === '.hg-ask-ai-launcher') return trigger;
       if (selector === 'script[data-hg-kapa-widget]') {
         return scripts.find((script) => !script.removed) || null;
@@ -104,13 +102,11 @@ function harness(storage = new Map()) {
     themeColor: '#123456',
     exampleQuestions: ['How do I start HugeGraph?', 'How do I import data?'],
     communityURL: 'https://github.com/apache/hugegraph/discussions',
-    labels: { error: 'unavailable', revokeError: 'Unable to revoke. AI consent remains enabled.', community: 'Ask the community' },
+    labels: { error: 'unavailable', community: 'Ask the community' },
   };
   return {
     calls,
     status,
-    revoke,
-    revokeConsent() { consentListeners.get('revoke:click')(); },
     storageEvent(event) { windowListeners.get('storage')(event); },
     consent,
     continueButton,
@@ -575,12 +571,14 @@ test('a page retains its sampled examples when the widget load is retried', () =
 });
 
 
-test('inline consent opens AI in one click and restores the launcher on widget close', () => {
+test('explicit activation opens consent and agreement restores the launcher on widget close', () => {
   const h = harness();
-  adapter.createController(h.windowObject, h.documentObject, h.config);
-  assert.equal(h.consent.hidden, false);
-  assert.equal(h.trigger.hidden, true);
+  const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
+  assert.equal(h.consent.hidden, true);
+  assert.equal(h.trigger.hidden, false);
   assert.equal(h.scripts.length, 0);
+  controller.activate('', false, h.trigger);
+  assert.equal(h.consent.hidden, false);
   h.continueConsent();
   assert.equal(h.consent.hidden, true);
   assert.equal(h.trigger.hidden, false);
@@ -595,9 +593,10 @@ test('inline consent opens AI in one click and restores the launcher on widget c
   assert.equal(h.scripts.length, 1);
 });
 
-test('initial inline dismissal remembers no-grant choice and pending activation focuses agreement', () => {
+test('explicit consent dismissal remembers no-grant choice and pending activation focuses agreement', () => {
   const h = harness();
   const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
+  controller.activate('', false, h.trigger);
   h.cancelConsent();
   assert.equal(h.trigger.hidden, false);
   assert.equal(h.trigger.focused, true);
@@ -619,7 +618,7 @@ test('initial inline dismissal remembers no-grant choice and pending activation 
 test('remembered dismissal stays local and explicit reopening still requires consent', () => {
   for (const dismiss of ['cancelConsent', 'escapeConsent']) {
     const first = harness();
-    adapter.createController(first.windowObject, first.documentObject, first.config);
+    adapter.createController(first.windowObject, first.documentObject, first.config).activate('', false, first.trigger);
     first[dismiss]();
     const next = harness(first.storage);
     next.config.locale = 'zh';
@@ -627,7 +626,6 @@ test('remembered dismissal stays local and explicit reopening still requires con
     assert.equal(next.consent.hidden, true);
     assert.equal(next.trigger.hidden, false);
     assert.equal(next.trigger.attrs['aria-haspopup'], undefined);
-    assert.equal(next.revoke.hidden, true);
     assert.equal(next.scripts.length, 0);
     controller.activate('private query', true, next.trigger);
     assert.equal(controller.getState(), 'consent');
@@ -637,51 +635,18 @@ test('remembered dismissal stays local and explicit reopening still requires con
   }
 });
 
-test('revocation clears only the grant and reloads whether vendor is loaded or not', () => {
-  for (const loaded of [false, true]) {
-    const storage = new Map([['hg-ai-consent:v2:website', 'granted'], ['unrelated', 'preserve']]);
-    const h = harness(storage);
-    const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
-    assert.equal(h.revoke.hidden, false);
-    if (loaded) {
-      controller.activate('', false, h.trigger);
-      h.scripts[0].fire('load');
-      h.fireRender();
-    }
-    h.revokeConsent();
-    assert.equal(h.windowObject.reloaded, true);
-    assert.deepEqual(Array.from(storage), [['unrelated', 'preserve']]);
-    const fresh = harness(storage);
-    adapter.createController(fresh.windowObject, fresh.documentObject, fresh.config);
-    assert.equal(fresh.consent.hidden, false);
-    assert.equal(fresh.trigger.hidden, true);
-    assert.equal(fresh.revoke.hidden, true);
-    assert.equal(fresh.scripts.length, 0);
-  }
-});
-
-test('failed grant removal reports an error and keeps the active permission', () => {
-  const h = harness(new Map([['hg-ai-consent:v2:website', 'granted']]));
-  h.windowObject.localStorage.removeItem = () => { throw new Error('blocked'); };
-  const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
-  h.revokeConsent();
-  assert.equal(h.windowObject.reloaded, undefined);
-  assert.equal(h.storage.get('hg-ai-consent:v2:website'), 'granted');
-  assert.equal(h.revoke.hidden, false);
-  assert.equal(h.status.textContent, 'Unable to revoke. AI consent remains enabled.');
-  controller.activate('', false, h.trigger);
-  assert.equal(controller.getState(), 'loading');
-});
-
-test('blocked storage keeps dismissal page-only and exposes fresh disclosure next visit', () => {
+test('blocked storage keeps dismissal page-only and requires explicit activation next visit', () => {
   const h = harness();
   h.windowObject.localStorage.setItem = () => { throw new Error('blocked'); };
-  adapter.createController(h.windowObject, h.documentObject, h.config);
+  adapter.createController(h.windowObject, h.documentObject, h.config).activate('', false, h.trigger);
   h.cancelConsent();
   assert.equal(h.consent.hidden, true);
   assert.equal(h.storage.size, 0);
   const fresh = harness(h.storage);
-  adapter.createController(fresh.windowObject, fresh.documentObject, fresh.config);
+  const controller = adapter.createController(fresh.windowObject, fresh.documentObject, fresh.config);
+  assert.equal(fresh.consent.hidden, true);
+  assert.equal(fresh.scripts.length, 0);
+  controller.activate('', false, fresh.trigger);
   assert.equal(fresh.consent.hidden, false);
   assert.equal(fresh.scripts.length, 0);
 });
@@ -722,7 +687,7 @@ test('incoming permission synchronizes stale preconsent tabs without loading the
 test('load and vendor open failures return keyboard focus from hidden agreement to launcher', () => {
   for (const failure of ['bundle', 'open']) {
     const h = harness();
-    adapter.createController(h.windowObject, h.documentObject, h.config);
+    adapter.createController(h.windowObject, h.documentObject, h.config).activate('', false, h.trigger);
     h.continueConsent();
     assert.equal(h.consent.hidden, true);
     if (failure === 'bundle') h.scripts[0].fire('error');
@@ -741,22 +706,21 @@ test('load and vendor open failures return keyboard focus from hidden agreement 
 });
 
 
-test('page-only permission can be revoked when storage is wholly blocked', () => {
+test('page-only permission expires on navigation when storage is wholly blocked', () => {
   const h = harness();
   Object.defineProperty(h.windowObject, 'localStorage', {
     get() { throw new Error('blocked'); },
   });
-  adapter.createController(h.windowObject, h.documentObject, h.config);
+  adapter.createController(h.windowObject, h.documentObject, h.config).activate('', false, h.trigger);
   h.continueConsent();
   h.scripts[0].fire('load');
   h.fireRender();
-  assert.equal(h.revoke.hidden, false);
-  h.revokeConsent();
-  assert.equal(h.windowObject.reloaded, true);
-  assert.equal(h.status.textContent, '');
   assert.equal(h.storage.size, 0);
   const fresh = harness(h.storage);
-  adapter.createController(fresh.windowObject, fresh.documentObject, fresh.config);
+  const controller = adapter.createController(fresh.windowObject, fresh.documentObject, fresh.config);
+  assert.equal(fresh.consent.hidden, true);
+  assert.equal(fresh.scripts.length, 0);
+  controller.activate('', false, fresh.trigger);
   assert.equal(fresh.consent.hidden, false);
   assert.equal(fresh.scripts.length, 0);
 });

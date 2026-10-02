@@ -34,9 +34,6 @@
       <div class="hg-asf-footer__legal">
         <p>Copyright &copy; {{ now.Year }} The Apache Software Foundation, Licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener noreferrer">Apache License Version 2.0</a></p>
         <p>Apache, the names of Apache projects, and the feather logo are either registered trademarks or trademarks of the Apache Software Foundation in the United States and/or other countries.</p>
-        {{- if (partial "ai/config.html" .).enabled }}
-        <button type="button" class="btn btn-link hg-ai-revoke p-0" data-hg-ai-revoke hidden>{{ T "ui_ai_revoke" }}</button>
-        {{- end }}
       </div>
     </div>
   </div>

@@ -24,6 +24,4 @@ ui_ai_consent_description: "Agree to send your questions to the third-party Kapa
 ui_ai_consent_continue: "Agree and open Ask AI"
 ui_ai_consent_cancel: "Not now"
 ui_ai_privacy: "Privacy policy"
-ui_ai_revoke: "Withdraw AI consent"
-ui_ai_revoke_error: "AI consent could not be removed and remains active. Clear this site's browser data to withdraw consent."
 ui_ai_community: "Ask the community on GitHub"

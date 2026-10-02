@@ -45,7 +45,6 @@ jobs:
     env:
       HUGO_CACHEDIR: /tmp/hugo-cache-${{ github.run_id }}-${{ github.run_attempt }}-prepare
     outputs:
-      versions: ${{ steps.matrix.outputs.versions }}
       selection: ${{ steps.plan.outputs.selection }}
       site_origin: ${{ steps.plan.outputs.site_origin }}
       historical_origin: ${{ steps.plan.outputs.historical_origin }}
@@ -166,7 +165,7 @@ jobs:
           go mod download
           PYTHONDONTWRITEBYTECODE=1 \
             python3 -m unittest discover -s scripts -p 'test_*.py' -v
-      - name: Resolve immutable version matrix
+      - name: Resolve immutable version manifest
         id: matrix
         env:
           LATEST_SHA: ${{ steps.plan.outputs.latest_sha }}
@@ -175,7 +174,6 @@ jobs:
           python3 scripts/versioning.py prepare \
             --latest-sha "$LATEST_SHA" --select "$SELECTION" \
             --output resolved-versions.json
-          echo "versions=$(jq -c '.include' resolved-versions.json)" >> "$GITHUB_OUTPUT"
       - name: Upload resolved version manifest
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -189,16 +187,11 @@ jobs:
   build:
     needs: prepare
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     permissions: { contents: read }
     env:
-      HUGO_CACHEDIR: /tmp/hugo-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.version.id }}
-    strategy:
-      fail-fast: false
-      max-parallel: 5
-      matrix:
-        version: ${{ fromJSON(needs.prepare.outputs.versions) }}
-    name: Build ${{ matrix.version.id }}
+      HUGO_CACHEDIR: /tmp/hugo-resources
+    name: Build selected versions
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -208,13 +201,10 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.13"
-      - name: Fetch immutable resolved source
-        env:
-          RESOLVED_SHA: ${{ matrix.version.sha }}
-        run: |
-          [[ "$RESOLVED_SHA" =~ ^[0-9a-f]{40}$ ]]
-          git fetch --no-tags origin "$RESOLVED_SHA"
-          git cat-file -e "$RESOLVED_SHA^{commit}"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: resolved-versions-${{ github.run_id }}
+          path: resolved
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: go.mod
@@ -228,33 +218,57 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ env.HUGO_CACHEDIR }}
-          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ matrix.version.id }}-${{ hashFiles('go.sum') }}
-          restore-keys: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ matrix.version.id }}-
+          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-all-${{ hashFiles('go.sum') }}
+          restore-keys: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-all-
       - name: Verify pinned OINK module
         run: |
           test "$(go list -m -f '{{ .Path }}')" = "github.com/apache/hugegraph-doc"
           test "$(go list -m all | wc -l)" -eq 2
           test -z "$(go list -m -f '{{ with .Replace }}{{ .Path }}{{ end }}' github.com/pgsty/oink)"
           python3 scripts/update_oink.py --check-baseline
-      - name: Build isolated version artifact
+      - name: Compute historical build fingerprints
+        id: cache-plan
+        env:
+          SITE_ORIGIN: ${{ needs.prepare.outputs.site_origin }}
+          HISTORICAL_ORIGIN: ${{ needs.prepare.outputs.historical_origin }}
+        run: |
+          python3 scripts/version_cache.py plan \
+            --resolved-manifest resolved/resolved-versions.json \
+            --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
+            --hugo-version "$HUGO_VERSION" --go-version "$(go version)" \
+            --cache-dir "$RUNNER_TEMP/history-cache" --output "$RUNNER_TEMP/cache-plan.json"
+          echo "key=$(jq -r .cacheKey "$RUNNER_TEMP/cache-plan.json")" >> "$GITHUB_OUTPUT"
+      - name: Restore historical artifact bundle
+        id: history-cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ runner.temp }}/history-cache
+          key: ${{ runner.os }}-${{ steps.cache-plan.outputs.key }}
+          # A previous bundle is only transport: each version must pass its
+          # exact input fingerprint and file digest before it can be reused.
+          restore-keys: ${{ runner.os }}-history-v1-
+      - name: Build and validate selected versions
         env:
           OINK_PYTHON: python3
           SITE_ORIGIN: ${{ needs.prepare.outputs.site_origin }}
           HISTORICAL_ORIGIN: ${{ needs.prepare.outputs.historical_origin }}
         run: |
-          python3 scripts/versioning.py build \
-            --version "${{ matrix.version.id }}" --sha "${{ matrix.version.sha }}" \
+          python3 scripts/version_cache.py plan \
+            --resolved-manifest resolved/resolved-versions.json \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
-            --output "${RUNNER_TEMP}/version-public"
-          python3 scripts/versioning.py validate \
-            --version "${{ matrix.version.id }}" --sha "${{ matrix.version.sha }}" \
+            --hugo-version "$HUGO_VERSION" --go-version "$(go version)" \
+            --cache-dir "$RUNNER_TEMP/history-cache" --output "$RUNNER_TEMP/cache-plan.json"
+          python3 scripts/build_versions.py \
+            --resolved-manifest resolved/resolved-versions.json \
+            --plan "$RUNNER_TEMP/cache-plan.json" --cache-dir "$RUNNER_TEMP/history-cache" \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
-            --artifact "${RUNNER_TEMP}/version-public"
-      - name: Upload isolated version artifact
+            --workers 2 --output "$RUNNER_TEMP/version-artifacts"
+      - name: Upload selected version artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: ${{ needs.prepare.outputs.artifact_prefix }}-${{ matrix.version.id }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/version-public
+          name: ${{ needs.prepare.outputs.artifact_prefix }}-versions-${{ github.run_id }}
+          path: ${{ runner.temp }}/version-artifacts
           include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
@@ -282,7 +296,7 @@ jobs:
           path: resolved
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          pattern: ${{ needs.prepare.outputs.artifact_prefix }}-*-${{ github.run_id }}
+          name: ${{ needs.prepare.outputs.artifact_prefix }}-versions-${{ github.run_id }}
           path: version-artifacts
       - name: Assemble publishable site
         env:
@@ -296,8 +310,7 @@ jobs:
             extra+=(--asf-profile oink --asf-whoami asf-staging-oink)
           fi
           python3 scripts/versioning.py aggregate \
-            --artifacts version-artifacts --workers 2 --artifact-prefix "$PREFIX-" \
-            --artifact-suffix="-${GITHUB_RUN_ID}" \
+            --artifacts version-artifacts --workers 2 \
             --resolved-manifest resolved/resolved-versions.json \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
             --select "$SELECTION" \

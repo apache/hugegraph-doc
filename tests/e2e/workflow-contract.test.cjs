@@ -60,9 +60,8 @@ test("trusted workflow bounds the candidate module graph without pinning its ver
 
 test("dependency artifacts keep stable names across selective reruns", () => {
   assert.match(workflow, /name: resolved-versions-\$\{\{ github\.run_id \}\}/);
-  assert.match(workflow, /name: \$\{\{ needs\.prepare\.outputs\.artifact_prefix \}\}-\$\{\{ matrix\.version\.id \}\}-\$\{\{ github\.run_id \}\}/);
-  assert.match(workflow, /pattern: \$\{\{ needs\.prepare\.outputs\.artifact_prefix \}\}-\*-\$\{\{ github\.run_id \}\}/);
-  assert.match(workflow, /--artifact-suffix="-\$\{GITHUB_RUN_ID\}"/);
+  assert.match(workflow, /name: \$\{\{ needs\.prepare\.outputs\.artifact_prefix \}\}-versions-\$\{\{ github\.run_id \}\}/);
+  assert.match(workflow, /--artifacts version-artifacts --workers 2/);
   assert.match(workflow, /name: hugegraph-site-\$\{\{ needs\.prepare\.outputs\.artifact_prefix \}\}-\$\{\{ github\.run_id \}\}/);
   assert.doesNotMatch(workflow, /name: (?:resolved-versions|hugegraph-site-[^\n]+)-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.equal((workflow.match(/\n\s+overwrite: true/g) ?? []).length, 3);
@@ -104,4 +103,17 @@ test("required gate rejects failed, skipped and cancelled prerequisites", () => 
       assert.notEqual(run({...success, [key]: result}), 0, `${key}=${result}`);
     }
   }
+});
+
+
+test("version work shares a runner with bounded concurrency and full validation", () => {
+  const build = jobBody("build");
+  assert.doesNotMatch(build, /matrix:|strategy:/);
+  assert.match(build, /scripts\/build_versions\.py/);
+  assert.match(build, /--workers 2/);
+  assert.match(build, /name: Restore historical artifact bundle/);
+  assert.match(build, /if: github.event_name != 'workflow_dispatch'/);
+  assert.match(build, /scripts\/version_cache\.py plan/);
+  assert.match(jobBody("aggregate"), /scripts\/versioning\.py aggregate/);
+  assert.match(jobBody("publish"), /keep_files: false/);
 });

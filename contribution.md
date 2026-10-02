@@ -72,8 +72,17 @@ Cancelled runs skip report uploads and the final gate instead of holding the
 queue with `always()`. A queued job with no runner has not started testing;
 repeated reruns do not resolve runner capacity shortages.
 
-Version builds remain parallel. Site assembly and blocking browser tests share
-one runner and the same local artifact. The required `deploy` check still
+Selected versions share one build runner with at most two builds in parallel.
+Historical artifacts are reused only when both the complete build-input fingerprint
+and artifact digest match. Missing or invalid cache entries rebuild automatically;
+manual dispatches start without the artifact cache. Cache hits still run the full
+version validator, and aggregation validates every selected version again.
+
+Assembly validates at most two versions concurrently, then writes the complete
+site and runs the cross-version and security checks. Stage timings are printed as
+`timing <stage>: <seconds>s`; nested security timings are included in their parent
+validation duration and must not be added twice. Site assembly and blocking browser
+tests share one runner and the same local artifact. The required `deploy` check still
 requires all blocking jobs to succeed; visual captures remain advisory and
 publication alone receives write permission. For a test failure, rerun failed
 jobs after inspecting the cause; artifact names remain stable within the run.

@@ -6,7 +6,8 @@ LLMS index: [llms.txt](/llms.txt)
 
 SeaTunnel connects data sources such as databases and Kafka to HugeGraph. The connector has two parts: **Source reads data and Sink writes data**<sup>[1][2]</sup>, with SeaTunnel transform components available between them. To export or migrate data from HugeGraph, see the [SeaTunnel Source export and migration guide](/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/).
 
-> **Version requirement: This guide targets SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release).** All examples use `mappings`
+> **Version requirement: This guide targets SeaTunnel [3.0+](https://seatunnel.apache.org/download/).**
+> All examples use the `mappings` configuration available in SeaTunnel 3.0+.
 
 [![Loader imports data directly with graph mappings; SeaTunnel 3.0+ combines Source, Transform, and Sink, and both support JDBC, Kafka, and graph data](/docs/images/seatunnel/seatunnel-vs-loader-en.png)](/docs/images/seatunnel/seatunnel-vs-loader-en.png)
 
@@ -36,25 +37,44 @@ SeaTunnel covers Loader's graph-import and Tools' export and migration scenarios
 
 > **Existing Spark/Flink daily jobs**
 >
-> Both HugeGraph Source and Sink list SeaTunnel Engine (Zeta), Spark, and Flink as supported engines in SeaTunnel 3.0.0-release. If you express the daily job as a SeaTunnel job and submit it to that engine, records can move directly from Source to Transform to Sink without an intermediate file. If you keep the existing Spark/Flink DAG, SeaTunnel does not automatically take over its in-memory DataFrame or stream. Adapt it into a SeaTunnel job or expose the data through a Source connector
+> Both HugeGraph Source and Sink list SeaTunnel Engine (Zeta), Spark, and Flink as supported engines in SeaTunnel 3.0+. If you express the daily job as a SeaTunnel job and submit it to that engine, records can move directly from Source to Transform to Sink without an intermediate file. If you keep the existing Spark/Flink DAG, SeaTunnel does not automatically take over its in-memory DataFrame or stream. Adapt it into a SeaTunnel job or expose the data through a Source connector
 
-Loader and Tools are focused, direct, and quick to start. Use Loader for a direct graph import; use Tools for backup, restore, export, or daily operations. If a SeaTunnel job already exists, adding HugeGraph to that pipeline is usually simpler. For higher import throughput, Loader's bypass-server path and other import optimizations are a better fit; measured peaks of 1-2 million records/s require a specific backend, data set, and hardware configuration and are not a general performance guarantee. For new SeaTunnel jobs, use [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release) and `mappings`. Recheck the connector configuration when using another version.
+Loader and Tools are focused, direct, and quick to start. Use Loader for a direct graph import; use Tools for backup, restore, export, or daily operations. If a SeaTunnel job already exists, adding HugeGraph to that pipeline is usually simpler. For higher import throughput, Loader's bypass-server path and other import optimizations are a better fit; measured peaks of 1-2 million records/s require a specific backend, data set, and hardware configuration and are not a general performance guarantee. For new SeaTunnel jobs, use [3.0+](https://seatunnel.apache.org/download/) and `mappings`. Recheck the connector configuration when using another version.
 
 ## 2 Prepare the environment
 
 ### 2.1 Get SeaTunnel 3.0+
 
-The SeaTunnel 3.0+ setup guide lists JDK 8 and JDK 11 as supported. This guide uses JDK 11 and sets `JAVA_HOME`. Clone the [SeaTunnel 3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)<sup>[4]</sup> branch and build a distribution by following the upstream [development setup guide](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/developer/setup.md)<sup>[5]</sup>:
+Use JDK 11 and set `JAVA_HOME`; the official [deployment guide](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
+lists Java 8 and 11 as prerequisites. Choose a 3.0+ binary distribution from the
+[official release page](https://seatunnel.apache.org/download/)<sup>[4]</sup> and verify its checksum or signature using the files linked there.
+The commands below use 3.0.0 as an example; set `SEATUNNEL_VERSION` to the release you downloaded.
 
 ```bash
-git clone --branch 3.0.0-release https://github.com/apache/seatunnel.git
-cd seatunnel
-./mvnw clean package -pl seatunnel-dist -am -Dmaven.test.skip=true
+export SEATUNNEL_VERSION=3.0.0
+tar -xzf "apache-seatunnel-${SEATUNNEL_VERSION}-bin.tar.gz"
+cd "apache-seatunnel-${SEATUNNEL_VERSION}"
 ```
 
-Extract the binary package from `seatunnel-dist/target/`. Run the remaining commands from the extracted SeaTunnel installation directory. When updating the feature set, switch to another version as needed. Keep the engine and connector plugins from the same build, and do not mix different plugin versions.
+The binary distribution does not include connector plugins. In `config/plugin_config`, select the connectors needed by the examples:
 
-This guide uses the bundled **Zeta engine in local mode**<sup>[6][7]</sup>. Check that `connectors/` contains HugeGraph and the JDBC or Kafka connector required by each example<sup>[11][12]</sup>. If a custom build does not include them, add the plugins produced by that same build. The JDBC examples also require the MySQL driver JAR in `lib/`, with driver class `com.mysql.cj.jdbc.Driver`.
+```text
+--seatunnel-connectors--
+connector-hugegraph
+connector-jdbc
+connector-kafka
+--end--
+```
+
+Install the matching released plugins using the upstream plugin installation instructions<sup>[5]</sup>:
+
+```bash
+sh bin/install-plugin.sh "${SEATUNNEL_VERSION}"
+```
+
+Run the remaining commands from this installation directory and keep the engine and connector plugins at the same version.
+This guide uses the bundled **Zeta engine in local mode**<sup>[6][7]</sup>. Check that `connectors/` contains HugeGraph, JDBC, and Kafka
+as needed<sup>[11][12]</sup>. The JDBC examples also require the MySQL driver JAR in `lib/`, with driver class `com.mysql.cj.jdbc.Driver`.
 
 ### 2.2 Prepare HugeGraph and data sources
 
@@ -288,7 +308,7 @@ The following table applies to the SeaTunnel 3.0+ version used by this guide:
 | `batch_size` | Number of records per batch; default 500 |
 | `env.sink.flush.interval` | Zeta scheduled flush interval in milliseconds |
 | `check_vertex` | Check edge endpoints; the edge job in this guide sets it to `true` |
-| [`batch_failure_fallback`](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/sink/HugeGraph.md)<sup>[2]</sup> | Defaults to `true`, so a failed batch falls back to record-by-record retries, capped by `max_insert_errors`; the examples explicitly set `false` so a batch failure stops the job |
+| [`batch_failure_fallback`](https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/)<sup>[2]</sup> | Defaults to `true`, so a failed batch falls back to record-by-record retries, capped by `max_insert_errors`; the examples explicitly set `false` so a batch failure stops the job |
 | `max_insert_errors` | Number of failed records that record-by-record fallback may skip; default `500`, `-1` for unlimited, and only applies when `batch_failure_fallback` is enabled |
 
 Use these checks when a job fails:
@@ -308,36 +328,28 @@ Choose a tool based on the work to complete. Use [Tools](/docs/quickstart/toolch
 
 **HugeGraph connectors**
 
-<p><sup>[1]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md">HugeGraph Source</a><br>
-<sup>[2]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/sink/HugeGraph.md">HugeGraph Sink</a></p>
+<p><sup>[1]</sup> <a href="https://seatunnel.apache.org/docs/connectors/source/HugeGraph/">HugeGraph Source</a><br>
+<sup>[2]</sup> <a href="https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/">HugeGraph Sink</a></p>
 
 **Configuration and deployment**
 
 <p><sup>[3]</sup> <a href="https://seatunnel.apache.org/docs/introduction/concepts/config/">HOCON job configuration</a><br>
-<sup>[4]</sup> <a href="https://github.com/apache/seatunnel/tree/3.0.0-release">SeaTunnel 3.0.0-release branch</a><br>
-<sup>[5]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/developer/setup.md">SeaTunnel development setup</a><br>
+<sup>[4]</sup> <a href="https://seatunnel.apache.org/download/">SeaTunnel 3.0+ release download</a><br>
+<sup>[5]</sup> <a href="https://seatunnel.apache.org/docs/getting-started/locally/deployment/#download-the-connector-plugins">Connector plugin installation</a><br>
 <sup>[6]</sup> <a href="https://seatunnel.apache.org/docs/getting-started/locally/deployment/">SeaTunnel local deployment</a></p>
 
 **Execution engines**
 
-<p><sup>[7]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/overview.md">SeaTunnel Engine Overview</a><br>
-<sup>[8]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/spark.md">SeaTunnel Spark Engine</a><br>
-<sup>[9]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/engines/flink.md">SeaTunnel Flink Engine</a><br>
-<sup>[10]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/introduction/concepts/connector-v2-features.md">Connector V2 multi-engine support</a></p>
+<p><sup>[7]</sup> <a href="https://seatunnel.apache.org/docs/engines/overview/">SeaTunnel Engine Overview</a><br>
+<sup>[8]</sup> <a href="https://seatunnel.apache.org/docs/engines/spark/">SeaTunnel Spark Engine</a><br>
+<sup>[9]</sup> <a href="https://seatunnel.apache.org/docs/engines/flink/">SeaTunnel Flink Engine</a><br>
+<sup>[10]</sup> <a href="https://seatunnel.apache.org/docs/introduction/concepts/connector-v2-features/">Connector V2 multi-engine support</a></p>
 
 **Data source connectors**
 
-<p><sup>[11]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Jdbc.md">JDBC Source</a><br>
-<sup>[12]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/Kafka.md">Kafka Source</a><br>
+<p><sup>[11]</sup> <a href="https://seatunnel.apache.org/docs/connectors/source/Jdbc/">JDBC Source</a><br>
+<sup>[12]</sup> <a href="https://seatunnel.apache.org/docs/connectors/source/Kafka/">Kafka Source</a><br>
 <sup>[13]</sup> <a href="https://seatunnel.apache.org/docs/connectors/source/MySQL-CDC/">MySQL CDC Source</a></p>
-
-**Legacy compatibility**
-
-<p><sup>[14]</sup> <a href="https://github.com/apache/seatunnel/blob/2.3.13/docs/en/connectors/sink/HugeGraph.md">SeaTunnel 2.3.13 HugeGraph Sink</a></p>
-
-> **Legacy version note**
->
-> This guide targets SeaTunnel 3.0+. Its Source, `mappings`, and graph migration examples do not apply to 2.3.13. That legacy version provides only the HugeGraph Sink, uses `schema_config`, and requires the graph schema to be created in advance. If you must use 2.3.13, follow the [official Sink documentation](https://github.com/apache/seatunnel/blob/2.3.13/docs/en/connectors/sink/HugeGraph.md)<sup>[14]</sup> instead of copying this guide's configuration
 
 ---
 

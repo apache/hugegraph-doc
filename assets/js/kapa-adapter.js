@@ -134,23 +134,34 @@
       exampleQuestions: pickExampleQuestions(config.exampleQuestions),
     });
     var consentKey = 'hg-ai-consent:v2:' + config.websiteId;
-    var consented = false;
+    var choice = null;
     try {
-      consented = windowObject.localStorage.getItem(consentKey) === 'granted';
+      choice = windowObject.localStorage.getItem(consentKey);
     } catch (_) {
       // Storage may be disabled; consent still works for this page only.
     }
+    var consented = choice === 'granted';
+    var dismissed = choice === 'dismissed';
+    windowObject.addEventListener('storage', function (event) {
+      if (event.key !== consentKey && event.key !== null) return;
+      if ((consented && event.newValue !== 'granted') ||
+          (!consented && (event.newValue === 'granted' ||
+            (event.newValue === 'dismissed' && choice !== 'dismissed')))) {
+        // Synchronize other tabs' choices without loading the vendor on startup.
+        windowObject.location.reload();
+      }
+    });
     var pending = null;
     var consent = documentObject.querySelector('[data-hg-ai-consent]');
     var launcher = documentObject.querySelector('.hg-ask-ai-launcher');
-    if (consent) consent.hidden = consented;
+    if (consent) consent.hidden = consented || dismissed;
     function renderLauncher(hidden) {
       if (!launcher) return;
       launcher.hidden = hidden;
       if (consented) launcher.setAttribute('aria-haspopup', 'dialog');
       else launcher.removeAttribute('aria-haspopup');
     }
-    renderLauncher(!consented);
+    renderLauncher(!consented && !dismissed);
 
     function dismissConsent() {
       if (consent) consent.hidden = true;
@@ -163,6 +174,21 @@
     var activeQueue = null;
     var operation = null;
     var status = documentObject.querySelector('[data-hg-ai-status]');
+    var revoke = documentObject.querySelector('[data-hg-ai-revoke]');
+    if (revoke) {
+      revoke.hidden = !consented;
+      revoke.addEventListener('click', function () {
+        if (!consented) return;
+        try {
+          windowObject.localStorage.removeItem(consentKey);
+        } catch (_) {
+          renderState(state, config.labels.revokeError);
+          return;
+        }
+        // Navigation terminates the vendor's loaded state and pending callbacks.
+        windowObject.location.reload();
+      });
+    }
 
     function renderState(next, message) {
       state = next;
@@ -202,6 +228,7 @@
         discardAttempt(attempt);
         renderState('error', config.labels.error);
         settle(new Error(config.labels.error));
+        restoreFocus();
       }
     }
 
@@ -236,6 +263,7 @@
       discardAttempt(serial);
       renderState('error', config.labels.error);
       settle(new Error(config.labels.error));
+      restoreFocus();
     }
 
     function ready(serial, query, submit) {
@@ -304,6 +332,14 @@
     }
 
     function cancelConsent() {
+      if (!consented) {
+        try {
+          windowObject.localStorage.setItem(consentKey, 'dismissed');
+          choice = 'dismissed';
+        } catch (_) {
+          // Without storage the dismissal applies only to this page.
+        }
+      }
       pending = null;
       renderState('idle', '');
       dismissConsent();
@@ -376,6 +412,7 @@
         } catch (_) {
           // Never bypass initial consent when persistence is unavailable.
         }
+        if (revoke) revoke.hidden = false;
         dismissConsent();
         load(request.query, request.submit);
       });

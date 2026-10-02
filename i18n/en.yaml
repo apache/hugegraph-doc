@@ -20,8 +20,10 @@ download_component_computer: Computer
 download_component_commons: Common
 download_asf_note: Source archives are the official Apache Software Foundation releases; binary packages are convenience builds made from them. All files are served from ASF mirrors, with signatures and checksums hosted on downloads.apache.org. Source archives generated automatically by GitHub are not ASF releases.
 
-ui_ai_consent_description: "Agree to load Kapa and use AI to answer your questions based on the documentation."
+ui_ai_consent_description: "Agree to send your questions to the third-party Kapa service for AI answers based on the documentation."
 ui_ai_consent_continue: "Agree and open Ask AI"
 ui_ai_consent_cancel: "Not now"
 ui_ai_privacy: "Privacy policy"
+ui_ai_revoke: "Withdraw AI consent"
+ui_ai_revoke_error: "AI consent could not be removed and remains active. Clear this site's browser data to withdraw consent."
 ui_ai_community: "Ask the community on GitHub"

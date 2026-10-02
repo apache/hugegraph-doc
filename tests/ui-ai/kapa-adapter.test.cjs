@@ -25,6 +25,7 @@ function harness(storage = new Map()) {
   const consentListeners = new Map();
   const continueButton = { focus() { this.focused = true; }, addEventListener(name, callback) { consentListeners.set(`continue:${name}`, callback); } };
   const cancelButton = { addEventListener(name, callback) { consentListeners.set(`cancel:${name}`, callback); } };
+  const revoke = { hidden: true, addEventListener(name, cb) { consentListeners.set(`revoke:${name}`, cb); } };
   const consent = {
     hidden: false,
     addEventListener(name, callback) { consentListeners.set(`dialog:${name}`, callback); },
@@ -39,6 +40,7 @@ function harness(storage = new Map()) {
     querySelector(selector) {
       if (selector === '[data-hg-ai-status]') return status;
       if (selector === '[data-hg-ai-consent]') return consent;
+      if (selector === '[data-hg-ai-revoke]') return revoke;
       if (selector === '.hg-ask-ai-launcher') return trigger;
       if (selector === 'script[data-hg-kapa-widget]') {
         return scripts.find((script) => !script.removed) || null;
@@ -69,7 +71,10 @@ function harness(storage = new Map()) {
       appendChild(script) { script.appended = true; },
     },
   };
+  const windowListeners = new Map();
   const windowObject = {
+    addEventListener(name, cb) { windowListeners.set(name, cb); },
+    location: { reload() { windowObject.reloaded = true; } },
     localStorage: {
       getItem(key) { return storage.get(key) || null; },
       setItem(key, value) { storage.set(key, value); },
@@ -99,10 +104,14 @@ function harness(storage = new Map()) {
     themeColor: '#123456',
     exampleQuestions: ['How do I start HugeGraph?', 'How do I import data?'],
     communityURL: 'https://github.com/apache/hugegraph/discussions',
-    labels: { error: 'unavailable', community: 'Ask the community' },
+    labels: { error: 'unavailable', revokeError: 'Unable to revoke. AI consent remains enabled.', community: 'Ask the community' },
   };
   return {
     calls,
+    status,
+    revoke,
+    revokeConsent() { consentListeners.get('revoke:click')(); },
+    storageEvent(event) { windowListeners.get('storage')(event); },
     consent,
     continueButton,
     storage,
@@ -586,7 +595,7 @@ test('inline consent opens AI in one click and restores the launcher on widget c
   assert.equal(h.scripts.length, 1);
 });
 
-test('initial inline dismissal saves no permission and pending activation focuses agreement', () => {
+test('initial inline dismissal remembers no-grant choice and pending activation focuses agreement', () => {
   const h = harness();
   const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
   h.cancelConsent();
@@ -594,7 +603,7 @@ test('initial inline dismissal saves no permission and pending activation focuse
   assert.equal(h.trigger.focused, true);
   assert.equal(h.trigger.attrs['aria-haspopup'], undefined);
   assert.equal(h.consent.hidden, true);
-  assert.equal(h.storage.size, 0);
+  assert.equal(h.storage.get('hg-ai-consent:v2:website'), 'dismissed');
   assert.equal(h.scripts.length, 0);
   controller.activate('  import data  ', true, h.trigger);
   assert.equal(h.consent.hidden, false);
@@ -604,4 +613,129 @@ test('initial inline dismissal saves no permission and pending activation focuse
   h.scripts[0].fire('load');
   h.fireRender();
   assert.deepEqual(h.calls.at(-1), ['open', { mode: 'ai', query: 'import data', submit: true }]);
+});
+
+
+test('remembered dismissal stays local and explicit reopening still requires consent', () => {
+  for (const dismiss of ['cancelConsent', 'escapeConsent']) {
+    const first = harness();
+    adapter.createController(first.windowObject, first.documentObject, first.config);
+    first[dismiss]();
+    const next = harness(first.storage);
+    next.config.locale = 'zh';
+    const controller = adapter.createController(next.windowObject, next.documentObject, next.config);
+    assert.equal(next.consent.hidden, true);
+    assert.equal(next.trigger.hidden, false);
+    assert.equal(next.trigger.attrs['aria-haspopup'], undefined);
+    assert.equal(next.revoke.hidden, true);
+    assert.equal(next.scripts.length, 0);
+    controller.activate('private query', true, next.trigger);
+    assert.equal(controller.getState(), 'consent');
+    assert.equal(next.consent.hidden, false);
+    assert.equal(next.trigger.hidden, true);
+    assert.equal(next.scripts.length, 0);
+  }
+});
+
+test('revocation clears only the grant and reloads whether vendor is loaded or not', () => {
+  for (const loaded of [false, true]) {
+    const storage = new Map([['hg-ai-consent:v2:website', 'granted'], ['unrelated', 'preserve']]);
+    const h = harness(storage);
+    const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
+    assert.equal(h.revoke.hidden, false);
+    if (loaded) {
+      controller.activate('', false, h.trigger);
+      h.scripts[0].fire('load');
+      h.fireRender();
+    }
+    h.revokeConsent();
+    assert.equal(h.windowObject.reloaded, true);
+    assert.deepEqual(Array.from(storage), [['unrelated', 'preserve']]);
+    const fresh = harness(storage);
+    adapter.createController(fresh.windowObject, fresh.documentObject, fresh.config);
+    assert.equal(fresh.consent.hidden, false);
+    assert.equal(fresh.trigger.hidden, true);
+    assert.equal(fresh.revoke.hidden, true);
+    assert.equal(fresh.scripts.length, 0);
+  }
+});
+
+test('failed grant removal reports an error and keeps the active permission', () => {
+  const h = harness(new Map([['hg-ai-consent:v2:website', 'granted']]));
+  h.windowObject.localStorage.removeItem = () => { throw new Error('blocked'); };
+  const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
+  h.revokeConsent();
+  assert.equal(h.windowObject.reloaded, undefined);
+  assert.equal(h.storage.get('hg-ai-consent:v2:website'), 'granted');
+  assert.equal(h.revoke.hidden, false);
+  assert.equal(h.status.textContent, 'Unable to revoke. AI consent remains enabled.');
+  controller.activate('', false, h.trigger);
+  assert.equal(controller.getState(), 'loading');
+});
+
+test('blocked storage keeps dismissal page-only and exposes fresh disclosure next visit', () => {
+  const h = harness();
+  h.windowObject.localStorage.setItem = () => { throw new Error('blocked'); };
+  adapter.createController(h.windowObject, h.documentObject, h.config);
+  h.cancelConsent();
+  assert.equal(h.consent.hidden, true);
+  assert.equal(h.storage.size, 0);
+  const fresh = harness(h.storage);
+  adapter.createController(fresh.windowObject, fresh.documentObject, fresh.config);
+  assert.equal(fresh.consent.hidden, false);
+  assert.equal(fresh.scripts.length, 0);
+});
+
+
+test('cross-tab removal or storage clear reloads consented tabs and ignores unrelated updates', () => {
+  for (const key of ['hg-ai-consent:v2:website', null]) {
+    const h = harness(new Map([['hg-ai-consent:v2:website', 'granted']]));
+    adapter.createController(h.windowObject, h.documentObject, h.config);
+    h.storageEvent({ key: 'unrelated', newValue: null });
+    assert.equal(h.windowObject.reloaded, undefined);
+    h.storageEvent({ key: 'hg-ai-consent:v2:website', newValue: 'granted' });
+    assert.equal(h.windowObject.reloaded, undefined);
+    h.storageEvent({ key, newValue: null });
+    assert.equal(h.windowObject.reloaded, true);
+  }
+  const h = harness();
+  adapter.createController(h.windowObject, h.documentObject, h.config);
+  h.storageEvent({ key: 'hg-ai-consent:v2:website', newValue: null });
+  assert.equal(h.windowObject.reloaded, undefined);
+});
+
+
+test('incoming permission synchronizes stale preconsent tabs without loading the vendor', () => {
+  for (const value of ['granted', 'dismissed']) {
+    const h = harness();
+    adapter.createController(h.windowObject, h.documentObject, h.config);
+    h.storageEvent({ key: 'hg-ai-consent:v2:website', newValue: value });
+    assert.equal(h.windowObject.reloaded, true);
+    assert.equal(h.scripts.length, 0);
+  }
+  const h = harness(new Map([['hg-ai-consent:v2:website', 'dismissed']]));
+  adapter.createController(h.windowObject, h.documentObject, h.config);
+  h.storageEvent({ key: 'hg-ai-consent:v2:website', newValue: 'dismissed' });
+  assert.equal(h.windowObject.reloaded, undefined);
+});
+
+test('load and vendor open failures return keyboard focus from hidden agreement to launcher', () => {
+  for (const failure of ['bundle', 'open']) {
+    const h = harness();
+    adapter.createController(h.windowObject, h.documentObject, h.config);
+    h.continueConsent();
+    assert.equal(h.consent.hidden, true);
+    if (failure === 'bundle') h.scripts[0].fire('error');
+    else {
+      const implementation = h.windowObject.Kapa;
+      h.windowObject.Kapa = (method, value) => {
+        if (method === 'open') throw new Error('vendor');
+        return implementation(method, value);
+      };
+      h.scripts[0].fire('load');
+      h.fireRender();
+    }
+    assert.equal(h.trigger.focused, true);
+    assert.equal(h.trigger.disabled, false);
+  }
 });

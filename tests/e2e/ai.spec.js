@@ -123,6 +123,7 @@ test("AI 500 remains non-blocking and retry issues one fresh request", async ({ 
   await expect.poll(() => attempts).toBe(1);
   await expect(launcher).toHaveAttribute("data-hg-ai-state", "error");
   await expect(launcher).toHaveAttribute("title", /unavailable/i);
+  await expect(launcher).toBeFocused();
   await launcher.click();
   await expect.poll(() => attempts).toBe(2);
   await expect(launcher).toHaveAttribute("data-hg-ai-state", "ready");
@@ -246,7 +247,7 @@ test("persistent consent survives language navigation, reload and a fresh tab wi
     await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
   });
   await page.goto(AI_ORIGIN + "/docs/");
-  await expect(page.locator("[data-hg-ai-revoke]")).toHaveCount(0);
+  await expect(page.locator("[data-hg-ai-revoke]")).toBeHidden();
   await expect(page.locator(".hg-ask-ai-launcher")).toBeHidden();
   await page.locator("[data-hg-ai-continue]").click();
   await expect.poll(() => requests.length).toBe(1);
@@ -291,6 +292,10 @@ test("blocked local storage requires fresh consent after navigation", async ({ p
   });
   await page.goto(AI_ORIGIN + "/docs/");
   await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
+  await page.locator("[data-hg-ai-cancel]").click();
+  await expect(page.locator("[data-hg-ai-consent]")).toBeHidden();
+  await page.reload();
+  await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
   expect(requests).toHaveLength(0);
   await page.locator("[data-hg-ai-continue]").click();
   await expect.poll(() => requests.length).toBe(1);
@@ -326,4 +331,162 @@ test("inline disclosure is nonmodal and first agreement opens AI with one click"
   await expect.poll(() => page.evaluate(() => window.__kapaCalls || [])).toContainEqual([
     "open", { mode: "ai", query: "", submit: false }
   ]);
+});
+
+
+for (const dismiss of ["button", "escape"]) {
+  test(`dismissal via ${dismiss} survives navigation and a fresh tab without granting AI`, async ({ page }) => {
+    const requests = [];
+    await page.context().route("https://widget.kapa.ai/kapa-widget.bundle.js*", async route => {
+      requests.push(route.request().url());
+      await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
+    });
+    await page.goto(AI_ORIGIN + "/docs/");
+    if (dismiss === "button") await page.locator("[data-hg-ai-cancel]").click();
+    else await page.locator("[data-hg-ai-continue]").press("Escape");
+    await page.goto(AI_ORIGIN + "/cn/docs/");
+    await expect(page.locator("[data-hg-ai-consent]")).toBeHidden();
+    await expect(page.locator(".hg-ask-ai-launcher")).toBeVisible();
+    await expect(page.locator("[data-hg-ai-revoke]")).toBeHidden();
+    await page.reload();
+    await expect(page.locator("[data-hg-ai-consent]")).toBeHidden();
+    const fresh = await page.context().newPage();
+    await fresh.goto(AI_ORIGIN + "/docs/");
+    await expect(fresh.locator("[data-hg-ai-consent]")).toBeHidden();
+    await fresh.locator(".hg-ask-ai-launcher").click();
+    await expect(fresh.locator("[data-hg-ai-consent]")).toBeVisible();
+    await expect(fresh.locator("[data-hg-ai-continue]")).toBeFocused();
+    expect(requests).toHaveLength(0);
+    await fresh.close();
+    await page.locator("[data-td-shell-search-open]").first().click();
+    await page.locator(".td-shell-search__input").fill("zzzxqnonexistentzzzxq");
+    await page.getByRole("option").filter({ hasText: /Ask AI|询问 AI|问 AI/ }).click();
+    await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
+    expect(requests).toHaveLength(0);
+  });
+}
+
+for (const loaded of [false, true]) {
+  test(`revocation resets grant and vendor state (${loaded ? "after" : "before"} loading)`, async ({ page }) => {
+    const requests = [];
+    await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", async route => {
+      requests.push(route.request().url());
+      await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
+    });
+    await page.goto(AI_ORIGIN + "/docs/");
+    await page.evaluate(() => {
+      const config = JSON.parse(document.querySelector("#hg-ai-config").textContent);
+      localStorage.setItem('hg-ai-consent:v2:' + config.websiteId, 'granted');
+      localStorage.setItem('unrelated', 'preserve');
+    });
+    await page.reload();
+    await expect(page.locator("[data-hg-ai-revoke]")).toBeVisible();
+    expect(requests).toHaveLength(0);
+    if (loaded) {
+      await page.locator(".hg-ask-ai-launcher").click();
+      await expect.poll(() => requests.length).toBe(1);
+      await expect(page.locator(".hg-ask-ai-launcher")).toHaveAttribute("data-hg-ai-state", "ready");
+    }
+    await page.locator("[data-hg-ai-revoke]").click();
+    await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
+    await expect(page.locator(".hg-ask-ai-launcher")).toBeHidden();
+    await expect(page.locator("[data-hg-ai-revoke]")).toBeHidden();
+    await expect(page.locator("script[data-hg-kapa-widget]")).toHaveCount(0);
+    expect(await page.evaluate(() => window.__kapaCalls)).toBeUndefined();
+    expect(await page.evaluate(() => localStorage.getItem('unrelated'))).toBe('preserve');
+    expect(requests).toHaveLength(loaded ? 1 : 0);
+  });
+}
+
+test("blocked adapter leaves consent and launcher hidden and native search usable", async ({ page }) => {
+  const requests = [];
+  await page.route("**/js/kapa-adapter*.js", route => route.abort());
+  await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", route => {
+    requests.push(route.request().url());
+    return route.abort();
+  });
+  await page.goto(AI_ORIGIN + "/docs/");
+  await expect(page.locator("[data-hg-ai-consent]")).toBeHidden();
+  await expect(page.locator(".hg-ask-ai-launcher")).toBeHidden();
+  await expect(page.locator("[data-hg-ai-revoke]")).toBeHidden();
+  await page.locator("[data-td-shell-search-open]").first().click();
+  await expect(page.locator(".td-shell-search__input")).toBeFocused();
+  expect(requests).toHaveLength(0);
+});
+
+
+test("failed persistent grant removal announces error without pretending to revoke", async ({ page }) => {
+  await page.goto(AI_ORIGIN + "/docs/");
+  await page.evaluate(() => {
+    const config = JSON.parse(document.querySelector("#hg-ai-config").textContent);
+    localStorage.setItem('hg-ai-consent:v2:' + config.websiteId, 'granted');
+  });
+  await page.reload();
+  await page.evaluate(() => {
+    Storage.prototype.removeItem = function () { throw new DOMException('blocked', 'SecurityError'); };
+  });
+  await page.locator("[data-hg-ai-revoke]").click();
+  const revokeError = await page.locator("#hg-ai-config").evaluate(node =>
+    JSON.parse(node.textContent).labels.revokeError);
+  await expect(page.locator("[data-hg-ai-status]")).toHaveText(revokeError);
+  await expect(page.locator("[data-hg-ai-revoke]")).toBeVisible();
+  await expect(page.locator("[data-hg-ai-consent]")).toBeHidden();
+  expect(await page.evaluate(() => {
+    const config = JSON.parse(document.querySelector("#hg-ai-config").textContent);
+    return localStorage.getItem('hg-ai-consent:v2:' + config.websiteId);
+  })).toBe('granted');
+});
+
+
+for (const loaded of [false, true]) {
+  test(`revocation synchronizes sibling tabs (${loaded ? "loaded vendor" : "before loading"})`, async ({ page }) => {
+    const requests = [];
+    await page.context().route("https://widget.kapa.ai/kapa-widget.bundle.js*", async route => {
+      requests.push(route.request().url());
+      await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
+    });
+    await page.goto(AI_ORIGIN + "/docs/");
+    await page.evaluate(() => {
+      const config = JSON.parse(document.querySelector("#hg-ai-config").textContent);
+      localStorage.setItem('hg-ai-consent:v2:' + config.websiteId, 'granted');
+    });
+    await page.reload();
+    const sibling = await page.context().newPage();
+    await sibling.goto(AI_ORIGIN + "/cn/docs/");
+    await expect(sibling.locator("[data-hg-ai-consent]")).toBeHidden();
+    if (loaded) {
+      await page.locator(".hg-ask-ai-launcher").click();
+      await sibling.locator(".hg-ask-ai-launcher").click();
+      await expect.poll(() => requests.length).toBe(2);
+      await expect(sibling.locator(".hg-ask-ai-launcher")).toHaveAttribute("data-hg-ai-state", "ready");
+    }
+    await page.locator("[data-hg-ai-revoke]").click();
+    await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
+    await expect(sibling.locator("[data-hg-ai-consent]")).toBeVisible();
+    await expect(sibling.locator("script[data-hg-kapa-widget]")).toHaveCount(0);
+    expect(await sibling.evaluate(() => window.__kapaCalls)).toBeUndefined();
+    expect(requests).toHaveLength(loaded ? 2 : 0);
+    await sibling.close();
+  });
+}
+
+
+test("grant synchronizes stale disclosure tabs without autoloading AI", async ({ page }) => {
+  const requests = [];
+  await page.context().route("https://widget.kapa.ai/kapa-widget.bundle.js*", async route => {
+    requests.push(route.request().url());
+    await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
+  });
+  await page.goto(AI_ORIGIN + "/docs/");
+  const sibling = await page.context().newPage();
+  await sibling.goto(AI_ORIGIN + "/cn/docs/");
+  await expect(sibling.locator("[data-hg-ai-consent]")).toBeVisible();
+  await page.locator("[data-hg-ai-continue]").click();
+  await expect.poll(() => requests.length).toBe(1);
+  await expect(sibling.locator("[data-hg-ai-consent]")).toBeHidden();
+  await expect(sibling.locator(".hg-ask-ai-launcher")).toBeVisible();
+  await expect(sibling.locator("[data-hg-ai-revoke]")).toBeVisible();
+  await expect(sibling.locator("script[data-hg-kapa-widget]")).toHaveCount(0);
+  expect(requests).toHaveLength(1);
+  await sibling.close();
 });

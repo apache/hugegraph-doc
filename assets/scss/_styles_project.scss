@@ -866,6 +866,11 @@
 
 
 // The first-use notice stays beside the AI entry without blocking the page.
+.hg-ai-revoke {
+  font-size: inherit;
+  &[hidden] { display: none; }
+}
+
 .hg-ai-consent {
   position: fixed;
   z-index: 1040;

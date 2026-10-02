@@ -21,8 +21,10 @@ download_component_computer: Computer
 download_component_commons: Common
 download_asf_note: 源码归档是 Apache 软件基金会的正式发布物；二进制软件包是基于源码构建的便利用品。所有文件均通过 ASF 镜像分发，签名与校验和托管在 downloads.apache.org。GitHub 自动生成的源码归档不是 ASF 正式发布版本。
 
-ui_ai_consent_description: "同意后将加载 Kapa 服务使用 AI 结合文档回答你的问题"
+ui_ai_consent_description: "同意后将把你的问题发送给第三方 Kapa 服务，使用 AI 结合文档回答。"
 ui_ai_consent_continue: "同意并打开 Ask AI"
 ui_ai_consent_cancel: "暂不使用"
 ui_ai_privacy: "隐私政策"
+ui_ai_revoke: "撤回 AI 授权"
+ui_ai_revoke_error: "未能撤回 AI 授权，授权仍有效。请清除此网站的浏览器数据以撤回授权。"
 ui_ai_community: "前往 GitHub 向社区提问"

@@ -84,7 +84,7 @@ git diff -- go.mod go.sum layouts assets scripts .github/workflows/hugo.yml
 | Version/language navigation and historical shell | `layouts/`, `scripts/versioning.py` | All-version aggregate, versioning and platform browser tests |
 | Browser language default and manual preference | `assets/js/language-preference.js`, `hooks/head-end.html` | Homepage, explicit links, storage, palette and keyboard browser tests |
 | Sidebar expansion memory | `assets/js/hugegraph-shell.js` | Public OinkSidebar API, storage/focus/keyboard browser tests |
-| Authorized Ask AI, remembered consent and community entry | `assets/js/kapa-adapter.js`, `layouts/_partials/hooks/body-end.html` | Public search-tail API, adapter tests and AI browser contracts |
+| Authorized Ask AI, remembered consent/dismissal, withdrawal and community entry | `assets/js/kapa-adapter.js`, `layouts/_partials/hooks/body-end.html`, `layouts/_partials/footer.html` | Public search-tail API, adapter tests and AI browser contracts |
 | Brand and layout | `assets/scss/`, `data/`, `i18n/` | Bilingual desktop/mobile, dark/light and print captures |
 
 `scripts/oink-overrides.json` records upstream hashes, not copies of upstream

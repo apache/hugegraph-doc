@@ -141,6 +141,7 @@
       // Storage may be disabled; consent still works for this page only.
     }
     var consented = choice === 'granted';
+    var grantPersisted = consented;
     var dismissed = choice === 'dismissed';
     windowObject.addEventListener('storage', function (event) {
       if (event.key !== consentKey && event.key !== null) return;
@@ -179,11 +180,13 @@
       revoke.hidden = !consented;
       revoke.addEventListener('click', function () {
         if (!consented) return;
-        try {
-          windowObject.localStorage.removeItem(consentKey);
-        } catch (_) {
-          renderState(state, config.labels.revokeError);
-          return;
+        if (grantPersisted) {
+          try {
+            windowObject.localStorage.removeItem(consentKey);
+          } catch (_) {
+            renderState(state, config.labels.revokeError);
+            return;
+          }
         }
         // Navigation terminates the vendor's loaded state and pending callbacks.
         windowObject.location.reload();
@@ -409,6 +412,7 @@
         consented = true;
         try {
           windowObject.localStorage.setItem(consentKey, 'granted');
+          grantPersisted = true;
         } catch (_) {
           // Never bypass initial consent when persistence is unavailable.
         }

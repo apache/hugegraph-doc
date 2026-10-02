@@ -490,3 +490,27 @@ test("grant synchronizes stale disclosure tabs without autoloading AI", async ({
   expect(requests).toHaveLength(1);
   await sibling.close();
 });
+
+
+test("blocked storage page-only consent can be revoked after loading AI", async ({ page }) => {
+  const requests = [];
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", {
+      get() { throw new DOMException("Storage disabled", "SecurityError"); },
+    });
+  });
+  await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", async route => {
+    requests.push(route.request().url());
+    await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
+  });
+  await page.goto(AI_ORIGIN + "/docs/");
+  await page.locator("[data-hg-ai-continue]").click();
+  await expect.poll(() => requests.length).toBe(1);
+  await expect(page.locator(".hg-ask-ai-launcher")).toHaveAttribute("data-hg-ai-state", "ready");
+  await page.locator("[data-hg-ai-revoke]").click();
+  await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
+  await expect(page.locator("[data-hg-ai-revoke]")).toBeHidden();
+  await expect(page.locator("script[data-hg-kapa-widget]")).toHaveCount(0);
+  expect(await page.evaluate(() => window.__kapaCalls)).toBeUndefined();
+  expect(requests).toHaveLength(1);
+});

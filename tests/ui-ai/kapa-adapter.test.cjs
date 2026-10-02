@@ -739,3 +739,24 @@ test('load and vendor open failures return keyboard focus from hidden agreement 
     assert.equal(h.trigger.disabled, false);
   }
 });
+
+
+test('page-only permission can be revoked when storage is wholly blocked', () => {
+  const h = harness();
+  Object.defineProperty(h.windowObject, 'localStorage', {
+    get() { throw new Error('blocked'); },
+  });
+  adapter.createController(h.windowObject, h.documentObject, h.config);
+  h.continueConsent();
+  h.scripts[0].fire('load');
+  h.fireRender();
+  assert.equal(h.revoke.hidden, false);
+  h.revokeConsent();
+  assert.equal(h.windowObject.reloaded, true);
+  assert.equal(h.status.textContent, '');
+  assert.equal(h.storage.size, 0);
+  const fresh = harness(h.storage);
+  adapter.createController(fresh.windowObject, fresh.documentObject, fresh.config);
+  assert.equal(fresh.consent.hidden, false);
+  assert.equal(fresh.scripts.length, 0);
+});

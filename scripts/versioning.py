@@ -19,6 +19,8 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor
+from contextlib import contextmanager
 import hashlib
 import html
 import html.parser
@@ -30,6 +32,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.parse
 import xml.etree.ElementTree as ET
 from typing import NoReturn
@@ -2582,6 +2585,11 @@ def canonical_docs_target(text: str, entry: dict) -> str | None:
     """Resolve the current canonical page to an unscoped route-map target."""
     document = DocumentParser()
     document.feed(text)
+    return _canonical_docs_target(document, entry)
+
+
+def _canonical_docs_target(document: DocumentParser, entry: dict) -> str | None:
+    """Read canonical routing from an already parsed page."""
     if len(document.canonical) != 1:
         return None
     path = urllib.parse.urlsplit(document.canonical[0]).path
@@ -2650,6 +2658,23 @@ def version_switch_options(
 ) -> list[dict]:
     """Return page-aware version choices with explicit missing-page fallbacks."""
     validate_version_routes(route_map, manifest)
+    return _version_switch_options(
+        manifest, route_map, current_version, current_target, origin,
+        historical_origin, language=language,
+    )
+
+
+def _version_switch_options(
+    manifest: dict,
+    route_map: dict,
+    current_version: str,
+    current_target: str | None,
+    origin: str,
+    historical_origin: str | None = None,
+    *,
+    language: str | None = None,
+) -> list[dict]:
+    """Use a route map already validated by load_version_routes or the public API."""
     logical_id = None
     if current_target is not None:
         target_language, _ = docs_target_parts(current_target)
@@ -3419,7 +3444,22 @@ def validate_social_image_metadata(
         fail(f"social image target is missing in {relative}: {value}")
 
 
+@contextmanager
+def timed_stage(label: str):
+    """Emit elapsed wall time even when a validation fails."""
+    started = time.monotonic()
+    try:
+        yield
+    finally:
+        print(f"timing {label}: {time.monotonic() - started:.3f}s", flush=True)
+
+
 def validate_artifact(args: argparse.Namespace) -> None:
+    with timed_stage(f"version-validation[{args.version}]"):
+        _validate_artifact(args)
+
+
+def _validate_artifact(args: argparse.Namespace) -> None:
     manifest = load_manifest(args.manifest)
     route_map = load_version_routes(manifest=manifest)
     entry = next(
@@ -3516,6 +3556,15 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 )
         contract_routes += 1
 
+    # The artifact is read-only throughout validation; repeated navigation URLs
+    # can share filesystem lookups without sharing source-dependent URL checks.
+    target_cache: dict[str, bool] = {}
+
+    def local_target_exists(relative: str) -> bool:
+        if relative not in target_cache:
+            target_cache[relative] = target_exists(root, relative)
+        return target_cache[relative]
+
     def validate_url(value: str, source: pathlib.Path) -> None:
         nonlocal checked_urls
         if not value or value.startswith(("#", "?")):
@@ -3591,7 +3640,7 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 f"URL escapes version {entry['id']} in {source.relative_to(root)}: {value}"
             )
         relative = path[len(prefix) :] if prefix else path
-        if not target_exists(root, relative):
+        if not local_target_exists(relative):
             fail(f"missing local target from {source.relative_to(root)}: {value}")
         checked_urls += 1
 
@@ -3778,8 +3827,8 @@ def validate_artifact(args: argparse.Namespace) -> None:
                 None,
             )
             language = "cn" if relative.startswith("cn/") else "en"
-            current_target = canonical_docs_target(text, entry)
-            expected_options = version_switch_options(
+            current_target = _canonical_docs_target(document, entry)
+            expected_options = _version_switch_options(
                 manifest,
                 route_map,
                 entry["id"],
@@ -3895,7 +3944,7 @@ def validate_artifact(args: argparse.Namespace) -> None:
             expected_hreflang = {
                 language: url
                 for language, url in equivalent_urls.items()
-                if target_exists(root, equivalent_paths[language])
+                if local_target_exists(equivalent_paths[language])
             }
             if actual_hreflang != expected_hreflang:
                 fail(
@@ -4290,17 +4339,18 @@ def write_error_documents(output: pathlib.Path, seen: set[str]) -> int:
 
 def validate_output_security(output: pathlib.Path, site_origin: str) -> None:
     """Re-scan a complete output tree before it can be published."""
-    subprocess.run(
-        [
-            sys.executable,
-            str(ROOT / "dist/validate-site-output.py"),
-            str(output),
-            site_origin,
-            "--security-only",
-        ],
-        cwd=ROOT,
-        check=True,
-    )
+    with timed_stage(f"security[{output.name}]"):
+        subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "dist/validate-site-output.py"),
+                str(output),
+                site_origin,
+                "--security-only",
+            ],
+            cwd=ROOT,
+            check=True,
+        )
 
 
 def validate_aggregate_version_routes(
@@ -4357,10 +4407,11 @@ def validate_aggregate_version_routes(
 def aggregate(args: argparse.Namespace) -> None:
     manifest = load_resolved_manifest(args.resolved_manifest)
     selected = selected_version_ids(getattr(args, "select", None), manifest)
-    output = prepare_output_directory(args.output, "aggregate output")
-    output.mkdir(parents=True)
-    seen: set[str] = set()
-    resolved = []
+    workers = getattr(args, "workers", 1)
+    if workers not in {1, 2}:
+        fail("aggregate workers must be 1 or 2")
+    artifacts = []
+    validations = []
     for entry in manifest["versions"]:
         if entry["id"] not in selected:
             continue
@@ -4377,7 +4428,7 @@ def aggregate(args: argparse.Namespace) -> None:
             fail(f"missing version metadata: {metadata_path}")
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         require_metadata_matches(entry, metadata, metadata_path)
-        validate_artifact(
+        validations.append(
             argparse.Namespace(
                 manifest=args.resolved_manifest,
                 version=entry["id"],
@@ -4387,10 +4438,25 @@ def aggregate(args: argparse.Namespace) -> None:
                 artifact=source,
             )
         )
-        destination = output / entry["publishPath"]
-        destination.mkdir(parents=True, exist_ok=True)
-        copy_without_collision(source, destination, seen)
-        resolved.append(metadata)
+        artifacts.append((entry, source, metadata))
+    with timed_stage("aggregate-validation"):
+        if workers == 1:
+            for validation in validations:
+                validate_artifact(validation)
+        else:
+            with ProcessPoolExecutor(max_workers=workers) as executor:
+                # Consume every result: worker exceptions must prevent publication.
+                list(executor.map(validate_artifact, validations))
+    output = prepare_output_directory(args.output, "aggregate output")
+    output.mkdir(parents=True)
+    seen: set[str] = set()
+    resolved = []
+    with timed_stage("aggregate-copy"):
+        for entry, source, metadata in artifacts:
+            destination = output / entry["publishPath"]
+            destination.mkdir(parents=True, exist_ok=True)
+            copy_without_collision(source, destination, seen)
+            resolved.append(metadata)
     error_documents = write_error_documents(output, seen)
     write_aggregate_sitemap(output, args.site_origin, manifest)
     expected_sitemaps = sitemap_locations(output / "sitemap.xml")
@@ -4430,13 +4496,10 @@ def aggregate(args: argparse.Namespace) -> None:
         json.dumps(route_map, ensure_ascii=False, sort_keys=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    validate_aggregate_version_routes(
-        output,
-        route_map,
-        selected,
-        manifest,
-    )
-    validate_output_security(output, args.site_origin)
+    with timed_stage("aggregate-routes"):
+        validate_aggregate_version_routes(output, route_map, selected, manifest)
+    with timed_stage("aggregate-security"):
+        validate_output_security(output, args.site_origin)
     print(
         f"aggregated {len(resolved)} versions and {len(seen)} files "
         f"with {error_documents} error documents -> {output}"
@@ -4505,6 +4568,7 @@ def parser() -> argparse.ArgumentParser:
     aggregate_parser.add_argument("--site-origin", required=True)
     aggregate_parser.add_argument("--historical-origin")
     aggregate_parser.add_argument("--select")
+    aggregate_parser.add_argument("--workers", type=int, choices=(1, 2), default=1)
     aggregate_parser.add_argument("--output", type=pathlib.Path, required=True)
     aggregate_parser.add_argument("--asf-profile")
     aggregate_parser.add_argument("--asf-whoami")

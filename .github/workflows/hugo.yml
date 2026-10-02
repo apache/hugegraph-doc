@@ -296,7 +296,7 @@ jobs:
             extra+=(--asf-profile oink --asf-whoami asf-staging-oink)
           fi
           python3 scripts/versioning.py aggregate \
-            --artifacts version-artifacts --artifact-prefix "$PREFIX-" \
+            --artifacts version-artifacts --workers 2 --artifact-prefix "$PREFIX-" \
             --artifact-suffix="-${GITHUB_RUN_ID}" \
             --resolved-manifest resolved/resolved-versions.json \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \

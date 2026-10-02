@@ -101,7 +101,7 @@ function harness(storage = new Map()) {
     locale: 'en',
     themeColor: '#123456',
     exampleQuestions: ['How do I start HugeGraph?', 'How do I import data?'],
-    communityURL: 'https://github.com/apache/hugegraph/discussions',
+    communityURL: 'https://github.com/apache/hugegraph/issues',
     labels: { error: 'unavailable', community: 'Ask the community' },
   };
   return {
@@ -145,13 +145,13 @@ test('uses one fixed bundle and explicit privacy-safe widget settings', () => {
     themeColor: '#123456',
     exampleQuestions: ['如何启动 HugeGraph？', '如何导入数据？'],
     labels: { community: '向社区求助' },
-    communityURL: 'https://github.com/apache/hugegraph/discussions',
+    communityURL: 'https://github.com/apache/hugegraph/issues',
   });
   assert.equal(attrs['data-example-questions'], '如何启动 HugeGraph？,如何导入数据？');
   assert.equal(attrs['data-example-questions-col-span'], '12');
   assert.equal(attrs['data-answer-cta-button-enabled'], 'true');
   assert.equal(attrs['data-answer-cta-button-text'], '向社区求助');
-  assert.equal(attrs['data-answer-cta-button-link'], 'https://github.com/apache/hugegraph/discussions');
+  assert.equal(attrs['data-answer-cta-button-link'], 'https://github.com/apache/hugegraph/issues');
   assert.equal(attrs['data-chat-disclaimer'], undefined);
   assert.equal(Object.keys(attrs).some(name => /handoff|email/.test(name)), false);
   assert.equal(attrs['data-render-on-load'], 'false');

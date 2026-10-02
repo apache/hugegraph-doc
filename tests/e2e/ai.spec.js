@@ -65,7 +65,7 @@ for (const [locale, route, source, language] of [
     await expect(script).not.toHaveAttribute("data-chat-disclaimer");
     await expect(script).toHaveAttribute("data-answer-cta-button-enabled", "true");
     await expect(script).toHaveAttribute("data-answer-cta-button-text", config.labels.community);
-    await expect(script).toHaveAttribute("data-answer-cta-button-link", "https://github.com/apache/hugegraph/discussions");
+    await expect(script).toHaveAttribute("data-answer-cta-button-link", "https://github.com/apache/hugegraph/issues");
     expect(await script.evaluate(node => Array.from(node.attributes).some(attr =>
       /handoff|email/.test(attr.name)))).toBe(false);
     await expect(script).toHaveAttribute("data-user-analytics-cookie-enabled", "false");

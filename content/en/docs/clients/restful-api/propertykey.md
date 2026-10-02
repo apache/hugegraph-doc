@@ -10,7 +10,7 @@ description: "PropertyKey REST API: Define data types and cardinality constraint
 Params Description:
 
 - name: The name of the property type, required.
-- data_type: The data type of the property type, including: bool, byte, int, long, float, double, text, blob, date, uuid. The default data type is `text` (Represent a `string` type)
+- data_type: The data type of the property type, including: bool, byte, int, long, float, double, decimal, text, blob, date, uuid. The default data type is `text` (Represent a `string` type). `decimal` holds an exact decimal number (Java `BigDecimal`): at most 128 significant digits and a scale of at most 128 in either direction; in a request it may be sent as a JSON number or as a string and is read exactly either way; in a response it is returned as a string (e.g. `"amount": "12345678901234567890.123456789012345678"`), so a client parses it with `new BigDecimal(String)`, never as a double. A decimal key cannot be indexed, used as a primary key or an edge sort key, or given an OLAP index write type (only `OLAP_COMMON`). Available from the release that ships apache/hugegraph#3209 and apache/hugegraph-toolchain#771
 - cardinality: The cardinality of the property type, including: single, list, set. The default cardinality is `single`.
 
 Request Body Field Description:

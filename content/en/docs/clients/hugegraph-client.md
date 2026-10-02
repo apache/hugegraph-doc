@@ -125,6 +125,7 @@ The constraint information that PropertyKey allows to define includes: name, dat
 | asByte()    | Byte       |
 | asBlob()    | Byte[]     |
 | asDouble()  | Double     |
+| asDecimal() | BigDecimal (exact decimal, not indexable, not a primary/sort key; from the release with apache/hugegraph#3209 and #771) |
 | asFloat()   | Float      |
 | asLong()    | Long       |
 

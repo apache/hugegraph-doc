@@ -126,6 +126,7 @@ PropertyKey 允许定义的约束信息包括：name、datatype、cardinality、
 | asByte()    | Byte       |
 | asBlob()    | Byte[]     |
 | asDouble()  | Double     |
+| asDecimal() | BigDecimal（精确十进制；不可索引，不可作主键/排序键；自包含 apache/hugegraph#3209 与 #771 的版本起可用） |
 | asFloat()   | Float      |
 | asLong()    | Long       |
 

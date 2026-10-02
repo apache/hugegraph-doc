@@ -54,6 +54,9 @@ Build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD a
 >
 > `supportsUniformListValues()` now returns `false` for vertex and edge properties, so clients that inspect `Graph.Features` must adjust that capability check.
 > Schema-defined `valueList()`/`LIST` properties remain supported; this flag change alone does not require rewriting existing list data.
+>
+> A mid-traversal scan retains its input multiplicity: with three vertices, `g.V().V().count()` returns `9L`.
+> `P.typeOf()` runs as a local filter, including in negated or combined predicates; it does not use backend indexes on its own.
 
 ## 3 Deploy
 

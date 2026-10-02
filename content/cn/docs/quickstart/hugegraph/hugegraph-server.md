@@ -53,6 +53,9 @@ flowchart TD
 >
 > 顶点和边属性的 `supportsUniformListValues()` 现在返回 `false`，依赖 `Graph.Features` 的客户端需复核能力判断。
 > 按 schema 定义的 `valueList()`/`LIST` 属性仍支持，仅此标志变化无需重写既有列表数据。
+>
+> 遍历中途的扫描保留上游输入数量：图中有三个顶点时，`g.V().V().count()` 返回 `9L`。
+> `P.typeOf()` 作为本地过滤执行，也支持放在取反或组合谓词中；单独使用类型过滤不会利用后端索引。
 
 ## 3 部署
 

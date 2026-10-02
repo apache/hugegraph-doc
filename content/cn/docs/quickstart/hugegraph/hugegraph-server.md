@@ -34,31 +34,25 @@ flowchart TD
 
 ## 2 依赖
 
-### 2.1 安装 Java 11 (JDK 11)
+<span id="21-安装-java-11-jdk-11"></span>
 
-基于 Java 11 构建的 HugeGraph 1.7.0 发行包需要 Java 11 或更高版本；下述 Java 17 升级分支则需要使用 Java 17。
+### 2.1 安装 Java 17 (JDK 17)
+
+从 HugeGraph 1.8.0 开始使用 **Java 17**；**1.7.0 是最后一个支持 Java 11 的版本**。
+所有模块的源码构建要求 **JDK 17 和 Maven 3.6.3 或更高版本**，Server、PD 和 Store 的运行环境统一使用 **JDK 17**。
 
 **在继续阅读前，请先执行 `java -version` 命令确认 JDK 版本。**
 
-> 1.7.0 起不再支持 Java 8。`bin/hugegraph-server.sh` 在低于 Java 11 的环境下会直接拒绝启动。
-
-> 安全检查默认开启，会安装 `HugeSecurityManager`，它要求 Java 11 到 23。JDK 24 移除了 Security Manager（[JEP 486](https://openjdk.org/jeps/486)），因此在 Java 24 及更高版本上必须关闭该检查后再启动服务：`bin/start-hugegraph.sh -s false`。
-
-> 构建基于 Java 11 的源码还需要 Maven 3.5.0 或更高版本。
-
 > [!NOTE]
-> **Java 17 / TinkerPop 升级分支**
+> **TinkerPop 兼容性**
 >
-> 对于 [Java 17 基础分支](https://github.com/hugegraph/hugegraph/pull/231)及其后续 PR，
-> 所有模块的源码构建要求 **JDK 17 和 Maven 3.6.3 或更高版本**，Server、PD 和 Store 的运行环境统一使用 **JDK 17**。
-> 本次升级尚未验证其他 JDK 版本。
-> 基础分支保留 TinkerPop 3.5.1，[最终升级分支](https://github.com/hugegraph/hugegraph/pull/233)使用 TinkerPop 3.8.1 和 Groovy 4.0.25。
-> 这些要求适用于对应的源码分支，不改变已有 Java 11 发行包的运行要求。
+> HugeGraph 1.8.0 使用 TinkerPop 3.8.1 和 Groovy 4.0.25。请使用 Server 随包提供的 Gremlin 配置。
+> 序列化器类从 `org.apache.tinkerpop.gremlin.driver.ser` 移至 `org.apache.tinkerpop.gremlin.util.ser`，
+> 并需保留配置中的 HugeGraph registries。默认脚本引擎仍为 Gremlin Groovy。
+> 部署前应检查应用脚本与 TinkerPop 3.5.1 到 3.8.1 整个升级区间的兼容性；本次升级不会将远程请求切换为 GremlinLang。
 >
-> 请使用升级后 Server 随包提供的 Gremlin 配置。序列化器类从 `org.apache.tinkerpop.gremlin.driver.ser`
-> 移至 `org.apache.tinkerpop.gremlin.util.ser`，并需保留配置中的 HugeGraph registries。
-> 默认脚本引擎仍为 Gremlin Groovy；部署前应检查应用脚本与 TinkerPop 3.5.1 到 3.8.1 整个升级区间的兼容性，
-> 本次升级不会将远程请求切换为 GremlinLang。
+> 顶点和边属性的 `supportsUniformListValues()` 现在返回 `false`，依赖 `Graph.Features` 的客户端需复核能力判断。
+> 按 schema 定义的 `valueList()`/`LIST` 属性仍支持，仅此标志变化无需重写既有列表数据。
 
 ## 3 部署
 
@@ -540,10 +534,10 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 | 参数 | 取值 | 默认值 | 作用 |
 |---|---|---|---|
 | `-d` | `true`、`false` | `true` | 守护进程模式。`-d false` 时脚本留在前台，并把 `SIGTERM`/`SIGINT` 转发给服务进程 |
-| `-g` | `zgc` 或 `ZGC` | 不填则用 G1GC | 选择垃圾回收器。只接受 ZGC，其他取值会直接终止启动；ZGC 需要 Java 11 及以上 |
+| `-g` | `zgc` 或 `ZGC` | 不填则用 G1GC | 选择垃圾回收器。只接受 ZGC，其他取值会直接终止启动 |
 | `-m` | `true`、`false` | `false` | 安装基于 crontab 的监控任务（`bin/start-monitor.sh`），仅用于虚拟机和物理机部署 |
 | `-p` | `true`、`false` | `false` | 预加载示例图，见 5.1.4 |
-| `-s` | `true`、`false` | `true` | 开启安全检查（`HugeSecurityManager`）。要求 Java 11 到 23，且 `conf/java-security.properties` 可读 |
+| `-s` | `true`、`false` | `true` | 开启安全检查（`HugeSecurityManager`），要求 `conf/java-security.properties` 可读 |
 | `-j` | JVM 参数 | 空 | 追加到服务命令行的额外 JVM 参数 |
 | `-t` | 秒 | `30` | 判定启动失败前等待服务响应的时长 |
 | `-y` | `true`、`false` | `false` | 开启 OpenTelemetry agent 上报链路追踪 |

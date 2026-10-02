@@ -35,31 +35,25 @@ flowchart TD
 
 ## 2 Dependency for Building/Running
 
-### 2.1 Install Java 11 (JDK 11)
+<span id="21-install-java-11-jdk-11"></span>
 
-The Java 11-based HugeGraph 1.7.0 distribution requires Java 11 or later. The Java 17 upgrade branches described below require Java 17 instead.
+### 2.1 Install Java 17 (JDK 17)
+
+Starting with HugeGraph 1.8.0, use **Java 17**; **1.7.0 is the last release supporting Java 11**.
+Build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD and Store with **JDK 17**.
 
 **Before continuing, run `java -version` to confirm your JDK version.**
 
-> Java 8 is no longer supported starting from 1.7.0. `bin/hugegraph-server.sh` refuses to start on anything older than Java 11.
-
-> The security check is on by default and installs `HugeSecurityManager`, which needs Java 11 to 23. JDK 24 removed the Security Manager ([JEP 486](https://openjdk.org/jeps/486)), so on Java 24 or later you must start the service with the check disabled: `bin/start-hugegraph.sh -s false`.
-
-> Building the Java 11-based source tree also needs Maven 3.5.0 or later.
-
 > [!NOTE]
-> **Java 17 / TinkerPop upgrade branches**
+> **TinkerPop compatibility**
 >
-> For the [Java 17 foundation](https://github.com/hugegraph/hugegraph/pull/231) and its dependent PRs,
-> build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD and Store with **JDK 17**.
-> Other JDK releases are not qualified by this upgrade.
-> The foundation retains TinkerPop 3.5.1; the [final upgrade](https://github.com/hugegraph/hugegraph/pull/233)
-> moves to TinkerPop 3.8.1 and Groovy 4.0.25. These requirements apply to those source branches, not to existing Java 11-based packages.
+> HugeGraph 1.8.0 uses TinkerPop 3.8.1 and Groovy 4.0.25. Use the Gremlin configuration files bundled with Server.
+> Serializer classes move from `org.apache.tinkerpop.gremlin.driver.ser` to `org.apache.tinkerpop.gremlin.util.ser`;
+> retain the supplied HugeGraph registries. Gremlin Groovy remains the default engine.
+> Check application scripts against the TinkerPop 3.5.1 to 3.8.1 upgrade interval; this upgrade does not switch remote requests to GremlinLang.
 >
-> Use the Gremlin configuration files bundled with the upgraded Server. Serializer classes move from
-> `org.apache.tinkerpop.gremlin.driver.ser` to `org.apache.tinkerpop.gremlin.util.ser`; retain the supplied HugeGraph registries.
-> Gremlin Groovy remains the default engine. Check application scripts against the full TinkerPop 3.5.1 to 3.8.1 upgrade interval;
-> this upgrade does not switch remote requests to GremlinLang.
+> `supportsUniformListValues()` now returns `false` for vertex and edge properties, so clients that inspect `Graph.Features` must adjust that capability check.
+> Schema-defined `valueList()`/`LIST` properties remain supported; this flag change alone does not require rewriting existing list data.
 
 ## 3 Deploy
 
@@ -539,10 +533,10 @@ This indicates the successful creation of the sample graph.
 | Option | Values | Default | Purpose |
 |---|---|---|---|
 | `-d` | `true`, `false` | `true` | Daemon mode. With `-d false` the script stays in the foreground and forwards `SIGTERM`/`SIGINT` to the server. |
-| `-g` | `zgc` or `ZGC` | omit for G1GC | Garbage collector to use. Only ZGC is accepted, any other value aborts the startup. ZGC needs Java 11 or later. |
+| `-g` | `zgc` or `ZGC` | omit for G1GC | Garbage collector to use. Only ZGC is accepted, any other value aborts the startup. |
 | `-m` | `true`, `false` | `false` | Install the cron-based monitor task (`bin/start-monitor.sh`). For VM and bare-metal deployments only. |
 | `-p` | `true`, `false` | `false` | Preload the sample graph, as in 5.1.4. |
-| `-s` | `true`, `false` | `true` | Run with the security check (`HugeSecurityManager`) enabled. It requires Java 11 to 23 and a readable `conf/java-security.properties`. |
+| `-s` | `true`, `false` | `true` | Enable `HugeSecurityManager`; requires readable `conf/java-security.properties`. |
 | `-j` | JVM options | empty | Extra JVM options appended to the server command line. |
 | `-t` | seconds | `30` | How long to wait for the service to answer before reporting a failed startup. |
 | `-y` | `true`, `false` | `false` | Enable the OpenTelemetry agent for traces. |

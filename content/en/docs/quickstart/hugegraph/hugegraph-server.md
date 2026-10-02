@@ -535,6 +535,15 @@ This indicates the successful creation of the sample graph.
 
 `bin/stop-hugegraph.sh` accepts `-m true|false` (default `true`), which controls whether the cron monitor task is removed along with the service.
 
+The server script always adds `-XX:+HeapDumpOnOutOfMemoryError`, `-XX:HeapDumpPath` and `-XX:ErrorFile`, so an out-of-memory heap dump
+(`java_pid<pid>_<launch time>.hprof`) and a JVM crash log (`hs_err_pid<pid>_<launch time>.log`) land in `logs/` whether or not `JAVA_OPTIONS` is set. The
+launch time keeps a restart that reuses the PID from colliding with an earlier file. A heap dump can be as large as the heap. To turn dumps off, pass
+`-XX:-HeapDumpOnOutOfMemoryError` with `-j`, or in `JAVA_OPTIONS` if you set it (`-j` is ignored when `JAVA_OPTIONS` is set). A value given there for any of
+these flags overrides the default, and a flag already set in `JAVA_TOOL_OPTIONS` or `JDK_JAVA_OPTIONS` is left as is.
+
+> **Version scope**: this applies to current master ([apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)). In 1.7.0 the heap dump
+> flags are added only when `JAVA_OPTIONS` is unset, and JVM crash logs go to the install directory.
+
 ### 5.2 Use Docker to startup
 
 In [3.1 Use Docker container](#31-use-docker-container-convenient-for-testdev), we introduced how to deploy `hugegraph-server` with Docker. You can also switch storage backends or preload a sample graph by setting the corresponding parameters.

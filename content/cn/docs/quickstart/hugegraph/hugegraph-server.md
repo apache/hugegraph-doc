@@ -536,6 +536,14 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 
 `bin/stop-hugegraph.sh` 支持 `-m true|false`（默认 `true`），用于控制停止服务时是否同时移除 crontab 监控任务。
 
+服务脚本总会添加 `-XX:+HeapDumpOnOutOfMemoryError`、`-XX:HeapDumpPath` 和 `-XX:ErrorFile`，因此无论是否设置了 `JAVA_OPTIONS`，内存溢出时的堆转储
+（`java_pid<pid>_<启动时间>.hprof`）和 JVM 崩溃日志（`hs_err_pid<pid>_<启动时间>.log`）都会写入 `logs/`。文件名带上启动时间，是为了避免重启后复用相同 PID
+时与旧文件冲突。堆转储可能和堆一样大。如需关闭，可通过 `-j` 传入 `-XX:-HeapDumpOnOutOfMemoryError`；如果设置了 `JAVA_OPTIONS`，则写在 `JAVA_OPTIONS`
+中（设置 `JAVA_OPTIONS` 后 `-j` 不生效）。在这些位置为上述参数指定的值会覆盖默认值；已在 `JAVA_TOOL_OPTIONS` 或 `JDK_JAVA_OPTIONS` 中设置的参数保持不变。
+
+> **版本范围**：以上行为适用于当前 master（[apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 只在未设置 `JAVA_OPTIONS`
+> 时添加堆转储参数，JVM 崩溃日志写入安装目录。
+
 ### 5.2 使用 Docker
 
 在 [3.1 使用 Docker 容器](#31-使用-docker-容器-便于测试) 中，我们已经介绍了如何使用 `docker` 部署 Server 服务。还可以通过切换后端存储或设置参数，在 Server 启动时加载样例图。

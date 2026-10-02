@@ -96,8 +96,8 @@ def selected_entries(manifest, plan):
 
 
 def execute(args):
-    if not 1 <= args.workers <= 3:
-        raise ValueError("workers must be between 1 and 3")
+    if not 1 <= args.workers <= 2:
+        raise ValueError("workers must be between 1 and 2")
     manifest = versioning.load_resolved_manifest(args.resolved_manifest)
     entries = selected_entries(manifest, json.loads(args.plan.read_text()))
     output, cache = args.output.resolve(), args.cache_dir.resolve()
@@ -140,7 +140,7 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--site-origin", required=True)
     parser.add_argument("--historical-origin", required=True)
-    parser.add_argument("--workers", type=int, choices=range(1, 4), default=2)
+    parser.add_argument("--workers", type=int, choices=(1, 2), default=2)
     parser.add_argument("--force-rebuild", action="store_true")
     execute(parser.parse_args())
 

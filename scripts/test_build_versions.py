@@ -109,6 +109,13 @@ class BuildVersionsTest(unittest.TestCase):
             build_versions.selected_entries({"versions": [self.entry]},
                 {"versions": [dict(self.entry, sha="c" * 40)]})
 
+    def test_rejects_worker_counts_outside_final_limit(self):
+        for workers in (0, 3):
+            with self.subTest(workers=workers):
+                self.args.workers = workers
+                with self.assertRaisesRegex(ValueError, "workers must be between 1 and 2"):
+                    build_versions.execute(self.args)
+
     def test_configured_hugo_cache_preserved_and_isolated_by_version(self):
         entries = [self.entry, dict(self.entry, id="1.5")]
         with tempfile.TemporaryDirectory() as tmp:

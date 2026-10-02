@@ -865,11 +865,21 @@
 }
 
 
-// Keep the search action visible while documentation results scroll.
+// Let documentation results scroll without covering them with the AI action.
+.td-shell-search__list:has(> [aria-labelledby="td-shell-search-group-actions"]) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  > .td-shell-search__group {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
 .td-shell-search__group[aria-labelledby="td-shell-search-group-actions"] {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
+  flex-shrink: 0;
   background: var(--bs-body-bg);
   border-top: 1px solid var(--bs-border-color);
   box-shadow: 0 -.25rem .75rem rgba(0, 0, 0, .06);

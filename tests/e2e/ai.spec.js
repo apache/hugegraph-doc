@@ -571,6 +571,17 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       return box.top >= Math.max(0, dialog.top) && box.bottom <= Math.min(innerHeight, dialog.bottom) &&
         box.left >= Math.max(0, dialog.left) && box.right <= Math.min(innerWidth, dialog.right);
     })).toBe(true);
+    // Keyboard scrolling must keep the last document above the action too.
+    const input = page.locator(".td-shell-search__input");
+    await input.press("Control+End");
+    await input.press("ArrowUp");
+    const selected = page.locator('[role="option"][aria-selected="true"]');
+    await expect(selected).not.toContainText("Ask AI:");
+    expect(await selected.evaluate(node => {
+      const box = node.getBoundingClientRect();
+      const actionGroup = document.querySelector('[aria-labelledby="td-shell-search-group-actions"]');
+      return box.bottom <= actionGroup.getBoundingClientRect().top;
+    })).toBe(true);
     await action.click();
     await expect(page.locator("[data-hg-ai-consent]")).toBeVisible();
     expect(requests).toEqual([]);

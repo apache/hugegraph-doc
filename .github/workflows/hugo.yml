@@ -295,26 +295,47 @@ jobs:
           # exact input fingerprint and file digest before it can be reused.
           restore-keys: ${{ runner.os }}-history-v1-
       - name: Build and validate selected versions
+        if: github.event_name != 'workflow_dispatch'
         env:
           OINK_PYTHON: python3
           SITE_ORIGIN: ${{ needs.prepare.outputs.site_origin }}
           HISTORICAL_ORIGIN: ${{ needs.prepare.outputs.historical_origin }}
-          EVENT_NAME: ${{ github.event_name }}
         run: |
-          expected=()
-          if [[ "$EVENT_NAME" != workflow_dispatch ]]; then
-            expected+=(--expected-plan resolved/cache-plan.json)
-          fi
           python3 scripts/version_cache.py plan \
             --resolved-manifest selected-versions.json \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
             --hugo-version "$HUGO_VERSION" --go-version "$(go version)" \
-            --cache-dir "$RUNNER_TEMP/history-cache" --output "$RUNNER_TEMP/cache-plan.json" "${expected[@]}"
+            --cache-dir "$RUNNER_TEMP/history-cache" --output "$RUNNER_TEMP/cache-plan.json" \
+            --expected-plan resolved/cache-plan.json
           python3 scripts/build_versions.py \
             --resolved-manifest selected-versions.json \
             --plan "$RUNNER_TEMP/cache-plan.json" --cache-dir "$RUNNER_TEMP/history-cache" \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
             --workers 2 --output "$RUNNER_TEMP/version-artifacts"
+      - name: Build and validate manual candidate versions
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          OINK_PYTHON: python3
+          SITE_ORIGIN: ${{ needs.prepare.outputs.site_origin }}
+          HISTORICAL_ORIGIN: ${{ needs.prepare.outputs.historical_origin }}
+        run: |
+          # Candidate branches may predate the cache and scheduling helpers.
+          jq -er '.include[] | [.id, .sha] | @tsv' selected-versions.json > selected-versions.tsv
+          cache_root="$HUGO_CACHEDIR"
+          while IFS=$'\t' read -r version sha; do
+            [[ "$version" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || exit 1
+            [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || exit 1
+            git cat-file -e "$sha^{commit}" || git fetch --no-tags origin "$sha"
+            export HUGO_CACHEDIR="$cache_root/$version"
+            python3 scripts/versioning.py build \
+              --version "$version" --sha "$sha" \
+              --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
+              --output "$RUNNER_TEMP/version-artifacts/$version"
+            python3 scripts/versioning.py validate \
+              --version "$version" --sha "$sha" \
+              --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
+              --artifact "$RUNNER_TEMP/version-artifacts/$version"
+          done < selected-versions.tsv
       - name: Upload selected version artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -362,6 +383,7 @@ jobs:
           path: version-artifacts
       - name: Assemble publishable site
         env:
+          EVENT_NAME: ${{ github.event_name }}
           PREFIX: ${{ needs.prepare.outputs.artifact_prefix }}
           SITE_ORIGIN: ${{ needs.prepare.outputs.site_origin }}
           HISTORICAL_ORIGIN: ${{ needs.prepare.outputs.historical_origin }}
@@ -369,11 +391,14 @@ jobs:
         run: |
           lscpu | sed -n '/^CPU(s):/p; /^Model name:/p'
           extra=()
+          if [[ "$EVENT_NAME" != workflow_dispatch ]]; then
+            extra+=(--workers 2)
+          fi
           if [[ "$PREFIX" == staging ]]; then
             extra+=(--asf-profile oink --asf-whoami asf-staging-oink)
           fi
           python3 scripts/versioning.py aggregate \
-            --artifacts version-artifacts --workers 2 \
+            --artifacts version-artifacts \
             --resolved-manifest resolved/resolved-versions.json \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
             --select "$SELECTION" \
@@ -415,7 +440,7 @@ jobs:
           if-no-files-found: error
           overwrite: true
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: npm
@@ -486,7 +511,7 @@ jobs:
         with:
           ref: ${{ needs.prepare.outputs.source_sha }}
           persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: npm

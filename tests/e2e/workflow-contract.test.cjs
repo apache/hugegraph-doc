@@ -61,7 +61,7 @@ test("trusted workflow bounds the candidate module graph without pinning its ver
 test("dependency artifacts keep stable names across selective reruns", () => {
   assert.match(workflow, /name: resolved-versions-\$\{\{ github\.run_id \}\}/);
   assert.match(workflow, /name: \$\{\{ needs\.prepare\.outputs\.artifact_prefix \}\}-versions-\$\{\{ matrix\.group\.id \}\}-\$\{\{ github\.run_id \}\}/);
-  assert.match(workflow, /--artifacts version-artifacts --workers 2/);
+  assert.match(workflow, /extra\+=\(--workers 2\)/);
   assert.match(workflow, /name: hugegraph-site-\$\{\{ needs\.prepare\.outputs\.artifact_prefix \}\}-\$\{\{ github\.run_id \}\}/);
   assert.doesNotMatch(workflow, /name: (?:resolved-versions|hugegraph-site-[^\n]+)-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.equal((workflow.match(/\n\s+overwrite: true/g) ?? []).length, 3);
@@ -104,7 +104,7 @@ test("required gate rejects failed, skipped and cancelled prerequisites", () => 
     .split("\n").filter(line => line.startsWith("          "))
     .map(line => line.slice(10)).join("\n");
   const success = { PREPARE_RESULT: "success", BUILD_RESULT: "success" };
-  const run = env => spawnSync("bash", ["-e", "-c", gate], {env: {...process.env, BASH_ENV: "", ...env}}).status;
+  const run = env => spawnSync("bash", ["--noprofile", "--norc", "-p", "-e", "-c", gate], {env: {...process.env, BASH_ENV: "", ...env}}).status;
   assert.equal(run(success), 0);
   for (const key of Object.keys(success)) {
     for (const result of ["failure", "skipped", "cancelled"]) {
@@ -154,7 +154,7 @@ test("cache recording failures cannot block an already validated site", () => {
     for (const code of [0, 1]) {
       fs.writeFileSync(path.join(directory, "python3"), `#!/bin/sh\nexit ${code}\n`, {mode: 0o755});
       const output = path.join(directory, `outputs-${code}`);
-      const result = spawnSync("bash", ["-e", "-c", script], {
+      const result = spawnSync("bash", ["--noprofile", "--norc", "-p", "-e", "-c", script], {
         cwd: directory,
         env: {...process.env, BASH_ENV: "", PATH: `${directory}:${process.env.PATH}`, GITHUB_OUTPUT: output, RUNNER_TEMP: directory}
       });
@@ -181,5 +181,75 @@ test("fingerprints use the same resolved Python patch on all version runners", (
   assert.match(jobBody("prepare"), /python_version: \$\{\{ steps.python.outputs.python-version \}\}/);
   for (const job of ["build", "aggregate"]) {
     assert.match(jobBody(job), /python-version: \$\{\{ needs.prepare.outputs.python_version \}\}/);
+  }
+});
+
+function stepBody(name) {
+  return workflow.split(`      - name: ${name}\n`)[1].split(/\n      - (?:name:|uses:)/)[0];
+}
+
+function stepScript(name) {
+  return stepBody(name).split("        run: |\n")[1].split("\n")
+    .filter(line => line.startsWith("          ")).map(line => line.slice(10)).join("\n");
+}
+
+test("manual candidates build and validate every immutable selected version using the original CLI", () => {
+  const { spawnSync } = require("node:child_process");
+  const os = require("node:os");
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "manual-build-"));
+  const name = "Build and validate manual candidate versions";
+  assert.match(stepBody(name), /if: github.event_name == 'workflow_dispatch'/);
+  assert.match(stepBody("Build and validate selected versions"), /if: github.event_name != 'workflow_dispatch'/);
+  assert.match(stepBody("Build and validate selected versions"), /--expected-plan resolved\/cache-plan.json/);
+  assert.doesNotMatch(stepScript(name), /version_cache|build_versions|--workers/);
+  const versions = [{id: "latest", sha: "a".repeat(40)}, {id: "1.7", sha: "b".repeat(40)}];
+  try {
+    fs.writeFileSync(path.join(directory, "selected-versions.json"), JSON.stringify({include: versions}));
+    fs.writeFileSync(path.join(directory, "git"), '#!/bin/sh\nprintf "%s\\n" "$*" >> "$RUNNER_TEMP/git.log"\n[ "$1" != cat-file ]\n', {mode: 0o755});
+    fs.writeFileSync(path.join(directory, "python3"), '#!/bin/sh\nprintf "%s\\t" "$HUGO_CACHEDIR" "$@" >> "$RUNNER_TEMP/python.log"\nprintf "\\n" >> "$RUNNER_TEMP/python.log"\n', {mode: 0o755});
+    const env = {...process.env, BASH_ENV: "", PATH: `${directory}:${process.env.PATH}`,
+      RUNNER_TEMP: directory, HUGO_CACHEDIR: `${directory}/hugo`,
+      SITE_ORIGIN: "https://staging.example/", HISTORICAL_ORIGIN: "https://history.example/"};
+    const run = () => spawnSync("bash", ["--noprofile", "--norc", "-p", "-e", "-c", stepScript(name)], {cwd: directory, env});
+    const result = run();
+    assert.equal(result.status, 0, result.stderr.toString());
+    const calls = fs.readFileSync(path.join(directory, "python.log"), "utf8").trim().split("\n").map(line => line.trim().split("\t"));
+    assert.deepEqual(calls, versions.flatMap(({id, sha}) => ["build", "validate"].map(operation => [
+      `${directory}/hugo/${id}`, "scripts/versioning.py", operation, "--version", id, "--sha", sha,
+      "--site-origin", env.SITE_ORIGIN, "--historical-origin", env.HISTORICAL_ORIGIN,
+      operation === "build" ? "--output" : "--artifact", `${directory}/version-artifacts/${id}`
+    ])));
+    const gitCalls = fs.readFileSync(path.join(directory, "git.log"), "utf8");
+    for (const {sha} of versions) assert.ok(gitCalls.includes(`fetch --no-tags origin ${sha}`));
+    fs.writeFileSync(path.join(directory, "selected-versions.json"), JSON.stringify({include: [{id: "latest", sha: "HEAD"}]}));
+    assert.notEqual(run().status, 0);
+    assert.equal(fs.readFileSync(path.join(directory, "python.log"), "utf8").trim().split("\n").length, 4);
+  } finally {
+    fs.rmSync(directory, {recursive: true, force: true});
+  }
+});
+
+test("manual aggregation retains staging flags without requiring new candidate CLI options", () => {
+  const { spawnSync } = require("node:child_process");
+  const os = require("node:os");
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "manual-aggregate-"));
+  const script = stepScript("Assemble publishable site");
+  assert.doesNotMatch(script, /version_cache|build_versions/);
+  try {
+    fs.writeFileSync(path.join(directory, "python3"), '#!/bin/sh\nprintf "%s\\n" "$@"\n', {mode: 0o755});
+    fs.writeFileSync(path.join(directory, "lscpu"), '#!/bin/sh\nexit 0\n', {mode: 0o755});
+    for (const event of ["workflow_dispatch", "pull_request"]) {
+      const result = spawnSync("bash", ["--noprofile", "--norc", "-p", "-e", "-c", script], {cwd: directory,
+        env: {...process.env, BASH_ENV: "", PATH: `${directory}:${process.env.PATH}`, EVENT_NAME: event,
+          PREFIX: "staging", RUNNER_TEMP: directory, SITE_ORIGIN: "https://staging.example/",
+          HISTORICAL_ORIGIN: "https://history.example/", SELECTION: "latest,1.7"}});
+      assert.equal(result.status, 0, result.stderr.toString());
+      const args = result.stdout.toString().trim().split("\n");
+      assert.equal(args.includes("--workers"), event !== "workflow_dispatch");
+      assert.deepEqual(args.slice(-4), ["--asf-profile", "oink", "--asf-whoami", "asf-staging-oink"]);
+      assert.deepEqual(args.slice(0, 4), ["scripts/versioning.py", "aggregate", "--artifacts", "version-artifacts"]);
+    }
+  } finally {
+    fs.rmSync(directory, {recursive: true, force: true});
   }
 });

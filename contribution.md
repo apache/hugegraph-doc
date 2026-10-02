@@ -76,7 +76,8 @@ A complete historical cache hit uses one build job. Cold runs use at most three
 build groups, with at most two versions building concurrently within each runner.
 Historical artifacts are reused only when both the complete build-input fingerprint
 and artifact digest match. Missing or invalid cache entries rebuild automatically;
-manual dispatches start without the artifact cache. Cache hits still run the full
+manual dispatches start without the artifact cache and use the original build and
+validate commands so older candidate branches do not need the new CI helpers. Cache hits still run the full
 version validator, and aggregation validates every selected version again.
 
 Assembly validates at most two versions concurrently, then writes the complete

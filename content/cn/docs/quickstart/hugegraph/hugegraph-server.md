@@ -36,7 +36,7 @@ flowchart TD
 
 ### 2.1 安装 Java 11 (JDK 11)
 
-HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行和源码构建均需使用 Java 11 或更高版本。
+基于 Java 11 构建的 HugeGraph 1.7.0 发行包需要 Java 11 或更高版本；下述 Java 17 升级分支则需要使用 Java 17。
 
 **在继续阅读前，请先执行 `java -version` 命令确认 JDK 版本。**
 
@@ -44,7 +44,21 @@ HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行�
 
 > 安全检查默认开启，会安装 `HugeSecurityManager`，它要求 Java 11 到 23。JDK 24 移除了 Security Manager（[JEP 486](https://openjdk.org/jeps/486)），因此在 Java 24 及更高版本上必须关闭该检查后再启动服务：`bin/start-hugegraph.sh -s false`。
 
-> 源码构建还需要 Maven 3.5.0 或更高版本。
+> 构建基于 Java 11 的源码还需要 Maven 3.5.0 或更高版本。
+
+> [!NOTE]
+> **Java 17 / TinkerPop 升级分支**
+>
+> 对于 [Java 17 基础分支](https://github.com/hugegraph/hugegraph/pull/231)及其后续 PR，
+> 所有模块的源码构建要求 **JDK 17 和 Maven 3.6.3 或更高版本**，Server、PD 和 Store 的运行环境统一使用 **JDK 17**。
+> 本次升级尚未验证其他 JDK 版本。
+> 基础分支保留 TinkerPop 3.5.1，[最终升级分支](https://github.com/hugegraph/hugegraph/pull/233)使用 TinkerPop 3.8.1 和 Groovy 4.0.25。
+> 这些要求适用于对应的源码分支，不改变已有 Java 11 发行包的运行要求。
+>
+> 请使用升级后 Server 随包提供的 Gremlin 配置。序列化器类从 `org.apache.tinkerpop.gremlin.driver.ser`
+> 移至 `org.apache.tinkerpop.gremlin.util.ser`，并需保留配置中的 HugeGraph registries。
+> 默认脚本引擎仍为 Gremlin Groovy；部署前应检查应用脚本与 TinkerPop 3.5.1 到 3.8.1 整个升级区间的兼容性，
+> 本次升级不会将远程请求切换为 GremlinLang。
 
 ## 3 部署
 

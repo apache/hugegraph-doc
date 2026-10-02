@@ -37,7 +37,7 @@ flowchart TD
 
 ### 2.1 Install Java 11 (JDK 11)
 
-The `hugegraph-server` module in HugeGraph 1.7.0 is compiled with Java 11. Running and building it from source require Java 11 or later.
+The Java 11-based HugeGraph 1.7.0 distribution requires Java 11 or later. The Java 17 upgrade branches described below require Java 17 instead.
 
 **Before continuing, run `java -version` to confirm your JDK version.**
 
@@ -45,7 +45,21 @@ The `hugegraph-server` module in HugeGraph 1.7.0 is compiled with Java 11. Runni
 
 > The security check is on by default and installs `HugeSecurityManager`, which needs Java 11 to 23. JDK 24 removed the Security Manager ([JEP 486](https://openjdk.org/jeps/486)), so on Java 24 or later you must start the service with the check disabled: `bin/start-hugegraph.sh -s false`.
 
-> Building from source also needs Maven 3.5.0 or later.
+> Building the Java 11-based source tree also needs Maven 3.5.0 or later.
+
+> [!NOTE]
+> **Java 17 / TinkerPop upgrade branches**
+>
+> For the [Java 17 foundation](https://github.com/hugegraph/hugegraph/pull/231) and its dependent PRs,
+> build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD and Store with **JDK 17**.
+> Other JDK releases are not qualified by this upgrade.
+> The foundation retains TinkerPop 3.5.1; the [final upgrade](https://github.com/hugegraph/hugegraph/pull/233)
+> moves to TinkerPop 3.8.1 and Groovy 4.0.25. These requirements apply to those source branches, not to existing Java 11-based packages.
+>
+> Use the Gremlin configuration files bundled with the upgraded Server. Serializer classes move from
+> `org.apache.tinkerpop.gremlin.driver.ser` to `org.apache.tinkerpop.gremlin.util.ser`; retain the supplied HugeGraph registries.
+> Gremlin Groovy remains the default engine. Check application scripts against the full TinkerPop 3.5.1 to 3.8.1 upgrade interval;
+> this upgrade does not switch remote requests to GremlinLang.
 
 ## 3 Deploy
 

@@ -293,7 +293,14 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 5. **数据在意料之外地保留了下来**：`docker compose down` 会保留命名卷。要同时删除该拓扑的数据，请使用 `docker compose down -v`
 
-**查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。单机镜像 `hugegraph/hugegraph` 设置了 `STDOUT_MODE=true`，其服务日志会输出到容器 stdout。`hugegraph/server`（HStore）镜像没有设置该变量，因此对 HStore 拓扑的 Server 执行 `docker logs` 只能看到入口脚本的输出，其余内容需在容器内查看 `logs/hugegraph-server.log`。
+**查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。PD、Store 以及两个 Server 镜像（`hugegraph/hugegraph`
+和 HStore 的 `hugegraph/server`）都设置了 `STDOUT_MODE=true`，服务日志会输出到容器 stdout。对 Server 而言，Hadoop、ZooKeeper、SOFA、Netty 和 Commons 的 WARN
+及以上日志也会输出到 stdout；它们的 INFO 日志以及审计日志、慢查询日志仍只写入文件。完整的 `hugegraph-server.log`、JVM 崩溃日志（`hs_err_pid*.log`）和内存溢出
+堆转储（`java_pid*.hprof`）位于 `/hugegraph-server/logs`。`docker restart` 会保留这些文件，但 Kubernetes 每次重启都会新建容器，因此需要在
+`/hugegraph-server/logs` 挂载 `emptyDir` 或 PersistentVolumeClaim 来保留它们，并按与 JVM 堆同样大小的堆转储预留空间。
+
+> **版本范围**：上述 HStore `hugegraph/server` 的行为适用于当前 master（[apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0
+> 及更早的 `hugegraph/server` 镜像没有设置 `STDOUT_MODE`，`docker logs` 只能看到入口脚本的输出，服务日志需在容器内查看 `logs/hugegraph-server.log`。
 
 ## 容器监控与健康检查
 

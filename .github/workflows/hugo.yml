@@ -314,7 +314,7 @@ jobs:
             --resolved-manifest selected-versions.json \
             --plan "$RUNNER_TEMP/cache-plan.json" --cache-dir "$RUNNER_TEMP/history-cache" \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
-            --workers "${{ needs.prepare.outputs.history_hit == 'true' && 3 || 2 }}" --output "$RUNNER_TEMP/version-artifacts"
+            --workers 2 --output "$RUNNER_TEMP/version-artifacts"
       - name: Upload selected version artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

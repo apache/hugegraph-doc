@@ -119,7 +119,7 @@ test("version work uses bounded groups and preserves full validation", () => {
   assert.match(build, /max-parallel: 3/);
   assert.match(build, /fromJSON\(needs.prepare.outputs.groups\)/);
   assert.match(build, /scripts\/build_versions\.py/);
-  assert.match(build, /history_hit == 'true' && 3 \|\| 2/);
+  assert.match(build, /--workers 2/);
   assert.match(build, /name: Restore historical artifact bundle/);
   assert.match(build, /if: github.event_name != 'workflow_dispatch'/);
   assert.match(build, /scripts\/version_cache\.py plan/);

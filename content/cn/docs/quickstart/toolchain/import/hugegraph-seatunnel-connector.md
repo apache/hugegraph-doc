@@ -8,7 +8,7 @@ aliases:
 
 SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph。连接器分为两部分：**Source 负责读取，Sink 负责写入**<sup>[1][2]</sup>，中间可以接 SeaTunnel 的数据转换组件。需要从 HugeGraph 导出或迁移数据时，请查看[SeaTunnel Source 导出与迁移文档](/cn/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/)。
 
-> **版本要求：本文面向 SeaTunnel [3.0.0](https://seatunnel.apache.org/download/)。** 所有示例使用 3.0.0 Sink 重构引入的 `mappings` 配置。
+> **版本要求：本文面向 SeaTunnel [3.0+](https://seatunnel.apache.org/download/)。** 所有示例使用 SeaTunnel 3.0+ 提供的 `mappings` 配置。
 
 [![Loader 与 SeaTunnel 的工作流对比：直接导入图数据与复用 Source、Transform、Sink 管道](/cn/docs/images/seatunnel/seatunnel-vs-loader-zh.png)](/cn/docs/images/seatunnel/seatunnel-vs-loader-zh.png)
 
@@ -25,7 +25,7 @@ SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph。连接器分
 | 对比点 | Loader | Tools | SeaTunnel |
 | --- | --- | --- | --- |
 | 任务覆盖 | ✅ 直接导入图数据 | ✅ 备份、恢复和导出 | ✅ 导入、导出与迁移，可组合 Source、Transform、Sink |
-| 任务配置 | JSON 映射文件，描述输入源、顶点和边 | 命令行参数和运维命令 | [HOCON 作业文件](https://seatunnel.apache.org/docs/3.0.0/introduction/concepts/config/)<sup>[3]</sup>，组合 Source、Transform 和 Sink |
+| 任务配置 | JSON 映射文件，描述输入源、顶点和边 | 命令行参数和运维命令 | [HOCON 作业文件](https://seatunnel.apache.org/docs/introduction/concepts/config/)<sup>[3]</sup>，组合 Source、Transform 和 Sink |
 | 默认部署 | ✅ 单机 CLI；⚠️ 可借助 Spark Loader 扩展 | ✅ 单机 CLI | ✅ 单机；✅ 分布式 |
 | 执行引擎 | ⚠️ 以 CLI 为主，Spark Loader 是独立扩展 | ❌ 不提供 Spark/Flink 执行引擎 | ✅ HugeGraph Source/Sink 支持 Zeta、Spark、Flink<sup>[1][2][7][8][9][10]</sup> |
 | 前端与可观测性 | ❌ 无内置前端，查看 CLI 日志 | ❌ 无内置前端，查看 CLI 日志 | ✅ 内置 Web UI 作业面板，方便查看任务状态和运行情况 |
@@ -38,21 +38,23 @@ SeaTunnel 覆盖 Loader 的图导入和 Tools 的导出、迁移场景，可以�
 
 > **已有 Spark/Flink 每日任务**
 >
-> HugeGraph Source 和 Sink 在 SeaTunnel 3.0.0 中都支持 SeaTunnel Engine（Zeta）、Spark 和 Flink。若把每日任务改成 SeaTunnel 作业，并用对应引擎提交，数据可以在 Source → Transform → Sink 之间直接传递，不需要先落盘再交给 Loader。若保留现有 Spark/Flink DAG，SeaTunnel 不会自动接管内存中的 DataFrame 或 Stream，需要改造成 SeaTunnel 作业，或让 Source 读取已有系统中的数据
+> HugeGraph Source 和 Sink 在 SeaTunnel 3.0+ 中都支持 SeaTunnel Engine（Zeta）、Spark 和 Flink。若把每日任务改成 SeaTunnel 作业，并用对应引擎提交，数据可以在 Source → Transform → Sink 之间直接传递，不需要先落盘再交给 Loader。若保留现有 Spark/Flink DAG，SeaTunnel 不会自动接管内存中的 DataFrame 或 Stream，需要改造成 SeaTunnel 作业，或让 Source 读取已有系统中的数据
 
-Loader 和 Tools 的优势是专注、直接、上手快。需要直接导入图数据时可先用 Loader；需要备份、恢复、导出或日常运维时可用 Tools。如果已经有 SeaTunnel 作业，通常在原管道中接入 HugeGraph 更方便。需要更高导入吞吐时，Loader 的 bypass-server 和其他导入优化更合适；Loader 在特定后端、数据规模和硬件条件下实测峰值可达 100～200 万条/秒，不能直接当作通用性能承诺，仍需单独压测。新建 SeaTunnel 任务使用 [3.0.0](https://seatunnel.apache.org/download/) 和 `mappings`。使用其他版本时，请重新核对连接器配置。
+Loader 和 Tools 的优势是专注、直接、上手快。需要直接导入图数据时可先用 Loader；需要备份、恢复、导出或日常运维时可用 Tools。如果已经有 SeaTunnel 作业，通常在原管道中接入 HugeGraph 更方便。需要更高导入吞吐时，Loader 的 bypass-server 和其他导入优化更合适；Loader 在特定后端、数据规模和硬件条件下实测峰值可达 100～200 万条/秒，不能直接当作通用性能承诺，仍需单独压测。新建 SeaTunnel 任务使用 [3.0+](https://seatunnel.apache.org/download/) 和 `mappings`。使用其他版本时，请重新核对连接器配置。
 
 ## 2 准备环境
 
-### 2.1 获取 SeaTunnel 3.0.0
+### 2.1 获取 SeaTunnel 3.0+
 
-使用 JDK 11 并设置 `JAVA_HOME`；官方[部署文档](https://seatunnel.apache.org/docs/3.0.0/getting-started/locally/deployment/)
+使用 JDK 11 并设置 `JAVA_HOME`；官方[部署文档](https://seatunnel.apache.org/docs/getting-started/locally/deployment/)
 列出的前置要求为 Java 8 或 11。从[官方下载页](https://seatunnel.apache.org/download/)<sup>[4]</sup>
-获取 `apache-seatunnel-3.0.0-bin.tar.gz`，并使用页面提供的校验文件或签名验证下载包。
+选择 3.0+ 二进制发行包，并使用页面提供的校验文件或签名验证下载包。
+下面以 3.0.0 为例，请将 `SEATUNNEL_VERSION` 改为实际下载的发行版本。
 
 ```bash
-tar -xzf apache-seatunnel-3.0.0-bin.tar.gz
-cd apache-seatunnel-3.0.0
+export SEATUNNEL_VERSION=3.0.0
+tar -xzf "apache-seatunnel-${SEATUNNEL_VERSION}-bin.tar.gz"
+cd "apache-seatunnel-${SEATUNNEL_VERSION}"
 ```
 
 二进制发行包不包含连接器插件。在 `config/plugin_config` 中选择示例需要的连接器：
@@ -65,11 +67,11 @@ connector-kafka
 --end--
 ```
 
-按官方[插件安装说明](https://seatunnel.apache.org/docs/3.0.0/getting-started/locally/deployment/#download-the-connector-plugins)<sup>[5]</sup>
+按官方[插件安装说明](https://seatunnel.apache.org/docs/getting-started/locally/deployment/#download-the-connector-plugins)<sup>[5]</sup>
 安装同版本的已发布插件：
 
 ```bash
-sh bin/install-plugin.sh 3.0.0
+sh bin/install-plugin.sh "${SEATUNNEL_VERSION}"
 ```
 
 后续命令均在该安装目录执行，引擎和连接器插件保持相同版本。
@@ -235,7 +237,7 @@ g.V().has('person', 'name', 'marko').outE('knows').where(inV().has('name', 'vada
 
 `sourceConfig` 和 `targetConfig` 指定端点字段，`fieldMapping` 将它们对应到顶点主键 `name`，`properties = ["since"]` 只写边属性。示例启用 `check_vertex = true`，并关闭失败后逐条跳过的回退（`batch_failure_fallback = false`）；端点不存在或写入失败时，任务会报错。
 
-如果关系表只有数字外键，而图的主键使用姓名，请先在 SQL 中关联出姓名，再交给 Sink。MySQL CDC 接入方式见 [MySQL CDC Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/MySQL-CDC/)<sup>[13]</sup>。
+如果关系表只有数字外键，而图的主键使用姓名，请先在 SQL 中关联出姓名，再交给 Sink。MySQL CDC 接入方式见 [MySQL CDC Source](https://seatunnel.apache.org/docs/connectors/source/MySQL-CDC/)<sup>[13]</sup>。
 
 ## 4 从 Kafka 导入（kafka2graph）
 
@@ -300,7 +302,7 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 
 ## 5 常用配置与排错
 
-下表适用于本文使用的 SeaTunnel 3.0.0 版本：
+下表适用于本文使用的 SeaTunnel 3.0+ 版本：
 
 | 配置 | 用途 |
 | --- | --- |
@@ -312,19 +314,19 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 | `batch_size` | 单批记录数，默认 500 |
 | `env.sink.flush.interval` | Zeta 定时刷新间隔，单位毫秒 |
 | `check_vertex` | 写边时检查端点，本文的边任务设为 `true` |
-| [`batch_failure_fallback`](https://seatunnel.apache.org/docs/3.0.0/connectors/sink/HugeGraph/)<sup>[2]</sup> | 默认 `true`，批量失败后逐条重试，最多跳过 `max_insert_errors` 条失败记录；本文示例显式设为 `false`，让批量失败直接终止任务 |
+| [`batch_failure_fallback`](https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/)<sup>[2]</sup> | 默认 `true`，批量失败后逐条重试，最多跳过 `max_insert_errors` 条失败记录；本文示例显式设为 `false`，让批量失败直接终止任务 |
 | `max_insert_errors` | 逐条回退时允许跳过的失败记录数；默认 `500`，`-1` 表示不限制，仅在开启 `batch_failure_fallback` 时生效 |
 
 遇到问题时可按下面检查：
 
-- **不识别 `mappings` 或找不到 HugeGraph Source**：检查引擎与 HugeGraph connector 是否来自同一次 3.0.0 构建。
+- **不识别 `mappings` 或找不到 HugeGraph Source**：检查引擎与 HugeGraph connector 是否来自同一次 3.0+ 构建。
 - **连接失败**：检查主机、端口、图空间、认证信息，以及 SeaTunnel 所在环境能否访问服务。
 - **Schema 不兼容**：检查标签的 ID 策略、属性类型和边端点。自动创建不会把已有 `PRIMARY_KEY` 标签改成 `CUSTOMIZE_STRING`。
 - **Kafka 少量数据未及时出现**：确认使用 Zeta，并在 `env` 中设置 `sink.flush.interval`。此版本的 `batch_interval_ms` 仅为兼容保留，不能代替它。
 
 ## 6 选型小结
 
-选工具时，先看要完成的工作：图管理、Gremlin、备份或克隆可用 [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/)；直接导入图可先看 [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/)；需要复用 Source、Transform、Sink 管道时选 SeaTunnel。使用 SeaTunnel 的图读取和迁移能力时，请按本文使用的 3.0.0 版本准备环境。
+选工具时，先看要完成的工作：图管理、Gremlin、备份或克隆可用 [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/)；直接导入图可先看 [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/)；需要复用 Source、Transform、Sink 管道时选 SeaTunnel。使用 SeaTunnel 的图读取和迁移能力时，请按本文使用的 3.0+ 版本准备环境。
 
 [![按工作流选择工具：图管理用 Tools，直接导入用 Loader，复用数据管道用 SeaTunnel](/cn/docs/images/seatunnel/seatunnel-tool-choice-zh.png)](/cn/docs/images/seatunnel/seatunnel-tool-choice-zh.png)
 
@@ -332,25 +334,25 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 
 **HugeGraph 连接器**
 
-<p><sup>[1]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/">HugeGraph Source</a><br>
-<sup>[2]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/connectors/sink/HugeGraph/">HugeGraph Sink</a></p>
+<p><sup>[1]</sup> <a href="https://seatunnel.apache.org/docs/connectors/source/HugeGraph/">HugeGraph Source</a><br>
+<sup>[2]</sup> <a href="https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/">HugeGraph Sink</a></p>
 
 **配置与部署**
 
-<p><sup>[3]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/introduction/concepts/config/">HOCON 作业文件配置说明</a><br>
-<sup>[4]</sup> <a href="https://seatunnel.apache.org/download/">SeaTunnel 3.0.0 正式版下载</a><br>
-<sup>[5]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/getting-started/locally/deployment/#download-the-connector-plugins">连接器插件安装说明</a><br>
-<sup>[6]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/getting-started/locally/deployment/">SeaTunnel 本地部署</a></p>
+<p><sup>[3]</sup> <a href="https://seatunnel.apache.org/docs/introduction/concepts/config/">HOCON 作业文件配置说明</a><br>
+<sup>[4]</sup> <a href="https://seatunnel.apache.org/download/">SeaTunnel 3.0+ 正式版下载</a><br>
+<sup>[5]</sup> <a href="https://seatunnel.apache.org/docs/getting-started/locally/deployment/#download-the-connector-plugins">连接器插件安装说明</a><br>
+<sup>[6]</sup> <a href="https://seatunnel.apache.org/docs/getting-started/locally/deployment/">SeaTunnel 本地部署</a></p>
 
 **执行引擎**
 
-<p><sup>[7]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/engines/overview/">SeaTunnel 引擎概览</a><br>
-<sup>[8]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/engines/spark/">SeaTunnel Spark 引擎</a><br>
-<sup>[9]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/engines/flink/">SeaTunnel Flink 引擎</a><br>
-<sup>[10]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/introduction/concepts/connector-v2-features/">Connector V2 多引擎说明</a></p>
+<p><sup>[7]</sup> <a href="https://seatunnel.apache.org/docs/engines/overview/">SeaTunnel 引擎概览</a><br>
+<sup>[8]</sup> <a href="https://seatunnel.apache.org/docs/engines/spark/">SeaTunnel Spark 引擎</a><br>
+<sup>[9]</sup> <a href="https://seatunnel.apache.org/docs/engines/flink/">SeaTunnel Flink 引擎</a><br>
+<sup>[10]</sup> <a href="https://seatunnel.apache.org/docs/introduction/concepts/connector-v2-features/">Connector V2 多引擎说明</a></p>
 
 **数据源连接器**
 
-<p><sup>[11]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/connectors/source/Jdbc/">JDBC Source</a><br>
-<sup>[12]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/connectors/source/Kafka/">Kafka Source</a><br>
-<sup>[13]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/connectors/source/MySQL-CDC/">MySQL CDC Source</a></p>
+<p><sup>[11]</sup> <a href="https://seatunnel.apache.org/docs/connectors/source/Jdbc/">JDBC Source</a><br>
+<sup>[12]</sup> <a href="https://seatunnel.apache.org/docs/connectors/source/Kafka/">Kafka Source</a><br>
+<sup>[13]</sup> <a href="https://seatunnel.apache.org/docs/connectors/source/MySQL-CDC/">MySQL CDC Source</a></p>

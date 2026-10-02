@@ -4,9 +4,17 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-Use Hubble when you need to view graphs in a browser, run Gremlin, or manage graph connections. Hubble provides a visual interface for graph data, schemas, and tasks.
+Hubble provides a Web interface for HugeGraph data, schema, queries, and imports.
+Start with a standalone deployment without PD, then read the distributed differences when needed.
 
-- [Visualize with Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Hubble basics with standalone RocksDB](/docs/quickstart/toolchain/hugegraph-hubble/): startup, sample graphs, modeling, imports, and queries.
+- [Hubble with an HStore cluster](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/): PD discovery, GraphSpaces, and cluster operations.
+
+---
+
+Section pages:
+
+- [Manage an HStore Cluster with Hubble](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/): Connect HStore and PD to Hubble and understand GraphSpaces, Schema templates, cluster topology, and node metrics.
 
 ---
 

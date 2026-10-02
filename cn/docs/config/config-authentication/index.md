@@ -190,4 +190,5 @@ bin/enable-auth.sh
 - [安装/构建 HugeGraph-Store](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [安装/构建 HugeGraph-PD](/cn/docs/quickstart/hugegraph/hugegraph-pd/)
 - [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)
-- [使用 Hubble 实现图可视化](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Hubble 基础与单机](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Hubble 分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)

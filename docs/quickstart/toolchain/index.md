@@ -25,7 +25,7 @@ Source repository: <i class="fab fa-github"></i> [apache/hugegraph-toolchain](ht
 Section pages:
 
 - [Graph visualization](/docs/quickstart/toolchain/visualization/)
-- [HugeGraph-Hubble Quick Start](/docs/quickstart/toolchain/hugegraph-hubble/): Deploy HugeGraph-Hubble for graph visualization, schema management, data import, and Gremlin or Cypher queries.
+- [Graph Visualization with Hubble: Standalone Quick Start](/docs/quickstart/toolchain/hugegraph-hubble/): Visualize graph data with Hubble and RocksDB Server: start with Docker, explore schema, import CSV, and run Gremlin queries.
 - [Graph import](/docs/quickstart/toolchain/import/)
 - [HugeGraph-Loader Quick Start](/docs/quickstart/toolchain/hugegraph-loader/): Bulk import graph data into HugeGraph with Loader from files, HDFS, relational databases, Kafka, and other HugeGraph graphs.
 - [Graph export and migration](/docs/quickstart/toolchain/export-migration/)

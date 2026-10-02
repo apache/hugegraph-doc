@@ -15,11 +15,12 @@
 
 - [系统介绍](https://hugegraph.apache.org/cn/docs/introduction/index.md)
 - [快速上手](https://hugegraph.apache.org/cn/docs/quickstart/index.md)
+  - [Hubble 基础与单机](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-hubble/index.md): 用 Docker 启动 RocksDB Server 与 Hubble，从示例图开始理解 Schema、导入 CSV、执行 Gremlin 并查看图结果。
   - [HugeGraph-LLM](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/index.md)
   - [Java 客户端](https://hugegraph.apache.org/cn/docs/quickstart/client/hugegraph-client/index.md)
   - [Vermeer: 高性能内存图计算框架](https://hugegraph.apache.org/cn/docs/quickstart/computing/hugegraph-vermeer/index.md): Vermeer 高性能内存图计算：一次启动、多次执行，支持 15+ OLAP 算法及秒到分钟级计算，涵盖部署、数据加载、PageRank 和社区发现。
-  - [使用 Hubble 实现图可视化](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-hubble/index.md): 部署 HugeGraph-Hubble，进行图可视化、元数据管理、数据导入，以及 Gremlin 或 Cypher 查询。
   - [安装/构建 HugeGraph Server](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-server/index.md)
+  - [Hubble 分布式补充](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/index.md): 连接 HStore 与 PD，理解 Hubble 的图空间、Schema 模板、集群拓扑和节点指标。
   - [HugeGraph-ML](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/hugegraph-ml/index.md)
   - [Python 客户端](https://hugegraph.apache.org/cn/docs/quickstart/client/hugegraph-client-python/index.md)
   - [使用 Computer 进行 OLAP 分析](https://hugegraph.apache.org/cn/docs/quickstart/computing/hugegraph-computer/index.md)

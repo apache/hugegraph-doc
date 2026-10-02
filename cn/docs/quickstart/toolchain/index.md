@@ -24,7 +24,7 @@ HugeGraph Toolchain 包含 Java/Go 客户端、Loader、Hubble、Tools、Spark C
 
 本节页面：
 
-- [HugeGraph-Hubble 快速上手](/cn/docs/quickstart/toolchain/hugegraph-hubble/): 部署 HugeGraph-Hubble，进行图可视化、元数据管理、数据导入，以及 Gremlin 或 Cypher 查询。
+- [使用 Hubble 实现图可视化：单机快速上手](/cn/docs/quickstart/toolchain/hugegraph-hubble/): 用 Docker 启动 RocksDB Server 与 Hubble，从示例图开始理解 Schema、导入 CSV、执行 Gremlin 并查看图结果。
 - [图可视化](/cn/docs/quickstart/toolchain/visualization/)
 - [HugeGraph-Loader 快速上手](/cn/docs/quickstart/toolchain/hugegraph-loader/)
 - [图导入](/cn/docs/quickstart/toolchain/import/)

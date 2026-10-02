@@ -724,5 +724,6 @@ bin/stop-hugegraph.sh
 - [Java 客户端](/cn/docs/quickstart/client/hugegraph-client/)
 - [HugeGraph (OLTP)](/cn/docs/quickstart/hugegraph/)
 - [安装/构建 HugeGraph-Store](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)
+- [Hubble 基础与单机](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
 - [使用 Loader 实时/流式导入数据](/cn/docs/quickstart/toolchain/hugegraph-loader/)
 - [使用 SeaTunnel Sink 导入图数据](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)

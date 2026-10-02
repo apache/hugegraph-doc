@@ -970,6 +970,7 @@ Backlinks:
 - [Java-Client](/docs/quickstart/client/hugegraph-client/)
 - [HugeGraph (OLTP)](/docs/quickstart/hugegraph/)
 - [Install/Build HugeGraph-Store](/docs/quickstart/hugegraph/hugegraph-hstore/)
+- [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
 - [Import graph data with SeaTunnel Sink](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)
 
@@ -2113,6 +2114,7 @@ Backlinks:
 - [HugeGraph (OLTP)](/docs/quickstart/hugegraph/)
 - [Install/Build HugeGraph-PD](/docs/quickstart/hugegraph/hugegraph-pd/)
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
+- [Hubble with HStore](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)
 
 
 ================
@@ -2659,6 +2661,7 @@ Backlinks:
 - [System Introduction](/docs/introduction/)
 - [HugeGraph (OLTP)](/docs/quickstart/hugegraph/)
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
+- [Hubble with HStore](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)
 
 
 ================
@@ -2692,7 +2695,7 @@ Source repository: <i class="fab fa-github"></i> [apache/hugegraph-toolchain](ht
 Section pages:
 
 - [Graph visualization](/docs/quickstart/toolchain/visualization/)
-- [HugeGraph-Hubble Quick Start](/docs/quickstart/toolchain/hugegraph-hubble/): Deploy HugeGraph-Hubble for graph visualization, schema management, data import, and Gremlin or Cypher queries.
+- [Graph Visualization with Hubble: Standalone Quick Start](/docs/quickstart/toolchain/hugegraph-hubble/): Visualize graph data with Hubble and RocksDB Server: start with Docker, explore schema, import CSV, and run Gremlin queries.
 - [Graph import](/docs/quickstart/toolchain/import/)
 - [HugeGraph-Loader Quick Start](/docs/quickstart/toolchain/hugegraph-loader/): Bulk import graph data into HugeGraph with Loader from files, HDFS, relational databases, Kafka, and other HugeGraph graphs.
 - [Graph export and migration](/docs/quickstart/toolchain/export-migration/)
@@ -2710,9 +2713,17 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-Use Hubble when you need to view graphs in a browser, run Gremlin, or manage graph connections. Hubble provides a visual interface for graph data, schemas, and tasks.
+Hubble provides a Web interface for HugeGraph data, schema, queries, and imports.
+Start with a standalone deployment without PD, then read the distributed differences when needed.
 
-- [Visualize with Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Hubble basics with standalone RocksDB](/docs/quickstart/toolchain/hugegraph-hubble/): startup, sample graphs, modeling, imports, and queries.
+- [Hubble with an HStore cluster](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/): PD discovery, GraphSpaces, and cluster operations.
+
+---
+
+Section pages:
+
+- [Manage an HStore Cluster with Hubble](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/): Connect HStore and PD to Hubble and understand GraphSpaces, Schema templates, cluster topology, and node metrics.
 
 ---
 
@@ -2725,9 +2736,9 @@ Backlinks:
 Source: https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md
 ================
 
-# HugeGraph-Hubble Quick Start
+# Graph Visualization with Hubble: Standalone Quick Start
 
-> Deploy HugeGraph-Hubble for graph visualization, schema management, data import, and Gremlin or Cypher queries.
+> Visualize graph data with Hubble and RocksDB Server: start with Docker, explore schema, import CSV, and run Gremlin queries.
 
 ---
 
@@ -2735,680 +2746,322 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-### 1 HugeGraph-Hubble Overview
+Hubble is the HugeGraph Web management and graph visualization interface. Use one workspace to manage schema, import data, run queries,
+and switch between graph, table, and JSON results. This guide uses **standalone RocksDB Server + Hubble**, without PD or Store.
+
+For HStore, read the shared operations here first, then follow the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
+This guide follows Toolchain `master` (currently `1.8.0`); Docker `latest` is mutable, so check the actual running versions.
 
 > [!WARNING]
-> **Restrict Hubble and Server access in production**
->
-> Hubble listens on plain HTTP and must not be exposed directly to the Internet or untrusted networks. Terminate HTTPS at a trusted entry point, restrict source IPs for both Hubble and Server, and enable Server authentication and authorization with minimum permissions. Retain and restrict access to Server `audit-*.log` files. `auth.audit_log_rate` is a per-user rate limit, not a dedicated audit-log switch. Hubble has no separate account database; if Server allows anonymous access, Hubble has no login step.
+> Do not expose Hubble or Server directly to the public network. In production, use HTTPS, containers,
+> [authentication and authorization](/docs/config/config-authentication/), and an access allowlist.
 
-> **Version note**: This page follows hugegraph-toolchain `master`. Features that depend on newer Server, PD or Store versions are marked below and are unavailable on older Servers.
 
-> **Testing Guide**: For running HugeGraph-Hubble tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/toolchain-local-test)
+## Start the standalone pair
 
-HugeGraph-Hubble is HugeGraph's web management interface. It connects to one HugeGraph Server, either directly or through PD in a distributed cluster, manages GraphSpaces, graphs and schemas, imports data, runs Gremlin and Cypher queries and built-in graph algorithms, and visualizes the results.
-
-The platform mainly includes the following modules:
-
-##### Graph Overview
-
-Graph Overview lists GraphSpaces (in PD mode) and graphs. It creates, clones and clears graphs, loads demo graphs, opens the graph detail page with statistics and schema, and jumps to the query workbench.
-
-##### Metadata Modeling
-
-Metadata Modeling manages PropertyKeys, VertexLabels, EdgeLabels and IndexLabels of one graph, in list and graph views. Schema Templates keep reusable Groovy schemas per GraphSpace that can be applied when a graph is created.
-
-##### Data Import
-
-> The data import page is intended for small-scale trials. For bulk or production imports, use [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader).
-
-Data Sources register FILE, HDFS, JDBC and KAFKA sources. Import tasks are configured in four steps and can run once, on a cron schedule, or continuously for Kafka.
-
-##### Graph Query
-
-Graph Query runs Gremlin and Cypher statements in immediate or asynchronous mode and displays results as a graph (2D or 3D), a table, or JSON. It keeps execution records and favorite statements.
-
-##### Built-in Graph Algorithms
-
-Built-in Graph Algorithms provides forms for the Server's OLTP traverser APIs (interactive exploration) and for OLAP jobs (cluster batch computation through HugeGraph Computer or Vermeer).
-
-##### Async Tasks
-
-Async Tasks lists background tasks such as Gremlin and Cypher tasks, algorithm tasks, metadata removal, index creation and rebuild, and Vermeer load or compute tasks, with detail, cancel and delete actions.
-
-##### System and Operations
-
-System and Operations covers the personal profile, account management with GraphSpace permission presets, and, in PD mode, the cluster overview and node details.
-
-#### 1.1 Compatibility
-
-Hubble detects the authentication mode and the capabilities of the connected Server; there is no separate authentication switch in Hubble. The supported combinations are:
-
-| HugeGraph Server / PD | Deployment | Hubble compatibility | Scope and limitations |
-|---|---|---|---|
-| Server 1.5.x | Standalone, normally without authentication | Minimum compatibility | Basic graph, schema, data and Gremlin workflows only. GraphSpace, account permissions, PD/Store topology, cluster operations and newer algorithms are unavailable. |
-| Server 1.7.x with matching PD/Store 1.7.x | Standalone or distributed | Minimum compatibility through legacy adapters | Core management and query workflows stay usable, but legacy REST/Gremlin authentication, permission semantics, metrics and algorithm capabilities give a reduced experience. |
-| Server, PD and Store 1.8.x or later | Distributed deployment recommended | Full and recommended experience | GraphSpace, account permission presets, cluster operations, async tasks and algorithm capability handling are designed and validated against this generation. |
-
-Use matching Server, PD and Store minor versions in a distributed cluster.
-
-### 2 Deploy
-
-There are three ways to deploy `hugegraph-hubble`
-
-- Use Docker (Convenient for Test/Dev)
-- Download the Toolchain binary package
-- Source code compilation
-
-Hubble runs on Java 11: the backend is compiled with `java.version=11` and the Docker image is based on `eclipse-temurin:11-jre`. `bin/start-hubble.sh` only checks that a `java` binary is on the `PATH`, so make sure the right JDK is selected.
-
-#### 2.1 Use docker (Convenient for Test/Dev)
-
-> **Special Note**: Hubble no longer asks for the Server host and port on the web page. The Server address comes from `conf/hugegraph-hubble.properties`: `server.direct_url` when `pd.enabled=false`, or PD discovery through `pd.peers` when `pd.enabled=true`. Inside the container `127.0.0.1` refers to the `hubble` container itself, so the packaged default `server.direct_url=http://127.0.0.1:8080` does not reach a Server running in another container.
->
-> If `hubble` and `server` are in the same docker network, we **recommend** using the `container_name` (in our example, it is `server`) as the hostname, and `8080` as the port. Or you can use the **host IP** as the hostname, and the port is configured by the host for the server.
-
-The image copies the packaged distribution to `/hubble`, rewrites `server.host=0.0.0.0` and clears `dashboard.address` in `/hubble/conf/hugegraph-hubble.properties`, exposes port `8088` and runs `./bin/start-hubble.sh -f` in the foreground.
-
-Prepare a `hugegraph-hubble.properties` that points at your Server and keeps the container listening on all interfaces:
-
-```properties
-server.host=0.0.0.0
-server.port=8088
-pd.enabled=false
-server.direct_url=http://server:8080
-```
-
-Then start [hubble](https://hub.docker.com/r/hugegraph/hubble) with that file mounted over the packaged configuration:
+Use the main repository's [docker/docker-compose.yml](https://github.com/apache/hugegraph/blob/master/docker/docker-compose.yml)
+instead of writing another Compose file. It already combines RocksDB Server and Hubble, with networking, health checks, and data volumes.
+See the adjacent [README](https://github.com/apache/hugegraph/blob/master/docker/README.md) for deployment details.
 
 ```bash
-docker run -itd --name=hubble -p 8088:8088 \
-  -v "$PWD/hugegraph-hubble.properties:/hubble/conf/hugegraph-hubble.properties" \
-  hugegraph/hubble:1.7.0
+git clone --branch master --single-branch --depth 1 https://github.com/apache/hugegraph.git
+cd hugegraph/docker
 ```
 
-Alternatively, you can use Docker Compose to start `hubble`. Additionally, if `hubble` and the graph is in the same Docker network, you can access the graph using the container name of the graph, eliminating the need for the host machine's IP address.
+If you already have the main repository, enter its `docker/` directory. Compose mounts
+[`conf/hubble/standalone.properties`](https://github.com/apache/hugegraph/blob/master/docker/conf/hubble/standalone.properties)
+from that directory. It sets `pd.enabled=false` and `server.direct_url=http://server:8080`;
+both services communicate over one Docker network, without a Server address configured per graph.
+Do not download only the YAML and start it from another directory: relative configuration files may be missing.
 
-Use `docker-compose up -d`, `docker-compose.yml` is following:
+Hubble defaults to host loopback port `8088`; Server publishes `8080`. For a trial on your machine only, change Server's
+`ports` entry to `127.0.0.1:8080:8080` to avoid exposing the anonymous API to other machines.
 
-```yaml
-version: '3'
-services:
-  server:
-    image: hugegraph/hugegraph:1.7.0
-    container_name: server
-    environment:
-      - PASSWORD=xxx
-    ports:
-      - 8080:8080
-
-  hubble:
-    image: hugegraph/hubble:1.7.0
-    container_name: hubble
-    ports:
-      - 8088:8088
-    volumes:
-      - ./hugegraph-hubble.properties:/hubble/conf/hugegraph-hubble.properties
-```
-
-> Note:
->
-> 1. The docker image of hugegraph-hubble is a convenience release to start hugegraph-hubble quickly, but not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
->
-> 2. Recommend to use `release tag` (like `1.7.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
-
-#### 2.2 Download the Toolchain binary package
-
-`hubble` is in the `toolchain` project. First, download the binary tar tarball
+Choose an unused project name for this trial and keep these variables in the same terminal.
+Restore this project name if you use another terminal.
 
 ```bash
-export VERSION=1.7.0
-export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
-wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
-tar -xvf "${ARCHIVE}.tar.gz"
-cd "${ARCHIVE}/apache-hugegraph-hubble-incubating-${VERSION}"
+export HUGEGRAPH_VERSION=latest
+export HUBBLE_IMAGE=hugegraph/hubble:latest
+export HUBBLE_DEMO_PROJECT="hubble-demo-$(date +%Y%m%d-%H%M%S)"
+docker compose ls
+docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml pull
+docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml up -d --wait
+docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml ps
+curl -fsS http://127.0.0.1:8080/versions
 ```
 
-Edit `conf/hugegraph-hubble.properties` so that the Server address is correct, then run `hubble`
+Once services are healthy, open <http://127.0.0.1:8088>. In a fresh directory without `HUGEGRAPH_ADMIN_PASSWORD`,
+Server allows anonymous access and Hubble opens the home page directly. For authentication, follow the Docker README to configure
+an administrator password and JWT secret in `.env`, then sign in with a Server account. Hubble has no separate account database.
+Personal and account-management pages depend on the authentication mode and your permissions. Do not overwrite an existing `.env`.
+
+Use `latest` to try current features, and pin a published image version or digest for production.
+Images are convenience distributions; official release archives are on the [download page](/docs/download/download/).
+The algorithm and account screenshots use Hubble built from Toolchain `1.8.0` with Server `1.7.0`. Hubble currently returns the static value
+`3.0.0` from `/about`, which does not identify the build version. This pairing describes those screenshots, not a fixed meaning of `latest`.
+Available controls depend on Server capabilities.
+Compose's `server-data` and `hubble-data` retain graph data and Hubble metadata respectively. For further persistence and production settings,
+see the [Server deployment guide](/docs/quickstart/hugegraph/hugegraph-server/).
+
+## Home: find the right starting point
+
+Home groups the workspace into graph overview, data preparation, and graph queries. Use it to understand the workflow,
+then return to any section through the sidebar. The top graph selector determines the target of queries, schema operations, and async tasks;
+check the current graph after changing pages. Standalone mode has only the `DEFAULT` GraphSpace and needs no PD configuration.
+
+| Section | Purpose |
+|---|---|
+| Graph Overview and details | Select a graph, load samples, inspect its size, then model or query it |
+| Schema configuration | Define properties, vertex/edge labels, and indexes |
+| GQL Traversal | Write queries and explore graph, table, and JSON results |
+| Built-in Algorithms | Explore neighbors, paths, and similarity with parameter forms |
+| Async Tasks | Track background queries, schema changes, and index operations |
+| Data Source Management | Upload files or configure external readers |
+| Data Import | Map source fields to the graph model and run or schedule ingestion |
+| Profile and Account Management | Update personal details/passwords and manage accounts or space members according to permissions |
+| Operations | Inspect Server nodes; PD mode also includes cluster overview and PD/Store nodes |
+
+## Graph Overview and details: get to know a graph
+
+Select the default graph `hugegraph` in **Graph Overview**. The overview provides graph entry points and action menus.
+Graph details show schema and data statistics, with routes to modeling, data preparation, and queries.
+Statistics describe overall size; update them after importing or modifying data.
+
+Load the **People & Software Demo Graph** from the graph's **More actions** menu. Samples add their schema and missing elements
+without clearing existing data. Start with an empty graph to avoid conflicting schema names.
+The remaining examples explore the people and software in this graph.
+
+![Graph overview with the person/software sample](/docs/images/hubble/overview.jpg)
+
+Graph creation depends on Server capabilities. Its form accepts a name, optional alias, and schema or sample;
+it does not configure a Server host or account per graph. The connection comes from Hubble configuration.
+User-defined schema templates require PD mode; see the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
+
+## Schema modeling: define the shape of your data
+
+Schema determines valid properties and relationships, vertex ID generation, and query indexes.
+Open the graph's schema configuration. List view is useful for maintaining definitions; graph view helps explain how labels connect.
+
+| Definition | What to decide |
+|---|---|
+| Properties | Data type and cardinality; distinguish numbers from text |
+| Vertex labels | Properties, nullable properties, ID strategy, and primary keys |
+| Edge labels | Source/target labels, properties, frequency, and sort keys |
+| Vertex / edge indexes | Index type and fields that match filtering and range queries |
+
+In the person/software sample, `person` generates IDs from the primary key `name`, with nullable `age` and `city`.
+`software` has custom numeric IDs, and `created` connects people to software. This matches the
+[Loader example](/docs/quickstart/toolchain/hugegraph-loader/).
+
+![Vertex labels with primary-key and numeric ID strategies](/docs/images/hubble/schema.jpg)
+
+For a new model, define properties, vertex labels, edge labels, then indexes. Associated-property and index information help inspect dependencies.
+Schema deletion and index creation/rebuild may submit background tasks. Acceptance of an operation is only the first step;
+confirm its final status in **Async Tasks**.
+
+## GQL workspace: query and explore relationships
+
+Open **GQL Traversal** and confirm `hugegraph` is selected. The workspace puts the editor and results together,
+with immediate or async execution, query favorites, and reusable execution history. Start with this Gremlin query:
+
+```groovy
+g.V().hasLabel('person').valueMap()
+```
+
+Inspect person properties in table or JSON view. To visualize the people-to-software relationships, run:
+
+```groovy
+g.V().hasLabel('person').outE('created').inV().path()
+```
+
+![Gremlin path query and graph result](/docs/images/hubble/query.jpg)
+
+Graph results support 2D / 3D. Click a vertex or edge to inspect its ID, label, and properties; double-click a vertex to expand its neighbors.
+Layout, styling, and filtering help highlight relevant relationships, while export helps share results.
+Use **New** to create elements, or edit existing data when authorized. Layout, colors, and display limits only change presentation;
+adding/editing elements and Gremlin writes change Server data.
+
+Use `Ctrl` / `Command` + `Enter` to execute. Immediate mode suits small explorations; submit long queries asynchronously
+and avoid returning an entire large graph. Cypher is available only when Server supports it.
+Text2GQL is currently a UI preview with no model or query service connected; it cannot generate executable queries.
+
+## Built-in algorithms: explore with parameter forms
+
+Use **Built-in Algorithms** when you prefer a form to writing traversal code. Search for an algorithm and supply its parameters.
+Neighbor exploration answers what surrounds a vertex, path algorithms connect two vertices, and similarity/ranking algorithms compare or select vertices.
+Start with a known vertex ID and limit direction, edge labels, depth, and result size before attempting broader computation.
+
+Forms provide parameter guidance and documentation links, and restore common parameters when navigating away and back.
+Results use graph or algorithm-specific panels. Consult the help and documentation links beside the algorithm title for definitions and parameters.
+While the parameter form is focused, `Ctrl` / `Command` + `Enter` runs the current algorithm.
+
+OLAP batch algorithms require external compute services such as Computer or Vermeer.
+The two containers in this example provide online graph operations, not those compute services.
+
+For example, select K-neighbor (GET) with `source=1:marko`, `max_depth=1`, and `limit=20`.
+After parameter validation, use the run button on the card or the form shortcut to explore one-hop neighbors.
+
+![Built-in neighbor algorithm parameters and graph result](/docs/images/hubble/algorithms.jpg)
+
+## Async Tasks: confirm background results
+
+**Async Tasks** lists background work for the current graph, including async queries and some schema/index operations.
+Filter by task type and status, inspect IDs, creation times, and execution states, open successful query results, or expand failure information.
+Completed task records can be deleted where the interface permits. These tasks are separate from import execution history.
+
+For example, submit `g.V().count()` asynchronously, confirm success in the list, then inspect the returned count.
+A successful submission means the request was accepted, not that computation or indexing has finished.
+Use task errors and Server logs together when diagnosing failures.
+
+## Data Source Management: prepare the input
+
+A data source defines where data comes from and how to parse it, and can be referenced by import tasks.
+Hubble supports FILE, HDFS, JDBC, and Kafka, each with its own path, connection, or subscription settings.
+FILE is an easy starting point: upload a file, configure its format, delimiter, encoding, and header, and check column names before mapping.
+Hubble configuration controls upload limits and permitted extensions.
+
+Save this UTF-8 file as `people.csv` for the person example:
+
+```csv
+name,age,city
+docs_alice,28,Beijing
+docs_bob,32,Shanghai
+```
+
+Create a FILE data source and upload it. Select CSV (comma separation and UTF-8 by default), with column names `name,age,city`.
+Header, delimiter, and encoding belong to the data source, not mapping settings. The source fields must match the file.
+
+## Data Import: turn fields into a queryable graph
+
+**Data Import** converts source rows into vertices and edges. Its four configuration sections identify the target, select fields,
+map them to the graph, and choose execution timing. Use the preceding data source to create a person import into `DEFAULT` / `hugegraph`:
+
+| Section | Settings for this example |
+|---|---|
+| Basic Information | Target graph, new data source, and a recognizable task name |
+| Source Fields | Select `name`, `age`, and `city`, moving them to the selected field list |
+| Mapping Fields | Add a `person` vertex mapping; use **Auto Match** for same-name properties, then verify types |
+| Schedule | Choose one-time execution; confirmation submits the task immediately |
+
+`person` uses PRIMARY_KEY, so do not select a separate ID column. Custom ID strategies require an ID column;
+AUTOMATIC lets Server generate IDs, while PRIMARY_KEY derives them from mapped primary-key properties.
+Edge mappings need source/target fields that follow the corresponding vertex ID rules.
+
+The task list manages configuration and execution entry points; execution history in task details shows each instance's state, count, and errors.
+Periodic schedules and real-time Kafka tasks are also available; choose an execution mode compatible with the source.
+After completion, verify the result in the GQL workspace:
+
+```groovy
+g.V().hasLabel('person').has('name', within('docs_alice', 'docs_bob')).valueMap()
+```
+
+The result should include both new people. Import counts are not necessarily counts of newly created vertices:
+reruns may update existing elements, and header processing can affect reader counts.
+If the import fails, check source fields, numeric types, nullable properties, and target schema.
+Use Hubble for small trials and [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/) for production bulk ingestion.
+
+## Profile and account permissions
+
+Hubble uses Server authentication and accounts, with no separate user database. Anonymous mode hides **Profile** and **Account Management**.
+After authentication is enabled, Profile shows the current account's details and permissions and allows changing your password.
+Editing details such as a nickname requires Server support for the personal-profile API. Changing a password ends the current session;
+sign in again with the new password.
+
+### Standalone account management
+
+In standalone mode, the administrator can create, inspect, edit, delete, and batch-create accounts.
+Ordinary standalone accounts created through Hubble receive read, write, delete, and execute permissions across all graphs;
+they are not read-only or isolated to one graph. Configure finer resource permissions through
+[Server authentication and authorization](/docs/config/config-authentication/) rather than relying on GraphSpace presets.
+
+### GraphSpace permissions in PD mode
+
+With a Server supporting default-role APIs, global accounts and space access can be managed separately.
+The administrator manages global accounts; a space administrator manages members only within authorized spaces.
+Ordinary members do not receive account-management or operations entry points.
+The following presets are for PD mode, and are not universally editable on older or standalone Servers:
+
+| Preset | Scope and purpose |
+|---|---|
+| `SUPER_ADMIN` | Global account, GraphSpace, and operations management; grant or revoke super-administrator access |
+| `GS_ADMIN` | Manage authorized spaces and their members, without granting other-space or global super-administrator access |
+| `GS_READ_WRITE` | Read and write graph data within authorized spaces, without managing global accounts |
+| `GS_READ_ONLY` | Read graph data within authorized spaces, without writes |
+
+An account may have different permissions in different spaces. Select a space before adding an existing account or changing member permissions.
+Before replacing custom permissions with a preset, inspect the grants that need to be retained; complex permissions may not match a single preset.
+After changes, refresh permission context or sign in again and verify menus and space selection. Server still validates every request.
+Older Servers may hide or disable unsupported operations; a visible button alone does not establish resource authorization.
+See the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/) for space management.
+
+![Authenticated account list in PD mode](/docs/images/hubble/accounts.jpg)
+
+## Operations: inspect the standalone Server
+
+Standalone **Operations** provides **Node Information** for Server only, with no PD/Store nodes or cluster overview.
+Search nodes, filter health status, and open node details to inspect available version, system, JVM, and Server-backend metrics.
+When metrics are unavailable or stale, use collection state and the last successful observation time;
+a missing value is neither zero nor proof of health.
+
+Anonymous mode can read operations information. With authentication enabled, operations are available only to administrators with the capability.
+This is an observation and diagnosis interface, not a start/stop or scaling console.
+The distributed supplement covers cluster overview and the PD/Store node hierarchy.
+
+## Keyboard shortcuts and graph interactions
+
+Use the topbar shortcut-help button to see key bindings. Their scope differs: typing `?` in an input does not trigger global help.
+
+| Action | Key or gesture | Scope |
+|---|---|---|
+| Open / close shortcut help | `?` | Outside inputs and editors |
+| Execute query | `Ctrl` / `Command` + `Enter` | Query editor |
+| Run current algorithm | `Ctrl` / `Command` + `Enter` | Algorithm parameter form |
+| Toggle graph fullscreen | `F` | Click to focus the graph canvas first; not a global binding |
+| Inspect element details | Click a vertex or edge | Graph result |
+| Expand neighboring relationships | Double-click a vertex | Graph result |
+
+## Diagnose connection and result issues
+
+| Symptom | Check first |
+|---|---|
+| The Hubble page does not open | Check container status and `docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml logs hubble` |
+| The page opens but graphs are unavailable | Server health, a `server.direct_url` reachable from Hubble, and a shared network |
+| Login appears or write actions are missing | Server authentication and account permissions; Hubble has no independent authentication switch |
+| Expected data is missing | Current graph, sample load result, matching labels/properties; distinguish canvas display from stored data |
+| No cluster overview | This example has no PD; see the distributed supplement |
+
+Configuration can affect displayed query size. `gremlin.suffix_limit` defaults to `250` and supplies `.limit(N)` appended to applicable Gremlin queries;
+it is not a universal hard limit. `gremlin.vertex_degree_limit` (`100`) and `gremlin.edges_total_limit` (`500`) constrain expansion.
+FILE uploads allow `csv,txt` by default, with 1 GB per file and 10 GB total. Override `upload_file.*` settings when needed.
+
+## Stop the trial or build from source
+
+When finished, run this in the main repository's `docker/` directory:
 
 ```bash
+docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volumes
+```
+
+This removes the project's containers, network, named volumes, and anonymous volume, losing the sample data and Hubble import tasks.
+To retain data, omit `--volumes` when taking the deployment down and reuse the same project name when starting it again.
+
+To obtain an exact master build, use JDK 11 and Maven. The Maven plugin installs the required Node/Yarn;
+you do not need to install them separately. These commands skip tests:
+
+```bash
+git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
+cd hugegraph-toolchain
+mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
+cd hugegraph-hubble
+mvn package -Dmaven.javadoc.skip=true -DskipTests -ntp
+cd apache-hugegraph-hubble-*
+# Edit conf/hugegraph-hubble.properties with the correct Server URL
 bin/start-hubble.sh
 ```
 
-`start-hubble.sh` accepts the following options:
-
-| Option | Description |
-|--------|-------------|
-| `-f`, `--foreground [true\|false]` | Run in the foreground instead of as a daemon; the Docker image uses `-f` |
-| `-d`, `--debug` | Enable the JDWP debugger on port `8787` (`server=y,suspend=n`) |
-
-The script starts the JVM with `-Xms512m -Dfile.encoding=UTF-8 -Dhubble.home.path=<install dir>`, writes the PID to `bin/pid`, logs to `logs/hugegraph-hubble.log` and waits up to 30 seconds for `http://<server.host>:<server.port>/about` to answer before it returns.
-
-The packaged default is `server.host=localhost`, so the service only accepts loopback connections until you change it. After startup, open `http://<host>:8088`.
-
-Run `bin/stop-hubble.sh` to stop the service. It sends `SIGTERM` first so that the shutdown hooks pause running load tasks and close the embedded H2 database cleanly, and only escalates to `SIGKILL` if the process is still alive after `STOP_TIMEOUT` seconds (environment variable, default `30`).
-
-#### 2.3 Source code compilation
-
-Hubble's build uses `frontend-maven-plugin` in `hugegraph-hubble/hubble-dist/pom.xml` to install Node.js v18.20.8 and Yarn v1.22.21, so neither tool needs to be installed beforehand. JDK 11 and Maven are required.
-
-Download the toolchain source code.
-
-```shell
-git clone https://github.com/apache/hugegraph-toolchain.git
-```
-
-Compile `hubble`. It depends on the loader and client, so you need to build these dependencies in advance during the compilation process (you can skip this step later).
-
-```shell
-cd hugegraph-toolchain
-python -m pip install -r hugegraph-hubble/hubble-dist/assembly/travis/requirements.txt
-mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
-cd hugegraph-hubble
-mvn -e compile package -Dmaven.javadoc.skip=true -Dmaven.test.skip=true -ntp
-cd apache-hugegraph-hubble-*
-```
-
-Run `hubble`
-
-```bash
-bin/start-hubble.sh -d
-```
-
-For frontend work, run `yarn dev` inside `hubble-fe`. The backend POM does not configure `spring-boot:run`, so run `org.apache.hugegraph.HugeGraphHubble` from `hubble-be/target/classes` with `-Dhubble.home.path` pointing at a writable directory instead.
-
-### 3	Platform Workflows
-
-The home page groups the modules into three journeys: Graph Overview, Graph Import and Graph Query. It also shows whether Hubble runs in PD / cluster mode or in non-PD standalone mode. The module usage process of the platform is as follows:
-
-<div style="text-align: center;">
-  <img src="/docs/images/images-hubble/2平台使用流程.png" alt="image">
-</div>
-
-
-### 4	Platform Instructions
-#### 4.1	Graph Management
-In PD mode, [Graph Space Management] lists all GraphSpaces of the cluster and can create or edit one, including its alias, optional Kubernetes namespace and compute task, and resource limits. In non-PD standalone mode there is exactly one GraphSpace named `DEFAULT` and the GraphSpace list is skipped.
-
-##### 4.1.1	Graph creation
-Under the graph management module, click [New Graph] and fill in the graph name, an optional alias, an optional schema template and optional sample data. The graph name is unique inside its GraphSpace and cannot be changed after creation.
-
-<div style="text-align: center;">
-  <img src="/docs/images/images-hubble/311图创建.png" alt="image">
-</div>
-
-
-Create graph by filling in the content as follows:
-
-<center>
-  <img src="/docs/images/images-hubble/311图创建2.png" alt="image">
-</center>
-
-> **Special Note**: The Server connection is not configured on this page. It comes from `conf/hugegraph-hubble.properties`, through `server.direct_url` or PD discovery; see section 2.1 for the Docker hostname rules. Graph creation is only offered when the connected Server exposes it (REST API 0.67 or later); on older Servers the graph list is read-only.
-
-##### 4.1.2	Graph Access
-Realize the information access to the graph space. After entering, you can perform operations such as multidimensional query analysis, metadata management, data import, and algorithm analysis of the graph. [Open Graph Studio] opens the query workbench, [Metadata Config] opens the schema pages, and the graph detail page shows vertex and edge statistics together with the schema.
-
-<center>
-  <img src="/docs/images/images-hubble/312图访问.png" alt="image">
-</center>
-
-
-##### 4.1.3	Graph management
-1. The graph list has a card view and a list view. Search matches the graph name.
-2. Per-graph actions are View Schema (with [Export Groovy Schema]), Metadata Config, Clone Graph (schema only, or schema and data), Clear Schema and Data, Delete, and, in PD mode, Set Default.
-3. [Sample data and resources] builds a demo graph inside the current graph: the Red Chamber demo graph, the People & Software demo graph, or the Tiny Movie Rank demo. These demos add missing schema and elements only and never clear existing data.
-
-<center>
-  <img src="/docs/images/images-hubble/313图管理.png" alt="image">
-</center>
-
-
-#### 4.2	Metadata Modeling (list + graph mode)
-##### 4.2.1	Module entry
-Open [Metadata Config] from the graph list, or the metadata page of a graph at `/graphspace/<graphspace>/graph/<graph>/meta`. The page has five tabs, Property, Vertex Type, Edge Type, Vertex Index and Edge Index, and a switch between list view and graph view.
-
-<center>
-  <img src="/docs/images/images-hubble/321元数据入口.png" alt="image">
-</center>
-
-
-##### 4.2.2	Property type
-###### 4.2.2.1	Create type
-1. Fill in or select the property name, data type, and cardinality to complete the creation of the property.
-2. Created properties can be used as properties of vertex type and edge type.
-
-List mode:
-
-<center>
-  <img src="/docs/images/images-hubble/3221属性创建.png" alt="image">
-</center>
-
-
-Graph mode:
-
-<center>
-  <img src="/docs/images/images-hubble/3221属性创建2.png" alt="image">
-</center>
-
-
-###### 4.2.2.2	Management
-1. You can delete a single item or delete it in batches in the property list. A property that is still used by a vertex or edge type cannot be deleted.
-2. Deleting metadata runs as an asynchronous task; check Async Tasks for its progress.
-
-##### 4.2.3	Vertex type
-###### 4.2.3.1	Create type
-1. Fill in or select the vertex type name, ID strategy, associated properties, primary key properties, vertex style, content displayed below the vertex in the query result, and index information: including whether to create a type index, and the specific content of the property index, complete the vertex type creation.
-
-List mode:
-
-<center>
-  <img src="/docs/images/images-hubble/3231顶点创建.png" alt="image">
-</center>
-
-
-Graph mode:
-
-<center>
-  <img src="/docs/images/images-hubble/3231顶点创建2.png" alt="image">
-</center>
-
-###### 4.2.3.2 Administration
-1. Editing operations are available. The vertex style, associated properties, vertex display content, and property index can be edited, and the rest cannot be edited. In graph mode, double-click a vertex type to edit it.
-
-2. You can delete a single item or delete it in batches.
-
-<center>
-  <img src="/docs/images/images-hubble/3233顶点删除.png" alt="image">
-</center>
-
-
-##### 4.2.4 Edge Types
-###### 4.2.4.1 Create
-1. Fill in or select the edge type name, the type (Normal, Parent or Sub, for edge type hierarchies), start point type, end point type, associated properties, whether to allow multiple connections, edge style, content displayed below the edge in the query result, and index information: including whether to create a type index, and the specific content of the property index, complete the creation of the edge type.
-
-List mode:
-
-<center>
-  <img src="/docs/images/images-hubble/3241边创建.png" alt="image">
-</center>
-
-
-Graph mode:
-
-<center>
-  <img src="/docs/images/images-hubble/3241边创建2.png" alt="image">
-</center>
-
-
-###### 4.2.4.2 Administration
-1. Editing operations are available. Edge styles, associated properties, edge display content, and property indexes can be edited, and the rest cannot be edited, the same as the vertex type.
-2. You can delete a single item or delete it in batches.
-
-##### 4.2.5 Index Types
-Displays vertex and edge indexes for vertex types and edge types. Secondary, range, search and unique indexes are supported.
-
-##### 4.2.6 Schema Templates
-[Schema templates] at `/graphspace/<graphspace>/schema` keeps a reusable template library for the current GraphSpace. Example templates ship with Hubble and can be used, removed or restored; they are not stored on the Server until you save one. User templates hold Groovy schema on the Server and can be created, edited and deleted. When you create a graph, an existing template can be selected so that its schema is applied right away.
-
-#### 4.3 Data Import
-
-> **Note**: currently, we recommend to use [hugegraph-loader](/docs/quickstart/toolchain/hugegraph-loader) to import data formally. The built-in import of `hubble` is used for **testing** and **getting started**.
-
-The usage process of data import is as follows:
-
-<center>
-  <img src="/docs/images/images-hubble/33导入流程.png" alt="image">
-</center>
-
-
-##### 4.3.1	Module entrance
-Left navigation, under Graph Import: [Data Sources] and [Data Import].
-<center>
-  <img src="/docs/images/images-hubble/331导入入口.png" alt="image">
-</center>
-
-
-##### 4.3.2 Data sources
-1. [Data Sources] registers where an import task reads from. Four source types are supported: FILE (local upload), HDFS, Kafka and JDBC.
-2. For a FILE source, upload the files that need to be composed. The accepted formats come from `upload_file.format_list`, which defaults to `csv` and `txt`.
-3. The single file and total size limits default to 1 GB and 10 GB, and unfinished uploads are discarded after `upload_file.max_uploading_time`, which defaults to 12 hours.
-
-<center>
-  <img src="/docs/images/images-hubble/333上传文件.png" alt="image">
-</center>
-
-
-##### 4.3.3 Create task
-1. [Data Import] > [Create Task] configures an import in four steps: Basic Information, Select Source Fields, Select Mapping Fields and Schedule.
-2. Basic Information takes the task name (1 to 48 Chinese characters, letters, digits or `_`), the target GraphSpace and graph, the source type and the data source.
-3. Multiple import tasks can be created and imported in parallel.
-
-<center>
-  <img src="/docs/images/images-hubble/332创建任务.png" alt="image">
-</center>
-
-
-##### 4.3.4 Setting up data mapping
-1. Set up data mapping for the selected source, including file settings and type settings
-2. File settings: check or fill in whether to include the header, separator, encoding format and other settings of the source itself, all set the default values, no need to fill in manually
-3. Type setting:
-
-     1. Vertex map and edge map:
-
-        【Vertex Type】: Select the vertex type, and map the column data of the source for its ID;
-
-        【Edge Type】: Select the edge type and map the column data of the source to the ID column of its start point type and end point type;
-     2. Mapping settings: map the column data of the source to the properties of the selected vertex type. Here, if the property name is the same as the header name of the file, the mapping property can be automatically matched, and there is no need to manually fill in the selection.
-     3. After completing the setting, the setting list will be displayed before proceeding to the next step. It supports the operations of adding, editing and deleting mappings.
-
-Fill in the settings map:
-
-  <center>
-      <img src="/docs/images/images-hubble/334设置映射.png" alt="image">
-  </center>
-
-
-Mapping list:
-
-  <center>
-    <img src="/docs/images/images-hubble/334设置映射2.png" alt="image">
-  </center>
-
-
-##### 4.3.5 Import data
-The last step chooses when the task runs: Run Once for a one-off import, Scheduled with a Quartz cron expression such as `0 0/5 * * * ?`, or Realtime for a Kafka source.
-1. Import settings
-- The import setting parameter items are as shown in the figure below, all set the default value, no need to fill in manually
-
-<center>
-  <img src="/docs/images/images-hubble/335导入设置.png" alt="image">
-</center>
-
-
-2. Import details
-- Run a task from the task list to start the import, and pause, edit or delete it from the same list
-- The execution history of a task provides the execution instance ID, the number of imported records, the average rate in records per second, the import duration and the status of each run
-- If the import fails, you can view the specific reason
-
-<center>
-  <img src="/docs/images/images-hubble/335导入详情.png" alt="image">
-</center>
-
-
-#### 4.4 Graph Query
-##### 4.4.1 Module entry
-Left navigation, under Graph Query: [GQL Traversal].
-<center>
-  <img src="/docs/images/images-hubble/341分析入口.png" alt="image">
-</center>
-
-
-##### 4.4.2 Multi-graphs switching
-The top bar carries the current GraphSpace and graph, so you can flexibly switch the operation space of multiple graphs without leaving the page.
-<center>
-  <img src="/docs/images/images-hubble/342多图切换.png" alt="image">
-</center>
-
-
-##### 4.4.3 Graph Analysis and Processing
-HugeGraph supports Gremlin, a graph traversal query language of Apache TinkerPop3. Gremlin is a general graph database query language. By entering Gremlin statements and clicking execute, you can perform query and analysis operations on graph data, and create and delete vertices/edges, modify vertex/edge properties, etc. When the connected Server supports Cypher, a Cypher tab is offered next to Gremlin. A Text2GQL tab is present as a user interface preview only: it is not connected to a model or a query service, and nothing entered there is sent or executed.
-
-Each statement can run in one of two modes. Immediate returns the result inline and suits analyses that finish within about 30 seconds; Async submits a task instead, and its progress and result appear under Async Tasks. `Ctrl`/`Command` + `Enter` runs the current statement.
-
-After the query, below is the graph result display area, which provides 3 kinds of graph result display modes: [Graph Mode], [Table Mode], [Json Mode]. The graph canvas can be rendered in 2D or 3D.
-
-> [!WARNING]
-> **Hubble's native query interface grants high privileges**
->
-> Hubble lets users enter and execute native Gremlin queries. In production, do not expose Hubble publicly. Enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum permissions for permitted operations. Standard Server configuration writes authentication-proxy authorization records to `audit-*.log`; retain these files and restrict read access.
-
-Support zoom, center, full screen, layout and style configuration, legend, minimap, undo and redo, and export operations. The canvas can be exported as JSON, CSV or an image, and a previously exported canvas can be imported again.
-
-【Picture Mode】
-<center>
-  <img src="/docs/images/images-hubble/343图分析-图.png" alt="image">
-</center>
-
-
-【Table mode】
-<center>
-  <img src="/docs/images/images-hubble/343图分析-表格.png" alt="image">
-</center>
-
-
-【Json mode】
-<center>
-  <img src="/docs/images/images-hubble/343图分析-json.png" alt="image">
-</center>
-
-
-##### 4.4.4 Data Details
-Click the vertex/edge entity to view the data details of the vertex/edge, including vertex/edge type, vertex ID, attribute and corresponding value, expand the information display dimension of the graph, and improve the usability.
-
-
-##### 4.4.5 Multidimensional Path Query of Graph Results
-In addition to the global query, an in-depth customized query and hidden operations can be performed for the vertices in the query result to realize customized mining of graph results.
-
-Right-click a vertex, and the menu entry of the vertex appears, which can be displayed, inquired, hidden, etc.
-- Expand: Click to display the vertices associated with the selected point.
-- Query: By selecting the edge type and edge direction associated with the selected point, and then selecting its attributes and corresponding filtering rules under this condition, a customized path display can be realized.
-- Hide: When clicked, hides the selected point and its associated edges.
-
-Double-clicking a vertex also displays the vertex associated with the selected point.
-
-<center>
-  <img src="/docs/images/images-hubble/345定制路径查询.png" alt="image">
-</center>
-
-
-##### 4.4.6 Add vertex/edge
-###### 4.4.6.1 Added vertex
-In the graph area, two entries can be used to dynamically add vertices, as follows:
-1. Click on the graph area panel, the Add Vertex entry appears
-2. Click the first icon in the action bar in the upper right corner
-
-Complete the addition of vertices by selecting or filling in the vertex type, ID value, and attribute information.
-
-The entry is as follows:
-
-<center>
-  <img src="/docs/images/images-hubble/346新增顶点.png" alt="image">
-</center>
-
-
-Add the vertex content as follows:
-
-<center>
-  <img src="/docs/images/images-hubble/346新增顶点2.png" alt="image">
-</center>
-
-
-###### 4.4.6.2 Add edge
-Right-click a vertex in the graph result to add the outgoing or incoming edge of that point.
-
-
-##### 4.4.7 Execute the query of records and favorites
-1. Record each query record at the bottom of the graph area, including: query time, execution type, content, status, time-consuming, as well as [collection] and [load] operations, to achieve a comprehensive record of graph execution, with traces to follow, and Can quickly load and reuse execution content
-2. Provides the function of collecting sentences, which can be used to collect frequently used sentences, which is convenient for fast calling of high-frequency sentences.
-
-<center>
-  <img src="/docs/images/images-hubble/347收藏.png" alt="image">
-</center>
-
-
-#### 4.5 Async Tasks
-##### 4.5.1 Module entry
-Left navigation, under Graph Query: [Async Tasks].
-<center>
-   <img src="/docs/images/images-hubble/351任务管理入口.png" alt="image">
-</center>
-
-
-##### 4.5.2 Task Management
-1. Provide unified management and result viewing of asynchronous tasks. The task types are:
-- gremlin: Gremlin tasks
-- cypher: Cypher tasks
-- computer-dis: algorithm tasks
-- remove_schema: remove metadata
-- create_index: create an index
-- rebuild_index: rebuild the index
-- vermeer-task:load: Vermeer graph load tasks
-- vermeer-task:compute: Vermeer graph compute tasks
-2. The list displays the asynchronous task information of the current graph, including task ID, task name, task type, creation time, time-consuming, status, operation, and realizes the management of asynchronous tasks. The list refreshes every 5 seconds.
-3. Support filtering by task type and status
-4. Support searching for task ID and task name
-5. A running task can be cancelled, and asynchronous tasks can be deleted one by one or in batches
-
-<center>
-  <img src="/docs/images/images-hubble/352任务列表.png" alt="image">
-</center>
-
-
-##### 4.5.3 Gremlin asynchronous tasks
-1. Create a task
-
-- The graph query module supports two execution modes, immediate query and asynchronous task; if the user switches to the asynchronous mode, after clicking execute, an asynchronous task will be created in the asynchronous task center. A Cypher statement creates a Cypher task in the same way;
-2. Task submission
-- After the task is submitted successfully, the graph area returns the submission result and task ID
-3. Mission details
-- Provide [View] entry, you can jump to the task details to view the specific execution of the current task After jumping to the task center, the currently executing task line will be displayed directly
-
-<center>
-  <img src="/docs/images/images-hubble/353gremlin任务.png" alt="image">
-</center>
-
-
-Click to view the entry to jump to the task management list, as follows:
-
-<center>
-  <img src="/docs/images/images-hubble/353gremlin任务2.png" alt="image">
-</center>
-
-
-4. View the results
-- The results are displayed in the form of JSON, and a compact result can be expanded inline
-
-
-##### 4.5.4 Algorithm tasks
-Batch algorithms submitted from [Built-in Graph Algorithms] land here as algorithm tasks, and so do Vermeer graph load and compute tasks. Find a task by ID in the list and open it to follow its progress and result. See section 4.6 for the algorithm forms themselves.
-
-##### 4.5.5 Delete metadata, rebuild index
-1. Create a task
-- In the metadata modeling module, when deleting metadata, an asynchronous task for deleting metadata can be created
-
-<center>
-  <img src="/docs/images/images-hubble/355删除元数据.png" alt="image">
-</center>
-
-
-- When editing an existing vertex/edge type operation, when adding an index, an asynchronous task of creating an index can be created
-<center>
-  <img src="/docs/images/images-hubble/355构建索引.png" alt="image">
-</center>
-
-
-2. Task details
-- After confirming/saving, you can jump to the task center to view the details of the current task
-
-<center>
-  <img src="/docs/images/images-hubble/355任务详情.png" alt="image">
-</center>
-
-
-#### 4.6 Built-in Graph Algorithms
-
-[Built-in Graph Algorithms] under Graph Query provides parameter forms for the algorithms the Server exposes, grouped by intent: explore neighborhoods, find paths and connections, compare and rank, measure importance, find communities, and analyze graph structure. Each algorithm links to its official API documentation.
-
-Two execution modes are offered:
-
-- Interactive exploration runs the Server's OLTP traverser APIs and returns results directly. It covers K-out and K-neighbor, shortest path in its single source, weighted, and multi-node forms, paths and all paths, customized and template paths, rings and rays, crosspoints and customized crosspoints, same neighbors, Jaccard similarity, fusiform similarity, Adamic-Adar, resource allocation, egonet, and the rank and neighbor rank APIs.
-- Cluster batch computation submits an asynchronous job over the whole graph and reports the result under Async Tasks. It covers PageRank and personal PageRank, degree, closeness and betweenness centrality, K-core, weakly connected components, label propagation, Louvain, triangle count, cluster coefficient, rings detection, subgraph matching and links, with Vermeer variants where the deployment provides Vermeer.
-
-Batch algorithms need a HugeGraph Computer environment, including Kubernetes when the deployment requires it. When Computer cannot be reached, the page says so instead of submitting the task.
-
-#### 4.7 Sign-in and account management
-
-When the connected Server has authentication enabled, Hubble opens the sign-in page at `/login`. Sign in with a HugeGraph Server account: Hubble forwards the credentials to the Server and keeps the returned token for the browser session, and it stores no accounts of its own. Login attempts are throttled, so after the first three failures for the same account and address, further attempts back off starting at 5 seconds and doubling up to 600 seconds. When the Server allows anonymous access, `/login` redirects to the home page and the profile and account pages are hidden.
-
-[My Profile] shows the account details and changes the password. [Account Management] is available to accounts that may manage accounts or GraphSpace members. It creates accounts and assigns one of four access presets: Super Administrator, GraphSpace Read-only, GraphSpace Read-write and GraphSpace Administrator. Low-level role, target, access and belong records are not exposed in the interface.
-
-#### 4.8 Cluster operations
-
-In PD mode, [System & Operations] adds [Cluster Overview] and [Node details] for accounts with the matching capabilities. Cluster Overview shows the topology, per-tier node status and cluster facts such as stores online, PD leader, capacity, data size, graphs, partitions and replicas. Node details lists every discovered node with filters for type and status, and opens a node profile with its metrics, leader role and Raft shards. Node details is also available in standalone mode; Cluster Overview needs PD.
-
-An optional external dashboard can be linked from the navigation page through `dashboard.address`. It is a separate monitoring entry, and leaving it unconfigured does not affect Cluster Overview or Node details.
-
-### 5 Configuration
-
-HugeGraph-Hubble can be configured through the `conf/hugegraph-hubble.properties` file.
-
-#### 5.1 Service Configuration
-
-| Configuration Item | Default Value | Description |
-|-------------------|---------------|-------------|
-| `server.host` | `localhost` | The address that Hubble binds to. The Docker image rewrites it to `0.0.0.0` |
-| `server.port` | `8088` | The port that Hubble listens on |
-| `server.protocol` | `http` | Protocol used to reach HugeGraphServer, `http` or `https` |
-| `ssl.client_truststore_file` | `conf/hugegraph.truststore` | Client truststore path, used when `server.protocol=https` |
-| `ssl.client_truststore_password` | `hugegraph` | Client truststore password, used when `server.protocol=https` |
-
-#### 5.2 Server and PD
-
-| Configuration | Default | Description |
-|---------------|---------|-------------|
-| `pd.enabled` | `false` | Whether to discover services through PD; keep `false` for a standalone Server |
-| `server.direct_url` | `http://127.0.0.1:8080` | Server address used when `pd.enabled=false` |
-| `pd.peers` | `127.0.0.1:8686` | PD node address |
-| `pd.server` | `127.0.0.1:8620` | PD service address |
-| `cluster` | `hg` | Name of the cluster Hubble connects to |
-| `route.type` | `NODE_PORT` | Service routing mode: `NODE_PORT`, `DDS`, or `BOTH` |
-| `client.request_timeout` | `60` | Request timeout in seconds for the HugeGraph client |
-| `client.url_cache_max_entries` | `1024` | Discovered URL scopes retained for stale fallback |
-
-#### 5.3 Gremlin Query Limits
-
-These settings control query result limits to prevent memory issues:
-
-| Configuration Item | Default Value | Description |
-|-------------------|---------------|-------------|
-| `gremlin.suffix_limit` | `250` | Maximum query suffix length |
-| `gremlin.vertex_degree_limit` | `100` | Maximum vertex degree to display |
-| `gremlin.edges_total_limit` | `500` | Maximum number of edges returned |
-| `gremlin.batch_query_ids` | `100` | ID batch query size |
-| `execute-history.show_limit` | `500` | Number of execution records kept for display |
-
-#### 5.4 File Upload
-
-These keys are not written into the packaged file; add them to override the defaults.
-
-| Configuration Item | Default Value | Description |
-|-------------------|---------------|-------------|
-| `upload_file.location` | `upload-files` | Directory that holds uploaded files |
-| `upload_file.format_list` | `csv,txt` | Accepted upload formats |
-| `upload_file.single_file_size_limit` | 1 GB | Size limit for one uploaded file |
-| `upload_file.total_file_size_limit` | 10 GB | Total size limit for uploaded files |
-| `upload_file.max_uploading_time` | `43200` | Seconds before unfinished upload parts are cleared |
-
-#### 5.5 Cluster Operations
-
-These keys drive the Cluster Overview and Node details pages.
-
-| Configuration Item | Default Value | Description |
-|-------------------|---------------|-------------|
-| `operations.connect_timeout_ms` | `1500` | Connection timeout for each operations upstream |
-| `operations.read_timeout_ms` | `2500` | Read timeout for each operations upstream |
-| `operations.max_response_bytes` | `1048576` | Maximum accepted body size from an operations upstream |
-| `operations.cache_ttl_seconds` | `5` | Lifetime of a fresh operations snapshot |
-| `operations.cache_max_entries` | `1024` | Operations snapshots retained across credentials |
-| `operations.store_threads` | `16` | Concurrent Store metric collection tasks |
-| `operations.store_deadline_ms` | `5000` | Deadline for one Store metric collection pass |
-| `operations.store.allowed_targets` | `[http://127.0.0.1:8520,http://[::1]:8520]` | Exact Store metric origins Hubble may contact |
-| `operations.pd.username` / `operations.pd.password` | `hubble` / empty | PD service identity used by the backend only |
-| `operations.store.username` / `operations.store.password` | `hubble` / empty | Store service identity used by the backend only |
-| `dashboard.address` | `127.0.0.1:8092` | Optional external dashboard; empty hides the entry |
-
-> The `operations.store.allowed_targets` default covers local testing only. A production deployment must list every trusted Store scheme, host and port explicitly, because discovery never adds an origin to this allowlist. HTTPS origins keep their configured hostname for TLS SNI and certificate verification. Supply the PD and Store passwords through a protected deployment configuration rather than the packaged file.
+The bundled configuration binds to `localhost:8088`. `bin/stop-hubble.sh` requests graceful shutdown before forcing termination on timeout.
+For development and testing, see the [Toolchain local test guide](/docs/guides/toolchain-local-test/).
 
 ---
 
@@ -3419,6 +3072,215 @@ Backlinks:
 - [System Introduction](/docs/introduction/)
 - [HugeGraph Examples](/docs/language/hugegraph-example/)
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
+- [Graph visualization](/docs/quickstart/toolchain/visualization/)
+- [Hubble with HStore](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)
+
+
+================
+Source: https://hugegraph.apache.org/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/index.md
+================
+
+# Manage an HStore Cluster with Hubble
+
+> Connect HStore and PD to Hubble and understand GraphSpaces, Schema templates, cluster topology, and node metrics.
+
+---
+
+LLMS index: [llms.txt](/llms.txt)
+
+---
+
+This guide covers the differences between HStore + PD and standalone RocksDB.
+For modeling, importing data, and querying, see the [Hubble standalone guide](/docs/quickstart/toolchain/hugegraph-hubble/).
+This guide follows Toolchain `master`.
+
+The main repository's [docker/docker-compose-hstore.yml](https://github.com/apache/hugegraph/blob/master/docker/docker-compose-hstore.yml)
+already combines PD, Store, Server, and Hubble. Follow the adjacent
+[Docker README](https://github.com/apache/hugegraph/blob/master/docker/README.md) to prepare `.env` and generated Hubble local configuration,
+then start it from `docker/`; do not maintain another deployment YAML.
+The settings below explain connection differences and do not replace the README's PD credential and service-readiness requirements.
+
+The screenshots use Hubble built from Toolchain `1.8.0` with Server, PD, and Store `1.7.0`. Hubble currently returns the static value `3.0.0`
+from `/about`, which does not identify its build version. This pairing describes the screenshot environment; `latest` is mutable.
+Metrics and permission APIs vary by version.
+
+## Connect to a distributed cluster
+
+Hubble still manages graph data through the **Server graph API**. In distributed mode, it discovers Servers through PD
+and collects cluster information from PD and Store. Hubble does not read or write graph data directly in Store.
+
+For the official Compose deployment, prepare `.env` in the main repository's `docker/` directory following its README, then generate the Hubble configuration:
+
+```bash
+set -a
+. ./.env
+set +a
+./set-hubble-pd-password.sh hstore
+```
+
+The script reads the loaded `HG_PD_AUTH_SECRET_KEY` and writes the PD operations password to the host file
+`docker/conf/hubble/hstore.local.properties`. Edit this generated file to customize connection or operations settings, preserving
+`operations.pd.password` so it matches PD's secret. Do not replace it with the tracked `.example` template. Compose mounts it read-only at
+`/hubble/conf/hugegraph-hubble.properties` inside the container; do not edit it there. Do not commit the generated file or `.env`.
+Running the script again overwrites the generated file, so reapply custom settings afterward.
+
+Start the services from the same `docker/` directory and confirm Server registration and Store readiness:
+
+```bash
+docker compose -f docker-compose-hstore.yml up -d --wait
+```
+
+For separately deployed services, follow the [PD deployment guide](/docs/quickstart/hugegraph/hugegraph-pd/) and
+[HStore deployment guide](/docs/quickstart/hugegraph/hugegraph-hstore/). A source or binary Hubble deployment instead uses the package's
+`conf/hugegraph-hubble.properties`. These settings match the official minimal topology; use backend-reachable addresses for other deployments:
+
+```properties
+pd.enabled=true
+cluster=hg
+pd.peers=pd:8686
+pd.server=pd:8620
+```
+
+| Setting | Purpose | Bundled value |
+|---|---|---|
+| `pd.enabled` | Explicitly enable PD mode; `server.direct_url` is not used in this mode. | `false` |
+| `cluster` | Cluster name used for Server discovery; it must match the registration. | `hg` |
+| `pd.peers` | PD **gRPC** addresses, separated by commas. | `127.0.0.1:8686` |
+| `pd.server` | PD **REST** address for cluster operations, not a list of gRPC peers. | `127.0.0.1:8620` |
+
+Do not interchange ports `8686` and `8620`, or retain `127.0.0.1` for connections between containers.
+The bundled file explicitly sets `pd.enabled=false`, while the Java fallback for a missing key is `true`; set it explicitly in either deployment.
+Restart source or binary Hubble deployments after configuration changes. For Compose, recreate the Hubble container from `docker/` after editing
+or regenerating the host file so the read-only bind mount loads it again; retain the original project name and all `-f` arguments:
+
+```bash
+docker compose -f docker-compose-hstore.yml up -d --force-recreate hubble
+```
+
+You do not enter a Server host and port for each graph in the UI.
+
+## Organize graphs and permissions with GraphSpaces
+
+A GraphSpace groups graphs, Schema templates, and access permissions. For example, create `sales` and `research` spaces
+so each team can work with its own graphs. Modeling, importing, and querying within a space follow the standalone guide.
+
+### Create and adjust a GraphSpace
+
+With Server authentication enabled, creating, editing, and deleting GraphSpaces require super administrator access.
+Start with a globally unique GraphSpace name, an optional display alias, and the maximum graph count.
+For example, use `research` as the API identifier and “Research_graph” as the display alias.
+The name cannot change after creation. The alias and description can change; aliases do not participate in URLs or permission matching.
+Choose GraphSpace administrators from existing accounts.
+
+“Advanced deployment and resource limits” includes CPU and memory limits for graph query/write services and asynchronous compute tasks,
+plus the storage capacity limit. These are deployment and quota settings, not current usage or a promise to resize Docker containers when the form is saved.
+Defaults are 100 graphs, 64 CPU cores and 128 GB of memory for each of the graph and compute services, and 1000000 GB of storage.
+Keep the defaults for a container trial. Configure Kubernetes namespaces, Operator images, and algorithm images only for the corresponding deployment or
+compute use.
+
+Select a space before opening a graph. Check the current graph after switching spaces, especially when spaces contain identically named graphs.
+The list reflects account access. If a space is missing, check membership permissions before creating more graphs.
+
+![GraphSpace creation and advanced resource limits](/docs/images/hubble/graphspace.jpg)
+
+### Reuse Schema templates
+
+**User-defined Schema templates require PD mode** and persist reusable Groovy Schema within a GraphSpace.
+When several business graphs share vertex labels, edge labels, and indexes, save the model as a template and select it when creating subsequent graphs.
+For example, a user template in `research` can be reused for new graphs in that space. After switching spaces, select a template belonging to the new space.
+
+User templates differ from the built-in sample templates in the main guide: built-in templates help explore preset models,
+while user templates preserve your own models for future use. A template is not an import of data; loading sample data is a separate graph creation choice.
+With Server authentication enabled, creating a user template requires write access to its space.
+Updating or deleting it also requires ownership or the corresponding administrative permission.
+Anonymous mode does not enforce per-user permissions or template ownership checks.
+Standalone mode does not provide user template management.
+
+## Assign access to a GraphSpace
+
+For account creation, login, and personal details, see the [standalone guide](/docs/quickstart/toolchain/hugegraph-hubble/).
+Distributed mode adds “Manage GraphSpace members” to assign permissions between existing accounts and selected spaces.
+Servers supporting permission presets provide these common choices:
+
+| Preset | Intended user | Scope |
+|---|---|---|
+| GraphSpace read-only | Users who inspect and query graph data | Selected spaces. |
+| GraphSpace read-write | Users who model, import, and maintain graph data | Selected spaces. |
+| GraphSpace administrator | Owners managing a space's members and graph resources | Selected spaces; does not grant GraphSpace creation/editing or cluster operations access. |
+| Super administrator | Operators managing accounts, GraphSpaces, and the cluster | Global; assign according to responsibilities. |
+
+An account may have different access in different spaces, such as read-write in `research` and read-only in `sales`.
+Accounts and space memberships are managed separately; removing a member does not delete the global account.
+After creating an account, continue directly to assigning space access. When changing an existing membership, check the selected space and preset
+and preserve permissions still needed in other spaces. Enabling `pd.enabled` grants no permissions;
+legacy custom roles on older Servers are not interchangeable with these presets.
+See [Server authentication and authorization](/docs/config/config-authentication/).
+
+![GraphSpace members and access presets](/docs/images/hubble/members.jpg)
+
+## Locate problems through the cluster overview
+
+The overview presents **Server → PD → Store** in one topology. Switch to the node list to filter by type, status, or name.
+PD Leader, online Store count, graphs, partitions, replicas, and data size help identify cluster scale and nodes requiring attention.
+Partitions and replicas describe data distribution. Data size is observed usage, distinct from a GraphSpace's configured storage limit.
+
+Start with cluster and source status, then inspect an affected node. `UP` indicates a successful collection from the source;
+`DEGRADED` indicates a cluster or partial source issue, and `DOWN` indicates that the corresponding probe failed.
+Graphs may remain queryable when topology is available but some metrics are missing.
+The UI distinguishes unsupported, unavailable, stale, and failed collections and includes observation times.
+An empty value is not zero, and an older value is not a current observation.
+
+![Cluster topology, node status, and capacity](/docs/images/hubble/cluster-overview.jpg)
+
+### Read node details
+
+| Node | Main observations | Use |
+|---|---|---|
+| Server | Availability, JVM/CPU/memory, and backend metrics | Check the query/write entrypoint and resource pressure. |
+| PD | Leader/Follower role, status, and runtime metrics supplied upstream | Check the metadata/scheduling entrypoint; do not infer a role when Leader information is absent. |
+| Store | Partition and Leader partition counts, system/disk metrics, Raft group and enabled group counts | Inspect storage nodes and replica service and compare distribution across nodes. |
+
+![Store system, drive, Raft, and partition metrics](/docs/images/hubble/store-node.jpg)
+
+The PD Leader and Store Leader partitions serve different purposes: PD coordinates cluster metadata, while a Store leads the respective data partition's Raft
+group.
+Hubble displays upstream observations and does not replace a full Raft replica consistency check. Available metrics vary by component version.
+
+With Server authentication enabled, cluster operations require a super administrator (`ADMIN` level).
+GraphSpace administrators and ordinary members do not inherit cluster access.
+Use container isolation, a trusted HTTPS entrypoint, Server authentication, and network allowlists; avoid publishing Hubble or component ports directly.
+
+### Configure operations access
+
+Hubble's **backend** uses the PD/Store operations credentials, separately from the Server account used to log in through the browser.
+For Compose, edit the generated host file `docker/conf/hubble/hstore.local.properties`; other deployments use the Hubble package configuration.
+The script-generated PD password must match the secret in `.env`. Configure the Store service account when Store authentication is enabled.
+Do not include passwords in documentation, screenshots, or committed configuration:
+
+| Setting | Bundled default | Configuration |
+|---|---|---|
+| `operations.pd.username` / `operations.pd.password` | Username `hubble`, empty password | Match PD operations REST authentication. |
+| `operations.store.username` / `operations.store.password` | Username `hubble`, empty password | Set the service account when upstream Store REST authentication is enabled. |
+| `operations.store.allowed_targets` | `[http://127.0.0.1:8520,http://[::1]:8520]` | List trusted Store metric origins. |
+
+For example, when a containerized Store advertises `store:8520`, set:
+
+```properties
+operations.store.allowed_targets=[http://store:8520]
+```
+
+For multiple nodes, list each trusted origin. Every entry must use `http` or `https` with an explicit port and no path, credentials, or wildcard,
+and must match the Store metric target returned by PD. Adding an origin to this list does not register or discover a node.
+
+If topology is available but metrics are incomplete, check backend connectivity and authentication to PD REST, the Store REST/metric targets returned by PD,
+and their match with the allowlist. A partially available overview means some sources could not be collected;
+it does not imply that all graph APIs are unavailable.
+
+---
+
+Backlinks:
+
+- [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Graph visualization](/docs/quickstart/toolchain/visualization/)
 
 
@@ -3465,6 +3327,9 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
+This guide follows Toolchain `master` (currently `1.8.0`). Released packages and Docker `latest` may differ from source;
+check the version you use and build from source for unreleased functionality.
+
 ### 1 HugeGraph-Loader Overview
 
 HugeGraph-Loader is the data import component of HugeGraph, which can convert data from various data sources into graph vertices and edges and import them into the graph database in batches.
@@ -3494,28 +3359,24 @@ HugeGraph-Loader is available in the following three ways:
 
 #### 2.1 Use Docker image (Convenient for Test/Dev)
 
-We can deploy the loader service using `docker run -itd --name loader hugegraph/loader:1.7.0`. For the data that needs to be loaded, it can be copied into the loader container either by mounting `-v /path/to/data/file:/loader/file` or by using `docker cp`.
+We can deploy the loader service using `docker run -itd --name loader hugegraph/loader:latest`. For the data that needs to be loaded, it can be copied into the loader container either by mounting `-v /path/to/data/file:/loader/file` or by using `docker cp`.
 
 Alternatively, to start the loader using docker-compose, the command is `docker-compose up -d`. An example of the docker-compose.yml is as follows:
+
+This combination is for local anonymous testing; the Server API is published only on the local host.
 
 ```yaml
 version: '3'
 
 services:
   server:
-    image: hugegraph/hugegraph:1.7.0
+    image: hugegraph/hugegraph:latest
     container_name: server
     ports:
-      - 8080:8080
-
-  hubble:
-    image: hugegraph/hubble:1.7.0
-    container_name: hubble
-    ports:
-      - 8088:8088
+      - 127.0.0.1:8080:8080
 
   loader:
-    image: hugegraph/loader:1.7.0
+    image: hugegraph/loader:latest
     container_name: loader
     # mount your own data here
     # volumes:
@@ -3527,43 +3388,20 @@ The specific data loading process can be referenced under [4.5 User Docker to lo
 > Note: 
 > 1. The docker image of hugegraph-loader is a convenience release to start hugegraph-loader quickly, but not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 > 
-> 2. Recommend to use `release tag`(like `1.7.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
+> 2. Pin a published version tag or image digest in production. `latest` is mutable and does not guarantee alignment with `master`.
 
 #### 2.2 Download the compiled archive
 
-Download the latest version of the HugeGraph-Toolchain release package:
-
-```bash
-export VERSION=1.7.0
-export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
-wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
-tar zxf "${ARCHIVE}.tar.gz"
-```
+Choose a published Toolchain archive from the [download page](/docs/download/download) and extract it.
+A release may not include all `master` functionality; use the source build below for the implementation described here.
 
 #### 2.3 Clone source code to compile and install
 
-Clone the latest version of HugeGraph-Loader source package:
+Clone the `master` branch:
 
 ```bash
-# 1. get from github
-git clone https://github.com/apache/hugegraph-toolchain.git
-
-# 2. Download a released source package
-export VERSION=1.7.0
-export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
-wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
+git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
 ```
-
-> [!DETAILS]- How to install OJDBC
-> Due to the license limitation of the `Oracle OJDBC`, you need to manually install ojdbc to the local maven repository.
-> Visit the [Oracle jdbc downloads](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html) page. Select Oracle Database 12c Release 2 (12.2.0.1) drivers, as shown in the following figure.
->
-> After opening the link, select "ojdbc8.jar".
->
-> Install ojdbc8 to the local maven repository, enter the directory where `ojdbc8.jar` is located, and execute the following command.
-> ```
-> mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-> ```
 
 Compile and generate tar package:
 
@@ -3571,6 +3409,9 @@ Compile and generate tar package:
 cd hugegraph-toolchain
 mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 ```
+
+For Oracle input, obtain a JDBC driver JAR compatible with your Oracle/JDK versions and place it in the extracted Loader `lib/` directory.
+The startup script loads JARs there; installing a driver only in the local Maven repository does not put it on Loader’s runtime classpath.
 
 ### 3 How to use
 The basic process of using HugeGraph-Loader is divided into the following steps:
@@ -3608,7 +3449,7 @@ schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name
 schema.vertexLabel("software").properties("name", "price").primaryKeys("name").ifNotExist().create();
 
 // Create the knows edge type, which goes from person to person
-schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").ifNotExist().create();
+schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date").ifNotExist().create();
 // Create the created edge type, which points from person to software
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
@@ -4067,7 +3908,8 @@ Input sources are currently divided into five categories: FILE, HDFS, JDBC, KAFK
     - path: the path of the local file or directory, an absolute path or a path relative to the Loader process working directory (not the mapping file). An absolute path is recommended; required;
     - file_filter: filter files with compound conditions from `path`, compound structure, currently only supports configuration extensions, represented by child node `extensions`, the default is "*", which means to keep all files;
     - format: the format of the local file, the optional values are CSV, TEXT and JSON, which must be uppercase, the default is CSV, optional;               
-    - header: the column name of each column of the file, if not specified, the first line of the data file will be used as the header; when the file itself has a header and the header is specified, the first line of the file will be treated as a normal data line; JSON The file does not need to specify a header, optional;
+    - header: column names; if omitted, the first data line supplies them. With an explicit header, an identical first line is still skipped by default
+      (see has_header). JSON does not require a header; optional;
     - has_header: for CSV and TEXT, the first line of every file is dropped when it is identical to the header, so a header repeated in each part file of a directory is not imported as data. Set this to `false` to turn that check off when the first line of a file is real data that happens to equal the header, optional;
     - delimiter: The column delimiter of the file line. The default depends on `format`: a comma `","` for CSV and a tab `"\t"` for TEXT; a CSV file accepts no other delimiter. The `JSON` file does not need to be specified, optional;     
     - charset: the encoded character set of the file, the default is `UTF-8`, optional;    
@@ -4291,7 +4133,7 @@ The import process is controlled by commands submitted by the user, and the user
 | `--pd-peers`                             |               |                 | PD service node addresses                                                                                                                                                                 |
 | `--pd-token`                             |               |                 | Token for accessing PD service                                                                                                                                                            |
 | `--meta-endpoints`                       |               |                 | Meta information storage service addresses                                                                                                                                                |
-| `--direct`                               | false         |                 | Whether to directly connect to HugeGraph-Store                                                                                                                                            |
+| `--direct`                               | false         |                 | Store direct mode is disabled in current master; imports still use Server API. Keep the default                                                                                                                                            |
 | `--route-type`                           | NODE_PORT     |                 | Route selection method (optional values: NODE_PORT / DDS / BOTH)                                                                                                                          |
 | `--cluster`                              | hg            |                 | Cluster name                                                                                                                                                                              |
 | `--trust-store-file`                     |               |                 | When the request protocol is https, the client's certificate file path                                                                                                                    |
@@ -4475,10 +4317,10 @@ Edge file: `example/file/edge_knows.json`
 Edge file: `example/file/edge_created.json`
 
 ```json
-{"aname": "marko", "bname": "lop", "date": "20171210", "weight": 0.4}
-{"aname": "josh", "bname": "lop", "date": "20091111", "weight": 0.4}
-{"aname": "josh", "bname": "ripple", "date": "20171210", "weight": 1.0}
-{"aname": "peter", "bname": "lop", "date": "20170324", "weight": 0.2}
+{"source_name": "marko", "target_id": 1, "date": "2017-12-10", "weight": 0.4}
+{"source_name": "josh", "target_id": 1, "date": "2009-11-11", "weight": 0.4}
+{"source_name": "josh", "target_id": 2, "date": "2017-12-10", "weight": 1.0}
+{"source_name": "peter", "target_id": 1, "date": "2017-03-24", "weight": 0.2}
 ```
 
 #### 4.2 Write schema
@@ -4493,8 +4335,8 @@ Edge file: `example/file/edge_created.json`
 > schema.propertyKey("date").asText().ifNotExist().create();
 > schema.propertyKey("price").asDouble().ifNotExist().create();
 >
-> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
-> schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
+> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").nullableKeys("age", "city").ifNotExist().create();
+> schema.vertexLabel("software").useCustomizeNumberId().properties("name", "lang", "price").ifNotExist().create();
 >
 > schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 > schema.indexLabel("personByCity").onV("person").by("city").secondary().ifNotExist().create();
@@ -4508,6 +4350,10 @@ Edge file: `example/file/edge_created.json`
 > schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
 > schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();
 > ```
+
+`person` uses `name` as its primary key. Tom’s `age` and `city` are removed by `null_values`, so both properties must be nullable.
+`software` uses custom numeric IDs: mapping `id` supplies the vertex ID and `created.target_id` supplies the edge’s target ID.
+Run this example in an empty graph without these schema labels; `ifNotExist()` does not replace incompatible existing definitions.
 
 #### 4.3 Write the input source mapping file `example/file/struct.json`
 
@@ -4653,6 +4499,9 @@ If loading a custom dataset, following the previous example, you would use:
 docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f /loader/dataset/struct.json -s /loader/dataset/schema.groovy -h server -p 8080
 ```
 
+Also update every `input.path` in the custom `struct.json` to its actual container path, such as `/loader/dataset/vertex_person.csv`.
+Changing only `-f` and `-s` does not change where Loader looks for data files.
+
 > If `loader` and `server` are in the same Docker network, you can specify `-h {server_container_name}`; otherwise, you need to specify the IP of the `server` host (in our example, `server_container_name` is `server`).
 
 Then we can see the result:
@@ -4685,12 +4534,14 @@ meter metrics
 
 You can also use `curl` or `hubble` to observe the import result. Here's an example using `curl`:
 
+These requests use the GraphSpace-aware Server API. For an older Server, omit `/graphspaces/DEFAULT` from the path.
+
 ```bash
-> curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+curl --compressed "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
 {"vertices":[{"id":1,"label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328.0}},{"id":2,"label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199.0}},{"id":"1:tom","label":"person","type":"vertex","properties":{"name":"tom"}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"1:li,nary","label":"person","type":"vertex","properties":{"name":"li,nary","age":26,"city":"Wu,han"}}]}
 ```
 
-If you want to check the import result of edges, you can use `curl "http://localhost:8080/graphs/hugegraph/graph/edges" | gunzip`.
+If you want to check the import result of edges, you can use `curl --compressed "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/edges"`.
 
 ##### 4.5.2 Enter the docker container to load data
 
@@ -4766,7 +4617,7 @@ Backlinks:
 - [System Introduction](/docs/introduction/)
 - [HugeGraph-Loader Performance](/docs/performance/hugegraph-loader-performance/)
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
-- [Visual with HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Graph import](/docs/quickstart/toolchain/import/)
 - [Import graph data with SeaTunnel Sink](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)
 
@@ -9087,6 +8938,9 @@ The code in this document is written in `java`, but its style is very similar to
 You can convert `java` code into `groovy`; in addition, each line of statement can be without a semicolon at the end, `groovy` considers a line to be a statement.
 The `gremlin(groovy)` written by the user in `HugeGraph-Studio` can refer to the `java` code in this document, and some examples will be given below.
 
+This reference follows Toolchain `master` (Client `1.8.0`). Prepare the matching dependency using the
+[quickstart](/docs/quickstart/client/hugegraph-client/); newly added APIs such as capability detection are unavailable in older clients.
+
 ### 1 HugeGraph-Client
 
 HugeGraph-Client is the general entry for operating graph. Users must first create a HugeGraph-Client object and establish a connection (pseudo connection) with HugeGraph-Server before they can obtain the operation entry objects of schema, graph and gremlin.
@@ -9099,7 +8953,7 @@ HugeGraph-Client connects to an existing graph on the server. Its builder accept
 HugeClient hugeClient = HugeClient.builder("http://localhost:8080", "hugegraph")
                                 //.builder("http://localhost:8080", "graphSpaceName", "hugegraph")
                                   .configTimeout(20) // 20s timeout
-                                  .configUser("**", "**") // enable auth 
+                                  // .configUser("username", "password") // set only when server auth is enabled
                                   .build();
 ```
 
@@ -9118,7 +8972,7 @@ The builder accepts the following options. Every timeout is expressed in seconds
 | `configGraphSpace(String graphSpace)`                         | GraphSpace name, a null or empty value falls back to `DEFAULT`                          | `DEFAULT`           |
 | `configUser(String username, String password)`                | Credentials for the server, a null value is stored as an empty string                   | empty, no auth      |
 | `configToken(String token)`                                   | Token used instead of username and password                                             | empty               |
-| `configTimeout(int seconds)`                                  | Request timeout, passing `0` restores the default                                       | 20                  |
+| `configTimeout(int seconds)`                                  | Request timeout; use a positive number of seconds                                       | 20                  |
 | `configConnectTimeout(Integer seconds)`                       | Connect timeout, left unset so that `configTimeout` applies                             | unset               |
 | `configReadTimeout(Integer seconds)`                          | Read timeout, left unset so that `configTimeout` applies                                | unset               |
 | `configPool(int maxConns, int maxConnsPerRoute)`              | Connection pool sizes, passing `0` for either one restores its default                  | 4 x CPUs, 2 x CPUs  |
@@ -9126,6 +8980,9 @@ The builder accepts the following options. Every timeout is expressed in seconds
 | `configSSL(String trustStoreFile, String trustStorePassword)` | Truststore used for HTTPS connections                                                   | empty               |
 | `configHttpBuilder(Consumer<OkHttpClient.Builder> consumer)`  | Callback that receives the underlying OkHttp builder for further customization          | none                |
 | `graphRequired(boolean graphRequired)`                        | Whether `build()` rejects an empty url or graph name                                    | true                |
+
+Current master has a unit-conversion defect in `configTimeout(0)`: it sets 20,000 seconds instead of the default 20 seconds.
+Omit the call to keep the default, or use `configTimeout(20)` explicitly; do not use `0` to reset it.
 
 On `build()`, the client reads the server API version and rejects anything outside the range `[0.38, 0.81)`.
 
@@ -9560,10 +9417,19 @@ The constraint information that IndexLabel allows to define include: name, baseT
 
 ##### 2.5.2 Create IndexLabel
 
+These examples assume a `person` vertex label with `name` and `age`, and a `created` edge label with `date`.
+First add the indexed properties below; `id` is a business property, separate from the internal vertex ID.
+
 ```java
+schema.propertyKey("lived").asText().ifNotExist().create();
+schema.propertyKey("city").asText().ifNotExist().create();
+schema.propertyKey("id").asInt().ifNotExist().create();
+schema.vertexLabel("person").properties("lived", "city", "id")
+      .nullableKeys("lived", "city", "id").append();
+
 schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 schema.indexLabel("createdByDate").onE("created").by("date").secondary().ifNotExist().create();
-schema.indexLabel("personByLived").onE("person").by("lived").search().ifNotExist().create();
+schema.indexLabel("personByLived").onV("person").by("lived").search().ifNotExist().create();
 schema.indexLabel("personByCityAndAge").onV("person").by("city", "age").shard().ifNotExist().create();
 schema.indexLabel("personById").onV("person").by("id").unique().ifNotExist().create();
 ```
@@ -22023,12 +21889,24 @@ Using IDEA or Eclipse to create the project:
     <dependency>
         <groupId>org.apache.hugegraph</groupId>
         <artifactId>hugegraph-client</artifactId>
-        <!-- Select a released version from the download page -->
+        <!-- The complete examples below work with the published 1.7.0 client -->
         <version>1.7.0</version>
     </dependency>    
 </dependencies>
 ```
-> Development versions of the client and server may differ. Check the corresponding release notes for compatibility before upgrading.
+The complete examples below use Schema, Graph, Gremlin and resource-cleanup APIs available in the published Client `1.7.0`
+and compatible with Toolchain `master`. Use the dependency above directly in your example project.
+
+For new master APIs in the [API reference](/docs/clients/hugegraph-client/), such as capability detection, use Client `1.8.0`
+from Toolchain `master` and change the POM version to `1.8.0`. If that version is not published to Maven yet, run the following
+command from the Toolchain source root to install the Client and its parent POM locally. The source build still needs
+its dependencies available from your configured Maven repositories.
+
+```bash
+mvn install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+```
+
+Client and Server versions need not match. Check the supported server API range and required capabilities before upgrading.
 
 #### 4.3 Example
 
@@ -24179,7 +24057,7 @@ If files cannot be found or parameters are invalid:
 Backlinks:
 
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
-- [Visual with HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
 - [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)
 
@@ -25111,8 +24989,9 @@ Backlinks:
 - [Install/Build HugeGraph-Store](/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [Install/Build HugeGraph-PD](/docs/quickstart/hugegraph/hugegraph-pd/)
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
-- [Visual with HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)
+- [Hubble with HStore](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)
 
 
 ================
@@ -28019,6 +27898,8 @@ Backlinks:
 - [Install/Build HugeGraph-Store](/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [Install/Build HugeGraph-PD](/docs/quickstart/hugegraph/hugegraph-pd/)
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
+- [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
 
 
 ================

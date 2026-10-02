@@ -444,6 +444,6 @@ mvn test -Dtest=FuncTestSuite -ntp  # 需 Server 运行
 反链：
 
 - [HugeGraph 工具链](/cn/docs/quickstart/toolchain/)
-- [使用 Hubble 实现图可视化](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Hubble 基础与单机](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
 - [使用 Loader 实时/流式导入数据](/cn/docs/quickstart/toolchain/hugegraph-loader/)
 - [使用 Tools 导出/管理图](/cn/docs/quickstart/toolchain/hugegraph-tools/)

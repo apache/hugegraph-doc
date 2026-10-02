@@ -198,5 +198,6 @@ Backlinks:
 - [Install/Build HugeGraph-Store](/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [Install/Build HugeGraph-PD](/docs/quickstart/hugegraph/hugegraph-pd/)
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
-- [Visual with HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)
+- [Hubble with HStore](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)

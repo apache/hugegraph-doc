@@ -538,3 +538,4 @@ Backlinks:
 - [System Introduction](/docs/introduction/)
 - [HugeGraph (OLTP)](/docs/quickstart/hugegraph/)
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
+- [Hubble with HStore](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)

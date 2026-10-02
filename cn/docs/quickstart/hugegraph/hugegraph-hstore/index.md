@@ -552,3 +552,4 @@ curl -fsS "$GRAPH_URL/graph/vertices/%22pd-store-demo-1%22"
 - [HugeGraph (OLTP)](/cn/docs/quickstart/hugegraph/)
 - [安装/构建 HugeGraph-PD](/cn/docs/quickstart/hugegraph/hugegraph-pd/)
 - [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)
+- [Hubble 分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)

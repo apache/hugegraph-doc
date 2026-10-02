@@ -728,5 +728,6 @@ Backlinks:
 - [Java-Client](/docs/quickstart/client/hugegraph-client/)
 - [HugeGraph (OLTP)](/docs/quickstart/hugegraph/)
 - [Install/Build HugeGraph-Store](/docs/quickstart/hugegraph/hugegraph-hstore/)
+- [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
 - [Import graph data with SeaTunnel Sink](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)

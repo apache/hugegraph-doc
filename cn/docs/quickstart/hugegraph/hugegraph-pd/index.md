@@ -535,3 +535,4 @@ PD 以 `hg` 前缀注册自己的指标，因此 `/actuator/prometheus` 除标�
 - [系统介绍](/cn/docs/introduction/)
 - [HugeGraph (OLTP)](/cn/docs/quickstart/hugegraph/)
 - [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)
+- [Hubble 分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)

@@ -444,6 +444,6 @@ If files cannot be found or parameters are invalid:
 Backlinks:
 
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
-- [Visual with HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+- [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
 - [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)

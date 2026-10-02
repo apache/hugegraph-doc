@@ -15,13 +15,14 @@
 
 - [System Introduction](https://hugegraph.apache.org/docs/introduction/index.md)
 - [Quick Start](https://hugegraph.apache.org/docs/quickstart/index.md)
+  - [Hubble Basics and Standalone](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md): Visualize graph data with Hubble and RocksDB Server: start with Docker, explore schema, import CSV, and run Gremlin queries.
   - [HugeGraph-LLM](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-llm/index.md)
   - [Install/Build HugeGraph Server](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/index.md)
   - [Java-Client](https://hugegraph.apache.org/docs/quickstart/client/hugegraph-client/index.md)
   - [Vermeer: Memory-First Computing Framework](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-vermeer/index.md): Vermeer high-performance in-memory graph computing: start once, execute repeatedly, with 15+ OLAP algorithms, seconds-to-minutes execution, deployment, loading, PageRank, and community detection.
-  - [Visual with HugeGraph-Hubble](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md): Deploy HugeGraph-Hubble for graph visualization, schema management, data import, and Gremlin or Cypher queries.
   - [Analysis with HugeGraph-Computer](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-computer/index.md)
   - [Export and migrate with SeaTunnel Source](https://hugegraph.apache.org/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/index.md)
+  - [Hubble with HStore](https://hugegraph.apache.org/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/index.md): Connect HStore and PD to Hubble and understand GraphSpaces, Schema templates, cluster topology, and node metrics.
   - [HugeGraph-ML](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-ml/index.md)
   - [Import graph data with SeaTunnel Sink](https://hugegraph.apache.org/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/index.md)
   - [Install/Build HugeGraph-PD](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-pd/index.md)

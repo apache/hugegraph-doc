@@ -330,6 +330,71 @@ class SiteOutputSecurityTest(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn("external CSS resource is forbidden", result.stdout)
 
+    def test_security_workers_preserve_cli_results(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = pathlib.Path(temp_name)
+
+            def run(*options: str) -> subprocess.CompletedProcess:
+                return subprocess.run(
+                    [sys.executable, str(VALIDATOR_PATH), str(root),
+                     "https://hugegraph.apache.org/", *options],
+                    check=False, capture_output=True,
+                )
+
+            def assert_same_results(expected_code: int) -> bytes:
+                default = run("--security-only")
+                self.assertEqual(default.returncode, expected_code, default.stderr)
+                for workers in ("1", "2"):
+                    result = run("--security-only", "--workers", workers)
+                    self.assertEqual(
+                        (result.returncode, result.stdout, result.stderr),
+                        (default.returncode, default.stdout, default.stderr),
+                    )
+                return default.stdout
+
+            (root / "index.html").write_text("<main>safe</main>", encoding="utf-8")
+            (root / "404.html").write_text(
+                '<meta name="robots" content="noindex, nofollow">', encoding="utf-8"
+            )
+            (root / "site.css").write_text("body{color:black}", encoding="utf-8")
+            assert_same_results(0)
+
+            (root / "a-invalid-url.html").write_text(
+                '<main><a href="https://[invalid">bad</a>'
+                '<script>shape error must short-circuit</script></main>',
+                encoding="utf-8",
+            )
+            (root / "b-invalid-utf8.html").write_bytes(b"<main>\xff</main>")
+            (root / "c-unsafe.html").write_text(
+                "<main><script>alert(1)</script></main>", encoding="utf-8"
+            )
+            (root / "404.html").write_text(
+                '<meta name="robots" content="index, follow">', encoding="utf-8"
+            )
+            (root / "site.css").write_text(
+                'body{background:url("missing.png")}', encoding="utf-8"
+            )
+            output = assert_same_results(1)
+            for diagnostic in (
+                b"malformed URL", b"cannot parse b-invalid-utf8.html",
+                b"c-unsafe.html: unsafe content markup: authored <script>",
+                b"404.html: expected one robots noindex,nofollow",
+                b"broken internal CSS resource missing.png",
+            ):
+                self.assertIn(diagnostic, output)
+            self.assertNotIn(b"a-invalid-url.html: unsafe content markup", output)
+
+            # The option must not alter the normal full-contract validation path.
+            normal = run()
+            self.assertEqual(normal.returncode, 1)
+            self.assertIn(b"missing required output", normal.stdout)
+            for workers in ("1", "2"):
+                result = run("--workers", workers)
+                self.assertEqual(
+                    (result.returncode, result.stdout, result.stderr),
+                    (normal.returncode, normal.stdout, normal.stderr),
+                )
+
     def test_shell_scripts_outside_content_are_allowed(self) -> None:
         parser = parse(
             '<head><script src="/shell.js"></script></head>'

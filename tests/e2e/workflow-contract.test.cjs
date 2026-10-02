@@ -110,7 +110,7 @@ test("version work shares a runner with bounded concurrency and full validation"
   const build = jobBody("build");
   assert.doesNotMatch(build, /matrix:|strategy:/);
   assert.match(build, /scripts\/build_versions\.py/);
-  assert.match(build, /--workers 2/);
+  assert.match(build, /--workers 3/);
   assert.match(build, /name: Restore historical artifact bundle/);
   assert.match(build, /if: github.event_name != 'workflow_dispatch'/);
   assert.match(build, /scripts\/version_cache\.py plan/);

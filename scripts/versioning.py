@@ -4337,7 +4337,9 @@ def write_error_documents(output: pathlib.Path, seen: set[str]) -> int:
     return count
 
 
-def validate_output_security(output: pathlib.Path, site_origin: str) -> None:
+def validate_output_security(
+    output: pathlib.Path, site_origin: str, *, workers: int = 1
+) -> None:
     """Re-scan a complete output tree before it can be published."""
     with timed_stage(f"security[{output.name}]"):
         subprocess.run(
@@ -4347,6 +4349,7 @@ def validate_output_security(output: pathlib.Path, site_origin: str) -> None:
                 str(output),
                 site_origin,
                 "--security-only",
+                "--workers", str(workers),
             ],
             cwd=ROOT,
             check=True,
@@ -4499,7 +4502,7 @@ def aggregate(args: argparse.Namespace) -> None:
     with timed_stage("aggregate-routes"):
         validate_aggregate_version_routes(output, route_map, selected, manifest)
     with timed_stage("aggregate-security"):
-        validate_output_security(output, args.site_origin)
+        validate_output_security(output, args.site_origin, workers=workers)
     print(
         f"aggregated {len(resolved)} versions and {len(seen)} files "
         f"with {error_documents} error documents -> {output}"

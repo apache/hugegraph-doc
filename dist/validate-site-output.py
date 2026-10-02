@@ -19,6 +19,8 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 import html.parser
 import json
 import pathlib
@@ -1091,6 +1093,37 @@ def document_url_shape_errors(
     return errors
 
 
+def parse_and_check_page_security(
+    page: pathlib.Path,
+    root: pathlib.Path,
+    base_parts: urllib.parse.SplitResult,
+    error_paths: set[str],
+) -> tuple[DocumentParser | None, list[str]]:
+    parser = DocumentParser()
+    try:
+        parser.feed(page.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError) as exc:
+        return None, [f"cannot parse {page.relative_to(root)}: {exc}"]
+
+    page_name = page.relative_to(root).as_posix()
+    errors = document_url_shape_errors(parser, page_name)
+    if errors:
+        return None, errors
+    errors.extend(document_security_errors(parser, page_name, base_parts))
+    errors.extend(error_document_seo_errors(parser, page_name, error_paths))
+    return parser, errors
+
+
+def page_security_errors(
+    page: pathlib.Path,
+    root: pathlib.Path,
+    base_parts: urllib.parse.SplitResult,
+    error_paths: set[str],
+) -> list[str]:
+    # Keep the parsed document local to the worker instead of serializing it.
+    return parse_and_check_page_security(page, root, base_parts, error_paths)[1]
+
+
 def main() -> int:
     argument_parser = argparse.ArgumentParser(
         description="Validate a generated HugeGraph documentation artifact."
@@ -1104,6 +1137,13 @@ def main() -> int:
             "Check rendered active-content, mixed-content, and CSP image "
             "boundaries only; versioning.py validates isolated URL contracts."
         ),
+    )
+    argument_parser.add_argument(
+        "--workers",
+        type=int,
+        choices=(1, 2),
+        default=1,
+        help="Number of HTML security-check processes in --security-only mode.",
     )
     args = argument_parser.parse_args()
 
@@ -1148,23 +1188,28 @@ def main() -> int:
                         f"route leaked into search: {ref}"
                     )
 
-    for page in html_files:
-        parser = DocumentParser()
-        try:
-            parser.feed(page.read_text(encoding="utf-8"))
-        except (OSError, UnicodeError) as exc:
-            errors.append(f"cannot parse {page.relative_to(root)}: {exc}")
-            continue
+    if args.security_only:
+        check_page = partial(
+            page_security_errors, root=root, base_parts=base_parts,
+            error_paths=error_paths,
+        )
+        if args.workers == 2 and html_files:
+            with ProcessPoolExecutor(max_workers=args.workers) as executor:
+                # map preserves sorted page order, including diagnostics.
+                for page_errors in executor.map(check_page, html_files):
+                    errors.extend(page_errors)
+        else:
+            for page_errors in map(check_page, html_files):
+                errors.extend(page_errors)
 
+    for page in [] if args.security_only else html_files:
+        parser, page_errors = parse_and_check_page_security(
+            page, root, base_parts, error_paths
+        )
+        errors.extend(page_errors)
+        if parser is None:
+            continue
         page_name = page.relative_to(root).as_posix()
-        shape_errors = document_url_shape_errors(parser, page_name)
-        errors.extend(shape_errors)
-        if shape_errors:
-            continue
-        errors.extend(document_security_errors(parser, page_name, base_parts))
-        errors.extend(error_document_seo_errors(parser, page_name, error_paths))
-        if args.security_only:
-            continue
         errors.extend(toc_accessibility_errors(parser, page_name))
         try:
             alias_target = refresh_target(parser)

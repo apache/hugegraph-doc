@@ -1855,7 +1855,7 @@ class VersionUrlTest(unittest.TestCase):
                 ):
                     versioning.aggregate(args)
                     routes.assert_called_once()
-                    security.assert_called_once_with(args.output.resolve(), ORIGIN)
+                    security.assert_called_once_with(args.output.resolve(), ORIGIN, workers=workers)
                 outputs.append({
                     path.relative_to(args.output).as_posix(): path.read_bytes()
                     for path in args.output.rglob("*") if path.is_file()
@@ -1929,7 +1929,8 @@ class VersionUrlTest(unittest.TestCase):
                 asf_whoami="asf-staging-oink",
             )
 
-            def assert_complete_aggregate(path: Path, origin: str) -> None:
+            def assert_complete_aggregate(path: Path, origin: str, *, workers: int) -> None:
+                self.assertEqual(workers, 1)
                 self.assertEqual(path, output.resolve())
                 self.assertEqual(origin, ORIGIN)
                 self.assertTrue((path / ".asf.yaml").is_file())
@@ -1976,7 +1977,7 @@ class VersionUrlTest(unittest.TestCase):
             ):
                 versioning.aggregate(args)
 
-            security_scan.assert_called_once_with(output.resolve(), ORIGIN)
+            security_scan.assert_called_once_with(output.resolve(), ORIGIN, workers=1)
             validate_routes.assert_called_once()
             validate_args = validate_artifact.call_args.args[0]
             self.assertEqual(

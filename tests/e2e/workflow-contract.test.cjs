@@ -77,7 +77,7 @@ test("superseded runs can cancel reporting and the required gate", () => {
   assert.match(workflow, /group:.*format\('pr-\{0\}', github.event.pull_request.number\)/);
   assert.match(workflow, /cancel-in-progress: true/);
   assert.doesNotMatch(workflow, /if: always\(\)/);
-  assert.match(jobBody("deploy"), /if: \$\{\{ !cancelled\(\) \}\}/);
+  assert.match(jobBody("aggregate"), /if: \$\{\{ !cancelled\(\) \}\}/);
 });
 
 test("assembly runs blocking browser tests on its local artifact", () => {
@@ -86,17 +86,25 @@ test("assembly runs blocking browser tests on its local artifact", () => {
   assert.match(aggregate, /SITE_ROOT: \$\{\{ runner.temp \}\}\/public-site/);
   assert.match(aggregate, /run: npm run test:ci/);
   assert.doesNotMatch(aggregate, /continue-on-error:/);
-  assert.match(jobBody("deploy"), /needs: \[prepare, build, aggregate\]/);
-  assert.match(jobBody("publish"), /needs: \[prepare, deploy\]/);
+  assert.match(aggregate, /^    name: deploy$/m);
+  assert.match(aggregate, /needs: \[prepare, build\]/);
+  assert.doesNotMatch(workflow, /^  deploy:/m);
+  assert.match(jobBody("publish"), /needs: \[prepare, aggregate\]/);
 });
 
 test("required gate rejects failed, skipped and cancelled prerequisites", () => {
   const { spawnSync } = require("node:child_process");
-  const gate = jobBody("deploy").split("        run: |\n")[1]
+  const aggregate = jobBody("aggregate");
+  assert.match(aggregate, /if: \$\{\{ !cancelled\(\) \}\}/);
+  assert.match(aggregate, /steps:\n      - name: Require all blocking predecessors to succeed/);
+  assert.ok(aggregate.indexOf('test "$BUILD_RESULT" = success') < aggregate.indexOf("- uses: actions/checkout@"));
+  assert.match(aggregate, /PREPARE_RESULT: \$\{\{ needs.prepare.result \}\}/);
+  assert.match(aggregate, /BUILD_RESULT: \$\{\{ needs.build.result \}\}/);
+  const gate = aggregate.split("        run: |\n")[1].split("      - uses:")[0]
     .split("\n").filter(line => line.startsWith("          "))
     .map(line => line.slice(10)).join("\n");
-  const success = { PREPARE_RESULT: "success", BUILD_RESULT: "success", AGGREGATE_RESULT: "success" };
-  const run = env => spawnSync("bash", ["-e", "-c", gate], {env: {...process.env, ...env}}).status;
+  const success = { PREPARE_RESULT: "success", BUILD_RESULT: "success" };
+  const run = env => spawnSync("bash", ["-e", "-c", gate], {env: {...process.env, BASH_ENV: "", ...env}}).status;
   assert.equal(run(success), 0);
   for (const key of Object.keys(success)) {
     for (const result of ["failure", "skipped", "cancelled"]) {
@@ -111,7 +119,7 @@ test("version work uses bounded groups and preserves full validation", () => {
   assert.match(build, /max-parallel: 3/);
   assert.match(build, /fromJSON\(needs.prepare.outputs.groups\)/);
   assert.match(build, /scripts\/build_versions\.py/);
-  assert.match(build, /--workers 2/);
+  assert.match(build, /history_hit == 'true' && 3 \|\| 2/);
   assert.match(build, /name: Restore historical artifact bundle/);
   assert.match(build, /if: github.event_name != 'workflow_dispatch'/);
   assert.match(build, /scripts\/version_cache\.py plan/);
@@ -148,7 +156,7 @@ test("cache recording failures cannot block an already validated site", () => {
       const output = path.join(directory, `outputs-${code}`);
       const result = spawnSync("bash", ["-e", "-c", script], {
         cwd: directory,
-        env: {...process.env, PATH: `${directory}:${process.env.PATH}`, GITHUB_OUTPUT: output, RUNNER_TEMP: directory}
+        env: {...process.env, BASH_ENV: "", PATH: `${directory}:${process.env.PATH}`, GITHUB_OUTPUT: output, RUNNER_TEMP: directory}
       });
       assert.equal(result.status, 0, result.stderr.toString());
       assert.equal(fs.readFileSync(output, "utf8"), `complete=${code === 0}\n`);

@@ -72,8 +72,9 @@ Cancelled runs skip report uploads and the final gate instead of holding the
 queue with `always()`. A queued job with no runner has not started testing;
 repeated reruns do not resolve runner capacity shortages.
 
-A complete historical cache hit uses one build job. Cold runs use at most three
-build groups, with at most two versions building concurrently within each runner.
+A complete historical cache hit uses one build job with up to three local workers,
+so cached-version validation can overlap the latest build. Cold runs use at most
+three build groups, with at most two versions building concurrently within each runner.
 Historical artifacts are reused only when both the complete build-input fingerprint
 and artifact digest match. Missing or invalid cache entries rebuild automatically;
 manual dispatches start without the artifact cache. Cache hits still run the full
@@ -85,9 +86,11 @@ two processes; it starts after version validation finishes, so these pools do no
 nest. All checks remain enabled. Stage timings are printed as
 `timing <stage>: <seconds>s`; nested security timings are included in their parent
 validation duration and must not be added twice. Site assembly and blocking browser
-tests share one runner and the same local artifact. The required `deploy` check still
-requires all blocking jobs to succeed; visual captures remain advisory and
-publication alone receives write permission. For a test failure, rerun failed
+tests share one runner and the same local artifact. The assembly job carries the
+required `deploy` check name, avoiding a separate gate runner and its queue time.
+Its first step requires successful preparation and builds, and all assembly and
+browser checks remain blocking. Visual captures remain advisory and publication
+alone receives write permission. For a test failure, rerun failed
 jobs after inspecting the cause; artifact names remain stable within the run.
 
 ## Repository structure

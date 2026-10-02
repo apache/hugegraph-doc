@@ -423,11 +423,15 @@ It is not possible to delete an attribute that is not set as nullable.
 - page: Page number
 
 Without `vertex_id`, a `properties` query searches edges globally. The specified `label` needs a property index compatible with the query
-conditions. If `label` is omitted, every edge label that declares all queried properties needs compatible index coverage, even if that label
-currently has no edges. A parent edge label's property index can also cover its sub-labels; a label index alone does not index the properties.
-No compatible index produces an index error; partial coverage also produces an
-index error instead of silently omitting matches. With complete coverage, the query uses the indexes. Specify `label` when querying only one
-edge label, or create compatible property indexes to cover every candidate label. The query does not automatically fall back to a full scan.
+conditions. If `label` is omitted, candidate labels are query-visible edge labels that can hold edges and declare all queried properties,
+including labels that currently have no edges. Labels hidden from normal query results, including those being deleted, do not require coverage.
+A base (parent) edge label has no direct edges and does not need a separate index when its sub-labels are covered. A compatible parent index
+can cover its sub-labels; compatible indexes on every candidate sub-label are also sufficient. A label index alone does not index properties.
+
+For query values compatible with the declared property types, no compatible index or partial candidate coverage produces an index error;
+complete coverage uses the indexes. A type-incompatible value may return an empty result after a matching index is found, before partial
+coverage is checked. If no index matches, the index error still applies. Specify `label` when querying only one edge label, or create compatible
+property indexes to cover every candidate label. The query does not automatically fall back to a full scan.
 
 With `vertex_id`, the query filters that vertex's adjacent edges; the global index-coverage requirement above does not apply.
 

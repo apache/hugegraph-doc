@@ -379,9 +379,12 @@ If `label` selects a vertex label with the `PRIMARY_KEY` ID strategy and `proper
 the query looks up the vertex by ID. Additional property conditions are checked on that vertex and do not need a property index.
 
 For other `properties` queries, the specified `label` needs a property index compatible with the query conditions. If `label` is omitted,
-every vertex label that declares all queried properties needs a compatible index, even if that label currently has no vertices. A label index
-alone does not index the properties. No compatible index produces an index error; partial coverage also produces an index error instead of
-silently omitting matches. With complete coverage, the query uses the indexes. Specify `label` when querying only one vertex label, or create
+candidate labels are query-visible vertex labels that declare all queried properties, including labels that currently have no vertices.
+Labels hidden from normal query results, including those being deleted, do not require coverage. A label index alone does not index properties.
+
+For query values compatible with the declared property types, no compatible index or partial candidate coverage produces an index error;
+complete coverage uses the indexes. A type-incompatible value may return an empty result after a matching index is found, before partial
+coverage is checked. If no index matches, the index error still applies. Specify `label` when querying only one vertex label, or create
 compatible property indexes for every candidate label. The query does not automatically fall back to a full scan.
 
 Property key-value pairs consist of the property name and value in JSON format. Multiple property key-value pairs are allowed as query conditions. The property value supports exact matching, range matching, and fuzzy matching. For exact matching, use the format `properties={"age":29}`, for range matching, use the format `properties={"age":"P.gt(29)"}`, and for fuzzy matching, use the format `properties={"city": "P.textcontains("ChengDu China")}`. The following expressions are supported for range matching:

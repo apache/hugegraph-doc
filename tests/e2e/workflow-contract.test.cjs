@@ -60,7 +60,7 @@ test("trusted workflow bounds the candidate module graph without pinning its ver
 
 test("dependency artifacts keep stable names across selective reruns", () => {
   assert.match(workflow, /name: resolved-versions-\$\{\{ github\.run_id \}\}/);
-  assert.match(workflow, /name: \$\{\{ needs\.prepare\.outputs\.artifact_prefix \}\}-versions-\$\{\{ github\.run_id \}\}/);
+  assert.match(workflow, /name: \$\{\{ needs\.prepare\.outputs\.artifact_prefix \}\}-versions-\$\{\{ matrix\.group\.id \}\}-\$\{\{ github\.run_id \}\}/);
   assert.match(workflow, /--artifacts version-artifacts --workers 2/);
   assert.match(workflow, /name: hugegraph-site-\$\{\{ needs\.prepare\.outputs\.artifact_prefix \}\}-\$\{\{ github\.run_id \}\}/);
   assert.doesNotMatch(workflow, /name: (?:resolved-versions|hugegraph-site-[^\n]+)-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
@@ -106,14 +106,72 @@ test("required gate rejects failed, skipped and cancelled prerequisites", () => 
 });
 
 
-test("version work shares a runner with bounded concurrency and full validation", () => {
+test("version work uses bounded groups and preserves full validation", () => {
   const build = jobBody("build");
-  assert.doesNotMatch(build, /matrix:|strategy:/);
+  assert.match(build, /max-parallel: 3/);
+  assert.match(build, /fromJSON\(needs.prepare.outputs.groups\)/);
   assert.match(build, /scripts\/build_versions\.py/);
-  assert.match(build, /--workers 3/);
+  assert.match(build, /--workers 2/);
   assert.match(build, /name: Restore historical artifact bundle/);
   assert.match(build, /if: github.event_name != 'workflow_dispatch'/);
   assert.match(build, /scripts\/version_cache\.py plan/);
   assert.match(jobBody("aggregate"), /scripts\/versioning\.py aggregate/);
   assert.match(jobBody("publish"), /keep_files: false/);
+});
+
+
+test("warm reruns exclude stale cold-group artifacts and only complete caches are saved", () => {
+  const prepare = jobBody("prepare");
+  assert.match(prepare, /lookup-only: true/);
+  assert.match(prepare, /echo 'pattern=0'/);
+  assert.match(jobBody("aggregate"), /versions-\$\{\{ needs\.prepare\.outputs\.group_pattern \}\}/);
+  assert.match(jobBody("aggregate"), /merge-multiple: true/);
+  assert.match(jobBody("build"), /--expected-plan resolved\/cache-plan\.json/);
+  assert.match(jobBody("aggregate"), /if: steps.history-record.outputs.complete == 'true'/);
+});
+
+test("cache recording failures cannot block an already validated site", () => {
+  const { spawnSync } = require("node:child_process");
+  const os = require("node:os");
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "history-record-"));
+  const block = jobBody("aggregate").split("      - name: Record validated historical artifacts\n")[1]
+    .split("      - name: Save complete historical bundle\n")[0];
+  const script = block.split("        run: |\n")[1].split("\n")
+    .filter(line => line.startsWith("          ")).map(line => line.slice(10)).join("\n");
+  try {
+    fs.mkdirSync(path.join(directory, "resolved"));
+    fs.writeFileSync(path.join(directory, "resolved/cache-plan.json"), JSON.stringify({
+      versions: [{id: "latest", archived: false}, {id: "1.7", archived: true}]
+    }));
+    for (const code of [0, 1]) {
+      fs.writeFileSync(path.join(directory, "python3"), `#!/bin/sh\nexit ${code}\n`, {mode: 0o755});
+      const output = path.join(directory, `outputs-${code}`);
+      const result = spawnSync("bash", ["-e", "-c", script], {
+        cwd: directory,
+        env: {...process.env, PATH: `${directory}:${process.env.PATH}`, GITHUB_OUTPUT: output, RUNNER_TEMP: directory}
+      });
+      assert.equal(result.status, 0, result.stderr.toString());
+      assert.equal(fs.readFileSync(output, "utf8"), `complete=${code === 0}\n`);
+    }
+  } finally {
+    fs.rmSync(directory, {recursive: true, force: true});
+  }
+});
+
+
+test("cache lookup and restore outages fall back without bypassing tests", () => {
+  for (const [job, id] of [["prepare", "history-lookup"], ["build", "history-cache"]]) {
+    assert.match(jobBody(job), new RegExp(`id: ${id}\\n        continue-on-error: true`));
+    assert.equal((jobBody(job).match(/continue-on-error:/g) ?? []).length, 1);
+  }
+  assert.match(jobBody("prepare"), /history-lookup.outcome == 'success'/);
+  assert.doesNotMatch(jobBody("aggregate"), /continue-on-error:/);
+});
+
+
+test("fingerprints use the same resolved Python patch on all version runners", () => {
+  assert.match(jobBody("prepare"), /python_version: \$\{\{ steps.python.outputs.python-version \}\}/);
+  for (const job of ["build", "aggregate"]) {
+    assert.match(jobBody(job), /python-version: \$\{\{ needs.prepare.outputs.python_version \}\}/);
+  }
 });

@@ -118,6 +118,27 @@ def make_plan(root, manifest, cache_dir, *, site_origin, historical_origin,
         "versions": entries, "include": [e for e in entries if not e["reusable"]]}
 
 
+def build_groups(manifest, cache_hit):
+    """Bound cold-build jobs while keeping a warm bundle in one job."""
+    selected = [entry["id"] for entry in manifest.get("include", manifest["versions"])]
+    for version in selected:
+        validate_version_id(version)
+    if not selected or len(set(selected)) != len(selected):
+        raise ValueError("selected versions must be nonempty and unique")
+    count = 1 if cache_hit else min(3, (len(selected) + 1) // 2)
+    return [{"id": str(index), "versions": selected[index::count]} for index in range(count)]
+
+
+def verify_expected_plan(actual, expected):
+    """Builders may select a subset, but must reproduce every prepared key."""
+    expected_keys = {entry["id"]: entry["buildKey"] for entry in expected["versions"]}
+    if len(expected_keys) != len(expected["versions"]):
+        raise ValueError("expected plan contains duplicate versions")
+    for entry in actual["versions"]:
+        if expected_keys.get(entry["id"]) != entry["buildKey"]:
+            raise ValueError(f"build inputs differ from prepared plan: {entry['id']}")
+
+
 def record(cache_dir, entry, artifact):
     if not entry["archived"]:
         raise ValueError("latest artifacts are not reusable")
@@ -162,6 +183,10 @@ def main():
     plan.add_argument("--go-version", required=True)
     plan.add_argument("--webp-version", default="unspecified")
     plan.add_argument("--output", type=pathlib.Path, required=True)
+    plan.add_argument("--expected-plan", type=pathlib.Path)
+    groups = commands.add_parser("groups")
+    groups.add_argument("--resolved-manifest", type=pathlib.Path, required=True)
+    groups.add_argument("--cache-hit", choices=("true", "false"), required=True)
     for name in ("restore", "record"):
         command = commands.add_parser(name)
         command.add_argument("--plan", type=pathlib.Path, required=True)
@@ -175,7 +200,12 @@ def main():
         result = make_plan(versioning.ROOT, manifest, args.cache_dir,
             site_origin=args.site_origin, historical_origin=args.historical_origin,
             hugo_version=args.hugo_version, go_version=args.go_version, webp_version=args.webp_version)
+        if args.expected_plan:
+            verify_expected_plan(result, json.loads(args.expected_plan.read_text()))
         args.output.write_text(json.dumps(result, indent=2) + "\n")
+    elif args.command == "groups":
+        manifest = versioning.load_resolved_manifest(args.resolved_manifest)
+        print(json.dumps(build_groups(manifest, args.cache_hit == "true")))
     else:
         plan_data = json.loads(args.plan.read_text())
         entry = next(e for e in plan_data["versions"] if e["id"] == args.version)

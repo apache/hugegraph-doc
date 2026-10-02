@@ -52,6 +52,11 @@ jobs:
       publish_branch: ${{ steps.plan.outputs.publish_branch }}
       latest_sha: ${{ steps.plan.outputs.latest_sha }}
       source_sha: ${{ steps.plan.outputs.source_sha }}
+      python_version: ${{ steps.python.outputs.python-version }}
+      cache_key: ${{ steps.history-plan.outputs.key }}
+      history_hit: ${{ steps.history-lookup.outcome == 'success' && steps.history-lookup.outputs.cache-hit || 'false' }}
+      groups: ${{ steps.groups.outputs.groups }}
+      group_pattern: ${{ steps.groups.outputs.pattern }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -59,6 +64,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        id: python
         with:
           python-version: "3.13"
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
@@ -174,12 +180,50 @@ jobs:
           python3 scripts/versioning.py prepare \
             --latest-sha "$LATEST_SHA" --select "$SELECTION" \
             --output resolved-versions.json
+      - name: Compute historical build fingerprints
+        id: history-plan
+        env:
+          SITE_ORIGIN: ${{ steps.plan.outputs.site_origin }}
+          HISTORICAL_ORIGIN: ${{ steps.plan.outputs.historical_origin }}
+        run: |
+          python3 scripts/version_cache.py plan \
+            --resolved-manifest resolved-versions.json \
+            --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
+            --hugo-version "$HUGO_VERSION" --go-version "$(go version)" \
+            --cache-dir "$RUNNER_TEMP/history-cache" --output cache-plan.json
+          echo "key=$(jq -r .cacheKey cache-plan.json)" >> "$GITHUB_OUTPUT"
+      - name: Look up the complete historical bundle
+        id: history-lookup
+        continue-on-error: true
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ runner.temp }}/history-cache
+          key: ${{ runner.os }}-${{ steps.history-plan.outputs.key }}
+          lookup-only: true
+      - name: Select bounded build groups
+        id: groups
+        env:
+          CACHE_HIT: ${{ steps.history-lookup.outcome == 'success' && steps.history-lookup.outputs.cache-hit || 'false' }}
+        run: |
+          python3 scripts/version_cache.py groups \
+            --resolved-manifest resolved-versions.json --cache-hit "$CACHE_HIT" > build-groups.json
+          echo "groups=$(jq -c . build-groups.json)" >> "$GITHUB_OUTPUT"
+          # A full rerun can switch from three cold groups to one warm group.
+          # Match only that current group, never the older attempt's artifacts.
+          if [[ "$(jq length build-groups.json)" == 1 ]]; then
+            echo 'pattern=0' >> "$GITHUB_OUTPUT"
+          else
+            echo 'pattern=*' >> "$GITHUB_OUTPUT"
+          fi
       - name: Upload resolved version manifest
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           # Keep dependency artifact names stable across selective job reruns.
           name: resolved-versions-${{ github.run_id }}
-          path: resolved-versions.json
+          path: |
+            resolved-versions.json
+            cache-plan.json
           retention-days: 7
           if-no-files-found: error
           overwrite: true
@@ -191,7 +235,12 @@ jobs:
     permissions: { contents: read }
     env:
       HUGO_CACHEDIR: /tmp/hugo-resources
-    name: Build selected versions
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        group: ${{ fromJSON(needs.prepare.outputs.groups) }}
+    name: Build group ${{ matrix.group.id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -200,7 +249,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: "3.13"
+          python-version: ${{ needs.prepare.outputs.python_version }}
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: resolved-versions-${{ github.run_id }}
@@ -218,33 +267,30 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ env.HUGO_CACHEDIR }}
-          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-all-${{ hashFiles('go.sum') }}
-          restore-keys: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-all-
+          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-group${{ matrix.group.id }}-${{ hashFiles('go.sum') }}
+          restore-keys: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-group${{ matrix.group.id }}-
       - name: Verify pinned OINK module
         run: |
+          lscpu | sed -n '/^CPU(s):/p; /^Model name:/p'
           test "$(go list -m -f '{{ .Path }}')" = "github.com/apache/hugegraph-doc"
           test "$(go list -m all | wc -l)" -eq 2
           test -z "$(go list -m -f '{{ with .Replace }}{{ .Path }}{{ end }}' github.com/pgsty/oink)"
           python3 scripts/update_oink.py --check-baseline
-      - name: Compute historical build fingerprints
-        id: cache-plan
+      - name: Select this group's immutable versions
         env:
-          SITE_ORIGIN: ${{ needs.prepare.outputs.site_origin }}
-          HISTORICAL_ORIGIN: ${{ needs.prepare.outputs.historical_origin }}
+          VERSION_IDS: ${{ toJSON(matrix.group.versions) }}
         run: |
-          python3 scripts/version_cache.py plan \
-            --resolved-manifest resolved/resolved-versions.json \
-            --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
-            --hugo-version "$HUGO_VERSION" --go-version "$(go version)" \
-            --cache-dir "$RUNNER_TEMP/history-cache" --output "$RUNNER_TEMP/cache-plan.json"
-          echo "key=$(jq -r .cacheKey "$RUNNER_TEMP/cache-plan.json")" >> "$GITHUB_OUTPUT"
+          jq --argjson ids "$VERSION_IDS" \
+            '.include |= map(select(.id as $id | $ids | index($id)))' \
+            resolved/resolved-versions.json > selected-versions.json
       - name: Restore historical artifact bundle
         id: history-cache
+        continue-on-error: true
         if: github.event_name != 'workflow_dispatch'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ runner.temp }}/history-cache
-          key: ${{ runner.os }}-${{ steps.cache-plan.outputs.key }}
+          key: ${{ runner.os }}-${{ needs.prepare.outputs.cache_key }}
           # A previous bundle is only transport: each version must pass its
           # exact input fingerprint and file digest before it can be reused.
           restore-keys: ${{ runner.os }}-history-v1-
@@ -253,21 +299,26 @@ jobs:
           OINK_PYTHON: python3
           SITE_ORIGIN: ${{ needs.prepare.outputs.site_origin }}
           HISTORICAL_ORIGIN: ${{ needs.prepare.outputs.historical_origin }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
+          expected=()
+          if [[ "$EVENT_NAME" != workflow_dispatch ]]; then
+            expected+=(--expected-plan resolved/cache-plan.json)
+          fi
           python3 scripts/version_cache.py plan \
-            --resolved-manifest resolved/resolved-versions.json \
+            --resolved-manifest selected-versions.json \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
             --hugo-version "$HUGO_VERSION" --go-version "$(go version)" \
-            --cache-dir "$RUNNER_TEMP/history-cache" --output "$RUNNER_TEMP/cache-plan.json"
+            --cache-dir "$RUNNER_TEMP/history-cache" --output "$RUNNER_TEMP/cache-plan.json" "${expected[@]}"
           python3 scripts/build_versions.py \
-            --resolved-manifest resolved/resolved-versions.json \
+            --resolved-manifest selected-versions.json \
             --plan "$RUNNER_TEMP/cache-plan.json" --cache-dir "$RUNNER_TEMP/history-cache" \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
-            --workers 3 --output "$RUNNER_TEMP/version-artifacts"
+            --workers 2 --output "$RUNNER_TEMP/version-artifacts"
       - name: Upload selected version artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: ${{ needs.prepare.outputs.artifact_prefix }}-versions-${{ github.run_id }}
+          name: ${{ needs.prepare.outputs.artifact_prefix }}-versions-${{ matrix.group.id }}-${{ github.run_id }}
           path: ${{ runner.temp }}/version-artifacts
           include-hidden-files: true
           retention-days: 1
@@ -289,14 +340,15 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: "3.13"
+          python-version: ${{ needs.prepare.outputs.python_version }}
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: resolved-versions-${{ github.run_id }}
           path: resolved
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: ${{ needs.prepare.outputs.artifact_prefix }}-versions-${{ github.run_id }}
+          pattern: ${{ needs.prepare.outputs.artifact_prefix }}-versions-${{ needs.prepare.outputs.group_pattern }}-${{ github.run_id }}
+          merge-multiple: true
           path: version-artifacts
       - name: Assemble publishable site
         env:
@@ -305,6 +357,7 @@ jobs:
           HISTORICAL_ORIGIN: ${{ needs.prepare.outputs.historical_origin }}
           SELECTION: ${{ needs.prepare.outputs.selection }}
         run: |
+          lscpu | sed -n '/^CPU(s):/p; /^Model name:/p'
           extra=()
           if [[ "$PREFIX" == staging ]]; then
             extra+=(--asf-profile oink --asf-whoami asf-staging-oink)
@@ -319,6 +372,29 @@ jobs:
         env:
           DOWNLOAD_PUBLIC_DIR: ${{ runner.temp }}/public-site
         run: python3 -m unittest scripts.test_download_data.DownloadDataTest.test_rendered_download_pages_have_verified_rows -v
+      - name: Record validated historical artifacts
+        id: history-record
+        if: github.event_name != 'workflow_dispatch' && needs.prepare.outputs.history_hit != 'true'
+        run: |
+          complete=false
+          while IFS= read -r version; do
+            if python3 scripts/version_cache.py record \
+              --plan resolved/cache-plan.json --version "$version" \
+              --artifact "version-artifacts/$version" --cache-dir "$RUNNER_TEMP/history-cache"; then
+              complete=true
+            else
+              echo '::warning::Could not record history cache; validated site remains publishable.'
+              complete=false
+              break
+            fi
+          done < <(jq -r '.versions[] | select(.archived) | .id' resolved/cache-plan.json)
+          echo "complete=$complete" >> "$GITHUB_OUTPUT"
+      - name: Save complete historical bundle
+        if: steps.history-record.outputs.complete == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ runner.temp }}/history-cache
+          key: ${{ runner.os }}-${{ needs.prepare.outputs.cache_key }}
       - name: Upload publishable aggregate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

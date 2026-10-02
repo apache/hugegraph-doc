@@ -157,6 +157,46 @@ class VersionCacheTests(unittest.TestCase):
         self.assertEqual(before["cacheKey"], after["cacheKey"])
         self.assertFalse(after["versions"][0]["reusable"])
 
+    def test_cold_groups_cover_every_selected_version_once_with_bounded_jobs(self):
+        for size in range(1, 11):
+            with self.subTest(size=size):
+                entries = [{"id": str(index)} for index in range(size)]
+                groups = cache.build_groups({"versions": entries}, False)
+                self.assertEqual([g["id"] for g in groups], [str(i) for i in range(min(3, (size + 1) // 2))])
+                flattened = [v for g in groups for v in g["versions"]]
+                self.assertCountEqual(flattened, [e["id"] for e in entries])
+                if size <= 6:
+                    self.assertTrue(all(len(g["versions"]) <= 2 for g in groups))
+        groups = cache.build_groups({"versions": [{"id": str(i)} for i in range(5)]}, False)
+        self.assertEqual(groups, [{"id": "0", "versions": ["0", "3"]},
+                                  {"id": "1", "versions": ["1", "4"]},
+                                  {"id": "2", "versions": ["2"]}])
+
+    def test_warm_groups_and_single_selection_use_one_job(self):
+        self.assertEqual(cache.build_groups(self.manifest, True), [
+            {"id": "0", "versions": ["latest", "1.7", "1.5"]}])
+        self.manifest["include"] = [self.manifest["versions"][1]]
+        self.assertEqual(cache.build_groups(self.manifest, False), [{"id": "0", "versions": ["1.7"]}])
+
+    def test_groups_reject_empty_duplicate_or_unsafe_selection(self):
+        for selection in ([], [{"id": "1.7"}, {"id": "1.7"}], [{"id": "../outside"}]):
+            with self.subTest(selection=selection), self.assertRaises(ValueError):
+                cache.build_groups(dict(self.manifest, include=selection), False)
+
+    def test_expected_plan_accepts_subset_and_rejects_input_mismatch(self):
+        expected = self.plan()
+        self.manifest["include"] = [self.manifest["versions"][1]]
+        cache.verify_expected_plan(self.plan(), expected)
+        self.options["go_version"] = "different"
+        with self.assertRaisesRegex(ValueError, "build inputs differ"):
+            cache.verify_expected_plan(self.plan(), expected)
+        actual = {"versions": [{"id": "unknown", "buildKey": "key"}]}
+        with self.assertRaises(ValueError):
+            cache.verify_expected_plan(actual, expected)
+        expected["versions"].append(expected["versions"][0])
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            cache.verify_expected_plan(actual, expected)
+
     def test_selection_is_honored(self):
         self.manifest["include"] = [copy.deepcopy(self.manifest["versions"][0])]
         self.assertEqual([e["id"] for e in self.plan()["versions"]], ["latest"])

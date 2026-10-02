@@ -72,7 +72,8 @@ Cancelled runs skip report uploads and the final gate instead of holding the
 queue with `always()`. A queued job with no runner has not started testing;
 repeated reruns do not resolve runner capacity shortages.
 
-Selected versions share one build runner with at most three builds in parallel.
+A complete historical cache hit uses one build job. Cold runs use at most three
+build groups, with at most two versions building concurrently within each runner.
 Historical artifacts are reused only when both the complete build-input fingerprint
 and artifact digest match. Missing or invalid cache entries rebuild automatically;
 manual dispatches start without the artifact cache. Cache hits still run the full

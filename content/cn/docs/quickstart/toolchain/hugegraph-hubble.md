@@ -55,7 +55,8 @@ Hubble 直接进入首页。需要认证时，按 Docker README 配置 `.env` �
 Hubble 没有独立账号库。个人中心与账号管理只在相应认证和权限条件下显示，不要覆盖已有 `.env`。
 
 `latest` 便于体验当前功能，正式部署应固定镜像版本或 digest。镜像是便捷分发物，正式发布包见 [下载页](/cn/docs/download/download/)。
-算法与账号示例使用 Hubble `1.8.0` 和 Server `1.7.0`；界面入口仍取决于 Server 提供的能力。
+算法与账号配图使用 Toolchain `1.8.0` 构建的 Hubble 与 Server `1.7.0`。Hubble 的 `/about` 当前返回静态值 `3.0.0`，
+不能据此判断构建版本；此组合只说明这些配图的运行环境，不保证 `latest` 始终对应这些版本。界面入口仍取决于 Server 提供的能力。
 Compose 的 `server-data` 和 `hubble-data` 分别保存图数据与 Hubble 元数据；更多持久化与生产配置见
 [Server 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
 

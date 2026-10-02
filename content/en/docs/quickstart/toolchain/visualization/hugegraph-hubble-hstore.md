@@ -16,17 +16,39 @@ already combines PD, Store, Server, and Hubble. Follow the adjacent
 then start it from `docker/`; do not maintain another deployment YAML.
 The settings below explain connection differences and do not replace the README's PD credential and service-readiness requirements.
 
-The illustrated setup uses Hubble `1.8.0` with Server, PD, and Store `1.7.0`; metrics and permission APIs vary by version.
+The screenshots use Hubble built from Toolchain `1.8.0` with Server, PD, and Store `1.7.0`. Hubble currently returns the static value `3.0.0`
+from `/about`, which does not identify its build version. This pairing describes the screenshot environment; `latest` is mutable.
+Metrics and permission APIs vary by version.
 
 ## Connect to a distributed cluster
 
 Hubble still manages graph data through the **Server graph API**. In distributed mode, it discovers Servers through PD
 and collects cluster information from PD and Store. Hubble does not read or write graph data directly in Store.
 
-Follow the [PD deployment guide](/docs/quickstart/hugegraph/hugegraph-pd/) and
-[HStore deployment guide](/docs/quickstart/hugegraph/hugegraph-hstore/) to start matching versions of PD, Store, and Server.
-Confirm that Server is registered and Store is ready, then edit Hubble's `conf/hugegraph-hubble.properties`.
-These hostnames illustrate a minimal topology on one container network; replace them with addresses reachable from the Hubble backend:
+For the official Compose deployment, prepare `.env` in the main repository's `docker/` directory following its README, then generate the Hubble configuration:
+
+```bash
+set -a
+. ./.env
+set +a
+./set-hubble-pd-password.sh hstore
+```
+
+The script reads the loaded `HG_PD_AUTH_SECRET_KEY` and writes the PD operations password to the host file
+`docker/conf/hubble/hstore.local.properties`. Edit this generated file to customize connection or operations settings, preserving
+`operations.pd.password` so it matches PD's secret. Do not replace it with the tracked `.example` template. Compose mounts it read-only at
+`/hubble/conf/hugegraph-hubble.properties` inside the container; do not edit it there. Do not commit the generated file or `.env`.
+Running the script again overwrites the generated file, so reapply custom settings afterward.
+
+Start the services from the same `docker/` directory and confirm Server registration and Store readiness:
+
+```bash
+docker compose -f docker-compose-hstore.yml up -d --wait
+```
+
+For separately deployed services, follow the [PD deployment guide](/docs/quickstart/hugegraph/hugegraph-pd/) and
+[HStore deployment guide](/docs/quickstart/hugegraph/hugegraph-hstore/). A source or binary Hubble deployment instead uses the package's
+`conf/hugegraph-hubble.properties`. These settings match the official minimal topology; use backend-reachable addresses for other deployments:
 
 ```properties
 pd.enabled=true
@@ -44,7 +66,14 @@ pd.server=pd:8620
 
 Do not interchange ports `8686` and `8620`, or retain `127.0.0.1` for connections between containers.
 The bundled file explicitly sets `pd.enabled=false`, while the Java fallback for a missing key is `true`; set it explicitly in either deployment.
-Restart Hubble after changing the configuration. You do not enter a Server host and port for each graph in the UI.
+Restart source or binary Hubble deployments after configuration changes. For Compose, recreate the Hubble container from `docker/` after editing
+or regenerating the host file so the read-only bind mount loads it again; retain the original project name and all `-f` arguments:
+
+```bash
+docker compose -f docker-compose-hstore.yml up -d --force-recreate hubble
+```
+
+You do not enter a Server host and port for each graph in the UI.
 
 ## Organize graphs and permissions with GraphSpaces
 
@@ -140,7 +169,9 @@ Use container isolation, a trusted HTTPS entrypoint, Server authentication, and 
 ### Configure operations access
 
 Hubble's **backend** uses the PD/Store operations credentials, separately from the Server account used to log in through the browser.
-Put deployment-specific credentials in the actual configuration file. Do not include passwords in documentation, screenshots, or committed configuration:
+For Compose, edit the generated host file `docker/conf/hubble/hstore.local.properties`; other deployments use the Hubble package configuration.
+The script-generated PD password must match the secret in `.env`. Configure the Store service account when Store authentication is enabled.
+Do not include passwords in documentation, screenshots, or committed configuration:
 
 | Setting | Bundled default | Configuration |
 |---|---|---|

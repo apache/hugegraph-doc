@@ -14,17 +14,37 @@ search_keywords: [HugeGraph Hubble, HStore, PD, GraphSpace, 集群管理]
 已提供 PD、Store、Server 与 Hubble 的组合。按同目录 [Docker README](https://github.com/apache/hugegraph/blob/master/docker/README.md)
 准备 `.env` 和生成的 Hubble 本地配置，再从 `docker/` 目录启动；不要另维护一份部署 YAML。
 下文配置用于解释连接差异，不能替代 README 中 PD 凭据及服务就绪的要求。
-图中的组合使用 Hubble `1.8.0` 与 Server、PD、Store `1.7.0`；不同版本可提供的指标和权限接口有所区别。
+图中使用 Toolchain `1.8.0` 构建的 Hubble 与 Server、PD、Store `1.7.0`。Hubble 的 `/about` 当前返回静态值 `3.0.0`，
+不能据此判断构建版本；此组合只对应本篇配图的运行环境，`latest` 标签会变化。不同版本可提供的指标和权限接口有所区别。
 
 ## 连接分布式集群
 
 Hubble 仍通过 **Server 的图 API** 管理数据。区别在于，分布式模式通过 PD 发现 Server，
 同时从 PD 和 Store 获取集群信息；Hubble 不直接读写 Store 中的图数据。
 
-先按 [PD 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-pd/) 和
-[HStore 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-hstore/) 启动匹配版本的 PD、Store 和 Server，
-确认 Server 已注册、Store 已就绪，再修改 Hubble 的 `conf/hugegraph-hubble.properties`。
-下面的主机名仅演示同一容器网络中的最小拓扑，请替换成 Hubble 后端实际可达的地址：
+使用官方 Compose 时，先按 Docker README 在主仓库的 `docker/` 目录准备 `.env`，再生成它挂载的 Hubble 配置：
+
+```bash
+set -a
+. ./.env
+set +a
+./set-hubble-pd-password.sh hstore
+```
+
+脚本读取 `.env` 中已载入的 `HG_PD_AUTH_SECRET_KEY`，将 PD 运维密码写入宿主机的 `docker/conf/hubble/hstore.local.properties`。
+如需调整连接地址或运维配置，编辑这个生成文件，并保留生成的 `operations.pd.password`，使其与 PD 使用的密钥一致。
+不要覆盖为跟踪的 `.example` 模板。Compose 将它只读挂载到容器的 `/hubble/conf/hugegraph-hubble.properties`，
+不要进入容器修改。生成文件和 `.env` 都不应提交；以后重新运行脚本会覆盖生成文件，需要重新应用自定义配置。
+
+在同一 `docker/` 目录启动组合，并确认 Server 已注册、Store 已就绪：
+
+```bash
+docker compose -f docker-compose-hstore.yml up -d --wait
+```
+
+若分别部署服务，参照 [PD 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-pd/) 和
+[HStore 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)；源码或二进制包启动的 Hubble 则编辑其
+`conf/hugegraph-hubble.properties`。以下连接项与官方最小拓扑一致，其他部署请使用 Hubble 后端实际可达的地址：
 
 ```properties
 pd.enabled=true
@@ -42,7 +62,14 @@ pd.server=pd:8620
 
 不要把 `8686` 和 `8620` 混用，也不要在跨容器连接时保留 `127.0.0.1`。
 随包文件显式设置 `pd.enabled=false`，而该键缺失时 Java 默认值是 `true`，因此两种部署都应显式设置它。
-修改配置后重启 Hubble；页面无需逐图填写 Server 主机和端口。
+源码或二进制包部署在修改配置后重启 Hubble。Compose 部署在修改或重新生成宿主机配置后，从 `docker/` 目录重建 Hubble 容器，
+使只读挂载重新载入文件（沿用启动时的项目名及所有 `-f` 参数）：
+
+```bash
+docker compose -f docker-compose-hstore.yml up -d --force-recreate hubble
+```
+
+页面无需逐图填写 Server 主机和端口。
 
 ## 用图空间组织图与权限
 
@@ -128,7 +155,8 @@ Hubble 展示上游提供的观测值，不代替完整的 Raft 副本一致性�
 ### 配置运维访问
 
 PD/Store 的运维凭据由 Hubble **后端**使用，与浏览器登录 Server 的账号分开。
-在实际配置文件中填写部署对应的凭据，不要把密码写进文档、截图或提交的配置：
+Compose 部署修改上文生成的宿主机 `docker/conf/hubble/hstore.local.properties`；其他部署修改 Hubble 包内配置文件。
+其中 PD 密码由脚本生成并与 `.env` 中的密钥保持一致，Store 启用认证时再配置对应服务账号。不要把密码写进文档、截图或提交的配置：
 
 | 配置 | 随包默认值 | 设置方式 |
 |---|---|---|

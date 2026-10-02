@@ -59,7 +59,9 @@ Personal and account-management pages depend on the authentication mode and your
 
 Use `latest` to try current features, and pin a published image version or digest for production.
 Images are convenience distributions; official release archives are on the [download page](/docs/download/download/).
-The algorithm and account examples use Hubble `1.8.0` with Server `1.7.0`; available controls depend on Server capabilities.
+The algorithm and account screenshots use Hubble built from Toolchain `1.8.0` with Server `1.7.0`. Hubble currently returns the static value
+`3.0.0` from `/about`, which does not identify the build version. This pairing describes those screenshots, not a fixed meaning of `latest`.
+Available controls depend on Server capabilities.
 Compose's `server-data` and `hubble-data` retain graph data and Hubble metadata respectively. For further persistence and production settings,
 see the [Server deployment guide](/docs/quickstart/hugegraph/hugegraph-server/).
 

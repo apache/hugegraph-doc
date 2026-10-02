@@ -44,19 +44,23 @@ weight: 1
     <dependency>
         <groupId>org.apache.hugegraph</groupId>
         <artifactId>hugegraph-client</artifactId>
-        <!-- 与本文的 Toolchain master 对应 -->
-        <version>1.8.0</version>
+        <!-- 以下完整示例可使用已发布的 1.7.0 -->
+        <version>1.7.0</version>
     </dependency>
 </dependencies>
 ```
-本文以 Toolchain `master`（`1.8.0`）为准。若此版本尚未发布到 Maven 仓库，在 Toolchain 源码根目录运行以下命令，
-将 Client 及其父 POM 安装到本地 Maven 仓库后，再构建示例工程。源码构建的依赖仍需能够从配置的 Maven 仓库获取。
+以下完整示例使用的 Schema、Graph、Gremlin 和资源关闭接口在已发布的 Client `1.7.0` 中可用，也与 Toolchain `master` 兼容。
+上面的依赖可直接用于示例工程。
+
+如果需要[API 参考](/cn/docs/clients/hugegraph-client/)中的 master 新接口（例如能力探测），请使用 Toolchain `master` 的 Client `1.8.0`，
+将 POM 中的版本改为 `1.8.0`。该版本未发布到 Maven 仓库时，先在 Toolchain 源码根目录运行以下命令，
+将 Client 及其父 POM 安装到本地 Maven 仓库。源码构建仍需从配置的 Maven 仓库获取依赖。
 
 ```bash
 mvn install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
-Client 与 Server 的版本不必相同；升级前核对服务端 API 兼容范围及所需功能。旧版 Client 不一定提供本文使用的接口。
+Client 与 Server 的版本不必相同；升级前核对服务端 API 兼容范围及所需功能。
 
 #### 4.3 Example
 

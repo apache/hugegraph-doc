@@ -6,7 +6,11 @@ weight: 2
 
 If you need to copy data from one HugeGraph graph to another, use `graph2graph`: HugeGraph Source reads vertices and edges from the source graph (graph A), and HugeGraph Sink writes them to the target graph (graph B), with an optional Transform in between. The data path is `graph A → HugeGraph Source → (optional Transform) → HugeGraph Sink → graph B`. If you need to export graph data to a file, JDBC, Kafka, or another system, use `graph2any`, where a downstream Sink receives the records read by HugeGraph Source. This page covers both job types.
 
-> **Version requirement: This guide targets SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)**
+> **Version requirement: This guide targets SeaTunnel [3.0.0](https://seatunnel.apache.org/download/)**
+
+SeaTunnel 3.0.0 introduces HugeGraph Source, with schema auto-discovery and multi-label reads.
+See the [official Source documentation](https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/)
+for parallel-scan backend requirements and configuration limits.
 
 Before starting, complete the [shared environment and configuration steps on the import page](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/#2-prepare-the-environment). They cover JDK, HOCON, plugin installation, and the sample graph model.
 
@@ -138,7 +142,7 @@ This example checks endpoints and makes write errors fail the job. The default `
 
 > **Why preserve IDs?** A HugeGraph `PRIMARY_KEY` ID contains the internal ID of the vertex label, and that internal ID can differ between graphs. For example, a source vertex can be `1:marko`, while regenerating the primary key in the target graph can produce `2:marko`. Reusing the source edge endpoints after regenerating vertex IDs can connect edges to the wrong vertices. This example stores the original ID as a string, which changes the target graph's ID strategy
 
-When Source reads every label, omit `label` to read all labels of `label_type` (default `VERTEX`). It produces one output table per label. Bind each Sink mapping to its table with `sourceTable`, for example `sourceTable = "default.person"`; use the full table name shown in the Writer log for the exact value. Do not reuse the single-label configuration from this section. See the [HugeGraph Source documentation](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md) for other limitations.
+When Source reads every label, omit `label` to read all labels of `label_type` (default `VERTEX`). It produces one output table per label. Bind each Sink mapping to its table with `sourceTable`, for example `sourceTable = "default.person"`; use the full table name shown in the Writer log for the exact value. Do not reuse the single-label configuration from this section. See the [HugeGraph Source documentation](https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/) for other limitations.
 
 ## 2 Export to another system (graph2any)
 
@@ -188,8 +192,8 @@ This page covers row reads and writes. It does not copy source indexes, TTLs, or
 
 **Connectors**
 
-<p><sup>[1]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/source/HugeGraph.md">HugeGraph Source</a><br>
-<sup>[2]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/en/connectors/sink/LocalFile.md">LocalFile Sink</a></p>
+<p><sup>[1]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/">HugeGraph Source</a><br>
+<sup>[2]</sup> <a href="https://seatunnel.apache.org/docs/3.0.0/connectors/sink/LocalFile/">LocalFile Sink</a></p>
 
 **Related guide**
 

@@ -441,10 +441,12 @@ test("failed persistent grant removal announces error without pretending to revo
 for (const loaded of [false, true]) {
   test(`revocation synchronizes sibling tabs (${loaded ? "loaded vendor" : "before loading"})`, async ({ page }) => {
     const requests = [];
-    await page.context().route("https://widget.kapa.ai/kapa-widget.bundle.js*", async route => {
+    const fulfillBundle = async route => {
       requests.push(route.request().url());
       await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
-    });
+    };
+    await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", fulfillBundle);
+    await page.context().route("https://widget.kapa.ai/kapa-widget.bundle.js*", fulfillBundle);
     await page.goto(AI_ORIGIN + "/docs/");
     await page.evaluate(() => {
       const config = JSON.parse(document.querySelector("#hg-ai-config").textContent);
@@ -473,10 +475,12 @@ for (const loaded of [false, true]) {
 
 test("grant synchronizes stale disclosure tabs without autoloading AI", async ({ page }) => {
   const requests = [];
-  await page.context().route("https://widget.kapa.ai/kapa-widget.bundle.js*", async route => {
+  const fulfillBundle = async route => {
     requests.push(route.request().url());
     await route.fulfill({ status: 200, contentType: "text/javascript", body: mockBundle });
-  });
+  };
+  await page.route("https://widget.kapa.ai/kapa-widget.bundle.js*", fulfillBundle);
+  await page.context().route("https://widget.kapa.ai/kapa-widget.bundle.js*", fulfillBundle);
   await page.goto(AI_ORIGIN + "/docs/");
   const sibling = await page.context().newPage();
   await sibling.goto(AI_ORIGIN + "/cn/docs/");

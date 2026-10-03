@@ -195,8 +195,11 @@ The following tables describe current master entrypoints and Compose files, not 
 | `HG_STORE_GRPC_PORT` | No | `8500` | `grpc.port` |
 | `HG_STORE_REST_PORT` | No | `8520` | `server.port` |
 | `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` |
+| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | No | None | `rocksdb.total_memory_size`, in bytes |
 
 > **Deprecated aliases**: `PD_ADDRESS` → `HG_STORE_PD_ADDRESS`, `GRPC_HOST` → `HG_STORE_GRPC_HOST`, `RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`.
+
+RocksDB caches live outside the Java heap. Leave `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` unset to size them from the container memory limit, or set it to a plain number of bytes; see `rocksdb.total_memory_size` in the [HStore configuration reference](/docs/quickstart/hugegraph/hugegraph-hstore/).
 
 ### Server Variables
 

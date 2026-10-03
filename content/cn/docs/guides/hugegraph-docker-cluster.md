@@ -195,8 +195,11 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` |
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` |
+| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | 否 | 无 | `rocksdb.total_memory_size`，单位字节 |
 
 > **已弃用的别名**：`PD_ADDRESS` → `HG_STORE_PD_ADDRESS`、`GRPC_HOST` → `HG_STORE_GRPC_HOST`、`RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`
+
+RocksDB 缓存位于 Java 堆外。不设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` 时按容器内存限制自动计算，也可以设为纯字节数；详见 [HStore 配置参考](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)中的 `rocksdb.total_memory_size`。
 
 ### Server 变量
 

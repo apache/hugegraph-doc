@@ -538,9 +538,11 @@ This indicates the successful creation of the sample graph.
 The server script puts `-XX:+HeapDumpOnOutOfMemoryError`, `-XX:HeapDumpPath` and `-XX:ErrorFile` first in `JAVA_TOOL_OPTIONS`, so an out-of-memory heap dump
 (`java_pid<pid>_<launch time>.hprof`) and a JVM crash log (`hs_err_pid<pid>_<launch time>.log`) land in `logs/` whether or not `JAVA_OPTIONS` is set. If a file
 with that name already exists, for example after a restart that reuses the PID within the same second, a counter is added (`<launch time>-1`, `-2`, ...). A heap
-dump can be as large as the heap. The JVM reads your own `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS`, the command line (`JAVA_OPTIONS`, or `-j` when `JAVA_OPTIONS`
-is unset) and `_JAVA_OPTIONS` after these defaults, so a value for one of these flags in any of them overrides the default. For example, pass
-`-XX:-HeapDumpOnOutOfMemoryError` with `-j` to turn dumps off. Because of the defaults, the JVM prints `Picked up JAVA_TOOL_OPTIONS: ...` at startup.
+dump can be as large as the heap, and old dumps are never removed, so a server that keeps running out of memory fills `logs/` with one dump per restart; move or
+delete old `java_pid*.hprof` files after each incident. The JVM reads your own `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS`, the command line (`JAVA_OPTIONS`, or
+`-j` when `JAVA_OPTIONS` is unset) and `_JAVA_OPTIONS` after these defaults, so a value for one of these flags in any of them overrides the default. For
+example, pass `-XX:-HeapDumpOnOutOfMemoryError` with `-j` to turn dumps off. Because of the defaults, the JVM prints `Picked up JAVA_TOOL_OPTIONS: ...` at
+startup.
 
 > **Version scope**: this applies to current master ([apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)). In 1.7.0 the heap dump
 > flags are added only when `JAVA_OPTIONS` is unset, and JVM crash logs go to the install directory.

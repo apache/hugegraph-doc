@@ -296,7 +296,9 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 **查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。基于当前 master 构建的 PD、Store 以及两个 Server 镜像（`hugegraph/hugegraph` 和 HStore 的
 `hugegraph/server`）都设置了 `STDOUT_MODE=true`，服务日志会输出到容器 stdout。对 Server 而言，Hadoop、ZooKeeper、SOFA、Netty 和 Commons 的 WARN 及以上日志也会输出到 stdout；它们的 INFO
 日志以及审计日志、慢查询日志仍只写入文件。完整的 `hugegraph-server.log`、JVM 崩溃日志（`hs_err_pid*.log`）和内存溢出堆转储（`java_pid*.hprof`）位于 `/hugegraph-server/logs`。`docker restart` 会保留这些文件，但
-Kubernetes 每次重启都会新建容器，因此需要在 `/hugegraph-server/logs` 挂载 `emptyDir` 或 PersistentVolumeClaim 来保留它们，并按与 JVM 堆同样大小的堆转储预留空间。
+Kubernetes 每次重启都会新建容器，因此需要在 `/hugegraph-server/logs` 挂载 `emptyDir` 或 PersistentVolumeClaim 来保留它们。堆转储可能和 JVM 堆一样大，而且每次启动都会写入新文件，因此反复内存溢出的 Server
+每重启一次就会多一个与堆同样大小的转储，直到卷被写满。无论使用 `emptyDir`（它在容器重启后同样保留）还是 PVC，启动脚本都不会删除旧的转储。请按需要保留的转储数量加上日志所需空间来规划卷大小，每次排查后移走或删除旧的 `java_pid*.hprof` 文件，或通过
+`-XX:-HeapDumpOnOutOfMemoryError` 关闭堆转储。
 
 > **版本范围**：上文描述的是基于当前 master 构建的镜像（PD、Store 和单机 Server 见 [apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980)，HStore Server 见
 > [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 及更早的镜像都没有设置 `STDOUT_MODE`，包括上文使用的单机镜像 `hugegraph/hugegraph:1.7.0`：`docker logs`

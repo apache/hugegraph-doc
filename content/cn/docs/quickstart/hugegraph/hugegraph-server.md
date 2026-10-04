@@ -536,10 +536,10 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 
 `bin/stop-hugegraph.sh` 支持 `-m true|false`（默认 `true`），用于控制停止服务时是否同时移除 crontab 监控任务。
 
-服务脚本总会添加 `-XX:+HeapDumpOnOutOfMemoryError`、`-XX:HeapDumpPath` 和 `-XX:ErrorFile`，因此无论是否设置了 `JAVA_OPTIONS`，内存溢出时的堆转储
-（`java_pid<pid>_<启动时间>.hprof`）和 JVM 崩溃日志（`hs_err_pid<pid>_<启动时间>.log`）都会写入 `logs/`。文件名带上启动时间，是为了避免重启后复用相同 PID
-时与旧文件冲突。堆转储可能和堆一样大。如需关闭，可通过 `-j` 传入 `-XX:-HeapDumpOnOutOfMemoryError`；如果设置了 `JAVA_OPTIONS`，则写在 `JAVA_OPTIONS`
-中（设置 `JAVA_OPTIONS` 后 `-j` 不生效）。在这些位置为上述参数指定的值会覆盖默认值；已在 `JAVA_TOOL_OPTIONS` 或 `JDK_JAVA_OPTIONS` 中设置的参数保持不变。
+服务脚本会把 `-XX:+HeapDumpOnOutOfMemoryError`、`-XX:HeapDumpPath` 和 `-XX:ErrorFile` 放在 `JAVA_TOOL_OPTIONS` 的最前面，因此内存溢出时的堆转储（`java_pid<pid>_<启动时间>.hprof`）和 JVM
+崩溃日志（`hs_err_pid<pid>_<启动时间>.log`）都会写入 `logs/`，与是否设置 `JAVA_OPTIONS` 无关。如果同名文件已存在（例如重启后在同一秒内复用了相同 PID），文件名会再加上计数（`<启动时间>-1`、`-2`……）。堆转储可能和堆一样大。JVM
+会在这些默认值之后读取你自己的 `JAVA_TOOL_OPTIONS`、`JDK_JAVA_OPTIONS`、命令行（`JAVA_OPTIONS`，未设置 `JAVA_OPTIONS` 时为 `-j`）和 `_JAVA_OPTIONS`，因此在其中任意一处为上述参数指定的值都会覆盖默认值。例如，可通过 `-j` 传入
+`-XX:-HeapDumpOnOutOfMemoryError` 来关闭堆转储。由于这些默认值，JVM 启动时会输出 `Picked up JAVA_TOOL_OPTIONS: ...`。
 
 > **版本范围**：以上行为适用于当前 master（[apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 只在未设置 `JAVA_OPTIONS`
 > 时添加堆转储参数，JVM 崩溃日志写入安装目录。

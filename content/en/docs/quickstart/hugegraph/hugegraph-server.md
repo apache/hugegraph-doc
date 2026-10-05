@@ -57,6 +57,19 @@ Build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD a
 >
 > A mid-traversal scan retains its input multiplicity: with three vertices, `g.V().V().count()` returns `9L`.
 > `P.typeOf()` runs as a local filter, including in negated or combined predicates; it does not use backend indexes on its own.
+>
+> The bundled Driver and Console configurations use GraphBinary V1: schema results are standard maps and Blob values are binary,
+> including inside returned graph elements. Default HTTP JSON with untyped GraphSON V1 preserves the legacy Tree `key`/`value` array, with scalar or element
+> keys.
+> Optional results carry their value or null when empty; File results keep the map shape `{"file": "name"}` with the file name, including in nested results.
+> Named `GValue` predicates retain bindings when reused or cloned; named `limit()`/`range()` bounds count like literal bounds.
+> Local mixed ID collections preserve typed string, number and UUID matches; all-string collections retain standard string-ID comparisons.
+> Count filtering keeps the complete count if any predicate branch has no proven safe truncation bound, including unsupported negated collections and custom
+> predicates.
+> DATE schema properties accept `OffsetDateTime` for writes and indexed equality/range queries, normalized by instant to milliseconds;
+> sub-millisecond precision is truncated, and existing DATE data needs no migration.
+> See the [TinkerPop 3.8.1 upgrade guide](https://github.com/apache/hugegraph/blob/master/docs/upgrade-tinkerpop-3.8.md)
+> for client configuration and verification details.
 
 ## 3 Deploy
 

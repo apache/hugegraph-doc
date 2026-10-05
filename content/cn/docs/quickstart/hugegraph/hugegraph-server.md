@@ -56,6 +56,15 @@ flowchart TD
 >
 > 遍历中途的扫描保留上游输入数量：图中有三个顶点时，`g.V().V().count()` 返回 `9L`。
 > `P.typeOf()` 作为本地过滤执行，也支持放在取反或组合谓词中；单独使用类型过滤不会利用后端索引。
+>
+> 随包 Driver 和 Console 配置使用 GraphBinary V1：schema 结果为标准 map，Blob 为二进制值，返回图元素内的 Blob 也适用。
+> 默认 HTTP JSON 使用的 Untyped GraphSON V1 保留 Tree 的旧 `key`/`value` 数组结构，支持标量和图元素作为 key。
+> Optional 返回其内容，空值返回 null；File 保留 `{"file": "name"}` 的 map 结构，使用文件名，嵌套结果也适用。
+> 命名 `GValue` 谓词在复用或克隆时保留绑定；命名 `limit()`/`range()` 边界的计数行为与字面量边界一致。
+> 本地混合 ID 集合保留字符串、数值和 UUID 各自的类型匹配；全字符串集合继续使用标准字符串 ID 比较语义。
+> Count 过滤仅在每个谓词分支均能证明截断安全时采用范围优化；不支持的否定集合或自定义谓词分支保留完整计数。
+> DATE schema 属性支持写入及索引等值/范围查询中的 `OffsetDateTime`，按 instant 转为毫秒；小于毫秒的精度被截断，既有 DATE 数据无需迁移。
+> 客户端配置和验证细节见 [TinkerPop 3.8.1 升级指南](https://github.com/apache/hugegraph/blob/master/docs/upgrade-tinkerpop-3.8.md)。
 
 ## 3 部署
 

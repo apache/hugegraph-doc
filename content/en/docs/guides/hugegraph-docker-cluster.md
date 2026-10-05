@@ -301,7 +301,8 @@ files. The full `hugegraph-server.log`, JVM crash logs (`hs_err_pid*.log`) and o
 `/hugegraph-server/logs` to keep them. A heap dump can be as large as the JVM heap, and every launch writes to a new file, so a Server that keeps running out of
 memory adds one heap-sized dump per restart until the volume is full. The launcher never removes old dumps, whether the volume is an `emptyDir` (which also
 survives container restarts) or a PVC. Size the volume for the number of dumps you want to keep plus the logs, move or delete old `java_pid*.hprof` files after
-each incident, or turn dumps off with `-XX:-HeapDumpOnOutOfMemoryError`.
+each incident, or turn dumps off with `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, which keeps the image's default `JAVA_OPTS`. Adding the flag to
+`JAVA_OPTS` also works, but setting `JAVA_OPTS` replaces that default (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those flags.
 
 > **Version scope**: the paragraph above describes current master images ([apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980) for PD, Store
 > and the standalone Server, [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258) for the HStore Server). No 1.7.0 or older image sets

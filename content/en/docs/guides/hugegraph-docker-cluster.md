@@ -295,14 +295,15 @@ Standalone publishes only `8080` and `8088`; minimal HStore publishes `8620` (PD
 
 **Runtime logs**: `docker logs <container-name>` (for example, `docker logs hg-pd0`) shows logs without entering containers. In images built from current
 master, the PD, Store and both Server images (`hugegraph/hugegraph` and the HStore `hugegraph/server`) set `STDOUT_MODE=true` and send service logs to stdout.
-For the Server, WARN and above from Hadoop, ZooKeeper, SOFA, Netty and Commons also reaches stdout; their INFO output and the audit and slow-query logs stay in
-files. The full `hugegraph-server.log`, JVM crash logs (`hs_err_pid*.log`) and out-of-memory heap dumps (`java_pid*.hprof`) are in `/hugegraph-server/logs`.
-`docker restart` keeps them, but Kubernetes starts a new container on every restart, so mount an `emptyDir` or a PersistentVolumeClaim at
-`/hugegraph-server/logs` to keep them. A heap dump can be as large as the JVM heap, and every launch writes to a new file, so a Server that keeps running out of
-memory adds one heap-sized dump per restart until the volume is full. The launcher never removes old dumps, whether the volume is an `emptyDir` (which also
-survives container restarts) or a PVC. Size the volume for the number of dumps you want to keep plus the logs, move or delete old `java_pid*.hprof` files after
-each incident, or turn dumps off with `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, which keeps the image's default `JAVA_OPTS`. Adding the flag to
-`JAVA_OPTS` also works, but setting `JAVA_OPTS` replaces that default (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those flags.
+For the Server, WARN and above from Hadoop, ZooKeeper, SOFA, Netty and Commons also reaches stdout; INFO from Hadoop, Netty and Commons and the audit and
+slow-query logs stay in files, and ZooKeeper and SOFA log nothing below WARN. The full `hugegraph-server.log`, JVM crash logs (`hs_err_pid*.log`) and
+out-of-memory heap dumps (`java_pid*.hprof`) are in `/hugegraph-server/logs`. `docker restart` keeps them, but Kubernetes starts a new container on every
+restart, so mount an `emptyDir` or a PersistentVolumeClaim at `/hugegraph-server/logs` to keep them. A heap dump can be as large as the JVM heap, and every
+launch writes to a new file, so a Server that keeps running out of memory adds one heap-sized dump per restart until the volume is full. The launcher never
+removes old dumps, whether the volume is an `emptyDir` (which also survives container restarts) or a PVC. Size the volume for the number of dumps you want to
+keep plus the logs, move or delete old `java_pid*.hprof` files after each incident, or turn dumps off with `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`,
+which keeps the image's default `JAVA_OPTS`. Adding the flag to `JAVA_OPTS` also works, but setting `JAVA_OPTS` replaces that default
+(`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those flags.
 
 > **Version scope**: the paragraph above describes current master images ([apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980) for PD, Store
 > and the standalone Server, [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258) for the HStore Server). No 1.7.0 or older image sets

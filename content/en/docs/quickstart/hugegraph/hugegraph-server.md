@@ -35,17 +35,46 @@ flowchart TD
 
 ## 2 Dependency for Building/Running
 
-### 2.1 Install Java 11 (JDK 11)
+<span id="21-install-java-11-jdk-11"></span>
 
-The `hugegraph-server` module in HugeGraph 1.7.0 is compiled with Java 11. Running and building it from source require Java 11 or later.
+### 2.1 Install Java 17 (JDK 17)
+
+Starting with HugeGraph 1.8.0, use **Java 17**; **1.7.0 is the last release supporting Java 11**.
+Build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD and Store with **JDK 17**.
 
 **Before continuing, run `java -version` to confirm your JDK version.**
 
-> Java 8 is no longer supported starting from 1.7.0. `bin/hugegraph-server.sh` refuses to start on anything older than Java 11.
-
-> The security check is on by default and installs `HugeSecurityManager`, which needs Java 11 to 23. JDK 24 removed the Security Manager ([JEP 486](https://openjdk.org/jeps/486)), so on Java 24 or later you must start the service with the check disabled: `bin/start-hugegraph.sh -s false`.
-
-> Building from source also needs Maven 3.5.0 or later.
+> [!NOTE]
+> **TinkerPop compatibility**
+>
+> HugeGraph 1.8.0 uses TinkerPop 3.8.1 and Groovy 4.0.25. Use the Gremlin configuration files bundled with Server.
+> Serializer classes move from `org.apache.tinkerpop.gremlin.driver.ser` to `org.apache.tinkerpop.gremlin.util.ser`;
+> retain the supplied HugeGraph registries. Gremlin Groovy remains the default engine.
+> Check application scripts against the TinkerPop 3.5.1 to 3.8.1 upgrade interval; this upgrade does not switch remote requests to GremlinLang.
+>
+> `supportsUniformListValues()` now returns `false` for vertex and edge properties, so clients that inspect `Graph.Features` must adjust that capability check.
+> Schema-defined `valueList()`/`LIST` properties remain supported; this flag change alone does not require rewriting existing list data.
+>
+> A mid-traversal scan retains its input multiplicity: with three vertices, `g.V().V().count()` returns `9L`.
+> `P.typeOf()` runs as a local filter, including in negated or combined predicates; it does not use backend indexes on its own.
+>
+> The bundled Driver and Console configurations use GraphBinary V1: schema results are standard maps and Blob values are binary,
+> including inside returned graph elements. Default HTTP JSON with untyped GraphSON V1 preserves the legacy Tree `key`/`value` array, with scalar or element
+> keys.
+> Optional results carry their value or null when empty; File results keep the map shape `{"file": "name"}` with the file name, including in nested results.
+> HugeGraph enums return their names; `graph.schema()` returns a map with property key, vertex label, edge label and index label lists.
+> Typed GraphSON V1 is disabled because class-name deserialization can construct Java objects before authentication; typed V2/V3 remain available.
+> The bundled Cypher predicate imports use the compatible factories, including when replaying the Gremlin translation returned by `EXPLAIN`.
+> Named `GValue` predicates retain bindings when reused or cloned; named `limit()`/`range()` bounds count like literal bounds.
+> Local mixed ID collections preserve typed string, number and UUID matches; all-string collections retain standard string-ID comparisons.
+> Local edge ID filters accept mixed serialized strings and native edge IDs with consistent membership and count results.
+> Jackson JSON and YAML modules use one compatible version, including parsing decimal-valued Kubernetes kubeconfig extensions.
+> Count filtering keeps the complete count if any predicate branch has no proven safe truncation bound, including unsupported negated collections and custom
+> predicates.
+> DATE schema properties accept `OffsetDateTime` for writes and indexed equality/range queries, normalized by instant to milliseconds;
+> sub-millisecond precision is truncated, and existing DATE data needs no migration.
+> See the [TinkerPop 3.8.1 upgrade guide](https://github.com/apache/hugegraph/blob/master/docs/upgrade-tinkerpop-3.8.md)
+> for client configuration and verification details.
 
 ## 3 Deploy
 
@@ -525,10 +554,10 @@ This indicates the successful creation of the sample graph.
 | Option | Values | Default | Purpose |
 |---|---|---|---|
 | `-d` | `true`, `false` | `true` | Daemon mode. With `-d false` the script stays in the foreground and forwards `SIGTERM`/`SIGINT` to the server. |
-| `-g` | `zgc` or `ZGC` | omit for G1GC | Garbage collector to use. Only ZGC is accepted, any other value aborts the startup. ZGC needs Java 11 or later. |
+| `-g` | `zgc` or `ZGC` | omit for G1GC | Garbage collector to use. Only ZGC is accepted, any other value aborts the startup. |
 | `-m` | `true`, `false` | `false` | Install the cron-based monitor task (`bin/start-monitor.sh`). For VM and bare-metal deployments only. |
 | `-p` | `true`, `false` | `false` | Preload the sample graph, as in 5.1.4. |
-| `-s` | `true`, `false` | `true` | Run with the security check (`HugeSecurityManager`) enabled. It requires Java 11 to 23 and a readable `conf/java-security.properties`. |
+| `-s` | `true`, `false` | `true` | Enable `HugeSecurityManager`; requires readable `conf/java-security.properties`. |
 | `-j` | JVM options | empty | Extra JVM options appended to the server command line. |
 | `-t` | seconds | `30` | How long to wait for the service to answer before reporting a failed startup. |
 | `-y` | `true`, `false` | `false` | Enable the OpenTelemetry agent for traces. |

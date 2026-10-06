@@ -60,8 +60,13 @@ flowchart TD
 > 随包 Driver 和 Console 配置使用 GraphBinary V1：schema 结果为标准 map，Blob 为二进制值，返回图元素内的 Blob 也适用。
 > 默认 HTTP JSON 使用的 Untyped GraphSON V1 保留 Tree 的旧 `key`/`value` 数组结构，支持标量和图元素作为 key。
 > Optional 返回其内容，空值返回 null；File 保留 `{"file": "name"}` 的 map 结构，使用文件名，嵌套结果也适用。
+> HugeGraph 枚举返回名称；`graph.schema()` 返回包含 property key、vertex label、edge label 和 index label 列表的 map。
+> Typed GraphSON V1 已禁用，因为基于类名的反序列化可在认证前构造 Java 对象；typed V2/V3 仍可使用。
+> 随包导入的 Cypher 谓词工厂使用兼容实现，也支持重放 `EXPLAIN` 返回的 Gremlin 翻译结果。
 > 命名 `GValue` 谓词在复用或克隆时保留绑定；命名 `limit()`/`range()` 边界的计数行为与字面量边界一致。
 > 本地混合 ID 集合保留字符串、数值和 UUID 各自的类型匹配；全字符串集合继续使用标准字符串 ID 比较语义。
+> 本地边 ID 过滤支持混合字符串形式和原生边 ID，保持成员匹配及计数一致。
+> Jackson JSON 和 YAML 模块使用同一兼容版本，也支持 Kubernetes kubeconfig 扩展中的小数值。
 > Count 过滤仅在每个谓词分支均能证明截断安全时采用范围优化；不支持的否定集合或自定义谓词分支保留完整计数。
 > DATE schema 属性支持写入及索引等值/范围查询中的 `OffsetDateTime`，按 instant 转为毫秒；小于毫秒的精度被截断，既有 DATE 数据无需迁移。
 > 客户端配置和验证细节见 [TinkerPop 3.8.1 升级指南](https://github.com/apache/hugegraph/blob/master/docs/upgrade-tinkerpop-3.8.md)。

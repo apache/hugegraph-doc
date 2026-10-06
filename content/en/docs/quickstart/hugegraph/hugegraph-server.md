@@ -62,8 +62,13 @@ Build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD a
 > including inside returned graph elements. Default HTTP JSON with untyped GraphSON V1 preserves the legacy Tree `key`/`value` array, with scalar or element
 > keys.
 > Optional results carry their value or null when empty; File results keep the map shape `{"file": "name"}` with the file name, including in nested results.
+> HugeGraph enums return their names; `graph.schema()` returns a map with property key, vertex label, edge label and index label lists.
+> Typed GraphSON V1 is disabled because class-name deserialization can construct Java objects before authentication; typed V2/V3 remain available.
+> The bundled Cypher predicate imports use the compatible factories, including when replaying the Gremlin translation returned by `EXPLAIN`.
 > Named `GValue` predicates retain bindings when reused or cloned; named `limit()`/`range()` bounds count like literal bounds.
 > Local mixed ID collections preserve typed string, number and UUID matches; all-string collections retain standard string-ID comparisons.
+> Local edge ID filters accept mixed serialized strings and native edge IDs with consistent membership and count results.
+> Jackson JSON and YAML modules use one compatible version, including parsing decimal-valued Kubernetes kubeconfig extensions.
 > Count filtering keeps the complete count if any predicate branch has no proven safe truncation bound, including unsupported negated collections and custom
 > predicates.
 > DATE schema properties accept `OffsetDateTime` for writes and indexed equality/range queries, normalized by instant to milliseconds;

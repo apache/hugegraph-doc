@@ -536,15 +536,17 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 
 `bin/stop-hugegraph.sh` 支持 `-m true|false`（默认 `true`），用于控制停止服务时是否同时移除 crontab 监控任务。
 
-服务脚本会把 `-XX:+HeapDumpOnOutOfMemoryError`、`-XX:HeapDumpPath` 和 `-XX:ErrorFile` 放在 `JAVA_TOOL_OPTIONS`
-的最前面，因此内存溢出时的堆转储（`heapdump_<主机名>_<启动时间>/java_pid<pid>.hprof`）和 JVM 崩溃日志（`hs_err_pid<pid>_<主机名>_<启动时间>.log`）都会写入 `logs/`，与是否设置 `JAVA_OPTIONS` 无关。每次启动都有自己的
-`heapdump_*` 目录，因此服务及其启动的 JVM（例如 computer 任务）会写入各自的转储。文件名中的主机名（在 Kubernetes 上即 Pod 名）可避免共用同一日志目录的多个服务选到相同的文件名。如果同名文件已存在（例如重启后在同一秒内复用了相同
-PID），文件名会再加上计数（`<启动时间>-1`、`-2`……）。堆转储可能和堆一样大，且旧的转储和 `heapdump_*` 目录都不会被删除（每次启动都会留下一个目录，除非发生内存溢出否则为空，因为 computer 任务的 JVM 可能在服务退出后仍在使用它），反复内存溢出的服务每重启一次就会在 `logs/`
-中多一个转储；每次排查后请移走或删除旧的 `heapdump_*` 目录。JVM 会在这些默认值之后读取你自己的 `JAVA_TOOL_OPTIONS`、`JDK_JAVA_OPTIONS`、命令行（`JAVA_OPTIONS`，未设置 `JAVA_OPTIONS` 时为 `-j`）和
-`_JAVA_OPTIONS`，因此在其中任意一处为上述参数指定的值都会覆盖默认值。例如，可通过 `-j` 传入 `-XX:-HeapDumpOnOutOfMemoryError` 来关闭堆转储。由于这些默认值，JVM 启动时会输出 `Picked up JAVA_TOOL_OPTIONS: ...`。
+`bin/hugegraph-server.sh` 会把 `-XX:+HeapDumpOnOutOfMemoryError`、`-XX:HeapDumpPath` 和 `-XX:ErrorFile` 放在 `JAVA_TOOL_OPTIONS` 的最前面。因此无论是否设置了
+`JAVA_OPTIONS`，内存溢出时的堆转储（`heapdump_<主机名>_<启动时间>/java_pid<pid>.hprof`）和 JVM 崩溃日志（`hs_err_pid<pid>_<主机名>_<启动时间>.log`）都会写入 `logs/`，其中 `<启动时间>` 为本地时间，格式是
+`YYYYMMDD-HHMMSS`。每次启动都有自己的 `heapdump_*` 目录，因此服务及其启动的 JVM（例如 computer
+任务）会分别写入各自的转储。主机名可避免共用同一日志目录的多个服务选到相同的名字；如果同一主机在同一秒内已经用过该名字，会再加上计数（`<启动时间>-1`、`-2`……）。如果无法创建该目录（例如磁盘已满），服务仍会启动，堆转储改为写入 `logs/` 本身。堆转储可能和堆一样大。启动脚本从不删除转储或
+`heapdump_*` 目录：每次启动都会留下一个目录，除非发生内存溢出否则为空；启动脚本保留它，是因为 computer 任务的 JVM 可能在服务退出后仍在使用它。在该次启动的 HugeGraph JVM
+都已退出后，可以移走或删除旧目录，但不要动正在运行的服务最新的那个目录；没有它，下一次转储会被写成一个同名文件。JVM 会在这些默认值之后读取你自己的 `JAVA_TOOL_OPTIONS`、`JDK_JAVA_OPTIONS`（包括 `@argfile`）、命令行（`JAVA_OPTIONS`；未设置或为空时为
+`-j`）和 `_JAVA_OPTIONS`，因此在其中任意一处为上述参数指定的值都会覆盖默认值。只有环境变量会传给服务启动的 JVM：要对所有 JVM 关闭堆转储，请设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`；通过 `-j` 或
+`JAVA_OPTIONS` 关闭只对服务自身的 JVM 生效。无论哪种方式，每次启动仍会创建空的 `heapdump_*` 目录。由于设置了这些默认值，JVM 启动时会在 stderr 输出 `Picked up JAVA_TOOL_OPTIONS: ...`。
 
-> **版本范围**：以上行为适用于当前 master（[apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 只在未设置 `JAVA_OPTIONS`
-> 时添加堆转储参数，JVM 崩溃日志写入安装目录。
+> **版本范围**：以上行为适用于当前 master（[apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 只在未设置 `JAVA_OPTIONS` 时添加堆转储参数，堆转储直接写入
+> `logs/java_pid<pid>.hprof`，JVM 崩溃日志写入安装目录。
 
 ### 5.2 使用 Docker
 

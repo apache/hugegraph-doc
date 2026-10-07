@@ -296,16 +296,17 @@ Standalone publishes only `8080` and `8088`; minimal HStore publishes `8620` (PD
 **Runtime logs**: `docker logs <container-name>` (for example, `docker logs hg-pd0`) shows logs without entering containers. In images built from current
 master, the PD, Store and both Server images (`hugegraph/hugegraph` and the HStore `hugegraph/server`) set `STDOUT_MODE=true` and send service logs to stdout.
 For the Server, WARN and above from Hadoop, ZooKeeper, SOFA, Netty and Commons also reaches stdout; INFO from Hadoop, Netty and Commons and the audit and
-slow-query logs stay in files, and ZooKeeper and SOFA log nothing below WARN. The full `hugegraph-server.log`, JVM crash logs (`hs_err_pid*.log`) and
-out-of-memory heap dumps (`heapdump_*/java_pid*.hprof`, one directory per launch so the Server and any JVM it starts get separate files) are in
-`/hugegraph-server/logs`. `docker restart` keeps them, but Kubernetes starts a new container on every restart, so mount an `emptyDir` or a PersistentVolumeClaim
-at `/hugegraph-server/logs` to keep them. A heap dump can be as large as the JVM heap, and every launch writes to a new file, so a Server that keeps running out
-of memory adds one heap-sized dump per restart until the volume is full. The launcher never removes old dumps or `heapdump_*` directories, whether the volume is
-an `emptyDir` (which also survives container restarts) or a PVC. Each start leaves a directory behind, empty unless something ran out of memory, because a
-computer-job JVM can keep using it after its Server exits; old ones can be deleted once no HugeGraph JVM from that launch is running. Size the volume for the
-number of dumps you want to keep plus the logs, move or delete old `heapdump_*` directories after each incident, or turn dumps off with
-`JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, which keeps the image's default `JAVA_OPTS`. Adding the flag to `JAVA_OPTS` also works, but setting
-`JAVA_OPTS` replaces that default (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those flags.
+slow-query logs stay in files, and ZooKeeper and SOFA log nothing below WARN. `/hugegraph-server/logs` holds `hugegraph-server.log`, JVM crash logs
+(`hs_err_pid*.log`) and out-of-memory heap dumps (`heapdump_*/java_pid*.hprof`, one directory per start, so the Server and the JVMs it starts get separate
+files). `docker restart` keeps them, but recreating the container does not unless that path is a volume, and Kubernetes starts a new container on every restart,
+so mount an `emptyDir` or a PersistentVolumeClaim at `/hugegraph-server/logs`. Give each pod its own volume (or a shared PVC with `subPathExpr: $(POD_NAME)`):
+crash files get distinct names, but the log files themselves have fixed names. The Helm chart does not mount a logs volume yet. A heap dump can be as large as
+the JVM heap, and every start uses a new directory, so a Server that keeps running out of memory fills the volume; size it for the dumps you want to keep, keep
+it within any `ephemeral-storage` limit or `emptyDir` `sizeLimit` (eviction deletes the `emptyDir` with the dump), and do not use `medium: Memory`. The launcher
+never deletes dumps or `heapdump_*` directories, because a computer-job JVM can go on using one after its Server exits; each start leaves one, empty unless
+something ran out of memory. Delete old ones once no HugeGraph JVM from that launch is running, never the newest one of a running Server. To turn dumps off for
+every JVM, set `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, which keeps the image's default `JAVA_OPTS`; putting the flag in `JAVA_OPTS` affects the
+Server JVM only and replaces that default (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those flags.
 
 > **Version scope**: the paragraph above describes current master images ([apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980) for PD, Store
 > and the standalone Server, [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258) for the HStore Server). No 1.7.0 or older image sets

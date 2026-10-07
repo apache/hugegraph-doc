@@ -535,19 +535,22 @@ This indicates the successful creation of the sample graph.
 
 `bin/stop-hugegraph.sh` accepts `-m true|false` (default `true`), which controls whether the cron monitor task is removed along with the service.
 
-The server script puts `-XX:+HeapDumpOnOutOfMemoryError`, `-XX:HeapDumpPath` and `-XX:ErrorFile` first in `JAVA_TOOL_OPTIONS`, so an out-of-memory heap dump
-(`heapdump_<host>_<launch time>/java_pid<pid>.hprof`) and a JVM crash log (`hs_err_pid<pid>_<host>_<launch time>.log`) land in `logs/` whether or not
-`JAVA_OPTIONS` is set. Each launch gets its own `heapdump_*` directory, so the server and any JVM it starts, such as a computer job, write separate dumps. The
-host name (the pod name on Kubernetes) keeps servers that share one log directory from picking the same name. If a file with that name already exists, for
-example after a restart that reuses the PID within the same second, a counter is added (`<launch time>-1`, `-2`, ...). A heap dump can be as large as the heap,
-and neither old dumps nor `heapdump_*` directories are ever removed (each start leaves one, empty unless something ran out of memory, because a computer-job JVM
-can keep using it after the server exits), so a server that keeps running out of memory fills `logs/` with one dump per restart; move or delete old `heapdump_*`
-directories after each incident. The JVM reads your own `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS`, the command line (`JAVA_OPTIONS`, or `-j` when `JAVA_OPTIONS`
-is unset) and `_JAVA_OPTIONS` after these defaults, so a value for one of these flags in any of them overrides the default. For example, pass
-`-XX:-HeapDumpOnOutOfMemoryError` with `-j` to turn dumps off. Because of the defaults, the JVM prints `Picked up JAVA_TOOL_OPTIONS: ...` at startup.
+`bin/hugegraph-server.sh` puts `-XX:+HeapDumpOnOutOfMemoryError`, `-XX:HeapDumpPath` and `-XX:ErrorFile` first in `JAVA_TOOL_OPTIONS`, so whether or not
+`JAVA_OPTIONS` is set, an out-of-memory heap dump (`heapdump_<host>_<launch time>/java_pid<pid>.hprof`) and a JVM crash log
+(`hs_err_pid<pid>_<host>_<launch time>.log`) land in `logs/`, where `<launch time>` is the local time as `YYYYMMDD-HHMMSS`. Each start gets its own `heapdump_*`
+directory, so the server and the JVMs it starts, such as computer jobs, write separate dumps. The host name keeps servers that share one log directory from
+picking the same name, and a counter (`<launch time>-1`, `-2`, ...) is added when the same host already used that second. If the directory cannot be created,
+for example on a full disk, the server still starts and dumps go to `logs/` itself. A heap dump can be as large as the heap. The launcher never deletes dumps or
+`heapdump_*` directories: each start leaves one, empty unless something ran out of memory, and the launcher keeps it because a computer-job JVM can go on using
+it after the server exits. Move or delete old ones once no HugeGraph JVM from that launch is running, but never the newest one of a running server; without it,
+the next dump is written as a file with that name. The JVM reads your own `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS` (including `@argfiles`), the command line
+(`JAVA_OPTIONS`, or `-j` when `JAVA_OPTIONS` is unset or empty) and `_JAVA_OPTIONS` after these defaults, so a value for one of these flags in any of them
+overrides the default. Only the environment variables reach the JVMs the server starts: to turn dumps off for all of them, set
+`JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, while `-j` or `JAVA_OPTIONS` turns them off for the server JVM only. Either way each start still creates
+its empty `heapdump_*` directory. Because of the defaults, the JVM prints `Picked up JAVA_TOOL_OPTIONS: ...` on stderr at startup.
 
-> **Version scope**: this applies to current master ([apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)). In 1.7.0 the heap dump
-> flags are added only when `JAVA_OPTIONS` is unset, and JVM crash logs go to the install directory.
+> **Version scope**: this applies to current master ([apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)). In 1.7.0 the heap dump flags are
+> added only when `JAVA_OPTIONS` is unset, heap dumps go directly to `logs/java_pid<pid>.hprof`, and JVM crash logs go to the install directory.
 
 ### 5.2 Use Docker to startup
 

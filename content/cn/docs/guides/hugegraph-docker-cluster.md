@@ -295,12 +295,14 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 **查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。基于当前 master 构建的 PD、Store 以及两个 Server 镜像（`hugegraph/hugegraph` 和 HStore 的
 `hugegraph/server`）都设置了 `STDOUT_MODE=true`，服务日志会输出到容器 stdout。对 Server 而言，Hadoop、ZooKeeper、SOFA、Netty 和 Commons 的 WARN 及以上日志也会输出到 stdout；Hadoop、Netty 和 Commons 的
-INFO 日志以及审计日志、慢查询日志仍只写入文件，ZooKeeper 和 SOFA 不输出 WARN 以下的日志。完整的 `hugegraph-server.log`、JVM
-崩溃日志（`hs_err_pid*.log`）和内存溢出堆转储（`heapdump_*/java_pid*.hprof`，每次启动一个目录，Server 及其启动的 JVM 各写各的文件）位于 `/hugegraph-server/logs`。`docker restart` 会保留这些文件，但 Kubernetes
-每次重启都会新建容器，因此需要在 `/hugegraph-server/logs` 挂载 `emptyDir` 或 PersistentVolumeClaim 来保留它们。堆转储可能和 JVM 堆一样大，而且每次启动都会写入新文件，因此反复内存溢出的 Server
-每重启一次就会多一个与堆同样大小的转储，直到卷被写满。无论使用 `emptyDir`（它在容器重启后同样保留）还是 PVC，启动脚本都不会删除旧的转储或 `heapdump_*` 目录。每次启动都会留下一个目录，除非发生内存溢出否则为空，因为 computer 任务的 JVM 可能在 Server
-退出后仍在使用它；确认该次启动的 HugeGraph JVM 都已退出后，可以删除旧目录。请按需要保留的转储数量加上日志所需空间来规划卷大小，每次排查后移走或删除旧的 `heapdump_*` 目录，或设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`
-关闭堆转储，这样会保留镜像默认的 `JAVA_OPTS`。也可以把该参数加到 `JAVA_OPTS` 中，但设置 `JAVA_OPTS` 会替换镜像默认值（`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`），需要把这些参数一并写上。
+INFO 日志以及审计日志、慢查询日志仍只写入文件，ZooKeeper 和 SOFA 不输出 WARN 以下的日志。`/hugegraph-server/logs` 中包含 `hugegraph-server.log`、JVM
+崩溃日志（`hs_err_pid*.log`）和内存溢出时的堆转储（`heapdump_*/java_pid*.hprof`，每次启动一个目录，Server 及其启动的 JVM 分别写入各自的文件）。`docker restart`
+会保留这些文件，但重新创建容器时，除非该路径是一个卷，否则文件会丢失；Kubernetes 每次重启都会新建容器，因此需要在 `/hugegraph-server/logs` 挂载 `emptyDir` 或 PersistentVolumeClaim。请为每个 Pod 使用单独的卷（或在共享 PVC 上使用
+`subPathExpr: $(POD_NAME)`）：崩溃文件的名字各不相同，但日志文件本身的名字是固定的。Helm Chart 目前还不会挂载日志卷。堆转储可能和 JVM 堆一样大，而且每次启动都会使用新目录，因此反复内存溢出的 Server 会把卷写满；请按需要保留的转储数量规划卷大小，并确保不超过
+`ephemeral-storage` 限制或 `emptyDir` 的 `sizeLimit`（被驱逐时 `emptyDir` 会连同转储一起删除），也不要使用 `medium: Memory`。启动脚本从不删除转储或 `heapdump_*` 目录，因为 computer 任务的 JVM 可能在 Server
+退出后仍在使用它；每次启动都会留下一个目录，除非发生内存溢出否则为空。在该次启动的 HugeGraph JVM 都已退出后可以删除旧目录，但不要动正在运行的 Server 最新的那个目录。要对所有 JVM 关闭堆转储，请设置
+`JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`，这样会保留镜像默认的 `JAVA_OPTS`；把该参数加到 `JAVA_OPTS` 中只对 Server 自身的 JVM
+生效，而且会替换镜像默认值（`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`），需要把这些参数一并写上。
 
 > **版本范围**：上文描述的是基于当前 master 构建的镜像（PD、Store 和单机 Server 见 [apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980)，HStore Server 见
 > [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 及更早的镜像都没有设置 `STDOUT_MODE`，包括上文使用的单机镜像 `hugegraph/hugegraph:1.7.0`：`docker logs`

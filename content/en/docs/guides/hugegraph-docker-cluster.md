@@ -305,8 +305,10 @@ the JVM heap, and every start uses a new directory, so a Server that keeps runni
 it within any `ephemeral-storage` limit or `emptyDir` `sizeLimit` (eviction deletes the `emptyDir` with the dump), and do not use `medium: Memory`. The launcher
 never deletes dumps or `heapdump_*` directories, because a computer-job JVM can go on using one after its Server exits; each start leaves one, empty unless
 something ran out of memory. Delete old ones once no HugeGraph JVM from that launch is running, never the newest one of a running Server. To turn dumps off for
-every JVM, set `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, which keeps the image's default `JAVA_OPTS`; putting the flag in `JAVA_OPTS` affects the
-Server JVM only and replaces that default (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those flags.
+every JVM, set `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError` in the container's environment (`docker run -e`, an `environment:` entry on the Server
+service in Compose, which the shipped Compose files do not set, or `env` in Kubernetes; exporting it in the host shell has no effect), which keeps the image's
+default `JAVA_OPTS`; putting the flag in `JAVA_OPTS` affects the Server JVM only and replaces that default
+(`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those flags.
 
 > **Version scope**: the paragraph above describes current master images ([apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980) for PD, Store
 > and the standalone Server, [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258) for the HStore Server). No 1.7.0 or older image sets

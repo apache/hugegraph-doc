@@ -232,6 +232,9 @@
         },
         {
           "page": "/docs/guides/toolchain-local-test"
+        },
+        {
+          "page": "/docs/guides/toplingdb"
         }
       ]
     },
@@ -695,6 +698,11 @@
         {
           "page": "/docs/guides/toolchain-local-test",
           "url": "/docs/guides/toolchain-local-test/",
+          "children": []
+        },
+        {
+          "page": "/docs/guides/toplingdb",
+          "url": "/docs/guides/toplingdb/",
           "children": []
         }
       ],
@@ -1192,6 +1200,10 @@
     "/docs/guides/toolchain-local-test/": [
       "@group/develop",
       "/docs/guides/toolchain-local-test/"
+    ],
+    "/docs/guides/toplingdb/": [
+      "@group/develop",
+      "/docs/guides/toplingdb/"
     ],
     "/docs/config/": [
       "@group/operate",

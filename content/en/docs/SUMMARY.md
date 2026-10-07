@@ -42,6 +42,7 @@ draft: true
 - [Docker Cluster](guides/hugegraph-docker-cluster)
 - [Security](guides/security)
 - [Toolchain Local Testing](guides/toolchain-local-test)
+- [ToplingDB (development)](guides/toplingdb)
 - [FAQ](guides/faq)
 
 ## Query Languages

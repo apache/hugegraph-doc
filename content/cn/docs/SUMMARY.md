@@ -42,6 +42,7 @@ draft: true
 - [Docker 集群](guides/hugegraph-docker-cluster)
 - [安全](guides/security)
 - [Toolchain 本地测试](guides/toolchain-local-test)
+- [ToplingDB（开发版）](guides/toplingdb)
 - [常见问题](guides/faq)
 
 ## 查询语言

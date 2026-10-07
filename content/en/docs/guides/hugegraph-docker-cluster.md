@@ -298,8 +298,9 @@ master, the PD, Store and both Server images (`hugegraph/hugegraph` and the HSto
 For the Server, WARN and above from Hadoop, ZooKeeper, SOFA, Netty and Commons also reaches stdout; INFO from Hadoop, Netty and Commons and the audit and
 slow-query logs stay in files, and ZooKeeper and SOFA log nothing below WARN. `/hugegraph-server/logs` holds `hugegraph-server.log`, JVM crash logs
 (`hs_err_pid*.log`) and out-of-memory heap dumps (`heapdump_*/java_pid*.hprof`, one directory per start, so the Server and the JVMs it starts get separate
-files). `docker restart` keeps them, but recreating the container does not unless that path is a volume, and Kubernetes starts a new container on every restart,
-so mount an `emptyDir` or a PersistentVolumeClaim at `/hugegraph-server/logs`. Give each pod its own volume (or a shared PVC with `subPathExpr: $(POD_NAME)`):
+files). Both images declare `VOLUME /hugegraph-server`, so `docker restart` and a Compose recreate keep them; `docker compose down` leaves that anonymous volume
+behind unattached until `down -v` deletes it, so use a named volume or bind mount to keep them reachable. Kubernetes starts a new container on every restart, so
+mount an `emptyDir` or a PersistentVolumeClaim at `/hugegraph-server/logs`. Give each pod its own volume (or a shared PVC with `subPathExpr: $(POD_NAME)`):
 crash files get distinct names, but the log files themselves have fixed names. The Helm chart does not mount a logs volume yet. A heap dump can be as large as
 the JVM heap, and every start uses a new directory, so a Server that keeps running out of memory fills the volume; size it for the dumps you want to keep, keep
 it within any `ephemeral-storage` limit or `emptyDir` `sizeLimit` (eviction deletes the `emptyDir` with the dump), and do not use `medium: Memory`. The launcher

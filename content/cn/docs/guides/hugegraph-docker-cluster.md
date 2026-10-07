@@ -298,9 +298,9 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 INFO 日志以及审计日志、慢查询日志仍只写入文件，ZooKeeper 和 SOFA 不输出 WARN 以下的日志。完整的 `hugegraph-server.log`、JVM
 崩溃日志（`hs_err_pid*.log`）和内存溢出堆转储（`heapdump_*/java_pid*.hprof`，每次启动一个目录，Server 及其启动的 JVM 各写各的文件）位于 `/hugegraph-server/logs`。`docker restart` 会保留这些文件，但 Kubernetes
 每次重启都会新建容器，因此需要在 `/hugegraph-server/logs` 挂载 `emptyDir` 或 PersistentVolumeClaim 来保留它们。堆转储可能和 JVM 堆一样大，而且每次启动都会写入新文件，因此反复内存溢出的 Server
-每重启一次就会多一个与堆同样大小的转储，直到卷被写满。无论使用 `emptyDir`（它在容器重启后同样保留）还是 PVC，启动脚本都不会删除旧的转储，启动时只会删除本主机中没有转储且所属 JVM 已退出的 `heapdump_*` 目录。请按需要保留的转储数量加上日志所需空间来规划卷大小，每次排查后移走或删除旧的
-`heapdump_*` 目录，或设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError` 关闭堆转储，这样会保留镜像默认的 `JAVA_OPTS`。也可以把该参数加到 `JAVA_OPTS` 中，但设置 `JAVA_OPTS`
-会替换镜像默认值（`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`），需要把这些参数一并写上。
+每重启一次就会多一个与堆同样大小的转储，直到卷被写满。无论使用 `emptyDir`（它在容器重启后同样保留）还是 PVC，启动脚本都不会删除旧的转储或 `heapdump_*` 目录。每次启动都会留下一个目录，除非发生内存溢出否则为空，因为 computer 任务的 JVM 可能在 Server
+退出后仍在使用它；确认该次启动的 HugeGraph JVM 都已退出后，可以删除旧目录。请按需要保留的转储数量加上日志所需空间来规划卷大小，每次排查后移走或删除旧的 `heapdump_*` 目录，或设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`
+关闭堆转储，这样会保留镜像默认的 `JAVA_OPTS`。也可以把该参数加到 `JAVA_OPTS` 中，但设置 `JAVA_OPTS` 会替换镜像默认值（`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`），需要把这些参数一并写上。
 
 > **版本范围**：上文描述的是基于当前 master 构建的镜像（PD、Store 和单机 Server 见 [apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980)，HStore Server 见
 > [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 及更早的镜像都没有设置 `STDOUT_MODE`，包括上文使用的单机镜像 `hugegraph/hugegraph:1.7.0`：`docker logs`

@@ -300,9 +300,10 @@ slow-query logs stay in files, and ZooKeeper and SOFA log nothing below WARN. Th
 out-of-memory heap dumps (`heapdump_*/java_pid*.hprof`, one directory per launch so the Server and any JVM it starts get separate files) are in
 `/hugegraph-server/logs`. `docker restart` keeps them, but Kubernetes starts a new container on every restart, so mount an `emptyDir` or a PersistentVolumeClaim
 at `/hugegraph-server/logs` to keep them. A heap dump can be as large as the JVM heap, and every launch writes to a new file, so a Server that keeps running out
-of memory adds one heap-sized dump per restart until the volume is full. The launcher never removes old dumps, whether the volume is an `emptyDir` (which also
-survives container restarts) or a PVC; at startup it only removes this host's `heapdump_*` directories that hold no dump and whose JVM has exited. Size the
-volume for the number of dumps you want to keep plus the logs, move or delete old `heapdump_*` directories after each incident, or turn dumps off with
+of memory adds one heap-sized dump per restart until the volume is full. The launcher never removes old dumps or `heapdump_*` directories, whether the volume is
+an `emptyDir` (which also survives container restarts) or a PVC. Each start leaves a directory behind, empty unless something ran out of memory, because a
+computer-job JVM can keep using it after its Server exits; old ones can be deleted once no HugeGraph JVM from that launch is running. Size the volume for the
+number of dumps you want to keep plus the logs, move or delete old `heapdump_*` directories after each incident, or turn dumps off with
 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, which keeps the image's default `JAVA_OPTS`. Adding the flag to `JAVA_OPTS` also works, but setting
 `JAVA_OPTS` replaces that default (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those flags.
 

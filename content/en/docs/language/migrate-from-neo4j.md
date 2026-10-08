@@ -28,10 +28,13 @@ verified and unverified areas and
 |---|---|
 | `CREATE INDEX` / `CREATE CONSTRAINT` | Create indexes/constraints through the [schema REST APIs](/docs/clients/restful-api/schema/); Cypher carries no DDL |
 | Implicit schema (add properties freely) | **Strong schema**: define VertexLabel / EdgeLabel / PropertyKey before writing data |
-| Parameterized queries `$param` | Released versions send the raw statement only — a missing binding evaluates to `null` (empty result), so validate values client-side; JSON-bound parameters land in [PR #238](https://github.com/hugegraph/hugegraph/pull/238) |
+| Parameterized queries `$param` | Released versions send the raw statement only — a missing binding evaluates to `null` (empty result), so validate values client-side; JSON-bound parameters are available on `master` after [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), with a fixed limit of 16 top-level bindings |
 | `CALL dbms.*` / `CALL algo.*` procedures | Equivalent capabilities live in the [traverser](/docs/clients/restful-api/traverser/), [task](/docs/clients/restful-api/task/), and other REST APIs |
 | Driver: Neo4j Bolt driver | [hugegraph-client](/docs/clients/hugegraph-client/) (`CypherManager`) or any HTTP client |
 | Transaction boundaries inside a Cypher statement | One statement per request; graph-to-graph data migration uses [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/) (preferred — see below), file-based bulk loads use the [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/) |
+
+The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound request form is a
+`master` feature, not a promise about that release. See the compatibility notes for its validated contract.
 
 ### Suggested migration path
 
@@ -81,3 +84,5 @@ verified and unverified areas and
   traversals — see the
   [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents);
   schema DDL and `CALL` procedures map to REST APIs instead.
+
+The translator’s historical TCK percentage is not a HugeGraph end-to-end compatibility rate; no measured overall HugeGraph Cypher percentage is established here.

@@ -136,7 +136,7 @@ Tip: `EXPLAIN MATCH (n:person) RETURN n` is parsed with the `EXPLAIN` option, an
 
 Cypher support in HugeGraph is bounded by the transpiler layer, which is based on openCypher 9 era tooling. Known gaps:
 
-- **No parameterized queries in released versions** — the API accepts a raw statement string only. A statement using `$param` still runs: a missing binding evaluates to `null`, so the query returns no rows (or writes null values) rather than failing. Sanitize/escape values on the client side before interpolating them into the statement. JSON-bound parameters (`{"cypher": ..., "parameters": {...}}`) are proposed in the unmerged [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), carried over from [PR #238](https://github.com/hugegraph/hugegraph/pull/238); see the [development compatibility record](/docs/language/cypher-compatibility/) for the tested request contract.
+- **No parameterized queries in released versions** — the API accepts a raw statement string only. A statement using `$param` still runs: a missing binding evaluates to `null`, so the query returns no rows (or writes null values) rather than failing. Sanitize/escape values on the client side before interpolating them into the statement. JSON-bound parameters (`{"cypher": ..., "parameters": {...}}`) are available on `master` after the merged [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), carried over from [PR #238](https://github.com/hugegraph/hugegraph/pull/238); see the [development compatibility record](/docs/language/cypher-compatibility/) for the tested request contract.
 - **Partial clause coverage** — some openCypher constructs are not translated (for example map projections and certain `datetime()` functions). Unsupported constructs fail at translation time with an error from the transpiler. Constructs such as `MERGE ... ON CREATE SET` and `NOT ... IN` do translate, but they are not verified end-to-end on HugeGraph. The development change verifies two whole-string `=~` matching cases on computed strings; broader regex coverage remains unverified — see the [compatibility notes](/docs/language/cypher-compatibility/).
 - **No `CALL` procedures** — HugeGraph graph algorithms (shortest path, k-out, personalrank, etc.) are not exposed as Cypher procedures; use the [traverser REST APIs](/docs/clients/restful-api/traverser/) or Gremlin instead.
 - **Single statement per request** — multi-statement scripts are not supported; send one statement per call.
@@ -148,3 +148,5 @@ When a statement fails translation, the response `status.message` contains the t
 - [Cypher REST API reference](/docs/clients/restful-api/cypher/)
 - [Gremlin Query Language](/docs/language/hugegraph-gremlin/)
 - [openCypher project](https://opencypher.org/) — language specification and resources
+
+The translator’s historical TCK percentage is not a HugeGraph end-to-end compatibility rate; no measured overall HugeGraph Cypher percentage is established here.

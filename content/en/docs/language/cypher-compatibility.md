@@ -6,7 +6,7 @@ weight: 3
 
 ### Scope
 
-**No statement on this page describes a released HugeGraph version.** A released build exposes exactly two
+**The verification results below describe `master`, not a released HugeGraph version.** A released build exposes exactly two
 request forms on `/graphspaces/{graphspace}/graphs/{graph}/cypher`: `GET ?cypher=<URL-encoded statement>`
 and `POST application/json` with a raw Cypher body. Released versions accept no bound parameters, and a
 statement that references `$param` returns no rows rather than failing — see
@@ -31,8 +31,7 @@ The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. General usage
 | `POST text/plain` with any body | No | Rejected with HTTP 415 | `testRejectPlainTextPost` |
 | `POST application/json` with a JSON object | No — introduced by [#3289](https://github.com/apache/hugegraph/pull/3289) | Query and bindings are sent separately | `testParameters` |
 
-The JSON object form below is therefore **not available in any released HugeGraph version**; it describes the
-open change only. On released versions a statement using `$param` runs with that binding bound to `null` and
+The JSON object form below is therefore **not available in any released HugeGraph version**; it describes the merged change on `master` (the 1.8.0 development line). On released versions a statement using `$param` runs with that binding bound to `null` and
 returns no rows — see [Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
 
 ```json
@@ -91,7 +90,9 @@ Acceptance results are limited to these test cases:
 | Errors and routing | Invalid syntax and request shape, content type, binding keys and the reserved null marker, schema values, authentication, and graph routing | `testInvalidRequests`, `testRejectPlainTextPost`, `testRejectInvalidQuery`, `testRejectInvalidBindingShapeAndKeys`, `testRejectTranslatorNullMarker`, `testRejectTranslatorNullSentinelInBindings`, `testAuthenticationAndGraphRouting`, `testSpecifiedGraphRouting` |
 
 The standalone code change is in [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289),
-which is open and unmerged, rebased onto the Apache `master` baseline above. The original development
+which was merged into Apache `master` on 2026-10-08 as
+[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb).
+The verified pre-merge baseline remains pinned above. The original development
 change remains linked in [PR #238](https://github.com/hugegraph/hugegraph/pull/238). At source commit
 [`8d06ad3`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/docs/cypher-compatibility.md), `CypherApiTest` passed 23/23,
 `CypherClientTest` 7/7, and `CypherOpProcessorTest` 8/8, with no skips. The additional predicate,

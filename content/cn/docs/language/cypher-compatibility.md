@@ -6,7 +6,7 @@ weight: 3
 
 ### 范围
 
-**本页没有任何描述适用于已发布的 HugeGraph 版本。** 已发布版本在
+**下文验证结果描述的是 `master`，不能直接套用于已发布版本。** 已发布版本在
 `/graphspaces/{graphspace}/graphs/{graph}/cypher` 上只提供两种请求形式：`GET ?cypher=<URL 编码的语句>`
 和 `POST application/json`（请求体为原始 Cypher 文本）。已发布版本不接受绑定参数，引用 `$param` 的语句
 不会报错，而是返回空结果——参见[已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)。
@@ -29,7 +29,7 @@ TinkerPop `3.8.1`、`org.opencypher.gremlin:translation:1.0.4` 和 RocksDB。
 | `POST text/plain`，任意请求体 | 否 | 返回 HTTP 415 | `testRejectPlainTextPost` |
 | `POST application/json`，请求体为 JSON 对象 | 否 — 由 [#3289](https://github.com/apache/hugegraph/pull/3289) 引入 | 查询语句与参数分开传入 | `testParameters` |
 
-因此下面的 JSON 对象形式**在任何已发布的 HugeGraph 版本中都不可用**，它只描述尚未合并的改动。
+因此下面的 JSON 对象形式**在任何已发布的 HugeGraph 版本中都不可用**，它描述已合入 `master`（1.8.0 开发线）的改动。
 在已发布版本上，引用 `$param` 的语句会把该参数绑定为 `null` 并返回空结果——参见
 [已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)。
 
@@ -81,7 +81,8 @@ API 测试夹具使用强类型 Schema，并为 `city` 建立 `SECONDARY` 索引
 | 失败写入 | 拒绝双顶点 `CREATE` 后，连续 32 次查询和原生读取均未发现残留 | `testFailedWriteDoesNotLeakIntoLaterRequests` |
 | 错误与路由 | 非法语法和请求结构、内容类型、参数键与保留的 null 标记、Schema 值、认证及图路由 | `testInvalidRequests`、`testRejectPlainTextPost`、`testRejectInvalidQuery`、`testRejectInvalidBindingShapeAndKeys`、`testRejectTranslatorNullMarker`、`testRejectTranslatorNullSentinelInBindings`、`testAuthenticationAndGraphRouting`、`testSpecifiedGraphRouting` |
 
-独立代码改动位于 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289)，该 PR 尚未合并，已变基到上述 Apache `master` 基线。
+独立代码改动位于 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289)，该 PR 已于 2026-10-08 合入 Apache `master`，合入提交为
+[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb)。上述固定基线仍对应合入前的实际验证。
 原始开发改动仍关联 [PR #238](https://github.com/hugegraph/hugegraph/pull/238)。
 在固定源码提交
 [`8d06ad3`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/docs/cypher-compatibility.md) 上，`CypherApiTest` 通过 23/23，

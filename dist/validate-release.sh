@@ -598,7 +598,7 @@ require_packages() {
 
 select_signer() {
     mkdir -m 700 "$RUN_DIR/signer"
-    gpg --homedir "$RUN_DIR/gnupg" --batch --export "$GPG_USER" > "$RUN_DIR/signer.pgp"
+    gpg --homedir "$RUN_DIR/gnupg" --batch --export -- "$GPG_USER" > "$RUN_DIR/signer.pgp"
     [[ -s "$RUN_DIR/signer.pgp" ]] || { info "Selected release signer not found: $GPG_USER"; return 1; }
     gpg --homedir "$RUN_DIR/signer" --batch --import "$RUN_DIR/signer.pgp"
 }

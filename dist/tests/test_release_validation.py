@@ -223,6 +223,11 @@ class ReleaseValidationTest(unittest.TestCase):
                 f"select_signer; PACKAGES=({shlex.quote(str(self.archive))}); verify_integrity")
         result = self.shell(code)
         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        # A selector resembling a GPG option must not export the entire project keyring.
+        result = self.shell(code.replace("alice@example.invalid", "--armor")
+                            .replace("select_signer;", f"rm -rf {shlex.quote(str(self.root / 'signer'))}; select_signer;"))
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Selected release signer not found: --armor", result.stdout)
         # Use Bob's actual disposable public key; Alice's valid but unrelated key cannot authorize it.
         result = self.shell(code.replace("alice@example.invalid", "bob@example.invalid")
                             .replace("select_signer;", f"rm -rf {shlex.quote(str(self.root / 'signer'))}; select_signer;"))

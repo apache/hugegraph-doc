@@ -26,6 +26,7 @@ bash dist/validate-release.sh 1.8.0 pengjunzhi /path/to/rc 17
 源码构建产物和下载的二进制包分别执行 Server、Client、普通 Loader、Tools 与 Hubble 业务断言，失败后保留日志。
 Workflow 的 `source-prevalidation` 模式使用明确的 Server/Toolchain commit SHA 和无签名源码归档，
 它不证明真实 RC 签名、下载及远端 staging 依赖解析已通过。
+`license-review-*.txt` 中的许可选择和例外仍需人工复核，明确的 Category-X-only 依赖会阻断验证；自动成功不等于发布批准。
 本地预验证和证据目录说明见[验证脚本指南](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md)。
 
 ## 验证阶段
@@ -100,28 +101,25 @@ gpg: key 28DCAED849C4180E: public key "coderzc (CODE SIGNING KEY) <zhaocong@apac
 gpg: Total number processed: x
 gpg:               imported: x
 
-# 2. 信任发版用户 (你需要信任 n 个邮件里提到的 gpg 用户名, ＞1则依次执行相同操作)
-gpg --edit-key $USER # 这里填写具体用户名或者公钥串, 回车进入交互模式
-gpg> trust
-...输出选项..
-Your decision? 5 # 选择5
-Do you really want to set this key to ultimate trust? (y/N) y # 选择y, 然后 q 退出信任下一个用户
+# 2. 将完整主密钥指纹与发版投票邮件中的签名者指纹对照
+release_signer_fingerprint='<signer-full-fingerprint>'
+gpg --fingerprint -- "$release_signer_fingerprint"
 
-# (可选) 你也可以直接使用非交互模式的如下命令:
-echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key $USER trust
-# 或者是信任所有当前导入过的 gpg 公钥 (请小心检查)
-for key in $(gpg --no-tty --list-keys --with-colons | awk -F: '/^pub/ {print $5}'); do
-  echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key "$key" trust
+# 3. 验证每个归档，签名验证退出码非零时立即停止
+for archive in *.tar.gz; do
+  gpg --status-fd 1 --verify -- "$archive.asc" "$archive" > "$archive.status" || exit "$?"
+  if grep -Eq '^\[GNUPG:\] (REVKEYSIG|EXPKEYSIG|EXPSIG)( |$)' "$archive.status"; then
+    exit 1
+  fi
+  grep -q '^\[GNUPG:\] VALIDSIG ' "$archive.status" || exit 1
+  cat "$archive.status"
 done
-
-# 3. 检查签名(确保没有 Warning 输出, 每一个 source/binary 文件都提示 Good Signature)
-#单个文件验证
-gpg --verify xx.asc xxx-src.tar.gz
-gpg --verify xx.asc xxx.tar.gz # 注：目前没有  bin/binary  后缀
-
-# 一行脚本快速验证所有包 (推荐使用，请确保所有 gpg 公钥已经信任)
-for i in *.tar.gz; do echo $i; gpg --verify $i.asc $i ; done
 ```
+
+必须同时确认验证退出码为零，且 `VALIDSIG` 中的指纹对应投票邮件的签名者；使用签名子密钥时，核对其报告的主密钥指纹。
+密钥信任警告本身不表示签名无效，也不能只凭本地化的 `Good signature` 文本判断成功。
+即使同时出现 `VALIDSIG` 或退出码为零，遇到 `REVKEYSIG`、`EXPKEYSIG`、`EXPSIG` 仍须停止，交由发版负责人复核或更新候选包。
+格式见 [GnuPG 状态说明](https://github.com/gpg/gnupg/blob/master/doc/DETAILS)。
 
 先确认了整体的"完整性 + 一致性", 然后接下来确认具体的内容 (**关键**)
 

@@ -229,10 +229,35 @@ class ReleaseValidationTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("Selected release signer not found: --armor", result.stdout)
         # Use Bob's actual disposable public key; Alice's valid but unrelated key cannot authorize it.
-        result = self.shell(code.replace("alice@example.invalid", "bob@example.invalid")
-                            .replace("select_signer;", f"rm -rf {shlex.quote(str(self.root / 'signer'))}; select_signer;"))
+        bob_code = code.replace("alice@example.invalid", "bob@example.invalid").replace(
+            "select_signer;", f"rm -rf {shlex.quote(str(self.root / 'signer'))}; select_signer;")
+        result = self.shell(bob_code)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        listing = subprocess.run(["gpg", "--homedir", str(keyring), "--batch", "--with-colons",
+                                  "--fingerprint", "--", "bob@example.invalid"], check=True, capture_output=True, text=True)
+        fingerprint = next(line.split(":")[9] for line in listing.stdout.splitlines() if line.startswith("fpr:"))
+        certificate = (keyring / "openpgp-revocs.d" / f"{fingerprint}.rev").read_text()
+        certificate = certificate.replace(":-----BEGIN PGP PUBLIC KEY BLOCK-----", "-----BEGIN PGP PUBLIC KEY BLOCK-----")
+        subprocess.run(["gpg", "--homedir", str(keyring), "--batch", "--import"], input=certificate,
+                       text=True, check=True, capture_output=True)
+        result = self.shell(bob_code.replace("GPG_USER=bob@example.invalid", f"GPG_USER={fingerprint}"))
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Expired or revoked release signature", result.stdout)
+        status = self.root / "logs/signatures" / f"{self.archive.name}.status"
+        self.assertIn("[GNUPG:] REVKEYSIG ", status.read_text())
         subprocess.run(["gpgconf", "--homedir", str(keyring), "--kill", "gpg-agent"], capture_output=True)
+
+    def test_machine_signature_status_rejects_expiry_even_with_validsig(self):
+        status = self.root / "signature.status"
+        for token in ("EXPKEYSIG", "EXPSIG"):
+            status.write_text(f"[GNUPG:] {token} KEY User\n[GNUPG:] VALIDSIG FINGERPRINT details\n")
+            result = self.shell(f"check_signature_status {shlex.quote(str(status))}")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Expired or revoked release signature", result.stdout)
+        status.write_text("[GNUPG:] GOODSIG KEY User\n")
+        result = self.shell(f"check_signature_status {shlex.quote(str(status))}")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Missing VALIDSIG", result.stdout)
 
     def test_posix_license_boundaries_reject_gpl_and_lgpl_in_notice(self):
         (self.root / "LICENSE").write_text("Apache License, Version 2.0")

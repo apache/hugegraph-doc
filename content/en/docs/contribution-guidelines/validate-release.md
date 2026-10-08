@@ -27,6 +27,8 @@ Strict RC validation builds with fresh, separate Maven repositories and does not
 It validates both source-built and downloaded binaries through Server, Client, ordinary Loader, Tools and Hubble business assertions.
 Logs remain available after failures. The `source-prevalidation` workflow mode uses exact Server/Toolchain commit SHAs and unsigned archives;
 its result does not prove real RC signatures, downloads or remote staging dependency resolution.
+Review `license-review-*.txt` for license choices and exceptions; explicit Category-X-only dependencies block validation.
+Automatic success does not approve the release.
 See [the validator instructions](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md) for local prevalidation and evidence paths.
 
 ## Verification
@@ -110,31 +112,25 @@ gpg: key 28DCAED849C4180E: public key "coderzc (CODE SIGNING KEY) <zhaocong@apac
 gpg: Total number processed: x
 gpg:               imported: x
 
-# 2. Trust release users (trust n username mentioned in voting mail, if more than one user, 
-#      just repeat the steps in turn or use the script below)
-gpg --edit-key $USER # input the username, enter the interactive mode
-gpg> trust
-...output options..
-Your decision? 5 # select 5
-Do you really want to set this key to ultimate trust? (y/N) y # slect y, then q quits trusting the next user
+# 2. Compare the full primary-key fingerprint with the release vote email
+release_signer_fingerprint='<signer-full-fingerprint>'
+gpg --fingerprint -- "$release_signer_fingerprint"
 
-# (Optional) You could also use the command to trust one user in non-interactive mode:
-echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key $USER trust
-# Or trust all currently imported GPG public keys (review them carefully first):
-for key in $(gpg --no-tty --list-keys --with-colons | awk -F: '/^pub/ {print $5}'); do
-  echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key "$key" trust
+# 3. Verify each archive; stop on a nonzero verification exit code
+for archive in *.tar.gz; do
+  gpg --status-fd 1 --verify -- "$archive.asc" "$archive" > "$archive.status" || exit "$?"
+  if grep -Eq '^\[GNUPG:\] (REVKEYSIG|EXPKEYSIG|EXPSIG)( |$)' "$archive.status"; then
+    exit 1
+  fi
+  grep -q '^\[GNUPG:\] VALIDSIG ' "$archive.status" || exit 1
+  cat "$archive.status"
 done
-
-
-# 3. Check the signature (make sure there is no Warning output, every source/binary file prompts Good Signature)
-#Single file verification
-gpg --verify xx.asc xxx-src.tar.gz
-gpg --verify xx.asc xxx.tar.gz # Note: without the bin/binary suffix
-
-# One-click shell traversal verification (recommended)
-for i in *.tar.gz; do echo $i; gpg --verify $i.asc $i ; done
-
 ```
+
+Require exit code zero and a `VALIDSIG` fingerprint matching the vote signer. When a signing subkey is used, compare its reported
+primary-key fingerprint. A key-trust warning alone does not invalidate a signature; do not infer success from localized `Good signature` text.
+Stop on `REVKEYSIG`, `EXPKEYSIG` or `EXPSIG`, even alongside `VALIDSIG` or exit code zero; ask the release manager to review or update the candidate.
+See the [GnuPG status format](https://github.com/gpg/gnupg/blob/master/doc/DETAILS).
 
 First confirm the overall integrity/consistency, and then confirm the specific content (**key**)
 

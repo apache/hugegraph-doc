@@ -603,8 +603,16 @@ select_signer() {
     gpg --homedir "$RUN_DIR/signer" --batch --import "$RUN_DIR/signer.pgp"
 }
 
+
+check_signature_status() {
+    if grep -Eq '^\[GNUPG:\] (REVKEYSIG|EXPKEYSIG|EXPSIG)( |$)' "$1"; then
+        info "Expired or revoked release signature: $1; the release manager must review/update the candidate"; return 1
+    fi
+    grep -q '^\[GNUPG:\] VALIDSIG ' "$1" || { info "Missing VALIDSIG: $1"; return 1; }
+}
+
 verify_integrity() {
-    local archive name
+    local archive name status_file
     for archive in "${PACKAGES[@]}"; do
         name=$(basename "$archive")
         [[ -f "$archive.sha512" ]] || { info "Missing SHA512: $name"; return 1; }
@@ -612,7 +620,10 @@ verify_integrity() {
         if [[ $SOURCE_PREVALIDATION -eq 0 ]]; then
             [[ -f "$archive.asc" ]] || { info "Missing signature: $name"; return 1; }
             # Check process status, not localized human-readable 'Good signature'.
-            gpg --homedir "$RUN_DIR/signer" --batch --verify "$archive.asc" "$archive"
+            mkdir -p "$RUN_DIR/logs/signatures"
+            status_file="$RUN_DIR/logs/signatures/$name.status"
+            gpg --homedir "$RUN_DIR/signer" --batch --status-fd 1 --verify -- "$archive.asc" "$archive" > "$status_file" || return $?
+            check_signature_status "$status_file" || return $?
         fi
     done
 }

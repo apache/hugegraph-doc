@@ -298,11 +298,12 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 INFO 日志以及审计日志、慢查询日志仍只写入文件，ZooKeeper 和 SOFA 不输出 WARN 以下的日志。`/hugegraph-server/logs` 中包含 `hugegraph-server.log`、JVM
 崩溃日志（`hs_err_pid*.log`）和内存溢出时的堆转储（`heapdump_*/java_pid*.hprof`，每次启动一个目录，Server 及其启动的 JVM 分别写入各自的文件）。两个镜像都声明了 `VOLUME /hugegraph-server`，因此 `docker restart` 和
 Compose 重新创建容器都会保留这些文件；`docker compose down` 会留下这个匿名卷，但下一次 `up` 不会再挂载它，直到 `down -v` 将其删除，所以请使用具名卷或绑定挂载来保留这些文件。Kubernetes 每次重启都会新建容器，因此需要在
-`/hugegraph-server/logs` 挂载 `emptyDir` 或 PersistentVolumeClaim。请为每个 Pod 使用单独的卷（或在共享 PVC 上使用 `subPathExpr: $(POD_NAME)`）：崩溃文件的名字各不相同，但日志文件本身的名字是固定的。Helm Chart
-目前还不会挂载日志卷。堆转储可能和 JVM 堆一样大，而且每次启动都会使用新目录，因此反复内存溢出的 Server 会把卷写满；请按需要保留的转储数量规划卷大小，并确保不超过 `ephemeral-storage` 限制或 `emptyDir` 的 `sizeLimit`（被驱逐时 `emptyDir`
-会连同转储一起删除），也不要使用 `medium: Memory`。启动脚本从不删除转储或 `heapdump_*` 目录，因为 computer 任务的 JVM 可能在 Server 退出后仍在使用它；每次启动都会留下一个目录，除非发生内存溢出否则为空。在该次启动的 HugeGraph JVM
-都已退出后可以删除旧目录，但不要动正在运行的 Server 最新的那个目录。要对所有 JVM 关闭堆转储，请在容器的环境变量中设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`（可以使用 `docker run -e`，或在 Compose 中 Server
-服务的 `environment:` 里添加，自带的 Compose 文件没有设置它，或在 Kubernetes 中使用 `env`；只在宿主机 shell 中导出不会生效），这样会保留镜像默认的 `JAVA_OPTS`；把该参数加到 `JAVA_OPTS` 中只对 Server 自身的 JVM
+`/hugegraph-server/logs` 挂载 `emptyDir` 或 PersistentVolumeClaim。请为每个 Pod 使用单独的卷，或在共享 PVC 上为每个 Pod 使用单独的目录（`subPathExpr: $(POD_NAME)`，并通过 Downward API 从
+`metadata.name` 传入 `POD_NAME`；Helm Chart 两者都没有设置）：崩溃文件的名字各不相同，但日志文件本身的名字是固定的。Helm Chart 目前还不会挂载日志卷。堆转储可能和 JVM 堆一样大，而且每次启动都会使用新目录，因此反复内存溢出的 Server
+会把卷写满；请按需要保留的转储数量规划卷大小，并确保不超过 `ephemeral-storage` 限制或 `emptyDir` 的 `sizeLimit`（被驱逐时 `emptyDir` 会连同转储一起删除），也不要使用 `medium: Memory`。启动脚本从不删除转储或 `heapdump_*` 目录，因为
+computer 任务的 JVM 可能在 Server 退出后仍在使用它；每次启动都会留下一个目录，除非发生内存溢出否则为空。在该次启动的 HugeGraph JVM 都已退出后可以删除旧目录，但不要动正在运行的 Server 最新的那个目录。要对所有 JVM 关闭堆转储，请在容器的环境变量中设置
+`JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`（可以使用 `docker run -e`，或在 Compose 中 Server 服务的 `environment:` 里添加，自带的 Compose 文件没有设置它，或在 Kubernetes 中使用
+`env`；只在宿主机 shell 中导出不会生效），这样会保留镜像默认的 `JAVA_OPTS`；把该参数加到 `JAVA_OPTS` 中只对 Server 自身的 JVM
 生效，而且会替换镜像默认值（`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`），需要把这些参数一并写上。
 
 > **版本范围**：上文描述的是基于当前 master 构建的镜像（PD、Store 和单机 Server 见 [apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980)，HStore Server 见

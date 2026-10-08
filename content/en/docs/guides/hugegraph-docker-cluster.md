@@ -300,16 +300,17 @@ slow-query logs stay in files, and ZooKeeper and SOFA log nothing below WARN. `/
 (`hs_err_pid*.log`) and out-of-memory heap dumps (`heapdump_*/java_pid*.hprof`, one directory per start, so the Server and the JVMs it starts get separate
 files). Both images declare `VOLUME /hugegraph-server`, so `docker restart` and a Compose recreate keep them; `docker compose down` leaves that anonymous volume
 behind unattached until `down -v` deletes it, so use a named volume or bind mount to keep them reachable. Kubernetes starts a new container on every restart, so
-mount an `emptyDir` or a PersistentVolumeClaim at `/hugegraph-server/logs`. Give each pod its own volume (or a shared PVC with `subPathExpr: $(POD_NAME)`):
-crash files get distinct names, but the log files themselves have fixed names. The Helm chart does not mount a logs volume yet. A heap dump can be as large as
-the JVM heap, and every start uses a new directory, so a Server that keeps running out of memory fills the volume; size it for the dumps you want to keep, keep
-it within any `ephemeral-storage` limit or `emptyDir` `sizeLimit` (eviction deletes the `emptyDir` with the dump), and do not use `medium: Memory`. The launcher
-never deletes dumps or `heapdump_*` directories, because a computer-job JVM can go on using one after its Server exits; each start leaves one, empty unless
-something ran out of memory. Delete old ones once no HugeGraph JVM from that launch is running, never the newest one of a running Server. To turn dumps off for
-every JVM, set `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError` in the container's environment (`docker run -e`, an `environment:` entry on the Server
-service in Compose, which the shipped Compose files do not set, or `env` in Kubernetes; exporting it in the host shell has no effect), which keeps the image's
-default `JAVA_OPTS`; putting the flag in `JAVA_OPTS` affects the Server JVM only and replaces that default
-(`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those flags.
+mount an `emptyDir` or a PersistentVolumeClaim at `/hugegraph-server/logs`. Give each pod its own volume, or a per-pod directory on a shared PVC
+(`subPathExpr: $(POD_NAME)`, with `POD_NAME` passed in from `metadata.name` through the Downward API; the Helm chart sets neither): crash files get distinct
+names, but the log files themselves have fixed names. The Helm chart does not mount a logs volume yet. A heap dump can be as large as the JVM heap, and every
+start uses a new directory, so a Server that keeps running out of memory fills the volume; size it for the dumps you want to keep, keep it within any
+`ephemeral-storage` limit or `emptyDir` `sizeLimit` (eviction deletes the `emptyDir` with the dump), and do not use `medium: Memory`. The launcher never deletes
+dumps or `heapdump_*` directories, because a computer-job JVM can go on using one after its Server exits; each start leaves one, empty unless something ran out
+of memory. Delete old ones once no HugeGraph JVM from that launch is running, never the newest one of a running Server. To turn dumps off for every JVM, set
+`JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError` in the container's environment (`docker run -e`, an `environment:` entry on the Server service in Compose,
+which the shipped Compose files do not set, or `env` in Kubernetes; exporting it in the host shell has no effect), which keeps the image's default `JAVA_OPTS`;
+putting the flag in `JAVA_OPTS` affects the Server JVM only and replaces that default (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those
+flags.
 
 > **Version scope**: the paragraph above describes current master images ([apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980) for PD, Store
 > and the standalone Server, [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258) for the HStore Server). No 1.7.0 or older image sets

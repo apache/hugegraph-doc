@@ -539,8 +539,8 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 `bin/hugegraph-server.sh` 会把 `-XX:+HeapDumpOnOutOfMemoryError`、`-XX:HeapDumpPath` 和 `-XX:ErrorFile` 放在 `JAVA_TOOL_OPTIONS` 的最前面。因此无论是否设置了
 `JAVA_OPTIONS`，内存溢出时的堆转储（`heapdump_<主机名>_<启动时间>/java_pid<pid>.hprof`）和 JVM 崩溃日志（`hs_err_pid<pid>_<主机名>_<启动时间>.log`）都会写入 `logs/`，其中 `<启动时间>` 为本地时间，格式是
 `YYYYMMDD-HHMMSS`。每次启动都有自己的 `heapdump_*` 目录，因此服务及其启动的 JVM（例如 computer
-任务）会分别写入各自的转储。主机名可避免共用同一日志目录的多个服务选到相同的名字；如果同一主机在同一秒内已经用过该名字，会再加上计数（`<启动时间>-1`、`-2`……）。如果无法创建该目录（例如磁盘已满），服务仍会启动，堆转储改为写入 `logs/` 本身。堆转储可能和堆一样大。启动脚本从不删除转储或
-`heapdump_*` 目录：每次启动都会留下一个目录，除非发生内存溢出否则为空；启动脚本保留它，是因为 computer 任务的 JVM 可能在服务退出后仍在使用它。在该次启动的 HugeGraph JVM
+任务）会分别写入各自的转储。主机名可避免共用同一日志目录的多个服务选到相同的名字；如果同一主机在同一秒内已经用过该名字，会再加上计数（`<启动时间>-1`、`-2`……）。如果无法创建该目录（例如磁盘已满），服务仍会启动，堆转储改为尽力写入 `logs/`
+本身；磁盘已满时可能也没有空间写入转储。堆转储可能和堆一样大。启动脚本从不删除转储或 `heapdump_*` 目录：每次启动都会留下一个目录，除非发生内存溢出否则为空；启动脚本保留它，是因为 computer 任务的 JVM 可能在服务退出后仍在使用它。在该次启动的 HugeGraph JVM
 都已退出后，可以移走或删除旧目录，但不要动正在运行的服务最新的那个目录；没有它，下一次转储会被写成一个同名文件。JVM 会在这些默认值之后读取你自己的 `JAVA_TOOL_OPTIONS`、`JDK_JAVA_OPTIONS`（包括 `@argfile`）、命令行（`JAVA_OPTIONS`；未设置或为空时为
 `-j`）和 `_JAVA_OPTIONS`，因此在其中任意一处为上述参数指定的值都会覆盖默认值。只有环境变量会传给服务启动的 JVM：要对所有 JVM 关闭堆转储，请设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`；通过 `-j` 或
 `JAVA_OPTIONS` 关闭只对服务自身的 JVM 生效。无论哪种方式，每次启动仍会创建空的 `heapdump_*` 目录。由于设置了这些默认值，JVM 启动时会在 stderr 输出 `Picked up JAVA_TOOL_OPTIONS: ...`。

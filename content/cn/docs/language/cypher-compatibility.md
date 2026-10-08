@@ -13,8 +13,8 @@ weight: 3
 
 本页记录当前 Cypher 开发改动实际验证过的用例，不代表完整支持 openCypher 或 Neo4j，也不代表所有已发布
 版本的 HugeGraph 都具备相同行为。测试代码基于当前 Apache `master` 的
-[`e62c961`](https://github.com/apache/hugegraph/commit/e62c961e00221569d4f955abbadf60faee45b283)，
-该基线使用 Java 17 和 TinkerPop `3.8.1`。Cypher 改动独立建立在该基线上。运行栈使用 Java `17.0.20.1`、
+[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b)，
+该基线声明 HugeGraph `1.8.0`，使用 Java 17 和 TinkerPop `3.8.1`。Cypher 改动独立建立在该基线上。运行栈使用 Java `17.0.20.1`、
 TinkerPop `3.8.1`、`org.opencypher.gremlin:translation:1.0.4` 和 RocksDB。
 
 接口路径为 `/graphspaces/{graphspace}/graphs/{graph}/cypher`。一般用法见
@@ -45,7 +45,23 @@ JSON 数组、字符串、数字、布尔值或 null 请求体会返回 HTTP 400
 
 JSON 对象中的 `cypher` 必须是非空字符串；`parameters` 若提供，必须是对象。省略 `parameters` 表示空参数表。
 语句引用了未提供的参数时会报执行错误；显式传入 `null` 是有效值。测试覆盖字符串、数字、布尔值、引号和换行，
-参数名 `id` 与 `label`，以及默认最多 16 个参数。参数值会作为绑定值传递，不会改写查询文本。
+参数名 `id` 与 `label`。当前实现的 `parameters` 最多接受 16 个顶层条目，该上限固定。
+该上限只统计顶层 `parameters` 对象中的键。Cypher 不支持在 Gremlin Server 的处理器配置中设置
+`maxParameters`。参数值会作为绑定值传递，不会改写查询文本。
+
+一个 Map 只计为一个顶层参数。可以将相关值放入一个 Map，并显式引用各字段；顶点标签和必需属性必须匹配图中已有的 Schema：
+
+```json
+{
+  "cypher": "CREATE (n:cypher_person {name:$props.name, age:$props.age, city:$props.city}) RETURN n.name",
+  "parameters": {"props": {"name": "new-person", "age": 20, "city": "Beijing"}}
+}
+```
+
+实际 REST 验证确认，一个包含 17 个条目的 Map 可以通过显式属性引用完成写入，并通过原生 REST 核对全部 17 个持久化值。
+返回包含 17 个条目的 Map 也成功，而 17 个顶层绑定参数会产生执行错误。请使用上述显式属性引用；
+固定版本的转译库不会通过 CREATE 的简写形式赋予绑定 Map 中的属性。
+
 转译库将精确字符串 `"  cypher.null"`（开头有两个空格）保留为 null 标记，因此绑定值会拒绝该字符串，
 包括列表和嵌套 Map 中的值。显式 null 仍受支持。语句字面量及存储属性等于该字符串的情况仍受转译库限制，
 本次改动未验证这些值能够保真。
@@ -68,17 +84,21 @@ API 测试夹具使用强类型 Schema，并为 `city` 建立 `SECONDARY` 索引
 独立代码改动位于 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289)，该 PR 尚未合并，已变基到上述 Apache `master` 基线。
 原始开发改动仍关联 [PR #238](https://github.com/hugegraph/hugegraph/pull/238)。
 在固定源码提交
-[`fd8f4a6`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/docs/cypher-compatibility.md) 上，`CypherApiTest` 通过 23/23，
+[`8d06ad3`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/docs/cypher-compatibility.md) 上，`CypherApiTest` 通过 23/23，
 `CypherClientTest` 通过 7/7，`CypherOpProcessorTest` 通过 8/8，均无跳过。新增的谓词、执行上下文和请求资源所有权
 回归测试均通过；`AbstractRestClientTest` 的九项测试也全部通过，包括 ASCII 请求体、UTF-16 Map 请求体及 gzip。
 Login 测试通过 3/3；相关 Gremlin 测试通过 10 项，保留一项因后端不共享而不适用的 `testClearAndInit` 跳过。
 EditorConfig 格式检查、仓库根目录 clean compile 和完整 install 均通过。在实际服务测试前，分发包内的 API JAR 与编译目标 JAR 一致。
 
 该固定提交中的兼容性说明包含验证记录和逐方法映射。测试源码：
-[`CypherApiTest`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/CypherApiTest.java)、
-[`CypherClientTest`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/cypher/CypherClientTest.java)
+[`CypherApiTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/CypherApiTest.java)、
+[`CypherClientTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/cypher/CypherClientTest.java)
 和
-[`CypherOpProcessorTest`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/opencypher/CypherOpProcessorTest.java)。
+[`CypherOpProcessorTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/opencypher/CypherOpProcessorTest.java)。
+此前在
+[`e62c961`](https://github.com/apache/hugegraph/commit/e62c961e00221569d4f955abbadf60faee45b283)
+基线上的验证仍保留在
+[`fd8f4a6`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/docs/cypher-compatibility.md)。
 此前变基前的验证记录仍保留在
 [`c3b2f3e`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/docs/cypher-compatibility.md)。
 

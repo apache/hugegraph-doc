@@ -15,9 +15,9 @@ statement that references `$param` returns no rows rather than failing — see
 This page records the cases verified for the current Cypher development change. It does not claim full
 openCypher or Neo4j compatibility, or compatibility across every released HugeGraph version. The tested
 working tree is based on current Apache `master` at
-[`e62c961`](https://github.com/apache/hugegraph/commit/e62c961e00221569d4f955abbadf60faee45b283),
-which uses Java 17 and TinkerPop `3.8.1`. This is a standalone Cypher change on that baseline. The runtime
-uses Java `17.0.20.1`, TinkerPop `3.8.1`, `org.opencypher.gremlin:translation:1.0.4`, and RocksDB.
+[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b),
+which declares HugeGraph `1.8.0`, Java 17, and TinkerPop `3.8.1`. This is a standalone Cypher change on that
+baseline. The runtime uses Java `17.0.20.1`, TinkerPop `3.8.1`, `org.opencypher.gremlin:translation:1.0.4`, and RocksDB.
 
 The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. General usage is covered in the
 [HugeGraph Cypher guide](/docs/language/hugegraph-cypher/).
@@ -48,7 +48,26 @@ Malformed JSON objects and trailing tokens also produce request errors; they do 
 For the JSON-object form, `cypher` must be a nonblank string and `parameters`, if present, must be an object.
 Omitting `parameters` means an empty map. A referenced but missing binding is an execution error; an explicit
 null value is valid. Tests cover string, number, and boolean values, quotes and newlines, the binding names
-`id` and `label`, and the default limit of 16 parameters. Values remain bindings and do not alter query text.
+`id` and `label`. The current implementation accepts at most 16 top-level entries in `parameters`; this
+limit is fixed. Only keys in the top-level `parameters` object count toward it. Cypher does not support a
+`maxParameters` setting in Gremlin Server's processor configuration. Values remain bindings and do not
+alter query text.
+
+A Map counts as one top-level parameter. Group related values into one Map and reference its fields
+explicitly; the vertex label and required properties must match the graph's existing schema:
+
+```json
+{
+  "cypher": "CREATE (n:cypher_person {name:$props.name, age:$props.age, city:$props.city}) RETURN n.name",
+  "parameters": {"props": {"name": "new-person", "age": 20, "city": "Beijing"}}
+}
+```
+
+Live REST verification confirmed that one Map containing 17 entries works with explicit property
+references, with all 17 persisted values checked through native REST. A 17-entry returned Map also
+succeeds, while 17 top-level bindings produce an execution error. Use the explicit property references
+shown above; the pinned translator does not assign a bound Map's fields through the shorthand CREATE form.
+
 The translator reserves the exact string `"  cypher.null"` (two leading spaces) as its null marker. That
 string is rejected as a binding value, including inside lists and nested maps. Explicit null remains
 supported. Literal query values and stored properties equal to that string remain a translator limitation;
@@ -74,7 +93,7 @@ Acceptance results are limited to these test cases:
 The standalone code change is in [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289),
 which is open and unmerged, rebased onto the Apache `master` baseline above. The original development
 change remains linked in [PR #238](https://github.com/hugegraph/hugegraph/pull/238). At source commit
-[`fd8f4a6`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/docs/cypher-compatibility.md), `CypherApiTest` passed 23/23,
+[`8d06ad3`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/docs/cypher-compatibility.md), `CypherApiTest` passed 23/23,
 `CypherClientTest` 7/7, and `CypherOpProcessorTest` 8/8, with no skips. The additional predicate,
 execution-context, and request-ownership regressions passed, as did all nine `AbstractRestClientTest`
 cases, including ASCII and UTF-16 map bodies with gzip. Login tests passed 3/3; related Gremlin tests
@@ -84,9 +103,13 @@ API JAR matched the compiled target JAR before the live test run.
 
 The compatibility note at that fixed commit contains the verification record and method-level mapping.
 Test sources:
-[`CypherApiTest`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/CypherApiTest.java),
-[`CypherClientTest`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/cypher/CypherClientTest.java),
-and [`CypherOpProcessorTest`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/opencypher/CypherOpProcessorTest.java).
+[`CypherApiTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/CypherApiTest.java),
+[`CypherClientTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/cypher/CypherClientTest.java),
+and [`CypherOpProcessorTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/opencypher/CypherOpProcessorTest.java).
+The earlier verification on
+[`e62c961`](https://github.com/apache/hugegraph/commit/e62c961e00221569d4f955abbadf60faee45b283)
+remains at
+[`fd8f4a6`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/docs/cypher-compatibility.md).
 The earlier, pre-rebase verification remains at
 [`c3b2f3e`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/docs/cypher-compatibility.md).
 

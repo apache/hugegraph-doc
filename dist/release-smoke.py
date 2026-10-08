@@ -119,7 +119,11 @@ def stopped(port):
 
 def ports():
     for port in (8080, 8088):
+        with socket.socket() as probe:
+            probe.settimeout(1)
+            require(probe.connect_ex(("127.0.0.1", port)) != 0, f"Port {port} is already listening")
         with socket.socket() as connection:
+            connection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             connection.bind(("127.0.0.1", port))
 
 

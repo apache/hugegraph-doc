@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import errno
 import gzip
 import hashlib
 import importlib.util
@@ -18,6 +19,7 @@ import json
 import os
 from pathlib import Path
 import shlex
+import socket
 import subprocess
 import tarfile
 import tempfile
@@ -54,6 +56,61 @@ class ReleaseValidationTest(unittest.TestCase):
     def shell(self, code):
         return subprocess.run(["bash", "-c", f"source {shlex.quote(str(DIST / 'validate-release.sh'))}; {code}"],
                               env=dict(os.environ, COPYFILE_DISABLE="0"), capture_output=True, text=True)
+
+    def check_fixture_port(self, port):
+        # Exercise production ports() with real sockets on a disposable TCP port,
+        # substituting only its fixed production port numbers.
+        real_socket = socket.socket
+        class FixtureSocket(real_socket):
+            def bind(self, address):
+                return super().bind((address[0], port))
+            def connect_ex(self, address):
+                return super().connect_ex((address[0], port))
+        with patch.object(SMOKE.socket, "socket", FixtureSocket):
+            SMOKE.ports()
+
+    def test_ports_reuses_time_wait_after_a_real_tcp_connection(self):
+        listener = socket.socket()
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(1)
+        port = listener.getsockname()[1]
+        client = socket.socket()
+        client.settimeout(2)
+        client.connect(("127.0.0.1", port))
+        accepted, _ = listener.accept()
+        accepted.settimeout(2)
+        accepted.shutdown(socket.SHUT_WR)
+        self.assertEqual(client.recv(1), b"")
+        client.close()
+        self.assertEqual(accepted.recv(1), b"")
+        accepted.close()
+        listener.close()
+        with socket.socket() as probe:
+            self.assertNotEqual(probe.connect_ex(("127.0.0.1", port)), 0)
+        with socket.socket() as old_probe:
+            with self.assertRaises(OSError) as error:
+                old_probe.bind(("127.0.0.1", port))
+            self.assertEqual(error.exception.errno, errno.EADDRINUSE)
+        self.check_fixture_port(port)
+
+    def test_ports_rejects_loopback_and_wildcard_listeners_without_stopping_them(self):
+        for host in ("127.0.0.1", "0.0.0.0"):
+            with self.subTest(host=host), socket.socket() as listener:
+                listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                listener.bind((host, 0))
+                listener.listen(2)
+                listener.settimeout(2)
+                port = listener.getsockname()[1]
+                with self.assertRaisesRegex(RuntimeError, "already listening"):
+                    self.check_fixture_port(port)
+                # The production availability check has not closed/killed the listener.
+                with socket.socket() as client:
+                    client.connect(("127.0.0.1", port))
+                first, _ = listener.accept()
+                first.close()
+                second, _ = listener.accept()
+                second.close()
 
     def test_binary_license_checks_actual_pom_and_retains_manual_review(self):
         library = self.root / "distribution/lib/component.jar"

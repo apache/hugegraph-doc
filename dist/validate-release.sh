@@ -77,8 +77,8 @@ cleanup() {
             info 'CHECKS COMPLETED; full release validation was not requested'
         elif [[ $status -eq 0 ]]; then
             if [[ $SOURCE_PREVALIDATION -eq 1 ]]; then
-                info 'SOURCE PREVALIDATION PASSED; real RC signatures/download/staging origin NOT verified'
-            else info 'RELEASE VALIDATION PASSED'; fi
+                info 'SOURCE PREVALIDATION AUTOMATED CHECKS PASSED; manual licensing review required; RC signatures/download/staging origin NOT verified'
+            else info 'AUTOMATED RELEASE CHECKS PASSED; manual licensing review and PMC release approval remain required'; fi
         else info "VALIDATION FAILED (exit $status)"; fi
         info "Evidence: $RUN_DIR"
     fi
@@ -183,6 +183,18 @@ check_license_categories() {
     fi
 
     return $has_error
+}
+
+
+check_binary_licenses() {
+    local package=$1 matches
+    matches=$(grep -rn -E "$CATEGORY_X|$CATEGORY_B" LICENSE NOTICE licenses 2>/dev/null || true)
+    if [[ -n "$matches" ]]; then
+        collect_warning "Package '$package': inspect aggregate license mentions manually; keywords alone do not prove a bundled dependency's license"
+        printf '%s\n' "$matches"
+    fi
+    python3 "$SCRIPT_DIR/release-smoke.py" binary-licenses "$PWD" "$RUN_DIR/license-review-${package%.tar.gz}.txt" ||
+        collect_error "Package '$package': actual dependency license check failed; inspect the license review report"
 }
 
 check_empty_files_and_dirs() {
@@ -565,7 +577,7 @@ validate_package() {
         check_notice_year "$name" || true
     else
         [[ -d licenses ]] || collect_error 'Missing licenses directory'
-        check_license_categories "$name" LICENSE NOTICE licenses || true
+        check_binary_licenses "$name"
     fi
     popd >/dev/null
     [[ ${#VALIDATION_ERRORS[@]} -eq $before ]]
@@ -614,6 +626,14 @@ unique_directory() {
 }
 
 
+
+start_server() {
+    local server=$1
+    (cd "$server" && printf '%s\n' release-smoke | bin/init-store.sh) || return $?
+    SERVER_DIR=$server
+    (cd "$server" && bin/start-hugegraph.sh -m false)
+}
+
 stop_services() {
     local failed=0
     if [[ -n "$HUBBLE_DIR" ]]; then
@@ -626,7 +646,7 @@ stop_services() {
         fi
     fi
     if [[ -n "$SERVER_DIR" ]]; then
-        if (cd "$SERVER_DIR" && bin/stop-hugegraph.sh) &&
+        if (cd "$SERVER_DIR" && bin/stop-hugegraph.sh -m false) &&
            python3 "$SCRIPT_DIR/release-smoke.py" stopped 8080; then
             SERVER_DIR=''
         else
@@ -645,13 +665,9 @@ run_packages() {
     python3 "$SCRIPT_DIR/release-smoke.py" ports
     # Only modify disposable extraction directories. Enable standalone authentication
     # so Client, Loader, Tools and Hubble exercise the same authenticated server.
-    cat >> "$server/conf/rest-server.properties" <<'EOF'
-auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
-auth.admin_pa=release-smoke
-auth.graph_store=hugegraph
-EOF
-    SERVER_DIR=$server
-    (cd "$server" && bin/init-store.sh && bin/start-hugegraph.sh)
+    python3 "$SCRIPT_DIR/release-smoke.py" properties "$server/conf/rest-server.properties" \
+        auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator auth.graph_store=hugegraph
+    start_server "$server"
     python3 "$SCRIPT_DIR/release-smoke.py" server
     loader=$(unique_directory "$toolchain" "apache-hugegraph-loader-$RELEASE_VERSION")
     tools=$(unique_directory "$toolchain" "apache-hugegraph-tools-$RELEASE_VERSION")
@@ -675,10 +691,8 @@ EOF
     [[ -n $(find "$RUN_DIR/backup-$label" -type f -size +0c -print -quit) ]] || {
         info 'Tools backup produced no nonempty file'; return 1;
     }
-    cat >> "$hubble/conf/hugegraph-hubble.properties" <<'EOF'
-pd.enabled=false
-server.direct_url=http://127.0.0.1:8080
-EOF
+    python3 "$SCRIPT_DIR/release-smoke.py" properties "$hubble/conf/hugegraph-hubble.properties" \
+        pd.enabled=false server.direct_url=http://127.0.0.1:8080
     HUBBLE_DIR=$hubble
     (cd "$hubble" && bin/start-hubble.sh)
     python3 "$SCRIPT_DIR/release-smoke.py" hubble

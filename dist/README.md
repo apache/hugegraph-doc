@@ -42,6 +42,14 @@ bash dist/validate-release.sh --staging-repository https://repository.apache.org
 大于 800KB 的源码文件列为人工复核提示，大小本身不是 ASF 发布禁止条件。
 源码构建产物与下载的二进制包分别验证，不能用一次启动替代两者。
 
+## 许可证复核边界
+
+二进制包的 LICENSE/NOTICE/licenses 关键词命中带上下文列为人工复核提示；它可能描述未打包资源或许可替代项，不能据此断言依赖违规。
+脚本读取实际 JAR 内嵌 Maven POM 的许可声明，明确无替代项/例外的 Category-X-only 声明仍失败；
+多许可、例外、Category B、缺少声明或继承信息写入 `license-review-*.txt`，需对照实际组件源码和发布资料复核。
+源包原有 Category X 检查保留。CI 成功表示自动检查通过，不表示许可复核已完成或发布已获批准。
+许可选择及 ClasspathException 条件遵循 [ASF 第三方许可政策](https://www.apache.org/legal/resolved.html) 中的相应规则。
+
 ## 无真实 RC 时的源码预验证
 
 ```bash

@@ -14,6 +14,7 @@
 """Release archive checks and assertions against disposable local services."""
 
 import base64
+import gzip
 import hashlib
 import http.cookiejar
 import json
@@ -26,6 +27,7 @@ import time
 import urllib.error
 import urllib.request
 import zipfile
+import xml.etree.ElementTree as ET
 
 AUTH = "Basic " + base64.b64encode(b"admin:release-smoke").decode()
 SERVER = "http://127.0.0.1:8080"
@@ -46,7 +48,10 @@ def request(url, body=None, hubble=False):
         headers["Authorization"] = AUTH
     data = json.dumps(body).encode() if body is not None else None
     with OPENER.open(urllib.request.Request(url, data, headers), timeout=10) as response:
-        result = json.load(response)
+        payload = response.read()
+        if response.headers.get("Content-Encoding", "").lower() == "gzip":
+            payload = gzip.decompress(payload)
+        result = json.loads(payload)
     if hubble:
         require(result.get("status") == 200, f"Hubble business failure: {result}")
         return result["data"]
@@ -133,6 +138,59 @@ def checksum(filename):
     print(f"PASS: SHA512 {archive.name}")
 
 
+def binary_licenses(directory, report):
+    # Maven declarations identify bundled components; aggregate NOTICE keyword
+    # mentions do not identify the license of an actual packaged dependency.
+    prohibited = re.compile(r"\b(?:AGPL|LGPL|GPL)(?:[- ]?v?[0-9]+(?:\.[0-9]+)?)?\b|\b(?:BCL|RSAL|QPL|SSPL|CPOL|NPL1)\b|GNU .*General Public License|"
+                            r"Sleepycat|BSD-4-Clause|Binary Code License|JSR-275|Amazon Software License|"
+                            r"Creative Commons Non-Commercial|JSON\.org", re.I)
+    exceptions = re.compile(r"classpath|exception|\bCPE\b", re.I)
+    conditional = re.compile(r"\b(?:CDDL|CPL|EPL|IPL|MPL|SPL|OFL)(?:[- ]?v?[0-9]+(?:\.[0-9]+)?)?\b|"
+                             r"Mozilla Public|Eclipse Public|Common Development|CC-BY", re.I)
+    permissive = re.compile(r"Apache|\bMIT\b|\bBSD\b|\bISC\b|Zlib|Boost|W3C|Public Domain|CC0", re.I)
+    review, errors = [], []
+    for library in Path(directory).rglob("lib/*.jar"):
+        with zipfile.ZipFile(library) as archive:
+            poms = [item for item in archive.infolist()
+                    if item.filename.startswith("META-INF/maven/") and item.filename.endswith("/pom.xml")]
+            if not poms:
+                review.append(f"{library}: no embedded Maven POM; inspect the component license")
+            for entry in poms:
+                context = f"{library}!{entry.filename}"
+                try:
+                    root = ET.fromstring(archive.read(entry))
+                    labels = [" ".join(item.itertext()).strip() for item in root.findall("{*}licenses/{*}license")]
+                except ET.ParseError:
+                    labels = []
+                if not labels:
+                    review.append(f"{context}: missing/invalid license declaration; inspect inherited/actual license")
+                else:
+                    # 'GPL or later' remains Category X. Only explicit non-X
+                    # license evidence or an exception requires choice review.
+                    only_x = [bool(prohibited.search(label)) and not exceptions.search(label) and
+                              not (conditional.search(prohibited.sub("", label)) or
+                                   permissive.search(prohibited.sub("", label))) for label in labels]
+                    if all(only_x):
+                        errors.append(f"{context}: Category-X-only declaration: {' | '.join(labels)}")
+                    elif len(labels) > 1 or any(prohibited.search(label) or exceptions.search(label) or
+                                               conditional.search(label) or not permissive.search(label) for label in labels):
+                        review.append(f"{context}: review license selection/conditions: {' | '.join(labels)}")
+    Path(report).write_text("MANUAL LICENSING REVIEW (automatic checks are not release approval)\n" +
+                            "\n".join(review + errors) + "\n")
+    print(f"Manual license review: {len(review)} declarations; report: {report}")
+    require(not errors, "\n".join(errors))
+
+
+def properties(filename, *assignments):
+    # These runtime overrides are single-line scalar properties. Remove only
+    # their active definitions; preserve comments and every other setting.
+    updates = dict(item.split("=", 1) for item in assignments)
+    pattern = re.compile(r"^\s*(?:" + "|".join(re.escape(key) for key in updates) + r")\s*[=:]")
+    path = Path(filename)
+    content = "".join(line for line in path.read_text().splitlines(keepends=True) if not pattern.match(line))
+    if content and not content.endswith("\n"):
+        content += "\n"
+    path.write_text(content + "".join(f"{key}={value}\n" for key, value in updates.items()))
 
 
 def embedded_versions(version, server_directory, toolchain_directory):
@@ -222,6 +280,10 @@ def extract(filename, destination):
 
 
 if __name__ == "__main__":
-    commands = {"server": server, "loader": loader, "hubble": hubble, "ports": ports,
-                "checksum": checksum, "extract": extract, "staging-origin": staging_origin, "embedded-versions": embedded_versions, "stopped": lambda port: stopped(int(port))}
+    commands = {
+        "server": server, "loader": loader, "hubble": hubble, "ports": ports,
+        "checksum": checksum, "extract": extract, "properties": properties,
+        "binary-licenses": binary_licenses, "staging-origin": staging_origin,
+        "embedded-versions": embedded_versions, "stopped": lambda port: stopped(int(port)),
+    }
     commands[sys.argv[1]](*sys.argv[2:])

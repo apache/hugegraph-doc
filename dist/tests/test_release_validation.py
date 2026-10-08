@@ -10,9 +10,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import gzip
 import hashlib
 import importlib.util
 import io
+import json
 import os
 from pathlib import Path
 import shlex
@@ -21,6 +23,7 @@ import tarfile
 import tempfile
 import unittest
 import zipfile
+from unittest.mock import patch
 
 DIST = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("release_smoke", DIST / "release-smoke.py")
@@ -51,6 +54,55 @@ class ReleaseValidationTest(unittest.TestCase):
     def shell(self, code):
         return subprocess.run(["bash", "-c", f"source {shlex.quote(str(DIST / 'validate-release.sh'))}; {code}"],
                               env=dict(os.environ, COPYFILE_DISABLE="0"), capture_output=True, text=True)
+
+    def test_binary_license_checks_actual_pom_and_retains_manual_review(self):
+        library = self.root / "distribution/lib/component.jar"
+        library.parent.mkdir(parents=True)
+        report = self.root / "license-review.txt"
+        def pom(licenses):
+            return ('<project xmlns="http://maven.apache.org/POM/4.0.0"><licenses>' +
+                    ''.join(f'<license><name>{name}</name></license>' for name in licenses) + '</licenses></project>')
+        with zipfile.ZipFile(library, "w") as archive:
+            archive.writestr("META-INF/maven/example/component/pom.xml", pom(["GPLv2"]))
+        with self.assertRaisesRegex(RuntimeError, "Category-X-only declaration"):
+            SMOKE.binary_licenses(self.root / "distribution", report)
+        # A separate Apache POM in the same shaded JAR cannot hide a GPL-only component.
+        with zipfile.ZipFile(library, "a") as archive:
+            archive.writestr("META-INF/maven/example/another/pom.xml", pom(["Apache License 2.0"]))
+        with self.assertRaisesRegex(RuntimeError, "Category-X-only declaration"):
+            SMOKE.binary_licenses(self.root / "distribution", report)
+        for declarations in (["GPL-2.0", "LGPL-2.1"], ["GPL version 2 or later"], ["BSD-4-Clause"]):
+            with zipfile.ZipFile(library, "w") as archive:
+                archive.writestr("META-INF/maven/example/component/pom.xml", pom(declarations))
+            with self.assertRaisesRegex(RuntimeError, "Category-X-only declaration"):
+                SMOKE.binary_licenses(self.root / "distribution", report)
+        for declarations in (["Apache License 2.0", "LGPL-2.1"], ["GPL OR Apache License 2.0"],
+                             ["GPL-2.0 WITH ClasspathException-2.0"], []):
+            with zipfile.ZipFile(library, "w") as archive:
+                archive.writestr("META-INF/maven/example/component/pom.xml", pom(declarations))
+            SMOKE.binary_licenses(self.root / "distribution", report)
+            self.assertIn("MANUAL LICENSING REVIEW", report.read_text())
+            self.assertIn("component.jar!", report.read_text())
+
+    def test_runtime_properties_replace_duplicate_active_keys_preserving_other_lines(self):
+        config = self.root / "hugegraph-hubble.properties"
+        config.write_text("# Keep the standalone documentation\n#pd.enabled=true\npd.enabled=false\n"
+                          "pd.enabled = true\nserver.direct_url=http://127.0.0.1:8080\n"
+                          "server.direct_url: http://old-server\nserver.port=8088\n")
+        assignments = ("pd.enabled=false", "server.direct_url=http://127.0.0.1:8080")
+        SMOKE.properties(str(config), *assignments)
+        expected = ("# Keep the standalone documentation\n#pd.enabled=true\nserver.port=8088\n"
+                    "pd.enabled=false\nserver.direct_url=http://127.0.0.1:8080\n")
+        self.assertEqual(config.read_text(), expected)
+        SMOKE.properties(str(config), *assignments)
+        self.assertEqual(config.read_text(), expected)
+
+    def test_server_response_with_real_gzip_payload_is_decoded(self):
+        expected = {"status": {"code": 200}, "result": {"data": [0]}}
+        response = io.BytesIO(gzip.compress(json.dumps(expected).encode()))
+        response.headers = {"Content-Encoding": "gzip"}
+        with patch.object(SMOKE.OPENER, "open", return_value=response):
+            self.assertEqual(SMOKE.request("http://127.0.0.1:8080/gremlin", {"gremlin": "g.V().count()"}), expected)
 
     def test_extract_expected_root(self):
         self.archive_with("./apache-hugegraph-1.8.0-src/LICENSE")
@@ -184,6 +236,40 @@ class ReleaseValidationTest(unittest.TestCase):
             result = self.shell(f"cd {shlex.quote(str(self.root))}; check_license_categories fixture LICENSE NOTICE")
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("prohibited ASF Category X", result.stdout)
+
+    def test_server_launcher_supplies_stdin_and_disables_monitor(self):
+        service = self.root / "server"
+        (service / "bin").mkdir(parents=True)
+        commands = {
+            "init-store.sh": f"read password\nprintf '%s' \"$password\" > {shlex.quote(str(self.root / 'init-stdin'))}\n",
+            "start-hugegraph.sh": f"printf '%s' \"$*\" > {shlex.quote(str(self.root / 'start-args'))}\n",
+            "stop-hugegraph.sh": f"printf '%s' \"$*\" > {shlex.quote(str(self.root / 'stop-args'))}\n",
+        }
+        for name, body in commands.items():
+            command = service / "bin" / name
+            command.write_text("#!/bin/sh\n" + body)
+            command.chmod(0o755)
+        (self.root / "release-smoke.py").write_text("# Test helper: disposable fixture port is closed\n")
+        result = self.shell(f"RUN_DIR={shlex.quote(str(self.root))}; SCRIPT_DIR={shlex.quote(str(self.root))}; "
+                            f"start_server {shlex.quote(str(service))}; stop_services")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual((self.root / "init-stdin").read_text(), "release-smoke")
+        self.assertEqual((self.root / "start-args").read_text(), "-m false")
+        self.assertEqual((self.root / "stop-args").read_text(), "-m false")
+
+    def test_failed_store_init_does_not_claim_a_started_server(self):
+        service = self.root / "server"
+        (service / "bin").mkdir(parents=True)
+        init = service / "bin/init-store.sh"
+        init.write_text("#!/bin/sh\nexit 11\n")
+        init.chmod(0o755)
+        stop = service / "bin/stop-hugegraph.sh"
+        marker = self.root / "unexpected-stop"
+        stop.write_text(f"#!/bin/sh\ntouch {shlex.quote(str(marker))}\n")
+        stop.chmod(0o755)
+        result = self.shell(f"RUN_DIR={shlex.quote(str(self.root))}; start_server {shlex.quote(str(service))}")
+        self.assertEqual(result.returncode, 11)
+        self.assertFalse(marker.exists())
 
     def test_failed_start_and_incomplete_stop_keep_cleanup_ownership(self):
         service = self.root / "service"

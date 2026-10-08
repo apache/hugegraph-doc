@@ -121,6 +121,7 @@ jobs:
             ${{ runner.temp }}/release-validation/**/validation.log
             ${{ runner.temp }}/release-validation/**/logs/**
             ${{ runner.temp }}/release-validation/**/backup-*/**
+            ${{ runner.temp }}/release-validation/**/license-review-*.txt
             ${{ runner.temp }}/prevalidation/origin.txt
             ${{ runner.temp }}/prevalidation-build.log
           if-no-files-found: warn

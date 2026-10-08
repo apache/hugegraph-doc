@@ -5,9 +5,28 @@ weight: 3
 ---
 
 > Note: 这篇文档会持续更新。
-> 你需要使用 Java11 验证测试 (如果希望测试功能/运行时)，从 1.5.0 版本开始 (除 client 外) 不再支持 Java8
+> HugeGraph 1.8.0 的源码构建与发行包运行验证统一使用 Java 17。
 >
 > 毕业说明：Apache HugeGraph 已于 2026 年 1 月毕业。正式发版投票现由 HugeGraph 社区内部完成（`dev@hugegraph.apache.org` 上的 PMC binding 投票），不再需要 Incubator `general@incubator.apache.org` 审批。
+
+## 自动化发版验证
+
+Workflow 与 `dist/validate-release.sh` 共用 Java 17 校验逻辑。发行版本与 SVN RC 路径分别指定，
+Maven staging repository 使用投票邮件中的地址。Server/Toolchain 四个源码和二进制包均必须附带 SHA512 与 GPG 签名。
+候选目录只能包含这四个归档，其他组件使用其对应流程验证。可将四个包、校验和及签名复制到独立本地目录，不得跳过签名。
+
+```bash
+bash dist/validate-release.sh --svn-path 1.8.0/RC1 \
+  --staging-repository https://repository.apache.org/content/repositories/<staging-id>/ 1.8.0 pengjunzhi
+# 原有本地包位置参数接口保留：
+bash dist/validate-release.sh 1.8.0 pengjunzhi /path/to/rc 17
+```
+
+严格 RC 模式使用全新、相互隔离的 Maven 仓库，不预装本地 Server SDK。
+源码构建产物和下载的二进制包分别执行 Server、Client、普通 Loader、Tools 与 Hubble 业务断言，失败后保留日志。
+Workflow 的 `source-prevalidation` 模式使用明确的 Server/Toolchain commit SHA 和无签名源码归档，
+它不证明真实 RC 签名、下载及远端 staging 依赖解析已通过。
+本地预验证和证据目录说明见[验证脚本指南](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md)。
 
 ## 验证阶段
 
@@ -21,7 +40,7 @@ weight: 3
 #### 1. 准备工作
 
 如果本地没有 svn 或 gpg 或 wget 环境，建议先安装一下 (windows 推荐使用 WSL2 环境，
-或者至少是 `git-bash`), 同时确保安装 Java(推荐 11) 和 maven 软件。
+或者至少是 `git-bash`), 同时确保安装 Java 17 和 maven 软件。
 
 ```bash
 # 1. 安装svn
@@ -49,7 +68,7 @@ brew install wget
 # 4. 下载 hugegraph-svn 目录 (版本号注意填写此次验证版本)
 svn co https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/
 # (注) 如果出现 svn 下载某个文件速度很慢的情况, 可以考虑 wget 单个文件下载, 如下 (或考虑使用 VPN / 代理)
-wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
+wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-1.x.x.tar.gz
 ```
 
 #### 2. 检查 hash 值
@@ -126,12 +145,16 @@ PMC 同学请特别注意认真检查 `LICENSE` + `NOTICE` 文件，确保文件
 大部分的发版问题都与之相关
 
 ```bash
-# 请优先使用/切换到 `java 11` 版本进行后序的编译和运行操作 (注:`Computer` 仅支持 `java >= 11`) 
+# 请优先使用/切换到 `java 17` 版本进行后序的编译和运行操作 (注:`Computer` 仅支持 `java >= 11`)
 # java --version
 
 # 尝试在 Unix 环境下编译测试是否正常
-mvn clean package -DskipTests -Dcheckstyle.skip=true -P stage
+mvn -s /path/to/staging-settings.xml -Dmaven.repo.local=/path/to/fresh-m2 \
+  clean install -Papache-release -DskipTests -Dgpg.skip=true
 ```
+
+手动 Maven 命令的 settings 必须指向投票邮件中的 staging repository，并使用全新的本地仓库。
+不要预装本地 Server SDK 来掩盖 staging 缺少依赖；自动化验证脚本会生成这些设置。
 
 ##### B. 二进制包
 
@@ -181,7 +204,7 @@ LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更�
 I checked:
 1. Download link/tag in mail are valid
 2. Checksum and GPG signatures are OK
-3. LICENSE & NOTICE & DISCLAIMER are exist
+3. LICENSE & NOTICE exist
 4. Build successfully on XX OS version XXX
 5. No unexpected binary files
 6. Date is right in the NOTICE file
@@ -198,7 +221,7 @@ I checked:
 I checked:
 1. Download link/tag in mail are valid
 2. Checksum and GPG signatures are OK
-3. LICENSE & NOTICE & DISCLAIMER are exist
+3. LICENSE & NOTICE exist
 4. Build successfully on XX OS Version XX
 5. No unexpected binary files
 6. Date is right in the NOTICE file

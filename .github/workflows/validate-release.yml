@@ -1,358 +1,126 @@
-name: "Validate Apache Release"
+name: Validate Apache Release
 
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: Strict signed RC validation or unsigned source prevalidation
+        type: choice
+        options: [rc, source-prevalidation]
+        default: rc
       release_version:
+        description: Package and Maven release version
+        default: '1.8.0'
         required: true
-        description: svn release version
-        default: '1.7.0'
+      svn_path:
+        description: Path below dev/hugegraph, e.g. 1.8.0/RC1 (defaults to version)
       gpg_user:
+        description: Release signer's name or public key fingerprint
+        default: pengjunzhi
         required: true
-        description: current release manager (gpg username)
-        default: 'pengjunzhi'
-
+      staging_repository:
+        description: Apache Maven staging repository URL
+        default: https://repository.apache.org/content/groups/staging/
+        required: true
+      server_sha:
+        description: Full Server commit SHA (source prevalidation only)
+      toolchain_sha:
+        description: Full Toolchain commit SHA (source prevalidation only)
+      all_platforms:
+        description: Run source prevalidation on all four platforms (RC always does)
+        type: boolean
+        default: false
   push:
-    branches:
-      - 'release-*'
+    branches: ['release-*']
   pull_request:
-    branches:
-      - 'release-*'
+    branches: ['release-*']
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-    name: "Build On ${{ matrix.os }} (java-${{ matrix.java_version }})"
-    runs-on: ${{ matrix.os }}
-    env:
-      SCRIPT_PATH: hugegraph-dist/scripts/
-      URL_PREFIX: https://dist.apache.org/repos/dist/dev/hugegraph/
-      USER: ${{ inputs.gpg_user }}
-      # TODO: parse version from the running branch name & also adapt the input version
-      RELEASE_VERSION: ''
-      USE_STAGE: 'true' # Whether to include the stage repository.
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      platforms: ${{ steps.platforms.outputs.value }}
+      version: ${{ steps.platforms.outputs.version }}
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-      - name: Install JDK ${{ matrix.java_version }}
-        uses: actions/setup-java@v3
-        with:
-          java-version: ${{ matrix.java_version }}
-          distribution: 'adopt'
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Get Yarn path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - name: Cache Yarn packages
-        uses: actions/cache@v3
-        # use id to check `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
-        id: yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Use staged maven repo settings
-        if: ${{ env.USE_STAGE == 'true' }}
+      - id: platforms
+        env:
+          MODE: ${{ inputs.mode || 'rc' }}
+          ALL_PLATFORMS: ${{ inputs.all_platforms }}
+          INPUT_VERSION: ${{ inputs.release_version }}
+          RELEASE_BRANCH: ${{ github.base_ref || github.ref_name }}
         run: |
-          cp $HOME/.m2/settings.xml /tmp/settings.xml
-          cp -vf .github/configs/settings.xml $HOME/.m2/settings.xml && cat $HOME/.m2/settings.xml
-
-      - name: 1. Download SVN Sources
-        run: |
-          if [[ ${{ matrix.os }} =~ "macos" ]]; then
-            brew install svn
+          version="${INPUT_VERSION:-${RELEASE_BRANCH#release-}}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid release version: $version"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$MODE" == source-prevalidation && "$ALL_PLATFORMS" != true ]]; then
+            echo 'value=["ubuntu-latest"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'value=["ubuntu-latest","ubuntu-24.04-arm","macos-latest","macos-14"]' >> "$GITHUB_OUTPUT"
           fi
-          if [[ ${{ matrix.os }} =~ "ubuntu" ]]; then
-            sudo apt-get install -y subversion
-          fi
-          if ! svn ls "${URL_PREFIX}/${{ inputs.release_version }}/" >/dev/null 2>&1; then
-            echo "Release path not found: ${URL_PREFIX}/${{ inputs.release_version }}/" && exit 1
-          fi
-          echo "Using SVN prefix: ${URL_PREFIX}"
-          rm -rf dist/${{ inputs.release_version }}
-          svn co ${URL_PREFIX}/${{ inputs.release_version }} dist/${{ inputs.release_version }}
 
-      - name: 2. Check Environment & Import Public Keys
-        run: |
-          cd dist/${{ inputs.release_version }} || exit
-
-          shasum --version 1>/dev/null || exit
-          gpg --version 1>/dev/null || exit
-
-          wget https://downloads.apache.org/hugegraph/KEYS || exit
-          echo "Import KEYS:" && gpg --import KEYS
-          # TODO: how to trust all public keys in gpg list, currently only trust the first one
-          echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key $USER trust
-
-          echo "trust all pk"
-          for key in $(gpg --no-tty --list-keys --with-colons | awk -F: '/^pub/ {print $5}'); do
-              echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key "$key" trust
-          done
-
-      - name: 3. Check SHA512 & GPG Signature
-        run: |
-          cd dist/${{ inputs.release_version }} || exit
-
-          for i in *.tar.gz; do
-            echo "$i"
-            shasum -a 512 --check "$i".sha512 || exit
-            eval gpg "${GPG_OPT}" --verify "$i".asc "$i" || exit
-          done
-
-      - name: 4. Validate Source Packages
-        run: |
-          cd dist/${{ inputs.release_version }} || exit
-
-          ls -lh ./*.tar.gz
-          CATEGORY_X="\bGPL|\bLGPL|Sleepycat License|BSD-4-Clause|\bBCL\b|JSR-275|Amazon Software License|\bRSAL\b|\bQPL\b|\bSSPL|\bCPOL|\bNPL1|Creative Commons Non-Commercial|JSON"
-          CATEGORY_B="\bCDDL1|\bCPL|\bEPL|\bIPL|\bMPL|\bSPL|OSL-3.0|UnRAR License|Erlang Public License|\bOFL\b|Ubuntu Font License Version 1.0|IPA Font License Agreement v1.0|EPL2.0|CC-BY"
-          for i in *src.tar.gz; do
-            echo "$i"
-
-            # 4.1 package naming should follow post-graduation TLP naming
-            if [[ ! "$i" =~ ^apache-hugegraph ]]; then
-              echo "The package name $i should start with apache-hugegraph" && exit 1
-            fi
-            if [[ "$i" =~ "incubating" ]]; then
-              echo "The package name $i should not contain incubating in post-graduation releases" && exit 1
-            fi
-
-            tar xzvf "$i" || exit
-            pushd "$(basename "$i" .tar.gz)" || exit
-            echo "Start to check the package content: $(basename "$i" .tar.gz)"
-
-            # 4.2 check the directory include "NOTICE" and "LICENSE" file
-            if [[ ! -f "LICENSE" ]]; then
-              echo "The package should include LICENSE file" && exit 1
-            fi
-            if [[ ! -f "NOTICE" ]]; then
-              echo "The package should include NOTICE file" && exit 1
-            fi
-
-            # 4.3: ensure doesn't contains ASF CATEGORY X License dependencies in LICENSE and NOTICE files
-            COUNT=$(grep -E "$CATEGORY_X" LICENSE NOTICE | wc -l)
-            if [[ $COUNT -ne 0 ]]; then
-              grep -E "$CATEGORY_X" LICENSE NOTICE
-              echo "The package $i shouldn't include invalid ASF category X dependencies, but get $COUNT" && exit 1
-            fi
-          
-            # 4.4: ensure doesn't contains ASF CATEGORY B License dependencies in LICENSE and NOTICE files
-            COUNT=$(grep -E "$CATEGORY_B" LICENSE NOTICE | wc -l)
-            if [[ $COUNT -ne 0 ]]; then
-              grep -E "$CATEGORY_B" LICENSE NOTICE
-              echo "The package $i shouldn't include invalid ASF category B dependencies, but get $COUNT" && exit 1
-            fi
-
-            # 4.5 ensure doesn't contains empty directory or file
-            find . -type d -empty | while read -r EMPTY_DIR; do
-              find . -type d -empty
-              echo "The package $i shouldn't include empty directory: $EMPTY_DIR is empty" && exit 1
-            done
-            find . -type f -empty | while read -r EMPTY_FILE; do
-              find . -type f -empty
-              echo "The package $i shouldn't include empty file: $EMPTY_FILE is empty" && exit 1
-            done
-
-            # 4.6 ensure any file should less than 800kb
-            find . -type f -size +800k | while read -r FILE; do
-              find . -type f -size +800k
-              echo "The package $i shouldn't include file larger than 800kb: $FILE is larger than 800kb" && exit 1
-            done
-
-            # 4.7: ensure all binary files are documented in LICENSE
-            find . -type f | perl -lne 'print if -B' | while read -r BINARY_FILE; do
-              FILE_NAME=$(basename "$BINARY_FILE")
-              if grep -q "$FILE_NAME" LICENSE; then
-                echo "Binary file $BINARY_FILE is documented in LICENSE, please check manually"
-              else
-                echo "Error: Binary file $BINARY_FILE is not documented in LICENSE" && exit 1
-              fi
-            done
-
-            # 4.8 test compile the packages
-            if [[ (${{ matrix.java_version }} == 8 && "$i" =~ "computer") ]] || [[ "$i" =~ "hugegraph-ai" ]]; then
-              echo "Skip compile computer module in java8 & AI module in all versions"
-              popd || exit
-              continue
-            fi
-            # TODO: consider using commands that are entirely consistent with building binary packages
-            if [[ "$i" =~ "computer" ]]; then
-              cd computer
-            fi
-            mvn package -DskipTests -Papache-release -ntp -e || exit
-            ls -lh
-
-            popd || exit
-          done
-
-      - name: 5. Run Compiled Packages In Server
-        run: |
-          cd dist/${{ inputs.release_version }} || exit
-
-          ls -lh
-          pushd ./*hugegraph*${{ inputs.release_version }}*src/hugegraph-server/*hugegraph-server*${{ inputs.release_version }}* || exit
-          bin/init-store.sh || exit
-          sleep 3
-          bin/start-hugegraph.sh || exit
-          popd || exit
-
-      - name: 6. Run Compiled Packages In Toolchain (Loader & Tool & Hubble)
-        run: |
-          cd dist/${{ inputs.release_version }} || exit
-
-          pushd ./*toolchain*src || exit
-          ls -lh
-          pushd ./*toolchain*${{ inputs.release_version }} || exit
-          ls -lh
-
-          # 6.1 load some data first
-          echo "test loader"
-          pushd ./*loader*${{ inputs.release_version }} || exit
-          bin/hugegraph-loader.sh -f ./example/file/struct.json -s ./example/file/schema.groovy \
-            -g hugegraph || exit
-          popd || exit
-
-          # 6.2 try some gremlin query & api in tool
-          echo "test tool"
-          pushd ./*tool*${{ inputs.release_version }} || exit
-          bin/hugegraph gremlin-execute --script 'g.V().count()' || exit
-          bin/hugegraph task-list || exit
-          bin/hugegraph backup -t all --directory ./backup-test || exit
-          popd || exit
-
-          # 6.3 start hubble and connect to server 
-          echo "test hubble"
-          pushd ./*hubble*${{ inputs.release_version }} || exit
-          # TODO: add hubble doc & test it
-          cat conf/hugegraph-hubble.properties
-          bin/start-hubble.sh || exit
-          bin/stop-hubble.sh || exit
-          popd || exit
-
-          popd || exit
-          popd || exit
-          # stop server
-          pushd ./*hugegraph*${{ inputs.release_version }}*src/hugegraph-server/*hugegraph-server*${{ inputs.release_version }}* || exit
-          bin/stop-hugegraph.sh || exit
-          popd || exit
-
-          # clear source packages
-          rm -rf ./*src*
-          ls -lh
-
-      - name: 7. Validate Binary Packages
-        run: |
-          cd dist/${{ inputs.release_version }} || exit
-          CATEGORY_X="\bGPL|\bLGPL|Sleepycat License|BSD-4-Clause|\bBCL\b|JSR-275|Amazon Software License|\bRSAL\b|\bQPL\b|\bSSPL|\bCPOL|\bNPL1|Creative Commons Non-Commercial|JSON\.org"
-          for i in *.tar.gz; do
-            if [[ "$i" == *-src.tar.gz ]]; then
-              # skip source packages
-              continue
-            fi
-
-            echo "$i"
-
-            # 7.1 package naming should follow post-graduation TLP naming
-            if [[ ! "$i" =~ ^apache-hugegraph ]]; then
-              echo "The package name $i should start with apache-hugegraph" && exit 1
-            fi
-            if [[ "$i" =~ "incubating" ]]; then
-              echo "The package name $i should not contain incubating in post-graduation releases" && exit 1
-            fi
-
-            tar xzvf "$i" || exit
-            pushd "$(basename "$i" .tar.gz)" || exit
-            ls -lh
-            echo "Start to check the package content: $(basename "$i" .tar.gz)"
-
-            # 7.2 check root dir include "NOTICE"/"LICENSE" & "licenses" dir
-            if [[ ! -f "LICENSE" ]]; then
-              echo "The package should include LICENSE file" && exit 1
-            fi
-            if [[ ! -f "NOTICE" ]]; then
-              echo "The package should include NOTICE file" && exit 1
-            fi
-            if [[ ! -d "licenses" ]]; then
-              echo "The package should include licenses dir" && exit 1
-            fi
-
-            # 7.3: ensure doesn't contains ASF CATEGORY X License dependencies in LICENSE/NOTICE and licenses/* files
-            COUNT=$(grep -r -E "$CATEGORY_X" LICENSE NOTICE licenses | wc -l)
-            if [[ $COUNT -ne 0 ]]; then
-              grep -r -E "$CATEGORY_X" LICENSE NOTICE licenses
-              echo "The package $i shouldn't include invalid ASF category X dependencies, but get $COUNT" && exit 1
-            fi
-
-            # 7.4: ensure doesn't contains empty directory or file
-            find . -type d -empty | while read -r EMPTY_DIR; do
-              find . -type d -empty
-              echo "The package $i shouldn't include empty directory: $EMPTY_DIR is empty" && exit 1
-            done
-            find . -type f -empty | while read -r EMPTY_FILE; do
-              find . -type f -empty
-              echo "The package $i shouldn't include empty file: $EMPTY_FILE is empty" && exit 1
-            done
-
-            popd || exit
-          done
-
-      - name: 8. Run Binary Packages In Server
-        run: |
-          cd dist/${{ inputs.release_version }} || exit
-
-          # TODO: run pd & store
-          pushd ./*hugegraph*${{ inputs.release_version }}*/*hugegraph-server*${{ inputs.release_version }}* || exit
-          bin/init-store.sh || exit
-          sleep 3
-          bin/start-hugegraph.sh || exit
-          popd || exit
-
-      - name: 9. Run Binary Packages In ToolChain (Loader & Tool & Hubble)
-        run: |
-          cd dist/${{ inputs.release_version }} || exit
-
-          pushd ./*toolchain*${{ inputs.release_version }} || exit
-          ls -lh
-
-          # 9.1 loader some data first
-          echo "test loader"
-          pushd ./*loader*${{ inputs.release_version }} || exit
-          bin/hugegraph-loader.sh -f ./example/file/struct.json -s ./example/file/schema.groovy \
-            -g hugegraph || exit
-          popd || exit
-
-          # 9.2 try some gremlin query & api in tool
-          echo "test tool"
-          pushd ./*tool*${{ inputs.release_version }} || exit
-          bin/hugegraph gremlin-execute --script 'g.V().count()' || exit
-          bin/hugegraph task-list || exit
-          bin/hugegraph backup -t all --directory ./backup-test || exit
-          popd || exit
-
-          # 9.3 start hubble and connect to server
-          echo "test hubble"
-          pushd ./*hubble*${{ inputs.release_version }} || exit
-          # TODO: add hubble doc & test it
-          cat conf/hugegraph-hubble.properties
-          bin/start-hubble.sh || exit
-          bin/stop-hubble.sh || exit
-          popd || exit
-
-          popd || exit
-          # stop server
-          pushd ./*hugegraph*${{ inputs.release_version }}*/*hugegraph-server*${{ inputs.release_version }}* || exit
-          bin/stop-hugegraph.sh || exit
-          popd || exit
-
+  validate:
+    needs: prepare
+    name: Validate on ${{ matrix.os }} (Java 17)
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
-        # disable java8 because of server
-        java_version: ['11']
-        # Support multiple OS and architectures (x64 and arm64)
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-14]
+        os: ${{ fromJSON(needs.prepare.outputs.platforms) }}
+    env:
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      SVN_PATH: ${{ inputs.svn_path }}
+      GPG_USER: ${{ inputs.gpg_user || 'pengjunzhi' }}
+      STAGING_REPOSITORY: ${{ inputs.staging_repository || 'https://repository.apache.org/content/groups/staging/' }}
+      MODE: ${{ inputs.mode || 'rc' }}
+      SERVER_SHA: ${{ inputs.server_sha }}
+      TOOLCHAIN_SHA: ${{ inputs.toolchain_sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+      - name: Install validation tools
+        run: |
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            brew install subversion coreutils
+            echo "$(brew --prefix coreutils)/libexec/gnubin" >> "$GITHUB_PATH"
+          else
+            sudo apt-get update
+            sudo apt-get install -y subversion gnupg libgomp1
+          fi
+      - name: Check validator
+        run: |
+          bash -n dist/validate-release.sh dist/prepare-release.sh
+          python3 -m unittest discover -s dist/tests
+      - name: Build unsigned packages from exact revisions
+        if: env.MODE == 'source-prevalidation'
+        shell: bash
+        run: |
+          bash dist/prepare-release.sh "$RELEASE_VERSION" "$SERVER_SHA" "$TOOLCHAIN_SHA" "$RUNNER_TEMP/prevalidation" 2>&1 | tee "$RUNNER_TEMP/prevalidation-build.log"
+      - name: Validate packages
+        run: |
+          args=(--non-interactive --work-dir "$RUNNER_TEMP/release-validation" --staging-repository "$STAGING_REPOSITORY")
+          if [[ "$MODE" == source-prevalidation ]]; then
+            args+=(--source-prevalidation --sdk-repository "$RUNNER_TEMP/prevalidation/m2")
+            bash dist/validate-release.sh "${args[@]}" "$RELEASE_VERSION" "$GPG_USER" "$RUNNER_TEMP/prevalidation/packages" 17
+          else
+            args+=(--svn-path "${SVN_PATH:-$RELEASE_VERSION}")
+            bash dist/validate-release.sh "${args[@]}" "$RELEASE_VERSION" "$GPG_USER"
+          fi
+      - name: Retain validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-validation-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/release-validation/**/validation.log
+            ${{ runner.temp }}/release-validation/**/logs/**
+            ${{ runner.temp }}/release-validation/**/backup-*/**
+            ${{ runner.temp }}/prevalidation/origin.txt
+            ${{ runner.temp }}/prevalidation-build.log
+          if-no-files-found: warn

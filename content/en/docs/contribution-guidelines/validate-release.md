@@ -5,9 +5,29 @@ weight: 3
 ---
 
 > Note: this doc will be updated continuously.
-> Use Java 11 for runtime verification. Since version 1.5.0, components other than the client no longer support Java 8.
+> Use Java 17 to build and verify HugeGraph 1.8.0 release packages.
 >
 > Graduation note: Apache HugeGraph graduated in January 2026. Official release voting is now completed within the HugeGraph community (PMC binding votes on `dev@hugegraph.apache.org`), and no longer requires Incubator `general@incubator.apache.org` approval.
+
+## Automated release validation
+
+The workflow and `dist/validate-release.sh` use the same Java 17 checks. Specify the package version and SVN RC path separately,
+and use the Maven staging repository from the vote email. The four Server/Toolchain source and binary archives must include SHA512 and GPG signatures.
+The candidate directory must contain exactly these four archives; validate other components with their own workflows.
+You may copy these archives, checksums and signatures into a separate local directory; do not skip signatures.
+
+```bash
+bash dist/validate-release.sh --svn-path 1.8.0/RC1 \
+  --staging-repository https://repository.apache.org/content/repositories/<staging-id>/ 1.8.0 pengjunzhi
+# Existing local-package interface is preserved:
+bash dist/validate-release.sh 1.8.0 pengjunzhi /path/to/rc 17
+```
+
+Strict RC validation builds with fresh, separate Maven repositories and does not preinstall a local Server SDK.
+It validates both source-built and downloaded binaries through Server, Client, ordinary Loader, Tools and Hubble business assertions.
+Logs remain available after failures. The `source-prevalidation` workflow mode uses exact Server/Toolchain commit SHAs and unsigned archives;
+its result does not prove real RC signatures, downloads or remote staging dependency resolution.
+See [the validator instructions](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md) for local prevalidation and evidence paths.
 
 ## Verification
 
@@ -23,7 +43,7 @@ subsequent **email reply**.(The following are the core items)
 
 If there is no svn or gpg or wget environment locally, it is recommended to install it first 
 (windows recommend using WSL2 environment, or at least `git-bash`), also make sure to install java 
-(prefer Java 11) and maven software
+(Java 17) and maven software
 
 ```bash
 # 1. install svn
@@ -53,7 +73,7 @@ brew install wget
 svn co https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/
 # (Note) If svn downloads a file very slowly, 
 # you can consider wget to download a single file, as follows (or consider using a proxy)
-wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
+wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-1.x.x.tar.gz
 ```
 
 #### 2. check hash value
@@ -137,12 +157,16 @@ After decompressing `*hugegraph*src.tar.gz`, Do the following checks:
 6. Finally, make sure the source code works/compiles correctly
 
 ```bash
-# prefer to use/switch to `java 11` for the following operations (compiling/running) (Note: `Computer` only supports `java >= 11`)
+# prefer to use/switch to `java 17` for the following operations (compiling/running) (Note: `Computer` only supports `java >= 11`)
 # java --version
 
 # try to compile in the Unix env to check if it works well (-P is optional)
-mvn clean package -DskipTests -Dcheckstyle.skip=true -P stage
+mvn -s /path/to/staging-settings.xml -Dmaven.repo.local=/path/to/fresh-m2 \
+  clean install -Papache-release -DskipTests -Dgpg.skip=true
 ```
+
+The manual Maven command must use settings pointing to the staging repository from the vote email and a fresh local repository.
+Do not preinstall local Server SDK artifacts to hide missing staged dependencies. The automated validator configures these settings for you.
 
 ##### B. binary package
 
@@ -193,7 +217,7 @@ After the check & test, you should reply to the mail with the following content:
 I checked:
 1. Download link/tag in mail are valid
 2. Checksum and GPG signatures are OK
-3. LICENSE & NOTICE & DISCLAIMER are exist
+3. LICENSE & NOTICE exist
 4. Build successfully on XX OS & Version XX
 5. No unexpected binary files
 6. Date is right in the NOTICE file
@@ -210,7 +234,7 @@ and the PMC members should reply with `binding`, it's important for summary the 
 I checked:
 1. Download link/tag in mail are valid
 2. Checksum and GPG signatures are OK
-3. LICENSE & NOTICE & DISCLAIMER are exist
+3. LICENSE & NOTICE exist
 4. Build successfully on XX OS & Version XX
 5. No unexpected binary files
 6. Date is right in the NOTICE file

@@ -47,11 +47,13 @@ Restore 有两种模式： RESTORING 和 MERGING，恢复之前首先要根据�
 ```bash
 bin/hugegraph graph-mode-get
 ```
+
 该命令用于查看当前图模式，包括：NONE、RESTORING、MERGING、LOADING。
 
 ```bash
 bin/hugegraph graph-mode-set -m RESTORING
 ```
+
 该命令用于设置图模式，Restore 之前可以设置成 RESTORING 或者 MERGING 模式，例子中设置成 RESTORING。
 
 ##### 步骤2：Restore 数据
@@ -59,6 +61,7 @@ bin/hugegraph graph-mode-set -m RESTORING
 ```bash
 bin/hugegraph restore -t all -d data
 ```
+
 该命令将data目录下的全部元数据和图数据重新导入到 http://127.0.0.1:8080 的 hugegraph 图中。
 
 ##### 步骤3：恢复图模式
@@ -66,6 +69,7 @@ bin/hugegraph restore -t all -d data
 ```bash
 bin/hugegraph graph-mode-set -m NONE
 ```
+
 该命令用于恢复图模式为 NONE。
 
 至此，一次完整的图备份和图恢复流程结束。
@@ -100,7 +104,9 @@ Restore 时存在两种不同的模式： Restoring 和 Merging，另外，还�
 
 实现的设置图模式的 RESTful API 如下：
 
-##### 查看某个图的模式. **该操作需要管理员权限**
+##### 查看某个图的模式
+
+启用鉴权时需要图读取权限（`space_member` 或该图的所有者）。
 
 ###### Method & Url
 
@@ -124,7 +130,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 
 > 合法的图模式包括：NONE，RESTORING，MERGING，LOADING
 
-##### 设置某个图的模式. **该操作需要管理员权限**
+##### 设置某个图的模式
+
+启用鉴权时需要图空间管理权限（`space`）；管理员可按权限继承规则满足。
 
 ###### Method & Url
 

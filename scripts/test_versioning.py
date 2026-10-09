@@ -48,6 +48,14 @@ def _walk_docs_nav_pages(nodes):
         yield from _walk_docs_nav_pages(node.get("children", []))
 
 
+def _validate_parallel_fixture(args):
+    """Picklable validator fixture: workers read inputs and must precede copying."""
+    if (args.artifact.parent.parent / "aggregate").exists():
+        raise AssertionError("aggregate output created before validation finished")
+    if (args.artifact / "index.html").read_text(encoding="utf-8") != args.version:
+        raise AssertionError("wrong artifact submitted to worker")
+
+
 class VersionUrlTest(unittest.TestCase):
     def test_historical_pruning_allows_footer_without_shared_routes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
@@ -686,9 +694,10 @@ class VersionUrlTest(unittest.TestCase):
             seen: set[str] = set()
             self.assertEqual(versioning.write_error_documents(output, seen), 4)
             self.assertEqual(
-                (output / ".htaccess").read_text(encoding="utf-8"),
+                "\n".join(line for line in (output / ".htaccess").read_text(encoding="utf-8").splitlines() if not line.startswith("#")) + "\n",
                 'RedirectMatch 404 "(?i)(?:^|/)\\.git(?:/|$)"\n'
-                "ErrorDocument 404 /404.html\n",
+                "ErrorDocument 404 /404.html\n"
+                'SetEnv CSP_PROJECT_DOMAINS "https://widget.kapa.ai https://proxy.kapa.ai https://kapa-widget-proxy-la7dkmplpq-uc.a.run.app https://hcaptcha.com https://*.hcaptcha.com"\n',
             )
             self.assertEqual(
                 (output / "cn/.htaccess").read_text(encoding="utf-8"),
@@ -1780,11 +1789,132 @@ class VersionUrlTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 versioning.aggregate(args)
 
+    def test_aggregate_parallel_validation_propagates_failure_before_output(self) -> None:
+        # Exercise real process transport, including SystemExit from fail().
+        for workers in (1, 2):
+            with self.subTest(workers=workers), tempfile.TemporaryDirectory() as directory:
+                temp = Path(directory)
+                manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+                for entry in manifest["versions"]:
+                    entry["sha"] = "a" * 40
+                resolved = temp / "resolved.json"
+                resolved.write_text(json.dumps(manifest), encoding="utf-8")
+                source = temp / "artifacts/latest"
+                source.mkdir(parents=True)
+                # Identity is correct; worker validation must reject the wrong baseURL.
+                (source / ".version.json").write_text(
+                    json.dumps(dict(manifest["versions"][0], baseURL="https://wrong.invalid/")),
+                    encoding="utf-8",
+                )
+                output = temp / "aggregate"
+                output.mkdir()
+                sentinel = output / "previous-output"
+                sentinel.write_text("preserve on validation failure", encoding="utf-8")
+                args = argparse.Namespace(
+                    resolved_manifest=resolved, artifacts=temp / "artifacts",
+                    artifact_prefix="", site_origin=ORIGIN, select="latest",
+                    output=output, asf_profile=None, asf_whoami=None, workers=workers,
+                )
+                with self.assertRaisesRegex(SystemExit, "version metadata does not match"):
+                    versioning.aggregate(args)
+                self.assertEqual(sentinel.read_text(), "preserve on validation failure")
+                self.assertEqual(list(output.iterdir()), [sentinel])
+
+    def test_aggregate_parallel_copy_matches_serial_output(self) -> None:
+        # Keep the worker boundary real while isolating orchestration from the
+        # full site fixtures. Both modes must emit identical complete output.
+        outputs = []
+        for workers in (1, 2):
+            with self.subTest(workers=workers), tempfile.TemporaryDirectory() as directory:
+                temp = Path(directory)
+                entries = [
+                    {"id": "latest", "publishPath": "", "sha": "a" * 40},
+                    {"id": "1.7", "publishPath": "versions/1.7", "sha": "b" * 40},
+                ]
+                for entry in entries:
+                    source = temp / "artifacts" / entry["id"]
+                    source.mkdir(parents=True)
+                    (source / ".version.json").write_text(json.dumps(entry), encoding="utf-8")
+                    (source / "index.html").write_text(entry["id"], encoding="utf-8")
+                    (source / "404.html").write_text("not found", encoding="utf-8")
+                    for language in ("en", "cn"):
+                        (source / language).mkdir()
+                        (source / language / "sitemap.xml").write_text("<urlset/>", encoding="utf-8")
+                args = argparse.Namespace(
+                    resolved_manifest=temp / "resolved.json", artifacts=temp / "artifacts",
+                    artifact_prefix="", site_origin=ORIGIN, output=temp / "aggregate",
+                    asf_profile=None, asf_whoami=None, workers=workers,
+                )
+                with (
+                    mock.patch.object(versioning, "load_resolved_manifest", return_value={"versions": entries}),
+                    mock.patch.object(versioning, "require_metadata_matches"),
+                    mock.patch.object(versioning, "validate_artifact", _validate_parallel_fixture),
+                    mock.patch.object(versioning, "load_version_routes", return_value={}),
+                    mock.patch.object(versioning, "validate_aggregate_version_routes") as routes,
+                    mock.patch.object(versioning, "validate_output_security") as security,
+                ):
+                    versioning.aggregate(args)
+                    routes.assert_called_once()
+                    security.assert_called_once_with(args.output.resolve(), ORIGIN, workers=workers)
+                outputs.append({
+                    path.relative_to(args.output).as_posix(): path.read_bytes()
+                    for path in args.output.rglob("*") if path.is_file()
+                })
+        self.assertEqual(outputs[0], outputs[1])
+        self.assertEqual(outputs[0]["versions/1.7/index.html"], b"1.7")
+
+    def test_canonical_target_reuses_parsed_page(self) -> None:
+        entry = {"publishPath": "versions/1.7"}
+        for target, expected in (("cn/docs/guide/", "cn/docs/guide/"), ("about/", None)):
+            text = f'<link rel="canonical" href="{ORIGIN}versions/1.7/{target}">'
+            document = versioning.DocumentParser()
+            document.feed(text)
+            with mock.patch.object(versioning.DocumentParser, "feed", side_effect=AssertionError("reparsed")):
+                self.assertEqual(versioning._canonical_docs_target(document, entry), expected)
+            self.assertEqual(versioning.canonical_docs_target(text, entry), expected)
+
+    def test_public_version_switch_still_rejects_invalid_routes(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        routes = versioning.load_version_routes(manifest=manifest)
+        routes["schemaVersion"] = -1
+        with self.assertRaises(SystemExit):
+            versioning.version_switch_options(manifest, routes, "latest", "docs/", ORIGIN)
+
+    def test_aggregate_flattened_artifact_checks_identity_and_selection(self) -> None:
+        for changed_field, select in [(None, "latest"), ("id", "latest"),
+                                       ("sha", "latest"), (None, None)]:
+            with self.subTest(field=changed_field, select=select), tempfile.TemporaryDirectory() as directory:
+                temp = Path(directory)
+                manifest = json.loads((versioning.ROOT / "versions.json").read_text())
+                for entry in manifest["versions"]:
+                    entry["sha"] = "a" * 40
+                resolved = temp / "resolved.json"
+                resolved.write_text(json.dumps(manifest))
+                artifacts = temp / "artifacts"
+                artifacts.mkdir()
+                metadata = dict(manifest["versions"][0])
+                if changed_field:
+                    metadata[changed_field] = "wrong" if changed_field == "id" else "b" * 40
+                (artifacts / ".version.json").write_text(json.dumps(metadata))
+                args = argparse.Namespace(resolved_manifest=resolved, artifacts=artifacts,
+                                          artifact_prefix="staging-", artifact_suffix="-123",
+                                          select=select, site_origin=ORIGIN,
+                                          output=temp / "aggregate", asf_profile=None, asf_whoami=None)
+                with mock.patch.object(versioning, "validate_artifact", side_effect=RuntimeError("validated source")) as validate:
+                    if changed_field or select is None:
+                        with self.assertRaises(SystemExit):
+                            versioning.aggregate(args)
+                        validate.assert_not_called()
+                    else:
+                        with self.assertRaisesRegex(RuntimeError, "validated source"):
+                            versioning.aggregate(args)
+                        self.assertEqual(validate.call_args.args[0].artifact, artifacts)
+
     def test_aggregate_security_scan_runs_after_metadata_is_written(self) -> None:
         with tempfile.TemporaryDirectory() as temp_name:
             temp = Path(temp_name)
             output = temp / "aggregate"
-            source = temp / "artifacts/latest"
+            source = temp / "artifacts"
             source.mkdir(parents=True)
             entry = {"id": "latest", "publishPath": "", "sha": "a" * 40}
             (source / ".version.json").write_text(json.dumps(entry), encoding="utf-8")
@@ -1799,7 +1929,8 @@ class VersionUrlTest(unittest.TestCase):
                 asf_whoami="asf-staging-oink",
             )
 
-            def assert_complete_aggregate(path: Path, origin: str) -> None:
+            def assert_complete_aggregate(path: Path, origin: str, *, workers: int) -> None:
+                self.assertEqual(workers, 1)
                 self.assertEqual(path, output.resolve())
                 self.assertEqual(origin, ORIGIN)
                 self.assertTrue((path / ".asf.yaml").is_file())
@@ -1846,7 +1977,7 @@ class VersionUrlTest(unittest.TestCase):
             ):
                 versioning.aggregate(args)
 
-            security_scan.assert_called_once_with(output.resolve(), ORIGIN)
+            security_scan.assert_called_once_with(output.resolve(), ORIGIN, workers=1)
             validate_routes.assert_called_once()
             validate_args = validate_artifact.call_args.args[0]
             self.assertEqual(

@@ -13,10 +13,10 @@ Apache HugeGraph includes graph database, graph computing, and graph AI componen
 
 | I want to... | Start here |
 |----------|-----------|
-| **Run graph queries** (OLTP) | [HugeGraph Server Quickstart](quickstart/hugegraph/hugegraph-server) |
-| **Large-scale graph computing** (OLAP) | [Graph Computing Engine](quickstart/computing/hugegraph-computer) |
+| **Run graph queries** (OLTP) | [HugeGraph Server Quick Start](quickstart/hugegraph/hugegraph-server) |
+| **Run graph algorithms** (OLAP) | [HugeGraph Computing](quickstart/computing/hugegraph-vermeer) |
 | **Build Graph + AI applications** | [HugeGraph-AI](quickstart/hugegraph-ai/quick_start) |
-| **Batch import data** | [HugeGraph Loader](quickstart/toolchain/hugegraph-loader) |
+| **Batch import data** | [HugeGraph Loader](quickstart/toolchain/hugegraph-loader), [SeaTunnel](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/) |
 | **Visualize and manage graphs** | [Hubble Web UI](quickstart/toolchain/hugegraph-hubble) |
 
 ### Ecosystem Overview
@@ -26,9 +26,9 @@ Apache HugeGraph includes graph database, graph computing, and graph AI componen
 │                  Apache HugeGraph Ecosystem                      │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │ HugeGraph   │  │ HugeGraph   │  │ HugeGraph-AI            │  │
+│  │ HugeGraph   │  │ Vermeer*    │  │ HugeGraph-AI            │  │
 │  │ Core Engine │  │ Computer    │  │ (GraphRAG/ML/Python)    │  │
-│  │ (OLTP)      │  │ (OLAP)      │  │                         │  │
+│  │ (OLTP)      │  │ (Java BSP)  │  │                         │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 │         │               │                    │                   │
 │  ┌──────┴───────────────┴────────────────────┴──────────────┐   │
@@ -37,6 +37,8 @@ Apache HugeGraph includes graph database, graph computing, and graph AI componen
 │  └───────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+* Vermeer is the default graph computing entry; Computer runs Java BSP jobs.
 
 ### Core Components
 
@@ -49,7 +51,7 @@ Apache HugeGraph includes graph database, graph computing, and graph AI componen
 
 | Mode | Core Components | Suitable Scenarios | Data Scale |
 |---|---|---|---|
-| **Standalone** | Server + RocksDB | Development, testing, and small to medium-scale data | ≤ 2 TB |
+| **Standalone** | Server + RocksDB | Development, testing, Graph AI, and small to medium-scale production environments | ≤ 2 TB |
 | **Distributed** | Server + PD + Store (HStore) | Production, horizontal scaling, and multi-replica deployment | ≤ 1 PB |
 
 See the [system introduction](introduction/) and the corresponding quick-start guides for each component's scope and startup instructions.

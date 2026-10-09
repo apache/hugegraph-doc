@@ -5,19 +5,20 @@ weight: 16
 description: "Authentication（认证鉴权）REST 接口:管理用户、角色、权限和访问控制,实现细粒度的图数据安全机制。"
 ---
 
-> **版本变更说明**:
-> - 1.7.0+: Auth API 路径使用 GraphSpace 格式，如 `/graphspaces/DEFAULT/auth/users`，且 group/target 等 id 格式与 name 一致（如 `admin`）
-> - 1.5.x 及更早: Auth API 路径包含 graph 名称，group/target 等 id 格式类似 `-69:grant`。参考 [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
+> **版本说明**：本页介绍当前 `master` 的接口。历史用法请切换到对应多版本页面： [1.7 版认证 API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/auth/) 或
+> [1.5 版认证 API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/auth/)。
+>
+> 用户、图空间用户组、资源、关联和赋权接口使用 `/graphspaces/{graphspace}/auth/...`。登录、登出和 token 校验仍使用 `/auth/login`、`/auth/logout`、`/auth/verify`；图空间默认角色接口位于 `/graphspaces/{graphspace}/role`。源码保留顶层 `/auth/groups`，本页组接口示例使用图空间范围接口。
+
+下文 `{group_id}`、`{target_id}`、`{another_target_id}`、`{belong_id}` 和 `{access_id}` 均为占位符，使用前须替换为对应响应中的 `id`。将 ID 放入 URL 路径时，还须按 URL 路径组件规则编码。
 
 ### 10.1 用户认证与权限控制
 
 > 开启权限及相关配置请先参考 [权限配置](/cn/docs/config/config-authentication/) 文档
 
 ##### 用户认证与权限控制概述：
-HugeGraph 支持多用户认证、以及细粒度的权限访问控制，采用基于“用户 - 用户组 - 操作 - 资源”的 4 层设计，灵活控制用户角色与权限。 
-资源描述了图数据库中的数据，比如符合某一类条件的顶点，每一个资源包括 type、label、properties 三个要素，共有 18 种 type、
-任意 label、任意 properties 的组合形成的资源，一个资源的内部条件是且关系，多个资源之间的条件是或关系。用户可以属于一个或多个用户组，
-每个用户组可以拥有对任意个资源的操作权限，操作类型包括：读、写、删除、执行等种类。HugeGraph 支持动态创建用户、用户组、资源，
+HugeGraph 支持多用户认证、以及细粒度的权限访问控制，采用基于“用户 - 用户组 - 操作 - 资源”的 4 层设计，灵活控制用户角色与权限。  资源描述了图数据库中的数据，比如符合某一类条件的顶点，每一个资源包括 type、label、properties 三个要素，共有 18 种 type、
+任意 label、任意 properties 的组合形成的资源，一个资源的内部条件是且关系，多个资源之间的条件是或关系。用户可以属于一个或多个用户组，每个用户组可以拥有对任意个资源的操作权限，操作类型包括：读、写、删除、执行等种类。HugeGraph 支持动态创建用户、用户组、资源，
 支持动态分配或取消权限。初始化数据库时超级管理员用户被创建，后续可通过超级管理员创建各类角色用户，新创建的用户如果被分配足够权限后，可以由其创建或管理更多的用户。
 
 ##### 举例说明：
@@ -27,8 +28,6 @@ city: Beijing})
 
 ##### 接口说明：
 用户认证与权限控制的核心接口包括 5 类：UserAPI、GroupAPI、TargetAPI、BelongAPI、AccessAPI。除此之外，ManagerAPI 用于授予图空间级别的管理角色，LoginAPI 用于签发和校验 token，ProjectAPI 用于把多个图归为一组从而一次性授权。
-**注意**: 1.5.0 及之前，group/target 等 id 的格式类似 -69:grant，1.7.0 及之后，id 和 name 一致，如 admin [HugeGraph 1.5.x RESTful API](https://github.com/apache/hugegraph-doc/tree/release-1.5.0)
-
 ### 10.2 用户（User）API
 用户接口包括：创建用户，删除用户，修改用户，和查询用户相关信息接口。
 
@@ -248,13 +247,16 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 
 ### 10.3 用户组（Group）API
 用户组会赋予相应的资源权限，用户会被分配不同的用户组，即可拥有不同的资源权限。  
-用户组接口包括：创建用户组，删除用户组，修改用户组，和查询用户组相关信息接口。
+用户组接口包括：创建用户组，删除用户组，修改用户组，和查询用户组相关信息接口。  
+
+> GraphSpace 用户组名由服务端生成，格式为 `~hubble_role:v1:` + GraphSpace 名称的 base64url 编码 + `:` + 32 个十六进制字符。
+> 例如，`DEFAULT` 的名称和 ID 都是 `~hubble_role:v1:REVGQVVMVA:<32 hex>`。请求中的 `group_name` 只是客户端标签；后续请求请用创建响应返回的 ID。
 
 #### 10.3.1 创建用户组
 
 ##### Params
 
-- group_name: 用户组名称
+- group_name: 必填的客户端标签；持久化名称由服务端生成
 - group_description: 用户组描述
 
 ##### Request Body
@@ -266,6 +268,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 }
 ```
 
+`group_name` 为必填字段；图空间范围的用户组持久化名称由服务端生成，不能用此字段自定义。请从创建响应中复制 `id`，用于后续关联、授权、查询、更新或删除。
 
 ##### Method & Url
 
@@ -284,10 +287,10 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ```json
 {
     "group_creator": "admin",
-    "group_name": "all",
+    "group_name": "<服务端生成的图空间范围名称>",
     "group_create": "2020-11-11 15:46:08.791",
     "group_update": "2020-11-11 15:46:08.791",
-    "id": "-69:all",
+    "id": "{group_id}",
     "group_description": "group can do anything"
 }
 ```
@@ -302,7 +305,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 ```
 
 ##### Response Status
@@ -320,14 +323,13 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 ```
 
 ##### Request Body
-修改 group_description
+修改 group_description。GraphSpace 形式下这里的 `group_name` 应当省略，或等于服务端生成的名称，传入其他值会被拒绝并提示 "The name of group can't be updated"。
 ```json
 {
-    "group_name": "grant",
     "group_description": "grant"
 }
 ```
@@ -343,10 +345,10 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:grant
 ```json
 {
     "group_creator": "admin",
-    "group_name": "grant",
+    "group_name": "<服务端生成的图空间范围名称>",
     "group_create": "2020-11-12 09:50:58.458",
     "group_update": "2020-11-12 09:57:58.155",
-    "id": "-69:grant",
+    "id": "{group_id}",
     "group_description": "grant"
 }
 ```
@@ -376,10 +378,10 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
     "groups": [
         {
             "group_creator": "admin",
-            "group_name": "all",
+            "group_name": "<服务端生成的图空间范围名称>",
             "group_create": "2020-11-11 15:46:08.791",
             "group_update": "2020-11-11 15:46:08.791",
-            "id": "-69:all",
+            "id": "{group_id}",
             "group_description": "group can do anything"
         }
     ]
@@ -395,7 +397,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:all
+GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 ```
 
 ##### Response Status
@@ -409,10 +411,10 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/-69:all
 ```json
 {
     "group_creator": "admin",
-    "group_name": "all",
+    "group_name": "<服务端生成的图空间范围名称>",
     "group_create": "2020-11-11 15:46:08.791",
     "group_update": "2020-11-11 15:46:08.791",
-    "id": "-69:all",
+    "id": "{group_id}",
     "group_description": "group can do anything"
 }
 ```
@@ -483,7 +485,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/targets
             "properties": null
         }
     ],
-    "id": "-77:all",
+    "id": "{target_id}",
     "target_update": "2020-11-11 15:32:01.192"
 }
 ```
@@ -498,7 +500,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/targets
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 ```
 
 ##### Response Status
@@ -517,16 +519,13 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 ```
 
 ##### Request Body
 修改资源定义中的 type
 ```json
 {
-    "target_name": "gremlin",
-    "target_graph": "hugegraph",
-    "target_url": "127.0.0.1:8080",
     "target_resources": [
         {
             "type": "NONE"
@@ -546,7 +545,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
 ```json
 {
     "target_creator": "admin",
-    "target_name": "gremlin",
+    "target_name": "all",
     "target_url": "127.0.0.1:8080",
     "target_graph": "hugegraph",
     "target_create": "2020-11-12 09:34:13.848",
@@ -557,7 +556,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:gremlin
             "properties": null
         }
     ],
-    "id": "-77:gremlin",
+    "id": "{target_id}",
     "target_update": "2020-11-12 09:37:12.780"
 }
 ```
@@ -598,7 +597,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
                     "properties": null
                 }
             ],
-            "id": "-77:all",
+            "id": "{target_id}",
             "target_update": "2020-11-11 15:32:01.192"
         },
         {
@@ -614,7 +613,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
                     "properties": null
                 }
             ],
-            "id": "-77:grant",
+            "id": "{another_target_id}",
             "target_update": "2020-11-11 15:43:24.841"
         }
     ]
@@ -630,7 +629,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:grant
+GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 ```
 
 ##### Response Status
@@ -644,25 +643,27 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:grant
 ```json
 {
     "target_creator": "admin",
-    "target_name": "grant",
+    "target_name": "all",
     "target_url": "127.0.0.1:8080",
     "target_graph": "hugegraph",
-    "target_create": "2020-11-11 15:43:24.841",
+    "target_create": "2020-11-11 15:32:01.192",
     "target_resources": [
         {
-            "type": "GRANT",
+            "type": "ALL",
             "label": "*",
             "properties": null
         }
     ],
-    "id": "-77:grant",
-    "target_update": "2020-11-11 15:43:24.841"
+    "id": "{target_id}",
+    "target_update": "2020-11-11 15:32:01.192"
 }
 ```
 
 ### 10.5 关联角色（Belong）API
 关联用户和用户组的关系，一个用户可以关联一个或者多个用户组。用户组拥有相关资源的权限，不同用户组的资源权限可以理解为不同的角色。即给用户关联角色。  
 关联角色接口包括：用户关联角色的创建、删除、修改和查询。
+
+> 下例沿用 10.3 的用户组 ID。实际调用时请换成自己创建响应中的 ID。后续操作使用 Belong 创建响应里的 `id`，并将 URL 路径中的 `>` 编码为 `%3E`。
 
 #### 10.5.1 创建用户的关联角色
 
@@ -677,7 +678,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/-77:grant
 ```json
 {
   "user": "boss",
-    "group": "-69:all"
+    "group": "{group_id}"
 }
 ```
 
@@ -701,9 +702,9 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/belongs
     "belong_create": "2020-11-11 16:19:35.422",
     "belong_creator": "admin",
     "belong_update": "2020-11-11 16:19:35.422",
-  "id": "Sboss>-82>>S-69:all",
+  "id": "{belong_id}",
   "user": "boss",
-    "group": "-69:all"
+    "group": "{group_id}"
 }
 ```
 
@@ -716,7 +717,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:grant
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
 ##### Response Status
@@ -735,7 +736,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:gr
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:grant
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
 ##### Request Body
@@ -760,9 +761,9 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:grant
     "belong_create": "2020-11-12 10:40:21.720",
     "belong_creator": "admin",
     "belong_update": "2020-11-12 10:42:47.265",
-  "id": "Sboss>-82>>S-69:grant",
+  "id": "{belong_id}",
   "user": "boss",
-    "group": "-69:grant"
+    "group": "{group_id}"
 }
 ```
 
@@ -798,9 +799,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs
             "belong_create": "2020-11-11 16:19:35.422",
             "belong_creator": "admin",
             "belong_update": "2020-11-11 16:19:35.422",
-          "id": "Sboss>-82>>S-69:all",
+          "id": "{belong_id}",
           "user": "boss",
-            "group": "-69:all"
+            "group": "{group_id}"
         }
     ]
 }
@@ -815,7 +816,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:all
+GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
 ##### Response Status
@@ -831,15 +832,17 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/Sboss>-82>>S-69:all
     "belong_create": "2020-11-11 16:19:35.422",
     "belong_creator": "admin",
     "belong_update": "2020-11-11 16:19:35.422",
-  "id": "Sboss>-82>>S-69:all",
+  "id": "{belong_id}",
   "user": "boss",
-    "group": "-69:all"
+    "group": "{group_id}"
 }
 ```
 
 ### 10.6 赋权（Access）API
 给用户组赋予资源的权限，主要包含：读操作 (READ)、写操作 (WRITE)、删除操作 (DELETE)、执行操作 (EXECUTE) 等。  
 赋权接口包括：赋权的创建、删除、修改和查询。
+
+> 下例使用 10.3 和 10.4 返回的用户组 ID、资源 ID。实际调用时请换成自己的响应值。后续操作使用 Access 创建响应里的 `id`，并将 URL 路径中的 `>` 编码为 `%3E`。
 
 #### 10.6.1 创建赋权 (用户组赋予资源的权限)
 
@@ -860,8 +863,8 @@ access_permission：
 
 ```json
 {
-    "group": "-69:all",
-    "target": "-77:all",
+    "group": "{group_id}",
+    "target": "{target_id}",
     "access_permission": "READ"
 }
 ```
@@ -884,11 +887,11 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 {
     "access_permission": "READ",
     "access_create": "2020-11-11 15:54:54.008",
-    "id": "S-69:all>-88>11>S-77:all",
+    "id": "{access_id}",
     "access_update": "2020-11-11 15:54:54.008",
     "access_creator": "admin",
-    "group": "-69:all",
-    "target": "-77:all"
+    "group": "{group_id}",
+    "target": "{target_id}"
 }
 ```
 
@@ -902,7 +905,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ##### Method & Url
 
 ```
-DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S-77:all
+DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
 ##### Response Status
@@ -921,7 +924,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S
 ##### Method & Url
 
 ```
-PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S-77:all
+PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
 ##### Request Body
@@ -943,13 +946,13 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>12>S-77
 ```json
 {
     "access_description": "test",
-    "access_permission": "WRITE",
+    "access_permission": "READ",
     "access_create": "2020-11-12 10:12:03.074",
-    "id": "S-69:all>-88>12>S-77:all",
+    "id": "{access_id}",
     "access_update": "2020-11-12 10:16:18.637",
     "access_creator": "admin",
-    "group": "-69:all",
-    "target": "-77:all"
+    "group": "{group_id}",
+    "target": "{target_id}"
 }
 ```
 
@@ -983,11 +986,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses
         {
             "access_permission": "READ",
             "access_create": "2020-11-11 15:54:54.008",
-            "id": "S-69:all>-88>11>S-77:all",
+            "id": "{access_id}",
             "access_update": "2020-11-11 15:54:54.008",
             "access_creator": "admin",
-            "group": "-69:all",
-            "target": "-77:all"
+            "group": "{group_id}",
+            "target": "{target_id}"
         }
     ]
 }
@@ -1002,7 +1005,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ##### Method & Url
 
 ```
-GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>11>S-77:all
+GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
 ##### Response Status
@@ -1017,11 +1020,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/S-69:all>-88>11>S-77
 {
     "access_permission": "READ",
     "access_create": "2020-11-11 15:54:54.008",
-    "id": "S-69:all>-88>11>S-77:all",
+    "id": "{access_id}",
     "access_update": "2020-11-11 15:54:54.008",
     "access_creator": "admin",
-    "group": "-69:all",
-    "target": "-77:all"
+    "group": "{group_id}",
+    "target": "{target_id}"
 }
 ```
 

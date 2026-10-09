@@ -13,10 +13,10 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 
 | 我想要... | 从这里开始 |
 |----------|-----------|
-| **运行图查询** (OLTP) | [HugeGraph Server 快速开始](quickstart/hugegraph/hugegraph-server) |
-| **大规模图计算** (OLAP) | [图计算引擎](quickstart/computing/hugegraph-computer) |
+| **运行图查询** (OLTP) | [HugeGraph Server 快速上手](quickstart/hugegraph/hugegraph-server) |
+| **运行图算法** (OLAP) | [HugeGraph Computing](quickstart/computing/hugegraph-vermeer) |
 | **构建 Graph + AI 应用** | [HugeGraph-AI](quickstart/hugegraph-ai/quick_start) |
-| **批量导入数据** | [HugeGraph Loader](quickstart/toolchain/hugegraph-loader) |
+| **批量导入数据** | [HugeGraph Loader](quickstart/toolchain/hugegraph-loader)、[SeaTunnel](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/) |
 | **可视化管理图** | [Hubble Web UI](quickstart/toolchain/hugegraph-hubble) |
 
 ### 生态系统一览
@@ -26,9 +26,9 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 │                    Apache HugeGraph 生态                         │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │ HugeGraph   │  │ HugeGraph   │  │ HugeGraph-AI            │  │
+│  │ HugeGraph   │  │ Vermeer*    │  │ HugeGraph-AI            │  │
 │  │ Core Engine │  │ Computer    │  │ (GraphRAG/ML/Python)    │  │
-│  │ (OLTP)      │  │ (OLAP)      │  │                         │  │
+│  │ (OLTP)      │  │ (Java BSP)  │  │                         │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 │         │               │                    │                   │
 │  ┌──────┴───────────────┴────────────────────┴──────────────┐   │
@@ -37,6 +37,8 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 │  └───────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+* Vermeer 为默认图计算入口；Computer 用于 Java BSP 作业。
 
 ### 核心组件
 
@@ -49,7 +51,7 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 
 | 模式 | 核心组件 | 适用场景 | 数据规模 |
 |---|---|---|---|
-| **单机模式** | Server + RocksDB | 开发、测试和中小规模数据 | ≤ 2 TB |
+| **单机模式** | Server + RocksDB | 开发、测试、Graph AI 和中小规模生产环境 | ≤ 2 TB |
 | **分布式模式** | Server + PD + Store（HStore） | 生产环境、水平扩展和多副本部署 | ≤ 1 PB |
 
-各组件的适用范围和启动方式见[系统介绍](introduction/)及对应快速开始文档。
+各组件的适用范围和启动方式见[系统介绍](introduction/)及对应快速上手文档。

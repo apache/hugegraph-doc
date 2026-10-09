@@ -28,10 +28,10 @@ user(name=xx) -belong-> group(name=xx) -access(read)-> target(graph=graph1, reso
 
 By default, HugeGraph does **not enable** user authentication, and it needs to be enabled by modifying the configuration file.
 
-> Because the flexibility of graph query languages can introduce potential system security risks, do not expose Gremlin,
-> Cypher, or other query endpoints directly to the public network. In production, enable
-> [authentication](/docs/config/config-authentication/), an IP allowlist, and audit logging, and isolate the Server
-> process with [Docker or Kubernetes](/docs/quickstart/hugegraph/hugegraph-server/#31-use-docker-container-convenient-for-testdev).
+> [!WARNING]
+> **Production requires authentication**
+>
+> HugeGraph disables user authentication by default. In production, enable authentication and authorization, set a strong non-default administrator password, maintain the Server IP allowlist, and grant minimum permissions. Do not expose Gremlin, Cypher, or other query endpoints directly to the public network. Standard Server configuration writes authentication-proxy audit records to `audit-*.log`; retain these files and restrict read access. `auth.audit_log_rate` limits per-user output rather than serving as a dedicated audit-log on/off switch.
 
 You need to modify the configuration file to enable this feature. HugeGraph provides built-in authentication mode: `StandardAuthenticator`. This mode supports multi-user authentication and fine-grained permission control. Additionally, developers can implement their own `HugeAuthenticator` interface to integrate with their existing authentication systems.
 
@@ -43,23 +43,35 @@ curl -u 'admin:<password>' \
   http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
 ```
 
-**Warning**: Versions of HugeGraph-Server prior to 1.5.0 have a JWT-related security vulnerability in the Auth mode.
-Users are advised to update to a newer version or manually set the JWT token's secretKey. It can be set in the `rest-server.properties` file by setting the `auth.token_secret` information:
+> [!WARNING]
+> **Protect Basic Authentication credentials**
+>
+> Basic Authentication only Base64-encodes `username:password`; it does not encrypt credentials. Use HTTPS for network transmission. See [HTTPS configuration](config-https).
+
+> [!WARNING]
+> **JWT risks in older versions**
+>
+> HugeGraph-Server versions before 1.5.0 have JWT-related security risks in Auth mode. Upgrade affected versions or change the JWT `secretKey` according to that version's requirements.
+
+`auth.token_secret` is read from the authentication graph's configuration. The default graph is `hugegraph`, so its file is normally `conf/graphs/hugegraph.properties`; if `auth.graph_store` changes, use that graph's properties file.
+The source-code default generates 32 random bytes encoded as Base64, but does not write the value back to the file. Independently generated defaults cannot remain consistent across restarts or Server nodes. To preserve existing tokens across restarts or validate the same token on multiple nodes, explicitly configure the same strong random secret in each authentication graph configuration.
+
+Server encodes this string as UTF-8 for JJWT's HS256 signer, which requires at least 32 bytes. This is a byte-length requirement; an arbitrary 32-character string need not have sufficient randomness. The command below generates 32 random bytes and Base64-encodes them locally.
 
 ```properties
-auth.token_secret=XXXX   # should be a 32-chars string, consist of A-Z, a-z and 0-9
+# Set the same value in every Server node's authentication graph configuration
+auth.token_secret=<locally-generated-secret>
 ```
 
-You can also generate it with the following command:
+Generate the secret locally and transfer it securely into the authentication graph configuration. Do not commit the actual secret or expose it in public logs:
 
-```shell
-RANDOM_STRING=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)
-echo "auth.token_secret=${RANDOM_STRING}" >> rest-server.properties
+```bash
+openssl rand -base64 32
 ```
 
-Since 1.5.0 the option defaults to a key generated randomly at startup, so it does not have to be configured. Set it
-explicitly when tokens have to survive a restart, or when more than one server must accept the same token. Tokens expire
-after `auth.token_expire` seconds (default 86400).
+Since the default is generated at every startup, explicitly configure it when tokens must survive restarts or be accepted by multiple nodes. Token lifetime is controlled by `auth.token_expire`, defaulting to 86400 seconds.
+
+Both `auth.token_expire` and `auth.token_secret` belong to the authentication graph specified by `auth.graph_store`. Entries with the same names in `rest-server.properties` do not override that graph configuration.
 
 #### StandardAuthenticator Mode
 The `StandardAuthenticator` mode supports user authentication and permission control by storing user information in the database backend. This
@@ -81,7 +93,8 @@ Configure the authenticator and the graph that stores authorization data in `res
 ```properties
 auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
 auth.graph_store=hugegraph
-# The password of the built-in admin account, default is pa, it takes effect on the first startup
+# Used when Server first creates admin; replace public default pa with a strong password in production
+# For local persistent backends, init-store.sh prompts for a password when StandardAuthenticator is first initialized
 #auth.admin_pa=<your-admin-password>
 
 # Auth Client Config

@@ -280,6 +280,6 @@ These extensions give users more tuning space, particularly suited for scenarios
 
 ## Related Documentation
 
-- [ToplingDB Quick Start](/blog/2025/10/09/toplingdb-quick-start) – How to enable ToplingDB in HugeGraph
+- [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="en">}}) – How to enable ToplingDB in HugeGraph
 - [RocksDB Official Configuration Guide](https://github.com/facebook/rocksdb/wiki/Setup-Options-and-Basic-Tuning) – Learn the basic configuration options
 - [SidePlugin Wiki](https://github.com/topling/sideplugin-wiki-en/wiki) – Complete configuration reference for ToplingDB

@@ -2,8 +2,7 @@
  * HugeGraph additions around OINK's shell.
  *
  * This file deliberately does not replace OINK's command palette. It only
- * persists authored tree disclosures, makes a collapsed/dismissed sidebar
- * inert, and adds an explicit retry control to the existing search error.
+ * persists authored tree disclosures through OINK's public API and adds an explicit retry control to the existing search error.
  */
 (function (global) {
   'use strict';
@@ -32,245 +31,69 @@
     }
   }
 
-  function setTreeExpanded(button, expanded, documentObject) {
-    var target = documentObject.getElementById(
-      button.getAttribute('aria-controls'),
-    );
-    if (!target) return;
-    button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-    target.classList.toggle('td-is-open', expanded);
-    var label = expanded
-      ? button.dataset.tdLabelCollapse
-      : button.dataset.tdLabelExpand;
-    if (label) button.setAttribute('aria-label', label);
-  }
-
   function initTreePersistence(windowObject, documentObject, config) {
-    var buttons = Array.prototype.slice.call(
-      documentObject.querySelectorAll('[data-td-shell-tree-toggle][aria-controls]'),
-    );
-    if (!buttons.length) return;
-    var storage = safeStorage(windowObject);
-    var key =
-      'oink.sidebar.v2.' +
-      String(config.version || 'latest') +
-      '.' +
-      String(config.locale || 'en');
-    var valid = new Set(
-      buttons.map(function (button) {
-        return button.getAttribute('aria-controls');
-      }),
-    );
-    var saved = [];
-    var hasSavedState = false;
-    if (storage) {
-      try {
-        var stored = storage.getItem(key);
-        var parsed = JSON.parse(stored || '[]');
-        if (Array.isArray(parsed)) {
-          hasSavedState = stored !== null;
-          saved = parsed.filter(function (id) {
-            return typeof id === 'string' && valid.has(id);
-          });
-        }
-      } catch (_) {
-        saved = [];
-      }
-    }
-    var remembered = new Set(saved);
-    var docsRoot = /(?:^|\/)(?:cn\/)?docs\/?$/.test(windowObject.location.pathname);
-
-    buttons.forEach(function (button) {
-      var item = button.closest('li');
-      var activePath = item && item.classList.contains('td-active-path');
-      var control = button.getAttribute('aria-controls') || '';
-      var defaultOpen =
-        !hasSavedState &&
-        docsRoot &&
-        /_nav(?:start|components)-children$/.test(control);
-      setTreeExpanded(
-        button,
-        Boolean(activePath || remembered.has(control) || defaultOpen),
-        documentObject,
-      );
-      button.addEventListener('click', function () {
-        global.setTimeout(function () {
-          if (!storage) return;
-          var expanded = buttons
-            .filter(function (candidate) {
-              var candidateItem = candidate.closest('li');
-              return (
-                candidate.getAttribute('aria-expanded') === 'true' &&
-                !(candidateItem &&
-                  candidateItem.classList.contains('td-active-path'))
-              );
-            })
-            .map(function (candidate) {
-              return candidate.getAttribute('aria-controls');
-            });
-          try {
-            storage.setItem(key, JSON.stringify(expanded));
-          } catch (_) {
-            /* Active-path expansion remains the storage-free fallback. */
-          }
-        }, 0);
-      });
-    });
-
-    // Seed the new persistence schema once so the docs-home defaults survive
-    // reloads; later clicks replace this set with the user's choices.
-    if (storage && !hasSavedState) {
-      try {
-        var initial = buttons
-          .filter(function (button) {
-            var item = button.closest('li');
-            return (
-              button.getAttribute('aria-expanded') === 'true' &&
-              !(item && item.classList.contains('td-active-path'))
-            );
-          })
-          .map(function (button) {
-            return button.getAttribute('aria-controls');
-          });
-        storage.setItem(key, JSON.stringify(initial));
-      } catch (_) {
-        /* Ignore storage becoming unavailable after the probe. */
-      }
-    }
-  }
-
-  function initSidebarIsolation(windowObject, documentObject) {
-    var html = documentObject.documentElement;
-    var sidebar = documentObject.getElementById('td-shell-sidebar');
+    var sidebar = windowObject.OinkSidebar;
     if (!sidebar) return;
-    var restore = documentObject.querySelector('.hg-sidebar-restore');
-    var desktop = windowObject.matchMedia('(min-width: 768px)');
-
-    var panel = sidebar.querySelector('.td-shell-sidebar__panel');
-    // The native 16px panel edge cannot receive pointers while the sidebar is
-    // inert. Keep an equivalent pointer-only strip outside the inert subtree;
-    // the labelled navbar button remains the keyboard/touch equivalent.
-    var edge = documentObject.createElement('div');
-    edge.className = 'hg-sidebar-edge d-print-none';
-    edge.setAttribute('aria-hidden', 'true');
-    documentObject.body.appendChild(edge);
-    var closeTimer;
-    var pointerLockUntil = 0;
-    function dynamic() {
-      return desktop.matches &&
-        html.getAttribute('data-td-shell-sidebar') === 'collapsed';
-    }
-    function preview() {
-      if (!dynamic()) return;
-      windowObject.clearTimeout(closeTimer);
-      sidebar.classList.add('td-shell-sidebar--overlay');
-      sync();
-    }
-    function closePreview() {
-      windowObject.clearTimeout(closeTimer);
-      closeTimer = windowObject.setTimeout(function () {
-        if (!sidebar.contains(documentObject.activeElement)) {
-          sidebar.classList.remove('td-shell-sidebar--overlay');
-          sync();
-        }
-      }, 350);
-    }
-    edge.addEventListener('pointerenter', function (event) {
-      if (event.pointerType !== 'touch' && Date.now() >= pointerLockUntil) preview();
-    });
-    edge.addEventListener('pointerleave', closePreview);
-    if (restore) {
-      restore.addEventListener('pointerenter', function (event) {
-        if (event.pointerType !== 'touch' && Date.now() >= pointerLockUntil) preview();
-      });
-      restore.addEventListener('pointerleave', closePreview);
-      restore.addEventListener('keydown', function (event) {
-        if (event.key !== 'ArrowRight' || !dynamic()) return;
-        event.preventDefault();
-        preview();
-        var first = sidebar.querySelector('a[href], button');
-        if (first) first.focus();
-      });
-    }
-    if (panel) {
-      panel.addEventListener('pointerenter', function () {
-        windowObject.clearTimeout(closeTimer);
-      });
-      panel.addEventListener('pointerleave', closePreview);
-      panel.addEventListener('focusout', closePreview);
-      panel.addEventListener('keydown', function (event) {
-        if (event.key !== 'Escape' || !dynamic()) return;
-        event.preventDefault();
-        if (restore) restore.focus();
-        sidebar.classList.remove('td-shell-sidebar--overlay');
-        sync();
-      });
-    }
-
-    function sync() {
-      var collapsed =
-        html.getAttribute('data-td-shell-sidebar') === 'collapsed';
-      var drawerOpen =
-        html.getAttribute('data-td-shell-drawer') === 'open';
-      // OINK owns the persistent collapsed mode and pointer overlay. Keep
-      // focus inside an open preview safe when its native pointerleave fires.
-      if (desktop.matches && collapsed &&
-          !sidebar.classList.contains('td-shell-sidebar--overlay') &&
-          sidebar.contains(documentObject.activeElement)) {
-        sidebar.classList.add('td-shell-sidebar--overlay');
+    return sidebar.ready.then(function () {
+      var buttons = Array.prototype.slice.call(documentObject.querySelectorAll(
+        '#td-shell-sidebar [data-td-shell-tree-toggle][aria-controls], ' +
+        '[data-td-shell-aside] [data-td-shell-tree-toggle][aria-controls]',
+      ));
+      if (!buttons.length) return;
+      var storage = safeStorage(windowObject);
+      var scope = String(config.version || 'latest') + '.' + String(config.locale || 'en');
+      var key = 'oink.sidebar.v3.' + scope;
+      var valid = new Set(buttons.map(function (button) {
+        return button.getAttribute('aria-controls');
+      }));
+      var remembered = new Set();
+      var hasSavedState = false;
+      var legacyState = false;
+      if (storage) {
+        try {
+          var stored = storage.getItem(key);
+          if (stored === null) {
+            stored = storage.getItem('oink.sidebar.v2.' + scope);
+            legacyState = stored !== null;
+          }
+          var parsed = JSON.parse(stored || '[]');
+          if (Array.isArray(parsed)) {
+            hasSavedState = stored !== null;
+            remembered = new Set(parsed.filter(function (id) {
+              return typeof id === 'string' && valid.has(id);
+            }));
+          }
+        } catch (_) { /* Keep active-path and docs-home defaults. */ }
       }
-      var overlay = sidebar.classList.contains('td-shell-sidebar--overlay');
-      var isolated = desktop.matches ? collapsed && !overlay : !drawerOpen;
-      edge.hidden = !desktop.matches || !collapsed;
-      if (restore) restore.setAttribute('aria-expanded', String(!isolated));
-      if (restore) restore.hidden = !desktop.matches || !collapsed;
-      sidebar.inert = isolated;
-      if (isolated) sidebar.setAttribute('aria-hidden', 'true');
-      else sidebar.removeAttribute('aria-hidden');
-      if (
-        isolated &&
-        sidebar.contains(documentObject.activeElement) &&
-        restore &&
-        restore.offsetParent !== null
-      ) {
-        restore.focus();
-      }
-    }
-
-    new MutationObserver(sync).observe(html, {
-      attributes: true,
-      attributeFilter: ['data-td-shell-sidebar', 'data-td-shell-drawer'],
-    });
-    new MutationObserver(sync).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
-    desktop.addEventListener('change', sync);
-    documentObject
-      .querySelectorAll('[data-td-shell-sidebar-toggle], [data-td-shell-drawer-close]')
-      .forEach(function (button) {
-        button.addEventListener('click', function () {
-          var hadFocus = documentObject.activeElement === button;
-          // Match OINK's cooldown so a newly visible trigger under the pointer
-          // does not immediately undo an explicit keyboard collapse.
-          pointerLockUntil = Date.now() + 150;
-          // Run after OINK's native click listener regardless of chunk order.
-          global.setTimeout(function () {
-            if (dynamic() && sidebar.contains(button) && restore) {
-              restore.hidden = false;
-              restore.focus();
-              sidebar.classList.remove('td-shell-sidebar--overlay');
-            }
-            sync();
-            // Both external restore controls disappear when pinned. Transfer
-            // their focus after making the sidebar operable; hover and clicks
-            // that did not focus a trigger must not steal unrelated focus.
-            if (hadFocus && desktop.matches && !dynamic() &&
-                !sidebar.contains(button) && button.offsetParent === null) {
-              var collapse = sidebar.querySelector('.td-shell-sidebar__collapse');
-              if (collapse) collapse.focus();
-            }
-          }, 0);
-        }, true);
+      var docsRoot = /(?:^|\/)(?:cn\/)?docs\/?$/.test(windowObject.location.pathname);
+      buttons.forEach(function (button) {
+        var id = button.getAttribute('aria-controls');
+        var isAside = Boolean(button.closest('[data-td-shell-aside]'));
+        // v2 stored only the main tree: an absent aside id was not a choice
+        // to collapse it. v3 records both, including an explicitly empty set.
+        var defaultOpen = isAside
+          ? (!hasSavedState || legacyState) && sidebar.getState(id).expanded
+          : !hasSavedState && docsRoot && /_nav(?:start|components)-children$/.test(id);
+        // OINK preserves the active path and owns DOM, inert and ARIA state.
+        sidebar.setExpanded(id, remembered.has(id) || defaultOpen, { source: 'api' });
       });
-    sync();
+
+      function persist() {
+        if (!storage) return;
+        var expanded = buttons.filter(function (button) {
+          var item = button.closest('li');
+          var state = sidebar.getState(button.getAttribute('aria-controls'));
+          return state && state.expanded &&
+            !(item && item.classList.contains('td-active-path'));
+        }).map(function (button) { return button.getAttribute('aria-controls'); });
+        try { storage.setItem(key, JSON.stringify(expanded)); }
+        catch (_) { /* Storage can become unavailable after initialization. */ }
+      }
+      documentObject.addEventListener('oink:sidebar-disclosure', function (event) {
+        if (event.detail && event.detail.source === 'user' && valid.has(event.detail.id)) persist();
+      });
+      if (!hasSavedState || legacyState) persist();
+    });
   }
 
   function initScrollableTables(documentObject) {
@@ -455,7 +278,6 @@
     consumeVersionFallback(windowObject, documentObject, config);
     initVersionSwitching(windowObject, documentObject);
     initTreePersistence(windowObject, documentObject, config);
-    initSidebarIsolation(windowObject, documentObject);
     initScrollableTables(documentObject);
     initSearchRetry(windowObject, documentObject);
   }
@@ -464,7 +286,7 @@
     init: init,
     readConfig: readConfig,
     safeStorage: safeStorage,
-    setTreeExpanded: setTreeExpanded,
+    initTreePersistence: initTreePersistence,
     versionTarget: versionTarget,
     initVersionSwitching: initVersionSwitching,
     consumeVersionFallback: consumeVersionFallback,

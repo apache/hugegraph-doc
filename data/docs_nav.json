@@ -45,6 +45,9 @@
               "children": [
                 {
                   "page": "/docs/quickstart/toolchain/hugegraph-hubble"
+                },
+                {
+                  "page": "/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore"
                 }
               ]
             },
@@ -426,6 +429,11 @@
                 {
                   "page": "/docs/quickstart/toolchain/hugegraph-hubble",
                   "url": "/docs/quickstart/toolchain/hugegraph-hubble/",
+                  "children": []
+                },
+                {
+                  "page": "/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore",
+                  "url": "/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/",
                   "children": []
                 }
               ]
@@ -937,6 +945,12 @@
       "/docs/quickstart/toolchain/visualization/",
       "/docs/quickstart/toolchain/hugegraph-hubble/"
     ],
+    "/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/": [
+      "@group/components",
+      "/docs/quickstart/toolchain/",
+      "/docs/quickstart/toolchain/visualization/",
+      "/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/"
+    ],
     "/docs/quickstart/toolchain/import/": [
       "@group/components",
       "/docs/quickstart/toolchain/",
@@ -1380,7 +1394,8 @@
       "/docs/quickstart/toolchain/export-migration"
     ],
     "/docs/quickstart/toolchain/visualization/": [
-      "/docs/quickstart/toolchain/hugegraph-hubble"
+      "/docs/quickstart/toolchain/hugegraph-hubble",
+      "/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore"
     ],
     "/docs/quickstart/toolchain/import/": [
       "/docs/quickstart/toolchain/hugegraph-loader",

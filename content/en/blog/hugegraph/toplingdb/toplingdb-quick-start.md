@@ -1,5 +1,6 @@
 ---
 date: 2025-10-09
+slug: toplingdb-quick-start
 title: "ToplingDB Quick Start"
 linkTitle: "ToplingDB Quick Start"
 ---

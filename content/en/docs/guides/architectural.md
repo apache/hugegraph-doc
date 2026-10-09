@@ -4,27 +4,60 @@ linkTitle: "Architecture Overview"
 weight: 1
 ---
 
-### 1 Overview
+## Full-Stack Components
 
-As a full-stack graph system covering **Graph Database, Graph Computing, and Graph AI**, HugeGraph is centered around a high-performance graph engine (HugeGraph Server) and supports both OLTP and OLAP graph computation types. For the OLTP layer, it implements the [Apache TinkerPop3](https://tinkerpop.apache.org) framework and supports the [Gremlin](https://tinkerpop.apache.org/gremlin.html) and [Cypher](https://en.wikipedia.org/wiki/Cypher) query languages. It comes with a complete application toolchain and provides a pluggable backend storage driver framework.
+The HugeGraph ecosystem combines a graph database, graph computing engines, graph AI, and a toolchain with distinct responsibilities. HugeGraph Server provides OLTP graph database services; HugeGraph-Computer and Vermeer are independent OLAP engines; HugeGraph-AI provides graph AI capabilities. Toolchain clients, import tools, visualization, and operations tools provide entry points for applications and operators.
 
-Below is the overall architecture diagram of HugeGraph:
+![HugeGraph architecture: Toolchain, AI, Computer, and Vermeer connections to Server, PD, and Store](/docs/images/design/hugegraph-architecture-en.png)
 
-<div style="text-align: center;">
-  <img src="/docs/images/design/architectural-revised.png" alt="image">
-</div>
+Figure: Server uses HStore as an example backend; see the Mermaid diagram below for independent backends such as RocksDB and HBase. Vermeer and HugeGraph-Computer are independent OLAP engines. Dashed arrows indicate optional integration.
 
-HugeGraph consists of three layers of functionality: the application layer, the graph engine layer, and the storage layer.
+## Ecosystem Integration
 
-- Application Layer:
-  - [Hubble](/docs/quickstart/toolchain/hugegraph-hubble): A one-stop visual analysis platform that covers the entire process from data modeling to rapid data import, online and offline analysis, and unified graph management, realizing wizard-style operations for the entire graph application process.
-  - [Loader](/docs/quickstart/toolchain/hugegraph-loader): A data import component that can transform data from multiple data sources into graph vertices and edges and batch import them into the graph database.
-  - [Tools](/docs/quickstart/toolchain/hugegraph-tools): Command-line tools for deploying, managing, and backing up/restoring data in HugeGraph.
-  - [Computer](/docs/quickstart/computing/hugegraph-computer): A distributed graph processing system (OLAP), which is an implementation of [Pregel](https://kowshik.github.io/JPregel/pregel_paper.pdf) and can run on Kubernetes.
-  - [Client](/docs/quickstart/client/hugegraph-client): Client SDKs encapsulate the core operations for connecting to HugeGraph Server, managing schemas, reading and writing graph data, and running queries. HugeGraph currently provides [Java](/docs/quickstart/client/hugegraph-client/), [Python](/docs/quickstart/client/hugegraph-client-python/), and [Go](/docs/quickstart/client/hugegraph-client-go/) clients, while a Rust client is under development.
-- [Graph Engine Layer](/docs/quickstart/hugegraph/hugegraph-server):
-  - REST Server: Provides a RESTful API for querying graph/schema information, supports the [Gremlin](https://tinkerpop.apache.org/gremlin.html) and [Cypher](https://en.wikipedia.org/wiki/Cypher) query languages, and offers APIs for service monitoring and operations.
-  - Graph Engine: Supports both OLTP and OLAP graph computation types, with OLTP implementing the [Apache TinkerPop3](https://tinkerpop.apache.org) framework.
-  - Backend Interface: Implements the storage of graph data to the backend.
-- Storage Layer:
-  - Storage Backend: Version 1.7.0 supports RocksDB, HStore, HBase, and Memory. Custom backends can be added through plugins.
+```mermaid
+flowchart TB
+  Apps["Applications / Operations"] --> Toolchain["Toolchain"] --> Server["Server REST API"]
+  AI["AI"] -. REST .-> Server
+  Computer["Computer"] -. REST .-> Server
+  Vermeer["Vermeer"] -. PD .-> PD["PD"]
+  Vermeer -. Scan .-> Store["Store"]
+  Vermeer -. Write .-> Server
+```
+
+Optional connections do not mean every AI, Computer, or Vermeer task must connect to Server, PD, or Store. Computer and AI read and write through the Server REST API. Vermeer's HugeGraph input queries PD for partition metadata and scans HStore partitions directly through Store. With HugeGraph result output, it writes results back through the Server REST API.
+
+## Server Internals
+
+```mermaid
+flowchart TB
+  API["REST API / Gremlin"] --> Core["Core"] --> Adapter["Backend adapter"]
+  Adapter --> RocksDB["RocksDB"]
+  Adapter --> HBase["HBase"]
+  Adapter --> HStore["HStore"]
+  HStore --> PD["PD"]
+  HStore --> Store["Store"]
+```
+
+Server REST APIs and Gremlin send requests to Core, which reads and writes through a backend adapter. RocksDB and HBase are independent backends. The HStore adapter obtains cluster metadata and partition information from PD and sends graph operations to Store nodes. PD manages metadata and partitions; it does not carry graph data reads and writes.
+
+Current Server implementations include RocksDB, HBase, HStore, and memory backends. Memory is for testing or temporary use, not a persistent production deployment. See the [Server quick start](/docs/quickstart/hugegraph/hugegraph-server/) for production deployment options.
+
+Main Toolchain components:
+
+- [Hubble](/docs/quickstart/toolchain/hugegraph-hubble/): Connects to the graph database through a web interface to manage schemas, import data, and run queries.
+- [Loader](/docs/quickstart/toolchain/hugegraph-loader/): Converts multiple data sources and imports them into graph data in batches.
+- [Tools](/docs/quickstart/toolchain/hugegraph-tools/): Provides command-line deployment, management, backup, and restore operations.
+- [Client](/docs/quickstart/client/hugegraph-client/): Wraps Server connections, schema management, graph reads and writes, and queries. Clients are available for [Java](/docs/quickstart/client/hugegraph-client/), [Python](/docs/quickstart/client/hugegraph-client-python/), and [Go](/docs/quickstart/client/hugegraph-client-go/); a Rust client is under development.
+
+## Independent Graph Computing Engines
+
+- [Vermeer](/docs/quickstart/computing/hugegraph-vermeer/): Provides independent graph computing services and algorithm APIs.
+- [HugeGraph-Computer](/docs/quickstart/computing/hugegraph-computer/): A Java distributed graph computing engine based on BSP/Pregel.
+
+## Historical Architecture
+
+The following diagram is retained for historical reference. Its depiction of Server providing both OLTP and OLAP, and of various old backends, does not describe current master.
+
+> [!DETAILS]- Expand the historical architecture diagram
+>
+> ![Historical HugeGraph architecture, for reference only](/docs/images/design/architectural-revised.png)

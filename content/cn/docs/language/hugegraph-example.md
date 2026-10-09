@@ -58,10 +58,16 @@ HugeGraph 相对于 TitanDB 而言，其主要特点如下：
 
 HugeGraph 需要显示创建 Schema，因此需要依次创建 PropertyKey、VertexLabel、EdgeLabel，如果有需要索引还需要创建 IndexLabel。
 
+以下代码片段假定 Groovy 脚本已打开 HugeGraph 实例并将其绑定为 `graph`，同时设置遍历源 `g = graph.traversal()`。可从 [Gremlin Console 本地模式示例](/cn/docs/clients/gremlin-console/)开始；该页面的 `scripts/example.groovy` 会创建这两个变量。远程 Console 中的 `g` 是 Server 端遍历源别名，客户端本地没有 `graph` 对象；远程建模请使用本页之外的 Schema REST API。
+
 #### 2.1 Graph Schema
 
 ```groovy
-schema = hugegraph.schema()
+import org.apache.tinkerpop.gremlin.structure.T
+import org.apache.tinkerpop.gremlin.structure.Vertex
+
+schema = graph.schema()
+g = graph.traversal()
 
 schema.propertyKey("name").asText().ifNotExist().create()
 schema.propertyKey("age").asInt().ifNotExist().create()
@@ -115,6 +121,8 @@ pluto.addEdge("brother", neptune)
 pluto.addEdge("lives", tartarus, "reason", "no fear of death")
 pluto.addEdge("pet", cerberus)
 cerberus.addEdge("lives", tartarus)
+
+graph.tx().commit()
 ```
 
 #### 2.3 Indices

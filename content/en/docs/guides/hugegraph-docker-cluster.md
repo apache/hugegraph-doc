@@ -6,197 +6,252 @@ weight: 6
 
 ## Overview
 
-HugeGraph can quickly run a full distributed deployment (PD + Store + Server) with Docker Compose. This works on Linux and Mac.
+Docker Compose provides a quick way to run a complete HugeGraph distributed cluster (PD + Store + Server) on Linux or macOS.
 
 ## Prerequisites
 
 - Docker Engine 20.10+ or Docker Desktop 4.x+
 - Docker Compose v2
-- For a 3-node cluster on Mac: allocate at least **12 GB** memory (Settings → Resources → Memory). Adjust this on other platforms as needed.
+- For a three-node cluster on macOS, allocate at least **12 GB** of memory (Settings → Resources → Memory). Adjust resources to suit other platforms.
 
-> **Tested environments**: Linux (native Docker) and macOS (Docker Desktop with ARM M4).
+> **Tested environments**: Linux (native Docker) and macOS (Docker Desktop on ARM M4).
 
 ## Compose Files
 
-Four compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory of the HugeGraph main repository:
+The HugeGraph repository provides four Compose files in [`docker/`](https://github.com/apache/hugegraph/tree/master/docker):
 
-| File | Services | When to use it |
-|------|----------|----------------|
-| `docker-compose.yml` | 1 RocksDB Server + 1 Hubble | Default standalone quickstart, start here |
-| `docker-compose-hstore.yml` | 1 PD + 1 Store + 1 Server + 1 Hubble | Distributed local development |
+| File | Services | Use case |
+|------|------|----------|
+| `docker-compose.yml` | 1 RocksDB Server + 1 Hubble | Default standalone Quick Start; recommended starting point |
+| `docker-compose-hstore.yml` | 1 PD + 1 Store + 1 Server + 1 Hubble | Local distributed development |
 | `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble | HA reference and evaluation |
-| `docker-compose.dev.yml` | (override only) | Source build overlay for the minimal HStore topology, always used together with `docker-compose-hstore.yml` |
+| `docker-compose.dev.yml` | Override only | Source-build override for the minimal HStore topology; always combine with `docker-compose-hstore.yml` |
 
-The standalone topology uses `hugegraph/hugegraph:${HUGEGRAPH_VERSION:-latest}`. The HStore topologies use the matching `hugegraph/pd`, `hugegraph/store`, and `hugegraph/server` tags. Hubble is selected independently with `${HUBBLE_IMAGE:-hugegraph/hubble:latest}`.
+Standalone uses `hugegraph/hugegraph:${HUGEGRAPH_VERSION:-latest}`; HStore uses matching `hugegraph/pd`, `hugegraph/store`, and `hugegraph/server` tags. Hubble is selected separately by `${HUBBLE_IMAGE:-hugegraph/hubble:latest}`.
 
-> **Note**: The following steps assume you have already cloned or pulled the HugeGraph main repository locally, or at least have its `docker/` directory available.
+> The following steps assume you have cloned the `hugegraph` repository, or at least its `docker/` directory.
+
+HStore and HA instructions use current master Compose files and require PD, Store, and Server images built from the same master source. Do not combine these files with HStore component images tagged `1.7.0`. The standalone example separately pins `hugegraph/hugegraph:1.7.0`.
 
 ## Authentication Environment
 
-All topologies read the administrator password and the shared JWT secret from the Compose environment, normally a `docker/.env` file:
+This `.env` template applies to current master Compose. Angle-bracket values and `replace-with-your-password` are placeholders: replace them before loading the file or starting services. Follow the [master authentication environment instructions](https://github.com/apache/hugegraph/blob/master/docker/README.md#create-the-authentication-environment) to generate `.env`, then replace the administrator password placeholder:
 
 ```bash
 HUGEGRAPH_ADMIN_PASSWORD='replace-with-your-password'
-HUGEGRAPH_AUTH_TOKEN_SECRET='<32 random bytes, for example openssl rand -hex 32>'
+HUGEGRAPH_AUTH_TOKEN_SECRET='<32 random bytes, e.g. openssl rand -hex 32>'
+HG_PD_AUTH_SECRET_KEY='<24 random bytes, e.g. openssl rand -hex 24>'
 ```
 
-A non-empty `HUGEGRAPH_ADMIN_PASSWORD` enables Server authentication, and Hubble detects that mode through the Server API. Omitting it, or setting it to an empty value, disables authentication, which is only suitable for a trusted local environment. Keeping the same JWT secret preserves tokens when containers are recreated, and every Server replica in a multi-Server topology receives the same secret. The HA topology sets `HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET: "true"`, so it fails fast when a password is supplied without the shared secret. Do not commit `.env`.
+For master HStore and HA topologies, `HG_PD_AUTH_SECRET_KEY` is the PD REST Basic password, shared by all PD nodes, Server, and Hubble. Current master PD Docker images require it. Hubble does not read `.env` directly: generate the local configuration for its topology using this value before startup, as described below. Do not commit `.env` or generated `.local.properties` files.
 
-`HUGEGRAPH_ADMIN_PASSWORD` initializes the built-in `admin` account on the first authenticated startup. Changing it later does not rotate an existing password, use the user API for that.
+A nonempty `HUGEGRAPH_ADMIN_PASSWORD` enables Server authentication through `PASSWORD`; Hubble detects this mode through the Server API. It initializes the built-in `admin` password only on first initialization. An unset or empty value disables authentication and is suitable only for trusted local environments.
 
-## Single-Node Quickstart
+Current master Compose passes `HUGEGRAPH_AUTH_TOKEN_SECRET` as `HG_SERVER_AUTH_TOKEN_SECRET`. A shared secret lets master Server replicas verify the same tokens and retain token validity after container recreation; HA Compose requires an explicit secret. The standalone `hugegraph/hugegraph:1.7.0` entrypoint enables authentication through `PASSWORD` but ignores `HG_SERVER_AUTH_TOKEN_SECRET`, so this `.env` variable does not fix its JWT secret. For a stable JWT secret in 1.7.0, explicitly set `auth.token_secret` in its authentication graph configuration, `conf/graphs/hugegraph.properties`, and persist that file across container replacement. See the [authentication guide](/docs/config/config-authentication/) for graph paths and secret generation.
+
+Changing `HUGEGRAPH_ADMIN_PASSWORD` later does not rotate an existing password; use the user API.
+
+> [!WARNING]
+> **Production component access controls**
+>
+> In production, enable [Server authentication and authorization](/docs/config/config-authentication/) for graph APIs, maintain the Server IP allowlist, grant minimum permissions, and retain Server `audit-*.log` with restricted read access. Configure PD REST credentials and PD/Store gRPC, Raft, and REST network boundaries separately; Server Auth does not protect those ports. Expose PD/Store only to cluster nodes and trusted operations networks.
+
+## Standalone Quick Start
+
+This section pins the standalone image `hugegraph/hugegraph:1.7.0`. HStore/HA examples use master-built images; do not reuse this version for them.
 
 ```bash
-cd hugegraph/docker
-# Keep the version aligned with the latest release, for example 1.x.0
+cd "$(git rev-parse --show-toplevel)/docker"
+# Standalone RocksDB Server image example
 HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
 ```
 
 Verify:
 ```bash
-curl http://localhost:8080/versions
-curl http://localhost:8088/about        # Hubble
+curl -fsS http://localhost:8080/versions
+curl -fsS http://localhost:8088/about        # Hubble
 ```
 
-Hubble is published on host loopback (`127.0.0.1:8088`) by default. Set `HUBBLE_PUBLISH_HOST` only behind an HTTPS reverse proxy and trusted network controls.
+Hubble binds only to host loopback (`127.0.0.1:8088`) by default. Set `HUBBLE_PUBLISH_HOST` only behind an HTTPS reverse proxy and trusted network controls.
 
-## Minimal HStore Quickstart
+## Minimal HStore Quick Start (Current Master Images)
+
+Build PD, Store, and HStore Server images from the HugeGraph Server master repository root:
 
 ```bash
-cd hugegraph/docker
-HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-hstore.yml up -d --wait
+cd "$(git rev-parse --show-toplevel)"
+docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
+docker build -f hugegraph-store/Dockerfile -t hugegraph/store:local .
+docker build -f hugegraph-server/Dockerfile-hstore -t hugegraph/server:local .
+```
+
+From the repository root, enter `docker/`, load `.env`, and generate Hubble configuration for the minimal topology. A read-only bind mount cannot create a valid missing `hstore.local.properties`; generate it before startup:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/docker"
+set -a; . ./.env; set +a
+./set-hubble-pd-password.sh hstore
+HUGEGRAPH_VERSION=local HUGEGRAPH_PULL_POLICY=never \
+  docker compose -f docker-compose-hstore.yml up -d --wait
 ```
 
 Verify:
 ```bash
-curl http://localhost:8620/v1/health    # PD
-curl http://localhost:8520/v1/health    # Store
-curl http://localhost:8080/versions     # Server
-curl http://localhost:8088/about        # Hubble
+set -a; . ./.env; set +a
+curl -fsS http://localhost:8620/v1/health    # PD
+curl -fsS http://localhost:8520/v1/health    # Store
+curl -fsS http://localhost:8080/versions     # Server
+curl -fsS http://localhost:8088/about        # Hubble
+curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?Load .env first}" \
+  http://localhost:8620/v1/stores       # Check registered Stores with PD REST authentication
 ```
 
-To build this topology from local source instead of pulling images, add the development overlay and keep both files on every later lifecycle command:
+To build this topology from local source instead of pulling images, add the development override and keep both files in all subsequent lifecycle commands:
 
 ```bash
+cd "$(git rev-parse --show-toplevel)/docker"
+set -a; . ./.env; set +a
+./set-hubble-pd-password.sh hstore
 docker compose -f docker-compose-hstore.yml -f docker-compose.dev.yml up -d --build --wait
 ```
 
-## 3-Node Cluster Quickstart
+The override builds images tagged `dev`. If you already built `local` images above, start with the base Compose file and `HUGEGRAPH_VERSION=local`; keep the tag choices consistent.
+
+## Three-Node Cluster Quick Start (Current Master Images)
+
+HA Compose has no source-build override. First build `hugegraph/pd:local`, `hugegraph/store:local`, and `hugegraph/server:local` from the same master source as in the minimal HStore section, then load `.env` in `docker/`, generate HA Hubble configuration, and start:
 
 ```bash
-cd hugegraph/docker
-HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d --wait
+cd "$(git rev-parse --show-toplevel)/docker"
+set -a; . ./.env; set +a
+./set-hubble-pd-password.sh hstore-ha
+HUGEGRAPH_VERSION=local \
+  docker compose -f docker-compose-3pd-3store-3server.yml up -d --wait
 ```
 
-Built-in startup ordering:
-1. PD nodes start first and must pass the `/v1/health` check
-2. Store nodes start only after all PD nodes are healthy
-3. Server nodes start last, after all PD and Store nodes are healthy
+HA Hubble bind-mounts `conf/hubble/hstore-ha.local.properties`; generate this before startup. It is separate from the minimal topology's `hstore.local.properties`, but both use the same `HG_PD_AUTH_SECRET_KEY` from `.env`.
 
-Verify that the cluster is healthy:
+The default startup order is:
+1. PD nodes start first and must pass `/v1/health` checks.
+2. Store nodes start after all PD nodes are healthy.
+3. Server nodes start after all Store and PD nodes are healthy.
+
+Verify the cluster: PD `/v1/health` and `/v1/ready` probes require no authentication. Store registration and partition queries are protected PD REST management APIs: use Basic username `hg` and `HG_PD_AUTH_SECRET_KEY` from `.env`.
+
 ```bash
-curl http://localhost:8620/v1/health      # PD health
-curl http://localhost:8520/v1/health      # Store health
-curl http://localhost:8080/versions        # Server
-curl http://localhost:8620/v1/stores       # Registered stores
-curl http://localhost:8620/v1/partitions   # Partition assignment
+set -a; . ./.env; set +a
+curl -fsS http://localhost:8620/v1/health      # PD health check
+curl -fsS http://localhost:8520/v1/health      # Store health check
+curl -fsS http://localhost:8080/versions        # Server
+for port in 8620 8621 8622; do
+  curl -fsS "http://localhost:${port}/v1/ready" | grep -q '"ready":true' || exit 1
+done
+curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?Load .env first}" \
+  http://localhost:8620/v1/stores          # Authenticated Store registration query
+curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?Load .env first}" \
+  http://localhost:8620/v1/partitions      # Authenticated partition query
+curl -fsS http://localhost:8088/about           # Hubble
 ```
 
-With authentication on, a graph listing must reject an anonymous request and accept the administrator:
+With authentication enabled, graph listing should reject anonymous access and accept the administrator:
 
 ```bash
+set -a; . ./.env; set +a
 curl -o /dev/null -w '%{http_code}\n' \
-  http://localhost:8080/graphspaces/DEFAULT/graphs                      # expect 401
+  http://localhost:8080/graphspaces/DEFAULT/graphs                      # Expect 401
 curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
-  http://localhost:8080/graphspaces/DEFAULT/graphs                      # expect 200
+  http://localhost:8080/graphspaces/DEFAULT/graphs                      # Expect 200
 ```
 
-The other two Servers answer on `8081` and `8082`, and the other PD and Store nodes on `8621`/`8622` and `8521`/`8522`.
+The other Server nodes listen on `8081` and `8082`; the remaining PD and Store nodes use `8621`/`8622` and `8521`/`8522`.
 
 ## Environment Variable Reference
 
-The PD and Store entrypoints turn their variables into a `SPRING_APPLICATION_JSON` document and log the effective values at startup, so `docker logs` shows exactly what a container resolved. The Server entrypoint instead rewrites keys in `conf/graphs/hugegraph.properties` and `conf/rest-server.properties`.
+The following tables describe current master entrypoints and Compose files, not the standalone `hugegraph/hugegraph:1.7.0` environment-variable contract. PD and Store build `SPRING_APPLICATION_JSON` from their variables and log selected nonsensitive settings at startup. PD secrets are excluded from that summary. Use `docker logs` to check listed settings; an absent secret in the logs does not establish whether it was applied. Server instead rewrites keys in `conf/graphs/hugegraph.properties` and `conf/rest-server.properties`.
 
 ### PD Variables
 
-| Variable | Required | Default | Maps To |
-|----------|----------|---------|---------|
-| `HG_PD_GRPC_HOST` | Yes | (none) | `grpc.host` |
-| `HG_PD_RAFT_ADDRESS` | Yes | (none) | `raft.address` |
-| `HG_PD_RAFT_PEERS_LIST` | Yes | (none) | `raft.peers-list` |
-| `HG_PD_INITIAL_STORE_LIST` | Yes | (none) | `pd.initial-store-list` |
+| Variable | Required | Default | Configuration mapping |
+|------|------|--------|----------|
+| `HG_PD_GRPC_HOST` | Yes | None | `grpc.host` |
+| `HG_PD_RAFT_ADDRESS` | Yes | None | `raft.address` |
+| `HG_PD_RAFT_PEERS_LIST` | Yes | None | `raft.peers-list` |
+| `HG_PD_INITIAL_STORE_LIST` | Yes | None | `pd.initial-store-list` |
 | `HG_PD_GRPC_PORT` | No | `8686` | `grpc.port` |
 | `HG_PD_REST_PORT` | No | `8620` | `server.port` |
 | `HG_PD_DATA_PATH` | No | `/hugegraph-pd/pd_data` | `pd.data-path` |
 | `HG_PD_INITIAL_STORE_COUNT` | No | `1` | `pd.initial-store-count` |
+| `HG_PD_AUTH_SECRET_KEY` | Yes (current master Docker) | None | `auth.secret-key`; PD REST Basic password, also used by Server and Hubble |
 
-> **Deprecated aliases**: `GRPC_HOST` → `HG_PD_GRPC_HOST`, `RAFT_ADDRESS` → `HG_PD_RAFT_ADDRESS`, `RAFT_PEERS` → `HG_PD_RAFT_PEERS_LIST`, `PD_INITIAL_STORE_LIST` → `HG_PD_INITIAL_STORE_LIST`. A deprecated name is mapped to the new one only when the new one is unset, and the entrypoint logs a warning. The entrypoint exits with code 2 when any required variable is missing.
+> **Deprecated aliases**: `GRPC_HOST` → `HG_PD_GRPC_HOST`, `RAFT_ADDRESS` → `HG_PD_RAFT_ADDRESS`, `RAFT_PEERS` → `HG_PD_RAFT_PEERS_LIST`, `PD_INITIAL_STORE_LIST` → `HG_PD_INITIAL_STORE_LIST`. Old names are mapped only when new names are unset, with a warning. Missing required variables cause the entrypoint to exit with code 2.
 
 ### Store Variables
 
-| Variable | Required | Default | Maps To |
-|----------|----------|---------|---------|
-| `HG_STORE_PD_ADDRESS` | Yes | (none) | `pdserver.address` |
-| `HG_STORE_GRPC_HOST` | Yes | (none) | `grpc.host` |
-| `HG_STORE_RAFT_ADDRESS` | Yes | (none) | `raft.address` |
+| Variable | Required | Default | Configuration mapping |
+|------|------|--------|----------|
+| `HG_STORE_PD_ADDRESS` | Yes | None | `pdserver.address` |
+| `HG_STORE_GRPC_HOST` | Yes | None | `grpc.host` |
+| `HG_STORE_RAFT_ADDRESS` | Yes | None | `raft.address` |
 | `HG_STORE_GRPC_PORT` | No | `8500` | `grpc.port` |
 | `HG_STORE_REST_PORT` | No | `8520` | `server.port` |
 | `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` |
 
-> **Deprecated aliases**: `PD_ADDRESS` → `HG_STORE_PD_ADDRESS`, `GRPC_HOST` → `HG_STORE_GRPC_HOST`, `RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`
+> **Deprecated aliases**: `PD_ADDRESS` → `HG_STORE_PD_ADDRESS`, `GRPC_HOST` → `HG_STORE_GRPC_HOST`, `RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`.
 
 ### Server Variables
 
-Unlike PD and Store, the Server entrypoint requires nothing: every variable below is optional and only the ones that are set are written into the config files. A distributed deployment still needs at least `HG_SERVER_BACKEND` and `HG_SERVER_PD_PEERS`.
+Unlike PD and Store, Server has no mandatory entrypoint variables: only set values are written to configuration. Distributed deployment nevertheless requires at least `HG_SERVER_BACKEND` and `HG_SERVER_PD_PEERS`.
 
-| Variable | Default | Maps To |
-|----------|---------|---------|
-| `HG_SERVER_BACKEND` | template value (`rocksdb`, or `hstore` in the `hugegraph/server` image) | `backend` in `conf/graphs/hugegraph.properties` |
-| `HG_SERVER_PD_PEERS` | (none) | `pd.peers` in both `hugegraph.properties` and `rest-server.properties` |
+| Variable | Default | Configuration mapping |
+|------|--------|----------|
+| `HG_SERVER_BACKEND` | Template value (`rocksdb`, or `hstore` in `hugegraph/server`) | `backend` in `conf/graphs/hugegraph.properties` |
+| `HG_SERVER_PD_PEERS` | None | `pd.peers` in `hugegraph.properties` and `rest-server.properties` |
 | `HG_SERVER_USE_PD` | `false` | `usePD` in `rest-server.properties` |
 | `HG_SERVER_CLUSTER` | `hg-test` | `cluster` in `rest-server.properties` |
 | `HG_SERVER_REST_URL` | `http://0.0.0.0:8080` (set in the image) | `restserver.url` |
-| `HG_SERVER_MIN_FREE_MEMORY` | `64` (MB) | `restserver.min_free_memory` |
-| `HG_SERVER_INIT_STORE_ENABLED` | `true` | `init_store.enabled`, set `false` for PD/HStore deployments where the storage side owns the metadata |
-| `HG_SERVER_AUTH_TOKEN_SECRET` | generated when `PASSWORD` is set | `auth.token_secret` in both files, must be at least 32 bytes |
-| `HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET` | `false` | when `true`, refuses to start if `PASSWORD` is set without `HG_SERVER_AUTH_TOKEN_SECRET` |
-| `PASSWORD` | (none) | `auth.admin_pa`, and runs `bin/enable-auth.sh` to turn auth mode on |
-| `PRELOAD` | (none) | `true` preloads the sample graph from `scripts/example.groovy` |
-| `JAVA_OPTS` | set in the image | passed to `bin/start-hugegraph.sh -j` |
-| `HG_SERVER_STARTUP_TIMEOUT_S` | `120` (seconds) | passed to `bin/start-hugegraph.sh -t`, accepts `1`–`86400`; see Server Startup Timeout below |
-| `STORE_REST` | `store:8520` | Store REST endpoint that `wait-partition.sh` polls, hstore backend only |
-| `HG_SERVER_PD_REST_ENDPOINT` | derived by rewriting `:8686` to `:8620` in `pd.peers` | PD REST peers that `wait-storage.sh` polls |
-| `PD_AUTH_USER` / `PD_AUTH_PASSWORD` | `store` / `admin` | credentials `wait-storage.sh` uses against the PD REST API |
-| `WAIT_PARTITION_TIMEOUT_S` | `120` | how long `wait-partition.sh` waits for partition assignment |
+| `HG_SERVER_MIN_FREE_MEMORY` | `64`（MB） | `restserver.min_free_memory` |
+| `HG_SERVER_INIT_STORE_ENABLED` | `true` | `init_store.enabled`; set `false` for PD/HStore deployments whose metadata is managed by storage |
+| `HG_SERVER_AUTH_TOKEN_SECRET` | Generated when `PASSWORD` is set | `auth.token_secret` in both configuration files; at least 32 bytes |
+| `HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET` | `false` | When `true`, refuse startup if `PASSWORD` is set without `HG_SERVER_AUTH_TOKEN_SECRET` |
+| `PASSWORD` | None | `auth.admin_pa`; runs `bin/enable-auth.sh` to enable authentication |
+| `PRELOAD` | None | When `true`, preload the example graph from `scripts/example.groovy` |
+| `JAVA_OPTS` | Set in the image | Passed to `bin/start-hugegraph.sh -j` |
+| `HG_SERVER_STARTUP_TIMEOUT_S` | `120` seconds | Passed to `bin/start-hugegraph.sh -t`, range `1`–`86400`; see Server startup timeout below |
+| `STORE_REST` | `store:8520` | Store REST address polled by `wait-partition.sh`, for HStore only |
+| `HG_SERVER_PD_REST_ENDPOINT` | Derived from `pd.peers` by replacing `:8686` with `:8620` | PD REST address polled by `wait-storage.sh` |
+| `PD_AUTH_USER` | `store` | Basic username for PD REST calls from `wait-storage.sh` |
+| `PD_AUTH_PASSWORD` | Empty | PD REST Basic password; must match `HG_PD_AUTH_SECRET_KEY` when PD REST authentication is enabled |
+| `WAIT_PARTITION_TIMEOUT_S` | `120` | Partition allocation wait time in `wait-partition.sh` |
 
-`wait-storage.sh` waits up to 300 seconds for a store in state `Up`. That budget is fixed in the script and cannot be raised from the environment.
+> **Deprecated aliases**: `BACKEND` → `HG_SERVER_BACKEND`, `PD_PEERS` → `HG_SERVER_PD_PEERS`.
 
-> **Deprecated aliases**: `BACKEND` → `HG_SERVER_BACKEND`, `PD_PEERS` → `HG_SERVER_PD_PEERS`
+`wait-storage.sh` waits up to 300 seconds for an `Up` Store. This duration is hardcoded and cannot be changed through environment variables.
 
-`HG_SERVER_INIT_STORE_ENABLED` accepts only the spellings `HugeConfig` accepts, case-insensitively: `y`, `t`, `yes`, `on`, `true`, `n`, `f`, `no`, `off`, `false`. Anything else, `0` and `1` included, aborts the entrypoint.
+`HG_SERVER_INIT_STORE_ENABLED` accepts only the case-insensitive boolean values recognized by `HugeConfig`: `y`, `t`, `yes`, `on`, `true`, `n`, `f`, `no`, `off`, `false`. Other values, including `0` and `1`, terminate the entrypoint.
 
-The entrypoint writes `docker/init_complete` after a successful initialization and skips re-initialization on later startups, but still re-runs `bin/init-store.sh` so a disabled one revalidates its configuration on every start.
+After successful initialization, the entrypoint writes `docker/init_complete`; later starts skip reinitialization but still invoke `bin/init-store.sh` to revalidate configuration each time initialization is disabled.
 
 ### Compose Variables
 
-These are read by the Compose files rather than by the entrypoints:
+Compose files, rather than entrypoints, read these variables:
 
 | Variable | Default | Purpose |
-|----------|---------|---------|
-| `HUGEGRAPH_VERSION` | `latest` | Image tag for Server, PD, and Store |
-| `HUGEGRAPH_PULL_POLICY` | `missing` | `pull_policy` for those images, use `never` to keep locally built ones |
+|------|--------|------|
+| `HUGEGRAPH_VERSION` | `latest` | Server, PD, and Store image tag |
+| `HUGEGRAPH_PULL_POLICY` | `missing` | Image `pull_policy`; use `never` to retain locally built images |
 | `HUBBLE_IMAGE` | `hugegraph/hubble:latest` | Hubble image, selected independently of `HUGEGRAPH_VERSION` |
-| `HUBBLE_PULL_POLICY` | `missing` | `pull_policy` for the Hubble image |
-| `HUBBLE_PUBLISH_HOST` | `127.0.0.1` | Host interface Hubble's `8088` is published on |
-| `HUGEGRAPH_ADMIN_PASSWORD` | (none) | Passed to the Server as `PASSWORD` |
-| `HUGEGRAPH_AUTH_TOKEN_SECRET` | (none) | Passed to the Server as `HG_SERVER_AUTH_TOKEN_SECRET` |
+| `HUBBLE_PULL_POLICY` | `missing` | Hubble image `pull_policy` |
+| `HUBBLE_PUBLISH_HOST` | `127.0.0.1` | Host interface for publishing Hubble port `8088` |
+| `HUGEGRAPH_ADMIN_PASSWORD` | None | Passed to Server as `PASSWORD` |
+| `HUGEGRAPH_AUTH_TOKEN_SECRET` | None | Master Compose passes this to Server as `HG_SERVER_AUTH_TOKEN_SECRET`; the 1.7.0 image ignores it |
+| `HG_PD_AUTH_SECRET_KEY` | None | HStore PD REST Basic password; Compose supplies it to PD and Server and uses it to generate local Hubble configuration |
 
 ## Port Reference
 
-Ports published by the 3-node cluster:
+Published ports in the three-node cluster:
 
-| Service | Host Port | Container Port | Purpose |
-|---------|-----------|----------------|---------|
+| Service | Host port | Container port | Purpose |
+|------|-----------|----------|------|
 | pd0 | 8620 | 8620 | REST API |
 | pd0 | 8686 | 8686 | gRPC |
 | pd1 | 8621 | 8620 | REST API |
@@ -217,62 +272,69 @@ Ports published by the 3-node cluster:
 | server2 | 8082 | 8080 | Graph API |
 | hubble | 8088 | 8088 | Hubble UI, bound to `127.0.0.1` by default |
 
-The standalone topology publishes only `8080` and `8088`. The minimal HStore topology publishes `8620` (PD REST), `8520` (Store REST), `8080`, and `8088`. PD Raft uses `8610` inside the network and is not published by any topology.
+Standalone publishes only `8080` and `8088`; minimal HStore publishes `8620` (PD REST), `8520` (Store REST), `8080`, and `8088`. PD Raft uses internal port `8610`, unpublished in all topologies.
 
 ## Troubleshooting
 
-1. **Containers exit due to OOM (`exit code 137`)**: Increase Docker Desktop memory to at least 12 GB, or reduce the JVM heap settings for the process that is being killed.
+1. **Container OOM exit (code 137)**: Increase Docker Desktop memory beyond 12 GB or adjust JVM memory for the killed process.
 
-2. **Raft leader election timeout**: Check that `HG_PD_RAFT_PEERS_LIST` is identical on all PD nodes. Verify connectivity with `docker exec hg-pd0 ping pd1`.
+2. **Raft election timeout**: Verify every PD node has the same `HG_PD_RAFT_PEERS_LIST`. Check connectivity with `docker exec hg-pd0 ping pd1`.
 
-3. **Partition assignment does not complete**: Check `curl http://localhost:8620/v1/stores` and confirm that all 3 stores show `"state":"Up"` before partition assignment can finish.
+3. **Partition allocation incomplete**: Load `.env` in `docker/`, then check Store registration with PD REST Basic authentication:
 
-4. **Connection refused**: Ensure `HG_*` environment variables use container hostnames (`pd0`, `store0`) instead of `127.0.0.1`.
+   ```bash
+   set -a; . ./.env; set +a
+   curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?Load .env first}" http://localhost:8620/v1/stores
+   ```
 
-5. **Data survives a restart when you did not expect it to**: `docker compose down` keeps the named volumes. Use `docker compose down -v` to delete the topology's data as well.
+   PD can complete partition allocation once all three Stores report `"state":"Up"`.
 
-**Viewing runtime logs**: Use `docker logs <container-name>` (e.g. `docker logs hg-pd0`) to view logs directly without exec-ing into the container. The standalone `hugegraph/hugegraph` image sets `STDOUT_MODE=true`, so its server log goes to the container stdout. The `hugegraph/server` (HStore) image does not, so `docker logs` on a Server of an HStore topology shows only the entrypoint output; read `logs/hugegraph-server.log` inside the container for the rest.
+4. **Connection refused**: Use container hostnames (`pd0`, `store0`) in `HG_*` variables rather than `127.0.0.1`.
 
-## Container Supervision & Health Checks
+5. **Unexpected retained data**: `docker compose down` keeps named volumes. To delete topology data too, use `docker compose down -v`.
 
-> **Version note**: This behavior is **not present in the `1.7.0` images**. Use `HUGEGRAPH_VERSION=latest` or wait for the next release tag.
+**Runtime logs**: `docker logs <container-name>` (for example, `docker logs hg-pd0`) shows logs without entering containers. Standalone `hugegraph/hugegraph` sets `STDOUT_MODE=true` and sends service logs to stdout. The HStore `hugegraph/server` image does not set this variable: `docker logs` shows only entrypoint output; inspect `logs/hugegraph-server.log` inside the container for service logs.
 
-### Process Supervision Model
+## Container Monitoring and Health Checks
 
-Previously, all three Docker entrypoints ended with `tail -f /dev/null`, which kept the container running even if the Java process crashed. Docker's `restart: unless-stopped` policy never fired because the container never exited.
+> **Version scope**: This section describes current master Docker images; these behaviors **are not included in 1.7.0 images**. Use the master-built `local` images above or a `latest` image containing these changes.
 
-The entrypoints now supervise Java directly:
+### Process Monitoring
 
-- **PD and Store containers**: the entrypoint passes `-d false` to the startup script, which `exec`s Java directly. The container process IS the Java process: when Java exits (crash or clean shutdown), the container exits immediately and Docker's restart policy fires.
-- **Server container**: the entrypoint uses `tail --pid=$PID -f /dev/null` to block until Java exits. A `SIGTERM`/`SIGINT` trap forwards `docker stop` signals to Java and waits for clean shutdown (exits 0). If Java crashes, the entrypoint exits 1 so the restart policy fires.
-- `dumb-init` (PID 1 in all images) forwards signals from Docker to the entrypoint process.
+Previously, all three entrypoints ended with `tail -f /dev/null`, keeping containers alive even after Java crashed. Because containers never exited, Docker's `restart: unless-stopped` policy did not trigger.
+
+Entrypoints now monitor Java directly:
+
+- **PD and Store**: The entrypoint passes `-d false` to the startup script, which replaces itself with Java using `exec`. When Java exits, the container exits immediately and Docker's restart policy applies.
+- **Server**: The entrypoint waits with `tail --pid=$PID -f /dev/null`. `SIGTERM`/`SIGINT` traps forward Docker stop signals to Java and wait for graceful shutdown (exit 0). If Java crashes, the entrypoint exits with code 1, triggering the restart policy.
+- PID 1 in every image is `dumb-init`, which forwards Docker signals to the entrypoint.
 
 ### Server Startup Timeout
 
-`HG_SERVER_STARTUP_TIMEOUT_S` controls how long the Server startup script waits for the REST service to respond. It defaults to **120 seconds** when unset. The value must be a decimal integer without leading zeros, in the range **1–86400 seconds**. An empty string, `0`, a negative number, a fractional value, or an out-of-range value makes the entrypoint log an error and exit with code `1`.
+`HG_SERVER_STARTUP_TIMEOUT_S` controls how long the Server startup script waits for a REST response; the default is **120 seconds**. Values must be decimal integers without leading zeros, from **1 to 86400 seconds**. Empty strings, `0`, negative numbers, fractions, and out-of-range values log an error and exit with code `1`.
 
-The entrypoint passes this value to `bin/start-hugegraph.sh -t`. If the Server is not ready within that wait or its process exits early, startup fails and the container exits with code `1`; the configured restart policy may restart it. This budget does not include earlier storage initialization or waiting for the backend to become ready.
+The entrypoint passes this value to `bin/start-hugegraph.sh -t`. If Server does not become ready within the deadline or exits early, startup fails and the container exits with code `1`; its restart policy may restart it. This duration excludes earlier storage initialization and backend readiness waits.
 
-For example, from the HugeGraph repository's `docker/` directory, increase the standalone Server startup wait to 300 seconds (the Compose file forwards this variable to the container):
+For example, from the HugeGraph repository's `docker/` directory, extend the standalone Server wait to 300 seconds (Compose passes this variable to the container):
 
 ```bash
 HG_SERVER_STARTUP_TIMEOUT_S=300 HUGEGRAPH_VERSION=latest \
   docker compose -f docker-compose.yml up -d --wait
 ```
 
-This setting is independent of Docker health-check settings: `start_period`, `interval`, `timeout`, and `retries`. Those settings determine when the container is marked `unhealthy`; increasing only the health-check budget does not extend the Server startup script's deadline. Changing this variable does not automatically adjust health checks either, so review both settings when startup is slow.
+This setting is independent of Docker health-check `start_period`, `interval`, `timeout`, and `retries`. Those determine when a container becomes `unhealthy`; extending health-check grace periods does not extend the startup script deadline. Adjusting this variable does not update health-check settings, so check both for slow startup.
 
-### Health Check Endpoints
+### Health-Check Endpoints
 
-All four Docker images now include a `HEALTHCHECK` instruction. `docker ps` shows real health status. During the 90-second start period, failed checks do not count. After that, three consecutive failures mark the container as `unhealthy`.
+All four master Docker images include `HEALTHCHECK`. `docker ps` displays health status. Failures during the 90-second startup grace period do not count; three consecutive failures afterward mark a container `unhealthy`.
 
-| Image | Health endpoint | Port | Parameters |
-|-------|-----------------|------|------------|
+| Image | Health-check endpoint | Port | Parameters |
+|------|-------------|------|------|
 | `hugegraph/hugegraph` (standalone RocksDB Server) | `GET /versions` | 8080 | `--interval=15s --timeout=10s --start-period=90s --retries=3` |
-| `hugegraph/server` (HStore Server) | `GET /versions` | 8080 | same |
-| `hugegraph/pd` | `GET /v1/health` | 8620 | same |
-| `hugegraph/store` | `GET /v1/health` | 8520 | same |
+| `hugegraph/server` (HStore Server) | `GET /versions` | 8080 | Same as above |
+| `hugegraph/pd` | `GET /v1/health` | 8620 | Same as above |
+| `hugegraph/store` | `GET /v1/health` | 8520 | Same as above |
 
-The Compose files define their own health checks on top of these, so `--wait` and `depends_on: condition: service_healthy` work without relying on the image defaults. Those Compose checks use a shorter start period (30 to 120 seconds depending on the service and topology) and more retries.
+Compose defines additional health checks, so `--wait` and `depends_on: condition: service_healthy` do not depend on image-level checks. Compose uses shorter startup periods (30–120 seconds depending on service and topology) and more retries.
 
-> **Note**: The `-m true` flag (cron-based monitor) in `start-hugegraph.sh` is for VM/bare-metal deployments only. It is not installed or used in Docker images. Docker users should rely on the built-in `HEALTHCHECK` and Docker's restart policy instead.
+> **Note**: The cron-based `-m true` monitoring option in `start-hugegraph.sh` is for VM/bare-metal deployments. Docker images neither install nor use it; use built-in `HEALTHCHECK` and Docker restart policies.

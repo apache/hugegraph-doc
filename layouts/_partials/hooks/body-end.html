@@ -24,10 +24,13 @@
       "ask" (T "ui_ask_ai")
       "description" (T "ui_ask_ai_description")
       "latest" (T "ui_ask_ai_latest")
-      "noResults" (T "ui_ask_ai_no_results")
-      "retry" (T "ui_retry")
       "error" (T "ui_ai_error")
+      "community" (T "ui_ai_community")
   -}}
+  {{- $questions := slice -}}
+  {{- range hugo.Data.ai.questions -}}
+    {{- $questions = $questions | append (index . $lang) -}}
+  {{- end -}}
   {{- $clientConfig := dict
     "websiteId" $ai.websiteID
     "sourceGroupId" $sourceGroup
@@ -35,23 +38,25 @@
     "themeColor" $themeColor
     "historical" $historical
     "labels" $labels
+    "exampleQuestions" $questions
+    "communityURL" "https://github.com/apache/hugegraph/issues"
   -}}
 <script type="application/json" id="hg-ai-config">{{ $clientConfig | jsonify | safeJS }}</script>
 <button type="button" class="hg-ask-ai-launcher d-print-none" data-hg-ask-ai
-  data-hg-ai-submit="false" aria-haspopup="dialog"{{ if $historical }} aria-label="{{ index $labels "ask" }} — {{ index $labels "latest" }}"{{ end }}>
+  data-hg-ai-submit="false" hidden aria-haspopup="dialog"{{ if $historical }} aria-label="{{ index $labels "ask" }} — {{ index $labels "latest" }}"{{ end }}>
   <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
   <span>{{ index $labels "ask" }}</span>
 </button>
-<dialog class="hg-ai-consent" data-hg-ai-consent aria-labelledby="hg-ai-consent-title" aria-describedby="hg-ai-disclosure">
-  <h2 id="hg-ai-consent-title">{{ index $labels "ask" }}</h2>
+<section class="hg-ai-consent d-print-none" data-hg-ai-consent hidden aria-labelledby="hg-ai-consent-title" aria-describedby="hg-ai-disclosure">
+  <h2 class="visually-hidden" id="hg-ai-consent-title">{{ index $labels "ask" }}</h2>
   <p id="hg-ai-disclosure">{{ T "ui_ai_consent_description" }}</p>
   {{ if $historical }}<p>{{ index $labels "latest" }}.</p>{{ end }}
   <p><a href="https://www.kapa.ai/content/privacy-policy" target="_blank" rel="noopener noreferrer">{{ T "ui_ai_privacy" }}</a></p>
   <div class="hg-ai-consent-actions">
-    <button type="button" class="btn btn-secondary" data-hg-ai-cancel autofocus>{{ T "ui_ai_consent_cancel" }}</button>
-    <button type="button" class="btn btn-primary" data-hg-ai-continue>{{ T "ui_ai_consent_continue" }}</button>
+    <button type="button" class="btn btn-secondary" data-hg-ai-cancel>{{ T "ui_ai_consent_cancel" }}</button>
+    <button type="button" class="btn btn-primary" data-hg-ai-continue aria-haspopup="dialog" aria-describedby="hg-ai-disclosure">{{ T "ui_ai_consent_continue" }}</button>
   </div>
-</dialog>
+</section>
 <div class="hg-ai-status visually-hidden" role="status" aria-live="polite" data-hg-ai-status></div>
   {{- $adapter := resources.Get "js/kapa-adapter.js" -}}
   {{- if hugo.IsProduction }}{{ $adapter = $adapter | minify | fingerprint }}{{ end }}

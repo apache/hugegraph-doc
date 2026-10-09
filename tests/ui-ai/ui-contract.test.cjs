@@ -6,10 +6,10 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('disabled AI emits no widget or adapter markup', () => {
+test('AI is enabled behind the conditional adapter hook', () => {
   const config = read('hugo.yaml');
   const hook = read('layouts/_partials/hooks/body-end.html');
-  assert.match(config, /ai_search:\n\s+enabled: false/);
+  assert.match(config, /ai_search:\n\s+enabled: true/);
   assert.match(hook, /\{\{- if \$ai\.enabled -\}\}/);
   assert.equal(config.includes('widget.kapa.ai'), false);
 });
@@ -90,7 +90,9 @@ test('shell persistence uses the version and locale scoped key', () => {
   assert.match(source, /oink\.sidebar\.v2\./);
   assert.match(source, /config\.version/);
   assert.match(source, /config\.locale/);
-  assert.match(source, /sidebar\.inert = isolated/);
+  assert.match(source, /sidebar\.ready\.then/);
+  assert.match(source, /oink:sidebar-disclosure/);
+  assert.doesNotMatch(source, /initSidebarIsolation|setTreeExpanded/);
 });
 
 test('all three version selector surfaces expose one stable route contract', () => {

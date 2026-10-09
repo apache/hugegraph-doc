@@ -1,0 +1,3 @@
+params:
+  ai_search:
+    enabled: false

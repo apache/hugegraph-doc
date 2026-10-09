@@ -507,30 +507,6 @@
   display: none;
 }
 
-.td-nav-util.hg-sidebar-restore {
-  display: none;
-}
-
-.hg-sidebar-edge {
-  position: fixed;
-  inset-inline-start: 0;
-  top: 64px;
-  bottom: 0;
-  width: 16px;
-  z-index: 121;
-  border-inline-start: 3px solid var(--bs-border-color);
-
-  &:hover { border-inline-start-color: var(--bs-primary); }
-}
-
-@media (min-width: 768px) {
-  [data-td-shell-sidebar='collapsed'] {
-    .td-nav-util.hg-sidebar-restore:not([hidden]) {
-      display: inline-flex;
-    }
-  }
-}
-
 .hg-version-overflow {
   color: var(--bs-body-color);
   summary {
@@ -556,43 +532,8 @@
   font-size: 0.84rem;
 }
 
-.hg-ai-search-tail {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-  margin-inline: -6px;
-  padding-inline: 6px;
-  background: var(--td-shell-popover);
-  box-shadow: 0 -8px 16px color-mix(in srgb, var(--td-shell-popover) 88%, transparent);
-  border-block-start: 1px solid var(--bs-border-color);
-
-  &__button {
-    width: 100%;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    text-align: start;
-
-    &:hover,
-    &:focus-visible {
-      background: var(--hg-theme-color-soft);
-      color: inherit;
-    }
-  }
-}
-
-/* Keep the optional Ask AI tail discoverable without changing the OINK theme. */
-.td-shell-search__panel {
-  max-height: unquote('min(84vh, 720px)');
-}
-
-@media (max-width: 767.98px) {
-  .td-shell-search__panel {
-    max-height: unquote('min(86vh, 680px)');
-  }
-}
-
 .hg-ask-ai-launcher {
+  &[hidden] { display: none; }
   position: fixed;
   z-index: 1040;
   inset-inline-end: unquote('max(1rem, env(safe-area-inset-right))');
@@ -924,23 +865,55 @@
 }
 
 
-// Local disclosure renders before any third-party AI resource is requested.
+// Let documentation results scroll without covering them with the AI action.
+.td-shell-search__list:has(> [aria-labelledby="td-shell-search-group-actions"]) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  > .td-shell-search__group {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+.td-shell-search__group[aria-labelledby="td-shell-search-group-actions"] {
+  flex-shrink: 0;
+  background: var(--bs-body-bg);
+  border-top: 1px solid var(--bs-border-color);
+  box-shadow: 0 -.25rem .75rem rgba(0, 0, 0, .06);
+
+  .td-shell-search__item {
+    color: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), .08);
+  }
+}
+
+// The first-use notice opens beside the AI entry after explicit activation.
+
 .hg-ai-consent {
+  position: fixed;
+  z-index: 1040;
+  inset-inline-end: unquote('max(1rem, env(safe-area-inset-right))');
+  inset-block-end: unquote('calc(max(1rem, env(safe-area-inset-bottom)) + 4rem)');
   width: calc(100% - 2rem);
-  max-width: 28rem;
-  padding: 1.5rem;
+  max-width: 22rem;
+  padding: 1rem;
   border: 1px solid var(--bs-border-color);
   border-radius: .75rem;
   background: var(--bs-body-bg);
   color: var(--bs-body-color);
-  box-shadow: 0 .75rem 3rem rgba(0, 0, 0, .2);
-  &::backdrop { background: rgba(0, 0, 0, .4); }
-  h2 { font-size: 1.25rem; }
+  box-shadow: 0 .25rem 1rem rgba(0, 0, 0, .12);
+  font-size: .85rem;
+
+  &[hidden] { display: none; }
+  p { margin-bottom: .6rem; }
   .hg-ai-consent-actions {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: .75rem;
-    margin-top: 1.25rem;
+    gap: .5rem;
+    .btn { font-size: inherit; }
   }
 }

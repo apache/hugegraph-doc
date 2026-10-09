@@ -1,5 +1,5 @@
 ---
-title: "HugeGraph Python 客户端快速入门"
+title: "HugeGraph Python 客户端快速上手"
 linkTitle: "Python 客户端"
 weight: 2
 ---
@@ -10,7 +10,7 @@ weight: 2
 
 ## 环境要求
 
-- 客户端本身要求 Python 3.9 或更高版本。HugeGraph-AI workspace 要求 Python 3.10 或更高版本，CI 在 3.10 和 3.11 上运行客户端测试。
+- 客户端与 HugeGraph-AI workspace 均要求 Python 3.10 或更高版本，CI 在 3.10 和 3.11 上运行客户端测试。
 - HugeGraph Server 1.5.0 或更高版本。客户端会拒绝连接更低版本的 Server，此类场景请改用 v1.3.x 客户端。
 - `uv`（推荐）或 `pip`
 
@@ -18,14 +18,14 @@ weight: 2
 
 ## 安装
 
-发布到 PyPI 的包名是 `hugegraph-python`：
+发布到 PyPI 的发行包名是 `hugegraph-python`：
 
 ```bash
 uv pip install hugegraph-python
 # 也可以使用 pip install hugegraph-python
 ```
 
-> PyPI 上的发布版本落后于仓库代码。在源码中该发行包声明为 `hugegraph-python-client`，版本号与 HugeGraph-AI 其他模块保持一致，需要最新代码时请从源码安装。
+上述命令不固定版本号，默认安装最新发布版；发行信息见 [PyPI 发布页](https://pypi.org/project/hugegraph-python/)。源码目录名是 `hugegraph-python-client`，发行包名为 `hugegraph-python`；需要主线代码时，请从 HugeGraph-AI workspace 安装。
 
 如需使用仓库中的最新代码，请从 HugeGraph-AI 仓库根目录同步 workspace。`hugegraph-python-client` 是 workspace 成员，通过 `python-client` extra 暴露，因此仅执行 `uv sync` 不会安装它：
 

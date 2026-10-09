@@ -1,11 +1,11 @@
 ---
-title: "HugeGraph-Spark Quick Start"
+title: "HugeGraph-Spark 快速上手"
 linkTitle: "(Deprecated) Analysis with HugeGraph-Spark"
 draft: true
 weight: 100
 ---
 
-> HugeGraph-Spark 已停止维护。新的图计算任务请使用 [HugeGraph-Computer](/cn/docs/quickstart/computing/hugegraph-computer)。本文仅保留为旧版本使用记录。
+> HugeGraph-Spark 已停止维护。新的图计算任务默认建议使用 [Vermeer](/cn/docs/quickstart/computing/hugegraph-vermeer/)；需要 Java BSP/Pregel 引擎时，请查看 [HugeGraph-Computer](/cn/docs/quickstart/computing/hugegraph-computer/)。本文仅保留为旧版本使用记录。
 
 ### 1 HugeGraph-Spark 概述 (Deprecated)
 

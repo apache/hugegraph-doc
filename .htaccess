@@ -1,2 +1,7 @@
 RedirectMatch 404 "(?i)(?:^|/)\.git(?:/|$)"
 ErrorDocument 404 /404.html
+# Reuse the existing HugeGraph Kapa/hCaptcha integration, PR #459.
+# Source: https://github.com/apache/hugegraph-doc/commit/7662b8afb64265ed7412f6d704b8adfa9a836fff
+# Preserve ASF default CSP; no Google CAPTCHA or optional metrics domains.
+# Existing deployment evidence is not a separate VP Privacy approval record.
+SetEnv CSP_PROJECT_DOMAINS "https://widget.kapa.ai https://proxy.kapa.ai https://kapa-widget-proxy-la7dkmplpq-uc.a.run.app https://hcaptcha.com https://*.hcaptcha.com"

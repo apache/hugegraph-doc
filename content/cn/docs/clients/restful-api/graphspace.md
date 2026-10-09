@@ -14,8 +14,13 @@ description: "Graphspace（图空间）REST 接口：多租户与资源隔离的
 1. 目前图空间功能只支持在 hstore 模式下使用。
 2. 如果非 hstore 模式，则只能使用默认的图空间 `DEFAULT`，且不支持创建、删除和更新图空间的操作。
 3. 注意在 rest-server.properties 中，设置 `usePD=true`，并且 hugegraph.properties 中，设置 `backend=hstore`
-4. 图空间功能必须开启鉴权模式，默认账密为 admin:pa（见 `auth.admin_pa` 配置项），请务必修改默认密码，防止未授权访问。
+4. 生产环境必须启用 Server 认证与授权，并将新建图空间的 `auth` 设为 `true`。生产管理员密码必须替换公开默认值 `pa`（由 `auth.admin_pa` 配置）。
 5. 本页所有接口都只在 PD 模式下可用，单机模式下会返回 `400` 和 `GraphSpace management is not supported in standalone mode` 错误信息。
+
+> [!WARNING]
+> **限制图空间列表和详情接口的访问**
+>
+> `GET /graphspaces` 和 `GET /graphspaces/{graphspace}` 均未声明 `@RolesAllowed`；Server 未启用鉴权时这两个接口可匿名调用，启用鉴权后也没有方法级管理员角色限制。详情响应包含 `dp_username` 和 `dp_password`。生产环境必须将 `white_ip.status` 设为 `enable` 并通过 [IP 白名单 API](/cn/docs/clients/restful-api/other/) 启用、维护名单。网关必须按调用者身份或角色，仅允许管理员和可信运维调用方访问这两条路径；只限制来源 IP 范围仍会让同一网段的普通已认证业务账号读取 DP 凭据。Server 网络策略必须仅允许可信网关的出口地址访问 API 端口，阻断客户端绕过网关的直连路径。网关须记录这两条路径的调用身份、来源和结果；Server `audit-*.log` 用于鉴权授权记录，不能替代这两条路径的网关访问审计。业务账号须按最小权限授权。
 
 #### 2.0.1 创建一个图空间
 
@@ -36,7 +41,7 @@ POST http://localhost:8080/graphspaces
 | description                  | 否       | String  |           |                                                                 | 图空间的描述信息                                                                                     |
 | cpu_limit                    | 是       | Int     |           | > 0                                                             | CPU 核数                                                                                             |
 | memory_limit                 | 是       | Int     |           | > 0                                                             | 内存大小，单位 GB                                                                                    |
-| storage_limit                | 是       | Int     |           | > 0                                                             | 图空间的数据占据的磁盘空间上限                                                                       |
+| storage_limit                | 是       | Int     |           | > 0                                                             | 图空间的数据占据的磁盘空间上限，单位 GB                                                              |
 | compute_cpu_limit            | 否       | Int     | 0         | >= 0                                                            | 针对图计算的额外资源配置，单位 cores。当该字段不配置或者配置为 0 时，会由 cpu_limit 字段的值进行覆盖 |
 | compute_memory_limit         | 否       | Int     | 0         | >= 0                                                            | 针对图计算的额外内存配置，单位 GB。当该字段不配置或者配置为 0 时，会由 memory_limit 字段的值进行覆盖 |
 | oltp_namespace               | 否       | String  | ""        |                                                                 | OLTP 的 k8s 命名空间                                                                                 |
@@ -180,7 +185,7 @@ GET http://localhost:8080/graphspaces/gs1
 }
 ```
 
-> `dp_username` 和 `dp_password` 由图空间名称推导得到，只有该接口会返回这两个字段。
+> 上述 `dp_username` 和 `dp_password` 是文档示例值。实际详情响应会返回对应图空间的 DP 凭据，应按敏感凭据保护。
 
 #### 2.0.4 更新某个图空间
 
@@ -204,7 +209,7 @@ GET http://localhost:8080/graphspaces/gs1
 | description                  | 否       | String |        |                            | 图空间的描述信息                                                                                     |
 | cpu_limit                    | 是       | Int    |        | > 0                        | OLTP HugeGraphServer 的 CPU 核数                                                                     |
 | memory_limit                 | 是       | Int    |        | > 0                        | OLTP HugeGraphServer 的内存大小，单位 GB                                                             |
-| storage_limit                | 是       | Int    |        | > 0                        | 图空间的数据占据的磁盘空间上限                                                                       |
+| storage_limit                | 是       | Int    |        | > 0                        | 图空间的数据占据的磁盘空间上限，单位 GB                                                              |
 | compute_cpu_limit            | 否       | Int    | 0      | >= 0                       | 针对图计算的额外资源配置，单位 cores。当该字段不配置或者配置为 0 时，会由 cpu_limit 字段的值进行覆盖 |
 | compute_memory_limit         | 否       | Int    | 0      | >= 0                       | 针对图计算的额外内存配置，单位 GB。当该字段不配置或者配置为 0 时，会由 memory_limit 字段的值进行覆盖 |
 | oltp_namespace               | 否       | String |        |                            | OLTP 的 k8s 命名空间                                                                                 |

@@ -105,15 +105,15 @@ params:
   offline_search_index: summary
   offline_search_summary_length: 70
   offline_search_max_results: 10
-  # Optional enhancement: keep disabled until both reviewed latest-only Kapa
-  # source groups and the staging CSP/corpus acceptance gates pass.
+  # Consent-gated Kapa; set false to disable. Rollout evidence and source
+  # readiness are tracked in scripts/kapa-rollout.md and issue #495.
   ai_search:
-    enabled: false
+    enabled: true
     provider: kapa
     website_id: 0b277570-4740-451e-96fa-1e4ac1ac5e88
     source_groups:
-      en: ''
-      cn: ''
+      en: 32769e2a-abfc-42f6-891f-09af6c123eb2
+      cn: ddce6795-32c8-40ac-8b27-73d73facd042
   footer_center_info: ''
   # The compact ASF footer owns the legal line; global controls stay in header.
   copyright: false

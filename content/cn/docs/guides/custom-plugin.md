@@ -35,7 +35,7 @@ weight: 3
 
 ##### 1.2 添加`hugegraph-core` Jar 包依赖
 
-maven pom.xml 详细内容如下：
+maven pom.xml 详细内容如下。`hugegraph.version` 应与要兼容的 Server 版本一致；此处以当前主线版本 1.7.0 为例：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -52,11 +52,15 @@ maven pom.xml 详细内容如下：
 
     <name>hugegraph-plugin-demo</name>
 
+    <properties>
+        <hugegraph.version>1.7.0</hugegraph.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-core</artifactId>
-            <version>${project.version}</version>
+            <version>${hugegraph.version}</version>
         </dependency>
     </dependencies>
 </project>
@@ -110,7 +114,7 @@ public class RocksDBStoreProvider extends AbstractBackendStoreProvider {
 
 ###### 2.1.2 实现接口 BackendStore
 
-BackendStore 接口定义如下：
+BackendStore 的核心抽象方法如下（接口默认辅助方法略）：
 
 ```java
 public interface BackendStore {
@@ -150,6 +154,9 @@ public interface BackendStore {
 
     // Query data
     Iterator<BackendEntry> query(Query query);
+    Iterator<Iterator<BackendEntry>> query(Iterator<Query> queries,
+                                           Function<Query, Query> queryWriter,
+                                           HugeGraph hugeGraph);
     Number queryNumber(Query query);
 
     // Transaction
@@ -173,8 +180,7 @@ public interface BackendStore {
  
 ###### 2.1.3 扩展自定义序列化器
 
-序列化器必须继承抽象类：`org.apache.hugegraph.backend.serializer.AbstractSerializer`(`implements GraphSerializer, SchemaSerializer`)
-主要接口的定义如下：
+序列化器必须继承抽象类：`org.apache.hugegraph.backend.serializer.AbstractSerializer`(`implements GraphSerializer, SchemaSerializer`) 主要接口的定义如下：
 
 ```java
 public interface GraphSerializer {
@@ -290,8 +296,7 @@ public class SpaceAnalyzer implements Analyzer {
  
 #### 3. 实现插件接口，并进行注册
 
-插件注册入口为`HugeGraphPlugin.register()`，自定义插件必须实现该接口方法，在其内部注册上述定义好的扩展项。
-接口`org.apache.hugegraph.plugin.HugeGraphPlugin`定义如下：
+插件注册入口为`HugeGraphPlugin.register()`，自定义插件必须实现该接口方法，在其内部注册上述定义好的扩展项。接口`org.apache.hugegraph.plugin.HugeGraphPlugin`定义如下：
 
 ```java
 public interface HugeGraphPlugin {
@@ -351,5 +356,4 @@ public class DemoPlugin implements HugeGraphPlugin {
  
 #### 5. 打 Jar 包
 
-通过 maven 打包，在项目目录下执行命令`mvn package`，在 target 目录下会生成 Jar 包文件。
-使用时将该 Jar 包拷到`plugins`目录，重启服务即可生效。
+通过 maven 打包，在项目目录下执行命令`mvn package`，在 target 目录下会生成 Jar 包文件。使用时将该 Jar 包拷到`plugins`目录，重启服务即可生效。

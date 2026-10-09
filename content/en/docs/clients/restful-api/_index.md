@@ -7,13 +7,10 @@ search_boost: 1.7
 description: "HugeGraph RESTful API reference for graph, schema, vertex, and edge operations."
 ---
 
-> ⚠️ **Version compatibility notes**
+> This section documents the REST API on current master. For historical APIs, switch to the versioned [HugeGraph 1.7 RESTful API documentation](https://hugegraph.apache.org/versions/1.7/docs/clients/restful-api/) or
+> [HugeGraph 1.5 RESTful API documentation](https://hugegraph.apache.org/versions/1.5/docs/clients/restful-api/).
 >
-> - Current graph resource paths begin with `/graphspaces/{graphspace}/graphs/{graph}`.
-> - HugeGraph 1.5.x and earlier use `/graphs/{graph}`. The request formats of APIs such as graph creation and cloning also differ from the current version.
-> - The default graph space is `DEFAULT`.
-> - See the [HugeGraph 1.5.x RESTful API documentation](https://github.com/apache/hugegraph-doc/tree/release-1.5.0) for older versions.
-
+> The default graph space is `DEFAULT`.
 
 After starting Server, open `http://localhost:8080/swagger-ui/index.html` to view the OpenAPI page for the current version. [See the usage example](/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example).
 

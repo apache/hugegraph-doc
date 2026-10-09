@@ -44,6 +44,9 @@ Authorization: Bearer replace-with-a-secret
 
 The same setting puts the Gradio UI behind basic authentication, with the fixed user name `rag` and `USER_TOKEN` as the password. A wrong token returns 401 with a `WWW-Authenticate: Bearer` header. When `ENABLE_LOGIN` is left at `False`, every endpoint is open.
 
+> [!WARNING]
+> Production requires HugeGraph-LLM login and a source IP allowlist at the firewall or network entry point. This protects only the LLM UI and REST API. Separately enable [Server authentication and authorization](/docs/config/config-authentication/), retain Server audit logs (normally `audit-*.log`), and grant `GRAPH_USER` minimum permissions. `USER_TOKEN` does not replace Server authentication.
+
 ## RAG
 
 ### `POST /rag`

@@ -73,9 +73,9 @@ HugeGraph Toolchain provides clients, data import, visual management, Spark inte
 
 ## Graph Computing Engines (OLAP)
 
-The HugeGraph-Computer repository provides two complementary OLAP graph computing engines:
+The HugeGraph-Computer repository provides two complementary OLAP graph computing engines. Start with Vermeer for general graph algorithms; use Computer when you need the Java BSP/Pregel computing model:
 
-- **Vermeer**: Written in Go, it uses a master-worker architecture and primarily performs in-memory computation. It provides REST APIs, gRPC, and a web UI, and is suitable for fast small- and medium-scale graph analysis.
+- **Vermeer (default entry)**: Written in Go, it uses a master-worker architecture and primarily performs in-memory computation. It provides REST APIs, gRPC, and a web UI, and is suitable for fast small- and medium-scale graph analysis.
 - **Computer**: Written in Java, it implements the distributed BSP/Pregel computing model and can run on Kubernetes, YARN, or local processes. It can spill data to disk when memory thresholds are exceeded and is suitable for larger graph computing workloads.
 
 Both engines can read HugeGraph data, but their runtime architectures, resource requirements, configuration, and algorithm interfaces differ.
@@ -98,7 +98,7 @@ HugeGraph-AI connects graph technology with large language models and graph mach
 
 | Mode | Core Components | Suitable Scenarios | Data Scale |
 |---|---|---|---|
-| **Standalone (OLTP)** | Server + RocksDB | Development, testing, and small to medium-scale data | ≤ 2 TB |
+| **Standalone (OLTP)** | Server + RocksDB | Development, testing, Graph AI, and small to medium-scale production environments | ≤ 2 TB |
 | **Distributed (OLTP)** | Server + PD + Store (HStore) | Production, horizontal scaling, and multi-replica deployment | ≤ 1 PB |
 
 Graph computing is an OLAP workload. Its capacity and resource requirements depend on the selected engine, graph structure, and algorithm, and do not use the OLTP storage capacity figures above.
@@ -108,9 +108,9 @@ Graph computing is an OLAP workload. Its capacity and resource requirements depe
 | Goal | Documentation |
 |---|---|
 | Start the graph database and run queries | [Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/) |
-| Import data in batches | [Loader](/docs/quickstart/toolchain/hugegraph-loader/) |
+| Import data in batches | [Loader](/docs/quickstart/toolchain/hugegraph-loader/), [SeaTunnel](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/) |
 | Manage graphs through a web interface | [Hubble](/docs/quickstart/toolchain/hugegraph-hubble/) |
-| Run graph algorithms | [Vermeer and Computer](/docs/quickstart/computing/) |
+| Run graph algorithms | [HugeGraph Computing](/docs/quickstart/computing/hugegraph-vermeer/) |
 | Build GraphRAG or graph machine learning applications | [HugeGraph-AI](/docs/quickstart/hugegraph-ai/) |
 
 ## Community {#community}

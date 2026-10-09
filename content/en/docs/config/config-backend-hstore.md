@@ -120,7 +120,7 @@ renames the template over it, so a container starts with the `hstore` backend al
 
 A locally built distribution has the `hstore` provider compiled in by default. The `rocksdb-only` Maven
 profile narrows the compiled backend list to `rocksdb`, and a distribution built that way rejects
-`backend=hstore` with `Unsupported backend type`.
+`backend=hstore` with `Not exists BackendStoreProvider: hstore` after the provider factory check.
 
 ### 4 hstore config options
 
@@ -159,17 +159,17 @@ adapter reads. The replica count in effect is the one PD is configured with,
 
 These keys live in the shared `rest-server.properties` and graph properties files, but only take effect, or
 only change behavior, when PD and the `hstore` backend are in use. The source column gives the file and line
-on the HugeGraph master branch where the option is declared.
+in the checked Server master commit `2f827d6` where the option is declared.
 
 | config option                | file                   | default        | why it matters with hstore                                                                   | source                       |
 |------------------------------|------------------------|----------------|----------------------------------------------------------------------------------------------|------------------------------|
 | pd.peers                     | rest-server.properties | 127.0.0.1:8686 | PD addresses used for metadata, service discovery and the system graph                        | `ServerOptions.java:195-201` |
 | pd.peers                     | {graph}.properties     | 127.0.0.1:8686 | PD addresses used by the backend adapter itself                                               | `CoreOptions.java:649-654`   |
-| usePD                        | rest-server.properties | false          | Whether Server loads its metadata from PD at startup                                          | `ServerOptions.java:390-396` |
+| usePD                        | rest-server.properties | false          | Whether Server loads its metadata from PD at startup                                          | `ServerOptions.java:401-407` |
 | cluster                      | rest-server.properties | hg-test        | Cluster name used as the prefix of every PD metadata key                                      | `ServerOptions.java:187-193` |
-| init_store.enabled           | rest-server.properties | true           | Set it to `false` in a PD/Store deployment, where the storage side already owns the metadata  | `ServerOptions.java:371-380` |
-| graph.load_from_local_config | rest-server.properties | false          | Whether `conf/graphs` is scanned at startup in addition to the graph configs held in PD       | `ServerOptions.java:355-361` |
-| auth.graph_store             | rest-server.properties | hugegraph      | The graph that holds auth data, checked against the `hstore` backend when init-store is off   | `ServerOptions.java:591-598` |
+| init_store.enabled           | rest-server.properties | true           | Set it to `false` in a PD/Store deployment, where the storage side already owns the metadata  | `ServerOptions.java:382-390` |
+| graph.load_from_local_config | rest-server.properties | false | Controls constructor preloading and rescanning on `reload()`; application initialization still scans and attempts to load local configurations, so `false` does not block local loading | `ServerOptions.java:366-372` |
+| auth.graph_store             | rest-server.properties | hugegraph      | The graph that holds auth data, checked against the `hstore` backend when init-store is off   | `ServerOptions.java:602-609` |
 | graphspace                   | {graph}.properties     | DEFAULT        | First segment of the graph name PD sees                                                       | `CoreOptions.java:679-685`   |
 
 `init-store.sh` never initializes an `hstore` graph. On the enabled path it scans `conf/graphs` and skips

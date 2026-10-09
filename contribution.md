@@ -14,23 +14,23 @@ For the short workflow, start with [README.md](./README.md). This file records t
 
 The site uses the Hugo Module recorded in `go.mod` and `go.sum`:
 
-```text
-Go:             1.27.0 or newer
-Hugo Extended:  0.165.0
-OINK:           v1.0.0
-```
+Toolchain versions are maintained in `go.mod` and `.github/workflows/hugo.yml`;
+`go.mod` / `go.sum` pin the theme. Node.js is needed only for the browser tests,
+with its version declared by `tests/e2e/package.json` and CI.
 
-Node.js, npm, PostCSS, and a vendored Docsy checkout are not part of the build.
-
-Verify the resolved theme before editing:
+Verify the installed toolchain and locked module:
 
 ```bash
 hugo version
 go version
-hugo mod graph
+python3 scripts/oink_module.py
 ```
 
-The module graph must contain exactly the pinned `github.com/pgsty/oink@v1.0.0` dependency for this site.
+For theme updates and breaking-change recovery, follow
+[scripts/oink-upgrade.md](scripts/oink-upgrade.md).
+
+For Kapa staging, consent/CSP checks and production activation, follow
+[scripts/kapa-rollout.md](scripts/kapa-rollout.md).
 
 ## Local preview
 
@@ -65,13 +65,52 @@ the generated local origin.
 
 A successful command proves that Hugo rendered the configured outputs. It does not replace browser checks for navigation, search, language switching, accessibility, mobile layout, print, or Content Security Policy behavior.
 
+## CI queue and reruns
+
+Each PR has its own concurrency group; a new commit cancels its previous run.
+Cancelled runs skip report uploads and the final gate instead of holding the
+queue with `always()`. A queued job with no runner has not started testing;
+repeated reruns do not resolve runner capacity shortages.
+
+A complete historical cache hit uses one build job. Cold runs use at most three
+build groups, with at most two versions building concurrently within each runner.
+Historical artifacts are reused only when both the complete build-input fingerprint
+and artifact digest match. Missing or invalid cache entries rebuild automatically;
+manual dispatches start without the artifact cache and use the original build and
+validate commands so older candidate branches do not need the new CI helpers. Cache hits still run the full
+version validator, and aggregation validates every selected version again.
+
+Assembly validates at most two versions concurrently, then writes the complete
+site and runs the cross-version checks. The final security scan also uses at most
+two processes; it starts after version validation finishes, so these pools do not
+nest. All checks remain enabled. Stage timings are printed as
+`timing <stage>: <seconds>s`; nested security timings are included in their parent
+validation duration and must not be added twice. Site assembly and blocking browser
+tests share one runner and the same local artifact. The assembly job carries the
+required `deploy` check name, avoiding a separate gate runner and its queue time.
+Its first step requires successful preparation and builds, and all assembly and
+browser checks remain blocking. Visual captures remain advisory and publication
+alone receives write permission. For a test failure, rerun failed
+jobs after inspecting the cause; artifact names remain stable within the run.
+
+## SeaTunnel documentation versions
+
+The `latest` SeaTunnel guides use the 3.0+ minimum-version label and link to
+upstream latest/Next documentation. Concrete versions in installation commands are
+examples, with the engine and plugins kept at the same version. When preparing the
+HugeGraph 1.8.0 documentation snapshot, pin its SeaTunnel references and installation
+version to 3.0.0 in the release branch; keep the `latest` guides tracking upstream.
+
+latest 文档使用 SeaTunnel 3.0+ 等最低版本说明，并引用上游 latest/Next 文档；安装命令中的具体版本仅作为示例，引擎和插件保持同版。
+准备 HugeGraph 1.8.0 文档快照时，在发布分支中将 SeaTunnel 文档引用和安装版本固定为 3.0.0，latest 文档继续跟随上游。
+
 ## Repository structure
 
 - `content/en/` and `content/cn/` contain the bilingual source pages.
 - `hugo.yaml` owns routing, languages, outputs, search, navigation, and OINK parameters.
 - `data/home/<language>.yaml` owns the bilingual homepage.
 - `data/footer/<language>.yaml` owns the bilingual footer.
-- `i18n/zh-CN.yaml` carries the Simplified Chinese OINK interface catalogue for the preserved `cn` URL language key; the file is named after the `zh-CN` locale because Hugo resolves translations by locale, not by the URL key.
+- `i18n/zh-CN.yaml` carries only HugeGraph-specific Simplified Chinese labels; generic interface translations come from OINK for the preserved `cn` URL language key; the file is named after the `zh-CN` locale because Hugo resolves translations by locale, not by the URL key.
 - `assets/` and `static/` contain site-owned brand and compatibility assets.
 
 OINK is a module dependency. Do not copy or edit generated module-cache files. Site-specific overrides belong in the corresponding root `layouts/`, `assets/`, or data path and require focused regression evidence.

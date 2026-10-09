@@ -11,15 +11,13 @@ search_keywords:
 
 ### 1 概述
 
-`hstore` 是 HugeGraph 的分布式存储后端。图使用该后端时，HugeGraph-Server 本地磁盘上不保存任何图数据，
-数据由另外两个进程负责：
+`hstore` 是 HugeGraph 的分布式存储后端。图使用该后端时，HugeGraph-Server 本地磁盘上不保存任何图数据，数据由另外两个进程负责：
 
 - **HugeGraph-PD**（Placement Driver）保存集群元数据：已注册的 Store 列表、每个图的分区布局、分区到 Store
   的映射关系、图的 Schema 以及 Schema 的 id 计数器。
 - **HugeGraph-Store** 保存实际的键值数据，并通过 Raft 在多个 Store 节点之间复制。
 
-Server 进程内嵌了 PD 客户端和 Store 客户端。每次读写时，它先向 PD 查询该 key 属于哪个分区、当前哪个 Store
-节点是这个分区的 leader，然后把请求直接发给这个 Store 节点。
+Server 进程内嵌了 PD 客户端和 Store 客户端。每次读写时，它先向 PD 查询该 key 属于哪个分区、当前哪个 Store 节点是这个分区的 leader，然后把请求直接发给这个 Store 节点。
 
 服务端的适配层是 `hugegraph-hstore` 模块，它以后端名 `hstore` 注册，驱动版本为 `1.13`。
 
@@ -37,8 +35,7 @@ Server 进程内嵌了 PD 客户端和 Store 客户端。每次读写时，它�
 
 ### 2 前置条件
 
-`hstore` 不能独立工作。在 Server 打开 `hstore` 图之前，PD 集群和至少一个 Store 节点必须已经运行，
-并且启动顺序如下：
+`hstore` 不能独立工作。在 Server 打开 `hstore` 图之前，PD 集群和至少一个 Store 节点必须已经运行，并且启动顺序如下：
 
 1. **PD**，先启动以便组成 Raft 组。
 2. **Store**，通过 gRPC 向 PD 注册。gRPC 地址出现在 PD 自身 `pd.initial-store-list` 中的 Store 会直接进入
@@ -55,9 +52,7 @@ Server 进程内嵌了 PD 客户端和 Store 客户端。每次读写时，它�
 
 服务端的 `pd.peers` 指向 PD 的 **gRPC** 端口，而不是 REST 端口。
 
-另外两个进程的安装与配置方式，参见
-[安装/构建 HugeGraph-PD](/cn/docs/quickstart/hugegraph/hugegraph-pd/) 和
-[安装/构建 HugeGraph-Store](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)。
+另外两个进程的安装与配置方式，参见 [安装/构建 HugeGraph-PD](/cn/docs/quickstart/hugegraph/hugegraph-pd/) 和 [安装/构建 HugeGraph-Store](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)。
 
 ### 3 选择 hstore 后端
 
@@ -85,8 +80,7 @@ pd.peers=127.0.0.1:8686
 - `pd.peers` 是以逗号分隔的 PD gRPC 地址列表。适配层从**图**配置中读取该项，而不是从
   `rest-server.properties` 中读取，图级别的元数据连接也使用同一个值。
 
-如果图配置文件中没有 `pd.peers`，那么在加载图时，只要 `usePD` 为 true 或者后端是 `hstore`，
-Server 会把 `rest-server.properties` 中的值复制到图配置里。不过在图配置文件中显式写出该项更清晰。
+如果图配置文件中没有 `pd.peers`，那么在加载图时，只要 `usePD` 为 true 或者后端是 `hstore`， Server 会把 `rest-server.properties` 中的值复制到图配置里。不过在图配置文件中显式写出该项更清晰。
 
 #### 3.2 rest-server.properties
 
@@ -96,24 +90,19 @@ usePD=true
 pd.peers=127.0.0.1:8686
 ```
 
-`usePD=true` 让 Server 在启动时从 PD 加载元数据。在这条路径上，它会把元数据管理器连接到 PD，创建内置的
-admin 账号和默认图空间，加载图空间与服务，创建内部的系统图（后端固定为 `hstore`），并加载 PD 中保存的
-图配置。
+`usePD=true` 让 Server 在启动时从 PD 加载元数据。在这条路径上，它会把元数据管理器连接到 PD，创建内置的 admin 账号和默认图空间，加载图空间与服务，创建内部的系统图（后端固定为 `hstore`），并加载 PD 中保存的图配置。
 
-它和图级别的 `backend=hstore` 是两个独立的开关：一个图可以使用 `hstore` 而 `usePD` 保持默认的 `false`，
-此时 Server 不会走基于 PD 的元数据路径。发行包自带的测试启动脚本在后端为 `hstore` 时会设置该项。
+它和图级别的 `backend=hstore` 是两个独立的开关：一个图可以使用 `hstore` 而 `usePD` 保持默认的 `false`，此时 Server 不会走基于 PD 的元数据路径。发行包自带的测试启动脚本在后端为 `hstore` 时会设置该项。
 
 #### 3.3 发行包中的模板文件
 
-发行包在 `conf/graphs/hstore.properties.template` 中提供了一份该后端的现成图配置文件。它与
-`hugegraph.properties` 的差别是：把 `backend` 设为 `hstore`、不注释 `pd.peers=127.0.0.1:8686`、
+发行包在 `conf/graphs/hstore.properties.template` 中提供了一份该后端的现成图配置文件。它与 `hugegraph.properties` 的差别是：把 `backend` 设为 `hstore`、不注释 `pd.peers=127.0.0.1:8686`、
 并且不包含内存管理配置段。
 
-hstore 的 Docker 镜像会自动套用这份模板：它删除 `conf/graphs/hugegraph.properties`，再把模板重命名过去，
-因此容器启动时就已经选好了 `hstore` 后端。
+hstore 的 Docker 镜像会自动套用这份模板：它删除 `conf/graphs/hugegraph.properties`，再把模板重命名过去，因此容器启动时就已经选好了 `hstore` 后端。
 
 本地构建的发行包默认编译了 `hstore` provider。`rocksdb-only` 这个 Maven profile 会把编译进去的后端列表
-收窄为只有 `rocksdb`，用这种方式构建出来的发行包会以 `Unsupported backend type` 拒绝 `backend=hstore`。
+收窄为只有 `rocksdb`，`backend=hstore` 在 provider 工厂检查后会报 `Not exists BackendStoreProvider: hstore`。
 
 ### 4 hstore 配置项
 
@@ -126,8 +115,7 @@ hstore 的 Docker 镜像会自动套用这份模板：它删除 `conf/graphs/hug
 
 #### 4.1 hstore.partition_count
 
-每个 graph store 第一次被打开时，Server 会把这个数字连同图名一起发给 PD。取负值会在此处被拒绝，
-报错信息为 `The value of hstore.partition_count cannot be less than 0.`
+每个 graph store 第一次被打开时，Server 会把这个数字连同图名一起发给 PD。取负值会在此处被拒绝，报错信息为 `The value of hstore.partition_count cannot be less than 0.`
 
 PD 对该值的处理方式：
 
@@ -141,30 +129,26 @@ PD 对该值的处理方式：
 
 #### 4.2 hstore.shard_count
 
-`hstore.shard_count` 声明在 `hstore` 配置空间中，属性文件里也接受该项，但当前版本服务端没有任何代码读取它：
-适配层读取的只有 `hstore.partition_count` 一项。实际生效的副本数由 PD 的配置决定，即 PD `application.yml`
+`hstore.shard_count` 声明在 `hstore` 配置空间中，属性文件里也接受该项，但当前版本服务端没有任何代码读取它：适配层读取的只有 `hstore.partition_count` 一项。实际生效的副本数由 PD 的配置决定，即 PD `application.yml`
 中的 `partition.default-shard-count`。
 
 ### 5 只在 hstore 模式下生效的其他配置项
 
-下列配置项位于公共的 `rest-server.properties` 和图属性文件中，但只有在使用 PD 和 `hstore` 后端时才生效，
-或者才会改变行为。source 列给出该配置项在 HugeGraph master 分支上的声明位置（文件与行号）。
+下列配置项位于公共的 `rest-server.properties` 和图属性文件中，但只有在使用 PD 和 `hstore` 后端时才生效，或者才会改变行为。source 列给出该配置项在本轮核对的 Server 主线提交 `2f827d6` 中的声明位置（文件与行号）。
 
 | 配置项                       | 文件                   | 默认值         | 在 hstore 模式下的作用                                            | source                       |
 |------------------------------|------------------------|----------------|-------------------------------------------------------------------|------------------------------|
 | pd.peers                     | rest-server.properties | 127.0.0.1:8686 | 用于元数据、服务发现和系统图的 PD 地址                            | `ServerOptions.java:195-201` |
 | pd.peers                     | {graph}.properties     | 127.0.0.1:8686 | 后端适配层自身使用的 PD 地址                                      | `CoreOptions.java:649-654`   |
-| usePD                        | rest-server.properties | false          | Server 启动时是否从 PD 加载元数据                                 | `ServerOptions.java:390-396` |
+| usePD                        | rest-server.properties | false          | Server 启动时是否从 PD 加载元数据                                 | `ServerOptions.java:401-407` |
 | cluster                      | rest-server.properties | hg-test        | 集群名，作为所有 PD 元数据 key 的前缀                             | `ServerOptions.java:187-193` |
-| init_store.enabled           | rest-server.properties | true           | PD/Store 部署下应设为 `false`，元数据已由存储侧负责               | `ServerOptions.java:371-380` |
-| graph.load_from_local_config | rest-server.properties | false          | 启动时是否在 PD 中的图配置之外，额外扫描 `conf/graphs`            | `ServerOptions.java:355-361` |
-| auth.graph_store             | rest-server.properties | hugegraph      | 保存权限数据的图，关闭 init-store 时会校验它使用 `hstore` 后端    | `ServerOptions.java:591-598` |
+| init_store.enabled           | rest-server.properties | true           | PD/Store 部署下应设为 `false`，元数据已由存储侧负责               | `ServerOptions.java:382-390` |
+| graph.load_from_local_config | rest-server.properties | false          | 控制管理器构造阶段预加载及 `reload()` 重扫本地图配置；应用初始化仍扫描并尝试加载，因此 `false` 不是阻止本地配置加载的安全开关 | `ServerOptions.java:366-372` |
+| auth.graph_store             | rest-server.properties | hugegraph      | 保存权限数据的图，关闭 init-store 时会校验它使用 `hstore` 后端    | `ServerOptions.java:602-609` |
 | graphspace                   | {graph}.properties     | DEFAULT        | PD 看到的图名的第一段                                             | `CoreOptions.java:679-685`   |
 
-`init-store.sh` 从不初始化 `hstore` 图。在开启的路径上，它扫描 `conf/graphs` 并跳过后端为 `hstore` 的每一个
-图。如果用 `init_store.enabled=false` 整体关闭这一步，它会改为校验 admin 账号仍然能在 PD 启动路径上被创建：
-`usePD` 必须为 true、权限图必须存在于本地配置中且后端为 `hstore`、`auth.admin_pa` 必须显式设置为非空值。
-否则启动会直接失败，而不是使用公开的默认密码创建账号。
+`init-store.sh` 从不初始化 `hstore` 图。在开启的路径上，它扫描 `conf/graphs` 并跳过后端为 `hstore` 的每一个图。如果用 `init_store.enabled=false` 整体关闭这一步，它会改为校验 admin 账号仍然能在 PD 启动路径上被创建：
+`usePD` 必须为 true、权限图必须存在于本地配置中且后端为 `hstore`、`auth.admin_pa` 必须显式设置为非空值。否则启动会直接失败，而不是使用公开的默认密码创建账号。
 
 ### 6 Server 如何通过 PD 发现 Store
 
@@ -174,8 +158,7 @@ PD 对该值的处理方式：
 2. 创建进程级的 PD 客户端。
 3. 用该 PD 客户端创建进程级的 Store 客户端。
 
-创建 Store 客户端时，会把一个基于 PD 的分区器同时注册为 Store 客户端节点管理器的 node provider、
-partitioner 和 notifier。路由逻辑全部在这个分区器中：
+创建 Store 客户端时，会把一个基于 PD 的分区器同时注册为 Store 客户端节点管理器的 node provider、 partitioner 和 notifier。路由逻辑全部在这个分区器中：
 
 - **单点和前缀请求**：向 PD 查询拥有该 key 的分区，取该分区的 leader 副本，把请求发到对应的 store id。
 - **按 code 的范围扫描**：按 code 逐个遍历分区直到覆盖整个范围，每个分区产生一个目标 Store。
@@ -184,8 +167,7 @@ partitioner 和 notifier。路由逻辑全部在这个分区器中：
 - **缓存失效**：当某个 Store 返回分区 leader 已迁移时，notifier 会更新 PD 客户端缓存中的分区 leader
   并使过期的分区条目失效，之后的请求就会跟随新的 leader。
 
-由于 Store 列表来自 PD 而不是配置文件，增删 Store 节点只需要针对同一个 PD 集群启动或停止它，
-服务端不需要改任何配置。
+由于 Store 列表来自 PD 而不是配置文件，增删 Store 节点只需要针对同一个 PD 集群启动或停止它，服务端不需要改任何配置。
 
 ### 7 后端能力
 
@@ -215,8 +197,7 @@ partitioner 和 notifier。路由逻辑全部在这个分区器中：
 | 聚合属性              | 不支持   |
 | TTL                   | 不支持   |
 
-不支持按输入 id 顺序排序，是因为多节点批量扫描会按 Store 对输入 key 分组，从而丢失全局顺序；
-不支持更新顶点和边属性，是因为属性被存放在单个 cell 中。
+不支持按输入 id 顺序排序，是因为多节点批量扫描会按 Store 对输入 key 分组，从而丢失全局顺序；不支持更新顶点和边属性，是因为属性被存放在单个 cell 中。
 
 ### 8 验证
 
@@ -226,6 +207,4 @@ Server 启动后，后端指标接口会返回 PD 当前认为处于活跃状态
 curl http://localhost:8080/metrics/backend
 ```
 
-响应中的 `nodes` 就是 PD 返回的活跃 Store 数量。`nodes` 为 `0` 说明 Server 连上了 PD，但 PD 中没有状态为
-`Up` 的 Store，通常是 Store 节点还没注册，或者因为不在 PD 的 `pd.initial-store-list` 中而注册成了
-`Pending`。
+响应中的 `nodes` 就是 PD 返回的活跃 Store 数量。`nodes` 为 `0` 说明 Server 连上了 PD，但 PD 中没有状态为 `Up` 的 Store，通常是 Store 节点还没注册，或者因为不在 PD 的 `pd.initial-store-list` 中而注册成了 `Pending`。

@@ -8,7 +8,7 @@ draft: true
 - [系统介绍](introduction/_index)
 - [下载](download/download)
 
-## 快速开始
+## 快速上手
 
 - [HugeGraph Server](quickstart/hugegraph/hugegraph-server)
 - [PD](quickstart/hugegraph/hugegraph-pd)

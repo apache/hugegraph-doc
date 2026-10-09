@@ -35,10 +35,10 @@ There are two ways to deploy the HugeGraph-Store component:
 
 #### 3.1 Download the tar package
 
-Download the latest version of HugeGraph-Store from the Apache HugeGraph official download page:
+Apache downloads currently provide the complete 1.7.0 binary bundle containing PD, Store, and Server, without a separate Store binary. Verify version, signatures, and SHA512 on the [official download page](https://hugegraph.apache.org/docs/download/download/). This historical incubating release retains `incubating` in archive and directory names:
 
 ```bash
-# 1.7.0 is a historical release from the incubation period, so its file and directory names still include "incubating"
+# Historical release 1.7.0 retains incubating in filenames and directories
 wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-store-incubating-1.7.0
@@ -70,157 +70,100 @@ The assembled directory contains only `bin/`, `conf/` and `lib/hg-store-node-{ve
 
 #### 3.3 Docker Deployment
 
-The HugeGraph-Store Docker image is available on Docker Hub as `hugegraph/store`.
-
-> **Note**: The following steps assume you have already cloned or pulled the HugeGraph main repository locally, or at least have its `docker/` directory available.
-
-Two compose files include Store:
-
-| Compose file | Topology | Use |
-|--------------|----------|-----|
-| `docker-compose-hstore.yml` | 1 PD + 1 Store + 1 Server + 1 Hubble | Smallest distributed setup |
-| `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble | Multi-node reference |
+`HG_STORE_*` mappings are current master features, absent from Server tag `1.7.0`. These Docker examples require PD, Store, and HStore Server images built from the same current master source with matching local tags:
 
 ```bash
-cd hugegraph/docker
-# Keep the version aligned with the latest release, for example 1.x.0
-
-# Minimal distributed deployment
-HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-hstore.yml up -d --wait
-
-# Or the multi-node cluster
-HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d
+# Run from the HugeGraph repository root
+docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
+docker build -f hugegraph-store/Dockerfile -t hugegraph/store:local .
+docker build -f hugegraph-server/Dockerfile-hstore -t hugegraph/server:local .
 ```
 
-To run a single Store node via `docker run`:
+Before first startup, create `.env` in `docker/` following the [authentication environment instructions](https://github.com/apache/hugegraph/blob/master/docker/README.md#create-the-authentication-environment).
+The procedure uses `umask 077` and refuses to overwrite existing files. Keep an existing `.env` and add missing entries. Never regenerate `HG_PD_AUTH_SECRET_KEY` for initialized data directories. Although `.gitignore` excludes this file, do not commit it.
+In every new shell, load the same file from `docker/` before Compose or PD REST commands:
+
+```bash
+# Run from the HugeGraph repository root
+cd docker
+set -a; . ./.env; set +a
+: "${HG_PD_AUTH_SECRET_KEY:?Set HG_PD_AUTH_SECRET_KEY in .env}"
+# Start PD, Store, and Server without optional Hubble
+HUGEGRAPH_VERSION=local HUGEGRAPH_PULL_POLICY=never \
+  docker compose -f docker-compose-hstore.yml \
+  up -d --wait pd store server
+```
+
+Load the same secret before subsequent restarts or PD REST calls; do not regenerate it for initialized directories. Explicitly include `HUGEGRAPH_VERSION=local` and `HUGEGRAPH_PULL_POLICY=never` in every Compose lifecycle command.
+
+To start Hubble, use the topology-specific untracked configuration: minimal `docker-compose-hstore.yml` mounts `conf/hubble/hstore.local.properties`;
+HA `docker-compose-3pd-3store-3server.yml` mounts `conf/hubble/hstore-ha.local.properties`.
+The README initialization creates both files with the shared PD secret. If missing or requiring updates, load existing `.env` from `docker/` and run:
+
+```bash
+set -a; . ./.env; set +a
+./set-hubble-pd-password.sh hstore      # Minimal topology
+./set-hubble-pd-password.sh hstore-ha  # HA topology
+```
+
+Multi-node service names are `pd0`–`pd2`, `store0`–`store2`, and `server0`–`server2`. This master Compose file also requires matching locally built images; do not mix `HUGEGRAPH_VERSION=1.7.0` release images with master Compose.
+
+To run master-built Store alone, replace example addresses with actual routable Store and PD addresses:
 
 ```bash
 docker run -d \
-  -p 8520:8520 \
-  -p 8500:8500 \
-  -p 8510:8510 \
-  -e HG_STORE_PD_ADDRESS=<pd-ip>:8686 \
-  -e HG_STORE_GRPC_HOST=<your-ip> \
-  -e HG_STORE_RAFT_ADDRESS=<your-ip>:8510 \
+  -p 8520:8520 -p 8500:8500 -p 8510:8510 \
+  -e HG_STORE_PD_ADDRESS=192.168.1.10:8686 \
+  -e HG_STORE_GRPC_HOST=192.168.1.20 \
+  -e HG_STORE_RAFT_ADDRESS=192.168.1.20:8510 \
   -v /path/to/storage:/hugegraph-store/storage \
   --name hugegraph-store \
-  hugegraph/store:1.7.0
+  hugegraph/store:local
 ```
 
-**Environment variable reference:**
+**Current Master Docker Environment Variables:**
 
-| Variable | Required | Default | Maps to | Description |
-|----------|----------|---------|---------|-------------|
-| `HG_STORE_PD_ADDRESS` | Yes | n/a | `pdserver.address` | PD gRPC addresses (e.g. `pd0:8686,pd1:8686,pd2:8686`) |
-| `HG_STORE_GRPC_HOST` | Yes | n/a | `grpc.host` | This node's hostname/IP for gRPC (e.g. `store0`) |
-| `HG_STORE_RAFT_ADDRESS` | Yes | n/a | `raft.address` | This node's Raft address (e.g. `store0:8510`) |
-| `HG_STORE_GRPC_PORT` | No | `8500` | `grpc.port` | gRPC server port |
-| `HG_STORE_REST_PORT` | No | `8520` | `server.port` | REST API port |
-| `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` | Data storage path |
+| Variable | Required | Default | Configuration key | Description |
+|------|------|--------|------------|------|
+| `HG_STORE_PD_ADDRESS` | Yes | None | `pdserver.address` | Comma-separated PD gRPC addresses. |
+| `HG_STORE_GRPC_HOST` | Yes | None | `grpc.host` | Advertised hostname/IP; use a container hostname within a container network. |
+| `HG_STORE_RAFT_ADDRESS` | Yes | None | `raft.address` | This node's Raft address. |
+| `HG_STORE_GRPC_PORT` | No | `8500` | `grpc.port` | gRPC service port. |
+| `HG_STORE_REST_PORT` | No | `8520` | `server.port` | REST API port. |
+| `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` | Data path. |
 
-The entrypoint turns these into a `SPRING_APPLICATION_JSON` overlay on top of `conf/application.yml`, then runs `bin/start-hugegraph-store.sh -d false -j "$JAVA_OPTS"`. Any key not covered by the table above still has to be edited in `conf/application.yml`, or supplied through your own `SPRING_APPLICATION_JSON`.
+The master entrypoint writes these values into `SPRING_APPLICATION_JSON`, overriding image `conf/application.yml`. Other options still come from that file and `application-pd.yml`; Java runs in the foreground. Deprecated `PD_ADDRESS`, `GRPC_HOST`, and `RAFT_ADDRESS` remain supported with warnings.
 
-Image details:
-
-- `JAVA_OPTS` defaults to `-XX:+UnlockExperimentalVMOptions -XX:+UseContainerSupport -XX:MaxRAMPercentage=50 -XshowSettings:vm`
-- `STDOUT_MODE=true`, so Java logs go to the container stdout instead of `logs/hugegraph-store-server.log`
-- `HEALTHCHECK` calls `GET http://localhost:8520/v1/health` every 15s after a 90s start period
-- The image declares `EXPOSE 8520`; publish 8500 and 8510 yourself when Server or other Store nodes need to reach the container from outside the Docker network
-
-> **Note**: In Docker bridge networking, use container hostnames (e.g. `store0`) for `HG_STORE_GRPC_HOST` instead of IP addresses.
-
-> **Deprecated aliases**: `PD_ADDRESS`, `GRPC_HOST`, `RAFT_ADDRESS` still work but log a deprecation warning. Use the `HG_STORE_*` names for new deployments.
+PD and Store Docker `HEALTHCHECK` use `/v1/health`, confirming only local REST responses. Compose `depends_on` uses the same startup gate; separately verify PD `/v1/ready` and `Up` Store state in `/v1/stores`. Store defaults to `STDOUT_MODE=true`; its Dockerfile declares only `EXPOSE 8520`, so publish gRPC `8500` and Raft `8510` separately if needed outside the Docker network.
 
 ### 4 Configuration
 
-Store reads two files from `conf/`:
+Store reads two files under `conf/`. Release 1.7.0 sources: [application.yml](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-store/hg-store-dist/src/assembly/static/conf/application.yml), [application-pd.yml](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-store/hg-store-dist/src/assembly/static/conf/application-pd.yml). Master sources: [application.yml](https://github.com/apache/hugegraph/blob/master/hugegraph-store/hg-store-dist/src/assembly/static/conf/application.yml), [application-pd.yml](https://github.com/apache/hugegraph/blob/master/hugegraph-store/hg-store-dist/src/assembly/static/conf/application-pd.yml). Master places RocksDB settings in the second file, included through `spring.profiles.include: pd`; startup selects `application.yml`.
 
-- `application.yml`, the main configuration file (PD address, ports, Raft, data path)
-- `application-pd.yml`, pulled in by `spring.profiles.include: pd` in `application.yml`, holding the RocksDB memory settings and the Actuator exposure
+- `application.yml`: Main PD address, ports, Raft, and data path settings.
+- `application-pd.yml`: Included through `spring.profiles.include: pd`; RocksDB memory and Actuator exposure.
 
 #### 4.1 application.yml
 
-This is the file shipped in the distribution package:
-
-```yaml
-pdserver:
-  # PD service address, multiple PD addresses separated by commas
-  address: localhost:8686
-
-management:
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-
-grpc:
-  # grpc service address
-  host: 127.0.0.1
-  port: 8500
-  netty-server:
-    max-inbound-message-size: 1000MB
-raft:
-  # raft cache queue size
-  disruptorBufferSize: 1024
-  address: 127.0.0.1:8510
-  max-log-file-size: 600000000000
-  # Snapshot generation interval, in seconds
-  snapshotInterval: 1800
-server:
-  # rest service address
-  port: 8520
-
-app:
-  # Storage path, support multiple paths, separated by commas
-  data-path: ./storage
-  #raft-path: ./storage
-
-spring:
-  application:
-    name: store-node-grpc-server
-  profiles:
-    active: default
-    include: pd
-
-logging:
-  config: 'file:./conf/log4j2.xml'
-  level:
-    root: info
-```
+The following tables were checked against distribution values and Java defaults at Server master commit `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4`. Use tagged configuration for release 1.7.0 without replacing it with another version's files.
 
 #### 4.2 application-pd.yml
 
-```yaml
-management:
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-  endpoints:
-    web:
-      exposure:
-        include: "*"
+This file contains only `rocksdb` and Actuator exposure settings.
 
-rocksdb:
-  # rocksdb total memory usage, force flush to disk when reaching this value
-  total_memory_size: 32000000000
-  # memtable size used by rocksdb
-  write_buffer_size: 32000000
-  # For each rocksdb, the number of memtables reaches this value for writing to disk.
-  min_write_buffer_number_to_merge: 16
-```
+> [!WARNING]
+> **Protect Server and Store ports separately in production**
+>
+> Enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum graph API permissions; retain and protect Server `audit-*.log`. These settings do not protect Store: master exposes all Actuator endpoints without PD-style Basic authentication. Restrict Store REST, gRPC, and Raft to cluster nodes and trusted operations networks.
+
 
 #### 4.3 Configuration reference
 
-"Shipped" is the value in the two files above. "Code default" is what the node falls back to when the key is absent, and is the value to rely on for keys the template does not list.
+"Master distribution value" comes from the two master files above. "Code default" is the fallback when a key is absent; rely on code defaults for options omitted from the distribution files.
 
 **Core**
 
-| Key | Shipped | Code default | Meaning |
+| Key | Master distribution value | Code default | Meaning |
 |-----|---------|--------------|---------|
 | `pdserver.address` | `localhost:8686` | required | PD gRPC endpoints, comma separated. Store registers itself here and receives its partition assignment. Must be PD's `grpc.port`, not its REST port. |
 | `grpc.host` | `127.0.0.1` | required | Address this node advertises for its own gRPC service. Set it to a routable IP or hostname, `127.0.0.1` is only usable for a single-machine setup. |
@@ -231,7 +174,7 @@ rocksdb:
 
 **Raft**
 
-| Key | Shipped | Code default | Meaning |
+| Key | Master distribution value | Code default | Meaning |
 |-----|---------|--------------|---------|
 | `raft.address` | `127.0.0.1:8510` | required | Raft service address of this node, `host:port`. Must be reachable from every other Store node. There is no peer list to configure: PD tells each node which peers belong to a partition's Raft group. |
 | `raft.disruptorBufferSize` | `1024` | `0` | Raft task queue size. `0` derives it from `rocksdb.total_memory_size`, by rounding that size in GB to the nearest power of two and multiplying by 32. |
@@ -249,7 +192,7 @@ rocksdb:
 
 **Storage and labels**
 
-| Key | Shipped | Code default | Meaning |
+| Key | Master distribution value | Code default | Meaning |
 |-----|---------|--------------|---------|
 | `app.data-path` | `./storage` | `store` | RocksDB data directory. Multiple paths separated by commas spread partitions over several disks. |
 | `app.raft-path` | commented out | empty | Directory for Raft logs and snapshots. Falls back to `app.data-path` when empty. |
@@ -259,7 +202,7 @@ rocksdb:
 
 **RocksDB**
 
-| Key | Shipped | Code default | Meaning |
+| Key | Master distribution value | Code default | Meaning |
 |-----|---------|--------------|---------|
 | `rocksdb.total_memory_size` | `32000000000` | `51539607552` | Memory budget shared by all RocksDB instances on this node. When absent or `0`, the node uses the JVM max heap instead. |
 | `rocksdb.write_buffer_size` | `32000000` | `33554432` | Memtable size in bytes. When absent or `0`, the node uses `total_memory_size / 1000`. |
@@ -387,11 +330,11 @@ It sources the stop script and then the start script, and forwards the flags fro
 
 #### 5.4 Startup order
 
-1. **PD** first. Each Store's `grpc.host:grpc.port` should appear in PD's `pd.initial-store-list`, otherwise PD registers the node in `Pending` state instead of bringing it to `Up`, and partition assignment never finishes.
-2. **Store** next. A Store started before PD is reachable is not fatal: the heartbeat thread keeps retrying registration and logs `store heartbeat error: PD UNREACHABLE` until PD answers.
-3. **HugeGraph-Server** last, once every Store node reports `state: "Up"`. Server needs the partitions in place before it can initialize or open a graph.
+1. **All PD nodes first.** Each Store's `grpc.host:grpc.port` must appear in PD `pd.initial-store-list`, or the node remains `Pending` instead of `Up`, blocking partition allocation. On master, verify HTTP `200` with `ready:true` from every PD `/v1/ready` first; `/v1/health` is liveness only.
+2. **Store next.** Registration retries while PD is unreachable, logging `store heartbeat error: PD UNREACHABLE`.
+3. **Server last.** Every Store should report `Up`; partitions must be ready before opening or initializing graphs.
 
-The compose files encode the same order with `depends_on: condition: service_healthy`: Store waits for every PD healthcheck, and Server waits for every Store healthcheck.
+Master Compose uses `depends_on: condition: service_healthy` for local liveness, but PD and Store Docker checks only call `/v1/health`; they do not confirm Raft quorum or Store registration. Server waits for PD to report at least one `Up` Store. Operators should still check PD `/v1/ready` and `/v1/stores`.
 
 ### 6 Multi-Node Deployment Example
 
@@ -498,7 +441,7 @@ Confirm that the Store service is running properly:
 curl http://localhost:8520/actuator/health
 ```
 
-If it returns `{"status":"UP"}`, it indicates that the Store service has been successfully started.
+Actuator `{"status":"UP"}` confirms local Store application health, without proving registration as `Up` in PD.
 
 `GET /v1/health` is the lighter check used by the Docker image and the compose files. It answers HTTP 200 with an empty body, so use `curl -fsS` and check the exit code rather than the output:
 
@@ -516,7 +459,7 @@ The Store node exposes these read-only endpoints on `server.port`:
 | GET | `/actuator/health` | Spring Boot Actuator health, `{"status":"UP"}` |
 | GET | `/actuator/prometheus` | Prometheus scrape endpoint |
 | GET | `/` | Node summary, `leaderCount` and `partitionCount` |
-| GET | `/-/state` | Node state, one of `STARTING`, `ONLINE`, `STOPPING` |
+| GET | `/-/state` | Operator-set `STARTING`, `ONLINE`, or `STOPPING` flag; distinct from PD registration state |
 | GET | `/-/echo?name=<text>` | Echo check |
 | GET | `/-/scan` | State of the running scan streams |
 | GET | `/v1/partitions` | All Raft groups on this node with per-partition metrics. Add `?flags=accurate` for exact key counts, which is slower. |
@@ -525,7 +468,7 @@ The Store node exposes these read-only endpoints on `server.port`:
 | GET | `/metrics/drive` | Disk metrics for the data paths |
 | GET | `/metrics/raft` | JRaft node metrics, needs `raft.metrics: true` |
 
-Actuator and Prometheus are reachable because the shipped configuration sets `management.endpoints.web.exposure.include: "*"` and `management.metrics.export.prometheus.enabled: true`.
+Master Store configuration exposes all Actuator endpoints with `management.endpoints.web.exposure.include: "*"` and enables Prometheus. These endpoints lack PD REST Basic protection; restrict Store REST network access.
 
 The node also serves maintenance endpoints that change state or run heavy work: `PUT /-/state`, `GET /-/cleaner`, `GET /v1/partition/dump/{id}`, `GET /v1/partition/clean/{id}`, `POST /v1/compat?id=<partition>`, `GET /v1/arthasstart`, `POST /raft/options`, and the `/fix/*` and `/test/*` groups. Use them only for troubleshooting, and keep the REST port off untrusted networks.
 
@@ -534,10 +477,11 @@ The node also serves maintenance endpoints that change state or run heavy work: 
 You can also check Store node status through the PD API:
 
 ```bash
-curl -u store:admin http://localhost:8620/v1/stores
+curl -u "store:${HG_PD_AUTH_SECRET_KEY:?Set the PD deployment secret first}" \
+  http://localhost:8620/v1/stores
 ```
 
-PD requires basic auth on its REST port. The user name must be one of `hg`, `store`, `hubble`, `vermeer`, and the password is not validated yet. A call with no credentials returns `{"status":-1,"error":"Unauthorized!"}`. Only `/v1/health`, `/actuator/*` and `/v1/prom/targets/*` are exempt.
+For master builds, PD REST usernames must be `hg`, `store`, `hubble`, or `vermeer`, and the password must equal PD `auth.secret-key`. `HG_PD_AUTH_SECRET_KEY` configures PD and Server in Compose. `/v1/health`, `/v1/ready`, `/actuator/*`, and `/v1/prom/targets/*` require no authentication. Release 1.7.0 checks only usernames, without comparing passwords; do not use that old behavior for master builds.
 
 If Store is configured successfully, the response should include status information for the current node, and `state: "Up"` means the node is running normally. A node stuck at `Pending` is usually missing from PD's `pd.initial-store-list`.
 
@@ -580,3 +524,29 @@ The example below shows a single Store node. If all three nodes are configured c
   "status": 0
 }
 ```
+
+#### 7.3 Minimal Graph Read/Write Verification
+
+After Store appears as `Up` in PD, start an HStore-backed Server connected to the same PD cluster. See the [Server Quick Start](./hugegraph-server.md). Once `GET /versions` responds and the default `hugegraph` graph is loaded, create a property key, vertex label, and vertex, then read it:
+
+```bash
+SERVER_URL=http://localhost:8080
+GRAPH_URL="$SERVER_URL/graphspaces/DEFAULT/graphs/hugegraph"
+
+# Names must be unique within the graphspace; choose new names if they already exist
+curl -fsS -X POST "$GRAPH_URL/schema/propertykeys" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"pd_store_demo_name","data_type":"TEXT","cardinality":"SINGLE","properties":[]}'
+
+curl -fsS -X POST "$GRAPH_URL/schema/vertexlabels" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"pd_store_demo_vertex","id_strategy":"CUSTOMIZE_STRING","properties":["pd_store_demo_name"],"primary_keys":[],"nullable_keys":[]}'
+
+curl -fsS -X POST "$GRAPH_URL/graph/vertices" \
+  -H 'Content-Type: application/json' \
+  -d '{"id":"pd-store-demo-1","label":"pd_store_demo_vertex","properties":{"pd_store_demo_name":"stored in HStore"}}'
+
+curl -fsS "$GRAPH_URL/graph/vertices/%22pd-store-demo-1%22"
+```
+
+The final response should contain vertex ID `pd-store-demo-1` and property `pd_store_demo_name`. If Server authentication is enabled, add credentials to each request.

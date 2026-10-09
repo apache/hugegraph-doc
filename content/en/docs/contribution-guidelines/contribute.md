@@ -40,6 +40,19 @@ HugeGraph Server code is under `hugegraph-server/`. For example, the core module
 hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/
 ```
 
+Current top-level Maven modules are listed below. Server's `hugegraph-server/hugegraph-hstore/` storage adapter is distinct from the standalone `hugegraph-store/` storage-node project.
+
+| Path | Submodules |
+|---|---|
+| `hugegraph-server/` | `hugegraph-core/`, `hugegraph-api/`, `hugegraph-example/`, `hugegraph-dist/`, `hugegraph-test/`, `hugegraph-rocksdb/`, `hugegraph-hbase/`, `hugegraph-hstore/` |
+| `hugegraph-pd/` | `hg-pd-common/`, `hg-pd-client/`, `hg-pd-core/`, `hg-pd-service/`, `hg-pd-dist/`, `hg-pd-cli/`, `hg-pd-grpc/`, `hg-pd-test/` |
+| `hugegraph-store/` | `hg-store-common/`, `hg-store-client/`, `hg-store-core/`, `hg-store-node/`, `hg-store-dist/`, `hg-store-cli/`, `hg-store-grpc/`, `hg-store-rocksdb/`, `hg-store-test/` |
+| `hugegraph-commons/` | `hugegraph-common/`, `hugegraph-rpc/` |
+| `hugegraph-cluster-test/` | `hugegraph-clustertest-minicluster/`, `hugegraph-clustertest-dist/`, `hugegraph-clustertest-test/` |
+| Independent root modules | `hugegraph-struct/`, `install-dist/` |
+
+These names come from the root and subproject `pom.xml` files. Use the structure of the branch you are working on.
+
 Run the tests directly related to your change first. Common Server test commands include:
 
 ```bash
@@ -67,7 +80,9 @@ When adding a third-party dependency, also update the license information includ
 
 ## Submit a Pull Request
 
-Make sure the email address used for your commits is associated with your GitHub account. See https://github.com/settings/emails for instructions:
+GitHub no longer accepts an account username and password for pushing code. If you need a personal access token, create one with the necessary permissions in [token settings](https://github.com/settings/tokens).
+
+Make sure the email address used for your commits is associated with your GitHub account. Use [email settings](https://github.com/settings/emails):
 
 ![Verify your commit email on GitHub](/images/docs/contribution/github-email.png)
 {width="1280" height="592"}

@@ -6,20 +6,25 @@ weight: 7
 
 ## 报告 Apache HugeGraph 的安全问题
 
-> ⚠️ **SEC 提醒：致漏洞研究人员关于图查询语言的说明**
+> [!WARNING]
+> **生产环境安全要求**
 >
-> 鉴于图查询语言 (如 Gremlin/Cypher) 本身在解析与执行上的灵活性，HugeGraph 推荐在生产环境依赖 **"[Auth (配置鉴权)](/cn/docs/config/config-authentication/) + IP 白名单 + Audit Log (审计日志)"** 机制来践行最小权限原则。同时由于 Server 节点基本是无状态的，**所有生产环境均明确建议使用[容器环境 (Docker/K8s)](/cn/docs/quickstart/hugegraph/hugegraph-server/#31-使用-docker-容器-便于测试) 进行隔离部署**。
+> HugeGraph 默认不启用用户认证。生产环境必须启用认证与授权、将 `white_ip.status` 设为 `enable` 并启用和维护 IP 白名单，同时按最小权限为账号授权；不得将 Gremlin、Cypher 等查询接口直接暴露到公网。白名单管理方式见 [IP 白名单 API](/cn/docs/clients/restful-api/other/)。生产部署还必须隔离 Server 进程，可使用 [Docker 或 Kubernetes](/cn/docs/quickstart/hugegraph/hugegraph-server/#31-使用-docker-容器-便于测试) 等容器环境。
+>
+> Server 标准配置将鉴权代理的审计记录写入 `audit-*.log`。部署时必须保留并限制这些日志的读取权限。`auth.audit_log_rate` 只控制每用户的最大日志输出速率，不是审计日志的启停开关。
+
+> [!WARNING]
+> **漏洞报告范围**
 >
 > 近期社区已收到较多关于图查询语言灵活性的安全反馈。在 HugeGraph 安全体系整体重构完成前，对于在**不启用或跳过 Auth 系统/避开授权身份**的前提下执行 DSL 查询的情况，此类已知风险将**不再单独视为新漏洞**进行处理。
 >
-> 但是，如果在**已开启 Auth 系统**的环境中，仍能以**匿名或未授权身份访问**并进行漏洞利用，或者成功**绕过 IP 白名单 / 逃逸容器**造成严重越权或底层系统破坏，我们仍然将其视为高危安全漏洞，非常欢迎您随时向我们反馈！
+> 如果在**已开启 Auth 系统**的环境中仍能以**匿名或未授权身份访问**并利用漏洞，或者成功**绕过 IP 白名单 / 逃逸容器**造成严重越权或底层系统破坏，仍属于高危安全漏洞，欢迎向社区报告。
 
 遵循 ASF 的规范，HugeGraph 社区对**解决修复**项目中的安全问题保持非常积极和开放的态度。
 
 我们强烈建议用户首先向我们的独立安全邮件列表报告此类问题，相关详细的流程规范请参考 [ASF SEC](https://www.apache.org/security/committers.html) 守则。
 
-请注意，安全邮件组适用于报告**未公开**的安全漏洞并跟进漏洞处理的过程。常规的软件 `Bug/Error` 报告应该使用 `Github Issue/Discussion` 
-或是 `HugeGraph-Dev` 邮箱组。发送到安全邮件组但与安全问题无关的邮件将被忽略。
+请注意，安全邮件组适用于报告**未公开**的安全漏洞并跟进漏洞处理的过程。常规的软件 `Bug/Error` 报告应该使用 `Github Issue/Discussion`  或是 `HugeGraph-Dev` 邮箱组。发送到安全邮件组但与安全问题无关的邮件将被忽略。
 
 独立的安全邮件 (组) 地址为： `security@hugegraph.apache.org` 
 

@@ -63,8 +63,9 @@ EXPECTED_ARTIFACTS = {
     },
 }
 
+# Site-owned labels only; ui_assets_download is inherited from OINK and checked
+# in the rendered output below.
 FIXED_I18N_KEYS = (
-    "ui_assets_download",
     "download_release_version",
     "download_release_date",
     "download_release_notes",
@@ -203,6 +204,9 @@ class DownloadDataTest(unittest.TestCase):
             self.assertTrue(page.is_file(), page)
             text = page.read_text(encoding="utf-8")
             self.assertIn("hg-asf-release", text, page)
+            labels = re.findall(r'aria-label="([^"<>]+): apache-hugegraph[^"<>]*"', text)
+            self.assertTrue(labels, page)
+            self.assertTrue(all(label.strip() and label != "ui_assets_download" for label in labels), page)
             self.assertIn("1.7.0", text, page)
             for version, expected_files in EXPECTED_ARTIFACTS.items():
                 self.assertIn(f"hugegraph-{version}-release-notes", text, page)

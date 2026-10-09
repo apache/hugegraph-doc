@@ -8,6 +8,9 @@ The code in this document is written in `java`, but its style is very similar to
 You can convert `java` code into `groovy`; in addition, each line of statement can be without a semicolon at the end, `groovy` considers a line to be a statement.
 The `gremlin(groovy)` written by the user in `HugeGraph-Studio` can refer to the `java` code in this document, and some examples will be given below.
 
+This reference follows Toolchain `master` (Client `1.8.0`). Prepare the matching dependency using the
+[quickstart](/docs/quickstart/client/hugegraph-client/); newly added APIs such as capability detection are unavailable in older clients.
+
 ### 1 HugeGraph-Client
 
 HugeGraph-Client is the general entry for operating graph. Users must first create a HugeGraph-Client object and establish a connection (pseudo connection) with HugeGraph-Server before they can obtain the operation entry objects of schema, graph and gremlin.
@@ -20,7 +23,7 @@ HugeGraph-Client connects to an existing graph on the server. Its builder accept
 HugeClient hugeClient = HugeClient.builder("http://localhost:8080", "hugegraph")
                                 //.builder("http://localhost:8080", "graphSpaceName", "hugegraph")
                                   .configTimeout(20) // 20s timeout
-                                  .configUser("**", "**") // enable auth 
+                                  // .configUser("username", "password") // set only when server auth is enabled
                                   .build();
 ```
 
@@ -39,7 +42,7 @@ The builder accepts the following options. Every timeout is expressed in seconds
 | `configGraphSpace(String graphSpace)`                         | GraphSpace name, a null or empty value falls back to `DEFAULT`                          | `DEFAULT`           |
 | `configUser(String username, String password)`                | Credentials for the server, a null value is stored as an empty string                   | empty, no auth      |
 | `configToken(String token)`                                   | Token used instead of username and password                                             | empty               |
-| `configTimeout(int seconds)`                                  | Request timeout, passing `0` restores the default                                       | 20                  |
+| `configTimeout(int seconds)`                                  | Request timeout; use a positive number of seconds                                       | 20                  |
 | `configConnectTimeout(Integer seconds)`                       | Connect timeout, left unset so that `configTimeout` applies                             | unset               |
 | `configReadTimeout(Integer seconds)`                          | Read timeout, left unset so that `configTimeout` applies                                | unset               |
 | `configPool(int maxConns, int maxConnsPerRoute)`              | Connection pool sizes, passing `0` for either one restores its default                  | 4 x CPUs, 2 x CPUs  |
@@ -47,6 +50,9 @@ The builder accepts the following options. Every timeout is expressed in seconds
 | `configSSL(String trustStoreFile, String trustStorePassword)` | Truststore used for HTTPS connections                                                   | empty               |
 | `configHttpBuilder(Consumer<OkHttpClient.Builder> consumer)`  | Callback that receives the underlying OkHttp builder for further customization          | none                |
 | `graphRequired(boolean graphRequired)`                        | Whether `build()` rejects an empty url or graph name                                    | true                |
+
+Current master has a unit-conversion defect in `configTimeout(0)`: it sets 20,000 seconds instead of the default 20 seconds.
+Omit the call to keep the default, or use `configTimeout(20)` explicitly; do not use `0` to reset it.
 
 On `build()`, the client reads the server API version and rejects anything outside the range `[0.38, 0.81)`.
 
@@ -481,10 +487,19 @@ The constraint information that IndexLabel allows to define include: name, baseT
 
 ##### 2.5.2 Create IndexLabel
 
+These examples assume a `person` vertex label with `name` and `age`, and a `created` edge label with `date`.
+First add the indexed properties below; `id` is a business property, separate from the internal vertex ID.
+
 ```java
+schema.propertyKey("lived").asText().ifNotExist().create();
+schema.propertyKey("city").asText().ifNotExist().create();
+schema.propertyKey("id").asInt().ifNotExist().create();
+schema.vertexLabel("person").properties("lived", "city", "id")
+      .nullableKeys("lived", "city", "id").append();
+
 schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 schema.indexLabel("createdByDate").onE("created").by("date").secondary().ifNotExist().create();
-schema.indexLabel("personByLived").onE("person").by("lived").search().ifNotExist().create();
+schema.indexLabel("personByLived").onV("person").by("lived").search().ifNotExist().create();
 schema.indexLabel("personByCityAndAge").onV("person").by("city", "age").shard().ifNotExist().create();
 schema.indexLabel("personById").onV("person").by("id").unique().ifNotExist().create();
 ```

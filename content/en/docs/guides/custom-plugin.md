@@ -38,7 +38,7 @@ configuration items to the plug-in custom value, and restarts to take effect
 
 ##### 1.2 Add `hugegraph-core` Jar package dependencies
 
-The details of maven pom.xml are as follows:
+The Maven `pom.xml` is shown below. Match `hugegraph.version` to the target Server version; this example uses the current master version 1.7.0:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -55,11 +55,15 @@ The details of maven pom.xml are as follows:
 
     <name>hugegraph-plugin-demo</name>
 
+    <properties>
+        <hugegraph.version>1.7.0</hugegraph.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-core</artifactId>
-            <version>${project.version}</version>
+            <version>${hugegraph.version}</version>
         </dependency>
     </dependencies>
 </project>
@@ -113,7 +117,7 @@ public class RocksDBStoreProvider extends AbstractBackendStoreProvider {
 
 ###### 2.1.2 Implement interface BackendStore
 
-The BackendStore interface is defined as follows:
+The main abstract methods of `BackendStore` are shown below; default helper methods are omitted:
 
 ```java
 public interface BackendStore {
@@ -153,6 +157,9 @@ public interface BackendStore {
 
     // Query data
     Iterator<BackendEntry> query(Query query);
+    Iterator<Iterator<BackendEntry>> query(Iterator<Query> queries,
+                                          Function<Query, Query> queryWriter,
+                                          HugeGraph hugeGraph);
     Number queryNumber(Query query);
 
     // Transaction

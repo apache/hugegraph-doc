@@ -310,7 +310,7 @@ mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true 
 #### 依赖服务
 
 - **必需**：HugeGraph Server
-- **可选**：Hadoop (HDFS 测试)、MySQL (JDBC 测试)
+- **可选**：Hadoop (HDFS 测试)、MySQL (JDBC 测试)；Kafka 测试通过 Testcontainers 启动 Kafka 容器，因此还需要可用的 Docker daemon
 
 #### 运行测试
 
@@ -320,7 +320,7 @@ mvn test -P unit -ntp   # 单元测试
 mvn test -P file -ntp   # 文件测试（需 Server）
 mvn test -P hdfs -ntp   # HDFS测试（需 Server + Hadoop）
 mvn test -P jdbc -ntp   # JDBC测试（需 Server + MySQL）
-mvn test -P kafka -ntp  # Kafka测试（需 Server）
+mvn test -P kafka -ntp  # Kafka 测试（需 Server + Docker daemon；测试会启动 Kafka 容器）
 ```
 
 ### 4.3 hugegraph-hubble

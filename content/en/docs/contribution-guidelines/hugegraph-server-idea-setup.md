@@ -4,7 +4,7 @@ linkTitle: "Setup Server in IDEA"
 weight: 4
 ---
 
-> NOTE: The following configuration is for reference purposes only, and has been tested on Linux and macOS platforms based on [this version](https://github.com/apache/hugegraph/commit/a946ad1de4e8f922251a5241ffc957c33379677f).
+> **Scope**: These IDEA instructions are based on the HugeGraph [1.2.0 release tag](https://github.com/apache/hugegraph/tree/1.2.0) and retained as historical debugging steps. For current source layout and verification commands, see the [contribution process](/docs/contribution-guidelines/contribute/) and [Server quick start](/docs/quickstart/hugegraph/hugegraph-server/). Do not infer the current module list from this page.
 
 ### Background
 
@@ -37,7 +37,7 @@ cp -r hugegraph-server/hugegraph-dist/src/assembly/static/scripts \
 
 Replace `path-to-your-directory` with the path to the directory where you want to copy the files. Run the command from the repository root, the `hugegraph-dist` module lives under the top-level `hugegraph-server` directory.
 
-> ToplingDB is not part of the `master` distribution. In a build that includes it, developers need to execute the `preload-topling.sh` script, which automatically extracts the required dynamic libraries and Web Server static resources into the `library` directory located alongside the `bin` directory (the static resources will also be copied to `/dev/shm/rocksdb_resource` ).
+> The following ToplingDB steps apply only to historical custom builds. Current master contains neither `preload-topling.sh` nor the ToplingDB module; skip this note when debugging current master.
 
 #### 2. Configure `InitStore` to initialize the graph
 
@@ -118,7 +118,7 @@ Once the configuration is completed, run it. If you see the following logs, it m
 
 #### 4. Debugging `HugeGraphServer` (optional)
 
-After completing the above configuration, you can try debugging `HugeGraphServer`. Run `HugeGraphServer` in debug mode and set a breakpoint at the following [location](https://github.com/apache/hugegraph/blob/a946ad1de4e8f922251a5241ffc957c33379677f/hugegraph-api/src/main/java/org/apache/hugegraph/api/graph/VertexAPI.java#L238):
+After completing the above configuration, you can try debugging `HugeGraphServer`. Run `HugeGraphServer` in debug mode and set a breakpoint at the following [location](https://github.com/apache/hugegraph/blob/1.2.0/hugegraph-server/hugegraph-api/src/main/java/org/apache/hugegraph/api/graph/VertexAPI.java#L238):
 
 ```java
 public String list(@Context GraphManager manager,

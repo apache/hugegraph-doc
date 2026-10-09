@@ -4,20 +4,18 @@ linkTitle: "在 IDEA 中配置 Server 开发环境"
 weight: 4
 ---
 
-> 注意：下述配置仅供参考，基于[这个版本](https://github.com/apache/hugegraph/commit/a946ad1de4e8f922251a5241ffc957c33379677f)，在 Linux 和 macOS 平台下进行了测试。
+> **适用范围**：下述 IDEA 配置基于 HugeGraph [1.2.0 发布标签](https://github.com/apache/hugegraph/tree/1.2.0)，仅作为历史调试步骤保留。当前主线的源码目录和验证入口见[贡献流程](/cn/docs/contribution-guidelines/contribute/)与 [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/)；不要从本页推断当前模块清单。
 
 ### 背景
 
-在 [Quick Start](/docs/quickstart/hugegraph/hugegraph-server/) 部分已经介绍了使用**脚本**启停 HugeGraph-Server 的流程。下面以 Linux 平台为例，
-介绍使用 **IntelliJ IDEA** 运行与调试 HugeGraph-Server 的流程。
+在 [快速上手](/docs/quickstart/hugegraph/hugegraph-server/) 部分已经介绍了使用**脚本**启停 HugeGraph-Server 的流程。下面以 Linux 平台为例，介绍使用 **IntelliJ IDEA** 运行与调试 HugeGraph-Server 的流程。
 
 本地启动的核心与**脚本启动**是一样的：
 
 1. 初始化数据库后端，执行 `InitStore` 类初始化图
 2. 启动 HugeGraph-Server，执行 `HugeGraphServer` 类加载初始化的图信息启动
 
-在执行下述流程之前，请确保已经克隆了 HugeGraph 的源代码，并且已经配置了 Java 11 环境 & 可以参考这个
-[配置文档](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
+在执行下述流程之前，请确保已经克隆了 HugeGraph 的源代码，并且已经配置了 Java 11 环境 & 可以参考这个 [配置文档](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
 
 ```bash
 git clone https://github.com/apache/hugegraph.git
@@ -37,7 +35,7 @@ cp -r hugegraph-server/hugegraph-dist/src/assembly/static/scripts \
 
 将 `path-to-your-directory` 替换为你创建的文件夹的路径。命令需在仓库根目录执行，`hugegraph-dist` 模块位于顶层的 `hugegraph-server` 目录之下。
 
-> ToplingDB 不在 `master` 的发布包中。在包含它的构建里，开发者需执行 `preload-topling.sh` 脚本，该脚本会将相关动态库和 Web Server 所需的静态资源自动解压至与 `bin` 同级的 `library` 目录中 (静态资源会同时拷贝到 `/dev/shm/rocksdb_resource` 中)。
+> 下列 ToplingDB 步骤仅适用于历史定制构建。当前主线源码不包含 `preload-topling.sh` 或 ToplingDB 模块，按当前主线调试时跳过此说明。
 
 #### 2. `InitStore` 类初始化图
 
@@ -119,7 +117,7 @@ rocksdb.wal_path=.
 
 #### 4. 调试 `HugeGraphServer` (可选)
 
-在完成上述配置后，可以尝试对 `HugeGraphServer` 进行调试。在调试模式下运行 `HugeGraphServer`，并在以下[位置](https://github.com/apache/hugegraph/blob/a946ad1de4e8f922251a5241ffc957c33379677f/hugegraph-api/src/main/java/org/apache/hugegraph/api/graph/VertexAPI.java#L238)设置断点：
+在完成上述配置后，可以尝试对 `HugeGraphServer` 进行调试。在调试模式下运行 `HugeGraphServer`，并在以下[位置](https://github.com/apache/hugegraph/blob/1.2.0/hugegraph-server/hugegraph-api/src/main/java/org/apache/hugegraph/api/graph/VertexAPI.java#L238)设置断点：
 
 ```java
 public String list(@Context GraphManager manager,
@@ -171,7 +169,7 @@ curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
 
 ##### 参考
 
-1. [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/)
+1. [HugeGraph-Server 快速上手](/docs/quickstart/hugegraph/hugegraph-server/)
 2. [hugegraph-server 本地调试文档 (Win/Unix)](https://gist.github.com/imbajin/1661450f000cd62a67e46d4f1abfe82c)
 3. ["package sun.misc does not exist" compilation error](https://youtrack.jetbrains.com/issue/IDEA-180033)
 4. [Cannot compile: java: package sun.misc does not exist](https://youtrack.jetbrains.com/issue/IDEA-201168)

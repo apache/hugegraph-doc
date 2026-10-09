@@ -4,13 +4,33 @@ linkTitle: "HugeGraph Computing (OLAP)"
 weight: 4
 ---
 
-The HugeGraph-Computer repository contains two OLAP systems: Vermeer, an in-memory graph computing platform implemented in Go, and Computer, a distributed BSP framework implemented in Java.
+The HugeGraph-Computer repository contains two graph computing systems with different deployment and runtime models. Start with Go Vermeer for general graph algorithms; use Computer when you need distributed Java BSP/Pregel computation. Both can connect to HugeGraph, but their configuration and job entry points are not interchangeable.
 
-> DeepWiki provides real-time updated project documentation with more comprehensive and accurate content, suitable for quickly understanding the latest project information.
->
-> 📖 [https://deepwiki.com/apache/hugegraph-computer/](https://deepwiki.com/apache/hugegraph-computer/)
+### Default entry: Go Vermeer
+
+```mermaid
+flowchart TB
+    Master["Master"] --> Workers["Workers"]
+    Master -->|PD| PD["PD"]
+    Workers -->|Scan| Store["Store"]
+    Workers -.->|REST| Server["Server"]
+```
+
+With `load.type=hugegraph`, the Vermeer master queries PD for partition metadata and workers scan HStore Store partitions directly. Workers write results through the Server REST API only when `output.type=hugegraph`; other input sources or output settings do not require those connections.
+
+### Java Computer
+
+```mermaid
+flowchart TB
+    Config["Job configuration"] --> Master["Master"] --> Workers["Workers"]
+    Master -. BSP .-> Etcd["etcd"]
+    Workers <-->|REST| Server["Server"]
+    Workers <-->|HDFS| HDFS["HDFS (optional)"]
+```
+
+Job configuration can be submitted through the Kubernetes Operator or YARN. Workers read graph data through the HugeGraph Server REST API and can write results back according to the output configuration. With HDFS input or output, workers access HDFS directly. The master uses etcd to coordinate BSP jobs.
 
 - [Vermeer Quick Start](./hugegraph-vermeer.md)
 - [Computer Quick Start](./hugegraph-computer/)
 - [Computer Configuration Reference](./hugegraph-computer-config.md)
-- [Source code](https://github.com/apache/hugegraph-computer)
+- [Computer source code](https://github.com/apache/hugegraph-computer)

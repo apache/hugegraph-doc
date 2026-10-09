@@ -6,7 +6,10 @@ weight: 2
 
 如果你需要把数据从一张 HugeGraph 图复制到另一张图，使用 `graph2graph`：HugeGraph Source 从源图（A 图）读取顶点和边，数据经过可选的 Transform 后，由 HugeGraph Sink 写入目标图（B 图）。数据方向是 `A 图 → HugeGraph Source →（可选 Transform）→ HugeGraph Sink → B 图`。如果要把图数据导出到文件、JDBC、Kafka 等其他系统，则使用 `graph2any`，由下游 Sink 接收 Source 读取的数据。本文介绍这两类任务。
 
-> **版本要求：本文面向 SeaTunnel [3.0+](https://github.com/apache/seatunnel/tree/3.0.0-release)**
+> **版本要求：本文面向 SeaTunnel [3.0+](https://seatunnel.apache.org/download/)**
+
+SeaTunnel 3.0+ 提供 HugeGraph Source，支持图模型自动发现和多标签读取。
+并行扫描的后端要求和配置限制见[官方 Source 文档](https://seatunnel.apache.org/docs/connectors/source/HugeGraph/)。
 
 开始前请先完成[导入页中的通用环境准备和配置](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/#2-准备环境)，其中包含 JDK、HOCON、插件安装和图模型说明。
 
@@ -138,7 +141,7 @@ sink {
 
 > **为什么保留 ID？** HugeGraph 的 `PRIMARY_KEY` ID 包含顶点标签的内部 ID，两张图可能不同。例如源图顶点是 `1:marko`，目标图重新按主键生成的可能是 `2:marko`。如果重新生成顶点 ID 后仍复用源图的边端点，边就会连错。本例将原 ID 保存为字符串，因此会改变目标图的 ID 策略
 
-若要一次读取全部标签，省略 Source 的 `label` 后会读取 `label_type`（默认 `VERTEX`）下的全部 label，每个 label 输出一张表。这时需用 `sourceTable` 将各 Sink 映射绑定到对应表，例如 `sourceTable = "default.person"`；具体值以 Writer 日志中的完整表名为准。不能直接套用本节的单标签配置。其他限制见 [HugeGraph Source 文档](https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md)。
+若要一次读取全部标签，省略 Source 的 `label` 后会读取 `label_type`（默认 `VERTEX`）下的全部 label，每个 label 输出一张表。这时需用 `sourceTable` 将各 Sink 映射绑定到对应表，例如 `sourceTable = "default.person"`；具体值以 Writer 日志中的完整表名为准。不能直接套用本节的单标签配置。其他限制见 [HugeGraph Source 文档](https://seatunnel.apache.org/docs/connectors/source/HugeGraph/)。
 
 ## 2 导出到其他系统（graph2any）
 
@@ -188,8 +191,8 @@ sink {
 
 **连接器**
 
-<p><sup>[1]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/source/HugeGraph.md">HugeGraph Source</a><br>
-<sup>[2]</sup> <a href="https://github.com/apache/seatunnel/blob/3.0.0-release/docs/zh/connectors/sink/LocalFile.md">LocalFile Sink</a></p>
+<p><sup>[1]</sup> <a href="https://seatunnel.apache.org/docs/connectors/source/HugeGraph/">HugeGraph Source</a><br>
+<sup>[2]</sup> <a href="https://seatunnel.apache.org/docs/connectors/sink/LocalFile/">LocalFile Sink</a></p>
 
 **关联文档**
 

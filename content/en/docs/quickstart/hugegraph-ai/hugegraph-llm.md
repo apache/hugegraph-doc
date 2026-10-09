@@ -4,7 +4,10 @@ linkTitle: "HugeGraph-LLM"
 weight: 1
 ---
 
-HugeGraph-LLM connects graph databases with large language models for knowledge graph construction, GraphRAG, and natural-language graph queries. Its demo service hosts the Gradio UI and FastAPI endpoints in the same process and listens on port `8001` by default.
+HugeGraph-LLM supports knowledge graph construction, GraphRAG, and natural-language graph queries. Its demo service hosts Gradio and FastAPI in one process. Source launches listen locally at `127.0.0.1:8001`, accessible at `http://localhost:8001`; explicitly use `--host 127.0.0.1` for local-only access. `Dockerfile.llm` overrides this to `0.0.0.0:8001`; do not use loopback inside the container, or published ports will not reach the service.
+
+> [!WARNING]
+> Production requires HugeGraph-LLM login (`ENABLE_LOGIN=True`, replacing `USER_TOKEN` and `ADMIN_TOKEN`) and a source IP allowlist at the firewall or network entry point. Separately enable [Server authentication and authorization](/docs/config/config-authentication/), retain Server audit logs (normally `audit-*.log`), and grant `GRAPH_USER` only the permissions this service needs. AI service tokens authenticate the LLM UI and API, not HugeGraph Server.
 
 ## Requirements
 
@@ -12,7 +15,7 @@ HugeGraph-LLM connects graph databases with large language models for knowledge 
 
 - Python 3.10 or 3.11 (`>=3.10,<3.12`)
 - `uv` 0.7 or later
-- HugeGraph Server 1.3 or later (1.5 or later recommended)
+- HugeGraph Server 1.5.0 or later; the current workspace client rejects detectable older versions
 
 ## Deploy with Docker Compose
 
@@ -24,6 +27,7 @@ cd hugegraph-ai
 cp docker/env.template docker/.env
 # Edit docker/.env and set PROJECT_PATH to the absolute path of this repository
 touch hugegraph-llm/.env
+# Set GRAPH_URL=server:8080 and matching GRAPH_USER / GRAPH_PWD in hugegraph-llm/.env
 cd docker
 docker compose -f docker-compose-network.yml up -d
 docker compose -f docker-compose-network.yml ps
@@ -33,29 +37,33 @@ After startup, HugeGraph Server is available at `http://localhost:8080`, and the
 
 The Compose file mounts `${PROJECT_PATH}/hugegraph-llm/.env` into the container at `/home/work/hugegraph-llm/.env`, so the file has to exist before the container starts. The resource directory `hugegraph-llm/src/hugegraph_llm/resources` can be mounted the same way; the mount is commented out by default.
 
+The application reads `GRAPH_URL`; Compose-provided `HUGEGRAPH_HOST` and `HUGEGRAPH_PORT` do not override it. Set `GRAPH_URL=server:8080` and matching Server credentials in the container's `.env`.
+
 ## Container Images
 
-| Image | Built from | Contents |
-|---|---|---|
-| `hugegraph/rag` | `docker/Dockerfile.llm` | Python 3.10 runtime with the source tree, started with `python -m hugegraph_llm.demo.rag_demo.app --host 0.0.0.0 --port 8001` |
-| `hugegraph/rag-bin` | `docker/Dockerfile.nk` | Nuitka-compiled binary built from the `nk-llm` extra, started with `./app.dist/app.bin` |
+| Build recipe | Description |
+|---|---|
+| `docker/Dockerfile.llm` | Source runtime image recipe; starts `python -m hugegraph_llm.demo.rag_demo.app --host 0.0.0.0 --port 8001` |
+| `docker/Dockerfile.nk` | Nuitka binary image recipe using the `nk-llm` extra; starts `./app.dist/app.bin` |
 
-Both images expose port `8001`, run as the non-root user `work`, declare a volume for `hugegraph-llm/src/hugegraph_llm/resources`, and use `curl -f http://localhost:8001/` as their health check.
-
-`scripts/build_llm_image.sh` builds `docker/Dockerfile.llm` and tags the result `hugegraph/graphrag:1.7.0`.
+Compose references untagged `hugegraph/rag`, which resolves to `latest`. `scripts/build_llm_image.sh` builds `docker/Dockerfile.llm` locally as `hugegraph/graphrag:1.7.0`. These are different images: building locally does not replace Compose's image. To run the build, change Compose's `image` to `hugegraph/graphrag:1.7.0`. The script builds but does not push. Both Dockerfiles expose `8001`, run as non-root user `work`, declare a resource-directory volume, and use `curl -f http://localhost:8001/` as their health check.
 
 ## Deploy on Kubernetes
 
 `docker/charts/hg-llm` is a Helm chart for the RAG service. It deploys the `hugegraph/graphrag` image and, by default, publishes a `NodePort` service that maps node port `8039` and service port `8080` onto container port `8001`. The release name is fixed to `hg-llm-service`. Ingress and horizontal pod autoscaling are present but disabled by default.
 
-The chart still defaults `image.tag` to `v0.0.1`, so set `--set image.tag=1.7.0` or edit `values.yaml` to match the tag you built.
+The chart deploys only the RAG service, not HugeGraph Server. Set `GRAPH_URL` in the mounted `.env` to a Server address reachable from the Pod, with matching credentials.
 
-The chart ships the `.env` and prompt YAML mounts commented out in `values.yaml`. To supply your own configuration, create the two config maps and then uncomment the matching `volumes` and `volumeMounts` blocks:
+`image.tag` still defaults to `v0.0.1`. The build script produces local `hugegraph/graphrag:1.7.0`; before deployment, push the image to a registry reachable by the cluster or load it onto cluster nodes, then set matching tag and pull policy values.
+
+The `.env` and prompt YAML mounts are commented out in `values.yaml`. Prompt YAML can use a ConfigMap, but `.env` may contain secrets and passwords: use a Secret and change the `env-config` volume from `configMap` to `secret`. Create them separately:
 
 ```bash
-kubectl create configmap hugegraph-llm-env --from-file=/path/to/.env
+kubectl create secret generic hugegraph-llm-env --from-file=.env=/path/to/.env
 kubectl create configmap hugegraph-llm-prompt-config --from-file=/path/to/config_prompt.yaml
 ```
+
+Uncomment the `volumeMounts` entries and enable the prompt ConfigMap volume/mount if needed. Helm renders these volume definitions directly from `values.yaml`.
 
 ## Start from Source
 

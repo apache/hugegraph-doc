@@ -53,9 +53,9 @@ HugeGraph Server 是图数据库的 OLTP 引擎和服务入口，负责属性图
 
 单机部署通常使用 RocksDB。分布式部署使用 HStore，由 PD 管理集群元数据和分区调度，Store 保存图数据及其副本。HBase 可作为独立的后端存储。
 
-- [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/)
-- [PD 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-pd/)
-- [HStore 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)
+- [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/)
+- [PD 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-pd/)
+- [HStore 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [REST API](/cn/docs/clients/restful-api/)
 
 ## HugeGraph Toolchain
@@ -73,15 +73,15 @@ HugeGraph Toolchain 提供客户端、数据导入、可视化管理、Spark 集
 
 ## 图计算引擎（OLAP）
 
-HugeGraph-Computer 仓库提供两种互补的 OLAP 图计算引擎：
+HugeGraph-Computer 仓库提供两种互补的 OLAP 图计算引擎。通用图算法任务默认建议从 Vermeer 开始；需要 Java BSP/Pregel 计算模型时，可使用 Computer：
 
-- **Vermeer**：使用 Go 编写，采用 master-worker 架构，以内存计算为主，提供 REST API、gRPC 和 Web UI，适合快速执行中小规模图分析任务。
+- **Vermeer（默认入口）**：使用 Go 编写，采用 master-worker 架构，以内存计算为主，提供 REST API、gRPC 和 Web UI，适合快速执行中小规模图分析任务。
 - **Computer**：使用 Java 编写，实现 BSP/Pregel 分布式计算模型，可运行在 Kubernetes、YARN 或本地进程中。数据超过内存阈值时可以落盘，适合更大规模的图计算任务。
 
 两者都可以读取 HugeGraph 数据，但运行架构、资源需求、配置和算法接口不同。
 
-- [Vermeer 快速开始](/cn/docs/quickstart/computing/hugegraph-vermeer/)
-- [Computer 快速开始](/cn/docs/quickstart/computing/hugegraph-computer/)
+- [Vermeer 快速上手](/cn/docs/quickstart/computing/hugegraph-vermeer/)
+- [Computer 快速上手](/cn/docs/quickstart/computing/hugegraph-computer/)
 
 ## HugeGraph-AI（Graph + AI）
 
@@ -92,13 +92,13 @@ HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库�
 - **hugegraph-python-client**：通过 Python 管理 Schema、图数据和 Gremlin 查询
 - **vermeer-python-client**：通过 Python 调用 Vermeer 图计算服务
 
-[HugeGraph-AI 快速开始](/cn/docs/quickstart/hugegraph-ai/quick_start/)
+[HugeGraph-AI 快速上手](/cn/docs/quickstart/hugegraph-ai/quick_start/)
 
 ## 部署模式
 
 | 模式 | 核心组件 | 适用场景 | 数据规模 |
 |---|---|---|---|
-| **单机模式（OLTP）** | Server + RocksDB | 开发、测试和中小规模数据 | ≤ 2 TB |
+| **单机模式（OLTP）** | Server + RocksDB | 开发、测试、Graph AI 和中小规模生产环境 | ≤ 2 TB |
 | **分布式模式（OLTP）** | Server + PD + Store（HStore） | 生产环境、水平扩展和多副本部署 | ≤ 1 PB |
 
 图计算属于 OLAP 任务，容量和资源需求取决于所选引擎、图结构与算法，不沿用上表的 OLTP 存储容量口径。
@@ -107,10 +107,10 @@ HugeGraph-AI 连接图技术与大语言模型、图机器学习框架。仓库�
 
 | 需求 | 文档 |
 |---|---|
-| 启动图数据库并执行查询 | [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/) |
-| 批量导入数据 | [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) |
+| 启动图数据库并执行查询 | [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/) |
+| 批量导入数据 | [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/)、[SeaTunnel](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/) |
 | 使用 Web 界面管理图 | [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) |
-| 运行图算法 | [Vermeer 与 Computer](/cn/docs/quickstart/computing/) |
+| 运行图算法 | [HugeGraph Computing](/cn/docs/quickstart/computing/hugegraph-vermeer/) |
 | 构建 GraphRAG 或图机器学习应用 | [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/) |
 
 ## 社区 {#community}

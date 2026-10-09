@@ -64,12 +64,25 @@
     return queue;
   }
 
+  function pickExampleQuestions(questions, random) {
+    var choices = Array.from(new Set(questions || []));
+    random = random || Math.random;
+    for (var i = choices.length - 1; i > 0; i--) {
+      var j = Math.floor(random() * (i + 1));
+      var value = choices[i];
+      choices[i] = choices[j];
+      choices[j] = value;
+    }
+    return choices.slice(0, 3);
+  }
+
   function scriptAttributes(config) {
     return {
       'data-website-id': config.websiteId,
       'data-source-group-ids-include': config.sourceGroupId,
       'data-language': config.locale,
       'data-project-name': 'Apache HugeGraph',
+      'data-project-logo': '/img/logo.svg',
       'data-project-color': config.themeColor,
       'data-project-color-dark': mixWithWhite(config.themeColor, 48),
       'data-surface-color': '#ffffff',
@@ -90,6 +103,7 @@
       'data-font-family':
         '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
       'data-modal-content-border-radius': '12px',
+      'data-modal-z-index': '1050',
       'data-modal-content-border': '1px solid #d9d4e4',
       'data-modal-content-border-dark': '1px solid #494254',
       'data-launcher-button-hidden': 'true',
@@ -102,19 +116,62 @@
       'data-exit-feedback-enabled': 'false',
       'data-user-satisfaction-feedback-enabled': 'false',
       'data-bot-protection-mechanism': 'hcaptcha',
+      'data-example-questions': (config.exampleQuestions || []).join(','),
+      'data-example-questions-col-span': '12',
+      'data-answer-cta-button-enabled': 'true',
+      'data-answer-cta-button-text': config.labels.community,
+      'data-answer-cta-button-link': config.communityURL,
+      'data-answer-cta-button-background-color': 'transparent',
+      'data-answer-cta-button-border': 'none',
+      'data-answer-cta-button-font-weight': '400',
+      'data-answer-cta-button-font-size': '.8rem',
     };
   }
 
   function createController(windowObject, documentObject, config) {
     var state = 'idle';
-    var consented = false;
+    var widgetConfig = Object.assign({}, config, {
+      exampleQuestions: pickExampleQuestions(config.exampleQuestions),
+    });
+    var consentKey = 'hg-ai-consent:v2:' + config.websiteId;
+    var choice = null;
+    try {
+      choice = windowObject.localStorage.getItem(consentKey);
+    } catch (_) {
+      // Storage may be disabled; consent still works for this page only.
+    }
+    var consented = choice === 'granted';
+    windowObject.addEventListener('storage', function (event) {
+      if (event.key !== consentKey && event.key !== null) return;
+      if ((consented && event.newValue !== 'granted') ||
+          (!consented && (event.newValue === 'granted' ||
+            (event.newValue === 'dismissed' && choice !== 'dismissed')))) {
+        // Synchronize other tabs' choices without loading the vendor on startup.
+        windowObject.location.reload();
+      }
+    });
     var pending = null;
     var consent = documentObject.querySelector('[data-hg-ai-consent]');
+    var launcher = documentObject.querySelector('.hg-ask-ai-launcher');
+    if (consent) consent.hidden = true;
+    function renderLauncher(hidden) {
+      if (!launcher) return;
+      launcher.hidden = hidden;
+      if (consented) launcher.setAttribute('aria-haspopup', 'dialog');
+      else launcher.removeAttribute('aria-haspopup');
+    }
+    renderLauncher(false);
+
+    function dismissConsent() {
+      if (consent) consent.hidden = true;
+      renderLauncher(false);
+    }
     var attempt = 0;
     var timer = 0;
     var lastTrigger = null;
     var activeScript = null;
     var activeQueue = null;
+    var operation = null;
     var status = documentObject.querySelector('[data-hg-ai-status]');
 
     function renderState(next, message) {
@@ -133,13 +190,30 @@
       }
     }
 
+    function settle(error) {
+      if (!operation) return;
+      var current = operation;
+      operation = null;
+      current.signal.removeEventListener('abort', current.abort);
+      if (error) current.reject(error);
+      else current.resolve();
+    }
+
     function openWidget(query, submit) {
-      invokeKapa(windowObject, 'setSourceGroupIDs', [config.sourceGroupId]);
-      invokeKapa(windowObject, 'open', {
-        mode: 'ai',
-        query: query,
-        submit: submit,
-      });
+      try {
+        invokeKapa(windowObject, 'setSourceGroupIDs', [config.sourceGroupId]);
+        invokeKapa(windowObject, 'open', {
+          mode: 'ai',
+          query: query,
+          submit: submit,
+        });
+        settle();
+      } catch (_) {
+        discardAttempt(attempt);
+        renderState('error', config.labels.error);
+        settle(new Error(config.labels.error));
+        restoreFocus();
+      }
     }
 
     function discardAttempt(serial) {
@@ -172,6 +246,8 @@
       windowObject.clearTimeout(timer);
       discardAttempt(serial);
       renderState('error', config.labels.error);
+      settle(new Error(config.labels.error));
+      restoreFocus();
     }
 
     function ready(serial, query, submit) {
@@ -195,7 +271,7 @@
         BUNDLE_URL + (retrying ? '?hg-retry=' + encodeURIComponent(serial) : '');
       script.dataset.hgKapaWidget = '';
       script.dataset.hgKapaAttempt = String(serial);
-      var attrs = scriptAttributes(config);
+      var attrs = scriptAttributes(widgetConfig);
       Object.keys(attrs).forEach(function (name) {
         script.setAttribute(name, attrs[name]);
       });
@@ -230,7 +306,7 @@
         openWidget(query, Boolean(submit && query));
         return;
       }
-      var retrying = state === 'error';
+      var retrying = attempt > 0;
       var serial = ++attempt;
       renderState('loading', '');
       timer = windowObject.setTimeout(function () {
@@ -240,31 +316,68 @@
     }
 
     function cancelConsent() {
+      if (!consented) {
+        try {
+          windowObject.localStorage.setItem(consentKey, 'dismissed');
+          choice = 'dismissed';
+        } catch (_) {
+          // Without storage the dismissal applies only to this page.
+        }
+      }
       pending = null;
       renderState('idle', '');
-      if (consent && consent.open) consent.close();
+      dismissConsent();
+      if (!lastTrigger) lastTrigger = launcher;
       restoreFocus();
+      settle();
     }
 
-    function activate(query, submit, trigger) {
+    function activate(query, submit, trigger, context) {
       if (state === 'loading' || state === 'consent') return;
+      if (context && context.signal.aborted) return Promise.resolve();
       lastTrigger = trigger || documentObject.activeElement;
+      var completion;
+      if (context) {
+        completion = new Promise(function (resolve, reject) {
+          operation = { signal: context.signal, resolve: resolve, reject: reject };
+          operation.abort = function () {
+            windowObject.clearTimeout(timer);
+            if (state === 'loading') discardAttempt(attempt);
+            attempt += 1;
+            pending = null;
+            dismissConsent();
+            renderState('idle', '');
+            settle();
+          };
+          context.signal.addEventListener('abort', operation.abort, { once: true });
+        });
+        // Transfer focus to the inline notice; OINK keeps cancellation alive
+        // until this promise settles, including when search is opened again.
+        if (!context.handoff()) {
+          settle();
+          return completion;
+        }
+      }
       if (consented) {
         load(query, submit);
-        return;
+        return completion;
       }
       // Fail closed if the local consent panel is unavailable.
-      if (!consent || typeof consent.showModal !== 'function') {
+      if (!consent) {
         renderState('error', config.labels.error);
-        return;
+        settle(new Error(config.labels.error));
+        return completion;
       }
       pending = { query: trimmedQuery(query), submit: submit };
       renderState('consent', '');
-      consent.showModal();
+      renderLauncher(true);
+      consent.hidden = false;
+      consent.querySelector('[data-hg-ai-continue]').focus();
+      return completion;
     }
 
     if (consent) {
-      // Keep the underlying search palette from consuming modal keyboard events.
+      // Keep pending search handoff keyboard events within the consent notice.
       consent.addEventListener('keydown', function (event) {
         event.stopPropagation();
         if (event.key === 'Escape') {
@@ -273,18 +386,20 @@
         }
       });
       consent.querySelector('[data-hg-ai-continue]').addEventListener('click', function () {
-        if (!pending) return;
-        var request = pending;
+        if (consented || state === 'loading') return;
+        var request = pending || { query: '', submit: false };
+        if (!pending) lastTrigger = launcher;
         pending = null;
         consented = true;
-        consent.close();
+        try {
+          windowObject.localStorage.setItem(consentKey, 'granted');
+        } catch (_) {
+          // Never bypass initial consent when persistence is unavailable.
+        }
+        dismissConsent();
         load(request.query, request.submit);
       });
       consent.querySelector('[data-hg-ai-cancel]').addEventListener('click', cancelConsent);
-      consent.addEventListener('cancel', function (event) {
-        event.preventDefault();
-        cancelConsent();
-      });
     }
 
     function restoreFocus() {
@@ -306,119 +421,48 @@
     var config = readConfig(documentObject);
     if (!config) return null;
     var controller = createController(windowObject, documentObject, config);
-    var root = documentObject.getElementById('td-shell-search');
-    var input = root && root.querySelector('.td-shell-search__input');
-    var list = root && root.querySelector('.td-shell-search__list');
-    var syncing = false;
-
-    function bind(button) {
+    documentObject.querySelectorAll('[data-hg-ask-ai]').forEach(function (button) {
       if (button.dataset.hgAiBound !== undefined) return;
       button.dataset.hgAiBound = '';
       button.addEventListener('click', function () {
-        controller.activate(
-          button.dataset.hgAiQuery || '',
-          button.dataset.hgAiSubmit === 'true',
-          button,
-        );
+        controller.activate('', false, button);
       });
-    }
-    documentObject.querySelectorAll('[data-hg-ask-ai]').forEach(bind);
+    });
 
-    if (!input || !list) return controller;
-
-    // Keep the OINK palette untouched: only intercept Enter when local search
-    // is empty and the site-owned Ask AI tail is the available follow-up.
-    input.addEventListener('keydown', function (event) {
-      if (event.isComposing || event.keyCode === 229 || event.key !== 'Enter') return;
-      var empty = list.querySelector('.td-shell-search__empty');
-      var localRow = list.querySelector('.td-shell-search__item:not(.hg-ai-search-tail__button)');
-      var tailButton = list.querySelector('[data-hg-ai-search-tail] [data-hg-ask-ai]');
-      if (!empty || localRow || !tailButton) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      controller.activate(input.value, true, tailButton);
-    }, true);
-
-    function syncTail() {
-      syncing = false;
-      if (!root || !input || !list || root.hidden) return;
-      var old = list.querySelector('[data-hg-ai-search-tail]');
-      var query = trimmedQuery(input.value);
-      if (!query || query.charAt(0) === '>') {
-        if (old) old.remove();
-        return;
-      }
-      var choiceLabel = root.dataset.tdTChoice || '';
-      if (
-        choiceLabel &&
-        Array.prototype.some.call(
-          list.querySelectorAll('.td-shell-search__group-label'),
-          function (label) { return label.textContent.trim() === choiceLabel; },
-        )
-      ) {
-        if (old) old.remove();
-        return;
-      }
-      var loading = root.dataset.tdTLoading || '';
-      if (
-        loading &&
-        Array.prototype.some.call(
-          list.querySelectorAll('.td-shell-search__empty'),
-          function (node) { return node.textContent.trim() === loading; },
-        )
-      ) {
-        if (old) old.remove();
-        return;
-      }
-      var empty = list.querySelector('.td-shell-search__empty');
-      if (empty && config.labels.noResults) empty.textContent = config.labels.noResults;
-      var oldButton = old && old.querySelector('[data-hg-ask-ai]');
-      if (oldButton && oldButton.dataset.hgAiQuery === query) return;
-      if (old) old.remove();
-
-      var group = documentObject.createElement('div');
-      group.className = 'td-shell-search__group hg-ai-search-tail';
-      group.dataset.hgAiSearchTail = '';
-      group.setAttribute('role', 'group');
-      var label = documentObject.createElement('div');
-      label.className = 'td-shell-search__group-label';
-      label.textContent = config.labels.ask;
-      var row = documentObject.createElement('button');
-      row.type = 'button';
-      row.className = 'td-shell-search__item hg-ai-search-tail__button';
-      row.dataset.hgAskAi = '';
-      row.dataset.hgAiQuery = query;
-      row.dataset.hgAiSubmit = 'true';
-      var icon = documentObject.createElement('i');
-      icon.className =
-        'fa-solid fa-wand-magic-sparkles td-shell-search__item-icon';
-      icon.setAttribute('aria-hidden', 'true');
-      var meta = documentObject.createElement('span');
-      meta.className = 'td-shell-search__item-meta';
-      var title = documentObject.createElement('span');
-      title.className = 'td-shell-search__item-title';
-      title.textContent = config.labels.ask + ': “' + query + '”';
-      var detail = documentObject.createElement('span');
-      detail.className = 'td-shell-search__item-ref';
-      detail.textContent = config.historical ? config.labels.latest + '.' : '';
-      meta.appendChild(title);
-      meta.appendChild(detail);
-      row.appendChild(icon);
-      row.appendChild(meta);
-      group.appendChild(label);
-      group.appendChild(row);
-      list.appendChild(group);
-      bind(row);
-    }
-
-    if (list) {
-      new MutationObserver(function () {
-        if (syncing) return;
-        syncing = true;
-        windowObject.requestAnimationFrame(syncTail);
-      }).observe(list, { childList: true, subtree: true });
-      input.addEventListener('input', syncTail);
-      syncTail();
+    var palette = windowObject.OinkCommandPalette;
+    if (palette && typeof palette.registerSearchTail === 'function') {
+      palette.registerSearchTail({
+        id: 'hugegraph-ai',
+        rows: function (context) {
+          return [{
+            id: 'ask',
+            title: config.labels.ask + ': “' + context.query + '”',
+            description: config.historical ? config.labels.latest + '.' : '',
+            icon: 'fa-solid fa-wand-magic-sparkles',
+          }];
+        },
+        activate: function (_, context) {
+          // OINK debounces row rendering; Enter can activate an older row.
+          var input = documentObject.querySelector('#td-shell-search .td-shell-search__input');
+          var query = trimmedQuery(input ? input.value : context.query);
+          if (query !== context.query) {
+            // Refresh OINK's cancellation token as well as the submitted text;
+            // otherwise its pending render aborts a handoff for the old query.
+            var instance = palette.instance;
+            instance.render(query);
+            var rows = instance.rows();
+            var index = rows.findIndex(function (row) {
+              return row.type === 'extension' && row.owner.id === 'hugegraph-ai';
+            });
+            if (index >= 0) instance.activate(index);
+            return;
+          }
+          if (!query || query.charAt(0) === '>') return;
+          // Search options are ephemeral and become hidden on handoff.
+          var trigger = documentObject.querySelector('.hg-ask-ai-launcher');
+          return controller.activate(query, true, trigger, context);
+        },
+      });
     }
     return controller;
   }
@@ -432,6 +476,7 @@
     preinitialize: preinitialize,
     readConfig: readConfig,
     scriptAttributes: scriptAttributes,
+    pickExampleQuestions: pickExampleQuestions,
     trimmedQuery: trimmedQuery,
   };
   global.HugeGraphKapa = api;

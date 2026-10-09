@@ -1,11 +1,11 @@
 ---
 title: "HugeGraph-Spark Quick Start"
-linkTitle: "Analysis with HugeGraph-Spark"
+linkTitle: "(Deprecated) Analysis with HugeGraph-Spark"
 draft: true
-weight: 8
+weight: 100
 ---
 
-> HugeGraph-Spark is no longer maintained. Use [HugeGraph-Computer](/docs/quickstart/computing/hugegraph-computer) for new graph computing workloads. This page is retained only as a reference for older versions.
+> HugeGraph-Spark is no longer maintained. Start with [Vermeer](/docs/quickstart/computing/hugegraph-vermeer/) for new graph computing tasks; use [HugeGraph-Computer](/docs/quickstart/computing/hugegraph-computer/) for Java BSP/Pregel. This page is retained as a historical reference.
 
 ### 1 HugeGraph-Spark Overview (Deprecated)
 

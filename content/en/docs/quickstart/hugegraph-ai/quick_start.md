@@ -83,6 +83,9 @@ A custom prompt must contain `{query}`, `{schema}`, `{example}`, and `{vertices}
 
 When `ENABLE_LOGIN=True`, the Web UI asks for basic credentials with the fixed user name `rag` and `USER_TOKEN` as the password, and the REST API requires `USER_TOKEN` as a Bearer token. The log endpoint additionally requires a separately configured, secure `ADMIN_TOKEN`.
 
+> [!WARNING]
+> In production, enable HugeGraph-LLM login, replace `USER_TOKEN` and `ADMIN_TOKEN`, and enforce a source IP allowlist at the firewall or network entry point. Separately enable [Server authentication and authorization](/docs/config/config-authentication/), retain Server audit logs (normally `audit-*.log`), and grant `GRAPH_USER` minimum required permissions. AI service tokens do not replace Server authentication.
+
 ![Keywords extracted in the RAG UI](/images/docs/hugegraph-ai/quick-start-04.png)
 
 ## 5. Prompt Language

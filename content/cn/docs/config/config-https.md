@@ -6,7 +6,17 @@ weight: 4
 
 ### 概述
 
-HugeGraphServer 默认使用的是 http 协议，如果用户对请求的安全性有要求，可以配置成 https。
+HugeGraphServer 默认使用的是 http 协议，可以配置成 https。
+
+> [!WARNING]
+> **HTTPS 不替代服务端鉴权与访问控制**
+>
+> HTTPS 保护传输链路，但不限制调用者权限。生产环境必须使用 HTTPS，并按 [Server 认证与授权配置](/cn/docs/config/config-authentication/)启用 Server Auth、IP 白名单和最小权限授权，同时保留、保护 Server `audit-*.log`。若由反向代理终结 TLS，还必须限制到 Server 后端端口的网络访问。
+
+> [!WARNING]
+> **生产环境使用专用服务端证书**
+>
+> 若启动时找不到 `conf/hugegraph-server.keystore`，脚本会下载共享的演示 keystore，其密码为公开值 `hugegraph`。生产环境必须使用专用证书和 keystore 密码，并限制私钥文件的读取权限。
 
 ### 服务端配置
 

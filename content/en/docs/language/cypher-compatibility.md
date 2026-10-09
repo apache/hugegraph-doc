@@ -15,10 +15,13 @@ statement that references `$param` returns no rows rather than failing — see
 
 This page records the cases verified for the current Cypher development change. It does not claim full
 openCypher or Neo4j compatibility, or compatibility across every released HugeGraph version. The tested
-working tree is based on current Apache `master` at
-[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b),
-which declares HugeGraph `1.8.0`, Java 17, and TinkerPop `3.8.1`. This is a standalone Cypher change on that
-baseline. The runtime uses Java `17.0.20.1`, TinkerPop `3.8.1`, `org.opencypher.gremlin:translation:1.0.4`, and RocksDB.
+working tree is current Apache `master` at
+[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb),
+which declares HugeGraph `1.8.0`, Java 17, and TinkerPop `3.8.1`, with the Cypher change
+([#3289](https://github.com/apache/hugegraph/pull/3289)) merged. The runtime uses Java `17.0.20.1` (Temurin),
+TinkerPop `3.8.1`, `org.opencypher.gremlin:translation:1.0.4`, and RocksDB. The pre-merge verification on
+[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b) remains
+referenced below.
 
 The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. General usage is covered in the
 [HugeGraph Cypher guide](/docs/language/hugegraph-cypher/).
@@ -93,10 +96,21 @@ Acceptance results are limited to these test cases:
 | Failed write | A rejected two-vertex `CREATE` left no residue during 32 subsequent query and native-read checks | `testFailedWriteDoesNotLeakIntoLaterRequests` |
 | Errors and routing | Invalid syntax and request shape, content type, binding keys and the reserved null marker, schema values, authentication, and graph routing | `testInvalidRequests`, `testRejectPlainTextPost`, `testRejectInvalidQuery`, `testRejectInvalidBindingShapeAndKeys`, `testRejectTranslatorNullMarker`, `testRejectTranslatorNullSentinelInBindings`, `testAuthenticationAndGraphRouting`, `testSpecifiedGraphRouting` |
 
+An additional post-merge REST run on `5039e5b` re-executed the documented guide examples against a fresh RocksDB graph:
+reads, projection with ordering and limit, aggregation, single-vertex `CREATE`, `SET`/`REMOVE`, edge `DELETE`,
+`DETACH DELETE`, and every request-form contract above held, including the missing-binding execution error on all
+three forms. The two-vertex shorthand `CREATE (a)-[:knows]->(b)` was verified in the same run on a graph whose
+`person` label uses the `AUTOMATIC` id strategy; on a `PRIMARY_KEY` label the same statement is rejected with an
+execution error reporting that the primary keys must be set, while single-vertex `CREATE` on that label succeeds.
+On `PRIMARY_KEY` schemas, issue the two `CREATE` statements separately or use the `AUTOMATIC` id strategy for this form.
+
 The standalone code change is in [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289),
 which was merged into Apache `master` on 2026-10-08 as
-[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb).
-The verified pre-merge baseline remains pinned above. The original development
+[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb);
+the verification record above describes that merged tree directly. The pre-merge baseline verified before the
+merge is
+[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b).
+The original development
 change remains linked in [PR #238](https://github.com/hugegraph/hugegraph/pull/238). At source commit
 [`8d06ad3`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/docs/cypher-compatibility.md), `CypherApiTest` passed 23/23,
 `CypherClientTest` 7/7, and `CypherOpProcessorTest` 8/8, with no skips. The additional predicate,

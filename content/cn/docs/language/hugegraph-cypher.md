@@ -50,7 +50,10 @@ ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.nam
 声明了 `person` 上的 `nullableKeys("age", "city")` 以及 `knows` 上的可空属性——例如在
 `scripts/example.groovy` 的 Schema 上补充这些可空键。若 Schema 未声明（已发布的默认 Schema 把
 `person` 的 `age`、`city` 标记为非空），下面的创建与更新示例会触发非空属性校验失败：请在每条语句中
-为所有非空属性赋值，或先以 `nullableKeys` 声明标签。
+为所有非空属性赋值，或先以 `nullableKeys` 声明标签。若 `person` 标签使用 `PRIMARY_KEY` id 策略，下面的双顶点简写
+`CREATE (a)-[:knows]->(b)` 会被拒绝并返回执行错误（提示必须设置主键；在已合入
+[#3289](https://github.com/apache/hugegraph/pull/3289) 的 `master` 上验证）：请将两条 `CREATE` 语句分开执行，
+或对该形式使用 `AUTOMATIC` id 策略。
 
 #### 查询 — MATCH / WHERE / RETURN
 

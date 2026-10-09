@@ -14,9 +14,12 @@ weight: 3
 
 本页记录当前 Cypher 开发改动实际验证过的用例，不代表完整支持 openCypher 或 Neo4j，也不代表所有已发布
 版本的 HugeGraph 都具备相同行为。测试代码基于当前 Apache `master` 的
-[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b)，
-该基线声明 HugeGraph `1.8.0`，使用 Java 17 和 TinkerPop `3.8.1`。Cypher 改动独立建立在该基线上。运行栈使用 Java `17.0.20.1`、
-TinkerPop `3.8.1`、`org.opencypher.gremlin:translation:1.0.4` 和 RocksDB。
+[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb)，
+该提交声明 HugeGraph `1.8.0`，使用 Java 17 和 TinkerPop `3.8.1`，且 Cypher 改动
+（[ASF PR #3289](https://github.com/apache/hugegraph/pull/3289)）已合入。运行栈使用 Java `17.0.20.1`（Temurin）、
+TinkerPop `3.8.1`、`org.opencypher.gremlin:translation:1.0.4` 和 RocksDB。合入前在
+[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b)
+上的验证仍见下文。
 
 接口路径为 `/graphspaces/{graphspace}/graphs/{graph}/cypher`。一般用法见
 [HugeGraph Cypher 指南](/cn/docs/language/hugegraph-cypher/)。
@@ -84,8 +87,17 @@ API 测试夹具使用强类型 Schema，并为 `city` 建立 `SECONDARY` 索引
 | 失败写入 | 拒绝双顶点 `CREATE` 后，连续 32 次查询和原生读取均未发现残留 | `testFailedWriteDoesNotLeakIntoLaterRequests` |
 | 错误与路由 | 非法语法和请求结构、内容类型、参数键与保留的 null 标记、Schema 值、认证及图路由 | `testInvalidRequests`、`testRejectPlainTextPost`、`testRejectInvalidQuery`、`testRejectInvalidBindingShapeAndKeys`、`testRejectTranslatorNullMarker`、`testRejectTranslatorNullSentinelInBindings`、`testAuthenticationAndGraphRouting`、`testSpecifiedGraphRouting` |
 
+合入后在 `5039e5b` 上的补充 REST 验证对全新 RocksDB 图重新执行了文档示例：查询、带排序和 LIMIT 的投影、聚合、
+单顶点 `CREATE`、`SET`/`REMOVE`、边 `DELETE`、`DETACH DELETE`，以及上表全部请求形式约定均与文档一致，
+包括三种请求形式下缺失绑定的执行错误。双顶点简写 `CREATE (a)-[:knows]->(b)` 在同一运行中于 `person` 标签使用
+`AUTOMATIC` id 策略的图上验证通过；在 `PRIMARY_KEY` 标签上，同一语句会被拒绝并返回执行错误（提示必须设置主键），
+而同一标签上的单顶点 `CREATE` 成功。在 `PRIMARY_KEY` Schema 上，请将两条 `CREATE` 语句分开执行，或对该形式使用
+`AUTOMATIC` id 策略。
+
 独立代码改动位于 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289)，该 PR 已于 2026-10-08 合入 Apache `master`，合入提交为
-[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb)。上述固定基线仍对应合入前的实际验证。
+[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb)；上文的验证记录直接描述该合入后的提交，
+合入前验证的基线为
+[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b)。
 原始开发改动仍关联 [PR #238](https://github.com/hugegraph/hugegraph/pull/238)。
 在固定源码提交
 [`8d06ad3`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/docs/cypher-compatibility.md) 上，`CypherApiTest` 通过 23/23，

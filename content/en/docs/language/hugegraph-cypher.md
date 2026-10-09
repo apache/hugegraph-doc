@@ -51,7 +51,10 @@ They assume the labels declare `nullableKeys("age", "city")` on `person` and nul
 for example the schema in `scripts/example.groovy` modified with those nullable keys. On a schema without them
 (the released default marks `age` and `city` non-null on `person`), the create and update examples below fail
 the non-null property check: set every non-null property in each statement, or declare the labels with
-`nullableKeys` first.
+`nullableKeys` first. If the `person` label uses the `PRIMARY_KEY` id strategy, the two-vertex shorthand
+`CREATE (a)-[:knows]->(b)` below is rejected with an execution error reporting that the primary keys must be set
+(verified on `master` with [#3289](https://github.com/apache/hugegraph/pull/3289) merged): issue the two
+`CREATE` statements separately or use the `AUTOMATIC` id strategy for that form.
 
 #### Read — MATCH / WHERE / RETURN
 

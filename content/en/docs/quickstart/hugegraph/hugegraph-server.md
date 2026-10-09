@@ -538,16 +538,17 @@ This indicates the successful creation of the sample graph.
 `bin/hugegraph-server.sh` puts `-XX:+HeapDumpOnOutOfMemoryError`, `-XX:HeapDumpPath` and `-XX:ErrorFile` first in `JAVA_TOOL_OPTIONS`, so whether or not
 `JAVA_OPTIONS` is set, an out-of-memory heap dump (`heapdump_<host>_<launch time>/java_pid<pid>.hprof`) and a JVM crash log
 (`hs_err_pid<pid>_<host>_<launch time>.log`) land in `logs/`, where `<launch time>` is the local time as `YYYYMMDD-HHMMSS`. Each start gets its own `heapdump_*`
-directory, so the server and the JVMs it starts, such as computer jobs, write separate dumps. The host name keeps servers that share one log directory from
-picking the same name, and a counter (`<launch time>-1`, `-2`, ...) is added when the same host already used that second. If the directory cannot be created,
-for example on a full disk, the server still starts and dumps go to `logs/` itself, as a best effort: a full disk may have no room for the dump either. A heap
-dump can be as large as the heap. The launcher never deletes dumps or `heapdump_*` directories: each start leaves one, empty unless something ran out of memory,
-and the launcher keeps it because a computer-job JVM can go on using it after the server exits. Move or delete old ones once no HugeGraph JVM from that launch
-is running, but never the newest one of a running server; without it, the next dump is written as a file with that name. The JVM reads your own
-`JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS` (including `@argfiles`), the command line (`JAVA_OPTIONS`, or `-j` when `JAVA_OPTIONS` is unset or empty) and
-`_JAVA_OPTIONS` after these defaults, so a value for one of these flags in any of them overrides the default. Only the environment variables reach the JVMs the
-server starts: to turn dumps off for all of them, set `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, while `-j` or `JAVA_OPTIONS` turns them off for the
-server JVM only. Either way each start still creates its empty `heapdump_*` directory. Because of the defaults, the JVM prints
+directory, so the server and the JVMs it starts, such as computer jobs, write separate dumps (HotSpot names each dump after the JVM's PID, so a JVM that reuses
+an earlier PID from the same start cannot write its dump). The host name keeps servers that share one log directory from picking the same name, and a counter
+(`<launch time>-1`, `-2`, ...) is added when the same host already used that second. If the directory cannot be created, for example on a full disk, the server
+still starts and dumps go to `logs/` itself, as a best effort: a full disk may have no room for the dump either. A heap dump can be as large as the heap. The
+launcher never deletes dumps or `heapdump_*` directories: each start leaves one, empty unless something ran out of memory, and the launcher keeps it because a
+computer-job JVM can go on using it after the server exits. Move or delete old ones once no HugeGraph JVM from that launch is running, but never the newest one
+of a running server; without it, the next dump is written as a file with that name. The JVM reads your own `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS` (including
+`@argfiles`), the command line (`JAVA_OPTIONS`, or `-j` when `JAVA_OPTIONS` is unset or empty) and `_JAVA_OPTIONS` after these defaults, so a value for one of
+these flags in any of them overrides the default. Only the environment variables reach the JVMs the server starts: to turn dumps off for all of them, set
+`JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, while `-j` or `JAVA_OPTIONS` turns them off for the server JVM only. Either way each start still creates
+its empty `heapdump_*` directory, unless creating it failed and dumps fell back to `logs/`. Because of the defaults, the JVM prints
 `Picked up JAVA_TOOL_OPTIONS: ...` on stderr at startup.
 
 > **Version scope**: this applies to current master ([apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)). In 1.7.0 the heap dump flags are

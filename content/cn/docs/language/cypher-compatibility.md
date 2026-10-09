@@ -6,9 +6,10 @@ weight: 3
 
 ### 范围
 
-**下文验证结果描述的是 `master`，不能直接套用于已发布版本。** 已发布版本在
+**下文验证结果描述的是 `master`，不能直接套用于已发布版本。** HugeGraph 1.7.0 在
 `/graphspaces/{graphspace}/graphs/{graph}/cypher` 上只提供两种请求形式：`GET ?cypher=<URL 编码的语句>`
-和 `POST application/json`（请求体为原始 Cypher 文本）。已发布版本不接受绑定参数，引用 `$param` 的语句
+和 `POST application/json`（请求体为原始 Cypher 文本）。1.7.0 之前的版本在 `/graphs/{graph}/cypher` 下
+提供同样的两种形式。已发布版本不接受绑定参数，引用 `$param` 的语句
 不会报错，而是返回空结果——参见[已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)。
 
 本页记录当前 Cypher 开发改动实际验证过的用例，不代表完整支持 openCypher 或 Neo4j，也不代表所有已发布
@@ -44,7 +45,9 @@ JSON 数组、字符串、数字、布尔值或 null 请求体会返回 HTTP 400
 格式错误的 JSON 对象和尾随内容也会产生请求错误，不会回退为原始 Cypher 文本。
 
 JSON 对象中的 `cypher` 必须是非空字符串；`parameters` 若提供，必须是对象。省略 `parameters` 表示空参数表。
-语句引用了未提供的参数时会报执行错误；显式传入 `null` 是有效值。测试覆盖字符串、数字、布尔值、引号和换行，
+语句引用了未提供的参数时会报执行错误；显式传入 `null` 是有效值。在测试栈上，该执行错误适用于所有请求形式，
+包括 `GET ?cypher=` 和原始文本 `POST`：[#3289](https://github.com/apache/hugegraph/pull/3289) 总是附带
+参数表并拒绝未解析的 `$param` 引用，取代了上文描述的已发布版本“返回 null 和空结果”行为。测试覆盖字符串、数字、布尔值、引号和换行，
 参数名 `id` 与 `label`。当前实现的 `parameters` 最多接受 16 个顶层条目，该上限固定。
 该上限只统计顶层 `parameters` 对象中的键。Cypher 不支持在 Gremlin Server 的处理器配置中设置
 `maxParameters`。参数值会作为绑定值传递，不会改写查询文本。

@@ -8,7 +8,8 @@ weight: 4
 
 正在评估 HugeGraph 的 Neo4j 用户。HugeGraph 的 Cypher 覆盖面由
 [cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) 转译器决定，
-与 Neo4j 并非 1:1 等价 —— 已验证与未验证范围见
+与 Neo4j 并非 1:1 等价 —— 已发布版本的行为见
+[已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)，开发树验证记录见
 [Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/)，
 用法见 [HugeGraph Cypher](/cn/docs/language/hugegraph-cypher/)。
 
@@ -37,8 +38,9 @@ weight: 4
 ### 建议的迁移路径
 
 1. **盘点查询**：把应用里的 Cypher 按
-   [兼容性说明](/cn/docs/language/cypher-compatibility/) 分成
-   "直接可用 / 需改写为 Gremlin / 需换 REST API" 三类。
+   [已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)（描述已发布版本行为）分成
+   "直接可用 / 需改写为 Gremlin / 需换 REST API" 三类；
+   [兼容性说明](/cn/docs/language/cypher-compatibility/) 仅记录开发树上的验证结果。
 2. **先建 schema**：用 schema API 建好 VertexLabel/EdgeLabel/PropertyKey 和索引 ——
    HugeGraph 在写入前要求 schema 存在。
 3. **导入数据**：首选路径是 [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/)
@@ -56,9 +58,12 @@ weight: 4
    - [HugeGraph Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/) 为
      3.0.0 新增（schema 自动发现、多标签/并行读取），使 HugeGraph 的导出与迁移工作流成为可能。
 
-   将 Neo4j 属性映射为 HugeGraph PropertyKey，保持稳定顶点 ID 不变，把边的端点映射到已存在的
-   顶点 ID，并先导入顶点、后导入边。以上能力均有文档记载，但这里没有完整跑通一次 Neo4j →
-   HugeGraph 迁移 —— 在把示例当作已验证之前，请先用你自己的数据验证。
+   将 Neo4j 属性映射为 HugeGraph PropertyKey，并在导入前先定好顶点 ID 策略：用
+   `idStrategy = "PRIMARY_KEY"` 加 `idFields` 指定 Neo4j 业务键，边的端点也通过这些键字段表达；
+   或用 `idStrategy = "CUSTOMIZE_STRING"` 保留 Neo4j 节点 id。第 2 步预创建的标签必须使用同一策略——
+   自动创建不会把已有的 `PRIMARY_KEY` 标签改为 `CUSTOMIZE_STRING`——而当 Sink 的 `mappings` 配置
+   负责创建 schema 时，第 2 步可省略。先导入顶点、后导入边。以上能力均有文档记载，但这里没有完整跑通
+   一次 Neo4j → HugeGraph 迁移 —— 在把示例当作已验证之前，请先用你自己的数据验证。
 4. **灰度切换**：Cypher 能表达的查询保持不动， translator 不支持的改写为
    Gremlin（等价写法见 [对照表](/cn/docs/language/hugegraph-cypher/#等价的-gremlin-写法)）。
 

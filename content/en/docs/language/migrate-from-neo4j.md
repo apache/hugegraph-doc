@@ -8,9 +8,11 @@ weight: 4
 
 Neo4j users evaluating HugeGraph. HugeGraph's Cypher coverage is defined by
 the [`cypher-for-gremlin`](https://github.com/opencypher/cypher-for-gremlin)
-translator and is not 1:1 with Neo4j — see the
+translator and is not 1:1 with Neo4j — see
+[Known limitations](/docs/language/hugegraph-cypher/#known-limitations) for what
+released HugeGraph versions do, and the
 [Cypher compatibility notes](/docs/language/cypher-compatibility/) for the
-verified and unverified areas and
+development-tree verification record and
 [HugeGraph Cypher](/docs/language/hugegraph-cypher/) for usage.
 
 ### What carries over directly
@@ -39,8 +41,11 @@ The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound re
 ### Suggested migration path
 
 1. **Inventory your queries**: classify the Cypher in your application against
-   the [compatibility notes](/docs/language/cypher-compatibility/) into
-   "works as-is / rewrite as Gremlin / switch to a REST API".
+   the [Known limitations](/docs/language/hugegraph-cypher/#known-limitations)
+   (which describe released behaviour) into
+   "works as-is / rewrite as Gremlin / switch to a REST API"; the
+   [compatibility notes](/docs/language/cypher-compatibility/) record only the
+   development-tree contract.
 2. **Create the schema first**: define VertexLabel / EdgeLabel / PropertyKey
    and indexes through the schema API — HugeGraph requires the schema to
    exist before data is written.
@@ -64,8 +69,14 @@ The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound re
      new in 3.0.0 (schema auto-discovery, multi-label/parallel reads), enabling HugeGraph export
      and migration workflows.
 
-   Map Neo4j properties to HugeGraph PropertyKeys, keep stable vertex IDs stable, map edge
-   endpoints to existing vertex IDs, and load vertices before edges. These capabilities are
+   Map Neo4j properties to HugeGraph PropertyKeys and pick the vertex ID strategy
+   before importing: use `idStrategy = "PRIMARY_KEY"` with a Neo4j business key in
+   `idFields` and express edge endpoints through those same key fields, or
+   `idStrategy = "CUSTOMIZE_STRING"` to keep the Neo4j node id. Labels you
+   pre-created in step 2 must use that same strategy — automatic creation does not
+   convert an existing `PRIMARY_KEY` label into `CUSTOMIZE_STRING` — and step 2 is
+   optional when the Sink `mappings` configuration creates the schema. Load vertices
+   before edges. These capabilities are
    documented, but a complete Neo4j → HugeGraph migration has not been run end-to-end here —
    validate examples against your own data before treating them as tested.
 4. **Switch incrementally**: keep the queries Cypher can express, and rewrite

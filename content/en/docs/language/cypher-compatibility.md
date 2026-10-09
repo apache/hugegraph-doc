@@ -6,9 +6,10 @@ weight: 3
 
 ### Scope
 
-**The verification results below describe `master`, not a released HugeGraph version.** A released build exposes exactly two
+**The verification results below describe `master`, not a released HugeGraph version.** HugeGraph 1.7.0 exposes exactly two
 request forms on `/graphspaces/{graphspace}/graphs/{graph}/cypher`: `GET ?cypher=<URL-encoded statement>`
-and `POST application/json` with a raw Cypher body. Released versions accept no bound parameters, and a
+and `POST application/json` with a raw Cypher body. Releases before 1.7.0 expose the same two forms under
+`/graphs/{graph}/cypher`. Released versions accept no bound parameters, and a
 statement that references `$param` returns no rows rather than failing — see
 [Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
 
@@ -46,7 +47,10 @@ Malformed JSON objects and trailing tokens also produce request errors; they do 
 
 For the JSON-object form, `cypher` must be a nonblank string and `parameters`, if present, must be an object.
 Omitting `parameters` means an empty map. A referenced but missing binding is an execution error; an explicit
-null value is valid. Tests cover string, number, and boolean values, quotes and newlines, the binding names
+null value is valid. On the tested tree this execution error applies to every request form, including
+`GET ?cypher=` and raw-body `POST`: [#3289](https://github.com/apache/hugegraph/pull/3289) always attaches the
+parameters map and rejects unresolved `$param` references, replacing the released null-and-no-rows behaviour
+described above. Tests cover string, number, and boolean values, quotes and newlines, the binding names
 `id` and `label`. The current implementation accepts at most 16 top-level entries in `parameters`; this
 limit is fixed. Only keys in the top-level `parameters` object count toward it. Cypher does not support a
 `maxParameters` setting in Gremlin Server's processor configuration. Values remain bindings and do not

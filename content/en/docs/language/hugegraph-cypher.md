@@ -47,6 +47,11 @@ ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.nam
 ### Basic examples
 
 The examples below assume a graph with `person` vertices (`name`, `age`, `city` properties) and `knows` edges.
+They assume the labels declare `nullableKeys("age", "city")` on `person` and nullable properties on `knows` —
+for example the schema in `scripts/example.groovy` modified with those nullable keys. On a schema without them
+(the released default marks `age` and `city` non-null on `person`), the create and update examples below fail
+the non-null property check: set every non-null property in each statement, or declare the labels with
+`nullableKeys` first.
 
 #### Read — MATCH / WHERE / RETURN
 
@@ -136,7 +141,7 @@ Tip: `EXPLAIN MATCH (n:person) RETURN n` is parsed with the `EXPLAIN` option, an
 
 Cypher support in HugeGraph is bounded by the transpiler layer, which is based on openCypher 9 era tooling. Known gaps:
 
-- **No parameterized queries in released versions** — the API accepts a raw statement string only. A statement using `$param` still runs: a missing binding evaluates to `null`, so the query returns no rows (or writes null values) rather than failing. Sanitize/escape values on the client side before interpolating them into the statement. JSON-bound parameters (`{"cypher": ..., "parameters": {...}}`) are available on `master` after the merged [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), carried over from [PR #238](https://github.com/hugegraph/hugegraph/pull/238); see the [development compatibility record](/docs/language/cypher-compatibility/) for the tested request contract.
+- **No parameterized queries in released versions** — the API accepts a raw statement string only. A statement using `$param` still runs: a missing binding evaluates to `null`, so the query returns no rows (or writes null values) rather than failing. Sanitize/escape values on the client side before interpolating them into the statement. On the tested tree with [#3289](https://github.com/apache/hugegraph/pull/3289) merged, this changes: a missing binding is an execution error for every request form, including `GET ?cypher=` and raw-body `POST` — the server always attaches a parameters map and rejects unresolved `$param` references. JSON-bound parameters (`{"cypher": ..., "parameters": {...}}`) are available on `master` after the merged [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), carried over from [PR #238](https://github.com/hugegraph/hugegraph/pull/238); see the [development compatibility record](/docs/language/cypher-compatibility/) for the tested request contract.
 - **Partial clause coverage** — some openCypher constructs are not translated (for example map projections and certain `datetime()` functions). Unsupported constructs fail at translation time with an error from the transpiler. Constructs such as `MERGE ... ON CREATE SET` and `NOT ... IN` do translate, but they are not verified end-to-end on HugeGraph. The development change verifies two whole-string `=~` matching cases on computed strings; broader regex coverage remains unverified — see the [compatibility notes](/docs/language/cypher-compatibility/).
 - **No `CALL` procedures** — HugeGraph graph algorithms (shortest path, k-out, personalrank, etc.) are not exposed as Cypher procedures; use the [traverser REST APIs](/docs/clients/restful-api/traverser/) or Gremlin instead.
 - **Single statement per request** — multi-statement scripts are not supported; send one statement per call.

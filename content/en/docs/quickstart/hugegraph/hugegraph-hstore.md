@@ -222,6 +222,17 @@ Any other option defined in `org/apache/hugegraph/rocksdb/access/RocksDBOptions.
 | `thread.pool.scan.max` | `1000` | Maximum scan threads. |
 | `thread.pool.scan.queue` | `0` | Scan task queue capacity. |
 
+**RPC lifecycle compatibility:** With the lifecycle fixes in
+[HugeGraph #3303](https://github.com/apache/hugegraph/pull/3303), Store continues to
+accept `thread.pool.grpc.queue` for configuration compatibility, but always uses an
+unbounded callback dispatch queue. A bounded queue can reject cancellation or
+completion callbacks and prevent accepted calls from draining at shutdown.
+`thread.pool.grpc.core` and `max` remain accepted; an unbounded queue normally keeps
+dispatch at the core thread count instead of expanding to `max` under backlog.
+Sustained overload can grow the callback backlog, so control workload at request
+admission and scan workers. Versions without this fix continue to honour the
+configured gRPC queue capacity.
+
 **Query pushdown**
 
 | Key | Code default | Meaning |

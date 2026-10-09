@@ -221,6 +221,14 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `thread.pool.scan.max` | `1000` | 扫描最大线程数。 |
 | `thread.pool.scan.queue` | `0` | 扫描任务队列容量。 |
 
+**RPC 生命周期兼容性：** 合入
+[HugeGraph #3303](https://github.com/apache/hugegraph/pull/3303) 的生命周期修复后，
+Store 仍接受 `thread.pool.grpc.queue` 以保持配置兼容，但 RPC 回调始终使用无界队列。
+有界队列可能拒绝取消或完成回调，导致已接收的请求无法在停机时排空。
+`thread.pool.grpc.core` 和 `max` 配置仍保留；无界队列通常使用核心线程数，
+不会因队列积压而扩展至 `max`。持续过载可能增加回调积压，应在请求准入及扫描 worker 控制业务负载。
+尚未包含此修复的版本仍按配置的 gRPC 队列容量执行。
+
 **查询下推**
 
 | 配置项 | 代码默认值 | 说明 |

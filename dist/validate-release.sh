@@ -62,6 +62,41 @@ are retained in the validation run directory, including on failure.
 EOF
 }
 
+summary() {
+    local status=$1
+    info '=== Validation summary ==='
+    if [[ $status -ne 0 ]]; then
+        info "VALIDATION FAILED (exit $status)"
+        if [[ $VALIDATION_COMPLETE -eq 1 ]]; then
+            info 'Checks completed; see errors or cleanup log'
+        else
+            info "Stopped at: ${CURRENT_STEP:-initialization} / ${CURRENT_PACKAGE:-package set}"
+        fi
+    elif [[ $VALIDATION_COMPLETE -eq 0 ]]; then
+        info 'CHECKS COMPLETED; full release validation was not requested'
+    elif [[ $SOURCE_PREVALIDATION -eq 1 ]]; then
+        info 'SOURCE PREVALIDATION AUTOMATED CHECKS PASSED'
+    else
+        info 'AUTOMATED RELEASE CHECKS PASSED'
+    fi
+    info "Release: ${RELEASE_VERSION:-not selected}"
+    if declare -p PACKAGES >/dev/null 2>&1; then info "Packages selected: ${#PACKAGES[@]}"; fi
+    if [[ $VALIDATION_COMPLETE -eq 1 ]]; then
+        info 'Server/Toolchain: source and binary runtime checks passed'
+        if [[ ${#PACKAGES[@]} -gt 4 ]]; then
+            info 'Extra components: source checks only; product runtime NOT checked'
+        fi
+    fi
+    info "Review notes: ${#VALIDATION_WARNINGS[@]}"
+    if [[ $SOURCE_PREVALIDATION -eq 1 ]]; then
+        info 'RC signatures/download/staging origin NOT verified'
+    fi
+    info 'Manual licensing review and release approval remain required'
+    for entry in ${VALIDATION_ERRORS[@]+"${VALIDATION_ERRORS[@]}"}; do info "ERROR: ${entry%%$'\n'*}"; done
+    for entry in ${VALIDATION_WARNINGS[@]+"${VALIDATION_WARNINGS[@]}"}; do info "REVIEW: ${entry%%$'\n'*}"; done
+    info "Evidence: $RUN_DIR"
+}
+
 cleanup() {
     local status=$?
     trap - EXIT
@@ -70,17 +105,12 @@ cleanup() {
         info 'ERROR: Service shutdown checks failed during cleanup'
         if [[ $status -eq 0 ]]; then status=1; fi
     fi
-    for entry in ${VALIDATION_ERRORS[@]+"${VALIDATION_ERRORS[@]}"}; do info "$entry"; done
     if [[ ${#VALIDATION_ERRORS[@]} -gt 0 && $status -eq 0 ]]; then status=1; fi
     if [[ -n "$RUN_DIR" ]]; then
-        if [[ $status -eq 0 && $VALIDATION_COMPLETE -eq 0 ]]; then
-            info 'CHECKS COMPLETED; full release validation was not requested'
-        elif [[ $status -eq 0 ]]; then
-            if [[ $SOURCE_PREVALIDATION -eq 1 ]]; then
-                info 'SOURCE PREVALIDATION AUTOMATED CHECKS PASSED; manual licensing review required; RC signatures/download/staging origin NOT verified'
-            else info 'AUTOMATED RELEASE CHECKS PASSED; manual licensing review and PMC release approval remain required'; fi
-        else info "VALIDATION FAILED (exit $status)"; fi
-        info "Evidence: $RUN_DIR"
+        summary "$status"
+        if [[ -n ${GITHUB_STEP_SUMMARY:-} ]]; then
+            { printf '### Release validation\n\n```text\n'; summary "$status"; printf '```\n'; } >> "$GITHUB_STEP_SUMMARY"
+        fi
     fi
     exit "$status"
 }
@@ -588,10 +618,18 @@ require_packages() {
               "$DIST_DIR/apache-hugegraph-toolchain-$RELEASE_VERSION-src.tar.gz"
               "$DIST_DIR/apache-hugegraph-$RELEASE_VERSION.tar.gz"
               "$DIST_DIR/apache-hugegraph-toolchain-$RELEASE_VERSION.tar.gz")
-    for archive in "${PACKAGES[@]}"; do [[ -f "$archive" ]] || { info "Missing required package: $archive"; return 1; }; done
+    local archive component
+    for archive in "${PACKAGES[@]}"; do
+        [[ -f "$archive" ]] || { info "Missing required package: $archive"; return 1; }
+    done
+    # Keep the four core positions stable; other components ship source only.
+    for component in ai computer; do
+        archive="$DIST_DIR/apache-hugegraph-$component-$RELEASE_VERSION-src.tar.gz"
+        if [[ -f "$archive" ]]; then PACKAGES+=("$archive"); fi
+    done
     local candidates=("$DIST_DIR"/*.tar.gz)
-    [[ ${#candidates[@]} -eq 4 ]] || {
-        info "Expected exactly the four Server/Toolchain archives; found ${#candidates[@]}"; return 1;
+    [[ ${#candidates[@]} -eq ${#PACKAGES[@]} ]] || {
+        info 'Unexpected archive: only Server/Toolchain packages and AI/Computer sources are supported'; return 1;
     }
 }
 
@@ -615,6 +653,7 @@ verify_integrity() {
     local archive name status_file
     for archive in "${PACKAGES[@]}"; do
         name=$(basename "$archive")
+        CURRENT_PACKAGE=$name
         [[ -f "$archive.sha512" ]] || { info "Missing SHA512: $name"; return 1; }
         python3 "$SCRIPT_DIR/release-smoke.py" checksum "$archive"
         if [[ $SOURCE_PREVALIDATION -eq 0 ]]; then
@@ -671,6 +710,7 @@ stop_services() {
 run_packages() {
     local server=$1 toolchain=$2 label=$3 loader tools hubble classpath
     CURRENT_STEP="$label runtime"
+    CURRENT_PACKAGE='Server/Toolchain'
     info "Running $label packages"
     python3 "$SCRIPT_DIR/release-smoke.py" embedded-versions "$RELEASE_VERSION" "$server" "$toolchain"
     python3 "$SCRIPT_DIR/release-smoke.py" ports
@@ -752,7 +792,9 @@ main() {
         DIST_DIR="$RUN_DIR/download"
         svn export "$SVN_URL_PREFIX/$SVN_PATH" "$DIST_DIR"
     fi
+    CURRENT_STEP='package selection'
     require_packages
+    CURRENT_STEP='integrity'
     # Package set is exact; reject legacy/incubating names before any build.
     local archive
     for archive in "$DIST_DIR"/*.tar.gz; do check_package_name "$(basename "$archive")"; done
@@ -767,18 +809,30 @@ main() {
     CURRENT_STEP='source contents'
     validate_package "${PACKAGES[0]}" source "$RUN_DIR/source/server"
     validate_package "${PACKAGES[1]}" source "$RUN_DIR/source/toolchain"
+    for archive in "${PACKAGES[@]:4}"; do
+        validate_package "$archive" source "$RUN_DIR/source/extra"
+    done
     local server_source="$RUN_DIR/source/server/apache-hugegraph-$RELEASE_VERSION-src"
     local toolchain_source="$RUN_DIR/source/toolchain/apache-hugegraph-toolchain-$RELEASE_VERSION-src"
     CURRENT_STEP='source build'
+    CURRENT_PACKAGE='Server'
     (cd "$server_source" && mvn clean "${MAVEN_ARGS[@]}" -Dmaven.repo.local="$RUN_DIR/m2/server" && \
         mvn package "${MAVEN_ARGS[@]}" -Dmaven.repo.local="$RUN_DIR/m2/server")
+    CURRENT_PACKAGE='Toolchain'
     (cd "$toolchain_source" && mvn clean "${MAVEN_ARGS[@]}" -Dmaven.repo.local="$RUN_DIR/m2/toolchain" && \
         mvn install "${MAVEN_ARGS[@]}" -Dmaven.repo.local="$RUN_DIR/m2/toolchain")
     SDK_VERIFIER="$toolchain_source/.github/scripts/verify_candidate_image_sdk.py"
     [[ -f "$SDK_VERIFIER" ]] || { info 'Toolchain source archive is missing the release SDK verifier'; return 1; }
     if [[ -z "$SDK_REPOSITORY" ]]; then
         python3 "$SCRIPT_DIR/release-smoke.py" staging-origin "$RUN_DIR/m2/toolchain" "$RELEASE_VERSION" \
-            "$toolchain_source/apache-hugegraph-toolchain-$RELEASE_VERSION"
+            "$toolchain_source/apache-hugegraph-toolchain-$RELEASE_VERSION" "$STAGING_REPOSITORY"
+    fi
+    local computer_source="$RUN_DIR/source/extra/apache-hugegraph-computer-$RELEASE_VERSION-src"
+    if [[ -d "$computer_source" ]]; then
+        CURRENT_PACKAGE='Computer'
+        (cd "$computer_source/computer" && mvn clean package "${MAVEN_ARGS[@]}" \
+            -Dmaven.repo.local="$RUN_DIR/m2/computer")
+        success 'Computer source build (product runtime tests are not included)'
     fi
     local server toolchain
     extract_package "$server_source/target/apache-hugegraph-$RELEASE_VERSION.tar.gz" "$RUN_DIR/compiled/server"

@@ -473,9 +473,51 @@ class ReleaseValidationTest(unittest.TestCase):
         (self.root / "apache-hugegraph-other-1.8.0.tar.gz").write_bytes(b"extra")
         result = self.shell(code)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Expected exactly the four Server/Toolchain archives", result.stdout)
+        self.assertIn("Unexpected archive", result.stdout)
+
+    def test_optional_ai_computer_sources_are_selected_and_verified(self):
+        names = ("apache-hugegraph-1.8.0-src", "apache-hugegraph-1.8.0",
+                 "apache-hugegraph-toolchain-1.8.0-src", "apache-hugegraph-toolchain-1.8.0",
+                 "apache-hugegraph-ai-1.8.0-src", "apache-hugegraph-computer-1.8.0-src")
+        for name in names:
+            archive = self.root / f"{name}.tar.gz"
+            archive.write_bytes(b"fixture")
+            Path(str(archive) + ".sha512").write_text(hashlib.sha512(b"fixture").hexdigest())
+        code = (f"RELEASE_VERSION=1.8.0; DIST_DIR={shlex.quote(str(self.root))}; "
+                'SOURCE_PREVALIDATION=1; require_packages; verify_integrity; '
+                'printf "packages=%s\\n" "${#PACKAGES[@]}"')
+        result = self.shell(code)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("packages=6", result.stdout)
+        # Optional means optional presence, not optional integrity checks.
+        Path(str(self.root / "apache-hugegraph-ai-1.8.0-src.tar.gz") + ".sha512").write_text("0" * 128)
+        result = self.shell(code)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Invalid SHA512", result.stdout + result.stderr)
+
+    def test_summary_is_written_for_failed_phase(self):
+        report = self.root / "github-summary.md"
+        code = (f"RUN_DIR={shlex.quote(str(self.root))}; RELEASE_VERSION=1.8.0; "
+                f"GITHUB_STEP_SUMMARY={shlex.quote(str(report))}; "
+                "CURRENT_STEP='source build'; CURRENT_PACKAGE='Computer'; "
+                "VALIDATION_WARNINGS=('[source contents][Computer] review a license'); exit 7")
+        result = self.shell(code)
+        self.assertEqual(result.returncode, 7)
+        for text in ("VALIDATION FAILED", "source build / Computer", "review a license"):
+            self.assertIn(text, result.stdout)
+            self.assertIn(text, report.read_text())
+
+    def test_summary_distinguishes_completed_checks_with_errors(self):
+        code = (f"RUN_DIR={shlex.quote(str(self.root))}; RELEASE_VERSION=1.8.0; "
+                "VALIDATION_COMPLETE=1; PACKAGES=(server toolchain server-binary toolchain-binary); "
+                "VALIDATION_ERRORS=('license error'); summary 1")
+        result = self.shell(code)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Checks completed; see errors or cleanup log", result.stdout)
+        self.assertNotIn("Stopped at:", result.stdout)
 
     def test_staging_origin_rejects_central_or_local_sdk(self):
+        staging_url = "https://repository.apache.org/content/repositories/orgapachehugegraph-1162/"
         sdk = ("hugegraph-common", "hg-pd-common", "hg-pd-client", "hg-pd-grpc", "hugegraph-core")
         for artifact in sdk:
             directory = self.root / "m2/org/apache/hugegraph" / artifact / "1.8.0"
@@ -488,11 +530,21 @@ class ReleaseValidationTest(unittest.TestCase):
             (directory / "_remote.repositories").write_text("\n".join(metadata))
         distribution = self.root / "distribution"
         (distribution / "lib").mkdir(parents=True)
-        SMOKE.staging_origin(str(self.root / "m2"), "1.8.0", str(distribution))
+        SMOKE.staging_origin(str(self.root / "m2"), "1.8.0", str(distribution), staging_url)
+        qualified = "selected-staging-" + hashlib.sha1(staging_url.encode()).hexdigest()
+        for artifact in sdk:
+            metadata = self.root / "m2/org/apache/hugegraph" / artifact / "1.8.0/_remote.repositories"
+            metadata.write_text(metadata.read_text().replace("selected-staging", qualified))
+        SMOKE.staging_origin(str(self.root / "m2"), "1.8.0", str(distribution), staging_url.rstrip("/"))
         metadata = self.root / "m2/org/apache/hugegraph/hugegraph-common/1.8.0/_remote.repositories"
-        metadata.write_text(metadata.read_text().replace("selected-staging", "central"))
-        with self.assertRaisesRegex(RuntimeError, "not fetched from selected staging"):
-            SMOKE.staging_origin(str(self.root / "m2"), "1.8.0", str(distribution))
+        original = metadata.read_text()
+        for origin in ("central", "", "selected-staging-wrong-url"):
+            # Keep the JAR valid: each negative case specifically exercises POM provenance.
+            lines = original.splitlines()
+            lines[0] = f"hugegraph-common-1.8.0.pom>{origin}="
+            metadata.write_text("\n".join(lines))
+            with self.subTest(origin=origin), self.assertRaisesRegex(RuntimeError, "not fetched from selected staging"):
+                SMOKE.staging_origin(str(self.root / "m2"), "1.8.0", str(distribution), staging_url)
 
     def test_package_version_and_incubating_rejected(self):
         for name in ("apache-hugegraph-1.8.00-src.tar.gz", "apache-hugegraph-incubating-1.8.0-src.tar.gz"):

@@ -12,8 +12,9 @@ weight: 3
 ## 自动化发版验证
 
 Workflow 与 `dist/validate-release.sh` 共用 Java 17 校验逻辑。发行版本与 SVN RC 路径分别指定，
-Maven staging repository 使用投票邮件中的地址。Server/Toolchain 四个源码和二进制包均必须附带 SHA512 与 GPG 签名。
-候选目录只能包含这四个归档，其他组件使用其对应流程验证。可将四个包、校验和及签名复制到独立本地目录，不得跳过签名。
+Maven staging repository 使用投票邮件中的地址。Server/Toolchain 四个源码和二进制包是必需项，
+同一候选目录也可包含 AI、Computer 源码包。每个包均须附带 SHA512 与 GPG 签名；未知包名和版本不符会阻断验证。
+所有包均检查完整性、内容和许可证，Computer 源码另执行 Maven 构建；AI、Computer 产品运行验证需另行完成。
 
 ```bash
 bash dist/validate-release.sh --svn-path 1.8.0/RC1 \
@@ -28,6 +29,8 @@ Workflow 的 `source-prevalidation` 模式使用明确的 Server/Toolchain commi
 它不证明真实 RC 签名、下载及远端 staging 依赖解析已通过。
 `license-review-*.txt` 中的许可选择和例外仍需人工复核，明确的 Category-X-only 依赖会阻断验证；自动成功不等于发布批准。
 本地预验证和证据目录说明见[验证脚本指南](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md)。
+
+控制台和 GitHub Job Summary 汇总结果、失败阶段、复核提示及日志位置；源码预验证不会显示为 RC 验收通过。
 
 ## 验证阶段
 
@@ -105,15 +108,26 @@ gpg:               imported: x
 release_signer_fingerprint='<signer-full-fingerprint>'
 gpg --fingerprint -- "$release_signer_fingerprint"
 
-# 3. 验证每个归档，签名验证退出码非零时立即停止
-for archive in *.tar.gz; do
-  gpg --status-fd 1 --verify -- "$archive.asc" "$archive" > "$archive.status" || exit "$?"
-  if grep -Eq '^\[GNUPG:\] (REVKEYSIG|EXPKEYSIG|EXPSIG)( |$)' "$archive.status"; then
-    exit 1
-  fi
-  grep -q '^\[GNUPG:\] VALIDSIG ' "$archive.status" || exit 1
-  cat "$archive.status"
-done
+# 3. 在子 shell 中验证，失败时停止检查但不退出交互终端
+(
+  for archive in *.tar.gz; do
+    gpg --status-fd 1 --verify -- "$archive.asc" "$archive" > "$archive.status" || {
+      status=$?
+      printf 'Signature verification failed: %s\n' "$archive" >&2
+      cat "$archive.status"
+      exit "$status"
+    }
+    cat "$archive.status"
+    if grep -Eq '^\[GNUPG:\] (REVKEYSIG|EXPKEYSIG|EXPSIG)( |$)' "$archive.status"; then
+      printf 'Expired or revoked signature: %s\n' "$archive" >&2
+      exit 1
+    fi
+    grep -q '^\[GNUPG:\] VALIDSIG ' "$archive.status" || {
+      printf 'Missing valid signature: %s\n' "$archive" >&2
+      exit 1
+    }
+  done
+)
 ```
 
 必须同时确认验证退出码为零，且 `VALIDSIG` 中的指纹对应投票邮件的签名者；使用签名子密钥时，核对其报告的主密钥指纹。

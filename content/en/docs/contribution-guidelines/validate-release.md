@@ -12,9 +12,10 @@ weight: 3
 ## Automated release validation
 
 The workflow and `dist/validate-release.sh` use the same Java 17 checks. Specify the package version and SVN RC path separately,
-and use the Maven staging repository from the vote email. The four Server/Toolchain source and binary archives must include SHA512 and GPG signatures.
-The candidate directory must contain exactly these four archives; validate other components with their own workflows.
-You may copy these archives, checksums and signatures into a separate local directory; do not skip signatures.
+and use the Maven staging repository from the vote email. The four Server/Toolchain source and binary archives are required.
+The same directory may also contain AI and Computer source archives. Every archive must include SHA512 and GPG signatures;
+unknown packages and mismatched versions are rejected. All present archives receive integrity, contents and license checks;
+Computer sources are also rebuilt with Maven. AI and Computer product runtime validation remains a separate task.
 
 ```bash
 bash dist/validate-release.sh --svn-path 1.8.0/RC1 \
@@ -29,6 +30,7 @@ Logs remain available after failures. The `source-prevalidation` workflow mode u
 its result does not prove real RC signatures, downloads or remote staging dependency resolution.
 Review `license-review-*.txt` for license choices and exceptions; explicit Category-X-only dependencies block validation.
 Automatic success does not approve the release.
+The console and GitHub Job Summary show the result, failed phase, review notes and log location. Source prevalidation is clearly separate from RC acceptance.
 See [the validator instructions](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md) for local prevalidation and evidence paths.
 
 ## Verification
@@ -116,15 +118,26 @@ gpg:               imported: x
 release_signer_fingerprint='<signer-full-fingerprint>'
 gpg --fingerprint -- "$release_signer_fingerprint"
 
-# 3. Verify each archive; stop on a nonzero verification exit code
-for archive in *.tar.gz; do
-  gpg --status-fd 1 --verify -- "$archive.asc" "$archive" > "$archive.status" || exit "$?"
-  if grep -Eq '^\[GNUPG:\] (REVKEYSIG|EXPKEYSIG|EXPSIG)( |$)' "$archive.status"; then
-    exit 1
-  fi
-  grep -q '^\[GNUPG:\] VALIDSIG ' "$archive.status" || exit 1
-  cat "$archive.status"
-done
+# 3. Use a subshell so verification failure does not exit your interactive terminal
+(
+  for archive in *.tar.gz; do
+    gpg --status-fd 1 --verify -- "$archive.asc" "$archive" > "$archive.status" || {
+      status=$?
+      printf 'Signature verification failed: %s\n' "$archive" >&2
+      cat "$archive.status"
+      exit "$status"
+    }
+    cat "$archive.status"
+    if grep -Eq '^\[GNUPG:\] (REVKEYSIG|EXPKEYSIG|EXPSIG)( |$)' "$archive.status"; then
+      printf 'Expired or revoked signature: %s\n' "$archive" >&2
+      exit 1
+    fi
+    grep -q '^\[GNUPG:\] VALIDSIG ' "$archive.status" || {
+      printf 'Missing valid signature: %s\n' "$archive" >&2
+      exit 1
+    }
+  done
+)
 ```
 
 Require exit code zero and a `VALIDSIG` fingerprint matching the vote signer. When a signing subkey is used, compare its reported

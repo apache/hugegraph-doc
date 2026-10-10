@@ -243,8 +243,12 @@ def embedded_versions(version, server_directory, toolchain_directory):
     print("PASS: Server and Toolchain self artifacts have matching filenames and embedded Maven versions")
 
 
-def staging_origin(repository, version, distribution):
+def staging_origin(repository, version, distribution, staging_url):
     repository = Path(repository)
+    # Newer Maven Resolver versions qualify repository IDs with the URL hash.
+    canonical_url = staging_url.rstrip("/") + "/"
+    url_hash = hashlib.sha1(canonical_url.encode()).hexdigest()
+    origins = ("selected-staging", f"selected-staging-{url_hash}")
     required = {"hugegraph-common", "hg-pd-common", "hg-pd-client", "hg-pd-grpc", "hugegraph-core"}
     for library in Path(distribution).rglob("lib/*.jar"):
         if library.name.startswith(("hugegraph-client-", "hugegraph-loader-", "hugegraph-tools-")):
@@ -259,7 +263,8 @@ def staging_origin(repository, version, distribution):
         for extension in ("pom", "jar"):
             name = f"{artifact}-{version}.{extension}"
             require((directory / name).is_file(), f"Missing staged artifact: {name}")
-            require(f"{name}>selected-staging=" in metadata, f"Artifact was not fetched from selected staging: {name}")
+            require(any(f"{name}>{origin}=" in metadata for origin in origins),
+                    f"Artifact was not fetched from selected staging: {name}")
     print(f"PASS: {len(required)} SDK coordinates resolved from selected staging")
 
 
@@ -290,4 +295,8 @@ if __name__ == "__main__":
         "binary-licenses": binary_licenses, "staging-origin": staging_origin,
         "embedded-versions": embedded_versions, "stopped": lambda port: stopped(int(port)),
     }
-    commands[sys.argv[1]](*sys.argv[2:])
+    try:
+        commands[sys.argv[1]](*sys.argv[2:])
+    except (RuntimeError, OSError, ValueError, tarfile.TarError, zipfile.BadZipFile) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        sys.exit(1)

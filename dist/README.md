@@ -25,14 +25,16 @@ bash dist/validate-release.sh --staging-repository https://repository.apache.org
   1.8.0 pengjunzhi /path/to/rc 17
 ```
 
-该流程仅处理以下四个包，每个包必须有 `.sha512` 和 `.asc`，目录中存在额外归档则失败：
+以下四个包是必需项，每个包均须有 `.sha512` 和 `.asc`：
 
 - `apache-hugegraph-1.8.0-src.tar.gz`
 - `apache-hugegraph-1.8.0.tar.gz`
 - `apache-hugegraph-toolchain-1.8.0-src.tar.gz`
 - `apache-hugegraph-toolchain-1.8.0.tar.gz`
 
-其他组件需使用其对应的验证流程；可将这四个包及其校验和、签名复制到独立本地目录验证，不得跳过任何包的签名。
+同一目录可另含 `apache-hugegraph-computer-1.8.0-src.tar.gz`、`apache-hugegraph-ai-1.8.0-src.tar.gz`。
+所有归档均验证签名、SHA512、内容和许可证；Computer 源码另执行 Maven 构建。未知归档或版本不符均失败，不能跳过签名。
+AI、Computer 产品运行验证需另行完成；本脚本的完整业务链路仅覆盖 Server/Toolchain。
 
 签名使用项目 KEYS 中由 `gpg-user` 选定的公钥验证，其他签名者的有效签名也会被拒绝；不修改用户的 GPG 信任设置。仍需按投票邮件核对签名者指纹。
 校验通过后才解压构建；Server 与 Toolchain 使用独立、全新的 Maven 仓库，严格 RC 模式不预装本地 Server SDK。
@@ -90,3 +92,5 @@ python3 -m unittest discover -s dist/tests
 参见 [英文验证指南](../content/en/docs/contribution-guidelines/validate-release.md)、
 [中文验证指南](../content/cn/docs/contribution-guidelines/validate-release.md) 和
 [ASF 发布策略](https://www.apache.org/legal/release-policy.html)。
+
+控制台和 GitHub Job Summary 汇总结果、失败阶段、复核提示及日志位置；源码预验证不会显示为 RC 验收通过。

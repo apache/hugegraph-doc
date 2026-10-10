@@ -548,8 +548,9 @@ of a running server; without it, the next dump is written as a file with that na
 `@argfiles`), the command line (`JAVA_OPTIONS`, or `-j` when `JAVA_OPTIONS` is unset or empty) and `_JAVA_OPTIONS` after these defaults, so a value for one of
 these flags in any of them overrides the default. Only the environment variables reach the JVMs the server starts: to turn dumps off for all of them, set
 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, while `-j` or `JAVA_OPTIONS` turns them off for the server JVM only. Either way each start still creates
-its empty `heapdump_*` directory, unless creating it failed and dumps fell back to `logs/`. Because of the defaults, the JVM prints
-`Picked up JAVA_TOOL_OPTIONS: ...` on stderr at startup.
+its empty `heapdump_*` directory, unless creating it failed and dumps fell back to `logs/`. If the logs path contains a double quote or `%`, the launcher warns
+and, for the server alone, keeps the 1.7.0 behaviour: heap dumps go to `logs/` itself, with no per-launch directory and no crash log default. Because of the
+defaults, the JVM prints `Picked up JAVA_TOOL_OPTIONS: ...` on stderr at startup.
 
 > **Version scope**: this applies to current master ([apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)). In 1.7.0 the heap dump flags are
 > added only when `JAVA_OPTIONS` is unset, heap dumps go directly to `logs/java_pid<pid>.hprof`, and JVM crash logs go to the install directory.

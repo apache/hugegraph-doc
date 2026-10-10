@@ -543,7 +543,8 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 本身；磁盘已满时可能也没有空间写入转储。堆转储可能和堆一样大。启动脚本从不删除转储或 `heapdump_*` 目录：每次启动都会留下一个目录，除非发生内存溢出否则为空；启动脚本保留它，是因为 computer 任务的 JVM 可能在服务退出后仍在使用它。在该次启动的 HugeGraph JVM
 都已退出后，可以移走或删除旧目录，但不要动正在运行的服务最新的那个目录；没有它，下一次转储会被写成一个同名文件。JVM 会在这些默认值之后读取你自己的 `JAVA_TOOL_OPTIONS`、`JDK_JAVA_OPTIONS`（包括 `@argfile`）、命令行（`JAVA_OPTIONS`；未设置或为空时为
 `-j`）和 `_JAVA_OPTIONS`，因此在其中任意一处为上述参数指定的值都会覆盖默认值。只有环境变量会传给服务启动的 JVM：要对所有 JVM 关闭堆转储，请设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`；通过 `-j` 或
-`JAVA_OPTIONS` 关闭只对服务自身的 JVM 生效。无论哪种方式，每次启动仍会创建空的 `heapdump_*` 目录，除非创建失败而改为写入 `logs/`。由于设置了这些默认值，JVM 启动时会在 stderr 输出 `Picked up JAVA_TOOL_OPTIONS: ...`。
+`JAVA_OPTIONS` 关闭只对服务自身的 JVM 生效。无论哪种方式，每次启动仍会创建空的 `heapdump_*` 目录，除非创建失败而改为写入 `logs/`。如果日志路径中包含双引号或 `%`，启动脚本会给出警告，并只对服务自身的 JVM 保留 1.7.0 的行为：堆转储直接写入
+`logs/`，不使用每次启动的目录，也不设置崩溃日志的默认值。由于设置了这些默认值，JVM 启动时会在 stderr 输出 `Picked up JAVA_TOOL_OPTIONS: ...`。
 
 > **版本范围**：以上行为适用于当前 master（[apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 只在未设置 `JAVA_OPTIONS` 时添加堆转储参数，堆转储直接写入
 > `logs/java_pid<pid>.hprof`，JVM 崩溃日志写入安装目录。

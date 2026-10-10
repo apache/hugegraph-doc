@@ -5,9 +5,33 @@ weight: 3
 ---
 
 > Note: this doc will be updated continuously.
-> Use Java 11 for runtime verification. Since version 1.5.0, components other than the client no longer support Java 8.
+> Use Java 17 to build and verify HugeGraph 1.8.0 release packages.
 >
 > Graduation note: Apache HugeGraph graduated in January 2026. Official release voting is now completed within the HugeGraph community (PMC binding votes on `dev@hugegraph.apache.org`), and no longer requires Incubator `general@incubator.apache.org` approval.
+
+## Automated release validation
+
+The workflow and `dist/validate-release.sh` use the same Java 17 checks. Specify the package version and SVN RC path separately,
+and use the Maven staging repository from the vote email. The four Server/Toolchain source and binary archives are required.
+The same directory may also contain AI and Computer source archives. Every archive must include SHA512 and GPG signatures;
+unknown packages and mismatched versions are rejected. All present archives receive integrity, contents and license checks;
+Computer sources are also rebuilt with Maven. AI and Computer product runtime validation remains a separate task.
+
+```bash
+bash dist/validate-release.sh --svn-path 1.8.0/RC1 \
+  --staging-repository https://repository.apache.org/content/repositories/<staging-id>/ 1.8.0 pengjunzhi
+# Existing local-package interface is preserved:
+bash dist/validate-release.sh 1.8.0 pengjunzhi /path/to/rc 17
+```
+
+Strict RC validation builds with fresh, separate Maven repositories and does not preinstall a local Server SDK.
+It validates both source-built and downloaded binaries through Server, Client, ordinary Loader, Tools and Hubble business assertions.
+Logs remain available after failures. The `source-prevalidation` workflow mode uses exact Server/Toolchain commit SHAs and unsigned archives;
+its result does not prove real RC signatures, downloads or remote staging dependency resolution.
+Review `license-review-*.txt` for license choices and exceptions; explicit Category-X-only dependencies block validation.
+Automatic success does not approve the release.
+The console and GitHub Job Summary show the result, failed phase, review notes and log location. Source prevalidation is clearly separate from RC acceptance.
+See [the validator instructions](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md) for local prevalidation and evidence paths.
 
 ## Verification
 
@@ -23,7 +47,7 @@ subsequent **email reply**.(The following are the core items)
 
 If there is no svn or gpg or wget environment locally, it is recommended to install it first 
 (windows recommend using WSL2 environment, or at least `git-bash`), also make sure to install java 
-(prefer Java 11) and maven software
+(Java 17) and maven software
 
 ```bash
 # 1. install svn
@@ -53,7 +77,7 @@ brew install wget
 svn co https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/
 # (Note) If svn downloads a file very slowly, 
 # you can consider wget to download a single file, as follows (or consider using a proxy)
-wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
+wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-1.x.x.tar.gz
 ```
 
 #### 2. check hash value
@@ -90,31 +114,36 @@ gpg: key 28DCAED849C4180E: public key "coderzc (CODE SIGNING KEY) <zhaocong@apac
 gpg: Total number processed: x
 gpg:               imported: x
 
-# 2. Trust release users (trust n username mentioned in voting mail, if more than one user, 
-#      just repeat the steps in turn or use the script below)
-gpg --edit-key $USER # input the username, enter the interactive mode
-gpg> trust
-...output options..
-Your decision? 5 # select 5
-Do you really want to set this key to ultimate trust? (y/N) y # slect y, then q quits trusting the next user
+# 2. Compare the full primary-key fingerprint with the release vote email
+release_signer_fingerprint='<signer-full-fingerprint>'
+gpg --fingerprint -- "$release_signer_fingerprint"
 
-# (Optional) You could also use the command to trust one user in non-interactive mode:
-echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key $USER trust
-# Or trust all currently imported GPG public keys (review them carefully first):
-for key in $(gpg --no-tty --list-keys --with-colons | awk -F: '/^pub/ {print $5}'); do
-  echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key "$key" trust
-done
-
-
-# 3. Check the signature (make sure there is no Warning output, every source/binary file prompts Good Signature)
-#Single file verification
-gpg --verify xx.asc xxx-src.tar.gz
-gpg --verify xx.asc xxx.tar.gz # Note: without the bin/binary suffix
-
-# One-click shell traversal verification (recommended)
-for i in *.tar.gz; do echo $i; gpg --verify $i.asc $i ; done
-
+# 3. Use a subshell so verification failure does not exit your interactive terminal
+(
+  for archive in *.tar.gz; do
+    gpg --status-fd 1 --verify -- "$archive.asc" "$archive" > "$archive.status" || {
+      status=$?
+      printf 'Signature verification failed: %s\n' "$archive" >&2
+      cat "$archive.status"
+      exit "$status"
+    }
+    cat "$archive.status"
+    if grep -Eq '^\[GNUPG:\] (REVKEYSIG|EXPKEYSIG|EXPSIG)( |$)' "$archive.status"; then
+      printf 'Expired or revoked signature: %s\n' "$archive" >&2
+      exit 1
+    fi
+    grep -q '^\[GNUPG:\] VALIDSIG ' "$archive.status" || {
+      printf 'Missing valid signature: %s\n' "$archive" >&2
+      exit 1
+    }
+  done
+)
 ```
+
+Require exit code zero and a `VALIDSIG` fingerprint matching the vote signer. When a signing subkey is used, compare its reported
+primary-key fingerprint. A key-trust warning alone does not invalidate a signature; do not infer success from localized `Good signature` text.
+Stop on `REVKEYSIG`, `EXPKEYSIG` or `EXPSIG`, even alongside `VALIDSIG` or exit code zero; ask the release manager to review or update the candidate.
+See the [GnuPG status format](https://github.com/gpg/gnupg/blob/master/doc/DETAILS).
 
 First confirm the overall integrity/consistency, and then confirm the specific content (**key**)
 
@@ -137,12 +166,16 @@ After decompressing `*hugegraph*src.tar.gz`, Do the following checks:
 6. Finally, make sure the source code works/compiles correctly
 
 ```bash
-# prefer to use/switch to `java 11` for the following operations (compiling/running) (Note: `Computer` only supports `java >= 11`)
+# prefer to use/switch to `java 17` for the following operations (compiling/running) (Note: `Computer` only supports `java >= 11`)
 # java --version
 
 # try to compile in the Unix env to check if it works well (-P is optional)
-mvn clean package -DskipTests -Dcheckstyle.skip=true -P stage
+mvn -s /path/to/staging-settings.xml -Dmaven.repo.local=/path/to/fresh-m2 \
+  clean install -Papache-release -DskipTests -Dgpg.skip=true
 ```
+
+The manual Maven command must use settings pointing to the staging repository from the vote email and a fresh local repository.
+Do not preinstall local Server SDK artifacts to hide missing staged dependencies. The automated validator configures these settings for you.
 
 ##### B. binary package
 
@@ -193,7 +226,7 @@ After the check & test, you should reply to the mail with the following content:
 I checked:
 1. Download link/tag in mail are valid
 2. Checksum and GPG signatures are OK
-3. LICENSE & NOTICE & DISCLAIMER are exist
+3. LICENSE & NOTICE exist
 4. Build successfully on XX OS & Version XX
 5. No unexpected binary files
 6. Date is right in the NOTICE file
@@ -210,7 +243,7 @@ and the PMC members should reply with `binding`, it's important for summary the 
 I checked:
 1. Download link/tag in mail are valid
 2. Checksum and GPG signatures are OK
-3. LICENSE & NOTICE & DISCLAIMER are exist
+3. LICENSE & NOTICE exist
 4. Build successfully on XX OS & Version XX
 5. No unexpected binary files
 6. Date is right in the NOTICE file

@@ -5,9 +5,32 @@ weight: 3
 ---
 
 > Note: 这篇文档会持续更新。
-> 你需要使用 Java11 验证测试 (如果希望测试功能/运行时)，从 1.5.0 版本开始 (除 client 外) 不再支持 Java8
+> HugeGraph 1.8.0 的源码构建与发行包运行验证统一使用 Java 17。
 >
 > 毕业说明：Apache HugeGraph 已于 2026 年 1 月毕业。正式发版投票现由 HugeGraph 社区内部完成（`dev@hugegraph.apache.org` 上的 PMC binding 投票），不再需要 Incubator `general@incubator.apache.org` 审批。
+
+## 自动化发版验证
+
+Workflow 与 `dist/validate-release.sh` 共用 Java 17 校验逻辑。发行版本与 SVN RC 路径分别指定，
+Maven staging repository 使用投票邮件中的地址。Server/Toolchain 四个源码和二进制包是必需项，
+同一候选目录也可包含 AI、Computer 源码包。每个包均须附带 SHA512 与 GPG 签名；未知包名和版本不符会阻断验证。
+所有包均检查完整性、内容和许可证，Computer 源码另执行 Maven 构建；AI、Computer 产品运行验证需另行完成。
+
+```bash
+bash dist/validate-release.sh --svn-path 1.8.0/RC1 \
+  --staging-repository https://repository.apache.org/content/repositories/<staging-id>/ 1.8.0 pengjunzhi
+# 原有本地包位置参数接口保留：
+bash dist/validate-release.sh 1.8.0 pengjunzhi /path/to/rc 17
+```
+
+严格 RC 模式使用全新、相互隔离的 Maven 仓库，不预装本地 Server SDK。
+源码构建产物和下载的二进制包分别执行 Server、Client、普通 Loader、Tools 与 Hubble 业务断言，失败后保留日志。
+Workflow 的 `source-prevalidation` 模式使用明确的 Server/Toolchain commit SHA 和无签名源码归档，
+它不证明真实 RC 签名、下载及远端 staging 依赖解析已通过。
+`license-review-*.txt` 中的许可选择和例外仍需人工复核，明确的 Category-X-only 依赖会阻断验证；自动成功不等于发布批准。
+本地预验证和证据目录说明见[验证脚本指南](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md)。
+
+控制台和 GitHub Job Summary 汇总结果、失败阶段、复核提示及日志位置；源码预验证不会显示为 RC 验收通过。
 
 ## 验证阶段
 
@@ -21,7 +44,7 @@ weight: 3
 #### 1. 准备工作
 
 如果本地没有 svn 或 gpg 或 wget 环境，建议先安装一下 (windows 推荐使用 WSL2 环境，
-或者至少是 `git-bash`), 同时确保安装 Java(推荐 11) 和 maven 软件。
+或者至少是 `git-bash`), 同时确保安装 Java 17 和 maven 软件。
 
 ```bash
 # 1. 安装svn
@@ -49,7 +72,7 @@ brew install wget
 # 4. 下载 hugegraph-svn 目录 (版本号注意填写此次验证版本)
 svn co https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/
 # (注) 如果出现 svn 下载某个文件速度很慢的情况, 可以考虑 wget 单个文件下载, 如下 (或考虑使用 VPN / 代理)
-wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
+wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-1.x.x.tar.gz
 ```
 
 #### 2. 检查 hash 值
@@ -81,28 +104,36 @@ gpg: key 28DCAED849C4180E: public key "coderzc (CODE SIGNING KEY) <zhaocong@apac
 gpg: Total number processed: x
 gpg:               imported: x
 
-# 2. 信任发版用户 (你需要信任 n 个邮件里提到的 gpg 用户名, ＞1则依次执行相同操作)
-gpg --edit-key $USER # 这里填写具体用户名或者公钥串, 回车进入交互模式
-gpg> trust
-...输出选项..
-Your decision? 5 # 选择5
-Do you really want to set this key to ultimate trust? (y/N) y # 选择y, 然后 q 退出信任下一个用户
+# 2. 将完整主密钥指纹与发版投票邮件中的签名者指纹对照
+release_signer_fingerprint='<signer-full-fingerprint>'
+gpg --fingerprint -- "$release_signer_fingerprint"
 
-# (可选) 你也可以直接使用非交互模式的如下命令:
-echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key $USER trust
-# 或者是信任所有当前导入过的 gpg 公钥 (请小心检查)
-for key in $(gpg --no-tty --list-keys --with-colons | awk -F: '/^pub/ {print $5}'); do
-  echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key "$key" trust
-done
-
-# 3. 检查签名(确保没有 Warning 输出, 每一个 source/binary 文件都提示 Good Signature)
-#单个文件验证
-gpg --verify xx.asc xxx-src.tar.gz
-gpg --verify xx.asc xxx.tar.gz # 注：目前没有  bin/binary  后缀
-
-# 一行脚本快速验证所有包 (推荐使用，请确保所有 gpg 公钥已经信任)
-for i in *.tar.gz; do echo $i; gpg --verify $i.asc $i ; done
+# 3. 在子 shell 中验证，失败时停止检查但不退出交互终端
+(
+  for archive in *.tar.gz; do
+    gpg --status-fd 1 --verify -- "$archive.asc" "$archive" > "$archive.status" || {
+      status=$?
+      printf 'Signature verification failed: %s\n' "$archive" >&2
+      cat "$archive.status"
+      exit "$status"
+    }
+    cat "$archive.status"
+    if grep -Eq '^\[GNUPG:\] (REVKEYSIG|EXPKEYSIG|EXPSIG)( |$)' "$archive.status"; then
+      printf 'Expired or revoked signature: %s\n' "$archive" >&2
+      exit 1
+    fi
+    grep -q '^\[GNUPG:\] VALIDSIG ' "$archive.status" || {
+      printf 'Missing valid signature: %s\n' "$archive" >&2
+      exit 1
+    }
+  done
+)
 ```
+
+必须同时确认验证退出码为零，且 `VALIDSIG` 中的指纹对应投票邮件的签名者；使用签名子密钥时，核对其报告的主密钥指纹。
+密钥信任警告本身不表示签名无效，也不能只凭本地化的 `Good signature` 文本判断成功。
+即使同时出现 `VALIDSIG` 或退出码为零，遇到 `REVKEYSIG`、`EXPKEYSIG`、`EXPSIG` 仍须停止，交由发版负责人复核或更新候选包。
+格式见 [GnuPG 状态说明](https://github.com/gpg/gnupg/blob/master/doc/DETAILS)。
 
 先确认了整体的"完整性 + 一致性", 然后接下来确认具体的内容 (**关键**)
 
@@ -126,12 +157,16 @@ PMC 同学请特别注意认真检查 `LICENSE` + `NOTICE` 文件，确保文件
 大部分的发版问题都与之相关
 
 ```bash
-# 请优先使用/切换到 `java 11` 版本进行后序的编译和运行操作 (注:`Computer` 仅支持 `java >= 11`) 
+# 请优先使用/切换到 `java 17` 版本进行后序的编译和运行操作 (注:`Computer` 仅支持 `java >= 11`)
 # java --version
 
 # 尝试在 Unix 环境下编译测试是否正常
-mvn clean package -DskipTests -Dcheckstyle.skip=true -P stage
+mvn -s /path/to/staging-settings.xml -Dmaven.repo.local=/path/to/fresh-m2 \
+  clean install -Papache-release -DskipTests -Dgpg.skip=true
 ```
+
+手动 Maven 命令的 settings 必须指向投票邮件中的 staging repository，并使用全新的本地仓库。
+不要预装本地 Server SDK 来掩盖 staging 缺少依赖；自动化验证脚本会生成这些设置。
 
 ##### B. 二进制包
 
@@ -181,7 +216,7 @@ LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更�
 I checked:
 1. Download link/tag in mail are valid
 2. Checksum and GPG signatures are OK
-3. LICENSE & NOTICE & DISCLAIMER are exist
+3. LICENSE & NOTICE exist
 4. Build successfully on XX OS version XXX
 5. No unexpected binary files
 6. Date is right in the NOTICE file
@@ -198,7 +233,7 @@ I checked:
 I checked:
 1. Download link/tag in mail are valid
 2. Checksum and GPG signatures are OK
-3. LICENSE & NOTICE & DISCLAIMER are exist
+3. LICENSE & NOTICE exist
 4. Build successfully on XX OS Version XX
 5. No unexpected binary files
 6. Date is right in the NOTICE file

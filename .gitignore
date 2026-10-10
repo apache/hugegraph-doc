@@ -38,3 +38,6 @@ WARP.md
 
 __pycache__/
 *.pyc
+
+# Disposable release validation packages and isolated Maven repositories
+/dist/validation/

@@ -53,6 +53,13 @@ Current top-level Maven modules are listed below. Server's `hugegraph-server/hug
 
 These names come from the root and subproject `pom.xml` files. Use the structure of the branch you are working on.
 
+For the 1.8.0 shared-foundation changes merged into Server `master`, see the
+[shared-foundation ownership and Java migration guide](/docs/guides/shared-foundation-migration/).
+
+Build current Server `master` with Java 17 and Maven 3.6.3 or later.
+CI-friendly versions are flattened during `process-resources`, so installed and deployed POMs contain concrete versions.
+Run the reactor with `install` before building modules separately, and keep Maven Resolver validation enabled, including with Maven 3.10.
+
 Run the tests directly related to your change first. Common Server test commands include:
 
 ```bash
@@ -74,9 +81,22 @@ GitHub requires a username and token for Git authentication instead of a usernam
 
 When adding a third-party dependency, also update the license information included in the distribution:
 
-1. Add the dependency's license file to `hugegraph-server/hugegraph-dist/release-docs/licenses/`.
-2. Update `hugegraph-server/hugegraph-dist/release-docs/LICENSE`. If the dependency includes a NOTICE file, update `NOTICE` as well.
-3. Run `hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh` to update the known-dependency list.
+1. Add the dependency's license file to `install-dist/release-docs/licenses/`.
+2. Update `install-dist/release-docs/LICENSE`. If the dependency includes a NOTICE file, update `NOTICE` as well.
+3. From the repository root, prepare the current revision's Server, PD and Store distribution libraries before regenerating the inventory:
+
+   ```bash
+   mvn clean install -DskipTests -Dmaven.javadoc.skip=true
+   bash install-dist/scripts/dependency/regenerate_known_dependencies.sh
+   ```
+
+   Clean rebuilds the current revision's distributions to avoid stale dependency jars.
+   It also removes root-level `*.tar.gz` distribution archives; other revision directories remain.
+
+   This build skips tests. Collection combines Maven runtime dependencies with actual flat and nested distribution jars,
+   including Spring Boot `BOOT-INF/lib` dependencies introduced by repackaging. Missing distributions must fail collection;
+   POM inspection alone does not establish the complete shipped inventory. Review strict additions/removals in
+   `install-dist/scripts/dependency/known-dependencies.txt` and their license/NOTICE coverage, including release platform/profile variants.
 
 ## Submit a Pull Request
 

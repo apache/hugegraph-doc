@@ -53,6 +53,12 @@ hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/
 
 上述名称来自根 `pom.xml` 及各子项目 `pom.xml`；代码结构以正在使用的分支为准。
 
+已合入 Server `master`、面向 1.8.0 的整合见[共享基础模块职责和 Java 迁移指南](/cn/docs/guides/shared-foundation-migration/)。
+
+当前 Server `master` 使用 Java 17 和 Maven 3.6.3 或更高版本构建。
+CI-friendly 版本在 `process-resources` 阶段展开，安装或发布的 POM 使用具体版本号。
+单独构建模块前，先对整仓执行 `install`；使用 Maven 3.10 时也应保持 Resolver 校验开启。
+
 先运行与改动直接相关的测试。Server 常用测试入口如下：
 
 ```bash
@@ -74,9 +80,21 @@ GitHub 已不支持通过用户名和密码直接推送代码。需要使用个�
 
 提交第三方依赖时，还要同步发行包中的许可证信息：
 
-1. 把依赖的许可证文件放入 `hugegraph-server/hugegraph-dist/release-docs/licenses/`。
-2. 更新 `hugegraph-server/hugegraph-dist/release-docs/LICENSE`；依赖包含 NOTICE 时，同时更新 `NOTICE`。
-3. 运行 `hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh`，更新已知依赖清单。
+1. 把依赖的许可证文件放入 `install-dist/release-docs/licenses/`。
+2. 更新 `install-dist/release-docs/LICENSE`；依赖包含 NOTICE 时，同时更新 `NOTICE`。
+3. 在仓库根目录，先准备当前 revision 的 Server、PD、Store 发行包库，再生成依赖清单：
+
+   ```bash
+   mvn clean install -DskipTests -Dmaven.javadoc.skip=true
+   bash install-dist/scripts/dependency/regenerate_known_dependencies.sh
+   ```
+
+   `clean` 会重新构建当前版本的发行目录，避免残留已移除的依赖 jar。
+   它也会删除仓库根目录的 `*.tar.gz` 发行归档；其他版本的目录会保留。
+
+   此构建跳过测试。依赖收集同时覆盖 Maven runtime 依赖和实际发行包中的平铺、嵌套 jar，
+   包括 Spring Boot repackaging 引入的 `BOOT-INF/lib` 依赖。缺失发行包必须使收集失败；只检查 POM 不能证明完整发行依赖集。
+   核查 `install-dist/scripts/dependency/known-dependencies.txt` 的严格增删对比及对应 license/NOTICE，并按需覆盖发布平台和 profile 变体。
 
 ## 提交 Pull Request
 

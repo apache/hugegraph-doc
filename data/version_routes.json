@@ -477,6 +477,13 @@
       "1.3": "cn/docs/guides/security/",
       "1.0": null
     },
+    "cn:guides/shared-foundation-migration": {
+      "latest": "cn/docs/guides/shared-foundation-migration/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "cn:guides/toolchain-local-test": {
       "latest": "cn/docs/guides/toolchain-local-test/",
       "1.7": "cn/docs/guides/toolchain-local-test/",
@@ -1189,6 +1196,13 @@
       "1.7": "docs/guides/security/",
       "1.5": "docs/guides/security/",
       "1.3": "docs/guides/security/",
+      "1.0": null
+    },
+    "en:guides/shared-foundation-migration": {
+      "latest": "docs/guides/shared-foundation-migration/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
       "1.0": null
     },
     "en:guides/toolchain-local-test": {

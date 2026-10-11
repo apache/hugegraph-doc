@@ -378,6 +378,9 @@ All of the above parameters are optional. `page` can not be combined with a non-
 If `label` selects a vertex label with the `PRIMARY_KEY` ID strategy and `properties` supplies exact values for all its primary-key fields, the query looks up
 the vertex by ID. Additional property conditions are checked on that vertex and do not need a property index.
 
+When `label` selects a `PRIMARY_KEY` vertex label and `properties` includes conditions on every primary-key field, a range condition on any of those fields
+is rejected before property-index lookup, even if a matching property index exists.
+
 For other `properties` queries, the specified `label` needs a property index compatible with the query conditions. If `label` is omitted, candidate labels are
 query-visible vertex labels that declare all queried properties, including labels that currently have no vertices. Labels hidden from normal query results,
 including those being deleted, do not require coverage. A label index alone does not index properties.

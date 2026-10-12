@@ -300,7 +300,8 @@ slow-query logs stay in files, and ZooKeeper and SOFA log nothing below WARN. `/
 (`hs_err_pid*.log`) and out-of-memory heap dumps (`heapdump_*/java_pid*.hprof`, one directory per start, so the Server and the JVMs it starts get separate files
 unless a JVM reuses an earlier PID from that start; if the directory cannot be created, dumps go to `/hugegraph-server/logs` itself). Both images declare
 `VOLUME /hugegraph-server`, so `docker restart` and a Compose recreate keep them; `docker compose down` leaves that anonymous volume behind unattached, and a
-later `down -v` does not remove it (delete it with `docker volume prune`), so use a named volume or bind mount to keep them reachable. Kubernetes starts a new
+later `down -v` does not remove it (note the volume name from `docker inspect` before `down` and delete it with `docker volume rm <name>`; `docker volume prune`
+would also delete every other unused anonymous volume on the Docker host), so use a named volume or bind mount to keep them reachable. Kubernetes starts a new
 container on every restart, so mount an `emptyDir` or a PersistentVolumeClaim at `/hugegraph-server/logs`. Give each pod its own volume, or a per-pod directory
 on a shared PVC (`subPathExpr: $(POD_NAME)`, with `POD_NAME` passed in from `metadata.name` through the Downward API; the Helm chart sets neither): crash files
 get distinct names, but the log files themselves have fixed names. The Helm chart does not mount a logs volume yet. A heap dump can be as large as the JVM heap,

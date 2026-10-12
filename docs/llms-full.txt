@@ -1804,6 +1804,17 @@ Any other option defined in `org/apache/hugegraph/rocksdb/access/RocksDBOptions.
 | `thread.pool.scan.max` | `1000` | Maximum scan threads. |
 | `thread.pool.scan.queue` | `0` | Scan task queue capacity. |
 
+**gRPC callback queue (1.8.0)**
+
+Store uses an unbounded queue for gRPC callbacks so that a full queue does not discard cancellation or completion notifications and leave requests unfinished.
+You can keep `thread.pool.grpc.queue` in the configuration, but it no longer limits this queue.
+
+`thread.pool.grpc.core` and `thread.pool.grpc.max` still configure the thread pool. Because callbacks can continue to queue, a backlog normally does not grow
+the pool from `core` to `max`; increasing `max` alone does not increase callback processing capacity.
+
+Sustained overload can still grow the queue and increase memory usage. Limit client concurrency and size the scan and query worker pools for the node's
+resources; do not rely on `thread.pool.grpc.queue` for load control. Version 1.7.0 still uses the configured gRPC queue capacity.
+
 **Query pushdown**
 
 | Key | Code default | Meaning |
@@ -4224,18 +4235,42 @@ The import process is controlled by commands submitted by the user, and the user
 | `--scheduler-type`                       | distributed |      | The task scheduler type when creating graph if not exists          |
 | `--batch-failure-fallback`               | true        |      | Whether to fallback to single insert when batch insert fails       |
 
-> The loader prints its usage and exits when it is given fewer than three arguments, so `-f struct.json` on its own is not enough.
+The mapping file option `--file` (`-f`) is required; other options use their defaults. A valid minimal invocation is:
+
+```bash
+bin/hugegraph-loader.sh --file struct.json
+```
+
+The launcher also accepts JCommander's native `@file` syntax. Put each option and value on separate lines in `loader.args`:
+
+```text
+--file
+struct.json
+```
+
+```bash
+bin/hugegraph-loader.sh @loader.args
+```
+
+This is equivalent to the minimal invocation above. Relative path values resolve from the Loader process working directory.
+If the argument file contains credentials, restrict it to mode `0600` with `chmod 0600 loader.args`.
+The `@file` form keeps credential values out of process arguments.
+Loader must be able to create and write the mapping-prefix directory used for progress output.
+Copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable volume before running Loader.
 
 ##### 3.4.2 Breakpoint Continuation Mode
 
 Usually, the Loader task takes a long time to execute. If the import interrupt process exits for some reason, and next time you want to continue the import from the interrupted point, this is the scenario of using breakpoint continuation.
 
-The user sets the command line parameter --incremental-mode to true to open the breakpoint resume mode. The key to breakpoint continuation lies in the progress file. When the import process exits, the import progress at the time of exit will be recorded.
-Recorded in the progress file, the progress file is located in the `${struct}` directory, the file name is like `load-progress_${timestamp}`, ${struct} is the prefix of the mapping file, and ${timestamp} is the start of the import
-moment, formatted as `yyyyMMdd-HHmmss`. For example, for an import task started at `2019-10-10 12:30:30`, the mapping file used is `struct-example.json`, then the path of the progress file is the same as struct-example.json
-Sibling `struct-example/load-progress_20191010-123030`. When the directory holds several progress files, the resumed import reads the last one in name order, which is the most recent one.
+Set `--incremental-mode` to `true` to resume from a progress file. Loader records progress when it closes normally after a successful import
+or a normal stop; an unexpected failure may prevent this write.
+The progress file is in `${struct}` and named `load-progress_${timestamp}`, where `${struct}` is the mapping-file prefix and `${timestamp}` is the
+import start time, formatted as `yyyyMMdd-HHmmss`. For example, an import started at `2019-10-10 12:30:30` with mapping file `struct-example.json`
+writes `struct-example/load-progress_20191010-123030`. When the directory holds several progress files, the resumed import reads the last one in name
+order, which is the most recent one.
 
-> Note: The generation of progress files is independent of whether --incremental-mode is turned on or not, and a progress file is generated at the end of each import.
+> Note: A progress file is written after a successful import or a normal stop (including an error limit), regardless of `--incremental-mode`
+> or `--print-progress`. An import aborted by an unexpected failure may not write one.
 
 If the data file formats are all legal and the import task is stopped by the user (CTRL + C or kill, kill -9 is not supported), that is to say, if there is no error record, the next import only needs to be set to 
 Continue for the breakpoint.
@@ -22826,6 +22861,13 @@ client, err := hugegraph.NewCommonClient(hugegraph.Config{
 
 Each operation takes functional options named `With...` on the operation itself, for example `client.Gremlin.Post.WithGremlin(...)` or `client.Propertykey.GetByName.WithName(...)`.
 
+`EdgeLabel.Create` accepts `Properties: nil` or an empty `[]string{}` in its request data to create an edge label without properties.
+
+Typed APIs return `err` for request validation, transport, response reading, or JSON decoding failures.
+An HTTP 4xx/5xx response can still return `err == nil`; for example, creating a vertex with a nonexistent label returns HTTP 400.
+Check that `response.StatusCode` is in the 2xx range before reading result data. For `Gremlin.Post`, also check `response.Data.Status.Code`
+for a successful Gremlin protocol status (2xx).
+
 ```go
 resp, err := client.Gremlin.Post(
 	client.Gremlin.Post.WithGremlin("g.V().limit(3)"),
@@ -22833,7 +22875,14 @@ resp, err := client.Gremlin.Post(
 if err != nil {
 	log.Fatal(err)
 }
-fmt.Println(resp.StatusCode, resp.Data.Status.Code, resp.Data.Result.Data)
+defer resp.Body.Close()
+if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	log.Fatalf("HugeGraph returned HTTP %d", resp.StatusCode)
+}
+if resp.Data.Status.Code < 200 || resp.Data.Status.Code >= 300 {
+	log.Fatalf("Gremlin returned status %d: %s", resp.Data.Status.Code, resp.Data.Status.Message)
+}
+fmt.Println(resp.Data.Result.Data)
 ```
 
 > The `Vertex` operations take `model.Vertex[any]` values from the `internal/model` package. Go does not allow importing an `internal` package from another module, so at the moment the `Vertex` API can only be called from code inside the client module itself; its test file is also fully commented out.
@@ -28620,9 +28669,33 @@ LLMS index: [llms.txt](/llms.txt)
 ---
 
 > Note: this doc will be updated continuously.
-> Use Java 11 for runtime verification. Since version 1.5.0, components other than the client no longer support Java 8.
+> Use Java 17 to build and verify HugeGraph 1.8.0 release packages.
 >
 > Graduation note: Apache HugeGraph graduated in January 2026. Official release voting is now completed within the HugeGraph community (PMC binding votes on `dev@hugegraph.apache.org`), and no longer requires Incubator `general@incubator.apache.org` approval.
+
+## Automated release validation
+
+The workflow and `dist/validate-release.sh` use the same Java 17 checks. Specify the package version and SVN RC path separately,
+and use the Maven staging repository from the vote email. The four Server/Toolchain source and binary archives are required.
+The same directory may also contain AI and Computer source archives. Every archive must include SHA512 and GPG signatures;
+unknown packages and mismatched versions are rejected. All present archives receive integrity, contents and license checks;
+Computer sources are also rebuilt with Maven. AI and Computer product runtime validation remains a separate task.
+
+```bash
+bash dist/validate-release.sh --svn-path 1.8.0/RC1 \
+  --staging-repository https://repository.apache.org/content/repositories/<staging-id>/ 1.8.0 imbajin
+# Existing local-package interface is preserved:
+bash dist/validate-release.sh 1.8.0 imbajin /path/to/rc 17
+```
+
+Strict RC validation builds with fresh, separate Maven repositories and does not preinstall a local Server SDK.
+It validates both source-built and downloaded binaries through Server, Client, ordinary Loader, Tools and Hubble business assertions.
+Logs remain available after failures. The `source-prevalidation` workflow mode uses exact Server/Toolchain commit SHAs and unsigned archives;
+its result does not prove real RC signatures, downloads or remote staging dependency resolution.
+Review `license-review-*.txt` for license choices and exceptions; explicit Category-X-only dependencies block validation.
+Automatic success does not approve the release.
+The console and GitHub Job Summary show the result, failed phase, review notes and log location. Source prevalidation is clearly separate from RC acceptance.
+See [the validator instructions](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md) for local prevalidation and evidence paths.
 
 ## Verification
 
@@ -28638,7 +28711,7 @@ subsequent **email reply**.(The following are the core items)
 
 If there is no svn or gpg or wget environment locally, it is recommended to install it first 
 (windows recommend using WSL2 environment, or at least `git-bash`), also make sure to install java 
-(prefer Java 11) and maven software
+(Java 17) and maven software
 
 ```bash
 # 1. install svn
@@ -28668,7 +28741,7 @@ brew install wget
 svn co https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/
 # (Note) If svn downloads a file very slowly, 
 # you can consider wget to download a single file, as follows (or consider using a proxy)
-wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-incubating-1.x.x.tar.gz
+wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-toolchain-1.x.x.tar.gz
 ```
 
 #### 2. check hash value
@@ -28705,31 +28778,36 @@ gpg: key 28DCAED849C4180E: public key "coderzc (CODE SIGNING KEY) <zhaocong@apac
 gpg: Total number processed: x
 gpg:               imported: x
 
-# 2. Trust release users (trust n username mentioned in voting mail, if more than one user, 
-#      just repeat the steps in turn or use the script below)
-gpg --edit-key $USER # input the username, enter the interactive mode
-gpg> trust
-...output options..
-Your decision? 5 # select 5
-Do you really want to set this key to ultimate trust? (y/N) y # slect y, then q quits trusting the next user
+# 2. Compare the full primary-key fingerprint with the release vote email
+release_signer_fingerprint='<signer-full-fingerprint>'
+gpg --fingerprint -- "$release_signer_fingerprint"
 
-# (Optional) You could also use the command to trust one user in non-interactive mode:
-echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key $USER trust
-# Or trust all currently imported GPG public keys (review them carefully first):
-for key in $(gpg --no-tty --list-keys --with-colons | awk -F: '/^pub/ {print $5}'); do
-  echo -e "5\ny\n" | gpg --batch --command-fd 0 --edit-key "$key" trust
-done
-
-
-# 3. Check the signature (make sure there is no Warning output, every source/binary file prompts Good Signature)
-#Single file verification
-gpg --verify xx.asc xxx-src.tar.gz
-gpg --verify xx.asc xxx.tar.gz # Note: without the bin/binary suffix
-
-# One-click shell traversal verification (recommended)
-for i in *.tar.gz; do echo $i; gpg --verify $i.asc $i ; done
-
+# 3. Use a subshell so verification failure does not exit your interactive terminal
+(
+  for archive in *.tar.gz; do
+    gpg --status-fd 1 --verify -- "$archive.asc" "$archive" > "$archive.status" || {
+      status=$?
+      printf 'Signature verification failed: %s\n' "$archive" >&2
+      cat "$archive.status"
+      exit "$status"
+    }
+    cat "$archive.status"
+    if grep -Eq '^\[GNUPG:\] (REVKEYSIG|EXPKEYSIG|EXPSIG)( |$)' "$archive.status"; then
+      printf 'Expired or revoked signature: %s\n' "$archive" >&2
+      exit 1
+    fi
+    grep -q '^\[GNUPG:\] VALIDSIG ' "$archive.status" || {
+      printf 'Missing valid signature: %s\n' "$archive" >&2
+      exit 1
+    }
+  done
+)
 ```
+
+Require exit code zero and a `VALIDSIG` fingerprint matching the vote signer. When a signing subkey is used, compare its reported
+primary-key fingerprint. A key-trust warning alone does not invalidate a signature; do not infer success from localized `Good signature` text.
+Stop on `REVKEYSIG`, `EXPKEYSIG` or `EXPSIG`, even alongside `VALIDSIG` or exit code zero; ask the release manager to review or update the candidate.
+See the [GnuPG status format](https://github.com/gpg/gnupg/blob/master/doc/DETAILS).
 
 First confirm the overall integrity/consistency, and then confirm the specific content (**key**)
 
@@ -28752,12 +28830,16 @@ After decompressing `*hugegraph*src.tar.gz`, Do the following checks:
 6. Finally, make sure the source code works/compiles correctly
 
 ```bash
-# prefer to use/switch to `java 11` for the following operations (compiling/running) (Note: `Computer` only supports `java >= 11`)
+# prefer to use/switch to `java 17` for the following operations (compiling/running) (Note: `Computer` only supports `java >= 11`)
 # java --version
 
 # try to compile in the Unix env to check if it works well (-P is optional)
-mvn clean package -DskipTests -Dcheckstyle.skip=true -P stage
+mvn -s /path/to/staging-settings.xml -Dmaven.repo.local=/path/to/fresh-m2 \
+  clean install -Papache-release -DskipTests -Dgpg.skip=true
 ```
+
+The manual Maven command must use settings pointing to the staging repository from the vote email and a fresh local repository.
+Do not preinstall local Server SDK artifacts to hide missing staged dependencies. The automated validator configures these settings for you.
 
 ##### B. binary package
 
@@ -28808,7 +28890,7 @@ After the check & test, you should reply to the mail with the following content:
 I checked:
 1. Download link/tag in mail are valid
 2. Checksum and GPG signatures are OK
-3. LICENSE & NOTICE & DISCLAIMER are exist
+3. LICENSE & NOTICE exist
 4. Build successfully on XX OS & Version XX
 5. No unexpected binary files
 6. Date is right in the NOTICE file
@@ -28825,7 +28907,7 @@ and the PMC members should reply with `binding`, it's important for summary the 
 I checked:
 1. Download link/tag in mail are valid
 2. Checksum and GPG signatures are OK
-3. LICENSE & NOTICE & DISCLAIMER are exist
+3. LICENSE & NOTICE exist
 4. Build successfully on XX OS & Version XX
 5. No unexpected binary files
 6. Date is right in the NOTICE file

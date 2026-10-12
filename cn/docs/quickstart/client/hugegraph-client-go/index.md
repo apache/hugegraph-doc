@@ -115,6 +115,12 @@ client, err := hugegraph.NewCommonClient(hugegraph.Config{
 
 每个操作都通过挂在操作本身上的 `With...` 函数式选项传参，例如 `client.Gremlin.Post.WithGremlin(...)` 或 `client.Propertykey.GetByName.WithName(...)`。
 
+`EdgeLabel.Create` 的请求数据允许 `Properties: nil` 或空切片 `[]string{}`，用于创建无属性的边标签。
+
+类型化 API 返回的 `err` 表示参数校验、传输、响应读取或 JSON 解码错误。
+HTTP 4xx/5xx 仍可能返回 `err == nil`，例如创建顶点时指定不存在的 label 会返回 HTTP 400。
+读取结果数据前，请检查 `response.StatusCode` 是否属于 2xx。调用 `Gremlin.Post` 时，还需检查 `response.Data.Status.Code` 是否为成功的 Gremlin 协议状态码（2xx）。
+
 ```go
 resp, err := client.Gremlin.Post(
 	client.Gremlin.Post.WithGremlin("g.V().limit(3)"),
@@ -122,7 +128,14 @@ resp, err := client.Gremlin.Post(
 if err != nil {
 	log.Fatal(err)
 }
-fmt.Println(resp.StatusCode, resp.Data.Status.Code, resp.Data.Result.Data)
+defer resp.Body.Close()
+if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	log.Fatalf("HugeGraph returned HTTP %d", resp.StatusCode)
+}
+if resp.Data.Status.Code < 200 || resp.Data.Status.Code >= 300 {
+	log.Fatalf("Gremlin returned status %d: %s", resp.Data.Status.Code, resp.Data.Status.Message)
+}
+fmt.Println(resp.Data.Result.Data)
 ```
 
 > `Vertex` 相关操作的入参是 `internal/model` 包中的 `model.Vertex[any]`。Go 不允许从其他 module 导入 `internal` 包，因此目前 `Vertex` API 只能在客户端 module 内部调用；其测试文件也已全部注释。

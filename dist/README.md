@@ -13,16 +13,16 @@ macOS 需要 coreutils，供发行项目的打包脚本使用。
 
 ```bash
 # 默认候选路径为 dev/hugegraph/1.8.0
-bash dist/validate-release.sh 1.8.0 pengjunzhi
+bash dist/validate-release.sh 1.8.0 imbajin
 
 # SVN 候选目录与发行版本分开指定
 bash dist/validate-release.sh --svn-path 1.8.0/RC1 \
   --staging-repository https://repository.apache.org/content/repositories/<staging-id>/ \
-  1.8.0 pengjunzhi
+  1.8.0 imbajin
 
 # 已下载的本地发行文件；原有位置参数接口保留，Java 默认 17
 bash dist/validate-release.sh --staging-repository https://repository.apache.org/content/repositories/<staging-id>/ \
-  1.8.0 pengjunzhi /path/to/rc 17
+  1.8.0 imbajin /path/to/rc 17
 ```
 
 以下四个包是必需项，每个包均须有 `.sha512` 和 `.asc`：

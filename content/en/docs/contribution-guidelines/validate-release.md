@@ -19,9 +19,9 @@ Computer sources are also rebuilt with Maven. AI and Computer product runtime va
 
 ```bash
 bash dist/validate-release.sh --svn-path 1.8.0/RC1 \
-  --staging-repository https://repository.apache.org/content/repositories/<staging-id>/ 1.8.0 pengjunzhi
+  --staging-repository https://repository.apache.org/content/repositories/<staging-id>/ 1.8.0 imbajin
 # Existing local-package interface is preserved:
-bash dist/validate-release.sh 1.8.0 pengjunzhi /path/to/rc 17
+bash dist/validate-release.sh 1.8.0 imbajin /path/to/rc 17
 ```
 
 Strict RC validation builds with fresh, separate Maven repositories and does not preinstall a local Server SDK.

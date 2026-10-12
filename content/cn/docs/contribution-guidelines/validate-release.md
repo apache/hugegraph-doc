@@ -18,9 +18,9 @@ Maven staging repository 使用投票邮件中的地址。Server/Toolchain 四�
 
 ```bash
 bash dist/validate-release.sh --svn-path 1.8.0/RC1 \
-  --staging-repository https://repository.apache.org/content/repositories/<staging-id>/ 1.8.0 pengjunzhi
+  --staging-repository https://repository.apache.org/content/repositories/<staging-id>/ 1.8.0 imbajin
 # 原有本地包位置参数接口保留：
-bash dist/validate-release.sh 1.8.0 pengjunzhi /path/to/rc 17
+bash dist/validate-release.sh 1.8.0 imbajin /path/to/rc 17
 ```
 
 严格 RC 模式使用全新、相互隔离的 Maven 仓库，不预装本地 Server SDK。

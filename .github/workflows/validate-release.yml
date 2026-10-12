@@ -16,7 +16,7 @@ on:
         description: Candidate path (optional)
       gpg_user:
         description: Signer name or fingerprint
-        default: pengjunzhi
+        default: imbajin
         required: true
       staging_repository:
         description: Server SDK staging URL
@@ -73,7 +73,7 @@ jobs:
     env:
       RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
       SVN_PATH: ${{ inputs.svn_path }}
-      GPG_USER: ${{ inputs.gpg_user || 'pengjunzhi' }}
+      GPG_USER: ${{ inputs.gpg_user || 'imbajin' }}
       STAGING_REPOSITORY: ${{ inputs.staging_repository || 'https://repository.apache.org/content/groups/staging/' }}
       MODE: ${{ inputs.mode || 'rc' }}
       SERVER_SHA: ${{ inputs.server_sha }}

@@ -10,7 +10,8 @@ weight: 3
 request forms on `/graphspaces/{graphspace}/graphs/{graph}/cypher`: `GET ?cypher=<URL-encoded statement>`
 and `POST application/json` with a raw Cypher body. Releases before 1.7.0 expose the same two forms under
 `/graphs/{graph}/cypher`. Released versions accept no bound parameters, and a
-statement that references `$param` returns no rows rather than failing — see
+statement that references `$param` runs with the missing binding inlined as `null` rather than failing (a predicate on it matches no rows,
+while `RETURN $value AS value` still returns a row) — see
 [Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
 
 This page records the cases verified for the current Cypher development change. It does not claim full
@@ -35,8 +36,9 @@ The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. General usage
 | `POST text/plain` with any body | No | Rejected with HTTP 415 | `testRejectPlainTextPost` |
 | `POST application/json` with a JSON object | No — introduced by [#3289](https://github.com/apache/hugegraph/pull/3289) | Query and bindings are sent separately | `testParameters` |
 
-The JSON object form below is therefore **not available in any released HugeGraph version**; it describes the merged change on `master` (the 1.8.0 development line). On released versions a statement using `$param` runs with that binding bound to `null` and
-returns no rows — see [Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
+The JSON object form below is therefore **not available in any released HugeGraph version**; it describes the merged change on `master` (the 1.8.0 development line). On released versions a statement using `$param` runs with the missing binding inlined as `null`; whether it returns rows
+depends on the expression (`WHERE n.name = $name` matches nothing, `RETURN $value AS value` returns a row holding `null`) —
+see [Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
 
 ```json
 {
@@ -52,7 +54,7 @@ For the JSON-object form, `cypher` must be a nonblank string and `parameters`, i
 Omitting `parameters` means an empty map. A referenced but missing binding is an execution error; an explicit
 null value is valid. On the tested tree this execution error applies to every request form, including
 `GET ?cypher=` and raw-body `POST`: [#3289](https://github.com/apache/hugegraph/pull/3289) always attaches the
-parameters map and rejects unresolved `$param` references, replacing the released null-and-no-rows behaviour
+parameters map and rejects unresolved `$param` references, replacing the released null-binding behaviour
 described above. Tests cover string, number, and boolean values, quotes and newlines, the binding names
 `id` and `label`. The current implementation accepts at most 16 top-level entries in `parameters`; this
 limit is fixed. Only keys in the top-level `parameters` object count toward it. Cypher does not support a

@@ -28,9 +28,9 @@ development-tree verification record and
 
 | In Neo4j | In HugeGraph |
 |---|---|
-| `CREATE INDEX` / `CREATE CONSTRAINT` | Create indexes/constraints through the [schema REST APIs](/docs/clients/restful-api/schema/); Cypher carries no DDL |
+| `CREATE INDEX` / `CREATE CONSTRAINT` | Create indexes/constraints through the [IndexLabel REST API](/docs/clients/restful-api/indexlabel/); Cypher carries no DDL |
 | Implicit schema (add properties freely) | **Strong schema**: define VertexLabel / EdgeLabel / PropertyKey before writing data |
-| Parameterized queries `$param` | Released versions send the raw statement only — a missing binding evaluates to `null` (empty result), so validate values client-side; JSON-bound parameters are available on `master` after [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), with a fixed limit of 16 top-level bindings |
+| Parameterized queries `$param` | Released versions send the raw statement only — a missing binding is inlined as `null` instead of failing (a predicate on it matches no rows), so validate values client-side; JSON-bound parameters are available on `master` after [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), with a fixed limit of 16 top-level bindings |
 | `CALL dbms.*` / `CALL algo.*` procedures | Equivalent capabilities live in the [traverser](/docs/clients/restful-api/traverser/), [task](/docs/clients/restful-api/task/), and other REST APIs |
 | Driver: Neo4j Bolt driver | [hugegraph-client](/docs/clients/hugegraph-client/) (`CypherManager`) or any HTTP client |
 | Transaction boundaries inside a Cypher statement | One statement per request; graph-to-graph data migration uses [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/) (preferred — see below), file-based bulk loads use the [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/) |
@@ -58,7 +58,7 @@ The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound re
    (environment, `mappings`, vertex/edge import examples) is covered in the
    [Import Graph Data with SeaTunnel Sink guide](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/).
 
-   The [SeaTunnel 3.0.0 connector docs](https://seatunnel.apache.org/docs/3.0.0/about/) document
+   The [SeaTunnel 3.0.0 connector docs](https://seatunnel.apache.org/docs/3.0.0/introduction/about/) document
    what to rely on:
    - [Neo4j Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/Neo4j/) reads Cypher
      query results with explicit field schemas; 3.0.0 adds multi-table reads via `tables_configs`.
@@ -87,10 +87,10 @@ The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound re
 ### Known limitations at a glance
 
 - Released versions support neither parameter binding (a missing binding
-  evaluates to `null` — see the habits table), multi-statement
+  is inlined as `null` — see the habits table), multi-statement
   scripts, nor `CALL` procedures.
 - The translator's last release is 2019-11 (1.0.4); its own TCK self-report is
-  879 pass / 79 fail (~91.7%) — uncovered syntax fails at translation time.
+  879 pass / 79 fail (~91.8%) — uncovered syntax fails at translation time.
 - Unsupported query constructs can typically be rewritten as Gremlin
   traversals — see the
   [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents);

@@ -26,9 +26,9 @@ weight: 4
 
 | 在 Neo4j 里 | 在 HugeGraph 里 |
 |---|---|
-| `CREATE INDEX` / `CREATE CONSTRAINT` | 通过 [schema REST API](/cn/docs/clients/restful-api/schema/) 建索引/约束；Cypher 不承载 DDL |
+| `CREATE INDEX` / `CREATE CONSTRAINT` | 通过 [IndexLabel REST API](/cn/docs/clients/restful-api/indexlabel/) 建索引/约束；Cypher 不承载 DDL |
 | 隐式 schema（属性随意添加） | **强 schema**：先定义 VertexLabel/EdgeLabel/PropertyKey，再写数据 |
-| 参数化查询 `$param` | 已发布版本仅发送原始语句 —— 缺失的绑定会被求值为 `null`（空结果），请在客户端校验取值；JSON 绑定参数已通过 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289) 合入 `master`，固定最多 16 个顶层绑定参数 |
+| 参数化查询 `$param` | 已发布版本仅发送原始语句 —— 缺失的绑定会被内联为 `null` 而不是报错（基于它的谓词匹配不到行），请在客户端校验取值；JSON 绑定参数已通过 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289) 合入 `master`，固定最多 16 个顶层绑定参数 |
 | `CALL dbms.*` / `CALL algo.*` 过程 | 对应功能分散在 [traverser](/cn/docs/clients/restful-api/traverser/)、[task](/cn/docs/clients/restful-api/task/) 等 REST API |
 | 驱动：Neo4j Bolt driver | [hugegraph-client](/cn/docs/clients/hugegraph-client/)（`CypherManager`）或任意 HTTP 客户端 |
 | 事务边界在 Cypher 语句内 | 每次请求一个语句；图到图的数据迁移使用 [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/)（首选 —— 见下文），基于文件的批量导入使用 [HugeGraph Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) |
@@ -50,7 +50,7 @@ weight: 4
    HugeGraph 侧的环境准备、`mappings` 配置与顶点/边导入示例见
    [通过 SeaTunnel Sink 导入图数据](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)。
 
-   [SeaTunnel 3.0.0 连接器文档](https://seatunnel.apache.org/docs/3.0.0/about/) 说明了可依赖的能力：
+   [SeaTunnel 3.0.0 连接器文档](https://seatunnel.apache.org/docs/3.0.0/introduction/about/) 说明了可依赖的能力：
    - [Neo4j Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/Neo4j/) 以显式字段
      schema 读取 Cypher 查询结果；3.0.0 新增通过 `tables_configs` 的多表读取。
    - [HugeGraph Sink](https://seatunnel.apache.org/docs/3.0.0/connectors/sink/HugeGraph/) 在 3.0.0
@@ -69,10 +69,10 @@ weight: 4
 
 ### 已知限制速查
 
-- 已发布版本不支持参数绑定（缺失的绑定会被求值为 `null`，见上表）、
+- 已发布版本不支持参数绑定（缺失的绑定会被内联为 `null`，见上表）、
   多语句脚本与 `CALL` 过程。
 - 转译器最后一次发布是 2019-11（1.0.4），其自身 TCK 报告为
-  879 通过 / 79 失败（约 91.7%）—— 未覆盖的语法会在翻译期报错。
+  879 通过 / 79 失败（约 91.8%）—— 未覆盖的语法会在翻译期报错。
 - 不受支持的查询结构通常可以改写为等价的 Gremlin 遍历 —— 见
   [HugeGraph Cypher 的对照表](/cn/docs/language/hugegraph-cypher/#等价的-gremlin-写法)；
   schema DDL 与 `CALL` 过程请改用 REST API。

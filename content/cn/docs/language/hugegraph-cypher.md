@@ -29,7 +29,7 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-该端点始终要求 `Authorization` 头（`Basic` 或 `Bearer`），即使服务端未开启认证 —— 凭据会被转发给 Gremlin Server。完整的请求/响应格式见 [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)。
+该端点始终要求 `Authorization` 头（`Basic` 或 `Bearer`），即使服务端未开启认证 —— 凭据会被转发给 Gremlin Server。`Basic` 凭据必须使用 URL 安全的 Base64 编码（用 `-` 和 `_` 代替 `+` 和 `/`），且密码不能包含 `:`；无法满足这两个条件的账号请改用 `Bearer`。完整的请求/响应格式见 [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)。
 
 示例：
 
@@ -50,10 +50,10 @@ ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.nam
 声明了 `person` 上的 `nullableKeys("age", "city")` 以及 `knows` 上的可空属性——例如在
 `scripts/example.groovy` 的 Schema 上补充这些可空键。若 Schema 未声明（已发布的默认 Schema 把
 `person` 的 `age`、`city` 标记为非空），下面的创建与更新示例会触发非空属性校验失败：请在每条语句中
-为所有非空属性赋值，或先以 `nullableKeys` 声明标签。若 `person` 标签使用 `PRIMARY_KEY` id 策略，下面的双顶点简写
+为所有非空属性赋值，或先以 `nullableKeys` 声明标签。若 `person` 标签使用 `PRIMARY_KEY` id 策略（`scripts/example.groovy` 即如此），双顶点简写
 `CREATE (a)-[:knows]->(b)` 会被拒绝并返回执行错误（提示必须设置主键；在已合入
-[#3289](https://github.com/apache/hugegraph/pull/3289) 的 `master` 上验证）：请将两条 `CREATE` 语句分开执行，
-或对该形式使用 `AUTOMATIC` id 策略。
+[#3289](https://github.com/apache/hugegraph/pull/3289) 的 `master` 上验证），因此下面的边示例先分别创建顶点再匹配它们；
+该简写在 `AUTOMATIC` id 策略下可用。
 
 #### 查询 — MATCH / WHERE / RETURN
 
@@ -86,8 +86,12 @@ CREATE (n:person {name: 'josh', age: 32, city: 'beijing'})
 ```
 
 ```cypher
-// 创建两个顶点及它们之间的边
-CREATE (a:person {name: 'peter'})-[:knows]->(b:person {name: 'lop'})
+// 先创建两个顶点，再创建它们之间的边（每条语句单独作为一次请求发送）
+CREATE (:person {name: 'peter'})
+CREATE (:person {name: 'lop'})
+MATCH (a:person), (b:person)
+WHERE a.name = 'peter' AND b.name = 'lop'
+CREATE (a)-[:knows]->(b)
 ```
 
 #### 更新 — SET / REMOVE
@@ -143,7 +147,7 @@ MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
 
 HugeGraph 的 Cypher 能力受转译层约束，该层基于 openCypher 9 时代的工具链。已知缺口：
 
-- **已发布版本不支持参数化查询** —— API 只接受原始语句字符串。使用 `$param` 的语句不会报错：缺失的绑定会被求值为 `null`，查询返回空结果（或写入 null 值）。请在客户端先对值做转义/净化再拼接到语句中。在合入 [#3289](https://github.com/apache/hugegraph/pull/3289) 后的
+- **已发布版本不支持参数化查询** —— API 只接受原始语句字符串。使用 `$param` 的语句不会报错：缺失的绑定会被内联为 `null`，结果取决于表达式：`WHERE n.name = $name` 这类谓词匹配不到行，`RETURN $value AS value` 仍会返回一行 `null`，写入时则会写入 null 值。请在客户端先对值做转义/净化再拼接到语句中。在合入 [#3289](https://github.com/apache/hugegraph/pull/3289) 后的
 测试栈上情况改变：缺失的绑定对所有请求形式都是执行错误，包括 `GET ?cypher=` 与原始文本
 `POST`——服务器总是附带参数表并拒绝未解析的 `$param` 引用。JSON 绑定参数（`{"cypher": ..., "parameters": {...}}`）已通过合入 `master` 的 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289) 引入，承接原 [PR #238](https://github.com/hugegraph/hugegraph/pull/238)；已验证的请求契约见[开发版兼容性记录](/cn/docs/language/cypher-compatibility/)。
 - **子句覆盖不完整** —— 部分 openCypher 结构无法翻译（例如 map projection、部分 `datetime()` 函数）。不支持的结构会在翻译阶段报错。`MERGE ... ON CREATE SET`、`NOT ... IN` 等结构可以翻译，但尚未在 HugeGraph 上端到端验证。开发改动验证了计算字符串上的两个 `=~` 全字符串匹配用例，更广泛的正则覆盖仍未验证 —— 见[兼容性说明](/cn/docs/language/cypher-compatibility/)。

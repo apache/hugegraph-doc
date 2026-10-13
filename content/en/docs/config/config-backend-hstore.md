@@ -179,7 +179,9 @@ the auth graph has to exist locally with backend `hstore`, and either `auth.admi
 non-empty value or `auth.admin_pa_file` has to name a file that passes the same checks as at Server startup.
 That file is read at this point, so a bad path fails before the Server starts. Otherwise startup fails rather
 than handing out the public default password. With PD the Server reads `auth.admin_pa_file` again on every
-start, not only the first one, so keep the file readable for as long as the option is set.
+start, not only the first one, so keep the file readable for as long as the option is set. Only versions after
+1.7.0 have `auth.admin_pa_file`. A 1.7.0 or earlier Server ignores it with a warning and creates the admin from
+`auth.admin_pa`, whose default is `pa`, so set `auth.admin_pa` on those versions.
 
 ### 6 How the Server finds the stores
 

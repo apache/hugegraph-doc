@@ -95,6 +95,7 @@ auth.graph_store=hugegraph
 # 也可以从文件读取密码：按原始 UTF-8 读取（去掉开头的 BOM 和末尾一个换行符），空格、反斜杠和非 ASCII 字符无需转义
 # 设置后优先于 auth.admin_pa 和 init-store.sh 的交互式输入；必须是普通文件（会跟随符号链接），密码最多 72 个 UTF-8 字节
 # 使用 PD（hstore）和非持久化后端时每次启动都会读取该文件，设置该选项期间要保持文件可读
+# 仅适用于 1.7.0 之后的版本：更早版本的 Server 会忽略该配置项，仍需设置 auth.admin_pa
 #auth.admin_pa_file=/run/secrets/hugegraph-admin-password
 
 # auth client config

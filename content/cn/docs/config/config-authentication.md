@@ -92,8 +92,9 @@ auth.graph_store=hugegraph
 # Server 启动路径首次创建内置 admin 账号时使用，默认值为公开的 pa，生产部署前务必显式设置强密码
 # 本地持久化后端首次启用 StandardAuthenticator 时，init-store.sh 会交互式读取密码
 #auth.admin_pa=<your-admin-password>
-# 也可以从文件读取密码：按原始 UTF-8 读取（去掉末尾一个换行符），空格、反斜杠和非 ASCII 字符无需转义
-# 设置后优先于 auth.admin_pa 和 init-store.sh 的交互式输入
+# 也可以从文件读取密码：按原始 UTF-8 读取（去掉开头的 BOM 和末尾一个换行符），空格、反斜杠和非 ASCII 字符无需转义
+# 设置后优先于 auth.admin_pa 和 init-store.sh 的交互式输入；必须是普通文件（会跟随符号链接），密码最多 72 个 UTF-8 字节
+# 使用 PD（hstore）和非持久化后端时每次启动都会读取该文件，设置该选项期间要保持文件可读
 #auth.admin_pa_file=/run/secrets/hugegraph-admin-password
 
 # auth client config

@@ -96,8 +96,10 @@ auth.graph_store=hugegraph
 # Used when Server first creates admin; replace public default pa with a strong password in production
 # For local persistent backends, init-store.sh prompts for a password when StandardAuthenticator is first initialized
 #auth.admin_pa=<your-admin-password>
-# Or read the password from a file as raw UTF-8 (one trailing line break is dropped), so spaces,
-# backslashes and non-ASCII characters need no escaping; overrides auth.admin_pa and the init-store.sh prompt
+# Or read the password from a file as raw UTF-8 (a leading BOM and one trailing line break are dropped), so
+# spaces, backslashes and non-ASCII characters need no escaping; overrides auth.admin_pa and the init-store.sh prompt.
+# It must be a regular file (symlinks are followed), and the password may be at most 72 UTF-8 bytes.
+# PD (hstore) and non-persistent backends read it on every start, so keep it readable while it is set
 #auth.admin_pa_file=/run/secrets/hugegraph-admin-password
 
 # Auth Client Config

@@ -41,6 +41,8 @@ flowchart TD
 
 Starting with HugeGraph 1.8.0, use **Java 17**; **1.7.0 is the last release supporting Java 11**.
 Build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD and Store with **JDK 17**.
+Server security check (`-s true`) requires Java 17 to 23 and a readable `conf/java-security.properties`;
+on Java 24 or later, start Server with `-s false` (JDK 24+ dropped Security Manager via JEP 486).
 
 **Before continuing, run `java -version` to confirm your JDK version.**
 
@@ -63,6 +65,7 @@ Build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD a
 > keys.
 > Optional results carry their value or null when empty; File results keep the map shape `{"file": "name"}` with the file name, including in nested results.
 > HugeGraph enums return their names; `graph.schema()` returns a map with property key, vertex label, edge label and index label lists.
+> Typed GraphSON is available only for supported simple values and IDs, not as a replacement for untyped serialization of every graph or schema object.
 > Typed GraphSON V1 is disabled because class-name deserialization can construct Java objects before authentication; typed V2/V3 remain available.
 > The bundled Cypher predicate imports use the compatible factories, including when replaying the Gremlin translation returned by `EXPLAIN`.
 > Named `GValue` predicates retain bindings when reused or cloned; named `limit()`/`range()` bounds count like literal bounds.
@@ -73,7 +76,7 @@ Build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD a
 > predicates.
 > DATE schema properties accept `OffsetDateTime` for writes and indexed equality/range queries, normalized by instant to milliseconds;
 > sub-millisecond precision is truncated, and existing DATE data needs no migration.
-> See the [TinkerPop 3.8.1 upgrade guide](https://github.com/apache/hugegraph/blob/master/docs/upgrade-tinkerpop-3.8.md)
+> See the [server runtime documentation](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md)
 > for client configuration and verification details.
 
 ## 3 Deploy
@@ -188,13 +191,13 @@ A successful build logs:
 [INFO] BUILD SUCCESS
 ```
 
-The build creates an aggregate master archive under repository-root `target/` (the current source version property is 1.7.0):
+The build creates an aggregate master archive under repository-root `target/` (the current source version property is 1.8.0):
 
 ```text
-target/apache-hugegraph-1.7.0.tar.gz
+target/apache-hugegraph-1.8.0.tar.gz
 ```
 
-The filename version comes from source `revision`; it does not make the build an ASF release artifact. The build also creates repository-root `apache-hugegraph-1.7.0/`, containing a Server directory named by that module's `final.name`, currently `apache-hugegraph-server-1.7.0`. If retaining only the archive, first run `tar zxf target/apache-hugegraph-1.7.0.tar.gz`, then enter the Server directory.
+The filename version comes from source `revision`; it does not make the build an ASF release artifact. The build also creates repository-root `apache-hugegraph-1.8.0/`, containing a Server directory named by that module's `final.name`, currently `apache-hugegraph-server-1.8.0`. If retaining only the archive, first run `tar zxf target/apache-hugegraph-1.8.0.tar.gz`, then enter the Server directory.
 
 Default builds bundle `rocksdb`, `hbase`, and `hstore` modules, listed in `backends` within `backend.properties` in the `hugegraph-dist` JAR. For a RocksDB-only distribution, add `-Drocksdb-only`:
 
@@ -554,10 +557,10 @@ This indicates the successful creation of the sample graph.
 | Option | Values | Default | Purpose |
 |---|---|---|---|
 | `-d` | `true`, `false` | `true` | Daemon mode. With `-d false` the script stays in the foreground and forwards `SIGTERM`/`SIGINT` to the server. |
-| `-g` | `zgc` or `ZGC` | omit for G1GC | Garbage collector to use. Only ZGC is accepted, any other value aborts the startup. |
+| `-g` | `g1`, `G1`, `zgc`, `ZGC` | JVM default | Garbage collector to use (`g1`/`G1` sets `-XX:+UseG1GC`; `zgc`/`ZGC` sets `-XX:+UseZGC`). Omitting `-g` uses the JVM default collector. |
 | `-m` | `true`, `false` | `false` | Install the cron-based monitor task (`bin/start-monitor.sh`). For VM and bare-metal deployments only. |
 | `-p` | `true`, `false` | `false` | Preload the sample graph, as in 5.1.4. |
-| `-s` | `true`, `false` | `true` | Enable `HugeSecurityManager`; requires readable `conf/java-security.properties`. |
+| `-s` | `true`, `false` | `true` | Enable `HugeSecurityManager`; requires Java 17 to 23 and readable `conf/java-security.properties`. On Java 24+, start with `-s false`. |
 | `-j` | JVM options | empty | Extra JVM options appended to the server command line. |
 | `-t` | seconds | `30` | How long to wait for the service to answer before reporting a failed startup. |
 | `-y` | `true`, `false` | `false` | Enable the OpenTelemetry agent for traces. |

@@ -40,6 +40,7 @@ flowchart TD
 
 从 HugeGraph 1.8.0 开始使用 **Java 17**；**1.7.0 是最后一个支持 Java 11 的版本**。
 所有模块的源码构建要求 **JDK 17 和 Maven 3.6.3 或更高版本**，Server、PD 和 Store 的运行环境统一使用 **JDK 17**。
+Server 安全检查（`-s true`）要求 Java 17 到 23 以及可读的 `conf/java-security.properties`；在 Java 24 或更高版本上，需以 `-s false` 启动 Server（JDK 24 通过 JEP 486 移除了 Security Manager）。
 
 **在继续阅读前，请先执行 `java -version` 命令确认 JDK 版本。**
 
@@ -61,6 +62,7 @@ flowchart TD
 > 默认 HTTP JSON 使用的 Untyped GraphSON V1 保留 Tree 的旧 `key`/`value` 数组结构，支持标量和图元素作为 key。
 > Optional 返回其内容，空值返回 null；File 保留 `{"file": "name"}` 的 map 结构，使用文件名，嵌套结果也适用。
 > HugeGraph 枚举返回名称；`graph.schema()` 返回包含 property key、vertex label、edge label 和 index label 列表的 map。
+> Typed GraphSON 仅支持受支持的简单标量值与 ID，不能替代所有图元素或元数据对象的非类型化序列化；
 > Typed GraphSON V1 已禁用，因为基于类名的反序列化可在认证前构造 Java 对象；typed V2/V3 仍可使用。
 > 随包导入的 Cypher 谓词工厂使用兼容实现，也支持重放 `EXPLAIN` 返回的 Gremlin 翻译结果。
 > 命名 `GValue` 谓词在复用或克隆时保留绑定；命名 `limit()`/`range()` 边界的计数行为与字面量边界一致。
@@ -69,7 +71,7 @@ flowchart TD
 > Jackson JSON 和 YAML 模块使用同一兼容版本，也支持 Kubernetes kubeconfig 扩展中的小数值。
 > Count 过滤仅在每个谓词分支均能证明截断安全时采用范围优化；不支持的否定集合或自定义谓词分支保留完整计数。
 > DATE schema 属性支持写入及索引等值/范围查询中的 `OffsetDateTime`，按 instant 转为毫秒；小于毫秒的精度被截断，既有 DATE 数据无需迁移。
-> 客户端配置和验证细节见 [TinkerPop 3.8.1 升级指南](https://github.com/apache/hugegraph/blob/master/docs/upgrade-tinkerpop-3.8.md)。
+> 客户端配置和验证细节见 [Server 运行时文档](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md)。
 
 ## 3 部署
 
@@ -185,13 +187,13 @@ mvn package -DskipTests -ntp
 [INFO] BUILD SUCCESS
 ```
 
-执行成功后，根目录 `target/` 下会生成主线聚合包（当前仓库版本属性为 1.7.0）：
+执行成功后，根目录 `target/` 下会生成主线聚合包（当前仓库版本属性为 1.8.0）：
 
 ```text
-target/apache-hugegraph-1.7.0.tar.gz
+target/apache-hugegraph-1.8.0.tar.gz
 ```
 
-该文件名中的版本号来自源码的 `revision` 属性；它不会把主线构建变成 ASF 发布物料。构建过程还会在仓库根目录生成 `apache-hugegraph-1.7.0/` 聚合目录，其中的 Server 子目录名由 Server 模块的 `final.name` 决定，例如当前为 `apache-hugegraph-server-1.7.0`。若只保留了 tar 包，则先执行 `tar zxf target/apache-hugegraph-1.7.0.tar.gz` 再进入该目录。
+该文件名中的版本号来自源码的 `revision` 属性；它不会把主线构建变成 ASF 发布物料。构建过程还会在仓库根目录生成 `apache-hugegraph-1.8.0/` 聚合目录，其中的 Server 子目录名由 Server 模块的 `final.name` 决定，例如当前为 `apache-hugegraph-server-1.8.0`。若只保留了 tar 包，则先执行 `tar zxf target/apache-hugegraph-1.8.0.tar.gz` 再进入该目录。
 
 默认构建会打包 `rocksdb`、`hbase` 和 `hstore` 三个后端模块，并把它们记录在 `hugegraph-dist` jar 内的 `backend.properties` 资源的 `backends` 配置项中。若只需要包含 RocksDB 的精简发布包，可加上 `-Drocksdb-only`：
 
@@ -551,10 +553,10 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 | 参数 | 取值 | 默认值 | 作用 |
 |---|---|---|---|
 | `-d` | `true`、`false` | `true` | 守护进程模式。`-d false` 时脚本留在前台，并把 `SIGTERM`/`SIGINT` 转发给服务进程 |
-| `-g` | `zgc` 或 `ZGC` | 不填则用 G1GC | 选择垃圾回收器。只接受 ZGC，其他取值会直接终止启动 |
+| `-g` | `g1`、`G1`、`zgc`、`ZGC` | JVM 默认值 | 选择垃圾回收器（`g1`/`G1` 设置 `-XX:+UseG1GC`；`zgc`/`ZGC` 设置 `-XX:+UseZGC`）。不填则使用 JVM 默认收集器配置 |
 | `-m` | `true`、`false` | `false` | 安装基于 crontab 的监控任务（`bin/start-monitor.sh`），仅用于虚拟机和物理机部署 |
 | `-p` | `true`、`false` | `false` | 预加载示例图，见 5.1.4 |
-| `-s` | `true`、`false` | `true` | 开启安全检查（`HugeSecurityManager`），要求 `conf/java-security.properties` 可读 |
+| `-s` | `true`、`false` | `true` | 开启安全检查（`HugeSecurityManager`），要求 Java 17 到 23 以及 `conf/java-security.properties` 可读。在 Java 24+ 上需传 `-s false` |
 | `-j` | JVM 参数 | 空 | 追加到服务命令行的额外 JVM 参数 |
 | `-t` | 秒 | `30` | 判定启动失败前等待服务响应的时长 |
 | `-y` | `true`、`false` | `false` | 开启 OpenTelemetry agent 上报链路追踪 |

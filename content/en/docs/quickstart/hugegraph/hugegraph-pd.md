@@ -25,8 +25,8 @@ PD listens on three ports:
 #### 2.1 Requirements
 
 - Operating System: Linux or macOS (Windows has not been fully tested)
-- Java version: ≥ 11
-- Maven version: ≥ 3.5.0
+- Java version: ≥ 17 for HugeGraph 1.8.0+ (1.7.0 is the last release supporting Java 11)
+- Maven version: ≥ 3.6.3 (for building from source)
 
 ### 3 Deployment
 
@@ -303,7 +303,8 @@ In the PD installation directory, execute:
 ./bin/start-hugegraph-pd.sh
 ```
 
-The script requires a JDK of at least version 11 on `PATH` or in `JAVA_HOME`, and it exits without doing anything if it finds a Java process already using this installation's `conf` directory.
+The script requires Java 17 or later on `PATH` or in `JAVA_HOME` (Java ≥ 11 on 1.7.0).
+It exits without doing anything if it finds a Java process already using this installation's `conf` directory.
 
 Supported flags:
 

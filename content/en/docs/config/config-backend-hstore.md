@@ -175,8 +175,10 @@ in the checked Server master commit `2f827d6` where the option is declared.
 `init-store.sh` never initializes an `hstore` graph. On the enabled path it scans `conf/graphs` and skips
 every graph whose backend is `hstore`. If you turn the whole step off with `init_store.enabled=false`, it
 validates instead that the admin account can still be created on the PD startup path: `usePD` has to be true,
-the auth graph has to exist locally with backend `hstore`, and `auth.admin_pa` has to be set to an explicit
-non-empty value. Otherwise startup fails rather than handing out the public default password.
+the auth graph has to exist locally with backend `hstore`, and either `auth.admin_pa` has to be set to an explicit
+non-empty value or `auth.admin_pa_file` has to point at a readable, non-empty UTF-8 file, which is read at this
+point so a bad path fails before the Server starts. Otherwise startup fails rather than handing out the public
+default password.
 
 ### 6 How the Server finds the stores
 

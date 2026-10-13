@@ -148,7 +148,7 @@ PD 对该值的处理方式：
 | graphspace                   | {graph}.properties     | DEFAULT        | PD 看到的图名的第一段                                             | `CoreOptions.java:679-685`   |
 
 `init-store.sh` 从不初始化 `hstore` 图。在开启的路径上，它扫描 `conf/graphs` 并跳过后端为 `hstore` 的每一个图。如果用 `init_store.enabled=false` 整体关闭这一步，它会改为校验 admin 账号仍然能在 PD 启动路径上被创建：
-`usePD` 必须为 true、权限图必须存在于本地配置中且后端为 `hstore`、`auth.admin_pa` 必须显式设置为非空值。否则启动会直接失败，而不是使用公开的默认密码创建账号。
+`usePD` 必须为 true、权限图必须存在于本地配置中且后端为 `hstore`、`auth.admin_pa` 必须显式设置为非空值，或者 `auth.admin_pa_file` 指向一个可读、非空的 UTF-8 文件（此时会立即读取该文件，路径错误会在 Server 启动前报错）。否则启动会直接失败，而不是使用公开的默认密码创建账号。
 
 ### 6 Server 如何通过 PD 发现 Store
 

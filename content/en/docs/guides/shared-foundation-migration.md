@@ -19,7 +19,7 @@ Use this guide to identify affected code, rebuild your integrations and check ex
 | HStore deployment | Align the PD namespace, inspect legacy rebuilt indexes and upgrade all writers together. |
 | Loader or another REST-only caller | Keep the independent client DTOs; migrate any actual affected Java calls. |
 
-The implementation has merged into Server `master` through [apache/hugegraph#3270](https://github.com/apache/hugegraph/pull/3270), targeting 1.8.0.
+This shared-foundation consolidation targets HugeGraph 1.8.0.
 Use matching Server, PD, Store and downstream artifacts when upgrading.
 See the [source migration guide](https://github.com/apache/hugegraph/blob/master/docs/shared-foundation-migration.md)
 for Java mappings and compatibility fixtures.

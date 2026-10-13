@@ -90,7 +90,7 @@ GitHub 已不支持通过用户名和密码直接推送代码。需要使用个�
    ```
 
    `clean` 会重新构建当前版本的发行目录，避免残留已移除的依赖 jar。
-   它也会删除仓库根目录的 `*.tar.gz` 发行归档；其他版本的目录会保留。
+   它还会删除 `hugegraph-server/`、`hugegraph-pd/` 与 `hugegraph-store/` 目录下的所有 `*.tar` 和 `*.tar.gz` 文件，以及仓库根目录中当前版本的 `apache-hugegraph-<revision>.tar.gz`；其他版本的目录会保留。
 
    此构建跳过测试。依赖收集同时覆盖 Maven runtime 依赖和实际发行包中的平铺、嵌套 jar，
    包括 Spring Boot repackaging 引入的 `BOOT-INF/lib` 依赖。缺失发行包必须使收集失败；只检查 POM 不能证明完整发行依赖集。

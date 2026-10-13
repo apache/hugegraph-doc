@@ -19,8 +19,8 @@ weight: 8
 | HStore 部署 | 对齐 PD 命名空间，检查旧的 Store 重建索引，同步升级所有写入端。 |
 | Loader 或其他仅通过 REST 调用的集成 | 保留独立 client DTO，按实际使用情况迁移受影响的 Java 调用。 |
 
-实现已通过 [apache/hugegraph#3270](https://github.com/apache/hugegraph/pull/3270) 合入 Server 的 `master`，目标版本为 1.8.0。
-升级时使用配套的 Server、PD、Store 发行包和下游依赖。
+该共享基础模块重构面向 1.8.0 目标版本。
+升级时请使用配套的 Server、PD、Store 发行包及下游依赖。
 Java 映射和兼容性样本见[源码迁移指南](https://github.com/apache/hugegraph/blob/master/docs/shared-foundation-migration.md)。
 
 ## 共享代码现在由谁维护

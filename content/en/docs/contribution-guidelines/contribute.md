@@ -91,7 +91,8 @@ When adding a third-party dependency, also update the license information includ
    ```
 
    Clean rebuilds the current revision's distributions to avoid stale dependency jars.
-   It also removes root-level `*.tar.gz` distribution archives; other revision directories remain.
+   It also removes every `*.tar` and `*.tar.gz` file directly under `hugegraph-server/`, `hugegraph-pd/` and `hugegraph-store/`,
+   plus the current revision's `apache-hugegraph-<revision>.tar.gz` in the repository root; directories of other revisions remain.
 
    This build skips tests. Collection combines Maven runtime dependencies with actual flat and nested distribution jars,
    including Spring Boot `BOOT-INF/lib` dependencies introduced by repackaging. Missing distributions must fail collection;

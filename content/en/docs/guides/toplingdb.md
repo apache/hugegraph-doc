@@ -44,7 +44,8 @@ The script verifies the copied JAR's hash, Topling Java marker, one Linux x86_64
 Before installation, a disposable database verifies that the selected JNI actually applies EasyMigrate configuration to its persisted write-buffer size.
 Unsupported builds are rejected even when their marker and hash match. The probe does not certify existing-data compatibility or every production setting.
 A checksum receipt binds this verification to the installed JAR and native library; launchers reject missing or changed receipts. Use a fresh distribution
-when upgrading from an older preparation script. Launch rejects inherited RocksDB JNI preloads in default/standard mode and competing JNI in Topling mode, while preserving unrelated preloads.
+when upgrading from an older preparation script. Launch rejects inherited RocksDB JNI preloads in default/standard mode
+and competing JNI in Topling mode, while preserving unrelated preloads.
 It installs `topling/rocksdbjni.jar`, its native library and optional web resources outside `lib`. Preparation refuses an existing `topling` directory;
 replace a runtime by preparing another stopped, fresh distribution. Repeat preparation separately for Server, PD and Store as applicable.
 
@@ -85,7 +86,8 @@ rocksdb:
 
 Set their persistent paths separately in `conf/application.yml`; keep the normal network addresses and cluster configuration.
 
-The published runtime directories use 0755 and regular files use 0644, so a service account different from the preparer can read the JNI. The service account also needs traversal permission on the component's parent directories; preparation does not change those parents.
+The published runtime directories use 0755 and regular files use 0644, so a service account different from the preparer can read the JNI.
+The service account also needs traversal permission on the component's parent directories; preparation does not change those parents.
 
 ## Select, start and verify
 

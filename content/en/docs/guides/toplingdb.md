@@ -5,8 +5,8 @@ weight: 11
 description: "Build the optional ToplingDB runtime from development source, isolate its data, and understand startup and recovery boundaries."
 ---
 
-> **Unreleased development interface.** This guide follows the [three-component runtime integration](https://github.com/apache/hugegraph/pull/3275).
-> Use source containing that change. Existing releases and image tags do not establish support, and runtime acceptance remains a deployment prerequisite.
+> **Development interface:** This guide applies to development builds with the optional ToplingDB runtime enabled.
+> Existing releases and image tags do not establish support, and runtime acceptance remains a deployment prerequisite.
 
 ## Choose the database owner
 
@@ -51,26 +51,29 @@ replace a runtime by preparing another stopped, fresh distribution. Repeat prepa
 ## Keep data outside the distribution
 
 Changing providers does not convert an existing database. Use separate, initially empty Topling directories and retain the standard-provider data.
-Create persistent directories writable by the service account, outside source checkouts, build outputs and unpacked distribution directories:
+Create persistent directories writable by the service account, outside source checkouts, build outputs and unpacked distribution directories.
+Note that each graph requires distinct, dedicated data and WAL directories to prevent path conflicts:
 
 | Component | Configuration file and key | Example persistent path |
 | --- | --- | --- |
-| Server data | Graph properties: `rocksdb.data_path` | `/srv/hugegraph/topling/server/data` |
-| Server WAL | Graph properties: `rocksdb.wal_path` | `/srv/hugegraph/topling/server/wal` |
+| Server data | Graph properties: `rocksdb.data_path` | `/srv/hugegraph/topling/server/<graph>/data` |
+| Server WAL | Graph properties: `rocksdb.wal_path` | `/srv/hugegraph/topling/server/<graph>/wal` |
 | PD | `conf/application.yml`: `pd.data-path` | `/srv/hugegraph/topling/pd` |
 | Store data | `conf/application.yml`: `app.data-path` | `/srv/hugegraph/topling/store/data` |
 | Store Raft | `conf/application.yml`: `app.raft-path` | `/srv/hugegraph/topling/store/raft` |
 
-For a standalone Server, edit every selected graph configuration, for example `conf/graphs/hugegraph.properties`:
+For a standalone Server, edit every selected graph configuration, for example `conf/graphs/hugegraph.properties`
+(replace `hugegraph` with the corresponding graph name for each graph):
 
 ```properties
 backend=rocksdb
 rocksdb.provider=topling
-rocksdb.data_path=/srv/hugegraph/topling/server/data
-rocksdb.wal_path=/srv/hugegraph/topling/server/wal
+rocksdb.data_path=/srv/hugegraph/topling/server/hugegraph/data
+rocksdb.wal_path=/srv/hugegraph/topling/server/hugegraph/wal
 ```
 
-Set **both** Server data and WAL paths. Leaving WAL at its package-local default risks losing it when a build or package replacement removes that directory.
+Set **both** Server data and WAL paths, ensuring each graph uses distinct directories.
+Leaving WAL at its package-local default risks losing it when a build or package replacement removes that directory.
 Keep the external data, WAL and Raft roots across runtime/package changes.
 
 For PD and Store, edit the existing `rocksdb` mapping in the provider configuration file listed above, retaining its other options:

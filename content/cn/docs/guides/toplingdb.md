@@ -5,8 +5,8 @@ weight: 11
 description: "从开发源码构建可选 ToplingDB 运行时，隔离数据目录，并了解启动与恢复边界。"
 ---
 
-> **尚未发布的开发接口。** 本文对应[三组件运行时接入](https://github.com/apache/hugegraph/pull/3275)。
-> 请使用包含该修改的源码。已有发行版和镜像标签不能证明支持本文接口，实际运行时验收仍须在采用前完成。
+> **开发版接口**：本文适用于开启可选 ToplingDB 运行时的开发构建版本。
+> 已有发行版和镜像标签不代表支持本文接口，采用前须完成运行时验证。
 
 ## 确认数据库所属组件
 
@@ -50,26 +50,26 @@ bash bin/prepare-topling.sh
 ## 将持久数据放在发行包之外
 
 更换 provider 不会转换已有数据库。为 Topling 使用独立、初始为空的目录，并保留标准 provider 的数据。
-预先创建服务账号可写的持久目录，将其放在源码检出、构建输出和解压后的发行包目录之外：
+预先创建服务账号可写的持久目录，将其放在源码检出、构建输出和解压后的发行包目录之外。注意：每个图必须使用互不相同的独立数据与 WAL 目录，避免目录冲突：
 
 | 组件 | 配置文件及配置项 | 持久路径示例 |
 | --- | --- | --- |
-| Server 数据 | Graph properties：`rocksdb.data_path` | `/srv/hugegraph/topling/server/data` |
-| Server WAL | Graph properties：`rocksdb.wal_path` | `/srv/hugegraph/topling/server/wal` |
+| Server 数据 | Graph properties：`rocksdb.data_path` | `/srv/hugegraph/topling/server/<graph>/data` |
+| Server WAL | Graph properties：`rocksdb.wal_path` | `/srv/hugegraph/topling/server/<graph>/wal` |
 | PD | `conf/application.yml`：`pd.data-path` | `/srv/hugegraph/topling/pd` |
 | Store 数据 | `conf/application.yml`：`app.data-path` | `/srv/hugegraph/topling/store/data` |
 | Store Raft | `conf/application.yml`：`app.raft-path` | `/srv/hugegraph/topling/store/raft` |
 
-独立 Server 的每个选用图配置都需修改，例如 `conf/graphs/hugegraph.properties`：
+独立 Server 的每个选用图配置都需修改，例如 `conf/graphs/hugegraph.properties`（若配置多个图，请将路径中的 `hugegraph` 替换为对应图名）：
 
 ```properties
 backend=rocksdb
 rocksdb.provider=topling
-rocksdb.data_path=/srv/hugegraph/topling/server/data
-rocksdb.wal_path=/srv/hugegraph/topling/server/wal
+rocksdb.data_path=/srv/hugegraph/topling/server/hugegraph/data
+rocksdb.wal_path=/srv/hugegraph/topling/server/hugegraph/wal
 ```
 
-Server 的数据和 WAL 路径**都要设置**。若 WAL 仍使用发行包内的默认路径，重新构建或替换发行包时可能丢失该目录。
+Server 的数据和 WAL 路径**都要设置**，且不同图之间不能共享同一路径。若 WAL 仍使用发行包内的默认路径，重新构建或替换发行包时可能丢失该目录。
 运行时或发行包更新时，保留外部数据、WAL 和 Raft 根目录。
 
 PD 和 Store 应在上表对应的 provider 配置文件中修改已有 `rocksdb` 映射，保留其余选项：

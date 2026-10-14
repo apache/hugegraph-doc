@@ -327,14 +327,22 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | k8s.internal_algorithm_image_url | Empty | Image URL for built-in Kubernetes algorithms. |
 
 > [!DETAILS]- **Arthas Diagnostic Config Options (Optional)**
-> Corresponding configuration file `rest-server.properties`
+> Corresponding configuration file: `rest-server.properties`.
 >
-> | config option      | default value | description           |
-> |--------------------|---------------|-----------------------|
-> | arthas.telnetPort  | 8562          | Arthas telnet port.   |
-> | arthas.httpPort    | 8561          | Arthas HTTP port.     |
-> | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
-> | arthas.disabledCommands | jad      | Disabled Arthas commands, separated by commas. |
+> These defaults target the next release with [server PR #2945](https://github.com/apache/hugegraph/pull/2945).
+>
+> | Config option | Default value | Description |
+> |---------------|---------------|-------------|
+> | arthas.telnet_port | 8562 | Arthas telnet port for administrator activation through `PUT /arthas`. |
+> | arthas.http_port | 8561 | Arthas HTTP port for administrator activation. |
+> | arthas.ip | 127.0.0.1 | Loopback bind address; activation rejects non-loopback addresses. |
+> | arthas.disabled_commands | jad | Disabled Arthas commands, separated by commas. |
+>
+> Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain fallback aliases. Explicit snake_case values win;
+> conflicting values produce a warning. The response still uses the camelCase Arthas agent keys.
+> HTTP activation requires authentication to be enabled and the caller to be an authenticated administrator. It returns `403` without
+> authentication enabled, including requests from loopback or a proxy. No extra Arthas enable switch is required. MCP is disabled.
+> The bundled `bin/arthas.sh` provides local diagnostics without changing these settings or restarting the JVM; its ports are independent.
 
 > [!DETAILS]- **RPC Server Config Options**
 > Corresponding configuration file `rest-server.properties`

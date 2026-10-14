@@ -324,15 +324,22 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | k8s.algorithms                | See `ServerOptions.K8S_ALGORITHMS` | The `name:paramsClass` mapping of the built-in k8s algorithms.                              |
 > | k8s.internal_algorithm_image_url | 空 | K8s 内置算法使用的镜像地址。 |
 
-> [!DETAILS]- **Arthas 诊断配置项 (可选)**
-> 对应配置文件`rest-server.properties`
+> [!DETAILS]- **Arthas 诊断配置项（可选）**
+> 对应配置文件为 `rest-server.properties`。
 >
-> | config option      | default value | description           |
-> |--------------------|---------------|-----------------------|
-> | arthas.telnetPort  | 8562          | Arthas telnet port.   |
-> | arthas.httpPort    | 8561          | Arthas HTTP port.     |
-> | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
-> | arthas.disabledCommands | jad      | Disabled Arthas commands, separated by commas. |
+> 以下默认值面向包含 [Server PR #2945](https://github.com/apache/hugegraph/pull/2945) 的下一版本。
+>
+> | 配置项 | 默认值 | 说明 |
+> |--------|--------|------|
+> | arthas.telnet_port | 8562 | 管理员通过 `PUT /arthas` 激活时使用的 Arthas telnet 端口。 |
+> | arthas.http_port | 8561 | 管理员激活时使用的 Arthas HTTP 端口。 |
+> | arthas.ip | 127.0.0.1 | Loopback 监听地址；激活时拒绝非 loopback 地址。 |
+> | arthas.disabled_commands | jad | 禁用的 Arthas 命令，以逗号分隔。 |
+>
+> 旧名称 `arthas.telnetPort`、`arthas.httpPort` 和 `arthas.disabledCommands` 仍可作为回退项。显式设置的 snake_case 值优先，
+> 两种名称的值冲突时会输出警告。响应仍使用 Arthas 代理的 camelCase 键名。
+> HTTP 激活要求已开启认证且调用者是已认证的管理员。未开启认证时返回 `403`，loopback 或代理转发的请求也不例外。
+> 无需额外开启 Arthas 开关，MCP 默认禁用。发行包内的 `bin/arthas.sh` 可直接进行本地诊断，无需修改这些配置或重启 JVM，端口独立设置。
 
 > [!DETAILS]- **RPC Server 配置项**
 > 对应配置文件`rest-server.properties`

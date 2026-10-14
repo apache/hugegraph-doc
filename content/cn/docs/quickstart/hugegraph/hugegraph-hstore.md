@@ -265,12 +265,29 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 
 **诊断**
 
+以下行为面向包含 [Server PR #2945](https://github.com/apache/hugegraph/pull/2945) 的下一版本。
+Server 和 Store 统一使用 Arthas 4.1.5，PD 未内置 Arthas 代理。Store 的 HTTP 激活接口 `GET /v1/arthasstart` 返回 `403`，
+loopback 或代理转发的请求也不例外。以服务进程所属的 OS 用户运行发行包内的脚本，即可诊断运行中的 JVM：
+
+```bash
+bin/arthas.sh
+```
+
+脚本读取 `bin/pid`，需要 JDK 17，离线使用包内代理，无需重启服务或修改配置。
+Telnet 固定监听 `127.0.0.1:3658`，HTTP 和 MCP 均禁用。同机多进程时可使用
+`bin/arthas.sh --pid 12345 --telnet-port 3659`。参见[本地诊断](/cn/docs/clients/restful-api/other/#无需重启的本地诊断)。
+
+Store 的 Arthas 配置仍保留，默认监听 loopback。这些配置不会重新开启 HTTP 激活，也不覆盖本地脚本独立设置的端口：
+
 | 配置项 | 代码默认值 | 说明 |
 |--------|------------|------|
-| `arthas.telnetPort` | `8566` | 调用 `/v1/arthasstart` 后 Arthas 的 telnet 端口。 |
-| `arthas.httpPort` | `8565` | Arthas HTTP 端口。 |
-| `arthas.ip` | `0.0.0.0` | Arthas 监听地址。 |
-| `arthas.disabledCommands` | `jad` | 需要禁用的 Arthas 命令。 |
+| `arthas.telnet_port` | `8566` | 配置的 Arthas telnet 端口。 |
+| `arthas.http_port` | `8565` | 配置的 Arthas HTTP 端口。 |
+| `arthas.ip` | `127.0.0.1` | Arthas 监听地址。 |
+| `arthas.disabled_commands` | `jad` | 需要禁用的 Arthas 命令。 |
+
+旧名称 `arthas.telnetPort`、`arthas.httpPort` 和 `arthas.disabledCommands` 仍可作为回退项。显式设置的 snake_case 值优先。
+不要通过反向代理或容器端口映射暴露诊断端口。
 
 #### 4.4 各节点需要区分的配置
 
@@ -477,7 +494,9 @@ Store 节点在 `server.port` 上提供以下只读接口：
 
 主线发行目录的 Store 配置将 `management.endpoints.web.exposure.include` 设为 `"*"`，并启用 Prometheus；Actuator 端点没有 PD REST Basic 认证保护，请限制 Store REST 端口的网络可达范围。
 
-节点还提供一批会修改状态或执行重负载操作的运维接口：`PUT /-/state`、`GET /-/cleaner`、`GET /v1/partition/dump/{id}`、`GET /v1/partition/clean/{id}`、`POST /v1/compat?id=<partition>`、`GET /v1/arthasstart`、`POST /raft/options`，以及 `/fix/*` 和 `/test/*` 两组接口。请仅在排查问题时使用，并且不要把 REST 端口暴露到不可信网络。
+节点还提供一批会修改状态或执行重负载操作的运维接口：`PUT /-/state`、`GET /-/cleaner`、`GET /v1/partition/dump/{id}`、
+`GET /v1/partition/clean/{id}`、`POST /v1/compat?id=<partition>`、`POST /raft/options`，以及 `/fix/*` 和 `/test/*` 两组接口。
+请仅在排查问题时使用，并且不要把 REST 端口暴露到不可信网络。
 
 #### 7.2 通过 PD 检查注册结果
 

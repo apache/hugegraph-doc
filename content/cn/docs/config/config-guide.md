@@ -84,10 +84,10 @@ batch.max_write_ratio=80
 batch.max_write_threads=0
 
 # configuration of arthas
-arthas.telnetPort=8562
-arthas.httpPort=8561
+arthas.telnet_port=8562
+arthas.http_port=8561
 arthas.ip=127.0.0.1
-arthas.disabledCommands=jad
+arthas.disabled_commands=jad
 
 # authentication configs
 #auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
@@ -112,7 +112,10 @@ memory_monitor.period=2000
 - graphs：图配置文件所在目录，默认值是 `./conf/graphs`。`init-store.sh` 会扫描该目录；Server 应用初始化也会扫描并尝试加载其中的 properties 文件；
 - graph.load_from_local_config：是否在管理器构造阶段预加载本地图配置，以及在 `reload()` 时重新扫描；源码默认值为 `false`。它不会禁止 Server 应用初始化阶段的本地加载，也不是安全隔离开关；
 
-> 当前上游模板中的 Arthas 键仍写作 `arthas.telnet_port`、`arthas.http_port` 和 `arthas.disabled_commands`，但 `ServerOptions` 读取的是下方示例中的 camelCase 名称。自定义配置应使用 `arthas.telnetPort`、`arthas.httpPort` 和 `arthas.disabledCommands`。
+> 以下行为面向包含 [Server PR #2945](https://github.com/apache/hugegraph/pull/2945) 的下一版本，旧版本行为有所不同。
+> 使用 `arthas.telnet_port`、`arthas.http_port` 和 `arthas.disabled_commands`。旧 camelCase 名称仍可作为回退项；
+> 显式设置的 snake_case 值优先，两种名称的值冲突时会输出警告。Arthas 仅监听 loopback，独立于 REST 监听地址。
+> 通过已认证的管理员或本地脚本[启动诊断](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)，无需重启 JVM。
 
 > 配置项 gremlinserver.url 是 GremlinServer 为 RestServer 提供服务的 url，该配置项默认为 http://127.0.0.1:8182，如需修改，需要和 gremlin-server.yaml 中的 host 和 port 相匹配；该值可以像模板那样省略协议前缀，缺失时会自动补上 `http://`。
 

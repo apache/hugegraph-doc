@@ -269,12 +269,30 @@ Only for single-node development and debugging, activated by `app.fake-pd: true`
 
 **Diagnostics**
 
+The following behavior targets the next release with [server PR #2945](https://github.com/apache/hugegraph/pull/2945).
+Server and Store use Arthas 4.1.5; PD does not embed an Arthas agent. Store HTTP activation (`GET /v1/arthasstart`) returns `403`,
+including requests from loopback or through a proxy. Run the bundled helper as the service's OS user to diagnose the running JVM:
+
+```bash
+bin/arthas.sh
+```
+
+The helper reads `bin/pid`, requires JDK 17, and uses the bundled agent offline. It needs no service restart or configuration change.
+It binds telnet to `127.0.0.1:3658` with HTTP and MCP disabled. For multiple processes on one host, use
+`bin/arthas.sh --pid 12345 --telnet-port 3659`. See [local diagnostics](/docs/clients/restful-api/other/#local-diagnostics-without-a-restart).
+
+The Store Arthas configuration remains available with loopback as its default bind address. These settings do not re-enable HTTP activation
+or override the helper's independent port choices:
+
 | Key | Code default | Meaning |
 |-----|--------------|---------|
-| `arthas.telnetPort` | `8566` | Arthas telnet port, used when `/v1/arthasstart` is called. |
-| `arthas.httpPort` | `8565` | Arthas HTTP port. |
-| `arthas.ip` | `0.0.0.0` | Arthas bind address. |
-| `arthas.disabledCommands` | `jad` | Arthas commands to disable. |
+| `arthas.telnet_port` | `8566` | Configured Arthas telnet port. |
+| `arthas.http_port` | `8565` | Configured Arthas HTTP port. |
+| `arthas.ip` | `127.0.0.1` | Arthas bind address. |
+| `arthas.disabled_commands` | `jad` | Arthas commands to disable. |
+
+Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain fallback aliases. Explicit snake_case values win.
+Keep diagnostic ports off reverse proxies and container port mappings.
 
 #### 4.4 Per-node changes
 
@@ -481,7 +499,9 @@ The Store node exposes these read-only endpoints on `server.port`:
 
 Master Store configuration exposes all Actuator endpoints with `management.endpoints.web.exposure.include: "*"` and enables Prometheus. These endpoints lack PD REST Basic protection; restrict Store REST network access.
 
-The node also serves maintenance endpoints that change state or run heavy work: `PUT /-/state`, `GET /-/cleaner`, `GET /v1/partition/dump/{id}`, `GET /v1/partition/clean/{id}`, `POST /v1/compat?id=<partition>`, `GET /v1/arthasstart`, `POST /raft/options`, and the `/fix/*` and `/test/*` groups. Use them only for troubleshooting, and keep the REST port off untrusted networks.
+The node also serves maintenance endpoints that change state or run heavy work: `PUT /-/state`, `GET /-/cleaner`,
+`GET /v1/partition/dump/{id}`, `GET /v1/partition/clean/{id}`, `POST /v1/compat?id=<partition>`, `POST /raft/options`, and the `/fix/*` and `/test/*` groups.
+Use them only for troubleshooting, and keep the REST port off untrusted networks.
 
 #### 7.2 Check registration from PD
 

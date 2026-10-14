@@ -10,6 +10,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -467,6 +468,432 @@ class SiteOutputSecurityTest(unittest.TestCase):
             with self.subTest(script=script):
                 parser = parse(f"<article>{script}</article>")
                 self.assertIn("authored <script>", parser.authored_violations)
+
+    def test_exact_oink_chart_and_terminal_json_carriers_are_allowed(self) -> None:
+        # Shapes emitted by tagged OINK 1.2 render-codeblock-echarts.html and
+        # _shortcodes/asciinema.html, including their native wrapper markup.
+        fragments = [
+            '<div id="td-echarts-placeholder-f0" class="td-echarts td-max-width-on-larger-screens" data-td-echarts>'
+            '<div data-td-echarts-canvas style="height:360px"></div>'
+            '<script type="application/json" data-td-echarts-options>'
+            '{"series":[{"type":"bar","data":[1,2]}]}</script></div>',
+            '<div id="td-asciinema-placeholder-0" class="td-asciinema td-max-width-on-larger-screens" '
+            'data-td-asciinema data-td-timer-label="Playback time">'
+            '<div class="td-asciinema__chrome"><span class="td-asciinema__title" dir="auto">Demo</span></div>'
+            '<div data-td-asciinema-player></div>'
+            '<script type="application/json" data-td-asciinema-config>'
+            '{"src":"/recording.cast","theme":"auto","options":{"autoPlay":false,"speed":1}}</script></div>',
+        ]
+        for fragment in fragments:
+            with self.subTest(fragment=fragment):
+                parser = parse(f"<main><article>{fragment}</article></main>")
+                self.assertEqual(parser.authored_violations, [])
+                self.assertEqual(VALIDATOR.document_security_errors(parser, "index.html", BASE), [])
+
+    def test_component_json_carrier_disguises_and_breakouts_are_rejected(self) -> None:
+        for marker in ("data-td-diagram-source", "data-td-echarts-options", "data-td-asciinema-config"):
+            variants = [
+                f'<script {marker}>alert(1)</script>',
+                f'<script type="module" {marker}>alert(1)</script>',
+                f'<script type="text/javascript" {marker}>alert(1)</script>',
+                f'<script type="application/json" {marker}="true">{{}}</script>',
+                f'<script type="application/json" {marker} src="/evil.js">{{}}</script>',
+                f'<script type="application/json" {marker} onload="evil()">{{}}</script>',
+                f'<script type="application/json" {marker} class="disguise">{{}}</script>',
+                f'<script type="application/json" {marker} data-extra="true">{{}}</script>',
+                f'<script type="application/json" {marker} data-td-fake-config>{{}}</script>',
+                f'<script type="application/json" {marker}>{{"text":"</script><script>alert(1)</script>"}}',
+                '<script type="application/json" data-td-fake-config>{}</script>',
+            ]
+            for variant in variants:
+                with self.subTest(marker=marker, variant=variant):
+                    parser = parse(f"<article>{variant}</article>")
+                    self.assertIn("authored <script>", parser.authored_violations)
+            duplicate = f'<script type="application/json" {marker} {marker}>{{}}</script>'
+            parser = parse(f"<article>{duplicate}</article>")
+            self.assertTrue(any("duplicate" in violation for violation in parser.authored_violations))
+
+    def test_asciinema_payload_source_uses_active_resource_boundary(self) -> None:
+        for source in ("https://evil.example/x.cast", "http://evil.example/x.cast", "//evil.example/x.cast",
+                       "javascript:evil()", "data:text/plain,cast", "\\\\evil.example\\x.cast"):
+            with self.subTest(source=source):
+                parser = parse('<article><script type="application/json" data-td-asciinema-config>' +
+                               json.dumps({"src": source, "theme": "auto", "options": {"autoPlay": False}}) + "</script></article>")
+                errors = VALIDATOR.document_security_errors(parser, "index.html", BASE) + \
+                         VALIDATOR.document_url_shape_errors(parser, "index.html")
+                self.assertTrue(errors)
+        parser = parse('<article><script type="application/json" data-td-asciinema-config>' +
+                       json.dumps({"src": "/recording.cast", "theme": "auto", "options": {"autoPlay": False}}) + "</script></article>")
+        self.assertEqual(VALIDATOR.document_security_errors(parser, "index.html", BASE), [])
+        self.assertEqual(VALIDATOR.document_url_shape_errors(parser, "index.html"), [])
+
+    def test_echarts_payload_images_and_formatter_html_are_validated(self) -> None:
+        payloads = [
+            {"series": [{"symbol": "image://https://evil.example/symbol.png"}]},
+            {"graphic": {"style": {"image": "https://evil.example/image.png"}}},
+            {"textStyle": {"rich": {"a": {"backgroundColor": {"image": "//evil.example/image.png"}}}}},
+            {"tooltip": {"formatter": '<img src="https://evil.example/x.png">'}},
+            {"tooltip": {"formatter": '<img src="/ok.png" onerror="evil()">'}},
+            {"tooltip": {"formatter": '</article><script>evil()</script>'}},
+            {"tooltip": {"formatter": '<template data-hg-authored-content="end"></template>'
+                                       '<script>evil()</script><template data-hg-authored-content="start"></template>'}},
+            {"tooltip": {"formatter": '<iframe src="/frame"></iframe>'}},
+            {"tooltip": {"formatter": '<a href="javascript:evil()">link</a>'}},
+            {"tooltip": {"formatter": '<div style="background:url(https://evil.example/x)">x</div>'}},
+        ]
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                # Hugo's jsonify escapes HTML characters in the script body;
+                # exercise runtime formatter markup after JSON decoding.
+                encoded = json.dumps(payload).replace("<", "\\u003c").replace(">", "\\u003e")
+                parser = parse('<article><script type="application/json" data-td-echarts-options>' +
+                               encoded + "</script></article>")
+                errors = VALIDATOR.document_security_errors(parser, "index.html", BASE) + \
+                         VALIDATOR.document_url_shape_errors(parser, "index.html")
+                self.assertTrue(errors)
+        for payload in ({"tooltip": {"formatter": "<b>{b}</b>: {c}"}},
+                        {"tooltip": {"trigger": "axis"}, "series": [{"type": "bar", "data": [1, 2]}]},
+                        {"series": [{"symbol": "image:///local.png"}]}):
+            parser = parse('<article><script type="application/json" data-td-echarts-options>' +
+                           json.dumps(payload) + "</script></article>")
+            self.assertEqual(VALIDATOR.document_security_errors(parser, "index.html", BASE), [])
+
+    def test_reserved_component_markers_require_exact_carrier_on_every_element(self) -> None:
+        for marker in VALIDATOR.OINK_CONFIG_MARKERS:
+            for tag in ("pre", "div", "template", "span"):
+                for attributes in (marker, f'{marker}="true"', f'{marker} data-extra="true"'):
+                    with self.subTest(marker=marker, tag=tag, attributes=attributes):
+                        parser = parse(f'<{tag} {attributes}>{{"src":"https://evil.example/cast"}}</{tag}>')
+                        self.assertTrue(VALIDATOR.document_security_errors(parser, "index.html", BASE))
+
+    def test_echarts_runtime_sink_paths_and_inert_dataset_columns(self) -> None:
+        unsafe = [
+            {"tooltip": {"extraCssText": "background:url(https://evil.example/a.png)"}},
+            {"series": [{"tooltip": {"extraCssText": "background:url(//evil.example/a.png)"}}]},
+            {"tooltip": {"extraCssText": "background:url(javascript:evil())"}},
+            {"toolbox": {"feature": {"dataView": {"lang": ['<img src="/ok.png" onerror="evil()">', "Close", "Refresh"]}}}},
+            {"toolbox": {"feature": {"dataView": {"title": '<img src="https://evil.example/a.png">'}}}},
+            {"toolbox": {"feature": {"dataView": {"lang": {"0": '<img src="/ok.png" onerror="evil()">'}}}}},
+            {"title": [{"link": "javascript:evil()", "target": "self"}]},
+            {"title": {"sublink": "data:text/html,evil"}},
+            {"title": {"link": ["javascript:evil()"]}},
+            {"tooltip": {"extraCssText": ["background:url(https://evil.example/a.png)"]}},
+            {"series": [{"type": "treemap", "data": [{"link": "javascript:evil()"}]}]},
+            {"toolbox": {"feature": {"saveAsImage": {"lang": ['" onerror="evil()']}}}},
+        ]
+        safe = [
+            {"dataset": {"source": [{"url": "https://external.example/data", "image": "https://external.example/a.png",
+                                     "formatter": '<img src="/ok.png" onerror="evil()">', "value": 42}]}},
+            {"title": {"link": "https://example.org/docs", "sublink": "/docs/"}},
+            {"tooltip": {"extraCssText": "background:url(/local.png);padding:4px"}},
+            {"toolbox": {"feature": {"dataView": {"lang": ["<b>Values</b>", "Close", "Refresh"]}}}},
+        ]
+        for payload, rejected in [(payload, True) for payload in unsafe] + [(payload, False) for payload in safe]:
+            with self.subTest(payload=payload):
+                parser = parse('<article><script type="application/json" data-td-echarts-options>' +
+                               json.dumps(payload).replace("<", "\\u003c") + '</script></article>')
+                errors = VALIDATOR.document_security_errors(parser, "index.html", BASE) + \
+                         VALIDATOR.document_url_shape_errors(parser, "index.html")
+                self.assertEqual(bool(errors), rejected, errors)
+
+    def test_echarts_tooltip_shorthand_inherited_fonts_and_fallback_colors(self) -> None:
+        hostile = '<img src="/missing" onerror="evil()">'
+        unsafe = [
+            {"series": [{"tooltip": hostile}]}, {"series": [{"data": [{"value": 5, "tooltip": hostile}]}]},
+            {"textStyle": {"fontFamily": "serif;background:url(https://evil.example/font.png)"}},
+            {"visualMap": {"pieces": [{"min": 0, "max": 10, "color": "red;background:url(https://evil.example/color.png)"}]}},
+            {"tooltip": {"defaultBorderColor": "red;background:url(https://evil.example/border.png)"}},
+        ]
+        safe = [
+            {"series": [{"tooltip": "<b>{b}</b>: {c}"}]},
+            {"series": [{"data": [{"value": 5, "tooltip": "{b}: {c}"}]}]},
+            {"textStyle": {"fontFamily": 'Arial, "思源黑体", sans-serif', "fontSize": 14}},
+            {"visualMap": {"pieces": [{"color": {"type": "linear", "colorStops": [{"offset": 0, "color": "red"}]}}]}},
+            {"tooltip": {"defaultBorderColor": "rgba(0,0,0,.5)"}},
+            {"dataset": {"source": [{"tooltip": hostile, "textStyle": {"fontFamily": unsafe[2]["textStyle"]["fontFamily"]}}]}},
+        ]
+        for option, rejected in [(option, True) for option in unsafe] + [(option, False) for option in safe]:
+            with self.subTest(option=option):
+                parser = parse('<script type="application/json" data-td-echarts-options>' +
+                               json.dumps(option).replace("<", "\\u003c") + '</script>')
+                self.assertEqual(bool(VALIDATOR.document_security_errors(parser, "index.html", BASE)), rejected)
+
+    def test_enabled_markmap_uses_explicit_plain_text_contract(self) -> None:
+        import html
+        runtime = '<script src="/third_party/markmap/markmap-autoloader.hash.js"></script>'
+        plain = "---\n# layout comment\nmarkmap:\n  spacingHorizontal: 40 # layout\n---\n# HugeGraph\n- server\n- `core`"
+        for source in [plain, "# Outline\n- `![image](https://evil.example/code.png)`", "# Outline\n```text\n![image](https://evil.example/code.png)\n```", "# Outline\n- &lt;img src=/literal&gt;"]:
+            parser = parse('<pre><code class="language-markmap">' + html.escape(source) + '</code></pre>' + runtime)
+            self.assertEqual(VALIDATOR.document_security_errors(parser, "index.html", BASE), [], source)
+        blocked = ["# Parent\n- ![image](https://evil.example/map.png)", "# Parent\n- ![image](/img/allowed.png)",
+                   "# Parent\n- ![image][ref]\n[ref]: /img/allowed.png", "# Parent\n- <img src=/allowed.png onerror=evil()>",
+                   "---\nmarkmap:\n  extraJs: [/local.js]\n---\n# Parent", "---\ntitle: '<img src=/allowed.png>'\n---",
+                   "# Parent\n- [link](/docs/)"]
+        for source in blocked:
+            with self.subTest(source=source):
+                encoded = '<pre><code class="language-markmap">' + html.escape(source) + '</code></pre>'
+                parser = parse(encoded + runtime)
+                self.assertTrue(VALIDATOR.document_security_errors(parser, "index.html", BASE))
+                # Disabled runtime and ordinary Markdown demonstrations remain
+                # inert, even if their displayed text contains an image URL.
+                self.assertEqual(VALIDATOR.document_security_errors(parse(encoded), "index.html", BASE), [])
+                ordinary = encoded.replace("language-markmap", "language-markdown")
+                self.assertEqual(VALIDATOR.document_security_errors(parse(ordinary + runtime), "index.html", BASE), [])
+
+    @unittest.skipUnless(shutil.which("hugo"), "Hugo is required to render the pinned Markmap fixture")
+    def test_native_markmap_runtime_on_off_obeys_plain_text_contract(self) -> None:
+        repo = VALIDATOR_PATH.parents[1]
+        with tempfile.TemporaryDirectory(prefix="oink-markmap-security-") as temporary:
+            root = pathlib.Path(temporary)
+            for name in ("go.mod", "go.sum"):
+                shutil.copyfile(repo / name, root / name)
+            (root / "layouts").mkdir()
+            (root / "layouts/single.html").write_text('<article>{{ .Content }}</article>{{ partial "scripts.html" . }}')
+            (root / "content").mkdir()
+            sources = [
+                ("# HugeGraph\n- server\n- core", False),
+                ("---\nmarkmap:\n  spacingHorizontal: 40\n---\n# HugeGraph\n- server", False),
+                ("# Parent\n- ![image](/img/local.png)", True),
+                ("# Parent\n- ![image][ref]\n\n[ref]: https://evil.example/ref.png", True),
+                # This pinned hook double-escapes raw HTML; textContent still
+                # contains &lt; so MarkdownIt renders literal text, not an img.
+                ("# Parent\n- <img src=/local.png onerror=evil()>", False),
+                ("---\nmarkmap:\n  extraJs: [/local.js]\n---\n# Parent", True),
+                ("# Parent\n- `![image](https://evil.example/code.png)`", False),
+            ]
+            for index, (source, _) in enumerate(sources):
+                (root / f"content/map-{index}.md").write_text('---\ntitle: Map fixture\n---\n```markmap\n' + source + '\n```\n')
+            artifact = root / "artifact"
+            artifact.mkdir()
+            for enabled in (True, False):
+                (root / "hugo.yaml").write_text(
+                    f'baseURL: {BASE.geturl()}\nparams:\n  markmap: {str(enabled).lower()}\n'
+                    'module:\n  imports:\n  - path: github.com/pgsty/oink\n')
+                result = subprocess.run([shutil.which("hugo"), "--source", str(root), "--destination", str(root / "public"),
+                                         "--environment", "production", "--panicOnWarning"], text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                for index, (_, rejected) in enumerate(sources):
+                    with self.subTest(enabled=enabled, source=index):
+                        shutil.copyfile(root / f"public/map-{index}/index.html", artifact / "index.html")
+                        result = subprocess.run([sys.executable, str(VALIDATOR_PATH), str(artifact), BASE.geturl(), "--security-only"],
+                                                text=True, capture_output=True)
+                        self.assertEqual(bool(result.returncode), enabled and rejected, result.stdout + result.stderr)
+
+    def test_echarts_effective_option_roots_reuse_all_sink_checks(self) -> None:
+        wrappers = [lambda option: option, lambda option: {"baseOption": option},
+                    lambda option: {"baseOption": {}, "options": [option]},
+                    lambda option: {"baseOption": {}, "options": {"0": option}},
+                    lambda option: {"media": [{"query": {"maxWidth": 600}, "option": option}]},
+                    lambda option: {"media": [{"option": option}]}]
+        unsafe_options = [
+            {"title": {"link": "javascript:evil()"}},
+            {"toolbox": {"feature": {"dataView": {"lang": ['<img src="/missing" onerror="evil()">']}}}},
+            {"toolbox": {"feature": {"saveAsImage": {"lang": ['unsafe fallback']}}}},
+            {"tooltip": {"backgroundColor": 'red;"><img src=/missing onerror=evil()>'}},
+        ]
+        safe = {"dataset": {"source": [{"symbol": "image://https://external.example/ordinary-data",
+                                         "color": {"image": "https://external.example/ordinary-data"}}]},
+                "tooltip": {"backgroundColor": "rgba(255, 255, 255, 0.8)"}}
+        for wrap in wrappers:
+            for option, rejected in [(option, True) for option in unsafe_options] + [(safe, False)]:
+                with self.subTest(payload=wrap(option)):
+                    parser = parse('<article><script type="application/json" data-td-echarts-options>' +
+                                   json.dumps(wrap(option)).replace("<", "\\u003c") + '</script></article>')
+                    errors = VALIDATOR.document_security_errors(parser, "index.html", BASE) + \
+                             VALIDATOR.document_url_shape_errors(parser, "index.html")
+                    self.assertEqual(bool(errors), rejected, errors)
+
+    def test_echarts_html_css_color_sinks_accept_explicit_colors(self) -> None:
+        legitimate = ["red", "AliceBlue", "transparent", "#f00", "#abcd", "#112233", "#11223388",
+                      "rgb(255, 0, 0)", "rgba(100%, 0%, 50%, .8)", "hsl(120, 50%, 50%)", "hsla(120, 50%, 50%, 0.5)"]
+        malicious = ['red;"><img src=/missing onerror=evil()>', "red;background-image:url(https://evil.example/a.png)",
+                     ["red;background-image:url(https://evil.example/a.png)"], "var(--untrusted)", "not-a-color"]
+        sinks = [lambda color: {"tooltip": {"backgroundColor": color}},
+                 lambda color: {"series": [{"tooltip": {"borderColor": color}}]},
+                 lambda color: {"tooltip": {"shadowColor": color, "textStyle": {"color": color, "textShadowColor": color}}},
+                 lambda color: {"toolbox": {"feature": {"dataView": {"buttonColor": color, "buttonTextColor": color}}}}]
+        for sink in sinks:
+            for color, rejected in [(color, False) for color in legitimate] + [(color, True) for color in malicious]:
+                with self.subTest(payload=sink(color)):
+                    parser = parse('<script type="application/json" data-td-echarts-options>' +
+                                   json.dumps(sink(color)).replace("<", "\\u003c") + '</script>')
+                    self.assertEqual(bool(VALIDATOR.document_security_errors(parser, "index.html", BASE)), rejected)
+        for stop, rejected in [("#f00", False), ('red;"><img src=/missing onerror=evil()>', True)]:
+            parser = parse('<script type="application/json" data-td-echarts-options>' + json.dumps({
+                "tooltip": {"borderColor": {"type": "linear", "colorStops": [{"offset": 0, "color": stop}]}}}) + '</script>')
+            self.assertEqual(bool(VALIDATOR.document_security_errors(parser, "index.html", BASE)), rejected)
+
+    def test_echarts_marker_color_sources_accept_palettes_gradients_and_patterns(self) -> None:
+        gradient = {"type": "linear", "colorStops": [{"offset": 0, "color": "#f00"}, {"offset": 1, "color": "blue"}]}
+        pattern = {"image": "/local.png", "repeat": "repeat"}
+        safe_colors = ["#f00", "auto", "inherit", ["red", "#123456"], gradient, pattern]
+        bad_colors = ["red;background:url(https://evil.example/a.png)", "$fn:uncheckedColor",
+                      ["red", "blue;background:url(https://evil.example/a.png)"],
+                      {"type": "linear", "colorStops": [{"offset": 0, "color": "red;background:url(https://evil.example/a.png)"}]}]
+        sinks = [lambda color: {"color": color}, lambda color: {"colorLayer": [color]},
+                 lambda color: {"series": [{"color": color}]},
+                 lambda color: {"series": [{"itemStyle": {"color": color}}]},
+                 lambda color: {"series": [{"data": [{"value": 1, "itemStyle": {"color": color}}]}]},
+                 lambda color: {"series": [{"lineStyle": {"color": color}}]},
+                 lambda color: {"visualMap": {"inRange": {"color": color}, "outOfRange": {"color": color}}}]
+        for sink in sinks:
+            for color, rejected in [(color, False) for color in safe_colors] + [(color, True) for color in bad_colors]:
+                with self.subTest(option=sink(color)):
+                    parser = parse('<script type="application/json" data-td-echarts-options>' + json.dumps(sink(color)) + '</script>')
+                    errors = VALIDATOR.document_security_errors(parser, "index.html", BASE) + \
+                             VALIDATOR.document_url_shape_errors(parser, "index.html")
+                    self.assertEqual(bool(errors), rejected, errors)
+        # The same fields in a dataset row are data, without a model style.
+        parser = parse('<script type="application/json" data-td-echarts-options>' + json.dumps({
+            "dataset": {"source": [{"color": bad_colors[0], "itemStyle": {"color": bad_colors[0]}}]}}) + '</script>')
+        self.assertEqual(VALIDATOR.document_security_errors(parser, "index.html", BASE), [])
+
+    def test_echarts_tooltip_css_numbers_and_font_options_use_declared_types(self) -> None:
+        safe = {"shadowBlur": 4, "shadowOffsetX": -2, "shadowOffsetY": 0, "borderWidth": 1, "borderRadius": [4, 6],
+                "padding": [4, 8], "textStyle": {"fontSize": 14, "lineHeight": 20, "textShadowBlur": 2,
+                "textShadowOffsetX": 0, "textShadowOffsetY": 1, "fontFamily": "Arial, 'Noto Sans CJK SC', sans-serif",
+                "fontStyle": "italic", "fontWeight": 600, "decoration": "underline", "align": "left"}}
+        cases = [(safe, False)]
+        for key in ("shadowBlur", "shadowOffsetX", "shadowOffsetY", "borderWidth", "borderRadius", "padding"):
+            cases.append(({key: "1px;background:url(https://evil.example/a.png)"}, True))
+        for key in ("fontSize", "lineHeight", "textShadowBlur", "textShadowOffsetX", "textShadowOffsetY",
+                    "fontFamily", "fontStyle", "fontWeight", "decoration", "align"):
+            cases.append(({"textStyle": {key: "1px;background:url(https://evil.example/a.png)"}}, True))
+        cases.extend([({"shadowBlur": float("inf")}, True), ({"textStyle": {"fontSize": float("nan")}}, True),
+                      ({"textStyle": {"fontFamily": '"思源黑体", sans-serif', "fontWeight": "bold"}}, False),
+                      ({"textStyle": {"fontWeight": "600"}}, False), ({"shadowBlur": 10 ** 400}, True)])
+        for tooltip, rejected in cases:
+            with self.subTest(tooltip=tooltip):
+                parser = parse('<script type="application/json" data-td-echarts-options>' +
+                               json.dumps({"tooltip": tooltip}) + '</script>')
+                self.assertEqual(bool(VALIDATOR.document_security_errors(parser, "index.html", BASE)), rejected)
+
+    def test_echarts_array_symbols_and_pattern_images_are_active_resources(self) -> None:
+        shapes = [lambda image: {"series": [{"markLine": {"symbol": ["image://" + image, "none"]}}]},
+                  lambda image: {"visualMap": {"inRange": {"symbol": ["circle", "image://" + image]}}},
+                  lambda image: {"series": [{"itemStyle": {"color": {"image": image, "repeat": "repeat"}}}]},
+                  lambda image: {"graphic": {"style": {"fill": {"image": image}}}}]
+        for shape in shapes:
+            for image, rejected in [("https://evil.example/image.png", True), ("//evil.example/image.png", True),
+                                    ("/local.png", False), ("https://hugegraph-oink.staged.apache.org/local.png", False)]:
+                with self.subTest(payload=shape(image)):
+                    parser = parse('<script type="application/json" data-td-echarts-options>' + json.dumps(shape(image)) + '</script>')
+                    errors = VALIDATOR.document_security_errors(parser, "index.html", BASE) + \
+                             VALIDATOR.document_url_shape_errors(parser, "index.html")
+                    self.assertEqual(bool(errors), rejected, errors)
+
+    @unittest.skipUnless(shutil.which("hugo"), "Hugo is required to render the pinned component fixture")
+    def test_tagged_hugo_component_output_and_security_cli(self) -> None:
+        repo = VALIDATOR_PATH.parents[1]
+        with tempfile.TemporaryDirectory(prefix="oink-component-security-") as temporary:
+            root = pathlib.Path(temporary)
+            for name in ("go.mod", "go.sum"):
+                shutil.copyfile(repo / name, root / name)
+            (root / "hugo.yaml").write_text(
+                "baseURL: https://hugegraph-oink.staged.apache.org/\nmodule:\n  imports:\n  - path: github.com/pgsty/oink\n")
+            (root / "layouts").mkdir()
+            (root / "layouts/single.html").write_text("<article>{{ .Content }}</article>")
+            (root / "content").mkdir()
+            (root / "content/fixture.md").write_text(
+                '---\ntitle: Fixture\n---\n'
+                '{{< asciinema file="/recording.cast" markers="10:Boot,25:Configure" >}}\n\n'
+                '```echarts\n{"dataset":{"source":[{"url":"https://example.org/inert","value":42}]},'
+                '"series":[{"type":"bar"}]}\n```\n')
+            result = subprocess.run([shutil.which("hugo"), "--source", str(root), "--destination", str(root / "public")],
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            html = (root / "public/fixture/index.html").read_text()
+            self.assertIn('"markers":[10,"Boot",25,"Configure"]', html)
+            parser = parse(html)
+            self.assertEqual(VALIDATOR.document_security_errors(parser, "fixture/index.html", BASE), [])
+            # Check the rendered component page in isolation; the fixture does
+            # not include HugeGraph's SEO/CSS customizations for theme defaults.
+            artifact = root / "artifact"
+            artifact.mkdir()
+            (artifact / "index.html").write_text(html)
+            result = subprocess.run([sys.executable, str(VALIDATOR_PATH), str(artifact), BASE.geturl(), "--security-only"],
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            # The actual native wrappers plus an alternate config carrier must
+            # fail the same CLI, not just a manually constructed parser test.
+            malicious = html.replace('<script type="application/json" data-td-asciinema-config>',
+                                     '<pre data-td-asciinema-config>', 1)
+            malicious = malicious.replace('</script>', '</pre>', 1)
+            (artifact / "index.html").write_text(malicious)
+            result = subprocess.run([sys.executable, str(VALIDATOR_PATH), str(artifact), BASE.geturl(), "--security-only"],
+                                    text=True, capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("noncanonical OINK component", result.stdout)
+            (root / "content/fixture.md").write_text(
+                '---\ntitle: Unsafe fixture\n---\n```echarts\n' + json.dumps({
+                    "tooltip": {"extraCssText": "background:url(https://evil.example/a.png)"},
+                    "toolbox": {"feature": {"dataView": {"lang": ['<img src="/ok.png" onerror="evil()">']}}},
+                    "title": {"link": "javascript:evil()"},
+                }) + '\n```\n')
+            html_option = {"toolbox": {"feature": {"dataView": {"lang": ['<img src="/missing" onerror="evil()">']}}}}
+            native_counterexamples = [
+                ({"series": [{"tooltip": '<img src="/missing" onerror="evil()">'}]}, "onerror"),
+                ({"series": [{"data": [{"value": 5, "tooltip": '<img src="/missing" onerror="evil()">'}]}]}, "onerror"),
+                ({"textStyle": {"fontFamily": "serif;background:url(https://evil.example/font.png)"}}, "invalid ECharts tooltip CSS font"),
+                ({"visualMap": {"pieces": [{"color": "red;background:url(https://evil.example/piece.png)"}]}}, "invalid ECharts tooltip marker colour"),
+                ({"tooltip": {"defaultBorderColor": "red;background:url(https://evil.example/border.png)"}}, "invalid ECharts CSS colour"),
+                ({"color": ["red;background:url(https://evil.example/palette.png)"]}, "invalid ECharts tooltip marker colour"),
+                ({"series": [{"itemStyle": {"color": "red;background:url(https://evil.example/itemstyle.png)"}}]},
+                 "invalid ECharts tooltip marker colour"),
+                ({"baseOption": html_option}, "onerror"),
+                ({"baseOption": {}, "options": [html_option]}, "onerror"),
+                ({"media": [{"query": {"maxWidth": 600}, "option": html_option}]}, "onerror"),
+                ({"tooltip": {"backgroundColor": 'red;"><img src=/missing onerror=evil()>'}}, "invalid ECharts CSS colour"),
+                ({"toolbox": {"feature": {"dataView": {"buttonColor": "red;background:url(https://evil.example/a.png)"}}}},
+                 "invalid ECharts CSS colour"),
+                ({"series": [{"markLine": {"symbol": ["image://https://evil.example/a.png", "none"]}}]}, "external active resource"),
+                ({"visualMap": {"inRange": {"symbol": ["circle", "image://https://evil.example/a.png"]}}}, "external active resource"),
+                ({"series": [{"itemStyle": {"color": {"image": "https://evil.example/a.png"}}}]}, "external active resource"),
+            ]
+            for index, (option, _) in enumerate(native_counterexamples):
+                (root / f"content/unsafe-{index}.md").write_text(
+                    '---\ntitle: Unsafe fixture\n---\n```echarts\n' + json.dumps(option) + '\n```\n')
+            result = subprocess.run([shutil.which("hugo"), "--source", str(root), "--destination", str(root / "public")],
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            for index, (_, message) in enumerate(native_counterexamples):
+                with self.subTest(native_counterexample=index):
+                    shutil.copyfile(root / f"public/unsafe-{index}/index.html", artifact / "index.html")
+                    result = subprocess.run([sys.executable, str(VALIDATOR_PATH), str(artifact), BASE.geturl(), "--security-only"],
+                                            text=True, capture_output=True)
+                    self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertIn(message, result.stdout)
+            shutil.copyfile(root / "public/fixture/index.html", artifact / "index.html")
+            result = subprocess.run([sys.executable, str(VALIDATOR_PATH), str(artifact), BASE.geturl(), "--security-only"],
+                                    text=True, capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            # URL-shape errors take priority in this CLI; independently verify
+            # all three runtime sinks on the very same rendered fixture.
+            parser = parse((artifact / "index.html").read_text())
+            errors = VALIDATOR.document_security_errors(parser, "index.html", BASE) + \
+                     VALIDATOR.document_url_shape_errors(parser, "index.html")
+            for message in ("external CSS", "onerror", "forbidden URL scheme"):
+                self.assertIn(message, "\n".join(errors))
+
+    def test_asciinema_payload_rejects_player_apis_outside_shortcode_schema(self) -> None:
+        payload = {"src": "/recording.cast", "theme": "auto", "options": {"autoPlay": False}}
+        variants = [dict(payload, audioUrl="https://evil.example/audio.mp3"),
+                    dict(payload, options={"audioUrl": "https://evil.example/audio.mp3"}),
+                    dict(payload, options={"driver": "benchmark"}),
+                    dict(payload, options={"poster": "https://evil.example/poster.png"}),
+                    dict(payload, options={"markers": [{"src": "https://evil.example/x"}]}),
+                    dict(payload, options={"markers": [[1.0, "start"]]}),
+                    dict(payload, options={"markers": [1.0]}),
+                    dict(payload, options={"speed": {"url": "https://evil.example/x"}})]
+        for variant in variants:
+            with self.subTest(variant=variant):
+                parser = parse('<article><script type="application/json" data-td-asciinema-config>' +
+                               json.dumps(variant) + "</script></article>")
+                self.assertTrue(VALIDATOR.document_security_errors(parser, "index.html", BASE))
+        for poster in ("npt:0:10", "data:text/plain,hello"):
+            parser = parse('<article><script type="application/json" data-td-asciinema-config>' +
+                           json.dumps(dict(payload, options={"poster": poster, "markers": [1.0, "start"]})) + "</script></article>")
+            self.assertEqual(VALIDATOR.document_security_errors(parser, "index.html", BASE), [])
 
     def test_http_resources_are_distinct_from_ordinary_links(self) -> None:
         parser = parse(

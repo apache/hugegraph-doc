@@ -79,6 +79,81 @@ sidebar_expanded: true
 
 #### 2.1 Batch 插入性能
 
+> [!NOTE]
+> 以下图表和原表均为 HugeGraph 0.5.6 历史测试数据，不代表当前版本性能。硬件、软件版本和后端条件见上方测试环境。
+
+图表使用对数坐标比较批量插入耗时（秒）；点击图例可切换系列，原表保留供准确取值。
+
+```echarts {height="340px"}
+{
+  "tooltip": {
+    "trigger": "axis",
+    "confine": true
+  },
+  "legend": {
+    "data": [
+      "HugeGraph",
+      "Titan",
+      "Neo4j"
+    ]
+  },
+  "grid": {
+    "left": 75,
+    "right": 30,
+    "top": 55,
+    "bottom": 75
+  },
+  "xAxis": {
+    "type": "category",
+    "data": [
+      "email-enron (30w)",
+      "amazon0601 (300w)",
+      "YouTube (300w)",
+      "LiveJournal (3000w)"
+    ],
+    "axisLabel": {
+      "rotate": 10
+    }
+  },
+  "yAxis": {
+    "type": "log",
+    "name": "耗时 / 秒（对数）"
+  },
+  "series": [
+    {
+      "name": "HugeGraph",
+      "type": "bar",
+      "data": [
+        0.629,
+        5.711,
+        5.243,
+        67.033
+      ]
+    },
+    {
+      "name": "Titan",
+      "type": "bar",
+      "data": [
+        10.15,
+        108.569,
+        150.266,
+        1217.944
+      ]
+    },
+    {
+      "name": "Neo4j",
+      "type": "bar",
+      "data": [
+        3.884,
+        18.938,
+        24.89,
+        281.537
+      ]
+    }
+  ]
+}
+```
+
 | Backend   | email-enron(30w) | amazon0601(300w) | com-youtube.ungraph(300w) | com-lj.ungraph(3000w) |
 |-----------|------------------|------------------|---------------------------|-----------------------|
 | HugeGraph | 0.629            | 5.711            | 5.243                     | 67.033                |

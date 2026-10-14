@@ -109,7 +109,7 @@ When authentication is enabled, graph read permission is required (`space_member
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 ```
 
@@ -135,13 +135,13 @@ When authentication is enabled, graph-space management permission (`space`) is r
 
 ###### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 ```
 
 ###### Request Body
 
-```
+```text
 "RESTORING"
 ```
 

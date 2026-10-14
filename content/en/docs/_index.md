@@ -3,6 +3,7 @@ title: "Documentation"
 linkTitle: "Documentation"
 weight: 20
 outputs: [HTML, RSS, print, markdown, LLMSFULL]
+icon: fa-solid fa-book
 ---
 
 ## Apache HugeGraph Documentation
@@ -21,7 +22,7 @@ Apache HugeGraph includes graph database, graph computing, and graph AI componen
 
 ### Ecosystem Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                  Apache HugeGraph Ecosystem                      │
 ├─────────────────────────────────────────────────────────────────┤

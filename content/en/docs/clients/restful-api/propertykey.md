@@ -23,7 +23,7 @@ Request Body Field Description:
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/propertykeys
 ```
 
@@ -72,7 +72,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/propertyk
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/propertykeys/age?action=append
 ```
 
@@ -121,7 +121,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/propertyke
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/propertykeys
 ```
 
@@ -200,7 +200,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/propertyke
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/propertykeys/age
 ```
 
@@ -236,7 +236,7 @@ Where `age` is the name of the PropertyKey to be retrieved.
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/propertykeys/age
 ```
 

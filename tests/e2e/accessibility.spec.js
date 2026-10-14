@@ -6,8 +6,16 @@ for (const route of [
   "/cn/docs/",
   "/community/",
   "/cn/community/",
+  "/community/documentation/",
+  "/cn/community/documentation/",
   "/docs/download/download/",
   "/cn/docs/download/download/",
+  "/blog/",
+  "/cn/blog/",
+  "/blog/2025/10/09/toplingdb-quick-start/",
+  "/cn/blog/2025/10/09/toplingdb-quick-start/",
+  "/series/toplingdb/",
+  "/cn/series/toplingdb/",
 ]) {
   test(`axe WCAG 2.2 AA guard ${route}`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });

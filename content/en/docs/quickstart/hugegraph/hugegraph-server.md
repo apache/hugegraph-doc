@@ -14,7 +14,8 @@ aliases:
 
 The `hugegraph-server` module contains `hugegraph-core`, `hugegraph-api`, `hugegraph-dist`, and storage adapters. Core implements the property graph model, transactions, and TinkerPop interfaces. API provides the HTTP service and delegates client requests to Core. Graph data is stored in RocksDB (the default standalone backend), HStore (distributed), or HBase.
 
-> ⚠️ **Version scope**: Download examples use the ASF HugeGraph 1.7.0 release. Source builds, configuration defaults, and startup behavior follow `apache/hugegraph` master. A master build is not an ASF release artifact, even if its version number matches a release. This guide covers RocksDB, HStore, and HBase; see [1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md) for other legacy backends.
+> [!WARNING]
+> **Version scope**: Download examples use the ASF HugeGraph 1.7.0 release. Source builds, configuration defaults, and startup behavior follow `apache/hugegraph` master. A master build is not an ASF release artifact, even if its version number matches a release. This guide covers RocksDB, HStore, and HBase; see [1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md) for other legacy backends.
 
 > Naming: `HugeGraph` means the overall project or main repository, `hugegraph-server` is its Server module, and `HugeGraphServer` is the Java service class. Server below means the running graph database service.
 
@@ -32,6 +33,23 @@ flowchart TD
     S --> Q["Request /versions and graph vertices"]
 ```
 
+
+The map uses short labels for the repository modules described above. `server`, `core`, `api`, `dist`, `pd`, and `store` refer to the corresponding
+`hugegraph-` modules; `dist` packages the distribution.
+
+```markmap
+---
+markmap:
+  spacingHorizontal: 40
+---
+# HugeGraph
+## server
+- core
+- api
+- dist
+## pd
+## store
+```
 
 ## 2 Dependency for Building/Running
 
@@ -83,11 +101,11 @@ on Java 24 or later, start Server with `-s false` (JDK 24+ dropped Security Mana
 
 There are four ways to deploy the Server service:
 
-1. Use a Docker container for test or development.
-1. Download the binary tarball.
-1. Compile the source code.
-1. Use the legacy one-click deployment tool.
-{.steps}
+- [Docker container](#31-use-docker-container-convenient-for-testdev) Quickly start a Server service for testing or development.
+- [ASF release archive](#32-download-a-released-archive) Download a released tarball and verify it before installation.
+- [master source](#33-build-from-master-source) Build the development branch; its output is not an ASF release archive.
+- [Legacy one-click deployment (outdated)](#34-one-click-deployment-outdated) Reference for the older deployment workflow.
+{.cards}
 
 > [!WARNING]
 > **Production requires authentication and restricted network access**
@@ -111,7 +129,8 @@ If you use Docker Desktop, you can set the options as follows:
     <img src="/docs/images/images-server/31docker-option.jpg" alt="Docker Desktop settings for a HugeGraph container" style="width:33%;">
 </div>
 
-> **Note**: The Docker Compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least **12 GB** of memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.
+> [!NOTE]
+> The Docker Compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least **12 GB** of memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.
 
 Use `docker compose` to manage multiple HugeGraph services from one configuration. Four Compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory:
 
@@ -136,7 +155,7 @@ The standalone `docker-compose.yml` example uses `hugegraph/hugegraph:1.7.0`; it
 
 See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full setup guide.
 
-> Note: 
+> [!NOTE]
 >
 > 1. HugeGraph Docker images are provided as a convenient way to start HugeGraph quickly, but they are not official ASF distribution artifacts. You can find more details in the [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 >
@@ -146,7 +165,7 @@ See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/RE
 
 This example uses HugeGraph 1.7.0. For other versions, confirm the release and filenames in the [ASF download directory](https://downloads.apache.org/hugegraph/). A master source build is not a released binary.
 
-```bash {filename="download-release.sh" wrap=true collapse=2}
+```bash {wrap=true}
 cd /path/to/downloads
 wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.sha512
@@ -173,7 +192,7 @@ Install `wget` or `curl` before building.
 
 Download HugeGraph source:
 
-```bash {filename="build-from-source.sh" wrap=true collapse=2}
+```bash {wrap=true}
 git clone --branch master https://github.com/apache/hugegraph.git
 ```
 
@@ -208,6 +227,8 @@ mvn package -DskipTests -ntp -Drocksdb-only
 
 > [!DETAILS]- Outdated tools
 > #### 3.4 One-click deployment (Outdated)
+>
+> {{< badge text="Outdated" tone="warning" >}} This status applies only to this one-click deployment entry.
 >
 > HugeGraph-Tools provides a one-click deployment command that downloads, extracts, configures, and starts the Server service and HugeGraph-Hubble. These tools are included in the HugeGraph-Toolchain distribution.
 >
@@ -263,206 +284,207 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 
 #### 5.1.1 Distributed Storage (HStore)
 
-<details>
-<summary>Expand/collapse distributed storage configuration and startup</summary>
-
-> Distributed storage, introduced after HugeGraph 1.5.0, uses HugeGraph-PD and HugeGraph-Store for distributed data storage and computing.
-
 First deploy PD and Store; see the [PD Quick Start](/docs/quickstart/hugegraph/hugegraph-pd/) and [Store Quick Start](/docs/quickstart/hugegraph/hugegraph-hstore/).
-
-After PD and Store are running:
-
-1. Edit Server `hugegraph.properties`:
-
-```properties
-backend=hstore
-serializer=binary
-
-# PD RPC addresses, separated by commas
-pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
-pd.cluster=hg
-```
-
-```properties
-# Simple example with authentication
-gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
-
-# Required HStore backend
-backend=hstore
-serializer=binary
-store=hugegraph
-
-# pd config
-pd.peers=127.0.0.1:8686
-pd.cluster=hg
-```
-
-The distribution includes `conf/graphs/hstore.properties.template`; copy it over `conf/graphs/hugegraph.properties` and adjust `pd.peers`.
-
-This example uses `cluster=hg` in `rest-server.properties` and `pd.cluster=hg` in graph configuration, matching the master Compose cluster below. These are separate keys for the Server process and graph respectively, not one setting. Select an appropriate cluster name. Likewise, `pd.peers` in each file has its own configuration scope; this example supplies the same PD RPC addresses to both.
-
-The backend selects the task scheduler: HStore uses distributed scheduling; others use local scheduling. `task.scheduler_type` is unnecessary and is ignored with a warning when retained for compatibility.
-
-2. Edit Server `rest-server.properties`:
-
-```properties
-usePD=true
-# Use cluster hg, matching pd.cluster in graph configuration
-cluster=hg
-# Server process PD addresses; replace with actual PD RPC addresses
-pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
-
-# Optional in local tests; authentication is mandatory in production
-# auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
-```
-
-These addresses support multiple Server processes on one machine; `127.0.0.1` is local only. Across hosts, use routable IPs or DNS for `restserver.url`, `gremlinserver.url`, `pd.peers`, Gremlin `host`, and `rpc.server_host`. Advertised RPC addresses and ports must be mutually reachable.
-
-For multiple Servers, edit each node's `rest-server.properties`:
-
-Node 1 (master):
-```properties
-usePD=true
-restserver.url=http://127.0.0.1:8081
-gremlinserver.url=http://127.0.0.1:8181
-pd.peers=127.0.0.1:8686
-
-rpc.server_host=127.0.0.1
-rpc.server_port=8091
-
-server.id=server-1
-server.role=master
-```
-
-Node 2 (worker):
-```properties
-usePD=true
-restserver.url=http://127.0.0.1:8082
-gremlinserver.url=http://127.0.0.1:8182
-pd.peers=127.0.0.1:8686
-
-rpc.server_host=127.0.0.1
-rpc.server_port=8092
-
-server.id=server-2
-server.role=worker
-```
-
-Also configure each node's `gremlin-server.yaml` ports:
-
-Node 1:
-```yaml
-host: 127.0.0.1
-port: 8181
-```
-
-Node 2:
-```yaml
-host: 127.0.0.1
-port: 8182
-```
-
-Start Server:
-
-```bash
-bin/start-hugegraph.sh
-```
-
-Distributed startup order:
-1. Start HugeGraph-PD
-2. Start HugeGraph-Store
-3. Start Server
-
-PD and Store manage HStore metadata and storage, so `init-store` skips that backend. With authentication enabled, `init-store` still creates the built-in `admin` account. If storage already holds this account, set `init_store.enabled=false` in `rest-server.properties` to skip the entire step, as Docker HStore topologies do.
-
-Verify startup:
-
-```bash
-curl http://localhost:8081/graphspaces/DEFAULT/graphs
-# Expected: {"graphs":["hugegraph"]}
-```
-
-Stop in reverse order:
-1. Stop Server
-2. Stop HugeGraph-Store
-3. Stop HugeGraph-PD
-
-```bash
-bin/stop-hugegraph.sh
-```
-
-##### Docker HStore HA Cluster (Current Master)
-
-`docker-compose-3pd-3store-3server.yml` uses master `HG_PD_*`, `HG_STORE_*`, and `HG_SERVER_*` variables unsupported by 1.7.0 release images. Build PD, Store, and Server from the same master source, all tagged `local`:
-
-```bash
-# Run from the HugeGraph repository root
-docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
-docker build -f hugegraph-store/Dockerfile -t hugegraph/store:local .
-docker build -f hugegraph-server/Dockerfile-hstore -t hugegraph/server:local .
-
-cd docker
-```
-
-Create the authentication environment in `docker/` and generate HStore Hubble configuration. Replace the example administrator password; because `.env` uses single quotes, the password must contain neither single quotes nor newlines. The script generates random JWT and PD secrets and writes the PD secret to two untracked `.local.properties` files mounted by HStore Compose:
 
 > [!WARNING]
 > `umask 077` protects the new `.env`, but `set-hubble-pd-password.sh` sets generated `.local.properties` permissions to `0644`, making the PD secret readable by other local users. This example assumes trusted local users. On shared hosts, set ownership and read permissions for the Hubble runtime user so Hubble can read the files while unauthorized users cannot. Keeping files untracked does not replace file permission controls.
 
-```bash
-(
-  set -eu
-  command -v openssl >/dev/null
-  jwt_secret="$(openssl rand -hex 32)"
-  pd_secret="$(openssl rand -hex 24)"
-  umask 077
-  test ! -e .env || {
-    echo ".env already exists; edit it instead of overwriting it" >&2
-    exit 1
-  }
-  printf "HUGEGRAPH_ADMIN_PASSWORD='%s'\nHUGEGRAPH_AUTH_TOKEN_SECRET='%s'\nHG_PD_AUTH_SECRET_KEY='%s'\n" \
-    'replace-with-your-password' "${jwt_secret}" "${pd_secret}" > .env
-  HG_PD_AUTH_SECRET_KEY="${pd_secret}" ./set-hubble-pd-password.sh hstore
-  HG_PD_AUTH_SECRET_KEY="${pd_secret}" ./set-hubble-pd-password.sh hstore-ha
-)
-```
-
-Start HA from `docker/`. `HUGEGRAPH_VERSION=local` selects the locally built PD, Store, and Server images; Compose `pull_policy: missing` uses existing local tags first. `HUBBLE_IMAGE` still selects Hubble independently:
-
-```bash
-set -a
-. ./.env
-set +a
-HUGEGRAPH_VERSION=local docker compose \
-  -f docker-compose-3pd-3store-3server.yml \
-  up -d --wait pd0 pd1 pd2 store0 store1 store2 server0 server1 server2 hubble
-```
-
-Generate `HG_PD_AUTH_SECRET_KEY` once for new data directories and reuse it on restart or when retaining data. Do not commit `.env` or generated `conf/hubble/*.local.properties`. Services communicate through container hostnames on the `hg-net` bridge. Server replicas need the shared JWT secret as well as the administrator password; set `HUGEGRAPH_AUTH_TOKEN_SECRET`. See the [Docker cluster guide](/docs/guides/hugegraph-docker-cluster/) and [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for all variables.
-
-Verify the cluster:
-```bash
-curl -fsS http://localhost:8080/versions
-curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?Load .env first}" \
-  http://localhost:8620/v1/stores
-```
-
-Master PD `/v1/stores` requires Basic authentication; this uses the generated, loaded `HG_PD_AUTH_SECRET_KEY` as the `hg` password.
-
-Inspect runtime logs with `docker logs <container-name>`, such as `docker logs hg-pd0`.
-
-See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for variables, ports, and troubleshooting.
-</details>
+> [!DETAILS]+ Distributed storage configuration and startup
+> > Distributed storage, introduced after HugeGraph 1.5.0, uses HugeGraph-PD and HugeGraph-Store for distributed data storage and computing.
+>
+> After PD and Store are running:
+>
+> 1. Edit Server `hugegraph.properties`:
+>
+> ```properties
+> backend=hstore
+> serializer=binary
+>
+> # PD RPC addresses, separated by commas
+> pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
+> pd.cluster=hg
+> ```
+>
+> ```properties
+> # Simple example with authentication
+> gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
+>
+> # Required HStore backend
+> backend=hstore
+> serializer=binary
+> store=hugegraph
+>
+> # pd config
+> pd.peers=127.0.0.1:8686
+> pd.cluster=hg
+> ```
+>
+> The distribution includes `conf/graphs/hstore.properties.template`; copy it over `conf/graphs/hugegraph.properties` and adjust `pd.peers`.
+>
+> This example uses `cluster=hg` in `rest-server.properties` and `pd.cluster=hg` in graph configuration, matching the master Compose cluster below. These are separate keys for the Server process and graph respectively, not one setting. Select an appropriate cluster name. Likewise, `pd.peers` in each file has its own configuration scope; this example supplies the same PD RPC addresses to both.
+>
+> The backend selects the task scheduler: HStore uses distributed scheduling; others use local scheduling. `task.scheduler_type` is unnecessary and is ignored with a warning when retained for compatibility.
+>
+> 2. Edit Server `rest-server.properties`:
+>
+> ```properties
+> usePD=true
+> # Use cluster hg, matching pd.cluster in graph configuration
+> cluster=hg
+> # Server process PD addresses; replace with actual PD RPC addresses
+> pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
+>
+> # Optional in local tests; authentication is mandatory in production
+> # auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
+> ```
+>
+> These addresses support multiple Server processes on one machine; `127.0.0.1` is local only. Across hosts, use routable IPs or DNS for `restserver.url`, `gremlinserver.url`, `pd.peers`, Gremlin `host`, and `rpc.server_host`. Advertised RPC addresses and ports must be mutually reachable.
+>
+> For multiple Servers, edit each node's `rest-server.properties`:
+>
+> Node 1 (master):
+> ```properties
+> usePD=true
+> restserver.url=http://127.0.0.1:8081
+> gremlinserver.url=http://127.0.0.1:8181
+> pd.peers=127.0.0.1:8686
+>
+> rpc.server_host=127.0.0.1
+> rpc.server_port=8091
+>
+> server.id=server-1
+> server.role=master
+> ```
+>
+> Node 2 (worker):
+> ```properties
+> usePD=true
+> restserver.url=http://127.0.0.1:8082
+> gremlinserver.url=http://127.0.0.1:8182
+> pd.peers=127.0.0.1:8686
+>
+> rpc.server_host=127.0.0.1
+> rpc.server_port=8092
+>
+> server.id=server-2
+> server.role=worker
+> ```
+>
+> Also configure each node's `gremlin-server.yaml` ports:
+>
+> Node 1:
+> ```yaml
+> host: 127.0.0.1
+> port: 8181
+> ```
+>
+> Node 2:
+> ```yaml
+> host: 127.0.0.1
+> port: 8182
+> ```
+>
+> Start Server:
+>
+> ```bash
+> bin/start-hugegraph.sh
+> ```
+>
+> Distributed startup order:
+> 1. Start HugeGraph-PD
+> 2. Start HugeGraph-Store
+> 3. Start Server
+>
+> PD and Store manage HStore metadata and storage, so `init-store` skips that backend. With authentication enabled, `init-store` still creates the built-in `admin` account. If storage already holds this account, set `init_store.enabled=false` in `rest-server.properties` to skip the entire step, as Docker HStore topologies do.
+>
+> Verify startup:
+>
+> ```bash
+> curl http://localhost:8081/graphspaces/DEFAULT/graphs
+> # Expected: {"graphs":["hugegraph"]}
+> ```
+>
+> Stop in reverse order:
+> 1. Stop Server
+> 2. Stop HugeGraph-Store
+> 3. Stop HugeGraph-PD
+>
+> ```bash
+> bin/stop-hugegraph.sh
+> ```
+>
+> ##### Docker HStore HA Cluster (Current Master)
+>
+> `docker-compose-3pd-3store-3server.yml` uses master `HG_PD_*`, `HG_STORE_*`, and `HG_SERVER_*` variables unsupported by 1.7.0 release images. Build PD, Store, and Server from the same master source, all tagged `local`:
+>
+> ```bash
+> # Run from the HugeGraph repository root
+> docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
+> docker build -f hugegraph-store/Dockerfile -t hugegraph/store:local .
+> docker build -f hugegraph-server/Dockerfile-hstore -t hugegraph/server:local .
+>
+> cd docker
+> ```
+>
+> Create the authentication environment in `docker/` and generate HStore Hubble configuration. Replace the example administrator password; because `.env` uses single quotes, the password must contain neither single quotes nor newlines. The script generates random JWT and PD secrets and writes the PD secret to two untracked `.local.properties` files mounted by HStore Compose:
+>
+> ```bash {wrap=true collapse=9}
+> (
+>   set -eu
+>   command -v openssl >/dev/null
+>   jwt_secret="$(openssl rand -hex 32)"
+>   pd_secret="$(openssl rand -hex 24)"
+>   umask 077
+>   test ! -e .env || {
+>     echo ".env already exists; edit it instead of overwriting it" >&2
+>     exit 1
+>   }
+>   printf "HUGEGRAPH_ADMIN_PASSWORD='%s'\nHUGEGRAPH_AUTH_TOKEN_SECRET='%s'\nHG_PD_AUTH_SECRET_KEY='%s'\n" \
+>     'replace-with-your-password' "${jwt_secret}" "${pd_secret}" > .env
+>   HG_PD_AUTH_SECRET_KEY="${pd_secret}" ./set-hubble-pd-password.sh hstore
+>   HG_PD_AUTH_SECRET_KEY="${pd_secret}" ./set-hubble-pd-password.sh hstore-ha
+> )
+> ```
+>
+> Start HA from `docker/`. `HUGEGRAPH_VERSION=local` selects the locally built PD, Store, and Server images; Compose `pull_policy: missing` uses existing local tags first. `HUBBLE_IMAGE` still selects Hubble independently:
+>
+> ```bash
+> set -a
+> . ./.env
+> set +a
+> HUGEGRAPH_VERSION=local docker compose \
+>   -f docker-compose-3pd-3store-3server.yml \
+>   up -d --wait pd0 pd1 pd2 store0 store1 store2 server0 server1 server2 hubble
+> ```
+>
+> Generate `HG_PD_AUTH_SECRET_KEY` once for new data directories and reuse it on restart or when retaining data. Do not commit `.env` or generated `conf/hubble/*.local.properties`. Services communicate through container hostnames on the `hg-net` bridge. Server replicas need the shared JWT secret as well as the administrator password; set `HUGEGRAPH_AUTH_TOKEN_SECRET`. See the [Docker cluster guide](/docs/guides/hugegraph-docker-cluster/) and [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for all variables.
+>
+> Verify the cluster:
+> ```bash
+> curl -fsS http://localhost:8080/versions
+> curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?Load .env first}" \
+>   http://localhost:8620/v1/stores
+> ```
+>
+> Master PD `/v1/stores` requires Basic authentication; this uses the generated, loaded `HG_PD_AUTH_SECRET_KEY` as the `hg` password.
+>
+> Inspect runtime logs with `docker logs <container-name>`, such as `docker logs hg-pd0`.
+>
+> See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for variables, ports, and troubleshooting.
 
 
 #### 5.1.2 RocksDB / ToplingDB
 
 The minimal standalone flow below uses a master build and preloads sample data to verify graph reads and writes.
 
-<details>
-<summary>Expand/collapse RocksDB configuration and startup</summary>
+1. [Check Java](#21-install-java-11-jdk-11) against the master build requirements.
+2. [Build master source](#33-build-from-master-source); the commands below use its nested Server directory.
+3. [Confirm RocksDB configuration](#4-configuration), then enter the build output's nested Server directory.
+4. Initialize storage, then start the service with sample data using the commands below.
+5. Request `/versions` and sample graph vertices, and check the actual response contents.
+{.steps}
 
-
+> [!NOTE]
 > RocksDB is embedded and needs no separate deployment. GCC ≥ 4.3.0 (GLIBCXX_3.4.10) is required; upgrade first if needed.
 
 Master `conf/graphs/hugegraph.properties` already sets `backend=rocksdb` and `serializer=binary`. Keep the defaults if using default data directories; otherwise check your backend and paths before initialization.
@@ -492,13 +514,12 @@ The first response should contain `versions`; the second should contain `vertice
 
 **ToplingDB (Beta)**: A high-performance RocksDB alternative; see the [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="en">}}).
 
-</details>
-
 
 #### 5.1.3 HBase
-> [!DETAILS]- Click to expand/collapse HBase configuration and startup methods
-> > users need to install HBase by themselves, requiring version 2.0 or above,[download link](https://hbase.apache.org/downloads.html)
->
+> [!NOTE]
+> users need to install HBase by themselves, requiring version 2.0 or above,[download link](https://hbase.apache.org/downloads.html)
+
+> [!DETAILS]+ HBase configuration and startup methods
 > Update hugegraph.properties
 >
 > ```properties
@@ -534,7 +555,7 @@ The first response should contain `versions`; the second should contain `vertice
 #### 5.1.4 Create an example graph when startup
 Pass the `-p true` argument when starting the script to enable `preload`, which creates a sample graph.
 
-```
+```text
 bin/start-hugegraph.sh -p true
 Starting HugeGraphServer in daemon mode...
 Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
@@ -650,13 +671,13 @@ _explanation_
 
 1. Server can compress vertex, edge, and other list responses. Use `curl --compressed` for automatic decompression:
 
-    ```
+    ```text
     curl --compressed -fsS "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
     ```
 
 2. The default listener is `127.0.0.1`, inaccessible directly from other machines.
 
-    ```
+    ```text
     vim conf/rest-server.properties
     
     restserver.url=http://0.0.0.0:8080
@@ -669,7 +690,7 @@ _explanation_
 
 response body:
 
-```javasript
+```javascript
 {
     "vertices": [
         {

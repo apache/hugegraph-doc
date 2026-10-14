@@ -12,7 +12,7 @@
     {"path": "/docs/", "versions": ["latest", "1.7", "1.5"], "file": "docs/index.html", "contains": ["Documentation"]},
     {"path": "/cn/docs/", "versions": ["latest", "1.7", "1.5"], "file": "cn/docs/index.html", "contains": ["Documentation"]},
     {"path": "/blog/", "versions": ["latest"], "file": "blog/index.html", "contains": ["Blog"]},
-    {"path": "/cn/blog/", "versions": ["latest"], "file": "cn/blog/index.html", "contains": ["Blog"]},
+    {"path": "/cn/blog/", "versions": ["latest"], "file": "cn/blog/index.html", "contains": ["博客"]},
     {"path": "/about/", "versions": ["latest"], "file": "about/index.html", "contains": ["Apache HugeGraph"]},
     {"path": "/cn/about/", "versions": ["latest"], "file": "cn/about/index.html", "contains": ["Apache HugeGraph"]},
     {"path": "/community/", "versions": ["latest"], "file": "community/index.html", "contains": ["Community"]},

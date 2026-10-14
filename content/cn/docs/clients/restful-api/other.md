@@ -11,7 +11,7 @@ description: "Other（其他接口）REST 接口:提供版本查询、API 列表
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/versions
 ```
 
@@ -40,7 +40,7 @@ GET http://localhost:8080/versions
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/
 ```
 
@@ -86,7 +86,7 @@ GET http://localhost:8080/
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/apis
 ```
 
@@ -128,7 +128,7 @@ GET http://localhost:8080/apis
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/exception/trace
 ```
 
@@ -148,7 +148,7 @@ GET http://localhost:8080/exception/trace
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/exception/trace
 ```
 
@@ -180,7 +180,7 @@ true
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/whiteiplist
 ```
 
@@ -209,7 +209,7 @@ GET http://localhost:8080/whiteiplist
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/whiteiplist
 ```
 
@@ -253,7 +253,7 @@ POST http://localhost:8080/whiteiplist
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/whiteiplist?status=true
 ```
 
@@ -277,7 +277,7 @@ PUT http://localhost:8080/whiteiplist?status=true
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/arthas
 ```
 

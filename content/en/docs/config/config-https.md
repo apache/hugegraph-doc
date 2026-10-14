@@ -103,7 +103,7 @@ keytool -genkey -alias serverkey -keyalg RSA -keystore server.keystore
 
 During the process, fill in the description information according to your requirements. The description information for the default certificate is as follows:
 
-```
+```text
 First and Last Name: hugegraph
 Organizational Unit Name: hugegraph
 Organization Name: hugegraph

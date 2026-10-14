@@ -15,7 +15,7 @@ HugeGraph-Spark 是一个连接 HugeGraph 和 Spark GraphX 的工具，能够读
 
 HugeGraph-Spark 依赖 HugeGraph Server，安装方法见 [HugeGraph-Server 快速入门](/cn/docs/quickstart/hugegraph/hugegraph-server)。它还依赖 Spark GraphX；下面保留的旧示例使用 Apache Spark 2.1.1。
 
-```
+```text
 wget https://archive.apache.org/dist/spark/spark-2.1.1/spark-2.1.1-bin-hadoop2.7.tgz
 tar -zxvf spark-2.1.1-bin-hadoop2.7.tgz
 cd spark-2.1.1-bin-hadoop2.7
@@ -23,7 +23,7 @@ cd spark-2.1.1-bin-hadoop2.7
 
 然后将 hugegraph-spark 的 jar 包拷贝到 spark 的 jars 目录下
 
-```
+```text
 cp {dir}/hugegraph-spark-0.9.0.jar jars
 ```
 

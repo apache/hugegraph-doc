@@ -3,6 +3,7 @@ title: "Documentation"
 linkTitle: "Documentation"
 weight: 20
 outputs: [HTML, RSS, print, markdown, LLMSFULL]
+icon: fa-solid fa-book
 ---
 
 ## Apache HugeGraph 文档
@@ -21,7 +22,7 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 
 ### 生态系统一览
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Apache HugeGraph 生态                         │
 ├─────────────────────────────────────────────────────────────────┤

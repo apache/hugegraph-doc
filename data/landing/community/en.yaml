@@ -37,6 +37,7 @@ sections:
             - [Developer mailing list](/docs/contribution-guidelines/subscribe/) — discuss project and community topics.
             - [Security reporting](mailto:security@hugegraph.apache.org) and [security policy](/docs/guides/security/) — report issues and follow the project's process.
             - [Contribution guidelines](/docs/contribution-guidelines/) — learn how to contribute code and documentation.
+            - [Documentation site preview](/community/documentation/) — check the tools and preview documentation changes locally.
             - [Committer resources](https://infra.apache.org/committers.html) — ASF tools, services, and guidance for project committers.
 
   - type: cta

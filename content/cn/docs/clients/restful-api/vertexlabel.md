@@ -25,7 +25,7 @@ Params 说明
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
 ```
 
@@ -124,7 +124,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlab
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels/person?action=append
 ```
 
@@ -180,7 +180,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabe
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
 ```
 
@@ -245,7 +245,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabe
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels/person
 ```
 
@@ -288,7 +288,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabe
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels/person
 ```
 

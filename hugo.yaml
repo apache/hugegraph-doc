@@ -55,6 +55,7 @@ languages:
 taxonomies:
   tag: tags
   category: categories
+  series: series
 
 permalinks:
   blog: /:section/:year/:month/:day/:slug/
@@ -78,6 +79,9 @@ markup:
         block: true
       wrapStandAloneImageWithinParagraph: false
   highlight:
+    lineNos: true
+    guessSyntax: true
+    lineNumbersInTable: false
     noClasses: false
     style: tango
 
@@ -87,8 +91,10 @@ outputs:
   section: [HTML, RSS, print, markdown]
 
 params:
+  # Native module outlines load the local runtime only on pages with Markmap.
+  markmap: true
   description: Apache HugeGraph is a full-stack graph database ecosystem for OLTP, OLAP, and graph AI.
-  images: [/img/social/hugegraph-default.png]
+  images: [/img/social/hugegraph-apache.png]
   github_repo: https://github.com/apache/hugegraph-doc
   github_project_repo: https://github.com/apache/hugegraph
   github_branch: master
@@ -120,6 +126,9 @@ params:
   print:
     toc: true
   ui:
+    # Keep the familiar default; readers may choose the stable Paper style.
+    preset: slate
+    preset_menu: true
     theme_color: '#532fc9'
     dark_mode:
       enable: true
@@ -131,7 +140,7 @@ params:
     sidebar_menu_foldable: true
     sidebar_expand_levels: 2
     wide_nav_sections: [community]
-    sidebar_icon_policy: groups
+    sidebar_icon_policy: all
     sidebar_item_overflow: wrap
     backlinks: true
     image_zoom: true

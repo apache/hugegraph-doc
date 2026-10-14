@@ -25,7 +25,7 @@ description: "Graphs（图管理）REST 接口:管理图实例的生命周期,�
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs
 ```
 
@@ -57,7 +57,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 ```
 
@@ -93,7 +93,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_message=I%27m+sure+to+delete+all+data
 ```
 
@@ -118,7 +118,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_name=hugegraph
 ```
 
@@ -169,7 +169,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_nam
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph-xx
 ```
 
@@ -281,7 +281,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/graphA?confirm_message=I
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/profile
 ```
 
@@ -327,7 +327,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/profile
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 ```
 
@@ -365,7 +365,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/default
 ```
 
@@ -389,7 +389,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/default
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/default
 ```
 
@@ -411,7 +411,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/default
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/default
 ```
 
@@ -447,7 +447,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/default
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/manage
 ```
 
@@ -539,7 +539,7 @@ Restore 时存在两种不同的模式：Restoring 和 Merging
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 ```
 
@@ -565,13 +565,13 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 ```
 
 ##### Request Body
 
-```
+```text
 "RESTORING"
 ```
 
@@ -601,7 +601,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 ```
 
@@ -629,13 +629,13 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 ```
 
 ##### Request Body
 
-```
+```text
 "OLTP_ONLY"
 ```
 
@@ -667,7 +667,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_create
 ```
 
@@ -695,7 +695,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_create
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_resume
 ```
 
@@ -725,7 +725,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_resume
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/compact
 ```
 
@@ -769,7 +769,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/compact
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/list_peers
 ```
 
@@ -797,7 +797,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/list_peers
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/get_leader
 ```
 
@@ -819,7 +819,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/get_leader
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/transfer_leader?endpoint=127.0.0.1:8282
 ```
 
@@ -841,7 +841,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/transfer_le
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/set_leader?endpoint=127.0.0.1:8282
 ```
 
@@ -865,7 +865,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/set_leader?
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/add_peer?endpoint=127.0.0.1:8284
 ```
 
@@ -889,7 +889,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/add_peer?en
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/remove_peer?endpoint=127.0.0.1:8284
 ```
 

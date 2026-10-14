@@ -18,7 +18,7 @@ HugeGraph 提供了获取监控信息的 Metrics 接口，比如各个 Gremlin �
 
 ##### 1.1.1 Method & Url
 
-```
+```text
 http://localhost:8080/metrics/?type=json
 ```
 
@@ -443,7 +443,7 @@ http://localhost:8080/metrics/?type=json
 
 ##### 1.1.2 Method & Url
 
-```
+```text
 http://localhost:8080/metrics/
 
 ```
@@ -516,7 +516,7 @@ org_apache_hugegraph_backend_cache_Cache_schema_name_hugegraph_size 17
 
 ##### Method & Url
 
-```
+```text
 http://localhost:8080/metrics/gauges
 
 ```
@@ -703,7 +703,7 @@ http://localhost:8080/metrics/gauges
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/counters
 
 ```
@@ -779,7 +779,7 @@ GET http://localhost:8080/metrics/counters
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/gauges
 
 ```
@@ -918,7 +918,7 @@ GET http://localhost:8080/metrics/gauges
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/meters
 
 ```
@@ -980,7 +980,7 @@ GET http://localhost:8080/metrics/meters
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/timers
 
 ```
@@ -1045,7 +1045,7 @@ GET http://localhost:8080/metrics/timers
 
 ##### 2.1 Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/statistics
 ```
 
@@ -1152,7 +1152,7 @@ metrics_system_GET{name=TOTAL_REQUEST,
 
 ##### 2.2 Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/statistics?type=json
 ```
 
@@ -1224,7 +1224,7 @@ GET http://localhost:8080/metrics/statistics?type=json
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/system
 ```
 
@@ -1287,7 +1287,7 @@ hugeGraph 支持多种后端存储，后端指标包括内存、磁盘等信息�
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/backend
 ```
 

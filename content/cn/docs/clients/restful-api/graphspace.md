@@ -26,7 +26,7 @@ description: "Graphspace（图空间）REST 接口：多租户与资源隔离的
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces
 ```
 
@@ -110,7 +110,7 @@ POST http://localhost:8080/graphspaces
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces
 ```
 
@@ -141,7 +141,7 @@ GET http://localhost:8080/graphspaces
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1
 ```
 
@@ -222,7 +222,7 @@ GET http://localhost:8080/graphspaces/gs1
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/gs1
 ```
 
@@ -295,7 +295,7 @@ PUT http://localhost:8080/graphspaces/gs1
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/gs1
 ```
 
@@ -317,7 +317,7 @@ DELETE http://localhost:8080/graphspaces/gs1
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/profile
 ```
 
@@ -390,7 +390,7 @@ GET http://localhost:8080/graphspaces/profile
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/gs1/role
 ```
 
@@ -437,7 +437,7 @@ POST http://localhost:8080/graphspaces/gs1/role
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1/role?user=boss&role=analyst
 ```
 
@@ -471,7 +471,7 @@ GET http://localhost:8080/graphspaces/gs1/role?user=boss&role=analyst
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/gs1/role?user=boss&role=analyst
 ```
 
@@ -500,7 +500,7 @@ Schema 模板把一段 Gremlin schema 脚本以名称保存下来，创建图时
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/gs1/schematemplates
 ```
 
@@ -537,7 +537,7 @@ POST http://localhost:8080/graphspaces/gs1/schematemplates
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1/schematemplates
 ```
 
@@ -561,7 +561,7 @@ GET http://localhost:8080/graphspaces/gs1/schematemplates
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1/schematemplates/template1
 ```
 
@@ -577,7 +577,7 @@ GET http://localhost:8080/graphspaces/gs1/schematemplates/template1
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/gs1/schematemplates/template1
 ```
 
@@ -599,7 +599,7 @@ PUT http://localhost:8080/graphspaces/gs1/schematemplates/template1
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/gs1/schematemplates/template1
 ```
 

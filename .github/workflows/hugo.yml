@@ -276,6 +276,11 @@ jobs:
           test "$(go list -m all | wc -l)" -eq 2
           test -z "$(go list -m -f '{{ with .Replace }}{{ .Path }}{{ end }}' github.com/pgsty/oink)"
           python3 scripts/update_oink.py --check-baseline
+          # PR and push must both exercise module initialization without a
+          # restored Hugo cache, rather than treating cache hits as correctness.
+          cold_cache=$(mktemp -d "$RUNNER_TEMP/oink-cold-cache.XXXXXX")
+          trap 'rm -rf -- "$cold_cache"' EXIT
+          HUGO_CACHEDIR="$cold_cache" python3 scripts/update_oink.py --check-baseline
       - name: Select this group's immutable versions
         env:
           VERSION_IDS: ${{ toJSON(matrix.group.versions) }}

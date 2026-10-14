@@ -2,6 +2,10 @@
 date: 2025-09-30
 title: "ToplingDB YAML configuration file"
 linkTitle: "ToplingDB的YAML配置文件"
+categories: [storage]
+tags: [ToplingDB, RocksDB]
+series: [toplingdb]
+series_weight: 2
 ---
 
 RocksDB 提供了丰富的参数配置，但大多数情况下，这些配置需要通过硬编码完成。

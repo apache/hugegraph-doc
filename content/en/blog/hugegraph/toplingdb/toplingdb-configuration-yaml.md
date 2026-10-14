@@ -2,6 +2,10 @@
 date: 2025-09-30
 title: "ToplingDB YAML configuration file"
 linkTitle: "ToplingDB YAML configuration file"
+categories: [storage]
+tags: [ToplingDB, RocksDB]
+series: [toplingdb]
+series_weight: 2
 ---
 
 RocksDB provides a rich set of configuration parameters, but most of them typically require hardcoded setup.

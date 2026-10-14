@@ -2,6 +2,7 @@
 title: "HugeGraph 图计算（OLAP）"
 linkTitle: "图计算（OLAP）"
 weight: 4
+icon: fa-solid fa-diagram-project
 ---
 
 HugeGraph-Computer 仓库包含两套部署和运行方式不同的图计算系统。通用图算法任务默认建议从 Go Vermeer 开始；需要 Java BSP/Pregel 分布式计算模型时，请使用 Computer。两者都可接入 HugeGraph，但配置和作业入口不能互换。

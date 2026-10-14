@@ -59,7 +59,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabe
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabels
 ```
 
@@ -123,7 +123,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabel
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabels/personByCity
 ```
 
@@ -154,7 +154,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabel
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabels/personByCity
 ```
 
@@ -186,7 +186,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexla
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabels/personByCity?action=append
 ```
 

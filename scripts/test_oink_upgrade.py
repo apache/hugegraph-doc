@@ -8,6 +8,7 @@
 import json
 from pathlib import Path
 import tempfile
+import subprocess
 import unittest
 from unittest.mock import patch
 
@@ -51,10 +52,14 @@ class UpgradeTest(unittest.TestCase):
     def test_failed_validation_keeps_baseline(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
+            (root / "go.mod").write_text("before mod")
+            (root / "go.sum").write_text("before sum")
             baseline = root / "baseline.json"
             original = json.dumps({"version": "v1.0.0", "files": {"a": "old"}})
             baseline.write_text(original)
-            with patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), patch.object(update_oink, "prune_checksums"), \
+            with patch.object(update_oink, "ROOT", root), patch.object(update_oink, "verify_hugo_graph", return_value="verified"), \
+                 patch.object(update_oink, "prior_release", return_value={"Dir": str(root / "prior")}), \
+                 patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), patch.object(update_oink, "prune_checksums"), \
                  patch.object(update_oink, "download_locked", return_value={"Dir": d}), \
                  patch.object(update_oink, "snapshot", return_value={"a": "new"}), \
                  patch.object(update_oink.tempfile, "mkdtemp", return_value=d), \
@@ -63,12 +68,29 @@ class UpgradeTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "test failed"):
                     update_oink.main()
             self.assertEqual(baseline.read_text(), original)
+            report = json.loads((root / "review.json").read_text())
+            self.assertEqual(report["priorModuleDir"], str(root / "prior"))
+            self.assertEqual(report["targetModuleDir"], d)
+            self.assertEqual(report["changes"], [{"path": "a", "kind": "changed",
+                                                 "reason": "local override or watched upstream interface"}])
+            self.assertIn("not a list of required local edits", report["reviewMeaning"])
+            self.assertIn("v1.1.0 --resume --accept-reviewed", report["resumeCommand"])
+            (root / "go.mod").write_text("changed")
+            (root / "go.sum").write_text("changed")
+            subprocess.run(report["recoveryCommand"], shell=True, check=True)
+            self.assertEqual((root / "go.mod").read_text(), "before mod")
+            self.assertEqual((root / "go.sum").read_text(), "before sum")
 
     def test_same_target_retry_runs_gates_and_updates_baseline(self):
         with tempfile.TemporaryDirectory() as d:
-            baseline = Path(d) / "baseline.json"
+            root = Path(d)
+            (root / "go.mod").write_text("before mod")
+            (root / "go.sum").write_text("before sum")
+            baseline = root / "baseline.json"
             baseline.write_text(json.dumps({"version": "v1.1.0", "files": {"a": "same"}}))
-            with patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), patch.object(update_oink, "prune_checksums"), \
+            with patch.object(update_oink, "ROOT", root), patch.object(update_oink, "verify_hugo_graph", return_value="verified"), \
+                 patch.object(update_oink, "prior_release", return_value={"Dir": str(root / "prior")}), \
+                 patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), patch.object(update_oink, "prune_checksums"), \
                  patch.object(update_oink, "locked_version", return_value="v1.1.0"), \
                  patch.object(update_oink, "command") as command, \
                  patch.object(update_oink, "download_locked", return_value={"Dir": d}), \
@@ -84,9 +106,14 @@ class UpgradeTest(unittest.TestCase):
 
     def test_unreviewed_change_stops_before_validation(self):
         with tempfile.TemporaryDirectory() as d:
-            baseline = Path(d) / "baseline.json"
+            root = Path(d)
+            (root / "go.mod").write_text("before mod")
+            (root / "go.sum").write_text("before sum")
+            baseline = root / "baseline.json"
             baseline.write_text(json.dumps({"version": "v1.0.0", "files": {"a": "old"}}))
-            with patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), patch.object(update_oink, "prune_checksums"), \
+            with patch.object(update_oink, "ROOT", root), patch.object(update_oink, "verify_hugo_graph", return_value="verified"), \
+                 patch.object(update_oink, "prior_release", return_value={"Dir": str(root / "prior")}), \
+                 patch.object(update_oink, "BASELINE", baseline), patch.object(update_oink, "preflight"), patch.object(update_oink, "prune_checksums"), \
                  patch.object(update_oink, "download_locked", return_value={"Dir": d}), \
                  patch.object(update_oink, "snapshot", return_value={"a": "new"}), \
                  patch.object(update_oink.tempfile, "mkdtemp", return_value=d), \

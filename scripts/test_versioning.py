@@ -304,13 +304,13 @@ class VersionUrlTest(unittest.TestCase):
 
     def test_shell_static_assets_include_all_shared_resources(self) -> None:
         self.assertIn(
-            "img/social/hugegraph-default.png",
+            "img/social/hugegraph-apache.png",
             versioning.SHELL_STATIC_FILES,
         )
         self.assertTrue(
             (
                 versioning.ROOT
-                / "static/img/social/hugegraph-default.png"
+                / "static/img/social/hugegraph-apache.png"
             ).is_file()
         )
         self.assertIn("img/bootstrap-controls", versioning.SHELL_STATIC_DIRS)

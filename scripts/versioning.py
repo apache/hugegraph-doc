@@ -52,7 +52,7 @@ SHELL_CONTENT_DIRS = (
 )
 SHELL_STATIC_FILES = (
     "favicon.svg",
-    "img/social/hugegraph-default.png",
+    "img/social/hugegraph-apache.png",
 )
 SHELL_STATIC_DIRS = (
     "img/bootstrap-controls",

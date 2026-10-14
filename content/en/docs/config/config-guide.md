@@ -44,7 +44,7 @@ This example shows commonly adjusted startup options. Use the source links above
 
 The shipped `host` and `port` lines are commented out. Without explicit values, the address is `127.0.0.1:8182`. Uncomment and set these options to change the listener:
 
-```yaml {filename="conf/gremlin-server.yaml"}
+```yaml
 #host: 127.0.0.1
 #port: 8182
 evaluationTimeout: 30000

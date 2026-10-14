@@ -167,7 +167,7 @@ TEXT 是自定义分隔符的文本文件，第一行通常是标题，记录了
 
 示例如下：
 
-```
+```text
 id|name|lang|price|ISBN
 1|lop|java|328|ISBN978-7-107-18618-5
 2|ripple|java|199|ISBN978-7-100-13678-5
@@ -175,7 +175,7 @@ id|name|lang|price|ISBN
 
 CSV 是分隔符为逗号`,`的 TEXT 文件，当列值本身包含逗号时，该列值需要用双引号包起来，如：
 
-```
+```text
 marko,29,Beijing
 "li,nary",26,"Wu,han"
 ```
@@ -201,17 +201,17 @@ loader 还支持以部分关系型数据库作为数据源，目前支持 MySQL�
 
 举个例子：假设有三张表，person、software 和 created
 
-```
+```text
 // person 表结构
 id | name | age | city 
 ```
 
-```
+```text
 // software 表结构
 id | name | lang | price
 ```
 
-```
+```text
 // created 表结构
 id | p_id | s_id | date
 ```
@@ -864,18 +864,39 @@ GRAPH 输入源从另一个 HugeGraph 图（通过 HugeGraph-PD 访问）读取�
 | `--scheduler-type`                      | distributed |      | 自动创建图（如果不存在）时的任务调度器类型                                             |
 | `--batch-failure-fallback`              | true        |      | 批量插入失败时是否回退至单条插入模式                                                |
 
-> 参数少于三个时 loader 会直接打印用法并退出，因此只传 `-f struct.json` 是不够的。
+映射文件选项 `--file`（`-f`）是必填项，其他选项使用默认值。有效的最简调用为：
+
+```bash
+bin/hugegraph-loader.sh --file struct.json
+```
+
+启动脚本也支持 JCommander 原生的 `@file` 语法。在 `loader.args` 中把每个选项及其值分别写在单独一行：
+
+```text
+--file
+struct.json
+```
+
+```bash
+bin/hugegraph-loader.sh @loader.args
+```
+
+这与上面的最简调用等价。参数中的相对路径以 Loader 进程的工作目录为基准。
+若参数文件包含凭据，使用 `chmod 0600 loader.args` 把权限限制为 `0600`；`@file` 调用让这些值不出现在进程参数中。
+Loader 必须能够创建并写入以映射文件前缀命名的进度目录。
+从只读 Kubernetes ConfigMap 挂载映射文件时，先把映射复制到可写卷中再运行 Loader。
 
 ##### 3.4.2 断点续导模式
 
 通常情况下，Loader 任务都需要较长时间执行，如果因为某些原因导致导入中断进程退出，而下次希望能从中断的点继续导，这就是使用断点续导的场景。
 
-用户设置命令行参数 --incremental-mode 为 true 即打开了断点续导模式。断点续导的关键在于进度文件，导入进程退出的时候，会把退出时刻的导入进度
-记录到进度文件中，进度文件位于 `${struct}` 目录下，文件名形如 `load-progress_${timestamp}` ，${struct} 为映射文件的前缀，${timestamp} 为导入开始
+设置 `--incremental-mode` 为 `true` 即可从进度文件续导。Loader 在导入成功或正常停止后关闭时写入进度；意外失败可能阻止该写入。
+进度文件位于 `${struct}` 目录下，文件名形如 `load-progress_${timestamp}` ，${struct} 为映射文件的前缀，${timestamp} 为导入开始
 的时刻，格式为 `yyyyMMdd-HHmmss`。比如：在 `2019-10-10 12:30:30` 开始的一次导入任务，使用的映射文件为 `struct-example.json`，则进度文件的路径为与 struct-example.json 
 同级的 `struct-example/load-progress_20191010-123030`。当目录下存在多个进度文件时，续导会读取按文件名排序的最后一个，也就是最新的那个。
 
-> 注意：进度文件的生成与 --incremental-mode 是否打开无关，每次导入结束都会生成一个进度文件。
+> 注意：导入成功或正常停止（包括达到错误上限）后会写入进度文件，与 `--incremental-mode` 或 `--print-progress` 是否打开无关。
+> 意外失败导致导入中止时，可能不会写入进度文件。
 
 如果数据文件格式都是合法的，是用户自己停止（CTRL + C 或 kill，kill -9 不支持）的导入任务，也就是说没有错误记录的情况下，下一次导入只需要设置为断点续导即可。
 
@@ -1254,7 +1275,7 @@ sh bin/hugegraph-spark-loader.sh --master yarn \
 
 `bin/get-params.sh` 负责拆分命令行：只有下列参数会交给 loader，其余参数原样传给 `spark-submit`。该拆分只识别参数全称，因此 `-f`、`-g` 这类缩写不会被识别。
 
-```
+```text
 --graph --schema --host --port --username --token --protocol
 --trust-store-file --trust-store-password --clear-all-data --clear-timeout
 --incremental-mode --failure-mode --batch-insert-threads --single-insert-threads

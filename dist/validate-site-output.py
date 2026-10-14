@@ -23,6 +23,7 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 import html.parser
 import json
+import math
 import pathlib
 import re
 import urllib.parse
@@ -79,6 +80,8 @@ DOCS_NAV_GROUP_TITLES = {
     "cn": ("开始", "组件", "开发", "配置", "参考"),
 }
 EXTERNAL_ACTIVE_RESOURCE_ATTRIBUTES = {
+    ("asciinema-config", "src"),
+    ("echarts-options", "resource"),
     ("script", "src"),
     ("link", "href"),
     ("iframe", "src"),
@@ -161,17 +164,95 @@ RUNTIME_ACTIVE_URL_ATTRIBUTES = {
     "data-td-action-url",
 }
 RUNTIME_IMAGE_URL_ATTRIBUTES = {"data-td-image-zoom"}
+OINK_CONFIG_MARKERS = {"data-td-diagram-source", "data-td-echarts-options", "data-td-asciinema-config"}
 
 
-def is_inert_oink_diagram_source(tag: str, values: dict[str, str]) -> bool:
-    """Match only OINK's inert Mermaid source carrier, not authored JSON scripts."""
+def is_inert_oink_component_source(tag: str, values: dict[str, str]) -> bool:
+    """Match the exact inert JSON carriers emitted by OINK 1.2 components."""
 
-    return (
-        tag == "script"
-        and set(values) == {"type", "data-td-diagram-source"}
-        and values["type"].strip().lower() == "application/json"
-        and values["data-td-diagram-source"] == ""
-    )
+    if tag != "script" or values.get("type", "").strip().lower() != "application/json":
+        return False
+    # These templates emit only type and one empty marker. Extra attributes
+    # (including class, src and handlers) are not part of the trusted shape.
+    return any(set(values) == {"type", marker} and values[marker] == ""
+               for marker in OINK_CONFIG_MARKERS)
+
+
+# Named colours supported by the pinned ECharts/ZRender colour parser.
+ECHARTS_COLOR_NAMES = frozenset("""
+transparent aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet
+brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan
+darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred
+darksalmon darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink
+deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold
+goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush
+lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen lightgrey
+lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime
+limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen
+mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin
+navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise
+palevioletred papayawhip peachpuff peru pink plum powderblue purple red rosybrown royalblue saddlebrown salmon
+sandybrown seagreen seashell sienna silver skyblue slateblue slategray slategrey snow springgreen steelblue
+tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen
+""".split())
+
+
+def echarts_css_color(value: object) -> bool:
+    """Accept explicit colour syntax, never CSS declarations or HTML markup."""
+
+    if not isinstance(value, str):
+        return False
+    value = value.strip().lower()
+    if value in ECHARTS_COLOR_NAMES or re.fullmatch(r"#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})", value):
+        return True
+    function = re.fullmatch(r"(rgba?|hsla?)\(\s*([^()]*)\s*\)", value)
+    if not function:
+        return False
+    name, arguments = function.groups()
+    parts = [part.strip() for part in arguments.split(",")]
+    expected = 4 if name.endswith("a") else 3
+    return len(parts) == expected and all(re.fullmatch(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)%?", part) for part in parts)
+
+
+def echarts_marker_color(value: object) -> bool:
+    """Validate actual palette/style colour sources before tooltip markup."""
+
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return echarts_css_color(value) or value in {"auto", "inherit"}
+    if isinstance(value, list):
+        return all(echarts_marker_color(color) for color in value)
+    if isinstance(value, dict):
+        if isinstance(value.get("colorStops"), list):
+            return all(isinstance(stop, dict) and echarts_css_color(stop.get("color")) for stop in value["colorStops"])
+        # ECharts pattern fills accept image URLs; the resource traversal below
+        # checks that URL against the same-origin policy, including local URLs.
+        return isinstance(value.get("image"), str)
+    return False
+
+
+def finite_json_number(value: object) -> bool:
+    try:
+        return type(value) in {int, float} and math.isfinite(value)
+    except OverflowError:
+        return False
+
+
+def echarts_option_roots(payload: dict) -> list[dict]:
+    """Enumerate ECharts OptionManager's base, timeline, and media options."""
+
+    roots = [payload["baseOption"] if isinstance(payload.get("baseOption"), dict) else payload]
+    options = payload.get("options")
+    # ECharts' each() also visits object values; numeric keys can be selected
+    # by its timeline index even though the documented form is an array.
+    if isinstance(options, (list, dict)):
+        roots.extend(option for option in (options.values() if isinstance(options, dict) else options)
+                     if isinstance(option, dict))
+    if isinstance(payload.get("media"), list):
+        roots.extend(media["option"] for media in payload["media"]
+                     if isinstance(media, dict) and isinstance(media.get("option"), dict))
+    return roots
 
 
 def srcset_urls(value: str) -> list[str]:
@@ -598,6 +679,7 @@ def document_security_errors(
 ) -> list[str]:
     """Return fail-closed resource and authored-markup errors for one page."""
 
+    parser._check_markmap_sources()
     errors = [
         f"{page_name}: unsafe content markup: {violation}"
         for violation in parser.authored_violations
@@ -667,12 +749,19 @@ class DocumentParser(html.parser.HTMLParser):
         self.toc_nav_labels: list[list[str]] = []
         self.action_manifest = ""
         self._in_action_manifest = False
+        self._component_source = ""
+        self._component_json = ""
         self._content_depth = 0
         self._content_markers = [0, 0]
         self._in_content_marker = False
         self._in_style = False
         self._svg_depth = 0
         self._media_elements: list[str] = []
+        self._pre_sources: list[dict] = []
+        self._markmap_containers: list[dict] = []
+        self._markmap_sources: list[str] = []
+        self._markmap_carrier_errors: list[str] = []
+        self._markmap_checked = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         tag = tag.lower()
@@ -711,6 +800,23 @@ class DocumentParser(html.parser.HTMLParser):
                     "unexpected authored-content end marker"
                 )
             self._in_content_marker = False
+        # Runtime configOf() queries the marker on any element, not just a
+        # script. Reject every non-template carrier even outside article/main.
+        if OINK_CONFIG_MARKERS.intersection(values) and not is_inert_oink_component_source(tag, values):
+            self.authored_violations.append(f"noncanonical OINK component configuration on <{tag}>")
+        for container in self._markmap_containers:
+            if tag == container["tag"]:
+                container["depth"] += 1
+        if tag == "pre":
+            self._pre_sources.append({"source": "", "markmap": False})
+        classes = values.get("class", "").split()
+        if "language-markmap" in classes:
+            if tag == "code" and self._pre_sources:
+                self._pre_sources[-1]["markmap"] = True
+            else:
+                self._markmap_carrier_errors.append("noncanonical Markmap source carrier")
+        if "markmap" in classes:
+            self._markmap_containers.append({"tag": tag, "depth": 1, "source": ""})
         if tag == "nav" and "TableOfContents" in [
             value or "" for key, value in attrs if key.lower() == "id"
         ]:
@@ -720,7 +826,7 @@ class DocumentParser(html.parser.HTMLParser):
         if tag in {"main", "article"}:
             self._content_depth += 1
         if self._content_depth or self._in_content_marker:
-            if tag in UNSAFE_AUTHORED_ELEMENTS and not is_inert_oink_diagram_source(
+            if tag in UNSAFE_AUTHORED_ELEMENTS and not is_inert_oink_component_source(
                 tag, values
             ):
                 self.authored_violations.append(f"authored <{tag}>")
@@ -893,10 +999,21 @@ class DocumentParser(html.parser.HTMLParser):
             self.meta.append(values)
         if tag == "script" and values.get("id") == "td-action-manifest":
             self._in_action_manifest = True
+        if is_inert_oink_component_source(tag, values):
+            for marker in ("data-td-echarts-options", "data-td-asciinema-config"):
+                if marker in values:
+                    self._component_source = marker
+                    self._component_json = ""
         if tag == "style":
             self._in_style = True
 
     def handle_data(self, data: str) -> None:
+        for pre in self._pre_sources:
+            pre["source"] += data
+        for container in self._markmap_containers:
+            container["source"] += data
+        if self._component_source:
+            self._component_json += data
         if self._in_action_manifest:
             self.action_manifest += data
         if self._in_style:
@@ -905,6 +1022,20 @@ class DocumentParser(html.parser.HTMLParser):
 
     def handle_endtag(self, tag: str) -> None:
         tag = tag.lower()
+        if tag == "pre" and self._pre_sources:
+            pre = self._pre_sources.pop()
+            if pre["markmap"]:
+                self._markmap_sources.append(pre["source"])
+        for container in self._markmap_containers[:]:
+            if tag == container["tag"]:
+                container["depth"] -= 1
+                if not container["depth"]:
+                    self._markmap_sources.append(container["source"])
+                    self._markmap_containers.remove(container)
+        if tag == "script" and self._component_source:
+            self._check_component_payload()
+            self._component_source = ""
+            self._component_json = ""
         if tag == "script" and self._in_action_manifest:
             self._in_action_manifest = False
         if tag == "style":
@@ -924,6 +1055,236 @@ class DocumentParser(html.parser.HTMLParser):
                 )
         if tag in {"main", "article"} and self._content_depth:
             self._content_depth -= 1
+
+    def _check_markmap_sources(self) -> None:
+        if self._markmap_checked:
+            return
+        self._markmap_checked = True
+        # Only the native enabled runtime turns these code sources into HTML.
+        enabled = any(tag == "script" and attribute == "src" and re.search(
+            r"/(?:third_party/markmap/markmap-autoloader|js/chunks/markmap-[^/]+)[^/]*\.js$",
+            urllib.parse.urlsplit(url).path) for tag, attribute, url in self.resources)
+        if not enabled:
+            return
+        self.authored_violations.extend(self._markmap_carrier_errors)
+        for source in self._markmap_sources:
+            lines = source.splitlines()
+            if lines and lines[0].strip() == "---":
+                end = next((index for index in range(1, len(lines)) if lines[index].strip() in {"---", "..."}), None)
+                header = lines[1:end] if end is not None else lines[1:]
+                allowed = all(not line.strip() or line.lstrip().startswith("#") or
+                              re.fullmatch(r"markmap:\s*(?:#.*)?", line) or
+                              re.fullmatch(r"  spacingHorizontal:\s*(?:\d+(?:\.\d*)?|\.\d+)\s*(?:#.*)?", line)
+                              for line in header)
+                roots = sum(bool(re.fullmatch(r"markmap:\s*(?:#.*)?", line)) for line in header)
+                spacing_values = [re.match(r"  spacingHorizontal:\s*((?:\d+(?:\.\d*)?|\.\d+))", line)[1]
+                                  for line in header if re.match(r"  spacingHorizontal:\s*((?:\d+(?:\.\d*)?|\.\d+))", line)]
+                spacing_valid = all(finite_json_number(float(value)) for value in spacing_values)
+                if end is None or not allowed or roots != 1 or len(spacing_values) > 1 or not spacing_valid:
+                    self.authored_violations.append("Markmap plain-text policy permits only numeric markmap.spacingHorizontal frontmatter")
+                lines = lines[end + 1:] if end is not None else []
+            # MarkdownIt keeps inline/fenced code inert. Preserve that property
+            # instead of mistaking a displayed image example for active markup.
+            ordinary = []
+            fence = None
+            for line in lines:
+                if fence:
+                    if re.fullmatch(r" {0,3}" + re.escape(fence[0]) + "{" + str(fence[1]) + r",}\s*", line):
+                        fence = None
+                    continue
+                opening = re.match(r" {0,3}(`{3,}|~{3,})", line)
+                if opening:
+                    fence = (opening[1][0], len(opening[1]))
+                else:
+                    ordinary.append(line)
+            body = "\n".join(ordinary)
+            body = re.sub(r"(?<!`)(`+)(?!`)[\s\S]*?\1(?!`)", "", body)
+            # Consume Markdown escapes pairwise: an escaped bang/bracket is
+            # literal, while an escaped backslash followed by ![ is active.
+            body = re.sub(r"\\([!\\<>\[\]()])", " ", body)
+            if ("![" in body or re.search(r"<[A-Za-z!/][^>]*>", body) or
+                    re.search(r"\[[^\]\n]*\]\s*(?:\(|\[)", body) or
+                    re.search(r"(?m)^ {0,3}\[[^\]\n]+\]:", body)):
+                self.authored_violations.append("Markmap is limited to plain-text outlines; images, links and raw HTML are forbidden")
+
+    def _check_component_payload(self) -> None:
+        try:
+            payload = json.loads(self._component_json)
+        except (ValueError, RecursionError):
+            self.authored_violations.append("invalid OINK component JSON payload")
+            return
+        if not isinstance(payload, dict):
+            self.authored_violations.append("OINK component JSON payload must be an object")
+            return
+        if self._component_source == "data-td-asciinema-config":
+            # Trust only the shortcode schema, not the player's much broader
+            # API (audioUrl, custom drivers, etc. can initiate other requests).
+            option_keys = {"autoPlay", "fit", "loop", "preload", "speed", "startAt", "poster", "cols", "rows",
+                           "idleTimeLimit", "pauseOnMarkers", "markers"}
+            options = payload.get("options")
+            if (set(payload) != {"src", "theme", "options"} or not isinstance(payload.get("theme"), str)
+                    or not isinstance(options, dict) or set(options) - option_keys):
+                self.authored_violations.append("Asciinema JSON payload does not match the OINK shortcode schema")
+                return
+            for key, value in options.items():
+                valid = True
+                if key in {"autoPlay", "loop", "preload", "pauseOnMarkers"}:
+                    valid = isinstance(value, bool)
+                elif key == "fit":
+                    valid = isinstance(value, str) and value in {"width", "height", "both", "none"}
+                elif key in {"cols", "rows"}:
+                    valid = type(value) is int and value > 0
+                elif key in {"speed", "startAt", "idleTimeLimit"}:
+                    valid = type(value) in {int, float} and value >= 0 and (key != "speed" or value > 0)
+                elif key == "poster":
+                    # The pinned player _parsePoster accepts terminal text or a
+                    # recording timestamp; it does not load an image/URL.
+                    valid = isinstance(value, str) and value.startswith(("npt:", "data:text/plain,"))
+                elif key == "markers":
+                    # Hugo append flattens the shortcode's [time, label] slices.
+                    valid = (isinstance(value, list) and len(value) % 2 == 0 and
+                             all(type(value[index]) in {int, float} and value[index] >= 0 and
+                                 isinstance(value[index + 1], str) for index in range(0, len(value), 2)))
+                if not valid:
+                    self.authored_violations.append(f"invalid Asciinema shortcode option: {key}")
+            source = payload.get("src")
+            if not isinstance(source, str) or not source:
+                self.authored_violations.append("Asciinema JSON payload requires a source URL")
+            else:
+                self.resources.append(("asciinema-config", "src", source))
+                self.urls.append(("src", source))
+            return
+        # Match ECharts 6.1 sinks by option path. Arbitrary dataset columns
+        # (including names such as url/image/formatter) remain inert data.
+        pending = [((), option) for option in echarts_option_roots(payload)]
+        while pending:
+            path, value = pending.pop()
+            if path[:1] == ("dataset",) and "source" in path:
+                continue
+            option_path = tuple(part for part in path if part != "[]")
+            text_style_sink = option_path[-3:-1] == ("tooltip", "textStyle") or (option_path[:1] == ("textStyle",) and len(option_path) == 2)
+            # Series/item string tooltip shorthand becomes {formatter: value}
+            # in ECharts' model; dataset columns were excluded above.
+            if option_path[:1] == ("series",) and option_path[-1:] == ("tooltip",) and isinstance(value, str):
+                self._check_component_html(value)
+                continue
+            marker_color_sink = option_path in {
+                ("color",), ("colorLayer",), ("series", "color"), ("series", "colorLayer"),
+                ("visualMap", "inRange", "color"), ("visualMap", "outOfRange", "color"), ("visualMap", "pieces", "color"),
+            } or (option_path[:1] == ("series",) and option_path[-2:] in {("itemStyle", "color"), ("lineStyle", "color")})
+            if marker_color_sink and not echarts_marker_color(value):
+                self.authored_violations.append("invalid ECharts tooltip marker colour: " + ".".join(option_path))
+                continue
+            color_sink = option_path[-2:] in {
+                ("tooltip", "backgroundColor"), ("tooltip", "borderColor"), ("tooltip", "defaultBorderColor"), ("tooltip", "shadowColor"),
+            } or (text_style_sink and option_path[-1] in {"color", "textShadowColor"}) or option_path in {
+                ("toolbox", "feature", "dataView", "buttonColor"),
+                ("toolbox", "feature", "dataView", "buttonTextColor"),
+            }
+            if color_sink and value is not None:
+                # Tooltip border gradients use their first stop via Nf(). A
+                # background gradient becomes inert [object Object] in HTML.
+                gradient = (isinstance(value, dict) and isinstance(value.get("colorStops"), list) and
+                            all(isinstance(stop, dict) and echarts_css_color(stop.get("color"))
+                                for stop in value["colorStops"]))
+                if not echarts_css_color(value) and not gradient:
+                    self.authored_violations.append("invalid ECharts CSS colour: " + ".".join(option_path))
+                    continue
+            # NY() constructs tooltip cssText from these numeric and font
+            # fields. Apply their declared types before browser coercion.
+            tooltip_number = option_path[-2:] in {
+                ("tooltip", key) for key in ("shadowBlur", "shadowOffsetX", "shadowOffsetY", "borderWidth", "borderRadius", "padding")
+            } or (text_style_sink and option_path[-1] in {
+                "fontSize", "lineHeight", "textShadowBlur", "textShadowOffsetX", "textShadowOffsetY"
+            })
+            if tooltip_number and value is not None:
+                numbers = value if isinstance(value, list) and option_path[-1] in {"padding", "borderRadius"} else [value]
+                if not numbers or not all(finite_json_number(number) for number in numbers):
+                    self.authored_violations.append("ECharts tooltip CSS number must be finite: " + ".".join(option_path))
+                    continue
+            if text_style_sink and value is not None:
+                key = option_path[-1]
+                font_valid = True
+                if key == "fontFamily":
+                    # Match quoted families or identifier-word families, not
+                    # arbitrary CSS text; supports Unicode family names.
+                    family = r"(?:[\w+-]+(?:[ ]+[\w+-]+)*|'[\w +\-]+'|\"[\w +\-]+\")"
+                    font_valid = isinstance(value, str) and bool(re.fullmatch(family + r"(?:\s*,\s*" + family + r")*", value.strip()))
+                elif key == "fontStyle":
+                    font_valid = isinstance(value, str) and value in {"normal", "italic", "oblique"}
+                elif key == "fontWeight":
+                    font_valid = ((finite_json_number(value)) or
+                                  (isinstance(value, str) and (value in {"normal", "bold", "bolder", "lighter"} or
+                                                            bool(re.fullmatch(r"(?:[1-9][0-9]{0,2}|1000)", value)))))
+                elif key == "decoration":
+                    font_valid = isinstance(value, str) and value in {"none", "underline", "overline", "line-through"}
+                elif key == "align":
+                    font_valid = isinstance(value, str) and value in {"left", "right", "center", "justify", "start", "end"}
+                if not font_valid:
+                    self.authored_violations.append("invalid ECharts tooltip CSS font option: " + ".".join(option_path))
+                    continue
+            navigation_sink = ((option_path[:1] == ("title",) and option_path[-1:] in {("link",), ("sublink",)}) or
+                               (option_path[:1] == ("series",) and "data" in path and option_path[-1:] == ("link",)))
+            string_sink = navigation_sink or option_path[-2:] in {
+                ("tooltip", "formatter"), ("tooltip", "extraCssText"),
+            } or option_path == ("toolbox", "feature", "dataView", "title")
+            if option_path == ("toolbox", "feature", "saveAsImage", "lang"):
+                # Its legacy fallback interpolates lang into an HTML attribute.
+                self.authored_violations.append("custom ECharts saveAsImage.lang is unsupported")
+                continue
+            if option_path == ("toolbox", "feature", "dataView", "lang") and "[]" not in path[-1:]:
+                if not isinstance(value, list) or not all(isinstance(label, str) for label in value):
+                    self.authored_violations.append("ECharts dataView.lang requires a list of strings")
+                    continue
+            # Browser DOM APIs coerce arrays/objects to strings. Do not let an
+            # alternate JSON type bypass checks at a known string-valued sink.
+            if string_sink and not isinstance(value, str):
+                self.authored_violations.append("ECharts string option requires a string: " + ".".join(option_path))
+                continue
+            if isinstance(value, dict):
+                pending.extend((path + (key,), child) for key, child in value.items()
+                               if path or key not in {"baseOption", "options", "media"})
+            elif isinstance(value, list):
+                pending.extend((path + ("[]",), child) for child in value)
+            elif isinstance(value, str):
+                key = option_path[-1]
+                resource = None
+                if key in {"symbol", "icon"} and value.startswith("image://"):
+                    resource = value[len("image://"):]
+                elif key == "image" and ("graphic" in path or any(part in path for part in {"backgroundColor", "color", "fill", "stroke"})):
+                    resource = value
+                if resource:
+                    self.resources.append(("echarts-options", "resource", resource))
+                    self.urls.append(("src", resource))
+                if navigation_sink:
+                    self.navigation_urls.append(("a", "href", value))
+                    self.urls.append(("href", value))
+                if option_path[-2:] == ("tooltip", "extraCssText"):
+                    self.inline_css_sources.append(value)
+                    self.inline_css_http_resources.extend(css_http_resources(value))
+                html_sink = option_path[-2:] == ("tooltip", "formatter") or option_path in {
+                    ("toolbox", "feature", "dataView", "lang"),
+                    ("toolbox", "feature", "dataView", "title"),
+                }
+                if html_sink:
+                    self._check_component_html(value)
+
+    def _check_component_html(self, value: str) -> None:
+        if "data-hg-authored-content" in value.lower():
+            self.authored_violations.append("ECharts HTML cannot contain authored-content markers")
+        fragment = DocumentParser()
+        fragment.feed('<template data-hg-authored-content="start"></template>' + value +
+                      '<template data-hg-authored-content="end"></template>')
+        self.authored_violations.extend(fragment.authored_violations)
+        if fragment._content_markers[0] != fragment._content_markers[1]:
+            self.authored_violations.append("unbalanced ECharts HTML content markers")
+        self.resources.extend(fragment.resources)
+        self.urls.extend(fragment.urls)
+        self.navigation_urls.extend(fragment.navigation_urls)
+        self.resources.extend(("echarts-options", "resource", resource) for _, _, resource in fragment.image_urls)
+        self.image_urls.extend(fragment.image_urls)
+        self.inline_css_sources.extend(fragment.inline_css_sources)
+        self.inline_css_http_resources.extend(fragment.inline_css_http_resources)
 
 
 def output_path(root: pathlib.Path, url_path: str) -> pathlib.Path:

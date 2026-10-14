@@ -221,6 +221,14 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `thread.pool.scan.max` | `1000` | 扫描最大线程数。 |
 | `thread.pool.scan.queue` | `0` | 扫描任务队列容量。 |
 
+**gRPC 回调队列（1.8.0）**
+
+Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或完成通知，导致请求无法正常结束。`thread.pool.grpc.queue` 仍可写在配置中，但不再限制这个队列的容量。
+
+`thread.pool.grpc.core` 和 `thread.pool.grpc.max` 仍用于配置线程池。由于回调可以继续排队，积压通常不会触发线程数从 `core` 增长到 `max`；只增大 `max` 无法提高回调处理能力。
+
+持续过载仍会使队列积压并增加内存占用。应限制客户端并发，并根据节点资源调整扫描和查询工作线程池；不要依赖 `thread.pool.grpc.queue` 限流。1.7.0 仍使用配置的 gRPC 队列容量。
+
 **查询下推**
 
 | 配置项 | 代码默认值 | 说明 |
@@ -305,7 +313,7 @@ JVM 内存方面，如果没有自行设置 `JAVA_OPTIONS`：`-Xms512m`，`-Xmx`
 
 启动成功后，可以在 `logs/hugegraph-store-server.log` 中看到类似以下的日志：
 
-```
+```text
 YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
 ```
 

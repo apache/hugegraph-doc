@@ -26,7 +26,7 @@ This REST proxy cannot reliably carry a JSON-braced `aliases` parameter in GET q
 
 ##### Method & Url
 
-```
+```text
 curl --compressed --get \
   --data-urlencode "gremlin=1+1" \
   http://127.0.0.1:8080/gremlin
@@ -138,7 +138,7 @@ Edge IDs, endpoints, and properties depend on current graph data.
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/gremlin
 ```
 

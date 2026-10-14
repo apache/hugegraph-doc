@@ -85,13 +85,19 @@ test("theme follows the system until an explicit preference is saved", async ({ 
   await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
   await page.emulateMedia({ colorScheme: "light" });
   await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "light");
-  await page.locator("[data-td-theme-toggle]").first().click();
+  await page.locator('[data-td-appearance-trigger][aria-controls="td-appearance-navbar"]').click();
+  await page.locator('#td-appearance-navbar [data-bs-theme-value="dark"]').locator('..').click();
   await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
-  await page.evaluate(() => window.OinkActions.run("switch_theme", { value: "auto" }));
+  await page.locator('[data-td-appearance-trigger][aria-controls="td-appearance-navbar"]').click();
+  await page.locator('#td-appearance-navbar [data-bs-theme-value="auto"]').locator('..').click();
   await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "light");
   await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
+  await page.evaluate(() => window.OinkActions.run("switch_theme", { value: "light" }));
+  await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "light");
+  await page.evaluate(() => window.OinkActions.run("switch_theme", { value: "auto" }));
   await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
 });
 

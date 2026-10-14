@@ -24,7 +24,7 @@ Params Explanation
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels
 ```
 
@@ -133,7 +133,7 @@ Additionally, when the edge has a property called "createdTime" and you want to 
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels/created?action=append
 ```
 
@@ -186,7 +186,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels
 ```
 
@@ -248,7 +248,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels/created
 ```
 
@@ -291,7 +291,7 @@ Deleting an EdgeLabel will result in the deletion of corresponding edges and rel
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels/created
 ```
 

@@ -37,6 +37,7 @@ sections:
             - [开发者邮件列表](/cn/docs/contribution-guidelines/subscribe/) — 讨论项目开发和社区事务。
             - [安全报告](mailto:security@hugegraph.apache.org) 与 [安全策略](/cn/docs/guides/security/) — 私下报告安全问题并了解处理流程。
             - [贡献指南](/cn/docs/contribution-guidelines/) — 了解如何贡献代码和文档。
+            - [文档站本地预览](/cn/community/documentation/) — 检查工具链并在本地预览文档修改。
             - [Committer 资源](https://infra.apache.org/committers.html) — 了解面向 Apache Committers 的 ASF 工具、服务与指引。
 
   - type: markdown

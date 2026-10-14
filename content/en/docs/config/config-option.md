@@ -341,7 +341,8 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > conflicting values produce a warning. The response still uses the camelCase Arthas agent keys.
 > HTTP activation requires authentication to be enabled and the caller to be an authenticated administrator. It returns `403` without
 > authentication enabled, including requests from loopback or a proxy. No extra Arthas enable switch is required. MCP is disabled.
-> The bundled `bin/arthas.sh` provides local diagnostics without changing these settings or restarting the JVM; its ports are independent.
+> The bundled `bin/arthas.sh` provides local diagnostics without changing these settings or restarting the JVM. A new agent uses the helper
+> defaults; an already active agent retains its existing settings.
 
 > [!DETAILS]- **RPC Server Config Options**
 > Corresponding configuration file `rest-server.properties`

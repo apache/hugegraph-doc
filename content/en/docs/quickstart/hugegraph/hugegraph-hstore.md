@@ -280,17 +280,8 @@ The helper reads `bin/pid`, requires JDK 17, and uses the bundled agent offline.
 For a newly attached agent, it binds telnet to `127.0.0.1:3658` with HTTP and MCP disabled. For multiple processes on one host, use
 `bin/arthas.sh --pid <PID> --telnet-port 3659`. See [local diagnostics](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
-The Store Arthas configuration remains available with loopback as its default bind address. These settings do not re-enable HTTP activation
-or override the helper's independent port choices:
-
-| Key | Code default | Meaning |
-|-----|--------------|---------|
-| `arthas.telnet_port` | `8566` | Configured Arthas telnet port. |
-| `arthas.http_port` | `8565` | Configured Arthas HTTP port. |
-| `arthas.ip` | `127.0.0.1` | Arthas bind address. |
-| `arthas.disabled_commands` | `jad` | Arthas commands to disable. |
-
-Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain fallback aliases. Explicit snake_case values win.
+Legacy Store Arthas configuration fields remain stored for compatibility; they do not activate an agent or configure the local helper.
+The helper uses the bundled `lib/arthas` files and enforces loopback independently. An already active agent retains its existing settings.
 Keep diagnostic ports off reverse proxies and container port mappings.
 
 #### 4.4 Per-node changes

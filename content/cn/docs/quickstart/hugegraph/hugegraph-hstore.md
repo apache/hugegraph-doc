@@ -276,16 +276,8 @@ bin/arthas.sh
 新激活代理时，Telnet 固定监听 `127.0.0.1:3658`，HTTP 和 MCP 均禁用。同机多进程时可指定 `--pid <PID> --telnet-port 3659`。
 参见[本地诊断](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)。
 
-Store 的 Arthas 配置仍保留，默认监听 loopback。这些配置不会重新开启 HTTP 激活，也不覆盖本地脚本独立设置的端口：
-
-| 配置项 | 代码默认值 | 说明 |
-|--------|------------|------|
-| `arthas.telnet_port` | `8566` | 配置的 Arthas telnet 端口。 |
-| `arthas.http_port` | `8565` | 配置的 Arthas HTTP 端口。 |
-| `arthas.ip` | `127.0.0.1` | Arthas 监听地址。 |
-| `arthas.disabled_commands` | `jad` | 需要禁用的 Arthas 命令。 |
-
-旧名称 `arthas.telnetPort`、`arthas.httpPort` 和 `arthas.disabledCommands` 仍可作为回退项。显式设置的 snake_case 值优先。
+Store 的旧 Arthas 配置字段仅为兼容保留，不会激活代理，也不控制本地脚本。
+脚本使用发行包内的 `lib/arthas` 文件，并独立限制为 loopback。已有代理保留当前配置。
 不要通过反向代理或容器端口映射暴露诊断端口。
 
 #### 4.4 各节点需要区分的配置

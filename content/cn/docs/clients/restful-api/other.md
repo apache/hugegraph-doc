@@ -277,7 +277,7 @@ PUT http://localhost:8080/whiteiplist?status=true
 
 > [!IMPORTANT]
 > **安全诊断要求**
-> - **仅监听本地 Loopback**：Arthas 默认且仅允许监听 `127.0.0.1`。Server 拒绝非 loopback 地址（如 `0.0.0.0`），严禁通过反向代理或容器端口映射对外暴露。
+> - **仅监听本地 Loopback**：Arthas 默认监听 `127.0.0.1`，且仅允许 loopback 地址。Server 拒绝非 loopback 地址（如 `0.0.0.0`），严禁通过反向代理或容器端口映射对外暴露。
 > - **管理员权限限制**：HTTP API 激活要求 Server 已开启鉴权，且必须具备管理员权限；未开启鉴权时直接返回 `403`。
 > - **免重启本地诊断**：推荐直接在主机上使用服务进程所属的 OS 用户运行 `bin/arthas.sh`，无需修改配置或重启 JVM。
 
@@ -307,6 +307,19 @@ curl --user admin -X PUT http://127.0.0.1:8080/arthas
 # 3. 使用本地脚本连接已有代理
 bin/arthas.sh --telnet-port 8562
 ```
+
+脚本默认读取 `bin/pid`，需要 JDK 17。两个发行包均在 `lib/arthas` 内提供代理文件，无需下载、运行时解压或持久化的用户缓存。
+新激活代理时，telnet 默认监听 `127.0.0.1:3658`，HTTP、MCP 和 tunnel 连接均禁用。
+
+已有代理保留当前监听配置。请使用原 telnet 端口连接，脚本不会重新绑定端口或关闭已有的 HTTP 监听。
+如需从 Server API 默认配置切换为本地脚本默认配置，先只停止 Arthas，再重新挂载：
+
+```bash
+bin/arthas.sh --telnet-port 8562 --command stop
+bin/arthas.sh
+```
+
+若配置了其他 telnet 端口，请将 `8562` 替换为实际值。服务 JVM 持续运行，无需重启。
 
 ##### HTTP 响应体示例
 

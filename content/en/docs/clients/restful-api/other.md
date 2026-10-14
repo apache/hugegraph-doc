@@ -277,8 +277,8 @@ Starting with HugeGraph 1.8.0, Server and Store bundle Arthas 4.1.5 (PD does not
 
 > [!IMPORTANT]
 > **Security Requirements for Diagnostics**
-> - **Loopback Only**: Arthas binds exclusively to `127.0.0.1`. Non-loopback addresses (such as `0.0.0.0`) are rejected, and diagnostic ports must
->   not be exposed via reverse proxies or container port mappings.
+> - **Loopback Only**: Arthas defaults to `127.0.0.1` and accepts only loopback addresses. Non-loopback addresses (such as `0.0.0.0`) are rejected.
+>   Diagnostic ports must not be exposed via reverse proxies or container port mappings.
 > - **Administrator Privilege**: HTTP API activation requires authentication to be enabled on Server with administrator privileges;
 >   requests without authentication enabled return `403`.
 > - **Offline Local Diagnostics**: For routine troubleshooting, run `bin/arthas.sh` on the host as the service OS user without restarting
@@ -310,6 +310,20 @@ curl --user admin -X PUT http://127.0.0.1:8080/arthas
 # 3. Connect to the active agent using the local helper
 bin/arthas.sh --telnet-port 8562
 ```
+
+The helper reads `bin/pid` by default and requires JDK 17. Both distributions include the agent files in `lib/arthas`, so no download,
+runtime extraction, or persistent user cache is needed. For a newly activated agent, telnet defaults to `127.0.0.1:3658`; HTTP, MCP,
+and tunnel connections are disabled.
+
+An already active agent retains its listener settings. Connect on its current telnet port; the helper does not rebind it or disable an
+existing HTTP listener. To switch from the Server API defaults to the local helper defaults, stop only Arthas and attach again:
+
+```bash
+bin/arthas.sh --telnet-port 8562 --command stop
+bin/arthas.sh
+```
+
+Use the configured telnet port if it differs from `8562`. The service JVM keeps running.
 
 ##### HTTP Response Body
 

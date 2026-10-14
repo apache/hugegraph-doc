@@ -94,6 +94,12 @@ API 测试夹具使用强类型 Schema，并为 `city` 建立 `SECONDARY` 索引
 而同一标签上的单顶点 `CREATE` 成功。在 `PRIMARY_KEY` Schema 上，请将两条 `CREATE` 语句分开执行，或对该形式使用
 `AUTOMATIC` id 策略。
 
+指南中有两个示例依赖 Schema。范围谓词查询（`WHERE n.age > 30`）需要上文夹具 Schema 中声明的 `age` 上的 `RANGE` 索引；
+`scripts/example.groovy` 的 Schema 只为 `person` 建了 `SECONDARY` 索引（`city`，以及 `age` 与 `city` 的组合），
+因此在那里对 `age` 做范围比较会被拒绝并报“未建索引”错误，直到建立 `RANGE` 索引。创建、更新和删除示例随后改名为
+`alice`、`bob` 和 `carol`，因为 `scripts/example.groovy` 已预置 `marko`、`vadas`、`josh` 和 `peter`，而在 `PRIMARY_KEY` 标签上
+用预置名字执行 `CREATE` 会替换该顶点；改名只改动数据取值，没有作为单独的验证重新运行。
+
 独立代码改动位于 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289)，该 PR 已于 2026-10-08 合入 Apache `master`，合入提交为
 [`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb)；上文的验证记录直接描述该合入后的提交，
 合入前验证的基线为

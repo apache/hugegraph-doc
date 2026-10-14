@@ -20,7 +20,7 @@ development-tree verification record and
 | Neo4j concept | HugeGraph equivalent |
 |---|---|
 | Property graph model (nodes / relationships / properties) | Same — vertex labels / edge labels / properties |
-| Core Cypher: `MATCH`/`WHERE`/`RETURN`/`CREATE`/`SET`/`DELETE` | Works as-is (REST `/cypher` endpoint or Java client `CypherManager`) |
+| Core Cypher: `MATCH`/`WHERE`/`RETURN`/`CREATE`/`SET`/`DELETE` | Works as-is (REST `/cypher` endpoint or Java client `CypherManager`), subject to the schema and index rules below |
 | Simple aggregations (`count`/`sum`/`min`/`max`/`avg`) | Works as-is |
 | Traversal-heavy queries | Gremlin traversals or the [traverser REST APIs](/docs/clients/restful-api/traverser/) (k-out, shortest path, personalrank, ...) |
 
@@ -30,7 +30,8 @@ development-tree verification record and
 |---|---|
 | `CREATE INDEX` / `CREATE CONSTRAINT` | Create indexes/constraints through the [IndexLabel REST API](/docs/clients/restful-api/indexlabel/); Cypher carries no DDL |
 | Implicit schema (add properties freely) | **Strong schema**: define VertexLabel / EdgeLabel / PropertyKey before writing data |
-| Parameterized queries `$param` | Released versions send the raw statement only — a missing binding is inlined as `null` instead of failing (a predicate on it matches no rows), so validate values client-side; JSON-bound parameters are available on `master` after [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), with a fixed limit of 16 top-level bindings |
+| Property predicates in `WHERE` need no index | A `WHERE` predicate on a property must be covered by an index: create a `SECONDARY` or `RANGE` IndexLabel first, and use `RANGE` for comparisons such as `>` or `<`. Without a covering index the request returns `status.code` 400 with a "not indexed" error |
+| Parameterized queries `$param` | Released versions send the raw statement only — a missing binding is inlined as `null` instead of failing (a predicate on it matches no rows, and a write does not reliably store `null`: `SET` removes the property, `CREATE` can store the marker string `"  cypher.null"` or fail), so validate values client-side; JSON-bound parameters are available on `master` after [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), with a fixed limit of 16 top-level bindings |
 | `CALL dbms.*` / `CALL algo.*` procedures | Equivalent capabilities live in the [traverser](/docs/clients/restful-api/traverser/), [task](/docs/clients/restful-api/task/), and other REST APIs |
 | Driver: Neo4j Bolt driver | [hugegraph-client](/docs/clients/hugegraph-client/) (`CypherManager`) or any HTTP client |
 | Transaction boundaries inside a Cypher statement | One statement per request; graph-to-graph data migration uses [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/) (preferred — see below), file-based bulk loads use the [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/) |
@@ -70,12 +71,22 @@ The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound re
      and migration workflows.
 
    Map Neo4j properties to HugeGraph PropertyKeys and pick the vertex ID strategy
-   before importing: use `idStrategy = "PRIMARY_KEY"` with a Neo4j business key in
-   `idFields` and express edge endpoints through those same key fields, or
-   `idStrategy = "CUSTOMIZE_STRING"` to keep the Neo4j node id. Labels you
-   pre-created in step 2 must use that same strategy — automatic creation does not
-   convert an existing `PRIMARY_KEY` label into `CUSTOMIZE_STRING` — and step 2 is
-   optional when the Sink `mappings` configuration creates the schema. Load vertices
+   before importing. The Sink requires `idFields` for every vertex strategy other than
+   `AUTOMATIC`, and edge mappings need separate `sourceConfig.idFields` and
+   `targetConfig.idFields`, so the Neo4j query must return the field that carries the ID:
+   - `idStrategy = "PRIMARY_KEY"`: put a Neo4j business key in `idFields` and express edge
+     endpoints through those same key fields.
+   - `idStrategy = "CUSTOMIZE_STRING"`: this alone does not keep the Neo4j node id. Make the
+     Neo4j query return the id you want to keep as its own column (aliased, for example `AS node_id`),
+     declare that field in the Source `schema.fields` (it must match the fields the query
+     returns), set the vertex `idFields` to it, and map the matching edge endpoint fields
+     in `sourceConfig.idFields` and `targetConfig.idFields`.
+
+   Labels you pre-created in step 2 must use that same strategy — automatic creation does not
+   convert an existing `PRIMARY_KEY` label into `CUSTOMIZE_STRING`. The Sink `mappings`
+   configuration can create the missing PropertyKey, VertexLabel and EdgeLabel definitions, so
+   those three parts of step 2 are optional when you use it; it does not create IndexLabels, so
+   create any index your queries rely on (see the habits table above) separately. Load vertices
    before edges. These capabilities are
    documented, but a complete Neo4j → HugeGraph migration has not been run end-to-end here —
    validate examples against your own data before treating them as tested.

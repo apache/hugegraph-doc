@@ -106,6 +106,13 @@ three forms. The two-vertex shorthand `CREATE (a)-[:knows]->(b)` was verified in
 execution error reporting that the primary keys must be set, while single-vertex `CREATE` on that label succeeds.
 On `PRIMARY_KEY` schemas, issue the two `CREATE` statements separately or use the `AUTOMATIC` id strategy for this form.
 
+Two guide examples depend on the schema. The range-predicate read (`WHERE n.age > 30`) needs the `RANGE` index on `age`
+declared in the fixture schema above; the `scripts/example.groovy` schema has only `SECONDARY` indexes on `person`
+(`city`, and `age` with `city`), so a range comparison on `age` there is rejected with a "not indexed" error until a
+`RANGE` index exists. The create, update and delete examples were renamed afterwards to `alice`, `bob` and `carol` because
+`scripts/example.groovy` already seeds `marko`, `vadas`, `josh` and `peter`, and on a `PRIMARY_KEY` label a `CREATE` with a seeded
+name replaces that vertex; the rename changes only data values and was not run as a separate verification.
+
 The standalone code change is in [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289),
 which was merged into Apache `master` on 2026-10-08 as
 [`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb);

@@ -47,8 +47,14 @@ ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.nam
 ### 基础示例
 
 以下示例假设图中存在 `person` 顶点（`name`、`age`、`city` 属性）和 `knows` 边，并假设标签
-声明了 `person` 上的 `nullableKeys("age", "city")` 以及 `knows` 上的可空属性——例如在
-`scripts/example.groovy` 的 Schema 上补充这些可空键。若 Schema 未声明（已发布的默认 Schema 把
+声明了 `person` 上的 `nullableKeys("age", "city")` 以及 `knows` 上的可空属性，并且 `person.age` 上有 `RANGE` 索引——例如在
+`scripts/example.groovy` 的 Schema 上补充这些可空键，再加上
+`schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create()`。`WHERE` 中的属性谓词必须有索引覆盖：
+`scripts/example.groovy` 只为 `person.city` 以及 `(age, city)` 建了 `SECONDARY` 索引，因此在 `RANGE` 索引存在之前，
+`n.age > 30` 这类范围比较会被拒绝并报“未建索引”错误。
+若先加载 `scripts/example.groovy`，请注意它已经预置了 `person` 顶点 `marko`、`vadas`、`josh` 和 `peter`；
+由于 `person` 标签使用 `PRIMARY_KEY` id 策略，用这些名字执行 `CREATE` 会替换预置顶点，
+因此下面的创建、更新和删除示例使用示例数据中不存在的名字（`alice`、`bob`、`carol`），或请在空图上执行。若 Schema 未声明可空键（已发布的默认 Schema 把
 `person` 的 `age`、`city` 标记为非空），下面的创建与更新示例会触发非空属性校验失败：请在每条语句中
 为所有非空属性赋值，或先以 `nullableKeys` 声明标签。若 `person` 标签使用 `PRIMARY_KEY` id 策略（`scripts/example.groovy` 即如此），双顶点简写
 `CREATE (a)-[:knows]->(b)` 会被拒绝并返回执行错误（提示必须设置主键；在已合入
@@ -82,22 +88,22 @@ RETURN b.name AS friend
 
 ```cypher
 // 创建顶点
-CREATE (n:person {name: 'josh', age: 32, city: 'beijing'})
+CREATE (n:person {name: 'alice', age: 32, city: 'beijing'})
 ```
 
 ```cypher
 // 先创建两个顶点，再创建它们之间的边（每条语句单独作为一次请求发送）
-CREATE (:person {name: 'peter'})
-CREATE (:person {name: 'lop'})
+CREATE (:person {name: 'bob'})
+CREATE (:person {name: 'carol'})
 MATCH (a:person), (b:person)
-WHERE a.name = 'peter' AND b.name = 'lop'
+WHERE a.name = 'bob' AND b.name = 'carol'
 CREATE (a)-[:knows]->(b)
 ```
 
 #### 更新 — SET / REMOVE
 
 ```cypher
-MATCH (n:person) WHERE n.name = 'josh'
+MATCH (n:person) WHERE n.name = 'alice'
 SET n.age = 33
 REMOVE n.city
 ```
@@ -107,13 +113,13 @@ REMOVE n.city
 ```cypher
 // 删除边
 MATCH (a:person)-[r:knows]->(b:person)
-WHERE a.name = 'peter' AND b.name = 'lop'
+WHERE a.name = 'bob' AND b.name = 'carol'
 DELETE r
 ```
 
 ```cypher
 // 删除顶点及其所有边
-MATCH (n:person) WHERE n.name = 'josh'
+MATCH (n:person) WHERE n.name = 'alice'
 DETACH DELETE n
 ```
 
@@ -147,7 +153,7 @@ MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
 
 HugeGraph 的 Cypher 能力受转译层约束，该层基于 openCypher 9 时代的工具链。已知缺口：
 
-- **已发布版本不支持参数化查询** —— API 只接受原始语句字符串。使用 `$param` 的语句不会报错：缺失的绑定会被内联为 `null`，结果取决于表达式：`WHERE n.name = $name` 这类谓词匹配不到行，`RETURN $value AS value` 仍会返回一行 `null`，写入时则会写入 null 值。请在客户端先对值做转义/净化再拼接到语句中。在合入 [#3289](https://github.com/apache/hugegraph/pull/3289) 后的
+- **已发布版本不支持参数化查询** —— API 只接受原始语句字符串。使用 `$param` 的语句不会报错：缺失的绑定会被内联为 `null`，结果取决于表达式：`WHERE n.name = $name` 这类谓词匹配不到行，`RETURN $value AS value` 仍会返回一行 `null`。缺失绑定的写入并不能可靠地存入 null 值：视语句而定，`SET n.prop = $missing` 会移除已有属性，`CREATE (n:label {prop: $missing})` 会在文本属性中存入转译库的 null 标记字符串 `"  cypher.null"`，而对非文本属性执行同样的 `CREATE`，或对非空属性执行 `SET`，则会报错。请在客户端先对值做转义/净化再拼接到语句中。在合入 [#3289](https://github.com/apache/hugegraph/pull/3289) 后的
 测试栈上情况改变：缺失的绑定对所有请求形式都是执行错误，包括 `GET ?cypher=` 与原始文本
 `POST`——服务器总是附带参数表并拒绝未解析的 `$param` 引用。JSON 绑定参数（`{"cypher": ..., "parameters": {...}}`）已通过合入 `master` 的 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289) 引入，承接原 [PR #238](https://github.com/hugegraph/hugegraph/pull/238)；已验证的请求契约见[开发版兼容性记录](/cn/docs/language/cypher-compatibility/)。
 - **子句覆盖不完整** —— 部分 openCypher 结构无法翻译（例如 map projection、部分 `datetime()` 函数）。不支持的结构会在翻译阶段报错。`MERGE ... ON CREATE SET`、`NOT ... IN` 等结构可以翻译，但尚未在 HugeGraph 上端到端验证。开发改动验证了计算字符串上的两个 `=~` 全字符串匹配用例，更广泛的正则覆盖仍未验证 —— 见[兼容性说明](/cn/docs/language/cypher-compatibility/)。

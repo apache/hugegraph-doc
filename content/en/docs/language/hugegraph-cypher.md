@@ -47,8 +47,15 @@ ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.nam
 ### Basic examples
 
 The examples below assume a graph with `person` vertices (`name`, `age`, `city` properties) and `knows` edges.
-They assume the labels declare `nullableKeys("age", "city")` on `person` and nullable properties on `knows` —
-for example the schema in `scripts/example.groovy` modified with those nullable keys. On a schema without them
+They assume the labels declare `nullableKeys("age", "city")` on `person` and nullable properties on `knows`, and that
+`person.age` has a `RANGE` index — for example the schema in `scripts/example.groovy` modified with those nullable keys
+plus `schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create()`. A property predicate in
+`WHERE` must be covered by an index: `scripts/example.groovy` indexes `person.city` and `(age, city)` with `SECONDARY` indexes only,
+so a range comparison such as `n.age > 30` is rejected with a "not indexed" error until the `RANGE` index exists.
+If you load `scripts/example.groovy` first, note that it already seeds the `person` vertices `marko`, `vadas`, `josh` and `peter`;
+because the `person` label uses the `PRIMARY_KEY` id strategy, a `CREATE` with one of those names replaces the seeded vertex,
+so the create, update and delete examples below use names that the sample data does not contain (`alice`, `bob`, `carol`),
+or run them on an empty graph. On a schema without the nullable keys
 (the released default marks `age` and `city` non-null on `person`), the create and update examples below fail
 the non-null property check: set every non-null property in each statement, or declare the labels with
 `nullableKeys` first. If the `person` label uses the `PRIMARY_KEY` id strategy (as it does in `scripts/example.groovy`), the two-vertex
@@ -83,22 +90,22 @@ RETURN b.name AS friend
 
 ```cypher
 // Create a vertex
-CREATE (n:person {name: 'josh', age: 32, city: 'beijing'})
+CREATE (n:person {name: 'alice', age: 32, city: 'beijing'})
 ```
 
 ```cypher
 // Create two vertices, then an edge between them (send each statement as its own request)
-CREATE (:person {name: 'peter'})
-CREATE (:person {name: 'lop'})
+CREATE (:person {name: 'bob'})
+CREATE (:person {name: 'carol'})
 MATCH (a:person), (b:person)
-WHERE a.name = 'peter' AND b.name = 'lop'
+WHERE a.name = 'bob' AND b.name = 'carol'
 CREATE (a)-[:knows]->(b)
 ```
 
 #### Update — SET / REMOVE
 
 ```cypher
-MATCH (n:person) WHERE n.name = 'josh'
+MATCH (n:person) WHERE n.name = 'alice'
 SET n.age = 33
 REMOVE n.city
 ```
@@ -108,13 +115,13 @@ REMOVE n.city
 ```cypher
 // Delete an edge
 MATCH (a:person)-[r:knows]->(b:person)
-WHERE a.name = 'peter' AND b.name = 'lop'
+WHERE a.name = 'bob' AND b.name = 'carol'
 DELETE r
 ```
 
 ```cypher
 // Delete a vertex and all its edges
-MATCH (n:person) WHERE n.name = 'josh'
+MATCH (n:person) WHERE n.name = 'alice'
 DETACH DELETE n
 ```
 
@@ -148,7 +155,7 @@ Tip: `EXPLAIN MATCH (n:person) RETURN n` is parsed with the `EXPLAIN` option, an
 
 Cypher support in HugeGraph is bounded by the transpiler layer, which is based on openCypher 9 era tooling. Known gaps:
 
-- **No parameterized queries in released versions** — the API accepts a raw statement string only. A statement using `$param` still runs: a missing binding is inlined as `null` rather than failing, and the result depends on the expression: a predicate such as `WHERE n.name = $name` matches no rows, `RETURN $value AS value` still returns a row holding `null`, and a write stores a null value. Sanitize/escape values on the client side before interpolating them into the statement. On the tested tree with [#3289](https://github.com/apache/hugegraph/pull/3289) merged, this changes: a missing binding is an execution error for every request form, including `GET ?cypher=` and raw-body `POST` — the server always attaches a parameters map and rejects unresolved `$param` references. JSON-bound parameters (`{"cypher": ..., "parameters": {...}}`) are available on `master` after the merged [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), carried over from [PR #238](https://github.com/hugegraph/hugegraph/pull/238); see the [development compatibility record](/docs/language/cypher-compatibility/) for the tested request contract.
+- **No parameterized queries in released versions** — the API accepts a raw statement string only. A statement using `$param` still runs: a missing binding is inlined as `null` rather than failing, and the result depends on the expression: a predicate such as `WHERE n.name = $name` matches no rows, `RETURN $value AS value` still returns a row holding `null`. A write with a missing binding does not reliably store a null value: depending on the statement, `SET n.prop = $missing` removes the existing property, `CREATE (n:label {prop: $missing})` stores the translator's null marker string `"  cypher.null"` in a text property, and the same `CREATE` on a non-text property, or `SET` on a non-nullable property, fails with an error. Sanitize/escape values on the client side before interpolating them into the statement. On the tested tree with [#3289](https://github.com/apache/hugegraph/pull/3289) merged, this changes: a missing binding is an execution error for every request form, including `GET ?cypher=` and raw-body `POST` — the server always attaches a parameters map and rejects unresolved `$param` references. JSON-bound parameters (`{"cypher": ..., "parameters": {...}}`) are available on `master` after the merged [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), carried over from [PR #238](https://github.com/hugegraph/hugegraph/pull/238); see the [development compatibility record](/docs/language/cypher-compatibility/) for the tested request contract.
 - **Partial clause coverage** — some openCypher constructs are not translated (for example map projections and certain `datetime()` functions). Unsupported constructs fail at translation time with an error from the transpiler. Constructs such as `MERGE ... ON CREATE SET` and `NOT ... IN` do translate, but they are not verified end-to-end on HugeGraph. The development change verifies two whole-string `=~` matching cases on computed strings; broader regex coverage remains unverified — see the [compatibility notes](/docs/language/cypher-compatibility/).
 - **No `CALL` procedures** — HugeGraph graph algorithms (shortest path, k-out, personalrank, etc.) are not exposed as Cypher procedures; use the [traverser REST APIs](/docs/clients/restful-api/traverser/) or Gremlin instead.
 - **Single statement per request** — multi-statement scripts are not supported; send one statement per call.

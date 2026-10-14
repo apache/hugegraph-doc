@@ -18,7 +18,7 @@ weight: 4
 | Neo4j 概念 | HugeGraph 对应 |
 |---|---|
 | 属性图模型（节点/关系/属性） | 相同 —— 顶点标签 / 边标签 / 属性 |
-| 基础 Cypher：`MATCH`/`WHERE`/`RETURN`/`CREATE`/`SET`/`DELETE` | 直接可用（REST `/cypher` 端点或 Java 客户端 `CypherManager`） |
+| 基础 Cypher：`MATCH`/`WHERE`/`RETURN`/`CREATE`/`SET`/`DELETE` | 直接可用（REST `/cypher` 端点或 Java 客户端 `CypherManager`），但须遵守下文的 Schema 与索引规则 |
 | 简单聚合（`count`/`sum`/`min`/`max`/`avg`） | 直接可用 |
 | 依赖图遍历的查询需求 | Gremlin 遍历或 [traverser REST API](/cn/docs/clients/restful-api/traverser/)（k-out、最短路、personalrank 等） |
 
@@ -28,7 +28,8 @@ weight: 4
 |---|---|
 | `CREATE INDEX` / `CREATE CONSTRAINT` | 通过 [IndexLabel REST API](/cn/docs/clients/restful-api/indexlabel/) 建索引/约束；Cypher 不承载 DDL |
 | 隐式 schema（属性随意添加） | **强 schema**：先定义 VertexLabel/EdgeLabel/PropertyKey，再写数据 |
-| 参数化查询 `$param` | 已发布版本仅发送原始语句 —— 缺失的绑定会被内联为 `null` 而不是报错（基于它的谓词匹配不到行），请在客户端校验取值；JSON 绑定参数已通过 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289) 合入 `master`，固定最多 16 个顶层绑定参数 |
+| `WHERE` 中的属性谓词无需索引 | `WHERE` 中针对属性的谓词必须有索引覆盖：请先创建 `SECONDARY` 或 `RANGE` 的 IndexLabel，`>`、`<` 等范围比较需要 `RANGE`。没有覆盖索引时，请求会返回 `status.code` 400 和“未建索引”错误 |
+| 参数化查询 `$param` | 已发布版本仅发送原始语句 —— 缺失的绑定会被内联为 `null` 而不是报错（基于它的谓词匹配不到行，写入也不能可靠地存入 `null`：`SET` 会移除属性，`CREATE` 可能存入标记字符串 `"  cypher.null"` 或报错），请在客户端校验取值；JSON 绑定参数已通过 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289) 合入 `master`，固定最多 16 个顶层绑定参数 |
 | `CALL dbms.*` / `CALL algo.*` 过程 | 对应功能分散在 [traverser](/cn/docs/clients/restful-api/traverser/)、[task](/cn/docs/clients/restful-api/task/) 等 REST API |
 | 驱动：Neo4j Bolt driver | [hugegraph-client](/cn/docs/clients/hugegraph-client/)（`CypherManager`）或任意 HTTP 客户端 |
 | 事务边界在 Cypher 语句内 | 每次请求一个语句；图到图的数据迁移使用 [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/)（首选 —— 见下文），基于文件的批量导入使用 [HugeGraph Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) |
@@ -58,11 +59,18 @@ weight: 4
    - [HugeGraph Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/) 为
      3.0.0 新增（schema 自动发现、多标签/并行读取），使 HugeGraph 的导出与迁移工作流成为可能。
 
-   将 Neo4j 属性映射为 HugeGraph PropertyKey，并在导入前先定好顶点 ID 策略：用
-   `idStrategy = "PRIMARY_KEY"` 加 `idFields` 指定 Neo4j 业务键，边的端点也通过这些键字段表达；
-   或用 `idStrategy = "CUSTOMIZE_STRING"` 保留 Neo4j 节点 id。第 2 步预创建的标签必须使用同一策略——
-   自动创建不会把已有的 `PRIMARY_KEY` 标签改为 `CUSTOMIZE_STRING`——而当 Sink 的 `mappings` 配置
-   负责创建 schema 时，第 2 步可省略。先导入顶点、后导入边。以上能力均有文档记载，但这里没有完整跑通
+   将 Neo4j 属性映射为 HugeGraph PropertyKey，并在导入前先定好顶点 ID 策略。Sink 对除 `AUTOMATIC`
+   之外的每种顶点策略都要求 `idFields`，边映射还需要分别设置 `sourceConfig.idFields` 与
+   `targetConfig.idFields`，因此 Neo4j 查询必须返回承载 ID 的字段：
+   - `idStrategy = "PRIMARY_KEY"`：在 `idFields` 中放入 Neo4j 业务键，边的端点也通过这些键字段表达。
+   - `idStrategy = "CUSTOMIZE_STRING"`：仅选择它并不能保留 Neo4j 节点 id。请让 Neo4j 查询把要保留的 id
+     作为单独一列返回（用 `AS node_id` 等别名），在 Source 的 `schema.fields` 中声明该字段（必须与查询返回的字段一致），
+     把顶点的 `idFields` 设为该字段，并在 `sourceConfig.idFields` 与 `targetConfig.idFields` 中映射对应的边端点字段。
+
+   第 2 步预创建的标签必须使用同一策略——自动创建不会把已有的 `PRIMARY_KEY` 标签改为 `CUSTOMIZE_STRING`。
+   Sink 的 `mappings` 配置可以创建缺失的 PropertyKey、VertexLabel 和 EdgeLabel 定义，因此使用它时第 2 步中的这三类
+   定义可省略；但它不会创建 IndexLabel，查询所依赖的索引仍须单独创建（见上文“需要改变习惯的部分”表）。
+   先导入顶点、后导入边。以上能力均有文档记载，但这里没有完整跑通
    一次 Neo4j → HugeGraph 迁移 —— 在把示例当作已验证之前，请先用你自己的数据验证。
 4. **灰度切换**：Cypher 能表达的查询保持不动， translator 不支持的改写为
    Gremlin（等价写法见 [对照表](/cn/docs/language/hugegraph-cypher/#等价的-gremlin-写法)）。

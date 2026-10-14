@@ -278,7 +278,8 @@ bin/arthas.sh
 ```
 
 The helper reads `bin/pid`, requires JDK 17, and uses the bundled agent offline. It needs no service restart or configuration change.
-It binds telnet to `127.0.0.1:3658` with HTTP and MCP disabled. For multiple processes on one host, use
+For a newly attached agent, it binds telnet to `127.0.0.1:3658` with HTTP and MCP disabled. An already active agent keeps its existing settings.
+For multiple processes on one host, use
 `bin/arthas.sh --pid 12345 --telnet-port 3659`. See [local diagnostics](/docs/clients/restful-api/other/#local-diagnostics-without-a-restart).
 
 The Store Arthas configuration remains available with loopback as its default bind address. These settings do not re-enable HTTP activation

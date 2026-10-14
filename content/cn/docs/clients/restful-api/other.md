@@ -322,12 +322,23 @@ bin/arthas.sh
 ```
 
 脚本读取 `bin/pid`，校验目标组件正在运行，并离线使用发行包内的代理，无需下载、修改配置或重启服务。
-脚本固定监听 loopback，telnet 端口默认为 `3658`，HTTP 和 MCP 均禁用。同一主机运行多个 JVM 时，可显式指定目标进程和空闲 telnet 端口：
+新激活代理时，脚本固定监听 loopback，telnet 端口默认为 `3658`，HTTP 和 MCP 均禁用。同一主机运行多个 JVM 时，可显式指定目标进程和空闲 telnet 端口：
 
 ```bash
 bin/arthas.sh --pid 12345 --telnet-port 3659
 bin/arthas.sh --pid 12345 --telnet-port 3659 --command version
 ```
+
+已经激活的代理会保留现有监听配置，脚本无法重新绑定端口或关闭它已有的 HTTP 监听。
+如果代理通过 Server API 激活，使用 `bin/arthas.sh --telnet-port 8562` 连接，或改为配置的 telnet 端口。
+如需切换为本地脚本的默认配置，先在当前端口停止诊断代理，再重新挂载：
+
+```bash
+bin/arthas.sh --telnet-port 8562 --command stop
+bin/arthas.sh
+```
+
+这只停止 Arthas，不会重启服务 JVM。
 
 将 `12345` 替换为目标组件的 PID。需要可用的 JDK `java`、`jar` 和 `jcmd` 工具。`quit` 仅断开客户端，`stop` 停止诊断代理而不停止服务。
 脚本会在用户私有缓存中保留 JVM 仍可能使用的代理文件。Arthas 可执行高权限 JVM 操作，服务账号的 OS 访问权限仍应按管理员权限管理。

@@ -274,7 +274,8 @@ bin/arthas.sh
 ```
 
 脚本读取 `bin/pid`，需要 JDK 17，离线使用包内代理，无需重启服务或修改配置。
-Telnet 固定监听 `127.0.0.1:3658`，HTTP 和 MCP 均禁用。同机多进程时可使用
+新激活代理时，Telnet 固定监听 `127.0.0.1:3658`，HTTP 和 MCP 均禁用。已经激活的代理保留现有配置。
+同机多进程时可使用
 `bin/arthas.sh --pid 12345 --telnet-port 3659`。参见[本地诊断](/cn/docs/clients/restful-api/other/#无需重启的本地诊断)。
 
 Store 的 Arthas 配置仍保留，默认监听 loopback。这些配置不会重新开启 HTTP 激活，也不覆盖本地脚本独立设置的端口：

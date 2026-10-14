@@ -323,13 +323,24 @@ bin/arthas.sh
 ```
 
 The helper reads `bin/pid`, verifies the running component, and uses the bundled agent offline. It needs no download, configuration edit,
-or service restart. Its fixed loopback listener uses telnet port `3658`; HTTP and MCP are disabled. For multiple JVMs on one host, select
-the process and an available telnet port explicitly:
+or service restart. When attaching a new agent, it uses loopback telnet port `3658` with HTTP and MCP disabled. For multiple JVMs on one host,
+select the process and an available telnet port explicitly:
 
 ```bash
 bin/arthas.sh --pid 12345 --telnet-port 3659
 bin/arthas.sh --pid 12345 --telnet-port 3659 --command version
 ```
+
+An already active agent retains its existing listener settings; the helper cannot rebind it or disable its HTTP listener.
+For an agent started through the Server API, connect with `bin/arthas.sh --telnet-port 8562` (or the configured telnet port).
+To switch deliberately to the helper's defaults, stop the diagnostic agent on its current port, then attach again:
+
+```bash
+bin/arthas.sh --telnet-port 8562 --command stop
+bin/arthas.sh
+```
+
+This stops only Arthas and does not restart the service JVM.
 
 Replace `12345` with the target component's PID. The JDK's `java`, `jar`, and `jcmd` tools must be available. `quit` disconnects the client;
 `stop` stops the diagnostic agent without stopping the service. The helper retains agent files in the user's private cache while the JVM may use them.

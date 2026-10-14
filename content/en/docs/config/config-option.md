@@ -328,8 +328,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 
 > [!DETAILS]- **Arthas Diagnostic Config Options (Optional)**
 > Corresponding configuration file: `rest-server.properties`.
->
-> These defaults target the next release with [server PR #2945](https://github.com/apache/hugegraph/pull/2945).
+> Starting with HugeGraph 1.8.0.
 >
 > | Config option | Default value | Description |
 > |---------------|---------------|-------------|

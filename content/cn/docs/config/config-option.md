@@ -326,8 +326,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 
 > [!DETAILS]- **Arthas 诊断配置项（可选）**
 > 对应配置文件为 `rest-server.properties`。
->
-> 以下默认值面向包含 [Server PR #2945](https://github.com/apache/hugegraph/pull/2945) 的下一版本。
+> 自 HugeGraph 1.8.0 起生效。
 >
 > | 配置项 | 默认值 | 说明 |
 > |--------|--------|------|

@@ -273,33 +273,47 @@ PUT http://localhost:8080/whiteiplist?status=true
 
 #### 11.1.6 Start the Arthas agent
 
-The following behavior targets the next release with [server PR #2945](https://github.com/apache/hugegraph/pull/2945).
-Earlier releases have different activation and bind defaults.
+Starting with HugeGraph 1.8.0, Server and Store bundle Arthas 4.1.5 (PD does not embed an Arthas agent). You can attach it to a running JVM for live troubleshooting via the local script or the administrator HTTP endpoint.
 
-[Arthas](https://arthas.aliyun.com/en/) attaches to a running JVM for diagnosis. Server and Store bundle the same Arthas 4.1.5 version;
-PD does not embed an Arthas agent. Choose an activation method that matches your deployment:
+> [!IMPORTANT]
+> **Security Requirements for Diagnostics**
+> - **Loopback Only**: Arthas binds exclusively to `127.0.0.1`. Non-loopback addresses (such as `0.0.0.0`) are rejected, and diagnostic ports must
+>   not be exposed via reverse proxies or container port mappings.
+> - **Administrator Privilege**: HTTP API activation requires authentication to be enabled on Server with administrator privileges;
+>   requests without authentication enabled return `403`.
+> - **Offline Local Diagnostics**: For routine troubleshooting, run `bin/arthas.sh` on the host as the service OS user without restarting
+>   the JVM or editing configuration.
 
-| Deployment | Activation |
-|------------|------------|
-| Server with [authentication enabled](/docs/config/config-authentication/) | An authenticated administrator can call `PUT /arthas` directly. |
-| Server without authentication | Run `bin/arthas.sh` on the host as the service's OS user. HTTP activation returns `403`, including loopback/proxy requests. |
-| Store | Run the same local helper. `GET /v1/arthasstart` returns `403`; Store has no administrator authentication for this endpoint. |
+| Deployment | Recommended Activation | Access & Permissions |
+|------------|------------------------|----------------------|
+| Server ([authentication enabled](/docs/config/config-authentication/)) | Administrator `PUT /arthas` or `bin/arthas.sh` | Only administrator accounts can invoke the HTTP endpoint; helper script requires service OS user access |
+| Server (authentication disabled) | Local helper `bin/arthas.sh` | HTTP activation returns `403` (including loopback and proxy requests) |
+| Store | Local helper `bin/arthas.sh` | `GET /v1/arthasstart` is disabled and returns `403` (Store lacks administrator authentication for this endpoint) |
 
-Arthas listens on loopback only. Non-loopback addresses, including `0.0.0.0`, are rejected during Server HTTP activation, and MCP is disabled.
-Do not expose diagnostic ports through a reverse proxy or container port mapping. For remote diagnosis, log into the host over SSH and run the local helper.
+##### Activation & Diagnostics
 
-##### Administrator HTTP activation
+```bash {tab="Local Diagnostics (Recommended)"}
+# 1. Run on the host as the service OS user (uses bundled agent offline, no restart or download needed)
+bin/arthas.sh
 
-No additional Arthas enable switch or JVM restart is needed when Server authentication is already configured. Authenticate as the administrator:
+# 2. For multiple instances on one host, specify PID and port explicitly
+bin/arthas.sh --pid <PID> --telnet-port 3659
 
-```bash
-curl --user admin -X PUT http://127.0.0.1:8080/arthas
+# 3. Disconnect: enter 'quit' to exit client session; enter 'stop' to unload the agent (does not affect JVM)
 ```
 
-The command prompts for the password. Authenticated non-administrators receive `403`; missing or invalid credentials follow the configured
-Server authentication behavior. When authentication is disabled, this endpoint always returns `403` before attaching the agent.
+```bash {tab="Administrator HTTP Activation"}
+# 1. Invoke REST API to attach diagnostic agent (requires Server authentication; enter admin password)
+curl --user admin -X PUT http://127.0.0.1:8080/arthas
 
-A successful request returns HTTP `200` and the applied Arthas configuration:
+# 2. On success, returns applied configuration (default ports 8562/8561 on 127.0.0.1)
+# 3. Connect to the active agent using the local helper
+bin/arthas.sh --telnet-port 8562
+```
+
+##### HTTP Response Body
+
+A successful activation returns HTTP `200` and the applied configuration:
 
 ```json
 {
@@ -310,38 +324,6 @@ A successful request returns HTTP `200` and the applied Arthas configuration:
 }
 ```
 
-The [configuration options](/docs/config/config-option/) use `arthas.telnet_port`, `arthas.http_port`, `arthas.ip`, and `arthas.disabled_commands`.
-Legacy camelCase aliases remain supported; explicit snake_case settings win and conflicting aliases produce a warning. The response keeps
-Arthas agent key names for compatibility. These settings belong in the server configuration, not the request body.
-
-##### Local diagnostics without a restart
-
-From the Server or Store distribution directory, use JDK 17 and the OS account that owns the service process:
-
-```bash
-bin/arthas.sh
-```
-
-The helper reads `bin/pid`, verifies the running component, and uses the bundled agent offline. It needs no download, configuration edit,
-or service restart. When attaching a new agent, it uses loopback telnet port `3658` with HTTP and MCP disabled. For multiple JVMs on one host,
-select the process and an available telnet port explicitly:
-
-```bash
-bin/arthas.sh --pid 12345 --telnet-port 3659
-bin/arthas.sh --pid 12345 --telnet-port 3659 --command version
-```
-
-An already active agent retains its existing listener settings; the helper cannot rebind it or disable its HTTP listener.
-For an agent started through the Server API, connect with `bin/arthas.sh --telnet-port 8562` (or the configured telnet port).
-To switch deliberately to the helper's defaults, stop the diagnostic agent on its current port, then attach again:
-
-```bash
-bin/arthas.sh --telnet-port 8562 --command stop
-bin/arthas.sh
-```
-
-This stops only Arthas and does not restart the service JVM.
-
-Replace `12345` with the target component's PID. The JDK's `java`, `jar`, and `jcmd` tools must be available. `quit` disconnects the client;
-`stop` stops the diagnostic agent without stopping the service. The helper retains agent files in the user's private cache while the JVM may use them.
-Arthas can execute powerful JVM operations; OS access to the service account remains a privileged operation.
+> [!NOTE]
+> [Configuration options](/docs/config/config-option/) use canonical snake_case names: `arthas.telnet_port`, `arthas.http_port`, `arthas.ip`, and `arthas.disabled_commands`.
+> Legacy camelCase aliases remain supported for backward compatibility; explicit snake_case settings take precedence. The response preserves Arthas agent key names for client compatibility.

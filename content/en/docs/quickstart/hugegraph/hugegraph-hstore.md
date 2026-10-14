@@ -269,18 +269,16 @@ Only for single-node development and debugging, activated by `app.fake-pd: true`
 
 **Diagnostics**
 
-The following behavior targets the next release with [server PR #2945](https://github.com/apache/hugegraph/pull/2945).
-Server and Store use Arthas 4.1.5; PD does not embed an Arthas agent. Store HTTP activation (`GET /v1/arthasstart`) returns `403`,
-including requests from loopback or through a proxy. Run the bundled helper as the service's OS user to diagnose the running JVM:
+Starting with HugeGraph 1.8.0, Server and Store bundle Arthas 4.1.5; PD does not embed an Arthas agent. Store HTTP activation (`GET /v1/arthasstart`) returns
+`403`, including requests from loopback or through a proxy. Run the bundled helper as the service OS user on the host to diagnose the running JVM:
 
 ```bash
 bin/arthas.sh
 ```
 
 The helper reads `bin/pid`, requires JDK 17, and uses the bundled agent offline. It needs no service restart or configuration change.
-For a newly attached agent, it binds telnet to `127.0.0.1:3658` with HTTP and MCP disabled. An already active agent keeps its existing settings.
-For multiple processes on one host, use
-`bin/arthas.sh --pid 12345 --telnet-port 3659`. See [local diagnostics](/docs/clients/restful-api/other/#local-diagnostics-without-a-restart).
+For a newly attached agent, it binds telnet to `127.0.0.1:3658` with HTTP and MCP disabled. For multiple processes on one host, use
+`bin/arthas.sh --pid <PID> --telnet-port 3659`. See [local diagnostics](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 The Store Arthas configuration remains available with loopback as its default bind address. These settings do not re-enable HTTP activation
 or override the helper's independent port choices:

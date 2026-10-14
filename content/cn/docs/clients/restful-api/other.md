@@ -273,32 +273,44 @@ PUT http://localhost:8080/whiteiplist?status=true
 
 #### 11.1.6 启动 Arthas 诊断代理
 
-以下行为面向包含 [Server PR #2945](https://github.com/apache/hugegraph/pull/2945) 的下一版本，旧版本的激活方式和监听默认值有所不同。
+自 HugeGraph 1.8.0 起，Server 和 Store 统一内置 Arthas 4.1.5（PD 未内置 Arthas 代理）。可通过本地脚本或管理员 HTTP 接口挂载到正在运行的 JVM 进行在线诊断。
 
-[Arthas](https://arthas.aliyun.com/) 可挂载到正在运行的 JVM 上进行诊断。Server 和 Store 统一内置 Arthas 4.1.5，PD 未内置 Arthas 代理。
-根据部署方式选择入口：
+> [!IMPORTANT]
+> **安全诊断要求**
+> - **仅监听本地 Loopback**：Arthas 默认且仅允许监听 `127.0.0.1`。Server 拒绝非 loopback 地址（如 `0.0.0.0`），严禁通过反向代理或容器端口映射对外暴露。
+> - **管理员权限限制**：HTTP API 激活要求 Server 已开启鉴权，且必须具备管理员权限；未开启鉴权时直接返回 `403`。
+> - **免重启本地诊断**：推荐直接在主机上使用服务进程所属的 OS 用户运行 `bin/arthas.sh`，无需修改配置或重启 JVM。
 
-| 部署方式 | 激活方式 |
-|----------|----------|
-| Server 已[开启认证](/cn/docs/config/config-authentication/) | 已认证的管理员可直接调用 `PUT /arthas`。 |
-| Server 未开启认证 | 以服务进程所属的 OS 用户在主机上运行 `bin/arthas.sh`。HTTP 激活返回 `403`，loopback 或代理请求也不例外。 |
-| Store | 使用相同的本地脚本。`GET /v1/arthasstart` 返回 `403`，Store 此接口没有管理员认证机制。 |
+| 部署方式 | 推荐激活方式 | 权限与访问说明 |
+|----------|--------------|----------------|
+| Server（已[开启认证](/cn/docs/config/config-authentication/)） | 管理员调用 `PUT /arthas` 或运行 `bin/arthas.sh` | 仅管理员账号可调用 HTTP 接口；本地脚本需服务 OS 用户权限 |
+| Server（未开启认证） | 本地脚本 `bin/arthas.sh` | HTTP 接口直接返回 `403`（包括 loopback 与代理请求） |
+| Store | 本地脚本 `bin/arthas.sh` | `GET /v1/arthasstart` 已禁用并返回 `403`（Store 无对应管理员鉴权机制） |
 
-Arthas 仅监听 loopback。Server HTTP 激活时会拒绝非 loopback 地址，包括 `0.0.0.0`，并禁用 MCP。
-不要通过反向代理或容器端口映射暴露诊断端口。远程排查时，通过 SSH 登录主机后运行本地脚本。
+##### 激活与使用方式
 
-##### 管理员通过 HTTP 激活
+```bash {tab="本地免重启诊断 (推荐)"}
+# 1. 以运行服务进程的 OS 用户在安装根目录下执行（离线使用包内代理，无需下载或重启）
+bin/arthas.sh
 
-Server 已配置认证时，无需额外开启 Arthas 开关或重启 JVM。使用管理员账号调用：
+# 2. 同一主机运行多个实例时，可显式指定进程 PID 与端口
+bin/arthas.sh --pid <PID> --telnet-port 3659
 
-```bash
-curl --user admin -X PUT http://127.0.0.1:8080/arthas
+# 3. 退出诊断：终端内输入 quit 仅断开客户端连接；输入 stop 卸载诊断代理（不影响服务 JVM）
 ```
 
-命令会提示输入密码。已认证的非管理员返回 `403`；缺少凭据或凭据无效时，按 Server 配置的认证机制处理。
-Server 未开启认证时，此接口始终返回 `403`，不会挂载代理。
+```bash {tab="管理员 HTTP API 激活"}
+# 1. 调用 REST API 激活诊断（Server 需已开启认证，输入管理员密码）
+curl --user admin -X PUT http://127.0.0.1:8080/arthas
 
-成功请求返回 HTTP `200` 和生效的 Arthas 配置：
+# 2. 成功后返回生效的配置（默认端口 8562/8561，监听 127.0.0.1）
+# 3. 使用本地脚本连接已有代理
+bin/arthas.sh --telnet-port 8562
+```
+
+##### HTTP 响应体示例
+
+成功激活后返回 HTTP `200` 及生效配置：
 
 ```json
 {
@@ -309,36 +321,6 @@ Server 未开启认证时，此接口始终返回 `403`，不会挂载代理。
 }
 ```
 
-[配置项](/cn/docs/config/config-option/) 使用 `arthas.telnet_port`、`arthas.http_port`、`arthas.ip` 和 `arthas.disabled_commands`。
-旧 camelCase 名称仍兼容；显式设置的 snake_case 值优先，两种名称的值冲突时会输出警告。响应保持 Arthas 代理的键名，以兼容已有客户端。
-这些选项写在服务端配置中，不从请求体传入。
-
-##### 无需重启的本地诊断
-
-在 Server 或 Store 发行包目录下，使用 JDK 17 和服务进程所属的 OS 用户运行：
-
-```bash
-bin/arthas.sh
-```
-
-脚本读取 `bin/pid`，校验目标组件正在运行，并离线使用发行包内的代理，无需下载、修改配置或重启服务。
-新激活代理时，脚本固定监听 loopback，telnet 端口默认为 `3658`，HTTP 和 MCP 均禁用。同一主机运行多个 JVM 时，可显式指定目标进程和空闲 telnet 端口：
-
-```bash
-bin/arthas.sh --pid 12345 --telnet-port 3659
-bin/arthas.sh --pid 12345 --telnet-port 3659 --command version
-```
-
-已经激活的代理会保留现有监听配置，脚本无法重新绑定端口或关闭它已有的 HTTP 监听。
-如果代理通过 Server API 激活，使用 `bin/arthas.sh --telnet-port 8562` 连接，或改为配置的 telnet 端口。
-如需切换为本地脚本的默认配置，先在当前端口停止诊断代理，再重新挂载：
-
-```bash
-bin/arthas.sh --telnet-port 8562 --command stop
-bin/arthas.sh
-```
-
-这只停止 Arthas，不会重启服务 JVM。
-
-将 `12345` 替换为目标组件的 PID。需要可用的 JDK `java`、`jar` 和 `jcmd` 工具。`quit` 仅断开客户端，`stop` 停止诊断代理而不停止服务。
-脚本会在用户私有缓存中保留 JVM 仍可能使用的代理文件。Arthas 可执行高权限 JVM 操作，服务账号的 OS 访问权限仍应按管理员权限管理。
+> [!NOTE]
+> [配置项](/cn/docs/config/config-option/) 采用规范的 snake_case 命名：`arthas.telnet_port`、`arthas.http_port`、`arthas.ip` 与 `arthas.disabled_commands`。
+> 旧版 camelCase 命名仍作为兼容回退；显式配置的 snake_case 选项优先。响应内容保持 Arthas 代理的原始键名以便兼容现有客户端。

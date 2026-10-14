@@ -112,9 +112,9 @@ memory_monitor.period=2000
 - `graphs`: The graph configuration directory, defaulting to `./conf/graphs`. Both `init-store.sh` and application initialization scan it; initialization attempts to load its properties files.
 - `graph.load_from_local_config`: Controls constructor preloading and rescanning on `reload()`, with source-code default `false`. It does not block local loading during application initialization and is not a security isolation switch.
 
-> The following behavior targets the next release with [server PR #2945](https://github.com/apache/hugegraph/pull/2945); earlier releases differ.
-> Use `arthas.telnet_port`, `arthas.http_port`, and `arthas.disabled_commands`. Legacy camelCase names remain fallbacks; an explicitly set
-> snake_case value wins and a conflicting alias produces a warning. Arthas binds to loopback only, independently of the REST listener.
+> Starting with HugeGraph 1.8.0, use canonical snake_case options: `arthas.telnet_port`, `arthas.http_port`, and `arthas.disabled_commands`.
+> Legacy camelCase names remain fallbacks; an explicitly set snake_case value wins and a conflicting alias produces a warning.
+> Arthas binds to loopback only, independently of the REST listener.
 > [Start diagnostics](/docs/clients/restful-api/other/#1116-start-the-arthas-agent) with an authenticated administrator or the local helper,
 > without restarting the JVM.
 

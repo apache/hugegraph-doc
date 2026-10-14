@@ -265,18 +265,16 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 
 **诊断**
 
-以下行为面向包含 [Server PR #2945](https://github.com/apache/hugegraph/pull/2945) 的下一版本。
-Server 和 Store 统一使用 Arthas 4.1.5，PD 未内置 Arthas 代理。Store 的 HTTP 激活接口 `GET /v1/arthasstart` 返回 `403`，
-loopback 或代理转发的请求也不例外。以服务进程所属的 OS 用户运行发行包内的脚本，即可诊断运行中的 JVM：
+自 HugeGraph 1.8.0 起，Server 和 Store 统一使用 Arthas 4.1.5，PD 未内置 Arthas 代理。Store 的 HTTP 激活接口 `GET /v1/arthasstart` 返回 `403`（包括 loopback 或代理请求）。
+推荐以服务进程所属的 OS 用户运行发行包内的脚本，即可直接诊断运行中的 JVM：
 
 ```bash
 bin/arthas.sh
 ```
 
 脚本读取 `bin/pid`，需要 JDK 17，离线使用包内代理，无需重启服务或修改配置。
-新激活代理时，Telnet 固定监听 `127.0.0.1:3658`，HTTP 和 MCP 均禁用。已经激活的代理保留现有配置。
-同机多进程时可使用
-`bin/arthas.sh --pid 12345 --telnet-port 3659`。参见[本地诊断](/cn/docs/clients/restful-api/other/#无需重启的本地诊断)。
+新激活代理时，Telnet 固定监听 `127.0.0.1:3658`，HTTP 和 MCP 均禁用。同机多进程时可指定 `--pid <PID> --telnet-port 3659`。
+参见[本地诊断](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)。
 
 Store 的 Arthas 配置仍保留，默认监听 loopback。这些配置不会重新开启 HTTP 激活，也不覆盖本地脚本独立设置的端口：
 

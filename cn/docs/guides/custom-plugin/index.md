@@ -4,6 +4,9 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
+插件接入计划用于 1.8.0 的共享基础模块 API 时，请按[Java/SPI 迁移指南](/cn/docs/guides/shared-foundation-migration/)调整并使用配套 artifacts 重新编译。
+下方示例描述 1.7.0 API。
+
 ### 背景
 
 1. HugeGraph 不仅开源开放，而且要做到简单易用，一般用户无需更改源码也能轻松增加插件扩展功能。
@@ -357,3 +360,9 @@ public class DemoPlugin implements HugeGraphPlugin {
 #### 5. 打 Jar 包
 
 通过 maven 打包，在项目目录下执行命令`mvn package`，在 target 目录下会生成 Jar 包文件。使用时将该 Jar 包拷到`plugins`目录，重启服务即可生效。
+
+---
+
+反链：
+
+- [1.8.0 Java 与升级迁移](/cn/docs/guides/shared-foundation-migration/)

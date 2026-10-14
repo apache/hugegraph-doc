@@ -76,6 +76,8 @@
   - [Docker 集群](https://hugegraph.apache.org/cn/docs/guides/hugegraph-docker-cluster/index.md)
   - [FAQ](https://hugegraph.apache.org/cn/docs/guides/faq/index.md)
   - [安全公告](https://hugegraph.apache.org/cn/docs/guides/security/index.md)
+  - [1.8.0 Java 与升级迁移](https://hugegraph.apache.org/cn/docs/guides/shared-foundation-migration/index.md): 调整 Java import 和插件实现，并准备 1.8.0 共享基础模块迁移所需的 Server、PD、Store 同步升级。
+  - [ToplingDB（开发版）](https://hugegraph.apache.org/cn/docs/guides/toplingdb/index.md): 从开发源码构建可选 ToplingDB 运行时，隔离数据目录，并了解启动与恢复边界。
 - [查询语言](https://hugegraph.apache.org/cn/docs/language/index.md)
   - [Gremlin Query Language](https://hugegraph.apache.org/cn/docs/language/hugegraph-gremlin/index.md)
   - [HugeGraph Examples](https://hugegraph.apache.org/cn/docs/language/hugegraph-example/index.md)

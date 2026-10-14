@@ -253,7 +253,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 `hugegraph-server` 模块包含 `hugegraph-core`、`hugegraph-api`、`hugegraph-dist` 和存储适配等子模块。Core 实现属性图模型、事务与 TinkerPop 接口，API 提供 HTTP 服务并将客户端请求交给 Core 处理。图数据由 RocksDB（单机默认）、HStore（分布式）或 HBase 后端保存。
 
 > [!WARNING]
-> **版本说明**：本文区分已发布版本与开发主线。下载示例使用 ASF 发布的 HugeGraph 1.7.0 安装包；源码构建、配置默认值和启动行为以 `apache/hugegraph` 的 `master` 分支为准。主线源码构建出的包不是 ASF 发布包，即使包内版本号相同也不代表与 1.7.0 发布包相同。本文介绍 RocksDB、HStore 和 HBase；其他旧后端请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
+> **版本说明**：本文区分已发布版本与开发主线。下载示例使用 ASF 发布的 HugeGraph 1.7.0 安装包；源码构建、配置默认值和启动行为以 `apache/hugegraph` 的 `master` 分支为准。主线源码构建出的包不是 ASF 发布包，即使包内版本号与发布版本一致也不代表属于官方发布包。本文介绍 RocksDB、HStore 和 HBase；其他旧后端请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
 
 > 名称说明：`HugeGraph` 表示整个项目或主仓库，`hugegraph-server` 表示仓库中的 Server 模块，`HugeGraphServer` 是服务进程的 Java 类名。下文的 Server 服务指运行中的图数据库服务。
 
@@ -289,17 +289,46 @@ markmap:
 
 ## 2 依赖
 
-### 2.1 安装 Java 11 (JDK 11)
+<span id="21-安装-java-11-jdk-11"></span>
 
-HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行和源码构建均需使用 Java 11 或更高版本。
+### 2.1 安装 Java 17 (JDK 17)
+
+从 HugeGraph 1.8.0 开始使用 **Java 17**；**1.7.0 是最后一个支持 Java 11 的版本**。
+所有模块的源码构建要求 **JDK 17 和 Maven 3.6.3 或更高版本**，Server、PD 和 Store 的运行环境统一使用 **JDK 17**。
+Server 安全检查（`-s true`）要求 Java 17 到 23 以及可读的 `conf/java-security.properties`；在 Java 24 或更高版本上，需以 `-s false` 启动 Server（JDK 24 通过 JEP 486 移除了 Security Manager）。
 
 **在继续阅读前，请先执行 `java -version` 命令确认 JDK 版本。**
 
-> 1.7.0 起不再支持 Java 8。`bin/hugegraph-server.sh` 在低于 Java 11 的环境下会直接拒绝启动。
+> [!NOTE]
+> **TinkerPop 3.8.1 兼容性与核心变更**
+>
+> HugeGraph 1.8.0 升级至 TinkerPop 3.8.1 与 Groovy 4.0.25。请使用 Server 随包提供的 Gremlin 配置文件。
+>
+> - **序列化器包路径变更**：Driver 序列化器类从 `org.apache.tinkerpop.gremlin.driver.ser` 移至 `org.apache.tinkerpop.gremlin.util.ser`，需保留配置中的 HugeGraph registries。
+> - **Graph.Features 调整**：`supportsUniformListValues()` 现返回 `false`；按 Schema 定义的 `valueList()`/`LIST` 属性仍正常支持，无需重写既有列表数据。
+> - **遍历倍数语义**：遍历中途扫描保留上游输入数量（如 3 个顶点执行 `g.V().V().count()` 返回 `9L`）。
+> - **日期时间类型**：`DATE` 属性支持写入及索引等值/范围查询中的 `OffsetDateTime`（按 instant 毫秒归一化）。
+> - **过滤与优化**：`P.typeOf()` 作为本地过滤执行；Count 过滤仅在谓词分支可证明截断安全时应用优化。
 
-> 安全检查默认开启，会安装 `HugeSecurityManager`，它要求 Java 11 到 23。JDK 24 移除了 Security Manager（[JEP 486](https://openjdk.org/jeps/486)），因此在 Java 24 及更高版本上必须关闭该检查后再启动服务：`bin/start-hugegraph.sh -s false`。
+```yaml {tab="GraphBinary (推荐/默认)"}
+# 随包 Driver 与 Console 默认采用 GraphBinary V1
+# - Schema 结果为标准 Map
+# - Blob 值以二进制格式传输（包含在返回图元素内的 Blob）
+serializer:
+  className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
+  config:
+    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+```
 
-> 源码构建还需要 Maven 3.5.0 或更高版本。
+```yaml {tab="GraphSON (HTTP/兼容)"}
+# 默认 HTTP JSON 采用 untyped GraphSON V1
+# - 保留 Tree 的旧 key/value 数组结构
+# - Typed GraphSON V1 因安全原因已禁用（typed V2/V3 仅适用于受支持的简单标量与 ID）
+# - graph.schema() 返回包含各类 label 的 Map
+```
+
+> [!TIP]
+> 完整客户端配置与验证细节见 [Server 运行时文档](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md)。
 
 ## 3 部署
 
@@ -416,13 +445,13 @@ mvn package -DskipTests -ntp
 [INFO] BUILD SUCCESS
 ```
 
-执行成功后，根目录 `target/` 下会生成主线聚合包（当前仓库版本属性为 1.7.0）：
+执行成功后，根目录 `target/` 下会生成主线聚合包（当前仓库版本属性为 1.8.0）：
 
 ```text
-target/apache-hugegraph-1.7.0.tar.gz
+target/apache-hugegraph-1.8.0.tar.gz
 ```
 
-该文件名中的版本号来自源码的 `revision` 属性；它不会把主线构建变成 ASF 发布物料。构建过程还会在仓库根目录生成 `apache-hugegraph-1.7.0/` 聚合目录，其中的 Server 子目录名由 Server 模块的 `final.name` 决定，例如当前为 `apache-hugegraph-server-1.7.0`。若只保留了 tar 包，则先执行 `tar zxf target/apache-hugegraph-1.7.0.tar.gz` 再进入该目录。
+该文件名中的版本号来自源码的 `revision` 属性；它不会把主线构建变成 ASF 发布物料。构建过程还会在仓库根目录生成 `apache-hugegraph-1.8.0/` 聚合目录，其中的 Server 子目录名由 Server 模块的 `final.name` 决定，例如当前为 `apache-hugegraph-server-1.8.0`。若只保留了 tar 包，则先执行 `tar zxf target/apache-hugegraph-1.8.0.tar.gz` 再进入该目录。
 
 默认构建会打包 `rocksdb`、`hbase` 和 `hstore` 三个后端模块，并把它们记录在 `hugegraph-dist` jar 内的 `backend.properties` 资源的 `backends` 配置项中。若只需要包含 RocksDB 的精简发布包，可加上 `-Drocksdb-only`：
 
@@ -459,7 +488,7 @@ mvn package -DskipTests -ntp -Drocksdb-only
 
 Server 的 tar 包随包提供 `conf/rest-server.properties`、`conf/gremlin-server.yaml` 和 `conf/graphs/hugegraph.properties`；源码构建包从 `hugegraph-server/hugegraph-dist/src/assembly/static/conf/` 装配这些文件。解压后在 Server 安装目录内编辑配置，无需另行生成。发行包版本之间可能有默认值差异，下面涉及的默认值和启动行为按 `master` 主线说明。
 
-单机 RocksDB 快速上手只需确认 `conf/graphs/hugegraph.properties` 使用 `backend=rocksdb`、`serializer=binary`。正常 Server 初始化会扫描 `conf/graphs/` 并加载本地图配置，无需额外设置 `graph.load_from_local_config=true`。该选项默认值为 `false`，控制构造阶段的提前加载和 `reload()` 时是否重新扫描本地配置。
+单机 RocksDB 快速上手只需确认 `conf/graphs/hugegraph.properties` 使用 `backend=rocksdb`、`serializer=binary`。正常 Server 初始化会扫描 `conf/graphs/` 并加载本地图配置，无需额外设置 `graph.load_from_local_config=true`。该选项默认 `false`，控制构造阶段的提前加载。图配置变化通过重启 Server 应用，不使用热重载进行维护。
 
 详细的配置介绍请参考[配置文档](/docs/config/config-guide)及[配置项介绍](/docs/config/config-option)。
 
@@ -783,15 +812,28 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 | 参数 | 取值 | 默认值 | 作用 |
 |---|---|---|---|
 | `-d` | `true`、`false` | `true` | 守护进程模式。`-d false` 时脚本留在前台，并把 `SIGTERM`/`SIGINT` 转发给服务进程 |
-| `-g` | `zgc` 或 `ZGC` | 不填则用 G1GC | 选择垃圾回收器。只接受 ZGC，其他取值会直接终止启动；ZGC 需要 Java 11 及以上 |
+| `-g` | `g1`、`G1`、`zgc`、`ZGC` | JVM 默认值 | 选择垃圾回收器（`g1`/`G1` 设置 `-XX:+UseG1GC`；`zgc`/`ZGC` 设置 `-XX:+UseZGC`）。不填则使用 JVM 默认收集器配置 |
 | `-m` | `true`、`false` | `false` | 安装基于 crontab 的监控任务（`bin/start-monitor.sh`），仅用于虚拟机和物理机部署 |
 | `-p` | `true`、`false` | `false` | 预加载示例图，见 5.1.4 |
-| `-s` | `true`、`false` | `true` | 开启安全检查（`HugeSecurityManager`）。要求 Java 11 到 23，且 `conf/java-security.properties` 可读 |
+| `-s` | `true`、`false` | `true` | 开启安全检查（`HugeSecurityManager`），要求 Java 17 到 23 以及 `conf/java-security.properties` 可读。在 Java 24+ 上需传 `-s false` |
 | `-j` | JVM 参数 | 空 | 追加到服务命令行的额外 JVM 参数 |
 | `-t` | 秒 | `30` | 判定启动失败前等待服务响应的时长 |
 | `-y` | `true`、`false` | `false` | 开启 OpenTelemetry agent 上报链路追踪 |
 
 `bin/stop-hugegraph.sh` 支持 `-m true|false`（默认 `true`），用于控制停止服务时是否同时移除 crontab 监控任务。
+
+`bin/hugegraph-server.sh` 会把 `-XX:+HeapDumpOnOutOfMemoryError`、`-XX:HeapDumpPath` 和 `-XX:ErrorFile` 放在 `JAVA_TOOL_OPTIONS` 的最前面。因此无论是否设置了
+`JAVA_OPTIONS`（下文所述的例外情况除外），内存溢出时的堆转储（`heapdump_<主机名>_<启动时间>/java_pid<pid>.hprof`）和 JVM 崩溃日志（`hs_err_pid<pid>_<主机名>_<启动时间>.log`）都会写入 `logs/`，其中 `<启动时间>`
+为本地时间，格式是 `YYYYMMDD-HHMMSS`。每次启动都有自己的 `heapdump_*` 目录，因此服务及其启动的 JVM（例如 computer 任务）会分别写入各自的转储（HotSpot 按 JVM 的 PID 命名转储文件和崩溃日志，因此同一次启动中复用了先前 PID 的 JVM
+无法写入它的转储，它的崩溃日志也会覆盖先前那个 JVM 的）。主机名可避免共用同一日志目录的多个服务选到相同的名字；如果同一主机在同一秒内已经用过该名字，会再加上计数（`<启动时间>-1`、`-2`……）。如果无法创建该目录（例如磁盘已满），服务仍会启动，堆转储改为尽力写入 `logs/`
+本身；磁盘已满时可能也没有空间写入转储。堆转储可能和堆一样大。启动脚本从不删除转储或 `heapdump_*` 目录：每次启动到 Java 阶段都会留下一个目录，除非发生内存溢出否则为空；启动脚本保留它，是因为 computer 任务的 JVM 可能在服务退出后仍在使用它。在该次启动的 HugeGraph JVM
+都已退出后，可以移走或删除旧目录，但不要动正在运行的服务最新的那个目录；没有它，下一次转储会被写成一个同名文件。JVM 会在这些默认值之后读取你自己的 `JAVA_TOOL_OPTIONS`、`JDK_JAVA_OPTIONS`（包括 `@argfile`）、命令行（`JAVA_OPTIONS`；未设置或为空时为
+`-j`）和 `_JAVA_OPTIONS`，因此在其中任意一处为上述参数指定的值都会覆盖默认值。只有环境变量会传给服务启动的 JVM：要对所有 JVM 关闭堆转储，请设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`；通过 `-j` 或
+`JAVA_OPTIONS` 关闭只对服务自身的 JVM 生效。无论哪种方式，每次启动到 Java 阶段仍会创建空的 `heapdump_*` 目录，除非创建失败而改为写入 `logs/`。如果日志路径中包含双引号或 `%`，启动脚本会给出警告，堆转储直接写入
+`logs/`，不使用每次启动的目录，也不设置崩溃日志的默认值；通过 `JAVA_TOOL_OPTIONS` 关闭堆转储的方式仍然有效。同时包含两种引号的路径则完全不设置堆转储默认值。由于设置了这些默认值，JVM 启动时会在 stderr 输出 `Picked up JAVA_TOOL_OPTIONS: ...`。
+
+> **版本范围**：以上行为适用于当前 master（[apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 只在未设置 `JAVA_OPTIONS` 时添加堆转储参数，堆转储直接写入
+> `logs/java_pid<pid>.hprof`，JVM 崩溃日志写入安装目录。
 
 ### 5.2 使用 Docker
 
@@ -1501,7 +1543,25 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 5. **数据在意料之外地保留了下来**：`docker compose down` 会保留命名卷。要同时删除该拓扑的数据，请使用 `docker compose down -v`
 
-**查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。单机镜像 `hugegraph/hugegraph` 设置了 `STDOUT_MODE=true`，其服务日志会输出到容器 stdout。`hugegraph/server`（HStore）镜像没有设置该变量，因此对 HStore 拓扑的 Server 执行 `docker logs` 只能看到入口脚本的输出，其余内容需在容器内查看 `logs/hugegraph-server.log`。
+**查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。基于当前 master 构建的 PD、Store 以及两个 Server 镜像（`hugegraph/hugegraph` 和 HStore 的
+`hugegraph/server`）都设置了 `STDOUT_MODE=true`，服务日志会输出到容器 stdout。对 Server 而言，Hadoop、ZooKeeper、SOFA、Netty 和 Commons 的 WARN 及以上日志也会输出到 stdout；Hadoop、Netty 和 Commons 的
+INFO 日志以及审计日志、慢查询日志仍只写入文件，ZooKeeper 和 SOFA 不输出 WARN 以下的日志。`/hugegraph-server/logs` 中包含 `hugegraph-server.log`、JVM
+崩溃日志（`hs_err_pid*.log`）和内存溢出时的堆转储（`heapdump_*/java_pid*.hprof`，每次启动一个目录，Server 及其启动的 JVM 分别写入各自的文件，除非某个 JVM 复用了同一次启动中先前的 PID；如果无法创建该目录，转储会直接写入
+`/hugegraph-server/logs`）。两个镜像都声明了 `VOLUME /hugegraph-server`，因此 `docker restart` 和 Compose 重新创建容器都会保留这些文件；`docker compose down` 会留下这个匿名卷，下一次 `up` 不会再挂载它，之后执行
+`down -v` 也不会删除它（请在 `down` 之前用 `docker inspect` 记下卷名，再用 `docker volume rm <name>` 删除；`docker volume prune` 会同时删除 Docker
+主机上所有其他未使用的匿名卷），所以请使用具名卷或绑定挂载来保留这些文件。Kubernetes 每次重启都会新建容器，因此需要在 `/hugegraph-server/logs` 挂载 `emptyDir` 或 PersistentVolumeClaim。请为每个 Pod 使用单独的卷，或在共享 PVC 上为每个
+Pod 使用单独的目录（`subPathExpr: $(POD_NAME)`，并通过 Downward API 从 `metadata.name` 传入 `POD_NAME`；Helm Chart 两者都没有设置）：崩溃文件的名字各不相同，但日志文件本身的名字是固定的。只有当存储支持多个节点同时读写挂载（通常是
+`ReadWriteMany`）时，不同节点上的 Pod 才能共享同一个 PVC；`ReadWriteOnce` 的 PVC 只能被一个节点读写挂载，否则请为每个 Pod 使用单独的 PVC。Helm Chart 目前还不会挂载日志卷。堆转储可能和 JVM 堆一样大，而且每次启动都会使用新目录，因此反复内存溢出的
+Server 会把卷写满；请按需要保留的转储数量规划卷大小，并确保不超过 `ephemeral-storage` 限制或 `emptyDir` 的 `sizeLimit`（被驱逐时 `emptyDir` 会连同转储一起删除），也不要使用 `medium: Memory`。存活探针失败后，容器最早可能在转储开始后约
+`(failureThreshold - 1) × periodSeconds + timeoutSeconds` 被重启，kubelet 最多再等待 `terminationGracePeriodSeconds`
+就会终止它；请让这段时间长于写入一次堆转储所需的时间，否则在写转储的过程中重启会留下不完整的文件。启动脚本从不删除转储或 `heapdump_*` 目录，因为 computer 任务的 JVM 可能在 Server 退出后仍在使用它；每次启动到 Java 阶段都会留下一个目录，除非发生内存溢出否则为空。在该次启动的
+HugeGraph JVM 都已退出后可以删除旧目录，但不要动正在运行的 Server 最新的那个目录。要对所有 JVM 关闭堆转储，请在容器的环境变量中设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`（可以使用 `docker run -e`，或在
+Compose 中 Server 服务的 `environment:` 里添加，自带的 Compose 文件没有设置它，或在 Kubernetes 中使用 `env`；只在宿主机 shell 中导出不会生效），这样会保留镜像默认的 `JAVA_OPTS`；把该参数加到 `JAVA_OPTS` 中只对 Server
+自身的 JVM 生效，而且会替换镜像默认值（`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`），需要把这些参数一并写上。
+
+> **版本范围**：上文描述的是基于当前 master 构建的镜像（PD、Store 和单机 Server 见 [apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980)，HStore Server 见
+> [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 及更早的镜像都没有设置 `STDOUT_MODE`，包括上文使用的单机镜像 `hugegraph/hugegraph:1.7.0`：`docker logs`
+> 只能看到入口脚本的输出，服务日志仍在容器内的 `logs/` 中（Server 为 `logs/hugegraph-server.log`）。
 
 ## 容器监控与健康检查
 
@@ -1602,8 +1662,8 @@ HugeGraph-Store 是 HugeGraph 分布式版本的存储节点组件，负责实�
 #### 2.1 前置条件
 
 - 操作系统：Linux 或 macOS（Windows 尚未经过完整测试）
-- Java 版本：≥ 11（编译期强制校验，`bin/start-hugegraph-store.sh` 启动时会再次检查）
-- Maven 版本：≥ 3.5.0
+- Java 版本：HugeGraph 1.8.0+ 使用 Java 17（Maven 源码构建仅接受 JDK 17；启动脚本拒绝低于 17 的运行时；1.7.0 是最后一个支持 Java 11 的版本）
+- Maven 版本：≥ 3.6.3（从源码编译时）
 - 如需进行多节点部署，请先部署 HugeGraph-PD
 
 ### 3 部署
@@ -2179,8 +2239,8 @@ PD 监听三个端口：
 #### 2.1 前置条件
 
 - 操作系统：Linux 或 macOS（Windows 尚未经过完整测试）
-- Java 版本：≥ 11
-- Maven 版本：≥ 3.5.0
+- Java 版本：HugeGraph 1.8.0+ 使用 Java 17（Maven 源码构建仅接受 JDK 17；启动脚本拒绝低于 17 的运行时；1.7.0 是最后一个支持 Java 11 的版本）
+- Maven 版本：≥ 3.6.3（从源码编译时）
 
 ### 3 部署
 
@@ -2456,7 +2516,7 @@ HG_PD_RAFT_PEERS_LIST: pd0:8610,pd1:8610,pd2:8610
 ./bin/start-hugegraph-pd.sh
 ```
 
-脚本要求 `PATH` 或 `JAVA_HOME` 中有 11 及以上版本的 JDK；如果发现已有 Java 进程在使用本安装目录的 `conf` 目录，脚本会直接退出，不做任何事。
+脚本要求 `PATH` 或 `JAVA_HOME` 中有 17 及以上版本的 JDK（1.7.0 要求 11 及以上）；如果发现已有 Java 进程在使用本安装目录的 `conf` 目录，脚本会直接退出，不做任何事。
 
 支持的参数：
 
@@ -10143,6 +10203,20 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph-xx
 
 启用鉴权时需要图空间管理权限（`space`）。
 
+删图前停止所有使用该图的 Server 的写入和任务，并在失败及重试期间持续保持停止状态。
+所有 Server 上的删除完成且经确认前，不得重建同名图。通知送达不构成集群范围的屏障。
+
+执行删除的 Server 会关闭新任务准入，并等待实际执行、取消回调和事务清理结束。
+配置的任务等待超时（`task.wait_timeout`，单位秒）时，会在移除数据、配置或元数据前拒绝删除；待执行对象退出后再重试。
+因任务未排空而拒绝删除后，任务准入仍保持关闭。若要在破坏性清理前恢复正常用图，保持写入和任务生产者停止，
+等待全部已准入任务和取消清理结束后再重启 Server；重启不会恢复已经移除的数据或元数据。
+仅关闭调度器时，尚未开始的持久化任务仍保留在存储中。
+
+删图不是事务操作，破坏性清理后的失败不会恢复已移除的数据或元数据。执行对象或原生资源的清理结果不确定时需要人工检查，
+不能强制移除调度器，也不能仅凭任务 Future 已完成就恢复写入。
+在启用 PD 且 `graph.load_from_local_config=true` 的部署中，若因使用本地配置而拒绝删除，
+移除对应配置文件并重启 Server 仅会阻止 Server 继续加载该图，其后端存储数据仍会保留。
+
 ##### Params
 
 **路径参数说明：**
@@ -10336,7 +10410,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/default
 
 #### 6.1.10 重新加载图空间中的图
 
-重新加载服务中的图，适用于图配置在服务外部被改动之后。
+图配置变化通过重启 Server 应用。热重载恢复尚未实现，不要使用此接口进行配置维护。
+当前未启用 PD 的执行路径中，reload 会调用删图流程，可能清空后端数据。重启完成并确认加载了预期图之前，持续停止写入和任务。
+下方请求及响应仅说明 API 格式，不代表维护或恢复保障。
 
 ##### Params
 
@@ -10815,6 +10891,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/remove_peer
 反链：
 
 - [Graphspace](/cn/docs/clients/restful-api/graphspace/)
+- [Task](/cn/docs/clients/restful-api/task/)
 - [FAQ](/cn/docs/guides/faq/)
 - [使用 Computer 进行 OLAP 分析](/cn/docs/quickstart/computing/hugegraph-computer/)
 
@@ -19636,6 +19713,8 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2
 
 - force: 任务仍在运行时是否强制删除，默认为 false
 
+任务记录删除与删图是不同操作。图维护须遵守[图 API](/cn/docs/clients/restful-api/graphs/)中的停写和任务清理要求。
+
 ##### Method & Url
 
 ```text
@@ -22799,7 +22878,9 @@ go get github.com/apache/hugegraph-toolchain/hugegraph-client-go
 
 `NewCommonClient` 要求 `Host` 是 IP 地址，`Port` 在 1 到 65535 之间；客户端始终使用明文 HTTP 连接。未启用认证时，用户名和密码留空；只有两者都设置时才会发送 Basic Auth。
 
-`GraphSpace` 只在 `Vertex` API（此时请求路径为 `/graphspaces/{space}/graphs/{graph}/...`）和 Gremlin 默认 aliases 中生效（空值按 `DEFAULT` 处理）。Schema 相关入口和 `Version()` 始终请求 `/graphs/{graph}/...` 和 `/versions`，与 `GraphSpace` 无关。默认图空间填写 `DEFAULT`；将 `GraphSpace` 留空时，`Vertex` API 会回退到旧版 Server 使用的 `/graphs/{graph}` 路径。
+`GraphSpace` 非空时，`Vertex` 和 Schema API（`Schema()`、`Propertykey`、`VertexLabel`、`EdgeLabel`）使用
+`/graphspaces/{space}/graphs/{graph}/...` 路径；留空时使用旧版 `/graphs/{graph}/...` 路径。默认图空间填写 `DEFAULT`。
+Gremlin 默认 aliases 也使用 `GraphSpace`，空值按 `DEFAULT` 处理。`Version()` 始终请求 `/versions`，不依赖图空间。
 
 ```go
 package main
@@ -22844,7 +22925,7 @@ func main() {
 |---|---|---|
 | `Host` | `string` | HugeGraph Server 的 IP 地址，不支持主机名 |
 | `Port` | `int` | HugeGraph Server 的 REST 端口，取值 1 到 65535 |
-| `GraphSpace` | `string` | 图空间，仅 `Vertex` API 和 Gremlin 默认 aliases 使用；不需要时填空字符串 |
+| `GraphSpace` | `string` | `Vertex`、Schema API 和 Gremlin 默认 aliases 使用的图空间；默认空间填写 `DEFAULT` |
 | `Graph` | `string` | Server 上配置的图名 |
 | `Username` | `string` | Server 用户名，未启用认证时填空字符串 |
 | `Password` | `string` | Server 密码，未启用认证时填空字符串 |
@@ -23382,6 +23463,9 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
+插件接入计划用于 1.8.0 的共享基础模块 API 时，请按[Java/SPI 迁移指南](/cn/docs/guides/shared-foundation-migration/)调整并使用配套 artifacts 重新编译。
+下方示例描述 1.7.0 API。
+
 ### 背景
 
 1. HugeGraph 不仅开源开放，而且要做到简单易用，一般用户无需更改源码也能轻松增加插件扩展功能。
@@ -23735,6 +23819,12 @@ public class DemoPlugin implements HugeGraphPlugin {
 #### 5. 打 Jar 包
 
 通过 maven 打包，在项目目录下执行命令`mvn package`，在 target 目录下会生成 Jar 包文件。使用时将该 Jar 包拷到`plugins`目录，重启服务即可生效。
+
+---
+
+反链：
+
+- [1.8.0 Java 与升级迁移](/cn/docs/guides/shared-foundation-migration/)
 
 
 ================
@@ -24193,6 +24283,146 @@ mvn test -Dtest=FuncTestSuite -ntp  # 需 Server 运行
 
 
 ================
+Source: https://hugegraph.apache.org/cn/docs/guides/toplingdb/index.md
+================
+
+# ToplingDB 开发版集成
+
+> 从开发源码构建可选 ToplingDB 运行时，隔离数据目录，并了解启动与恢复边界。
+
+---
+
+LLMS 索引： [llms.txt](/cn/llms.txt)
+
+---
+
+> **开发版接口**：本文适用于开启可选 ToplingDB 运行时的开发构建版本。
+> 已有发行版和镜像标签不代表支持本文接口，采用前须完成运行时验证。
+
+## 确认数据库所属组件
+
+HugeGraph 默认使用标准 RocksDB。对持有本地存储的每个进程分别启用 Topling：
+
+| 组件 | 业务 provider 配置 | 启动命令 |
+| --- | --- | --- |
+| 独立 RocksDB Server | 每个选用的 graph properties 文件中设置 `rocksdb.provider=topling` | `bin/start-hugegraph.sh` |
+| PD | `conf/application.yml` 的 `rocksdb` 下设置 `provider: topling` | `bin/start-hugegraph-pd.sh` |
+| Store | `conf/application-pd.yml` 的 `rocksdb` 下设置 `provider: topling` | `bin/start-hugegraph-store.sh` |
+
+独立 Server 保持 `backend=rocksdb`；HStore Server 使用 `backend=hstore`，不需要本地 Topling 运行时。
+同一 Server 进程中的本地 RocksDB 图必须使用相同 provider。业务配置必须与启动脚本选择的运行时一致。
+
+## 构建并准备标准发行包
+
+在源码仓库根目录，使用 Java 17 和 Maven 3.6.3 或更新版本构建普通发行包：
+
+```bash
+mvn clean package -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+```
+
+从可信制品渠道取得 Topling Easy Migrate JNI JAR 及其 SHA-256。准备环境需要 Java 17 JDK、Linux x86_64、`sha256sum`、`unzip`、`od`、`ldd` 和 GNU `mv`。
+还须满足所选 JAR 的 native 依赖，包括其要求的 glibc 和 libaio。
+
+先停止组件，解压一份新的标准发行包，再从该组件目录执行：
+
+```bash
+export TOPLING_JNI_JAR=/absolute/path/to/rocksdbjni-topling.jar
+export TOPLING_JNI_SHA256='<trusted-64-character-sha256>'
+bash bin/prepare-topling.sh
+```
+
+脚本校验复制后的 JAR 哈希、Topling Java 标识、唯一的 Linux x86_64 JNI 条目、ELF 架构及 native 依赖。
+安装前还会用所选 JNI 打开临时数据库，确认 EasyMigrate 配置实际改变了持久化的写缓冲区大小；类标识和哈希匹配但不支持该配置入口的构建会被拒绝。
+此探针不代表已有数据兼容性或所有生产配置均已验证。校验记录绑定已测试的 JAR 和 native 库，启动时拒绝缺失或失效的记录；从旧准备脚本升级时请重新准备一份新发行包。
+默认/标准模式启动时会拒绝继承的 RocksDB JNI 预载库，Topling 模式则拒绝与所选 JNI 竞争的预载库；其他预载库继续保留。
+它将 `topling/rocksdbjni.jar`、对应 native 库和可选网页资源放在 `lib` 之外。已有 `topling` 目录时会拒绝准备；更换运行时请使用另一份已停止的新发行包。
+按实际部署需要，为 Server、PD 和 Store 分别执行准备步骤。
+
+## 将持久数据放在发行包之外
+
+更换 provider 不会转换已有数据库。为 Topling 使用独立、初始为空的目录，并保留标准 provider 的数据。
+预先创建服务账号可写的持久目录，将其放在源码检出、构建输出和解压后的发行包目录之外。注意：每个图必须使用互不相同的独立数据与 WAL 目录，避免目录冲突：
+
+| 组件 | 配置文件及配置项 | 持久路径示例 |
+| --- | --- | --- |
+| Server 数据 | Graph properties：`rocksdb.data_path` | `/srv/hugegraph/topling/server/<graph>/data` |
+| Server WAL | Graph properties：`rocksdb.wal_path` | `/srv/hugegraph/topling/server/<graph>/wal` |
+| PD | `conf/application.yml`：`pd.data-path` | `/srv/hugegraph/topling/pd` |
+| Store 数据 | `conf/application.yml`：`app.data-path` | `/srv/hugegraph/topling/store/data` |
+| Store Raft | `conf/application.yml`：`app.raft-path` | `/srv/hugegraph/topling/store/raft` |
+
+独立 Server 的每个选用图配置都需修改，例如 `conf/graphs/hugegraph.properties`（若配置多个图，请将路径中的 `hugegraph` 替换为对应图名）：
+
+```properties
+backend=rocksdb
+rocksdb.provider=topling
+rocksdb.data_path=/srv/hugegraph/topling/server/hugegraph/data
+rocksdb.wal_path=/srv/hugegraph/topling/server/hugegraph/wal
+```
+
+Server 的数据和 WAL 路径**都要设置**，且不同图之间不能共享同一路径。若 WAL 仍使用发行包内的默认路径，重新构建或替换发行包时可能丢失该目录。
+运行时或发行包更新时，保留外部数据、WAL 和 Raft 根目录。
+
+PD 和 Store 应在上表对应的 provider 配置文件中修改已有 `rocksdb` 映射，保留其余选项：
+
+```yaml
+rocksdb:
+  provider: topling
+```
+
+持久路径另在 `conf/application.yml` 中配置，同时保留正常的网络地址和集群配置。
+
+准备完成后的 runtime 目录权限为 0755，普通资源文件为 0644，因此使用另一个服务账号也能读取 JNI。该账号还需要组件上级目录的遍历权限；prepare 不会修改上级目录权限。
+
+## 选择运行时并启动验证
+
+在每个持有 Topling 数据库的组件启动终端中，显式选择运行时：
+
+```bash
+export TOPLINGDB_ROCKSDB_PROVIDER=topling
+# 执行第一张表中该组件对应的启动命令。
+```
+
+启动脚本默认使用该组件的 `conf/toplingdb.yaml`，也可用 `TOPLINGDB_EASY_MIGRATE_CONF=/absolute/path/config.yaml` 显式覆盖。
+发行包中的 native 配置关闭 HTTP 服务，并保留 Java 写入路径要求的 `memtable_as_log_index=false`。
+请按机器条件调整该文件；它与业务 provider、数据目录配置分别生效。
+
+独立 Server 使用全新图时，首次启动前先初始化一次存储：
+
+```bash
+bash bin/init-store.sh
+bash bin/start-hugegraph.sh
+```
+
+`bin/init-store.sh`、`bin/dump-store.sh` 与 `bin/start-hugegraph.sh` 使用同一显式运行时选择。
+HStore 按 PD、Store、Server 的顺序启动。在同一 shell 中启动 HStore Server 前，执行 `unset TOPLINGDB_ROCKSDB_PROVIDER`
+（或 `export TOPLINGDB_ROCKSDB_PROVIDER=rocksdb`）；不要在该 Server 上启用本地 Topling。
+业务 provider 与实际运行时不一致时，组件会在开库前拒绝启动。
+
+采用前须确认实际 RocksDB Java 类和进程加载的 JNI 库来自准备好的运行时。在专用数据目录中验证真实写入、读取、正常停止和重启；
+HStore 还需通过 Server 执行图操作，覆盖 PD 和 Store 链路。仅构建成功、启动成功或通过标准 JNI 单元测试，不能证明 Topling 运行时已验收。
+
+## 停止或切回标准 RocksDB
+
+先停止新业务，再使用正常停止脚本。HStore 依次执行 Server 的 `bin/stop-hugegraph.sh`、Store 的 `bin/stop-hugegraph-store.sh`、
+PD 的 `bin/stop-hugegraph-pd.sh`，等待前一个进程退出后再停止其依赖。强制终止进程不能作为正常 native 资源清理的证明。
+
+切回标准 RocksDB 前先停止组件，取消 `TOPLINGDB_ROCKSDB_PROVIDER`，并把业务 provider 改回 `rocksdb`。
+使用对应的标准 provider 数据和 WAL 路径，不要指向已被 Topling 修改的数据库。
+
+专用 Topling 发行包、Docker/Compose 打包、通用生命周期改造及可重试快照恢复分别后续交付。
+本文覆盖普通发行包的启动脚本；自定义 IDE 和嵌入式入口需要自行准备运行时并完成验证。
+
+---
+
+反链：
+
+- [ToplingDB](/cn/blog/hugegraph/toplingdb/)
+- [ToplingDB的YAML配置文件](/cn/blog/2025/09/30/toplingdb-yaml-configuration-file/)
+- [ToplingDB 快速上手](/cn/blog/2025/10/09/toplingdb-quick-start/)
+
+
+================
 Source: https://hugegraph.apache.org/cn/docs/config/index.md
 ================
 
@@ -24263,7 +24493,7 @@ HugeGraphServer 内部集成了 GremlinServer 和 RestServer，而 gremlin-serve
 |------|------------|----------|
 | `conf/gremlin-server.yaml` | 随发行包提供；配置 Gremlin Server。 | `start-hugegraph.sh` 将它作为 Server 启动参数传入。 |
 | `conf/rest-server.properties` | 按固定 Server 主线构建时随发行包提供；配置 REST Server、PD、认证等。 | 启动脚本和 Server 进程读取；对应主线构建的容器入口脚本也会在启动前更新其中受支持的选项。 |
-| `conf/graphs/hugegraph.properties` | 随发行包提供的默认图配置，使用 RocksDB。 | `init-store.sh` 和 Server 应用初始化都会扫描该目录；初始化阶段会尝试加载其中的图配置。`graph.load_from_local_config` 默认 `false`，只控制管理器构造阶段预加载及 `reload()` 重扫。 |
+| `conf/graphs/hugegraph.properties` | 随发行包提供的默认图配置，使用 RocksDB。 | `init-store.sh` 和 Server 应用初始化都会扫描该目录；初始化阶段会尝试加载其中的图配置。`graph.load_from_local_config` 默认 `false`，控制管理器构造阶段预加载。图配置变化通过重启 Server 应用。 |
 | `conf/graphs/hstore.properties.template` | 随发行包提供的 HStore 模板；其他图配置由用户按需创建。 | HStore 镜像在构建时把模板改名为 `hugegraph.properties`；裸发行包用户可复制模板并修改。 |
 
 完整的默认文件见Server 主线源码：[gremlin-server.yaml](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/gremlin-server.yaml)、[rest-server.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/rest-server.properties)、[hugegraph.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hugegraph.properties) 和 [hstore.properties.template](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hstore.properties.template)。
@@ -24285,7 +24515,7 @@ graphs: {}
 ssl: { enabled: false }
 ```
 
-通常只需关注 `channelizer`、`host` 和 `port`。图不在 Gremlin Server 的 `graphs` 段加载；REST 侧管理器会在 Server 应用初始化时扫描 `graphs` 目录并尝试载入本地图配置。`graph.load_from_local_config` 只控制管理器构造阶段的预加载与 `reload()` 重扫；默认 `false` 不会关闭应用初始化阶段的本地加载。
+通常只需关注 `channelizer`、`host` 和 `port`。图不在 Gremlin Server 的 `graphs` 段加载；REST 侧管理器会在 Server 应用初始化时扫描 `graphs` 目录并尝试载入本地图配置。`graph.load_from_local_config` 控制管理器构造阶段的预加载；默认 `false` 不会关闭应用初始化阶段的本地加载。
 
 - channelizer：默认的 `WsAndHttpChannelizer` 同时支持 WebSocket 和 HTTP。Gremlin-Console 使用 WebSocket，HugeGraph-Client、Loader 和 Hubble 使用 HTTP；
 
@@ -24298,7 +24528,7 @@ ssl: { enabled: false }
 
 ### 3 rest-server.properties
 
-下面是可用的 `rest-server.properties` 示例。主线模板未写出 `graph.load_from_local_config`，源码默认值为 `false`。示例中设为 `true` 是可选的：它开启管理器构造阶段预加载和 `reload()` 重扫；Server 应用初始化阶段仍会扫描并尝试加载本地图配置。
+下面是可用的 `rest-server.properties` 示例。主线模板未写出 `graph.load_from_local_config`，源码默认值为 `false`。示例中设为 `true` 是可选的：它开启管理器构造阶段预加载；Server 应用初始化阶段仍会扫描并尝试加载本地图配置。
 
 ```properties
 # bind url
@@ -24342,7 +24572,7 @@ memory_monitor.period=2000
 
 - restserver.url：RestServer 提供服务的 url，根据实际环境修改。如果其他 IP 地址无法访问，可以尝试修改为特定的地址；或修改为 `http://0.0.0.0` 来监听来自任何 IP 地址的请求，这种方案较为便捷，但需要留意服务可被访问的网络范围；
 - graphs：图配置文件所在目录，默认值是 `./conf/graphs`。`init-store.sh` 会扫描该目录；Server 应用初始化也会扫描并尝试加载其中的 properties 文件；
-- graph.load_from_local_config：是否在管理器构造阶段预加载本地图配置，以及在 `reload()` 时重新扫描；源码默认值为 `false`。它不会禁止 Server 应用初始化阶段的本地加载，也不是安全隔离开关；
+- graph.load_from_local_config：默认 `false`，控制构造阶段预加载；不会禁止 Server 应用初始化阶段的本地加载，也不是安全隔离开关。图配置变化通过重启 Server 应用。
 
 > 当前上游模板中的 Arthas 键仍写作 `arthas.telnet_port`、`arthas.http_port` 和 `arthas.disabled_commands`，但 `ServerOptions` 读取的是下方示例中的 camelCase 名称。自定义配置应使用 `arthas.telnetPort`、`arthas.httpPort` 和 `arthas.disabledCommands`。
 
@@ -24377,7 +24607,7 @@ store=hugegraph
 
 **[可选]：修改 rest-server.properties**
 
-通过修改 `rest-server.properties` 中的 `graphs` 配置项来设置图的配置文件目录。默认配置为 `graphs=./conf/graphs`；需要其他目录时调整 `graphs`。下面将 `graph.load_from_local_config` 设为 `true`，作为管理器构造阶段预加载和 `reload()` 重扫的可选设置；应用初始化仍会读取该目录中的本地图配置：
+通过修改 `rest-server.properties` 中的 `graphs` 配置项来设置图的配置文件目录。默认配置为 `graphs=./conf/graphs`；需要其他目录时调整 `graphs`。下面将 `graph.load_from_local_config` 设为 `true`，作为管理器构造阶段预加载的可选设置；应用初始化仍会读取该目录中的本地图配置：
 
 ```properties
 graphs=./conf/graphs
@@ -24503,7 +24733,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 | config option                          | default value                                    | description                                                                                                                                                                                                   |
 |----------------------------------------|--------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | graphs                                 | ./conf/graphs                                    | 图配置 properties 文件所在目录。                                                                                                                                                                                |
-| graph.load_from_local_config           | false                                            | 控制管理器构造阶段是否预加载本地图配置，以及 `reload()` 时是否重扫。应用初始化仍会扫描并尝试加载 `graphs` 目录，因此 `false` 不是阻止本地配置加载的安全开关。 |
+| graph.load_from_local_config           | false                                            | 控制构造阶段预加载。应用初始化仍扫描并尝试加载本地配置，`false` 不会阻止本地加载。图配置变化通过重启 Server 应用。 |
 | graphs.enable_dynamic_create_drop      | true                                             | Whether to enable create or drop graph dynamically.                                                                                                                                                           |
 | init_store.enabled                     | true                                             | Whether init-store initializes the local backend stores and the built-in admin account. Set false in distributed deployments (PD/HStore) where the storage side already owns the metadata.                     |
 | server.id                              | 空字符串                                         | The optional legacy id of hugegraph-server.                                                                                                                                                                   |
@@ -25421,6 +25651,12 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 }
 ```
 
+---
+
+反链：
+
+- [1.8.0 Java 与升级迁移](/cn/docs/guides/shared-foundation-migration/)
+
 
 ================
 Source: https://hugegraph.apache.org/cn/docs/guides/security/index.md
@@ -25503,8 +25739,8 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
   1.7.0 支持 RocksDB、HStore、HBase 和 Memory。Cassandra、ScyllaDB、MySQL、PostgreSQL 等旧后端需使用 1.5.x 或更早版本。
 
 - 启动服务时提示：`xxx (core dumped) xxx`
-
-  请先确认 JDK 版本不低于 Java 11。HugeGraph 1.7.0 不再支持 Java 8。
+ 
+  请先确认 JDK 版本符合对应版本要求：HugeGraph 1.8.0+ 要求 Java 17，1.7.0 要求 Java 11。HugeGraph 不再支持 Java 8。
 
 - 启动服务成功了，但是操作图时有类似于"无法连接到后端或连接未打开"的提示
 
@@ -25524,7 +25760,8 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 - 配置了两个图，名字是`hugegraph`和`hugegraph1`，而启动服务的命令是`start-hugegraph.sh`，是只打开了`hugegraph`这个图吗
 
-  脚本名称与图名无关。Server 默认从 `conf/graphs` 扫描并加载本地图配置，目录可在 `conf/rest-server.properties` 的 `graphs` 配置项中修改。`graph.load_from_local_config` 的默认值是 `false`，只控制图管理器构造阶段的预加载及 `reload()` 重扫，不能用于禁止启动时加载；需要加载多个本地图时，为每个图准备独立配置文件。详见[服务端配置说明](/cn/docs/config/config-guide/)。
+  脚本名称与图名无关。Server 默认从 `conf/graphs` 扫描并加载本地图配置，目录可在 `conf/rest-server.properties` 的 `graphs` 配置项中修改。`graph.load_from_local_config` 默认
+  `false`，控制构造阶段预加载，不能用于禁止启动时加载。每个本地图使用独立配置文件，配置变化后重启 Server。详见[服务端配置说明](/cn/docs/config/config-guide/)。
 
 - 服务启动成功后，使用`curl`查询所有顶点时返回乱码
 
@@ -26558,6 +26795,8 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 - [HugeGraph Docker 集群部署指南](/cn/docs/guides/hugegraph-docker-cluster/)
 - [FAQ](/cn/docs/guides/faq/)
 - [报告安全问题](/cn/docs/guides/security/)
+- [1.8.0 共享基础模块迁移指南](/cn/docs/guides/shared-foundation-migration/): 调整 Java import 和插件实现，并准备 1.8.0 共享基础模块迁移所需的 Server、PD、Store 同步升级。
+- [ToplingDB 开发版集成](/cn/docs/guides/toplingdb/): 从开发源码构建可选 ToplingDB 运行时，隔离数据目录，并了解启动与恢复边界。
 
 
 ================
@@ -28165,6 +28404,12 @@ hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/
 
 上述名称来自根 `pom.xml` 及各子项目 `pom.xml`；代码结构以正在使用的分支为准。
 
+已合入 Server `master`、面向 1.8.0 的整合见[共享基础模块职责和 Java 迁移指南](/cn/docs/guides/shared-foundation-migration/)。
+
+当前 Server `master` 使用 Java 17 和 Maven 3.6.3 或更高版本构建。
+CI-friendly 版本在 `process-resources` 阶段展开，安装或发布的 POM 使用具体版本号。
+单独构建模块前，先对整仓执行 `install`；使用 Maven 3.10 时也应保持 Resolver 校验开启。
+
 先运行与改动直接相关的测试。Server 常用测试入口如下：
 
 ```bash
@@ -28186,9 +28431,21 @@ GitHub 已不支持通过用户名和密码直接推送代码。需要使用个�
 
 提交第三方依赖时，还要同步发行包中的许可证信息：
 
-1. 把依赖的许可证文件放入 `hugegraph-server/hugegraph-dist/release-docs/licenses/`。
-2. 更新 `hugegraph-server/hugegraph-dist/release-docs/LICENSE`；依赖包含 NOTICE 时，同时更新 `NOTICE`。
-3. 运行 `hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh`，更新已知依赖清单。
+1. 把依赖的许可证文件放入 `install-dist/release-docs/licenses/`。
+2. 更新 `install-dist/release-docs/LICENSE`；依赖包含 NOTICE 时，同时更新 `NOTICE`。
+3. 在仓库根目录，先准备当前 revision 的 Server、PD、Store 发行包库，再生成依赖清单：
+
+   ```bash
+   mvn clean install -DskipTests -Dmaven.javadoc.skip=true
+   bash install-dist/scripts/dependency/regenerate_known_dependencies.sh
+   ```
+
+   `clean` 会重新构建当前版本的发行目录，避免残留已移除的依赖 jar。
+   它还会删除 `hugegraph-server/`、`hugegraph-pd/` 与 `hugegraph-store/` 目录下的所有 `*.tar` 和 `*.tar.gz` 文件，以及仓库根目录中当前版本的 `apache-hugegraph-<revision>.tar.gz`；其他版本的目录会保留。
+
+   此构建跳过测试。依赖收集同时覆盖 Maven runtime 依赖和实际发行包中的平铺、嵌套 jar，
+   包括 Spring Boot repackaging 引入的 `BOOT-INF/lib` 依赖。缺失发行包必须使收集失败；只检查 POM 不能证明完整发行依赖集。
+   核查 `install-dist/scripts/dependency/known-dependencies.txt` 的严格增删对比及对应 license/NOTICE，并按需覆盖发布平台和 profile 变体。
 
 ## 提交 Pull Request
 
@@ -28226,6 +28483,7 @@ Contributor Agreement 使用 ASF 官方流程，见[贡献者协议](https://hug
 反链：
 
 - [在 IDEA 中配置 Server 开发环境](/cn/docs/contribution-guidelines/hugegraph-server-idea-setup/)
+- [1.8.0 Java 与升级迁移](/cn/docs/guides/shared-foundation-migration/)
 
 
 ================
@@ -28636,7 +28894,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 ---
 
 > Note: 这篇文档会持续更新。
-> HugeGraph 1.8.0 的源码构建与发行包运行验证统一使用 Java 17。
+> HugeGraph 1.8.0 的源码构建与发行包运行验证统一使用 Java 17（Maven 源码构建仅接受 JDK 17）；1.7.0 请使用 Java 11。从 1.5.0 版本开始 (除 client 外) 不再支持 Java 8。
 >
 > 毕业说明：Apache HugeGraph 已于 2026 年 1 月毕业。正式发版投票现由 HugeGraph 社区内部完成（`dev@hugegraph.apache.org` 上的 PMC binding 投票），不再需要 Incubator `general@incubator.apache.org` 审批。
 
@@ -28675,7 +28933,7 @@ Workflow 的 `source-prevalidation` 模式使用明确的 Server/Toolchain commi
 #### 1. 准备工作
 
 如果本地没有 svn 或 gpg 或 wget 环境，建议先安装一下 (windows 推荐使用 WSL2 环境，
-或者至少是 `git-bash`), 同时确保安装 Java 17 和 maven 软件。
+或者至少是 `git-bash`), 同时确保安装 Java 17（编译 1.7.0 请使用 Java 11）和 Maven 软件 (≥ 3.6.3)。
 
 ```bash
 # 1. 安装svn
@@ -28788,7 +29046,7 @@ PMC 同学请特别注意认真检查 `LICENSE` + `NOTICE` 文件，确保文件
 大部分的发版问题都与之相关
 
 ```bash
-# 请优先使用/切换到 `java 17` 版本进行后序的编译和运行操作 (注:`Computer` 仅支持 `java >= 11`)
+# 验证 HugeGraph 1.8.0+ 请优先使用/切换到 `java 17` 版本（1.7.0 请使用 `java 11`）进行后序的编译和运行操作 (注:`Computer` 仅支持 `java >= 11`)
 # java --version
 
 # 尝试在 Unix 环境下编译测试是否正常
@@ -28902,7 +29160,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 1. 初始化数据库后端，执行 `InitStore` 类初始化图
 2. 启动 HugeGraph-Server，执行 `HugeGraphServer` 类加载初始化的图信息启动
 
-在执行下述流程之前，请确保已经克隆了 HugeGraph 的源代码，并且已经配置了 Java 11 环境 & 可以参考这个 [配置文档](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
+在执行下述流程之前，请确保已经克隆了 HugeGraph 的源代码，并且已经配置了开发环境（HugeGraph 1.8.0+ 需 Java 17，1.7.0 需 Java 11）& 可以参考这个 [配置文档](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
 
 ```bash
 git clone https://github.com/apache/hugegraph.git

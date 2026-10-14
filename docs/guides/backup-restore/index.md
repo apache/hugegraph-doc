@@ -160,3 +160,9 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
     "mode": "RESTORING"
 }
 ```
+
+---
+
+Backlinks:
+
+- [1.8.0 Java and upgrade migration](/docs/guides/shared-foundation-migration/)

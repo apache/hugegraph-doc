@@ -76,6 +76,8 @@
   - [Docker Cluster](https://hugegraph.apache.org/docs/guides/hugegraph-docker-cluster/index.md)
   - [FAQ](https://hugegraph.apache.org/docs/guides/faq/index.md)
   - [Security](https://hugegraph.apache.org/docs/guides/security/index.md)
+  - [1.8.0 Java and upgrade migration](https://hugegraph.apache.org/docs/guides/shared-foundation-migration/index.md): Update Java imports and plugins, then prepare matching Server, PD and Store upgrades for the 1.8.0 shared-foundation changes.
+  - [ToplingDB (development)](https://hugegraph.apache.org/docs/guides/toplingdb/index.md): Build the optional ToplingDB runtime from development source, isolate its data, and understand startup and recovery boundaries.
 - [Query Languages](https://hugegraph.apache.org/docs/language/index.md)
   - [Gremlin Query Language](https://hugegraph.apache.org/docs/language/hugegraph-gremlin/index.md)
   - [HugeGraph Examples](https://hugegraph.apache.org/docs/language/hugegraph-example/index.md)

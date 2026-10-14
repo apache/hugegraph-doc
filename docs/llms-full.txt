@@ -253,7 +253,7 @@ LLMS index: [llms.txt](/llms.txt)
 The `hugegraph-server` module contains `hugegraph-core`, `hugegraph-api`, `hugegraph-dist`, and storage adapters. Core implements the property graph model, transactions, and TinkerPop interfaces. API provides the HTTP service and delegates client requests to Core. Graph data is stored in RocksDB (the default standalone backend), HStore (distributed), or HBase.
 
 > [!WARNING]
-> **Version scope**: Download examples use the ASF HugeGraph 1.7.0 release. Source builds, configuration defaults, and startup behavior follow `apache/hugegraph` master. A master build is not an ASF release artifact, even if its version number matches 1.7.0. This guide covers RocksDB, HStore, and HBase; see [1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md) for other legacy backends.
+> **Version scope**: Download examples use the ASF HugeGraph 1.7.0 release. Source builds, configuration defaults, and startup behavior follow `apache/hugegraph` master. A master build is not an ASF release artifact, even if its version number matches a release. This guide covers RocksDB, HStore, and HBase; see [1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md) for other legacy backends.
 
 > Naming: `HugeGraph` means the overall project or main repository, `hugegraph-server` is its Server module, and `HugeGraphServer` is the Java service class. Server below means the running graph database service.
 
@@ -291,17 +291,50 @@ markmap:
 
 ## 2 Dependency for Building/Running
 
-### 2.1 Install Java 11 (JDK 11)
+<span id="21-install-java-11-jdk-11"></span>
 
-The `hugegraph-server` module in HugeGraph 1.7.0 is compiled with Java 11. Running and building it from source require Java 11 or later.
+### 2.1 Install Java 17 (JDK 17)
+
+Starting with HugeGraph 1.8.0, use **Java 17**; **1.7.0 is the last release supporting Java 11**.
+Build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD and Store with **JDK 17**.
+Server security check (`-s true`) requires Java 17 to 23 and a readable `conf/java-security.properties`;
+on Java 24 or later, start Server with `-s false` (JDK 24+ dropped Security Manager via JEP 486).
 
 **Before continuing, run `java -version` to confirm your JDK version.**
 
-> Java 8 is no longer supported starting from 1.7.0. `bin/hugegraph-server.sh` refuses to start on anything older than Java 11.
+> [!NOTE]
+> **TinkerPop 3.8.1 Compatibility & Key Changes**
+>
+> HugeGraph 1.8.0 upgrades to TinkerPop 3.8.1 and Groovy 4.0.25. Use the Gremlin configuration files bundled with Server.
+>
+> - **Serializer Packages**: Driver serializer classes moved from `org.apache.tinkerpop.gremlin.driver.ser` to `org.apache.tinkerpop.gremlin.util.ser`.
+>   Keep HugeGraph registries.
+> - **Graph.Features**: `supportsUniformListValues()` returns `false` for properties.
+>   Schema `valueList()`/`LIST` properties remain supported without rewriting existing data.
+> - **Traversal Multiplicity**: Mid-traversal scans retain input multiplicity (e.g. for 3 vertices, `g.V().V().count()` returns `9L`).
+> - **Date & Time Types**: `DATE` properties accept `OffsetDateTime` for writes and indexed equality/range queries (instant normalized to milliseconds).
+> - **Filtering Behavior**: `P.typeOf()` runs as a local filter; count filtering applies range optimizations only when predicate branches are provably safe.
 
-> The security check is on by default and installs `HugeSecurityManager`, which needs Java 11 to 23. JDK 24 removed the Security Manager ([JEP 486](https://openjdk.org/jeps/486)), so on Java 24 or later you must start the service with the check disabled: `bin/start-hugegraph.sh -s false`.
+```yaml {tab="GraphBinary (Recommended)"}
+# Bundled Driver and Console default to GraphBinary V1
+# - Schema results are standard maps
+# - Blob values are binary (including inside returned elements)
+serializer:
+  className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
+  config:
+    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+```
 
-> Building from source also needs Maven 3.5.0 or later.
+```yaml {tab="GraphSON (HTTP / Legacy)"}
+# Default HTTP JSON uses untyped GraphSON V1
+# - Preserves the legacy Tree key/value array structure
+# - Typed GraphSON V1 is disabled for security (typed V2/V3 remain available for simple values and IDs)
+# - graph.schema() returns property keys, vertex labels, edge labels, and index labels
+```
+
+> [!TIP]
+> For complete client configuration and migration details, see the
+> [server runtime documentation](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md).
 
 ## 3 Deploy
 
@@ -416,13 +449,13 @@ A successful build logs:
 [INFO] BUILD SUCCESS
 ```
 
-The build creates an aggregate master archive under repository-root `target/` (the current source version property is 1.7.0):
+The build creates an aggregate master archive under repository-root `target/` (the current source version property is 1.8.0):
 
 ```text
-target/apache-hugegraph-1.7.0.tar.gz
+target/apache-hugegraph-1.8.0.tar.gz
 ```
 
-The filename version comes from source `revision`; it does not make the build an ASF release artifact. The build also creates repository-root `apache-hugegraph-1.7.0/`, containing a Server directory named by that module's `final.name`, currently `apache-hugegraph-server-1.7.0`. If retaining only the archive, first run `tar zxf target/apache-hugegraph-1.7.0.tar.gz`, then enter the Server directory.
+The filename version comes from source `revision`; it does not make the build an ASF release artifact. The build also creates repository-root `apache-hugegraph-1.8.0/`, containing a Server directory named by that module's `final.name`, currently `apache-hugegraph-server-1.8.0`. If retaining only the archive, first run `tar zxf target/apache-hugegraph-1.8.0.tar.gz`, then enter the Server directory.
 
 Default builds bundle `rocksdb`, `hbase`, and `hstore` modules, listed in `backends` within `backend.properties` in the `hugegraph-dist` JAR. For a RocksDB-only distribution, add `-Drocksdb-only`:
 
@@ -464,7 +497,7 @@ mvn package -DskipTests -ntp -Drocksdb-only
 
 Server archives include `conf/rest-server.properties`, `conf/gremlin-server.yaml`, and `conf/graphs/hugegraph.properties`; source builds assemble them from `hugegraph-server/hugegraph-dist/src/assembly/static/conf/`. Edit them inside the extracted Server directory without a separate generation step. Defaults vary by release; the following defaults and startup behavior describe master.
 
-For standalone RocksDB, confirm `backend=rocksdb` and `serializer=binary` in `conf/graphs/hugegraph.properties`. Normal Server initialization scans `conf/graphs/` and loads local graphs without requiring `graph.load_from_local_config=true`. This option defaults to `false` and controls constructor preloading and rescanning on `reload()`.
+For standalone RocksDB, confirm `backend=rocksdb` and `serializer=binary` in `conf/graphs/hugegraph.properties`. Normal Server initialization scans `conf/graphs/` and loads local graphs without requiring `graph.load_from_local_config=true`. This option defaults to `false` and controls constructor preloading. Restart Server to apply graph configuration changes; do not use hot reload for maintenance.
 
 See the [configuration guide](/docs/config/config-guide/) and [option reference](/docs/config/config-option/) for details.
 
@@ -784,15 +817,36 @@ This indicates the successful creation of the sample graph.
 | Option | Values | Default | Purpose |
 |---|---|---|---|
 | `-d` | `true`, `false` | `true` | Daemon mode. With `-d false` the script stays in the foreground and forwards `SIGTERM`/`SIGINT` to the server. |
-| `-g` | `zgc` or `ZGC` | omit for G1GC | Garbage collector to use. Only ZGC is accepted, any other value aborts the startup. ZGC needs Java 11 or later. |
+| `-g` | `g1`, `G1`, `zgc`, `ZGC` | JVM default | Garbage collector to use (`g1`/`G1` sets `-XX:+UseG1GC`; `zgc`/`ZGC` sets `-XX:+UseZGC`). Omitting `-g` uses the JVM default collector. |
 | `-m` | `true`, `false` | `false` | Install the cron-based monitor task (`bin/start-monitor.sh`). For VM and bare-metal deployments only. |
 | `-p` | `true`, `false` | `false` | Preload the sample graph, as in 5.1.4. |
-| `-s` | `true`, `false` | `true` | Run with the security check (`HugeSecurityManager`) enabled. It requires Java 11 to 23 and a readable `conf/java-security.properties`. |
+| `-s` | `true`, `false` | `true` | Enable `HugeSecurityManager`; requires Java 17 to 23 and readable `conf/java-security.properties`. On Java 24+, start with `-s false`. |
 | `-j` | JVM options | empty | Extra JVM options appended to the server command line. |
 | `-t` | seconds | `30` | How long to wait for the service to answer before reporting a failed startup. |
 | `-y` | `true`, `false` | `false` | Enable the OpenTelemetry agent for traces. |
 
 `bin/stop-hugegraph.sh` accepts `-m true|false` (default `true`), which controls whether the cron monitor task is removed along with the service.
+
+`bin/hugegraph-server.sh` puts `-XX:+HeapDumpOnOutOfMemoryError`, `-XX:HeapDumpPath` and `-XX:ErrorFile` first in `JAVA_TOOL_OPTIONS`, so, whether or not
+`JAVA_OPTIONS` is set and with the exceptions below, an out-of-memory heap dump (`heapdump_<host>_<launch time>/java_pid<pid>.hprof`) and a JVM crash log
+(`hs_err_pid<pid>_<host>_<launch time>.log`) land in `logs/`, where `<launch time>` is the local time as `YYYYMMDD-HHMMSS`. Each start gets its own `heapdump_*`
+directory, so the server and the JVMs it starts, such as computer jobs, write separate dumps (HotSpot names each dump and crash log after the JVM's PID, so a
+JVM that reuses an earlier PID from the same start cannot write its dump, and its crash log replaces the earlier one's). The host name keeps servers that share
+one log directory from picking the same name, and a counter (`<launch time>-1`, `-2`, ...) is added when the same host already used that second. If the
+directory cannot be created, for example on a full disk, the server still starts and dumps go to `logs/` itself, as a best effort: a full disk may have no room
+for the dump either. A heap dump can be as large as the heap. The launcher never deletes dumps or `heapdump_*` directories: each start that reaches Java leaves
+one, empty unless something ran out of memory, and the launcher keeps it because a computer-job JVM can go on using it after the server exits. Move or delete
+old ones once no HugeGraph JVM from that launch is running, but never the newest one of a running server; without it, the next dump is written as a file with
+that name. The JVM reads your own `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS` (including `@argfiles`), the command line (`JAVA_OPTIONS`, or `-j` when `JAVA_OPTIONS`
+is unset or empty) and `_JAVA_OPTIONS` after these defaults, so a value for one of these flags in any of them overrides the default. Only the environment
+variables reach the JVMs the server starts: to turn dumps off for all of them, set `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, while `-j` or
+`JAVA_OPTIONS` turns them off for the server JVM only. Either way each start that reaches Java still creates its empty `heapdump_*` directory, unless creating
+it failed and dumps fell back to `logs/`. If the logs path contains a double quote or `%`, the launcher warns and heap dumps go to `logs/` itself, with no
+per-launch directory and no crash log default; the `JAVA_TOOL_OPTIONS` opt-out still applies. A path with both quote characters gets no heap dump default at
+all. Because of the defaults, the JVM prints `Picked up JAVA_TOOL_OPTIONS: ...` on stderr at startup.
+
+> **Version scope**: this applies to current master ([apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)). In 1.7.0 the heap dump flags are
+> added only when `JAVA_OPTIONS` is unset, heap dumps go directly to `logs/java_pid<pid>.hprof`, and JVM crash logs go to the install directory.
 
 ### 5.2 Use Docker to startup
 
@@ -1503,7 +1557,35 @@ Standalone publishes only `8080` and `8088`; minimal HStore publishes `8620` (PD
 
 5. **Unexpected retained data**: `docker compose down` keeps named volumes. To delete topology data too, use `docker compose down -v`.
 
-**Runtime logs**: `docker logs <container-name>` (for example, `docker logs hg-pd0`) shows logs without entering containers. Standalone `hugegraph/hugegraph` sets `STDOUT_MODE=true` and sends service logs to stdout. The HStore `hugegraph/server` image does not set this variable: `docker logs` shows only entrypoint output; inspect `logs/hugegraph-server.log` inside the container for service logs.
+**Runtime logs**: `docker logs <container-name>` (for example, `docker logs hg-pd0`) shows logs without entering containers. In images built from current
+master, the PD, Store and both Server images (`hugegraph/hugegraph` and the HStore `hugegraph/server`) set `STDOUT_MODE=true` and send service logs to stdout.
+For the Server, WARN and above from Hadoop, ZooKeeper, SOFA, Netty and Commons also reaches stdout; INFO from Hadoop, Netty and Commons and the audit and
+slow-query logs stay in files, and ZooKeeper and SOFA log nothing below WARN. `/hugegraph-server/logs` holds `hugegraph-server.log`, JVM crash logs
+(`hs_err_pid*.log`) and out-of-memory heap dumps (`heapdump_*/java_pid*.hprof`, one directory per start, so the Server and the JVMs it starts get separate files
+unless a JVM reuses an earlier PID from that start; if the directory cannot be created, dumps go to `/hugegraph-server/logs` itself). Both images declare
+`VOLUME /hugegraph-server`, so `docker restart` and a Compose recreate keep them; `docker compose down` leaves that anonymous volume behind unattached, and a
+later `down -v` does not remove it (note the volume name from `docker inspect` before `down` and delete it with `docker volume rm <name>`; `docker volume prune`
+would also delete every other unused anonymous volume on the Docker host), so use a named volume or bind mount to keep them reachable. Kubernetes starts a new
+container on every restart, so mount an `emptyDir` or a PersistentVolumeClaim at `/hugegraph-server/logs`. Give each pod its own volume, or a per-pod directory
+on a shared PVC (`subPathExpr: $(POD_NAME)`, with `POD_NAME` passed in from `metadata.name` through the Downward API; the Helm chart sets neither): crash files
+get distinct names, but the log files themselves have fixed names. Pods on different nodes can share one PVC only if its storage supports read-write mounts from
+several nodes (typically `ReadWriteMany`); a `ReadWriteOnce` claim is writable from one node only, so otherwise give each pod its own PVC. The Helm chart does
+not mount a logs volume yet. A heap dump can be as large as the JVM heap, and every start uses a new directory, so a Server that keeps running out of memory
+fills the volume; size it for the dumps you want to keep, keep it within any `ephemeral-storage` limit or `emptyDir` `sizeLimit` (eviction deletes the
+`emptyDir` with the dump), and do not use `medium: Memory`. A failing liveness probe can restart the container as soon as about
+`(failureThreshold - 1) × periodSeconds + timeoutSeconds` after a dump starts, and the kubelet kills it at most `terminationGracePeriodSeconds` after that; make
+that time longer than writing a heap dump takes, or a restart in the middle of a dump leaves a truncated file. The launcher never deletes dumps or `heapdump_*`
+directories, because a computer-job JVM can go on using one after its Server exits; each start that reaches Java leaves one, empty unless something ran out of
+memory. Delete old ones once no HugeGraph JVM from that launch is running, never the newest one of a running Server. To turn dumps off for every JVM, set
+`JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError` in the container's environment (`docker run -e`, an `environment:` entry on the Server service in Compose,
+which the shipped Compose files do not set, or `env` in Kubernetes; exporting it in the host shell has no effect), which keeps the image's default `JAVA_OPTS`;
+putting the flag in `JAVA_OPTS` affects the Server JVM only and replaces that default (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those
+flags.
+
+> **Version scope**: the paragraph above describes current master images ([apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980) for PD, Store
+> and the standalone Server, [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258) for the HStore Server). No 1.7.0 or older image sets
+> `STDOUT_MODE`, including the standalone `hugegraph/hugegraph:1.7.0` used above: `docker logs` shows only entrypoint output, and service logs stay in `logs/`
+> inside the container (`logs/hugegraph-server.log` for the Server).
 
 ## Container Monitoring and Health Checks
 
@@ -1604,8 +1686,8 @@ Each Store node keeps graph data in RocksDB and replicates it with Raft (JRaft):
 #### 2.1 Requirements
 
 - Operating System: Linux or macOS (Windows has not been fully tested)
-- Java version: ≥ 11 (enforced by the build and re-checked by `bin/start-hugegraph-store.sh`)
-- Maven version: ≥ 3.5.0
+- Java version: Java 17 for HugeGraph 1.8.0+ (the Maven build accepts only JDK 17; the start script rejects older runtimes; 1.7.0 is the last release supporting Java 11)
+- Maven version: ≥ 3.6.3 (for building from source)
 - Deploy HugeGraph-PD first for multi-node deployment
 
 ### 3 Deployment
@@ -2186,8 +2268,8 @@ PD listens on three ports:
 #### 2.1 Requirements
 
 - Operating System: Linux or macOS (Windows has not been fully tested)
-- Java version: ≥ 11
-- Maven version: ≥ 3.5.0
+- Java version: Java 17 for HugeGraph 1.8.0+ (the Maven build accepts only JDK 17; the start script rejects older runtimes; 1.7.0 is the last release supporting Java 11)
+- Maven version: ≥ 3.6.3 (for building from source)
 
 ### 3 Deployment
 
@@ -2465,7 +2547,8 @@ In the PD installation directory, execute:
 ./bin/start-hugegraph-pd.sh
 ```
 
-The script requires a JDK of at least version 11 on `PATH` or in `JAVA_HOME`, and it exits without doing anything if it finds a Java process already using this installation's `conf` directory.
+The script requires Java 17 or later on `PATH` or in `JAVA_HOME` (Java ≥ 11 on 1.7.0).
+It exits without doing anything if it finds a Java process already using this installation's `conf` directory.
 
 Supported flags:
 
@@ -10122,6 +10205,21 @@ Create a graph (set `Content-Type: application/json`)
 
 Graph-space management permission (`space`) is required when authentication is enabled.
 
+Stop writes and tasks on every Server that uses the graph before deletion, and keep them stopped during failures and retries.
+Do not recreate the same graph name until deletion has completed and been confirmed on every Server. Notifications are not a cluster-wide barrier.
+
+On the deleting Server, scheduler shutdown fences new task admission and waits for actual executions, cancellation callbacks and transaction cleanup.
+If the configured task-drain wait times out (`task.wait_timeout`, seconds), deletion is refused before data, configuration or metadata removal; retry after
+the owners exit. Task admission stays closed after this refusal.
+To resume ordinary graph use before destructive cleanup, keep writes and task producers stopped;
+wait for all admitted tasks and cancellation cleanup to finish, then restart Server. A restart does not restore data or metadata already removed.
+Closing the scheduler alone retains persistent work that has not started.
+
+Deletion is not transactional. A failure after destructive cleanup does not restore removed data or metadata. An uncertain owner or native-resource cleanup
+needs manual inspection; do not force-remove the scheduler or resume writes just because a task Future is done.
+In PD deployments with `graph.load_from_local_config=true`, if deletion is refused because the graph uses local configuration,
+removing its configuration file and restarting Server stops Server from loading the graph, but leaves its backend data in place.
+
 ##### Params
 
 **Path parameters**
@@ -10316,7 +10414,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/default
 
 #### 6.1.10 Reload the graphs of the graphspace
 
-Reloads the graphs the server holds, which is useful after the graph configuration has changed outside the server.
+Apply graph configuration changes by restarting Server. Hot-reload recovery is deferred; do not use this endpoint for configuration maintenance.
+In the current non-PD path, reload invokes graph deletion and can clear backend data. Keep writes and tasks stopped until Server has restarted and the
+intended graphs have been verified. The request and response below document the API shape, not a maintenance or recovery guarantee.
 
 ##### Params
 
@@ -10833,6 +10933,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/remove_peer
 Backlinks:
 
 - [Graphspace](/docs/clients/restful-api/graphspace/)
+- [Task](/docs/clients/restful-api/task/)
 - [FAQ](/docs/guides/faq/)
 - [Analysis with HugeGraph-Computer](/docs/quickstart/computing/hugegraph-computer/)
 
@@ -19594,6 +19695,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2
 
 - force: whether to delete the task even when it is still running, default is false
 
+Task-record deletion is separate from graph deletion. For graph maintenance, follow the stop-write and task-drain requirements in the [graph
+API](/docs/clients/restful-api/graphs/).
+
 ##### Method & Url
 
 ```text
@@ -22771,7 +22875,9 @@ go get github.com/apache/hugegraph-toolchain/hugegraph-client-go
 
 `NewCommonClient` requires `Host` to be an IP address and `Port` to be between 1 and 65535. The client always connects over plain HTTP. Leave the username and password empty when authentication is disabled; Basic Auth is sent only when both are set.
 
-`GraphSpace` is applied only by the `Vertex` API, which then calls `/graphspaces/{space}/graphs/{graph}/...`, and by the default Gremlin aliases (an empty value is treated as `DEFAULT`). The schema entry points and `Version()` always call `/graphs/{graph}/...` and `/versions`, regardless of `GraphSpace`. Use `DEFAULT` for the default space; leaving `GraphSpace` empty makes the `Vertex` API fall back to the `/graphs/{graph}` path used by older servers.
+When `GraphSpace` is nonempty, the `Vertex` and schema APIs (`Schema()`, `Propertykey`, `VertexLabel`, and `EdgeLabel`) use
+`/graphspaces/{space}/graphs/{graph}/...`; an empty value selects the legacy `/graphs/{graph}/...` paths. Use `DEFAULT` for the default space.
+Gremlin default aliases also use `GraphSpace`, treating an empty value as `DEFAULT`. `Version()` calls `/versions` independently of graph space.
 
 ```go
 package main
@@ -22816,7 +22922,7 @@ The `Versions` value returned by `Version()` includes the HugeGraph Server, Core
 |---|---|---|
 | `Host` | `string` | HugeGraph Server IP address. Host names are rejected. |
 | `Port` | `int` | HugeGraph Server REST port, 1 to 65535 |
-| `GraphSpace` | `string` | Graph space; only used by the `Vertex` API and the default Gremlin aliases. Set an empty string when not needed. |
+| `GraphSpace` | `string` | Graph space for the `Vertex` and schema APIs and default Gremlin aliases; use `DEFAULT` for the default space. |
 | `Graph` | `string` | Graph name configured on the server |
 | `Username` | `string` | Server username; empty string when authentication is disabled |
 | `Password` | `string` | Server password; empty string when authentication is disabled |
@@ -23371,6 +23477,10 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
+For plugins targeting the planned 1.8.0 shared-foundation API, follow the
+[Java/SPI migration guide](/docs/guides/shared-foundation-migration/) and recompile against matching artifacts.
+The examples below describe the 1.7.0 API.
+
 ### Background
 
 1. HugeGraph is not only open source and open, but also simple and easy to use. General users can easily add plug-in extension functions without changing the source code.
@@ -23730,6 +23840,12 @@ public class DemoPlugin implements HugeGraphPlugin {
 
 Through maven packaging, execute the command in the project directory mvn package, and a Jar package file will be generated in the 
 target directory. Copy the Jar package to the `plugins` directory when using it, and restart the service to take effect.
+
+---
+
+Backlinks:
+
+- [1.8.0 Java and upgrade migration](/docs/guides/shared-foundation-migration/)
 
 
 ================
@@ -24188,6 +24304,153 @@ Backlinks:
 
 
 ================
+Source: https://hugegraph.apache.org/docs/guides/toplingdb/index.md
+================
+
+# ToplingDB development integration
+
+> Build the optional ToplingDB runtime from development source, isolate its data, and understand startup and recovery boundaries.
+
+---
+
+LLMS index: [llms.txt](/llms.txt)
+
+---
+
+> **Development interface:** This guide applies to development builds with the optional ToplingDB runtime enabled.
+> Existing releases and image tags do not establish support, and runtime acceptance remains a deployment prerequisite.
+
+## Choose the database owner
+
+HugeGraph defaults to standard RocksDB. Enable Topling separately for each process that owns local storage:
+
+| Component | Business provider setting | Start command |
+| --- | --- | --- |
+| Standalone RocksDB Server | `rocksdb.provider=topling` in each selected graph properties file | `bin/start-hugegraph.sh` |
+| PD | `provider: topling` under `rocksdb` in `conf/application.yml` | `bin/start-hugegraph-pd.sh` |
+| Store | `provider: topling` under `rocksdb` in `conf/application-pd.yml` | `bin/start-hugegraph-store.sh` |
+
+A standalone Server keeps `backend=rocksdb`; an HStore-backed Server uses `backend=hstore` and needs no local Topling runtime.
+All local RocksDB graphs in one Server process must use the same provider. The business setting must match the runtime selected by its launcher.
+
+## Build and prepare a standard distribution
+
+Build the normal distributions from the source repository root using Java 17 and Maven 3.6.3 or later:
+
+```bash
+mvn clean package -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+```
+
+Obtain a trusted Topling Easy Migrate JNI JAR and its SHA-256 through your artifact channel. Preparation requires a Java 17 JDK, Linux x86_64,
+`sha256sum`, `unzip`, `od`, `ldd`, and GNU `mv`. The selected JAR's native dependencies, including its glibc and libaio requirements, must be installed.
+
+Stop the component, unpack a fresh standard distribution, and run from that component directory:
+
+```bash
+export TOPLING_JNI_JAR=/absolute/path/to/rocksdbjni-topling.jar
+export TOPLING_JNI_SHA256='<trusted-64-character-sha256>'
+bash bin/prepare-topling.sh
+```
+
+The script verifies the copied JAR's hash, Topling Java marker, one Linux x86_64 JNI entry, ELF architecture and native dependencies.
+Before installation, a disposable database verifies that the selected JNI actually applies EasyMigrate configuration to its persisted write-buffer size.
+Unsupported builds are rejected even when their marker and hash match. The probe does not certify existing-data compatibility or every production setting.
+A checksum receipt binds this verification to the installed JAR and native library; launchers reject missing or changed receipts. Use a fresh distribution
+when upgrading from an older preparation script. Launch rejects inherited RocksDB JNI preloads in default/standard mode
+and competing JNI in Topling mode, while preserving unrelated preloads.
+It installs `topling/rocksdbjni.jar`, its native library and optional web resources outside `lib`. Preparation refuses an existing `topling` directory;
+replace a runtime by preparing another stopped, fresh distribution. Repeat preparation separately for Server, PD and Store as applicable.
+
+## Keep data outside the distribution
+
+Changing providers does not convert an existing database. Use separate, initially empty Topling directories and retain the standard-provider data.
+Create persistent directories writable by the service account, outside source checkouts, build outputs and unpacked distribution directories.
+Note that each graph requires distinct, dedicated data and WAL directories to prevent path conflicts:
+
+| Component | Configuration file and key | Example persistent path |
+| --- | --- | --- |
+| Server data | Graph properties: `rocksdb.data_path` | `/srv/hugegraph/topling/server/<graph>/data` |
+| Server WAL | Graph properties: `rocksdb.wal_path` | `/srv/hugegraph/topling/server/<graph>/wal` |
+| PD | `conf/application.yml`: `pd.data-path` | `/srv/hugegraph/topling/pd` |
+| Store data | `conf/application.yml`: `app.data-path` | `/srv/hugegraph/topling/store/data` |
+| Store Raft | `conf/application.yml`: `app.raft-path` | `/srv/hugegraph/topling/store/raft` |
+
+For a standalone Server, edit every selected graph configuration, for example `conf/graphs/hugegraph.properties`
+(replace `hugegraph` with the corresponding graph name for each graph):
+
+```properties
+backend=rocksdb
+rocksdb.provider=topling
+rocksdb.data_path=/srv/hugegraph/topling/server/hugegraph/data
+rocksdb.wal_path=/srv/hugegraph/topling/server/hugegraph/wal
+```
+
+Set **both** Server data and WAL paths, ensuring each graph uses distinct directories.
+Leaving WAL at its package-local default risks losing it when a build or package replacement removes that directory.
+Keep the external data, WAL and Raft roots across runtime/package changes.
+
+For PD and Store, edit the existing `rocksdb` mapping in the provider configuration file listed above, retaining its other options:
+
+```yaml
+rocksdb:
+  provider: topling
+```
+
+Set their persistent paths separately in `conf/application.yml`; keep the normal network addresses and cluster configuration.
+
+The published runtime directories use 0755 and regular files use 0644, so a service account different from the preparer can read the JNI.
+The service account also needs traversal permission on the component's parent directories; preparation does not change those parents.
+
+## Select, start and verify
+
+In the startup shell of each component that owns a Topling database, explicitly select the runtime:
+
+```bash
+export TOPLINGDB_ROCKSDB_PROVIDER=topling
+# Run this component's start command from the first table.
+```
+
+The launcher uses that component's `conf/toplingdb.yaml`. Set `TOPLINGDB_EASY_MIGRATE_CONF=/absolute/path/config.yaml` for an explicit override.
+The shipped native profile disables its HTTP server and keeps `memtable_as_log_index=false`, which the Java write path requires.
+Tune that profile for the host; it is separate from the business provider and data-path configuration.
+
+For a fresh standalone Server graph, initialize its store once before the first startup:
+
+```bash
+bash bin/init-store.sh
+bash bin/start-hugegraph.sh
+```
+
+`bin/init-store.sh` and `bin/dump-store.sh` use the same explicit runtime selection as `bin/start-hugegraph.sh`.
+For HStore, start PD, then Store. Before starting the HStore-backed Server from the same shell, run `unset TOPLINGDB_ROCKSDB_PROVIDER`
+(or `export TOPLINGDB_ROCKSDB_PROVIDER=rocksdb`); do not enable local Topling on that Server.
+A configured provider/runtime mismatch fails before the component opens its database.
+
+Before adoption, verify the actual RocksDB Java classes and mapped JNI library belong to the prepared runtime. Use dedicated data directories to test real
+writes, reads, normal stop and restart; for HStore, include a Server graph operation through PD and Store. A successful build, startup or standard-JNI unit test
+alone does not establish Topling runtime acceptance.
+
+## Stop or switch back
+
+Stop incoming work, then use the normal stop scripts. For HStore, stop Server with `bin/stop-hugegraph.sh`, Store with `bin/stop-hugegraph-store.sh`,
+and PD with `bin/stop-hugegraph-pd.sh`, waiting for each process to exit before stopping its dependency. A forced kill is not proof of normal native cleanup.
+
+To use standard RocksDB again, stop the component, unset `TOPLINGDB_ROCKSDB_PROVIDER`, and restore its business provider to `rocksdb`.
+Select the corresponding standard-provider data and WAL paths; do not point it at a database modified by Topling.
+
+Dedicated Topling distributions, Docker/Compose packaging, general lifecycle changes and retryable snapshot recovery are separate follow-ups.
+This guide covers the normal distribution launch scripts; custom IDE and embedded launchers require their own runtime setup and validation.
+
+---
+
+Backlinks:
+
+- [ToplingDB](/blog/hugegraph/toplingdb/)
+- [ToplingDB YAML configuration file](/blog/2025/09/30/toplingdb-yaml-configuration-file/)
+- [ToplingDB Quick Start](/blog/2025/10/09/toplingdb-quick-start/)
+
+
+================
 Source: https://hugegraph.apache.org/docs/config/index.md
 ================
 
@@ -24258,7 +24521,7 @@ The file-loading behavior on this page was checked against Server master commit 
 |------|------------|----------|
 | `conf/gremlin-server.yaml` | Shipped with the distribution; configures Gremlin Server. | Passed to Server by `start-hugegraph.sh`. |
 | `conf/rest-server.properties` | Shipped when building the checked Server master; configures REST Server, PD, authentication, and related settings. | Read by startup scripts and Server; the corresponding container entrypoint also updates supported settings before startup. |
-| `conf/graphs/hugegraph.properties` | Shipped default graph configuration, using RocksDB. | Scanned by both `init-store.sh` and application initialization, which attempts to load local graphs. `graph.load_from_local_config` defaults to `false` and controls only constructor preloading and rescanning on `reload()`. |
+| `conf/graphs/hugegraph.properties` | Shipped default graph configuration, using RocksDB. | Scanned by both `init-store.sh` and application initialization, which attempts to load local graphs. `graph.load_from_local_config` defaults to `false` and controls constructor preloading. Restart Server to apply graph configuration changes. |
 | `conf/graphs/hstore.properties.template` | Shipped HStore template; users create other graph configurations as needed. | The HStore image renames it to `hugegraph.properties` during its build; distribution users can copy and customize it. |
 
 Complete defaults are in Server master: [gremlin-server.yaml](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/gremlin-server.yaml), [rest-server.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/rest-server.properties), [hugegraph.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hugegraph.properties), and [hstore.properties.template](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hstore.properties.template).
@@ -24280,7 +24543,7 @@ graphs: {}
 ssl: { enabled: false }
 ```
 
-Usually, focus on `channelizer`, `host`, and `port`. Graphs are not loaded from the Gremlin Server `graphs` section. During application initialization, the REST-side manager scans the `graphs` directory and attempts to load local graph configurations. `graph.load_from_local_config` controls only constructor preloading and rescanning on `reload()`; its default `false` does not disable local loading during application initialization.
+Usually, focus on `channelizer`, `host`, and `port`. Graphs are not loaded from the Gremlin Server `graphs` section. During application initialization, the REST-side manager scans the `graphs` directory and attempts to load local graph configurations. `graph.load_from_local_config` controls constructor preloading; its default `false` does not disable local loading during application initialization.
 
 - `channelizer`: The default `WsAndHttpChannelizer` supports WebSocket and HTTP. Gremlin Console uses WebSocket; HugeGraph Client, Loader, and Hubble use HTTP.
 
@@ -24293,7 +24556,7 @@ Set the matching `gremlinserver.url=http://host:port` in `rest-server.properties
 
 ### 3 rest-server.properties
 
-The following example lists `rest-server.properties` options. The master template omits `graph.load_from_local_config`, whose source-code default is `false`. Setting it to `true` is optional: it enables constructor preloading and rescanning on `reload()`. Application initialization still scans and attempts to load local graph configurations.
+The following example lists `rest-server.properties` options. The master template omits `graph.load_from_local_config`, whose source-code default is `false`. Setting it to `true` is optional: it enables constructor preloading. Application initialization still scans and attempts to load local graph configurations.
 
 ```properties
 # bind url
@@ -24337,7 +24600,8 @@ memory_monitor.period=2000
 
 - `restserver.url`: The REST listener URL. Use a specific address for remote access, or `http://0.0.0.0` to listen on every interface while restricting the accessible network.
 - `graphs`: The graph configuration directory, defaulting to `./conf/graphs`. Both `init-store.sh` and application initialization scan it; initialization attempts to load its properties files.
-- `graph.load_from_local_config`: Controls constructor preloading and rescanning on `reload()`, with source-code default `false`. It does not block local loading during application initialization and is not a security isolation switch.
+- `graph.load_from_local_config`: Controls constructor preloading, with source-code default `false`. It does not block local loading during application
+  initialization and is not a security isolation switch. Restart Server to apply graph configuration changes.
 
 > The upstream template still uses `arthas.telnet_port`, `arthas.http_port`, and `arthas.disabled_commands`, but `ServerOptions` reads the camelCase names in the example. Use `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` in custom configurations.
 
@@ -24372,7 +24636,7 @@ A Server can load multiple graphs, each with its own properties file. This examp
 
 **[Optional]: Modify rest-server.properties**
 
-Set the graph configuration directory with `graphs` in `rest-server.properties`, defaulting to `graphs=./conf/graphs`. Adjust it for another directory. The example optionally enables constructor preloading and rescanning on `reload()` with `graph.load_from_local_config=true`; application initialization still reads local graph configurations from this directory:
+Set the graph configuration directory with `graphs` in `rest-server.properties`, defaulting to `graphs=./conf/graphs`. Adjust it for another directory. The example optionally enables constructor preloading with `graph.load_from_local_config=true`; application initialization still reads local graph configurations from this directory:
 
 ```properties
 graphs=./conf/graphs
@@ -24498,7 +24762,7 @@ Corresponding configuration file `rest-server.properties`
 | config option                          | default value                                    | description                                                                                                                                                                                                   |
 |----------------------------------------|--------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | graphs                                 | ./conf/graphs                                    | Directory containing graph configuration properties files.                                                                                                                                                    |
-| graph.load_from_local_config | false | Controls local graph preloading in the manager constructor and rescanning on `reload()`. Application initialization still scans and attempts to load `graphs`; `false` does not prevent local loading. |
+| graph.load_from_local_config | false | Controls constructor preloading. Application initialization still scans and attempts to load local configurations, so `false` does not block local loading. Restart Server to apply graph configuration changes. |
 | graphs.enable_dynamic_create_drop      | true                                             | Whether to enable create or drop graph dynamically.                                                                                                                                                           |
 | init_store.enabled                     | true                                             | Whether init-store initializes the local backend stores and the built-in admin account. Set false in distributed deployments (PD/HStore) where the storage side already owns the metadata.                     |
 | server.id                              | Empty string                                     | The optional legacy id of hugegraph-server.                                                                                                                                                                   |
@@ -25428,6 +25692,12 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 }
 ```
 
+---
+
+Backlinks:
+
+- [1.8.0 Java and upgrade migration](/docs/guides/shared-foundation-migration/)
+
 
 ================
 Source: https://hugegraph.apache.org/docs/guides/security/index.md
@@ -25511,8 +25781,8 @@ LLMS index: [llms.txt](/llms.txt)
   Version 1.7.0 supports RocksDB, HStore, HBase, and Memory. Legacy backends such as Cassandra, ScyllaDB, MySQL, and PostgreSQL require version 1.5.x or earlier.
 
 - Prompt when starting the service: `xxx (core dumped) xxx`
-
-  First confirm that the JDK version is Java 11 or later. HugeGraph 1.7.0 no longer supports Java 8.
+ 
+  First confirm that your JDK version matches the requirements: Java 17 for HugeGraph 1.8.0+, or Java 11 for 1.7.0. HugeGraph no longer supports Java 8.
 
 - The service is started successfully, but there is a prompt similar to "Unable to connect to the backend or the connection is not open" when operating the graph
 
@@ -25532,7 +25802,10 @@ LLMS index: [llms.txt](/llms.txt)
 
 - Two graphs are configured, the names are `hugegraph` and `hugegraph1`, and the command to start the service is `start-hugegraph.sh`. Is only the hugegraph graph opened?
 
-  The script name is unrelated to the graph name. Server scans and loads local graph configurations from `conf/graphs` by default; change the directory with `graphs` in `conf/rest-server.properties`. `graph.load_from_local_config` defaults to `false` and controls only constructor preloading and rescanning on `reload()`, not whether startup loads local graphs. Give each local graph its own configuration file. See the [Server configuration guide](/docs/config/config-guide/).
+  The script name is unrelated to the graph name. Server scans and loads local graph configurations from `conf/graphs` by default; change the directory with
+  `graphs` in `conf/rest-server.properties`. `graph.load_from_local_config` defaults to `false` and controls constructor preloading, not whether startup loads
+  local graphs. Give each local graph its own configuration file and restart Server after changing it. See the
+  [Server configuration guide](/docs/config/config-guide/).
 
 - After the service starts successfully, garbled characters are returned when using `curl` to query all vertices
 
@@ -26571,6 +26844,8 @@ Section pages:
 - [HugeGraph Docker Cluster Guide](/docs/guides/hugegraph-docker-cluster/)
 - [FAQ](/docs/guides/faq/)
 - [Security Report](/docs/guides/security/)
+- [1.8.0 shared-foundation migration](/docs/guides/shared-foundation-migration/): Update Java imports and plugins, then prepare matching Server, PD and Store upgrades for the 1.8.0 shared-foundation changes.
+- [ToplingDB development integration](/docs/guides/toplingdb/): Build the optional ToplingDB runtime from development source, isolate its data, and understand startup and recovery boundaries.
 
 
 ================
@@ -28192,6 +28467,13 @@ Current top-level Maven modules are listed below. Server's `hugegraph-server/hug
 
 These names come from the root and subproject `pom.xml` files. Use the structure of the branch you are working on.
 
+For the 1.8.0 shared-foundation changes merged into Server `master`, see the
+[shared-foundation ownership and Java migration guide](/docs/guides/shared-foundation-migration/).
+
+Build current Server `master` with Java 17 and Maven 3.6.3 or later.
+CI-friendly versions are flattened during `process-resources`, so installed and deployed POMs contain concrete versions.
+Run the reactor with `install` before building modules separately, and keep Maven Resolver validation enabled, including with Maven 3.10.
+
 Run the tests directly related to your change first. Common Server test commands include:
 
 ```bash
@@ -28213,9 +28495,23 @@ GitHub requires a username and token for Git authentication instead of a usernam
 
 When adding a third-party dependency, also update the license information included in the distribution:
 
-1. Add the dependency's license file to `hugegraph-server/hugegraph-dist/release-docs/licenses/`.
-2. Update `hugegraph-server/hugegraph-dist/release-docs/LICENSE`. If the dependency includes a NOTICE file, update `NOTICE` as well.
-3. Run `hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh` to update the known-dependency list.
+1. Add the dependency's license file to `install-dist/release-docs/licenses/`.
+2. Update `install-dist/release-docs/LICENSE`. If the dependency includes a NOTICE file, update `NOTICE` as well.
+3. From the repository root, prepare the current revision's Server, PD and Store distribution libraries before regenerating the inventory:
+
+   ```bash
+   mvn clean install -DskipTests -Dmaven.javadoc.skip=true
+   bash install-dist/scripts/dependency/regenerate_known_dependencies.sh
+   ```
+
+   Clean rebuilds the current revision's distributions to avoid stale dependency jars.
+   It also removes every `*.tar` and `*.tar.gz` file directly under `hugegraph-server/`, `hugegraph-pd/` and `hugegraph-store/`,
+   plus the current revision's `apache-hugegraph-<revision>.tar.gz` in the repository root; directories of other revisions remain.
+
+   This build skips tests. Collection combines Maven runtime dependencies with actual flat and nested distribution jars,
+   including Spring Boot `BOOT-INF/lib` dependencies introduced by repackaging. Missing distributions must fail collection;
+   POM inspection alone does not establish the complete shipped inventory. Review strict additions/removals in
+   `install-dist/scripts/dependency/known-dependencies.txt` and their license/NOTICE coverage, including release platform/profile variants.
 
 ## Submit a Pull Request
 
@@ -28255,6 +28551,7 @@ Contributor agreements follow the official ASF process. See the [Contributor Agr
 Backlinks:
 
 - [Setup Server in IDEA](/docs/contribution-guidelines/hugegraph-server-idea-setup/)
+- [1.8.0 Java and upgrade migration](/docs/guides/shared-foundation-migration/)
 
 
 ================
@@ -28669,7 +28966,7 @@ LLMS index: [llms.txt](/llms.txt)
 ---
 
 > Note: this doc will be updated continuously.
-> Use Java 17 to build and verify HugeGraph 1.8.0 release packages.
+> Use Java 17 to build and verify HugeGraph 1.8.0 release packages (the Maven build accepts only JDK 17); use Java 11 for 1.7.0. Since version 1.5.0, components other than the client no longer support Java 8.
 >
 > Graduation note: Apache HugeGraph graduated in January 2026. Official release voting is now completed within the HugeGraph community (PMC binding votes on `dev@hugegraph.apache.org`), and no longer requires Incubator `general@incubator.apache.org` approval.
 
@@ -28711,7 +29008,7 @@ subsequent **email reply**.(The following are the core items)
 
 If there is no svn or gpg or wget environment locally, it is recommended to install it first 
 (windows recommend using WSL2 environment, or at least `git-bash`), also make sure to install java 
-(Java 17) and maven software
+(Java 17 for HugeGraph 1.8.0+, Java 11 for 1.7.0) and maven software (≥ 3.6.3)
 
 ```bash
 # 1. install svn
@@ -28830,7 +29127,7 @@ After decompressing `*hugegraph*src.tar.gz`, Do the following checks:
 6. Finally, make sure the source code works/compiles correctly
 
 ```bash
-# prefer to use/switch to `java 17` for the following operations (compiling/running) (Note: `Computer` only supports `java >= 11`)
+# prefer to use/switch to `java 17` for HugeGraph 1.8.0+ (`java 11` for 1.7.0) for the following operations (compiling/running) (Note: `Computer` only supports `java >= 11`)
 # java --version
 
 # try to compile in the Unix env to check if it works well (-P is optional)
@@ -28946,7 +29243,7 @@ The core steps for local startup are the same as starting with **scripts**:
 2. Start HugeGraph-Server by executing the `HugeGraphServer` class to load the initialized graph information and start the server.
 
 Before proceeding with the following process, make sure that you have cloned the source code of HugeGraph
-and have configured the development environment, such as `Java 11` & you could config your local environment
+and have configured the development environment, such as `Java 17` for HugeGraph 1.8.0+ (`Java 11` for 1.7.0) & you could config your local environment
 with this [config-doc](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
 
 ```bash

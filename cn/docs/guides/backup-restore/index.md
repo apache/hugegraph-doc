@@ -161,3 +161,9 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
     "mode": "RESTORING"
 }
 ```
+
+---
+
+反链：
+
+- [1.8.0 Java 与升级迁移](/cn/docs/guides/shared-foundation-migration/)

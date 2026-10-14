@@ -29,7 +29,7 @@ HugeGraphServer 内部集成了 GremlinServer 和 RestServer，而 gremlin-serve
 |------|------------|----------|
 | `conf/gremlin-server.yaml` | 随发行包提供；配置 Gremlin Server。 | `start-hugegraph.sh` 将它作为 Server 启动参数传入。 |
 | `conf/rest-server.properties` | 按固定 Server 主线构建时随发行包提供；配置 REST Server、PD、认证等。 | 启动脚本和 Server 进程读取；对应主线构建的容器入口脚本也会在启动前更新其中受支持的选项。 |
-| `conf/graphs/hugegraph.properties` | 随发行包提供的默认图配置，使用 RocksDB。 | `init-store.sh` 和 Server 应用初始化都会扫描该目录；初始化阶段会尝试加载其中的图配置。`graph.load_from_local_config` 默认 `false`，只控制管理器构造阶段预加载及 `reload()` 重扫。 |
+| `conf/graphs/hugegraph.properties` | 随发行包提供的默认图配置，使用 RocksDB。 | `init-store.sh` 和 Server 应用初始化都会扫描该目录；初始化阶段会尝试加载其中的图配置。`graph.load_from_local_config` 默认 `false`，控制管理器构造阶段预加载。图配置变化通过重启 Server 应用。 |
 | `conf/graphs/hstore.properties.template` | 随发行包提供的 HStore 模板；其他图配置由用户按需创建。 | HStore 镜像在构建时把模板改名为 `hugegraph.properties`；裸发行包用户可复制模板并修改。 |
 
 完整的默认文件见Server 主线源码：[gremlin-server.yaml](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/gremlin-server.yaml)、[rest-server.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/rest-server.properties)、[hugegraph.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hugegraph.properties) 和 [hstore.properties.template](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hstore.properties.template)。
@@ -51,7 +51,7 @@ graphs: {}
 ssl: { enabled: false }
 ```
 
-通常只需关注 `channelizer`、`host` 和 `port`。图不在 Gremlin Server 的 `graphs` 段加载；REST 侧管理器会在 Server 应用初始化时扫描 `graphs` 目录并尝试载入本地图配置。`graph.load_from_local_config` 只控制管理器构造阶段的预加载与 `reload()` 重扫；默认 `false` 不会关闭应用初始化阶段的本地加载。
+通常只需关注 `channelizer`、`host` 和 `port`。图不在 Gremlin Server 的 `graphs` 段加载；REST 侧管理器会在 Server 应用初始化时扫描 `graphs` 目录并尝试载入本地图配置。`graph.load_from_local_config` 控制管理器构造阶段的预加载；默认 `false` 不会关闭应用初始化阶段的本地加载。
 
 - channelizer：默认的 `WsAndHttpChannelizer` 同时支持 WebSocket 和 HTTP。Gremlin-Console 使用 WebSocket，HugeGraph-Client、Loader 和 Hubble 使用 HTTP；
 
@@ -64,7 +64,7 @@ ssl: { enabled: false }
 
 ### 3 rest-server.properties
 
-下面是可用的 `rest-server.properties` 示例。主线模板未写出 `graph.load_from_local_config`，源码默认值为 `false`。示例中设为 `true` 是可选的：它开启管理器构造阶段预加载和 `reload()` 重扫；Server 应用初始化阶段仍会扫描并尝试加载本地图配置。
+下面是可用的 `rest-server.properties` 示例。主线模板未写出 `graph.load_from_local_config`，源码默认值为 `false`。示例中设为 `true` 是可选的：它开启管理器构造阶段预加载；Server 应用初始化阶段仍会扫描并尝试加载本地图配置。
 
 ```properties
 # bind url
@@ -108,7 +108,7 @@ memory_monitor.period=2000
 
 - restserver.url：RestServer 提供服务的 url，根据实际环境修改。如果其他 IP 地址无法访问，可以尝试修改为特定的地址；或修改为 `http://0.0.0.0` 来监听来自任何 IP 地址的请求，这种方案较为便捷，但需要留意服务可被访问的网络范围；
 - graphs：图配置文件所在目录，默认值是 `./conf/graphs`。`init-store.sh` 会扫描该目录；Server 应用初始化也会扫描并尝试加载其中的 properties 文件；
-- graph.load_from_local_config：是否在管理器构造阶段预加载本地图配置，以及在 `reload()` 时重新扫描；源码默认值为 `false`。它不会禁止 Server 应用初始化阶段的本地加载，也不是安全隔离开关；
+- graph.load_from_local_config：默认 `false`，控制构造阶段预加载；不会禁止 Server 应用初始化阶段的本地加载，也不是安全隔离开关。图配置变化通过重启 Server 应用。
 
 > 当前上游模板中的 Arthas 键仍写作 `arthas.telnet_port`、`arthas.http_port` 和 `arthas.disabled_commands`，但 `ServerOptions` 读取的是下方示例中的 camelCase 名称。自定义配置应使用 `arthas.telnetPort`、`arthas.httpPort` 和 `arthas.disabledCommands`。
 
@@ -143,7 +143,7 @@ store=hugegraph
 
 **[可选]：修改 rest-server.properties**
 
-通过修改 `rest-server.properties` 中的 `graphs` 配置项来设置图的配置文件目录。默认配置为 `graphs=./conf/graphs`；需要其他目录时调整 `graphs`。下面将 `graph.load_from_local_config` 设为 `true`，作为管理器构造阶段预加载和 `reload()` 重扫的可选设置；应用初始化仍会读取该目录中的本地图配置：
+通过修改 `rest-server.properties` 中的 `graphs` 配置项来设置图的配置文件目录。默认配置为 `graphs=./conf/graphs`；需要其他目录时调整 `graphs`。下面将 `graph.load_from_local_config` 设为 `true`，作为管理器构造阶段预加载的可选设置；应用初始化仍会读取该目录中的本地图配置：
 
 ```properties
 graphs=./conf/graphs

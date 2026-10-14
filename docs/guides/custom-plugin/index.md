@@ -4,6 +4,10 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
+For plugins targeting the planned 1.8.0 shared-foundation API, follow the
+[Java/SPI migration guide](/docs/guides/shared-foundation-migration/) and recompile against matching artifacts.
+The examples below describe the 1.7.0 API.
+
 ### Background
 
 1. HugeGraph is not only open source and open, but also simple and easy to use. General users can easily add plug-in extension functions without changing the source code.
@@ -363,3 +367,9 @@ public class DemoPlugin implements HugeGraphPlugin {
 
 Through maven packaging, execute the command in the project directory mvn package, and a Jar package file will be generated in the 
 target directory. Copy the Jar package to the `plugins` directory when using it, and restart the service to take effect.
+
+---
+
+Backlinks:
+
+- [1.8.0 Java and upgrade migration](/docs/guides/shared-foundation-migration/)

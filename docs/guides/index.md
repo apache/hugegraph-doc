@@ -18,3 +18,5 @@ Section pages:
 - [HugeGraph Docker Cluster Guide](/docs/guides/hugegraph-docker-cluster/)
 - [FAQ](/docs/guides/faq/)
 - [Security Report](/docs/guides/security/)
+- [1.8.0 shared-foundation migration](/docs/guides/shared-foundation-migration/): Update Java imports and plugins, then prepare matching Server, PD and Store upgrades for the 1.8.0 shared-foundation changes.
+- [ToplingDB development integration](/docs/guides/toplingdb/): Build the optional ToplingDB runtime from development source, isolate its data, and understand startup and recovery boundaries.

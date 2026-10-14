@@ -65,37 +65,38 @@ on Java 24 or later, start Server with `-s false` (JDK 24+ dropped Security Mana
 **Before continuing, run `java -version` to confirm your JDK version.**
 
 > [!NOTE]
-> **TinkerPop compatibility**
+> **TinkerPop 3.8.1 Compatibility & Key Changes**
 >
-> HugeGraph 1.8.0 uses TinkerPop 3.8.1 and Groovy 4.0.25. Use the Gremlin configuration files bundled with Server.
-> Serializer classes move from `org.apache.tinkerpop.gremlin.driver.ser` to `org.apache.tinkerpop.gremlin.util.ser`;
-> retain the supplied HugeGraph registries. Gremlin Groovy remains the default engine.
-> Check application scripts against the TinkerPop 3.5.1 to 3.8.1 upgrade interval; this upgrade does not switch remote requests to GremlinLang.
+> HugeGraph 1.8.0 upgrades to TinkerPop 3.8.1 and Groovy 4.0.25. Use the Gremlin configuration files bundled with Server.
 >
-> `supportsUniformListValues()` now returns `false` for vertex and edge properties, so clients that inspect `Graph.Features` must adjust that capability check.
-> Schema-defined `valueList()`/`LIST` properties remain supported; this flag change alone does not require rewriting existing list data.
->
-> A mid-traversal scan retains its input multiplicity: with three vertices, `g.V().V().count()` returns `9L`.
-> `P.typeOf()` runs as a local filter, including in negated or combined predicates; it does not use backend indexes on its own.
->
-> The bundled Driver and Console configurations use GraphBinary V1: schema results are standard maps and Blob values are binary,
-> including inside returned graph elements. Default HTTP JSON with untyped GraphSON V1 preserves the legacy Tree `key`/`value` array, with scalar or element
-> keys.
-> Optional results carry their value or null when empty; File results keep the map shape `{"file": "name"}` with the file name, including in nested results.
-> HugeGraph enums return their names; `graph.schema()` returns a map with property key, vertex label, edge label and index label lists.
-> Typed GraphSON is available only for supported simple values and IDs, not as a replacement for untyped serialization of every graph or schema object.
-> Typed GraphSON V1 is disabled because class-name deserialization can construct Java objects before authentication; typed V2/V3 remain available.
-> The bundled Cypher predicate imports use the compatible factories, including when replaying the Gremlin translation returned by `EXPLAIN`.
-> Named `GValue` predicates retain bindings when reused or cloned; named `limit()`/`range()` bounds count like literal bounds.
-> Local mixed ID collections preserve typed string, number and UUID matches; all-string collections retain standard string-ID comparisons.
-> Local edge ID filters accept mixed serialized strings and native edge IDs with consistent membership and count results.
-> Jackson JSON and YAML modules use one compatible version, including parsing decimal-valued Kubernetes kubeconfig extensions.
-> Count filtering keeps the complete count if any predicate branch has no proven safe truncation bound, including unsupported negated collections and custom
-> predicates.
-> DATE schema properties accept `OffsetDateTime` for writes and indexed equality/range queries, normalized by instant to milliseconds;
-> sub-millisecond precision is truncated, and existing DATE data needs no migration.
-> See the [server runtime documentation](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md)
-> for client configuration and verification details.
+> - **Serializer Packages**: Driver serializer classes moved from `org.apache.tinkerpop.gremlin.driver.ser` to `org.apache.tinkerpop.gremlin.util.ser`.
+>   Keep HugeGraph registries.
+> - **Graph.Features**: `supportsUniformListValues()` returns `false` for properties.
+>   Schema `valueList()`/`LIST` properties remain supported without rewriting existing data.
+> - **Traversal Multiplicity**: Mid-traversal scans retain input multiplicity (e.g. for 3 vertices, `g.V().V().count()` returns `9L`).
+> - **Date & Time Types**: `DATE` properties accept `OffsetDateTime` for writes and indexed equality/range queries (instant normalized to milliseconds).
+> - **Filtering Behavior**: `P.typeOf()` runs as a local filter; count filtering applies range optimizations only when predicate branches are provably safe.
+
+```yaml {tab="GraphBinary (Recommended)"}
+# Bundled Driver and Console default to GraphBinary V1
+# - Schema results are standard maps
+# - Blob values are binary (including inside returned elements)
+serializer:
+  className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
+  config:
+    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+```
+
+```yaml {tab="GraphSON (HTTP / Legacy)"}
+# Default HTTP JSON uses untyped GraphSON V1
+# - Preserves the legacy Tree key/value array structure
+# - Typed GraphSON V1 is disabled for security (typed V2/V3 remain available for simple values and IDs)
+# - graph.schema() returns property keys, vertex labels, edge labels, and index labels
+```
+
+> [!TIP]
+> For complete client configuration and migration details, see the
+> [server runtime documentation](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md).
 
 ## 3 Deploy
 

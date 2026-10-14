@@ -13,8 +13,8 @@ weight: 6
   1.7.0 支持 RocksDB、HStore、HBase 和 Memory。Cassandra、ScyllaDB、MySQL、PostgreSQL 等旧后端需使用 1.5.x 或更早版本。
 
 - 启动服务时提示：`xxx (core dumped) xxx`
-
-  请先确认 JDK 版本不低于 Java 11。HugeGraph 1.7.0 不再支持 Java 8。
+ 
+  请先确认 JDK 版本符合对应版本要求：HugeGraph 1.8.0+ 要求 Java 17，1.7.0 要求 Java 11。HugeGraph 不再支持 Java 8。
 
 - 启动服务成功了，但是操作图时有类似于"无法连接到后端或连接未打开"的提示
 

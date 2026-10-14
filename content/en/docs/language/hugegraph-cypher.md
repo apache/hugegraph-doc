@@ -6,9 +6,13 @@ weight: 2
 
 ### Overview
 
-HugeGraph supports [Cypher](https://opencypher.org/), the declarative graph query language originally created by Neo4j and standardized as [openCypher](https://github.com/opencypher/openCypher). While Gremlin is an imperative traversal language, Cypher lets you describe the graph pattern you want (`MATCH`, `WHERE`, `RETURN`) and lets the engine decide how to execute it.
+HugeGraph supports [Cypher](https://opencypher.org/), the declarative graph query language originally created by Neo4j and standardized as
+[openCypher](https://github.com/opencypher/openCypher). While Gremlin is an imperative traversal language, Cypher lets you describe the graph pattern you want
+(`MATCH`, `WHERE`, `RETURN`) and lets the engine decide how to execute it.
 
-HugeGraph executes Cypher by translating the statement to Gremlin through the [cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) transpiler, then running the resulting traversal on the TinkerPop stack. This means Cypher support in HugeGraph covers the openCypher 9 surface that the transpiler implements — see [Known limitations](#known-limitations) below.
+HugeGraph executes Cypher by translating the statement to Gremlin through the [cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) transpiler,
+then running the resulting traversal on the TinkerPop stack. This means Cypher support in HugeGraph covers the openCypher 9 surface that the transpiler
+implements — see [Known limitations](#known-limitations) below.
 
 ### When to use Cypher vs Gremlin
 
@@ -29,7 +33,10 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-The endpoint always requires an `Authorization` header (`Basic` or `Bearer`), even when server authentication is disabled — the credentials are forwarded to the Gremlin Server. `Basic` credentials must be encoded with URL-safe Base64 (`-` and `_` instead of `+` and `/`), and the password must not contain `:`; use `Bearer` for accounts that cannot meet either condition. See the [Cypher REST API reference](/docs/clients/restful-api/cypher/) for the full request/response format.
+The endpoint always requires an `Authorization` header (`Basic` or `Bearer`), even when server authentication is disabled — the credentials are forwarded to the
+Gremlin Server. `Basic` credentials must be encoded with URL-safe Base64 (`-` and `_` instead of `+` and `/`), and the password must not contain `:`; use
+`Bearer` for accounts that cannot meet either condition. See the [Cypher REST API reference](/docs/clients/restful-api/cypher/) for the full request/response
+format.
 
 Example:
 
@@ -149,18 +156,34 @@ Every Cypher statement is translated to Gremlin internally. When a Cypher featur
 | `MATCH (n) DETACH DELETE n` | `g.V().drop()` |
 | `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
 
-Tip: `EXPLAIN MATCH (n:person) RETURN n` is parsed with the `EXPLAIN` option, and the translated Gremlin is expected in `result.data[0].translation` — translator-level behavior, not yet verified end-to-end on a server (see the [compatibility notes](/docs/language/cypher-compatibility/)). It remains the quickest way to draft the equivalent traversal for the table above. `PROFILE` is not supported.
+Tip: `EXPLAIN MATCH (n:person) RETURN n` is parsed with the `EXPLAIN` option, and the translated Gremlin is expected in `result.data[0].translation` —
+translator-level behavior, not yet verified end-to-end on a server (see the [compatibility notes](/docs/language/cypher-compatibility/)). It remains the
+quickest way to draft the equivalent traversal for the table above. `PROFILE` is not supported.
 
 ### Known limitations
 
 Cypher support in HugeGraph is bounded by the transpiler layer, which is based on openCypher 9 era tooling. Known gaps:
 
-- **No parameterized queries in released versions** — the API accepts a raw statement string only. A statement using `$param` still runs: a missing binding is inlined as `null` rather than failing, and the result depends on the expression: a predicate such as `WHERE n.name = $name` matches no rows, `RETURN $value AS value` still returns a row holding `null`. A write with a missing binding does not reliably store a null value: depending on the statement, `SET n.prop = $missing` removes the existing property, `CREATE (n:label {prop: $missing})` stores the translator's null marker string `"  cypher.null"` in a text property, and the same `CREATE` on a non-text property, or `SET` on a non-nullable property, fails with an error. Sanitize/escape values on the client side before interpolating them into the statement. On the tested tree with [#3289](https://github.com/apache/hugegraph/pull/3289) merged, this changes: a missing binding is an execution error for every request form, including `GET ?cypher=` and raw-body `POST` — the server always attaches a parameters map and rejects unresolved `$param` references. JSON-bound parameters (`{"cypher": ..., "parameters": {...}}`) are available on `master` after the merged [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), carried over from [PR #238](https://github.com/hugegraph/hugegraph/pull/238); see the [development compatibility record](/docs/language/cypher-compatibility/) for the tested request contract.
-- **Partial clause coverage** — some openCypher constructs are not translated (for example map projections and certain `datetime()` functions). Unsupported constructs fail at translation time with an error from the transpiler. Constructs such as `MERGE ... ON CREATE SET` and `NOT ... IN` do translate, but they are not verified end-to-end on HugeGraph. The development change verifies two whole-string `=~` matching cases on computed strings; broader regex coverage remains unverified — see the [compatibility notes](/docs/language/cypher-compatibility/).
-- **No `CALL` procedures** — HugeGraph graph algorithms (shortest path, k-out, personalrank, etc.) are not exposed as Cypher procedures; use the [traverser REST APIs](/docs/clients/restful-api/traverser/) or Gremlin instead.
+- **No parameterized queries in released versions** — the API accepts a raw statement string only. A statement using `$param` still runs: a missing binding is
+  inlined as `null` rather than failing, and the result depends on the expression: a predicate such as `WHERE n.name = $name` matches no rows,
+  `RETURN $value AS value` still returns a row holding `null`. A write with a missing binding does not reliably store a null value: depending on the statement,
+  `SET n.prop = $missing` removes the existing property, `CREATE (n:label {prop: $missing})` stores the translator's null marker string `"  cypher.null"` in a
+  text property, and the same `CREATE` on a non-text property, or `SET` on a non-nullable property, fails with an error. Sanitize/escape values on the client
+  side before interpolating them into the statement. On the tested tree with [#3289](https://github.com/apache/hugegraph/pull/3289) merged, this changes: a
+  missing binding is an execution error for every request form, including `GET ?cypher=` and raw-body `POST` — the server always attaches a parameters map and
+  rejects unresolved `$param` references. JSON-bound parameters (`{"cypher": ..., "parameters": {...}}`) are available on `master` after the merged
+  [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), carried over from [PR #238](https://github.com/hugegraph/hugegraph/pull/238); see the
+  [development compatibility record](/docs/language/cypher-compatibility/) for the tested request contract.
+- **Partial clause coverage** — some openCypher constructs are not translated (for example map projections and certain `datetime()` functions). Unsupported
+  constructs fail at translation time with an error from the transpiler. Constructs such as `MERGE ... ON CREATE SET` and `NOT ... IN` do translate, but they
+  are not verified end-to-end on HugeGraph. The development change verifies two whole-string `=~` matching cases on computed strings; broader regex coverage
+  remains unverified — see the [compatibility notes](/docs/language/cypher-compatibility/).
+- **No `CALL` procedures** — HugeGraph graph algorithms (shortest path, k-out, personalrank, etc.) are not exposed as Cypher procedures; use the
+  [traverser REST APIs](/docs/clients/restful-api/traverser/) or Gremlin instead.
 - **Single statement per request** — multi-statement scripts are not supported; send one statement per call.
 
-When a statement fails translation, the response `status.message` contains the transpiler error. If you hit a gap, the Gremlin equivalent is the supported fallback.
+When a statement fails translation, the response `status.message` contains the transpiler error. If you hit a gap, the Gremlin equivalent is the supported
+fallback.
 
 ### Further reading
 
@@ -168,4 +191,5 @@ When a statement fails translation, the response `status.message` contains the t
 - [Gremlin Query Language](/docs/language/hugegraph-gremlin/)
 - [openCypher project](https://opencypher.org/) — language specification and resources
 
-The translator’s historical TCK percentage is not a HugeGraph end-to-end compatibility rate; no measured overall HugeGraph Cypher percentage is established here.
+The translator’s historical TCK percentage is not a HugeGraph end-to-end compatibility rate; no measured overall HugeGraph Cypher percentage is established
+here.

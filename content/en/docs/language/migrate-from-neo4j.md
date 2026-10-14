@@ -107,4 +107,5 @@ The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound re
   [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents);
   schema DDL and `CALL` procedures map to REST APIs instead.
 
-The translator’s historical TCK percentage is not a HugeGraph end-to-end compatibility rate; no measured overall HugeGraph Cypher percentage is established here.
+The translator’s historical TCK percentage is not a HugeGraph end-to-end compatibility rate; no measured overall HugeGraph Cypher percentage is established
+here.

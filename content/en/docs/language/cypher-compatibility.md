@@ -36,7 +36,8 @@ The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. General usage
 | `POST text/plain` with any body | No | Rejected with HTTP 415 | `testRejectPlainTextPost` |
 | `POST application/json` with a JSON object | No — introduced by [#3289](https://github.com/apache/hugegraph/pull/3289) | Query and bindings are sent separately | `testParameters` |
 
-The JSON object form below is therefore **not available in any released HugeGraph version**; it describes the merged change on `master` (the 1.8.0 development line). On released versions a statement using `$param` runs with the missing binding inlined as `null`; whether it returns rows
+The JSON object form below is therefore **not available in any released HugeGraph version**; it describes the merged change on `master` (the 1.8.0 development
+line). On released versions a statement using `$param` runs with the missing binding inlined as `null`; whether it returns rows
 depends on the expression (`WHERE n.name = $name` matches nothing, `RETURN $value AS value` returns a row holding `null`) —
 see [Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
 
@@ -133,7 +134,8 @@ The compatibility note at that fixed commit contains the verification record and
 Test sources:
 [`CypherApiTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/CypherApiTest.java),
 [`CypherClientTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/cypher/CypherClientTest.java),
-and [`CypherOpProcessorTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/opencypher/CypherOpProcessorTest.java).
+and
+[`CypherOpProcessorTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/opencypher/CypherOpProcessorTest.java).
 The earlier verification on
 [`e62c961`](https://github.com/apache/hugegraph/commit/e62c961e00221569d4f955abbadf60faee45b283)
 remains at

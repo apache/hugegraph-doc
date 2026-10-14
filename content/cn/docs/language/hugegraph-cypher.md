@@ -6,9 +6,11 @@ weight: 2
 
 ### 概述
 
-HugeGraph 支持 [Cypher](https://opencypher.org/) —— 最初由 Neo4j 创建、并由 [openCypher](https://github.com/opencypher/openCypher) 标准化的声明式图查询语言。Gremlin 是命令式的遍历语言，而 Cypher 只需描述想要的图模式（`MATCH`、`WHERE`、`RETURN`），由引擎决定如何执行。
+HugeGraph 支持 [Cypher](https://opencypher.org/) —— 最初由 Neo4j 创建、并由 [openCypher](https://github.com/opencypher/openCypher) 标准化的声明式图查询语言。Gremlin 是命令式的遍历语言，而 Cypher
+只需描述想要的图模式（`MATCH`、`WHERE`、`RETURN`），由引擎决定如何执行。
 
-HugeGraph 通过 [cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) 转译器将 Cypher 语句翻译为 Gremlin，再在 TinkerPop 技术栈上执行。因此 HugeGraph 的 Cypher 能力覆盖转译器所实现的 openCypher 9 语法面 —— 详见下文[已知限制](#已知限制)。
+HugeGraph 通过 [cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) 转译器将 Cypher 语句翻译为 Gremlin，再在 TinkerPop 技术栈上执行。因此 HugeGraph 的 Cypher
+能力覆盖转译器所实现的 openCypher 9 语法面 —— 详见下文[已知限制](#已知限制)。
 
 ### 何时用 Cypher、何时用 Gremlin
 
@@ -29,7 +31,8 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-该端点始终要求 `Authorization` 头（`Basic` 或 `Bearer`），即使服务端未开启认证 —— 凭据会被转发给 Gremlin Server。`Basic` 凭据必须使用 URL 安全的 Base64 编码（用 `-` 和 `_` 代替 `+` 和 `/`），且密码不能包含 `:`；无法满足这两个条件的账号请改用 `Bearer`。完整的请求/响应格式见 [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)。
+该端点始终要求 `Authorization` 头（`Basic` 或 `Bearer`），即使服务端未开启认证 —— 凭据会被转发给 Gremlin Server。`Basic` 凭据必须使用 URL 安全的 Base64 编码（用 `-` 和 `_` 代替 `+` 和 `/`），且密码不能包含 `:`；
+无法满足这两个条件的账号请改用 `Bearer`。完整的请求/响应格式见 [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)。
 
 示例：
 
@@ -147,16 +150,22 @@ MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
 | `MATCH (n) DETACH DELETE n` | `g.V().drop()` |
 | `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
 
-提示：`EXPLAIN MATCH (n:person) RETURN n` 会以 `EXPLAIN` 选项解析，翻译后的 Gremlin 预期出现在 `result.data[0].translation` 中 —— 这是转译层行为，尚未在服务器上端到端验证（见[兼容性说明](/cn/docs/language/cypher-compatibility/)）。它仍是起草上表等价写法的最快方式。`PROFILE` 不受支持。
+提示：`EXPLAIN MATCH (n:person) RETURN n` 会以 `EXPLAIN` 选项解析，翻译后的 Gremlin 预期出现在 `result.data[0].translation` 中 —— 这是转译层行为，尚未在服务器上端到端验证（见
+[兼容性说明](/cn/docs/language/cypher-compatibility/)）。它仍是起草上表等价写法的最快方式。`PROFILE` 不受支持。
 
 ### 已知限制
 
 HugeGraph 的 Cypher 能力受转译层约束，该层基于 openCypher 9 时代的工具链。已知缺口：
 
-- **已发布版本不支持参数化查询** —— API 只接受原始语句字符串。使用 `$param` 的语句不会报错：缺失的绑定会被内联为 `null`，结果取决于表达式：`WHERE n.name = $name` 这类谓词匹配不到行，`RETURN $value AS value` 仍会返回一行 `null`。缺失绑定的写入并不能可靠地存入 null 值：视语句而定，`SET n.prop = $missing` 会移除已有属性，`CREATE (n:label {prop: $missing})` 会在文本属性中存入转译库的 null 标记字符串 `"  cypher.null"`，而对非文本属性执行同样的 `CREATE`，或对非空属性执行 `SET`，则会报错。请在客户端先对值做转义/净化再拼接到语句中。在合入 [#3289](https://github.com/apache/hugegraph/pull/3289) 后的
+- **已发布版本不支持参数化查询** —— API 只接受原始语句字符串。使用 `$param` 的语句不会报错：缺失的绑定会被内联为 `null`，结果取决于表达式：`WHERE n.name = $name` 这类谓词匹配不到行，`RETURN $value AS value` 仍会返回一行 `null`。
+  缺失绑定的写入并不能可靠地存入 null 值：视语句而定，`SET n.prop = $missing` 会移除已有属性，`CREATE (n:label {prop: $missing})` 会在文本属性中存入转译库的 null 标记字符串 `"  cypher.null"`，而对非文本属性执行同样的
+  `CREATE`，或对非空属性执行 `SET`，则会报错。请在客户端先对值做转义/净化再拼接到语句中。在合入 [#3289](https://github.com/apache/hugegraph/pull/3289) 后的
 测试栈上情况改变：缺失的绑定对所有请求形式都是执行错误，包括 `GET ?cypher=` 与原始文本
-`POST`——服务器总是附带参数表并拒绝未解析的 `$param` 引用。JSON 绑定参数（`{"cypher": ..., "parameters": {...}}`）已通过合入 `master` 的 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289) 引入，承接原 [PR #238](https://github.com/hugegraph/hugegraph/pull/238)；已验证的请求契约见[开发版兼容性记录](/cn/docs/language/cypher-compatibility/)。
-- **子句覆盖不完整** —— 部分 openCypher 结构无法翻译（例如 map projection、部分 `datetime()` 函数）。不支持的结构会在翻译阶段报错。`MERGE ... ON CREATE SET`、`NOT ... IN` 等结构可以翻译，但尚未在 HugeGraph 上端到端验证。开发改动验证了计算字符串上的两个 `=~` 全字符串匹配用例，更广泛的正则覆盖仍未验证 —— 见[兼容性说明](/cn/docs/language/cypher-compatibility/)。
+`POST`——服务器总是附带参数表并拒绝未解析的 `$param` 引用。JSON 绑定参数（`{"cypher": ..., "parameters": {...}}`）已通过合入 `master` 的
+[ASF PR #3289](https://github.com/apache/hugegraph/pull/3289) 引入，承接原 [PR #238](https://github.com/hugegraph/hugegraph/pull/238)；已验证的请求契约见
+[开发版兼容性记录](/cn/docs/language/cypher-compatibility/)。
+- **子句覆盖不完整** —— 部分 openCypher 结构无法翻译（例如 map projection、部分 `datetime()` 函数）。不支持的结构会在翻译阶段报错。`MERGE ... ON CREATE SET`、`NOT ... IN` 等结构可以翻译，但尚未在 HugeGraph 上端到端验证。
+  开发改动验证了计算字符串上的两个 `=~` 全字符串匹配用例，更广泛的正则覆盖仍未验证 —— 见[兼容性说明](/cn/docs/language/cypher-compatibility/)。
 - **不支持 `CALL` 过程** —— HugeGraph 的图算法（最短路径、k-out、personalrank 等）未暴露为 Cypher 过程；请改用 [traverser REST API](/cn/docs/clients/restful-api/traverser/) 或 Gremlin。
 - **每次请求仅一条语句** —— 不支持多语句脚本，请每次调用发送一条语句。
 

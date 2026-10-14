@@ -209,6 +209,8 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `HG_SERVER_USE_PD` | `false` | `rest-server.properties` 中的 `usePD` |
 | `HG_SERVER_CLUSTER` | `hg-test` | `rest-server.properties` 中的 `cluster` |
 | `HG_SERVER_REST_URL` | `http://0.0.0.0:8080`（镜像中已设置） | `restserver.url` |
+| `HG_SERVER_URLS_TO_PD` | `http://0.0.0.0:8080` | `server.urls_to_pd`：本 Server 注册到 PD 的地址列表（逗号分隔），代替 `restserver.url`；仅在 `server.deploy_in_k8s` 为 `true` 时生效；其中的空白字符会被去除 |
+| `HG_SERVER_DEPLOY_IN_K8S` | `false` | `rest-server.properties` 中的 `server.deploy_in_k8s` |
 | `HG_SERVER_MIN_FREE_MEMORY` | `64`（MB） | `restserver.min_free_memory` |
 | `HG_SERVER_INIT_STORE_ENABLED` | `true` | `init_store.enabled`；元数据由存储侧管理的 PD/HStore 部署应设为 `false` |
 | `HG_SERVER_AUTH_TOKEN_SECRET` | 设置了 `PASSWORD` 时自动生成 | 两个配置文件中的 `auth.token_secret`，至少 32 字节 |
@@ -227,7 +229,7 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 `wait-storage.sh` 最多等待 300 秒直到出现状态为 `Up` 的 Store。该时长写死在脚本中，无法通过环境变量调整。
 
-`HG_SERVER_INIT_STORE_ENABLED` 只接受 `HugeConfig` 能识别的写法（忽略大小写）：`y`、`t`、`yes`、`on`、`true`、`n`、`f`、`no`、`off`、`false`。其他取值（包括 `0` 和 `1`）都会让入口脚本终止。
+`HG_SERVER_INIT_STORE_ENABLED` 和 `HG_SERVER_DEPLOY_IN_K8S` 只接受 `HugeConfig` 能识别的写法（忽略大小写）：`y`、`t`、`yes`、`on`、`true`、`n`、`f`、`no`、`off`、`false`。其他取值（包括 `0` 和 `1`）都会让入口脚本终止。
 
 入口脚本在初始化成功后写入 `docker/init_complete`，后续启动会跳过重新初始化，但仍会再执行一次 `bin/init-store.sh`，以便关闭状态下每次启动都重新校验配置。
 

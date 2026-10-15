@@ -534,3 +534,5 @@ curl -u "store:${HG_PD_AUTH_SECRET_KEY:?请先设置 PD 部署密钥}" \
 两个 `log` 接口接受形如 `{"startTime": "...", "endTime": "..."}` 的时间范围，`yyyy-MM-dd HH:mm:ss` 和 `yyyy-MM-dd` 都是可接受的格式。
 
 PD 以 `hg` 前缀注册自己的指标，因此 `/actuator/prometheus` 除标准 JVM 指标外还会暴露 `hg_up`、`hg_graphs`、`hg_stores` 和 `hg_terms`，在存在图之后还会有按图统计的分区和大小指标。
+
+在 1.7.0 之后的版本中，PD 还会为每个已注册的 Store 导出 `hg_store_state{store="<id>",state="<state>"}`：Store 当前状态（`Unknown`、`Pending`、`Up`、`Offline`、`Exiting` 或 `Tombstone`）对应的序列为 `1`，其余为 `0`；以及 `hg_store_leader_count{store="<id>"}`，即 leader 位于该 Store 上的分片组数量。重建后的 Store 在 leader 迁回之前会报告 `0`。所有 PD 成员读取的是同一份复制的元数据，因此聚合这些序列前请先只选取一个实例。

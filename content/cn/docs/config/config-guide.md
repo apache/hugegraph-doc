@@ -113,8 +113,11 @@ memory_monitor.period=2000
 - graph.load_from_local_config：是否在管理器构造阶段预加载本地图配置，以及在 `reload()` 时重新扫描；源码默认值为 `false`。它不会禁止 Server 应用初始化阶段的本地加载，也不是安全隔离开关；
 
 > 自 HugeGraph 1.8.0 起，推荐使用 snake_case 配置项：`arthas.telnet_port`、`arthas.http_port` 和 `arthas.disabled_commands`。旧版 camelCase 命名仍作为兼容回退；
-> 显式设置的 snake_case 值优先，两种名称的值冲突时会输出警告。Arthas 仅监听 loopback，独立于 REST 监听地址。
-> 通过已认证的管理员或本地脚本[启动诊断](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)，无需重启 JVM。
+> 显式设置的 snake_case 值优先，两种名称的值冲突时会输出警告。
+> **升级说明**：发行包附带的 `rest-server.properties` 模板默认包含 snake_case 配置（`arthas.telnet_port=8562`、`arthas.http_port=8561`、`arthas.disabled_commands=jad`）。
+> 若此前按照早期文档配置了自定义 camelCase 键名，升级后必须将配置值迁移至对应的 snake_case 键或删除模板中的 snake_case 行；
+> 否则模板中显式声明的 snake_case 默认值将覆盖自定义的 camelCase 回退项。建议移除未使用的别名以避免歧义。
+> Arthas 仅监听 loopback，独立于 REST 监听地址。通过已认证的管理员或本地脚本[启动诊断](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)，无需重启 JVM。
 
 > 配置项 gremlinserver.url 是 GremlinServer 为 RestServer 提供服务的 url，该配置项默认为 http://127.0.0.1:8182，如需修改，需要和 gremlin-server.yaml 中的 host 和 port 相匹配；该值可以像模板那样省略协议前缀，缺失时会自动补上 `http://`。
 

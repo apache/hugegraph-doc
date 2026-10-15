@@ -336,4 +336,5 @@ bin/arthas.sh
 
 > [!NOTE]
 > [配置项](/cn/docs/config/config-option/) 采用规范的 snake_case 命名：`arthas.telnet_port`、`arthas.http_port`、`arthas.ip` 与 `arthas.disabled_commands`。
-> 旧版 camelCase 命名仍作为兼容回退；显式配置的 snake_case 选项优先。响应内容保持 Arthas 代理的原始键名以便兼容现有客户端。
+> 旧版 camelCase 命名仍作为兼容回退；显式配置的 snake_case 选项优先（参见[配置指南升级说明](/cn/docs/config/config-guide/#3-rest-serverproperties)）。
+> 响应内容保持 Arthas 代理的原始键名以便兼容现有客户端。

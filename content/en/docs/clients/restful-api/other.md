@@ -340,4 +340,5 @@ A successful activation returns HTTP `200` and the applied configuration:
 
 > [!NOTE]
 > [Configuration options](/docs/config/config-option/) use canonical snake_case names: `arthas.telnet_port`, `arthas.http_port`, `arthas.ip`, and `arthas.disabled_commands`.
-> Legacy camelCase aliases remain supported for backward compatibility; explicit snake_case settings take precedence. The response preserves Arthas agent key names for client compatibility.
+> Legacy camelCase aliases remain supported for backward compatibility; explicit snake_case settings take precedence (see
+> [upgrade note](/docs/config/config-guide/#3-rest-serverproperties)). The response preserves Arthas agent key names for client compatibility.

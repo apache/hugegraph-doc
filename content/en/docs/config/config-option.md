@@ -338,7 +338,8 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | arthas.disabled_commands | jad | Disabled Arthas commands, separated by commas. |
 >
 > Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain fallback aliases. Explicit snake_case values win;
-> conflicting values produce a warning. The response still uses the camelCase Arthas agent keys.
+> conflicting values produce a warning (see [configuration guide upgrade notice](/docs/config/config-guide/#3-rest-serverproperties)).
+> The response still uses the camelCase Arthas agent keys.
 > HTTP activation requires authentication to be enabled and the caller to be an authenticated administrator. It returns `403` without
 > authentication enabled, including requests from loopback or a proxy. No extra Arthas enable switch is required. MCP is disabled.
 > The bundled `bin/arthas.sh` provides local diagnostics without changing these settings or restarting the JVM. A new agent uses the helper

@@ -209,7 +209,7 @@ Unlike PD and Store, Server has no mandatory entrypoint variables: only set valu
 | `HG_SERVER_USE_PD` | `false` | `usePD` in `rest-server.properties` |
 | `HG_SERVER_CLUSTER` | `hg-test` | `cluster` in `rest-server.properties` |
 | `HG_SERVER_REST_URL` | `http://0.0.0.0:8080` (set in the image) | `restserver.url` |
-| `HG_SERVER_URLS_TO_PD` | `http://0.0.0.0:8080` | `server.urls_to_pd`: comma-separated URLs this Server registers in PD instead of `restserver.url`; read only when `server.deploy_in_k8s` is `true`; whitespace is removed |
+| `HG_SERVER_URLS_TO_PD` | `http://0.0.0.0:8080` | `server.urls_to_pd`: comma-separated URLs this Server registers in PD instead of `restserver.url`; read only when `server.deploy_in_k8s` is `true`; give each URL its own `http://` prefix, since only the first entry gets one added; whitespace is removed |
 | `HG_SERVER_DEPLOY_IN_K8S` | `false` | `server.deploy_in_k8s` in `rest-server.properties` |
 | `HG_SERVER_MIN_FREE_MEMORY` | `64`（MB） | `restserver.min_free_memory` |
 | `HG_SERVER_INIT_STORE_ENABLED` | `true` | `init_store.enabled`; set `false` for PD/HStore deployments whose metadata is managed by storage |

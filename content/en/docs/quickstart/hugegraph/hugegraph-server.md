@@ -156,6 +156,59 @@ The standalone `docker-compose.yml` example uses `hugegraph/hugegraph:1.7.0`; it
 
 See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full setup guide.
 
+#### Server service identity with PD
+
+For a PD-backed Server, the Helm chart exposes `server.serviceId` and `server.graphSpace`.
+Both default to `DEFAULT`, which preserves the existing `server.service_id` and `server.graphspace`
+values in `conf/rest-server.properties`. A non-default chart value injects `HG_SERVER_SERVICE_ID`
+or `HG_SERVER_GRAPHSPACE` into the Server container.
+These service identity chart settings (`server.serviceId`, `server.graphSpace`, and `server.testGraphAlias`)
+apply to development 1.8.0+ builds and charts; older versions such as 1.7.0 do not support these options.
+Do not use this example with older chart or image versions lacking these features.
+Non-empty service IDs supplied through `HG_SERVER_SERVICE_ID`, `SERVICE_ID`, or `server.serviceId`
+must use printable ASCII; spaces and backslashes are supported, while deployment checks reject
+non-ASCII and control characters. This entrypoint restriction does not change Core Service naming
+or existing manually supplied properties. Helm preserves dollar signs in `server.serviceId` literally,
+including `$(POD_IP)`; this field does not expand Kubernetes environment references.
+The full service ID, including `/` and `-`, is retained when service metadata is reloaded or its graph space is cleared.
+Set the identity through these chart values; Server `extraEnv` reserves both the new and legacy identity variable names.
+`HG_SERVER_GRAPHSPACE`, the effective `GRAPH_SPACE` fallback,
+and `server.graphSpace` accept `DEFAULT` or an existing space name of up to 48 lowercase letters, digits,
+and underscores, starting with a letter:
+
+```bash
+helm upgrade --install hg ./helm/hugegraph \
+  --set-string server.serviceId=analytics \
+  --set-string server.graphSpace=team_a
+```
+
+Before deploying Servers assigned to `team_a`, create that graph space through an existing Server
+in `DEFAULT`, using an account with permission to create graph spaces. The chart and these environment
+variables do not create graph spaces; all replicas in the Server Deployment use the same identity.
+
+To check a graph in that space with `helm test`, first create the target graph and set
+`--set-string server.testGraphAlias=team_a-demo` to its actual Gremlin binding. Creating the graph space does not create a `hugegraph` graph.
+
+For container deployments, `HG_SERVER_SERVICE_ID` and `HG_SERVER_GRAPHSPACE` write the same two
+properties. The legacy `SERVICE_ID` and `GRAPH_SPACE` names remain accepted: a non-empty new variable
+wins over its legacy counterpart. If both names for a property are unset or empty, its existing value
+is preserved. Compose does not automatically forward these host variables; add explicit Server
+`environment:` entries in a Compose override. See the Helm chart documentation for details.
+
+These settings select the Server's PD service metadata. They do not move existing graphs or change
+`server.path_graphspace` for REST paths that omit the graph space. Use `/graphspaces/team_a/...` paths
+and select the matching graph space and service in Hubble. When authentication is enabled, explicit paths
+still require authorization.
+
+`server.testGraphAlias` defaults to `DEFAULT-hugegraph`. The hook checks this existing local binding on every Server Pod;
+it does not derive the alias from `server.graphSpace`. A local binding may exist independently of the Server's assigned PD graph space,
+so a successful default hook does not validate graphs in `team_a`. If `Could not rebind` appears, first check that the requested graph exists
+and that its alias is correct. A Pod restart cannot create a missing graph or correct an alias.
+Match the binding's case: a local `Demo.properties` can bind `DEFAULT-Demo`, while REST-created graph names are lowercase.
+
+Configuration rendering and entrypoint checks alone do not establish non-default Linux discovery,
+authentication, or isolation between graph spaces.
+
 > [!NOTE]
 >
 > 1. HugeGraph Docker images are provided as a convenient way to start HugeGraph quickly, but they are not official ASF distribution artifacts. You can find more details in the [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
@@ -607,7 +660,7 @@ it failed and dumps fell back to `logs/`. If the logs path contains a double quo
 per-launch directory and no crash log default; the `JAVA_TOOL_OPTIONS` opt-out still applies. A path with both quote characters gets no heap dump default at
 all. Because of the defaults, the JVM prints `Picked up JAVA_TOOL_OPTIONS: ...` on stderr at startup.
 
-> **Version scope**: this applies to current master ([apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)). In 1.7.0 the heap dump flags are
+> **Version scope**: this applies to current development/master builds. In 1.7.0 the heap dump flags are
 > added only when `JAVA_OPTIONS` is unset, heap dumps go directly to `logs/java_pid<pid>.hprof`, and JVM crash logs go to the install directory.
 
 ### 5.2 Use Docker to startup

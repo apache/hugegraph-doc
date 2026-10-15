@@ -41,7 +41,7 @@ Apache 下载页目前提供 1.7.0 的完整二进制包，其中包含 PD、Sto
 
 ```bash
 # 1.7.0 是项目孵化期发布的历史版本，因此文件名和目录名仍带 incubating
-wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+curl -fLO --connect-timeout 10 --max-time 1800 https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 ```
@@ -304,14 +304,19 @@ HG_PD_RAFT_PEERS_LIST: pd0:8610,pd1:8610,pd2:8610
 
 脚本要求 `PATH` 或 `JAVA_HOME` 中有 17 及以上版本的 JDK（1.7.0 要求 11 及以上）；如果发现已有 Java 进程在使用本安装目录的 `conf` 目录，脚本会直接退出，不做任何事。
 
-支持的参数：
+下文的生命周期说明适用于当前主线构建；上文下载的 1.7.0 启动脚本不包含这些修复。
+支持的参数如下，GC 的版本限制见下文：
 
 | 参数 | 取值 | 默认值 | 描述 |
 |------|------|--------|------|
 | `-d` | `true`、`false` | `true` | 守护进程模式，详见下文。 |
-| `-g` | `zgc`、`ZGC` | 不设置 | 垃圾回收器。不带该参数即使用默认的 G1GC；填其他值（包括 `g1`）会导致启动中止。 |
+| `-g` | 见下文版本限制 | 不设置 | 选择垃圾回收器；不支持的参数会中止启动。 |
 | `-j` | JVM 参数 | 空 | 额外的 JVM 参数，例如 `-j "-Xmx8g -Xms8g"`。 |
 | `-y` | `true`、`false` | `false` | 挂载 OpenTelemetry Java agent。首次使用时会把 agent 下载到 `plugins/` 并校验 MD5，trace 通过 gRPC 上报到 `http://127.0.0.1:4317`。 |
+
+master 构建接受 `g1`、`G1`、`zgc` 和 `ZGC`。
+上文下载的 1.7.0 启动脚本仅接受显式指定 `zgc` 或 `ZGC`；`-g g1`、`-g G1` 和其他参数会中止启动。
+默认路径请省略 `-g`；参数被拒绝时，查看 `logs/hugegraph-pd-stdout.log`。
 
 `-d` 参数控制守护进程模式：
 

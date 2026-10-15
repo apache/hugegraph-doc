@@ -1510,3 +1510,4 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 
 - [Graphspace](/cn/docs/clients/restful-api/graphspace/)
 - [权限配置](/cn/docs/config/config-authentication/)
+- [Docker 集群](/cn/docs/guides/hugegraph-docker-cluster/)

@@ -221,11 +221,24 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `HG_SERVER_PD_REST_ENDPOINT` | 由 `pd.peers` 把 `:8686` 改写为 `:8620` 得到 | `wait-storage.sh` 轮询的 PD REST 地址 |
 | `PD_AUTH_USER` | `store` | `wait-storage.sh` 访问 PD REST API 的 Basic 用户名 |
 | `PD_AUTH_PASSWORD` | 空 | PD REST Basic 密码；启用 PD REST 鉴权时须与 `HG_PD_AUTH_SECRET_KEY` 相同 |
-| `WAIT_PARTITION_TIMEOUT_S` | `120` | `wait-partition.sh` 等待分区分配的时长 |
+| `WAIT_PARTITION_TIMEOUT_S` | `120` | 分区轮询超时；包含下文修复的构建还会限制最终诊断 |
+
+包含鉴权属性修复的 master 镜像会保留显式签名密钥中的空格、反斜杠和 Unicode，各 Server 副本应使用同一密钥。
+如果旧镜像曾错误读取这类密钥，升级时应重新显式提供原本想使用的 `HG_SERVER_AUTH_TOKEN_SECRET`；仅复用旧配置仍会保留错误读取后的密钥。
+若实际生效的密钥改变，须重新登录获取 token。上文所述 1.7.0 镜像限制仍适用。
+
+旧镜像在初始化程序继承 C locale 时，可能错误初始化 Unicode 管理员密码。升级或再次设置 `PASSWORD` 不会修复已有账号存储的密码，
+须由仍可登录的管理员通过[用户 API](/cn/docs/clients/restful-api/auth/)修改。若已无可用管理员身份，本修复不提供自动恢复；应保留现有数据，安排账号恢复后再升级。
 
 > **已弃用的别名**：`BACKEND` → `HG_SERVER_BACKEND`、`PD_PEERS` → `HG_SERVER_PD_PEERS`
 
 `wait-storage.sh` 最多等待 300 秒直到出现状态为 `Up` 的 Store。该时长写死在脚本中，无法通过环境变量调整。
+
+在当前 master Server 构建中，HStore 启动时，分区轮询和最终
+`/v1/partitions` 诊断分别使用独立的 `WAIT_PARTITION_TIMEOUT_S` 预算。旧构建仅限制轮询时间，最终诊断请求没有超时。
+使用默认配置时，最终响应停滞会在 120 秒后超时；设为 `0` 会禁用 GNU timeout 的时限。
+入口脚本在等待 Java 进程前会先等待 `wait-partition.sh`。若 Java 进程在分区轮询阶段提前退出，轮询仍可能消耗完整超时预算后入口脚本才感知到退出；
+若轮询成功，后续的最终诊断也可能再次消耗完整的超时预算。信号触发的关闭仍可正常中断检查。
 
 `HG_SERVER_INIT_STORE_ENABLED` 只接受 `HugeConfig` 能识别的写法（忽略大小写）：`y`、`t`、`yes`、`on`、`true`、`n`、`f`、`no`、`off`、`false`。其他取值（包括 `0` 和 `1`）都会让入口脚本终止。
 
@@ -309,8 +322,7 @@ HugeGraph JVM 都已退出后可以删除旧目录，但不要动正在运行的
 Compose 中 Server 服务的 `environment:` 里添加，自带的 Compose 文件没有设置它，或在 Kubernetes 中使用 `env`；只在宿主机 shell 中导出不会生效），这样会保留镜像默认的 `JAVA_OPTS`；把该参数加到 `JAVA_OPTS` 中只对 Server
 自身的 JVM 生效，而且会替换镜像默认值（`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`），需要把这些参数一并写上。
 
-> **版本范围**：上文描述的是基于当前 master 构建的镜像（PD、Store 和单机 Server 见 [apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980)，HStore Server 见
-> [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 及更早的镜像都没有设置 `STDOUT_MODE`，包括上文使用的单机镜像 `hugegraph/hugegraph:1.7.0`：`docker logs`
+> **版本范围**：上文描述的是基于当前 master 构建的镜像。1.7.0 及更早的镜像都没有设置 `STDOUT_MODE`，包括上文使用的单机镜像 `hugegraph/hugegraph:1.7.0`：`docker logs`
 > 只能看到入口脚本的输出，服务日志仍在容器内的 `logs/` 中（Server 为 `logs/hugegraph-server.log`）。
 
 ## 容器监控与健康检查
@@ -324,14 +336,18 @@ Compose 中 Server 服务的 `environment:` 里添加，自带的 Compose 文件
 现在，入口脚本直接监控 Java 进程：
 
 - **PD 和 Store 容器**：入口脚本向启动脚本传入 `-d false` 参数，启动脚本通过 `exec` 直接替换为 Java 进程。容器进程即为 Java 进程，当 Java 退出（崩溃或正常关闭）时，容器立即退出，Docker 的重启策略随即触发。
-- **Server 容器**：入口脚本使用 `tail --pid=$PID -f /dev/null` 阻塞，直到 Java 退出。`SIGTERM`/`SIGINT` 信号陷阱会将 `docker stop` 信号转发给 Java 并等待其正常关闭（退出码 0）。若 Java 崩溃，入口脚本以退出码 1 退出，从而触发重启策略。
+- **Server 容器**：入口脚本持有前台 launcher 并等待 Java。服务就绪后保留 Java 的实际退出码，包括 `0`、`42` 和 `SIGKILL` 对应的 `137`。
+  `SIGTERM` 和 `SIGINT` 请求协作关闭、回收持有的就绪/分区检查进程，并在关闭后分别返回 `143` 和 `130`。
 - 所有镜像中的 PID 1 均为 `dumb-init`，负责将 Docker 信号转发给入口脚本进程。
 
 ### Server 启动等待超时
 
-`HG_SERVER_STARTUP_TIMEOUT_S` 控制 Server 启动脚本等待 REST 服务响应的时长，未设置时默认 **120 秒**。取值必须是不带前导零的十进制整数，范围为 **1–86400 秒**。空字符串、`0`、负数、小数和超出范围的值都会使入口脚本记录错误并以退出码 `1` 退出。
+`HG_SERVER_STARTUP_TIMEOUT_S` 设置 Docker 入口脚本等待 REST 就绪的期限，未设置时默认 **120 秒**。取值必须是不带前导零的十进制整数，范围为 **1–86400 秒**。空字符串、`0`、负数、小数和超出范围的值都会使入口脚本记录错误并以退出码 `1` 退出。
 
-入口脚本通过 `bin/start-hugegraph.sh -t` 传入该值。如果 Server 在等待期限内未就绪，或进程提前退出，启动失败，容器以退出码 `1` 退出；配置的重启策略可能会重新启动容器。此时长不包括此前的存储初始化或等待后端就绪的时间。
+入口脚本也通过 `bin/start-hugegraph.sh -t` 传入该值；前台 launcher 本身等待 Java，不轮询 REST。
+启动期限失败、或 Java 在就绪前以 `0` 退出时，入口脚本返回 `1`；提前以非零码退出则保留该退出码。
+此时长不包括此前的存储初始化或等待后端就绪的时间。关闭时可以中断就绪和分区检查；启动期限失败会请求终止 Java 并返回，不增加无限等待。
+未响应终止请求的 Java 进程仍依靠容器终止完成最终清理。
 
 例如，在 HugeGraph 仓库的 `docker/` 目录下，将单机 Server 的启动等待时间增加到 300 秒（Compose 文件会将该变量传入容器）：
 

@@ -394,6 +394,59 @@ The standalone `docker-compose.yml` example uses `hugegraph/hugegraph:1.7.0`; it
 
 See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full setup guide.
 
+#### Server service identity with PD
+
+For a PD-backed Server, the Helm chart exposes `server.serviceId` and `server.graphSpace`.
+Both default to `DEFAULT`, which preserves the existing `server.service_id` and `server.graphspace`
+values in `conf/rest-server.properties`. A non-default chart value injects `HG_SERVER_SERVICE_ID`
+or `HG_SERVER_GRAPHSPACE` into the Server container.
+These service identity chart settings (`server.serviceId`, `server.graphSpace`, and `server.testGraphAlias`)
+apply to development 1.8.0+ builds and charts; older versions such as 1.7.0 do not support these options.
+Do not use this example with older chart or image versions lacking these features.
+Non-empty service IDs supplied through `HG_SERVER_SERVICE_ID`, `SERVICE_ID`, or `server.serviceId`
+must use printable ASCII; spaces and backslashes are supported, while deployment checks reject
+non-ASCII and control characters. This entrypoint restriction does not change Core Service naming
+or existing manually supplied properties. Helm preserves dollar signs in `server.serviceId` literally,
+including `$(POD_IP)`; this field does not expand Kubernetes environment references.
+The full service ID, including `/` and `-`, is retained when service metadata is reloaded or its graph space is cleared.
+Set the identity through these chart values; Server `extraEnv` reserves both the new and legacy identity variable names.
+`HG_SERVER_GRAPHSPACE`, the effective `GRAPH_SPACE` fallback,
+and `server.graphSpace` accept `DEFAULT` or an existing space name of up to 48 lowercase letters, digits,
+and underscores, starting with a letter:
+
+```bash
+helm upgrade --install hg ./helm/hugegraph \
+  --set-string server.serviceId=analytics \
+  --set-string server.graphSpace=team_a
+```
+
+Before deploying Servers assigned to `team_a`, create that graph space through an existing Server
+in `DEFAULT`, using an account with permission to create graph spaces. The chart and these environment
+variables do not create graph spaces; all replicas in the Server Deployment use the same identity.
+
+To check a graph in that space with `helm test`, first create the target graph and set
+`--set-string server.testGraphAlias=team_a-demo` to its actual Gremlin binding. Creating the graph space does not create a `hugegraph` graph.
+
+For container deployments, `HG_SERVER_SERVICE_ID` and `HG_SERVER_GRAPHSPACE` write the same two
+properties. The legacy `SERVICE_ID` and `GRAPH_SPACE` names remain accepted: a non-empty new variable
+wins over its legacy counterpart. If both names for a property are unset or empty, its existing value
+is preserved. Compose does not automatically forward these host variables; add explicit Server
+`environment:` entries in a Compose override. See the Helm chart documentation for details.
+
+These settings select the Server's PD service metadata. They do not move existing graphs or change
+`server.path_graphspace` for REST paths that omit the graph space. Use `/graphspaces/team_a/...` paths
+and select the matching graph space and service in Hubble. When authentication is enabled, explicit paths
+still require authorization.
+
+`server.testGraphAlias` defaults to `DEFAULT-hugegraph`. The hook checks this existing local binding on every Server Pod;
+it does not derive the alias from `server.graphSpace`. A local binding may exist independently of the Server's assigned PD graph space,
+so a successful default hook does not validate graphs in `team_a`. If `Could not rebind` appears, first check that the requested graph exists
+and that its alias is correct. A Pod restart cannot create a missing graph or correct an alias.
+Match the binding's case: a local `Demo.properties` can bind `DEFAULT-Demo`, while REST-created graph names are lowercase.
+
+Configuration rendering and entrypoint checks alone do not establish non-default Linux discovery,
+authentication, or isolation between graph spaces.
+
 > [!NOTE]
 >
 > 1. HugeGraph Docker images are provided as a convenient way to start HugeGraph quickly, but they are not official ASF distribution artifacts. You can find more details in the [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
@@ -845,7 +898,7 @@ it failed and dumps fell back to `logs/`. If the logs path contains a double quo
 per-launch directory and no crash log default; the `JAVA_TOOL_OPTIONS` opt-out still applies. A path with both quote characters gets no heap dump default at
 all. Because of the defaults, the JVM prints `Picked up JAVA_TOOL_OPTIONS: ...` on stderr at startup.
 
-> **Version scope**: this applies to current master ([apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)). In 1.7.0 the heap dump flags are
+> **Version scope**: this applies to current development/master builds. In 1.7.0 the heap dump flags are
 > added only when `JAVA_OPTIONS` is unset, heap dumps go directly to `logs/java_pid<pid>.hprof`, and JVM crash logs go to the install directory.
 
 ### 5.2 Use Docker to startup
@@ -1485,11 +1538,29 @@ Unlike PD and Store, Server has no mandatory entrypoint variables: only set valu
 | `HG_SERVER_PD_REST_ENDPOINT` | Derived from `pd.peers` by replacing `:8686` with `:8620` | PD REST address polled by `wait-storage.sh` |
 | `PD_AUTH_USER` | `store` | Basic username for PD REST calls from `wait-storage.sh` |
 | `PD_AUTH_PASSWORD` | Empty | PD REST Basic password; must match `HG_PD_AUTH_SECRET_KEY` when PD REST authentication is enabled |
-| `WAIT_PARTITION_TIMEOUT_S` | `120` | Partition allocation wait time in `wait-partition.sh` |
+| `WAIT_PARTITION_TIMEOUT_S` | `120` | Partition polling timeout; also bounds the final diagnostic in builds with the fix described below |
+
+Master builds that include authentication property fixes preserve spaces, backslashes and Unicode in explicit
+signing keys. Use the same key on every Server replica. When upgrading from an image that misread such a key, explicitly supply the intended
+`HG_SERVER_AUTH_TOKEN_SECRET` again; retaining the old configuration also retains its misread key. If the active key changes, sign in again to
+obtain new tokens. The 1.7.0 image limitation above still applies.
+
+Older images could initialize a Unicode administrator password incorrectly when the initializer inherited the C locale. Upgrading or setting
+`PASSWORD` again does not repair an existing account's stored password. A working administrator must change it through the
+[user API](/docs/clients/restful-api/auth/). This fix provides no automatic recovery when no administrator identity is usable; preserve the
+existing data and arrange account recovery before upgrading.
 
 > **Deprecated aliases**: `BACKEND` → `HG_SERVER_BACKEND`, `PD_PEERS` → `HG_SERVER_PD_PEERS`.
 
 `wait-storage.sh` waits up to 300 seconds for an `Up` Store. This duration is hardcoded and cannot be changed through environment variables.
+
+In master builds, HStore startup gives partition polling
+and the final `/v1/partitions` diagnostic separate `WAIT_PARTITION_TIMEOUT_S` budgets. Earlier builds bound polling only; the final diagnostic
+request has no timeout. With the default value, a stalled final response times out after 120 seconds; setting the value to `0` disables
+GNU timeout's limit.
+The entrypoint waits for `wait-partition.sh` before waiting for the Java launcher. If Java exits while partition polling is still waiting,
+that poll can consume its full timeout before the entrypoint observes the exit. If polling succeeds, the diagnostic step can then consume
+a second full timeout before observation finishes; signal-triggered shutdown remains interruptible.
 
 `HG_SERVER_INIT_STORE_ENABLED` accepts only the case-insensitive boolean values recognized by `HugeConfig`: `y`, `t`, `yes`, `on`, `true`, `n`, `f`, `no`, `off`, `false`. Other values, including `0` and `1`, terminate the entrypoint.
 
@@ -1582,8 +1653,7 @@ which the shipped Compose files do not set, or `env` in Kubernetes; exporting it
 putting the flag in `JAVA_OPTS` affects the Server JVM only and replaces that default (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those
 flags.
 
-> **Version scope**: the paragraph above describes current master images ([apache/hugegraph#2980](https://github.com/apache/hugegraph/pull/2980) for PD, Store
-> and the standalone Server, [apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258) for the HStore Server). No 1.7.0 or older image sets
+> **Version scope**: the paragraph above describes current master images. No 1.7.0 or older image sets
 > `STDOUT_MODE`, including the standalone `hugegraph/hugegraph:1.7.0` used above: `docker logs` shows only entrypoint output, and service logs stay in `logs/`
 > inside the container (`logs/hugegraph-server.log` for the Server).
 
@@ -1598,14 +1668,22 @@ Previously, all three entrypoints ended with `tail -f /dev/null`, keeping contai
 Entrypoints now monitor Java directly:
 
 - **PD and Store**: The entrypoint passes `-d false` to the startup script, which replaces itself with Java using `exec`. When Java exits, the container exits immediately and Docker's restart policy applies.
-- **Server**: The entrypoint waits with `tail --pid=$PID -f /dev/null`. `SIGTERM`/`SIGINT` traps forward Docker stop signals to Java and wait for graceful shutdown (exit 0). If Java crashes, the entrypoint exits with code 1, triggering the restart policy.
+- **Server**: The entrypoint owns the foreground launcher and waits for Java. After readiness, it preserves Java's exit status,
+  including `0`, `42`, and `137` for `SIGKILL`. `SIGTERM` and `SIGINT` request cooperative shutdown, reap owned readiness/partition checks,
+  and return `143` and `130` respectively after shutdown.
 - PID 1 in every image is `dumb-init`, which forwards Docker signals to the entrypoint.
 
 ### Server Startup Timeout
 
-`HG_SERVER_STARTUP_TIMEOUT_S` controls how long the Server startup script waits for a REST response; the default is **120 seconds**. Values must be decimal integers without leading zeros, from **1 to 86400 seconds**. Empty strings, `0`, negative numbers, fractions, and out-of-range values log an error and exit with code `1`.
+`HG_SERVER_STARTUP_TIMEOUT_S` sets the Docker entrypoint's REST readiness deadline; the default is **120 seconds**.
+Values must be decimal integers without leading zeros, from **1 to 86400 seconds**.
+Empty strings, `0`, negative numbers, fractions, and out-of-range values log an error and exit with code `1`.
 
-The entrypoint passes this value to `bin/start-hugegraph.sh -t`. If Server does not become ready within the deadline or exits early, startup fails and the container exits with code `1`; its restart policy may restart it. This duration excludes earlier storage initialization and backend readiness waits.
+The entrypoint also passes this value to `bin/start-hugegraph.sh -t`; the foreground launcher itself waits for Java, without polling REST.
+A startup deadline failure or Java exiting with `0` before readiness returns `1`;
+an early nonzero Java exit keeps its status. The deadline excludes earlier storage initialization and backend readiness waits.
+Readiness and partition checks remain interruptible during shutdown. A deadline failure requests termination and returns without an indefinite wait;
+an unresponsive Java process relies on container termination for final cleanup.
 
 For example, from the HugeGraph repository's `docker/` directory, extend the standalone Server wait to 300 seconds (Compose passes this variable to the container):
 
@@ -1663,6 +1741,8 @@ Section pages:
 - [HugeGraph Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/)
 - [HugeGraph-PD Quick Start](/docs/quickstart/hugegraph/hugegraph-pd/)
 - [HugeGraph-Store Quick Start](/docs/quickstart/hugegraph/hugegraph-hstore/)
+- [Deploy HugeGraph with Helm](/docs/quickstart/hugegraph/hugegraph-helm/)
+- [Operate HugeGraph on Kubernetes](/docs/quickstart/hugegraph/hugegraph-helm-operations/)
 
 
 ================
@@ -1686,7 +1766,8 @@ Each Store node keeps graph data in RocksDB and replicates it with Raft (JRaft):
 #### 2.1 Requirements
 
 - Operating System: Linux or macOS (Windows has not been fully tested)
-- Java version: Java 17 for HugeGraph 1.8.0+ (the Maven build accepts only JDK 17; the start script rejects older runtimes; 1.7.0 is the last release supporting Java 11)
+- Java version: Java 17 for HugeGraph 1.8.0+ (the Maven build accepts only JDK 17;
+  the start script rejects older runtimes; 1.7.0 is the last release supporting Java 11)
 - Maven version: ≥ 3.6.3 (for building from source)
 - Deploy HugeGraph-PD first for multi-node deployment
 
@@ -1703,7 +1784,7 @@ Apache downloads currently provide the complete 1.7.0 binary bundle containing P
 
 ```bash
 # Historical release 1.7.0 retains incubating in filenames and directories
-wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+curl -fLO --connect-timeout 10 --max-time 1800 https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-store-incubating-1.7.0
 ```
@@ -1961,14 +2042,20 @@ Ensure that the PD service is already started, then in the Store installation di
 ./bin/start-hugegraph-store.sh
 ```
 
-The script accepts four flags:
+The lifecycle and timeout details below describe master builds that include launcher script repairs.
+The downloaded 1.7.0 launcher does not include those repairs.
+The script accepts four flags, with GC version limits noted below:
 
 | Flag | Values | Default | Description |
 |------|--------|---------|-------------|
 | `-d` | `true`, `false` | `true` | Daemon mode. See below. |
-| `-g` | `ZGC`, `zgc` | not set | Garbage collector. Omit the flag for G1, which is the default. Any value other than `ZGC` or `zgc` aborts the start, including `g1`, even though the script's own usage line suggests it. |
+| `-g` | See version limits below | not set | Select the garbage collector. Unsupported values abort startup. |
 | `-j` | JVM options string | empty | Extra JVM options, for example `-j "-Xmx16g -Xms8g"`. |
 | `-y` | `true`, `false` | `false` | Attach the OpenTelemetry Java agent, downloading it into `plugins/` on first use, and export traces to `127.0.0.1:4317`. |
+
+Master builds accept `g1`, `G1`, `zgc` and `ZGC`.
+The downloaded 1.7.0 launcher accepts only `zgc` or `ZGC` as explicit choices; `-g g1`, `-g G1` and other values abort startup.
+Omit `-g` for the default path. For rejected values, inspect `logs/hugegraph-store-server.log`.
 
 Daemon mode:
 
@@ -1978,6 +2065,11 @@ Daemon mode:
 JVM memory, unless you set `JAVA_OPTIONS` yourself: `-Xms512m`, and `-Xmx` set to half the free memory, clamped to the 512 MB to 2048 MB range. The script also adds `-XX:MetaspaceSize=256M`, a heap dump on out-of-memory into `logs/`, and a rolling GC log at `logs/gc.log`. Production nodes normally need a much larger heap, so pass one explicitly, for example `-j "-Xmx32g -Xms32g"`.
 
 The script refuses to start if `ulimit -n` or `ulimit -u` is below 1024, and it preloads jemalloc on x86_64 and arm64 when the shared object can be downloaded and verified.
+
+In master builds, each optional jemalloc download allows
+5 seconds to connect and 30 seconds in total. The 1.7.0 helper has no connection or total timeout.
+A timeout or failed verification follows the existing fallback:
+startup continues without preloading the downloaded library. Verified cached libraries can still be reused; partial downloads are removed.
 
 After successful startup, you can see logs similar to the following in `logs/hugegraph-store-server.log`:
 
@@ -2268,7 +2360,8 @@ PD listens on three ports:
 #### 2.1 Requirements
 
 - Operating System: Linux or macOS (Windows has not been fully tested)
-- Java version: Java 17 for HugeGraph 1.8.0+ (the Maven build accepts only JDK 17; the start script rejects older runtimes; 1.7.0 is the last release supporting Java 11)
+- Java version: Java 17 for HugeGraph 1.8.0+ (the Maven build accepts only JDK 17;
+  the start script rejects older runtimes; 1.7.0 is the last release supporting Java 11)
 - Maven version: ≥ 3.6.3 (for building from source)
 
 ### 3 Deployment
@@ -2284,7 +2377,7 @@ Apache downloads currently provide the complete 1.7.0 binary bundle containing P
 
 ```bash
 # Historical release 1.7.0 retains incubating in filenames and directories
-wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+curl -fLO --connect-timeout 10 --max-time 1800 https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 ```
@@ -2550,14 +2643,19 @@ In the PD installation directory, execute:
 The script requires Java 17 or later on `PATH` or in `JAVA_HOME` (Java ≥ 11 on 1.7.0).
 It exits without doing anything if it finds a Java process already using this installation's `conf` directory.
 
-Supported flags:
+The lifecycle details below describe current master builds. The downloaded 1.7.0 launcher does not include those repairs.
+Supported flags, with GC version limits noted below:
 
 | Flag | Values | Default | Description |
 |------|--------|---------|-------------|
 | `-d` | `true`, `false` | `true` | Daemon mode. See the note below. |
-| `-g` | `zgc`, `ZGC` | not set | Garbage collector. Leave the flag off for the default G1GC. Any other value, `g1` included, aborts the start. |
+| `-g` | See version limits below | not set | Select the garbage collector. Unsupported values abort startup. |
 | `-j` | JVM options | empty | Extra JVM options, for example `-j "-Xmx8g -Xms8g"`. |
 | `-y` | `true`, `false` | `false` | Attach the OpenTelemetry Java agent. The agent is downloaded into `plugins/` on first use, its MD5 is verified, and traces are exported over gRPC to `http://127.0.0.1:4317`. |
+
+Master builds accept `g1`, `G1`, `zgc` and `ZGC`.
+The downloaded 1.7.0 launcher accepts only `zgc` or `ZGC` as explicit choices; `-g g1`, `-g G1` and other values abort startup.
+Omit `-g` for the default path. For rejected values, inspect `logs/hugegraph-pd-stdout.log`.
 
 The `-d` flag controls daemon mode:
 
@@ -2786,6 +2884,363 @@ Backlinks:
 - [HugeGraph (OLTP)](/docs/quickstart/hugegraph/)
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
 - [Hubble with HStore](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)
+
+
+================
+Source: https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-helm/index.md
+================
+
+# Deploy HugeGraph with Helm
+
+LLMS index: [llms.txt](/llms.txt)
+
+---
+
+This guide follows the chart in the HugeGraph development branch. Image tags remain `latest` until release images are published;
+pin images for your installation. The chart requires Helm 3 and Kubernetes 1.23 or later.
+Start with the [chart README](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/README.md) for common commands and settings.
+Advanced lifecycle procedures are in the [operations reference](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md).
+
+## 1 Install
+
+> [!NOTE]
+> **Default Topology & Storage Prerequisites**
+> - **Components**: Deploys **3 PD + 3 Store + 3 Server and Hubble** by default, with authentication and persistent storage enabled.
+> - **Volume Requirements**: Requires a default dynamic StorageClass or matching pre-created static PVs, totaling 7 persistent volumes
+>   (3 × 10 GiB PD volumes, 3 × 50 GiB Store volumes, and 1 × 1 GiB Hubble volume).
+> - **Memory Sizing**: Retains container JVM memory auto-calculation; configure resource requests/limits to allocate sufficient physical memory
+>   for the 9 JVMs and Hubble.
+
+```bash
+git clone https://github.com/apache/hugegraph.git
+cd hugegraph
+kubectl config current-context
+kubectl get nodes
+kubectl get storageclass
+# Standard cluster deployment (3 PD + 3 Store + 3 Server + 1 Hubble; requires 7 PVs):
+helm install hugegraph ./helm/hugegraph -n hugegraph \
+  --create-namespace --wait --timeout 15m
+
+# Local testing or single-node environments (Minikube, Kind; 1 replica and no anti-affinity):
+# helm install hugegraph ./helm/hugegraph -n hugegraph \
+#   -f ./helm/hugegraph/values-single.yaml \
+#   --create-namespace --wait --timeout 10m
+```
+
+## 2 Modes and entry points
+
+```filetree {.hg-filetree-notes title="HugeGraph Helm Chart Layout"}
+helm/hugegraph/
+  Chart.yaml            # Chart metadata and version definitions
+  values.yaml           # Default values (easy mode: 3 PD + 3 Store + 3 Server + 1 Hubble, NodePort)
+  values-single.yaml    # Single-node preset (local Minikube/Kind testing with 1 replica and no anti-affinity)
+  values-cluster.yaml   # Multi-node cluster preset (required anti-affinity, Store OnDelete rollout)
+  values-strict.yaml    # Hardened security preset (strict mode: ClusterIP only, strict NetworkPolicies)
+  values.schema.json    # Schema validation for values configuration
+  templates/            # Kubernetes workload templates
+    pd-statefulset.yaml   # PD StatefulSet (metadata and scheduling)
+    store-statefulset.yaml # Store StatefulSet (storage engine)
+    server-deployment.yaml # Server Deployment (injects serviceId and graphSpace)
+    hubble-deployment.yaml # Hubble UI Deployment
+    tests/              # Smoke validation hook (helm test, supports custom testGraphAlias)
+  examples/             # Seven complete production scenario examples (local PVs, GitOps secrets, Ingress)
+  docs/operations.md    # Lifecycle operations and recovery guide
+```
+
+`mode: easy` is the default. Server and Hubble use automatic NodePorts; PD stays ClusterIP. HTTP works without a domain, certificate or acknowledgement.
+`mode: strict` defaults Server/Hubble to ClusterIP and enables NetworkPolicy. Both modes keep authentication and persistence.
+Explicit component parameters take priority over global parameters, which take priority over mode defaults; explicit `false` remains an override.
+The global parameters are `persistence.enabled` and `global.imageRegistry`. Strict mode is also available through `values-strict.yaml`.
+
+| Entry | Access | Requirements |
+|---|---|---|
+| NodePort | `http://<reachable-node-ip>:<assigned-node-port>` | Node connectivity and firewall access; no additional controller |
+| ClusterIP | Internal Service IP/DNS, for example `hugegraph-server.hugegraph.svc:8080` | External clients use port-forward or an existing gateway |
+| LoadBalancer | Infrastructure-assigned address | Compatible load balancer controller |
+| Ingress | HTTP routing through a controller | Installed controller; hostname and TLS optional |
+
+```bash
+kubectl -n hugegraph get svc hugegraph-server hugegraph-hubble
+kubectl get nodes -o wide
+kubectl -n hugegraph get secret hugegraph-admin \
+  -o jsonpath='{.data.password}' | base64 --decode
+```
+
+Open Hubble on its assigned NodePort and log in as `admin` with this password. A node need not host the Pod with default `externalTrafficPolicy: Cluster`.
+The internal ClusterIP is a virtual Service address, not a node IP; a laptop normally cannot reach it directly.
+Use `kubectl -n hugegraph port-forward svc/hugegraph-hubble 8088:8088` for a local browser at `http://127.0.0.1:8088`.
+
+Each client Service supports `externalTrafficPolicy`, `loadBalancerClass`, `loadBalancerIP`, `loadBalancerSourceRanges`, `externalIPs`
+and `allocateLoadBalancerNodePorts`, subject to the cluster/controller's capabilities. Use LoadBalancer fields with that Service type.
+NodePort omission or `0` means automatic allocation. Fixed ports are validated against the cluster's configured range by Kubernetes;
+the chart does not force `30000–32767`. Legacy HTTP acknowledgement fields remain accepted but no longer gate rendering.
+
+### Server service identity and graph space
+
+Both `server.serviceId` and `server.graphSpace` default to `DEFAULT`. To register the Server with a specific service name or graph space in PD:
+
+```bash
+helm upgrade --install hugegraph ./helm/hugegraph -n hugegraph \
+  --set-string server.serviceId=analytics \
+  --set-string server.graphSpace=team_a \
+  --set-string server.testGraphAlias=team_a-demo
+```
+
+A non-default graph space must be created through the PD API before starting its assigned Server. `server.testGraphAlias` specifies the Gremlin binding checked
+by `helm test` (case-sensitive) and does not auto-infer from `graphSpace`. Do not re-declare service ID or graph space in `server.extraEnv`.
+
+## 3 Internal images and storage
+
+[Complete examples](https://github.com/apache/hugegraph/tree/master/helm/hugegraph/examples) cover private registries, dynamic storage, seven local PVs,
+GitOps credentials, API-only deployment and a hostless HTTP Ingress.
+
+Set `global.imageRegistry` to prefix unqualified image repositories; an explicit registry in a component repository takes precedence.
+The default mirror inventory is only `hugegraph/pd`, `hugegraph/store`, `hugegraph/server` and `hugegraph/hubble`, at the configured tags/digests.
+Store's PD wait init container and the Helm test reuse Store and Server images respectively, which already contain `curl`.
+No separate curl image or runtime package installation is required. Explicit `store.waitImage` / `server.waitImage` overrides remain supported.
+
+For storage, empty `storageClassName` inherits the cluster default, while `"-"` explicitly selects no StorageClass.
+Local PVs require prepared host directories, matching capacities, `nodeAffinity` and a `kubernetes.io/no-provisioner` StorageClass;
+`WaitForFirstConsumer` binds with the Pod's scheduling constraints. See the complete seven-volume example before creating resources.
+For a new temporary installation, set `persistence.enabled=false` to use `emptyDir`; component storage flags override it.
+The chart never replaces a failed PVC with temporary storage and rejects PD/Store storage-mode changes on initialized releases.
+
+## 4 Authentication and secrets
+
+Normal Helm installations generate and reuse three credentials: `<release>-admin` (`password`), `<release>-auth-token` (`token_secret`)
+and `<release>-pd-auth` (`secret-key`). PD REST requires the shared PD secret, supplied to the PD container as `HG_PD_AUTH_SECRET_KEY`;
+Server's storage wait and Hubble read the same credential. It is not a separate user password that must be invented for each Pod.
+
+For GitOps, use fixed encrypted values or pre-created Secrets through `pd.auth.existingSecret`, `server.auth.admin.existingSecret`
+and `server.auth.token.existingSecret`. `existingSecret` wins over inline values and is not managed by the chart.
+The admin password must be printable ASCII without spaces, colons or backslashes; the PD secret must be printable ASCII without surrounding whitespace
+or backslashes; the JWT signing key must be at least 32 bytes. Offline renderers cannot reuse live generated Secrets through `lookup`.
+
+The admin Secret is an **initial** credential. Updating it does not rotate an existing account.
+Change the password through `PUT /graphspaces/DEFAULT/auth/users/admin` with `{"user_password":"<new-password>"}` using the existing credential,
+update the Secret/source to that same password, then restart the Server Deployment to clear every replica's auth cache.
+
+Hubble is enabled by default and its current login requires Server authentication. Set `hubble.enabled=false` for API-only access;
+optionally also set `server.auth.enabled=false` for an unauthenticated API. Inactive credential settings may remain in your values file.
+
+## 5 Upgrade and verification
+
+Use native Helm value reuse to preserve an old release's UI, entry, storage and credentials:
+
+```bash
+helm get values hugegraph -n hugegraph --all
+helm upgrade hugegraph ./helm/hugegraph -n hugegraph --reuse-values \
+  --wait --timeout 15m
+helm test hugegraph -n hugegraph --logs --timeout 5m
+```
+
+Older explicit helper images also remain under `--reuse-values`; add `--set-string store.waitImage= --set-string server.waitImage=` to reuse component images.
+Adopt new defaults deliberately with `--reset-values` and a reviewed file retaining your image, credential, storage and topology settings.
+Do not treat PD membership, storage or credential changes as ordinary independent overrides; consult the lifecycle reference.
+
+`server.storageWaitTimeoutSeconds` defaults to 300 and is passed as `WAIT_STORAGE_TIMEOUT_S`. An unspecified startup probe threshold is derived
+from that wait plus 150 seconds; an explicit threshold is preserved and must cover the storage wait plus at least 120 seconds of Server startup.
+A contradictory budget fails rendering with the relevant parameter names. Storage wait timeout is not a JVM memory setting.
+
+Kubernetes readiness and `helm test` do not prove fresh UI login. Test login and graph queries after install/recovery.
+For scheduling, NetworkPolicy, rolling updates and recovery, see [Kubernetes operations](./hugegraph-helm-operations.md).
+
+---
+
+Backlinks:
+
+- [Kubernetes Operations](/docs/quickstart/hugegraph/hugegraph-helm-operations/)
+
+
+================
+Source: https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-helm-operations/index.md
+================
+
+# Operate HugeGraph on Kubernetes
+
+LLMS index: [llms.txt](/llms.txt)
+
+---
+
+This guide accompanies [Helm deployment](./hugegraph-helm.md). Detailed lifecycle checks and recovery notes are maintained in the
+[operations reference](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md); all parameters are commented in `values.yaml`.
+Commands assume release/namespace `hugegraph`; substitute the actual workload names if overridden.
+
+## 1 Storage and private images
+
+The default installation needs seven persistent volumes. Dynamic storage requires a working provisioner; static local storage requires prepared directories
+and matching PVs on the named nodes. Use the [complete examples](https://github.com/apache/hugegraph/tree/master/helm/hugegraph/examples)
+for all seven local PVs, `WaitForFirstConsumer`, registry mirrors and GitOps Secrets.
+An initially Pending PVC with `WaitForFirstConsumer` can be normal; persistent Pending needs PVC/Pod events and PV matching checks.
+A bound claim with a missing directory or permission mismatch can fail mounting. Do not replace failed PVCs with temporary data directories.
+
+```bash
+kubectl -n hugegraph get pvc,pods
+kubectl -n hugegraph describe pvc <claim-name>
+kubectl -n hugegraph describe pod <pod-name>
+kubectl get pv,storageclass
+```
+
+For `ImagePullBackOff`, inspect Pod events and registry access/credentials. The default image inventory contains four component images;
+Store wait and Helm test reuse existing component images with `curl` already installed. Explicit helper-image overrides must also be mirrored.
+
+## 2 Ports and health
+
+PD listens on REST 8620, gRPC 8686 and Raft 8610; Store on REST 8520, gRPC 8500 and Raft 8510; Server HTTP on 8080; Hubble HTTP on 8088.
+Client Services hide individual Pod addresses. NodePort is a separate allocated port on reachable nodes, not the application listener port.
+PD `/v1/ready` requires a Raft leader; `/v1/health` only confirms the listener. Store startup waits for a majority of ready PD peers.
+Server waits up to `server.storageWaitTimeoutSeconds` (default 300) before its application startup; adjust it for slow storage bootstrap.
+No local Helm rendering verifies live cluster reachability, volumes or JVM capacity.
+
+### Helm test coverage
+
+`helm test` validates graph binding on every Server Pod (`DEFAULT-hugegraph` by default, or configured via `server.testGraphAlias`), and requires
+currently visible associated indexes to be in `CREATED` state.
+Run it after index creation/rebuild jobs finish, with no schema changes during the test.
+On HStore, reading an unfinished index can cache its temporary status on other Pods; retries do not refresh that state.
+Indexed queries on those Pods may keep failing after the job succeeds; replace affected Server Pods only after the jobs finish.
+The hook does not fix cross-Server schema cache consistency. Its 150-second internal retry window allows transient elections to settle;
+Helm's `--timeout` does not change that window.
+It reads indexes by ID without refreshing the full index cache; it does not prove index query results or complete schema consistency.
+For existing data, use `--set-file server.testGremlin=assertions.groovy` during Helm upgrade to add read-only business assertions on every Pod.
+The script must use `assert` or throw on unexpected results; returning `false` alone does not fail the request.
+See [business query assertions](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#business-query-assertions)
+for an example and coverage limits. Without a script, business assertions are reported as skipped.
+The default hook creates no schema or data. Custom scripts use the hook's Server credential (`admin` with auth enabled);
+read-only execution is not enforced, so supply trusted, read-only assertions.
+
+Server API responses negotiate compression through `Accept-Encoding`. Gzip-capable clients can request `gzip` or use `curl --compressed`;
+`identity` or no compression request keeps the response uncompressed. Build a new Server image from the updated source to include this behavior;
+updating the chart alone does not update an existing image.
+
+### PD REST authentication
+
+PD REST uses HTTP Basic auth: `hg`, `store`, `hubble` and `vermeer` share the PD REST Secret password.
+Server's `admin` account is not a PD REST account and receives 401. For the default release/Secret and a reachable PD REST address:
+
+```bash
+PD_SECRET=$(kubectl -n hugegraph get secret hugegraph-pd-auth \
+  -o jsonpath='{.data.secret-key}' | base64 --decode)
+curl --user "hg:${PD_SECRET}" "http://<pd-rest-address>:8620/v1/stores"
+```
+
+The HTTP example assumes a trusted internal network. For other access paths, use an HTTPS gateway or optionally forward the PD Service:
+`kubectl -n hugegraph port-forward service/hugegraph-pd-client 8620:8620`, then query `http://127.0.0.1:8620`.
+
+With `pd.auth.existingSecret` or a custom `pd.auth.key`, read the actual Secret and key. Do not use the Server admin password.
+Variables avoid literal passwords in shell history, but expanded credentials can briefly appear in process arguments.
+On shared terminals, use `curl --user hg` to prompt for the password or a private curl config with permissions `600`;
+the [credentials guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#credentials)
+also covers password-update payloads. Keep credential files out of logs and version control.
+
+## 3 Scheduling
+
+The default `preferred` anti-affinity permits scheduling with fewer nodes than replicas. `values-cluster.yaml` sets required PD/Store anti-affinity,
+so it needs at least three schedulable nodes. Explicit affinity takes priority over presets.
+Local PV node affinity must match the workload's placement constraints; PV capacity declarations do not enforce filesystem quotas.
+Do not change a persisted PD/Store Raft hostname or port as an ordinary upgrade: those addresses are recorded identities.
+
+## 4 Partition sharding
+
+At first bootstrap, the chart seeds three shard replicas when there are at least three Stores, and one otherwise.
+PD persists the partition settings; changing chart values after initialization does not rewrite that metadata.
+Use the PD configuration API and a coordinated partition patrol for an existing cluster. An explicit shard count must be odd and no greater than Store replicas.
+See the [topology constraints](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#topology-and-scheduling)
+before changing a live cluster; the chart does not migrate existing shard metadata.
+
+## 5 NetworkPolicy
+
+Easy mode, including the ordinary cluster preset, defaults policies off. Strict mode enables them; explicit `networkPolicy.enabled` wins in either mode.
+The cluster network plugin must enforce NetworkPolicy for these resources to have an effect.
+The generated policies admit component traffic and DNS. External clients and Ingress controllers need suitable
+`networkPolicy.<component>.extraIngress` rules; external discovery addresses may need matching `extraEgress`.
+An empty list is valid and can block external traffic. Native Kubernetes rules are accepted, including `{}` to allow all;
+there is no separate source-acknowledgement gate. Use your actual source addresses/selectors, considering NodePort SNAT and controller behavior.
+
+```yaml
+networkPolicy:
+  enabled: true
+  server:
+    extraIngress:
+      - from:
+          - ipBlock:
+              cidr: 10.20.0.0/16
+        ports:
+          - protocol: TCP
+            port: 8080
+  hubble:
+    extraIngress:
+      - from:
+          - ipBlock:
+              cidr: 10.20.0.0/16
+        ports:
+          - protocol: TCP
+            port: 8088
+```
+
+## 6 Rolling Store images safely
+
+Use `store.updateStrategy.type=OnDelete` for a controlled maintenance rollout, as the cluster preset does.
+Delete one Store Pod at a time. Before replacing the next, verify the previous Pod is Ready, has a fresh Store heartbeat and each shard group has its
+full membership and exactly one leader, read from the PD leader. PD's `Up` status alone does not prove completed shard recovery.
+PDBs limit voluntary eviction, not StatefulSet controller disruption. Stop on missing members or leaders.
+The [operations reference](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#rolling-store-updates-and-recovery)
+summarizes these rollout conditions;
+it does not provide a complete per-group diagnostic or disk-loss recovery procedure.
+
+A single Store replacement can cause request errors or timeouts while Raft leadership and client routes converge, even with full replicas.
+There is no zero-error guarantee. Observe application errors as well as shard recovery before continuing; do not blindly retry writes.
+
+### PD patrol and leader balance
+
+Partition patrol repairs shard membership; leader balance is a separate manual task and is not scheduled automatically.
+Before either task, identify the PD leader through authenticated `/v1/members` (`data.pdLeader.restUrl`) and confirm its `/v1/ready` reports `isLeader: true`.
+The GET tasks `/v1/task/patrolPartitions` and `/v1/task/balanceLeaders` change cluster state; target that confirmed leader with PD REST credentials.
+Wait for membership recovery and split/move tasks to finish before balancing leaders; Stores must have fresh heartbeats and groups full, healthy membership.
+A busy task returns body `status: 1001`. A follower may return empty success, and leader transfers are asynchronous:
+HTTP 200 or a transfer plan does not prove completion. Recheck `/v1/partitions`, `/v1/stores` and application errors before further maintenance.
+Follow the [task procedure](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#pd-patrol-and-leader-balance)
+for the separate patrol and balance steps; do not loop task requests while maintenance is busy.
+
+## 7 Disaster recovery
+
+Preserve existing volumes, claim identities and PD membership. Do not delete RocksDB lock files to recover a deployment, or replace persisted membership
+with freshly generated nodes. A new empty PVC does not restore the data from a lost Store disk.
+Local disks cannot migrate their files automatically when a node fails. Take backups outside these PVs and test recovery separately.
+The chart does not implement backup or automatic recovery. The
+[recovery notes](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#rolling-store-updates-and-recovery)
+describe constraints, not a complete recovery sequence.
+Before destructive changes, establish and validate a recovery plan for the deployed version and remaining replicas or backups.
+
+## 8 Scaling
+
+Server replicas are routinely mutable; an HPA also needs CPU requests. Store growth is a coordinated storage/shard operation.
+PD growth/shrink and Store shrink cannot be handled as ordinary replica changes, because persistent Raft/shard membership must be updated first.
+Chart upgrade checks reject unsupported identity/membership changes on initialized StatefulSets; fresh installs do not query StatefulSets for upgrade checks.
+Scale through the documented lifecycle procedure rather than `kubectl scale`, which can leave Hubble's Store metrics configuration stale.
+
+## 9 Running Hubble outside the cluster
+
+Direct mode only needs an externally reachable Server URL. PD discovery also needs externally reachable PD gRPC, and Server addresses registered with PD
+must be reachable from that external Hubble. Set `server.advertiseUrl` to a shared reachable Server URL when needed; it affects all discovery clients,
+including in-cluster Hubble. In-chart Hubble already uses internal service discovery and needs no public PD entry point.
+HTTP is supported directly; TLS termination remains optional. Hubble remains single-replica and its current login requires Server authentication.
+
+## 10 When Gremlin fails with Could not rebind
+
+A Server can become Ready and serve REST while Gremlin binding failed during a PD rollout. Run `helm test hugegraph -n hugegraph --logs --timeout 5m`;
+the hook checks authenticated graph-bound Gremlin on every Server Pod. Once PD is stable, replace the failing Server Pod and verify again.
+A test that only calls `/versions` does not prove graph binding; also check fresh Hubble login and a graph query.
+
+For `ERROR: missing required env 'HG_PD_AUTH_SECRET_KEY'`, inspect the PD Pod's Secret reference and the corresponding key, not the Secret value in logs.
+The chart normally injects this shared PD REST credential automatically. Custom containers/manifests must provide the same value to PD and its clients.
+In GitOps, create the external Secret before workload reconciliation; with ordinary Helm, retain the chart-generated release Secret.
+
+---
+
+Backlinks:
+
+- [Helm Deployment](/docs/quickstart/hugegraph/hugegraph-helm/)
 
 
 ================
@@ -11819,8 +12274,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 Groups grant corresponding resource permissions, and users are assigned to different groups, thereby having different resource permissions.
 The group interface includes APIs for creating groups, deleting groups, modifying groups, and querying group-related information.
 
-> `GroupAPI` remains at `/auth/groups`, the only group route on 1.7.0. Current `master` also serves `/graphspaces/DEFAULT/auth/groups`,
-> added by [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096).
+> `GroupAPI` remains at `/auth/groups` on 1.7.0; current `master` also serves `/graphspaces/DEFAULT/auth/groups`.
 >
 > The GraphSpace API generates each persisted group name as `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 hex digits.
 > For `DEFAULT`, the name and ID look like `~hubble_role:v1:REVGQVVMVA:<32 hex>`; request `group_name` is only a client
@@ -13088,6 +13542,7 @@ Backlinks:
 
 - [Graphspace](/docs/clients/restful-api/graphspace/)
 - [Config Authentication](/docs/config/config-authentication/)
+- [Docker Cluster](/docs/guides/hugegraph-docker-cluster/)
 
 
 ================

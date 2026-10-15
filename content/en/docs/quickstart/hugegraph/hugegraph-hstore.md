@@ -22,8 +22,8 @@ Each Store node keeps graph data in RocksDB and replicates it with Raft (JRaft):
 #### 2.1 Requirements
 
 - Operating System: Linux or macOS (Windows has not been fully tested)
-- Java version: ≥ 11 (enforced by the build and re-checked by `bin/start-hugegraph-store.sh`)
-- Maven version: ≥ 3.5.0
+- Java version: Java 17 for HugeGraph 1.8.0+ (the Maven build accepts only JDK 17; the start script rejects older runtimes; 1.7.0 is the last release supporting Java 11)
+- Maven version: ≥ 3.6.3 (for building from source)
 - Deploy HugeGraph-PD first for multi-node deployment
 
 ### 3 Deployment

@@ -25,8 +25,8 @@ PD 监听三个端口：
 #### 2.1 前置条件
 
 - 操作系统：Linux 或 macOS（Windows 尚未经过完整测试）
-- Java 版本：≥ 11
-- Maven 版本：≥ 3.5.0
+- Java 版本：HugeGraph 1.8.0+ 使用 Java 17（Maven 源码构建仅接受 JDK 17；启动脚本拒绝低于 17 的运行时；1.7.0 是最后一个支持 Java 11 的版本）
+- Maven 版本：≥ 3.6.3（从源码编译时）
 
 ### 3 部署
 
@@ -302,7 +302,7 @@ HG_PD_RAFT_PEERS_LIST: pd0:8610,pd1:8610,pd2:8610
 ./bin/start-hugegraph-pd.sh
 ```
 
-脚本要求 `PATH` 或 `JAVA_HOME` 中有 11 及以上版本的 JDK；如果发现已有 Java 进程在使用本安装目录的 `conf` 目录，脚本会直接退出，不做任何事。
+脚本要求 `PATH` 或 `JAVA_HOME` 中有 17 及以上版本的 JDK（1.7.0 要求 11 及以上）；如果发现已有 Java 进程在使用本安装目录的 `conf` 目录，脚本会直接退出，不做任何事。
 
 支持的参数：
 

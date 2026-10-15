@@ -15,7 +15,7 @@ aliases:
 `hugegraph-server` 模块包含 `hugegraph-core`、`hugegraph-api`、`hugegraph-dist` 和存储适配等子模块。Core 实现属性图模型、事务与 TinkerPop 接口，API 提供 HTTP 服务并将客户端请求交给 Core 处理。图数据由 RocksDB（单机默认）、HStore（分布式）或 HBase 后端保存。
 
 > [!WARNING]
-> **版本说明**：本文区分已发布版本与开发主线。下载示例使用 ASF 发布的 HugeGraph 1.7.0 安装包；源码构建、配置默认值和启动行为以 `apache/hugegraph` 的 `master` 分支为准。主线源码构建出的包不是 ASF 发布包，即使包内版本号相同也不代表与 1.7.0 发布包相同。本文介绍 RocksDB、HStore 和 HBase；其他旧后端请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
+> **版本说明**：本文区分已发布版本与开发主线。下载示例使用 ASF 发布的 HugeGraph 1.7.0 安装包；源码构建、配置默认值和启动行为以 `apache/hugegraph` 的 `master` 分支为准。主线源码构建出的包不是 ASF 发布包，即使包内版本号与发布版本一致也不代表属于官方发布包。本文介绍 RocksDB、HStore 和 HBase；其他旧后端请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
 
 > 名称说明：`HugeGraph` 表示整个项目或主仓库，`hugegraph-server` 表示仓库中的 Server 模块，`HugeGraphServer` 是服务进程的 Java 类名。下文的 Server 服务指运行中的图数据库服务。
 
@@ -51,17 +51,46 @@ markmap:
 
 ## 2 依赖
 
-### 2.1 安装 Java 11 (JDK 11)
+<span id="21-安装-java-11-jdk-11"></span>
 
-HugeGraph 1.7.0 中的 `hugegraph-server` 模块使用 Java 11 编译，运行和源码构建均需使用 Java 11 或更高版本。
+### 2.1 安装 Java 17 (JDK 17)
+
+从 HugeGraph 1.8.0 开始使用 **Java 17**；**1.7.0 是最后一个支持 Java 11 的版本**。
+所有模块的源码构建要求 **JDK 17 和 Maven 3.6.3 或更高版本**，Server、PD 和 Store 的运行环境统一使用 **JDK 17**。
+Server 安全检查（`-s true`）要求 Java 17 到 23 以及可读的 `conf/java-security.properties`；在 Java 24 或更高版本上，需以 `-s false` 启动 Server（JDK 24 通过 JEP 486 移除了 Security Manager）。
 
 **在继续阅读前，请先执行 `java -version` 命令确认 JDK 版本。**
 
-> 1.7.0 起不再支持 Java 8。`bin/hugegraph-server.sh` 在低于 Java 11 的环境下会直接拒绝启动。
+> [!NOTE]
+> **TinkerPop 3.8.1 兼容性与核心变更**
+>
+> HugeGraph 1.8.0 升级至 TinkerPop 3.8.1 与 Groovy 4.0.25。请使用 Server 随包提供的 Gremlin 配置文件。
+>
+> - **序列化器包路径变更**：Driver 序列化器类从 `org.apache.tinkerpop.gremlin.driver.ser` 移至 `org.apache.tinkerpop.gremlin.util.ser`，需保留配置中的 HugeGraph registries。
+> - **Graph.Features 调整**：`supportsUniformListValues()` 现返回 `false`；按 Schema 定义的 `valueList()`/`LIST` 属性仍正常支持，无需重写既有列表数据。
+> - **遍历倍数语义**：遍历中途扫描保留上游输入数量（如 3 个顶点执行 `g.V().V().count()` 返回 `9L`）。
+> - **日期时间类型**：`DATE` 属性支持写入及索引等值/范围查询中的 `OffsetDateTime`（按 instant 毫秒归一化）。
+> - **过滤与优化**：`P.typeOf()` 作为本地过滤执行；Count 过滤仅在谓词分支可证明截断安全时应用优化。
 
-> 安全检查默认开启，会安装 `HugeSecurityManager`，它要求 Java 11 到 23。JDK 24 移除了 Security Manager（[JEP 486](https://openjdk.org/jeps/486)），因此在 Java 24 及更高版本上必须关闭该检查后再启动服务：`bin/start-hugegraph.sh -s false`。
+```yaml {tab="GraphBinary (推荐/默认)"}
+# 随包 Driver 与 Console 默认采用 GraphBinary V1
+# - Schema 结果为标准 Map
+# - Blob 值以二进制格式传输（包含在返回图元素内的 Blob）
+serializer:
+  className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
+  config:
+    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+```
 
-> 源码构建还需要 Maven 3.5.0 或更高版本。
+```yaml {tab="GraphSON (HTTP/兼容)"}
+# 默认 HTTP JSON 采用 untyped GraphSON V1
+# - 保留 Tree 的旧 key/value 数组结构
+# - Typed GraphSON V1 因安全原因已禁用（typed V2/V3 仅适用于受支持的简单标量与 ID）
+# - graph.schema() 返回包含各类 label 的 Map
+```
+
+> [!TIP]
+> 完整客户端配置与验证细节见 [Server 运行时文档](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md)。
 
 ## 3 部署
 
@@ -178,13 +207,13 @@ mvn package -DskipTests -ntp
 [INFO] BUILD SUCCESS
 ```
 
-执行成功后，根目录 `target/` 下会生成主线聚合包（当前仓库版本属性为 1.7.0）：
+执行成功后，根目录 `target/` 下会生成主线聚合包（当前仓库版本属性为 1.8.0）：
 
 ```text
-target/apache-hugegraph-1.7.0.tar.gz
+target/apache-hugegraph-1.8.0.tar.gz
 ```
 
-该文件名中的版本号来自源码的 `revision` 属性；它不会把主线构建变成 ASF 发布物料。构建过程还会在仓库根目录生成 `apache-hugegraph-1.7.0/` 聚合目录，其中的 Server 子目录名由 Server 模块的 `final.name` 决定，例如当前为 `apache-hugegraph-server-1.7.0`。若只保留了 tar 包，则先执行 `tar zxf target/apache-hugegraph-1.7.0.tar.gz` 再进入该目录。
+该文件名中的版本号来自源码的 `revision` 属性；它不会把主线构建变成 ASF 发布物料。构建过程还会在仓库根目录生成 `apache-hugegraph-1.8.0/` 聚合目录，其中的 Server 子目录名由 Server 模块的 `final.name` 决定，例如当前为 `apache-hugegraph-server-1.8.0`。若只保留了 tar 包，则先执行 `tar zxf target/apache-hugegraph-1.8.0.tar.gz` 再进入该目录。
 
 默认构建会打包 `rocksdb`、`hbase` 和 `hstore` 三个后端模块，并把它们记录在 `hugegraph-dist` jar 内的 `backend.properties` 资源的 `backends` 配置项中。若只需要包含 RocksDB 的精简发布包，可加上 `-Drocksdb-only`：
 
@@ -221,7 +250,7 @@ mvn package -DskipTests -ntp -Drocksdb-only
 
 Server 的 tar 包随包提供 `conf/rest-server.properties`、`conf/gremlin-server.yaml` 和 `conf/graphs/hugegraph.properties`；源码构建包从 `hugegraph-server/hugegraph-dist/src/assembly/static/conf/` 装配这些文件。解压后在 Server 安装目录内编辑配置，无需另行生成。发行包版本之间可能有默认值差异，下面涉及的默认值和启动行为按 `master` 主线说明。
 
-单机 RocksDB 快速上手只需确认 `conf/graphs/hugegraph.properties` 使用 `backend=rocksdb`、`serializer=binary`。正常 Server 初始化会扫描 `conf/graphs/` 并加载本地图配置，无需额外设置 `graph.load_from_local_config=true`。该选项默认值为 `false`，控制构造阶段的提前加载和 `reload()` 时是否重新扫描本地配置。
+单机 RocksDB 快速上手只需确认 `conf/graphs/hugegraph.properties` 使用 `backend=rocksdb`、`serializer=binary`。正常 Server 初始化会扫描 `conf/graphs/` 并加载本地图配置，无需额外设置 `graph.load_from_local_config=true`。该选项默认 `false`，控制构造阶段的提前加载。图配置变化通过重启 Server 应用，不使用热重载进行维护。
 
 详细的配置介绍请参考[配置文档](/docs/config/config-guide)及[配置项介绍](/docs/config/config-option)。
 
@@ -545,15 +574,28 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 | 参数 | 取值 | 默认值 | 作用 |
 |---|---|---|---|
 | `-d` | `true`、`false` | `true` | 守护进程模式。`-d false` 时脚本留在前台，并把 `SIGTERM`/`SIGINT` 转发给服务进程 |
-| `-g` | `zgc` 或 `ZGC` | 不填则用 G1GC | 选择垃圾回收器。只接受 ZGC，其他取值会直接终止启动；ZGC 需要 Java 11 及以上 |
+| `-g` | `g1`、`G1`、`zgc`、`ZGC` | JVM 默认值 | 选择垃圾回收器（`g1`/`G1` 设置 `-XX:+UseG1GC`；`zgc`/`ZGC` 设置 `-XX:+UseZGC`）。不填则使用 JVM 默认收集器配置 |
 | `-m` | `true`、`false` | `false` | 安装基于 crontab 的监控任务（`bin/start-monitor.sh`），仅用于虚拟机和物理机部署 |
 | `-p` | `true`、`false` | `false` | 预加载示例图，见 5.1.4 |
-| `-s` | `true`、`false` | `true` | 开启安全检查（`HugeSecurityManager`）。要求 Java 11 到 23，且 `conf/java-security.properties` 可读 |
+| `-s` | `true`、`false` | `true` | 开启安全检查（`HugeSecurityManager`），要求 Java 17 到 23 以及 `conf/java-security.properties` 可读。在 Java 24+ 上需传 `-s false` |
 | `-j` | JVM 参数 | 空 | 追加到服务命令行的额外 JVM 参数 |
 | `-t` | 秒 | `30` | 判定启动失败前等待服务响应的时长 |
 | `-y` | `true`、`false` | `false` | 开启 OpenTelemetry agent 上报链路追踪 |
 
 `bin/stop-hugegraph.sh` 支持 `-m true|false`（默认 `true`），用于控制停止服务时是否同时移除 crontab 监控任务。
+
+`bin/hugegraph-server.sh` 会把 `-XX:+HeapDumpOnOutOfMemoryError`、`-XX:HeapDumpPath` 和 `-XX:ErrorFile` 放在 `JAVA_TOOL_OPTIONS` 的最前面。因此无论是否设置了
+`JAVA_OPTIONS`（下文所述的例外情况除外），内存溢出时的堆转储（`heapdump_<主机名>_<启动时间>/java_pid<pid>.hprof`）和 JVM 崩溃日志（`hs_err_pid<pid>_<主机名>_<启动时间>.log`）都会写入 `logs/`，其中 `<启动时间>`
+为本地时间，格式是 `YYYYMMDD-HHMMSS`。每次启动都有自己的 `heapdump_*` 目录，因此服务及其启动的 JVM（例如 computer 任务）会分别写入各自的转储（HotSpot 按 JVM 的 PID 命名转储文件和崩溃日志，因此同一次启动中复用了先前 PID 的 JVM
+无法写入它的转储，它的崩溃日志也会覆盖先前那个 JVM 的）。主机名可避免共用同一日志目录的多个服务选到相同的名字；如果同一主机在同一秒内已经用过该名字，会再加上计数（`<启动时间>-1`、`-2`……）。如果无法创建该目录（例如磁盘已满），服务仍会启动，堆转储改为尽力写入 `logs/`
+本身；磁盘已满时可能也没有空间写入转储。堆转储可能和堆一样大。启动脚本从不删除转储或 `heapdump_*` 目录：每次启动到 Java 阶段都会留下一个目录，除非发生内存溢出否则为空；启动脚本保留它，是因为 computer 任务的 JVM 可能在服务退出后仍在使用它。在该次启动的 HugeGraph JVM
+都已退出后，可以移走或删除旧目录，但不要动正在运行的服务最新的那个目录；没有它，下一次转储会被写成一个同名文件。JVM 会在这些默认值之后读取你自己的 `JAVA_TOOL_OPTIONS`、`JDK_JAVA_OPTIONS`（包括 `@argfile`）、命令行（`JAVA_OPTIONS`；未设置或为空时为
+`-j`）和 `_JAVA_OPTIONS`，因此在其中任意一处为上述参数指定的值都会覆盖默认值。只有环境变量会传给服务启动的 JVM：要对所有 JVM 关闭堆转储，请设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`；通过 `-j` 或
+`JAVA_OPTIONS` 关闭只对服务自身的 JVM 生效。无论哪种方式，每次启动到 Java 阶段仍会创建空的 `heapdump_*` 目录，除非创建失败而改为写入 `logs/`。如果日志路径中包含双引号或 `%`，启动脚本会给出警告，堆转储直接写入
+`logs/`，不使用每次启动的目录，也不设置崩溃日志的默认值；通过 `JAVA_TOOL_OPTIONS` 关闭堆转储的方式仍然有效。同时包含两种引号的路径则完全不设置堆转储默认值。由于设置了这些默认值，JVM 启动时会在 stderr 输出 `Picked up JAVA_TOOL_OPTIONS: ...`。
+
+> **版本范围**：以上行为适用于当前 master（[apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 只在未设置 `JAVA_OPTIONS` 时添加堆转储参数，堆转储直接写入
+> `logs/java_pid<pid>.hprof`，JVM 崩溃日志写入安装目录。
 
 ### 5.2 使用 Docker
 

@@ -5,7 +5,7 @@ weight: 3
 ---
 
 > Note: this doc will be updated continuously.
-> Use Java 17 to build and verify HugeGraph 1.8.0 release packages.
+> Use Java 17 to build and verify HugeGraph 1.8.0 release packages (the Maven build accepts only JDK 17); use Java 11 for 1.7.0. Since version 1.5.0, components other than the client no longer support Java 8.
 >
 > Graduation note: Apache HugeGraph graduated in January 2026. Official release voting is now completed within the HugeGraph community (PMC binding votes on `dev@hugegraph.apache.org`), and no longer requires Incubator `general@incubator.apache.org` approval.
 
@@ -47,7 +47,7 @@ subsequent **email reply**.(The following are the core items)
 
 If there is no svn or gpg or wget environment locally, it is recommended to install it first 
 (windows recommend using WSL2 environment, or at least `git-bash`), also make sure to install java 
-(Java 17) and maven software
+(Java 17 for HugeGraph 1.8.0+, Java 11 for 1.7.0) and maven software (≥ 3.6.3)
 
 ```bash
 # 1. install svn
@@ -166,7 +166,7 @@ After decompressing `*hugegraph*src.tar.gz`, Do the following checks:
 6. Finally, make sure the source code works/compiles correctly
 
 ```bash
-# prefer to use/switch to `java 17` for the following operations (compiling/running) (Note: `Computer` only supports `java >= 11`)
+# prefer to use/switch to `java 17` for HugeGraph 1.8.0+ (`java 11` for 1.7.0) for the following operations (compiling/running) (Note: `Computer` only supports `java >= 11`)
 # java --version
 
 # try to compile in the Unix env to check if it works well (-P is optional)

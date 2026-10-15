@@ -90,6 +90,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2
 
 - force: whether to delete the task even when it is still running, default is false
 
+Task-record deletion is separate from graph deletion. For graph maintenance, follow the stop-write and task-drain requirements in the [graph
+API](/docs/clients/restful-api/graphs/).
+
 ##### Method & Url
 
 ```text

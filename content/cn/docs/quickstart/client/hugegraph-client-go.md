@@ -25,7 +25,9 @@ go get github.com/apache/hugegraph-toolchain/hugegraph-client-go
 
 `NewCommonClient` 要求 `Host` 是 IP 地址，`Port` 在 1 到 65535 之间；客户端始终使用明文 HTTP 连接。未启用认证时，用户名和密码留空；只有两者都设置时才会发送 Basic Auth。
 
-`GraphSpace` 只在 `Vertex` API（此时请求路径为 `/graphspaces/{space}/graphs/{graph}/...`）和 Gremlin 默认 aliases 中生效（空值按 `DEFAULT` 处理）。Schema 相关入口和 `Version()` 始终请求 `/graphs/{graph}/...` 和 `/versions`，与 `GraphSpace` 无关。默认图空间填写 `DEFAULT`；将 `GraphSpace` 留空时，`Vertex` API 会回退到旧版 Server 使用的 `/graphs/{graph}` 路径。
+`GraphSpace` 非空时，`Vertex` 和 Schema API（`Schema()`、`Propertykey`、`VertexLabel`、`EdgeLabel`）使用
+`/graphspaces/{space}/graphs/{graph}/...` 路径；留空时使用旧版 `/graphs/{graph}/...` 路径。默认图空间填写 `DEFAULT`。
+Gremlin 默认 aliases 也使用 `GraphSpace`，空值按 `DEFAULT` 处理。`Version()` 始终请求 `/versions`，不依赖图空间。
 
 ```go
 package main
@@ -70,7 +72,7 @@ func main() {
 |---|---|---|
 | `Host` | `string` | HugeGraph Server 的 IP 地址，不支持主机名 |
 | `Port` | `int` | HugeGraph Server 的 REST 端口，取值 1 到 65535 |
-| `GraphSpace` | `string` | 图空间，仅 `Vertex` API 和 Gremlin 默认 aliases 使用；不需要时填空字符串 |
+| `GraphSpace` | `string` | `Vertex`、Schema API 和 Gremlin 默认 aliases 使用的图空间；默认空间填写 `DEFAULT` |
 | `Graph` | `string` | Server 上配置的图名 |
 | `Username` | `string` | Server 用户名，未启用认证时填空字符串 |
 | `Password` | `string` | Server 密码，未启用认证时填空字符串 |

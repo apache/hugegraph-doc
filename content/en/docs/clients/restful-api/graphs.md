@@ -215,6 +215,21 @@ Create a graph (set `Content-Type: application/json`)
 
 Graph-space management permission (`space`) is required when authentication is enabled.
 
+Stop writes and tasks on every Server that uses the graph before deletion, and keep them stopped during failures and retries.
+Do not recreate the same graph name until deletion has completed and been confirmed on every Server. Notifications are not a cluster-wide barrier.
+
+On the deleting Server, scheduler shutdown fences new task admission and waits for actual executions, cancellation callbacks and transaction cleanup.
+If the configured task-drain wait times out (`task.wait_timeout`, seconds), deletion is refused before data, configuration or metadata removal; retry after
+the owners exit. Task admission stays closed after this refusal.
+To resume ordinary graph use before destructive cleanup, keep writes and task producers stopped;
+wait for all admitted tasks and cancellation cleanup to finish, then restart Server. A restart does not restore data or metadata already removed.
+Closing the scheduler alone retains persistent work that has not started.
+
+Deletion is not transactional. A failure after destructive cleanup does not restore removed data or metadata. An uncertain owner or native-resource cleanup
+needs manual inspection; do not force-remove the scheduler or resume writes just because a task Future is done.
+In PD deployments with `graph.load_from_local_config=true`, if deletion is refused because the graph uses local configuration,
+removing its configuration file and restarting Server stops Server from loading the graph, but leaves its backend data in place.
+
 ##### Params
 
 **Path parameters**
@@ -409,7 +424,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/default
 
 #### 6.1.10 Reload the graphs of the graphspace
 
-Reloads the graphs the server holds, which is useful after the graph configuration has changed outside the server.
+Apply graph configuration changes by restarting Server. Hot-reload recovery is deferred; do not use this endpoint for configuration maintenance.
+In the current non-PD path, reload invokes graph deletion and can clear backend data. Keep writes and tasks stopped until Server has restarted and the
+intended graphs have been verified. The request and response below document the API shape, not a maintenance or recovery guarantee.
 
 ##### Params
 

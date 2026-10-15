@@ -9,6 +9,11 @@ series: [toplingdb]
 series_weight: 1
 ---
 
+> **Historical integration.** This 2025 article describes an earlier interface and is retained for reference.
+> For the proposed replacement, see the [ToplingDB development guide](/docs/guides/toplingdb/).
+> That guide describes unreleased changes; do not mix its settings with these historical examples.
+
+
 > [ToplingDB](https://github.com/topling/toplingdb) is a configurable and observable extension of RocksDB. It supports dynamic tuning via YAML files and enables real-time monitoring through a built-in Web Server.
 
 Update hugegraph.properties

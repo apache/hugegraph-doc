@@ -16,7 +16,7 @@ The core steps for local startup are the same as starting with **scripts**:
 2. Start HugeGraph-Server by executing the `HugeGraphServer` class to load the initialized graph information and start the server.
 
 Before proceeding with the following process, make sure that you have cloned the source code of HugeGraph
-and have configured the development environment, such as `Java 11` & you could config your local environment
+and have configured the development environment, such as `Java 17` for HugeGraph 1.8.0+ (`Java 11` for 1.7.0) & you could config your local environment
 with this [config-doc](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
 
 ```bash

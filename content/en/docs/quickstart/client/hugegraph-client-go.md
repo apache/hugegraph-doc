@@ -25,7 +25,9 @@ go get github.com/apache/hugegraph-toolchain/hugegraph-client-go
 
 `NewCommonClient` requires `Host` to be an IP address and `Port` to be between 1 and 65535. The client always connects over plain HTTP. Leave the username and password empty when authentication is disabled; Basic Auth is sent only when both are set.
 
-`GraphSpace` is applied only by the `Vertex` API, which then calls `/graphspaces/{space}/graphs/{graph}/...`, and by the default Gremlin aliases (an empty value is treated as `DEFAULT`). The schema entry points and `Version()` always call `/graphs/{graph}/...` and `/versions`, regardless of `GraphSpace`. Use `DEFAULT` for the default space; leaving `GraphSpace` empty makes the `Vertex` API fall back to the `/graphs/{graph}` path used by older servers.
+When `GraphSpace` is nonempty, the `Vertex` and schema APIs (`Schema()`, `Propertykey`, `VertexLabel`, and `EdgeLabel`) use
+`/graphspaces/{space}/graphs/{graph}/...`; an empty value selects the legacy `/graphs/{graph}/...` paths. Use `DEFAULT` for the default space.
+Gremlin default aliases also use `GraphSpace`, treating an empty value as `DEFAULT`. `Version()` calls `/versions` independently of graph space.
 
 ```go
 package main
@@ -70,7 +72,7 @@ The `Versions` value returned by `Version()` includes the HugeGraph Server, Core
 |---|---|---|
 | `Host` | `string` | HugeGraph Server IP address. Host names are rejected. |
 | `Port` | `int` | HugeGraph Server REST port, 1 to 65535 |
-| `GraphSpace` | `string` | Graph space; only used by the `Vertex` API and the default Gremlin aliases. Set an empty string when not needed. |
+| `GraphSpace` | `string` | Graph space for the `Vertex` and schema APIs and default Gremlin aliases; use `DEFAULT` for the default space. |
 | `Graph` | `string` | Graph name configured on the server |
 | `Username` | `string` | Server username; empty string when authentication is disabled |
 | `Password` | `string` | Server password; empty string when authentication is disabled |

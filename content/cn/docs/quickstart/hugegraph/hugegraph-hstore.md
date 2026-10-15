@@ -22,8 +22,8 @@ HugeGraph-Store 是 HugeGraph 分布式版本的存储节点组件，负责实�
 #### 2.1 前置条件
 
 - 操作系统：Linux 或 macOS（Windows 尚未经过完整测试）
-- Java 版本：≥ 11（编译期强制校验，`bin/start-hugegraph-store.sh` 启动时会再次检查）
-- Maven 版本：≥ 3.5.0
+- Java 版本：HugeGraph 1.8.0+ 使用 Java 17（Maven 源码构建仅接受 JDK 17；启动脚本拒绝低于 17 的运行时；1.7.0 是最后一个支持 Java 11 的版本）
+- Maven 版本：≥ 3.6.3（从源码编译时）
 - 如需进行多节点部署，请先部署 HugeGraph-PD
 
 ### 3 部署

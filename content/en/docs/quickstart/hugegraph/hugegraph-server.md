@@ -15,7 +15,7 @@ aliases:
 The `hugegraph-server` module contains `hugegraph-core`, `hugegraph-api`, `hugegraph-dist`, and storage adapters. Core implements the property graph model, transactions, and TinkerPop interfaces. API provides the HTTP service and delegates client requests to Core. Graph data is stored in RocksDB (the default standalone backend), HStore (distributed), or HBase.
 
 > [!WARNING]
-> **Version scope**: Download examples use the ASF HugeGraph 1.7.0 release. Source builds, configuration defaults, and startup behavior follow `apache/hugegraph` master. A master build is not an ASF release artifact, even if its version number matches 1.7.0. This guide covers RocksDB, HStore, and HBase; see [1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md) for other legacy backends.
+> **Version scope**: Download examples use the ASF HugeGraph 1.7.0 release. Source builds, configuration defaults, and startup behavior follow `apache/hugegraph` master. A master build is not an ASF release artifact, even if its version number matches a release. This guide covers RocksDB, HStore, and HBase; see [1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md) for other legacy backends.
 
 > Naming: `HugeGraph` means the overall project or main repository, `hugegraph-server` is its Server module, and `HugeGraphServer` is the Java service class. Server below means the running graph database service.
 
@@ -53,17 +53,50 @@ markmap:
 
 ## 2 Dependency for Building/Running
 
-### 2.1 Install Java 11 (JDK 11)
+<span id="21-install-java-11-jdk-11"></span>
 
-The `hugegraph-server` module in HugeGraph 1.7.0 is compiled with Java 11. Running and building it from source require Java 11 or later.
+### 2.1 Install Java 17 (JDK 17)
+
+Starting with HugeGraph 1.8.0, use **Java 17**; **1.7.0 is the last release supporting Java 11**.
+Build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD and Store with **JDK 17**.
+Server security check (`-s true`) requires Java 17 to 23 and a readable `conf/java-security.properties`;
+on Java 24 or later, start Server with `-s false` (JDK 24+ dropped Security Manager via JEP 486).
 
 **Before continuing, run `java -version` to confirm your JDK version.**
 
-> Java 8 is no longer supported starting from 1.7.0. `bin/hugegraph-server.sh` refuses to start on anything older than Java 11.
+> [!NOTE]
+> **TinkerPop 3.8.1 Compatibility & Key Changes**
+>
+> HugeGraph 1.8.0 upgrades to TinkerPop 3.8.1 and Groovy 4.0.25. Use the Gremlin configuration files bundled with Server.
+>
+> - **Serializer Packages**: Driver serializer classes moved from `org.apache.tinkerpop.gremlin.driver.ser` to `org.apache.tinkerpop.gremlin.util.ser`.
+>   Keep HugeGraph registries.
+> - **Graph.Features**: `supportsUniformListValues()` returns `false` for properties.
+>   Schema `valueList()`/`LIST` properties remain supported without rewriting existing data.
+> - **Traversal Multiplicity**: Mid-traversal scans retain input multiplicity (e.g. for 3 vertices, `g.V().V().count()` returns `9L`).
+> - **Date & Time Types**: `DATE` properties accept `OffsetDateTime` for writes and indexed equality/range queries (instant normalized to milliseconds).
+> - **Filtering Behavior**: `P.typeOf()` runs as a local filter; count filtering applies range optimizations only when predicate branches are provably safe.
 
-> The security check is on by default and installs `HugeSecurityManager`, which needs Java 11 to 23. JDK 24 removed the Security Manager ([JEP 486](https://openjdk.org/jeps/486)), so on Java 24 or later you must start the service with the check disabled: `bin/start-hugegraph.sh -s false`.
+```yaml {tab="GraphBinary (Recommended)"}
+# Bundled Driver and Console default to GraphBinary V1
+# - Schema results are standard maps
+# - Blob values are binary (including inside returned elements)
+serializer:
+  className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
+  config:
+    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+```
 
-> Building from source also needs Maven 3.5.0 or later.
+```yaml {tab="GraphSON (HTTP / Legacy)"}
+# Default HTTP JSON uses untyped GraphSON V1
+# - Preserves the legacy Tree key/value array structure
+# - Typed GraphSON V1 is disabled for security (typed V2/V3 remain available for simple values and IDs)
+# - graph.schema() returns property keys, vertex labels, edge labels, and index labels
+```
+
+> [!TIP]
+> For complete client configuration and migration details, see the
+> [server runtime documentation](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md).
 
 ## 3 Deploy
 
@@ -178,13 +211,13 @@ A successful build logs:
 [INFO] BUILD SUCCESS
 ```
 
-The build creates an aggregate master archive under repository-root `target/` (the current source version property is 1.7.0):
+The build creates an aggregate master archive under repository-root `target/` (the current source version property is 1.8.0):
 
 ```text
-target/apache-hugegraph-1.7.0.tar.gz
+target/apache-hugegraph-1.8.0.tar.gz
 ```
 
-The filename version comes from source `revision`; it does not make the build an ASF release artifact. The build also creates repository-root `apache-hugegraph-1.7.0/`, containing a Server directory named by that module's `final.name`, currently `apache-hugegraph-server-1.7.0`. If retaining only the archive, first run `tar zxf target/apache-hugegraph-1.7.0.tar.gz`, then enter the Server directory.
+The filename version comes from source `revision`; it does not make the build an ASF release artifact. The build also creates repository-root `apache-hugegraph-1.8.0/`, containing a Server directory named by that module's `final.name`, currently `apache-hugegraph-server-1.8.0`. If retaining only the archive, first run `tar zxf target/apache-hugegraph-1.8.0.tar.gz`, then enter the Server directory.
 
 Default builds bundle `rocksdb`, `hbase`, and `hstore` modules, listed in `backends` within `backend.properties` in the `hugegraph-dist` JAR. For a RocksDB-only distribution, add `-Drocksdb-only`:
 
@@ -226,7 +259,7 @@ mvn package -DskipTests -ntp -Drocksdb-only
 
 Server archives include `conf/rest-server.properties`, `conf/gremlin-server.yaml`, and `conf/graphs/hugegraph.properties`; source builds assemble them from `hugegraph-server/hugegraph-dist/src/assembly/static/conf/`. Edit them inside the extracted Server directory without a separate generation step. Defaults vary by release; the following defaults and startup behavior describe master.
 
-For standalone RocksDB, confirm `backend=rocksdb` and `serializer=binary` in `conf/graphs/hugegraph.properties`. Normal Server initialization scans `conf/graphs/` and loads local graphs without requiring `graph.load_from_local_config=true`. This option defaults to `false` and controls constructor preloading and rescanning on `reload()`.
+For standalone RocksDB, confirm `backend=rocksdb` and `serializer=binary` in `conf/graphs/hugegraph.properties`. Normal Server initialization scans `conf/graphs/` and loads local graphs without requiring `graph.load_from_local_config=true`. This option defaults to `false` and controls constructor preloading. Restart Server to apply graph configuration changes; do not use hot reload for maintenance.
 
 See the [configuration guide](/docs/config/config-guide/) and [option reference](/docs/config/config-option/) for details.
 
@@ -546,15 +579,36 @@ This indicates the successful creation of the sample graph.
 | Option | Values | Default | Purpose |
 |---|---|---|---|
 | `-d` | `true`, `false` | `true` | Daemon mode. With `-d false` the script stays in the foreground and forwards `SIGTERM`/`SIGINT` to the server. |
-| `-g` | `zgc` or `ZGC` | omit for G1GC | Garbage collector to use. Only ZGC is accepted, any other value aborts the startup. ZGC needs Java 11 or later. |
+| `-g` | `g1`, `G1`, `zgc`, `ZGC` | JVM default | Garbage collector to use (`g1`/`G1` sets `-XX:+UseG1GC`; `zgc`/`ZGC` sets `-XX:+UseZGC`). Omitting `-g` uses the JVM default collector. |
 | `-m` | `true`, `false` | `false` | Install the cron-based monitor task (`bin/start-monitor.sh`). For VM and bare-metal deployments only. |
 | `-p` | `true`, `false` | `false` | Preload the sample graph, as in 5.1.4. |
-| `-s` | `true`, `false` | `true` | Run with the security check (`HugeSecurityManager`) enabled. It requires Java 11 to 23 and a readable `conf/java-security.properties`. |
+| `-s` | `true`, `false` | `true` | Enable `HugeSecurityManager`; requires Java 17 to 23 and readable `conf/java-security.properties`. On Java 24+, start with `-s false`. |
 | `-j` | JVM options | empty | Extra JVM options appended to the server command line. |
 | `-t` | seconds | `30` | How long to wait for the service to answer before reporting a failed startup. |
 | `-y` | `true`, `false` | `false` | Enable the OpenTelemetry agent for traces. |
 
 `bin/stop-hugegraph.sh` accepts `-m true|false` (default `true`), which controls whether the cron monitor task is removed along with the service.
+
+`bin/hugegraph-server.sh` puts `-XX:+HeapDumpOnOutOfMemoryError`, `-XX:HeapDumpPath` and `-XX:ErrorFile` first in `JAVA_TOOL_OPTIONS`, so, whether or not
+`JAVA_OPTIONS` is set and with the exceptions below, an out-of-memory heap dump (`heapdump_<host>_<launch time>/java_pid<pid>.hprof`) and a JVM crash log
+(`hs_err_pid<pid>_<host>_<launch time>.log`) land in `logs/`, where `<launch time>` is the local time as `YYYYMMDD-HHMMSS`. Each start gets its own `heapdump_*`
+directory, so the server and the JVMs it starts, such as computer jobs, write separate dumps (HotSpot names each dump and crash log after the JVM's PID, so a
+JVM that reuses an earlier PID from the same start cannot write its dump, and its crash log replaces the earlier one's). The host name keeps servers that share
+one log directory from picking the same name, and a counter (`<launch time>-1`, `-2`, ...) is added when the same host already used that second. If the
+directory cannot be created, for example on a full disk, the server still starts and dumps go to `logs/` itself, as a best effort: a full disk may have no room
+for the dump either. A heap dump can be as large as the heap. The launcher never deletes dumps or `heapdump_*` directories: each start that reaches Java leaves
+one, empty unless something ran out of memory, and the launcher keeps it because a computer-job JVM can go on using it after the server exits. Move or delete
+old ones once no HugeGraph JVM from that launch is running, but never the newest one of a running server; without it, the next dump is written as a file with
+that name. The JVM reads your own `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS` (including `@argfiles`), the command line (`JAVA_OPTIONS`, or `-j` when `JAVA_OPTIONS`
+is unset or empty) and `_JAVA_OPTIONS` after these defaults, so a value for one of these flags in any of them overrides the default. Only the environment
+variables reach the JVMs the server starts: to turn dumps off for all of them, set `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, while `-j` or
+`JAVA_OPTIONS` turns them off for the server JVM only. Either way each start that reaches Java still creates its empty `heapdump_*` directory, unless creating
+it failed and dumps fell back to `logs/`. If the logs path contains a double quote or `%`, the launcher warns and heap dumps go to `logs/` itself, with no
+per-launch directory and no crash log default; the `JAVA_TOOL_OPTIONS` opt-out still applies. A path with both quote characters gets no heap dump default at
+all. Because of the defaults, the JVM prints `Picked up JAVA_TOOL_OPTIONS: ...` on stderr at startup.
+
+> **Version scope**: this applies to current master ([apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)). In 1.7.0 the heap dump flags are
+> added only when `JAVA_OPTIONS` is unset, heap dumps go directly to `logs/java_pid<pid>.hprof`, and JVM crash logs go to the install directory.
 
 ### 5.2 Use Docker to startup
 

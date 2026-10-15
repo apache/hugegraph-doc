@@ -5,7 +5,7 @@ weight: 3
 ---
 
 > Note: 这篇文档会持续更新。
-> HugeGraph 1.8.0 的源码构建与发行包运行验证统一使用 Java 17。
+> HugeGraph 1.8.0 的源码构建与发行包运行验证统一使用 Java 17（Maven 源码构建仅接受 JDK 17）；1.7.0 请使用 Java 11。从 1.5.0 版本开始 (除 client 外) 不再支持 Java 8。
 >
 > 毕业说明：Apache HugeGraph 已于 2026 年 1 月毕业。正式发版投票现由 HugeGraph 社区内部完成（`dev@hugegraph.apache.org` 上的 PMC binding 投票），不再需要 Incubator `general@incubator.apache.org` 审批。
 
@@ -44,7 +44,7 @@ Workflow 的 `source-prevalidation` 模式使用明确的 Server/Toolchain commi
 #### 1. 准备工作
 
 如果本地没有 svn 或 gpg 或 wget 环境，建议先安装一下 (windows 推荐使用 WSL2 环境，
-或者至少是 `git-bash`), 同时确保安装 Java 17 和 maven 软件。
+或者至少是 `git-bash`), 同时确保安装 Java 17（编译 1.7.0 请使用 Java 11）和 Maven 软件 (≥ 3.6.3)。
 
 ```bash
 # 1. 安装svn
@@ -157,7 +157,7 @@ PMC 同学请特别注意认真检查 `LICENSE` + `NOTICE` 文件，确保文件
 大部分的发版问题都与之相关
 
 ```bash
-# 请优先使用/切换到 `java 17` 版本进行后序的编译和运行操作 (注:`Computer` 仅支持 `java >= 11`)
+# 验证 HugeGraph 1.8.0+ 请优先使用/切换到 `java 17` 版本（1.7.0 请使用 `java 11`）进行后序的编译和运行操作 (注:`Computer` 仅支持 `java >= 11`)
 # java --version
 
 # 尝试在 Unix 环境下编译测试是否正常

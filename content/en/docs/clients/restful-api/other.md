@@ -273,7 +273,8 @@ PUT http://localhost:8080/whiteiplist?status=true
 
 #### 11.1.6 Start the Arthas agent
 
-Starting with HugeGraph 1.8.0, Server and Store bundle Arthas 4.1.5 (PD does not embed an Arthas agent). You can attach it to a running JVM for live troubleshooting via the local script or the administrator HTTP endpoint.
+Starting with HugeGraph 1.8.0, Server and Store bundle Arthas 4.1.5 (PD does not embed an Arthas agent).
+You can attach it to a running JVM for live troubleshooting via the local script or the administrator HTTP endpoint.
 
 > [!IMPORTANT]
 > **Security Requirements for Diagnostics**
@@ -286,9 +287,9 @@ Starting with HugeGraph 1.8.0, Server and Store bundle Arthas 4.1.5 (PD does not
 
 | Deployment | Recommended Activation | Access & Permissions |
 |------------|------------------------|----------------------|
-| Server ([authentication enabled](/docs/config/config-authentication/)) | Administrator `PUT /arthas` or `bin/arthas.sh` | Only administrator accounts can invoke the HTTP endpoint; helper script requires service OS user access |
-| Server (authentication disabled) | Local helper `bin/arthas.sh` | HTTP activation returns `403` (including loopback and proxy requests) |
-| Store | Local helper `bin/arthas.sh` | `GET /v1/arthasstart` is disabled and returns `403` (Store lacks administrator authentication for this endpoint) |
+| Server ([auth](/docs/config/config-authentication/)) | `PUT /arthas` or `bin/arthas.sh` | Admin HTTP access; helper requires service OS user |
+| Server (auth disabled) | Local helper `bin/arthas.sh` | HTTP activation returns `403` |
+| Store | Local helper `bin/arthas.sh` | `GET /v1/arthasstart` is disabled and returns `403` |
 
 ##### Activation & Diagnostics
 
@@ -339,6 +340,8 @@ A successful activation returns HTTP `200` and the applied configuration:
 ```
 
 > [!NOTE]
-> [Configuration options](/docs/config/config-option/) use canonical snake_case names: `arthas.telnet_port`, `arthas.http_port`, `arthas.ip`, and `arthas.disabled_commands`.
-> Legacy camelCase aliases remain supported for backward compatibility; explicit snake_case settings take precedence (see
-> [upgrade note](/docs/config/config-guide/#3-rest-serverproperties)). The response preserves Arthas agent key names for client compatibility.
+> [Configuration options](/docs/config/config-option/) use canonical snake_case names: `arthas.telnet_port`,
+> `arthas.http_port`, `arthas.ip`, and `arthas.disabled_commands`. Legacy camelCase aliases remain supported
+> for backward compatibility; explicit snake_case settings take precedence (see
+> [upgrade note](/docs/config/config-guide/#3-rest-serverproperties)). The response preserves Arthas agent
+> key names for client compatibility.

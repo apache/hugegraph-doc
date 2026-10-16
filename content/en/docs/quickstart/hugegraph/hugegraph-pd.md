@@ -25,7 +25,8 @@ PD listens on three ports:
 #### 2.1 Requirements
 
 - Operating System: Linux or macOS (Windows has not been fully tested)
-- Java version: Java 17 for HugeGraph 1.8.0+ (the Maven build accepts only JDK 17; the start script rejects older runtimes; 1.7.0 is the last release supporting Java 11)
+- Java version: Java 17 for HugeGraph 1.8.0+ (the Maven build accepts only JDK 17;
+  the start script rejects older runtimes; 1.7.0 is the last release supporting Java 11)
 - Maven version: ≥ 3.6.3 (for building from source)
 
 ### 3 Deployment
@@ -41,7 +42,7 @@ Apache downloads currently provide the complete 1.7.0 binary bundle containing P
 
 ```bash
 # Historical release 1.7.0 retains incubating in filenames and directories
-wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+curl -fLO --connect-timeout 10 --max-time 1800 https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 ```
@@ -307,14 +308,19 @@ In the PD installation directory, execute:
 The script requires Java 17 or later on `PATH` or in `JAVA_HOME` (Java ≥ 11 on 1.7.0).
 It exits without doing anything if it finds a Java process already using this installation's `conf` directory.
 
-Supported flags:
+The lifecycle details below describe current master builds. The downloaded 1.7.0 launcher does not include those repairs.
+Supported flags, with GC version limits noted below:
 
 | Flag | Values | Default | Description |
 |------|--------|---------|-------------|
 | `-d` | `true`, `false` | `true` | Daemon mode. See the note below. |
-| `-g` | `zgc`, `ZGC` | not set | Garbage collector. Leave the flag off for the default G1GC. Any other value, `g1` included, aborts the start. |
+| `-g` | See version limits below | not set | Select the garbage collector. Unsupported values abort startup. |
 | `-j` | JVM options | empty | Extra JVM options, for example `-j "-Xmx8g -Xms8g"`. |
 | `-y` | `true`, `false` | `false` | Attach the OpenTelemetry Java agent. The agent is downloaded into `plugins/` on first use, its MD5 is verified, and traces are exported over gRPC to `http://127.0.0.1:4317`. |
+
+Master builds accept `g1`, `G1`, `zgc` and `ZGC`.
+The downloaded 1.7.0 launcher accepts only `zgc` or `ZGC` as explicit choices; `-g g1`, `-g G1` and other values abort startup.
+Omit `-g` for the default path. For rejected values, inspect `logs/hugegraph-pd-stdout.log`.
 
 The `-d` flag controls daemon mode:
 

@@ -247,8 +247,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 Groups grant corresponding resource permissions, and users are assigned to different groups, thereby having different resource permissions.
 The group interface includes APIs for creating groups, deleting groups, modifying groups, and querying group-related information.
 
-> `GroupAPI` remains at `/auth/groups`, the only group route on 1.7.0. Current `master` also serves `/graphspaces/DEFAULT/auth/groups`,
-> added by [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096).
+> `GroupAPI` remains at `/auth/groups` on 1.7.0; current `master` also serves `/graphspaces/DEFAULT/auth/groups`.
 >
 > The GraphSpace API generates each persisted group name as `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 hex digits.
 > For `DEFAULT`, the name and ID look like `~hubble_role:v1:REVGQVVMVA:<32 hex>`; request `group_name` is only a client

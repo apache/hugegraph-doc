@@ -34,6 +34,12 @@
             },
             {
               "page": "/docs/quickstart/hugegraph/hugegraph-pd"
+            },
+            {
+              "page": "/docs/quickstart/hugegraph/hugegraph-helm"
+            },
+            {
+              "page": "/docs/quickstart/hugegraph/hugegraph-helm-operations"
             }
           ]
         },
@@ -408,6 +414,16 @@
             {
               "page": "/docs/quickstart/hugegraph/hugegraph-pd",
               "url": "/docs/quickstart/hugegraph/hugegraph-pd/",
+              "children": []
+            },
+            {
+              "page": "/docs/quickstart/hugegraph/hugegraph-helm",
+              "url": "/docs/quickstart/hugegraph/hugegraph-helm/",
+              "children": []
+            },
+            {
+              "page": "/docs/quickstart/hugegraph/hugegraph-helm-operations",
+              "url": "/docs/quickstart/hugegraph/hugegraph-helm-operations/",
               "children": []
             }
           ]
@@ -914,6 +930,16 @@
       "/docs/quickstart/hugegraph/",
       "/docs/quickstart/hugegraph/hugegraph-pd/"
     ],
+    "/docs/quickstart/hugegraph/hugegraph-helm/": [
+      "@group/components",
+      "/docs/quickstart/hugegraph/",
+      "/docs/quickstart/hugegraph/hugegraph-helm/"
+    ],
+    "/docs/quickstart/hugegraph/hugegraph-helm-operations/": [
+      "@group/components",
+      "/docs/quickstart/hugegraph/",
+      "/docs/quickstart/hugegraph/hugegraph-helm-operations/"
+    ],
     "/docs/quickstart/toolchain/": [
       "@group/components",
       "/docs/quickstart/toolchain/"
@@ -1359,7 +1385,9 @@
     ],
     "/docs/quickstart/hugegraph/": [
       "/docs/quickstart/hugegraph/hugegraph-hstore",
-      "/docs/quickstart/hugegraph/hugegraph-pd"
+      "/docs/quickstart/hugegraph/hugegraph-pd",
+      "/docs/quickstart/hugegraph/hugegraph-helm",
+      "/docs/quickstart/hugegraph/hugegraph-helm-operations"
     ],
     "/docs/quickstart/toolchain/": [
       "/docs/quickstart/toolchain/visualization",

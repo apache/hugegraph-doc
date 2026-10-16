@@ -133,36 +133,36 @@ DOCS_NAV_GROUP_TITLES = {
 DOCS_NAV_EXPECTED_STATS = {
     "latest": {
         "groups": 5,
-        "pages": 93,
+        "pages": 95,
         "removed": 4,
         "scopedLinks": 0,
-        "treeSha256": "04caef919b5423ee32862a0c3cf533ea63a0a21b61a39eda6ceb6d9c6d0a01bf"
+        "treeSha256": "b33f771f77fc376121902fee37d66235d2920a450320620400320925f985c86a",
     },
     "1.7": {
         "groups": 5,
         "pages": 85,
-        "removed": 6,
+        "removed": 8,
         "scopedLinks": 10,
         "treeSha256": "c87538b82b0e3506eef59417411686ddc188e0f33d0e3a1cda687de8d6f88747",
     },
     "1.5": {
         "groups": 5,
         "pages": 77,
-        "removed": 14,
+        "removed": 16,
         "scopedLinks": 10,
         "treeSha256": "ac29ab8f0e7020496a3a1afe480687043d751e32c93ffb848e2210e3500cd483",
     },
     "1.3": {
         "groups": 5,
         "pages": 68,
-        "removed": 23,
+        "removed": 25,
         "scopedLinks": 10,
         "treeSha256": "e8c9b0a64dac6dd3e47827ec5072697eb7d3ed79659e0b5c4a9c5df8e1408d38",
     },
     "1.0": {
         "groups": 5,
         "pages": 59,
-        "removed": 22,
+        "removed": 24,
         "scopedLinks": 10,
         "treeSha256": "bd45db511d9b6728e1523bd3c5ebd9d18912ee85aeabf79c77bcca7e511f977a",
     },

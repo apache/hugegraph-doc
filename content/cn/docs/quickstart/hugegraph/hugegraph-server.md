@@ -152,6 +152,48 @@ HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
 
 完整的部署指南请参阅 [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
+#### 使用 PD 的 Server 服务标识
+
+对于使用 PD 的 Server，Helm chart 提供 `server.serviceId` 和 `server.graphSpace` 配置项。
+二者默认为 `DEFAULT`，此时保留 `conf/rest-server.properties` 中已有的 `server.service_id` 和 `server.graphspace`。
+非默认值会向 Server 容器注入 `HG_SERVER_SERVICE_ID` 或 `HG_SERVER_GRAPHSPACE`。
+注意：这些服务身份相关的 Chart 配置项（`server.serviceId`、`server.graphSpace` 和 `server.testGraphAlias`）适用于开发中的 1.8.0+ 版本镜像与 Chart；
+目前尚无已发布的 Chart 或镜像支持这些选项。不要将本示例与未支持该特性的旧版本搭配使用。
+通过 `HG_SERVER_SERVICE_ID`、`SERVICE_ID` 或 `server.serviceId` 传入的非空服务 ID 仅支持可打印 ASCII，包含空格和反斜杠；
+部署校验会拒绝非 ASCII 和控制字符。此限制仅针对这些配置入口，不改变 Core Service 名称协议和已有的手工 properties 配置。
+Helm 会将 `server.serviceId` 中的美元符号（包括 `$(POD_IP)`）按字面量保留，不展开 Kubernetes 环境变量引用。
+重读服务元数据或清理图空间时，会保留完整的服务 ID，包括其中的 `/` 和 `-`。
+使用上述 chart values 设置身份；Server 的 `extraEnv` 会保留对应的新旧身份变量名，禁止重复覆盖。
+`HG_SERVER_GRAPHSPACE`、生效的旧变量 `GRAPH_SPACE` 和 `server.graphSpace` 遵循同一规则：
+接受 `DEFAULT`，或以小写字母开头、最多 48 位的小写字母、数字和下划线组成的已有空间名称：
+
+```bash
+helm upgrade --install hg ./helm/hugegraph \
+  --set-string server.serviceId=analytics \
+  --set-string server.graphSpace=team_a
+```
+
+部署分配到 `team_a` 的 Server 前，先通过现有 `DEFAULT` 空间的 Server，用具有创建图空间权限的账号创建该空间。
+chart 和这些环境变量不会自动创建图空间；同一个 Server Deployment 的所有副本使用相同服务标识。
+
+用 `helm test` 检查该空间中的图前，先创建目标图，再将 `--set-string server.testGraphAlias=team_a-demo` 设置为它实际的 Gremlin 绑定。
+创建图空间不会自动创建 `hugegraph` 图。
+
+容器部署中的 `HG_SERVER_SERVICE_ID` 和 `HG_SERVER_GRAPHSPACE` 写入上述两个配置项。
+旧名称 `SERVICE_ID` 和 `GRAPH_SPACE` 仍可使用；非空的新变量优先于对应旧变量。
+同一配置项的新旧变量均未设置或为空时，保留已有值。Compose 不会自动传入宿主机上的这些变量，
+需要在 Compose override 的 Server `environment:` 中显式添加。详见 Helm chart 配置说明。
+
+这些设置选择 Server 在 PD 中的服务元数据，不会搬迁已有图，也不会修改未指定图空间的 REST 路径所用的 `server.path_graphspace`。
+请求使用 `/graphspaces/team_a/...` 路径，并在 Hubble 中选择匹配的图空间和服务；开启鉴权时，显式指定路径仍须获得授权。
+
+`server.testGraphAlias` 默认为 `DEFAULT-hugegraph`。hook 会逐个 Server Pod 检查这一已有本地图绑定，不会从 `server.graphSpace` 自动派生别名。
+别名的大小写须与实际绑定一致：本地 `Demo.properties` 可以绑定为 `DEFAULT-Demo`；通过 REST 创建的图使用小写名称。
+本地图绑定可以独立于 Server 在 PD 中分配的图空间存在，因此默认 hook 成功不能证明 `team_a` 中的图可查询。
+出现 `Could not rebind` 时，先确认目标图存在且别名正确；重启 Pod 不能创建缺失的图或纠正别名。
+
+配置渲染和入口脚本检查不能单独证明 Linux 上的非默认服务发现、鉴权或跨图空间隔离已通过验收。
+
 > [!NOTE]
 > 
 > 1. HugeGraph 的 Docker 镜像主要用于便捷地快速启动 HugeGraph，并不是 **ASF 官方发布物料包**。你可以从 [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub) 中了解更多细节。
@@ -594,7 +636,7 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 `JAVA_OPTIONS` 关闭只对服务自身的 JVM 生效。无论哪种方式，每次启动到 Java 阶段仍会创建空的 `heapdump_*` 目录，除非创建失败而改为写入 `logs/`。如果日志路径中包含双引号或 `%`，启动脚本会给出警告，堆转储直接写入
 `logs/`，不使用每次启动的目录，也不设置崩溃日志的默认值；通过 `JAVA_TOOL_OPTIONS` 关闭堆转储的方式仍然有效。同时包含两种引号的路径则完全不设置堆转储默认值。由于设置了这些默认值，JVM 启动时会在 stderr 输出 `Picked up JAVA_TOOL_OPTIONS: ...`。
 
-> **版本范围**：以上行为适用于当前 master（[apache/hugegraph#3258](https://github.com/apache/hugegraph/pull/3258)）。1.7.0 只在未设置 `JAVA_OPTIONS` 时添加堆转储参数，堆转储直接写入
+> **版本范围**：以上行为适用于当前开发分支/master 分支。1.7.0 只在未设置 `JAVA_OPTIONS` 时添加堆转储参数，堆转储直接写入
 > `logs/java_pid<pid>.hprof`，JVM 崩溃日志写入安装目录。
 
 ### 5.2 使用 Docker

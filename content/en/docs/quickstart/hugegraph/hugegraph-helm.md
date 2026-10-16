@@ -10,7 +10,7 @@ Install `hugegraph-helm` from GHCR or Docker Hub. Chart and HugeGraph versions a
 for example, a `0.2.x` Chart can deploy a `1.8.x` service.
 
 > [!WARNING]
-> The example uses the published **development version** `0.2.0-dev.14` and `latest` images, suitable for testing.
+> The current development Chart uses `latest` images and is intended for testing.
 > For production, choose a stable Chart once the corresponding HugeGraph service has been released, and review its image versions.
 > Image tags can change; set each component's `image.digest` to keep using the same image content.
 
@@ -31,35 +31,35 @@ and the [operations reference](https://github.com/apache/hugegraph/blob/master/h
 > - **Memory Sizing**: Retains container JVM memory auto-calculation; configure resource requests/limits to allocate sufficient physical memory
 >   for the 9 JVMs and Hubble.
 
-Choose either registry; GHCR is recommended for public CI. Specify a Chart version when installing or upgrading.
-For local lightweight testing, use the single-node preset.
+Choose either registry; GHCR is recommended for public CI. For local lightweight testing, use the single-node preset.
+
+> [!TIP]
+> `--devel` selects the highest Chart version, including development and stable versions, without limiting the version series.
+> For production or reproducible installations, replace `--devel` with `--version <published-version>` to pin your chosen version.
 
 ```bash {tab="GHCR (recommended)"}
 CHART=oci://ghcr.io/hugegraph/hugegraph-helm
-CHART_VERSION=0.2.0-dev.14
 kubectl config current-context
 kubectl get nodes
 kubectl get storageclass
-helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+helm install hugegraph "$CHART" --devel -n hugegraph \
   --create-namespace --wait --timeout 15m
 ```
 
 ```bash {tab="Docker Hub"}
 CHART=oci://registry-1.docker.io/hugegraph/hugegraph-helm
-CHART_VERSION=0.2.0-dev.14
 kubectl config current-context
 kubectl get nodes
 kubectl get storageclass
-helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+helm install hugegraph "$CHART" --devel -n hugegraph \
   --create-namespace --wait --timeout 15m
 ```
 
 ```bash {tab="Single-node trial"}
-# For local testing (Minikube, Kind): unpack the Chart to use values-single.yaml
+# For local testing (Minikube, Kind): install the Chart downloaded below
 CHART=oci://ghcr.io/hugegraph/hugegraph-helm
-CHART_VERSION=0.2.0-dev.14
-helm pull "$CHART" --version "$CHART_VERSION" --untar
-helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+helm pull "$CHART" --devel --untar
+helm install hugegraph ./hugegraph-helm -n hugegraph \
   -f ./hugegraph-helm/values-single.yaml \
   --create-namespace --wait --timeout 10m
 ```
@@ -121,7 +121,7 @@ the chart does not force `30000–32767`. Legacy HTTP acknowledgement fields rem
 Both `server.serviceId` and `server.graphSpace` default to `DEFAULT`. To register the Server with a specific service name or graph space in PD:
 
 ```bash
-helm upgrade --install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+helm upgrade --install hugegraph "$CHART" --devel -n hugegraph \
   --set-string server.serviceId=analytics \
   --set-string server.graphSpace=team_a \
   --set-string server.testGraphAlias=team_a-demo
@@ -142,11 +142,12 @@ No separate curl image or runtime package installation is required. Explicit `st
 
 ### Offline installation and internal repositories
 
-Download the Chart and move the `.tgz` into your network. Install it directly or upload it to an existing OCI or HTTP repository.
+Select the latest version, download that Chart and move the `.tgz` into your network.
+Install it directly or upload it to an existing OCI or HTTP repository.
 
 ```bash
 CHART=oci://ghcr.io/hugegraph/hugegraph-helm
-CHART_VERSION=0.2.0-dev.14
+CHART_VERSION=$(helm show chart "$CHART" --devel | sed -n 's/^version: //p')
 helm pull "$CHART" --version "$CHART_VERSION"
 ```
 
@@ -204,8 +205,8 @@ Use native Helm value reuse to preserve an existing deployment's UI, entry, stor
 
 ```bash
 helm get values hugegraph -n hugegraph --all
-# Set CHART_VERSION to the published version you reviewed before upgrading.
-helm upgrade hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+# Follow the latest version for testing; use --version with a reviewed stable version for production.
+helm upgrade hugegraph "$CHART" --devel -n hugegraph \
   --reuse-values --wait --timeout 15m
 helm test hugegraph -n hugegraph --logs --timeout 5m
 ```

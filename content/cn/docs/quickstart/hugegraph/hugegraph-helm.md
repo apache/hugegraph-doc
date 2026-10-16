@@ -9,7 +9,7 @@ search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, 内网部�
 可从 GHCR 或 Docker Hub 安装 `hugegraph-helm`。Chart 与 HugeGraph 服务分别维护版本，例如 `0.2.x` 的 Chart 可以部署 `1.8.x` 的服务。
 
 > [!WARNING]
-> 下文使用已发布的**开发版本** `0.2.0-dev.14` 和 `latest` 镜像，适合测试。
+> 当前开发 Chart 使用 `latest` 镜像，适合测试。
 > 对应 HugeGraph 服务正式发布后，生产环境请选择稳定 Chart，并检查其中的镜像版本。
 > 镜像标签可能变化；需要固定镜像内容时，请配置各组件的 `image.digest`。
 
@@ -27,34 +27,35 @@ search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, 内网部�
 > - **存储依赖**：需要集群具备默认动态 StorageClass 或预先匹配的静态 local PV，共需 7 个持久卷（3 个 10 GiB PD 卷、3 个 50 GiB Store 卷、1 个 1 GiB Hubble 卷）。
 > - **内存考量**：保留镜像内 JVM 内存自动推导；按需调整 resource requests/limits，确保宿主机给 9 个图服务 JVM 与 Hubble 提供足够内存。
 
-选择一个下载源即可，公共 CI 推荐 GHCR。安装和升级时都应指定 Chart 版本。本地轻量测试可直接使用单节点预设。
+选择一个下载源即可，公共 CI 推荐 GHCR。本地轻量测试可直接使用单节点预设。
+
+> [!TIP]
+> `--devel` 按版本号选择最新 Chart，包含开发版和稳定版，不限于某个版本系列。
+> 生产部署或需要复现时，将 `--devel` 换成 `--version <已发布版本>`，固定你选定的版本。
 
 ```bash {tab="GHCR（推荐）"}
 CHART=oci://ghcr.io/hugegraph/hugegraph-helm
-CHART_VERSION=0.2.0-dev.14
 kubectl config current-context
 kubectl get nodes
 kubectl get storageclass
-helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+helm install hugegraph "$CHART" --devel -n hugegraph \
   --create-namespace --wait --timeout 15m
 ```
 
 ```bash {tab="Docker Hub"}
 CHART=oci://registry-1.docker.io/hugegraph/hugegraph-helm
-CHART_VERSION=0.2.0-dev.14
 kubectl config current-context
 kubectl get nodes
 kubectl get storageclass
-helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+helm install hugegraph "$CHART" --devel -n hugegraph \
   --create-namespace --wait --timeout 15m
 ```
 
 ```bash {tab="单节点试用"}
-# 适合本地 Minikube/Kind 等轻量测试（解压 Chart 并应用 values-single.yaml）
+# 适合本地 Minikube/Kind 等轻量测试；直接安装本次下载的 Chart
 CHART=oci://ghcr.io/hugegraph/hugegraph-helm
-CHART_VERSION=0.2.0-dev.14
-helm pull "$CHART" --version "$CHART_VERSION" --untar
-helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+helm pull "$CHART" --devel --untar
+helm install hugegraph ./hugegraph-helm -n hugegraph \
   -f ./hugegraph-helm/values-single.yaml \
   --create-namespace --wait --timeout 10m
 ```
@@ -116,7 +117,7 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 默认 `server.serviceId` 与 `server.graphSpace` 均为 `DEFAULT`。如需将 Server 注册到指定的业务服务名或图空间，可通过 values 指定：
 
 ```bash
-helm upgrade --install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+helm upgrade --install hugegraph "$CHART" --devel -n hugegraph \
   --set-string server.serviceId=analytics \
   --set-string server.graphSpace=team_a \
   --set-string server.testGraphAlias=team_a-demo
@@ -137,11 +138,11 @@ GitOps 凭据、仅 API 部署以及无域名的 HTTP Ingress。
 
 ### 离线安装和私库
 
-先下载 Chart，再将 `.tgz` 搬入内网。可以直接安装，也可以接入已有的 OCI 或 HTTP 私库。
+先选择最新版本，再按该版本下载 Chart，将 `.tgz` 搬入内网。可以直接安装，也可以接入已有的 OCI 或 HTTP 私库。
 
 ```bash
 CHART=oci://ghcr.io/hugegraph/hugegraph-helm
-CHART_VERSION=0.2.0-dev.14
+CHART_VERSION=$(helm show chart "$CHART" --devel | sed -n 's/^version: //p')
 helm pull "$CHART" --version "$CHART_VERSION"
 ```
 
@@ -198,8 +199,8 @@ Hubble 默认开启，当前镜像的登录仍依赖 Server 鉴权。只使用 A
 
 ```bash
 helm get values hugegraph -n hugegraph --all
-# 升级前，将 CHART_VERSION 设为已审阅的已发布版本。
-helm upgrade hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+# 测试环境继续跟随最新版本；生产升级请改用 --version 指定已审阅的稳定版本。
+helm upgrade hugegraph "$CHART" --devel -n hugegraph \
   --reuse-values --wait --timeout 15m
 helm test hugegraph -n hugegraph --logs --timeout 5m
 ```

@@ -2,10 +2,10 @@
 title: "Deploy HugeGraph with Helm"
 linkTitle: "Helm Deployment"
 weight: 4
-search_keywords: [HugeGraph Helm, Kubernetes, NodePort, Hubble, OCI, GHCR, Artifact Hub]
+search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, OCI, GHCR, Artifact Hub]
 ---
 
-This guide covers HugeGraph **1.8.0 and later**, using Helm **3.8+** with OCI support and Kubernetes **1.23+**.
+This guide covers HugeGraph **1.8.0 and later**, using Helm **3.8+** with OCI support and Kubernetes (K8s) **1.23+**.
 Install `hugegraph-helm` from GHCR or Docker Hub. Chart and HugeGraph versions are maintained separately:
 for example, a `0.2.x` Chart can deploy a `1.8.x` service.
 
@@ -200,10 +200,7 @@ optionally also set `server.auth.enabled=false` for an unauthenticated API. Inac
 
 ## 5 Upgrade and verification
 
-Index-state validation and `server.testGremlin` require the updated Helm test chart.
-A passing test on older charts does not establish that indexes are `CREATED`.
-
-Use native Helm value reuse to preserve an old release's UI, entry, storage and credentials:
+Use native Helm value reuse to preserve an existing deployment's UI, entry, storage and credentials:
 
 ```bash
 helm get values hugegraph -n hugegraph --all
@@ -213,7 +210,7 @@ helm upgrade hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
 helm test hugegraph -n hugegraph --logs --timeout 5m
 ```
 
-Older explicit helper images also remain under `--reuse-values`; add `--set-string store.waitImage= --set-string server.waitImage=` to reuse component images.
+Existing explicit helper images also remain under `--reuse-values`; add `--set-string store.waitImage= --set-string server.waitImage=` to reuse component images.
 Adopt new defaults deliberately with `--reset-values` and a reviewed file retaining your image, credential, storage and topology settings.
 Do not treat PD membership, storage or credential changes as ordinary independent overrides; consult the lifecycle reference.
 

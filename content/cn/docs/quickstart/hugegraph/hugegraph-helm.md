@@ -2,10 +2,10 @@
 title: "使用 Helm 部署 HugeGraph"
 linkTitle: "Helm 部署"
 weight: 4
-search_keywords: [HugeGraph Helm, Kubernetes, NodePort, Hubble, 内网部署, OCI, GHCR, Artifact Hub]
+search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, 内网部署, OCI, GHCR, Artifact Hub]
 ---
 
-本文适用于 HugeGraph **1.8.0 及以后版本**，需要支持 OCI 的 Helm **3.8+** 和 Kubernetes **1.23+**。
+本文适用于 HugeGraph **1.8.0 及以后版本**，需要支持 OCI 的 Helm **3.8+** 和 Kubernetes (K8s) **1.23+**。
 可从 GHCR 或 Docker Hub 安装 `hugegraph-helm`。Chart 与 HugeGraph 服务分别维护版本，例如 `0.2.x` 的 Chart 可以部署 `1.8.x` 的服务。
 
 > [!WARNING]
@@ -194,9 +194,7 @@ Hubble 默认开启，当前镜像的登录仍依赖 Server 鉴权。只使用 A
 
 ## 5 升级和验证
 
-索引状态检查和 `server.testGremlin` 需要使用更新后的 Helm test chart。旧 chart 的测试通过不代表索引已处于 `CREATED` 状态。
-
-使用 Helm 原生值复用保留旧部署的 UI、入口、存储和凭据设置。
+使用 Helm 原生值复用保留已有部署的 UI、入口、存储和凭据设置。
 
 ```bash
 helm get values hugegraph -n hugegraph --all
@@ -206,7 +204,7 @@ helm upgrade hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
 helm test hugegraph -n hugegraph --logs --timeout 5m
 ```
 
-旧值中的显式 helper 镜像也会保留。添加 `--set-string store.waitImage= --set-string server.waitImage=` 可清空覆盖并复用组件镜像。
+已有配置中的显式 helper 镜像也会保留。添加 `--set-string store.waitImage= --set-string server.waitImage=` 可清空覆盖并复用组件镜像。
 要采用新的默认值，先审阅已有配置，再使用 `--reset-values` 和保留镜像、凭据、存储、拓扑设置的配置文件。
 PD 成员、持久存储和共享凭据变更需要按生命周期说明协调处理。
 

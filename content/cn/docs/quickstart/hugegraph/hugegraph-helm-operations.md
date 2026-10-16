@@ -36,8 +36,6 @@ Server 等待存储的默认上限为 300 秒，可以用 `server.storageWaitTim
 
 ### Helm test 检查范围 {#helm-test-coverage}
 
-索引状态检查和 `server.testGremlin` 需要使用更新后的 Helm test chart。旧 chart 的测试通过不代表索引已处于 `CREATED` 状态。
-
 `helm test` 逐 Server Pod 检查图绑定（默认检查 `DEFAULT-hugegraph`，可通过 `server.testGraphAlias` 指定图别名），并要求当前可见关联索引处于 `CREATED` 状态。
 请在索引创建／重建任务结束后执行，检查期间不要并发修改 schema。
 在 HStore 上，读取尚未完成的索引可能将临时状态缓存到其他 Pod；重试不会刷新该状态。

@@ -134,10 +134,12 @@ Delete one Store Pod at a time. Before replacing the next, verify the previous P
 full membership and exactly one leader, read from the PD leader. PD's `Up` status alone does not prove completed shard recovery.
 PDBs limit voluntary eviction, not StatefulSet controller disruption. Stop on missing members or leaders.
 
-Images containing the [Store registration fix](https://github.com/apache/hugegraph/issues/3229) register `Up` after local engine restore
+Images containing the [Store registration fix](https://github.com/apache/hugegraph/pull/3362) register `Up` after local engine restore
 and report `Offline` on graceful shutdown. Upgrade PD before Store to enable the restore gate.
-PD's authenticated Store responses expose `heartbeatAgeMillis` (`-1` if unknown); compare it with the configured heartbeat interval
-to reject stale `Up` records after abrupt stops. Fresh heartbeats and local restore do not prove Raft catch-up, so retain the manual barrier.
+Temporary Offline reports preserve the existing keepalive window without renewing it; expiry still applies if the Store does not return.
+After successful local restore, stream reconnects register `Up` directly without repeating recovery.
+PD's authenticated Store responses expose `heartbeatAgeMillis` (`-1` if unknown); compare it with the Store heartbeat period (fixed at 30 seconds).
+An age of several times 30000 ms marks a stale `Up` record. Fresh heartbeats and local restore do not prove Raft catch-up, so retain the manual barrier.
 The [operations reference](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#rolling-store-updates-and-recovery)
 summarizes these rollout conditions;
 it does not provide a complete per-group diagnostic or disk-loss recovery procedure.
@@ -154,7 +156,7 @@ Wait for membership recovery and split/move tasks to finish before balancing lea
 A busy task returns body `status: 1001`. Older images may return empty success from a follower, and leader transfers are asynchronous:
 HTTP 200 or a transfer plan does not prove completion. Recheck `/v1/partitions`, `/v1/stores` and application errors before further maintenance.
 
-With the [task response fix](https://github.com/apache/hugegraph/issues/3231), followers return body `status: 100`, naming the known leader's Raft address.
+With the [task response fix](https://github.com/apache/hugegraph/pull/3359), followers return body `status: 100`, naming the known leader's Raft address.
 Partition patrol also reports `reallocatedShardGroups` and `offlineShardRequests`; empty results mean no changes were scheduled.
 Offline-shard requests do not prove successful repairs. A skipped partition balance returns `{"status":0,"outcome":"skipped"}`;
 a completed balance with no transfers returns `{}`. Continue to verify actual membership and leaders before proceeding.

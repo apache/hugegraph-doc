@@ -126,9 +126,12 @@ networkPolicy:
 PD 的 `Up` 状态本身不证明 shard 恢复完成。PDB 限制主动驱逐，不限制 StatefulSet 控制器更新。
 发现缺成员或无 leader 时停止继续替换。
 
-包含 [Store 注册修复](https://github.com/apache/hugegraph/issues/3229)的镜像，在本地 engine 恢复后才注册为 `Up`，正常关闭时报告 `Offline`。
-应先升级 PD 再升级 Store，才能启用恢复检查。PD 的鉴权 Store 响应新增 `heartbeatAgeMillis`（未知时为 `-1`），
-可与配置的心跳间隔比较，识别异常停止后残留的 `Up` 状态。新鲜心跳和本地恢复都不证明 Raft 已追平，仍需保留手动升级屏障。
+包含 [Store 注册修复](https://github.com/apache/hugegraph/pull/3362)的镜像，在本地 engine 恢复后才注册为 `Up`，正常关闭时报告 `Offline`。
+应先升级 PD 再升级 Store，才能启用恢复检查。
+临时 `Offline` 报告保留已有的 keepalive 有效期，但不会续期；Store 未恢复时仍会按原有效期过期。
+本地恢复成功后，心跳流重连会直接注册 `Up`，不再重复恢复。
+PD 的鉴权 Store 响应新增 `heartbeatAgeMillis`（未知时为 `-1`）。Store 心跳周期固定为 30 秒；该值达到 30000 ms 的数倍时，表示 `Up` 记录已陈旧。
+新鲜心跳和本地恢复都不证明 Raft 已追平，仍需保留手动升级屏障。
 [运维参考](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#rolling-store-updates-and-recovery)说明这些升级条件，
 但不提供完整的逐组诊断或丢盘恢复步骤。
 
@@ -144,7 +147,7 @@ GET 任务 `/v1/task/patrolPartitions` 和 `/v1/task/balanceLeaders` 会改变�
 忙碌任务返回 body `status: 1001`。旧镜像的 follower 可能返回空成功，leader 转移是异步的，HTTP 200 或转移计划不代表执行完成。
 继续维护前重新检查 `/v1/partitions`、`/v1/stores` 和应用错误。
 
-包含[任务响应修复](https://github.com/apache/hugegraph/issues/3231)的镜像，follower 返回 body `status: 100`，并给出已知 leader 的 Raft 地址。
+包含[任务响应修复](https://github.com/apache/hugegraph/pull/3359)的镜像，follower 返回 body `status: 100`，并给出已知 leader 的 Raft 地址。
 分区巡检还返回 `reallocatedShardGroups` 和 `offlineShardRequests`；空结果表示未调度变更，离线 shard 请求并不证明修复成功。
 跳过的分区均衡返回 `{"status":0,"outcome":"skipped"}`，已执行但无需转移的均衡返回 `{}`。继续操作前仍需验证实际成员和 leader。
 [任务操作步骤](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#pd-patrol-and-leader-balance)

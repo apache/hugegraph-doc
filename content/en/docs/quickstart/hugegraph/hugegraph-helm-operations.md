@@ -31,9 +31,15 @@ Store wait and Helm test reuse existing component images with `curl` already ins
 
 PD listens on REST 8620, gRPC 8686 and Raft 8610; Store on REST 8520, gRPC 8500 and Raft 8510; Server HTTP on 8080; Hubble HTTP on 8088.
 Client Services hide individual Pod addresses. NodePort is a separate allocated port on reachable nodes, not the application listener port.
-PD `/v1/ready` requires a Raft leader; `/v1/health` only confirms the listener. Store startup waits for a majority of ready PD peers.
+PD `/v1/ready` requires a Raft leader. On older images, `/v1/health` only confirms the listener.
+Store startup waits for a majority of ready PD peers.
 Server waits up to `server.storageWaitTimeoutSeconds` (default 300) before its application startup; adjust it for slow storage bootstrap.
 No local Helm rendering verifies live cluster reachability, volumes or JVM capacity.
+
+Images containing the [fatal PD health fix](https://github.com/apache/hugegraph/pull/3358) return `503` from `/v1/health`
+after a terminal Raft error or shutdown; ordinary elections and quorum loss remain live (`200`).
+After a failed snapshot, fix the disk or storage problem before restarting PD: freeing space alone does not reinitialize JRaft.
+Keep the chart's single-PD readiness-based liveness workaround for older images.
 
 ### Helm test coverage
 
@@ -127,6 +133,11 @@ Use `store.updateStrategy.type=OnDelete` for a controlled maintenance rollout, a
 Delete one Store Pod at a time. Before replacing the next, verify the previous Pod is Ready, has a fresh Store heartbeat and each shard group has its
 full membership and exactly one leader, read from the PD leader. PD's `Up` status alone does not prove completed shard recovery.
 PDBs limit voluntary eviction, not StatefulSet controller disruption. Stop on missing members or leaders.
+
+Images containing the [Store registration fix](https://github.com/apache/hugegraph/issues/3229) register `Up` after local engine restore
+and report `Offline` on graceful shutdown. Upgrade PD before Store to enable the restore gate.
+PD's authenticated Store responses expose `heartbeatAgeMillis` (`-1` if unknown); compare it with the configured heartbeat interval
+to reject stale `Up` records after abrupt stops. Fresh heartbeats and local restore do not prove Raft catch-up, so retain the manual barrier.
 The [operations reference](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#rolling-store-updates-and-recovery)
 summarizes these rollout conditions;
 it does not provide a complete per-group diagnostic or disk-loss recovery procedure.
@@ -140,8 +151,13 @@ Partition patrol repairs shard membership; leader balance is a separate manual t
 Before either task, identify the PD leader through authenticated `/v1/members` (`data.pdLeader.restUrl`) and confirm its `/v1/ready` reports `isLeader: true`.
 The GET tasks `/v1/task/patrolPartitions` and `/v1/task/balanceLeaders` change cluster state; target that confirmed leader with PD REST credentials.
 Wait for membership recovery and split/move tasks to finish before balancing leaders; Stores must have fresh heartbeats and groups full, healthy membership.
-A busy task returns body `status: 1001`. A follower may return empty success, and leader transfers are asynchronous:
+A busy task returns body `status: 1001`. Older images may return empty success from a follower, and leader transfers are asynchronous:
 HTTP 200 or a transfer plan does not prove completion. Recheck `/v1/partitions`, `/v1/stores` and application errors before further maintenance.
+
+With the [task response fix](https://github.com/apache/hugegraph/issues/3231), followers return body `status: 100`, naming the known leader's Raft address.
+Partition patrol also reports `reallocatedShardGroups` and `offlineShardRequests`; empty results mean no changes were scheduled.
+Offline-shard requests do not prove successful repairs. A skipped partition balance returns `{"status":0,"outcome":"skipped"}`;
+a completed balance with no transfers returns `{}`. Continue to verify actual membership and leaders before proceeding.
 Follow the [task procedure](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#pd-patrol-and-leader-balance)
 for the separate patrol and balance steps; do not loop task requests while maintenance is busy.
 

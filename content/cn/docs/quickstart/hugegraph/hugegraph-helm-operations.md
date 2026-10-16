@@ -30,9 +30,14 @@ kubectl get pv,storageclass
 
 PD 端口为 REST 8620、gRPC 8686、Raft 8610；Store 为 REST 8520、gRPC 8500、Raft 8510；Server HTTP 为 8080；Hubble HTTP 为 8088。
 客户端 Service 隐藏 Pod 地址，NodePort 是节点上另外分配的端口，与应用监听端口不同。
-PD `/v1/ready` 需要 Raft leader，`/v1/health` 只说明监听器已启动，Store 等待多数 PD peer ready 后启动。
+PD `/v1/ready` 需要 Raft leader；旧镜像的 `/v1/health` 只说明监听器已启动。Store 等待多数 PD peer ready 后启动。
 Server 等待存储的默认上限为 300 秒，可以用 `server.storageWaitTimeoutSeconds` 调整。
 本地模板渲染不能验证集群连通性、卷挂载或 JVM 运行容量。
+
+包含 [PD 致命错误健康检查修复](https://github.com/apache/hugegraph/pull/3358)的镜像，在 Raft 发生终止性错误或关闭后，
+`/v1/health` 返回 `503`；普通选举和暂时失去 quorum 时仍返回 `200`。
+快照失败后，先修复磁盘或存储问题再重启 PD：仅释放空间不会重新初始化 JRaft。
+旧镜像仍需保留 chart 为单 PD 配置的基于 readiness 的 liveness 变通方案。
 
 ### Helm test 检查范围 {#helm-test-coverage}
 
@@ -120,6 +125,10 @@ networkPolicy:
 每次只删除一个 Store Pod，下一次删除前确认上一个 Pod Ready、Store 心跳新鲜，并从 PD leader 查询每个 shard group 都有完整成员及唯一 leader。
 PD 的 `Up` 状态本身不证明 shard 恢复完成。PDB 限制主动驱逐，不限制 StatefulSet 控制器更新。
 发现缺成员或无 leader 时停止继续替换。
+
+包含 [Store 注册修复](https://github.com/apache/hugegraph/issues/3229)的镜像，在本地 engine 恢复后才注册为 `Up`，正常关闭时报告 `Offline`。
+应先升级 PD 再升级 Store，才能启用恢复检查。PD 的鉴权 Store 响应新增 `heartbeatAgeMillis`（未知时为 `-1`），
+可与配置的心跳间隔比较，识别异常停止后残留的 `Up` 状态。新鲜心跳和本地恢复都不证明 Raft 已追平，仍需保留手动升级屏障。
 [运维参考](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#rolling-store-updates-and-recovery)说明这些升级条件，
 但不提供完整的逐组诊断或丢盘恢复步骤。
 
@@ -132,8 +141,12 @@ PD 的 `Up` 状态本身不证明 shard 恢复完成。PDB 限制主动驱逐，
 执行前通过鉴权的 `/v1/members` 查询 `data.pdLeader.restUrl`，并确认该 PD 的 `/v1/ready` 返回 `isLeader: true`。
 GET 任务 `/v1/task/patrolPartitions` 和 `/v1/task/balanceLeaders` 会改变集群状态，应携带 PD REST 凭据请求已确认的 leader。
 成员恢复和 split/move 任务完成后才能执行 leader 均衡；Store 心跳需新鲜，各组成员需完整、健康。
-忙碌任务返回 body `status: 1001`。follower 可能返回空成功，leader 转移是异步的，HTTP 200 或转移计划不代表执行完成。
+忙碌任务返回 body `status: 1001`。旧镜像的 follower 可能返回空成功，leader 转移是异步的，HTTP 200 或转移计划不代表执行完成。
 继续维护前重新检查 `/v1/partitions`、`/v1/stores` 和应用错误。
+
+包含[任务响应修复](https://github.com/apache/hugegraph/issues/3231)的镜像，follower 返回 body `status: 100`，并给出已知 leader 的 Raft 地址。
+分区巡检还返回 `reallocatedShardGroups` 和 `offlineShardRequests`；空结果表示未调度变更，离线 shard 请求并不证明修复成功。
+跳过的分区均衡返回 `{"status":0,"outcome":"skipped"}`，已执行但无需转移的均衡返回 `{}`。继续操作前仍需验证实际成员和 leader。
 [任务操作步骤](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#pd-patrol-and-leader-balance)
 说明巡检和均衡的独立操作；维护忙碌时不要循环请求任务。
 

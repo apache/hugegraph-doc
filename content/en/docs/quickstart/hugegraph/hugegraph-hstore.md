@@ -207,7 +207,7 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | Key | Master distribution value | Code default | Meaning |
 |-----|---------|--------------|---------|
 | `rocksdb.total_memory_size` | `0` | Auto-sized, see Meaning | Memory budget in bytes shared by all RocksDB instances on this node, split into the write cache and the block cache by `write_buffer_ratio`. Both caches are off-heap, so `-Xmx` does not limit them, and a fixed 1 GiB Raft log cache comes on top. When absent or `0`, the node uses half of the memory left after the JVM max heap, `MaxDirectMemorySize` (counted as the heap size, at most 1 GiB, when unset) and a 1.5 GiB reserve, clamped to 256 MiB to 32 GB. In a container the starting point is the cgroup memory limit, including a limit set only on a parent cgroup the Store can see. An `application-pd.yml` kept from an earlier release still sets `32000000000`; set it to `0` to auto-size. A positive value is used as given and must be plain bytes, at least `1048576` (1 MiB); a smaller value or one such as `4GB` stops startup. |
-| `rocksdb.write_buffer_size` | `32000000` | `33554432` | Memtable size in bytes. When absent or `0`, the node uses `total_memory_size / 1000`. |
+| `rocksdb.write_buffer_size` | `32000000` | `33554432` | Memtable size in bytes. When absent or `0`, the node uses `total_memory_size / 1000`, at least `1048576` (1 MiB). |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | Number of memtables merged together before a flush. |
 | `rocksdb.write_buffer_ratio` | not set | `0.66` | Share of `total_memory_size` given to the write cache. The rest becomes the block cache. |
 

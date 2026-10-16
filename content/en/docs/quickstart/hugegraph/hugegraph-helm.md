@@ -5,7 +5,7 @@ weight: 4
 search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, OCI, GHCR, Artifact Hub]
 ---
 
-This guide covers HugeGraph **1.8.0 and later**, using Helm **3.8+** with OCI support and Kubernetes (K8s) **1.23+**.
+This guide covers HugeGraph **1.8.0 and later**, using Helm **3.10+** with OCI support and Kubernetes (K8s) **1.23+**.
 Install `hugegraph-helm` from GHCR or Docker Hub. Chart and HugeGraph versions are maintained separately:
 for example, a `0.2.x` Chart can deploy a `1.8.x` service.
 
@@ -120,8 +120,13 @@ the chart does not force `30000–32767`. Legacy HTTP acknowledgement fields rem
 
 Both `server.serviceId` and `server.graphSpace` default to `DEFAULT`. To register the Server with a specific service name or graph space in PD:
 
+For configuration-only changes, keep the installed Chart version and values.
+Find the version with `helm list` and replace the placeholder below:
+
 ```bash
-helm upgrade --install hugegraph "$CHART" --devel -n hugegraph \
+helm list -n hugegraph
+CHART_VERSION='<installed-chart-version>'
+helm upgrade hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph --reuse-values \
   --set-string server.serviceId=analytics \
   --set-string server.graphSpace=team_a \
   --set-string server.testGraphAlias=team_a-demo
@@ -164,7 +169,7 @@ helm pull "$CHART" --version "$CHART_VERSION"
 ```bash {tab="Install archive"}
 # Override the image registry in air-gapped clusters (or use -f values-internal-registry.yaml)
 helm install hugegraph "./hugegraph-helm-${CHART_VERSION}.tgz" -n hugegraph \
-  --set global.imageRegistry=registry.example.com/hugegraph \
+  --set global.imageRegistry=registry.example.com \
   --create-namespace --wait --timeout 15m
 ```
 
@@ -173,7 +178,7 @@ helm registry login registry.example.com
 helm push "./hugegraph-helm-${CHART_VERSION}.tgz" oci://registry.example.com/charts
 helm install hugegraph oci://registry.example.com/charts/hugegraph-helm \
   --version "$CHART_VERSION" -n hugegraph \
-  --set global.imageRegistry=registry.example.com/hugegraph \
+  --set global.imageRegistry=registry.example.com \
   --create-namespace --wait --timeout 15m
 ```
 
@@ -184,7 +189,7 @@ helm repo add hugegraph-internal https://charts.example.com
 helm repo update hugegraph-internal
 helm install hugegraph hugegraph-internal/hugegraph-helm \
   --version "$CHART_VERSION" -n hugegraph \
-  --set global.imageRegistry=registry.example.com/hugegraph \
+  --set global.imageRegistry=registry.example.com \
   --create-namespace --wait --timeout 15m
 ```
 

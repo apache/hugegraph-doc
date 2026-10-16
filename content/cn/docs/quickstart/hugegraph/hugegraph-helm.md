@@ -5,7 +5,7 @@ weight: 4
 search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, 内网部署, OCI, GHCR, Artifact Hub]
 ---
 
-本文适用于 HugeGraph **1.8.0 及以后版本**，需要支持 OCI 的 Helm **3.8+** 和 Kubernetes (K8s) **1.23+**。
+本文适用于 HugeGraph **1.8.0 及以后版本**，需要支持 OCI 的 Helm **3.10+** 和 Kubernetes (K8s) **1.23+**。
 可从 GHCR 或 Docker Hub 安装 `hugegraph-helm`。Chart 与 HugeGraph 服务分别维护版本，例如 `0.2.x` 的 Chart 可以部署 `1.8.x` 的服务。
 
 > [!WARNING]
@@ -116,8 +116,12 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 
 默认 `server.serviceId` 与 `server.graphSpace` 均为 `DEFAULT`。如需将 Server 注册到指定的业务服务名或图空间，可通过 values 指定：
 
+仅修改已有部署的配置时，保留当前 Chart 版本和 values。用 `helm list` 查看版本，替换下面的版本占位符：
+
 ```bash
-helm upgrade --install hugegraph "$CHART" --devel -n hugegraph \
+helm list -n hugegraph
+CHART_VERSION='<已安装的Chart版本>'
+helm upgrade hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph --reuse-values \
   --set-string server.serviceId=analytics \
   --set-string server.graphSpace=team_a \
   --set-string server.testGraphAlias=team_a-demo
@@ -159,7 +163,7 @@ helm pull "$CHART" --version "$CHART_VERSION"
 ```bash {tab="直接安装"}
 # 内网环境需覆盖镜像私库（或使用 -f values-internal-registry.yaml）
 helm install hugegraph "./hugegraph-helm-${CHART_VERSION}.tgz" -n hugegraph \
-  --set global.imageRegistry=registry.example.com/hugegraph \
+  --set global.imageRegistry=registry.example.com \
   --create-namespace --wait --timeout 15m
 ```
 
@@ -168,7 +172,7 @@ helm registry login registry.example.com
 helm push "./hugegraph-helm-${CHART_VERSION}.tgz" oci://registry.example.com/charts
 helm install hugegraph oci://registry.example.com/charts/hugegraph-helm \
   --version "$CHART_VERSION" -n hugegraph \
-  --set global.imageRegistry=registry.example.com/hugegraph \
+  --set global.imageRegistry=registry.example.com \
   --create-namespace --wait --timeout 15m
 ```
 
@@ -179,7 +183,7 @@ helm repo add hugegraph-internal https://charts.example.com
 helm repo update hugegraph-internal
 helm install hugegraph hugegraph-internal/hugegraph-helm \
   --version "$CHART_VERSION" -n hugegraph \
-  --set global.imageRegistry=registry.example.com/hugegraph \
+  --set global.imageRegistry=registry.example.com \
   --create-namespace --wait --timeout 15m
 ```
 

@@ -2,13 +2,22 @@
 title: "使用 Helm 部署 HugeGraph"
 linkTitle: "Helm 部署"
 weight: 4
-search_keywords: [HugeGraph Helm, Kubernetes, NodePort, Hubble, 内网部署]
+search_keywords: [HugeGraph Helm, Kubernetes, NodePort, Hubble, 内网部署, OCI, GHCR, Artifact Hub]
 ---
 
-本文对应 HugeGraph 开发分支的 chart。发布镜像完成前标签仍为 `latest`，实际部署请固定自己的镜像版本。
-需要 Helm 3 和 Kubernetes 1.23 或更高版本。常用命令和参数见
-[chart README](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/README.md)，生命周期操作见
-[运维参考](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md)。
+本文适用于 HugeGraph **1.8.0 及以后版本**，需要支持 OCI 的 Helm **3.8+** 和 Kubernetes **1.23+**。
+可从 GHCR 或 Docker Hub 安装 `hugegraph-helm`。Chart 与 HugeGraph 服务分别维护版本，例如 `0.2.x` 的 Chart 可以部署 `1.8.x` 的服务。
+
+> [!WARNING]
+> 下文使用已发布的**开发版本** `0.2.0-dev.14` 和 `latest` 镜像，适合测试。
+> 对应 HugeGraph 服务正式发布后，生产环境请选择稳定 Chart，并检查其中的镜像版本。
+> 镜像标签可能变化；需要固定镜像内容时，请配置各组件的 `image.digest`。
+
+[Artifact Hub](https://artifacthub.io/packages/helm/hugegraph-helm/hugegraph-helm) 方便查找 Chart、查看版本和安装说明，实际安装包仍从 GHCR 或 Docker Hub 下载。
+参数和源码开发方式见 [chart README](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/README.md)，
+生命周期操作见 [运维参考](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md)。
+
+![在 Artifact Hub 选择版本，从 GHCR 或 Docker Hub 下载 Chart，再使用 Helm 安装到 Kubernetes](/images/helm-oci-install-cn.png)
 
 ## 1 安装
 
@@ -18,26 +27,47 @@ search_keywords: [HugeGraph Helm, Kubernetes, NodePort, Hubble, 内网部署]
 > - **存储依赖**：需要集群具备默认动态 StorageClass 或预先匹配的静态 local PV，共需 7 个持久卷（3 个 10 GiB PD 卷、3 个 50 GiB Store 卷、1 个 1 GiB Hubble 卷）。
 > - **内存考量**：保留镜像内 JVM 内存自动推导；按需调整 resource requests/limits，确保宿主机给 9 个图服务 JVM 与 Hubble 提供足够内存。
 
-```bash
-git clone https://github.com/apache/hugegraph.git
-cd hugegraph
+选择一个下载源即可，公共 CI 推荐 GHCR。安装和升级时都应指定 Chart 版本。
+
+```bash {tab="GHCR（推荐）"}
+CHART=oci://ghcr.io/hugegraph/hugegraph-helm
+CHART_VERSION=0.2.0-dev.14
 kubectl config current-context
 kubectl get nodes
 kubectl get storageclass
-# 默认标准集群安装（3 PD + 3 Store + 3 Server + 1 Hubble，需 7 个 PV）：
-helm install hugegraph ./helm/hugegraph -n hugegraph \
+helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
   --create-namespace --wait --timeout 15m
-
-# 本地测试 / 单节点轻量环境（Minikube、Kind 等，仅各 1 副本且关闭反亲和）：
-# helm install hugegraph ./helm/hugegraph -n hugegraph \
-#   -f ./helm/hugegraph/values-single.yaml \
-#   --create-namespace --wait --timeout 10m
 ```
+
+```bash {tab="Docker Hub"}
+CHART=oci://registry-1.docker.io/hugegraph/hugegraph-helm
+CHART_VERSION=0.2.0-dev.14
+kubectl config current-context
+kubectl get nodes
+kubectl get storageclass
+helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+  --create-namespace --wait --timeout 15m
+```
+
+只在单节点上试用时，改用下面的安装命令。先解压 Chart，取出其中的单节点配置：
+
+```bash
+CHART=oci://ghcr.io/hugegraph/hugegraph-helm
+CHART_VERSION=0.2.0-dev.14
+helm pull "$CHART" --version "$CHART_VERSION" --untar
+helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+  -f ./hugegraph-helm/values-single.yaml \
+  --create-namespace --wait --timeout 10m
+```
+
+这组命令替代上面的默认安装，将各组件设为 1 副本，并放宽调度限制。
 
 ## 2 模式和访问入口
 
+解压后目录为 `hugegraph-helm/`，源码目录仍为 `helm/hugegraph/`。
+
 ```filetree {.hg-filetree-notes title="HugeGraph Helm 核心文件与结构"}
-helm/hugegraph/
+hugegraph-helm/
   Chart.yaml            # Chart 元数据与版本定义
   values.yaml           # 默认配置（easy 模式：3 PD + 3 Store + 3 Server + 1 Hubble，NodePort 入口）
   values-single.yaml    # 单节点预设（本地 Minikube/Kind 测试，1 副本且关闭反亲和与 PDB）
@@ -87,7 +117,7 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 默认 `server.serviceId` 与 `server.graphSpace` 均为 `DEFAULT`。如需将 Server 注册到指定的业务服务名或图空间，可通过 values 指定：
 
 ```bash
-helm upgrade --install hugegraph ./helm/hugegraph -n hugegraph \
+helm upgrade --install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
   --set-string server.serviceId=analytics \
   --set-string server.graphSpace=team_a \
   --set-string server.testGraphAlias=team_a-demo
@@ -105,6 +135,39 @@ GitOps 凭据、仅 API 部署以及无域名的 HTTP Ingress。
 默认只需镜像仓库中的 `hugegraph/pd`、`hugegraph/store`、`hugegraph/server` 和 `hugegraph/hubble` 四个镜像，标签或 digest 按实际配置选取。
 等待 PD 的 init container 复用 Store 镜像，Helm test 复用 Server 镜像。这两个镜像已包含 `curl`，无需额外 curl 镜像或启动时安装软件。
 自定义镜像可以继续使用显式 `store.waitImage` 和 `server.waitImage` 覆盖。
+
+### 离线安装和私库
+
+先下载 Chart，再将 `.tgz` 搬入内网。可以直接安装，也可以接入已有的 OCI 或 HTTP 私库。
+
+```bash
+CHART=oci://ghcr.io/hugegraph/hugegraph-helm
+CHART_VERSION=0.2.0-dev.14
+helm pull "$CHART" --version "$CHART_VERSION"
+```
+
+```bash {tab="直接安装"}
+helm install hugegraph "./hugegraph-helm-${CHART_VERSION}.tgz" -n hugegraph \
+  --create-namespace --wait --timeout 15m
+```
+
+```bash {tab="OCI 私库"}
+helm registry login registry.example.com
+helm push "./hugegraph-helm-${CHART_VERSION}.tgz" oci://registry.example.com/charts
+helm install hugegraph oci://registry.example.com/charts/hugegraph-helm \
+  --version "$CHART_VERSION" -n hugegraph --create-namespace --wait --timeout 15m
+```
+
+```bash {tab="HTTP 私库"}
+# 按私库的上传方式接收同一个 .tgz，并更新 index.yaml。
+# 自建静态 HTTP 源可用 helm repo index 生成索引；helm push 只适用于 OCI。
+helm repo add hugegraph-internal https://charts.example.com
+helm repo update hugegraph-internal
+helm install hugegraph hugegraph-internal/hugegraph-helm \
+  --version "$CHART_VERSION" -n hugegraph --create-namespace --wait --timeout 15m
+```
+
+私库地址请替换为实际地址。Chart 包不包含容器镜像；完整离线部署还需搬运配置引用的所有容器镜像，并覆盖镜像地址。
 
 `storageClassName` 为空时继承集群默认 StorageClass，`"-"` 表示显式不使用 StorageClass。
 local PV 需要预建宿主机目录、匹配容量、`nodeAffinity` 和 `kubernetes.io/no-provisioner` StorageClass。
@@ -136,8 +199,9 @@ Hubble 默认开启，当前镜像的登录仍依赖 Server 鉴权。只使用 A
 
 ```bash
 helm get values hugegraph -n hugegraph --all
-helm upgrade hugegraph ./helm/hugegraph -n hugegraph --reuse-values \
-  --wait --timeout 15m
+# 升级前，将 CHART_VERSION 设为已审阅的已发布版本。
+helm upgrade hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
+  --reuse-values --wait --timeout 15m
 helm test hugegraph -n hugegraph --logs --timeout 5m
 ```
 
@@ -149,5 +213,5 @@ PD 成员、持久存储和共享凭据变更需要按生命周期说明协调�
 未指定的启动探针阈值按存储等待加 150 秒推导；显式探针不会被改写，但预算必须覆盖存储等待和至少 120 秒 Server 启动时间。
 矛盾预算会在渲染时报出对应参数。这个等待超时不是 JVM 内存配置。
 
-Kubernetes Ready 和 `helm test` 不代表 UI 登录已经验证。安装或恢复后还应测试新登录及图查询。
+默认 `helm test` hook 检查连接和读取。安装或恢复后，还应重新登录 UI，并验证应用实际使用的读写查询。
 调度、NetworkPolicy、滚动升级和恢复见 [Kubernetes 运维](./hugegraph-helm-operations.md)。

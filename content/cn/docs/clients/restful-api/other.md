@@ -278,6 +278,8 @@ PUT http://localhost:8080/whiteiplist?status=true
 > [!IMPORTANT]
 > **安全诊断要求**
 > - **仅监听本地 Loopback**：Arthas 默认监听 `127.0.0.1`，且仅允许 loopback 地址。Server 拒绝非 loopback 地址（如 `0.0.0.0`），严禁通过反向代理或容器端口映射对外暴露。
+> - **代理自身无鉴权**：运行中的 Arthas 代理自身无访问密码，同一网络命名空间内的任何进程均可执行命令（在 Kubernetes 中包括同 Pod 内其它容器与 port-forward）。
+>   请将宿主机与 Pod 访问权限严格限制为可信运维人员，并在排查结束后运行 `stop` 彻底关闭代理（仅 `quit` 不会停止监听）。
 > - **管理员权限限制**：HTTP API 激活要求 Server 已开启鉴权，且必须具备管理员权限；未开启鉴权时直接返回 `403`。
 > - **免重启本地诊断**：推荐直接在主机上使用服务进程所属的 OS 用户运行 `bin/arthas.sh`，无需修改配置或重启 JVM。
 

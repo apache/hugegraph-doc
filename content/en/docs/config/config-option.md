@@ -335,15 +335,15 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | arthas.telnet_port | 8562 | Arthas telnet port for administrator activation through `PUT /arthas`. |
 > | arthas.http_port | 8561 | Arthas HTTP port for administrator activation. |
 > | arthas.ip | 127.0.0.1 | Loopback bind address; activation rejects non-loopback addresses. |
-> | arthas.disabled_commands | jad | Disabled Arthas commands, separated by commas. |
+> | arthas.disabled_commands | jad | Disabled commands for administrator activation through `PUT /arthas`; the local helper does not apply them. |
 >
 > Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain fallback aliases. Explicit snake_case values win;
 > conflicting values produce a warning (see [configuration guide upgrade notice](/docs/config/config-guide/#3-rest-serverproperties)).
 > The response still uses the camelCase Arthas agent keys.
 > HTTP activation requires authentication to be enabled and the caller to be an authenticated administrator. It returns `403` without
 > authentication enabled, including requests from loopback or a proxy. No extra Arthas enable switch is required. MCP is disabled.
-> The bundled `bin/arthas.sh` provides local diagnostics without changing these settings or restarting the JVM. A new agent uses the helper
-> defaults; an already active agent retains its existing settings.
+> The bundled `bin/arthas.sh` provides local diagnostics without changing these settings or restarting the JVM (the helper applies its own
+> defaults and does not read these options). A new agent uses the helper defaults; an already active agent retains its existing settings.
 
 > [!DETAILS]- **RPC Server Config Options**
 > Corresponding configuration file `rest-server.properties`

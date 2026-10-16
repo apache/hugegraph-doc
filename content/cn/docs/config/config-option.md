@@ -333,12 +333,12 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | arthas.telnet_port | 8562 | 管理员通过 `PUT /arthas` 激活时使用的 Arthas telnet 端口。 |
 > | arthas.http_port | 8561 | 管理员激活时使用的 Arthas HTTP 端口。 |
 > | arthas.ip | 127.0.0.1 | Loopback 监听地址；激活时拒绝非 loopback 地址。 |
-> | arthas.disabled_commands | jad | 禁用的 Arthas 命令，以逗号分隔。 |
+> | arthas.disabled_commands | jad | 管理员通过 `PUT /arthas` 激活时禁用的命令（以逗号分隔）；本地脚本不受此项约束。 |
 >
 > 旧名称 `arthas.telnetPort`、`arthas.httpPort` 和 `arthas.disabledCommands` 仍可作为回退项。显式设置的 snake_case 值优先，
 > 两种名称的值冲突时会输出警告（参见[配置指南升级说明](/cn/docs/config/config-guide/#3-rest-serverproperties)）。响应仍使用 Arthas 代理的 camelCase 键名。
 > HTTP 激活要求已开启认证且调用者是已认证的管理员。未开启认证时返回 `403`，loopback 或代理转发的请求也不例外。
-> 无需额外开启 Arthas 开关，MCP 默认禁用。发行包内的 `bin/arthas.sh` 可直接进行本地诊断，无需修改这些配置或重启 JVM。
+> 无需额外开启 Arthas 开关，MCP 默认禁用。发行包内的 `bin/arthas.sh` 可直接进行本地诊断，无需修改这些配置或重启 JVM（本地脚本独立使用默认配置，不读取上述选项）。
 > 新激活的代理使用脚本默认配置，已有代理保留当前配置。
 
 > [!DETAILS]- **RPC Server 配置项**

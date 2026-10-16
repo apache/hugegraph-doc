@@ -280,6 +280,9 @@ You can attach it to a running JVM for live troubleshooting via the local script
 > **Security Requirements for Diagnostics**
 > - **Loopback Only**: Arthas defaults to `127.0.0.1` and accepts only loopback addresses. Non-loopback addresses (such as `0.0.0.0`) are rejected.
 >   Diagnostic ports must not be exposed via reverse proxies or container port mappings.
+> - **Unauthenticated Agent Access**: A running Arthas agent has no authentication of its own; any process in the same network namespace can execute
+>   commands. In Kubernetes, this includes other containers in the pod and port-forwards. Restrict host and pod access to trusted operators,
+>   and execute `stop` (not just `quit`) when diagnosis ends.
 > - **Administrator Privilege**: HTTP API activation requires authentication to be enabled on Server with administrator privileges;
 >   requests without authentication enabled return `403`.
 > - **Offline Local Diagnostics**: For routine troubleshooting, run `bin/arthas.sh` on the host as the service OS user without restarting

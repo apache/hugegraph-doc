@@ -37,6 +37,9 @@ No local Helm rendering verifies live cluster reachability, volumes or JVM capac
 
 ### Helm test coverage
 
+Index-state validation and `server.testGremlin` require the updated Helm test chart.
+A passing test on older charts does not establish that indexes are `CREATED`.
+
 `helm test` validates graph binding on every Server Pod (`DEFAULT-hugegraph` by default, or configured via `server.testGraphAlias`), and requires
 currently visible associated indexes to be in `CREATED` state.
 Run it after index creation/rebuild jobs finish, with no schema changes during the test.

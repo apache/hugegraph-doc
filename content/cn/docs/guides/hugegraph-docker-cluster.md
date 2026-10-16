@@ -199,7 +199,7 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 > **已弃用的别名**：`PD_ADDRESS` → `HG_STORE_PD_ADDRESS`、`GRPC_HOST` → `HG_STORE_GRPC_HOST`、`RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`
 
-RocksDB 缓存位于 Java 堆外。不设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` 时按容器内存限制自动计算，也可以设为纯字节数；详见 [HStore 配置参考](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)中的 `rocksdb.total_memory_size`。
+RocksDB 缓存位于 Java 堆外。不设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` 时按容器内存限制自动计算；容器没有内存限制时，按 Docker 宿主机（Docker Desktop 虚拟机）的内存计算。上面的 Compose 文件都没有设置内存限制，因此每个 Store 都会按整台宿主机的内存计算预算；多个 Store 共用一台宿主机时，请为 Store 服务设置内存限制，或把该变量设为纯字节数。详见 [HStore 配置参考](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)中的 `rocksdb.total_memory_size`。
 
 ### Server 变量
 

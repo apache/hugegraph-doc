@@ -134,9 +134,6 @@ optionally also set `server.auth.enabled=false` for an unauthenticated API. Inac
 
 ## 5 Upgrade and verification
 
-Index-state validation and `server.testGremlin` require the updated Helm test chart.
-A passing test on older charts does not establish that indexes are `CREATED`.
-
 Use native Helm value reuse to preserve an old release's UI, entry, storage and credentials:
 
 ```bash

@@ -132,8 +132,6 @@ Hubble 默认开启，当前镜像的登录仍依赖 Server 鉴权。只使用 A
 
 ## 5 升级和验证
 
-索引状态检查和 `server.testGremlin` 需要使用更新后的 Helm test chart。旧 chart 的测试通过不代表索引已处于 `CREATED` 状态。
-
 使用 Helm 原生值复用保留旧部署的 UI、入口、存储和凭据设置。
 
 ```bash

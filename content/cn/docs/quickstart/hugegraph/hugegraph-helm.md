@@ -120,6 +120,7 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 
 ```bash
 helm list -n hugegraph
+CHART=oci://ghcr.io/hugegraph/hugegraph-helm
 CHART_VERSION='<已安装的Chart版本>'
 helm upgrade hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph --reuse-values \
   --set-string server.serviceId=analytics \

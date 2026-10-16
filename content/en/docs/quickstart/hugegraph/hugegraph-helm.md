@@ -125,6 +125,7 @@ Find the version with `helm list` and replace the placeholder below:
 
 ```bash
 helm list -n hugegraph
+CHART=oci://ghcr.io/hugegraph/hugegraph-helm
 CHART_VERSION='<installed-chart-version>'
 helm upgrade hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph --reuse-values \
   --set-string server.serviceId=analytics \

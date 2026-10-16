@@ -27,7 +27,7 @@ search_keywords: [HugeGraph Helm, Kubernetes, NodePort, Hubble, 内网部署, OC
 > - **存储依赖**：需要集群具备默认动态 StorageClass 或预先匹配的静态 local PV，共需 7 个持久卷（3 个 10 GiB PD 卷、3 个 50 GiB Store 卷、1 个 1 GiB Hubble 卷）。
 > - **内存考量**：保留镜像内 JVM 内存自动推导；按需调整 resource requests/limits，确保宿主机给 9 个图服务 JVM 与 Hubble 提供足够内存。
 
-选择一个下载源即可，公共 CI 推荐 GHCR。安装和升级时都应指定 Chart 版本。
+选择一个下载源即可，公共 CI 推荐 GHCR。安装和升级时都应指定 Chart 版本。本地轻量测试可直接使用单节点预设。
 
 ```bash {tab="GHCR（推荐）"}
 CHART=oci://ghcr.io/hugegraph/hugegraph-helm
@@ -49,9 +49,8 @@ helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
   --create-namespace --wait --timeout 15m
 ```
 
-只在单节点上试用时，改用下面的安装命令。先解压 Chart，取出其中的单节点配置：
-
-```bash
+```bash {tab="单节点试用"}
+# 适合本地 Minikube/Kind 等轻量测试（解压 Chart 并应用 values-single.yaml）
 CHART=oci://ghcr.io/hugegraph/hugegraph-helm
 CHART_VERSION=0.2.0-dev.14
 helm pull "$CHART" --version "$CHART_VERSION" --untar
@@ -60,7 +59,7 @@ helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
   --create-namespace --wait --timeout 10m
 ```
 
-这组命令替代上面的默认安装，将各组件设为 1 副本，并放宽调度限制。
+单节点试用预设替代默认安装，将各组件设为 1 副本并放宽调度限制，适合资源受限环境。
 
 ## 2 模式和访问入口
 
@@ -194,6 +193,8 @@ Hubble 默认开启，当前镜像的登录仍依赖 Server 鉴权。只使用 A
 如需关闭 API 鉴权，再设置 `server.auth.enabled=false`。未使用的凭据配置可以留在 values 中。
 
 ## 5 升级和验证
+
+索引状态检查和 `server.testGremlin` 需要使用更新后的 Helm test chart。旧 chart 的测试通过不代表索引已处于 `CREATED` 状态。
 
 使用 Helm 原生值复用保留旧部署的 UI、入口、存储和凭据设置。
 

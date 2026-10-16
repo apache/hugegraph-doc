@@ -31,7 +31,8 @@ and the [operations reference](https://github.com/apache/hugegraph/blob/master/h
 > - **Memory Sizing**: Retains container JVM memory auto-calculation; configure resource requests/limits to allocate sufficient physical memory
 >   for the 9 JVMs and Hubble.
 
-Choose either source; GHCR is recommended for public CI. Specify a Chart version when installing or upgrading.
+Choose either registry; GHCR is recommended for public CI. Specify a Chart version when installing or upgrading.
+For local lightweight testing, use the single-node preset.
 
 ```bash {tab="GHCR (recommended)"}
 CHART=oci://ghcr.io/hugegraph/hugegraph-helm
@@ -53,9 +54,8 @@ helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
   --create-namespace --wait --timeout 15m
 ```
 
-For a single-node trial, use these commands instead of the default installation. Unpack the Chart to access its single-node preset:
-
-```bash
+```bash {tab="Single-node trial"}
+# For local testing (Minikube, Kind): unpack the Chart to use values-single.yaml
 CHART=oci://ghcr.io/hugegraph/hugegraph-helm
 CHART_VERSION=0.2.0-dev.14
 helm pull "$CHART" --version "$CHART_VERSION" --untar
@@ -64,7 +64,7 @@ helm install hugegraph "$CHART" --version "$CHART_VERSION" -n hugegraph \
   --create-namespace --wait --timeout 10m
 ```
 
-This replaces the default installation, using one replica per component and relaxing scheduling constraints.
+The single-node preset replaces the default installation with one replica per component and relaxed scheduling constraints.
 
 ## 2 Modes and entry points
 
@@ -199,6 +199,9 @@ Hubble is enabled by default and its current login requires Server authenticatio
 optionally also set `server.auth.enabled=false` for an unauthenticated API. Inactive credential settings may remain in your values file.
 
 ## 5 Upgrade and verification
+
+Index-state validation and `server.testGremlin` require the updated Helm test chart.
+A passing test on older charts does not establish that indexes are `CREATED`.
 
 Use native Helm value reuse to preserve an old release's UI, entry, storage and credentials:
 

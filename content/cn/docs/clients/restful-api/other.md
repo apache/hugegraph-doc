@@ -278,8 +278,8 @@ PUT http://localhost:8080/whiteiplist?status=true
 > [!IMPORTANT]
 > **安全诊断要求**
 > - **仅监听本地 Loopback**：Arthas 默认监听 `127.0.0.1`，且仅允许 loopback 地址。Server 拒绝非 loopback 地址（如 `0.0.0.0`），严禁通过反向代理或容器端口映射对外暴露。
-> - **代理自身无鉴权**：运行中的 Arthas 代理自身无访问密码，同一网络命名空间内的任何进程均可执行命令（在 Kubernetes 中包括同 Pod 内其它容器与 port-forward）。
->   请将宿主机与 Pod 访问权限严格限制为可信运维人员，并在排查结束后运行 `stop` 彻底关闭代理（仅 `quit` 不会停止监听）。
+> - **代理自身无鉴权**：运行中的 Arthas 代理自身无访问密码，同一网络命名空间内的进程（包括其他 OS 用户或同 Pod 内的容器）均可执行命令。
+>   请将宿主机、Pod 和 port-forward 的访问权限限制为可信运维人员。本地脚本退出时会停止 Arthas；仅通过 HTTP API 激活时，仍需显式执行 `stop`。
 > - **管理员权限限制**：HTTP API 激活要求 Server 已开启鉴权，且必须具备管理员权限；未开启鉴权时直接返回 `403`。
 > - **免重启本地诊断**：推荐直接在主机上使用服务进程所属的 OS 用户运行 `bin/arthas.sh`，无需修改配置或重启 JVM。
 
@@ -298,7 +298,7 @@ bin/arthas.sh
 # 2. 同一主机运行多个实例时，可显式指定进程 PID 与端口
 bin/arthas.sh --pid <PID> --telnet-port 3659
 
-# 3. 退出诊断：终端内输入 quit 仅断开客户端连接；输入 stop 卸载诊断代理（不影响服务 JVM）
+# 3. 退出诊断：输入 quit 或 stop；脚本会在会话结束时停止 Arthas，服务 JVM 持续运行
 ```
 
 ```bash {tab="管理员 HTTP API 激活"}
@@ -312,6 +312,13 @@ bin/arthas.sh --telnet-port 8562
 
 脚本默认读取 `bin/pid`，需要 JDK 17。两个发行包均在 `lib/arthas` 内提供代理文件，无需下载、运行时解压或持久化的用户缓存。
 新激活代理时，telnet 默认监听 `127.0.0.1:3658`，HTTP、MCP 和 tunnel 连接均禁用。
+
+本地脚本会在客户端退出时自动停止 Arthas，包括 `--command` 执行完成或输入 `quit`，并处理 `INT`、`TERM`、`HUP` 信号以完成清理。
+`SIGKILL` 会阻止清理，强制终止后需确认代理已停止。仅通过 HTTP API 激活代理的生命周期不受此机制影响。
+请勿并发运行多个脚本会话，退出任一会话都会停止共享代理及其全部诊断会话。脚本连接 API 已激活的代理后，也会在退出时停止该代理。
+
+官方 Server（包括 HStore）与 Store 镜像内置 JDK 17，可在容器内以服务进程所属的 OS 用户运行同一脚本，
+例如 `docker exec -it <container> bin/arthas.sh`，无需额外安装 JDK 或映射诊断端口。
 
 已有代理保留当前监听配置。请使用原 telnet 端口连接，脚本不会重新绑定端口或关闭已有的 HTTP 监听。
 如需从 Server API 默认配置切换为本地脚本默认配置，先只停止 Arthas，再重新挂载：

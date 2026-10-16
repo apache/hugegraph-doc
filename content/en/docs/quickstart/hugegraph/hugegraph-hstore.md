@@ -283,7 +283,10 @@ For a newly attached agent, it binds telnet to `127.0.0.1:3658` with HTTP and MC
 
 Legacy Store Arthas configuration fields remain stored for compatibility; they do not activate an agent or configure the local helper.
 The helper uses the bundled `lib/arthas` files and enforces loopback independently. An already active agent retains its existing settings.
-Keep diagnostic ports off reverse proxies and container port mappings.
+The helper stops Arthas when the client exits, including after `quit` or `--command` completion; forced `SIGKILL` cannot perform cleanup.
+Official Store images include JDK 17, so the same helper works through `docker exec` as the service OS user.
+During diagnosis, other OS users or containers in the same pod can access loopback. Restrict host and pod access to trusted operators,
+and keep diagnostic ports off reverse proxies and container port mappings.
 
 #### 4.4 Per-node changes
 

@@ -280,9 +280,9 @@ You can attach it to a running JVM for live troubleshooting via the local script
 > **Security Requirements for Diagnostics**
 > - **Loopback Only**: Arthas defaults to `127.0.0.1` and accepts only loopback addresses. Non-loopback addresses (such as `0.0.0.0`) are rejected.
 >   Diagnostic ports must not be exposed via reverse proxies or container port mappings.
-> - **Unauthenticated Agent Access**: A running Arthas agent has no authentication of its own; any process in the same network namespace can execute
->   commands. In Kubernetes, this includes other containers in the pod and port-forwards. Restrict host and pod access to trusted operators,
->   and execute `stop` (not just `quit`) when diagnosis ends.
+> - **Unauthenticated Agent Access**: A running Arthas agent has no authentication of its own. Processes in the same network namespace, including
+>   other OS users or containers in the same pod, can execute commands. Restrict host, pod, and port-forward access to trusted operators.
+>   The local helper stops Arthas when it exits; API-only activation still requires an explicit `stop`.
 > - **Administrator Privilege**: HTTP API activation requires authentication to be enabled on Server with administrator privileges;
 >   requests without authentication enabled return `403`.
 > - **Offline Local Diagnostics**: For routine troubleshooting, run `bin/arthas.sh` on the host as the service OS user without restarting
@@ -303,7 +303,7 @@ bin/arthas.sh
 # 2. For multiple instances on one host, specify PID and port explicitly
 bin/arthas.sh --pid <PID> --telnet-port 3659
 
-# 3. Disconnect: enter 'quit' to exit client session; enter 'stop' to unload the agent (does not affect JVM)
+# 3. Exit: enter 'quit' or 'stop'; the helper stops Arthas when the session ends (the service JVM keeps running)
 ```
 
 ```bash {tab="Administrator HTTP Activation"}
@@ -318,6 +318,15 @@ bin/arthas.sh --telnet-port 8562
 The helper reads `bin/pid` by default and requires JDK 17. Both distributions include the agent files in `lib/arthas`, so no download,
 runtime extraction, or persistent user cache is needed. For a newly activated agent, telnet defaults to `127.0.0.1:3658`; HTTP, MCP,
 and tunnel connections are disabled.
+
+The helper automatically stops Arthas when the client exits, including after `--command` completes or `quit`, and handles `INT`, `TERM`,
+and `HUP` for cleanup. `SIGKILL` prevents cleanup; verify the agent is stopped after a forced termination. This does not change the
+lifecycle of an agent activated only through the HTTP API.
+Avoid concurrent helper sessions: exiting one stops the shared agent and all its diagnostic sessions. Connecting through the helper
+also applies this cleanup to an agent previously activated through the API.
+
+Official Server (including HStore) and Store images include JDK 17. Run the same helper inside the container as the service OS user,
+for example `docker exec -it <container> bin/arthas.sh`; no extra JDK installation or diagnostic port mapping is needed.
 
 An already active agent retains its listener settings. Connect on its current telnet port; the helper does not rebind it or disable an
 existing HTTP listener. To switch from the Server API defaults to the local helper defaults, stop only Arthas and attach again:

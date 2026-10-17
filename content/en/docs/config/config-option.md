@@ -341,6 +341,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > conflicting values produce a warning (see [configuration guide upgrade notice](/docs/config/config-guide/#3-rest-serverproperties)).
 > The response still uses the camelCase Arthas agent keys.
 > For API native authentication, set `-Darthas.username=...` and `-Darthas.password=...` on the Server JVM and restart; these are not REST options.
+> These credentials also apply to [helper-started agents](/docs/clients/restful-api/other/#1116-start-the-arthas-agent); supply matching CLI credentials.
 > JVM properties may expose secrets in process listings. A specific non-loopback bind without native credentials has no login;
 > wildcard binds generate a password.
 > To authenticate clients from `127.0.0.1` too, set `-Darthas.localConnectionNonAuth=false` on the service JVM and restart.

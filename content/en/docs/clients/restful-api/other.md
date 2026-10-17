@@ -282,6 +282,7 @@ You can attach it to a running JVM for live troubleshooting via the local script
 > - **Native Authentication Recommended**: Enable Arthas native authentication, especially before exposing diagnostic ports beyond loopback.
 >   HugeGraph administrator authentication protects activation only. For API credentials, set native `-Darthas.username=...` and `-Darthas.password=...`
 >   on the Server JVM and restart; these are not REST configuration keys. Without native credentials, a specific non-loopback bind has no login.
+>   These JVM credentials also apply to helper-started agents; supply matching `--username`/`--password` for authenticated commands and cleanup.
 >   Native defaults bypass authentication for clients from `127.0.0.1`, including other OS users or containers in the same Pod, even with credentials.
 >   Set `-Darthas.localConnectionNonAuth=false` on the service JVM and restart to disable this bypass. Restrict host, Pod and port-forward access
 >   to trusted operators. Limit firewall rules, port mappings and forwarding; wildcard listeners may accept IPv4 and IPv6 depending on OS/JVM settings.
@@ -340,16 +341,20 @@ bin/arthas.sh --target-ip 0.0.0.0 \
 
 Use single-line credentials; printable ASCII avoids the bundled Arthas 4.1.5 telnet client's Unicode limitation.
 Password-only use defaults to username `arthas`. These credentials are separate from HugeGraph accounts.
+Native JVM credentials also apply to helper-started agents; omitted options do not clear the target JVM's native credential settings.
+If `-Darthas.username`/`-Darthas.password` are configured, supply matching `--username`/`--password`, especially with `-Darthas.localConnectionNonAuth=false`.
 The helper uses them for `--command` and exit cleanup automatically.
 For interactive diagnosis, if prompted, enter `auth --username diagnostics <arthas-password>` in the Arthas console.
 When reusing an existing agent, provide its existing credentials; the options do not change them.
 Password arguments may appear in shell history and process listings; handle them on a trusted host.
-With `--username` alone, native Arthas generates a password in the target JVM's Arthas log. Supply `--password` for authenticated batch commands and cleanup.
-If cleanup fails, the helper returns nonzero and the agent may remain running; use the logged password with native `auth`, then `stop`, to close it.
+With `--username` alone, Arthas generates a password only when none is already configured in the target JVM's native settings;
+otherwise it inherits that password.
+Supply `--password` for authenticated batch commands and cleanup. If cleanup fails, the helper returns nonzero and the agent may remain running;
+use its configured or generated credentials with native `auth`, then `stop`, to close it.
 
 Authentication is optional and follows Arthas defaults. `arthas.localConnectionNonAuth=true` permits connections from `127.0.0.1` to skip authentication.
 The helper uses a private configuration, so editing `lib/arthas/arthas.properties` does not configure it; if needed, it honors the target JVM property
-`-Darthas.localConnectionNonAuth=false` after restarting that JVM. When binding `0.0.0.0` or `::` without an explicit password, Arthas 4.1.5
+`-Darthas.localConnectionNonAuth=false` after restarting that JVM. When binding `0.0.0.0` or `::` without an effective native password, Arthas 4.1.5
 creates a password and prints it in the target JVM output and Arthas log. Supplying credentials explicitly is more convenient for remote use and cleanup.
 Authentication does not encrypt ordinary telnet or HTTP traffic; use a protected network or encrypted transport for remote access.
 

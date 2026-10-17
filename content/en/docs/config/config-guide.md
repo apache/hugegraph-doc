@@ -123,6 +123,7 @@ memory_monitor.period=2000
 > Commands are unrestricted by default; `arthas.disabled_commands` optionally lists comma-separated commands such as `jad,mc`.
 > We recommend native authentication before exposing diagnostic ports. For API activation, set `-Darthas.username=...` and `-Darthas.password=...`
 > on the Server JVM and restart. These native JVM properties may expose secrets in process listings; they are not REST configuration keys.
+> They also apply to [local helper agents](/docs/clients/restful-api/other/#1116-start-the-arthas-agent); supply matching `--username`/`--password`.
 > Credentials still allow clients from `127.0.0.1` to bypass authentication unless the service JVM uses
 > `-Darthas.localConnectionNonAuth=false` (restart required).
 > Restrict host, Pod and port-forward access to trusted operators; wildcard listeners may accept both IPv4 and IPv6, so firewall both.

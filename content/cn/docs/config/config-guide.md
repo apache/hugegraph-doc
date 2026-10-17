@@ -120,8 +120,10 @@ memory_monitor.period=2000
 > Arthas 默认监听 `127.0.0.1`，独立于 REST 监听地址；管理员可显式配置其他监听地址，包括 `0.0.0.0`。
 > 默认不禁用命令；可在 `arthas.disabled_commands` 中按需填写以逗号分隔的命令，如 `jad,mc`。
 > 建议对外暴露前启用 Arthas 原生认证。API 激活的凭据通过 Server JVM 的 `-Darthas.username=...` 和 `-Darthas.password=...` 设置，需重启生效。
-> 这些原生 JVM 属性可能在进程列表中暴露凭据，不是 REST 配置项。即使设置凭据，来自 `127.0.0.1` 的客户端默认仍可免认证，
-> 除非在服务 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启。请将宿主机、Pod 和 port-forward 访问限制为可信运维人员。
+> 这些原生 JVM 属性可能在进程列表中暴露凭据，不是 REST 配置项。
+> 这些凭据也适用于[本地脚本挂载的代理](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)；请传入匹配的 `--username`/`--password`。
+> 即使设置凭据，来自 `127.0.0.1` 的客户端默认仍可免认证，除非在服务 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启。
+> 请将宿主机、Pod 和 port-forward 访问限制为可信运维人员。
 > 通配监听可能同时接受 IPv4 和 IPv6，请同时限制两者的防火墙规则。配置就绪后，可通过已认证的管理员或本地脚本[启动诊断](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)，无需再重启 JVM。
 
 > 配置项 gremlinserver.url 是 GremlinServer 为 RestServer 提供服务的 url，该配置项默认为 http://127.0.0.1:8182，如需修改，需要和 gremlin-server.yaml 中的 host 和 port 相匹配；该值可以像模板那样省略协议前缀，缺失时会自动补上 `http://`。

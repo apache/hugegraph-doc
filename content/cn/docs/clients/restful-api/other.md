@@ -280,6 +280,7 @@ PUT http://localhost:8080/whiteiplist?status=true
 > - **默认本地监听**：Arthas 默认监听 `127.0.0.1`；管理员可显式配置其他有效地址，包括 `0.0.0.0`。
 > - **推荐原生认证**：建议开启 Arthas 原生认证，尤其是在对外暴露诊断端口前。HugeGraph 管理员鉴权只保护激活入口。
 >   API 激活使用的原生凭据需通过 Server JVM 的 `-Darthas.username=...` 和 `-Darthas.password=...` 设置并重启生效，不是 REST 配置项。
+>   这些 JVM 凭据也适用于脚本新挂载的代理；认证命令和自动清理时，请传入相匹配的 `--username`/`--password`。
 >   未设置原生凭据时，特定非 loopback 地址上的代理不要求登录。即使设置了凭据，默认仍允许来自 `127.0.0.1` 的连接免认证，
 >   包括其他 OS 用户或同 Pod 内的容器；如需关闭，请在服务 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启。
 >   请将宿主机、Pod 及 port-forward 访问权限限制为可信运维人员，收紧防火墙、端口映射和转发规则；通配监听可能同时接受 IPv4 和 IPv6，取决于 OS/JVM 配置。
@@ -332,15 +333,18 @@ bin/arthas.sh --target-ip 0.0.0.0 \
 ```
 
 凭据需为单行；建议使用可打印 ASCII，避免包内 Arthas 4.1.5 telnet 客户端的 Unicode 限制。仅传密码时用户名默认为 `arthas`。
+JVM 原生凭据也适用于脚本新挂载的代理；省略参数不会清除目标 JVM 的原生凭据设置。
+若已设置 `-Darthas.username`/`-Darthas.password`，请传入匹配的 `--username`/`--password`，尤其是同时设置了 `-Darthas.localConnectionNonAuth=false` 时。
 这组凭据独立于 HugeGraph 账号，脚本会自动将其用于 `--command` 和退出清理。
 交互诊断时若提示需要认证，请在 Arthas 控制台输入 `auth --username diagnostics <arthas-password>`。
 复用已有代理时应提供其原有凭据，脚本参数不会修改它。密码参数可能出现在 shell 历史及进程列表中，请在可信主机上妥善处理。
-仅提供 `--username` 时，原生 Arthas 会生成密码并记录于目标 JVM 的 Arthas 日志。建议提供 `--password`，方便认证批处理及自动清理。
-清理失败时脚本返回非零，代理可能仍在运行；请使用日志中的密码通过原生 `auth` 认证，再执行 `stop` 关闭代理。
+仅提供 `--username` 且目标 JVM 的原生设置中没有现成密码时，Arthas 才会生成密码并写入日志；否则会继承已有密码。
+建议提供 `--password`，方便认证批处理及自动清理。清理失败时脚本返回非零，代理可能仍在运行；
+请使用已配置或生成的凭据通过原生 `auth` 认证，再执行 `stop` 关闭代理。
 
 认证保持可选，并遵循 Arthas 默认行为。`arthas.localConnectionNonAuth=true` 允许来自 `127.0.0.1` 的连接免认证。
 脚本使用独立配置，编辑 `lib/arthas/arthas.properties` 不会配置本脚本；如有需要，可在目标 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启生效。
-未显式提供密码且监听 `0.0.0.0` 或 `::` 时，Arthas 4.1.5 会生成密码并打印至目标 JVM 输出及 Arthas 日志；显式提供凭据更方便远程使用和清理。
+未配置有效的原生密码且监听 `0.0.0.0` 或 `::` 时，Arthas 4.1.5 会生成密码并打印至目标 JVM 输出及 Arthas 日志；显式提供凭据更方便远程使用和清理。
 认证不会加密普通 telnet 或 HTTP 流量；远程访问请使用受保护网络或加密传输。
 
 默认不禁用任何命令，管理员可按需配置以逗号分隔的列表，例如 `jad,mc`。

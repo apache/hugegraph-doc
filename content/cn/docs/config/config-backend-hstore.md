@@ -112,6 +112,7 @@ hstore 的 Docker 镜像会自动套用这份模板：它删除 `conf/graphs/hug
 |------------------------|--------|-----------------------------------------------------------------|
 | hstore.partition_count | 0      | 分区数量，PD 依据该值控制分区（Number of partitions）。         |
 | hstore.shard_count     | 0      | 副本数量，PD 依据该值控制分区副本（Number of copies）。         |
+{.td-table--wide}
 
 #### 4.1 hstore.partition_count
 
@@ -146,6 +147,7 @@ PD 对该值的处理方式：
 | graph.load_from_local_config | rest-server.properties | false          | 控制构造阶段预加载。应用初始化仍扫描并尝试加载本地配置，`false` 不会阻止本地加载。图配置变化通过重启 Server 应用。 | `ServerOptions.java:366-372` |
 | auth.graph_store             | rest-server.properties | hugegraph      | 保存权限数据的图，关闭 init-store 时会校验它使用 `hstore` 后端    | `ServerOptions.java:602-609` |
 | graphspace                   | {graph}.properties     | DEFAULT        | PD 看到的图名的第一段                                             | `CoreOptions.java:679-685`   |
+{.td-table--wide}
 
 `init-store.sh` 从不初始化 `hstore` 图。在开启的路径上，它扫描 `conf/graphs` 并跳过后端为 `hstore` 的每一个图。如果用 `init_store.enabled=false` 整体关闭这一步，它会改为校验 admin 账号仍然能在 PD 启动路径上被创建：
 `usePD` 必须为 true、权限图必须存在于本地配置中且后端为 `hstore`、`auth.admin_pa` 必须显式设置为非空值。否则启动会直接失败，而不是使用公开的默认密码创建账号。

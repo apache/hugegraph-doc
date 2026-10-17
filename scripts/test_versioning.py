@@ -1205,6 +1205,65 @@ class VersionUrlTest(unittest.TestCase):
                     self.assertNotIn("performance/api-performance", summary)
                     self.assertEqual(summary.count("performance/api-preformance"), 3)
 
+    def test_historical_catalog_wide_tables_preserve_quotes_fences_and_attributes(self) -> None:
+        table = "| config option | default value | description |\n|---|---|---|\n| gremlin.graph | value | detail |\n"
+        ordinary = "| Name | Description |\n|---|---|\n| Simple | ordinary table |\n"
+        quoted = "".join("> " + line for line in table.splitlines(keepends=True)).replace("> | gremlin", ">| gremlin")
+        fenced = "```markdown\n" + table + "```\n\n" + "> ~~~markdown\n" + quoted + "> ~~~\n"
+        existing = '{#catalog .existing data-label="preserve } here"}\n'
+        source = table + existing + "\n" + quoted + "\n" + ordinary + "\n" + fenced
+        with tempfile.TemporaryDirectory() as temporary:
+            page = Path(temporary) / "config-option.md"
+            page.write_text(source, encoding="utf-8")
+            self.assertEqual(versioning.ensure_legacy_config_tables_wide(page), 2)
+            rendered = page.read_text(encoding="utf-8")
+            self.assertIn('{#catalog .existing data-label="preserve } here" .td-table--wide}\n', rendered)
+            self.assertIn(quoted + "> {.td-table--wide}\n", rendered)
+            self.assertIn(ordinary, rendered)
+            self.assertIn(fenced, rendered)
+            self.assertEqual(versioning.ensure_legacy_config_tables_wide(page), 0)
+            self.assertEqual(page.read_text(encoding="utf-8"), rendered)
+
+    def test_historical_catalog_preserves_already_wide_attributes(self) -> None:
+        source = (
+            "| config option | default value | description |\n|---|---|---|\n| key | value | detail |\n"
+            '{#catalog class="td-table--wide other"}\n'
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            page = Path(temporary) / "config-option.md"
+            page.write_text(source, encoding="utf-8")
+            self.assertEqual(versioning.ensure_legacy_config_tables_wide(page), 0)
+            self.assertEqual(page.read_text(encoding="utf-8"), source)
+
+    def test_known_legacy_catalog_adapter_is_bound_to_versions_languages_and_paths(self) -> None:
+        source = (
+            "---\ntitle: Config\n---\n"
+            "| config option | default value | description |\n|---|---|---|\n| gremlin.graph | value | detail |\n"
+            "\n" + "[legacy](/en/docs/)\n" * 4
+        )
+        for version in ("1.7", "1.5", "1.3", "1.0", "latest", "2.0"):
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as temporary:
+                assembly = Path(temporary)
+                for language in ("en", "cn"):
+                    for name in ("config-option.md", "config-computer.md", "unrelated.md"):
+                        page = assembly / f"content/{language}/docs/config/{name}"
+                        page.parent.mkdir(parents=True, exist_ok=True)
+                        page.write_text(source, encoding="utf-8")
+                with (
+                    mock.patch.object(versioning, "apply_exact_legacy_content_fixes", return_value=0),
+                    mock.patch.object(versioning, "repair_historical_performance_routes", return_value=0),
+                    mock.patch.object(versioning, "normalize_historical_server_headings", return_value=0),
+                    mock.patch.object(versioning, "first_existing_path", return_value=assembly / "server.md"),
+                ):
+                    versioning.apply_known_legacy_fixes(assembly, version)
+                for language in ("en", "cn"):
+                    for name in ("config-option.md", "config-computer.md", "unrelated.md"):
+                        page = assembly / f"content/{language}/docs/config/{name}"
+                        expected = version in {"1.7", "1.5", "1.3", "1.0"} and name != "unrelated.md"
+                        self.assertEqual("{.td-table--wide}" in page.read_text(encoding="utf-8"), expected)
+                        if version in {"latest", "2.0"}:
+                            self.assertEqual(page.read_text(encoding="utf-8"), source)
+
     def test_scopes_root_relative_urls(self) -> None:
         self.assertEqual(rewrite("/docs/"), "/versions/1.7/docs/")
         self.assertEqual(

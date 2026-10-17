@@ -5,7 +5,7 @@
   "cn" (dict "title" "项目成员" "lead" "Apache HugeGraph 当前的 PMC 成员与 Committers，数据来自 ASF 记录。" "guide" "(注: 如何成为 HugeGraph Committer)" "guideNote" "" "chair" "主席" "pmc" "PMC" "committers" "Committers" "github" "的 GitHub 主页")
 -}}
 {{- $copy := index $labels $page.Language.Lang | default (index $labels "en") -}}
-{{- $style := resources.Get "scss/community-members.scss" | toCSS | minify | fingerprint -}}
+{{- $style := resources.Get "scss/community-members.scss" | css.Sass (dict "transpiler" "dartsass") | minify | fingerprint -}}
 <link rel="stylesheet" href="{{ $style.RelPermalink }}" integrity="{{ $style.Data.Integrity }}" crossorigin="anonymous">
 <section id="project-members" class="td-landing-section hg-community-members" aria-labelledby="project-members-title">
   <div class="td-site-container">

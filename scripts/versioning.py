@@ -1499,6 +1499,61 @@ def first_existing_path(assembly: pathlib.Path, candidates: tuple[str, ...]) -> 
     return matches[0]
 
 
+def ensure_legacy_config_tables_wide(path: pathlib.Path) -> int:
+    """Opt frozen technical catalogs into OINK's native horizontal table layout."""
+    source = path.read_text(encoding="utf-8")
+    lines = source.splitlines(keepends=True)
+    result: list[str] = []
+    fence: str | None = None
+    fixed = 0
+    index = 0
+
+    def parts(line: str) -> tuple[str, str]:
+        match = re.match(r"^( {0,3}(?:>[ \t]*)?)(.*)$", line.rstrip("\r\n"))
+        assert match
+        return match[1], match[2]
+
+    while index < len(lines):
+        prefix, body = parts(lines[index])
+        if fence is not None:
+            if re.fullmatch(rf" {{0,3}}{re.escape(fence[0])}{{{len(fence)},}}[ \t]*", body):
+                fence = None
+        else:
+            opening = MARKDOWN_FENCE_OPEN_RE.match(body)
+            if opening:
+                fence = opening.group("marker")
+            elif ([cell.strip().lower() for cell in body.strip().strip("|").split("|")]
+                  == ["config option", "default value", "description"]
+                  and index + 1 < len(lines)
+                  and parts(lines[index + 1])[0].strip() == prefix.strip()
+                  and re.fullmatch(r"\|(?:[ \t]*:?-{3,}:?[ \t]*\|){3}", parts(lines[index + 1])[1].strip())):
+                end = index + 2
+                while end < len(lines) and parts(lines[end])[0].strip() == prefix.strip() and parts(lines[end])[1].startswith("|"):
+                    end += 1
+                result.extend(lines[index:end])
+                attribute = parts(lines[end])[1].strip() if end < len(lines) and parts(lines[end])[0].strip() == prefix.strip() else ""
+                if attribute.startswith("{") and attribute.endswith("}"):
+                    if not re.search(r"(?<![\w-])td-table--wide(?![\w-])", attribute):
+                        closing = lines[end].rfind("}")
+                        result.append(lines[end][:closing] + " .td-table--wide" + lines[end][closing:])
+                        fixed += 1
+                    else:
+                        result.append(lines[end])
+                    end += 1
+                else:
+                    if not result[-1].endswith("\n"):
+                        result[-1] += "\n"
+                    result.append(prefix + "{.td-table--wide}\n")
+                    fixed += 1
+                index = end
+                continue
+        result.append(lines[index])
+        index += 1
+    if fixed:
+        path.write_text("".join(result), encoding="utf-8")
+    return fixed
+
+
 def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
     fixed = 0
     if version in {"1.7", "1.5", "1.3", "1.0"}:
@@ -1545,6 +1600,12 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
                 page = assembly / f"content/{language}/docs/{relative}"
                 if page.is_file():
                     fixed += ensure_search_metadata(page, keywords=keywords, boost=1.5)
+            # These two frozen catalogs used the former global table CSS.
+            # Keep ordinary tables native and opt only their technical headers in.
+            for catalog in ("config-option.md", "config-computer.md"):
+                page = assembly / f"content/{language}/docs/config/{catalog}"
+                if page.is_file():
+                    fixed += ensure_legacy_config_tables_wide(page)
             summary_path = assembly / f"content/{language}/docs/SUMMARY.md"
             if version in {"1.7", "1.5"}:
                 fixed += repair_historical_performance_routes(summary_path)

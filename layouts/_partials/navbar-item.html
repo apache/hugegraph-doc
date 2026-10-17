@@ -1,4 +1,4 @@
-{{- /* OINK override (reviewed against v1.1.0): Documentation gains manifest-driven versions.
+{{- /* OINK override (reviewed against v1.3.1): Documentation gains manifest-driven versions.
      One top-level Hugo Menu item. Leaves keep the historical link path;
      parents add a separate disclosure and one dropdown/accordion panel. */ -}}
 {{- $page := .page -}}
@@ -18,7 +18,7 @@
   {{- if not $target.Host -}}
     {{- $targetPage := $page.Site.GetPage $target.Path -}}
     {{- if and (not $targetPage) $page.Site.LanguagePrefix
-          (hasPrefix $target.Path $page.Site.LanguagePrefix) -}}
+          (or (eq $target.Path $page.Site.LanguagePrefix) (hasPrefix $target.Path (printf "%s/" $page.Site.LanguagePrefix))) -}}
       {{- $targetPage = $page.Site.GetPage
           (strings.TrimPrefix $page.Site.LanguagePrefix $target.Path) -}}
     {{- end -}}

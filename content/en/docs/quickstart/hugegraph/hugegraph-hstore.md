@@ -132,6 +132,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | No | `8500` | `grpc.port` | gRPC service port. |
 | `HG_STORE_REST_PORT` | No | `8520` | `server.port` | REST API port. |
 | `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` | Data path. |
+| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | No | None | `rocksdb.total_memory_size` | RocksDB memory budget in bytes, digits only; other values stop the entrypoint with exit code 2. When unset, the value in `application-pd.yml` or auto-sizing applies. |
 {.td-table--wide}
 
 The master entrypoint writes these values into `SPRING_APPLICATION_JSON`, overriding image `conf/application.yml`. Other options still come from that file and `application-pd.yml`; Java runs in the foreground. Deprecated `PD_ADDRESS`, `GRPC_HOST`, and `RAFT_ADDRESS` remain supported with warnings.
@@ -147,7 +148,7 @@ Store reads two files under `conf/`. Release 1.7.0 sources: [application.yml](ht
 
 #### 4.1 application.yml
 
-The following tables were checked against distribution values and Java defaults at Server master commit `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4`. Use tagged configuration for release 1.7.0 without replacing it with another version's files.
+The following tables were checked against distribution values and Java defaults at Server master commit `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4`, except the `rocksdb.total_memory_size`, `rocksdb.write_buffer_size` and `raft.disruptorBufferSize` rows, which describe apache/hugegraph#3355. Use tagged configuration for release 1.7.0 without replacing it with another version's files.
 
 #### 4.2 application-pd.yml
 
@@ -180,7 +181,7 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | Key | Master distribution value | Code default | Meaning |
 |-----|---------|--------------|---------|
 | `raft.address` | `127.0.0.1:8510` | required | Raft service address of this node, `host:port`. Must be reachable from every other Store node. There is no peer list to configure: PD tells each node which peers belong to a partition's Raft group. |
-| `raft.disruptorBufferSize` | `1024` | `0` | Raft task queue size. `0` derives it from `rocksdb.total_memory_size`, by rounding that size in GB to the nearest power of two and multiplying by 32. |
+| `raft.disruptorBufferSize` | `1024` | `0` | Raft task queue size. `0` derives it from `rocksdb.total_memory_size`, by rounding that size in GB (at least 1) to the nearest power of two and multiplying by 32. |
 | `raft.max-log-file-size` | `600000000000` | `50000000000` | Maximum byte size of Raft logs. |
 | `raft.snapshotInterval` | `1800` | `300` | Seconds between Raft snapshots. |
 | `raft.snapshotLogIndexMargin` | not set | `0` | Minimum applied-index distance since the last snapshot before a snapshot is actually written. `0` disables the distance check. |
@@ -209,8 +210,8 @@ This file contains only `rocksdb` and Actuator exposure settings.
 
 | Key | Master distribution value | Code default | Meaning |
 |-----|---------|--------------|---------|
-| `rocksdb.total_memory_size` | `32000000000` | `51539607552` | Memory budget shared by all RocksDB instances on this node. When absent or `0`, the node uses the JVM max heap instead. |
-| `rocksdb.write_buffer_size` | `32000000` | `33554432` | Memtable size in bytes. When absent or `0`, the node uses `total_memory_size / 1000`. |
+| `rocksdb.total_memory_size` | `0` | Auto-sized, see Meaning | Memory budget in bytes shared by all RocksDB instances on this node, split into the write cache and the block cache by `write_buffer_ratio`. Both caches are off-heap, so `-Xmx` does not limit them, and a fixed 1 GiB Raft log cache comes on top. When absent or `0`, the node uses half of the memory left after the JVM max heap, `MaxDirectMemorySize` (counted as the heap size when unset; `bin/start-hugegraph-store.sh` sets it to the heap it picks unless `-j` sets `-Xmx`, `-XX:MaxHeapSize` or the cap itself) and a 1.5 GiB reserve, clamped to 256 MiB to 32 GB. In a container the starting point is the cgroup memory limit when one is set, including a limit set only on a parent cgroup the Store can see; otherwise it is the host's memory. An `application-pd.yml` kept from an earlier release still sets `32000000000`; set it to `0` to auto-size. A positive value is used as given and must be plain bytes, at least `1048576` (1 MiB); a smaller value or one such as `4GB` stops startup. |
+| `rocksdb.write_buffer_size` | `32000000` | `33554432` | Memtable size in bytes. When absent or `0`, the node uses `total_memory_size / 1000`, at least `1048576` (1 MiB). |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | Number of memtables merged together before a flush. |
 | `rocksdb.write_buffer_ratio` | not set | `0.66` | Share of `total_memory_size` given to the write cache. The rest becomes the block cache. |
 {.td-table--wide}
@@ -330,7 +331,7 @@ Daemon mode:
 - `-d true` (default): run as a background daemon. The script returns immediately and writes the Java pid to `bin/pid`.
 - `-d false`: run in the foreground. The script `exec`s Java, so the container or supervisor process is Java itself. Use this under Docker or a process supervisor (systemd, supervisord) so crashes are detected and the service is restarted automatically.
 
-JVM memory, unless you set `JAVA_OPTIONS` yourself: `-Xms512m`, and `-Xmx` set to half the free memory, clamped to the 512 MB to 2048 MB range. The script also adds `-XX:MetaspaceSize=256M`, a heap dump on out-of-memory into `logs/`, and a rolling GC log at `logs/gc.log`. Production nodes normally need a much larger heap, so pass one explicitly, for example `-j "-Xmx32g -Xms32g"`.
+JVM memory, unless you set `JAVA_OPTIONS` yourself: `-Xms512m`, and `-Xmx` set to half the free memory, clamped to the 512 MB to 2048 MB range. The script also adds `-XX:MaxDirectMemorySize` equal to that heap, `-XX:MetaspaceSize=256M`, a heap dump on out-of-memory into `logs/`, and a rolling GC log at `logs/gc.log`. Production nodes normally need a much larger heap, so pass one explicitly together with a direct-memory cap, for example `-j "-Xmx32g -Xms32g -XX:MaxDirectMemorySize=2g"`. Without the cap the JVM allows as much direct memory as the 32 GB heap, the RocksDB budget counts it, and on a host with less than about 66 GB it falls to the 256 MiB floor.
 
 The script refuses to start if `ulimit -n` or `ulimit -u` is below 1024, and it preloads jemalloc on x86_64 and arm64 when the shared object can be downloaded and verified.
 

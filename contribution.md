@@ -132,6 +132,9 @@ Do not restore these behaviors with site-wide table or FileTree CSS.
 
 Use Mermaid for relationships and flows, Markmap for a text hierarchy, and ECharts
 for quantitative comparisons; keep chart data and test conditions alongside the chart.
+
+### Image loading and albums
+
 Use [Gallery](https://oink.pgsty.com/docs/components/gallery/) for a few screenshots
 inside a tutorial. Use [Expo](https://oink.pgsty.com/docs/write/expo/) when the images
 are the main content of an independent album: a section with `type: expo` and
@@ -142,6 +145,31 @@ wall, masonry and seamless layouts plus original-image viewing; image captions,
 credits and ordering belong in Hugo resource metadata. It does not replace the
 step-by-step explanation in a tutorial. These are authoring examples, not routes
 that this site publishes automatically.
+
+OINK 1.3 adds these loading behaviors to Expo albums:
+
+- Processable local images get previews fitted within 960 × 960 pixels in WebP
+  when either side exceeds 960 pixels or the file is a GIF; other images reuse
+  their original file.
+  The viewer retains the original file and shows the cached preview while it loads.
+- The first four tiles load eagerly, with high priority on the first; later tiles
+  are lazy. Viewing an original preloads one neighboring image on each side.
+- Card layouts batch geometry reads and writes, and known image dimensions avoid
+  another layout pass after each image loads.
+
+Gallery retains native lazy loading, asynchronous decoding and the shared image
+viewer. It does not generate those Expo previews or preload neighboring originals.
+Keep explanatory screenshots in Gallery rather than changing a guide into an album.
+For standalone static images, supply intrinsic `width` and `height` through native
+Markdown attributes to reserve space before loading. These attributes do not compress
+the image. Avoid repeating the same screenshot in a gallery and again at full width.
+
+Check the pinned templates and generated HTML before claiming a loading improvement;
+measure network bytes and timing separately. See the
+[upstream loading change](https://github.com/pgsty/oink/commit/33d5e652ce986e1c197bb87fd588fd3c55851c69)
+and [tagged Expo preview implementation](https://github.com/pgsty/oink/blob/v1.3.1/layouts/_partials/expo/items.html).
+
+### Content and output checks
 
 Published Markmap diagrams are limited to text outlines and code. Only a finite,
 nonnegative `spacingHorizontal` is allowed in frontmatter; active images, links, raw HTML

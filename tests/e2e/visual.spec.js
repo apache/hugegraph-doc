@@ -53,6 +53,16 @@ const states = [
       [`${language}-selected-terminal-mobile`, `${prefix}/community/documentation/`, { width: 390, height: 844 }, "light", "terminal"],
       [`${language}-selected-jaccard-math`, `${prefix}/docs/clients/restful-api/traverser/`, { width: 1440, height: 1000 }, "light", "math"]
     ];
+  }),
+  ...["en", "cn"].flatMap(language => {
+    const prefix = language === "cn" ? "/cn" : "";
+    return ["desktop", "mobile"].flatMap(device => {
+      const viewport = device === "desktop" ? { width: 1440, height: 1000 } : { width: 390, height: 844 };
+      return [
+        [`${language}-hubble-import-${device}`, `${prefix}/docs/quickstart/toolchain/hugegraph-hubble/`, viewport, "light", "hubble-import"],
+        [`${language}-hubble-nodes-${device}`, `${prefix}/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/`, viewport, "light", "hubble-nodes"]
+      ];
+    });
   })
 ];
 
@@ -68,6 +78,7 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
     );
     await page.goto(url);
     await expect(page.locator("body")).toBeVisible();
+    let sectionHeading;
     if (["gallery", "chart", "longcode", "markmap", "terminal", "math"].includes(state)) {
       const selector = { gallery: ".td-gallery", chart: "[data-td-echarts-canvas]",
         longcode: "[data-td-collapse-lines]", markmap: ".markmap svg",
@@ -110,6 +121,17 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
         await expect.poll(() => component.locator(".ap-term-text .ap-line span").first()
           .evaluate(node => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(11);
       }
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    } else if (state === "hubble-import" || state === "hubble-nodes") {
+      const chinese = url.startsWith("/cn/");
+      const headingId = state === "hubble-import"
+        ? (chinese ? "数据导入从字段映射到可查询的图" : "data-import-turn-fields-into-a-queryable-graph")
+        : (chinese ? "节点详情读什么" : "read-node-details");
+      const heading = page.locator(`[id="${headingId}"]`);
+      sectionHeading = heading;
+      await expect(heading).toBeVisible();
+      await heading.scrollIntoViewIfNeeded();
+      await page.waitForLoadState("networkidle");
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     } else if (state === "pd") {
       // Content-based selection works for both the old local class and native wide tables.
@@ -176,10 +198,24 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
       }).map(image => image.decode().catch(() => {})));
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     });
+    if (sectionHeading) {
+      // Align after fonts and lazy images settle; compare the same section,
+      // not unchanged page headers or different points in the article.
+      await expect(async () => {
+        await sectionHeading.evaluate(async node => {
+          window.scrollTo({ top: window.scrollY + node.getBoundingClientRect().top - 108, behavior: "instant" });
+          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        });
+        expect(await sectionHeading.evaluate(node => Math.abs(node.getBoundingClientRect().top - 108))).toBeLessThan(2);
+      }).toPass();
+    }
     await page.screenshot({
       animations: "disabled",
       path: path.join(directory, `${name}.png`),
-      fullPage: !["gallery", "chart", "longcode", "markmap", "terminal", "math", "pd", "computer", "config-api", "helm", "footer"].includes(state)
+      fullPage: !["gallery", "chart", "longcode", "markmap", "terminal", "math", "pd", "computer", "config-api", "helm", "footer", "hubble-import", "hubble-nodes"].includes(state)
     });
+    if (sectionHeading) {
+      expect(await sectionHeading.evaluate(node => Math.abs(node.getBoundingClientRect().top - 108))).toBeLessThan(2);
+    }
   });
 }

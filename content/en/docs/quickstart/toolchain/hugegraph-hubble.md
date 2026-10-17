@@ -1,9 +1,9 @@
 ---
 title: "Graph Visualization with Hubble: Standalone Quick Start"
-description: "Visualize graph data with Hubble and RocksDB Server: start with Docker, explore schema, import CSV, and run Gremlin queries."
+description: "Use Hubble and RocksDB Server to manage schema, import CSV, and query graph data with Gremlin, Cypher, or Text2GQL."
 linkTitle: "Hubble Basics and Standalone"
 weight: 1
-search_keywords: [HugeGraph Hubble, graph visualization, Web management interface, RocksDB]
+search_keywords: [HugeGraph Hubble, graph visualization, Web management interface, RocksDB, Text2GQL, natural-language queries, Prompt]
 search_boost: 1.6
 ---
 
@@ -11,12 +11,11 @@ Hubble is the HugeGraph Web management and graph visualization interface. Use on
 and switch between graph, table, and JSON results. This guide uses **standalone RocksDB Server + Hubble**, without PD or Store.
 
 For HStore, read the shared operations here first, then follow the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
-This guide follows Toolchain `master` (currently `1.8.0`); Docker `latest` is mutable, so check the actual running versions.
+This guide follows Toolchain and Server `master` (both currently `1.8.0`); Docker `latest` is mutable, so verify the deployed versions.
 
 > [!WARNING]
 > Do not expose Hubble or Server directly to the public network. In production, use HTTPS, containers,
 > [authentication and authorization](/docs/config/config-authentication/), and an access allowlist.
-
 
 ## Start the standalone pair
 
@@ -59,9 +58,12 @@ Personal and account-management pages depend on the authentication mode and your
 
 Use `latest` to try current features, and pin a published image version or digest for production.
 Images are convenience distributions; official release archives are on the [download page](/docs/download/download/).
-The algorithm and account screenshots use Hubble built from Toolchain `1.8.0` with Server `1.7.0`. Hubble currently returns the static value
-`3.0.0` from `/about`, which does not identify the build version. This pairing describes those screenshots, not a fixed meaning of `latest`.
 Available controls depend on Server capabilities.
+
+> [!DETAILS]- Verify the deployed versions
+>
+> Screenshots help locate controls. Verify actual versions from the deployed image digests and build information.
+
 Compose's `server-data` and `hubble-data` retain graph data and Hubble metadata respectively. For further persistence and production settings,
 see the [Server deployment guide](/docs/quickstart/hugegraph/hugegraph-server/).
 
@@ -85,8 +87,7 @@ check the current graph after changing pages. Standalone mode has only the `DEFA
 
 ### Interface at a glance
 
-Explore the graph overview, schema, and query workspaces in this gallery. Click an image to zoom; the operation sections below retain
-full-size screenshots for following each step.
+Compare the graph overview, schema, and query workspaces below. Click a screenshot to view the original.
 
 ```gallery
 ![Graph overview with the person/software sample](/docs/images/hubble/overview.jpg) # Graph overview: select a graph and inspect sample data
@@ -103,8 +104,6 @@ Statistics describe overall size; update them after importing or modifying data.
 Load the **People & Software Demo Graph** from the graph's **More actions** menu. Samples add their schema and missing elements
 without clearing existing data. Start with an empty graph to avoid conflicting schema names.
 The remaining examples explore the people and software in this graph.
-
-![Graph overview with the person/software sample](/docs/images/hubble/overview.jpg)
 
 Graph creation depends on Server capabilities. Its form accepts a name, optional alias, and schema or sample;
 it does not configure a Server host or account per graph. The connection comes from Hubble configuration.
@@ -126,8 +125,6 @@ In the person/software sample, `person` generates IDs from the primary key `name
 `software` has custom numeric IDs, and `created` connects people to software. This matches the
 [Loader example](/docs/quickstart/toolchain/hugegraph-loader/).
 
-![Vertex labels with primary-key and numeric ID strategies](/docs/images/hubble/schema.jpg)
-
 For a new model, define properties, vertex labels, edge labels, then indexes. Associated-property and index information help inspect dependencies.
 Schema deletion and index creation/rebuild may submit background tasks. Acceptance of an operation is only the first step;
 confirm its final status in **Async Tasks**.
@@ -147,8 +144,6 @@ Inspect person properties in table or JSON view. To visualize the people-to-soft
 g.V().hasLabel('person').outE('created').inV().path()
 ```
 
-![Gremlin path query and graph result](/docs/images/hubble/query.jpg)
-
 Graph results support 2D / 3D. Click a vertex or edge to inspect its ID, label, and properties; double-click a vertex to expand its neighbors.
 Layout, styling, and filtering help highlight relevant relationships, while export helps share results.
 Use **New** to create elements, or edit existing data when authorized. Layout, colors, and display limits only change presentation;
@@ -156,7 +151,40 @@ adding/editing elements and Gremlin writes change Server data.
 
 Use `Ctrl` / `Command` + `Enter` to execute. Immediate mode suits small explorations; submit long queries asynchronously
 and avoid returning an entire large graph. Cypher is available only when Server supports it.
-Text2GQL is currently a UI preview with no model or query service connected; it cannot generate executable queries.
+The shortcut generates a query from the focused natural-language input, or runs the statement from the focused query editor.
+
+### Text2GQL natural-language queries {#text2gql}
+
+Describe a question in **Natural language**. Text2GQL uses the current graph's schema to generate and execute read-only Gremlin or Cypher.
+Generated statements remain editable and retain read-only checks after editing. **Async** mode supports both generated and manual queries.
+Inputs restore the graph's latest record for each language without running it; the **Natural language** column retains the original question.
+
+```gallery
+![Text2GQL query and graph results](/docs/images/hubble/text2gql.jpg) # Query workspace
+![Shared model settings](/docs/images/hubble/text2gql-settings.jpg) # Model settings
+![Gremlin and Cypher Prompt templates](/docs/images/hubble/text2gql-prompt.jpg) # Text2GQL Prompt
+```
+
+| Model source | Configuration and storage |
+| --- | --- |
+| Use built-in model | Configure under **System & Operations → Model settings**; Keys are encrypted in H2 and never returned to the browser |
+| Use temporary model | Enter the API type, Base URL, model name, and temporary API Key on the query page; the Key clears on refresh |
+
+Choose **OpenAI compatible** for OpenAI, DeepSeek, GLM, and similar services, or **Ollama (local)** for local Ollama; unauthenticated Ollama needs no Key.
+The Base URL must be reachable from Hubble's backend; container `localhost` refers to that container.
+Administrators manage shared settings. When Server authentication is disabled, anyone who can access the deployment can manage them.
+
+Open **Text2GQL Prompt** beside the model settings heading to edit separate Gremlin/Cypher instructions and few-shot examples.
+After **Apply**, save model settings to persist the templates in H2 for both built-in and temporary models.
+The current schema is appended automatically.
+
+> [!DETAILS]- Key backups and data storage
+>
+> Back up the master-key file with H2. Its default location is `data/text2gql-master.key`; losing it prevents decryption of saved Keys.
+> Generation sends the question, schema, and necessary correction information to the selected model, excluding query results.
+> Hubble execution records retain questions and statements. The browser can remember successful URLs and model names, but never temporary Keys.
+
+Input footers show model generation time and query request time separately. Async submission time excludes background execution.
 
 ## Built-in algorithms: explore with parameter forms
 
@@ -175,6 +203,7 @@ For example, select K-neighbor (GET) with `source=1:marko`, `max_depth=1`, and `
 After parameter validation, use the run button on the card or the form shortcut to explore one-hop neighbors.
 
 ![Built-in neighbor algorithm parameters and graph result](/docs/images/hubble/algorithms.jpg)
+{width="2033" height="977"}
 
 ## Async Tasks: confirm background results
 
@@ -209,12 +238,11 @@ Header, delimiter, and encoding belong to the data source, not mapping settings.
 **Data Import** converts source rows into vertices and edges. Its four configuration sections identify the target, select fields,
 map them to the graph, and choose execution timing. Use the preceding data source to create a person import into `DEFAULT` / `hugegraph`:
 
-| Section | Settings for this example |
-|---|---|
-| Basic Information | Target graph, new data source, and a recognizable task name |
-| Source Fields | Select `name`, `age`, and `city`, moving them to the selected field list |
-| Mapping Fields | Add a `person` vertex mapping; use **Auto Match** for same-name properties, then verify types |
-| Schedule | Choose one-time execution; confirmation submits the task immediately |
+1. **Basic Information** Select the target graph, new data source, and a task name.
+1. **Source Fields** Select `name`, `age`, and `city`, moving them to the selected field list.
+1. **Mapping Fields** Add a `person` vertex mapping; use **Auto Match** for same-name properties, then verify types.
+1. **Schedule** Choose one-time execution and confirm to submit the task.
+{.steps}
 
 `person` uses PRIMARY_KEY, so do not select a separate ID column. Custom ID strategies require an ID column;
 AUTOMATIC lets Server generate IDs, while PRIMARY_KEY derives them from mapped primary-key properties.
@@ -268,6 +296,7 @@ Older Servers may hide or disable unsupported operations; a visible button alone
 See the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/) for space management.
 
 ![Authenticated account list in PD mode](/docs/images/hubble/accounts.jpg)
+{width="2033" height="977"}
 
 ## Operations: inspect the standalone Server
 
@@ -318,7 +347,7 @@ docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volume
 This removes the project's containers, network, named volumes, and anonymous volume, losing the sample data and Hubble import tasks.
 To retain data, omit `--volumes` when taking the deployment down and reuse the same project name when starting it again.
 
-To obtain an exact master build, use JDK 11 and Maven. The Maven plugin installs the required Node/Yarn;
+To obtain an exact master build, use JDK 17 and Maven. The Maven plugin installs the required Node/Yarn;
 you do not need to install them separately. These commands skip tests:
 
 ```bash

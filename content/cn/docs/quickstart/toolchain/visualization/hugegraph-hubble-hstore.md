@@ -8,39 +8,40 @@ search_keywords: [HugeGraph Hubble, HStore, PD, GraphSpace, 集群管理]
 
 本篇补充 HStore + PD 部署与单机 RocksDB 的差异。建模、导入和查询的通用操作见
 [Hubble 基础与单机指南](/cn/docs/quickstart/toolchain/hugegraph-hubble/)。
-内容以 Toolchain `master` 为准。
+内容以 Toolchain、Server、PD 和 Store 的 `master`（当前均为 `1.8.0`）为准。
 
 主仓库的 [docker/docker-compose-hstore.yml](https://github.com/apache/hugegraph/blob/master/docker/docker-compose-hstore.yml)
 已提供 PD、Store、Server 与 Hubble 的组合。按同目录 [Docker README](https://github.com/apache/hugegraph/blob/master/docker/README.md)
 准备 `.env` 和生成的 Hubble 本地配置，再从 `docker/` 目录启动；不要另维护一份部署 YAML。
 下文配置用于解释连接差异，不能替代 README 中 PD 凭据及服务就绪的要求。
-图中使用 Toolchain `1.8.0` 构建的 Hubble 与 Server、PD、Store `1.7.0`。Hubble 的 `/about` 当前返回静态值 `3.0.0`，
-不能据此判断构建版本；此组合只对应本篇配图的运行环境，`latest` 标签会变化。不同版本可提供的指标和权限接口有所区别。
+Docker `latest` 是可变标签。配图用于定位界面，实际版本以部署使用的镜像 digest 和构建信息为准。
+不同版本可提供的指标和权限接口有所区别。
 
 ## 连接分布式集群
 
 Hubble 仍通过 **Server 的图 API** 管理数据。区别在于，分布式模式通过 PD 发现 Server，
 同时从 PD 和 Store 获取集群信息；Hubble 不直接读写 Store 中的图数据。
 
-使用官方 Compose 时，先按 Docker README 在主仓库的 `docker/` 目录准备 `.env`，再生成它挂载的 Hubble 配置：
+1. **生成 Hubble 配置。** 按 Docker README 在主仓库的 `docker/` 目录准备 `.env`。
 
-```bash
-set -a
-. ./.env
-set +a
-./set-hubble-pd-password.sh hstore
-```
+   ```bash
+   set -a
+   . ./.env
+   set +a
+   ./set-hubble-pd-password.sh hstore
+   ```
 
-脚本读取 `.env` 中已载入的 `HG_PD_AUTH_SECRET_KEY`，将 PD 运维密码写入宿主机的 `docker/conf/hubble/hstore.local.properties`。
-如需调整连接地址或运维配置，编辑这个生成文件，并保留生成的 `operations.pd.password`，使其与 PD 使用的密钥一致。
-不要覆盖为跟踪的 `.example` 模板。Compose 将它只读挂载到容器的 `/hubble/conf/hugegraph-hubble.properties`，
-不要进入容器修改。生成文件和 `.env` 都不应提交；以后重新运行脚本会覆盖生成文件，需要重新应用自定义配置。
+   脚本读取 `.env` 中已载入的 `HG_PD_AUTH_SECRET_KEY`，将 PD 运维密码写入宿主机的 `docker/conf/hubble/hstore.local.properties`。
+   如需调整连接地址或运维配置，编辑这个生成文件，并保留生成的 `operations.pd.password`，使其与 PD 使用的密钥一致。
+   不要覆盖为跟踪的 `.example` 模板。Compose 将它只读挂载到容器的 `/hubble/conf/hugegraph-hubble.properties`，
+   不要进入容器修改。生成文件和 `.env` 都不应提交；以后重新运行脚本会覆盖生成文件，需要重新应用自定义配置。
 
-在同一 `docker/` 目录启动组合，并确认 Server 已注册、Store 已就绪：
+1. **启动服务。** 在同一 `docker/` 目录启动组合，确认 Server 已注册、Store 已就绪。
 
-```bash
-docker compose -f docker-compose-hstore.yml up -d --wait
-```
+   ```bash
+   docker compose -f docker-compose-hstore.yml up -d --wait
+   ```
+{.steps}
 
 若分别部署服务，参照 [PD 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-pd/) 和
 [HStore 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)；源码或二进制包启动的 Hubble 则编辑其
@@ -83,14 +84,18 @@ GraphSpace（图空间）将图、Schema 模板和访问权限组织在同一个
 别名和描述可随后调整，别名不参与 URL 或权限匹配。图空间管理员从已有账号中选择。
 
 “高级部署与资源限制”包含图查询/写入服务、异步计算任务的 CPU 与内存上限，以及存储容量限制。
-这些值用于部署和配额场景，不是当前资源用量，也不代表提交表单后会立即扩容 Docker 容器。
-默认最大图数为 100；图服务与计算任务分别为 64 核、128 GB，存储上限为 1000000 GB。
-普通容器试用可先保留默认值；Kubernetes 命名空间、Operator 和算法镜像仅在对应部署或计算场景中填写。
+这些部署配额不会显示实时资源用量，也不会自动扩容现有容器。
+
+> [!DETAILS]- 高级部署的默认值
+>
+> 默认最大图数为 100；图服务与计算任务分别为 64 核、128 GB，存储上限为 1000000 GB。
+> 普通容器试用可保留默认值。Kubernetes 命名空间、Operator 和算法镜像仅在对应场景中填写。
 
 选择图空间后，再进入其中的图。切换空间时应重新确认当前图，尤其是不同空间中存在同名图时。
 列表只显示账号可访问的空间；看不到预期空间时，先检查成员权限，不要反复新建图。
 
 ![图空间创建表单与高级资源限制入口](/cn/docs/images/hubble/graphspace.jpg)
+{width="2048" height="984"}
 
 ### 复用 Schema 模板
 
@@ -123,6 +128,7 @@ GraphSpace（图空间）将图、Schema 模板和访问权限组织在同一个
 认证配置见 [Server 认证与授权](/cn/docs/config/config-authentication/)。
 
 ![GraphSpace 成员与权限预设](/cn/docs/images/hubble/members.jpg)
+{width="2048" height="984"}
 
 ## 从集群概览定位异常
 
@@ -134,8 +140,6 @@ GraphSpace（图空间）将图、Schema 模板和访问权限组织在同一个
 `DOWN` 表示相应探测未成功。拓扑可用而指标部分缺失时，仍可能正常查询图。
 页面会区分不支持、不可用、数据过期和采集失败，并显示采集时间；空值不是零，历史值也不等于当前状态。
 
-![集群拓扑、节点状态与容量信息](/cn/docs/images/hubble/cluster-overview.jpg)
-
 ### 节点详情读什么
 
 | 节点 | 主要关注信息 | 如何使用 |
@@ -143,8 +147,12 @@ GraphSpace（图空间）将图、Schema 模板和访问权限组织在同一个
 | Server | 节点可用性、JVM/CPU/内存及后端指标 | 判断查询与写入入口是否可达，并检查资源压力。 |
 | PD | Leader/Follower 角色、状态及上游可提供的运行指标 | 确认元数据与调度入口；Leader 信息缺失时不推断角色。 |
 | Store | 分区数、Leader 分区数、系统/磁盘指标，以及 Raft 组数和启用组数 | 检查存储节点及副本服务，结合其他节点比较分布。 |
+{.td-table--wide}
 
-![Store 节点的系统、磁盘、Raft 和分区指标](/cn/docs/images/hubble/store-node.jpg)
+```gallery
+![集群拓扑、节点状态与容量信息](/cn/docs/images/hubble/cluster-overview.jpg) # 集群概览，先看异常来源
+![Store 节点的系统、磁盘、Raft 和分区指标](/cn/docs/images/hubble/store-node.jpg) # Store 详情，再检查节点指标
+```
 
 PD Leader 与 Store 的 Leader 分区不是同一概念：前者协调集群元数据，后者负责相应数据分区的 Raft 组。
 Hubble 展示上游提供的观测值，不代替完整的 Raft 副本一致性检查；各版本可用的指标不同。

@@ -18,7 +18,7 @@ description: "Task REST API: Query and manage asynchronous task execution status
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks?status=success
 ```
 
@@ -56,7 +56,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks?status=succ
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2
 ```
 
@@ -90,9 +90,12 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2
 
 - force: whether to delete the task even when it is still running, default is false
 
+Task-record deletion is separate from graph deletion. For graph maintenance, follow the stop-write and task-drain requirements in the [graph
+API](/docs/clients/restful-api/graphs/).
+
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2
 ```
 
@@ -120,7 +123,7 @@ If you already created an async task via [Gremlin API](/docs/clients/restful-api
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2?action=cancel
 ```
 > cancel it in 10s. if more than 10s, the task may already be finished, then can't be cancelled.
@@ -167,7 +170,7 @@ Schedules an OLAP algorithm as an asynchronous task inside the server. The task 
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/algorithm/page_rank
 ```
 
@@ -210,7 +213,7 @@ Schedules a HugeGraph-Computer job as an asynchronous task. The computer job run
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/computer/page_rank
 ```
 

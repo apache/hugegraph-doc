@@ -2,6 +2,8 @@
 date: 2025-10-29
 title: "Agentic GraphRAG"
 linkTitle: "Agentic GraphRAG：模块化架构实践"
+categories: [graph-ai]
+tags: [GraphRAG, RAG, Workflow]
 ---
 
 # 项目背景

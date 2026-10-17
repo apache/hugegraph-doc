@@ -8,7 +8,7 @@ draft: true
 - [系统介绍](introduction/_index)
 - [下载](download/download)
 
-## 快速开始
+## 快速上手
 
 - [HugeGraph Server](quickstart/hugegraph/hugegraph-server)
 - [PD](quickstart/hugegraph/hugegraph-pd)
@@ -42,6 +42,7 @@ draft: true
 - [Docker 集群](guides/hugegraph-docker-cluster)
 - [安全](guides/security)
 - [Toolchain 本地测试](guides/toolchain-local-test)
+- [ToplingDB（开发版）](guides/toplingdb)
 - [常见问题](guides/faq)
 
 ## 查询语言

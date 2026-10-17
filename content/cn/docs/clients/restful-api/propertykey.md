@@ -122,7 +122,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/propertyke
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/propertykeys
 ```
 

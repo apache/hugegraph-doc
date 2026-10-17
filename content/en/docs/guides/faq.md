@@ -7,14 +7,14 @@ weight: 6
 - How to choose the back-end storage? RocksDB or distributed storage?
 
   HugeGraph supports multiple deployment modes. Choose based on your data scale and scenario:
-  - **Standalone Mode**: Server + RocksDB, suitable for development/testing and small to medium-scale data (≤ 2 TB)
+  - **Standalone Mode**: Server + RocksDB, suitable for development, testing, Graph AI, and small to medium-scale production environments (≤ 2 TB)
   - **Distributed Mode**: HugeGraph-PD + HugeGraph-Store (HStore), for deployments that require horizontal scaling and multiple replicas, supporting data scales up to 1 PB
 
   Version 1.7.0 supports RocksDB, HStore, HBase, and Memory. Legacy backends such as Cassandra, ScyllaDB, MySQL, and PostgreSQL require version 1.5.x or earlier.
 
 - Prompt when starting the service: `xxx (core dumped) xxx`
-
-  First confirm that the JDK version is Java 11 or later. HugeGraph 1.7.0 no longer supports Java 8.
+ 
+  First confirm that your JDK version matches the requirements: Java 17 for HugeGraph 1.8.0+, or Java 11 for 1.7.0. HugeGraph no longer supports Java 8.
 
 - The service is started successfully, but there is a prompt similar to "Unable to connect to the backend or the connection is not open" when operating the graph
 
@@ -34,7 +34,10 @@ weight: 6
 
 - Two graphs are configured, the names are `hugegraph` and `hugegraph1`, and the command to start the service is `start-hugegraph.sh`. Is only the hugegraph graph opened?
 
-  The script name is unrelated to the graph name. To load multiple local graphs from the `graphs` directory, set `graph.load_from_local_config=true` in `rest-server.properties`; its default value in the source code is `false`.
+  The script name is unrelated to the graph name. Server scans and loads local graph configurations from `conf/graphs` by default; change the directory with
+  `graphs` in `conf/rest-server.properties`. `graph.load_from_local_config` defaults to `false` and controls constructor preloading, not whether startup loads
+  local graphs. Give each local graph its own configuration file and restart Server after changing it. See the
+  [Server configuration guide](/docs/config/config-guide/).
 
 - After the service starts successfully, garbled characters are returned when using `curl` to query all vertices
 
@@ -48,7 +51,7 @@ weight: 6
   
   Check whether the vertex id contains `+`, `space`, `/`, `?`, `%`, `&`, and `=` reserved characters of these `URLs`.  If they exist, they need to be encoded. The following table gives the coded values:
   
-  ```
+  ```text
   special character | encoded value
   ------------------| -------------
   +                 | %2B

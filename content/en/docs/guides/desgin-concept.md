@@ -1,18 +1,22 @@
 ---
 title: "HugeGraph Design Concepts"
-linkTitle: "Design Concepts"
+linkTitle: "Design Concepts (legacy)"
 weight: 2
 ---
 
 ### 1. Property Graph
+
+> **Version note**: This page retains early design material. The property graph model and vertex ID strategies remain consistent with current master, but figures, partitioning conclusions, and transaction descriptions have the scope stated in each section. They are not current deployment or storage implementation guarantees.
+
 There are two common graph data representation models, namely the RDF (Resource Description Framework) model and the Property Graph (Property Graph) model. 
 Both RDF and Property Graph are the most basic and well-known graph representation modes, and both can represent entity-relationship modeling of various graphs. 
 RDF is a W3C standard, while Property Graph is an industry standard and is widely supported by graph database vendors. HugeGraph currently uses Property Graph.
 
-The storage concept model corresponding to HugeGraph is also designed with reference to Property Graph. For specific examples, see the figure below: 
-( This figure is outdated for the old version design, please ignore it and update it later )
+HugeGraph uses the property graph model. This person-and-book example shows labels and properties on vertices and directed edges. It is a logical model, not an illustration of the current internal data layout.
 
-![image](/docs/images/design/PropertyGraph.png)
+![Property graph logical model: a Person vertex reads a Book vertex; vertices and the edge have separate labels and properties](/docs/images/design/PropertyGraphModel.png)
+
+_Figure: Vertices and edges each carry their own labels and properties._
 
 Inside HugeGraph, each vertex/edge is identified by a unique VertexId/EdgeId, and the attributes are stored inside the corresponding vertex/edge. 
 The relationship/mapping between vertices is stored through edges.
@@ -24,6 +28,9 @@ requirements for modifying vertex attributes, but less for edge attributes. For 
 modification of vertex attribute values.
 
 ### 2. Graph Partition Scheme
+
+> **Version note**: The Edge Cut and Vertex Cut comparison is historical design background. Current PD and Store code does not define "HugeGraph uses Edge Cut" as an implementation contract. Do not use that conclusion to describe current partitioning or replication; see the [HStore quick start](/docs/quickstart/hugegraph/hugegraph-hstore/) for current distributed deployments.
+
 For distributed graph databases, there are two partition storage methods for graphs: Edge Cut and Vertex Cut, as shown in the following figure. When using the 
 Edge Cut method to store graphs, any vertex will only appear on one machine, while edges may be distributed on different machines. This storage method may lead 
 to multiple storage of edges. When using the Vertex Cut method to store graphs, any edge will only appear on one machine, and each same point may be distributed 
@@ -32,7 +39,7 @@ to different machines. This storage method may result in multiple storage of ver
 ![image](/docs/images/design/GraphCut.png)
 
 The EdgeCut partition scheme can support high-performance insert and update operations, while the VertexCut partition scheme is more suitable for static graph query 
-analysis, so EdgeCut is suitable for OLTP graph query, and VertexCut is more suitable for OLAP graph query. HugeGraph currently adopts the partition scheme of EdgeCut.
+analysis, so EdgeCut is suitable for OLTP graph query, and VertexCut is more suitable for OLAP graph query. Early design material described HugeGraph as using Edge Cut. That historical conclusion is retained here and does not describe the current partitioning implementation.
 
 ### 3. VertexId Strategy
 
@@ -101,6 +108,9 @@ If users need Vertex deduplication, there are three options:
 
 ### 4. EdgeId policy
 
+> **Current implementation**: The four-part composition below is a historical simplification. Current `EdgeId` also distinguishes edge direction and parent/child edge labels. See `EdgeId` in the Server source; use the source for your version when relying on ID formats or persistent keys.
+
+
 The EdgeId of HugeGraph is composed of `srcVertexId` + `edgeLabel` + `sortKey` + `tgtVertexId`.  Among them `sortKey` is an important concept of HugeGraph.
 There are two reasons for adding `sortKey` to Edge as the unique ID of Edge:
 
@@ -116,6 +126,9 @@ In addition, because HugeGraph's EdgeId adopts an automatic deduplication strate
 > The edges of HugeGraph only support directed edges, and undirected edges can be realized by creating two edges, Out and In.
 
 ### 5. HugeGraph transaction overview
+
+> **Version scope**: The isolation-level, thread-binding, and backend atomicity descriptions below are historical implementation notes. Transaction isolation and rollback boundaries depend on the backend implementation; do not treat these historical descriptions as cross-backend guarantees.
+
 
 ##### TinkerPop transaction overview
 
@@ -220,7 +233,6 @@ Example: One transaction cannot read another transaction's uncommitted content
 
 ###### Notice 
 
-> The RESTful API does not expose the transaction interface for the time being
+> REST APIs do not expose a separate transaction lifecycle interface; write APIs invoke the relevant Server-side transaction commit logic.
 
 > TinkerPop API allows open transactions, which are automatically closed when the request is completed (Gremlin Server forces close)
-

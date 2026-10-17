@@ -14,35 +14,104 @@ aliases:
 
 The `hugegraph-server` module contains `hugegraph-core`, `hugegraph-api`, `hugegraph-dist`, and storage adapters. Core implements the property graph model, transactions, and TinkerPop interfaces. API provides the HTTP service and delegates client requests to Core. Graph data is stored in RocksDB (the default standalone backend), HStore (distributed), or HBase.
 
-> ⚠️ **Version note**: This page follows HugeGraph 1.7.0 through the `master` branch and covers only RocksDB, HStore, and HBase. For other legacy backends and their configuration, see the [HugeGraph 1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md).
+> [!WARNING]
+> **Version scope**: Download examples use the ASF HugeGraph 1.7.0 release. Source builds, configuration defaults, and startup behavior follow `apache/hugegraph` master. A master build is not an ASF release artifact, even if its version number matches a release. This guide covers RocksDB, HStore, and HBase; see [1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md) for other legacy backends.
 
-> Naming: `HugeGraph` means the overall project or main repository, `hugegraph-server` is the Server module in that repository, and `HugeGraphServer` is the Java class for the service process. This page uses "Server service" for a running graph database service.
+> Naming: `HugeGraph` means the overall project or main repository, `hugegraph-server` is its Server module, and `HugeGraphServer` is the Java service class. Server below means the running graph database service.
+
+```mermaid
+flowchart TD
+    A{Choose installation source}
+    A -->|Release| R["HugeGraph 1.7.0 archive"]
+    R --> V[Verify SHA-512]
+    V --> X[Extract and use bundled configuration]
+    A -->|Development| M["master source"]
+    M --> B["mvn package -DskipTests"]
+    B --> C[Check RocksDB configuration in conf/graphs]
+    C --> I[bin/init-store.sh]
+    I --> S["bin/start-hugegraph.sh -p true"]
+    S --> Q["Request /versions and graph vertices"]
+```
+
+
+The map uses short labels for the repository modules described above. `server`, `core`, `api`, `dist`, `pd`, and `store` refer to the corresponding
+`hugegraph-` modules; `dist` packages the distribution.
+
+```markmap
+---
+markmap:
+  spacingHorizontal: 40
+---
+# HugeGraph
+## server
+- core
+- api
+- dist
+## pd
+## store
+```
 
 ## 2 Dependency for Building/Running
 
-### 2.1 Install Java 11 (JDK 11)
+<span id="21-install-java-11-jdk-11"></span>
 
-The `hugegraph-server` module in HugeGraph 1.7.0 is compiled with Java 11. Running and building it from source require Java 11 or later.
+### 2.1 Install Java 17 (JDK 17)
+
+Starting with HugeGraph 1.8.0, use **Java 17**; **1.7.0 is the last release supporting Java 11**.
+Build all modules with **JDK 17 and Maven 3.6.3 or later**, and run Server, PD and Store with **JDK 17**.
+Server security check (`-s true`) requires Java 17 to 23 and a readable `conf/java-security.properties`;
+on Java 24 or later, start Server with `-s false` (JDK 24+ dropped Security Manager via JEP 486).
 
 **Before continuing, run `java -version` to confirm your JDK version.**
 
-> Java 8 is no longer supported starting from 1.7.0. `bin/hugegraph-server.sh` refuses to start on anything older than Java 11.
+> [!NOTE]
+> **TinkerPop 3.8.1 Compatibility & Key Changes**
+>
+> HugeGraph 1.8.0 upgrades to TinkerPop 3.8.1 and Groovy 4.0.25. Use the Gremlin configuration files bundled with Server.
+>
+> - **Serializer Packages**: Driver serializer classes moved from `org.apache.tinkerpop.gremlin.driver.ser` to `org.apache.tinkerpop.gremlin.util.ser`.
+>   Keep HugeGraph registries.
+> - **Graph.Features**: `supportsUniformListValues()` returns `false` for properties.
+>   Schema `valueList()`/`LIST` properties remain supported without rewriting existing data.
+> - **Traversal Multiplicity**: Mid-traversal scans retain input multiplicity (e.g. for 3 vertices, `g.V().V().count()` returns `9L`).
+> - **Date & Time Types**: `DATE` properties accept `OffsetDateTime` for writes and indexed equality/range queries (instant normalized to milliseconds).
+> - **Filtering Behavior**: `P.typeOf()` runs as a local filter; count filtering applies range optimizations only when predicate branches are provably safe.
 
-> The security check is on by default and installs `HugeSecurityManager`, which needs Java 11 to 23. JDK 24 removed the Security Manager ([JEP 486](https://openjdk.org/jeps/486)), so on Java 24 or later you must start the service with the check disabled: `bin/start-hugegraph.sh -s false`.
+```yaml {tab="GraphBinary (Recommended)"}
+# Bundled Driver and Console default to GraphBinary V1
+# - Schema results are standard maps
+# - Blob values are binary (including inside returned elements)
+serializer:
+  className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
+  config:
+    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+```
 
-> Building from source also needs Maven 3.5.0 or later.
+```yaml {tab="GraphSON (HTTP / Legacy)"}
+# Default HTTP JSON uses untyped GraphSON V1
+# - Preserves the legacy Tree key/value array structure
+# - Typed GraphSON V1 is disabled for security (typed V2/V3 remain available for simple values and IDs)
+# - graph.schema() returns property keys, vertex labels, edge labels, and index labels
+```
+
+> [!TIP]
+> For complete client configuration and migration details, see the
+> [server runtime documentation](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md).
 
 ## 3 Deploy
 
 There are four ways to deploy the Server service:
 
-1. Use a Docker container for test or development.
-1. Download the binary tarball.
-1. Compile the source code.
-1. Use the legacy one-click deployment tool.
-{.steps}
+- [Docker container](#31-use-docker-container-convenient-for-testdev) Quickly start a Server service for testing or development.
+- [ASF release archive](#32-download-a-released-archive) Download a released tarball and verify it before installation.
+- [master source](#33-build-from-master-source) Build the development branch; its output is not an ASF release archive.
+- [Legacy one-click deployment (outdated)](#34-one-click-deployment-outdated) Reference for the older deployment workflow.
+{.cards}
 
-> Do not expose Gremlin, Cypher, or other query endpoints directly to the public Internet. In production, enable [authentication and authorization](/docs/config/config-authentication/), restrict network access, and retain audit logs. See the [Security Guide](/docs/guides/security/) for deployment guidance.
+> [!WARNING]
+> **Production requires authentication and restricted network access**
+>
+> HugeGraph disables user authentication by default. Enable [authentication and authorization](/docs/config/config-authentication/), maintain an IP allowlist, and grant minimum permissions. Do not expose Gremlin, Cypher, or other query APIs directly to the public Internet. Retain Server `audit-*.log` and restrict read access. `auth.audit_log_rate` limits per-user output rate rather than turning audit logging on or off. See the [security guide](/docs/guides/security/).
 
 ### 3.1 Use Docker container (Convenient for Test/Dev)
 
@@ -61,16 +130,16 @@ If you use Docker Desktop, you can set the options as follows:
     <img src="/docs/images/images-server/31docker-option.jpg" alt="Docker Desktop settings for a HugeGraph container" style="width:33%;">
 </div>
 
-> **Note**: The Docker Compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least **12 GB** of memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.
+> [!NOTE]
+> The Docker Compose files use bridge networking (`hg-net`) and work on Linux and Mac (Docker Desktop). For the 3-node distributed cluster on Mac (Docker Desktop), allocate at least **12 GB** of memory (Settings → Resources → Memory). On Linux, Docker uses host memory directly.
 
-If you want a single, unified setup for multiple HugeGraph services, you can use `docker compose`.
-Four compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory:
+Use `docker compose` to manage multiple HugeGraph services from one configuration. Four Compose files are available in the [`docker/`](https://github.com/apache/hugegraph/tree/master/docker) directory:
 
 | Topology | Compose file | Services |
 |---|---|---|
 | Standalone (start here) | `docker-compose.yml` | 1 RocksDB Server + 1 Hubble |
-| Minimal HStore | `docker-compose-hstore.yml` | 1 PD + 1 Store + 1 Server + 1 Hubble |
-| HA reference | `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble |
+| Minimal HStore (current master) | `docker-compose-hstore.yml` | 1 PD + 1 Store + 1 Server + 1 Hubble; locally built master images required |
+| HA reference (current master) | `docker-compose-3pd-3store-3server.yml` | 3 PD + 3 Store + 3 Server + 1 Hubble; locally built master images required |
 | Source build override for the minimal HStore topology | `docker-compose.dev.yml` | (used together with `docker-compose-hstore.yml`) |
 
 ```bash {wrap=true}
@@ -81,76 +150,139 @@ HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
 
 The standalone topology publishes the Server on port `8080` and Hubble on `127.0.0.1:8088`. `HUGEGRAPH_VERSION` selects the Server, PD, and Store image tags; Hubble is selected separately with `HUBBLE_IMAGE`.
 
-The compose files read the administrator password from `HUGEGRAPH_ADMIN_PASSWORD` and the JWT secret from `HUGEGRAPH_AUTH_TOKEN_SECRET`, normally kept in a `docker/.env` file. A non-empty `HUGEGRAPH_ADMIN_PASSWORD` turns authentication on, and Hubble detects that mode by itself. With plain `docker run`, pass `-e PASSWORD=xxx` instead.
+The standalone `docker-compose.yml` example uses `hugegraph/hugegraph:1.7.0`; its `docker/conf/hubble/standalone.properties` is bundled in source. Compose reads the administrator password from `HUGEGRAPH_ADMIN_PASSWORD` and JWT secret from `HUGEGRAPH_AUTH_TOKEN_SECRET`, normally in `docker/.env`. A nonempty password enables authentication, automatically detected by Hubble. With `docker run`, use `-e PASSWORD=xxx`. Master HStore Compose files cannot be combined with 1.7.0 PD/Store/Server release images.
+
+**JWT version differences**: Master-built Server maps `HUGEGRAPH_AUTH_TOKEN_SECRET` to `HG_SERVER_AUTH_TOKEN_SECRET` and writes startup configuration; preserve the secret across recreation. The [1.7.0 entrypoint](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh) handles older variables such as `PASSWORD`, ignoring `HG_SERVER_AUTH_TOKEN_SECRET`. To keep a stable JWT secret in 1.7.0, persist [`auth.token_secret`](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/config/AuthOptions.java) in that version's `conf/graphs/hugegraph.properties`. With a randomly generated default, do not assume issued JWTs survive Server restarts.
 
 See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full setup guide.
 
-> Note: 
+#### Server service identity with PD
+
+For a PD-backed Server, the Helm chart exposes `server.serviceId` and `server.graphSpace`.
+Both default to `DEFAULT`, which preserves the existing `server.service_id` and `server.graphspace`
+values in `conf/rest-server.properties`. A non-default chart value injects `HG_SERVER_SERVICE_ID`
+or `HG_SERVER_GRAPHSPACE` into the Server container.
+These service identity chart settings (`server.serviceId`, `server.graphSpace`, and `server.testGraphAlias`)
+apply to development 1.8.0+ builds and charts; older versions such as 1.7.0 do not support these options.
+Do not use this example with older chart or image versions lacking these features.
+Non-empty service IDs supplied through `HG_SERVER_SERVICE_ID`, `SERVICE_ID`, or `server.serviceId`
+must use printable ASCII; spaces and backslashes are supported, while deployment checks reject
+non-ASCII and control characters. This entrypoint restriction does not change Core Service naming
+or existing manually supplied properties. Helm preserves dollar signs in `server.serviceId` literally,
+including `$(POD_IP)`; this field does not expand Kubernetes environment references.
+The full service ID, including `/` and `-`, is retained when service metadata is reloaded or its graph space is cleared.
+Set the identity through these chart values; Server `extraEnv` reserves both the new and legacy identity variable names.
+`HG_SERVER_GRAPHSPACE`, the effective `GRAPH_SPACE` fallback,
+and `server.graphSpace` accept `DEFAULT` or an existing space name of up to 48 lowercase letters, digits,
+and underscores, starting with a letter:
+
+```bash
+helm upgrade --install hg ./helm/hugegraph \
+  --set-string server.serviceId=analytics \
+  --set-string server.graphSpace=team_a
+```
+
+Before deploying Servers assigned to `team_a`, create that graph space through an existing Server
+in `DEFAULT`, using an account with permission to create graph spaces. The chart and these environment
+variables do not create graph spaces; all replicas in the Server Deployment use the same identity.
+
+To check a graph in that space with `helm test`, first create the target graph and set
+`--set-string server.testGraphAlias=team_a-demo` to its actual Gremlin binding. Creating the graph space does not create a `hugegraph` graph.
+
+For container deployments, `HG_SERVER_SERVICE_ID` and `HG_SERVER_GRAPHSPACE` write the same two
+properties. The legacy `SERVICE_ID` and `GRAPH_SPACE` names remain accepted: a non-empty new variable
+wins over its legacy counterpart. If both names for a property are unset or empty, its existing value
+is preserved. Compose does not automatically forward these host variables; add explicit Server
+`environment:` entries in a Compose override. See the Helm chart documentation for details.
+
+These settings select the Server's PD service metadata. They do not move existing graphs or change
+`server.path_graphspace` for REST paths that omit the graph space. Use `/graphspaces/team_a/...` paths
+and select the matching graph space and service in Hubble. When authentication is enabled, explicit paths
+still require authorization.
+
+`server.testGraphAlias` defaults to `DEFAULT-hugegraph`. The hook checks this existing local binding on every Server Pod;
+it does not derive the alias from `server.graphSpace`. A local binding may exist independently of the Server's assigned PD graph space,
+so a successful default hook does not validate graphs in `team_a`. If `Could not rebind` appears, first check that the requested graph exists
+and that its alias is correct. A Pod restart cannot create a missing graph or correct an alias.
+Match the binding's case: a local `Demo.properties` can bind `DEFAULT-Demo`, while REST-created graph names are lowercase.
+
+Configuration rendering and entrypoint checks alone do not establish non-default Linux discovery,
+authentication, or isolation between graph spaces.
+
+> [!NOTE]
 >
 > 1. HugeGraph Docker images are provided as a convenient way to start HugeGraph quickly, but they are not official ASF distribution artifacts. You can find more details in the [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 >
 > 2. We recommend using a release tag (such as `1.7.0` or `1.x.0`) for stable deployments. Use the `latest` tag only if you want the newest features still under development.
 
-### 3.2 Download the binary tarball
+### 3.2 Download a Released Archive
 
-You could download the binary tarball from the download page of the ASF site like this:
-```bash {filename="download-and-verify.sh" wrap=true collapse=5}
-# 1.7.0 is a historical release from the incubation period, so its file name still includes "incubating"
+This example uses HugeGraph 1.7.0. For other versions, confirm the release and filenames in the [ASF download directory](https://downloads.apache.org/hugegraph/). A master source build is not a released binary.
+
+```bash {wrap=true}
+cd /path/to/downloads
 wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.sha512
+sha512sum -c apache-hugegraph-incubating-1.7.0.tar.gz.sha512
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
-
-# (Optional) verify the integrity with SHA512 (recommended)
-shasum -a 512 apache-hugegraph-incubating-1.7.0.tar.gz
-curl https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.sha512
 ```
 
-### 3.3 Source code compilation
-
-Please ensure that the wget/curl commands are installed before compiling the source code
-
-Download HugeGraph **source code** in either of the following 2 ways (so as the other HugeGraph repos/modules):
-- download the stable/release version from the ASF site
-- clone the unstable/latest version by GitBox(ASF) or GitHub
-
-```bash {filename="build-from-source.sh" wrap=true collapse=5}
-# Way 1. download release package from the ASF site
-wget https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-src-{version}.tar.gz
-tar zxf *hugegraph*.tar.gz
-
-# (Optional) verify the integrity with SHA512 (recommended)
-shasum -a 512 apache-hugegraph-incubating-src-{version}.tar.gz
-curl https://downloads.apache.org/hugegraph/{version}/apache-hugegraph-incubating-{version}-src.tar.gz.sha512
-
-# Way2 : clone the latest code by git way (e.g GitHub)
-git clone https://github.com/apache/hugegraph.git
-
-```
-
-Compile and generate tarball
+Extract only after SHA-512 verification succeeds. You can also verify the PGP signature following Apache release procedures:
 
 ```bash
-cd *hugegraph
+wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz.asc
+wget https://downloads.apache.org/hugegraph/KEYS
+gpg --import KEYS
+gpg --verify apache-hugegraph-incubating-1.7.0.tar.gz.asc apache-hugegraph-incubating-1.7.0.tar.gz
+```
+
+Trust publisher keys only after verifying them through Apache project channels. Signature verification can complement SHA-512 checks.
+
+### 3.3 Build from master Source
+
+These commands build the development branch, not the 1.7.0 release.
+
+Install `wget` or `curl` before building.
+
+Download HugeGraph source:
+
+```bash {wrap=true}
+git clone --branch master https://github.com/apache/hugegraph.git
+```
+
+Compile and package:
+
+```bash
+cd hugegraph
 # (Optional) use "-P stage" param if you build failed with the latest code(during pre-release period)
 mvn package -DskipTests -ntp
 ```
 
+A successful build logs:
 
-A successful build includes the following line:
-
-```text
+```bash
 [INFO] BUILD SUCCESS
 ```
 
-After a successful build, the generated distribution is the `*hugegraph-*.tar.gz` file in the repository root.
+The build creates an aggregate master archive under repository-root `target/` (the current source version property is 1.8.0):
 
-The default build bundles the `rocksdb`, `hbase`, and `hstore` backend modules, and records them in the `backends` option of the `backend.properties` resource inside the `hugegraph-dist` jar. To build a smaller distribution that carries RocksDB only, add `-Drocksdb-only`:
+```text
+target/apache-hugegraph-1.8.0.tar.gz
+```
+
+The filename version comes from source `revision`; it does not make the build an ASF release artifact. The build also creates repository-root `apache-hugegraph-1.8.0/`, containing a Server directory named by that module's `final.name`, currently `apache-hugegraph-server-1.8.0`. If retaining only the archive, first run `tar zxf target/apache-hugegraph-1.8.0.tar.gz`, then enter the Server directory.
+
+Default builds bundle `rocksdb`, `hbase`, and `hstore` modules, listed in `backends` within `backend.properties` in the `hugegraph-dist` JAR. For a RocksDB-only distribution, add `-Drocksdb-only`:
 
 ```bash
 mvn package -DskipTests -ntp -Drocksdb-only
 ```
 
+
 > [!DETAILS]- Outdated tools
 > #### 3.4 One-click deployment (Outdated)
+>
+> {{< badge text="Outdated" tone="warning" >}} This status applies only to this one-click deployment entry.
 >
 > HugeGraph-Tools provides a one-click deployment command that downloads, extracts, configures, and starts the Server service and HugeGraph-Hubble. These tools are included in the HugeGraph-Toolchain distribution.
 >
@@ -176,10 +308,14 @@ mvn package -DskipTests -ntp -Drocksdb-only
 >
 > `{hugegraph-version}` is the Server service and HugeGraphStudio version; see `conf/version-mapping.yaml` for supported mappings. `{install-path}` is the installation directory, while `{download-path-prefix}` optionally overrides the tarball download location. For example, deploy version 0.6 with `bin/hugegraph deploy -v 0.6 -p services`.
 
-## 4 Config
+## 4 Configuration
 
-If you need to quickly start HugeGraph just for testing, then you only need to modify a few configuration items (see next section).
-For detailed configuration introduction, please refer to [configuration document](/docs/config/config-guide) and [introduction to configuration items](/docs/config/config-option)
+Server archives include `conf/rest-server.properties`, `conf/gremlin-server.yaml`, and `conf/graphs/hugegraph.properties`; source builds assemble them from `hugegraph-server/hugegraph-dist/src/assembly/static/conf/`. Edit them inside the extracted Server directory without a separate generation step. Defaults vary by release; the following defaults and startup behavior describe master.
+
+For standalone RocksDB, confirm `backend=rocksdb` and `serializer=binary` in `conf/graphs/hugegraph.properties`. Normal Server initialization scans `conf/graphs/` and loads local graphs without requiring `graph.load_from_local_config=true`. This option defaults to `false` and controls constructor preloading. Restart Server to apply graph configuration changes; do not use hot reload for maintenance.
+
+See the [configuration guide](/docs/config/config-guide/) and [option reference](/docs/config/config-option/) for details.
+
 
 ## 5 Startup
 
@@ -195,58 +331,72 @@ If you need to access HugeGraphServer externally, modify the `restserver.url` co
 
 Since the configuration (hugegraph.properties) and startup steps required by various backends are slightly different, the following will introduce the configuration and startup of each backend one by one.
 
-**Note:** Configure [Server Authentication](/docs/config/config-authentication/) before starting HugeGraphServer if you need Auth mode (especially for production or public network environments).
+> [!WARNING]
+> **Configure authentication before production startup**
+>
+> Enable [Server authentication and authorization](/docs/config/config-authentication/) with a strong, nondefault administrator password, an IP allowlist, and minimum business-user permissions.
 
 #### 5.1.1 Distributed Storage (HStore)
 
-> [!DETAILS]- Click to expand/collapse Distributed Storage configuration and startup method
-> > Distributed storage is a new feature introduced after HugeGraph 1.5.0, which implements distributed data storage and computation based on HugeGraph-PD and HugeGraph-Store components.
+First deploy PD and Store; see the [PD Quick Start](/docs/quickstart/hugegraph/hugegraph-pd/) and [Store Quick Start](/docs/quickstart/hugegraph/hugegraph-hstore/).
+
+> [!WARNING]
+> `umask 077` protects the new `.env`, but `set-hubble-pd-password.sh` sets generated `.local.properties` permissions to `0644`, making the PD secret readable by other local users. This example assumes trusted local users. On shared hosts, set ownership and read permissions for the Hubble runtime user so Hubble can read the files while unauthorized users cannot. Keeping files untracked does not replace file permission controls.
+
+> [!DETAILS]+ Distributed storage configuration and startup
+> > Distributed storage, introduced after HugeGraph 1.5.0, uses HugeGraph-PD and HugeGraph-Store for distributed data storage and computing.
 >
-> To use the distributed storage engine, you need to deploy HugeGraph-PD and HugeGraph-Store first. See [HugeGraph-PD Quick Start](/docs/quickstart/hugegraph/hugegraph-pd/) and [HugeGraph-Store Quick Start](/docs/quickstart/hugegraph/hugegraph-hstore/).
+> After PD and Store are running:
 >
-> After ensuring that both PD and Store services are started, modify the `hugegraph.properties` configuration of HugeGraph-Server:
+> 1. Edit Server `hugegraph.properties`:
 >
 > ```properties
 > backend=hstore
 > serializer=binary
 >
-> # PD service address, multiple PD addresses are separated by commas, configure PD's RPC port
+> # PD RPC addresses, separated by commas
 > pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
+> pd.cluster=hg
 > ```
 >
 > ```properties
-> # Simple example (with authentication)
+> # Simple example with authentication
 > gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
 >
-> # Specify storage backend hstore
+> # Required HStore backend
 > backend=hstore
 > serializer=binary
 > store=hugegraph
 >
 > # pd config
 > pd.peers=127.0.0.1:8686
+> pd.cluster=hg
 > ```
 >
-> A ready-made template for this backend ships as `conf/graphs/hstore.properties.template`. Copy it over `conf/graphs/hugegraph.properties` and adjust `pd.peers`.
+> The distribution includes `conf/graphs/hstore.properties.template`; copy it over `conf/graphs/hugegraph.properties` and adjust `pd.peers`.
 >
-> The task scheduler is picked from the backend, so `task.scheduler_type` does not need to be set. `hstore` uses the distributed scheduler and every other backend uses the local one. The key is still accepted for upgrade compatibility, but it is ignored and logs a warning.
+> This example uses `cluster=hg` in `rest-server.properties` and `pd.cluster=hg` in graph configuration, matching the master Compose cluster below. These are separate keys for the Server process and graph respectively, not one setting. Select an appropriate cluster name. Likewise, `pd.peers` in each file has its own configuration scope; this example supplies the same PD RPC addresses to both.
 >
-> Then enable PD discovery in `rest-server.properties` (required for every HugeGraph-Server node):
+> The backend selects the task scheduler: HStore uses distributed scheduling; others use local scheduling. `task.scheduler_type` is unnecessary and is ignored with a warning when retained for compatibility.
+>
+> 2. Edit Server `rest-server.properties`:
 >
 > ```properties
 > usePD=true
-> # load the hugegraph.properties above from the graphs directory; the source default is false
-> graph.load_from_local_config=true
->
-> # notice: must have this conf in 1.7.0
+> # Use cluster hg, matching pd.cluster in graph configuration
+> cluster=hg
+> # Server process PD addresses; replace with actual PD RPC addresses
 > pd.peers=127.0.0.1:8686,127.0.0.1:8687,127.0.0.1:8688
-> # If auth is needed
+>
+> # Optional in local tests; authentication is mandatory in production
 > # auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
 > ```
 >
-> If configuring multiple HugeGraph-Server nodes, you need to modify the `rest-server.properties` configuration file for each node, for example:
+> These addresses support multiple Server processes on one machine; `127.0.0.1` is local only. Across hosts, use routable IPs or DNS for `restserver.url`, `gremlinserver.url`, `pd.peers`, Gremlin `host`, and `rpc.server_host`. Advertised RPC addresses and ports must be mutually reachable.
 >
-> Node 1 (Master node):
+> For multiple Servers, edit each node's `rest-server.properties`:
+>
+> Node 1 (master):
 > ```properties
 > usePD=true
 > restserver.url=http://127.0.0.1:8081
@@ -260,7 +410,7 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 > server.role=master
 > ```
 >
-> Node 2 (Worker node):
+> Node 2 (worker):
 > ```properties
 > usePD=true
 > restserver.url=http://127.0.0.1:8082
@@ -274,7 +424,7 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 > server.role=worker
 > ```
 >
-> Also, you need to modify the port configuration in `gremlin-server.yaml` for each node:
+> Also configure each node's `gremlin-server.yaml` ports:
 >
 > Node 1:
 > ```yaml
@@ -288,36 +438,28 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 > port: 8182
 > ```
 >
-> Initialize the database:
->
-> ```bash
-> cd *hugegraph-${version}
-> bin/init-store.sh
-> ```
->
-> PD and Store own the metadata and the store for the `hstore` backend, so `init-store` skips graphs configured with it. Running it still creates the built-in `admin` account when authentication is on. In a deployment where the storage side already holds that account, set `init_store.enabled=false` in `rest-server.properties` to skip the whole step, which is what the Docker HStore topologies do.
->
-> Start the Server:
+> Start Server:
 >
 > ```bash
 > bin/start-hugegraph.sh
 > ```
 >
-> The startup sequence for using the distributed storage engine is:
+> Distributed startup order:
 > 1. Start HugeGraph-PD
 > 2. Start HugeGraph-Store
-> 3. Initialize the database (only for the first time)
-> 4. Start HugeGraph-Server
+> 3. Start Server
 >
-> Verify that the service is started properly:
+> PD and Store manage HStore metadata and storage, so `init-store` skips that backend. With authentication enabled, `init-store` still creates the built-in `admin` account. If storage already holds this account, set `init_store.enabled=false` in `rest-server.properties` to skip the entire step, as Docker HStore topologies do.
+>
+> Verify startup:
 >
 > ```bash
 > curl http://localhost:8081/graphspaces/DEFAULT/graphs
-> # Should return: {"graphs":["hugegraph"]}
+> # Expected: {"graphs":["hugegraph"]}
 > ```
 >
-> The sequence to stop the services should be the reverse of the startup sequence:
-> 1. Stop HugeGraph-Server
+> Stop in reverse order:
+> 1. Stop Server
 > 2. Stop HugeGraph-Store
 > 3. Stop HugeGraph-PD
 >
@@ -325,79 +467,113 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 > bin/stop-hugegraph.sh
 > ```
 >
-> ##### Docker Distributed Cluster
+> ##### Docker HStore HA Cluster (Current Master)
 >
-> Run the full distributed cluster (3 PD + 3 Store + 3 Server) with Docker Compose:
+> `docker-compose-3pd-3store-3server.yml` uses master `HG_PD_*`, `HG_STORE_*`, and `HG_SERVER_*` variables unsupported by 1.7.0 release images. Build PD, Store, and Server from the same master source, all tagged `local`:
 >
 > ```bash
-> cd hugegraph/docker
-> HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose-3pd-3store-3server.yml up -d --wait
+> # Run from the HugeGraph repository root
+> docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
+> docker build -f hugegraph-store/Dockerfile -t hugegraph/store:local .
+> docker build -f hugegraph-server/Dockerfile-hstore -t hugegraph/server:local .
+>
+> cd docker
 > ```
 >
-> Services communicate via container hostnames on the `hg-net` bridge network. Configuration is injected via environment variables:
+> Create the authentication environment in `docker/` and generate HStore Hubble configuration. Replace the example administrator password; because `.env` uses single quotes, the password must contain neither single quotes nor newlines. The script generates random JWT and PD secrets and writes the PD secret to two untracked `.local.properties` files mounted by HStore Compose:
 >
-> ```yaml
-> # Server configuration, shared by server0, server1 and server2
-> HG_SERVER_BACKEND: hstore
-> HG_SERVER_PD_PEERS: pd0:8686,pd1:8686,pd2:8686
-> HG_SERVER_CLUSTER: hg
-> HG_SERVER_USE_PD: "true"
-> HG_SERVER_MIN_FREE_MEMORY: "0"
-> HG_SERVER_INIT_STORE_ENABLED: "false"
-> HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET: "true"
-> STORE_REST: store0:8520
-> # per node, for example on server0
-> HG_SERVER_REST_URL: http://server0:8080
+> ```bash {wrap=true collapse=9}
+> (
+>   set -eu
+>   command -v openssl >/dev/null
+>   jwt_secret="$(openssl rand -hex 32)"
+>   pd_secret="$(openssl rand -hex 24)"
+>   umask 077
+>   test ! -e .env || {
+>     echo ".env already exists; edit it instead of overwriting it" >&2
+>     exit 1
+>   }
+>   printf "HUGEGRAPH_ADMIN_PASSWORD='%s'\nHUGEGRAPH_AUTH_TOKEN_SECRET='%s'\nHG_PD_AUTH_SECRET_KEY='%s'\n" \
+>     'replace-with-your-password' "${jwt_secret}" "${pd_secret}" > .env
+>   HG_PD_AUTH_SECRET_KEY="${pd_secret}" ./set-hubble-pd-password.sh hstore
+>   HG_PD_AUTH_SECRET_KEY="${pd_secret}" ./set-hubble-pd-password.sh hstore-ha
+> )
 > ```
 >
-> Because this topology sets `HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET: "true"`, the Servers refuse to start when a password is supplied without a shared JWT secret. Put both `HUGEGRAPH_ADMIN_PASSWORD` and `HUGEGRAPH_AUTH_TOKEN_SECRET` in `docker/.env` before starting it. The full variable reference is in the [Docker Cluster guide](/docs/guides/hugegraph-docker-cluster/).
+> Start HA from `docker/`. `HUGEGRAPH_VERSION=local` selects the locally built PD, Store, and Server images; Compose `pull_policy: missing` uses existing local tags first. `HUBBLE_IMAGE` still selects Hubble independently:
+>
+> ```bash
+> set -a
+> . ./.env
+> set +a
+> HUGEGRAPH_VERSION=local docker compose \
+>   -f docker-compose-3pd-3store-3server.yml \
+>   up -d --wait pd0 pd1 pd2 store0 store1 store2 server0 server1 server2 hubble
+> ```
+>
+> Generate `HG_PD_AUTH_SECRET_KEY` once for new data directories and reuse it on restart or when retaining data. Do not commit `.env` or generated `conf/hubble/*.local.properties`. Services communicate through container hostnames on the `hg-net` bridge. Server replicas need the shared JWT secret as well as the administrator password; set `HUGEGRAPH_AUTH_TOKEN_SECRET`. See the [Docker cluster guide](/docs/guides/hugegraph-docker-cluster/) and [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for all variables.
 >
 > Verify the cluster:
 > ```bash
-> curl http://localhost:8080/versions
-> curl http://localhost:8620/v1/stores
+> curl -fsS http://localhost:8080/versions
+> curl -fsS -u "hg:${HG_PD_AUTH_SECRET_KEY:?Load .env first}" \
+>   http://localhost:8620/v1/stores
 > ```
-> To view runtime logs for any container use `docker logs <container-name>` (e.g. `docker logs hg-pd0`).
 >
-> See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for the full environment variable reference, port table, and troubleshooting guide.
+> Master PD `/v1/stores` requires Basic authentication; this uses the generated, loaded `HG_PD_AUTH_SECRET_KEY` as the `hg` password.
+>
+> Inspect runtime logs with `docker logs <container-name>`, such as `docker logs hg-pd0`.
+>
+> See [docker/README.md](https://github.com/apache/hugegraph/blob/master/docker/README.md) for variables, ports, and troubleshooting.
+
 
 #### 5.1.2 RocksDB / ToplingDB
 
-> [!DETAILS]- Click to expand/collapse RocksDB configuration and startup methods
-> > RocksDB is an embedded database that does not require manual installation and deployment. GCC version >= 4.3.0 (GLIBCXX_3.4.10) is required. If not, GCC needs to be upgraded in advance
->
-> Update hugegraph.properties
->
-> ```properties
-> backend=rocksdb
-> serializer=binary
-> rocksdb.data_path=.
-> rocksdb.wal_path=.
-> ```
->
-> Initialize the database (required on the first startup, or a new configuration was manually added under 'conf/graphs/')
->
-> ```bash
-> cd *hugegraph-${version}
-> bin/init-store.sh
-> ```
->
-> Start server
->
-> ```bash
-> bin/start-hugegraph.sh
-> Starting HugeGraphServer in daemon mode...
-> Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)....OK
-> Started [pid 21614]
-> ```
->
-> **ToplingDB (Beta)**: As a high-performance alternative to RocksDB, please refer to the configuration guide: [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="en">}})
+The minimal standalone flow below uses a master build and preloads sample data to verify graph reads and writes.
+
+1. [Check Java](#21-install-java-11-jdk-11) against the master build requirements.
+2. [Build master source](#33-build-from-master-source); the commands below use its nested Server directory.
+3. [Confirm RocksDB configuration](#4-configuration), then enter the build output's nested Server directory.
+4. Initialize storage, then start the service with sample data using the commands below.
+5. Request `/versions` and sample graph vertices, and check the actual response contents.
+{.steps}
+
+> [!NOTE]
+> RocksDB is embedded and needs no separate deployment. GCC ≥ 4.3.0 (GLIBCXX_3.4.10) is required; upgrade first if needed.
+
+Master `conf/graphs/hugegraph.properties` already sets `backend=rocksdb` and `serializer=binary`. Keep the defaults if using default data directories; otherwise check your backend and paths before initialization.
+
+Initialize storage on first startup or after adding graph configuration under `conf/graphs/`:
+
+```bash
+cd apache-hugegraph-1.7.0/apache-hugegraph-server-1.7.0
+bin/init-store.sh
+```
+
+Start Server and preload the built-in sample graph:
+
+```bash
+bin/start-hugegraph.sh -p true
+```
+
+The startup script polls `/graphs` at configured `restserver.url` and exits nonzero on timeout or process failure. Check service version, then read sample vertices:
+
+```bash
+curl -fsS http://127.0.0.1:8080/versions
+curl --compressed -fsS \
+  http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
+```
+
+The first response should contain `versions`; the second should contain `vertices` with sample names such as `marko` and `lop`. A process check or HTTP status alone does not prove backend and business request health.
+
+**ToplingDB (Beta)**: A high-performance RocksDB alternative; see the [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="en">}}).
 
 
 #### 5.1.3 HBase
-> [!DETAILS]- Click to expand/collapse HBase configuration and startup methods
-> > users need to install HBase by themselves, requiring version 2.0 or above,[download link](https://hbase.apache.org/downloads.html)
->
+> [!NOTE]
+> users need to install HBase by themselves, requiring version 2.0 or above,[download link](https://hbase.apache.org/downloads.html)
+
+> [!DETAILS]+ HBase configuration and startup methods
 > Update hugegraph.properties
 >
 > ```properties
@@ -433,7 +609,7 @@ Since the configuration (hugegraph.properties) and startup steps required by var
 #### 5.1.4 Create an example graph when startup
 Pass the `-p true` argument when starting the script to enable `preload`, which creates a sample graph.
 
-```
+```text
 bin/start-hugegraph.sh -p true
 Starting HugeGraphServer in daemon mode...
 Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
@@ -456,15 +632,36 @@ This indicates the successful creation of the sample graph.
 | Option | Values | Default | Purpose |
 |---|---|---|---|
 | `-d` | `true`, `false` | `true` | Daemon mode. With `-d false` the script stays in the foreground and forwards `SIGTERM`/`SIGINT` to the server. |
-| `-g` | `zgc` or `ZGC` | omit for G1GC | Garbage collector to use. Only ZGC is accepted, any other value aborts the startup. ZGC needs Java 11 or later. |
+| `-g` | `g1`, `G1`, `zgc`, `ZGC` | JVM default | Garbage collector to use (`g1`/`G1` sets `-XX:+UseG1GC`; `zgc`/`ZGC` sets `-XX:+UseZGC`). Omitting `-g` uses the JVM default collector. |
 | `-m` | `true`, `false` | `false` | Install the cron-based monitor task (`bin/start-monitor.sh`). For VM and bare-metal deployments only. |
 | `-p` | `true`, `false` | `false` | Preload the sample graph, as in 5.1.4. |
-| `-s` | `true`, `false` | `true` | Run with the security check (`HugeSecurityManager`) enabled. It requires Java 11 to 23 and a readable `conf/java-security.properties`. |
+| `-s` | `true`, `false` | `true` | Enable `HugeSecurityManager`; requires Java 17 to 23 and readable `conf/java-security.properties`. On Java 24+, start with `-s false`. |
 | `-j` | JVM options | empty | Extra JVM options appended to the server command line. |
 | `-t` | seconds | `30` | How long to wait for the service to answer before reporting a failed startup. |
 | `-y` | `true`, `false` | `false` | Enable the OpenTelemetry agent for traces. |
 
 `bin/stop-hugegraph.sh` accepts `-m true|false` (default `true`), which controls whether the cron monitor task is removed along with the service.
+
+`bin/hugegraph-server.sh` puts `-XX:+HeapDumpOnOutOfMemoryError`, `-XX:HeapDumpPath` and `-XX:ErrorFile` first in `JAVA_TOOL_OPTIONS`, so, whether or not
+`JAVA_OPTIONS` is set and with the exceptions below, an out-of-memory heap dump (`heapdump_<host>_<launch time>/java_pid<pid>.hprof`) and a JVM crash log
+(`hs_err_pid<pid>_<host>_<launch time>.log`) land in `logs/`, where `<launch time>` is the local time as `YYYYMMDD-HHMMSS`. Each start gets its own `heapdump_*`
+directory, so the server and the JVMs it starts, such as computer jobs, write separate dumps (HotSpot names each dump and crash log after the JVM's PID, so a
+JVM that reuses an earlier PID from the same start cannot write its dump, and its crash log replaces the earlier one's). The host name keeps servers that share
+one log directory from picking the same name, and a counter (`<launch time>-1`, `-2`, ...) is added when the same host already used that second. If the
+directory cannot be created, for example on a full disk, the server still starts and dumps go to `logs/` itself, as a best effort: a full disk may have no room
+for the dump either. A heap dump can be as large as the heap. The launcher never deletes dumps or `heapdump_*` directories: each start that reaches Java leaves
+one, empty unless something ran out of memory, and the launcher keeps it because a computer-job JVM can go on using it after the server exits. Move or delete
+old ones once no HugeGraph JVM from that launch is running, but never the newest one of a running server; without it, the next dump is written as a file with
+that name. The JVM reads your own `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS` (including `@argfiles`), the command line (`JAVA_OPTIONS`, or `-j` when `JAVA_OPTIONS`
+is unset or empty) and `_JAVA_OPTIONS` after these defaults, so a value for one of these flags in any of them overrides the default. Only the environment
+variables reach the JVMs the server starts: to turn dumps off for all of them, set `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, while `-j` or
+`JAVA_OPTIONS` turns them off for the server JVM only. Either way each start that reaches Java still creates its empty `heapdump_*` directory, unless creating
+it failed and dumps fell back to `logs/`. If the logs path contains a double quote or `%`, the launcher warns and heap dumps go to `logs/` itself, with no
+per-launch directory and no crash log default; the `JAVA_TOOL_OPTIONS` opt-out still applies. A path with both quote characters gets no heap dump default at
+all. Because of the defaults, the JVM prints `Picked up JAVA_TOOL_OPTIONS: ...` on stderr at startup.
+
+> **Version scope**: this applies to current development/master builds. In 1.7.0 the heap dump flags are
+> added only when `JAVA_OPTIONS` is unset, heap dumps go directly to `logs/java_pid<pid>.hprof`, and JVM crash logs go to the install directory.
 
 ### 5.2 Use Docker to startup
 
@@ -524,10 +721,10 @@ jps
 `curl` request `RESTfulAPI`
 
 ```bash
-echo `curl -o /dev/null -s -w %{http_code} "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"`
+curl -fsS http://127.0.0.1:8080/versions
 ```
 
-Return 200, which means the server starts normally.
+HTTP 2xx with a JSON `versions` field confirms REST responsiveness. `HugeGraphServer` in `jps` confirms only process existence; verify backend health by preloading the sample graph and requesting vertices as above.
 
 ### 6.2 Request Server
 
@@ -547,23 +744,28 @@ curl http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 _explanation_
 
-1. Since there are many vertices and edges in the graph, for list-type requests, such as getting all vertices, getting all edges, etc., the server will compress the data and return it, so when use curl, you get a bunch of garbled characters, you can redirect to gunzip for decompression. It is recommended to use the Chrome browser + Restlet plugin to send HTTP requests for testing.
+1. Server can compress vertex, edge, and other list responses. Use `curl --compressed` for automatic decompression:
 
-    ```
-    curl "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices" | gunzip
+    ```text
+    curl --compressed -fsS "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
     ```
 
-2. The current default configuration of HugeGraphServer can only be accessed locally, and the configuration can be modified so that it can be accessed on other machines.
+2. The default listener is `127.0.0.1`, inaccessible directly from other machines.
 
-    ```
+    ```text
     vim conf/rest-server.properties
     
     restserver.url=http://0.0.0.0:8080
     ```
 
+> [!WARNING]
+> **Changing the Server listener**
+>
+> Setting `0.0.0.0` listens on every interface. In production, enable authentication and authorization, an IP allowlist, and minimum permissions; retain and protect audit logs. Do not expose Gremlin or Cypher directly to the public Internet.
+
 response body:
 
-```javasript
+```javascript
 {
     "vertices": [
         {
@@ -640,7 +842,7 @@ Currently, HugeGraph supports setting authentication information in two forms: B
 ## 7 Stop Server
 
 ```bash
-cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-server-incubating-1.7.0
+cd apache-hugegraph-1.7.0/apache-hugegraph-server-1.7.0
 bin/stop-hugegraph.sh
 ```
 

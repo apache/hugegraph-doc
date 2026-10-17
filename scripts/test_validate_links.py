@@ -74,6 +74,24 @@ class ValidateLinksImagesTest(unittest.TestCase):
         self.assertIn("Error: Broken link", result.stdout)
         self.assertIn("assets/images/docs/missing.png", result.stdout)
 
+    def test_recording_path_requires_a_real_local_file(self) -> None:
+        self.write_content("/casts/check.cast")
+        result = self.run_validator()
+        self.assertEqual(result.returncode, 1)
+        self.write_file("static/casts/check.cast")
+        result = self.run_validator()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_recording_symlink_cannot_escape_static(self) -> None:
+        self.write_content("/casts/escape.cast")
+        outside = self.write_file("private/escape.cast")
+        link = self.root / "static/casts/escape.cast"
+        link.parent.mkdir(parents=True)
+        link.symlink_to(outside)
+        result = self.run_validator()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Error: Link resolves outside content directory", result.stdout)
+
     def test_images_path_cannot_escape_with_parent_segments(self) -> None:
         self.write_content("/images/%2e%2e/secret.png")
         self.write_file("assets/secret.png")

@@ -7,6 +7,8 @@
     dir="{{ .Site.Language.Direction | default "ltr" }}"
     lang="{{ partial "language-tag.html" . }}"
     data-td-typography="{{ partial "typography-preset.html" .Site }}"
+    {{- $preset := partialCached "preset-config.html" "preset-global" }}
+    data-td-preset="{{ $preset.preset }}" data-td-site-preset="{{ $preset.preset }}"
     {{- $darkMode := partialCached "dark-mode-config.html" "dark-mode-global" -}}
     {{- if $darkMode.enable }} data-td-theme-init{{ end }}>
   <head>

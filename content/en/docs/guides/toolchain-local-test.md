@@ -311,7 +311,7 @@ mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true 
 #### Dependent Services
 
 - **Required**: HugeGraph Server
-- **Optional**: Hadoop (HDFS tests), MySQL (JDBC tests)
+- **Optional**: Hadoop (HDFS tests), MySQL (JDBC tests); Kafka tests use Testcontainers to start Kafka and also require an available Docker daemon.
 
 #### Run Tests
 
@@ -321,7 +321,7 @@ mvn test -P unit -ntp   # Unit tests
 mvn test -P file -ntp   # File tests (requires Server)
 mvn test -P hdfs -ntp   # HDFS tests (requires Server + Hadoop)
 mvn test -P jdbc -ntp   # JDBC tests (requires Server + MySQL)
-mvn test -P kafka -ntp  # Kafka tests (requires Server)
+mvn test -P kafka -ntp  # Kafka tests (requires Server + Docker daemon; starts a Kafka container)
 ```
 
 ### 4.3 hugegraph-hubble

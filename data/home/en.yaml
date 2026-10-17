@@ -10,7 +10,7 @@ hero:
   align: center
   class: hg-home-hero
   title: Apache HugeGraph
-  lead: HugeGraph is a full-stack graph system covering [graph database](docs/quickstart/hugegraph/hugegraph-server/), [graph computing](docs/quickstart/computing/hugegraph-computer/), and [graph AI](docs/quickstart/hugegraph-ai/).
+  lead: HugeGraph is a full-stack graph system covering [graph database](docs/quickstart/hugegraph/hugegraph-server/), [graph computing](docs/quickstart/computing/hugegraph-vermeer/), and [graph AI](docs/quickstart/hugegraph-ai/).
   note: It provides complete graph data processing capabilities from storage and real-time querying to offline analysis, and supports both [Gremlin](docs/language/hugegraph-gremlin/) and [Cypher](docs/clients/restful-api/cypher/) query languages.
   actions:
     - { label: Learn More, url: docs/, icon: fa-solid fa-circle-arrow-right, style: primary }
@@ -19,9 +19,9 @@ hero:
 introduction:
   class: hg-home-introduction
   body: |-
-    HugeGraph supports high-speed import and millisecond-level real-time queries for up to hundreds of billions of graph data, with deep integration with big data platforms like Spark and Flink, and can use the [HugeGraph toolchain](docs/quickstart/toolchain/) for data import, visualization, and operations.
+    HugeGraph supports high-speed import and millisecond-level real-time queries for up to hundreds of billions of graph data, with seamless integration with big data platforms such as Spark/Flink/SeaTunnel, and can use the [HugeGraph toolchain](docs/quickstart/toolchain/) for data import, visualization, and operations.
 
-    In the AI era, combined with Large Language Models (LLMs), it provides powerful graph computing capabilities for intelligent Q&A, recommendation systems, fraud detection, and knowledge graph applications.
+    In the AI era, combined with Large Language Models (LLMs), it provides powerful Graph AI and graph computing capabilities for intelligent Q&A, recommendation systems, fraud detection, and knowledge graph applications.
 
 capabilities:
   class: hg-home-capabilities
@@ -35,7 +35,7 @@ capabilities:
       desc: Deeply optimized for graph storage and graph computing, it provides [**batch import tools**](docs/quickstart/toolchain/hugegraph-loader/) to efficiently ingest massive data, achieves millisecond-level graph retrieval latency with optimized queries, and supports concurrent online operations for thousands of users.
     - title: Adaptable
       icon: fa-solid fa-arrow-right-arrow-left
-      desc: Supports the Apache Gremlin standard graph query language and the Property Graph modeling method, with both OLTP and [**OLAP graph computing**](docs/quickstart/computing/hugegraph-computer/) scenarios. It can be integrated with Hadoop and Spark and can extend backend storage engines through plug-ins.
+      desc: Supports the Apache Gremlin standard graph query language and the Property Graph modeling method, with both OLTP and [**OLAP graph computing**](docs/quickstart/computing/hugegraph-vermeer/) scenarios. It can be integrated with Hadoop and Spark and can extend backend storage engines through plug-ins.
     - title: AI-Ready
       icon: fa-solid fa-brain
       desc: Integrates LLM with [**GraphRAG capabilities**](docs/quickstart/hugegraph-ai/), automated knowledge graph construction, and 20+ built-in graph machine learning algorithms to build AI-driven graph applications.

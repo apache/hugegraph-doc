@@ -10,7 +10,7 @@ The module lives in the [hugegraph-ai](https://github.com/apache/hugegraph-ai) r
 
 ## Requirements
 
-- Python 3.9 or later for the client itself. The HugeGraph-AI workspace requires Python 3.10 or later, and CI runs the client tests on 3.10 and 3.11.
+- The client and HugeGraph-AI workspace require Python 3.10 or later; CI runs client tests on 3.10 and 3.11.
 - HugeGraph Server 1.5.0 or later. The client refuses to connect to older servers; use client v1.3.x for those.
 - `uv` (recommended) or `pip`
 
@@ -25,7 +25,7 @@ uv pip install hugegraph-python
 # Alternatively: pip install hugegraph-python
 ```
 
-> The PyPI release lags behind the repository. In the source tree the distribution is declared as `hugegraph-python-client` and versioned with the rest of HugeGraph-AI, so install from source if you need the newest code.
+These commands do not pin a version and install the latest release; see [PyPI](https://pypi.org/project/hugegraph-python/). The source directory is `hugegraph-python-client`, while the distribution is `hugegraph-python`. Install from the HugeGraph-AI workspace for master code.
 
 To use the latest repository code, sync the workspace from the root of the HugeGraph-AI repository. `hugegraph-python-client` is a workspace member exposed through the `python-client` extra, so plain `uv sync` does not pull it in:
 

@@ -3,3 +3,10 @@
   {{- errorf "params.ui.theme_color must be a six-digit hexadecimal color" -}}
 {{- end }}
 <style>:root { --hg-theme-color: {{ $themeColor | safeCSS }}; }</style>
+{{- $targets := partialCached "language-targets.html" . .Site.BaseURL .RelPermalink .Site.Language.Lang -}}
+{{- $auto := and .IsHome (eq .Site.Language.Lang "en") (eq (.Site.Params.version | default "latest") "latest") -}}
+<script type="application/json" id="hg-language-config">{{ dict "auto" $auto "locale" .Site.Language.Lang "targets" $targets | jsonify | safeJS }}</script>
+{{- $language := resources.Get "js/language-preference.js" -}}
+{{- if hugo.IsProduction }}{{ $language = $language | minify | fingerprint }}{{ end }}
+<script src="{{ $language.RelPermalink }}"
+  {{- with $language.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}></script>

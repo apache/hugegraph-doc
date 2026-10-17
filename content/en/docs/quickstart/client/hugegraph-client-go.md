@@ -25,7 +25,9 @@ go get github.com/apache/hugegraph-toolchain/hugegraph-client-go
 
 `NewCommonClient` requires `Host` to be an IP address and `Port` to be between 1 and 65535. The client always connects over plain HTTP. Leave the username and password empty when authentication is disabled; Basic Auth is sent only when both are set.
 
-`GraphSpace` is applied only by the `Vertex` API, which then calls `/graphspaces/{space}/graphs/{graph}/...`, and by the default Gremlin aliases (an empty value is treated as `DEFAULT`). The schema entry points and `Version()` always call `/graphs/{graph}/...` and `/versions`, regardless of `GraphSpace`. Use `DEFAULT` for the default space; leaving `GraphSpace` empty makes the `Vertex` API fall back to the `/graphs/{graph}` path used by older servers.
+When `GraphSpace` is nonempty, the `Vertex` and schema APIs (`Schema()`, `Propertykey`, `VertexLabel`, and `EdgeLabel`) use
+`/graphspaces/{space}/graphs/{graph}/...`; an empty value selects the legacy `/graphs/{graph}/...` paths. Use `DEFAULT` for the default space.
+Gremlin default aliases also use `GraphSpace`, treating an empty value as `DEFAULT`. `Version()` calls `/versions` independently of graph space.
 
 ```go
 package main
@@ -70,7 +72,7 @@ The `Versions` value returned by `Version()` includes the HugeGraph Server, Core
 |---|---|---|
 | `Host` | `string` | HugeGraph Server IP address. Host names are rejected. |
 | `Port` | `int` | HugeGraph Server REST port, 1 to 65535 |
-| `GraphSpace` | `string` | Graph space; only used by the `Vertex` API and the default Gremlin aliases. Set an empty string when not needed. |
+| `GraphSpace` | `string` | Graph space for the `Vertex` and schema APIs and default Gremlin aliases; use `DEFAULT` for the default space. |
 | `Graph` | `string` | Graph name configured on the server |
 | `Username` | `string` | Server username; empty string when authentication is disabled |
 | `Password` | `string` | Server password; empty string when authentication is disabled |
@@ -115,6 +117,13 @@ client, err := hugegraph.NewCommonClient(hugegraph.Config{
 
 Each operation takes functional options named `With...` on the operation itself, for example `client.Gremlin.Post.WithGremlin(...)` or `client.Propertykey.GetByName.WithName(...)`.
 
+`EdgeLabel.Create` accepts `Properties: nil` or an empty `[]string{}` in its request data to create an edge label without properties.
+
+Typed APIs return `err` for request validation, transport, response reading, or JSON decoding failures.
+An HTTP 4xx/5xx response can still return `err == nil`; for example, creating a vertex with a nonexistent label returns HTTP 400.
+Check that `response.StatusCode` is in the 2xx range before reading result data. For `Gremlin.Post`, also check `response.Data.Status.Code`
+for a successful Gremlin protocol status (2xx).
+
 ```go
 resp, err := client.Gremlin.Post(
 	client.Gremlin.Post.WithGremlin("g.V().limit(3)"),
@@ -122,7 +131,14 @@ resp, err := client.Gremlin.Post(
 if err != nil {
 	log.Fatal(err)
 }
-fmt.Println(resp.StatusCode, resp.Data.Status.Code, resp.Data.Result.Data)
+defer resp.Body.Close()
+if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	log.Fatalf("HugeGraph returned HTTP %d", resp.StatusCode)
+}
+if resp.Data.Status.Code < 200 || resp.Data.Status.Code >= 300 {
+	log.Fatalf("Gremlin returned status %d: %s", resp.Data.Status.Code, resp.Data.Status.Message)
+}
+fmt.Println(resp.Data.Result.Data)
 ```
 
 > The `Vertex` operations take `model.Vertex[any]` values from the `internal/model` package. Go does not allow importing an `internal` package from another module, so at the moment the `Vertex` API can only be called from code inside the client module itself; its test file is also fully commented out.

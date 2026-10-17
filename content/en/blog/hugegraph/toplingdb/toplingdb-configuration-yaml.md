@@ -2,7 +2,16 @@
 date: 2025-09-30
 title: "ToplingDB YAML configuration file"
 linkTitle: "ToplingDB YAML configuration file"
+categories: [storage]
+tags: [ToplingDB, RocksDB]
+series: [toplingdb]
+series_weight: 2
 ---
+
+> **Historical integration.** This 2025 article describes an earlier interface and is retained for reference.
+> For the proposed replacement, see the [ToplingDB development guide](/docs/guides/toplingdb/).
+> That guide describes unreleased changes; do not mix its settings with these historical examples.
+
 
 RocksDB provides a rich set of configuration parameters, but most of them typically require hardcoded setup.
 
@@ -280,6 +289,6 @@ These extensions give users more tuning space, particularly suited for scenarios
 
 ## Related Documentation
 
-- [ToplingDB Quick Start](/blog/2025/10/09/toplingdb-quick-start) – How to enable ToplingDB in HugeGraph
+- [ToplingDB Quick Start]({{< ref path="/blog/hugegraph/toplingdb/toplingdb-quick-start.md" lang="en">}}) – How to enable ToplingDB in HugeGraph
 - [RocksDB Official Configuration Guide](https://github.com/facebook/rocksdb/wiki/Setup-Options-and-Basic-Tuning) – Learn the basic configuration options
 - [SidePlugin Wiki](https://github.com/topling/sideplugin-wiki-en/wiki) – Complete configuration reference for ToplingDB

@@ -60,8 +60,14 @@ HugeGraph requires explicit schema creation, which involves creating PropertyKey
 
 #### 2.1 Graph Schema
 
+The snippets assume a local Groovy script has opened HugeGraph as `graph` and set `g = graph.traversal()`. Start with the [Gremlin Console local-mode example](/docs/clients/gremlin-console/), whose `scripts/example.groovy` creates both variables. In a remote Console, `g` is a Server-side traversal-source alias and there is no local `graph` object; use the Schema REST API for remote schema creation.
+
 ```groovy
-schema = hugegraph.schema()
+import org.apache.tinkerpop.gremlin.structure.T
+import org.apache.tinkerpop.gremlin.structure.Vertex
+
+schema = graph.schema()
+g = graph.traversal()
 
 schema.propertyKey("name").asText().ifNotExist().create()
 schema.propertyKey("age").asInt().ifNotExist().create()
@@ -115,6 +121,8 @@ pluto.addEdge("brother", neptune)
 pluto.addEdge("lives", tartarus, "reason", "no fear of death")
 pluto.addEdge("pet", cerberus)
 cerberus.addEdge("lives", tartarus)
+
+graph.tx().commit()
 ```
 
 #### 2.3 Indices

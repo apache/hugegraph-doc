@@ -24,7 +24,7 @@ Params 说明
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels
 ```
 
@@ -133,7 +133,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabel
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels/created?action=append
 ```
 
@@ -186,7 +186,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels
 ```
 
@@ -248,7 +248,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels/created
 ```
 
@@ -291,7 +291,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelabels/created
 ```
 

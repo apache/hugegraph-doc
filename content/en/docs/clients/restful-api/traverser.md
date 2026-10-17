@@ -175,7 +175,7 @@ public class Loader {
 
 The vertex IDs are:
 
-```
+```text
 "2:ripple",
 "1:vadas",
 "1:peter",
@@ -186,7 +186,7 @@ The vertex IDs are:
 
 The edge IDs are:
 
-```
+```text
 "S1:peter>2>>S2:lop",
 "S1:josh>2>>S2:lop",
 "S1:josh>2>>S2:ripple",
@@ -216,7 +216,7 @@ The K-out API allows you to find vertices that are exactly "depth" steps away fr
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kout?source="1:marko"&max_depth=2
 ```
 
@@ -266,7 +266,7 @@ The K-out API allows you to find vertices that are exactly "depth" steps away fr
     - vertex_steps: The step set of vertices, supporting label and properties filtering for the vertex. If vertex_steps is empty, the vertex is not filtered.
         - label: Vertex types.
         - properties: Filter vertices based on property values.
-    - max_degree: Maximum number of adjacent edges to traverse for a single vertex, default is 10000 (Note: Prior to version 0.12, the parameter name was "degree" instead of "max_degree". Starting from version 0.12, "max_degree" is used uniformly, while still supporting the "degree" syntax for backward compatibility).
+    - max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
     - skip_degree: Sets the minimum number of edges to skip super vertices during the query process. If the number of adjacent edges for a vertex is greater than skip_degree, the vertex is completely skipped. Optional. If enabled, it should satisfy the constraint `skip_degree >= max_degree`. Default is 0 (not enabled), indicating no skipping of any vertices (Note: Enabling this configuration means that during traversal, an attempt will be made to access skip_degree edges of a vertex, not just max_degree edges. This incurs additional traversal overhead and may have a significant impact on query performance. Please enable it only after understanding the implications).
 - max_depth: Number of steps, required.
 - nearest: When nearest is true, it means the shortest path length from the starting vertex to the result vertex is equal to depth, and there is no shorter path. When nearest is false, it means there is a path of length depth from the starting vertex to the result vertex (not necessarily the shortest and can contain cycles). Optional, default is true.
@@ -290,7 +290,7 @@ The K-out API allows you to find vertices that are exactly "depth" steps away fr
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kout
 ```
 
@@ -457,7 +457,7 @@ Find all vertices that are reachable within depth steps, including the starting 
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighbor?source=%221:marko%22&max_depth=2
 ```
 
@@ -511,7 +511,7 @@ Find all vertices that are reachable within depth steps from the starting vertex
     - vertex_steps: The step set of vertices, supporting label and properties filtering for the vertex. If vertex_steps is empty, the vertex is not filtered.
         - label: Vertex types.
         - properties: Filter vertices based on property values.
-    - max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Before version 0.12, the parameter name within the step only supported "degree." Starting from version 0.12, it is unified as "max_degree" and is backward compatible with the "degree" notation.)
+    - max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
     - skip_degree: Used to set the minimum number of edges to discard super vertices during the query process. When the number of adjacent edges for a vertex exceeds skip_degree, the vertex is completely discarded. This is an optional parameter. If enabled, it should satisfy the constraint `skip_degree >= max_degree`. Default is 0 (not enabled), which means no vertices are skipped. (Note: When this configuration is enabled, the traversal will attempt to access skip_degree edges for each vertex, not just max_degree edges. This incurs additional traversal overhead and may significantly impact query performance. Please make sure to understand this before enabling.)
 - max_depth: Number of steps, required.
 - count_only: Boolean value. If true, only the count of results is returned without the actual results. If false, the specific results are returned. Default is false.
@@ -532,7 +532,7 @@ Find all vertices that are reachable within depth steps from the starting vertex
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighbor
 ```
 
@@ -758,7 +758,7 @@ Retrieve the common neighbors of two vertices.
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/sameneighbors?vertex=%221:marko%22&other=%221:josh%22
 ```
 
@@ -790,6 +790,12 @@ Find the common neighbors of two vertices:
 
 Compute the Jaccard similarity between two vertices (the intersection of the neighbors of the two vertices divided by the union of the neighbors of the two vertices).
 
+For neighbor sets `N(u)` and `N(v)` with a nonempty union, the definition above is:
+
+```math
+J(u,v) = \frac{|N(u) \cap N(v)|}{|N(u) \cup N(v)|}
+```
+
 ###### Params
 
 - vertex: ID of one vertex, required.
@@ -802,7 +808,7 @@ Compute the Jaccard similarity between two vertices (the intersection of the nei
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/jaccardsimilarity?vertex="1:marko"&other="1:josh"
 ```
 
@@ -839,7 +845,7 @@ Compute the N vertices with the highest Jaccard similarity to a specified vertex
 	- direction: Direction of the edges (OUT, IN, BOTH). Optional, default is BOTH.
 	- labels: List of edge types.
 	- properties: Filter edges based on property values.
-	- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Prior to version 0.12, the parameter name inside "step" was "degree". Starting from version 0.12, it is unified as "max_degree" and still compatible with "degree" notation.)
+	- max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
 	- skip_degree: Used to set the minimum number of edges to skip super vertices during the query process. If the number of adjacent edges for a vertex is greater than skip_degree, the vertex is completely skipped. Optional, default is 0 (not enabled), which means no skipping. (Note: When this configuration is enabled, the traversal will attempt to access skip_degree edges of a vertex, not just max_degree edges. This incurs additional traversal overhead and may have a significant impact on query performance. Please enable it after understanding and confirming.)
 - top: Return the top N vertices with the highest Jaccard similarity for a starting vertex. Optional, default is 100.
 - capacity: Maximum number of vertices to be visited during the traversal process. Optional, default is 10000000.
@@ -848,7 +854,7 @@ Compute the N vertices with the highest Jaccard similarity to a specified vertex
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/jaccardsimilarity
 ```
 
@@ -908,7 +914,7 @@ Find the shortest path between a starting vertex and a target vertex based on th
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/shortestpath?source="1:marko"&target="2:ripple"&max_depth=3
 ```
 
@@ -958,7 +964,7 @@ Find all shortest paths between a starting vertex and a target vertex based on t
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/allshortestpaths?source="A"&target="Z"&max_depth=10
 ```
 
@@ -1022,7 +1028,7 @@ Find a weighted shortest path between a starting vertex and a target vertex base
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/weightedshortestpath?source="1:marko"&target="2:ripple"&weight="weight"&with_vertex=true
 ```
 
@@ -1107,7 +1113,7 @@ Starting from a vertex, find the shortest paths from that vertex to other vertic
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/singlesourceshortestpath?source="1:marko"&with_vertex=true
 ```
 
@@ -1249,7 +1255,7 @@ Finds the shortest paths between pairs of specified vertices.
 	- direction: Represents the direction of the edges (OUT, IN, BOTH). Default is BOTH.
 	- labels: List of edge types.
 	- properties: Filters the edges based on property values.
-	- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Before version 0.12, the step only supported "degree" as the parameter name. Starting from version 0.12, "max_degree" is used uniformly, and "degree" is still supported for backward compatibility.)
+	- max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
 	- skip_degree: Used to set the minimum number of edges to skip super vertices during the query process. If the number of adjacent edges for a vertex is greater than skip_degree, the vertex is completely skipped. Optional, default is 0 (not enabled), which means no skipping. (Note: When this configuration is enabled, the traversal will attempt to access skip_degree edges of a vertex, not just max_degree edges. This incurs additional traversal overhead and may have a significant impact on query performance. Please enable it after understanding and confirming.)
 - max_depth: Number of steps, required.
 - capacity: Maximum number of vertices to be visited during the traversal process. Optional, default is 10000000.
@@ -1259,7 +1265,7 @@ Finds the shortest paths between pairs of specified vertices.
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/multinodeshortestpath
 ```
 
@@ -1487,7 +1493,7 @@ Finds all paths based on conditions such as the starting vertex, destination ver
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/paths?source="1:marko"&target="1:josh"&max_depth=5
 ```
 
@@ -1550,7 +1556,7 @@ Finds all paths based on conditions such as the starting vertex, destination ver
 	- direction: Represents the direction of edges (OUT, IN, BOTH). The default is BOTH.
 	- labels: List of edge types.
 	- properties: Filters edges based on property values.
-	- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Prior to version 0.12, step only supported degree as a parameter name. Starting from version 0.12, max_degree is used uniformly and degree writing is backward compatible.)
+	- max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
 	- skip_degree: Used to set the minimum number of edges to be discarded for super vertices during the query process. When the number of adjacent edges for a vertex is greater than skip_degree, the vertex is completely discarded. Optional, if enabled, it must satisfy the constraint `skip_degree >= max_degree`. Default is 0 (not enabled), which means no points are skipped. (Note: When this configuration is enabled, the traversal will attempt to visit skip_degree edges of a vertex, not just max_degree edges. This incurs additional traversal overhead and may have a significant impact on query performance. Please make sure to understand before enabling it.)
 - max_depth: Number of steps, required.
 - nearest: When nearest is true, it means the shortest path length from the starting vertex to the result vertex is depth, and there is no shorter path. When nearest is false, it means there is a path of length depth from the starting vertex to the result vertex (not necessarily the shortest path and can have cycles). Optional, default is true.
@@ -1562,7 +1568,7 @@ Finds all paths based on conditions such as the starting vertex, destination ver
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/paths
 ```
 
@@ -1647,7 +1653,7 @@ Finds all paths that meet the specified conditions based on a batch of starting 
 	- properties: Filters edges based on property values.
 	- weight_by: Calculates the weight of edges based on the specified property. It is effective when sort_by is not NONE and is mutually exclusive with default_weight.
 	- default_weight: The default weight to be used when there is no property to calculate the weight of edges. It is effective when sort_by is not NONE and is mutually exclusive with weight_by.
-	- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Prior to version 0.12, step only supported degree as a parameter name. Starting from version 0.12, max_degree is used uniformly and degree writing is backward compatible.)
+	- max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
 	- sample: Used when sampling is needed for the edges that meet the conditions of a specific step. -1 means no sampling, and the default is to sample 100 edges.
 - sort_by: Sorts the paths based on their weights. Optional, default is NONE:
 	- NONE: No sorting, default value.
@@ -1661,7 +1667,7 @@ Finds all paths that meet the specified conditions based on a batch of starting 
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/customizedpaths
 ```
 
@@ -1839,7 +1845,7 @@ Finds all paths that meet the specified conditions based on a batch of starting 
 	- labels: List of edge types.
 	- properties: Filters edges based on property values.
 	- max_times: The number of times the current step can be repeated. When set to N, it means the starting vertices can pass through the current step 1-N times.
-	- max_degree: Maximum number of adjacent edges to traverse for each vertex during the query process. Default is 10000. (Note: Prior to version 0.12, step only supported degree as a parameter name. Starting from version 0.12, max_degree is used uniformly and degree writing is backward compatible.)
+	- max_degree: Maximum adjacent edges traversed per vertex, defaulting to 10000; the parameter name `degree` is also accepted.
 	- skip_degree: Used to set the minimum number of edges to discard super vertices during the query process. When the number of adjacent edges of a vertex is greater than skip_degree, the vertex is completely discarded. Optional. If enabled, it must satisfy the `skip_degree >= max_degree` constraint. Default is 0 (not enabled), which means no points are skipped. (Note: After enabling this configuration, traversing will attempt to access a vertex's skip_degree edges, not just max_degree edges. This incurs additional traversal overhead and may have a significant impact on query performance. Please ensure understanding before enabling.)
 - with_ring: Boolean value, true to include cycles; false to exclude cycles. Default is false.
 - capacity: Maximum number of vertices to be visited during the traversal process. Optional, default is 10000000.
@@ -1852,7 +1858,7 @@ Finds all paths that meet the specified conditions based on a batch of starting 
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/templatepaths
 ```
 
@@ -2016,7 +2022,7 @@ Finds the intersection points based on the specified conditions, including start
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/crosspoints?source="2:lop"&target="2:ripple"&max_depth=5&direction=IN
 ```
 
@@ -2086,7 +2092,7 @@ Finds the intersection of destination vertices that satisfy the specified condit
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/customizedcrosspoints
 ```
 
@@ -2256,7 +2262,7 @@ For example: 1 -> 25 -> 775 -> 14690 -> 25, where the cycle is 25 -> 775 -> 1469
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/rings?source="1:marko"&max_depth=2
 ```
 
@@ -2325,7 +2331,7 @@ For example: 1 -> 25 -> 775 -> 14690 -> 2289 -> 18379, where 18379 is the bounda
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/rays?source="1:marko"&max_depth=2&direction=OUT
 ```
 
@@ -2414,7 +2420,7 @@ Queries a batch of "fusiform similar vertices" based on specified conditions. Wh
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/fusiformsimilarity
 ```
 
@@ -2521,7 +2527,7 @@ Used to query vertices that have high similarity with a group of vertices. For e
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertices?ids="1:marko"&ids="2:lop"
 ```
 
@@ -2600,7 +2606,7 @@ Obtain vertex shard information by specifying the shard size `split_size` (can b
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertices/shards?split_size=67108864
 ```
 
@@ -2653,7 +2659,7 @@ Retrieve vertices in batches based on the specified shard information (refer to 
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertices/scan?start=0&end=4294967295
 ```
 
@@ -2837,7 +2843,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertic
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges?ids="S1:josh>1>>S2:lop"&ids="S1:josh>1>>S2:ripple"
 ```
 
@@ -2892,7 +2898,7 @@ Retrieve shard information for edges by specifying the shard size (`split_size`)
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges/shards?split_size=4294967295
 ```
 
@@ -2949,7 +2955,7 @@ Batch retrieve edges by specifying shard information (refer to section 3.2.22.2 
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges/scan?start=0&end=3221225469
 ```
 
@@ -3070,7 +3076,7 @@ Compute the [Adamic-Adar](https://en.wikipedia.org/wiki/Adamic/Adar_index) index
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/adamicadar?vertex="1:marko"&other="1:josh"
 ```
 
@@ -3113,7 +3119,7 @@ Compute the resource allocation index of two vertices: the sum of the reciprocal
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/resourceallocation?vertex="1:marko"&other="1:josh"
 ```
 
@@ -3153,7 +3159,7 @@ Return the edges that exist between a source vertex and a target vertex.
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/edgeexist?source="1:marko"&target="2:lop"
 ```
 
@@ -3211,7 +3217,7 @@ Count the vertices reached from a starting vertex after a series of traversal st
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/count
 ```
 

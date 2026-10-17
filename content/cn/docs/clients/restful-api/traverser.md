@@ -175,7 +175,7 @@ public class Loader {
 
 顶点 ID 为：
 
-```
+```text
 "2:ripple",
 "1:vadas",
 "1:peter",
@@ -186,7 +186,7 @@ public class Loader {
 
 边 ID 为：
 
-```
+```text
 "S1:peter>2>>S2:lop",
 "S1:josh>2>>S2:lop",
 "S1:josh>2>>S2:ripple",
@@ -216,7 +216,7 @@ public class Loader {
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kout?source="1:marko"&max_depth=2
 ```
 
@@ -266,7 +266,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kout?sou
     - vertex_steps：顶点 Step 集合，支持对单点的类型和属性过滤，如果为空，则不过滤
         - label：顶点类型
         - properties：顶点属性
-    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000 (注：0.12 版之前 step 内仅支持 degree 作为参数名，0.12 开始统一使用 max_degree, 并向下兼容 degree 写法)
+    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000；当前也兼容参数名 `degree`。
     - skip_degree：用于设置查询过程中舍弃超级顶点的最小边数，即当某个顶点的邻接边数目大于 skip_degree 时，完全舍弃该顶点。选填项，如果开启时，需满足 `skip_degree >= max_degree` 约束，默认为 0 (不启用)，表示不跳过任何点 (注意：开启此配置后，遍历时会尝试访问一个顶点的 skip_degree 条边，而不仅仅是 max_degree 条边，这样有额外的遍历开销，对查询性能影响可能有较大影响，请确认理解后再开启)
 - max_depth：步数，必填项
 - nearest：nearest 为 true 时，代表起始顶点到达结果顶点的最短路径长度为 depth，不存在更短的路径；nearest 为 false 时，代表起始顶点到结果顶点有一条长度为 depth 的路径（未必最短且可以有环），选填项，默认为 true
@@ -290,7 +290,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kout?sou
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kout
 ```
 
@@ -457,7 +457,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kout
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighbor?source=%221:marko%22&max_depth=2
 ```
 
@@ -514,7 +514,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighbo
         - vertex_steps：顶点 Step 集合，支持对单点的类型和属性过滤，如果为空，则不过滤
             - label：顶点类型
             - properties：顶点属性
-    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000 (注：0.12 版之前 step 内仅支持 degree 作为参数名，0.12 开始统一使用 max_degree, 并向下兼容 degree 写法)
+    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000；当前也兼容参数名 `degree`。
     - skip_degree：用于设置查询过程中舍弃超级顶点的最小边数，即当某个顶点的邻接边数目大于 skip_degree 时，完全舍弃该顶点。选填项，如果开启时，需满足 `skip_degree >= max_degree` 约束，默认为 0 (不启用)，表示不跳过任何点 (注意：开启此配置后，遍历时会尝试访问一个顶点的 skip_degree 条边，而不仅仅是 max_degree 条边，这样有额外的遍历开销，对查询性能影响可能有较大影响，请确认理解后再开启)
 - max_depth：步数，必填项
 - count_only：Boolean 值，true 表示只统计结果的数目，不返回具体结果；false 表示返回具体的结果，默认为 false
@@ -535,7 +535,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighbo
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighbor
 ```
 
@@ -756,7 +756,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/kneighb
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/sameneighbors?vertex=%221:marko%22&other=%221:josh%22
 ```
 
@@ -788,6 +788,12 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/sameneig
 
 计算两个顶点的 jaccard similarity（两个顶点邻居的交集比上两个顶点邻居的并集）
 
+对于并集非空的邻居集合 `N(u)` 和 `N(v)`，上述定义可写为：
+
+```math
+J(u,v) = \frac{|N(u) \cap N(v)|}{|N(u) \cup N(v)|}
+```
+
 ###### Params
 
 - vertex：一个顶点 id，必填项
@@ -800,7 +806,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/sameneig
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/jaccardsimilarity?vertex="1:marko"&other="1:josh"
 ```
 
@@ -837,7 +843,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/jaccards
     - direction：表示边的方向（OUT,IN,BOTH），默认是 BOTH
 	- labels：边的类型列表
 	- properties：通过属性的值过滤边
-    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000 (注：0.12 版之前 step 内仅支持 degree 作为参数名，0.12 开始统一使用 max_degree, 并向下兼容 degree 写法)
+    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000；当前也兼容参数名 `degree`。
     - skip_degree：用于设置查询过程中舍弃超级顶点的最小边数，即当某个顶点的邻接边数目大于 skip_degree 时，完全舍弃该顶点。选填项，如果开启时，需满足 `skip_degree >= max_degree` 约束，默认为 0 (不启用)，表示不跳过任何点 (注意：开启此配置后，遍历时会尝试访问一个顶点的 skip_degree 条边，而不仅仅是 max_degree 条边，这样有额外的遍历开销，对查询性能影响可能有较大影响，请确认理解后再开启)
 - top：返回一个起点的 jaccard similarity 中最大的 top 个，选填项，默认为 100
 - capacity：遍历过程中最大的访问的顶点数目，选填项，默认为 10000000
@@ -846,7 +852,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/jaccards
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/jaccardsimilarity
 ```
 
@@ -906,7 +912,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/jaccard
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/shortestpath?source="1:marko"&target="2:ripple"&max_depth=3
 ```
 
@@ -956,7 +962,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/shortest
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/allshortestpaths?source="A"&target="Z"&max_depth=10
 ```
 
@@ -1020,7 +1026,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/allshort
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/weightedshortestpath?source="1:marko"&target="2:ripple"&weight="weight"&with_vertex=true
 ```
 
@@ -1105,7 +1111,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/weighted
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/singlesourceshortestpath?source="1:marko"&with_vertex=true
 ```
 
@@ -1247,7 +1253,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/singleso
     - direction：表示边的方向（OUT,IN,BOTH），默认是 BOTH
 	- labels：边的类型列表
 	- properties：通过属性的值过滤边
-    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000 (注：0.12 版之前 step 内仅支持 degree 作为参数名，0.12 开始统一使用 max_degree, 并向下兼容 degree 写法)
+    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000；当前也兼容参数名 `degree`。
     - skip_degree：用于设置查询过程中舍弃超级顶点的最小边数，即当某个顶点的邻接边数目大于 skip_degree 时，完全舍弃该顶点。选填项，如果开启时，需满足 `skip_degree >= max_degree` 约束，默认为 0 (不启用)，表示不跳过任何点 (注意：开启此配置后，遍历时会尝试访问一个顶点的 skip_degree 条边，而不仅仅是 max_degree 条边，这样有额外的遍历开销，对查询性能影响可能有较大影响，请确认理解后再开启)
 - max_depth：步数，必填项
 - capacity：遍历过程中最大的访问的顶点数目，选填项，默认为 10000000
@@ -1257,7 +1263,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/singleso
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/multinodeshortestpath
 ```
 
@@ -1485,7 +1491,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/multino
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/paths?source="1:marko"&target="1:josh"&max_depth=5
 ```
 
@@ -1548,7 +1554,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/paths?so
     - direction：表示边的方向（OUT,IN,BOTH），默认是 BOTH
 	- labels：边的类型列表
 	- properties：通过属性的值过滤边
-    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000 (注：0.12 版之前 step 内仅支持 degree 作为参数名，0.12 开始统一使用 max_degree, 并向下兼容 degree 写法)
+    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000；当前也兼容参数名 `degree`。
     - skip_degree：用于设置查询过程中舍弃超级顶点的最小边数，即当某个顶点的邻接边数目大于 skip_degree 时，完全舍弃该顶点。选填项，如果开启时，需满足 `skip_degree >= max_degree` 约束，默认为 0 (不启用)，表示不跳过任何点 (注意：开启此配置后，遍历时会尝试访问一个顶点的 skip_degree 条边，而不仅仅是 max_degree 条边，这样有额外的遍历开销，对查询性能影响可能有较大影响，请确认理解后再开启)
 - max_depth：步数，必填项
 - nearest：nearest 为 true 时，代表起始顶点到达结果顶点的最短路径长度为 depth，不存在更短的路径；nearest 为 false 时，代表起始顶点到结果顶点有一条长度为 depth 的路径（未必最短且可以有环），选填项，默认为 true
@@ -1561,7 +1567,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/paths?so
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/paths
 ```
 
@@ -1646,7 +1652,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/paths
 	- properties：通过属性的值过滤边
     - weight_by：根据指定的属性计算边的权重，sort_by 不为 NONE 时有效，与 default_weight 互斥
     - default_weight：当边没有属性作为权重计算值时，采取的默认权重，sort_by 不为 NONE 时有效，与 weight_by 互斥
-    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000 (注：0.12 版之前 step 内仅支持 degree 作为参数名，0.12 开始统一使用 max_degree, 并向下兼容 degree 写法)
+    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000；当前也兼容参数名 `degree`。
     - sample：当需要对某个 step 的符合条件的边进行采样时设置，-1 表示不采样，默认为采样 100
 - sort_by：根据路径的权重排序，选填项，默认为 NONE：
     - NONE 表示不排序，默认值
@@ -1660,7 +1666,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/paths
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/customizedpaths
 ```
 
@@ -1838,7 +1844,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/customi
 	- labels：边的类型列表
 	- properties：通过属性的值过滤边
     - max_times：当前 step 可以重复的次数，当为 N 时，表示从起始顶点可以经过当前 step 1-N 次
-    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000 (注：0.12 版之前 step 内仅支持 degree 作为参数名，0.12 开始统一使用 max_degree, 并向下兼容 degree 写法)
+    - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000；当前也兼容参数名 `degree`。
     - skip_degree：用于设置查询过程中舍弃超级顶点的最小边数，即当某个顶点的邻接边数目大于 skip_degree 时，完全舍弃该顶点。选填项，如果开启时，需满足 `skip_degree >= max_degree` 约束，默认为 0 (不启用)，表示不跳过任何点 (注意：开启此配置后，遍历时会尝试访问一个顶点的 skip_degree 条边，而不仅仅是 max_degree 条边，这样有额外的遍历开销，对查询性能影响可能有较大影响，请确认理解后再开启)
 - with_ring：Boolean 值，true 表示包含环路；false 表示不包含环路，默认为 false
 - capacity：遍历过程中最大的访问的顶点数目，选填项，默认为 10000000
@@ -1849,7 +1855,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/customi
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/templatepaths
 ```
 
@@ -2013,7 +2019,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/templat
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/crosspoints?source="2:lop"&target="2:ripple"&max_depth=5&direction=IN
 ```
 
@@ -2067,7 +2073,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/crosspoi
         - direction：表示边的方向（OUT,IN,BOTH），默认是 BOTH
 		- labels：边的类型列表
 		- properties：通过属性的值过滤边
-        - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000 (注：0.12 版之前 step 内仅支持 degree 作为参数名，0.12 开始统一使用 max_degree, 并向下兼容 degree 写法)
+        - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000；当前也兼容参数名 `degree`。
         - skip_degree：用于设置查询过程中舍弃超级顶点的最小边数，即当某个顶点的邻接边数目大于 skip_degree 时，完全舍弃该顶点。选填项，如果开启时，需满足 `skip_degree >= max_degree` 约束，默认为 0 (不启用)，表示不跳过任何点 (注意：开启此配置后，遍历时会尝试访问一个顶点的 skip_degree 条边，而不仅仅是 max_degree 条边，这样有额外的遍历开销，对查询性能影响可能有较大影响，请确认理解后再开启)
 - capacity：遍历过程中最大的访问的顶点数目，选填项，默认为 10000000
 - limit：返回的路径的最大数目，选填项，默认为 10
@@ -2082,7 +2088,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/crosspoi
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/customizedcrosspoints
 ```
 
@@ -2252,7 +2258,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/customi
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/rings?source="1:marko"&max_depth=2
 ```
 
@@ -2321,7 +2327,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/rings?so
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/rays?source="1:marko"&max_depth=2&direction=OUT
 ```
 
@@ -2408,7 +2414,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/rays?sou
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/fusiformsimilarity
 ```
 
@@ -2515,7 +2521,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/fusif
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertices?ids="1:marko"&ids="2:lop"
 ```
 
@@ -2594,7 +2600,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertic
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertices/shards?split_size=67108864
 ```
 
@@ -2647,7 +2653,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertic
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertices/scan?start=0&end=4294967295
 ```
 
@@ -2831,7 +2837,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertic
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges?ids="S1:josh>1>>S2:lop"&ids="S1:josh>1>>S2:ripple"
 ```
 
@@ -2886,7 +2892,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges?
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges/shards?split_size=4294967295
 ```
 
@@ -2943,7 +2949,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges/
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges/scan?start=0&end=3221225469
 ```
 
@@ -3064,7 +3070,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges/
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/adamicadar?vertex="1:marko"&other="1:josh"
 ```
 
@@ -3107,7 +3113,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/adamicad
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/resourceallocation?vertex="1:marko"&other="1:josh"
 ```
 
@@ -3147,7 +3153,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/resource
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/edgeexist?source="1:marko"&target="2:lop"
 ```
 
@@ -3205,7 +3211,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/edgeexis
 
 ###### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/count
 ```
 

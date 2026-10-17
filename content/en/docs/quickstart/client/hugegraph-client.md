@@ -41,12 +41,24 @@ Using IDEA or Eclipse to create the project:
     <dependency>
         <groupId>org.apache.hugegraph</groupId>
         <artifactId>hugegraph-client</artifactId>
-        <!-- Select a released version from the download page -->
+        <!-- The complete examples below work with the published 1.7.0 client -->
         <version>1.7.0</version>
     </dependency>    
 </dependencies>
 ```
-> Development versions of the client and server may differ. Check the corresponding release notes for compatibility before upgrading.
+The complete examples below use Schema, Graph, Gremlin and resource-cleanup APIs available in the published Client `1.7.0`
+and compatible with Toolchain `master`. Use the dependency above directly in your example project.
+
+For new master APIs in the [API reference](/docs/clients/hugegraph-client/), such as capability detection, use Client `1.8.0`
+from Toolchain `master` and change the POM version to `1.8.0`. If that version is not published to Maven yet, run the following
+command from the Toolchain source root to install the Client and its parent POM locally. The source build still needs
+its dependencies available from your configured Maven repositories.
+
+```bash
+mvn install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+```
+
+Client and Server versions need not match. Check the supported server API range and required capabilities before upgrading.
 
 #### 4.3 Example
 

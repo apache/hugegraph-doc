@@ -9,12 +9,12 @@ HugeGraph-ML 从 HugeGraph 读取图数据并转换为 DGL 图，供节点嵌入
 ## 环境要求
 
 - Python 3.10 或更高版本
-- HugeGraph Server 1.0 或更高版本，推荐 1.5 及以上版本
+- HugeGraph Server 1.5.0 或更高版本；当前 workspace 中的 Python 客户端会拒绝可探测到的更低版本
 - `uv` 0.7 或更高版本
 
 所有服务端访问都通过同一仓库中的 `hugegraph-python-client`（即 `pyhugegraph` 包）完成。`HugeGraph2DGL` 使用 Gremlin 接口的 `g.V().hasLabel(...)` 和 `g.E().hasLabel(...)` 拉取点边，数据集导入函数则通过 schema 接口和顶点、边的批量接口写入，每批 500 条。
 
-ML 依赖在仓库根目录的 `[tool.uv] constraint-dependencies` 中固定版本：
+ML 依赖在仓库根目录的 `[tool.uv] constraint-dependencies` 中声明版本约束：
 
 | 依赖 | 版本约束 |
 |---|---|
@@ -27,7 +27,7 @@ ML 依赖在仓库根目录的 `[tool.uv] constraint-dependencies` 中固定版�
 | `numpy` | `~=1.24.4` |
 | `pandas` | `~=2.2.3` |
 
-上述约束安装的是 CPU 版本。每个任务都有 `gpu` 参数，默认值 `-1` 表示使用 CPU；只有自行安装 CUDA 版的 `torch` 和 `dgl` 之后，才可以传入设备编号。
+这些约束限定依赖版本，不指定 CPU 或 CUDA 构建。支持 `gpu` 参数的任务默认值 `-1` 表示使用 CPU；使用 GPU 时，需要安装彼此兼容的 CUDA 版 `torch` 和 `dgl`。
 
 ## 安装
 
@@ -39,7 +39,7 @@ source .venv/bin/activate
 cd hugegraph-ml/src
 ```
 
-HugeGraph-ML 是根项目的路径依赖，但不属于 `uv` workspace members。应在仓库根目录选择 `ml` extra，不要在子目录建立另一套锁文件。
+HugeGraph-ML 是根项目的路径依赖，但不属于 `uv` workspace members。应在仓库根目录选择 `ml` extra，让 `uv` 按 workspace 配置安装它及其本地客户端依赖。
 
 ## 已实现模型
 

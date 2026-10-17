@@ -40,6 +40,26 @@ HugeGraph Server code is under `hugegraph-server/`. For example, the core module
 hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/
 ```
 
+Current top-level Maven modules are listed below. Server's `hugegraph-server/hugegraph-hstore/` storage adapter is distinct from the standalone `hugegraph-store/` storage-node project.
+
+| Path | Submodules |
+|---|---|
+| `hugegraph-server/` | `hugegraph-core/`, `hugegraph-api/`, `hugegraph-example/`, `hugegraph-dist/`, `hugegraph-test/`, `hugegraph-rocksdb/`, `hugegraph-hbase/`, `hugegraph-hstore/` |
+| `hugegraph-pd/` | `hg-pd-common/`, `hg-pd-client/`, `hg-pd-core/`, `hg-pd-service/`, `hg-pd-dist/`, `hg-pd-cli/`, `hg-pd-grpc/`, `hg-pd-test/` |
+| `hugegraph-store/` | `hg-store-common/`, `hg-store-client/`, `hg-store-core/`, `hg-store-node/`, `hg-store-dist/`, `hg-store-cli/`, `hg-store-grpc/`, `hg-store-rocksdb/`, `hg-store-test/` |
+| `hugegraph-commons/` | `hugegraph-common/`, `hugegraph-rpc/` |
+| `hugegraph-cluster-test/` | `hugegraph-clustertest-minicluster/`, `hugegraph-clustertest-dist/`, `hugegraph-clustertest-test/` |
+| Independent root modules | `hugegraph-struct/`, `install-dist/` |
+
+These names come from the root and subproject `pom.xml` files. Use the structure of the branch you are working on.
+
+For the 1.8.0 shared-foundation changes merged into Server `master`, see the
+[shared-foundation ownership and Java migration guide](/docs/guides/shared-foundation-migration/).
+
+Build current Server `master` with Java 17 and Maven 3.6.3 or later.
+CI-friendly versions are flattened during `process-resources`, so installed and deployed POMs contain concrete versions.
+Run the reactor with `install` before building modules separately, and keep Maven Resolver validation enabled, including with Maven 3.10.
+
 Run the tests directly related to your change first. Common Server test commands include:
 
 ```bash
@@ -61,13 +81,29 @@ GitHub requires a username and token for Git authentication instead of a usernam
 
 When adding a third-party dependency, also update the license information included in the distribution:
 
-1. Add the dependency's license file to `hugegraph-server/hugegraph-dist/release-docs/licenses/`.
-2. Update `hugegraph-server/hugegraph-dist/release-docs/LICENSE`. If the dependency includes a NOTICE file, update `NOTICE` as well.
-3. Run `hugegraph-server/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh` to update the known-dependency list.
+1. Add the dependency's license file to `install-dist/release-docs/licenses/`.
+2. Update `install-dist/release-docs/LICENSE`. If the dependency includes a NOTICE file, update `NOTICE` as well.
+3. From the repository root, prepare the current revision's Server, PD and Store distribution libraries before regenerating the inventory:
+
+   ```bash
+   mvn clean install -DskipTests -Dmaven.javadoc.skip=true
+   bash install-dist/scripts/dependency/regenerate_known_dependencies.sh
+   ```
+
+   Clean rebuilds the current revision's distributions to avoid stale dependency jars.
+   It also removes every `*.tar` and `*.tar.gz` file directly under `hugegraph-server/`, `hugegraph-pd/` and `hugegraph-store/`,
+   plus the current revision's `apache-hugegraph-<revision>.tar.gz` in the repository root; directories of other revisions remain.
+
+   This build skips tests. Collection combines Maven runtime dependencies with actual flat and nested distribution jars,
+   including Spring Boot `BOOT-INF/lib` dependencies introduced by repackaging. Missing distributions must fail collection;
+   POM inspection alone does not establish the complete shipped inventory. Review strict additions/removals in
+   `install-dist/scripts/dependency/known-dependencies.txt` and their license/NOTICE coverage, including release platform/profile variants.
 
 ## Submit a Pull Request
 
-Make sure the email address used for your commits is associated with your GitHub account. See https://github.com/settings/emails for instructions:
+GitHub no longer accepts an account username and password for pushing code. If you need a personal access token, create one with the necessary permissions in [token settings](https://github.com/settings/tokens).
+
+Make sure the email address used for your commits is associated with your GitHub account. Use [email settings](https://github.com/settings/emails):
 
 ![Verify your commit email on GitHub](/images/docs/contribution/github-email.png)
 {width="1280" height="592"}

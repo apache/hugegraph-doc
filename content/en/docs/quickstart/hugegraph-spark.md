@@ -1,11 +1,11 @@
 ---
 title: "HugeGraph-Spark Quick Start"
-linkTitle: "Analysis with HugeGraph-Spark"
+linkTitle: "(Deprecated) Analysis with HugeGraph-Spark"
 draft: true
-weight: 8
+weight: 100
 ---
 
-> HugeGraph-Spark is no longer maintained. Use [HugeGraph-Computer](/docs/quickstart/computing/hugegraph-computer) for new graph computing workloads. This page is retained only as a reference for older versions.
+> HugeGraph-Spark is no longer maintained. Start with [Vermeer](/docs/quickstart/computing/hugegraph-vermeer/) for new graph computing tasks; use [HugeGraph-Computer](/docs/quickstart/computing/hugegraph-computer/) for Java BSP/Pregel. This page is retained as a historical reference.
 
 ### 1 HugeGraph-Spark Overview (Deprecated)
 
@@ -15,7 +15,7 @@ HugeGraph-Spark connects HugeGraph with Spark GraphX. It reads data from HugeGra
 
 HugeGraph-Spark depends on HugeGraph Server; see [HugeGraph Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server) for installation. It also depends on Spark GraphX. The legacy example retained below uses Apache Spark 2.1.1.
 
-```
+```text
 wget https://archive.apache.org/dist/spark/spark-2.1.1/spark-2.1.1-bin-hadoop2.7.tgz
 tar -zxvf spark-2.1.1-bin-hadoop2.7.tgz
 cd spark-2.1.1-bin-hadoop2.7
@@ -23,7 +23,7 @@ cd spark-2.1.1-bin-hadoop2.7
 
 Then copy the HugeGraph-Spark JAR into Spark's `jars` directory:
 
-```
+```text
 cp {dir}/hugegraph-spark-0.9.0.jar jars
 ```
 

@@ -4,7 +4,10 @@ linkTitle: "HugeGraph-LLM"
 weight: 1
 ---
 
-HugeGraph-LLM 用于知识图谱构建、GraphRAG 和自然语言图查询。演示服务把 Gradio 页面和 FastAPI 接口挂在同一个进程上，默认监听 `8001` 端口。
+HugeGraph-LLM 用于知识图谱构建、GraphRAG 和自然语言图查询。演示服务把 Gradio 页面和 FastAPI 接口挂在同一个进程上，直接从源码启动时默认只监听本机 `127.0.0.1:8001`，可用 `http://localhost:8001` 访问。若显式启动源码入口且只需本机访问，可指定 `--host 127.0.0.1`；源码 Docker 镜像的 `Dockerfile.llm` 会覆盖默认值并监听 `0.0.0.0:8001`，不要在容器内改为 loopback，否则容器外无法通过映射端口访问。
+
+> [!WARNING]
+> 生产环境必须为 HugeGraph-LLM 启用自身的登录认证（`ENABLE_LOGIN=True`，并替换 `USER_TOKEN`、`ADMIN_TOKEN`），同时在防火墙或网络入口设置来源 IP 白名单。HugeGraph Server 还必须单独开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（标准日志文件为 `audit-*.log`），为 `GRAPH_USER` 配置只具备该服务所需权限的账号。AI 服务 token 只认证 LLM 页面和 API，不能替代 HugeGraph Server 认证。
 
 ## 环境要求
 
@@ -12,7 +15,7 @@ HugeGraph-LLM 用于知识图谱构建、GraphRAG 和自然语言图查询。演
 
 - Python 3.10 或 3.11（`>=3.10,<3.12`）
 - `uv` 0.7 或更高版本
-- HugeGraph Server 1.3 或更高版本（推荐 1.5 或更高版本）
+- HugeGraph Server 1.5.0 或更高版本；当前 workspace 中的 Python 客户端会拒绝可探测到的更低版本
 
 ## Docker Compose 部署
 
@@ -24,6 +27,7 @@ cd hugegraph-ai
 cp docker/env.template docker/.env
 # 编辑 docker/.env，将 PROJECT_PATH 改为当前仓库的绝对路径
 touch hugegraph-llm/.env
+# 编辑 hugegraph-llm/.env：GRAPH_URL=server:8080，并设置与 Server 相符的 GRAPH_USER、GRAPH_PWD
 cd docker
 docker compose -f docker-compose-network.yml up -d
 docker compose -f docker-compose-network.yml ps
@@ -36,14 +40,16 @@ docker compose -f docker-compose-network.yml ps
 
 Compose 文件会把 `${PROJECT_PATH}/hugegraph-llm/.env` 挂载到容器内的 `/home/work/hugegraph-llm/.env`，因此该文件必须在容器启动前存在。资源目录 `hugegraph-llm/src/hugegraph_llm/resources` 也可以用同样方式挂载，该挂载默认被注释掉。
 
+应用读取 `GRAPH_URL`，Compose 注入的 `HUGEGRAPH_HOST` 和 `HUGEGRAPH_PORT` 不会覆盖它；因此容器内要将 `GRAPH_URL` 设为 `server:8080`，并在 `.env` 中配置匹配 HugeGraph Server 的用户名和密码。
+
 ## 容器镜像
 
 | 镜像 | 构建文件 | 内容 |
 |---|---|---|
-| `hugegraph/rag` | `docker/Dockerfile.llm` | 包含源码的 Python 3.10 运行环境，入口是 `python -m hugegraph_llm.demo.rag_demo.app --host 0.0.0.0 --port 8001` |
-| `hugegraph/rag-bin` | `docker/Dockerfile.nk` | 基于 `nk-llm` extra 用 Nuitka 编译的二进制，入口是 `./app.dist/app.bin` |
+| `docker/Dockerfile.llm` | 源码运行镜像构建配方，入口是 `python -m hugegraph_llm.demo.rag_demo.app --host 0.0.0.0 --port 8001` |
+| `docker/Dockerfile.nk` | 基于 `nk-llm` extra 用 Nuitka 编译的二进制镜像构建配方，入口是 `./app.dist/app.bin` |
 
-两个镜像都暴露 `8001` 端口，以非 root 用户 `work` 运行，为 `hugegraph-llm/src/hugegraph_llm/resources` 声明数据卷，并使用 `curl -f http://localhost:8001/` 作为健康检查。
+Compose 文件引用未指定标签的 `hugegraph/rag`，Docker 会使用默认的 `latest` 标签。`scripts/build_llm_image.sh` 则以 `docker/Dockerfile.llm` 在本地构建 `hugegraph/graphrag:1.7.0`。Compose 引用的 `hugegraph/rag:latest` 与本地构建的 `hugegraph/graphrag:1.7.0` 是不同镜像；本地构建不会自动替换 Compose 所用镜像。要在 Compose 中运行本地构建结果，需将 Compose 的 `image` 改为 `hugegraph/graphrag:1.7.0`。该脚本只构建镜像，不会推送。两个 Dockerfile 都声明 `8001` 端口、以非 root 用户 `work` 运行，并用 `curl -f http://localhost:8001/` 做镜像健康检查；两者都为资源目录声明数据卷。
 
 `scripts/build_llm_image.sh` 会用 `docker/Dockerfile.llm` 构建并打上 `hugegraph/graphrag:1.7.0` 标签。
 
@@ -51,14 +57,18 @@ Compose 文件会把 `${PROJECT_PATH}/hugegraph-llm/.env` 挂载到容器内的 
 
 `docker/charts/hg-llm` 是 RAG 服务的 Helm chart，部署 `hugegraph/graphrag` 镜像。默认发布 `NodePort` 类型的 Service，把节点端口 `8039` 和服务端口 `8080` 映射到容器端口 `8001`，名称固定为 `hg-llm-service`。Ingress 和水平自动扩缩容已定义但默认关闭。
 
-chart 中 `image.tag` 仍默认为 `v0.0.1`，因此需要通过 `--set image.tag=1.7.0` 或修改 `values.yaml` 指向实际构建的标签。
+该 chart 只部署 RAG 服务，不会部署 HugeGraph Server。挂载的 `.env` 中要把 `GRAPH_URL` 设为 Pod 可访问的 HugeGraph 地址，并配置匹配的用户名和密码。
 
-chart 的 `values.yaml` 中，`.env` 和提示词 YAML 的挂载默认被注释掉。要使用自定义配置，先创建两个 ConfigMap，再取消对应 `volumes` 和 `volumeMounts` 段落的注释：
+chart 中 `image.tag` 仍默认为 `v0.0.1`。当前构建脚本生成的标签是本地 `hugegraph/graphrag:1.7.0`；部署前须确保同名镜像已推送到集群可访问的仓库，或已加载到集群节点，并将 chart 的标签和拉取策略设为匹配的值。
+
+chart 的 `values.yaml` 中，`.env` 和提示词 YAML 的挂载默认被注释掉。提示词 YAML 可用 ConfigMap；`.env` 可能含有密钥和密码，应使用 Secret，并把 `volumes` 中 `env-config` 的 `configMap` 改为 `secret`。Secret 和提示词 ConfigMap 可分别创建：
 
 ```bash
-kubectl create configmap hugegraph-llm-env --from-file=/path/to/.env
+kubectl create secret generic hugegraph-llm-env --from-file=.env=/path/to/.env
 kubectl create configmap hugegraph-llm-prompt-config --from-file=/path/to/config_prompt.yaml
 ```
+
+随后取消 `volumeMounts` 段落的注释，并按需要启用提示词 ConfigMap 的 `volumes` 和挂载。Helm 模板会直接渲染 `values.yaml` 中的卷定义。
 
 ## 从源码启动
 

@@ -12,7 +12,7 @@
   {"locale": "en", "query": "StandardAuthenticator", "expected_ref": "/docs/config/config-authentication/"},
   {"locale": "en", "query": "release artifacts", "expected_ref": "/docs/download/download/"},
   {"locale": "cn", "query": "HugeGraph 介绍", "expected_ref": "/cn/docs/introduction/"},
-  {"locale": "cn", "query": "Server 快速开始", "expected_ref": "/cn/docs/quickstart/hugegraph/hugegraph-server/"},
+  {"locale": "cn", "query": "Server 快速上手", "expected_ref": "/cn/docs/quickstart/hugegraph/hugegraph-server/"},
   {"locale": "cn", "query": "分布式存储", "expected_ref": "/cn/docs/quickstart/hugegraph/hugegraph-hstore/"},
   {"locale": "cn", "query": "元数据管理", "expected_ref": "/cn/docs/quickstart/hugegraph/hugegraph-pd/"},
   {"locale": "cn", "query": "图计算", "expected_ref": "/cn/docs/quickstart/computing/hugegraph-computer/"},

@@ -32,6 +32,12 @@ upgrade or deployment workflow. Use `go.mod` / `go.sum` and CI for pinned versio
 - Validate behavior affected by the change. Theme/runtime changes require strict
   builds and browser checks; visual/navigation changes also need before/after
   screenshots. A rendered site alone does not prove interaction compatibility.
+- Before pushing documentation edits, run `bash dist/validate-links.sh`. For
+  title, description, keyword, route or substantial body changes, also run the
+  source tests with CI's Python 3.13, Hugo 0.165 Extended and WebP tools; build
+  and validate a fresh latest artifact. Run `tests/e2e/search-ranking.spec.js`
+  when search-facing content changes; keep metadata accurate instead of
+  weakening ranking checks. Small prose edits need only focused checks.
 - Independent work may run in parallel. Review the final combined diff independently
   for changes affecting runtime behavior or multiple components; local content
   edits can use self-review.

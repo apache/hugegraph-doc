@@ -103,11 +103,13 @@ Merging mode as needed, and when the Restore is completed, restore the graph mod
 
 The implemented RESTful API for setting graph mode is as follows:
 
-##### View the schema of a graph. **This operation requires administrator privileges**
+##### View the mode of a graph
+
+When authentication is enabled, graph read permission is required (`space_member` or the graph owner).
 
 ###### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 ```
 
@@ -127,17 +129,19 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 
 > Legal graph modes include: NONE, RESTORING, MERGING, LOADING
 
-##### Set the mode of a graph. **This operation requires administrator privileges**
+##### Set the mode of a graph
+
+When authentication is enabled, graph-space management permission (`space`) is required; administrators can satisfy it through permission inheritance.
 
 ###### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 ```
 
 ###### Request Body
 
-```
+```text
 "RESTORING"
 ```
 

@@ -9,6 +9,9 @@ weight: 2
 
 用户在`HugeGraph-Hubble`中编写的`gremlin(groovy)`可以参考本文的`java`代码，下面会举出几个例子。
 
+本文以 Toolchain `master`（Client `1.8.0`）为准。请先按[快速入门](/cn/docs/quickstart/client/hugegraph-client/)准备对应依赖；
+能力探测等新增接口不能直接用于旧版 Client。
+
 ### 1 HugeGraph-Client
 
 HugeGraph-Client 是操作 graph 的总入口，用户必须先创建出 HugeGraph-Client 对象，与 HugeGraph-Server 建立连接（伪连接）后，才能获取到 schema、graph 以及 gremlin 的操作入口对象。
@@ -21,7 +24,7 @@ HugeGraph-Client 连接服务端已有的图。构造器支持传入 GraphSpace�
 HugeClient hugeClient = HugeClient.builder("http://localhost:8080", "hugegraph")
                                 //.builder("http://localhost:8080", "graphSpaceName", "hugegraph")
                                   .configTimeout(20) // 默认 20s 超时
-                                  .configUser("**", "**") // 默认未开启用户权限
+                                  // .configUser("username", "password") // 服务端启用认证时配置
                                   .build();
 ```
 
@@ -40,7 +43,7 @@ HugeClient hugeClient = HugeClient.builder("http://localhost:8080", "hugegraph")
 | `configGraphSpace(String graphSpace)`                         | GraphSpace 名称，传入 null 或空值时回退为 `DEFAULT` | `DEFAULT`          |
 | `configUser(String username, String password)`                | 服务端用户名和密码，传入 null 时按空字符串处理      | 空，不开启认证     |
 | `configToken(String token)`                                   | 使用 Token 代替用户名和密码                         | 空                 |
-| `configTimeout(int seconds)`                                  | 请求超时，传入 `0` 时恢复默认值                     | 20                 |
+| `configTimeout(int seconds)`                                  | 请求超时，建议使用正数秒值                     | 20                 |
 | `configConnectTimeout(Integer seconds)`                       | 连接超时，不设置时沿用 `configTimeout`              | 未设置             |
 | `configReadTimeout(Integer seconds)`                          | 读取超时，不设置时沿用 `configTimeout`              | 未设置             |
 | `configPool(int maxConns, int maxConnsPerRoute)`              | 连接池大小，任意一项传入 `0` 时恢复其默认值         | 4 x CPU 数，2 x CPU 数 |
@@ -48,6 +51,9 @@ HugeClient hugeClient = HugeClient.builder("http://localhost:8080", "hugegraph")
 | `configSSL(String trustStoreFile, String trustStorePassword)` | HTTPS 连接使用的信任库                              | 空                 |
 | `configHttpBuilder(Consumer<OkHttpClient.Builder> consumer)`  | 回调，用于进一步定制底层的 OkHttp 客户端            | 无                 |
 | `graphRequired(boolean graphRequired)`                        | `build()` 是否拒绝空的 url 或图名称                 | true               |
+
+当前 master 的 `configTimeout(0)` 存在单位换算缺陷，会得到 20,000 秒而非默认的 20 秒。
+保持默认值时省略该调用，或显式使用 `configTimeout(20)`；不要用 `0` 恢复默认值。
 
 调用 `build()` 时，客户端会读取服务端的 API 版本，超出 `[0.38, 0.81)` 范围时报错。
 
@@ -493,10 +499,19 @@ IndexLabel 允许定义的约束信息包括：name、baseType、baseValue、ind
 
 ##### 2.5.2 创建 IndexLabel
 
+以下示例假定已创建带 `name`、`age` 的 `person` 顶点类型，以及带 `date` 的 `created` 边类型。
+先补充索引所需属性；`id` 是业务属性，与顶点的内部 ID 不同。
+
 ```java
+schema.propertyKey("lived").asText().ifNotExist().create();
+schema.propertyKey("city").asText().ifNotExist().create();
+schema.propertyKey("id").asInt().ifNotExist().create();
+schema.vertexLabel("person").properties("lived", "city", "id")
+      .nullableKeys("lived", "city", "id").append();
+
 schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 schema.indexLabel("createdByDate").onE("created").by("date").secondary().ifNotExist().create();
-schema.indexLabel("personByLived").onE("person").by("lived").search().ifNotExist().create();
+schema.indexLabel("personByLived").onV("person").by("lived").search().ifNotExist().create();
 schema.indexLabel("personByCityAndAge").onV("person").by("city", "age").shard().ifNotExist().create();
 schema.indexLabel("personById").onV("person").by("id").unique().ifNotExist().create();
 ```

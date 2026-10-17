@@ -1,5 +1,5 @@
 ---
-title: "HugeGraph-Studio Quick Start"
+title: "HugeGraph-Studio 快速上手"
 linkTitle: "(Deprecated) Display with HugeGraph-Studio"
 draft: true
 weight: 5
@@ -9,9 +9,7 @@ weight: 5
 
 ### 1 HugeGraph-Studio概述 (Deprecated)
 
-HugeGraph-Studio是HugeGraph的前端展示工具，是基于Web的图形化IDE环境。
-通过HugeGraph-Studio，用户可以执行Gremlin语句，并及时获得图形化的展示结果。
-功能包括：
+HugeGraph-Studio是HugeGraph的前端展示工具，是基于Web的图形化IDE环境。通过HugeGraph-Studio，用户可以执行Gremlin语句，并及时获得图形化的展示结果。功能包括：
 
 - 图数据的输入
 - 图数据的展示
@@ -150,8 +148,7 @@ graph.schema().propertyKey("price").asInt().ifNotExist().create()
 2、上述语句是通过`graph.schema()`获取到`SchemaManager`对象后操作元数据，通过`gremlin`语句操作Schema可参考文档[HugeGraph-Client](/docs/clients/hugegraph-client)，
 需要注意的是`HugeGraph-Client`是`java`语法，大体上与`gremlin`风格是一致的，具体的差异见文档`HugeGraph-Client`中的说明。
 
-3、在`HugeGraph-Studio`的输入框中，用户可以直接使用两个变量`graph`和`g`，其中`graph`就是当前连接的图对象，可使用该对象对图做各种增删改查操作;
-`g`是用于遍历图的一个对象，其本质就是`graph.traversal()`，用户可以使用该对象做各种遍历操作；
+3、在`HugeGraph-Studio`的输入框中，用户可以直接使用两个变量`graph`和`g`，其中`graph`就是当前连接的图对象，可使用该对象对图做各种增删改查操作; `g`是用于遍历图的一个对象，其本质就是`graph.traversal()`，用户可以使用该对象做各种遍历操作；
 
 4、`HugeGraph-Studio`作为一个展示图的工具，主要用于做查询或遍历，而不宜做太多增删改的操作。
 

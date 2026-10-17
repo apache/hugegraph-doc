@@ -1,47 +1,45 @@
 ---
 title: "HugeGraph-Studio Quick Start"
-linkTitle: "Display with HugeGraph-Studio"
+linkTitle: "(Deprecated) Display with HugeGraph-Studio"
 draft: true
-weight: 9
+weight: 5
 ---
 
-### 1 HugeGraph-Studio概述 (Deprecated)
+> Note: Studio is no longer maintained. Use [Hubble](/docs/quickstart/toolchain/hugegraph-hubble/) instead.
 
-(WARNING: Deprecated Now! Use HugeGraph-Hubble instead)
+### 1 HugeGraph-Studio Overview (Deprecated)
 
-HugeGraph-Studio是HugeGraph的前端展示工具，是基于Web的图形化IDE环境。
-通过HugeGraph-Studio，用户可以执行Gremlin语句，并及时获得图形化的展示结果。
-功能包括：
+HugeGraph-Studio is a web-based graphical IDE for HugeGraph. It executes Gremlin statements and displays their results graphically. Features include:
 
-- 图数据的输入
-- 图数据的展示
-- 图数据的分析
+- Graph data input
+- Graph visualization
+- Graph analysis
 
-> 注意：HugeGraph-Studio需要依赖HugeGraph-Server，在安装和使用HugeGraph-Studio之前，请通过jps命令检查HugeGraphServer服务是否已经启动，如果没有启动，请参考[HugeGraph-Server安装配置](/docs/quickstart/hugegraph/hugegraph-server)启动HugeGraphServer。
+> HugeGraph-Studio depends on HugeGraph-Server. Before installing or using Studio, check with `jps` that HugeGraphServer is running. If needed, follow the [Server installation guide](/docs/quickstart/hugegraph/hugegraph-server/).
 
-### 2 安装和运行HugeGraph-Studio
+### 2 Install and Run HugeGraph-Studio
 
-有两种方式可以获取HugeGraph-Studio：
+Two installation methods are available:
 
-- 下载源码包编译安装
-- 下载二进制tar包
+- Build a source archive
+- Download a binary archive
 
-#### 2.1 下载源码编译生成tar包
+#### 2.1 Build from Source
 
-下载HugeGraph-Studio源码包
+Download HugeGraph-Studio source:
 
 ```bash
 $ git clone https://github.com/hugegraph/hugegraph-studio.git
 ```
 
-编译生成tar包:
+Build the archive:
 
 ```bash
 $ cd hugegraph-studio
 $ mvn package -DskipTests
 ```
 
-执行结果如下：
+Example output:
 
 ```bash
 [INFO] ------------------------------------------------------------------------
@@ -60,45 +58,45 @@ $ mvn package -DskipTests
 [INFO] ------------------------------------------------------------------------
 ```
 
-执行成功后,在hugegraph-studio目录下生成hugegraph-studio-${version}文件夹以及hugegraph-studio-${version}.tar.gz文件，即为编译生成的tar包。
+The build creates `hugegraph-studio-${version}/` and `hugegraph-studio-${version}.tar.gz` under the source directory.
 
-#### 2.2 下载二进制tar包
+#### 2.2 Download a Binary Archive
 
-可以从以下地址下载:
+Download from:
 
 ```bash
 wget https://github.com/hugegraph/hugegraph-studio/releases/download/v${version}/hugegraph-studio-${version}.tar.gz
 ```
 
-下载完成后解压缩：
+Extract the archive:
 
 ```bash
 $ tar zxvf hugegraph-studio-${version}.tar.gz
 ```
 
-### 3 启动HugeGraph-Studio
+### 3 Start HugeGraph-Studio
 
-修改配置文件：
+Edit configuration:
 
 ```bash
 $ cd hugegraph-studio-${version}
 $ vim conf/hugegraph-studio.properties
 ```
 
-- 将配置项`studio.server.host`的值`localhost`修改成机器名或 IP，这是 HugeGraphStudio 对外提供服务的`host`，如果只需要本地访问则保持不变即可；
-- 将配置项`studio.server.port`的值`8088`修改成想要的端口，这是 HugeGraphStudio 对外提供服务的`port`；
-- 将配置项`graph.server.host`的值`localhost`修改成 HugeGraphServer 的`host`，HugeGraphStudio 通过此项和`graph.server.port`与 HugeGraphServer 建立连接；
-- 将配置项`graph.server.port`的值`8080`修改成 HugeGraphServer 的`port`，HugeGraphStudio 通过`graph.server.host`和此项与 HugeGraphServer 建立连接；
-- 将配置项`graph.name`的值`hugegraph`修改成要连接的 HugeGraphServer 的图名，目前只允许连接一个图。
+- `studio.server.host`: Change `localhost` to the Studio hostname or IP for external access; retain it for local access.
+- `studio.server.port`: Change `8088` to the desired Studio service port.
+- `graph.server.host`: HugeGraphServer hostname used with `graph.server.port` to connect to Server.
+- `graph.server.port`: HugeGraphServer port, default `8080`, used with `graph.server.host`.
+- `graph.name`: Graph to connect to, default `hugegraph`. Studio supports one graph at a time.
 
-修改完上述配置后，即可启动 HugeGraphStudio:
+After editing configuration, start Studio:
 
 ```bash
 $ cd hugegraph-studio-${version}
 $ bin/hugegraph-studio.sh
 ```
 
-启动成功结果如下：
+Successful startup output:
 
 ```bash
 19:05:12.779 [localhost-startStop-1] INFO  org.springframework.web.context.ContextLoader ID:  TS: - Root WebApplicationContext: initialization started
@@ -113,25 +111,25 @@ $ bin/hugegraph-studio.sh
 19:05:14.873 [main] INFO   com.baidu.hugegraph.studio.HugeGraphStudio ID:  TS: - HugeGraphStudio is now running on: http://localhost:8088
 ```
 
-接下来，打开浏览器访问 <http://localhost:8088> 即可使用HugeGraph-Studio，首页如下图：
+Open <http://localhost:8088> in a browser; the homepage is shown below.
 
 <center>
   <img src="/images/images-studio/home-page.png" alt="image">
 </center>
 
-这里以"一些人与相关软件关系图"为例子，内容包括元数据（Schema）和数据（Vertex/Edge）两部分。
+The following example models relationships between people and software, with schema and vertex/edge data.
 
-### 4 HugeGraph-Studio 操作指南
+### 4 HugeGraph-Studio User Guide
 
-#### 4.1 使用Gremlin语言创建一个图
+#### 4.1 Create a Graph with Gremlin
 
-##### 4.1.1 创建Schema
+##### 4.1.1 Create Schema
 
-这个例子涉及的Schema有三类，分别是：PropertyKey，VertexLabel和EdgeLabel。下面依次创建这些Schema。
+The example uses PropertyKey, VertexLabel, and EdgeLabel schema. Create them in the following order.
 
-###### 4.1.1.1 创建属性类型（PropertyKey）
+###### 4.1.1.1 Create Property Keys
 
-将下面的语句输入到 Studio 的输入框中：
+Enter the following statements in Studio:
 
 ```groovy
 graph.schema().propertyKey("name").asText().ifNotExist().create()
@@ -142,43 +140,42 @@ graph.schema().propertyKey("date").asText().ifNotExist().create()
 graph.schema().propertyKey("price").asInt().ifNotExist().create()
 ```
 
-**在这里有几点需要说明**
+**Notes**
 
-1、上述语句是`groovy`语言形式（类似但不是`java`）的`gremlin`语句，这些`gremlin`语句会被发送到`HugeGraphServer`上执行。
-关于`gremlin`本身可以参考[Gremlin Query Language](../language/hugegraph-gremlin)或[Tinkerpop官网](http://tinkerpop.apache.org/)；
+1. These Gremlin statements use Groovy syntax and are sent to HugeGraphServer for execution.
+See [Gremlin Query Language](../language/hugegraph-gremlin) or the [TinkerPop website](http://tinkerpop.apache.org/) for Gremlin details.
 
-2、上述语句是通过`graph.schema()`获取到`SchemaManager`对象后操作元数据，通过`gremlin`语句操作Schema可参考文档[HugeGraph-Client](/docs/clients/hugegraph-client)，
-需要注意的是`HugeGraph-Client`是`java`语法，大体上与`gremlin`风格是一致的，具体的差异见文档`HugeGraph-Client`中的说明。
+2. `graph.schema()` returns a `SchemaManager` for schema operations. See [HugeGraph-Client](/docs/clients/hugegraph-client/) for examples.
+The Java client uses Java syntax, broadly similar to Gremlin; see its documentation for differences.
 
-3、在`HugeGraph-Studio`的输入框中，用户可以直接使用两个变量`graph`和`g`，其中`graph`就是当前连接的图对象，可使用该对象对图做各种增删改查操作;
-`g`是用于遍历图的一个对象，其本质就是`graph.traversal()`，用户可以使用该对象做各种遍历操作；
+3. Studio exposes `graph`, the connected graph object for data operations, and `g`, its traversal object (`graph.traversal()`).
 
-4、`HugeGraph-Studio`作为一个展示图的工具，主要用于做查询或遍历，而不宜做太多增删改的操作。
+4. Studio primarily supports queries and visualization; avoid extensive data modification through this interface.
 
-执行完成后，可以得到返回的数据，表明执行成功。如图所示
+Execution returns data confirming success, as shown below.
 
 <center>
   <img src="/docs/images/images-studio/add-schema.png" alt="image">
 </center>
 
 
-###### 4.1.1.2 创建顶点类型（VertexLabel）
+###### 4.1.1.2 Create Vertex Labels
 
 ```groovy
 person = graph.schema().vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create()
 software = graph.schema().vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create()
 ```
 
-###### 4.1.1.2 创建边类型（EdgeLabel）
+###### 4.1.1.3 Create Edge Labels
 
 ```groovy
 knows = graph.schema().edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date").ifNotExist().create()
 created = graph.schema().edgeLabel("created").sourceLabel("person").targetLabel("software").properties("date", "city").ifNotExist().create()
 ```
 
-##### 4.1.2 创建顶点（Vertex）和边（Edge）
+##### 4.1.2 Create Vertices and Edges
 
-有了Schema后，就可以根据Schema创建特定的顶点和边了，这里我们定义两个person类型的顶点实例：marko 和 vadas，再定义两者之间的关系knows：
+With schema created, add `person` vertices `marko` and `vadas`, and a `knows` edge between them:
 
 ```groovy
 marko = graph.addVertex(T.label, "person", "name", "marko", "age", 29, "city", "Beijing")
@@ -186,14 +183,14 @@ vadas = graph.addVertex(T.label, "person", "name", "vadas", "age", 27, "city", "
 marko.addEdge("knows", vadas, "date", "20160110")
 ```
 
-在页面中输入语句，这样我们就创建了两个顶点一条边，点击执行，结果如下图所示
+Enter and execute the statements to create two vertices and one edge; the result is shown below.
 
 <center>
   <img src="/docs/images/images-studio/example-2V-1E.png" alt="image">
 </center>
 
 
-##### 4.1.3 添加更多数据到图中
+##### 4.1.3 Add More Data
 
 ```groovy
 marko = graph.addVertex(T.label, "person", "name", "marko", "age", 29, "city", "Beijing")
@@ -211,58 +208,58 @@ josh.addEdge("created", lop, "date", "20171210", "city", "Beijing")
 peter.addEdge("created", lop, "date", "20171210", "city", "Beijing")
 ```
 
-##### 4.1.4 展示图
+##### 4.1.4 Display the Graph
 
 ```groovy
 g.V()
 ```
 
-如下图所示
+Example visualization:
 
 <center>
   <img src="/docs/images/images-studio/show-graph.png" alt="image">
 </center>
 
 
-HugeGraph-Studio不仅支持通过graph的方式展示数据，还支持表格和Json两种数据展示形式
+Studio supports graph, table, and JSON views.
 
-**表格展示形式**
+**Table view**
 
 <center>
   <img src="/docs/images/images-studio/show-table.png" alt="image">
 </center>
 
 
-**Json展示形式**
+**JSON view**
 
 <center>
   <img src="/docs/images/images-studio/show-json.png" alt="image">
 </center>
 
 
-#### 4.4 HugeGraph-Studio 样式自定义
+#### 4.4 Customize Studio Styles
 
-##### 4.4.1 自定义VertexLabel 样式
+##### 4.4.1 Customize VertexLabel Styles
 
-| 属性                         | 默认值       | 类型     | 说明                                                                                                              |
+| Property | Default | Type | Description |
 |:---------------------------|:----------|:-------|:----------------------------------------------------------------------------------------------------------------|
-| `vis.size`                 | `25`      | number | 顶点大小                                                                                                            |
-| `vis.scaling.min`          | `10`      | number | 根据标签内容调整节点大小，优先级比vis.size高                                                                                      |
-| `vis.scaling.max`          | `30`      | number | 根据标签内容调整节点大小，优先级比vis.size高                                                                                      |
-| `vis.shape`                | dot       | string | 形状，包括ellipse, circle, database, box, text，diamond, dot, star, triangle, triangleDown, hexagon, square and icon. |
-| `vis.border`               | #00ccff   | string | 顶点边框颜色                                                                                                          |
-| `vis.background`           | #00ccff   | string | 顶点背景颜色                                                                                                          |
-| `vis.hover.border`         | #00ccff   | string | 鼠标悬浮时，顶点边框颜色                                                                                                    |
-| `vis.hover.background`     | #ec3112   | string | 鼠标悬浮时，顶点背景颜色                                                                                                    |
-| `vis.highlight.border`     | #fb6a02   | string | 选中时，顶点边框颜色                                                                                                      |
-| `vis.highlight.background` | #fb6a02   | string | 选中时，顶点背景颜色                                                                                                      |
-| `vis.font.color`           | #343434   | string | 顶点类型字体颜色                                                                                                        |
-| `vis.font.size`            | `12`      | string | 顶点类型字体大小                                                                                                        |
-| `vis.icon.code`            | `\uf111`  | string | FontAwesome 图标编码，目前支持4.7.5版本的图标                                                                                 |
-| `vis.icon.color`           | `#2B7CE9` | string | 图标颜色，优先级比vis.background高                                                                                        |
-| `vis.icon.size`            | 50        | string | icon大小，优先级比vis.size高                                                                                            |
+| `vis.size` | `25` | number | Vertex size |
+| `vis.scaling.min` | `10` | number | Scale vertices according to label content; takes precedence over `vis.size` |
+| `vis.scaling.max` | `30` | number | Scale vertices according to label content; takes precedence over `vis.size` |
+| `vis.shape` | dot | string | Shape: ellipse, circle, database, box, text, diamond, dot, star, triangle, triangleDown, hexagon, square, or icon |
+| `vis.border` | #00ccff | string | Vertex border color |
+| `vis.background` | #00ccff | string | Vertex background color |
+| `vis.hover.border` | #00ccff | string | Border color on hover |
+| `vis.hover.background` | #ec3112 | string | Background color on hover |
+| `vis.highlight.border` | #fb6a02 | string | Selected vertex border color |
+| `vis.highlight.background` | #fb6a02 | string | Selected vertex background color |
+| `vis.font.color` | #343434 | string | Vertex label font color |
+| `vis.font.size` | `12` | string | Vertex label font size |
+| `vis.icon.code` | `\uf111` | string | FontAwesome icon code, currently supporting version 4.7.5 |
+| `vis.icon.color` | `#2B7CE9` | string | Icon color; takes precedence over `vis.background` |
+| `vis.icon.size` | 50 | string | Icon size; takes precedence over `vis.size` |
 
-示例：
+Example:
 
 ```groovy
 graph.schema().vertexLabel("software")
@@ -286,8 +283,7 @@ graph.schema().vertexLabel("software")
 
 <div align="center">
 
-颜色代码示例:
-
+Color code examples:
 <table style="BORDER-COLLAPSE: collapse" bordercolor="#111111" cellpadding="2" width="740" border="0">
 <tbody><tr><td align="middle" width="10%" bgcolor="#fffff" height="16"><font face="MS Sans Serif" size="2" color="#000000">#ffffff </font></td><td align="middle" width="10%" bgcolor="#ffffcc" height="16"><font face="MS Sans Serif" size="2" color="#000000">#ffffcc </font></td><td align="middle" width="10%" bgcolor="#cccccc" height="16"><font face="MS Sans Serif" size="2" color="#000000">#cccccc </font></td><td align="middle" width="10%" bgcolor="#999999" height="16"><font face="MS Sans Serif" size="2" color="#000000">#999999 </font></td><td align="middle" width="10%" bgcolor="#000000" height="16"><font face="MS Sans Serif" color="#ffffff" size="2">#000000 </font></td><td align="middle" width="10%" bgcolor="#fc363b" height="16"><font face="MS Sans Serif" color="#ffffff" size="2">#fc363b </font></td><td align="middle" width="10%" bgcolor="#fb157e" height="16"><font face="MS Sans Serif" color="#ffffff" size="2">#fb157e </font></td><td align="middle" width="10%" bgcolor="#fec96e" height="16"><font face="MS Sans Serif" color="#ffffff" size="2">#fec96e </font></td><td align="middle" width="10%" bgcolor="#b80711" height="16"><font face="MS Sans Serif" color="#ffffff" size="2">#b80711</font></td><td align="middle" width="10%" bgcolor="#e981f2" height="16"><font face="MS Sans Serif" color="#ffffff" size="2">#e981f2 </font></td></tr><tr><td align="middle" width="10%" bgcolor="#fb6120" height="16"><font face="MS Sans Serif" size="2" color="#000000">#fb6120 </font></td><td align="middle" width="10%" bgcolor="#9b9dfa" height="16"><font face="MS Sans Serif" size="2" color="#000000">#9b9dfa </font></td><td align="middle" width="10%" bgcolor="#98c2f9" height="16"><font face="MS Sans Serif" size="2" color="#000000">#98c2f9 </font></td><td align="middle" width="10%" bgcolor="#3e71ef" height="16"><font face="MS Sans Serif" size="2" color="#000000">#3e71ef </font></td><td align="middle" width="10%" bgcolor="#fecec8" height="16"><font face="MS Sans Serif" color="#00000" size="2">#fecec8 </font></td><td align="middle" width="10%" bgcolor="#77d46f" height="16"><font face="MS Sans Serif" color="#00000" size="2">#77d46f </font></td><td align="middle" width="10%" bgcolor="#fefc38" height="16"><font face="MS Sans Serif" color="#00000" size="2">#fefc38 </font></td><td align="middle" width="10%" bgcolor="#7ede4d" height="16"><font face="MS Sans Serif" color="#ffffff" size="2">#7ede4d </font></td><td align="middle" width="10%" bgcolor="#c3f9be" height="16"><font face="MS Sans Serif" color="#00000" size="2">#c3f9be</font></td><td align="middle" width="10%" bgcolor="#f95c79" height="16"><font face="MS Sans Serif" color="#ffffff" size="2">#f95c79 </font></td></tr></tbody>
 </table>

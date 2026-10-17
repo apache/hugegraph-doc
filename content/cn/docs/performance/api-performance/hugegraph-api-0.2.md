@@ -25,7 +25,7 @@ weight: 4
 - 后端存储：使用服务内嵌的cassandra-3.10，单点部署；
 - 后端配置修改：修改了cassandra.yaml文件中的以下两个属性，其余选项均保持默认
 
-```
+```text
   batch_size_warn_threshold_in_kb: 1000
   batch_size_fail_threshold_in_kb: 1000
 ```

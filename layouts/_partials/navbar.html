@@ -1,7 +1,6 @@
-{{- /* OINK v1.0.0 override: keep keyboard help in the header and expose
+{{- /* OINK v1.2.0 override: keep keyboard help in the header and expose
        version links inside the landing-page mobile drawer. */ -}}
 {{- $config := partialCached "shell/config.html" . .Site.Language.Lang -}}
-{{- $darkMode := partialCached "dark-mode-config.html" "dark-mode-global" -}}
 {{- $targets := partialCached "language-targets.html" . .Site.BaseURL .RelPermalink .Site.Language.Lang -}}
 {{- $localSearch := partial "shell/search-enabled.html" . -}}
 {{- /* On shell pages with a sidebar, the compact navbar gains one extra
@@ -81,28 +80,7 @@
            title="{{ .label }}" aria-label="{{ .label }}"><i class="fa-solid fa-language" aria-hidden="true"></i><span>{{ .label }}</span></a>
         {{- end }}
         {{- end }}
-        {{- if $darkMode.showMenu }}
-        {{- /* Click toggles light/dark; hovering reveals the three-mode
-             picker. dark-mode.js binds every [data-bs-theme-value]. */ -}}
-        <div class="td-nav-hover-menu td-nav-theme-menu" data-td-nav-hover>
-          <button type="button" class="td-nav-util" data-td-nav-hover-trigger data-td-theme-toggle
-            title="{{ T "ui_theme_toggle" }}" aria-label="{{ T "ui_theme_toggle" }}" aria-expanded="false">
-            {{- partialCached "shell/icon.html" "moon" "moon" -}}
-            {{- partialCached "shell/icon.html" "sun" "sun" -}}
-          </button>
-          <div class="td-nav-hover-menu__pop" role="group" aria-label="{{ T "ui_theme_toggle" }}">
-            <button type="button" class="td-nav-hover-menu__option" data-bs-theme-value="light" aria-pressed="false">
-              {{- partialCached "shell/icon.html" "sun" "navbar-theme-light" -}}<span>{{ T "ui_theme_light" }}</span>
-            </button>
-            <button type="button" class="td-nav-hover-menu__option" data-bs-theme-value="dark" aria-pressed="false">
-              {{- partialCached "shell/icon.html" "moon" "navbar-theme-dark" -}}<span>{{ T "ui_theme_dark" }}</span>
-            </button>
-            <button type="button" class="td-nav-hover-menu__option" data-bs-theme-value="auto" aria-pressed="false">
-              {{- partialCached "shell/icon.html" "contrast" "navbar-theme-auto" -}}<span>{{ T "ui_theme_auto" }}</span>
-            </button>
-          </div>
-        </div>
-        {{- end }}
+        {{ partial "shell/appearance-menu.html" (dict "page" . "context" "navbar" "class" "td-nav-appearance" "trigger" "td-nav-util") }}
         {{- /* Keyboard help is a global navigation aid, so keep it beside
                language and theme rather than repeating controls in footer. */ -}}
         {{ partial "shell/keyboard-help.html" . }}
@@ -158,15 +136,7 @@
       <section class="hg-shell-mobile-utils__group" aria-label="{{ T "ui_language_select" }}">
         {{ partial "language-selector.html" (dict "page" . "mode" "list" "class" "hg-shell-mobile-utils__languages") }}
       </section>
-      {{- if $darkMode.showMenu }}
-      <section class="hg-shell-mobile-utils__group" aria-label="{{ T "ui_theme_toggle" }}">
-        <div class="hg-shell-mobile-utils__links">
-          <button type="button" data-bs-theme-value="light" aria-pressed="false">{{ partialCached "shell/icon.html" "sun" "landing-mobile-theme-light" }}<span>{{ T "ui_theme_light" }}</span></button>
-          <button type="button" data-bs-theme-value="dark" aria-pressed="false">{{ partialCached "shell/icon.html" "moon" "landing-mobile-theme-dark" }}<span>{{ T "ui_theme_dark" }}</span></button>
-          <button type="button" data-bs-theme-value="auto" aria-pressed="false">{{ partialCached "shell/icon.html" "contrast" "landing-mobile-theme-auto" }}<span>{{ T "ui_theme_auto" }}</span></button>
-        </div>
-      </section>
-      {{- end }}
+      {{ partial "shell/appearance-menu.html" (dict "page" $ "context" "drawer" "class" "hg-shell-mobile-utils__appearance" "trigger" "td-site-nav__menu-link td-site-nav__menu-link--button" "label" (T "ui_appearance")) }}
     </div>
     {{- with $altSite }}
     <a class="td-site-nav__menu-link" href="{{ .url }}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-language" aria-hidden="true"></i><span>{{ .label }}</span></a>

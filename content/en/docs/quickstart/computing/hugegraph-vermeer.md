@@ -2,34 +2,77 @@
 title: "HugeGraph-Vermeer Quick Start"
 linkTitle: "Vermeer: Memory-First Computing Framework"
 weight: 1
+description: "Vermeer high-performance in-memory graph computing: start once, execute repeatedly, with 15+ OLAP algorithms, seconds-to-minutes execution, deployment, loading, PageRank, and community detection."
+search_keywords: [Vermeer, high-performance graph computing, in-memory graph computing, OLAP, PageRank, community detection]
 ---
 
 ## 1. Overview of Vermeer
 
 ### 1.1 Architecture
 
-Vermeer is a high-performance, memory-first graph computing framework written in `Go` (start once, execute any task), supporting ultra-fast computation of 15+ OLAP graph algorithms (most tasks complete in seconds to minutes), with master and worker roles. Currently, there is only one master (HA can be added), and there can be multiple workers.
+Vermeer is a high-performance, memory-first graph computing framework written in Go: start once and execute repeatedly. It supports fast execution of 15+ OLAP algorithms, often in seconds to minutes; actual time depends on graph size, algorithm parameters, and resources. A single master currently schedules multiple workers.
 
-The master is responsible for communication, forwarding, and aggregation, with minimal computation and resource usage. Workers are computation nodes used to store graph data and run computation tasks, consuming a large amount of memory and CPU. The grpc and rest modules handle internal communication and external calls, respectively.
+The master handles communication, forwarding, and aggregation, with modest computation and resource usage. Workers store graph data and execute tasks, consuming most memory and CPU. gRPC handles internal communication; REST provides external APIs.
 
-The framework's runtime configuration can be passed via command-line parameters or specified in configuration files located in the `config/` directory. The `--env` parameter can specify which configuration file to use, e.g., `--env=master` specifies using `master.ini`. Note that the master needs to specify the listening port, and the worker needs to specify the listening port and the master's `ip:port`.
+At startup, built-in defaults are loaded first, followed by the `[default]` section of `config/<env>.ini` under the working directory, then explicit command-line overrides. For example, `--env=master` reads `config/master.ini`. The Docker image copies repository configuration to `/go/bin/config/` and works from `/go/bin/`. A host bind mount hides the bundled files, so it must contain every ini file used. The configuration reader does not read environment variables.
 
-The default master HTTP port is `6688` for REST API and Python clients. Workers connect to the master through gRPC port `6689`. The Docker examples below publish HTTP with `6688:6688`; keep `http_peer=0.0.0.0:6688` in the master configuration.
+Default ports:
 
-### 1.2 Running Method
+| Role | Configuration key | Default address | Purpose |
+|---|---|---|---|
+| master | `http_peer` | `0.0.0.0:6688` | REST API for host-side clients |
+| master | `grpc_peer` | `0.0.0.0:6689` | Workers connect to master |
+| worker | `http_peer` | `0.0.0.0:6788` | Worker HTTP service |
+| worker | `grpc_peer` | `0.0.0.0:6789` | Worker gRPC listener, also advertised to master for node communication |
 
-For both Docker options below, prepare a host configuration directory containing the provided `master.ini` and `worker.ini` files. In the existing `[default]` section of `worker.ini`, change `master_peer` as follows, keeping the other settings:
+The Docker examples publish only master HTTP on host loopback `127.0.0.1:6688:6688`; master and worker gRPC ports stay within the container network.
+
+```mermaid
+flowchart LR
+  Client["curl / Python client"] -->|"HTTP :6688"| Master["master"]
+  Worker["worker"] <-->|"Bidirectional gRPC: master :6689, worker :6789"| Master
+  Master -->|"gRPC partition lookup"| PD["HugeGraph PD"]
+  Worker -->|"gRPC partition scan"| Store["HugeGraph Store"]
+```
+
+### 1.2 Running Vermeer
+
+> [!WARNING]
+> In production, enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum permissions; retain `audit-*.log`. Server Auth does not protect independent Vermeer, PD, or Store APIs. Restrict these HTTP/gRPC ports to trusted networks and callers, and configure access controls at the Vermeer external entry point.
+>
+> `master.ini` defaults to `auth=none`, disabling authentication for ordinary and administrative APIs. Local examples publish loopback only. Before remote access, enable `auth=token` or restrict callers through a protected network or gateway.
+
+Both Docker options need a host configuration directory. From the Vermeer repository root, copy the supplied [`master.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/master.ini) and [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/worker.ini) templates. The mount hides image configuration under `/go/bin/config`, so never mount an empty directory or your entire home directory there:
+
+```shell
+CONFIG_DIR="$HOME/vermeer-config"
+mkdir -p "$CONFIG_DIR"
+cp config/master.ini config/worker.ini "$CONFIG_DIR/"
+```
+
+Keep master HTTP/gRPC listeners at `0.0.0.0:6688` and `0.0.0.0:6689`. The Compose example assigns `172.20.0.10` to master and `172.20.0.11` to worker; set these options in the copied `worker.ini`:
 
 ```ini
 [default]
-master_peer=vermeer-master:6689
+http_peer=0.0.0.0:6788
+grpc_peer=172.20.0.11:6789
+master_peer=172.20.0.10:6689
+run_mode=worker
+worker_group=$
 ```
 
-Inside the worker container, the shipped `127.0.0.1:6689` points to the worker itself. `vermeer-master` resolves to the master container on the shared Docker network in both examples. Keep `grpc_peer=0.0.0.0:6689` in `master.ini`, and mount this configuration directory at `/go/bin/config` in both containers. Publishing HTTP port `6688` alone does not configure the worker's gRPC connection.
+This single-worker example uses literal `worker_group=$`, the general group used when no named group is bound. The repository template defaults to `worker_group=default`; if retaining that named group, bind it to the task space or graph before submitting tasks. For default space `$DEFAULT`, use:
 
-1.  **Option 1: Docker Compose (Recommended)**
+```shell
+curl --fail --show-error -X POST \
+  'http://localhost:6688/admin/workers/alloc/default/%24DEFAULT'
+```
 
-Run the following steps from the Vermeer root directory. You can use the repository's existing `docker-compose.yaml` or create one from the example below. In either case, apply the required port and volume changes below before starting the services:
+An `errcode=0` response confirms binding; with token authentication, also supply the authorization header. `master_peer` must reach master gRPC from the worker network. `grpc_peer` is both the listener and advertised worker address, so do not advertise `0.0.0.0`, which other containers cannot reach. Update these IPs when changing the subnet or addresses; each additional worker needs a unique, mutually reachable `grpc_peer`.
+
+1. **Option 1: Docker Compose (Recommended)**
+
+Run from the Vermeer repository root. Modify existing `docker-compose.yaml` or use the following example. The repository file currently mounts all of `~/` as configuration and does not publish master HTTP; replace the mount and add the port mapping before starting:
 
 ```yaml
 services:
@@ -37,60 +80,56 @@ services:
     image: hugegraph/vermeer
     container_name: vermeer-master
     ports:
-      - "6688:6688"
+      - "127.0.0.1:6688:6688"
     volumes:
-      - ~/.config:/go/bin/config # Change here to your actual config path
+      - /home/user/vermeer-config:/go/bin/config:ro
     command: --env=master
     networks:
       vermeer_network:
-        ipv4_address: 172.20.0.10 # Assign a static IP for the master
+        ipv4_address: 172.20.0.10 # Static master address
 
   vermeer-worker:
     image: hugegraph/vermeer
     container_name: vermeer-worker
     volumes:
-      - ~/.config:/go/bin/config # Change here to your actual config path
+      - /home/user/vermeer-config:/go/bin/config:ro
     command: --env=worker
     networks:
       vermeer_network:
-        ipv4_address: 172.20.0.11 # Assign a static IP for the worker
+        ipv4_address: 172.20.0.11 # Static worker address
 
 networks:
   vermeer_network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/24 # Define the subnet for your network
+        - subnet: 172.20.0.0/24 # Change the subnet as needed
 ```
 
-Before starting, update `docker-compose.yaml` whether you use the repository's file or the example above:
+Replace `/home/user/vermeer-config` with your actual absolute configuration directory. Changing the subnet or static IPs of `vermeer_network` also requires updating `grpc_peer` and `master_peer` in `worker.ini`. Do not use the default `grpc_peer=0.0.0.0:6789` as an advertised container address.
 
-- **Ports**: Under `services.vermeer-master`, add `ports: ["6688:6688"]` if this mapping is missing, so host-side curl and Python clients can reach the master HTTP API.
-- **Volumes**: In both `vermeer-master` and `vermeer-worker`, set the bind mount for `/go/bin/config` to `/home/user/config:/go/bin/config`, replacing `/home/user/config` with the absolute configuration directory prepared above. Replace the existing mount regardless of whether it uses `~/` (the repository's file) or `~/.config` (the example above).
-- **Subnet**: Modify the subnet IP based on your actual situation. Note that the ports each container needs to access are specified in the config file. Please refer to the contents of the project's `config` folder for details.
-
-Build the Image and Start in the Project Directory (or `docker build` first, then `docker-compose up`)
+Build and start from the project directory:
 
 ```shell
-# Build the image (in the project root vermeer directory)
+# Build the image from the Vermeer root directory
 docker build -t hugegraph/vermeer .
 
-# Start the services (in the vermeer root directory)
+# Start from the Vermeer root directory
 docker-compose up -d
-# Or use the new CLI:
+# Or use the newer CLI:
 # docker compose up -d
 ```
 
-View Logs / Stop / Remove
+View logs / stop / remove:
 
 ```shell
 docker-compose logs -f
 docker-compose down
 ```
 
-2.  **Option 2: Start individually via `docker run` (Manually create network and assign static IP)**
+2. **Option 2: Separate docker run Commands (Manual Network and Static IPs)**
 
-Set `CONFIG_DIR` to the configuration directory prepared above, with `master_peer=vermeer-master:6689` in `worker.ini`. Ensure it has proper read/execute permissions for the Docker process.
+Set `CONFIG_DIR` to the prepared configuration directory, with `grpc_peer` and `master_peer` matching the static container addresses. Replace the example `CONFIG_DIR` with your actual absolute path.
 
 Build the image:
 
@@ -98,7 +137,7 @@ Build the image:
 docker build -t hugegraph/vermeer .
 ```
 
-Create a custom bridge network (one-time operation):
+Create a custom bridge network (once):
 
 ```shell
 docker network create --driver bridge \
@@ -106,16 +145,16 @@ docker network create --driver bridge \
   vermeer_network
 ```
 
-Run master (adjust `CONFIG_DIR` to your **absolute** configuration path, and you can adjust the IP as needed based on your actual situation).
+Run master (use your absolute `CONFIG_DIR` and adjust IPs as needed):
 
 ```shell
-CONFIG_DIR=/home/user/config
+CONFIG_DIR=/home/user/vermeer-config
 
 docker run -d \
   --name vermeer-master \
   --network vermeer_network --ip 172.20.0.10 \
-  -p 6688:6688 \
-  -v ${CONFIG_DIR}:/go/bin/config \
+  -p 127.0.0.1:6688:6688 \
+  -v ${CONFIG_DIR}:/go/bin/config:ro \
   hugegraph/vermeer \
   --env=master
 ```
@@ -126,12 +165,12 @@ Run worker:
 docker run -d \
   --name vermeer-worker \
   --network vermeer_network --ip 172.20.0.11 \
-  -v ${CONFIG_DIR}:/go/bin/config \
+  -v ${CONFIG_DIR}:/go/bin/config:ro \
   hugegraph/vermeer \
   --env=worker
 ```
 
-View logs / Stop / Remove:
+View logs / stop / remove:
 
 ```shell
 docker logs -f vermeer-master
@@ -140,50 +179,53 @@ docker logs -f vermeer-worker
 docker stop vermeer-master vermeer-worker
 docker rm vermeer-master vermeer-worker
 
-# Remove the custom network (if needed)
+# Delete the custom network if needed
 docker network rm vermeer_network
 ```
 
-3.  **Option 3: Build from Source**
+3. **Option 3: Build from Source**
 
-Build. You can refer [Vermeer Readme](https://github.com/apache/hugegraph-computer/tree/master/vermeer).
+Build following the [Vermeer README](https://github.com/apache/hugegraph-computer/tree/master/vermeer).
 
 ```shell
 go build
 ```
 
-Enter the directory and input `./vermeer --env=master` or `./vermeer --env=worker01`.
+Start from the Vermeer root directory with `./vermeer --env=master` and `./vermeer --env=worker01`. In `worker01.ini`, set `grpc_peer` to an address bindable locally and reachable by master and other workers; point `master_peer` to master gRPC.
 
-After starting the master, check its HTTP port from the host:
+After starting master, check its HTTP port from the host:
 
 ```shell
 curl --fail --show-error http://localhost:6688/graphs
 ```
 
-The request should return HTTP 200 with `errcode` set to `0` in the JSON response.
+Expect HTTP 200 and JSON `errcode=0`.
 
 ## 2. Task Creation REST API
 
 ### 2.1 Introduction
 
-This REST API provides all task creation functions, including reading graph data and various computation functions, offering both asynchronous and synchronous return interfaces. The returned content includes information about the created tasks. The overall process of using Vermeer is to first create a task to read the graph data, and after the graph is read, create a computation task to execute the computation. The graph will not be automatically deleted; multiple computation tasks can be run on one graph without repeated reading. If deletion is needed, the delete graph interface can be used. Task statuses can be divided into graph reading task status and computation task status. Generally, the client only needs to know four statuses: created, in progress, completed, and error. The graph status is the basis for determining whether the graph is available. If the graph is being read or the graph status is erroneous, the graph cannot be used to create computation tasks. The delete graph interface is only available when the graph is in the loaded or error status and has no computation tasks.
+Submit a `load` task, wait for loading to finish, then submit a `compute` task. A loaded graph can support repeated computations and is not deleted after completion. Asynchronous APIs return creation results and task information, including ID, before completion; synchronous APIs wait for success or failure, so client and proxy HTTP timeouts must be sufficiently long. Query task states: `loaded` for successful loading, `complete` for successful computation, `error` for failure, and `canceled` for cancellation; other states remain waiting or running. Graphs loading or in an error state cannot be computed. Deletion requires a deletable graph state and no current usage.
 
-Available URLs are as follows:
+Available URLs:
 
-- Asynchronous return interface: POST http://master_ip:port/tasks/create returns only whether the task creation is successful, and the task status needs to be actively queried to determine completion.
-- Synchronous return interface: POST http://master_ip:port/tasks/create/sync returns after the task is completed.
+- Asynchronous: `POST http://master_ip:port/tasks/create`; read the ID from response `task.id`.
+- Synchronous: `POST http://master_ip:port/tasks/create/sync`; returns after the task ends.
+- Query task: `GET http://master_ip:port/task/{task_id}`. `errcode=0` indicates a successful query; inspect `task.state` for task status. Set a client polling deadline for asynchronous jobs; reaching it stops client waiting without canceling the server task.
 
 ### 2.2 Loading Graph Data
 
-Refer to the Vermeer parameter list document for specific parameters.
+The examples list common load parameters. Each loader reads its own keys; unused keys do not change behavior.
 
-Vermeer provides three ways to load data:
+Vermeer provides three loading methods:
 
-1. Load from Local Files
+1. Local files
 
-You can obtain the dataset in advance, such as the Twitter-2010 dataset. Acquisition method: https://snap.stanford.edu/data/twitter-2010.html The first Twitter-2010.text.gz is sufficient.
+`load.vertex_files` and `load.edge_files` map worker address host portions to file paths read by those workers. With containers, mount data into the worker and use container paths. In the Compose example, mount a host data directory at worker `/data` (such as `- /host/data:/data:ro`) and use `172.20.0.11` from `grpc_peer` as the mapping key. Other deployments use the host portion of their advertised worker addresses.
 
-**Request Example:**
+Obtain a dataset such as [Twitter-2010](https://snap.stanford.edu/data/twitter-2010.html); the first `twitter-2010.txt.gz` file is sufficient.
+
+**Request example:**
 
 ```javascript
 POST http://localhost:6688/tasks/create
@@ -193,19 +235,19 @@ POST http://localhost:6688/tasks/create
  "params": {
   "load.parallel": "50",
   "load.type": "local",
-  "load.vertex_files": "{\"localhost\":\"data/twitter-2010.v_[0,99]\"}",
-  "load.edge_files": "{\"localhost\":\"data/twitter-2010.e_[0,99]\"}",
+  "load.vertex_files": "{\"172.20.0.11\":\"/data/twitter-2010.v_[0,99]\"}",
+  "load.edge_files": "{\"172.20.0.11\":\"/data/twitter-2010.e_[0,99]\"}",
   "load.use_out_degree": "1",
   "load.use_outedge": "1"
  }
 }
 ```
 
-2. Load from HugeGraph
+2. HugeGraph
 
-**Request Example:**
+**Request example:**
 
-⚠️ Security Warning: Never store real passwords in configuration files or code. Use environment variables or a secure credential management system instead.
+Replace request addresses, graph name, and credentials with your actual connection settings.
 
 ```javascript
 POST http://localhost:6688/tasks/create
@@ -215,7 +257,7 @@ POST http://localhost:6688/tasks/create
   "params": {
     "load.parallel": "50",
     "load.type": "hugegraph",
-    "load.hg_pd_peers": "[\"<your-hugegraph-ip>:8686\"]",
+    "load.hg_pd_peers": "[\"<pd-address-reachable-from-vermeer>:8686\"]",
     "load.hugegraph_name": "DEFAULT/hugegraph2/g",
     "load.hugegraph_username": "admin",
     "load.hugegraph_password": "<your-password-here>",
@@ -225,9 +267,11 @@ POST http://localhost:6688/tasks/create
 }
 ```
 
-3. Load from HDFS
+Vermeer master connects to PD through `load.hg_pd_peers` to look up partitions; workers read data from the returned Store addresses. These services must be reachable from the corresponding Vermeer hosts or containers. Inside Docker, `127.0.0.1` identifies the container itself, not the host or another container.
 
-**Request Example:**
+3. HDFS
+
+**Request example:**
 
 ```javascript
 POST http://localhost:6688/tasks/create
@@ -252,11 +296,11 @@ POST http://localhost:6688/tasks/create
 }
 ```
 
-### 2.3 Output Computation Results
+### 2.3 Outputting Computation Results
 
-All Vermeer computation tasks support multiple result output methods, which can be customized: local, hdfs, afs, or hugegraph. Add the corresponding parameters under the params parameter when sending the request to take effect. When output.need_statistics is set to 1, it supports outputting statistical information of the computation results, which will be written in the interface task information. The statistical mode operators currently support "count" and "modularity," but only for community detection algorithms.
+Current result writers support `local`, `hdfs`, and `hugegraph` through `output.type`; `none` disables output. Source retains an `afs` constant, but current master registers no AFS loader or writer. Set `output.need_statistics=1` to put statistics into task information; supported statistics operators depend on each algorithm implementation.
 
-Refer to the Vermeer parameter list document for specific parameters.
+The examples list common computation and output parameters; supported algorithm parameters depend on current Vermeer implementations.
 
 Request example:
 
@@ -275,6 +319,9 @@ POST http://localhost:6688/tasks/create
   }
 }
 ```
+
+`output.type=local` writes to the executing worker's local filesystem. For containers, mount the output directory if the host needs to read results.
+
 
 ## 3. Supported Algorithms
 
@@ -649,7 +696,7 @@ POST http://localhost:6688/tasks/create
  "compute.max_step":"200"
  }
 }
+
 ```
 
 > 🚧, further updates and improvements will be made at any time. Suggestions and feedback are welcome.
-```

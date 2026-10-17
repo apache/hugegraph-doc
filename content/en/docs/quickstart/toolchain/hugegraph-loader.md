@@ -4,7 +4,11 @@ linkTitle: "Load data with HugeGraph-Loader"
 weight: 2
 search_keywords: [HugeGraph Loader, bulk import, data loading]
 search_boost: 1.6
+description: "Bulk import graph data into HugeGraph with Loader from files, HDFS, relational databases, Kafka, and other HugeGraph graphs."
 ---
+
+This guide follows Toolchain `master` (currently `1.8.0`). Released packages and Docker `latest` may differ from source;
+check the version you use and build from source for unreleased functionality.
 
 ### 1 HugeGraph-Loader Overview
 
@@ -23,6 +27,10 @@ It will be explained in detail below.
 
 > Note: HugeGraph-Loader requires HugeGraph Server service, please refer to [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server) to download and start Server
 
+> **Concurrency protection:** starting with HugeGraph 1.8.0, ordinary imports acquire same-Server ownership protection
+> (requires a Server whose `GET .../mode/owners` returns `protocol: 1` and a matching Loader; current `master` does not include it yet).
+> Older Servers retain the legacy import behavior described below.
+
 > **Testing Guide**: For running HugeGraph-Loader tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/toolchain-local-test)
 
 ### 2 Get HugeGraph-Loader
@@ -35,28 +43,24 @@ HugeGraph-Loader is available in the following three ways:
 
 #### 2.1 Use Docker image (Convenient for Test/Dev)
 
-We can deploy the loader service using `docker run -itd --name loader hugegraph/loader:1.7.0`. For the data that needs to be loaded, it can be copied into the loader container either by mounting `-v /path/to/data/file:/loader/file` or by using `docker cp`.
+We can deploy the loader service using `docker run -itd --name loader hugegraph/loader:latest`. For the data that needs to be loaded, it can be copied into the loader container either by mounting `-v /path/to/data/file:/loader/file` or by using `docker cp`.
 
 Alternatively, to start the loader using docker-compose, the command is `docker-compose up -d`. An example of the docker-compose.yml is as follows:
+
+This combination is for local anonymous testing; the Server API is published only on the local host.
 
 ```yaml
 version: '3'
 
 services:
   server:
-    image: hugegraph/hugegraph:1.7.0
+    image: hugegraph/hugegraph:latest
     container_name: server
     ports:
-      - 8080:8080
-
-  hubble:
-    image: hugegraph/hubble:1.7.0
-    container_name: hubble
-    ports:
-      - 8088:8088
+      - 127.0.0.1:8080:8080
 
   loader:
-    image: hugegraph/loader:1.7.0
+    image: hugegraph/loader:latest
     container_name: loader
     # mount your own data here
     # volumes:
@@ -68,43 +72,20 @@ The specific data loading process can be referenced under [4.5 User Docker to lo
 > Note: 
 > 1. The docker image of hugegraph-loader is a convenience release to start hugegraph-loader quickly, but not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 > 
-> 2. Recommend to use `release tag`(like `1.7.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
+> 2. Pin a published version tag or image digest in production. `latest` is mutable and does not guarantee alignment with `master`.
 
 #### 2.2 Download the compiled archive
 
-Download the latest version of the HugeGraph-Toolchain release package:
-
-```bash
-export VERSION=1.7.0
-export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
-wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
-tar zxf "${ARCHIVE}.tar.gz"
-```
+Choose a published Toolchain archive from the [download page](/docs/download/download) and extract it.
+A release may not include all `master` functionality; use the source build below for the implementation described here.
 
 #### 2.3 Clone source code to compile and install
 
-Clone the latest version of HugeGraph-Loader source package:
+Clone the `master` branch:
 
 ```bash
-# 1. get from github
-git clone https://github.com/apache/hugegraph-toolchain.git
-
-# 2. Download a released source package
-export VERSION=1.7.0
-export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
-wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
+git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
 ```
-
-> [!DETAILS]- How to install OJDBC
-> Due to the license limitation of the `Oracle OJDBC`, you need to manually install ojdbc to the local maven repository.
-> Visit the [Oracle jdbc downloads](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html) page. Select Oracle Database 12c Release 2 (12.2.0.1) drivers, as shown in the following figure.
->
-> After opening the link, select "ojdbc8.jar".
->
-> Install ojdbc8 to the local maven repository, enter the directory where `ojdbc8.jar` is located, and execute the following command.
-> ```
-> mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-> ```
 
 Compile and generate tar package:
 
@@ -112,6 +93,9 @@ Compile and generate tar package:
 cd hugegraph-toolchain
 mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 ```
+
+For Oracle input, obtain a JDBC driver JAR compatible with your Oracle/JDK versions and place it in the extracted Loader `lib/` directory.
+The startup script loads JARs there; installing a driver only in the local Maven repository does not put it on Loader’s runtime classpath.
 
 ### 3 How to use
 The basic process of using HugeGraph-Loader is divided into the following steps:
@@ -149,7 +133,7 @@ schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name
 schema.vertexLabel("software").properties("name", "price").primaryKeys("name").ifNotExist().create();
 
 // Create the knows edge type, which goes from person to person
-schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").ifNotExist().create();
+schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date").ifNotExist().create();
 // Create the created edge type, which points from person to software
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
@@ -184,7 +168,7 @@ TEXT is a text file with custom delimiters, the first line is usually the header
 
 An example is as follows:
 
-```
+```text
 id|name|lang|price|ISBN
 1|lop|java|328|ISBN978-7-107-18618-5
 2|ripple|java|199|ISBN978-7-100-13678-5
@@ -192,7 +176,7 @@ id|name|lang|price|ISBN
 
 CSV is a TEXT file with commas `,` as delimiters. When a column value itself contains a comma, the column value needs to be enclosed in double quotes, for example:
 
-```
+```text
 marko,29,Beijing
 "li,nary",26,"Wu,han"
 ```
@@ -218,17 +202,17 @@ However, the requirements for the table structure are relatively strict at prese
 
 For example, Suppose there are three tables, person, software and created
 
-```
+```text
 // person schema
 id | name | age | city
 ```
 
-```
+```text
 // software schema
 id | name | lang | price
 ```
 
-```
+```text
 // created schema
 id | p_id | s_id | date
 ```
@@ -605,10 +589,11 @@ Input sources are currently divided into five categories: FILE, HDFS, JDBC, KAFK
 - skip: whether to skip the input source, because the JSON file cannot add comments, if you do not want to import an input source during a certain import, but do not want to delete the configuration of the input source, you can set it to true to skip it, the default is false, not required;
 - input: input source map block, composite structure
     - type: an input source type, file or FILE must be filled;
-    - path: the path of the local file or directory, the absolute path or the relative path relative to the mapping file, it is recommended to use the absolute path, required;
+    - path: the path of the local file or directory, an absolute path or a path relative to the Loader process working directory (not the mapping file). An absolute path is recommended; required;
     - file_filter: filter files with compound conditions from `path`, compound structure, currently only supports configuration extensions, represented by child node `extensions`, the default is "*", which means to keep all files;
     - format: the format of the local file, the optional values are CSV, TEXT and JSON, which must be uppercase, the default is CSV, optional;               
-    - header: the column name of each column of the file, if not specified, the first line of the data file will be used as the header; when the file itself has a header and the header is specified, the first line of the file will be treated as a normal data line; JSON The file does not need to specify a header, optional;
+    - header: column names; if omitted, the first data line supplies them. With an explicit header, an identical first line is still skipped by default
+      (see has_header). JSON does not require a header; optional;
     - has_header: for CSV and TEXT, the first line of every file is dropped when it is identical to the header, so a header repeated in each part file of a directory is not imported as data. Set this to `false` to turn that check off when the first line of a file is real data that happens to equal the header, optional;
     - delimiter: The column delimiter of the file line. The default depends on `format`: a comma `","` for CSV and a tab `"\t"` for TEXT; a CSV file accepts no other delimiter. The `JSON` file does not need to be specified, optional;     
     - charset: the encoded character set of the file, the default is `UTF-8`, optional;    
@@ -703,7 +688,7 @@ schema: required
 - bootstrap_server: the list of kafka bootstrap servers, required;
 - topic: the topic to subscribe to, required;
 - group: group of Kafka consumers, required;
-- from_beginning: whether to start from the earliest offset of the topic (`auto.offset.reset=earliest`) instead of the latest one, default is false, optional;
+- from_beginning: sets `auto.offset.reset` to `earliest` when true, or `latest` when false (default). It applies only when no valid committed offset exists; otherwise consumption resumes from the committed offset. Optional;
 - format: format of each message, options are CSV, TEXT and JSON, must be uppercase, required;
 - header: column name of each column of a message; no header line is read from the topic, so it has to be given for CSV and TEXT, while JSON messages do not need it;
 - delimiter: delimiter of the message columns, used by TEXT only, since CSV always splits on `,`, optional;
@@ -711,7 +696,7 @@ schema: required
 - date_format: customized date format, default value is yyyy-MM-dd HH:mm:ss, optional; if the date is presented in the form of timestamp, this item must be written as timestamp (fixed);
 - extra_date_formats: a customized list of another date formats, empty by default, optional; each item in the list is an alternate date format to the date_format specified date format;
 - time_zone: set which time zone the date data is in, default is GMT+8, optional;
-- skipped_line: the line you want to skip, composite structure, currently can only configure the regular expression of the line to be skipped, described by the child node regex, the default is not to skip any line, optional;
+- skipped_line: current master `KafkaReader` does not implement this filter. Kafka messages go directly to the parser, so configuring this field does not skip blank or comment messages; preprocess them upstream or in the consumer to avoid parse failures;
 - batch_size: the maximum number of records fetched in one poll (`max.poll.records`), default is 500, optional;
 - early_stop: the record pulled from Kafka broker at a certain time is empty, stop the task, default is false, only for debugging, optional;
 
@@ -832,7 +817,7 @@ The import process is controlled by commands submitted by the user, and the user
 | `--pd-peers`                             |               |                 | PD service node addresses                                                                                                                                                                 |
 | `--pd-token`                             |               |                 | Token for accessing PD service                                                                                                                                                            |
 | `--meta-endpoints`                       |               |                 | Meta information storage service addresses                                                                                                                                                |
-| `--direct`                               | false         |                 | Whether to directly connect to HugeGraph-Store                                                                                                                                            |
+| `--direct`                               | false         |                 | Store direct mode is disabled in current master; imports still use Server API. Keep the default                                                                                                                                            |
 | `--route-type`                           | NODE_PORT     |                 | Route selection method (optional values: NODE_PORT / DDS / BOTH)                                                                                                                          |
 | `--cluster`                              | hg            |                 | Cluster name                                                                                                                                                                              |
 | `--trust-store-file`                     |               |                 | When the request protocol is https, the client's certificate file path                                                                                                                    |
@@ -882,18 +867,42 @@ The import process is controlled by commands submitted by the user, and the user
 | `--scheduler-type`                       | distributed |      | The task scheduler type when creating graph if not exists          |
 | `--batch-failure-fallback`               | true        |      | Whether to fallback to single insert when batch insert fails       |
 
-> The loader prints its usage and exits when it is given fewer than three arguments, so `-f struct.json` on its own is not enough.
+The mapping file option `--file` (`-f`) is required; other options use their defaults. A valid minimal invocation is:
+
+```bash
+bin/hugegraph-loader.sh --file struct.json
+```
+
+The launcher also accepts JCommander's native `@file` syntax. Put each option and value on separate lines in `loader.args`:
+
+```text
+--file
+struct.json
+```
+
+```bash
+bin/hugegraph-loader.sh @loader.args
+```
+
+This is equivalent to the minimal invocation above. Relative path values resolve from the Loader process working directory.
+If the argument file contains credentials, restrict it to mode `0600` with `chmod 0600 loader.args`.
+The `@file` form keeps credential values out of process arguments.
+Loader must be able to create and write the mapping-prefix directory used for progress output.
+Copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable volume before running Loader.
 
 ##### 3.4.2 Breakpoint Continuation Mode
 
 Usually, the Loader task takes a long time to execute. If the import interrupt process exits for some reason, and next time you want to continue the import from the interrupted point, this is the scenario of using breakpoint continuation.
 
-The user sets the command line parameter --incremental-mode to true to open the breakpoint resume mode. The key to breakpoint continuation lies in the progress file. When the import process exits, the import progress at the time of exit will be recorded.
-Recorded in the progress file, the progress file is located in the `${struct}` directory, the file name is like `load-progress_${timestamp}`, ${struct} is the prefix of the mapping file, and ${timestamp} is the start of the import
-moment, formatted as `yyyyMMdd-HHmmss`. For example, for an import task started at `2019-10-10 12:30:30`, the mapping file used is `struct-example.json`, then the path of the progress file is the same as struct-example.json
-Sibling `struct-example/load-progress_20191010-123030`. When the directory holds several progress files, the resumed import reads the last one in name order, which is the most recent one.
+Set `--incremental-mode` to `true` to resume from a progress file. Loader records progress when it closes normally after a successful import
+or a normal stop; an unexpected failure may prevent this write.
+The progress file is in `${struct}` and named `load-progress_${timestamp}`, where `${struct}` is the mapping-file prefix and `${timestamp}` is the
+import start time, formatted as `yyyyMMdd-HHmmss`. For example, an import started at `2019-10-10 12:30:30` with mapping file `struct-example.json`
+writes `struct-example/load-progress_20191010-123030`. When the directory holds several progress files, the resumed import reads the last one in name
+order, which is the most recent one.
 
-> Note: The generation of progress files is independent of whether --incremental-mode is turned on or not, and a progress file is generated at the end of each import.
+> Note: A progress file is written after a successful import or a normal stop (including an error limit), regardless of `--incremental-mode`
+> or `--print-progress`. An import aborted by an unexpected failure may not write one.
 
 If the data file formats are all legal and the import task is stopped by the user (CTRL + C or kill, kill -9 is not supported), that is to say, if there is no error record, the next import only needs to be set to 
 Continue for the breakpoint.
@@ -926,6 +935,98 @@ bin/hugegraph-loader.sh -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} 
 ```
 
 The script runs the JVM under `JAVA_HOME` when that variable is set, and `java` from the `PATH` otherwise. It passes the contents of the `JVM_OPTS` environment variable, then `-Xmx10g` and the class path built from `lib/`, to that JVM, so `JVM_OPTS` is the place to add JVM flags. Logging is configured by `conf/log4j2.xml`.
+
+#### 3.4.5 Minimal Local-File Import
+
+
+First start HugeGraph Server and ensure the current user can access `hugegraph` in graphspace `DEFAULT`, create schema, and write data. If authentication is enabled, add the appropriate `--username`, `--password`, or `--token`. This example requires only local files, without Kafka, HDFS, or JDBC.
+
+From the extracted Loader installation directory, create data, schema, and a version 2.0 mapping file:
+
+```bash
+mkdir -p demo-loader
+
+cat > demo-loader/people.csv <<'EOF'
+docs-smoke-alice,29
+docs-smoke-bob,31
+EOF
+
+cat > demo-loader/schema.groovy <<'EOF'
+schema.propertyKey("docs_name").asText().ifNotExist().create()
+schema.propertyKey("docs_age").asInt().ifNotExist().create()
+schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age").primaryKeys("docs_name").ifNotExist().create()
+EOF
+
+cat > demo-loader/struct.json <<'EOF'
+{
+  "version": "2.0",
+  "structs": [
+    {
+      "id": "people",
+      "input": {
+        "type": "FILE",
+        "path": "demo-loader/people.csv",
+        "format": "CSV",
+        "header": ["docs_name", "docs_age"]
+      },
+      "vertices": [
+        {"label": "docs_smoke_person"}
+      ],
+      "edges": []
+    }
+  ]
+}
+EOF
+```
+
+The CSV has no header row; `input.header` in the mapping supplies column names. `input.path` is relative to the Loader process working directory, so keep running from the installation directory. If Server runs in another container, set `--host` to a Server address reachable by Loader:
+
+```bash
+bin/hugegraph-loader.sh \
+  --graphspace DEFAULT --graph hugegraph \
+  --file demo-loader/struct.json --schema demo-loader/schema.groovy \
+  --host 127.0.0.1 --port 8080
+```
+
+Expected result: two vertices and zero edges imported. This example uses dedicated schema names to avoid conflicts with a preloaded `person` label. In Hubble, run `g.V().hasLabel('docs_smoke_person').values('docs_name')` to confirm `docs-smoke-alice` and `docs-smoke-bob`.
+
+#### 3.4.6 Concurrent imports and LOADING ownership {#loading-ownership}
+
+Starting with HugeGraph 1.8.0, Loader supports concurrent import protection via the LOADING ownership protocol
+(requires a Server whose `GET .../mode/owners` returns `protocol: 1` and a matching Loader; current `master` does not include it yet).
+
+```mermaid
+graph TD
+    A["Graph Mode: NONE"] -->|First Loader acquires owner| B["LOADING Mode (Acquires Token)"]
+    B -->|Concurrent Loaders join| B
+    B -->|Loader finishes & releases| B
+    B -->|Last Loader releases| C["Restores to NONE"]
+    B -.->|Abnormal exit / kill -9| D["Manual Release / Recovery / Restart"]
+    D -.->|"Last owner released, or recover/restart"| A
+    D -.->|"Other owners still active"| B
+```
+
+1. **Probe and Acquire**: Loader probes `/mode/owners`. The first Loader obtains an ownership handle (`instance/epoch/token`),
+   transitioning graph mode from `NONE` to `LOADING`; concurrent Loaders can join.
+2. **Data Import**: Loaders holding valid handles execute concurrent imports while preserving `LOADING` mode.
+3. **Graceful Release**: When an import completes, Loader drains its workers and releases its handle. When the last owner releases,
+   graph mode automatically returns to `NONE`.
+4. **Failure Recovery**: If abnormal exit (e.g. `kill -9`) leaves an orphaned owner, stop and drain all related imports and graph writes,
+   then perform administrator recovery via the [RESTful API recovery endpoint](/docs/clients/restful-api/graphs/#loading-ownership) or
+   restart the Server. Manual `release` applies only when the caller still holds its token (e.g. a direct REST client).
+{.steps}
+
+> [!NOTE]
+> **Compatibility and Operational Notes**
+> - **Legacy Compatibility**: During ordinary imports, only an unsupported-route `404` status on `/mode/owners` falls back to the legacy enum
+>   `LOADING`/`NONE` flow (maintains compatibility with Server 1.7, without multi-loader protection).
+>   Network or permission errors, or a `404` for a missing graph, do not trigger fallback.
+> - **Restore and Graph Source Imports**: Retain the `RESTORING` flow without ownership probes or automatic resets. After a restore import completes,
+>   manually reset graph mode to `NONE` before starting ordinary imports.
+>   Do not run restore, graph-source, Spark connector, or older Loader imports while owned imports are active.
+> - **Scope & Lifecycle**: Ownership is bound to the target Server instance without cross-node synchronization or automatic lease expiry.
+>   For embedded programmatic integrations, callers must invoke `HugeGraphLoader.shutdown()` to attempt a single graceful release. If release
+>   fails, the handle is not retried; the owner may remain active on the Server, and the administrator recovery step above may be required.
 
 ### 4 Complete example
 
@@ -962,10 +1063,10 @@ Edge file: `example/file/edge_knows.json`
 Edge file: `example/file/edge_created.json`
 
 ```json
-{"aname": "marko", "bname": "lop", "date": "20171210", "weight": 0.4}
-{"aname": "josh", "bname": "lop", "date": "20091111", "weight": 0.4}
-{"aname": "josh", "bname": "ripple", "date": "20171210", "weight": 1.0}
-{"aname": "peter", "bname": "lop", "date": "20170324", "weight": 0.2}
+{"source_name": "marko", "target_id": 1, "date": "2017-12-10", "weight": 0.4}
+{"source_name": "josh", "target_id": 1, "date": "2009-11-11", "weight": 0.4}
+{"source_name": "josh", "target_id": 2, "date": "2017-12-10", "weight": 1.0}
+{"source_name": "peter", "target_id": 1, "date": "2017-03-24", "weight": 0.2}
 ```
 
 #### 4.2 Write schema
@@ -980,8 +1081,8 @@ Edge file: `example/file/edge_created.json`
 > schema.propertyKey("date").asText().ifNotExist().create();
 > schema.propertyKey("price").asDouble().ifNotExist().create();
 >
-> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
-> schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
+> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").nullableKeys("age", "city").ifNotExist().create();
+> schema.vertexLabel("software").useCustomizeNumberId().properties("name", "lang", "price").ifNotExist().create();
 >
 > schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 > schema.indexLabel("personByCity").onV("person").by("city").secondary().ifNotExist().create();
@@ -995,6 +1096,10 @@ Edge file: `example/file/edge_created.json`
 > schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
 > schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();
 > ```
+
+`person` uses `name` as its primary key. Tom’s `age` and `city` are removed by `null_values`, so both properties must be nullable.
+`software` uses custom numeric IDs: mapping `id` supplies the vertex ID and `created.target_id` supplies the edge’s target ID.
+Run this example in an empty graph without these schema labels; `ifNotExist()` does not replace incompatible existing definitions.
 
 #### 4.3 Write the input source mapping file `example/file/struct.json`
 
@@ -1140,6 +1245,9 @@ If loading a custom dataset, following the previous example, you would use:
 docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f /loader/dataset/struct.json -s /loader/dataset/schema.groovy -h server -p 8080
 ```
 
+Also update every `input.path` in the custom `struct.json` to its actual container path, such as `/loader/dataset/vertex_person.csv`.
+Changing only `-f` and `-s` does not change where Loader looks for data files.
+
 > If `loader` and `server` are in the same Docker network, you can specify `-h {server_container_name}`; otherwise, you need to specify the IP of the `server` host (in our example, `server_container_name` is `server`).
 
 Then we can see the result:
@@ -1172,12 +1280,14 @@ meter metrics
 
 You can also use `curl` or `hubble` to observe the import result. Here's an example using `curl`:
 
+These requests use the GraphSpace-aware Server API. For an older Server, omit `/graphspaces/DEFAULT` from the path.
+
 ```bash
-> curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+curl --compressed "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
 {"vertices":[{"id":1,"label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328.0}},{"id":2,"label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199.0}},{"id":"1:tom","label":"person","type":"vertex","properties":{"name":"tom"}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"1:li,nary","label":"person","type":"vertex","properties":{"name":"li,nary","age":26,"city":"Wu,han"}}]}
 ```
 
-If you want to check the import result of edges, you can use `curl "http://localhost:8080/graphs/hugegraph/graph/edges" | gunzip`.
+If you want to check the import result of edges, you can use `curl --compressed "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/edges"`.
 
 ##### 4.5.2 Enter the docker container to load data
 
@@ -1212,7 +1322,7 @@ sh bin/hugegraph-spark-loader.sh --master yarn \
 
 `bin/get-params.sh` splits the command line: only the options below are handed to the loader, every other argument is passed to `spark-submit` unchanged. The splitter matches long option names only, so short forms such as `-f` and `-g` are not recognised.
 
-```
+```text
 --graph --schema --host --port --username --token --protocol
 --trust-store-file --trust-store-password --clear-all-data --clear-timeout
 --incremental-mode --failure-mode --batch-insert-threads --single-insert-threads

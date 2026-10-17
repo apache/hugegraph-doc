@@ -24,7 +24,7 @@ module.exports = defineConfig({
   },
   webServer: [
     {
-      command: `python3 -m http.server 4173 --bind 127.0.0.1 --directory ${JSON.stringify(siteRoot)}`,
+      command: `python3 serve.py 4173 --bind 127.0.0.1 --directory ${JSON.stringify(siteRoot)}`,
       url: "http://127.0.0.1:4173/",
       reuseExistingServer: false,
       timeout: 30_000,
@@ -33,7 +33,7 @@ module.exports = defineConfig({
     },
     ...(aiSiteRoot
       ? [{
-          command: `python3 -m http.server 4174 --bind 127.0.0.1 --directory ${JSON.stringify(aiSiteRoot)}`,
+          command: `python3 serve.py 4174 --bind 127.0.0.1 --directory ${JSON.stringify(aiSiteRoot)}`,
           url: "http://127.0.0.1:4174/",
           reuseExistingServer: false,
           timeout: 30_000,
@@ -43,7 +43,7 @@ module.exports = defineConfig({
       : []),
     ...(aiDisabledSiteRoot
       ? [{
-          command: `python3 -m http.server 4175 --bind 127.0.0.1 --directory ${JSON.stringify(aiDisabledSiteRoot)}`,
+          command: `python3 serve.py 4175 --bind 127.0.0.1 --directory ${JSON.stringify(aiDisabledSiteRoot)}`,
           url: "http://127.0.0.1:4175/",
           reuseExistingServer: false,
           timeout: 30_000,

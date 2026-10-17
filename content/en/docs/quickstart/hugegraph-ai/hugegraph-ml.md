@@ -9,14 +9,14 @@ HugeGraph-ML reads graph data from HugeGraph and converts it to DGL graphs for t
 ## Requirements
 
 - Python 3.10 or later
-- HugeGraph Server 1.0 or later; 1.5 or later is recommended
+- HugeGraph Server 1.5.0 or later; the current workspace client rejects detectable older versions
 - `uv` 0.7 or later
 
 All server access goes through `hugegraph-python-client` (the `pyhugegraph` package) from the same repository. `HugeGraph2DGL` pulls vertices and edges over the Gremlin endpoint with `g.V().hasLabel(...)` and `g.E().hasLabel(...)`, and the dataset importers write through the schema and batch vertex/edge APIs in batches of 500.
 
-The ML stack is version pinned at the repository root under `[tool.uv] constraint-dependencies`:
+The repository root declares ML version constraints under `[tool.uv] constraint-dependencies`:
 
-| Package | Pin |
+| Package | Constraint |
 |---|---|
 | `torch` | `==2.2.0` |
 | `dgl` | `~=2.1.0` |
@@ -27,7 +27,7 @@ The ML stack is version pinned at the repository root under `[tool.uv] constrain
 | `numpy` | `~=1.24.4` |
 | `pandas` | `~=2.2.3` |
 
-Those pins install CPU builds. Every task accepts a `gpu` argument that defaults to `-1`, meaning CPU; pass a device index only after installing CUDA builds of `torch` and `dgl` yourself.
+These constraints limit versions but do not select CPU or CUDA builds. Tasks that support `gpu` default to `-1` for CPU. GPU use requires mutually compatible CUDA builds of `torch` and `dgl`.
 
 ## Installation
 
@@ -39,7 +39,7 @@ source .venv/bin/activate
 cd hugegraph-ml/src
 ```
 
-HugeGraph-ML is a path dependency of the root project but is not a `uv` workspace member. Select the `ml` extra at the repository root instead of creating another lock file in the subdirectory.
+HugeGraph-ML is a path dependency of the root project but is not a `uv` workspace member. Select the `ml` extra at the repository root so `uv` installs it and its local client dependency according to workspace configuration.
 
 ## Implemented Models
 

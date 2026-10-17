@@ -4,6 +4,10 @@ linkTitle: "HugeGraph Plugin"
 weight: 3
 ---
 
+For plugins targeting the planned 1.8.0 shared-foundation API, follow the
+[Java/SPI migration guide](/docs/guides/shared-foundation-migration/) and recompile against matching artifacts.
+The examples below describe the 1.7.0 API.
+
 ### Background
 
 1. HugeGraph is not only open source and open, but also simple and easy to use. General users can easily add plug-in extension functions without changing the source code.
@@ -38,7 +42,7 @@ configuration items to the plug-in custom value, and restarts to take effect
 
 ##### 1.2 Add `hugegraph-core` Jar package dependencies
 
-The details of maven pom.xml are as follows:
+The Maven `pom.xml` is shown below. Match `hugegraph.version` to the target Server version; this example uses the current master version 1.7.0:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -55,11 +59,15 @@ The details of maven pom.xml are as follows:
 
     <name>hugegraph-plugin-demo</name>
 
+    <properties>
+        <hugegraph.version>1.7.0</hugegraph.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-core</artifactId>
-            <version>${project.version}</version>
+            <version>${hugegraph.version}</version>
         </dependency>
     </dependencies>
 </project>
@@ -113,7 +121,7 @@ public class RocksDBStoreProvider extends AbstractBackendStoreProvider {
 
 ###### 2.1.2 Implement interface BackendStore
 
-The BackendStore interface is defined as follows:
+The main abstract methods of `BackendStore` are shown below; default helper methods are omitted:
 
 ```java
 public interface BackendStore {
@@ -153,6 +161,9 @@ public interface BackendStore {
 
     // Query data
     Iterator<BackendEntry> query(Query query);
+    Iterator<Iterator<BackendEntry>> query(Iterator<Query> queries,
+                                          Function<Query, Query> queryWriter,
+                                          HugeGraph hugeGraph);
     Number queryNumber(Query query);
 
     // Transaction

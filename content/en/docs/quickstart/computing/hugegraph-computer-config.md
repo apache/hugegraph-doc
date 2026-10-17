@@ -6,7 +6,19 @@ weight: 3
 
 ## Computer Config Options
 
-The defaults in the tables come from `ComputerOptions.java` in the `computer-api` module. When the distribution's `conf/computer.properties` explicitly overrides an option, the table shows "code default (packaged: actual value)". At runtime, values in the configuration file take precedence.
+The defaults in the tables come from `ComputerOptions.java` in `computer-api`; explicit `conf/computer.properties` overrides are shown as "code default (distribution: actual value)". Common options such as `rpc.*` come from HugeGraph Commons; distribution values are listed separately below.
+
+### Configuration Sources
+
+- Source template: [`computer/computer-dist/src/assembly/static/conf/computer.properties`](https://github.com/apache/hugegraph-computer/blob/master/computer/computer-dist/src/assembly/static/conf/computer.properties), with `log4j2.xml` in the same directory. Maven `package` copies these into distribution `conf/`, runtime dependencies into `lib/`, and built-in algorithm JARs into `algorithm/`. Templates are maintained in source; there is no separate configuration generator.
+- Standalone and YARN: startup scripts read distribution `conf/computer.properties` by default. Override it with `bin/start-computer.sh -c <configuration-path>`; master and workers need the same job parameters.
+- Kubernetes Operator: users supply `spec.computerConf` in the CRD; the Operator writes a ConfigMap mounted as `computer.properties`. It supplies job ID, worker count, Pod addresses, and etcd when unspecified. Unspecified or zero transfer/RPC ports become `8099`/`8190`; `transport.server_host` and `rpc.server_host` become Pod IPs. Job startup scripts substitute only `${POD_IP}`, `${HOSTNAME}`, `${POD_NAME}`, and `${POD_NAMESPACE}`.
+- Kubernetes job images must contain the Computer runtime. Bundle algorithm JARs and select them with `jarFile`, or use an HTTP(S) `remoteJarUri` for startup download. See the [Computer Quick Start](/docs/quickstart/computing/hugegraph-computer/) and CRD table below.
+
+Apache downloads provide versioned Computer source archives without separate precompiled binaries. Release 1.7.0 source and distribution names include `-incubating-`; run `mvn clean package -DskipTests` in the tagged `computer/` project to build them. Current master omits that marker and takes its version from the POM. Source archives cannot be started as built distributions.
+
+> [!WARNING]
+> Empty HugeGraph credentials and example MinIO keys below are for local demonstrations. In production, enable [Server authentication and authorization](/docs/config/config-authentication/), retain Server `audit-*.log`, use a Computer account with minimum required Server permissions, and configure a Server source IP allowlist. Do not use example MinIO keys in production.
 
 ---
 
@@ -21,7 +33,7 @@ Core job settings for HugeGraph-Computer.
 | hugegraph.username | "" (empty) | The username for HugeGraph authentication (leave empty if authentication is disabled). |
 | hugegraph.password | "" (empty) | The password for HugeGraph authentication (leave empty if authentication is disabled). |
 | job.id | local_0001 (packaged: local_001) | The job identifier on YARN cluster or K8s cluster. |
-| job.namespace | "" (empty) | The job namespace used to separate different data sources. This option is managed by the runtime system. |
+| job.namespace | "" (empty) | Optional etcd job-key prefix for namespace isolation; distinct from Kubernetes metadata.namespace and not populated automatically by the Operator. |
 | job.workers_count | 1 | The number of workers for one graph algorithm job. In K8s, this option is set by the Operator. |
 | job.partitions_count | 1 | The number of partitions for computing one graph algorithm job. |
 | job.partitions_thread_nums | 4 | The number of threads for partition parallel compute. |
@@ -231,8 +243,8 @@ Configuration for network communication between workers and master.
 
 | config option | default value | description |
 |---------------|---------------|-------------|
-| transport.server_host | 127.0.0.1 | The hostname or IP that listens for transport data. This option is managed by the runtime system. |
-| transport.server_port | 0 | The port that listens for transport data; 0 assigns a random port. This option is managed by the runtime system. |
+| transport.server_host | 127.0.0.1 | Worker data listener and advertised address. It must be reachable by other workers across hosts; the Operator sets it to the Pod IP. |
+| transport.server_port | 0 (distribution: 0; K8s Operator: 8099) | Worker data port. Locally, `0` lets the OS assign a port; the Operator uses fixed port `8099` by default for Pod communication. |
 | transport.server_threads | 4 | The number of transport threads for server. |
 
 #### 7.2 Client Configuration
@@ -295,6 +307,17 @@ Configuration for network communication between workers and master.
 
 ---
 
+#### 7.9 Master RPC Configuration
+
+These options come from HugeGraph Commons RPC configuration; the distribution template explicitly sets host and port. Kubernetes Operator advertises the Pod IP and defaults an unspecified or zero port to `8190`.
+
+| Option | Distribution value | Description |
+|--------|--------------------|-------------|
+| rpc.server_host | 127.0.0.1 (K8s: Pod IP) | Master RPC address, reachable by workers. |
+| rpc.server_port | 8190 (K8s default: 8190) | Master RPC listener port; allow worker connections in security groups and network policies. |
+
+---
+
 ### 8. Storage & Persistence Configuration
 
 Configuration for HGKV (HugeGraph Key-Value) storage engine and value files.
@@ -322,7 +345,7 @@ Configuration for Bulk Synchronous Parallel (BSP) protocol and etcd coordination
 
 | config option | default value | description |
 |---------------|---------------|-------------|
-| bsp.etcd_endpoints | http://localhost:2379 | The etcd endpoints; separate multiple addresses with commas. In K8s deployments, this option is set by the Operator. |
+| bsp.etcd_endpoints | http://localhost:2379 (distribution: http://127.0.0.1:2379) | Comma-separated etcd client endpoints. The Operator uses `INTERNAL_ETCD_URL` only when `computerConf` does not specify this key. |
 | bsp.max_super_step | 10 (packaged: 2) | The max super step of the algorithm. |
 | bsp.register_timeout | 300000 (packaged: 100000) | The max timeout (in ms) to wait for master and workers to register. |
 | bsp.wait_workers_timeout | 86400000 (24 hours) | The max timeout (in ms) to wait for workers BSP event. |
@@ -344,26 +367,23 @@ Configuration for performance optimization.
 
 ### 11. System Administration Configuration
 
-The following options are managed by the runtime system and should not be overridden in job configurations.
+Kubernetes Operator fills or overrides these options. Avoid overriding them unless customizing the Operator or network. `job.namespace` is optional user configuration; see the basic configuration table.
 
-The following configuration items are automatically managed by the K8s Operator, Driver, or runtime system. Manual modification will cause cluster communication failures or job scheduling errors.
+| Option | Managed by | Description |
+|--------|------------|-------------|
+| bsp.etcd_endpoints | K8s Operator | Uses `INTERNAL_ETCD_URL` only when absent from `computerConf`. |
+| transport.server_host | K8s Operator | Overrides with Pod IP; workers must reach each other. |
+| transport.server_port | K8s Operator | Defaults unspecified or zero values to `8099`, not a random port. |
+| job.id | K8s Operator | Set from CRD job ID. |
+| job.workers_count | K8s Operator | Set from CRD `workerInstances`. |
+| rpc.server_host | K8s Operator | Overrides with master Pod IP. |
+| rpc.server_port | K8s Operator | Defaults unspecified or zero values to `8190`. |
+| rpc.remote_url | Computer startup | Removed when configuration is read; do not set as job configuration. |
 
-| config option | managed by | description |
-|---------------|------------|-------------|
-| bsp.etcd_endpoints | K8s Operator | Automatically set to operator's etcd service address |
-| transport.server_host | Runtime | Automatically set to pod/container hostname |
-| transport.server_port | Runtime | Automatically assigned random port |
-| job.namespace | K8s Operator | Automatically set to job namespace |
-| job.id | K8s Operator | Automatically set to job ID from CRD |
-| job.workers_count | K8s Operator | Automatically set from CRD `workerInstances` |
-| rpc.server_host | Runtime | RPC server hostname (system-managed) |
-| rpc.server_port | Runtime | RPC server port (system-managed) |
-| rpc.remote_url | Runtime | RPC remote URL (system-managed) |
-
-**Why These Are Forbidden:**
-- **BSP/RPC Configuration**: Must match the actual deployed etcd/RPC services. Manual overrides break coordination.
-- **Job Configuration**: Must match K8s CRD specifications. Mismatches cause worker count errors.
-- **Transport Configuration**: Must use actual pod hostnames/ports. Manual values prevent inter-worker communication.
+**Why these values must match:**
+- **BSP/RPC**: Must match deployed etcd/RPC services for coordination.
+- **Job settings**: Must match the CRD to provide the correct worker count.
+- **Transport**: Workers need mutually reachable Pod IPs and ports; the K8s default is `8099`.
 
 ---
 
@@ -373,41 +393,42 @@ The following configuration items are automatically managed by the K8s Operator,
 
 | config option | default value | description |
 |------------------------------|---------------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| k8s.auto_destroy_pod | true | Whether to automatically destroy all pods when the job is completed or failed. |
+| k8s.auto_destroy_pod | true | Delete the job CR after completion or failure; CR deletion triggers cleanup of associated computing resources. |
 | k8s.close_reconciler_timeout | 120 | The max timeout (in ms) to close reconciler. |
-| k8s.internal_etcd_url | http://127.0.0.1:2379 | The internal etcd URL for operator system. |
+| k8s.internal_etcd_url | Code: `http://127.0.0.1:2379`; manifest: `http://hugegraph-computer-operator-etcd.hugegraph-computer-operator-system:2379` | etcd URL used by Operator jobs; the supplied manifest uses the etcd Service address. |
+| k8s.internal_minio_url | Code: `http://127.0.0.1:9000`; manifest: `http://hugegraph-computer-operator-minio.hugegraph-computer-operator-system:9000` | MinIO address supplied to jobs by the Operator; needed only for MinIO snapshots. |
 | k8s.max_reconcile_retry | 3 | The max retry times of reconcile. |
 | k8s.probe_backlog | 50 | The maximum backlog for serving health probes. |
 | k8s.probe_port | 9892 | The port that the controller binds to for serving health probes. |
 | k8s.ready_check_internal | 1000 | The time interval (ms) of check ready. |
 | k8s.ready_timeout | 30000 | The max timeout (in ms) of check ready. |
-| k8s.reconciler_count | 10 | The max number of reconciler threads. |
+| k8s.reconciler_count | Code: `Runtime.getRuntime().availableProcessors()`; manifest: `6` | Maximum reconciler thread count. |
 | k8s.resync_period | 600000 | The minimum frequency at which watched resources are reconciled. |
 | k8s.timezone | Asia/Shanghai | The timezone of computer job and operator. |
-| k8s.watch_namespace | hugegraph-computer-system | The namespace to watch custom resources in. Use '*' to watch all namespaces. |
+| k8s.watch_namespace | hugegraph-computer-operator-system | Namespace watched for custom resources; also used by the supplied manifest. Use `*` to watch all namespaces. |
 
 ---
 
 ### HugeGraph-Computer CRD
 
-> CRD: https://github.com/apache/hugegraph-computer/blob/master/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
+> 1.7.0 CRD: https://github.com/apache/hugegraph-computer/blob/1.7.0/computer/computer-k8s-operator/manifest/hugegraph-computer-crd.v1.yaml
 
 | spec | default value | description | required |
 |-----------------|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
 | algorithmName | | The name of algorithm. | true |
 | jobId | | The job id. | true |
-| image | | The image of algorithm. | true |
+| image | | Job container image, which must include the Computer runtime. Bundle algorithm JARs or download them with `remoteJarUri`. | true |
 | computerConf | | The map of computer config options. | true |
 | workerInstances | | The number of worker instances, it will override the 'job.workers_count' option. | true |
-| pullPolicy | Always | The pull-policy of image, detail please refer to: https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy | false |
+| pullPolicy | Kubernetes selects `Always` for `latest`, otherwise `IfNotPresent`, when unset | Explicit values: `Always`, `Never`, or `IfNotPresent`. The CRD has no default; see [image pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy). | false |
 | pullSecrets | | The pull-secrets of Image, detail please refer to: https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod | false |
 | masterCpu | | The cpu limit of master, the unit can be 'm' or without unit detail please refer to: [https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu) | false |
 | workerCpu | | The cpu limit of worker, the unit can be 'm' or without unit detail please refer to: [https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu) | false |
 | masterMemory | | The memory limit of master, the unit can be one of Ei、Pi、Ti、Gi、Mi、Ki detail please refer to: [https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory) | false |
 | workerMemory | | The memory limit of worker, the unit can be one of Ei、Pi、Ti、Gi、Mi、Ki detail please refer to: [https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory) | false |
 | log4jXml | | The content of log4j.xml for computer job. | false |
-| jarFile | | The jar path of computer algorithm. | false |
-| remoteJarUri | | The remote jar uri of computer algorithm, it will overlay algorithm image. | false |
+| jarFile | | Path to the algorithm JAR inside the image. | false |
+| remoteJarUri | | HTTP(S) algorithm JAR URL, downloaded and loaded by the startup script. | false |
 | jvmOptions | | The java startup parameters of computer job. | false |
 | envVars | | please refer to: https://kubernetes.io/docs/tasks/inject-data-application/define-interdependent-environment-variables/ | false |
 | envFrom | | please refer to: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/ | false |
@@ -440,5 +461,5 @@ The following configuration items are automatically managed by the K8s Operator,
 | k8s.jar_file_dir | /cache/jars/ | The directory where the algorithm jar will be uploaded. |
 | k8s.kube_config | ~/.kube/config | The path of k8s config file. |
 | k8s.log4j_xml_path | | The log4j.xml path for computer job. |
-| k8s.namespace | hugegraph-computer-system | The namespace of hugegraph-computer system. |
+| k8s.namespace | hugegraph-computer-operator-system | Namespace of the HugeGraph-Computer system. |
 | k8s.pull_secret_names | [] | The names of pull-secret for pulling image. |

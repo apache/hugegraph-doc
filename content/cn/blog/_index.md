@@ -1,6 +1,11 @@
 ---
-title: "Blog"
-linkTitle: "Blog"
+title: "博客"
+linkTitle: "博客"
+icon: fa-solid fa-rss
+cascade:
+  images: [/img/social/hugegraph-apache.png]
+  reading_time: true
+  featured_image: wash
 ---
 
 欢迎阅读 HugeGraph 博客！

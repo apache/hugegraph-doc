@@ -15,15 +15,16 @@ weight: 3
 - [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client): a Python SDK for managing schemas and graph data and running Gremlin queries.
 - [vermeer-python-client](https://github.com/apache/hugegraph-ai/tree/main/vermeer-python-client): a Python SDK for the Vermeer graph computing service.
 
-The repository uses a `uv` workspace whose members are `hugegraph-llm` and `hugegraph-python-client`. `hugegraph-ml` and `vermeer-python-client` are editable path dependencies rather than workspace members. The current repository version is `1.7.0`.
+The repository uses a `uv` workspace whose members are `hugegraph-llm` and `hugegraph-python-client`. `hugegraph-ml` and `vermeer-python-client` are editable path dependencies rather than workspace members. The current repository version is `1.7.0`. The client source directory is named `hugegraph-python-client`, but its distribution name is `hugegraph-python`.
 
 ## Requirements
 
-- HugeGraph-LLM: Python 3.10 or 3.11 (`>=3.10,<3.12`)
+- HugeGraph-AI root workspace: Python 3.10 or later; HugeGraph-LLM additionally requires a version below 3.12
 - HugeGraph-ML: Python 3.10 or later
-- HugeGraph Python client and Vermeer Python client: Python 3.9 or later
+- PyPI `hugegraph-python` 1.5.0: Python 3.9 or later; current repository source uses Python 3.10 or later with the workspace
+- Vermeer Python client: current source requires Python 3.10 or later, although package metadata still says `>=3.9`; see the [client guide](/docs/quickstart/hugegraph-ai/vermeer-python-client/)
 - `uv` 0.7 or later
-- HugeGraph Server 1.3 or later (1.5 or later recommended)
+- HugeGraph Server 1.5.0 or later; the current workspace client rejects detectable older versions
 
 ## Optional Dependency Groups
 
@@ -33,7 +34,7 @@ The root project declares one extra per module plus a few combined ones:
 |---|---|
 | `llm` | `hugegraph-llm` |
 | `ml` | `hugegraph-ml` |
-| `python-client` | `hugegraph-python-client` |
+| `python-client` | `hugegraph-python` (source directory `hugegraph-python-client`) |
 | `vermeer` | `vermeer-python-client` |
 | `dev` | pytest, pytest-cov, coverage, pylint, ruff, mypy, ty, pre-commit |
 | `nk-llm` | `hugegraph-llm`, `hugegraph-python-client`, and Nuitka for the compiled image |
@@ -51,6 +52,7 @@ cd hugegraph-ai
 cp docker/env.template docker/.env
 # Edit docker/.env and set PROJECT_PATH to the absolute path of this repository
 touch hugegraph-llm/.env
+# Set GRAPH_URL=server:8080 in hugegraph-llm/.env and supply matching Server credentials
 cd docker
 docker compose -f docker-compose-network.yml up -d
 ```
@@ -71,7 +73,7 @@ cd hugegraph-llm
 python -m hugegraph_llm.demo.rag_demo.app
 ```
 
-`uv sync` creates `.venv` at the repository root. Do not create a separate environment under `hugegraph-llm`, because doing so can bypass the dependencies locked by the workspace.
+`uv sync` creates `.venv` at the repository root. Installing from the root resolves workspace members and path dependencies together. The repository does not track `uv.lock`; `uv sync` resolves the declarations and version constraints in `pyproject.toml`.
 
 ## Install ML Dependencies
 

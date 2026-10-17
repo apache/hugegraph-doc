@@ -1,10 +1,12 @@
 ---
-title: "HugeGraph-Loader Quick Start"
+title: "HugeGraph-Loader 快速上手"
 linkTitle: "使用 Loader 实时/流式导入数据"
 weight: 2
 search_keywords: [HugeGraph Loader, 批量导入, 数据导入]
 search_boost: 1.6
 ---
+
+本文以 Toolchain `master`（当前版本为 `1.8.0`）为准。发布版和 Docker `latest` 可能与源码不同；使用时请核对版本，未发布的版本请按下文从源码构建。
 
 ### 1 HugeGraph-Loader 概述
 
@@ -22,9 +24,13 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 后面会具体说明。
 
-> **注意**：使用 HugeGraph-Loader 需要依赖 HugeGraph Server 服务，下载和启动 Server 请参考 [HugeGraph-Server Quick Start](/cn/docs/quickstart/hugegraph/hugegraph-server)
+> **注意**：使用 HugeGraph-Loader 需要依赖 HugeGraph Server 服务，下载和启动 Server 请参考 [HugeGraph-Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server)
 > 
 > **测试指南**：如需在本地运行 Loader 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
+
+> **并发导入保护方案**：自 1.8.0 起，普通导入支持在同一 Server 实例上获取 owner 保护
+> （需配合返回 `protocol: 1` 的新版 Server 与对应 Loader；当前 `master` 分支暂未包含该协议）。
+> 旧版 Server 保持下文说明的原有导入行为。
 
 ### 2 获取 HugeGraph-Loader
 
@@ -37,30 +43,24 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 #### 2.1 使用 Docker 镜像 (便于**测试**)
 
-我们可以使用 `docker run -itd --name loader hugegraph/loader:1.7.0` 部署 loader 服务。对于需要加载的数据，则可以通过挂载 `-v /path/to/data/file:/loader/file` 或者 `docker cp` 的方式将文件复制到 loader 容器内部。
+我们可以使用 `docker run -itd --name loader hugegraph/loader:latest` 部署 loader 服务。对于需要加载的数据，则可以通过挂载 `-v /path/to/data/file:/loader/file` 或者 `docker cp` 的方式将文件复制到 loader 容器内部。
 
 或者使用 docker-compose 启动 loader, 启动命令为 `docker-compose up -d`, 样例的 docker-compose.yml 如下所示：
+
+以下组合用于本地匿名试用，Server API 只发布到本机。
 
 ```yaml
 version: '3'
 
 services:
   server:
-    image: hugegraph/hugegraph:1.7.0
+    image: hugegraph/hugegraph:latest
     container_name: server
-    environment:
-      - PASSWORD=xxx
     ports:
-      - 8080:8080
-
-  hubble:
-    image: hugegraph/hubble:1.7.0
-    container_name: hubble
-    ports:
-      - 8088:8088
+      - 127.0.0.1:8080:8080
 
   loader:
-    image: hugegraph/loader:1.7.0
+    image: hugegraph/loader:latest
     container_name: loader
     # mount your own data here
     # volumes:
@@ -74,43 +74,20 @@ services:
 > 
 > 1. hugegraph-loader 的 docker 镜像是一个便捷版本，用于快速启动 loader，并不是**官方发布物料包方式**。你可以从 [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub) 中得到更多细节。
 > 
-> 2. 推荐使用 `release tag` (如 `1.7.0`) 以获取稳定版。使用 `latest` tag 可以使用开发中的最新功能。
+> 2. 生产环境应固定已发布的版本标签或镜像 digest。`latest` 是可变标签，不能据此判断其与 `master` 一致。
 
 #### 2.2 下载已编译的压缩包
 
-下载最新版本的 `HugeGraph-Toolchain` Release 包，里面包含了 `loader + tool + hubble` 全套工具，如果你已经下载，可跳过重复步骤
-
-```bash
-export VERSION=1.7.0
-export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
-wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}.tar.gz"
-tar zxf "${ARCHIVE}.tar.gz"
-```
+从 [下载页面](/cn/docs/download/download) 选择已发布的 Toolchain 压缩包并解压。
+发布包不一定包含 `master` 的全部功能；需要本文对应实现时，使用下一节的源码构建方式。
 
 #### 2.3 克隆源码编译安装
 
-克隆最新版本的 HugeGraph-Loader 源码包：
+克隆 `master` 分支：
 
 ```bash
-# 1. get from github
-git clone https://github.com/apache/hugegraph-toolchain.git
-
-# 2. 下载发布版源码包
-export VERSION=1.7.0
-export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
-wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
+git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
 ```
-
-> [!DETAILS]- 点击展开/折叠 手动安装 ojdbc 方法
-> 由于 Oracle ojdbc license 的限制，需要手动安装 ojdbc 到本地 maven 仓库。
-> 访问 [Oracle jdbc 下载](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html) 页面。选择 Oracle Database 12c Release 2 (12.2.0.1) drivers，如下图所示。
->
-> 打开链接后，选择“ojdbc8.jar”
->
-> 把 ojdbc8 安装到本地 maven 仓库，进入`ojdbc8.jar`所在目录，执行以下命令。
-> ```
-> mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-> ```
 
 编译生成 tar 包：
 
@@ -118,6 +95,9 @@ wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
 cd hugegraph-toolchain
 mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 ```
+
+如需读取 Oracle 数据，按所用 Oracle/JDK 版本准备兼容的 JDBC 驱动 JAR，并放入解压后 Loader 的 `lib/` 目录。
+启动脚本会加载该目录中的 JAR；仅将驱动安装到 Maven 本地仓库并不会让运行中的 Loader 找到它。
 
 ### 3 使用流程
 
@@ -132,8 +112,7 @@ mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 
 这一步是建模的过程，用户需要对自己已有的数据和想要创建的图模型有一个清晰的构想，然后编写 schema 建立图模型。
 
-比如想创建一个拥有两类顶点及两类边的图，顶点是"人"和"软件"，边是"人认识人"和"人创造软件"，并且这些顶点和边都带有一些属性，比如顶点"人"有："姓名"、"年龄"等属性，
-"软件"有："名字"、"售卖价格"等属性；边"认识"有："日期"属性等。
+比如想创建一个拥有两类顶点及两类边的图，顶点是"人"和"软件"，边是"人认识人"和"人创造软件"，并且这些顶点和边都带有一些属性，比如顶点"人"有："姓名"、"年龄"等属性， "软件"有："名字"、"售卖价格"等属性；边"认识"有："日期"属性等。
 
 <div style="text-align: center;">
   <img src="/docs/images/demo-graph-model.png" alt="由“认识”和“创建”边连接人物与软件顶点的示例图">
@@ -157,12 +136,12 @@ schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name
 schema.vertexLabel("software").properties("name", "price").primaryKeys("name").ifNotExist().create();
 
 // 创建 knows 边类型，这类边是从 person 指向 person 的
-schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").ifNotExist().create();
+schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date").ifNotExist().create();
 // 创建 created 边类型，这类边是从 person 指向 software 的
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
 
-> 关于 schema 的详细说明请参考 [hugegraph-client](/docs/clients/hugegraph-client) 中对应部分。
+> 关于 schema 的详细说明请参考 [HugeGraph Java Client](/cn/docs/clients/hugegraph-client/) 中对应部分。
 
 #### 3.2 准备数据
 
@@ -192,7 +171,7 @@ TEXT 是自定义分隔符的文本文件，第一行通常是标题，记录了
 
 示例如下：
 
-```
+```text
 id|name|lang|price|ISBN
 1|lop|java|328|ISBN978-7-107-18618-5
 2|ripple|java|199|ISBN978-7-100-13678-5
@@ -200,7 +179,7 @@ id|name|lang|price|ISBN
 
 CSV 是分隔符为逗号`,`的 TEXT 文件，当列值本身包含逗号时，该列值需要用双引号包起来，如：
 
-```
+```text
 marko,29,Beijing
 "li,nary",26,"Wu,han"
 ```
@@ -226,17 +205,17 @@ loader 还支持以部分关系型数据库作为数据源，目前支持 MySQL�
 
 举个例子：假设有三张表，person、software 和 created
 
-```
+```text
 // person 表结构
 id | name | age | city 
 ```
 
-```
+```text
 // software 表结构
 id | name | lang | price
 ```
 
-```
+```text
 // created 表结构
 id | p_id | s_id | date
 ```
@@ -612,10 +591,10 @@ bin/utf8-bom-to-utf8.sh /path/to/file-or-dir
 - skip: 是否跳过该输入源，由于 JSON 文件无法添加注释，如果某次导入时不想导入某个输入源，但又不想删除该输入源的配置，则可以设置为 true 将其跳过，默认为 false，非必填；
 - input: 输入源映射块，复合结构
     - type: 输入源类型，必须填 file 或 FILE； 
-    - path: 本地文件或目录的路径，绝对路径或相对于映射文件的相对路径，建议使用绝对路径，必填；
+    - path: 本地文件或目录的路径，绝对路径或相对于 Loader 进程当前工作目录的相对路径，必填；为避免工作目录不同导致找不到文件，建议使用绝对路径；
     - file_filter: 从`path`中筛选复合条件的文件，复合结构，目前只支持配置扩展名，用子节点`extensions`表示，默认为"*"，表示保留所有文件；
     - format: 本地文件的格式，可选值为 CSV、TEXT 及 JSON，必须大写，默认为 CSV，选填；               
-    - header: 文件各列的列名，如不指定则会以数据文件第一行作为 header；当文件本身有标题且又指定了 header，文件的第一行会被当作普通的数据行；JSON 文件不需要指定 header，选填；
+    - header: 文件各列的列名，如不指定则以数据文件第一行作为 header；显式指定时，首行若与 header 完全相同，默认仍会跳过，详见 has_header；JSON 文件不需要指定 header，选填；
     - has_header: 对 CSV 和 TEXT 格式，如果某个文件的首行与 header 完全相同，该行会被丢弃，这样目录下每个分片文件重复的表头不会被当作数据导入。如果分片文件的首行是恰好与 header 相同的真实数据，可以设为 `false` 关闭这个检查，选填；
     - delimiter: 文件行的列分隔符。默认值取决于`format`：CSV 为逗号`","`，TEXT 为制表符`"\t"`；CSV 只接受逗号。`JSON`文件不需要指定，选填；     
     - charset: 文件的编码字符集，默认`UTF-8`，选填；    
@@ -710,7 +689,7 @@ schema: 必填
 - bootstrap_server：kafka bootstrap server 列表，必填；
 - topic：订阅的 topic，必填；
 - group：Kafka 消费者组，必填；
-- from_beginning：是否从 topic 最早的 offset 开始读取（`auto.offset.reset=earliest`），否则从最新 offset 开始，默认为 false，选填；
+- from_beginning：设置 Kafka 的 `auto.offset.reset`；`true` 对应 `earliest`，`false` 对应 `latest`，默认为 `false`。该策略仅在消费组没有已提交 offset，或已提交 offset 不再有效时生效；已有有效 offset 时会从该 offset 继续读取；
 - format：每条消息的格式，可选值为 CSV、TEXT 及 JSON，必须大写，必填；
 - header：消息各列的列名；loader 不会从 topic 中读取表头行，因此 CSV 和 TEXT 格式必须指定，JSON 消息则不需要；
 - delimiter：消息的列分隔符，仅 TEXT 格式使用，CSV 固定以`,`分隔，选填；
@@ -718,7 +697,7 @@ schema: 必填
 - date_format：自定义的日期格式，默认值为 yyyy-MM-dd HH:mm:ss，选填；如果日期是以时间戳的形式呈现的，此项须写为 timestamp（固定写法）；
 - extra_date_formats：自定义的其他日期格式列表，默认为空，选填；列表中每一项都是一个 date_format 指定日期格式的备用日期格式；
 - time_zone：置日期数据是处于哪个时区的，默认值为 GMT+8，选填；
-- skipped_line：想跳过的行，复合结构，目前只能配置要跳过的行的正则表达式，用子节点 regex 描述，默认不跳过任何行，选填；
+- skipped_line：当前 master 的 KafkaReader 未实现该过滤，配置此字段不会跳过 Kafka 消息；每条消息仍会直接交给所选格式的解析器，空行或注释行可能因此触发解析错误。需要过滤时请在写入 Kafka 前或消费侧预处理；
 - batch_size：单次拉取的最大记录数（`max.poll.records`），默认为 500，选填；
 - early_stop：某次从 Kafka broker 拉取的记录为空，停止任务，默认为 false，仅用于调试，选填；
 
@@ -839,7 +818,7 @@ GRAPH 输入源从另一个 HugeGraph 图（通过 HugeGraph-PD 访问）读取�
 | `--pd-peers`                            |             |      | PD 服务节点地址                                                         |
 | `--pd-token`                            |             |      | 访问 PD 服务的 token                                                   |
 | `--meta-endpoints`                      |             |      | 元信息存储服务地址                                                         |
-| `--direct`                              | false       |      | 是否直连 HugeGraph-Store                                              |
+| `--direct`                              | false       |      | 当前 master 未启用 Store 直连，仍经 Server API 导入；保留默认值                                              |
 | `--route-type`                          | NODE_PORT   |      | 路由选择方式（可选值：NODE_PORT / DDS / BOTH）                                |
 | `--cluster`                             | hg          |      | 集群名                                                               |
 | `--trust-store-file`                    |             |      | 请求协议为 https 时，客户端的证书文件路径                                          |
@@ -889,21 +868,41 @@ GRAPH 输入源从另一个 HugeGraph 图（通过 HugeGraph-PD 访问）读取�
 | `--scheduler-type`                      | distributed |      | 自动创建图（如果不存在）时的任务调度器类型                                             |
 | `--batch-failure-fallback`              | true        |      | 批量插入失败时是否回退至单条插入模式                                                |
 
-> 参数少于三个时 loader 会直接打印用法并退出，因此只传 `-f struct.json` 是不够的。
+映射文件选项 `--file`（`-f`）是必填项，其他选项使用默认值。有效的最简调用为：
+
+```bash
+bin/hugegraph-loader.sh --file struct.json
+```
+
+启动脚本也支持 JCommander 原生的 `@file` 语法。在 `loader.args` 中把每个选项及其值分别写在单独一行：
+
+```text
+--file
+struct.json
+```
+
+```bash
+bin/hugegraph-loader.sh @loader.args
+```
+
+这与上面的最简调用等价。参数中的相对路径以 Loader 进程的工作目录为基准。
+若参数文件包含凭据，使用 `chmod 0600 loader.args` 把权限限制为 `0600`；`@file` 调用让这些值不出现在进程参数中。
+Loader 必须能够创建并写入以映射文件前缀命名的进度目录。
+从只读 Kubernetes ConfigMap 挂载映射文件时，先把映射复制到可写卷中再运行 Loader。
 
 ##### 3.4.2 断点续导模式
 
 通常情况下，Loader 任务都需要较长时间执行，如果因为某些原因导致导入中断进程退出，而下次希望能从中断的点继续导，这就是使用断点续导的场景。
 
-用户设置命令行参数 --incremental-mode 为 true 即打开了断点续导模式。断点续导的关键在于进度文件，导入进程退出的时候，会把退出时刻的导入进度
-记录到进度文件中，进度文件位于 `${struct}` 目录下，文件名形如 `load-progress_${timestamp}` ，${struct} 为映射文件的前缀，${timestamp} 为导入开始
+设置 `--incremental-mode` 为 `true` 即可从进度文件续导。Loader 在导入成功或正常停止后关闭时写入进度；意外失败可能阻止该写入。
+进度文件位于 `${struct}` 目录下，文件名形如 `load-progress_${timestamp}` ，${struct} 为映射文件的前缀，${timestamp} 为导入开始
 的时刻，格式为 `yyyyMMdd-HHmmss`。比如：在 `2019-10-10 12:30:30` 开始的一次导入任务，使用的映射文件为 `struct-example.json`，则进度文件的路径为与 struct-example.json 
 同级的 `struct-example/load-progress_20191010-123030`。当目录下存在多个进度文件时，续导会读取按文件名排序的最后一个，也就是最新的那个。
 
-> 注意：进度文件的生成与 --incremental-mode 是否打开无关，每次导入结束都会生成一个进度文件。
+> 注意：导入成功或正常停止（包括达到错误上限）后会写入进度文件，与 `--incremental-mode` 或 `--print-progress` 是否打开无关。
+> 意外失败导致导入中止时，可能不会写入进度文件。
 
-如果数据文件格式都是合法的，是用户自己停止（CTRL + C 或 kill，kill -9 不支持）的导入任务，也就是说没有错误记录的情况下，下一次导入只需要设置
-为断点续导即可。
+如果数据文件格式都是合法的，是用户自己停止（CTRL + C 或 kill，kill -9 不支持）的导入任务，也就是说没有错误记录的情况下，下一次导入只需要设置为断点续导即可。
 
 但如果是因为太多数据不合法或者网络异常，达到了 --max-read-errors、--max-parse-errors 或 --max-insert-errors 的限制，Loader 会把这些失败的原始行记录到
 失败文件中，用户对失败文件中的数据行修改后，设置 --failure-mode 为 true 即可把这些"失败文件"也当作输入源进行导入（不影响正常的文件的导入），
@@ -933,6 +932,93 @@ bin/hugegraph-loader.sh -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} 
 ```
 
 脚本在设置了 `JAVA_HOME` 时使用其中的 JVM，否则使用 `PATH` 上的 `java`。它会把 `JVM_OPTS` 环境变量的内容，以及 `-Xmx10g` 和由 `lib/` 生成的 classpath 一起传给 JVM，因此需要追加 JVM 参数时可以设置 `JVM_OPTS`。日志由 `conf/log4j2.xml` 配置。
+
+#### 3.4.5 最小本地文件导入示例
+
+先确保 HugeGraph Server 已启动，当前用户可以访问 `DEFAULT` 图空间中的 `hugegraph` 图，并有权限创建 Schema 和写入数据。若 Server 已启用认证，在命令中增加对应的 `--username`、`--password` 或 `--token`。本例只需本地文件，不依赖 Kafka、HDFS 或 JDBC。
+
+进入解压后的 Loader 安装目录，再创建数据、Schema 和 2.0 格式的映射文件：
+
+```bash
+mkdir -p demo-loader
+
+cat > demo-loader/people.csv <<'EOF'
+docs-smoke-alice,29
+docs-smoke-bob,31
+EOF
+
+cat > demo-loader/schema.groovy <<'EOF'
+schema.propertyKey("docs_name").asText().ifNotExist().create()
+schema.propertyKey("docs_age").asInt().ifNotExist().create()
+schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age").primaryKeys("docs_name").ifNotExist().create()
+EOF
+
+cat > demo-loader/struct.json <<'EOF'
+{
+  "version": "2.0",
+  "structs": [
+    {
+      "id": "people",
+      "input": {
+        "type": "FILE",
+        "path": "demo-loader/people.csv",
+        "format": "CSV",
+        "header": ["docs_name", "docs_age"]
+      },
+      "vertices": [
+        {"label": "docs_smoke_person"}
+      ],
+      "edges": []
+    }
+  ]
+}
+EOF
+```
+
+`people.csv` 没有表头行，列名由映射文件的 `header` 提供。映射文件中的本地路径相对于运行命令时的工作目录。仍在 Loader 安装目录中执行导入；如果 Server 在其他容器中，请把 `--host` 改为 Loader 能访问到的 Server 地址。
+
+```bash
+bin/hugegraph-loader.sh \
+  --graphspace DEFAULT --graph hugegraph \
+  --file demo-loader/struct.json --schema demo-loader/schema.groovy \
+  --host 127.0.0.1 --port 8080
+```
+
+本例用独立的 `docs_smoke_person` 标签和 `docs_*` 属性，避免与预置的 `person` 样例数据冲突。成功时统计中应显示顶点写入成功数为 `2`、边写入成功数为 `0`。也可以在 Hubble 的 Gremlin 工作台查询 `g.V().hasLabel('docs_smoke_person').values('docs_name')`，结果应包含 `docs-smoke-alice` 和 `docs-smoke-bob`。
+
+#### 3.4.6 并发导入与 LOADING owner {#loading-ownership}
+
+自 1.8.0 版本起，Loader 支持并发导入模式所有权保护协议
+（需配合返回 `protocol: 1` 的新版 Server 与对应 Loader；当前 `master` 分支暂未包含该协议）。
+
+```mermaid
+graph TD
+    A["图模式 NONE"] -->|首个 Loader 申请所有权| B["进入 LOADING 模式 (分配 token)"]
+    B -->|其他并发 Loader 加入| B
+    B -->|部分 Loader 导入完成释放| B
+    B -->|最后一个 Loader 释放| C["自动恢复 NONE 模式"]
+    B -.->|"异常/进程中断 (Token 残留)"| D["管理员恢复 / 释放 / 重启图实例"]
+    D -.->|"最后一个 owner 释放，或 recover/重启"| A
+    D -.->|"仍有其他 owner 活跃"| B
+```
+
+1. **探测与获取**：Loader 启动后探测 `/mode/owners`。首个 Loader 获取所有权句柄（`instance/epoch/token`），图模式由 `NONE` 转为 `LOADING`；并发 Loader 可申请加入该模式。
+2. **数据导入**：持有有效句柄的 Loader 并行执行数据导入。
+3. **安全释放**：导入完成后停止 worker 并释放对应句柄。当最后一个 owner 释放时，图模式自动恢复为 `NONE`。
+4. **异常恢复**：若因异常中断（如 `kill -9`）导致句柄残留，请先停止并排空所有相关的导入任务与图写操作，
+   然后通过 [RESTful API 管理员恢复接口](/cn/docs/clients/restful-api/graphs/#loading-ownership) 执行恢复，或重启 Server。
+   直接调用 `release` 仅适用于仍持有 Token 的调用方（如直接调用 REST API 的客户端）。
+{.steps}
+
+> [!NOTE]
+> **兼容性与运维说明**
+> - **旧版本兼容**：普通导入时仅在接口返回不支持该路由的 `404` 响应时回退至旧版 `LOADING`/`NONE` 枚举流程（支持 1.7 等旧版 Server，但不提供并发隔离）。
+>   权限、网络、图不存在或无效响应错误不会触发回退。
+> - **恢复与图源导入**：保留 `RESTORING` 模式，不探测 owner 且不自动重置。恢复导入完成后须手动将图模式设回 `NONE`，否则后续普通导入无法获取首个所有权。
+>   在活跃 owner 存在期间，请勿运行恢复导入、图源导入、Spark connector 或旧版 Loader 导入。
+> - **作用范围与生命周期**：所有权属于直连 Server 实例，不跨节点同步；owner 无自动租期过期机制。
+>   对于嵌入式程序集成，调用方必须调用 `HugeGraphLoader.shutdown()` 执行单次句柄释放；若释放失败，不会自动重试；
+>   该 owner 可能会在 Server 端保持活跃，此时可能需要通过上述管理员恢复流程处理。
 
 ### 4 完整示例
 
@@ -969,10 +1055,10 @@ id|name|lang|price|ISBN
 边文件：`example/file/edge_created.json`
 
 ```json
-{"aname": "marko", "bname": "lop", "date": "20171210", "weight": 0.4}
-{"aname": "josh", "bname": "lop", "date": "20091111", "weight": 0.4}
-{"aname": "josh", "bname": "ripple", "date": "20171210", "weight": 1.0}
-{"aname": "peter", "bname": "lop", "date": "20170324", "weight": 0.2}
+{"source_name": "marko", "target_id": 1, "date": "2017-12-10", "weight": 0.4}
+{"source_name": "josh", "target_id": 1, "date": "2009-11-11", "weight": 0.4}
+{"source_name": "josh", "target_id": 2, "date": "2017-12-10", "weight": 1.0}
+{"source_name": "peter", "target_id": 1, "date": "2017-03-24", "weight": 0.2}
 ```
 
 #### 4.2 编写 schema
@@ -987,8 +1073,8 @@ id|name|lang|price|ISBN
 > schema.propertyKey("date").asText().ifNotExist().create();
 > schema.propertyKey("price").asDouble().ifNotExist().create();
 >
-> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
-> schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
+> schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").nullableKeys("age", "city").ifNotExist().create();
+> schema.vertexLabel("software").useCustomizeNumberId().properties("name", "lang", "price").ifNotExist().create();
 >
 > schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create();
 > schema.indexLabel("personByCity").onV("person").by("city").secondary().ifNotExist().create();
@@ -1002,6 +1088,10 @@ id|name|lang|price|ISBN
 > schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
 > schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();
 > ```
+
+`person` 使用 `name` 作为主键；Tom 的 `age` 和 `city` 会被 `null_values` 去掉，因此这两个属性必须允许为空。
+`software` 使用自定义数值 ID，映射中的 `id` 和 `created.target_id` 分别对应顶点 ID 及边的目标 ID。
+请在未包含同名 Schema 的空图中执行，避免 `ifNotExist()` 保留已有的不兼容定义。
 
 #### 4.3 编写输入源映射文件`example/file/struct.json`
 
@@ -1147,6 +1237,9 @@ docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f example/file/stru
 docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f /loader/dataset/struct.json -s /loader/dataset/schema.groovy -h server -p 8080
 ```
 
+自定义数据集的 `struct.json` 还需将每个 `input.path` 改为容器内实际路径，例如 `/loader/dataset/vertex_person.csv`。
+只修改 `-f` 和 `-s` 不会改变数据文件的解析路径。
+
 
 > 如果 `loader` 和 `server`位于同一 docker 网络，则可以指定 `-h {server_container_name}`, 否则需要指定 `server`的宿主机的 ip (在我们的例子中， `server_container_name` 为 `server`).
 
@@ -1180,12 +1273,14 @@ meter metrics
 
 也可以使用 `curl` 或者 `hubble`观察导入结果，此处以 `curl` 为例：
 
+以下使用支持 GraphSpace 的 Server API；旧版 Server 的路径需去掉 `/graphspaces/DEFAULT`。
+
 ```bash
-> curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+curl --compressed "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices"
 {"vertices":[{"id":1,"label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328.0}},{"id":2,"label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199.0}},{"id":"1:tom","label":"person","type":"vertex","properties":{"name":"tom"}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"1:li,nary","label":"person","type":"vertex","properties":{"name":"li,nary","age":26,"city":"Wu,han"}}]}
 ```
 
-如果想检查边的导入结果，可以使用 `curl "http://localhost:8080/graphs/hugegraph/graph/edges" | gunzip`
+如果想检查边的导入结果，可以使用 `curl --compressed "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/edges"`
 
 ##### 4.5.2 进入 docker 容器进行导入
 
@@ -1200,8 +1295,7 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 执行的结果如 [4.5.1](#451-使用-docker-exec-直接导入数据) 所示
 
 #### 4.6 使用 spark-loader 导入
-> Spark 版本：Spark 3+，其他版本未测试。
-> 当前源码使用 Spark 3.2.2 和 Scala 2.12；其他组合需自行验证。
+> Spark 版本：Spark 3+，其他版本未测试。当前源码使用 Spark 3.2.2 和 Scala 2.12；其他组合需自行验证。
 > 
 `spark-loader` 的参数分为两部分，注意：因二者参数名缩写存在重合部分，请使用参数全称。两种参数之间无需保证先后顺序。
 - hugegraph 参数（参考：[hugegraph-loader 参数说明](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-loader/#341-%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E) ）
@@ -1219,7 +1313,7 @@ sh bin/hugegraph-spark-loader.sh --master yarn \
 
 `bin/get-params.sh` 负责拆分命令行：只有下列参数会交给 loader，其余参数原样传给 `spark-submit`。该拆分只识别参数全称，因此 `-f`、`-g` 这类缩写不会被识别。
 
-```
+```text
 --graph --schema --host --port --username --token --protocol
 --trust-store-file --trust-store-password --clear-all-data --clear-timeout
 --incremental-mode --failure-mode --batch-insert-threads --single-insert-threads

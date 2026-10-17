@@ -7,7 +7,13 @@ description: "Graphs REST API: Manage graph instance lifecycle including creatin
 
 ### 6.1 Graphs
 
-**Important Reminder**: Since HugeGraph 1.7.0, dynamic graph creation must enable authentication mode. For non-authentication mode, please refer to [Graph Configuration File](https://hugegraph.apache.org/docs/config/config-guide/#4-hugegraphproperties) to statically create graphs through configuration files.
+> [!WARNING]
+> In production, enable [Server authentication and authorization](/docs/config/config-authentication/), restrict graph management with an IP allowlist and minimum permissions, and retain `audit-*.log` audit records. Unauthenticated settings below are only for isolated local tests.
+
+> This page documents the Graphs API on current master. For historical paths and request bodies, use the [1.7 Graphs API](https://hugegraph.apache.org/versions/1.7/docs/clients/restful-api/graphs/) or
+> [1.5 Graphs API](https://hugegraph.apache.org/versions/1.5/docs/clients/restful-api/graphs/).
+
+With authentication enabled, creation, cloning, deletion, clearing, display-name changes, graph-configuration reads, read-mode changes, and manual compaction require graph-space management permission (`space`); administrators can satisfy it through permission inheritance. Snapshot creation/restoration and data-mode changes allow graph-space managers or the graph owner. Listing, details, and data/read-mode queries use graph read permissions. Raft APIs additionally require graph-space membership.
 
 #### 6.1.1 List all graphs in the graphspace
 
@@ -19,7 +25,7 @@ description: "Graphs REST API: Manage graph instance lifecycle including creatin
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs
 ```
 
@@ -33,10 +39,10 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs
 
 ```javascript
 {
-  "graphs": [
-    "hugegraph",
-    "hugegraph1"
-  ]
+    "graphs": [
+        "hugegraph",
+        "hugegraph1"
+    ]
 }
 ```
 
@@ -51,7 +57,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 ```
 
@@ -65,12 +71,12 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 
 ```javascript
 {
-  "name": "hugegraph",
-  "backend": "rocksdb"
+    "name": "hugegraph",
+    "backend": "rocksdb"
 }
 ```
 
-#### 6.1.3 Clear all data of a graph, include: schema, vertex, edge and index, **This operation requires administrator privileges**
+#### 6.1.3 Clear all data of a graph, include: schema, vertex, edge and index
 
 ##### Params
 
@@ -87,7 +93,7 @@ Since emptying the graph is a dangerous operation, we have added parameters for 
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_message=I%27m+sure+to+delete+all+data
 ```
 
@@ -97,7 +103,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 204
 ```
 
-#### 6.1.4 Clone graph, **this operation requires administrator privileges**
+#### 6.1.4 Clone graph
 
 ##### Params
 
@@ -112,7 +118,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_name=hugegraph
 ```
 
@@ -152,7 +158,7 @@ Clone a `non-auth` mode graph (set `Content-Type: application/json`)
 }
 ```
 
-#### 6.1.5 Create graph, **this operation requires administrator privileges**
+#### 6.1.5 Create graph
 
 ##### Params
 
@@ -163,8 +169,8 @@ Clone a `non-auth` mode graph (set `Content-Type: application/json`)
 
 ##### Method & Url
 
-```
-POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph2
+```text
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph-xx
 ```
 
 ##### Request Body
@@ -172,48 +178,21 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph2
 Create a graph (set `Content-Type: application/json`)
 
 **`gremlin.graph` Configuration:**
-- Auth mode: `"gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy"` (Recommended)
+- Auth mode: `"gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy"` (required in production)
 - Non-auth mode: `"gremlin.graph": "org.apache.hugegraph.HugeFactory"`
 
-**Note**!!
-1. In version 1.7.0, dynamic graph creation would cause a NPE. This issue has been fixed in [PR#2912](https://github.com/apache/hugegraph/pull/2912). The current master version and versions after 1.7.0 do not have this problem.
-2. If the backend is hstore, ensure HugeGraph-Server is properly configured with PD, see [HStore Configuration](/docs/quickstart/hugegraph/hugegraph-server/#511-distributed-storage-hstore). On 1.7.0 and earlier the request body also had to set `"task.scheduler_type": "distributed"`. That key is now deprecated and ignored: the scheduler is selected from the backend type, hstore uses the distributed scheduler and other backends use the local one.
-
-**Optional fields and their defaults:**
-- `gremlin.graph` defaults to `org.apache.hugegraph.HugeFactory`
-- `backend` defaults to `hstore` when the server runs in PD mode, and to `rocksdb` otherwise
-- `serializer` defaults to `binary`
-- `store` defaults to the graph name
-- `nickname` sets a display name for the graph, it must be unique inside the graphspace
-- `schema` names a [schema template](./graphspace) to initialize the graph with, it is stored as `schema.init_template`
-- `description` is returned as-is in the response
-
-**RocksDB Example:**
+**Note**: For HStore, configure PD correctly in HugeGraph Server; see [HStore configuration](/docs/quickstart/hugegraph/hugegraph-server/#511-distributed-storage-hstore). The backend selects the scheduler: HStore uses the distributed scheduler; other backends use the local scheduler.
 
 ```javascript
 {
   "gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy",
   "backend": "rocksdb",
   "serializer": "binary",
-  "store": "hugegraph2",
+  "store": "hugegraph",
   "rocksdb.data_path": "./rks-data-xx",
   "rocksdb.wal_path": "./rks-data-xx"
 }
 ```
-
-**HStore Example:**
-
-```javascript
-{
-  "gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy",
-  "backend": "hstore",
-  "serializer": "binary",
-  "store": "hugegraph2",
-  "pd.peers": "127.0.0.1:8686"
-}
-```
-
-> Note: The data/wal_path can't be the same as the existing graph (use separate directories)
 
 ##### Response Status
 
@@ -225,14 +204,31 @@ Create a graph (set `Content-Type: application/json`)
 
 ```javascript
 {
-  "name": "hugegraph2",
-  "nickname": "hugegraph2",
-  "backend": "rocksdb",
-  "description": ""
+    "name": "hugegraph2",
+    "nickname": "hugegraph2",
+    "backend": "rocksdb",
+    "description": ""
 }
 ```
 
 #### 6.1.6 Delete graph and its data
+
+Graph-space management permission (`space`) is required when authentication is enabled.
+
+Stop writes and tasks on every Server that uses the graph before deletion, and keep them stopped during failures and retries.
+Do not recreate the same graph name until deletion has completed and been confirmed on every Server. Notifications are not a cluster-wide barrier.
+
+On the deleting Server, scheduler shutdown fences new task admission and waits for actual executions, cancellation callbacks and transaction cleanup.
+If the configured task-drain wait times out (`task.wait_timeout`, seconds), deletion is refused before data, configuration or metadata removal; retry after
+the owners exit. Task admission stays closed after this refusal.
+To resume ordinary graph use before destructive cleanup, keep writes and task producers stopped;
+wait for all admitted tasks and cancellation cleanup to finish, then restart Server. A restart does not restore data or metadata already removed.
+Closing the scheduler alone retains persistent work that has not started.
+
+Deletion is not transactional. A failure after destructive cleanup does not restore removed data or metadata. An uncertain owner or native-resource cleanup
+needs manual inspection; do not force-remove the scheduler or resume writes just because a task Future is done.
+In PD deployments with `graph.load_from_local_config=true`, if deletion is refused because the graph uses local configuration,
+removing its configuration file and restarting Server stops Server from loading the graph, but leaves its backend data in place.
 
 ##### Params
 
@@ -249,7 +245,7 @@ Since deleting a graph is a dangerous operation, we have added parameters for co
 
 ##### Method & Url
 
-```
+```javascript
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/graphA?confirm_message=I%27m%20sure%20to%20drop%20the%20graph
 ```
 
@@ -259,7 +255,6 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/graphA?confirm_message=I
 204
 ```
 
-> Note: For HugeGraph 1.5.0 and earlier versions, if you need to create or drop a graph, please still use the legacy `text/plain` (properties) style request body instead of JSON.
 
 #### 6.1.7 List the graphs of the graphspace with their configuration
 
@@ -277,7 +272,7 @@ Returns one entry per graph the current user can read, each carrying the graph c
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/profile
 ```
 
@@ -307,7 +302,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/profile
 ]
 ```
 
-#### 6.1.8 Update the nickname of a graph, **this operation requires administrator privileges**
+#### 6.1.8 Update the nickname of a graph
 
 ##### Params
 
@@ -323,7 +318,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/profile
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 ```
 
@@ -361,7 +356,7 @@ A default graph is recorded per user, so the endpoints below act on behalf of th
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/default
 ```
 
@@ -385,7 +380,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/default
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/default
 ```
 
@@ -407,7 +402,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/default
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/default
 ```
 
@@ -429,7 +424,9 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/default
 
 #### 6.1.10 Reload the graphs of the graphspace
 
-Reloads the graphs the server holds, which is useful after the graph configuration has changed outside the server.
+Apply graph configuration changes by restarting Server. Hot-reload recovery is deferred; do not use this endpoint for configuration maintenance.
+In the current non-PD path, reload invokes graph deletion and can clear backend data. Keep writes and tasks stopped until Server has restarted and the
+intended graphs have been verified. The request and response below document the API shape, not a maintenance or recovery guarantee.
 
 ##### Params
 
@@ -443,7 +440,7 @@ Reloads the graphs the server holds, which is useful after the graph configurati
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/manage
 ```
 
@@ -471,7 +468,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/manage
 
 ### 6.2 Conf
 
-#### 6.2.1 Get configuration for a graph, **This operation requires administrator privileges**
+#### 6.2.1 Get configuration for a graph
 
 ##### Params
 
@@ -483,7 +480,8 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/manage
 ##### Method & Url
 
 ```javascript
-GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/conf
+GET
+http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/conf
 ```
 
 ##### Response Status
@@ -539,6 +537,8 @@ When you complete the restore, change the graph mode to None.
 
 #### 6.3.1 Get graph mode
 
+Graph read permission (`space_member` or the graph owner) is required when authentication is enabled.
+
 ##### Params
 
 **Path parameters**
@@ -548,7 +548,7 @@ When you complete the restore, change the graph mode to None.
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 ```
 
@@ -562,13 +562,15 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 
 ```javascript
 {
-  "mode": "NONE"
+    "mode": "NONE"
 }
 ```
 
 > Allowed graph mode values are: NONE, RESTORING, MERGING, LOADING
 
-#### 6.3.2 Modify graph mode. **This operation requires administrator privileges**
+#### 6.3.2 Modify graph mode.
+
+Graph-space management permission (`space`) or graph ownership is required when authentication is enabled; administrators can satisfy it through permission inheritance.
 
 ##### Params
 
@@ -579,17 +581,19 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 ```
 
 ##### Request Body
 
-```
+```text
 "RESTORING"
 ```
 
 > Allowed graph mode values are: NONE, RESTORING, MERGING, LOADING
+
+While loading owners are active, this enum PUT rejects all mode changes, including `"LOADING"`. Release the owners after their import workers stop.
 
 ##### Response Status
 
@@ -601,11 +605,13 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 
 ```javascript
 {
-  "mode": "RESTORING"
+    "mode": "RESTORING"
 }
 ```
 
 #### 6.3.3 Get graph's read mode
+
+Graph read permission (`space_member` or the graph owner) is required when authentication is enabled.
 
 ##### Params
 
@@ -616,7 +622,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 ```
 
@@ -630,11 +636,13 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 ```javascript
 {
-  "graph_read_mode": "ALL"
+    "graph_read_mode": "ALL"
 }
 ```
 
-#### 6.3.4 Modify graph's read mode. **This operation requires administrator privileges**
+#### 6.3.4 Modify graph's read mode.
+
+Graph-space management permission (`space`) is required when authentication is enabled; administrators can satisfy it through permission inheritance.
 
 ##### Params
 
@@ -645,13 +653,13 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 ```
 
 ##### Request Body
 
-```
+```text
 "OLTP_ONLY"
 ```
 
@@ -667,13 +675,93 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 ```javascript
 {
-  "graph_read_mode": "OLTP_ONLY"
+    "graph_read_mode": "OLTP_ONLY"
 }
 ```
+
+#### 6.3.5 LOADING ownership {#loading-ownership}
+
+Starting with HugeGraph 1.8.0, the Server provides the protocol 1 endpoints for LOADING ownership
+(requires a Server whose `GET .../mode/owners` returns `protocol: 1` and a matching Loader; current `master` does not include it yet);
+Loader integration requires a matching 1.8.0 or newer client.
+Released packages, earlier 1.8 builds, and current `master` builds lack this protocol. Support for the `LOADING` enum alone does not imply support for it.
+With authentication enabled, both endpoints use the mode setter's permissions: graph-space management (`space`) or graph ownership, with STATUS write
+authorization. Server binds the handle to the authenticated principal; a token grants no permission. Keep the same identity for acquire, release and retries.
+
+```text
+GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode/owners
+```
+
+The `200` capability response contains the graph-instance UUID, current nonnegative epoch, and state revision:
+
+```json
+{
+    "protocol": 1,
+    "instance": "<instance UUID>",
+    "epoch": 0,
+    "revision": 0
+}
+```
+
+Generate a new lowercase hyphenated UUID `token` for each import, retain the returned `instance` and `epoch`,
+and acquire with `Content-Type: application/json`:
+
+```text
+PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode/owners
+```
+
+```json
+{
+    "action": "acquire",
+    "instance": "<instance UUID>",
+    "epoch": 0,
+    "token": "<import UUID>"
+}
+```
+
+An acquire succeeded only when the response returns `200` with `state: "active"`, echoing `protocol`, `instance`, `epoch`, `token`, and `mode: "LOADING"`.
+A `200` response with `state: "released"` means the handle is finished or was preemptively released; it does not grant ownership. In that case, stop and drain
+that import attempt, then start a new attempt with a fresh GET for `instance` and `epoch` and generate a new token.
+Release with `action: "release"` and the same handle; its response has `state: "released"` and the effective graph mode. Calling release before acquire is
+recorded and causes a subsequent acquire with that handle to return `released`.
+Keep one handle for retries; Server checks its principal, instance and epoch. A released handle cannot acquire again.
+
+To clear orphaned handles after an abnormal exit (e.g. `kill -9`), an administrator can execute an explicit recovery request:
+
+```text
+PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode/owners
+```
+
+```json
+{
+    "action": "recover",
+    "instance": "<instance UUID>",
+    "epoch": 0,
+    "revision": 0,
+    "confirm": "I'm sure all imports have stopped"
+}
+```
+
+Administrator recovery requires the global administrator role (`admin`). Callers must supply the current `revision`, `instance`, and `epoch`
+obtained from `GET /mode/owners`, plus the confirmation string `confirm: "I'm sure all imports have stopped"`.
+If the provided `revision` does not match the Server's current state, the request is rejected with HTTP `409 Conflict`.
+On success, the Server clears all active owners, resets graph mode to `NONE`, and increments the epoch, returning HTTP `200` with
+`state: "recovered"` and `mode: "NONE"`.
+
+The first owner requires `NONE`. Other owners share owner-managed `LOADING`; the last release restores `NONE`.
+Manually set `LOADING`, `RESTORING` and `MERGING` are not adopted. While owners are active, the legacy enum PUT rejects mode changes.
+
+This protects ordinary imports on one live Server graph instance, with the handle bound to its authenticated principal, instance and epoch.
+It provides no cross-Server coordination, data-write isolation or automatic expiry. Use a fixed direct Server endpoint and release after the import stops.
+The upgraded Loader falls back to old behavior only for an unsupported-route `404` from its ownership probe; other errors remain failures.
+Graph-source and restore imports retain their original enum-mode behavior. See
+[Loader compatibility and recovery](/docs/quickstart/toolchain/hugegraph-loader/#loading-ownership).
 
 ### 6.4 Snapshot
 
 #### 6.4.1 Create a snapshot
+
+Graph-space management permission (`space`) or graph ownership is required when authentication is enabled; administrators can satisfy it through permission inheritance.
 
 ##### Params
 
@@ -684,7 +772,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_create
 ```
 
@@ -698,11 +786,13 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_create
 
 ```javascript
 {
-  "hugegraph": "snapshot_created"
+    "hugegraph": "snapshot_created"
 }
 ```
 
 #### 6.4.2 Resume a snapshot
+
+Graph-space management permission (`space`) or graph ownership is required when authentication is enabled; administrators can satisfy it through permission inheritance.
 
 ##### Params
 
@@ -713,7 +803,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_create
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_resume
 ```
 
@@ -727,13 +817,15 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_resume
 
 ```javascript
 {
-  "hugegraph": "snapshot_resumed"
+    "hugegraph": "snapshot_resumed"
 }
 ```
 
 ### 6.5 Compact
 
-#### 6.5.1 Manually compact graph, **This operation requires administrator privileges**
+#### 6.5.1 Manually compact graph
+
+Graph-space management permission (`space`) is required when authentication is enabled; administrators can satisfy it through permission inheritance.
 
 ##### Params
 
@@ -744,7 +836,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/snapshot_resume
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/compact
 ```
 
@@ -758,11 +850,11 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/compact
 
 ```javascript
 {
-  "nodes": 1,
-  "cluster_id": "local",
-  "servers": {
-    "local": "OK"
-  }
+    "nodes": 1,
+    "cluster_id": "local",
+    "servers": {
+        "local": "OK"
+    }
 }
 ```
 
@@ -784,9 +876,11 @@ These endpoints only work when the graph runs in raft mode, see the `raft.mode` 
 
 #### 6.6.1 List the peers of a raft group
 
+Graph-space membership (`space_member`) is required when authentication is enabled; administrators can satisfy it through permission inheritance.
+
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/list_peers
 ```
 
@@ -814,7 +908,7 @@ The key of the returned object is the raft group name.
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/get_leader
 ```
 
@@ -836,7 +930,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/get_leader
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/transfer_leader?endpoint=127.0.0.1:8282
 ```
 
@@ -858,7 +952,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/transfer_le
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/set_leader?endpoint=127.0.0.1:8282
 ```
 
@@ -882,7 +976,7 @@ This schedules an asynchronous task, see [Task API](./task).
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/add_peer?endpoint=127.0.0.1:8284
 ```
 
@@ -906,7 +1000,7 @@ This schedules an asynchronous task, see [Task API](./task).
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/raft/remove_peer?endpoint=127.0.0.1:8284
 ```
 

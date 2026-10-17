@@ -53,13 +53,13 @@ schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().cr
 
 #### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 ```
 
 #### Request Body
 
-```json {filename="request.json" wrap=true}
+```json {wrap=true}
 {
     "label": "person",
     "properties": {
@@ -77,7 +77,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 #### Response Body
 
-```json {filename="response.json" wrap=true}
+```json {wrap=true}
 {
     "id": "1:marko",
     "label": "person",
@@ -100,7 +100,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 #### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/batch
 ```
 
@@ -153,7 +153,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/b
 
 #### Method & Url
 
-```
+```text
 PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1:marko"?action=append
 ```
 
@@ -256,7 +256,7 @@ curl -H "Content-Type: application/json" -d '[{"label":"person","properties":{"n
 
 #### Method & Url
 
-```
+```text
 PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/batch
 ```
 
@@ -362,7 +362,7 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/ba
 
 #### Method & Url
 
-```
+```text
 PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1:marko"?action=eliminate
 ```
 
@@ -444,7 +444,7 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 
 #### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?label=person&properties={"age":29}&limit=1
 ```
 
@@ -482,7 +482,7 @@ curl -H "Content-Type: application/json" -d '[{"label":"person","properties":{"n
 
 #### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?page&limit=3
 ```
 
@@ -543,7 +543,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?pa
 
 #### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?page=CIYxOnBldGVyAAAAAAAAAAM=&limit=3
 ```
 
@@ -607,7 +607,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?pa
 
 #### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1:marko"
 ```
 
@@ -649,7 +649,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 
 #### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1:marko"
 ```
 
@@ -665,7 +665,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices
 
 #### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1:marko"?label=person
 ```
 

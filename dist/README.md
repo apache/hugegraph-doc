@@ -68,6 +68,7 @@ CI 的 `use_staging_sdk` 仅作用于源码预验证：开启后，首次打包�
 并检查远端来源和首批二进制 SDK 一致性，不预装本地 Server SDK。此时必须指定具体的
 `https://repository.apache.org/content/repositories/orgapachehugegraph-<编号>/`，不接受聚合地址。默认关闭，保持同源 SDK 预验证。
 命令行可将 staging URL 作为 `prepare-release.sh` 的第 5 个参数；验证时传同一个 `--staging-repository`，不传 `--sdk-repository`。
+staged 模式不会比对 SDK 内容与所选 Server 提交是否一致；同版本的旧 staging 仓库也可能通过，请确认仓库对应本次候选。
 两种源码模式均生成未签名包，不验证真实 RC 下载或签名，不能代替严格 RC 验证。
 
 ## 核心链路与证据

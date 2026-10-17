@@ -90,7 +90,11 @@ summary() {
     info "Review notes: ${#VALIDATION_WARNINGS[@]}"
     if [[ $SOURCE_PREVALIDATION -eq 1 ]]; then
         info 'RC signatures/download NOT verified'
-        if [[ -n "$SDK_REPOSITORY" ]]; then info 'Remote staging origin NOT verified'; fi
+        if [[ -n "$SDK_REPOSITORY" ]]; then
+            info 'Remote staging origin NOT verified'
+        else
+            info 'Staged SDK content NOT compared with Server commit'
+        fi
     fi
     info 'Manual licensing review and release approval remain required'
     for entry in ${VALIDATION_ERRORS[@]+"${VALIDATION_ERRORS[@]}"}; do info "ERROR: ${entry%%$'\n'*}"; done

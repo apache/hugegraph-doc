@@ -37,7 +37,7 @@ SDK_ORIGIN="$OUTPUT/m2 (same Server source, NOT remote staging)"
 if [[ -n "$STAGING_REPOSITORY" ]]; then
     # Do not install local SDK artifacts over the candidate being verified.
     SERVER_GOAL=package
-    SDK_ORIGIN="$STAGING_REPOSITORY (remote staging)"
+    SDK_ORIGIN="$STAGING_REPOSITORY (remote staging; SDK content NOT compared with Server commit)"
     cat > "$OUTPUT/settings.xml" <<EOF
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
   <mirrors><mirror><id>selected-staging</id><mirrorOf>staged-releases,apache.releases.https</mirrorOf>

@@ -318,6 +318,11 @@ bin/arthas.sh --telnet-port 8562
 `SIGKILL` 会阻止清理，强制终止后需确认代理已停止。仅通过 HTTP API 激活代理的生命周期不受此机制影响。
 请勿并发运行多个脚本会话，退出任一会话都会停止共享代理及其全部诊断会话。脚本连接 API 已激活的代理后，也会在退出时停止该代理。
 
+复用 API 已激活的代理前，请勿在 `arthas.disabled_commands`（或旧别名）中禁用 `session` 和 `stop`。
+`session` 用于确认目标 PID，`stop` 只关闭 Arthas，不会停止服务 JVM。已有配置继续兼容，但无法确认 PID 或关闭监听时，
+脚本会打印错误并以非零状态退出，代理可能仍在运行。若已有代理禁用了 `stop`，请移除该限制并重启服务，再重新激活 Arthas。
+本地脚本新激活的代理始终保留这两个命令。
+
 官方 Server（包括 HStore）与 Store 镜像内置 JDK 17，可在容器内以服务进程所属的 OS 用户运行同一脚本，
 例如 `docker exec -it <container> bin/arthas.sh`，无需额外安装 JDK 或映射诊断端口。
 

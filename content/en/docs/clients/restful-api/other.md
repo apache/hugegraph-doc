@@ -326,6 +326,12 @@ lifecycle of an agent activated only through the HTTP API.
 Avoid concurrent helper sessions: exiting one stops the shared agent and all its diagnostic sessions. Connecting through the helper
 also applies this cleanup to an agent previously activated through the API.
 
+Before reusing an API-started agent, leave `session` and `stop` out of `arthas.disabled_commands` (or its legacy alias).
+`session` verifies the target PID; `stop` closes Arthas without stopping the service JVM. Existing configurations remain accepted,
+but failed PID verification or listener cleanup makes the helper print an error and exit nonzero; the agent may remain running.
+To recover from an agent with `stop` disabled, remove that restriction and restart the service before activating Arthas again.
+Newly attached local agents keep both commands available.
+
 Official Server (including HStore) and Store images include JDK 17. Run the same helper inside the container as the service OS user,
 for example `docker exec -it <container> bin/arthas.sh`; no extra JDK installation or diagnostic port mapping is needed.
 

@@ -176,6 +176,7 @@ bin/enable-auth.sh
 - [Authentication](/cn/docs/clients/restful-api/auth/)
 - [Graphs](/cn/docs/clients/restful-api/graphs/)
 - [Gremlin](/cn/docs/clients/restful-api/gremlin/)
+- [Other](/cn/docs/clients/restful-api/other/)
 - [Server 配置](/cn/docs/config/)
 - [Server 启动指南](/cn/docs/config/config-guide/)
 - [配置 HTTPS](/cn/docs/config/config-https/)

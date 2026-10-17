@@ -2016,12 +2016,15 @@ Only for single-node development and debugging, activated by `app.fake-pd: true`
 
 **Diagnostics**
 
-| Key | Code default | Meaning |
-|-----|--------------|---------|
-| `arthas.telnetPort` | `8566` | Arthas telnet port, used when `/v1/arthasstart` is called. |
-| `arthas.httpPort` | `8565` | Arthas HTTP port. |
-| `arthas.ip` | `0.0.0.0` | Arthas bind address. |
-| `arthas.disabledCommands` | `jad` | Arthas commands to disable. |
+Starting with HugeGraph 1.8.0, Store HTTP activation (`GET /v1/arthasstart`) is disabled and returns `403`. Legacy configuration fields are kept only
+for compatibility. Run the bundled script as the service OS user on the host to diagnose the running JVM (official container images include JDK 17):
+
+```bash
+bin/arthas.sh
+```
+
+For multiple processes on one host, specify `--pid <PID> --telnet-port 3659`. For command options, authentication, and security practices, see
+[Start the Arthas agent](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 #### 4.4 Per-node changes
 
@@ -2239,7 +2242,9 @@ The Store node exposes these read-only endpoints on `server.port`:
 
 Master Store configuration exposes all Actuator endpoints with `management.endpoints.web.exposure.include: "*"` and enables Prometheus. These endpoints lack PD REST Basic protection; restrict Store REST network access.
 
-The node also serves maintenance endpoints that change state or run heavy work: `PUT /-/state`, `GET /-/cleaner`, `GET /v1/partition/dump/{id}`, `GET /v1/partition/clean/{id}`, `POST /v1/compat?id=<partition>`, `GET /v1/arthasstart`, `POST /raft/options`, and the `/fix/*` and `/test/*` groups. Use them only for troubleshooting, and keep the REST port off untrusted networks.
+The node also serves maintenance endpoints that change state or run heavy work: `PUT /-/state`, `GET /-/cleaner`,
+`GET /v1/partition/dump/{id}`, `GET /v1/partition/clean/{id}`, `POST /v1/compat?id=<partition>`, `POST /raft/options`, and the `/fix/*` and `/test/*` groups.
+Use them only for troubleshooting, and keep the REST port off untrusted networks.
 
 #### 7.2 Check registration from PD
 
@@ -22670,39 +22675,92 @@ PUT http://localhost:8080/whiteiplist?status=true
 
 #### 11.1.6 Start the Arthas agent
 
-Attaches the [Arthas](https://arthas.aliyun.com/en/) agent to the running server process for diagnosis. The ports, the bind IP and the disabled commands are taken from the `arthas.telnetPort`, `arthas.httpPort`, `arthas.ip` and `arthas.disabledCommands` options, see [Config Options](/docs/config/config-option/).
+Starting with HugeGraph 1.8.0, Server and Store bundle Arthas 4.1.5 (PD does not embed an Arthas agent). You can attach it to a running JVM for live
+troubleshooting via the local script or the administrator HTTP endpoint.
 
-##### Method & Url
+> [!IMPORTANT]
+> **Security & Access Control**
+> - **Local by Default**: Arthas binds to `127.0.0.1` by default. If binding a wildcard address (such as `0.0.0.0`),
+>   ensure firewall protection and enable authentication.
+> - **Administrator Privilege**: HTTP API activation (`PUT /arthas`) requires Server authentication enabled with administrator privileges;
+>   requests without authentication enabled return `403`.
+> - **Store Endpoint Disabled**: Store's `GET /v1/arthasstart` is disabled and returns `403`. Use `bin/arthas.sh` instead.
+> - **No Restart & Auto Cleanup**: We recommend running `bin/arthas.sh` on the host as the service OS user without restarting the JVM;
+>   exiting the interactive session automatically unloads the agent.
 
-```text
-PUT http://localhost:8080/arthas
+| Deployment | Recommended Activation | Access & Permissions |
+|------------|------------------------|----------------------|
+| Server ([auth](/docs/config/config-authentication/)) | Admin `PUT /arthas` or `bin/arthas.sh` | Admin HTTP credentials; script requires service OS user |
+| Server (auth disabled) | Local script `bin/arthas.sh` | HTTP activation returns `403` (including loopback and proxy requests) |
+| Store | Local script `bin/arthas.sh` | `GET /v1/arthasstart` is disabled and returns `403` |
+
+##### Activation & Diagnostics
+
+```bash {tab="Local Diagnostics (Recommended)"}
+# Run on the host as the service OS user (uses bundled agent offline, no restart needed)
+bin/arthas.sh
+
+# Container environments (official images bundle JDK 17)
+docker exec -it <container> bin/arthas.sh
 ```
 
-##### Response Status
+```bash {tab="Common Diagnostic Options"}
+# Specify target JVM PID and custom telnet port (multi-instance on host)
+bin/arthas.sh --pid <PID> --telnet-port 3659
 
-```json
-200
+# Specify remote bind address and native authentication credentials
+bin/arthas.sh --target-ip 0.0.0.0 --username admin --password '<password>'
+
+# Non-interactive single-command batch execution
+bin/arthas.sh --command version
 ```
 
-##### Response Body
+```bash {tab="Administrator HTTP Activation"}
+# 1. Invoke REST API to attach diagnostic agent (requires Server auth; default ports 8562/8561 on 127.0.0.1)
+curl -u admin:pa -X PUT http://127.0.0.1:8080/arthas
 
-The applied Arthas configuration is returned:
+# 2. Connect to the active agent using the local script
+bin/arthas.sh --telnet-port 8562
+```
+
+##### Operational Notes & Security Configuration
+
+- **Session Exit & Cleanup**: The local script automatically stops Arthas and releases ports when exiting (via `quit`, `stop`, or `--command` completion),
+  leaving the service JVM running. If activated via HTTP API only, execute `stop` in the console to unload the agent.
+- **Authentication & Security**: Enable native authentication before exposing diagnostic ports beyond loopback. Supply credentials via `--username`/`--password`
+  in the script or set JVM properties `-Darthas.username` and `-Darthas.password`. For full authentication behavior and options, see
+  [Arthas Authentication Documentation](https://arthas.aliyun.com/en/doc/auth.html).
+- **Disabling Dangerous Commands**: In `rest-server.properties`, configure `arthas.disabled_commands` with a comma-separated list (e.g., `jad,mc`).
+  Keep `session` and `stop` enabled so tooling can manage the agent lifecycle. See [Arthas Commands](https://arthas.aliyun.com/en/doc/commands.html)
+  for command usage.
+
+##### HTTP Response Body
+
+A successful activation returns HTTP `200` and the applied configuration:
 
 ```json
 {
     "arthas.telnetPort": "8562",
     "arthas.httpPort": "8561",
-    "arthas.ip": "0.0.0.0",
-    "arthas.disabledCommands": "jad"
+    "arthas.ip": "127.0.0.1",
+    "arthas.disabledCommands": ""
 }
 ```
+
+> [!NOTE]
+> [Configuration options](/docs/config/config-option/) use canonical snake_case names: `arthas.telnet_port`, `arthas.http_port`, `arthas.ip`,
+> and `arthas.disabled_commands`. Legacy camelCase aliases remain supported for backward compatibility; explicit snake_case settings take precedence (see
+> [upgrade note](/docs/config/config-guide/#3-rest-serverproperties)). The response preserves Arthas agent key names for client compatibility.
 
 ---
 
 Backlinks:
 
 - [Graphspace](/docs/clients/restful-api/graphspace/)
+- [Server Startup Guide](/docs/config/config-guide/)
+- [Server Complete Configuration Manual](/docs/config/config-option/)
 - [Security](/docs/guides/security/)
+- [Install/Build HugeGraph-Store](/docs/quickstart/hugegraph/hugegraph-hstore/)
 
 
 ================
@@ -25242,11 +25300,11 @@ graph.load_from_local_config=true
 batch.max_write_ratio=80
 batch.max_write_threads=0
 
-# configuration of arthas
-arthas.telnetPort=8562
-arthas.httpPort=8561
+# configuration of arthas (optional disabled commands, for example jad,mc)
+arthas.telnet_port=8562
+arthas.http_port=8561
 arthas.ip=127.0.0.1
-arthas.disabledCommands=jad
+arthas.disabled_commands=
 
 # authentication configs
 #auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
@@ -25272,7 +25330,12 @@ memory_monitor.period=2000
 - `graph.load_from_local_config`: Controls constructor preloading, with source-code default `false`. It does not block local loading during application
   initialization and is not a security isolation switch. Restart Server to apply graph configuration changes.
 
-> The upstream template still uses `arthas.telnet_port`, `arthas.http_port`, and `arthas.disabled_commands`, but `ServerOptions` reads the camelCase names in the example. Use `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` in custom configurations.
+> Starting with HugeGraph 1.8.0, use canonical snake_case options: `arthas.telnet_port`, `arthas.http_port`, `arthas.ip`, and `arthas.disabled_commands`.
+> Legacy camelCase names remain supported as fallbacks; an explicitly configured snake_case value takes precedence.
+> **Upgrade notice:** The shipped `rest-server.properties` template includes default snake_case entries. If you configured custom camelCase properties earlier,
+> migrate those values to snake_case keys to avoid being overridden by template defaults.
+> For diagnostic workflows, access controls, and authentication configuration,
+> see [Start the Arthas agent](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 > `gremlinserver.url` is the GremlinServer address used by RestServer, defaulting to `http://127.0.0.1:8182`. It must match `host` and `port` in `gremlin-server.yaml`. Like the template, it can omit the scheme; missing schemes receive an `http://` prefix.
 
@@ -25389,6 +25452,7 @@ curl http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph_rocksdb
 
 Backlinks:
 
+- [Other](/docs/clients/restful-api/other/)
 - [Server Config](/docs/config/)
 - [FAQ](/docs/guides/faq/)
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
@@ -25722,14 +25786,19 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | k8s.internal_algorithm_image_url | Empty | Image URL for built-in Kubernetes algorithms. |
 
 > [!DETAILS]- **Arthas Diagnostic Config Options (Optional)**
-> Corresponding configuration file `rest-server.properties`
+> Corresponding configuration file: `rest-server.properties`.
+> Starting with HugeGraph 1.8.0.
 >
-> | config option      | default value | description           |
-> |--------------------|---------------|-----------------------|
-> | arthas.telnetPort  | 8562          | Arthas telnet port.   |
-> | arthas.httpPort    | 8561          | Arthas HTTP port.     |
-> | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
-> | arthas.disabledCommands | jad      | Disabled Arthas commands, separated by commas. |
+> | Config option | Default value | Description |
+> |---------------|---------------|-------------|
+> | arthas.telnet_port | 8562 | Arthas telnet port for administrator activation through `PUT /arthas`. |
+> | arthas.http_port | 8561 | Arthas HTTP port for administrator activation. |
+> | arthas.ip | 127.0.0.1 | Bind address; administrators may explicitly select another valid address, including `0.0.0.0`. |
+> | arthas.disabled_commands | Empty | Optional comma-separated disabled commands, e.g. `jad,mc`, for API activation; not applied by the local helper. |
+>
+> Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain supported as fallbacks; explicit snake_case settings take precedence.
+> The bundled `bin/arthas.sh` provides local diagnostics without changing configuration. For activation workflows, permissions, and authentication options,
+> see [Start the Arthas agent](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 > [!DETAILS]- **RPC Server Config Options**
 > Corresponding configuration file `rest-server.properties`
@@ -26033,6 +26102,7 @@ Backlinks:
 - [Authentication](/docs/clients/restful-api/auth/)
 - [Graphs](/docs/clients/restful-api/graphs/)
 - [Gremlin](/docs/clients/restful-api/gremlin/)
+- [Other](/docs/clients/restful-api/other/)
 - [Server Config](/docs/config/)
 - [Server Startup Guide](/docs/config/config-guide/)
 - [Config HTTPS](/docs/config/config-https/)

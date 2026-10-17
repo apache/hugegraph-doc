@@ -184,6 +184,7 @@ Backlinks:
 - [Authentication](/docs/clients/restful-api/auth/)
 - [Graphs](/docs/clients/restful-api/graphs/)
 - [Gremlin](/docs/clients/restful-api/gremlin/)
+- [Other](/docs/clients/restful-api/other/)
 - [Server Config](/docs/config/)
 - [Server Startup Guide](/docs/config/config-guide/)
 - [Config HTTPS](/docs/config/config-https/)

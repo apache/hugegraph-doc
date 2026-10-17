@@ -22,6 +22,10 @@ on:
         description: Server SDK staging URL
         default: https://repository.apache.org/content/groups/staging/
         required: true
+      use_staging_sdk:
+        description: Use staged SDK for source checks
+        type: boolean
+        default: false
       server_sha:
         description: Server commit (prevalidation)
       toolchain_sha:
@@ -76,6 +80,7 @@ jobs:
       GPG_USER: ${{ inputs.gpg_user || 'imbajin' }}
       STAGING_REPOSITORY: ${{ inputs.staging_repository || 'https://repository.apache.org/content/groups/staging/' }}
       MODE: ${{ inputs.mode || 'rc' }}
+      USE_STAGING_SDK: ${{ inputs.use_staging_sdk }}
       SERVER_SHA: ${{ inputs.server_sha }}
       TOOLCHAIN_SHA: ${{ inputs.toolchain_sha }}
     steps:
@@ -101,12 +106,17 @@ jobs:
         if: env.MODE == 'source-prevalidation'
         shell: bash
         run: |
-          bash dist/prepare-release.sh "$RELEASE_VERSION" "$SERVER_SHA" "$TOOLCHAIN_SHA" "$RUNNER_TEMP/prevalidation" 2>&1 | tee "$RUNNER_TEMP/prevalidation-build.log"
+          args=("$RELEASE_VERSION" "$SERVER_SHA" "$TOOLCHAIN_SHA" "$RUNNER_TEMP/prevalidation")
+          if [[ "$USE_STAGING_SDK" == true ]]; then args+=("$STAGING_REPOSITORY"); fi
+          bash dist/prepare-release.sh "${args[@]}" 2>&1 | tee "$RUNNER_TEMP/prevalidation-build.log"
       - name: Validate packages
         run: |
           args=(--non-interactive --work-dir "$RUNNER_TEMP/release-validation" --staging-repository "$STAGING_REPOSITORY")
           if [[ "$MODE" == source-prevalidation ]]; then
-            args+=(--source-prevalidation --sdk-repository "$RUNNER_TEMP/prevalidation/m2")
+            args+=(--source-prevalidation)
+            if [[ "$USE_STAGING_SDK" != true ]]; then
+              args+=(--sdk-repository "$RUNNER_TEMP/prevalidation/m2")
+            fi
             bash dist/validate-release.sh "${args[@]}" "$RELEASE_VERSION" "$GPG_USER" "$RUNNER_TEMP/prevalidation/packages" 17
           else
             args+=(--svn-path "${SVN_PATH:-$RELEASE_VERSION}")

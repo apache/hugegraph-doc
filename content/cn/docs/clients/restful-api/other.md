@@ -312,6 +312,7 @@ bin/arthas.sh --telnet-port 8562
 
 脚本默认读取 `bin/pid`，需要 JDK 17。两个发行包均在 `lib/arthas` 内提供代理文件，无需下载、运行时解压或持久化的用户缓存。
 新激活代理时，telnet 默认监听 `127.0.0.1:3658`，HTTP、MCP 和 tunnel 连接均禁用。
+交互模式需要终端。在管道、脚本或未使用 `-it` 的 `docker exec` 中，请改用 `bin/arthas.sh --command version`。
 
 本地脚本会在客户端退出时自动停止 Arthas，包括 `--command` 执行完成或输入 `quit`，并处理 `INT`、`TERM`、`HUP` 信号以完成清理。
 `SIGKILL` 会阻止清理，强制终止后需确认代理已停止。仅通过 HTTP API 激活代理的生命周期不受此机制影响。
@@ -321,6 +322,9 @@ bin/arthas.sh --telnet-port 8562
 例如 `docker exec -it <container> bin/arthas.sh`，无需额外安装 JDK 或映射诊断端口。
 
 已有代理保留当前监听配置。请使用原 telnet 端口连接，脚本不会重新绑定端口或关闭已有的 HTTP 监听。
+若 `arthas.ip` 使用其他 loopback 地址，请通过 `--target-ip` 指定同一地址，例如
+`bin/arthas.sh --target-ip ::1 --telnet-port 8562 --command version`。默认仍为 `127.0.0.1`，
+仅允许数字格式的 loopback 地址及 `localhost`（映射为 `127.0.0.1`）；挂载、连接和退出清理均使用该地址。
 如需从 Server API 默认配置切换为本地脚本默认配置，先只停止 Arthas，再重新挂载：
 
 ```bash

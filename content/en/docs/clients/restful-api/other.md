@@ -317,7 +317,8 @@ bin/arthas.sh --telnet-port 8562
 
 The helper reads `bin/pid` by default and requires JDK 17. Both distributions include the agent files in `lib/arthas`, so no download,
 runtime extraction, or persistent user cache is needed. For a newly activated agent, telnet defaults to `127.0.0.1:3658`; HTTP, MCP,
-and tunnel connections are disabled.
+and tunnel connections are disabled. Interactive mode requires a terminal. For pipes, scripts, or `docker exec` without `-it`,
+use `bin/arthas.sh --command version` instead.
 
 The helper automatically stops Arthas when the client exits, including after `--command` completes or `quit`, and handles `INT`, `TERM`,
 and `HUP` for cleanup. `SIGKILL` prevents cleanup; verify the agent is stopped after a forced termination. This does not change the
@@ -329,7 +330,10 @@ Official Server (including HStore) and Store images include JDK 17. Run the same
 for example `docker exec -it <container> bin/arthas.sh`; no extra JDK installation or diagnostic port mapping is needed.
 
 An already active agent retains its listener settings. Connect on its current telnet port; the helper does not rebind it or disable an
-existing HTTP listener. To switch from the Server API defaults to the local helper defaults, stop only Arthas and attach again:
+existing HTTP listener. If `arthas.ip` uses another loopback address, supply it with `--target-ip`, for example
+`bin/arthas.sh --target-ip ::1 --telnet-port 8562 --command version`. The default remains `127.0.0.1`; only numeric loopback addresses
+and `localhost` (mapped to `127.0.0.1`) are accepted. The selected address is used for attachment, connection, and cleanup.
+To switch from the Server API defaults to the local helper defaults, stop only Arthas and attach again:
 
 ```bash
 bin/arthas.sh --telnet-port 8562 --command stop

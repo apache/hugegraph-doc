@@ -16,8 +16,9 @@ the corresponding local CSS patches have been removed. FileTree authors select
 continue to check readability, keyboard access and Print after removing the patches.
 Historical configuration catalogues acquire the same native wide-table marker
 through the existing temporary assembly fixes. Their pinned release sources are
-unchanged; check archived configuration pages when removing shared styling, not
-only the latest guides.
+unchanged. When removing shared styling, inventory both published current configuration
+guides and their archived predecessors: renamed successors such as
+`quickstart/computing/hugegraph-computer-config` still need explicit native markers.
 The 1.3 series also adds optional Expo albums and repairs navigation, Landing and
 aggregate Print. See [contribution.md](../contribution.md#native-content-components)
 for component selection and examples. A theme update does not create new albums.

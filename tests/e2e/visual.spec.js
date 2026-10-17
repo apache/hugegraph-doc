@@ -23,6 +23,8 @@ const states = [
         [`${language}-upgrade-home-${preset}-${theme}`, `${prefix}/`, viewport, theme, "default", preset],
         [`${language}-upgrade-pd-${preset}-${theme}`, `${prefix}/docs/quickstart/hugegraph/hugegraph-pd/`, viewport, theme, "pd", preset],
         [`${language}-upgrade-helm-${preset}-${theme}`, `${prefix}/docs/quickstart/hugegraph/hugegraph-helm/`, viewport, theme, "helm", preset],
+        [`${language}-upgrade-computer-${preset}-${theme}`, `${prefix}/docs/quickstart/computing/hugegraph-computer-config/`, viewport, theme, "computer", preset],
+        [`${language}-upgrade-api-${preset}-${theme}`, `${prefix}/docs/quickstart/hugegraph-ai/config-reference/`, viewport, theme, "config-api", preset],
         [`${language}-upgrade-footer-${preset}-${theme}`, `${prefix}/blog/2025/10/09/toplingdb-quick-start/`,
           { width: 1440, height: 1000 }, theme, "footer", preset]
       ];
@@ -117,6 +119,11 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
       // Compare the explanation column, not just the identifiers at the left edge.
       await viewport.evaluate(node => { node.scrollLeft = node.scrollWidth; });
       await expect(table).toBeVisible();
+    } else if (state === "computer" || state === "config-api") {
+      const token = state === "computer" ? "worker.vertex_properties_combiner_class" : "LITELLM_TEXT2GQL_LANGUAGE_MODEL";
+      const table = page.locator(".td-content table").filter({ hasText: token });
+      await table.locator("..").scrollIntoViewIfNeeded();
+      await expect(table).toBeVisible();
     } else if (state === "helm") {
       const tree = page.locator(".td-filetree").filter({ hasText: "values-single.yaml" });
       await tree.scrollIntoViewIfNeeded();
@@ -172,7 +179,7 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
     await page.screenshot({
       animations: "disabled",
       path: path.join(directory, `${name}.png`),
-      fullPage: !["gallery", "chart", "longcode", "markmap", "terminal", "math", "pd", "helm", "footer"].includes(state)
+      fullPage: !["gallery", "chart", "longcode", "markmap", "terminal", "math", "pd", "computer", "config-api", "helm", "footer"].includes(state)
     });
   });
 }

@@ -866,6 +866,7 @@ The import process is controlled by commands submitted by the user, and the user
 | `--serializer`                           | binary      |      | The serializer type when creating graph if not exists              |
 | `--scheduler-type`                       | distributed |      | The task scheduler type when creating graph if not exists          |
 | `--batch-failure-fallback`               | true        |      | Whether to fallback to single insert when batch insert fails       |
+{.td-table--wide}
 
 The mapping file option `--file` (`-f`) is required; other options use their defaults. A valid minimal invocation is:
 

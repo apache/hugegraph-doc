@@ -37,6 +37,7 @@ Core job settings for HugeGraph-Computer.
 | job.workers_count | 1 | The number of workers for one graph algorithm job. In K8s, this option is set by the Operator. |
 | job.partitions_count | 1 | The number of partitions for computing one graph algorithm job. |
 | job.partitions_thread_nums | 4 | The number of threads for partition parallel compute. |
+{.td-table--wide}
 
 ---
 
@@ -49,6 +50,7 @@ Algorithm-specific configuration for computation logic.
 | algorithm.params_class | `ComputerOptions.Null` placeholder class | Required. The class used to pass algorithm parameters before the algorithm runs. |
 | algorithm.result_class | `ComputerOptions.Null` placeholder class | The vertex value class used to store computation results. |
 | algorithm.message_class | `ComputerOptions.Null` placeholder class | The message class passed while computing a vertex. |
+{.td-table--wide}
 
 ---
 
@@ -63,6 +65,7 @@ Configuration for loading input data from HugeGraph or other sources.
 | input.source_type | hugegraph-server | The source type to load input data, allowed values: ['hugegraph-server', 'hugegraph-loader']. The 'hugegraph-loader' means use hugegraph-loader to load data from HDFS or file. If using 'hugegraph-loader', please configure 'input.loader_struct_path' and 'input.loader_schema_path'. |
 | input.loader_struct_path | "" (empty) | The structure path for Loader input. It takes effect only when `input.source_type=hugegraph-loader`. |
 | input.loader_schema_path | "" (empty) | The schema path for Loader input. It takes effect only when `input.source_type=hugegraph-loader`. |
+{.td-table--wide}
 
 #### 3.2 Input Splits
 
@@ -72,6 +75,7 @@ Configuration for loading input data from HugeGraph or other sources.
 | input.split_max_splits | 10000000 | The maximum number of input splits. |
 | input.split_page_size | 500 | The page size for streamed load input split data. |
 | input.split_fetch_timeout | 300 | The timeout in seconds to fetch input splits. |
+{.td-table--wide}
 
 #### 3.3 Input Processing
 
@@ -81,12 +85,14 @@ Configuration for loading input data from HugeGraph or other sources.
 | input.edge_direction | OUT | The direction of edges to load, allowed values: [OUT, IN, BOTH]. When the value is BOTH, edges in both OUT and IN directions will be loaded. |
 | input.edge_freq | MULTIPLE | The frequency of edges that can exist between a pair of vertices, allowed values: [SINGLE, SINGLE_PER_LABEL, MULTIPLE]. SINGLE means only one edge can exist between a pair of vertices (identified by sourceId + targetId); SINGLE_PER_LABEL means each edge label can have one edge between a pair of vertices (identified by sourceId + edgeLabel + targetId); MULTIPLE means many edges can exist between a pair of vertices (identified by sourceId + edgeLabel + sortValues + targetId). |
 | input.max_edges_in_one_vertex | 200 | The maximum number of adjacent edges allowed to be attached to a vertex. The adjacent edges will be stored and transferred together as a batch unit. |
+{.td-table--wide}
 
 #### 3.4 Input Performance
 
 | config option | default value | description |
 |---------------|---------------|-------------|
 | input.send_thread_nums | 4 | The number of threads for parallel sending of vertices or edges. |
+{.td-table--wide}
 
 ---
 
@@ -101,6 +107,7 @@ HugeGraph-Computer supports snapshot functionality to save vertex/edge partition
 | snapshot.write | false | Whether to write snapshots of input vertex/edge partitions. |
 | snapshot.load | false | Whether to load from snapshots of vertex/edge partitions. |
 | snapshot.name | "" (empty) | User-defined snapshot name to distinguish different snapshots. |
+{.td-table--wide}
 
 #### 4.2 MinIO Integration (Optional)
 
@@ -112,6 +119,7 @@ MinIO can be used as a distributed object storage backend for snapshots in K8s d
 | snapshot.minio_access_key | minioadmin | MinIO access key for authentication. |
 | snapshot.minio_secret_key | minioadmin | MinIO secret key for authentication. |
 | snapshot.minio_bucket_name | "" (empty) | MinIO bucket name for storing snapshot data. |
+{.td-table--wide}
 
 **Usage Scenarios:**
 - **Checkpoint Recovery**: Resume from snapshots after job failures, avoiding data reloading
@@ -146,6 +154,7 @@ Configuration for worker and master computation logic.
 | config option | default value | description |
 |---------------|---------------|-------------|
 | master.computation_class | org.apache.hugegraph.computer.core.master.DefaultMasterComputation | Master-computation is computation that can determine whether to continue to the next superstep. It runs at the end of each superstep on the master. |
+{.td-table--wide}
 
 #### 5.2 Worker Computation
 
@@ -154,6 +163,7 @@ Configuration for worker and master computation logic.
 | worker.computation_class | org.apache.hugegraph.computer.core.config.Null | The class to create worker-computation object. Worker-computation is used to compute each vertex in each superstep. |
 | worker.combiner_class | org.apache.hugegraph.computer.core.config.Null | Combiner can combine messages into one value for a vertex. For example, PageRank algorithm can combine messages of a vertex to a sum value. |
 | worker.partitioner | org.apache.hugegraph.computer.core.graph.partition.HashPartitioner | The partitioner that decides which partition a vertex should be in, and which worker a partition should be in. |
+{.td-table--wide}
 
 #### 5.3 Worker Combiners
 
@@ -161,6 +171,7 @@ Configuration for worker and master computation logic.
 |---------------|---------------|-------------|
 | worker.vertex_properties_combiner_class | org.apache.hugegraph.computer.core.combiner.OverwritePropertiesCombiner | The combiner can combine several properties of the same vertex into one properties at input step. |
 | worker.edge_properties_combiner_class | org.apache.hugegraph.computer.core.combiner.OverwritePropertiesCombiner | The combiner can combine several properties of the same edge into one properties at input step. |
+{.td-table--wide}
 
 #### 5.4 Worker Buffers
 
@@ -169,6 +180,7 @@ Configuration for worker and master computation logic.
 | worker.received_buffers_bytes_limit | 104857600 (100 MB) | The limit bytes of buffers of received data. The total size of all buffers can't exceed this limit. If received buffers reach this limit, they will be merged into a file (spill to disk). |
 | worker.write_buffer_capacity | 52428800 (50 MB) | The initial size of write buffer that used to store vertex or message. |
 | worker.write_buffer_threshold | 52428800 (50 MB) | The threshold of write buffer. Exceeding it will trigger sorting. The write buffer is used to store vertex or message. |
+{.td-table--wide}
 
 #### 5.5 Worker Data & Timeouts
 
@@ -177,6 +189,7 @@ Configuration for worker and master computation logic.
 | worker.data_dirs | [jobs] | The directories separated by ',' that received vertices and messages can persist into. |
 | worker.wait_sort_timeout | 600000 (10 minutes) | The max timeout (in ms) for message-handler to wait for sort-thread to sort one batch of buffers. |
 | worker.wait_finish_messages_timeout | 86400000 (24 hours) | The max timeout (in ms) for message-handler to wait for finish-message of all workers. |
+{.td-table--wide}
 
 ---
 
@@ -191,6 +204,7 @@ Configuration for output computation results.
 | output.output_class | org.apache.hugegraph.computer.core.output.LogOutput | The class to output the computation result of each vertex. Called after iteration computation. |
 | output.result_name | value | The value is assigned dynamically by #name() of instance created by WORKER_COMPUTATION_CLASS. |
 | output.result_write_type | OLAP_COMMON | The result write-type to output to HugeGraph, allowed values: [OLAP_COMMON, OLAP_SECONDARY, OLAP_RANGE]. |
+{.td-table--wide}
 
 #### 6.2 Output Behavior
 
@@ -199,6 +213,7 @@ Configuration for output computation results.
 | output.with_adjacent_edges | false | Whether to output the adjacent edges of the vertex. |
 | output.with_vertex_properties | false | Whether to output the properties of the vertex. |
 | output.with_edge_properties | false | Whether to output the properties of the edge. |
+{.td-table--wide}
 
 #### 6.3 Batch Output
 
@@ -207,6 +222,7 @@ Configuration for output computation results.
 | output.batch_size | 500 | The batch size of output. |
 | output.batch_threads | 1 | The number of threads used for batch output. |
 | output.single_threads | 1 | The number of threads used for single output. |
+{.td-table--wide}
 
 #### 6.4 HDFS Output
 
@@ -224,6 +240,7 @@ Configuration for output computation results.
 | output.hdfs_kerberos_principal | "" (empty) | The HDFS principal for Kerberos authentication. |
 | output.hdfs_kerberos_keytab | "" (empty) | The HDFS keytab file for Kerberos authentication. |
 | output.hdfs_krb5_conf | /etc/krb5.conf | Kerberos configuration file path. |
+{.td-table--wide}
 
 #### 6.5 Retry & Timeout
 
@@ -232,6 +249,7 @@ Configuration for output computation results.
 | output.retry_times | 3 | The retry times when output fails. |
 | output.retry_interval | 10 | The retry interval (in seconds) when output fails. |
 | output.thread_pool_shutdown_timeout | 60 | The timeout (in seconds) of output thread pool shutdown. |
+{.td-table--wide}
 
 ---
 
@@ -246,6 +264,7 @@ Configuration for network communication between workers and master.
 | transport.server_host | 127.0.0.1 | Worker data listener and advertised address. It must be reachable by other workers across hosts; the Operator sets it to the Pod IP. |
 | transport.server_port | 0 (distribution: 0; K8s Operator: 8099) | Worker data port. Locally, `0` lets the OS assign a port; the Operator uses fixed port `8099` by default for Pod communication. |
 | transport.server_threads | 4 | The number of transport threads for server. |
+{.td-table--wide}
 
 #### 7.2 Client Configuration
 
@@ -253,6 +272,7 @@ Configuration for network communication between workers and master.
 |---------------|---------------|-------------|
 | transport.client_threads | 4 | The number of transport threads for client. |
 | transport.client_connect_timeout | 3000 | The timeout (in ms) of client connect to server. |
+{.td-table--wide}
 
 #### 7.3 Protocol Configuration
 
@@ -262,6 +282,7 @@ Configuration for network communication between workers and master.
 | transport.io_mode | AUTO | The network IO mode, allowed values: [NIO, EPOLL, AUTO]. AUTO means selecting the appropriate mode automatically. |
 | transport.tcp_keep_alive | true | Whether to enable TCP keep-alive. |
 | transport.transport_epoll_lt | false | Whether to enable EPOLL level-trigger (only effective when io_mode=EPOLL). |
+{.td-table--wide}
 
 #### 7.4 Buffer Configuration
 
@@ -271,6 +292,7 @@ Configuration for network communication between workers and master.
 | transport.receive_buffer_size | 0 | The size of socket receive-buffer in bytes. 0 means using system default value. |
 | transport.write_buffer_high_mark | 67108864 (64 MB) | The high water mark for write buffer in bytes. It will trigger sending unavailable if the number of queued bytes > write_buffer_high_mark. |
 | transport.write_buffer_low_mark | 33554432 (32 MB) | The low water mark for write buffer in bytes. It will trigger sending available if the number of queued bytes < write_buffer_low_mark. |
+{.td-table--wide}
 
 #### 7.5 Flow Control
 
@@ -279,6 +301,7 @@ Configuration for network communication between workers and master.
 | transport.max_pending_requests | 8 | The max number of client unreceived ACKs. It will trigger sending unavailable if the number of unreceived ACKs >= max_pending_requests. |
 | transport.min_pending_requests | 6 | The minimum number of client unreceived ACKs. It will trigger sending available if the number of unreceived ACKs < min_pending_requests. |
 | transport.min_ack_interval | 200 | The minimum interval (in ms) of server reply ACK. |
+{.td-table--wide}
 
 #### 7.6 Timeouts
 
@@ -289,6 +312,7 @@ Configuration for network communication between workers and master.
 | transport.finish_session_timeout | 0 | The timeout (in ms) to finish session. 0 means using (transport.sync_request_timeout × transport.max_pending_requests). |
 | transport.write_socket_timeout | 3000 | The timeout (in ms) to write data to socket buffer. |
 | transport.server_idle_timeout | 360000 (6 minutes) | The max timeout (in ms) of server idle. |
+{.td-table--wide}
 
 #### 7.7 Heartbeat
 
@@ -296,6 +320,7 @@ Configuration for network communication between workers and master.
 |---------------|---------------|-------------|
 | transport.heartbeat_interval | 20000 (20 seconds) | The minimum interval (in ms) between heartbeats on client side. |
 | transport.max_timeout_heartbeat_count | 120 | The maximum times of timeout heartbeat on client side. If the number of timeouts waiting for heartbeat response continuously > max_timeout_heartbeat_count, the channel will be closed from client side. |
+{.td-table--wide}
 
 #### 7.8 Advanced Network Settings
 
@@ -304,6 +329,7 @@ Configuration for network communication between workers and master.
 | transport.max_syn_backlog | 511 | The capacity of SYN queue on server side. 0 means using system default value. |
 | transport.recv_file_mode | true | Whether to enable receive buffer-file mode. It will receive buffer and write to file from socket using zero-copy if enabled. **Note**: Requires OS support for zero-copy (e.g., Linux sendfile/splice). |
 | transport.network_retries | 3 | The number of retry attempts for network communication if network is unstable. |
+{.td-table--wide}
 
 ---
 
@@ -315,6 +341,7 @@ These options come from HugeGraph Commons RPC configuration; the distribution te
 |--------|--------------------|-------------|
 | rpc.server_host | 127.0.0.1 (K8s: Pod IP) | Master RPC address, reachable by workers. |
 | rpc.server_port | 8190 (K8s default: 8190) | Master RPC listener port; allow worker connections in security groups and network policies. |
+{.td-table--wide}
 
 ---
 
@@ -330,12 +357,14 @@ Configuration for HGKV (HugeGraph Key-Value) storage engine and value files.
 | hgkv.max_data_block_size | 65536 (64 KB) | The max byte size of HGKV file data block. |
 | hgkv.max_merge_files | 10 | The max number of files to merge at one time. |
 | hgkv.temp_file_dir | /tmp/hgkv | This folder is used to store temporary files during the file merging process. |
+{.td-table--wide}
 
 #### 8.2 Value File Configuration
 
 | config option | default value | description |
 |---------------|---------------|-------------|
 | valuefile.max_segment_size | 1073741824 (1 GB) | The max number of bytes in each segment of value-file. |
+{.td-table--wide}
 
 ---
 
@@ -351,6 +380,7 @@ Configuration for Bulk Synchronous Parallel (BSP) protocol and etcd coordination
 | bsp.wait_workers_timeout | 86400000 (24 hours) | The max timeout (in ms) to wait for workers BSP event. |
 | bsp.wait_master_timeout | 86400000 (24 hours) | The max timeout (in ms) to wait for master BSP event. |
 | bsp.log_interval | 30000 (30 seconds) | The log interval (in ms) to print the log while waiting for BSP event. |
+{.td-table--wide}
 
 ---
 
@@ -362,6 +392,7 @@ Configuration for performance optimization.
 |---------------|---------------|-------------|
 | allocator.max_vertices_per_thread | 10000 | Maximum number of vertices per thread processed in each memory allocator. |
 | sort.thread_nums | 4 | The number of threads performing internal sorting. |
+{.td-table--wide}
 
 ---
 
@@ -379,6 +410,7 @@ Kubernetes Operator fills or overrides these options. Avoid overriding them unle
 | rpc.server_host | K8s Operator | Overrides with master Pod IP. |
 | rpc.server_port | K8s Operator | Defaults unspecified or zero values to `8190`. |
 | rpc.remote_url | Computer startup | Removed when configuration is read; do not set as job configuration. |
+{.td-table--wide}
 
 **Why these values must match:**
 - **BSP/RPC**: Must match deployed etcd/RPC services for coordination.
@@ -406,6 +438,7 @@ Kubernetes Operator fills or overrides these options. Avoid overriding them unle
 | k8s.resync_period | 600000 | The minimum frequency at which watched resources are reconciled. |
 | k8s.timezone | Asia/Shanghai | The timezone of computer job and operator. |
 | k8s.watch_namespace | hugegraph-computer-operator-system | Namespace watched for custom resources; also used by the supplied manifest. Use `*` to watch all namespaces. |
+{.td-table--wide}
 
 ---
 
@@ -442,6 +475,7 @@ Kubernetes Operator fills or overrides these options. Avoid overriding them unle
 | configMapPaths | | The map of k8s-configmap name and mount path. | false |
 | podTemplateSpec | | Please refer to: https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-template-v1/#PodTemplateSpec | false |
 | securityContext | | Please refer to: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ | false |
+{.td-table--wide}
 
 ---
 
@@ -463,3 +497,4 @@ Kubernetes Operator fills or overrides these options. Avoid overriding them unle
 | k8s.log4j_xml_path | | The log4j.xml path for computer job. |
 | k8s.namespace | hugegraph-computer-operator-system | Namespace of the HugeGraph-Computer system. |
 | k8s.pull_secret_names | [] | The names of pull-secret for pulling image. |
+{.td-table--wide}

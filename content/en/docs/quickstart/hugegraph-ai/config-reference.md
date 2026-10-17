@@ -57,6 +57,7 @@ Chat, extraction, and Text2Gremlin can use different endpoints, keys, and models
 | Extraction | `OPENAI_EXTRACT_API_BASE` | `OPENAI_EXTRACT_API_KEY` | `OPENAI_EXTRACT_LANGUAGE_MODEL` | `OPENAI_EXTRACT_TOKENS=256` |
 | Text2Gremlin | `OPENAI_TEXT2GQL_API_BASE` | `OPENAI_TEXT2GQL_API_KEY` | `OPENAI_TEXT2GQL_LANGUAGE_MODEL` | `OPENAI_TEXT2GQL_TOKENS=4096` |
 | Embedding | `OPENAI_EMBEDDING_API_BASE` | `OPENAI_EMBEDDING_API_KEY` | `OPENAI_EMBEDDING_MODEL` | Not applicable |
+{.td-table--wide}
 
 The default API base is `https://api.openai.com/v1`. The default language model for all three tasks is `gpt-4.1-mini`, and the default embedding model is `text-embedding-3-small`.
 
@@ -70,6 +71,7 @@ The default API base is `https://api.openai.com/v1`. The default language model 
 | Extraction | `LITELLM_EXTRACT_API_BASE` | `LITELLM_EXTRACT_API_KEY` | `LITELLM_EXTRACT_LANGUAGE_MODEL` | `LITELLM_EXTRACT_TOKENS=256` |
 | Text2Gremlin | `LITELLM_TEXT2GQL_API_BASE` | `LITELLM_TEXT2GQL_API_KEY` | `LITELLM_TEXT2GQL_LANGUAGE_MODEL` | `LITELLM_TEXT2GQL_TOKENS=4096` |
 | Embedding | `LITELLM_EMBEDDING_API_BASE` | `LITELLM_EMBEDDING_API_KEY` | `LITELLM_EMBEDDING_MODEL` | Not applicable |
+{.td-table--wide}
 
 The default language model is `openai/gpt-4.1-mini`, and the default embedding model is `openai/text-embedding-3-small`. Model names generally use the `provider/model` form; supported values depend on the LiteLLM service.
 
@@ -81,6 +83,7 @@ The default language model is `openai/gpt-4.1-mini`, and the default embedding m
 | Extraction | `OLLAMA_EXTRACT_HOST` | `OLLAMA_EXTRACT_PORT` | `OLLAMA_EXTRACT_LANGUAGE_MODEL` |
 | Text2Gremlin | `OLLAMA_TEXT2GQL_HOST` | `OLLAMA_TEXT2GQL_PORT` | `OLLAMA_TEXT2GQL_LANGUAGE_MODEL` |
 | Embedding | `OLLAMA_EMBEDDING_HOST` | `OLLAMA_EMBEDDING_PORT` | `OLLAMA_EMBEDDING_MODEL` |
+{.td-table--wide}
 
 The default host is `127.0.0.1` and the default port is `11434`. Model names have no defaults; pull the required models in Ollama before use.
 

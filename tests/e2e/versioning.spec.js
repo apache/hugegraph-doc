@@ -102,6 +102,69 @@ for (const version of VERSION_IDS.slice(1)) {
   }
 }
 
+const archivedReferenceCatalogues = [
+  [VERSION_IDS.slice(1), 'quickstart/toolchain/hugegraph-tools', 1, [['HUGEGRAPH_TRUST_STORE_PASSWORD', 1]]],
+  [VERSION_IDS.slice(1), 'quickstart/toolchain/hugegraph-loader', 1, [['single-insert-threads', 1]]],
+  [['1.7'], 'clients/restful-api/graphspace', 2, [['internal_algorithm_image_url', 2]]],
+  [['1.7'], 'quickstart/toolchain/hugegraph-hubble', 1, [['gremlin.vertex_degree_limit', 1]]],
+  [['1.7'], 'quickstart/hugegraph-ai/config-reference', 3, [
+    ['OPENAI_TEXT2GQL_LANGUAGE_MODEL', 1], ['LITELLM_TEXT2GQL_LANGUAGE_MODEL', 1], ['OLLAMA_TEXT2GQL_LANGUAGE_MODEL', 1]
+  ]],
+  [['1.7'], 'quickstart/hugegraph/hugegraph-pd', 1, [['HG_PD_INITIAL_STORE_COUNT', 1]]],
+  [['1.7'], 'quickstart/hugegraph/hugegraph-hstore', 1, [['HG_STORE_RAFT_ADDRESS', 1]]]
+];
+
+for (const [versions, route, wideCount, identifiers] of archivedReferenceCatalogues) {
+  for (const version of versions) {
+    for (const locale of ['en', 'cn']) {
+      test(`${version} ${locale} archived technical reference ${route} keeps mobile identifiers readable`, async ({ page }) => {
+        test.skip(!EXPECTED_IDS.includes(version), 'latest-only staging artifact');
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.goto(`/versions/${version}${locale === 'cn' ? '/cn' : ''}/docs/${route}/`);
+        await page.evaluate(() => document.fonts.ready);
+        const tables = page.locator('.td-content table.td-table--wide');
+        await expect(tables).toHaveCount(wideCount);
+        for (const [identifier, expectedTables] of identifiers) {
+          const matchingTables = tables.filter({ hasText: identifier });
+          await expect(matchingTables, identifier).toHaveCount(expectedTables);
+          const cells = matchingTables.locator('tbody td').filter({ hasText: identifier });
+          const measurements = await cells.evaluateAll((nodes, identifier) => nodes.flatMap(node => {
+            const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+            const results = [];
+            let text;
+            while ((text = walker.nextNode())) {
+              const start = text.textContent.indexOf(identifier);
+              if (start < 0) continue;
+              const range = document.createRange();
+              range.setStart(text, start);
+              range.setEnd(text, start + identifier.length);
+              results.push({ lines: new Set(Array.from(range.getClientRects(), rect => Math.round(rect.top))).size,
+                font: parseFloat(getComputedStyle(text.parentElement).fontSize) });
+            }
+            return results;
+          }), identifier);
+          expect(measurements.length, identifier).toBeGreaterThan(0);
+          for (const measurement of measurements) {
+            expect(measurement.lines, identifier).toBe(1);
+            expect(measurement.font, identifier).toBeGreaterThanOrEqual(14);
+          }
+        }
+        for (const table of await tables.all()) {
+          const wrapper = table.locator('..');
+          await wrapper.scrollIntoViewIfNeeded();
+          if (await wrapper.evaluate(node => node.scrollWidth > node.clientWidth + 1)) {
+            await expect(wrapper).toHaveAttribute('tabindex', '0');
+            await wrapper.focus();
+            await wrapper.press('ArrowRight');
+            await expect.poll(() => wrapper.evaluate(node => node.scrollLeft)).toBeGreaterThan(0);
+          }
+        }
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      });
+    }
+  }
+}
+
 test("1.0 flat Server URL remains a static alias", async ({ request }) => {
   test.skip(!EXPECTED_IDS.includes("1.0"), "latest-only staging artifact");
   const response = await request.get(

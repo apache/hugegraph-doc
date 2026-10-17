@@ -178,6 +178,7 @@ Do not include passwords in documentation, screenshots, or committed configurati
 | `operations.pd.username` / `operations.pd.password` | Username `hubble`, empty password | Match PD operations REST authentication. |
 | `operations.store.username` / `operations.store.password` | Username `hubble`, empty password | Set the service account when upstream Store REST authentication is enabled. |
 | `operations.store.allowed_targets` | `[http://127.0.0.1:8520,http://[::1]:8520]` | List trusted Store metric origins. |
+{.td-table--wide}
 
 For example, when a containerized Store advertises `store:8520`, set:
 

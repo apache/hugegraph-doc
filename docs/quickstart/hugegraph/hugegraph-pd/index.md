@@ -538,6 +538,8 @@ The two `log` endpoints take a time range as `{"startTime": "...", "endTime": ".
 
 PD registers its own meters under the `hg` prefix, so `/actuator/prometheus` exposes `hg_up`, `hg_graphs`, `hg_stores` and `hg_terms` alongside the standard JVM metrics, plus per-graph partition and size meters once graphs exist.
 
+In versions after 1.7.0, PD also exports, for each registered store, `hg_store_state{store="<id>",state="<state>"}`, which is `1` for the store's current state (`Unknown`, `Pending`, `Up`, `Offline`, `Exiting` or `Tombstone`) and `0` for the others, and `hg_store_leader_count{store="<id>"}`, the number of shard groups whose leader is on that store. A rebuilt Store reports `0` leaders until leadership moves back to it. Every PD member reads the same replicated metadata, so select one instance before aggregating these series.
+
 ---
 
 Backlinks:

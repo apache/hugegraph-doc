@@ -1526,6 +1526,8 @@ Unlike PD and Store, Server has no mandatory entrypoint variables: only set valu
 | `HG_SERVER_USE_PD` | `false` | `usePD` in `rest-server.properties` |
 | `HG_SERVER_CLUSTER` | `hg-test` | `cluster` in `rest-server.properties` |
 | `HG_SERVER_REST_URL` | `http://0.0.0.0:8080` (set in the image) | `restserver.url` |
+| `HG_SERVER_URLS_TO_PD` | `http://0.0.0.0:8080` | `server.urls_to_pd`: comma-separated URLs this Server registers in PD instead of `restserver.url`; read only when `server.deploy_in_k8s` is `true`; give each URL its own `http://` prefix, since only the first entry gets one added; whitespace is removed |
+| `HG_SERVER_DEPLOY_IN_K8S` | `false` | `server.deploy_in_k8s` in `rest-server.properties` |
 | `HG_SERVER_MIN_FREE_MEMORY` | `64`（MB） | `restserver.min_free_memory` |
 | `HG_SERVER_INIT_STORE_ENABLED` | `true` | `init_store.enabled`; set `false` for PD/HStore deployments whose metadata is managed by storage |
 | `HG_SERVER_AUTH_TOKEN_SECRET` | Generated when `PASSWORD` is set | `auth.token_secret` in both configuration files; at least 32 bytes |
@@ -1562,7 +1564,7 @@ The entrypoint waits for `wait-partition.sh` before waiting for the Java launche
 that poll can consume its full timeout before the entrypoint observes the exit. If polling succeeds, the diagnostic step can then consume
 a second full timeout before observation finishes; signal-triggered shutdown remains interruptible.
 
-`HG_SERVER_INIT_STORE_ENABLED` accepts only the case-insensitive boolean values recognized by `HugeConfig`: `y`, `t`, `yes`, `on`, `true`, `n`, `f`, `no`, `off`, `false`. Other values, including `0` and `1`, terminate the entrypoint.
+`HG_SERVER_INIT_STORE_ENABLED` and `HG_SERVER_DEPLOY_IN_K8S` accept only the case-insensitive boolean values recognized by `HugeConfig`: `y`, `t`, `yes`, `on`, `true`, `n`, `f`, `no`, `off`, `false`. Other values, including `0` and `1`, terminate the entrypoint.
 
 After successful initialization, the entrypoint writes `docker/init_complete`; later starts skip reinitialization but still invoke `bin/init-store.sh` to revalidate configuration each time initialization is disabled.
 
@@ -2874,6 +2876,8 @@ All paths below are relative to `http://<pd-host>:8620` and need the Basic heade
 The two `log` endpoints take a time range as `{"startTime": "...", "endTime": "..."}`; `yyyy-MM-dd HH:mm:ss` and `yyyy-MM-dd` are among the accepted formats.
 
 PD registers its own meters under the `hg` prefix, so `/actuator/prometheus` exposes `hg_up`, `hg_graphs`, `hg_stores` and `hg_terms` alongside the standard JVM metrics, plus per-graph partition and size meters once graphs exist.
+
+In versions after 1.7.0, PD also exports, for each registered store, `hg_store_state{store="<id>",state="<state>"}`, which is `1` for the store's current state (`Unknown`, `Pending`, `Up`, `Offline`, `Exiting` or `Tombstone`) and `0` for the others, and `hg_store_leader_count{store="<id>"}`, the number of shard groups whose leader is on that store. A rebuilt Store reports `0` leaders until leadership moves back to it. Every PD member reads the same replicated metadata, so select one instance before aggregating these series.
 
 ---
 
@@ -25191,7 +25195,7 @@ The file-loading behavior on this page was checked against Server master commit 
 
 Complete defaults are in Server master: [gremlin-server.yaml](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/gremlin-server.yaml), [rest-server.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/rest-server.properties), [hugegraph.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hugegraph.properties), and [hstore.properties.template](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hstore.properties.template).
 
-The following Docker environment-variable behavior applies only to images built from `master`; arbitrary variable names are not converted into configuration options. Before initialization and startup, this entrypoint processes `HG_SERVER_BACKEND`, `HG_SERVER_PD_PEERS`, `HG_SERVER_USE_PD`, `HG_SERVER_CLUSTER`, `HG_SERVER_REST_URL`, `HG_SERVER_MIN_FREE_MEMORY`, `HG_SERVER_AUTH_TOKEN_SECRET`, `HG_SERVER_INIT_STORE_ENABLED`, and `PASSWORD`. Check the tagged entrypoint for historical release images. See [Docker entrypoint](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh).
+The following Docker environment-variable behavior applies only to images built from `master`; arbitrary variable names are not converted into configuration options. Before initialization and startup, this entrypoint processes `HG_SERVER_BACKEND`, `HG_SERVER_PD_PEERS`, `HG_SERVER_USE_PD`, `HG_SERVER_CLUSTER`, `HG_SERVER_REST_URL`, `HG_SERVER_URLS_TO_PD`, `HG_SERVER_DEPLOY_IN_K8S`, `HG_SERVER_MIN_FREE_MEMORY`, `HG_SERVER_AUTH_TOKEN_SECRET`, `HG_SERVER_INIT_STORE_ENABLED`, and `PASSWORD`. Check the tagged entrypoint for historical release images. See [Docker entrypoint](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh).
 
 ### 2 gremlin-server.yaml
 

@@ -1,0 +1,7 @@
+{"version": 2, "width": 48, "height": 14, "timestamp": 1791730466, "title": "Actual local OINK version checks", "env": {"TERM": "xterm-256color"}}
+[0.002884, "o", "+ hugo version\r\n"]
+[0.03043, "o", "hugo v0.165.0-76a5e1880ab46688155b02e99bab9be2a6134492+extended darwin/arm64 BuildDate=2026-08-12T14:26:28Z VendorInfo=gohugoio\r\n"]
+[0.031396, "o", "+ go version\r\n"]
+[0.03694, "o", "go version go1.27.1 darwin/arm64\r\n"]
+[0.037284, "o", "+ hugo mod graph\r\n"]
+[0.104096, "o", "github.com/apache/hugegraph-doc github.com/pgsty/oink@v1.2.0\r\n"]

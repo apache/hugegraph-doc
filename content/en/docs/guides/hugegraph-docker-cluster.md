@@ -209,6 +209,8 @@ Unlike PD and Store, Server has no mandatory entrypoint variables: only set valu
 | `HG_SERVER_USE_PD` | `false` | `usePD` in `rest-server.properties` |
 | `HG_SERVER_CLUSTER` | `hg-test` | `cluster` in `rest-server.properties` |
 | `HG_SERVER_REST_URL` | `http://0.0.0.0:8080` (set in the image) | `restserver.url` |
+| `HG_SERVER_URLS_TO_PD` | `http://0.0.0.0:8080` | `server.urls_to_pd`: comma-separated URLs this Server registers in PD instead of `restserver.url`; read only when `server.deploy_in_k8s` is `true`; give each URL its own `http://` prefix, since only the first entry gets one added; whitespace is removed |
+| `HG_SERVER_DEPLOY_IN_K8S` | `false` | `server.deploy_in_k8s` in `rest-server.properties` |
 | `HG_SERVER_MIN_FREE_MEMORY` | `64`（MB） | `restserver.min_free_memory` |
 | `HG_SERVER_INIT_STORE_ENABLED` | `true` | `init_store.enabled`; set `false` for PD/HStore deployments whose metadata is managed by storage |
 | `HG_SERVER_AUTH_TOKEN_SECRET` | Generated when `PASSWORD` is set | `auth.token_secret` in both configuration files; at least 32 bytes |
@@ -221,13 +223,31 @@ Unlike PD and Store, Server has no mandatory entrypoint variables: only set valu
 | `HG_SERVER_PD_REST_ENDPOINT` | Derived from `pd.peers` by replacing `:8686` with `:8620` | PD REST address polled by `wait-storage.sh` |
 | `PD_AUTH_USER` | `store` | Basic username for PD REST calls from `wait-storage.sh` |
 | `PD_AUTH_PASSWORD` | Empty | PD REST Basic password; must match `HG_PD_AUTH_SECRET_KEY` when PD REST authentication is enabled |
-| `WAIT_PARTITION_TIMEOUT_S` | `120` | Partition allocation wait time in `wait-partition.sh` |
+| `WAIT_PARTITION_TIMEOUT_S` | `120` | Partition polling timeout; also bounds the final diagnostic in builds with the fix described below |
+
+Master builds that include authentication property fixes preserve spaces, backslashes and Unicode in explicit
+signing keys. Use the same key on every Server replica. When upgrading from an image that misread such a key, explicitly supply the intended
+`HG_SERVER_AUTH_TOKEN_SECRET` again; retaining the old configuration also retains its misread key. If the active key changes, sign in again to
+obtain new tokens. The 1.7.0 image limitation above still applies.
+
+Older images could initialize a Unicode administrator password incorrectly when the initializer inherited the C locale. Upgrading or setting
+`PASSWORD` again does not repair an existing account's stored password. A working administrator must change it through the
+[user API](/docs/clients/restful-api/auth/). This fix provides no automatic recovery when no administrator identity is usable; preserve the
+existing data and arrange account recovery before upgrading.
 
 > **Deprecated aliases**: `BACKEND` → `HG_SERVER_BACKEND`, `PD_PEERS` → `HG_SERVER_PD_PEERS`.
 
 `wait-storage.sh` waits up to 300 seconds for an `Up` Store. This duration is hardcoded and cannot be changed through environment variables.
 
-`HG_SERVER_INIT_STORE_ENABLED` accepts only the case-insensitive boolean values recognized by `HugeConfig`: `y`, `t`, `yes`, `on`, `true`, `n`, `f`, `no`, `off`, `false`. Other values, including `0` and `1`, terminate the entrypoint.
+In master builds, HStore startup gives partition polling
+and the final `/v1/partitions` diagnostic separate `WAIT_PARTITION_TIMEOUT_S` budgets. Earlier builds bound polling only; the final diagnostic
+request has no timeout. With the default value, a stalled final response times out after 120 seconds; setting the value to `0` disables
+GNU timeout's limit.
+The entrypoint waits for `wait-partition.sh` before waiting for the Java launcher. If Java exits while partition polling is still waiting,
+that poll can consume its full timeout before the entrypoint observes the exit. If polling succeeds, the diagnostic step can then consume
+a second full timeout before observation finishes; signal-triggered shutdown remains interruptible.
+
+`HG_SERVER_INIT_STORE_ENABLED` and `HG_SERVER_DEPLOY_IN_K8S` accept only the case-insensitive boolean values recognized by `HugeConfig`: `y`, `t`, `yes`, `on`, `true`, `n`, `f`, `no`, `off`, `false`. Other values, including `0` and `1`, terminate the entrypoint.
 
 After successful initialization, the entrypoint writes `docker/init_complete`; later starts skip reinitialization but still invoke `bin/init-store.sh` to revalidate configuration each time initialization is disabled.
 
@@ -293,7 +313,34 @@ Standalone publishes only `8080` and `8088`; minimal HStore publishes `8620` (PD
 
 5. **Unexpected retained data**: `docker compose down` keeps named volumes. To delete topology data too, use `docker compose down -v`.
 
-**Runtime logs**: `docker logs <container-name>` (for example, `docker logs hg-pd0`) shows logs without entering containers. Standalone `hugegraph/hugegraph` sets `STDOUT_MODE=true` and sends service logs to stdout. The HStore `hugegraph/server` image does not set this variable: `docker logs` shows only entrypoint output; inspect `logs/hugegraph-server.log` inside the container for service logs.
+**Runtime logs**: `docker logs <container-name>` (for example, `docker logs hg-pd0`) shows logs without entering containers. In images built from current
+master, the PD, Store and both Server images (`hugegraph/hugegraph` and the HStore `hugegraph/server`) set `STDOUT_MODE=true` and send service logs to stdout.
+For the Server, WARN and above from Hadoop, ZooKeeper, SOFA, Netty and Commons also reaches stdout; INFO from Hadoop, Netty and Commons and the audit and
+slow-query logs stay in files, and ZooKeeper and SOFA log nothing below WARN. `/hugegraph-server/logs` holds `hugegraph-server.log`, JVM crash logs
+(`hs_err_pid*.log`) and out-of-memory heap dumps (`heapdump_*/java_pid*.hprof`, one directory per start, so the Server and the JVMs it starts get separate files
+unless a JVM reuses an earlier PID from that start; if the directory cannot be created, dumps go to `/hugegraph-server/logs` itself). Both images declare
+`VOLUME /hugegraph-server`, so `docker restart` and a Compose recreate keep them; `docker compose down` leaves that anonymous volume behind unattached, and a
+later `down -v` does not remove it (note the volume name from `docker inspect` before `down` and delete it with `docker volume rm <name>`; `docker volume prune`
+would also delete every other unused anonymous volume on the Docker host), so use a named volume or bind mount to keep them reachable. Kubernetes starts a new
+container on every restart, so mount an `emptyDir` or a PersistentVolumeClaim at `/hugegraph-server/logs`. Give each pod its own volume, or a per-pod directory
+on a shared PVC (`subPathExpr: $(POD_NAME)`, with `POD_NAME` passed in from `metadata.name` through the Downward API; the Helm chart sets neither): crash files
+get distinct names, but the log files themselves have fixed names. Pods on different nodes can share one PVC only if its storage supports read-write mounts from
+several nodes (typically `ReadWriteMany`); a `ReadWriteOnce` claim is writable from one node only, so otherwise give each pod its own PVC. The Helm chart does
+not mount a logs volume yet. A heap dump can be as large as the JVM heap, and every start uses a new directory, so a Server that keeps running out of memory
+fills the volume; size it for the dumps you want to keep, keep it within any `ephemeral-storage` limit or `emptyDir` `sizeLimit` (eviction deletes the
+`emptyDir` with the dump), and do not use `medium: Memory`. A failing liveness probe can restart the container as soon as about
+`(failureThreshold - 1) × periodSeconds + timeoutSeconds` after a dump starts, and the kubelet kills it at most `terminationGracePeriodSeconds` after that; make
+that time longer than writing a heap dump takes, or a restart in the middle of a dump leaves a truncated file. The launcher never deletes dumps or `heapdump_*`
+directories, because a computer-job JVM can go on using one after its Server exits; each start that reaches Java leaves one, empty unless something ran out of
+memory. Delete old ones once no HugeGraph JVM from that launch is running, never the newest one of a running Server. To turn dumps off for every JVM, set
+`JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError` in the container's environment (`docker run -e`, an `environment:` entry on the Server service in Compose,
+which the shipped Compose files do not set, or `env` in Kubernetes; exporting it in the host shell has no effect), which keeps the image's default `JAVA_OPTS`;
+putting the flag in `JAVA_OPTS` affects the Server JVM only and replaces that default (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those
+flags.
+
+> **Version scope**: the paragraph above describes current master images. No 1.7.0 or older image sets
+> `STDOUT_MODE`, including the standalone `hugegraph/hugegraph:1.7.0` used above: `docker logs` shows only entrypoint output, and service logs stay in `logs/`
+> inside the container (`logs/hugegraph-server.log` for the Server).
 
 ## Container Monitoring and Health Checks
 
@@ -306,14 +353,22 @@ Previously, all three entrypoints ended with `tail -f /dev/null`, keeping contai
 Entrypoints now monitor Java directly:
 
 - **PD and Store**: The entrypoint passes `-d false` to the startup script, which replaces itself with Java using `exec`. When Java exits, the container exits immediately and Docker's restart policy applies.
-- **Server**: The entrypoint waits with `tail --pid=$PID -f /dev/null`. `SIGTERM`/`SIGINT` traps forward Docker stop signals to Java and wait for graceful shutdown (exit 0). If Java crashes, the entrypoint exits with code 1, triggering the restart policy.
+- **Server**: The entrypoint owns the foreground launcher and waits for Java. After readiness, it preserves Java's exit status,
+  including `0`, `42`, and `137` for `SIGKILL`. `SIGTERM` and `SIGINT` request cooperative shutdown, reap owned readiness/partition checks,
+  and return `143` and `130` respectively after shutdown.
 - PID 1 in every image is `dumb-init`, which forwards Docker signals to the entrypoint.
 
 ### Server Startup Timeout
 
-`HG_SERVER_STARTUP_TIMEOUT_S` controls how long the Server startup script waits for a REST response; the default is **120 seconds**. Values must be decimal integers without leading zeros, from **1 to 86400 seconds**. Empty strings, `0`, negative numbers, fractions, and out-of-range values log an error and exit with code `1`.
+`HG_SERVER_STARTUP_TIMEOUT_S` sets the Docker entrypoint's REST readiness deadline; the default is **120 seconds**.
+Values must be decimal integers without leading zeros, from **1 to 86400 seconds**.
+Empty strings, `0`, negative numbers, fractions, and out-of-range values log an error and exit with code `1`.
 
-The entrypoint passes this value to `bin/start-hugegraph.sh -t`. If Server does not become ready within the deadline or exits early, startup fails and the container exits with code `1`; its restart policy may restart it. This duration excludes earlier storage initialization and backend readiness waits.
+The entrypoint also passes this value to `bin/start-hugegraph.sh -t`; the foreground launcher itself waits for Java, without polling REST.
+A startup deadline failure or Java exiting with `0` before readiness returns `1`;
+an early nonzero Java exit keeps its status. The deadline excludes earlier storage initialization and backend readiness waits.
+Readiness and partition checks remain interruptible during shutdown. A deadline failure requests termination and returns without an indefinite wait;
+an unresponsive Java process relies on container termination for final cleanup.
 
 For example, from the HugeGraph repository's `docker/` directory, extend the standalone Server wait to 300 seconds (Compose passes this variable to the container):
 

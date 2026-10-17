@@ -42,6 +42,8 @@ scripts/hugo.sh server
 
 Open <http://localhost:1313/>. The local preview includes the language-aware search index so search behavior can be checked before publication.
 
+The site's [local preview guide](https://hugegraph.apache.org/community/documentation/) includes a real toolchain-check recording and a short preview workflow.
+
 ## Strict production build
 
 Run the same warning-strict build used by CI:
@@ -103,6 +105,59 @@ version to 3.0.0 in the release branch; keep the `latest` guides tracking upstre
 
 latest 文档使用 SeaTunnel 3.0+ 等最低版本说明，并引用上游 latest/Next 文档；安装命令中的具体版本仅作为示例，引擎和插件保持同版。
 准备 HugeGraph 1.8.0 文档快照时，在发布分支中将 SeaTunnel 文档引用和安装版本固定为 3.0.0，latest 文档继续跟随上游。
+
+## Native content components
+
+Prefer [OINK's native Markdown components](https://oink.pgsty.com/docs/components/)
+over copied theme templates: `filetree` for annotated directory layouts, `{.cards}`
+for parallel navigation choices, `{tab="..."}` for equivalent code alternatives,
+and `kbd` for physical keys. Use `{.steps}` only for actions performed in order.
+Keep important prerequisites visible; reserve folding for supplemental detail.
+Published Markmap diagrams are limited to text outlines and code. Only a finite,
+nonnegative `spacingHorizontal` is allowed in frontmatter; active images, links, raw HTML
+and other frontmatter fail the site's safety validation.
+Use standard language-labelled fences (`bash`, `properties`, `json`, or `text`
+for plain text). Inline line numbers come from the global Hugo highlight config;
+ordinary documentation code blocks do not need custom filename or title headers.
+For long code examples, show at least 5–9 source lines according to the reading
+context. Do not fold short examples that already fit within that range; preserve
+complete clipboard output, including hidden lines. Keep benchmark tables and test
+conditions beside charts, and use Gallery summaries alongside detailed screenshots
+when readers need to follow UI steps. Math should clarify a real documented formula.
+
+Use terminal recordings only when timing, interactive input or changing output
+adds useful information, such as a startup or troubleshooting walkthrough. Keep
+the commands as copyable code; a version check alone does not need a player.
+The local preview guide includes one optional player-authoring example in both
+languages; it demonstrates component usage rather than replacing version checks.
+Asciicast files store terminal text and timestamps, not video or executable
+commands. Change the shortcode's `title` or `speed` for presentation; re-record
+when commands or output change. Resize the terminal to the intended dimensions
+before recording; overriding the player's `cols` or `rows` can crop the recording.
+
+With the optional [Asciinema recorder](https://oink.pgsty.com/docs/components/asciinema/)
+installed, record a real session, run the demonstration commands, then exit:
+
+```bash
+asciinema rec demo.cast
+```
+
+Save the checked recording under `static/casts/` and reference it from Markdown:
+
+```text
+{{< asciinema file="/casts/demo.cast" title="Startup walkthrough" speed="1" >}}
+```
+
+The recorder is an authoring tool, not a site build dependency. Check both desktop
+and mobile playback, keep output readable, and review the plain-text file before
+committing it so credentials or private output are not included.
+
+Blog section metadata supplies default cover images and reading time; individual
+articles supply real categories, tags and series order. Confirm original authorship
+before creating an author profile. Keep both languages aligned, public article
+routes stable, and accurate defaults; content styling is not a reason to change
+commands or historical benchmark claims. Verify relevant HTML interactions and
+Print/Markdown/RSS fallbacks when adopting a new content component.
 
 ## Repository structure
 

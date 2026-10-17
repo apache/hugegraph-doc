@@ -13,7 +13,7 @@ log_verbose() {
     fi
 }
 
-ASSET_EXTENSIONS_REGEX='png|jpg|jpeg|svg|gif|webp|avif|ico|xml|yaml|yml|json|css|js|pdf|zip|tar\.gz|woff|woff2|ttf|eot|mp4|webm'
+ASSET_EXTENSIONS_REGEX='png|jpg|jpeg|svg|gif|webp|avif|ico|xml|yaml|yml|json|css|js|pdf|zip|tar\.gz|woff|woff2|ttf|eot|mp4|webm|cast'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || exit 1
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)" || exit 1
 CONTENT_ROOT="$(cd "$REPO_ROOT/$CONTENT_DIR" && pwd)" || exit 1
@@ -146,7 +146,7 @@ check_internal_link() {
     elif [[ "$clean_link" == /language/* ]]; then
         target_path="$CONTENT_ROOT/en${clean_link}"
 
-    elif [[ "$clean_link" == /clients/* ]]; then
+    elif [[ "$clean_link" == /clients/* || "$clean_link" == /casts/* ]]; then
         target_path="$REPO_ROOT/static${clean_link}"
 
     elif [[ "$clean_link" == /images/* ]]; then

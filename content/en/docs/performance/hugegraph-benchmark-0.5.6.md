@@ -76,6 +76,83 @@ The size of the datasets used in this test is not mentioned.
 
 #### 2.1 Batch insertion performance
 
+> [!NOTE]
+> The chart and original table show historical HugeGraph 0.5.6 results, not current-version performance.
+> Hardware, software versions and backend conditions are listed in the test environment above.
+
+The chart uses a logarithmic scale for batch insertion time in seconds. Click legend entries to toggle series;
+the original table remains available for exact values.
+
+```echarts {height="340px"}
+{
+  "tooltip": {
+    "trigger": "axis",
+    "confine": true
+  },
+  "legend": {
+    "data": [
+      "HugeGraph",
+      "Titan",
+      "Neo4j"
+    ]
+  },
+  "grid": {
+    "left": 75,
+    "right": 30,
+    "top": 55,
+    "bottom": 75
+  },
+  "xAxis": {
+    "type": "category",
+    "data": [
+      "email-enron (30w)",
+      "amazon0601 (300w)",
+      "YouTube (300w)",
+      "LiveJournal (3000w)"
+    ],
+    "axisLabel": {
+      "rotate": 10
+    }
+  },
+  "yAxis": {
+    "type": "log",
+    "name": "Time / seconds (log)"
+  },
+  "series": [
+    {
+      "name": "HugeGraph",
+      "type": "bar",
+      "data": [
+        0.629,
+        5.711,
+        5.243,
+        67.033
+      ]
+    },
+    {
+      "name": "Titan",
+      "type": "bar",
+      "data": [
+        10.15,
+        108.569,
+        150.266,
+        1217.944
+      ]
+    },
+    {
+      "name": "Neo4j",
+      "type": "bar",
+      "data": [
+        3.884,
+        18.938,
+        24.89,
+        281.537
+      ]
+    }
+  ]
+}
+```
+
 | Backend   | email-enron(30w) | amazon0601(300w) | com-youtube.ungraph(300w) | com-lj.ungraph(3000w) |
 |-----------|------------------|------------------|---------------------------|-----------------------|
 | HugeGraph | 0.629            | 5.711            | 5.243                     | 67.033                |

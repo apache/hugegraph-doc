@@ -25,8 +25,9 @@ PD listens on three ports:
 #### 2.1 Requirements
 
 - Operating System: Linux or macOS (Windows has not been fully tested)
-- Java version: ≥ 11
-- Maven version: ≥ 3.5.0
+- Java version: Java 17 for HugeGraph 1.8.0+ (the Maven build accepts only JDK 17;
+  the start script rejects older runtimes; 1.7.0 is the last release supporting Java 11)
+- Maven version: ≥ 3.6.3 (for building from source)
 
 ### 3 Deployment
 
@@ -41,7 +42,7 @@ Apache downloads currently provide the complete 1.7.0 binary bundle containing P
 
 ```bash
 # Historical release 1.7.0 retains incubating in filenames and directories
-wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+curl -fLO --connect-timeout 10 --max-time 1800 https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 ```
@@ -107,6 +108,7 @@ docker run -d \
 | `HG_PD_DATA_PATH` | No | `/hugegraph-pd/pd_data` | `pd.data-path` | Metadata path. |
 | `HG_PD_INITIAL_STORE_COUNT` | No | `1` | `pd.initial-store-count` | Minimum Store count needed for cluster availability. |
 | `HG_PD_ACTUATOR_EXPOSURE` | No | `health,metrics,prometheus` | `management.endpoints.web.exposure.include` | Public Actuator endpoint allowlist; `*` is forbidden. |
+{.hg-pd-env}
 
 The master entrypoint requires all five mandatory variables, builds `SPRING_APPLICATION_JSON` overrides, then starts PD. Other settings come from image `conf/application.yml`; `JAVA_OPTS` is passed to the JVM. Deprecated `GRPC_HOST`, `RAFT_ADDRESS`, `RAFT_PEERS`, and `PD_INITIAL_STORE_LIST` remain supported with warnings.
 
@@ -303,16 +305,22 @@ In the PD installation directory, execute:
 ./bin/start-hugegraph-pd.sh
 ```
 
-The script requires a JDK of at least version 11 on `PATH` or in `JAVA_HOME`, and it exits without doing anything if it finds a Java process already using this installation's `conf` directory.
+The script requires Java 17 or later on `PATH` or in `JAVA_HOME` (Java ≥ 11 on 1.7.0).
+It exits without doing anything if it finds a Java process already using this installation's `conf` directory.
 
-Supported flags:
+The lifecycle details below describe current master builds. The downloaded 1.7.0 launcher does not include those repairs.
+Supported flags, with GC version limits noted below:
 
 | Flag | Values | Default | Description |
 |------|--------|---------|-------------|
 | `-d` | `true`, `false` | `true` | Daemon mode. See the note below. |
-| `-g` | `zgc`, `ZGC` | not set | Garbage collector. Leave the flag off for the default G1GC. Any other value, `g1` included, aborts the start. |
+| `-g` | See version limits below | not set | Select the garbage collector. Unsupported values abort startup. |
 | `-j` | JVM options | empty | Extra JVM options, for example `-j "-Xmx8g -Xms8g"`. |
 | `-y` | `true`, `false` | `false` | Attach the OpenTelemetry Java agent. The agent is downloaded into `plugins/` on first use, its MD5 is verified, and traces are exported over gRPC to `http://127.0.0.1:4317`. |
+
+Master builds accept `g1`, `G1`, `zgc` and `ZGC`.
+The downloaded 1.7.0 launcher accepts only `zgc` or `ZGC` as explicit choices; `-g g1`, `-g G1` and other values abort startup.
+Omit `-g` for the default path. For rejected values, inspect `logs/hugegraph-pd-stdout.log`.
 
 The `-d` flag controls daemon mode:
 
@@ -323,7 +331,7 @@ Each flag also has an environment variable equivalent: `DAEMON`, `GC_OPTION`, `U
 
 After successful startup, you can see logs similar to the following in `logs/hugegraph-pd-stdout.log`:
 
-```
+```text
 YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.p.b.HugePDServer - Started HugePDServer in x.xxx seconds (JVM running for x.xxx)
 ```
 
@@ -531,3 +539,5 @@ All paths below are relative to `http://<pd-host>:8620` and need the Basic heade
 The two `log` endpoints take a time range as `{"startTime": "...", "endTime": "..."}`; `yyyy-MM-dd HH:mm:ss` and `yyyy-MM-dd` are among the accepted formats.
 
 PD registers its own meters under the `hg` prefix, so `/actuator/prometheus` exposes `hg_up`, `hg_graphs`, `hg_stores` and `hg_terms` alongside the standard JVM metrics, plus per-graph partition and size meters once graphs exist.
+
+In versions after 1.7.0, PD also exports, for each registered store, `hg_store_state{store="<id>",state="<state>"}`, which is `1` for the store's current state (`Unknown`, `Pending`, `Up`, `Offline`, `Exiting` or `Tombstone`) and `0` for the others, and `hg_store_leader_count{store="<id>"}`, the number of shard groups whose leader is on that store. A rebuilt Store reports `0` leaders until leadership moves back to it. Every PD member reads the same replicated metadata, so select one instance before aggregating these series.

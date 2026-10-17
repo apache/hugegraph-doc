@@ -59,7 +59,7 @@ city: Beijing})
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/users
 ```
 
@@ -93,7 +93,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/users
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 ```
 
@@ -111,7 +111,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 ```
 
@@ -155,7 +155,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/users
 ```
 
@@ -190,7 +190,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/users/admin
 ```
 
@@ -217,7 +217,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/admin
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 ```
 
@@ -272,7 +272,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ```
 
@@ -304,7 +304,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 ```
 
@@ -322,7 +322,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 ```
 
@@ -361,7 +361,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ```
 
@@ -396,7 +396,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 ```
 
@@ -459,7 +459,7 @@ target_resources 可以包括多个 target_resource，以列表的形式存储�
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/targets
 ```
 
@@ -499,7 +499,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/targets
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 ```
 
@@ -518,7 +518,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 ```
 
@@ -569,7 +569,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
 ```
 
@@ -628,7 +628,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 ```
 
@@ -685,7 +685,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ```
 
@@ -716,7 +716,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
@@ -735,7 +735,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
@@ -780,7 +780,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ```
 
@@ -815,7 +815,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
@@ -871,7 +871,7 @@ access_permission：
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ```
 
@@ -904,7 +904,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
@@ -923,7 +923,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
@@ -968,7 +968,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ```
 
@@ -1004,7 +1004,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
@@ -1044,7 +1044,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1/auth/managers/check?type=SPACE_MEMBER
 ```
 
@@ -1070,7 +1070,7 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers/check?type=SPACE_MEMBER
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1/auth/managers?type=SPACE
 ```
 
@@ -1112,7 +1112,7 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers?type=SPACE
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/gs1/auth/managers
 ```
 
@@ -1143,7 +1143,7 @@ POST http://localhost:8080/graphspaces/gs1/auth/managers
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/gs1/auth/managers?user=boss&type=SPACE_MEMBER
 ```
 
@@ -1161,7 +1161,7 @@ DELETE http://localhost:8080/graphspaces/gs1/auth/managers?user=boss&type=SPACE_
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1/auth/managers/role?user=boss
 ```
 
@@ -1196,7 +1196,7 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers/role?user=boss
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1/auth/managers/default?role=analyst
 ```
 
@@ -1239,7 +1239,7 @@ token 使用 `auth.token_secret` 配置项签名，有效期为 `auth.token_expi
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/auth/login
 ```
 
@@ -1271,7 +1271,7 @@ POST http://localhost:8080/auth/login
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/auth/logout
 ```
 
@@ -1293,7 +1293,7 @@ token 非法或已过期时返回 `401`。
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/auth/verify
 ```
 
@@ -1338,7 +1338,7 @@ token 非法或已过期时返回 `401`。
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/projects
 ```
 
@@ -1383,7 +1383,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/projects
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project?action=add_graph
 ```
 
@@ -1415,7 +1415,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project?action=
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 ```
 
@@ -1433,7 +1433,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/projects
 ```
 
@@ -1471,7 +1471,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/projects
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 ```
 
@@ -1491,7 +1491,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 ```
 

@@ -101,7 +101,7 @@ keytool -genkey -alias serverkey -keyalg RSA -keystore server.keystore
 
 过程中根据需求填写描述信息，默认证书的描述信息如下：
 
-```
+```text
 名字和姓⽒：hugegraph
 组织单位名称：hugegraph
 组织名称：hugegraph

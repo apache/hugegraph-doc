@@ -2,6 +2,8 @@
 date: 2025-10-29
 title: "Agentic GraphRAG"
 linkTitle: "Agentic GraphRAG: A Modular Architecture Practice"
+categories: [graph-ai]
+tags: [GraphRAG, RAG, Workflow]
 ---
 
 # Project Background

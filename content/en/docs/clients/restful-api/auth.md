@@ -56,7 +56,7 @@ Both user_name and user_password are required, the rest are optional.
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/users
 ```
 
@@ -90,7 +90,7 @@ In the response message, the password is encrypted as ciphertext.
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 ```
 
@@ -108,7 +108,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/users/test
 ```
 
@@ -153,7 +153,7 @@ The returned result is the entire user object including the modified content.
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/users
 ```
 
@@ -188,7 +188,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/users/admin
 ```
 
@@ -215,7 +215,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/admin
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 ```
 
@@ -247,8 +247,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/users/boss/role
 Groups grant corresponding resource permissions, and users are assigned to different groups, thereby having different resource permissions.
 The group interface includes APIs for creating groups, deleting groups, modifying groups, and querying group-related information.
 
-> `GroupAPI` remains at `/auth/groups`, the only group route on 1.7.0. Current `master` also serves `/graphspaces/DEFAULT/auth/groups`,
-> added by [apache/hugegraph#3096](https://github.com/apache/hugegraph/pull/3096).
+> `GroupAPI` remains at `/auth/groups` on 1.7.0; current `master` also serves `/graphspaces/DEFAULT/auth/groups`.
 >
 > The GraphSpace API generates each persisted group name as `~hubble_role:v1:` + base64url(graphspace) + `:` + 32 hex digits.
 > For `DEFAULT`, the name and ID look like `~hubble_role:v1:REVGQVVMVA:<32 hex>`; request `group_name` is only a client
@@ -275,7 +274,7 @@ The group interface includes APIs for creating groups, deleting groups, modifyin
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ```
 
@@ -307,7 +306,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/groups
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 ```
 
@@ -325,7 +324,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 ```
 
@@ -367,7 +366,7 @@ The returned result is the entire group object including the modified content.
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
 ```
 
@@ -402,7 +401,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/groups
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/groups/{group_id}
 ```
 
@@ -463,7 +462,7 @@ The resource definition means: a vertex of type 'person' with the city property 
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/targets
 ```
 
@@ -502,7 +501,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/targets
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 ```
 
@@ -520,7 +519,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 ```
 
@@ -572,7 +571,7 @@ The response contains the entire target group object, including the modified con
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
 ```
 
@@ -631,7 +630,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/targets
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/targets/{target_id}
 ```
 
@@ -689,7 +688,7 @@ The API for associating roles includes creating, deleting, modifying, and queryi
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ```
 
@@ -720,7 +719,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
@@ -740,7 +739,7 @@ An association of roles can only be modified for its description. The `user` and
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
@@ -785,7 +784,7 @@ The response includes the modified content as well as the entire association of 
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 ```
 
@@ -820,7 +819,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/belongs/{belong_id}
 ```
 
@@ -876,7 +875,7 @@ Access permissions:
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ```
 
@@ -908,7 +907,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
@@ -928,7 +927,7 @@ Authorization can only be modified for its description. User group, resource, an
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
@@ -977,7 +976,7 @@ The response includes the modified content as well as the entire authorization o
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 ```
 
@@ -1013,7 +1012,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 ```
 
@@ -1053,7 +1052,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/accesses/{access_id}
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1/auth/managers/check?type=SPACE_MEMBER
 ```
 
@@ -1079,7 +1078,7 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers/check?type=SPACE_MEMBER
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1/auth/managers?type=SPACE
 ```
 
@@ -1121,7 +1120,7 @@ GET http://localhost:8080/graphspaces/gs1/auth/managers?type=SPACE
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/gs1/auth/managers
 ```
 
@@ -1152,7 +1151,7 @@ POST http://localhost:8080/graphspaces/gs1/auth/managers
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/gs1/auth/managers?user=boss&type=SPACE_MEMBER
 ```
 
@@ -1170,7 +1169,7 @@ DELETE http://localhost:8080/graphspaces/gs1/auth/managers?user=boss&type=SPACE_
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1/auth/managers/role?user=boss
 ```
 
@@ -1205,7 +1204,7 @@ Default roles are the built-in roles of a graphspace, see [Graphspace API](./gra
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/gs1/auth/managers/default?role=analyst
 ```
 
@@ -1248,7 +1247,7 @@ The token is signed with the `auth.token_secret` option and expires after `auth.
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/auth/login
 ```
 
@@ -1280,7 +1279,7 @@ The token to invalidate is taken from the request header, no request body is nee
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/auth/logout
 ```
 
@@ -1302,7 +1301,7 @@ An invalid or expired token returns `401`.
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/auth/verify
 ```
 
@@ -1347,7 +1346,7 @@ A project groups a set of graphs together with an admin group and an op group, s
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/auth/projects
 ```
 
@@ -1392,7 +1391,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/auth/projects
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project?action=add_graph
 ```
 
@@ -1424,7 +1423,7 @@ Leave `action` out to update the description. `project_graphs` must not be prese
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 ```
 
@@ -1442,7 +1441,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/projects
 ```
 
@@ -1480,7 +1479,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/auth/projects
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 ```
 
@@ -1500,7 +1499,7 @@ Remove all graphs from the project before deleting it.
 
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/auth/projects/test_project
 ```
 

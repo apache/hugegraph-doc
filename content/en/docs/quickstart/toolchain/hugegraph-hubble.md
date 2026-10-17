@@ -83,6 +83,17 @@ check the current graph after changing pages. Standalone mode has only the `DEFA
 | Profile and Account Management | Update personal details/passwords and manage accounts or space members according to permissions |
 | Operations | Inspect Server nodes; PD mode also includes cluster overview and PD/Store nodes |
 
+### Interface at a glance
+
+Explore the graph overview, schema, and query workspaces in this gallery. Click an image to zoom; the operation sections below retain
+full-size screenshots for following each step.
+
+```gallery
+![Graph overview with the person/software sample](/docs/images/hubble/overview.jpg) # Graph overview: select a graph and inspect sample data
+![Vertex labels with primary-key and numeric ID strategies](/docs/images/hubble/schema.jpg) # Schema: inspect vertex labels, primary keys, and ID strategies
+![Gremlin path query and graph result](/docs/images/hubble/query.jpg) # Graph query: run Gremlin and explore graph results
+```
+
 ## Graph Overview and details: get to know a graph
 
 Select the default graph `hugegraph` in **Graph Overview**. The overview provides graph entry points and action menus.
@@ -275,10 +286,10 @@ Use the topbar shortcut-help button to see key bindings. Their scope differs: ty
 
 | Action | Key or gesture | Scope |
 |---|---|---|
-| Open / close shortcut help | `?` | Outside inputs and editors |
-| Execute query | `Ctrl` / `Command` + `Enter` | Query editor |
-| Run current algorithm | `Ctrl` / `Command` + `Enter` | Algorithm parameter form |
-| Toggle graph fullscreen | `F` | Click to focus the graph canvas first; not a global binding |
+| Open / close shortcut help | {{< kbd "?" >}} | Outside inputs and editors |
+| Execute query | {{< kbd "Ctrl" "Enter" >}} / {{< kbd "Command" "Enter" >}} | Query editor |
+| Run current algorithm | {{< kbd "Ctrl" "Enter" >}} / {{< kbd "Command" "Enter" >}} | Algorithm parameter form |
+| Toggle graph fullscreen | {{< kbd "F" >}} | Click to focus the graph canvas first; not a global binding |
 | Inspect element details | Click a vertex or edge | Graph result |
 | Expand neighboring relationships | Double-click a vertex | Graph result |
 

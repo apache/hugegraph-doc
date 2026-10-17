@@ -11,7 +11,7 @@ description: "Rebuild（重建索引）REST 接口:重建图模式的索引,确�
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/rebuild/indexlabels/personByCity
 ```
 

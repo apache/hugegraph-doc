@@ -168,7 +168,7 @@ in the checked Server master commit `2f827d6` where the option is declared.
 | usePD                        | rest-server.properties | false          | Whether Server loads its metadata from PD at startup                                          | `ServerOptions.java:401-407` |
 | cluster                      | rest-server.properties | hg-test        | Cluster name used as the prefix of every PD metadata key                                      | `ServerOptions.java:187-193` |
 | init_store.enabled           | rest-server.properties | true           | Set it to `false` in a PD/Store deployment, where the storage side already owns the metadata  | `ServerOptions.java:382-390` |
-| graph.load_from_local_config | rest-server.properties | false | Controls constructor preloading and rescanning on `reload()`; application initialization still scans and attempts to load local configurations, so `false` does not block local loading | `ServerOptions.java:366-372` |
+| graph.load_from_local_config | rest-server.properties | false | Controls constructor preloading. Application initialization still scans and attempts to load local configurations, so `false` does not block local loading. Restart Server to apply graph configuration changes. | `ServerOptions.java:366-372` |
 | auth.graph_store             | rest-server.properties | hugegraph      | The graph that holds auth data, checked against the `hstore` backend when init-store is off   | `ServerOptions.java:602-609` |
 | graphspace                   | {graph}.properties     | DEFAULT        | First segment of the graph name PD sees                                                       | `CoreOptions.java:679-685`   |
 

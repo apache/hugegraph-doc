@@ -83,7 +83,7 @@
   .td-nav-search-box,
   .td-nav-version-menu > .td-nav-util,
   .td-site-nav__language > .td-language-selector__trigger,
-  .td-nav-theme-menu > .td-nav-util,
+  .td-nav-appearance > .td-nav-util,
   .td-shell-keyboard__trigger,
   .td-nav-github,
   .td-site-drawer-toggle {
@@ -167,6 +167,9 @@
     > .td-landing-hero__actions {
       order: 1;
       margin: 18px 0 28px;
+      display: inline-grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: 100%;
     }
 
     > .td-landing-hero__lead {
@@ -225,9 +228,11 @@
 
   .td-landing-button--primary {
     background: #5930b8;
+    color: #fff;
 
     &:hover {
       background: #48239e;
+      color: #fff;
     }
   }
 
@@ -285,7 +290,7 @@
   .td-nav-menu-zone .td-nav-menu > .nav-link,
   .td-nav-version-menu > .td-nav-util,
   .td-site-nav__language > .td-language-selector__trigger,
-  .td-nav-theme-menu > .td-nav-util,
+  .td-nav-appearance > .td-nav-util,
   .td-shell-keyboard__trigger,
   .td-nav-github,
   .td-site-drawer-toggle {
@@ -706,9 +711,16 @@
   }
 }
 
-@media screen and (max-width: 575.98px) {
+// Keep the fixed right rail above the visible footer, as the native left panel does.
+@media screen and (min-width: 1200px) {
+  .td-shell-layout:not(.td-shell-layout--toc-flow) .td-shell-toc__panel {
+    inset-block-end: var(--td-shell-footer-offset, 0px);
+  }
+}
+
+@media screen {
   // Keep technical tokens readable and let OINK's labelled, focusable wrapper
-  // own mobile overflow instead of collapsing identifiers one letter per line.
+  // own overflow instead of collapsing identifiers one letter per line.
   .td-content .td-table-scroll > table :is(th, td),
   .td-content .td-table-scroll > table :is(th, td) :is(a, code) {
     overflow-wrap: normal;
@@ -915,5 +927,40 @@
     justify-content: flex-end;
     gap: .5rem;
     .btn { font-size: inherit; }
+  }
+}
+.hg-toolchain-recording {
+  width: 100%;
+  max-width: 36rem;
+}
+
+// The bundled Markmap runtime defaults to #333 even in the site's dark mode.
+// Use its public text token on both the container and generated SVG.
+.td-content .markmap {
+  --markmap-text-color: var(--bs-body-color);
+}
+
+// Full store definitions must remain readable without pointer hover.
+// Scope wrapping to authored trees that opt in through OINK's public class attribute.
+.hg-filetree-notes {
+  .td-filetree__row {
+    block-size: auto;
+    min-block-size: var(--td-filetree-row);
+  }
+  .td-filetree__comment {
+    white-space: normal;
+  }
+  .td-filetree__comment-text {
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media screen {
+  // Let this wide PD environment table use OINK's intrinsic column widths.
+  // The native focusable wrapper owns scrolling; other tables and Print keep their defaults.
+  .td-content .td-table-scroll:not(.td-table-scroll--static) > table.hg-pd-env {
+    max-width: none;
   }
 }

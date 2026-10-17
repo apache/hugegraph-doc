@@ -61,7 +61,7 @@ store=hugegraph
 每个图会打开三个 store：`m` 存放 schema，`g` 存放图数据，`s` 是 system store。store 名会拼接到上面
 两个路径之后，因此一个默认的单图安装目录如下：
 
-```
+```filetree {.hg-filetree-notes title="RocksDB 数据目录"}
 rocksdb-data/
   data/
     m/    # schema store：属性键、顶点/边/索引标签、计数器

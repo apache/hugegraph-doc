@@ -2,6 +2,7 @@
 title: "HugeGraph Computing (OLAP)"
 linkTitle: "HugeGraph Computing (OLAP)"
 weight: 4
+icon: fa-solid fa-diagram-project
 ---
 
 The HugeGraph-Computer repository contains two graph computing systems with different deployment and runtime models. Start with Go Vermeer for general graph algorithms; use Computer when you need distributed Java BSP/Pregel computation. Both can connect to HugeGraph, but their configuration and job entry points are not interchangeable.

@@ -630,8 +630,9 @@ class CommunityContentContractTests(unittest.TestCase):
             server = (ROOT / "content" / language / "docs/quickstart/hugegraph/hugegraph-server.md").read_text()
             config = (ROOT / "content" / language / "docs/config/config-guide.md").read_text()
             vertex = (ROOT / "content" / language / "docs/clients/restful-api/vertex.md").read_text()
-            self.assertIn("{.steps}", server)
-            self.assertIn('filename="conf/gremlin-server.yaml"', config)
+            self.assertIn("{.cards}", server)
+            self.assertIn("```yaml\n", config)
+            self.assertNotIn("filename=", config)
             self.assertIn(".full-width", vertex)
             self.assertIn("{#vertex-id-strategy", vertex)
 
@@ -649,9 +650,9 @@ class CommunityContentContractTests(unittest.TestCase):
                 "vertex_md": self.site / prefix / "docs/clients/restful-api/vertex/index.md",
             }
             rendered = {key: path.read_text(encoding="utf-8") for key, path in outputs.items()}
-            self.assertIn('class="steps"', rendered["server_html"])
-            self.assertIn('class="steps"', rendered["server_print"])
-            self.assertIn("{.steps}", rendered["server_md"])
+            self.assertIn('class="cards"', rendered["server_html"])
+            self.assertIn('class="cards"', rendered["server_print"])
+            self.assertIn("{.cards}", rendered["server_md"])
             for key in ("config_html", "config_print", "config_md"):
                 self.assertIn("conf/gremlin-server.yaml", rendered[key])
             self.assertIn('id="vertex-id-strategy"', rendered["vertex_html"])

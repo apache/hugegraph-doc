@@ -68,7 +68,7 @@ is the installation directory.
 Each graph opens three stores: `m` for schema, `g` for graph data, and `s` for the system store. The
 store name is appended to both configured paths, so a default single-graph installation looks like this:
 
-```
+```filetree {.hg-filetree-notes title="RocksDB data directories"}
 rocksdb-data/
   data/
     m/    # schema store: property keys, vertex/edge/index labels, counters

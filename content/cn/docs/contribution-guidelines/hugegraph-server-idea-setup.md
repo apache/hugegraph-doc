@@ -15,7 +15,7 @@ weight: 4
 1. 初始化数据库后端，执行 `InitStore` 类初始化图
 2. 启动 HugeGraph-Server，执行 `HugeGraphServer` 类加载初始化的图信息启动
 
-在执行下述流程之前，请确保已经克隆了 HugeGraph 的源代码，并且已经配置了 Java 11 环境 & 可以参考这个 [配置文档](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
+在执行下述流程之前，请确保已经克隆了 HugeGraph 的源代码，并且已经配置了开发环境（HugeGraph 1.8.0+ 需 Java 17，1.7.0 需 Java 11）& 可以参考这个 [配置文档](https://github.com/apache/hugegraph/wiki/The-style-config-for-HugeGraph-in-IDEA)
 
 ```bash
 git clone https://github.com/apache/hugegraph.git

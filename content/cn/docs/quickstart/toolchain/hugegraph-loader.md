@@ -28,6 +28,10 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 > 
 > **测试指南**：如需在本地运行 Loader 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
 
+> **并发导入保护方案**：自 1.8.0 起，普通导入支持在同一 Server 实例上获取 owner 保护
+> （需配合返回 `protocol: 1` 的新版 Server 与对应 Loader；当前 `master` 分支暂未包含该协议）。
+> 旧版 Server 保持下文说明的原有导入行为。
+
 ### 2 获取 HugeGraph-Loader
 
 可以通过以下三种方式获取 HugeGraph-Loader：
@@ -167,7 +171,7 @@ TEXT 是自定义分隔符的文本文件，第一行通常是标题，记录了
 
 示例如下：
 
-```
+```text
 id|name|lang|price|ISBN
 1|lop|java|328|ISBN978-7-107-18618-5
 2|ripple|java|199|ISBN978-7-100-13678-5
@@ -175,7 +179,7 @@ id|name|lang|price|ISBN
 
 CSV 是分隔符为逗号`,`的 TEXT 文件，当列值本身包含逗号时，该列值需要用双引号包起来，如：
 
-```
+```text
 marko,29,Beijing
 "li,nary",26,"Wu,han"
 ```
@@ -201,17 +205,17 @@ loader 还支持以部分关系型数据库作为数据源，目前支持 MySQL�
 
 举个例子：假设有三张表，person、software 和 created
 
-```
+```text
 // person 表结构
 id | name | age | city 
 ```
 
-```
+```text
 // software 表结构
 id | name | lang | price
 ```
 
-```
+```text
 // created 表结构
 id | p_id | s_id | date
 ```
@@ -864,18 +868,39 @@ GRAPH 输入源从另一个 HugeGraph 图（通过 HugeGraph-PD 访问）读取�
 | `--scheduler-type`                      | distributed |      | 自动创建图（如果不存在）时的任务调度器类型                                             |
 | `--batch-failure-fallback`              | true        |      | 批量插入失败时是否回退至单条插入模式                                                |
 
-> 参数少于三个时 loader 会直接打印用法并退出，因此只传 `-f struct.json` 是不够的。
+映射文件选项 `--file`（`-f`）是必填项，其他选项使用默认值。有效的最简调用为：
+
+```bash
+bin/hugegraph-loader.sh --file struct.json
+```
+
+启动脚本也支持 JCommander 原生的 `@file` 语法。在 `loader.args` 中把每个选项及其值分别写在单独一行：
+
+```text
+--file
+struct.json
+```
+
+```bash
+bin/hugegraph-loader.sh @loader.args
+```
+
+这与上面的最简调用等价。参数中的相对路径以 Loader 进程的工作目录为基准。
+若参数文件包含凭据，使用 `chmod 0600 loader.args` 把权限限制为 `0600`；`@file` 调用让这些值不出现在进程参数中。
+Loader 必须能够创建并写入以映射文件前缀命名的进度目录。
+从只读 Kubernetes ConfigMap 挂载映射文件时，先把映射复制到可写卷中再运行 Loader。
 
 ##### 3.4.2 断点续导模式
 
 通常情况下，Loader 任务都需要较长时间执行，如果因为某些原因导致导入中断进程退出，而下次希望能从中断的点继续导，这就是使用断点续导的场景。
 
-用户设置命令行参数 --incremental-mode 为 true 即打开了断点续导模式。断点续导的关键在于进度文件，导入进程退出的时候，会把退出时刻的导入进度
-记录到进度文件中，进度文件位于 `${struct}` 目录下，文件名形如 `load-progress_${timestamp}` ，${struct} 为映射文件的前缀，${timestamp} 为导入开始
+设置 `--incremental-mode` 为 `true` 即可从进度文件续导。Loader 在导入成功或正常停止后关闭时写入进度；意外失败可能阻止该写入。
+进度文件位于 `${struct}` 目录下，文件名形如 `load-progress_${timestamp}` ，${struct} 为映射文件的前缀，${timestamp} 为导入开始
 的时刻，格式为 `yyyyMMdd-HHmmss`。比如：在 `2019-10-10 12:30:30` 开始的一次导入任务，使用的映射文件为 `struct-example.json`，则进度文件的路径为与 struct-example.json 
 同级的 `struct-example/load-progress_20191010-123030`。当目录下存在多个进度文件时，续导会读取按文件名排序的最后一个，也就是最新的那个。
 
-> 注意：进度文件的生成与 --incremental-mode 是否打开无关，每次导入结束都会生成一个进度文件。
+> 注意：导入成功或正常停止（包括达到错误上限）后会写入进度文件，与 `--incremental-mode` 或 `--print-progress` 是否打开无关。
+> 意外失败导致导入中止时，可能不会写入进度文件。
 
 如果数据文件格式都是合法的，是用户自己停止（CTRL + C 或 kill，kill -9 不支持）的导入任务，也就是说没有错误记录的情况下，下一次导入只需要设置为断点续导即可。
 
@@ -960,6 +985,40 @@ bin/hugegraph-loader.sh \
 ```
 
 本例用独立的 `docs_smoke_person` 标签和 `docs_*` 属性，避免与预置的 `person` 样例数据冲突。成功时统计中应显示顶点写入成功数为 `2`、边写入成功数为 `0`。也可以在 Hubble 的 Gremlin 工作台查询 `g.V().hasLabel('docs_smoke_person').values('docs_name')`，结果应包含 `docs-smoke-alice` 和 `docs-smoke-bob`。
+
+#### 3.4.6 并发导入与 LOADING owner {#loading-ownership}
+
+自 1.8.0 版本起，Loader 支持并发导入模式所有权保护协议
+（需配合返回 `protocol: 1` 的新版 Server 与对应 Loader；当前 `master` 分支暂未包含该协议）。
+
+```mermaid
+graph TD
+    A["图模式 NONE"] -->|首个 Loader 申请所有权| B["进入 LOADING 模式 (分配 token)"]
+    B -->|其他并发 Loader 加入| B
+    B -->|部分 Loader 导入完成释放| B
+    B -->|最后一个 Loader 释放| C["自动恢复 NONE 模式"]
+    B -.->|"异常/进程中断 (Token 残留)"| D["管理员恢复 / 释放 / 重启图实例"]
+    D -.->|"最后一个 owner 释放，或 recover/重启"| A
+    D -.->|"仍有其他 owner 活跃"| B
+```
+
+1. **探测与获取**：Loader 启动后探测 `/mode/owners`。首个 Loader 获取所有权句柄（`instance/epoch/token`），图模式由 `NONE` 转为 `LOADING`；并发 Loader 可申请加入该模式。
+2. **数据导入**：持有有效句柄的 Loader 并行执行数据导入。
+3. **安全释放**：导入完成后停止 worker 并释放对应句柄。当最后一个 owner 释放时，图模式自动恢复为 `NONE`。
+4. **异常恢复**：若因异常中断（如 `kill -9`）导致句柄残留，请先停止并排空所有相关的导入任务与图写操作，
+   然后通过 [RESTful API 管理员恢复接口](/cn/docs/clients/restful-api/graphs/#loading-ownership) 执行恢复，或重启 Server。
+   直接调用 `release` 仅适用于仍持有 Token 的调用方（如直接调用 REST API 的客户端）。
+{.steps}
+
+> [!NOTE]
+> **兼容性与运维说明**
+> - **旧版本兼容**：普通导入时仅在接口返回不支持该路由的 `404` 响应时回退至旧版 `LOADING`/`NONE` 枚举流程（支持 1.7 等旧版 Server，但不提供并发隔离）。
+>   权限、网络、图不存在或无效响应错误不会触发回退。
+> - **恢复与图源导入**：保留 `RESTORING` 模式，不探测 owner 且不自动重置。恢复导入完成后须手动将图模式设回 `NONE`，否则后续普通导入无法获取首个所有权。
+>   在活跃 owner 存在期间，请勿运行恢复导入、图源导入、Spark connector 或旧版 Loader 导入。
+> - **作用范围与生命周期**：所有权属于直连 Server 实例，不跨节点同步；owner 无自动租期过期机制。
+>   对于嵌入式程序集成，调用方必须调用 `HugeGraphLoader.shutdown()` 执行单次句柄释放；若释放失败，不会自动重试；
+>   该 owner 可能会在 Server 端保持活跃，此时可能需要通过上述管理员恢复流程处理。
 
 ### 4 完整示例
 
@@ -1254,7 +1313,7 @@ sh bin/hugegraph-spark-loader.sh --master yarn \
 
 `bin/get-params.sh` 负责拆分命令行：只有下列参数会交给 loader，其余参数原样传给 `spark-submit`。该拆分只识别参数全称，因此 `-f`、`-g` 这类缩写不会被识别。
 
-```
+```text
 --graph --schema --host --port --username --token --protocol
 --trust-store-file --trust-store-password --clear-all-data --clear-timeout
 --incremental-mode --failure-mode --batch-insert-threads --single-insert-threads

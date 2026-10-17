@@ -22,8 +22,8 @@ HugeGraph-Store 是 HugeGraph 分布式版本的存储节点组件，负责实�
 #### 2.1 前置条件
 
 - 操作系统：Linux 或 macOS（Windows 尚未经过完整测试）
-- Java 版本：≥ 11（编译期强制校验，`bin/start-hugegraph-store.sh` 启动时会再次检查）
-- Maven 版本：≥ 3.5.0
+- Java 版本：HugeGraph 1.8.0+ 使用 Java 17（Maven 源码构建仅接受 JDK 17；启动脚本拒绝低于 17 的运行时；1.7.0 是最后一个支持 Java 11 的版本）
+- Maven 版本：≥ 3.6.3（从源码编译时）
 - 如需进行多节点部署，请先部署 HugeGraph-PD
 
 ### 3 部署
@@ -39,7 +39,7 @@ Apache 下载页目前提供 1.7.0 的完整二进制包，其中包含 PD、Sto
 
 ```bash
 # 1.7.0 是项目孵化期发布的历史版本，因此文件名和目录名仍带 incubating
-wget https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
+curl -fLO --connect-timeout 10 --max-time 1800 https://downloads.apache.org/hugegraph/1.7.0/apache-hugegraph-incubating-1.7.0.tar.gz
 tar zxf apache-hugegraph-incubating-1.7.0.tar.gz
 cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-store-incubating-1.7.0
 ```
@@ -221,6 +221,14 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `thread.pool.scan.max` | `1000` | 扫描最大线程数。 |
 | `thread.pool.scan.queue` | `0` | 扫描任务队列容量。 |
 
+**gRPC 回调队列（1.8.0）**
+
+Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或完成通知，导致请求无法正常结束。`thread.pool.grpc.queue` 仍可写在配置中，但不再限制这个队列的容量。
+
+`thread.pool.grpc.core` 和 `thread.pool.grpc.max` 仍用于配置线程池。由于回调可以继续排队，积压通常不会触发线程数从 `core` 增长到 `max`；只增大 `max` 无法提高回调处理能力。
+
+持续过载仍会使队列积压并增加内存占用。应限制客户端并发，并根据节点资源调整扫描和查询工作线程池；不要依赖 `thread.pool.grpc.queue` 限流。1.7.0 仍使用配置的 gRPC 队列容量。
+
 **查询下推**
 
 | 配置项 | 代码默认值 | 说明 |
@@ -285,14 +293,19 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 ./bin/start-hugegraph-store.sh
 ```
 
-启动脚本支持四个参数：
+下文的生命周期与下载时限说明适用于包含启动脚本修复的 master 构建；上文下载的 1.7.0 启动脚本不包含这些修复。
+启动脚本支持四个参数，GC 的版本限制见下文：
 
 | 参数 | 取值 | 默认值 | 说明 |
 |------|------|--------|------|
 | `-d` | `true`、`false` | `true` | 守护进程模式，见下文。 |
-| `-g` | `ZGC`、`zgc` | 未设置 | 垃圾回收器。不传该参数即使用默认的 G1。除 `ZGC` 和 `zgc` 之外的任何取值都会直接退出，包括 `g1`，尽管脚本自身的用法提示里写了它。 |
+| `-g` | 见下文版本限制 | 未设置 | 选择垃圾回收器；不支持的参数会中止启动。 |
 | `-j` | JVM 参数字符串 | 空 | 附加的 JVM 参数，例如 `-j "-Xmx16g -Xms8g"`。 |
 | `-y` | `true`、`false` | `false` | 挂载 OpenTelemetry Java agent（首次使用时下载到 `plugins/`），并将 trace 导出到 `127.0.0.1:4317`。 |
+
+master 构建接受 `g1`、`G1`、`zgc` 和 `ZGC`。
+上文下载的 1.7.0 启动脚本仅接受显式指定 `zgc` 或 `ZGC`；`-g g1`、`-g G1` 和其他参数会中止启动。
+默认路径请省略 `-g`；参数被拒绝时，查看 `logs/hugegraph-store-server.log`。
 
 守护进程模式：
 
@@ -303,9 +316,13 @@ JVM 内存方面，如果没有自行设置 `JAVA_OPTIONS`：`-Xms512m`，`-Xmx`
 
 当 `ulimit -n` 或 `ulimit -u` 低于 1024 时脚本会拒绝启动；在 x86_64 和 arm64 上，如果能成功下载并校验对应的动态库，脚本会预加载 jemalloc。
 
+主线构建中，每次可选 jemalloc 下载的连接时限为 5 秒，总时限为 30 秒。
+1.7.0 的下载 helper 没有连接或总时限。超时或校验失败时沿用已有回退路径，不预加载下载库并继续启动。
+校验有效的缓存库仍可复用，失败下载的临时文件会被清理。
+
 启动成功后，可以在 `logs/hugegraph-store-server.log` 中看到类似以下的日志：
 
-```
+```text
 YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started StoreNodeApplication in x.xxx seconds (JVM running for x.xxx)
 ```
 

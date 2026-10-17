@@ -18,7 +18,7 @@ description: "Task（任务管理）REST 接口:查询和管理异步任务的�
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks?status=success
 ```
 
@@ -56,7 +56,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks?status=succ
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2
 ```
 
@@ -90,9 +90,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2
 
 - force: 任务仍在运行时是否强制删除，默认为 false
 
+任务记录删除与删图是不同操作。图维护须遵守[图 API](/cn/docs/clients/restful-api/graphs/)中的停写和任务清理要求。
+
 ##### Method & Url
 
-```
+```text
 DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2
 ```
 
@@ -120,7 +122,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2
 
 ##### Method & Url
 
-```
+```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2?action=cancel
 ```
 
@@ -168,7 +170,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/2?action=ca
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/algorithm/page_rank
 ```
 
@@ -211,7 +213,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/algorithm/p
 
 ##### Method & Url
 
-```
+```text
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/computer/page_rank
 ```
 

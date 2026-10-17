@@ -1,11 +1,16 @@
 {{- /* Error documents describe whichever missing URL Apache serves them for, so
        they must not claim the generated /404.html URL as canonical or translated. */ -}}
 {{- if not (.Store.Get "tdIsErrorDocument") -}}
-  {{- $targets := partialCached "language-targets.html" . .Site.BaseURL .RelPermalink .Site.Language.Lang -}}
+  {{- $targets := where (partialCached "language-targets.html" . .Site.BaseURL .RelPermalink .Site.Language.Lang) "translated" true -}}
   {{- $outputFormat := lower (.Store.Get "tdOutputFormat" | default "html") -}}
+  {{- $canonical := .Permalink -}}
+  {{- if and (eq $outputFormat "html") (.Store.Get "tdBlogPaginated") -}}
+    {{- $canonical = .Paginator.URL | absURL -}}
+    {{- if gt .Paginator.PageNumber 1 }}{{ $targets = slice }}{{ end -}}
+  {{- end -}}
   {{- /* Print already receives the regular HTML URL as its canonical alternative. */ -}}
   {{- if ne $outputFormat "print" }}
-<link rel="canonical" href="{{ .Permalink }}">
+<link rel="canonical" href="{{ $canonical }}">
   {{- end }}
   {{- range $targets }}
 <link rel="alternate" hreflang="{{ .code }}" href="{{ .permalink }}">

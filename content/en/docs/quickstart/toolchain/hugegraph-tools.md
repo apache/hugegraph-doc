@@ -101,9 +101,22 @@ The above global variables can also be set through environment variables. One wa
 | --trust-store-file     | HUGEGRAPH_TRUST_STORE_FILE     | export HUGEGRAPH_TRUST_STORE_FILE=/tmp/trust-store |
 | --trust-store-password | HUGEGRAPH_TRUST_STORE_PASSWORD | export HUGEGRAPH_TRUST_STORE_PASSWORD=xxxx         |
 
+Both forms below count vertices in the same graph; choose either form. The example uses a local Server without authentication.
+For an authenticated Server, also provide the username and password described above.
+
+```bash {tab="CLI flags"}
+./bin/hugegraph --url http://127.0.0.1:8080 --graph hugegraph gremlin-execute --script 'g.V().count()'
+```
+
+```bash {tab="Environment variables"}
+export HUGEGRAPH_URL=http://127.0.0.1:8080
+export HUGEGRAPH_GRAPH=hugegraph
+./bin/hugegraph gremlin-execute --script 'g.V().count()'
+```
+
 Another way is to set the environment variable in the bin/hugegraph script:
 
-```
+```text
 #!/bin/bash
 
 # Set environment here if needed

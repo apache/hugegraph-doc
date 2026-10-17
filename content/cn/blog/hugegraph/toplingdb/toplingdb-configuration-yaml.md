@@ -2,7 +2,16 @@
 date: 2025-09-30
 title: "ToplingDB YAML configuration file"
 linkTitle: "ToplingDB的YAML配置文件"
+categories: [storage]
+tags: [ToplingDB, RocksDB]
+series: [toplingdb]
+series_weight: 2
 ---
+
+> **历史集成。** 2025 年的文章介绍较早的接口，保留供参考。
+> 候选替代方案见 [ToplingDB 开发版指南](/cn/docs/guides/toplingdb/)。
+> 开发版指南对应尚未发布的修改，请勿将其配置与这些历史示例混用。
+
 
 RocksDB 提供了丰富的参数配置，但大多数情况下，这些配置需要通过硬编码完成。
 

@@ -34,6 +34,12 @@
             },
             {
               "page": "/docs/quickstart/hugegraph/hugegraph-pd"
+            },
+            {
+              "page": "/docs/quickstart/hugegraph/hugegraph-helm"
+            },
+            {
+              "page": "/docs/quickstart/hugegraph/hugegraph-helm-operations"
             }
           ]
         },
@@ -241,6 +247,9 @@
         },
         {
           "page": "/docs/guides/toolchain-local-test"
+        },
+        {
+          "page": "/docs/guides/toplingdb"
         }
       ]
     },
@@ -414,6 +423,16 @@
             {
               "page": "/docs/quickstart/hugegraph/hugegraph-pd",
               "url": "/docs/quickstart/hugegraph/hugegraph-pd/",
+              "children": []
+            },
+            {
+              "page": "/docs/quickstart/hugegraph/hugegraph-helm",
+              "url": "/docs/quickstart/hugegraph/hugegraph-helm/",
+              "children": []
+            },
+            {
+              "page": "/docs/quickstart/hugegraph/hugegraph-helm-operations",
+              "url": "/docs/quickstart/hugegraph/hugegraph-helm-operations/",
               "children": []
             }
           ]
@@ -720,6 +739,11 @@
           "page": "/docs/guides/toolchain-local-test",
           "url": "/docs/guides/toolchain-local-test/",
           "children": []
+        },
+        {
+          "page": "/docs/guides/toplingdb",
+          "url": "/docs/guides/toplingdb/",
+          "children": []
         }
       ],
       "group": "develop"
@@ -929,6 +953,16 @@
       "@group/components",
       "/docs/quickstart/hugegraph/",
       "/docs/quickstart/hugegraph/hugegraph-pd/"
+    ],
+    "/docs/quickstart/hugegraph/hugegraph-helm/": [
+      "@group/components",
+      "/docs/quickstart/hugegraph/",
+      "/docs/quickstart/hugegraph/hugegraph-helm/"
+    ],
+    "/docs/quickstart/hugegraph/hugegraph-helm-operations/": [
+      "@group/components",
+      "/docs/quickstart/hugegraph/",
+      "/docs/quickstart/hugegraph/hugegraph-helm-operations/"
     ],
     "/docs/quickstart/toolchain/": [
       "@group/components",
@@ -1217,6 +1251,10 @@
       "@group/develop",
       "/docs/guides/toolchain-local-test/"
     ],
+    "/docs/guides/toplingdb/": [
+      "@group/develop",
+      "/docs/guides/toplingdb/"
+    ],
     "/docs/config/": [
       "@group/operate",
       "/docs/config/"
@@ -1386,7 +1424,9 @@
     ],
     "/docs/quickstart/hugegraph/": [
       "/docs/quickstart/hugegraph/hugegraph-hstore",
-      "/docs/quickstart/hugegraph/hugegraph-pd"
+      "/docs/quickstart/hugegraph/hugegraph-pd",
+      "/docs/quickstart/hugegraph/hugegraph-helm",
+      "/docs/quickstart/hugegraph/hugegraph-helm-operations"
     ],
     "/docs/quickstart/toolchain/": [
       "/docs/quickstart/toolchain/visualization",

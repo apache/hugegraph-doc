@@ -1,6 +1,11 @@
 ---
 title: "Blog"
 linkTitle: "Blog"
+icon: fa-solid fa-rss
+cascade:
+  images: [/img/social/hugegraph-apache.png]
+  reading_time: true
+  featured_image: wash
 ---
 
 Welcome to HugeGraph Blog!

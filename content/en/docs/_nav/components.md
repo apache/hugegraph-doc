@@ -5,9 +5,9 @@ description: "Start with HugeGraph, then explore toolchain, computing, and AI co
 manual_link: /docs/quickstart/hugegraph/
 sidebar_expanded: true
 search_exclude: true
-toc_hide: true
 pager: false
 build:
   render: link
   list: never
+icon: fa-solid fa-cubes
 ---

@@ -4,5 +4,6 @@ linkTitle: 关于
 layout: landing
 landing: about
 outputs: [HTML, print, markdown]
+icon: fa-solid fa-circle-info
 ---
 

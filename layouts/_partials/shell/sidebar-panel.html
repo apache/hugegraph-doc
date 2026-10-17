@@ -1,7 +1,6 @@
 {{- /* OINK override (reviewed against v1.1.0): the mobile Docs drawer owns global controls that
        disappear from the compact header and no longer repeat in the footer. */ -}}
 {{- $config := partialCached "shell/config.html" . .Site.Language.Lang -}}
-{{- $darkMode := partialCached "dark-mode-config.html" "dark-mode-global" -}}
 {{- $hasAlgolia := partialCached "search/algolia-enabled.html" . .Site.Language.Lang .Site.BaseURL -}}
 {{- $hasOnlineSearch := or .Site.Params.gcs_engine_id $hasAlgolia -}}
 {{- $localSearch := partial "shell/search-enabled.html" . -}}
@@ -70,15 +69,7 @@
     <section class="hg-shell-mobile-utils__group" aria-label="{{ T "ui_language_select" }}">
       {{ partial "language-selector.html" (dict "page" . "mode" "list" "class" "hg-shell-mobile-utils__languages") }}
     </section>
-    {{- if $darkMode.showMenu }}
-    <section class="hg-shell-mobile-utils__group" aria-label="{{ T "ui_theme_toggle" }}">
-      <div class="hg-shell-mobile-utils__links">
-        <button type="button" data-bs-theme-value="light" aria-pressed="false">{{ partialCached "shell/icon.html" "sun" "mobile-theme-light" }}<span>{{ T "ui_theme_light" }}</span></button>
-        <button type="button" data-bs-theme-value="dark" aria-pressed="false">{{ partialCached "shell/icon.html" "moon" "mobile-theme-dark" }}<span>{{ T "ui_theme_dark" }}</span></button>
-        <button type="button" data-bs-theme-value="auto" aria-pressed="false">{{ partialCached "shell/icon.html" "contrast" "mobile-theme-auto" }}<span>{{ T "ui_theme_auto" }}</span></button>
-      </div>
-    </section>
-    {{- end }}
+    {{ partial "shell/appearance-menu.html" (dict "page" . "context" "drawer" "class" "hg-shell-mobile-utils__appearance" "trigger" "td-site-nav__menu-link td-site-nav__menu-link--button" "label" (T "ui_appearance")) }}
     {{- with $config.projectRepo }}
     <a class="hg-shell-mobile-utils__github" href="{{ . }}" target="_blank" rel="noopener noreferrer">
       {{ partialCached "shell/icon.html" "github" "mobile-github" }}<span>GitHub</span>

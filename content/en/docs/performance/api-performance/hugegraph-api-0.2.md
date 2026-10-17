@@ -23,7 +23,7 @@ CPU                                          | Memory | 网卡
 - Backend Storage: Cassandra 3.10, deployed as a single node in the service.
 - Backend Configuration Modification: Modified two properties in the cassandra.yaml file, while keeping the rest of the options default:
 
-```
+```text
   batch_size_warn_threshold_in_kb: 1000
   batch_size_fail_threshold_in_kb: 1000
 ```

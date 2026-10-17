@@ -209,6 +209,8 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `HG_SERVER_USE_PD` | `false` | `rest-server.properties` 中的 `usePD` |
 | `HG_SERVER_CLUSTER` | `hg-test` | `rest-server.properties` 中的 `cluster` |
 | `HG_SERVER_REST_URL` | `http://0.0.0.0:8080`（镜像中已设置） | `restserver.url` |
+| `HG_SERVER_URLS_TO_PD` | `http://0.0.0.0:8080` | `server.urls_to_pd`：本 Server 注册到 PD 的地址列表（逗号分隔），代替 `restserver.url`；仅在 `server.deploy_in_k8s` 为 `true` 时生效；每个地址都要自带 `http://` 前缀，系统只会给第一个地址补上；其中的空白字符会被去除 |
+| `HG_SERVER_DEPLOY_IN_K8S` | `false` | `rest-server.properties` 中的 `server.deploy_in_k8s` |
 | `HG_SERVER_MIN_FREE_MEMORY` | `64`（MB） | `restserver.min_free_memory` |
 | `HG_SERVER_INIT_STORE_ENABLED` | `true` | `init_store.enabled`；元数据由存储侧管理的 PD/HStore 部署应设为 `false` |
 | `HG_SERVER_AUTH_TOKEN_SECRET` | 设置了 `PASSWORD` 时自动生成 | 两个配置文件中的 `auth.token_secret`，至少 32 字节 |
@@ -221,13 +223,26 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `HG_SERVER_PD_REST_ENDPOINT` | 由 `pd.peers` 把 `:8686` 改写为 `:8620` 得到 | `wait-storage.sh` 轮询的 PD REST 地址 |
 | `PD_AUTH_USER` | `store` | `wait-storage.sh` 访问 PD REST API 的 Basic 用户名 |
 | `PD_AUTH_PASSWORD` | 空 | PD REST Basic 密码；启用 PD REST 鉴权时须与 `HG_PD_AUTH_SECRET_KEY` 相同 |
-| `WAIT_PARTITION_TIMEOUT_S` | `120` | `wait-partition.sh` 等待分区分配的时长 |
+| `WAIT_PARTITION_TIMEOUT_S` | `120` | 分区轮询超时；包含下文修复的构建还会限制最终诊断 |
+
+包含鉴权属性修复的 master 镜像会保留显式签名密钥中的空格、反斜杠和 Unicode，各 Server 副本应使用同一密钥。
+如果旧镜像曾错误读取这类密钥，升级时应重新显式提供原本想使用的 `HG_SERVER_AUTH_TOKEN_SECRET`；仅复用旧配置仍会保留错误读取后的密钥。
+若实际生效的密钥改变，须重新登录获取 token。上文所述 1.7.0 镜像限制仍适用。
+
+旧镜像在初始化程序继承 C locale 时，可能错误初始化 Unicode 管理员密码。升级或再次设置 `PASSWORD` 不会修复已有账号存储的密码，
+须由仍可登录的管理员通过[用户 API](/cn/docs/clients/restful-api/auth/)修改。若已无可用管理员身份，本修复不提供自动恢复；应保留现有数据，安排账号恢复后再升级。
 
 > **已弃用的别名**：`BACKEND` → `HG_SERVER_BACKEND`、`PD_PEERS` → `HG_SERVER_PD_PEERS`
 
 `wait-storage.sh` 最多等待 300 秒直到出现状态为 `Up` 的 Store。该时长写死在脚本中，无法通过环境变量调整。
 
-`HG_SERVER_INIT_STORE_ENABLED` 只接受 `HugeConfig` 能识别的写法（忽略大小写）：`y`、`t`、`yes`、`on`、`true`、`n`、`f`、`no`、`off`、`false`。其他取值（包括 `0` 和 `1`）都会让入口脚本终止。
+在当前 master Server 构建中，HStore 启动时，分区轮询和最终
+`/v1/partitions` 诊断分别使用独立的 `WAIT_PARTITION_TIMEOUT_S` 预算。旧构建仅限制轮询时间，最终诊断请求没有超时。
+使用默认配置时，最终响应停滞会在 120 秒后超时；设为 `0` 会禁用 GNU timeout 的时限。
+入口脚本在等待 Java 进程前会先等待 `wait-partition.sh`。若 Java 进程在分区轮询阶段提前退出，轮询仍可能消耗完整超时预算后入口脚本才感知到退出；
+若轮询成功，后续的最终诊断也可能再次消耗完整的超时预算。信号触发的关闭仍可正常中断检查。
+
+`HG_SERVER_INIT_STORE_ENABLED` 和 `HG_SERVER_DEPLOY_IN_K8S` 只接受 `HugeConfig` 能识别的写法（忽略大小写）：`y`、`t`、`yes`、`on`、`true`、`n`、`f`、`no`、`off`、`false`。其他取值（包括 `0` 和 `1`）都会让入口脚本终止。
 
 入口脚本在初始化成功后写入 `docker/init_complete`，后续启动会跳过重新初始化，但仍会再执行一次 `bin/init-store.sh`，以便关闭状态下每次启动都重新校验配置。
 
@@ -293,7 +308,24 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 5. **数据在意料之外地保留了下来**：`docker compose down` 会保留命名卷。要同时删除该拓扑的数据，请使用 `docker compose down -v`
 
-**查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。单机镜像 `hugegraph/hugegraph` 设置了 `STDOUT_MODE=true`，其服务日志会输出到容器 stdout。`hugegraph/server`（HStore）镜像没有设置该变量，因此对 HStore 拓扑的 Server 执行 `docker logs` 只能看到入口脚本的输出，其余内容需在容器内查看 `logs/hugegraph-server.log`。
+**查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。基于当前 master 构建的 PD、Store 以及两个 Server 镜像（`hugegraph/hugegraph` 和 HStore 的
+`hugegraph/server`）都设置了 `STDOUT_MODE=true`，服务日志会输出到容器 stdout。对 Server 而言，Hadoop、ZooKeeper、SOFA、Netty 和 Commons 的 WARN 及以上日志也会输出到 stdout；Hadoop、Netty 和 Commons 的
+INFO 日志以及审计日志、慢查询日志仍只写入文件，ZooKeeper 和 SOFA 不输出 WARN 以下的日志。`/hugegraph-server/logs` 中包含 `hugegraph-server.log`、JVM
+崩溃日志（`hs_err_pid*.log`）和内存溢出时的堆转储（`heapdump_*/java_pid*.hprof`，每次启动一个目录，Server 及其启动的 JVM 分别写入各自的文件，除非某个 JVM 复用了同一次启动中先前的 PID；如果无法创建该目录，转储会直接写入
+`/hugegraph-server/logs`）。两个镜像都声明了 `VOLUME /hugegraph-server`，因此 `docker restart` 和 Compose 重新创建容器都会保留这些文件；`docker compose down` 会留下这个匿名卷，下一次 `up` 不会再挂载它，之后执行
+`down -v` 也不会删除它（请在 `down` 之前用 `docker inspect` 记下卷名，再用 `docker volume rm <name>` 删除；`docker volume prune` 会同时删除 Docker
+主机上所有其他未使用的匿名卷），所以请使用具名卷或绑定挂载来保留这些文件。Kubernetes 每次重启都会新建容器，因此需要在 `/hugegraph-server/logs` 挂载 `emptyDir` 或 PersistentVolumeClaim。请为每个 Pod 使用单独的卷，或在共享 PVC 上为每个
+Pod 使用单独的目录（`subPathExpr: $(POD_NAME)`，并通过 Downward API 从 `metadata.name` 传入 `POD_NAME`；Helm Chart 两者都没有设置）：崩溃文件的名字各不相同，但日志文件本身的名字是固定的。只有当存储支持多个节点同时读写挂载（通常是
+`ReadWriteMany`）时，不同节点上的 Pod 才能共享同一个 PVC；`ReadWriteOnce` 的 PVC 只能被一个节点读写挂载，否则请为每个 Pod 使用单独的 PVC。Helm Chart 目前还不会挂载日志卷。堆转储可能和 JVM 堆一样大，而且每次启动都会使用新目录，因此反复内存溢出的
+Server 会把卷写满；请按需要保留的转储数量规划卷大小，并确保不超过 `ephemeral-storage` 限制或 `emptyDir` 的 `sizeLimit`（被驱逐时 `emptyDir` 会连同转储一起删除），也不要使用 `medium: Memory`。存活探针失败后，容器最早可能在转储开始后约
+`(failureThreshold - 1) × periodSeconds + timeoutSeconds` 被重启，kubelet 最多再等待 `terminationGracePeriodSeconds`
+就会终止它；请让这段时间长于写入一次堆转储所需的时间，否则在写转储的过程中重启会留下不完整的文件。启动脚本从不删除转储或 `heapdump_*` 目录，因为 computer 任务的 JVM 可能在 Server 退出后仍在使用它；每次启动到 Java 阶段都会留下一个目录，除非发生内存溢出否则为空。在该次启动的
+HugeGraph JVM 都已退出后可以删除旧目录，但不要动正在运行的 Server 最新的那个目录。要对所有 JVM 关闭堆转储，请在容器的环境变量中设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`（可以使用 `docker run -e`，或在
+Compose 中 Server 服务的 `environment:` 里添加，自带的 Compose 文件没有设置它，或在 Kubernetes 中使用 `env`；只在宿主机 shell 中导出不会生效），这样会保留镜像默认的 `JAVA_OPTS`；把该参数加到 `JAVA_OPTS` 中只对 Server
+自身的 JVM 生效，而且会替换镜像默认值（`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`），需要把这些参数一并写上。
+
+> **版本范围**：上文描述的是基于当前 master 构建的镜像。1.7.0 及更早的镜像都没有设置 `STDOUT_MODE`，包括上文使用的单机镜像 `hugegraph/hugegraph:1.7.0`：`docker logs`
+> 只能看到入口脚本的输出，服务日志仍在容器内的 `logs/` 中（Server 为 `logs/hugegraph-server.log`）。
 
 ## 容器监控与健康检查
 
@@ -306,14 +338,18 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 现在，入口脚本直接监控 Java 进程：
 
 - **PD 和 Store 容器**：入口脚本向启动脚本传入 `-d false` 参数，启动脚本通过 `exec` 直接替换为 Java 进程。容器进程即为 Java 进程，当 Java 退出（崩溃或正常关闭）时，容器立即退出，Docker 的重启策略随即触发。
-- **Server 容器**：入口脚本使用 `tail --pid=$PID -f /dev/null` 阻塞，直到 Java 退出。`SIGTERM`/`SIGINT` 信号陷阱会将 `docker stop` 信号转发给 Java 并等待其正常关闭（退出码 0）。若 Java 崩溃，入口脚本以退出码 1 退出，从而触发重启策略。
+- **Server 容器**：入口脚本持有前台 launcher 并等待 Java。服务就绪后保留 Java 的实际退出码，包括 `0`、`42` 和 `SIGKILL` 对应的 `137`。
+  `SIGTERM` 和 `SIGINT` 请求协作关闭、回收持有的就绪/分区检查进程，并在关闭后分别返回 `143` 和 `130`。
 - 所有镜像中的 PID 1 均为 `dumb-init`，负责将 Docker 信号转发给入口脚本进程。
 
 ### Server 启动等待超时
 
-`HG_SERVER_STARTUP_TIMEOUT_S` 控制 Server 启动脚本等待 REST 服务响应的时长，未设置时默认 **120 秒**。取值必须是不带前导零的十进制整数，范围为 **1–86400 秒**。空字符串、`0`、负数、小数和超出范围的值都会使入口脚本记录错误并以退出码 `1` 退出。
+`HG_SERVER_STARTUP_TIMEOUT_S` 设置 Docker 入口脚本等待 REST 就绪的期限，未设置时默认 **120 秒**。取值必须是不带前导零的十进制整数，范围为 **1–86400 秒**。空字符串、`0`、负数、小数和超出范围的值都会使入口脚本记录错误并以退出码 `1` 退出。
 
-入口脚本通过 `bin/start-hugegraph.sh -t` 传入该值。如果 Server 在等待期限内未就绪，或进程提前退出，启动失败，容器以退出码 `1` 退出；配置的重启策略可能会重新启动容器。此时长不包括此前的存储初始化或等待后端就绪的时间。
+入口脚本也通过 `bin/start-hugegraph.sh -t` 传入该值；前台 launcher 本身等待 Java，不轮询 REST。
+启动期限失败、或 Java 在就绪前以 `0` 退出时，入口脚本返回 `1`；提前以非零码退出则保留该退出码。
+此时长不包括此前的存储初始化或等待后端就绪的时间。关闭时可以中断就绪和分区检查；启动期限失败会请求终止 Java 并返回，不增加无限等待。
+未响应终止请求的 Java 进程仍依靠容器终止完成最终清理。
 
 例如，在 HugeGraph 仓库的 `docker/` 目录下，将单机 Server 的启动等待时间增加到 300 秒（Compose 文件会将该变量传入容器）：
 

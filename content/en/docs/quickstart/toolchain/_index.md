@@ -2,6 +2,7 @@
 title: "HugeGraph ToolChain"
 linkTitle: "HugeGraph ToolChain"
 weight: 2
+icon: fa-solid fa-screwdriver-wrench
 ---
 
 HugeGraph Toolchain includes the Java and Go clients, Loader, Hubble, Tools, Spark Connector, and SeaTunnel Sink/Source. Choose an entry by the task you need to complete, then open the component guide for its configuration and commands.

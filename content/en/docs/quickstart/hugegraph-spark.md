@@ -15,7 +15,7 @@ HugeGraph-Spark connects HugeGraph with Spark GraphX. It reads data from HugeGra
 
 HugeGraph-Spark depends on HugeGraph Server; see [HugeGraph Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server) for installation. It also depends on Spark GraphX. The legacy example retained below uses Apache Spark 2.1.1.
 
-```
+```text
 wget https://archive.apache.org/dist/spark/spark-2.1.1/spark-2.1.1-bin-hadoop2.7.tgz
 tar -zxvf spark-2.1.1-bin-hadoop2.7.tgz
 cd spark-2.1.1-bin-hadoop2.7
@@ -23,7 +23,7 @@ cd spark-2.1.1-bin-hadoop2.7
 
 Then copy the HugeGraph-Spark JAR into Spark's `jars` directory:
 
-```
+```text
 cp {dir}/hugegraph-spark-0.9.0.jar jars
 ```
 

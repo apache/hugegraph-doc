@@ -21,7 +21,7 @@ categories: basic metrics, statistical metrics, system metrics, and backend stor
 
 ##### 1.1.1 Method & Url
 
-```
+```text
 http://localhost:8080/metrics/?type=json
 ```
 
@@ -446,7 +446,7 @@ http://localhost:8080/metrics/?type=json
 
 ##### 1.1.2 Method & Url
 
-```
+```text
 http://localhost:8080/metrics/
 
 ```
@@ -519,7 +519,7 @@ org_apache_hugegraph_backend_cache_Cache_schema_name_hugegraph_size 17
 
 ##### Method & Url
 
-```
+```text
 http://localhost:8080/metrics/gauges
 
 ```
@@ -706,7 +706,7 @@ http://localhost:8080/metrics/gauges
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/counters
 
 ```
@@ -782,7 +782,7 @@ GET http://localhost:8080/metrics/counters
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/gauges
 
 ```
@@ -921,7 +921,7 @@ GET http://localhost:8080/metrics/gauges
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/meters
 
 ```
@@ -983,7 +983,7 @@ GET http://localhost:8080/metrics/meters
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/timers
 
 ```
@@ -1049,7 +1049,7 @@ GET http://localhost:8080/metrics/timers
 
 ##### 2.1 Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/statistics
 ```
 
@@ -1156,7 +1156,7 @@ metrics_system_GET{name=TOTAL_REQUEST,
 
 ##### 2.2 Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/statistics?type=json
 ```
 
@@ -1228,7 +1228,7 @@ System metrics mainly return the machine metrics, such as memory, threads, and o
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/system
 ```
 
@@ -1292,7 +1292,7 @@ information.
 
 ##### Method & Url
 
-```
+```text
 GET http://localhost:8080/metrics/backend
 ```
 

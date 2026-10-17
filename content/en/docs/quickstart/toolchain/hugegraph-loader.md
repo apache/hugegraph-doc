@@ -27,6 +27,10 @@ It will be explained in detail below.
 
 > Note: HugeGraph-Loader requires HugeGraph Server service, please refer to [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server) to download and start Server
 
+> **Concurrency protection:** starting with HugeGraph 1.8.0, ordinary imports acquire same-Server ownership protection
+> (requires a Server whose `GET .../mode/owners` returns `protocol: 1` and a matching Loader; current `master` does not include it yet).
+> Older Servers retain the legacy import behavior described below.
+
 > **Testing Guide**: For running HugeGraph-Loader tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/toolchain-local-test)
 
 ### 2 Get HugeGraph-Loader
@@ -164,7 +168,7 @@ TEXT is a text file with custom delimiters, the first line is usually the header
 
 An example is as follows:
 
-```
+```text
 id|name|lang|price|ISBN
 1|lop|java|328|ISBN978-7-107-18618-5
 2|ripple|java|199|ISBN978-7-100-13678-5
@@ -172,7 +176,7 @@ id|name|lang|price|ISBN
 
 CSV is a TEXT file with commas `,` as delimiters. When a column value itself contains a comma, the column value needs to be enclosed in double quotes, for example:
 
-```
+```text
 marko,29,Beijing
 "li,nary",26,"Wu,han"
 ```
@@ -198,17 +202,17 @@ However, the requirements for the table structure are relatively strict at prese
 
 For example, Suppose there are three tables, person, software and created
 
-```
+```text
 // person schema
 id | name | age | city
 ```
 
-```
+```text
 // software schema
 id | name | lang | price
 ```
 
-```
+```text
 // created schema
 id | p_id | s_id | date
 ```
@@ -863,18 +867,42 @@ The import process is controlled by commands submitted by the user, and the user
 | `--scheduler-type`                       | distributed |      | The task scheduler type when creating graph if not exists          |
 | `--batch-failure-fallback`               | true        |      | Whether to fallback to single insert when batch insert fails       |
 
-> The loader prints its usage and exits when it is given fewer than three arguments, so `-f struct.json` on its own is not enough.
+The mapping file option `--file` (`-f`) is required; other options use their defaults. A valid minimal invocation is:
+
+```bash
+bin/hugegraph-loader.sh --file struct.json
+```
+
+The launcher also accepts JCommander's native `@file` syntax. Put each option and value on separate lines in `loader.args`:
+
+```text
+--file
+struct.json
+```
+
+```bash
+bin/hugegraph-loader.sh @loader.args
+```
+
+This is equivalent to the minimal invocation above. Relative path values resolve from the Loader process working directory.
+If the argument file contains credentials, restrict it to mode `0600` with `chmod 0600 loader.args`.
+The `@file` form keeps credential values out of process arguments.
+Loader must be able to create and write the mapping-prefix directory used for progress output.
+Copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable volume before running Loader.
 
 ##### 3.4.2 Breakpoint Continuation Mode
 
 Usually, the Loader task takes a long time to execute. If the import interrupt process exits for some reason, and next time you want to continue the import from the interrupted point, this is the scenario of using breakpoint continuation.
 
-The user sets the command line parameter --incremental-mode to true to open the breakpoint resume mode. The key to breakpoint continuation lies in the progress file. When the import process exits, the import progress at the time of exit will be recorded.
-Recorded in the progress file, the progress file is located in the `${struct}` directory, the file name is like `load-progress_${timestamp}`, ${struct} is the prefix of the mapping file, and ${timestamp} is the start of the import
-moment, formatted as `yyyyMMdd-HHmmss`. For example, for an import task started at `2019-10-10 12:30:30`, the mapping file used is `struct-example.json`, then the path of the progress file is the same as struct-example.json
-Sibling `struct-example/load-progress_20191010-123030`. When the directory holds several progress files, the resumed import reads the last one in name order, which is the most recent one.
+Set `--incremental-mode` to `true` to resume from a progress file. Loader records progress when it closes normally after a successful import
+or a normal stop; an unexpected failure may prevent this write.
+The progress file is in `${struct}` and named `load-progress_${timestamp}`, where `${struct}` is the mapping-file prefix and `${timestamp}` is the
+import start time, formatted as `yyyyMMdd-HHmmss`. For example, an import started at `2019-10-10 12:30:30` with mapping file `struct-example.json`
+writes `struct-example/load-progress_20191010-123030`. When the directory holds several progress files, the resumed import reads the last one in name
+order, which is the most recent one.
 
-> Note: The generation of progress files is independent of whether --incremental-mode is turned on or not, and a progress file is generated at the end of each import.
+> Note: A progress file is written after a successful import or a normal stop (including an error limit), regardless of `--incremental-mode`
+> or `--print-progress`. An import aborted by an unexpected failure may not write one.
 
 If the data file formats are all legal and the import task is stopped by the user (CTRL + C or kill, kill -9 is not supported), that is to say, if there is no error record, the next import only needs to be set to 
 Continue for the breakpoint.
@@ -961,6 +989,44 @@ bin/hugegraph-loader.sh \
 ```
 
 Expected result: two vertices and zero edges imported. This example uses dedicated schema names to avoid conflicts with a preloaded `person` label. In Hubble, run `g.V().hasLabel('docs_smoke_person').values('docs_name')` to confirm `docs-smoke-alice` and `docs-smoke-bob`.
+
+#### 3.4.6 Concurrent imports and LOADING ownership {#loading-ownership}
+
+Starting with HugeGraph 1.8.0, Loader supports concurrent import protection via the LOADING ownership protocol
+(requires a Server whose `GET .../mode/owners` returns `protocol: 1` and a matching Loader; current `master` does not include it yet).
+
+```mermaid
+graph TD
+    A["Graph Mode: NONE"] -->|First Loader acquires owner| B["LOADING Mode (Acquires Token)"]
+    B -->|Concurrent Loaders join| B
+    B -->|Loader finishes & releases| B
+    B -->|Last Loader releases| C["Restores to NONE"]
+    B -.->|Abnormal exit / kill -9| D["Manual Release / Recovery / Restart"]
+    D -.->|"Last owner released, or recover/restart"| A
+    D -.->|"Other owners still active"| B
+```
+
+1. **Probe and Acquire**: Loader probes `/mode/owners`. The first Loader obtains an ownership handle (`instance/epoch/token`),
+   transitioning graph mode from `NONE` to `LOADING`; concurrent Loaders can join.
+2. **Data Import**: Loaders holding valid handles execute concurrent imports while preserving `LOADING` mode.
+3. **Graceful Release**: When an import completes, Loader drains its workers and releases its handle. When the last owner releases,
+   graph mode automatically returns to `NONE`.
+4. **Failure Recovery**: If abnormal exit (e.g. `kill -9`) leaves an orphaned owner, stop and drain all related imports and graph writes,
+   then perform administrator recovery via the [RESTful API recovery endpoint](/docs/clients/restful-api/graphs/#loading-ownership) or
+   restart the Server. Manual `release` applies only when the caller still holds its token (e.g. a direct REST client).
+{.steps}
+
+> [!NOTE]
+> **Compatibility and Operational Notes**
+> - **Legacy Compatibility**: During ordinary imports, only an unsupported-route `404` status on `/mode/owners` falls back to the legacy enum
+>   `LOADING`/`NONE` flow (maintains compatibility with Server 1.7, without multi-loader protection).
+>   Network or permission errors, or a `404` for a missing graph, do not trigger fallback.
+> - **Restore and Graph Source Imports**: Retain the `RESTORING` flow without ownership probes or automatic resets. After a restore import completes,
+>   manually reset graph mode to `NONE` before starting ordinary imports.
+>   Do not run restore, graph-source, Spark connector, or older Loader imports while owned imports are active.
+> - **Scope & Lifecycle**: Ownership is bound to the target Server instance without cross-node synchronization or automatic lease expiry.
+>   For embedded programmatic integrations, callers must invoke `HugeGraphLoader.shutdown()` to attempt a single graceful release. If release
+>   fails, the handle is not retried; the owner may remain active on the Server, and the administrator recovery step above may be required.
 
 ### 4 Complete example
 
@@ -1256,7 +1322,7 @@ sh bin/hugegraph-spark-loader.sh --master yarn \
 
 `bin/get-params.sh` splits the command line: only the options below are handed to the loader, every other argument is passed to `spark-submit` unchanged. The splitter matches long option names only, so short forms such as `-f` and `-g` are not recognised.
 
-```
+```text
 --graph --schema --host --port --username --token --protocol
 --trust-store-file --trust-store-password --clear-all-data --clear-timeout
 --incremental-mode --failure-mode --batch-insert-threads --single-insert-threads

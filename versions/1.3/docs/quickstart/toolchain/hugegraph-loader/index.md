@@ -791,6 +791,7 @@ The import process is controlled by commands submitted by the user, and the user
 | `--print-progress`        | true          |                 | Whether to print the number of imported items in the console in real time                                                                                                                 |
 | `--dry-run`               | false         |                 | Turn on this mode, only parsing but not importing, usually used for testing                                                                                                               |
 | `--help`                  | false         |                 | print help information                                                                                                                                                                    |
+{.td-table--wide}
 
 ##### 3.4.2 Breakpoint Continuation Mode
 

@@ -95,6 +95,7 @@ Usage: hugegraph [options] [command] [command options]
 | --timeout              | HUGEGRAPH_TIMEOUT              | export HUGEGRAPH_TIMEOUT=30                        |
 | --trust-store-file     | HUGEGRAPH_TRUST_STORE_FILE     | export HUGEGRAPH_TRUST_STORE_FILE=/tmp/trust-store |
 | --trust-store-password | HUGEGRAPH_TRUST_STORE_PASSWORD | export HUGEGRAPH_TRUST_STORE_PASSWORD=xxxx         |
+{.td-table--wide}
 
 另一种方式是在 bin/hugegraph 脚本中设置环境变量：
 

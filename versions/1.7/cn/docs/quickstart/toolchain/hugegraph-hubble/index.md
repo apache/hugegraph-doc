@@ -572,3 +572,4 @@ HugeGraph-Hubble 可以通过 `conf/hugegraph-hubble.properties` 文件进行配
 | `gremlin.vertex_degree_limit` | `100` | 显示的最大顶点度数 |
 | `gremlin.edges_total_limit` | `500` | 返回的最大边数 |
 | `gremlin.batch_query_ids` | `100` | ID 批量查询大小 |
+{.td-table--wide}

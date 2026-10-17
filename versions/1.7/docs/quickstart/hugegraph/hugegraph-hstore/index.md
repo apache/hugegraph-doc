@@ -89,6 +89,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | No | `8500` | gRPC server port |
 | `HG_STORE_REST_PORT` | No | `8520` | REST API port |
 | `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | Data storage path |
+{.td-table--wide}
 
 > **Note**: In Docker bridge networking, use container hostnames (e.g. `store0`) for `HG_STORE_GRPC_HOST` instead of IP addresses.
 

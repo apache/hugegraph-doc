@@ -860,6 +860,7 @@ schema: 必填
 | `--serializer`                          | binary      |      | 自动创建图（如果不存在）时的序列化器类型                                              |
 | `--scheduler-type`                      | distributed |      | 自动创建图（如果不存在）时的任务调度器类型                                             |
 | `--batch-failure-fallback`              | true        |      | 批量插入失败时是否回退至单条插入模式                                                |
+{.td-table--wide}
 ##### 3.4.2 断点续导模式
 
 通常情况下，Loader 任务都需要较长时间执行，如果因为某些原因导致导入中断进程退出，而下次希望能从中断的点继续导，这就是使用断点续导的场景。

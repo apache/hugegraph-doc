@@ -100,6 +100,7 @@ Usage: hugegraph [options] [command] [command options]
 | --timeout              | HUGEGRAPH_TIMEOUT              | export HUGEGRAPH_TIMEOUT=30                        |
 | --trust-store-file     | HUGEGRAPH_TRUST_STORE_FILE     | export HUGEGRAPH_TRUST_STORE_FILE=/tmp/trust-store |
 | --trust-store-password | HUGEGRAPH_TRUST_STORE_PASSWORD | export HUGEGRAPH_TRUST_STORE_PASSWORD=xxxx         |
+{.td-table--wide}
 
 下面两种写法查询同一个图的顶点总数，可按使用习惯任选一种。示例使用未启用鉴权的本地 Server；已启用鉴权时还需提供上述用户名和密码。
 

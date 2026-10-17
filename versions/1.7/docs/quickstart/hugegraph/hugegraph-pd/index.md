@@ -91,6 +91,7 @@ docker run -d \
 | `HG_PD_REST_PORT` | No | `8620` | REST API port |
 | `HG_PD_DATA_PATH` | No | `/hugegraph-pd/pd_data` | Metadata storage path |
 | `HG_PD_INITIAL_STORE_COUNT` | No | `1` | Minimum stores required for cluster availability |
+{.td-table--wide}
 
 > **Note**: In Docker bridge networking, use container hostnames (e.g. `pd0`) for `HG_PD_GRPC_HOST` and `HG_PD_RAFT_ADDRESS` instead of IP addresses.
 

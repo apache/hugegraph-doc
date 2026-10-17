@@ -1474,6 +1474,7 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `HG_PD_DATA_PATH` | 否 | `/hugegraph-pd/pd_data` | `pd.data-path` |
 | `HG_PD_INITIAL_STORE_COUNT` | 否 | `1` | `pd.initial-store-count` |
 | `HG_PD_AUTH_SECRET_KEY` | 是（当前主线 Docker） | 无 | `auth.secret-key`；PD REST Basic 密码，也供 Server 与 Hubble 使用 |
+{.td-table--wide}
 
 > **已弃用的别名**：`GRPC_HOST` → `HG_PD_GRPC_HOST`、`RAFT_ADDRESS` → `HG_PD_RAFT_ADDRESS`、`RAFT_PEERS` → `HG_PD_RAFT_PEERS_LIST`、`PD_INITIAL_STORE_LIST` → `HG_PD_INITIAL_STORE_LIST`。只有当新名称未设置时才会把旧名称映射过去，并打印一条警告日志。任一必填变量缺失时，入口脚本以退出码 2 退出。
 
@@ -1487,6 +1488,7 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` |
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` |
+{.td-table--wide}
 
 > **已弃用的别名**：`PD_ADDRESS` → `HG_STORE_PD_ADDRESS`、`GRPC_HOST` → `HG_STORE_GRPC_HOST`、`RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`
 
@@ -1516,6 +1518,7 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `PD_AUTH_USER` | `store` | `wait-storage.sh` 访问 PD REST API 的 Basic 用户名 |
 | `PD_AUTH_PASSWORD` | 空 | PD REST Basic 密码；启用 PD REST 鉴权时须与 `HG_PD_AUTH_SECRET_KEY` 相同 |
 | `WAIT_PARTITION_TIMEOUT_S` | `120` | 分区轮询超时；包含下文修复的构建还会限制最终诊断 |
+{.td-table--wide}
 
 包含鉴权属性修复的 master 镜像会保留显式签名密钥中的空格、反斜杠和 Unicode，各 Server 副本应使用同一密钥。
 如果旧镜像曾错误读取这类密钥，升级时应重新显式提供原本想使用的 `HG_SERVER_AUTH_TOKEN_SECRET`；仅复用旧配置仍会保留错误读取后的密钥。
@@ -1552,6 +1555,7 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `HUGEGRAPH_ADMIN_PASSWORD` | （无） | 以 `PASSWORD` 传给 Server |
 | `HUGEGRAPH_AUTH_TOKEN_SECRET` | （无） | 当前主线 Compose 以 `HG_SERVER_AUTH_TOKEN_SECRET` 传给 Server；1.7.0 镜像不读取该变量 |
 | `HG_PD_AUTH_SECRET_KEY` | （无） | HStore 拓扑 PD REST Basic 密码；由 Compose 传给 PD 和 Server，并用于生成 Hubble 本地配置 |
+{.td-table--wide}
 
 ## 端口参考
 
@@ -1833,6 +1837,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` | gRPC 服务端口。 |
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` | REST API 端口。 |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` | 数据存储路径。 |
+{.td-table--wide}
 
 当前主线 entrypoint 将这些变量写入 `SPRING_APPLICATION_JSON`，覆盖镜像内 `conf/application.yml`；其余配置仍从该文件和 `application-pd.yml` 读取，然后以前台方式启动 Java。旧变量 `PD_ADDRESS`、`GRPC_HOST`、`RAFT_ADDRESS` 仍可用，但会输出弃用警告。
 
@@ -1872,6 +1877,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `grpc.netty-server.max-inbound-message-size` | `1000MB` | gRPC 默认值 | 单个入站 gRPC 消息的最大大小，由 `grpc-spring-boot-starter` 的 Netty 服务端读取。 |
 | `grpc.server.wait-time` | 未设置 | `3600` | 扫描流等待客户端消费一页数据的秒数，超时后服务端中止该流。 |
 | `server.port` | `8520` | 必填 | REST 和 Actuator 端口，同时以 `rest.port` 标签上报给 PD。 |
+{.td-table--wide}
 
 **Raft**
 
@@ -1890,6 +1896,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `raft.maxEntriesSize` | 未设置 | `256` | 单次 `AppendEntries` 请求包含的最大条目数。 |
 | `raft.maxBodySize` | 未设置 | `524288` | 单次 `AppendEntries` 请求的最大字节数。 |
 | `ave-logEntry-size-ratio` | 未设置 | `0.95` | 估算日志条目平均大小时的平滑系数。注意该配置项位于顶层，不在 `raft` 下。 |
+{.td-table--wide}
 
 **存储与标签**
 
@@ -1900,6 +1907,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `app.fake-pd` | 未设置 | `false` | 内置 PD 模式，仅用于单机测试，不要用于生产。 |
 | `app.placeholder-size` | 未设置 | `10` | 启动时在每个数据路径下创建的 `placeholder` 占位文件大小，单位 GB，便于紧急情况下释放空间。设为 `0` 关闭。 |
 | `app.label.<name>` | 未设置 | 无 | 随 store 心跳上报给 PD 的自定义键值标签。节点会自动追加 `rest.port`。 |
+{.td-table--wide}
 
 **RocksDB**
 
@@ -1909,6 +1917,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `rocksdb.write_buffer_size` | `32000000` | `33554432` | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`。 |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | 落盘前合并的 memtable 数量。 |
 | `rocksdb.write_buffer_ratio` | 未设置 | `0.66` | `total_memory_size` 中分配给写缓存的比例，其余作为 block cache。 |
+{.td-table--wide}
 
 `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` 中定义的其他选项都可以加在同一个 `rocksdb:` 块下，例如 `rocksdb.max_background_jobs`、`rocksdb.level0_file_num_compaction_trigger` 或 `rocksdb.bloom_filter_bits_per_key`。
 
@@ -1922,6 +1931,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `thread.pool.scan.core` | `128` | 处理扫描的核心线程数。设为 `0` 时取 CPU 核数的 4 倍。 |
 | `thread.pool.scan.max` | `1000` | 扫描最大线程数。 |
 | `thread.pool.scan.queue` | `0` | 扫描任务队列容量。 |
+{.td-table--wide}
 
 **gRPC 回调队列（1.8.0）**
 
@@ -1940,6 +1950,7 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 | `query.push-down.fetch_timeout` | `300000` | 拉取超时时间，单位毫秒。 |
 | `query.push-down.memory_limit_count` | `50000` | 排序等内存操作的行数上限。 |
 | `query.push-down.index_size_limit_count` | `50000` | 索引 sst 文件大小上限，单位 kB。 |
+{.td-table--wide}
 
 **后台任务**
 
@@ -1953,6 +1964,7 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 | `job.uninterruptibleThreadPool.queue` | `2147483647` | 不可中断任务线程池的队列容量。 |
 | `job.cleaner.batch.size` | `10000` | TTL 清理任务每批删除的 key 数量。 |
 | `job.start-time` | `0` | 每日 TTL 清理执行的小时数（0 到 23）。超出该范围时回退为 19。 |
+{.td-table--wide}
 
 **内置 PD 模式**
 
@@ -1964,6 +1976,7 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 | `fake-pd.peers-list` | `''` | 同一批节点的 Raft 地址。 |
 | `fake-pd.partition-count` | `3` | 分区数量。 |
 | `fake-pd.shard-count` | `3` | 每个分区的副本数。 |
+{.td-table--wide}
 
 **诊断**
 
@@ -2398,7 +2411,7 @@ docker run -d \
 | `HG_PD_DATA_PATH` | 否 | `/hugegraph-pd/pd_data` | `pd.data-path` | 元数据存储路径。 |
 | `HG_PD_INITIAL_STORE_COUNT` | 否 | `1` | `pd.initial-store-count` | 集群可用所需的最小 Store 数量。 |
 | `HG_PD_ACTUATOR_EXPOSURE` | 否 | `health,metrics,prometheus` | `management.endpoints.web.exposure.include` | 公开的 Actuator 端点白名单；不允许设置为 `*`。 |
-{.hg-pd-env}
+{.td-table--wide}
 
 当前主线 entrypoint 要求以上五个必填变量，生成 `SPRING_APPLICATION_JSON` 覆盖项后再启动 PD；其他配置继续从镜像内的 `conf/application.yml` 读取。`JAVA_OPTS` 会透传给 JVM。旧变量 `GRPC_HOST`、`RAFT_ADDRESS`、`RAFT_PEERS`、`PD_INITIAL_STORE_LIST` 仍可用，但会输出弃用警告。
 
@@ -2421,6 +2434,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 | `grpc.host` | `127.0.0.1` | 无，必填 | 本 PD 对外公布的 gRPC 地址。Store 和 Server 会连到这个地址，因此分布式部署时必须填可访问的 IPv4 地址或主机名，不能用 `127.0.0.1` 或 `0.0.0.0`。 |
 | `grpc.port` | `8686` | 无，必填 | gRPC 端口。 |
 | `server.port` | `8620` | 无，必填 | REST API 端口，同时也是 Raft 成员信息中公布的 REST 端口。 |
+{.td-table--wide}
 
 `application.yml.template` 中还有 `grpc.netty-server.max-inbound-message-size: 100MB`，但 PD 在代码中把 gRPC 服务端的入站消息上限固定为 1 GB，该配置项实际不生效。
 
@@ -2434,6 +2448,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 | `raft.ip-whitelist.enabled` | 未设置 | `true` | 为 true 时 Raft RPC 端口只接受由 `raft.peers-list` 解析出的地址的连接，其他连接会被断开并记录 `Blocked connection from <ip>`。peer 列表变更时白名单会重新解析，但主机名不变而 IP 变化的情况（例如容器重启）仍需重启 PD。 |
 | `raft.snapshotInterval` | 未设置 | `300` | Raft 快照生成间隔（秒）。 |
 | `raft.rpc-timeout` | 未设置 | `10000` | Raft RPC 的连接、请求和安装快照超时时间（毫秒）。 |
+{.td-table--wide}
 
 **PD 核心**
 
@@ -2444,6 +2459,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 | `pd.initial-store-count` | `1` | `3` | 活跃 Store 节点的最小数量。低于该值时集群状态变为 `Cluster_Not_Ready`，整个集群视为不可用。建议设为实际部署的 Store 数量。 |
 | `pd.initial-store-list` | `127.0.0.1:8500` | 空 | 逗号分隔的 Store gRPC 地址（`ip:port`），列表中的 Store 注册后自动激活。条目也可以带分组 id，写作 `store_address/group_id`。 |
 | `pd.cluster_id` | 未设置 | `1` | 集群 id，用于区分不同的 PD 集群。 |
+{.td-table--wide}
 
 **Store 管理**
 
@@ -2454,6 +2470,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 | `store.monitor_data_enabled` | `true` | `false` | 是否持久化 Store 监控采样数据。 |
 | `store.monitor_data_interval` | `1 minute` | `1 minute` | 采样间隔，格式为 `<数字> <单位>`，单位为 `second`、`minute`、`hour`、`day`、`month`、`year` 之一；省略数字时按 1 计。 |
 | `store.monitor_data_retention` | `1 day` | `1 day` | 监控数据保留时长，格式同上。 |
+{.td-table--wide}
 
 **分区**
 
@@ -2461,6 +2478,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 |--------|--------------|------------|------|
 | `partition.default-shard-count` | `1` | `3` | 每个分区的副本数。生产集群建议设为 `3`。 |
 | `partition.store-max-shard-count` | `12` | `24` | 单个 Store 最多承载的分区副本数。 |
+{.td-table--wide}
 
 初始分区数由这两个配置项和 `pd.initial-store-list` 的长度推导得出：
 
@@ -2479,6 +2497,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 | `management.metrics.export.prometheus.enabled` | `true` | Spring Boot 默认值 | 是否暴露 `/actuator/prometheus`。 |
 | `management.endpoints.web.exposure.include` | `health,metrics,prometheus` | Spring Boot 默认只暴露 `health` | Actuator 暴露白名单；这些端点不经过 PD REST Basic 拦截器。 |
 | `logging.config` | `file:./conf/log4j2.xml` | 无 | Log4j2 配置文件，会写出 `logs/hugegraph-pd.log`、`logs/hugegraph-pd_raft.log` 和 `logs/audit-hugegraph-pd.log`。 |
+{.td-table--wide}
 
 **线程池**
 
@@ -2490,6 +2509,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 | `job.uninterruptibleThreadPool.core` | `0` | 元数据后台任务线程池的核心线程数。小于等于 0 时取可用处理器数的一半。 |
 | `job.uninterruptibleThreadPool.max` | `256` | 该线程池的最大线程数。 |
 | `job.uninterruptibleThreadPool.queue` | 无上限 | 该线程池的队列容量。 |
+{.td-table--wide}
 
 #### 4.2 单节点配置
 
@@ -2910,7 +2930,7 @@ helm install hugegraph ./hugegraph-helm -n hugegraph \
 
 解压后目录为 `hugegraph-helm/`，源码目录仍为 `helm/hugegraph/`。
 
-```filetree {.hg-filetree-notes title="HugeGraph Helm 核心文件与结构"}
+```filetree {wrap=true title="HugeGraph Helm 核心文件与结构"}
 hugegraph-helm/
   Chart.yaml            # Chart 元数据与版本定义
   values.yaml           # 默认配置（easy 模式：3 PD + 3 Store + 3 Server + 1 Hubble，NodePort 入口）
@@ -3835,6 +3855,7 @@ Compose 部署修改上文生成的宿主机 `docker/conf/hubble/hstore.local.pr
 | `operations.pd.username` / `operations.pd.password` | 用户名 `hubble`，密码为空 | 与 PD 运维 REST 认证匹配。 |
 | `operations.store.username` / `operations.store.password` | 用户名 `hubble`，密码为空 | 上游 Store REST 启用认证时配置对应服务账号。 |
 | `operations.store.allowed_targets` | `[http://127.0.0.1:8520,http://[::1]:8520]` | 列出信任的 Store 指标来源。 |
+{.td-table--wide}
 
 例如容器中的 Store 上报 `store:8520`，将白名单配置为：
 
@@ -4756,6 +4777,7 @@ GRAPH 输入源从另一个 HugeGraph 图（通过 HugeGraph-PD 访问）读取�
 | `--serializer`                          | binary      |      | 自动创建图（如果不存在）时的序列化器类型                                              |
 | `--scheduler-type`                      | distributed |      | 自动创建图（如果不存在）时的任务调度器类型                                             |
 | `--batch-failure-fallback`              | true        |      | 批量插入失败时是否回退至单条插入模式                                                |
+{.td-table--wide}
 
 映射文件选项 `--file`（`-f`）是必填项，其他选项使用默认值。有效的最简调用为：
 
@@ -5565,6 +5587,7 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 | `check_vertex` | 写边时检查端点，本文的边任务设为 `true` |
 | [`batch_failure_fallback`](https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/)<sup>[2]</sup> | 默认 `true`，批量失败后逐条重试，最多跳过 `max_insert_errors` 条失败记录；本文示例显式设为 `false`，让批量失败直接终止任务 |
 | `max_insert_errors` | 逐条回退时允许跳过的失败记录数；默认 `500`，`-1` 表示不限制，仅在开启 `batch_failure_fallback` 时生效 |
+{.td-table--wide}
 
 遇到问题时可按下面检查：
 
@@ -6020,6 +6043,7 @@ Usage: hugegraph [options] [command] [command options]
 | --timeout              | HUGEGRAPH_TIMEOUT              | export HUGEGRAPH_TIMEOUT=30                        |
 | --trust-store-file     | HUGEGRAPH_TRUST_STORE_FILE     | export HUGEGRAPH_TRUST_STORE_FILE=/tmp/trust-store |
 | --trust-store-password | HUGEGRAPH_TRUST_STORE_PASSWORD | export HUGEGRAPH_TRUST_STORE_PASSWORD=xxxx         |
+{.td-table--wide}
 
 下面两种写法查询同一个图的顶点总数，可按使用习惯任选一种。示例使用未启用鉴权的本地 Server；已启用鉴权时还需提供上述用户名和密码。
 
@@ -7947,6 +7971,7 @@ HugeGraph-Computer 核心作业设置。
 | job.workers_count | 1 | 执行一个图算法作业的 Worker 数量。在 K8s 中由 Operator 设置。 |
 | job.partitions_count | 1 | 执行一个图算法作业的分区数量。 |
 | job.partitions_thread_nums | 4 | 分区并行计算的线程数量。 |
+{.td-table--wide}
 
 ---
 
@@ -7959,6 +7984,7 @@ HugeGraph-Computer 核心作业设置。
 | algorithm.params_class | `ComputerOptions.Null` 占位类 | 必填。用于在算法运行前传递算法参数的类。 |
 | algorithm.result_class | `ComputerOptions.Null` 占位类 | 顶点值的类，用于存储顶点的计算结果。 |
 | algorithm.message_class | `ComputerOptions.Null` 占位类 | 计算顶点时传递的消息类。 |
+{.td-table--wide}
 
 ---
 
@@ -7973,6 +7999,7 @@ HugeGraph-Computer 核心作业设置。
 | input.source_type | hugegraph-server | 加载输入数据的源类型,允许值:['hugegraph-server', 'hugegraph-loader']。'hugegraph-loader' 表示使用 hugegraph-loader 从 HDFS 或文件加载数据。如果使用 'hugegraph-loader',请配置 'input.loader_struct_path' 和 'input.loader_schema_path'。 |
 | input.loader_struct_path | "" (空) | Loader 输入的结构路径，仅在 `input.source_type=hugegraph-loader` 时生效。 |
 | input.loader_schema_path | "" (空) | Loader 输入的 Schema 路径，仅在 `input.source_type=hugegraph-loader` 时生效。 |
+{.td-table--wide}
 
 #### 3.2 输入分片
 
@@ -7982,6 +8009,7 @@ HugeGraph-Computer 核心作业设置。
 | input.split_max_splits | 10000000 | 最大输入分片数量。 |
 | input.split_page_size | 500 | 流式加载输入分片数据的页面大小。 |
 | input.split_fetch_timeout | 300 | 获取输入分片的超时时间(秒)。 |
+{.td-table--wide}
 
 #### 3.3 输入处理
 
@@ -7991,12 +8019,14 @@ HugeGraph-Computer 核心作业设置。
 | input.edge_direction | OUT | 要加载的边的方向,允许值:[OUT, IN, BOTH]。当值为 BOTH 时,将加载 OUT 和 IN 两个方向的边。 |
 | input.edge_freq | MULTIPLE | 一对顶点之间可以存在的边的频率,允许值:[SINGLE, SINGLE_PER_LABEL, MULTIPLE]。SINGLE 表示一对顶点之间只能存在一条边(通过 sourceId + targetId 标识);SINGLE_PER_LABEL 表示每个边标签在一对顶点之间可以有一条边(通过 sourceId + edgeLabel + targetId 标识);MULTIPLE 表示一对顶点之间可以存在多条边(通过 sourceId + edgeLabel + sortValues + targetId 标识)。 |
 | input.max_edges_in_one_vertex | 200 | 允许附加到一个顶点的最大邻接边数量。邻接边将作为一个批处理单元一起存储和传输。 |
+{.td-table--wide}
 
 #### 3.4 输入性能
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
 | input.send_thread_nums | 4 | 并行发送顶点或边的线程数量。 |
+{.td-table--wide}
 
 ---
 
@@ -8011,6 +8041,7 @@ HugeGraph-Computer 支持快照功能,可将顶点/边分区保存到本地存�
 | snapshot.write | false | 是否写入输入顶点/边分区的快照。 |
 | snapshot.load | false | 是否从顶点/边分区的快照加载。 |
 | snapshot.name | "" (空) | 用户自定义的快照名称,用于区分不同的快照。 |
+{.td-table--wide}
 
 #### 4.2 MinIO 集成(可选)
 
@@ -8022,6 +8053,7 @@ MinIO 可用作 K8s 部署中快照的分布式对象存储后端。
 | snapshot.minio_access_key | minioadmin | MinIO 认证访问密钥。 |
 | snapshot.minio_secret_key | minioadmin | MinIO 认证密钥。 |
 | snapshot.minio_bucket_name | "" (空) | 用于存储快照数据的 MinIO 存储桶名称。 |
+{.td-table--wide}
 
 **使用场景:**
 - **断点恢复**:作业失败后从快照恢复,避免重新加载数据
@@ -8056,6 +8088,7 @@ Worker 和 Master 计算逻辑的配置。
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
 | master.computation_class | org.apache.hugegraph.computer.core.master.DefaultMasterComputation | Master 计算是可以决定是否继续下一个超步的计算。它在每个超步结束时在 master 上运行。 |
+{.td-table--wide}
 
 #### 5.2 Worker 计算
 
@@ -8064,6 +8097,7 @@ Worker 和 Master 计算逻辑的配置。
 | worker.computation_class | org.apache.hugegraph.computer.core.config.Null | 创建 worker 计算对象的类。Worker 计算用于在每个超步中计算每个顶点。 |
 | worker.combiner_class | org.apache.hugegraph.computer.core.config.Null | Combiner 可以将消息组合为一个顶点的一个值。例如,PageRank 算法可以将一个顶点的消息组合为一个求和值。 |
 | worker.partitioner | org.apache.hugegraph.computer.core.graph.partition.HashPartitioner | 分区器,决定顶点应该在哪个分区中,以及分区应该在哪个 worker 中。 |
+{.td-table--wide}
 
 #### 5.3 Worker 组合器
 
@@ -8071,6 +8105,7 @@ Worker 和 Master 计算逻辑的配置。
 |--------|--------|------|
 | worker.vertex_properties_combiner_class | org.apache.hugegraph.computer.core.combiner.OverwritePropertiesCombiner | 组合器可以在输入步骤将同一顶点的多个属性组合为一个属性。 |
 | worker.edge_properties_combiner_class | org.apache.hugegraph.computer.core.combiner.OverwritePropertiesCombiner | 组合器可以在输入步骤将同一边的多个属性组合为一个属性。 |
+{.td-table--wide}
 
 #### 5.4 Worker 缓冲区
 
@@ -8079,6 +8114,7 @@ Worker 和 Master 计算逻辑的配置。
 | worker.received_buffers_bytes_limit | 104857600 (100 MB) | 接收数据缓冲区的限制字节数。所有缓冲区的总大小不能超过此限制。如果接收缓冲区达到此限制,它们将被合并到文件中(溢出到磁盘)。 |
 | worker.write_buffer_capacity | 52428800 (50 MB) | 用于存储顶点或消息的写缓冲区的初始大小。 |
 | worker.write_buffer_threshold | 52428800 (50 MB) | 写缓冲区的阈值。超过它将触发排序。写缓冲区用于存储顶点或消息。 |
+{.td-table--wide}
 
 #### 5.5 Worker 数据与超时
 
@@ -8087,6 +8123,7 @@ Worker 和 Master 计算逻辑的配置。
 | worker.data_dirs | [jobs] | 用逗号分隔的目录,接收的顶点和消息可以持久化到其中。 |
 | worker.wait_sort_timeout | 600000 (10 分钟) | 消息处理程序等待排序线程对一批缓冲区进行排序的最大超时时间(毫秒)。 |
 | worker.wait_finish_messages_timeout | 86400000 (24 小时) | 消息处理程序等待所有 worker 完成消息的最大超时时间(毫秒)。 |
+{.td-table--wide}
 
 ---
 
@@ -8101,6 +8138,7 @@ Worker 和 Master 计算逻辑的配置。
 | output.output_class | org.apache.hugegraph.computer.core.output.LogOutput | 输出每个顶点计算结果的类。在迭代计算后调用。 |
 | output.result_name | value | 该值由 WORKER_COMPUTATION_CLASS 创建的实例的 #name() 动态分配。 |
 | output.result_write_type | OLAP_COMMON | 输出到 HugeGraph 的结果写入类型,允许值:[OLAP_COMMON, OLAP_SECONDARY, OLAP_RANGE]。 |
+{.td-table--wide}
 
 #### 6.2 输出行为
 
@@ -8109,6 +8147,7 @@ Worker 和 Master 计算逻辑的配置。
 | output.with_adjacent_edges | false | 是否输出顶点的邻接边。 |
 | output.with_vertex_properties | false | 是否输出顶点的属性。 |
 | output.with_edge_properties | false | 是否输出边的属性。 |
+{.td-table--wide}
 
 #### 6.3 批量输出
 
@@ -8117,6 +8156,7 @@ Worker 和 Master 计算逻辑的配置。
 | output.batch_size | 500 | 输出的批处理大小。 |
 | output.batch_threads | 1 | 用于批量输出的线程数量。 |
 | output.single_threads | 1 | 用于单个输出的线程数量。 |
+{.td-table--wide}
 
 #### 6.4 HDFS 输出
 
@@ -8134,6 +8174,7 @@ Worker 和 Master 计算逻辑的配置。
 | output.hdfs_kerberos_principal | "" (空) | HDFS 的 Kerberos 认证 principal。 |
 | output.hdfs_kerberos_keytab | "" (空) | HDFS 的 Kerberos 认证 keytab 文件。 |
 | output.hdfs_krb5_conf | /etc/krb5.conf | Kerberos 配置文件路径。 |
+{.td-table--wide}
 
 #### 6.5 重试与超时
 
@@ -8142,6 +8183,7 @@ Worker 和 Master 计算逻辑的配置。
 | output.retry_times | 3 | 输出失败时的重试次数。 |
 | output.retry_interval | 10 | 输出失败时的重试间隔(秒)。 |
 | output.thread_pool_shutdown_timeout | 60 | 输出线程池关闭的超时时间(秒)。 |
+{.td-table--wide}
 
 ---
 
@@ -8156,6 +8198,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.server_host | 127.0.0.1 | worker 数据服务监听并向其他 worker 公告的地址。多主机场景必须使用其他节点可达的地址；Operator 会改为 Pod IP。 |
 | transport.server_port | 0（发行包：0；K8s Operator：8099） | worker 数据传输监听端口。单机值 `0` 表示系统分配端口；Operator 会将 K8s 默认值改为固定端口 `8099`，以便 Pod 间通信。 |
 | transport.server_threads | 4 | 服务器传输线程的数量。 |
+{.td-table--wide}
 
 #### 7.2 客户端配置
 
@@ -8163,6 +8206,7 @@ Worker 和 Master 之间网络通信的配置。
 |--------|--------|------|
 | transport.client_threads | 4 | 客户端传输线程的数量。 |
 | transport.client_connect_timeout | 3000 | 客户端连接到服务器的超时时间(毫秒)。 |
+{.td-table--wide}
 
 #### 7.3 协议配置
 
@@ -8172,6 +8216,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.io_mode | AUTO | 网络 IO 模式,允许值:[NIO, EPOLL, AUTO]。AUTO 表示自动选择适当的模式。 |
 | transport.tcp_keep_alive | true | 是否启用 TCP keep-alive。 |
 | transport.transport_epoll_lt | false | 是否启用 EPOLL 水平触发(仅在 io_mode=EPOLL 时有效)。 |
+{.td-table--wide}
 
 #### 7.4 缓冲区配置
 
@@ -8181,6 +8226,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.receive_buffer_size | 0 | Socket 接收缓冲区大小(字节)。0 表示使用系统默认值。 |
 | transport.write_buffer_high_mark | 67108864 (64 MB) | 写缓冲区的高水位标记(字节)。如果排队字节数 > write_buffer_high_mark,将触发发送不可用。 |
 | transport.write_buffer_low_mark | 33554432 (32 MB) | 写缓冲区的低水位标记(字节)。如果排队字节数 < write_buffer_low_mark,将触发发送可用。 |
+{.td-table--wide}
 
 #### 7.5 流量控制
 
@@ -8189,6 +8235,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.max_pending_requests | 8 | 客户端未接收 ACK 的最大数量。如果未接收 ACK 的数量 >= max_pending_requests,将触发发送不可用。 |
 | transport.min_pending_requests | 6 | 客户端未接收 ACK 的最小数量。如果未接收 ACK 的数量 < min_pending_requests,将触发发送可用。 |
 | transport.min_ack_interval | 200 | 服务器回复 ACK 的最小间隔(毫秒)。 |
+{.td-table--wide}
 
 #### 7.6 超时配置
 
@@ -8199,6 +8246,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.finish_session_timeout | 0 | 完成会话的超时时间(毫秒)。0 表示使用 (transport.sync_request_timeout × transport.max_pending_requests)。 |
 | transport.write_socket_timeout | 3000 | 将数据写入 socket 缓冲区的超时时间(毫秒)。 |
 | transport.server_idle_timeout | 360000 (6 分钟) | 服务器空闲的最大超时时间(毫秒)。 |
+{.td-table--wide}
 
 #### 7.7 心跳配置
 
@@ -8206,6 +8254,7 @@ Worker 和 Master 之间网络通信的配置。
 |--------|--------|------|
 | transport.heartbeat_interval | 20000 (20 秒) | 客户端心跳之间的最小间隔(毫秒)。 |
 | transport.max_timeout_heartbeat_count | 120 | 客户端超时心跳的最大次数。如果连续等待心跳响应超时的次数 > max_timeout_heartbeat_count,通道将从客户端关闭。 |
+{.td-table--wide}
 
 #### 7.8 高级网络设置
 
@@ -8214,6 +8263,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.max_syn_backlog | 511 | 服务器端 SYN 队列的容量。0 表示使用系统默认值。 |
 | transport.recv_file_mode | true | 是否启用接收缓冲文件模式。如果启用,将使用零拷贝从 socket 接收缓冲区并写入文件。**注意**:需要操作系统支持零拷贝(例如 Linux sendfile/splice)。 |
 | transport.network_retries | 3 | 网络通信不稳定时的重试次数。 |
+{.td-table--wide}
 
 #### 7.9 Master RPC 配置
 
@@ -8223,6 +8273,7 @@ Worker 和 Master 之间网络通信的配置。
 |--------|----------|------|
 | rpc.server_host | 127.0.0.1（K8s：Pod IP） | Master RPC 服务地址，worker 必须能访问此地址。 |
 | rpc.server_port | 8190（K8s 默认：8190） | Master RPC 监听端口；集群安全组和网络策略须允许 worker 连接。 |
+{.td-table--wide}
 
 ---
 
@@ -8238,12 +8289,14 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | hgkv.max_data_block_size | 65536 (64 KB) | HGKV 文件数据块的最大字节大小。 |
 | hgkv.max_merge_files | 10 | 一次合并的最大文件数。 |
 | hgkv.temp_file_dir | /tmp/hgkv | 此文件夹用于在文件合并过程中存储临时文件。 |
+{.td-table--wide}
 
 #### 8.2 值文件配置
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
 | valuefile.max_segment_size | 1073741824 (1 GB) | 值文件每个段的最大字节数。 |
+{.td-table--wide}
 
 ---
 
@@ -8259,6 +8312,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | bsp.wait_workers_timeout | 86400000 (24 小时) | 等待 worker BSP 事件的最大超时时间(毫秒)。 |
 | bsp.wait_master_timeout | 86400000 (24 小时) | 等待 master BSP 事件的最大超时时间(毫秒)。 |
 | bsp.log_interval | 30000 (30 秒) | 等待 BSP 事件时打印日志的日志间隔(毫秒)。 |
+{.td-table--wide}
 
 ---
 
@@ -8270,6 +8324,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 |--------|--------|------|
 | allocator.max_vertices_per_thread | 10000 | 每个内存分配器中每个线程处理的最大顶点数。 |
 | sort.thread_nums | 4 | 执行内部排序的线程数量。 |
+{.td-table--wide}
 
 ---
 
@@ -8287,6 +8342,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | rpc.server_host | K8s Operator | 覆盖为 master Pod IP。 |
 | rpc.server_port | K8s Operator | 未设置或为 `0` 时设置为 `8190`。 |
 | rpc.remote_url | Computer 启动流程 | 读取配置时会移除该项，不应作为作业配置设置。 |
+{.td-table--wide}
 
 **为什么禁止修改:**
 - **BSP/RPC 配置**:必须与实际部署的 etcd/RPC 服务匹配。手动覆盖会破坏协调。
@@ -8314,6 +8370,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | k8s.resync_period | 600000 | 被监视资源进行 reconcile 的最小频率。 |
 | k8s.timezone | Asia/Shanghai | computer 作业和 operator 的时区。 |
 | k8s.watch_namespace | hugegraph-computer-operator-system | 监视自定义资源的命名空间。随附发行清单也设置为此值；使用 `*` 可监视所有命名空间。 |
+{.td-table--wide}
 
 ---
 
@@ -8350,6 +8407,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | configMapPaths | | k8s-configmap 名称和挂载路径的映射。 | false |
 | podTemplateSpec | | 请参考:https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-template-v1/#PodTemplateSpec | false |
 | securityContext | | 请参考:https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ | false |
+{.td-table--wide}
 
 ---
 
@@ -8371,6 +8429,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | k8s.log4j_xml_path | | computer 作业的 log4j.xml 路径。 |
 | k8s.namespace | hugegraph-computer-operator-system | hugegraph-computer 系统的命名空间。 |
 | k8s.pull_secret_names | [] | 拉取镜像的 pull-secret 名称。 |
+{.td-table--wide}
 
 ---
 
@@ -8953,6 +9012,7 @@ hg2d = HugeGraph2DGL(
 | `convert_graph_with_edge_feat(vertex_label, edge_label, node_feat_key="feat", edge_feat_key="edge_feat", label_key="label", mask_keys=None)` | `dgl.DGLGraph` | 同时填充 `edata["feat"]` |
 | `convert_graph_ogb(vertex_label, edge_label, split_label)` | `(dgl.DGLGraph, split_edge)` | SEAL 使用 |
 | `convert_hetero_graph_bgnn(vertex_labels, edge_labels, feat_key="feat", label_key="class", cat_key="cat_features", mask_keys=None)` | DGL 异构图 | BGNN 使用 |
+{.td-table--wide}
 
 节点特征写入 `ndata["feat"]`，标签写入 `ndata["label"]`，各掩码写入 `ndata[<mask key>]`。`NodeEmbed` 只要求 `feat`；`NodeClassify`、`NodeClassifyWithEdge` 和 `NodeClassifyWithSample` 要求 `feat`、`label`、`train_mask`、`val_mask` 和 `test_mask`，缺少任意一项都会抛出 `ValueError`。
 
@@ -8971,6 +9031,7 @@ hg2d = HugeGraph2DGL(
 | `import_graph_from_dgl_with_edge_feat` | `CORA`、`CITESEER`、`PUBMED` | `<NAME>_edge_feat_vertex`、`<NAME>_edge_feat_edge` |
 | `import_graph_from_ogb` | `ogbl-collab`，不做大写转换 | `<NAME>_vertex`、`<NAME>_edge` |
 | `import_split_edge_from_ogb` | `ogbl-collab`，不做大写转换 | `<NAME>_split_edge` |
+{.td-table--wide}
 
 传入其他名称会抛出 `ValueError("dataset not supported")`。`import_split_edge_from_ogb` 还需要顶点导入返回的 `idx_to_vertex_id` 映射和 `max_nodes` 上限。
 
@@ -8993,6 +9054,7 @@ hg2d = HugeGraph2DGL(
 | `HeteroSampleEmbedGATNE` | `hetero_sample_embed_gatne.py` | `train_and_embed(lr=1e-3, n_epochs=200, gpu=-1)` |
 | `LinkPredictionPGNN` | `link_prediction_pgnn.py` | `train(lr, weight_decay, n_epochs, gpu)` |
 | `LinkPredictionSeal` | `link_prediction_seal.py` | 构造函数内部已调用 `data_prepare()`，随后执行 `train(lr=1e-3, n_epochs=200, gpu=-1)` |
+{.td-table--wide}
 
 `patience` 默认值为 `float("inf")`。`utils/early_stopping.py` 中的 `EarlyStopping` 可以监控 `loss` 或 `accuracy`，保存最优权重并在训练结束时恢复。
 
@@ -9027,6 +9089,7 @@ python ./hugegraph_ml/examples/dgi_example.py
 | `jknet_example.py` | `JKNet` | `NodeClassify` | `CORA_vertex`、`CORA_edge` |
 | `pgnn_example.py` | `PGNN` | `LinkPredictionPGNN` | `CAVEMAN_vertex`、`CAVEMAN_edge` |
 | `seal_example.py` | `DGCNN` | `LinkPredictionSeal` | `ogbl-collab_vertex`、`ogbl-collab_edge`、`ogbl-collab_split_edge` |
+{.td-table--wide}
 
 ## DGI 节点嵌入示例
 
@@ -9175,6 +9238,7 @@ python -m hugegraph_llm.config.generate --update
 | 抽取 | `OPENAI_EXTRACT_API_BASE` | `OPENAI_EXTRACT_API_KEY` | `OPENAI_EXTRACT_LANGUAGE_MODEL` | `OPENAI_EXTRACT_TOKENS=256` |
 | Text2Gremlin | `OPENAI_TEXT2GQL_API_BASE` | `OPENAI_TEXT2GQL_API_KEY` | `OPENAI_TEXT2GQL_LANGUAGE_MODEL` | `OPENAI_TEXT2GQL_TOKENS=4096` |
 | 嵌入 | `OPENAI_EMBEDDING_API_BASE` | `OPENAI_EMBEDDING_API_KEY` | `OPENAI_EMBEDDING_MODEL` | 不适用 |
+{.td-table--wide}
 
 API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `gpt-4.1-mini`，嵌入模型默认是 `text-embedding-3-small`。
 
@@ -9188,6 +9252,7 @@ API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `g
 | 抽取 | `LITELLM_EXTRACT_API_BASE` | `LITELLM_EXTRACT_API_KEY` | `LITELLM_EXTRACT_LANGUAGE_MODEL` | `LITELLM_EXTRACT_TOKENS=256` |
 | Text2Gremlin | `LITELLM_TEXT2GQL_API_BASE` | `LITELLM_TEXT2GQL_API_KEY` | `LITELLM_TEXT2GQL_LANGUAGE_MODEL` | `LITELLM_TEXT2GQL_TOKENS=4096` |
 | 嵌入 | `LITELLM_EMBEDDING_API_BASE` | `LITELLM_EMBEDDING_API_KEY` | `LITELLM_EMBEDDING_MODEL` | 不适用 |
+{.td-table--wide}
 
 三个语言模型默认是 `openai/gpt-4.1-mini`，嵌入模型默认是 `openai/text-embedding-3-small`。模型名通常使用 `供应商/模型` 格式，具体取值由 LiteLLM 服务决定。
 
@@ -9199,6 +9264,7 @@ API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `g
 | 抽取 | `OLLAMA_EXTRACT_HOST` | `OLLAMA_EXTRACT_PORT` | `OLLAMA_EXTRACT_LANGUAGE_MODEL` |
 | Text2Gremlin | `OLLAMA_TEXT2GQL_HOST` | `OLLAMA_TEXT2GQL_PORT` | `OLLAMA_TEXT2GQL_LANGUAGE_MODEL` |
 | 嵌入 | `OLLAMA_EMBEDDING_HOST` | `OLLAMA_EMBEDDING_PORT` | `OLLAMA_EMBEDDING_MODEL` |
+{.td-table--wide}
 
 主机默认是 `127.0.0.1`，端口默认是 `11434`，模型名没有默认值。使用前先在 Ollama 中拉取对应模型。
 
@@ -11579,6 +11645,7 @@ POST http://localhost:8080/graphspaces
 | max_role_number              | 否       | Int     | 0         |                                                                 | 图空间的角色数目的上限                                                                               |
 | auth                         | 否       | Boolean | false     | true, false                                                     | 图空间是否支持权限认证                                                                               |
 | configs                      | 否       | Map     |           |                                                                 | 其他配置信息                                                                                         |
+{.td-table--wide}
 
 ```json
 {
@@ -11745,6 +11812,7 @@ GET http://localhost:8080/graphspaces/gs1
 | internal_algorithm_image_url | 否       | String |        |                            | 图计算的算法镜像地址：在更新图空间时，允许指定图计算的算法镜像并交由 K8S 进行统一管理                |
 | max_graph_number             | 是       | Int    |        | > 0                        | 图空间的图数目的上限                                                                                 |
 | max_role_number              | 否       | Int    |        |                            | 图空间的角色数目的上限                                                                               |
+{.td-table--wide}
 
 ##### Method & Url
 
@@ -25406,6 +25474,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 | resultIterationBatchSize  | 64                                                                                                           | 流式返回结果集时，每批返回的结果条数。                                     |
 | ssl.enabled               | false                                                                                                        | Gremlin Server 是否启用 TLS。                                              |
 | authentication            | 未配置                                                                                                        | 启用认证时配置认证器、处理器和 `rest-server.properties` 路径。                   |
+{.td-table--wide}
 
 ### Rest Server & API 配置项
 
@@ -25453,6 +25522,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 | memory_monitor.period                  | 2000                                             | The period in ms of JVM memory usage monitoring, in each period we will detect the jvm memory usage and take corresponding actions.                                                                            |
 | log.slow_query_threshold               | 1000                                             | The threshold time(ms) of logging slow query, 0 means logging slow query is disabled.                                                                                                                          |
 | log.slow_query_body_limit              | 512                                              | 慢查询日志记录的请求体最大字节数，0 表示不记录。记录的前缀原样写入，可能包含敏感的 Gremlin 或 Cypher 字面量。                      |
+{.td-table--wide}
 
 角色选举配置项 `server.role_election` 和 `server.role.*` 仅适用于 1.7.0 及更早版本。之后的版本不再读取这些配置项：若仍然设置，服务可以正常启动，并为每个配置项输出一条警告日志。
 
@@ -25472,6 +25542,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 | meta.ca              |                       | The ca file of meta server.                                     |
 | meta.client_ca       |                       | The client ca file of meta server.                              |
 | meta.client_key      |                       | The client key file of meta server.                             |
+{.td-table--wide}
 
 HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下两项，默认值 0 表示由 PD 决定：
 
@@ -25479,6 +25550,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 |-------------------------|---------------|-----------------------------------------------------------------|
 | hstore.partition_count  | 0             | Number of partitions, which PD controls partitions based on.    |
 | hstore.shard_count      | 0             | Number of copies, which PD controls partition copies based on.  |
+{.td-table--wide}
 
 ### 认证数据图配置项
 
@@ -25491,6 +25563,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 | auth.cache_expire                      | 600                                              | 认证客户端和服务端缓存的过期时间，单位为秒，取非负整数。                                                                                                                                  |
 | auth.token_expire                      | 86400                                            | JWT token 的有效期，单位为秒，取非负整数。                                                                                                                                                            |
 | auth.token_secret                      | 32 个随机字节经 Base64 编码                         | 认证数据图的配置项；默认密钥不写回文件。若需跨重启或跨节点验证 token，应在每个节点的认证图配置中设置同一个强随机值。HS256 密钥按 UTF-8 字节计至少 32 字节。                                                                                                                                 |
+{.td-table--wide}
 
 ### 基本配置项
 
@@ -25567,6 +25640,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 | memory.max_capacity                   | 1073741824                                   | The maximum memory capacity in bytes that can be managed for all queries in HugeGraph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | memory.one_query_max_capacity         | 104857600                                    | The maximum memory capacity in bytes that can be managed for a query in HugeGraph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | memory.alignment                      | 8                                            | The alignment used for round memory size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+{.td-table--wide}
 
 > [!DETAILS]- **Raft 配置项 (已废弃)**
 > 发行包中的图配置模板已将这些配置项标注为废弃。它们仅在 `raft.mode=true` 时生效，且 `raft.group_peers` 从 `rest-server.properties` 读取，而不是图配置文件。
@@ -25595,6 +25669,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | raft.install_snapshot_rpc_timeout | 36000                | The install snapshot rpc timeout in seconds for jraft rpc.                                                                                                                                                                                                                        |
 > | raft.rpc_buf_low_water_mark       | 10485760             | The ChannelOutboundBuffer's low water mark of netty, when buffer size less than this size, the method ChannelOutboundBuffer.isWritable() will return true, it means that low downstream pressure or good network.                                                                   |
 > | raft.rpc_buf_high_water_mark      | 20971520             | The ChannelOutboundBuffer's high water mark of netty, only when buffer size exceed this size, the method ChannelOutboundBuffer.isWritable() will return false, it means that the downstream pressure is too great to process the request or network is very congestion, upstream needs to limit rate at this time. |
+> {.td-table--wide}
 
 ### RocksDB 后端配置项
 
@@ -25672,6 +25747,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 | rocksdb.partition_filters_and_indexes           | false                                            | If bloom filter is enabled, set this option true to use partitioned full filters and indexes for each sst file. This option is incompatible with block-based filters.                                                                                                                                                                                                                                  |
 | rocksdb.pin_top_level_index_and_filter          | true                                             | If partition_filters_and_indexes is set true, set this option true if we'd pin top-level index of partitioned filter and index blocks to the block cache.                                                                                                                                                                                                                                              |
 | rocksdb.prefix_extractor_n_bytes                | 0                                                | The prefix-extractor uses the first N bytes of a key as its prefix, it will use the full key when a key is shorter than the N. 0 means unset prefix-extractor.                                                                                                                                                                                                                                         |
+{.td-table--wide}
 
 > [!DETAILS]- **K8s 配置项 (可选)**
 > 对应配置文件`rest-server.properties`
@@ -25701,6 +25777,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | k8s.internal_algorithm        | [page-rank, degree-centrality, wcc, triangle-count, rings, rings-with-filter, betweenness-centrality, closeness-centrality, lpa, links, kcore, louvain, clustering-coefficient, ppr, subgraph-match] | The names of the built-in k8s algorithms.        |
 > | k8s.algorithms                | See `ServerOptions.K8S_ALGORITHMS` | The `name:paramsClass` mapping of the built-in k8s algorithms.                              |
 > | k8s.internal_algorithm_image_url | 空 | K8s 内置算法使用的镜像地址。 |
+> {.td-table--wide}
 
 > [!DETAILS]- **Arthas 诊断配置项（可选）**
 > 对应配置文件为 `rest-server.properties`。
@@ -25712,6 +25789,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | arthas.http_port | 8561 | 管理员激活时使用的 Arthas HTTP 端口。 |
 > | arthas.ip | 127.0.0.1 | 监听地址；管理员可显式选择其他有效地址，包括 `0.0.0.0`。 |
 > | arthas.disabled_commands | 空 | API 激活时可选的禁用命令，以逗号分隔，例如 `jad,mc`；本地脚本不受此项约束。 |
+> {.td-table--wide}
 >
 > 旧名称 `arthas.telnetPort`、`arthas.httpPort` 与 `arthas.disabledCommands` 仍兼容作为回退项；显式配置的 snake_case 选项优先。
 > 发行包内的 `bin/arthas.sh` 可直接免配置进行本地诊断。
@@ -25736,6 +25814,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | rpc.serialization           | hessian2                                | Rpc serialization type, client and server must set the same value. Note: If you choose 'protobuf', you need to add the relative IDL file. (Could refer PD/Store *.proto)                                       |
 > | rpc.config_order            | 999                                     | Sofa-RPC configuration file loading order, the larger the more later loading.                                                                                                                                 |
 > | rpc.logger_impl             | com.alipay.sofa.rpc.log.SLF4JLoggerImpl | Sofa-RPC log implementation class.                                                                                                                                                                            |
+> {.td-table--wide}
 
 > [!DETAILS]- **HBase 后端配置项**
 > | config option             | default value                  | description                                                              |
@@ -25757,6 +25836,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
 > | hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
 > | hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
+> {.td-table--wide}
 
 
 ---
@@ -25781,12 +25861,14 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
 > | cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
 > | cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
+> {.td-table--wide}
 
 > [!DETAILS]- **ScyllaDB 后端配置项**
 > | config option | default value | description                |
 > |---------------|---------------|----------------------------|
 > | backend       |               | Must be set to `scylladb`. |
 > | serializer    |               | Must be set to `scylladb`. |
+> {.td-table--wide}
 >
 > 其它与 Cassandra 后端一致。
 
@@ -25804,12 +25886,14 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
 > | jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
 > | jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
+> {.td-table--wide}
 
 > [!DETAILS]- **PostgreSQL 后端配置项**
 > | config option | default value | description                  |
 > |---------------|---------------|------------------------------|
 > | backend       |               | Must be set to `postgresql`. |
 > | serializer    |               | Must be set to `postgresql`. |
+> {.td-table--wide}
 >
 > 其它与 MySQL 后端一致。
 >

@@ -89,6 +89,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | gRPC 服务端口 |
 | `HG_STORE_REST_PORT` | 否 | `8520` | REST API 端口 |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | 数据存储路径 |
+{.td-table--wide}
 
 > **注意**：在 Docker 桥接网络中，`HG_STORE_GRPC_HOST` 应使用容器主机名（如 `store0`）而非 IP 地址。
 

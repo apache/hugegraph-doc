@@ -567,3 +567,4 @@ These settings control query result limits to prevent memory issues:
 | `gremlin.vertex_degree_limit` | `100` | Maximum vertex degree to display |
 | `gremlin.edges_total_limit` | `500` | Maximum number of edges returned |
 | `gremlin.batch_query_ids` | `100` | ID batch query size |
+{.td-table--wide}

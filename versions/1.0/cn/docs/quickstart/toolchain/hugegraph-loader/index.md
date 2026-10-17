@@ -747,6 +747,7 @@ schema: 必填
 | --print-progress        | true      |      | 是否在控制台实时打印导入条数                                                    |
 | --dry-run               | false     |      | 打开该模式，只解析不导入，通常用于测试                                               |
 | --help                  | false     |      | 打印帮助信息                                                            |
+{.td-table--wide}
 
 ##### 3.4.2 断点续导模式
 

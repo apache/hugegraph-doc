@@ -16,6 +16,7 @@ Corresponding configuration file `gremlin-server.yaml`
 | evaluationTimeout       | 30000                                                                                                        | Gremlin script evaluation timeout in milliseconds.                              |
 | channelizer             | org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer                                             | Handles both WebSocket and HTTP requests.                                       |
 | authentication          | Not configured                                                                                               | When enabling authentication, configure the authenticator, handler, and path to `rest-server.properties`. |
+{.td-table--wide}
 
 ### Rest Server & API Config Options
 
@@ -56,6 +57,7 @@ Corresponding configuration file `rest-server.properties`
 | memory_monitor.period              | 2000                                             | The period in ms of JVM(in-heap) memory usage monitoring.                                                                                                                                                     |
 | log.slow_query_threshold           | 1000                                             | Slow query log threshold in milliseconds, 0 means disabled.                                                                                                                                                   |
 | log.slow_query_body_limit          | 512                                              | Maximum bytes of a request body recorded in the slow query log, 0 means disabled. The recorded prefix may contain sensitive Gremlin or Cypher literals.                                                       |
+{.td-table--wide}
 
 ### PD/Meta Config Options (Distributed Mode)
 
@@ -66,6 +68,7 @@ Corresponding configuration file `rest-server.properties`
 | pd.peers         | 127.0.0.1:8686         | PD server addresses (comma separated).     |
 | meta.endpoints   | http://127.0.0.1:2379  | Meta service endpoints.                    |
 | usePD            | false                   | Whether to use PD to manage distributed metadata. |
+{.td-table--wide}
 
 ### Basic Config Options
 
@@ -142,6 +145,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | raft.rpc_buf_low_water_mark           | 10485760                                     | The ChannelOutboundBuffer's low water mark of netty, when buffer size less than this size, the method ChannelOutboundBuffer.isWritable() will return true, it means that low downstream pressure or good network.                                                                                                                                                                                                                                                                                                                                                                                |
 | raft.rpc_buf_high_water_mark          | 20971520                                     | The ChannelOutboundBuffer's high water mark of netty, only when buffer size exceed this size, the method ChannelOutboundBuffer.isWritable() will return false, it means that the downstream pressure is too great to process the request or network is very congestion, upstream needs to limit rate at this time.                                                                                                                                                                                                                                                                               |
 | raft.read_strategy                    | ReadOnlyLeaseBased                           | The linearizability of read strategy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+{.td-table--wide}
 
 ### RocksDB Backend Config Options
 
@@ -198,6 +202,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | rocksdb.level0_slowdown_writes_trigger          | 20                                                                                                                                   | Soft limit on number of level-0 files for slowing down writes.                                                                                                                                                                                                                                                                                                                                        |
 | rocksdb.level0_stop_writes_trigger              | 36                                                                                                                                   | Hard limit on number of level-0 files for stopping writes.                                                                                                                                                                                                                                                                                                                                            |
 | rocksdb.soft_pending_compaction_bytes_limit     | 68719476736                                                                                                                          | The soft limit to impose on pending compaction in bytes.                                                                                                                                                                                                                                                                                                                                              |
+{.td-table--wide}
 
 > [!DETAILS]- **K8s Config Options (Optional)**
 > Corresponding configuration file `rest-server.properties`
@@ -207,6 +212,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | server.use_k8s   | false                         | Whether to enable K8s multi-tenancy mode. |
 > | k8s.namespace    | hugegraph-computer-system     | K8s namespace for compute jobs.          |
 > | k8s.kubeconfig   |                               | Path to kubeconfig file.                 |
+> {.td-table--wide}
 
 > [!DETAILS]- **Arthas Diagnostic Config Options (Optional)**
 > Corresponding configuration file `rest-server.properties`
@@ -217,6 +223,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | arthas.httpPort    | 8561          | Arthas HTTP port.     |
 > | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
 > | arthas.disabledCommands | jad      | Disabled Arthas commands, separated by commas. |
+> {.td-table--wide}
 
 > [!DETAILS]- **HBase Backend Config Options**
 > | config option             | default value                  | description                                                              |
@@ -237,6 +244,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
 > | hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
 > | hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
+> {.td-table--wide}
 
 
 ---
@@ -261,12 +269,14 @@ The following backend stores are no longer supported in version 1.7.0+ and are o
 > | cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
 > | cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
 > | cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
+> {.td-table--wide}
 
 > [!DETAILS]- **ScyllaDB Backend Config Options**
 > | config option | default value | description                |
 > |---------------|---------------|----------------------------|
 > | backend       |               | Must be set to `scylladb`. |
 > | serializer    |               | Must be set to `scylladb`. |
+> {.td-table--wide}
 >
 > Other options are consistent with the Cassandra backend.
 
@@ -284,12 +294,14 @@ The following backend stores are no longer supported in version 1.7.0+ and are o
 > | jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
 > | jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
 > | jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
+> {.td-table--wide}
 
 > [!DETAILS]- **PostgreSQL Backend Config Options**
 > | config option | default value | description                  |
 > |---------------|---------------|------------------------------|
 > | backend       |               | Must be set to `postgresql`. |
 > | serializer    |               | Must be set to `postgresql`. |
+> {.td-table--wide}
 >
 > Other options are consistent with the MySQL backend.
 >

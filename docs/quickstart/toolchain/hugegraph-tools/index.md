@@ -100,6 +100,7 @@ The above global variables can also be set through environment variables. One wa
 | --timeout              | HUGEGRAPH_TIMEOUT              | export HUGEGRAPH_TIMEOUT=30                        |
 | --trust-store-file     | HUGEGRAPH_TRUST_STORE_FILE     | export HUGEGRAPH_TRUST_STORE_FILE=/tmp/trust-store |
 | --trust-store-password | HUGEGRAPH_TRUST_STORE_PASSWORD | export HUGEGRAPH_TRUST_STORE_PASSWORD=xxxx         |
+{.td-table--wide}
 
 Both forms below count vertices in the same graph; choose either form. The example uses a local Server without authentication.
 For an authenticated Server, also provide the username and password described above.

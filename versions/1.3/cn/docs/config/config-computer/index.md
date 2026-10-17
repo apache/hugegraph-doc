@@ -103,6 +103,7 @@ LLMS 索引： [llms.txt](/versions/1.3/cn/llms.txt)
 | worker.wait_sort_timeout                | 600000                                                                                          | The max timeout(in ms) message-handler wait for sort-thread to sort one batch of buffers.                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | worker.write_buffer_capacity            | 52428800                                                                                        | The initial size of write buffer that used to store vertex or message.                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | worker.write_buffer_threshold           | 52428800                                                                                        | The threshold of write buffer, exceeding it will trigger sorting, the write buffer is used to store vertex or message.                                                                                                                                                                                                                                                                                                                                                                                               |
+{.td-table--wide}
 
 ### K8s Operator Config Options
 
@@ -122,6 +123,7 @@ LLMS 索引： [llms.txt](/versions/1.3/cn/llms.txt)
 | k8s.resync_period            | 600000                    | The minimum frequency at which watched resources are reconciled.                                                                |
 | k8s.timezone                 | Asia/Shanghai             | The timezone of computer job and operator.                                                                                      |
 | k8s.watch_namespace          | hugegraph-computer-system | The value is watch custom resources in the namespace, ignore other namespaces, the '*' means is all namespaces will be watched. |
+{.td-table--wide}
 
 ### HugeGraph-Computer CRD
 
@@ -175,3 +177,4 @@ LLMS 索引： [llms.txt](/versions/1.3/cn/llms.txt)
 | k8s.log4j_xml_path               || The log4j.xml path for computer job.     |
 | k8s.namespace                    | hugegraph-computer-system                | The namespace of hugegraph-computer system.               |
 | k8s.pull_secret_names            | []                                       | The names of pull-secret for pulling image.               |
+{.td-table--wide}

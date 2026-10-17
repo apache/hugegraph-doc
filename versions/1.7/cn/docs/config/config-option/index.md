@@ -16,6 +16,7 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 | evaluationTimeout       | 30000                                                                                                        | Gremlin 脚本执行超时，单位为毫秒。                                               |
 | channelizer             | org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer                                             | 同时处理 WebSocket 和 HTTP 请求。                                                |
 | authentication          | 未配置                                                                                                        | 启用认证时配置认证器、处理器和 `rest-server.properties` 路径。                   |
+{.td-table--wide}
 
 ### Rest Server & API 配置项
 
@@ -56,6 +57,7 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 | memory_monitor.period              | 2000                                             | The period in ms of JVM(in-heap) memory usage monitoring.                                                                                                                                                     |
 | log.slow_query_threshold           | 1000                                             | Slow query log threshold in milliseconds, 0 means disabled.                                                                                                                                                   |
 | log.slow_query_body_limit          | 512                                              | 慢查询日志记录的请求体最大字节数，0 表示不记录。记录的前缀可能包含敏感的 Gremlin 或 Cypher 字面量。                                                                                                              |
+{.td-table--wide}
 
 ### PD/Meta 配置项 (分布式模式)
 
@@ -66,6 +68,7 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 | pd.peers         | 127.0.0.1:8686         | PD server addresses (comma separated).     |
 | meta.endpoints   | http://127.0.0.1:2379  | Meta service endpoints.                    |
 | usePD            | false                   | 是否通过 PD 管理分布式元数据。              |
+{.td-table--wide}
 
 ### 基本配置项
 
@@ -142,6 +145,7 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 | raft.rpc_buf_low_water_mark           | 10485760                                     | The ChannelOutboundBuffer's low water mark of netty, when buffer size less than this size, the method ChannelOutboundBuffer.isWritable() will return true, it means that low downstream pressure or good network.                                                                                                                                                                                                                                                                                                                                                         |
 | raft.rpc_buf_high_water_mark          | 20971520                                     | The ChannelOutboundBuffer's high water mark of netty, only when buffer size exceed this size, the method ChannelOutboundBuffer.isWritable() will return false, it means that the downstream pressure is too great to process the request or network is very congestion, upstream needs to limit rate at this time.                                                                                                                                                                                                                                                        |
 | raft.read_strategy                    | ReadOnlyLeaseBased                           | The linearizability of read strategy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+{.td-table--wide}
 
 ### RocksDB 后端配置项
 
@@ -198,6 +202,7 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 | rocksdb.level0_slowdown_writes_trigger          | 20                                                                                                                                   | Soft limit on number of level-0 files for slowing down writes.                                                                                                                                                                                                                                                                                                                                        |
 | rocksdb.level0_stop_writes_trigger              | 36                                                                                                                                   | Hard limit on number of level-0 files for stopping writes.                                                                                                                                                                                                                                                                                                                                            |
 | rocksdb.soft_pending_compaction_bytes_limit     | 68719476736                                                                                                                          | The soft limit to impose on pending compaction in bytes.                                                                                                                                                                                                                                                                                                                                              |
+{.td-table--wide}
 
 > [!DETAILS]- **K8s 配置项 (可选)**
 > 对应配置文件`rest-server.properties`
@@ -207,6 +212,7 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 > | server.use_k8s   | false                         | Whether to enable K8s multi-tenancy mode. |
 > | k8s.namespace    | hugegraph-computer-system     | K8s namespace for compute jobs.          |
 > | k8s.kubeconfig   |                               | Path to kubeconfig file.                 |
+> {.td-table--wide}
 
 > [!DETAILS]- **Arthas 诊断配置项 (可选)**
 > 对应配置文件`rest-server.properties`
@@ -216,6 +222,7 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 > | arthas.telnetPort  | 8562          | Arthas telnet port.   |
 > | arthas.httpPort    | 8561          | Arthas HTTP port.     |
 > | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
+> {.td-table--wide}
 
 > [!DETAILS]- **RPC Server 配置**
 > | config option               | default value                           | description                                                                                                                                                                                                   |
@@ -233,6 +240,7 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 > | rpc.server_host             |                                         | The hosts/ips bound by rpc server to provide services, empty value means not enabled.                                                                                                                         |
 > | rpc.server_port             | 8090                                    | The port bound by rpc server to provide services.                                                                                                                                                             |
 > | rpc.server_timeout          | 30                                      | The timeout(in seconds) of rpc server execution.                                                                                                                                                              |
+> {.td-table--wide}
 
 > [!DETAILS]- **Arthas 诊断配置项 (可选)**
 > 对应配置文件`rest-server.properties`
@@ -243,6 +251,7 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 > | arthas.httpPort    | 8561          | Arthas HTTP port.     |
 > | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
 > | arthas.disabledCommands | jad      | Disabled Arthas commands, separated by commas. |
+> {.td-table--wide}
 >
 > [!DETAILS]- **HBase 后端配置项**
 > | config option             | default value                  | description                                                              |
@@ -263,6 +272,7 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 > | hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
 > | hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
 > | hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
+> {.td-table--wide}
 
 
 ---
@@ -287,12 +297,14 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 > | cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
 > | cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
 > | cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
+> {.td-table--wide}
 
 > [!DETAILS]- **ScyllaDB 后端配置项**
 > | config option | default value | description                |
 > |---------------|---------------|----------------------------|
 > | backend       |               | Must be set to `scylladb`. |
 > | serializer    |               | Must be set to `scylladb`. |
+> {.td-table--wide}
 >
 > 其它与 Cassandra 后端一致。
 
@@ -310,12 +322,14 @@ LLMS 索引： [llms.txt](/versions/1.7/cn/llms.txt)
 > | jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
 > | jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
 > | jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
+> {.td-table--wide}
 
 > [!DETAILS]- **PostgreSQL 后端配置项**
 > | config option | default value | description                  |
 > |---------------|---------------|------------------------------|
 > | backend       |               | Must be set to `postgresql`. |
 > | serializer    |               | Must be set to `postgresql`. |
+> {.td-table--wide}
 >
 > 其它与 MySQL 后端一致。
 >

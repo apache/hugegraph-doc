@@ -90,6 +90,7 @@ docker run -d \
 | `HG_PD_REST_PORT` | 否 | `8620` | REST API 端口 |
 | `HG_PD_DATA_PATH` | 否 | `/hugegraph-pd/pd_data` | 元数据存储路径 |
 | `HG_PD_INITIAL_STORE_COUNT` | 否 | `1` | 集群可用所需的最小 Store 数量 |
+{.td-table--wide}
 
 > **注意**：在 Docker 桥接网络中，`HG_PD_GRPC_HOST` 和 `HG_PD_RAFT_ADDRESS` 应使用容器主机名（如 `pd0`）而非 IP 地址。
 

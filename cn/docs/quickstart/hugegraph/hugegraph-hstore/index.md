@@ -124,6 +124,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` | gRPC 服务端口。 |
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` | REST API 端口。 |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` | 数据存储路径。 |
+{.td-table--wide}
 
 当前主线 entrypoint 将这些变量写入 `SPRING_APPLICATION_JSON`，覆盖镜像内 `conf/application.yml`；其余配置仍从该文件和 `application-pd.yml` 读取，然后以前台方式启动 Java。旧变量 `PD_ADDRESS`、`GRPC_HOST`、`RAFT_ADDRESS` 仍可用，但会输出弃用警告。
 
@@ -163,6 +164,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `grpc.netty-server.max-inbound-message-size` | `1000MB` | gRPC 默认值 | 单个入站 gRPC 消息的最大大小，由 `grpc-spring-boot-starter` 的 Netty 服务端读取。 |
 | `grpc.server.wait-time` | 未设置 | `3600` | 扫描流等待客户端消费一页数据的秒数，超时后服务端中止该流。 |
 | `server.port` | `8520` | 必填 | REST 和 Actuator 端口，同时以 `rest.port` 标签上报给 PD。 |
+{.td-table--wide}
 
 **Raft**
 
@@ -181,6 +183,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `raft.maxEntriesSize` | 未设置 | `256` | 单次 `AppendEntries` 请求包含的最大条目数。 |
 | `raft.maxBodySize` | 未设置 | `524288` | 单次 `AppendEntries` 请求的最大字节数。 |
 | `ave-logEntry-size-ratio` | 未设置 | `0.95` | 估算日志条目平均大小时的平滑系数。注意该配置项位于顶层，不在 `raft` 下。 |
+{.td-table--wide}
 
 **存储与标签**
 
@@ -191,6 +194,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `app.fake-pd` | 未设置 | `false` | 内置 PD 模式，仅用于单机测试，不要用于生产。 |
 | `app.placeholder-size` | 未设置 | `10` | 启动时在每个数据路径下创建的 `placeholder` 占位文件大小，单位 GB，便于紧急情况下释放空间。设为 `0` 关闭。 |
 | `app.label.<name>` | 未设置 | 无 | 随 store 心跳上报给 PD 的自定义键值标签。节点会自动追加 `rest.port`。 |
+{.td-table--wide}
 
 **RocksDB**
 
@@ -200,6 +204,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `rocksdb.write_buffer_size` | `32000000` | `33554432` | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`。 |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | 落盘前合并的 memtable 数量。 |
 | `rocksdb.write_buffer_ratio` | 未设置 | `0.66` | `total_memory_size` 中分配给写缓存的比例，其余作为 block cache。 |
+{.td-table--wide}
 
 `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` 中定义的其他选项都可以加在同一个 `rocksdb:` 块下，例如 `rocksdb.max_background_jobs`、`rocksdb.level0_file_num_compaction_trigger` 或 `rocksdb.bloom_filter_bits_per_key`。
 
@@ -213,6 +218,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `thread.pool.scan.core` | `128` | 处理扫描的核心线程数。设为 `0` 时取 CPU 核数的 4 倍。 |
 | `thread.pool.scan.max` | `1000` | 扫描最大线程数。 |
 | `thread.pool.scan.queue` | `0` | 扫描任务队列容量。 |
+{.td-table--wide}
 
 **gRPC 回调队列（1.8.0）**
 
@@ -231,6 +237,7 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 | `query.push-down.fetch_timeout` | `300000` | 拉取超时时间，单位毫秒。 |
 | `query.push-down.memory_limit_count` | `50000` | 排序等内存操作的行数上限。 |
 | `query.push-down.index_size_limit_count` | `50000` | 索引 sst 文件大小上限，单位 kB。 |
+{.td-table--wide}
 
 **后台任务**
 
@@ -244,6 +251,7 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 | `job.uninterruptibleThreadPool.queue` | `2147483647` | 不可中断任务线程池的队列容量。 |
 | `job.cleaner.batch.size` | `10000` | TTL 清理任务每批删除的 key 数量。 |
 | `job.start-time` | `0` | 每日 TTL 清理执行的小时数（0 到 23）。超出该范围时回退为 19。 |
+{.td-table--wide}
 
 **内置 PD 模式**
 
@@ -255,6 +263,7 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 | `fake-pd.peers-list` | `''` | 同一批节点的 Raft 地址。 |
 | `fake-pd.partition-count` | `3` | 分区数量。 |
 | `fake-pd.shard-count` | `3` | 每个分区的副本数。 |
+{.td-table--wide}
 
 **诊断**
 

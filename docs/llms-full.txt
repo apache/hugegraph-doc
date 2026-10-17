@@ -1499,6 +1499,7 @@ The following tables describe current master entrypoints and Compose files, not 
 | `HG_PD_DATA_PATH` | No | `/hugegraph-pd/pd_data` | `pd.data-path` |
 | `HG_PD_INITIAL_STORE_COUNT` | No | `1` | `pd.initial-store-count` |
 | `HG_PD_AUTH_SECRET_KEY` | Yes (current master Docker) | None | `auth.secret-key`; PD REST Basic password, also used by Server and Hubble |
+{.td-table--wide}
 
 > **Deprecated aliases**: `GRPC_HOST` → `HG_PD_GRPC_HOST`, `RAFT_ADDRESS` → `HG_PD_RAFT_ADDRESS`, `RAFT_PEERS` → `HG_PD_RAFT_PEERS_LIST`, `PD_INITIAL_STORE_LIST` → `HG_PD_INITIAL_STORE_LIST`. Old names are mapped only when new names are unset, with a warning. Missing required variables cause the entrypoint to exit with code 2.
 
@@ -1512,6 +1513,7 @@ The following tables describe current master entrypoints and Compose files, not 
 | `HG_STORE_GRPC_PORT` | No | `8500` | `grpc.port` |
 | `HG_STORE_REST_PORT` | No | `8520` | `server.port` |
 | `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` |
+{.td-table--wide}
 
 > **Deprecated aliases**: `PD_ADDRESS` → `HG_STORE_PD_ADDRESS`, `GRPC_HOST` → `HG_STORE_GRPC_HOST`, `RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`.
 
@@ -1541,6 +1543,7 @@ Unlike PD and Store, Server has no mandatory entrypoint variables: only set valu
 | `PD_AUTH_USER` | `store` | Basic username for PD REST calls from `wait-storage.sh` |
 | `PD_AUTH_PASSWORD` | Empty | PD REST Basic password; must match `HG_PD_AUTH_SECRET_KEY` when PD REST authentication is enabled |
 | `WAIT_PARTITION_TIMEOUT_S` | `120` | Partition polling timeout; also bounds the final diagnostic in builds with the fix described below |
+{.td-table--wide}
 
 Master builds that include authentication property fixes preserve spaces, backslashes and Unicode in explicit
 signing keys. Use the same key on every Server replica. When upgrading from an image that misread such a key, explicitly supply the intended
@@ -1582,6 +1585,7 @@ Compose files, rather than entrypoints, read these variables:
 | `HUGEGRAPH_ADMIN_PASSWORD` | None | Passed to Server as `PASSWORD` |
 | `HUGEGRAPH_AUTH_TOKEN_SECRET` | None | Master Compose passes this to Server as `HG_SERVER_AUTH_TOKEN_SECRET`; the 1.7.0 image ignores it |
 | `HG_PD_AUTH_SECRET_KEY` | None | HStore PD REST Basic password; Compose supplies it to PD and Server and uses it to generate local Hubble configuration |
+{.td-table--wide}
 
 ## Port Reference
 
@@ -1878,6 +1882,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | No | `8500` | `grpc.port` | gRPC service port. |
 | `HG_STORE_REST_PORT` | No | `8520` | `server.port` | REST API port. |
 | `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` | Data path. |
+{.td-table--wide}
 
 The master entrypoint writes these values into `SPRING_APPLICATION_JSON`, overriding image `conf/application.yml`. Other options still come from that file and `application-pd.yml`; Java runs in the foreground. Deprecated `PD_ADDRESS`, `GRPC_HOST`, and `RAFT_ADDRESS` remain supported with warnings.
 
@@ -1918,6 +1923,7 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | `grpc.netty-server.max-inbound-message-size` | `1000MB` | gRPC default | Maximum size of a single inbound gRPC message. Bound by the `grpc-spring-boot-starter` Netty server. |
 | `grpc.server.wait-time` | not set | `3600` | Seconds a scan stream waits for the client to consume a page before the server aborts it. |
 | `server.port` | `8520` | required | REST and Actuator port. Also reported to PD as the `rest.port` label. |
+{.td-table--wide}
 
 **Raft**
 
@@ -1936,6 +1942,7 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | `raft.maxEntriesSize` | not set | `256` | Maximum number of entries in one `AppendEntries` request. |
 | `raft.maxBodySize` | not set | `524288` | Maximum byte size of one `AppendEntries` request. |
 | `ave-logEntry-size-ratio` | not set | `0.95` | Smoothing ratio used to estimate the average log entry size. Note that this key sits at the top level, not under `raft`. |
+{.td-table--wide}
 
 **Storage and labels**
 
@@ -1946,6 +1953,7 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | `app.fake-pd` | not set | `false` | Built-in PD mode for standalone testing. Do not use it in production. |
 | `app.placeholder-size` | not set | `10` | Size in GB of a `placeholder` file created in each data path at startup, so space can be freed in an emergency. `0` disables it. |
 | `app.label.<name>` | not set | none | Arbitrary key/value labels sent to PD in the store heartbeat. The node adds `rest.port` on its own. |
+{.td-table--wide}
 
 **RocksDB**
 
@@ -1955,6 +1963,7 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | `rocksdb.write_buffer_size` | `32000000` | `33554432` | Memtable size in bytes. When absent or `0`, the node uses `total_memory_size / 1000`. |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | Number of memtables merged together before a flush. |
 | `rocksdb.write_buffer_ratio` | not set | `0.66` | Share of `total_memory_size` given to the write cache. The rest becomes the block cache. |
+{.td-table--wide}
 
 Any other option defined in `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` can be added under the same `rocksdb:` block, for example `rocksdb.max_background_jobs`, `rocksdb.level0_file_num_compaction_trigger` or `rocksdb.bloom_filter_bits_per_key`.
 
@@ -1968,6 +1977,7 @@ Any other option defined in `org/apache/hugegraph/rocksdb/access/RocksDBOptions.
 | `thread.pool.scan.core` | `128` | Core threads serving scans. `0` means 4 times the CPU count. |
 | `thread.pool.scan.max` | `1000` | Maximum scan threads. |
 | `thread.pool.scan.queue` | `0` | Scan task queue capacity. |
+{.td-table--wide}
 
 **gRPC callback queue (1.8.0)**
 
@@ -1989,6 +1999,7 @@ resources; do not rely on `thread.pool.grpc.queue` for load control. Version 1.7
 | `query.push-down.fetch_timeout` | `300000` | Fetch timeout in milliseconds. |
 | `query.push-down.memory_limit_count` | `50000` | Row limit for in-memory operations such as sorting. |
 | `query.push-down.index_size_limit_count` | `50000` | Index sst file size limit in kB. |
+{.td-table--wide}
 
 **Background jobs**
 
@@ -2002,6 +2013,7 @@ resources; do not rely on `thread.pool.grpc.queue` for load control. Version 1.7
 | `job.uninterruptibleThreadPool.queue` | `2147483647` | Queue capacity of the uninterruptible job pool. |
 | `job.cleaner.batch.size` | `10000` | Keys deleted per batch by the TTL cleaner. |
 | `job.start-time` | `0` | Hour of day (0 to 23) at which the daily TTL cleanup runs. Values outside that range fall back to 19. |
+{.td-table--wide}
 
 **Built-in PD mode**
 
@@ -2013,6 +2025,7 @@ Only for single-node development and debugging, activated by `app.fake-pd: true`
 | `fake-pd.peers-list` | `''` | Raft addresses of the same nodes. |
 | `fake-pd.partition-count` | `3` | Number of partitions. |
 | `fake-pd.shard-count` | `3` | Replicas per partition. |
+{.td-table--wide}
 
 **Diagnostics**
 
@@ -2450,7 +2463,7 @@ docker run -d \
 | `HG_PD_DATA_PATH` | No | `/hugegraph-pd/pd_data` | `pd.data-path` | Metadata path. |
 | `HG_PD_INITIAL_STORE_COUNT` | No | `1` | `pd.initial-store-count` | Minimum Store count needed for cluster availability. |
 | `HG_PD_ACTUATOR_EXPOSURE` | No | `health,metrics,prometheus` | `management.endpoints.web.exposure.include` | Public Actuator endpoint allowlist; `*` is forbidden. |
-{.hg-pd-env}
+{.td-table--wide}
 
 The master entrypoint requires all five mandatory variables, builds `SPRING_APPLICATION_JSON` overrides, then starts PD. Other settings come from image `conf/application.yml`; `JAVA_OPTS` is passed to the JVM. Deprecated `GRPC_HOST`, `RAFT_ADDRESS`, `RAFT_PEERS`, and `PD_INITIAL_STORE_LIST` remain supported with warnings.
 
@@ -2475,6 +2488,7 @@ These tables were checked against `hg-pd-dist` configuration and Java defaults a
 | `grpc.host` | `127.0.0.1` | none, required | Address this PD advertises for gRPC. Store and Server connect here, so set it to a reachable IPv4 address or hostname, never `127.0.0.1` or `0.0.0.0`, in a distributed deployment. |
 | `grpc.port` | `8686` | none, required | gRPC port. |
 | `server.port` | `8620` | none, required | REST API port. Also the port reported in Raft member information. |
+{.td-table--wide}
 
 `application.yml.template` also carries `grpc.netty-server.max-inbound-message-size: 100MB`, but PD sets the gRPC server's inbound message limit to 1 GB in code, so that key has no effect.
 
@@ -2488,6 +2502,7 @@ These tables were checked against `hg-pd-dist` configuration and Java defaults a
 | `raft.ip-whitelist.enabled` | not set | `true` | When true, the Raft RPC port accepts connections only from the addresses resolved from `raft.peers-list`; other clients are dropped and logged as `Blocked connection from <ip>`. The allowlist is re-resolved when the peer list changes, but a peer that keeps its hostname and changes IP (a restarted container, for example) needs a PD restart. |
 | `raft.snapshotInterval` | not set | `300` | Seconds between Raft snapshots. |
 | `raft.rpc-timeout` | not set | `10000` | Raft RPC connect, request and install-snapshot timeout, in milliseconds. |
+{.td-table--wide}
 
 **PD core**
 
@@ -2498,6 +2513,7 @@ These tables were checked against `hg-pd-dist` configuration and Java defaults a
 | `pd.initial-store-count` | `1` | `3` | Minimum number of active Store nodes. Below this the cluster state becomes `Cluster_Not_Ready` and the cluster is treated as unavailable. Set it to the number of stores you deploy. |
 | `pd.initial-store-list` | `127.0.0.1:8500` | empty | Comma separated Store gRPC addresses (`ip:port`) that are activated automatically when they register. An entry may also carry a group id as `store_address/group_id`. |
 | `pd.cluster_id` | not set | `1` | Cluster id, used to keep separate PD clusters apart. |
+{.td-table--wide}
 
 **Store management**
 
@@ -2508,6 +2524,7 @@ These tables were checked against `hg-pd-dist` configuration and Java defaults a
 | `store.monitor_data_enabled` | `true` | `false` | Whether to persist Store monitoring samples. |
 | `store.monitor_data_interval` | `1 minute` | `1 minute` | Sampling interval, written as `<number> <unit>` with unit one of `second`, `minute`, `hour`, `day`, `month`, `year`. The number defaults to 1 when omitted. |
 | `store.monitor_data_retention` | `1 day` | `1 day` | How long monitoring samples are kept, same format as above. |
+{.td-table--wide}
 
 **Partitions**
 
@@ -2515,6 +2532,7 @@ These tables were checked against `hg-pd-dist` configuration and Java defaults a
 |-----|---------------|------------------|-------------|
 | `partition.default-shard-count` | `1` | `3` | Number of replicas per partition. Use `3` for a production cluster. |
 | `partition.store-max-shard-count` | `12` | `24` | Maximum number of partition replicas one Store holds. |
+{.td-table--wide}
 
 The initial partition count is derived from these two values and the size of `pd.initial-store-list`:
 
@@ -2533,6 +2551,7 @@ initial partitions = store count * partition.store-max-shard-count / partition.d
 | `management.metrics.export.prometheus.enabled` | `true` | Spring Boot default | Exposes `/actuator/prometheus`. |
 | `management.endpoints.web.exposure.include` | `health,metrics,prometheus` | Spring Boot exposes only `health` by default | Actuator allowlist; these endpoints bypass the PD REST Basic interceptor. |
 | `logging.config` | `file:./conf/log4j2.xml` | none | Log4j2 configuration. Writes `logs/hugegraph-pd.log`, `logs/hugegraph-pd_raft.log` and `logs/audit-hugegraph-pd.log`. |
+{.td-table--wide}
 
 **Thread pools**
 
@@ -2544,6 +2563,7 @@ initial partitions = store count * partition.store-max-shard-count / partition.d
 | `job.uninterruptibleThreadPool.core` | `0` | Core size of the background metadata job pool. A value of 0 or less means half the available processors. |
 | `job.uninterruptibleThreadPool.max` | `256` | Maximum size of that pool. |
 | `job.uninterruptibleThreadPool.queue` | unbounded | Queue capacity of that pool. |
+{.td-table--wide}
 
 #### 4.2 Single-node configuration
 
@@ -2970,7 +2990,7 @@ The single-node preset replaces the default installation with one replica per co
 
 The extracted package is rooted at `hugegraph-helm/`; the source directory remains `helm/hugegraph/`.
 
-```filetree {.hg-filetree-notes title="HugeGraph Helm Chart Layout"}
+```filetree {wrap=true title="HugeGraph Helm Chart Layout"}
 hugegraph-helm/
   Chart.yaml            # Chart metadata and version definitions
   values.yaml           # Default values (easy mode: 3 PD + 3 Store + 3 Server + 1 Hubble, NodePort)
@@ -3947,6 +3967,7 @@ Do not include passwords in documentation, screenshots, or committed configurati
 | `operations.pd.username` / `operations.pd.password` | Username `hubble`, empty password | Match PD operations REST authentication. |
 | `operations.store.username` / `operations.store.password` | Username `hubble`, empty password | Set the service account when upstream Store REST authentication is enabled. |
 | `operations.store.allowed_targets` | `[http://127.0.0.1:8520,http://[::1]:8520]` | List trusted Store metric origins. |
+{.td-table--wide}
 
 For example, when a containerized Store advertises `store:8520`, set:
 
@@ -4871,6 +4892,7 @@ The import process is controlled by commands submitted by the user, and the user
 | `--serializer`                           | binary      |      | The serializer type when creating graph if not exists              |
 | `--scheduler-type`                       | distributed |      | The task scheduler type when creating graph if not exists          |
 | `--batch-failure-fallback`               | true        |      | Whether to fallback to single insert when batch insert fails       |
+{.td-table--wide}
 
 The mapping file option `--file` (`-f`) is required; other options use their defaults. A valid minimal invocation is:
 
@@ -5690,6 +5712,7 @@ The following table applies to the SeaTunnel 3.0+ version used by this guide:
 | `check_vertex` | Check edge endpoints; the edge job in this guide sets it to `true` |
 | [`batch_failure_fallback`](https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/)<sup>[2]</sup> | Defaults to `true`, so a failed batch falls back to record-by-record retries, capped by `max_insert_errors`; the examples explicitly set `false` so a batch failure stops the job |
 | `max_insert_errors` | Number of failed records that record-by-record fallback may skip; default `500`, `-1` for unlimited, and only applies when `batch_failure_fallback` is enabled |
+{.td-table--wide}
 
 Use these checks when a job fails:
 
@@ -6143,6 +6166,7 @@ The above global variables can also be set through environment variables. One wa
 | --timeout              | HUGEGRAPH_TIMEOUT              | export HUGEGRAPH_TIMEOUT=30                        |
 | --trust-store-file     | HUGEGRAPH_TRUST_STORE_FILE     | export HUGEGRAPH_TRUST_STORE_FILE=/tmp/trust-store |
 | --trust-store-password | HUGEGRAPH_TRUST_STORE_PASSWORD | export HUGEGRAPH_TRUST_STORE_PASSWORD=xxxx         |
+{.td-table--wide}
 
 Both forms below count vertices in the same graph; choose either form. The example uses a local Server without authentication.
 For an authenticated Server, also provide the username and password described above.
@@ -8076,6 +8100,7 @@ Core job settings for HugeGraph-Computer.
 | job.workers_count | 1 | The number of workers for one graph algorithm job. In K8s, this option is set by the Operator. |
 | job.partitions_count | 1 | The number of partitions for computing one graph algorithm job. |
 | job.partitions_thread_nums | 4 | The number of threads for partition parallel compute. |
+{.td-table--wide}
 
 ---
 
@@ -8088,6 +8113,7 @@ Algorithm-specific configuration for computation logic.
 | algorithm.params_class | `ComputerOptions.Null` placeholder class | Required. The class used to pass algorithm parameters before the algorithm runs. |
 | algorithm.result_class | `ComputerOptions.Null` placeholder class | The vertex value class used to store computation results. |
 | algorithm.message_class | `ComputerOptions.Null` placeholder class | The message class passed while computing a vertex. |
+{.td-table--wide}
 
 ---
 
@@ -8102,6 +8128,7 @@ Configuration for loading input data from HugeGraph or other sources.
 | input.source_type | hugegraph-server | The source type to load input data, allowed values: ['hugegraph-server', 'hugegraph-loader']. The 'hugegraph-loader' means use hugegraph-loader to load data from HDFS or file. If using 'hugegraph-loader', please configure 'input.loader_struct_path' and 'input.loader_schema_path'. |
 | input.loader_struct_path | "" (empty) | The structure path for Loader input. It takes effect only when `input.source_type=hugegraph-loader`. |
 | input.loader_schema_path | "" (empty) | The schema path for Loader input. It takes effect only when `input.source_type=hugegraph-loader`. |
+{.td-table--wide}
 
 #### 3.2 Input Splits
 
@@ -8111,6 +8138,7 @@ Configuration for loading input data from HugeGraph or other sources.
 | input.split_max_splits | 10000000 | The maximum number of input splits. |
 | input.split_page_size | 500 | The page size for streamed load input split data. |
 | input.split_fetch_timeout | 300 | The timeout in seconds to fetch input splits. |
+{.td-table--wide}
 
 #### 3.3 Input Processing
 
@@ -8120,12 +8148,14 @@ Configuration for loading input data from HugeGraph or other sources.
 | input.edge_direction | OUT | The direction of edges to load, allowed values: [OUT, IN, BOTH]. When the value is BOTH, edges in both OUT and IN directions will be loaded. |
 | input.edge_freq | MULTIPLE | The frequency of edges that can exist between a pair of vertices, allowed values: [SINGLE, SINGLE_PER_LABEL, MULTIPLE]. SINGLE means only one edge can exist between a pair of vertices (identified by sourceId + targetId); SINGLE_PER_LABEL means each edge label can have one edge between a pair of vertices (identified by sourceId + edgeLabel + targetId); MULTIPLE means many edges can exist between a pair of vertices (identified by sourceId + edgeLabel + sortValues + targetId). |
 | input.max_edges_in_one_vertex | 200 | The maximum number of adjacent edges allowed to be attached to a vertex. The adjacent edges will be stored and transferred together as a batch unit. |
+{.td-table--wide}
 
 #### 3.4 Input Performance
 
 | config option | default value | description |
 |---------------|---------------|-------------|
 | input.send_thread_nums | 4 | The number of threads for parallel sending of vertices or edges. |
+{.td-table--wide}
 
 ---
 
@@ -8140,6 +8170,7 @@ HugeGraph-Computer supports snapshot functionality to save vertex/edge partition
 | snapshot.write | false | Whether to write snapshots of input vertex/edge partitions. |
 | snapshot.load | false | Whether to load from snapshots of vertex/edge partitions. |
 | snapshot.name | "" (empty) | User-defined snapshot name to distinguish different snapshots. |
+{.td-table--wide}
 
 #### 4.2 MinIO Integration (Optional)
 
@@ -8151,6 +8182,7 @@ MinIO can be used as a distributed object storage backend for snapshots in K8s d
 | snapshot.minio_access_key | minioadmin | MinIO access key for authentication. |
 | snapshot.minio_secret_key | minioadmin | MinIO secret key for authentication. |
 | snapshot.minio_bucket_name | "" (empty) | MinIO bucket name for storing snapshot data. |
+{.td-table--wide}
 
 **Usage Scenarios:**
 - **Checkpoint Recovery**: Resume from snapshots after job failures, avoiding data reloading
@@ -8185,6 +8217,7 @@ Configuration for worker and master computation logic.
 | config option | default value | description |
 |---------------|---------------|-------------|
 | master.computation_class | org.apache.hugegraph.computer.core.master.DefaultMasterComputation | Master-computation is computation that can determine whether to continue to the next superstep. It runs at the end of each superstep on the master. |
+{.td-table--wide}
 
 #### 5.2 Worker Computation
 
@@ -8193,6 +8226,7 @@ Configuration for worker and master computation logic.
 | worker.computation_class | org.apache.hugegraph.computer.core.config.Null | The class to create worker-computation object. Worker-computation is used to compute each vertex in each superstep. |
 | worker.combiner_class | org.apache.hugegraph.computer.core.config.Null | Combiner can combine messages into one value for a vertex. For example, PageRank algorithm can combine messages of a vertex to a sum value. |
 | worker.partitioner | org.apache.hugegraph.computer.core.graph.partition.HashPartitioner | The partitioner that decides which partition a vertex should be in, and which worker a partition should be in. |
+{.td-table--wide}
 
 #### 5.3 Worker Combiners
 
@@ -8200,6 +8234,7 @@ Configuration for worker and master computation logic.
 |---------------|---------------|-------------|
 | worker.vertex_properties_combiner_class | org.apache.hugegraph.computer.core.combiner.OverwritePropertiesCombiner | The combiner can combine several properties of the same vertex into one properties at input step. |
 | worker.edge_properties_combiner_class | org.apache.hugegraph.computer.core.combiner.OverwritePropertiesCombiner | The combiner can combine several properties of the same edge into one properties at input step. |
+{.td-table--wide}
 
 #### 5.4 Worker Buffers
 
@@ -8208,6 +8243,7 @@ Configuration for worker and master computation logic.
 | worker.received_buffers_bytes_limit | 104857600 (100 MB) | The limit bytes of buffers of received data. The total size of all buffers can't exceed this limit. If received buffers reach this limit, they will be merged into a file (spill to disk). |
 | worker.write_buffer_capacity | 52428800 (50 MB) | The initial size of write buffer that used to store vertex or message. |
 | worker.write_buffer_threshold | 52428800 (50 MB) | The threshold of write buffer. Exceeding it will trigger sorting. The write buffer is used to store vertex or message. |
+{.td-table--wide}
 
 #### 5.5 Worker Data & Timeouts
 
@@ -8216,6 +8252,7 @@ Configuration for worker and master computation logic.
 | worker.data_dirs | [jobs] | The directories separated by ',' that received vertices and messages can persist into. |
 | worker.wait_sort_timeout | 600000 (10 minutes) | The max timeout (in ms) for message-handler to wait for sort-thread to sort one batch of buffers. |
 | worker.wait_finish_messages_timeout | 86400000 (24 hours) | The max timeout (in ms) for message-handler to wait for finish-message of all workers. |
+{.td-table--wide}
 
 ---
 
@@ -8230,6 +8267,7 @@ Configuration for output computation results.
 | output.output_class | org.apache.hugegraph.computer.core.output.LogOutput | The class to output the computation result of each vertex. Called after iteration computation. |
 | output.result_name | value | The value is assigned dynamically by #name() of instance created by WORKER_COMPUTATION_CLASS. |
 | output.result_write_type | OLAP_COMMON | The result write-type to output to HugeGraph, allowed values: [OLAP_COMMON, OLAP_SECONDARY, OLAP_RANGE]. |
+{.td-table--wide}
 
 #### 6.2 Output Behavior
 
@@ -8238,6 +8276,7 @@ Configuration for output computation results.
 | output.with_adjacent_edges | false | Whether to output the adjacent edges of the vertex. |
 | output.with_vertex_properties | false | Whether to output the properties of the vertex. |
 | output.with_edge_properties | false | Whether to output the properties of the edge. |
+{.td-table--wide}
 
 #### 6.3 Batch Output
 
@@ -8246,6 +8285,7 @@ Configuration for output computation results.
 | output.batch_size | 500 | The batch size of output. |
 | output.batch_threads | 1 | The number of threads used for batch output. |
 | output.single_threads | 1 | The number of threads used for single output. |
+{.td-table--wide}
 
 #### 6.4 HDFS Output
 
@@ -8263,6 +8303,7 @@ Configuration for output computation results.
 | output.hdfs_kerberos_principal | "" (empty) | The HDFS principal for Kerberos authentication. |
 | output.hdfs_kerberos_keytab | "" (empty) | The HDFS keytab file for Kerberos authentication. |
 | output.hdfs_krb5_conf | /etc/krb5.conf | Kerberos configuration file path. |
+{.td-table--wide}
 
 #### 6.5 Retry & Timeout
 
@@ -8271,6 +8312,7 @@ Configuration for output computation results.
 | output.retry_times | 3 | The retry times when output fails. |
 | output.retry_interval | 10 | The retry interval (in seconds) when output fails. |
 | output.thread_pool_shutdown_timeout | 60 | The timeout (in seconds) of output thread pool shutdown. |
+{.td-table--wide}
 
 ---
 
@@ -8285,6 +8327,7 @@ Configuration for network communication between workers and master.
 | transport.server_host | 127.0.0.1 | Worker data listener and advertised address. It must be reachable by other workers across hosts; the Operator sets it to the Pod IP. |
 | transport.server_port | 0 (distribution: 0; K8s Operator: 8099) | Worker data port. Locally, `0` lets the OS assign a port; the Operator uses fixed port `8099` by default for Pod communication. |
 | transport.server_threads | 4 | The number of transport threads for server. |
+{.td-table--wide}
 
 #### 7.2 Client Configuration
 
@@ -8292,6 +8335,7 @@ Configuration for network communication between workers and master.
 |---------------|---------------|-------------|
 | transport.client_threads | 4 | The number of transport threads for client. |
 | transport.client_connect_timeout | 3000 | The timeout (in ms) of client connect to server. |
+{.td-table--wide}
 
 #### 7.3 Protocol Configuration
 
@@ -8301,6 +8345,7 @@ Configuration for network communication between workers and master.
 | transport.io_mode | AUTO | The network IO mode, allowed values: [NIO, EPOLL, AUTO]. AUTO means selecting the appropriate mode automatically. |
 | transport.tcp_keep_alive | true | Whether to enable TCP keep-alive. |
 | transport.transport_epoll_lt | false | Whether to enable EPOLL level-trigger (only effective when io_mode=EPOLL). |
+{.td-table--wide}
 
 #### 7.4 Buffer Configuration
 
@@ -8310,6 +8355,7 @@ Configuration for network communication between workers and master.
 | transport.receive_buffer_size | 0 | The size of socket receive-buffer in bytes. 0 means using system default value. |
 | transport.write_buffer_high_mark | 67108864 (64 MB) | The high water mark for write buffer in bytes. It will trigger sending unavailable if the number of queued bytes > write_buffer_high_mark. |
 | transport.write_buffer_low_mark | 33554432 (32 MB) | The low water mark for write buffer in bytes. It will trigger sending available if the number of queued bytes < write_buffer_low_mark. |
+{.td-table--wide}
 
 #### 7.5 Flow Control
 
@@ -8318,6 +8364,7 @@ Configuration for network communication between workers and master.
 | transport.max_pending_requests | 8 | The max number of client unreceived ACKs. It will trigger sending unavailable if the number of unreceived ACKs >= max_pending_requests. |
 | transport.min_pending_requests | 6 | The minimum number of client unreceived ACKs. It will trigger sending available if the number of unreceived ACKs < min_pending_requests. |
 | transport.min_ack_interval | 200 | The minimum interval (in ms) of server reply ACK. |
+{.td-table--wide}
 
 #### 7.6 Timeouts
 
@@ -8328,6 +8375,7 @@ Configuration for network communication between workers and master.
 | transport.finish_session_timeout | 0 | The timeout (in ms) to finish session. 0 means using (transport.sync_request_timeout × transport.max_pending_requests). |
 | transport.write_socket_timeout | 3000 | The timeout (in ms) to write data to socket buffer. |
 | transport.server_idle_timeout | 360000 (6 minutes) | The max timeout (in ms) of server idle. |
+{.td-table--wide}
 
 #### 7.7 Heartbeat
 
@@ -8335,6 +8383,7 @@ Configuration for network communication between workers and master.
 |---------------|---------------|-------------|
 | transport.heartbeat_interval | 20000 (20 seconds) | The minimum interval (in ms) between heartbeats on client side. |
 | transport.max_timeout_heartbeat_count | 120 | The maximum times of timeout heartbeat on client side. If the number of timeouts waiting for heartbeat response continuously > max_timeout_heartbeat_count, the channel will be closed from client side. |
+{.td-table--wide}
 
 #### 7.8 Advanced Network Settings
 
@@ -8343,6 +8392,7 @@ Configuration for network communication between workers and master.
 | transport.max_syn_backlog | 511 | The capacity of SYN queue on server side. 0 means using system default value. |
 | transport.recv_file_mode | true | Whether to enable receive buffer-file mode. It will receive buffer and write to file from socket using zero-copy if enabled. **Note**: Requires OS support for zero-copy (e.g., Linux sendfile/splice). |
 | transport.network_retries | 3 | The number of retry attempts for network communication if network is unstable. |
+{.td-table--wide}
 
 ---
 
@@ -8354,6 +8404,7 @@ These options come from HugeGraph Commons RPC configuration; the distribution te
 |--------|--------------------|-------------|
 | rpc.server_host | 127.0.0.1 (K8s: Pod IP) | Master RPC address, reachable by workers. |
 | rpc.server_port | 8190 (K8s default: 8190) | Master RPC listener port; allow worker connections in security groups and network policies. |
+{.td-table--wide}
 
 ---
 
@@ -8369,12 +8420,14 @@ Configuration for HGKV (HugeGraph Key-Value) storage engine and value files.
 | hgkv.max_data_block_size | 65536 (64 KB) | The max byte size of HGKV file data block. |
 | hgkv.max_merge_files | 10 | The max number of files to merge at one time. |
 | hgkv.temp_file_dir | /tmp/hgkv | This folder is used to store temporary files during the file merging process. |
+{.td-table--wide}
 
 #### 8.2 Value File Configuration
 
 | config option | default value | description |
 |---------------|---------------|-------------|
 | valuefile.max_segment_size | 1073741824 (1 GB) | The max number of bytes in each segment of value-file. |
+{.td-table--wide}
 
 ---
 
@@ -8390,6 +8443,7 @@ Configuration for Bulk Synchronous Parallel (BSP) protocol and etcd coordination
 | bsp.wait_workers_timeout | 86400000 (24 hours) | The max timeout (in ms) to wait for workers BSP event. |
 | bsp.wait_master_timeout | 86400000 (24 hours) | The max timeout (in ms) to wait for master BSP event. |
 | bsp.log_interval | 30000 (30 seconds) | The log interval (in ms) to print the log while waiting for BSP event. |
+{.td-table--wide}
 
 ---
 
@@ -8401,6 +8455,7 @@ Configuration for performance optimization.
 |---------------|---------------|-------------|
 | allocator.max_vertices_per_thread | 10000 | Maximum number of vertices per thread processed in each memory allocator. |
 | sort.thread_nums | 4 | The number of threads performing internal sorting. |
+{.td-table--wide}
 
 ---
 
@@ -8418,6 +8473,7 @@ Kubernetes Operator fills or overrides these options. Avoid overriding them unle
 | rpc.server_host | K8s Operator | Overrides with master Pod IP. |
 | rpc.server_port | K8s Operator | Defaults unspecified or zero values to `8190`. |
 | rpc.remote_url | Computer startup | Removed when configuration is read; do not set as job configuration. |
+{.td-table--wide}
 
 **Why these values must match:**
 - **BSP/RPC**: Must match deployed etcd/RPC services for coordination.
@@ -8445,6 +8501,7 @@ Kubernetes Operator fills or overrides these options. Avoid overriding them unle
 | k8s.resync_period | 600000 | The minimum frequency at which watched resources are reconciled. |
 | k8s.timezone | Asia/Shanghai | The timezone of computer job and operator. |
 | k8s.watch_namespace | hugegraph-computer-operator-system | Namespace watched for custom resources; also used by the supplied manifest. Use `*` to watch all namespaces. |
+{.td-table--wide}
 
 ---
 
@@ -8481,6 +8538,7 @@ Kubernetes Operator fills or overrides these options. Avoid overriding them unle
 | configMapPaths | | The map of k8s-configmap name and mount path. | false |
 | podTemplateSpec | | Please refer to: https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-template-v1/#PodTemplateSpec | false |
 | securityContext | | Please refer to: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ | false |
+{.td-table--wide}
 
 ---
 
@@ -8502,6 +8560,7 @@ Kubernetes Operator fills or overrides these options. Avoid overriding them unle
 | k8s.log4j_xml_path | | The log4j.xml path for computer job. |
 | k8s.namespace | hugegraph-computer-operator-system | Namespace of the HugeGraph-Computer system. |
 | k8s.pull_secret_names | [] | The names of pull-secret for pulling image. |
+{.td-table--wide}
 
 ---
 
@@ -9041,6 +9100,7 @@ hg2d = HugeGraph2DGL(
 | `convert_graph_with_edge_feat(vertex_label, edge_label, node_feat_key="feat", edge_feat_key="edge_feat", label_key="label", mask_keys=None)` | `dgl.DGLGraph` | Also fills `edata["feat"]` |
 | `convert_graph_ogb(vertex_label, edge_label, split_label)` | `(dgl.DGLGraph, split_edge)` | Used by SEAL |
 | `convert_hetero_graph_bgnn(vertex_labels, edge_labels, feat_key="feat", label_key="class", cat_key="cat_features", mask_keys=None)` | DGL heterograph | Used by BGNN |
+{.td-table--wide}
 
 Node features land in `ndata["feat"]`, labels in `ndata["label"]` and each mask in `ndata[<mask key>]`. `NodeEmbed` requires `feat` only; `NodeClassify`, `NodeClassifyWithEdge` and `NodeClassifyWithSample` require `feat`, `label`, `train_mask`, `val_mask` and `test_mask` and raise `ValueError` when one is missing.
 
@@ -9059,6 +9119,7 @@ Node features land in `ndata["feat"]`, labels in `ndata["label"]` and each mask 
 | `import_graph_from_dgl_with_edge_feat` | `CORA`, `CITESEER`, `PUBMED` | `<NAME>_edge_feat_vertex`, `<NAME>_edge_feat_edge` |
 | `import_graph_from_ogb` | `ogbl-collab`, matched without upper-casing | `<NAME>_vertex`, `<NAME>_edge` |
 | `import_split_edge_from_ogb` | `ogbl-collab`, matched without upper-casing | `<NAME>_split_edge` |
+{.td-table--wide}
 
 Any other name raises `ValueError("dataset not supported")`. `import_split_edge_from_ogb` additionally requires the `idx_to_vertex_id` mapping and a `max_nodes` cap returned by the vertex import.
 
@@ -9081,6 +9142,7 @@ Task classes live in `hugegraph-ml/src/hugegraph_ml/tasks/`. Each one takes the 
 | `HeteroSampleEmbedGATNE` | `hetero_sample_embed_gatne.py` | `train_and_embed(lr=1e-3, n_epochs=200, gpu=-1)` |
 | `LinkPredictionPGNN` | `link_prediction_pgnn.py` | `train(lr, weight_decay, n_epochs, gpu)` |
 | `LinkPredictionSeal` | `link_prediction_seal.py` | The constructor calls `data_prepare()` itself, then `train(lr=1e-3, n_epochs=200, gpu=-1)` |
+{.td-table--wide}
 
 `patience` defaults to `float("inf")`. `EarlyStopping` in `utils/early_stopping.py` monitors either `loss` or `accuracy`, keeps a copy of the best weights and restores them when training stops.
 
@@ -9115,6 +9177,7 @@ Each script also exposes a function of the same name, so it can be imported and 
 | `jknet_example.py` | `JKNet` | `NodeClassify` | `CORA_vertex`, `CORA_edge` |
 | `pgnn_example.py` | `PGNN` | `LinkPredictionPGNN` | `CAVEMAN_vertex`, `CAVEMAN_edge` |
 | `seal_example.py` | `DGCNN` | `LinkPredictionSeal` | `ogbl-collab_vertex`, `ogbl-collab_edge`, `ogbl-collab_split_edge` |
+{.td-table--wide}
 
 ## DGI Node Embedding Example
 
@@ -9255,6 +9318,7 @@ Chat, extraction, and Text2Gremlin can use different endpoints, keys, and models
 | Extraction | `OPENAI_EXTRACT_API_BASE` | `OPENAI_EXTRACT_API_KEY` | `OPENAI_EXTRACT_LANGUAGE_MODEL` | `OPENAI_EXTRACT_TOKENS=256` |
 | Text2Gremlin | `OPENAI_TEXT2GQL_API_BASE` | `OPENAI_TEXT2GQL_API_KEY` | `OPENAI_TEXT2GQL_LANGUAGE_MODEL` | `OPENAI_TEXT2GQL_TOKENS=4096` |
 | Embedding | `OPENAI_EMBEDDING_API_BASE` | `OPENAI_EMBEDDING_API_KEY` | `OPENAI_EMBEDDING_MODEL` | Not applicable |
+{.td-table--wide}
 
 The default API base is `https://api.openai.com/v1`. The default language model for all three tasks is `gpt-4.1-mini`, and the default embedding model is `text-embedding-3-small`.
 
@@ -9268,6 +9332,7 @@ The default API base is `https://api.openai.com/v1`. The default language model 
 | Extraction | `LITELLM_EXTRACT_API_BASE` | `LITELLM_EXTRACT_API_KEY` | `LITELLM_EXTRACT_LANGUAGE_MODEL` | `LITELLM_EXTRACT_TOKENS=256` |
 | Text2Gremlin | `LITELLM_TEXT2GQL_API_BASE` | `LITELLM_TEXT2GQL_API_KEY` | `LITELLM_TEXT2GQL_LANGUAGE_MODEL` | `LITELLM_TEXT2GQL_TOKENS=4096` |
 | Embedding | `LITELLM_EMBEDDING_API_BASE` | `LITELLM_EMBEDDING_API_KEY` | `LITELLM_EMBEDDING_MODEL` | Not applicable |
+{.td-table--wide}
 
 The default language model is `openai/gpt-4.1-mini`, and the default embedding model is `openai/text-embedding-3-small`. Model names generally use the `provider/model` form; supported values depend on the LiteLLM service.
 
@@ -9279,6 +9344,7 @@ The default language model is `openai/gpt-4.1-mini`, and the default embedding m
 | Extraction | `OLLAMA_EXTRACT_HOST` | `OLLAMA_EXTRACT_PORT` | `OLLAMA_EXTRACT_LANGUAGE_MODEL` |
 | Text2Gremlin | `OLLAMA_TEXT2GQL_HOST` | `OLLAMA_TEXT2GQL_PORT` | `OLLAMA_TEXT2GQL_LANGUAGE_MODEL` |
 | Embedding | `OLLAMA_EMBEDDING_HOST` | `OLLAMA_EMBEDDING_PORT` | `OLLAMA_EMBEDDING_MODEL` |
+{.td-table--wide}
 
 The default host is `127.0.0.1` and the default port is `11434`. Model names have no defaults; pull the required models in Ollama before use.
 
@@ -11674,6 +11740,7 @@ Note: CPU/memory and Kubernetes-related capabilities are not publicly available 
 | max_role_number              | No       | Int     | 0       |                                                                                | Maximum number of roles that can be created inside the graphspace                 |
 | auth                         | No       | Boolean | false   | true / false                                                                   | Whether to enable authentication for the graphspace                               |
 | configs                      | No       | Map     |         |                                                                                | Additional configuration                                                          |
+{.td-table--wide}
 
 ```json
 {
@@ -11840,6 +11907,7 @@ GET http://localhost:8080/graphspaces/gs1
 | internal_algorithm_image_url | No       | String |                                                         | HugeGraph-Computer algorithm image registry                                       |
 | max_graph_number             | Yes      | Int    | > 0                                                     | Maximum number of graphs                                                          |
 | max_role_number              | Yes      | Int    | > 0                                                     | Maximum number of roles                                                           |
+{.td-table--wide}
 
 ##### Method & Url
 
@@ -25487,6 +25555,7 @@ Corresponding configuration file `gremlin-server.yaml`
 | resultIterationBatchSize  | 64                                                                                                           | Number of results returned per batch when streaming a result set.                |
 | ssl.enabled               | false                                                                                                        | Whether Gremlin Server serves over TLS.                                          |
 | authentication            | Not configured                                                                                               | When enabling authentication, configure the authenticator, handler, and path to `rest-server.properties`. |
+{.td-table--wide}
 
 ### Rest Server & API Config Options
 
@@ -25534,6 +25603,7 @@ Corresponding configuration file `rest-server.properties`
 | memory_monitor.period                  | 2000                                             | The period in ms of JVM memory usage monitoring, in each period we will detect the jvm memory usage and take corresponding actions.                                                                            |
 | log.slow_query_threshold               | 1000                                             | The threshold time(ms) of logging slow query, 0 means logging slow query is disabled.                                                                                                                          |
 | log.slow_query_body_limit              | 512                                              | The max bytes of request body recorded in the slow query log, 0 means the body is not recorded. The recorded prefix is written as-is and may contain sensitive Gremlin or Cypher literals.                      |
+{.td-table--wide}
 
 The role election options `server.role_election` and `server.role.*` apply to version 1.7.0 and earlier only. Later versions no longer read them: a server that still sets them starts normally and logs a warning for each key.
 
@@ -25553,6 +25623,7 @@ Corresponding configuration file `rest-server.properties`
 | meta.ca              |                       | The ca file of meta server.                                     |
 | meta.client_ca       |                       | The client ca file of meta server.                              |
 | meta.client_key      |                       | The client key file of meta server.                             |
+{.td-table--wide}
 
 The HStore backend also reads two options from the graph configuration file `{graph-name}.properties`. Both default to
 0, which means the value is decided by PD:
@@ -25561,6 +25632,7 @@ The HStore backend also reads two options from the graph configuration file `{gr
 |-------------------------|---------------|-----------------------------------------------------------------|
 | hstore.partition_count  | 0             | Number of partitions, which PD controls partitions based on.    |
 | hstore.shard_count      | 0             | Number of copies, which PD controls partition copies based on.  |
+{.td-table--wide}
 
 ### Authentication Graph Config Options
 
@@ -25573,6 +25645,7 @@ Write these options in the properties file for the graph specified by `auth.grap
 | auth.cache_expire | 600 | Authentication client and Server cache expiration in seconds; a non-negative integer. |
 | auth.token_expire | 86400 | JWT lifetime in seconds; a non-negative integer. |
 | auth.token_secret | 32 random bytes encoded as Base64 | Authentication graph setting; the default is not written back to the file. Explicitly set the same strong random value on every node to validate tokens across restarts or nodes. HS256 requires at least 32 UTF-8 bytes. |
+{.td-table--wide}
 
 ### Basic Config Options
 
@@ -25649,6 +25722,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | memory.max_capacity                   | 1073741824                                   | The maximum memory capacity in bytes that can be managed for all queries in HugeGraph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | memory.one_query_max_capacity         | 104857600                                    | The maximum memory capacity in bytes that can be managed for a query in HugeGraph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | memory.alignment                      | 8                                            | The alignment used for round memory size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+{.td-table--wide}
 
 > [!DETAILS]- **Raft Config Options (Deprecated)**
 > The shipped graph configuration templates mark these options as deprecated. They only take effect when
@@ -25678,6 +25752,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | raft.install_snapshot_rpc_timeout | 36000                | The install snapshot rpc timeout in seconds for jraft rpc.                                                                                                                                                                                                                        |
 > | raft.rpc_buf_low_water_mark       | 10485760             | The ChannelOutboundBuffer's low water mark of netty, when buffer size less than this size, the method ChannelOutboundBuffer.isWritable() will return true, it means that low downstream pressure or good network.                                                                   |
 > | raft.rpc_buf_high_water_mark      | 20971520             | The ChannelOutboundBuffer's high water mark of netty, only when buffer size exceed this size, the method ChannelOutboundBuffer.isWritable() will return false, it means that the downstream pressure is too great to process the request or network is very congestion, upstream needs to limit rate at this time. |
+> {.td-table--wide}
 
 ### RocksDB Backend Config Options
 
@@ -25755,6 +25830,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | rocksdb.partition_filters_and_indexes           | false                                            | If bloom filter is enabled, set this option true to use partitioned full filters and indexes for each sst file. This option is incompatible with block-based filters.                                                                                                                                                                                                                                  |
 | rocksdb.pin_top_level_index_and_filter          | true                                             | If partition_filters_and_indexes is set true, set this option true if we'd pin top-level index of partitioned filter and index blocks to the block cache.                                                                                                                                                                                                                                              |
 | rocksdb.prefix_extractor_n_bytes                | 0                                                | The prefix-extractor uses the first N bytes of a key as its prefix, it will use the full key when a key is shorter than the N. 0 means unset prefix-extractor.                                                                                                                                                                                                                                         |
+{.td-table--wide}
 
 > [!DETAILS]- **K8s Config Options (Optional)**
 > Corresponding configuration file `rest-server.properties`
@@ -25784,6 +25860,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | k8s.internal_algorithm        | [page-rank, degree-centrality, wcc, triangle-count, rings, rings-with-filter, betweenness-centrality, closeness-centrality, lpa, links, kcore, louvain, clustering-coefficient, ppr, subgraph-match] | The names of the built-in k8s algorithms.        |
 > | k8s.algorithms                | See `ServerOptions.K8S_ALGORITHMS` | The `name:paramsClass` mapping of the built-in k8s algorithms.                              |
 > | k8s.internal_algorithm_image_url | Empty | Image URL for built-in Kubernetes algorithms. |
+> {.td-table--wide}
 
 > [!DETAILS]- **Arthas Diagnostic Config Options (Optional)**
 > Corresponding configuration file: `rest-server.properties`.
@@ -25795,6 +25872,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | arthas.http_port | 8561 | Arthas HTTP port for administrator activation. |
 > | arthas.ip | 127.0.0.1 | Bind address; administrators may explicitly select another valid address, including `0.0.0.0`. |
 > | arthas.disabled_commands | Empty | Optional comma-separated disabled commands, e.g. `jad,mc`, for API activation; not applied by the local helper. |
+> {.td-table--wide}
 >
 > Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain supported as fallbacks; explicit snake_case settings take precedence.
 > The bundled `bin/arthas.sh` provides local diagnostics without changing configuration. For activation workflows, permissions, and authentication options,
@@ -25819,6 +25897,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | rpc.serialization           | hessian2                                | Rpc serialization type, client and server must set the same value. Note: If you choose 'protobuf', you need to add the relative IDL file. (Could refer PD/Store *.proto)                                       |
 > | rpc.config_order            | 999                                     | Sofa-RPC configuration file loading order, the larger the more later loading.                                                                                                                                 |
 > | rpc.logger_impl             | com.alipay.sofa.rpc.log.SLF4JLoggerImpl | Sofa-RPC log implementation class.                                                                                                                                                                            |
+> {.td-table--wide}
 
 > [!DETAILS]- **HBase Backend Config Options**
 > | config option             | default value                  | description                                                              |
@@ -25840,6 +25919,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
 > | hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
 > | hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
+> {.td-table--wide}
 
 
 ---
@@ -25864,12 +25944,14 @@ The following backend stores are no longer supported in version 1.7.0+ and are o
 > | cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
 > | cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
 > | cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
+> {.td-table--wide}
 
 > [!DETAILS]- **ScyllaDB Backend Config Options**
 > | config option | default value | description                |
 > |---------------|---------------|----------------------------|
 > | backend       |               | Must be set to `scylladb`. |
 > | serializer    |               | Must be set to `scylladb`. |
+> {.td-table--wide}
 >
 > Other options are consistent with the Cassandra backend.
 
@@ -25887,12 +25969,14 @@ The following backend stores are no longer supported in version 1.7.0+ and are o
 > | jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
 > | jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
 > | jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
+> {.td-table--wide}
 
 > [!DETAILS]- **PostgreSQL Backend Config Options**
 > | config option | default value | description                  |
 > |---------------|---------------|------------------------------|
 > | backend       |               | Must be set to `postgresql`. |
 > | serializer    |               | Must be set to `postgresql`. |
+> {.td-table--wide}
 >
 > Other options are consistent with the MySQL backend.
 >

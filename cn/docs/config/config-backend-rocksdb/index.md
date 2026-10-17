@@ -61,7 +61,7 @@ store=hugegraph
 每个图会打开三个 store：`m` 存放 schema，`g` 存放图数据，`s` 是 system store。store 名会拼接到上面
 两个路径之后，因此一个默认的单图安装目录如下：
 
-```filetree {.hg-filetree-notes title="RocksDB 数据目录"}
+```filetree {wrap=true title="RocksDB 数据目录"}
 rocksdb-data/
   data/
     m/    # schema store：属性键、顶点/边/索引标签、计数器
@@ -94,6 +94,7 @@ rocksdb-data/
 | rocksdb.wal_path     | `rocksdb-data/wal`  | RocksDB WAL 存储路径，不允许为空。                                                                                                                                                                                                                                                                                                                |
 | rocksdb.sst_path     | （空）              | 待导入 RocksDB 的 SST 文件所在路径，为空表示不导入。                                                                                                                                                                                                                                                                                              |
 | rocksdb.log_level    | `INFO`              | RocksDB 的日志级别，可选值：DEBUG、INFO、WARN、ERROR、FATAL、HEADER。                                                                                                                                                                                                                                                                             |
+{.td-table--wide}
 
 ### 压缩与合并配置项
 
@@ -106,6 +107,7 @@ rocksdb-data/
 | rocksdb.compression_per_level  | `[none, none, snappy, snappy, snappy, snappy, snappy]` | 各层使用的压缩算法，可选值为 none/snappy/z/bzip2/lz4/lz4hc/xpress/zstd。列表必须为空，或者元素个数正好等于 `rocksdb.num_levels`。         |
 | rocksdb.bottommost_compression | `none`                                                 | 最底层使用的压缩算法，可选值为 none/snappy/z/bzip2/lz4/lz4hc/xpress/zstd。                                                               |
 | rocksdb.compression            | `snappy`                                               | 压缩数据块使用的压缩算法，可选值为 none/snappy/z/bzip2/lz4/lz4hc/xpress/zstd。                                                           |
+{.td-table--wide}
 
 ### 数据库级配置项
 
@@ -128,6 +130,7 @@ rocksdb-data/
 | rocksdb.compaction_readahead_size      | `0`                  | compaction 时批量读取的字节数。如果 RocksDB 跑在机械盘上，建议至少设为 2MB，0 表示关闭预取。                       |
 | rocksdb.row_cache_capacity             | `0`                  | 表级行缓存的全局容量，单位字节，0 表示关闭 row_cache。                                                            |
 | rocksdb.delete_obsolete_files_period   | `21600`（6 小时）    | 删除废弃文件的周期，单位秒，0 表示每次都做完整清理。该值传给 RocksDB 前会换算成微秒。                              |
+{.td-table--wide}
 
 ### Memtable 配置项
 
@@ -141,6 +144,7 @@ rocksdb-data/
 | rocksdb.memtable_whole_key_filtering        | `false`              | 在 memtable 中启用全键布隆过滤器，可以降低点查的 CPU 开销。只有 memtable_bloom_size_ratio > 0 时才生效。                          |
 | rocksdb.memtable_huge_page_size             | `0`                  | memtable 中布隆过滤器使用的 huge page TLB 的页大小，小于等于 0 时不从 huge page TLB 分配，改用 malloc。                            |
 | rocksdb.inplace_update_support              | `false`              | 当写入的键已存在于当前 memtable 且新值更小时，允许线程安全的原地更新。                                                             |
+{.td-table--wide}
 
 ### 层级大小与写入限流配置项
 
@@ -156,6 +160,7 @@ rocksdb-data/
 | rocksdb.level0_stop_writes_trigger           | `36`                    | 触发停写的 level-0 文件数硬上限。                                                                                                                                                                                   |
 | rocksdb.soft_pending_compaction_bytes_limit  | `68719476736`（64 GB）  | 待 compaction 数据量的软上限，单位字节，最小 1 GB。                                                                                                                                                                |
 | rocksdb.hard_pending_compaction_bytes_limit  | `274877906944`（256 GB）| 待 compaction 数据量的硬上限，单位字节，最小 1 GB。                                                                                                                                                                |
+{.td-table--wide}
 
 ### 文件 I/O 配置项
 
@@ -167,6 +172,7 @@ rocksdb-data/
 | rocksdb.use_direct_io_for_flush_and_compaction | `false`       | flush 和 compaction 时使用直接读写。                                                                 |
 | rocksdb.use_fsync                              | `false`       | 为 true 时每次持久化都会执行 fsync。                                                                 |
 | rocksdb.atomic_flush                           | `false`       | 为 true 时多个列族的 flush 结果会原子地提交到 MANIFEST。WAL 一直开启的情况下不必设置该项。             |
+{.td-table--wide}
 
 ### SST 表格式与块缓存配置项
 
@@ -180,6 +186,7 @@ rocksdb-data/
 | rocksdb.block_size_deviation             | `10`                     | 用于结束一个块的空闲空间百分比，取值范围 0 到 100。                                                                                    |
 | rocksdb.block_restart_interval           | `16`                     | 块内增量编码的 restart 间隔。                                                                                                          |
 | rocksdb.block_cache_capacity             | `8388608`（8 MB）        | RocksDB 使用的块缓存大小，单位字节，0 表示不使用块缓存。每个列族都会创建一个该大小的独立缓存。                                          |
+{.td-table--wide}
 
 ### 布隆过滤器配置项
 
@@ -197,6 +204,7 @@ rocksdb-data/
 | rocksdb.partition_filters_and_indexes           | `false`       | 启用布隆过滤器时，设为 true 表示每个 sst 文件使用分区的 full filter 和索引。该项与 block based filter 不兼容。开启后索引类型会被强制为 kTwoLevelIndexSearch，元数据块大小取 `rocksdb.block_size`。 |
 | rocksdb.pin_top_level_index_and_filter          | `true`        | 当 partition_filters_and_indexes 为 true 时，设为 true 表示把分区过滤块和索引块的顶层索引固定在块缓存中。                                          |
 | rocksdb.prefix_extractor_n_bytes                | `0`           | prefix-extractor 取键的前 N 个字节作为前缀，键长度小于 N 时使用完整键，0 表示不设置 prefix-extractor。                                             |
+{.td-table--wide}
 
 ### 配置项的生效方式
 

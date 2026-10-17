@@ -54,6 +54,7 @@ All options below live in the graph properties file (`conf/graphs/hugegraph.prop
 | hbase.znode_parent  | /hbase      | The znode parent path of HBase zookeeper. Must not be empty. Maps to `zookeeper.znode.parent`.                                                               |
 | hbase.zk_retry      | 3           | The recovery retry times of HBase zookeeper, in the range 0 to 1000. Maps to `zookeeper.recovery.retry`.                                                     |
 | hbase.threads_max   | 64          | The max threads num of hbase connections, in the range 1 to 1000. Maps to `hbase.hconnection.threads.max`, which HBase itself defaults to 256; the lower value is used to avoid running out of memory. |
+{.td-table--wide}
 
 ### Timeout Options
 
@@ -61,6 +62,7 @@ All options below live in the graph properties file (`conf/graphs/hugegraph.prop
 |---------------------------|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | hbase.truncate_timeout    | 30               | The timeout in seconds of waiting for store truncate. Must be positive. It applies per store, and a graph has three stores, so a truncate can take up to three times this value. |
 | hbase.aggregation_timeout | 43200 (12 hours) | The timeout in seconds of waiting for aggregation. Must be positive. Sets `hbase.rpc.timeout` on the aggregation client used by count queries.                  |
+{.td-table--wide}
 
 ### Kerberos and HBase Site Options
 
@@ -71,6 +73,7 @@ All options below live in the graph properties file (`conf/graphs/hugegraph.prop
 | hbase.hbase_site         | /etc/hbase/conf/hbase-site.xml | The HBase's configuration file. It is added as a configuration resource on every connection, whether or not Kerberos is enabled. |
 | hbase.kerberos_principal | (empty)                        | The HBase's principal for kerberos authentication.                                                      |
 | hbase.kerberos_keytab    | (empty)                        | The HBase's key tab file for kerberos authentication.                                                   |
+{.td-table--wide}
 
 When `hbase.kerberos_enable=true`, HugeGraph sets `hadoop.security.authentication` and `hbase.security.authentication` to `kerberos` on the connection, then logs in from the keytab with the configured principal before opening the connection. A Kerberos setup therefore needs all four of `hbase.krb5_conf`, `hbase.hbase_site`, `hbase.kerberos_principal` and `hbase.kerberos_keytab` to be valid:
 
@@ -91,6 +94,7 @@ hbase.kerberos_keytab=/etc/security/keytabs/hugegraph.keytab
 | hbase.enable_partition  | true    | Is pre-split partitions enabled for HBase. Also decides whether the backend reports support for key-prefix and key-range scans. |
 | hbase.vertex_partitions | 10      | The number of partitions of the HBase vertex table. Must not be negative.          |
 | hbase.edge_partitions   | 30      | The number of partitions of the HBase edge table. Must not be negative.            |
+{.td-table--wide}
 
 With pre-split enabled, the vertex table is created with `hbase.vertex_partitions` regions and each of the two edge tables with `hbase.edge_partitions` regions, and the serializer prefixes row keys with the partition the id hashes to.
 

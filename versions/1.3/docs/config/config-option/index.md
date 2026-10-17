@@ -16,6 +16,7 @@ Corresponding configuration file `gremlin-server.yaml`
 | scriptEvaluationTimeout | 30000                                                                                                        | The timeout for gremlin script execution(millisecond).                          |
 | channelizer             | org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer                                                  | Indicates the protocol which the Gremlin Server provides service.               |
 | authentication          | authenticator: org.apache.hugegraph.auth.StandardAuthenticator, config: {tokens: conf/rest-server.properties} | The authenticator and config(contains tokens path) of authentication mechanism. |
+{.td-table--wide}
 
 ### Rest Server & API Config Options
 
@@ -52,6 +53,7 @@ Corresponding configuration file `rest-server.properties`
 | auth.token_expire                  | 86400                                            | The expiration time in seconds after token created                                                                                                                                                            |
 | auth.token_secret                  | FXQXbJtbCLxODc6tGci732pkH1cyf8Qg                 | Secret key of HS256 algorithm.                                                                                                                                                                                |
 | exception.allow_trace              | false                                            | Whether to allow exception trace stack.                                                                                                                                                                       |
+{.td-table--wide}
 
 ### Basic Config Options
 
@@ -128,6 +130,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | raft.rpc_buf_low_water_mark           | 10485760                                     | The ChannelOutboundBuffer's low water mark of netty, when buffer size less than this size, the method ChannelOutboundBuffer.isWritable() will return true, it means that low downstream pressure or good network.                                                                                                                                                                                                                                                                                                                                                                                |
 | raft.rpc_buf_high_water_mark          | 20971520                                     | The ChannelOutboundBuffer's high water mark of netty, only when buffer size exceed this size, the method ChannelOutboundBuffer.isWritable() will return false, it means that the downstream pressure is too great to process the request or network is very congestion, upstream needs to limit rate at this time.                                                                                                                                                                                                                                                                               |
 | raft.read_strategy                    | ReadOnlyLeaseBased                           | The linearizability of read strategy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+{.td-table--wide}
 
 ### RPC server Config Options
 
@@ -146,6 +149,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | rpc.server_host             |                                         | The hosts/ips bound by rpc server to provide services, empty value means not enabled.                                                                                                                         |
 | rpc.server_port             | 8090                                    | The port bound by rpc server to provide services.                                                                                                                                                             |
 | rpc.server_timeout          | 30                                      | The timeout(in seconds) of rpc server execution.                                                                                                                                                              |
+{.td-table--wide}
 
 ### Cassandra Backend Config Options
 
@@ -164,6 +168,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
 | cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
 | cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
+{.td-table--wide}
 
 ### ScyllaDB Backend Config Options
 
@@ -171,6 +176,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 |---------------|---------------|----------------------------|
 | backend       |               | Must be set to `scylladb`. |
 | serializer    |               | Must be set to `scylladb`. |
+{.td-table--wide}
 
 Other options are consistent with the Cassandra backend.
 
@@ -227,6 +233,7 @@ Other options are consistent with the Cassandra backend.
 | rocksdb.level0_slowdown_writes_trigger          | 20                                                                                                                                   | Soft limit on number of level-0 files for slowing down writes.                                                                                                                                                                                                                                                                                                                                        |
 | rocksdb.level0_stop_writes_trigger              | 36                                                                                                                                   | Hard limit on number of level-0 files for stopping writes.                                                                                                                                                                                                                                                                                                                                            |
 | rocksdb.soft_pending_compaction_bytes_limit     | 68719476736                                                                                                                          | The soft limit to impose on pending compaction in bytes.                                                                                                                                                                                                                                                                                                                                              |
+{.td-table--wide}
 
 ### HBase Backend Config Options
 
@@ -248,6 +255,7 @@ Other options are consistent with the Cassandra backend.
 | hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
 | hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
 | hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
+{.td-table--wide}
 
 ### MySQL & PostgreSQL Backend Config Options
 
@@ -264,6 +272,7 @@ Other options are consistent with the Cassandra backend.
 | jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
 | jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
 | jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
+{.td-table--wide}
 
 ### PostgreSQL Backend Config Options
 
@@ -271,6 +280,7 @@ Other options are consistent with the Cassandra backend.
 |---------------|---------------|------------------------------|
 | backend       |               | Must be set to `postgresql`. |
 | serializer    |               | Must be set to `postgresql`. |
+{.td-table--wide}
 
 Other options are consistent with the MySQL backend.
 

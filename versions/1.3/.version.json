@@ -17,7 +17,7 @@
     "changed": 4,
     "files": 176,
     "findings": 0,
-    "knownFixes": 104,
+    "knownFixes": 134,
     "residual": 0,
     "routeMigrations": 22
   },
@@ -32,6 +32,6 @@
     "manifests": 181,
     "searchFingerprints": 2,
     "searchRefs": 115,
-    "urls": 1253
+    "urls": 1287
   }
 }

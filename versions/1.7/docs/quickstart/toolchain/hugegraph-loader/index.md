@@ -847,6 +847,7 @@ The import process is controlled by commands submitted by the user, and the user
 | `--serializer`                           | binary      |      | The serializer type when creating graph if not exists              |
 | `--scheduler-type`                       | distributed |      | The task scheduler type when creating graph if not exists          |
 | `--batch-failure-fallback`               | true        |      | Whether to fallback to single insert when batch insert fails       |##### 3.4.2 Breakpoint Continuation Mode
+{.td-table--wide}
 ##### 3.4.2 Breakpoint Continuation Mode
 
 Usually, the Loader task takes a long time to execute. If the import interrupt process exits for some reason, and next time you want to continue the import from the interrupted point, this is the scenario of using breakpoint continuation.

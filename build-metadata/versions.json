@@ -28,7 +28,7 @@
       "nonEquivalentHreflangRemoved": 0,
       "publishPath": "",
       "ref": "master",
-      "sha": "9f44692bfde3408a8fa20dc9d0cc5be5167e7f3a",
+      "sha": "278fdcb44f5471785898a58bcd023871d936e4c1",
       "urlScoping": {
         "files": 316,
         "historicalHomeRedirects": 0,
@@ -57,7 +57,7 @@
         "changed": 1,
         "files": 209,
         "findings": 0,
-        "knownFixes": 24,
+        "knownFixes": 76,
         "residual": 0,
         "routeMigrations": 0
       },
@@ -72,7 +72,7 @@
         "manifests": 221,
         "searchFingerprints": 2,
         "searchRefs": 171,
-        "urls": 1676
+        "urls": 1703
       }
     },
     {
@@ -94,7 +94,7 @@
         "changed": 5,
         "files": 191,
         "findings": 0,
-        "knownFixes": 137,
+        "knownFixes": 167,
         "residual": 0,
         "routeMigrations": 0
       },
@@ -109,7 +109,7 @@
         "manifests": 201,
         "searchFingerprints": 2,
         "searchRefs": 133,
-        "urls": 1305
+        "urls": 1327
       }
     },
     {
@@ -131,7 +131,7 @@
         "changed": 4,
         "files": 176,
         "findings": 0,
-        "knownFixes": 104,
+        "knownFixes": 134,
         "residual": 0,
         "routeMigrations": 22
       },
@@ -146,7 +146,7 @@
         "manifests": 181,
         "searchFingerprints": 2,
         "searchRefs": 115,
-        "urls": 1253
+        "urls": 1287
       }
     },
     {
@@ -168,7 +168,7 @@
         "changed": 0,
         "files": 158,
         "findings": 0,
-        "knownFixes": 72,
+        "knownFixes": 102,
         "residual": 0,
         "routeMigrations": 22
       },
@@ -183,7 +183,7 @@
         "manifests": 178,
         "searchFingerprints": 2,
         "searchRefs": 114,
-        "urls": 1253
+        "urls": 1307
       }
     }
   ]

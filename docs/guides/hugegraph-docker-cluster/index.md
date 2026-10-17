@@ -182,6 +182,7 @@ The following tables describe current master entrypoints and Compose files, not 
 | `HG_PD_DATA_PATH` | No | `/hugegraph-pd/pd_data` | `pd.data-path` |
 | `HG_PD_INITIAL_STORE_COUNT` | No | `1` | `pd.initial-store-count` |
 | `HG_PD_AUTH_SECRET_KEY` | Yes (current master Docker) | None | `auth.secret-key`; PD REST Basic password, also used by Server and Hubble |
+{.td-table--wide}
 
 > **Deprecated aliases**: `GRPC_HOST` → `HG_PD_GRPC_HOST`, `RAFT_ADDRESS` → `HG_PD_RAFT_ADDRESS`, `RAFT_PEERS` → `HG_PD_RAFT_PEERS_LIST`, `PD_INITIAL_STORE_LIST` → `HG_PD_INITIAL_STORE_LIST`. Old names are mapped only when new names are unset, with a warning. Missing required variables cause the entrypoint to exit with code 2.
 
@@ -195,6 +196,7 @@ The following tables describe current master entrypoints and Compose files, not 
 | `HG_STORE_GRPC_PORT` | No | `8500` | `grpc.port` |
 | `HG_STORE_REST_PORT` | No | `8520` | `server.port` |
 | `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` |
+{.td-table--wide}
 
 > **Deprecated aliases**: `PD_ADDRESS` → `HG_STORE_PD_ADDRESS`, `GRPC_HOST` → `HG_STORE_GRPC_HOST`, `RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`.
 
@@ -224,6 +226,7 @@ Unlike PD and Store, Server has no mandatory entrypoint variables: only set valu
 | `PD_AUTH_USER` | `store` | Basic username for PD REST calls from `wait-storage.sh` |
 | `PD_AUTH_PASSWORD` | Empty | PD REST Basic password; must match `HG_PD_AUTH_SECRET_KEY` when PD REST authentication is enabled |
 | `WAIT_PARTITION_TIMEOUT_S` | `120` | Partition polling timeout; also bounds the final diagnostic in builds with the fix described below |
+{.td-table--wide}
 
 Master builds that include authentication property fixes preserve spaces, backslashes and Unicode in explicit
 signing keys. Use the same key on every Server replica. When upgrading from an image that misread such a key, explicitly supply the intended
@@ -265,6 +268,7 @@ Compose files, rather than entrypoints, read these variables:
 | `HUGEGRAPH_ADMIN_PASSWORD` | None | Passed to Server as `PASSWORD` |
 | `HUGEGRAPH_AUTH_TOKEN_SECRET` | None | Master Compose passes this to Server as `HG_SERVER_AUTH_TOKEN_SECRET`; the 1.7.0 image ignores it |
 | `HG_PD_AUTH_SECRET_KEY` | None | HStore PD REST Basic password; Compose supplies it to PD and Server and uses it to generate local Hubble configuration |
+{.td-table--wide}
 
 ## Port Reference
 

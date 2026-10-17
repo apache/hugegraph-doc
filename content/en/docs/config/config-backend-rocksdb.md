@@ -68,7 +68,7 @@ is the installation directory.
 Each graph opens three stores: `m` for schema, `g` for graph data, and `s` for the system store. The
 store name is appended to both configured paths, so a default single-graph installation looks like this:
 
-```filetree {.hg-filetree-notes title="RocksDB data directories"}
+```filetree {wrap=true title="RocksDB data directories"}
 rocksdb-data/
   data/
     m/    # schema store: property keys, vertex/edge/index labels, counters
@@ -106,6 +106,7 @@ Other points to keep in mind:
 | rocksdb.wal_path     | `rocksdb-data/wal`  | The path for storing WAL of RocksDB. Must not be empty.                                                                                                                                                                                                                                                                                           |
 | rocksdb.sst_path     | (empty)             | The path for ingesting SST file into RocksDB. Empty disables ingestion.                                                                                                                                                                                                                                                                           |
 | rocksdb.log_level    | `INFO`              | The info log level of RocksDB. Allowed values: DEBUG, INFO, WARN, ERROR, FATAL, HEADER.                                                                                                                                                                                                                                                            |
+{.td-table--wide}
 
 ### Compaction and compression options
 
@@ -118,6 +119,7 @@ Other points to keep in mind:
 | rocksdb.compression_per_level  | `[none, none, snappy, snappy, snappy, snappy, snappy]`                                    | The compression algorithms for different levels of RocksDB, allowed values are none/snappy/z/bzip2/lz4/lz4hc/xpress/zstd. The list must be empty or hold exactly `rocksdb.num_levels` elements. |
 | rocksdb.bottommost_compression | `none`                                                                                    | The compression algorithm for the bottommost level of RocksDB, allowed values are none/snappy/z/bzip2/lz4/lz4hc/xpress/zstd.                                    |
 | rocksdb.compression            | `snappy`                                                                                  | The compression algorithm for compressing blocks of RocksDB, allowed values are none/snappy/z/bzip2/lz4/lz4hc/xpress/zstd.                                      |
+{.td-table--wide}
 
 ### Database level options
 
@@ -140,6 +142,7 @@ Other points to keep in mind:
 | rocksdb.compaction_readahead_size      | `0`                  | The number of bytes to perform bigger reads when doing compaction. If running RocksDB on spinning disks, you should set this to at least 2MB. 0 means the prefetching is disabled.        |
 | rocksdb.row_cache_capacity             | `0`                  | The capacity in bytes of global cache for table-level rows. 0 means the row_cache is disabled.                                                                                           |
 | rocksdb.delete_obsolete_files_period   | `21600` (6 hours)    | The periodicity in seconds when obsolete files get deleted, 0 means always do full purge. The value is converted to microseconds before it reaches RocksDB.                              |
+{.td-table--wide}
 
 ### Memtable options
 
@@ -153,6 +156,7 @@ Other points to keep in mind:
 | rocksdb.memtable_whole_key_filtering        | `false`              | Enable whole key bloom filter in memtable, it can potentially reduce CPU usage for point-look-ups. Note this will only take effect if memtable_bloom_size_ratio > 0.                                                          |
 | rocksdb.memtable_huge_page_size             | `0`                  | The page size for huge page TLB for bloom in memtable. If <= 0, not allocate from huge page TLB but from malloc.                                                                                                             |
 | rocksdb.inplace_update_support              | `false`              | Allows thread-safe inplace updates if a put key exists in current memtable and sizeof new value is smaller.                                                                                                                  |
+{.td-table--wide}
 
 ### Level sizing and write stall options
 
@@ -168,6 +172,7 @@ Other points to keep in mind:
 | rocksdb.level0_stop_writes_trigger          | `36`                      | Hard limit on number of level-0 files for stopping writes.                                                                                                                                                                                             |
 | rocksdb.soft_pending_compaction_bytes_limit | `68719476736` (64 GB)     | The soft limit to impose on pending compaction in bytes. Minimum 1 GB.                                                                                                                                                                                  |
 | rocksdb.hard_pending_compaction_bytes_limit | `274877906944` (256 GB)   | The hard limit to impose on pending compaction in bytes. Minimum 1 GB.                                                                                                                                                                                  |
+{.td-table--wide}
 
 ### File I/O options
 
@@ -179,6 +184,7 @@ Other points to keep in mind:
 | rocksdb.use_direct_io_for_flush_and_compaction | `false`       | Enable the OS to use direct read/writes in flush and compaction.                                                                                                 |
 | rocksdb.use_fsync                              | `false`       | If true, then every store to stable storage will issue a fsync.                                                                                                 |
 | rocksdb.atomic_flush                           | `false`       | If true, flushing multiple column families and committing their results atomically to MANIFEST. Note that it's not necessary to set atomic_flush=true if WAL is always enabled. |
+{.td-table--wide}
 
 ### SST table format and block cache options
 
@@ -192,6 +198,7 @@ Other points to keep in mind:
 | rocksdb.block_size_deviation             | `10`                   | The percentage of free space used to close a block. Range: 0 to 100.                                                                                                                  |
 | rocksdb.block_restart_interval           | `16`                   | The block restart interval for delta encoding in blocks.                                                                                                                              |
 | rocksdb.block_cache_capacity             | `8388608` (8 MB)       | The amount of block cache in bytes that will be used by RocksDB, 0 means no block cache. A separate cache of this size is created for each column family.                              |
+{.td-table--wide}
 
 ### Bloom filter options
 
@@ -210,6 +217,7 @@ effect, including the index and filter block caching ones.
 | rocksdb.partition_filters_and_indexes           | `false`       | If bloom filter is enabled, set this option true to use partitioned full filters and indexes for each sst file. This option is incompatible with block-based filters. Enabling it also forces the index type to kTwoLevelIndexSearch and sets the metadata block size to `rocksdb.block_size`. |
 | rocksdb.pin_top_level_index_and_filter          | `true`        | If partition_filters_and_indexes is set true, set this option true if we'd pin top-level index of partitioned filter and index blocks to the block cache.                                                          |
 | rocksdb.prefix_extractor_n_bytes                | `0`           | The prefix-extractor uses the first N bytes of a key as its prefix, it will use the full key when a key is shorter than the N. 0 means unset prefix-extractor.                                                       |
+{.td-table--wide}
 
 ### How the options are applied
 

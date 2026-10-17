@@ -6,7 +6,7 @@
   },
   "scripts": {
     "test": "playwright test",
-    "test:ci": "node --test ../ui-ai/*.test.cjs && node --test workflow-contract.test.cjs && playwright test versioning.spec.js search-ranking.spec.js platform.spec.js theme-upgrade.spec.js filetree-comments.spec.js pd-table.spec.js chart-tooltip.spec.js component-security.spec.js ai.spec.js accessibility.spec.js --reporter=line,html",
+    "test:ci": "node --test ../ui-ai/*.test.cjs && node --test workflow-contract.test.cjs && playwright test versioning.spec.js search-ranking.spec.js platform.spec.js theme-upgrade.spec.js filetree-comments.spec.js pd-table.spec.js technical-catalogs.spec.js chart-tooltip.spec.js component-security.spec.js ai.spec.js accessibility.spec.js --reporter=line,html",
     "test:visual": "playwright test visual.spec.js --reporter=line"
   },
   "devDependencies": {

@@ -41,6 +41,37 @@ class UpgradeInventoryTest(unittest.TestCase):
             for name, contents in before.items():
                 self.assertEqual((root / name).read_bytes(), contents)
 
+    @unittest.skipUnless(shutil.which(os.environ.get("GO_BIN", "go")), "Go executable is required")
+    def test_target_release_resolution_preserves_both_original_locks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            root.mkdir()
+            before = {}
+            for name in ("go.mod", "go.sum"):
+                before[name] = (update_oink.ROOT / name).read_bytes()
+                (root / name).write_bytes(before[name])
+            # Download a release outside the currently pinned graph, which would
+            # normally add its checksums when executed against the real source.
+            other = "v1.2.0" if b"v1.3.1" in before["go.mod"] else "v1.3.1"
+            self.assertEqual(update_oink.prior_release(root, other)["Version"], other)
+            for name, contents in before.items():
+                self.assertEqual((root / name).read_bytes(), contents)
+
+    def test_baseline_check_never_requires_sass_or_compiles(self):
+        with tempfile.TemporaryDirectory() as directory:
+            baseline = Path(directory) / "baseline.json"
+            baseline.write_text(json.dumps({"version": "v1.2.0", "files": {}}))
+            with patch.object(update_oink, "BASELINE", baseline), \
+                 patch.object(update_oink, "download_locked", return_value={"Version": "v1.2.0", "Dir": directory}), \
+                 patch.object(update_oink, "verify_hugo_graph"), \
+                 patch.object(update_oink, "snapshot", return_value={}), \
+                 patch.object(update_oink, "check_toolchain") as tools, \
+                 patch.object(update_oink.subprocess, "run") as compile, \
+                 patch("sys.argv", ["update", "--check-baseline"]):
+                update_oink.main()
+                tools.assert_not_called()
+                compile.assert_not_called()
+
     def test_hugo_graph_suppresses_cold_cache_progress_without_relaxing_validation(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -279,6 +310,7 @@ class UpgradeInventoryTest(unittest.TestCase):
     def test_validation_subprocesses_inherit_isolation_and_absolute_hugo_path(self):
         with tempfile.TemporaryDirectory() as directory:
             work = Path(directory)
+            (work / "toolchain.json").write_text(json.dumps(dict(hugo="hugo 0.168.0", sass="1.105.2", go="go1.27.0", webp="1.6.0")))
             (work / "resolved.json").write_text(json.dumps({"versions": [{"id": "latest", "sha": "example"}]}))
             observations = []
 
@@ -296,7 +328,7 @@ class UpgradeInventoryTest(unittest.TestCase):
                  patch.object(update_oink, "validation_snapshot", return_value="local-snapshot"), \
                  patch.object(update_oink, "run", side_effect=run):
                 update_oink.validate(work)
-            self.assertTrue(any("build" in argv and "--version" in argv for argv in observations))
+            self.assertTrue(any("scripts/build_versions.py" in argv and "--force-rebuild" in argv for argv in observations))
             self.assertTrue(any(argv[0] == "/resolved/hugo" for argv in observations))
             self.assertTrue(any("discover" in argv for argv in observations))
             prepare = next(argv for argv in observations if "prepare" in argv)
@@ -309,6 +341,7 @@ class UpgradeInventoryTest(unittest.TestCase):
     def test_validation_builds_both_ai_modes_before_browser_tests(self):
         with tempfile.TemporaryDirectory() as directory:
             work = Path(directory)
+            (work / "toolchain.json").write_text(json.dumps(dict(hugo="hugo 0.168.0", sass="1.105.2", go="go1.27.0", webp="1.6.0")))
             (work / "resolved.json").write_text(json.dumps({"versions": []}))
             with patch.object(update_oink, "validation_snapshot", return_value="local-snapshot"), \
                  patch.object(update_oink, "run") as run:
@@ -323,6 +356,14 @@ class UpgradeInventoryTest(unittest.TestCase):
                 self.assertEqual(len(builds), 1)
                 self.assertIn(f"tests/e2e/{config}.yaml", str(builds[0].args[0]))
                 self.assertLess(calls.index(builds[0]), calls.index(browser))
+            plan = next(call.args[0] for call in calls if "scripts/version_cache.py" in call.args[0])
+            self.assertEqual(plan[plan.index("--sass-version") + 1], "1.105.2")
+            versions = next(call for call in calls if "scripts/build_versions.py" in call.args[0])
+            self.assertIn("--force-rebuild", versions.args[0])
+            self.assertEqual(versions.args[0][versions.args[0].index("--workers") + 1], "2")
+            self.assertEqual(versions.kwargs["env"]["HUGO_CACHEDIR"], str(work / "hugo-cache"))
+            visual = next(call for call in calls if call.args[0] == ["npm", "run", "test:visual"])
+            self.assertEqual(visual.kwargs["env"]["VISUAL_RESULTS_DIR"], str(work / "after"))
 
     def test_validation_snapshot_captures_worktree_sources_without_mutating_git_state(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -400,7 +441,8 @@ class UpgradeInventoryTest(unittest.TestCase):
 
     def test_resume_cleans_interrupted_upgrade_before_validation(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory) / "source"
+            root.mkdir()
             (root / "go.mod").write_text("module fixture")
             target = f"{MODULE} v1.1.0 h1:new\n{MODULE} v1.1.0/go.mod h1:newmod\n"
             (root / "go.sum").write_text(f"{MODULE} v1.0.0 h1:old\n" + target)
@@ -411,17 +453,18 @@ class UpgradeInventoryTest(unittest.TestCase):
                 self.assertEqual((path / "go.sum").read_text(), target)
                 return {"Dir": str(root)}
 
-            with patch.object(update_oink, "ROOT", root), patch.object(update_oink, "BASELINE", baseline), \
+            with patch.object(update_oink, "ROOT", root), patch.object(update_oink, "check_toolchain", return_value={}), patch.object(update_oink, "BASELINE", baseline), \
                  patch.object(update_oink, "locked_version", return_value="v1.1.0"), \
                  patch.object(update_oink, "download_locked", side_effect=download), \
                  patch.object(update_oink, "verify_hugo_graph", return_value="verified"), \
                  patch.object(update_oink, "snapshot", return_value={}), \
                  patch.object(update_oink, "validate") as validate, \
                  patch.object(update_oink, "command") as command, \
-                 patch.object(update_oink.tempfile, "mkdtemp", return_value=directory), \
+                 patch.object(update_oink.tempfile, "mkdtemp", return_value=str(root.parent / "artifacts")), \
                  patch("sys.argv", ["update", "v1.1.0", "--resume"]):
                 update_oink.main()
-                update_oink.main()
+                with patch("sys.argv", ["update", "v1.1.0", "--resume", "--work-dir", str(root.parent / "artifacts")]):
+                    update_oink.main()
                 command.assert_not_called()
                 self.assertEqual(validate.call_count, 2)
 

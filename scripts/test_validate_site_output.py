@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import pathlib
 import shutil
 import subprocess
@@ -24,6 +25,7 @@ assert SPEC and SPEC.loader
 VALIDATOR = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(VALIDATOR)
 
+HUGO_BIN = os.environ.get("HUGO_BIN", "hugo")
 BASE = urllib.parse.urlsplit("https://hugegraph-oink.staged.apache.org/")
 
 
@@ -640,7 +642,7 @@ class SiteOutputSecurityTest(unittest.TestCase):
                 ordinary = encoded.replace("language-markmap", "language-markdown")
                 self.assertEqual(VALIDATOR.document_security_errors(parse(ordinary + runtime), "index.html", BASE), [])
 
-    @unittest.skipUnless(shutil.which("hugo"), "Hugo is required to render the pinned Markmap fixture")
+    @unittest.skipUnless(shutil.which(HUGO_BIN), "Hugo is required to render the pinned Markmap fixture")
     def test_native_markmap_runtime_on_off_obeys_plain_text_contract(self) -> None:
         repo = VALIDATOR_PATH.parents[1]
         with tempfile.TemporaryDirectory(prefix="oink-markmap-security-") as temporary:
@@ -669,7 +671,7 @@ class SiteOutputSecurityTest(unittest.TestCase):
                 (root / "hugo.yaml").write_text(
                     f'baseURL: {BASE.geturl()}\nparams:\n  markmap: {str(enabled).lower()}\n'
                     'module:\n  imports:\n  - path: github.com/pgsty/oink\n')
-                result = subprocess.run([shutil.which("hugo"), "--source", str(root), "--destination", str(root / "public"),
+                result = subprocess.run([shutil.which(HUGO_BIN), "--source", str(root), "--destination", str(root / "public"),
                                          "--environment", "production", "--panicOnWarning"], text=True, capture_output=True)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 for index, (_, rejected) in enumerate(sources):
@@ -782,7 +784,7 @@ class SiteOutputSecurityTest(unittest.TestCase):
                              VALIDATOR.document_url_shape_errors(parser, "index.html")
                     self.assertEqual(bool(errors), rejected, errors)
 
-    @unittest.skipUnless(shutil.which("hugo"), "Hugo is required to render the pinned component fixture")
+    @unittest.skipUnless(shutil.which(HUGO_BIN), "Hugo is required to render the pinned component fixture")
     def test_tagged_hugo_component_output_and_security_cli(self) -> None:
         repo = VALIDATOR_PATH.parents[1]
         with tempfile.TemporaryDirectory(prefix="oink-component-security-") as temporary:
@@ -799,7 +801,7 @@ class SiteOutputSecurityTest(unittest.TestCase):
                 '{{< asciinema file="/recording.cast" markers="10:Boot,25:Configure" >}}\n\n'
                 '```echarts\n{"dataset":{"source":[{"url":"https://example.org/inert","value":42}]},'
                 '"series":[{"type":"bar"}]}\n```\n')
-            result = subprocess.run([shutil.which("hugo"), "--source", str(root), "--destination", str(root / "public")],
+            result = subprocess.run([shutil.which(HUGO_BIN), "--source", str(root), "--destination", str(root / "public")],
                                     text=True, capture_output=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             html = (root / "public/fixture/index.html").read_text()
@@ -853,7 +855,7 @@ class SiteOutputSecurityTest(unittest.TestCase):
             for index, (option, _) in enumerate(native_counterexamples):
                 (root / f"content/unsafe-{index}.md").write_text(
                     '---\ntitle: Unsafe fixture\n---\n```echarts\n' + json.dumps(option) + '\n```\n')
-            result = subprocess.run([shutil.which("hugo"), "--source", str(root), "--destination", str(root / "public")],
+            result = subprocess.run([shutil.which(HUGO_BIN), "--source", str(root), "--destination", str(root / "public")],
                                     text=True, capture_output=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             for index, (_, message) in enumerate(native_counterexamples):

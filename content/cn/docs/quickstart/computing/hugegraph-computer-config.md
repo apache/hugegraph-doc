@@ -37,6 +37,7 @@ HugeGraph-Computer 核心作业设置。
 | job.workers_count | 1 | 执行一个图算法作业的 Worker 数量。在 K8s 中由 Operator 设置。 |
 | job.partitions_count | 1 | 执行一个图算法作业的分区数量。 |
 | job.partitions_thread_nums | 4 | 分区并行计算的线程数量。 |
+{.td-table--wide}
 
 ---
 
@@ -49,6 +50,7 @@ HugeGraph-Computer 核心作业设置。
 | algorithm.params_class | `ComputerOptions.Null` 占位类 | 必填。用于在算法运行前传递算法参数的类。 |
 | algorithm.result_class | `ComputerOptions.Null` 占位类 | 顶点值的类，用于存储顶点的计算结果。 |
 | algorithm.message_class | `ComputerOptions.Null` 占位类 | 计算顶点时传递的消息类。 |
+{.td-table--wide}
 
 ---
 
@@ -63,6 +65,7 @@ HugeGraph-Computer 核心作业设置。
 | input.source_type | hugegraph-server | 加载输入数据的源类型,允许值:['hugegraph-server', 'hugegraph-loader']。'hugegraph-loader' 表示使用 hugegraph-loader 从 HDFS 或文件加载数据。如果使用 'hugegraph-loader',请配置 'input.loader_struct_path' 和 'input.loader_schema_path'。 |
 | input.loader_struct_path | "" (空) | Loader 输入的结构路径，仅在 `input.source_type=hugegraph-loader` 时生效。 |
 | input.loader_schema_path | "" (空) | Loader 输入的 Schema 路径，仅在 `input.source_type=hugegraph-loader` 时生效。 |
+{.td-table--wide}
 
 #### 3.2 输入分片
 
@@ -72,6 +75,7 @@ HugeGraph-Computer 核心作业设置。
 | input.split_max_splits | 10000000 | 最大输入分片数量。 |
 | input.split_page_size | 500 | 流式加载输入分片数据的页面大小。 |
 | input.split_fetch_timeout | 300 | 获取输入分片的超时时间(秒)。 |
+{.td-table--wide}
 
 #### 3.3 输入处理
 
@@ -81,12 +85,14 @@ HugeGraph-Computer 核心作业设置。
 | input.edge_direction | OUT | 要加载的边的方向,允许值:[OUT, IN, BOTH]。当值为 BOTH 时,将加载 OUT 和 IN 两个方向的边。 |
 | input.edge_freq | MULTIPLE | 一对顶点之间可以存在的边的频率,允许值:[SINGLE, SINGLE_PER_LABEL, MULTIPLE]。SINGLE 表示一对顶点之间只能存在一条边(通过 sourceId + targetId 标识);SINGLE_PER_LABEL 表示每个边标签在一对顶点之间可以有一条边(通过 sourceId + edgeLabel + targetId 标识);MULTIPLE 表示一对顶点之间可以存在多条边(通过 sourceId + edgeLabel + sortValues + targetId 标识)。 |
 | input.max_edges_in_one_vertex | 200 | 允许附加到一个顶点的最大邻接边数量。邻接边将作为一个批处理单元一起存储和传输。 |
+{.td-table--wide}
 
 #### 3.4 输入性能
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
 | input.send_thread_nums | 4 | 并行发送顶点或边的线程数量。 |
+{.td-table--wide}
 
 ---
 
@@ -101,6 +107,7 @@ HugeGraph-Computer 支持快照功能,可将顶点/边分区保存到本地存�
 | snapshot.write | false | 是否写入输入顶点/边分区的快照。 |
 | snapshot.load | false | 是否从顶点/边分区的快照加载。 |
 | snapshot.name | "" (空) | 用户自定义的快照名称,用于区分不同的快照。 |
+{.td-table--wide}
 
 #### 4.2 MinIO 集成(可选)
 
@@ -112,6 +119,7 @@ MinIO 可用作 K8s 部署中快照的分布式对象存储后端。
 | snapshot.minio_access_key | minioadmin | MinIO 认证访问密钥。 |
 | snapshot.minio_secret_key | minioadmin | MinIO 认证密钥。 |
 | snapshot.minio_bucket_name | "" (空) | 用于存储快照数据的 MinIO 存储桶名称。 |
+{.td-table--wide}
 
 **使用场景:**
 - **断点恢复**:作业失败后从快照恢复,避免重新加载数据
@@ -146,6 +154,7 @@ Worker 和 Master 计算逻辑的配置。
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
 | master.computation_class | org.apache.hugegraph.computer.core.master.DefaultMasterComputation | Master 计算是可以决定是否继续下一个超步的计算。它在每个超步结束时在 master 上运行。 |
+{.td-table--wide}
 
 #### 5.2 Worker 计算
 
@@ -154,6 +163,7 @@ Worker 和 Master 计算逻辑的配置。
 | worker.computation_class | org.apache.hugegraph.computer.core.config.Null | 创建 worker 计算对象的类。Worker 计算用于在每个超步中计算每个顶点。 |
 | worker.combiner_class | org.apache.hugegraph.computer.core.config.Null | Combiner 可以将消息组合为一个顶点的一个值。例如,PageRank 算法可以将一个顶点的消息组合为一个求和值。 |
 | worker.partitioner | org.apache.hugegraph.computer.core.graph.partition.HashPartitioner | 分区器,决定顶点应该在哪个分区中,以及分区应该在哪个 worker 中。 |
+{.td-table--wide}
 
 #### 5.3 Worker 组合器
 
@@ -161,6 +171,7 @@ Worker 和 Master 计算逻辑的配置。
 |--------|--------|------|
 | worker.vertex_properties_combiner_class | org.apache.hugegraph.computer.core.combiner.OverwritePropertiesCombiner | 组合器可以在输入步骤将同一顶点的多个属性组合为一个属性。 |
 | worker.edge_properties_combiner_class | org.apache.hugegraph.computer.core.combiner.OverwritePropertiesCombiner | 组合器可以在输入步骤将同一边的多个属性组合为一个属性。 |
+{.td-table--wide}
 
 #### 5.4 Worker 缓冲区
 
@@ -169,6 +180,7 @@ Worker 和 Master 计算逻辑的配置。
 | worker.received_buffers_bytes_limit | 104857600 (100 MB) | 接收数据缓冲区的限制字节数。所有缓冲区的总大小不能超过此限制。如果接收缓冲区达到此限制,它们将被合并到文件中(溢出到磁盘)。 |
 | worker.write_buffer_capacity | 52428800 (50 MB) | 用于存储顶点或消息的写缓冲区的初始大小。 |
 | worker.write_buffer_threshold | 52428800 (50 MB) | 写缓冲区的阈值。超过它将触发排序。写缓冲区用于存储顶点或消息。 |
+{.td-table--wide}
 
 #### 5.5 Worker 数据与超时
 
@@ -177,6 +189,7 @@ Worker 和 Master 计算逻辑的配置。
 | worker.data_dirs | [jobs] | 用逗号分隔的目录,接收的顶点和消息可以持久化到其中。 |
 | worker.wait_sort_timeout | 600000 (10 分钟) | 消息处理程序等待排序线程对一批缓冲区进行排序的最大超时时间(毫秒)。 |
 | worker.wait_finish_messages_timeout | 86400000 (24 小时) | 消息处理程序等待所有 worker 完成消息的最大超时时间(毫秒)。 |
+{.td-table--wide}
 
 ---
 
@@ -191,6 +204,7 @@ Worker 和 Master 计算逻辑的配置。
 | output.output_class | org.apache.hugegraph.computer.core.output.LogOutput | 输出每个顶点计算结果的类。在迭代计算后调用。 |
 | output.result_name | value | 该值由 WORKER_COMPUTATION_CLASS 创建的实例的 #name() 动态分配。 |
 | output.result_write_type | OLAP_COMMON | 输出到 HugeGraph 的结果写入类型,允许值:[OLAP_COMMON, OLAP_SECONDARY, OLAP_RANGE]。 |
+{.td-table--wide}
 
 #### 6.2 输出行为
 
@@ -199,6 +213,7 @@ Worker 和 Master 计算逻辑的配置。
 | output.with_adjacent_edges | false | 是否输出顶点的邻接边。 |
 | output.with_vertex_properties | false | 是否输出顶点的属性。 |
 | output.with_edge_properties | false | 是否输出边的属性。 |
+{.td-table--wide}
 
 #### 6.3 批量输出
 
@@ -207,6 +222,7 @@ Worker 和 Master 计算逻辑的配置。
 | output.batch_size | 500 | 输出的批处理大小。 |
 | output.batch_threads | 1 | 用于批量输出的线程数量。 |
 | output.single_threads | 1 | 用于单个输出的线程数量。 |
+{.td-table--wide}
 
 #### 6.4 HDFS 输出
 
@@ -224,6 +240,7 @@ Worker 和 Master 计算逻辑的配置。
 | output.hdfs_kerberos_principal | "" (空) | HDFS 的 Kerberos 认证 principal。 |
 | output.hdfs_kerberos_keytab | "" (空) | HDFS 的 Kerberos 认证 keytab 文件。 |
 | output.hdfs_krb5_conf | /etc/krb5.conf | Kerberos 配置文件路径。 |
+{.td-table--wide}
 
 #### 6.5 重试与超时
 
@@ -232,6 +249,7 @@ Worker 和 Master 计算逻辑的配置。
 | output.retry_times | 3 | 输出失败时的重试次数。 |
 | output.retry_interval | 10 | 输出失败时的重试间隔(秒)。 |
 | output.thread_pool_shutdown_timeout | 60 | 输出线程池关闭的超时时间(秒)。 |
+{.td-table--wide}
 
 ---
 
@@ -246,6 +264,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.server_host | 127.0.0.1 | worker 数据服务监听并向其他 worker 公告的地址。多主机场景必须使用其他节点可达的地址；Operator 会改为 Pod IP。 |
 | transport.server_port | 0（发行包：0；K8s Operator：8099） | worker 数据传输监听端口。单机值 `0` 表示系统分配端口；Operator 会将 K8s 默认值改为固定端口 `8099`，以便 Pod 间通信。 |
 | transport.server_threads | 4 | 服务器传输线程的数量。 |
+{.td-table--wide}
 
 #### 7.2 客户端配置
 
@@ -253,6 +272,7 @@ Worker 和 Master 之间网络通信的配置。
 |--------|--------|------|
 | transport.client_threads | 4 | 客户端传输线程的数量。 |
 | transport.client_connect_timeout | 3000 | 客户端连接到服务器的超时时间(毫秒)。 |
+{.td-table--wide}
 
 #### 7.3 协议配置
 
@@ -262,6 +282,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.io_mode | AUTO | 网络 IO 模式,允许值:[NIO, EPOLL, AUTO]。AUTO 表示自动选择适当的模式。 |
 | transport.tcp_keep_alive | true | 是否启用 TCP keep-alive。 |
 | transport.transport_epoll_lt | false | 是否启用 EPOLL 水平触发(仅在 io_mode=EPOLL 时有效)。 |
+{.td-table--wide}
 
 #### 7.4 缓冲区配置
 
@@ -271,6 +292,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.receive_buffer_size | 0 | Socket 接收缓冲区大小(字节)。0 表示使用系统默认值。 |
 | transport.write_buffer_high_mark | 67108864 (64 MB) | 写缓冲区的高水位标记(字节)。如果排队字节数 > write_buffer_high_mark,将触发发送不可用。 |
 | transport.write_buffer_low_mark | 33554432 (32 MB) | 写缓冲区的低水位标记(字节)。如果排队字节数 < write_buffer_low_mark,将触发发送可用。 |
+{.td-table--wide}
 
 #### 7.5 流量控制
 
@@ -279,6 +301,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.max_pending_requests | 8 | 客户端未接收 ACK 的最大数量。如果未接收 ACK 的数量 >= max_pending_requests,将触发发送不可用。 |
 | transport.min_pending_requests | 6 | 客户端未接收 ACK 的最小数量。如果未接收 ACK 的数量 < min_pending_requests,将触发发送可用。 |
 | transport.min_ack_interval | 200 | 服务器回复 ACK 的最小间隔(毫秒)。 |
+{.td-table--wide}
 
 #### 7.6 超时配置
 
@@ -289,6 +312,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.finish_session_timeout | 0 | 完成会话的超时时间(毫秒)。0 表示使用 (transport.sync_request_timeout × transport.max_pending_requests)。 |
 | transport.write_socket_timeout | 3000 | 将数据写入 socket 缓冲区的超时时间(毫秒)。 |
 | transport.server_idle_timeout | 360000 (6 分钟) | 服务器空闲的最大超时时间(毫秒)。 |
+{.td-table--wide}
 
 #### 7.7 心跳配置
 
@@ -296,6 +320,7 @@ Worker 和 Master 之间网络通信的配置。
 |--------|--------|------|
 | transport.heartbeat_interval | 20000 (20 秒) | 客户端心跳之间的最小间隔(毫秒)。 |
 | transport.max_timeout_heartbeat_count | 120 | 客户端超时心跳的最大次数。如果连续等待心跳响应超时的次数 > max_timeout_heartbeat_count,通道将从客户端关闭。 |
+{.td-table--wide}
 
 #### 7.8 高级网络设置
 
@@ -304,6 +329,7 @@ Worker 和 Master 之间网络通信的配置。
 | transport.max_syn_backlog | 511 | 服务器端 SYN 队列的容量。0 表示使用系统默认值。 |
 | transport.recv_file_mode | true | 是否启用接收缓冲文件模式。如果启用,将使用零拷贝从 socket 接收缓冲区并写入文件。**注意**:需要操作系统支持零拷贝(例如 Linux sendfile/splice)。 |
 | transport.network_retries | 3 | 网络通信不稳定时的重试次数。 |
+{.td-table--wide}
 
 #### 7.9 Master RPC 配置
 
@@ -313,6 +339,7 @@ Worker 和 Master 之间网络通信的配置。
 |--------|----------|------|
 | rpc.server_host | 127.0.0.1（K8s：Pod IP） | Master RPC 服务地址，worker 必须能访问此地址。 |
 | rpc.server_port | 8190（K8s 默认：8190） | Master RPC 监听端口；集群安全组和网络策略须允许 worker 连接。 |
+{.td-table--wide}
 
 ---
 
@@ -328,12 +355,14 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | hgkv.max_data_block_size | 65536 (64 KB) | HGKV 文件数据块的最大字节大小。 |
 | hgkv.max_merge_files | 10 | 一次合并的最大文件数。 |
 | hgkv.temp_file_dir | /tmp/hgkv | 此文件夹用于在文件合并过程中存储临时文件。 |
+{.td-table--wide}
 
 #### 8.2 值文件配置
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
 | valuefile.max_segment_size | 1073741824 (1 GB) | 值文件每个段的最大字节数。 |
+{.td-table--wide}
 
 ---
 
@@ -349,6 +378,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | bsp.wait_workers_timeout | 86400000 (24 小时) | 等待 worker BSP 事件的最大超时时间(毫秒)。 |
 | bsp.wait_master_timeout | 86400000 (24 小时) | 等待 master BSP 事件的最大超时时间(毫秒)。 |
 | bsp.log_interval | 30000 (30 秒) | 等待 BSP 事件时打印日志的日志间隔(毫秒)。 |
+{.td-table--wide}
 
 ---
 
@@ -360,6 +390,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 |--------|--------|------|
 | allocator.max_vertices_per_thread | 10000 | 每个内存分配器中每个线程处理的最大顶点数。 |
 | sort.thread_nums | 4 | 执行内部排序的线程数量。 |
+{.td-table--wide}
 
 ---
 
@@ -377,6 +408,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | rpc.server_host | K8s Operator | 覆盖为 master Pod IP。 |
 | rpc.server_port | K8s Operator | 未设置或为 `0` 时设置为 `8190`。 |
 | rpc.remote_url | Computer 启动流程 | 读取配置时会移除该项，不应作为作业配置设置。 |
+{.td-table--wide}
 
 **为什么禁止修改:**
 - **BSP/RPC 配置**:必须与实际部署的 etcd/RPC 服务匹配。手动覆盖会破坏协调。
@@ -404,6 +436,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | k8s.resync_period | 600000 | 被监视资源进行 reconcile 的最小频率。 |
 | k8s.timezone | Asia/Shanghai | computer 作业和 operator 的时区。 |
 | k8s.watch_namespace | hugegraph-computer-operator-system | 监视自定义资源的命名空间。随附发行清单也设置为此值；使用 `*` 可监视所有命名空间。 |
+{.td-table--wide}
 
 ---
 
@@ -440,6 +473,7 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | configMapPaths | | k8s-configmap 名称和挂载路径的映射。 | false |
 | podTemplateSpec | | 请参考:https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-template-v1/#PodTemplateSpec | false |
 | securityContext | | 请参考:https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ | false |
+{.td-table--wide}
 
 ---
 
@@ -461,3 +495,4 @@ HGKV(HugeGraph Key-Value)存储引擎和值文件的配置。
 | k8s.log4j_xml_path | | computer 作业的 log4j.xml 路径。 |
 | k8s.namespace | hugegraph-computer-operator-system | hugegraph-computer 系统的命名空间。 |
 | k8s.pull_secret_names | [] | 拉取镜像的 pull-secret 名称。 |
+{.td-table--wide}

@@ -1,4 +1,14 @@
+# Additional content exists only in this AI-enabled browser fixture.
+# Keep the production language roots when declaring explicit content mounts.
+module:
+  mounts:
+    - { source: content/en, target: content, sites: { matrix: { languages: [en] } } }
+    - { source: content/cn, target: content, sites: { matrix: { languages: [cn] } } }
+    - { source: tests/e2e/fixtures/expo/content/en, target: content, sites: { matrix: { languages: [en] } } }
+    - { source: tests/e2e/fixtures/expo/content/cn, target: content, sites: { matrix: { languages: [cn] } } }
 params:
+  ui:
+    quick_links: []
   ai_search:
     enabled: true
     provider: kapa

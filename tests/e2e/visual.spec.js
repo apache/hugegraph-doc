@@ -17,6 +17,21 @@ const states = [
   ["cn-paper-mobile-dark", "/cn/docs/introduction/", { width: 390, height: 844 }, "dark", "paper"],
   ...["en", "cn"].flatMap(language => {
     const prefix = language === "cn" ? "/cn" : "";
+    return ["slate", "paper"].flatMap(preset => ["light", "dark"].flatMap(theme => {
+      const viewport = theme === "light" ? { width: 1440, height: 1000 } : { width: 390, height: 844 };
+      return [
+        [`${language}-upgrade-home-${preset}-${theme}`, `${prefix}/`, viewport, theme, "default", preset],
+        [`${language}-upgrade-pd-${preset}-${theme}`, `${prefix}/docs/quickstart/hugegraph/hugegraph-pd/`, viewport, theme, "pd", preset],
+        [`${language}-upgrade-helm-${preset}-${theme}`, `${prefix}/docs/quickstart/hugegraph/hugegraph-helm/`, viewport, theme, "helm", preset],
+        [`${language}-upgrade-computer-${preset}-${theme}`, `${prefix}/docs/quickstart/computing/hugegraph-computer-config/`, viewport, theme, "computer", preset],
+        [`${language}-upgrade-api-${preset}-${theme}`, `${prefix}/docs/quickstart/hugegraph-ai/config-reference/`, viewport, theme, "config-api", preset],
+        [`${language}-upgrade-footer-${preset}-${theme}`, `${prefix}/blog/2025/10/09/toplingdb-quick-start/`,
+          { width: 1440, height: 1000 }, theme, "footer", preset]
+      ];
+    }));
+  }),
+  ...["en", "cn"].flatMap(language => {
+    const prefix = language === "cn" ? "/cn" : "";
     return [
       [`${language}-adopted-blog-desktop`, `${prefix}/blog/`, { width: 1440, height: 1000 }, "light", "blog"],
       [`${language}-adopted-toplingdb-desktop`, `${prefix}/blog/2025/10/09/toplingdb-quick-start/`, { width: 1440, height: 1000 }, "light", "series"],
@@ -41,12 +56,15 @@ const states = [
   })
 ];
 
-for (const [name, url, viewport, theme, state] of states) {
+for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
   test(`capture advisory ${name}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.addInitScript(
-      (value) => localStorage.setItem("td-color-theme", value),
-      theme
+      ({ theme, preset }) => {
+        localStorage.setItem("td-color-theme", theme);
+        localStorage.setItem("td-preset", preset);
+      },
+      { theme, preset }
     );
     await page.goto(url);
     await expect(page.locator("body")).toBeVisible();
@@ -93,6 +111,27 @@ for (const [name, url, viewport, theme, state] of states) {
           .evaluate(node => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(11);
       }
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    } else if (state === "pd") {
+      // Content-based selection works for both the old local class and native wide tables.
+      const table = page.locator(".td-content table").filter({ hasText: "HG_PD_AUTH_SECRET_KEY" });
+      const viewport = table.locator("..");
+      await viewport.scrollIntoViewIfNeeded();
+      // Compare the explanation column, not just the identifiers at the left edge.
+      await viewport.evaluate(node => { node.scrollLeft = node.scrollWidth; });
+      await expect(table).toBeVisible();
+    } else if (state === "computer" || state === "config-api") {
+      const token = state === "computer" ? "worker.vertex_properties_combiner_class" : "LITELLM_TEXT2GQL_LANGUAGE_MODEL";
+      const table = page.locator(".td-content table").filter({ hasText: token });
+      await table.locator("..").scrollIntoViewIfNeeded();
+      await expect(table).toBeVisible();
+    } else if (state === "helm") {
+      const tree = page.locator(".td-filetree").filter({ hasText: "values-single.yaml" });
+      await tree.scrollIntoViewIfNeeded();
+      await expect(tree).toBeVisible();
+    } else if (state === "footer") {
+      await page.locator("footer").scrollIntoViewIfNeeded();
+      await expect(page.locator(".td-shell-toc__panel")).toBeVisible();
+      await expect.poll(() => page.evaluate(() => window.scrollY + innerHeight >= document.documentElement.scrollHeight - 2)).toBe(true);
     } else if (state === "series") {
       await page.locator('.td-series-strip summary').press('Enter');
       await expect(page.locator('.td-series-strip__list')).toBeVisible();
@@ -126,13 +165,21 @@ for (const [name, url, viewport, theme, state] of states) {
       await page.locator("[data-td-shell-drawer-open]").click();
       await expect(page.locator("html")).toHaveAttribute("data-td-shell-drawer", "open");
     }
-    const directory = path.join(__dirname, "visual-results");
+    const directory = process.env.VISUAL_RESULTS_DIR
+      ? path.resolve(process.env.VISUAL_RESULTS_DIR) : path.join(__dirname, "visual-results");
     fs.mkdirSync(directory, { recursive: true });
-    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await Promise.all(Array.from(document.images).filter(image => {
+        const rect = image.getBoundingClientRect();
+        return rect.bottom > 0 && rect.top < innerHeight;
+      }).map(image => image.decode().catch(() => {})));
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    });
     await page.screenshot({
       animations: "disabled",
       path: path.join(directory, `${name}.png`),
-      fullPage: !["gallery", "chart", "longcode", "markmap", "terminal", "math"].includes(state)
+      fullPage: !["gallery", "chart", "longcode", "markmap", "terminal", "math", "pd", "computer", "config-api", "helm", "footer"].includes(state)
     });
   });
 }

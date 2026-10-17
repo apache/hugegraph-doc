@@ -83,11 +83,11 @@ graph.load_from_local_config=true
 batch.max_write_ratio=80
 batch.max_write_threads=0
 
-# configuration of arthas
-arthas.telnetPort=8562
-arthas.httpPort=8561
+# configuration of arthas (optional disabled commands, for example jad,mc)
+arthas.telnet_port=8562
+arthas.http_port=8561
 arthas.ip=127.0.0.1
-arthas.disabledCommands=jad
+arthas.disabled_commands=
 
 # authentication configs
 #auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
@@ -113,7 +113,12 @@ memory_monitor.period=2000
 - `graph.load_from_local_config`: Controls constructor preloading, with source-code default `false`. It does not block local loading during application
   initialization and is not a security isolation switch. Restart Server to apply graph configuration changes.
 
-> The upstream template still uses `arthas.telnet_port`, `arthas.http_port`, and `arthas.disabled_commands`, but `ServerOptions` reads the camelCase names in the example. Use `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` in custom configurations.
+> Starting with HugeGraph 1.8.0, use canonical snake_case options: `arthas.telnet_port`, `arthas.http_port`, `arthas.ip`, and `arthas.disabled_commands`.
+> Legacy camelCase names remain supported as fallbacks; an explicitly configured snake_case value takes precedence.
+> **Upgrade notice:** The shipped `rest-server.properties` template includes default snake_case entries. If you configured custom camelCase properties earlier,
+> migrate those values to snake_case keys to avoid being overridden by template defaults.
+> For diagnostic workflows, access controls, and authentication configuration,
+> see [Start the Arthas agent](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 > `gremlinserver.url` is the GremlinServer address used by RestServer, defaulting to `http://127.0.0.1:8182`. It must match `host` and `port` in `gremlin-server.yaml`. Like the template, it can omit the scheme; missing schemes receive an `http://` prefix.
 

@@ -279,13 +279,15 @@ Only for single-node development and debugging, activated by `app.fake-pd: true`
 
 **Diagnostics**
 
-| Key | Code default | Meaning |
-|-----|--------------|---------|
-| `arthas.telnetPort` | `8566` | Arthas telnet port, used when `/v1/arthasstart` is called. |
-| `arthas.httpPort` | `8565` | Arthas HTTP port. |
-| `arthas.ip` | `0.0.0.0` | Arthas bind address. |
-| `arthas.disabledCommands` | `jad` | Arthas commands to disable. |
-{.td-table--wide}
+Starting with HugeGraph 1.8.0, Store HTTP activation (`GET /v1/arthasstart`) is disabled and returns `403`. Legacy configuration fields are kept only
+for compatibility. Run the bundled script as the service OS user on the host to diagnose the running JVM (official container images include JDK 17):
+
+```bash
+bin/arthas.sh
+```
+
+For multiple processes on one host, specify `--pid <PID> --telnet-port 3659`. For command options, authentication, and security practices, see
+[Start the Arthas agent](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 #### 4.4 Per-node changes
 
@@ -503,7 +505,9 @@ The Store node exposes these read-only endpoints on `server.port`:
 
 Master Store configuration exposes all Actuator endpoints with `management.endpoints.web.exposure.include: "*"` and enables Prometheus. These endpoints lack PD REST Basic protection; restrict Store REST network access.
 
-The node also serves maintenance endpoints that change state or run heavy work: `PUT /-/state`, `GET /-/cleaner`, `GET /v1/partition/dump/{id}`, `GET /v1/partition/clean/{id}`, `POST /v1/compat?id=<partition>`, `GET /v1/arthasstart`, `POST /raft/options`, and the `/fix/*` and `/test/*` groups. Use them only for troubleshooting, and keep the REST port off untrusted networks.
+The node also serves maintenance endpoints that change state or run heavy work: `PUT /-/state`, `GET /-/cleaner`,
+`GET /v1/partition/dump/{id}`, `GET /v1/partition/clean/{id}`, `POST /v1/compat?id=<partition>`, `POST /raft/options`, and the `/fix/*` and `/test/*` groups.
+Use them only for troubleshooting, and keep the REST port off untrusted networks.
 
 #### 7.2 Check registration from PD
 

@@ -274,13 +274,16 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 
 **诊断**
 
-| 配置项 | 代码默认值 | 说明 |
-|--------|------------|------|
-| `arthas.telnetPort` | `8566` | 调用 `/v1/arthasstart` 后 Arthas 的 telnet 端口。 |
-| `arthas.httpPort` | `8565` | Arthas HTTP 端口。 |
-| `arthas.ip` | `0.0.0.0` | Arthas 监听地址。 |
-| `arthas.disabledCommands` | `jad` | 需要禁用的 Arthas 命令。 |
-{.td-table--wide}
+自 HugeGraph 1.8.0 起，Store 的 HTTP 激活接口 `GET /v1/arthasstart` 已禁用（直接返回 `403`），旧 Arthas 配置字段仅为兼容保留。
+推荐直接以服务进程属主身份运行发行包内置的脚本诊断正在运行的 JVM
+（官方容器镜像内置 JDK 17，可直接使用 `docker exec` 执行）：
+
+```bash
+bin/arthas.sh
+```
+
+同机多进程时可指定 `--pid <PID> --telnet-port 3659`。
+更多参数、认证配置及安全实践参见 [Arthas 诊断代理](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)。
 
 #### 4.4 各节点需要区分的配置
 
@@ -496,7 +499,9 @@ Store 节点在 `server.port` 上提供以下只读接口：
 
 主线发行目录的 Store 配置将 `management.endpoints.web.exposure.include` 设为 `"*"`，并启用 Prometheus；Actuator 端点没有 PD REST Basic 认证保护，请限制 Store REST 端口的网络可达范围。
 
-节点还提供一批会修改状态或执行重负载操作的运维接口：`PUT /-/state`、`GET /-/cleaner`、`GET /v1/partition/dump/{id}`、`GET /v1/partition/clean/{id}`、`POST /v1/compat?id=<partition>`、`GET /v1/arthasstart`、`POST /raft/options`，以及 `/fix/*` 和 `/test/*` 两组接口。请仅在排查问题时使用，并且不要把 REST 端口暴露到不可信网络。
+节点还提供一批会修改状态或执行重负载操作的运维接口：`PUT /-/state`、`GET /-/cleaner`、`GET /v1/partition/dump/{id}`、
+`GET /v1/partition/clean/{id}`、`POST /v1/compat?id=<partition>`、`POST /raft/options`，以及 `/fix/*` 和 `/test/*` 两组接口。
+请仅在排查问题时使用，并且不要把 REST 端口暴露到不可信网络。
 
 #### 7.2 通过 PD 检查注册结果
 

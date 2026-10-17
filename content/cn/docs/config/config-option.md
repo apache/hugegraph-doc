@@ -333,16 +333,21 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | k8s.internal_algorithm_image_url | 空 | K8s 内置算法使用的镜像地址。 |
 > {.td-table--wide}
 
-> [!DETAILS]- **Arthas 诊断配置项 (可选)**
-> 对应配置文件`rest-server.properties`
+> [!DETAILS]- **Arthas 诊断配置项（可选）**
+> 对应配置文件为 `rest-server.properties`。
+> 自 HugeGraph 1.8.0 起生效。
 >
-> | config option      | default value | description           |
-> |--------------------|---------------|-----------------------|
-> | arthas.telnetPort  | 8562          | Arthas telnet port.   |
-> | arthas.httpPort    | 8561          | Arthas HTTP port.     |
-> | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
-> | arthas.disabledCommands | jad      | Disabled Arthas commands, separated by commas. |
+> | 配置项 | 默认值 | 说明 |
+> |--------|--------|------|
+> | arthas.telnet_port | 8562 | 管理员通过 `PUT /arthas` 激活时使用的 Arthas telnet 端口。 |
+> | arthas.http_port | 8561 | 管理员激活时使用的 Arthas HTTP 端口。 |
+> | arthas.ip | 127.0.0.1 | 监听地址；管理员可显式选择其他有效地址，包括 `0.0.0.0`。 |
+> | arthas.disabled_commands | 空 | API 激活时可选的禁用命令，以逗号分隔，例如 `jad,mc`；本地脚本不受此项约束。 |
 > {.td-table--wide}
+>
+> 旧名称 `arthas.telnetPort`、`arthas.httpPort` 与 `arthas.disabledCommands` 仍兼容作为回退项；显式配置的 snake_case 选项优先。
+> 发行包内的 `bin/arthas.sh` 可直接免配置进行本地诊断。
+> 详细激活方式、权限要求及认证配置请参见 [Arthas 诊断代理](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)。
 
 > [!DETAILS]- **RPC Server 配置项**
 > 对应配置文件`rest-server.properties`

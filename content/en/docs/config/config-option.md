@@ -336,15 +336,20 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > {.td-table--wide}
 
 > [!DETAILS]- **Arthas Diagnostic Config Options (Optional)**
-> Corresponding configuration file `rest-server.properties`
+> Corresponding configuration file: `rest-server.properties`.
+> Starting with HugeGraph 1.8.0.
 >
-> | config option      | default value | description           |
-> |--------------------|---------------|-----------------------|
-> | arthas.telnetPort  | 8562          | Arthas telnet port.   |
-> | arthas.httpPort    | 8561          | Arthas HTTP port.     |
-> | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
-> | arthas.disabledCommands | jad      | Disabled Arthas commands, separated by commas. |
+> | Config option | Default value | Description |
+> |---------------|---------------|-------------|
+> | arthas.telnet_port | 8562 | Arthas telnet port for administrator activation through `PUT /arthas`. |
+> | arthas.http_port | 8561 | Arthas HTTP port for administrator activation. |
+> | arthas.ip | 127.0.0.1 | Bind address; administrators may explicitly select another valid address, including `0.0.0.0`. |
+> | arthas.disabled_commands | Empty | Optional comma-separated disabled commands, e.g. `jad,mc`, for API activation; not applied by the local helper. |
 > {.td-table--wide}
+>
+> Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain supported as fallbacks; explicit snake_case settings take precedence.
+> The bundled `bin/arthas.sh` provides local diagnostics without changing configuration. For activation workflows, permissions, and authentication options,
+> see [Start the Arthas agent](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 > [!DETAILS]- **RPC Server Config Options**
 > Corresponding configuration file `rest-server.properties`

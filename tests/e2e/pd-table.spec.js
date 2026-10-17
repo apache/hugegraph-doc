@@ -152,7 +152,7 @@ for (const language of ['en', 'cn']) {
 for (const language of ['en', 'cn']) {
   for (const width of [1440, 390]) {
     for (const [route, wideCount, ordinaryCount, environmentKeys] of [
-      ['hugegraph/hugegraph-hstore', 10, 2, false],
+      ['hugegraph/hugegraph-hstore', 9, 2, false],
       ['hugegraph/hugegraph-pd', 8, 3, false],
       ['hugegraph-ai/config-reference', 3, 5, true]
     ]) {

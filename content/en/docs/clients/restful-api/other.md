@@ -296,14 +296,14 @@ You can attach it to a running JVM for live troubleshooting via the local script
 
 ##### Activation & Diagnostics
 
-```bash {tab="Local Diagnostics (Recommended)"}
-# 1. Run on the host as the service OS user (uses bundled agent offline, no restart or download needed)
+```bash {tab="Local Diagnostics (Single Instance)"}
+# Run on the host as the service OS user (uses bundled agent offline, no restart needed)
 bin/arthas.sh
+```
 
-# 2. For multiple instances on one host, specify PID and port explicitly
+```bash {tab="Multi-Instance on Host"}
+# Explicitly specify target JVM PID and a custom telnet port
 bin/arthas.sh --pid <PID> --telnet-port 3659
-
-# 3. Exit: enter 'quit' or 'stop'; the helper stops Arthas when the session ends (the service JVM keeps running)
 ```
 
 ```bash {tab="Administrator HTTP Activation"}
@@ -314,6 +314,8 @@ curl --user admin -X PUT http://127.0.0.1:8080/arthas
 # 3. Connect to the active agent using the local helper
 bin/arthas.sh --telnet-port 8562
 ```
+
+To exit diagnostics, enter `quit` or `stop`; the helper automatically stops Arthas when the session ends, while the service JVM keeps running.
 
 The helper reads `bin/pid` by default and requires JDK 17. Both distributions include the agent files in `lib/arthas`, so no download,
 runtime extraction, or persistent user cache is needed. For a newly activated agent, telnet defaults to `127.0.0.1:3658`; HTTP, MCP,
@@ -332,8 +334,10 @@ but failed PID verification or listener cleanup makes the helper print an error 
 To recover from an agent with `stop` disabled, remove that restriction and restart the service before activating Arthas again.
 Newly attached local agents keep both commands available.
 
-Official Server (including HStore) and Store images include JDK 17. Run the same helper inside the container as the service OS user,
-for example `docker exec -it <container> bin/arthas.sh`; no extra JDK installation or diagnostic port mapping is needed.
+> [!TIP]
+> Official Server (including HStore) and Store images bundle JDK 17. In container environments, you can run the same
+> helper inside the container as the service OS user: `docker exec -it <container> bin/arthas.sh` without extra JDK
+> installation or diagnostic port mappings.
 
 An already active agent retains its listener settings. Connect on its current telnet port; the helper does not rebind it or disable an
 existing HTTP listener. If `arthas.ip` uses another loopback address, supply it with `--target-ip`, for example

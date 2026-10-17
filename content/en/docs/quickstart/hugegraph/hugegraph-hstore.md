@@ -282,11 +282,13 @@ For a newly attached agent, it binds telnet to `127.0.0.1:3658` with HTTP and MC
 `bin/arthas.sh --pid <PID> --telnet-port 3659`. See [local diagnostics](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 Legacy Store Arthas configuration fields remain stored for compatibility; they do not activate an agent or configure the local helper.
-The helper uses the bundled `lib/arthas` files and enforces loopback independently. An already active agent retains its existing settings.
+The helper uses the bundled `lib/arthas` files. It defaults to `127.0.0.1`; administrators may explicitly select another bind address with `--target-ip`.
+An already active agent retains its listener and authentication settings.
 The helper stops Arthas when the client exits, including after `quit` or `--command` completion; forced `SIGKILL` cannot perform cleanup.
 Official Store images include JDK 17, so the same helper works through `docker exec` as the service OS user.
-During diagnosis, other OS users or containers in the same pod can access loopback. Restrict host and pod access to trusted operators,
-and keep diagnostic ports off reverse proxies and container port mappings.
+We recommend enabling [Arthas native authentication](/docs/clients/restful-api/other/#1116-start-the-arthas-agent), especially before exposing diagnostic ports.
+Without it, any network-reachable client can execute commands, including other OS users or containers in the same pod.
+Administrators control firewall rules, port mappings, and forwarding access. Authentication does not encrypt ordinary telnet or HTTP traffic.
 
 #### 4.4 Per-node changes
 

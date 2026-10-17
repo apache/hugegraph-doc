@@ -334,8 +334,8 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > |---------------|---------------|-------------|
 > | arthas.telnet_port | 8562 | Arthas telnet port for administrator activation through `PUT /arthas`. |
 > | arthas.http_port | 8561 | Arthas HTTP port for administrator activation. |
-> | arthas.ip | 127.0.0.1 | Loopback bind address; activation rejects non-loopback addresses. |
-> | arthas.disabled_commands | jad | Disabled commands for administrator activation through `PUT /arthas`; the local helper does not apply them. |
+> | arthas.ip | 127.0.0.1 | Bind address; administrators may explicitly select another valid address, including `0.0.0.0`. |
+> | arthas.disabled_commands | Empty | Optional comma-separated disabled commands, e.g. `jad,mc`, for API activation; not applied by the local helper. |
 >
 > Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain fallback aliases. Explicit snake_case values win;
 > conflicting values produce a warning (see [configuration guide upgrade notice](/docs/config/config-guide/#3-rest-serverproperties)).

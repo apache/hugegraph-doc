@@ -83,11 +83,11 @@ graph.load_from_local_config=true
 batch.max_write_ratio=80
 batch.max_write_threads=0
 
-# configuration of arthas
+# configuration of arthas (optional disabled commands, for example jad,mc)
 arthas.telnet_port=8562
 arthas.http_port=8561
 arthas.ip=127.0.0.1
-arthas.disabled_commands=jad
+arthas.disabled_commands=
 
 # authentication configs
 #auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
@@ -116,10 +116,12 @@ memory_monitor.period=2000
 > Starting with HugeGraph 1.8.0, use canonical snake_case options: `arthas.telnet_port`, `arthas.http_port`, and `arthas.disabled_commands`.
 > Legacy camelCase names remain fallbacks; an explicitly set snake_case value wins and a conflicting alias produces a warning.
 > **Upgrade notice:** The shipped `rest-server.properties` template includes default snake_case entries (`arthas.telnet_port=8562`,
-> `arthas.http_port=8561`, `arthas.disabled_commands=jad`). If you set custom camelCase properties as earlier versions advised, you must migrate
+> `arthas.http_port=8561`, `arthas.disabled_commands=`). If you set custom camelCase properties as earlier versions advised, you must migrate
 > those values to the snake_case keys or remove the template's snake_case lines, because shipped snake_case keys take precedence over camelCase
 > fallbacks. Remove the unused alias to avoid ambiguity.
-> Arthas binds to loopback only, independently of the REST listener.
+> Arthas defaults to `127.0.0.1`, independently of the REST listener. Administrators may explicitly configure another bind address, including `0.0.0.0`.
+> Commands are unrestricted by default; `arthas.disabled_commands` optionally lists comma-separated commands such as `jad,mc`.
+> We recommend enabling Arthas native authentication and restricting network access before exposing diagnostic ports.
 > [Start diagnostics](/docs/clients/restful-api/other/#1116-start-the-arthas-agent) with an authenticated administrator or the local helper,
 > without restarting the JVM.
 

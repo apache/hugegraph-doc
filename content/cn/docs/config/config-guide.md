@@ -83,11 +83,11 @@ graph.load_from_local_config=true
 batch.max_write_ratio=80
 batch.max_write_threads=0
 
-# configuration of arthas
+# configuration of arthas (optional disabled commands, for example jad,mc)
 arthas.telnet_port=8562
 arthas.http_port=8561
 arthas.ip=127.0.0.1
-arthas.disabled_commands=jad
+arthas.disabled_commands=
 
 # authentication configs
 #auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
@@ -114,10 +114,12 @@ memory_monitor.period=2000
 
 > 自 HugeGraph 1.8.0 起，推荐使用 snake_case 配置项：`arthas.telnet_port`、`arthas.http_port` 和 `arthas.disabled_commands`。旧版 camelCase 命名仍作为兼容回退；
 > 显式设置的 snake_case 值优先，两种名称的值冲突时会输出警告。
-> **升级说明**：发行包附带的 `rest-server.properties` 模板默认包含 snake_case 配置（`arthas.telnet_port=8562`、`arthas.http_port=8561`、`arthas.disabled_commands=jad`）。
+> **升级说明**：发行包附带的 `rest-server.properties` 模板默认包含 snake_case 配置（`arthas.telnet_port=8562`、`arthas.http_port=8561`、`arthas.disabled_commands=`）。
 > 若此前按照早期文档配置了自定义 camelCase 键名，升级后必须将配置值迁移至对应的 snake_case 键或删除模板中的 snake_case 行；
 > 否则模板中显式声明的 snake_case 默认值将覆盖自定义的 camelCase 回退项。建议移除未使用的别名以避免歧义。
-> Arthas 仅监听 loopback，独立于 REST 监听地址。通过已认证的管理员或本地脚本[启动诊断](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)，无需重启 JVM。
+> Arthas 默认监听 `127.0.0.1`，独立于 REST 监听地址；管理员可显式配置其他监听地址，包括 `0.0.0.0`。
+> 默认不禁用命令；可在 `arthas.disabled_commands` 中按需填写以逗号分隔的命令，如 `jad,mc`。
+> 建议启用 Arthas 原生认证，对外暴露前限制网络访问。通过已认证的管理员或本地脚本[启动诊断](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)，无需重启 JVM。
 
 > 配置项 gremlinserver.url 是 GremlinServer 为 RestServer 提供服务的 url，该配置项默认为 http://127.0.0.1:8182，如需修改，需要和 gremlin-server.yaml 中的 host 和 port 相匹配；该值可以像模板那样省略协议前缀，缺失时会自动补上 `http://`。
 

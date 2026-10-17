@@ -332,8 +332,8 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > |--------|--------|------|
 > | arthas.telnet_port | 8562 | 管理员通过 `PUT /arthas` 激活时使用的 Arthas telnet 端口。 |
 > | arthas.http_port | 8561 | 管理员激活时使用的 Arthas HTTP 端口。 |
-> | arthas.ip | 127.0.0.1 | Loopback 监听地址；激活时拒绝非 loopback 地址。 |
-> | arthas.disabled_commands | jad | 管理员通过 `PUT /arthas` 激活时禁用的命令（以逗号分隔）；本地脚本不受此项约束。 |
+> | arthas.ip | 127.0.0.1 | 监听地址；管理员可显式选择其他有效地址，包括 `0.0.0.0`。 |
+> | arthas.disabled_commands | 空 | API 激活时可选的禁用命令，以逗号分隔，例如 `jad,mc`；本地脚本不受此项约束。 |
 >
 > 旧名称 `arthas.telnetPort`、`arthas.httpPort` 和 `arthas.disabledCommands` 仍可作为回退项。显式设置的 snake_case 值优先，
 > 两种名称的值冲突时会输出警告（参见[配置指南升级说明](/cn/docs/config/config-guide/#3-rest-serverproperties)）。响应仍使用 Arthas 代理的 camelCase 键名。

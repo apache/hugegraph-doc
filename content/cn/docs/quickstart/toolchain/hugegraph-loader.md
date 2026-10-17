@@ -28,6 +28,10 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 > 
 > **测试指南**：如需在本地运行 Loader 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
 
+> **并发导入保护方案**：自 1.8.0 起，普通导入支持在同一 Server 实例上获取 owner 保护
+> （需配合返回 `protocol: 1` 的新版 Server 与对应 Loader；当前 `master` 分支暂未包含该协议）。
+> 旧版 Server 保持下文说明的原有导入行为。
+
 ### 2 获取 HugeGraph-Loader
 
 可以通过以下三种方式获取 HugeGraph-Loader：
@@ -981,6 +985,40 @@ bin/hugegraph-loader.sh \
 ```
 
 本例用独立的 `docs_smoke_person` 标签和 `docs_*` 属性，避免与预置的 `person` 样例数据冲突。成功时统计中应显示顶点写入成功数为 `2`、边写入成功数为 `0`。也可以在 Hubble 的 Gremlin 工作台查询 `g.V().hasLabel('docs_smoke_person').values('docs_name')`，结果应包含 `docs-smoke-alice` 和 `docs-smoke-bob`。
+
+#### 3.4.6 并发导入与 LOADING owner {#loading-ownership}
+
+自 1.8.0 版本起，Loader 支持并发导入模式所有权保护协议
+（需配合返回 `protocol: 1` 的新版 Server 与对应 Loader；当前 `master` 分支暂未包含该协议）。
+
+```mermaid
+graph TD
+    A["图模式 NONE"] -->|首个 Loader 申请所有权| B["进入 LOADING 模式 (分配 token)"]
+    B -->|其他并发 Loader 加入| B
+    B -->|部分 Loader 导入完成释放| B
+    B -->|最后一个 Loader 释放| C["自动恢复 NONE 模式"]
+    B -.->|"异常/进程中断 (Token 残留)"| D["管理员恢复 / 释放 / 重启图实例"]
+    D -.->|"最后一个 owner 释放，或 recover/重启"| A
+    D -.->|"仍有其他 owner 活跃"| B
+```
+
+1. **探测与获取**：Loader 启动后探测 `/mode/owners`。首个 Loader 获取所有权句柄（`instance/epoch/token`），图模式由 `NONE` 转为 `LOADING`；并发 Loader 可申请加入该模式。
+2. **数据导入**：持有有效句柄的 Loader 并行执行数据导入。
+3. **安全释放**：导入完成后停止 worker 并释放对应句柄。当最后一个 owner 释放时，图模式自动恢复为 `NONE`。
+4. **异常恢复**：若因异常中断（如 `kill -9`）导致句柄残留，请先停止并排空所有相关的导入任务与图写操作，
+   然后通过 [RESTful API 管理员恢复接口](/cn/docs/clients/restful-api/graphs/#loading-ownership) 执行恢复，或重启 Server。
+   直接调用 `release` 仅适用于仍持有 Token 的调用方（如直接调用 REST API 的客户端）。
+{.steps}
+
+> [!NOTE]
+> **兼容性与运维说明**
+> - **旧版本兼容**：普通导入时仅在接口返回不支持该路由的 `404` 响应时回退至旧版 `LOADING`/`NONE` 枚举流程（支持 1.7 等旧版 Server，但不提供并发隔离）。
+>   权限、网络、图不存在或无效响应错误不会触发回退。
+> - **恢复与图源导入**：保留 `RESTORING` 模式，不探测 owner 且不自动重置。恢复导入完成后须手动将图模式设回 `NONE`，否则后续普通导入无法获取首个所有权。
+>   在活跃 owner 存在期间，请勿运行恢复导入、图源导入、Spark connector 或旧版 Loader 导入。
+> - **作用范围与生命周期**：所有权属于直连 Server 实例，不跨节点同步；owner 无自动租期过期机制。
+>   对于嵌入式程序集成，调用方必须调用 `HugeGraphLoader.shutdown()` 执行单次句柄释放；若释放失败，不会自动重试；
+>   该 owner 可能会在 Server 端保持活跃，此时可能需要通过上述管理员恢复流程处理。
 
 ### 4 完整示例
 

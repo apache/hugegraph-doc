@@ -209,6 +209,8 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `HG_SERVER_USE_PD` | `false` | `rest-server.properties` 中的 `usePD` |
 | `HG_SERVER_CLUSTER` | `hg-test` | `rest-server.properties` 中的 `cluster` |
 | `HG_SERVER_REST_URL` | `http://0.0.0.0:8080`（镜像中已设置） | `restserver.url` |
+| `HG_SERVER_URLS_TO_PD` | `http://0.0.0.0:8080` | `server.urls_to_pd`：本 Server 注册到 PD 的地址列表（逗号分隔），代替 `restserver.url`；仅在 `server.deploy_in_k8s` 为 `true` 时生效；每个地址都要自带 `http://` 前缀，系统只会给第一个地址补上；其中的空白字符会被去除 |
+| `HG_SERVER_DEPLOY_IN_K8S` | `false` | `rest-server.properties` 中的 `server.deploy_in_k8s` |
 | `HG_SERVER_MIN_FREE_MEMORY` | `64`（MB） | `restserver.min_free_memory` |
 | `HG_SERVER_INIT_STORE_ENABLED` | `true` | `init_store.enabled`；元数据由存储侧管理的 PD/HStore 部署应设为 `false` |
 | `HG_SERVER_AUTH_TOKEN_SECRET` | 设置了 `PASSWORD` 时自动生成 | 两个配置文件中的 `auth.token_secret`，至少 32 字节 |
@@ -240,7 +242,7 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 入口脚本在等待 Java 进程前会先等待 `wait-partition.sh`。若 Java 进程在分区轮询阶段提前退出，轮询仍可能消耗完整超时预算后入口脚本才感知到退出；
 若轮询成功，后续的最终诊断也可能再次消耗完整的超时预算。信号触发的关闭仍可正常中断检查。
 
-`HG_SERVER_INIT_STORE_ENABLED` 只接受 `HugeConfig` 能识别的写法（忽略大小写）：`y`、`t`、`yes`、`on`、`true`、`n`、`f`、`no`、`off`、`false`。其他取值（包括 `0` 和 `1`）都会让入口脚本终止。
+`HG_SERVER_INIT_STORE_ENABLED` 和 `HG_SERVER_DEPLOY_IN_K8S` 只接受 `HugeConfig` 能识别的写法（忽略大小写）：`y`、`t`、`yes`、`on`、`true`、`n`、`f`、`no`、`off`、`false`。其他取值（包括 `0` 和 `1`）都会让入口脚本终止。
 
 入口脚本在初始化成功后写入 `docker/init_complete`，后续启动会跳过重新初始化，但仍会再执行一次 `bin/init-store.sh`，以便关闭状态下每次启动都重新校验配置。
 

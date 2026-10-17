@@ -265,26 +265,16 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 
 **诊断**
 
-自 HugeGraph 1.8.0 起，Server 和 Store 统一使用 Arthas 4.1.5，PD 未内置 Arthas 代理。Store 的 HTTP 激活接口 `GET /v1/arthasstart` 返回 `403`（包括 loopback 或代理请求）。
-推荐以服务进程所属的 OS 用户运行发行包内的脚本，即可直接诊断运行中的 JVM：
+自 HugeGraph 1.8.0 起，Store 的 HTTP 激活接口 `GET /v1/arthasstart` 已禁用（直接返回 `403`），旧 Arthas 配置字段仅为兼容保留。
+推荐直接以服务进程属主身份运行发行包内置的脚本诊断正在运行的 JVM
+（官方容器镜像内置 JDK 17，可直接使用 `docker exec` 执行）：
 
 ```bash
 bin/arthas.sh
 ```
 
-脚本读取 `bin/pid`，需要 JDK 17，离线使用包内代理，无需重启服务或修改配置。
-新激活代理时，Telnet 默认监听 `127.0.0.1:3658`，HTTP 和 MCP 均禁用。同机多进程时可指定 `--pid <PID> --telnet-port 3659`。
-参见[本地诊断](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)。
-
-Store 的旧 Arthas 配置字段仅为兼容保留，不会激活代理，也不控制本地脚本。
-脚本使用发行包内的 `lib/arthas` 文件，默认监听 `127.0.0.1`；管理员可通过 `--target-ip` 显式选择其他监听地址。
-已有代理保留当前监听和认证配置。
-脚本会在客户端退出时停止 Arthas，包括输入 `quit` 或 `--command` 执行完成；强制 `SIGKILL` 无法执行清理。
-官方 Store 镜像内置 JDK 17，可通过 `docker exec` 以服务进程所属的 OS 用户使用同一脚本。
-建议启用 [Arthas 原生认证](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)，尤其是在对外暴露诊断端口前。
-即使设置凭据，来自 `127.0.0.1` 的客户端默认仍可免认证，包括其他 OS 用户或同 Pod 内的容器。
-如需关闭这一行为，请在服务 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启。请将宿主机、Pod 及 port-forward 访问限制为可信运维人员。
-收紧防火墙、端口映射及转发规则；通配监听可能同时接受 IPv4 和 IPv6，取决于 OS/JVM 配置，请同时限制两者。普通 telnet 和 HTTP 流量不会因认证而加密。
+同机多进程时可指定 `--pid <PID> --telnet-port 3659`。
+更多参数、认证配置及安全实践参见 [Arthas 诊断代理](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)。
 
 #### 4.4 各节点需要区分的配置
 

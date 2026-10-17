@@ -273,104 +273,62 @@ PUT http://localhost:8080/whiteiplist?status=true
 
 #### 11.1.6 启动 Arthas 诊断代理
 
-自 HugeGraph 1.8.0 起，Server 和 Store 统一内置 Arthas 4.1.5（PD 未内置 Arthas 代理）。可通过本地脚本或管理员 HTTP 接口挂载到正在运行的 JVM 进行在线诊断。
+自 HugeGraph 1.8.0 起，Server 与 Store 发行包统一内置 Arthas 4.1.5（PD 未内置）。
+可通过本地脚本或管理员 HTTP 接口挂载到正在运行的 JVM 进行在线诊断。
 
 > [!IMPORTANT]
-> **诊断访问说明**
-> - **默认本地监听**：Arthas 默认监听 `127.0.0.1`；管理员可显式配置其他有效地址，包括 `0.0.0.0`。
-> - **推荐原生认证**：建议开启 Arthas 原生认证，尤其是在对外暴露诊断端口前。HugeGraph 管理员鉴权只保护激活入口。
->   API 激活使用的原生凭据需通过 Server JVM 的 `-Darthas.username=...` 和 `-Darthas.password=...` 设置并重启生效，不是 REST 配置项。
->   这些 JVM 凭据也适用于脚本新挂载的代理；认证命令和自动清理时，请传入相匹配的 `--username`/`--password`。
->   未设置原生凭据时，特定非 loopback 地址上的代理不要求登录。即使设置了凭据，默认仍允许来自 `127.0.0.1` 的连接免认证，
->   包括其他 OS 用户或同 Pod 内的容器；如需关闭，请在服务 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启。
->   请将宿主机、Pod 及 port-forward 访问权限限制为可信运维人员，收紧防火墙、端口映射和转发规则；通配监听可能同时接受 IPv4 和 IPv6，取决于 OS/JVM 配置。
->   本地脚本退出时会停止 Arthas；仅通过 HTTP API 激活时，仍需显式执行 `stop`。
-> - **管理员权限限制**：HTTP API 激活要求 Server 已开启鉴权，且必须具备管理员权限；未开启鉴权时直接返回 `403`。
-> - **免重启本地诊断**：推荐直接在主机上使用服务进程所属的 OS 用户运行 `bin/arthas.sh`，无需修改配置或重启 JVM。
+> **安全与访问控制说明**
+> - **默认本地监听**：Arthas 默认仅监听 `127.0.0.1`。若绑定通配地址（如 `0.0.0.0`），请务必收紧网络防火墙并开启认证。
+> - **管理员权限限制**：HTTP API 激活（`PUT /arthas`）仅限已开启鉴权的管理员调用；未开启鉴权时直接返回 `403`。
+> - **Store 端点禁用**：Store 服务的 `GET /v1/arthasstart` 已禁用并返回 `403`，统一推荐使用 `bin/arthas.sh`。
+> - **免重启与自动清理**：推荐在宿主机以服务属主身份直接运行 `bin/arthas.sh`，无需重启服务；
+>   交互会话退出时脚本会自动卸载代理。
 
 | 部署方式 | 推荐激活方式 | 权限与访问说明 |
 |----------|--------------|----------------|
 | Server（已[开启认证](/cn/docs/config/config-authentication/)） | 管理员调用 `PUT /arthas` 或运行 `bin/arthas.sh` | 仅管理员账号可调用 HTTP 接口；本地脚本需服务 OS 用户权限 |
 | Server（未开启认证） | 本地脚本 `bin/arthas.sh` | HTTP 接口直接返回 `403`（包括 loopback 与代理请求） |
-| Store | 本地脚本 `bin/arthas.sh` | `GET /v1/arthasstart` 已禁用并返回 `403`（Store 无对应管理员鉴权机制） |
+| Store | 本地脚本 `bin/arthas.sh` | `GET /v1/arthasstart` 已禁用并返回 `403` |
 
 ##### 激活与使用方式
 
-```bash {tab="本地免重启诊断 (单实例)"}
-# 以服务进程所属的 OS 用户执行（离线使用包内代理，无需重启）
+```bash {tab="本地免重启诊断 (推荐)"}
+# 以服务进程所属的 OS 用户执行（离线使用内置代理，无需重启）
 bin/arthas.sh
+
+# 官方容器镜像内置 JDK 17，可在容器内直接运行
+docker exec -it <container> bin/arthas.sh
 ```
 
-```bash {tab="同机多实例诊断"}
-# 显式指定目标 JVM 进程 PID 及自定义 telnet 端口
+```bash {tab="常用诊断参数"}
+# 指定目标 JVM PID 及自定义 telnet 端口（同机多实例场景）
 bin/arthas.sh --pid <PID> --telnet-port 3659
+
+# 指定远程监听地址与原生认证凭据
+bin/arthas.sh --target-ip 0.0.0.0 --username admin --password '<password>'
+
+# 非交互模式执行单条命令并退出
+bin/arthas.sh --command version
 ```
 
 ```bash {tab="管理员 HTTP API 激活"}
-# 1. 调用 REST API 挂载诊断代理（需已开启 Server 认证，输入管理员密码）
-curl --user admin -X PUT http://127.0.0.1:8080/arthas
+# 1. 管理员调用 REST API 挂载诊断代理（默认端口 8562/8561，监听 127.0.0.1）
+curl -u admin:pa -X PUT http://127.0.0.1:8080/arthas
 
-# 2. 成功后返回生效配置（默认端口 8562/8561，监听 127.0.0.1）
-# 3. 使用本地脚本连接已有代理
+# 2. 使用本地脚本连接已有代理
 bin/arthas.sh --telnet-port 8562
 ```
 
-退出诊断：在终端输入 `quit` 或 `stop` 即可；脚本会在会话结束时自动清理并停止 Arthas 代理，服务 JVM 持续运行。
+##### 运维说明与安全配置
 
-脚本默认读取 `bin/pid`，需要 JDK 17。两个发行包均在 `lib/arthas` 内提供代理文件，无需下载、运行时解压或持久化的用户缓存。
-新挂载代理时，telnet 默认监听 `127.0.0.1:3658`，HTTP、MCP 和 tunnel 连接均禁用。
-交互模式需要终端。在管道、脚本或未使用 `-it` 的 `docker exec` 中，请改用 `bin/arthas.sh --command version`。
-
-本地脚本会在客户端退出时自动停止 Arthas，包括 `--command` 执行完成或输入 `quit`，并处理 `INT`、`TERM`、`HUP` 信号以完成清理。
-`SIGKILL` 会阻止清理，强制终止后需确认代理已停止。仅通过 HTTP API 激活代理的生命周期不受此机制影响。
-请勿并发运行多个脚本会话，退出任一会话都会停止共享代理及其全部诊断会话。脚本连接 API 已激活的代理后，也会在退出时停止该代理。
-
-可通过脚本传递 [Arthas 原生认证](https://arthas.aliyun.com/doc/auth.html)凭据：
-
-```bash
-bin/arthas.sh --target-ip 0.0.0.0 \
-    --username diagnostics --password '<arthas-password>'
-```
-
-凭据需为单行；建议使用可打印 ASCII，避免包内 Arthas 4.1.5 telnet 客户端的 Unicode 限制。仅传密码时用户名默认为 `arthas`。
-JVM 原生凭据也适用于脚本新挂载的代理；省略参数不会清除目标 JVM 的原生凭据设置。
-若已设置 `-Darthas.username`/`-Darthas.password`，请传入匹配的 `--username`/`--password`，尤其是同时设置了 `-Darthas.localConnectionNonAuth=false` 时。
-这组凭据独立于 HugeGraph 账号，脚本会自动将其用于 `--command` 和退出清理。
-交互诊断时若提示需要认证，请在 Arthas 控制台输入 `auth --username diagnostics <arthas-password>`。
-复用已有代理时应提供其原有凭据，脚本参数不会修改它。密码参数可能出现在 shell 历史及进程列表中，请在可信主机上妥善处理。
-仅提供 `--username` 且目标 JVM 的原生设置中没有现成密码时，Arthas 才会生成密码并写入日志；否则会继承已有密码。
-建议提供 `--password`，方便认证批处理及自动清理。清理失败时脚本返回非零，代理可能仍在运行；
-请使用已配置或生成的凭据通过原生 `auth` 认证，再执行 `stop` 关闭代理。
-
-认证保持可选，并遵循 Arthas 默认行为。`arthas.localConnectionNonAuth=true` 允许来自 `127.0.0.1` 的连接免认证。
-脚本使用独立配置，编辑 `lib/arthas/arthas.properties` 不会配置本脚本；如有需要，可在目标 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启生效。
-未配置有效的原生密码且监听 `0.0.0.0` 或 `::` 时，Arthas 4.1.5 会生成密码并打印至目标 JVM 输出及 Arthas 日志；显式提供凭据更方便远程使用和清理。
-认证不会加密普通 telnet 或 HTTP 流量；远程访问请使用受保护网络或加密传输。
-
-默认不禁用任何命令，管理员可按需配置以逗号分隔的列表，例如 `jad,mc`。
-复用 API 已激活的代理前，请勿在 `arthas.disabled_commands`（或旧别名）中禁用 `session` 和 `stop`。
-`session` 用于确认目标 PID，`stop` 只关闭 Arthas，不会停止服务 JVM。已有配置继续兼容，但无法确认 PID 或关闭监听时，
-脚本会打印错误并以非零状态退出，代理可能仍在运行。若已有代理禁用了 `stop`，请移除该限制并重启服务，再重新激活 Arthas。
-本地脚本新激活的代理始终保留这两个命令。
-
-> [!TIP]
-> 官方 Server（包括 HStore）与 Store 镜像均内置 JDK 17。在容器环境中，可直接以服务 OS 用户运行同一脚本：
-> `docker exec -it <container> bin/arthas.sh`，无需额外安装 JDK 或映射诊断端口。
-
-已有代理保留当前监听配置。请使用原 telnet 端口连接，脚本不会重新绑定端口或关闭已有的 HTTP 监听。
-通过 `--target-ip` 指定监听地址，例如 `bin/arthas.sh --target-ip ::1 --telnet-port 8562 --command version`，
-或使用 `bin/arthas.sh --target-ip 0.0.0.0`。默认仍为 `127.0.0.1`，`localhost` 映射为 `127.0.0.1`。
-使用通配监听地址 `0.0.0.0` 或 `::` 时，脚本均通过 `127.0.0.1` 连接及清理；远程客户端连接主机实际可达的地址。
-通配监听可能同时接受 IPv4 和 IPv6，取决于 OS/JVM 配置；请同时限制两者的防火墙规则。
-已有代理保留当前监听和认证配置，脚本参数不会重新配置它。
-如需从 Server API 默认配置切换为本地脚本默认配置，先只停止 Arthas，再重新挂载：
-
-```bash
-bin/arthas.sh --telnet-port 8562 --command stop
-bin/arthas.sh
-```
-
-若配置了其他 telnet 端口，请将 `8562` 替换为实际值。服务 JVM 持续运行，无需重启。
+- **会话退出与清理**：本地脚本会在退出时（输入 `quit`、`stop` 或 `--command` 执行完成）自动停止 Arthas 代理并释放端口，
+  服务 JVM 保持运行。若仅通过 HTTP API 激活，会话结束后需显式执行 `stop` 彻底卸载代理。
+- **用户认证与安全**：对外暴露诊断端口前强烈建议启用原生认证。可通过脚本参数 `--username`/`--password` 传递凭据，
+  或在服务 JVM 参数中设置 `-Darthas.username` 与 `-Darthas.password`。
+  详细认证机制及安全配置请参考 [Arthas 官方用户认证文档](https://arthas.aliyun.com/doc/auth.html)。
+- **禁用高危命令**：Server 可在 `rest-server.properties` 中通过 `arthas.disabled_commands` 配置禁用命令列表
+  （以逗号分隔，如 `jad,mc`）。请勿禁用 `session` 与 `stop`，以便工具管理生命周期。
+  各命令详情请参见 [Arthas 官方命令列表](https://arthas.aliyun.com/doc/commands.html)。
 
 ##### HTTP 响应体示例
 
@@ -386,6 +344,7 @@ bin/arthas.sh
 ```
 
 > [!NOTE]
-> [配置项](/cn/docs/config/config-option/) 采用规范的 snake_case 命名：`arthas.telnet_port`、`arthas.http_port`、`arthas.ip` 与 `arthas.disabled_commands`。
-> 旧版 camelCase 命名仍作为兼容回退；显式配置的 snake_case 选项优先（参见[配置指南升级说明](/cn/docs/config/config-guide/#3-rest-serverproperties)）。
+> [配置项](/cn/docs/config/config-option/) 采用规范的 snake_case 命名：`arthas.telnet_port`、`arthas.http_port`、
+> `arthas.ip` 与 `arthas.disabled_commands`。旧版 camelCase 命名仍作为兼容回退；显式配置的 snake_case 选项优先
+> （参见[配置指南升级说明](/cn/docs/config/config-guide/#3-rest-serverproperties)）。
 > 响应内容保持 Arthas 代理的原始键名以便兼容现有客户端。

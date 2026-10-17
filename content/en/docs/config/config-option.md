@@ -337,19 +337,9 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | arthas.ip | 127.0.0.1 | Bind address; administrators may explicitly select another valid address, including `0.0.0.0`. |
 > | arthas.disabled_commands | Empty | Optional comma-separated disabled commands, e.g. `jad,mc`, for API activation; not applied by the local helper. |
 >
-> Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain fallback aliases. Explicit snake_case values win;
-> conflicting values produce a warning (see [configuration guide upgrade notice](/docs/config/config-guide/#3-rest-serverproperties)).
-> The response still uses the camelCase Arthas agent keys.
-> For API native authentication, set `-Darthas.username=...` and `-Darthas.password=...` on the Server JVM and restart; these are not REST options.
-> These credentials also apply to [helper-started agents](/docs/clients/restful-api/other/#1116-start-the-arthas-agent); supply matching CLI credentials.
-> JVM properties may expose secrets in process listings. A specific non-loopback bind without native credentials has no login;
-> wildcard binds generate a password.
-> To authenticate clients from `127.0.0.1` too, set `-Darthas.localConnectionNonAuth=false` on the service JVM and restart.
-> Restrict host, Pod and port-forward access to trusted operators; wildcard listeners may accept IPv4 and IPv6 depending on OS/JVM settings, so firewall both.
-> HTTP activation requires authentication to be enabled and the caller to be an authenticated administrator. It returns `403` without
-> authentication enabled, including requests from loopback or a proxy. No extra Arthas enable switch is required. MCP is disabled.
-> The bundled `bin/arthas.sh` provides local diagnostics without changing these settings or restarting the JVM (the helper applies its own
-> defaults and does not read these options). A new agent uses the helper defaults; an already active agent retains its existing settings.
+> Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain supported as fallbacks; explicit snake_case settings take precedence.
+> The bundled `bin/arthas.sh` provides local diagnostics without changing configuration. For activation workflows, permissions, and authentication options,
+> see [Start the Arthas agent](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 > [!DETAILS]- **RPC Server Config Options**
 > Corresponding configuration file `rest-server.properties`

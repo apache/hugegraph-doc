@@ -270,28 +270,15 @@ Only for single-node development and debugging, activated by `app.fake-pd: true`
 
 **Diagnostics**
 
-Starting with HugeGraph 1.8.0, Server and Store bundle Arthas 4.1.5; PD does not embed an Arthas agent. Store HTTP activation (`GET /v1/arthasstart`) returns
-`403`, including requests from loopback or through a proxy. Run the bundled helper as the service OS user on the host to diagnose the running JVM:
+Starting with HugeGraph 1.8.0, Store HTTP activation (`GET /v1/arthasstart`) is disabled and returns `403`. Legacy configuration fields are kept only
+for compatibility. Run the bundled script as the service OS user on the host to diagnose the running JVM (official container images include JDK 17):
 
 ```bash
 bin/arthas.sh
 ```
 
-The helper reads `bin/pid`, requires JDK 17, and uses the bundled agent offline. It needs no service restart or configuration change.
-For a newly attached agent, it binds telnet to `127.0.0.1:3658` with HTTP and MCP disabled. For multiple processes on one host, use
-`bin/arthas.sh --pid <PID> --telnet-port 3659`. See [local diagnostics](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
-
-Legacy Store Arthas configuration fields remain stored for compatibility; they do not activate an agent or configure the local helper.
-The helper uses the bundled `lib/arthas` files. It defaults to `127.0.0.1`; administrators may explicitly select another bind address with `--target-ip`.
-An already active agent retains its listener and authentication settings.
-The helper stops Arthas when the client exits, including after `quit` or `--command` completion; forced `SIGKILL` cannot perform cleanup.
-Official Store images include JDK 17, so the same helper works through `docker exec` as the service OS user.
-We recommend enabling [Arthas native authentication](/docs/clients/restful-api/other/#1116-start-the-arthas-agent), especially before exposing diagnostic ports.
-Native defaults allow clients from `127.0.0.1`, including other OS users or containers in the same Pod, to bypass authentication even with credentials.
-To disable this bypass, set `-Darthas.localConnectionNonAuth=false` on the service JVM and restart.
-Restrict host, Pod and port-forward access to trusted operators.
-Limit firewall rules, port mappings and forwarding; wildcard listeners may accept both IPv4 and IPv6 depending on OS/JVM settings, so firewall both.
-Authentication does not encrypt ordinary telnet or HTTP traffic.
+For multiple processes on one host, specify `--pid <PID> --telnet-port 3659`. For command options, authentication, and security practices, see
+[Start the Arthas agent](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 #### 4.4 Per-node changes
 

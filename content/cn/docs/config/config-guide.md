@@ -112,19 +112,13 @@ memory_monitor.period=2000
 - graphs：图配置文件所在目录，默认值是 `./conf/graphs`。`init-store.sh` 会扫描该目录；Server 应用初始化也会扫描并尝试加载其中的 properties 文件；
 - graph.load_from_local_config：默认 `false`，控制构造阶段预加载；不会禁止 Server 应用初始化阶段的本地加载，也不是安全隔离开关。图配置变化通过重启 Server 应用。
 
-> 自 HugeGraph 1.8.0 起，推荐使用 snake_case 配置项：`arthas.telnet_port`、`arthas.http_port` 和 `arthas.disabled_commands`。旧版 camelCase 命名仍作为兼容回退；
-> 显式设置的 snake_case 值优先，两种名称的值冲突时会输出警告。
-> **升级说明**：发行包附带的 `rest-server.properties` 模板默认包含 snake_case 配置（`arthas.telnet_port=8562`、`arthas.http_port=8561`、`arthas.disabled_commands=`）。
-> 若此前按照早期文档配置了自定义 camelCase 键名，升级后必须将配置值迁移至对应的 snake_case 键或删除模板中的 snake_case 行；
-> 否则模板中显式声明的 snake_case 默认值将覆盖自定义的 camelCase 回退项。建议移除未使用的别名以避免歧义。
-> Arthas 默认监听 `127.0.0.1`，独立于 REST 监听地址；管理员可显式配置其他监听地址，包括 `0.0.0.0`。
-> 默认不禁用命令；可在 `arthas.disabled_commands` 中按需填写以逗号分隔的命令，如 `jad,mc`。
-> 建议对外暴露前启用 Arthas 原生认证。API 激活的凭据通过 Server JVM 的 `-Darthas.username=...` 和 `-Darthas.password=...` 设置，需重启生效。
-> 这些原生 JVM 属性可能在进程列表中暴露凭据，不是 REST 配置项。
-> 这些凭据也适用于[本地脚本挂载的代理](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)；请传入匹配的 `--username`/`--password`。
-> 即使设置凭据，来自 `127.0.0.1` 的客户端默认仍可免认证，除非在服务 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启。
-> 请将宿主机、Pod 和 port-forward 访问限制为可信运维人员。
-> 通配监听可能同时接受 IPv4 和 IPv6，请同时限制两者的防火墙规则。配置就绪后，可通过已认证的管理员或本地脚本[启动诊断](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)，无需再重启 JVM。
+> 自 HugeGraph 1.8.0 起，推荐使用规范的 snake_case 配置项：
+> `arthas.telnet_port`、`arthas.http_port`、`arthas.ip` 与 `arthas.disabled_commands`。
+> 旧版 camelCase 命名仍作为兼容回退；显式配置的 snake_case 值优先。
+> **升级说明**：发行包附带的 `rest-server.properties` 模板默认包含 snake_case 配置。
+> 若此前配置了自定义 camelCase 键名，建议迁移至对应的 snake_case 键以避免被模板默认值覆盖。
+> 详细在线诊断方法、权限要求及认证配置请参见
+> [Arthas 诊断代理](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)。
 
 > 配置项 gremlinserver.url 是 GremlinServer 为 RestServer 提供服务的 url，该配置项默认为 http://127.0.0.1:8182，如需修改，需要和 gremlin-server.yaml 中的 host 和 port 相匹配；该值可以像模板那样省略协议前缀，缺失时会自动补上 `http://`。
 

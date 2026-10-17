@@ -340,6 +340,11 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain fallback aliases. Explicit snake_case values win;
 > conflicting values produce a warning (see [configuration guide upgrade notice](/docs/config/config-guide/#3-rest-serverproperties)).
 > The response still uses the camelCase Arthas agent keys.
+> For API native authentication, set `-Darthas.username=...` and `-Darthas.password=...` on the Server JVM and restart; these are not REST options.
+> JVM properties may expose secrets in process listings. A specific non-loopback bind without native credentials has no login;
+> wildcard binds generate a password.
+> To authenticate clients from `127.0.0.1` too, set `-Darthas.localConnectionNonAuth=false` on the service JVM and restart.
+> Restrict host, Pod and port-forward access to trusted operators; wildcard listeners may accept IPv4 and IPv6 depending on OS/JVM settings, so firewall both.
 > HTTP activation requires authentication to be enabled and the caller to be an authenticated administrator. It returns `403` without
 > authentication enabled, including requests from loopback or a proxy. No extra Arthas enable switch is required. MCP is disabled.
 > The bundled `bin/arthas.sh` provides local diagnostics without changing these settings or restarting the JVM (the helper applies its own

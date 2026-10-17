@@ -280,8 +280,11 @@ You can attach it to a running JVM for live troubleshooting via the local script
 > **Diagnostic Access**
 > - **Local by Default**: Arthas defaults to `127.0.0.1`. Administrators may explicitly bind another valid address, including `0.0.0.0`.
 > - **Native Authentication Recommended**: Enable Arthas native authentication, especially before exposing diagnostic ports beyond loopback.
->   HugeGraph administrator authentication protects activation only. Without Arthas authentication, any network-reachable client can execute commands,
->   including other OS users or containers in the same pod. Administrators control firewall rules, port mappings, and forwarding access.
+>   HugeGraph administrator authentication protects activation only. For API credentials, set native `-Darthas.username=...` and `-Darthas.password=...`
+>   on the Server JVM and restart; these are not REST configuration keys. Without native credentials, a specific non-loopback bind has no login.
+>   Native defaults bypass authentication for clients from `127.0.0.1`, including other OS users or containers in the same Pod, even with credentials.
+>   Set `-Darthas.localConnectionNonAuth=false` on the service JVM and restart to disable this bypass. Restrict host, Pod and port-forward access
+>   to trusted operators. Limit firewall rules, port mappings and forwarding; wildcard listeners may accept IPv4 and IPv6 depending on OS/JVM settings.
 >   The local helper stops Arthas when it exits; API-only activation still requires an explicit `stop`.
 > - **Administrator Privilege**: HTTP API activation requires authentication to be enabled on Server with administrator privileges;
 >   requests without authentication enabled return `403`.
@@ -346,7 +349,7 @@ If cleanup fails, the helper returns nonzero and the agent may remain running; u
 
 Authentication is optional and follows Arthas defaults. `arthas.localConnectionNonAuth=true` permits connections from `127.0.0.1` to skip authentication.
 The helper uses a private configuration, so editing `lib/arthas/arthas.properties` does not configure it; if needed, it honors the target JVM property
-`-Darthas.localConnectionNonAuth=false`. When binding `0.0.0.0` without an explicit password, Arthas 4.1.5
+`-Darthas.localConnectionNonAuth=false` after restarting that JVM. When binding `0.0.0.0` or `::` without an explicit password, Arthas 4.1.5
 creates a password and prints it in the target JVM output and Arthas log. Supplying credentials explicitly is more convenient for remote use and cleanup.
 Authentication does not encrypt ordinary telnet or HTTP traffic; use a protected network or encrypted transport for remote access.
 
@@ -366,7 +369,8 @@ An already active agent retains its listener settings. Connect on its current te
 existing HTTP listener. Supply the bind address with `--target-ip`, for example
 `bin/arthas.sh --target-ip ::1 --telnet-port 8562 --command version` or `bin/arthas.sh --target-ip 0.0.0.0`.
 The default remains `127.0.0.1`; `localhost` maps to `127.0.0.1`. For wildcard binds `0.0.0.0` and `::`, the helper connects and cleans up
-through `127.0.0.1` and `::1` respectively. Remote clients use the host's actual reachable address. Existing agents retain their listener
+through `127.0.0.1` for either wildcard. A wildcard listener may accept both IPv4 and IPv6 depending on OS/JVM settings; firewall both.
+Remote clients use the host's actual reachable address. Existing agents retain their listener
 and authentication settings; helper options cannot reconfigure them.
 To switch from the Server API defaults to the local helper defaults, stop only Arthas and attach again:
 

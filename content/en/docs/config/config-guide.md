@@ -121,9 +121,13 @@ memory_monitor.period=2000
 > fallbacks. Remove the unused alias to avoid ambiguity.
 > Arthas defaults to `127.0.0.1`, independently of the REST listener. Administrators may explicitly configure another bind address, including `0.0.0.0`.
 > Commands are unrestricted by default; `arthas.disabled_commands` optionally lists comma-separated commands such as `jad,mc`.
-> We recommend enabling Arthas native authentication and restricting network access before exposing diagnostic ports.
+> We recommend native authentication before exposing diagnostic ports. For API activation, set `-Darthas.username=...` and `-Darthas.password=...`
+> on the Server JVM and restart. These native JVM properties may expose secrets in process listings; they are not REST configuration keys.
+> Credentials still allow clients from `127.0.0.1` to bypass authentication unless the service JVM uses
+> `-Darthas.localConnectionNonAuth=false` (restart required).
+> Restrict host, Pod and port-forward access to trusted operators; wildcard listeners may accept both IPv4 and IPv6, so firewall both.
 > [Start diagnostics](/docs/clients/restful-api/other/#1116-start-the-arthas-agent) with an authenticated administrator or the local helper,
-> without restarting the JVM.
+> without restarting the JVM once its configuration is in place.
 
 > `gremlinserver.url` is the GremlinServer address used by RestServer, defaulting to `http://127.0.0.1:8182`. It must match `host` and `port` in `gremlin-server.yaml`. Like the template, it can omit the scheme; missing schemes receive an `http://` prefix.
 

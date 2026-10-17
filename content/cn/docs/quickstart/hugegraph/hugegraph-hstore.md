@@ -282,8 +282,9 @@ Store 的旧 Arthas 配置字段仅为兼容保留，不会激活代理，也不
 脚本会在客户端退出时停止 Arthas，包括输入 `quit` 或 `--command` 执行完成；强制 `SIGKILL` 无法执行清理。
 官方 Store 镜像内置 JDK 17，可通过 `docker exec` 以服务进程所属的 OS 用户使用同一脚本。
 建议启用 [Arthas 原生认证](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)，尤其是在对外暴露诊断端口前。
-未启用时，所有网络可达的客户端均可执行命令，包括其他 OS 用户或同 Pod 内的容器。
-管理员负责防火墙、端口映射及转发访问控制；普通 telnet 和 HTTP 流量不会因认证而加密。
+即使设置凭据，来自 `127.0.0.1` 的客户端默认仍可免认证，包括其他 OS 用户或同 Pod 内的容器。
+如需关闭这一行为，请在服务 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启。请将宿主机、Pod 及 port-forward 访问限制为可信运维人员。
+收紧防火墙、端口映射及转发规则；通配监听可能同时接受 IPv4 和 IPv6，取决于 OS/JVM 配置，请同时限制两者。普通 telnet 和 HTTP 流量不会因认证而加密。
 
 #### 4.4 各节点需要区分的配置
 

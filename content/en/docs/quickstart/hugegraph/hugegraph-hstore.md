@@ -287,8 +287,11 @@ An already active agent retains its listener and authentication settings.
 The helper stops Arthas when the client exits, including after `quit` or `--command` completion; forced `SIGKILL` cannot perform cleanup.
 Official Store images include JDK 17, so the same helper works through `docker exec` as the service OS user.
 We recommend enabling [Arthas native authentication](/docs/clients/restful-api/other/#1116-start-the-arthas-agent), especially before exposing diagnostic ports.
-Without it, any network-reachable client can execute commands, including other OS users or containers in the same pod.
-Administrators control firewall rules, port mappings, and forwarding access. Authentication does not encrypt ordinary telnet or HTTP traffic.
+Native defaults allow clients from `127.0.0.1`, including other OS users or containers in the same Pod, to bypass authentication even with credentials.
+To disable this bypass, set `-Darthas.localConnectionNonAuth=false` on the service JVM and restart.
+Restrict host, Pod and port-forward access to trusted operators.
+Limit firewall rules, port mappings and forwarding; wildcard listeners may accept both IPv4 and IPv6 depending on OS/JVM settings, so firewall both.
+Authentication does not encrypt ordinary telnet or HTTP traffic.
 
 #### 4.4 Per-node changes
 

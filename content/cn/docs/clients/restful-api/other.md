@@ -279,8 +279,11 @@ PUT http://localhost:8080/whiteiplist?status=true
 > **诊断访问说明**
 > - **默认本地监听**：Arthas 默认监听 `127.0.0.1`；管理员可显式配置其他有效地址，包括 `0.0.0.0`。
 > - **推荐原生认证**：建议开启 Arthas 原生认证，尤其是在对外暴露诊断端口前。HugeGraph 管理员鉴权只保护激活入口。
->   未启用 Arthas 认证时，所有网络可达的客户端均可执行命令，包括其他 OS 用户或同 Pod 内的容器。
->   管理员负责防火墙、端口映射及转发访问控制。本地脚本退出时会停止 Arthas；仅通过 HTTP API 激活时，仍需显式执行 `stop`。
+>   API 激活使用的原生凭据需通过 Server JVM 的 `-Darthas.username=...` 和 `-Darthas.password=...` 设置并重启生效，不是 REST 配置项。
+>   未设置原生凭据时，特定非 loopback 地址上的代理不要求登录。即使设置了凭据，默认仍允许来自 `127.0.0.1` 的连接免认证，
+>   包括其他 OS 用户或同 Pod 内的容器；如需关闭，请在服务 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启。
+>   请将宿主机、Pod 及 port-forward 访问权限限制为可信运维人员，收紧防火墙、端口映射和转发规则；通配监听可能同时接受 IPv4 和 IPv6，取决于 OS/JVM 配置。
+>   本地脚本退出时会停止 Arthas；仅通过 HTTP API 激活时，仍需显式执行 `stop`。
 > - **管理员权限限制**：HTTP API 激活要求 Server 已开启鉴权，且必须具备管理员权限；未开启鉴权时直接返回 `403`。
 > - **免重启本地诊断**：推荐直接在主机上使用服务进程所属的 OS 用户运行 `bin/arthas.sh`，无需修改配置或重启 JVM。
 
@@ -336,8 +339,8 @@ bin/arthas.sh --target-ip 0.0.0.0 \
 清理失败时脚本返回非零，代理可能仍在运行；请使用日志中的密码通过原生 `auth` 认证，再执行 `stop` 关闭代理。
 
 认证保持可选，并遵循 Arthas 默认行为。`arthas.localConnectionNonAuth=true` 允许来自 `127.0.0.1` 的连接免认证。
-脚本使用独立配置，编辑 `lib/arthas/arthas.properties` 不会配置本脚本；如有需要，可在目标 JVM 设置 `-Darthas.localConnectionNonAuth=false`。
-未显式提供密码且监听 `0.0.0.0` 时，Arthas 4.1.5 会生成密码并打印至目标 JVM 输出及 Arthas 日志；显式提供凭据更方便远程使用和清理。
+脚本使用独立配置，编辑 `lib/arthas/arthas.properties` 不会配置本脚本；如有需要，可在目标 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启生效。
+未显式提供密码且监听 `0.0.0.0` 或 `::` 时，Arthas 4.1.5 会生成密码并打印至目标 JVM 输出及 Arthas 日志；显式提供凭据更方便远程使用和清理。
 认证不会加密普通 telnet 或 HTTP 流量；远程访问请使用受保护网络或加密传输。
 
 默认不禁用任何命令，管理员可按需配置以逗号分隔的列表，例如 `jad,mc`。
@@ -353,7 +356,8 @@ bin/arthas.sh --target-ip 0.0.0.0 \
 已有代理保留当前监听配置。请使用原 telnet 端口连接，脚本不会重新绑定端口或关闭已有的 HTTP 监听。
 通过 `--target-ip` 指定监听地址，例如 `bin/arthas.sh --target-ip ::1 --telnet-port 8562 --command version`，
 或使用 `bin/arthas.sh --target-ip 0.0.0.0`。默认仍为 `127.0.0.1`，`localhost` 映射为 `127.0.0.1`。
-使用通配监听地址 `0.0.0.0` 或 `::` 时，脚本分别通过 `127.0.0.1` 或 `::1` 连接及清理；远程客户端连接主机实际可达的地址。
+使用通配监听地址 `0.0.0.0` 或 `::` 时，脚本均通过 `127.0.0.1` 连接及清理；远程客户端连接主机实际可达的地址。
+通配监听可能同时接受 IPv4 和 IPv6，取决于 OS/JVM 配置；请同时限制两者的防火墙规则。
 已有代理保留当前监听和认证配置，脚本参数不会重新配置它。
 如需从 Server API 默认配置切换为本地脚本默认配置，先只停止 Arthas，再重新挂载：
 

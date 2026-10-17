@@ -337,6 +337,10 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 >
 > 旧名称 `arthas.telnetPort`、`arthas.httpPort` 和 `arthas.disabledCommands` 仍可作为回退项。显式设置的 snake_case 值优先，
 > 两种名称的值冲突时会输出警告（参见[配置指南升级说明](/cn/docs/config/config-guide/#3-rest-serverproperties)）。响应仍使用 Arthas 代理的 camelCase 键名。
+> API 原生认证凭据通过 Server JVM 的 `-Darthas.username=...` 和 `-Darthas.password=...` 设置，需重启生效，不是 REST 配置项。
+> JVM 属性可能在进程列表中暴露凭据。未设置原生凭据时，特定非 loopback 地址上的代理不要求登录，通配监听会生成密码。
+> 若要对来自 `127.0.0.1` 的客户端也认证，请在服务 JVM 设置 `-Darthas.localConnectionNonAuth=false` 并重启。
+> 请将宿主机、Pod 及 port-forward 访问限制为可信运维人员；通配监听可能同时接受 IPv4 和 IPv6，取决于 OS/JVM 配置，请同时限制两者的防火墙规则。
 > HTTP 激活要求已开启认证且调用者是已认证的管理员。未开启认证时返回 `403`，loopback 或代理转发的请求也不例外。
 > 无需额外开启 Arthas 开关，MCP 默认禁用。发行包内的 `bin/arthas.sh` 可直接进行本地诊断，无需修改这些配置或重启 JVM（本地脚本独立使用默认配置，不读取上述选项）。
 > 新激活的代理使用脚本默认配置，已有代理保留当前配置。

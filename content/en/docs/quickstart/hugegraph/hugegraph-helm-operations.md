@@ -39,9 +39,9 @@ No local Helm rendering verifies live cluster reachability, volumes or JVM capac
 Images containing the [fatal PD health fix](https://github.com/apache/hugegraph/pull/3358) return `503` from `/v1/health`
 after a terminal Raft error or shutdown; ordinary elections and quorum loss remain live (`200`).
 After a failed snapshot, fix the disk or storage problem before restarting PD: freeing space alone does not reinitialize JRaft.
-Because chart templates default probes to `/v1/ready` when `pd.replicas` is 1, single-PD deployments remain readiness-based
-regardless of image until chart updates; for fixed images, override `pd.livenessPath=/v1/health` (which also sets the startup probe path)
-to enable health-based probe recovery.
+When `pd.replicas` is 1, chart templates default startup and liveness probes to `/v1/ready`, which already restarts a single PD after a terminal Raft error.
+Setting `pd.livenessPath=/v1/health` (which also sets the startup probe path) switches them to health checks, but `/v1/health` does not detect a PD that fails
+to initialize its storage and never becomes ready.
 
 ### Helm test coverage
 

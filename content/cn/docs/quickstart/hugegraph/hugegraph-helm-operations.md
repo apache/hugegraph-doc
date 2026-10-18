@@ -37,8 +37,8 @@ Server 等待存储的默认上限为 300 秒，可以用 `server.storageWaitTim
 包含 [PD 致命错误健康检查修复](https://github.com/apache/hugegraph/pull/3358)的镜像，在 Raft 发生终止性错误或关闭后，
 `/v1/health` 返回 `503`；普通选举和暂时失去 quorum 时仍返回 `200`。
 快照失败后，先修复磁盘或存储问题再重启 PD：仅释放空间不会重新初始化 JRaft。
-当 `pd.replicas` 为 1 时，chart 模板默认将探针指向 `/v1/ready`（无论镜像版本），因此单副本 PD 探针在 chart 调整前仍基于 readiness；
-使用修复镜像时，可配置 `pd.livenessPath=/v1/health`（同时对 startup 探针生效）以启用健康检查恢复。
+当 `pd.replicas` 为 1 时，chart 模板默认将 startup 与 liveness 探针指向 `/v1/ready`，该路径在发生终止性 Raft 错误后本就会重启单副本 PD。
+若配置 `pd.livenessPath=/v1/health`（同时对 startup 探针生效）改用健康检查，需注意 `/v1/health` 无法检测未能完成初始化而从未进入 ready 状态的 PD。
 
 ### Helm test 检查范围 {#helm-test-coverage}
 

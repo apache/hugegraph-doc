@@ -28,6 +28,7 @@ Corresponding configuration file `gremlin-server.yaml`
 | resultIterationBatchSize  | 64                                                                                                           | Number of results returned per batch when streaming a result set.                |
 | ssl.enabled               | false                                                                                                        | Whether Gremlin Server serves over TLS.                                          |
 | authentication            | Not configured                                                                                               | When enabling authentication, configure the authenticator, handler, and path to `rest-server.properties`. |
+{.td-table--wide}
 
 ### Rest Server & API Config Options
 
@@ -75,6 +76,7 @@ Corresponding configuration file `rest-server.properties`
 | memory_monitor.period                  | 2000                                             | The period in ms of JVM memory usage monitoring, in each period we will detect the jvm memory usage and take corresponding actions.                                                                            |
 | log.slow_query_threshold               | 1000                                             | The threshold time(ms) of logging slow query, 0 means logging slow query is disabled.                                                                                                                          |
 | log.slow_query_body_limit              | 512                                              | The max bytes of request body recorded in the slow query log, 0 means the body is not recorded. The recorded prefix is written as-is and may contain sensitive Gremlin or Cypher literals.                      |
+{.td-table--wide}
 
 The role election options `server.role_election` and `server.role.*` apply to version 1.7.0 and earlier only. Later versions no longer read them: a server that still sets them starts normally and logs a warning for each key.
 
@@ -94,6 +96,7 @@ Corresponding configuration file `rest-server.properties`
 | meta.ca              |                       | The ca file of meta server.                                     |
 | meta.client_ca       |                       | The client ca file of meta server.                              |
 | meta.client_key      |                       | The client key file of meta server.                             |
+{.td-table--wide}
 
 The HStore backend also reads two options from the graph configuration file `{graph-name}.properties`. Both default to
 0, which means the value is decided by PD:
@@ -102,6 +105,7 @@ The HStore backend also reads two options from the graph configuration file `{gr
 |-------------------------|---------------|-----------------------------------------------------------------|
 | hstore.partition_count  | 0             | Number of partitions, which PD controls partitions based on.    |
 | hstore.shard_count      | 0             | Number of copies, which PD controls partition copies based on.  |
+{.td-table--wide}
 
 ### Authentication Graph Config Options
 
@@ -114,6 +118,7 @@ Write these options in the properties file for the graph specified by `auth.grap
 | auth.cache_expire | 600 | Authentication client and Server cache expiration in seconds; a non-negative integer. |
 | auth.token_expire | 86400 | JWT lifetime in seconds; a non-negative integer. |
 | auth.token_secret | 32 random bytes encoded as Base64 | Authentication graph setting; the default is not written back to the file. Explicitly set the same strong random value on every node to validate tokens across restarts or nodes. HS256 requires at least 32 UTF-8 bytes. |
+{.td-table--wide}
 
 ### Basic Config Options
 
@@ -190,6 +195,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | memory.max_capacity                   | 1073741824                                   | The maximum memory capacity in bytes that can be managed for all queries in HugeGraph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | memory.one_query_max_capacity         | 104857600                                    | The maximum memory capacity in bytes that can be managed for a query in HugeGraph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | memory.alignment                      | 8                                            | The alignment used for round memory size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+{.td-table--wide}
 
 > [!DETAILS]- **Raft Config Options (Deprecated)**
 > The shipped graph configuration templates mark these options as deprecated. They only take effect when
@@ -219,6 +225,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | raft.install_snapshot_rpc_timeout | 36000                | The install snapshot rpc timeout in seconds for jraft rpc.                                                                                                                                                                                                                        |
 > | raft.rpc_buf_low_water_mark       | 10485760             | The ChannelOutboundBuffer's low water mark of netty, when buffer size less than this size, the method ChannelOutboundBuffer.isWritable() will return true, it means that low downstream pressure or good network.                                                                   |
 > | raft.rpc_buf_high_water_mark      | 20971520             | The ChannelOutboundBuffer's high water mark of netty, only when buffer size exceed this size, the method ChannelOutboundBuffer.isWritable() will return false, it means that the downstream pressure is too great to process the request or network is very congestion, upstream needs to limit rate at this time. |
+> {.td-table--wide}
 
 ### RocksDB Backend Config Options
 
@@ -296,6 +303,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 | rocksdb.partition_filters_and_indexes           | false                                            | If bloom filter is enabled, set this option true to use partitioned full filters and indexes for each sst file. This option is incompatible with block-based filters.                                                                                                                                                                                                                                  |
 | rocksdb.pin_top_level_index_and_filter          | true                                             | If partition_filters_and_indexes is set true, set this option true if we'd pin top-level index of partitioned filter and index blocks to the block cache.                                                                                                                                                                                                                                              |
 | rocksdb.prefix_extractor_n_bytes                | 0                                                | The prefix-extractor uses the first N bytes of a key as its prefix, it will use the full key when a key is shorter than the N. 0 means unset prefix-extractor.                                                                                                                                                                                                                                         |
+{.td-table--wide}
 
 > [!DETAILS]- **K8s Config Options (Optional)**
 > Corresponding configuration file `rest-server.properties`
@@ -325,16 +333,23 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | k8s.internal_algorithm        | [page-rank, degree-centrality, wcc, triangle-count, rings, rings-with-filter, betweenness-centrality, closeness-centrality, lpa, links, kcore, louvain, clustering-coefficient, ppr, subgraph-match] | The names of the built-in k8s algorithms.        |
 > | k8s.algorithms                | See `ServerOptions.K8S_ALGORITHMS` | The `name:paramsClass` mapping of the built-in k8s algorithms.                              |
 > | k8s.internal_algorithm_image_url | Empty | Image URL for built-in Kubernetes algorithms. |
+> {.td-table--wide}
 
 > [!DETAILS]- **Arthas Diagnostic Config Options (Optional)**
-> Corresponding configuration file `rest-server.properties`
+> Corresponding configuration file: `rest-server.properties`.
+> Starting with HugeGraph 1.8.0.
 >
-> | config option      | default value | description           |
-> |--------------------|---------------|-----------------------|
-> | arthas.telnetPort  | 8562          | Arthas telnet port.   |
-> | arthas.httpPort    | 8561          | Arthas HTTP port.     |
-> | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
-> | arthas.disabledCommands | jad      | Disabled Arthas commands, separated by commas. |
+> | Config option | Default value | Description |
+> |---------------|---------------|-------------|
+> | arthas.telnet_port | 8562 | Arthas telnet port for administrator activation through `PUT /arthas`. |
+> | arthas.http_port | 8561 | Arthas HTTP port for administrator activation. |
+> | arthas.ip | 127.0.0.1 | Bind address; administrators may explicitly select another valid address, including `0.0.0.0`. |
+> | arthas.disabled_commands | Empty | Optional comma-separated disabled commands, e.g. `jad,mc`, for API activation; not applied by the local helper. |
+> {.td-table--wide}
+>
+> Legacy `arthas.telnetPort`, `arthas.httpPort`, and `arthas.disabledCommands` remain supported as fallbacks; explicit snake_case settings take precedence.
+> The bundled `bin/arthas.sh` provides local diagnostics without changing configuration. For activation workflows, permissions, and authentication options,
+> see [Start the Arthas agent](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 > [!DETAILS]- **RPC Server Config Options**
 > Corresponding configuration file `rest-server.properties`
@@ -355,6 +370,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | rpc.serialization           | hessian2                                | Rpc serialization type, client and server must set the same value. Note: If you choose 'protobuf', you need to add the relative IDL file. (Could refer PD/Store *.proto)                                       |
 > | rpc.config_order            | 999                                     | Sofa-RPC configuration file loading order, the larger the more later loading.                                                                                                                                 |
 > | rpc.logger_impl             | com.alipay.sofa.rpc.log.SLF4JLoggerImpl | Sofa-RPC log implementation class.                                                                                                                                                                            |
+> {.td-table--wide}
 
 > [!DETAILS]- **HBase Backend Config Options**
 > | config option             | default value                  | description                                                              |
@@ -376,6 +392,7 @@ Basic Config Options and Backend Config Options correspond to configuration file
 > | hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
 > | hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
 > | hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
+> {.td-table--wide}
 
 
 ---
@@ -400,12 +417,14 @@ The following backend stores are no longer supported in version 1.7.0+ and are o
 > | cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
 > | cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
 > | cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
+> {.td-table--wide}
 
 > [!DETAILS]- **ScyllaDB Backend Config Options**
 > | config option | default value | description                |
 > |---------------|---------------|----------------------------|
 > | backend       |               | Must be set to `scylladb`. |
 > | serializer    |               | Must be set to `scylladb`. |
+> {.td-table--wide}
 >
 > Other options are consistent with the Cassandra backend.
 
@@ -423,12 +442,14 @@ The following backend stores are no longer supported in version 1.7.0+ and are o
 > | jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
 > | jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
 > | jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
+> {.td-table--wide}
 
 > [!DETAILS]- **PostgreSQL Backend Config Options**
 > | config option | default value | description                  |
 > |---------------|---------------|------------------------------|
 > | backend       |               | Must be set to `postgresql`. |
 > | serializer    |               | Must be set to `postgresql`. |
+> {.td-table--wide}
 >
 > Other options are consistent with the MySQL backend.
 >

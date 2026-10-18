@@ -53,6 +53,7 @@ Note: CPU/memory and Kubernetes-related capabilities are not publicly available 
 | max_role_number              | No       | Int     | 0       |                                                                                | Maximum number of roles that can be created inside the graphspace                 |
 | auth                         | No       | Boolean | false   | true / false                                                                   | Whether to enable authentication for the graphspace                               |
 | configs                      | No       | Map     |         |                                                                                | Additional configuration                                                          |
+{.td-table--wide}
 
 ```json
 {
@@ -219,6 +220,7 @@ GET http://localhost:8080/graphspaces/gs1
 | internal_algorithm_image_url | No       | String |                                                         | HugeGraph-Computer algorithm image registry                                       |
 | max_graph_number             | Yes      | Int    | > 0                                                     | Maximum number of graphs                                                          |
 | max_role_number              | Yes      | Int    | > 0                                                     | Maximum number of roles                                                           |
+{.td-table--wide}
 
 ##### Method & Url
 

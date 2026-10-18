@@ -37,7 +37,7 @@ class VersionCacheTests(unittest.TestCase):
         self.write("versions.json", json.dumps(self.manifest))
         self.write("content/en/docs/page.md", "latest body")
         self.options = dict(site_origin="https://example.org/", historical_origin="https://example.org/",
-                            hugo_version="0.165.0", go_version="1.27", webp_version="1.2", year=2026)
+                            hugo_version="0.168.0", sass_version="1.105.2", go_version="1.27", webp_version="1.2", year=2026)
 
     def write(self, name, value):
         path = self.root / name
@@ -83,6 +83,13 @@ class VersionCacheTests(unittest.TestCase):
                 self.options[key] = 2027 if key == "year" else original + "changed"
                 self.assertNotEqual(before, self.plan()["cacheKey"])
                 self.options[key] = original
+
+    def test_sass_upgrade_rejects_a_previously_valid_artifact(self):
+        self.save()
+        self.assertTrue(self.plan()["versions"][1]["reusable"])
+        self.options["sass_version"] = "1.105.3"
+        self.assertFalse(self.plan()["versions"][1]["reusable"])
+        self.assertIn("1.7", [entry["id"] for entry in self.plan()["include"]])
 
     def test_cache_round_trip_and_missing(self):
         self.assertFalse(self.plan()["versions"][1]["reusable"])
@@ -136,7 +143,8 @@ class VersionCacheTests(unittest.TestCase):
     def test_shared_navigation_scripts_and_assets_invalidate(self):
         for path in ("data/version_routes.json", "content/en/docs/SUMMARY.md",
                      "content/cn/docs/_nav/intro.md", "scripts/versioning.py",
-                     "dist/url-contract.json", "static/favicon.svg"):
+                     "dist/url-contract.json", "static/favicon.svg",
+                     ".github/actions/setup-site-tools/action.yml"):
             with self.subTest(path=path):
                 before = self.plan()["cacheKey"]
                 self.write(path, "changed")

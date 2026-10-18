@@ -95,6 +95,7 @@ hg2d = HugeGraph2DGL(
 | `convert_graph_with_edge_feat(vertex_label, edge_label, node_feat_key="feat", edge_feat_key="edge_feat", label_key="label", mask_keys=None)` | `dgl.DGLGraph` | 同时填充 `edata["feat"]` |
 | `convert_graph_ogb(vertex_label, edge_label, split_label)` | `(dgl.DGLGraph, split_edge)` | SEAL 使用 |
 | `convert_hetero_graph_bgnn(vertex_labels, edge_labels, feat_key="feat", label_key="class", cat_key="cat_features", mask_keys=None)` | DGL 异构图 | BGNN 使用 |
+{.td-table--wide}
 
 节点特征写入 `ndata["feat"]`，标签写入 `ndata["label"]`，各掩码写入 `ndata[<mask key>]`。`NodeEmbed` 只要求 `feat`；`NodeClassify`、`NodeClassifyWithEdge` 和 `NodeClassifyWithSample` 要求 `feat`、`label`、`train_mask`、`val_mask` 和 `test_mask`，缺少任意一项都会抛出 `ValueError`。
 
@@ -113,6 +114,7 @@ hg2d = HugeGraph2DGL(
 | `import_graph_from_dgl_with_edge_feat` | `CORA`、`CITESEER`、`PUBMED` | `<NAME>_edge_feat_vertex`、`<NAME>_edge_feat_edge` |
 | `import_graph_from_ogb` | `ogbl-collab`，不做大写转换 | `<NAME>_vertex`、`<NAME>_edge` |
 | `import_split_edge_from_ogb` | `ogbl-collab`，不做大写转换 | `<NAME>_split_edge` |
+{.td-table--wide}
 
 传入其他名称会抛出 `ValueError("dataset not supported")`。`import_split_edge_from_ogb` 还需要顶点导入返回的 `idx_to_vertex_id` 映射和 `max_nodes` 上限。
 
@@ -135,6 +137,7 @@ hg2d = HugeGraph2DGL(
 | `HeteroSampleEmbedGATNE` | `hetero_sample_embed_gatne.py` | `train_and_embed(lr=1e-3, n_epochs=200, gpu=-1)` |
 | `LinkPredictionPGNN` | `link_prediction_pgnn.py` | `train(lr, weight_decay, n_epochs, gpu)` |
 | `LinkPredictionSeal` | `link_prediction_seal.py` | 构造函数内部已调用 `data_prepare()`，随后执行 `train(lr=1e-3, n_epochs=200, gpu=-1)` |
+{.td-table--wide}
 
 `patience` 默认值为 `float("inf")`。`utils/early_stopping.py` 中的 `EarlyStopping` 可以监控 `loss` 或 `accuracy`，保存最优权重并在训练结束时恢复。
 
@@ -169,6 +172,7 @@ python ./hugegraph_ml/examples/dgi_example.py
 | `jknet_example.py` | `JKNet` | `NodeClassify` | `CORA_vertex`、`CORA_edge` |
 | `pgnn_example.py` | `PGNN` | `LinkPredictionPGNN` | `CAVEMAN_vertex`、`CAVEMAN_edge` |
 | `seal_example.py` | `DGCNN` | `LinkPredictionSeal` | `ogbl-collab_vertex`、`ogbl-collab_edge`、`ogbl-collab_split_edge` |
+{.td-table--wide}
 
 ## DGI 节点嵌入示例
 

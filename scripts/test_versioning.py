@@ -1205,6 +1205,152 @@ class VersionUrlTest(unittest.TestCase):
                     self.assertNotIn("performance/api-performance", summary)
                     self.assertEqual(summary.count("performance/api-preformance"), 3)
 
+    def test_historical_catalog_wide_tables_preserve_quotes_fences_and_attributes(self) -> None:
+        table = "| config option | default value | description |\n|---|---|---|\n| gremlin.graph | value | detail |\n"
+        ordinary = "| Name | Description |\n|---|---|\n| Simple | ordinary table |\n"
+        quoted = "".join("> " + line for line in table.splitlines(keepends=True)).replace("> | gremlin", ">| gremlin")
+        fenced = "```markdown\n" + table + "```\n\n" + "> ~~~markdown\n" + quoted + "> ~~~\n"
+        existing = '{#catalog .existing data-label="preserve } here"}\n'
+        source = table + existing + "\n" + quoted + "\n" + ordinary + "\n" + fenced
+        with tempfile.TemporaryDirectory() as temporary:
+            page = Path(temporary) / "config-option.md"
+            page.write_text(source, encoding="utf-8")
+            self.assertEqual(versioning.ensure_legacy_config_tables_wide(page), 2)
+            rendered = page.read_text(encoding="utf-8")
+            self.assertIn('{#catalog .existing data-label="preserve } here" .td-table--wide}\n', rendered)
+            self.assertIn(quoted + "> {.td-table--wide}\n", rendered)
+            self.assertIn(ordinary, rendered)
+            self.assertIn(fenced, rendered)
+            self.assertEqual(versioning.ensure_legacy_config_tables_wide(page), 0)
+            self.assertEqual(page.read_text(encoding="utf-8"), rendered)
+
+    def test_historical_catalog_preserves_indented_code_examples(self) -> None:
+        table = "| config option | default value | description |\n|---|---|---|\n| key | value | detail |\n"
+        examples = "".join("    " + line for line in table.splitlines(keepends=True))
+        examples += "\n" + "".join(">     " + line for line in table.splitlines(keepends=True))
+        # An indented backtick is literal code, not a new fence that hides the
+        # next real table. Conversely an over-indented closer stays in its fence.
+        examples += "\n    ```literal\n\n"
+        fenced = "```markdown\n    ```\n" + table + "```\n\n"
+        for prefix in ("", "   ", "> ", ">    "):
+            with self.subTest(prefix=prefix), tempfile.TemporaryDirectory() as temporary:
+                page = Path(temporary) / "config-option.md"
+                real_table = "".join(prefix + line for line in table.splitlines(keepends=True))
+                page.write_text(examples + fenced + real_table, encoding="utf-8")
+                self.assertEqual(versioning.ensure_legacy_config_tables_wide(page), 1)
+                expected = examples + fenced + real_table + prefix + "{.td-table--wide}\n"
+                self.assertEqual(page.read_text(encoding="utf-8"), expected)
+                self.assertEqual(versioning.ensure_legacy_config_tables_wide(page), 0)
+                self.assertEqual(page.read_text(encoding="utf-8"), expected)
+
+    def test_historical_catalog_preserves_already_wide_attributes(self) -> None:
+        source = (
+            "| config option | default value | description |\n|---|---|---|\n| key | value | detail |\n"
+            '{#catalog class="td-table--wide other"}\n'
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            page = Path(temporary) / "config-option.md"
+            page.write_text(source, encoding="utf-8")
+            self.assertEqual(versioning.ensure_legacy_config_tables_wide(page), 0)
+            self.assertEqual(page.read_text(encoding="utf-8"), source)
+
+    def test_known_legacy_catalog_adapter_is_bound_to_versions_languages_and_paths(self) -> None:
+        source = (
+            "---\ntitle: Config\n---\n"
+            "| config option | default value | description |\n|---|---|---|\n| gremlin.graph | value | detail |\n"
+            "\n" + "[legacy](/en/docs/)\n" * 4
+        )
+        for version in ("1.7", "1.5", "1.3", "1.0", "latest", "2.0"):
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as temporary:
+                assembly = Path(temporary)
+                for language in ("en", "cn"):
+                    for name in ("config-option.md", "config-computer.md", "unrelated.md"):
+                        page = assembly / f"content/{language}/docs/config/{name}"
+                        page.parent.mkdir(parents=True, exist_ok=True)
+                        page.write_text(source, encoding="utf-8")
+                with (
+                    mock.patch.object(versioning, "apply_exact_legacy_content_fixes", return_value=0),
+                    mock.patch.object(versioning, "repair_historical_performance_routes", return_value=0),
+                    mock.patch.object(versioning, "normalize_historical_server_headings", return_value=0),
+                    mock.patch.object(versioning, "first_existing_path", return_value=assembly / "server.md"),
+                ):
+                    versioning.apply_known_legacy_fixes(assembly, version)
+                for language in ("en", "cn"):
+                    for name in ("config-option.md", "config-computer.md", "unrelated.md"):
+                        page = assembly / f"content/{language}/docs/config/{name}"
+                        expected = version in {"1.7", "1.5", "1.3", "1.0"} and name != "unrelated.md"
+                        self.assertEqual("{.td-table--wide}" in page.read_text(encoding="utf-8"), expected)
+                        if version in {"latest", "2.0"}:
+                            self.assertEqual(page.read_text(encoding="utf-8"), source)
+
+    def test_frozen_reference_catalog_headers_and_path_guards(self) -> None:
+        def table(header, key="long_configuration_name"):
+            return ("| " + " | ".join(header) + " |\n|" + "---|" * len(header)
+                    + "\n| " + " | ".join([key] + ["value"] * (len(header) - 1)) + " |\n")
+
+        for version in ("1.7", "1.5", "1.3", "1.0", "latest"):
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as temporary:
+                assembly = Path(temporary)
+                fixtures = []
+                for language in ("en", "cn"):
+                    chinese = language == "cn"
+                    fields = (("名称", "是否必填", "类型", "默认值", "取值范围", "说明"),) * 2 if chinese else (
+                        ("Name", "Required", "Type", "Default", "Range/Note", "Description"),
+                        ("Name", "Required", "Type", "Range/Note", "Description"),
+                    )
+                    hubble = ("配置项", "默认值", "说明") if chinese else ("Configuration Item", "Default Value", "Description")
+                    api = ("用途", "API 地址", "密钥", "模型", "最大 token 默认值") if chinese else (
+                        "Purpose", "API base", "Key", "Model", "Default maximum tokens")
+                    host = ("用途", "主机", "端口", "模型") if chinese else ("Purpose", "Host", "Port", "Model")
+                    environment = ("变量", "必填", "默认值", "描述") if chinese else ("Variable", "Required", "Default", "Description")
+                    tools = ("全局变量", "环境变量", "示例") if chinese or version == "1.0" else (
+                        "Global Variable", "Environment Variable", "Example")
+                    loader = ("参数", "默认值", "是否必传", "描述信息") if chinese else (
+                        "Parameter", "Default value", "Required or not", "Description")
+                    cases = [
+                        ("quickstart/toolchain/hugegraph-tools.md", (tools,), 1, True),
+                        ("quickstart/toolchain/hugegraph-loader.md", (loader,), 1, True),
+                        ("clients/restful-api/graphspace.md", fields, 2, False),
+                        ("quickstart/toolchain/hugegraph-hubble.md", (hubble,), 1, False),
+                        ("quickstart/hugegraph-ai/config-reference.md", (api, api, host), 3, False),
+                        ("quickstart/hugegraph/hugegraph-pd.md", (environment,), 1, False),
+                        ("quickstart/hugegraph/hugegraph-hstore.md", (environment,), 1, False),
+                        ("unrelated.md", (tools, loader, *fields, hubble, api, host, environment), 0, False),
+                    ]
+                    for relative, headers, count, all_archives in cases:
+                        source = "---\ntitle: Reference\n---\n\n"
+                        source += "\n".join(table(header, "gremlin.vertex_degree_limit") for header in headers)
+                        # Same-header Spark table, ordinary/JDBC examples, and fenced
+                        # demonstrations must retain their original native layout.
+                        if relative.endswith("hugegraph-hubble.md"):
+                            source += "\n" + table(hubble, "spark.master")
+                        source += "\n" + table(("Node", "Fixed value or common value"))
+                        source += "\n```markdown\n" + table(headers[0], "gremlin.vertex_degree_limit") + "```\n"
+                        source += "\n" + "[legacy](/en/docs/)\n" * 4
+                        page = assembly / f"content/{language}/docs/{relative}"
+                        page.parent.mkdir(parents=True, exist_ok=True)
+                        page.write_text(source, encoding="utf-8")
+                        expected = count if version != "latest" and (all_archives or version == "1.7") else 0
+                        fixtures.append((page, source, headers, expected))
+                with (
+                    mock.patch.object(versioning, "apply_exact_legacy_content_fixes", return_value=0),
+                    mock.patch.object(versioning, "repair_historical_performance_routes", return_value=0),
+                    mock.patch.object(versioning, "normalize_historical_server_headings", return_value=0),
+                    mock.patch.object(versioning, "first_existing_path", return_value=assembly / "server.md"),
+                ):
+                    versioning.apply_known_legacy_fixes(assembly, version)
+                for page, source, headers, expected in fixtures:
+                    rendered = page.read_text(encoding="utf-8")
+                    self.assertEqual(rendered.count("{.td-table--wide}"), expected, str(page))
+                    self.assertIn(table(("Node", "Fixed value or common value")), rendered)
+                    self.assertIn("```markdown\n" + table(headers[0], "gremlin.vertex_degree_limit") + "```\n", rendered)
+                    if expected:
+                        required_row = "gremlin.vertex_degree_limit" if page.name == "hugegraph-hubble.md" else None
+                        self.assertEqual(versioning.ensure_legacy_config_tables_wide(page, headers, required_row), 0)
+                        self.assertEqual(page.read_text(encoding="utf-8"), rendered)
+                    if version == "latest":
+                        self.assertEqual(rendered, source)
+
     def test_scopes_root_relative_urls(self) -> None:
         self.assertEqual(rewrite("/docs/"), "/versions/1.7/docs/")
         self.assertEqual(

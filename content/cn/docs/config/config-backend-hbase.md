@@ -54,6 +54,7 @@ hbase.znode_parent=/hbase
 | hbase.znode_parent | /hbase    | HBase ZooKeeper 的 znode 父路径，不允许为空。对应 `zookeeper.znode.parent`。                                                         |
 | hbase.zk_retry     | 3         | HBase ZooKeeper 的恢复重试次数，取值范围 0 到 1000。对应 `zookeeper.recovery.retry`。                                                   |
 | hbase.threads_max  | 64        | HBase 连接的最大线程数，取值范围 1 到 1000。对应 `hbase.hconnection.threads.max`，HBase 自身默认值为 256，这里取更小的值以避免内存溢出。                        |
+{.td-table--wide}
 
 ### 超时配置项
 
@@ -61,6 +62,7 @@ hbase.znode_parent=/hbase
 |---------------------------|-----------------|--------------------------------------------------------------------------|
 | hbase.truncate_timeout    | 30              | 等待后端 truncate 的超时时间，单位秒，必须为正数。该超时按 store 计算，而一个图有三个 store，因此一次 truncate 最多耗时该值的三倍。 |
 | hbase.aggregation_timeout | 43200（12 小时）    | 等待聚合的超时时间，单位秒，必须为正数。它会设置计数查询所用聚合客户端的 `hbase.rpc.timeout`。                 |
+{.td-table--wide}
 
 ### Kerberos 与 HBase 配置文件配置项
 
@@ -71,6 +73,7 @@ hbase.znode_parent=/hbase
 | hbase.hbase_site         | /etc/hbase/conf/hbase-site.xml | HBase 的配置文件。无论是否启用 Kerberos，每次建立连接时都会把它作为配置资源加载。                        |
 | hbase.kerberos_principal | （空）                            | Kerberos 认证使用的 HBase principal。                                        |
 | hbase.kerberos_keytab    | （空）                            | Kerberos 认证使用的 HBase keytab 文件。                                        |
+{.td-table--wide}
 
 当 `hbase.kerberos_enable=true` 时，HugeGraph 会在连接上把 `hadoop.security.authentication` 和 `hbase.security.authentication` 设置为 `kerberos`，然后在打开连接之前用配置的 principal 从 keytab 登录。因此 Kerberos 环境下 `hbase.krb5_conf`、`hbase.hbase_site`、`hbase.kerberos_principal` 和 `hbase.kerberos_keytab` 四项都必须有效：
 
@@ -91,6 +94,7 @@ hbase.kerberos_keytab=/etc/security/keytabs/hugegraph.keytab
 | hbase.enable_partition  | true | 是否为 HBase 启用预分区。它同时决定后端是否声明支持前缀扫描和范围扫描。                 |
 | hbase.vertex_partitions | 10   | HBase 顶点表的分区数，不允许为负数。                                  |
 | hbase.edge_partitions   | 30   | HBase 边表的分区数，不允许为负数。                                   |
+{.td-table--wide}
 
 启用预分区后，顶点表按 `hbase.vertex_partitions` 个 region 创建，两张边表各按 `hbase.edge_partitions` 个 region 创建，序列化器会在 rowkey 前面加上 id 哈希得到的分区前缀。
 

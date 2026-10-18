@@ -47,7 +47,6 @@ test('theme color and social fallback have one configuration authority', () => {
 
 test('documentation menu has five groups and no duplicate version panel', () => {
   const config = read('hugo.yaml');
-  const navbarItem = read('layouts/_partials/navbar-item.html');
   for (const id of [
     'docs-start',
     'docs-components',
@@ -57,7 +56,10 @@ test('documentation menu has five groups and no duplicate version panel', () => 
   ]) {
     assert.match(config, new RegExp(`identifier: ${id}`));
   }
-  assert.equal(navbarItem.includes('$hasVersionLinks'), false);
+  // An absent override inherits OINK; guard any local reintroduction.
+  if (fs.existsSync(path.join(root, 'layouts/_partials/navbar-item.html'))) {
+    assert.equal(read('layouts/_partials/navbar-item.html').includes('$hasVersionLinks'), false);
+  }
 });
 
 test('backlinks are limited to latest documentation', () => {

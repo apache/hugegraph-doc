@@ -57,6 +57,7 @@ python -m hugegraph_llm.config.generate --update
 | 抽取 | `OPENAI_EXTRACT_API_BASE` | `OPENAI_EXTRACT_API_KEY` | `OPENAI_EXTRACT_LANGUAGE_MODEL` | `OPENAI_EXTRACT_TOKENS=256` |
 | Text2Gremlin | `OPENAI_TEXT2GQL_API_BASE` | `OPENAI_TEXT2GQL_API_KEY` | `OPENAI_TEXT2GQL_LANGUAGE_MODEL` | `OPENAI_TEXT2GQL_TOKENS=4096` |
 | 嵌入 | `OPENAI_EMBEDDING_API_BASE` | `OPENAI_EMBEDDING_API_KEY` | `OPENAI_EMBEDDING_MODEL` | 不适用 |
+{.td-table--wide}
 
 API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `gpt-4.1-mini`，嵌入模型默认是 `text-embedding-3-small`。
 
@@ -70,6 +71,7 @@ API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `g
 | 抽取 | `LITELLM_EXTRACT_API_BASE` | `LITELLM_EXTRACT_API_KEY` | `LITELLM_EXTRACT_LANGUAGE_MODEL` | `LITELLM_EXTRACT_TOKENS=256` |
 | Text2Gremlin | `LITELLM_TEXT2GQL_API_BASE` | `LITELLM_TEXT2GQL_API_KEY` | `LITELLM_TEXT2GQL_LANGUAGE_MODEL` | `LITELLM_TEXT2GQL_TOKENS=4096` |
 | 嵌入 | `LITELLM_EMBEDDING_API_BASE` | `LITELLM_EMBEDDING_API_KEY` | `LITELLM_EMBEDDING_MODEL` | 不适用 |
+{.td-table--wide}
 
 三个语言模型默认是 `openai/gpt-4.1-mini`，嵌入模型默认是 `openai/text-embedding-3-small`。模型名通常使用 `供应商/模型` 格式，具体取值由 LiteLLM 服务决定。
 
@@ -81,6 +83,7 @@ API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `g
 | 抽取 | `OLLAMA_EXTRACT_HOST` | `OLLAMA_EXTRACT_PORT` | `OLLAMA_EXTRACT_LANGUAGE_MODEL` |
 | Text2Gremlin | `OLLAMA_TEXT2GQL_HOST` | `OLLAMA_TEXT2GQL_PORT` | `OLLAMA_TEXT2GQL_LANGUAGE_MODEL` |
 | 嵌入 | `OLLAMA_EMBEDDING_HOST` | `OLLAMA_EMBEDDING_PORT` | `OLLAMA_EMBEDDING_MODEL` |
+{.td-table--wide}
 
 主机默认是 `127.0.0.1`，端口默认是 `11434`，模型名没有默认值。使用前先在 Ollama 中拉取对应模型。
 

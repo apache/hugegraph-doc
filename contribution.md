@@ -15,13 +15,15 @@ For the short workflow, start with [README.md](./README.md). This file records t
 The site uses the Hugo Module recorded in `go.mod` and `go.sum`:
 
 Toolchain versions are maintained in `go.mod` and `.github/workflows/hugo.yml`;
-`go.mod` / `go.sum` pin the theme. Node.js is needed only for the browser tests,
+`go.mod` / `go.sum` pin the theme. Hugo Extended uses standalone Dart Sass from
+`PATH`; CI installs the official archive with a pinned checksum. Node.js is needed only for the browser tests,
 with its version declared by `tests/e2e/package.json` and CI.
 
 Verify the installed toolchain and locked module:
 
 ```bash
 hugo version
+sass --version
 go version
 python3 scripts/oink_module.py
 ```
@@ -113,6 +115,34 @@ over copied theme templates: `filetree` for annotated directory layouts, `{.card
 for parallel navigation choices, `{tab="..."}` for equivalent code alternatives,
 and `kbd` for physical keys. Use `{.steps}` only for actions performed in order.
 Keep important prerequisites visible; reserve folding for supplemental detail.
+For FileTree comments that readers must see in full, opt into native wrapping:
+
+````markdown
+```filetree {title="Store directories" wrap=true}
+data/
+  m/ # schema store: property keys and labels
+  g/ # graph store: vertices, edges and indexes
+```
+````
+
+Keep the compact default for short comments. For a technical table whose identifiers
+would squeeze its descriptions, add `{.td-table--wide}` immediately after the table.
+Its native wrapper owns keyboard scrolling; ordinary tables need no modifier.
+Do not restore these behaviors with site-wide table or FileTree CSS.
+
+Use Mermaid for relationships and flows, Markmap for a text hierarchy, and ECharts
+for quantitative comparisons; keep chart data and test conditions alongside the chart.
+Use [Gallery](https://oink.pgsty.com/docs/components/gallery/) for a few screenshots
+inside a tutorial. Use [Expo](https://oink.pgsty.com/docs/write/expo/) when the images
+are the main content of an independent album: a section with `type: expo` and
+`cascade: {type: expo}`, containing leaf bundles with `index.md` and local images.
+For example, `content/en/product-images/hubble/index.md` and an `images/` subdirectory
+can form one album; add the matching Chinese bundle when adopting it. Expo supplies
+wall, masonry and seamless layouts plus original-image viewing; image captions,
+credits and ordering belong in Hugo resource metadata. It does not replace the
+step-by-step explanation in a tutorial. These are authoring examples, not routes
+that this site publishes automatically.
+
 Published Markmap diagrams are limited to text outlines and code. Only a finite,
 nonnegative `spacingHorizontal` is allowed in frontmatter; active images, links, raw HTML
 and other frontmatter fail the site's safety validation.

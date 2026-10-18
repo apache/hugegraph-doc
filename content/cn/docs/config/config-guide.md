@@ -83,11 +83,11 @@ graph.load_from_local_config=true
 batch.max_write_ratio=80
 batch.max_write_threads=0
 
-# configuration of arthas
-arthas.telnetPort=8562
-arthas.httpPort=8561
+# configuration of arthas (optional disabled commands, for example jad,mc)
+arthas.telnet_port=8562
+arthas.http_port=8561
 arthas.ip=127.0.0.1
-arthas.disabledCommands=jad
+arthas.disabled_commands=
 
 # authentication configs
 #auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
@@ -112,7 +112,13 @@ memory_monitor.period=2000
 - graphs：图配置文件所在目录，默认值是 `./conf/graphs`。`init-store.sh` 会扫描该目录；Server 应用初始化也会扫描并尝试加载其中的 properties 文件；
 - graph.load_from_local_config：默认 `false`，控制构造阶段预加载；不会禁止 Server 应用初始化阶段的本地加载，也不是安全隔离开关。图配置变化通过重启 Server 应用。
 
-> 当前上游模板中的 Arthas 键仍写作 `arthas.telnet_port`、`arthas.http_port` 和 `arthas.disabled_commands`，但 `ServerOptions` 读取的是下方示例中的 camelCase 名称。自定义配置应使用 `arthas.telnetPort`、`arthas.httpPort` 和 `arthas.disabledCommands`。
+> 自 HugeGraph 1.8.0 起，推荐使用规范的 snake_case 配置项：
+> `arthas.telnet_port`、`arthas.http_port`、`arthas.ip` 与 `arthas.disabled_commands`。
+> 旧版 camelCase 命名仍作为兼容回退；显式配置的 snake_case 值优先。
+> **升级说明**：发行包附带的 `rest-server.properties` 模板默认包含 snake_case 配置。
+> 若此前配置了自定义 camelCase 键名，建议迁移至对应的 snake_case 键以避免被模板默认值覆盖。
+> 详细在线诊断方法、权限要求及认证配置请参见
+> [Arthas 诊断代理](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)。
 
 > 配置项 gremlinserver.url 是 GremlinServer 为 RestServer 提供服务的 url，该配置项默认为 http://127.0.0.1:8182，如需修改，需要和 gremlin-server.yaml 中的 host 和 port 相匹配；该值可以像模板那样省略协议前缀，缺失时会自动补上 `http://`。
 

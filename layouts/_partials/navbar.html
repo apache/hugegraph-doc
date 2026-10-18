@@ -1,4 +1,4 @@
-{{- /* OINK v1.2.0 override: keep keyboard help in the header and expose
+{{- /* OINK v1.3.1 override: keep keyboard help in the header and expose
        version links inside the landing-page mobile drawer. */ -}}
 {{- $config := partialCached "shell/config.html" . .Site.Language.Lang -}}
 {{- $targets := partialCached "language-targets.html" . .Site.BaseURL .RelPermalink .Site.Language.Lang -}}
@@ -6,13 +6,16 @@
 {{- /* On shell pages with a sidebar, the compact navbar gains one extra
        icon below md that opens the shell drawer (docs tree + relocated
        aside). */ -}}
-{{- $drawerMode := and (partial "shell/chrome-enabled.html" .) (partial "shell/sidebar-enabled.html" .) -}}
+{{- $landingLayout := eq .Layout "landing" -}}
+{{- $drawerMode := and (not $landingLayout) (partial "shell/chrome-enabled.html" .) (partial "shell/sidebar-enabled.html" .) -}}
 {{- /* Home and explicit Landing layouts render the drawer entry: these are
        the navbar-only surfaces with no sidebar drawer to fall back on. CSS
        gates the button to the below-md tier, where it joins search as the
        whole right-hand contract; the centered link tree stays at every
        width, so the drawer only restores the full labelled hierarchy. */ -}}
-{{- $landingSurface := or .IsHome (eq .Layout "landing") -}}
+{{- $landingSurface := and (not $drawerMode) (or .IsHome $landingLayout) -}}
+{{- /* The navbar owns this drawer even with a local homepage renderer. */ -}}
+{{- if $landingSurface }}{{ .Page.Store.Set "hasLanding" true }}{{ end -}}
 {{- $githubStars := partial "landing/github-stars.html" . -}}
 {{- $altSite := false -}}
 {{- if le (len $targets) 1 }}{{ $altSite = partial "landing/alt-site.html" . }}{{ end -}}

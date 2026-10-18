@@ -132,6 +132,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | No | `8500` | `grpc.port` | gRPC service port. |
 | `HG_STORE_REST_PORT` | No | `8520` | `server.port` | REST API port. |
 | `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` | Data path. |
+{.td-table--wide}
 
 The master entrypoint writes these values into `SPRING_APPLICATION_JSON`, overriding image `conf/application.yml`. Other options still come from that file and `application-pd.yml`; Java runs in the foreground. Deprecated `PD_ADDRESS`, `GRPC_HOST`, and `RAFT_ADDRESS` remain supported with warnings.
 
@@ -172,6 +173,7 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | `grpc.netty-server.max-inbound-message-size` | `1000MB` | gRPC default | Maximum size of a single inbound gRPC message. Bound by the `grpc-spring-boot-starter` Netty server. |
 | `grpc.server.wait-time` | not set | `3600` | Seconds a scan stream waits for the client to consume a page before the server aborts it. |
 | `server.port` | `8520` | required | REST and Actuator port. Also reported to PD as the `rest.port` label. |
+{.td-table--wide}
 
 **Raft**
 
@@ -190,6 +192,7 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | `raft.maxEntriesSize` | not set | `256` | Maximum number of entries in one `AppendEntries` request. |
 | `raft.maxBodySize` | not set | `524288` | Maximum byte size of one `AppendEntries` request. |
 | `ave-logEntry-size-ratio` | not set | `0.95` | Smoothing ratio used to estimate the average log entry size. Note that this key sits at the top level, not under `raft`. |
+{.td-table--wide}
 
 **Storage and labels**
 
@@ -200,6 +203,7 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | `app.fake-pd` | not set | `false` | Built-in PD mode for standalone testing. Do not use it in production. |
 | `app.placeholder-size` | not set | `10` | Size in GB of a `placeholder` file created in each data path at startup, so space can be freed in an emergency. `0` disables it. |
 | `app.label.<name>` | not set | none | Arbitrary key/value labels sent to PD in the store heartbeat. The node adds `rest.port` on its own. |
+{.td-table--wide}
 
 **RocksDB**
 
@@ -209,6 +213,7 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | `rocksdb.write_buffer_size` | `32000000` | `33554432` | Memtable size in bytes. When absent or `0`, the node uses `total_memory_size / 1000`. |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | Number of memtables merged together before a flush. |
 | `rocksdb.write_buffer_ratio` | not set | `0.66` | Share of `total_memory_size` given to the write cache. The rest becomes the block cache. |
+{.td-table--wide}
 
 Any other option defined in `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` can be added under the same `rocksdb:` block, for example `rocksdb.max_background_jobs`, `rocksdb.level0_file_num_compaction_trigger` or `rocksdb.bloom_filter_bits_per_key`.
 
@@ -222,6 +227,7 @@ Any other option defined in `org/apache/hugegraph/rocksdb/access/RocksDBOptions.
 | `thread.pool.scan.core` | `128` | Core threads serving scans. `0` means 4 times the CPU count. |
 | `thread.pool.scan.max` | `1000` | Maximum scan threads. |
 | `thread.pool.scan.queue` | `0` | Scan task queue capacity. |
+{.td-table--wide}
 
 **gRPC callback queue (1.8.0)**
 
@@ -243,6 +249,7 @@ resources; do not rely on `thread.pool.grpc.queue` for load control. Version 1.7
 | `query.push-down.fetch_timeout` | `300000` | Fetch timeout in milliseconds. |
 | `query.push-down.memory_limit_count` | `50000` | Row limit for in-memory operations such as sorting. |
 | `query.push-down.index_size_limit_count` | `50000` | Index sst file size limit in kB. |
+{.td-table--wide}
 
 **Background jobs**
 
@@ -256,6 +263,7 @@ resources; do not rely on `thread.pool.grpc.queue` for load control. Version 1.7
 | `job.uninterruptibleThreadPool.queue` | `2147483647` | Queue capacity of the uninterruptible job pool. |
 | `job.cleaner.batch.size` | `10000` | Keys deleted per batch by the TTL cleaner. |
 | `job.start-time` | `0` | Hour of day (0 to 23) at which the daily TTL cleanup runs. Values outside that range fall back to 19. |
+{.td-table--wide}
 
 **Built-in PD mode**
 
@@ -267,15 +275,19 @@ Only for single-node development and debugging, activated by `app.fake-pd: true`
 | `fake-pd.peers-list` | `''` | Raft addresses of the same nodes. |
 | `fake-pd.partition-count` | `3` | Number of partitions. |
 | `fake-pd.shard-count` | `3` | Replicas per partition. |
+{.td-table--wide}
 
 **Diagnostics**
 
-| Key | Code default | Meaning |
-|-----|--------------|---------|
-| `arthas.telnetPort` | `8566` | Arthas telnet port, used when `/v1/arthasstart` is called. |
-| `arthas.httpPort` | `8565` | Arthas HTTP port. |
-| `arthas.ip` | `0.0.0.0` | Arthas bind address. |
-| `arthas.disabledCommands` | `jad` | Arthas commands to disable. |
+Starting with HugeGraph 1.8.0, Store HTTP activation (`GET /v1/arthasstart`) is disabled and returns `403`. Legacy configuration fields are kept only
+for compatibility. Run the bundled script as the service OS user on the host to diagnose the running JVM (official container images include JDK 17):
+
+```bash
+bin/arthas.sh
+```
+
+For multiple processes on one host, specify `--pid <PID> --telnet-port 3659`. For command options, authentication, and security practices, see
+[Start the Arthas agent](/docs/clients/restful-api/other/#1116-start-the-arthas-agent).
 
 #### 4.4 Per-node changes
 
@@ -493,7 +505,9 @@ The Store node exposes these read-only endpoints on `server.port`:
 
 Master Store configuration exposes all Actuator endpoints with `management.endpoints.web.exposure.include: "*"` and enables Prometheus. These endpoints lack PD REST Basic protection; restrict Store REST network access.
 
-The node also serves maintenance endpoints that change state or run heavy work: `PUT /-/state`, `GET /-/cleaner`, `GET /v1/partition/dump/{id}`, `GET /v1/partition/clean/{id}`, `POST /v1/compat?id=<partition>`, `GET /v1/arthasstart`, `POST /raft/options`, and the `/fix/*` and `/test/*` groups. Use them only for troubleshooting, and keep the REST port off untrusted networks.
+The node also serves maintenance endpoints that change state or run heavy work: `PUT /-/state`, `GET /-/cleaner`,
+`GET /v1/partition/dump/{id}`, `GET /v1/partition/clean/{id}`, `POST /v1/compat?id=<partition>`, `POST /raft/options`, and the `/fix/*` and `/test/*` groups.
+Use them only for troubleshooting, and keep the REST port off untrusted networks.
 
 #### 7.2 Check registration from PD
 

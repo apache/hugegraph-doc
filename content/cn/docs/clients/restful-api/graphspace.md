@@ -53,6 +53,7 @@ POST http://localhost:8080/graphspaces
 | max_role_number              | 否       | Int     | 0         |                                                                 | 图空间的角色数目的上限                                                                               |
 | auth                         | 否       | Boolean | false     | true, false                                                     | 图空间是否支持权限认证                                                                               |
 | configs                      | 否       | Map     |           |                                                                 | 其他配置信息                                                                                         |
+{.td-table--wide}
 
 ```json
 {
@@ -219,6 +220,7 @@ GET http://localhost:8080/graphspaces/gs1
 | internal_algorithm_image_url | 否       | String |        |                            | 图计算的算法镜像地址：在更新图空间时，允许指定图计算的算法镜像并交由 K8S 进行统一管理                |
 | max_graph_number             | 是       | Int    |        | > 0                        | 图空间的图数目的上限                                                                                 |
 | max_role_number              | 否       | Int    |        |                            | 图空间的角色数目的上限                                                                               |
+{.td-table--wide}
 
 ##### Method & Url
 

@@ -5,6 +5,7 @@ import stat
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -70,6 +71,10 @@ grep -q '"versions":\\[1,2,3,4,5\\]' "$generated"
     ) -> subprocess.CompletedProcess[str]:
         environment = os.environ.copy()
         environment["PATH"] = f"{self.bin}{os.pathsep}{environment['PATH']}"
+        # These are argument-contract tests, not live server launches. Explicit
+        # task-local compiler overrides must not escape the test's own shims.
+        environment["HUGO_BIN"] = str(self.bin / "hugo")
+        environment["PYTHON_BIN"] = str(self.bin / "python3")
         environment["HG_WRAPPER_TEST_LOG"] = str(self.log)
         environment.pop("HG_DOC_VERSION", None)
         environment.pop("HG_DOC_SITE_ORIGIN", None)
@@ -82,6 +87,7 @@ grep -q '"versions":\\[1,2,3,4,5\\]' "$generated"
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            timeout=10,
         )
 
     def calls(self) -> list[dict]:
@@ -116,6 +122,11 @@ grep -q '"versions":\\[1,2,3,4,5\\]' "$generated"
             calls[1]["args"][-4:],
             ["--port", "1414", "--bind", "127.0.0.1"],
         )
+
+    def test_task_local_tool_overrides_do_not_launch_real_tools(self) -> None:
+        with patch.dict(os.environ, {"HUGO_BIN": "/unavailable/task/hugo", "PYTHON_BIN": "/unavailable/task/python"}):
+            calls = self.run_wrapper("server")
+        self.assertEqual([call["tool"] for call in calls], ["python3", "hugo"])
 
     def test_explicit_version_is_forwarded_only_when_requested(self) -> None:
         calls = self.run_wrapper(

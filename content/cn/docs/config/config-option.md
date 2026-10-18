@@ -28,6 +28,7 @@ search_boost: 1.5
 | resultIterationBatchSize  | 64                                                                                                           | 流式返回结果集时，每批返回的结果条数。                                     |
 | ssl.enabled               | false                                                                                                        | Gremlin Server 是否启用 TLS。                                              |
 | authentication            | 未配置                                                                                                        | 启用认证时配置认证器、处理器和 `rest-server.properties` 路径。                   |
+{.td-table--wide}
 
 ### Rest Server & API 配置项
 
@@ -75,6 +76,7 @@ search_boost: 1.5
 | memory_monitor.period                  | 2000                                             | The period in ms of JVM memory usage monitoring, in each period we will detect the jvm memory usage and take corresponding actions.                                                                            |
 | log.slow_query_threshold               | 1000                                             | The threshold time(ms) of logging slow query, 0 means logging slow query is disabled.                                                                                                                          |
 | log.slow_query_body_limit              | 512                                              | 慢查询日志记录的请求体最大字节数，0 表示不记录。记录的前缀原样写入，可能包含敏感的 Gremlin 或 Cypher 字面量。                      |
+{.td-table--wide}
 
 角色选举配置项 `server.role_election` 和 `server.role.*` 仅适用于 1.7.0 及更早版本。之后的版本不再读取这些配置项：若仍然设置，服务可以正常启动，并为每个配置项输出一条警告日志。
 
@@ -94,6 +96,7 @@ search_boost: 1.5
 | meta.ca              |                       | The ca file of meta server.                                     |
 | meta.client_ca       |                       | The client ca file of meta server.                              |
 | meta.client_key      |                       | The client key file of meta server.                             |
+{.td-table--wide}
 
 HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下两项，默认值 0 表示由 PD 决定：
 
@@ -101,6 +104,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 |-------------------------|---------------|-----------------------------------------------------------------|
 | hstore.partition_count  | 0             | Number of partitions, which PD controls partitions based on.    |
 | hstore.shard_count      | 0             | Number of copies, which PD controls partition copies based on.  |
+{.td-table--wide}
 
 ### 认证数据图配置项
 
@@ -113,6 +117,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 | auth.cache_expire                      | 600                                              | 认证客户端和服务端缓存的过期时间，单位为秒，取非负整数。                                                                                                                                  |
 | auth.token_expire                      | 86400                                            | JWT token 的有效期，单位为秒，取非负整数。                                                                                                                                                            |
 | auth.token_secret                      | 32 个随机字节经 Base64 编码                         | 认证数据图的配置项；默认密钥不写回文件。若需跨重启或跨节点验证 token，应在每个节点的认证图配置中设置同一个强随机值。HS256 密钥按 UTF-8 字节计至少 32 字节。                                                                                                                                 |
+{.td-table--wide}
 
 ### 基本配置项
 
@@ -189,6 +194,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 | memory.max_capacity                   | 1073741824                                   | The maximum memory capacity in bytes that can be managed for all queries in HugeGraph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | memory.one_query_max_capacity         | 104857600                                    | The maximum memory capacity in bytes that can be managed for a query in HugeGraph.                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | memory.alignment                      | 8                                            | The alignment used for round memory size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+{.td-table--wide}
 
 > [!DETAILS]- **Raft 配置项 (已废弃)**
 > 发行包中的图配置模板已将这些配置项标注为废弃。它们仅在 `raft.mode=true` 时生效，且 `raft.group_peers` 从 `rest-server.properties` 读取，而不是图配置文件。
@@ -217,6 +223,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | raft.install_snapshot_rpc_timeout | 36000                | The install snapshot rpc timeout in seconds for jraft rpc.                                                                                                                                                                                                                        |
 > | raft.rpc_buf_low_water_mark       | 10485760             | The ChannelOutboundBuffer's low water mark of netty, when buffer size less than this size, the method ChannelOutboundBuffer.isWritable() will return true, it means that low downstream pressure or good network.                                                                   |
 > | raft.rpc_buf_high_water_mark      | 20971520             | The ChannelOutboundBuffer's high water mark of netty, only when buffer size exceed this size, the method ChannelOutboundBuffer.isWritable() will return false, it means that the downstream pressure is too great to process the request or network is very congestion, upstream needs to limit rate at this time. |
+> {.td-table--wide}
 
 ### RocksDB 后端配置项
 
@@ -294,6 +301,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 | rocksdb.partition_filters_and_indexes           | false                                            | If bloom filter is enabled, set this option true to use partitioned full filters and indexes for each sst file. This option is incompatible with block-based filters.                                                                                                                                                                                                                                  |
 | rocksdb.pin_top_level_index_and_filter          | true                                             | If partition_filters_and_indexes is set true, set this option true if we'd pin top-level index of partitioned filter and index blocks to the block cache.                                                                                                                                                                                                                                              |
 | rocksdb.prefix_extractor_n_bytes                | 0                                                | The prefix-extractor uses the first N bytes of a key as its prefix, it will use the full key when a key is shorter than the N. 0 means unset prefix-extractor.                                                                                                                                                                                                                                         |
+{.td-table--wide}
 
 > [!DETAILS]- **K8s 配置项 (可选)**
 > 对应配置文件`rest-server.properties`
@@ -323,16 +331,23 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | k8s.internal_algorithm        | [page-rank, degree-centrality, wcc, triangle-count, rings, rings-with-filter, betweenness-centrality, closeness-centrality, lpa, links, kcore, louvain, clustering-coefficient, ppr, subgraph-match] | The names of the built-in k8s algorithms.        |
 > | k8s.algorithms                | See `ServerOptions.K8S_ALGORITHMS` | The `name:paramsClass` mapping of the built-in k8s algorithms.                              |
 > | k8s.internal_algorithm_image_url | 空 | K8s 内置算法使用的镜像地址。 |
+> {.td-table--wide}
 
-> [!DETAILS]- **Arthas 诊断配置项 (可选)**
-> 对应配置文件`rest-server.properties`
+> [!DETAILS]- **Arthas 诊断配置项（可选）**
+> 对应配置文件为 `rest-server.properties`。
+> 自 HugeGraph 1.8.0 起生效。
 >
-> | config option      | default value | description           |
-> |--------------------|---------------|-----------------------|
-> | arthas.telnetPort  | 8562          | Arthas telnet port.   |
-> | arthas.httpPort    | 8561          | Arthas HTTP port.     |
-> | arthas.ip          | 0.0.0.0       | Arthas bind IP.       |
-> | arthas.disabledCommands | jad      | Disabled Arthas commands, separated by commas. |
+> | 配置项 | 默认值 | 说明 |
+> |--------|--------|------|
+> | arthas.telnet_port | 8562 | 管理员通过 `PUT /arthas` 激活时使用的 Arthas telnet 端口。 |
+> | arthas.http_port | 8561 | 管理员激活时使用的 Arthas HTTP 端口。 |
+> | arthas.ip | 127.0.0.1 | 监听地址；管理员可显式选择其他有效地址，包括 `0.0.0.0`。 |
+> | arthas.disabled_commands | 空 | API 激活时可选的禁用命令，以逗号分隔，例如 `jad,mc`；本地脚本不受此项约束。 |
+> {.td-table--wide}
+>
+> 旧名称 `arthas.telnetPort`、`arthas.httpPort` 与 `arthas.disabledCommands` 仍兼容作为回退项；显式配置的 snake_case 选项优先。
+> 发行包内的 `bin/arthas.sh` 可直接免配置进行本地诊断。
+> 详细激活方式、权限要求及认证配置请参见 [Arthas 诊断代理](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)。
 
 > [!DETAILS]- **RPC Server 配置项**
 > 对应配置文件`rest-server.properties`
@@ -353,6 +368,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | rpc.serialization           | hessian2                                | Rpc serialization type, client and server must set the same value. Note: If you choose 'protobuf', you need to add the relative IDL file. (Could refer PD/Store *.proto)                                       |
 > | rpc.config_order            | 999                                     | Sofa-RPC configuration file loading order, the larger the more later loading.                                                                                                                                 |
 > | rpc.logger_impl             | com.alipay.sofa.rpc.log.SLF4JLoggerImpl | Sofa-RPC log implementation class.                                                                                                                                                                            |
+> {.td-table--wide}
 
 > [!DETAILS]- **HBase 后端配置项**
 > | config option             | default value                  | description                                                              |
@@ -374,6 +390,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | hbase.enable_partition    | true                           | Is pre-split partitions enabled for HBase.                               |
 > | hbase.vertex_partitions   | 10                             | The number of partitions of the HBase vertex table.                      |
 > | hbase.edge_partitions     | 30                             | The number of partitions of the HBase edge table.                        |
+> {.td-table--wide}
 
 
 ---
@@ -398,12 +415,14 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | cassandra.compression_type     | none           | The compression algorithm of cassandra transport: none/snappy/lz4.                                                                             |
 > | cassandra.jmx_port=7199        | 7199           | The port of JMX API service for cassandra.                                                                                                     |
 > | cassandra.aggregation_timeout  | 43200          | The timeout in seconds of waiting for aggregation.                                                                                             |
+> {.td-table--wide}
 
 > [!DETAILS]- **ScyllaDB 后端配置项**
 > | config option | default value | description                |
 > |---------------|---------------|----------------------------|
 > | backend       |               | Must be set to `scylladb`. |
 > | serializer    |               | Must be set to `scylladb`. |
+> {.td-table--wide}
 >
 > 其它与 Cassandra 后端一致。
 
@@ -421,12 +440,14 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 > | jdbc.reconnect_max_times         | 3                           | The reconnect times when the database connection fails.                             |
 > | jdbc.storage_engine              | InnoDB                      | The storage engine of backend store database, like InnoDB/MyISAM/RocksDB for MySQL. |
 > | jdbc.postgresql.connect_database | template1                   | The database used to connect when init store, drop store or check store exist.      |
+> {.td-table--wide}
 
 > [!DETAILS]- **PostgreSQL 后端配置项**
 > | config option | default value | description                  |
 > |---------------|---------------|------------------------------|
 > | backend       |               | Must be set to `postgresql`. |
 > | serializer    |               | Must be set to `postgresql`. |
+> {.td-table--wide}
 >
 > 其它与 MySQL 后端一致。
 >

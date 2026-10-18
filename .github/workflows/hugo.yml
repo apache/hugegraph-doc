@@ -32,7 +32,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  HUGO_VERSION: 0.165.0
+  HUGO_VERSION: 0.168.0
+  DART_SASS_VERSION: 1.105.2
   HUGO_ENVIRONMENT: production
   PRODUCTION_ORIGIN: https://hugegraph.apache.org/
   STAGING_ORIGIN: https://hugegraph-oink.staged.apache.org/
@@ -71,11 +72,11 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Setup Hugo Extended
-        uses: peaceiris/actions-hugo@2752ce1d29631191ea3f27c23495fa06139a5b78 # v3.2.1
+      - name: Setup site compilers
+        uses: ./.github/actions/setup-site-tools
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
-          extended: true
+          dart-sass-version: ${{ env.DART_SASS_VERSION }}
       - name: Install WebP validators
         run: |
           sudo apt-get update
@@ -189,7 +190,7 @@ jobs:
           python3 scripts/version_cache.py plan \
             --resolved-manifest resolved-versions.json \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
-            --hugo-version "$HUGO_VERSION" --go-version "$(go version)" \
+            --hugo-version "$(hugo version)" --sass-version "$(sass --version)" --go-version "$(go version)" \
             --cache-dir "$RUNNER_TEMP/history-cache" --output cache-plan.json
           echo "key=$(jq -r .cacheKey cache-plan.json)" >> "$GITHUB_OUTPUT"
       - name: Look up the complete historical bundle
@@ -216,6 +217,10 @@ jobs:
           else
             echo 'pattern=*' >> "$GITHUB_OUTPUT"
           fi
+      - name: Package trusted compiler setup for candidate builds
+        run: |
+          mkdir -p setup-site-tools
+          cp .github/actions/setup-site-tools/action.yml setup-site-tools/action.yml
       - name: Upload resolved version manifest
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -224,6 +229,7 @@ jobs:
           path: |
             resolved-versions.json
             cache-plan.json
+            setup-site-tools/
           retention-days: 7
           if-no-files-found: error
           overwrite: true
@@ -258,17 +264,17 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Setup Hugo Extended
-        uses: peaceiris/actions-hugo@2752ce1d29631191ea3f27c23495fa06139a5b78 # v3.2.1
+      - name: Setup site compilers
+        uses: ./resolved/setup-site-tools
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
-          extended: true
+          dart-sass-version: ${{ env.DART_SASS_VERSION }}
       - name: Cache Hugo resources
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ env.HUGO_CACHEDIR }}
-          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-group${{ matrix.group.id }}-${{ hashFiles('go.sum') }}
-          restore-keys: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-group${{ matrix.group.id }}-
+          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-sass-${{ env.DART_SASS_VERSION }}-${{ hashFiles('resolved/setup-site-tools/action.yml') }}-group${{ matrix.group.id }}-${{ hashFiles('go.sum') }}
+          restore-keys: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-sass-${{ env.DART_SASS_VERSION }}-${{ hashFiles('resolved/setup-site-tools/action.yml') }}-group${{ matrix.group.id }}-
       - name: Verify pinned OINK module
         run: |
           lscpu | sed -n '/^CPU(s):/p; /^Model name:/p'
@@ -309,7 +315,7 @@ jobs:
           python3 scripts/version_cache.py plan \
             --resolved-manifest selected-versions.json \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
-            --hugo-version "$HUGO_VERSION" --go-version "$(go version)" \
+            --hugo-version "$(hugo version)" --sass-version "$(sass --version)" --go-version "$(go version)" \
             --cache-dir "$RUNNER_TEMP/history-cache" --output "$RUNNER_TEMP/cache-plan.json" \
             --expected-plan resolved/cache-plan.json
           python3 scripts/build_versions.py \
@@ -454,11 +460,11 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Setup Hugo Extended
-        uses: peaceiris/actions-hugo@2752ce1d29631191ea3f27c23495fa06139a5b78 # v3.2.1
+      - name: Setup site compilers
+        uses: ./resolved/setup-site-tools
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
-          extended: true
+          dart-sass-version: ${{ env.DART_SASS_VERSION }}
       - name: Install Chromium test workspace
         working-directory: tests/e2e
         run: |

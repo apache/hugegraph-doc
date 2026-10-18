@@ -316,6 +316,7 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 | `check_vertex` | 写边时检查端点，本文的边任务设为 `true` |
 | [`batch_failure_fallback`](https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/)<sup>[2]</sup> | 默认 `true`，批量失败后逐条重试，最多跳过 `max_insert_errors` 条失败记录；本文示例显式设为 `false`，让批量失败直接终止任务 |
 | `max_insert_errors` | 逐条回退时允许跳过的失败记录数；默认 `500`，`-1` 表示不限制，仅在开启 `batch_failure_fallback` 时生效 |
+{.td-table--wide}
 
 遇到问题时可按下面检查：
 

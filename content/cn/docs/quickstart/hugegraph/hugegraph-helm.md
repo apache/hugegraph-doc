@@ -66,7 +66,7 @@ helm install hugegraph ./hugegraph-helm -n hugegraph \
 
 解压后目录为 `hugegraph-helm/`，源码目录仍为 `helm/hugegraph/`。
 
-```filetree {.hg-filetree-notes title="HugeGraph Helm 核心文件与结构"}
+```filetree {wrap=true title="HugeGraph Helm 核心文件与结构"}
 hugegraph-helm/
   Chart.yaml            # Chart 元数据与版本定义
   values.yaml           # 默认配置（easy 模式：3 PD + 3 Store + 3 Server + 1 Hubble，NodePort 入口）

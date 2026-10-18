@@ -11,25 +11,42 @@ for (const language of ['en', 'cn']) {
   const quickStart = `${prefix}/blog/2025/10/09/toplingdb-quick-start/`;
   const configuration = `${prefix}/blog/2025/09/30/toplingdb-yaml-configuration-file/`;
 
-  test(`${language} fixed taxonomy rail stays above the footer and keeps tags reachable`, async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto(quickStart);
-    await page.locator('footer').scrollIntoViewIfNeeded();
-    const rail = page.locator('.td-shell-toc__panel');
-    await expect.poll(async () => {
-      const panel = await rail.boundingBox();
-      const footer = await page.locator('footer').boundingBox();
-      return panel.y + panel.height <= footer.y + 1;
-    }).toBe(true);
-    const tags = rail.locator('a[href*="/tags/"]').last();
-    await tags.scrollIntoViewIfNeeded();
-    const box = await tags.boundingBox();
-    const footer = await page.locator('footer').boundingBox();
-    expect(box.y + box.height).toBeLessThanOrEqual(footer.y + 1);
-    await tags.click();
-    await expect(page).toHaveURL(/\/tags\//);
-    await expect(page.locator('main')).toContainText('Workflow');
-  });
+  for (const preset of ['slate', 'paper']) {
+    for (const theme of ['light', 'dark']) {
+      test(`${language} ${preset} ${theme} taxonomy rail avoids the footer after resizing and reflow`, async ({ page }) => {
+        await page.addInitScript(({ preset, theme }) => {
+          localStorage.setItem('td-preset', preset);
+          localStorage.setItem('td-color-theme', theme);
+        }, { preset, theme });
+        await page.goto(quickStart);
+        const rail = page.locator('.td-shell-toc__panel');
+        const footer = page.locator('footer');
+        const expectClearFooter = async () => {
+          await footer.scrollIntoViewIfNeeded();
+          await expect.poll(async () => {
+            const panel = await rail.boundingBox();
+            const bottom = await footer.boundingBox();
+            return panel.y + panel.height <= bottom.y + 1;
+          }).toBe(true);
+        };
+        for (const viewport of [{ width: 1440, height: 1000 }, { width: 1280, height: 760 }, { width: 1600, height: 900 }]) {
+          await page.setViewportSize(viewport);
+          await expectClearFooter();
+        }
+        // Reflow after load must update the native footer offset too.
+        await footer.evaluate(node => { node.style.minHeight = '280px'; });
+        await expectClearFooter();
+        const tags = rail.locator('a[href*="/tags/"]').last();
+        await tags.scrollIntoViewIfNeeded();
+        const box = await tags.boundingBox();
+        const bottom = await footer.boundingBox();
+        expect(box.y + box.height).toBeLessThanOrEqual(bottom.y + 1);
+        await tags.click();
+        await expect(page).toHaveURL(/\/tags\//);
+        await expect(page.locator('main')).toContainText('Workflow');
+      });
+    }
+  }
 
   test(`${language} native code blocks inherit global inline line numbers without custom headers`, async ({ page }) => {
     for (const route of ['config/config-backend-rocksdb', 'clients/restful-api/vertex', 'quickstart/hugegraph/hugegraph-server',
@@ -561,47 +578,82 @@ for (const language of ['en', 'cn']) {
     await expect(page.locator('.td-content .td-callout').first()).toBeVisible();
   });
 
-  for (const colorTheme of ['light', 'dark']) {
-    for (const width of [320, 390]) {
-      test(`${language} Server map remains readable after fitting to ${width}px in ${colorTheme} mode`, async ({ page }) => {
-        await page.setViewportSize({ width, height: 844 });
-        await page.addInitScript(value => localStorage.setItem('td-color-theme', value), colorTheme);
-        await page.goto(serverPath);
-        await expect(page.locator('html')).toHaveAttribute('data-bs-theme', colorTheme);
-        const map = page.locator('div.markmap');
-        await map.scrollIntoViewIfNeeded();
-        await expect(map.locator('.markmap-node')).toHaveCount(7);
-        // Markmap scales the SVG group, so computed font-size alone can report
-        // 16px while the labels actually render at only 4px on a narrow screen.
-        await expect.poll(() => map.locator('foreignObject').evaluateAll(nodes => {
-          const labels = nodes.map(node => {
-            const text = node.querySelector('div');
-            const transform = node.getScreenCTM();
-            const { left, right } = node.getBoundingClientRect();
-            return { left, right,
-              font: parseFloat(getComputedStyle(text).fontSize) * Math.hypot(transform.a, transform.b) };
+  for (const preset of ['slate', 'paper']) {
+    for (const colorTheme of ['light', 'dark']) {
+      for (const width of [320, 390]) {
+        test(`${language} ${preset} Server map remains readable after fitting to ${width}px in ${colorTheme} mode`, async ({ page }) => {
+          await page.setViewportSize({ width, height: 844 });
+          await page.addInitScript(({ preset, colorTheme }) => {
+            localStorage.setItem('td-preset', preset);
+            localStorage.setItem('td-color-theme', colorTheme);
+          }, { preset, colorTheme });
+          await page.goto(serverPath);
+          await expect(page.locator('html')).toHaveAttribute('data-bs-theme', colorTheme);
+          const map = page.locator('div.markmap');
+          await map.scrollIntoViewIfNeeded();
+          await expect(map.locator('.markmap-node')).toHaveCount(7);
+          // Markmap scales the SVG group, so computed font-size alone can report
+          // 16px while the labels actually render at only 4px on a narrow screen.
+          await expect.poll(() => map.locator('foreignObject').evaluateAll(nodes => {
+            const labels = nodes.map(node => {
+              const text = node.querySelector('div');
+              const transform = node.getScreenCTM();
+              const { left, right } = node.getBoundingClientRect();
+              return { left, right,
+                font: parseFloat(getComputedStyle(text).fontSize) * Math.hypot(transform.a, transform.b) };
+            });
+            return labels.every(label => label.font >= 12 && label.left >= 0 && label.right <= innerWidth);
+          })).toBe(true);
+          const colors = await map.locator('.markmap-foreign div').first().evaluate(node => {
+            const rgb = color => color.match(/[\d.]+/g).slice(0, 3).map(Number);
+            let ancestor = node;
+            while (ancestor && !/^rgb\(/.test(getComputedStyle(ancestor).backgroundColor)) ancestor = ancestor.parentElement;
+            const foreground = getComputedStyle(node).color;
+            const background = getComputedStyle(ancestor || document.body).backgroundColor;
+            const luminance = color => rgb(color).map(value => {
+              const channel = value / 255;
+              return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+            }).reduce((sum, channel, i) => sum + channel * [0.2126, 0.7152, 0.0722][i], 0);
+            const light = luminance(foreground), dark = luminance(background);
+            return { foreground, bodyText: getComputedStyle(document.body).color, background,
+              contrast: (Math.max(light, dark) + 0.05) / (Math.min(light, dark) + 0.05) };
           });
-          return labels.every(label => label.font >= 12 && label.left >= 0 && label.right <= innerWidth);
-        })).toBe(true);
-        const colors = await map.locator('.markmap-foreign div').first().evaluate(node => {
-          const rgb = color => color.match(/[\d.]+/g).slice(0, 3).map(Number);
-          let ancestor = node;
-          while (ancestor && !/^rgb\(/.test(getComputedStyle(ancestor).backgroundColor)) ancestor = ancestor.parentElement;
-          const foreground = getComputedStyle(node).color;
-          const background = getComputedStyle(ancestor || document.body).backgroundColor;
-          const luminance = color => rgb(color).map(value => {
-            const channel = value / 255;
-            return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-          }).reduce((sum, channel, i) => sum + channel * [0.2126, 0.7152, 0.0722][i], 0);
-          const light = luminance(foreground), dark = luminance(background);
-          return { foreground, bodyText: getComputedStyle(document.body).color, background,
-            contrast: (Math.max(light, dark) + 0.05) / (Math.min(light, dark) + 0.05) };
+          expect(colors.foreground).toBe(colors.bodyText);
+          expect(colors.contrast).toBeGreaterThanOrEqual(4.5);
         });
-        expect(colors.foreground).toBe(colors.bodyText);
-        expect(colors.contrast).toBeGreaterThanOrEqual(4.5);
-      });
+      }
     }
   }
+
+  test(`${language} aggregated Print preserves the destination of relative article links`, async ({ page }) => {
+    await page.goto(`${prefix}/docs/clients/restful-api/gremlin/`);
+    const taskLink = page.locator('.td-content a').filter({ hasText: language === 'cn' ? '异步任务' : 'asynchronous task REST API' }).first();
+    await expect(taskLink).toBeVisible();
+    const label = await taskLink.textContent();
+    const destination = new URL(await taskLink.getAttribute('href'), page.url()).pathname;
+    await page.goto(`${prefix}/_print/docs/`);
+    const printedLink = page.locator('a').filter({ hasText: label }).filter({ hasNot: page.locator('.td-heading-self-link') });
+    expect(await printedLink.count()).toBeGreaterThan(0);
+    expect(await printedLink.evaluateAll((links, destination) => links.some(link => new URL(link.href).pathname === destination), destination)).toBe(true);
+  });
+
+  test(`${language} native Markmap keeps dark ink when printing from dark mode`, async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('td-color-theme', 'dark'));
+    await page.goto(serverPath);
+    const labels = page.locator('div.markmap .markmap-foreign div');
+    await expect(labels.first()).toBeVisible();
+    await page.emulateMedia({ media: 'print' });
+    const printColors = await labels.first().evaluate(node => ({
+      text: getComputedStyle(node).color,
+      background: getComputedStyle(document.body).backgroundColor
+    }));
+    expect(printColors.text).toBe('rgb(51, 51, 51)');
+    expect(printColors.background).toBe('rgb(255, 255, 255)');
+    await page.goto(`${prefix}/_print/docs/`);
+    await expect(page.locator('body')).toContainText('hugegraph-core');
+    await expect(page.locator('body')).toContainText('values-single.yaml');
+    await expect(page.locator('body')).toContainText('HG_PD_AUTH_SECRET_KEY');
+  });
 
   test(`${language} long Server script initially shows nine source lines and copies its complete hidden tail`, async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);

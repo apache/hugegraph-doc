@@ -15,7 +15,7 @@
 
 - [系统介绍](https://hugegraph.apache.org/cn/docs/introduction/index.md)
 - [快速上手](https://hugegraph.apache.org/cn/docs/quickstart/index.md)
-  - [Hubble 基础与单机](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-hubble/index.md): 用 Docker 启动 RocksDB Server 与 Hubble，从示例图开始理解 Schema、导入 CSV、执行 Gremlin 并查看图结果。
+  - [Hubble 基础与单机](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-hubble/index.md): 用 Docker 启动 RocksDB Server 与 Hubble，从示例图开始建模、导入 CSV，并用 Gremlin、Cypher 或 Text2GQL 查询图数据。
   - [HugeGraph-LLM](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/index.md)
   - [Java 客户端](https://hugegraph.apache.org/cn/docs/quickstart/client/hugegraph-client/index.md)
   - [Vermeer: 高性能内存图计算框架](https://hugegraph.apache.org/cn/docs/quickstart/computing/hugegraph-vermeer/index.md): Vermeer 高性能内存图计算：一次启动、多次执行，支持 15+ OLAP 算法及秒到分钟级计算，涵盖部署、数据加载、PageRank 和社区发现。

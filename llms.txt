@@ -15,7 +15,7 @@
 
 - [System Introduction](https://hugegraph.apache.org/docs/introduction/index.md)
 - [Quick Start](https://hugegraph.apache.org/docs/quickstart/index.md)
-  - [Hubble Basics and Standalone](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md): Visualize graph data with Hubble and RocksDB Server: start with Docker, explore schema, import CSV, and run Gremlin queries.
+  - [Hubble Basics and Standalone](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md): Use Hubble and RocksDB Server to manage schema, import CSV, and query graph data with Gremlin, Cypher, or Text2GQL.
   - [HugeGraph-LLM](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-llm/index.md)
   - [Install/Build HugeGraph Server](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/index.md)
   - [Java-Client](https://hugegraph.apache.org/docs/quickstart/client/hugegraph-client/index.md)

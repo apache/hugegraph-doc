@@ -58,10 +58,10 @@ ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.nam
 The examples below assume a graph with `person` vertices (`name`, `age`, `city` properties) and `knows` edges.
 They assume the labels declare `nullableKeys("age", "city")` on `person` and nullable properties on `knows`, and that
 `person.age` has a `RANGE` index — for example the schema in `scripts/example.groovy` modified with those nullable keys
-plus `schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create()`. The starting vertex lookup
-needs a covering index unless it is an equality on every primary key of the label: `scripts/example.groovy` indexes `person.city`
-and `(age, city)` with `SECONDARY` indexes only, so a range comparison such as `n.age > 30` is rejected with a "not indexed" error
-until the `RANGE` index exists.
+plus `schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create()`. A property predicate
+in `WHERE` on the starting vertex needs a covering index unless it is an equality on every primary key of the label:
+`scripts/example.groovy` indexes `person.city` and `(age, city)` with `SECONDARY` indexes only, so a range comparison such
+as `n.age > 30` is rejected with a "not indexed" error until the `RANGE` index exists.
 If you load `scripts/example.groovy` first, note that it already seeds the `person` vertices `marko`, `vadas`, `josh` and `peter`;
 because the `person` label uses the `PRIMARY_KEY` id strategy, a `CREATE` with one of those names replaces the seeded vertex,
 so the create, update and delete examples below use names that the sample data does not contain (`alice`, `bob`, `carol`),

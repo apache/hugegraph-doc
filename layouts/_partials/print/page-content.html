@@ -6,17 +6,23 @@
 {{- $page.Store.Set "tdOutputFormat" "print" -}}
 {{- $page.Store.Delete "tdBookAggregate" -}}
 {{- $plain := $page.RenderString (dict "display" "block") $page.RawContent -}}
+{{- $plainHeadings := partial "print/heading-ids.html" $plain -}}
 {{- $plain = partial "content/static-image-output.html" $plain -}}
 {{- partial "code/register-rendered-ids.html" (dict "page" $page "content" $plain) -}}
+{{- if eq $page.Type "expo" }}{{ $plain = printf "%s%s" $plain (partial "expo/static.html" $page) | safeHTML }}{{ end -}}
+{{- $plain = partial "print/resolve-links.html" (dict "page" $page "content" $plain) -}}
 {{- $book := $plain -}}
+{{- $bookHeadings := $plainHeadings -}}
 {{- if eq $page.Type "book" -}}
   {{- $page.Store.Set "tdBookAggregate" true -}}
   {{- $book = $page.RenderString (dict "display" "block") $page.RawContent -}}
+  {{- $bookHeadings = partial "print/heading-ids.html" $book -}}
   {{- $book = partial "content/static-image-output.html" $book -}}
   {{- partial "code/register-rendered-ids.html" (dict "page" $page "content" $book) -}}
+  {{- $book = partial "print/resolve-links.html" (dict "page" $page "content" $book) -}}
   {{- $page.Store.Delete "tdBookAggregate" -}}
 {{- end -}}
 {{- /* Keep publication scanning scoped to authored content in both modes. */ -}}
 {{- $plain = printf "<template data-hg-authored-content=\"start\"></template>%s<template data-hg-authored-content=\"end\"></template>" $plain | safeHTML -}}
 {{- $book = printf "<template data-hg-authored-content=\"start\"></template>%s<template data-hg-authored-content=\"end\"></template>" $book | safeHTML -}}
-{{- return (dict "plain" $plain "book" $book) -}}
+{{- return (dict "plain" $plain "book" $book "plainHeadings" $plainHeadings "bookHeadings" $bookHeadings) -}}

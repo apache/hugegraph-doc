@@ -1,4 +1,4 @@
-{{- /* OINK override (reviewed against v1.1.0): separate the visible lockup from the SEO title. */ -}}
+{{- /* OINK override (reviewed against v1.3.1): separate the visible lockup from the SEO title. */ -}}
 {{- $name := .Site.Params.brand_name | default .Site.Title -}}
 {{- $logoPath := .Site.Params.logo | default "icons/logo.svg" -}}
 {{- $logoURL := (partial "content/url.html" (dict
@@ -35,8 +35,11 @@
   {{- warnf "params.ui.docs_sidebar_root must be home or section; got %q; using section" $docsRoot -}}
   {{- $docsRoot = "section" -}}
 {{- end -}}
-{{- $shellTypes := .Site.Params.ui.shell_types | default (slice "docs" "book" "blog" "swagger") -}}
-{{- $quickLinks := .Site.Params.ui.quick_links | default (slice $docsSection $blogSection) -}}
+{{- $shellTypes := .Site.Params.ui.shell_types | default (slice "docs" "book" "blog" "swagger" "expo") -}}
+{{- $quickLinks := slice $docsSection $blogSection -}}
+{{- if isset .Site.Params.ui "quick_links" -}}
+  {{- $quickLinks = index .Site.Params.ui "quick_links" -}}
+{{- end -}}
 {{- return dict
   "brandName" $name
   "logoURL" $logoURL

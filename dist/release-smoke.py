@@ -246,8 +246,7 @@ def embedded_versions(version, server_directory, toolchain_directory):
 def staging_origin(repository, version, distribution, staging_url):
     repository = Path(repository)
     # Newer Maven Resolver versions qualify repository IDs with the URL hash.
-    canonical_url = staging_url.rstrip("/") + "/"
-    url_hash = hashlib.sha1(canonical_url.encode()).hexdigest()
+    url_hash = hashlib.sha1(staging_url.encode()).hexdigest()
     origins = ("selected-staging", f"selected-staging-{url_hash}")
     required = {"hugegraph-common", "hg-pd-common", "hg-pd-client", "hg-pd-grpc", "hugegraph-core"}
     for library in Path(distribution).rglob("lib/*.jar"):

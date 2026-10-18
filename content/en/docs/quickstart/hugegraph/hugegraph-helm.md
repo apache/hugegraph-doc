@@ -70,7 +70,7 @@ The single-node preset replaces the default installation with one replica per co
 
 The extracted package is rooted at `hugegraph-helm/`; the source directory remains `helm/hugegraph/`.
 
-```filetree {.hg-filetree-notes title="HugeGraph Helm Chart Layout"}
+```filetree {wrap=true title="HugeGraph Helm Chart Layout"}
 hugegraph-helm/
   Chart.yaml            # Chart metadata and version definitions
   values.yaml           # Default values (easy mode: 3 PD + 3 Store + 3 Server + 1 Hubble, NodePort)

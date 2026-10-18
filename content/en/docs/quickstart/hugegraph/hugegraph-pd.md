@@ -108,7 +108,7 @@ docker run -d \
 | `HG_PD_DATA_PATH` | No | `/hugegraph-pd/pd_data` | `pd.data-path` | Metadata path. |
 | `HG_PD_INITIAL_STORE_COUNT` | No | `1` | `pd.initial-store-count` | Minimum Store count needed for cluster availability. |
 | `HG_PD_ACTUATOR_EXPOSURE` | No | `health,metrics,prometheus` | `management.endpoints.web.exposure.include` | Public Actuator endpoint allowlist; `*` is forbidden. |
-{.hg-pd-env}
+{.td-table--wide}
 
 The master entrypoint requires all five mandatory variables, builds `SPRING_APPLICATION_JSON` overrides, then starts PD. Other settings come from image `conf/application.yml`; `JAVA_OPTS` is passed to the JVM. Deprecated `GRPC_HOST`, `RAFT_ADDRESS`, `RAFT_PEERS`, and `PD_INITIAL_STORE_LIST` remain supported with warnings.
 
@@ -133,6 +133,7 @@ These tables were checked against `hg-pd-dist` configuration and Java defaults a
 | `grpc.host` | `127.0.0.1` | none, required | Address this PD advertises for gRPC. Store and Server connect here, so set it to a reachable IPv4 address or hostname, never `127.0.0.1` or `0.0.0.0`, in a distributed deployment. |
 | `grpc.port` | `8686` | none, required | gRPC port. |
 | `server.port` | `8620` | none, required | REST API port. Also the port reported in Raft member information. |
+{.td-table--wide}
 
 `application.yml.template` also carries `grpc.netty-server.max-inbound-message-size: 100MB`, but PD sets the gRPC server's inbound message limit to 1 GB in code, so that key has no effect.
 
@@ -146,6 +147,7 @@ These tables were checked against `hg-pd-dist` configuration and Java defaults a
 | `raft.ip-whitelist.enabled` | not set | `true` | When true, the Raft RPC port accepts connections only from the addresses resolved from `raft.peers-list`; other clients are dropped and logged as `Blocked connection from <ip>`. The allowlist is re-resolved when the peer list changes, but a peer that keeps its hostname and changes IP (a restarted container, for example) needs a PD restart. |
 | `raft.snapshotInterval` | not set | `300` | Seconds between Raft snapshots. |
 | `raft.rpc-timeout` | not set | `10000` | Raft RPC connect, request and install-snapshot timeout, in milliseconds. |
+{.td-table--wide}
 
 **PD core**
 
@@ -156,6 +158,7 @@ These tables were checked against `hg-pd-dist` configuration and Java defaults a
 | `pd.initial-store-count` | `1` | `3` | Minimum number of active Store nodes. Below this the cluster state becomes `Cluster_Not_Ready` and the cluster is treated as unavailable. Set it to the number of stores you deploy. |
 | `pd.initial-store-list` | `127.0.0.1:8500` | empty | Comma separated Store gRPC addresses (`ip:port`) that are activated automatically when they register. An entry may also carry a group id as `store_address/group_id`. |
 | `pd.cluster_id` | not set | `1` | Cluster id, used to keep separate PD clusters apart. |
+{.td-table--wide}
 
 **Store management**
 
@@ -166,6 +169,7 @@ These tables were checked against `hg-pd-dist` configuration and Java defaults a
 | `store.monitor_data_enabled` | `true` | `false` | Whether to persist Store monitoring samples. |
 | `store.monitor_data_interval` | `1 minute` | `1 minute` | Sampling interval, written as `<number> <unit>` with unit one of `second`, `minute`, `hour`, `day`, `month`, `year`. The number defaults to 1 when omitted. |
 | `store.monitor_data_retention` | `1 day` | `1 day` | How long monitoring samples are kept, same format as above. |
+{.td-table--wide}
 
 **Partitions**
 
@@ -173,6 +177,7 @@ These tables were checked against `hg-pd-dist` configuration and Java defaults a
 |-----|---------------|------------------|-------------|
 | `partition.default-shard-count` | `1` | `3` | Number of replicas per partition. Use `3` for a production cluster. |
 | `partition.store-max-shard-count` | `12` | `24` | Maximum number of partition replicas one Store holds. |
+{.td-table--wide}
 
 The initial partition count is derived from these two values and the size of `pd.initial-store-list`:
 
@@ -191,6 +196,7 @@ initial partitions = store count * partition.store-max-shard-count / partition.d
 | `management.metrics.export.prometheus.enabled` | `true` | Spring Boot default | Exposes `/actuator/prometheus`. |
 | `management.endpoints.web.exposure.include` | `health,metrics,prometheus` | Spring Boot exposes only `health` by default | Actuator allowlist; these endpoints bypass the PD REST Basic interceptor. |
 | `logging.config` | `file:./conf/log4j2.xml` | none | Log4j2 configuration. Writes `logs/hugegraph-pd.log`, `logs/hugegraph-pd_raft.log` and `logs/audit-hugegraph-pd.log`. |
+{.td-table--wide}
 
 **Thread pools**
 
@@ -202,6 +208,7 @@ initial partitions = store count * partition.store-max-shard-count / partition.d
 | `job.uninterruptibleThreadPool.core` | `0` | Core size of the background metadata job pool. A value of 0 or less means half the available processors. |
 | `job.uninterruptibleThreadPool.max` | `256` | Maximum size of that pool. |
 | `job.uninterruptibleThreadPool.queue` | unbounded | Queue capacity of that pool. |
+{.td-table--wide}
 
 #### 4.2 Single-node configuration
 

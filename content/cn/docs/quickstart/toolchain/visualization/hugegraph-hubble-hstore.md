@@ -163,6 +163,7 @@ Compose 部署修改上文生成的宿主机 `docker/conf/hubble/hstore.local.pr
 | `operations.pd.username` / `operations.pd.password` | 用户名 `hubble`，密码为空 | 与 PD 运维 REST 认证匹配。 |
 | `operations.store.username` / `operations.store.password` | 用户名 `hubble`，密码为空 | 上游 Store REST 启用认证时配置对应服务账号。 |
 | `operations.store.allowed_targets` | `[http://127.0.0.1:8520,http://[::1]:8520]` | 列出信任的 Store 指标来源。 |
+{.td-table--wide}
 
 例如容器中的 Store 上报 `store:8520`，将白名单配置为：
 

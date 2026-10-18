@@ -546,7 +546,18 @@ class ReleaseValidationTest(unittest.TestCase):
         for artifact in sdk:
             metadata = self.root / "m2/org/apache/hugegraph" / artifact / "1.8.0/_remote.repositories"
             metadata.write_text(metadata.read_text().replace("selected-staging", qualified))
-        SMOKE.staging_origin(str(self.root / "m2"), "1.8.0", str(distribution), staging_url.rstrip("/"))
+        SMOKE.staging_origin(str(self.root / "m2"), "1.8.0", str(distribution), staging_url)
+        no_slash = staging_url.rstrip("/")
+        no_slash_origin = "selected-staging-" + hashlib.sha1(no_slash.encode()).hexdigest()
+        for artifact in sdk:
+            metadata = self.root / "m2/org/apache/hugegraph" / artifact / "1.8.0/_remote.repositories"
+            metadata.write_text(metadata.read_text().replace(qualified, no_slash_origin))
+        SMOKE.staging_origin(str(self.root / "m2"), "1.8.0", str(distribution), no_slash)
+        with self.assertRaisesRegex(RuntimeError, "not fetched from selected staging"):
+            SMOKE.staging_origin(str(self.root / "m2"), "1.8.0", str(distribution), staging_url)
+        for artifact in sdk:
+            metadata = self.root / "m2/org/apache/hugegraph" / artifact / "1.8.0/_remote.repositories"
+            metadata.write_text(metadata.read_text().replace(no_slash_origin, qualified))
         metadata = self.root / "m2/org/apache/hugegraph/hugegraph-common/1.8.0/_remote.repositories"
         original = metadata.read_text()
         for origin in ("central", "", "selected-staging-wrong-url"):

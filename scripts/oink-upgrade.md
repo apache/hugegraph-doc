@@ -8,8 +8,22 @@ this dependency without Go source imports.
 
 ## Upstream reference
 
-The [OINK v1.2.0 release notes](https://github.com/pgsty/oink/releases/tag/v1.2.0)
-introduce independent visual-style and light/dark controls. HugeGraph retains Slate
+The [OINK v1.3.1 release notes](https://github.com/pgsty/oink/releases/tag/v1.3.1)
+cover native Markmap text colours, footer-aware outlines, opt-in complete FileTree
+comments and technical wide tables. HugeGraph uses those native implementations;
+the corresponding local CSS patches have been removed. FileTree authors select
+`wrap=true`; technical tables select `.td-table--wide`. Existing behavior tests
+continue to check readability, keyboard access and Print after removing the patches.
+Historical configuration catalogues acquire the same native wide-table marker
+through the existing temporary assembly fixes. Their pinned release sources are
+unchanged. When removing shared styling, inventory both published current configuration
+guides and their archived predecessors: renamed successors such as
+`quickstart/computing/hugegraph-computer-config` still need explicit native markers.
+The 1.3 series also adds optional Expo albums and repairs navigation, Landing and
+aggregate Print. See [contribution.md](../contribution.md#native-content-components)
+for component selection and examples. A theme update does not create new albums.
+
+OINK 1.2 introduced independent visual-style and light/dark controls. HugeGraph retains Slate
 as the default and enables the stable Paper/Slate reader menu with
 `params.ui.preset_menu: true`. The public `shell/appearance-menu.html` partial is
 used in the header and both mobile drawers; the theme owns dialogs, keyboard
@@ -29,34 +43,64 @@ Use tagged source when checking API details; issue proposals are background.
 
 ## Normal upgrade
 
-Start from a clean worktree with the Go and Hugo versions documented in
-[contribution.md](../contribution.md), Python 3, and Node.js satisfying
-`tests/e2e/package.json`. Network access is needed for modules, archived content,
+Start from a clean worktree with the Go, Hugo Extended and standalone Dart Sass
+versions pinned in `.github/workflows/hugo.yml`, Python 3.13, and Node.js satisfying
+`tests/e2e/package.json`. Install WebP's `cwebp` and `dwebp` validators too
+(`brew install webp` on macOS; CI uses the `webp` apt package). Network access is needed for modules, archived content,
 npm and Chromium. Local ports 4173, 4174 and 4175 must be available.
 The browser harness serves artifacts through its standard-library
 `tests/e2e/serve.py` helper, with room for concurrent font and avatar requests;
 no machine-local Python startup override is required.
 
+Dart Sass must be available as `sass` on `PATH`, including its sibling `src/`
+directory; a script that only prints a version is insufficient. CI reuses the local
+`setup-site-tools` composite action and verifies the official Sass archive checksum.
+When changing Sass, update the workflow pin and the action's verified version/checksum
+together. Historical build fingerprints include the actual compiler version.
+The updater checks target requirements and performs a real Hugo-to-Dart-Sass compile
+before changing root locks. It never installs tools or modifies the global `PATH`.
+Set `HUGO_BIN` or `PYTHON_BIN` when using a task-local toolchain.
+
+Before changing the pin, capture the current site using its matching toolchain.
+Use the same screenshot harness, viewport matrix and browser for both versions:
+
 ```sh
-scripts/update-oink.sh v1.2.0
+upgrade_dir=$(mktemp -d "${TMPDIR:-/tmp}/hugegraph-oink-review.XXXXXX")
+scripts/hugo.sh build --destination "$upgrade_dir/before-site"
+(
+  cd tests/e2e
+  npm ci
+  npx playwright install chromium
+  SITE_ROOT="$upgrade_dir/before-site" VISUAL_RESULTS_DIR="$upgrade_dir/before" npm run test:visual
+)
+# Select the target toolchain, then upgrade from the still-clean worktree.
+scripts/update-oink.sh v1.3.1 --work-dir "$upgrade_dir"
 ```
 
 Use an explicit release tag. The command updates the lock files, removes old-version
 checksums from `go.sum`, validates module
 identity, reports upstream changes affecting customizations, then reuses the
-strict build, Python/link tests, all historical builds, aggregate validation
+strict build, Python/link tests, all historical builds through the existing bounded
+two-worker builder with independent caches and forced rebuilds, aggregate validation
 (which validates each version artifact once),
 blocking Chromium suite and visual captures. It installs the locked browser test
 dependencies. It does not commit to a branch, push or publish.
 
-A temporary `hugegraph-oink-*` directory printed at startup holds the review
-report and build artifacts, including on failure. Browser failures keep the
+A supplied `--work-dir` keeps the original lock backups, review report, build
+artifacts and `before/` / `after/` captures together. Without it, a temporary
+`hugegraph-oink-*` directory is printed at startup. Browser failures keep the
 existing Playwright report and traces. No automatic reset is performed.
+Use a dedicated directory outside the checkout. An initial run rejects existing
+reserved output paths rather than overwriting user files; existing `before/`
+captures and `before-site/` are allowed. Resume retains the first lock backup and
+never regenerates baseline screenshots from the upgraded site. A fresh `--resume`
+directory can only back up the already-pinned target; `review.json` states that
+scope, so retain the original source or commit for rollback.
 A same-version run is valid. After a failed or interrupted run, retain the target
 pin and resume explicitly; this accepts a dirty worktree for manual adaptations:
 
 ```sh
-scripts/update-oink.sh v1.2.0 --resume
+scripts/update-oink.sh v1.3.1 --resume --work-dir "$upgrade_dir"
 ```
 
 Local validation includes the current `content/` and `static/`, including new
@@ -81,12 +125,12 @@ upgrade from passing against old HEAD content while omitting local adaptations.
 4. After reviewing every reported change, rerun the full verification:
 
    ```sh
-   scripts/update-oink.sh v1.2.0 --resume --accept-reviewed
+   scripts/update-oink.sh v1.3.1 --resume --accept-reviewed --work-dir "$upgrade_dir"
    ```
 
    This acknowledges review; it does not bypass any tests. The baseline advances
    only after every command succeeds. If a test fails, fix its cause and rerun.
-5. Inspect the visual captures under `tests/e2e/visual-results`, compare before
+5. Inspect the visual captures under the work directory's `before/` and `after/`, compare before
    and after desktop/mobile in both languages, and independently review the final
    diff before release. Automated success is not a visual approval or a promise
    of compatibility with every untested upstream change.
@@ -94,8 +138,8 @@ upgrade from passing against old HEAD content while omitting local adaptations.
 Get upstream directories for comparison without changing the site pin:
 
 ```sh
+go mod download -json github.com/pgsty/oink@v1.3.1
 go mod download -json github.com/pgsty/oink@v1.2.0
-go mod download -json github.com/pgsty/oink@v1.1.0
 git diff --check
 git diff -- go.mod go.sum layouts assets scripts .github/workflows/hugo.yml
 ```
@@ -162,9 +206,8 @@ DOM controller or automated text migration for content that already works.
 | Brand and layout | `assets/scss/`, `data/`, `i18n/` | Bilingual desktop/mobile, dark/light and print captures |
 | Native content components | `content/`, `assets/scss/_styles_project.scss`, `dist/validate-site-output.py` | Exact component data carriers and payload sinks; Markmap scaled text and contrast in both themes |
 
-The local Markmap styling uses the native `--markmap-text-color` token and the
-site's `--bs-body-color`, so labels stay readable in both light and dark modes.
-Component payload validation follows the pinned runtime's actual URL, HTML and
+Markmap text and Print colours now come from OINK; do not restore a site token
+override when upgrading. Component payload validation follows the pinned runtime's actual URL, HTML and
 CSS sinks. Recheck those contracts when component runtimes change; an unchanged
 template name does not prove that an updated runtime consumes data safely.
 

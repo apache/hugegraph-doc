@@ -11,6 +11,7 @@ from contextlib import contextmanager
 import hashlib
 import json
 import os
+import re
 import shlex
 import shutil
 from pathlib import Path
@@ -106,7 +107,8 @@ def verify_hugo_graph(root, version):
 
 
 def prior_release(root, version):
-    module = json.loads(command(["mod", "download", "-json", MODULE + "@" + version], root))
+    with graph_workspace(root) as workspace:
+        module = json.loads(command(["mod", "download", "-json", MODULE + "@" + version], workspace))
     if module.get("Error") or module.get("Version") != version or not module.get("Dir"):
         raise ValueError(f"cannot resolve reviewed previous release: {module}")
     return module
@@ -167,6 +169,115 @@ def preflight(root, target, resume):
         raise ValueError("working tree is not clean; commit/stash your work first, or use --resume for this pinned target")
 
 
+def version_tuple(value):
+    match = re.search(r"(?<![0-9])(\d+)\.(\d+)\.(\d+)(?![0-9])", value)
+    if not match:
+        raise ValueError(f"cannot identify tool version: {value!r}")
+    return tuple(map(int, match.groups()))
+
+
+def tool_output(argv):
+    try:
+        return subprocess.check_output(argv, env=release_environment(), text=True,
+                                       stderr=subprocess.STDOUT).strip()
+    except (OSError, subprocess.CalledProcessError) as error:
+        detail = getattr(error, "output", None) or str(error)
+        raise ValueError(f"toolchain command {' '.join(argv)} failed: {detail}; "
+                         "prepare the tools in scripts/oink-upgrade.md and rerun with the same --work-dir") from None
+
+
+def tool_versions():
+    return {"hugo": tool_output([release_environment().get("HUGO_BIN", "hugo"), "version"]),
+            "sass": tool_output(["sass", "--version"]),
+            "go": tool_output([os.environ.get("GO_BIN", "go"), "version"]),
+            "webp": tool_output(["cwebp", "-version"])}
+
+
+def check_toolchain(root, target):
+    """Resolve target metadata and compile in disposable roots before changing locks."""
+    try:
+        import tomllib
+    except ImportError:
+        raise ValueError("OINK upgrades require Python >= 3.11; use Python 3.13 as documented in scripts/oink-upgrade.md") from None
+    module = prior_release(root, target)
+    theme = Path(module["Dir"]) / "theme.toml"
+    minimum = max((0, 168, 0), version_tuple(tomllib.loads(theme.read_text())["min_version"]))
+    versions = tool_versions()
+    if version_tuple(versions["hugo"]) < minimum or "+extended" not in versions["hugo"]:
+        raise ValueError(f"Hugo Extended >= {'.'.join(map(str, minimum))} is required for {target}; "
+                         f"found {versions['hugo']}. Prepare tools using scripts/oink-upgrade.md; locks are unchanged")
+    if version_tuple(versions["sass"]) < (1, 105, 2):
+        raise ValueError(f"Dart Sass >= 1.105.2 is required; found {versions['sass']}. "
+                         "Prepare tools using scripts/oink-upgrade.md; locks are unchanged")
+    with tempfile.TemporaryDirectory(prefix="oink-dartsass-check-") as directory:
+        fixture = Path(directory)
+        (fixture / "hugo.toml").write_text('baseURL = "https://example.test/"\ndisableKinds = ["taxonomy", "term", "RSS", "sitemap"]\n')
+        (fixture / "layouts").mkdir()
+        (fixture / "assets").mkdir()
+        (fixture / "assets/probe.scss").write_text('@use "sass:math"; .probe { width: math.div(12px, 3); }\n')
+        (fixture / "layouts/index.html").write_text(
+            '{{ $css := resources.Get "probe.scss" | css.Sass (dict "transpiler" "dartsass" "targetPath" "probe.css") }}{{ $css.Content }}')
+        env = release_environment()
+        try:
+            result = subprocess.run([env.get("HUGO_BIN", "hugo"), "--source", str(fixture),
+                                     "--environment", "production", "--panicOnWarning"],
+                                    env=env, text=True, capture_output=True, timeout=30)
+        except subprocess.TimeoutExpired:
+            raise ValueError("Hugo → Dart Sass smoke compilation timed out; check the embedded Sass executable. Locks are unchanged") from None
+        rendered = fixture / "public/index.html"
+        if result.returncode or not rendered.is_file() or "width: 4px" not in rendered.read_text():
+            raise ValueError(f"Hugo → Dart Sass smoke compilation failed with {versions['hugo']} / "
+                             f"{versions['sass']}: {result.stdout}{result.stderr}. "
+                             "Prepare tools using scripts/oink-upgrade.md; locks are unchanged")
+    return versions
+
+
+def prepare_work(root, baseline, requested, resume, target):
+    work = requested.expanduser().resolve() if requested else Path(tempfile.mkdtemp(prefix="hugegraph-oink-"))
+    source = root.resolve()
+    if work == source or work in source.parents or source in work.parents:
+        raise ValueError("--work-dir must be outside the repository and its ancestors; use a fresh --work-dir")
+    work.mkdir(parents=True, exist_ok=True)
+    backup = work / "before"
+    names = ("go.mod", "go.sum", "oink-overrides.json")
+    present = [(backup / name).exists() for name in names]
+    report = work / "review.json"
+    if any(present):
+        if not all(present):
+            raise ValueError(f"incomplete original lock backup in {backup}; use a fresh --work-dir")
+        if not resume or not report.is_file():
+            raise ValueError("existing upgrade backup requires --resume and its original review.json; use a fresh --work-dir")
+    elif report.exists():
+        raise ValueError("review.json has no original lock backup; use a fresh --work-dir")
+    if report.is_file():
+        previous = json.loads(report.read_text())
+        if previous.get("to") != target or previous.get("root") != str(root.resolve()):
+            raise ValueError("--work-dir belongs to another target or checkout; use its matching --resume command")
+    if not any(present):
+        reserved = ("toolchain.json", "resolved.json", "build-plan.json", "validation-snapshot.json",
+                    "strict", "artifacts", "site", "ai", "ai-disabled", "ai.json", "ai-disabled.json",
+                    "hugo-cache", "version-cache", "after")
+        conflicts = [name for name in reserved if (work / name).exists() or (work / name).is_symlink()]
+        if conflicts:
+            raise ValueError(f"--work-dir contains reserved runner outputs: {', '.join(conflicts)}; use a fresh --work-dir")
+        backup.mkdir(exist_ok=True)
+        for name, source in (("go.mod", root / "go.mod"), ("go.sum", root / "go.sum"),
+                             ("oink-overrides.json", baseline)):
+            with (backup / name).open("xb") as destination:
+                destination.write(source.read_bytes())
+        recovery = " && ".join("cp " + shlex.quote(str(backup / name)) + " " + shlex.quote(str(destination))
+                               for name, destination in (("go.mod", root / "go.mod"), ("go.sum", root / "go.sum"),
+                                                         ("oink-overrides.json", baseline)))
+        report.write_text(json.dumps({"root": str(root.resolve()), "to": target, "startedFromResume": resume,
+                                      "recoveryCommand": recovery,
+                                      "recoveryScope": "Restores locks and reviewed inventory from the first invocation in this directory; "
+                                                       "startedFromResume means the backup may already pin the target. Local adaptations are retained.",
+                                      "resumeCommand": " ".join(map(shlex.quote, [sys.executable, str(root / "scripts/update_oink.py"),
+                                                                                target, "--resume", "--accept-reviewed", "--work-dir", str(work)]))},
+                                     indent=2) + "\n")
+    return work
+
+
 def validate(work):
     with isolated_release():
         _validate(work)
@@ -211,11 +322,17 @@ def _validate(work):
     resolved = work / "resolved.json"
     latest = validation_snapshot(ROOT, work)
     run([*cli, "prepare", "--latest-sha", latest, "--output", resolved])
-    manifest = json.loads(resolved.read_text())
-    for entry in manifest["versions"]:
-        artifact = work / "artifacts" / entry["id"]
-        run([*cli, "build", "--version", entry["id"], "--sha", entry["sha"],
-             "--site-origin", origin, "--historical-origin", historical, "--output", artifact])
+    versions = json.loads((work / "toolchain.json").read_text())
+    plan = work / "build-plan.json"
+    run([py, "scripts/version_cache.py", "plan", "--resolved-manifest", resolved,
+         "--site-origin", origin, "--historical-origin", historical,
+         "--hugo-version", versions["hugo"], "--sass-version", versions["sass"],
+         "--go-version", versions["go"], "--webp-version", versions["webp"],
+         "--cache-dir", work / "version-cache", "--output", plan])
+    run([py, "scripts/build_versions.py", "--resolved-manifest", resolved, "--plan", plan,
+         "--cache-dir", work / "version-cache", "--output", work / "artifacts",
+         "--site-origin", origin, "--historical-origin", historical, "--workers", "2", "--force-rebuild"],
+        env=dict(os.environ, HUGO_CACHEDIR=str(work / "hugo-cache")))
     # aggregate validates every version artifact before merging it.
     run([*cli, "aggregate", "--resolved-manifest", resolved,
          "--artifacts", work / "artifacts", "--site-origin", origin,
@@ -230,7 +347,7 @@ def _validate(work):
              "--destination", work / name, "--cleanDestinationDir", "--gc", "--minify",
              "--environment", "production", "--panicOnWarning"])
     env = dict(os.environ, SITE_ROOT=str(work / "site"), AI_SITE_ROOT=str(work / "ai"),
-               AI_DISABLED_SITE_ROOT=str(work / "ai-disabled"))
+               AI_DISABLED_SITE_ROOT=str(work / "ai-disabled"), VISUAL_RESULTS_DIR=str(work / "after"))
     run(["npm", "ci"], cwd=ROOT / "tests/e2e")
     run(["npx", "playwright", "install", "chromium"], cwd=ROOT / "tests/e2e")
     run(["npm", "run", "test:ci"], cwd=ROOT / "tests/e2e", env=env)
@@ -248,7 +365,12 @@ def _main():
     parser.add_argument("--check-baseline", action="store_true", help="read-only CI check of reviewed upstream files")
     parser.add_argument("--resume", action="store_true", help="validate/adapt the already-pinned target in a dirty worktree")
     parser.add_argument("--accept-reviewed", action="store_true", help="record human review of reported upstream changes; still run every validator")
+    parser.add_argument("--work-dir", type=Path, help="artifact directory; reuse the same directory with --resume")
     args = parser.parse_args()
+    if args.check_baseline and (args.version or args.resume or args.accept_reviewed or args.work_dir):
+        parser.error("--check-baseline cannot be combined with upgrade options")
+    if args.accept_reviewed and not args.version:
+        parser.error("--accept-reviewed requires a target version")
     if args.check_baseline:
         module = download_locked(ROOT)
         verify_hugo_graph(ROOT, module["Version"])
@@ -265,13 +387,13 @@ def _main():
         parser.error("version is required for upgrades")
     preflight(ROOT, args.version, args.resume)
     previous = json.loads(BASELINE.read_text())
-    work = Path(tempfile.mkdtemp(prefix="hugegraph-oink-"))
+    versions = check_toolchain(ROOT, args.version)
+    work = prepare_work(ROOT, BASELINE, args.work_dir, args.resume, args.version)
+    (work / "toolchain.json").write_text(json.dumps(versions, indent=2) + "\n")
     print(f"Upgrade artifacts and review report: {work}", flush=True)
     backup = work / "before"
-    backup.mkdir(exist_ok=True)
-    for name in ("go.mod", "go.sum"):
-        shutil.copy2(ROOT / name, backup / name)
-    shutil.copy2(BASELINE, backup / "oink-overrides.json")
+    previous = json.loads((backup / "oink-overrides.json").read_text())
+    initial_report = json.loads((work / "review.json").read_text())
     if previous["version"] == args.version:
         prior_module = None
     else:
@@ -285,26 +407,20 @@ def _main():
     graph = verify_hugo_graph(ROOT, args.version)
     current = snapshot(ROOT, Path(module["Dir"]))
     changed = changes(previous["files"], current)
-    report = {"from": previous["version"], "to": args.version, "reviewRequired": changed,
+    report = {**initial_report, "from": previous["version"], "reviewRequired": changed,
               "priorModuleDir": (prior_module or module)["Dir"], "targetModuleDir": module["Dir"],
               "hugoModuleGraph": graph,
               "changes": [{"path": p, "kind": change_kind(previous["files"], current, p),
                            "reason": "upstream SCSS selector dependency" if p.startswith("assets/scss/") else
                                      "local override or watched upstream interface"} for p in changed],
               "reviewMeaning": "These are upstream review impacts, not a list of required local edits. Added/removed describe watched inventory coverage; SCSS changes may need no adaptation.",
-              "recoveryCommand": "cp " + shlex.quote(str(backup / "go.mod")) + " " + shlex.quote(str(ROOT / "go.mod")) +
-                                 " && cp " + shlex.quote(str(backup / "go.sum")) + " " + shlex.quote(str(ROOT / "go.sum")) +
-                                 " && cp " + shlex.quote(str(backup / "oink-overrides.json")) + " " + shlex.quote(str(BASELINE)),
-              "recoveryScope": "Restores lock files and reviewed inventory before this invocation; a resume backup may already pin the target. Local adaptations are retained.",
-              "resumeCommand": shlex.quote(sys.executable) + " " + shlex.quote(str(ROOT / "scripts/update_oink.py")) +
-                               " " + shlex.quote(args.version) + " --resume --accept-reviewed",
               "scope": "same-name layouts/assets/translations/data overrides, sidebar/search/appearance interfaces and upstream SCSS; not a full compatibility proof"}
     (work / "review.json").write_text(json.dumps(report, indent=2) + "\n")
     if changed and not args.accept_reviewed:
-        raise ValueError(f"review required for {len(changed)} upstream files; inspect {work / 'review.json'}, adapt, then rerun with --resume --accept-reviewed")
+        raise ValueError(f"review required for {len(changed)} upstream files; inspect {work / 'review.json'}, adapt, then rerun with {report['resumeCommand']}")
     validate(work)
     BASELINE.write_text(json.dumps({"version": args.version, "files": current}, indent=2) + "\n")
-    print(f"Upgrade checks passed: {args.version}. Review visual captures in tests/e2e/visual-results before publishing. No branch commit or publication performed.")
+    print(f"Upgrade checks passed: {args.version}. Review visual captures in {work / 'after'} before publishing. No branch commit or publication performed.")
 
 
 if __name__ == "__main__":

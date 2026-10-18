@@ -22,6 +22,9 @@ guides and their archived predecessors: renamed successors such as
 The 1.3 series also adds optional Expo albums and repairs navigation, Landing and
 aggregate Print. See [contribution.md](../contribution.md#native-content-components)
 for component selection and examples. A theme update does not create new albums.
+Expo's preview, neighbor-preloading and batched-layout improvements do not change
+existing Gallery fences; review the [image-loading guidance](../contribution.md#image-loading-and-albums)
+before migrating content or making performance claims.
 
 OINK 1.2 introduced independent visual-style and light/dark controls. HugeGraph retains Slate
 as the default and enables the stable Paper/Slate reader menu with

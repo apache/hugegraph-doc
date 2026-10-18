@@ -538,20 +538,24 @@ for (const language of ['en', 'cn']) {
 
   test(`${language} Hubble gallery images load, open at full size and restore focus on Escape`, async ({ page }) => {
     await page.goto(`${prefix}/docs/quickstart/toolchain/hugegraph-hubble/`);
-    const gallery = page.locator('.td-gallery');
-    await expect(gallery.locator('img')).toHaveCount(3);
-    const image = gallery.locator('img').nth(1);
-    await image.scrollIntoViewIfNeeded();
-    await expect.poll(() => image.evaluate(node => node.complete && node.naturalWidth > 0)).toBe(true);
-    const opener = image.locator('..');
-    await image.click();
-    const zoom = page.locator('[data-td-image-zoom-dialog]');
-    await expect(zoom).toBeVisible();
-    await expect.poll(() => zoom.locator('img').evaluate(node => node.complete && node.naturalWidth > 0)).toBe(true);
-    await page.keyboard.press('Escape');
-    await expect(zoom).toBeHidden();
-    // Escape returns focus to the native button wrapped around this image.
-    await expect(opener).toBeFocused();
+    for (const filename of ['schema.jpg', 'text2gql-settings.jpg']) {
+      const selector = `img[src$="/hubble/${filename}"]`;
+      const gallery = page.locator('.td-gallery').filter({ has: page.locator(selector) });
+      await expect(gallery).toHaveCount(1);
+      await expect(gallery.locator('img')).toHaveCount(3);
+      const image = gallery.locator(selector);
+      await image.scrollIntoViewIfNeeded();
+      await expect.poll(() => image.evaluate(node => node.complete && node.naturalWidth > 0)).toBe(true);
+      const opener = image.locator('..');
+      await image.click();
+      const zoom = page.locator('[data-td-image-zoom-dialog]');
+      await expect(zoom).toBeVisible();
+      await expect.poll(() => zoom.locator('img').evaluate(node => node.complete && node.naturalWidth > 0)).toBe(true);
+      await page.keyboard.press('Escape');
+      await expect(zoom).toBeHidden();
+      // Escape returns focus to the native button wrapped around this image.
+      await expect(opener).toBeFocused();
+    }
   });
 
   test(`${language} Server map folds nodes while steps and outdated status retain real context`, async ({ page }) => {

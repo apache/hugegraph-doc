@@ -16,7 +16,9 @@ For the HugeGraph database project, visit [apache/hugegraph](https://github.com/
 
 Only **3 steps** are needed to run the documentation website locally.
 
-**Prerequisites:** Go 1.27+ and [Hugo Extended](https://github.com/gohugoio/hugo/releases) 0.165.0. OINK does not require Node.js, npm, PostCSS, or a vendored theme checkout.
+**Prerequisites:** Go 1.27+, [Hugo Extended](https://github.com/gohugoio/hugo/releases) 0.168.0 and standalone
+[Dart Sass](https://github.com/sass/dart-sass/releases) 1.105.2 on `PATH`. CI pins the supported toolchain in
+`.github/workflows/hugo.yml`. Node.js and npm are needed only for browser tests; the site has no npm build step or vendored theme checkout.
 
 ```bash
 # 1. Clone repository
@@ -88,7 +90,7 @@ For theme updates, compatibility review and rollback, use the [OINK upgrade SOP]
 | `scripts/hugo.sh server` | Start the manifest-aware dev server (hot reload) |
 | `scripts/hugo.sh build` | Strict, production-equivalent build to `./public/` |
 | `scripts/hugo.sh server -p 8080` | Start the dev server on a custom port |
-| `scripts/update-oink.sh v1.1.0` | Update the theme and run compatibility checks (see the SOP) |
+| `scripts/update-oink.sh <release-tag>` | Update the theme and run compatibility checks (see the SOP) |
 
 ---
 
@@ -102,7 +104,9 @@ For theme updates, compatibility review and rollback, use the [OINK upgrade SOP]
 
 只需 **3 步**即可在本地启动文档网站。
 
-**前置条件：** Go 1.27+ 和 [Hugo Extended](https://github.com/gohugoio/hugo/releases) 0.165.0。OINK 不需要 Node.js、npm、PostCSS 或检出到仓库内的主题副本。
+**前置条件：** Go 1.27+、[Hugo Extended](https://github.com/gohugoio/hugo/releases) 0.168.0，以及位于 `PATH` 中的独立
+[Dart Sass](https://github.com/sass/dart-sass/releases) 1.105.2。CI 在 `.github/workflows/hugo.yml` 中固定受支持的工具链。
+Node.js 和 npm 仅用于浏览器测试；站点没有 npm 构建步骤，也不需要检出到仓库内的主题副本。
 
 ```bash
 # 1. 克隆仓库
@@ -174,7 +178,7 @@ hugegraph-doc/
 | `scripts/hugo.sh server` | 启动读取版本清单的开发服务器（支持热重载） |
 | `scripts/hugo.sh build` | 严格构建与生产等价的站点到 `./public/` |
 | `scripts/hugo.sh server -p 8080` | 在指定端口启动开发服务器 |
-| `scripts/update-oink.sh v1.1.0` | 更新主题并执行兼容检查（详见升级 SOP） |
+| `scripts/update-oink.sh <release-tag>` | 更新主题并执行兼容检查（详见升级 SOP） |
 
 ---
 

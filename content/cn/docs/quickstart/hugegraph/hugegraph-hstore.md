@@ -131,6 +131,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` | gRPC 服务端口。 |
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` | REST API 端口。 |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` | 数据存储路径。 |
+{.td-table--wide}
 
 当前主线 entrypoint 将这些变量写入 `SPRING_APPLICATION_JSON`，覆盖镜像内 `conf/application.yml`；其余配置仍从该文件和 `application-pd.yml` 读取，然后以前台方式启动 Java。旧变量 `PD_ADDRESS`、`GRPC_HOST`、`RAFT_ADDRESS` 仍可用，但会输出弃用警告。
 
@@ -170,6 +171,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `grpc.netty-server.max-inbound-message-size` | `1000MB` | gRPC 默认值 | 单个入站 gRPC 消息的最大大小，由 `grpc-spring-boot-starter` 的 Netty 服务端读取。 |
 | `grpc.server.wait-time` | 未设置 | `3600` | 扫描流等待客户端消费一页数据的秒数，超时后服务端中止该流。 |
 | `server.port` | `8520` | 必填 | REST 和 Actuator 端口，同时以 `rest.port` 标签上报给 PD。 |
+{.td-table--wide}
 
 **Raft**
 
@@ -188,6 +190,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `raft.maxEntriesSize` | 未设置 | `256` | 单次 `AppendEntries` 请求包含的最大条目数。 |
 | `raft.maxBodySize` | 未设置 | `524288` | 单次 `AppendEntries` 请求的最大字节数。 |
 | `ave-logEntry-size-ratio` | 未设置 | `0.95` | 估算日志条目平均大小时的平滑系数。注意该配置项位于顶层，不在 `raft` 下。 |
+{.td-table--wide}
 
 **存储与标签**
 
@@ -198,6 +201,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `app.fake-pd` | 未设置 | `false` | 内置 PD 模式，仅用于单机测试，不要用于生产。 |
 | `app.placeholder-size` | 未设置 | `10` | 启动时在每个数据路径下创建的 `placeholder` 占位文件大小，单位 GB，便于紧急情况下释放空间。设为 `0` 关闭。 |
 | `app.label.<name>` | 未设置 | 无 | 随 store 心跳上报给 PD 的自定义键值标签。节点会自动追加 `rest.port`。 |
+{.td-table--wide}
 
 **RocksDB**
 
@@ -207,6 +211,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `rocksdb.write_buffer_size` | `32000000` | `33554432` | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`。 |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | 落盘前合并的 memtable 数量。 |
 | `rocksdb.write_buffer_ratio` | 未设置 | `0.66` | `total_memory_size` 中分配给写缓存的比例，其余作为 block cache。 |
+{.td-table--wide}
 
 `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` 中定义的其他选项都可以加在同一个 `rocksdb:` 块下，例如 `rocksdb.max_background_jobs`、`rocksdb.level0_file_num_compaction_trigger` 或 `rocksdb.bloom_filter_bits_per_key`。
 
@@ -220,6 +225,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `thread.pool.scan.core` | `128` | 处理扫描的核心线程数。设为 `0` 时取 CPU 核数的 4 倍。 |
 | `thread.pool.scan.max` | `1000` | 扫描最大线程数。 |
 | `thread.pool.scan.queue` | `0` | 扫描任务队列容量。 |
+{.td-table--wide}
 
 **gRPC 回调队列（1.8.0）**
 
@@ -238,6 +244,7 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 | `query.push-down.fetch_timeout` | `300000` | 拉取超时时间，单位毫秒。 |
 | `query.push-down.memory_limit_count` | `50000` | 排序等内存操作的行数上限。 |
 | `query.push-down.index_size_limit_count` | `50000` | 索引 sst 文件大小上限，单位 kB。 |
+{.td-table--wide}
 
 **后台任务**
 
@@ -251,6 +258,7 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 | `job.uninterruptibleThreadPool.queue` | `2147483647` | 不可中断任务线程池的队列容量。 |
 | `job.cleaner.batch.size` | `10000` | TTL 清理任务每批删除的 key 数量。 |
 | `job.start-time` | `0` | 每日 TTL 清理执行的小时数（0 到 23）。超出该范围时回退为 19。 |
+{.td-table--wide}
 
 **内置 PD 模式**
 
@@ -262,15 +270,20 @@ Store 使用无界队列处理 gRPC 回调，避免队列满时丢弃取消或�
 | `fake-pd.peers-list` | `''` | 同一批节点的 Raft 地址。 |
 | `fake-pd.partition-count` | `3` | 分区数量。 |
 | `fake-pd.shard-count` | `3` | 每个分区的副本数。 |
+{.td-table--wide}
 
 **诊断**
 
-| 配置项 | 代码默认值 | 说明 |
-|--------|------------|------|
-| `arthas.telnetPort` | `8566` | 调用 `/v1/arthasstart` 后 Arthas 的 telnet 端口。 |
-| `arthas.httpPort` | `8565` | Arthas HTTP 端口。 |
-| `arthas.ip` | `0.0.0.0` | Arthas 监听地址。 |
-| `arthas.disabledCommands` | `jad` | 需要禁用的 Arthas 命令。 |
+自 HugeGraph 1.8.0 起，Store 的 HTTP 激活接口 `GET /v1/arthasstart` 已禁用（直接返回 `403`），旧 Arthas 配置字段仅为兼容保留。
+推荐直接以服务进程属主身份运行发行包内置的脚本诊断正在运行的 JVM
+（官方容器镜像内置 JDK 17，可直接使用 `docker exec` 执行）：
+
+```bash
+bin/arthas.sh
+```
+
+同机多进程时可指定 `--pid <PID> --telnet-port 3659`。
+更多参数、认证配置及安全实践参见 [Arthas 诊断代理](/cn/docs/clients/restful-api/other/#1116-启动-arthas-诊断代理)。
 
 #### 4.4 各节点需要区分的配置
 
@@ -486,7 +499,9 @@ Store 节点在 `server.port` 上提供以下只读接口：
 
 主线发行目录的 Store 配置将 `management.endpoints.web.exposure.include` 设为 `"*"`，并启用 Prometheus；Actuator 端点没有 PD REST Basic 认证保护，请限制 Store REST 端口的网络可达范围。
 
-节点还提供一批会修改状态或执行重负载操作的运维接口：`PUT /-/state`、`GET /-/cleaner`、`GET /v1/partition/dump/{id}`、`GET /v1/partition/clean/{id}`、`POST /v1/compat?id=<partition>`、`GET /v1/arthasstart`、`POST /raft/options`，以及 `/fix/*` 和 `/test/*` 两组接口。请仅在排查问题时使用，并且不要把 REST 端口暴露到不可信网络。
+节点还提供一批会修改状态或执行重负载操作的运维接口：`PUT /-/state`、`GET /-/cleaner`、`GET /v1/partition/dump/{id}`、
+`GET /v1/partition/clean/{id}`、`POST /v1/compat?id=<partition>`、`POST /raft/options`，以及 `/fix/*` 和 `/test/*` 两组接口。
+请仅在排查问题时使用，并且不要把 REST 端口暴露到不可信网络。
 
 #### 7.2 通过 PD 检查注册结果
 

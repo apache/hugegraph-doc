@@ -316,6 +316,7 @@ The following table applies to the SeaTunnel 3.0+ version used by this guide:
 | `check_vertex` | Check edge endpoints; the edge job in this guide sets it to `true` |
 | [`batch_failure_fallback`](https://seatunnel.apache.org/docs/connectors/sink/HugeGraph/)<sup>[2]</sup> | Defaults to `true`, so a failed batch falls back to record-by-record retries, capped by `max_insert_errors`; the examples explicitly set `false` so a batch failure stops the job |
 | `max_insert_errors` | Number of failed records that record-by-record fallback may skip; default `500`, `-1` for unlimited, and only applies when `batch_failure_fallback` is enabled |
+{.td-table--wide}
 
 Use these checks when a job fails:
 

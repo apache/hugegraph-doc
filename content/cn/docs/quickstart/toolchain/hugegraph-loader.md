@@ -867,6 +867,7 @@ GRAPH 输入源从另一个 HugeGraph 图（通过 HugeGraph-PD 访问）读取�
 | `--serializer`                          | binary      |      | 自动创建图（如果不存在）时的序列化器类型                                              |
 | `--scheduler-type`                      | distributed |      | 自动创建图（如果不存在）时的任务调度器类型                                             |
 | `--batch-failure-fallback`              | true        |      | 批量插入失败时是否回退至单条插入模式                                                |
+{.td-table--wide}
 
 映射文件选项 `--file`（`-f`）是必填项，其他选项使用默认值。有效的最简调用为：
 

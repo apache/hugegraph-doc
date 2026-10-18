@@ -587,3 +587,68 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     expect(requests).toEqual([]);
   });
 }
+
+// This content is mounted only in ai-enabled.yaml. Exercise Expo's native
+// shell contract without publishing an example album on the production site.
+for (const locale of ['en', 'cn']) {
+  for (const width of [1440, 390]) {
+    test(`${locale} Expo fixture keeps native shell navigation and gallery controls at ${width}px`, async ({ page }) => {
+      const prefix = locale === 'cn' ? '/cn' : '';
+      await page.setViewportSize({ width, height: 1000 });
+      await page.goto(`${AI_ORIGIN}${prefix}/e2e-expo/album/`);
+      await expect(page.locator('body')).toHaveClass(/td-expo-shell/);
+      await expect(page.locator('.td-nav-brand')).toHaveAttribute('aria-label', /HugeGraph/);
+      const manifest = await page.locator('#td-action-manifest').evaluate(node => JSON.parse(node.textContent));
+      // An explicitly empty list must disable defaults instead of restoring them.
+      expect(manifest.quickLinks).toEqual([]);
+      const sidebar = page.locator('#td-shell-sidebar');
+      if (width < 768) {
+        const opener = page.locator('[data-td-shell-drawer-open]');
+        await expect(opener).toBeVisible();
+        await opener.click();
+        await expect(page.locator('html')).toHaveAttribute('data-td-shell-drawer', 'open');
+        await expect(sidebar).toBeVisible();
+        await expect(sidebar.locator('.td-shell-tree__link[aria-current="page"]')).toBeVisible();
+        await page.locator('button[data-td-shell-drawer-close]').click();
+      } else {
+        await expect(sidebar).toBeVisible();
+        await expect(sidebar.locator('.td-shell-tree__link[aria-current="page"]')).toBeVisible();
+      }
+      await page.locator('[data-td-shell-search-open]').first().click();
+      const search = page.locator('#td-shell-search');
+      await expect(search).toBeVisible();
+      await page.locator('.td-shell-search__input').fill('RocksDB');
+      const pageResult = search.getByRole('option').filter({ has: page.locator('.td-shell-search__item-excerpt') })
+        .filter({ hasText: /RocksDB/i }).first();
+      await expect(pageResult).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(search).toBeHidden();
+      const expo = page.locator('[data-td-expo]');
+      const image = expo.locator('[data-td-expo-image] img');
+      await expect(image).toHaveCount(1);
+      await expect.poll(() => image.evaluate(node => node.complete && node.naturalWidth > 0)).toBe(true);
+      await expect(expo.locator('[data-td-expo-controls]')).toBeVisible();
+      await expo.locator('input[data-td-expo-mode="cards"]').locator('..').click();
+      await expect(expo).toHaveAttribute('data-td-expo-mode', 'cards');
+      const opener = expo.locator('[data-td-expo-image]');
+      await opener.click();
+      const viewer = page.locator('[data-td-expo-viewer]');
+      await expect(viewer).toBeVisible();
+      await expect.poll(() => viewer.locator('[data-td-expo-full]')
+        .evaluate(node => node.complete && node.naturalWidth > 0)).toBe(true);
+      await page.keyboard.press('Escape');
+      await expect(viewer).toBeHidden();
+      await expect(opener).toBeFocused();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    });
+  }
+}
+
+test('Expo example content is absent from production and AI-disabled artifacts', async ({ request }) => {
+  for (const prefix of ['', '/cn']) {
+    expect((await request.get(`${prefix}/e2e-expo/album/`)).status()).toBe(404);
+    if (process.env.AI_DISABLED_SITE_ROOT) {
+      expect((await request.get(`http://127.0.0.1:4175${prefix}/e2e-expo/album/`)).status()).toBe(404);
+    }
+  }
+});

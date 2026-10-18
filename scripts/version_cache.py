@@ -64,7 +64,8 @@ def snapshot(path):
 
 def shared_digest(root):
     paths = {*versioning.SHELL_FILES, *versioning.SHELL_DIRS,
-             *versioning.SHELL_CONTENT_DIRS, "versions.json", "dist", ".htaccess", ".asf.yaml"}
+             *versioning.SHELL_CONTENT_DIRS, "versions.json", "dist", ".htaccess", ".asf.yaml",
+             ".github/actions/setup-site-tools"}
     paths.update(p for p in versioning.SHELL_CONTENT if p.endswith("docs/SUMMARY.md"))
     paths.update("static/" + p for p in (*versioning.SHELL_STATIC_FILES, *versioning.SHELL_STATIC_DIRS))
     paths.update(p.relative_to(root).as_posix() for p in (root / "scripts").glob("*.py"))
@@ -99,10 +100,10 @@ def reusable(cache_dir, entry):
 
 
 def make_plan(root, manifest, cache_dir, *, site_origin, historical_origin,
-              hugo_version, go_version, webp_version, year=None):
+              hugo_version, sass_version, go_version, webp_version, year=None):
     common = {"schemaVersion": SCHEMA, "shared": shared_digest(root),
               "siteOrigin": site_origin, "historicalOrigin": historical_origin,
-              "hugo": hugo_version, "go": go_version, "webp": webp_version,
+              "hugo": hugo_version, "sass": sass_version, "go": go_version, "webp": webp_version,
               "python": platform.python_version(), "system": platform.system(),
               "machine": platform.machine(), "year": year or datetime.datetime.now(datetime.timezone.utc).year}
     entries = []
@@ -179,7 +180,8 @@ def main():
     plan.add_argument("--resolved-manifest", type=pathlib.Path, required=True)
     plan.add_argument("--site-origin", required=True)
     plan.add_argument("--historical-origin", required=True)
-    plan.add_argument("--hugo-version", default="0.165.0")
+    plan.add_argument("--hugo-version", required=True)
+    plan.add_argument("--sass-version", required=True)
     plan.add_argument("--go-version", required=True)
     plan.add_argument("--webp-version", default="unspecified")
     plan.add_argument("--output", type=pathlib.Path, required=True)
@@ -199,7 +201,8 @@ def main():
         manifest = versioning.load_resolved_manifest(args.resolved_manifest)
         result = make_plan(versioning.ROOT, manifest, args.cache_dir,
             site_origin=args.site_origin, historical_origin=args.historical_origin,
-            hugo_version=args.hugo_version, go_version=args.go_version, webp_version=args.webp_version)
+            hugo_version=args.hugo_version, sass_version=args.sass_version,
+            go_version=args.go_version, webp_version=args.webp_version)
         if args.expected_plan:
             verify_expected_plan(result, json.loads(args.expected_plan.read_text()))
         args.output.write_text(json.dumps(result, indent=2) + "\n")

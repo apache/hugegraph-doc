@@ -37,7 +37,8 @@ Server 等待存储的默认上限为 300 秒，可以用 `server.storageWaitTim
 包含 [PD 致命错误健康检查修复](https://github.com/apache/hugegraph/pull/3358)的镜像，在 Raft 发生终止性错误或关闭后，
 `/v1/health` 返回 `503`；普通选举和暂时失去 quorum 时仍返回 `200`。
 快照失败后，先修复磁盘或存储问题再重启 PD：仅释放空间不会重新初始化 JRaft。
-旧镜像仍需保留 chart 为单 PD 配置的基于 readiness 的 liveness 变通方案。
+当 `pd.replicas` 为 1 时，chart 模板默认将探针指向 `/v1/ready`（无论镜像版本），因此单副本 PD 探针在 chart 调整前仍基于 readiness；
+使用修复镜像时，可配置 `pd.livenessPath=/v1/health`（同时对 startup 探针生效）以启用健康检查恢复。
 
 ### Helm test 检查范围 {#helm-test-coverage}
 
@@ -132,8 +133,9 @@ PD 的 `Up` 状态本身不证明 shard 恢复完成。PDB 限制主动驱逐，
 恢复期间，独立工作线程恢复 engine，`Offline` 注册会为已返回的 Store 续期。
 旧版 PD 不支持专用关闭 RPC 时，Store 依赖正常过期，不会退回管理用途的 `Offline` 操作。
 本地恢复成功后，心跳流重连会直接注册 `Up`，不再重复恢复。
-PD 的鉴权 Store 响应新增 `heartbeatAgeMillis`（未知时为 `-1`）。Store 心跳周期固定为 30 秒；该值达到 30000 ms 的数倍时，表示 `Up` 记录已陈旧。
-新鲜心跳和本地恢复都不证明 Raft 已追平，仍需保留手动升级屏障。
+PD 的鉴权 Store 响应新增 `heartbeatAgeMillis`（未知时为 `-1`）。注意该值由 PD 本地墙上时钟计算（`max(0, currentTimeMillis - lastHeartbeat)`）；
+若发生时钟回退，未来时间戳截断为 0 可能误判为新鲜，发生时钟调整后应核对实际心跳时间戳或注册记录。
+Store 心跳周期固定为 30 秒；该值达到 30000 ms 的数倍时，表示 `Up` 记录已陈旧。新鲜心跳和本地恢复都不证明 Raft 已追平，仍需保留手动升级屏障。
 [运维参考](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#rolling-store-updates-and-recovery)说明这些升级条件，
 但不提供完整的逐组诊断或丢盘恢复步骤。
 
@@ -151,7 +153,8 @@ GET 任务 `/v1/task/patrolPartitions` 和 `/v1/task/balanceLeaders` 会改变�
 
 包含[任务响应修复](https://github.com/apache/hugegraph/pull/3359)的镜像，follower 返回 body `status: 100`，并给出已知 leader 的 Raft 地址。
 分区巡检还返回 `reallocatedShardGroups` 和 `offlineShardRequests`；空结果表示未调度变更，离线 shard 请求并不证明修复成功。
-跳过的分区均衡返回 `{"status":0,"outcome":"skipped"}`，已执行但无需转移的均衡返回 `{}`。继续操作前仍需验证实际成员和 leader。
+调用 `/v1/task/balancePartitions` 时，跳过的分区均衡返回 `status: 0` 且 `outcome: skipped`；对 `/v1/task/balanceLeaders`，
+已执行但无需转移的均衡返回 `{}`。继续操作前仍需验证实际成员和 leader。
 [任务操作步骤](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#pd-patrol-and-leader-balance)
 说明巡检和均衡的独立操作；维护忙碌时不要循环请求任务。
 

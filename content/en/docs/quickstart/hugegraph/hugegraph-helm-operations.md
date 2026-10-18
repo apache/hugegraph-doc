@@ -39,7 +39,9 @@ No local Helm rendering verifies live cluster reachability, volumes or JVM capac
 Images containing the [fatal PD health fix](https://github.com/apache/hugegraph/pull/3358) return `503` from `/v1/health`
 after a terminal Raft error or shutdown; ordinary elections and quorum loss remain live (`200`).
 After a failed snapshot, fix the disk or storage problem before restarting PD: freeing space alone does not reinitialize JRaft.
-Keep the chart's single-PD readiness-based liveness workaround for older images.
+Because chart templates default probes to `/v1/ready` when `pd.replicas` is 1, single-PD deployments remain readiness-based
+regardless of image until chart updates; for fixed images, override `pd.livenessPath=/v1/health` (which also sets the startup probe path)
+to enable health-based probe recovery.
 
 ### Helm test coverage
 
@@ -140,8 +142,10 @@ Shutdown reports preserve the existing keepalive window without renewing it; exp
 During recovery, Offline registrations renew the returned Store's lease while its engines restore on an owned worker.
 Older PDs reject the dedicated shutdown RPC; Store then relies on expiry and never falls back to administrative Offline.
 After successful local restore, stream reconnects register `Up` directly without repeating recovery.
-PD's authenticated Store responses expose `heartbeatAgeMillis` (`-1` if unknown); compare it with the Store heartbeat period (fixed at 30 seconds).
-An age of several times 30000 ms marks a stale `Up` record. Fresh heartbeats and local restore do not prove Raft catch-up, so retain the manual barrier.
+PD's authenticated Store responses expose `heartbeatAgeMillis` (`-1` if unknown). Because PD calculates this from wall-clock time
+(`max(0, currentTimeMillis - lastHeartbeat)`), clock rollback or skew can clamp future timestamps to 0 and falsely report fresh; verify actual timestamps
+or registration records after clock shifts. Compare it with the Store heartbeat period (fixed at 30 seconds); an age of several times 30000 ms marks a stale
+`Up` record. Fresh heartbeats and local restore do not prove Raft catch-up, so retain the manual barrier.
 The [operations reference](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#rolling-store-updates-and-recovery)
 summarizes these rollout conditions;
 it does not provide a complete per-group diagnostic or disk-loss recovery procedure.
@@ -160,8 +164,9 @@ HTTP 200 or a transfer plan does not prove completion. Recheck `/v1/partitions`,
 
 With the [task response fix](https://github.com/apache/hugegraph/pull/3359), followers return body `status: 100`, naming the known leader's Raft address.
 Partition patrol also reports `reallocatedShardGroups` and `offlineShardRequests`; empty results mean no changes were scheduled.
-Offline-shard requests do not prove successful repairs. A skipped partition balance returns `{"status":0,"outcome":"skipped"}`;
-a completed balance with no transfers returns `{}`. Continue to verify actual membership and leaders before proceeding.
+Offline-shard requests do not prove successful repairs. When calling `/v1/task/balancePartitions`, a skipped partition balance returns `status: 0` with
+`outcome: skipped`; for `/v1/task/balanceLeaders`, a completed balance with no transfers returns `{}`. Continue to verify actual membership and leaders
+before proceeding.
 Follow the [task procedure](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#pd-patrol-and-leader-balance)
 for the separate patrol and balance steps; do not loop task requests while maintenance is busy.
 

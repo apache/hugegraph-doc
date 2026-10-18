@@ -381,7 +381,8 @@ uses a range condition, the query is rejected before property-index lookup, even
 
 For other `properties` queries, the specified `label` needs a property index compatible with the query conditions. If `label` is omitted, candidate labels are
 query-visible vertex labels that declare all queried properties, including labels that currently have no vertices. Labels hidden from normal query results,
-including those being deleted, do not require coverage. A label index alone does not index properties.
+including those being deleted, do not require coverage. If the specified `label`, or every candidate label, is hidden or being deleted, the query returns
+an empty result instead of an index error. A label index alone does not index properties.
 
 For query values compatible with the declared property types, no compatible index or partial candidate coverage produces an index error; complete coverage uses
 the indexes. The partial-coverage error applies from the release containing [apache/hugegraph#3243](https://github.com/apache/hugegraph/pull/3243); earlier

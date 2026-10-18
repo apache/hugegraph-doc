@@ -425,7 +425,8 @@ It is not possible to delete an attribute that is not set as nullable.
 Without `vertex_id`, a `properties` query searches edges globally. When `label` is specified, only indexes created on that label are used, and that label needs
 a property index compatible with the query conditions. When `label` is omitted, candidate labels are query-visible edge labels that can hold edges and declare
 all queried properties, including labels that currently have no edges. Labels hidden from normal query results, including those being deleted, do not require
-coverage. When `label` is omitted, a base (parent) edge label has no direct edges and does not need a separate index when its sub-labels are covered; a
+coverage. If the specified `label`, or every candidate label, is hidden or being deleted, the query returns an empty result instead of an index error.
+When `label` is omitted, a base (parent) edge label has no direct edges and does not need a separate index when its sub-labels are covered; a
 compatible index on a query-visible parent label can cover its sub-labels, and compatible indexes on every candidate sub-label are also sufficient. Indexes on
 hidden or deleting parents excluded from the query cannot provide this coverage. A label index alone does not index properties.
 

@@ -1,8 +1,9 @@
 # Apache HugeGraph Documentation Website
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-doc)
+[![Ask DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-blue)](https://deepwiki.com/apache/hugegraph-doc)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Hugo](https://img.shields.io/badge/Hugo-Extended-ff4088?logo=hugo)](https://gohugo.io/)
+[![OINK theme version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Fapache%2Fhugegraph-doc%2Frefs%2Fheads%2Fmaster%2Fgo.mod&search=github%5C.com%2Fpgsty%2Foink%5Cs%2B%28v%5CS%2B%29&replace=%241&label=OINK&color=blue)](go.mod)
 
 ---
 

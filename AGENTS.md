@@ -17,6 +17,8 @@ site shell.
 - Native content components and examples: the "Native content components" section
   of [contribution.md](contribution.md); check the pinned OINK documentation before
   adding a custom renderer, script or stylesheet.
+- Image loading and album selection: [Gallery versus Expo](contribution.md#image-loading-and-albums).
+  Expo's thumbnail, preloading and layout optimizations do not apply automatically to Gallery.
 
 Read the entry relevant to the task; small content edits do not require the full
 upgrade or deployment workflow. Use `go.mod` / `go.sum` and CI for pinned versions.

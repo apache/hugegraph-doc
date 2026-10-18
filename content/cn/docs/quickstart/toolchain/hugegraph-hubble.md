@@ -1,43 +1,42 @@
 ---
 title: "使用 Hubble 实现图可视化：单机快速上手"
-description: "用 Docker 启动 RocksDB Server 与 Hubble，从示例图开始理解 Schema、导入 CSV、执行 Gremlin 并查看图结果。"
+description: "用 Docker 启动 RocksDB Server 与 Hubble，从示例图开始建模、导入 CSV，并用 Gremlin、Cypher 或 Text2GQL 查询图数据。"
 linkTitle: "Hubble 基础与单机"
 weight: 1
-search_keywords: [HugeGraph Hubble, 图可视化, 图形化界面, Web 管理界面, RocksDB]
+search_keywords: [HugeGraph Hubble, 图可视化, 图形化界面, Web 管理界面, RocksDB, Text2GQL, 自然语言查询, Prompt]
 search_boost: 1.6
 ---
 
 Hubble 是 HugeGraph 的 Web 管理与图可视化界面。你可以在同一个工作台中管理图的 Schema、导入数据、执行查询，
-并在图、表格和 JSON 视图之间切换。本文用 **单机 RocksDB Server + Hubble** 走通这些操作，不需要 PD 或 Store。
+并在图、表格和 JSON 视图之间自由切换。本文以 **单机 RocksDB Server + Hubble** 为例走通完整操作，无需预先部署 PD 或 Store。
 
-如果使用 HStore，请先阅读本文的通用操作，再看 [HStore 分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
-本文以 Toolchain `master`（当前为 `1.8.0`）为准；Docker `latest` 是可变标签，使用时应核对实际版本。
+如需搭配 HStore 分布式集群使用，可先了解本文的基础操作，再参考 [HStore 分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
+文档内容以 Toolchain 与 Server 的 `master` 分支（当前版本均为 `1.8.0`）为准；Docker `latest` 为动态标签，实际部署建议使用固定版本。
 
 > [!WARNING]
-> 不要直接对外暴露 Hubble 或 Server。生产环境使用 HTTPS、容器部署、
-> [认证与授权](/cn/docs/config/config-authentication/)和访问白名单。
-
+> 请勿将未配置防护的 Hubble 或 Server 直接暴露在公网上。生产环境请务必开启 HTTPS、容器网络隔离、
+> [认证与授权](/cn/docs/config/config-authentication/)及访问白名单。
 
 ## 启动单机组合
 
-直接使用主仓库 [docker/docker-compose.yml](https://github.com/apache/hugegraph/blob/master/docker/docker-compose.yml)，
-无需另外编写一份 Compose。文件已经组合了 RocksDB Server 与 Hubble，并配置网络、健康检查和数据卷；
-部署细节见同目录的 [README](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
+直接使用主仓库提供的 [docker/docker-compose.yml](https://github.com/apache/hugegraph/blob/master/docker/docker-compose.yml) 即可，
+无需自行编写 Compose 配置文件。该文件已内置编排了 RocksDB Server 与 Hubble，并配置好网络、健康检查及持久化数据卷；
+完整部署说明见同目录的 [README](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
 ```bash
 git clone --branch master --single-branch --depth 1 https://github.com/apache/hugegraph.git
 cd hugegraph/docker
 ```
 
-如果已有主仓库，直接进入它的 `docker/` 目录。Compose 挂载该目录下的
+若本地已有主仓库，直接进入其 `docker/` 目录即可。Compose 会自动挂载该目录下的
 [`conf/hubble/standalone.properties`](https://github.com/apache/hugegraph/blob/master/docker/conf/hubble/standalone.properties)，
-其中 `pd.enabled=false`、`server.direct_url=http://server:8080`：两个服务在同一 Docker 网络中通信，不需要填写每图 Server 地址。
-不要只下载 YAML 后从其他目录启动，否则相对配置文件路径可能不存在。
+已预设 `pd.enabled=false` 与 `server.direct_url=http://server:8080`。两项服务处于同一 Docker 网络中通信，
+无需为每个图单独配置 Server 地址。请直接在 `docker/` 目录下启动，以确保相对配置路径有效。
 
-Hubble 默认只在宿主机回环地址开放 `8088`；Server 默认发布 `8080`。仅本机试用时，将 Compose 中 Server 的
-`ports` 改为 `127.0.0.1:8080:8080`，避免对其他机器开放匿名接口。
+Hubble 默认只在宿主机回环地址开放 `8088`（由 `HUBBLE_PUBLISH_HOST` 环境变量控制，默认为 `127.0.0.1`）；
+Server 默认对外发布 `8080`。若仅供本机试用，可将 Compose 中 Server 的 `ports` 改为 `127.0.0.1:8080:8080`，避免匿名端口暴露到外部网络。
 
-为本次试用选一个未被使用的项目名，后续命令在同一终端沿用这些变量；另开终端时恢复本次项目名。
+为本次试用指定一个独立的项目名，后续命令在同一终端中沿用这些环境变量；另起终端时请重新设置：
 
 ```bash
 export HUGEGRAPH_VERSION=latest
@@ -50,21 +49,24 @@ docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml ps
 curl -fsS http://127.0.0.1:8080/versions
 ```
 
-服务健康后，打开 <http://127.0.0.1:8088>。全新目录未配置 `HUGEGRAPH_ADMIN_PASSWORD` 时，Server 允许匿名访问，
-Hubble 直接进入首页。需要认证时，按 Docker README 配置 `.env` 中的管理员密码与 JWT 密钥，使用 Server 账号登录；
-Hubble 没有独立账号库。个人中心与账号管理只在相应认证和权限条件下显示，不要覆盖已有 `.env`。
+服务启动完成后，在浏览器访问 <http://127.0.0.1:8088>。若未在 `.env` 中配置 `HUGEGRAPH_ADMIN_PASSWORD`，Server 默认允许匿名访问，
+Hubble 会直接进入首页。若已启用认证，请根据 Docker README 在 `.env` 中配置管理员密码与 JWT 密钥，并使用 Server 账号登录（Hubble 无独立用户库）。
+个人中心与账号管理入口仅在开启认证且具备相应权限时展示。
 
-`latest` 便于体验当前功能，正式部署应固定镜像版本或 digest。镜像是便捷分发物，正式发布包见 [下载页](/cn/docs/download/download/)。
-算法与账号配图使用 Toolchain `1.8.0` 构建的 Hubble 与 Server `1.7.0`。Hubble 的 `/about` 当前返回静态值 `3.0.0`，
-不能据此判断构建版本；此组合只说明这些配图的运行环境，不保证 `latest` 始终对应这些版本。界面入口仍取决于 Server 提供的能力。
-Compose 的 `server-data` 和 `hubble-data` 分别保存图数据与 Hubble 元数据；更多持久化与生产配置见
+`latest` 镜像便于快速体验最新功能，生产环境建议指定发布版本号或镜像 digest。正式发布包可前往 [下载页](/cn/docs/download/download/) 获取。
+
+> [!DETAILS]- 核实部署版本
+>
+> 文档截图用于定位界面元素，实际版本以部署镜像的 digest 及构建信息为准。
+
+Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据与 Hubble 元数据；更多生产配置参见
 [Server 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
 
 ## 首页：找到当前任务的入口
 
-首页按“图概览 → 图导入 → 图查询”组织工作入口，适合第一次使用时了解整体流程。
-左侧导航可随时返回各栏目；顶部的图选择器决定查询、Schema 和异步任务的操作对象，切换页面后也要留意当前图。
-单机模式只有 `DEFAULT` 图空间，不需要额外配置 PD。
+首页按“图概览 → 图导入 → 图查询”组织核心工作流。左侧导航栏可随时切换各功能模块；
+顶部的图选择器用于切换当前操作的目标图，所有查询、Schema 操作和异步任务均作用于当前选中的图。
+单机模式下仅包含默认的 `DEFAULT` 图空间，无需配置 PD。
 
 | 栏目 | 主要用途 |
 |---|---|
@@ -80,7 +82,7 @@ Compose 的 `server-data` 和 `hubble-data` 分别保存图数据与 Hubble 元�
 
 ### 界面速览
 
-先通过画廊认识图概览、Schema 和查询三个工作区。点击截图可放大；下文各操作章节保留大图，便于对照具体步骤。
+图概览、Schema 和查询工作区如下，点击任一截图可查看原图。
 
 ```gallery
 ![人物与软件示例的图概览](/cn/docs/images/hubble/overview.jpg) # 图概览：选择图并查看示例数据
@@ -90,21 +92,18 @@ Compose 的 `server-data` 和 `hubble-data` 分别保存图数据与 Hubble 元�
 
 ## 图概览与图详情：先认识一张图
 
-从【图概览】选择默认图 `hugegraph`。图概览提供图的入口与操作菜单；进入详情后，
-可以查看 Schema 和数据统计，并跳转到建模、数据准备或查询。统计提供整体规模信息，导入或修改数据后可重新更新。
+在【图概览】中选择默认图 `hugegraph`。点击图卡片或详情，可查看该图的 Schema 结构与数据统计，并快速跳转到建模、数据导入或查询页面。
 
-在图的【更多操作】菜单中加载【人物与软件 Demo 图】。示例会补齐对应 Schema 和缺失的数据，不清空已有图；
-初次体验请使用空图，避免同名 Schema 与示例定义冲突。本文后续都使用这张图，探索人物和软件之间的关系。
+在图卡片的【更多操作】菜单中点击【加载人物与软件 Demo 图】。该示例会自动创建预设 Schema 并导入示例数据（不会清空已有数据）。
+初次体验建议在空图上加载，避免与已有同名 Schema 冲突。后续章节均基于该示例图演示。
 
-![人物与软件示例的图概览](/cn/docs/images/hubble/overview.jpg)
-
-新建图入口取决于 Server 的建图能力。表单填写图名称、可选别名及模板或示例数据，不填写每图 Server 主机与账号；
-Server 连接统一来自 Hubble 配置。用户自建 Schema 模板属于 PD 模式，见 [分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
+若需新建图，可在页面点击新建按钮，填写图名称、可选别名并选择 Schema 模板或示例数据。连接信息由 Hubble 后端统一配置，
+无需重复填写 Server 主机与账号。用户自定义 Schema 模板属于 PD 模式功能，详见 [分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
 
 ## Schema 建模：定义数据的形状
 
-Schema 决定哪些属性和关系可以写入图，以及顶点 ID 和查询索引如何生成。
-从【元数据配置】进入，列表视图方便维护定义，图视图帮助理解顶点与边的结构。
+Schema 规定了图中允许存储的属性、顶点与边类型，并决定顶点 ID 的生成策略与索引规则。
+在【元数据配置】中，可以通过列表视图维护定义，或通过图关系视图直观查看顶点与边的拓扑结构。
 
 | 定义 | 建模时关注什么 |
 |---|---|
@@ -113,19 +112,16 @@ Schema 决定哪些属性和关系可以写入图，以及顶点 ID 和查询索
 | 边类型 | 起点和终点类型、属性、边的频次及排序键 |
 | 顶点索引 / 边索引 | 索引类型与字段，匹配实际过滤和范围查询 |
 
-在人物与软件示例中，`person` 通过 `name` 主键生成 ID，`age` 与 `city` 可以为空；
-`software` 使用自定义数值 ID，`created` 连接人物与软件。它们对应 [Loader 完整示例](/cn/docs/quickstart/toolchain/hugegraph-loader/)。
+在人物与软件示例中：`person` 以 `name` 为主键生成 ID，`age` 与 `city` 允许为空；
+`software` 采用自定义数值 ID；边类型 `created` 连接人物与软件。模型定义与 [Loader 示例](/cn/docs/quickstart/toolchain/hugegraph-loader/) 保持一致。
 
-![顶点类型列表中的主键与数值 ID 策略](/cn/docs/images/hubble/schema.jpg)
-
-建立自己的模型时，按“属性 → 顶点类型 → 边类型 → 索引”准备。关联属性和索引信息可以帮助检查类型的依赖关系。
-删除类型和创建、重建索引可能提交后台任务；操作被接受后，还需到【异步任务】确认最终状态。
+自主建模时，建议遵循 **属性 → 顶点类型 → 边类型 → 索引** 的顺序依次创建。
+删除类型或创建/重建索引操作通常会提交为后台异步任务，操作提交后可在【异步任务】中查看最终执行结果。
 
 ## GQL 工作台：查询与探索人物关系
 
-进入【GQL 图遍历】，确认当前图为 `hugegraph`。工作台将查询编辑器与结果区放在一起，
-可选择立即执行或异步执行，收藏常用语句，也可以从执行记录加载查询。
-先在 Gremlin 编辑器执行人物属性查询：
+进入【GQL 图遍历】，确认当前图为 `hugegraph`。工作台将查询编辑器与图展示区集成在一起，
+支持即时执行与异步执行、常用语句收藏，并可随时从执行历史中重载语句。先在 Gremlin 编辑器中执行人物属性查询：
 
 ```groovy
 g.V().hasLabel('person').valueMap()
@@ -137,14 +133,49 @@ g.V().hasLabel('person').valueMap()
 g.V().hasLabel('person').outE('created').inV().path()
 ```
 
-![Gremlin 路径查询与图结果](/cn/docs/images/hubble/query.jpg)
-
 图结果支持 2D / 3D 展示。点击顶点或边查看 ID、类型和属性，双击顶点展开邻居；
 布局、样式和筛选工具帮助突出重点，导出功能便于分享结果。【新增】用于创建元素，有权限时也可以编辑已有数据。
-调整布局、颜色或显示范围只改变画布；新增、编辑和 Gremlin 写入才会改变 Server 中的数据。
+调整布局、颜色或显示范围仅影响前端画布；通过界面新增、编辑元素或执行 Gremlin 写入语句才会真正修改 Server 中的图数据。
 
-`Ctrl` / `Command` + `Enter` 执行查询。立即执行适合小规模探索；长查询可交给后台任务，避免一次返回整张大图。
-Cypher 页签只在 Server 支持时提供。Text2GQL 当前是界面预览，未连接模型或查询服务，不能直接生成可执行查询。
+快捷键 `Ctrl` / `Command` + `Enter` 可快速执行查询。普通即时执行适合小规模交互探索；大数据量或耗时查询建议提交为后台异步任务。
+Cypher 查询仅在 Server 后端支持时提供。快捷键会作用于当前获得焦点的输入框（在自然语言框中生成查询，在语句框中执行已有语句）。
+
+### Text2GQL 自然语言查询 {#text2gql}
+
+> [!NOTE]
+> Text2GQL 后端能力（包括模型设置、内置/临时模型管理与 Prompt 模板）依赖包含
+> [apache/hugegraph-toolchain#824](https://github.com/apache/hugegraph-toolchain/pull/824) 的 Hubble 构建或后续发布版本；未合入该特性的旧版本仅提供预览占位，不包含模型设置页面。
+
+在【自然语言】输入框中用自然语言描述查询需求，Text2GQL 会结合当前图的 Schema 自动生成只读 Gremlin 或 Cypher 语句并执行查询。
+生成的语句支持二次编辑（执行前同样会进行只读安全校验）。切换至【异步】模式时，生成的查询与手写查询均可提交为后台异步任务。
+输入框会自动恢复当前图最近一次的查询输入（不会自动触发执行），执行记录中也会完整保留原始自然语言问题。
+
+```gallery
+![Text2GQL 查询与图结果](/cn/docs/images/hubble/text2gql.jpg) # 查询工作台
+![内置模型设置](/cn/docs/images/hubble/text2gql-settings.jpg) # 模型设置
+![Gremlin 与 Cypher Prompt 模板](/cn/docs/images/hubble/text2gql-prompt.jpg) # Text2GQL Prompt
+```
+
+| 模型来源 | 配置与保存方式 |
+| --- | --- |
+| 使用内置模型 | 在【系统与运维 → 模型设置】统一配置，Key 加密存入 H2，不回传浏览器 |
+| 使用临时模型 | 在查询页填写 API 类别、Base URL、模型名称和临时 API Key；Key 只保留在前端内存中，刷新后清除 |
+
+使用 OpenAI、DeepSeek、GLM 等模型时选择【OpenAI 兼容接口】；使用本地运行的 Ollama 时选择【Ollama（本地）】（无认证时 Key 可留空）。
+注意：Base URL 必须能被 Hubble 后端服务正常访问（若 Hubble 运行在容器中，`localhost` 指向容器本身而非宿主机）。公网端点必须使用 HTTPS，HTTP 仅允许用于
+本地回环或私网模型；在【模型设置】中修改 Base URL 时，必须重新填写 Key 或清空已保存的 Key。
+全局内置模型仅由 `admin` 账号（PD 模式下为超级管理员）统一配置；未开启 Server 认证时，任何访问者均可配置。
+
+在模型设置页面右上角打开 **Text2GQL Prompt**，可分别定制 Gremlin 与 Cypher 的生成规则及 Few-shot 示例。
+点击【应用】后需保存模型设置，模板将持久化存入 H2 数据库供内置模型与临时模型共享，生成时会自动附加当前图的 Schema。
+
+> [!DETAILS]- API Key 存储与隐私说明
+>
+> 备份 Hubble H2 数据库时，请一并备份主密钥文件（默认路径 `data/text2gql-master.key`），该文件丢失将导致无法解密已保存的 Key。
+> 生成查询时仅向模型接口发送用户问题、当前 Schema 及纠错提示，绝不会发送图数据查询结果。
+> 浏览器可选择记住常用的 Base URL 与模型名称，但临时 API Key 仅保留在前端内存中，刷新页面即自动清除。
+
+页脚分别显示模型生成耗时与查询请求耗时；异步提交耗时仅代表任务入队耗时，不代表后台任务实际运行时间。
 
 ## 内置图算法：用表单探索关系
 
@@ -162,6 +193,7 @@ OLAP 批量算法需要 Computer 或 Vermeer 等外部计算环境。本例的�
 参数校验通过后点击卡片右侧运行按钮，或在参数表单内使用快捷键，即可观察一跳邻居。
 
 ![内置邻居算法的参数与图结果](/cn/docs/images/hubble/algorithms.jpg)
+{width="2033" height="977"}
 
 ## 异步任务：确认后台操作的最终结果
 
@@ -194,12 +226,11 @@ docs_bob,32,Shanghai
 【数据导入】把数据源中的行转换为顶点和边。任务创建采用四段配置，先明确目标，再选择字段和映射，最后决定执行时机。
 沿用上面的数据源，在 `DEFAULT` / `hugegraph` 中创建人物导入任务：
 
-| 配置 | 本例如何填写 |
-|---|---|
-| 基础信息 | 选择目标图与刚创建的数据源，填写可识别的任务名 |
-| 源端字段 | 选择 `name`、`age`、`city`，移到已选字段列表 |
-| 映射字段 | 添加 `person` 顶点映射，用【自动匹配】关联同名属性后核对类型 |
-| 调度信息 | 选择执行一次；确认后任务随即提交执行 |
+1. **基础信息** 选择目标图与刚创建的数据源，填写任务名。
+1. **源端字段** 选择 `name`、`age`、`city`，移到已选字段列表。
+1. **映射字段** 添加 `person` 顶点映射，用【自动匹配】关联同名属性后核对类型。
+1. **调度信息** 选择执行一次，确认后提交任务。
+{.steps}
 
 `person` 使用 PRIMARY_KEY，不设置独立 ID 列。自定义 ID 策略需要指定 ID 列；
 AUTOMATIC 由 Server 生成 ID，PRIMARY_KEY 根据映射的主键属性生成 ID。边映射还需指定起点、终点字段并匹配对应顶点的 ID 规则。
@@ -248,6 +279,7 @@ Hubble 使用 Server 的认证和账号，没有独立用户库。匿名访问�
 更完整的空间管理见 [分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
 
 ![认证模式下的账号列表（PD 模式示例）](/cn/docs/images/hubble/accounts.jpg)
+{width="2033" height="977"}
 
 ## 系统运维：检查单机 Server
 
@@ -296,7 +328,7 @@ docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volume
 这会删除该项目的容器、网络、命名卷与匿名卷，示例图和 Hubble 导入任务也会丢失。
 若想保留数据，下线时省略 `--volumes`，以后用同一项目名启动。
 
-需要与 master 精确一致的产物时，使用 JDK 11 和 Maven 从 Toolchain 构建。
+需要与 master 精确一致的产物时，使用 JDK 17 和 Maven 从 Toolchain 构建。
 Maven 插件会安装所需的 Node/Yarn，无需预先安装；以下命令不执行测试：
 
 ```bash

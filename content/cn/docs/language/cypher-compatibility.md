@@ -12,14 +12,13 @@ weight: 3
 提供同样的两种形式。已发布版本不接受绑定参数，引用 `$param` 的语句
 不会报错，缺失的绑定会被内联为 `null`（基于它的谓词匹配不到行，而 `RETURN $value AS value` 仍会返回一行）——参见[已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)。
 
-本页记录当前 Cypher 开发改动实际验证过的用例，不代表完整支持 openCypher 或 Neo4j，也不代表所有已发布
-版本的 HugeGraph 都具备相同行为。测试代码基于当前 Apache `master` 的
-[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb)，
+本页记录 Cypher 开发改动实际验证过的用例，不代表完整支持 openCypher 或 Neo4j，也不代表所有已发布
+版本的 HugeGraph 都具备相同行为。测试代码基于 Apache `master` 的
+[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb)（2026-10-08），
 该提交声明 HugeGraph `1.8.0`，使用 Java 17 和 TinkerPop `3.8.1`，且 Cypher 改动
-（[ASF PR #3289](https://github.com/apache/hugegraph/pull/3289)）已合入。运行栈使用 Java `17.0.20.1`（Temurin）、
-TinkerPop `3.8.1`、`org.opencypher.gremlin:translation:1.0.4` 和 RocksDB。合入前在
-[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b)
-上的验证仍见下文。
+（[ASF PR #3289](https://github.com/apache/hugegraph/pull/3289)）已合入。后续 `master` 提交调整了鉴权处理与错误信封格式，
+不包含在本记录内。运行栈使用 Java `17.0.20.1`（Temurin）、TinkerPop `3.8.1`、`org.opencypher.gremlin:translation:1.0.4` 和 RocksDB。合入前在
+[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b) 上的验证仍见下文。
 
 接口路径为 `/graphspaces/{graphspace}/graphs/{graph}/cypher`。一般用法见
 [HugeGraph Cypher 指南](/cn/docs/language/hugegraph-cypher/)。

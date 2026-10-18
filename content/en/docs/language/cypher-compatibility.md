@@ -14,12 +14,13 @@ statement that references `$param` runs with the missing binding inlined as `nul
 while `RETURN $value AS value` still returns a row) — see
 [Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
 
-This page records the cases verified for the current Cypher development change. It does not claim full
+This page records the cases verified for the Cypher development change. It does not claim full
 openCypher or Neo4j compatibility, or compatibility across every released HugeGraph version. The tested
-working tree is current Apache `master` at
-[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb),
+working tree is Apache `master` at
+[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb) (2026-10-08),
 which declares HugeGraph `1.8.0`, Java 17, and TinkerPop `3.8.1`, with the Cypher change
-([#3289](https://github.com/apache/hugegraph/pull/3289)) merged. The runtime uses Java `17.0.20.1` (Temurin),
+([#3289](https://github.com/apache/hugegraph/pull/3289)) merged. Later `master` commits changed authentication
+handling and the error envelope, and are not covered by this record. The runtime uses Java `17.0.20.1` (Temurin),
 TinkerPop `3.8.1`, `org.opencypher.gremlin:translation:1.0.4`, and RocksDB. The pre-merge verification on
 [`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b) remains
 referenced below.

@@ -28,9 +28,9 @@ development-tree verification record and
 
 | In Neo4j | In HugeGraph |
 |---|---|
-| `CREATE INDEX` / `CREATE CONSTRAINT` | Create indexes/constraints through the [IndexLabel REST API](/docs/clients/restful-api/indexlabel/); Cypher carries no DDL |
+| `CREATE INDEX` / `CREATE CONSTRAINT` | Create property indexes through the [IndexLabel REST API](/docs/clients/restful-api/indexlabel/); primary-key and property-existence constraints are defined on [VertexLabels](/docs/clients/restful-api/vertexlabel/) via `primary_keys` and non-nullable keys (Cypher carries no DDL in HugeGraph; some Neo4j node key/unique constraint rules have no standalone Cypher DDL equivalent) |
 | Implicit schema (add properties freely) | **Strong schema**: define VertexLabel / EdgeLabel / PropertyKey before writing data |
-| Property predicates in `WHERE` need no index | A `WHERE` predicate on a property must be covered by an index: create a `SECONDARY` or `RANGE` IndexLabel first, and use `RANGE` for comparisons such as `>` or `<`. Without a covering index the request returns `status.code` 400 with a "not indexed" error |
+| Property predicates in `WHERE` need no index | The starting vertex lookup in `WHERE` needs a covering index unless it is an equality on every primary key of the label: create a `SECONDARY` or `RANGE` IndexLabel first, and use `RANGE` for comparisons such as `>` or `<`. Without a covering index the request returns `status.code` 400 with a "not indexed" error |
 | Parameterized queries `$param` | Released versions send the raw statement only — a missing binding is inlined as `null` instead of failing (a predicate on it matches no rows, and a write does not reliably store `null`: `SET` removes the property, `CREATE` can store the marker string `"  cypher.null"` or fail), so validate values client-side; JSON-bound parameters are available on `master` after [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), with a fixed limit of 16 top-level bindings |
 | `CALL dbms.*` / `CALL algo.*` procedures | Equivalent capabilities live in the [traverser](/docs/clients/restful-api/traverser/), [task](/docs/clients/restful-api/task/), and other REST APIs |
 | Driver: Neo4j Bolt driver | [hugegraph-client](/docs/clients/hugegraph-client/) (`CypherManager`) or any HTTP client |

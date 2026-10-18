@@ -33,10 +33,12 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-The endpoint always requires an `Authorization` header (`Basic` or `Bearer`), even when server authentication is disabled — the credentials are forwarded to the
-Gremlin Server. `Basic` credentials must be encoded with URL-safe Base64 (`-` and `_` instead of `+` and `/`), and the password must not contain `:`; use
-`Bearer` for accounts that cannot meet either condition. See the [Cypher REST API reference](/docs/clients/restful-api/cypher/) for the full request/response
-format.
+On 1.7.0 and earlier, the endpoint always requires an `Authorization` header (`Basic` or `Bearer`), even when server authentication is disabled —
+the credentials are forwarded to the Gremlin Server. On those versions `Basic` credentials must be encoded with URL-safe Base64 (`-` and `_` instead
+of `+` and `/`), and the password must not contain `:`. On `master` (1.8.0+), authentication is optional when server auth is disabled
+([#3366](https://github.com/apache/hugegraph/pull/3366)), `Basic` credentials use standard RFC 4648 Base64 (as sent by `curl -u`,
+[#3290](https://github.com/apache/hugegraph/pull/3290)), and `:` in passwords is supported.
+See the [Cypher REST API reference](/docs/clients/restful-api/cypher/) for the full request/response format.
 
 Example:
 
@@ -56,9 +58,10 @@ ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.nam
 The examples below assume a graph with `person` vertices (`name`, `age`, `city` properties) and `knows` edges.
 They assume the labels declare `nullableKeys("age", "city")` on `person` and nullable properties on `knows`, and that
 `person.age` has a `RANGE` index — for example the schema in `scripts/example.groovy` modified with those nullable keys
-plus `schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create()`. A property predicate in
-`WHERE` must be covered by an index: `scripts/example.groovy` indexes `person.city` and `(age, city)` with `SECONDARY` indexes only,
-so a range comparison such as `n.age > 30` is rejected with a "not indexed" error until the `RANGE` index exists.
+plus `schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create()`. The starting vertex lookup
+needs a covering index unless it is an equality on every primary key of the label: `scripts/example.groovy` indexes `person.city`
+and `(age, city)` with `SECONDARY` indexes only, so a range comparison such as `n.age > 30` is rejected with a "not indexed" error
+until the `RANGE` index exists.
 If you load `scripts/example.groovy` first, note that it already seeds the `person` vertices `marko`, `vadas`, `josh` and `peter`;
 because the `person` label uses the `PRIMARY_KEY` id strategy, a `CREATE` with one of those names replaces the seeded vertex,
 so the create, update and delete examples below use names that the sample data does not contain (`alice`, `bob`, `carol`),

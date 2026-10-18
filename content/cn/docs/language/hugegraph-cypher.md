@@ -31,8 +31,10 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-该端点始终要求 `Authorization` 头（`Basic` 或 `Bearer`），即使服务端未开启认证 —— 凭据会被转发给 Gremlin Server。`Basic` 凭据必须使用 URL 安全的 Base64 编码（用 `-` 和 `_` 代替 `+` 和 `/`），且密码不能包含 `:`；
-无法满足这两个条件的账号请改用 `Bearer`。完整的请求/响应格式见 [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)。
+在 1.7.0 及更早版本中，该端点始终要求 `Authorization` 头（`Basic` 或 `Bearer`），即使服务端未开启认证 —— 凭据会被转发给 Gremlin Server。这些版本下 `Basic`
+凭据必须使用 URL 安全的 Base64 编码（用 `-` 和 `_` 代替 `+` 和 `/`），且密码不能包含 `:`。在 `master`（1.8.0+）中，未开启认证时无需该请求头（[#3366](https://github.com/apache/hugegraph/pull/3366)），
+`Basic` 凭据使用标准 RFC 4648 Base64 编码（即 `curl -u` 默认形式，[#3290](https://github.com/apache/hugegraph/pull/3290)），且密码支持包含 `:`。
+完整请求/响应格式见 [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)。
 
 示例：
 
@@ -52,7 +54,8 @@ ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.nam
 以下示例假设图中存在 `person` 顶点（`name`、`age`、`city` 属性）和 `knows` 边，并假设标签
 声明了 `person` 上的 `nullableKeys("age", "city")` 以及 `knows` 上的可空属性，并且 `person.age` 上有 `RANGE` 索引——例如在
 `scripts/example.groovy` 的 Schema 上补充这些可空键，再加上
-`schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create()`。`WHERE` 中的属性谓词必须有索引覆盖：
+`schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create()`。起始顶点查找在
+`WHERE` 中的属性谓词需要索引覆盖，除非是对该标签全部主键的等值匹配：
 `scripts/example.groovy` 只为 `person.city` 以及 `(age, city)` 建了 `SECONDARY` 索引，因此在 `RANGE` 索引存在之前，
 `n.age > 30` 这类范围比较会被拒绝并报“未建索引”错误。
 若先加载 `scripts/example.groovy`，请注意它已经预置了 `person` 顶点 `marko`、`vadas`、`josh` 和 `peter`；

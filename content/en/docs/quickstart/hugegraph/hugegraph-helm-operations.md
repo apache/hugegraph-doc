@@ -136,7 +136,9 @@ PDBs limit voluntary eviction, not StatefulSet controller disruption. Stop on mi
 
 Images containing the [Store registration fix](https://github.com/apache/hugegraph/pull/3362) register `Up` after local engine restore
 and report `Offline` on graceful shutdown. Upgrade PD before Store to enable the restore gate.
-Temporary Offline reports preserve the existing keepalive window without renewing it; expiry still applies if the Store does not return.
+Shutdown reports preserve the existing keepalive window without renewing it; expiry still applies if the Store does not return.
+During recovery, Offline registrations renew the returned Store's lease while its engines restore on an owned worker.
+Older PDs reject the dedicated shutdown RPC; Store then relies on expiry and never falls back to administrative Offline.
 After successful local restore, stream reconnects register `Up` directly without repeating recovery.
 PD's authenticated Store responses expose `heartbeatAgeMillis` (`-1` if unknown); compare it with the Store heartbeat period (fixed at 30 seconds).
 An age of several times 30000 ms marks a stale `Up` record. Fresh heartbeats and local restore do not prove Raft catch-up, so retain the manual barrier.

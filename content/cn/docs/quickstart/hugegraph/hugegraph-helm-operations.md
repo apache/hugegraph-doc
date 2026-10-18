@@ -128,7 +128,9 @@ PD 的 `Up` 状态本身不证明 shard 恢复完成。PDB 限制主动驱逐，
 
 包含 [Store 注册修复](https://github.com/apache/hugegraph/pull/3362)的镜像，在本地 engine 恢复后才注册为 `Up`，正常关闭时报告 `Offline`。
 应先升级 PD 再升级 Store，才能启用恢复检查。
-临时 `Offline` 报告保留已有的 keepalive 有效期，但不会续期；Store 未恢复时仍会按原有效期过期。
+关闭报告保留已有的 keepalive 有效期，但不会续期；Store 未返回时仍会按原有效期过期。
+恢复期间，独立工作线程恢复 engine，`Offline` 注册会为已返回的 Store 续期。
+旧版 PD 不支持专用关闭 RPC 时，Store 依赖正常过期，不会退回管理用途的 `Offline` 操作。
 本地恢复成功后，心跳流重连会直接注册 `Up`，不再重复恢复。
 PD 的鉴权 Store 响应新增 `heartbeatAgeMillis`（未知时为 `-1`）。Store 心跳周期固定为 30 秒；该值达到 30000 ms 的数倍时，表示 `Up` 记录已陈旧。
 新鲜心跳和本地恢复都不证明 Raft 已追平，仍需保留手动升级屏障。

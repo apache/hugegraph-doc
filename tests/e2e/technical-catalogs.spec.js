@@ -5,7 +5,7 @@ const { test, expect } = require('./artifact-test');
 const catalogues = [
   ['clients/restful-api/graphspace', 2, [['internal_algorithm_image_url', 2]]],
   ['quickstart/toolchain/hugegraph-tools', 1, ['HUGEGRAPH_TRUST_STORE_PASSWORD']],
-  ['quickstart/toolchain/visualization/hugegraph-hubble-hstore', 1, ['operations.store.allowed_targets']],
+  ['quickstart/toolchain/visualization/hugegraph-hubble-hstore', 2, ['operations.store.allowed_targets', 'Leader/Follower']],
   ['guides/hugegraph-docker-cluster', 4, ['HG_PD_INITIAL_STORE_COUNT', 'HG_STORE_RAFT_ADDRESS',
     'HG_SERVER_REQUIRE_AUTH_TOKEN_SECRET', 'HUGEGRAPH_AUTH_TOKEN_SECRET']],
   ['quickstart/toolchain/import/hugegraph-seatunnel-connector', 1, ['env.sink.flush.interval']],

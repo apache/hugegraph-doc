@@ -375,9 +375,10 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 
 All of the above parameters are optional. `page` can not be combined with a non-zero `offset`, everything else can be combined in any way.
 
-If `label` selects a vertex label with the `PRIMARY_KEY` ID strategy and `properties` supplies exact values for all its primary-key fields, the query looks up
-the vertex by ID and checks additional property conditions on that vertex without a property index. If all primary-key fields have conditions but any of them
-uses a range condition, the query is rejected before property-index lookup, even if a matching property index exists.
+If `label` selects a vertex label with the `PRIMARY_KEY` ID strategy and `properties` supplies exact values for all its primary-key fields (`P.eq` and
+`P.within` count as exact values), the query looks up the vertex by ID and checks additional property conditions on that vertex without a property index.
+If all primary-key fields have conditions but any of them is not an exact value (`P.neq`, `P.gt`, `P.between`, `P.textcontains` and similar), the query is
+rejected before property-index lookup, even if a matching property index exists.
 
 For other `properties` queries, the specified `label` needs a property index compatible with the query conditions. If `label` is omitted, candidate labels are
 query-visible vertex labels that declare all queried properties, including labels that currently have no vertices. Labels hidden from normal query results,

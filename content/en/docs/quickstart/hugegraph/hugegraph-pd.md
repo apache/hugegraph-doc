@@ -123,7 +123,7 @@ PD startup reads installation `conf/application.yml`. Match this file to the ins
 
 #### 4.1 Configuration Reference
 
-These tables were checked against `hg-pd-dist` configuration and Java defaults at Server master commit `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4`; they do not describe every 1.7.0 behavior. Use original tagged configuration with release binaries and [master configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) with master builds.
+These tables were checked against `hg-pd-dist` configuration and Java defaults at Server master commit `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4`, and the three `raft.rpc-*` rows against [apache/hugegraph#3368](https://github.com/apache/hugegraph/pull/3368); they do not describe every 1.7.0 behavior. Use original tagged configuration with release binaries and [master configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) with master builds.
 
 
 **gRPC and REST**
@@ -146,8 +146,13 @@ These tables were checked against `hg-pd-dist` configuration and Java defaults a
 | `raft.enable` | not set | `true` | When true, metadata writes go through the Raft state machine. When false, PD writes straight to its local store with no replication. |
 | `raft.ip-whitelist.enabled` | not set | `true` | When true, the Raft RPC port accepts connections only from the addresses resolved from `raft.peers-list`; other clients are dropped and logged as `Blocked connection from <ip>`. The allowlist is re-resolved when the peer list changes, but a peer that keeps its hostname and changes IP (a restarted container, for example) needs a PD restart. |
 | `raft.snapshotInterval` | not set | `300` | Seconds between Raft snapshots. |
-| `raft.rpc-timeout` | not set | `10000` | Raft RPC connect, request and install-snapshot timeout, in milliseconds. |
+| `raft.rpc-timeout` | not set | `10000` | Timeout of a Raft RPC between PD nodes, in milliseconds. Also the deadline of the ReadIndex wait that PD runs before it reads an id counter; id allocation fails when the wait takes longer. |
+| `raft.rpc-connect-timeout` | not set | `1000` | Timeout of the Ping that opens a Raft connection to a peer, in milliseconds. A candidate connects to its peers one at a time, so an election waits this long for each peer that accepts the TCP connection but does not answer. Requests on an open connection use `raft.rpc-timeout`. |
+| `raft.rpc-install-snapshot-timeout` | not set | `0` | Timeout for sending a snapshot to a follower that fell behind the log, in milliseconds. `0` uses `raft.rpc-timeout`. Raise it if large snapshots time out. |
 {.td-table--wide}
+
+`raft.rpc-connect-timeout` and `raft.rpc-install-snapshot-timeout` exist only in versions after 1.7.0. In 1.7.0, `raft.rpc-timeout` is also the connect and
+install-snapshot timeout, and id allocation runs no ReadIndex wait.
 
 **PD core**
 

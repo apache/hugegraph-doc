@@ -37,6 +37,8 @@ latest 开启 Crawl sitemap，英文显式使用 `https://hugegraph.apache.org/e
 sitemap 发现的页面仍须经过各自语言目录的 URL 白名单。部署前预览全部页面并核对包含/排除
 列表；保持 Global 关闭，只选对应版本语言组。历史来源分别限定 `/versions/1.7/docs/`、`/versions/1.7/cn/docs/` 等路径。
 历史构建会删除 sitemap，并保留 `noindex,follow`；不要配置不存在的历史 sitemap，也不要改变搜索引擎归档策略。
+1.7、1.5 中文来源还需将 `/versions/<版本>/cn/docs/changelog/hugegraph-0.12.0-release-notes/`
+加入 Start URLs；这页已发布但没有导航入链。核对覆盖时使用构建后的规范 URL，排除草稿，不能直接以 Markdown 文件数为准。
 验证历史抓取覆盖后再发布，不能因前端 group ID 正确就认为旧版已可问答。验证新来源后，将旧上传移入 Legacy 保留回退能力。
 记录实际抓取站点和候选 SHA；引用会指向抓取站点，staging 来源不能直接当作生产引用配置。
 

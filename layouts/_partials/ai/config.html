@@ -33,7 +33,7 @@
   {{- if not (reflect.IsMap $sourceGroups) }}{{ errorf "params.ai_search.source_groups must be a map when AI search is enabled" }}{{ end -}}
   {{- if ne $provider "kapa" }}{{ errorf "params.ai_search.provider must be kapa when AI search is enabled" }}{{ end -}}
   {{- if not $websiteID }}{{ errorf "params.ai_search.website_id is required when AI search is enabled" }}{{ end -}}
-  {{- if and $configured (or (not $enGroup) (not $cnGroup)) -}}
+  {{- if and (or $configured (eq $version "latest")) (or (not $enGroup) (not $cnGroup)) -}}
     {{- errorf "params.ai_search.source_groups.%s.en and .cn are required for configured AI versions" $version -}}
   {{- end -}}
 {{- end -}}

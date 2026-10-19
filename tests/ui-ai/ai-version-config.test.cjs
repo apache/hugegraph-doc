@@ -79,11 +79,24 @@ for (const version of ['1.3', '1.0', 'unknown']) {
   });
 }
 
-test('a partially configured historical group fails the build without a latest fallback', () => {
-  const result = render('1.7', { sourceGroups: { ...groups, '1.7': { en: '1.7-en', cn: '' } } });
+test('enabled latest requires an index even when other versions are configured', () => {
+  const { latest, ...historicalGroups } = groups;
+  const result = render('latest', { sourceGroups: historicalGroups });
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr + result.stdout, /source_groups\.1\.7\.en and \.cn are required/);
+  assert.match(result.stderr + result.stdout, /source_groups\.latest\.en and \.cn are required/);
 });
+
+for (const version of ['latest', '1.7']) {
+  for (const missingLocale of ['en', 'cn']) {
+    test(`configured ${version} requires its ${missingLocale} group`, () => {
+      const result = render(version, { sourceGroups: {
+        ...groups, [version]: { ...groups[version], [missingLocale]: '' },
+      } });
+      assert.notEqual(result.status, 0);
+      assert.ok((result.stderr + result.stdout).includes(`source_groups.${version}.en and .cn are required`));
+    });
+  }
+}
 
 for (const sourceGroups of ['invalid', '', ['latest-en'], [], false, null]) {
   test(`enabled AI rejects malformed source_groups: ${JSON.stringify(sourceGroups)}`, () => {
@@ -93,11 +106,13 @@ for (const sourceGroups of ['invalid', '', ['latest-en'], [], false, null]) {
   });
 }
 
-test('disabled AI stays absent even with incomplete groups', () => {
-  const result = render('1.7', { enabled: false, sourceGroups: { '1.7': { en: '' } } });
-  assert.equal(result.status, 0, result.stderr || result.stdout);
-  for (const { html, config } of Object.values(result.pages)) {
-    assert.equal(config, null);
-    assert.equal(/kapa|hg-ai-|hg-ask-ai/.test(html), false);
-  }
-});
+for (const version of ['latest', '1.7']) {
+  test(`disabled AI stays absent on ${version} even with incomplete groups`, () => {
+    const result = render(version, { enabled: false, sourceGroups: { '1.7': { en: '' } } });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    for (const { html, config } of Object.values(result.pages)) {
+      assert.equal(config, null);
+      assert.equal(/kapa|hg-ai-|hg-ask-ai/.test(html), false);
+    }
+  });
+}

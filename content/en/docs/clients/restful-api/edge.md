@@ -422,17 +422,20 @@ It is not possible to delete an attribute that is not set as nullable.
 - limit: Number of queries, default is 100
 - page: Page number
 
-Without `vertex_id`, a `properties` query searches edges globally. When `label` is specified, only indexes created on that label are used, and that label needs
-a property index compatible with the query conditions. When `label` is omitted, candidate labels are query-visible edge labels that can hold edges and declare
-all queried properties, including labels that currently have no edges. Labels hidden from normal query results, including those being deleted, do not require
-coverage. If the specified `label`, or every candidate label, is hidden or being deleted, the query returns an empty result instead of an index error.
-When `label` is omitted, a base (parent) edge label has no direct edges and does not need a separate index when its sub-labels are covered; a
+Without `vertex_id`, a `properties` query searches edges globally. When `label` is specified, that label needs a property index compatible with the query
+conditions; for a sub-edge label without one, a compatible index on its query-visible parent label is used and edges of sibling sub-labels are filtered out.
+When `label` is omitted, candidate labels are query-visible edge labels that can hold edges and declare all queried properties, including labels that
+currently have no edges. Labels hidden from normal query results, including those being deleted, do not require coverage. If the specified `label`
+(provided it declares all queried non-OLAP properties), or every candidate label, is hidden or being deleted, the query returns an empty result instead of an
+index error. When `label` is omitted, a base (parent) edge label has no direct edges and does not need a separate index when its sub-labels are covered; a
 compatible index on a query-visible parent label can cover its sub-labels, and compatible indexes on every candidate sub-label are also sufficient. Indexes on
 hidden or deleting parents excluded from the query cannot provide this coverage. A label index alone does not index properties.
 
 For query values compatible with the declared property types, no compatible index or partial candidate coverage produces an index error; complete coverage uses
-the indexes. The partial-coverage error and the empty result for hidden or deleting labels apply from the release containing [apache/hugegraph#3243](https://github.com/apache/hugegraph/pull/3243);
-earlier versions return only the matches from indexed labels and raise an index error when no label has a compatible index (including labels being deleted).
+the indexes. The partial-coverage error, parent-index fallback for sub-edge labels, and the empty result for hidden or deleting candidate labels apply from
+the release containing [apache/hugegraph#3243](https://github.com/apache/hugegraph/pull/3243); earlier versions use only indexes created on the specified
+label, return only the matches from indexed labels when `label` is omitted, and raise an index error when no label has a compatible index (including labels
+being deleted).
 A type-incompatible value may return an empty result after a matching index is found, before partial coverage is checked. If no index matches, the index error
 still applies. Specify `label` when querying only one edge label, or create compatible property indexes to cover every candidate label. The query does not
 automatically fall back to a full scan.

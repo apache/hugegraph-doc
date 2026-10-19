@@ -36,8 +36,11 @@ Server 等待存储的默认上限为 300 秒，可以用 `server.storageWaitTim
 
 包含 [PD 致命错误健康检查修复](https://github.com/apache/hugegraph/pull/3358)的镜像，在 Raft 发生终止性错误或关闭后，
 `/v1/health` 返回 `503`；普通选举和暂时失去 quorum 时仍返回 `200`。
-快照失败后，先修复磁盘或存储问题再重启 PD：仅释放空间不会重新初始化 JRaft。
+快照失败后，应先修复磁盘或存储问题再手动重启 PD；仅释放空间不会重新初始化 JRaft。
+下述探针可能已自动重启故障 PD；若底层存储问题仍未解决，自动重启可能反复发生，不能代替修复。
 当 `pd.replicas` 为 1 时，chart 模板默认将 startup 与 liveness 探针指向 `/v1/ready`，该路径在发生终止性 Raft 错误后本就会重启单副本 PD。
+当 `pd.replicas` 大于 1 时，startup 与 liveness 默认使用 `/v1/health`；包含终止状态健康检查修复的镜像也会因 `503` 而自动重启。
+
 若配置 `pd.livenessPath=/v1/health`（同时对 startup 探针生效）改用健康检查，需注意 `/v1/health` 无法检测未能完成初始化而从未进入 ready 状态的 PD。
 
 ### Helm test 检查范围 {#helm-test-coverage}
@@ -127,10 +130,14 @@ networkPolicy:
 PD 的 `Up` 状态本身不证明 shard 恢复完成。PDB 限制主动驱逐，不限制 StatefulSet 控制器更新。
 发现缺成员或无 leader 时停止继续替换。
 
-包含 [Store 注册修复](https://github.com/apache/hugegraph/pull/3362)的镜像，在本地 engine 恢复后才注册为 `Up`，正常关闭时报告 `Offline`。
+包含 [Store 注册修复](https://github.com/apache/hugegraph/pull/3362)的镜像，在本地 engine 恢复后才注册为 `Up`，正常关闭时尝试报告 `Offline`；只有 PD 接受报告后才会改变记录。
 应先升级 PD 再升级 Store，才能启用恢复检查。
 关闭报告保留已有的 keepalive 有效期，但不会续期；Store 未返回时仍会按原有效期过期。
 恢复期间，独立工作线程恢复 engine，`Offline` 注册会为已返回的 Store 续期。
+关闭 RPC 要求具有内部特权的凭据：在 Store 中设置与 PD 的 `auth.secret-key` 相同的 `HG_PD_AUTH_SECRET_KEY`。
+报告被拒绝或调用失败时，Store 仍会关闭；PD 保留此前记录，直到已有租约正常过期。
+恢复租约只用于存活跟踪，新分配仍要求 Store 的规范状态为 `Up`。
+恢复失败后，重试间隔逐步退避至 Store 心跳周期；`Offline` 注册最多每五秒续期一次。
 旧版 PD 不支持专用关闭 RPC 时，Store 依赖正常过期，不会退回管理用途的 `Offline` 操作。
 本地恢复成功后，心跳流重连会直接注册 `Up`，不再重复恢复。
 PD 的鉴权 Store 响应新增 `heartbeatAgeMillis`（未知时为 `-1`）。注意该值由 PD 本地墙上时钟计算（`max(0, currentTimeMillis - lastHeartbeat)`）；

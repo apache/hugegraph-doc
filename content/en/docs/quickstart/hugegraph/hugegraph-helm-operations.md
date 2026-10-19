@@ -38,8 +38,10 @@ No local Helm rendering verifies live cluster reachability, volumes or JVM capac
 
 Images containing the [fatal PD health fix](https://github.com/apache/hugegraph/pull/3358) return `503` from `/v1/health`
 after a terminal Raft error or shutdown; ordinary elections and quorum loss remain live (`200`).
-After a failed snapshot, fix the disk or storage problem before restarting PD: freeing space alone does not reinitialize JRaft.
+After a failed snapshot, repair the disk or storage problem before an operator-initiated restart; freeing space alone does not reinitialize JRaft.
+The probes below may already restart a failed PD automatically. If the underlying storage fault remains, those restarts can repeat without fixing it.
 When `pd.replicas` is 1, chart templates default startup and liveness probes to `/v1/ready`, which already restarts a single PD after a terminal Raft error.
+When `pd.replicas` is greater than 1, startup and liveness default to `/v1/health`; with the fatal health fix, terminal-state `503` also triggers restarts.
 Setting `pd.livenessPath=/v1/health` (which also sets the startup probe path) switches them to health checks, but `/v1/health` does not detect a PD that fails
 to initialize its storage and never becomes ready.
 
@@ -137,9 +139,13 @@ full membership and exactly one leader, read from the PD leader. PD's `Up` statu
 PDBs limit voluntary eviction, not StatefulSet controller disruption. Stop on missing members or leaders.
 
 Images containing the [Store registration fix](https://github.com/apache/hugegraph/pull/3362) register `Up` after local engine restore
-and report `Offline` on graceful shutdown. Upgrade PD before Store to enable the restore gate.
+and attempt to report `Offline` on graceful shutdown; PD changes its record only if it accepts the report. Upgrade PD before Store to enable the restore gate.
 Shutdown reports preserve the existing keepalive window without renewing it; expiry still applies if the Store does not return.
 During recovery, Offline registrations renew the returned Store's lease while its engines restore on an owned worker.
+The shutdown RPC requires a privileged internal credential: set `HG_PD_AUTH_SECRET_KEY` in Store to match PD's `auth.secret-key`.
+If the report is refused or fails, Store still shuts down and PD retains its previous record until the existing lease expires.
+A recovering Store's lease keeps liveness tracking separate from placement: new placements require canonical `Up` state.
+Restore retries back off to the heartbeat interval, while Offline registrations renew at most every five seconds.
 Older PDs reject the dedicated shutdown RPC; Store then relies on expiry and never falls back to administrative Offline.
 After successful local restore, stream reconnects register `Up` directly without repeating recovery.
 PD's authenticated Store responses expose `heartbeatAgeMillis` (`-1` if unknown). Because PD calculates this from wall-clock time

@@ -43,7 +43,7 @@ HugeGraph Server is the OLTP engine and service entry point for the graph databa
 - **Query languages**: Supports Gremlin (TinkerPop 3) and Cypher (OpenCypher)
 - **REST API**: Provides endpoints for schemas, graph data, queries, tasks, and operations
 - **Indexes and queries**: Supports exact, range, and compound-condition queries
-- **Storage backends**: Versions 1.7.0 through `master` primarily support RocksDB (standalone), HStore (distributed), and HBase
+- **Storage backends**: Supports RocksDB (recommended for standalone), HStore (recommended for distributed), and HBase (legacy backends such as Cassandra, MySQL, and PostgreSQL were deprecated starting in 1.7.0)
 
 The main modules include `hugegraph-core`, the storage backend modules, and `hugegraph-api`. Core implements the graph model, transactions, and query logic; backend modules connect to specific storage systems; and the API module provides HTTP access. Current REST resource paths include the graph space and graph name, for example:
 

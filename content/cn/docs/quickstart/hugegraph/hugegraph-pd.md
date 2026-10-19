@@ -121,7 +121,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 
 #### 4.1 配置项参考
 
-以下表格核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 中的 `hg-pd-dist` 配置和 Java 默认注入值，不是 1.7.0 发布标签的全部行为。1.7.0 二进制包请使用其标签对应的原始配置；主线源码构建包则以 [主线配置文件](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) 为准。
+以下表格核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 中的 `hg-pd-dist` 配置和 Java 默认注入值（三个 `raft.rpc-*` 配置项按 [apache/hugegraph#3368](https://github.com/apache/hugegraph/pull/3368) 核对），不是 1.7.0 发布标签的全部行为。1.7.0 二进制包请使用其标签对应的原始配置；主线源码构建包则以 [主线配置文件](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) 为准。
 
 **gRPC 与 REST**
 
@@ -143,8 +143,12 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 | `raft.enable` | 未设置 | `true` | 为 true 时元数据写入经过 Raft 状态机；为 false 时 PD 直接写本地存储，不做复制。 |
 | `raft.ip-whitelist.enabled` | 未设置 | `true` | 为 true 时 Raft RPC 端口只接受由 `raft.peers-list` 解析出的地址的连接，其他连接会被断开并记录 `Blocked connection from <ip>`。peer 列表变更时白名单会重新解析，但主机名不变而 IP 变化的情况（例如容器重启）仍需重启 PD。 |
 | `raft.snapshotInterval` | 未设置 | `300` | Raft 快照生成间隔（秒）。 |
-| `raft.rpc-timeout` | 未设置 | `10000` | Raft RPC 的连接、请求和安装快照超时时间（毫秒）。 |
+| `raft.rpc-timeout` | 未设置 | `10000` | PD 节点之间 Raft RPC 的超时时间（毫秒）。PD 读取 id 计数器前等待 ReadIndex 的时限也是这个值，超过时限则 id 分配失败。 |
+| `raft.rpc-connect-timeout` | 未设置 | `1000` | 与 peer 建立 Raft 连接时 Ping 的超时时间（毫秒）。候选节点逐个连接 peer，某个 peer 接受了 TCP 连接却不应答时，选举会为它等待这么久。已建立连接上的请求使用 `raft.rpc-timeout`。 |
+| `raft.rpc-install-snapshot-timeout` | 未设置 | `0` | 向落后于日志的 follower 发送快照的超时时间（毫秒）。`0` 表示使用 `raft.rpc-timeout`。快照较大而超时时可调大。 |
 {.td-table--wide}
+
+`raft.rpc-connect-timeout` 和 `raft.rpc-install-snapshot-timeout` 仅在 1.7.0 之后的版本中提供。1.7.0 中 `raft.rpc-timeout` 同时也是连接超时和安装快照超时，id 分配也不等待 ReadIndex。
 
 **PD 核心**
 

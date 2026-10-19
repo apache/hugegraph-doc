@@ -15,9 +15,9 @@ While bringing substantial performance optimizations and specification alignment
 
 ---
 
-## Top 6 High-Frequency Syntax and Behavioral Changes
+## Top 5 High-Frequency Syntax and Behavioral Changes
 
-Among existing query scripts, the following 6 changes are the most common. **Failure to update these may cause query errors or silently return empty results.**
+Among existing query scripts, the following 5 changes are the most common. **Failure to update these may cause query errors or silently return empty results.**
 
 ### 1. `has(key, traversal)` Overload Removed (High Risk: Silent Empty Results)
 
@@ -71,14 +71,20 @@ Among existing query scripts, the following 6 changes are the most common. **Fai
 ### 3. Step `none()` Renamed to `discard()`
 
 * **Impact**:
-  The parameterless `none()` step was originally used to discard all incoming traversers (e.g., at the end of `choose()` or `coalesce()` branches). In 3.8.0, this step is renamed to **`discard()`**.
-  Meanwhile, 3.8 introduces a new collection predicate step `none(P)` (checking if no elements in a collection match predicate P). Calling parameterless `none()` in 3.8 triggers argument errors.
+  In TinkerPop 3.5.1, `none()` was a traversal step used to discard all incoming traversers (e.g., `g.V().hasLabel('person').none()`, which returned `[]`).
+  In 3.8.1, this step has been renamed to **`discard()`**.
+  Meanwhile, 3.8 introduces a new collection predicate step `none(P)` (checking if no elements in a collection match predicate P). Invoking parameterless
+  `none()` in 3.8.1 fails immediately with:
+  `IllegalArgumentException: Input predicate to none step can't be null.`
 * **Recommended Rewrite**:
   ```groovy
-  // Legacy:
-  g.V().choose(__.values('age')).option(gt(30), __.values('name')).option(Pick.none, __.none()) // Error
+  // Legacy (runs on 3.5.1, returning []):
+  g.V().hasLabel('person').none()
 
-  // Rewritten: use discard()
+  // Rewritten for 3.8: use discard() to discard traversers
+  g.V().hasLabel('person').discard()
+
+  // Discarding unhandled inputs in choose() branches:
   g.V().choose(__.values('age')).option(gt(30), __.values('name')).option(Pick.none, __.discard())
   ```
 
@@ -108,8 +114,11 @@ Among existing query scripts, the following 6 changes are the most common. **Fai
 ### 5. `choose()` Semantics Alignment
 
 * **Impact**:
-  - **Single Branch Execution**: When multiple `option()` conditions match simultaneously, 3.8 **executes only the first matching branch** (legacy versions might execute all matching branches).
-  - **Default Pass-Through**: If the choice child traversal yields no values (e.g., property missing) or no `option()` matches, 3.8 **passes the input element through unchanged** by default (legacy versions often filtered it out).
+  - **Missing Property Handling**: When a choice child traversal evaluated an absent property on an element, TinkerPop 3.5.1 threw:
+    `IllegalArgumentException: The provided traverser does not map to a value: v[3]->[PropertiesStep([age],value)]`.
+    In 3.8.1, elements missing the target property pass through unchanged without error.
+  - **Single Branch Execution**: When multiple `option()` conditions match simultaneously, 3.8.1 **executes only the first matching branch** (legacy versions might execute all matching branches).
+  - **Default Pass-Through**: When no `option()` condition matches, 3.8.1 **passes the input element through unchanged** by default (whereas 3.5.1 filtered it out).
 * **Recommended Rewrite**:
   - To execute multiple matching branches, rewrite using `union()` combined with `filter()`.
   - To filter out elements when no option matches or property is missing, explicitly supply `Pick.none` and `Pick.unproductive` branches:
@@ -123,16 +132,23 @@ Among existing query scripts, the following 6 changes are the most common. **Fai
 
 ---
 
-### 6. Date Types and Time Difference Units
+## New Steps & Functions in 1.8 (TinkerPop 3.8)
 
-* **Impact**:
-  - **Return Type**: Date steps such as `datetime()` and `dateAdd()` now return **`java.time.OffsetDateTime`** instead of `java.util.Date`.
-  - **Unit Change in `dateDiff()`**: The difference between two dates is now returned in **milliseconds** instead of seconds (e.g., 1 day difference is `86400000` ms instead of `86400` s).
-* **Recommended Rewrite**:
-  - Update Java clients to expect `OffsetDateTime`; convert to `java.util.Date` via `Date.from(offsetDateTime.toInstant())` only if strictly required.
-  - Review all TTL checks and date comparisons that use `dateDiff()`. Adjust multipliers or divide by 1000:
+TinkerPop 3.8 introduces native date manipulation functions and steps that were not present in 3.5.1 (HugeGraph 1.7.0):
+
+### Date Steps (`datetime()`, `dateAdd()`, `dateDiff()`)
+
+- **`datetime()`**: Creates a date-time object or retrieves server time.
+  In 3.8, it returns **`java.time.OffsetDateTime`** (e.g., `datetime('2026-10-19T00:00:00Z')`).
+- **`dateAdd()`**: Performs date arithmetic, adding a duration to a date.
+- **`dateDiff()`**: Computes the difference between two date-time objects, returning the difference in **milliseconds**
+  (e.g., a 1-day difference yields `86400000` ms).
+- **Example**:
   ```groovy
-  // Convert dateDiff milliseconds to seconds
+  // Current time as OffsetDateTime
+  g.inject(datetime())
+
+  // Compute difference in milliseconds, convert to seconds
   g.inject(datetime('2026-10-19T00:00:00Z')).dateDiff(datetime('2026-10-18T00:00:00Z'))
     .math('_ / 1000').asNumber(GType.LONG)
   ```
@@ -141,14 +157,24 @@ Among existing query scripts, the following 6 changes are the most common. **Fai
 
 ## Server Configuration and Client Compatibility
 
-### 1. Serializer Class Names and Package Migration
-In `conf/gremlin-server.yaml`, serializer classes moved from `gremlin-driver` to `gremlin-util`. **You must update serializer package names in the configuration, as legacy class names will cause ClassNotFoundException**:
+### 1. Serializer Configuration in `conf/gremlin-server.yaml`
 
-| Legacy Class (`driver.ser.*`) | 1.8.0 Class (`util.ser.*`) | Notes |
-|---|---|---|
-| `GraphBinaryMessageSerializerV1` | `org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1` | Recommended default binary serializer |
-| `GraphSONMessageSerializerV1d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV1` | Retains untyped JSON (do not just remove `d0`, which becomes typed) |
-| `GraphSONMessageSerializerV3d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONMessageSerializerV3` | Standard Typed GraphSON V3 |
+In TinkerPop 3.8, serializer classes moved from `gremlin-driver` (`org.apache.tinkerpop.gremlin.driver.ser.*`)
+to `gremlin-util` (`org.apache.tinkerpop.gremlin.util.ser.*`).
+
+> [!IMPORTANT]
+> **Do not simply copy an old `gremlin-server.yaml` from 1.7.0 and edit class names.**
+> Always start from the `conf/gremlin-server.yaml` bundled with HugeGraph 1.8.0 and carry over your customizations (ports, host, authenticator).
+> HugeGraph requires custom serializer builders and registries: GraphBinary requires `builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder`
+> to serialize HugeGraph `Id`, schema, `Blob`, and enum values (otherwise failing with `IOException: Serializer for type ... not found`);
+> untyped GraphSON V1 requires `org.apache.hugegraph.io.HugeGraphSONV1MessageIoRegistry`.
+
+| Legacy Serializer (`driver.ser.*`) | 1.8.0 Serializer (`util.ser.*`) | Required Registries / Builder | Notes |
+|---|---|---|---|
+| `GraphBinaryMessageSerializerV1` | `org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1` | `builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder`<br>`ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | Recommended default binary serializer |
+| `GraphSONMessageSerializerV1d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV1` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry, org.apache.hugegraph.io.HugeGraphSONV1MessageIoRegistry]` | Untyped GraphSON V1 |
+| `GraphSONMessageSerializerV2d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV2` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | Untyped GraphSON V2 |
+| `GraphSONMessageSerializerV3d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV3` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | Untyped GraphSON V3 |
 {.td-table--wide}
 
 ### 2. Can HugeGraph Client 1.5.0 Continue to Work?
@@ -161,17 +187,18 @@ In `conf/gremlin-server.yaml`, serializer classes moved from `gremlin-driver` to
 ## Full Compatibility Reference
 
 ### Appendix 1: Writes & Upsert (`mergeV` / `mergeE`)
+`mergeV()` and `mergeE()` are new steps in TinkerPop 3.8 (absent in 3.5.1) for graph upserts:
 - **M01**: `onCreate` property maps strictly inherit the search match map. Conflicting keys cannot overwrite matched properties.
 - **M02**: `mergeE` no longer implicitly binds incoming/outgoing vertices from upstream traversers; specify `Direction.OUT` and `Direction.IN` in the map or use explicit options.
 - **M03**: Conflicting `onCreate` / `onMatch` maps are validated during construction rather than deferred to runtime execution.
-- **M04**: In 3.8, child traversers in `onMatch` receive the matched Element object rather than the original input Map. Preserve input map references prior to merge with `.as('input')` and reference with `select('input')`.
+- **M04**: Child traversers in `onMatch` receive the matched Element object rather than the original input Map. Preserve input map references prior to merge with `.as('input')` and reference with `select('input')`.
 
 ### Appendix 2: Advanced Traversal Steps & Collections
 - **B07 (`local()` unpacks bulk)**: Traversers with bulk counters are expanded into individual items when entering `local()` child traversals. Use `groupCount()` for frequency analysis.
 - **B09 (`range(local)` collection unpacking)**: Slicing a single item from a list (e.g., `limit(local, 1)`) consistently returns a Collection wrapper (`[item]`). Append `.unfold()` if a scalar is needed.
 - **B11 (`sum()` return type)**: Summing integer streams without overflow may return `Integer` instead of `Long`. Clients should accept `Number`.
-- **B14 (`split('')`)**: Splitting with an empty separator returns a list of individual characters.
-- **B15 (`asString()` on null)**: `asString()` throws an `IllegalArgumentException` on null inputs.
+- **B14 (`split()` step)**: New step in TinkerPop 3.8. An empty string separator splits the string into individual characters.
+- **B15 (`asString()` step)**: New step in TinkerPop 3.8. Throws `IllegalArgumentException` on null inputs.
 
 ### Appendix 3: GLV Client Variations
 - **Python**: Avoids Python keyword conflicts by appending an underscore to step names (`filter_()`, `id_()`, `range_()`, `max_()`).
@@ -184,6 +211,8 @@ In `conf/gremlin-server.yaml`, serializer classes moved from `gremlin-driver` to
 - **C06 (GraphSON payload limits)**: Added guardrails for max number length (10,000), max string length (20,000,000), and max nesting depth (1,000).
 
 ### Appendix 5: HugeGraph Feature Capabilities
-- **Meta-Properties Unsupported**: HugeGraph strictly follows its native schema design and does not support TinkerPop meta-properties (properties on properties). Writing property metadata in 1.8.0 will be **explicitly rejected**.
+- **Meta-Properties Unchanged (Unsupported)**: HugeGraph has never supported TinkerPop meta-properties (properties on properties).
+  Calling `property()` with key-values on a vertex property throws `VertexProperty.Exceptions.metaPropertiesNotSupported()`
+  or `NotSupportException("nested property")`, which remains the unchanged behavior in 1.8.0.
 - **GraphComputer Boundaries**: `supportsComputer()` remains `false`. GraphComputer-dependent steps (e.g., `pageRank()`, `peerPressure()`) cannot run directly on the OLTP engine. Use HugeGraph algorithms REST API or Vermeer.
 - **Uniform List Features**: `supportsUniformListValues()` returns `false`; property lists remain supported via HugeGraph schema (`valueList()`).

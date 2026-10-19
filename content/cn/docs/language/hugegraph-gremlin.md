@@ -100,7 +100,7 @@ HugeGraph支持Gremlin的所有步骤。有关Gremlin的完整参考信息，请
 | coalesce   | 返回第一个返回结果的遍历                                                                                    | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step)     |
 | constant   | 返回常量值。 与`coalesce`配合使用                                                                          | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step)     |
 | count      | 从遍历返回计数                                                                                         | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step)         |
-| datetime   | 构造日期时间对象或取得服务器当前时间（1.8.0 默认返回 `OffsetDateTime`）                                      | [datetime step](http://tinkerpop.apache.org/docs/current/reference/#datetime-step)     |
+| datetime   | 构造日期时间对象或取得服务器当前时间（1.8.0 默认返回 `OffsetDateTime`）                                      | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
 | dedup      | 返回已删除重复内容的值                                                                                     | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step)           |
 | discard    | 丢弃流中当前输入（1.8.0 替代原无参 `none()`）                                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)       |
 | drop       | 丢弃值（顶点/边缘）                                                                                      | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step)             |

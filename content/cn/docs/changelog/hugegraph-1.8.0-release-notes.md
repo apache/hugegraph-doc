@@ -19,14 +19,14 @@ weight: 1
 - **无参 `none()` 更名为 `discard()`**：丢弃输入遍历必须使用 `discard()`（避免与新集合过滤 `none(P)` 冲突）。
 - **`by()` 缺失属性严检**：缺失属性在 `order().by()` 下直接过滤顶点，在 `project().by()` 下不再返回该 key，在 `path().by()` 下直接过滤路径；需保留缺失字段请在 `by()` 中显式使用 `coalesce()` 补默认值。
 - **`choose()` 分支语义收敛**：多条件重叠仅执行首个匹配分支；无匹配或属性缺失默认原样放行穿透（需过滤请显式加 `Pick.none` / `Pick.unproductive` 分支配合 `discard()`）。
-- **日期类型与单位变更**：日期操作产出由 `java.util.Date` 转向 `OffsetDateTime`；`dateDiff()` 差值单位从**秒变为毫秒**。
 
 > 完整改写代码对照与全量细则速查表请参阅：[HugeGraph 1.8.0 Gremlin 迁移与兼容性指南](../guides/gremlin-migration-3.8)。
 
 #### 2. 服务端配置与客户端兼容
 - **Serializer 类名迁移**：`conf/gremlin-server.yaml` 中序列化器包路径由 `org.apache.tinkerpop.gremlin.driver.ser.*` 迁移至 `org.apache.tinkerpop.gremlin.util.ser.*`。
 - **HugeGraph Client 1.5.0**：服务端提供向后兼容适配，1.5.0 客户端无需换包可正常连通 1.8.0 服务端；但客户端拼接的 Gremlin 脚本需按 3.8 语法规范调整。
-- **移除内置 GPL word 分词器**：统一使用 IK、SmartCN 等合规分词器。
+- **不再默认捆绑 GPL word 分词器**：因开源协议合规，默认发行包不再捆绑 GPLv3 的 `word-1.3.jar`。配置了 `search.text_analyzer=word` 的图仍受支持，
+  只需将 `word-1.3.jar` 放入 Server 的 `lib/` 目录即可正常使用；亦可切换为内置的 IK 或 SmartCN（注意切换分词器后需重建已有搜索索引）。
 
 ---
 
@@ -37,6 +37,6 @@ weight: 1
 - **BREAKING CHANGE**: Shared foundation module migration (`hugegraph-struct`)
 
 #### Feature Changes
-- Support TinkerPop 3.8 steps including `discard()`, `mergeV()`, `mergeE()`, and `datetime()`
+- 支持 TinkerPop 3.8 步骤，包括 `discard()`、`mergeV()`、`mergeE()` 以及日期步骤（`datetime()`、`dateAdd()`、`dateDiff()`）
 - Adapt HugeSecurityManager and Groovy 4.0.25 on Java 17
 - Improve count query visibility inside uncommitted transactions

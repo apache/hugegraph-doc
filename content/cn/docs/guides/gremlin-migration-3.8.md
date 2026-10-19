@@ -15,9 +15,9 @@ HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升�
 
 ---
 
-## 核心重点：最常用的 6 大语法与行为变化
+## 核心重点：最常用的 5 大语法与行为变化
 
-在已有的业务查询中，以下 6 项改动最为高频，**若不改写可能直接导致查询报错或静默返回空结果（查询不到数据）**，请优先重点排查。
+在已有的业务查询中，以下 5 项改动最为高频，**若不改写可能直接导致查询报错或静默返回空结果（查询不到数据）**，请优先重点排查。
 
 ### 1. `has(key, traversal)` 重载删除（高危：静默返回空结果）
 
@@ -71,14 +71,19 @@ HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升�
 ### 3. 丢弃输入步骤 `none()` 更名为 `discard()`
 
 * **影响说明**：
-  无参的 `none()` 原本用于丢弃流中的所有输入（如在 `choose()` 或 `coalesce()` 结尾丢弃未匹配元素）。3.8.0 中该操作更名为 **`discard()`**。
-  3.8 同时引入了新的集合谓词步骤 `none(P)`（用于检查集合是否没有元素满足条件）。若在旧代码中写无参的 `none()`，极易误命中或抛出参数异常。
+  在 TinkerPop 3.5.1 中，`none()` 为 traversal 步骤，用于丢弃流中输入（如 `g.V().hasLabel('person').none()` 返回 `[]`）。
+  3.8.1 中该操作更名为 **`discard()`**。
+  同时 3.8 引入了新的集合谓词步骤 `none(P)`（用于检查集合是否没有元素满足条件）。若在 3.8.1 中直接调用无参 `none()`，会立即抛出异常：
+  `IllegalArgumentException: Input predicate to none step can't be null.`
 * **推荐改写方案**：
   ```groovy
-  // 旧写法：丢弃未匹配元素
-  g.V().choose(__.values('age')).option(gt(30), __.values('name')).option(Pick.none, __.none()) // 错误
+  // 旧写法（3.5.1 下执行返回 []）：
+  g.V().hasLabel('person').none()
 
   // 新写法：统一使用 discard()
+  g.V().hasLabel('person').discard()
+
+  // 在 choose() 或分支中丢弃未匹配元素：
   g.V().choose(__.values('age')).option(gt(30), __.values('name')).option(Pick.none, __.discard())
   ```
 
@@ -108,8 +113,11 @@ HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升�
 ### 5. 分支条件 `choose()` 语义收敛
 
 * **影响说明**：
+  - **缺失属性处理**：当选择子遍历依赖的属性缺失时，TinkerPop 3.5.1 会直接抛出异常：
+    `IllegalArgumentException: The provided traverser does not map to a value: v[3]->[PropertiesStep([age],value)]`。
+    在 3.8.1 中，缺少对应属性的元素不再报错，而是默认原样放行穿透。
   - **单分支执行**：当多个 `option()` 条件同时命中时，旧版可能会把多个匹配分支全部执行；新版**只执行第一个命中的分支**。
-  - **默认放行机制**：如果选择子遍历不产值（例如没有对应的属性），或没有任何一个 `option()` 匹配，新版**默认将输入元素原样向下游放行**（旧版通常会过滤掉）。
+  - **默认放行机制**：如果没有任何一个 `option()` 匹配，新版**默认将输入元素原样向下游放行**（3.5.1 则会过滤掉）。
 * **推荐改写方案**：
   - 如需在多个条件同时命中时全部执行，请使用 `union()` 配合 `filter()`。
   - 如需在无匹配或属性缺失时将元素过滤抛弃，需显式声明 `Pick.none` 与 `Pick.unproductive` 分支：
@@ -123,16 +131,21 @@ HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升�
 
 ---
 
-### 6. 日期类型与时间差单位变化
+## 1.8 新增步骤与内置函数（TinkerPop 3.8）
 
-* **影响说明**：
-  - **类型转向**：`datetime()`、`dateAdd()` 等日期操作的默认返回类型从 `java.util.Date` 转向 **`java.time.OffsetDateTime`**。
-  - **单位由秒变毫秒**：`dateDiff()` 计算两个日期的差值，结果单位**从秒（s）改为毫秒（ms）**（例如相隔 1 天的结果由 `86400` 变为 `86400000`）。
-* **推荐改写方案**：
-  - Java 客户端与 SDK 应使用 `OffsetDateTime` 接收时间对象；若确需原生 `java.util.Date`，可通过 `Date.from(offsetDateTime.toInstant())` 进行转换。
-  - 检查业务代码中所有涉及 `dateDiff()` 的比较阈值、TTL 策略及时间报表，将原先基于秒的计算乘以 1000 或显式除以 1000：
+TinkerPop 3.8 引入了原生日期操作函数与步骤，这些能力在 3.5.1（HugeGraph 1.7.0）中并不存在：
+
+### 日期步骤（`datetime()`、`dateAdd()`、`dateDiff()`）
+
+- **`datetime()`**：构造日期时间对象或取得服务器当前时间。在 3.8 中返回 **`java.time.OffsetDateTime`**（如 `datetime('2026-10-19T00:00:00Z')`）。
+- **`dateAdd()`**：对日期进行加减运算。
+- **`dateDiff()`**：计算两个日期的差值，返回差值的**毫秒数**（例如相隔 1 天的结果为 `86400000` ms）。
+- **代码示例**：
   ```groovy
-  // 将 dateDiff 毫秒转换为秒
+  // 获取当前时间 OffsetDateTime
+  g.inject(datetime())
+
+  // 计算日期毫秒差并转换为秒
   g.inject(datetime('2026-10-19T00:00:00Z')).dateDiff(datetime('2026-10-18T00:00:00Z'))
     .math('_ / 1000').asNumber(GType.LONG)
   ```
@@ -141,14 +154,23 @@ HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升�
 
 ## 服务端配置与客户端连接兼容
 
-### 1. 服务端 Serializer 类名与包名迁移
-在 `conf/gremlin-server.yaml` 中，TinkerPop 3.8 将序列化器从 `gremlin-driver` 包分离到了 `gremlin-util` 包中。**必须更新 YAML 中的全限定类名，旧类名不是兼容别名，否则启动时将报 ClassNotFoundException**：
+### 1. `conf/gremlin-server.yaml` 序列化器配置
 
-| 旧配置类名 (`driver.ser.*`) | 1.8.0 对应类名 (`util.ser.*`) | 说明 |
-|---|---|---|
-| `GraphBinaryMessageSerializerV1` | `org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1` | 推荐，默认高效二进制协议 |
-| `GraphSONMessageSerializerV1d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV1` | 保持无类型 JSON（不可只去掉 d0，否则会变成 typed） |
-| `GraphSONMessageSerializerV3d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONMessageSerializerV3` | 标准 Typed GraphSON V3 |
+在 TinkerPop 3.8 中，序列化器从 `gremlin-driver`（`org.apache.tinkerpop.gremlin.driver.ser.*`）包迁移到了 `gremlin-util`（`org.apache.tinkerpop.gremlin.util.ser.*`）包。
+
+> [!IMPORTANT]
+> **请勿直接复制 1.7.0 的 `gremlin-server.yaml` 并仅替换类名！**
+> 推荐直接使用 HugeGraph 1.8.0 发行包自带的 `conf/gremlin-server.yaml`，再将自定义端口、认证等配置合并进去。
+> HugeGraph 需要专用的 Builder 与 Registry：GraphBinary 必须配置 `builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder`
+> 才能序列化 HugeGraph 的 `Id`、Schema、`Blob` 与枚举类型（否则会抛出 `IOException: Serializer for type ... not found`）；
+> 无类型 GraphSON V1 需要添加 `org.apache.hugegraph.io.HugeGraphSONV1MessageIoRegistry`。
+
+| 旧配置类名 (`driver.ser.*`) | 1.8.0 对应类名 (`util.ser.*`) | 所需 Builder / Registry | 说明 |
+|---|---|---|---|
+| `GraphBinaryMessageSerializerV1` | `org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1` | `builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder`<br>`ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | 推荐，默认高效二进制协议 |
+| `GraphSONMessageSerializerV1d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV1` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry, org.apache.hugegraph.io.HugeGraphSONV1MessageIoRegistry]` | 保持无类型 GraphSON V1 |
+| `GraphSONMessageSerializerV2d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV2` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | 无类型 GraphSON V2 |
+| `GraphSONMessageSerializerV3d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV3` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | 标准 Typed GraphSON V3 |
 {.td-table--wide}
 
 ### 2. HugeGraph Client 1.5.0 能否平滑使用？
@@ -163,7 +185,7 @@ HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升�
 除上述高频变化外，TinkerPop 3.5.1 → 3.8.1 还包含若干深层优化与边缘语义调整。如遇特定场景异常，请查阅下表对应项：
 
 ### 附录 1：写入与 Upsert（`mergeV` / `mergeE`）
-从 3.6.0 开始推荐使用标准的 `mergeV()` 与 `mergeE()` 执行图数据 Upsert 操作：
+`mergeV()` 与 `mergeE()` 是 TinkerPop 3.8（3.5.1 中不存在）推荐的标准图数据 Upsert 操作：
 - **M01**: `onCreate` 的属性 Map 严格继承主匹配 Map，不允许用冲突值覆盖主匹配条件（如匹配条件是 `name: 'A'`，`onCreate` 不能设 `name: 'B'`）。
 - **M02**: `mergeE` 不再隐式拿上游顶点填补端点，必须在 Map 中指明 `(Direction.OUT)` 与 `(Direction.IN)`，或使用 `option(Merge.outV, ...)` 显式绑定。
 - **M03**: `onMatch` 与 `onCreate` 的属性冲突在构造期就会被严格校验，而非等到运行时才报错。
@@ -173,8 +195,8 @@ HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升�
 - **B07 (`local()` 拆 bulk)**：带 bulk 计数的 Traverser 经过 `local()` 子遍历时会被展开为单个对象处理。若需统计频次，建议使用 `groupCount()`。
 - **B09 (`range(local)` 集合解包)**：对列表截取单元素（如 `limit(local, 1)`），新版始终返回 Collection 包装（如 `[1]`），若业务必须获取标量，请在后续追加 `.unfold()`。
 - **B11 (`sum()` 返回类型)**：整数流的 `sum()` 结果可能直接返回 Integer 而不是 Long（若无溢出），建议 Java 端统一使用 `Number` 接收。
-- **B14 (`split('')`)**：空字符串分隔符在 3.8 中将拆分为单字符列表（如 `'abc'` 拆分为 `['a','b','c']`）。
-- **B15 (`asString()` 遇 null)**：`asString()` 接收到 null 时会抛出异常，如需兼容 null 请配合 `choose()` 显式处理。
+- **B14 (`split()` 步骤)**：TinkerPop 3.8 新增步骤。空字符串分隔符在 3.8 中将拆分为单字符列表（如 `'abc'` 拆分为 `['a','b','c']`）。
+- **B15 (`asString()` 步骤)**：TinkerPop 3.8 新增步骤。`asString()` 接收到 null 时会抛出 `IllegalArgumentException`，如需兼容 null 请配合 `choose()` 显式处理。
 
 ### 附录 3：多语言客户端差异（GLV）
 - **Python**：步骤名避免与 Python 关键字冲突，全面使用下划线后缀（如 `filter_()`、`id_()`、`range_()`、`max_()` 等），推荐使用 snake_case（如 `has_label`）。
@@ -187,6 +209,7 @@ HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升�
 - **C06 (GraphSON 载荷安全限制)**：新增数字长度（默认 10,000）、字符串长度（默认 20,000,000）与嵌套深度（默认 1,000）反序列化上限，避免深层 JSON 导致 OOM。
 
 ### 附录 5：HugeGraph 适配与能力边界
-- **不支持 Meta-Properties**：HugeGraph 严格遵循自有 Schema 体系，不支持 TinkerPop 的属性元数据（属性上的属性）。在 1.8.0 中若向属性写入 metadata 将被**显式拒绝**，不再隐式退化。
+- **元属性保持不支持（Unchanged）**：HugeGraph 严格遵循自有 Schema 体系，历来不支持 TinkerPop 的属性元数据（属性上的属性）。
+  向顶点属性写入 metadata 始终会抛出 `VertexProperty.Exceptions.metaPropertiesNotSupported()` 或 `NotSupportException("nested property")`，1.8.0 行为与历史版本完全一致。
 - **图计算限制**：`supportsComputer()` 仍为 `false`，依赖 `GraphComputer` 的步骤（如 `pageRank()`、`peerPressure()`）不能在 OLTP 引擎上直接执行，建议使用 HugeGraph 的专门算法 API 或 Vermeer 组件。
 - **统一列表特性**：`supportsUniformListValues()` 现返回 `false`；图中的 List 属性依然由 HugeGraph 内部 Schema (`valueList()`) 提供完整支持。

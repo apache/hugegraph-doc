@@ -26,7 +26,7 @@ weight: 4
 
 | 在 Neo4j 里 | 在 HugeGraph 里 |
 |---|---|
-| `CREATE INDEX` / `CREATE CONSTRAINT` | 通过 [IndexLabel REST API](/cn/docs/clients/restful-api/indexlabel/) 创建属性索引；唯一性约束对应 `UNIQUE` 索引（冲突时拒绝写入并报错）。节点键对应非可空属性加复合 `UNIQUE` 索引；属性存在约束对应 [VertexLabel](/cn/docs/clients/restful-api/vertexlabel/) 或 [EdgeLabel](/cn/docs/clients/restful-api/edgelabel/) 上的非可空属性。注意 `primary_keys` 用于确定顶点标识而非约束机制，重复 `CREATE` 会直接覆盖旧记录而非报错 |
+| `CREATE INDEX` / `CREATE CONSTRAINT` | 通过 [IndexLabel REST API](/cn/docs/clients/restful-api/indexlabel/) 创建属性索引；唯一性约束对应 `UNIQUE` 索引（冲突时拒绝写入并报错）。节点键对应非可空属性加复合 `UNIQUE` 索引（`PRIMARY_KEY` 标签上，`UNIQUE` 索引不能包含该标签的全部主键，服务端会拒绝；若要保留重复拒绝，请使用以 Neo4j 节点 id 为键的 `CUSTOMIZE_STRING`，并在业务键上建 `UNIQUE` 索引）；属性存在约束对应 [VertexLabel](/cn/docs/clients/restful-api/vertexlabel/) 或 [EdgeLabel](/cn/docs/clients/restful-api/edgelabel/) 上的非可空属性。注意 `primary_keys` 用于确定顶点标识而非约束机制，重复 `CREATE` 会直接覆盖旧记录而非报错 |
 | 隐式 schema（属性随意添加） | **强 schema**：先定义 VertexLabel/EdgeLabel/PropertyKey，再写数据 |
 | `WHERE` 中的属性谓词无需索引 | `WHERE` 中的起始顶点查找需要索引覆盖，除非是对该标签全部主键的等值匹配：请先创建 `SECONDARY` 或 `RANGE` 的 IndexLabel，`>`、`<` 等范围比较需要 `RANGE`。没有覆盖索引时，请求会返回 `status.code` 400 和“未建索引”错误 |
 | 参数化查询 `$param` | 已发布版本仅发送原始语句 —— 缺失的绑定会被内联为 `null` 而不是报错（基于它的谓词匹配不到行，写入也不能可靠地存入 `null`：`SET` 会移除属性，`CREATE` 可能存入标记字符串 `"  cypher.null"` 或报错），请在客户端校验取值；JSON 绑定参数已通过 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289) 合入 `master`，固定最多 16 个顶层绑定参数 |

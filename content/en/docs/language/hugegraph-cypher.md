@@ -33,7 +33,7 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-On 1.7.0 and earlier, the endpoint always requires an `Authorization` header (`Basic` or `Bearer`), even when server authentication is disabled —
+On 1.2.0 to 1.7.0, the endpoint always requires an `Authorization` header (`Basic` or `Bearer`), even when server authentication is disabled —
 the credentials are forwarded to the Gremlin Server. On those versions `Basic` credentials must be encoded with URL-safe Base64 (`-` and `_` instead
 of `+` and `/`), and the password must not contain `:`. On `master` (1.8.0+), authentication is optional when server auth is disabled
 ([#3366](https://github.com/apache/hugegraph/pull/3366)), `Basic` credentials use standard RFC 4648 Base64 (as sent by `curl -u`,

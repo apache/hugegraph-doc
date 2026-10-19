@@ -31,7 +31,7 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-在 1.7.0 及更早版本中，该端点始终要求 `Authorization` 头（`Basic` 或 `Bearer`），即使服务端未开启认证 —— 凭据会被转发给 Gremlin Server。这些版本下 `Basic`
+在 1.2.0 至 1.7.0 版本中，该端点始终要求 `Authorization` 头（`Basic` 或 `Bearer`），即使服务端未开启认证 —— 凭据会被转发给 Gremlin Server。这些版本下 `Basic`
 凭据必须使用 URL 安全的 Base64 编码（用 `-` 和 `_` 代替 `+` 和 `/`），且密码不能包含 `:`。在 `master`（1.8.0+）中，未开启认证时无需该请求头（[#3366](https://github.com/apache/hugegraph/pull/3366)），
 `Basic` 凭据使用标准 RFC 4648 Base64 编码（即 `curl -u` 默认形式，[#3290](https://github.com/apache/hugegraph/pull/3290)），且密码支持包含 `:`。
 完整请求/响应格式见 [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)。

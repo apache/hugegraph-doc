@@ -7,7 +7,7 @@ description: "Cypher REST API: Execute OpenCypher declarative graph query langua
 
 ### 9.1 Cypher
 
-> On 1.7.0 and earlier, the Cypher API always needs an `Authorization` header (`Basic` or `Bearer`). A request without one is rejected with `401`, even when the
+> On 1.2.0 to 1.7.0, the Cypher API always needs an `Authorization` header (`Basic` or `Bearer`). A request without one is rejected with `401`, even when the
 > server runs without authentication. On `master` (1.8.0+), the header is optional when authentication is disabled.
 > Credentials are forwarded to the Gremlin Server through `conf/remote-objects.yaml`.
 

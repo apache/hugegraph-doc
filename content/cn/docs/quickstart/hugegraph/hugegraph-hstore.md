@@ -326,7 +326,10 @@ master 构建接受 `g1`、`G1`、`zgc` 和 `ZGC`。
 - `-d true`（默认）：以后台守护进程方式运行，脚本立即返回，并把 Java 进程号写入 `bin/pid`。
 - `-d false`：以前台模式运行，脚本通过 `exec` 替换为 Java 进程，容器或进程管理器的进程即为 Java 本身。在 Docker 或进程管理器（systemd、supervisord）下运行时请使用此参数，以便在崩溃时自动检测并重启服务。
 
-JVM 内存方面，如果没有自行设置 `JAVA_OPTIONS`：`-Xms512m`，`-Xmx` 取空闲内存的一半并限制在 512 MB 到 2048 MB 之间。脚本还会加上与该堆大小相同的 `-XX:MaxDirectMemorySize`、`-XX:MetaspaceSize=256M`、OOM 时把堆转储写入 `logs/`，以及滚动的 GC 日志 `logs/gc.log`。生产节点通常需要大得多的堆，请显式指定，并同时设置直接内存上限，例如 `-j "-Xmx32g -Xms32g -XX:MaxDirectMemorySize=2g"`。不设上限时，JVM 允许的直接内存与 32 GB 的堆相同，RocksDB 预算会把它计算在内，在内存不足约 66 GB 的主机上会降到 256 MiB 的下限。
+JVM 内存方面，如果没有自行设置 `JAVA_OPTIONS`：`-Xms512m`，`-Xmx` 取空闲内存的一半并限制在 512 MB 到 2048 MB 之间。
+脚本还会加上与该堆大小相同的 `-XX:MaxDirectMemorySize`、`-XX:MetaspaceSize=256M`、OOM 时把堆转储写入 `logs/`，以及滚动的 GC 日志 `logs/gc.log`。
+生产节点通常需要大得多的堆，请显式指定，并同时设置直接内存上限，例如 `-j "-Xmx32g -Xms32g -XX:MaxDirectMemorySize=2g"`。
+不设上限时，JVM 允许的直接内存与 32 GB 的堆相同，RocksDB 预算会把它计算在内，在内存不足约 66 GB 的主机上会降到 256 MiB 的下限。
 
 当 `ulimit -n` 或 `ulimit -u` 低于 1024 时脚本会拒绝启动；在 x86_64 和 arm64 上，如果能成功下载并校验对应的动态库，脚本会预加载 jemalloc。
 

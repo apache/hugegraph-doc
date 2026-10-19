@@ -331,7 +331,11 @@ Daemon mode:
 - `-d true` (default): run as a background daemon. The script returns immediately and writes the Java pid to `bin/pid`.
 - `-d false`: run in the foreground. The script `exec`s Java, so the container or supervisor process is Java itself. Use this under Docker or a process supervisor (systemd, supervisord) so crashes are detected and the service is restarted automatically.
 
-JVM memory, unless you set `JAVA_OPTIONS` yourself: `-Xms512m`, and `-Xmx` set to half the free memory, clamped to the 512 MB to 2048 MB range. The script also adds `-XX:MaxDirectMemorySize` equal to that heap, `-XX:MetaspaceSize=256M`, a heap dump on out-of-memory into `logs/`, and a rolling GC log at `logs/gc.log`. Production nodes normally need a much larger heap, so pass one explicitly together with a direct-memory cap, for example `-j "-Xmx32g -Xms32g -XX:MaxDirectMemorySize=2g"`. Without the cap the JVM allows as much direct memory as the 32 GB heap, the RocksDB budget counts it, and on a host with less than about 66 GB it falls to the 256 MiB floor.
+JVM memory, unless you set `JAVA_OPTIONS` yourself: `-Xms512m`, and `-Xmx` set to half the free memory, clamped to the 512 MB to 2048 MB range.
+The script also adds `-XX:MaxDirectMemorySize` equal to that heap, `-XX:MetaspaceSize=256M`, a heap dump on out-of-memory into `logs/`, and a rolling GC log at
+`logs/gc.log`. Production nodes normally need a much larger heap, so pass one explicitly together with a direct-memory cap, for example
+`-j "-Xmx32g -Xms32g -XX:MaxDirectMemorySize=2g"`. Without the cap the JVM allows as much direct memory as the 32 GB heap, the RocksDB budget counts it,
+and on a host with less than about 66 GB it falls to the 256 MiB floor.
 
 The script refuses to start if `ulimit -n` or `ulimit -u` is below 1024, and it preloads jemalloc on x86_64 and arm64 when the shared object can be downloaded and verified.
 

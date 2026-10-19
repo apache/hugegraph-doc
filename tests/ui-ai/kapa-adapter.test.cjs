@@ -321,20 +321,20 @@ test('init succeeds without search shell and binds standalone triggers', () => {
   assert.equal(h.trigger.dataset.hgAiBound, '');
 });
 
-test('registers native search rows with localized title and historical notice', async () => {
+test('registers native search rows with localized title and exact version notice', async () => {
   const h = harness();
   let extension;
   h.windowObject.OinkCommandPalette = { registerSearchTail(value) { extension = value; } };
   h.trigger.addEventListener = () => {};
   h.documentObject.getElementById = (id) => id === 'hg-ai-config' ? {
-    textContent: JSON.stringify({ ...h.config, historical: true,
-      labels: { ask: 'Ask AI', latest: 'Answers use latest docs' } }),
+    textContent: JSON.stringify({ ...h.config, version: '1.7',
+      labels: { ask: 'Ask AI', version: 'Answers use the 1.7 documentation' } }),
   } : null;
   adapter.init(h.windowObject, h.documentObject);
   assert.equal(extension.id, 'hugegraph-ai');
   assert.deepEqual(extension.rows({ query: '<graph>' }), [{
     id: 'ask', title: 'Ask AI: “<graph>”',
-    description: 'Answers use latest docs.', icon: 'fa-solid fa-wand-magic-sparkles',
+    description: 'Answers use the 1.7 documentation', icon: 'fa-solid fa-wand-magic-sparkles',
   }]);
   const abort = new AbortController();
   let handedOff = false;
@@ -723,4 +723,28 @@ test('page-only permission expires on navigation when storage is wholly blocked'
   controller.activate('', false, fresh.trigger);
   assert.equal(fresh.consent.hidden, false);
   assert.equal(fresh.scripts.length, 0);
+});
+
+test('unindexed versions keep the launcher local even with remembered consent', async () => {
+  for (const granted of [false, true]) {
+    const h = harness(new Map(granted ? [['hg-ai-consent:v2:website', 'granted']] : []));
+    h.config.sourceGroupId = '';
+    h.config.labels.unavailable = 'No documentation index for 1.3 yet.';
+    const controller = adapter.createController(h.windowObject, h.documentObject, h.config);
+    assert.equal(h.trigger.hidden, false);
+    assert.equal(h.trigger.attrs['aria-haspopup'], undefined);
+    let handedOff = false;
+    await controller.activate('auth', true, h.trigger, {
+      signal: new AbortController().signal,
+      handoff() { handedOff = true; return true; },
+    });
+    assert.equal(handedOff, true);
+    assert.equal(h.status.textContent, h.config.labels.unavailable);
+    assert.equal(h.consent.hidden, true);
+    assert.equal(h.trigger.focused, true);
+    assert.deepEqual(h.scripts, []);
+    assert.deepEqual(h.calls, []);
+    h.continueConsent();
+    assert.deepEqual(h.scripts, []);
+  }
 });

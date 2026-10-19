@@ -431,10 +431,11 @@ compatible index on a query-visible parent label can cover its sub-labels, and c
 hidden or deleting parents excluded from the query cannot provide this coverage. A label index alone does not index properties.
 
 For query values compatible with the declared property types, no compatible index or partial candidate coverage produces an index error; complete coverage uses
-the indexes. The partial-coverage error applies from the release containing [apache/hugegraph#3243](https://github.com/apache/hugegraph/pull/3243); earlier
-versions return only the matches from indexed labels and raise no error. A type-incompatible value may return an empty result after a matching index is found,
-before partial coverage is checked. If no index matches, the index error still applies. Specify `label` when querying only one edge label, or create
-compatible property indexes to cover every candidate label. The query does not automatically fall back to a full scan.
+the indexes. The partial-coverage error and the empty result for hidden or deleting labels apply from the release containing [apache/hugegraph#3243](https://github.com/apache/hugegraph/pull/3243);
+earlier versions return only the matches from indexed labels and raise an index error when no label has a compatible index (including labels being deleted).
+A type-incompatible value may return an empty result after a matching index is found, before partial coverage is checked. If no index matches, the index error
+still applies. Specify `label` when querying only one edge label, or create compatible property indexes to cover every candidate label. The query does not
+automatically fall back to a full scan.
 
 With `vertex_id`, the query filters that vertex's adjacent edges; the global index-coverage requirement above does not apply.
 

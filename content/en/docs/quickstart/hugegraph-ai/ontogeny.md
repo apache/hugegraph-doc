@@ -4,24 +4,36 @@ linkTitle: "Ontogeny"
 weight: 7
 ---
 
-`ontogeny` — Greek *onto-* (being, the root of *ontology*) + *genesis* (birth, development): in biology the word names the **full-life-cycle development of an individual organism**. The name is the thesis: an ontology here is not a static schema but a living thing — declared in Git, compiled into tables and a graph, and grown through use. It is a **self-improving operational ontology platform**: it models an enterprise's business semantics (objects, properties, links) and business actions (actions, functions, policies) as declarative, Git-native YAML, and serves them to applications, analytics and AI agents through one governed API — optionally projected onto [Apache HugeGraph](https://github.com/apache/hugegraph) for deep-graph queries.
+`ontogeny` — Greek *onto-* (being, root of *ontology*) + *genesis* (birth, development):
+in biology, it names the **full-life-cycle development of an individual organism**.
+The name is the thesis: an ontology here is not a static schema, but an evolving
+operational system — declared in Git, compiled into tables and a graph, and grown
+through actual usage. It is a **self-improving operational ontology platform** that
+models enterprise business semantics (objects, properties, links) and actions
+(actions, functions, policies) as declarative, Git-native YAML. It serves them to
+applications, analytics, and AI agents through a governed API, with optional
+projection onto [Apache HugeGraph](https://github.com/apache/hugegraph) for deep graph queries.
 
-The whole system on one board — this is the console's Overview dashboard, and the map for everything below:
+The whole system on one board — this is the console's Overview dashboard and the architecture map for the platform:
 
 ![Overall architecture board](/images/docs/hugegraph-ai/ontogeny-arch-board.png)
 
-*Top: the eight first-class DSL citizens (Action = the only write gate, EvalSuite = the selection box). Middle: the online pipeline (build → explore → act → control → audit) and the offline RSI loop, joined by the agent spine — its reads/writes cross the same gates, its traces and approvals flow back as evolution signals. Bottom: the supporting layer and the three cross-cutting invariants (ownership, one gate, Git as source).*
+*Top: eight first-class DSL citizens (Action = single write gate, EvalSuite = selection gate).
+Middle: online pipeline (build → explore → act → control → audit) and offline RSI loop,
+connected by the agent spine. Bottom: supporting layer and three cross-cutting invariants
+(ownership, single gate, Git as source of truth).*
 
 ## Key Features
 
-- **Git-native ontology** — modeling is YAML + pull requests; consensus happens in code review, not a locked GUI
-- **Single-process kernel** — `ontogeny serve` = Registry + query engine + Action runtime on SQLite / Postgres
-- **Agent-first** — a governed MCP tool surface at `/mcp`; agents and humans share one policy surface, writes pass human approval gates
-- **Self-improving (RSI)** — observe → mutate (LLM-generated DSL diffs) → select (deterministic eval suites) → release (T0 auto-merge / T1 PR / T2 canary); *mutation is outsourced to the LLM, the selection function is not*
-- **Constitutional guardrails** — machine proposals travel the same Git/CI channel as humans; policy relaxation, markings and tier definitions always require human review
-- **Bilingual enterprise console** — React 19 + TypeScript: ontology canvas (browse *and* edit), graph exploration, action runner, audit, self-evolution console
+- **Git-native ontology** — modeling is YAML + Pull Requests; consensus happens via code review rather than proprietary UI forms
+- **Single-process kernel** — `ontogeny serve` bundles Registry, query engine, and Action runtime on SQLite or PostgreSQL
+- **Agent-first** — governed MCP tool surface at `/mcp`; agents and humans share one policy surface, and writes pass human approval gates
+- **Self-improving (RSI)** — observe → mutate (LLM-generated DSL diffs) → select (deterministic eval suites) → release (T0 auto-merge / T1 PR / T2 canary)
+- **Constitutional guardrails** — machine proposals follow standard Git/CI workflows; policy relaxation, markings, and tiers always require human review
+- **Bilingual enterprise console** — React 19 + TypeScript: ontology canvas (browse and edit),
+  graph exploration, action runner, audit, and self-evolution console
 
-Modeling is code review, not form-filling — the ontology canvas shows every object, link, action and function of the domain, with references highlighted on hover:
+Modeling is code review, not form-filling — the ontology canvas displays every object, link, action, and function, with dependencies highlighted on hover:
 
 ![Ontology definition canvas](/images/docs/hugegraph-ai/ontogeny-ontology-canvas.png)
 
@@ -34,17 +46,24 @@ git clone -b ontogeny https://github.com/apache/hugegraph-ai.git
 cd hugegraph-ai
 
 docker compose up -d          # self-contained demo (SQLite + seeded data)
-# docker compose --profile postgres up -d   # Postgres-backed
-# docker compose --profile graph up -d      # + HugeGraph projection
+# docker compose --profile postgres up -d   # starts Postgres container only; the demo image uses SQLite by default
+# docker compose --profile graph up -d      # starts HugeGraph; configure via admin API to enable graph projection
 ```
 
-Console + API: **http://localhost:8000** — the first boot creates an `admin` account and prints the generated password to the container log (or preset `ONTOGENY_ADMIN_PASSWORD`). One command gets you a live dashboard seeded with a real manufacturing domain — the ontology model, the agent surface and the RSI loop at a glance:
+Console + API: **http://localhost:8000** — the first boot creates an `admin` account
+with the fixed default password `ontogeny@2026` (printed in container logs).
+Set `ONTOGENY_ADMIN_PASSWORD` before starting or change the password before exposing port 8000.
+One command provides a live dashboard seeded with manufacturing domain data,
+showcasing the ontology model, agent surface, and RSI loop:
 
 ![The Overview dashboard — ontology model section](/images/docs/hugegraph-ai/ontogeny-dashboard.png)
 
 ### Option 2: From Source
 
 ```bash
+git clone -b ontogeny https://github.com/apache/hugegraph-ai.git
+cd hugegraph-ai
+
 # backend (with the MCP extra so /mcp is served)
 uv venv && source .venv/bin/activate && uv pip install -e '.[mcp]'
 
@@ -55,37 +74,45 @@ cd web && npm install && npm run build && cd ..
 ontogeny serve --demo --open   # → http://127.0.0.1:8000/
 ```
 
-Optional: attach an LLM shared by the assistant and the RSI proposer — `ONTOGENY_LLM_BASE_URL=http://<ollama>:11434 ONTOGENY_LLM_MODEL=qwen3:27b ontogeny serve --demo --open`.
+Optional: attach an LLM shared by the assistant and the RSI proposer:
+`ONTOGENY_LLM_BASE_URL=http://<ollama>:11434 ONTOGENY_LLM_MODEL=qwen3:27b ontogeny serve --demo --open`.
 
 > [!NOTE]
-> The API is session/bearer authenticated. The `X-Ontogeny-Principal` dev header is **enabled by default** for evaluation (`ONTOGENY_DEV_AUTH=0` disables it) — turn it off in production, where the agent surfaces (REST + `/mcp`) then require a signed-in driver and every session records WHO drove it.
+> The API uses session/bearer authentication. The `X-Ontogeny-Principal` dev header is
+> **enabled by default** for evaluation (`ONTOGENY_DEV_AUTH=0` disables it). Turn it off in
+> production, where agent surfaces (REST + `/mcp`) require authenticated credentials and
+> every session audits the operator identity.
 
-Already have a domain package? Sidebar domain switcher → **New domain → Import ontology package**, upload a zip (e.g. `domains/product-manufacturing.zip`) — validate-install-activate in one step.
+Already have a domain package? In the sidebar domain switcher, navigate to **New domain → Import ontology package**, and upload a zip package (such as
+`domains/product-manufacturing.zip`) to validate, install, and activate in one step.
 
 ## Connecting an Agent (MCP)
 
-Point any MCP client (Claude Desktop, Cursor, LangGraph, the `mcp` SDK) at **`http://<host>/mcp`**:
+Point any MCP client (Claude Desktop, Cursor, LangGraph, or the `mcp` SDK) to **`http://<host>/mcp`**:
 
 1. `agent_open_session(plugin, task)` — opens a governed session for a declared plugin;
-2. call any tool with `plugin` / `session_id` / `thought` — budget, tool catalog, approval gates and the step trail apply identically to the REST session protocol;
-3. writes park for human approval in the console; session-less calls are read-only.
+2. Call any tool with `plugin` / `session_id` / `thought` — budget limits, tool catalog, approval gates, and step traces mirror the REST session protocol;
+3. Write operations pause in the console for human approval; calls without a session are read-only.
 
-In the console, the same surface lives behind the floating icon at the bottom-right of every page — click it and hand a task to a declared plugin (agent run, ontology Q&A or RSI proposal) from anywhere:
+In the console, the same surface is accessible via the floating icon at the bottom-right of every page:
 
 ![The agent console popup](/images/docs/hugegraph-ai/ontogeny-agent-console.png)
 
-Governance you can point at: every execution and every refusal lands in an immutable audit stream (executed / rule-rejected / policy-denied), and every agent step is attributable and replayable:
+Observable governance: every execution and rejection is recorded in an immutable audit stream
+(executed / rule-rejected / policy-denied), ensuring full traceability:
 
 ![The audit stream](/images/docs/hugegraph-ai/ontogeny-audit.png)
 
 ## Production Notes
 
-- **Single-process kernel**: registry, outbox, derivation, evolve and projection workers all live in the one server process. Do NOT scale with `uvicorn --workers N`; scale by domain (one process per database).
-- **Observability**: `GET /api/v1/admin/metrics` — query/action/agent/outbox counters from the platform's own tables, zero extra dependencies.
-- **Query baseline**: `python tools/bench_query.py` (p50/p95 for search/filter/traverse).
+- **Single-process kernel**: registry, outbox, derivation, evolution, and projection workers run in a single process. Do NOT scale with `uvicorn --workers N`;
+  scale horizontally per domain (one process per database).
+- **Observability**: `GET /api/v1/admin/metrics` provides query, action, agent, and outbox metrics
+  directly from internal metadata tables with zero external dependencies.
+- **Query baseline**: run `python tools/bench_query.py` to evaluate p50/p95 latency for search, filter, and traverse operations.
 
 ## More Resources
 
 - Ontogeny source tree: <https://github.com/apache/hugegraph-ai/tree/ontogeny>
 - Full API contract: `GET /openapi.json` on a running instance
-- [HugeGraph-LLM](./hugegraph-llm.md) — GraphRAG and knowledge-graph construction from the same repository's main line
+- [HugeGraph-LLM](./hugegraph-llm.md) — GraphRAG and knowledge-graph construction from the same repository's main branch

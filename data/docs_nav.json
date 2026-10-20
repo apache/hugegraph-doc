@@ -117,6 +117,9 @@
             },
             {
               "page": "/docs/quickstart/hugegraph-ai/rest-api"
+            },
+            {
+              "page": "/docs/quickstart/hugegraph-ai/ontogeny"
             }
           ]
         },
@@ -536,6 +539,11 @@
             {
               "page": "/docs/quickstart/hugegraph-ai/rest-api",
               "url": "/docs/quickstart/hugegraph-ai/rest-api/",
+              "children": []
+            },
+            {
+              "page": "/docs/quickstart/hugegraph-ai/ontogeny",
+              "url": "/docs/quickstart/hugegraph-ai/ontogeny/",
               "children": []
             }
           ]
@@ -1373,6 +1381,11 @@
     "/docs/cla/": [
       "@group/reference",
       "/docs/cla/"
+    ],
+    "/docs/quickstart/hugegraph-ai/ontogeny/": [
+      "@group/components",
+      "/docs/quickstart/hugegraph-ai/",
+      "/docs/quickstart/hugegraph-ai/ontogeny/"
     ]
   },
   "children_by_url": {
@@ -1419,7 +1432,8 @@
       "/docs/quickstart/hugegraph-ai/hugegraph-llm",
       "/docs/quickstart/hugegraph-ai/hugegraph-ml",
       "/docs/quickstart/hugegraph-ai/config-reference",
-      "/docs/quickstart/hugegraph-ai/rest-api"
+      "/docs/quickstart/hugegraph-ai/rest-api",
+      "/docs/quickstart/hugegraph-ai/ontogeny"
     ],
     "/docs/clients/": [
       "/docs/clients/hugegraph-client",

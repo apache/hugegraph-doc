@@ -1,0 +1,29 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.8.1",
+  "base_commit_sha": "fa123314ebc252f46fe685882806c8318599b565",
+  "prompts": {
+    "4088b035e898f36b": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_f3fe2c8f-c378-4860-9542-255c10d91270",
+        "model": "GLM-5.3-Flash"
+      },
+      "human_author": "simon <zhangshiming@cvte.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 6,
+      "accepted_lines": 0,
+      "overriden_lines": 0,
+      "messages_url": "https://gitai.gz.cvte.cn/cas/453cbacfc1ae772e7b0ad23d688b5abd387e81d5b92a00920f7308a5f64cf832",
+      "token_usage": {
+        "input_tokens": 7244244,
+        "output_tokens": 62210,
+        "cache_read_tokens": 6886976,
+        "cache_creation_tokens": 0,
+        "total_cost": 0.0
+      }
+    }
+  }
+}

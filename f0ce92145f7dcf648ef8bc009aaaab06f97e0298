@@ -1,0 +1,33 @@
+content/en/docs/quickstart/hugegraph-ai/ontogeny.md
+  4088b035e898f36b 7,9,11,13-24,26,28,30-32,38-41,43,45,47,56,60,62-63,65,67,69,71-73,75,77,79,81,83,85-87
+content/cn/docs/quickstart/hugegraph-ai/ontogeny.md
+  4088b035e898f36b 7,9,11,13-24,26,28,30-32,37-39,43,45,47,63,65-66,68,70,72,74-76,78,80,82,84,86,88-90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.8.1",
+  "base_commit_sha": "f0ce92145f7dcf648ef8bc009aaaab06f97e0298",
+  "prompts": {
+    "4088b035e898f36b": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_f3fe2c8f-c378-4860-9542-255c10d91270",
+        "model": "GLM-5.3-Flash"
+      },
+      "human_author": "simon <zhangshiming@cvte.com>",
+      "messages": [],
+      "total_additions": 89,
+      "total_deletions": 78,
+      "accepted_lines": 88,
+      "overriden_lines": 0,
+      "messages_url": "https://gitai.gz.cvte.cn/cas/48c57f7db2b9ca3fbb6b82679b1bf33febce03983421440f7aa3dd65df780fa9",
+      "token_usage": {
+        "input_tokens": 4161052,
+        "output_tokens": 45202,
+        "cache_read_tokens": 3949504,
+        "cache_creation_tokens": 0,
+        "total_cost": 0.0
+      }
+    }
+  }
+}

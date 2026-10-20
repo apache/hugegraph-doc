@@ -57,6 +57,8 @@ for (const [locale, route, source, language] of [
     const script = page.locator("script[data-hg-kapa-widget]");
     await expect(script).toHaveAttribute("data-language", language);
     const config = await page.locator("#hg-ai-config").evaluate(node => JSON.parse(node.textContent));
+    expect(config.version).toBe("latest");
+    expect(config.labels.version).toContain("latest");
     expect(config.exampleQuestions).toHaveLength(36);
     const displayed = (await script.getAttribute("data-example-questions")).split(",");
     expect(displayed).toHaveLength(3);
@@ -652,3 +654,50 @@ test('Expo example content is absent from production and AI-disabled artifacts',
     }
   }
 });
+
+
+// Hugo's exact version/group selection is covered by ai-version-config.test.cjs.
+// Exercise the browser handoff at the adapter boundary without an external index.
+for (const rememberedConsent of [false, true]) {
+  test(`an unindexed version keeps Ask AI local with consent=${rememberedConsent}`, async ({ page }) => {
+    const externalRequests = [];
+    await page.route(/https:\/\/[^/]*(?:kapa\.ai|hcaptcha\.com)\//, route => {
+      externalRequests.push(route.request().url());
+      return route.abort();
+    });
+    await page.route(AI_ORIGIN + "/docs/", async route => {
+      const response = await route.fetch();
+      const body = (await response.text()).replace(
+        /(<script[^>]+id="?hg-ai-config"?[^>]*>)([\s\S]*?)(<\/script>)/,
+        (_, open, value, close) => {
+          const config = JSON.parse(value);
+          config.version = '1.3';
+          config.sourceGroupId = '';
+          config.labels.version = 'Answers use the 1.3 documentation';
+          config.labels.unavailable = 'Ask AI has no documentation index for 1.3 yet. Please use local search.';
+          return open + JSON.stringify(config) + close;
+        },
+      );
+      await route.fulfill({ response, body });
+    });
+    if (rememberedConsent) {
+      await page.addInitScript(() => localStorage.setItem(
+        'hg-ai-consent:v2:0b277570-4740-451e-96fa-1e4ac1ac5e88', 'granted',
+      ));
+    }
+    await page.goto(AI_ORIGIN + "/docs/");
+    const launcher = page.locator('.hg-ask-ai-launcher');
+    await expect(launcher).toBeVisible();
+    await launcher.click();
+    await expect(page.locator('[data-hg-ai-status]')).toContainText('no documentation index for 1.3');
+    await expect(page.locator('[data-hg-ai-consent]')).toBeHidden();
+    await page.locator('[data-td-shell-search-open]').first().click();
+    await page.locator('.td-shell-search__input').fill('auth');
+    await page.getByRole('option').filter({ hasText: 'Ask AI:' }).click();
+    await expect(page.locator('[data-hg-ai-status]')).toBeVisible();
+    await expect(launcher).toBeFocused();
+    await expect(page.locator('script[data-hg-kapa-widget]')).toHaveCount(0);
+    expect(await page.evaluate(() => typeof window.Kapa)).toBe('undefined');
+    expect(externalRequests).toEqual([]);
+  });
+}

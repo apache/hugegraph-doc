@@ -6,8 +6,6 @@ weight: 7
 
 `ontogeny` — Greek *onto-* (being, the root of *ontology*) + *genesis* (birth, development): in biology the word names the **full-life-cycle development of an individual organism**. The name is the thesis: an ontology here is not a static schema but a living thing — declared in Git, compiled into tables and a graph, and grown through use. It is a **self-improving operational ontology platform**: it models an enterprise's business semantics (objects, properties, links) and business actions (actions, functions, policies) as declarative, Git-native YAML, and serves them to applications, analytics and AI agents through one governed API — optionally projected onto [Apache HugeGraph](https://github.com/apache/hugegraph) for deep-graph queries.
 
-The design references a proven operational-ontology blueprint (semantic layer + dynamic action layer) but is fully open: **the DSL is the single source of truth** — object tables and the graph schema are compiled artifacts that can be deleted and rebuilt at any time.
-
 The whole system on one board — this is the console's Overview dashboard, and the map for everything below:
 
 ![Overall architecture board](/images/docs/hugegraph-ai/ontogeny-arch-board.png)
@@ -89,6 +87,5 @@ Governance you can point at: every execution and every refusal lands in an immut
 ## More Resources
 
 - Ontogeny source tree: <https://github.com/apache/hugegraph-ai/tree/ontogeny>
-- In-repo documentation (architecture + usage, English and Chinese): [`docs/`](https://github.com/apache/hugegraph-ai/tree/ontogeny/docs)
 - Full API contract: `GET /openapi.json` on a running instance
 - [HugeGraph-LLM](./hugegraph-llm.md) — GraphRAG and knowledge-graph construction from the same repository's main line

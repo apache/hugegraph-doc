@@ -6,8 +6,6 @@ weight: 7
 
 `ontogeny` —— 希腊语 **onto-**（存在，即 *ontology* 本体论的词根）+ **genesis**（诞生、发育）：生物学术语，指一个个体从胚胎到成体的**全生命周期发育**。名字即主张：本体在这里不是静态的 schema，而是一个活物——在 Git 里被定义，编译成表与图，再在使用中成长。它是一个**自我进化的运营本体平台**：把企业的业务语义（对象、属性、链接）与业务动作（动作、函数、策略）建模为 Git 中的声明式 YAML，通过一个受治理的统一 API 提供给应用、分析与 AI Agent，并可选投影到 [Apache HugeGraph](https://github.com/apache/hugegraph) 以支持深图查询。
 
-设计参考了经过验证的运营本体范式（语义层 + 动态动作层）但完全开源：**DSL 是唯一真源**——对象表与图 schema 都是编译产物，随时可以删除重建。
-
 整个系统画在一块看板上——这也是控制台的「总览」页，以及下文所有内容的地图：
 
 ![总体架构图](/images/docs/hugegraph-ai/ontogeny-arch-board-zh.png)
@@ -92,6 +90,5 @@ ontogeny serve --demo --open   # → http://127.0.0.1:8000/
 ## 更多资源
 
 - Ontogeny 源码目录：<https://github.com/apache/hugegraph-ai/tree/ontogeny>
-- 仓库内文档（架构 + 使用，中英双语）：[`docs/`](https://github.com/apache/hugegraph-ai/tree/ontogeny/docs)
 - 全量 API 契约：运行实例上的 `GET /openapi.json`
 - [HugeGraph-LLM](./hugegraph-llm.md) —— 同仓库主线上的 GraphRAG 与知识图谱构建

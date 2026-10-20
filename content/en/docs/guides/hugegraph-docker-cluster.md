@@ -202,7 +202,10 @@ The following tables describe current master entrypoints and Compose files, not 
 > **Deprecated aliases**: `PD_ADDRESS` → `HG_STORE_PD_ADDRESS`, `GRPC_HOST` → `HG_STORE_GRPC_HOST`, `RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`.
 
 RocksDB caches live outside the Java heap. Leave `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` unset to size them from the container memory limit, or from the
-memory of the Docker host (such as the Docker Desktop VM) when the container has no limit. The Compose files above set no limit, so each Store sizes its budget
+memory of the Docker host (such as the Docker Desktop VM) when the container has no limit. That needs the loaded
+`rocksdb.total_memory_size` to be missing or `0`: an `application-pd.yml` kept from an earlier release still sets `32000000000`
+and keeps that budget, so follow the upgrade note under `rocksdb.total_memory_size` in the
+[HStore configuration reference](/docs/quickstart/hugegraph/hugegraph-hstore/). The Compose files above set no limit, so each Store sizes its budget
 from the whole host; set a memory limit on Store services or set this variable to a plain number of bytes when several Stores share one host.
 A container limit bounds only the RocksDB budget: the Store launcher still picks `-Xmx` from the host's free memory (up to 2 GiB) and sets direct memory to the
 same size. Size those for the limit too through `JAVA_OPTS` (passed to the launcher as `-j`), for example `JAVA_OPTS="-Xmx1g -XX:MaxDirectMemorySize=512m"` for

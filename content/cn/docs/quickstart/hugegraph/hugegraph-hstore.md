@@ -131,7 +131,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` | gRPC 服务端口。 |
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` | REST API 端口。 |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` | 数据存储路径。 |
-| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | 否 | 无 | `rocksdb.total_memory_size` | RocksDB 内存预算，单位字节，只能是数字；其他值会使入口脚本以退出码 2 退出。未设置时使用 `application-pd.yml` 中的值或自动计算。 |
+| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | 否 | 无 | `rocksdb.total_memory_size` | RocksDB 内存预算，单位字节。空值视为未设置；非空值只能是数字，否则入口脚本以退出码 2 退出。未设置时使用 `application-pd.yml` 中的值或自动计算。 |
 {.td-table--wide}
 
 当前主线 entrypoint 将这些变量写入 `SPRING_APPLICATION_JSON`，覆盖镜像内 `conf/application.yml`；其余配置仍从该文件和 `application-pd.yml` 读取，然后以前台方式启动 Java。旧变量 `PD_ADDRESS`、`GRPC_HOST`、`RAFT_ADDRESS` 仍可用，但会输出弃用警告。
@@ -208,7 +208,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 | 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
-| `rocksdb.total_memory_size` | `0` | 自动计算，见说明 | 本节点所有 RocksDB 实例共享的内存预算，单位字节，按 `write_buffer_ratio` 分为写缓存和 block cache。两者都在堆外，不受 `-Xmx` 限制，另有固定 1 GiB 的 Raft 日志缓存不计入其中。缺失或为 `0` 时，取物理内存减去 JVM 最大堆、`MaxDirectMemorySize`（未设置时按堆大小计算；`bin/start-hugegraph-store.sh` 默认把它设为所选的堆大小；`-j` 自行设置了 `-Xmx`、`-XX:MaxHeapSize` 或该上限时不再添加）和 1.5 GiB 预留后剩余部分的一半，并限制在 256 MiB 到 32 GB 之间；容器内设置了内存限制时以 cgroup 内存限制为准，Store 能看到的父 cgroup 上的限制也会计入；否则以宿主机内存为准。JVM 和 cgroup 文件都拿不到可用的内存大小时，改用 JVM 最大堆，同样限制在 256 MiB 到 32 GB 之间。沿用旧版本的 `application-pd.yml` 仍是 `32000000000`，需改为 `0` 才会自动计算。正数按原值使用，且必须是纯字节数，最小为 `1048576`（1 MiB）；更小的值或 `4GB` 之类的值会导致启动失败。 |
+| `rocksdb.total_memory_size` | `0` | 自动计算，见说明 | 本节点所有 RocksDB 实例共享的内存预算，单位字节，按 `write_buffer_ratio` 分为写缓存和 block cache。两者都在堆外，不受 `-Xmx` 限制，另有固定 1 GiB 的 Raft 日志缓存不计入其中。该预算是容量目标，并非硬上限：`rocksdb.write_buffer_allow_stall` 默认为 `false`，写缓存写满时不会阻塞写入，因此在大量写入时本地内存可能超出预算，容器仍可能被 OOM 终止。将其设为 `true` 能更严格地守住上限，但会增加写入延迟。缺失或为 `0` 时，取物理内存减去 JVM 最大堆、`MaxDirectMemorySize`（未设置时按堆大小计算；`bin/start-hugegraph-store.sh` 默认把它设为所选的堆大小；`-j` 自行设置了 `-Xmx`、`-XX:MaxHeapSize` 或该上限时不再添加）和 1.5 GiB 预留后剩余部分的一半，并限制在 256 MiB 到 32 GB 之间；容器内设置了内存限制时以 cgroup 内存限制为准，Store 能看到的父 cgroup 上的限制也会计入；否则以宿主机内存为准。JVM 和 cgroup 文件都拿不到可用的内存大小时，改用 JVM 最大堆，同样限制在 256 MiB 到 32 GB 之间。沿用旧版本的 `application-pd.yml` 仍是 `32000000000`，需改为 `0` 才会自动计算。正数按原值使用，且必须是纯字节数，最小为 `1048576`（1 MiB）；更小的值或 `4GB` 之类的值会导致启动失败。 |
 | `rocksdb.write_buffer_size` | `32000000` | `33554432` | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`，最小为 `1048576`（1 MiB）。 |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | 落盘前合并的 memtable 数量。 |
 | `rocksdb.write_buffer_ratio` | 未设置 | `0.66` | `total_memory_size` 中分配给写缓存的比例，其余作为 block cache。 |

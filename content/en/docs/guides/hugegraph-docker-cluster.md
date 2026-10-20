@@ -326,8 +326,9 @@ Standalone publishes only `8080` and `8088`; minimal HStore publishes `8620` (PD
    ```
 
    Do not upgrade running containers with a plain `up -d`: Compose reattaches the anonymous volume holding the previous image's root-owned application
-   directory. Run `down` first, or use `up -d --renew-anon-volumes`. A host directory used as a bind mount must be writable by UID `10001`. On Kubernetes, set
-   `fsGroup: 10001` in the pod security context; see [Helm upgrade and verification](/docs/quickstart/hugegraph/hugegraph-helm/#5-upgrade-and-verification).
+   directory. Run `down` first, or use `up -d --renew-anon-volumes`. A host directory used as a bind mount must be writable by UID `10001`. On Kubernetes,
+   the pod security context needs `fsGroup: 10001`, which the Helm chart sets for PD and Store; see [Helm upgrade and
+   verification](/docs/quickstart/hugegraph/hugegraph-helm/#5-upgrade-and-verification).
 
 **Runtime logs**: `docker logs <container-name>` (for example, `docker logs hg-pd0`) shows logs without entering containers. In images built from current
 master, the PD, Store and both Server images (`hugegraph/hugegraph` and the HStore `hugegraph/server`) set `STDOUT_MODE=true` and send service logs to stdout.

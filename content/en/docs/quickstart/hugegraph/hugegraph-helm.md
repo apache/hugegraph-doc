@@ -231,18 +231,10 @@ Existing explicit helper images also remain under `--reuse-values`;
 add `--set-string store.waitImage= --set-string server.waitImage=` to reuse component images.
 Adopt new defaults deliberately with `--reset-values` and a reviewed file retaining your image, credential, storage and topology settings.
 
-PD, Store and Server images built from current master run as UID/GID `10001`, and the chart defaults `pd.podSecurityContext` and
-`store.podSecurityContext` to `fsGroup: 10001` so they can write PVCs created by older images, which ran as root. `--reuse-values` keeps an existing
-release's empty value, and the default `latest` tag with `pullPolicy: Always` can pull the new image on any Pod restart, so set it explicitly first:
-
-```bash
-helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
-  --set pd.podSecurityContext.fsGroup=10001 \
-  --set pd.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
-  --set store.podSecurityContext.fsGroup=10001 \
-  --set store.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
-  --wait --timeout 15m
-```
+PD, Store and Server images built from current master run as UID/GID `10001`. The chart gives the PD and Store pods `fsGroup: 10001` (with
+`fsGroupChangePolicy: OnRootMismatch`) unless their `podSecurityContext` sets `fsGroup`, also when `--reuse-values` keeps an older release's empty value,
+so they can write PVCs created by older images, which ran as root. The default `latest` tag with `pullPolicy: Always` can pull the new image on any Pod
+restart, so upgrade the chart before that happens, or pin the old image tags until you do.
 
 If a Pod still reports `Permission denied`, set `fsGroupChangePolicy: Always` for one rollout or change the owner once with `chown -R 10001:10001`;
 volumes whose CSI driver ignores `fsGroup` (for example many NFS drivers) and `hostPath` volumes need that `chown` too.

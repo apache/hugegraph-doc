@@ -320,7 +320,7 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
    ```
 
    不要对运行中的容器直接执行 `up -d` 升级：Compose 会重新挂载保存旧镜像应用目录（归 root 所有）的匿名卷。请先执行 `down`，或使用 `up -d --renew-anon-volumes`。
-   作为 bind mount 的宿主机目录必须对 UID `10001` 可写。在 Kubernetes 上，请在 Pod 安全上下文中设置 `fsGroup: 10001`，参见
+   作为 bind mount 的宿主机目录必须对 UID `10001` 可写。在 Kubernetes 上，Pod 安全上下文需要 `fsGroup: 10001`，Helm Chart 已为 PD 和 Store 设置，参见
    [Helm 升级和验证](/cn/docs/quickstart/hugegraph/hugegraph-helm/#5-升级和验证)。
 
 **查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。基于当前 master 构建的 PD、Store 以及两个 Server 镜像（`hugegraph/hugegraph` 和 HStore 的

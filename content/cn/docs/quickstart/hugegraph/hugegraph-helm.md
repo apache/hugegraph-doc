@@ -223,18 +223,9 @@ helm test hugegraph -n hugegraph --logs --timeout 5m
 已有配置中的显式 helper 镜像也会保留。添加 `--set-string store.waitImage= --set-string server.waitImage=` 可清空覆盖并复用组件镜像。
 要采用新的默认值，先审阅已有配置，再使用 `--reset-values` 和保留镜像、凭据、存储、拓扑设置的配置文件。
 
-基于当前 master 构建的 PD、Store 和 Server 镜像以 UID/GID `10001` 运行；Chart 将 `pd.podSecurityContext` 和 `store.podSecurityContext` 默认设为
-`fsGroup: 10001`，使其能写入旧镜像（以 root 运行）创建的 PVC。`--reuse-values` 会保留已有 Release 的空值，而默认的 `latest` 标签配合 `pullPolicy: Always`
-可能在任意 Pod 重启时拉取新镜像，因此请先显式设置：
-
-```bash
-helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
-  --set pd.podSecurityContext.fsGroup=10001 \
-  --set pd.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
-  --set store.podSecurityContext.fsGroup=10001 \
-  --set store.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
-  --wait --timeout 15m
-```
+基于当前 master 构建的 PD、Store 和 Server 镜像以 UID/GID `10001` 运行。除非 `podSecurityContext` 已设置 `fsGroup`，Chart 会为 PD 和 Store Pod 设置
+`fsGroup: 10001`（以及 `fsGroupChangePolicy: OnRootMismatch`），即使 `--reuse-values` 保留了旧 Release 的空值也是如此，使其能写入旧镜像（以 root 运行）创建的 PVC。
+默认的 `latest` 标签配合 `pullPolicy: Always` 可能在任意 Pod 重启时拉取新镜像，因此请在此之前升级 Chart，或在升级前固定旧镜像标签。
 
 如果 Pod 仍报 `Permission denied`，可在一次滚动更新中设置 `fsGroupChangePolicy: Always`，或执行一次 `chown -R 10001:10001`；CSI 驱动忽略 `fsGroup` 的卷
 （例如许多 NFS 驱动）和 `hostPath` 卷同样需要执行该 `chown`。

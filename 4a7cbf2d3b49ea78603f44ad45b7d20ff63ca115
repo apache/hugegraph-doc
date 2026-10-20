@@ -1,0 +1,33 @@
+content/en/docs/quickstart/hugegraph-ai/ontogeny.md
+  4088b035e898f36b 7,9
+content/cn/docs/quickstart/hugegraph-ai/ontogeny.md
+  4088b035e898f36b 7,9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.8.1",
+  "base_commit_sha": "4a7cbf2d3b49ea78603f44ad45b7d20ff63ca115",
+  "prompts": {
+    "4088b035e898f36b": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_f3fe2c8f-c378-4860-9542-255c10d91270",
+        "model": "GLM-5.3-Flash"
+      },
+      "human_author": "simon <zhangshiming@cvte.com>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 4,
+      "accepted_lines": 4,
+      "overriden_lines": 0,
+      "messages_url": "https://gitai.gz.cvte.cn/cas/614a1e466f83613b5daf0d3c4d2c1e760ff7312cd63a9386283b75f10913ca53",
+      "token_usage": {
+        "input_tokens": 6826537,
+        "output_tokens": 59545,
+        "cache_read_tokens": 6484544,
+        "cache_creation_tokens": 0,
+        "total_cost": 0.0
+      }
+    }
+  }
+}

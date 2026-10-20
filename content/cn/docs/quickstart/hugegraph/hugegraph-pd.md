@@ -83,6 +83,8 @@ docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
 
 ```bash
 export HG_PD_AUTH_SECRET_KEY="$(openssl rand -hex 24)"
+# master 构建的镜像以 UID 10001 运行，宿主机数据目录必须对该用户可写
+mkdir -p /path/to/data && sudo chown 10001:10001 /path/to/data
 docker run -d \
   -p 8620:8620 -p 8686:8686 -p 8610:8610 \
   -e HG_PD_GRPC_HOST=192.168.1.10 \

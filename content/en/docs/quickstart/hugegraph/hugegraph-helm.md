@@ -230,6 +230,22 @@ helm test hugegraph -n hugegraph --logs --timeout 5m
 Existing explicit helper images also remain under `--reuse-values`;
 add `--set-string store.waitImage= --set-string server.waitImage=` to reuse component images.
 Adopt new defaults deliberately with `--reset-values` and a reviewed file retaining your image, credential, storage and topology settings.
+
+PD, Store and Server images built from current master run as UID/GID `10001`, and the chart defaults `pd.podSecurityContext` and
+`store.podSecurityContext` to `fsGroup: 10001` so they can write PVCs created by older images, which ran as root. `--reuse-values` keeps an existing
+release's empty value, and the default `latest` tag with `pullPolicy: Always` can pull the new image on any Pod restart, so set it explicitly first:
+
+```bash
+helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+  --set pd.podSecurityContext.fsGroup=10001 \
+  --set pd.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+  --set store.podSecurityContext.fsGroup=10001 \
+  --set store.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+  --wait --timeout 15m
+```
+
+If a Pod still reports `Permission denied`, set `fsGroupChangePolicy: Always` for one rollout or change the owner once with `chown -R 10001:10001`;
+volumes whose CSI driver ignores `fsGroup` (for example many NFS drivers) and `hostPath` volumes need that `chown` too.
 Do not treat PD membership, storage or credential changes as ordinary independent overrides; consult the lifecycle reference.
 
 `server.storageWaitTimeoutSeconds` defaults to 300 and is passed as `WAIT_STORAGE_TIMEOUT_S`. An unspecified startup probe threshold is derived

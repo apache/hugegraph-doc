@@ -233,11 +233,24 @@ Adopt new defaults deliberately with `--reset-values` and a reviewed file retain
 
 PD, Store and Server images built from current master run as UID/GID `10001`. The chart gives the PD and Store pods `fsGroup: 10001` (with
 `fsGroupChangePolicy: OnRootMismatch`) unless their `podSecurityContext` sets `fsGroup`, also when `--reuse-values` keeps an older release's empty value,
-so they can write PVCs created by older images, which ran as root. The default `latest` tag with `pullPolicy: Always` can pull the new image on any Pod
-restart, so upgrade the chart before that happens, or pin the old image tags until you do.
+so they can write PVCs created by older images, which ran as root.
 
-If a Pod still reports `Permission denied`, set `fsGroupChangePolicy: Always` for one rollout or change the owner once with `chown -R 10001:10001`;
-volumes whose CSI driver ignores `fsGroup` (for example many NFS drivers) and `hostPath` volumes need that `chown` too.
+Switch PD and Store to images built from this version in the same rollout that first applies `fsGroup`, so the kubelet changes the volume ownership right
+before the `10001` image starts. Do not run images that still run as root with this chart first, for example a `latest` that has not moved to this version:
+files they create stay owned by root, and `OnRootMismatch` checks only the volume root, so it does not fix them later. Pin `pd.image` and `store.image` to a
+build from this version rather than relying on `latest`.
+
+If a release already ran root images with `fsGroup` set, roll out the first `10001` image with a one-time recursive ownership change, then return to
+`OnRootMismatch` on the next upgrade, because `Always` walks the whole volume on every Pod start:
+
+```bash
+helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+  --set pd.podSecurityContext.fsGroupChangePolicy=Always \
+  --set store.podSecurityContext.fsGroupChangePolicy=Always \
+  --wait --timeout 15m
+```
+
+Volumes whose CSI driver ignores `fsGroup` (for example many NFS drivers) and `hostPath` volumes need a one-time `chown -R 10001:10001` instead.
 Do not treat PD membership, storage or credential changes as ordinary independent overrides; consult the lifecycle reference.
 
 `server.storageWaitTimeoutSeconds` defaults to 300 and is passed as `WAIT_STORAGE_TIMEOUT_S`. An unspecified startup probe threshold is derived

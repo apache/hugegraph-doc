@@ -17,8 +17,7 @@ search_keywords: [HugeGraph Hubble, HStore, PD, GraphSpace, 集群管理]
 Docker `latest` 为动态标签，配图用于定位界面，实际版本以部署镜像的 digest 及构建信息为准。
 不同版本可提供的指标和权限接口有所区别。
 
-截图以 2026-10-22 固定的 [Hubble 源码版本][hubble-screenshot-source]
-构建并实测，中文与英文采用相同示例数据与操作。
+本文截图基于 HugeGraph Hubble 界面，中英文界面功能与操作一致。
 
 ## 连接分布式集群
 
@@ -195,5 +194,3 @@ operations.store.allowed_targets=[http://store:8520]
 
 若集群拓扑可见但节点指标不完整，请依次检查 Hubble 后端到 PD REST 的网络连通性与认证凭据、PD 返回的 Store REST 与指标地址，
 以及目标地址是否已加入上述白名单。概览中的部分可用状态仅表示特定来源指标采集受阻，并不代表图 API 服务不可用。
-
-[hubble-screenshot-source]: https://github.com/apache/hugegraph-toolchain/tree/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-hubble

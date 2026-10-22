@@ -59,21 +59,18 @@ The build also writes `hugegraph-tools/target/apache-hugegraph-tools-incubating-
 
 #### 2.3 Build current source {#build-current-source}
 
-Use this separate path for the unreleased `1.8.0` source described in the current documentation.
-It requires JDK 17, Maven 3.6.3 or newer, and Python 3.9 or newer. Set `JAVA_HOME` to JDK 17 before starting.
-Run all steps in the same terminal so the SDK and Tools use the same isolated Maven repository.
+To use unreleased features from the master branch, build Tools `1.8.0` from source (requires JDK 17, Maven 3.6.3+, and Python 3.9+):
 
-1. **Get the fixed Toolchain source.**
+1. **Clone Toolchain source**
 
    ```bash
-   git clone --no-checkout https://github.com/apache/hugegraph-toolchain.git hugegraph-toolchain-1.8.0
-   cd hugegraph-toolchain-1.8.0
-   git checkout d655b0372dfe189ebeff51ea885b3386a1bc4a2c
+   git clone https://github.com/apache/hugegraph-toolchain.git
+   cd hugegraph-toolchain
    ```
 
-1. **Build the matching Server SDK.**
+1. **Build matching Server SDK**
 
-   Both version checks must report JDK 17. The helper downloads the fixed Server source and installs its SDK into `candidate_dir`.
+   Run the script below to download Server source and install the SDK into an isolated Maven repository:
 
    ```bash
    java -version
@@ -85,10 +82,9 @@ Run all steps in the same terminal so the SDK and Tools use the same isolated Ma
      "$candidate_dir/server" "$candidate_dir/m2"
    ```
 
-   See the [candidate SDK guide](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/docs/java17-migration.md#build-the-locked-candidate)
-   for the dependency manifest and validation details.
+   See the [candidate SDK guide](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md) for details.
 
-1. **Package Tools and enter the generated directory.**
+1. **Package Tools**
 
    ```bash
    mvn -Dmaven.repo.local="$candidate_dir/m2" \
@@ -309,12 +305,11 @@ You can also set these variables in `bin/hugegraph`.
 
 ##### 3.8 Install the deployment type
 
-These shell commands deploy the legacy Server/Studio pairs listed in
-[`bin/version-map.yaml`](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-tools/assembly/bin/version-map.yaml),
-from Server `0.6.1` / Studio `0.6.1` to Server `0.10.4` / Studio `0.10.0`.
-They do not deploy current Server or Hubble. For a new installation, follow
-[Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/) and [Hubble Quick Start](/docs/quickstart/toolchain/hugegraph-hubble/).
-The options below remain as a reference for existing legacy installations.
+Note: These deployment commands only apply to legacy versions (Server 0.6.1~0.10.4 and Studio 0.6.1~0.10.0),
+and do not support current HugeGraph Server or Hubble.
+For modern deployments, follow [Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/)
+and [Hubble Quick Start](/docs/quickstart/toolchain/hugegraph-hubble/).
+The options below are retained only for maintaining legacy environments.
 
 - deploy, one-click download, install and start HugeGraph-Server and HugeGraph-Studio
   - -v, required, specifies the HugeGraph-Server and HugeGraph-Studio version to install, must be one of the versions listed in bin/version-map.yaml (0.6, 0.7, 0.8, 0.9, 0.10), which maps it to the matching server and studio release versions

@@ -59,21 +59,18 @@ bin/hugegraph help
 
 #### 2.3 构建当前源码 {#build-current-source}
 
-需要当前文档中的未发布 `1.8.0` 功能时，使用这条独立路径。
-先安装 JDK 17、Maven 3.6.3 或更新版本、Python 3.9 或更新版本，并将 `JAVA_HOME` 指向 JDK 17。
-以下步骤在同一终端中运行，使 SDK 和 Tools 使用同一个独立 Maven 仓库。
+若需要使用 master 分支未发布的新特性，可按以下步骤从源码构建 Tools `1.8.0`（需 JDK 17、Maven 3.6.3+ 与 Python 3.9+）：
 
-1. **获取固定的 Toolchain 源码。**
+1. **获取 Toolchain 源码**
 
    ```bash
-   git clone --no-checkout https://github.com/apache/hugegraph-toolchain.git hugegraph-toolchain-1.8.0
-   cd hugegraph-toolchain-1.8.0
-   git checkout d655b0372dfe189ebeff51ea885b3386a1bc4a2c
+   git clone https://github.com/apache/hugegraph-toolchain.git
+   cd hugegraph-toolchain
    ```
 
-1. **构建配套 Server SDK。**
+1. **构建配套 Server SDK**
 
-   两条版本检查都应显示 JDK 17。脚本会下载固定的 Server 源码，将 SDK 安装到 `candidate_dir`。
+   执行以下脚本下载 Server 源码并将配套 SDK 安装到独立 Maven 仓库：
 
    ```bash
    java -version
@@ -85,9 +82,9 @@ bin/hugegraph help
      "$candidate_dir/server" "$candidate_dir/m2"
    ```
 
-   依赖清单和校验方式见 [candidate SDK 构建说明](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/docs/java17-migration.md#build-the-locked-candidate)。
+   详细说明见 [candidate SDK 构建指引](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)。
 
-1. **打包 Tools，进入生成目录。**
+1. **打包 Tools**
 
    ```bash
    mvn -Dmaven.repo.local="$candidate_dir/m2" \
@@ -305,10 +302,9 @@ export HUGEGRAPH_GRAPH=hugegraph
 
 ##### 3.8 安装部署类
 
-这些脚本只部署 [`bin/version-map.yaml`](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-tools/assembly/bin/version-map.yaml)中列出的旧版 Server/Studio 组合，
-范围从 Server `0.6.1` / Studio `0.6.1` 到 Server `0.10.4` / Studio `0.10.0`。
-它们不能部署当前 Server 或 Hubble。新部署请按 [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/)
-和 [Hubble 快速上手](/cn/docs/quickstart/toolchain/hugegraph-hubble/)操作，以下参数保留供维护旧环境时查阅。
+注意：此处的安装部署命令仅适用于早期历史版本（Server 0.6.1~0.10.4 与 Studio 0.6.1~0.10.0），不支持当前版本的 HugeGraph Server 或 Hubble。
+新部署请参考 [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/) 与 [Hubble 快速上手](/cn/docs/quickstart/toolchain/hugegraph-hubble/)，
+以下说明仅供维护旧环境参考。
 
 - deploy，一键下载、安装和启动 HugeGraph-Server 和 HugeGraph-Studio
     - -v，必填项，指定要安装的 HugeGraph-Server 和 HugeGraph-Studio 版本，必须是 bin/version-map.yaml 中列出的版本之一（0.6、0.7、0.8、0.9、0.10），脚本据此映射到对应的 server 和 studio 发布版本

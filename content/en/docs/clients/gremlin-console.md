@@ -109,7 +109,7 @@ Older configuration files may reference serializer classes that no longer exist.
    ```
 
    Server binds the graph `hugegraph` in graphspace `DEFAULT` as `DEFAULT-hugegraph`, and its traversal source as `__g_DEFAULT-hugegraph`.
-   The hyphenated name is not a Groovy identifier. Map that traversal source to `g` when creating the client:
+   Because hyphens are invalid in Groovy variable names, use `.alias(['g': '__g_DEFAULT-hugegraph'])` to map it to `g` when creating the driver client:
 
    ```groovy
    import org.apache.tinkerpop.gremlin.driver.Cluster
@@ -124,8 +124,8 @@ Older configuration files may reference serializer classes that no longer exist.
    client.submit('g.V().toList().size()').all().get()[0].object
    ```
 
-   Both return `6` if the sample graph was preloaded at Server startup; other graphs return their actual vertex count.
-   These are local Console calls to the Driver's `submit()` method, which sends the script to Server. They do not need a `:>` prefix.
+   Both return `6` if the sample graph was preloaded at Server startup (other graphs return their actual vertex count).
+   When submitting scripts via `client.submit()`, no `:>` prefix is needed.
 
 1. Close the client and cluster when finished.
 
@@ -135,15 +135,14 @@ Older configuration files may reference serializer classes that no longer exist.
    ```
 {.steps}
 
-The Console also provides its own remote connection command:
+Alternatively, you can connect using Gremlin Console's built-in `:remote` command:
 
 ```groovy
 :remote connect tinkerpop.server conf/remote.yaml
-// Use :> to submit a script through this Console remote connection.
+// Use :> as a prefix when submitting scripts through the Console remote connection.
 :remote close
 ```
 
-With this Console command, `:>` submits a script to Server, while an ordinary expression runs locally unless remote-console mode is enabled.
-The connection shown above does not define the `g` alias used in the Driver example. Do not send `:> g.V()` through it without configuring an alias.
+When connected with `:remote`, expressions prefixed with `:>` are sent to the remote Server, while normal expressions execute locally in Console.
 
 For more information, see the [TinkerPop Gremlin Console reference](https://tinkerpop.apache.org/docs/current/reference/#gremlin-console).

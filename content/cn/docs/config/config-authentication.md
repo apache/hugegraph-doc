@@ -148,10 +148,8 @@ HStore/PD 部署的管理员由 PD 启动路径创建，须按该部署的配置
 
 新容器在 Docker run 和 Compose 中选择一种方式。已经运行过的容器直接阅读[既有容器](#3-进入容器后重新开启鉴权模式)。
 
-以下流程依据[当前源码的入口脚本](https://github.com/apache/hugegraph/blob/ebb8f4e17f0bf826cb50745c590d8bc54b45c6b6/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh)。
-按 [Server 安装指南](/cn/docs/quickstart/hugegraph/hugegraph-server/) 准备对应镜像，将下面的占位符替换为实际标签或 digest。
-示例适用于官方 Server 镜像布局 `/hugegraph-server`，且镜像包含 `bin/enable-auth.sh` 和 `bin/init-store.sh`。
-`PASSWORD` 用于首次创建管理员，不能用来重置已有管理员密码。不同版本的入口脚本存在差异，升级时应核对所选版本的脚本。
+使用 Docker 部署时，官方镜像支持通过环境变量直接开启鉴权模式（适用于官方 Server 镜像 `/hugegraph-server` 布局）。
+将占位符替换为实际镜像标签或 digest：
 
 ```bash
 export HUGEGRAPH_IMAGE='<image:tag-or-digest>'
@@ -160,7 +158,7 @@ printf '\n'
 export PASSWORD
 ```
 
-在 Bash 中运行上述命令，输入不含空白字符的强随机密码。密码会进入容器环境，限制 Docker 管理权限，不要将凭据写进共享 Compose 文件。
+提示输入管理员密码后执行启动命令。为保障凭据安全，请避免将密码以明文形式提交到共享 Compose 文件中。
 JWT 密钥仍按[上面的配置](#配置用户认证)持久保存到认证图配置；多节点必须使用同一个值。
 
 #### Docker run {#1-采用-docker-run}
@@ -249,7 +247,7 @@ HStore/PD 或外部认证服务使用各自的管理员初始化流程。
 
 #### 检查认证结果
 
-等待 Server 启动后，在宿主机执行以下请求。`-u admin` 会交互式读取密码。
+等待 Server 启动后，在宿主机执行以下请求验证。`-u admin` 会交互式提示输入密码：
 
 ```bash
 curl -sS -o /dev/null -w '%{http_code}\n' \
@@ -258,6 +256,6 @@ curl -sS -o /dev/null -w '%{http_code}\n' -u admin \
   http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
 ```
 
-预期依次返回 `401` 和 `200`。再次执行第二条命令并输入错误密码，应返回 `401`。
-以上 URL 适用于当前源码。`1.7.0` 发布镜像使用 `/graphs/hugegraph/schema/vertexlabels`，验证时替换 URL 路径。
-若无凭据仍返回 `200`，检查认证配置与实际镜像版本，暂勿开放服务端口。
+未携带凭据的请求预期返回 `401 Unauthorized`，输入正确密码的请求返回 `200 OK`（若输入错误密码则同样返回 `401`）。
+注：当前主线版本 URL 包含 `/graphspaces/DEFAULT`，1.7.0 等历史版本请省略 graphspace 前缀（直接使用 `/graphs/hugegraph/...`）。
+若未提供凭据仍返回 `200`，说明鉴权未成功启用，请检查配置并重启 Server。

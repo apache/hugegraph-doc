@@ -106,8 +106,8 @@ Gremlin-Console 通过 WebSocket 连接 HugeGraph-Server。使用与 Server 同�
    ./bin/gremlin-console.sh
    ```
 
-   Server 将图空间 `DEFAULT` 下的图 `hugegraph` 绑定为 `DEFAULT-hugegraph`，其 traversal source 绑定为 `__g_DEFAULT-hugegraph`。
-   名称中的连字符不能用于 Groovy 标识符，创建客户端时将 traversal source 映射为 `g`。
+   Server 端将默认图空间下的图绑定为 `DEFAULT-hugegraph`，其 traversal source 绑定为 `__g_DEFAULT-hugegraph`。
+   由于连字符 `-` 在 Groovy 中不能直接用作变量名，通过 Java Driver 连接时，使用 `.alias(['g': '__g_DEFAULT-hugegraph'])` 将其映射为 `g`。
 
    ```groovy
    import org.apache.tinkerpop.gremlin.driver.Cluster
@@ -122,8 +122,8 @@ Gremlin-Console 通过 WebSocket 连接 HugeGraph-Server。使用与 Server 同�
    client.submit('g.V().toList().size()').all().get()[0].object
    ```
 
-   如果启动 Server 时预加载了示例图，两条查询均返回 `6`；其他图返回实际顶点数。
-   这里是在 Console 本地调用 Driver 的 `submit()` 方法，由该方法向 Server 发送脚本，不需要 `:>` 前缀。
+   若启动 Server 时预加载了示例图，两条查询均返回 `6`（其他图返回其实际顶点数）。
+   通过 Driver 的 `client.submit()` 提交脚本时，无需在语句前加 `:>` 前缀。
 
 1. 使用结束后关闭客户端和集群连接。
 
@@ -133,15 +133,14 @@ Gremlin-Console 通过 WebSocket 连接 HugeGraph-Server。使用与 Server 同�
    ```
 {.steps}
 
-Console 也提供自身的远程连接命令。
+此外，也可以使用 Gremlin Console 内置的 `:remote` 命令连接：
 
 ```groovy
 :remote connect tinkerpop.server conf/remote.yaml
-// 通过此 Console 远程连接提交脚本时，使用 :> 前缀。
+// 通过 Console 远程连接提交脚本时，前缀使用 :>
 :remote close
 ```
 
-使用这套 Console 命令时，`:>` 表示将脚本提交到 Server；普通表达式在本地执行（启用 remote-console 模式时除外）。
-上面的连接命令没有定义 Driver 示例使用的 `g` 别名，配置别名前不要直接通过它发送 `:> g.V()`。
+使用 `:remote` 连接时，以 `:>` 开头的语句会被发送至远端 Server 执行，普通语句则在 Console 本地执行。
 
 更多用法见 [TinkerPop Gremlin Console 参考](https://tinkerpop.apache.org/docs/current/reference/#gremlin-console)。

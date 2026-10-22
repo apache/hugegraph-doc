@@ -6,15 +6,13 @@ search_keywords: [HugeGraph Loader, 批量导入, 数据导入]
 search_boost: 1.6
 ---
 
-本文依据 Toolchain `1.8.0` 的[提交 `d655b037`](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/pom.xml)。
-发布版和 Docker `latest` 可能与源码不同，使用未发布功能前请先核对版本。
+本文以 Toolchain `1.8.0`（master 分支）为准。发布版和 Docker `latest` 可能存在部分差异，使用未发布功能前请先核对版本。
 
-### 先试一次本地文件导入 {#quick-local-file-import}
+### 快速上手：本地文件导入 {#quick-local-file-import}
 
-导入两个人和一条关系，再查询姓名、年龄和关系。先[安装 Loader](#2-获取-hugegraph-loader)，并启动
-[HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)。以下命令均在 Loader 安装目录执行，
-连接 `127.0.0.1:8080` 上的 `DEFAULT/hugegraph`。当前账号需要有创建 Schema 和写入数据的权限。
-Server 已启用认证时，在导入命令中增加 `--username` 和 `--password`，或使用 `--token`。
+下面通过一个最简示例体验 Loader 的基本导入流程：导入两个人和一条关系，并在 Hubble 中查询验证。
+请先[安装 Loader](#2-获取-hugegraph-loader) 并启动 [HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
+以下命令均在 Loader 安装目录下执行，连接本地默认图 `hugegraph`。若 Server 已启用鉴权，在命令中追加 `--username` 与 `--password`（或 `--token`）。
 
 1. **创建数据文件**
 
@@ -1375,10 +1373,8 @@ bin/hugegraph-spark-loader.sh \
 导入后查询目标图，核对数量和属性；API 写入路径的插入计数器不统计分布式写入。
 
 该路径拒绝 `--incremental-mode true` 和 `--failure-mode true`。Standalone Spark 仅支持 client 部署模式。
-Spark 3.5.8 / Java 17 不支持 HBase bulkload（`--sink-type false`）。已有 bulkload 部署应继续使用单独验证过的
-Loader 发布包及其 JVM、Spark、HBase 环境。输入限制和部署边界见固定源码中的说明。
-
-[Spark 说明](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-loader/docs/spark-java17.md)
+Spark 3.5.8 / Java 17 不支持 HBase bulkload（`--sink-type false`）。已有 bulkload 部署建议继续沿用原环境验证通过的
+Loader 发布包及其相关依赖。更多细节见 [Spark 迁移说明](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/spark-java17.md)。
 
 #### 4.7 使用 flink-cdc-loader 导入
 
@@ -1402,6 +1398,5 @@ bin/hugegraph-flinkcdc-loader.sh -p 1 -- \
 
 每个映射使用一个 source reader 和一个 sink writer。`--cdc-sink-parallelism` 默认为 `1`，其他取值会被拒绝。
 `--` 之后的 Loader 参数 `-p` 表示 Server 端口。Checkpoint 刷新不提供图写入事务，也不保证 exactly-once。
-部署边 CDC 或更多映射前，需在真实 MySQL 和 HugeGraph 环境中单独验证。支持范围和恢复过程见固定源码中的说明。
-
-[Flink CDC 说明](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-loader/docs/flink-cdc-java17.md)
+在生产环境部署边 CDC 或更复杂的多表映射前，建议先在真实环境中充分验证。
+支持范围和恢复流程见 [Flink CDC 说明](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/flink-cdc-java17.md)。

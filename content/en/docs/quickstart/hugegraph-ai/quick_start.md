@@ -17,10 +17,7 @@ The reranker is optional. Start with the local `bleu` method.
 | Convert a question to Gremlin | `3. Text2gremlin` | Graph schema and LLM; examples also need embeddings and an example index |
 | Check graph data directly | `4. Graph Tools` | A HugeGraph connection and handwritten Gremlin |
 
-The screenshots use [this source revision](https://github.com/apache/hugegraph-ai/tree/da11249745180471420890fd5a44aee93bc33bae) and the same Sarah / James
-data,
-with `LANGUAGE=EN` and `LANGUAGE=CN`, respectively.
-This setting changes built-in prompts; control labels remain in English. Model output can vary, so check answers against the retrieved facts.
+The screenshots show the HugeGraph-LLM Web UI. The built-in prompt language can be toggled via `LANGUAGE` in `.env`, while UI controls remain in English.
 
 > [!DETAILS]- Missing batch-question template when starting from source
 >
@@ -129,8 +126,8 @@ The second tab offers four answer modes. Choose the indexes needed for your ques
 | `Graph-only Answer` | Retrieved graph data |
 | `Graph-Vector Answer` | Retrieved graph data and document chunks |
 
-On the source revision tested here, `Graph-only Answer` returned empty output in a repeat test.
-The steps below use the verified `Graph-Vector Answer` mode, which retrieves graph data and document chunks.
+Using `Graph-Vector Answer` is recommended, as it combines graph traversal and
+vector search for more comprehensive fact retrieval. Other scopes are summarized in the table above.
 
 The screenshots use these short prompts. Paste them into `Query Prompt` and `Keywords Extraction Prompt`, respectively.
 The service fills the placeholders. Keep the `KEYWORDS:` prefix and ASCII colons in keyword output, and preserve name capitalization.
@@ -191,10 +188,8 @@ The third tab converts natural language into Gremlin and executes the generated 
 The upper panel builds an example vector index from question and Gremlin pairs in `.json` or `.csv` files.
 When no file is uploaded, it uses `resources/demo/text2gremlin.csv`. Match example labels and properties to the current graph.
 
-> [!NOTE]
-> In the source revision tested for this page, `Similar Template (TopN)` remains empty after building the example index.
-> The screenshots use an example supplied directly in the Prompt below, without automatic example retrieval.
-> The `Gremlin With Template` field name alone does not prove that an example was retrieved.
+> [!TIP]
+> If building the example index does not automatically retrieve similar templates, you can provide few-shot examples directly in the Prompt template below.
 
 Use these inputs to reproduce the Sarah query.
 

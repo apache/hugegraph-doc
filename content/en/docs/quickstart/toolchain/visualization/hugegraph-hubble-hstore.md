@@ -18,8 +18,7 @@ The guidance below focuses on connectivity and operations; ensure prerequisite c
 Docker `latest` is a moving tag. Screenshots assist in UI navigation; verify deployed versions via image digests and build details.
 Metrics and permission APIs vary by version.
 
-Screenshots use a source build of the [Hubble revision checked on 2026-10-22][hubble-screenshot-source],
-with the same sample data and actions in both languages.
+The screenshots show the HugeGraph Hubble interface in action; features and workflows are identical in both English and Chinese.
 
 ## Connect to a distributed cluster
 
@@ -211,5 +210,3 @@ matching the Store metric target returned by PD. Adding an origin here only auth
 If topology renders but node metrics are missing, check Hubble backend connectivity and credentials to PD REST, verify the Store REST and metric addresses
 returned by PD, and ensure targets are in `operations.store.allowed_targets`. A partially available overview indicates metrics collection was blocked for
 specific sources, not that graph APIs are down.
-
-[hubble-screenshot-source]: https://github.com/apache/hugegraph-toolchain/tree/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-hubble

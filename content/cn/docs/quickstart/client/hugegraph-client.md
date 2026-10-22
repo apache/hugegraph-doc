@@ -61,9 +61,8 @@ weight: 1
 示例使用的 Schema、Graph、Gremlin 和资源关闭接口在 Client `1.7.0` 中可用，也与 Toolchain `master` 兼容。
 发布版的 Java 编译目标不代表所有传递依赖的运行环境要求。
 
-需要 [API 参考](/cn/docs/clients/hugegraph-client/)中的新接口时，将依赖版本改为 `1.8.0`。
-源码版需要配套的 candidate SDK。先按[构建当前 Toolchain 源码](/cn/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)的前两步获取固定源码，
-准备 `candidate_dir`，再在同一终端的 Toolchain 源码根目录运行以下命令。它会将 Client 及父 POM 安装到该独立仓库。
+若需要使用 master 分支未发布的新接口，可将依赖版本改为 `1.8.0` 并从源码编译安装 Client
+（需配合 Toolchain 源码，详见 [Tools 源码构建指引](/cn/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)）：
 
 ```bash
 java -version

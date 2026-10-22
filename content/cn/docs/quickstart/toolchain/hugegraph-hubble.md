@@ -13,14 +13,13 @@ Hubble 是 HugeGraph 的 Web 管理与图可视化界面。你可以在同一个
 如需搭配 HStore 分布式集群使用，可先了解本文的基础操作，再参考 [HStore 分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
 文档内容以 Toolchain 与 Server 的 `master` 分支（当前版本均为 `1.8.0`）为准；Docker `latest` 为动态标签，实际部署建议使用固定版本。
 
-截图以 2026-10-22 固定的 [Hubble 源码版本][hubble-screenshot-source]
-构建并实测，中文与英文采用相同示例数据与操作。
+本文截图基于 HugeGraph Hubble 界面，中英文界面功能与操作一致。
 
 > [!WARNING]
 > 请勿将未配置防护的 Hubble 或 Server 直接暴露在公网上。生产环境请务必开启 HTTPS、容器网络隔离、
 > [认证与授权](/cn/docs/config/config-authentication/)及访问白名单。
 
-按当前任务选择入口；首次使用从启动环境开始。
+可按需快速跳转到对应操作；首次使用建议从启动单机环境开始：
 
 - [启动并加载示例](#启动单机组合)
 
@@ -340,7 +339,7 @@ FILE 上传默认允许 `csv,txt`，单文件 1 GB、总量 10 GB；需要覆盖
 
 ## 停止试用环境或从源码构建
 
-不再需要示例时，在主仓库的 `docker/` 目录执行以下命令。
+清理测试环境时，在 `docker/` 目录下执行以下命令：
 
 ```bash
 docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volumes
@@ -352,20 +351,18 @@ docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volume
 从当前 master 构建时，需要 **JDK 17、Maven 3.9+、Python 3.9+、稳定版 Node.js 24（至少 24.22.0）**，
 并通过 Corepack 使用仓库锁定的 **pnpm 12.14.0**。Maven 不再自动安装 Node/Yarn。
 
-1. 按 [Java 17 candidate 构建说明](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/docs/java17-migration.md#build-the-locked-candidate)
-   安装锁定的 Server SDK，生成独立 Maven 仓库。
-1. 按 [Hubble 源码构建步骤](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-hubble/README.md#2-clone-source-code-then-compile-and-install)
-   安装 Python 依赖，再用同一 Maven 仓库构建 Client、Loader 和 Hubble；构建命令跳过测试，测试需单独执行。
-1. 进入构建得到的 `hugegraph-hubble/apache-hugegraph-hubble-*` 目录，修改 `conf/hugegraph-hubble.properties` 中的连接配置，再启动服务。
+1. 按 [Java 17 构建说明](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)
+   编译并安装 Server SDK 到独立 Maven 仓库。
+1. 按 [Hubble 源码构建步骤](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-hubble/README.md)
+   安装 Python 依赖，再使用同一 Maven 仓库构建 Client、Loader 和 Hubble（跳过测试）。
+1. 进入构建生成的 `hugegraph-hubble/apache-hugegraph-hubble-*` 目录，配置 `conf/hugegraph-hubble.properties` 中的 Server 连接信息后启动：
 
    ```bash
    bin/start-hubble.sh -d
    ```
 {.steps}
 
-当前 master 使用新的 H2 元数据库。升级时保留旧 Hubble 包及其数据，新版使用独立的数据目录；旧元数据没有自动迁移，不能直接复用。
+当前 master 使用新的 H2 元数据库。升级时保留旧 Hubble 包及其数据，新版使用独立的数据目录；旧元数据不支持自动迁移，不能直接复用。
 
 打包配置默认绑定本机 `localhost:8088`。`bin/stop-hubble.sh` 会先请求正常停机，超时后才强制终止。
 需要开发与测试说明时，参考 [Toolchain 本地测试指南](/cn/docs/guides/toolchain-local-test/)。
-
-[hubble-screenshot-source]: https://github.com/apache/hugegraph-toolchain/tree/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-hubble

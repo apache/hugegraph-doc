@@ -11,13 +11,14 @@ These [HugeGraph-Tools](/docs/quickstart/toolchain/hugegraph-tools) commands sup
 
 #### Backup
 
-Backup runs in any graph mode. Pause source writes before exporting so schema, vertices, and edges remain consistent.
-The paginated read APIs do not provide a transaction snapshot spanning the entire backup.
-`backup -t all` covers graph schema and data, excluding deployment configuration and user permissions.
+Backup runs in any graph mode. Pausing source writes before exporting is recommended to keep schema, vertices, and edges consistent
+(paginated read APIs do not provide a global transactional snapshot).
+Note: `backup -t all` only exports schema and graph data, excluding deployment configurations and user permissions.
 
 #### Restore
 
-Choose a restore mode based on the target graph. Use `NONE` for normal operations. `LOADING` cannot be used with `restore`.
+Before restoring data, switch the target graph to the appropriate mode.
+Normal read/write operations use `NONE` mode; note that `LOADING` mode cannot be used for `restore`.
 
 | Target | Mode | Schema IDs | Vertex and edge IDs |
 |---|---|---|---|
@@ -84,8 +85,8 @@ Pause application writes to the target during maintenance.
      restore -t all -d "$BACKUP_DIR"
    ```
 
-   Check that the command succeeds and inspect its results for each data type. On failure, retain the backup and logs and inspect partial writes to the target.
-   Restore does not roll back completed writes or reset the graph mode automatically. Do not blindly repeat it on a partially restored graph.
+   Check command output and the restore results for each type. On failure, retain the backup directory and logs to inspect target state.
+   Restore does not automatically roll back committed writes; do not re-run on a partially restored graph without inspection.
 
 1. <span id="step-3-restoring-graph-mode"></span>**Restore the original mode.**
 
@@ -96,8 +97,8 @@ Pause application writes to the target during maintenance.
    bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-get
    ```
 
-   Handle the graph mode after either success or failure. After a failure, retain the evidence and reset the mode, but keep application writes paused until the
-   target has been checked or prepared again.
+   Regardless of whether restore succeeds or fails, always restore the graph mode back to its original state (usually `NONE`).
+   On failure, preserve the logs and state, and re-prepare the target graph before resuming business writes.
 {.steps}
 
 After resetting the mode, compare vertex and edge counts on both graphs.
@@ -109,14 +110,13 @@ bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" gremlin-execute --scri
 bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" gremlin-execute --script 'g.E().count()'
 ```
 
-Each pair of counts should match. Use the [Schema API](/docs/clients/restful-api/schema/) to compare property keys, vertex labels, edge labels, and indexes.
-Also inspect business properties and edge endpoints. Check original IDs for `RESTORING` and the changes in the table for `MERGING`.
-Matching counts alone do not prove that the business data is complete.
+Each pair of counts should match exactly. We also recommend using the [Schema API](/docs/clients/restful-api/schema/) to verify metadata definitions,
+and sampling vertex and edge properties and endpoints to ensure complete data integrity.
 
-#### help
+#### Help
 
-See the [Tools reference](/docs/quickstart/toolchain/hugegraph-tools) for compression, concurrency, logs, and selecting data types.
-Test backup compatibility with the target version before recovery. Matching command names do not guarantee cross-version compatibility.
+For additional options on compression, concurrency, and selective type backup, see the [Tools reference](/docs/quickstart/toolchain/hugegraph-tools).
+Before performing cross-major-version restores, verify backup file compatibility in a test environment first.
 
 ## API description for Backup/Restore usage and implementation
 

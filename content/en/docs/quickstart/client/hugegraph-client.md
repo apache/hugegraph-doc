@@ -58,10 +58,8 @@ Choose the client version before building:
 The examples use Schema, Graph, Gremlin and resource-cleanup APIs available in Client `1.7.0` and compatible with Toolchain `master`.
 The release's Java build target does not describe the runtime requirements of every transitive dependency.
 
-For new interfaces in the [API reference](/docs/clients/hugegraph-client/), change the dependency version to `1.8.0`.
-This source build needs the matching candidate SDK. Follow the first two steps of
-[building current Toolchain source](/docs/quickstart/toolchain/hugegraph-tools/#build-current-source) to get the fixed source and prepare `candidate_dir`.
-Then run this command from the Toolchain source root in the same terminal. It installs Client and its parent POMs into that isolated repository.
+To use unreleased features from the master branch, change the dependency version to `1.8.0`
+and build Client from source (see [Tools source build instructions](/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)):
 
 ```bash
 java -version

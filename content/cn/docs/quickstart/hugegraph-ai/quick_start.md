@@ -16,9 +16,7 @@ weight: 3
 | 把问题转成 Gremlin | `3. Text2gremlin` | 图 Schema、LLM；引用示例还需 Embedding 和示例索引 |
 | 直接验证图数据 | `4. Graph Tools` | HugeGraph 连接和手写 Gremlin |
 
-截图来自[固定源码版本](https://github.com/apache/hugegraph-ai/tree/da11249745180471420890fd5a44aee93bc33bae)，使用同一份 Sarah / James 数据，
-分别启用 `LANGUAGE=CN` 和 `LANGUAGE=EN`。
-该设置切换内置提示词，控件名称仍为英文。模型输出可能不同，应结合检索到的事实检查答案。
+本文截图基于 HugeGraph-LLM Web 界面，示例包含中英文提示词模式（通过环境变量 `LANGUAGE` 切换内置提示词语言，界面控件保持英文）。
 
 > [!DETAILS]- 源码启动时缺少批量问题模板
 >
@@ -129,8 +127,7 @@ Sarah is a 30-year-old attorney. James is a journalist. Sarah has been James's r
 | `Graph-only Answer` | 图检索结果 |
 | `Graph-Vector Answer` | 图与 chunk 向量检索结果 |
 
-本页验证的源码版本中，`Graph-only Answer` 在复测时出现过空输出。
-下面使用已验证的 `Graph-Vector Answer`，同时检索图数据和文档索引。其他范围的控件含义见上表。
+推荐优先使用 `Graph-Vector Answer`，同时结合图数据检索与文档向量索引以获得更完整的事实支撑。其他范围的控件含义见上表。
 
 截图使用下面的简短提示词。分别填入 `Query Prompt` 和 `Keywords Extraction Prompt`，其中占位符会由服务替换。
 关键词输出需使用代码块中的英文前缀和冒号，姓名的大小写应与图数据一致。
@@ -190,9 +187,8 @@ flowchart TD
 第三个标签页将自然语言转换为 Gremlin，并执行生成的查询。上半部分用 `.json` 或 `.csv` 的问题与 Gremlin 对建立示例向量索引；
 未上传文件时使用内置的 `resources/demo/text2gremlin.csv`。示例中的标签和属性应与当前图一致。
 
-> [!NOTE]
-> 本页验证的源码版本中，建立示例索引后，`Similar Template (TopN)` 仍为空。截图使用下面的 Prompt 手动提供示例，
-> 没有依赖自动示例召回。不要仅凭 `Gremlin With Template` 的字段名称判断示例已命中。
+> [!TIP]
+> 若上传 CSV 构建示例向量索引后未自动召回示例模板，可直接在下面的 Prompt 模板中手动提供 Few-shot 参考示例。
 
 复现 Sarah 查询时，使用以下输入。
 

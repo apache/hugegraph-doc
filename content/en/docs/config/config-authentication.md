@@ -158,16 +158,14 @@ initialization.
    If startup fails, check the logs and authentication graph configuration before retrying.
 {.steps}
 
-### Use docker to enable authentication mode
+### Enable authentication with Docker
 
-Choose Docker run or Compose for a new container. For a container that has already run, use the
-[existing-container path](#3-enter-the-container-to-enable-authentication-mode).
+For a new container, choose either Docker run or Docker Compose. For an existing container, see
+[enabling authentication in existing containers](#3-enter-the-container-to-enable-authentication-mode).
 
-Choose an image using the [Server installation guide](/docs/quickstart/hugegraph/hugegraph-server/) and replace the placeholder below with a versioned tag or
-digest.
-These examples require the official Server layout at `/hugegraph-server`, including `bin/enable-auth.sh` and `bin/init-store.sh`.
-`PASSWORD` creates the initial administrator; it does not reset an existing administrator's password. Check the entrypoint of your selected version when
-upgrading.
+When deploying with Docker, the official image supports enabling authentication
+directly via environment variables (applicable to the official `/hugegraph-server` layout).
+Replace the placeholder below with your image tag or digest:
 
 ```bash
 export HUGEGRAPH_IMAGE='<image:tag-or-digest>'
@@ -176,9 +174,8 @@ printf '\n'
 export PASSWORD
 ```
 
-Run these commands in Bash and enter a strong random password without whitespace. The password becomes part of the container environment.
-Restrict Docker administration access and keep credentials out of shared Compose files.
-Persist the JWT secret in the authentication graph configuration as described [above](#configure-user-authentication). Use the same value on every node.
+Execute the command and enter a strong administrator password when prompted. Avoid committing plaintext passwords into shared Compose files.
+Persist the JWT secret in the authentication graph configuration as described [above](#configure-user-authentication). Use the same value across all nodes.
 
 #### Docker run {#1-use-docker-run}
 
@@ -267,7 +264,7 @@ HStore/PD and external authentication services use their own administrator initi
 
 #### Check authentication
 
-After Server starts, run these requests from the host. `-u admin` prompts for the password.
+Once Server is running, execute the following requests from the host to verify. `-u admin` prompts interactively for the password:
 
 ```bash
 curl -sS -o /dev/null -w '%{http_code}\n' \
@@ -276,6 +273,6 @@ curl -sS -o /dev/null -w '%{http_code}\n' -u admin \
   http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
 ```
 
-Expect `401` followed by `200`. Run the second command again with an incorrect password and expect `401`.
-These URLs apply to the current source. For the `1.7.0` release image, use `/graphs/hugegraph/schema/vertexlabels` instead.
-If an unauthenticated request still returns `200`, check the configuration and actual image version before opening the service port.
+Requests without credentials should return `401 Unauthorized`, while requests with the correct password return `200 OK` (incorrect passwords also return `401`).
+Note: Current master URLs include `/graphspaces/DEFAULT`; for 1.7.0 and older versions, omit the graphspace prefix (use `/graphs/hugegraph/...` directly).
+If unauthenticated requests still return `200`, authentication is not active; inspect configuration and restart Server.

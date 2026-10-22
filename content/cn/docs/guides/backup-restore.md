@@ -11,12 +11,12 @@ Backup 将一张图的 Schema、顶点和边导出为 JSON 数据，Restore 将�
 
 #### Backup
 
-备份可在任意图模式下执行。导出前暂停源图写入，让 Schema、顶点和边保持一致；分批读取 API 不提供跨整个备份过程的事务快照。
-`backup -t all` 只覆盖图的 Schema 和图数据，不包含部署配置与用户权限备份。
+备份可在任意图模式下执行。建议在导出前暂停源图的写入操作，以确保 Schema、顶点和边的数据一致性（分批读取不提供全局事务快照）。
+注意：`backup -t all` 仅导出图的 Schema 和图数据，不包含系统配置文件与用户权限。
 
 #### Restore
 
-先按目标图状态选择恢复模式。日常读写使用 `NONE`，`LOADING` 不能用于 `restore`。
+恢复数据前，需先根据目标图的状态切换恢复模式。日常读写处于 `NONE` 模式；注意：`LOADING` 模式不能用于 `restore`。
 
 | 目标 | 模式 | Schema ID | 顶点和边 ID |
 |---|---|---|---|
@@ -79,8 +79,8 @@ bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" \
      restore -t all -d "$BACKUP_DIR"
    ```
 
-   检查命令是否成功结束及各类型的恢复结果。发生错误时保留备份目录与日志，先检查目标图的部分写入状态。
-   Restore 不会回滚已经写入的数据，也不会自动恢复图模式；不要对部分恢复的图盲目重跑。
+   检查命令输出与各类型的导入结果。若发生错误，请先保留备份目录与日志，并检查目标图的数据状态。
+   Restore 不会自动回滚已写入的数据，切勿在部分恢复的图上盲目重跑。
 
 1. <span id="步骤3恢复图模式"></span>**还原原模式。**
 
@@ -91,7 +91,8 @@ bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" \
    bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-get
    ```
 
-   无论 Restore 成功还是失败，都要处理图模式。失败时先保留现场，完成模式还原后仍暂停业务写入，待检查或重新准备目标图后再恢复业务。
+   无论恢复成功还是失败，最后都必须将图模式还原为原有模式（通常为 `NONE`）。
+   若恢复失败，先保留现场并排查日志，待重新准备目标图后再恢复业务写入。
 {.steps}
 
 还原模式后，对比两端的顶点数和边数。
@@ -103,14 +104,13 @@ bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" gremlin-execute --scri
 bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" gremlin-execute --script 'g.E().count()'
 ```
 
-两组计数应分别相同。再通过 [Schema API](/cn/docs/clients/restful-api/schema/) 核对属性、顶点类型、边类型和索引，
-并抽查业务属性与边的两端。`RESTORING` 还应核对原 ID；`MERGING` 按上表检查 ID 变化。
-仅有计数相同不足以证明业务数据完整。
+两组计数结果应保持完全一致。建议进一步通过 [Schema API](/cn/docs/clients/restful-api/schema/) 核对元数据定义，
+并抽样检查顶点和边的属性与端点关联，确保业务数据的完整性。
 
 #### 帮助
 
-压缩、并发、日志及分类型备份参数见 [Tools 参考](/cn/docs/quickstart/toolchain/hugegraph-tools)。
-恢复前先在目标版本试验备份文件的兼容性，不能仅凭命令名相同推断跨版本可直接恢复。
+更多关于压缩、并发和分类型备份的参数说明，见 [Tools 参考](/cn/docs/quickstart/toolchain/hugegraph-tools)。
+在跨大版本恢复前，建议先在测试环境中验证备份文件的兼容性。
 
 ## Backup/Restore使用和实现的API说明
 

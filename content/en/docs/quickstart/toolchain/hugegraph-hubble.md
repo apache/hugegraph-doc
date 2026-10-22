@@ -14,14 +14,13 @@ For use with an HStore distributed cluster, read the foundational operations her
 [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
 This guide aligns with the Toolchain and Server `master` branches (both currently `1.8.0`).
 
-Screenshots use a source build of the [Hubble revision checked on 2026-10-22][hubble-screenshot-source],
-with the same sample data and actions in both languages.
+The screenshots show the HugeGraph Hubble interface in action; features and workflows are identical in both English and Chinese.
 
 > [!WARNING]
 > Do not expose unauthenticated Hubble or Server instances directly to the public internet. In production, use HTTPS, container isolation,
 > [authentication and authorization](/docs/config/config-authentication/), and network allowlists.
 
-Choose an entry by task. Start with deployment if this is your first visit.
+Jump directly to a task below. If this is your first visit, start with the standalone deployment:
 
 - [Start and load a sample](#start-the-standalone-pair)
 
@@ -376,11 +375,12 @@ To retain data, omit `--volumes` when taking the deployment down and reuse the s
 Building current master requires **JDK 17, Maven 3.9+, Python 3.9+, and stable Node.js 24 (at least 24.22.0)**,
 with **pnpm 12.14.0** selected through Corepack. Maven no longer installs Node/Yarn automatically.
 
-1. Follow the [Java 17 candidate bootstrap](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/docs/java17-migration.md#build-the-locked-candidate)
-   to install the locked Server SDK in an isolated Maven repository.
-1. Follow the [Hubble source-build procedure](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-hubble/README.md#2-clone-source-code-then-compile-and-install)
-   to install Python dependencies and build Client, Loader, and Hubble with that same repository. These build commands skip tests; run tests separately.
-1. Open the resulting `hugegraph-hubble/apache-hugegraph-hubble-*` directory, edit its `conf/hugegraph-hubble.properties` connection settings, then start:
+1. Follow the [Java 17 migration instructions](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)
+   to install the Server SDK in an isolated Maven repository.
+1. Follow the [Hubble source-build procedure](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-hubble/README.md)
+   to install Python dependencies and build Client, Loader, and Hubble with that same repository (skipping tests).
+1. Open the resulting `hugegraph-hubble/apache-hugegraph-hubble-*` directory,
+   configure Server connection settings in `conf/hugegraph-hubble.properties`, then start:
 
    ```bash
    bin/start-hubble.sh -d
@@ -392,5 +392,3 @@ Old metadata has no automatic migration and cannot be reused directly.
 
 The bundled configuration binds to `localhost:8088`. `bin/stop-hubble.sh` requests graceful shutdown before forcing termination on timeout.
 For development and testing, see the [Toolchain local test guide](/docs/guides/toolchain-local-test/).
-
-[hubble-screenshot-source]: https://github.com/apache/hugegraph-toolchain/tree/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-hubble

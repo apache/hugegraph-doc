@@ -7,16 +7,14 @@ search_boost: 1.6
 description: "Bulk import graph data into HugeGraph with Loader from files, HDFS, relational databases, Kafka, and other HugeGraph graphs."
 ---
 
-This guide follows Toolchain `1.8.0` at
-[commit `d655b037`](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/pom.xml).
-Released packages and Docker `latest` may differ; check your version before using unreleased features.
+This guide aligns with Toolchain `1.8.0` (master branch). Released packages and Docker `latest` may differ; check your version before using unreleased features.
 
-### Try a local-file import {#quick-local-file-import}
+### Quick start: local file import {#quick-local-file-import}
 
-Import two people and one relationship, then query their names and ages. First [install Loader](#2-get-hugegraph-loader)
-and start [HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/). The commands below run from the Loader installation directory
-and use `DEFAULT/hugegraph` on `127.0.0.1:8080`. Your account needs permission to create schema and write data;
-for an authenticated Server, add `--username` and `--password`, or `--token`, to the import command.
+Walk through a minimal import workflow: import two people and one relationship, then verify the data in Hubble.
+First [install Loader](#2-get-hugegraph-loader) and start [HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/).
+The commands below run from the Loader directory, importing into the default graph `hugegraph`.
+For an authenticated Server, append `--username` and `--password` (or `--token`).
 
 1. **Create the data files.**
 
@@ -1384,9 +1382,8 @@ Query the target graph to verify counts and properties; the API sink's insertion
 
 This path rejects `--incremental-mode true` and `--failure-mode true`. Standalone Spark supports client deployment only.
 HBase bulkload (`--sink-type false`) is unsupported on Spark 3.5.8 / Java 17; keep an existing bulkload deployment on its separately validated
-released Loader/JVM/Spark/HBase environment. See the fixed-source guide for input restrictions and deployment boundaries.
-
-[Spark guide](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-loader/docs/spark-java17.md)
+released Loader/JVM/Spark/HBase environment.
+For details, see the [Spark migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/spark-java17.md).
 
 #### 4.7 Import data by flink-cdc-loader
 
@@ -1410,7 +1407,5 @@ bin/hugegraph-flinkcdc-loader.sh -p 1 -- \
 
 Each mapping uses a single source reader and sink writer. `--cdc-sink-parallelism` defaults to `1`; other values are rejected.
 After `--`, Loader's `-p` means the Server port. Checkpoint flushing does not provide transactional graph writes or an exactly-once guarantee.
-Validate edge CDC and broader mappings separately against real MySQL and HugeGraph instances before deployment.
-See the fixed-source guide for the supported behavior and recovery procedure.
-
-[Flink CDC guide](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-loader/docs/flink-cdc-java17.md)
+Validate edge CDC and broader mappings in your test environment before deploying to production.
+For more details, see the [Flink CDC documentation](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/flink-cdc-java17.md).

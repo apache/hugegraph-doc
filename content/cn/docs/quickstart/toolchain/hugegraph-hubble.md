@@ -165,10 +165,6 @@ Cypher 查询仅在 Server 后端支持时提供。快捷键会作用于当前�
 
 ### Text2GQL 自然语言查询 {#text2gql}
 
-> [!NOTE]
-> Text2GQL 后端能力（包括模型设置、内置/临时模型管理与 Prompt 模板）依赖包含
-> [apache/hugegraph-toolchain#824](https://github.com/apache/hugegraph-toolchain/pull/824) 的 Hubble 构建或后续发布版本；未合入该特性的旧版本仅提供预览占位，不包含模型设置页面。
-
 在【自然语言】输入框中用自然语言描述查询需求，Text2GQL 会结合当前图的 Schema 自动生成只读 Gremlin 或 Cypher 语句并执行查询。
 生成的语句支持二次编辑（执行前同样会进行只读安全校验）。切换至【异步】模式时，生成的查询与手写查询均可提交为后台异步任务。
 输入框会自动恢复当前图最近一次的查询输入（不会自动触发执行），执行记录中也会完整保留原始自然语言问题。

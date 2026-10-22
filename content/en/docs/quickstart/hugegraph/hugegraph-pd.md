@@ -123,7 +123,7 @@ PD startup reads installation `conf/application.yml`. Match this file to the ins
 
 #### 4.1 Configuration Reference
 
-These tables were checked against `hg-pd-dist` configuration and Java defaults at Server master commit `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4`, and the three `raft.rpc-*` rows against [apache/hugegraph#3368](https://github.com/apache/hugegraph/pull/3368); they do not describe every 1.7.0 behavior. Use original tagged configuration with release binaries and [master configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) with master builds.
+These tables list master configuration values and code defaults. See the [PDConfig implementation](https://github.com/apache/hugegraph/blob/fd8d06c519e2481be89c6f7bc7a45b321b773d12/hugegraph-pd/hg-pd-core/src/main/java/org/apache/hugegraph/pd/config/PDConfig.java#L187-L196) for Raft timeouts. Use the original tagged configuration with 1.7.0 binaries and [master configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) with master builds. Differences from 1.7.0 are noted below.
 
 
 **gRPC and REST**

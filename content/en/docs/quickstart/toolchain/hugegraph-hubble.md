@@ -176,11 +176,6 @@ the natural language prompt, or running statements in the code editor.
 
 ### Text2GQL natural-language queries {#text2gql}
 
-> [!NOTE]
-> The Text2GQL backend capabilities (including Model settings, built-in/temporary models, and Prompt templates) require a Hubble build with
-> [apache/hugegraph-toolchain#824](https://github.com/apache/hugegraph-toolchain/pull/824) or a release containing it.
-> Earlier builds display a preview tab without model management.
-
 Describe your query requirement in the **Natural language** input. Text2GQL combines the current graph schema to generate read-only Gremlin or Cypher
 and execute it automatically. Generated statements can be edited freely (read-only safety checks still apply before execution).
 In **Async** mode, both generated and handwritten queries can be submitted as background tasks.

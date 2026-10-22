@@ -84,7 +84,8 @@ on Java 24 or later, start Server with `-s false` (JDK 24+ dropped Security Mana
 serializer:
   className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
   config:
-    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+    builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
 ```
 
 ```yaml {tab="GraphSON (HTTP / Legacy)"}

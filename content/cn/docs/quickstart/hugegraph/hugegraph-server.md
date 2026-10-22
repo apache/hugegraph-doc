@@ -79,7 +79,8 @@ Server 安全检查（`-s true`）要求 Java 17 到 23 以及可读的 `conf/ja
 serializer:
   className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
   config:
-    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+    builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
 ```
 
 ```yaml {tab="GraphSON (HTTP/兼容)"}

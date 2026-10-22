@@ -18,10 +18,21 @@ The guidance below focuses on connectivity and operations; ensure prerequisite c
 Docker `latest` is a moving tag. Screenshots assist in UI navigation; verify deployed versions via image digests and build details.
 Metrics and permission APIs vary by version.
 
+Screenshots use a source build of the [Hubble revision checked on 2026-10-22][hubble-screenshot-source],
+with the same sample data and actions in both languages.
+
 ## Connect to a distributed cluster
 
 Hubble still manages graph data through the **Server graph API**. In distributed mode, it discovers Servers through PD
 and collects cluster information from PD and Store. Hubble does not read or write graph data directly in Store.
+
+```mermaid
+flowchart LR
+    H[Hubble] -->|Graph API| S[Server]
+    S -->|Graph reads and writes| T[Store]
+    H -.->|Discovery and cluster information| P[PD]
+    H -.->|Node metrics| T
+```
 
 1. **Generate Hubble configuration.** Prepare `.env` in the main repository's `docker/` directory following the Docker README.
 
@@ -101,8 +112,8 @@ plus the storage capacity limit. These deployment quotas neither report current 
 Select a space before opening a graph. Check the current graph after switching spaces, especially when spaces contain identically named graphs.
 The list reflects account access. If a space is missing, check membership permissions before creating more graphs.
 
-![GraphSpace creation and advanced resource limits](/docs/images/hubble/graphspace.jpg)
-{width="2048" height="984"}
+![GraphSpace creation form and entry to advanced resource limits](/docs/images/hubble/graphspace.jpg)
+{width="1600" height="1000"}
 
 ### Reuse Schema templates
 
@@ -138,7 +149,7 @@ legacy custom roles on older Servers are not interchangeable with these presets.
 See [Server authentication and authorization](/docs/config/config-authentication/).
 
 ![GraphSpace members and access presets](/docs/images/hubble/members.jpg)
-{width="2048" height="984"}
+{width="1600" height="1000"}
 
 ## Locate problems through the cluster overview
 
@@ -200,3 +211,5 @@ matching the Store metric target returned by PD. Adding an origin here only auth
 If topology renders but node metrics are missing, check Hubble backend connectivity and credentials to PD REST, verify the Store REST and metric addresses
 returned by PD, and ensure targets are in `operations.store.allowed_targets`. A partially available overview indicates metrics collection was blocked for
 specific sources, not that graph APIs are down.
+
+[hubble-screenshot-source]: https://github.com/apache/hugegraph-toolchain/tree/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-hubble

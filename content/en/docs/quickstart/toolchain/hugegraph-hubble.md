@@ -12,7 +12,7 @@ and switch smoothly between graph, table, and JSON results. This guide uses **st
 
 For use with an HStore distributed cluster, read the foundational operations here first, then consult the
 [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
-This guide aligns with the Toolchain and Server `master` branches (both currently `1.8.0`).
+This guide aligns with the Toolchain and Server `master` branches (currently based on 1.8, unreleased). Docker `latest` is a moving tag; use released versions for production deployments.
 
 The screenshots show the HugeGraph Hubble interface in action; features and workflows are identical in both English and Chinese.
 

@@ -59,12 +59,12 @@ The build also writes `hugegraph-tools/target/apache-hugegraph-tools-incubating-
 
 #### 2.3 Build current source {#build-current-source}
 
-To use unreleased features from the master branch, build Tools `1.8.0` from source (requires JDK 17, Maven 3.6.3+, and Python 3.9+):
+To use unreleased features from the master branch, build Tools from source (master is currently based on 1.8; requires JDK 17, Maven 3.6.3+, and Python 3.9+):
 
 1. **Clone Toolchain source**
 
    ```bash
-   git clone https://github.com/apache/hugegraph-toolchain.git
+   git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
    cd hugegraph-toolchain
    ```
 
@@ -78,24 +78,23 @@ To use unreleased features from the master branch, build Tools `1.8.0` from sour
    candidate_dir=$(mktemp -d)
    mkdir -p "$candidate_dir/m2"
    bash hugegraph-client/assembly/travis/install-candidate-sdk.sh \
-     86c05ef9c5d417bd37eab21d4ecd5af82bab17ef \
-     "$candidate_dir/server" "$candidate_dir/m2"
+     master "$candidate_dir/server" "$candidate_dir/m2"
    ```
 
-   See the [candidate SDK guide](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md) for details.
+   See the [Java 17 migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md) for details.
 
 1. **Package Tools**
 
    ```bash
    mvn -Dmaven.repo.local="$candidate_dir/m2" \
-     -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+     -Dsdk.validation.mode=candidate \
      package -pl hugegraph-tools -am -DskipTests -Dmaven.javadoc.skip=true -ntp
-   cd hugegraph-tools/apache-hugegraph-tools-1.8.0
+   cd hugegraph-tools/apache-hugegraph-tools-*
    bin/hugegraph help
    ```
 {.steps}
 
-Keep the SDK repository while using this source build. The `1.8.0` output directory does not contain `incubating`.
+Keep the SDK repository while using this source build. The master build directory does not contain `incubating`.
 
 ### 3 How to use
 

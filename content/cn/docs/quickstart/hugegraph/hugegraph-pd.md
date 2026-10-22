@@ -121,7 +121,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 
 #### 4.1 配置项参考
 
-以下表格列出主线配置及代码默认值，Raft 超时设置可参阅 [PDConfig 实现](https://github.com/apache/hugegraph/blob/fd8d06c519e2481be89c6f7bc7a45b321b773d12/hugegraph-pd/hg-pd-core/src/main/java/org/apache/hugegraph/pd/config/PDConfig.java#L187-L196)。1.7.0 二进制包请使用对应标签的原始配置；主线源码构建包则以 [主线配置文件](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) 为准。下文会单独说明与 1.7.0 的差异。
+以下表格列出主线配置及代码默认值，Raft 超时设置可参阅 [PDConfig 实现](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-core/src/main/java/org/apache/hugegraph/pd/config/PDConfig.java)。1.7.0 二进制包请使用对应标签的原始配置；主线源码构建包则以 [主线配置文件](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) 为准。下文会单独说明与 1.7.0 的差异。
 
 **gRPC 与 REST**
 

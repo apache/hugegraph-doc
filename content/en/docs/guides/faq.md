@@ -17,8 +17,7 @@ version earlier than 1.7.0. See the [Server quick start](/docs/quickstart/hugegr
 
 ### Investigate a core dump at startup {#core-dump}
 
-First, run `java -version` to confirm your JDK version: **HugeGraph 1.8.0+ requires Java 17**, and **1.7.0 requires Java 11** (Java 8 is no
-longer supported). If the JDK version is correct, inspect the Server logs and the JVM crash log (`hs_err_pid*.log`) to check for
+First, run `java -version` to confirm your JDK version: **HugeGraph master (1.8 baseline) requires Java 17**, and **1.7.0 requires Java 11** (Java 8 is no longer supported). If the JDK version is correct, inspect the Server logs and the JVM crash log (`hs_err_pid*.log`) to check for
 architecture mismatches, missing native libraries (such as RocksDB JNI), or insufficient system memory.
 
 ### Which backends need init-store {#initialize-backend}

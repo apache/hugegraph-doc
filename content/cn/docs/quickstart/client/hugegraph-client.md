@@ -56,23 +56,22 @@ weight: 1
 | 用途 | 客户端版本 | Java 编译目标 |
 | --- | --- | --- |
 | 运行下方完整示例 | 已发布的 `1.7.0`，使用上面的依赖即可 | 发布版 POM 为 Java 8；本文统一使用 JDK 17 |
-| 使用能力探测等 master 新接口 | Toolchain `master` 中的 `1.8.0` | Java 17 |
+| 使用能力探测等 master 新接口 | Toolchain `master`（以 1.8 为基线） | Java 17 |
 
 示例使用的 Schema、Graph、Gremlin 和资源关闭接口在 Client `1.7.0` 中可用，也与 Toolchain `master` 兼容。
 发布版的 Java 编译目标不代表所有传递依赖的运行环境要求。
 
-若需要使用 master 分支未发布的新接口，可将依赖版本改为 `1.8.0` 并从源码编译安装 Client
-（需配合 Toolchain 源码，详见 [Tools 源码构建指引](/cn/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)）：
+若需要使用 master 分支未发布的新接口，可从源码编译安装 Client（需配合 Toolchain 源码，详见 [Tools 源码构建指引](/cn/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)）：
 
 ```bash
 java -version
 mvn -version
 mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" \
-  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+  -Dsdk.validation.mode=candidate \
   install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
-两条版本检查都应显示 JDK 17。使用 Client `1.8.0` 的项目运行 Maven 命令时，也需添加 `-Dmaven.repo.local="$candidate_dir/m2"`。
+两条版本检查都应显示 JDK 17。使用 master 分支 Client 的项目运行 Maven 命令时，也需添加 `-Dmaven.repo.local="$candidate_dir/m2"`。
 Client 与 Server 的版本不必相同；升级前核对所需 API 及兼容范围。
 
 #### 4.3 Example

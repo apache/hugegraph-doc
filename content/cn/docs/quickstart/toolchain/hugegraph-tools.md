@@ -59,12 +59,12 @@ bin/hugegraph help
 
 #### 2.3 构建当前源码 {#build-current-source}
 
-若需要使用 master 分支未发布的新特性，可按以下步骤从源码构建 Tools `1.8.0`（需 JDK 17、Maven 3.6.3+ 与 Python 3.9+）：
+若需要使用 master 分支未发布的新特性，可按以下步骤从源码构建 Tools（当前 master 以 1.8 为基线，需 JDK 17、Maven 3.6.3+ 与 Python 3.9+）：
 
 1. **获取 Toolchain 源码**
 
    ```bash
-   git clone https://github.com/apache/hugegraph-toolchain.git
+   git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
    cd hugegraph-toolchain
    ```
 
@@ -78,24 +78,23 @@ bin/hugegraph help
    candidate_dir=$(mktemp -d)
    mkdir -p "$candidate_dir/m2"
    bash hugegraph-client/assembly/travis/install-candidate-sdk.sh \
-     86c05ef9c5d417bd37eab21d4ecd5af82bab17ef \
-     "$candidate_dir/server" "$candidate_dir/m2"
+     master "$candidate_dir/server" "$candidate_dir/m2"
    ```
 
-   详细说明见 [candidate SDK 构建指引](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)。
+   详细说明见 [Java 17 迁移指引](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)。
 
 1. **打包 Tools**
 
    ```bash
    mvn -Dmaven.repo.local="$candidate_dir/m2" \
-     -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+     -Dsdk.validation.mode=candidate \
      package -pl hugegraph-tools -am -DskipTests -Dmaven.javadoc.skip=true -ntp
-   cd hugegraph-tools/apache-hugegraph-tools-1.8.0
+   cd hugegraph-tools/apache-hugegraph-tools-*
    bin/hugegraph help
    ```
 {.steps}
 
-使用这份源码构建时保留 SDK 仓库。`1.8.0` 生成目录名不含 `incubating`。
+使用这份源码构建时保留 SDK 仓库。master 分支生成目录名不含 `incubating`。
 
 ### 3 使用
 

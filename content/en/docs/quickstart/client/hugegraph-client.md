@@ -53,23 +53,22 @@ Choose the client version before building:
 | Use case | Client version | Java build target |
 | --- | --- | --- |
 | Run the complete examples below | Published `1.7.0`; use the dependency above | Java 8 in the release POM; this walkthrough uses JDK 17 |
-| Use new master APIs, such as capability detection | `1.8.0` from Toolchain `master` | Java 17 |
+| Use new master APIs, such as capability detection | Toolchain `master` (based on 1.8) | Java 17 |
 
 The examples use Schema, Graph, Gremlin and resource-cleanup APIs available in Client `1.7.0` and compatible with Toolchain `master`.
 The release's Java build target does not describe the runtime requirements of every transitive dependency.
 
-To use unreleased features from the master branch, change the dependency version to `1.8.0`
-and build Client from source (see [Tools source build instructions](/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)):
+To use unreleased features from the master branch, build Client from source (see [Tools source build instructions](/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)):
 
 ```bash
 java -version
 mvn -version
 mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" \
-  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+  -Dsdk.validation.mode=candidate \
   install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
-Both version checks must report JDK 17. Also pass `-Dmaven.repo.local="$candidate_dir/m2"` to Maven commands in projects using Client `1.8.0`.
+Both version checks must report JDK 17. Also pass `-Dmaven.repo.local="$candidate_dir/m2"` to Maven commands in projects using Client from master.
 Client and Server versions need not be identical; check the required APIs and compatibility before upgrading.
 
 #### 4.3 Example

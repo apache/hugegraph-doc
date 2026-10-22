@@ -6,7 +6,7 @@ search_keywords: [HugeGraph Loader, 批量导入, 数据导入]
 search_boost: 1.6
 ---
 
-本文以 Toolchain `1.8.0`（master 分支）为准。发布版和 Docker `latest` 可能存在部分差异，使用未发布功能前请先核对版本。
+本文以 Toolchain `master` 分支（以 1.8 为基线，尚未正式发布）为准。发布版和 Docker `latest` 可能存在部分差异，使用未发布功能前请先核对版本。
 
 ### 快速上手：本地文件导入 {#quick-local-file-import}
 
@@ -124,9 +124,7 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 > 
 > **测试指南**：如需在本地运行 Loader 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
 
-> **并发导入保护** 本文固定的 `1.8.0` Loader 源码已包含同一 Server 实例上的 LOADING owner 保护。
-> 需要配合 `GET .../mode/owners` 返回 `protocol: 1` 的 Server。
-> 没有此接口的 Server 保持原有导入行为，不提供并发导入保护，具体见下文兼容说明。
+> **并发导入保护**：Toolchain master 分支的 Loader 已支持针对同一 Server 实例的 LOADING owner 保护。当配套 Server 的 `GET .../mode/owners` 返回 `protocol: 1` 时会自动生效；若 Server 无此接口，则保持原有导入行为。
 
 ### 2 获取 HugeGraph-Loader
 
@@ -179,24 +177,16 @@ services:
 
 #### 2.3 克隆源码编译安装
 
-此 `1.8.0` 源码需要 Java 17、Maven 3.6.3 或更新版本，以及 Python 3.9 或更新版本。
-克隆仓库并切换到本文使用的提交。
+从 master 分支编译 Loader 需要 Java 17、Maven 3.6.3+ 与 Python 3.9+。直接克隆仓库并编译：
 
 ```bash
 git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
 cd hugegraph-toolchain
-git checkout d655b0372dfe189ebeff51ea885b3386a1bc4a2c
+mvn package -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
+cd hugegraph-loader/apache-hugegraph-loader-*
 ```
 
-按下列
-[SDK 构建说明](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/docs/java17-migration.md#build-the-locked-candidate)
-将配套的 Server SDK 构建到独立 Maven 仓库。在同一终端保留其中的 `candidate_dir` 变量，再打包 Loader。
-
-```bash
-mvn -Dmaven.repo.local="$candidate_dir/m2" -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
-  package -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
-cd hugegraph-loader/apache-hugegraph-loader-1.8.0
-```
+如需搭配开发阶段的 Server master SDK 编译，可参阅 [Java 17 迁移指引](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)。
 
 如需读取 Oracle 数据，按所用 Oracle/JDK 版本准备兼容的 JDBC 驱动 JAR，并放入解压后 Loader 的 `lib/` 目录。
 启动脚本会加载该目录中的 JAR；仅将驱动安装到 Maven 本地仓库并不会让运行中的 Loader 找到它。
@@ -1043,11 +1033,8 @@ bin/hugegraph-loader.sh -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} 
 
 #### 3.4.6 并发导入与 LOADING owner {#loading-ownership}
 
-本文固定的 Loader `1.8.0` 源码 `d655b037` 已为普通导入实现 LOADING 所有权协议。
-配套 Server 源码的
-[提交 `ebb8f4e`](https://github.com/apache/hugegraph/commit/ebb8f4e17f0bf826cb50745c590d8bc54b45c6b6)
-已提供 `/mode/owners` 接口。部署后应确认该接口返回 `protocol: 1`，仅凭版本号或 Docker 标签不能判断是否支持。
-已发布的 Server `1.7.0` 和旧版 Loader 仍走不带此保护的原有模式切换流程。
+在 master 分支中，Loader 为普通导入实现了 LOADING 所有权管理协议，与 Server 的 `/mode/owners` 接口协同工作。
+若部署的 Server 提供该接口并返回 `protocol: 1`，Loader 会自动启用所有权保护；已发布的 Server 1.7.0 及更早版本则继续使用原有模式切换流程。
 
 ```mermaid
 graph TD
@@ -1354,7 +1341,7 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 
 #### 4.6 使用 spark-loader 导入
 
-当前 `1.8.0` 的 API 写入路径使用 Spark `3.5.8`、Scala `2.12`，driver 和 executor 均需 Java 17。
+当前 master 分支的 API 写入路径使用 Spark `3.5.8`、Scala `2.12`，driver 和 executor 均需 Java 17。
 POM 中的 Spark `3.2.2` 只提供编译期 API，不是运行引擎。设置 `SPARK_HOME` 和 `JAVA_HOME`，
 再使用发行目录中的启动脚本和 shaded Loader JAR。
 
@@ -1378,7 +1365,7 @@ Loader 发布包及其相关依赖。更多细节见 [Spark 迁移说明](https:
 
 #### 4.7 使用 flink-cdc-loader 导入
 
-当前 `1.8.0` 适配 Flink `2.2.1`、MySQL CDC `3.6.0-2.2` 和 Java 17。
+当前 master 分支适配 Flink `2.2.1`、MySQL CDC `3.6.0-2.2` 和 Java 17。
 此前使用 Flink 1.13.5、CDC 2.2.1 的示例属于旧实现。
 设置 `FLINK_HOME`，确保提交进程、JobManager 和 TaskManager 都使用 Java 17。
 保留 Flink 的模块访问参数，发行目录的 `lib/` 中须恰好有一个 shaded Loader JAR。

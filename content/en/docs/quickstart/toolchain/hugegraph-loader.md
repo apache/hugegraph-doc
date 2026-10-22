@@ -7,7 +7,7 @@ search_boost: 1.6
 description: "Bulk import graph data into HugeGraph with Loader from files, HDFS, relational databases, Kafka, and other HugeGraph graphs."
 ---
 
-This guide aligns with Toolchain `1.8.0` (master branch). Released packages and Docker `latest` may differ; check your version before using unreleased features.
+This guide aligns with the Toolchain `master` branch (currently based on 1.8, unreleased). Released packages and Docker `latest` may differ; check your version before using unreleased features.
 
 ### Quick start: local file import {#quick-local-file-import}
 
@@ -123,9 +123,7 @@ Local disk files and HDFS files support resumable uploads.
 
 > Note: HugeGraph-Loader requires HugeGraph Server service, please refer to [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server) to download and start Server
 
-> **Concurrent imports** The fixed `1.8.0` Loader source used here includes same-Server LOADING ownership protection.
-> It requires a Server whose `GET .../mode/owners` response contains `protocol: 1`.
-> Servers without that endpoint retain the legacy import behavior without concurrent-import protection; see the compatibility notes below.
+> **Concurrent imports**: Loader on the master branch supports LOADING owner protection on the same Server instance when the Server's `GET .../mode/owners` returns `protocol: 1`. Servers without this endpoint retain legacy import behavior without this protection; see the compatibility notes below.
 
 > **Testing Guide**: For running HugeGraph-Loader tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/toolchain-local-test)
 
@@ -177,24 +175,16 @@ A release may not include all `master` functionality; use the source build below
 
 #### 2.3 Clone source code to compile and install
 
-This `1.8.0` source requires Java 17, Maven 3.6.3 or newer and Python 3.9 or newer.
-Clone the repository and select the revision used by this guide.
+Building Loader from the master branch requires Java 17, Maven 3.6.3+, and Python 3.9+. Clone the repository and build:
 
 ```bash
 git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
 cd hugegraph-toolchain
-git checkout d655b0372dfe189ebeff51ea885b3386a1bc4a2c
+mvn package -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
+cd hugegraph-loader/apache-hugegraph-loader-*
 ```
 
-Follow the
-[SDK guide](https://github.com/apache/hugegraph-toolchain/blob/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/docs/java17-migration.md#build-the-locked-candidate)
-to prepare the matching Server SDK in an isolated Maven repository. Keep `candidate_dir` from those instructions in the same shell, then package Loader.
-
-```bash
-mvn -Dmaven.repo.local="$candidate_dir/m2" -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
-  package -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
-cd hugegraph-loader/apache-hugegraph-loader-1.8.0
-```
+To build against candidate Server SDKs during development, refer to the [Java 17 migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md).
 
 For Oracle input, obtain a JDBC driver JAR compatible with your Oracle/JDK versions and place it in the extracted Loader `lib/` directory.
 The startup script loads JARs there; installing a driver only in the local Maven repository does not put it on Loader’s runtime classpath.
@@ -1045,12 +1035,8 @@ Follow the [local-file import steps](#quick-local-file-import) at the start of t
 
 #### 3.4.6 Concurrent imports and LOADING ownership {#loading-ownership}
 
-Loader at the fixed `1.8.0` source revision `d655b037` implements LOADING ownership for ordinary imports.
-The matching Server source at
-[commit `ebb8f4e`](https://github.com/apache/hugegraph/commit/ebb8f4e17f0bf826cb50745c590d8bc54b45c6b6)
-provides the `/mode/owners` API. Check that your deployed Server returns `protocol: 1` from this endpoint;
-a version label or Docker tag alone does not establish support.
-Released Server `1.7.0` and older Loaders use the legacy mode flow without this protection.
+In the `master` branch, Loader implements a LOADING ownership protocol coordinated with Server's `/mode/owners` endpoint.
+When the deployed Server provides this endpoint and returns `protocol: 1`, Loader enables ownership protection automatically; released Server 1.7.0 and older versions continue using the legacy mode switching flow.
 
 ```mermaid
 graph TD
@@ -1088,7 +1074,7 @@ graph TD
 ### 4 Complete example
 
 The Loader distribution includes this dataset in `example/file/`.
-See the [source files](https://github.com/apache/hugegraph-toolchain/tree/d655b0372dfe189ebeff51ea885b3386a1bc4a2c/hugegraph-loader/assembly/static/example/file).
+See the [source files](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-loader/assembly/static/example/file).
 
 #### 4.1 Prepare data
 
@@ -1361,7 +1347,7 @@ The results of the execution will be similar to those shown in [4.5.1](#451-use-
 
 #### 4.6 Import data by spark-loader
 
-The current `1.8.0` API sink uses Spark `3.5.8`, Scala `2.12` and Java 17 on the driver and executors.
+The current `master` API sink uses Spark `3.5.8`, Scala `2.12` and Java 17 on the driver and executors.
 The POM's Spark `3.2.2` dependency supplies compile-time APIs; it is not the runtime engine.
 Set `SPARK_HOME` and `JAVA_HOME`, then use the distribution's shaded Loader JAR with its launcher.
 
@@ -1387,7 +1373,7 @@ For details, see the [Spark migration guide](https://github.com/apache/hugegraph
 
 #### 4.7 Import data by flink-cdc-loader
 
-The current `1.8.0` integration targets Flink `2.2.1`, MySQL CDC `3.6.0-2.2` and Java 17.
+The current `master` integration targets Flink `2.2.1`, MySQL CDC `3.6.0-2.2` and Java 17.
 Older examples using Flink 1.13.5 and CDC 2.2.1 belong to the previous implementation.
 Set `FLINK_HOME`; the submission JVM, JobManager and TaskManager must all use Java 17.
 Keep Flink's module-access options and exactly one shaded Loader JAR in the distribution's `lib/`.

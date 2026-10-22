@@ -15,7 +15,7 @@ weight: 6
 
 ### 启动时出现 core dumped 怎么查 {#core-dump}
 
-先执行 `java -version` 确认 JDK 版本：**HugeGraph 1.8.0+ 要求 Java 17**，**1.7.0 要求 Java 11**（已不再支持 Java 8）。
+先执行 `java -version` 确认 JDK 版本：**HugeGraph master 分支（以 1.8 为基线）要求 Java 17**，**1.7.0 要求 Java 11**（已不再支持 Java 8）。
 若 JDK 版本正确，进一步查看 Server 日志及 JVM 崩溃日志（`hs_err_pid*.log`），排查是否由于系统架构不匹配、依赖的动态库（如 RocksDB JNI）缺失或系统内存不足引起。
 
 ### 哪些后端需要 init-store {#initialize-backend}

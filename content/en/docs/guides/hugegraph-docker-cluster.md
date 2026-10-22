@@ -326,7 +326,8 @@ Standalone publishes only `8080` and `8088`; minimal HStore publishes `8620` (PD
    ```
 
    Do not upgrade running containers with a plain `up -d`: Compose reattaches the anonymous volume holding the previous image's root-owned application
-   directory. Run `down` first, or use `up -d --renew-anon-volumes`. A host directory used as a bind mount must be writable by UID `10001`. On Kubernetes,
+   directory. Run `down` first, or use `up -d --renew-anon-volumes`. A host directory used as a bind mount must be writable by UID `10001`; one an
+   older image wrote to needs `sudo chown -R 10001:10001 <dir>`, since files inside it stay owned by root. On Kubernetes,
    the pod security context needs `fsGroup: 10001`, which the Helm chart sets for PD and Store; see [Helm upgrade and
    verification](/docs/quickstart/hugegraph/hugegraph-helm/#5-upgrade-and-verification).
 

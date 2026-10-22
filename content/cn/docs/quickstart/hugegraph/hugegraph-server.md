@@ -671,6 +671,8 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
           - 8080:8080
     ```
 
+    基于当前 master 构建的 Server 镜像以非 root 的 UID `10001` 运行，挂载的脚本必须对该用户可读。
+
     使用命令 `docker compose up -d` 启动容器
 
 使用 RESTful API 请求 `HugeGraphServer` 得到如下结果：

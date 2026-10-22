@@ -695,6 +695,8 @@ Set the environment variable `PRELOAD=true` when starting Docker so that sample 
           - 8080:8080
     ```
 
+    Server images built from current master run as the non-root UID `10001`, so a mounted script must be readable by that user.
+
     Use `docker compose up -d` to start the container.
 
 And use the RESTful API to request `HugeGraphServer` and get the following result:

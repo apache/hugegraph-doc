@@ -317,6 +317,20 @@ Standalone publishes only `8080` and `8088`; minimal HStore publishes `8620` (PD
 
 5. **Unexpected retained data**: `docker compose down` keeps named volumes. To delete topology data too, use `docker compose down -v`.
 
+6. **`Permission denied` after upgrading to master-built images**: PD, Store and Server images built from current master run as the non-root user
+   `hugegraph`, UID/GID `10001`. Volumes written by older images, which ran as root, stay owned by root. Stop with `docker compose down` (not `down -v`),
+   change the owner of each data volume once, then start again:
+
+   ```bash
+   docker run --rm -u 0 --entrypoint chown -v <volume>:/data <new-image> -R 10001:10001 /data
+   ```
+
+   Do not upgrade running containers with a plain `up -d`: Compose reattaches the anonymous volume holding the previous image's root-owned application
+   directory. Run `down` first, or use `up -d --renew-anon-volumes`. A host directory used as a bind mount must be writable by UID `10001`; one an
+   older image wrote to needs `sudo chown -R 10001:10001 <dir>`, since files inside it stay owned by root. On Kubernetes,
+   the pod security context needs `fsGroup: 10001`, which the Helm chart sets for PD and Store; see [Helm upgrade and
+   verification](/docs/quickstart/hugegraph/hugegraph-helm/#5-upgrade-and-verification).
+
 **Runtime logs**: `docker logs <container-name>` (for example, `docker logs hg-pd0`) shows logs without entering containers. In images built from current
 master, the PD, Store and both Server images (`hugegraph/hugegraph` and the HStore `hugegraph/server`) set `STDOUT_MODE=true` and send service logs to stdout.
 For the Server, WARN and above from Hadoop, ZooKeeper, SOFA, Netty and Commons also reaches stdout; INFO from Hadoop, Netty and Commons and the audit and

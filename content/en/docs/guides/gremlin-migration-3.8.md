@@ -17,16 +17,21 @@ While bringing substantial performance optimizations and specification alignment
 
 ## Top 5 High-Frequency Syntax and Behavioral Changes
 
-Among existing query scripts, the following 5 changes are the most common. **Failure to update these may cause query errors or silently return empty results.**
+Among existing query scripts, the following 5 changes are the most common. **Failure to update these will cause query execution errors on HugeGraph 1.8.**
 
-### 1. `has(key, traversal)` Overload Removed (High Risk: Silent Empty Results)
+### 1. `has(key, traversal)` Overload Removed (High Risk: Execution Error)
 
 * **Impact**:
   In TinkerPop 3.8.0, the `has(String, Traversal)` and `has(T, Traversal)` overloads were removed.
-  In the Groovy script engine, legacy code will not throw a compilation error; instead, it **silently falls back to `has(String, Object)`**, comparing the anonymous traversal object itself against vertex/edge properties. In practice, this **silently yields 0 results / empty sets**!
+  In the Groovy script engine, legacy syntax falls back to `has(String, Object)`. On HugeGraph 1.8, because the graph engine pushes `has()` predicates down into backend queries and validates values with `TraversalUtil.validPropertyValue()`, **it fails immediately with type mismatch errors**:
+  - Property filter `g.V().has('age', __.is(gt(30)))` throws:
+    `IllegalArgumentException: Invalid data type of query value '[IsStep(gt(30))]', expect INT for 'age', actual got class org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.DefaultGraphTraversal`
+  - Label filter `g.V().has(T.label, __.is('person'))` throws:
+    `HugeException: The label type must be number or string, but got 'class org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.DefaultGraphTraversal'`
+  *(Note: Pure in-memory TinkerGraph silently returns an empty array `[]`, whereas HugeGraph 1.8 fails strictly).*
 * **Legacy Query**:
   ```groovy
-  // Broken in 3.8: will not throw an error, but silently returns 0 results
+  // Broken on HugeGraph 1.8: throws Invalid data type exception
   g.V().has('age', __.is(gt(30)))
   g.V().has(T.label, __.is('person'))
   ```
@@ -46,7 +51,7 @@ Among existing query scripts, the following 5 changes are the most common. **Fai
 ### 2. `store()` Removed & `aggregate()` Scope Overload Removed
 
 * **Impact**:
-  - The `store('x')` step, previously used for lazy side-effect collection, has been completely removed (`No signature of method: store()`).
+  - The `store('x')` step, previously used for lazy side-effect collection, has been completely removed (`MissingMethodException: No signature of method: ...store()`).
   - The `aggregate(Scope, 'x')` overload with an explicit `Scope` (both `local` and `global`) has also been removed.
 * **Legacy Query**:
   ```groovy
@@ -71,21 +76,23 @@ Among existing query scripts, the following 5 changes are the most common. **Fai
 ### 3. Step `none()` Renamed to `discard()`
 
 * **Impact**:
-  In TinkerPop 3.5.1, `none()` was a traversal step used to discard all incoming traversers (e.g., `g.V().hasLabel('person').none()`, which returned `[]`).
-  In 3.8.1, this step has been renamed to **`discard()`**.
-  Meanwhile, 3.8 introduces a new collection predicate step `none(P)` (checking if no elements in a collection match predicate P). Invoking parameterless
-  `none()` in 3.8.1 fails immediately with:
+  In TinkerPop 3.5.1, only the traversal step `g.V().none()` existed (which returned an empty result); anonymous `__.none()` was not supported.
+  In 3.8.0, parameterless `none()` was completely renamed to **`discard()`**, while `none(P)` was repurposed as a collection predicate step.
+  Calling parameterless `none()` in 3.8.1 (such as `g.V().hasLabel('person').none()`) throws:
   `IllegalArgumentException: Input predicate to none step can't be null.`
 * **Recommended Rewrite**:
   ```groovy
-  // Legacy (runs on 3.5.1, returning []):
+  // Legacy (dropped results on 3.5.1, throws predicate can't be null on 3.8.1)
   g.V().hasLabel('person').none()
 
-  // Rewritten for 3.8: use discard() to discard traversers
+  // Rewritten: use discard()
   g.V().hasLabel('person').discard()
 
-  // Discarding unhandled inputs in choose() branches:
-  g.V().choose(__.values('age')).option(gt(30), __.values('name')).option(Pick.none, __.discard())
+  // In choose() or branches, discard unhandled and missing-property inputs:
+  g.V().choose(__.values('age'))
+    .option(gt(30), __.values('name'))
+    .option(Pick.none, __.discard())
+    .option(Pick.unproductive, __.discard())
   ```
 
 ---
@@ -173,32 +180,36 @@ to `gremlin-util` (`org.apache.tinkerpop.gremlin.util.ser.*`).
 |---|---|---|---|
 | `GraphBinaryMessageSerializerV1` | `org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1` | `builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder`<br>`ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | Recommended default binary serializer |
 | `GraphSONMessageSerializerV1d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV1` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry, org.apache.hugegraph.io.HugeGraphSONV1MessageIoRegistry]` | Untyped GraphSON V1 |
-| `GraphSONMessageSerializerV2d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV2` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | Untyped GraphSON V2 |
-| `GraphSONMessageSerializerV3d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV3` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | Untyped GraphSON V3 |
+| `GraphSONMessageSerializerV2d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONMessageSerializerV2` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | Standard Typed GraphSON V2 |
+| `GraphSONMessageSerializerV3d0` | `org.apache.tinkerpop.gremlin.util.ser.GraphSONMessageSerializerV3` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | Standard Typed GraphSON V3 |
+| *(New in 1.8)* | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV2` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | Untyped GraphSON V2 (`types=false`) |
+| *(New in 1.8)* | `org.apache.tinkerpop.gremlin.util.ser.GraphSONUntypedMessageSerializerV3` | `ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]` | Untyped GraphSON V3 (`types=false`) |
 {.td-table--wide}
 
 ### 2. Can HugeGraph Client 1.5.0 Continue to Work?
-* **Verdict**: **Yes**.
-* HugeGraph Server 1.8.0 provides backward-compatible adapters (graph alias mapping and legacy auth path redirection). Applications using `hugegraph-client:1.5.0` can continue standard CRUD, schema management, and REST operations without forced SDK upgrades.
-* **Important Note**: Although Client 1.5.0 connects successfully, **all submitted Gremlin script strings are executed on the 3.8.1 server engine**. Therefore, Gremlin queries constructed in your code must comply with the 3.8 rules described above.
+* **Verdict**: **Basic CRUD, schema operations, and Gremlin queries continue to work**.
+* HugeGraph Server 1.8.0 provides backward-compatible adapters (such as default graphspace alias mapping), allowing `hugegraph-client:1.5.0` to connect for standard data operations, schema management, and Gremlin query scripts.
+* **Limitations**:
+  - **Auth Paths**: Server 1.8.0 migrates authentication to GraphSpace scopes (`graphspaces/{graphspace}/auth/users`). The legacy Client 1.5.0 path `graphs/{graph}/auth/...` is not redirected to this new endpoint, so auth operations require upgrading the client.
+  - **Gremlin Query Strings**: All Gremlin query strings submitted by the client are evaluated on the server's 3.8.1 engine and must adhere to 3.8 syntax.
 
 ---
 
 ## Full Compatibility Reference
 
 ### Appendix 1: Writes & Upsert (`mergeV` / `mergeE`)
-`mergeV()` and `mergeE()` are new steps in TinkerPop 3.8 (absent in 3.5.1) for graph upserts:
+HugeGraph 1.8.0 (introduced upstream in TinkerPop 3.6.0) supports standard `mergeV()` and `mergeE()` steps for graph upserts:
 - **M01**: `onCreate` property maps strictly inherit the search match map. Conflicting keys cannot overwrite matched properties.
 - **M02**: `mergeE` no longer implicitly binds incoming/outgoing vertices from upstream traversers; specify `Direction.OUT` and `Direction.IN` in the map or use explicit options.
-- **M03**: Conflicting `onCreate` / `onMatch` maps are validated during construction rather than deferred to runtime execution.
+- **M03**: Construction-time validation applies when a static `onCreate` map attempts to override keys defined in the search-criteria match map.
 - **M04**: Child traversers in `onMatch` receive the matched Element object rather than the original input Map. Preserve input map references prior to merge with `.as('input')` and reference with `select('input')`.
 
 ### Appendix 2: Advanced Traversal Steps & Collections
 - **B07 (`local()` unpacks bulk)**: Traversers with bulk counters are expanded into individual items when entering `local()` child traversals. Use `groupCount()` for frequency analysis.
 - **B09 (`range(local)` collection unpacking)**: Slicing a single item from a list (e.g., `limit(local, 1)`) consistently returns a Collection wrapper (`[item]`). Append `.unfold()` if a scalar is needed.
 - **B11 (`sum()` return type)**: Summing integer streams without overflow may return `Integer` instead of `Long`. Clients should accept `Number`.
-- **B14 (`split()` step)**: New step in TinkerPop 3.8. An empty string separator splits the string into individual characters.
-- **B15 (`asString()` step)**: New step in TinkerPop 3.8. Throws `IllegalArgumentException` on null inputs.
+- **B14 (`split()` step)**: HugeGraph 1.8 new step. An empty string separator splits the string into individual characters.
+- **B15 (`asString()` step)**: HugeGraph 1.8 new step. Throws `IllegalArgumentException` on null inputs.
 
 ### Appendix 3: GLV Client Variations
 - **Python**: Avoids Python keyword conflicts by appending an underscore to step names (`filter_()`, `id_()`, `range_()`, `max_()`).

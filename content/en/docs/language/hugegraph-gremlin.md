@@ -12,7 +12,7 @@ Gremlin can be used to create entities (Vertex and Edge) of a graph, modify the 
 
 > [!NOTE]
 > **Version & Migration Note**: HugeGraph 1.8.0 upgrades its underlying TinkerPop engine to **3.8.1** (along with Java 17 and Groovy 4.0.25).
-> Certain legacy syntax patterns (e.g., `store()`, `has(key, traversal)`, and scoped `aggregate()`) have been deprecated or modified. See the [1.8 Gremlin & TinkerPop Migration Guide](../guides/gremlin-migration-3.8) for details.
+> Legacy syntax patterns such as `store()`, scoped `aggregate()`, and `has(key, traversal)` have been completely removed and now fail on 1.8. See the [1.8 Gremlin & TinkerPop Migration Guide](../guides/gremlin-migration-3.8) for details.
 
 ### TinkerPop Features
 

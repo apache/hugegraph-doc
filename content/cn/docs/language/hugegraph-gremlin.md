@@ -12,7 +12,7 @@ Gremlin可用于创建图的实体（Vertex和Edge）、修改实体内部属性
 
 > [!NOTE]
 > **版本与升级提示**：HugeGraph 1.8.0 已将底层 TinkerPop 引擎升级至 **3.8.1**（同时要求 Java 17 与 Groovy 4.0.25）。
-> 部分旧版语法（如 `store()`、`has(key, traversal)`、带 Scope 的 `aggregate()`）已被废弃或语义调整。详见 [1.8 Gremlin 与 TinkerPop 迁移指南](../guides/gremlin-migration-3.8)。
+> 部分旧版语法（如 `store()`、带 Scope 的 `aggregate()` 以及 `has(key, traversal)`）已彻底移除，在 1.8 中调用会直接报错。详见 [1.8 Gremlin 与 TinkerPop 迁移指南](../guides/gremlin-migration-3.8)。
 
 ### TinkerPop Features
 

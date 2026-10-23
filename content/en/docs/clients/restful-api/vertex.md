@@ -377,13 +377,15 @@ All of the above parameters are optional. `page` can not be combined with a non-
 
 If `label` selects a vertex label with the `PRIMARY_KEY` ID strategy and `properties` supplies exact values for all its primary-key fields (`P.eq` and
 `P.within` count as exact values), the query looks up the vertex by ID and checks additional property conditions on that vertex without a property index.
-If all primary-key fields have conditions but any of them is not an exact value (`P.neq`, `P.gt`, `P.between`, `P.textcontains` and similar), the query is
-rejected before property-index lookup, even if a matching property index exists.
+If all primary-key fields have conditions but any of them uses a condition other than `P.eq`, `P.within` or `P.contains` (`P.neq`, `P.gt`, `P.between`,
+`P.textcontains` and similar), the query is rejected before property-index lookup, even if a matching property index exists; `P.contains` on a primary-key
+field takes the primary-key lookup path using a single element rather than being rejected.
 
-For other `properties` queries, the specified `label` needs a property index compatible with the query conditions. If `label` is omitted, candidate labels are
-query-visible vertex labels that declare all queried properties, including labels that currently have no vertices. Labels hidden from normal query results,
-including those being deleted, do not require coverage. If the specified `label` (provided it declares all queried non-OLAP properties), or every candidate
-label, is hidden or being deleted, the query returns an empty result instead of an index error. A label index alone does not index properties.
+For other `properties` queries, the specified `label` needs a property index compatible with the query conditions. Candidate labels are vertex labels that
+declare all queried non-OLAP properties, including labels that currently have no vertices. Labels hidden from normal query results, including those being
+deleted, do not require coverage. If candidate labels exist but all of them are hidden or being deleted (or the specified candidate `label` is hidden or
+being deleted), the query returns an empty result instead of an index error; if no schema label declares the queried properties, the index error still
+applies. A label index alone does not index properties.
 When the query includes OLAP properties and the read mode exposes OLAP data, HugeGraph uses shared OLAP indexes; such OLAP properties do not require
 per-label coverage declarations or individual indexes on each candidate label.
 

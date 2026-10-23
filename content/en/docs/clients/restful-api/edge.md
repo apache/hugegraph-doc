@@ -424,12 +424,13 @@ It is not possible to delete an attribute that is not set as nullable.
 
 Without `vertex_id`, a `properties` query searches edges globally. When `label` is specified, that label needs a property index compatible with the query
 conditions; for a sub-edge label without one, a compatible index on its query-visible parent label is used and edges of sibling sub-labels are filtered out.
-When `label` is omitted, candidate labels are query-visible edge labels that can hold edges and declare all queried properties, including labels that
-currently have no edges. Labels hidden from normal query results, including those being deleted, do not require coverage. If the specified `label`
-(provided it declares all queried non-OLAP properties), or every candidate label, is hidden or being deleted, the query returns an empty result instead of an
-index error. When `label` is omitted, a base (parent) edge label has no direct edges and does not need a separate index when its sub-labels are covered; a
-compatible index on a query-visible parent label can cover its sub-labels, and compatible indexes on every candidate sub-label are also sufficient. Indexes on
-hidden or deleting parents excluded from the query cannot provide this coverage. A label index alone does not index properties.
+Candidate labels are edge labels that can hold edges and declare all queried non-OLAP properties, including labels that currently have no edges. Labels hidden
+from normal query results, including those being deleted, do not require coverage. If candidate labels exist but all of them are hidden or being deleted (or
+the specified candidate `label` is hidden or being deleted), the query returns an empty result instead of an index error; if no schema label declares the
+queried properties, the index error still applies. When `label` is omitted, a base (parent) edge label has no direct edges and does not need a separate index
+when its sub-labels are covered; a compatible index on a query-visible parent label can cover its sub-labels, and compatible indexes on every candidate
+sub-label are also sufficient. Indexes on hidden or deleting parents excluded from the query cannot provide this coverage. A label index alone does not index
+properties.
 
 For query values compatible with the declared property types, no compatible index or partial candidate coverage produces an index error; complete coverage uses
 the indexes. The partial-coverage error, parent-index fallback for sub-edge labels, and the empty result for hidden or deleting candidate labels apply from

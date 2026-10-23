@@ -15,7 +15,7 @@ aliases:
 The `hugegraph-server` module contains `hugegraph-core`, `hugegraph-api`, `hugegraph-dist`, and storage adapters. Core implements the property graph model, transactions, and TinkerPop interfaces. API provides the HTTP service and delegates client requests to Core. Graph data is stored in RocksDB (the default standalone backend), HStore (distributed), or HBase.
 
 > [!WARNING]
-> **Version scope**: Download examples use the ASF HugeGraph 1.7.0 release. Source builds, configuration defaults, and startup behavior follow `apache/hugegraph` master. A master build is not an ASF release artifact, even if its version number matches a release. This guide covers RocksDB, HStore, and HBase; see [1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md) for other legacy backends.
+> **Version scope**: This guide distinguishes between official releases and the development master branch. For official installations, use official release archives (such as 1.7.0 or the upcoming 1.8.0). Source builds, default configurations, and startup behaviors follow the `apache/hugegraph` master branch (currently targeting 1.8.0). A master build is not an ASF release artifact, even if its version number matches a release. Supported storage backends include RocksDB, HStore, and HBase; see [1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md) for deprecated legacy backends.
 
 > Naming: `HugeGraph` means the overall project or main repository, `hugegraph-server` is its Server module, and `HugeGraphServer` is the Java service class. Server below means the running graph database service.
 
@@ -96,7 +96,8 @@ serializer:
 ```
 
 > [!TIP]
-> For complete client configuration and migration details, see the
+> For complete Gremlin syntax rewrites, compatibility requirements, and reference tables, see the
+> [1.8 Gremlin & TinkerPop Migration Guide](../../guides/gremlin-migration-3.8). Additional runtime details are in the
 > [server runtime documentation](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md).
 
 ## 3 Deploy

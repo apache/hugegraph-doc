@@ -80,7 +80,8 @@ on Java 24 or later, start Server with `-s false` (JDK 24+ dropped Security Mana
 serializer:
   className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
   config:
-    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+    builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
 ```
 
 ```yaml {tab="GraphSON (HTTP / Legacy)"}
@@ -858,6 +859,7 @@ Backlinks:
 - [Setup Server in IDEA](/docs/contribution-guidelines/hugegraph-server-idea-setup/)
 - [Download](/docs/download/download/)
 - [Architecture Overview](/docs/guides/architectural/)
+- [FAQ](/docs/guides/faq/)
 - [Security](/docs/guides/security/)
 - [Toolchain Local Testing](/docs/guides/toolchain-local-test/)
 - [System Introduction](/docs/introduction/)
@@ -866,4 +868,5 @@ Backlinks:
 - [Install/Build HugeGraph-Store](/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
+- [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)
 - [Import graph data with SeaTunnel Sink](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)

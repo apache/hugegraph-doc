@@ -477,3 +477,4 @@ Backlinks:
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
 - [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
+- [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)

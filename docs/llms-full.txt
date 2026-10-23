@@ -322,7 +322,8 @@ on Java 24 or later, start Server with `-s false` (JDK 24+ dropped Security Mana
 serializer:
   className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
   config:
-    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+    builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
 ```
 
 ```yaml {tab="GraphSON (HTTP / Legacy)"}
@@ -1100,6 +1101,7 @@ Backlinks:
 - [Setup Server in IDEA](/docs/contribution-guidelines/hugegraph-server-idea-setup/)
 - [Download](/docs/download/download/)
 - [Architecture Overview](/docs/guides/architectural/)
+- [FAQ](/docs/guides/faq/)
 - [Security](/docs/guides/security/)
 - [Toolchain Local Testing](/docs/guides/toolchain-local-test/)
 - [System Introduction](/docs/introduction/)
@@ -1108,6 +1110,7 @@ Backlinks:
 - [Install/Build HugeGraph-Store](/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
+- [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)
 - [Import graph data with SeaTunnel Sink](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)
 
 
@@ -2478,7 +2481,7 @@ PD startup reads installation `conf/application.yml`. Match this file to the ins
 
 #### 4.1 Configuration Reference
 
-These tables were checked against `hg-pd-dist` configuration and Java defaults at Server master commit `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4`, and the three `raft.rpc-*` rows against [apache/hugegraph#3368](https://github.com/apache/hugegraph/pull/3368); they do not describe every 1.7.0 behavior. Use original tagged configuration with release binaries and [master configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) with master builds.
+These tables list master configuration values and code defaults. See the [PDConfig implementation](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-core/src/main/java/org/apache/hugegraph/pd/config/PDConfig.java) for Raft timeouts. Use the original tagged configuration with 1.7.0 binaries and [master configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) with master builds. Differences from 1.7.0 are noted below.
 
 
 **gRPC and REST**
@@ -3451,11 +3454,26 @@ and switch smoothly between graph, table, and JSON results. This guide uses **st
 
 For use with an HStore distributed cluster, read the foundational operations here first, then consult the
 [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
-This guide aligns with the Toolchain and Server `master` branches (both currently `1.8.0`).
+This guide aligns with the Toolchain and Server `master` branches (currently based on 1.8, unreleased). Docker `latest` is a moving tag; use released versions for production deployments.
+
+The screenshots show the HugeGraph Hubble interface in action; features and workflows are identical in both English and Chinese.
 
 > [!WARNING]
 > Do not expose unauthenticated Hubble or Server instances directly to the public internet. In production, use HTTPS, container isolation,
 > [authentication and authorization](/docs/config/config-authentication/), and network allowlists.
+
+Jump directly to a task below. If this is your first visit, start with the standalone deployment:
+
+- [Start and load a sample](#start-the-standalone-pair)
+
+  Start the two services and load the People & Software Demo Graph.
+- [Query and visualize](#gql-workspace-query-and-explore-relationships)
+
+  Run Gremlin and inspect graph, table, or JSON results.
+- [Import your own data](#data-source-management-prepare-the-input)
+
+  Prepare CSV, map fields, and verify the imported records.
+{.cards}
 
 ## Start the standalone pair
 
@@ -3463,37 +3481,44 @@ Use the main repository's [docker/docker-compose.yml](https://github.com/apache/
 instead of writing custom Compose files. It already integrates RocksDB Server and Hubble with networking, health checks, and data volumes;
 see the adjacent [README](https://github.com/apache/hugegraph/blob/master/docker/README.md) for deployment details.
 
-```bash
-git clone --branch master --single-branch --depth 1 https://github.com/apache/hugegraph.git
-cd hugegraph/docker
-```
+1. **Prepare the official Compose configuration.**
 
-If you already have the repository locally, navigate directly to its `docker/` directory. Compose automatically mounts
-[`conf/hubble/standalone.properties`](https://github.com/apache/hugegraph/blob/master/docker/conf/hubble/standalone.properties),
-which pre-configures `pd.enabled=false` and `server.direct_url=http://server:8080`. Because both services communicate over a shared Docker network,
-you do not need to configure Server endpoints per graph. Start Compose directly from `docker/` so relative file paths resolve correctly.
+   ```bash
+   git clone --branch master --single-branch --depth 1 https://github.com/apache/hugegraph.git
+   cd hugegraph/docker
+   ```
 
-Hubble publishes on host loopback port `8088` by default (controlled by `HUBBLE_PUBLISH_HOST`, defaulting to `127.0.0.1`), whereas Server publishes
-`8080` across all interfaces. For a local trial, set Server's `ports` in Compose to `127.0.0.1:8080:8080` to prevent exposing unauthenticated ports
-beyond loopback (set `HUBBLE_PUBLISH_HOST=0.0.0.0` if remote access to Hubble is required).
+   If you already have the repository locally, navigate directly to its `docker/` directory. Compose automatically mounts
+   [`conf/hubble/standalone.properties`](https://github.com/apache/hugegraph/blob/master/docker/conf/hubble/standalone.properties),
+   which pre-configures `pd.enabled=false` and `server.direct_url=http://server:8080`. Because both services communicate over a shared Docker network,
+   you do not need to configure Server endpoints per graph. Start Compose directly from `docker/` so relative file paths resolve correctly.
 
-Choose an unused project name for this trial and keep these variables in the same terminal session:
+   Hubble publishes on host loopback port `8088` by default (controlled by `HUBBLE_PUBLISH_HOST`, defaulting to `127.0.0.1`), whereas Server publishes
+   `8080` across all interfaces. For a local trial, set Server's `ports` in Compose to `127.0.0.1:8080:8080` to prevent exposing unauthenticated ports
+   beyond loopback (set `HUBBLE_PUBLISH_HOST=0.0.0.0` if remote access to Hubble is required).
 
-```bash
-export HUGEGRAPH_VERSION=latest
-export HUBBLE_IMAGE=hugegraph/hubble:latest
-export HUBBLE_DEMO_PROJECT="hubble-demo-$(date +%Y%m%d-%H%M%S)"
-docker compose ls
-docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml pull
-docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml up -d --wait
-docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml ps
-curl -fsS http://127.0.0.1:8080/versions
-```
+1. **Start and check the services.**
 
-Once services are healthy, open <http://127.0.0.1:8088>. When `HUGEGRAPH_ADMIN_PASSWORD` is unset in `.env`,
-Server permits anonymous access and Hubble opens the homepage directly. If authentication is enabled, configure an admin password and JWT secret in `.env`
-as described in the Docker README, then sign in with a Server account (Hubble has no independent user database).
-Profile and account management options appear only when authentication is enabled and the account holds requisite permissions.
+   Choose an unused project name for this trial and keep these variables in the same terminal session:
+
+   ```bash
+   export HUGEGRAPH_VERSION=latest
+   export HUBBLE_IMAGE=hugegraph/hubble:latest
+   export HUBBLE_DEMO_PROJECT="hubble-demo-$(date +%Y%m%d-%H%M%S)"
+   docker compose ls
+   docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml pull
+   docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml up -d --wait
+   docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml ps
+   curl -fsS http://127.0.0.1:8080/versions
+   ```
+
+1. **Open Hubble.**
+
+   Once services are healthy, open <http://127.0.0.1:8088>. When `HUGEGRAPH_ADMIN_PASSWORD` is unset in `.env`,
+   Server permits anonymous access and Hubble opens the homepage directly. If authentication is enabled, configure an admin password and JWT secret in `.env`
+   as described in the Docker README, then sign in with a Server account (Hubble has no independent user database).
+   Profile and account management options appear only when authentication is enabled and the account holds requisite permissions.
+{.steps}
 
 Use `latest` to explore recent features; pin a released image version or digest for production. Official release archives are on the
 [download page](/docs/download/download/).
@@ -3592,21 +3617,18 @@ the natural language prompt, or running statements in the code editor.
 
 ### Text2GQL natural-language queries {#text2gql}
 
-> [!NOTE]
-> The Text2GQL backend capabilities (including Model settings, built-in/temporary models, and Prompt templates) require a Hubble build with
-> [apache/hugegraph-toolchain#824](https://github.com/apache/hugegraph-toolchain/pull/824) or a release containing it.
-> Earlier builds display a preview tab without model management.
-
 Describe your query requirement in the **Natural language** input. Text2GQL combines the current graph schema to generate read-only Gremlin or Cypher
 and execute it automatically. Generated statements can be edited freely (read-only safety checks still apply before execution).
 In **Async** mode, both generated and handwritten queries can be submitted as background tasks.
 Inputs automatically restore the graph's most recent query prompt without running it, and the execution history retains original natural-language questions.
 
 ```gallery
-![Text2GQL query and graph results](/docs/images/hubble/text2gql.jpg) # Query workspace
+![Text2GQL entry and handwritten query results](/docs/images/hubble/text2gql.jpg) # Unconfigured model; handwritten query
 ![Shared model settings](/docs/images/hubble/text2gql-settings.jpg) # Model settings
 ![Gremlin and Cypher Prompt templates](/docs/images/hubble/text2gql-prompt.jpg) # Text2GQL Prompt
 ```
+
+The screenshots show an unconfigured model. The graph results come from handwritten Gremlin; connect a working model before generating natural-language queries.
 
 | Model source | Configuration and storage |
 | --- | --- |
@@ -3616,7 +3638,7 @@ Inputs automatically restore the graph's most recent query prompt without runnin
 Choose **OpenAI compatible** for OpenAI, DeepSeek, GLM, and similar services, or **Ollama (local)** for local Ollama; unauthenticated Ollama needs no Key.
 The Base URL must be reachable from Hubble's backend; container `localhost` refers to that container. Public endpoints require HTTPS, while plain HTTP is
 accepted only for loopback or private-network models; when changing the Base URL in Model settings, supply a new Key or explicitly clear the saved Key.
-Only the `admin` account (a super administrator in PD mode) manages shared settings. When Server authentication is disabled, anyone who can access the
+Administrators with model-settings management permission manage shared settings. When Server authentication is disabled, anyone who can access the
 deployment can manage them.
 
 Under model settings, click **Text2GQL Prompt** in the header to customize Gremlin and Cypher generation rules and few-shot examples.
@@ -3648,7 +3670,7 @@ For example, select K-neighbor (GET) with `source=1:marko`, `max_depth=1`, and `
 After parameter validation, use the run button on the card or the form shortcut to explore one-hop neighbors.
 
 ![Built-in neighbor algorithm parameters and graph result](/docs/images/hubble/algorithms.jpg)
-{width="2033" height="977"}
+{width="1600" height="1000"}
 
 ## Async Tasks: confirm background results
 
@@ -3740,8 +3762,8 @@ After changes, refresh permission context or sign in again and verify menus and 
 Older Servers may hide or disable unsupported operations; a visible button alone does not establish resource authorization.
 See the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/) for space management.
 
-![Authenticated account list in PD mode](/docs/images/hubble/accounts.jpg)
-{width="2033" height="977"}
+![Authenticated account list in standalone mode](/docs/images/hubble/accounts.jpg)
+{width="1600" height="1000"}
 
 ## Operations: inspect the standalone Server
 
@@ -3792,19 +3814,23 @@ docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volume
 This removes the project's containers, network, named volumes, and anonymous volume, losing the sample data and Hubble import tasks.
 To retain data, omit `--volumes` when taking the deployment down and reuse the same project name when starting it again.
 
-To obtain an exact master build, use JDK 17 and Maven. The Maven plugin installs the required Node/Yarn;
-you do not need to install them separately. These commands skip tests:
+Building current master requires **JDK 17, Maven 3.9+, Python 3.9+, and stable Node.js 24 (at least 24.22.0)**,
+with **pnpm 12.14.0** selected through Corepack. Maven no longer installs Node/Yarn automatically.
 
-```bash
-git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
-cd hugegraph-toolchain
-mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
-cd hugegraph-hubble
-mvn package -Dmaven.javadoc.skip=true -DskipTests -ntp
-cd apache-hugegraph-hubble-*
-# Edit conf/hugegraph-hubble.properties with the correct Server URL
-bin/start-hubble.sh
-```
+1. Follow the [Java 17 migration instructions](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)
+   to install the Server SDK in an isolated Maven repository.
+1. Follow the [Hubble source-build procedure](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-hubble/README.md)
+   to install Python dependencies and build Client, Loader, and Hubble with that same repository (skipping tests).
+1. Open the resulting `hugegraph-hubble/apache-hugegraph-hubble-*` directory,
+   configure Server connection settings in `conf/hugegraph-hubble.properties`, then start:
+
+   ```bash
+   bin/start-hubble.sh -d
+   ```
+{.steps}
+
+Current master uses a new H2 metadata database. Retain the old Hubble distribution and its data, and use a separate data directory for the new version.
+Old metadata has no automatic migration and cannot be reused directly.
 
 The bundled configuration binds to `localhost:8088`. `bin/stop-hubble.sh` requests graceful shutdown before forcing termination on timeout.
 For development and testing, see the [Toolchain local test guide](/docs/guides/toolchain-local-test/).
@@ -3818,6 +3844,7 @@ Backlinks:
 - [System Introduction](/docs/introduction/)
 - [HugeGraph Examples](/docs/language/hugegraph-example/)
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
+- [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)
 - [Graph visualization](/docs/quickstart/toolchain/visualization/)
 - [Hubble with HStore](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)
 
@@ -3848,10 +3875,20 @@ The guidance below focuses on connectivity and operations; ensure prerequisite c
 Docker `latest` is a moving tag. Screenshots assist in UI navigation; verify deployed versions via image digests and build details.
 Metrics and permission APIs vary by version.
 
+The screenshots show the HugeGraph Hubble interface in action; features and workflows are identical in both English and Chinese.
+
 ## Connect to a distributed cluster
 
 Hubble still manages graph data through the **Server graph API**. In distributed mode, it discovers Servers through PD
 and collects cluster information from PD and Store. Hubble does not read or write graph data directly in Store.
+
+```mermaid
+flowchart LR
+    H[Hubble] -->|Graph API| S[Server]
+    S -->|Graph reads and writes| T[Store]
+    H -.->|Discovery and cluster information| P[PD]
+    H -.->|Node metrics| T
+```
 
 1. **Generate Hubble configuration.** Prepare `.env` in the main repository's `docker/` directory following the Docker README.
 
@@ -3931,8 +3968,8 @@ plus the storage capacity limit. These deployment quotas neither report current 
 Select a space before opening a graph. Check the current graph after switching spaces, especially when spaces contain identically named graphs.
 The list reflects account access. If a space is missing, check membership permissions before creating more graphs.
 
-![GraphSpace creation and advanced resource limits](/docs/images/hubble/graphspace.jpg)
-{width="2048" height="984"}
+![GraphSpace creation form and entry to advanced resource limits](/docs/images/hubble/graphspace.jpg)
+{width="1600" height="1000"}
 
 ### Reuse Schema templates
 
@@ -3968,7 +4005,7 @@ legacy custom roles on older Servers are not interchangeable with these presets.
 See [Server authentication and authorization](/docs/config/config-authentication/).
 
 ![GraphSpace members and access presets](/docs/images/hubble/members.jpg)
-{width="2048" height="984"}
+{width="1600" height="1000"}
 
 ## Locate problems through the cluster overview
 
@@ -4082,12 +4119,110 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-This guide follows Toolchain `master` (currently `1.8.0`). Released packages and Docker `latest` may differ from source;
-check the version you use and build from source for unreleased functionality.
+This guide aligns with the Toolchain `master` branch (currently based on 1.8, unreleased). Released packages and Docker `latest` may differ; check your version before using unreleased features.
+
+### Quick start: local file import {#quick-local-file-import}
+
+Walk through a minimal import workflow: import two people and one relationship, then verify the data in Hubble.
+First [install Loader](#2-get-hugegraph-loader) and start [HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/).
+The commands below run from the Loader directory, importing into the default graph `hugegraph`.
+For an authenticated Server, append `--username` and `--password` (or `--token`).
+
+1. **Create the data files.**
+
+   These CSV files have no header row. The mapping in the next step supplies the column names.
+
+   ```bash
+   mkdir -p demo-loader
+   cat > demo-loader/people.csv <<'EOF'
+   docs-smoke-alice,29
+   docs-smoke-bob,31
+   EOF
+   cat > demo-loader/knows.csv <<'EOF'
+   docs-smoke-alice,docs-smoke-bob
+   EOF
+   ```
+
+1. **Create the schema and mapping.**
+
+   Dedicated `docs_*` names keep this example separate from the built-in `person` data.
+   File paths are relative to the directory where you run Loader.
+
+   ```bash
+   cat > demo-loader/schema.groovy <<'EOF'
+   schema.propertyKey("docs_name").asText().ifNotExist().create()
+   schema.propertyKey("docs_age").asInt().ifNotExist().create()
+   schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age")
+         .primaryKeys("docs_name").ifNotExist().create()
+   schema.edgeLabel("docs_smoke_knows").sourceLabel("docs_smoke_person")
+         .targetLabel("docs_smoke_person").ifNotExist().create()
+   EOF
+   cat > demo-loader/struct.json <<'EOF'
+   {
+     "version": "2.0",
+     "structs": [
+       {
+         "id": "people",
+         "input": {
+           "type": "FILE",
+           "path": "demo-loader/people.csv",
+           "format": "CSV",
+           "header": ["docs_name", "docs_age"]
+         },
+         "vertices": [{"label": "docs_smoke_person"}]
+       },
+       {
+         "id": "knows",
+         "input": {
+           "type": "FILE",
+           "path": "demo-loader/knows.csv",
+           "format": "CSV",
+           "header": ["source_name", "target_name"]
+         },
+         "edges": [{
+           "label": "docs_smoke_knows",
+           "source": ["source_name"],
+           "target": ["target_name"],
+           "field_mapping": {"source_name": "docs_name", "target_name": "docs_name"}
+         }]
+       }
+     ]
+   }
+   EOF
+   ```
+
+1. **Run the import.**
+
+   Keep the same working directory. Change the host and port if Server runs elsewhere.
+
+   ```bash
+   bin/hugegraph-loader.sh \
+     --graphspace DEFAULT --graph hugegraph \
+     --file demo-loader/struct.json --schema demo-loader/schema.groovy \
+     --host 127.0.0.1 --port 8080
+   ```
+
+   A first successful run imports two vertices and one edge. Check the success and failure counts in the summary.
+
+1. **Query the result in Hubble.**
+
+   Connect Hubble to the same Server and graph, then run these queries separately in the Gremlin workspace.
+
+   ```groovy
+   g.V().hasLabel('docs_smoke_person').valueMap('docs_name', 'docs_age')
+   g.V().has('docs_smoke_person', 'docs_name', 'docs-smoke-alice')
+    .out('docs_smoke_knows').values('docs_name')
+   ```
+
+   The first query returns Alice with age `29` and Bob with age `31`. The second returns `docs-smoke-bob`.
+{.steps}
+
+For other inputs, continue with the [mapping reference](#33-write-data-source-mapping-file).
+The [bundled full example](#4-complete-example) also includes software vertices and edge properties.
 
 ### 1 HugeGraph-Loader Overview
 
-HugeGraph-Loader is the data import component of HugeGraph, which can convert data from various data sources into graph vertices and edges and import them into the graph database in batches.
+HugeGraph-Loader converts source data into graph vertices and edges and imports them into HugeGraph in batches.
 
 Currently supported data sources include:
 - Local disk file or directory, supports TEXT, CSV and JSON format files, supports compressed files
@@ -4098,13 +4233,9 @@ Currently supported data sources include:
 
 Local disk files and HDFS files support resumable uploads.
 
-It will be explained in detail below.
-
 > Note: HugeGraph-Loader requires HugeGraph Server service, please refer to [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server) to download and start Server
 
-> **Concurrency protection:** starting with HugeGraph 1.8.0, ordinary imports acquire same-Server ownership protection
-> (requires a Server whose `GET .../mode/owners` returns `protocol: 1` and a matching Loader; current `master` does not include it yet).
-> Older Servers retain the legacy import behavior described below.
+> **Concurrent imports**: Loader on the master branch supports LOADING owner protection on the same Server instance when the Server's `GET .../mode/owners` returns `protocol: 1`. Servers without this endpoint retain legacy import behavior without this protection; see the compatibility notes below.
 
 > **Testing Guide**: For running HugeGraph-Loader tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/toolchain-local-test)
 
@@ -4156,24 +4287,22 @@ A release may not include all `master` functionality; use the source build below
 
 #### 2.3 Clone source code to compile and install
 
-Clone the `master` branch:
+Building Loader from the master branch requires Java 17, Maven 3.6.3+, and Python 3.9+. Clone the repository and build:
 
 ```bash
 git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
-```
-
-Compile and generate tar package:
-
-```bash
 cd hugegraph-toolchain
-mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
+mvn package -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
+cd hugegraph-loader/apache-hugegraph-loader-*
 ```
+
+To build against candidate Server SDKs during development, refer to the [Java 17 migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md).
 
 For Oracle input, obtain a JDBC driver JAR compatible with your Oracle/JDK versions and place it in the extracted Loader `lib/` directory.
 The startup script loads JARs there; installing a driver only in the local Maven repository does not put it on Loader’s runtime classpath.
 
 ### 3 How to use
-The basic process of using HugeGraph-Loader is divided into the following steps:
+To import a dataset, prepare the schema, data and mapping, then run Loader.
 - Write graph schema
 - Prepare data files
 - Write input source map files
@@ -4181,10 +4310,10 @@ The basic process of using HugeGraph-Loader is divided into the following steps:
 
 #### 3.1 Construct graph schema
 
-This step is the modeling process. Users need to have a clear idea of ​​their existing data and the graph model they want to create, and then write the schema to build the graph model.
+Define the vertex labels, edge labels and properties needed to represent your data before writing the schema.
 
-For example, if you want to create a graph with two types of vertices and two types of edges, the vertices are "people" and "software", the edges are "people know people" and "people create software", and these vertices and edges have some attributes, For example, the vertex "person" has: "name", "age" and other attributes,
-"Software" includes: "name", "sale price" and other attributes; side "knowledge" includes: "date" attribute and so on.
+The example below uses `person` and `software` vertices, connected by `knows` and `created` edges.
+People have names, ages and cities; software has a name and price. Each edge records a date.
 
 <div style="text-align: center;">
   <img src="/docs/images/demo-graph-model.png" alt="Example graph with person and software vertices connected by knows and created edges">
@@ -4192,7 +4321,7 @@ For example, if you want to create a graph with two types of vertices and two ty
 </div>
 
 
-After designing the graph model, we can use `groovy` to write the definition of `schema` and save it to a file, here named `schema.groovy`.
+Save the schema definitions in `schema.groovy`.
 
 ```groovy
 // Create some properties
@@ -4213,7 +4342,7 @@ schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
 
-> Please refer to the corresponding section in [hugegraph-client](/docs/clients/hugegraph-client) for the detailed description of the schema.
+> See [HugeGraph Client](/docs/clients/hugegraph-client) for the schema API.
 
 #### 3.2 Prepare data
 
@@ -4229,9 +4358,9 @@ The data sources currently supported by HugeGraph-Loader include:
 
 ###### 3.2.1.1 Local disk file or directory
 
-The user can specify a local disk file as the data source. If the data is scattered in multiple files, a certain directory is also supported as the data source, but multiple directories are not supported as the data source for the time being.
+Set the input path to a local file or a directory. A single input source accepts one directory, not a list of directories.
 
-For example, my data is scattered in multiple files, part-0, part-1 ... part-n. To perform the import, it must be ensured that they are placed in one directory. Then in the loader's mapping file, specify `path` as the directory.
+For data split across `part-0`, `part-1` and other files, place those files in one directory and set the mapping's `path` to that directory.
 
 Supported file formats include:
 
@@ -4239,7 +4368,8 @@ Supported file formats include:
 - CSV
 - JSON
 
-TEXT is a text file with custom delimiters, the first line is usually the header, and the name of each column is recorded, and no header line is allowed (specified in the mapping file). Each remaining row represents a record, which will be converted into a vertex/edge; each column of the row corresponds to a field, which will be converted into the id, label or attribute of the vertex/edge;
+TEXT uses a configurable delimiter. Each data row represents a record; its columns supply IDs, labels or properties.
+Column names can come from a header row or from the mapping's `header` setting.
 
 An example is as follows:
 
@@ -4273,9 +4403,10 @@ Currently supported compressed file types include: GZIP, BZ2, XZ, LZMA, SNAPPY_R
 
 The loader also supports some relational databases as data sources, and currently supports MySQL, PostgreSQL, Oracle, and SQL Server.
 
-However, the requirements for the table structure are relatively strict at present. If **association query** needs to be done during the import process, such a table structure is not allowed. The associated query means: after reading a row of the table, it is found that the value of a certain column cannot be used directly (such as a foreign key), and you need to do another query to determine the true value of the column.
+Loader does not follow foreign keys to query other tables while parsing a row.
+Each input row must provide the values needed to construct its graph elements. Prepare any joins in the source query first.
 
-For example, Suppose there are three tables, person, software and created
+Consider three tables named `person`, `software` and `created`.
 
 ```text
 // person schema
@@ -4292,12 +4423,14 @@ id | name | lang | price
 id | p_id | s_id | date
 ```
 
-If the id strategy of person or software is specified as PRIMARY_KEY when modeling (schema), choose name as the primary key (note: this is the concept of vertex-label in hugegraph), when importing edge data, the source vertex and target need to be spliced ​​out. For the id of the vertex, you must go to the person/software table with p_id/s_id to find the corresponding name. In the case of the schema that requires additional query, the loader does not support it temporarily. In this case, the following two methods can be used instead:
+If `person` and `software` use `PRIMARY_KEY` IDs with `name` as the primary key, each edge needs its endpoints' names.
+The `created` table contains only `p_id` and `s_id`; Loader will not query the names from those IDs. Use either of these ID designs.
 
-1. The id strategy of person and software is still specified as PRIMARY_KEY, but the id column of the person table and software table is used as the primary key attribute of the vertex, so that the id can be generated by directly splicing p_id and s_id with the label of the vertex when importing an edge;
-2. Specify the id policy of person and software as CUSTOMIZE, and then directly use the id column of the person table and the software table as the vertex id, so that p_id and s_id can be used directly when importing edges;
+1. Keep `PRIMARY_KEY` and use each vertex table's `id` column as its primary key property.
+   Loader can then build endpoint IDs from `p_id`, `s_id` and the vertex labels.
+2. Use custom IDs, taking each vertex table's `id` column as the vertex ID. The edge mapping can use `p_id` and `s_id` directly.
 
-The key point is to make the edge use p_id and s_id directly, don't check it again.
+Both designs let edge rows supply endpoint IDs without another lookup.
 
 ##### 3.2.2 Prepare vertex and edge data
 
@@ -4342,13 +4475,11 @@ The edge data file consists of data line by line. Generally, each line is used a
 
 ##### 3.3.1 Mapping file overview
 
-The mapping file of the input source is used to describe how to establish the mapping relationship between the input source data and the vertex type/edge type of the graph. It is organized in `JSON` format and consists of multiple mapping blocks, each of which is responsible for mapping an input source. Mapped to vertices and edges.
+The mapping file uses JSON. Each item in `structs` contains one `input` and its `vertices` and `edges` mappings.
 
-Specifically, each mapping block contains **an input source** and multiple **vertex mapping** and **edge mapping** blocks, and the input source block corresponds to the `local disk file or directory`, ` HDFS file or directory` and `relational database` are responsible for describing the basic information of the data source, such as where the data is, what format, what is the delimiter, etc. The vertex map/edge map is bound to the input source, which columns of the input source can be selected, which columns are used as ids, which columns are used as attributes, and what attributes are mapped to each column, the values ​​of the columns are mapped to what values ​​of attributes, and so on.
+`input` describes the data location, format and delimiter. Vertex and edge mappings define labels, IDs, properties and field conversions.
 
-In the simplest terms, each mapping block describes: where is the file to be imported, which type of vertices/edges each line of the file is to be used as which columns of the file need to be imported, and the corresponding vertices/edges of these columns. what properties, etc.
-
-> Note: The format of the mapping file before version 0.11.0 and the format after 0.11.0 has changed greatly. For the convenience of expression, the mapping file (format) before 0.11.0 is called version 1.0, and the version after 0.11.0 is version 2.0. And unless otherwise specified, the "map file" refers to version 2.0.
+> Loader 0.11.0 introduced mapping format 2.0; earlier mappings use format 1.0. This page uses 2.0 unless stated otherwise.
 
 
 
@@ -4870,9 +5001,7 @@ The nodes of vertex and edge mapping (a key in the JSON file) have a lot of the 
 
 #### 3.4 Execute command import
 
-After preparing the graph model, data file, and input source mapping relationship file, the data file can be imported into the graph database.
-
-The import process is controlled by commands submitted by the user, and the user can control the specific process of execution through different parameters.
+With the schema, data and mapping ready, run Loader with the options below.
 
 ##### 3.4.1 Parameter description
 
@@ -4968,7 +5097,7 @@ Copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable volum
 
 ##### 3.4.2 Breakpoint Continuation Mode
 
-Usually, the Loader task takes a long time to execute. If the import interrupt process exits for some reason, and next time you want to continue the import from the interrupted point, this is the scenario of using breakpoint continuation.
+For a long import, use a progress file to resume after an interruption.
 
 Set `--incremental-mode` to `true` to resume from a progress file. Loader records progress when it closes normally after a successful import
 or a normal stop; an unexpected failure may prevent this write.
@@ -4980,12 +5109,12 @@ order, which is the most recent one.
 > Note: A progress file is written after a successful import or a normal stop (including an error limit), regardless of `--incremental-mode`
 > or `--print-progress`. An import aborted by an unexpected failure may not write one.
 
-If the data file formats are all legal and the import task is stopped by the user (CTRL + C or kill, kill -9 is not supported), that is to say, if there is no error record, the next import only needs to be set to 
-Continue for the breakpoint.
+After stopping an import with `Ctrl+C` or `kill`, set `--incremental-mode true` to continue from the recorded position.
+A forced stop with `kill -9` cannot save progress.
 
-But if the limit of --max-read-errors, --max-parse-errors or --max-insert-errors is reached because too much data is invalid or network abnormality is reached, Loader will record these original rows that failed into
-the failure file, after the user modifies the data lines in the failure file, set --failure-mode to true to import these "failure files" as input sources (does not affect the normal file import),
-Of course, if there is still a problem with the modified data line, it will be logged again to the failure file (don't worry about duplicate lines, they are dropped when the file is closed). Failure mode lifts the three error limits above, so the whole failure file is scanned.
+Invalid data or connection failures can exhaust `--max-read-errors`, `--max-parse-errors` or `--max-insert-errors`.
+Correct the rows in the failure files, then use `--failure-mode true` to retry them. This leaves the original data files unchanged.
+Rows that still fail are recorded again and deduplicated when the failure file closes. Failure mode lifts these three limits and scans the entire file.
 
 Each input source, that is each item of `structs` in the mapping file, gets its own failure file. The file is named after the `id` of that input source with the suffix `.error` and is stored in the `${struct}/failure-data` directory.
 Every failed line is written as a pair of lines: a tip line starting with `#### READ ERROR:`, `#### PARSE ERROR:` or `#### INSERT ERROR:`, followed by the original data line. When the input source has a header, that header is written as JSON to a sibling `${id}.header` file, so the failure file can be read back with the right columns.
@@ -5014,62 +5143,12 @@ The script runs the JVM under `JAVA_HOME` when that variable is set, and `java` 
 
 #### 3.4.5 Minimal Local-File Import
 
-
-First start HugeGraph Server and ensure the current user can access `hugegraph` in graphspace `DEFAULT`, create schema, and write data. If authentication is enabled, add the appropriate `--username`, `--password`, or `--token`. This example requires only local files, without Kafka, HDFS, or JDBC.
-
-From the extracted Loader installation directory, create data, schema, and a version 2.0 mapping file:
-
-```bash
-mkdir -p demo-loader
-
-cat > demo-loader/people.csv <<'EOF'
-docs-smoke-alice,29
-docs-smoke-bob,31
-EOF
-
-cat > demo-loader/schema.groovy <<'EOF'
-schema.propertyKey("docs_name").asText().ifNotExist().create()
-schema.propertyKey("docs_age").asInt().ifNotExist().create()
-schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age").primaryKeys("docs_name").ifNotExist().create()
-EOF
-
-cat > demo-loader/struct.json <<'EOF'
-{
-  "version": "2.0",
-  "structs": [
-    {
-      "id": "people",
-      "input": {
-        "type": "FILE",
-        "path": "demo-loader/people.csv",
-        "format": "CSV",
-        "header": ["docs_name", "docs_age"]
-      },
-      "vertices": [
-        {"label": "docs_smoke_person"}
-      ],
-      "edges": []
-    }
-  ]
-}
-EOF
-```
-
-The CSV has no header row; `input.header` in the mapping supplies column names. `input.path` is relative to the Loader process working directory, so keep running from the installation directory. If Server runs in another container, set `--host` to a Server address reachable by Loader:
-
-```bash
-bin/hugegraph-loader.sh \
-  --graphspace DEFAULT --graph hugegraph \
-  --file demo-loader/struct.json --schema demo-loader/schema.groovy \
-  --host 127.0.0.1 --port 8080
-```
-
-Expected result: two vertices and zero edges imported. This example uses dedicated schema names to avoid conflicts with a preloaded `person` label. In Hubble, run `g.V().hasLabel('docs_smoke_person').values('docs_name')` to confirm `docs-smoke-alice` and `docs-smoke-bob`.
+Follow the [local-file import steps](#quick-local-file-import) at the start of this page.
 
 #### 3.4.6 Concurrent imports and LOADING ownership {#loading-ownership}
 
-Starting with HugeGraph 1.8.0, Loader supports concurrent import protection via the LOADING ownership protocol
-(requires a Server whose `GET .../mode/owners` returns `protocol: 1` and a matching Loader; current `master` does not include it yet).
+In the `master` branch, Loader implements a LOADING ownership protocol coordinated with Server's `/mode/owners` endpoint.
+When the deployed Server provides this endpoint and returns `protocol: 1`, Loader enables ownership protection automatically; released Server 1.7.0 and older versions continue using the legacy mode switching flow.
 
 ```mermaid
 graph TD
@@ -5106,7 +5185,8 @@ graph TD
 
 ### 4 Complete example
 
-Given below is an example in the example directory of the hugegraph-loader package. ([GitHub address](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-loader/assembly/static/example/file))
+The Loader distribution includes this dataset in `example/file/`.
+See the [source files](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-loader/assembly/static/example/file).
 
 #### 4.1 Prepare data
 
@@ -5274,13 +5354,13 @@ count metrics
 
 ###### 4.5.1.1 Prepare data
 
-If you just want to try out the loader, you can import the built-in example dataset without needing to prepare additional data yourself.
+For a first import, use the built-in example dataset.
 
-If using custom data, before importing data with the loader, we need to copy the data into the container.
+For custom data, first copy the files into the Loader container.
 
-First, following the steps in [4.1–4.3](#41-prepare-data), we can prepare the data and then use `docker cp` to copy the prepared data into the loader container.
+Prepare the data, schema and mapping as described in [sections 4.1 to 4.3](#41-prepare-data), then copy them with `docker cp`.
 
-Suppose we've prepared the corresponding dataset following the above steps, stored in the `hugegraph-dataset` folder with the following file structure:
+The following example stores the files in `hugegraph-dataset`.
 
 ```bash
 tree -f hugegraph-dataset/
@@ -5305,9 +5385,9 @@ edge_created.json  edge_knows.json  schema.groovy  struct.json  vertex_person.cs
 
 ###### 4.5.1.2 Data loading
 
-Taking the built-in example dataset as an example, we can use the following command to load the data.
+Run this command to import the built-in dataset.
 
-If you need to import your custom dataset, you need to modify the paths for `-f` (data script) and `-s` (schema) configurations.
+For custom data, set `-f` to your mapping file and `-s` to your schema file.
 
 You can refer to [3.4.1-Parameter description](#341-parameter-description) for the rest of the parameters.
 
@@ -5354,7 +5434,7 @@ meter metrics
     edge load rate(edges/s)       : 53   
 ```
 
-You can also use `curl` or `hubble` to observe the import result. Here's an example using `curl`:
+Query the imported data with Hubble or `curl`.
 
 These requests use the GraphSpace-aware Server API. For an older Server, omit `/graphspaces/DEFAULT` from the path.
 
@@ -5367,9 +5447,9 @@ If you want to check the import result of edges, you can use `curl --compressed 
 
 ##### 4.5.2 Enter the docker container to load data
 
-Besides using `docker exec` directly for data import, we can also enter the container for data loading. The basic process is similar to [4.5.1](#451-use-docker-exec-to-load-data-directly).
+You can also open a shell in the container and run the same import commands.
 
-Enter the container by `docker exec -it loader bash` and execute the command:
+Open the shell with `docker exec -it loader bash`, then run the import.
 
 ```bash
 sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h server -p 8080
@@ -5378,57 +5458,55 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 The results of the execution will be similar to those shown in [4.5.1](#451-use-docker-exec-to-load-data-directly).
 
 #### 4.6 Import data by spark-loader
-> The current source uses Spark 3.2.2 and Scala 2.12. Other combinations need independent verification.
-> 
-The parameters of `spark-loader` are divided into two parts. Note: Because the abbreviations of 
-these two-parameter names have overlapping parts, please use the full name of the parameter. 
-And there is no need to guarantee the order between the two parameters.
-- hugegraph parameters (Reference: [hugegraph-loader parameter description](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-loader/#341-parameter-description) )
-- Spark task submission parameters (Reference: [Submitting Applications](https://spark.apache.org/docs/3.3.0/submitting-applications.html#content))
 
-Example:
+The current `master` API sink uses Spark `3.5.8`, Scala `2.12` and Java 17 on the driver and executors.
+The POM's Spark `3.2.2` dependency supplies compile-time APIs; it is not the runtime engine.
+Set `SPARK_HOME` and `JAVA_HOME`, then use the distribution's shaded Loader JAR with its launcher.
+
+Create the schema first and make data files readable by the executors. CSV and TEXT inputs need headerless UTF-8 data and an explicit mapping `header`.
+Other charsets and `has_header: true` are rejected. Load vertex data before edge data when the edges depend on those vertices.
+Replace the mapping path below with your prepared vertex mapping.
+
 ```bash
-sh bin/hugegraph-spark-loader.sh --master yarn \
---deploy-mode cluster --name spark-hugegraph-loader --file ./hugegraph.json \
---username admin --token admin --host xx.xx.xx.xx --port 8093 \
---graph graph-test --num-executors 6 --executor-cores 16 --executor-memory 15g
+bin/hugegraph-spark-loader.sh \
+  --master 'local[2]' --driver-memory 1g \
+  --file /path/to/vertex-mapping.json \
+  --host 127.0.0.1 --port 8080 --graph hugegraph --sink-type true
 ```
 
-`bin/hugegraph-spark-loader.sh` submits `org.apache.hugegraph.loader.spark.HugeGraphSparkLoader` through `${SPARK_HOME}/bin/spark-submit`, so `SPARK_HOME` has to point at a Spark installation. Every jar under `lib/` is put on the class path. The Spark application name defaults to `hugegraph-spark-loader` and can be changed through the `APP_NAME` environment variable.
+Pass Spark options such as `--master`, `--conf` and `--jars` to the launcher alongside Loader options.
+Additional JDBC drivers need explicit `--jars`; copying them into `lib/` does not distribute them to executors.
+Query the target graph to verify counts and properties; the API sink's insertion counters do not report distributed writes.
 
-`bin/get-params.sh` splits the command line: only the options below are handed to the loader, every other argument is passed to `spark-submit` unchanged. The splitter matches long option names only, so short forms such as `-f` and `-g` are not recognised.
-
-```text
---graph --schema --host --port --username --token --protocol
---trust-store-file --trust-store-password --clear-all-data --clear-timeout
---incremental-mode --failure-mode --batch-insert-threads --single-insert-threads
---max-conn --max-conn-per-route --batch-size --max-parse-errors --max-insert-errors
---timeout --shutdown-timeout --retry-times --retry-interval --check-vertex
---print-progress --dry-run --sink-type --vertex-partitions --edge-partitions --help
-```
-
-`--file` is treated separately: with `--deploy-mode cluster` the mapping file is shipped to the executors through `--files` and the loader receives only its base name, otherwise the path is passed through as written.
-
-In this mode the loader reads FILE, HDFS and JDBC input sources; a KAFKA or GRAPH input source is rejected.
-
-By default (`--sink-type true`) each Spark partition opens a HugeClient and writes vertices and edges through the HugeGraph server API. With `--sink-type false` the loader generates HFiles and bulk-loads them into HBase instead, taking the table names and ZooKeeper settings from `--vertex-table-name`, `--edge-table-name`, `--hbase-zk-quorum`, `--hbase-zk-port`, `--hbase-zk-parent`, `--vertex-partitions` and `--edge-partitions`.
+This path rejects `--incremental-mode true` and `--failure-mode true`. Standalone Spark supports client deployment only.
+HBase bulkload (`--sink-type false`) is unsupported on Spark 3.5.8 / Java 17; keep an existing bulkload deployment on its separately validated
+released Loader/JVM/Spark/HBase environment.
+For details, see the [Spark migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/spark-java17.md).
 
 #### 4.7 Import data by flink-cdc-loader
 
-> The current source uses Flink 1.13.5 with flink-connector-mysql-cdc 2.2.1 and Scala 2.12. Other combinations need independent verification.
+The current `master` integration targets Flink `2.2.1`, MySQL CDC `3.6.0-2.2` and Java 17.
+Older examples using Flink 1.13.5 and CDC 2.2.1 belong to the previous implementation.
+Set `FLINK_HOME`; the submission JVM, JobManager and TaskManager must all use Java 17.
+Keep Flink's module-access options and exactly one shaded Loader JAR in the distribution's `lib/`.
 
-`bin/hugegraph-flinkcdc-loader.sh` submits `org.apache.hugegraph.loader.flink.HugeGraphFlinkCDCLoader` through `${FLINK_HOME}/bin/flink run`, so `FLINK_HOME` has to be set. The job captures MySQL change events with Flink CDC and applies them to the graph, which keeps the graph in step with the source tables.
+Each mapping needs a MySQL JDBC input with `url`, `database`, `table`, `username` and `password`.
+Set MySQL `binlog_row_image=FULL`. UPDATE events require explicit, nonempty `update_strategies` and unchanged graph IDs;
+changes to vertex IDs, edge endpoints or sort keys are rejected. CDC also rejects `--dry-run true` and `--use-prefilter true`.
 
-The mapping file uses the same format as for the command-line loader, but every input source has to be a JDBC input source over MySQL: the loader takes `url`, `database`, `table`, `username` and `password` from it and parses the host and port out of `url`. Vertex and edge mappings work as usual. `--cdc-flush-interval` and `--cdc-sink-parallelism` in [3.4.1](#341-parameter-description) apply to this mode only.
-
-The command line is split by `bin/get-params.sh` in the same way as for `spark-loader`, with the arguments that are not loader options going to `flink run`.
-
-Example:
+Without a separator, all arguments go to Loader. To set Flink options, put them before `--` and Loader options after it.
+For a prepared mapping at `mysql-cdc.json`, submit with one sink writer.
 
 ```bash
-sh bin/hugegraph-flinkcdc-loader.sh --file ./mysql-cdc.json \
---host xx.xx.xx.xx --port 8080 --graph hugegraph --username admin --token admin
+bin/hugegraph-flinkcdc-loader.sh -p 1 -- \
+  --file ./mysql-cdc.json --host 127.0.0.1 --port 8080 \
+  --graph hugegraph --cdc-sink-parallelism 1
 ```
+
+Each mapping uses a single source reader and sink writer. `--cdc-sink-parallelism` defaults to `1`; other values are rejected.
+After `--`, Loader's `-p` means the Server port. Checkpoint flushing does not provide transactional graph writes or an exactly-once guarantee.
+Validate edge CDC and broader mappings in your test environment before deploying to production.
+For more details, see the [Flink CDC documentation](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/flink-cdc-java17.md).
 
 ---
 
@@ -5437,6 +5515,7 @@ Backlinks:
 - [Documentation](/docs/)
 - [Graphs](/docs/clients/restful-api/graphs/)
 - [Architecture Overview](/docs/guides/architectural/)
+- [FAQ](/docs/guides/faq/)
 - [System Introduction](/docs/introduction/)
 - [HugeGraph-Loader Performance](/docs/performance/hugegraph-loader-performance/)
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
@@ -6121,7 +6200,7 @@ LLMS index: [llms.txt](/llms.txt)
 
 ### 1 HugeGraph-Tools Overview
 
-HugeGraph-Tools is an automated deployment, management and backup/restore component of HugeGraph.
+HugeGraph-Tools manages graphs and tasks and provides backup and restore commands. It also retains deployment commands for legacy Server/Studio versions.
 
 > **Testing Guide**: For running HugeGraph-Tools tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/toolchain-local-test)
 
@@ -6134,7 +6213,7 @@ HugeGraph-Tools is included in the Toolchain distribution. You can download the 
 
 #### 2.1 Download the compiled archive
 
-Download the latest version of the HugeGraph-Toolchain package:
+The following example uses the released HugeGraph-Toolchain `1.7.0` package. Check the [download page](/docs/download/download/) for releases.
 
 ```bash
 export VERSION=1.7.0
@@ -6147,42 +6226,83 @@ cd "${ARCHIVE}/apache-hugegraph-tools-incubating-${VERSION}"
 ```
 
 #### 2.2 Clone source code to compile and install
-Please ensure that the wget command is installed before compiling the source code
 
-Download the latest version of the HugeGraph-Tools source package:
+Choose one source below. Both build the released `1.7.0` Tools; install Maven and JDK 11 first. The archive route also requires `wget`.
+Each example ends in the generated Tools directory, where `bin/hugegraph help` lists the available commands.
 
-```bash
-# 1. get from github
-git clone https://github.com/apache/hugegraph-toolchain.git
+```bash {tab="Git tag"}
+git clone --branch 1.7.0 --single-branch https://github.com/apache/hugegraph-toolchain.git
+cd hugegraph-toolchain
+mvn package -pl hugegraph-tools -am -DskipTests -ntp
+cd hugegraph-tools/apache-hugegraph-tools-incubating-1.7.0
+bin/hugegraph help
+```
 
-# 2. Download a released source package
+```bash {tab="Source archive"}
 export VERSION=1.7.0
 export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
 wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
-```
-
-Compile and generate tar package:
-
-```bash
-cd hugegraph-toolchain
+tar zxf "${ARCHIVE}-src.tar.gz"
+cd "${ARCHIVE}-src"
 mvn package -pl hugegraph-tools -am -DskipTests -ntp
+cd "hugegraph-tools/apache-hugegraph-tools-incubating-${VERSION}"
+bin/hugegraph help
 ```
 
-The package is generated as `hugegraph-tools/target/apache-hugegraph-tools-${version}.tar.gz`, and the unpacked directory `hugegraph-tools/apache-hugegraph-tools-${version}` (containing `bin/` and `lib/`) is created next to it.
+The build also writes `hugegraph-tools/target/apache-hugegraph-tools-incubating-1.7.0.tar.gz` relative to the source root.
 
+#### 2.3 Build current source {#build-current-source}
+
+To use unreleased features from the master branch, build Tools from source (master is currently based on 1.8; requires JDK 17, Maven 3.6.3+, and Python 3.9+):
+
+1. **Clone Toolchain source**
+
+   ```bash
+   git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
+   cd hugegraph-toolchain
+   ```
+
+1. **Build matching Server SDK**
+
+   Run the script below to download Server source and install the SDK into an isolated Maven repository:
+
+   ```bash
+   java -version
+   mvn -version
+   candidate_dir=$(mktemp -d)
+   mkdir -p "$candidate_dir/m2"
+   bash hugegraph-client/assembly/travis/install-candidate-sdk.sh \
+     master "$candidate_dir/server" "$candidate_dir/m2"
+   ```
+
+   See the [Java 17 migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md) for details.
+
+1. **Package Tools**
+
+   ```bash
+   mvn -Dmaven.repo.local="$candidate_dir/m2" \
+     -Dsdk.validation.mode=candidate \
+     package -pl hugegraph-tools -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+   cd hugegraph-tools/apache-hugegraph-tools-*
+   bin/hugegraph help
+   ```
+{.steps}
+
+Keep the SDK repository while using this source build. The master build directory does not contain `incubating`.
 
 ### 3 How to use
 
 #### 3.1 Function overview
 
-After decompression, enter the apache-hugegraph-tools-${version} directory, you can use `bin/hugegraph` or `bin/hugegraph help` to view the usage information, and `bin/hugegraph help <sub-command>` to view the usage of a single sub-command. mainly divided:
+From the extracted or generated Tools directory, run `bin/hugegraph help` for the command list,
+or `bin/hugegraph help <sub-command>` for one command. The commands cover these tasks.
 
 - Graph management type, graph-mode-set, graph-mode-get, graph-list, graph-get, graph-clear, graph-create, graph-clone and graph-drop
 - Asynchronous task management type, task-list, task-get, task-delete, task-cancel and task-clear
 - Gremlin type, gremlin-execute and gremlin-schedule
 - Backup/Restore type, backup, restore, migrate, schedule-backup and dump
 - Authentication data backup/restore type, auth-backup and auth-restore
-- Install deployment type, deploy, clear, start-all and stop-all
+- Legacy Server/Studio deployment, deploy, clear, start-all and stop-all
 
 ```bash
 Usage: hugegraph [options] [command] [command options]
@@ -6190,20 +6310,21 @@ Usage: hugegraph [options] [command] [command options]
 
 ##### 3.2 [options]-Global Variable
 
-`options` is a global variable of HugeGraph-Tools, which can be configured in hugegraph-tools/bin/hugegraph, including:
+Set these global connection options on the command line or through the environment variables below.
 
-- --graph，HugeGraph-Tools The name of the graph to operate on, the default value is hugegraph
-- --url，The service address of HugeGraph-Server, the default is http://127.0.0.1:8080
-- --user，When HugeGraph-Server opens authentication, pass username
-- --password，When HugeGraph-Server opens authentication, pass the user's password
-- --timeout，Timeout when connecting to HugeGraph-Server, the default is 30s
-- --trust-store-file，The path of the certificate file, when --url uses https, the truststore file used by HugeGraph-Client, the default is empty, which means using the built-in truststore file conf/hugegraph.truststore of hugegraph-tools
-- --trust-store-password，The password of the certificate file, when --url uses https, the password of the truststore used by HugeGraph-Client, the default is empty, representing the password of the built-in truststore file of hugegraph-tools
-- --throw-mode, whether HugeGraph-Tools throws the exception instead of printing the error message and exiting, the default is false (mainly used by tests)
+- `--graph` selects the graph, default `hugegraph`.
+- `--url` sets the Server address, default `http://127.0.0.1:8080`.
+- `--user` supplies the username when Server authentication is enabled.
+- `--password` supplies that user's password.
+- `--timeout` sets the connection timeout, default 30 seconds.
+- `--trust-store-file` selects the HTTPS truststore. An empty value uses the built-in `conf/hugegraph.truststore`.
+- `--trust-store-password` supplies its password. An empty value uses the built-in truststore password.
+- `--throw-mode` defaults to `false`, which prints errors and exits. Set it to `true` to throw exceptions, mainly for tests.
 
-> The protocol is taken from the scheme of --url: use `https://...` to connect over https. --trust-store-file and --trust-store-password can only be set when --url uses https, and both --user and --password must be given together or omitted together.
+> The scheme in `--url` selects the protocol. Use `https://...` for HTTPS and set truststore options only with that scheme.
+> Supply both `--user` and `--password`, or omit both.
 
-The above global variables can also be set through environment variables. One way is to use export on the command line to set temporary environment variables, which are valid until the command line is closed
+Use `export` to set an option for the current shell and the commands launched from it.
 
 
 | Global Variable                   | Environment Variable           | Example                                            |
@@ -6230,7 +6351,7 @@ export HUGEGRAPH_GRAPH=hugegraph
 ./bin/hugegraph gremlin-execute --script 'g.V().count()'
 ```
 
-Another way is to set the environment variable in the bin/hugegraph script:
+You can also set these variables in `bin/hugegraph`.
 
 ```text
 #!/bin/bash
@@ -6267,7 +6388,7 @@ Another way is to set the environment variable in the bin/hugegraph script:
 
 > graph-create, graph-clone, graph-clear and graph-drop raise --timeout to at least 300 seconds.
 
-> When you need to restore the backup graph to a new graph, you need to set the graph mode to RESTORING mode; when you need to merge the backup graph into an existing graph, you need to first set the graph mode to MERGING model.
+> Before restoring into a new graph, set its mode to `RESTORING`. To merge into an existing graph, use `MERGING`.
 
 ##### 3.4 Asynchronous task management Type，task-list、task-get、task-delete、task-cancel and task-clear
 
@@ -6325,7 +6446,7 @@ Another way is to set the environment variable in the bin/hugegraph script:
   - --retry, specify the number of failed retries, the default is 3
   - --thread-num or -T, the number of threads to use, default is Math.min(10, Math.max(4, CPUs / 2))
   - -D, use the mode of -Dkey=value to specify dynamic parameters, which are used to specify HDFS configuration items when restoring graphs from HDFS, for example: -Dfs.default.name=hdfs://localhost:9000
-  > restore command can be used only if --format is executed as backup for json
+  > `restore` accepts backups made with `--format json`.
   > restore requires the graph to be in RESTORING or MERGING mode (set it with graph-mode-set first), otherwise the command fails
 - migrate, migrate the currently connected graph to another HugeGraphServer
   - --target-graph, the name of the target graph, the default is hugegraph
@@ -6377,6 +6498,12 @@ Another way is to set the environment variable in the bin/hugegraph script:
 
 ##### 3.8 Install the deployment type
 
+Note: These deployment commands only apply to legacy versions (Server 0.6.1~0.10.4 and Studio 0.6.1~0.10.0),
+and do not support current HugeGraph Server or Hubble.
+For modern deployments, follow [Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/)
+and [Hubble Quick Start](/docs/quickstart/toolchain/hugegraph-hubble/).
+The options below are retained only for maintaining legacy environments.
+
 - deploy, one-click download, install and start HugeGraph-Server and HugeGraph-Studio
   - -v, required, specifies the HugeGraph-Server and HugeGraph-Studio version to install, must be one of the versions listed in bin/version-map.yaml (0.6, 0.7, 0.8, 0.9, 0.10), which maps it to the matching server and studio release versions
   - -p, required, specifies the installed HugeGraph-Server and HugeGraph-Studio directories
@@ -6390,11 +6517,12 @@ Another way is to set the environment variable in the bin/hugegraph script:
 
 > deploy, start-all, clear and stop-all are handed by `bin/hugegraph` straight to the shell scripts `bin/deploy.sh`, `bin/start-all.sh`, `bin/clear.sh` and `bin/stop-all.sh`, so the global options and environment variables in 3.2 do not apply to them.
 
-> There is an optional parameter -u in the deploy command. When provided, the specified download address will be used instead of the default download address to download the tar package, and the address will be written into the `~/hugegraph-download-url-prefix` file; if no address is specified later When -u and `~/hugegraph-download-url-prefix` are not specified, the tar package will be downloaded from the address specified by `~/hugegraph-download-url-prefix`; if there is neither -u nor `~/hugegraph-download-url-prefix`, it will be downloaded from the default download address `https://github.com/hugegraph`
+> `deploy -u` overrides the download URL and saves it in `~/hugegraph-download-url-prefix`.
+> Later runs without `-u` reuse the saved URL. Without either setting, the script uses `https://github.com/hugegraph`.
 
 ##### 3.9 Specific command parameters
 
-The specific parameters of each subcommand are as follows:
+The help output below lists each subcommand and its options.
 
 ```bash
 Usage: hugegraph [options] [command] [command options]
@@ -6885,6 +7013,7 @@ Backlinks:
 - [Architecture Overview](/docs/guides/architectural/)
 - [Backup Restore](/docs/guides/backup-restore/)
 - [System Introduction](/docs/introduction/)
+- [Java-Client](/docs/quickstart/client/hugegraph-client/)
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
 - [Graph export / migration](/docs/quickstart/toolchain/export-migration/)
 - [Import graph data with SeaTunnel Sink](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)
@@ -8749,11 +8878,51 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-This page explains the processing flow in the HugeGraph-LLM Web UI. See [HugeGraph-LLM](./hugegraph-llm.md) for startup instructions.
+Follow the Web UI to build indexes, query documents, and generate Gremlin. See [HugeGraph-LLM](./hugegraph-llm.md) for startup instructions.
+
+Prepare a reachable HugeGraph Server, a generation model, and an embedding model. Viewing settings or running handwritten Gremlin in
+`Graph Tools` needs no model. Document vectors require embeddings; graph extraction and answers also require an LLM.
+The reranker is optional. Start with the local `bleu` method.
+
+| Task | UI tab | Prerequisites |
+| --- | --- | --- |
+| Build indexes from documents | `1. Build RAG Index` | Documents and embeddings; graph extraction also needs a schema and LLM |
+| Answer from documents or a graph | `2. (Graph)RAG & User Functions` | The corresponding indexes and an LLM |
+| Convert a question to Gremlin | `3. Text2gremlin` | Graph schema and LLM; examples also need embeddings and an example index |
+| Check graph data directly | `4. Graph Tools` | A HugeGraph connection and handwritten Gremlin |
+
+The screenshots show the HugeGraph-LLM Web UI. The built-in prompt language can be toggled via `LANGUAGE` in `.env`, while UI controls remain in English.
+
+> [!DETAILS]- Missing batch-question template when starting from source
+>
+> If startup raises `FileNotFoundError` for `questions_template.xlsx`, create the input template from the repository root after installing dependencies,
+> then restart. This preserves an existing file. The template has all 6 columns, with a test question and expected answer; the 4 model-answer columns stay empty.
+>
+> ```bash
+> uv run --extra llm python - <<'PYTHON'
+> from pathlib import Path
+> from openpyxl import Workbook
+>
+> path = Path("hugegraph-llm/src/hugegraph_llm/resources/demo/questions_template.xlsx")
+> if not path.exists():
+>     workbook = Workbook()
+>     sheet = workbook.active
+>     sheet.append([
+>         "Question", "Expected Answer", "Basic LLM Answer",
+>         "Vector-only Answer", "Graph-only Answer", "Graph-Vector Answer",
+>     ])
+>     sheet.append(["Who is Sarah?", "Sarah is a 30-year-old attorney.", None, None, None, None])
+>     workbook.save(path)
+> PYTHON
+> ```
 
 ## 0. Configuration Panel
 
 Above the tabs sits a collapsible configuration panel with five sections: `1. Set up the HugeGraph server.`, `2. Set up the LLM.`, `3. Set up the Embedding.`, `4. Set up the Reranker.`, and `5. Set up the vector engine.`. Each section has its own apply button, and applying a change writes the supported fields back to `.env`. The header also shows the current prompt language.
+
+Set the answer, extraction, and query-generation models in the `chat`, `mini_tasks`, and `text2gql` sub-tabs of the LLM settings.
+The screenshots use local Ollama models `qwen2.5:3b` and `mxbai-embed-large`, with `Faiss` as the vector engine.
+Rebuild indexes after changing embedding models, since vector dimensions or meaning can differ.
 
 ## 1. Build RAG Indexes
 
@@ -8771,7 +8940,47 @@ flowchart TD
 
 Input comes from either the `text` sub-tab or the `file` sub-tab. Uploads accept `.txt`, `.docx`, and `.pdf`, and several files can be selected at once.
 
-Common operations are `Import into Vector`, `Extract Graph Data (1)`, `Load into GraphDB (2)`, and `Update Vid Embedding`. `Load into GraphDB (2)` also refreshes the vertex vector index, so the separate `Update Vid Embedding` step is only needed when the graph already held data. The `Graph Extraction Split Type` dropdown next to these buttons chooses `document`, `paragraph`, or `sentence`. `document` keeps the whole input as one unit; the other two split long documents before extraction.
+For a first run, paste this short document into `Input Doc(s)`. Select a dedicated test graph before importing it.
+
+```text
+Sarah is a 30-year-old attorney. James is a journalist. Sarah has been James's roommate since 2010.
+```
+
+Paste this JSON into `Graph Schema` and keep the default extraction prompt.
+It allows people and roommate relationships, with optional age and occupation.
+
+```json
+{
+  "vertexlabels": [
+    {"id": 1, "name": "person", "id_strategy": "PRIMARY_KEY",
+     "primary_keys": ["name"], "properties": ["name", "age", "occupation"],
+     "nullable_keys": ["age", "occupation"]}
+  ],
+  "edgelabels": [
+    {"name": "roommate", "source_label": "person", "target_label": "person", "properties": ["date"]}
+  ],
+  "propertykeys": [
+    {"name": "name", "data_type": "TEXT", "cardinality": "SINGLE"},
+    {"name": "age", "data_type": "INT", "cardinality": "SINGLE"},
+    {"name": "occupation", "data_type": "TEXT", "cardinality": "SINGLE"},
+    {"name": "date", "data_type": "TEXT", "cardinality": "SINGLE"}
+  ]
+}
+```
+
+Follow these steps to build the indexes. For vector-only retrieval, stop after step 1.
+
+1. Click `Import into Vector` to split the document and build the chunk vector index.
+2. Enter schema JSON or an existing graph name in `Graph Schema`, then click `Extract Graph Data (1)`.
+   Check the vertices, edges, and properties in `Output Info`.
+3. Click `Load into GraphDB (2)` after checking the extraction. This writes to HugeGraph and refreshes vertex embeddings.
+4. Open `Graph Tools`. Run `g.V().count()` and `g.E().count()`, then query the properties to confirm that the data was written.
+{.steps}
+
+This example should produce 2 vertices and 1 edge, with Sarah's age set to `30` and occupation to `attorney`.
+If the graph already contains data, use `Update Vid Embedding` to refresh its vertex index separately.
+The `Graph Extraction Split Type` dropdown selects `document`, `paragraph`, or `sentence`.
+`document` uses the whole input; the other options split it before extraction.
 
 The page can also inspect or clear chunk indexes, vertex indexes, and graph data. Clearing removes existing data, so first confirm that the current graph and indexes are not still used by other queries.
 
@@ -8782,15 +8991,52 @@ Two collapsed helpers sit below the main controls:
 
 ## 2. GraphRAG Queries
 
-The second tab can answer directly with the LLM, use only chunk-vector retrieval, use only graph retrieval, or combine graph and vector retrieval.
+The second tab offers four answer modes. Choose the indexes needed for your question.
+
+| Control | Answer source |
+| --- | --- |
+| `Basic LLM Answer` | The LLM alone, without document or graph retrieval |
+| `Vector-only Answer` | Retrieved document chunks |
+| `Graph-only Answer` | Retrieved graph data |
+| `Graph-Vector Answer` | Retrieved graph data and document chunks |
+
+Using `Graph-Vector Answer` is recommended, as it combines graph traversal and
+vector search for more comprehensive fact retrieval. Other scopes are summarized in the table above.
+
+The screenshots use these short prompts. Paste them into `Query Prompt` and `Keywords Extraction Prompt`, respectively.
+The service fills the placeholders. Keep the `KEYWORDS:` prefix and ASCII colons in keyword output, and preserve name capitalization.
+
+```text
+Answer the question in English using only the retrieved context. Preserve names and state when the context is insufficient.
+Context: {context_str}
+Question: {query_str}
+```
+
+```text
+Extract person names from the question and preserve their case. Return at most {max_keywords} names.
+Return one line in this exact ASCII format: KEYWORDS:name:1.0
+Question: {question}
+```
+
+1. Enter `Who is Sarah?`, set `Graph-only Answer` to `False`, and set `Graph-Vector Answer` to `True`.
+2. Keep `Template Num=-1` and `Rerank method=bleu` for the first check, then click `Answer Question`.
+3. Read `Graph-Vector Answer` and compare facts such as age and occupation with the source document and graph.
+{.steps}
+
+```gallery
+![GraphRAG answer modes and a combined graph-vector answer](/images/docs/hugegraph-ai/en/graphrag.jpg)
+![English prompts in GraphRAG](/images/docs/hugegraph-ai/en/query-prompts.jpg)
+```
 
 ```mermaid
 flowchart TD
     Q[Question] --> V[Query chunk vector index]
     Q --> K[Extract keywords]
     K --> M[Match graph vertices]
-    M --> T[Generate and execute Gremlin]
-    T -->|Failure| B[Fallback to BFS graph traversal]
+    M --> D{Text2Gremlin enabled}
+    D -->|Yes| T[Generate and execute Gremlin]
+    D -->|No| B[BFS graph traversal]
+    T -->|Failure| B
     T --> R[Prepare graph results]
     B --> R
     V --> S[Merge and rerank]
@@ -8803,7 +9049,7 @@ Graph retrieval first matches HugeGraph vertices exactly by keyword and then use
 `Template Num` controls how Text2Gremlin participates in graph retrieval:
 
 - A negative value skips Text2Gremlin entirely, so graph retrieval goes straight to the predefined traversal.
-- `0` generates Gremlin without any examples (zero-shot).
+- `0` uses baseline generation without retrieving examples.
 - A positive value retrieves that many similar examples from the example index and uses the template-guided result. The example count is clamped to the range 0 to 10.
 
 Other controls on this tab are `Rerank method` (`bleu` or `reranker`), `Graph Ratio`, `Near neighbor first`, and `Query related information`, plus editable `Query Prompt` and `Keywords Extraction Prompt` fields.
@@ -8812,17 +9058,57 @@ Below the single-question panel is a batch back-testing panel. Upload an `.xlsx`
 
 ## 3. Text2Gremlin
 
-The third tab has two parts. The upper part builds the example vector index from a `.json` or `.csv` file of question and Gremlin pairs; the bundled `resources/demo/text2gremlin.csv` is used when no file is uploaded.
+The third tab converts natural language into Gremlin and executes the generated queries.
+The upper panel builds an example vector index from question and Gremlin pairs in `.json` or `.csv` files.
+When no file is uploaded, it uses `resources/demo/text2gremlin.csv`. Match example labels and properties to the current graph.
 
-The lower part reads the graph schema, retrieves similar natural-language and Gremlin examples, fills the prompt with the question, schema, examples, and matched vertices, then generates Gremlin and optionally executes it. `Number of refer examples` sets how many examples are retrieved, from 0 to 10, and defaults to 2. The results appear in four fields: Gremlin with a template, Gremlin without a template, and the execution output for each.
+> [!TIP]
+> If building the example index does not automatically retrieve similar templates, you can provide few-shot examples directly in the Prompt template below.
 
-![RAG query scope selector](/images/docs/hugegraph-ai/quick-start-03.jpg)
+Use these inputs to reproduce the Sarah query.
 
-A custom prompt must contain `{query}`, `{schema}`, `{example}`, and `{vertices}`. The REST API rejects a request if any placeholder is missing.
+1. Save the CSV below as `sarah-gremlin.csv`, upload it, and click `Build Example Vector Index`. Set `Number of refer examples` to `1`.
+2. Paste the simplified schema below into `Schema`. It contains only the labels and properties needed for this query.
+3. Paste the prompt below into `Prompt`, enter `Who is Sarah?`, then click `Text2Gremlin`.
+4. Check both generated queries and their `Query ... Output` fields. This example returns Sarah with `age=30` and `occupation=attorney`.
+{.steps}
+
+```csv
+query,gremlin
+Who is Sarah?,"g.V().has('person', 'name', 'Sarah').valueMap()"
+```
+
+```json
+{"vertexlabels":[{"name":"person","properties":["name","age","occupation"]}],"edgelabels":[]}
+```
+
+```text
+Translate the question into a read-only HugeGraph Gremlin query.
+For person-name lookups, use g.V().has('person', 'name', '<name from question>').valueMap().
+Preserve name capitalization. Query by name; do not use vertex IDs.
+Example question: Who is Peter?
+Example Gremlin: g.V().has('person', 'name', 'Peter').valueMap()
+Graph schema: {schema}
+Additional examples: {example}
+Known vertices: {vertices}
+Question: {query}
+Return only one ```gremlin``` code block.
+```
+
+```gallery
+![Generated Text2Gremlin queries and execution results](/images/docs/hugegraph-ai/en/text2gremlin.jpg)
+```
+
+A small model can generate incorrect IDs, change name capitalization, or use filters that do not meet the graph's index requirements.
+Check the returned data before treating a query as successful. The Web UI executes generated queries directly, so use a dedicated test graph.
+To generate a query without executing it, select the corresponding output types in the [REST API](./rest-api.md).
+
+A custom prompt must retain `{query}`, `{schema}`, `{example}`, and `{vertices}`. The REST API rejects it if any placeholder is missing.
 
 ## 4. Graph and Administration Tools
 
 `Graph Tools` runs a Gremlin query directly against the configured graph, triggers a manual graph backup, and can initialize demo data in HugeGraph through a beta action. A background job also backs up the graph every day at 01:00, and a second background task keeps vertex-id embeddings up to date while the process runs.
+Initializing demo data first clears the current graph. Use this action only on a dedicated test graph.
 
 `Admin Tools` is password protected. Entering the configured `ADMIN_TOKEN` reveals the tail of `logs/llm-server.log`, which refreshes every 60 seconds, along with buttons to refresh or clear it. Access is refused while `ADMIN_TOKEN` is empty or still set to the placeholder `xxxx`.
 
@@ -8831,7 +9117,9 @@ When `ENABLE_LOGIN=True`, the Web UI asks for basic credentials with the fixed u
 > [!WARNING]
 > In production, enable HugeGraph-LLM login, replace `USER_TOKEN` and `ADMIN_TOKEN`, and enforce a source IP allowlist at the firewall or network entry point. Separately enable [Server authentication and authorization](/docs/config/config-authentication/), retain Server audit logs (normally `audit-*.log`), and grant `GRAPH_USER` minimum required permissions. AI service tokens do not replace Server authentication.
 
-![Keywords extracted in the RAG UI](/images/docs/hugegraph-ai/quick-start-04.png)
+```gallery
+![Handwritten Gremlin and its result in Graph Tools](/images/docs/hugegraph-ai/en/graph-tools.jpg)
+```
 
 ## 5. Prompt Language
 
@@ -10518,76 +10806,83 @@ For more Gremlin statements, please refer to [Tinkerpop Official Website](http:/
 
 ### 2 Client/Server mode
 
-Gremlin Console connects to HugeGraph Server through WebSocket. The default configuration uses `WsAndHttpChannelizer`, which handles both WebSocket and HTTP requests, so there is no need to switch the Channelizer.
+Gremlin Console connects to HugeGraph Server through WebSocket. Use the Console and `conf/remote.yaml` bundled with the same Server version.
+Keep the serializer settings from that file; change only the address and, if authentication is enabled, credentials.
+Older configuration files may reference serializer classes that no longer exist.
 
-```yaml
-# vim conf/gremlin-server.yaml
-# ......
-channelizer: org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer
-# ......
-```
+1. Prepare the connection configuration and start Server.
 
-Confirm that `host` and `port` match the settings in `remote.yaml`, and then follow the [steps](/docs/quickstart/hugegraph/hugegraph-server) to start HugeGraph Server.
+   Check the `host` and `port` in `conf/gremlin-server.yaml`. The default `WsAndHttpChannelizer` handles both WebSocket and HTTP requests;
+   it does not need to be changed. In `conf/remote.yaml`, `hosts` must contain the Server address reachable from the Console,
+   and `port` must match the Gremlin port (default `8182`, not the REST port `8080`).
+   Start Server following the [quick start](/docs/quickstart/hugegraph/hugegraph-server).
 
-Then enter Gremlin-Console:
+   The current master configuration uses GraphBinary V1 with HugeGraph's type registry:
 
-```bash
-> ./bin/gremlin-console.sh
+   ```yaml
+   hosts: [localhost]
+   port: 8182
+   serializer:
+     className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
+     config:
+       serializeResultToString: false
+       builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+       ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
+   ```
 
-         \,,,/
-         (o o)
------oOOo-(3)-oOOo-----
-plugin activated: HugeGraph
-plugin activated: tinkerpop.server
-plugin activated: tinkerpop.utilities
-plugin activated: tinkerpop.tinkergraph
-```
+   If Server requires authentication, add your actual credentials to the same file:
 
-To connect to the server, you need to specify the connection parameters in the configuration file, and there is a default `remote.yaml` file in the conf directory
+   ```yaml
+   username: admin
+   password: "replace-with-your-password"
+   ```
 
-```yaml
-# cat conf/remote.yaml
-hosts: [localhost]
-port: 8182
-serializer: {
-  className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV1d0,
-  config: {
-    serializeResultToString: false,
-    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
-  }
-}
-```
+   The bundled `remote-objects.yaml` and `gremlin-driver-settings.yaml` use the same serializer settings. Keep them aligned if you use them.
 
-If the Server runs in auth mode, add the credentials to the same file:
+1. Start Console from the Server distribution directory and create a client with a traversal alias.
 
-```yaml
-username: admin
-password: pa
-```
+   ```bash
+   ./bin/gremlin-console.sh
+   ```
 
-The `conf` directory also ships `remote-objects.yaml` and `gremlin-driver-settings.yaml`, which carry the same host, port, and serializer settings.
+   Server binds the graph `hugegraph` in graphspace `DEFAULT` as `DEFAULT-hugegraph`, and its traversal source as `__g_DEFAULT-hugegraph`.
+   Because hyphens are invalid in Groovy variable names, use `.alias(['g': '__g_DEFAULT-hugegraph'])` to map it to `g` when creating the driver client:
+
+   ```groovy
+   import org.apache.tinkerpop.gremlin.driver.Cluster
+   cluster = Cluster.open('conf/remote.yaml')
+   client = cluster.connect().alias(['g': '__g_DEFAULT-hugegraph'])
+   ```
+
+1. Submit queries through the client.
+
+   ```groovy
+   client.submit('g.V().count()').all().get()[0].object
+   client.submit('g.V().toList().size()').all().get()[0].object
+   ```
+
+   Both return `6` if the sample graph was preloaded at Server startup (other graphs return their actual vertex count).
+   When submitting scripts via `client.submit()`, no `:>` prefix is needed.
+
+1. Close the client and cluster when finished.
+
+   ```groovy
+   client.close()
+   cluster.close()
+   ```
+{.steps}
+
+Alternatively, you can connect using Gremlin Console's built-in `:remote` command:
 
 ```groovy
-gremlin> :remote connect tinkerpop.server conf/remote.yaml
-==>Configured localhost/127.0.0.1:8182
+:remote connect tinkerpop.server conf/remote.yaml
+// Use :> as a prefix when submitting scripts through the Console remote connection.
+:remote close
 ```
 
-Server-side graphs are bound under a graphspace-qualified name, so the graph `hugegraph` in graphspace `DEFAULT` is bound as `DEFAULT-hugegraph` and its traversal source as `__g_DEFAULT-hugegraph`. A bare `hugegraph` does not resolve on the Server, and `DEFAULT-hugegraph` is not a valid Groovy identifier, so a remote script reaches the traversal source through an alias. If the sample graph was preloaded when HugeGraph-Server started, a query looks like this:
+When connected with `:remote`, expressions prefixed with `:>` are sent to the remote Server, while normal expressions execute locally in Console.
 
-```groovy
-gremlin> import org.apache.tinkerpop.gremlin.driver.Cluster
-gremlin> cluster = Cluster.open('conf/remote.yaml')
-gremlin> client = cluster.connect().alias(['g': '__g_DEFAULT-hugegraph'])
-gremlin> client.submit('g.V().count()').all().get()[0].object
-==>6
-gremlin> client.submit('g.V().toList().size()').all().get()[0].object
-==>6
-gremlin> client.close(); cluster.close()
-```
-
-> NOTE: In Client/Server mode, all operations related to the Server should be prefixed with `:> `. If not added, it indicates local console operations. A `:> ` script carries no alias, so it can only use names the Server itself has bound.
-
-For more information on the use of Gremlin-Console, please refer to [Tinkerpop Official Website](http://tinkerpop.apache.org/docs/current/reference/)
+For more information, see the [TinkerPop Gremlin Console reference](https://tinkerpop.apache.org/docs/current/reference/#gremlin-console).
 
 ---
 
@@ -14211,6 +14506,12 @@ e.g: GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema
     ]
 }
 ```
+
+---
+
+Backlinks:
+
+- [Backup Restore](/docs/guides/backup-restore/)
 
 
 ================
@@ -22919,16 +23220,17 @@ For other languages, use the [Go Client](/docs/quickstart/client/hugegraph-clien
 
 ### 2 What You Need
 
-- JDK 11 (used by the current CI; the source target remains Java 8)
-- Maven 3.6+
+- JDK 17 for this walkthrough and for building Client `1.8.0` from Toolchain `master`
+- Maven 3.6.3+
 
 ### 3 How To Use
 
 The basic steps to use HugeGraph-Client are as follows:
 
-- Build a new Maven project by IDEA or Eclipse
-- Add HugeGraph-Client dependency in a pom file;
-- Create an object to invoke the interface of HugeGraph-Client
+1. Create a Maven project in IntelliJ IDEA or Eclipse.
+1. Add the HugeGraph-Client dependency to `pom.xml`.
+1. Create a client, call its APIs, and close it after use.
+{.steps}
 
 See the complete example in the following section for the detail.
 
@@ -22953,25 +23255,40 @@ Using IDEA or Eclipse to create the project:
     </dependency>    
 </dependencies>
 ```
-The complete examples below use Schema, Graph, Gremlin and resource-cleanup APIs available in the published Client `1.7.0`
-and compatible with Toolchain `master`. Use the dependency above directly in your example project.
 
-For new master APIs in the [API reference](/docs/clients/hugegraph-client/), such as capability detection, use Client `1.8.0`
-from Toolchain `master` and change the POM version to `1.8.0`. If that version is not published to Maven yet, run the following
-command from the Toolchain source root to install the Client and its parent POM locally. The source build still needs
-its dependencies available from your configured Maven repositories.
+Choose the client version before building:
+
+| Use case | Client version | Java build target |
+| --- | --- | --- |
+| Run the complete examples below | Published `1.7.0`; use the dependency above | Java 8 in the release POM; this walkthrough uses JDK 17 |
+| Use new master APIs, such as capability detection | Toolchain `master` (based on 1.8) | Java 17 |
+
+The examples use Schema, Graph, Gremlin and resource-cleanup APIs available in Client `1.7.0` and compatible with Toolchain `master`.
+The release's Java build target does not describe the runtime requirements of every transitive dependency.
+
+To use unreleased features from the master branch, build Client from source (see [Tools source build instructions](/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)):
 
 ```bash
-mvn install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+java -version
+mvn -version
+mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" \
+  -Dsdk.validation.mode=candidate \
+  install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
-Client and Server versions need not match. Check the supported server API range and required capabilities before upgrading.
+Both version checks must report JDK 17. Also pass `-Dmaven.repo.local="$candidate_dir/m2"` to Maven commands in projects using Client from master.
+Client and Server versions need not be identical; check the required APIs and compatibility before upgrading.
 
 #### 4.3 Example
 
+Choose a single-record or batch example. Save the complete code as `src/main/java/SingleExample.java` or
+`src/main/java/BatchExample.java` in your Maven project. The copy button includes the folded lines.
+
+**SingleExample**
+
 ##### 4.3.1 SingleExample
 
-```java
+```java {collapse=30}
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -23123,9 +23440,11 @@ public class SingleExample {
 }
 ```
 
+**BatchExample**
+
 ##### 4.3.2 BatchExample
 
-```java
+```java {collapse=30}
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23268,7 +23587,12 @@ public class BatchExample {
 
 #### 4.4 Run The Example
 
-Before running Example, you need to start the Server. For the startup process, see[HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server).
+1. [Start HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server) and prepare a test graph named `hugegraph` in graphspace `DEFAULT`.
+1. Set the Maven project's JDK to 17. In the selected example, replace the Server URL, graphspace, graph and credentials in `HugeClient.builder(...)`
+   and `configUser(...)` with your settings. Omit `configUser(...)` if Server does not require authentication.
+1. Run `SingleExample.main()` or `BatchExample.main()` in your IDE. Both examples create schema and graph data, print the results, and close the client.
+   Use a test graph: existing schema or data can affect repeated runs.
+{.steps}
 
 #### 4.5 More Information About Client-API
 
@@ -26056,17 +26380,15 @@ LLMS index: [llms.txt](/llms.txt)
 ---
 
 ### Overview
-To facilitate authentication usage in different user scenarios, HugeGraph currently provides built-in authorization `StandardAuthenticator` mode,
-which supports multi-user authentication and fine-grained access control. It adopts a 4-layer design based on "User-UserGroup-Operation-Resource" to
-flexibly control user roles and permissions (supports multiple GraphServers).
+HugeGraph provides `StandardAuthenticator` for multi-user authentication and access control based on users, groups, operations, and resources.
 
-Some key designs of the `StandardAuthenticator` mode include:
-- During initialization, a super administrator (`admin`) user is created. Subsequently, other users can be created by the super administrator. Once newly created users are assigned sufficient permissions, they can create or manage more users.
-- It supports dynamic creation of users, user groups, and resources, as well as dynamic allocation or revocation of permissions.
-- Users can belong to one or multiple user groups. Each user group can have permissions to operate on any number of resources. The types of operations include read, write, delete, execute, and others.
-- "Resource" describes the data in the graph database, such as vertices that meet certain criteria. Each resource consists of three elements: `type`, `label`, and `properties`. There are 18 types in total, with the ability to combine any label and properties. The internal condition of a resource is an AND relationship, while the condition between multiple resources is an OR relationship.
+Initialization creates the `admin` superuser. Administrators create users, groups, and resources, then grant or revoke permissions.
+Users receive read, write, delete, and execute permissions through their groups.
 
-Here is an example to illustrate:
+A resource describes accessible data using `type`, `label`, and `properties`. Conditions within one resource are combined with AND; multiple resources are
+combined with OR.
+
+This relationship grants a user read access to data for Beijing.
 
 ```java
 // Scenario: A user only has data read permission for the Beijing area
@@ -26080,9 +26402,12 @@ By default, HugeGraph does **not enable** user authentication, and it needs to b
 > [!WARNING]
 > **Production requires authentication**
 >
-> HugeGraph disables user authentication by default. In production, enable authentication and authorization, set a strong non-default administrator password, maintain the Server IP allowlist, and grant minimum permissions. Do not expose Gremlin, Cypher, or other query endpoints directly to the public network. Standard Server configuration writes authentication-proxy audit records to `audit-*.log`; retain these files and restrict read access. `auth.audit_log_rate` limits per-user output rather than serving as a dedicated audit-log on/off switch.
+> HugeGraph disables user authentication by default. In production, enable authentication and authorization, set a strong non-default administrator password,
+maintain the Server IP allowlist, and grant minimum permissions. Do not expose Gremlin, Cypher, or other query endpoints directly to the public network.
+Standard Server configuration writes authentication-proxy audit records to `audit-*.log`; retain these files and restrict read access. `auth.audit_log_rate`
+limits per-user output rather than serving as a dedicated audit-log on/off switch.
 
-You need to modify the configuration file to enable this feature. HugeGraph provides built-in authentication mode: `StandardAuthenticator`. This mode supports multi-user authentication and fine-grained permission control. Additionally, developers can implement their own `HugeAuthenticator` interface to integrate with their existing authentication systems.
+Use `StandardAuthenticator` for built-in access control, or implement `HugeAuthenticator` to connect an existing identity system.
 
 HugeGraph uses [HTTP Basic Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication). The value after
 `Basic` is the Base64 encoding of `username:password`. With curl, pass the credentials directly through `-u`:
@@ -26095,17 +26420,23 @@ curl -u 'admin:<password>' \
 > [!WARNING]
 > **Protect Basic Authentication credentials**
 >
-> Basic Authentication only Base64-encodes `username:password`; it does not encrypt credentials. Use HTTPS for network transmission. See [HTTPS configuration](config-https).
+> Basic Authentication only Base64-encodes `username:password`; it does not encrypt credentials. Use HTTPS for network transmission. See [HTTPS
+configuration](config-https).
 
 > [!WARNING]
 > **JWT risks in older versions**
 >
-> HugeGraph-Server versions before 1.5.0 have JWT-related security risks in Auth mode. Upgrade affected versions or change the JWT `secretKey` according to that version's requirements.
+> HugeGraph-Server versions before 1.5.0 have JWT-related security risks in Auth mode. Upgrade affected versions or change the JWT `secretKey` according to that
+version's requirements.
 
-`auth.token_secret` is read from the authentication graph's configuration. The default graph is `hugegraph`, so its file is normally `conf/graphs/hugegraph.properties`; if `auth.graph_store` changes, use that graph's properties file.
-The source-code default generates 32 random bytes encoded as Base64, but does not write the value back to the file. Independently generated defaults cannot remain consistent across restarts or Server nodes. To preserve existing tokens across restarts or validate the same token on multiple nodes, explicitly configure the same strong random secret in each authentication graph configuration.
+`auth.token_secret` is read from the authentication graph's configuration. The default graph is `hugegraph`, so its file is normally
+`conf/graphs/hugegraph.properties`; if `auth.graph_store` changes, use that graph's properties file.
+The core configuration defaults to 32 random bytes encoded as Base64 and does not write that default back to the file. Independently generated defaults cannot
+remain consistent across restarts or Server nodes. To preserve existing tokens across restarts or validate the same token on multiple nodes, explicitly
+configure the same strong random secret in each authentication graph configuration.
 
-Server encodes this string as UTF-8 for JJWT's HS256 signer, which requires at least 32 bytes. This is a byte-length requirement; an arbitrary 32-character string need not have sufficient randomness. The command below generates 32 random bytes and Base64-encodes them locally.
+Server encodes this string as UTF-8 for JJWT's HS256 signer, which requires at least 32 bytes. This is a byte-length requirement; an arbitrary 32-character
+string need not have sufficient randomness. The command below generates 32 random bytes and Base64-encodes them locally.
 
 ```properties
 # Set the same value in every Server node's authentication graph configuration
@@ -26118,16 +26449,16 @@ Generate the secret locally and transfer it securely into the authentication gra
 openssl rand -base64 32
 ```
 
-Since the default is generated at every startup, explicitly configure it when tokens must survive restarts or be accepted by multiple nodes. Token lifetime is controlled by `auth.token_expire`, defaulting to 86400 seconds.
+Token lifetime is controlled by `auth.token_expire`, defaulting to 86400 seconds.
 
-Both `auth.token_expire` and `auth.token_secret` belong to the authentication graph specified by `auth.graph_store`. Entries with the same names in `rest-server.properties` do not override that graph configuration.
+Both `auth.token_expire` and `auth.token_secret` belong to the authentication graph specified by `auth.graph_store`. Entries with the same names in
+`rest-server.properties` do not override that graph configuration.
 
 #### StandardAuthenticator Mode
-The `StandardAuthenticator` mode supports user authentication and permission control by storing user information in the database backend. This
-implementation authenticates users based on their names and passwords (encrypted) stored in the database and controls user permissions based on their
-roles. Below is the specific configuration process (requires service restart):
+`StandardAuthenticator` stores users and password hashes in the backend and checks access by role.
+After updating these three configurations, [initialize authentication and restart Server](#switching-authentication-mode).
 
-Configure the `authenticator` and its `rest-server` file path in the `gremlin-server.yaml` configuration file:
+Set the authenticator and REST configuration path in `conf/gremlin-server.yaml`.
 
 ```yaml
 authentication: {
@@ -26137,7 +26468,7 @@ authentication: {
 }
 ```
 
-Configure the authenticator and the graph that stores authorization data in `rest-server.properties`:
+Set the authenticator and authentication graph in `conf/rest-server.properties`.
 
 ```properties
 auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
@@ -26151,9 +26482,9 @@ auth.graph_store=hugegraph
 # auth.remote_url=127.0.0.1:8899,127.0.0.1:8898,127.0.0.1:8897
 
 ```
-In the above configuration, the `graph_store` option specifies which graph to use for storing user information. If there are multiple graphs, you can choose any of them.
+`auth.graph_store` names the graph that stores authentication data. It must match a graph configuration in `conf/graphs/`.
 
-In the `hugegraph{n}.properties` configuration file, configure the `gremlin.graph` information:
+Set `gremlin.graph` in `conf/graphs/<graph>.properties` for each protected graph.
 
 ```properties
 gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
@@ -26163,69 +26494,161 @@ For authorization API usage, see the [Authentication API](/docs/clients/restful-
 
 ### Custom User Authentication System
 
-If you need to support a more flexible user system, you can customize the authenticator for extension.
-Simply implement the `org.apache.hugegraph.auth.HugeAuthenticator` interface with your custom authenticator, 
-and then modify the `authenticator` configuration item in the configuration file to point to your implementation.
+Implement `org.apache.hugegraph.auth.HugeAuthenticator` and point both `authenticator` configurations to that implementation to connect an existing identity
+system.
 
 ### Switching authentication mode
 
-When `init-store.sh` is run for the first time and the `admin` user does not yet exist, the command prompts for the
-administrator password. For an initialized persistent backend, `init-store.sh` adds the system metadata required for
-authentication without deleting existing graph data.
+Use this sequence for a local persistent backend such as RocksDB, after applying the configuration above.
+HStore/PD deployments create the administrator through the PD startup path. Set `auth.admin_pa` for that deployment instead of using local interactive
+initialization.
+
+1. **Stop Server.**
+
+   ```bash
+   bin/stop-hugegraph.sh
+   ```
+
+1. **Initialize authentication data.**
+
+   ```bash
+   bin/init-store.sh
+   ```
+
+   Enter a strong password when prompted to create `admin`. Existing graph data is retained. If `admin` already exists, this command does not reset its
+   password.
+   Keep the existing storage directory.
+
+1. **Start Server and check authentication.**
+
+   ```bash
+   bin/start-hugegraph.sh
+   curl -u admin \
+     http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
+   ```
+
+   curl prompts for the password. Correct credentials should return HTTP 200; missing or incorrect credentials should return HTTP 401.
+   If startup fails, check the logs and authentication graph configuration before retrying.
+{.steps}
+
+### Enable authentication with Docker
+
+For a new container, choose either Docker run or Docker Compose. For an existing container, see
+[enabling authentication in existing containers](#3-enter-the-container-to-enable-authentication-mode).
+
+When deploying with Docker, the official image supports enabling authentication
+directly via environment variables (applicable to the official `/hugegraph-server` layout).
+Replace the placeholder below with your image tag or digest:
 
 ```bash
-# stop the hugeGraph firstly
-bin/stop-hugegraph.sh
-
-# Initialize authentication system metadata; existing backend data is preserved
-bin/init-store.sh
-
-# start hugeGraph again
-bin/start-hugegraph.sh
-
+export HUGEGRAPH_IMAGE='<image:tag-or-digest>'
+read -r -s -p 'Admin password: ' PASSWORD
+printf '\n'
+export PASSWORD
 ```
 
-### Use docker to enable authentication mode
+Execute the command and enter a strong administrator password when prompted. Avoid committing plaintext passwords into shared Compose files.
+Persist the JWT secret in the authentication graph configuration as described [above](#configure-user-authentication). Use the same value across all nodes.
 
-For versions of the hugegraph/hugegraph image equal to or greater than 1.2.0, you can enable authentication mode while starting the Docker image. 
+#### Docker run {#1-use-docker-run}
 
-The steps are as follows:
-
-#### 1. Use docker run
-
-To enable authentication mode, add the environment variable `PASSWORD=xxx` (you can freely set the password) in the `docker run` command:
+Create a new container and publish its REST port only on the local host.
 
 ```bash
-docker run -itd -e PASSWORD=xxx --name=server -p 8080:8080 hugegraph/hugegraph:1.7.0
+docker run -d --name server \
+  -p 127.0.0.1:8080:8080 \
+  -e PASSWORD \
+  "$HUGEGRAPH_IMAGE"
+unset PASSWORD
 ```
 
-#### 2. Use docker-compose
+The entrypoint configures authentication, initializes the backend on first startup, and starts Server.
+Continue with [checking authentication](#check-authentication).
 
-Use `docker-compose` and set the environment variable `PASSWORD=xxx`:
+#### Docker Compose {#2-use-docker-compose}
+
+Save the following as `compose.yaml`. Compose rejects missing required variables to avoid starting an unauthenticated service by accident.
+Start the service in the same terminal.
 
 ```yaml
-version: '3'
 services:
   server:
-    image: hugegraph/hugegraph:1.7.0
+    image: ${HUGEGRAPH_IMAGE:?Set HUGEGRAPH_IMAGE}
     container_name: server
     ports:
-      - 8080:8080
+      - "127.0.0.1:8080:8080"
     environment:
-      - PASSWORD=xxx
+      PASSWORD: ${PASSWORD:?Set PASSWORD}
 ```
-
-#### 3. Enter the container to enable authentication mode
-
-Enter the container first:
 
 ```bash
-docker exec -it server bash
-# Modify the config quickly, the modified file are save in the conf-bak folder
-bin/enable-auth.sh
+docker compose up -d
+unset PASSWORD
 ```
 
-Then follow [Switching authentication mode](#switching-authentication-mode)
+Set these variables again before recreating the container. Retain its data volumes and persist the configuration required by your deployment.
+Continue with [checking authentication](#check-authentication).
+
+#### Existing containers {#3-enter-the-container-to-enable-authentication-mode}
+
+Use this path for an official Server container that ran without authentication and uses a local persistent backend.
+Back up its data first. Confirm that the configuration, backend data, and `conf-bak` are all in mounted persistent volumes.
+The official image declares `/hugegraph-server` as a volume; inspect the mounts of custom images first.
+HStore/PD and external authentication services use their own administrator initialization paths.
+
+1. **Stop the original container and open a maintenance container with the same image and volumes.**
+
+   ```bash
+   SERVER_IMAGE=$(docker inspect --format '{{.Image}}' server)
+   docker stop server
+   docker run --rm -it --volumes-from server \
+     --entrypoint bash "$SERVER_IMAGE"
+   ```
+
+   Keep the original container stopped so two JVMs do not open the local database at once. `--entrypoint bash` opens a shell without starting Server.
+
+1. **Configure authentication and initialize it inside the maintenance container.**
+
+   ```bash
+   cd /hugegraph-server
+   bin/enable-auth.sh
+   ```
+
+   On its first run, `enable-auth.sh` saves the original configuration in `conf-bak` and updates authentication and the default `hugegraph` graph.
+   If `conf-bak` already exists, the script skips its changes. Check all three configurations under [StandardAuthenticator mode](#standardauthenticator-mode).
+   Configure other authentication graphs manually.
+   Write a strong random JWT secret to the authentication graph configuration as described [above](#configure-user-authentication), then initialize it.
+
+   ```bash
+   bin/init-store.sh
+   exit
+   ```
+
+   Enter the administrator password when prompted, then exit after initialization succeeds.
+
+1. **Start the original container from the host.**
+
+   ```bash
+   docker start server
+   ```
+
+   Retain the `docker/init_complete` marker. Later changes to the `PASSWORD` environment variable do not change the stored administrator password.
+{.steps}
+
+#### Check authentication
+
+Once Server is running, execute the following requests from the host to verify. `-u admin` prompts interactively for the password:
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' \
+  http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
+curl -sS -o /dev/null -w '%{http_code}\n' -u admin \
+  http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
+```
+
+Requests without credentials should return `401 Unauthorized`, while requests with the correct password return `200 OK` (incorrect passwords also return `401`).
+Note: Current master URLs include `/graphspaces/DEFAULT`; for 1.7.0 and older versions, omit the graphspace prefix (use `/graphs/hugegraph/...` directly).
+If unauthenticated requests still return `200`, authentication is not active; inspect configuration and restart Server.
 
 ---
 
@@ -26409,102 +26832,129 @@ LLMS index: [llms.txt](/llms.txt)
 
 ## Description
 
-Backup and Restore are functions of backup map and restore map. The data backed up and restored includes metadata (schema) and graph data (vertex and edge).
+Backup exports a graph's schema, vertices, and edges as JSON data. Restore imports that data into a target graph.
+These [HugeGraph-Tools](/docs/quickstart/toolchain/hugegraph-tools) commands support migration, recovery after an upgrade, and graph merging.
 
 #### Backup
 
-Export the metadata and graph data of a graph in the HugeGraph system in JSON format.
+Backup runs in any graph mode. Pausing source writes before exporting is recommended to keep schema, vertices, and edges consistent
+(paginated read APIs do not provide a global transactional snapshot).
+Note: `backup -t all` only exports schema and graph data, excluding deployment configurations and user permissions.
 
 #### Restore
 
-Re-import the data in JSON format exported by Backup to a graph in the HugeGraph system.
+Before restoring data, switch the target graph to the appropriate mode.
+Normal read/write operations use `NONE` mode; note that `LOADING` mode cannot be used for `restore`.
 
-Restore has two modes:
+| Target | Mode | Schema IDs | Vertex and edge IDs |
+|---|---|---|---|
+| New graph without schema or data | `RESTORING` | Use IDs from the backup | Use IDs from the backup |
+| Existing graph to merge into | `MERGING` | Use target schema IDs, creating schema if needed | Some IDs change with target schema; see below |
 
-- In Restoring mode, the metadata and graph data exported by Backup are restored to the HugeGraph system intact. It can be used for graph backup and recovery, and the general target graph is a new graph (without metadata and graph data). for example:
-  - System upgrade, first back up the map, then upgrade the system, and finally restore the map to the new system
-  - Graph migration, from a HugeGraph system, use the Backup function to export the graph, and then use the Restore function to import the graph into another HugeGraph system
-- In the Merging mode, the metadata and graph data exported by Backup are imported into another graph that already has metadata or graph data. During the process, the ID of the metadata may change, and the IDs of vertices and edges will also change accordingly.
-  - Can be used to merge graphs
+In `MERGING`, Tools recomputes `PRIMARY_KEY` vertex IDs using the target label IDs and updates connected edge endpoints and IDs.
+It retains `AUTOMATIC` and custom vertex IDs. The merge reuses schema with matching names.
+Check that their definitions are compatible and that retained vertex IDs do not conflict.
+It does not resolve arbitrary schema or data conflicts. Test on a separate target before merging production data.
 
 ## Instructions
 
-You can use [hugegraph-tools](/docs/quickstart/toolchain/hugegraph-tools) to backup and restore the graph.
+Prepare [HugeGraph-Tools](/docs/quickstart/toolchain/hugegraph-tools) compatible with your Server version, then run the commands from the Tools root directory.
+This example restores a source graph on port `8080` to an empty target on port `8081`.
+Both Servers and the target graph must already exist and be running. Adjust the addresses and graph names for your deployment.
+
+```bash
+SOURCE_URL=http://127.0.0.1:8080
+TARGET_URL=http://127.0.0.1:8081
+SOURCE_GRAPH=hugegraph
+TARGET_GRAPH=hugegraph
+BACKUP_DIR="$PWD/data/hugegraph-backup"
+```
+
+With authentication enabled, add `--user <user> --password <password>` before the subcommand in each Tools command.
+The account needs the relevant graph access and graph-mode management permissions.
+See the [Tools reference](/docs/quickstart/toolchain/hugegraph-tools) for connection and credential options.
 
 #### Backup
 
+Pause source writes, then export all schema, vertices, and edges.
+
 ```bash
-bin/hugegraph backup -t all -d data
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" \
+  backup -t all -d "$BACKUP_DIR"
 ```
 
-This command backs up all the metadata and graph data of the hugegraph graph of http://127.0.0.1:8080 (the default --url) to the data directory.
-
-> Backup works in any graph mode, it does not check the graph mode
+An explicit `-d` is the backup directory itself; the graph name is not appended. Use a separate directory for each backup to avoid mixing old files.
+Retain the complete directory, including compressed files. Restore reads the JSON backup formats supported by Tools.
 
 #### Restore
 
-Restore has two modes: RESTORING and MERGING. Before restore, you must first set the graph mode according to your needs, the restore command fails when the graph is in any other mode.
+This sequence uses `RESTORING`. To merge, use `MERGING` after the compatibility checks above.
+Pause application writes to the target during maintenance.
 
-##### Step 1: View and set graph mode
+
+1. <span id="step-1-view-and-set-graph-mode"></span>**Record the original mode, then switch it.**
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-get
+   ORIGINAL_MODE=NONE
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" \
+     graph-mode-set -m RESTORING
+   ```
+
+   A graph in normal use should be in `NONE` mode. Set `ORIGINAL_MODE` to the value returned by the query, such as `NONE` below.
+   If another task is using `RESTORING`, `MERGING`, or `LOADING`, coordinate with that task before changing its mode.
+
+1. <span id="step-2-restore-data"></span>**Restore the data.**
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" \
+     restore -t all -d "$BACKUP_DIR"
+   ```
+
+   Check command output and the restore results for each type. On failure, retain the backup directory and logs to inspect target state.
+   Restore does not automatically roll back committed writes; do not re-run on a partially restored graph without inspection.
+
+1. <span id="step-3-restoring-graph-mode"></span>**Restore the original mode.**
+
+   Reset the mode using `ORIGINAL_MODE`, recorded in the first step.
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-set -m "$ORIGINAL_MODE"
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-get
+   ```
+
+   Regardless of whether restore succeeds or fails, always restore the graph mode back to its original state (usually `NONE`).
+   On failure, preserve the logs and state, and re-prepare the target graph before resuming business writes.
+{.steps}
+
+After resetting the mode, compare vertex and edge counts on both graphs.
 
 ```bash
-bin/hugegraph graph-mode-get
-```
-This command is used to view the current graph mode, including: NONE, RESTORING, MERGING, LOADING.
-
-```bash
-bin/hugegraph graph-mode-set -m RESTORING
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" gremlin-execute --script 'g.V().count()'
+bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" gremlin-execute --script 'g.V().count()'
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" gremlin-execute --script 'g.E().count()'
+bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" gremlin-execute --script 'g.E().count()'
 ```
 
-This command is used to set the graph mode. Before Restore, it can be set to RESTORING or MERGING mode. In the example, it is set to RESTORING.
+Each pair of counts should match exactly. We also recommend using the [Schema API](/docs/clients/restful-api/schema/) to verify metadata definitions,
+and sampling vertex and edge properties and endpoints to ensure complete data integrity.
 
-##### Step 2: Restore data
+#### Help
 
-```bash
-bin/hugegraph restore -t all -d data
-```
-This command re-imports all metadata and graph data in the data directory to the hugegraph graph at http://127.0.0.1:8080.
-
-##### Step 3: Restoring Graph Mode
-
-```bash
-bin/hugegraph graph-mode-set -m NONE
-```
-This command is used to restore the graph mode to NONE.
-
-So far, a complete graph backup and graph recovery process is over.
-
-#### help
-
-For detailed usage of backup and restore commands, please refer to the [hugegraph-tools documentation](/docs/quickstart/toolchain/hugegraph-tools).
+For additional options on compression, concurrency, and selective type backup, see the [Tools reference](/docs/quickstart/toolchain/hugegraph-tools).
+Before performing cross-major-version restores, verify backup file compatibility in a test environment first.
 
 ## API description for Backup/Restore usage and implementation
 
 #### Backup
 
-Backup uses the corresponding list(GET) API export of metadata and graph data, and no new API is added.
+Backup exports data through the schema, vertex, and edge list GET APIs.
 
 #### Restore
 
-Restore uses the corresponding create(POST) API imports for metadata and graph data, and does not add new APIs.
-
-There are two different modes for Restore: Restoring and Merging. In addition, there is a regular mode of NONE (default), the differences are as follows:
-
-- In None mode, the writing of metadata and graph data is normal, please refer to the function description. special:
-    - ID is not allowed when metadata (schema) is created
-    - Graph data (vertex) is not allowed to specify an ID when the id strategy is Automatic
-- Restoring mode, restoring to a new graph, in particular:
-    - ID is allowed to be specified when metadata (schema) is created
-    - Graph data (vertex) allows specifying an ID when the id strategy is Automatic
-- Merging mode, merging into a graph with existing metadata and graph data, in particular:
-    - ID is not allowed when metadata (schema) is created
-    - Graph data (vertex) allows specifying an ID when the id strategy is Automatic
-
-
-Normally, the graph mode is None. When you need to restore the graph, you need to temporarily change the graph mode to Restoring mode or 
-Merging mode as needed, and when the Restore is completed, restore the graph mode to None.
-
-The implemented RESTful API for setting graph mode is as follows:
+Restore imports data through the schema, vertex, and edge creation APIs. See the [mode table](#restore) for ID behavior.
+`RESTORING` accepts schema IDs; `MERGING` does not. Both accept retained `AUTOMATIC` vertex IDs.
+Normal `NONE` mode does not accept these ID settings required for restore.
 
 ##### View the mode of a graph
 
@@ -26530,7 +26980,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 }
 ```
 
-> Legal graph modes include: NONE, RESTORING, MERGING, LOADING
+Valid graph modes are `NONE`, `RESTORING`, `MERGING`, and `LOADING`.
 
 ##### Set the mode of a graph
 
@@ -26548,7 +26998,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 "RESTORING"
 ```
 
-> Legal graph modes include: NONE, RESTORING, MERGING, LOADING
+Valid graph modes are `NONE`, `RESTORING`, `MERGING`, and `LOADING`.
 
 ###### Response Status
 
@@ -26644,103 +27094,160 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-- How to choose the back-end storage? RocksDB or distributed storage?
+## Deployment and startup {#deployment}
 
-  HugeGraph supports multiple deployment modes. Choose based on your data scale and scenario:
-  - **Standalone Mode**: Server + RocksDB, suitable for development, testing, Graph AI, and small to medium-scale production environments (≤ 2 TB)
-  - **Distributed Mode**: HugeGraph-PD + HugeGraph-Store (HStore), for deployments that require horizontal scaling and multiple replicas, supporting data scales up to 1 PB
+### Choose RocksDB or HStore {#choose-backend}
 
-  Version 1.7.0 supports RocksDB, HStore, HBase, and Memory. Legacy backends such as Cassandra, ScyllaDB, MySQL, and PostgreSQL require version 1.5.x or earlier.
+For development, testing, or small-to-medium standalone deployments, **Server + RocksDB** is recommended for its simplicity and high
+performance. When data volume is large (TB to PB scale) or requires horizontal scalability and multi-replica high availability, deploy an
+**HStore distributed cluster** (PD + Store + Server).
 
-- Prompt when starting the service: `xxx (core dumped) xxx`
- 
-  First confirm that your JDK version matches the requirements: Java 17 for HugeGraph 1.8.0+, or Java 11 for 1.7.0. HugeGraph no longer supports Java 8.
+Version 1.7.0 supports RocksDB, HStore, HBase, and Memory. Legacy backends such as Cassandra, ScyllaDB, MySQL, and PostgreSQL require a
+version earlier than 1.7.0. See the [Server quick start](/docs/quickstart/hugegraph/hugegraph-server/) for deployment steps.
 
-- The service is started successfully, but there is a prompt similar to "Unable to connect to the backend or the connection is not open" when operating the graph
+### Investigate a core dump at startup {#core-dump}
 
-  Persistent local backends such as RocksDB and HBase must be initialized with `init-store` before their first startup. HStore is managed by PD and Store and does not use this script.
-  
-- Do all backends need to be executed before use init-store, and can the serialization options be filled in at will?
+First, run `java -version` to confirm your JDK version: **HugeGraph master (1.8 baseline) requires Java 17**, and **1.7.0 requires Java 11** (Java 8 is no longer supported). If the JDK version is correct, inspect the Server logs and the JVM crash log (`hs_err_pid*.log`) to check for
+architecture mismatches, missing native libraries (such as RocksDB JNI), or insufficient system memory.
 
-  Memory and HStore do not use `init-store`; persistent local backends such as RocksDB and HBase must be initialized before first use. The serializer must match the backend, for example RocksDB uses `binary`.
+### Which backends need init-store {#initialize-backend}
 
-- Execution `init-store` error: ```Exception in thread "main" java.lang.UnsatisfiedLinkError: /tmp/librocksdbjni3226083071221514754.so: /usr/lib64/libstdc++.so.6: version `GLIBCXX_3.4.10' not found (required by /tmp/librocksdbjni3226083071221514754.so)```
+When using local persistent backends like RocksDB or HBase, **you must run `bin/init-store.sh` before the first startup**. Memory (in-memory
+backend) and HStore (distributed backend) do not use this script; HStore storage is managed directly by PD and Store.
 
-  RocksDB requires gcc 4.3.0 (GLIBCXX_3.4.10) and above
+Note: The `backend` and `serializer` settings must match (for example, RocksDB requires `binary`). If the service starts but reports that
+the backend is disconnected, verify initialization and backend connection settings first.
 
-- The `bin` directory contains `start-hugegraph.sh`, `start-restserver.sh` and `start-gremlinserver.sh`.  These scripts seem to be related to startup.  Which one should be used?
+### Resolve a missing GLIBCXX version during init-store {#native-library}
 
-  Current release packages retain only `start-hugegraph.sh` as the Server startup script. GremlinServer and the REST Server run in the same process.
+The following error indicates that the host system's `libstdc++` version is too old and lacks symbols required by the RocksDB JNI native library:
 
-- Two graphs are configured, the names are `hugegraph` and `hugegraph1`, and the command to start the service is `start-hugegraph.sh`. Is only the hugegraph graph opened?
+```text
+java.lang.UnsatisfiedLinkError: .../librocksdbjni....so:
+.../libstdc++.so.6: version `GLIBCXX_3.4.10' not found
+```
 
-  The script name is unrelated to the graph name. Server scans and loads local graph configurations from `conf/graphs` by default; change the directory with
-  `graphs` in `conf/rest-server.properties`. `graph.load_from_local_config` defaults to `false` and controls constructor preloading, not whether startup loads
-  local graphs. Give each local graph its own configuration file and restart Server after changing it. See the
-  [Server configuration guide](/docs/config/config-guide/).
+To resolve: Upgrade the system's `libstdc++` (or install a newer GCC runtime), or run HugeGraph using the official Docker image.
 
-- After the service starts successfully, garbled characters are returned when using `curl` to query all vertices
+### Which Server startup script should I use {#start-script}
 
-  The batch vertices/edges returned by the server are compressed (gzip), and can be redirected to `gunzip` for decompression (`curl http://example | gunzip`), or can be sent with the `postman` of `Firefox` or the `restlet` plug-in of Chrome browser. request, the response data will be decompressed automatically.
-  
-- When using the vertex Id to query the vertex through the `RESTful API`, it returns empty, but the vertex does exist
+Current releases uniformly use `bin/start-hugegraph.sh`. Both GremlinServer and the REST Server start in the same process. The
+`start-restserver.sh` and `start-gremlinserver.sh` scripts from older documentation are deprecated.
 
-  Check the type of the vertex ID. If it is a string type, the "id" part of the API URL needs to be enclosed in double quotes, while for numeric types, it is not necessary to enclose the ID in quotes.
+### Which graphs does the startup script load {#load-graphs}
 
-- Vertex Id has been double quoted as required, but querying the vertex via the   RESTful API  still returns empty
-  
-  Check whether the vertex id contains `+`, `space`, `/`, `?`, `%`, `&`, and `=` reserved characters of these `URLs`.  If they exist, they need to be encoded. The following table gives the coded values:
-  
-  ```text
-  special character | encoded value
-  ------------------| -------------
-  +                 | %2B
-  space             | %20
-  /                 | %2F
-  ?                 | %3F
-  %                 | %25
-  #                 | %23
-  &                 | %26
-  =                 | %3D
-  ```
-  
-- Timeout when querying vertices or edges of a certain category (`query by label`)
+The script name has no relation to the graph name. Server scans and loads all graph configurations in `conf/graphs` by default (this
+directory can be customized via `graphs` in `conf/rest-server.properties`). Each local graph uses an independent configuration file; restart
+Server after editing configurations.
 
-  Since the amount of data belonging to a certain label may be relatively large, please add a limit limit.
+Note: `graph.load_from_local_config` defaults to `false` (controlling constructor preloading) and cannot prevent local graph loading at
+startup. See the [Server configuration guide](/docs/config/config-guide/).
 
-- It is possible to operate the graph through the `RESTful API`, but when sending `Gremlin` statements, an error is reported: `Request Failed(500)`
+## Connections and queries {#queries}
 
-  It may be that the configuration of `GremlinServer` is wrong, check whether the `host` and `port` of `gremlin-server.yaml` match the `gremlinserver.url` of `rest-server.properties`, if they do not match, modify them, and then Restart the service.
+### Read compressed responses with curl {#compressed-response}
 
-- When using `Loader` to import data, a `Socket Timeout` exception occurs, and then `Loader` is interrupted
+Batch vertex and edge endpoints return gzip-compressed data by default. Add the `--compressed` flag to curl to decompress automatically:
 
-  Continuously importing data will put too much pressure on the `Server`, which will cause some requests to time out. The pressure on `Server` can be appropriately relieved by adjusting the parameters of `Loader` (such as: number of retries, retry interval, error tolerance, etc.), and reduce the frequency of this problem.
+```bash
+curl --compressed \
+  'http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?limit=10'
+```
 
-- How to delete all data from a graph
+If authentication is enabled, supply credentials. If output remains unexpected, check HTTP status codes, `Content-Type`, and
+`Content-Encoding`. Do not pipe JSON error responses directly into `gunzip`.
 
-  An administrator can call `DELETE /graphspaces/{graphspace}/graphs/{graph}/clear?confirm_message=I'm sure to delete all data`. The `confirm_message` query parameter must match that value exactly, otherwise the request is rejected. See the [Graph API](../clients/restful-api/graphs) for details. This operation removes schemas, vertices, edges, and indexes.
+### A vertex exists, but lookup by ID cannot find it {#vertex-id}
 
-- The database has been cleared and `init-store` has been executed, but when trying to add a schema, the prompt "xxx has existed" appeared.
+Check the exact format and type of `id` in existing query results: **string IDs require JSON double quotes, while numeric IDs do not**. For
+example, the string ID `1:marko` is written in JSON as `"1:marko"`.
 
-  There is a cache in the `HugeGraphServer`, and it is necessary to restart the `Server` when the database is cleared, otherwise the residual cache will be inconsistent.
+When embedding this JSON ID into a URL path, URL-encode the entire string including double quotes. If the ID contains special characters,
+encoding the whole quoted string is required:
 
-- An error is reported during the process of inserting vertices or edges: `The max length of vertex id is 16384, but got xxx {yyy}` or `The max length of edge id is 65536, but got xxx {yyy}`
+| Character | URL encoding |
+| --- | --- |
+| `+` | `%2B` |
+| Space | `%20` |
+| `/` | `%2F` |
+| `?` | `%3F` |
+| `%` | `%25` |
+| `#` | `%23` |
+| `&` | `%26` |
+| `=` | `%3D` |
+| `"` | `%22` |
 
-  In order to ensure query performance, the current backend storage limits the length of the id column. The vertex id cannot exceed 16384 bytes and the edge id cannot exceed 65536 bytes. An index id longer than 32 bytes is stored as a hash instead of being rejected.
+### Queries by label time out {#label-timeout}
 
-- Is there support for nested attributes, and if not, are there any alternatives?
+When a label contains a large volume of data, scanning all records will exhaust resources and time out. Recommended solutions:
+1. Append `.limit(n)` to restrict the number of returned records;
+2. Use pagination to fetch results incrementally;
+3. Filter by specific properties and ensure the relevant properties are indexed to prevent full scans.
 
-  Nested attributes are currently not supported. Alternative: Nested attributes can be taken out as individual vertices and connected with edges.
+### REST works, but Gremlin returns HTTP 500 {#gremlin-connection}
 
-- Can an `EdgeLabel` connect multiple pairs of `VertexLabel`, such as "investment" relationship, which can be "individual" investing in "enterprise", or "enterprise" investing in "enterprise"?
+A working REST endpoint only confirms HTTP reachability. HTTP 500 from Gremlin typically stems from:
+1. **Gremlin Server connection failure**: Verify that `gremlinserver.url` in `conf/rest-server.properties` points to a reachable Gremlin
+port (default `8182`, configured in `conf/gremlin-server.yaml`);
+2. **Query syntax or logic error**: Such as unindexed property filtering triggering scan limits;
+3. **Missing or expired credentials**.
 
-  Yes. Call `link(sourceLabel, targetLabel)` once per pair when building the `EdgeLabel`; every pair is kept, so one "investment" label can cover both "individual" to "enterprise" and "enterprise" to "enterprise". The older `sourceLabel()` and `targetLabel()` builder methods are deprecated and accept only a single pair.
+Check `logs/hugegraph-server.log` for the detailed exception stack trace.
 
-- Prompt `HTTP 415 Unsupported Media Type` when sending a request through `RestAPI`
+### REST returns HTTP 415 {#content-type}
 
-  `Content-Type: application/json` needs to be specified in the request header
+When sending POST/PUT requests with a JSON body, set the header `Content-Type: application/json` and ensure the payload is valid JSON.
 
-Other issues can be searched in the issue area of the corresponding project, such as [Server-Issues](https://github.com/apache/hugegraph/issues) / [Loader Issues](https://github.com/apache/hugegraph-loader/issues)
+## Import and data maintenance {#data-management}
+
+### Loader reports Socket Timeout {#loader-timeout}
+
+Import timeouts usually occur when batch sizes are too large or write concurrency is too high for the Server. Recommended actions:
+1. Decrease `--batch-size` (e.g., from 500 down to 200);
+2. Reduce the number of concurrent insert threads;
+3. Increase `--timeout` and configure retry settings. See the [Loader guide](/docs/quickstart/toolchain/hugegraph-loader/) for parameter details.
+
+### Clear all data from a graph {#clear-graph}
+
+Administrators can call the following endpoint to wipe schema, vertices, edges, and indexes from a graph (verify target graph and backups beforehand):
+
+```text
+DELETE /graphspaces/{graphspace}/graphs/{graph}/clear
+```
+
+The request requires the `confirm_message` query parameter, strictly matching `I'm sure to delete all data` (URL-encoded). See the [Graph
+API](/docs/clients/restful-api/graphs/) for complete reference.
+
+### Schema still exists after clearing the backend {#schema-cache}
+
+Server caches metadata in memory. Bypassing Server to clear underlying storage directly (such as wiping RocksDB directories or HBase tables)
+causes cache inconsistency. If storage was manually deleted, **restart Server** to clear the cache. For normal cleanup, use the official
+[Clear Graph API](/docs/clients/restful-api/graphs/#clear-graph).
+
+## Modeling and IDs {#modeling}
+
+### A vertex or edge ID exceeds the length limit {#id-length}
+
+To maintain storage and indexing performance, HugeGraph enforces maximum ID length limits (calculated by encoded byte count):
+- **Vertex ID**: Maximum 16384 bytes (16 KB);
+- **Edge ID**: Maximum 65536 bytes (64 KB).
+
+Use concise business identifiers as primary keys rather than concatenating large text blocks. Note: Property index values exceeding 32 bytes
+are automatically hashed for storage and will not trigger length errors.
+
+### Are nested properties supported {#nested-properties}
+
+Nested properties (complex nested maps or objects) are not currently supported. To represent multi-level relations, model the nested object
+as an independent vertex and link it to the parent vertex with an edge.
+
+### Can one edge label connect several vertex-label pairs {#edge-links}
+
+Yes. When creating an `EdgeLabel`, invoke `link(sourceLabel, targetLabel)` once for each source-target pair.
+For example, an `investment` edge label can link both `individual → enterprise` and `enterprise → enterprise`. The deprecated
+`sourceLabel()` and `targetLabel()` methods only supported a single pair and should no longer be used.
+
+For other questions, search the [Server issues](https://github.com/apache/hugegraph/issues) or [Toolchain
+issues](https://github.com/apache/hugegraph-toolchain/issues).
 
 
 ================
@@ -29249,6 +29756,7 @@ Backlinks:
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)
 - [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 - [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
+- [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)
 
 
 ================

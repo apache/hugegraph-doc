@@ -317,7 +317,8 @@ Server 安全检查（`-s true`）要求 Java 17 到 23 以及可读的 `conf/ja
 serializer:
   className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
   config:
-    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+    builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
 ```
 
 ```yaml {tab="GraphSON (HTTP/兼容)"}
@@ -1075,6 +1076,7 @@ bin/stop-hugegraph.sh
 - [在 IDEA 中配置 Server 开发环境](/cn/docs/contribution-guidelines/hugegraph-server-idea-setup/)
 - [Download](/cn/docs/download/download/)
 - [架构概览](/cn/docs/guides/architectural/)
+- [FAQ](/cn/docs/guides/faq/)
 - [安全公告](/cn/docs/guides/security/)
 - [Toolchain本地测试](/cn/docs/guides/toolchain-local-test/)
 - [系统介绍](/cn/docs/introduction/)
@@ -1083,6 +1085,7 @@ bin/stop-hugegraph.sh
 - [安装/构建 HugeGraph-Store](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [Hubble 基础与单机](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
 - [使用 Loader 实时/流式导入数据](/cn/docs/quickstart/toolchain/hugegraph-loader/)
+- [使用 Tools 导出/管理图](/cn/docs/quickstart/toolchain/hugegraph-tools/)
 - [使用 SeaTunnel Sink 导入图数据](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)
 
 
@@ -2425,7 +2428,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 
 #### 4.1 配置项参考
 
-以下表格核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 中的 `hg-pd-dist` 配置和 Java 默认注入值（三个 `raft.rpc-*` 配置项按 [apache/hugegraph#3368](https://github.com/apache/hugegraph/pull/3368) 核对），不是 1.7.0 发布标签的全部行为。1.7.0 二进制包请使用其标签对应的原始配置；主线源码构建包则以 [主线配置文件](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) 为准。
+以下表格列出主线配置及代码默认值，Raft 超时设置可参阅 [PDConfig 实现](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-core/src/main/java/org/apache/hugegraph/pd/config/PDConfig.java)。1.7.0 二进制包请使用对应标签的原始配置；主线源码构建包则以 [主线配置文件](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) 为准。下文会单独说明与 1.7.0 的差异。
 
 **gRPC 与 REST**
 
@@ -3374,11 +3377,26 @@ Hubble 是 HugeGraph 的 Web 管理与图可视化界面。你可以在同一个
 并在图、表格和 JSON 视图之间自由切换。本文以 **单机 RocksDB Server + Hubble** 为例走通完整操作，无需预先部署 PD 或 Store。
 
 如需搭配 HStore 分布式集群使用，可先了解本文的基础操作，再参考 [HStore 分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
-文档内容以 Toolchain 与 Server 的 `master` 分支（当前版本均为 `1.8.0`）为准；Docker `latest` 为动态标签，实际部署建议使用固定版本。
+文档内容以 Toolchain 与 Server 的 `master` 分支（当前均以 1.8 为基线，尚未正式发布）为准；Docker `latest` 为动态标签，生产环境建议使用已发布的固定版本。
+
+本文截图基于 HugeGraph Hubble 界面，中英文界面功能与操作一致。
 
 > [!WARNING]
 > 请勿将未配置防护的 Hubble 或 Server 直接暴露在公网上。生产环境请务必开启 HTTPS、容器网络隔离、
 > [认证与授权](/cn/docs/config/config-authentication/)及访问白名单。
+
+可按需快速跳转到对应操作；首次使用建议从启动单机环境开始：
+
+- [启动并加载示例](#启动单机组合)
+
+  启动两个服务，加载人物与软件示例图。
+- [查询与可视化](#gql-工作台查询与探索人物关系)
+
+  运行 Gremlin，再查看图、表格或 JSON 结果。
+- [导入自己的数据](#数据源管理把原始数据准备好)
+
+  准备 CSV，配置数据源、字段映射并验证导入结果。
+{.cards}
 
 ## 启动单机组合
 
@@ -3386,35 +3404,42 @@ Hubble 是 HugeGraph 的 Web 管理与图可视化界面。你可以在同一个
 无需自行编写 Compose 配置文件。该文件已内置编排了 RocksDB Server 与 Hubble，并配置好网络、健康检查及持久化数据卷；
 完整部署说明见同目录的 [README](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
-```bash
-git clone --branch master --single-branch --depth 1 https://github.com/apache/hugegraph.git
-cd hugegraph/docker
-```
+1. **准备官方 Compose 配置。**
 
-若本地已有主仓库，直接进入其 `docker/` 目录即可。Compose 会自动挂载该目录下的
-[`conf/hubble/standalone.properties`](https://github.com/apache/hugegraph/blob/master/docker/conf/hubble/standalone.properties)，
-已预设 `pd.enabled=false` 与 `server.direct_url=http://server:8080`。两项服务处于同一 Docker 网络中通信，
-无需为每个图单独配置 Server 地址。请直接在 `docker/` 目录下启动，以确保相对配置路径有效。
+   ```bash
+   git clone --branch master --single-branch --depth 1 https://github.com/apache/hugegraph.git
+   cd hugegraph/docker
+   ```
 
-Hubble 默认只在宿主机回环地址开放 `8088`（由 `HUBBLE_PUBLISH_HOST` 环境变量控制，默认为 `127.0.0.1`）；
-Server 默认对外发布 `8080`。若仅供本机试用，可将 Compose 中 Server 的 `ports` 改为 `127.0.0.1:8080:8080`，避免匿名端口暴露到外部网络。
+   若本地已有主仓库，直接进入其 `docker/` 目录即可。Compose 会自动挂载该目录下的
+   [`conf/hubble/standalone.properties`](https://github.com/apache/hugegraph/blob/master/docker/conf/hubble/standalone.properties)，
+   已预设 `pd.enabled=false` 与 `server.direct_url=http://server:8080`。两项服务处于同一 Docker 网络中通信，
+   无需为每个图单独配置 Server 地址。请直接在 `docker/` 目录下启动，以确保相对配置路径有效。
 
-为本次试用指定一个独立的项目名，后续命令在同一终端中沿用这些环境变量；另起终端时请重新设置：
+   Hubble 默认只在宿主机回环地址开放 `8088`（由 `HUBBLE_PUBLISH_HOST` 环境变量控制，默认为 `127.0.0.1`）；
+   Server 默认对外发布 `8080`。若仅供本机试用，可将 Compose 中 Server 的 `ports` 改为 `127.0.0.1:8080:8080`，避免匿名端口暴露到外部网络。
 
-```bash
-export HUGEGRAPH_VERSION=latest
-export HUBBLE_IMAGE=hugegraph/hubble:latest
-export HUBBLE_DEMO_PROJECT="hubble-demo-$(date +%Y%m%d-%H%M%S)"
-docker compose ls
-docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml pull
-docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml up -d --wait
-docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml ps
-curl -fsS http://127.0.0.1:8080/versions
-```
+1. **启动并检查服务。**
 
-服务启动完成后，在浏览器访问 <http://127.0.0.1:8088>。若未在 `.env` 中配置 `HUGEGRAPH_ADMIN_PASSWORD`，Server 默认允许匿名访问，
-Hubble 会直接进入首页。若已启用认证，请根据 Docker README 在 `.env` 中配置管理员密码与 JWT 密钥，并使用 Server 账号登录（Hubble 无独立用户库）。
-个人中心与账号管理入口仅在开启认证且具备相应权限时展示。
+   为本次试用指定一个独立的项目名，后续命令在同一终端中沿用这些环境变量；另起终端时请重新设置。
+
+   ```bash
+   export HUGEGRAPH_VERSION=latest
+   export HUBBLE_IMAGE=hugegraph/hubble:latest
+   export HUBBLE_DEMO_PROJECT="hubble-demo-$(date +%Y%m%d-%H%M%S)"
+   docker compose ls
+   docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml pull
+   docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml up -d --wait
+   docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml ps
+   curl -fsS http://127.0.0.1:8080/versions
+   ```
+
+1. **打开 Hubble。**
+
+   服务启动完成后，在浏览器访问 <http://127.0.0.1:8088>。若未在 `.env` 中配置 `HUGEGRAPH_ADMIN_PASSWORD`，Server 默认允许匿名访问，
+   Hubble 会直接进入首页。若已启用认证，请根据 Docker README 在 `.env` 中配置管理员密码与 JWT 密钥，并使用 Server 账号登录（Hubble 无独立用户库）。
+   个人中心与账号管理入口仅在开启认证且具备相应权限时展示。
+{.steps}
 
 `latest` 镜像便于快速体验最新功能，生产环境建议指定发布版本号或镜像 digest。正式发布包可前往 [下载页](/cn/docs/download/download/) 获取。
 
@@ -3425,7 +3450,7 @@ Hubble 会直接进入首页。若已启用认证，请根据 Docker README 在 
 Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据与 Hubble 元数据；更多生产配置参见
 [Server 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
 
-## 首页：找到当前任务的入口
+## 首页与任务入口 {#首页找到当前任务的入口}
 
 首页按“图概览 → 图导入 → 图查询”组织核心工作流。左侧导航栏可随时切换各功能模块；
 顶部的图选择器用于切换当前操作的目标图，所有查询、Schema 操作和异步任务均作用于当前选中的图。
@@ -3448,12 +3473,12 @@ Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据
 图概览、Schema 和查询工作区如下，点击任一截图可查看原图。
 
 ```gallery
-![人物与软件示例的图概览](/cn/docs/images/hubble/overview.jpg) # 图概览：选择图并查看示例数据
-![顶点类型列表中的主键与数值 ID 策略](/cn/docs/images/hubble/schema.jpg) # Schema：查看顶点类型、主键与 ID 策略
-![Gremlin 路径查询与图结果](/cn/docs/images/hubble/query.jpg) # 图查询：执行 Gremlin 并探索图结果
+![人物与软件示例的图概览](/cn/docs/images/hubble/overview.jpg) # 图概览，选择图并查看示例数据
+![顶点类型列表中的主键与数值 ID 策略](/cn/docs/images/hubble/schema.jpg) # Schema，查看顶点类型、主键与 ID 策略
+![Gremlin 路径查询与图结果](/cn/docs/images/hubble/query.jpg) # 图查询，执行 Gremlin 并探索图结果
 ```
 
-## 图概览与图详情：先认识一张图
+## 认识图概览与图详情 {#图概览与图详情先认识一张图}
 
 在【图概览】中选择默认图 `hugegraph`。点击图卡片或详情，可查看该图的 Schema 结构与数据统计，并快速跳转到建模、数据导入或查询页面。
 
@@ -3463,7 +3488,7 @@ Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据
 若需新建图，可在页面点击新建按钮，填写图名称、可选别名并选择 Schema 模板或示例数据。连接信息由 Hubble 后端统一配置，
 无需重复填写 Server 主机与账号。用户自定义 Schema 模板属于 PD 模式功能，详见 [分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
 
-## Schema 建模：定义数据的形状
+## 定义 Schema {#schema-建模定义数据的形状}
 
 Schema 规定了图中允许存储的属性、顶点与边类型，并决定顶点 ID 的生成策略与索引规则。
 在【元数据配置】中，可以通过列表视图维护定义，或通过图关系视图直观查看顶点与边的拓扑结构。
@@ -3475,22 +3500,22 @@ Schema 规定了图中允许存储的属性、顶点与边类型，并决定顶�
 | 边类型 | 起点和终点类型、属性、边的频次及排序键 |
 | 顶点索引 / 边索引 | 索引类型与字段，匹配实际过滤和范围查询 |
 
-在人物与软件示例中：`person` 以 `name` 为主键生成 ID，`age` 与 `city` 允许为空；
+在人物与软件示例中，`person` 以 `name` 为主键生成 ID，`age` 与 `city` 允许为空；
 `software` 采用自定义数值 ID；边类型 `created` 连接人物与软件。模型定义与 [Loader 示例](/cn/docs/quickstart/toolchain/hugegraph-loader/) 保持一致。
 
 自主建模时，建议遵循 **属性 → 顶点类型 → 边类型 → 索引** 的顺序依次创建。
 删除类型或创建/重建索引操作通常会提交为后台异步任务，操作提交后可在【异步任务】中查看最终执行结果。
 
-## GQL 工作台：查询与探索人物关系
+## 在 GQL 工作台查询人物关系 {#gql-工作台查询与探索人物关系}
 
 进入【GQL 图遍历】，确认当前图为 `hugegraph`。工作台将查询编辑器与图展示区集成在一起，
-支持即时执行与异步执行、常用语句收藏，并可随时从执行历史中重载语句。先在 Gremlin 编辑器中执行人物属性查询：
+支持即时执行与异步执行、常用语句收藏，并可随时从执行历史中重载语句。先在 Gremlin 编辑器中查询人物属性。
 
 ```groovy
 g.V().hasLabel('person').valueMap()
 ```
 
-这条查询适合在表格或 JSON 视图核对属性。要观察人物与软件的关系，执行：
+这条查询适合在表格或 JSON 视图核对属性。也可以查询人物与软件的关系。
 
 ```groovy
 g.V().hasLabel('person').outE('created').inV().path()
@@ -3505,19 +3530,17 @@ Cypher 查询仅在 Server 后端支持时提供。快捷键会作用于当前�
 
 ### Text2GQL 自然语言查询 {#text2gql}
 
-> [!NOTE]
-> Text2GQL 后端能力（包括模型设置、内置/临时模型管理与 Prompt 模板）依赖包含
-> [apache/hugegraph-toolchain#824](https://github.com/apache/hugegraph-toolchain/pull/824) 的 Hubble 构建或后续发布版本；未合入该特性的旧版本仅提供预览占位，不包含模型设置页面。
-
 在【自然语言】输入框中用自然语言描述查询需求，Text2GQL 会结合当前图的 Schema 自动生成只读 Gremlin 或 Cypher 语句并执行查询。
 生成的语句支持二次编辑（执行前同样会进行只读安全校验）。切换至【异步】模式时，生成的查询与手写查询均可提交为后台异步任务。
 输入框会自动恢复当前图最近一次的查询输入（不会自动触发执行），执行记录中也会完整保留原始自然语言问题。
 
 ```gallery
-![Text2GQL 查询与图结果](/cn/docs/images/hubble/text2gql.jpg) # 查询工作台
+![未配置模型时的自然语言入口与手写 Gremlin 查询结果](/cn/docs/images/hubble/text2gql.jpg) # 查询工作台，模型尚未配置，结果来自手写查询
 ![内置模型设置](/cn/docs/images/hubble/text2gql-settings.jpg) # 模型设置
 ![Gremlin 与 Cypher Prompt 模板](/cn/docs/images/hubble/text2gql-prompt.jpg) # Text2GQL Prompt
 ```
+
+配图中的模型尚未配置，图结果来自手写 Gremlin；自然语言生成功能需要先连接可用模型。
 
 | 模型来源 | 配置与保存方式 |
 | --- | --- |
@@ -3525,9 +3548,9 @@ Cypher 查询仅在 Server 后端支持时提供。快捷键会作用于当前�
 | 使用临时模型 | 在查询页填写 API 类别、Base URL、模型名称和临时 API Key；Key 只保留在前端内存中，刷新后清除 |
 
 使用 OpenAI、DeepSeek、GLM 等模型时选择【OpenAI 兼容接口】；使用本地运行的 Ollama 时选择【Ollama（本地）】（无认证时 Key 可留空）。
-注意：Base URL 必须能被 Hubble 后端服务正常访问（若 Hubble 运行在容器中，`localhost` 指向容器本身而非宿主机）。公网端点必须使用 HTTPS，HTTP 仅允许用于
+Base URL 必须能被 Hubble 后端服务正常访问（若 Hubble 运行在容器中，`localhost` 指向容器本身而非宿主机）。公网端点必须使用 HTTPS，HTTP 仅允许用于
 本地回环或私网模型；在【模型设置】中修改 Base URL 时，必须重新填写 Key 或清空已保存的 Key。
-全局内置模型仅由 `admin` 账号（PD 模式下为超级管理员）统一配置；未开启 Server 认证时，任何访问者均可配置。
+全局内置模型由具备模型设置管理权限的管理员统一配置；未开启 Server 认证时，任何访问者均可配置。
 
 在模型设置页面右上角打开 **Text2GQL Prompt**，可分别定制 Gremlin 与 Cypher 的生成规则及 Few-shot 示例。
 点击【应用】后需保存模型设置，模板将持久化存入 H2 数据库供内置模型与临时模型共享，生成时会自动附加当前图的 Schema。
@@ -3540,7 +3563,7 @@ Cypher 查询仅在 Server 后端支持时提供。快捷键会作用于当前�
 
 页脚分别显示模型生成耗时与查询请求耗时；异步提交耗时仅代表任务入队耗时，不代表后台任务实际运行时间。
 
-## 内置图算法：用表单探索关系
+## 使用内置图算法 {#内置图算法用表单探索关系}
 
 不想从头编写遍历语句时，可以进入【内置图算法】，搜索算法并填写参数。
 邻居探索用于回答“这个点附近有什么”，路径算法用于寻找两个点的连接，相似度和排序算法用于比较或筛选顶点。
@@ -3556,9 +3579,9 @@ OLAP 批量算法需要 Computer 或 Vermeer 等外部计算环境。本例的�
 参数校验通过后点击卡片右侧运行按钮，或在参数表单内使用快捷键，即可观察一跳邻居。
 
 ![内置邻居算法的参数与图结果](/cn/docs/images/hubble/algorithms.jpg)
-{width="2033" height="977"}
+{width="1600" height="1000"}
 
-## 异步任务：确认后台操作的最终结果
+## 查看异步任务的最终结果 {#异步任务确认后台操作的最终结果}
 
 【异步任务】集中显示当前图的后台任务，包括异步查询及部分 Schema、索引操作。
 可以按任务类型和状态筛选，查看任务 ID、创建时间与执行状态；成功查询可打开结果，失败任务可展开错误信息。
@@ -3567,13 +3590,13 @@ OLAP 批量算法需要 Computer 或 Vermeer 等外部计算环境。本例的�
 例如把 `g.V().count()` 以异步方式提交后，先在列表确认成功，再查看返回的数量。
 “提交成功”只表示请求被接受，不表示计算或索引已完成。排查失败时，结合任务错误和 Server 日志定位原因。
 
-## 数据源管理：把原始数据准备好
+## 准备数据源 {#数据源管理把原始数据准备好}
 
 数据源负责“从哪里读、怎样解析”，可以被导入任务引用。Hubble 支持 FILE、HDFS、JDBC 和 Kafka；
-不同来源需要对应的路径、连接或订阅配置。FILE 最适合先体验：上传文件后，配置格式、分隔符、编码和表头，
+不同来源需要对应的路径、连接或订阅配置。首次体验可选择 FILE。上传文件后，配置格式、分隔符、编码和表头，
 检查读取的列名，再进入映射。上传限制和允许的扩展名由 Hubble 配置决定。
 
-为人物示例保存一个 UTF-8 文件 `people.csv`：
+为人物示例保存一个 UTF-8 文件 `people.csv`。
 
 ```csv
 name,age,city
@@ -3584,10 +3607,10 @@ docs_bob,32,Shanghai
 创建 FILE 数据源并上传它，选择 CSV（逗号分隔、默认 UTF-8），列名为 `name,age,city`。
 表头、分隔符和编码属于数据源配置，不在后面的映射步骤设置；源字段应与文件内容一致。
 
-## 数据导入：从字段映射到可查询的图
+## 映射字段并导入数据 {#数据导入从字段映射到可查询的图}
 
 【数据导入】把数据源中的行转换为顶点和边。任务创建采用四段配置，先明确目标，再选择字段和映射，最后决定执行时机。
-沿用上面的数据源，在 `DEFAULT` / `hugegraph` 中创建人物导入任务：
+沿用上面的数据源，在 `DEFAULT` / `hugegraph` 中创建人物导入任务。
 
 1. **基础信息** 选择目标图与刚创建的数据源，填写任务名。
 1. **源端字段** 选择 `name`、`age`、`city`，移到已选字段列表。
@@ -3600,7 +3623,7 @@ AUTOMATIC 由 Server 生成 ID，PRIMARY_KEY 根据映射的主键属性生成 I
 
 任务列表用于管理配置和执行入口，详情中的执行历史用于查看每次实例的状态、导入量与错误。
 Hubble 还提供周期调度和 Kafka 实时执行，调度方式需与数据源类型匹配。
-完成后返回 GQL 工作台验证：
+完成后返回 GQL 工作台查询新导入的数据。
 
 ```groovy
 g.V().hasLabel('person').has('name', within('docs_alice', 'docs_bob')).valueMap()
@@ -3626,7 +3649,7 @@ Hubble 使用 Server 的认证和账号，没有独立用户库。匿名访问�
 
 连接支持默认角色接口的 Server 后，账号与空间访问可以分别管理。管理员管理全局账号，
 空间管理员只管理已授权空间的成员；普通成员不会获得账号管理或运维入口。
-以下四种预设属于 PD 模式，不表示旧版本或单机 Server 都提供同样的权限编辑能力：
+以下四种预设属于 PD 模式，不表示旧版本或单机 Server 都提供同样的权限编辑能力。
 
 | 预设 | 范围与用途 |
 |---|---|
@@ -3641,10 +3664,10 @@ Hubble 使用 Server 的认证和账号，没有独立用户库。匿名访问�
 旧 Server 未提供相应接口时，页面按能力隐藏或禁用操作，不应只凭按钮是否可见推断资源权限。
 更完整的空间管理见 [分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
 
-![认证模式下的账号列表（PD 模式示例）](/cn/docs/images/hubble/accounts.jpg)
-{width="2033" height="977"}
+![认证模式下的账号列表（单机模式示例）](/cn/docs/images/hubble/accounts.jpg)
+{width="1600" height="1000"}
 
-## 系统运维：检查单机 Server
+## 检查单机 Server {#系统运维检查单机-server}
 
 单机模式的【系统运维】提供【节点信息】，只显示 Server，不显示 PD / Store 节点或集群概览。
 节点列表可搜索、筛选健康状态并进入详情；详情用于查看可用的版本、系统、JVM、Server 后端等指标。
@@ -3682,7 +3705,7 @@ FILE 上传默认允许 `csv,txt`，单文件 1 GB、总量 10 GB；需要覆盖
 
 ## 停止试用环境或从源码构建
 
-不再需要示例时，在主仓库的 `docker/` 目录执行：
+清理测试环境时，在 `docker/` 目录下执行以下命令：
 
 ```bash
 docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volumes
@@ -3691,19 +3714,21 @@ docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volume
 这会删除该项目的容器、网络、命名卷与匿名卷，示例图和 Hubble 导入任务也会丢失。
 若想保留数据，下线时省略 `--volumes`，以后用同一项目名启动。
 
-需要与 master 精确一致的产物时，使用 JDK 17 和 Maven 从 Toolchain 构建。
-Maven 插件会安装所需的 Node/Yarn，无需预先安装；以下命令不执行测试：
+从当前 master 构建时，需要 **JDK 17、Maven 3.9+、Python 3.9+、稳定版 Node.js 24（至少 24.22.0）**，
+并通过 Corepack 使用仓库锁定的 **pnpm 12.14.0**。Maven 不再自动安装 Node/Yarn。
 
-```bash
-git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
-cd hugegraph-toolchain
-mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
-cd hugegraph-hubble
-mvn package -Dmaven.javadoc.skip=true -DskipTests -ntp
-cd apache-hugegraph-hubble-*
-# 编辑 conf/hugegraph-hubble.properties，设置正确的 Server URL
-bin/start-hubble.sh
-```
+1. 按 [Java 17 构建说明](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)
+   编译并安装 Server SDK 到独立 Maven 仓库。
+1. 按 [Hubble 源码构建步骤](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-hubble/README.md)
+   安装 Python 依赖，再使用同一 Maven 仓库构建 Client、Loader 和 Hubble（跳过测试）。
+1. 进入构建生成的 `hugegraph-hubble/apache-hugegraph-hubble-*` 目录，配置 `conf/hugegraph-hubble.properties` 中的 Server 连接信息后启动：
+
+   ```bash
+   bin/start-hubble.sh -d
+   ```
+{.steps}
+
+当前 master 使用新的 H2 元数据库。升级时保留旧 Hubble 包及其数据，新版使用独立的数据目录；旧元数据不支持自动迁移，不能直接复用。
 
 打包配置默认绑定本机 `localhost:8088`。`bin/stop-hubble.sh` 会先请求正常停机，超时后才强制终止。
 需要开发与测试说明时，参考 [Toolchain 本地测试指南](/cn/docs/guides/toolchain-local-test/)。
@@ -3717,6 +3742,7 @@ bin/start-hubble.sh
 - [系统介绍](/cn/docs/introduction/)
 - [HugeGraph Examples](/cn/docs/language/hugegraph-example/)
 - [HugeGraph 工具链](/cn/docs/quickstart/toolchain/)
+- [使用 Tools 导出/管理图](/cn/docs/quickstart/toolchain/hugegraph-tools/)
 - [图可视化](/cn/docs/quickstart/toolchain/visualization/)
 - [Hubble 分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)
 
@@ -3746,10 +3772,20 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 Docker `latest` 为动态标签，配图用于定位界面，实际版本以部署镜像的 digest 及构建信息为准。
 不同版本可提供的指标和权限接口有所区别。
 
+本文截图基于 HugeGraph Hubble 界面，中英文界面功能与操作一致。
+
 ## 连接分布式集群
 
 Hubble 仍通过 **Server 的图 API** 管理数据。区别在于，分布式模式通过 PD 发现 Server，
 同时从 PD 和 Store 获取集群信息；Hubble 不直接读写 Store 中的图数据。
+
+```mermaid
+flowchart LR
+    H[Hubble] -->|图 API| S[Server]
+    S -->|读写图数据| T[Store]
+    H -.->|服务发现与集群信息| P[PD]
+    H -.->|节点指标| T
+```
 
 1. **生成 Hubble 配置。** 按 Docker README 在主仓库的 `docker/` 目录准备 `.env`。
 
@@ -3774,7 +3810,7 @@ Hubble 仍通过 **Server 的图 API** 管理数据。区别在于，分布式�
 
 若分别部署服务，参照 [PD 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-pd/) 和
 [HStore 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)；源码或二进制包启动的 Hubble 则编辑其
-`conf/hugegraph-hubble.properties`。以下连接项与官方最小拓扑一致，其他部署请使用 Hubble 后端实际可达的地址：
+`conf/hugegraph-hubble.properties`。以下连接项与官方最小拓扑一致，其他部署请使用 Hubble 后端实际可达的地址。
 
 ```properties
 pd.enabled=true
@@ -3790,10 +3826,10 @@ pd.server=pd:8620
 | `pd.peers` | PD **gRPC** 地址；多个地址用逗号分隔。 | `127.0.0.1:8686` |
 | `pd.server` | 集群运维使用的 PD **REST** 地址，不是 gRPC peer 列表。 | `127.0.0.1:8620` |
 
-请注意区分两个端口：`8686` 为 gRPC 端口，`8620` 为 REST 端口，切勿混用；跨容器通信时请使用容器服务名或网络可达 IP，避免使用 `127.0.0.1`。
+请区分两个端口。`8686` 为 gRPC 端口，`8620` 为 REST 端口，切勿混用；跨容器通信时请使用容器服务名或网络可达 IP，避免使用 `127.0.0.1`。
 发行包默认配置中显式设为 `pd.enabled=false`；若未配置该项，代码默认值为 `true`，因此单机与分布式部署均建议显式声明该配置。
-修改配置后：源码或二进制部署需重启 Hubble 服务；Docker Compose 部署则在 `docker/` 目录下重新创建 Hubble 容器以重新加载挂载配置
-（沿用启动时的项目名及所有 `-f` 参数）：
+修改配置后，源码或二进制部署需重启 Hubble 服务；Docker Compose 部署则在 `docker/` 目录下重新创建 Hubble 容器以重新加载挂载配置
+（沿用启动时的项目名及所有 `-f` 参数）。
 
 ```bash
 docker compose -f docker-compose-hstore.yml up -d --force-recreate hubble
@@ -3824,7 +3860,7 @@ GraphSpace（图空间）将图、Schema 模板和访问权限组织在同一个
 列表只显示账号可访问的空间；看不到预期空间时，先检查成员权限，不要反复新建图。
 
 ![图空间创建表单与高级资源限制入口](/cn/docs/images/hubble/graphspace.jpg)
-{width="2048" height="984"}
+{width="1600" height="1000"}
 
 ### 复用 Schema 模板
 
@@ -3832,7 +3868,7 @@ GraphSpace（图空间）将图、Schema 模板和访问权限组织在同一个
 当一组业务图需要同样的顶点类型、边类型和索引时，可以先保存模板，再在创建图时选择它，减少重复建模。
 例如 `research` 中的用户模板用于该空间后续创建的图；切换到另一个空间后，应重新选择该空间的模板。
 
-用户模板与主篇的内置示例模板不同：内置模板用于快速体验预设模型，用户模板用于保存自己的模型并长期复用。
+主篇的内置示例模板用于快速体验预设模型。用户模板用于保存自己的模型并长期复用。
 模板本身不等于导入数据；是否加载示例数据是创建图时的另一个选择。
 开启 Server 认证时，创建用户模板需要所在空间的写权限，更新或删除还要求模板所有者或相应管理权限。
 匿名模式不进行按用户的权限与模板所有者检查。
@@ -3842,7 +3878,7 @@ GraphSpace（图空间）将图、Schema 模板和访问权限组织在同一个
 
 账号创建、登录和个人资料管理见[基础指南](/cn/docs/quickstart/toolchain/hugegraph-hubble/)；
 分布式模式额外提供“管理 GraphSpace 成员”，在已有账号与指定空间之间分配权限。
-支持权限预设的 Server 提供以下常用选择：
+支持权限预设的 Server 提供以下常用选择。
 
 | 预设 | 适用对象 | 作用范围 |
 |---|---|---|
@@ -3857,7 +3893,7 @@ GraphSpace（图空间）将图、Schema 模板和访问权限组织在同一个
 认证配置见 [Server 认证与授权](/cn/docs/config/config-authentication/)。
 
 ![GraphSpace 成员与权限预设](/cn/docs/images/hubble/members.jpg)
-{width="2048" height="984"}
+{width="1600" height="1000"}
 
 ## 从集群概览定位异常
 
@@ -3865,7 +3901,7 @@ GraphSpace（图空间）将图、Schema 模板和访问权限组织在同一个
 概览中的 PD Leader、在线 Store 数、图数、分区数、副本数和数据量，帮助判断当前连接的规模及哪些节点需要关注。
 分区和副本描述数据分布；数据量是采集到的用量，不是图空间配置的存储上限。
 
-先看集群和来源状态，再进入异常节点：`UP` 表示本次采集的来源正常；`DEGRADED` 表示集群或部分来源异常；
+先看集群和来源状态，再进入异常节点。`UP` 表示本次采集的来源正常；`DEGRADED` 表示集群或部分来源异常；
 `DOWN` 表示相应探测未成功。拓扑可用而指标部分缺失时，仍可能正常查询图。
 页面会区分不支持、不可用、数据过期和采集失败，并显示采集时间；空值不是零，历史值也不等于当前状态。
 
@@ -3883,7 +3919,7 @@ GraphSpace（图空间）将图、Schema 模板和访问权限组织在同一个
 ![Store 节点的系统、磁盘、Raft 和分区指标](/cn/docs/images/hubble/store-node.jpg) # Store 详情，再检查节点指标
 ```
 
-PD Leader 与 Store 的 Leader 分区不是同一概念：前者协调集群元数据，后者负责相应数据分区的 Raft 组。
+PD Leader 与 Store 的 Leader 分区分别负责不同的工作。前者协调集群元数据，后者负责相应数据分区的 Raft 组。
 Hubble 展示上游提供的观测值，不代替完整的 Raft 副本一致性检查；各版本可用的指标不同。
 
 开启 Server 认证时，集群运维读取要求超级管理员（`ADMIN` 级别），空间管理员和普通成员不会因此获得集群读取权限。
@@ -3893,7 +3929,7 @@ Hubble 展示上游提供的观测值，不代替完整的 Raft 副本一致性�
 
 PD/Store 的运维凭据由 Hubble **后端**使用，与浏览器登录 Server 的账号分开。
 Compose 部署修改上文生成的宿主机 `docker/conf/hubble/hstore.local.properties`；其他部署修改 Hubble 包内配置文件。
-其中 PD 密码由脚本生成并与 `.env` 中的密钥保持一致，Store 启用认证时再配置对应服务账号。不要把密码写进文档、截图或提交的配置：
+其中 PD 密码由脚本生成并与 `.env` 中的密钥保持一致，Store 启用认证时再配置对应服务账号。不要把密码写进文档、截图或提交的配置。
 
 | 配置 | 随包默认值 | 设置方式 |
 |---|---|---|
@@ -3902,16 +3938,16 @@ Compose 部署修改上文生成的宿主机 `docker/conf/hubble/hstore.local.pr
 | `operations.store.allowed_targets` | `[http://127.0.0.1:8520,http://[::1]:8520]` | 列出信任的 Store 指标来源。 |
 {.td-table--wide}
 
-例如容器中的 Store 上报 `store:8520`，将白名单配置为：
+例如容器中的 Store 上报 `store:8520`，将白名单配置为以下内容。
 
 ```properties
 operations.store.allowed_targets=[http://store:8520]
 ```
 
 多节点集群中需列出所有允许访问的目标地址。每项必须是包含显式端口的 `http` 或 `https` 源地址（Origin），不可包含路径、凭据或通配符，
-且需与 PD 返回的 Store 指标目标完全一致。注意：仅在白名单中添加地址不会自动建立节点发现。
+且需与 PD 返回的 Store 指标目标完全一致。仅在白名单中添加地址不会自动建立节点发现。
 
-若集群拓扑可见但节点指标不完整，请依次排查：Hubble 后端到 PD REST 的网络连通性与认证凭据、PD 返回的 Store REST 与指标地址，
+若集群拓扑可见但节点指标不完整，请依次检查 Hubble 后端到 PD REST 的网络连通性与认证凭据、PD 返回的 Store REST 与指标地址，
 以及目标地址是否已加入上述白名单。概览中的部分可用状态仅表示特定来源指标采集受阻，并不代表图 API 服务不可用。
 
 ---
@@ -3961,7 +3997,105 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-本文以 Toolchain `master`（当前版本为 `1.8.0`）为准。发布版和 Docker `latest` 可能与源码不同；使用时请核对版本，未发布的版本请按下文从源码构建。
+本文以 Toolchain `master` 分支（以 1.8 为基线，尚未正式发布）为准。发布版和 Docker `latest` 可能存在部分差异，使用未发布功能前请先核对版本。
+
+### 快速上手：本地文件导入 {#quick-local-file-import}
+
+下面通过一个最简示例体验 Loader 的基本导入流程：导入两个人和一条关系，并在 Hubble 中查询验证。
+请先[安装 Loader](#2-获取-hugegraph-loader) 并启动 [HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
+以下命令均在 Loader 安装目录下执行，连接本地默认图 `hugegraph`。若 Server 已启用鉴权，在命令中追加 `--username` 与 `--password`（或 `--token`）。
+
+1. **创建数据文件**
+
+   两份 CSV 均不含表头，列名由下一步的映射文件指定。
+
+   ```bash
+   mkdir -p demo-loader
+   cat > demo-loader/people.csv <<'EOF'
+   docs-smoke-alice,29
+   docs-smoke-bob,31
+   EOF
+   cat > demo-loader/knows.csv <<'EOF'
+   docs-smoke-alice,docs-smoke-bob
+   EOF
+   ```
+
+1. **创建 Schema 和映射文件**
+
+   本例使用独立的 `docs_*` 名称，避免与内置的 `person` 数据冲突。
+   映射文件中的路径相对于运行 Loader 时的工作目录。
+
+   ```bash
+   cat > demo-loader/schema.groovy <<'EOF'
+   schema.propertyKey("docs_name").asText().ifNotExist().create()
+   schema.propertyKey("docs_age").asInt().ifNotExist().create()
+   schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age")
+         .primaryKeys("docs_name").ifNotExist().create()
+   schema.edgeLabel("docs_smoke_knows").sourceLabel("docs_smoke_person")
+         .targetLabel("docs_smoke_person").ifNotExist().create()
+   EOF
+   cat > demo-loader/struct.json <<'EOF'
+   {
+     "version": "2.0",
+     "structs": [
+       {
+         "id": "people",
+         "input": {
+           "type": "FILE",
+           "path": "demo-loader/people.csv",
+           "format": "CSV",
+           "header": ["docs_name", "docs_age"]
+         },
+         "vertices": [{"label": "docs_smoke_person"}]
+       },
+       {
+         "id": "knows",
+         "input": {
+           "type": "FILE",
+           "path": "demo-loader/knows.csv",
+           "format": "CSV",
+           "header": ["source_name", "target_name"]
+         },
+         "edges": [{
+           "label": "docs_smoke_knows",
+           "source": ["source_name"],
+           "target": ["target_name"],
+           "field_mapping": {"source_name": "docs_name", "target_name": "docs_name"}
+         }]
+       }
+     ]
+   }
+   EOF
+   ```
+
+1. **执行导入**
+
+   保持在同一工作目录。Server 运行在其他地址时，修改主机和端口。
+
+   ```bash
+   bin/hugegraph-loader.sh \
+     --graphspace DEFAULT --graph hugegraph \
+     --file demo-loader/struct.json --schema demo-loader/schema.groovy \
+     --host 127.0.0.1 --port 8080
+   ```
+
+   首次成功导入后，统计应显示两个顶点、一条边。检查汇总中的成功数和失败数。
+
+1. **在 Hubble 中查询结果**
+
+   将 Hubble 连接到同一个 Server 和图，在 Gremlin 工作台分别执行以下查询。
+
+   ```groovy
+   g.V().hasLabel('docs_smoke_person').valueMap('docs_name', 'docs_age')
+   g.V().has('docs_smoke_person', 'docs_name', 'docs-smoke-alice')
+    .out('docs_smoke_knows').values('docs_name')
+   ```
+
+   第一条查询返回 Alice 的年龄 `29`、Bob 的年龄 `31`，第二条返回 `docs-smoke-bob`。
+{.steps}
+
+导入其他数据源时，继续阅读[映射文件参考](#33-编写数据源映射文件)。
+[内置完整示例](#4-完整示例)还包含软件顶点和边属性。
 
 ### 1 HugeGraph-Loader 概述
 
@@ -3977,15 +4111,11 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 本地磁盘文件和 HDFS 文件支持断点续传。
 
-后面会具体说明。
-
 > **注意**：使用 HugeGraph-Loader 需要依赖 HugeGraph Server 服务，下载和启动 Server 请参考 [HugeGraph-Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server)
 > 
 > **测试指南**：如需在本地运行 Loader 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
 
-> **并发导入保护方案**：自 1.8.0 起，普通导入支持在同一 Server 实例上获取 owner 保护
-> （需配合返回 `protocol: 1` 的新版 Server 与对应 Loader；当前 `master` 分支暂未包含该协议）。
-> 旧版 Server 保持下文说明的原有导入行为。
+> **并发导入保护**：Toolchain master 分支的 Loader 已支持针对同一 Server 实例的 LOADING owner 保护。当配套 Server 的 `GET .../mode/owners` 返回 `protocol: 1` 时会自动生效；若 Server 无此接口，则保持原有导入行为。
 
 ### 2 获取 HugeGraph-Loader
 
@@ -4038,25 +4168,23 @@ services:
 
 #### 2.3 克隆源码编译安装
 
-克隆 `master` 分支：
+从 master 分支编译 Loader 需要 Java 17、Maven 3.6.3+ 与 Python 3.9+。直接克隆仓库并编译：
 
 ```bash
 git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
-```
-
-编译生成 tar 包：
-
-```bash
 cd hugegraph-toolchain
-mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
+mvn package -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
+cd hugegraph-loader/apache-hugegraph-loader-*
 ```
+
+如需搭配开发阶段的 Server master SDK 编译，可参阅 [Java 17 迁移指引](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)。
 
 如需读取 Oracle 数据，按所用 Oracle/JDK 版本准备兼容的 JDBC 驱动 JAR，并放入解压后 Loader 的 `lib/` 目录。
 启动脚本会加载该目录中的 JAR；仅将驱动安装到 Maven 本地仓库并不会让运行中的 Loader 找到它。
 
 ### 3 使用流程
 
-使用 HugeGraph-Loader 的基本流程分为以下几步：
+导入数据前先准备图模型、数据文件和映射文件，再运行 Loader。
 
 - 编写图模型
 - 准备数据文件
@@ -4065,9 +4193,10 @@ mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 
 #### 3.1 编写图模型
 
-这一步是建模的过程，用户需要对自己已有的数据和想要创建的图模型有一个清晰的构想，然后编写 schema 建立图模型。
+先确定数据对应的顶点类型、边类型和属性，再编写 Schema。
 
-比如想创建一个拥有两类顶点及两类边的图，顶点是"人"和"软件"，边是"人认识人"和"人创造软件"，并且这些顶点和边都带有一些属性，比如顶点"人"有："姓名"、"年龄"等属性， "软件"有："名字"、"售卖价格"等属性；边"认识"有："日期"属性等。
+以下示例包含 `person` 和 `software` 两类顶点，以及 `knows` 和 `created` 两类边。
+人有姓名、年龄和城市，软件有名称和价格，两类边都记录日期。
 
 <div style="text-align: center;">
   <img src="/docs/images/demo-graph-model.png" alt="由“认识”和“创建”边连接人物与软件顶点的示例图">
@@ -4075,7 +4204,7 @@ mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 </div>
 
 
-在设计好了图模型之后，我们可以用`groovy`编写出`schema`的定义，并保存至文件中，这里命名为`schema.groovy`。
+将 Schema 定义保存到 `schema.groovy`。
 
 ```groovy
 // 创建一些属性
@@ -4156,9 +4285,10 @@ JSON 文件要求每一行都是一个 JSON 串，且每行的格式需保持一
 
 loader 还支持以部分关系型数据库作为数据源，目前支持 MySQL、PostgreSQL、Oracle 和 SQL Server。
 
-但目前对表结构要求较为严格，如果导入过程中需要做**关联查询**，这样的表结构是不允许的。关联查询的意思是：在读到表的某行后，发现某列的值不能直接使用（比如外键），需要再去做一次查询才能确定该列的真实值。
+Loader 解析一行数据时，不会根据外键再查询其他表。输入行必须直接提供构造图元素所需的值。
+需要关联数据时，先在数据源侧准备好查询结果。
 
-举个例子：假设有三张表，person、software 和 created
+以下以 `person`、`software`、`created` 三张表为例。
 
 ```text
 // person 表结构
@@ -4175,12 +4305,13 @@ id | name | lang | price
 id | p_id | s_id | date
 ```
 
-如果在建模（schema）时指定 person 或 software 的 id 策略是 PRIMARY_KEY，选择以 name 作为 primary keys（注意：这是 hugegraph 中 vertexlabel 的概念），在导入边数据时，由于需要拼接出源顶点和目标顶点的 id，必须拿着 p_id/s_id 去 person/software 表中查到对应的 name，这种需要做额外查询的表结构的情况，loader 暂时是不支持的。这时可以采用以下两种方式替代：
+若 `person` 和 `software` 使用 `PRIMARY_KEY` 策略，以 `name` 为主键，导入边时就需要两个端点的 `name`。
+`created` 表只有 `p_id` 和 `s_id`，Loader 不会用它们回查名称。可以改用以下两种 ID 设计。
 
-1. 仍然指定 person 和 software 的 id 策略为 PRIMARY_KEY，但是以 person 表和 software 表的 id 列作为顶点的主键属性，这样导入边时直接使用 p_id 和 s_id 和顶点的 label 拼接就能生成 id 了；
-2. 指定 person 和 software 的 id 策略为 CUSTOMIZE，然后直接以 person 表和 software 表的 id 列作为顶点 id，这样导入边时直接使用 p_id 和 s_id 即可；
+1. 保留 `PRIMARY_KEY` 策略，将两张顶点表的 `id` 列作为主键属性。Loader 可用 `p_id`、`s_id` 和顶点标签生成端点 ID。
+2. 使用自定义 ID 策略，将两张顶点表的 `id` 列直接作为顶点 ID，导入边时直接使用 `p_id` 和 `s_id`。
 
-关键点就是要让边能直接使用 p_id 和 s_id，不要再去查一次。
+这两种设计都让边数据直接提供端点 ID，省去回查。
 
 ##### 3.2.2 准备顶点和边数据
 
@@ -4225,13 +4356,11 @@ Office,388
 
 ##### 3.3.1 映射文件概述
 
-输入源的映射文件用于描述如何将输入源数据与图的顶点类型/边类型建立映射关系，以`JSON`格式组织，由多个映射块组成，其中每一个映射块都负责将一个输入源映射为顶点和边。
+映射文件使用 JSON 格式。每个 `structs` 映射块包含一个 `input`，以及该输入对应的 `vertices` 和 `edges` 映射。
 
-具体而言，每个映射块包含**一个输入源**和多个**顶点映射**与**边映射**块，输入源块对应上面介绍的`本地磁盘文件或目录`、`HDFS 文件或目录`和`关系型数据库`，负责描述数据源的基本信息，比如数据在哪，是什么格式的，分隔符是什么等。顶点映射/边映射与该输入源绑定，可以选择输入源的哪些列，哪些列作为 id、哪些列作为属性，以及每一列映射成什么属性，列的值映射成属性的什么值等等。
+`input` 描述数据位置、格式和分隔符。顶点和边映射指定标签、ID、属性及字段转换。
 
-以最通俗的话讲，每一个映射块描述了：要导入的文件在哪，文件的每一行要作为哪一类顶点/边，文件的哪些列是需要导入的，以及这些列对应顶点/边的什么属性等。
-
-> 注意：0.11.0 版本以前的映射文件与 0.11.0 以后的格式变化较大，为表述方便，下面称 0.11.0 以前的映射文件（格式）为 1.0 版本，0.11.0 以后的为 2.0 版本。并且若无特殊说明，“映射文件”表示的是 2.0 版本的。
+> Loader 0.11.0 起使用 2.0 映射格式，此前的格式称为 1.0。下文未特别说明时，均使用 2.0 格式。
 
 
 > [!DETAILS]- 点击展开/折叠 2.0 版本的映射文件的框架
@@ -4891,61 +5020,12 @@ bin/hugegraph-loader.sh -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} 
 
 #### 3.4.5 最小本地文件导入示例
 
-先确保 HugeGraph Server 已启动，当前用户可以访问 `DEFAULT` 图空间中的 `hugegraph` 图，并有权限创建 Schema 和写入数据。若 Server 已启用认证，在命令中增加对应的 `--username`、`--password` 或 `--token`。本例只需本地文件，不依赖 Kafka、HDFS 或 JDBC。
-
-进入解压后的 Loader 安装目录，再创建数据、Schema 和 2.0 格式的映射文件：
-
-```bash
-mkdir -p demo-loader
-
-cat > demo-loader/people.csv <<'EOF'
-docs-smoke-alice,29
-docs-smoke-bob,31
-EOF
-
-cat > demo-loader/schema.groovy <<'EOF'
-schema.propertyKey("docs_name").asText().ifNotExist().create()
-schema.propertyKey("docs_age").asInt().ifNotExist().create()
-schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age").primaryKeys("docs_name").ifNotExist().create()
-EOF
-
-cat > demo-loader/struct.json <<'EOF'
-{
-  "version": "2.0",
-  "structs": [
-    {
-      "id": "people",
-      "input": {
-        "type": "FILE",
-        "path": "demo-loader/people.csv",
-        "format": "CSV",
-        "header": ["docs_name", "docs_age"]
-      },
-      "vertices": [
-        {"label": "docs_smoke_person"}
-      ],
-      "edges": []
-    }
-  ]
-}
-EOF
-```
-
-`people.csv` 没有表头行，列名由映射文件的 `header` 提供。映射文件中的本地路径相对于运行命令时的工作目录。仍在 Loader 安装目录中执行导入；如果 Server 在其他容器中，请把 `--host` 改为 Loader 能访问到的 Server 地址。
-
-```bash
-bin/hugegraph-loader.sh \
-  --graphspace DEFAULT --graph hugegraph \
-  --file demo-loader/struct.json --schema demo-loader/schema.groovy \
-  --host 127.0.0.1 --port 8080
-```
-
-本例用独立的 `docs_smoke_person` 标签和 `docs_*` 属性，避免与预置的 `person` 样例数据冲突。成功时统计中应显示顶点写入成功数为 `2`、边写入成功数为 `0`。也可以在 Hubble 的 Gremlin 工作台查询 `g.V().hasLabel('docs_smoke_person').values('docs_name')`，结果应包含 `docs-smoke-alice` 和 `docs-smoke-bob`。
+按本页开头的[本地文件导入步骤](#quick-local-file-import)操作。
 
 #### 3.4.6 并发导入与 LOADING owner {#loading-ownership}
 
-自 1.8.0 版本起，Loader 支持并发导入模式所有权保护协议
-（需配合返回 `protocol: 1` 的新版 Server 与对应 Loader；当前 `master` 分支暂未包含该协议）。
+在 master 分支中，Loader 为普通导入实现了 LOADING 所有权管理协议，与 Server 的 `/mode/owners` 接口协同工作。
+若部署的 Server 提供该接口并返回 `protocol: 1`，Loader 会自动启用所有权保护；已发布的 Server 1.7.0 及更早版本则继续使用原有模式切换流程。
 
 ```mermaid
 graph TD
@@ -5251,55 +5331,53 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 执行的结果如 [4.5.1](#451-使用-docker-exec-直接导入数据) 所示
 
 #### 4.6 使用 spark-loader 导入
-> Spark 版本：Spark 3+，其他版本未测试。当前源码使用 Spark 3.2.2 和 Scala 2.12；其他组合需自行验证。
-> 
-`spark-loader` 的参数分为两部分，注意：因二者参数名缩写存在重合部分，请使用参数全称。两种参数之间无需保证先后顺序。
-- hugegraph 参数（参考：[hugegraph-loader 参数说明](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-loader/#341-%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E) ）
-- Spark 任务提交参数（参考：[Submitting Applications](https://spark.apache.org/docs/3.3.0/submitting-applications.html#content)）
 
-示例：
+当前 master 分支的 API 写入路径使用 Spark `3.5.8`、Scala `2.12`，driver 和 executor 均需 Java 17。
+POM 中的 Spark `3.2.2` 只提供编译期 API，不是运行引擎。设置 `SPARK_HOME` 和 `JAVA_HOME`，
+再使用发行目录中的启动脚本和 shaded Loader JAR。
+
+先创建 Schema，确保 executor 可以读取数据文件。CSV、TEXT 数据须使用 UTF-8、去掉表头行，并在映射中显式指定 `header`。
+其他字符集和 `has_header: true` 会被拒绝。边依赖已有顶点时，先导入顶点。将以下路径替换为准备好的顶点映射文件。
+
 ```bash
-sh bin/hugegraph-spark-loader.sh --master yarn \
---deploy-mode cluster --name spark-hugegraph-loader --file ./hugegraph.json \
---username admin --token admin --host xx.xx.xx.xx --port 8093 \
---graph graph-test --num-executors 6 --executor-cores 16 --executor-memory 15g
+bin/hugegraph-spark-loader.sh \
+  --master 'local[2]' --driver-memory 1g \
+  --file /path/to/vertex-mapping.json \
+  --host 127.0.0.1 --port 8080 --graph hugegraph --sink-type true
 ```
 
-`bin/hugegraph-spark-loader.sh` 通过 `${SPARK_HOME}/bin/spark-submit` 提交 `org.apache.hugegraph.loader.spark.HugeGraphSparkLoader`，因此 `SPARK_HOME` 必须指向一个 Spark 安装目录。`lib/` 下的所有 jar 都会加入 classpath。Spark 应用名默认为 `hugegraph-spark-loader`，可以通过 `APP_NAME` 环境变量修改。
+启动脚本可同时接收 `--master`、`--conf`、`--jars` 等 Spark 参数和 Loader 参数。
+额外的 JDBC 驱动需通过 `--jars` 传入，仅放在 `lib/` 中不会分发到 executor。
+导入后查询目标图，核对数量和属性；API 写入路径的插入计数器不统计分布式写入。
 
-`bin/get-params.sh` 负责拆分命令行：只有下列参数会交给 loader，其余参数原样传给 `spark-submit`。该拆分只识别参数全称，因此 `-f`、`-g` 这类缩写不会被识别。
-
-```text
---graph --schema --host --port --username --token --protocol
---trust-store-file --trust-store-password --clear-all-data --clear-timeout
---incremental-mode --failure-mode --batch-insert-threads --single-insert-threads
---max-conn --max-conn-per-route --batch-size --max-parse-errors --max-insert-errors
---timeout --shutdown-timeout --retry-times --retry-interval --check-vertex
---print-progress --dry-run --sink-type --vertex-partitions --edge-partitions --help
-```
-
-`--file` 单独处理：使用 `--deploy-mode cluster` 时，映射文件会通过 `--files` 分发到 executor，loader 只收到它的文件名；其他情况下路径原样传入。
-
-该模式下 loader 只读取 FILE、HDFS 和 JDBC 输入源，KAFKA 和 GRAPH 输入源会被拒绝。
-
-默认情况下（`--sink-type true`），每个 Spark 分区各自创建一个 HugeClient，通过 HugeGraph server API 写入顶点和边。使用 `--sink-type false` 时，loader 会生成 HFile 并直接 bulkload 到 HBase，此时表名和 ZooKeeper 配置取自 `--vertex-table-name`、`--edge-table-name`、`--hbase-zk-quorum`、`--hbase-zk-port`、`--hbase-zk-parent`、`--vertex-partitions` 和 `--edge-partitions`。
+该路径拒绝 `--incremental-mode true` 和 `--failure-mode true`。Standalone Spark 仅支持 client 部署模式。
+Spark 3.5.8 / Java 17 不支持 HBase bulkload（`--sink-type false`）。已有 bulkload 部署建议继续沿用原环境验证通过的
+Loader 发布包及其相关依赖。更多细节见 [Spark 迁移说明](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/spark-java17.md)。
 
 #### 4.7 使用 flink-cdc-loader 导入
 
-> 当前源码使用 Flink 1.13.5、flink-connector-mysql-cdc 2.2.1 和 Scala 2.12；其他组合需自行验证。
+当前 master 分支适配 Flink `2.2.1`、MySQL CDC `3.6.0-2.2` 和 Java 17。
+此前使用 Flink 1.13.5、CDC 2.2.1 的示例属于旧实现。
+设置 `FLINK_HOME`，确保提交进程、JobManager 和 TaskManager 都使用 Java 17。
+保留 Flink 的模块访问参数，发行目录的 `lib/` 中须恰好有一个 shaded Loader JAR。
 
-`bin/hugegraph-flinkcdc-loader.sh` 通过 `${FLINK_HOME}/bin/flink run` 提交 `org.apache.hugegraph.loader.flink.HugeGraphFlinkCDCLoader`，因此必须设置 `FLINK_HOME`。该任务用 Flink CDC 捕获 MySQL 的变更事件并应用到图上，从而让图与源表保持同步。
+每个映射都需使用 MySQL JDBC 输入，包含 `url`、`database`、`table`、`username` 和 `password`。
+MySQL 须配置 `binlog_row_image=FULL`。UPDATE 事件需要显式指定非空的 `update_strategies`，且图元素标识保持不变。
+顶点 ID、边端点或排序键变化时，任务会拒绝更新。CDC 也会拒绝 `--dry-run true` 和 `--use-prefilter true`。
 
-映射文件格式与命令行 loader 相同，但每个输入源都必须是 MySQL 的 JDBC 输入源：loader 从中读取 `url`、`database`、`table`、`username` 和 `password`，并从 `url` 解析出主机和端口。顶点和边映射的用法不变。[3.4.1](#341-参数说明) 中的 `--cdc-flush-interval` 和 `--cdc-sink-parallelism` 只在该模式下生效。
-
-命令行同样由 `bin/get-params.sh` 按 4.6 的方式拆分，非 loader 参数会传给 `flink run`。
-
-示例：
+不带分隔符时，所有参数均交给 Loader。需要设置 Flink 参数时，将其放在 `--` 之前，Loader 参数放在之后。
+准备好 `mysql-cdc.json` 映射后，使用单个 sink writer 提交任务。
 
 ```bash
-sh bin/hugegraph-flinkcdc-loader.sh --file ./mysql-cdc.json \
---host xx.xx.xx.xx --port 8080 --graph hugegraph --username admin --token admin
+bin/hugegraph-flinkcdc-loader.sh -p 1 -- \
+  --file ./mysql-cdc.json --host 127.0.0.1 --port 8080 \
+  --graph hugegraph --cdc-sink-parallelism 1
 ```
+
+每个映射使用一个 source reader 和一个 sink writer。`--cdc-sink-parallelism` 默认为 `1`，其他取值会被拒绝。
+`--` 之后的 Loader 参数 `-p` 表示 Server 端口。Checkpoint 刷新不提供图写入事务，也不保证 exactly-once。
+在生产环境部署边 CDC 或更复杂的多表映射前，建议先在真实环境中充分验证。
+支持范围和恢复流程见 [Flink CDC 说明](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/flink-cdc-java17.md)。
 
 ---
 
@@ -5308,6 +5386,7 @@ sh bin/hugegraph-flinkcdc-loader.sh --file ./mysql-cdc.json \
 - [Documentation](/cn/docs/)
 - [Graphs](/cn/docs/clients/restful-api/graphs/)
 - [架构概览](/cn/docs/guides/architectural/)
+- [FAQ](/cn/docs/guides/faq/)
 - [系统介绍](/cn/docs/introduction/)
 - [HugeGraph-Loader 性能](/cn/docs/performance/hugegraph-loader-performance/)
 - [HugeGraph 工具链](/cn/docs/quickstart/toolchain/)
@@ -5994,7 +6073,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ### 1 HugeGraph-Tools概述
 
-HugeGraph-Tools 是 HugeGraph 的自动化部署、管理和备份/还原组件。
+HugeGraph-Tools 提供图与任务管理、备份和恢复命令，也保留旧版 Server/Studio 的部署命令。
 
 > **测试指南**：如需在本地运行 Tools 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
 
@@ -6007,7 +6086,7 @@ HugeGraph-Tools 包含在 Toolchain 发布包中，可以下载发布包，也�
 
 #### 2.1 下载二进制tar包
 
-下载最新版本的 HugeGraph-Toolchain 包, 然后进入 tools 子目录
+以下以已发布的 HugeGraph-Toolchain `1.7.0` 为例。其他发布版本见[下载页](/cn/docs/download/download/)。
 
 ```bash
 export VERSION=1.7.0
@@ -6020,42 +6099,83 @@ cd "${ARCHIVE}/apache-hugegraph-tools-incubating-${VERSION}"
 ```
 
 #### 2.2 下载源码编译安装
-源码编译前请确保安装了wget命令
 
-下载最新版本的 HugeGraph-Toolchain 源码包, 然后根目录编译或者单独编译 tool 子模块：
+任选一种方式构建发布版 `1.7.0` Tools，开始前先安装 Maven 和 JDK 11。源码包方式还需要 `wget`。
+两段命令均包含编译和进入生成目录，最后用 `bin/hugegraph help` 查看可用命令。
 
-```bash
-# 1. get from github
-git clone https://github.com/apache/hugegraph-toolchain.git
+```bash {tab="Git 标签"}
+git clone --branch 1.7.0 --single-branch https://github.com/apache/hugegraph-toolchain.git
+cd hugegraph-toolchain
+mvn package -pl hugegraph-tools -am -DskipTests -ntp
+cd hugegraph-tools/apache-hugegraph-tools-incubating-1.7.0
+bin/hugegraph help
+```
 
-# 2. 下载发布版源码包
+```bash {tab="源码包"}
 export VERSION=1.7.0
 export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
 wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
-```
-
-编译生成 tar 包:
-
-```bash
-cd hugegraph-toolchain
+tar zxf "${ARCHIVE}-src.tar.gz"
+cd "${ARCHIVE}-src"
 mvn package -pl hugegraph-tools -am -DskipTests -ntp
+cd "hugegraph-tools/apache-hugegraph-tools-incubating-${VERSION}"
+bin/hugegraph help
 ```
 
-生成的 tar 包位于 `hugegraph-tools/target/apache-hugegraph-tools-${version}.tar.gz`，同时会在 `hugegraph-tools/apache-hugegraph-tools-${version}` 生成解压后的目录（包含 `bin/` 和 `lib/`）
+编译还会在源码根目录下生成 `hugegraph-tools/target/apache-hugegraph-tools-incubating-1.7.0.tar.gz`。
 
+#### 2.3 构建当前源码 {#build-current-source}
+
+若需要使用 master 分支未发布的新特性，可按以下步骤从源码构建 Tools（当前 master 以 1.8 为基线，需 JDK 17、Maven 3.6.3+ 与 Python 3.9+）：
+
+1. **获取 Toolchain 源码**
+
+   ```bash
+   git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
+   cd hugegraph-toolchain
+   ```
+
+1. **构建配套 Server SDK**
+
+   执行以下脚本下载 Server 源码并将配套 SDK 安装到独立 Maven 仓库：
+
+   ```bash
+   java -version
+   mvn -version
+   candidate_dir=$(mktemp -d)
+   mkdir -p "$candidate_dir/m2"
+   bash hugegraph-client/assembly/travis/install-candidate-sdk.sh \
+     master "$candidate_dir/server" "$candidate_dir/m2"
+   ```
+
+   详细说明见 [Java 17 迁移指引](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)。
+
+1. **打包 Tools**
+
+   ```bash
+   mvn -Dmaven.repo.local="$candidate_dir/m2" \
+     -Dsdk.validation.mode=candidate \
+     package -pl hugegraph-tools -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+   cd hugegraph-tools/apache-hugegraph-tools-*
+   bin/hugegraph help
+   ```
+{.steps}
+
+使用这份源码构建时保留 SDK 仓库。master 分支生成目录名不含 `incubating`。
 
 ### 3 使用
 
 #### 3.1 功能概览
 
-解压后，进入 apache-hugegraph-tools-${version} 目录，可以使用`bin/hugegraph`或者`bin/hugegraph help`来查看 usage 信息，使用`bin/hugegraph help <子命令>`查看单个子命令的 usage。主要分为：
+进入解压或编译生成的 Tools 目录，用 `bin/hugegraph help` 查看命令列表，
+用 `bin/hugegraph help <子命令>` 查看单个命令的用法。可用命令分为以下几类。
 
 - 图管理类，graph-mode-set、graph-mode-get、graph-list、graph-get、graph-clear、graph-create、graph-clone 和 graph-drop
 - 异步任务管理类，task-list、task-get、task-delete、task-cancel 和 task-clear
 - Gremlin类，gremlin-execute 和 gremlin-schedule
 - 备份/恢复类，backup、restore、migrate、schedule-backup 和 dump
 - 认证数据备份/恢复类，auth-backup 和 auth-restore
-- 安装部署类，deploy、clear、start-all 和 stop-all
+- 旧版 Server/Studio 部署，deploy、clear、start-all 和 stop-all
 
 ```bash
 Usage: hugegraph [options] [command] [command options]
@@ -6063,20 +6183,21 @@ Usage: hugegraph [options] [command] [command options]
 
 ##### 3.2 [options]-全局变量
 
-`options`是 HugeGraph-Tools 的全局变量，可以在 hugegraph-tools/bin/hugegraph 中配置,包括：
+以下全局选项可以通过命令行或环境变量设置。
 
-- --graph，HugeGraph-Tools 操作的图的名字，默认值是 hugegraph
-- --url，HugeGraph-Server 的服务地址，默认是 http://127.0.0.1:8080
-- --user，当 HugeGraph-Server 开启认证时，传递用户名
-- --password，当 HugeGraph-Server 开启认证时，传递用户的密码
-- --timeout，连接 HugeGraph-Server 时的超时时间，默认是 30s
-- --trust-store-file，证书文件的路径，当 --url 使用 https 时，HugeGraph-Client 使用的 truststore 文件，默认为空，代表使用 hugegraph-tools 内置的 truststore 文件 conf/hugegraph.truststore
-- --trust-store-password，证书文件的密码，当 --url 使用 https 时，HugeGraph-Client 使用的 truststore 的密码，默认为空，代表使用 hugegraph-tools 内置的 truststore 文件的密码
-- --throw-mode，HugeGraph-Tools 出错时是否直接抛出异常，而不是打印错误信息后退出，默认为 false（主要用于测试）
+- `--graph` 指定要操作的图，默认为 `hugegraph`。
+- `--url` 指定 Server 地址，默认为 `http://127.0.0.1:8080`。
+- `--user` 在 Server 启用认证时提供用户名。
+- `--password` 提供该用户的密码。
+- `--timeout` 设置连接超时时间，默认为 30 秒。
+- `--trust-store-file` 指定 HTTPS truststore，留空时使用内置的 `conf/hugegraph.truststore`。
+- `--trust-store-password` 提供其密码，留空时使用内置 truststore 的密码。
+- `--throw-mode` 默认为 `false`，出错时打印错误并退出。设为 `true` 时抛出异常，主要用于测试。
 
-> 连接协议由 --url 的 scheme 决定：使用 `https://...` 即通过 https 连接。--trust-store-file 和 --trust-store-password 只能在 --url 使用 https 时设置，--user 和 --password 必须同时提供或同时省略。
+> `--url` 的 scheme 决定连接协议。使用 `https://...` 连接 HTTPS 时，才可设置 truststore 选项。
+> `--user` 和 `--password` 必须同时提供或同时省略。
 
-上述全局变量，也可以通过环境变量来设置。一种方式是在命令行使用 export 设置临时环境变量，在该命令行关闭之前均有效
+使用 `export` 设置的环境变量对当前终端及其启动的命令生效。
 
 
 | 全局变量                   | 环境变量                           | 示例                                                 |
@@ -6102,7 +6223,7 @@ export HUGEGRAPH_GRAPH=hugegraph
 ./bin/hugegraph gremlin-execute --script 'g.V().count()'
 ```
 
-另一种方式是在 bin/hugegraph 脚本中设置环境变量：
+也可以在 `bin/hugegraph` 脚本中设置这些变量。
 
 ```text
 #!/bin/bash
@@ -6246,6 +6367,10 @@ export HUGEGRAPH_GRAPH=hugegraph
     - -D，用 -Dkey=value 的模式指定动态参数，用来从 HDFS 恢复数据时，指定 HDFS 的配置项，例如：-Dfs.default.name=hdfs://localhost:9000
 
 ##### 3.8 安装部署类
+
+注意：此处的安装部署命令仅适用于早期历史版本（Server 0.6.1~0.10.4 与 Studio 0.6.1~0.10.0），不支持当前版本的 HugeGraph Server 或 Hubble。
+新部署请参考 [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/) 与 [Hubble 快速上手](/cn/docs/quickstart/toolchain/hugegraph-hubble/)，
+以下说明仅供维护旧环境参考。
 
 - deploy，一键下载、安装和启动 HugeGraph-Server 和 HugeGraph-Studio
     - -v，必填项，指定要安装的 HugeGraph-Server 和 HugeGraph-Studio 版本，必须是 bin/version-map.yaml 中列出的版本之一（0.6、0.7、0.8、0.9、0.10），脚本据此映射到对应的 server 和 studio 发布版本
@@ -6755,6 +6880,7 @@ Usage: hugegraph [options] [command] [command options]
 - [架构概览](/cn/docs/guides/architectural/)
 - [备份 & 恢复](/cn/docs/guides/backup-restore/)
 - [系统介绍](/cn/docs/introduction/)
+- [Java 客户端](/cn/docs/quickstart/client/hugegraph-client/)
 - [HugeGraph 工具链](/cn/docs/quickstart/toolchain/)
 - [图导出/迁移](/cn/docs/quickstart/toolchain/export-migration/)
 - [使用 SeaTunnel Sink 导入图数据](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)
@@ -8614,15 +8740,55 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-本文说明 HugeGraph-LLM Web 页面的处理流程。服务启动方式见 [HugeGraph-LLM](./hugegraph-llm.md)。
+本页按 Web 页面的操作顺序，说明如何建立索引、查询文档和生成 Gremlin。服务启动方式见 [HugeGraph-LLM](./hugegraph-llm.md)。
+
+先准备可连接的 HugeGraph Server、生成模型和 Embedding 模型。查看配置或在 `Graph Tools` 手写 Gremlin 不需要模型；
+文档向量化需要 Embedding，图数据抽取和答案生成还需要 LLM。Reranker 可选，初次运行可用本地 `bleu`。
+
+| 想做什么 | 页面入口 | 需要准备什么 |
+| --- | --- | --- |
+| 从文档建立索引 | `1. Build RAG Index` | 文档、Embedding；抽取图数据还需 Schema 和 LLM |
+| 根据文档或图回答问题 | `2. (Graph)RAG & User Functions` | 对应索引和 LLM |
+| 把问题转成 Gremlin | `3. Text2gremlin` | 图 Schema、LLM；引用示例还需 Embedding 和示例索引 |
+| 直接验证图数据 | `4. Graph Tools` | HugeGraph 连接和手写 Gremlin |
+
+本文截图基于 HugeGraph-LLM Web 界面，示例包含中英文提示词模式（通过环境变量 `LANGUAGE` 切换内置提示词语言，界面控件保持英文）。
+
+> [!DETAILS]- 源码启动时缺少批量问题模板
+>
+> 若启动时报 `FileNotFoundError`，且缺少的文件为 `questions_template.xlsx`，在已安装依赖的仓库根目录创建输入模板后重启。
+> 已有文件会保留。模板包含完整的 6 列，只填写测试问题和预期答案，4 个模型回答列留空。
+>
+> ```bash
+> uv run --extra llm python - <<'PYTHON'
+> from pathlib import Path
+> from openpyxl import Workbook
+>
+> path = Path("hugegraph-llm/src/hugegraph_llm/resources/demo/questions_template.xlsx")
+> if not path.exists():
+>     workbook = Workbook()
+>     sheet = workbook.active
+>     sheet.append([
+>         "Question", "Expected Answer", "Basic LLM Answer",
+>         "Vector-only Answer", "Graph-only Answer", "Graph-Vector Answer",
+>     ])
+>     sheet.append(["Who is Sarah?", "Sarah is a 30-year-old attorney.", None, None, None, None])
+>     workbook.save(path)
+> PYTHON
+> ```
 
 ## 0. 配置面板
 
-标签页上方是可折叠的配置面板，共五个部分：`1. Set up the HugeGraph server.`、`2. Set up the LLM.`、`3. Set up the Embedding.`、`4. Set up the Reranker.` 和 `5. Set up the vector engine.`。每部分都有独立的应用按钮，应用后会把受支持的字段写回 `.env`。页面顶部还会显示当前提示词语言。
+标签页上方是可折叠的配置面板，共五个部分，包括 `1. Set up the HugeGraph server.`、`2. Set up the LLM.`、`3. Set up the Embedding.`、`4. Set up the Reranker.` 和 `5. Set up the vector
+engine.`。每部分都有独立的应用按钮，应用后会把受支持的字段写回 `.env`。页面顶部还会显示当前提示词语言。
+
+在 LLM 配置的 `chat`、`mini_tasks`、`text2gql` 子页分别设置回答、抽取和查询生成模型。
+截图使用本地 Ollama 的 `qwen2.5:3b` 和 `mxbai-embed-large`，向量引擎为 `Faiss`。
+更换 Embedding 模型后需重建索引，避免新旧向量维数或含义不同。
 
 ## 1. 构建 RAG 索引
 
-第一个标签页负责两类索引：
+第一个标签页负责两类索引。
 
 - 将文档切分后写入 chunk 向量索引。
 - 按 Schema 从文档抽取顶点和边，写入 HugeGraph，并维护顶点向量索引。
@@ -8639,38 +8805,100 @@ flowchart TD
 
 输入来自 `text` 子页或 `file` 子页。上传支持 `.txt`、`.docx` 和 `.pdf`，可一次选择多个文件。
 
-页面包含文档、Schema、抽取提示词和结果区域。常用操作有：
+首次尝试可以使用下面的短文，填入 `Input Doc(s)`。请先选择专用测试图，避免将示例写入业务图。
 
-1. `Import into Vector`：切分文档并建立 chunk 向量索引。
-2. `Extract Graph Data (1)`：按 Schema 抽取图数据。
-3. `Load into GraphDB (2)`：把抽取结果写入 HugeGraph，并自动更新顶点向量。
-4. `Update Vid Embedding`：重新生成顶点向量，通常只在图中已有数据时才需要单独执行。
+```text
+Sarah is a 30-year-old attorney. James is a journalist. Sarah has been James's roommate since 2010.
+```
+
+将下面的 JSON 填入 `Graph Schema`，保留默认抽取提示词。它只允许抽取人物及室友关系，年龄和职业可为空。
+
+```json
+{
+  "vertexlabels": [
+    {"id": 1, "name": "person", "id_strategy": "PRIMARY_KEY",
+     "primary_keys": ["name"], "properties": ["name", "age", "occupation"],
+     "nullable_keys": ["age", "occupation"]}
+  ],
+  "edgelabels": [
+    {"name": "roommate", "source_label": "person", "target_label": "person", "properties": ["date"]}
+  ],
+  "propertykeys": [
+    {"name": "name", "data_type": "TEXT", "cardinality": "SINGLE"},
+    {"name": "age", "data_type": "INT", "cardinality": "SINGLE"},
+    {"name": "occupation", "data_type": "TEXT", "cardinality": "SINGLE"},
+    {"name": "date", "data_type": "TEXT", "cardinality": "SINGLE"}
+  ]
+}
+```
+
+页面包含文档、Schema、抽取提示词和结果区域。按下面的顺序建立图索引。只用向量检索时，完成第 1 步即可。
+
+1. 点击 `Import into Vector`，切分文档并建立 chunk 向量索引。
+2. 在 `Graph Schema` 填入 Schema JSON 或已有图名，再点击 `Extract Graph Data (1)`。检查 `Output Info` 中的顶点、边和属性。
+3. 确认抽取结果后点击 `Load into GraphDB (2)`，写入 HugeGraph 并更新顶点向量。
+4. 打开 `Graph Tools`，执行 `g.V().count()` 和 `g.E().count()`，再查具体属性，确认数据已写入。
+{.steps}
+
+本例应得到 2 个顶点和 1 条边，Sarah 的年龄为 `30`，职业为 `attorney`。
+图里已经有数据时，可以单独点击 `Update Vid Embedding` 更新顶点索引。
 
 这些按钮旁的 `Graph Extraction Split Type` 下拉框可选 `document`、`paragraph` 或 `sentence`。`document` 把输入整体作为一个单元，另外两种会在抽取前先切分长文档。
 
 页面还可以查看或清除 chunk 索引、顶点索引和图数据。清除操作会删除已有数据，执行前先确认当前图和索引是否仍被其他查询使用。
 
-主控件下方还有两个折叠的辅助工具：
+主控件下方还有两个折叠的辅助工具。
 
-- `Graph Schema Generator`：根据查询示例和少样本示例生成 Schema，填入 Graph Schema 字段。
-- `Graph Extraction Prompt Generator`：根据期望场景（例如社交关系、金融知识图谱）和选定的参考示例生成 Graph Extract Prompt Header。
+- `Graph Schema Generator` 根据查询示例和少样本示例生成 Schema，填入 Graph Schema 字段。
+- `Graph Extraction Prompt Generator` 根据期望场景（例如社交关系、金融知识图谱）和选定的参考示例生成 Graph Extract Prompt Header。
 
 ## 2. GraphRAG 查询
 
-第二个标签页提供四种回答范围：
+第二个标签页提供四种回答范围，按需要选择对应索引。
 
-- 直接使用 LLM 回答。
-- 只使用 chunk 向量召回。
-- 只使用图召回。
-- 合并图召回与向量召回。
+| 控件 | 回答依据 |
+| --- | --- |
+| `Basic LLM Answer` | 直接调用 LLM，不查询文档或图 |
+| `Vector-only Answer` | chunk 向量检索结果 |
+| `Graph-only Answer` | 图检索结果 |
+| `Graph-Vector Answer` | 图与 chunk 向量检索结果 |
+
+推荐优先使用 `Graph-Vector Answer`，同时结合图数据检索与文档向量索引以获得更完整的事实支撑。其他范围的控件含义见上表。
+
+截图使用下面的简短提示词。分别填入 `Query Prompt` 和 `Keywords Extraction Prompt`，其中占位符会由服务替换。
+关键词输出需使用代码块中的英文前缀和冒号，姓名的大小写应与图数据一致。
+
+```text
+只根据检索到的上下文，用中文简洁回答问题，保留原文中的姓名。上下文不足时说明缺少信息。
+上下文: {context_str}
+问题: {query_str}
+```
+
+```text
+从问题中提取人名，保留姓名原有的大小写，最多输出 {max_keywords} 个。
+只返回一行，严格使用英文冒号，格式为 KEYWORDS:姓名:1.0
+问题: {question}
+```
+
+1. 输入 `Who is Sarah?`，将 `Graph-only Answer` 设为 `False`，`Graph-Vector Answer` 设为 `True`。
+2. 初次验证时保留 `Template Num=-1` 和 `Rerank method=bleu`，点击 `Answer Question`。
+3. 查看 `Graph-Vector Answer`，将答案中的职业、年龄等事实与原文和图数据核对。
+{.steps}
+
+```gallery
+![GraphRAG 回答范围与图向量联合检索答案](/images/docs/hugegraph-ai/cn/graphrag.jpg)
+![GraphRAG 的中文提示词](/images/docs/hugegraph-ai/cn/query-prompts.jpg)
+```
 
 ```mermaid
 flowchart TD
     Q[问题] --> V[查询 chunk 向量索引]
     Q --> K[抽取关键词]
     K --> M[匹配图顶点]
-    M --> T[生成并执行 Gremlin]
-    T -->|失败| B[BFS 图遍历回退]
+    M --> D{启用 Text2Gremlin}
+    D -->|是| T[生成并执行 Gremlin]
+    D -->|否| B[BFS 图遍历]
+    T -->|失败| B
     T --> R[整理图结果]
     B --> R
     V --> S[合并与重排序]
@@ -8680,11 +8908,11 @@ flowchart TD
 
 图召回先用关键词精确匹配 HugeGraph 顶点，找不到时再用顶点向量做近似匹配。匹配结果会进入 Text2Gremlin；生成或执行失败时，流程可以回退到预定义的图遍历。
 
-`Template Num` 控制 Text2Gremlin 在图召回中的参与方式：
+`Template Num` 控制 Text2Gremlin 在图召回中的参与方式。
 
-- 小于 0：完全跳过 Text2Gremlin，图召回直接使用预定义的图遍历。
-- 等于 0：不带任何示例生成 Gremlin（zero-shot）。
-- 大于 0：从示例索引中取相应数量的相近示例，并采用带模板的生成结果。示例数量会被限制在 0 到 10 之间。
+- 小于 0 时，完全跳过 Text2Gremlin，图召回直接使用预定义的图遍历。
+- 等于 0 时，不检索参考示例，使用基础生成结果。
+- 大于 0 时，从示例索引中取相应数量的相近示例，并采用带模板的生成结果。示例数量会被限制在 0 到 10 之间。
 
 该标签页的其他控件还有 `Rerank method`（`bleu` 或 `reranker`）、`Graph Ratio`、`Near neighbor first` 和 `Query related information`，以及可编辑的 `Query Prompt` 和 `Keywords Extraction Prompt`。
 
@@ -8692,24 +8920,55 @@ flowchart TD
 
 ## 3. Text2Gremlin
 
-第三个标签页分为两部分。上半部分用问题与 Gremlin 对照文件（`.json` 或 `.csv`）构建示例向量索引；未上传文件时使用内置的 `resources/demo/text2gremlin.csv`。
+第三个标签页将自然语言转换为 Gremlin，并执行生成的查询。上半部分用 `.json` 或 `.csv` 的问题与 Gremlin 对建立示例向量索引；
+未上传文件时使用内置的 `resources/demo/text2gremlin.csv`。示例中的标签和属性应与当前图一致。
 
-下半部分把自然语言转换成 Gremlin：
+> [!TIP]
+> 若上传 CSV 构建示例向量索引后未自动召回示例模板，可直接在下面的 Prompt 模板中手动提供 Few-shot 参考示例。
 
-1. 读取当前图的 Schema。
-2. 从示例向量索引取回相近的自然语言与 Gremlin 对。
-3. 把问题、Schema、示例和已匹配顶点填入提示词。
-4. 调用 LLM 生成 Gremlin，并按所选输出类型决定是否执行。
+复现 Sarah 查询时，使用以下输入。
 
-`Number of refer examples` 设置取回的示例数量，范围 0 到 10，默认 2。结果显示在四个字段中：带模板的 Gremlin、不带模板的 Gremlin，以及两者各自的执行输出。
+1. 将下面的 CSV 保存为 `sarah-gremlin.csv`，上传后点击 `Build Example Vector Index`，并把 `Number of refer examples` 设为 `1`。
+2. 在 `Schema` 填入下方的简化 Schema，只保留查询所需的类型与属性。
+3. 在 `Prompt` 填入下方的提示词，输入问题 `Who is Sarah?`，再点击 `Text2Gremlin`。
+4. 检查生成语句及两组 `Query ... Output`。本例返回 Sarah 的 `age=30` 和 `occupation=attorney`。
+{.steps}
 
-![RAG 查询范围选择](/images/docs/hugegraph-ai/quick-start-03.jpg)
+```csv
+query,gremlin
+Who is Sarah?,"g.V().has('person', 'name', 'Sarah').valueMap()"
+```
 
-自定义提示词必须包含 `{query}`、`{schema}`、`{example}` 和 `{vertices}`。缺少任一占位符时，REST API 会拒绝请求。
+```json
+{"vertexlabels":[{"name":"person","properties":["name","age","occupation"]}],"edgelabels":[]}
+```
+
+```text
+把问题转换为 HugeGraph 的只读 Gremlin 查询。
+按人物姓名查询时，使用 g.V().has('person', 'name', '<问题中的姓名>').valueMap()。
+保留姓名的大小写，按姓名查询，不使用顶点 ID。
+问题示例: Who is Peter?
+Gremlin 示例: g.V().has('person', 'name', 'Peter').valueMap()
+图 Schema: {schema}
+其他示例: {example}
+已知顶点: {vertices}
+问题: {query}
+只返回一个 ```gremlin``` 代码块。
+```
+
+```gallery
+![Text2Gremlin 生成的查询与执行结果](/images/docs/hugegraph-ai/cn/text2gremlin.jpg)
+```
+
+小模型可能生成错误 ID、大小写不符的姓名或不满足索引条件的过滤语句。应查看执行结果中的具体数据，再判断查询是否成功。
+Web 页面会直接执行生成的语句，请使用专用测试图。需要只生成语句时，在 [REST API](./rest-api.md) 中选择相应输出类型。
+
+自定义提示词必须保留 `{query}`、`{schema}`、`{example}` 和 `{vertices}`。缺少任一占位符时，REST API 会拒绝请求。
 
 ## 4. 图工具与管理工具
 
-`Graph Tools` 标签页可直接对当前图执行 Gremlin 查询、手动触发图备份，并通过 beta 操作初始化 HugeGraph 演示数据。后台还有两个任务：每天 01:00 自动备份图数据，以及在进程运行期间持续更新顶点 id 向量。
+`Graph Tools` 标签页可直接对当前图执行 Gremlin 查询、手动触发图备份，并通过 beta 操作初始化 HugeGraph 演示数据。后台还有两个任务，每天凌晨 1 点自动备份图数据，以及在进程运行期间持续更新顶点 id 向量。
+初始化演示数据会先清空当前图，只能在专用测试图上使用。
 
 `Admin Tools` 需要密码。输入已配置的 `ADMIN_TOKEN` 后可查看 `logs/llm-server.log` 的末尾内容（每 60 秒自动刷新），并可手动刷新或清空该文件。`ADMIN_TOKEN` 为空或仍是占位值 `xxxx` 时，访问会被拒绝。
 
@@ -8718,11 +8977,13 @@ flowchart TD
 > [!WARNING]
 > 生产环境必须启用 HugeGraph-LLM 自身的登录认证，并替换 `USER_TOKEN` 和 `ADMIN_TOKEN`，同时在防火墙或网络入口设置来源 IP 白名单。HugeGraph Server 还必须单独开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（标准日志文件为 `audit-*.log`），为 `GRAPH_USER` 配置最小必要权限。AI 服务 token 不会替代 HugeGraph Server 认证。
 
-![RAG 界面中抽取的关键词](/images/docs/hugegraph-ai/quick-start-04.png)
+```gallery
+![Graph Tools 中手写 Gremlin 的查询结果](/images/docs/hugegraph-ai/cn/graph-tools.jpg)
+```
 
 ## 5. 提示词语言
 
-在 `hugegraph-llm/.env` 中设置：
+在 `hugegraph-llm/.env` 中选择一种提示词语言。
 
 ```properties
 # 英文提示词
@@ -8732,7 +8993,7 @@ LANGUAGE=EN
 LANGUAGE=CN
 ```
 
-修改后重启服务。该配置选择内置提示词语言，不会自动翻译输入文档，也不是 `/rag` 请求体字段。
+修改后重启服务。该配置选择内置提示词语言，不会自动翻译输入文档，也不属于 `/rag` 请求体字段。
 
 ## 6. REST 调用
 
@@ -10380,25 +10641,25 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-Gremlin-Console 是由 Tinkerpop 自己开发的一个交互式客户端，用户可以使用该客户端对 Graph 做各种操作，主要有两种使用模式：
+Gremlin-Console 是 TinkerPop 的交互式客户端，支持离线操作图，也可以连接 Server 提交查询。
 
 - 单机离线调用模式
 - Client/Server 请求模式
 
-**注：Gremlin-Console 只是便于用户快速上手体验，不建议在生产环境中使用。**
+Gremlin-Console 适合学习和调试。生产应用建议使用对应语言的客户端。
 
 ### 1 单机离线调用模式
 
-由于 lib 目录下已经包含了 HugeCore 的 jar 包，且 HugeGraph-Server 已经作为插件注册到 Gremlin-Console 中，用户可以直接写 Groovy 脚本调用 HugeGraph-Core 的代码，然后交由 Gremlin-Console 内的解析引擎执行，就能在**不启动** Server 的情况下操作图。
+Server 发行包内的 Console 已包含 HugeGraph-Core JAR 和插件，可以直接执行 Groovy 脚本操作图，无需启动 Server。
 
-这里提供一个示例，首先修改 `hugegraph.properties` 配置使用 Memory 后端 (使用其他后端可能会出现一些初始化问题)：
+先在 `hugegraph.properties` 中配置 Memory 后端。其他后端可能需要额外初始化。
 
 ```properties
 backend=memory
 serializer=text
 ```
 
-然后输入下述命令：
+然后运行示例脚本。
 
 ```bash
 > ./bin/gremlin-console.sh -- -i scripts/example.groovy
@@ -10421,7 +10682,7 @@ gremlin>
 
 其中 [`example.groovy`](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy) 是 scripts 目录下的一个示例脚本，该脚本插入了一些数据，并在最后查询图中顶点和边的数量。
 
-此时还可以继续输入 Gremlin 语句对图进行操作：
+脚本执行后，可以继续输入 Gremlin 语句。
 
 ```groovy
 gremlin> g.V()
@@ -10445,76 +10706,81 @@ gremlin>
 
 ### 2 Client/Server 请求模式
 
-Gremlin-Console 通过 WebSocket 连接 HugeGraph-Server。默认配置使用 `WsAndHttpChannelizer`，可同时处理 WebSocket 和 HTTP 请求，无需切换 Channelizer。
+Gremlin-Console 通过 WebSocket 连接 HugeGraph-Server。使用与 Server 同版本发行包中的 Console 和 `conf/remote.yaml`，
+保留文件中的序列化器配置，只修改地址，以及启用鉴权时需要的凭据。旧版配置可能引用已经不存在的序列化器类。
 
-```yaml
-# vim conf/gremlin-server.yaml
-# ......
-channelizer: org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer
-# ......
-```
+1. 准备连接配置并启动 Server。
 
-确认 `host`、`port` 与 `remote.yaml` 一致，然后按照[步骤](/cn/docs/quickstart/hugegraph/hugegraph-server/)启动 HugeGraph-Server。
+   检查 `conf/gremlin-server.yaml` 中的 `host`、`port`。默认的 `WsAndHttpChannelizer` 同时处理 WebSocket 和 HTTP 请求，无需修改。
+   `conf/remote.yaml` 中的 `hosts` 应填写 Console 能访问的 Server 地址，`port` 应与 Gremlin 端口一致（默认为 `8182`，不是 REST 端口 `8080`）。
+   按照[快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/)启动 Server。
 
-下面进入 Gremlin-Console：
+   当前 master 配置使用 GraphBinary V1 和 HugeGraph 类型注册器。
 
-```bash
-> ./bin/gremlin-console.sh
+   ```yaml
+   hosts: [localhost]
+   port: 8182
+   serializer:
+     className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
+     config:
+       serializeResultToString: false
+       builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+       ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
+   ```
 
-         \,,,/
-         (o o)
------oOOo-(3)-oOOo-----
-plugin activated: HugeGraph
-plugin activated: tinkerpop.server
-plugin activated: tinkerpop.utilities
-plugin activated: tinkerpop.tinkergraph
-```
+   如果 Server 开启了鉴权，在同一个文件中填写实际凭据。
 
-连接 Server，需在配置文件中指定连接参数，在 conf 目录下有一个默认的 `remote.yaml`：
+   ```yaml
+   username: admin
+   password: "replace-with-your-password"
+   ```
 
-```yaml
-# cat conf/remote.yaml
-hosts: [localhost]
-port: 8182
-serializer: {
-  className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV1d0,
-  config: {
-    serializeResultToString: false,
-    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
-  }
-}
-```
+   随包的 `remote-objects.yaml` 和 `gremlin-driver-settings.yaml` 使用相同的序列化器配置；使用这些文件时也要保持一致。
 
-如果 Server 开启了鉴权模式，需要在同一个文件中补上凭据：
+1. 从 Server 发行包目录启动 Console，并创建带 traversal 别名的客户端。
 
-```yaml
-username: admin
-password: pa
-```
+   ```bash
+   ./bin/gremlin-console.sh
+   ```
 
-`conf` 目录下还提供了 `remote-objects.yaml` 和 `gremlin-driver-settings.yaml`，它们使用相同的 host、port 和序列化器配置。
+   Server 端将默认图空间下的图绑定为 `DEFAULT-hugegraph`，其 traversal source 绑定为 `__g_DEFAULT-hugegraph`。
+   由于连字符 `-` 在 Groovy 中不能直接用作变量名，通过 Java Driver 连接时，使用 `.alias(['g': '__g_DEFAULT-hugegraph'])` 将其映射为 `g`。
+
+   ```groovy
+   import org.apache.tinkerpop.gremlin.driver.Cluster
+   cluster = Cluster.open('conf/remote.yaml')
+   client = cluster.connect().alias(['g': '__g_DEFAULT-hugegraph'])
+   ```
+
+1. 通过客户端提交查询。
+
+   ```groovy
+   client.submit('g.V().count()').all().get()[0].object
+   client.submit('g.V().toList().size()').all().get()[0].object
+   ```
+
+   若启动 Server 时预加载了示例图，两条查询均返回 `6`（其他图返回其实际顶点数）。
+   通过 Driver 的 `client.submit()` 提交脚本时，无需在语句前加 `:>` 前缀。
+
+1. 使用结束后关闭客户端和集群连接。
+
+   ```groovy
+   client.close()
+   cluster.close()
+   ```
+{.steps}
+
+此外，也可以使用 Gremlin Console 内置的 `:remote` 命令连接：
 
 ```groovy
-gremlin> :remote connect tinkerpop.server conf/remote.yaml
-==>Configured localhost/127.0.0.1:8182
+:remote connect tinkerpop.server conf/remote.yaml
+// 通过 Console 远程连接提交脚本时，前缀使用 :>
+:remote close
 ```
 
-Server 端的图以图空间限定名绑定，因此图空间 `DEFAULT` 下的图 `hugegraph` 绑定名为 `DEFAULT-hugegraph`，其 traversal source 绑定名为 `__g_DEFAULT-hugegraph`。裸写 `hugegraph` 在 Server 端无法解析，而 `DEFAULT-hugegraph` 又不是合法的 Groovy 标识符，所以远程脚本需要通过别名访问 traversal source。如果启动 HugeGraph-Server 时预加载了示例图，查询方式如下：
+使用 `:remote` 连接时，以 `:>` 开头的语句会被发送至远端 Server 执行，普通语句则在 Console 本地执行。
 
-```groovy
-gremlin> import org.apache.tinkerpop.gremlin.driver.Cluster
-gremlin> cluster = Cluster.open('conf/remote.yaml')
-gremlin> client = cluster.connect().alias(['g': '__g_DEFAULT-hugegraph'])
-gremlin> client.submit('g.V().count()').all().get()[0].object
-==>6
-gremlin> client.submit('g.V().toList().size()').all().get()[0].object
-==>6
-gremlin> client.close(); cluster.close()
-```
-
-> 注意：在 Client/Server 模式下，所有和 Server 有关的操作都要加上 `:> `，如果不加，表示在 console 本地操作。`:> ` 发送的脚本不带别名，因此只能使用 Server 自身已绑定的名称。
-
-更多关于 Gremlin-Console 的使用，请参考 [Tinkerpop 官网](http://tinkerpop.apache.org/docs/current/reference/)。
+更多用法见 [TinkerPop Gremlin Console 参考](https://tinkerpop.apache.org/docs/current/reference/#gremlin-console)。
 
 ---
 
@@ -14105,6 +14371,12 @@ e.g: GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema
     ]
 }
 ```
+
+---
+
+反链：
+
+- [备份 & 恢复](/cn/docs/guides/backup-restore/)
 
 
 ================
@@ -22862,31 +23134,32 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ### 2 环境要求
 
-- JDK 11（当前 CI 使用版本；源码目标版本为 Java 8）
-- Maven 3.6+
+- JDK 17，用于本文示例及从 Toolchain `master` 构建 Client `1.8.0`
+- Maven 3.6.3+
 
 ### 3 使用流程
 
-使用 HugeGraph-Client 的基本步骤如下：
+按下面的顺序接入 HugeGraph-Client。
 
-- 新建Eclipse/ IDEA Maven 项目；
-- 在 pom 文件中添加 HugeGraph-Client 依赖；
-- 创建类，调用 HugeGraph-Client 接口；
+1. 使用 IntelliJ IDEA 或 Eclipse 新建 Maven 工程。
+1. 在 `pom.xml` 中添加 HugeGraph-Client 依赖。
+1. 创建客户端、调用 API，并在使用后关闭客户端。
+{.steps}
 
-详细使用过程见下节完整示例。
+详细操作见下面的完整示例。
 
 ### 4 完整示例
 
 #### 4.1 新建 Maven 工程
 
-可以选择 Eclipse 或者 Intellij Idea 创建工程：
+使用 Eclipse 或 IntelliJ IDEA 创建 Maven 工程。
 
 - [Eclipse 新建 Maven 工程](http://www.vogella.com/tutorials/EclipseMaven/article.html)
 - [Intellij Idea 创建 maven 工程](https://vaadin.com/docs/-/part/framework/getting-started/getting-started-idea.html)
 
 #### 4.2 添加 hugegraph-client 依赖
 
-添加 hugegraph-client 依赖
+在 `pom.xml` 中添加依赖。
 
 ```xml
 
@@ -22899,24 +23172,40 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
     </dependency>
 </dependencies>
 ```
-以下完整示例使用的 Schema、Graph、Gremlin 和资源关闭接口在已发布的 Client `1.7.0` 中可用，也与 Toolchain `master` 兼容。
-上面的依赖可直接用于示例工程。
 
-如果需要[API 参考](/cn/docs/clients/hugegraph-client/)中的 master 新接口（例如能力探测），请使用 Toolchain `master` 的 Client `1.8.0`，
-将 POM 中的版本改为 `1.8.0`。该版本未发布到 Maven 仓库时，先在 Toolchain 源码根目录运行以下命令，
-将 Client 及其父 POM 安装到本地 Maven 仓库。源码构建仍需从配置的 Maven 仓库获取依赖。
+先根据用途选择客户端版本。
+
+| 用途 | 客户端版本 | Java 编译目标 |
+| --- | --- | --- |
+| 运行下方完整示例 | 已发布的 `1.7.0`，使用上面的依赖即可 | 发布版 POM 为 Java 8；本文统一使用 JDK 17 |
+| 使用能力探测等 master 新接口 | Toolchain `master`（以 1.8 为基线） | Java 17 |
+
+示例使用的 Schema、Graph、Gremlin 和资源关闭接口在 Client `1.7.0` 中可用，也与 Toolchain `master` 兼容。
+发布版的 Java 编译目标不代表所有传递依赖的运行环境要求。
+
+若需要使用 master 分支未发布的新接口，可从源码编译安装 Client（需配合 Toolchain 源码，详见 [Tools 源码构建指引](/cn/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)）：
 
 ```bash
-mvn install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+java -version
+mvn -version
+mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" \
+  -Dsdk.validation.mode=candidate \
+  install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
-Client 与 Server 的版本不必相同；升级前核对服务端 API 兼容范围及所需功能。
+两条版本检查都应显示 JDK 17。使用 master 分支 Client 的项目运行 Maven 命令时，也需添加 `-Dmaven.repo.local="$candidate_dir/m2"`。
+Client 与 Server 的版本不必相同；升级前核对所需 API 及兼容范围。
 
 #### 4.3 Example
 
+选择单条操作或批量操作示例，将完整代码保存为 Maven 工程中的 `src/main/java/SingleExample.java` 或
+`src/main/java/BatchExample.java`。复制按钮会包含已折叠的代码行。
+
+**SingleExample**
+
 ##### 4.3.1 SingleExample
 
-```java
+```java {collapse=30}
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -23068,9 +23357,11 @@ public class SingleExample {
 }
 ```
 
+**BatchExample**
+
 ##### 4.3.2 BatchExample
 
-```java
+```java {collapse=30}
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23214,7 +23505,12 @@ public class BatchExample {
 
 #### 4.4 运行 Example
 
-运行 Example 之前需要启动 Server, 启动过程见[HugeGraph-Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server)
+1. [启动 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server)，在图空间 `DEFAULT` 中准备名为 `hugegraph` 的测试图。
+1. 将 Maven 工程的 JDK 设为 17，把所选示例中 `HugeClient.builder(...)` 和 `configUser(...)` 的 Server 地址、图空间、图名和凭据改为实际配置。
+   Server 未开启鉴权时，省略 `configUser(...)`。
+1. 在 IDE 中运行 `SingleExample.main()` 或 `BatchExample.main()`。两个示例都会创建 Schema 和图数据、打印结果并关闭客户端。
+   请使用测试图，已有 Schema 或数据可能影响重复运行。
+{.steps}
 
 #### 4.5 详细 API 说明
 
@@ -25972,13 +26268,11 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 HugeGraph 内置 `StandardAuthenticator`，支持多用户认证和基于“用户、用户组、操作、资源”的权限控制。
 
-`StandardAuthenticator` 模式的几个核心设计：
-- 初始化时创建超级管理员 (`admin`) 用户，后续通过超级管理员创建其它用户，新创建的用户被分配足够权限后，可以创建或管理更多的用户
-- 支持动态创建用户、用户组、资源，支持动态分配或取消权限
-- 用户可以属于一个或多个用户组，每个用户组可以拥有对任意个资源的操作权限，操作类型包括：读、写、删除、执行等种类
-- "资源" 描述了图数据库中的数据，比如符合某一类条件的顶点，每一个资源包括 `type`、`label`、`properties`三个要素，共有 18 种类型、任意 label、任意 properties 可组合形成的资源，一个资源的内部条件是且关系，多个资源之间的条件是或关系
+初始化会创建超级管理员 `admin`。管理员可创建用户、用户组及资源，并分配或撤销权限。用户通过所属组获得读、写、删除和执行等权限。
 
-举例说明：
+资源用 `type`、`label` 和 `properties` 描述可访问的数据。同一资源中的条件需同时满足，多个资源之间满足其一即可。
+
+下面的关系表示用户仅可读取北京地区的数据。
 
 ```java
 // 场景：某用户只有北京地区的数据读取权限
@@ -25992,11 +26286,13 @@ HugeGraph 目前默认**未启用**用户认证功能，需通过修改配置文
 > [!WARNING]
 > **生产环境必须启用鉴权**
 >
-> HugeGraph 默认不启用用户认证。生产环境必须启用认证与授权、设置非默认强管理员密码、启用并维护 Server IP 白名单，并按最小权限为用户授权；不得将 Gremlin、Cypher 等查询接口直接暴露到公网。Server 标准配置会将鉴权代理记录写入 `audit-*.log`，部署时必须保留并限制这些日志的读取权限。`auth.audit_log_rate` 只限制每用户的日志输出速率，不是审计日志的启停开关。
+> HugeGraph 默认不启用用户认证。生产环境必须启用认证与授权、设置非默认强管理员密码、启用并维护 Server IP 白名单，并按最小权限为用户授权；不得将 Gremlin、Cypher 等查询接口直接暴露到公网。Server 标准配置会将鉴权代理记录写入
+`audit-*.log`，部署时必须保留并限制这些日志的读取权限。`auth.audit_log_rate` 只限制每用户的日志输出速率，不是审计日志的启停开关。
 
 `StandardAuthenticator` 支持多用户认证和细粒度权限控制。也可以实现 `HugeAuthenticator` 接口来接入已有的用户系统。
 
-用户认证使用 [HTTP Basic Authentication](https://zh.wikipedia.org/wiki/HTTP%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81)。`Basic` 后面的值是 `用户名:密码` 的 Base64 编码。使用 curl 时可直接通过 `-u` 传入凭据：
+用户认证使用 [HTTP Basic Authentication](https://zh.wikipedia.org/wiki/HTTP%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81)。`Basic` 后面的值是 `用户名:密码` 的 Base64 编码。使用 curl 时可直接通过
+`-u` 传入凭据。
 
 ```bash
 curl -u 'admin:<password>' \
@@ -26014,7 +26310,7 @@ curl -u 'admin:<password>' \
 > HugeGraph-Server 1.5.0 之前的版本在鉴权模式下存在 JWT 相关安全隐患。使用受影响版本时必须升级，或按该版本要求修改 JWT token 的 `secretKey`。
 
 `auth.token_secret` 由认证数据图的配置读取。默认认证图名为 `hugegraph`，因此配置文件通常是 `conf/graphs/hugegraph.properties`；如果修改了 `auth.graph_store`，应改为对应图的 properties 文件。
-源码默认会生成 32 个随机字节并以 Base64 编码，但该值不会写回配置文件；重启后或多个 Server 节点之间无法依赖各自生成的默认值保持一致。若需要令已有 token 在重启后继续有效，或让多个节点验证同一 token，请为认证图显式配置同一个强随机密钥：
+核心配置默认会生成 32 个随机字节并以 Base64 编码，该默认值不会自行写回配置文件；重启后或多个 Server 节点之间无法依赖各自生成的默认值保持一致。若需要令已有 token 在重启后继续有效，或让多个节点验证同一 token，请为认证图显式配置同一个强随机密钥。
 
 Server 将配置字符串按 UTF-8 编码后交给 JJWT 的 HS256 签名器，密钥至少需要 32 字节；这是字节长度要求，不代表任意 32 字符串都具有足够随机性。下面的命令在本机生成 32 个随机字节并以 Base64 编码。
 
@@ -26023,20 +26319,20 @@ Server 将配置字符串按 UTF-8 编码后交给 JJWT 的 HS256 签名器，�
 auth.token_secret=<本机生成的密钥>
 ```
 
-可在本机终端生成密钥，再通过安全方式填入认证图配置；不要把实际密钥提交到代码库或公开日志：
+可在本机终端生成密钥，再通过安全方式填入认证图配置；不要把实际密钥提交到代码库或公开日志。
 
 ```bash
 openssl rand -base64 32
 ```
 
-由于默认值在每次启动时随机生成，当 token 需要在重启后继续有效、或者需要被多个服务节点接受时，必须显式配置该项。token 的有效期由 `auth.token_expire` 决定，默认为 86400 秒。
+token 的有效期由 `auth.token_expire` 决定，默认为 86400 秒。
 
 `auth.token_expire` 和 `auth.token_secret` 都属于 `auth.graph_store` 指定的认证数据图配置；`rest-server.properties` 中的同名项不会覆盖认证图配置。
 
 #### StandardAuthenticator 模式
-`StandardAuthenticator`模式是通过在数据库后端存储用户信息来支持用户认证和权限控制，该实现基于数据库存储的用户的名称与密码进行认证（密码已被加密），基于用户的角色来细粒度控制用户权限。下面是具体的配置流程（重启服务生效）：
+`StandardAuthenticator` 在后端存储用户及密码哈希，并按用户角色控制访问。修改以下三处配置后，按[启动顺序](#基于鉴权模式启动)初始化并重启服务。
 
-在配置文件`gremlin-server.yaml`中配置`authenticator`及其`rest-server`文件路径：
+在 `conf/gremlin-server.yaml` 中配置认证器及 REST 配置路径。
 
 ```yaml
 authentication: {
@@ -26046,7 +26342,7 @@ authentication: {
 }
 ```
 
-在 `rest-server.properties` 中配置认证器和权限数据存储图：
+在 `conf/rest-server.properties` 中配置认证器和权限数据存储图。
 
 ```properties
 auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
@@ -26060,9 +26356,9 @@ auth.graph_store=hugegraph
 #auth.remote_url=127.0.0.1:8899,127.0.0.1:8898,127.0.0.1:8897
 ```
 
-其中，`graph_store`配置项是指使用哪一个图来存储用户信息，如果存在多个图的话，选取任意一个均可。
+`auth.graph_store` 指定保存认证数据的图，名称必须与 `conf/graphs/` 中的图配置对应。
 
-在配置文件`hugegraph{n}.properties`中配置`gremlin.graph`信息：
+在每个受保护图的配置文件 `conf/graphs/<graph>.properties` 中设置 `gremlin.graph`。
 
 ```properties
 gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
@@ -26072,65 +26368,155 @@ gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
 
 ### 自定义用户认证系统
 
-如果需要支持更加灵活的用户系统，可自定义 authenticator 进行扩展，自定义 authenticator 实现接口`org.apache.hugegraph.auth.HugeAuthenticator`即可，然后修改配置文件中`authenticator`配置项指向该实现。
+实现 `org.apache.hugegraph.auth.HugeAuthenticator` 接口，再将两处 `authenticator` 配置指向该实现，即可接入已有用户系统。
 
 ### 基于鉴权模式启动
 
-首次执行 `init-store.sh` 时，如果尚未创建 `admin` 用户，命令会要求输入管理员密码。对于已经初始化的持久化后端，`init-store.sh` 会补充认证所需的系统信息，无需删除原有图数据。
+下面的顺序适用于本地持久化后端，例如 RocksDB。先完成上面的配置，再初始化认证数据。
+HStore/PD 部署的管理员由 PD 启动路径创建，须按该部署的配置设置 `auth.admin_pa`，不要照搬本地后端的交互式初始化流程。
 
-```bash
-# stop the hugeGraph firstly
-bin/stop-hugegraph.sh
+1. **停止 Server。**
 
-# 初始化认证系统信息；已有后端数据会被保留
-bin/init-store.sh
+   ```bash
+   bin/stop-hugegraph.sh
+   ```
 
-# start hugeGraph again
-bin/start-hugegraph.sh
+1. **初始化认证数据。**
 
-```
+   ```bash
+   bin/init-store.sh
+   ```
+
+   首次创建 `admin` 时，按提示输入强密码。已有图数据会保留；已有 `admin` 时不会重新设置其密码。
+   此命令补充后端与认证系统信息，不需要删除原有存储目录。
+
+1. **启动并检查认证。**
+
+   ```bash
+   bin/start-hugegraph.sh
+   curl -u admin \
+     http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
+   ```
+
+   curl 会提示输入密码。正确密码应返回 HTTP 200；不带凭据或使用错误密码应返回 HTTP 401。
+   启动失败时先检查日志和认证图配置，不要通过清空数据来重试。
+{.steps}
 
 ### 使用 Docker 时开启鉴权模式
 
-对于镜像 `hugegraph/hugegraph` 大于等于 `1.2.0` 的版本，我们可以在启动 `docker` 镜像的同时开启鉴权模式
+新容器在 Docker run 和 Compose 中选择一种方式。已经运行过的容器直接阅读[既有容器](#3-进入容器后重新开启鉴权模式)。
 
-具体做法如下：
-
-#### 1. 采用 docker run
-
-在 `docker run` 中添加环境变量 `PASSWORD=xxx`（密码可以自由设置）即可开启鉴权模式：：
+使用 Docker 部署时，官方镜像支持通过环境变量直接开启鉴权模式（适用于官方 Server 镜像 `/hugegraph-server` 布局）。
+将占位符替换为实际镜像标签或 digest：
 
 ```bash
-docker run -itd -e PASSWORD=xxx --name=server -p 8080:8080 hugegraph/hugegraph:1.7.0
+export HUGEGRAPH_IMAGE='<image:tag-or-digest>'
+read -r -s -p 'Admin password: ' PASSWORD
+printf '\n'
+export PASSWORD
 ```
 
-#### 2. 采用 docker-compose
+提示输入管理员密码后执行启动命令。为保障凭据安全，请避免将密码以明文形式提交到共享 Compose 文件中。
+JWT 密钥仍按[上面的配置](#配置用户认证)持久保存到认证图配置；多节点必须使用同一个值。
 
-使用 `docker-compose` 在环境变量中设置 `PASSWORD=xxx`即可
+#### Docker run {#1-采用-docker-run}
+
+创建一个新容器，并仅向本机开放 REST 端口。
+
+```bash
+docker run -d --name server \
+  -p 127.0.0.1:8080:8080 \
+  -e PASSWORD \
+  "$HUGEGRAPH_IMAGE"
+unset PASSWORD
+```
+
+入口脚本完成认证配置和首次初始化后启动 Server。接着阅读[检查认证结果](#检查认证结果)。
+
+#### Docker Compose {#2-采用-docker-compose}
+
+将下面的内容保存为 `compose.yaml`。必填变量缺失时，Compose 会报错，避免意外启动无认证服务。
+在同一终端中启动服务。
 
 ```yaml
-version: '3'
 services:
   server:
-    image: hugegraph/hugegraph:1.7.0
+    image: ${HUGEGRAPH_IMAGE:?Set HUGEGRAPH_IMAGE}
     container_name: server
     ports:
-      - 8080:8080
+      - "127.0.0.1:8080:8080"
     environment:
-      - PASSWORD=xxx
+      PASSWORD: ${PASSWORD:?Set PASSWORD}
 ```
-
-#### 3. 进入容器后重新开启鉴权模式
-
-首先进入容器：
 
 ```bash
-docker exec -it server bash
-# 用于快速修改配置, 修改前的文件被保存在conf-bak文件夹下
-bin/enable-auth.sh
+docker compose up -d
+unset PASSWORD
 ```
 
-之后参照 [基于鉴权模式启动](#基于鉴权模式启动) 即可
+以后重新创建容器前，需要重新设置这些变量。保留已有数据卷，并按部署要求持久保存配置。
+接着阅读[检查认证结果](#检查认证结果)。
+
+#### 既有容器 {#3-进入容器后重新开启鉴权模式}
+
+此路径适用于原先未开启认证、使用本地持久化后端的官方 Server 容器。
+先备份数据，并确认配置、后端数据及 `conf-bak` 均位于容器挂载的持久卷中。
+官方镜像将 `/hugegraph-server` 声明为卷；自定义镜像应先检查挂载位置。
+HStore/PD 或外部认证服务使用各自的管理员初始化流程。
+
+1. **停止原容器，使用同一镜像和数据卷打开临时维护容器。**
+
+   ```bash
+   SERVER_IMAGE=$(docker inspect --format '{{.Image}}' server)
+   docker stop server
+   docker run --rm -it --volumes-from server \
+     --entrypoint bash "$SERVER_IMAGE"
+   ```
+
+   原容器须保持停止，防止两个 JVM 同时打开本地数据库。`--entrypoint bash` 使维护容器只打开终端。
+
+1. **在维护容器内修改配置并初始化。**
+
+   ```bash
+   cd /hugegraph-server
+   bin/enable-auth.sh
+   ```
+
+   `enable-auth.sh` 首次运行时将原配置保存到 `conf-bak`，然后修改默认 `hugegraph` 图和认证配置。
+   如果 `conf-bak` 已存在，脚本会跳过修改，须按[StandardAuthenticator 模式](#standardauthenticator-模式)检查三处配置。
+   使用其他认证图时也应手动配置对应文件。
+   按[上面的配置](#配置用户认证)将强随机 JWT 密钥写入认证图配置，再运行初始化命令。
+
+   ```bash
+   bin/init-store.sh
+   exit
+   ```
+
+   按提示输入管理员密码，确认初始化成功后退出。
+
+1. **在宿主机启动原容器。**
+
+   ```bash
+   docker start server
+   ```
+
+   不需要删除 `docker/init_complete` 标记。后续 `PASSWORD` 环境变量的变化不会修改已存储的管理员密码。
+{.steps}
+
+#### 检查认证结果
+
+等待 Server 启动后，在宿主机执行以下请求验证。`-u admin` 会交互式提示输入密码：
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' \
+  http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
+curl -sS -o /dev/null -w '%{http_code}\n' -u admin \
+  http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
+```
+
+未携带凭据的请求预期返回 `401 Unauthorized`，输入正确密码的请求返回 `200 OK`（若输入错误密码则同样返回 `401`）。
+注：当前主线版本 URL 包含 `/graphspaces/DEFAULT`，1.7.0 等历史版本请省略 graphspace 前缀（直接使用 `/graphs/hugegraph/...`）。
+若未提供凭据仍返回 `200`，说明鉴权未成功启用，请检查配置并重启 Server。
 
 ---
 
@@ -26303,7 +26689,7 @@ client.truststore 是给客户端⽤的，其中保存着受信任的证书
 Source: https://hugegraph.apache.org/cn/docs/guides/backup-restore/index.md
 ================
 
-# Backup Restore
+# 备份与恢复
 
 LLMS 索引： [llms.txt](/cn/llms.txt)
 
@@ -26311,103 +26697,123 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ## 描述
 
-Backup 和 Restore 是备份图和恢复图的功能。备份和恢复的数据包括元数据（schema）和图数据（vertex 和 edge）。
+Backup 将一张图的 Schema、顶点和边导出为 JSON 数据，Restore 将这些数据导入目标图。
+它们是 [HugeGraph-Tools](/cn/docs/quickstart/toolchain/hugegraph-tools) 的命令，适合图迁移、升级后的恢复及图合并。
 
 #### Backup
 
-将 HugeGraph 系统中的一张图的元数据和图数据以 JSON 格式导出。
+备份可在任意图模式下执行。建议在导出前暂停源图的写入操作，以确保 Schema、顶点和边的数据一致性（分批读取不提供全局事务快照）。
+注意：`backup -t all` 仅导出图的 Schema 和图数据，不包含系统配置文件与用户权限。
 
 #### Restore
 
-将 Backup 导出的JSON格式的数据，重新导入到 HugeGraph 系统中的一个图中。
+恢复数据前，需先根据目标图的状态切换恢复模式。日常读写处于 `NONE` 模式；注意：`LOADING` 模式不能用于 `restore`。
 
-Restore 有两种模式：
+| 目标 | 模式 | Schema ID | 顶点和边 ID |
+|---|---|---|---|
+| 恢复到没有 Schema 和数据的新图 | `RESTORING` | 使用备份中的 ID | 使用备份中的 ID |
+| 合并到已有图 | `MERGING` | 使用目标图的 Schema ID，必要时新建 | 部分 ID 随目标 Schema 重算，见下文 |
 
-- Restoring 模式，将 Backup 导出的元数据和图数据原封不动的恢复到 HugeGraph 系统中。可用于图的备份和恢复，一般目标图是新图（没有元数据和图数据）。比如：
-    - 系统升级，先备份图，然后升级系统，最后将图恢复到新的系统中
-    - 图迁移，从一个 HugeGraph 系统中，使用 Backup 功能将图导出，然后使用 Restore 功能将图导入另一个 HugeGraph 系统中
-- Merging 模式，将 Backup 导出的元数据和图数据导入到另一个已经存在元数据或者图数据的图中，过程中元数据的 ID 可能发生改变，顶点和边的 ID 也会发生相应变化。
-    - 可用于合并图
+`MERGING` 中，`PRIMARY_KEY` 顶点 ID 按目标 label ID 重新生成，关联边的端点与 ID 随之调整。
+`AUTOMATIC` 和自定义顶点 ID 保留。合并会复用同名 Schema，先检查双方的定义是否兼容，以及保留的顶点 ID 是否冲突。
+它不提供任意 Schema 冲突或数据冲突的自动解决策略。先在独立目标图验证，再合并正式数据。
 
 ## 使用方法
 
-可以使用[hugegraph-tools](/cn/docs/quickstart/toolchain/hugegraph-tools)进行图的备份和恢复。
+准备与 Server 版本匹配的 [HugeGraph-Tools](/cn/docs/quickstart/toolchain/hugegraph-tools)，在 Tools 根目录执行以下命令。
+本例从 `8080` 的源图恢复到 `8081` 的空目标图。两个 Server 和目标图应已创建并启动；可将变量改成实际地址及图名。
+
+```bash
+SOURCE_URL=http://127.0.0.1:8080
+TARGET_URL=http://127.0.0.1:8081
+SOURCE_GRAPH=hugegraph
+TARGET_GRAPH=hugegraph
+BACKUP_DIR="$PWD/data/hugegraph-backup"
+```
+
+启用认证时，在每条 Tools 命令的子命令前加入 `--user <user> --password <password>`，并使用具备对应图读写和模式管理权限的账号。
+详细参数及凭据使用方式见 [Tools 参考](/cn/docs/quickstart/toolchain/hugegraph-tools)。
 
 #### Backup
 
+暂停源图写入后，备份全部 Schema、顶点和边。
+
 ```bash
-bin/hugegraph backup -t all -d data
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" \
+  backup -t all -d "$BACKUP_DIR"
 ```
 
-该命令将 http://127.0.0.1:8080（默认 --url）的 hugegraph 图的全部元数据和图数据备份到data目录下。
-
-> Backup 在任意图模式下都可以正常工作，它不会检查图模式
+显式指定的 `-d` 就是备份目录，不会自动附加图名。为每次备份使用独立目录，避免混入旧文件。
+保留完整目录，包括压缩文件；Restore 可读取 Tools 支持的 JSON 备份格式。
 
 #### Restore
 
-Restore 有两种模式： RESTORING 和 MERGING，恢复之前首先要根据需要设置图模式，图处于其他模式时 restore 命令会失败。
+以下流程使用 `RESTORING`。合并时改为 `MERGING`，并先完成上面的兼容性检查。
+操作期间暂停目标图业务写入。
 
-##### 步骤1：查看并设置图模式
+
+1. <span id="步骤1查看并设置图模式"></span>**查看并记录原模式，再切换。**
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-get
+   ORIGINAL_MODE=NONE
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" \
+     graph-mode-set -m RESTORING
+   ```
+
+   正常业务图应处于 `NONE`。将查询返回的值填入 `ORIGINAL_MODE`，例如下方的 `NONE`。若另一项维护正在使用 `RESTORING`、`MERGING` 或 `LOADING`，先协调该任务，不要覆盖其模式。
+
+1. <span id="步骤2restore-数据"></span>**恢复数据。**
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" \
+     restore -t all -d "$BACKUP_DIR"
+   ```
+
+   检查命令输出与各类型的导入结果。若发生错误，请先保留备份目录与日志，并检查目标图的数据状态。
+   Restore 不会自动回滚已写入的数据，切勿在部分恢复的图上盲目重跑。
+
+1. <span id="步骤3恢复图模式"></span>**还原原模式。**
+
+   使用第一步记录的 `ORIGINAL_MODE` 还原模式。
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-set -m "$ORIGINAL_MODE"
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-get
+   ```
+
+   无论恢复成功还是失败，最后都必须将图模式还原为原有模式（通常为 `NONE`）。
+   若恢复失败，先保留现场并排查日志，待重新准备目标图后再恢复业务写入。
+{.steps}
+
+还原模式后，对比两端的顶点数和边数。
 
 ```bash
-bin/hugegraph graph-mode-get
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" gremlin-execute --script 'g.V().count()'
+bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" gremlin-execute --script 'g.V().count()'
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" gremlin-execute --script 'g.E().count()'
+bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" gremlin-execute --script 'g.E().count()'
 ```
 
-该命令用于查看当前图模式，包括：NONE、RESTORING、MERGING、LOADING。
-
-```bash
-bin/hugegraph graph-mode-set -m RESTORING
-```
-
-该命令用于设置图模式，Restore 之前可以设置成 RESTORING 或者 MERGING 模式，例子中设置成 RESTORING。
-
-##### 步骤2：Restore 数据
-
-```bash
-bin/hugegraph restore -t all -d data
-```
-
-该命令将data目录下的全部元数据和图数据重新导入到 http://127.0.0.1:8080 的 hugegraph 图中。
-
-##### 步骤3：恢复图模式
-
-```bash
-bin/hugegraph graph-mode-set -m NONE
-```
-
-该命令用于恢复图模式为 NONE。
-
-至此，一次完整的图备份和图恢复流程结束。
+两组计数结果应保持完全一致。建议进一步通过 [Schema API](/cn/docs/clients/restful-api/schema/) 核对元数据定义，
+并抽样检查顶点和边的属性与端点关联，确保业务数据的完整性。
 
 #### 帮助
 
-备份和恢复命令的详细使用方式可以参考[hugegraph-tools文档](/cn/docs/quickstart/toolchain/hugegraph-tools)。
+更多关于压缩、并发和分类型备份的参数说明，见 [Tools 参考](/cn/docs/quickstart/toolchain/hugegraph-tools)。
+在跨大版本恢复前，建议先在测试环境中验证备份文件的兼容性。
 
 ## Backup/Restore使用和实现的API说明
 
 #### Backup
 
-Backup 使用`元数据`和`图数据`的相应的 list(GET) API 导出，并未增加新的 API。
+Backup 使用 Schema、顶点和边的列表 GET API 导出数据。
 
 #### Restore
 
-Restore 使用`元数据`和`图数据`的相应的 create(POST) API 导入，并未增加新的 API。
-
-Restore 时存在两种不同的模式： Restoring 和 Merging，另外，还有常规模式 NONE(默认)，区别如下：
-
-- None 模式，元数据和图数据的写入属于正常状态，可参见功能说明。特别的：
-    - 元数据（schema）创建时不允许指定 ID
-    - 图数据（vertex）在 id strategy 为 Automatic 时，不允许指定 ID
-- Restoring 模式，恢复到一个新图中，特别的：
-    - 元数据（schema）创建时允许指定 ID
-    - 图数据（vertex）在 id strategy 为 Automatic 时，允许指定 ID
-- Merging 模式，合并到一个已存在元数据和图数据的图中，特别的：
-    - 元数据（schema）创建时不允许指定 ID
-    - 图数据（vertex）在 id strategy 为 Automatic 时，允许指定 ID
-
-正常情况下，图模式为 None，当需要 Restore 图时，需要根据需要临时修改图模式为 Restoring 模式或者 Merging 模式，并在完成 Restore 时，恢复图模式为 None。
-
-实现的设置图模式的 RESTful API 如下：
+Restore 使用 Schema、顶点和边的创建 API 导入数据。模式对应的 ID 行为见[前面的选择表](#restore)。
+`RESTORING` 允许指定 Schema ID；`MERGING` 不允许指定 Schema ID。两种模式均允许保留 `AUTOMATIC` 顶点 ID。
+普通 `NONE` 模式不接受这些恢复操作所需的 ID 设置。
 
 ##### 查看某个图的模式
 
@@ -26433,7 +26839,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 }
 ```
 
-> 合法的图模式包括：NONE，RESTORING，MERGING，LOADING
+合法图模式为 `NONE`、`RESTORING`、`MERGING` 和 `LOADING`。
 
 ##### 设置某个图的模式
 
@@ -26451,7 +26857,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 "RESTORING"
 ```
 
-> 合法的图模式包括：NONE，RESTORING，MERGING，LOADING
+合法图模式为 `NONE`、`RESTORING`、`MERGING` 和 `LOADING`。
 
 ###### Response Status
 
@@ -26546,101 +26952,142 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-- 如何选择后端存储? 选 RocksDB 还是分布式存储?
+## 部署与启动 {#deployment}
 
-  HugeGraph 支持多种部署模式，根据数据规模和场景选择：
-  - **单机模式**：Server + RocksDB，适合开发测试、Graph AI 和中小规模生产环境（≤ 2 TB）
-  - **分布式模式**：HugeGraph-PD + HugeGraph-Store（HStore），用于需要水平扩展和多副本的部署，支持 ≤ 1 PB 的数据规模
+### 如何选择 RocksDB 或 HStore {#choose-backend}
 
-  1.7.0 支持 RocksDB、HStore、HBase 和 Memory。Cassandra、ScyllaDB、MySQL、PostgreSQL 等旧后端需使用 1.5.x 或更早版本。
+开发测试或中小规模单机部署推荐选择 **Server + RocksDB**，部署轻便且性能优异。当数据规模较大（如 TB/PB 级）、需要水平扩容或多副本高可用时，推荐部署 **HStore 分布式集群**（PD + Store + Server）。
 
-- 启动服务时提示：`xxx (core dumped) xxx`
- 
-  请先确认 JDK 版本符合对应版本要求：HugeGraph 1.8.0+ 要求 Java 17，1.7.0 要求 Java 11。HugeGraph 不再支持 Java 8。
+1.7.0 支持 RocksDB、HStore、HBase 和 Memory。Cassandra、ScyllaDB、MySQL、PostgreSQL 等旧后端需使用低于 1.7.0 的版本。
+部署步骤见 [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
 
-- 启动服务成功了，但是操作图时有类似于"无法连接到后端或连接未打开"的提示
+### 启动时出现 core dumped 怎么查 {#core-dump}
 
-  RocksDB、HBase 等本地持久化后端首次启动前需要使用 `init-store` 初始化。HStore 由 PD、Store 管理，不执行该脚本。
+先执行 `java -version` 确认 JDK 版本：**HugeGraph master 分支（以 1.8 为基线）要求 Java 17**，**1.7.0 要求 Java 11**（已不再支持 Java 8）。
+若 JDK 版本正确，进一步查看 Server 日志及 JVM 崩溃日志（`hs_err_pid*.log`），排查是否由于系统架构不匹配、依赖的动态库（如 RocksDB JNI）缺失或系统内存不足引起。
 
-- 所有的后端在使用前都需要执行`init-store`吗，序列化的选择可以随意填写么?
-  
-  Memory 和 HStore 不执行 `init-store`；RocksDB、HBase 等本地持久化后端首次使用前需要初始化。序列化器必须与后端匹配，例如 RocksDB 使用 `binary`。
+### 哪些后端需要 init-store {#initialize-backend}
 
-- 执行`init-store`报错：```Exception in thread "main" java.lang.UnsatisfiedLinkError: /tmp/librocksdbjni3226083071221514754.so: /usr/lib64/libstdc++.so.6: version `GLIBCXX_3.4.10' not found (required by /tmp/librocksdbjni3226083071221514754.so)```
+使用 RocksDB 或 HBase 等本地持久化后端时，**首次启动前必须执行 `bin/init-store.sh`** 进行初始化。Memory（内存后端）和 HStore（分布式后端）无需执行此脚本，HStore 的存储由 PD 和 Store 统一管理。
 
-  RocksDB需要 gcc 4.3.0 (GLIBCXX_3.4.10) 及以上版本
+注意：`backend` 与 `serializer` 必须配套使用（例如 RocksDB 配套 `binary`），不可随意替换。若服务启动后提示无法连接后端，请优先检查是否完成初始化以及后端存储配置是否正确。
 
-- `bin`目录下包含`start-hugegraph.sh`、`start-restserver.sh`和`start-gremlinserver.sh`三个似乎与启动有关的脚本，到底该使用哪个
+### init-store 报 GLIBCXX 版本缺失怎么办 {#native-library}
 
-  当前发布包只保留 `start-hugegraph.sh` 作为 Server 启动脚本。GremlinServer 和 REST Server 由同一进程启动。
+出现以下报错表示当前系统的 `libstdc++` 版本过低，缺少 RocksDB JNI 本地库所需的符号：
 
-- 配置了两个图，名字是`hugegraph`和`hugegraph1`，而启动服务的命令是`start-hugegraph.sh`，是只打开了`hugegraph`这个图吗
+```text
+java.lang.UnsatisfiedLinkError: .../librocksdbjni....so:
+.../libstdc++.so.6: version `GLIBCXX_3.4.10' not found
+```
 
-  脚本名称与图名无关。Server 默认从 `conf/graphs` 扫描并加载本地图配置，目录可在 `conf/rest-server.properties` 的 `graphs` 配置项中修改。`graph.load_from_local_config` 默认
-  `false`，控制构造阶段预加载，不能用于禁止启动时加载。每个本地图使用独立配置文件，配置变化后重启 Server。详见[服务端配置说明](/cn/docs/config/config-guide/)。
+解决方法：核对发行包支持的系统架构，升级系统的 `libstdc++`（或安装较新的 GCC 运行库），或者直接使用官方提供的 Docker 镜像运行。
 
-- 服务启动成功后，使用`curl`查询所有顶点时返回乱码
+### 应该使用哪个 Server 启动脚本 {#start-script}
 
-  服务端返回的批量顶点/边是压缩（gzip）过的，可以使用管道重定向至 `gunzip` 进行解压（`curl http://example | gunzip`），也可以用`Firefox`的`postman`或者`Chrome`浏览器的`restlet`插件发请求，会自动解压缩响应数据。
+当前发行包统一使用 `bin/start-hugegraph.sh`，GremlinServer 与 REST Server 会在同一个进程中启动。旧版本文档中的 `start-restserver.sh` 和 `start-gremlinserver.sh` 已废弃。
 
-- 使用顶点Id通过`RESTful API`查询顶点时返回空，但是顶点确实是存在的
+### 启动脚本会加载哪些图 {#load-graphs}
 
-  检查顶点Id的类型，如果是字符串类型，`API`的`url`中的id部分需要加上双引号，数字类型则不用加。
+脚本名称与加载的图无关。Server 默认会扫描并加载 `conf/graphs` 目录下的所有图配置（可在 `conf/rest-server.properties` 中的 `graphs` 修改该目录）。每张本地图使用独立的配置文件，修改配置后需重启 Server。
 
-- 已经根据需要给顶点Id加上了双引号，但是通过`RESTful API`查询顶点时仍然返回空
-  
-  检查顶点id中是否包含`+`、`空格`、`/`、`?`、`%`、`&`和`=`这些URL的保留字符，如果存在则需要进行编码。下表给出了编码值：
-  
-  ```text
-  特殊字符 | 编码值
-  --------| ----
-  +       | %2B
-  空格     | %20
-  /       | %2F
-  ?       | %3F
-  %       | %25
-  #       | %23
-  &       | %26
-  =       | %3D
-  ```
-  
-- 查询某一类别的顶点或边（`query by label`）时提示超时
+注：`graph.load_from_local_config` 默认为 `false`（控制构造阶段预加载），不能用来禁止启动时加载本地图。详见[服务端配置说明](/cn/docs/config/config-guide/)。
 
-  由于属于某一label的数据量可能比较多，请加上limit限制。
+## 连接与查询 {#queries}
 
-- 通过`RESTful API`操作图是可以的，但是发送`Gremlin`语句就报错：`Request Failed(500)`
+### curl 返回乱码怎么办 {#compressed-response}
 
-  可能是`GremlinServer`的配置有误，检查`gremlin-server.yaml`的`host`、`port`是否与`rest-server.properties`的`gremlinserver.url`匹配，如不匹配则修改，然后重启服务。
+批量顶点和边接口默认会返回 gzip 压缩数据。使用 curl 请求时加上 `--compressed` 参数即可自动解压：
 
-- 使用`Loader`导数据出现`Socket Timeout`异常，然后导致`Loader`中断
+```bash
+curl --compressed \
+  'http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?limit=10'
+```
 
-  持续地导入数据会使`Server`的压力过大，然后导致有些请求超时。可以通过调整`Loader`的参数来适当缓解`Server`压力（如：重试次数，重试间隔，错误容忍数等），降低该问题出现频率。
+若开启了认证，需同时传入凭据。若返回内容仍不符合预期，请检查 HTTP 状态码、`Content-Type` 与 `Content-Encoding`，不要把 JSON 报错直接管道传给 `gunzip`。
 
-- 如何删除图中的全部数据
+### 按顶点 ID 查询却找不到顶点 {#vertex-id}
 
-  管理员可调用 `DELETE /graphspaces/{graphspace}/graphs/{graph}/clear?confirm_message=I'm sure to delete all data`。`confirm_message` 查询参数必须与该值完全一致，否则请求会被拒绝，详见 [Graph API](../clients/restful-api/graphs)。该操作会清除 schema、顶点、边和索引。
+先从已有查询结果中确认 `id` 的实际格式和类型：**字符串 ID 需要 JSON 双引号，数值 ID 不需要**。例如字符串 ID `1:marko` 的 JSON 格式应为 `"1:marko"`。
 
-- 清空了数据库，并且执行了`init-store`，但是添加`schema`时提示"xxx has existed"
+在把 ID 放入 URL 路径时，必须对包含双引号在内的完整字符串进行 URL 编码。若 ID 含有特殊字符，不能仅补双引号而遗漏编码：
 
-  `HugeGraphServer`内是有缓存的，清空数据库的同时是需要重启`Server`的，否则残留的缓存会产生不一致。
+| 字符 | URL 编码 |
+| --- | --- |
+| `+` | `%2B` |
+| 空格 | `%20` |
+| `/` | `%2F` |
+| `?` | `%3F` |
+| `%` | `%25` |
+| `#` | `%23` |
+| `&` | `%26` |
+| `=` | `%3D` |
+| `"` | `%22` |
 
-- 插入顶点或边的过程中报错：`The max length of vertex id is 16384, but got xxx {yyy}` 或 `The max length of edge id is 65536, but got xxx {yyy}`
+### 按类型查询顶点或边时超时 {#label-timeout}
 
-  为了保证查询性能，目前的后端存储对id列的长度做了限制，顶点id不能超过16384字节，边id长度不能超过65536字节；索引id超过32字节时会转为哈希存储，而不是报错。
+当某个标签下的数据量很大时，全量扫描很容易耗尽资源导致超时。建议优化方式：
+1. 加上 `limit()` 限制返回记录数；
+2. 使用分页机制分批读取；
+3. 配合具体属性过滤，并确保对应属性已建立索引，避免全表扫描。
 
-- 是否支持嵌套属性，如果不支持，是否有什么替代方案
+### REST 请求正常，Gremlin 返回 500 {#gremlin-connection}
 
-  嵌套属性目前暂不支持。替代方案：可以把嵌套属性作为单独的顶点拿出来，然后用边连接起来。
+REST 接口正常仅说明 HTTP 入口可用，Gremlin 执行返回 500 通常有以下原因：
+1. **Gremlin Server 连接异常**：检查 `conf/rest-server.properties` 中的 `gremlinserver.url` 是否指向可达的 Gremlin 端口（默认 `8182`，对应 `conf/gremlin-server.yaml`）；
+2. **语句语法或逻辑错误**：例如未加索引导致遍历被拦截；
+3. **认证凭据缺失或过期**。
 
-- 一个`EdgeLabel`是否可以连接多对`VertexLabel`，比如"投资"关系，可以是"个人"投资"企业"，也可以是"企业"投资"企业"
+建议查看 `logs/hugegraph-server.log` 中的异常堆栈定位具体报错。
 
-  可以。创建`EdgeLabel`时对每一对顶点标签各调用一次`link(sourceLabel, targetLabel)`，所有配对都会被保留，因此同一个"投资"标签可以同时覆盖"个人"投资"企业"和"企业"投资"企业"。旧的`sourceLabel()`和`targetLabel()`构建方法已废弃，且只支持单一配对。
+### REST 请求返回 HTTP 415 {#content-type}
 
-- 通过`RestAPI`发送请求时提示`HTTP 415 Unsupported Media Type`
+发送带请求体的 POST/PUT 请求时，需在请求头中指定 `Content-Type: application/json`，并确保请求体是合法的 JSON 格式。
 
-  请求头中需要指定`Content-Type:application/json`
+## 导入与数据维护 {#data-management}
 
-其他问题可以在对应项目的 issue 区搜索，例如 [Server-Issues](https://github.com/apache/hugegraph/issues) / [Loader Issues](https://github.com/apache/hugegraph-toolchain/issues)
+### Loader 出现 Socket Timeout {#loader-timeout}
+
+导入超时通常由于单批次写入过大或并发压力过高导致。建议：
+1. 适当调小 `--batch-size`（如由 500 降为 200）；
+2. 适当降低并发线程数；
+3. 调大 `--timeout` 并配置重试机制。参数说明见 [Loader 指南](/cn/docs/quickstart/toolchain/hugegraph-loader/)。
+
+### 如何清空一张图 {#clear-graph}
+
+管理员可调用以下接口清空指定图的 Schema、顶点、边和索引（执行前请务必确认目标图并做好备份）：
+
+```text
+DELETE /graphspaces/{graphspace}/graphs/{graph}/clear
+```
+
+请求需携带 `confirm_message` 查询参数，值必须严格等于 `I'm sure to delete all data`（需进行 URL 编码）。完整调用方式见 [Graph API](/cn/docs/clients/restful-api/graphs/)。
+
+### 清理底层存储后，为什么仍提示 Schema 已存在 {#schema-cache}
+
+Server 在内存中维护了 Schema 缓存。如果直接绕过 Server 清理底层存储（如清空 RocksDB 目录或 HBase 表），Server 缓存与实际存储将出现不一致。
+若已手动清理底层，必须**重启 Server**。日常清理建议使用官方提供的 [Clear 图 API](/cn/docs/clients/restful-api/graphs/#clear-graph)。
+
+## 建模与 ID {#modeling}
+
+### 顶点或边 ID 超过长度限制 {#id-length}
+
+为保证底层存储与索引性能，HugeGraph 对 ID 长度作了如下限制（按编码后的字节数计算）：
+- **顶点 ID**：最长 16384 字节（16 KB）；
+- **边 ID**：最长 65536 字节（64 KB）。
+
+建议使用简洁的业务唯一标识作为主键，避免在 ID 中拼接大段文本。注：属性索引值超过 32 字节时会自动转为哈希存储，不会报错超长。
+
+### 是否支持嵌套属性 {#nested-properties}
+
+目前不支持嵌套属性（复杂对象或嵌套 Map）。如果需要表达多层级关系，建议将嵌套对象拆分成独立的顶点，通过边与主体顶点相连。
+
+### 一个边类型能连接多组顶点类型吗 {#edge-links}
+
+支持。创建 `EdgeLabel` 时，对每一组起点和终点类型分别调用一次 `link(sourceLabel, targetLabel)` 即可。
+例如“投资”关系可以同时连接“个人 → 企业”和“企业 → 企业”。旧版 `sourceLabel()` 与 `targetLabel()` 只支持单一配对，现已废弃。
+
+其他问题可搜索 [Server issues](https://github.com/apache/hugegraph/issues) 或 [Toolchain issues](https://github.com/apache/hugegraph-toolchain/issues)。
 
 
 ================
@@ -27607,7 +28054,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 - [HugeGraph 设计理念](/cn/docs/guides/desgin-concept/)
 - [HugeGraph Plugin 机制及插件扩展流程](/cn/docs/guides/custom-plugin/)
 - [HugeGraph工具链本地测试指南](/cn/docs/guides/toolchain-local-test/)
-- [Backup Restore](/cn/docs/guides/backup-restore/)
+- [备份与恢复](/cn/docs/guides/backup-restore/)
 - [HugeGraph Docker 集群部署指南](/cn/docs/guides/hugegraph-docker-cluster/)
 - [FAQ](/cn/docs/guides/faq/)
 - [报告安全问题](/cn/docs/guides/security/)
@@ -29136,6 +29583,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 - [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)
 - [Hubble 基础与单机](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
 - [使用 Loader 实时/流式导入数据](/cn/docs/quickstart/toolchain/hugegraph-loader/)
+- [使用 Tools 导出/管理图](/cn/docs/quickstart/toolchain/hugegraph-tools/)
 
 
 ================

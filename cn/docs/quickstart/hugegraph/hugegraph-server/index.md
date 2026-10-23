@@ -75,7 +75,8 @@ Server 安全检查（`-s true`）要求 Java 17 到 23 以及可读的 `conf/ja
 serializer:
   className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
   config:
-    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+    builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
 ```
 
 ```yaml {tab="GraphSON (HTTP/兼容)"}
@@ -833,6 +834,7 @@ bin/stop-hugegraph.sh
 - [在 IDEA 中配置 Server 开发环境](/cn/docs/contribution-guidelines/hugegraph-server-idea-setup/)
 - [Download](/cn/docs/download/download/)
 - [架构概览](/cn/docs/guides/architectural/)
+- [FAQ](/cn/docs/guides/faq/)
 - [安全公告](/cn/docs/guides/security/)
 - [Toolchain本地测试](/cn/docs/guides/toolchain-local-test/)
 - [系统介绍](/cn/docs/introduction/)
@@ -841,4 +843,5 @@ bin/stop-hugegraph.sh
 - [安装/构建 HugeGraph-Store](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [Hubble 基础与单机](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
 - [使用 Loader 实时/流式导入数据](/cn/docs/quickstart/toolchain/hugegraph-loader/)
+- [使用 Tools 导出/管理图](/cn/docs/quickstart/toolchain/hugegraph-tools/)
 - [使用 SeaTunnel Sink 导入图数据](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)

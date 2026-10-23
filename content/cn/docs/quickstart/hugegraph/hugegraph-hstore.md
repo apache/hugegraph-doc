@@ -131,6 +131,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` | gRPC 服务端口。 |
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` | REST API 端口。 |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` | 数据存储路径。 |
+| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | 否 | 无 | `rocksdb.total_memory_size` | RocksDB 内存预算，单位字节。空值视为未设置；非空值只能是数字，否则入口脚本以退出码 2 退出。未设置时使用 `application-pd.yml` 中的值或自动计算。 |
 {.td-table--wide}
 
 当前主线 entrypoint 将这些变量写入 `SPRING_APPLICATION_JSON`，覆盖镜像内 `conf/application.yml`；其余配置仍从该文件和 `application-pd.yml` 读取，然后以前台方式启动 Java。旧变量 `PD_ADDRESS`、`GRPC_HOST`、`RAFT_ADDRESS` 仍可用，但会输出弃用警告。
@@ -146,7 +147,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 #### 4.1 application.yml
 
-以下配置参考表核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 的发行目录值和 Java 默认注入值；1.7.0 发布包请使用其版本标签对应的配置文件，不要跨版本覆盖。
+以下配置参考表核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 的发行目录值和 Java 默认注入值，其中 `rocksdb.total_memory_size`、`rocksdb.write_buffer_size` 和 `raft.disruptorBufferSize` 三行描述的是 apache/hugegraph#3355 的行为；1.7.0 发布包请使用其版本标签对应的配置文件，不要跨版本覆盖。
 
 #### 4.2 application-pd.yml
 
@@ -178,7 +179,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
 | `raft.address` | `127.0.0.1:8510` | 必填 | 本节点的 Raft 服务地址，格式为 `host:port`，必须能被其他 Store 节点访问。这里不需要配置 peer 列表：分区 Raft 组的成员由 PD 下发。 |
-| `raft.disruptorBufferSize` | `1024` | `0` | Raft 任务队列大小。设为 `0` 时按 `rocksdb.total_memory_size` 推导：将该内存量的 GB 数取最接近的 2 的幂，再乘以 32。 |
+| `raft.disruptorBufferSize` | `1024` | `0` | Raft 任务队列大小。设为 `0` 时按 `rocksdb.total_memory_size` 推导：将该内存量的 GB 数（至少为 1）取最接近的 2 的幂，再乘以 32。 |
 | `raft.max-log-file-size` | `600000000000` | `50000000000` | Raft 日志的最大字节数。 |
 | `raft.snapshotInterval` | `1800` | `300` | 生成 Raft 快照的时间间隔，单位秒。 |
 | `raft.snapshotLogIndexMargin` | 未设置 | `0` | 距上次快照的最小 applied index 差值，达到后才真正生成快照。设为 `0` 关闭该判断。 |
@@ -207,8 +208,8 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 | 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
-| `rocksdb.total_memory_size` | `32000000000` | `51539607552` | 本节点所有 RocksDB 实例共享的内存预算。缺失或为 `0` 时使用 JVM 最大堆内存。 |
-| `rocksdb.write_buffer_size` | `32000000` | `33554432` | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`。 |
+| `rocksdb.total_memory_size` | `0` | 自动计算，见说明 | 本节点所有 RocksDB 实例共享的内存预算，单位字节，按 `write_buffer_ratio` 分为写缓存和 block cache。两者都在堆外，不受 `-Xmx` 限制，另有固定 1 GiB 的 Raft 日志缓存不计入其中；所有分区的 Raft 日志 memtable 共用一个 256 MiB 的写缓冲，并计入这 1 GiB 缓存，不会额外占用内存。该预算是容量目标，并非硬上限：`rocksdb.write_buffer_allow_stall` 默认为 `false`，写缓存写满时不会阻塞写入，因此在大量写入时本地内存可能超出预算，容器仍可能被 OOM 终止。将其设为 `true` 能更严格地守住上限，但会增加写入延迟。缺失或为 `0` 时，取物理内存减去 JVM 最大堆、`MaxDirectMemorySize`（未设置时按堆大小计算；`bin/start-hugegraph-store.sh` 默认把它设为所选的堆大小；`-j` 自行设置了 `-Xmx`、`-XX:MaxHeapSize` 或该上限时不再添加）和 1.5 GiB 预留后剩余部分的一半，并限制在 256 MiB 到 32 GB 之间；容器内设置了内存限制时以 cgroup 内存限制为准，Store 能看到的父 cgroup 上的限制也会计入；否则以宿主机内存为准。JVM 和 cgroup 文件都拿不到可用的内存大小时，改用 JVM 最大堆，同样限制在 256 MiB 到 32 GB 之间。沿用旧版本的 `application-pd.yml` 仍是 `32000000000`，需改为 `0` 才会自动计算。PD 模式下 PD 还可能保存一份副本（KV 键 `S:FS`），由第一个启动的 Store 上传。Store 只有在没有本地文件，或本地文件不比 `S:Timestamp` 新时，才会加载这份副本并覆盖本地文件；上传时不会写入时间戳，缺失的时间戳按 0 处理，因此只修改 `S:FS` 不会生效。升级时，请在每个 Store 上设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=0` 或 `-Drocksdb.total_memory_size=0` 并重启，Store 会让这个值优先于本地文件和 PD 的副本。也可以先修改 `S:FS` 中的值，再通过 PD 的 KV 服务（gRPC `KvService.put`）把当前时间（毫秒）写入 `S:Timestamp`：所有运行中的 Store 会重新加载 PD 的副本、覆盖本地文件，并在 60 秒内通过 `bin/restart-hugegraph-store.sh` 自行重启；已停止的 Store 会在下次启动时加载它。正数按原值使用，且必须是纯字节数，最小为 `1048576`（1 MiB）；更小的值或 `4GB` 之类的值会导致启动失败。 |
+| `rocksdb.write_buffer_size` | `32000000` | 自动推导，见说明 | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`，最小为 `1048576`（1 MiB）。 |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | 落盘前合并的 memtable 数量。 |
 | `rocksdb.write_buffer_ratio` | 未设置 | `0.66` | `total_memory_size` 中分配给写缓存的比例，其余作为 block cache。 |
 {.td-table--wide}
@@ -325,7 +326,10 @@ master 构建接受 `g1`、`G1`、`zgc` 和 `ZGC`。
 - `-d true`（默认）：以后台守护进程方式运行，脚本立即返回，并把 Java 进程号写入 `bin/pid`。
 - `-d false`：以前台模式运行，脚本通过 `exec` 替换为 Java 进程，容器或进程管理器的进程即为 Java 本身。在 Docker 或进程管理器（systemd、supervisord）下运行时请使用此参数，以便在崩溃时自动检测并重启服务。
 
-JVM 内存方面，如果没有自行设置 `JAVA_OPTIONS`：`-Xms512m`，`-Xmx` 取空闲内存的一半并限制在 512 MB 到 2048 MB 之间。脚本还会加上 `-XX:MetaspaceSize=256M`、OOM 时把堆转储写入 `logs/`，以及滚动的 GC 日志 `logs/gc.log`。生产节点通常需要大得多的堆，请显式指定，例如 `-j "-Xmx32g -Xms32g"`。
+JVM 内存方面，如果没有自行设置 `JAVA_OPTIONS`：`-Xms512m`，`-Xmx` 取空闲内存的一半并限制在 512 MB 到 2048 MB 之间。
+脚本还会加上与该堆大小相同的 `-XX:MaxDirectMemorySize`、`-XX:MetaspaceSize=256M`、OOM 时把堆转储写入 `logs/`，以及滚动的 GC 日志 `logs/gc.log`。
+生产节点通常需要大得多的堆，请显式指定，并同时设置直接内存上限，例如 `-j "-Xmx32g -Xms32g -XX:MaxDirectMemorySize=2g"`。
+不设上限时，JVM 允许的直接内存与 32 GB 的堆相同，RocksDB 预算会把它计算在内，在内存不足约 66 GB 的主机上会降到 256 MiB 的下限。
 
 当 `ulimit -n` 或 `ulimit -u` 低于 1024 时脚本会拒绝启动；在 x86_64 和 arm64 上，如果能成功下载并校验对应的动态库，脚本会预加载 jemalloc。
 

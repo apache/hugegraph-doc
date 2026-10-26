@@ -196,13 +196,13 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` |
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` |
-| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | 否 | 无 | `rocksdb.total_memory_size`，单位字节 |
+| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | 否 | 无 | `rocksdb.total_memory_size`，`auto` 或字节数 |
 {.td-table--wide}
 
 > **已弃用的别名**：`PD_ADDRESS` → `HG_STORE_PD_ADDRESS`、`GRPC_HOST` → `HG_STORE_GRPC_HOST`、`RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`
 
 RocksDB 缓存位于 Java 堆外。不设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` 时，将按容器内存限制自动计算；若容器未设置限制，则按宿主机（或 Docker Desktop 虚拟机）内存计算。
-前提是加载到的 `rocksdb.total_memory_size` 缺失或为 `0`：沿用旧版本的 `application-pd.yml` 仍是 `32000000000`，会保留该预算，PD 保存并下发给各 Store 的副本也是如此，
+前提是加载到的 `rocksdb.total_memory_size` 为 `auto`（或缺失、为 `0`）：沿用旧版本的 `application-pd.yml` 仍是 `32000000000`，会保留该预算，PD 保存并下发给各 Store 的副本也是如此，
 请按 [HStore 配置参考](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)中 `rocksdb.total_memory_size` 一行的升级说明处理。
 上面的 Compose 文件默认未设置内存限制，每个 Store 均会按整台宿主机估算预算；多 Store 共用单机时，建议为服务配置内存限制，或将该变量显式设为字节数。
 需要注意，容器限制仅约束 RocksDB 预算：Store 启动脚本仍会按宿主机空闲内存自动分配 `-Xmx`（最多 2 GiB），并将直接内存设为相同大小。

@@ -312,6 +312,17 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 5. **数据在意料之外地保留了下来**：`docker compose down` 会保留命名卷。要同时删除该拓扑的数据，请使用 `docker compose down -v`
 
+6. **升级到 master 构建的镜像后出现 `Permission denied`**：基于当前 master 构建的 PD、Store 和 Server 镜像以非 root 用户 `hugegraph`（UID/GID `10001`）运行。
+   旧镜像以 root 运行，写入的卷仍归 root 所有。先执行 `docker compose down`（不要用 `down -v`），对每个数据卷执行一次属主变更，再重新启动：
+
+   ```bash
+   docker run --rm -u 0 --entrypoint chown -v <volume>:/data <new-image> -R 10001:10001 /data
+   ```
+
+   不要对运行中的容器直接执行 `up -d` 升级：Compose 会重新挂载保存旧镜像应用目录（归 root 所有）的匿名卷。请先执行 `down`，或使用 `up -d --renew-anon-volumes`。
+   作为 bind mount 的宿主机目录必须对 UID `10001` 可写；旧镜像写入过的目录需要执行 `sudo chown -R 10001:10001 <dir>`，因为其中的文件仍归 root 所有。在 Kubernetes 上，Pod 安全上下文需要 `fsGroup: 10001`，Helm Chart 已为 PD 和 Store 设置，参见
+   [Helm 升级和验证](/cn/docs/quickstart/hugegraph/hugegraph-helm/#5-升级和验证)。
+
 **查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。基于当前 master 构建的 PD、Store 以及两个 Server 镜像（`hugegraph/hugegraph` 和 HStore 的
 `hugegraph/server`）都设置了 `STDOUT_MODE=true`，服务日志会输出到容器 stdout。对 Server 而言，Hadoop、ZooKeeper、SOFA、Netty 和 Commons 的 WARN 及以上日志也会输出到 stdout；Hadoop、Netty 和 Commons 的
 INFO 日志以及审计日志、慢查询日志仍只写入文件，ZooKeeper 和 SOFA 不输出 WARN 以下的日志。`/hugegraph-server/logs` 中包含 `hugegraph-server.log`、JVM

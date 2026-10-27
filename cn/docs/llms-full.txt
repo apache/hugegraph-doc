@@ -909,6 +909,8 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
           - 8080:8080
     ```
 
+    基于当前 master 构建的 Server 镜像以非 root 的 UID `10001` 运行，挂载的脚本必须对该用户可读。
+
     使用命令 `docker compose up -d` 启动容器
 
 使用 RESTful API 请求 `HugeGraphServer` 得到如下结果：
@@ -1607,6 +1609,17 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 5. **数据在意料之外地保留了下来**：`docker compose down` 会保留命名卷。要同时删除该拓扑的数据，请使用 `docker compose down -v`
 
+6. **升级到 master 构建的镜像后出现 `Permission denied`**：基于当前 master 构建的 PD、Store 和 Server 镜像以非 root 用户 `hugegraph`（UID/GID `10001`）运行。
+   旧镜像以 root 运行，写入的卷仍归 root 所有。先执行 `docker compose down`（不要用 `down -v`），对每个数据卷执行一次属主变更，再重新启动：
+
+   ```bash
+   docker run --rm -u 0 --entrypoint chown -v <volume>:/data <new-image> -R 10001:10001 /data
+   ```
+
+   不要对运行中的容器直接执行 `up -d` 升级：Compose 会重新挂载保存旧镜像应用目录（归 root 所有）的匿名卷。请先执行 `down`，或使用 `up -d --renew-anon-volumes`。
+   作为 bind mount 的宿主机目录必须对 UID `10001` 可写；旧镜像写入过的目录需要执行 `sudo chown -R 10001:10001 <dir>`，因为其中的文件仍归 root 所有。在 Kubernetes 上，Pod 安全上下文需要 `fsGroup: 10001`，Helm Chart 已为 PD 和 Store 设置，参见
+   [Helm 升级和验证](/cn/docs/quickstart/hugegraph/hugegraph-helm/#5-升级和验证)。
+
 **查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。基于当前 master 构建的 PD、Store 以及两个 Server 镜像（`hugegraph/hugegraph` 和 HStore 的
 `hugegraph/server`）都设置了 `STDOUT_MODE=true`，服务日志会输出到容器 stdout。对 Server 而言，Hadoop、ZooKeeper、SOFA、Netty 和 Commons 的 WARN 及以上日志也会输出到 stdout；Hadoop、Netty 和 Commons 的
 INFO 日志以及审计日志、慢查询日志仍只写入文件，ZooKeeper 和 SOFA 不输出 WARN 以下的日志。`/hugegraph-server/logs` 中包含 `hugegraph-server.log`、JVM
@@ -1820,6 +1833,8 @@ set -a; . ./.env; set +a
 单独运行当前主线构建的 Store 时，将示例地址换成 Store 与 PD 均可路由的实际地址：
 
 ```bash
+# master 构建的镜像以 UID 10001 运行，宿主机数据目录必须对该用户可写
+mkdir -p /path/to/storage && sudo chown 10001:10001 /path/to/storage
 docker run -d \
   -p 8520:8520 -p 8500:8500 -p 8510:8510 \
   -e HG_STORE_PD_ADDRESS=192.168.1.10:8686 \
@@ -2390,6 +2405,8 @@ docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
 
 ```bash
 export HG_PD_AUTH_SECRET_KEY="$(openssl rand -hex 24)"
+# master 构建的镜像以 UID 10001 运行，宿主机数据目录必须对该用户可写
+mkdir -p /path/to/data && sudo chown 10001:10001 /path/to/data
 docker run -d \
   -p 8620:8620 -p 8686:8686 -p 8610:8610 \
   -e HG_PD_GRPC_HOST=192.168.1.10 \
@@ -3095,6 +3112,47 @@ helm test hugegraph -n hugegraph --logs --timeout 5m
 要采用新的默认值，先审阅已有配置，再使用 `--reset-values` 和保留镜像、凭据、存储、拓扑设置的配置文件。
 PD 成员、持久存储和共享凭据变更需要按生命周期说明协调处理。
 
+基于当前 master 构建的 PD、Store 和 Server 镜像以 UID/GID `10001` 运行。除非 `podSecurityContext` 已设置 `fsGroup`，Chart 会为 PD 和 Store Pod 设置
+`fsGroup: 10001`（以及 `fsGroupChangePolicy: OnRootMismatch`），即使 `--reuse-values` 保留了旧 Release 的空值也是如此，使其能写入旧镜像（以 root 运行）创建的 PVC。
+
+请在首次应用 `fsGroup` 的同一次滚动更新中，将 PD 和 Store 切换到基于此版本构建的镜像，使 kubelet 在 `10001` 镜像启动前修改卷的属主。不要先用仍以 root
+运行的镜像（例如尚未更新到此版本的 `latest`）运行此 Chart：这些镜像创建的文件归 root 所有，而 `OnRootMismatch` 只检查卷的根目录，之后不会再修正它们。
+请将 `pd.image` 和 `store.image` 固定为基于此版本构建的镜像，而不要依赖 `latest`。非空的 `image.digest` 优先于 `image.tag`，且 `--reuse-values`
+会保留已有的 digest，因此按 digest 固定镜像的 Release 必须修改 digest，而不能只修改标签。
+
+如果 Release 已在设置了 `fsGroup` 的情况下运行过 root 镜像，请在首次滚动更新到 `10001` 镜像的同时执行一次递归属主变更。请在同一条命令中设置镜像，
+使递归变更作用于 `10001` 镜像，而不是已固定的 root 镜像。示例清空了保留下来的 digest，使标签生效；按 digest 固定镜像的 Release 应改为将 `pd.image.digest`
+和 `store.image.digest` 设为此版本镜像的 digest：
+
+```bash
+helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+  --set pd.image.tag=<this-version> \
+  --set store.image.tag=<this-version> \
+  --set-string pd.image.digest= \
+  --set-string store.image.digest= \
+  --set pd.podSecurityContext.fsGroupChangePolicy=Always \
+  --set store.podSecurityContext.fsGroupChangePolicy=Always \
+  --wait --timeout 15m
+```
+
+改回原策略前，请确认每个 PD 和 Store Pod 运行的都是你设置的 `10001` 镜像，而不是旧的 root 镜像：
+
+```bash
+kubectl get pods -n hugegraph \
+  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].image}{"\n"}{end}'
+```
+
+`--reuse-values` 会保留 `Always`，而它会在每次 Pod 启动时遍历整个卷，因此请在这些 Pod 运行后改回原策略：
+
+```bash
+helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+  --set pd.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+  --set store.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+  --wait --timeout 15m
+```
+
+CSI 驱动忽略 `fsGroup` 的卷（例如许多 NFS 驱动）和 `hostPath` 卷需要改为执行一次 `chown -R 10001:10001`。
+
 `server.storageWaitTimeoutSeconds` 默认 300，通过 `WAIT_STORAGE_TIMEOUT_S` 传给启动脚本。
 未指定的启动探针阈值按存储等待加 150 秒推导；显式探针不会被改写，但预算必须覆盖存储等待和至少 120 秒 Server 启动时间。
 矛盾预算会在渲染时报出对应参数。这个等待超时不是 JVM 内存配置。
@@ -3106,6 +3164,7 @@ PD 成员、持久存储和共享凭据变更需要按生命周期说明协调�
 
 反链：
 
+- [Docker 集群](/cn/docs/guides/hugegraph-docker-cluster/)
 - [Kubernetes 运维](/cn/docs/quickstart/hugegraph/hugegraph-helm-operations/)
 
 

@@ -933,6 +933,8 @@ Set the environment variable `PRELOAD=true` when starting Docker so that sample 
           - 8080:8080
     ```
 
+    Server images built from current master run as the non-root UID `10001`, so a mounted script must be readable by that user.
+
     Use `docker compose up -d` to start the container.
 
 And use the RESTful API to request `HugeGraphServer` and get the following result:
@@ -1637,6 +1639,20 @@ Standalone publishes only `8080` and `8088`; minimal HStore publishes `8620` (PD
 
 5. **Unexpected retained data**: `docker compose down` keeps named volumes. To delete topology data too, use `docker compose down -v`.
 
+6. **`Permission denied` after upgrading to master-built images**: PD, Store and Server images built from current master run as the non-root user
+   `hugegraph`, UID/GID `10001`. Volumes written by older images, which ran as root, stay owned by root. Stop with `docker compose down` (not `down -v`),
+   change the owner of each data volume once, then start again:
+
+   ```bash
+   docker run --rm -u 0 --entrypoint chown -v <volume>:/data <new-image> -R 10001:10001 /data
+   ```
+
+   Do not upgrade running containers with a plain `up -d`: Compose reattaches the anonymous volume holding the previous image's root-owned application
+   directory. Run `down` first, or use `up -d --renew-anon-volumes`. A host directory used as a bind mount must be writable by UID `10001`; one an
+   older image wrote to needs `sudo chown -R 10001:10001 <dir>`, since files inside it stay owned by root. On Kubernetes,
+   the pod security context needs `fsGroup: 10001`, which the Helm chart sets for PD and Store; see [Helm upgrade and
+   verification](/docs/quickstart/hugegraph/hugegraph-helm/#5-upgrade-and-verification).
+
 **Runtime logs**: `docker logs <container-name>` (for example, `docker logs hg-pd0`) shows logs without entering containers. In images built from current
 master, the PD, Store and both Server images (`hugegraph/hugegraph` and the HStore `hugegraph/server`) set `STDOUT_MODE=true` and send service logs to stdout.
 For the Server, WARN and above from Hadoop, ZooKeeper, SOFA, Netty and Commons also reaches stdout; INFO from Hadoop, Netty and Commons and the audit and
@@ -1865,6 +1881,8 @@ Multi-node service names are `pd0`–`pd2`, `store0`–`store2`, and `server0`�
 To run master-built Store alone, replace example addresses with actual routable Store and PD addresses:
 
 ```bash
+# Master-built images run as UID 10001; the host data directory must be writable by it
+mkdir -p /path/to/storage && sudo chown 10001:10001 /path/to/storage
 docker run -d \
   -p 8520:8520 -p 8500:8500 -p 8510:8510 \
   -e HG_STORE_PD_ADDRESS=192.168.1.10:8686 \
@@ -2442,6 +2460,8 @@ To run master-built PD alone, first set a deployment-specific secret and replace
 
 ```bash
 export HG_PD_AUTH_SECRET_KEY="$(openssl rand -hex 24)"
+# Master-built images run as UID 10001; the host data directory must be writable by it
+mkdir -p /path/to/data && sudo chown 10001:10001 /path/to/data
 docker run -d \
   -p 8620:8620 -p 8686:8686 -p 8610:8610 \
   -e HG_PD_GRPC_HOST=192.168.1.10 \
@@ -3160,6 +3180,49 @@ add `--set-string store.waitImage= --set-string server.waitImage=` to reuse comp
 Adopt new defaults deliberately with `--reset-values` and a reviewed file retaining your image, credential, storage and topology settings.
 Do not treat PD membership, storage or credential changes as ordinary independent overrides; consult the lifecycle reference.
 
+PD, Store and Server images built from current master run as UID/GID `10001`. The chart gives the PD and Store pods `fsGroup: 10001` (with
+`fsGroupChangePolicy: OnRootMismatch`) unless their `podSecurityContext` sets `fsGroup`, also when `--reuse-values` keeps an older release's empty value,
+so they can write PVCs created by older images, which ran as root.
+
+Switch PD and Store to images built from this version in the same rollout that first applies `fsGroup`, so the kubelet changes the volume ownership right
+before the `10001` image starts. Do not run images that still run as root with this chart first, for example a `latest` that has not moved to this version:
+files they create stay owned by root, and `OnRootMismatch` checks only the volume root, so it does not fix them later. Pin `pd.image` and `store.image` to a
+build from this version rather than relying on `latest`. A non-empty `image.digest` wins over `image.tag`, and `--reuse-values` keeps an existing digest,
+so a release pinned by digest must change the digest, not only the tag.
+
+If a release already ran root images with `fsGroup` set, roll out the first `10001` image together with a one-time recursive ownership change. Set the
+images in the same command, so the recursive change runs for the `10001` image rather than for a pinned root image. The example clears any reused digest so
+the tag applies; a release pinned by digest sets `pd.image.digest` and `store.image.digest` to the digests of this version's images instead:
+
+```bash
+helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+  --set pd.image.tag=<this-version> \
+  --set store.image.tag=<this-version> \
+  --set-string pd.image.digest= \
+  --set-string store.image.digest= \
+  --set pd.podSecurityContext.fsGroupChangePolicy=Always \
+  --set store.podSecurityContext.fsGroupChangePolicy=Always \
+  --wait --timeout 15m
+```
+
+Before switching the policy back, check that every PD and Store Pod runs the `10001` image you set, not an older root image:
+
+```bash
+kubectl get pods -n hugegraph \
+  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].image}{"\n"}{end}'
+```
+
+`--reuse-values` keeps `Always`, which walks the whole volume on every Pod start, so set the policy back once those Pods are running:
+
+```bash
+helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+  --set pd.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+  --set store.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+  --wait --timeout 15m
+```
+
+Volumes whose CSI driver ignores `fsGroup` (for example many NFS drivers) and `hostPath` volumes need a one-time `chown -R 10001:10001` instead.
+
 `server.storageWaitTimeoutSeconds` defaults to 300 and is passed as `WAIT_STORAGE_TIMEOUT_S`. An unspecified startup probe threshold is derived
 from that wait plus 150 seconds; an explicit threshold is preserved and must cover the storage wait plus at least 120 seconds of Server startup.
 A contradictory budget fails rendering with the relevant parameter names. Storage wait timeout is not a JVM memory setting.
@@ -3172,6 +3235,7 @@ For scheduling, NetworkPolicy, rolling updates and recovery, see [Kubernetes ope
 
 Backlinks:
 
+- [Docker Cluster](/docs/guides/hugegraph-docker-cluster/)
 - [Kubernetes Operations](/docs/quickstart/hugegraph/hugegraph-helm-operations/)
 
 

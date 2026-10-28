@@ -122,22 +122,17 @@ the chart does not force `30000–32767`. Legacy HTTP acknowledgement fields rem
 
 ### Optional engines: disabled by default {#optional-engines}
 
-SeaTunnel and Vermeer remain disabled with both `values-single.yaml` and `values-cluster.yaml`.
-These presets select HugeGraph's HStore topology; `seatunnel.mode` and `vermeer.mode` select the optional engines' own topology.
-Top-level `mode: easy/strict` separately controls Server/Hubble HTTP entry and full network isolation.
+By default, the Chart provisions only the core graph services (PD + Store + Server + Hubble). For data migration and distributed memory graph computing, the Chart offers SeaTunnel and Vermeer as native optional engines, both disabled by default:
 
-| Component | Default | Switch |
-|---|---|---|
-| Hubble | `true` | `hubble.enabled` |
-| SeaTunnel | `false` | `seatunnel.enabled` |
-| Vermeer | `false` | `vermeer.enabled` |
+| Engine | Default | Purpose | Topologies (`*.mode`) | Access & Security |
+|---|---|---|---|---|
+| **Hubble** | Enabled (`true`) | Graph visualization, multi-graphspace management & metrics | Single-replica Deployment | Follows global `mode` (NodePort or ClusterIP) |
+| **SeaTunnel** | Disabled (`false`) | Heterogeneous data ingestion & full graph migration | `standalone` / `cluster` | Private ClusterIP (HTTP Basic auth) |
+| **Vermeer** | Disabled (`false`) | Memory-first high-performance distributed graph algorithms | `standalone` / `cluster` | Private ClusterIP (Token auth, auto-wired to Hubble) |
 
-Set an engine's switch to `true` to enable it. Set `hubble.enabled=false` for API-only access.
+Enable either engine by setting its `enabled` key to `true` in values. Both engines maintain private ClusterIP services, and their administrative passwords are generated independently from Server.
 
-The examples below use the source Chart from the HugeGraph repository root.
-For Vermeer computation, enable the switch and sign in to Hubble; service addresses and credentials are configured automatically.
-
-> [!DETAILS]- SeaTunnel: enable native import, export and migration
+> [!DETAILS]- SeaTunnel: On-demand Data Import, Export, and Migration
 > ```bash
 > helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
 >   -f helm/hugegraph/values-single.yaml \
@@ -145,16 +140,11 @@ For Vermeer computation, enable the switch and sign in to Hubble; service addres
 >   --wait --timeout 30m
 > ```
 >
-> Standalone starts one long-running hybrid member. Set `seatunnel.mode=cluster` and `seatunnel.replicas=2`
-> for multiple hybrid members. Native UI/API access remains private behind ClusterIP and always requires HTTP Basic login.
-> Newly generated administrator passwords use 6 random alphanumeric characters in easy mode or 16 in strict mode.
-> Upgrades, including mode changes, retain existing passwords without automatic rotation. HTTP/member ports admit only required internal callers
-> in both modes. For optional administration, use an authorized port-forward as described in the deployment guide.
-> Helm prepares the engine and examples; create graphs and submit jobs yourself. Checkpoints use temporary local files.
-> See the [SeaTunnel deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)
-> for access, credentials, copy examples and recovery limits.
+> - **Topologies**: `standalone` runs 1 Hybrid node for lightweight testing; `cluster` runs multiple homogeneous nodes for high-throughput batch jobs.
+> - **Authentication**: Web dashboard uses independent HTTP Basic auth (default `admin`), stored in the `hugegraph-seatunnel-auth` Secret. Port `5801` is strictly for cluster internal communication.
+> - See the [SeaTunnel Deployment Section](#6-start-seatunnel) or [SeaTunnel Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md) for full job configs and migration steps.
 
-> [!DETAILS]- Vermeer: enable graph computation and automatic Hubble connection
+> [!DETAILS]- Vermeer: In-Memory Graph Computing Integrated with Hubble
 > ```bash
 > helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
 >   -f helm/hugegraph/values-single.yaml \
@@ -162,37 +152,26 @@ For Vermeer computation, enable the switch and sign in to Hubble; service addres
 >   --wait --timeout 20m
 > ```
 >
-> Standalone uses one Pod with separate native Master and Worker containers and separate data volumes.
-> Set `vermeer.mode=cluster` for one Master Pod plus `vermeer.worker.replicas` Worker Pods (default 3).
-> Multiple Workers provide distributed computation; the single Master has no automatic failover guarantee.
+> ```text
+> helm/hugegraph/
+>   examples/
+>     values-vermeer-standalone.yaml # Standalone preset (Master and Worker combined in one Pod)
+>     values-vermeer-cluster.yaml    # Cluster preset (1 dedicated Master Pod + 3 distributed Worker Pods)
+>   docs/
+>     vermeer.md                     # Advanced algorithm parameters, API mapping and operations
+> ```
 >
-> Keep Hubble in its default PD mode. The Chart supplies the internal Master URL and service token automatically.
-> Log in to Hubble as the HugeGraph administrator, select an HStore graph, load/reload it, run one of the nine supported algorithms,
-> inspect/cancel the asynchronous task and page through results. Compute-copy cleanup uses the existing Hubble administrator API;
-> the current page has Load/Reload controls, not a separate Unload button.
-> This workflow does not write results into HugeGraph properties. Ordinary graph readers do not receive direct Store-scan privileges.
->
-> Native UI/API remains private behind ClusterIP in both modes. Optional administration uses
-> `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` and `http://127.0.0.1:6688/`.
-> Read the separate administrator password from Secret `hugegraph-vermeer-admin`, key `password`, and paste it into **Admin credential**.
-> Newly generated passwords use 6 random alphanumeric characters in easy mode or 16 in strict mode; upgrades and mode changes retain existing passwords.
-> Login creates a 24-hour versioned session cookie. Hubble needs no manual service token.
-> The [Vermeer deployment guide](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)
-> covers password retrieval, storage, mode changes and advanced service credentials.
-> The Chart pins `hugegraph/vermeer:helm-30b67d93e7d0` to image-index digest
-> `sha256:f9b69ef134069b432de1c9964374d7fdbfa53245d1fe7dcbce1e75b82b69dc9e`, published by the
-> [official workflow run](https://github.com/hugegraph/actions/actions/runs/40653109759) from source
-> [`30b67d93e7d0`](https://github.com/hugegraph/hugegraph-computer/commit/30b67d93e7d097374341cf46ee6a0703421512b1).
-> Hubble requires `hubble.mode=pd` for this native integration; API-only Vermeer remains usable with `hubble.enabled=false`.
-> For first enablement on a pre-Vermeer release, export and review `helm get values --all -o yaml`, then supply that file with `-f`
-> without `--reuse-values`, allowing the new Vermeer defaults to load. Preserve `metadataCluster`; see the deployment guide for the complete command.
+> - **Topologies**: `standalone` runs Master and Worker in one Pod; `cluster` provides a separate Master coordinator Pod and scalable Worker computing Pods (default 3 replicas).
+> - **Hubble Integration**: Hubble automatically acquires the internal Master Service URL and service tokens. Operators can trigger 15+ graph algorithms directly from Hubble without manual token configuration.
+> - **Native Dashboard Access**: Forward the private Service via `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` and sign in with the password from Secret `<release>-vermeer-admin` under **Admin credential**.
+> - For image pinning and credentials management, see the [Vermeer Deployment Guide](https://github.com/hugegraph/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md).
 
 ### PD metadata namespace {#metadata-namespace}
 
-Top-level `metadataCluster` defaults to `hg-test`, preserving the existing Server metadata prefix.
-The Chart supplies the same value as Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER`, so Store scans resolve the Schema written by Server.
-This prefix is independent of Raft names, service IDs and graph spaces. A new deployment can choose another identifier before initialization.
-Changing the value afterward does not migrate metadata or graph data; keep the initialized Server value when enabling Vermeer.
+The top-level `metadataCluster` parameter (default `hg-test`) specifies the PD metadata cluster prefix. The Chart injects this value into Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER`, ensuring Store correctly locates the Schema initialized by Server when processing Vermeer graph scans.
+
+> [!IMPORTANT]
+> `metadataCluster` is a metadata namespace prefix, not a Raft group name. Modifying it **does not** automatically migrate existing graph data. Always preserve the original cluster prefix when enabling Vermeer; if graph load tasks fail with `Schema missing` or `no such vertex label`, check that the namespace prefix matches across all components. Refer to the [Metadata Namespace Operations Guide](./hugegraph-helm-operations.md#metadata-namespace) for details.
 Standard older releases using `hg-test` need no namespace-adoption step. For a custom legacy prefix, follow
 [metadata namespace adoption](./hugegraph-helm-operations.md#metadata-namespace) before upgrading.
 

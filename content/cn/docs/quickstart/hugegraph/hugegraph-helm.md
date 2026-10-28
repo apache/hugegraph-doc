@@ -117,21 +117,17 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 
 ### 可选引擎：默认关闭 {#optional-engines}
 
-`values-single.yaml` 和 `values-cluster.yaml` 都不会开启 SeaTunnel 或 Vermeer。
-这两个预设选择 HugeGraph 的 HStore 拓扑；`seatunnel.mode` 和 `vermeer.mode` 分别选择可选引擎的拓扑，
-顶层 `mode: easy/strict` 则独立控制 Server/Hubble 的 HTTP 入口与完整网络隔离。
+Chart 默认仅部署核心图服务（PD + Store + Server + Hubble）。针对数据集成与超大规模内存图计算场景，Chart 提供了 SeaTunnel 与 Vermeer 两款原生可选引擎，默认均保持关闭：
 
-| 组件 | 默认值 | 开关 |
-|---|---|---|
-| Hubble | `true` | `hubble.enabled` |
-| SeaTunnel | `false` | `seatunnel.enabled` |
-| Vermeer | `false` | `vermeer.enabled` |
+| 可选引擎 | 默认状态 | 核心用途 | 运行模式 (`*.mode`) | 访问控制 |
+|---|---|---|---|---|
+| **Hubble** | 开启 (`true`) | 图数据可视化、多图空间与任务监控 | 单副本 Deployment | 跟随全局 `mode`（NodePort 或 ClusterIP） |
+| **SeaTunnel** | 关闭 (`false`) | 异构数据源批流导入与跨图整库迁移 | `standalone` / `cluster` | 私有 ClusterIP（HTTP Basic 鉴权） |
+| **Vermeer** | 关闭 (`false`) | 内存优先的高性能分布式图计算算法 | `standalone` / `cluster` | 私有 ClusterIP（Token 鉴权，Hubble 自动集成） |
 
-将引擎开关设为 `true` 即可启用；`hubble.enabled=false` 切换为仅 API 部署。
+在 values 中将对应引擎的 `enabled` 设为 `true` 即可启用。两款引擎的原生接口均保留为私有 ClusterIP，管理密码与 Server 独立生成。
 
-下面示例从 HugeGraph 仓库根目录安装源码 Chart。使用 Vermeer 图计算只需开启开关并登录 Hubble，服务地址与凭据由 Chart 自动接入。
-
-> [!DETAILS]- SeaTunnel：按需开启原生导入、导出和迁移
+> [!DETAILS]- SeaTunnel：按需开启原生数据导入、导出与迁移
 > ```bash
 > helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
 >   -f helm/hugegraph/values-single.yaml \
@@ -139,15 +135,11 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 >   --wait --timeout 30m
 > ```
 >
-> 单机模式运行一个常驻 hybrid 成员；设置 `seatunnel.mode=cluster` 和 `seatunnel.replicas=2` 可运行多个成员。
-> 原生 UI/API 在两种模式下都保留为私有 ClusterIP，始终需要独立的 HTTP Basic 登录。
-> 新生成的管理员密码在 easy 模式下为 6 位随机字母数字，strict 模式下为 16 位。
-> 升级复用既有密码，切换模式也不会自动轮换；两种模式都将 HTTP／成员端口限制为必要的内部调用方。
-> 按需管理时使用经过授权的 port-forward，步骤见部署指南。
-> Helm 准备引擎和示例，不自动建图或执行作业；checkpoint 使用临时本地文件。
-> 访问、凭据、复制示例和恢复限制见 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
+> - **运行模式**：`standalone` 启动 1 个 Hybrid 节点（轻量测试）；`cluster` 模式启动多个同构节点（高并发批处理）。
+> - **访问与凭据**：Web 控制台使用独立 HTTP Basic 认证（默认用户 `admin`），密码保存在 `hugegraph-seatunnel-auth` Secret 中。端口 `5801` 仅供集群内部通信，严禁对外暴露。
+> - 完整作业配置、内置示例验证及跨图迁移流程见 [SeaTunnel 部署章节](#6-start-seatunnel) 或 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
-> [!DETAILS]- Vermeer：按需开启图计算，自动接入 Hubble
+> [!DETAILS]- Vermeer：按需开启内存图计算，自动接入 Hubble
 > ```bash
 > helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
 >   -f helm/hugegraph/values-single.yaml \
@@ -155,37 +147,26 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 >   --wait --timeout 20m
 > ```
 >
-> 单机模式使用一个 Pod，内含独立的 Master 和 Worker 原生进程容器，各自挂载数据卷。
-> 设置 `vermeer.mode=cluster` 后为 1 个 Master Pod 加 `vermeer.worker.replicas` 个 Worker Pod，默认 3 个 Worker。
-> 多 Worker 提供分布式计算；单 Master 不承诺自动故障切换。
+> ```text
+> helm/hugegraph/
+>   examples/
+>     values-vermeer-standalone.yaml # 单机预设（单个 Pod 同时包含 Master 与 Worker）
+>     values-vermeer-cluster.yaml    # 集群预设（1 个 Master Pod + 3 个 Worker Pods）
+>   docs/
+>     vermeer.md                     # Vermeer 算法调用、参数映射与进阶运维手册
+> ```
 >
-> 保持 Hubble 默认的 PD 模式，Chart 会自动提供 Master 内部地址和服务令牌，无需手工填写。
-> 以 HugeGraph 管理员登录 Hubble，选择 HStore 图，加载／重载后运行九种支持算法之一，
-> 查看／取消异步任务并分页浏览结果。计算副本清理由既有 Hubble 管理员 API 完成，当前页面提供加载／重载，没有独立卸载按钮。
-> 此流程不把结果写回 HugeGraph 属性；普通图读取用户不会因此获得直接扫描 Store 的权限。
->
-> Vermeer 原生 UI/API 在两种模式下都保留为私有 ClusterIP。按需管理时，
-> 执行 `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` 后访问 `http://127.0.0.1:6688/`。
-> 从 Secret `hugegraph-vermeer-admin` 的 `password` 键读取独立的管理员密码，粘贴到 **Admin credential** 输入框。
-> 新生成的密码在 easy 模式下为 6 位随机字母数字，strict 模式下为 16 位；升级和切换模式均保留既有密码。
-> 登录后获得有效期 24 小时的版本化会话 Cookie；使用 Hubble 无需手工获取服务令牌。
-> 密码获取、持久化、模式切换与高级服务凭据见 [Vermeer 部署指南](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)。
-> Chart 将 `hugegraph/vermeer:helm-30b67d93e7d0` 固定到镜像索引 digest
-> `sha256:f9b69ef134069b432de1c9964374d7fdbfa53245d1fe7dcbce1e75b82b69dc9e`，由
-> [官方工作流运行](https://github.com/hugegraph/actions/actions/runs/40653109759)基于源码
-> [`30b67d93e7d0`](https://github.com/hugegraph/hugegraph-computer/commit/30b67d93e7d097374341cf46ee6a0703421512b1)发布。
-> 原生联动要求 `hubble.mode=pd`；设置 `hubble.enabled=false` 时仍可通过原生入口使用 Vermeer。
-> 对新增 Vermeer 之前的旧 release 首次启用时，先导出并审阅 `helm get values --all -o yaml`，再用 `-f` 传入，
-> 不加 `--reuse-values`，以便加载新 Vermeer 默认值。保留既有 `metadataCluster`，完整命令见部署指南。
+> - **运行模式**：`standalone` 单机模式在同一个 Pod 中运行 Master 协调与 Worker 计算容器；`cluster` 模式提供独立的 Master Pod 与可水平扩展的 Worker Pod 集群（默认 3 副本）。
+> - **Hubble 一键集成**：Hubble 会自动注入 Master 内部 Service 地址与访问令牌。管理员在 Hubble 控制台即可直接触发 15+ 种图算法，计算结果保留在内存副本中，不污染原图属性。
+> - **原生控制台直连**：原生 UI 默认以私有 ClusterIP 运行，可通过 `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` 转发，并在 **Admin credential** 输入框中填入 `<release>-vermeer-admin` Secret 的 `password` 登录。
+> - 镜像固定策略与进阶凭据管理见 [Vermeer 部署指南](https://github.com/hugegraph/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
 
 ### PD 元数据命名空间 {#metadata-namespace}
 
-顶层 `metadataCluster` 默认为 `hg-test`，保留既有 Server 元数据前缀。
-Chart 将同一值注入 Server 的 `HG_SERVER_CLUSTER` 和 Store 的 `PD_CLUSTER`，让 Store 扫描读取到 Server 写入的 Schema。
-该前缀独立于 Raft 名称、服务 ID 和图空间；新部署可在初始化前选择其他标识符。
-初始化后改变该值不会迁移元数据或图数据，启用 Vermeer 时应保留原 Server 的值。
-标准旧部署使用 `hg-test`，无需额外认领命名空间；旧自定义前缀请先按
-[元数据命名空间接入步骤](./hugegraph-helm-operations.md#metadata-namespace)核对，再执行升级。
+顶层参数 `metadataCluster`（默认 `hg-test`）定义了 PD 中元数据的集群前缀。Chart 会将该值同步注入 Server 的 `HG_SERVER_CLUSTER` 与 Store 的 `PD_CLUSTER`，使得 Store 在接收 Vermeer 扫描请求时能准确定位 Server 写入的 Schema。
+
+> [!IMPORTANT]
+> `metadataCluster` 是元数据存储的前缀空间，而非 Raft 分组名。修改该值**不会**自动迁移已有图数据。开启 Vermeer 时必须保留原有集群的前缀值；若加载图时遇到 `Schema missing` 或 `no such vertex label`，请优先检查各组件的元数据前缀是否一致。自定义前缀的核验流程请参考 [元数据命名空间运维指引](./hugegraph-helm-operations.md#metadata-namespace)。
 
 ### 服务身份与图空间
 

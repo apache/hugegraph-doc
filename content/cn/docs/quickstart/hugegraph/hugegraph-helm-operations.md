@@ -41,47 +41,23 @@ Server 等待存储的默认上限为 300 秒，可以用 `server.storageWaitTim
 
 ### 保留元数据命名空间 {#metadata-namespace}
 
-`metadataCluster: hg-test` 保留旧 Server 的 PD 元数据前缀，并统一配置 Server 的 `HG_SERVER_CLUSTER` 与 Store 的 `PD_CLUSTER`。
-它不是 Raft 名称，也不是元数据迁移开关；不要为了启用 Vermeer 把已初始化部署切换成 `hg`。
-若 Server REST 查询正常，而 Vermeer 扫描 Store 报 `Schema missing` 或 `no such vertex label`，
-先核对共享值、既有 Server 元数据命名空间，以及每个运行中 Store Pod 的环境是否一致。
+`metadataCluster: hg-test` 用于声明 Server 和 Store 访问 PD 时的元数据前缀（注入至 Server 的 `HG_SERVER_CLUSTER` 与 Store 的 `PD_CLUSTER`）。
+它并非 Raft 分组名，修改该值不会自动迁移历史元数据。**切勿**为了启用 Vermeer 将已有集群的前缀随意变更。若遇到 Server 查询正常但 Vermeer 扫描 Store 报 `Schema missing` 或 `no such vertex label`，应优先核查各组件的元数据前缀是否完全一致。
 
-在线升级会拒绝与 Server Deployment 记录的 annotation 或显式 `HG_SERVER_CLUSTER` 冲突的目标值。
-标准旧 `hg-test` 部署无需额外认领操作。若旧自定义镜像用了其他前缀且 Chart 无法确认，
-先读取既有 Server 日志／配置，确认实际值，再在 Server Deployment 记录该值，并在审阅后的 Helm values 中将 `metadataCluster` 设为同一值：
+若历史自建环境使用了非默认前缀，升级前需在 Server Deployment 显式标注确认：
 
 ```bash
 kubectl -n hugegraph annotate deployment hugegraph-server \
-  hugegraph.apache.org/metadata-cluster='<核实过的既有命名空间>'
+  hugegraph.apache.org/metadata-cluster='<已核准的历史前缀>'
 ```
 
-只在完成核对后替换占位符；annotation 记录原本使用的命名空间，不复制或迁移 PD key。
-离线／GitOps 渲染无法检查在线 Deployment，应显式保留核实后的值。
-集群预设的 `store.updateStrategy.type=OnDelete` 不会因模板更新而替换正在运行的 Pod，
-须按[逐个更新 Store 的既有流程](#6-rolling-store-images-safely)更新 Pod，新环境才会生效。
-替换使用 `emptyDir` 的 Pod 会丢弃其临时数据，这种滚动操作不能视为无损恢复或迁移。
+并在 values 中将 `metadataCluster` 设为同一值。对于采用 `store.updateStrategy.type=OnDelete` 策略的 Store 节点，需按[受控滚动升级流程](#6-rolling-store-images-safely)逐个重建 Pod，新配置方可生效。
 
-> [!DETAILS]- 可选引擎：就绪、凭据和恢复
-> SeaTunnel 和 Vermeer 在两种 HugeGraph 预设中都默认关闭，启用后增加独立入口凭据与网络规则。
-> SeaTunnel HTTP/UI 使用 8080 和 Basic 鉴权，两种模式都将私有 HTTP／成员端口限制为必要的内部调用方。
-> 常驻 hybrid 进程不代表 checkpoint 已通过 PVC 持久化。
->
-> Vermeer Master HTTP/gRPC 为 6688/6689，Worker HTTP/gRPC 为 6788/6789，原生 UI/API 也始终保留为私有 ClusterIP。
-> 单机为一个 Pod 中独立的 Master/Worker 容器和数据卷；集群默认为 1 个 Master 加 3 个 Worker Pod。
-> 两个引擎的原生入口始终需要登录。新生成的管理员密码在 easy 模式下为 6 位随机字母数字，strict 模式下为 16 位。
-> 升级复用既有密码，切换模式也不会自动轮换；按需管理使用经过授权的 port-forward。
-> Vermeer 的 **Admin credential** 直接接受 `<release>-vermeer-admin` Secret 的 `password`，无需用户名，登录获得 24 小时版本化会话 Cookie。
-> SeaTunnel 用户名仍为 `admin`。Hubble 服务鉴权自动接入，与人类管理密码独立，不需要用户获取令牌。
-> 更改外部 Vermeer 管理密码 Secret 只需重启 Master；内部服务签名因子轮换需重启 Master 与 Hubble，无需重启 Worker。
->
-> Master/Worker 监听器健康不代表当前空间已可计算。以服务凭据检查 `/api/v1/workers/availability`，
-> 再通过 Hubble 实测加载和已知算法结果；公共 Worker 池避免新空间需要手工分配。
-> 持久化元数据不保证内存图、结果缓存或运行中任务自动恢复。
-> 切换拓扑或 Worker 数前停止新提交、完成／取消任务并卸载计算图，变更后检查可用性并重新加载。
-> 单机和集群使用不同 Worker claim，模式切换不会迁移本地文件。
->
-> 管理密码获取、保留卷与升级步骤见 [Vermeer 运维指南](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)
-> 和 [SeaTunnel 运维指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
+> [!DETAILS]- 可选引擎运维：探针、凭据与拓扑切换
+> - **端口与健康状态**：SeaTunnel HTTP/UI 端口为 `8080`；Vermeer Master HTTP/gRPC 为 `6688/6689`，Worker 为 `6788/6789`。两款引擎的原生接口在两种模式下均保持私有 ClusterIP。
+> - **密码与会话**：初次部署生成的管理密码在 easy 模式下为 6 位字符，strict 模式下为 16 位；后续升级与模式切换均自动保留既有凭据。Vermeer 原生控制台直接在 **Admin credential** 填入 `<release>-vermeer-admin` Secret 的 `password` 即可登录；Hubble 内部服务凭据已自动注入。
+> - **拓扑与副本切换**：修改 `seatunnel.mode` 或 `vermeer.mode` 前，请确保所有计算与导入批任务已结束并卸载内存图副本。单机与集群使用独立的数据卷声明，拓扑切换不会自动迁移本地文件。
+> - 完整恢复指引与进阶参数详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md) 与 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
 ### Helm test 检查范围 {#helm-test-coverage}
 

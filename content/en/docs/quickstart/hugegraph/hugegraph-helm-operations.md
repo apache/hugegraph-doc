@@ -44,50 +44,23 @@ No local Helm rendering verifies live cluster reachability, volumes or JVM capac
 
 ### Preserve the metadata namespace {#metadata-namespace}
 
-`metadataCluster: hg-test` keeps the legacy Server PD metadata prefix and configures both Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER`.
-It is not a Raft name or a metadata-migration option. Do not switch an initialized deployment to `hg` merely to enable Vermeer.
-If Vermeer Store scans report `Schema missing` or `no such vertex label` while Server REST queries work, first compare this shared value
-with the existing Server metadata namespace and the environment of each running Store Pod.
+`metadataCluster: hg-test` sets the PD metadata namespace prefix (injected into Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER`).
+It is not a Raft group name; changing it will not automatically migrate existing metadata. **Never** arbitrarily change this prefix on an initialized cluster to enable Vermeer. If Server REST queries succeed but Vermeer scanning Store fails with `Schema missing` or `no such vertex label`, check that the namespace prefix matches across all components.
 
-Online upgrades reject a target value that conflicts with the recorded Server Deployment annotation or explicit `HG_SERVER_CLUSTER` value.
-Standard legacy `hg-test` releases need no extra adoption action. If an older custom image used another prefix and the Chart cannot verify it,
-inspect the existing Server logs/configuration first. Record that verified existing value on the Server Deployment, then set `metadataCluster`
-to exactly the same value in the reviewed Helm values:
+If a legacy environment used a custom prefix, record it explicitly on the Server Deployment before upgrading:
 
 ```bash
 kubectl -n hugegraph annotate deployment hugegraph-server \
   hugegraph.apache.org/metadata-cluster='<verified-existing-namespace>'
 ```
 
-Replace the placeholder only after verification. This records the namespace already in use; it does not copy or migrate PD keys.
-Offline/GitOps rendering cannot inspect the running Deployment, so preserve the verified value explicitly.
-With the cluster preset's `store.updateStrategy.type=OnDelete`, updating the StatefulSet template does not update running Pods.
-Apply the existing [one-at-a-time Store procedure](#6-rolling-store-images-safely) before expecting the new environment to take effect.
-Replacing a Pod backed by `emptyDir` discards its temporary data; such a rollout is not a lossless recovery or migration.
+and ensure `metadataCluster` matches this value in your values file. For Store nodes using `store.updateStrategy.type=OnDelete`, follow the [rolling upgrade procedure](#6-rolling-store-images-safely) to recreate Pods one by one so the new settings take effect.
 
-> [!DETAILS]- Optional engines: readiness, credentials and recovery
-> SeaTunnel and Vermeer stay disabled in both HugeGraph presets; enabling either adds separate entry credentials and network rules.
-> SeaTunnel HTTP/UI uses 8080 and Basic authentication. Its private HTTP/member ports admit only required internal callers in both modes.
-> Its long-running hybrid process does not provide PVC-backed checkpoint recovery.
->
-> Vermeer Master HTTP/gRPC uses 6688/6689, and Worker HTTP/gRPC uses 6788/6789. Its native UI/API also remains private behind ClusterIP.
-> Standalone has one Pod with separate Master/Worker containers and data volumes; cluster has one Master plus three Worker Pods by default.
-> Both engines always require native login. Newly generated administrator passwords use 6 random alphanumeric characters in easy mode or 16 in strict mode.
-> Upgrades retain existing passwords, including when changing mode; changing mode does not rotate them automatically.
-> Optional administration uses authorized port-forwarding; Vermeer **Admin credential** accepts the password from `<release>-vermeer-admin`,
-> key `password`, with no username required. Login creates a 24-hour versioned session cookie. SeaTunnel still uses username `admin`.
-> Hubble service authentication is automatic and separate from human passwords; no token retrieval is needed.
-> An external Vermeer administrator Secret change needs a Master restart only; internal service-factor rotation needs Master and Hubble, not Workers.
->
-> Master/Worker listener health does not prove space-level compute readiness. Check `/api/v1/workers/availability` with the service credential,
-> then verify loading and a known algorithm result through Hubble. The common Worker pool avoids manual allocation for new spaces.
-> Persistent metadata does not restore in-memory graphs, result caches or running jobs automatically.
-> Stop submissions, finish/cancel tasks and unload compute graphs before topology/Worker-count changes; inspect availability and reload afterward.
-> Standalone and cluster use different Worker claims, so changing modes does not migrate local files.
->
-> Follow the [Vermeer operations guide](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)
-> and [SeaTunnel operations guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)
-> for administrator password retrieval, retained claims and exact upgrade commands. Raw service tokens are advanced internal integrations only.
+> [!DETAILS]- Optional Engines Operations: Probes, Credentials, and Topology Switching
+> - **Ports & Health**: SeaTunnel HTTP/UI runs on `8080`; Vermeer Master HTTP/gRPC listens on `6688/6689`, and Worker on `6788/6789`. Both engines stay behind private ClusterIP in both modes.
+> - **Credentials & Sessions**: Generated admin passwords use 6 characters in easy mode or 16 in strict mode, retained across upgrades and mode changes. In Vermeer native UI, enter the password from Secret `<release>-vermeer-admin` into **Admin credential**; Hubble internal service tokens are auto-wired.
+> - **Topology Changes**: Ensure active computations and batch ingestion jobs are complete and in-memory graphs are unloaded before changing `seatunnel.mode` or `vermeer.mode`. Standalone and cluster use separate PVC claims, so mode changes do not migrate local files.
+> - See the [Vermeer Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md) and [SeaTunnel Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md) for full recovery and configuration details.
 
 ### Helm test coverage
 

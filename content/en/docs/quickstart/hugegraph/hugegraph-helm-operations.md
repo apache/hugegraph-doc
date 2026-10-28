@@ -11,7 +11,7 @@ Commands assume release/namespace `hugegraph`; substitute the actual workload na
 
 ## 1 Storage and private images
 
-The default installation needs seven persistent volumes. Dynamic storage requires a working provisioner; static local storage requires prepared directories
+The base installation needs seven persistent volumes. Dynamic storage requires a working provisioner; static local storage requires prepared directories
 and matching PVs on the named nodes. Use the [complete examples](https://github.com/apache/hugegraph/tree/master/helm/hugegraph/examples)
 for all seven local PVs, `WaitForFirstConsumer`, registry mirrors and GitOps Secrets.
 An initially Pending PVC with `WaitForFirstConsumer` can be normal; persistent Pending needs PVC/Pod events and PV matching checks.
@@ -26,6 +26,9 @@ kubectl get pv,storageclass
 
 For `ImagePullBackOff`, inspect Pod events and registry access/credentials. The default image inventory contains four component images;
 Store wait and Helm test reuse existing component images with `curl` already installed. Explicit helper-image overrides must also be mirrored.
+Enabled SeaTunnel adds its configured `apache/seatunnel` image; enabled Vermeer adds a compatible `hugegraph/vermeer` build,
+reused by Master, Worker and token initialization. The base local-PV example omits Vermeer claims: standalone adds two,
+while cluster adds one Master claim plus one per Worker (four additional claims by default).
 
 ## 2 Ports and health
 
@@ -34,6 +37,26 @@ Client Services hide individual Pod addresses. NodePort is a separate allocated 
 PD `/v1/ready` requires a Raft leader; `/v1/health` only confirms the listener. Store startup waits for a majority of ready PD peers.
 Server waits up to `server.storageWaitTimeoutSeconds` (default 300) before its application startup; adjust it for slow storage bootstrap.
 No local Helm rendering verifies live cluster reachability, volumes or JVM capacity.
+
+> [!DETAILS]- Optional engines: readiness, credentials and recovery
+> SeaTunnel and Vermeer stay disabled in both HugeGraph presets; enabling either adds separate entry credentials and network rules.
+> SeaTunnel HTTP/UI uses 8080 and Basic authentication; member/CLI 5801 is restricted to trusted release peers even in easy mode.
+> Its long-running hybrid process does not provide PVC-backed checkpoint recovery.
+>
+> Vermeer Master HTTP/gRPC uses 6688/6689, and Worker HTTP/gRPC uses 6788/6789. Only authenticated Master HTTP is exposed.
+> Standalone has one Pod with separate Master/Worker containers and data volumes; cluster has one Master plus three Worker Pods by default.
+> Its kept signing factor and generated long-lived Hubble token are separate from Server login and PD credentials.
+> Changing an external Secret requires rolling the dependent Vermeer workloads and Hubble so the token is regenerated.
+>
+> Master/Worker listener health does not prove space-level compute readiness. Check `/api/v1/workers/availability` with the service credential,
+> then verify loading and a known algorithm result through Hubble. The common Worker pool avoids manual allocation for new spaces.
+> Persistent metadata does not restore in-memory graphs, result caches or running jobs automatically.
+> Stop submissions, finish/cancel tasks and unload compute graphs before topology/Worker-count changes; inspect availability and reload afterward.
+> Standalone and cluster use different Worker claims, so changing modes does not migrate local files.
+>
+> Follow the [Vermeer operations guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
+> and [SeaTunnel operations guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)
+> for token retrieval, credential sources, retained claims and exact upgrade commands.
 
 ### Helm test coverage
 

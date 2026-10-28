@@ -113,7 +113,7 @@ kubectl -n hugegraph get secret hugegraph-admin \
 NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据集群配置的范围校验，chart 不再强制 `30000–32767`。
 原 HTTP 暴露确认参数保留兼容，但不再阻止渲染。
 
-### 可选引擎：默认关闭
+### 可选引擎：默认关闭 {#optional-engines}
 
 `values-single.yaml` 和 `values-cluster.yaml` 都不会开启 SeaTunnel 或 Vermeer。
 这两个预设选择 HugeGraph 的 HStore 拓扑；`seatunnel.mode` 和 `vermeer.mode` 分别选择可选引擎的拓扑，

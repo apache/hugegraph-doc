@@ -14,7 +14,8 @@ Vermeer 是使用 Go 编写的高性能内存优先图计算框架，支持一�
 
 master 是负责通信、转发、汇总的节点，计算量和占用资源量较少。worker 是计算节点，用于存储图数据和运行计算任务，占用大量内存和 cpu。grpc 和 rest 模块分别负责内部通信和外部调用。
 
-启动时，程序先设置内置默认值，再读取工作目录下 `config/<env>.ini` 的 `[default]` 节，最后由显式命令行参数覆盖对应配置；例如 `--env=master` 读取 `config/master.ini`。Docker 镜像把仓库中的配置复制到 `/go/bin/config/`，并以 `/go/bin/` 为工作目录。挂载宿主机目录到 `/go/bin/config` 会遮住镜像自带文件，因此该目录必须包含实际使用的 ini 文件。配置读取器不从环境变量取值。
+启动时，程序先设置内置默认值，再读取工作目录下 `config/<env>.ini` 的 `[default]` 节，最后由显式命令行参数覆盖对应配置；例如 `--env=master` 读取 `config/master.ini`。Docker 镜像把仓库中的配置复制到 `/go/bin/config/`，并以 `/go/bin/` 为工作目录。挂载宿主机目录到 `/go/bin/config` 会遮住镜像自带文件，因此该目录必须包含实际使用的 ini 文件。普通 INI 配置键不会自动映射环境变量。专门的部署凭据设置还支持
+`VERMEER_PD_PASSWORD_FILE`、`VERMEER_PD_PEERS`、`VERMEER_HUGEGRAPH_CREDENTIALS_FILE` 及文档中的签名因子／密码文件设置。
 
 默认端口如下：
 
@@ -36,6 +37,29 @@ flowchart LR
 ```
 
 ### 1.2 运行方法
+
+> [!DETAILS]- Helm：与 HugeGraph、Hubble 一起部署 Vermeer
+> HugeGraph Helm Chart 提供可选的原生 Vermeer 集成，两种 HugeGraph 拓扑预设都默认关闭。
+> 先在 `my-images.yaml` 选好匹配的 Hubble/Vermeer 构建，再从 HugeGraph 仓库根目录运行：
+>
+> ```bash
+> helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
+>   -f helm/hugegraph/values-single.yaml -f my-images.yaml \
+>   --set vermeer.enabled=true --set vermeer.mode=standalone \
+>   --wait --timeout 20m
+> ```
+>
+> 单机为一个 Pod 内独立的 Master 和 Worker 容器；设置 `vermeer.mode=cluster` 与 `vermeer.worker.replicas=3`，
+> 则使用 1 个 Master Pod 和可调数量的 Worker Pod。两者都依赖 HStore/PD 数据链路，轻量 HugeGraph 预设已提供它。
+> 顶层 `mode: easy/strict` 独立选择 NodePort 或 ClusterIP HTTP 入口以及网络策略默认值。
+>
+> Hubble 自动获得 Master 内部地址与服务令牌。HugeGraph 管理员可以加载／重载图、运行九种支持算法、查看／取消任务、
+> 分页浏览结果并卸载计算副本；结果不会写回图属性。原生 Vermeer UI/API 也同时提供，使用独立管理员令牌登录。
+> 不承诺 Master 自动故障切换或运行中任务自动恢复。
+> 镜像前提、凭据、端口和持久化见 [Helm 可选引擎](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)
+> 与 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
+> 不要仅凭现有 `latest` 标签假定镜像已包含新能力。
+
 
 > [!WARNING]
 > 生产环境必须启用 HugeGraph Server [认证与授权](/cn/docs/config/config-authentication/)、IP 白名单和最小权限授权，并保留 `audit-*.log` 审计记录。Server Auth 不会保护 Vermeer、PD 和 Store 的独立接口；这些 HTTP、gRPC 端口必须限制在可信网络及调用方范围内，Vermeer 对外入口需配置访问控制。

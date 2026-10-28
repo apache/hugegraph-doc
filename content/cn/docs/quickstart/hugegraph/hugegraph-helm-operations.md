@@ -11,7 +11,7 @@ search_keywords: [HugeGraph Helm 运维, local PV, NetworkPolicy, PD, Store]
 
 ## 1 存储和内网镜像 {#1-storage-and-private-images}
 
-默认安装需要七个持久卷。动态存储需要正常的 provisioner，静态 local 存储需要预建目录和绑定节点的匹配 PV。
+基础安装需要七个持久卷。动态存储需要正常的 provisioner，静态 local 存储需要预建目录和绑定节点的匹配 PV。
 [完整例子](https://github.com/apache/hugegraph/tree/master/helm/hugegraph/examples)包含七个 local PV、`WaitForFirstConsumer`、镜像仓库和 GitOps Secret。
 `WaitForFirstConsumer` 的 PVC 初期 Pending 可以是正常等待；持续 Pending 应检查 PVC/Pod 事件和 PV 匹配。
 PVC 已绑定但目录不存在或权限不匹配时可能挂载失败，不能把故障 PVC 静默替换成临时目录。
@@ -25,6 +25,8 @@ kubectl get pv,storageclass
 
 出现 `ImagePullBackOff` 时检查 Pod 事件、仓库连通性和拉取凭据。默认只需四个组件镜像，等待 Store/Helm test 复用已包含 curl 的组件镜像。
 如显式覆盖 helper 镜像，该镜像也需要同步到内网仓库。
+启用 SeaTunnel 还需配置的 `apache/seatunnel` 镜像；启用 Vermeer 还需匹配的 `hugegraph/vermeer` 构建，Master、Worker 和令牌初始化共用它。
+基础 local PV 示例不包含 Vermeer 卷：单机增加两个，集群增加一个 Master 卷及每 Worker 一个卷，默认增加四个。
 
 ## 2 端口和健康检查 {#2-ports-and-health}
 
@@ -33,6 +35,25 @@ PD 端口为 REST 8620、gRPC 8686、Raft 8610；Store 为 REST 8520、gRPC 8500
 PD `/v1/ready` 需要 Raft leader，`/v1/health` 只说明监听器已启动，Store 等待多数 PD peer ready 后启动。
 Server 等待存储的默认上限为 300 秒，可以用 `server.storageWaitTimeoutSeconds` 调整。
 本地模板渲染不能验证集群连通性、卷挂载或 JVM 运行容量。
+
+> [!DETAILS]- 可选引擎：就绪、凭据和恢复
+> SeaTunnel 和 Vermeer 在两种 HugeGraph 预设中都默认关闭，启用后增加独立入口凭据与网络规则。
+> SeaTunnel HTTP/UI 使用 8080 和 Basic 鉴权；成员／CLI 端口 5801 在 easy 下也限制为可信的同 release peers。
+> 常驻 hybrid 进程不代表 checkpoint 已通过 PVC 持久化。
+>
+> Vermeer Master HTTP/gRPC 为 6688/6689，Worker HTTP/gRPC 为 6788/6789；仅鉴权后的 Master HTTP 对外提供入口。
+> 单机为一个 Pod 中独立的 Master/Worker 容器和数据卷；集群默认为 1 个 Master 加 3 个 Worker Pod。
+> 保留的签名因子和自动生成的 Hubble 长期服务令牌，与 Server 登录和 PD 凭据相互独立。
+> 修改外部 Secret 后需滚动相关 Vermeer 工作负载及 Hubble，才能刷新进程凭据和服务令牌。
+>
+> Master/Worker 监听器健康不代表当前空间已可计算。以服务凭据检查 `/api/v1/workers/availability`，
+> 再通过 Hubble 实测加载和已知算法结果；公共 Worker 池避免新空间需要手工分配。
+> 持久化元数据不保证内存图、结果缓存或运行中任务自动恢复。
+> 切换拓扑或 Worker 数前停止新提交、完成／取消任务并卸载计算图，变更后检查可用性并重新加载。
+> 单机和集群使用不同 Worker claim，模式切换不会迁移本地文件。
+>
+> 令牌获取、凭据来源、保留卷与升级步骤见 [Vermeer 运维指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
+> 和 [SeaTunnel 运维指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
 ### Helm test 检查范围 {#helm-test-coverage}
 

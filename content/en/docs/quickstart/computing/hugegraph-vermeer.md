@@ -14,7 +14,8 @@ Vermeer is a high-performance, memory-first graph computing framework written in
 
 The master handles communication, forwarding, and aggregation, with modest computation and resource usage. Workers store graph data and execute tasks, consuming most memory and CPU. gRPC handles internal communication; REST provides external APIs.
 
-At startup, built-in defaults are loaded first, followed by the `[default]` section of `config/<env>.ini` under the working directory, then explicit command-line overrides. For example, `--env=master` reads `config/master.ini`. The Docker image copies repository configuration to `/go/bin/config/` and works from `/go/bin/`. A host bind mount hides the bundled files, so it must contain every ini file used. The configuration reader does not read environment variables.
+At startup, built-in defaults are loaded first, followed by the `[default]` section of `config/<env>.ini` under the working directory, then explicit command-line overrides. For example, `--env=master` reads `config/master.ini`. The Docker image copies repository configuration to `/go/bin/config/` and works from `/go/bin/`. A host bind mount hides the bundled files, so it must contain every ini file used. Ordinary INI keys are not mapped automatically from environment variables. Dedicated deployment credential settings also support
+`VERMEER_PD_PASSWORD_FILE`, `VERMEER_PD_PEERS`, `VERMEER_HUGEGRAPH_CREDENTIALS_FILE` and the documented token-factor/password file settings.
 
 Default ports:
 
@@ -36,6 +37,29 @@ flowchart LR
 ```
 
 ### 1.2 Running Vermeer
+
+> [!DETAILS]- Helm: deploy Vermeer together with HugeGraph and Hubble
+> The HugeGraph Helm Chart offers an optional native Vermeer integration. It is disabled by default in both HugeGraph topology presets.
+> From the HugeGraph repository root, after selecting compatible Hubble/Vermeer builds in `my-images.yaml`:
+>
+> ```bash
+> helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
+>   -f helm/hugegraph/values-single.yaml -f my-images.yaml \
+>   --set vermeer.enabled=true --set vermeer.mode=standalone \
+>   --wait --timeout 20m
+> ```
+>
+> Standalone uses one Pod with separate Master and Worker containers. Cluster mode uses one Master Pod plus configurable Worker Pods:
+> set `vermeer.mode=cluster` and `vermeer.worker.replicas=3`. Both require the HStore/PD data path; the small HugeGraph preset provides it.
+> Top-level `mode: easy/strict` independently selects NodePort or ClusterIP HTTP entry and network policy defaults.
+>
+> Hubble receives the internal Master URL and service token automatically. A HugeGraph administrator can load/reload a graph,
+> run nine supported algorithms, inspect/cancel tasks, page through results and unload the compute copy. Results are not written back to graph properties.
+> The native Vermeer UI/API is available too, with separate administrator-token login. No Master failover or automatic task recovery is promised.
+> See [Helm optional engines](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) and the
+> [Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
+> for image prerequisites, credentials, ports and retained data. Do not assume an existing `latest` image contains the required new capabilities.
+
 
 > [!WARNING]
 > In production, enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum permissions; retain `audit-*.log`. Server Auth does not protect independent Vermeer, PD, or Store APIs. Restrict these HTTP/gRPC ports to trusted networks and callers, and configure access controls at the Vermeer external entry point.

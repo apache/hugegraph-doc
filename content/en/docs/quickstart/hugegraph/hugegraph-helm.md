@@ -118,7 +118,7 @@ and `allocateLoadBalancerNodePorts`, subject to the cluster/controller's capabil
 NodePort omission or `0` means automatic allocation. Fixed ports are validated against the cluster's configured range by Kubernetes;
 the chart does not force `30000–32767`. Legacy HTTP acknowledgement fields remain accepted but no longer gate rendering.
 
-### Optional engines: disabled by default
+### Optional engines: disabled by default {#optional-engines}
 
 SeaTunnel and Vermeer remain disabled with both `values-single.yaml` and `values-cluster.yaml`.
 These presets select HugeGraph's HStore topology; `seatunnel.mode` and `vermeer.mode` select the optional engines' own topology.

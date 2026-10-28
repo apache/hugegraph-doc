@@ -26,9 +26,10 @@ kubectl get pv,storageclass
 
 For `ImagePullBackOff`, inspect Pod events and registry access/credentials. The default image inventory contains four component images;
 Store wait and Helm test reuse existing component images with `curl` already installed. Explicit helper-image overrides must also be mirrored.
-Enabled SeaTunnel adds its configured `apache/seatunnel` image. Enabled Vermeer uses `hugegraph/vermeer:helm-2678ff91b56a`, pinned by digest
-and reused by Master, Worker and token initialization. Its [official publishing run](https://github.com/hugegraph/actions/actions/runs/40639306743)
-records the source and image digest; see the [Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md).
+Enabled SeaTunnel adds its configured `apache/seatunnel` image. Enabled Vermeer uses `hugegraph/vermeer:helm-30b67d93e7d0`, pinned by digest
+and reused by Master, Worker and token initialization. Its [official publishing run](https://github.com/hugegraph/actions/actions/runs/40653109759)
+records the source and image digest; see the
+[Vermeer deployment guide](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md).
 Custom image overrides must also update `vermeer.image.digest`, or explicitly clear it to select by tag; digest takes priority.
 The base local-PV example omits Vermeer claims: standalone adds two,
 while cluster adds one Master claim plus one per Worker (four additional claims by default).
@@ -84,7 +85,7 @@ Replacing a Pod backed by `emptyDir` discards its temporary data; such a rollout
 > Stop submissions, finish/cancel tasks and unload compute graphs before topology/Worker-count changes; inspect availability and reload afterward.
 > Standalone and cluster use different Worker claims, so changing modes does not migrate local files.
 >
-> Follow the [Vermeer operations guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
+> Follow the [Vermeer operations guide](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)
 > and [SeaTunnel operations guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)
 > for administrator password retrieval, retained claims and exact upgrade commands. Raw service tokens are advanced internal integrations only.
 

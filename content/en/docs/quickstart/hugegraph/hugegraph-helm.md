@@ -177,12 +177,12 @@ For Vermeer computation, enable the switch and sign in to Hubble; service addres
 > Read the separate administrator password from Secret `hugegraph-vermeer-admin`, key `password`, and paste it into **Admin credential**.
 > Newly generated passwords use 6 random alphanumeric characters in easy mode or 16 in strict mode; upgrades and mode changes retain existing passwords.
 > Login creates a 24-hour versioned session cookie. Hubble needs no manual service token.
-> The [Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
+> The [Vermeer deployment guide](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)
 > covers password retrieval, storage, mode changes and advanced service credentials.
-> The Chart pins `hugegraph/vermeer:helm-2678ff91b56a` to image-index digest
-> `sha256:9ef623d93e4feddc345c6ce445109c4039b029be83090d0eca97aedeba981a9e`, published by the
-> [official workflow run](https://github.com/hugegraph/actions/actions/runs/40639306743) from source
-> [`2678ff91b56a`](https://github.com/hugegraph/hugegraph-computer/commit/2678ff91b56ae9501fbcdb0e1cf937144e508241).
+> The Chart pins `hugegraph/vermeer:helm-30b67d93e7d0` to image-index digest
+> `sha256:f9b69ef134069b432de1c9964374d7fdbfa53245d1fe7dcbce1e75b82b69dc9e`, published by the
+> [official workflow run](https://github.com/hugegraph/actions/actions/runs/40653109759) from source
+> [`30b67d93e7d0`](https://github.com/hugegraph/hugegraph-computer/commit/30b67d93e7d097374341cf46ee6a0703421512b1).
 > Hubble requires `hubble.mode=pd` for this native integration; API-only Vermeer remains usable with `hubble.enabled=false`.
 > For first enablement on a pre-Vermeer release, export and review `helm get values --all -o yaml`, then supply that file with `-f`
 > without `--reuse-values`, allowing the new Vermeer defaults to load. Preserve `metadataCluster`; see the deployment guide for the complete command.

@@ -169,11 +169,11 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 > 从 Secret `hugegraph-vermeer-admin` 的 `password` 键读取独立的管理员密码，粘贴到 **Admin credential** 输入框。
 > 新生成的密码在 easy 模式下为 6 位随机字母数字，strict 模式下为 16 位；升级和切换模式均保留既有密码。
 > 登录后获得有效期 24 小时的版本化会话 Cookie；使用 Hubble 无需手工获取服务令牌。
-> 密码获取、持久化、模式切换与高级服务凭据见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
-> Chart 将 `hugegraph/vermeer:helm-2678ff91b56a` 固定到镜像索引 digest
-> `sha256:9ef623d93e4feddc345c6ce445109c4039b029be83090d0eca97aedeba981a9e`，由
-> [官方工作流运行](https://github.com/hugegraph/actions/actions/runs/40639306743)基于源码
-> [`2678ff91b56a`](https://github.com/hugegraph/hugegraph-computer/commit/2678ff91b56ae9501fbcdb0e1cf937144e508241)发布。
+> 密码获取、持久化、模式切换与高级服务凭据见 [Vermeer 部署指南](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)。
+> Chart 将 `hugegraph/vermeer:helm-30b67d93e7d0` 固定到镜像索引 digest
+> `sha256:f9b69ef134069b432de1c9964374d7fdbfa53245d1fe7dcbce1e75b82b69dc9e`，由
+> [官方工作流运行](https://github.com/hugegraph/actions/actions/runs/40653109759)基于源码
+> [`30b67d93e7d0`](https://github.com/hugegraph/hugegraph-computer/commit/30b67d93e7d097374341cf46ee6a0703421512b1)发布。
 > 原生联动要求 `hubble.mode=pd`；设置 `hubble.enabled=false` 时仍可通过原生入口使用 Vermeer。
 > 对新增 Vermeer 之前的旧 release 首次启用时，先导出并审阅 `helm get values --all -o yaml`，再用 `-f` 传入，
 > 不加 `--reuse-values`，以便加载新 Vermeer 默认值。保留既有 `metadataCluster`，完整命令见部署指南。

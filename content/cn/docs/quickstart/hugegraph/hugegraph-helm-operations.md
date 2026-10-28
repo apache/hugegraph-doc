@@ -25,9 +25,9 @@ kubectl get pv,storageclass
 
 出现 `ImagePullBackOff` 时检查 Pod 事件、仓库连通性和拉取凭据。默认只需四个组件镜像，等待 Store/Helm test 复用已包含 curl 的组件镜像。
 如显式覆盖 helper 镜像，该镜像也需要同步到内网仓库。
-启用 SeaTunnel 还需配置的 `apache/seatunnel` 镜像；启用 Vermeer 使用按 digest 固定的 `hugegraph/vermeer:helm-2678ff91b56a`，
-Master、Worker 和令牌初始化共用它。[官方发布运行](https://github.com/hugegraph/actions/actions/runs/40639306743)记录源码与镜像 digest，
-详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
+启用 SeaTunnel 还需配置的 `apache/seatunnel` 镜像；启用 Vermeer 使用按 digest 固定的 `hugegraph/vermeer:helm-30b67d93e7d0`，
+Master、Worker 和令牌初始化共用它。[官方发布运行](https://github.com/hugegraph/actions/actions/runs/40653109759)记录源码与镜像 digest，
+详见 [Vermeer 部署指南](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)。
 自定义镜像覆盖还需同步更新 `vermeer.image.digest`，或显式清空以按标签选择；非空 digest 优先。
 基础 local PV 示例不包含 Vermeer 卷：单机增加两个，集群增加一个 Master 卷及每 Worker 一个卷，默认增加四个。
 
@@ -80,7 +80,7 @@ kubectl -n hugegraph annotate deployment hugegraph-server \
 > 切换拓扑或 Worker 数前停止新提交、完成／取消任务并卸载计算图，变更后检查可用性并重新加载。
 > 单机和集群使用不同 Worker claim，模式切换不会迁移本地文件。
 >
-> 管理密码获取、保留卷与升级步骤见 [Vermeer 运维指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
+> 管理密码获取、保留卷与升级步骤见 [Vermeer 运维指南](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)
 > 和 [SeaTunnel 运维指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
 ### Helm test 检查范围 {#helm-test-coverage}

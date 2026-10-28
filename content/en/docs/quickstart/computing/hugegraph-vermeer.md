@@ -69,11 +69,11 @@ flowchart LR
 > Paste it into **Admin credential**, with no username; login creates a 24-hour versioned session cookie. Hubble service authentication remains automatic.
 > No Master failover or automatic task recovery is promised.
 > See [Helm optional engines](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) and the
-> [Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
+> [Vermeer deployment guide](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)
 > for optional administration, retained data and advanced service credentials. The Chart pins
-> `hugegraph/vermeer:helm-2678ff91b56a` by verified image-index digest, published by the
-> [official workflow run](https://github.com/hugegraph/actions/actions/runs/40639306743) from source
-> [`2678ff91b56a`](https://github.com/hugegraph/hugegraph-computer/commit/2678ff91b56ae9501fbcdb0e1cf937144e508241).
+> `hugegraph/vermeer:helm-30b67d93e7d0` by verified image-index digest, published by the
+> [official workflow run](https://github.com/hugegraph/actions/actions/runs/40653109759) from source
+> [`30b67d93e7d0`](https://github.com/hugegraph/hugegraph-computer/commit/30b67d93e7d097374341cf46ee6a0703421512b1).
 > The deployment guide records the digest and custom-image override procedure.
 
 

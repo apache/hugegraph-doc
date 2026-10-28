@@ -20,6 +20,9 @@ The following example migrates `person` vertices and `knows` edges from a source
 
 These two jobs migrate only the selected labels and properties. They do not copy every source schema setting, such as indexes and TTLs. Pause writes to the source graph during the migration so both jobs read a consistent point in time. Afterward, compare vertex and edge counts and sample properties.
 
+To retain schema IDs and indexes for ordinary edge labels, see the Chart's
+[schema-copy examples](https://github.com/apache/hugegraph/tree/96ce802a25672f8b7b0d08c49e68db694231f5e4/helm/hugegraph/examples/seatunnel/clone).
+
 [![Regenerating a primary key can change 1:marko to 2:marko; CUSTOMIZE_STRING preserves the original ID so edge endpoints still resolve](/docs/images/seatunnel/seatunnel-preserve-ids-en.png)](/docs/images/seatunnel/seatunnel-preserve-ids-en.png)
 
 ### 1.1 Migrate vertices first

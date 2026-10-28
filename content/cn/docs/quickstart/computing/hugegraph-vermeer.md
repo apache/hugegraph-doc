@@ -14,7 +14,7 @@ Vermeer 是使用 Go 编写的高性能内存优先图计算框架，支持一�
 
 master 是负责通信、转发、汇总的节点，计算量和占用资源量较少。worker 是计算节点，用于存储图数据和运行计算任务，占用大量内存和 cpu。grpc 和 rest 模块分别负责内部通信和外部调用。
 
-启动时，程序先设置内置默认值，再读取工作目录下 `config/<env>.ini` 的 `[default]` 节，最后由显式命令行参数覆盖对应配置；例如 `--env=master` 读取 `config/master.ini`。Docker 镜像把仓库中的配置复制到 `/go/bin/config/`，并以 `/go/bin/` 为工作目录。挂载宿主机目录到 `/go/bin/config` 会遮住镜像自带文件，因此该目录必须包含实际使用的 ini 文件。普通 INI 配置键不会自动映射环境变量。专门的部署凭据设置还支持
+启动时，程序先设置内置默认值，再读取工作目录下 `config/<env>.ini` 的 `[default]` 节，最后由显式命令行参数覆盖对应配置；例如 `--env=master` 读取 `config/master.ini`。Docker 镜像把仓库中的配置复制到 `/go/bin/config/`，并以 `/go/bin/` 为工作目录。挂载宿主机目录到 `/go/bin/config` 会遮住镜像自带文件，因此该目录必须包含实际使用的 ini 文件。普通 INI 配置键不会自动映射环境变量。部署专用凭据设置还支持
 `VERMEER_PD_PASSWORD_FILE`、`VERMEER_PD_PEERS`、`VERMEER_HUGEGRAPH_CREDENTIALS_FILE` 及文档中的签名因子／密码文件设置。
 
 默认端口如下：
@@ -67,10 +67,10 @@ flowchart LR
 > 粘贴到 **Admin credential**，无需用户名；登录获得 24 小时版本化会话 Cookie，Hubble 服务鉴权仍自动接入。
 > 不承诺 Master 自动故障切换或运行中任务自动恢复。
 > 镜像前提、凭据、端口和持久化见 [Helm 可选引擎](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)
-> 与 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
-> Chart 按经过验证的镜像索引 digest 固定 `hugegraph/vermeer:helm-2678ff91b56a`，由
-> [官方工作流运行](https://github.com/hugegraph/actions/actions/runs/40639306743)基于源码
-> [`2678ff91b56a`](https://github.com/hugegraph/hugegraph-computer/commit/2678ff91b56ae9501fbcdb0e1cf937144e508241)发布。
+> 与 [Vermeer 部署指南](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)。
+> Chart 按经过验证的镜像索引 digest 固定 `hugegraph/vermeer:helm-30b67d93e7d0`，由
+> [官方工作流运行](https://github.com/hugegraph/actions/actions/runs/40653109759)基于源码
+> [`30b67d93e7d0`](https://github.com/hugegraph/hugegraph-computer/commit/30b67d93e7d097374341cf46ee6a0703421512b1)发布。
 > 部署指南记录完整 digest 与自定义镜像覆盖流程。
 
 

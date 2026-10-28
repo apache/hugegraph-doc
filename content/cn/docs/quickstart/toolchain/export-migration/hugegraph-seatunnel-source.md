@@ -19,6 +19,9 @@ SeaTunnel 3.0+ 提供 HugeGraph Source，支持图模型自动发现和多标签
 
 这两个任务只迁移指定标签和属性，不会完整复制源图的索引、TTL 等全部 Schema 配置。运行期间应暂停源图写入，避免两个任务读到不同时间的数据；完成后核对顶点、边数量及抽样属性。
 
+需要保留普通边标签的 Schema ID 和索引定义时，可参考 Helm Chart 中的
+[Schema 复制示例](https://github.com/apache/hugegraph/tree/96ce802a25672f8b7b0d08c49e68db694231f5e4/helm/hugegraph/examples/seatunnel/clone)。
+
 [![跨图迁移时重建主键可能改变顶点 ID；使用 CUSTOMIZE_STRING 保留原 ID，确保边端点匹配](/cn/docs/images/seatunnel/seatunnel-preserve-ids-zh.png)](/cn/docs/images/seatunnel/seatunnel-preserve-ids-zh.png)
 
 ### 1.1 先迁移顶点

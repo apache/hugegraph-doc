@@ -6,7 +6,7 @@ search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, 内网部�
 ---
 
 本文适用于 HugeGraph **1.8.0 及以后版本**，需要支持 OCI 的 Helm **3.10+** 和 Kubernetes (K8s) **1.23+**。
-可从 GHCR 或 Docker Hub 安装 `hugegraph-helm`。Chart 与 HugeGraph 服务分别维护版本，例如 `0.2.x` 的 Chart 可以部署 `1.8.x` 的服务。
+可从 GHCR 或 Docker Hub 安装 `hugegraph-helm`。Chart 与 HugeGraph 服务分别维护版本，例如 `0.3.x` 的 Chart 可以部署 `1.8.x` 的服务。
 
 > [!WARNING]
 > 当前开发 Chart 使用 `latest` 镜像，适合测试。
@@ -60,7 +60,8 @@ helm install hugegraph ./hugegraph-helm -n hugegraph \
   --create-namespace --wait --timeout 10m
 ```
 
-单节点试用预设替代默认安装，将各组件设为 1 副本并放宽调度限制，适合资源受限环境。
+单节点试用预设使用 HStore 的 1 PD + 1 Store + 1 Server 与 Hubble，放宽调度限制，适合资源受限环境。
+SeaTunnel 和 Vermeer 仍保持关闭。
 
 ## 2 模式和访问入口
 
@@ -80,12 +81,12 @@ hugegraph-helm/
     server-deployment.yaml # Server 引擎无状态 Deployment（注入 serviceId / graphSpace）
     hubble-deployment.yaml # 可视化控制台 Deployment
     tests/              # 冒烟验证测试钩子（helm test，支持自定义 testGraphAlias）
-  examples/             # 7 种生产场景完整示例（含 local PV、GitOps 凭据、Ingress 等）
+  examples/             # 部署示例（local PV、GitOps 凭据、可选引擎、Ingress 等）
   docs/operations.md    # 生命周期进阶运维与故障恢复手册
 ```
 
 默认 `mode: easy`，Server 和 Hubble 自动分配 NodePort，PD 保持 ClusterIP。可以直接使用 HTTP，无需域名、证书或额外确认参数。
-`mode: strict` 默认将 Server/Hubble 设为 ClusterIP，并开启 NetworkPolicy。两个模式都保留鉴权和持久化。
+`mode: strict` 默认将 Server/Hubble 和已启用可选组件的 HTTP 入口设为 ClusterIP，并开启 NetworkPolicy。两个模式都保留鉴权和持久化。
 优先级是组件显式参数高于全局参数，全局参数高于模式默认值，显式 `false` 也会生效。
 全局参数包括 `persistence.enabled` 和 `global.imageRegistry`，严格预设为 `values-strict.yaml`。
 
@@ -107,10 +108,63 @@ kubectl -n hugegraph get secret hugegraph-admin \
 默认 `externalTrafficPolicy: Cluster` 下，访问的节点不必运行目标 Pod。ClusterIP 是集群内部的虚拟服务地址，不是节点 IP，普通笔记本通常不能直接访问。
 也可以运行 `kubectl -n hugegraph port-forward svc/hugegraph-hubble 8088:8088`，在本机打开 `http://127.0.0.1:8088`。
 
-三个客户端 Service 都支持 `externalTrafficPolicy`、`loadBalancerClass`、`loadBalancerIP`、`loadBalancerSourceRanges`、`externalIPs`
+基础 PD/Server/Hubble 三类客户端 Service 支持 `externalTrafficPolicy`、`loadBalancerClass`、`loadBalancerIP`、`loadBalancerSourceRanges`、`externalIPs`
 和 `allocateLoadBalancerNodePorts`，具体行为取决于集群及负载均衡实现。LoadBalancer 专用字段应配合对应类型使用。
 NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据集群配置的范围校验，chart 不再强制 `30000–32767`。
 原 HTTP 暴露确认参数保留兼容，但不再阻止渲染。
+
+### 可选引擎：默认关闭
+
+`values-single.yaml` 和 `values-cluster.yaml` 都不会开启 SeaTunnel 或 Vermeer。
+这两个预设选择 HugeGraph 的 HStore 拓扑；`seatunnel.mode` 和 `vermeer.mode` 分别选择可选引擎的拓扑，
+顶层 `mode: easy/strict` 则独立控制 HTTP 入口与网络隔离。
+
+| 组件 | 默认状态 | 按需启用 |
+|---|---|---|
+| Hubble | 开启 | `hubble.enabled=false` 切换为仅 API 部署 |
+| SeaTunnel | 关闭 | `seatunnel.enabled=true` 开启导入导出与原生 UI |
+| Vermeer | 关闭 | `vermeer.enabled=true` 开启图计算、Hubble 联动与原生 UI |
+
+下面示例从 HugeGraph 仓库根目录安装源码 Chart。
+启用 Vermeer 前须确认 Hubble/Vermeer 镜像包含对应能力，并固定已验证的镜像引用；
+已发布 Chart 或可变的 `latest` 标签本身不能证明应用改动已经包含在镜像中。
+
+> [!DETAILS]- SeaTunnel：按需开启原生导入、导出和迁移
+> ```bash
+> helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
+>   -f helm/hugegraph/values-single.yaml \
+>   --set seatunnel.enabled=true --set seatunnel.mode=standalone \
+>   --wait --timeout 30m
+> ```
+>
+> 单机模式运行一个常驻 hybrid 成员；设置 `seatunnel.mode=cluster` 和 `seatunnel.replicas=2` 可运行多个成员。
+> 两种模式都有原生 UI/API，使用独立的 HTTP Basic 凭据。
+> HTTP 入口在 easy 下为 NodePort、strict 下为 ClusterIP；成员端口 5801 始终限制为可信的同 release peers。
+> Helm 准备引擎和示例，不自动建图或执行作业；checkpoint 使用临时本地文件。
+> 访问、凭据、复制示例和恢复限制见 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
+
+> [!DETAILS]- Vermeer：按需开启图计算，自动接入 Hubble
+> ```bash
+> helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
+>   -f helm/hugegraph/values-single.yaml -f my-images.yaml \
+>   --set vermeer.enabled=true --set vermeer.mode=standalone \
+>   --wait --timeout 20m
+> ```
+>
+> 先在 `my-images.yaml` 中选择匹配的 Hubble/Vermeer 镜像。
+> 单机模式使用一个 Pod，内含独立的 Master 和 Worker 原生进程容器，各自挂载数据卷。
+> 设置 `vermeer.mode=cluster` 后为 1 个 Master Pod 加 `vermeer.worker.replicas` 个 Worker Pod，默认 3 个 Worker。
+> 多 Worker 提供分布式计算；单 Master 不承诺自动故障切换。
+>
+> 保持 Hubble 默认的 PD 模式，Chart 会自动提供 Master 内部地址和服务令牌，无需手工填写。
+> 以 HugeGraph 管理员登录 Hubble，选择 HStore 图，加载／重载后运行九种支持算法之一，
+> 查看／取消异步任务并分页浏览结果，结束后卸载计算副本。
+> 此流程不把结果写回 HugeGraph 属性；普通图读取用户不会因此获得直接扫描 Store 的权限。
+>
+> Vermeer 原生 UI/API 也同时提供：easy 下使用 NodePort，strict 下使用 ClusterIP，令牌登录与 Hubble 登录相互独立。
+> 执行 `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` 后访问 `http://127.0.0.1:6688/`。
+> 匹配镜像、令牌获取、部署凭据、持久化和模式切换见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
+> 原生联动要求 `hubble.mode=pd`；设置 `hubble.enabled=false` 时仍可通过原生入口使用 Vermeer。
 
 ### 服务身份与图空间
 
@@ -141,6 +195,9 @@ GitOps 凭据、仅 API 部署以及无域名的 HTTP Ingress。
 等待 PD 的 init container 复用 Store 镜像，Helm test 复用 Server 镜像。这两个镜像已包含 `curl`，无需额外 curl 镜像或启动时安装软件。
 自定义镜像可以继续使用显式 `store.waitImage` 和 `server.waitImage` 覆盖。
 
+启用 SeaTunnel 时还需同步其配置的 `apache/seatunnel` 镜像，启用 Vermeer 时还需匹配的 `hugegraph/vermeer` 构建。
+Vermeer 的 Master、Worker 和服务令牌初始化复用同一镜像；所有已启用镜像及显式 helper 覆盖都应同步。
+
 ### 存储配置
 
 `storageClassName` 为空时继承集群默认 StorageClass，`"-"` 表示显式不使用 StorageClass。
@@ -148,6 +205,11 @@ local PV 需要预建宿主机目录、匹配容量、`nodeAffinity` 和 `kubern
 `WaitForFirstConsumer` 根据 Pod 调度约束绑定，创建资源前请查看七个卷的完整例子。
 新建临时实例可以设置 `persistence.enabled=false` 使用 `emptyDir`，组件存储开关优先。
 PVC 失败不会自动降级为临时存储，已经初始化的 PD/Store 切换存储模式会被拒绝。
+
+Vermeer 的 Master 和 Worker 使用独立数据卷，单 Pod 模式也不共享 Pebble 目录。
+单机模式增加 2 个卷；集群模式为 1 个 Master 卷加每 Worker 1 个卷，默认增加 4 个。
+因此默认基础拓扑加 Vermeer 单机／集群分别需要 9／11 个卷，轻量 HugeGraph 预设加 Vermeer 单机需要 5 个。
+七卷 local PV 示例仅覆盖基础安装；SeaTunnel checkpoint 仍使用临时本地文件。
 
 ### 离线安装和私库
 
@@ -207,6 +269,11 @@ GitOps 使用加密的固定值，或预先创建 Secret 并配置 `pd.auth.exis
 
 Hubble 默认开启，当前镜像的登录仍依赖 Server 鉴权。只使用 API 可以设置 `hubble.enabled=false`，
 如需关闭 API 鉴权，再设置 `server.auth.enabled=false`。未使用的凭据配置可以留在 values 中。
+
+可选引擎启用后增加独立入口凭据：SeaTunnel 使用原生 HTTP Basic；Vermeer 使用保留的签名因子 Secret，
+通过 `vermeer.auth.value` 或 `vermeer.auth.existingSecret/key` 配置，Hubble 会自动生成长期服务令牌。GitOps 需要保留稳定的凭据来源。
+Worker Schema 读取默认复用部署管理员凭据，也可通过 `vermeer.hugegraphCredentials.existingSecret/key` 指向现有用户的受保护用户名密码 JSON；
+该用户需具备目标图的 Schema 权限，Chart 不会自动创建账户。
 
 ## 5 升级和验证
 

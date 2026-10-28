@@ -26,8 +26,11 @@ kubectl get pv,storageclass
 
 For `ImagePullBackOff`, inspect Pod events and registry access/credentials. The default image inventory contains four component images;
 Store wait and Helm test reuse existing component images with `curl` already installed. Explicit helper-image overrides must also be mirrored.
-Enabled SeaTunnel adds its configured `apache/seatunnel` image; enabled Vermeer adds a compatible `hugegraph/vermeer` build,
-reused by Master, Worker and token initialization. The base local-PV example omits Vermeer claims: standalone adds two,
+Enabled SeaTunnel adds its configured `apache/seatunnel` image. Enabled Vermeer uses `hugegraph/vermeer:helm-2678ff91b56a`, pinned by digest
+and reused by Master, Worker and token initialization. Its [official publishing run](https://github.com/hugegraph/actions/actions/runs/40639306743)
+records the source and image digest; see the [Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md).
+Custom image overrides must also update `vermeer.image.digest`, or explicitly clear it to select by tag; digest takes priority.
+The base local-PV example omits Vermeer claims: standalone adds two,
 while cluster adds one Master claim plus one per Worker (four additional claims by default).
 
 ## 2 Ports and health

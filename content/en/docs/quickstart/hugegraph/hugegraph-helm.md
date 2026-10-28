@@ -10,7 +10,8 @@ Install `hugegraph-helm` from GHCR or Docker Hub. Chart and HugeGraph versions a
 for example, a `0.4.x` Chart can deploy a `1.8.x` service.
 
 > [!WARNING]
-> The current development Chart uses `latest` images and is intended for testing.
+> The current development Chart uses `latest` images for the base HugeGraph components and is intended for testing.
+> Optional Vermeer is pinned to a verified published image and digest; see [optional engines](#optional-engines).
 > For production, choose a stable Chart once the corresponding HugeGraph service has been released, and review its image versions.
 > Image tags can change; set each component's `image.digest` to keep using the same image content.
 
@@ -175,8 +176,11 @@ For Vermeer computation, enable the switch and sign in to Hubble; service addres
 > Read the separate 16-character administrator password from Secret `hugegraph-vermeer-admin`, key `password`,
 > and paste it into **Admin credential**. Login creates a 24-hour versioned session cookie. Hubble needs no manual service token.
 > The [Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
-> covers password retrieval, storage, mode changes and advanced service credentials. Image publishing uses the
-> [Vermeer publishing workflow](https://github.com/hugegraph/actions/blob/master/.github/workflows/publish_latest_vermeer_image.yml).
+> covers password retrieval, storage, mode changes and advanced service credentials.
+> The Chart pins `hugegraph/vermeer:helm-2678ff91b56a` to image-index digest
+> `sha256:9ef623d93e4feddc345c6ce445109c4039b029be83090d0eca97aedeba981a9e`, published by the
+> [official workflow run](https://github.com/hugegraph/actions/actions/runs/40639306743) from source
+> [`2678ff91b56a`](https://github.com/hugegraph/hugegraph-computer/commit/2678ff91b56ae9501fbcdb0e1cf937144e508241).
 > Hubble requires `hubble.mode=pd` for this native integration; API-only Vermeer remains usable with `hubble.enabled=false`.
 > For first enablement on a pre-Vermeer release, export and review `helm get values --all -o yaml`, then supply that file with `-f`
 > without `--reuse-values`, allowing the new Vermeer defaults to load. Preserve `metadataCluster`; see the deployment guide for the complete command.
@@ -220,8 +224,9 @@ The default mirror inventory is only `hugegraph/pd`, `hugegraph/store`, `hugegra
 Store's PD wait init container and the Helm test reuse Store and Server images respectively, which already contain `curl`.
 No separate curl image or runtime package installation is required. Explicit `store.waitImage` / `server.waitImage` overrides remain supported.
 
-Enabled SeaTunnel additionally needs its configured `apache/seatunnel` image; enabled Vermeer needs its matching `hugegraph/vermeer` build.
+Enabled SeaTunnel additionally needs its configured `apache/seatunnel` image; enabled Vermeer uses the published build pinned above.
 Vermeer reuses that image for Master, Worker and service-token initialization. Mirror every enabled image and explicit helper override.
+For a custom Vermeer image, also update `vermeer.image.digest`, or explicitly clear it when selecting by tag; a nonempty digest takes priority.
 
 ### Storage configuration
 

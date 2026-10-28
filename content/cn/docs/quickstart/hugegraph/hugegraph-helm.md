@@ -9,7 +9,8 @@ search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, 内网部�
 可从 GHCR 或 Docker Hub 安装 `hugegraph-helm`。Chart 与 HugeGraph 服务分别维护版本，例如 `0.4.x` 的 Chart 可以部署 `1.8.x` 的服务。
 
 > [!WARNING]
-> 当前开发 Chart 使用 `latest` 镜像，适合测试。
+> 当前开发 Chart 的 HugeGraph 基础组件使用 `latest` 镜像，适合测试。
+> 可选 Vermeer 已固定为经过验证的已发布镜像及 digest，见[可选引擎](#optional-engines)。
 > 对应 HugeGraph 服务正式发布后，生产环境请选择稳定 Chart，并检查其中的镜像版本。
 > 镜像标签可能变化；需要固定镜像内容时，请配置各组件的 `image.digest`。
 
@@ -167,7 +168,10 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 > 从 Secret `hugegraph-vermeer-admin` 的 `password` 键读取独立的 16 位管理员密码，粘贴到 **Admin credential** 输入框。
 > 登录后获得有效期 24 小时的版本化会话 Cookie；使用 Hubble 无需手工获取服务令牌。
 > 密码获取、持久化、模式切换与高级服务凭据见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
-> 镜像发布使用 [Vermeer 发布工作流](https://github.com/hugegraph/actions/blob/master/.github/workflows/publish_latest_vermeer_image.yml)。
+> Chart 将 `hugegraph/vermeer:helm-2678ff91b56a` 固定到镜像索引 digest
+> `sha256:9ef623d93e4feddc345c6ce445109c4039b029be83090d0eca97aedeba981a9e`，由
+> [官方工作流运行](https://github.com/hugegraph/actions/actions/runs/40639306743)基于源码
+> [`2678ff91b56a`](https://github.com/hugegraph/hugegraph-computer/commit/2678ff91b56ae9501fbcdb0e1cf937144e508241)发布。
 > 原生联动要求 `hubble.mode=pd`；设置 `hubble.enabled=false` 时仍可通过原生入口使用 Vermeer。
 > 对新增 Vermeer 之前的旧 release 首次启用时，先导出并审阅 `helm get values --all -o yaml`，再用 `-f` 传入，
 > 不加 `--reuse-values`，以便加载新 Vermeer 默认值。保留既有 `metadataCluster`，完整命令见部署指南。
@@ -210,8 +214,9 @@ GitOps 凭据、仅 API 部署以及无域名的 HTTP Ingress。
 等待 PD 的 init container 复用 Store 镜像，Helm test 复用 Server 镜像。这两个镜像已包含 `curl`，无需额外 curl 镜像或启动时安装软件。
 自定义镜像可以继续使用显式 `store.waitImage` 和 `server.waitImage` 覆盖。
 
-启用 SeaTunnel 时还需同步其配置的 `apache/seatunnel` 镜像，启用 Vermeer 时还需匹配的 `hugegraph/vermeer` 构建。
+启用 SeaTunnel 时还需同步其配置的 `apache/seatunnel` 镜像，启用 Vermeer 时使用上文固定的已发布构建。
 Vermeer 的 Master、Worker 和服务令牌初始化复用同一镜像；所有已启用镜像及显式 helper 覆盖都应同步。
+使用自定义 Vermeer 镜像时，还需更新 `vermeer.image.digest`，或在按标签选择时显式清空；非空 digest 优先于标签。
 
 ### 存储配置
 

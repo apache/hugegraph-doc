@@ -67,7 +67,10 @@ flowchart LR
 > 不承诺 Master 自动故障切换或运行中任务自动恢复。
 > 镜像前提、凭据、端口和持久化见 [Helm 可选引擎](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)
 > 与 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
-> 镜像发布使用 [Vermeer 发布工作流](https://github.com/hugegraph/actions/blob/master/.github/workflows/publish_latest_vermeer_image.yml)。
+> Chart 按经过验证的镜像索引 digest 固定 `hugegraph/vermeer:helm-2678ff91b56a`，由
+> [官方工作流运行](https://github.com/hugegraph/actions/actions/runs/40639306743)基于源码
+> [`2678ff91b56a`](https://github.com/hugegraph/hugegraph-computer/commit/2678ff91b56ae9501fbcdb0e1cf937144e508241)发布。
+> 部署指南记录完整 digest 与自定义镜像覆盖流程。
 
 
 > [!WARNING]

@@ -25,7 +25,10 @@ kubectl get pv,storageclass
 
 出现 `ImagePullBackOff` 时检查 Pod 事件、仓库连通性和拉取凭据。默认只需四个组件镜像，等待 Store/Helm test 复用已包含 curl 的组件镜像。
 如显式覆盖 helper 镜像，该镜像也需要同步到内网仓库。
-启用 SeaTunnel 还需配置的 `apache/seatunnel` 镜像；启用 Vermeer 还需匹配的 `hugegraph/vermeer` 构建，Master、Worker 和令牌初始化共用它。
+启用 SeaTunnel 还需配置的 `apache/seatunnel` 镜像；启用 Vermeer 使用按 digest 固定的 `hugegraph/vermeer:helm-2678ff91b56a`，
+Master、Worker 和令牌初始化共用它。[官方发布运行](https://github.com/hugegraph/actions/actions/runs/40639306743)记录源码与镜像 digest，
+详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
+自定义镜像覆盖还需同步更新 `vermeer.image.digest`，或显式清空以按标签选择；非空 digest 优先。
 基础 local PV 示例不包含 Vermeer 卷：单机增加两个，集群增加一个 Master 卷及每 Worker 一个卷，默认增加四个。
 
 ## 2 端口和健康检查 {#2-ports-and-health}

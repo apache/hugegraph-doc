@@ -147,7 +147,8 @@ For Vermeer computation, enable the switch and sign in to Hubble; service addres
 >
 > Standalone starts one long-running hybrid member. Set `seatunnel.mode=cluster` and `seatunnel.replicas=2`
 > for multiple hybrid members. Native UI/API access remains private behind ClusterIP and always requires HTTP Basic login.
-> New administrator passwords are 16 characters; upgrades reuse existing credentials. HTTP/member ports admit only required internal callers
+> Newly generated administrator passwords use 6 random alphanumeric characters in easy mode or 16 in strict mode.
+> Upgrades, including mode changes, retain existing passwords without automatic rotation. HTTP/member ports admit only required internal callers
 > in both modes. For optional administration, use an authorized port-forward as described in the deployment guide.
 > Helm prepares the engine and examples; create graphs and submit jobs yourself. Checkpoints use temporary local files.
 > See the [SeaTunnel deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)
@@ -173,8 +174,9 @@ For Vermeer computation, enable the switch and sign in to Hubble; service addres
 >
 > Native UI/API remains private behind ClusterIP in both modes. Optional administration uses
 > `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` and `http://127.0.0.1:6688/`.
-> Read the separate 16-character administrator password from Secret `hugegraph-vermeer-admin`, key `password`,
-> and paste it into **Admin credential**. Login creates a 24-hour versioned session cookie. Hubble needs no manual service token.
+> Read the separate administrator password from Secret `hugegraph-vermeer-admin`, key `password`, and paste it into **Admin credential**.
+> Newly generated passwords use 6 random alphanumeric characters in easy mode or 16 in strict mode; upgrades and mode changes retain existing passwords.
+> Login creates a 24-hour versioned session cookie. Hubble needs no manual service token.
 > The [Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
 > covers password retrieval, storage, mode changes and advanced service credentials.
 > The Chart pins `hugegraph/vermeer:helm-2678ff91b56a` to image-index digest
@@ -302,9 +304,10 @@ update the Secret/source to that same password, then restart the Server Deployme
 Hubble is enabled by default and its current login requires Server authentication. Set `hubble.enabled=false` for API-only access;
 optionally also set `server.auth.enabled=false` for an unauthenticated API. Inactive credential settings may remain in your values file.
 
-Enabled optional engines always require native login, including in easy mode. New installations generate separate 16-character
-administrator passwords: SeaTunnel uses HTTP Basic, while Vermeer uses Secret `<release>-vermeer-admin` and its **Admin credential** login.
-Upgrades keep existing credentials. Vermeer password sources are `vermeer.auth.admin.password` or `vermeer.auth.admin.existingSecret/key`;
+Enabled optional engines always require native login, including in easy mode. Newly generated administrator passwords use 6 random alphanumeric
+characters in easy mode or 16 in strict mode. SeaTunnel uses HTTP Basic, while Vermeer uses Secret `<release>-vermeer-admin` and its
+**Admin credential** login. Upgrades retain existing passwords, including when changing mode; mode changes do not rotate them automatically.
+Vermeer password sources are `vermeer.auth.admin.password` or `vermeer.auth.admin.existingSecret/key`;
 only Master reads that password. Native administration uses authorized port-forwarding, and Hubble service credentials are automatic.
 
 > [!DETAILS]- Advanced: Vermeer deployment credentials and GitOps

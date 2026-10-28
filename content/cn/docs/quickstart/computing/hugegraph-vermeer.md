@@ -62,7 +62,8 @@ flowchart LR
 >
 > Hubble 自动获得 Master 内部地址与服务令牌。HugeGraph 管理员可以加载／重载图、运行九种支持算法、查看／取消任务、
 > 分页浏览结果并卸载计算副本；结果不会写回图属性。原生 Vermeer UI/API 始终为私有 ClusterIP，访问始终需要登录。
-> 按需管理使用经过授权的 port-forward，将 `<release>-vermeer-admin` Secret 的 `password` 中独立 16 位密码
+> 按需管理使用经过授权的 port-forward，从 `<release>-vermeer-admin` Secret 的 `password` 读取独立管理密码。
+> 新生成的密码在 easy 模式下为 6 位随机字母数字，strict 模式下为 16 位；升级和切换模式均保留既有密码，不自动轮换。
 > 粘贴到 **Admin credential**，无需用户名；登录获得 24 小时版本化会话 Cookie，Hubble 服务鉴权仍自动接入。
 > 不承诺 Master 自动故障切换或运行中任务自动恢复。
 > 镜像前提、凭据、端口和持久化见 [Helm 可选引擎](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)

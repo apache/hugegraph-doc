@@ -68,7 +68,8 @@ kubectl -n hugegraph annotate deployment hugegraph-server \
 >
 > Vermeer Master HTTP/gRPC 为 6688/6689，Worker HTTP/gRPC 为 6788/6789，原生 UI/API 也始终保留为私有 ClusterIP。
 > 单机为一个 Pod 中独立的 Master/Worker 容器和数据卷；集群默认为 1 个 Master 加 3 个 Worker Pod。
-> 两个引擎的原生入口始终需要登录。新管理员密码为 16 位，升级复用既有凭据，按需管理使用经过授权的 port-forward。
+> 两个引擎的原生入口始终需要登录。新生成的管理员密码在 easy 模式下为 6 位随机字母数字，strict 模式下为 16 位。
+> 升级复用既有密码，切换模式也不会自动轮换；按需管理使用经过授权的 port-forward。
 > Vermeer 的 **Admin credential** 直接接受 `<release>-vermeer-admin` Secret 的 `password`，无需用户名，登录获得 24 小时版本化会话 Cookie。
 > SeaTunnel 用户名仍为 `admin`。Hubble 服务鉴权自动接入，与人类管理密码独立，不需要用户获取令牌。
 > 更改外部 Vermeer 管理密码 Secret 只需重启 Master；内部服务签名因子轮换需重启 Master 与 Hubble，无需重启 Worker。

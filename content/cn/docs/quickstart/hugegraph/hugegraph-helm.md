@@ -141,7 +141,8 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 >
 > 单机模式运行一个常驻 hybrid 成员；设置 `seatunnel.mode=cluster` 和 `seatunnel.replicas=2` 可运行多个成员。
 > 原生 UI/API 在两种模式下都保留为私有 ClusterIP，始终需要独立的 HTTP Basic 登录。
-> 新生成的管理员密码为 16 位，升级复用既有凭据；两种模式都将 HTTP／成员端口限制为必要的内部调用方。
+> 新生成的管理员密码在 easy 模式下为 6 位随机字母数字，strict 模式下为 16 位。
+> 升级复用既有密码，切换模式也不会自动轮换；两种模式都将 HTTP／成员端口限制为必要的内部调用方。
 > 按需管理时使用经过授权的 port-forward，步骤见部署指南。
 > Helm 准备引擎和示例，不自动建图或执行作业；checkpoint 使用临时本地文件。
 > 访问、凭据、复制示例和恢复限制见 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
@@ -165,7 +166,8 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 >
 > Vermeer 原生 UI/API 在两种模式下都保留为私有 ClusterIP。按需管理时，
 > 执行 `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` 后访问 `http://127.0.0.1:6688/`。
-> 从 Secret `hugegraph-vermeer-admin` 的 `password` 键读取独立的 16 位管理员密码，粘贴到 **Admin credential** 输入框。
+> 从 Secret `hugegraph-vermeer-admin` 的 `password` 键读取独立的管理员密码，粘贴到 **Admin credential** 输入框。
+> 新生成的密码在 easy 模式下为 6 位随机字母数字，strict 模式下为 16 位；升级和切换模式均保留既有密码。
 > 登录后获得有效期 24 小时的版本化会话 Cookie；使用 Hubble 无需手工获取服务令牌。
 > 密码获取、持久化、模式切换与高级服务凭据见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
 > Chart 将 `hugegraph/vermeer:helm-2678ff91b56a` 固定到镜像索引 digest
@@ -290,8 +292,9 @@ GitOps 使用加密的固定值，或预先创建 Secret 并配置 `pd.auth.exis
 Hubble 默认开启，当前镜像的登录仍依赖 Server 鉴权。只使用 API 可以设置 `hubble.enabled=false`，
 如需关闭 API 鉴权，再设置 `server.auth.enabled=false`。未使用的凭据配置可以留在 values 中。
 
-可选引擎的原生入口始终需要登录，easy 模式也不例外。新安装生成独立的 16 位管理员密码：
-SeaTunnel 使用 HTTP Basic，Vermeer 使用 `<release>-vermeer-admin` Secret 与 **Admin credential** 登录，升级保留既有凭据。
+可选引擎的原生入口始终需要登录，easy 模式也不例外。新生成的独立管理员密码在 easy 模式下为 6 位随机字母数字，strict 模式下为 16 位。
+SeaTunnel 使用 HTTP Basic，Vermeer 使用 `<release>-vermeer-admin` Secret 与 **Admin credential** 登录。
+升级保留既有密码，切换模式也不会自动轮换。
 Vermeer 管理密码可通过 `vermeer.auth.admin.password` 或 `vermeer.auth.admin.existingSecret/key` 配置，仅 Master 读取。
 原生管理按需使用经过授权的 port-forward，Hubble 的服务凭据自动配置。
 

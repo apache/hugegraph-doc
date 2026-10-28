@@ -71,7 +71,8 @@ Replacing a Pod backed by `emptyDir` discards its temporary data; such a rollout
 >
 > Vermeer Master HTTP/gRPC uses 6688/6689, and Worker HTTP/gRPC uses 6788/6789. Its native UI/API also remains private behind ClusterIP.
 > Standalone has one Pod with separate Master/Worker containers and data volumes; cluster has one Master plus three Worker Pods by default.
-> Both engines always require native login. New administrator passwords are 16 characters and upgrades retain existing credentials.
+> Both engines always require native login. Newly generated administrator passwords use 6 random alphanumeric characters in easy mode or 16 in strict mode.
+> Upgrades retain existing passwords, including when changing mode; changing mode does not rotate them automatically.
 > Optional administration uses authorized port-forwarding; Vermeer **Admin credential** accepts the password from `<release>-vermeer-admin`,
 > key `password`, with no username required. Login creates a 24-hour versioned session cookie. SeaTunnel still uses username `admin`.
 > Hubble service authentication is automatic and separate from human passwords; no token retrieval is needed.

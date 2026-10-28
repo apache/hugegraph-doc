@@ -64,8 +64,10 @@ flowchart LR
 > Hubble receives the internal Master URL and service token automatically. A HugeGraph administrator can load/reload a graph,
 > run nine supported algorithms, inspect/cancel tasks, page through results and unload the compute copy. Results are not written back to graph properties.
 > The native UI/API remains a private ClusterIP Service and always requires login. Optional administration uses an authorized port-forward
-> and the separate 16-character password in `<release>-vermeer-admin`, key `password`. Paste it into **Admin credential**, with no username;
-> login creates a 24-hour versioned session cookie. Hubble service authentication remains automatic. No Master failover or automatic task recovery is promised.
+> and the separate password in `<release>-vermeer-admin`, key `password`. Newly generated passwords use
+> 6 random alphanumeric characters in easy mode or 16 in strict mode. Upgrades, including mode changes, retain the existing password without automatic rotation.
+> Paste it into **Admin credential**, with no username; login creates a 24-hour versioned session cookie. Hubble service authentication remains automatic.
+> No Master failover or automatic task recovery is promised.
 > See [Helm optional engines](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) and the
 > [Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
 > for optional administration, retained data and advanced service credentials. The Chart pins

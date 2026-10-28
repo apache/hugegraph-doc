@@ -124,11 +124,13 @@ SeaTunnel and Vermeer remain disabled with both `values-single.yaml` and `values
 These presets select HugeGraph's HStore topology; `seatunnel.mode` and `vermeer.mode` select the optional engines' own topology.
 Top-level `mode: easy/strict` separately controls HTTP entry and network isolation.
 
-| Component | Default | Opt in |
+| Component | Default | Switch |
 |---|---|---|
-| Hubble | Enabled | `hubble.enabled=false` selects API-only access |
-| SeaTunnel | Disabled | `seatunnel.enabled=true` enables import/export and its native UI |
-| Vermeer | Disabled | `vermeer.enabled=true` enables computation, Hubble integration and its native UI |
+| Hubble | `true` | `hubble.enabled` |
+| SeaTunnel | `false` | `seatunnel.enabled` |
+| Vermeer | `false` | `vermeer.enabled` |
+
+Set an engine's switch to `true` to enable it. Set `hubble.enabled=false` for API-only access.
 
 The examples below use the source Chart from the HugeGraph repository root.
 Vermeer and Hubble need compatible image builds; verify their capabilities and pin the tested references before installing.

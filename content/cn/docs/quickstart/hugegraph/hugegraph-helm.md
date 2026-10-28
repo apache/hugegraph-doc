@@ -119,11 +119,13 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 这两个预设选择 HugeGraph 的 HStore 拓扑；`seatunnel.mode` 和 `vermeer.mode` 分别选择可选引擎的拓扑，
 顶层 `mode: easy/strict` 则独立控制 HTTP 入口与网络隔离。
 
-| 组件 | 默认状态 | 按需启用 |
+| 组件 | 默认值 | 开关 |
 |---|---|---|
-| Hubble | 开启 | `hubble.enabled=false` 切换为仅 API 部署 |
-| SeaTunnel | 关闭 | `seatunnel.enabled=true` 开启导入导出与原生 UI |
-| Vermeer | 关闭 | `vermeer.enabled=true` 开启图计算、Hubble 联动与原生 UI |
+| Hubble | `true` | `hubble.enabled` |
+| SeaTunnel | `false` | `seatunnel.enabled` |
+| Vermeer | `false` | `vermeer.enabled` |
+
+将引擎开关设为 `true` 即可启用；`hubble.enabled=false` 切换为仅 API 部署。
 
 下面示例从 HugeGraph 仓库根目录安装源码 Chart。
 启用 Vermeer 前须确认 Hubble/Vermeer 镜像包含对应能力，并固定已验证的镜像引用；

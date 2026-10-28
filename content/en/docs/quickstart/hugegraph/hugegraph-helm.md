@@ -174,6 +174,17 @@ A published Chart or a moving `latest` tag does not prove that the required appl
 > The [Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
 > covers matching builds, token retrieval, deployment credentials, storage and mode changes.
 > Hubble requires `hubble.mode=pd` for this native integration; API-only Vermeer remains usable with `hubble.enabled=false`.
+> For first enablement on a pre-Vermeer release, export and review `helm get values --all -o yaml`, then supply that file with `-f`
+> without `--reuse-values`, allowing the new Vermeer defaults to load. Preserve `metadataCluster`; see the deployment guide for the complete command.
+
+### PD metadata namespace {#metadata-namespace}
+
+Top-level `metadataCluster` defaults to `hg-test`, preserving the existing Server metadata prefix.
+The Chart supplies the same value as Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER`, so Store scans resolve the Schema written by Server.
+This prefix is independent of Raft names, service IDs and graph spaces. A new deployment can choose another identifier before initialization.
+Changing the value afterward does not migrate metadata or graph data; keep the initialized Server value when enabling Vermeer.
+Standard older releases using `hg-test` need no namespace-adoption step. For a custom legacy prefix, follow
+[metadata namespace adoption](./hugegraph-helm-operations.md#metadata-namespace) before upgrading.
 
 ### Server service identity and graph space
 

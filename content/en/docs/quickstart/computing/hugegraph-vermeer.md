@@ -53,6 +53,14 @@ flowchart LR
 > set `vermeer.mode=cluster` and `vermeer.worker.replicas=3`. Both require the HStore/PD data path; the small HugeGraph preset provides it.
 > Top-level `mode: easy/strict` independently selects NodePort or ClusterIP HTTP entry and network policy defaults.
 >
+> Keep the initialized `metadataCluster` (default `hg-test`): the Chart aligns Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER` for Schema reads.
+> This is a PD metadata prefix, not a Raft name; changing it does not migrate an existing graph. Do not change it to `hg` to enable Vermeer.
+> If loads fail with `Schema missing` or `no such vertex label`, check namespace alignment and the environment of running Store Pods first.
+> Older custom prefixes require verification/adoption as described in [Helm operations](/docs/quickstart/hugegraph/hugegraph-helm-operations/#metadata-namespace).
+> For first enablement on an older release, export/review `helm get values --all -o yaml` and upgrade with that file through `-f` without `--reuse-values`;
+> the deployment guide gives the complete sequence. With `OnDelete`, Store Pods need the existing controlled update procedure to use changed environment.
+> Replacing `emptyDir` Pods discards their data and is not a lossless migration.
+>
 > Hubble receives the internal Master URL and service token automatically. A HugeGraph administrator can load/reload a graph,
 > run nine supported algorithms, inspect/cancel tasks, page through results and unload the compute copy. Results are not written back to graph properties.
 > The native Vermeer UI/API is available too, with separate administrator-token login. No Master failover or automatic task recovery is promised.

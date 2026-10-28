@@ -36,6 +36,28 @@ PD `/v1/ready` 需要 Raft leader，`/v1/health` 只说明监听器已启动，S
 Server 等待存储的默认上限为 300 秒，可以用 `server.storageWaitTimeoutSeconds` 调整。
 本地模板渲染不能验证集群连通性、卷挂载或 JVM 运行容量。
 
+### 保留元数据命名空间 {#metadata-namespace}
+
+`metadataCluster: hg-test` 保留旧 Server 的 PD 元数据前缀，并统一配置 Server 的 `HG_SERVER_CLUSTER` 与 Store 的 `PD_CLUSTER`。
+它不是 Raft 名称，也不是元数据迁移开关；不要为了启用 Vermeer 把已初始化部署切换成 `hg`。
+若 Server REST 查询正常，而 Vermeer 扫描 Store 报 `Schema missing` 或 `no such vertex label`，
+先核对共享值、既有 Server 元数据命名空间，以及每个运行中 Store Pod 的环境是否一致。
+
+在线升级会拒绝与 Server Deployment 记录的 annotation 或显式 `HG_SERVER_CLUSTER` 冲突的目标值。
+标准旧 `hg-test` 部署无需额外认领操作。若旧自定义镜像用了其他前缀且 Chart 无法确认，
+先读取既有 Server 日志／配置，确认实际值，再在 Server Deployment 记录该值，并在审阅后的 Helm values 中将 `metadataCluster` 设为同一值：
+
+```bash
+kubectl -n hugegraph annotate deployment hugegraph-server \
+  hugegraph.apache.org/metadata-cluster='<核实过的既有命名空间>'
+```
+
+只在完成核对后替换占位符；annotation 记录原本使用的命名空间，不复制或迁移 PD key。
+离线／GitOps 渲染无法检查在线 Deployment，应显式保留核实后的值。
+集群预设的 `store.updateStrategy.type=OnDelete` 不会因模板更新而替换正在运行的 Pod，
+须按[逐个更新 Store 的既有流程](#6-rolling-store-images-safely)更新 Pod，新环境才会生效。
+替换使用 `emptyDir` 的 Pod 会丢弃其临时数据，这种滚动操作不能视为无损恢复或迁移。
+
 > [!DETAILS]- 可选引擎：就绪、凭据和恢复
 > SeaTunnel 和 Vermeer 在两种 HugeGraph 预设中都默认关闭，启用后增加独立入口凭据与网络规则。
 > SeaTunnel HTTP/UI 使用 8080 和 Basic 鉴权；成员／CLI 端口 5801 在 easy 下也限制为可信的同 release peers。

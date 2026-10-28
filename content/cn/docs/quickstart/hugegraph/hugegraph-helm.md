@@ -167,6 +167,17 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 > 执行 `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` 后访问 `http://127.0.0.1:6688/`。
 > 匹配镜像、令牌获取、部署凭据、持久化和模式切换见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
 > 原生联动要求 `hubble.mode=pd`；设置 `hubble.enabled=false` 时仍可通过原生入口使用 Vermeer。
+> 对新增 Vermeer 之前的旧 release 首次启用时，先导出并审阅 `helm get values --all -o yaml`，再用 `-f` 传入，
+> 不加 `--reuse-values`，以便加载新 Vermeer 默认值。保留既有 `metadataCluster`，完整命令见部署指南。
+
+### PD 元数据命名空间 {#metadata-namespace}
+
+顶层 `metadataCluster` 默认为 `hg-test`，保留既有 Server 元数据前缀。
+Chart 将同一值注入 Server 的 `HG_SERVER_CLUSTER` 和 Store 的 `PD_CLUSTER`，让 Store 扫描读取到 Server 写入的 Schema。
+该前缀独立于 Raft 名称、服务 ID 和图空间；新部署可在初始化前选择其他标识符。
+初始化后改变该值不会迁移元数据或图数据，启用 Vermeer 时应保留原 Server 的值。
+标准旧部署使用 `hg-test`，无需额外认领命名空间；旧自定义前缀请先按
+[元数据命名空间接入步骤](./hugegraph-helm-operations.md#metadata-namespace)核对，再执行升级。
 
 ### 服务身份与图空间
 

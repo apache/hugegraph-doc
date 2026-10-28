@@ -38,6 +38,29 @@ PD `/v1/ready` requires a Raft leader; `/v1/health` only confirms the listener. 
 Server waits up to `server.storageWaitTimeoutSeconds` (default 300) before its application startup; adjust it for slow storage bootstrap.
 No local Helm rendering verifies live cluster reachability, volumes or JVM capacity.
 
+### Preserve the metadata namespace {#metadata-namespace}
+
+`metadataCluster: hg-test` keeps the legacy Server PD metadata prefix and configures both Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER`.
+It is not a Raft name or a metadata-migration option. Do not switch an initialized deployment to `hg` merely to enable Vermeer.
+If Vermeer Store scans report `Schema missing` or `no such vertex label` while Server REST queries work, first compare this shared value
+with the existing Server metadata namespace and the environment of each running Store Pod.
+
+Online upgrades reject a target value that conflicts with the recorded Server Deployment annotation or explicit `HG_SERVER_CLUSTER` value.
+Standard legacy `hg-test` releases need no extra adoption action. If an older custom image used another prefix and the Chart cannot verify it,
+inspect the existing Server logs/configuration first. Record that verified existing value on the Server Deployment, then set `metadataCluster`
+to exactly the same value in the reviewed Helm values:
+
+```bash
+kubectl -n hugegraph annotate deployment hugegraph-server \
+  hugegraph.apache.org/metadata-cluster='<verified-existing-namespace>'
+```
+
+Replace the placeholder only after verification. This records the namespace already in use; it does not copy or migrate PD keys.
+Offline/GitOps rendering cannot inspect the running Deployment, so preserve the verified value explicitly.
+With the cluster preset's `store.updateStrategy.type=OnDelete`, updating the StatefulSet template does not update running Pods.
+Apply the existing [one-at-a-time Store procedure](#6-rolling-store-images-safely) before expecting the new environment to take effect.
+Replacing a Pod backed by `emptyDir` discards its temporary data; such a rollout is not a lossless recovery or migration.
+
 > [!DETAILS]- Optional engines: readiness, credentials and recovery
 > SeaTunnel and Vermeer stay disabled in both HugeGraph presets; enabling either adds separate entry credentials and network rules.
 > SeaTunnel HTTP/UI uses 8080 and Basic authentication; member/CLI 5801 is restricted to trusted release peers even in easy mode.

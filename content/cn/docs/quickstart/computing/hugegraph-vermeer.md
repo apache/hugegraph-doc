@@ -53,6 +53,13 @@ flowchart LR
 > 则使用 1 个 Master Pod 和可调数量的 Worker Pod。两者都依赖 HStore/PD 数据链路，轻量 HugeGraph 预设已提供它。
 > 顶层 `mode: easy/strict` 独立选择 NodePort 或 ClusterIP HTTP 入口以及网络策略默认值。
 >
+> 保留已初始化的 `metadataCluster`，默认 `hg-test`；Chart 统一 Server 的 `HG_SERVER_CLUSTER` 与 Store 的 `PD_CLUSTER` 供 Schema 读取。
+> 这是 PD 元数据前缀，不是 Raft 名称；改变它不会迁移已有图，不要为了启用 Vermeer 将其改成 `hg`。
+> 加载报 `Schema missing` 或 `no such vertex label` 时，先检查命名空间和运行中 Store Pod 的环境是否对齐。
+> 旧自定义前缀先按 [Helm 运维](/cn/docs/quickstart/hugegraph/hugegraph-helm-operations/#metadata-namespace)核对并记录既有值。
+> 旧 release 首次启用先导出／审阅 `helm get values --all -o yaml`，再用 `-f` 传入，升级时不加 `--reuse-values`，完整流程见部署指南。
+> `OnDelete` 需按既有受控流程更新 Store Pod，新环境才会生效；替换 `emptyDir` Pod 会丢弃其数据，不能视为无损迁移。
+>
 > Hubble 自动获得 Master 内部地址与服务令牌。HugeGraph 管理员可以加载／重载图、运行九种支持算法、查看／取消任务、
 > 分页浏览结果并卸载计算副本；结果不会写回图属性。原生 Vermeer UI/API 也同时提供，使用独立管理员令牌登录。
 > 不承诺 Master 自动故障切换或运行中任务自动恢复。

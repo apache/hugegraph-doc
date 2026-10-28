@@ -4,6 +4,12 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
+**1\.7\.0 · 2025-11-16**
+- [View release](https://github.com/apache/hugegraph/releases/tag/1.7.0)
+- [Source · tar\.gz](https://github.com/apache/hugegraph/archive/refs/tags/1.7.0.tar.gz)
+- [Source · zip](https://github.com/apache/hugegraph/archive/refs/tags/1.7.0.zip)
+- [apache\/hugegraph](https://github.com/apache/hugegraph)
+
 > WIP: This doc is under construction, please wait for the final version (BETA)
 
 ### Operating Environment / Version Description

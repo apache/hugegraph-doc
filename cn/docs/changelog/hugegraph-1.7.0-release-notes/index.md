@@ -4,6 +4,12 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
+**1\.7\.0 · 2025-11-16**
+- [查看发布](https://github.com/apache/hugegraph/releases/tag/1.7.0)
+- [源码 · tar\.gz](https://github.com/apache/hugegraph/archive/refs/tags/1.7.0.tar.gz)
+- [源码 · zip](https://github.com/apache/hugegraph/archive/refs/tags/1.7.0.zip)
+- [apache\/hugegraph](https://github.com/apache/hugegraph)
+
 > WIP: This doc is under construction, please wait for the final version (BETA)
 
 ### 运行环境/版本说明

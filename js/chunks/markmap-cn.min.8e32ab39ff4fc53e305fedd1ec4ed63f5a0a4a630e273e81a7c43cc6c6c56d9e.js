@@ -1,1 +1,0 @@
-(function(){"use strict";var e=!1;Array.prototype.forEach.call(document.querySelectorAll(".language-markmap"),function(t){var s,n=t.parentNode;if(!n||!n.parentNode)return;e=!0,s=document.createElement("div"),s.className="markmap",s.textContent=n.textContent,n.parentNode.replaceChild(s,n)}),e&&window.markmap.autoLoader.renderAll()})()

@@ -25,20 +25,20 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 ### 生态系统一览
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    Apache HugeGraph 生态                         │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │ HugeGraph   │  │ Vermeer*    │  │ HugeGraph-AI            │  │
-│  │ Core Engine │  │ Computer    │  │ (GraphRAG/ML/Python)    │  │
-│  │ (OLTP)      │  │ (Java BSP)  │  │                         │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-│         │               │                    │                   │
-│  ┌──────┴───────────────┴────────────────────┴──────────────┐   │
-│  │              HugeGraph Toolchain                          │   │
-│  │  Hubble (UI) | Loader | Client (Java/Go/Py) | Tools      │   │
-│  └───────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------+
+|                   Apache HugeGraph Ecosystem                    |
++-----------------------------------------------------------------+
+|  +-------------+  +-------------+  +-------------------------+  |
+|  | HugeGraph   |  | Vermeer*    |  | HugeGraph-AI            |  |
+|  | Core Engine |  | Computer    |  | (GraphRAG/ML/Python)    |  |
+|  | (OLTP)      |  | (Java BSP)  |  |                         |  |
+|  +------+------+  +------+------+  +------------+------------+  |
+|         |                |                      |               |
+|  +------+----------------+----------------------+------------+  |
+|  | HugeGraph Toolchain                                       |  |
+|  | Hubble (UI) | Loader | Client (Java/Go/Py) | Tools        |  |
+|  +-----------------------------------------------------------+  |
++-----------------------------------------------------------------+
 ```
 
 * Vermeer 为默认图计算入口；Computer 用于 Java BSP 作业。
@@ -127,17 +127,17 @@ HugeGraph 支持百亿以上的顶点和边的快速存储与查询，具备出�
 ## 生态系统全景
 
 ```text
-┌────────────────────────────────────────────────────────────────────┐
-│            Apache HugeGraph - Full-Stack Graph System             │
-├──────────────────┬────────────────────┬────────────────────────────┤
-│  Graph DB (OLTP) │    Graph Compute   │          Graph AI          │
-│  HugeGraph       │  Vermeer (Memory)  │       HugeGraph-AI         │
-│  Server          │  Computer (Dist.)  │     GraphRAG / GNN / Py    │
-├──────────────────┴────────────────────┴────────────────────────────┤
-│                       HugeGraph Toolchain                          │
-│ Hubble | Loader | Client (Java/Go/Python; Rust WIP) | Spark | Tools│
-│ SeaTunnel 3.0+: Source + Sink                                      │
-└────────────────────────────────────────────────────────────────────┘
++----------------------------------------------------------------------+
+|              Apache HugeGraph - Full-Stack Graph System              |
++------------------+--------------------+------------------------------+
+| Graph DB (OLTP)  | Graph Compute      | Graph AI                     |
+| HugeGraph        | Vermeer (Memory)   | HugeGraph-AI                 |
+| Server           | Computer (Dist.)   | GraphRAG / GNN / Py          |
++------------------+--------------------+------------------------------+
+|                         HugeGraph Toolchain                          |
+| Hubble | Loader | Client (Java/Go/Python; Rust WIP) | Spark | Tools  |
+| SeaTunnel 3.0+: Source + Sink                                        |
++----------------------------------------------------------------------+
 ```
 
 ## HugeGraph Server（OLTP 图引擎）
@@ -25922,7 +25922,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 | memory_monitor.period                  | 2000                                             | The period in ms of JVM memory usage monitoring, in each period we will detect the jvm memory usage and take corresponding actions.                                                                            |
 | log.slow_query_threshold               | 1000                                             | The threshold time(ms) of logging slow query, 0 means logging slow query is disabled.                                                                                                                          |
 | log.slow_query_body_limit              | 512                                              | 慢查询日志记录的请求体最大字节数，0 表示不记录。记录的前缀原样写入，可能包含敏感的 Gremlin 或 Cypher 字面量。                      |
-{.td-table--wide}
+{.wide .expand}
 
 角色选举配置项 `server.role_election` 和 `server.role.*` 仅适用于 1.7.0 及更早版本。之后的版本不再读取这些配置项：若仍然设置，服务可以正常启动，并为每个配置项输出一条警告日志。
 
@@ -28902,6 +28902,12 @@ Source: https://hugegraph.apache.org/cn/docs/changelog/hugegraph-1.7.0-release-n
 LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
+
+**1\.7\.0 · 2025-11-16**
+- [查看发布](https://github.com/apache/hugegraph/releases/tag/1.7.0)
+- [源码 · tar\.gz](https://github.com/apache/hugegraph/archive/refs/tags/1.7.0.tar.gz)
+- [源码 · zip](https://github.com/apache/hugegraph/archive/refs/tags/1.7.0.zip)
+- [apache\/hugegraph](https://github.com/apache/hugegraph)
 
 > WIP: This doc is under construction, please wait for the final version (BETA)
 

@@ -42,7 +42,7 @@ hugo mod graph
    ```
 
 2. Open [the local site](http://localhost:1313/) and inspect both language versions of the changed page.
-3. Run the warning-strict build:
+3. Run the production build with CI's diagnostics:
 
    ```bash
    scripts/hugo.sh build

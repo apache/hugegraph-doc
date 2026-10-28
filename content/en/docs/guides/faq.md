@@ -4,100 +4,157 @@ linkTitle: "FAQ"
 weight: 6
 ---
 
-- How to choose the back-end storage? RocksDB or distributed storage?
+## Deployment and startup {#deployment}
 
-  HugeGraph supports multiple deployment modes. Choose based on your data scale and scenario:
-  - **Standalone Mode**: Server + RocksDB, suitable for development, testing, Graph AI, and small to medium-scale production environments (≤ 2 TB)
-  - **Distributed Mode**: HugeGraph-PD + HugeGraph-Store (HStore), for deployments that require horizontal scaling and multiple replicas, supporting data scales up to 1 PB
+### Choose RocksDB or HStore {#choose-backend}
 
-  Version 1.7.0 supports RocksDB, HStore, HBase, and Memory. Legacy backends such as Cassandra, ScyllaDB, MySQL, and PostgreSQL require version 1.5.x or earlier.
+For development, testing, or small-to-medium standalone deployments, **Server + RocksDB** is recommended for its simplicity and high
+performance. When data volume is large (TB to PB scale) or requires horizontal scalability and multi-replica high availability, deploy an
+**HStore distributed cluster** (PD + Store + Server).
 
-- Prompt when starting the service: `xxx (core dumped) xxx`
- 
-  First confirm that your JDK version matches the requirements: Java 17 for HugeGraph 1.8.0+, or Java 11 for 1.7.0. HugeGraph no longer supports Java 8.
+Version 1.7.0 supports RocksDB, HStore, HBase, and Memory. Legacy backends such as Cassandra, ScyllaDB, MySQL, and PostgreSQL require a
+version earlier than 1.7.0. See the [Server quick start](/docs/quickstart/hugegraph/hugegraph-server/) for deployment steps.
 
-- The service is started successfully, but there is a prompt similar to "Unable to connect to the backend or the connection is not open" when operating the graph
+### Investigate a core dump at startup {#core-dump}
 
-  Persistent local backends such as RocksDB and HBase must be initialized with `init-store` before their first startup. HStore is managed by PD and Store and does not use this script.
-  
-- Do all backends need to be executed before use init-store, and can the serialization options be filled in at will?
+First, run `java -version` to confirm your JDK version: **HugeGraph master (1.8 baseline) requires Java 17**, and **1.7.0 requires Java 11** (Java 8 is no longer supported). If the JDK version is correct, inspect the Server logs and the JVM crash log (`hs_err_pid*.log`) to check for
+architecture mismatches, missing native libraries (such as RocksDB JNI), or insufficient system memory.
 
-  Memory and HStore do not use `init-store`; persistent local backends such as RocksDB and HBase must be initialized before first use. The serializer must match the backend, for example RocksDB uses `binary`.
+### Which backends need init-store {#initialize-backend}
 
-- Execution `init-store` error: ```Exception in thread "main" java.lang.UnsatisfiedLinkError: /tmp/librocksdbjni3226083071221514754.so: /usr/lib64/libstdc++.so.6: version `GLIBCXX_3.4.10' not found (required by /tmp/librocksdbjni3226083071221514754.so)```
+When using local persistent backends like RocksDB or HBase, **you must run `bin/init-store.sh` before the first startup**. Memory (in-memory
+backend) and HStore (distributed backend) do not use this script; HStore storage is managed directly by PD and Store.
 
-  RocksDB requires gcc 4.3.0 (GLIBCXX_3.4.10) and above
+Note: The `backend` and `serializer` settings must match (for example, RocksDB requires `binary`). If the service starts but reports that
+the backend is disconnected, verify initialization and backend connection settings first.
 
-- The `bin` directory contains `start-hugegraph.sh`, `start-restserver.sh` and `start-gremlinserver.sh`.  These scripts seem to be related to startup.  Which one should be used?
+### Resolve a missing GLIBCXX version during init-store {#native-library}
 
-  Current release packages retain only `start-hugegraph.sh` as the Server startup script. GremlinServer and the REST Server run in the same process.
+The following error indicates that the host system's `libstdc++` version is too old and lacks symbols required by the RocksDB JNI native library:
 
-- Two graphs are configured, the names are `hugegraph` and `hugegraph1`, and the command to start the service is `start-hugegraph.sh`. Is only the hugegraph graph opened?
+```text
+java.lang.UnsatisfiedLinkError: .../librocksdbjni....so:
+.../libstdc++.so.6: version `GLIBCXX_3.4.10' not found
+```
 
-  The script name is unrelated to the graph name. Server scans and loads local graph configurations from `conf/graphs` by default; change the directory with
-  `graphs` in `conf/rest-server.properties`. `graph.load_from_local_config` defaults to `false` and controls constructor preloading, not whether startup loads
-  local graphs. Give each local graph its own configuration file and restart Server after changing it. See the
-  [Server configuration guide](/docs/config/config-guide/).
+To resolve: Upgrade the system's `libstdc++` (or install a newer GCC runtime), or run HugeGraph using the official Docker image.
 
-- After the service starts successfully, garbled characters are returned when using `curl` to query all vertices
+### Which Server startup script should I use {#start-script}
 
-  The batch vertices/edges returned by the server are compressed (gzip), and can be redirected to `gunzip` for decompression (`curl http://example | gunzip`), or can be sent with the `postman` of `Firefox` or the `restlet` plug-in of Chrome browser. request, the response data will be decompressed automatically.
-  
-- When using the vertex Id to query the vertex through the `RESTful API`, it returns empty, but the vertex does exist
+Current releases uniformly use `bin/start-hugegraph.sh`. Both GremlinServer and the REST Server start in the same process. The
+`start-restserver.sh` and `start-gremlinserver.sh` scripts from older documentation are deprecated.
 
-  Check the type of the vertex ID. If it is a string type, the "id" part of the API URL needs to be enclosed in double quotes, while for numeric types, it is not necessary to enclose the ID in quotes.
+### Which graphs does the startup script load {#load-graphs}
 
-- Vertex Id has been double quoted as required, but querying the vertex via the   RESTful API  still returns empty
-  
-  Check whether the vertex id contains `+`, `space`, `/`, `?`, `%`, `&`, and `=` reserved characters of these `URLs`.  If they exist, they need to be encoded. The following table gives the coded values:
-  
-  ```text
-  special character | encoded value
-  ------------------| -------------
-  +                 | %2B
-  space             | %20
-  /                 | %2F
-  ?                 | %3F
-  %                 | %25
-  #                 | %23
-  &                 | %26
-  =                 | %3D
-  ```
-  
-- Timeout when querying vertices or edges of a certain category (`query by label`)
+The script name has no relation to the graph name. Server scans and loads all graph configurations in `conf/graphs` by default (this
+directory can be customized via `graphs` in `conf/rest-server.properties`). Each local graph uses an independent configuration file; restart
+Server after editing configurations.
 
-  Since the amount of data belonging to a certain label may be relatively large, please add a limit limit.
+Note: `graph.load_from_local_config` defaults to `false` (controlling constructor preloading) and cannot prevent local graph loading at
+startup. See the [Server configuration guide](/docs/config/config-guide/).
 
-- It is possible to operate the graph through the `RESTful API`, but when sending `Gremlin` statements, an error is reported: `Request Failed(500)`
+## Connections and queries {#queries}
 
-  It may be that the configuration of `GremlinServer` is wrong, check whether the `host` and `port` of `gremlin-server.yaml` match the `gremlinserver.url` of `rest-server.properties`, if they do not match, modify them, and then Restart the service.
+### Read compressed responses with curl {#compressed-response}
 
-- When using `Loader` to import data, a `Socket Timeout` exception occurs, and then `Loader` is interrupted
+Batch vertex and edge endpoints return gzip-compressed data by default. Add the `--compressed` flag to curl to decompress automatically:
 
-  Continuously importing data will put too much pressure on the `Server`, which will cause some requests to time out. The pressure on `Server` can be appropriately relieved by adjusting the parameters of `Loader` (such as: number of retries, retry interval, error tolerance, etc.), and reduce the frequency of this problem.
+```bash
+curl --compressed \
+  'http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?limit=10'
+```
 
-- How to delete all data from a graph
+If authentication is enabled, supply credentials. If output remains unexpected, check HTTP status codes, `Content-Type`, and
+`Content-Encoding`. Do not pipe JSON error responses directly into `gunzip`.
 
-  An administrator can call `DELETE /graphspaces/{graphspace}/graphs/{graph}/clear?confirm_message=I'm sure to delete all data`. The `confirm_message` query parameter must match that value exactly, otherwise the request is rejected. See the [Graph API](../clients/restful-api/graphs) for details. This operation removes schemas, vertices, edges, and indexes.
+### A vertex exists, but lookup by ID cannot find it {#vertex-id}
 
-- The database has been cleared and `init-store` has been executed, but when trying to add a schema, the prompt "xxx has existed" appeared.
+Check the exact format and type of `id` in existing query results: **string IDs require JSON double quotes, while numeric IDs do not**. For
+example, the string ID `1:marko` is written in JSON as `"1:marko"`.
 
-  There is a cache in the `HugeGraphServer`, and it is necessary to restart the `Server` when the database is cleared, otherwise the residual cache will be inconsistent.
+When embedding this JSON ID into a URL path, URL-encode the entire string including double quotes. If the ID contains special characters,
+encoding the whole quoted string is required:
 
-- An error is reported during the process of inserting vertices or edges: `The max length of vertex id is 16384, but got xxx {yyy}` or `The max length of edge id is 65536, but got xxx {yyy}`
+| Character | URL encoding |
+| --- | --- |
+| `+` | `%2B` |
+| Space | `%20` |
+| `/` | `%2F` |
+| `?` | `%3F` |
+| `%` | `%25` |
+| `#` | `%23` |
+| `&` | `%26` |
+| `=` | `%3D` |
+| `"` | `%22` |
 
-  In order to ensure query performance, the current backend storage limits the length of the id column. The vertex id cannot exceed 16384 bytes and the edge id cannot exceed 65536 bytes. An index id longer than 32 bytes is stored as a hash instead of being rejected.
+### Queries by label time out {#label-timeout}
 
-- Is there support for nested attributes, and if not, are there any alternatives?
+When a label contains a large volume of data, scanning all records will exhaust resources and time out. Recommended solutions:
+1. Append `.limit(n)` to restrict the number of returned records;
+2. Use pagination to fetch results incrementally;
+3. Filter by specific properties and ensure the relevant properties are indexed to prevent full scans.
 
-  Nested attributes are currently not supported. Alternative: Nested attributes can be taken out as individual vertices and connected with edges.
+### REST works, but Gremlin returns HTTP 500 {#gremlin-connection}
 
-- Can an `EdgeLabel` connect multiple pairs of `VertexLabel`, such as "investment" relationship, which can be "individual" investing in "enterprise", or "enterprise" investing in "enterprise"?
+A working REST endpoint only confirms HTTP reachability. HTTP 500 from Gremlin typically stems from:
+1. **Gremlin Server connection failure**: Verify that `gremlinserver.url` in `conf/rest-server.properties` points to a reachable Gremlin
+port (default `8182`, configured in `conf/gremlin-server.yaml`);
+2. **Query syntax or logic error**: Such as unindexed property filtering triggering scan limits;
+3. **Missing or expired credentials**.
 
-  Yes. Call `link(sourceLabel, targetLabel)` once per pair when building the `EdgeLabel`; every pair is kept, so one "investment" label can cover both "individual" to "enterprise" and "enterprise" to "enterprise". The older `sourceLabel()` and `targetLabel()` builder methods are deprecated and accept only a single pair.
+Check `logs/hugegraph-server.log` for the detailed exception stack trace.
 
-- Prompt `HTTP 415 Unsupported Media Type` when sending a request through `RestAPI`
+### REST returns HTTP 415 {#content-type}
 
-  `Content-Type: application/json` needs to be specified in the request header
+When sending POST/PUT requests with a JSON body, set the header `Content-Type: application/json` and ensure the payload is valid JSON.
 
-Other issues can be searched in the issue area of the corresponding project, such as [Server-Issues](https://github.com/apache/hugegraph/issues) / [Loader Issues](https://github.com/apache/hugegraph-loader/issues)
+## Import and data maintenance {#data-management}
+
+### Loader reports Socket Timeout {#loader-timeout}
+
+Import timeouts usually occur when batch sizes are too large or write concurrency is too high for the Server. Recommended actions:
+1. Decrease `--batch-size` (e.g., from 500 down to 200);
+2. Reduce the number of concurrent insert threads;
+3. Increase `--timeout` and configure retry settings. See the [Loader guide](/docs/quickstart/toolchain/hugegraph-loader/) for parameter details.
+
+### Clear all data from a graph {#clear-graph}
+
+Administrators can call the following endpoint to wipe schema, vertices, edges, and indexes from a graph (verify target graph and backups beforehand):
+
+```text
+DELETE /graphspaces/{graphspace}/graphs/{graph}/clear
+```
+
+The request requires the `confirm_message` query parameter, strictly matching `I'm sure to delete all data` (URL-encoded). See the [Graph
+API](/docs/clients/restful-api/graphs/) for complete reference.
+
+### Schema still exists after clearing the backend {#schema-cache}
+
+Server caches metadata in memory. Bypassing Server to clear underlying storage directly (such as wiping RocksDB directories or HBase tables)
+causes cache inconsistency. If storage was manually deleted, **restart Server** to clear the cache. For normal cleanup, use the official
+[Clear Graph API](/docs/clients/restful-api/graphs/#clear-graph).
+
+## Modeling and IDs {#modeling}
+
+### A vertex or edge ID exceeds the length limit {#id-length}
+
+To maintain storage and indexing performance, HugeGraph enforces maximum ID length limits (calculated by encoded byte count):
+- **Vertex ID**: Maximum 16384 bytes (16 KB);
+- **Edge ID**: Maximum 65536 bytes (64 KB).
+
+Use concise business identifiers as primary keys rather than concatenating large text blocks. Note: Property index values exceeding 32 bytes
+are automatically hashed for storage and will not trigger length errors.
+
+### Are nested properties supported {#nested-properties}
+
+Nested properties (complex nested maps or objects) are not currently supported. To represent multi-level relations, model the nested object
+as an independent vertex and link it to the parent vertex with an edge.
+
+### Can one edge label connect several vertex-label pairs {#edge-links}
+
+Yes. When creating an `EdgeLabel`, invoke `link(sourceLabel, targetLabel)` once for each source-target pair.
+For example, an `investment` edge label can link both `individual → enterprise` and `enterprise → enterprise`. The deprecated
+`sourceLabel()` and `targetLabel()` methods only supported a single pair and should no longer be used.
+
+For other questions, search the [Server issues](https://github.com/apache/hugegraph/issues) or [Toolchain
+issues](https://github.com/apache/hugegraph-toolchain/issues).

@@ -111,6 +111,8 @@ set -a; . ./.env; set +a
 单独运行当前主线构建的 Store 时，将示例地址换成 Store 与 PD 均可路由的实际地址：
 
 ```bash
+# master 构建的镜像以 UID 10001 运行，宿主机数据目录必须对该用户可写
+mkdir -p /path/to/storage && sudo chown 10001:10001 /path/to/storage
 docker run -d \
   -p 8520:8520 -p 8500:8500 -p 8510:8510 \
   -e HG_STORE_PD_ADDRESS=192.168.1.10:8686 \

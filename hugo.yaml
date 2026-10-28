@@ -108,7 +108,8 @@ params:
   url_latest_version: https://hugegraph.apache.org/docs/
   offline_search: true
   offline_search_on_serve: true
-  offline_search_index: summary
+  # Include body-only configuration names and error messages in local search.
+  offline_search_index: content
   offline_search_summary_length: 70
   offline_search_max_results: 10
   # Consent-gated Kapa; set false to disable. Rollout evidence and source
@@ -134,9 +135,9 @@ params:
   print:
     toc: true
   ui:
-    # Keep the familiar default; readers may choose the stable Paper style.
+    # Keep Slate by default; explicitly opt in to all four native styles.
     preset: slate
-    preset_menu: true
+    preset_menu: [paper, slate, ink, terminal]
     theme_color: '#532fc9'
     dark_mode:
       enable: true

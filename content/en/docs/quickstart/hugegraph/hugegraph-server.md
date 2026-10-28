@@ -84,7 +84,8 @@ on Java 24 or later, start Server with `-s false` (JDK 24+ dropped Security Mana
 serializer:
   className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
   config:
-    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+    builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
 ```
 
 ```yaml {tab="GraphSON (HTTP / Legacy)"}
@@ -693,6 +694,8 @@ Set the environment variable `PRELOAD=true` when starting Docker so that sample 
         ports:
           - 8080:8080
     ```
+
+    Server images built from current master run as the non-root UID `10001`, so a mounted script must be readable by that user.
 
     Use `docker compose up -d` to start the container.
 

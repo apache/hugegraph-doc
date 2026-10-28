@@ -6,102 +6,129 @@ weight: 5
 
 ## Description
 
-Backup and Restore are functions of backup map and restore map. The data backed up and restored includes metadata (schema) and graph data (vertex and edge).
+Backup exports a graph's schema, vertices, and edges as JSON data. Restore imports that data into a target graph.
+These [HugeGraph-Tools](/docs/quickstart/toolchain/hugegraph-tools) commands support migration, recovery after an upgrade, and graph merging.
 
 #### Backup
 
-Export the metadata and graph data of a graph in the HugeGraph system in JSON format.
+Backup runs in any graph mode. Pausing source writes before exporting is recommended to keep schema, vertices, and edges consistent
+(paginated read APIs do not provide a global transactional snapshot).
+Note: `backup -t all` only exports schema and graph data, excluding deployment configurations and user permissions.
 
 #### Restore
 
-Re-import the data in JSON format exported by Backup to a graph in the HugeGraph system.
+Before restoring data, switch the target graph to the appropriate mode.
+Normal read/write operations use `NONE` mode; note that `LOADING` mode cannot be used for `restore`.
 
-Restore has two modes:
+| Target | Mode | Schema IDs | Vertex and edge IDs |
+|---|---|---|---|
+| New graph without schema or data | `RESTORING` | Use IDs from the backup | Use IDs from the backup |
+| Existing graph to merge into | `MERGING` | Use target schema IDs, creating schema if needed | Some IDs change with target schema; see below |
 
-- In Restoring mode, the metadata and graph data exported by Backup are restored to the HugeGraph system intact. It can be used for graph backup and recovery, and the general target graph is a new graph (without metadata and graph data). for example:
-  - System upgrade, first back up the map, then upgrade the system, and finally restore the map to the new system
-  - Graph migration, from a HugeGraph system, use the Backup function to export the graph, and then use the Restore function to import the graph into another HugeGraph system
-- In the Merging mode, the metadata and graph data exported by Backup are imported into another graph that already has metadata or graph data. During the process, the ID of the metadata may change, and the IDs of vertices and edges will also change accordingly.
-  - Can be used to merge graphs
+In `MERGING`, Tools recomputes `PRIMARY_KEY` vertex IDs using the target label IDs and updates connected edge endpoints and IDs.
+It retains `AUTOMATIC` and custom vertex IDs. The merge reuses schema with matching names.
+Check that their definitions are compatible and that retained vertex IDs do not conflict.
+It does not resolve arbitrary schema or data conflicts. Test on a separate target before merging production data.
 
 ## Instructions
 
-You can use [hugegraph-tools](/docs/quickstart/toolchain/hugegraph-tools) to backup and restore the graph.
+Prepare [HugeGraph-Tools](/docs/quickstart/toolchain/hugegraph-tools) compatible with your Server version, then run the commands from the Tools root directory.
+This example restores a source graph on port `8080` to an empty target on port `8081`.
+Both Servers and the target graph must already exist and be running. Adjust the addresses and graph names for your deployment.
+
+```bash
+SOURCE_URL=http://127.0.0.1:8080
+TARGET_URL=http://127.0.0.1:8081
+SOURCE_GRAPH=hugegraph
+TARGET_GRAPH=hugegraph
+BACKUP_DIR="$PWD/data/hugegraph-backup"
+```
+
+With authentication enabled, add `--user <user> --password <password>` before the subcommand in each Tools command.
+The account needs the relevant graph access and graph-mode management permissions.
+See the [Tools reference](/docs/quickstart/toolchain/hugegraph-tools) for connection and credential options.
 
 #### Backup
 
+Pause source writes, then export all schema, vertices, and edges.
+
 ```bash
-bin/hugegraph backup -t all -d data
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" \
+  backup -t all -d "$BACKUP_DIR"
 ```
 
-This command backs up all the metadata and graph data of the hugegraph graph of http://127.0.0.1:8080 (the default --url) to the data directory.
-
-> Backup works in any graph mode, it does not check the graph mode
+An explicit `-d` is the backup directory itself; the graph name is not appended. Use a separate directory for each backup to avoid mixing old files.
+Retain the complete directory, including compressed files. Restore reads the JSON backup formats supported by Tools.
 
 #### Restore
 
-Restore has two modes: RESTORING and MERGING. Before restore, you must first set the graph mode according to your needs, the restore command fails when the graph is in any other mode.
+This sequence uses `RESTORING`. To merge, use `MERGING` after the compatibility checks above.
+Pause application writes to the target during maintenance.
 
-##### Step 1: View and set graph mode
+
+1. <span id="step-1-view-and-set-graph-mode"></span>**Record the original mode, then switch it.**
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-get
+   ORIGINAL_MODE=NONE
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" \
+     graph-mode-set -m RESTORING
+   ```
+
+   A graph in normal use should be in `NONE` mode. Set `ORIGINAL_MODE` to the value returned by the query, such as `NONE` below.
+   If another task is using `RESTORING`, `MERGING`, or `LOADING`, coordinate with that task before changing its mode.
+
+1. <span id="step-2-restore-data"></span>**Restore the data.**
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" \
+     restore -t all -d "$BACKUP_DIR"
+   ```
+
+   Check command output and the restore results for each type. On failure, retain the backup directory and logs to inspect target state.
+   Restore does not automatically roll back committed writes; do not re-run on a partially restored graph without inspection.
+
+1. <span id="step-3-restoring-graph-mode"></span>**Restore the original mode.**
+
+   Reset the mode using `ORIGINAL_MODE`, recorded in the first step.
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-set -m "$ORIGINAL_MODE"
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-get
+   ```
+
+   Regardless of whether restore succeeds or fails, always restore the graph mode back to its original state (usually `NONE`).
+   On failure, preserve the logs and state, and re-prepare the target graph before resuming business writes.
+{.steps}
+
+After resetting the mode, compare vertex and edge counts on both graphs.
 
 ```bash
-bin/hugegraph graph-mode-get
-```
-This command is used to view the current graph mode, including: NONE, RESTORING, MERGING, LOADING.
-
-```bash
-bin/hugegraph graph-mode-set -m RESTORING
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" gremlin-execute --script 'g.V().count()'
+bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" gremlin-execute --script 'g.V().count()'
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" gremlin-execute --script 'g.E().count()'
+bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" gremlin-execute --script 'g.E().count()'
 ```
 
-This command is used to set the graph mode. Before Restore, it can be set to RESTORING or MERGING mode. In the example, it is set to RESTORING.
+Each pair of counts should match exactly. We also recommend using the [Schema API](/docs/clients/restful-api/schema/) to verify metadata definitions,
+and sampling vertex and edge properties and endpoints to ensure complete data integrity.
 
-##### Step 2: Restore data
+#### Help
 
-```bash
-bin/hugegraph restore -t all -d data
-```
-This command re-imports all metadata and graph data in the data directory to the hugegraph graph at http://127.0.0.1:8080.
-
-##### Step 3: Restoring Graph Mode
-
-```bash
-bin/hugegraph graph-mode-set -m NONE
-```
-This command is used to restore the graph mode to NONE.
-
-So far, a complete graph backup and graph recovery process is over.
-
-#### help
-
-For detailed usage of backup and restore commands, please refer to the [hugegraph-tools documentation](/docs/quickstart/toolchain/hugegraph-tools).
+For additional options on compression, concurrency, and selective type backup, see the [Tools reference](/docs/quickstart/toolchain/hugegraph-tools).
+Before performing cross-major-version restores, verify backup file compatibility in a test environment first.
 
 ## API description for Backup/Restore usage and implementation
 
 #### Backup
 
-Backup uses the corresponding list(GET) API export of metadata and graph data, and no new API is added.
+Backup exports data through the schema, vertex, and edge list GET APIs.
 
 #### Restore
 
-Restore uses the corresponding create(POST) API imports for metadata and graph data, and does not add new APIs.
-
-There are two different modes for Restore: Restoring and Merging. In addition, there is a regular mode of NONE (default), the differences are as follows:
-
-- In None mode, the writing of metadata and graph data is normal, please refer to the function description. special:
-    - ID is not allowed when metadata (schema) is created
-    - Graph data (vertex) is not allowed to specify an ID when the id strategy is Automatic
-- Restoring mode, restoring to a new graph, in particular:
-    - ID is allowed to be specified when metadata (schema) is created
-    - Graph data (vertex) allows specifying an ID when the id strategy is Automatic
-- Merging mode, merging into a graph with existing metadata and graph data, in particular:
-    - ID is not allowed when metadata (schema) is created
-    - Graph data (vertex) allows specifying an ID when the id strategy is Automatic
-
-
-Normally, the graph mode is None. When you need to restore the graph, you need to temporarily change the graph mode to Restoring mode or 
-Merging mode as needed, and when the Restore is completed, restore the graph mode to None.
-
-The implemented RESTful API for setting graph mode is as follows:
+Restore imports data through the schema, vertex, and edge creation APIs. See the [mode table](#restore) for ID behavior.
+`RESTORING` accepts schema IDs; `MERGING` does not. Both accept retained `AUTOMATIC` vertex IDs.
+Normal `NONE` mode does not accept these ID settings required for restore.
 
 ##### View the mode of a graph
 
@@ -127,7 +154,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 }
 ```
 
-> Legal graph modes include: NONE, RESTORING, MERGING, LOADING
+Valid graph modes are `NONE`, `RESTORING`, `MERGING`, and `LOADING`.
 
 ##### Set the mode of a graph
 
@@ -145,7 +172,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 "RESTORING"
 ```
 
-> Legal graph modes include: NONE, RESTORING, MERGING, LOADING
+Valid graph modes are `NONE`, `RESTORING`, `MERGING`, and `LOADING`.
 
 ###### Response Status
 

@@ -17,8 +17,8 @@ For the HugeGraph database project, visit [apache/hugegraph](https://github.com/
 
 Only **3 steps** are needed to run the documentation website locally.
 
-**Prerequisites:** Go 1.27+, [Hugo Extended](https://github.com/gohugoio/hugo/releases) 0.168.0 and standalone
-[Dart Sass](https://github.com/sass/dart-sass/releases) 1.105.2 on `PATH`. CI pins the supported toolchain in
+**Prerequisites:** Go 1.27.3+ and [Hugo Extended](https://github.com/gohugoio/hugo/releases) 0.168.0.
+Hugo's built-in LibSass compiles the site; no standalone Sass installation is needed. CI pins the supported toolchain in
 `.github/workflows/hugo.yml`. Node.js and npm are needed only for browser tests; the site has no npm build step or vendored theme checkout.
 
 ```bash
@@ -105,8 +105,8 @@ For theme updates, compatibility review and rollback, use the [OINK upgrade SOP]
 
 只需 **3 步**即可在本地启动文档网站。
 
-**前置条件：** Go 1.27+、[Hugo Extended](https://github.com/gohugoio/hugo/releases) 0.168.0，以及位于 `PATH` 中的独立
-[Dart Sass](https://github.com/sass/dart-sass/releases) 1.105.2。CI 在 `.github/workflows/hugo.yml` 中固定受支持的工具链。
+**前置条件：** Go 1.27.3+、[Hugo Extended](https://github.com/gohugoio/hugo/releases) 0.168.0。
+Hugo 使用内置 LibSass 编译站点，无需单独安装 Sass。CI 在 `.github/workflows/hugo.yml` 中固定受支持的工具链。
 Node.js 和 npm 仅用于浏览器测试；站点没有 npm 构建步骤，也不需要检出到仓库内的主题副本。
 
 ```bash

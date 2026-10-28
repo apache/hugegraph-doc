@@ -252,9 +252,14 @@ for (const language of ['en', 'cn']) {
     await expect(page.locator('html')).toHaveAttribute('data-td-preset', 'slate');
     await page.locator(appearanceTrigger).click();
     const panel = page.locator('#td-appearance-navbar');
-    await expect(panel.locator('[data-td-preset-value]')).toHaveCount(2);
+    await expect(panel.locator('[data-td-preset-value]')).toHaveCount(4);
     await panel.locator('[data-bs-theme-value="dark"]').locator('..').click();
-    await panel.locator('[data-td-preset-value="paper"]').locator('..').click();
+    for (const preset of ['ink', 'terminal', 'paper']) {
+      await panel.locator(`[data-td-preset-value="${preset}"]`).locator('..').click();
+      await expect(page.locator('html')).toHaveAttribute('data-td-preset', preset);
+      await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
+      expect(await page.evaluate(() => localStorage.getItem('td-preset'))).toBe(preset);
+    }
     await expect(page.locator('html')).toHaveAttribute('data-td-preset', 'paper');
     await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
     await expect(panel.locator('[data-bs-theme-value="dark"]')).toBeChecked();
@@ -292,6 +297,11 @@ for (const language of ['en', 'cn']) {
     await page.keyboard.press('ArrowLeft');
     await expect(panel.locator('[data-td-preset-value="paper"]')).toBeChecked();
     await expect(page.locator('html')).toHaveAttribute('data-td-preset', 'paper');
+    for (const preset of ['slate', 'ink', 'terminal', 'paper']) {
+      await page.keyboard.press('ArrowRight');
+      await expect(panel.locator(`[data-td-preset-value="${preset}"]`)).toBeChecked();
+      await expect(page.locator('html')).toHaveAttribute('data-td-preset', preset);
+    }
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
@@ -315,8 +325,12 @@ for (const language of ['en', 'cn']) {
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(390);
       expect(box.y + box.height).toBeLessThanOrEqual(844);
-      await panel.locator('[data-td-preset-value="paper"]').locator('..').click();
-      await expect(page.locator('html')).toHaveAttribute('data-td-preset', 'paper');
+      await expect(panel.locator('[data-td-preset-value]')).toHaveCount(4);
+      for (const preset of ['ink', 'terminal', 'paper', 'slate']) {
+        await panel.locator(`[data-td-preset-value="${preset}"]`).locator('..').click();
+        await expect(page.locator('html')).toHaveAttribute('data-td-preset', preset);
+        await expect(panel).toBeVisible();
+      }
       await page.keyboard.press('Escape');
       await expect(panel).toBeHidden();
       await expect(trigger).toBeFocused();

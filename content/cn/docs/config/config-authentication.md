@@ -10,13 +10,11 @@ search_boost: 1.7
 
 HugeGraph 内置 `StandardAuthenticator`，支持多用户认证和基于“用户、用户组、操作、资源”的权限控制。
 
-`StandardAuthenticator` 模式的几个核心设计：
-- 初始化时创建超级管理员 (`admin`) 用户，后续通过超级管理员创建其它用户，新创建的用户被分配足够权限后，可以创建或管理更多的用户
-- 支持动态创建用户、用户组、资源，支持动态分配或取消权限
-- 用户可以属于一个或多个用户组，每个用户组可以拥有对任意个资源的操作权限，操作类型包括：读、写、删除、执行等种类
-- "资源" 描述了图数据库中的数据，比如符合某一类条件的顶点，每一个资源包括 `type`、`label`、`properties`三个要素，共有 18 种类型、任意 label、任意 properties 可组合形成的资源，一个资源的内部条件是且关系，多个资源之间的条件是或关系
+初始化会创建超级管理员 `admin`。管理员可创建用户、用户组及资源，并分配或撤销权限。用户通过所属组获得读、写、删除和执行等权限。
 
-举例说明：
+资源用 `type`、`label` 和 `properties` 描述可访问的数据。同一资源中的条件需同时满足，多个资源之间满足其一即可。
+
+下面的关系表示用户仅可读取北京地区的数据。
 
 ```java
 // 场景：某用户只有北京地区的数据读取权限
@@ -30,11 +28,13 @@ HugeGraph 目前默认**未启用**用户认证功能，需通过修改配置文
 > [!WARNING]
 > **生产环境必须启用鉴权**
 >
-> HugeGraph 默认不启用用户认证。生产环境必须启用认证与授权、设置非默认强管理员密码、启用并维护 Server IP 白名单，并按最小权限为用户授权；不得将 Gremlin、Cypher 等查询接口直接暴露到公网。Server 标准配置会将鉴权代理记录写入 `audit-*.log`，部署时必须保留并限制这些日志的读取权限。`auth.audit_log_rate` 只限制每用户的日志输出速率，不是审计日志的启停开关。
+> HugeGraph 默认不启用用户认证。生产环境必须启用认证与授权、设置非默认强管理员密码、启用并维护 Server IP 白名单，并按最小权限为用户授权；不得将 Gremlin、Cypher 等查询接口直接暴露到公网。Server 标准配置会将鉴权代理记录写入
+`audit-*.log`，部署时必须保留并限制这些日志的读取权限。`auth.audit_log_rate` 只限制每用户的日志输出速率，不是审计日志的启停开关。
 
 `StandardAuthenticator` 支持多用户认证和细粒度权限控制。也可以实现 `HugeAuthenticator` 接口来接入已有的用户系统。
 
-用户认证使用 [HTTP Basic Authentication](https://zh.wikipedia.org/wiki/HTTP%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81)。`Basic` 后面的值是 `用户名:密码` 的 Base64 编码。使用 curl 时可直接通过 `-u` 传入凭据：
+用户认证使用 [HTTP Basic Authentication](https://zh.wikipedia.org/wiki/HTTP%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81)。`Basic` 后面的值是 `用户名:密码` 的 Base64 编码。使用 curl 时可直接通过
+`-u` 传入凭据。
 
 ```bash
 curl -u 'admin:<password>' \
@@ -52,7 +52,7 @@ curl -u 'admin:<password>' \
 > HugeGraph-Server 1.5.0 之前的版本在鉴权模式下存在 JWT 相关安全隐患。使用受影响版本时必须升级，或按该版本要求修改 JWT token 的 `secretKey`。
 
 `auth.token_secret` 由认证数据图的配置读取。默认认证图名为 `hugegraph`，因此配置文件通常是 `conf/graphs/hugegraph.properties`；如果修改了 `auth.graph_store`，应改为对应图的 properties 文件。
-源码默认会生成 32 个随机字节并以 Base64 编码，但该值不会写回配置文件；重启后或多个 Server 节点之间无法依赖各自生成的默认值保持一致。若需要令已有 token 在重启后继续有效，或让多个节点验证同一 token，请为认证图显式配置同一个强随机密钥：
+核心配置默认会生成 32 个随机字节并以 Base64 编码，该默认值不会自行写回配置文件；重启后或多个 Server 节点之间无法依赖各自生成的默认值保持一致。若需要令已有 token 在重启后继续有效，或让多个节点验证同一 token，请为认证图显式配置同一个强随机密钥。
 
 Server 将配置字符串按 UTF-8 编码后交给 JJWT 的 HS256 签名器，密钥至少需要 32 字节；这是字节长度要求，不代表任意 32 字符串都具有足够随机性。下面的命令在本机生成 32 个随机字节并以 Base64 编码。
 
@@ -61,20 +61,20 @@ Server 将配置字符串按 UTF-8 编码后交给 JJWT 的 HS256 签名器，�
 auth.token_secret=<本机生成的密钥>
 ```
 
-可在本机终端生成密钥，再通过安全方式填入认证图配置；不要把实际密钥提交到代码库或公开日志：
+可在本机终端生成密钥，再通过安全方式填入认证图配置；不要把实际密钥提交到代码库或公开日志。
 
 ```bash
 openssl rand -base64 32
 ```
 
-由于默认值在每次启动时随机生成，当 token 需要在重启后继续有效、或者需要被多个服务节点接受时，必须显式配置该项。token 的有效期由 `auth.token_expire` 决定，默认为 86400 秒。
+token 的有效期由 `auth.token_expire` 决定，默认为 86400 秒。
 
 `auth.token_expire` 和 `auth.token_secret` 都属于 `auth.graph_store` 指定的认证数据图配置；`rest-server.properties` 中的同名项不会覆盖认证图配置。
 
 #### StandardAuthenticator 模式
-`StandardAuthenticator`模式是通过在数据库后端存储用户信息来支持用户认证和权限控制，该实现基于数据库存储的用户的名称与密码进行认证（密码已被加密），基于用户的角色来细粒度控制用户权限。下面是具体的配置流程（重启服务生效）：
+`StandardAuthenticator` 在后端存储用户及密码哈希，并按用户角色控制访问。修改以下三处配置后，按[启动顺序](#基于鉴权模式启动)初始化并重启服务。
 
-在配置文件`gremlin-server.yaml`中配置`authenticator`及其`rest-server`文件路径：
+在 `conf/gremlin-server.yaml` 中配置认证器及 REST 配置路径。
 
 ```yaml
 authentication: {
@@ -84,7 +84,7 @@ authentication: {
 }
 ```
 
-在 `rest-server.properties` 中配置认证器和权限数据存储图：
+在 `conf/rest-server.properties` 中配置认证器和权限数据存储图。
 
 ```properties
 auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator
@@ -98,9 +98,9 @@ auth.graph_store=hugegraph
 #auth.remote_url=127.0.0.1:8899,127.0.0.1:8898,127.0.0.1:8897
 ```
 
-其中，`graph_store`配置项是指使用哪一个图来存储用户信息，如果存在多个图的话，选取任意一个均可。
+`auth.graph_store` 指定保存认证数据的图，名称必须与 `conf/graphs/` 中的图配置对应。
 
-在配置文件`hugegraph{n}.properties`中配置`gremlin.graph`信息：
+在每个受保护图的配置文件 `conf/graphs/<graph>.properties` 中设置 `gremlin.graph`。
 
 ```properties
 gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
@@ -110,62 +110,152 @@ gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy
 
 ### 自定义用户认证系统
 
-如果需要支持更加灵活的用户系统，可自定义 authenticator 进行扩展，自定义 authenticator 实现接口`org.apache.hugegraph.auth.HugeAuthenticator`即可，然后修改配置文件中`authenticator`配置项指向该实现。
+实现 `org.apache.hugegraph.auth.HugeAuthenticator` 接口，再将两处 `authenticator` 配置指向该实现，即可接入已有用户系统。
 
 ### 基于鉴权模式启动
 
-首次执行 `init-store.sh` 时，如果尚未创建 `admin` 用户，命令会要求输入管理员密码。对于已经初始化的持久化后端，`init-store.sh` 会补充认证所需的系统信息，无需删除原有图数据。
+下面的顺序适用于本地持久化后端，例如 RocksDB。先完成上面的配置，再初始化认证数据。
+HStore/PD 部署的管理员由 PD 启动路径创建，须按该部署的配置设置 `auth.admin_pa`，不要照搬本地后端的交互式初始化流程。
 
-```bash
-# stop the hugeGraph firstly
-bin/stop-hugegraph.sh
+1. **停止 Server。**
 
-# 初始化认证系统信息；已有后端数据会被保留
-bin/init-store.sh
+   ```bash
+   bin/stop-hugegraph.sh
+   ```
 
-# start hugeGraph again
-bin/start-hugegraph.sh
+1. **初始化认证数据。**
 
-```
+   ```bash
+   bin/init-store.sh
+   ```
+
+   首次创建 `admin` 时，按提示输入强密码。已有图数据会保留；已有 `admin` 时不会重新设置其密码。
+   此命令补充后端与认证系统信息，不需要删除原有存储目录。
+
+1. **启动并检查认证。**
+
+   ```bash
+   bin/start-hugegraph.sh
+   curl -u admin \
+     http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
+   ```
+
+   curl 会提示输入密码。正确密码应返回 HTTP 200；不带凭据或使用错误密码应返回 HTTP 401。
+   启动失败时先检查日志和认证图配置，不要通过清空数据来重试。
+{.steps}
 
 ### 使用 Docker 时开启鉴权模式
 
-对于镜像 `hugegraph/hugegraph` 大于等于 `1.2.0` 的版本，我们可以在启动 `docker` 镜像的同时开启鉴权模式
+新容器在 Docker run 和 Compose 中选择一种方式。已经运行过的容器直接阅读[既有容器](#3-进入容器后重新开启鉴权模式)。
 
-具体做法如下：
-
-#### 1. 采用 docker run
-
-在 `docker run` 中添加环境变量 `PASSWORD=xxx`（密码可以自由设置）即可开启鉴权模式：：
+使用 Docker 部署时，官方镜像支持通过环境变量直接开启鉴权模式（适用于官方 Server 镜像 `/hugegraph-server` 布局）。
+将占位符替换为实际镜像标签或 digest：
 
 ```bash
-docker run -itd -e PASSWORD=xxx --name=server -p 8080:8080 hugegraph/hugegraph:1.7.0
+export HUGEGRAPH_IMAGE='<image:tag-or-digest>'
+read -r -s -p 'Admin password: ' PASSWORD
+printf '\n'
+export PASSWORD
 ```
 
-#### 2. 采用 docker-compose
+提示输入管理员密码后执行启动命令。为保障凭据安全，请避免将密码以明文形式提交到共享 Compose 文件中。
+JWT 密钥仍按[上面的配置](#配置用户认证)持久保存到认证图配置；多节点必须使用同一个值。
 
-使用 `docker-compose` 在环境变量中设置 `PASSWORD=xxx`即可
+#### Docker run {#1-采用-docker-run}
+
+创建一个新容器，并仅向本机开放 REST 端口。
+
+```bash
+docker run -d --name server \
+  -p 127.0.0.1:8080:8080 \
+  -e PASSWORD \
+  "$HUGEGRAPH_IMAGE"
+unset PASSWORD
+```
+
+入口脚本完成认证配置和首次初始化后启动 Server。接着阅读[检查认证结果](#检查认证结果)。
+
+#### Docker Compose {#2-采用-docker-compose}
+
+将下面的内容保存为 `compose.yaml`。必填变量缺失时，Compose 会报错，避免意外启动无认证服务。
+在同一终端中启动服务。
 
 ```yaml
-version: '3'
 services:
   server:
-    image: hugegraph/hugegraph:1.7.0
+    image: ${HUGEGRAPH_IMAGE:?Set HUGEGRAPH_IMAGE}
     container_name: server
     ports:
-      - 8080:8080
+      - "127.0.0.1:8080:8080"
     environment:
-      - PASSWORD=xxx
+      PASSWORD: ${PASSWORD:?Set PASSWORD}
 ```
-
-#### 3. 进入容器后重新开启鉴权模式
-
-首先进入容器：
 
 ```bash
-docker exec -it server bash
-# 用于快速修改配置, 修改前的文件被保存在conf-bak文件夹下
-bin/enable-auth.sh
+docker compose up -d
+unset PASSWORD
 ```
 
-之后参照 [基于鉴权模式启动](#基于鉴权模式启动) 即可
+以后重新创建容器前，需要重新设置这些变量。保留已有数据卷，并按部署要求持久保存配置。
+接着阅读[检查认证结果](#检查认证结果)。
+
+#### 既有容器 {#3-进入容器后重新开启鉴权模式}
+
+此路径适用于原先未开启认证、使用本地持久化后端的官方 Server 容器。
+先备份数据，并确认配置、后端数据及 `conf-bak` 均位于容器挂载的持久卷中。
+官方镜像将 `/hugegraph-server` 声明为卷；自定义镜像应先检查挂载位置。
+HStore/PD 或外部认证服务使用各自的管理员初始化流程。
+
+1. **停止原容器，使用同一镜像和数据卷打开临时维护容器。**
+
+   ```bash
+   SERVER_IMAGE=$(docker inspect --format '{{.Image}}' server)
+   docker stop server
+   docker run --rm -it --volumes-from server \
+     --entrypoint bash "$SERVER_IMAGE"
+   ```
+
+   原容器须保持停止，防止两个 JVM 同时打开本地数据库。`--entrypoint bash` 使维护容器只打开终端。
+
+1. **在维护容器内修改配置并初始化。**
+
+   ```bash
+   cd /hugegraph-server
+   bin/enable-auth.sh
+   ```
+
+   `enable-auth.sh` 首次运行时将原配置保存到 `conf-bak`，然后修改默认 `hugegraph` 图和认证配置。
+   如果 `conf-bak` 已存在，脚本会跳过修改，须按[StandardAuthenticator 模式](#standardauthenticator-模式)检查三处配置。
+   使用其他认证图时也应手动配置对应文件。
+   按[上面的配置](#配置用户认证)将强随机 JWT 密钥写入认证图配置，再运行初始化命令。
+
+   ```bash
+   bin/init-store.sh
+   exit
+   ```
+
+   按提示输入管理员密码，确认初始化成功后退出。
+
+1. **在宿主机启动原容器。**
+
+   ```bash
+   docker start server
+   ```
+
+   不需要删除 `docker/init_complete` 标记。后续 `PASSWORD` 环境变量的变化不会修改已存储的管理员密码。
+{.steps}
+
+#### 检查认证结果
+
+等待 Server 启动后，在宿主机执行以下请求验证。`-u admin` 会交互式提示输入密码：
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' \
+  http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
+curl -sS -o /dev/null -w '%{http_code}\n' -u admin \
+  http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels
+```
+
+未携带凭据的请求预期返回 `401 Unauthorized`，输入正确密码的请求返回 `200 OK`（若输入错误密码则同样返回 `401`）。
+注：当前主线版本 URL 包含 `/graphspaces/DEFAULT`，1.7.0 等历史版本请省略 graphspace 前缀（直接使用 `/graphs/hugegraph/...`）。
+若未提供凭据仍返回 `200`，说明鉴权未成功启用，请检查配置并重启 Server。

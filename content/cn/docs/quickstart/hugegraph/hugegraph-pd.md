@@ -83,6 +83,8 @@ docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
 
 ```bash
 export HG_PD_AUTH_SECRET_KEY="$(openssl rand -hex 24)"
+# master 构建的镜像以 UID 10001 运行，宿主机数据目录必须对该用户可写
+mkdir -p /path/to/data && sudo chown 10001:10001 /path/to/data
 docker run -d \
   -p 8620:8620 -p 8686:8686 -p 8610:8610 \
   -e HG_PD_GRPC_HOST=192.168.1.10 \
@@ -121,7 +123,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 
 #### 4.1 配置项参考
 
-以下表格核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 中的 `hg-pd-dist` 配置和 Java 默认注入值（三个 `raft.rpc-*` 配置项按 [apache/hugegraph#3368](https://github.com/apache/hugegraph/pull/3368) 核对），不是 1.7.0 发布标签的全部行为。1.7.0 二进制包请使用其标签对应的原始配置；主线源码构建包则以 [主线配置文件](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) 为准。
+以下表格列出主线配置及代码默认值，Raft 超时设置可参阅 [PDConfig 实现](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-core/src/main/java/org/apache/hugegraph/pd/config/PDConfig.java)。1.7.0 二进制包请使用对应标签的原始配置；主线源码构建包则以 [主线配置文件](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) 为准。下文会单独说明与 1.7.0 的差异。
 
 **gRPC 与 REST**
 

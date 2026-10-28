@@ -48,7 +48,7 @@ capabilities:
 
 tlp:
   class: hg-home-band hg-home-tlp
-  title: 首个 Apache 基金会的顶级图项目
+  title: 首个 Apache 基金会的顶级图系统
 
 community:
   class: hg-home-community

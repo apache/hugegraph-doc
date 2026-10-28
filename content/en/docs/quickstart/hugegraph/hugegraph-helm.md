@@ -232,6 +232,49 @@ add `--set-string store.waitImage= --set-string server.waitImage=` to reuse comp
 Adopt new defaults deliberately with `--reset-values` and a reviewed file retaining your image, credential, storage and topology settings.
 Do not treat PD membership, storage or credential changes as ordinary independent overrides; consult the lifecycle reference.
 
+PD, Store and Server images built from current master run as UID/GID `10001`. The chart gives the PD and Store pods `fsGroup: 10001` (with
+`fsGroupChangePolicy: OnRootMismatch`) unless their `podSecurityContext` sets `fsGroup`, also when `--reuse-values` keeps an older release's empty value,
+so they can write PVCs created by older images, which ran as root.
+
+Switch PD and Store to images built from this version in the same rollout that first applies `fsGroup`, so the kubelet changes the volume ownership right
+before the `10001` image starts. Do not run images that still run as root with this chart first, for example a `latest` that has not moved to this version:
+files they create stay owned by root, and `OnRootMismatch` checks only the volume root, so it does not fix them later. Pin `pd.image` and `store.image` to a
+build from this version rather than relying on `latest`. A non-empty `image.digest` wins over `image.tag`, and `--reuse-values` keeps an existing digest,
+so a release pinned by digest must change the digest, not only the tag.
+
+If a release already ran root images with `fsGroup` set, roll out the first `10001` image together with a one-time recursive ownership change. Set the
+images in the same command, so the recursive change runs for the `10001` image rather than for a pinned root image. The example clears any reused digest so
+the tag applies; a release pinned by digest sets `pd.image.digest` and `store.image.digest` to the digests of this version's images instead:
+
+```bash
+helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+  --set pd.image.tag=<this-version> \
+  --set store.image.tag=<this-version> \
+  --set-string pd.image.digest= \
+  --set-string store.image.digest= \
+  --set pd.podSecurityContext.fsGroupChangePolicy=Always \
+  --set store.podSecurityContext.fsGroupChangePolicy=Always \
+  --wait --timeout 15m
+```
+
+Before switching the policy back, check that every PD and Store Pod runs the `10001` image you set, not an older root image:
+
+```bash
+kubectl get pods -n hugegraph \
+  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].image}{"\n"}{end}'
+```
+
+`--reuse-values` keeps `Always`, which walks the whole volume on every Pod start, so set the policy back once those Pods are running:
+
+```bash
+helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+  --set pd.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+  --set store.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+  --wait --timeout 15m
+```
+
+Volumes whose CSI driver ignores `fsGroup` (for example many NFS drivers) and `hostPath` volumes need a one-time `chown -R 10001:10001` instead.
+
 `server.storageWaitTimeoutSeconds` defaults to 300 and is passed as `WAIT_STORAGE_TIMEOUT_S`. An unspecified startup probe threshold is derived
 from that wait plus 150 seconds; an explicit threshold is preserved and must cover the storage wait plus at least 120 seconds of Server startup.
 A contradictory budget fails rendering with the relevant parameter names. Storage wait timeout is not a JVM memory setting.

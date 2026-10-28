@@ -6,7 +6,7 @@ search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, 内网部�
 ---
 
 本文适用于 HugeGraph **1.8.0 及以后版本**，需要支持 OCI 的 Helm **3.10+** 和 Kubernetes (K8s) **1.23+**。
-可从 GHCR 或 Docker Hub 安装 `hugegraph-helm`。Chart 与 HugeGraph 服务分别维护版本，例如 `0.3.x` 的 Chart 可以部署 `1.8.x` 的服务。
+可从 GHCR 或 Docker Hub 安装 `hugegraph-helm`。Chart 与 HugeGraph 服务分别维护版本，例如 `0.4.x` 的 Chart 可以部署 `1.8.x` 的服务。
 
 > [!WARNING]
 > 当前开发 Chart 使用 `latest` 镜像，适合测试。

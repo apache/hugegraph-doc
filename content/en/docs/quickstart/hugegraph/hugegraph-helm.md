@@ -7,7 +7,7 @@ search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, OCI, GHCR, 
 
 This guide covers HugeGraph **1.8.0 and later**, using Helm **3.10+** with OCI support and Kubernetes (K8s) **1.23+**.
 Install `hugegraph-helm` from GHCR or Docker Hub. Chart and HugeGraph versions are maintained separately:
-for example, a `0.3.x` Chart can deploy a `1.8.x` service.
+for example, a `0.4.x` Chart can deploy a `1.8.x` service.
 
 > [!WARNING]
 > The current development Chart uses `latest` images and is intended for testing.

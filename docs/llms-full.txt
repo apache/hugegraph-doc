@@ -1880,6 +1880,9 @@ Multi-node service names are `pd0`–`pd2`, `store0`–`store2`, and `server0`�
 
 To run master-built Store alone, replace example addresses with actual routable Store and PD addresses:
 
+The `mkdir -p` and nonrecursive `chown` below are for a new empty directory. Before reusing data written by a root image, stop Store and run
+`sudo chown -R 10001:10001 /path/to/storage` once, then start the UID 10001 image.
+
 ```bash
 # Master-built images run as UID 10001; the host data directory must be writable by it
 mkdir -p /path/to/storage && sudo chown 10001:10001 /path/to/storage
@@ -2458,6 +2461,9 @@ docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
 
 To run master-built PD alone, first set a deployment-specific secret and replace example addresses with addresses reachable by the container:
 
+The `mkdir -p` and nonrecursive `chown` below are for a new empty directory. Before reusing data written by a root image, stop PD and run
+`sudo chown -R 10001:10001 /path/to/data` once, then start the UID 10001 image.
+
 ```bash
 export HG_PD_AUTH_SECRET_KEY="$(openssl rand -hex 24)"
 # Master-built images run as UID 10001; the host data directory must be writable by it
@@ -2955,10 +2961,11 @@ LLMS index: [llms.txt](/llms.txt)
 
 This guide covers HugeGraph **1.8.0 and later**, using Helm **3.10+** with OCI support and Kubernetes (K8s) **1.23+**.
 Install `hugegraph-helm` from GHCR or Docker Hub. Chart and HugeGraph versions are maintained separately:
-for example, a `0.2.x` Chart can deploy a `1.8.x` service.
+for example, a `0.4.x` Chart can deploy a `1.8.x` service.
 
 > [!WARNING]
-> The current development Chart uses `latest` images and is intended for testing.
+> The current development Chart uses `latest` images for the base HugeGraph components and is intended for testing.
+> Optional Vermeer is pinned to a verified published image and digest; see [optional engines](#optional-engines).
 > For production, choose a stable Chart once the corresponding HugeGraph service has been released, and review its image versions.
 > Image tags can change; set each component's `image.digest` to keep using the same image content.
 
@@ -3012,7 +3019,8 @@ helm install hugegraph ./hugegraph-helm -n hugegraph \
   --create-namespace --wait --timeout 10m
 ```
 
-The single-node preset replaces the default installation with one replica per component and relaxed scheduling constraints.
+The single-node preset selects 1 PD + 1 Store + 1 Server using HStore, plus Hubble, with relaxed scheduling constraints.
+It leaves SeaTunnel and Vermeer disabled.
 
 ## 2 Modes and entry points
 
@@ -3032,12 +3040,14 @@ hugegraph-helm/
     server-deployment.yaml # Server Deployment (injects serviceId and graphSpace)
     hubble-deployment.yaml # Hubble UI Deployment
     tests/              # Smoke validation hook (helm test, supports custom testGraphAlias)
-  examples/             # Seven complete production scenario examples (local PVs, GitOps secrets, Ingress)
+  examples/             # Deployment examples: local PVs, GitOps credentials, optional engines and Ingress
   docs/operations.md    # Lifecycle operations and recovery guide
 ```
 
 `mode: easy` is the default. Server and Hubble use automatic NodePorts; PD stays ClusterIP. HTTP works without a domain, certificate or acknowledgement.
-`mode: strict` defaults Server/Hubble to ClusterIP and enables NetworkPolicy. Both modes keep authentication and persistence.
+`mode: strict` defaults Server/Hubble to ClusterIP and enables full NetworkPolicy isolation.
+SeaTunnel and Vermeer native Services stay private ClusterIP services and require login in both modes.
+Both modes keep authentication and persistence.
 Explicit component parameters take priority over global parameters, which take priority over mode defaults; explicit `false` remains an override.
 The global parameters are `persistence.enabled` and `global.imageRegistry`. Strict mode is also available through `values-strict.yaml`.
 
@@ -3059,10 +3069,65 @@ Open Hubble on its assigned NodePort and log in as `admin` with this password. A
 The internal ClusterIP is a virtual Service address, not a node IP; a laptop normally cannot reach it directly.
 Use `kubectl -n hugegraph port-forward svc/hugegraph-hubble 8088:8088` for a local browser at `http://127.0.0.1:8088`.
 
-Each client Service supports `externalTrafficPolicy`, `loadBalancerClass`, `loadBalancerIP`, `loadBalancerSourceRanges`, `externalIPs`
+The base PD/Server/Hubble client Services support `externalTrafficPolicy`, `loadBalancerClass`, `loadBalancerIP`, `loadBalancerSourceRanges`, `externalIPs`
 and `allocateLoadBalancerNodePorts`, subject to the cluster/controller's capabilities. Use LoadBalancer fields with that Service type.
 NodePort omission or `0` means automatic allocation. Fixed ports are validated against the cluster's configured range by Kubernetes;
 the chart does not force `30000–32767`. Legacy HTTP acknowledgement fields remain accepted but no longer gate rendering.
+
+### Optional engines: disabled by default {#optional-engines}
+
+By default, the Chart provisions only the core graph services (PD + Store + Server + Hubble). For data migration and distributed memory graph computing, the Chart offers SeaTunnel and Vermeer as native optional engines, both disabled by default:
+
+| Engine | Default | Purpose | Topologies (`*.mode`) | Access & Security |
+|---|---|---|---|---|
+| **Hubble** | Enabled (`true`) | Graph visualization, multi-graphspace management & metrics | Single-replica Deployment | Follows global `mode` (NodePort or ClusterIP) |
+| **SeaTunnel** | Disabled (`false`) | Heterogeneous data ingestion & full graph migration | `standalone` / `cluster` | Private ClusterIP (HTTP Basic auth) |
+| **Vermeer** | Disabled (`false`) | Memory-first high-performance distributed graph algorithms | `standalone` / `cluster` | Private ClusterIP (Token auth, auto-wired to Hubble) |
+
+Enable either engine by setting its `enabled` key to `true` in values. Both engines maintain private ClusterIP services, and their administrative passwords are generated independently from Server.
+
+> [!DETAILS]- SeaTunnel: On-demand Data Import, Export, and Migration
+> ```bash
+> helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
+>   -f helm/hugegraph/values-single.yaml \
+>   --set seatunnel.enabled=true --set seatunnel.mode=standalone \
+>   --wait --timeout 30m
+> ```
+>
+> - **Topologies**: `standalone` runs 1 Hybrid node for lightweight testing; `cluster` runs multiple homogeneous nodes for high-throughput batch jobs.
+> - **Authentication**: Web dashboard uses independent HTTP Basic auth (default `admin`), stored in the `hugegraph-seatunnel-auth` Secret. Port `5801` is strictly for cluster internal communication.
+> - See the [SeaTunnel Deployment Section](#6-start-seatunnel) or [SeaTunnel Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md) for full job configs and migration steps.
+
+> [!DETAILS]- Vermeer: In-Memory Graph Computing Integrated with Hubble
+> ```bash
+> helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
+>   -f helm/hugegraph/values-single.yaml \
+>   --set vermeer.enabled=true --set vermeer.mode=standalone \
+>   --wait --timeout 20m
+> ```
+>
+> ```text
+> helm/hugegraph/
+>   examples/
+>     values-vermeer-standalone.yaml # Standalone preset (Master and Worker combined in one Pod)
+>     values-vermeer-cluster.yaml    # Cluster preset (1 dedicated Master Pod + 3 distributed Worker Pods)
+>   docs/
+>     vermeer.md                     # Advanced algorithm parameters, API mapping and operations
+> ```
+>
+> - **Topologies**: `standalone` runs Master and Worker in one Pod; `cluster` provides a separate Master coordinator Pod and scalable Worker computing Pods (default 3 replicas).
+> - **Hubble Integration**: Hubble automatically acquires the internal Master Service URL and service tokens. Operators can trigger 15+ graph algorithms directly from Hubble without manual token configuration.
+> - **Native Dashboard Access**: Forward the private Service via `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` and sign in with the password from Secret `<release>-vermeer-admin` under **Admin credential**.
+> - For image pinning and credentials management, see the [Vermeer Deployment Guide](https://github.com/hugegraph/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md).
+
+### PD metadata namespace {#metadata-namespace}
+
+The top-level `metadataCluster` parameter (default `hg-test`) specifies the PD metadata cluster prefix. The Chart injects this value into Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER`, ensuring Store correctly locates the Schema initialized by Server when processing Vermeer graph scans.
+
+> [!IMPORTANT]
+> `metadataCluster` is a metadata namespace prefix, not a Raft group name. Modifying it **does not** automatically migrate existing graph data. Always preserve the original cluster prefix when enabling Vermeer; if graph load tasks fail with `Schema missing` or `no such vertex label`, check that the namespace prefix matches across all components. Refer to the [Metadata Namespace Operations Guide](./hugegraph-helm-operations.md#metadata-namespace) for details.
+Standard older releases using `hg-test` need no namespace-adoption step. For a custom legacy prefix, follow
+[metadata namespace adoption](./hugegraph-helm-operations.md#metadata-namespace) before upgrading.
 
 ### Server service identity and graph space
 
@@ -3094,6 +3159,10 @@ The default mirror inventory is only `hugegraph/pd`, `hugegraph/store`, `hugegra
 Store's PD wait init container and the Helm test reuse Store and Server images respectively, which already contain `curl`.
 No separate curl image or runtime package installation is required. Explicit `store.waitImage` / `server.waitImage` overrides remain supported.
 
+Enabled SeaTunnel additionally needs its configured `apache/seatunnel` image; enabled Vermeer uses the published build pinned above.
+Vermeer reuses that image for Master, Worker and service-token initialization. Mirror every enabled image and explicit helper override.
+For a custom Vermeer image, also update `vermeer.image.digest`, or explicitly clear it when selecting by tag; a nonempty digest takes priority.
+
 ### Storage configuration
 
 For storage, empty `storageClassName` inherits the cluster default, while `"-"` explicitly selects no StorageClass.
@@ -3101,6 +3170,11 @@ Local PVs require prepared host directories, matching capacities, `nodeAffinity`
 `WaitForFirstConsumer` binds with the Pod's scheduling constraints. See the complete seven-volume example before creating resources.
 For a new temporary installation, set `persistence.enabled=false` to use `emptyDir`; component storage flags override it.
 The chart never replaces a failed PVC with temporary storage and rejects PD/Store storage-mode changes on initialized releases.
+
+Vermeer uses separate Master and Worker claims, even in its single-Pod mode: two additional volumes in standalone,
+or one Master volume plus one per Worker in cluster mode. With the default base topology this means 9 or 11 volumes respectively.
+The small HugeGraph preset plus standalone Vermeer needs 5. The seven-volume local example covers only the base installation.
+SeaTunnel checkpoints remain temporary local files.
 
 ### Offline installation and internal repositories
 
@@ -3162,6 +3236,21 @@ update the Secret/source to that same password, then restart the Server Deployme
 
 Hubble is enabled by default and its current login requires Server authentication. Set `hubble.enabled=false` for API-only access;
 optionally also set `server.auth.enabled=false` for an unauthenticated API. Inactive credential settings may remain in your values file.
+
+Enabled optional engines always require native login, including in easy mode. Newly generated administrator passwords use 6 random alphanumeric
+characters in easy mode or 16 in strict mode. SeaTunnel uses HTTP Basic, while Vermeer uses Secret `<release>-vermeer-admin` and its
+**Admin credential** login. Upgrades retain existing passwords, including when changing mode; mode changes do not rotate them automatically.
+Vermeer password sources are `vermeer.auth.admin.password` or `vermeer.auth.admin.existingSecret/key`;
+only Master reads that password. Native administration uses authorized port-forwarding, and Hubble service credentials are automatic.
+
+> [!DETAILS]- Advanced: Vermeer deployment credentials and GitOps
+> For GitOps, preserve stable administrator credentials and the separate internal service identity.
+> The service signing factor uses `vermeer.auth.value` or `vermeer.auth.existingSecret/key`; Hubble generates its service token automatically.
+> Ordinary Hubble use and native password login do not require retrieving that token.
+> Changing an external native administrator Secret needs a Master restart only. Service-factor rotation requires Master and Hubble,
+> not Workers. Worker Schema reads reuse the deployment administrator unless `vermeer.hugegraphCredentials.existingSecret/key`
+> supplies protected username/password JSON for an existing account with the required Schema permissions. No account is created automatically.
+
 
 ## 5 Upgrade and verification
 
@@ -3236,6 +3325,7 @@ For scheduling, NetworkPolicy, rolling updates and recovery, see [Kubernetes ope
 Backlinks:
 
 - [Docker Cluster](/docs/guides/hugegraph-docker-cluster/)
+- [Vermeer: Memory-First Computing Framework](/docs/quickstart/computing/hugegraph-vermeer/)
 - [Kubernetes Operations](/docs/quickstart/hugegraph/hugegraph-helm-operations/)
 
 
@@ -3255,7 +3345,7 @@ Commands assume release/namespace `hugegraph`; substitute the actual workload na
 
 ## 1 Storage and private images
 
-The default installation needs seven persistent volumes. Dynamic storage requires a working provisioner; static local storage requires prepared directories
+The base installation needs seven persistent volumes. Dynamic storage requires a working provisioner; static local storage requires prepared directories
 and matching PVs on the named nodes. Use the [complete examples](https://github.com/apache/hugegraph/tree/master/helm/hugegraph/examples)
 for all seven local PVs, `WaitForFirstConsumer`, registry mirrors and GitOps Secrets.
 An initially Pending PVC with `WaitForFirstConsumer` can be normal; persistent Pending needs PVC/Pod events and PV matching checks.
@@ -3270,6 +3360,13 @@ kubectl get pv,storageclass
 
 For `ImagePullBackOff`, inspect Pod events and registry access/credentials. The default image inventory contains four component images;
 Store wait and Helm test reuse existing component images with `curl` already installed. Explicit helper-image overrides must also be mirrored.
+Enabled SeaTunnel adds its configured `apache/seatunnel` image. Enabled Vermeer uses `hugegraph/vermeer:helm-30b67d93e7d0`, pinned by digest
+and reused by Master, Worker and token initialization. Its [official publishing run](https://github.com/hugegraph/actions/actions/runs/40653109759)
+records the source and image digest; see the
+[Vermeer deployment guide](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md).
+Custom image overrides must also update `vermeer.image.digest`, or explicitly clear it to select by tag; digest takes priority.
+The base local-PV example omits Vermeer claims: standalone adds two,
+while cluster adds one Master claim plus one per Worker (four additional claims by default).
 
 ## 2 Ports and health
 
@@ -3278,6 +3375,26 @@ Client Services hide individual Pod addresses. NodePort is a separate allocated 
 PD `/v1/ready` requires a Raft leader; `/v1/health` only confirms the listener. Store startup waits for a majority of ready PD peers.
 Server waits up to `server.storageWaitTimeoutSeconds` (default 300) before its application startup; adjust it for slow storage bootstrap.
 No local Helm rendering verifies live cluster reachability, volumes or JVM capacity.
+
+### Preserve the metadata namespace {#metadata-namespace}
+
+`metadataCluster: hg-test` sets the PD metadata namespace prefix (injected into Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER`).
+It is not a Raft group name; changing it will not automatically migrate existing metadata. **Never** arbitrarily change this prefix on an initialized cluster to enable Vermeer. If Server REST queries succeed but Vermeer scanning Store fails with `Schema missing` or `no such vertex label`, check that the namespace prefix matches across all components.
+
+If a legacy environment used a custom prefix, record it explicitly on the Server Deployment before upgrading:
+
+```bash
+kubectl -n hugegraph annotate deployment hugegraph-server \
+  hugegraph.apache.org/metadata-cluster='<verified-existing-namespace>'
+```
+
+and ensure `metadataCluster` matches this value in your values file. For Store nodes using `store.updateStrategy.type=OnDelete`, follow the [rolling upgrade procedure](#6-rolling-store-images-safely) to recreate Pods one by one so the new settings take effect.
+
+> [!DETAILS]- Optional Engines Operations: Probes, Credentials, and Topology Switching
+> - **Ports & Health**: SeaTunnel HTTP/UI runs on `8080`; Vermeer Master HTTP/gRPC listens on `6688/6689`, and Worker on `6788/6789`. Both engines stay behind private ClusterIP in both modes.
+> - **Credentials & Sessions**: Generated admin passwords use 6 characters in easy mode or 16 in strict mode, retained across upgrades and mode changes. In Vermeer native UI, enter the password from Secret `<release>-vermeer-admin` into **Admin credential**; Hubble internal service tokens are auto-wired.
+> - **Topology Changes**: Ensure active computations and batch ingestion jobs are complete and in-memory graphs are unloaded before changing `seatunnel.mode` or `vermeer.mode`. Standalone and cluster use separate PVC claims, so mode changes do not migrate local files.
+> - See the [Vermeer Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md) and [SeaTunnel Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md) for full recovery and configuration details.
 
 ### Helm test coverage
 
@@ -3337,11 +3454,12 @@ before changing a live cluster; the chart does not migrate existing shard metada
 
 ## 5 NetworkPolicy
 
-Easy mode, including the ordinary cluster preset, defaults policies off. Strict mode enables them; explicit `networkPolicy.enabled` wins in either mode.
+Easy mode and the ordinary cluster preset leave full base-service isolation disabled by default; strict enables it.
+SeaTunnel and Vermeer always keep private ClusterIP Services, login and native HTTP/RPC ingress restrictions, even with `networkPolicy.enabled=false`.
 The cluster network plugin must enforce NetworkPolicy for these resources to have an effect.
 The generated policies admit component traffic and DNS. External clients and Ingress controllers need suitable
 `networkPolicy.<component>.extraIngress` rules; external discovery addresses may need matching `extraEgress`.
-An empty list is valid and can block external traffic. Native Kubernetes rules are accepted, including `{}` to allow all;
+For base-service rules, an empty list can block outside traffic and native Kubernetes rules include `{}` to allow all;
 there is no separate source-acknowledgement gate. Use your actual source addresses/selectors, considering NodePort SNAT and controller behavior.
 
 ```yaml
@@ -3364,6 +3482,10 @@ networkPolicy:
           - protocol: TCP
             port: 8088
 ```
+
+Native engine ingress accepts explicit internal Pod/namespace selectors only; IP blocks and allow-all forms are rejected.
+The base-service example above applies to Server, not native engine exposure. External data destinations can use engine `extraEgress`;
+strict mode additionally enforces egress isolation.
 
 ## 6 Rolling Store images safely
 
@@ -7109,6 +7231,9 @@ The following example migrates `person` vertices and `knows` edges from a source
 
 These two jobs migrate only the selected labels and properties. They do not copy every source schema setting, such as indexes and TTLs. Pause writes to the source graph during the migration so both jobs read a consistent point in time. Afterward, compare vertex and edge counts and sample properties.
 
+To retain schema IDs and indexes for ordinary edge labels, see the Chart's
+[schema-copy examples](https://github.com/apache/hugegraph/tree/96ce802a25672f8b7b0d08c49e68db694231f5e4/helm/hugegraph/examples/seatunnel/clone).
+
 [![Regenerating a primary key can change 1:marko to 2:marko; CUSTOMIZE_STRING preserves the original ID so edge endpoints still resolve](/docs/images/seatunnel/seatunnel-preserve-ids-en.png)](/docs/images/seatunnel/seatunnel-preserve-ids-en.png)
 
 ### 1.1 Migrate vertices first
@@ -7362,7 +7487,8 @@ Vermeer is a high-performance, memory-first graph computing framework written in
 
 The master handles communication, forwarding, and aggregation, with modest computation and resource usage. Workers store graph data and execute tasks, consuming most memory and CPU. gRPC handles internal communication; REST provides external APIs.
 
-At startup, built-in defaults are loaded first, followed by the `[default]` section of `config/<env>.ini` under the working directory, then explicit command-line overrides. For example, `--env=master` reads `config/master.ini`. The Docker image copies repository configuration to `/go/bin/config/` and works from `/go/bin/`. A host bind mount hides the bundled files, so it must contain every ini file used. The configuration reader does not read environment variables.
+At startup, built-in defaults are loaded first, followed by the `[default]` section of `config/<env>.ini` under the working directory, then explicit command-line overrides. For example, `--env=master` reads `config/master.ini`. The Docker image copies repository configuration to `/go/bin/config/` and works from `/go/bin/`. A host bind mount hides the bundled files, so it must contain every ini file used. Ordinary INI keys are not mapped automatically from environment variables. Dedicated deployment credential settings also support
+`VERMEER_PD_PASSWORD_FILE`, `VERMEER_PD_PEERS`, `VERMEER_HUGEGRAPH_CREDENTIALS_FILE` and the documented token-factor/password file settings.
 
 Default ports:
 
@@ -7385,10 +7511,44 @@ flowchart LR
 
 ### 1.2 Running Vermeer
 
+> [!DETAILS]- Helm: Deploy Vermeer with HugeGraph and Hubble
+> The HugeGraph Helm Chart supports deploying the native Vermeer in-memory graph computing engine, disabled by default.
+> From the HugeGraph repository root, enable Vermeer with:
+>
+> ```bash
+> helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
+>   -f helm/hugegraph/values-single.yaml \
+>   --set vermeer.enabled=true --set vermeer.mode=standalone \
+>   --wait --timeout 20m
+> ```
+>
+> ```filetree {wrap=true title="Vermeer Core Files and Layout"}
+> helm/hugegraph/
+>   examples/
+>     values-vermeer-standalone.yaml # Standalone preset (Master and Worker run in a single Pod)
+>     values-vermeer-cluster.yaml    # Cluster preset (dedicated Master Pod + distributed Worker Pods)
+>   templates/
+>     vermeer-master.yaml            # Master scheduling and coordination workload
+>     vermeer-worker.yaml            # Worker in-memory computing workload
+>     vermeer-auth-secret.yaml       # Admin credentials and Hubble internal service tokens
+>   docs/
+>     vermeer.md                     # Advanced algorithm parameters, API mapping and operations
+> ```
+>
+> **Architecture & Topologies**:
+> - **Standalone Mode (`standalone`)**: Master and Worker run as distinct containers in the same Pod with minimal overhead, suitable for local exploration and small-scale testing.
+> - **Cluster Mode (`cluster`)**: Set `vermeer.mode=cluster` and `vermeer.worker.replicas=3` to provision a dedicated Master coordinator Pod and multiple distributed Worker computing Pods.
+> - **Graph Service Integration**: Master queries PD via gRPC for partition topology, while Workers scan graph slices directly from Store via gRPC. Hubble automatically injects the Master URL and communication token, allowing users to load graphs and execute 15+ graph algorithms directly from the UI.
+>
+> **Key Operational Considerations**:
+> 1. **Preserve Metadata Namespace**: Retain the Chart default `metadataCluster: hg-test`. This key synchronizes Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER` so that Store can properly resolve schemas. Do not arbitrarily change this value on existing clusters to avoid `Schema missing` errors during load tasks.
+> 2. **Access Native Web Dashboard**: The native UI runs as a private ClusterIP Service. Use `kubectl port-forward svc/<release>-vermeer-master 6688:6688` to access it locally, and log in by entering the password from the `<release>-vermeer-admin` Secret directly into **Admin credential** (no username required), which grants a 24-hour versioned session.
+> 3. For image pinning, persistent volume sizing, and recovery procedures, refer to the [Helm Optional Engines Guide](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) and [Vermeer Deployment Guide](https://github.com/hugegraph/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md).
+
 > [!WARNING]
 > In production, enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum permissions; retain `audit-*.log`. Server Auth does not protect independent Vermeer, PD, or Store APIs. Restrict these HTTP/gRPC ports to trusted networks and callers, and configure access controls at the Vermeer external entry point.
 >
-> `master.ini` defaults to `auth=none`, disabling authentication for ordinary and administrative APIs. Local examples publish loopback only. Before remote access, enable `auth=token` or restrict callers through a protected network or gateway.
+> Manual standalone deployments default to `auth=none` in `master.ini`, and the Docker examples below publish to loopback only. When deploying manually for remote access, always enable `auth=token`. The Helm deployment enables token authentication and private ClusterIP isolation by default.
 
 Both Docker options need a host configuration directory. From the Vermeer repository root, copy the supplied [`master.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/master.ini) and [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/worker.ini) templates. The mount hides image configuration under `/go/bin/config`, so never mount an empty directory or your entire home directory there:
 

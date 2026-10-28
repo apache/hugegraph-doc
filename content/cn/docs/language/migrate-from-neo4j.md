@@ -55,7 +55,9 @@ weight: 4
    - [Neo4j Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/Neo4j/) 以显式字段
      schema 读取 Cypher 查询结果；3.0.0 新增通过 `tables_configs` 的多表读取。
    - [HugeGraph Sink](https://seatunnel.apache.org/docs/3.0.0/connectors/sink/HugeGraph/) 在 3.0.0
-     中重构，支持多映射 —— 顶点/边请使用推荐的 `mappings` 配置，并遵循其 schema 创建行为。
+     中重构，支持多映射 —— 顶点/边请使用推荐的 `mappings` 配置，并遵循其 schema 创建行为。注意：该 Sink
+     默认开启 `batch_failure_fallback=true`，会记录并跳过失败行，且默认累计跳过 500 条后才会报错终止
+     （`max_insert_errors`）；正式切换前请关闭 fallback 或捕获并核对被跳过的行，并比对数据总条数。
    - [HugeGraph Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/) 为
      3.0.0 新增（schema 自动发现、多标签/并行读取），使 HugeGraph 的导出与迁移工作流成为可能。
 

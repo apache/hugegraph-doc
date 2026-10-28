@@ -65,7 +65,9 @@ The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound re
      query results with explicit field schemas; 3.0.0 adds multi-table reads via `tables_configs`.
    - [HugeGraph Sink](https://seatunnel.apache.org/docs/3.0.0/connectors/sink/HugeGraph/) is
      refactored in 3.0.0 with multi-mapping support — use the recommended `mappings` configuration
-     for vertices/edges and follow its schema-creation behavior.
+     for vertices/edges and follow its schema-creation behavior. Note that the Sink defaults
+     `batch_failure_fallback=true`, which logs and skips failed records and only fails after 500 skips
+     (`max_insert_errors`); disable fallback or capture and reconcile skipped records and compare row counts before cutover.
    - [HugeGraph Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/) is
      new in 3.0.0 (schema auto-discovery, multi-label/parallel reads), enabling HugeGraph export
      and migration workflows.

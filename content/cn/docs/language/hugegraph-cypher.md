@@ -65,7 +65,7 @@ ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.nam
 为所有非空属性赋值，或先以 `nullableKeys` 声明标签。若 `person` 标签使用 `PRIMARY_KEY` id 策略（`scripts/example.groovy` 即如此），双顶点简写
 `CREATE (a)-[:knows]->(b)` 会被拒绝并返回执行错误（提示必须设置主键；在已合入
 [#3289](https://github.com/apache/hugegraph/pull/3289) 的 `master` 上验证），因此下面的边示例先分别创建顶点再匹配它们；
-该简写在 `AUTOMATIC` id 策略下可用。
+该简写在 `AUTOMATIC` id 策略且标签未定义非空属性时可用；在上述假定 Schema 中，`name` 仍为非空属性，因此该简写仍会被拒绝（新创建的顶点必须提供所有非空属性）。
 
 #### 查询 — MATCH / WHERE / RETURN
 

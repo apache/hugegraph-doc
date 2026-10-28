@@ -71,7 +71,7 @@ the non-null property check: set every non-null property in each statement, or d
 `nullableKeys` first. If the `person` label uses the `PRIMARY_KEY` id strategy (as it does in `scripts/example.groovy`), the two-vertex
 shorthand `CREATE (a)-[:knows]->(b)` is rejected with an execution error reporting that the primary keys must be set
 (verified on `master` with [#3289](https://github.com/apache/hugegraph/pull/3289) merged), so the edge example below creates the vertices
-first and then matches them. The shorthand works with the `AUTOMATIC` id strategy.
+first and then matches them. The shorthand works with the `AUTOMATIC` id strategy only when the label defines no required (non-null) properties; under the assumed schema, `name` remains non-null, so the shorthand is rejected because each created vertex must supply all non-null properties.
 
 #### Read — MATCH / WHERE / RETURN
 

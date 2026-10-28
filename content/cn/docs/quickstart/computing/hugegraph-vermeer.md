@@ -40,18 +40,18 @@ flowchart LR
 
 > [!DETAILS]- Helm：与 HugeGraph、Hubble 一起部署 Vermeer
 > HugeGraph Helm Chart 提供可选的原生 Vermeer 集成，两种 HugeGraph 拓扑预设都默认关闭。
-> 先在 `my-images.yaml` 选好匹配的 Hubble/Vermeer 构建，再从 HugeGraph 仓库根目录运行：
+> 从 HugeGraph 仓库根目录开启 Vermeer，之后登录现有 Hubble 入口：
 >
 > ```bash
 > helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
->   -f helm/hugegraph/values-single.yaml -f my-images.yaml \
+>   -f helm/hugegraph/values-single.yaml \
 >   --set vermeer.enabled=true --set vermeer.mode=standalone \
 >   --wait --timeout 20m
 > ```
 >
 > 单机为一个 Pod 内独立的 Master 和 Worker 容器；设置 `vermeer.mode=cluster` 与 `vermeer.worker.replicas=3`，
 > 则使用 1 个 Master Pod 和可调数量的 Worker Pod。两者都依赖 HStore/PD 数据链路，轻量 HugeGraph 预设已提供它。
-> 顶层 `mode: easy/strict` 独立选择 NodePort 或 ClusterIP HTTP 入口以及网络策略默认值。
+> 顶层 `mode: easy/strict` 独立选择 Server/Hubble 入口与完整网络隔离，原生引擎在两种模式下都保留为私有服务。
 >
 > 保留已初始化的 `metadataCluster`，默认 `hg-test`；Chart 统一 Server 的 `HG_SERVER_CLUSTER` 与 Store 的 `PD_CLUSTER` 供 Schema 读取。
 > 这是 PD 元数据前缀，不是 Raft 名称；改变它不会迁移已有图，不要为了启用 Vermeer 将其改成 `hg`。
@@ -61,17 +61,21 @@ flowchart LR
 > `OnDelete` 需按既有受控流程更新 Store Pod，新环境才会生效；替换 `emptyDir` Pod 会丢弃其数据，不能视为无损迁移。
 >
 > Hubble 自动获得 Master 内部地址与服务令牌。HugeGraph 管理员可以加载／重载图、运行九种支持算法、查看／取消任务、
-> 分页浏览结果并卸载计算副本；结果不会写回图属性。原生 Vermeer UI/API 也同时提供，使用独立管理员令牌登录。
+> 分页浏览结果并卸载计算副本；结果不会写回图属性。原生 Vermeer UI/API 始终为私有 ClusterIP，访问始终需要登录。
+> 按需管理使用经过授权的 port-forward，将 `<release>-vermeer-admin` Secret 的 `password` 中独立 16 位密码
+> 粘贴到 **Admin credential**，无需用户名；登录获得 24 小时版本化会话 Cookie，Hubble 服务鉴权仍自动接入。
 > 不承诺 Master 自动故障切换或运行中任务自动恢复。
 > 镜像前提、凭据、端口和持久化见 [Helm 可选引擎](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)
 > 与 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
-> 不要仅凭现有 `latest` 标签假定镜像已包含新能力。
+> 镜像发布使用 [Vermeer 发布工作流](https://github.com/hugegraph/actions/blob/master/.github/workflows/publish_latest_vermeer_image.yml)。
 
 
 > [!WARNING]
 > 生产环境必须启用 HugeGraph Server [认证与授权](/cn/docs/config/config-authentication/)、IP 白名单和最小权限授权，并保留 `audit-*.log` 审计记录。Server Auth 不会保护 Vermeer、PD 和 Store 的独立接口；这些 HTTP、gRPC 端口必须限制在可信网络及调用方范围内，Vermeer 对外入口需配置访问控制。
 >
-> Vermeer 的 `master.ini` 默认 `auth=none`，普通及管理 API 均未启用鉴权。本机快速上手只发布回环端口；远程访问前必须启用 `auth=token`，或通过受保护网络、网关将访问限制到可信调用方。
+> 上游手工配置 `master.ini` 仍默认 `auth=none`，下方手工 Docker 示例仅发布回环端口。这与本次 Helm 集成相互独立：
+> Helm 始终使用 token 鉴权、私有原生 Service 与管理员密码，不能把手工未鉴权默认值当成 Helm 的便捷替代方案。
+> 手工保护部署应在远程访问前启用 `auth=token`，并按上游说明配置文件凭据。
 
 下面两种 Docker 启动方式都需要先准备一个宿主机配置目录。请在 Vermeer 仓库根目录执行，将项目提供的 [`master.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/master.ini) 和 [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/worker.ini) 模板复制到该目录；挂载会覆盖镜像里的 `/go/bin/config`，所以不要把空目录或整个用户主目录挂进去：
 

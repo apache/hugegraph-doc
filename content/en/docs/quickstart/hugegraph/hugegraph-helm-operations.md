@@ -63,13 +63,16 @@ Replacing a Pod backed by `emptyDir` discards its temporary data; such a rollout
 
 > [!DETAILS]- Optional engines: readiness, credentials and recovery
 > SeaTunnel and Vermeer stay disabled in both HugeGraph presets; enabling either adds separate entry credentials and network rules.
-> SeaTunnel HTTP/UI uses 8080 and Basic authentication; member/CLI 5801 is restricted to trusted release peers even in easy mode.
+> SeaTunnel HTTP/UI uses 8080 and Basic authentication. Its private HTTP/member ports admit only required internal callers in both modes.
 > Its long-running hybrid process does not provide PVC-backed checkpoint recovery.
 >
-> Vermeer Master HTTP/gRPC uses 6688/6689, and Worker HTTP/gRPC uses 6788/6789. Only authenticated Master HTTP is exposed.
+> Vermeer Master HTTP/gRPC uses 6688/6689, and Worker HTTP/gRPC uses 6788/6789. Its native UI/API also remains private behind ClusterIP.
 > Standalone has one Pod with separate Master/Worker containers and data volumes; cluster has one Master plus three Worker Pods by default.
-> Its kept signing factor and generated long-lived Hubble token are separate from Server login and PD credentials.
-> Changing an external Secret requires rolling the dependent Vermeer workloads and Hubble so the token is regenerated.
+> Both engines always require native login. New administrator passwords are 16 characters and upgrades retain existing credentials.
+> Optional administration uses authorized port-forwarding; Vermeer **Admin credential** accepts the password from `<release>-vermeer-admin`,
+> key `password`, with no username required. Login creates a 24-hour versioned session cookie. SeaTunnel still uses username `admin`.
+> Hubble service authentication is automatic and separate from human passwords; no token retrieval is needed.
+> An external Vermeer administrator Secret change needs a Master restart only; internal service-factor rotation needs Master and Hubble, not Workers.
 >
 > Master/Worker listener health does not prove space-level compute readiness. Check `/api/v1/workers/availability` with the service credential,
 > then verify loading and a known algorithm result through Hubble. The common Worker pool avoids manual allocation for new spaces.
@@ -79,7 +82,7 @@ Replacing a Pod backed by `emptyDir` discards its temporary data; such a rollout
 >
 > Follow the [Vermeer operations guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
 > and [SeaTunnel operations guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)
-> for token retrieval, credential sources, retained claims and exact upgrade commands.
+> for administrator password retrieval, retained claims and exact upgrade commands. Raw service tokens are advanced internal integrations only.
 
 ### Helm test coverage
 
@@ -139,11 +142,12 @@ before changing a live cluster; the chart does not migrate existing shard metada
 
 ## 5 NetworkPolicy
 
-Easy mode, including the ordinary cluster preset, defaults policies off. Strict mode enables them; explicit `networkPolicy.enabled` wins in either mode.
+Easy mode and the ordinary cluster preset leave full base-service isolation disabled by default; strict enables it.
+SeaTunnel and Vermeer always keep private ClusterIP Services, login and native HTTP/RPC ingress restrictions, even with `networkPolicy.enabled=false`.
 The cluster network plugin must enforce NetworkPolicy for these resources to have an effect.
 The generated policies admit component traffic and DNS. External clients and Ingress controllers need suitable
 `networkPolicy.<component>.extraIngress` rules; external discovery addresses may need matching `extraEgress`.
-An empty list is valid and can block external traffic. Native Kubernetes rules are accepted, including `{}` to allow all;
+For base-service rules, an empty list can block outside traffic and native Kubernetes rules include `{}` to allow all;
 there is no separate source-acknowledgement gate. Use your actual source addresses/selectors, considering NodePort SNAT and controller behavior.
 
 ```yaml
@@ -166,6 +170,10 @@ networkPolicy:
           - protocol: TCP
             port: 8088
 ```
+
+Native engine ingress accepts explicit internal Pod/namespace selectors only; IP blocks and allow-all forms are rejected.
+The base-service example above applies to Server, not native engine exposure. External data destinations can use engine `extraEgress`;
+strict mode additionally enforces egress isolation.
 
 ## 6 Rolling Store images safely
 

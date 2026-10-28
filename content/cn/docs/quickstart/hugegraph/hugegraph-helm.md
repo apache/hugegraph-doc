@@ -86,7 +86,8 @@ hugegraph-helm/
 ```
 
 默认 `mode: easy`，Server 和 Hubble 自动分配 NodePort，PD 保持 ClusterIP。可以直接使用 HTTP，无需域名、证书或额外确认参数。
-`mode: strict` 默认将 Server/Hubble 和已启用可选组件的 HTTP 入口设为 ClusterIP，并开启 NetworkPolicy。两个模式都保留鉴权和持久化。
+`mode: strict` 默认将 Server/Hubble 设为 ClusterIP，并开启完整 NetworkPolicy 隔离。
+SeaTunnel 和 Vermeer 的原生 Service 在两种模式下始终为私有 ClusterIP，访问始终需要登录。两个模式都保留鉴权和持久化。
 优先级是组件显式参数高于全局参数，全局参数高于模式默认值，显式 `false` 也会生效。
 全局参数包括 `persistence.enabled` 和 `global.imageRegistry`，严格预设为 `values-strict.yaml`。
 
@@ -117,7 +118,7 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 
 `values-single.yaml` 和 `values-cluster.yaml` 都不会开启 SeaTunnel 或 Vermeer。
 这两个预设选择 HugeGraph 的 HStore 拓扑；`seatunnel.mode` 和 `vermeer.mode` 分别选择可选引擎的拓扑，
-顶层 `mode: easy/strict` 则独立控制 HTTP 入口与网络隔离。
+顶层 `mode: easy/strict` 则独立控制 Server/Hubble 的 HTTP 入口与完整网络隔离。
 
 | 组件 | 默认值 | 开关 |
 |---|---|---|
@@ -127,9 +128,7 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 
 将引擎开关设为 `true` 即可启用；`hubble.enabled=false` 切换为仅 API 部署。
 
-下面示例从 HugeGraph 仓库根目录安装源码 Chart。
-启用 Vermeer 前须确认 Hubble/Vermeer 镜像包含对应能力，并固定已验证的镜像引用；
-已发布 Chart 或可变的 `latest` 标签本身不能证明应用改动已经包含在镜像中。
+下面示例从 HugeGraph 仓库根目录安装源码 Chart。使用 Vermeer 图计算只需开启开关并登录 Hubble，服务地址与凭据由 Chart 自动接入。
 
 > [!DETAILS]- SeaTunnel：按需开启原生导入、导出和迁移
 > ```bash
@@ -140,32 +139,35 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 > ```
 >
 > 单机模式运行一个常驻 hybrid 成员；设置 `seatunnel.mode=cluster` 和 `seatunnel.replicas=2` 可运行多个成员。
-> 两种模式都有原生 UI/API，使用独立的 HTTP Basic 凭据。
-> HTTP 入口在 easy 下为 NodePort、strict 下为 ClusterIP；成员端口 5801 始终限制为可信的同 release peers。
+> 原生 UI/API 在两种模式下都保留为私有 ClusterIP，始终需要独立的 HTTP Basic 登录。
+> 新生成的管理员密码为 16 位，升级复用既有凭据；两种模式都将 HTTP／成员端口限制为必要的内部调用方。
+> 按需管理时使用经过授权的 port-forward，步骤见部署指南。
 > Helm 准备引擎和示例，不自动建图或执行作业；checkpoint 使用临时本地文件。
 > 访问、凭据、复制示例和恢复限制见 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
 > [!DETAILS]- Vermeer：按需开启图计算，自动接入 Hubble
 > ```bash
 > helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
->   -f helm/hugegraph/values-single.yaml -f my-images.yaml \
+>   -f helm/hugegraph/values-single.yaml \
 >   --set vermeer.enabled=true --set vermeer.mode=standalone \
 >   --wait --timeout 20m
 > ```
 >
-> 先在 `my-images.yaml` 中选择匹配的 Hubble/Vermeer 镜像。
 > 单机模式使用一个 Pod，内含独立的 Master 和 Worker 原生进程容器，各自挂载数据卷。
 > 设置 `vermeer.mode=cluster` 后为 1 个 Master Pod 加 `vermeer.worker.replicas` 个 Worker Pod，默认 3 个 Worker。
 > 多 Worker 提供分布式计算；单 Master 不承诺自动故障切换。
 >
 > 保持 Hubble 默认的 PD 模式，Chart 会自动提供 Master 内部地址和服务令牌，无需手工填写。
 > 以 HugeGraph 管理员登录 Hubble，选择 HStore 图，加载／重载后运行九种支持算法之一，
-> 查看／取消异步任务并分页浏览结果，结束后卸载计算副本。
+> 查看／取消异步任务并分页浏览结果。计算副本清理由既有 Hubble 管理员 API 完成，当前页面提供加载／重载，没有独立卸载按钮。
 > 此流程不把结果写回 HugeGraph 属性；普通图读取用户不会因此获得直接扫描 Store 的权限。
 >
-> Vermeer 原生 UI/API 也同时提供：easy 下使用 NodePort，strict 下使用 ClusterIP，令牌登录与 Hubble 登录相互独立。
+> Vermeer 原生 UI/API 在两种模式下都保留为私有 ClusterIP。按需管理时，
 > 执行 `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` 后访问 `http://127.0.0.1:6688/`。
-> 匹配镜像、令牌获取、部署凭据、持久化和模式切换见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
+> 从 Secret `hugegraph-vermeer-admin` 的 `password` 键读取独立的 16 位管理员密码，粘贴到 **Admin credential** 输入框。
+> 登录后获得有效期 24 小时的版本化会话 Cookie；使用 Hubble 无需手工获取服务令牌。
+> 密码获取、持久化、模式切换与高级服务凭据见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
+> 镜像发布使用 [Vermeer 发布工作流](https://github.com/hugegraph/actions/blob/master/.github/workflows/publish_latest_vermeer_image.yml)。
 > 原生联动要求 `hubble.mode=pd`；设置 `hubble.enabled=false` 时仍可通过原生入口使用 Vermeer。
 > 对新增 Vermeer 之前的旧 release 首次启用时，先导出并审阅 `helm get values --all -o yaml`，再用 `-f` 传入，
 > 不加 `--reuse-values`，以便加载新 Vermeer 默认值。保留既有 `metadataCluster`，完整命令见部署指南。
@@ -283,10 +285,19 @@ GitOps 使用加密的固定值，或预先创建 Secret 并配置 `pd.auth.exis
 Hubble 默认开启，当前镜像的登录仍依赖 Server 鉴权。只使用 API 可以设置 `hubble.enabled=false`，
 如需关闭 API 鉴权，再设置 `server.auth.enabled=false`。未使用的凭据配置可以留在 values 中。
 
-可选引擎启用后增加独立入口凭据：SeaTunnel 使用原生 HTTP Basic；Vermeer 使用保留的签名因子 Secret，
-通过 `vermeer.auth.value` 或 `vermeer.auth.existingSecret/key` 配置，Hubble 会自动生成长期服务令牌。GitOps 需要保留稳定的凭据来源。
-Worker Schema 读取默认复用部署管理员凭据，也可通过 `vermeer.hugegraphCredentials.existingSecret/key` 指向现有用户的受保护用户名密码 JSON；
-该用户需具备目标图的 Schema 权限，Chart 不会自动创建账户。
+可选引擎的原生入口始终需要登录，easy 模式也不例外。新安装生成独立的 16 位管理员密码：
+SeaTunnel 使用 HTTP Basic，Vermeer 使用 `<release>-vermeer-admin` Secret 与 **Admin credential** 登录，升级保留既有凭据。
+Vermeer 管理密码可通过 `vermeer.auth.admin.password` 或 `vermeer.auth.admin.existingSecret/key` 配置，仅 Master 读取。
+原生管理按需使用经过授权的 port-forward，Hubble 的服务凭据自动配置。
+
+> [!DETAILS]- 高级：Vermeer 部署凭据与 GitOps
+> GitOps 需保留稳定的管理员凭据和独立的内部服务身份。
+> 服务签名因子通过 `vermeer.auth.value` 或 `vermeer.auth.existingSecret/key` 配置，Hubble 自动生成服务令牌；
+> 日常 Hubble 使用和原生密码登录都不需要手工获取该令牌。
+> 更改外部管理密码 Secret 只需重启 Master；服务签名因子轮换需重启 Master 与 Hubble，无需重启 Worker。
+> Worker Schema 读取默认复用部署管理员，也可通过 `vermeer.hugegraphCredentials.existingSecret/key` 指向现有用户的受保护用户名密码 JSON。
+> 该用户需具备目标图的 Schema 权限，Chart 不会自动创建账户。
+
 
 ## 5 升级和验证
 

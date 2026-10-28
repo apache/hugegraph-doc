@@ -40,18 +40,18 @@ flowchart LR
 
 > [!DETAILS]- Helm: deploy Vermeer together with HugeGraph and Hubble
 > The HugeGraph Helm Chart offers an optional native Vermeer integration. It is disabled by default in both HugeGraph topology presets.
-> From the HugeGraph repository root, after selecting compatible Hubble/Vermeer builds in `my-images.yaml`:
+> From the HugeGraph repository root, enable Vermeer and sign in to the existing Hubble entry:
 >
 > ```bash
 > helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
->   -f helm/hugegraph/values-single.yaml -f my-images.yaml \
+>   -f helm/hugegraph/values-single.yaml \
 >   --set vermeer.enabled=true --set vermeer.mode=standalone \
 >   --wait --timeout 20m
 > ```
 >
 > Standalone uses one Pod with separate Master and Worker containers. Cluster mode uses one Master Pod plus configurable Worker Pods:
 > set `vermeer.mode=cluster` and `vermeer.worker.replicas=3`. Both require the HStore/PD data path; the small HugeGraph preset provides it.
-> Top-level `mode: easy/strict` independently selects NodePort or ClusterIP HTTP entry and network policy defaults.
+> Top-level `mode: easy/strict` independently selects Server/Hubble entry and full network isolation. Native engines stay private in both modes.
 >
 > Keep the initialized `metadataCluster` (default `hg-test`): the Chart aligns Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER` for Schema reads.
 > This is a PD metadata prefix, not a Raft name; changing it does not migrate an existing graph. Do not change it to `hg` to enable Vermeer.
@@ -63,16 +63,22 @@ flowchart LR
 >
 > Hubble receives the internal Master URL and service token automatically. A HugeGraph administrator can load/reload a graph,
 > run nine supported algorithms, inspect/cancel tasks, page through results and unload the compute copy. Results are not written back to graph properties.
-> The native Vermeer UI/API is available too, with separate administrator-token login. No Master failover or automatic task recovery is promised.
+> The native UI/API remains a private ClusterIP Service and always requires login. Optional administration uses an authorized port-forward
+> and the separate 16-character password in `<release>-vermeer-admin`, key `password`. Paste it into **Admin credential**, with no username;
+> login creates a 24-hour versioned session cookie. Hubble service authentication remains automatic. No Master failover or automatic task recovery is promised.
 > See [Helm optional engines](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) and the
 > [Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
-> for image prerequisites, credentials, ports and retained data. Do not assume an existing `latest` image contains the required new capabilities.
+> for optional administration, retained data and advanced service credentials. Image publishing uses the
+> [Vermeer publishing workflow](https://github.com/hugegraph/actions/blob/master/.github/workflows/publish_latest_vermeer_image.yml).
 
 
 > [!WARNING]
 > In production, enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum permissions; retain `audit-*.log`. Server Auth does not protect independent Vermeer, PD, or Store APIs. Restrict these HTTP/gRPC ports to trusted networks and callers, and configure access controls at the Vermeer external entry point.
 >
-> `master.ini` defaults to `auth=none`, disabling authentication for ordinary and administrative APIs. Local examples publish loopback only. Before remote access, enable `auth=token` or restrict callers through a protected network or gateway.
+> Manual upstream `master.ini` defaults to `auth=none`; the manual Docker examples below publish loopback only. This is independent of the Helm integration,
+> which always uses token authentication, a private native Service and an administrator password.
+> Do not use the manual unauthenticated defaults as a Helm shortcut.
+> For a protected manual deployment, enable `auth=token` and follow the upstream file-based credential instructions before remote access.
 
 Both Docker options need a host configuration directory. From the Vermeer repository root, copy the supplied [`master.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/master.ini) and [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/worker.ini) templates. The mount hides image configuration under `/go/bin/config`, so never mount an empty directory or your entire home directory there:
 

@@ -60,13 +60,15 @@ kubectl -n hugegraph annotate deployment hugegraph-server \
 
 > [!DETAILS]- 可选引擎：就绪、凭据和恢复
 > SeaTunnel 和 Vermeer 在两种 HugeGraph 预设中都默认关闭，启用后增加独立入口凭据与网络规则。
-> SeaTunnel HTTP/UI 使用 8080 和 Basic 鉴权；成员／CLI 端口 5801 在 easy 下也限制为可信的同 release peers。
+> SeaTunnel HTTP/UI 使用 8080 和 Basic 鉴权，两种模式都将私有 HTTP／成员端口限制为必要的内部调用方。
 > 常驻 hybrid 进程不代表 checkpoint 已通过 PVC 持久化。
 >
-> Vermeer Master HTTP/gRPC 为 6688/6689，Worker HTTP/gRPC 为 6788/6789；仅鉴权后的 Master HTTP 对外提供入口。
+> Vermeer Master HTTP/gRPC 为 6688/6689，Worker HTTP/gRPC 为 6788/6789，原生 UI/API 也始终保留为私有 ClusterIP。
 > 单机为一个 Pod 中独立的 Master/Worker 容器和数据卷；集群默认为 1 个 Master 加 3 个 Worker Pod。
-> 保留的签名因子和自动生成的 Hubble 长期服务令牌，与 Server 登录和 PD 凭据相互独立。
-> 修改外部 Secret 后需滚动相关 Vermeer 工作负载及 Hubble，才能刷新进程凭据和服务令牌。
+> 两个引擎的原生入口始终需要登录。新管理员密码为 16 位，升级复用既有凭据，按需管理使用经过授权的 port-forward。
+> Vermeer 的 **Admin credential** 直接接受 `<release>-vermeer-admin` Secret 的 `password`，无需用户名，登录获得 24 小时版本化会话 Cookie。
+> SeaTunnel 用户名仍为 `admin`。Hubble 服务鉴权自动接入，与人类管理密码独立，不需要用户获取令牌。
+> 更改外部 Vermeer 管理密码 Secret 只需重启 Master；内部服务签名因子轮换需重启 Master 与 Hubble，无需重启 Worker。
 >
 > Master/Worker 监听器健康不代表当前空间已可计算。以服务凭据检查 `/api/v1/workers/availability`，
 > 再通过 Hubble 实测加载和已知算法结果；公共 Worker 池避免新空间需要手工分配。
@@ -74,7 +76,7 @@ kubectl -n hugegraph annotate deployment hugegraph-server \
 > 切换拓扑或 Worker 数前停止新提交、完成／取消任务并卸载计算图，变更后检查可用性并重新加载。
 > 单机和集群使用不同 Worker claim，模式切换不会迁移本地文件。
 >
-> 令牌获取、凭据来源、保留卷与升级步骤见 [Vermeer 运维指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
+> 管理密码获取、保留卷与升级步骤见 [Vermeer 运维指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
 > 和 [SeaTunnel 运维指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
 ### Helm test 检查范围 {#helm-test-coverage}
@@ -130,10 +132,11 @@ PD 会持久化分区设置，初始化后修改 chart 值不会覆盖已有元�
 
 ## 5 NetworkPolicy {#5-networkpolicy}
 
-easy 模式及普通集群预设默认关闭，strict 模式默认开启；显式 `networkPolicy.enabled` 在任何模式都优先。
+基础服务的完整隔离在 easy 和普通集群预设下默认关闭，strict 下开启。
+SeaTunnel 和 Vermeer 的私有 ClusterIP、登录及原生 HTTP／RPC 入口限制始终生效，`networkPolicy.enabled=false` 也不例外。
 集群网络插件必须支持策略执行，才有实际隔离效果。
 生成策略允许组件间通信和 DNS，外部客户端、Ingress 控制器需要适当的 `networkPolicy.<component>.extraIngress`，
-外部发现地址可能还需要 `extraEgress`。空列表合法但可能阻止外部访问；支持 Kubernetes 原生规则，包括允许全部的 `{}`，不要求额外来源确认。
+外部发现地址可能还需要 `extraEgress`。基础服务规则的空列表合法但可能阻止外部访问，并支持 Kubernetes 原生规则，包括允许全部的 `{}`。
 按实际来源地址或 selector 配置，并考虑 NodePort SNAT 和控制器行为。
 
 ```yaml
@@ -156,6 +159,9 @@ networkPolicy:
           - protocol: TCP
             port: 8088
 ```
+
+原生引擎的 ingress 只接受显式内部 Pod／namespace selector，拒绝 IP block 和允许全部的规则。
+上面的基础服务示例用于 Server，不用于对外暴露原生引擎；外部数据源可按需配置引擎 `extraEgress`，strict 进一步限制出站流量。
 
 ## 6 逐个升级 Store {#6-rolling-store-images-safely}
 

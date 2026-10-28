@@ -90,7 +90,8 @@ hugegraph-helm/
 ```
 
 `mode: easy` is the default. Server and Hubble use automatic NodePorts; PD stays ClusterIP. HTTP works without a domain, certificate or acknowledgement.
-`mode: strict` defaults Server/Hubble and enabled optional HTTP entries to ClusterIP and enables NetworkPolicy.
+`mode: strict` defaults Server/Hubble to ClusterIP and enables full NetworkPolicy isolation.
+SeaTunnel and Vermeer native Services stay private ClusterIP services and require login in both modes.
 Both modes keep authentication and persistence.
 Explicit component parameters take priority over global parameters, which take priority over mode defaults; explicit `false` remains an override.
 The global parameters are `persistence.enabled` and `global.imageRegistry`. Strict mode is also available through `values-strict.yaml`.
@@ -122,7 +123,7 @@ the chart does not force `30000–32767`. Legacy HTTP acknowledgement fields rem
 
 SeaTunnel and Vermeer remain disabled with both `values-single.yaml` and `values-cluster.yaml`.
 These presets select HugeGraph's HStore topology; `seatunnel.mode` and `vermeer.mode` select the optional engines' own topology.
-Top-level `mode: easy/strict` separately controls HTTP entry and network isolation.
+Top-level `mode: easy/strict` separately controls Server/Hubble HTTP entry and full network isolation.
 
 | Component | Default | Switch |
 |---|---|---|
@@ -133,8 +134,7 @@ Top-level `mode: easy/strict` separately controls HTTP entry and network isolati
 Set an engine's switch to `true` to enable it. Set `hubble.enabled=false` for API-only access.
 
 The examples below use the source Chart from the HugeGraph repository root.
-Vermeer and Hubble need compatible image builds; verify their capabilities and pin the tested references before installing.
-A published Chart or a moving `latest` tag does not prove that the required application changes are already available.
+For Vermeer computation, enable the switch and sign in to Hubble; service addresses and credentials are configured automatically.
 
 > [!DETAILS]- SeaTunnel: enable native import, export and migration
 > ```bash
@@ -145,8 +145,9 @@ A published Chart or a moving `latest` tag does not prove that the required appl
 > ```
 >
 > Standalone starts one long-running hybrid member. Set `seatunnel.mode=cluster` and `seatunnel.replicas=2`
-> for multiple hybrid members. Both include the native UI/API, protected by separate HTTP Basic credentials.
-> HTTP inherits NodePort in easy mode or ClusterIP in strict mode; member port 5801 stays restricted to trusted release peers.
+> for multiple hybrid members. Native UI/API access remains private behind ClusterIP and always requires HTTP Basic login.
+> New administrator passwords are 16 characters; upgrades reuse existing credentials. HTTP/member ports admit only required internal callers
+> in both modes. For optional administration, use an authorized port-forward as described in the deployment guide.
 > Helm prepares the engine and examples; create graphs and submit jobs yourself. Checkpoints use temporary local files.
 > See the [SeaTunnel deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)
 > for access, credentials, copy examples and recovery limits.
@@ -154,25 +155,28 @@ A published Chart or a moving `latest` tag does not prove that the required appl
 > [!DETAILS]- Vermeer: enable graph computation and automatic Hubble connection
 > ```bash
 > helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
->   -f helm/hugegraph/values-single.yaml -f my-images.yaml \
+>   -f helm/hugegraph/values-single.yaml \
 >   --set vermeer.enabled=true --set vermeer.mode=standalone \
 >   --wait --timeout 20m
 > ```
 >
-> Select matching Hubble/Vermeer image references in `my-images.yaml` first.
 > Standalone uses one Pod with separate native Master and Worker containers and separate data volumes.
 > Set `vermeer.mode=cluster` for one Master Pod plus `vermeer.worker.replicas` Worker Pods (default 3).
 > Multiple Workers provide distributed computation; the single Master has no automatic failover guarantee.
 >
 > Keep Hubble in its default PD mode. The Chart supplies the internal Master URL and service token automatically.
 > Log in to Hubble as the HugeGraph administrator, select an HStore graph, load/reload it, run one of the nine supported algorithms,
-> inspect/cancel the asynchronous task and page through results. Unload the compute copy when finished.
+> inspect/cancel the asynchronous task and page through results. Compute-copy cleanup uses the existing Hubble administrator API;
+> the current page has Load/Reload controls, not a separate Unload button.
 > This workflow does not write results into HugeGraph properties. Ordinary graph readers do not receive direct Store-scan privileges.
 >
-> The native Vermeer UI/API is also exposed: easy uses NodePort, strict uses ClusterIP. Its administrator token login is separate from Hubble.
-> Use `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` and open `http://127.0.0.1:6688/`.
+> Native UI/API remains private behind ClusterIP in both modes. Optional administration uses
+> `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` and `http://127.0.0.1:6688/`.
+> Read the separate 16-character administrator password from Secret `hugegraph-vermeer-admin`, key `password`,
+> and paste it into **Admin credential**. Login creates a 24-hour versioned session cookie. Hubble needs no manual service token.
 > The [Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
-> covers matching builds, token retrieval, deployment credentials, storage and mode changes.
+> covers password retrieval, storage, mode changes and advanced service credentials. Image publishing uses the
+> [Vermeer publishing workflow](https://github.com/hugegraph/actions/blob/master/.github/workflows/publish_latest_vermeer_image.yml).
 > Hubble requires `hubble.mode=pd` for this native integration; API-only Vermeer remains usable with `hubble.enabled=false`.
 > For first enablement on a pre-Vermeer release, export and review `helm get values --all -o yaml`, then supply that file with `-f`
 > without `--reuse-values`, allowing the new Vermeer defaults to load. Preserve `metadataCluster`; see the deployment guide for the complete command.
@@ -293,11 +297,19 @@ update the Secret/source to that same password, then restart the Server Deployme
 Hubble is enabled by default and its current login requires Server authentication. Set `hubble.enabled=false` for API-only access;
 optionally also set `server.auth.enabled=false` for an unauthenticated API. Inactive credential settings may remain in your values file.
 
-Enabled optional engines add independent entry credentials. SeaTunnel uses native HTTP Basic authentication;
-Vermeer uses a kept signing factor configured through `vermeer.auth.value` or `vermeer.auth.existingSecret/key`.
-Hubble generates its long-lived Vermeer service token automatically from that factor. For GitOps, preserve stable credential sources.
-Worker Schema reads reuse the deployment administrator credential unless `vermeer.hugegraphCredentials.existingSecret/key` supplies
-a protected username/password JSON for an existing account with the required Schema permissions. No account is created automatically.
+Enabled optional engines always require native login, including in easy mode. New installations generate separate 16-character
+administrator passwords: SeaTunnel uses HTTP Basic, while Vermeer uses Secret `<release>-vermeer-admin` and its **Admin credential** login.
+Upgrades keep existing credentials. Vermeer password sources are `vermeer.auth.admin.password` or `vermeer.auth.admin.existingSecret/key`;
+only Master reads that password. Native administration uses authorized port-forwarding, and Hubble service credentials are automatic.
+
+> [!DETAILS]- Advanced: Vermeer deployment credentials and GitOps
+> For GitOps, preserve stable administrator credentials and the separate internal service identity.
+> The service signing factor uses `vermeer.auth.value` or `vermeer.auth.existingSecret/key`; Hubble generates its service token automatically.
+> Ordinary Hubble use and native password login do not require retrieving that token.
+> Changing an external native administrator Secret needs a Master restart only. Service-factor rotation requires Master and Hubble,
+> not Workers. Worker Schema reads reuse the deployment administrator unless `vermeer.hugegraphCredentials.existingSecret/key`
+> supplies protected username/password JSON for an existing account with the required Schema permissions. No account is created automatically.
+
 
 ## 5 Upgrade and verification
 

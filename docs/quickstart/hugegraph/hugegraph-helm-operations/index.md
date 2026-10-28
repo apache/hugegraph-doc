@@ -26,9 +26,9 @@ kubectl get pv,storageclass
 For `ImagePullBackOff`, inspect Pod events and registry access/credentials. The default image inventory contains four component images;
 Store wait and Helm test reuse existing component images with `curl` already installed. Explicit helper-image overrides must also be mirrored.
 Enabled SeaTunnel adds its configured `apache/seatunnel` image. Enabled Vermeer uses `hugegraph/vermeer:helm-30b67d93e7d0`, pinned by digest
-and reused by Master, Worker and token initialization. Its [official publishing run](https://github.com/hugegraph/actions/actions/runs/40653109759)
-records the source and image digest; see the
-[Vermeer deployment guide](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md).
+and reused by Master, Worker and token initialization. Official publishing runs
+record the source and image digest; see the
+[Vermeer deployment guide](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md).
 Custom image overrides must also update `vermeer.image.digest`, or explicitly clear it to select by tag; digest takes priority.
 The base local-PV example omits Vermeer claims: standalone adds two,
 while cluster adds one Master claim plus one per Worker (four additional claims by default).
@@ -56,10 +56,18 @@ kubectl -n hugegraph annotate deployment hugegraph-server \
 and ensure `metadataCluster` matches this value in your values file. For Store nodes using `store.updateStrategy.type=OnDelete`, follow the [rolling upgrade procedure](#6-rolling-store-images-safely) to recreate Pods one by one so the new settings take effect.
 
 > [!DETAILS]- Optional Engines Operations: Probes, Credentials, and Topology Switching
-> - **Ports & Health**: SeaTunnel HTTP/UI runs on `8080`; Vermeer Master HTTP/gRPC listens on `6688/6689`, and Worker on `6788/6789`. Both engines stay behind private ClusterIP in both modes.
-> - **Credentials & Sessions**: Generated admin passwords use 6 characters in easy mode or 16 in strict mode, retained across upgrades and mode changes. In Vermeer native UI, enter the password from Secret `<release>-vermeer-admin` into **Admin credential**; Hubble internal service tokens are auto-wired.
-> - **Topology Changes**: Ensure active computations and batch ingestion jobs are complete and in-memory graphs are unloaded before changing `seatunnel.mode` or `vermeer.mode`. Standalone and cluster use separate PVC claims, so mode changes do not migrate local files.
-> - See the [Vermeer Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md) and [SeaTunnel Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md) for full recovery and configuration details.
+> - **Ports & Health**: SeaTunnel HTTP/UI runs on `8080`; Vermeer Master HTTP/gRPC listens on `6688/6689`, and Worker on `6788/6789`.
+>   Native HTTP/UI defaults to NodePort in easy mode and ClusterIP in strict mode; both require login.
+>   Internal RPC, Worker HTTP and SeaTunnel `5801` stay private.
+>   With `service.type: null`, the mode default applies; explicit `ClusterIP` stays private, while explicit `NodePort` exposes authenticated HTTP/UI.
+>   Use the assigned HTTP NodePort from Service `hugegraph-seatunnel` or `hugegraph-vermeer-master` with a reachable node IP.
+>   See [native access commands](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines); ClusterIP access can use port-forwarding.
+> - **Credentials & Sessions**: Generated admin passwords use 6 characters in easy mode or 16 in strict mode, retained across upgrades and mode changes.
+>   In Vermeer native UI, enter the password from Secret `<release>-vermeer-admin` into **Admin credential**; Hubble internal service tokens are auto-wired.
+> - **Topology Changes**: Ensure active computations and batch ingestion jobs are complete and in-memory graphs are unloaded before changing `seatunnel.mode`
+>   or `vermeer.mode`. Standalone and cluster use separate PVC claims, so mode changes do not migrate local files.
+> - See the [Vermeer Guide](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md) and
+>   [SeaTunnel Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md) for full recovery and configuration details.
 
 ### Helm test coverage
 
@@ -120,9 +128,10 @@ before changing a live cluster; the chart does not migrate existing shard metada
 ## 5 NetworkPolicy
 
 Easy mode and the ordinary cluster preset leave full base-service isolation disabled by default; strict enables it.
-SeaTunnel and Vermeer always keep private ClusterIP Services, login and native HTTP/RPC ingress restrictions, even with `networkPolicy.enabled=false`.
+SeaTunnel and Vermeer always require login. Their native policies allow external HTTP only when the final Service type is NodePort,
+while internal RPC, Worker HTTP and SeaTunnel member ports retain their release-caller restrictions, even with `networkPolicy.enabled=false`.
 The cluster network plugin must enforce NetworkPolicy for these resources to have an effect.
-The generated policies admit component traffic and DNS. External clients and Ingress controllers need suitable
+The generated policies admit component traffic and DNS. For base services, external clients and Ingress controllers need suitable
 `networkPolicy.<component>.extraIngress` rules; external discovery addresses may need matching `extraEgress`.
 For base-service rules, an empty list can block outside traffic and native Kubernetes rules include `{}` to allow all;
 there is no separate source-acknowledgement gate. Use your actual source addresses/selectors, considering NodePort SNAT and controller behavior.
@@ -148,8 +157,9 @@ networkPolicy:
             port: 8088
 ```
 
-Native engine ingress accepts explicit internal Pod/namespace selectors only; IP blocks and allow-all forms are rejected.
-The base-service example above applies to Server, not native engine exposure. External data destinations can use engine `extraEgress`;
+Native-engine `extraIngress` accepts explicit internal Pod/namespace selectors only; IP blocks and unrestricted rules are rejected.
+NodePort HTTP access is admitted by the generated policy without an `extraIngress` rule.
+The base-service example above applies to Server. External data destinations can use engine `extraEgress`;
 strict mode additionally enforces egress isolation.
 
 ## 6 Rolling Store images safely

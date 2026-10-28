@@ -25,8 +25,8 @@ kubectl get pv,storageclass
 出现 `ImagePullBackOff` 时检查 Pod 事件、仓库连通性和拉取凭据。默认只需四个组件镜像，等待 Store/Helm test 复用已包含 curl 的组件镜像。
 如显式覆盖 helper 镜像，该镜像也需要同步到内网仓库。
 启用 SeaTunnel 还需配置的 `apache/seatunnel` 镜像；启用 Vermeer 使用按 digest 固定的 `hugegraph/vermeer:helm-30b67d93e7d0`，
-Master、Worker 和令牌初始化共用它。[官方发布运行](https://github.com/hugegraph/actions/actions/runs/40653109759)记录源码与镜像 digest，
-详见 [Vermeer 部署指南](https://github.com/hugegraph/hugegraph/blob/e0f6b071c31e645127226ee5c1217a4fb4196732/helm/hugegraph/docs/vermeer.md)。
+Master、Worker 和令牌初始化共用它。官方发布运行记录源码与镜像 digest，
+详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)。
 自定义镜像覆盖还需同步更新 `vermeer.image.digest`，或显式清空以按标签选择；非空 digest 优先。
 基础 local PV 示例不包含 Vermeer 卷：单机增加两个，集群增加一个 Master 卷及每 Worker 一个卷，默认增加四个。
 
@@ -53,10 +53,16 @@ kubectl -n hugegraph annotate deployment hugegraph-server \
 并在 values 中将 `metadataCluster` 设为同一值。对于采用 `store.updateStrategy.type=OnDelete` 策略的 Store 节点，需按[受控滚动升级流程](#6-rolling-store-images-safely)逐个重建 Pod，新配置方可生效。
 
 > [!DETAILS]- 可选引擎运维：探针、凭据与拓扑切换
-> - **端口与健康状态**：SeaTunnel HTTP/UI 端口为 `8080`；Vermeer Master HTTP/gRPC 为 `6688/6689`，Worker 为 `6788/6789`。两款引擎的原生接口在两种模式下均保持私有 ClusterIP。
-> - **密码与会话**：初次部署生成的管理密码在 easy 模式下为 6 位字符，strict 模式下为 16 位；后续升级与模式切换均自动保留既有凭据。Vermeer 原生控制台直接在 **Admin credential** 填入 `<release>-vermeer-admin` Secret 的 `password` 即可登录；Hubble 内部服务凭据已自动注入。
+> - **端口与健康状态**：SeaTunnel HTTP/UI 端口为 `8080`；Vermeer Master HTTP/gRPC 为 `6688/6689`，Worker 为 `6788/6789`。
+>   原生 HTTP/UI 在 easy 下默认 NodePort，strict 下默认 ClusterIP，两者均需登录；内部 RPC、Worker HTTP 与 SeaTunnel `5801` 保持私有。
+>   `service.type: null` 继承模式默认值，显式 `ClusterIP` 保持私有，显式 `NodePort` 则开放需要登录的 HTTP/UI。
+>   使用 `hugegraph-seatunnel` 或 `hugegraph-vermeer-master` Service 分配的 HTTP NodePort 与可达节点 IP 访问。
+>   查询命令见[原生入口说明](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)；ClusterIP 可使用 port-forward。
+> - **密码与会话**：初次部署生成的管理密码在 easy 模式下为 6 位字符，strict 模式下为 16 位；后续升级与模式切换均自动保留既有凭据。
+>   Vermeer 原生控制台直接在 **Admin credential** 填入 `<release>-vermeer-admin` Secret 的 `password` 即可登录；Hubble 内部服务凭据已自动注入。
 > - **拓扑与副本切换**：修改 `seatunnel.mode` 或 `vermeer.mode` 前，请确保所有计算与导入批任务已结束并卸载内存图副本。单机与集群使用独立的数据卷声明，拓扑切换不会自动迁移本地文件。
-> - 完整恢复指引与进阶参数详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md) 与 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
+> - 完整恢复指引与进阶参数详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)
+>   与 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
 ### Helm test 检查范围 {#helm-test-coverage}
 
@@ -112,9 +118,10 @@ PD 会持久化分区设置，初始化后修改 chart 值不会覆盖已有元�
 ## 5 NetworkPolicy {#5-networkpolicy}
 
 基础服务的完整隔离在 easy 和普通集群预设下默认关闭，strict 下开启。
-SeaTunnel 和 Vermeer 的私有 ClusterIP、登录及原生 HTTP／RPC 入口限制始终生效，`networkPolicy.enabled=false` 也不例外。
+SeaTunnel 和 Vermeer 始终需要登录。原生策略仅在最终 Service 类型为 NodePort 时允许外部 HTTP，
+内部 RPC、Worker HTTP 与 SeaTunnel 成员端口仍限制为相应 release 调用方，`networkPolicy.enabled=false` 也不例外。
 集群网络插件必须支持策略执行，才有实际隔离效果。
-生成策略允许组件间通信和 DNS，外部客户端、Ingress 控制器需要适当的 `networkPolicy.<component>.extraIngress`，
+生成策略允许组件间通信和 DNS，基础服务的外部客户端、Ingress 控制器需要适当的 `networkPolicy.<component>.extraIngress`，
 外部发现地址可能还需要 `extraEgress`。基础服务规则的空列表合法但可能阻止外部访问，并支持 Kubernetes 原生规则，包括允许全部的 `{}`。
 按实际来源地址或 selector 配置，并考虑 NodePort SNAT 和控制器行为。
 
@@ -139,8 +146,9 @@ networkPolicy:
             port: 8088
 ```
 
-原生引擎的 ingress 只接受显式内部 Pod／namespace selector，拒绝 IP block 和允许全部的规则。
-上面的基础服务示例用于 Server，不用于对外暴露原生引擎；外部数据源可按需配置引擎 `extraEgress`，strict 进一步限制出站流量。
+原生引擎的 extraIngress 只接受显式内部 Pod／namespace selector，拒绝 IP block 和通配规则。
+NodePort HTTP 访问已由生成的策略直接放行，无需额外的 extraIngress 规则。
+上面的基础服务示例用于 Server。外部数据源可按需配置引擎 extraEgress，strict 进一步限制出站流量。
 
 ## 6 逐个升级 Store {#6-rolling-store-images-safely}
 

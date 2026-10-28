@@ -87,7 +87,8 @@ hugegraph-helm/
 
 默认 `mode: easy`，Server 和 Hubble 自动分配 NodePort，PD 保持 ClusterIP。可以直接使用 HTTP，无需域名、证书或额外确认参数。
 `mode: strict` 默认将 Server/Hubble 设为 ClusterIP，并开启完整 NetworkPolicy 隔离。
-SeaTunnel 和 Vermeer 的原生 Service 在两种模式下始终为私有 ClusterIP，访问始终需要登录。两个模式都保留鉴权和持久化。
+SeaTunnel 和 Vermeer 启用后的原生 HTTP/UI 在 easy 模式下默认使用 NodePort，strict 模式下默认使用 ClusterIP，两种模式均需登录。
+内部 RPC、Worker HTTP 与 SeaTunnel 成员端口仍保持私有。两个模式都保留鉴权和持久化。
 优先级是组件显式参数高于全局参数，全局参数高于模式默认值，显式 `false` 也会生效。
 全局参数包括 `persistence.enabled` 和 `global.imageRegistry`，严格预设为 `values-strict.yaml`。
 
@@ -121,33 +122,46 @@ Chart 默认仅部署核心图服务（PD + Store + Server + Hubble）。针对�
 | 可选引擎 | 默认状态 | 核心用途 | 运行模式 (`*.mode`) | 访问控制 |
 |---|---|---|---|---|
 | **Hubble** | 开启 (`true`) | 图数据可视化、多图空间与任务监控 | 单副本 Deployment | 跟随全局 `mode`（NodePort 或 ClusterIP） |
-| **SeaTunnel** | 关闭 (`false`) | 异构数据源批流导入与跨图整库迁移 | `standalone` / `cluster` | 私有 ClusterIP（HTTP Basic 鉴权） |
-| **Vermeer** | 关闭 (`false`) | 内存优先的高性能分布式图计算算法 | `standalone` / `cluster` | 私有 ClusterIP（Token 鉴权，Hubble 自动集成） |
+| **SeaTunnel** | 关闭 (`false`) | 异构数据源批流导入与跨图整库迁移 | `standalone` / `cluster` | easy 为 NodePort，strict 为 ClusterIP；HTTP Basic 鉴权 |
+| **Vermeer** | 关闭 (`false`) | 内存优先的高性能分布式图计算算法 | `standalone` / `cluster` | easy 为 NodePort，strict 为 ClusterIP；Token 鉴权，Hubble 自动集成 |
 
-在 values 中将对应引擎的 `enabled` 设为 `true` 即可启用。两款引擎的原生接口均保留为私有 ClusterIP，管理密码与 Server 独立生成。
+在 values 中将对应引擎的 `enabled` 设为 `true` 即可启用，管理密码与 Server 独立生成。
+`seatunnel.service.type` 和 `vermeer.service.type` 为 `null` 时继承模式默认值：easy 为 NodePort，strict 为 ClusterIP。
+显式 `ClusterIP` 保持私有；显式 `NodePort`（包括 strict 模式）开放需要登录的 HTTP/UI。
+旧配置显式指定了 `ClusterIP` 时，需改回 `null` 才会继承 easy 默认值；省略 `service.nodePort` 或设为 `null` 时由 Kubernetes 分配端口。
+引擎的 `standalone` / `cluster` 拓扑独立于上述访问设置。
 
 > [!DETAILS]- SeaTunnel：按需开启原生数据导入、导出与迁移
 > ```bash
-> helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
->   -f helm/hugegraph/values-single.yaml \
+> helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
+>   -f ./hugegraph-helm/values-single.yaml \
 >   --set seatunnel.enabled=true --set seatunnel.mode=standalone \
 >   --wait --timeout 30m
 > ```
 >
 > - **运行模式**：`standalone` 启动 1 个 Hybrid 节点（轻量测试）；`cluster` 模式启动多个同构节点（高并发批处理）。
-> - **访问与凭据**：Web 控制台使用独立 HTTP Basic 认证（默认用户 `admin`），密码保存在 `hugegraph-seatunnel-auth` Secret 中。端口 `5801` 仅供集群内部通信，严禁对外暴露。
+> - **访问与凭据**：easy 模式通过分配的 HTTP NodePort 打开 `http://<可达节点IP>:<NodePort>/#/overview`：
+>
+>   ```bash
+>   kubectl -n hugegraph get svc hugegraph-seatunnel \
+>     -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}{"\n"}'
+>   kubectl get nodes -o wide
+>   ```
+>
+>   使用 HTTP Basic 用户名 `admin` 和 `hugegraph-seatunnel-auth` Secret 中的密码登录。
+>   strict 默认 ClusterIP，可用 `kubectl -n hugegraph port-forward svc/hugegraph-seatunnel 8081:8080` 在本机访问；`5801` 仍仅供内部通信。
 > - 完整作业配置、内置示例验证及跨图迁移流程见 [SeaTunnel 部署章节](#6-start-seatunnel) 或 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
 > [!DETAILS]- Vermeer：按需开启内存图计算，自动接入 Hubble
 > ```bash
-> helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
->   -f helm/hugegraph/values-single.yaml \
+> helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
+>   -f ./hugegraph-helm/values-single.yaml \
 >   --set vermeer.enabled=true --set vermeer.mode=standalone \
 >   --wait --timeout 20m
 > ```
 >
 > ```text
-> helm/hugegraph/
+> hugegraph-helm/
 >   examples/
 >     values-vermeer-standalone.yaml # 单机预设（单个 Pod 同时包含 Master 与 Worker）
 >     values-vermeer-cluster.yaml    # 集群预设（1 个 Master Pod + 3 个 Worker Pods）
@@ -157,8 +171,17 @@ Chart 默认仅部署核心图服务（PD + Store + Server + Hubble）。针对�
 >
 > - **运行模式**：`standalone` 单机模式在同一个 Pod 中运行 Master 协调与 Worker 计算容器；`cluster` 模式提供独立的 Master Pod 与可水平扩展的 Worker Pod 集群（默认 3 副本）。
 > - **Hubble 一键集成**：Hubble 会自动注入 Master 内部 Service 地址与访问令牌。管理员在 Hubble 控制台即可直接触发 15+ 种图算法，计算结果保留在内存副本中，不污染原图属性。
-> - **原生控制台直连**：原生 UI 默认以私有 ClusterIP 运行，可通过 `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` 转发，并在 **Admin credential** 输入框中填入 `<release>-vermeer-admin` Secret 的 `password` 登录。
-> - 镜像固定策略与进阶凭据管理见 [Vermeer 部署指南](https://github.com/hugegraph/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
+> - **原生控制台直连**：easy 模式通过 `<release>-vermeer-master` 分配的 HTTP NodePort 打开 `http://<可达节点IP>:<NodePort>/`：
+>
+>   ```bash
+>   kubectl -n hugegraph get svc hugegraph-vermeer-master \
+>     -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}{"\n"}'
+>   kubectl get nodes -o wide
+>   ```
+>
+>   并在 **Admin credential** 输入框中填入 `<release>-vermeer-admin` Secret 的 `password`（无需用户名）登录。
+>   strict 模式默认 ClusterIP，可用 `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` 转发访问；内部 Master/Worker RPC 与 Worker HTTP 保持私有。
+> - 镜像固定策略与进阶凭据管理见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)。
 
 ### PD 元数据命名空间 {#metadata-namespace}
 
@@ -276,7 +299,7 @@ Hubble 默认开启，当前镜像的登录仍依赖 Server 鉴权。只使用 A
 SeaTunnel 使用 HTTP Basic，Vermeer 使用 `<release>-vermeer-admin` Secret 与 **Admin credential** 登录。
 升级保留既有密码，切换模式也不会自动轮换。
 Vermeer 管理密码可通过 `vermeer.auth.admin.password` 或 `vermeer.auth.admin.existingSecret/key` 配置，仅 Master 读取。
-原生管理按需使用经过授权的 port-forward，Hubble 的服务凭据自动配置。
+原生管理按最终 Service 类型访问：NodePort 直接通过节点 IP 和分配端口访问，ClusterIP 使用 port-forward 转发，Hubble 的服务凭据自动配置。
 
 > [!DETAILS]- 高级：Vermeer 部署凭据与 GitOps
 > GitOps 需保留稳定的管理员凭据和独立的内部服务身份。
@@ -384,19 +407,19 @@ SeaTunnel 采用 Hybrid 节点架构，单个节点同时负责作业协调调�
 - **单机模式（Standalone）**：启动 1 个常驻节点，内存占用小，适合开发测试与小规模数据处理。
 - **集群模式（Cluster）**：启动多个同构节点组成集群，支持分布式高可用和更大吞吐。
 
-SeaTunnel 的副本规模与 HugeGraph 拓扑完全独立解耦。在项目根目录下，可通过组合 values 快速安装：
+SeaTunnel 的副本规模与 HugeGraph 拓扑完全独立解耦。在解压包目录（或源码根目录）下，可通过组合 values 快速安装：
 
 ```bash {tab="SeaTunnel 单机"}
-helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
-  -f helm/hugegraph/values-single.yaml \
-  -f helm/hugegraph/examples/values-seatunnel-standalone.yaml \
+helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
+  -f ./hugegraph-helm/values-single.yaml \
+  -f ./hugegraph-helm/examples/values-seatunnel-standalone.yaml \
   --wait --timeout 30m
 ```
 
 ```bash {tab="SeaTunnel 集群"}
-helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
-  -f helm/hugegraph/values-single.yaml \
-  -f helm/hugegraph/examples/values-seatunnel-cluster.yaml \
+helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
+  -f ./hugegraph-helm/values-single.yaml \
+  -f ./hugegraph-helm/examples/values-seatunnel-cluster.yaml \
   --wait --timeout 30m
 ```
 

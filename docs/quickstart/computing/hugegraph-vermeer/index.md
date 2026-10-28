@@ -71,13 +71,22 @@ flowchart LR
 >
 > **Key Operational Considerations**:
 > 1. **Preserve Metadata Namespace**: Retain the Chart default `metadataCluster: hg-test`. This key synchronizes Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER` so that Store can properly resolve schemas. Do not arbitrarily change this value on existing clusters to avoid `Schema missing` errors during load tasks.
-> 2. **Access Native Web Dashboard**: The native UI runs as a private ClusterIP Service. Use `kubectl port-forward svc/<release>-vermeer-master 6688:6688` to access it locally, and log in by entering the password from the `<release>-vermeer-admin` Secret directly into **Admin credential** (no username required), which grants a 24-hour versioned session.
-> 3. For image pinning, persistent volume sizing, and recovery procedures, refer to the [Helm Optional Engines Guide](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) and [Vermeer Deployment Guide](https://github.com/hugegraph/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md).
+> 2. **Access Native Web Dashboard**: In easy mode, open `http://<reachable-node-ip>:<assigned-http-node-port>/` for Service `<release>-vermeer-master`.
+>    Strict mode defaults to ClusterIP; use `kubectl -n hugegraph port-forward svc/<release>-vermeer-master 6688:6688` for local access.
+>    `vermeer.service.type: null` inherits the mode; explicit `ClusterIP` stays private and explicit `NodePort` exposes authenticated HTTP/UI.
+>    Internal Master/Worker RPC and Worker HTTP stay private; `standalone` / `cluster` does not change this access choice.
+>    Enter the `<release>-vermeer-admin` Secret's `password` into **Admin credential** (no username) for a 24-hour session.
+>    New passwords use 6 random alphanumeric characters in easy mode or 16 in strict mode; upgrades and mode changes retain existing credentials.
+> 3. For image pinning, persistent volume sizing, and recovery procedures, refer to the
+>    [Helm Optional Engines Guide](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) and
+>    [Vermeer Deployment Guide](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md).
 
 > [!WARNING]
 > In production, enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum permissions; retain `audit-*.log`. Server Auth does not protect independent Vermeer, PD, or Store APIs. Restrict these HTTP/gRPC ports to trusted networks and callers, and configure access controls at the Vermeer external entry point.
 >
-> Manual standalone deployments default to `auth=none` in `master.ini`, and the Docker examples below publish to loopback only. When deploying manually for remote access, always enable `auth=token`. The Helm deployment enables token authentication and private ClusterIP isolation by default.
+> Manual standalone deployments default to `auth=none` in `master.ini`, and the Docker examples below publish to loopback only.
+> When deploying manually for remote access, always enable `auth=token`. The Helm deployment requires token authentication in both modes
+> and exposes only native HTTP/UI through NodePort in easy mode by default.
 
 Both Docker options need a host configuration directory. From the Vermeer repository root, copy the supplied [`master.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/master.ini) and [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/worker.ini) templates. The mount hides image configuration under `/go/bin/config`, so never mount an empty directory or your entire home directory there:
 

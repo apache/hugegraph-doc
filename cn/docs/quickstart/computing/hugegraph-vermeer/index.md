@@ -71,13 +71,19 @@ flowchart LR
 >
 > **核心注意事项**：
 > 1. **保持元数据命名空间一致**：保留 Chart 默认的 `metadataCluster: hg-test`。该值统一了 Server 的 `HG_SERVER_CLUSTER` 与 Store 的 `PD_CLUSTER`，确保 Schema 正确读取；切勿随意修改该值，以免计算加载时报 `Schema missing`。
-> 2. **访问原生 Web 控制台**：原生 UI 默认以私有 ClusterIP 运行。如需直连管理，可通过 `kubectl port-forward svc/<release>-vermeer-master 6688:6688` 转发，并在 **Admin credential** 处填入 `<release>-vermeer-admin` Secret 中的 `password`（无需用户名），登录后获得 24 小时有效会话。
-> 3. 详细镜像固定策略、持久卷配置及运维命令可参考 [Helm 可选引擎指南](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) 与 [Vermeer 部署指南](https://github.com/hugegraph/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
+> 2. **访问原生 Web 控制台**：easy 模式通过 `<release>-vermeer-master` Service 分配的 HTTP NodePort，
+>    打开 `http://<可达节点IP>:<NodePort>/`；strict 默认 ClusterIP，可用 `kubectl -n hugegraph port-forward svc/<release>-vermeer-master 6688:6688` 在本机访问。
+>    `vermeer.service.type: null` 继承模式默认值，显式 `ClusterIP` 保持私有，显式 `NodePort` 则开放需要登录的 HTTP/UI。
+>    内部 Master/Worker RPC 与 Worker HTTP 仍保持私有；`standalone` / `cluster` 不改变上述访问选择。
+>    在 **Admin credential** 处填入 `<release>-vermeer-admin` Secret 的 `password`（无需用户名），登录后获得 24 小时会话。
+>    新密码在 easy 下为 6 位随机字母数字，strict 下为 16 位；升级与模式切换保留既有凭据。
+> 3. 详细镜像固定策略、持久卷配置及运维命令可参考 [Helm 可选引擎指南](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)
+>    与 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)。
 
 > [!WARNING]
 > 生产环境必须启用 HugeGraph Server [认证与授权](/cn/docs/config/config-authentication/)、IP 白名单和最小权限授权，并保留 `audit-*.log` 审计记录。Server Auth 不会保护 Vermeer、PD 和 Store 的独立接口；这些 HTTP、gRPC 端口必须限制在可信网络及调用方范围内，Vermeer 对外入口需配置访问控制。
 >
-> 独立手动部署时，默认 `master.ini` 配置为 `auth=none`，下方 Docker 示例仅发布至回环地址；若需远程访问，务必在配置文件中启用 `auth=token`。Helm 部署则已默认开启 Token 鉴权与私有 Service 隔离。
+> 独立手动部署时，默认 `master.ini` 配置为 `auth=none`，下方 Docker 示例仅发布至回环地址；若需远程访问，务必在配置文件中启用 `auth=token`。Helm 部署在两种模式下均要求 Token 鉴权，easy 默认仅通过 NodePort 开放原生 HTTP/UI。
 
 下面两种 Docker 启动方式都需要先准备一个宿主机配置目录。请在 Vermeer 仓库根目录执行，将项目提供的 [`master.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/master.ini) 和 [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/worker.ini) 模板复制到该目录；挂载会覆盖镜像里的 `/go/bin/config`，所以不要把空目录或整个用户主目录挂进去：
 

@@ -35,9 +35,8 @@ POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 
 On 1.2.0 to 1.7.0, the endpoint always requires an `Authorization` header (`Basic` or `Bearer`), even when server authentication is disabled —
 the credentials are forwarded to the Gremlin Server. On those versions `Basic` credentials must be encoded with URL-safe Base64 (`-` and `_` instead
-of `+` and `/`), and the password must not contain `:`. On `master` (1.8.0+), authentication is optional when server auth is disabled
-([#3366](https://github.com/apache/hugegraph/pull/3366)), `Basic` credentials use standard RFC 4648 Base64 (as sent by `curl -u`,
-[#3290](https://github.com/apache/hugegraph/pull/3290)), and `:` in passwords is supported.
+of `+` and `/`), and the password must not contain `:`. Starting in 1.8.0, authentication is optional when server auth is disabled,
+`Basic` credentials use standard RFC 4648 Base64 (as sent by `curl -u`), and `:` in passwords is supported.
 See the [Cypher REST API reference](/docs/clients/restful-api/cypher/) for the full request/response format.
 
 Example:
@@ -69,9 +68,8 @@ or run them on an empty graph. On a schema without the nullable keys
 (the released default marks `age` and `city` non-null on `person`), the create and update examples below fail
 the non-null property check: set every non-null property in each statement, or declare the labels with
 `nullableKeys` first. If the `person` label uses the `PRIMARY_KEY` id strategy (as it does in `scripts/example.groovy`), the two-vertex
-shorthand `CREATE (a)-[:knows]->(b)` is rejected with an execution error reporting that the primary keys must be set
-(verified on `master` with [#3289](https://github.com/apache/hugegraph/pull/3289) merged), so the edge example below creates the vertices
-first and then matches them. The shorthand works with the `AUTOMATIC` id strategy only when the label defines no required (non-null) properties; under the assumed schema, `name` remains non-null, so the shorthand is rejected because each created vertex must supply all non-null properties.
+shorthand `CREATE (a)-[:knows]->(b)` is rejected with an execution error reporting that the primary keys must be set,
+so the edge example below creates the vertices first and then matches them. The shorthand works with the `AUTOMATIC` id strategy only when the label defines no required (non-null) properties; under the assumed schema, `name` remains non-null, so the shorthand is rejected because each created vertex must supply all non-null properties.
 
 #### Read — MATCH / WHERE / RETURN
 
@@ -172,11 +170,10 @@ Cypher support in HugeGraph is bounded by the transpiler layer, which is based o
   `RETURN $value AS value` still returns a row holding `null`. A write with a missing binding does not reliably store a null value: depending on the statement,
   `SET n.prop = $missing` removes the existing property, `CREATE (n:label {prop: $missing})` stores the translator's null marker string `"  cypher.null"` in a
   text property, and the same `CREATE` on a non-text property, or `SET` on a non-nullable property, fails with an error. Sanitize/escape values on the client
-  side before interpolating them into the statement. On the tested tree with [#3289](https://github.com/apache/hugegraph/pull/3289) merged, this changes: a
-  missing binding is an execution error for every request form, including `GET ?cypher=` and raw-body `POST` — the server always attaches a parameters map and
-  rejects unresolved `$param` references. JSON-bound parameters (`{"cypher": ..., "parameters": {...}}`) are available on `master` after the merged
-  [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289), carried over from [PR #238](https://github.com/hugegraph/hugegraph/pull/238); see the
-  [development compatibility record](/docs/language/cypher-compatibility/) for the tested request contract.
+  side before interpolating them into the statement. Starting in 1.8.0, a missing binding produces an execution error for every request form, including
+  `GET ?cypher=` and raw-body `POST` — the server always attaches a parameters map and rejects unresolved `$param` references. JSON-bound parameters
+  (`{"cypher": ..., "parameters": {...}}`) are supported starting from 1.8.0; see the [Cypher compatibility notes](/docs/language/cypher-compatibility/)
+  for the tested request contract.
 - **Partial clause coverage** — some openCypher constructs are not translated (for example map projections and certain `datetime()` functions). Unsupported
   constructs fail at translation time with an error from the transpiler. Constructs such as `MERGE ... ON CREATE SET` and `NOT ... IN` do translate, but they
   are not verified end-to-end on HugeGraph. The development change verifies two whole-string `=~` matching cases on computed strings; broader regex coverage

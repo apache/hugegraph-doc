@@ -12,13 +12,8 @@ weight: 3
 提供同样的两种形式。已发布版本不接受绑定参数，引用 `$param` 的语句
 不会报错，缺失的绑定会被内联为 `null`（基于它的谓词匹配不到行，而 `RETURN $value AS value` 仍会返回一行）——参见[已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)。
 
-本页记录 Cypher 开发改动实际验证过的用例，不代表完整支持 openCypher 或 Neo4j，也不代表所有已发布
-版本的 HugeGraph 都具备相同行为。测试代码基于 Apache `master` 的
-[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb)（2026-10-08），
-该提交声明 HugeGraph `1.8.0`，使用 Java 17 和 TinkerPop `3.8.1`，且 Cypher 改动
-（[ASF PR #3289](https://github.com/apache/hugegraph/pull/3289)）已合入。后续 `master` 提交调整了鉴权处理与错误信封格式，
-不包含在本记录内。运行栈使用 Java `17.0.20.1`（Temurin）、TinkerPop `3.8.1`、`org.opencypher.gremlin:translation:1.0.4` 和 RocksDB。合入前在
-[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b) 上的验证仍见下文。
+本页记录 Cypher 语法的实际验证用例与行为边界，不代表完整支持 openCypher 或 Neo4j，也不代表所有已发布
+版本的 HugeGraph 都具备相同行为。Cypher 参数绑定与语法增强自 1.8.0（基于 Java 17 与 TinkerPop 3.8.1）起合入。
 
 接口路径为 `/graphspaces/{graphspace}/graphs/{graph}/cypher`。一般用法见
 [HugeGraph Cypher 指南](/cn/docs/language/hugegraph-cypher/)。
@@ -30,9 +25,9 @@ weight: 3
 | `GET ?cypher=<URL 编码的语句>` | 是 | 保留原有查询参数形式 | `testGet` |
 | `POST application/json`，请求体为原始 Cypher 文本 | 是 | 保留旧的原始文本请求形式 | `testPost` |
 | `POST text/plain`，任意请求体 | 否 | 返回 HTTP 415 | `testRejectPlainTextPost` |
-| `POST application/json`，请求体为 JSON 对象 | 否 — 由 [#3289](https://github.com/apache/hugegraph/pull/3289) 引入 | 查询语句与参数分开传入 | `testParameters` |
+| `POST application/json`，请求体为 JSON 对象 | 否 — 自 1.8.0 起支持 | 查询语句与参数分开传入 | `testParameters` |
 
-因此下面的 JSON 对象形式**在任何已发布的 HugeGraph 版本中都不可用**，它描述已合入 `master`（1.8.0 开发线）的改动。
+因此下面的 JSON 对象形式**在 1.7.0 及更早版本中不可用**，它描述 1.8.0 起支持的功能。
 在已发布版本上，引用 `$param` 的语句会把缺失的绑定内联为 `null`，是否返回行取决于表达式（`WHERE n.name = $name` 匹配不到行，`RETURN $value AS value` 会返回一行 `null`）——参见
 [已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)。
 
@@ -48,7 +43,7 @@ JSON 数组、字符串、数字、布尔值或 null 请求体会返回 HTTP 400
 
 JSON 对象中的 `cypher` 必须是非空白字符串；`parameters` 若提供，必须是对象。省略 `parameters` 表示空参数表。
 语句引用了未提供的参数时会报执行错误；显式传入 `null` 是有效值。在测试栈上，该执行错误适用于所有请求形式，
-包括 `GET ?cypher=` 和原始文本 `POST`：[#3289](https://github.com/apache/hugegraph/pull/3289) 总是附带
+包括 `GET ?cypher=` 和原始文本 `POST`：自 1.8.0 起总是附带
 参数表并拒绝未解析的 `$param` 引用，取代了上文描述的已发布版本“缺失绑定按 `null` 处理”行为。测试覆盖字符串、数字、布尔值、引号和换行，
 参数名 `id` 与 `label`。当前实现的 `parameters` 最多接受 16 个顶层条目，该上限固定。
 该上限只统计顶层 `parameters` 对象中的键。Cypher 不支持在 Gremlin Server 的处理器配置中设置
@@ -99,43 +94,14 @@ API 测试夹具使用强类型 Schema，并为 `city` 建立 `SECONDARY` 索引
 `alice`、`bob` 和 `carol`，因为 `scripts/example.groovy` 已预置 `marko`、`vadas`、`josh` 和 `peter`，而在 `PRIMARY_KEY` 标签上
 用预置名字执行 `CREATE` 会替换该顶点；改名只改动数据取值，没有作为单独的验证重新运行。
 
-独立代码改动位于 [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289)，该 PR 已于 2026-10-08 合入 Apache `master`，合入提交为
-[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb)；上文的验证记录直接描述该合入后的提交，
-合入前验证的基线为
-[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b)。
-原始开发改动仍关联 [PR #238](https://github.com/hugegraph/hugegraph/pull/238)。
-在固定源码提交
-[`8d06ad3`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/docs/cypher-compatibility.md) 上，`CypherApiTest` 通过 23/23，
-`CypherClientTest` 通过 7/7，`CypherOpProcessorTest` 通过 8/8，均无跳过。新增的谓词、执行上下文和请求资源所有权
-回归测试均通过；`AbstractRestClientTest` 的九项测试也全部通过，包括 ASCII 请求体、UTF-16 Map 请求体及 gzip。
-Login 测试通过 3/3；相关 Gremlin 测试通过 10 项，保留一项因后端不共享而不适用的 `testClearAndInit` 跳过。
-EditorConfig 格式检查、仓库根目录 clean compile 和完整 install 均通过。在实际服务测试前，分发包内的 API JAR 与编译目标 JAR 一致。
+### 测试与实现边界
 
-该固定提交中的兼容性说明包含验证记录和逐方法映射。测试源码：
-[`CypherApiTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/CypherApiTest.java)、
-[`CypherClientTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/cypher/CypherClientTest.java)
-和
-[`CypherOpProcessorTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/opencypher/CypherOpProcessorTest.java)。
-此前在
-[`e62c961`](https://github.com/apache/hugegraph/commit/e62c961e00221569d4f955abbadf60faee45b283)
-基线上的验证仍保留在
-[`fd8f4a6`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/docs/cypher-compatibility.md)。
-此前变基前的验证记录仍保留在
-[`c3b2f3e`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/docs/cypher-compatibility.md)。
+相关单元测试与集成测试覆盖 `CypherApiTest`、`CypherClientTest` 与 `CypherOpProcessorTest`。
+在 `PRIMARY_KEY` 策略的 Schema 下，双顶点简写 `CREATE (a)-[:knows]->(b)` 会因缺少主键而被拒绝；而在 `AUTOMATIC` 策略下支持该简写。对于 `PRIMARY_KEY` Schema，建议将两条创建语句分开执行。
 
-### 基线故障与当前修复
+### 未验证范围
 
-在此前的基线
-[`27a7c9b`](https://github.com/apache/hugegraph/commit/27a7c9b42274d6d4f95eabed6d2051d393ae0eaf)
-中，失败的双顶点 `CREATE` 在两次观察中都留下了延迟可见的残留。第一次运行中，即时原生读取未发现前缀，
-但后续聚合/排序查询暴露了前缀，原生全量列表也确认了它。第二次复现时，即时原生读取和之后 7 次 count/原生读取均未见前缀；
-第 8 次 count 后才出现。原始基线证据保留在
-[基线报告](https://github.com/apache/hugegraph-doc/pull/499#issuecomment-5826172378)。
-
-当前开发改动通过了 `testFailedWriteDoesNotLeakIntoLaterRequests`：针对该夹具，原生读取和后续 32 轮查询/原生读取均确认无残留。
-这只验证了已报告的失败场景及当前测试栈，不能据此推断所有回滚路径、跨请求事务语义、所有语句或后端的写原子性。
-
-### 本次未验证
-
-本次测试范围之外的高级语法和行为仍未验证，包括 `MERGE`、`OPTIONAL MATCH`、`WITH`、`UNWIND`、`UNION`、变长路径、
-广泛的函数覆盖、过程调用、Cypher Schema DDL、`EXPLAIN`/`PROFILE`、HStore、Bolt、跨请求事务和性能。
+以下高级语法和特性当前尚未在 HugeGraph 上完成端到端验证，生产环境使用时请予以注意：
+- 复杂语法与子句：`MERGE`、`OPTIONAL MATCH`、`WITH`、`UNWIND`、`UNION`、变长路径匹配；
+- 扩展能力：过程调用（Procedures）、Cypher Schema DDL、`EXPLAIN` / `PROFILE`；
+- 协议与驱动：Bolt 协议驱动、跨请求事务。

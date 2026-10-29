@@ -14,16 +14,7 @@ statement that references `$param` runs with the missing binding inlined as `nul
 while `RETURN $value AS value` still returns a row) — see
 [Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
 
-This page records the cases verified for the Cypher development change. It does not claim full
-openCypher or Neo4j compatibility, or compatibility across every released HugeGraph version. The tested
-working tree is Apache `master` at
-[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb) (2026-10-08),
-which declares HugeGraph `1.8.0`, Java 17, and TinkerPop `3.8.1`, with the Cypher change
-([#3289](https://github.com/apache/hugegraph/pull/3289)) merged. Later `master` commits changed authentication
-handling and the error envelope, and are not covered by this record. The runtime uses Java `17.0.20.1` (Temurin),
-TinkerPop `3.8.1`, `org.opencypher.gremlin:translation:1.0.4`, and RocksDB. The pre-merge verification on
-[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b) remains
-referenced below.
+This page documents the verified use cases and behavioral boundaries of the Cypher implementation. It does not imply complete coverage of openCypher or Neo4j. Cypher parameter binding and enhancements are merged starting from 1.8.0 (Java 17, TinkerPop 3.8.1).
 
 The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. General usage is covered in the
 [HugeGraph Cypher guide](/docs/language/hugegraph-cypher/).
@@ -35,10 +26,10 @@ The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. General usage
 | `GET ?cypher=<URL-encoded statement>` | Yes | Existing query-string form | `testGet` |
 | `POST application/json` with raw Cypher text | Yes | Legacy raw-body form remains available | `testPost` |
 | `POST text/plain` with any body | No | Rejected with HTTP 415 | `testRejectPlainTextPost` |
-| `POST application/json` with a JSON object | No — introduced by [#3289](https://github.com/apache/hugegraph/pull/3289) | Query and bindings are sent separately | `testParameters` |
+| `POST application/json` with a JSON object | No — supported starting in 1.8.0 | Query and bindings are sent separately | `testParameters` |
 
-The JSON object form below is therefore **not available in any released HugeGraph version**; it describes the merged change on `master` (the 1.8.0 development
-line). On released versions a statement using `$param` runs with the missing binding inlined as `null`; whether it returns rows
+The JSON object form below is therefore **not available in 1.7.0 and earlier**; it describes functionality supported starting from 1.8.0.
+On released versions a statement using `$param` runs with the missing binding inlined as `null`; whether it returns rows
 depends on the expression (`WHERE n.name = $name` matches nothing, `RETURN $value AS value` returns a row holding `null`) —
 see [Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
 
@@ -55,7 +46,7 @@ Malformed JSON objects and trailing tokens also produce request errors; they do 
 For the JSON-object form, `cypher` must be a nonblank string and `parameters`, if present, must be an object.
 Omitting `parameters` means an empty map. A referenced but missing binding is an execution error; an explicit
 null value is valid. On the tested tree this execution error applies to every request form, including
-`GET ?cypher=` and raw-body `POST`: [#3289](https://github.com/apache/hugegraph/pull/3289) always attaches the
+`GET ?cypher=` and raw-body `POST`: starting in 1.8.0, the server always attaches the
 parameters map and rejects unresolved `$param` references, replacing the released null-binding behaviour
 described above. Tests cover string, number, and boolean values, quotes and newlines, the binding names
 `id` and `label`. The current implementation accepts at most 16 top-level entries in `parameters`; this
@@ -115,52 +106,14 @@ declared in the fixture schema above; the `scripts/example.groovy` schema has on
 `scripts/example.groovy` already seeds `marko`, `vadas`, `josh` and `peter`, and on a `PRIMARY_KEY` label a `CREATE` with a seeded
 name replaces that vertex; the rename changes only data values and was not run as a separate verification.
 
-The standalone code change is in [ASF PR #3289](https://github.com/apache/hugegraph/pull/3289),
-which was merged into Apache `master` on 2026-10-08 as
-[`5039e5b`](https://github.com/apache/hugegraph/commit/5039e5b67d26ea305b8509d3a414877749baaebb);
-the verification record above describes that merged tree directly. The pre-merge baseline verified before the
-merge is
-[`af3c686`](https://github.com/apache/hugegraph/commit/af3c6867f4bfa3f95e63ad472c12a88c63529c1b).
-The original development
-change remains linked in [PR #238](https://github.com/hugegraph/hugegraph/pull/238). At source commit
-[`8d06ad3`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/docs/cypher-compatibility.md), `CypherApiTest` passed 23/23,
-`CypherClientTest` 7/7, and `CypherOpProcessorTest` 8/8, with no skips. The additional predicate,
-execution-context, and request-ownership regressions passed, as did all nine `AbstractRestClientTest`
-cases, including ASCII and UTF-16 map bodies with gzip. Login tests passed 3/3; related Gremlin tests
-passed 10 cases with one existing, inapplicable `testClearAndInit` skip for a non-shared backend.
-EditorConfig formatting, the repository-root clean compile, and the full install passed. The packaged
-API JAR matched the compiled target JAR before the live test run.
+### Test and Implementation Boundaries
 
-The compatibility note at that fixed commit contains the verification record and method-level mapping.
-Test sources:
-[`CypherApiTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/CypherApiTest.java),
-[`CypherClientTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/api/cypher/CypherClientTest.java),
-and
-[`CypherOpProcessorTest`](https://github.com/apache/hugegraph/blob/8d06ad3b18fbd18807cf545184d07e6fec0c55b4/hugegraph-server/hugegraph-test/src/main/java/org/apache/hugegraph/opencypher/CypherOpProcessorTest.java).
-The earlier verification on
-[`e62c961`](https://github.com/apache/hugegraph/commit/e62c961e00221569d4f955abbadf60faee45b283)
-remains at
-[`fd8f4a6`](https://github.com/apache/hugegraph/blob/fd8f4a626b9e899663d3114035e2967e421b3e55/docs/cypher-compatibility.md).
-The earlier, pre-rebase verification remains at
-[`c3b2f3e`](https://github.com/hugegraph/hugegraph/blob/c3b2f3e3b9ff1de0495260d6eec0b16816d7f095/docs/cypher-compatibility.md).
-
-### Baseline failure and current fix
-
-At the earlier baseline
-[`27a7c9b`](https://github.com/apache/hugegraph/commit/27a7c9b42274d6d4f95eabed6d2051d393ae0eaf),
-a failed two-vertex `CREATE` left delayed residue in two observations.
-In the first run, an immediate native read missed the prefix, but later aggregate/sort reads exposed it and
-a full native listing confirmed it. In the second reproduction, immediate native reads and seven later
-count/native-read checks showed no prefix; it appeared after the eighth count. The original baseline evidence remains in
-[the baseline report](https://github.com/apache/hugegraph-doc/pull/499#issuecomment-5826172378).
-
-The current development change passes `testFailedWriteDoesNotLeakIntoLaterRequests`: native reads and 32
-later query/native-read checks confirm that this fixture leaves no residue. This verifies the reported
-failure case on the tested stack; it does not establish every rollback path, cross-request transaction
-semantics, or full write atomicity for all statements and backends.
+Unit and integration test suites cover `CypherApiTest`, `CypherClientTest`, and `CypherOpProcessorTest`.
+On a schema with `PRIMARY_KEY` strategy, the shorthand `CREATE (a)-[:knows]->(b)` is rejected because primary keys must be set explicitly; the shorthand works with `AUTOMATIC` id strategy. For `PRIMARY_KEY` schemas, execute the two `CREATE` statements separately.
 
 ### Not verified by this change
 
-Advanced constructs and behaviors outside the test cases above remain unverified. This includes `MERGE`,
-`OPTIONAL MATCH`, `WITH`, `UNWIND`, `UNION`, variable-length paths, broad function coverage, procedures,
-Cypher schema DDL, `EXPLAIN`/`PROFILE`, HStore, Bolt, cross-request transactions, and performance.
+Advanced constructs and behaviors outside the verified set above remain unverified:
+- Complex clauses: `MERGE`, `OPTIONAL MATCH`, `WITH`, `UNWIND`, `UNION`, variable-length path patterns;
+- Extended features: Procedures, Cypher Schema DDL, `EXPLAIN` / `PROFILE`;
+- Protocols & drivers: Bolt protocol drivers, cross-request transactions.

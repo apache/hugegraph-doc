@@ -12,16 +12,17 @@ For other languages, use the [Go Client](/docs/quickstart/client/hugegraph-clien
 
 ### 2 What You Need
 
-- JDK 11 (used by the current CI; the source target remains Java 8)
-- Maven 3.6+
+- JDK 17 for this walkthrough and for building Client `1.8.0` from Toolchain `master`
+- Maven 3.6.3+
 
 ### 3 How To Use
 
 The basic steps to use HugeGraph-Client are as follows:
 
-- Build a new Maven project by IDEA or Eclipse
-- Add HugeGraph-Client dependency in a pom file;
-- Create an object to invoke the interface of HugeGraph-Client
+1. Create a Maven project in IntelliJ IDEA or Eclipse.
+1. Add the HugeGraph-Client dependency to `pom.xml`.
+1. Create a client, call its APIs, and close it after use.
+{.steps}
 
 See the complete example in the following section for the detail.
 
@@ -46,25 +47,41 @@ Using IDEA or Eclipse to create the project:
     </dependency>    
 </dependencies>
 ```
-The complete examples below use Schema, Graph, Gremlin and resource-cleanup APIs available in the published Client `1.7.0`
-and compatible with Toolchain `master`. Use the dependency above directly in your example project.
 
-For new master APIs in the [API reference](/docs/clients/hugegraph-client/), such as capability detection, use Client `1.8.0`
-from Toolchain `master` and change the POM version to `1.8.0`. If that version is not published to Maven yet, run the following
-command from the Toolchain source root to install the Client and its parent POM locally. The source build still needs
-its dependencies available from your configured Maven repositories.
+Choose the client version before building:
+
+| Use case | Client version | Java build target |
+| --- | --- | --- |
+| Run the complete examples below | Published `1.7.0`; use the dependency above | Java 8 in the release POM; this walkthrough uses JDK 17 |
+| Use new master APIs, such as capability detection | Toolchain `master` (based on 1.8) | Java 17 |
+
+The examples use Schema, Graph, Gremlin and resource-cleanup APIs available in Client `1.7.0` and compatible with Toolchain `master`.
+The release's Java build target does not describe the runtime requirements of every transitive dependency.
+
+To use unreleased features from the master branch, build Client from source (see [Tools source build instructions](/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)):
 
 ```bash
-mvn install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+java -version
+mvn -version
+mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" \
+  -Dsdk.validation.mode=candidate \
+  install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
-Client and Server versions need not match. Check the supported server API range and required capabilities before upgrading.
+Both version checks must report JDK 17. Also pass `-Dmaven.repo.local="$candidate_dir/m2"` to Maven commands in projects using Client from master.
+Client and Server versions need not be identical; check the required APIs and compatibility before upgrading.
 
 #### 4.3 Example
 
+Choose a single-record or batch example. Save the complete code as `src/main/java/SingleExample.java` or
+`src/main/java/BatchExample.java` in your Maven project. The copy button includes the folded lines.
+
+{{< tabs group="java-client-example" default="single" label="Java client example" >}}
+{{< tab label="SingleExample" value="single" >}}
+
 ##### 4.3.1 SingleExample
 
-```java
+```java {collapse=30}
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -216,9 +233,12 @@ public class SingleExample {
 }
 ```
 
+{{< /tab >}}
+{{< tab label="BatchExample" value="batch" >}}
+
 ##### 4.3.2 BatchExample
 
-```java
+```java {collapse=30}
 import java.util.ArrayList;
 import java.util.List;
 
@@ -359,9 +379,17 @@ public class BatchExample {
 }
 ```
 
+{{< /tab >}}
+{{< /tabs >}}
+
 #### 4.4 Run The Example
 
-Before running Example, you need to start the Server. For the startup process, see[HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server).
+1. [Start HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server) and prepare a test graph named `hugegraph` in graphspace `DEFAULT`.
+1. Set the Maven project's JDK to 17. In the selected example, replace the Server URL, graphspace, graph and credentials in `HugeClient.builder(...)`
+   and `configUser(...)` with your settings. Omit `configUser(...)` if Server does not require authentication.
+1. Run `SingleExample.main()` or `BatchExample.main()` in your IDE. Both examples create schema and graph data, print the results, and close the client.
+   Use a test graph: existing schema or data can affect repeated runs.
+{.steps}
 
 #### 4.5 More Information About Client-API
 

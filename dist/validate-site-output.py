@@ -164,11 +164,22 @@ RUNTIME_ACTIVE_URL_ATTRIBUTES = {
     "data-td-action-url",
 }
 RUNTIME_IMAGE_URL_ATTRIBUTES = {"data-td-image-zoom"}
-OINK_CONFIG_MARKERS = {"data-td-diagram-source", "data-td-echarts-options", "data-td-asciinema-config"}
+# Native reader dialogs use these localized strings only through textContent.
+# Keep their exact pinned-template schema separate from chart/player options.
+OINK_READER_LABEL_FIELDS = {
+    "data-td-table-labels": {"title", "viewport"},
+    "data-td-diagram-labels": {
+        "source", "expand", "copy", "copied", "copyError", "error",
+        "downloadStarted", "downloadError",
+    },
+}
+OINK_CONFIG_MARKERS = {
+    "data-td-diagram-source", "data-td-echarts-options", "data-td-asciinema-config",
+} | set(OINK_READER_LABEL_FIELDS)
 
 
 def is_inert_oink_component_source(tag: str, values: dict[str, str]) -> bool:
-    """Match the exact inert JSON carriers emitted by OINK 1.2 components."""
+    """Match the exact inert JSON carriers emitted by pinned OINK templates."""
 
     if tag != "script" or values.get("type", "").strip().lower() != "application/json":
         return False
@@ -1000,7 +1011,7 @@ class DocumentParser(html.parser.HTMLParser):
         if tag == "script" and values.get("id") == "td-action-manifest":
             self._in_action_manifest = True
         if is_inert_oink_component_source(tag, values):
-            for marker in ("data-td-echarts-options", "data-td-asciinema-config"):
+            for marker in ("data-td-echarts-options", "data-td-asciinema-config", *OINK_READER_LABEL_FIELDS):
                 if marker in values:
                     self._component_source = marker
                     self._component_json = ""
@@ -1115,6 +1126,11 @@ class DocumentParser(html.parser.HTMLParser):
             return
         if not isinstance(payload, dict):
             self.authored_violations.append("OINK component JSON payload must be an object")
+            return
+        label_fields = OINK_READER_LABEL_FIELDS.get(self._component_source)
+        if label_fields is not None:
+            if set(payload) != label_fields or any(not isinstance(value, str) for value in payload.values()):
+                self.authored_violations.append("OINK reader labels JSON payload does not match the pinned template schema")
             return
         if self._component_source == "data-td-asciinema-config":
             # Trust only the shortcode schema, not the player's much broader

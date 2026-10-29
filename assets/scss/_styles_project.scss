@@ -328,6 +328,21 @@
   }
 }
 
+// The header uses white controls on purple, but the language popover uses
+// OINK's theme-colored surface. Keep its text independent of the header and
+// let the outer utility provide the trigger's hover background.
+.td-home > .td-site-header,
+.td-shell-chrome .td-site-header {
+  .td-site-nav__language > ul {
+    color: var(--bs-body-color);
+  }
+
+  .td-site-nav__language > .td-language-selector__trigger:hover,
+  .td-site-nav__language > .td-language-selector__trigger:focus-visible {
+    background: transparent;
+  }
+}
+
 // The desktop Docs sidebar deliberately overlays the navbar's left edge. Give
 // its identity row the same band treatment so the two structural regions read
 // as one header, while the drawer keeps its light mobile surface.

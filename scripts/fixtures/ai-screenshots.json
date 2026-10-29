@@ -1,0 +1,114 @@
+{
+  "source": {
+    "repo": "apache/hugegraph-ai",
+    "ref": "main",
+    "sha": "da11249745180471420890fd5a44aee93bc33bae"
+  },
+  "server": {
+    "runtime_sha": "ebb8f4e17f0bf826cb50745c590d8bc54b45c6b6",
+    "sdk_sha": "86c05ef9c5d417bd37eab21d4ecd5af82bab17ef",
+    "graph": "aidocs",
+    "graphspace": "DEFAULT",
+    "backend": "memory",
+    "vertices": 2,
+    "edges": 1
+  },
+  "models": [
+    {
+      "name": "qwen2.5:3b",
+      "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b"
+    },
+    {
+      "name": "mxbai-embed-large:latest",
+      "digest": "468836162de7f81e041c43663fedbbba921dcea9b9fefea135685a39b2d83dd8",
+      "embedding_dimension": 1024
+    }
+  ],
+  "model_server": "Ollama v0.40.8; 127.0.0.1:18200; local inference only",
+  "language": "EN/CN changes prompts; all Gradio control labels remain English",
+  "data": "Sarah is a 30-year-old attorney. James is a journalist. Sarah has been James's roommate since 2010.",
+  "question": "Who is Sarah?",
+  "rag_state": {
+    "raw": false,
+    "vector_only": false,
+    "graph_only": false,
+    "graph_vector": true,
+    "template_num": -1,
+    "graph_ratio": 0.6,
+    "rerank": "bleu"
+  },
+  "text2_state": {
+    "example_num": 1,
+    "similar_template": [],
+    "prompt_example": "Peter supplied directly in Prompt",
+    "actual_generation": "g.V().has('person', 'name', 'Sarah').valueMap()",
+    "output": "Sarah; age 30; occupation attorney; both generated queries executed"
+  },
+  "graph_tools_query": "g.V().valueMap()",
+  "screenshots": [
+    {
+      "file": "static/images/docs/hugegraph-ai/cn/graph-tools.jpg",
+      "locale": "cn",
+      "width": 1472,
+      "height": 607,
+      "sha256": "3f7c1b35f6fda8b98e5099aac1f28ec90d4a9d810c64000c22e4ddd62ed5cb11",
+      "capture": "Playwright Chromium native screenshot; no API interception or pixel edits"
+    },
+    {
+      "file": "static/images/docs/hugegraph-ai/cn/graphrag.jpg",
+      "locale": "cn",
+      "width": 1482,
+      "height": 671,
+      "sha256": "9066845ce4897c5642f4a2c3987c4781795d93033b09d64f71340aed7767fffb",
+      "capture": "Playwright Chromium native screenshot; no API interception or pixel edits"
+    },
+    {
+      "file": "static/images/docs/hugegraph-ai/cn/query-prompts.jpg",
+      "locale": "cn",
+      "width": 968,
+      "height": 425,
+      "sha256": "e0a90b23d1df828f8b552511476f6c70a4465a739d8d781974fecfe54ecb19f1",
+      "capture": "Playwright Chromium native screenshot; no API interception or pixel edits"
+    },
+    {
+      "file": "static/images/docs/hugegraph-ai/cn/text2gremlin.jpg",
+      "locale": "cn",
+      "width": 1472,
+      "height": 1317,
+      "sha256": "ac3add4c661080cd461925f43c17e328f82aa1c78387b61101cf13fabb0d2e98",
+      "capture": "Playwright Chromium native screenshot; no API interception or pixel edits"
+    },
+    {
+      "file": "static/images/docs/hugegraph-ai/en/graph-tools.jpg",
+      "locale": "en",
+      "width": 1472,
+      "height": 607,
+      "sha256": "3f7c1b35f6fda8b98e5099aac1f28ec90d4a9d810c64000c22e4ddd62ed5cb11",
+      "capture": "Playwright Chromium native screenshot; no API interception or pixel edits"
+    },
+    {
+      "file": "static/images/docs/hugegraph-ai/en/graphrag.jpg",
+      "locale": "en",
+      "width": 1482,
+      "height": 671,
+      "sha256": "75ff18d9eb2488dc62d5f586146b772d0416a841a386c6f8ef3626f50262d9ea",
+      "capture": "Playwright Chromium native screenshot; no API interception or pixel edits"
+    },
+    {
+      "file": "static/images/docs/hugegraph-ai/en/query-prompts.jpg",
+      "locale": "en",
+      "width": 968,
+      "height": 425,
+      "sha256": "aab594a5f0e1ccb3e56a0f351debdcd80f1590c7bc7a8704865909fc494561f6",
+      "capture": "Playwright Chromium native screenshot; no API interception or pixel edits"
+    },
+    {
+      "file": "static/images/docs/hugegraph-ai/en/text2gremlin.jpg",
+      "locale": "en",
+      "width": 1472,
+      "height": 1317,
+      "sha256": "14fe41a4c2da7da8fa1cc102fac9571625bcc9eaa486a06dcd16eca5998feddf",
+      "capture": "Playwright Chromium native screenshot; no API interception or pixel edits"
+    }
+  ]
+}

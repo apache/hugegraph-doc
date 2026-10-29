@@ -79,7 +79,8 @@ Server 安全检查（`-s true`）要求 Java 17 到 23 以及可读的 `conf/ja
 serializer:
   className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
   config:
-    ioRegistries: [org.apache.hugegraph.structure.io.HugeGraphIoRegistry]
+    builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
 ```
 
 ```yaml {tab="GraphSON (HTTP/兼容)"}
@@ -669,6 +670,8 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
         ports:
           - 8080:8080
     ```
+
+    基于当前 master 构建的 Server 镜像以非 root 的 UID `10001` 运行，挂载的脚本必须对该用户可读。
 
     使用命令 `docker compose up -d` 启动容器
 

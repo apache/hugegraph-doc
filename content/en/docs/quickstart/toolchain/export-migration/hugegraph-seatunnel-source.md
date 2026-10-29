@@ -14,11 +14,32 @@ for parallel-scan backend requirements and configuration limits.
 
 Before starting, complete the [shared environment and configuration steps on the import page](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/#2-prepare-the-environment). They cover JDK, HOCON, plugin installation, and the sample graph model.
 
+With HugeGraph Helm, follow the [SeaTunnel deployment guide](/docs/quickstart/hugegraph/hugegraph-helm/#6-start-seatunnel)
+to run a persistent standalone engine or cluster with pre-mounted Source/Sink examples.
+Addresses and credentials for a remote source graph still require separate configuration.
+
 ## 1 Migrate a HugeGraph graph (graph2graph)
 
 The following example migrates `person` vertices and `knows` edges from a source graph. Use a separate target graph. This section uses `CUSTOMIZE_STRING` to preserve vertex IDs. Do not reuse the `person` label created earlier with `PRIMARY_KEY`.
 
 These two jobs migrate only the selected labels and properties. They do not copy every source schema setting, such as indexes and TTLs. Pause writes to the source graph during the migration so both jobs read a consistent point in time. Afterward, compare vertex and edge counts and sample properties.
+
+To retain schema IDs and index definitions for ordinary edge labels, see the Chart's
+[schema copy and per-label examples](https://github.com/apache/hugegraph/tree/96ce802a25672f8b7b0d08c49e68db694231f5e4/helm/hugegraph/examples/seatunnel/clone).
+The helper rejects inherited `PARENT/SUB` edge labels before accessing the target; it does not migrate inheritance automatically.
+
+```filetree {wrap=true title="Graph Migration Sample Layout"}
+helm/hugegraph/examples/seatunnel/clone/
+  copy-schema.py             # Copies schema from source to target graph (preserves IDs & indexes)
+  person.conf                # Vertex data migration job (CUSTOMIZE_STRING preserves IDs)
+  knows.conf                 # Edge data migration job (depends on vertex ID consistency)
+```
+
+> [!WARNING]
+> **Check the source Server's timezone for `DATE` properties.** REST date strings read by SeaTunnel 3.0.0 have no timezone.
+> Set `timeZone` inside every Sink `mappings` entry to the source Server's timezone, for example `timeZone = "UTC"`.
+> Do not rely on the worker default: Source `time_zone` does not correct these strings.
+> The Chart's copy examples assume a UTC source Server. Adjust non-UTC sources and compare the original timestamps.
 
 [![Regenerating a primary key can change 1:marko to 2:marko; CUSTOMIZE_STRING preserves the original ID so edge endpoints still resolve](/docs/images/seatunnel/seatunnel-preserve-ids-en.png)](/docs/images/seatunnel/seatunnel-preserve-ids-en.png)
 

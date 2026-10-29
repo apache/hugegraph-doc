@@ -19,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 
+from hugo_build import is_unexpected_warning
 from oink_module import MODULE, SITE_MODULE, VERSION, command, download_locked, locked_version
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,6 +42,8 @@ def release_environment():
     env = dict(os.environ)
     env.pop("HUGO_MODULE_REPLACEMENTS", None)
     env.pop("HUGO_THEME", None)
+    # LibSass emits an expected deprecation warning; release checks retain it.
+    env.pop("HUGO_PANICONWARNING", None)
     env.update(GOWORK="off", HUGO_MODULE_WORKSPACE="off")
     # Version assembly changes cwd; relative HUGO_BIN paths would stop working.
     hugo = env.get("HUGO_BIN")
@@ -188,7 +191,6 @@ def tool_output(argv):
 
 def tool_versions():
     return {"hugo": tool_output([release_environment().get("HUGO_BIN", "hugo"), "version"]),
-            "sass": tool_output(["sass", "--version"]),
             "go": tool_output([os.environ.get("GO_BIN", "go"), "version"]),
             "webp": tool_output(["cwebp", "-version"])}
 
@@ -200,34 +202,39 @@ def check_toolchain(root, target):
     except ImportError:
         raise ValueError("OINK upgrades require Python >= 3.11; use Python 3.13 as documented in scripts/oink-upgrade.md") from None
     module = prior_release(root, target)
-    theme = Path(module["Dir"]) / "theme.toml"
-    minimum = max((0, 168, 0), version_tuple(tomllib.loads(theme.read_text())["min_version"]))
+    upstream = Path(module["Dir"])
+    minimum = max((0, 168, 0), version_tuple(tomllib.loads((upstream / "theme.toml").read_text())["min_version"]))
     versions = tool_versions()
     if version_tuple(versions["hugo"]) < minimum or "+extended" not in versions["hugo"]:
         raise ValueError(f"Hugo Extended >= {'.'.join(map(str, minimum))} is required for {target}; "
                          f"found {versions['hugo']}. Prepare tools using scripts/oink-upgrade.md; locks are unchanged")
-    if version_tuple(versions["sass"]) < (1, 105, 2):
-        raise ValueError(f"Dart Sass >= 1.105.2 is required; found {versions['sass']}. "
-                         "Prepare tools using scripts/oink-upgrade.md; locks are unchanged")
-    with tempfile.TemporaryDirectory(prefix="oink-dartsass-check-") as directory:
+    directive = re.search(r"(?m)^go\s+(\d+)\.(\d+)(?:\.(\d+))?\s*$", (upstream / "go.mod").read_text())
+    if not directive:
+        raise ValueError(f"cannot identify target Go requirement for {target}; locks are unchanged")
+    minimum_go = tuple(int(part or 0) for part in directive.groups())
+    if version_tuple(versions["go"]) < minimum_go:
+        raise ValueError(f"Go >= {'.'.join(map(str, minimum_go))} is required for {target}; "
+                         f"found {versions['go']}. Prepare tools using scripts/oink-upgrade.md; locks are unchanged")
+    with tempfile.TemporaryDirectory(prefix="oink-libsass-check-") as directory:
         fixture = Path(directory)
         (fixture / "hugo.toml").write_text('baseURL = "https://example.test/"\ndisableKinds = ["taxonomy", "term", "RSS", "sitemap"]\n')
         (fixture / "layouts").mkdir()
         (fixture / "assets").mkdir()
-        (fixture / "assets/probe.scss").write_text('@use "sass:math"; .probe { width: math.div(12px, 3); }\n')
+        (fixture / "assets/probe.scss").write_text('$width: 12px; .probe { width: ($width / 3); }\n')
         (fixture / "layouts/index.html").write_text(
-            '{{ $css := resources.Get "probe.scss" | css.Sass (dict "transpiler" "dartsass" "targetPath" "probe.css") }}{{ $css.Content }}')
+            '{{ $css := resources.Get "probe.scss" | css.Sass (dict "transpiler" "libsass" "targetPath" "probe.css") }}{{ $css.Content }}')
         env = release_environment()
         try:
             result = subprocess.run([env.get("HUGO_BIN", "hugo"), "--source", str(fixture),
-                                     "--environment", "production", "--panicOnWarning"],
+                                     "--environment", "production", "--logLevel", "info"],
                                     env=env, text=True, capture_output=True, timeout=30)
         except subprocess.TimeoutExpired:
-            raise ValueError("Hugo → Dart Sass smoke compilation timed out; check the embedded Sass executable. Locks are unchanged") from None
+            raise ValueError("Hugo → LibSass smoke compilation timed out; locks are unchanged") from None
         rendered = fixture / "public/index.html"
-        if result.returncode or not rendered.is_file() or "width: 4px" not in rendered.read_text():
-            raise ValueError(f"Hugo → Dart Sass smoke compilation failed with {versions['hugo']} / "
-                             f"{versions['sass']}: {result.stdout}{result.stderr}. "
+        unexpected = any(is_unexpected_warning(line) for line in (result.stdout + result.stderr).splitlines())
+        if result.returncode or unexpected or not rendered.is_file() or "width: 4px" not in rendered.read_text():
+            raise ValueError(f"Hugo → LibSass smoke compilation failed with {versions['hugo']}: "
+                             f"{result.stdout}{result.stderr}. "
                              "Prepare tools using scripts/oink-upgrade.md; locks are unchanged")
     return versions
 
@@ -326,12 +333,12 @@ def _validate(work):
     plan = work / "build-plan.json"
     run([py, "scripts/version_cache.py", "plan", "--resolved-manifest", resolved,
          "--site-origin", origin, "--historical-origin", historical,
-         "--hugo-version", versions["hugo"], "--sass-version", versions["sass"],
+         "--hugo-version", versions["hugo"],
          "--go-version", versions["go"], "--webp-version", versions["webp"],
          "--cache-dir", work / "version-cache", "--output", plan])
     run([py, "scripts/build_versions.py", "--resolved-manifest", resolved, "--plan", plan,
          "--cache-dir", work / "version-cache", "--output", work / "artifacts",
-         "--site-origin", origin, "--historical-origin", historical, "--workers", "2", "--force-rebuild"],
+         "--site-origin", origin, "--historical-origin", historical, "--workers", "2"],
         env=dict(os.environ, HUGO_CACHEDIR=str(work / "hugo-cache")))
     # aggregate validates every version artifact before merging it.
     run([*cli, "aggregate", "--resolved-manifest", resolved,
@@ -342,10 +349,10 @@ def _validate(work):
     for name, port, config in [("ai", 4174, "ai-enabled"), ("ai-disabled", 4175, "ai-disabled")]:
         run([*cli, "config", "--version", "latest", "--site-origin", f"http://127.0.0.1:{port}/",
              "--historical-origin", historical, "--output", work / f"{name}.json"])
-        run([os.environ.get("HUGO_BIN", "hugo"), "--config",
+        run([py, "scripts/hugo_build.py", os.environ.get("HUGO_BIN", "hugo"), "--config",
              f"hugo.yaml,{work / f'{name}.json'},tests/e2e/{config}.yaml",
              "--destination", work / name, "--cleanDestinationDir", "--gc", "--minify",
-             "--environment", "production", "--panicOnWarning"])
+             "--environment", "production", "--printPathWarnings", "--printI18nWarnings", "--logLevel", "info"])
     env = dict(os.environ, SITE_ROOT=str(work / "site"), AI_SITE_ROOT=str(work / "ai"),
                AI_DISABLED_SITE_ROOT=str(work / "ai-disabled"), VISUAL_RESULTS_DIR=str(work / "after"))
     run(["npm", "ci"], cwd=ROOT / "tests/e2e")

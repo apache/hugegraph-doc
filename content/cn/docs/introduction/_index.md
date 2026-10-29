@@ -22,17 +22,17 @@ HugeGraph 支持百亿以上的顶点和边的快速存储与查询，具备出�
 ## 生态系统全景
 
 ```text
-┌────────────────────────────────────────────────────────────────────┐
-│            Apache HugeGraph - Full-Stack Graph System             │
-├──────────────────┬────────────────────┬────────────────────────────┤
-│  Graph DB (OLTP) │    Graph Compute   │          Graph AI          │
-│  HugeGraph       │  Vermeer (Memory)  │       HugeGraph-AI         │
-│  Server          │  Computer (Dist.)  │     GraphRAG / GNN / Py    │
-├──────────────────┴────────────────────┴────────────────────────────┤
-│                       HugeGraph Toolchain                          │
-│ Hubble | Loader | Client (Java/Go/Python; Rust WIP) | Spark | Tools│
-│ SeaTunnel 3.0+: Source + Sink                                      │
-└────────────────────────────────────────────────────────────────────┘
++----------------------------------------------------------------------+
+|              Apache HugeGraph - Full-Stack Graph System              |
++------------------+--------------------+------------------------------+
+| Graph DB (OLTP)  | Graph Compute      | Graph AI                     |
+| HugeGraph        | Vermeer (Memory)   | HugeGraph-AI                 |
+| Server           | Computer (Dist.)   | GraphRAG / GNN / Py          |
++------------------+--------------------+------------------------------+
+|                         HugeGraph Toolchain                          |
+| Hubble | Loader | Client (Java/Go/Python; Rust WIP) | Spark | Tools  |
+| SeaTunnel 3.0+: Source + Sink                                        |
++----------------------------------------------------------------------+
 ```
 
 ## HugeGraph Server（OLTP 图引擎）

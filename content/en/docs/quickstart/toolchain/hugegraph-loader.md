@@ -7,12 +7,110 @@ search_boost: 1.6
 description: "Bulk import graph data into HugeGraph with Loader from files, HDFS, relational databases, Kafka, and other HugeGraph graphs."
 ---
 
-This guide follows Toolchain `master` (currently `1.8.0`). Released packages and Docker `latest` may differ from source;
-check the version you use and build from source for unreleased functionality.
+This guide aligns with the Toolchain `master` branch (currently based on 1.8, unreleased). Released packages and Docker `latest` may differ; check your version before using unreleased features.
+
+### Quick start: local file import {#quick-local-file-import}
+
+Walk through a minimal import workflow: import two people and one relationship, then verify the data in Hubble.
+First [install Loader](#2-get-hugegraph-loader) and start [HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/).
+The commands below run from the Loader directory, importing into the default graph `hugegraph`.
+For an authenticated Server, append `--username` and `--password` (or `--token`).
+
+1. **Create the data files.**
+
+   These CSV files have no header row. The mapping in the next step supplies the column names.
+
+   ```bash
+   mkdir -p demo-loader
+   cat > demo-loader/people.csv <<'EOF'
+   docs-smoke-alice,29
+   docs-smoke-bob,31
+   EOF
+   cat > demo-loader/knows.csv <<'EOF'
+   docs-smoke-alice,docs-smoke-bob
+   EOF
+   ```
+
+1. **Create the schema and mapping.**
+
+   Dedicated `docs_*` names keep this example separate from the built-in `person` data.
+   File paths are relative to the directory where you run Loader.
+
+   ```bash
+   cat > demo-loader/schema.groovy <<'EOF'
+   schema.propertyKey("docs_name").asText().ifNotExist().create()
+   schema.propertyKey("docs_age").asInt().ifNotExist().create()
+   schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age")
+         .primaryKeys("docs_name").ifNotExist().create()
+   schema.edgeLabel("docs_smoke_knows").sourceLabel("docs_smoke_person")
+         .targetLabel("docs_smoke_person").ifNotExist().create()
+   EOF
+   cat > demo-loader/struct.json <<'EOF'
+   {
+     "version": "2.0",
+     "structs": [
+       {
+         "id": "people",
+         "input": {
+           "type": "FILE",
+           "path": "demo-loader/people.csv",
+           "format": "CSV",
+           "header": ["docs_name", "docs_age"]
+         },
+         "vertices": [{"label": "docs_smoke_person"}]
+       },
+       {
+         "id": "knows",
+         "input": {
+           "type": "FILE",
+           "path": "demo-loader/knows.csv",
+           "format": "CSV",
+           "header": ["source_name", "target_name"]
+         },
+         "edges": [{
+           "label": "docs_smoke_knows",
+           "source": ["source_name"],
+           "target": ["target_name"],
+           "field_mapping": {"source_name": "docs_name", "target_name": "docs_name"}
+         }]
+       }
+     ]
+   }
+   EOF
+   ```
+
+1. **Run the import.**
+
+   Keep the same working directory. Change the host and port if Server runs elsewhere.
+
+   ```bash
+   bin/hugegraph-loader.sh \
+     --graphspace DEFAULT --graph hugegraph \
+     --file demo-loader/struct.json --schema demo-loader/schema.groovy \
+     --host 127.0.0.1 --port 8080
+   ```
+
+   A first successful run imports two vertices and one edge. Check the success and failure counts in the summary.
+
+1. **Query the result in Hubble.**
+
+   Connect Hubble to the same Server and graph, then run these queries separately in the Gremlin workspace.
+
+   ```groovy
+   g.V().hasLabel('docs_smoke_person').valueMap('docs_name', 'docs_age')
+   g.V().has('docs_smoke_person', 'docs_name', 'docs-smoke-alice')
+    .out('docs_smoke_knows').values('docs_name')
+   ```
+
+   The first query returns Alice with age `29` and Bob with age `31`. The second returns `docs-smoke-bob`.
+{.steps}
+
+For other inputs, continue with the [mapping reference](#33-write-data-source-mapping-file).
+The [bundled full example](#4-complete-example) also includes software vertices and edge properties.
 
 ### 1 HugeGraph-Loader Overview
 
-HugeGraph-Loader is the data import component of HugeGraph, which can convert data from various data sources into graph vertices and edges and import them into the graph database in batches.
+HugeGraph-Loader converts source data into graph vertices and edges and imports them into HugeGraph in batches.
 
 Currently supported data sources include:
 - Local disk file or directory, supports TEXT, CSV and JSON format files, supports compressed files
@@ -23,13 +121,9 @@ Currently supported data sources include:
 
 Local disk files and HDFS files support resumable uploads.
 
-It will be explained in detail below.
-
 > Note: HugeGraph-Loader requires HugeGraph Server service, please refer to [HugeGraph-Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server) to download and start Server
 
-> **Concurrency protection:** starting with HugeGraph 1.8.0, ordinary imports acquire same-Server ownership protection
-> (requires a Server whose `GET .../mode/owners` returns `protocol: 1` and a matching Loader; current `master` does not include it yet).
-> Older Servers retain the legacy import behavior described below.
+> **Concurrent imports**: Loader on the master branch supports LOADING owner protection on the same Server instance when the Server's `GET .../mode/owners` returns `protocol: 1`. Servers without this endpoint retain legacy import behavior without this protection; see the compatibility notes below.
 
 > **Testing Guide**: For running HugeGraph-Loader tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/toolchain-local-test)
 
@@ -81,24 +175,22 @@ A release may not include all `master` functionality; use the source build below
 
 #### 2.3 Clone source code to compile and install
 
-Clone the `master` branch:
+Building Loader from the master branch requires Java 17, Maven 3.6.3+, and Python 3.9+. Clone the repository and build:
 
 ```bash
 git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
-```
-
-Compile and generate tar package:
-
-```bash
 cd hugegraph-toolchain
-mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
+mvn package -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
+cd hugegraph-loader/apache-hugegraph-loader-*
 ```
+
+To build against candidate Server SDKs during development, refer to the [Java 17 migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md).
 
 For Oracle input, obtain a JDBC driver JAR compatible with your Oracle/JDK versions and place it in the extracted Loader `lib/` directory.
 The startup script loads JARs there; installing a driver only in the local Maven repository does not put it on Loader’s runtime classpath.
 
 ### 3 How to use
-The basic process of using HugeGraph-Loader is divided into the following steps:
+To import a dataset, prepare the schema, data and mapping, then run Loader.
 - Write graph schema
 - Prepare data files
 - Write input source map files
@@ -106,10 +198,10 @@ The basic process of using HugeGraph-Loader is divided into the following steps:
 
 #### 3.1 Construct graph schema
 
-This step is the modeling process. Users need to have a clear idea of ​​their existing data and the graph model they want to create, and then write the schema to build the graph model.
+Define the vertex labels, edge labels and properties needed to represent your data before writing the schema.
 
-For example, if you want to create a graph with two types of vertices and two types of edges, the vertices are "people" and "software", the edges are "people know people" and "people create software", and these vertices and edges have some attributes, For example, the vertex "person" has: "name", "age" and other attributes,
-"Software" includes: "name", "sale price" and other attributes; side "knowledge" includes: "date" attribute and so on.
+The example below uses `person` and `software` vertices, connected by `knows` and `created` edges.
+People have names, ages and cities; software has a name and price. Each edge records a date.
 
 <div style="text-align: center;">
   <img src="/docs/images/demo-graph-model.png" alt="Example graph with person and software vertices connected by knows and created edges">
@@ -117,7 +209,7 @@ For example, if you want to create a graph with two types of vertices and two ty
 </div>
 
 
-After designing the graph model, we can use `groovy` to write the definition of `schema` and save it to a file, here named `schema.groovy`.
+Save the schema definitions in `schema.groovy`.
 
 ```groovy
 // Create some properties
@@ -138,7 +230,7 @@ schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
 
-> Please refer to the corresponding section in [hugegraph-client](/docs/clients/hugegraph-client) for the detailed description of the schema.
+> See [HugeGraph Client](/docs/clients/hugegraph-client) for the schema API.
 
 #### 3.2 Prepare data
 
@@ -154,9 +246,9 @@ The data sources currently supported by HugeGraph-Loader include:
 
 ###### 3.2.1.1 Local disk file or directory
 
-The user can specify a local disk file as the data source. If the data is scattered in multiple files, a certain directory is also supported as the data source, but multiple directories are not supported as the data source for the time being.
+Set the input path to a local file or a directory. A single input source accepts one directory, not a list of directories.
 
-For example, my data is scattered in multiple files, part-0, part-1 ... part-n. To perform the import, it must be ensured that they are placed in one directory. Then in the loader's mapping file, specify `path` as the directory.
+For data split across `part-0`, `part-1` and other files, place those files in one directory and set the mapping's `path` to that directory.
 
 Supported file formats include:
 
@@ -164,7 +256,8 @@ Supported file formats include:
 - CSV
 - JSON
 
-TEXT is a text file with custom delimiters, the first line is usually the header, and the name of each column is recorded, and no header line is allowed (specified in the mapping file). Each remaining row represents a record, which will be converted into a vertex/edge; each column of the row corresponds to a field, which will be converted into the id, label or attribute of the vertex/edge;
+TEXT uses a configurable delimiter. Each data row represents a record; its columns supply IDs, labels or properties.
+Column names can come from a header row or from the mapping's `header` setting.
 
 An example is as follows:
 
@@ -198,9 +291,10 @@ Currently supported compressed file types include: GZIP, BZ2, XZ, LZMA, SNAPPY_R
 
 The loader also supports some relational databases as data sources, and currently supports MySQL, PostgreSQL, Oracle, and SQL Server.
 
-However, the requirements for the table structure are relatively strict at present. If **association query** needs to be done during the import process, such a table structure is not allowed. The associated query means: after reading a row of the table, it is found that the value of a certain column cannot be used directly (such as a foreign key), and you need to do another query to determine the true value of the column.
+Loader does not follow foreign keys to query other tables while parsing a row.
+Each input row must provide the values needed to construct its graph elements. Prepare any joins in the source query first.
 
-For example, Suppose there are three tables, person, software and created
+Consider three tables named `person`, `software` and `created`.
 
 ```text
 // person schema
@@ -217,12 +311,14 @@ id | name | lang | price
 id | p_id | s_id | date
 ```
 
-If the id strategy of person or software is specified as PRIMARY_KEY when modeling (schema), choose name as the primary key (note: this is the concept of vertex-label in hugegraph), when importing edge data, the source vertex and target need to be spliced ​​out. For the id of the vertex, you must go to the person/software table with p_id/s_id to find the corresponding name. In the case of the schema that requires additional query, the loader does not support it temporarily. In this case, the following two methods can be used instead:
+If `person` and `software` use `PRIMARY_KEY` IDs with `name` as the primary key, each edge needs its endpoints' names.
+The `created` table contains only `p_id` and `s_id`; Loader will not query the names from those IDs. Use either of these ID designs.
 
-1. The id strategy of person and software is still specified as PRIMARY_KEY, but the id column of the person table and software table is used as the primary key attribute of the vertex, so that the id can be generated by directly splicing p_id and s_id with the label of the vertex when importing an edge;
-2. Specify the id policy of person and software as CUSTOMIZE, and then directly use the id column of the person table and the software table as the vertex id, so that p_id and s_id can be used directly when importing edges;
+1. Keep `PRIMARY_KEY` and use each vertex table's `id` column as its primary key property.
+   Loader can then build endpoint IDs from `p_id`, `s_id` and the vertex labels.
+2. Use custom IDs, taking each vertex table's `id` column as the vertex ID. The edge mapping can use `p_id` and `s_id` directly.
 
-The key point is to make the edge use p_id and s_id directly, don't check it again.
+Both designs let edge rows supply endpoint IDs without another lookup.
 
 ##### 3.2.2 Prepare vertex and edge data
 
@@ -267,13 +363,11 @@ The edge data file consists of data line by line. Generally, each line is used a
 
 ##### 3.3.1 Mapping file overview
 
-The mapping file of the input source is used to describe how to establish the mapping relationship between the input source data and the vertex type/edge type of the graph. It is organized in `JSON` format and consists of multiple mapping blocks, each of which is responsible for mapping an input source. Mapped to vertices and edges.
+The mapping file uses JSON. Each item in `structs` contains one `input` and its `vertices` and `edges` mappings.
 
-Specifically, each mapping block contains **an input source** and multiple **vertex mapping** and **edge mapping** blocks, and the input source block corresponds to the `local disk file or directory`, ` HDFS file or directory` and `relational database` are responsible for describing the basic information of the data source, such as where the data is, what format, what is the delimiter, etc. The vertex map/edge map is bound to the input source, which columns of the input source can be selected, which columns are used as ids, which columns are used as attributes, and what attributes are mapped to each column, the values ​​of the columns are mapped to what values ​​of attributes, and so on.
+`input` describes the data location, format and delimiter. Vertex and edge mappings define labels, IDs, properties and field conversions.
 
-In the simplest terms, each mapping block describes: where is the file to be imported, which type of vertices/edges each line of the file is to be used as which columns of the file need to be imported, and the corresponding vertices/edges of these columns. what properties, etc.
-
-> Note: The format of the mapping file before version 0.11.0 and the format after 0.11.0 has changed greatly. For the convenience of expression, the mapping file (format) before 0.11.0 is called version 1.0, and the version after 0.11.0 is version 2.0. And unless otherwise specified, the "map file" refers to version 2.0.
+> Loader 0.11.0 introduced mapping format 2.0; earlier mappings use format 1.0. This page uses 2.0 unless stated otherwise.
 
 
 
@@ -795,9 +889,7 @@ The nodes of vertex and edge mapping (a key in the JSON file) have a lot of the 
 
 #### 3.4 Execute command import
 
-After preparing the graph model, data file, and input source mapping relationship file, the data file can be imported into the graph database.
-
-The import process is controlled by commands submitted by the user, and the user can control the specific process of execution through different parameters.
+With the schema, data and mapping ready, run Loader with the options below.
 
 ##### 3.4.1 Parameter description
 
@@ -893,7 +985,7 @@ Copy a mapping mounted from a read-only Kubernetes ConfigMap to a writable volum
 
 ##### 3.4.2 Breakpoint Continuation Mode
 
-Usually, the Loader task takes a long time to execute. If the import interrupt process exits for some reason, and next time you want to continue the import from the interrupted point, this is the scenario of using breakpoint continuation.
+For a long import, use a progress file to resume after an interruption.
 
 Set `--incremental-mode` to `true` to resume from a progress file. Loader records progress when it closes normally after a successful import
 or a normal stop; an unexpected failure may prevent this write.
@@ -905,12 +997,12 @@ order, which is the most recent one.
 > Note: A progress file is written after a successful import or a normal stop (including an error limit), regardless of `--incremental-mode`
 > or `--print-progress`. An import aborted by an unexpected failure may not write one.
 
-If the data file formats are all legal and the import task is stopped by the user (CTRL + C or kill, kill -9 is not supported), that is to say, if there is no error record, the next import only needs to be set to 
-Continue for the breakpoint.
+After stopping an import with `Ctrl+C` or `kill`, set `--incremental-mode true` to continue from the recorded position.
+A forced stop with `kill -9` cannot save progress.
 
-But if the limit of --max-read-errors, --max-parse-errors or --max-insert-errors is reached because too much data is invalid or network abnormality is reached, Loader will record these original rows that failed into
-the failure file, after the user modifies the data lines in the failure file, set --failure-mode to true to import these "failure files" as input sources (does not affect the normal file import),
-Of course, if there is still a problem with the modified data line, it will be logged again to the failure file (don't worry about duplicate lines, they are dropped when the file is closed). Failure mode lifts the three error limits above, so the whole failure file is scanned.
+Invalid data or connection failures can exhaust `--max-read-errors`, `--max-parse-errors` or `--max-insert-errors`.
+Correct the rows in the failure files, then use `--failure-mode true` to retry them. This leaves the original data files unchanged.
+Rows that still fail are recorded again and deduplicated when the failure file closes. Failure mode lifts these three limits and scans the entire file.
 
 Each input source, that is each item of `structs` in the mapping file, gets its own failure file. The file is named after the `id` of that input source with the suffix `.error` and is stored in the `${struct}/failure-data` directory.
 Every failed line is written as a pair of lines: a tip line starting with `#### READ ERROR:`, `#### PARSE ERROR:` or `#### INSERT ERROR:`, followed by the original data line. When the input source has a header, that header is written as JSON to a sibling `${id}.header` file, so the failure file can be read back with the right columns.
@@ -939,62 +1031,12 @@ The script runs the JVM under `JAVA_HOME` when that variable is set, and `java` 
 
 #### 3.4.5 Minimal Local-File Import
 
-
-First start HugeGraph Server and ensure the current user can access `hugegraph` in graphspace `DEFAULT`, create schema, and write data. If authentication is enabled, add the appropriate `--username`, `--password`, or `--token`. This example requires only local files, without Kafka, HDFS, or JDBC.
-
-From the extracted Loader installation directory, create data, schema, and a version 2.0 mapping file:
-
-```bash
-mkdir -p demo-loader
-
-cat > demo-loader/people.csv <<'EOF'
-docs-smoke-alice,29
-docs-smoke-bob,31
-EOF
-
-cat > demo-loader/schema.groovy <<'EOF'
-schema.propertyKey("docs_name").asText().ifNotExist().create()
-schema.propertyKey("docs_age").asInt().ifNotExist().create()
-schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age").primaryKeys("docs_name").ifNotExist().create()
-EOF
-
-cat > demo-loader/struct.json <<'EOF'
-{
-  "version": "2.0",
-  "structs": [
-    {
-      "id": "people",
-      "input": {
-        "type": "FILE",
-        "path": "demo-loader/people.csv",
-        "format": "CSV",
-        "header": ["docs_name", "docs_age"]
-      },
-      "vertices": [
-        {"label": "docs_smoke_person"}
-      ],
-      "edges": []
-    }
-  ]
-}
-EOF
-```
-
-The CSV has no header row; `input.header` in the mapping supplies column names. `input.path` is relative to the Loader process working directory, so keep running from the installation directory. If Server runs in another container, set `--host` to a Server address reachable by Loader:
-
-```bash
-bin/hugegraph-loader.sh \
-  --graphspace DEFAULT --graph hugegraph \
-  --file demo-loader/struct.json --schema demo-loader/schema.groovy \
-  --host 127.0.0.1 --port 8080
-```
-
-Expected result: two vertices and zero edges imported. This example uses dedicated schema names to avoid conflicts with a preloaded `person` label. In Hubble, run `g.V().hasLabel('docs_smoke_person').values('docs_name')` to confirm `docs-smoke-alice` and `docs-smoke-bob`.
+Follow the [local-file import steps](#quick-local-file-import) at the start of this page.
 
 #### 3.4.6 Concurrent imports and LOADING ownership {#loading-ownership}
 
-Starting with HugeGraph 1.8.0, Loader supports concurrent import protection via the LOADING ownership protocol
-(requires a Server whose `GET .../mode/owners` returns `protocol: 1` and a matching Loader; current `master` does not include it yet).
+In the `master` branch, Loader implements a LOADING ownership protocol coordinated with Server's `/mode/owners` endpoint.
+When the deployed Server provides this endpoint and returns `protocol: 1`, Loader enables ownership protection automatically; released Server 1.7.0 and older versions continue using the legacy mode switching flow.
 
 ```mermaid
 graph TD
@@ -1031,7 +1073,8 @@ graph TD
 
 ### 4 Complete example
 
-Given below is an example in the example directory of the hugegraph-loader package. ([GitHub address](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-loader/assembly/static/example/file))
+The Loader distribution includes this dataset in `example/file/`.
+See the [source files](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-loader/assembly/static/example/file).
 
 #### 4.1 Prepare data
 
@@ -1199,13 +1242,13 @@ count metrics
 
 ###### 4.5.1.1 Prepare data
 
-If you just want to try out the loader, you can import the built-in example dataset without needing to prepare additional data yourself.
+For a first import, use the built-in example dataset.
 
-If using custom data, before importing data with the loader, we need to copy the data into the container.
+For custom data, first copy the files into the Loader container.
 
-First, following the steps in [4.1–4.3](#41-prepare-data), we can prepare the data and then use `docker cp` to copy the prepared data into the loader container.
+Prepare the data, schema and mapping as described in [sections 4.1 to 4.3](#41-prepare-data), then copy them with `docker cp`.
 
-Suppose we've prepared the corresponding dataset following the above steps, stored in the `hugegraph-dataset` folder with the following file structure:
+The following example stores the files in `hugegraph-dataset`.
 
 ```bash
 tree -f hugegraph-dataset/
@@ -1230,9 +1273,9 @@ edge_created.json  edge_knows.json  schema.groovy  struct.json  vertex_person.cs
 
 ###### 4.5.1.2 Data loading
 
-Taking the built-in example dataset as an example, we can use the following command to load the data.
+Run this command to import the built-in dataset.
 
-If you need to import your custom dataset, you need to modify the paths for `-f` (data script) and `-s` (schema) configurations.
+For custom data, set `-f` to your mapping file and `-s` to your schema file.
 
 You can refer to [3.4.1-Parameter description](#341-parameter-description) for the rest of the parameters.
 
@@ -1279,7 +1322,7 @@ meter metrics
     edge load rate(edges/s)       : 53   
 ```
 
-You can also use `curl` or `hubble` to observe the import result. Here's an example using `curl`:
+Query the imported data with Hubble or `curl`.
 
 These requests use the GraphSpace-aware Server API. For an older Server, omit `/graphspaces/DEFAULT` from the path.
 
@@ -1292,9 +1335,9 @@ If you want to check the import result of edges, you can use `curl --compressed 
 
 ##### 4.5.2 Enter the docker container to load data
 
-Besides using `docker exec` directly for data import, we can also enter the container for data loading. The basic process is similar to [4.5.1](#451-use-docker-exec-to-load-data-directly).
+You can also open a shell in the container and run the same import commands.
 
-Enter the container by `docker exec -it loader bash` and execute the command:
+Open the shell with `docker exec -it loader bash`, then run the import.
 
 ```bash
 sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h server -p 8080
@@ -1303,54 +1346,52 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 The results of the execution will be similar to those shown in [4.5.1](#451-use-docker-exec-to-load-data-directly).
 
 #### 4.6 Import data by spark-loader
-> The current source uses Spark 3.2.2 and Scala 2.12. Other combinations need independent verification.
-> 
-The parameters of `spark-loader` are divided into two parts. Note: Because the abbreviations of 
-these two-parameter names have overlapping parts, please use the full name of the parameter. 
-And there is no need to guarantee the order between the two parameters.
-- hugegraph parameters (Reference: [hugegraph-loader parameter description](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-loader/#341-parameter-description) )
-- Spark task submission parameters (Reference: [Submitting Applications](https://spark.apache.org/docs/3.3.0/submitting-applications.html#content))
 
-Example:
+The current `master` API sink uses Spark `3.5.8`, Scala `2.12` and Java 17 on the driver and executors.
+The POM's Spark `3.2.2` dependency supplies compile-time APIs; it is not the runtime engine.
+Set `SPARK_HOME` and `JAVA_HOME`, then use the distribution's shaded Loader JAR with its launcher.
+
+Create the schema first and make data files readable by the executors. CSV and TEXT inputs need headerless UTF-8 data and an explicit mapping `header`.
+Other charsets and `has_header: true` are rejected. Load vertex data before edge data when the edges depend on those vertices.
+Replace the mapping path below with your prepared vertex mapping.
+
 ```bash
-sh bin/hugegraph-spark-loader.sh --master yarn \
---deploy-mode cluster --name spark-hugegraph-loader --file ./hugegraph.json \
---username admin --token admin --host xx.xx.xx.xx --port 8093 \
---graph graph-test --num-executors 6 --executor-cores 16 --executor-memory 15g
+bin/hugegraph-spark-loader.sh \
+  --master 'local[2]' --driver-memory 1g \
+  --file /path/to/vertex-mapping.json \
+  --host 127.0.0.1 --port 8080 --graph hugegraph --sink-type true
 ```
 
-`bin/hugegraph-spark-loader.sh` submits `org.apache.hugegraph.loader.spark.HugeGraphSparkLoader` through `${SPARK_HOME}/bin/spark-submit`, so `SPARK_HOME` has to point at a Spark installation. Every jar under `lib/` is put on the class path. The Spark application name defaults to `hugegraph-spark-loader` and can be changed through the `APP_NAME` environment variable.
+Pass Spark options such as `--master`, `--conf` and `--jars` to the launcher alongside Loader options.
+Additional JDBC drivers need explicit `--jars`; copying them into `lib/` does not distribute them to executors.
+Query the target graph to verify counts and properties; the API sink's insertion counters do not report distributed writes.
 
-`bin/get-params.sh` splits the command line: only the options below are handed to the loader, every other argument is passed to `spark-submit` unchanged. The splitter matches long option names only, so short forms such as `-f` and `-g` are not recognised.
-
-```text
---graph --schema --host --port --username --token --protocol
---trust-store-file --trust-store-password --clear-all-data --clear-timeout
---incremental-mode --failure-mode --batch-insert-threads --single-insert-threads
---max-conn --max-conn-per-route --batch-size --max-parse-errors --max-insert-errors
---timeout --shutdown-timeout --retry-times --retry-interval --check-vertex
---print-progress --dry-run --sink-type --vertex-partitions --edge-partitions --help
-```
-
-`--file` is treated separately: with `--deploy-mode cluster` the mapping file is shipped to the executors through `--files` and the loader receives only its base name, otherwise the path is passed through as written.
-
-In this mode the loader reads FILE, HDFS and JDBC input sources; a KAFKA or GRAPH input source is rejected.
-
-By default (`--sink-type true`) each Spark partition opens a HugeClient and writes vertices and edges through the HugeGraph server API. With `--sink-type false` the loader generates HFiles and bulk-loads them into HBase instead, taking the table names and ZooKeeper settings from `--vertex-table-name`, `--edge-table-name`, `--hbase-zk-quorum`, `--hbase-zk-port`, `--hbase-zk-parent`, `--vertex-partitions` and `--edge-partitions`.
+This path rejects `--incremental-mode true` and `--failure-mode true`. Standalone Spark supports client deployment only.
+HBase bulkload (`--sink-type false`) is unsupported on Spark 3.5.8 / Java 17; keep an existing bulkload deployment on its separately validated
+released Loader/JVM/Spark/HBase environment.
+For details, see the [Spark migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/spark-java17.md).
 
 #### 4.7 Import data by flink-cdc-loader
 
-> The current source uses Flink 1.13.5 with flink-connector-mysql-cdc 2.2.1 and Scala 2.12. Other combinations need independent verification.
+The current `master` integration targets Flink `2.2.1`, MySQL CDC `3.6.0-2.2` and Java 17.
+Older examples using Flink 1.13.5 and CDC 2.2.1 belong to the previous implementation.
+Set `FLINK_HOME`; the submission JVM, JobManager and TaskManager must all use Java 17.
+Keep Flink's module-access options and exactly one shaded Loader JAR in the distribution's `lib/`.
 
-`bin/hugegraph-flinkcdc-loader.sh` submits `org.apache.hugegraph.loader.flink.HugeGraphFlinkCDCLoader` through `${FLINK_HOME}/bin/flink run`, so `FLINK_HOME` has to be set. The job captures MySQL change events with Flink CDC and applies them to the graph, which keeps the graph in step with the source tables.
+Each mapping needs a MySQL JDBC input with `url`, `database`, `table`, `username` and `password`.
+Set MySQL `binlog_row_image=FULL`. UPDATE events require explicit, nonempty `update_strategies` and unchanged graph IDs;
+changes to vertex IDs, edge endpoints or sort keys are rejected. CDC also rejects `--dry-run true` and `--use-prefilter true`.
 
-The mapping file uses the same format as for the command-line loader, but every input source has to be a JDBC input source over MySQL: the loader takes `url`, `database`, `table`, `username` and `password` from it and parses the host and port out of `url`. Vertex and edge mappings work as usual. `--cdc-flush-interval` and `--cdc-sink-parallelism` in [3.4.1](#341-parameter-description) apply to this mode only.
-
-The command line is split by `bin/get-params.sh` in the same way as for `spark-loader`, with the arguments that are not loader options going to `flink run`.
-
-Example:
+Without a separator, all arguments go to Loader. To set Flink options, put them before `--` and Loader options after it.
+For a prepared mapping at `mysql-cdc.json`, submit with one sink writer.
 
 ```bash
-sh bin/hugegraph-flinkcdc-loader.sh --file ./mysql-cdc.json \
---host xx.xx.xx.xx --port 8080 --graph hugegraph --username admin --token admin
+bin/hugegraph-flinkcdc-loader.sh -p 1 -- \
+  --file ./mysql-cdc.json --host 127.0.0.1 --port 8080 \
+  --graph hugegraph --cdc-sink-parallelism 1
 ```
+
+Each mapping uses a single source reader and sink writer. `--cdc-sink-parallelism` defaults to `1`; other values are rejected.
+After `--`, Loader's `-p` means the Server port. Checkpoint flushing does not provide transactional graph writes or an exactly-once guarantee.
+Validate edge CDC and broader mappings in your test environment before deploying to production.
+For more details, see the [Flink CDC documentation](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/flink-cdc-java17.md).

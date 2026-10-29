@@ -14,7 +14,8 @@ Vermeer is a high-performance, memory-first graph computing framework written in
 
 The master handles communication, forwarding, and aggregation, with modest computation and resource usage. Workers store graph data and execute tasks, consuming most memory and CPU. gRPC handles internal communication; REST provides external APIs.
 
-At startup, built-in defaults are loaded first, followed by the `[default]` section of `config/<env>.ini` under the working directory, then explicit command-line overrides. For example, `--env=master` reads `config/master.ini`. The Docker image copies repository configuration to `/go/bin/config/` and works from `/go/bin/`. A host bind mount hides the bundled files, so it must contain every ini file used. The configuration reader does not read environment variables.
+At startup, built-in defaults are loaded first, followed by the `[default]` section of `config/<env>.ini` under the working directory, then explicit command-line overrides. For example, `--env=master` reads `config/master.ini`. The Docker image copies repository configuration to `/go/bin/config/` and works from `/go/bin/`. A host bind mount hides the bundled files, so it must contain every ini file used. Ordinary INI keys are not mapped automatically from environment variables. Dedicated deployment credential settings also support
+`VERMEER_PD_PASSWORD_FILE`, `VERMEER_PD_PEERS`, `VERMEER_HUGEGRAPH_CREDENTIALS_FILE` and the documented token-factor/password file settings.
 
 Default ports:
 
@@ -37,10 +38,53 @@ flowchart LR
 
 ### 1.2 Running Vermeer
 
+> [!DETAILS]- Helm: Deploy Vermeer with HugeGraph and Hubble
+> The HugeGraph Helm Chart supports deploying the native Vermeer in-memory graph computing engine, disabled by default.
+> From the HugeGraph repository root, enable Vermeer with:
+>
+> ```bash
+> helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
+>   -f helm/hugegraph/values-single.yaml \
+>   --set vermeer.enabled=true --set vermeer.mode=standalone \
+>   --wait --timeout 20m
+> ```
+>
+> ```filetree {wrap=true title="Vermeer Core Files and Layout"}
+> helm/hugegraph/
+>   examples/
+>     values-vermeer-standalone.yaml # Standalone preset (Master and Worker run in a single Pod)
+>     values-vermeer-cluster.yaml    # Cluster preset (dedicated Master Pod + distributed Worker Pods)
+>   templates/
+>     vermeer-master.yaml            # Master scheduling and coordination workload
+>     vermeer-worker.yaml            # Worker in-memory computing workload
+>     vermeer-auth-secret.yaml       # Admin credentials and Hubble internal service tokens
+>   docs/
+>     vermeer.md                     # Advanced algorithm parameters, API mapping and operations
+> ```
+>
+> **Architecture & Topologies**:
+> - **Standalone Mode (`standalone`)**: Master and Worker run as distinct containers in the same Pod with minimal overhead, suitable for local exploration and small-scale testing.
+> - **Cluster Mode (`cluster`)**: Set `vermeer.mode=cluster` and `vermeer.worker.replicas=3` to provision a dedicated Master coordinator Pod and multiple distributed Worker computing Pods.
+> - **Graph Service Integration**: Master queries PD via gRPC for partition topology, while Workers scan graph slices directly from Store via gRPC. Hubble automatically injects the Master URL and communication token, allowing users to load graphs and execute 15+ graph algorithms directly from the UI.
+>
+> **Key Operational Considerations**:
+> 1. **Preserve Metadata Namespace**: Retain the Chart default `metadataCluster: hg-test`. This key synchronizes Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER` so that Store can properly resolve schemas. Do not arbitrarily change this value on existing clusters to avoid `Schema missing` errors during load tasks.
+> 2. **Access Native Web Dashboard**: In easy mode, open `http://<reachable-node-ip>:<assigned-http-node-port>/` for Service `<release>-vermeer-master`.
+>    Strict mode defaults to ClusterIP; use `kubectl -n hugegraph port-forward svc/<release>-vermeer-master 6688:6688` for local access.
+>    `vermeer.service.type: null` inherits the mode; explicit `ClusterIP` stays private and explicit `NodePort` exposes authenticated HTTP/UI.
+>    Internal Master/Worker RPC and Worker HTTP stay private; `standalone` / `cluster` does not change this access choice.
+>    Enter the `<release>-vermeer-admin` Secret's `password` into **Admin credential** (no username) for a 24-hour session.
+>    New passwords use 6 random alphanumeric characters in easy mode or 16 in strict mode; upgrades and mode changes retain existing credentials.
+> 3. For image pinning, persistent volume sizing, and recovery procedures, refer to the
+>    [Helm Optional Engines Guide](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) and
+>    [Vermeer Deployment Guide](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md).
+
 > [!WARNING]
 > In production, enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum permissions; retain `audit-*.log`. Server Auth does not protect independent Vermeer, PD, or Store APIs. Restrict these HTTP/gRPC ports to trusted networks and callers, and configure access controls at the Vermeer external entry point.
 >
-> `master.ini` defaults to `auth=none`, disabling authentication for ordinary and administrative APIs. Local examples publish loopback only. Before remote access, enable `auth=token` or restrict callers through a protected network or gateway.
+> Manual standalone deployments default to `auth=none` in `master.ini`, and the Docker examples below publish to loopback only.
+> When deploying manually for remote access, always enable `auth=token`. The Helm deployment requires token authentication in both modes
+> and exposes only native HTTP/UI through NodePort in easy mode by default.
 
 Both Docker options need a host configuration directory. From the Vermeer repository root, copy the supplied [`master.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/master.ini) and [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/worker.ini) templates. The mount hides image configuration under `/go/bin/config`, so never mount an empty directory or your entire home directory there:
 

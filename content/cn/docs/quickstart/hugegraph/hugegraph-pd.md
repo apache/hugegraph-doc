@@ -81,6 +81,9 @@ docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
 
 单独运行当前主线构建的 PD 时，先设置部署专用密钥，并把示例地址替换为容器可达的真实地址：
 
+下面的 `mkdir -p` 和非递归 `chown` 仅适用于新建空目录。复用旧 root 镜像写入的数据时，先停止 PD，
+执行一次 `sudo chown -R 10001:10001 /path/to/data`，再启动 UID 10001 镜像。
+
 ```bash
 export HG_PD_AUTH_SECRET_KEY="$(openssl rand -hex 24)"
 # master 构建的镜像以 UID 10001 运行，宿主机数据目录必须对该用户可写

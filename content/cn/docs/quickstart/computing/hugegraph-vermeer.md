@@ -14,7 +14,8 @@ Vermeer 是使用 Go 编写的高性能内存优先图计算框架，支持一�
 
 master 是负责通信、转发、汇总的节点，计算量和占用资源量较少。worker 是计算节点，用于存储图数据和运行计算任务，占用大量内存和 cpu。grpc 和 rest 模块分别负责内部通信和外部调用。
 
-启动时，程序先设置内置默认值，再读取工作目录下 `config/<env>.ini` 的 `[default]` 节，最后由显式命令行参数覆盖对应配置；例如 `--env=master` 读取 `config/master.ini`。Docker 镜像把仓库中的配置复制到 `/go/bin/config/`，并以 `/go/bin/` 为工作目录。挂载宿主机目录到 `/go/bin/config` 会遮住镜像自带文件，因此该目录必须包含实际使用的 ini 文件。配置读取器不从环境变量取值。
+启动时，程序先设置内置默认值，再读取工作目录下 `config/<env>.ini` 的 `[default]` 节，最后由显式命令行参数覆盖对应配置；例如 `--env=master` 读取 `config/master.ini`。Docker 镜像把仓库中的配置复制到 `/go/bin/config/`，并以 `/go/bin/` 为工作目录。挂载宿主机目录到 `/go/bin/config` 会遮住镜像自带文件，因此该目录必须包含实际使用的 ini 文件。普通 INI 配置键不会自动映射环境变量。部署专用凭据设置还支持
+`VERMEER_PD_PASSWORD_FILE`、`VERMEER_PD_PEERS`、`VERMEER_HUGEGRAPH_CREDENTIALS_FILE` 及文档中的签名因子／密码文件设置。
 
 默认端口如下：
 
@@ -37,10 +38,50 @@ flowchart LR
 
 ### 1.2 运行方法
 
+> [!DETAILS]- Helm：与 HugeGraph、Hubble 一起部署 Vermeer
+> HugeGraph Helm Chart 支持一键拉起原生 Vermeer 内存图计算引擎，默认保持关闭。
+> 在 HugeGraph 仓库根目录下，开启 Vermeer 并启动：
+>
+> ```bash
+> helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
+>   -f helm/hugegraph/values-single.yaml \
+>   --set vermeer.enabled=true --set vermeer.mode=standalone \
+>   --wait --timeout 20m
+> ```
+>
+> ```filetree {wrap=true title="Vermeer 核心文件与配置结构"}
+> helm/hugegraph/
+>   examples/
+>     values-vermeer-standalone.yaml # 单机预设（单个 Pod 同时运行 Master 与 Worker 容器）
+>     values-vermeer-cluster.yaml    # 集群预设（独立 Master Pod + 多 Worker Pods 分布式计算）
+>   templates/
+>     vermeer-master.yaml            # Master 调度节点编排
+>     vermeer-worker.yaml            # Worker 内存计算节点编排
+>     vermeer-auth-secret.yaml       # 管理员密码与 Hubble 内部调用服务令牌
+>   docs/
+>     vermeer.md                     # Vermeer 算法调用、参数映射与运维指引
+> ```
+>
+> **架构与运行模式**：
+> - **单机模式（standalone）**：Master 与 Worker 运行在同一个 Pod 中，开销小，适合小规模图计算测试。
+> - **集群模式（cluster）**：设 `vermeer.mode=cluster` 与 `vermeer.worker.replicas=3`，提供独立的 Master 协调节点与多个分布式 Worker 计算节点。
+> - **图服务协同**：Master 通过 gRPC 向 PD 查询分区信息，Worker 直连 Store 扫描图数据切片；Hubble 会自动注入 Master 地址与通信令牌，在可视化界面中一键加载图并执行 15+ 种图算法。
+>
+> **核心注意事项**：
+> 1. **保持元数据命名空间一致**：保留 Chart 默认的 `metadataCluster: hg-test`。该值统一了 Server 的 `HG_SERVER_CLUSTER` 与 Store 的 `PD_CLUSTER`，确保 Schema 正确读取；切勿随意修改该值，以免计算加载时报 `Schema missing`。
+> 2. **访问原生 Web 控制台**：easy 模式通过 `<release>-vermeer-master` Service 分配的 HTTP NodePort，
+>    打开 `http://<可达节点IP>:<NodePort>/`；strict 默认 ClusterIP，可用 `kubectl -n hugegraph port-forward svc/<release>-vermeer-master 6688:6688` 在本机访问。
+>    `vermeer.service.type: null` 继承模式默认值，显式 `ClusterIP` 保持私有，显式 `NodePort` 则开放需要登录的 HTTP/UI。
+>    内部 Master/Worker RPC 与 Worker HTTP 仍保持私有；`standalone` / `cluster` 不改变上述访问选择。
+>    在 **Admin credential** 处填入 `<release>-vermeer-admin` Secret 的 `password`（无需用户名），登录后获得 24 小时会话。
+>    新密码在 easy 下为 6 位随机字母数字，strict 下为 16 位；升级与模式切换保留既有凭据。
+> 3. 详细镜像固定策略、持久卷配置及运维命令可参考 [Helm 可选引擎指南](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)
+>    与 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)。
+
 > [!WARNING]
 > 生产环境必须启用 HugeGraph Server [认证与授权](/cn/docs/config/config-authentication/)、IP 白名单和最小权限授权，并保留 `audit-*.log` 审计记录。Server Auth 不会保护 Vermeer、PD 和 Store 的独立接口；这些 HTTP、gRPC 端口必须限制在可信网络及调用方范围内，Vermeer 对外入口需配置访问控制。
 >
-> Vermeer 的 `master.ini` 默认 `auth=none`，普通及管理 API 均未启用鉴权。本机快速上手只发布回环端口；远程访问前必须启用 `auth=token`，或通过受保护网络、网关将访问限制到可信调用方。
+> 独立手动部署时，默认 `master.ini` 配置为 `auth=none`，下方 Docker 示例仅发布至回环地址；若需远程访问，务必在配置文件中启用 `auth=token`。Helm 部署在两种模式下均要求 Token 鉴权，easy 默认仅通过 NodePort 开放原生 HTTP/UI。
 
 下面两种 Docker 启动方式都需要先准备一个宿主机配置目录。请在 Vermeer 仓库根目录执行，将项目提供的 [`master.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/master.ini) 和 [`worker.ini`](https://github.com/apache/hugegraph-computer/blob/master/vermeer/config/worker.ini) 模板复制到该目录；挂载会覆盖镜像里的 `/go/bin/config`，所以不要把空目录或整个用户主目录挂进去：
 

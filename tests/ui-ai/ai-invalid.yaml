@@ -4,5 +4,6 @@ params:
     provider: kapa
     website_id: test-website-id
     source_groups:
-      en: test-latest-en
-      cn: ''
+      latest:
+        en: test-latest-en
+        cn: ''

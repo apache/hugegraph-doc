@@ -37,7 +37,7 @@ class VersionCacheTests(unittest.TestCase):
         self.write("versions.json", json.dumps(self.manifest))
         self.write("content/en/docs/page.md", "latest body")
         self.options = dict(site_origin="https://example.org/", historical_origin="https://example.org/",
-                            hugo_version="0.168.0", sass_version="1.105.2", go_version="1.27", webp_version="1.2", year=2026)
+                            hugo_version="0.168.0", go_version="1.27", webp_version="1.2", year=2026)
 
     def write(self, name, value):
         path = self.root / name
@@ -61,12 +61,20 @@ class VersionCacheTests(unittest.TestCase):
         self.manifest["versions"][0]["sha"] = "d" * 40
         after = self.plan()
         self.assertEqual(before["cacheKey"], after["cacheKey"])
+        self.assertEqual(before["cachePrefix"], after["cachePrefix"])
         self.assertEqual(before["versions"][1:], after["versions"][1:])
 
     def test_shell_changes_invalidate_history(self):
-        before = self.plan()["cacheKey"]
+        before = self.plan()
         self.write("layouts/partials/test.html", "new shell")
-        self.assertNotEqual(before, self.plan()["cacheKey"])
+        after = self.plan()
+        self.assertNotEqual(before["cacheKey"], after["cacheKey"])
+        self.assertNotEqual(before["cachePrefix"], after["cachePrefix"])
+
+    def test_source_tests_do_not_invalidate_history(self):
+        before = self.plan()
+        self.write("scripts/test_versioning.py", "changed assertions")
+        self.assertEqual(before, self.plan())
 
     def test_history_sha_only_invalidates_corresponding_version(self):
         before = self.plan()
@@ -74,20 +82,38 @@ class VersionCacheTests(unittest.TestCase):
         after = self.plan()
         self.assertNotEqual(before["versions"][1]["buildKey"], after["versions"][1]["buildKey"])
         self.assertEqual(before["versions"][2], after["versions"][2])
+        self.assertNotEqual(before["cacheKey"], after["cacheKey"])
+        self.assertEqual(before["cachePrefix"], after["cachePrefix"])
+        self.assertTrue(after["cacheKey"].startswith(after["cachePrefix"]))
+
+    def test_compatible_bundle_only_reuses_unchanged_history(self):
+        self.save()
+        before = self.plan()
+        self.manifest["versions"][2]["sha"] = "d" * 40
+        after = self.plan()
+        self.assertEqual(before["cachePrefix"], after["cachePrefix"])
+        self.assertNotEqual(before["cacheKey"], after["cacheKey"])
+        self.assertTrue(after["versions"][1]["reusable"])
+        self.assertFalse(after["versions"][2]["reusable"])
+        self.assertEqual([e["id"] for e in after["include"]], ["latest", "1.5"])
+        self.assertEqual(cache.build_groups(self.manifest, True), [
+            {"id": "0", "versions": ["latest", "1.7", "1.5"]}])
 
     def test_origins_toolchain_year_invalidate(self):
         for key in self.options:
             with self.subTest(key=key):
                 original = self.options[key]
-                before = self.plan()["cacheKey"]
+                before = self.plan()
                 self.options[key] = 2027 if key == "year" else original + "changed"
-                self.assertNotEqual(before, self.plan()["cacheKey"])
+                after = self.plan()
+                self.assertNotEqual(before["cacheKey"], after["cacheKey"])
+                self.assertNotEqual(before["cachePrefix"], after["cachePrefix"])
                 self.options[key] = original
 
-    def test_sass_upgrade_rejects_a_previously_valid_artifact(self):
+    def test_hugo_upgrade_rejects_a_previously_valid_artifact(self):
         self.save()
         self.assertTrue(self.plan()["versions"][1]["reusable"])
-        self.options["sass_version"] = "1.105.3"
+        self.options["hugo_version"] = "0.169.0"
         self.assertFalse(self.plan()["versions"][1]["reusable"])
         self.assertIn("1.7", [entry["id"] for entry in self.plan()["include"]])
 
@@ -141,8 +167,8 @@ class VersionCacheTests(unittest.TestCase):
             self.plan()
 
     def test_shared_navigation_scripts_and_assets_invalidate(self):
-        for path in ("data/version_routes.json", "content/en/docs/SUMMARY.md",
-                     "content/cn/docs/_nav/intro.md", "scripts/versioning.py",
+        for path in ("go.mod", "go.sum", "versions.json", "data/version_routes.json", "content/en/docs/SUMMARY.md",
+                     "content/cn/docs/_nav/intro.md", "scripts/versioning.py", "scripts/oink_module.py",
                      "dist/url-contract.json", "static/favicon.svg",
                      ".github/actions/setup-site-tools/action.yml"):
             with self.subTest(path=path):

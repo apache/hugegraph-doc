@@ -108,7 +108,8 @@ params:
   url_latest_version: https://hugegraph.apache.org/docs/
   offline_search: true
   offline_search_on_serve: true
-  offline_search_index: summary
+  # Include body-only configuration names and error messages in local search.
+  offline_search_index: content
   offline_search_summary_length: 70
   offline_search_max_results: 10
   # Consent-gated Kapa; set false to disable. Rollout evidence and source
@@ -117,18 +118,26 @@ params:
     enabled: true
     provider: kapa
     website_id: 0b277570-4740-451e-96fa-1e4ac1ac5e88
+    # Each version has independent language groups; absent versions show a local availability notice.
     source_groups:
-      en: 32769e2a-abfc-42f6-891f-09af6c123eb2
-      cn: ddce6795-32c8-40ac-8b27-73d73facd042
+      latest:
+        en: 32769e2a-abfc-42f6-891f-09af6c123eb2
+        cn: ddce6795-32c8-40ac-8b27-73d73facd042
+      '1.7':
+        en: 01c70391-63ab-40bb-b043-ca38f6549fd2
+        cn: 16ffb5cd-1502-4e5b-bcbb-d4df0eb75505
+      '1.5':
+        en: afcbb285-13d8-4668-bac3-93f559389a5f
+        cn: 48626579-051f-49a1-a16e-5bf2cabc59d0
   footer_center_info: ''
   # The compact ASF footer owns the legal line; global controls stay in header.
   copyright: false
   print:
     toc: true
   ui:
-    # Keep the familiar default; readers may choose the stable Paper style.
+    # Keep Slate by default; explicitly opt in to all four native styles.
     preset: slate
-    preset_menu: true
+    preset_menu: [paper, slate, ink, terminal]
     theme_color: '#532fc9'
     dark_mode:
       enable: true

@@ -33,6 +33,26 @@ const FALLBACK_CASES = {
   ]
 };
 
+// Body-only queries are separate from the 24 title/keyword metadata contracts.
+// Do not add search_keywords or boosts to make these full-text cases pass.
+const BODY_CASES = {
+  en: [
+    ["restserver.connection_max_requests", "/docs/config/config-option/"],
+    ["auth.token_secret", "/docs/config/config-authentication/"],
+    ["target-trust-store-password", "/docs/config/config-https/"],
+    ["rocksdb.min_write_buffer_number_to_merge", "/docs/config/config-backend-rocksdb/"]
+  ],
+  cn: [
+    ["restserver.connection_max_requests", "/cn/docs/config/config-option/"],
+    ["auth.token_secret", "/cn/docs/config/config-authentication/"],
+    ["target-trust-store-password", "/cn/docs/config/config-https/"],
+    ["rocksdb.min_write_buffer_number_to_merge", "/cn/docs/config/config-backend-rocksdb/"],
+    ["重启后继续有效", "/cn/docs/config/config-authentication/"],
+    ["全键布隆过滤器", "/cn/docs/config/config-backend-rocksdb/"],
+    ["服务端私钥", "/cn/docs/config/config-https/"]
+  ]
+};
+
 const metadataFixture = path.resolve(__dirname, "../../scripts/fixtures/community_search_queries.json");
 const metadataIntegrated = fs.existsSync(metadataFixture);
 const siteRoot = process.env.SITE_ROOT;
@@ -55,7 +75,7 @@ const cases = Object.fromEntries(
     const titles = new Map(records.map((record) => [record.ref, record.title]));
     return [
       locale,
-      localeCases.map(([query, expectedRef]) => {
+      [...localeCases, ...BODY_CASES[locale]].map(([query, expectedRef]) => {
         const expectedTitle = titles.get(expectedRef);
         if (!expectedTitle) throw new Error(`missing search record ${expectedRef}`);
         return [query, expectedRef, expectedTitle];
@@ -66,7 +86,7 @@ const cases = Object.fromEntries(
 
 for (const [locale, localeCases] of Object.entries(cases)) {
   for (const [query, expectedRef, expectedTitle] of localeCases) {
-    test(`summary Lunr ranks ${locale}: ${query}`, async ({ page }) => {
+    test(`local Lunr ranks ${locale}: ${query}`, async ({ page }) => {
       test.skip(!metadataIntegrated, "Search metadata fixture is unavailable");
       // Search uses the JSON index; loading documentation images adds no signal
       // and can leave unrelated image requests in flight during navigation.
@@ -80,26 +100,22 @@ for (const [locale, localeCases] of Object.entries(cases)) {
         .first()
         .locator('[role="option"]');
       await expect(pageResults.first(), `no Lunr results for ${query}`).toBeVisible();
-      await expect
-        .poll(() =>
-          pageResults.evaluateAll((rows) =>
-            rows
-              .slice(0, 3)
-              .map((row) => row.querySelector(".td-shell-search__item-title")?.textContent.trim())
-          )
-        )
-        .toContain(expectedTitle);
-      const titles = await pageResults.evaluateAll((rows) =>
-        rows.slice(0, 3).map((row) =>
-          row.querySelector(".td-shell-search__item-title")?.textContent.trim()
-        )
+      // OINK may append " › section" to a page's indexed title. Accept only
+      // that explicit suffix and activate the matching row within the top
+      // three, then verify its real destination rather than a title substring.
+      const expectedRank = () => pageResults.evaluateAll((rows, title) =>
+        rows.slice(0, 3).findIndex((row) => {
+          const label = row.querySelector(".td-shell-search__item-title")?.textContent.trim() || "";
+          return label === title || label.startsWith(title + " › ");
+        }), expectedTitle
       );
-      expect(
-        titles.includes(expectedTitle),
-        `${query} must rank ${expectedRef} in the top three`
-      ).toBe(true);
-      const target = pageResults.filter({ hasText: expectedTitle }).first();
-      await target.click();
+      await expect
+        .poll(expectedRank, { message: `${query} must rank ${expectedRef} in the top three` })
+        .toBeGreaterThanOrEqual(0);
+      const rank = await expectedRank();
+      expect(rank).toBeGreaterThanOrEqual(0);
+      expect(rank).toBeLessThan(3);
+      await pageResults.nth(rank).click();
       await expect(page).toHaveURL((url) => url.pathname === expectedRef);
     });
   }

@@ -29,7 +29,8 @@
     if (!node) return null;
     try {
       var config = JSON.parse(node.textContent || '{}');
-      return config.websiteId && config.sourceGroupId ? config : null;
+      return config.websiteId && (config.sourceGroupId ||
+        (config.labels && config.labels.unavailable)) ? config : null;
     } catch (_) {
       return null;
     }
@@ -157,7 +158,7 @@
     function renderLauncher(hidden) {
       if (!launcher) return;
       launcher.hidden = hidden;
-      if (consented) launcher.setAttribute('aria-haspopup', 'dialog');
+      if (consented && config.sourceGroupId) launcher.setAttribute('aria-haspopup', 'dialog');
       else launcher.removeAttribute('aria-haspopup');
     }
     renderLauncher(false);
@@ -335,6 +336,12 @@
     function activate(query, submit, trigger, context) {
       if (state === 'loading' || state === 'consent') return;
       if (context && context.signal.aborted) return Promise.resolve();
+      if (!config.sourceGroupId) {
+        if (context && !context.handoff()) return Promise.resolve();
+        renderState('unavailable', config.labels.unavailable);
+        if (launcher) launcher.focus();
+        return Promise.resolve();
+      }
       lastTrigger = trigger || documentObject.activeElement;
       var completion;
       if (context) {
@@ -386,7 +393,7 @@
         }
       });
       consent.querySelector('[data-hg-ai-continue]').addEventListener('click', function () {
-        if (consented || state === 'loading') return;
+        if (!config.sourceGroupId || consented || state === 'loading') return;
         var request = pending || { query: '', submit: false };
         if (!pending) lastTrigger = launcher;
         pending = null;
@@ -408,8 +415,10 @@
       }
     }
 
-    activeQueue = preinitialize(windowObject);
-    invokeKapa(windowObject, 'onModalClose', restoreFocus);
+    if (config.sourceGroupId) {
+      activeQueue = preinitialize(windowObject);
+      invokeKapa(windowObject, 'onModalClose', restoreFocus);
+    }
 
     return {
       activate: activate,
@@ -437,7 +446,7 @@
           return [{
             id: 'ask',
             title: config.labels.ask + ': “' + context.query + '”',
-            description: config.historical ? config.labels.latest + '.' : '',
+            description: config.labels.version || '',
             icon: 'fa-solid fa-wand-magic-sparkles',
           }];
         },

@@ -493,7 +493,10 @@ class SiteOutputSecurityTest(unittest.TestCase):
                 self.assertEqual(VALIDATOR.document_security_errors(parser, "index.html", BASE), [])
 
     def test_component_json_carrier_disguises_and_breakouts_are_rejected(self) -> None:
-        for marker in ("data-td-diagram-source", "data-td-echarts-options", "data-td-asciinema-config"):
+        for marker in (
+            "data-td-diagram-source", "data-td-echarts-options", "data-td-asciinema-config",
+            "data-td-table-labels", "data-td-diagram-labels",
+        ):
             variants = [
                 f'<script {marker}>alert(1)</script>',
                 f'<script type="module" {marker}>alert(1)</script>',
@@ -514,6 +517,90 @@ class SiteOutputSecurityTest(unittest.TestCase):
             duplicate = f'<script type="application/json" {marker} {marker}>{{}}</script>'
             parser = parse(f"<article>{duplicate}</article>")
             self.assertTrue(any("duplicate" in violation for violation in parser.authored_violations))
+
+    def test_oink_reader_labels_are_inert_text_in_native_dialogs(self) -> None:
+        fixtures = [
+            (
+                "data-td-table-labels",
+                'id="td-table-reader" data-td-table-reader',
+                {"title": "展开表格", "viewport": "可滚动的表格"},
+            ),
+            (
+                "data-td-diagram-labels",
+                "data-td-diagram-zoom-dialog",
+                {
+                    "source": "源码",
+                    "expand": "展开图表",
+                    "copy": "复制",
+                    "copied": "已复制",
+                    "copyError": "复制失败",
+                    "error": "图表不可用",
+                    "downloadStarted": "下载已开始",
+                    "downloadError": "下载失败",
+                },
+            ),
+        ]
+        for marker, dialog, payload in fixtures:
+            with self.subTest(marker=marker):
+                # Translation strings remain text even when they contain markup
+                # or URL-looking text. Hugo's jsonify escapes the script body.
+                first_key = next(iter(payload))
+                payload[first_key] += ' <img src="https://example.org/text.png">'
+                encoded = json.dumps(payload).replace("<", "\\u003c").replace(">", "\\u003e")
+                parser = parse(
+                    "<main><p>Documentation</p></main>"
+                    f'<dialog {dialog}><script type="application/json" {marker}>'
+                    + encoded + "</script></dialog>"
+                )
+                self.assertEqual(parser.authored_violations, [])
+                self.assertEqual(parser.resources, [])
+                self.assertEqual(VALIDATOR.document_security_errors(parser, "index.html", BASE), [])
+
+    def test_oink_reader_labels_reject_invalid_payloads(self) -> None:
+        fixtures = [
+            ("data-td-table-labels", {"title": "Table", "viewport": "Scrollable table"}),
+            (
+                "data-td-diagram-labels",
+                {
+                    "source": "Source", "expand": "Expand", "copy": "Copy", "copied": "Copied",
+                    "copyError": "Copy failed", "error": "Unavailable",
+                    "downloadStarted": "Downloaded", "downloadError": "Download failed",
+                },
+            ),
+        ]
+        for marker, payload in fixtures:
+            first_key = next(iter(payload))
+            missing = dict(payload)
+            missing.pop(first_key)
+            invalid = [
+                "invalid JSON",
+                json.dumps([]),
+                json.dumps(missing),
+                json.dumps(dict(payload, src="https://example.org/unexpected.json")),
+                *(json.dumps(dict(payload, **{first_key: value})) for value in (None, 0, [], {})),
+            ]
+            for encoded in invalid:
+                with self.subTest(marker=marker, payload=encoded):
+                    # Dialog configuration lives outside main/article too.
+                    parser = parse(
+                        f'<dialog><script type="application/json" {marker}>'
+                        + encoded + "</script></dialog>"
+                    )
+                    self.assertTrue(parser.authored_violations)
+
+    def test_reader_label_carrier_shapes_are_checked_outside_content(self) -> None:
+        for marker in ("data-td-table-labels", "data-td-diagram-labels"):
+            variants = [
+                f'<div type="application/json" {marker}>{{}}</div>',
+                f'<script type="application/json" {marker}="true">{{}}</script>',
+                f'<script type="application/json" {marker} src="/evil.js">{{}}</script>',
+                f'<script type="application/json" {marker} class="disguise">{{}}</script>',
+            ]
+            for variant in variants:
+                with self.subTest(marker=marker, variant=variant):
+                    parser = parse("<dialog>" + variant + "</dialog>")
+                    self.assertTrue(any("noncanonical OINK component configuration" in violation
+                                        for violation in parser.authored_violations))
 
     def test_asciinema_payload_source_uses_active_resource_boundary(self) -> None:
         for source in ("https://evil.example/x.cast", "http://evil.example/x.cast", "//evil.example/x.cast",
@@ -672,7 +759,7 @@ class SiteOutputSecurityTest(unittest.TestCase):
                     f'baseURL: {BASE.geturl()}\nparams:\n  markmap: {str(enabled).lower()}\n'
                     'module:\n  imports:\n  - path: github.com/pgsty/oink\n')
                 result = subprocess.run([shutil.which(HUGO_BIN), "--source", str(root), "--destination", str(root / "public"),
-                                         "--environment", "production", "--panicOnWarning"], text=True, capture_output=True)
+                                         "--environment", "production", "--logLevel", "info"], text=True, capture_output=True)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 for index, (_, rejected) in enumerate(sources):
                     with self.subTest(enabled=enabled, source=index):

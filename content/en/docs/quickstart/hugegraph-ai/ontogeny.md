@@ -36,7 +36,7 @@ The ontology canvas provides a comprehensive view of domain objects, relations, 
 
 ```bash {tab="Docker (Recommended)"}
 git clone -b ontogeny https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai
+cd hugegraph-ai/ontogeny
 
 # Start self-contained demo environment (SQLite + seeded data)
 docker compose up -d
@@ -48,7 +48,7 @@ docker compose up -d
 
 ```bash {tab="From Source"}
 git clone -b ontogeny https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai
+cd hugegraph-ai/ontogeny
 
 # Install backend with MCP dependencies
 uv venv && source .venv/bin/activate && uv pip install -e '.[mcp]'
@@ -72,7 +72,7 @@ ONTOGENY_LLM_BASE_URL=http://<ollama>:11434 ONTOGENY_LLM_MODEL=qwen3:27b ontogen
 > The API uses session/bearer authentication. The `X-Ontogeny-Principal` evaluation header is enabled by default in development mode (disable via `ONTOGENY_DEV_AUTH=0`).
 > In production environments, disable this header and authenticate all agent and user requests with valid credentials.
 
-If you already have a domain package, navigate to **New domain → Import ontology package** in the sidebar, and upload a zip package (e.g., `domains/product-manufacturing.zip`) to validate, install, and activate in one step.
+If you already have a domain package, navigate to **New domain → Import ontology package** in the sidebar, and upload a zip package (e.g., zipped from `domains/product-manufacturing`) to validate, install, and activate in one step.
 
 The Overview dashboard shows ontology metrics, agent activities, and runtime status:
 
@@ -84,7 +84,7 @@ Point any MCP-compatible client (such as Claude Desktop, Cursor, LangGraph, or t
 
 1. **Initialize Session**: Call `agent_open_session(plugin, task)` to establish governed context for a specified plugin.
 2. **Execute Governed Calls**: Supply `plugin`, `session_id`, and `thought` with each invocation to adhere to quotas and policy controls.
-3. **Approval Gates**: Write operations pause in the console awaiting administrator approval; requests without a session remain read-only.
+3. **Approval Gates**: Write operations pause in the console awaiting administrator approval by default (`approval.writes=confirm`); actions whitelisted under `approval.auto_actions` execute automatically, while plugins configured with `approval.writes=never` reject write attempts entirely. Invocations without a session remain read-only.
 {.steps}
 
 The console includes a floating agent dialog for executing tasks, querying ontology definitions, or triggering RSI proposals:

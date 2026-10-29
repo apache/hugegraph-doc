@@ -36,7 +36,7 @@ weight: 7
 
 ```bash {tab="Docker (推荐)"}
 git clone -b ontogeny https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai
+cd hugegraph-ai/ontogeny
 
 # 启动自包含演示环境（SQLite + 预置种子数据）
 docker compose up -d
@@ -48,7 +48,7 @@ docker compose up -d
 
 ```bash {tab="源码编译"}
 git clone -b ontogeny https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai
+cd hugegraph-ai/ontogeny
 
 # 后端安装（包含 mcp 依赖）
 uv venv && source .venv/bin/activate && uv pip install -e '.[mcp]'
@@ -72,7 +72,7 @@ ONTOGENY_LLM_BASE_URL=http://<ollama>:11434 ONTOGENY_LLM_MODEL=qwen3:27b ontogen
 > API 采用 session/bearer 鉴权。本地评估用的请求头 `X-Ontogeny-Principal` 在开发模式下默认启用（可通过 `ONTOGENY_DEV_AUTH=0` 关闭）。
 > 生产环境务必关闭该开发请求头，所有 Agent 与用户请求必须使用真实身份凭据。
 
-已有现成领域包时，可在控制台侧栏选择 **新域 → 导入本体包**，上传 zip 压缩包（如 `domains/product-manufacturing.zip`）快速安装与激活。
+已有现成领域包时，可在控制台侧栏选择 **新域 → 导入本体包**，上传领域 zip 压缩包（如将 `domains/product-manufacturing` 目录打包为 zip）快速安装与激活。
 
 运行看板展示模型规模、Agent 交互与系统状态：
 
@@ -84,7 +84,7 @@ ONTOGENY_LLM_BASE_URL=http://<ollama>:11434 ONTOGENY_LLM_MODEL=qwen3:27b ontogen
 
 1. **开启受控会话**：通过 `agent_open_session(plugin, task)` 为指定插件初始化会话上下文。
 2. **携带治理上下文调用**：工具调用时传递 `plugin`、`session_id` 和 `thought`，统一遵循配额与策略拦截。
-3. **写入门禁审核**：写操作默认在控制台挂起等待人工审批，无会话的请求默认仅限只读。
+3. **写入门禁审核**：写操作默认在控制台挂起等待管理员审批（`approval.writes=confirm`）；对于配置为 `approval.auto_actions` 白名单内的操作可自动执行，配置为 `never` 时则完全拒绝写入；无会话的请求默认仅限只读。
 {.steps}
 
 控制台提供悬浮 Agent 对话入口，可直接执行任务调用、本体问答或触发 RSI 提案：

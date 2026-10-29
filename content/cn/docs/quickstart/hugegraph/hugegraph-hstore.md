@@ -149,7 +149,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 #### 4.1 application.yml
 
-以下配置参考表核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 的发行目录值和 Java 默认注入值，其中 `rocksdb.total_memory_size`、`rocksdb.write_buffer_size` 和 `raft.disruptorBufferSize` 三行描述的是 apache/hugegraph#3355 的行为；1.7.0 发布包请使用其版本标签对应的配置文件，不要跨版本覆盖。
+以下配置参考表核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 的发行目录值和 Java 默认注入值，其中 `rocksdb.total_memory_size`、`rocksdb.write_buffer_size` 和 `raft.disruptorBufferSize` 三行核对的是合入 apache/hugegraph#3355 的提交 `edd7cee77`；1.7.0 发布包请使用其版本标签对应的配置文件，不要跨版本覆盖。
 
 #### 4.2 application-pd.yml
 

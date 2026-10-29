@@ -150,7 +150,7 @@ Store reads two files under `conf/`. Release 1.7.0 sources: [application.yml](ht
 
 #### 4.1 application.yml
 
-The following tables were checked against distribution values and Java defaults at Server master commit `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4`, except the `rocksdb.total_memory_size`, `rocksdb.write_buffer_size` and `raft.disruptorBufferSize` rows, which describe apache/hugegraph#3355. Use tagged configuration for release 1.7.0 without replacing it with another version's files.
+The following tables were checked against distribution values and Java defaults at Server master commit `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4`, except the `rocksdb.total_memory_size`, `rocksdb.write_buffer_size` and `raft.disruptorBufferSize` rows, which were checked at commit `edd7cee77`, where apache/hugegraph#3355 was merged. Use tagged configuration for release 1.7.0 without replacing it with another version's files.
 
 #### 4.2 application-pd.yml
 

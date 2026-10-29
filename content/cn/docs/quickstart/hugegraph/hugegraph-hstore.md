@@ -110,7 +110,12 @@ set -a; . ./.env; set +a
 
 单独运行当前主线构建的 Store 时，将示例地址换成 Store 与 PD 均可路由的实际地址：
 
+下面的 `mkdir -p` 和非递归 `chown` 仅适用于新建空目录。复用旧 root 镜像写入的数据时，先停止 Store，
+执行一次 `sudo chown -R 10001:10001 /path/to/storage`，再启动 UID 10001 镜像。
+
 ```bash
+# master 构建的镜像以 UID 10001 运行，宿主机数据目录必须对该用户可写
+mkdir -p /path/to/storage && sudo chown 10001:10001 /path/to/storage
 docker run -d \
   -p 8520:8520 -p 8500:8500 -p 8510:8510 \
   -e HG_STORE_PD_ADDRESS=192.168.1.10:8686 \

@@ -22,17 +22,17 @@ HugeGraph supports fast storage and queries for tens of billions of vertices and
 ## Ecosystem Overview
 
 ```text
-┌────────────────────────────────────────────────────────────────────┐
-│            Apache HugeGraph - Full-Stack Graph System             │
-├──────────────────┬────────────────────┬────────────────────────────┤
-│  Graph DB (OLTP) │    Graph Compute   │          Graph AI          │
-│  HugeGraph       │  Vermeer (Memory)  │       HugeGraph-AI         │
-│  Server          │  Computer (Dist.)  │     GraphRAG / GNN / Py    │
-├──────────────────┴────────────────────┴────────────────────────────┤
-│                       HugeGraph Toolchain                          │
-│ Hubble | Loader | Client (Java/Go/Python; Rust WIP) | Spark | Tools│
-│ SeaTunnel 3.0+: Source + Sink                                      │
-└────────────────────────────────────────────────────────────────────┘
++----------------------------------------------------------------------+
+|              Apache HugeGraph - Full-Stack Graph System              |
++------------------+--------------------+------------------------------+
+| Graph DB (OLTP)  | Graph Compute      | Graph AI                     |
+| HugeGraph        | Vermeer (Memory)   | HugeGraph-AI                 |
+| Server           | Computer (Dist.)   | GraphRAG / GNN / Py          |
++------------------+--------------------+------------------------------+
+|                         HugeGraph Toolchain                          |
+| Hubble | Loader | Client (Java/Go/Python; Rust WIP) | Spark | Tools  |
+| SeaTunnel 3.0+: Source + Sink                                        |
++----------------------------------------------------------------------+
 ```
 
 ## HugeGraph Server (OLTP Graph Engine)

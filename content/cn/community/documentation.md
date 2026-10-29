@@ -41,7 +41,7 @@ hugo mod graph
    ```
 
 2. 打开[本地站点](http://localhost:1313/)，检查所改页面的中英文版本。
-3. 执行遇到警告即失败的严格构建：
+3. 执行与 CI 一致、保留诊断日志的生产构建：
 
    ```bash
    scripts/hugo.sh build

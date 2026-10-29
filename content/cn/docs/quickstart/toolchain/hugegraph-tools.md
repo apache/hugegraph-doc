@@ -6,7 +6,7 @@ weight: 3
 
 ### 1 HugeGraph-Tools概述
 
-HugeGraph-Tools 是 HugeGraph 的自动化部署、管理和备份/还原组件。
+HugeGraph-Tools 提供图与任务管理、备份和恢复命令，也保留旧版 Server/Studio 的部署命令。
 
 > **测试指南**：如需在本地运行 Tools 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
 
@@ -19,7 +19,7 @@ HugeGraph-Tools 包含在 Toolchain 发布包中，可以下载发布包，也�
 
 #### 2.1 下载二进制tar包
 
-下载最新版本的 HugeGraph-Toolchain 包, 然后进入 tools 子目录
+以下以已发布的 HugeGraph-Toolchain `1.7.0` 为例。其他发布版本见[下载页](/cn/docs/download/download/)。
 
 ```bash
 export VERSION=1.7.0
@@ -32,42 +32,83 @@ cd "${ARCHIVE}/apache-hugegraph-tools-incubating-${VERSION}"
 ```
 
 #### 2.2 下载源码编译安装
-源码编译前请确保安装了wget命令
 
-下载最新版本的 HugeGraph-Toolchain 源码包, 然后根目录编译或者单独编译 tool 子模块：
+任选一种方式构建发布版 `1.7.0` Tools，开始前先安装 Maven 和 JDK 11。源码包方式还需要 `wget`。
+两段命令均包含编译和进入生成目录，最后用 `bin/hugegraph help` 查看可用命令。
 
-```bash
-# 1. get from github
-git clone https://github.com/apache/hugegraph-toolchain.git
+```bash {tab="Git 标签"}
+git clone --branch 1.7.0 --single-branch https://github.com/apache/hugegraph-toolchain.git
+cd hugegraph-toolchain
+mvn package -pl hugegraph-tools -am -DskipTests -ntp
+cd hugegraph-tools/apache-hugegraph-tools-incubating-1.7.0
+bin/hugegraph help
+```
 
-# 2. 下载发布版源码包
+```bash {tab="源码包"}
 export VERSION=1.7.0
 export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
 wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
-```
-
-编译生成 tar 包:
-
-```bash
-cd hugegraph-toolchain
+tar zxf "${ARCHIVE}-src.tar.gz"
+cd "${ARCHIVE}-src"
 mvn package -pl hugegraph-tools -am -DskipTests -ntp
+cd "hugegraph-tools/apache-hugegraph-tools-incubating-${VERSION}"
+bin/hugegraph help
 ```
 
-生成的 tar 包位于 `hugegraph-tools/target/apache-hugegraph-tools-${version}.tar.gz`，同时会在 `hugegraph-tools/apache-hugegraph-tools-${version}` 生成解压后的目录（包含 `bin/` 和 `lib/`）
+编译还会在源码根目录下生成 `hugegraph-tools/target/apache-hugegraph-tools-incubating-1.7.0.tar.gz`。
 
+#### 2.3 构建当前源码 {#build-current-source}
+
+若需要使用 master 分支未发布的新特性，可按以下步骤从源码构建 Tools（当前 master 以 1.8 为基线，需 JDK 17、Maven 3.6.3+ 与 Python 3.9+）：
+
+1. **获取 Toolchain 源码**
+
+   ```bash
+   git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
+   cd hugegraph-toolchain
+   ```
+
+1. **构建配套 Server SDK**
+
+   执行以下脚本下载 Server 源码并将配套 SDK 安装到独立 Maven 仓库：
+
+   ```bash
+   java -version
+   mvn -version
+   candidate_dir=$(mktemp -d)
+   mkdir -p "$candidate_dir/m2"
+   bash hugegraph-client/assembly/travis/install-candidate-sdk.sh \
+     master "$candidate_dir/server" "$candidate_dir/m2"
+   ```
+
+   详细说明见 [Java 17 迁移指引](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)。
+
+1. **打包 Tools**
+
+   ```bash
+   mvn -Dmaven.repo.local="$candidate_dir/m2" \
+     -Dsdk.validation.mode=candidate \
+     package -pl hugegraph-tools -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+   cd hugegraph-tools/apache-hugegraph-tools-*
+   bin/hugegraph help
+   ```
+{.steps}
+
+使用这份源码构建时保留 SDK 仓库。master 分支生成目录名不含 `incubating`。
 
 ### 3 使用
 
 #### 3.1 功能概览
 
-解压后，进入 apache-hugegraph-tools-${version} 目录，可以使用`bin/hugegraph`或者`bin/hugegraph help`来查看 usage 信息，使用`bin/hugegraph help <子命令>`查看单个子命令的 usage。主要分为：
+进入解压或编译生成的 Tools 目录，用 `bin/hugegraph help` 查看命令列表，
+用 `bin/hugegraph help <子命令>` 查看单个命令的用法。可用命令分为以下几类。
 
 - 图管理类，graph-mode-set、graph-mode-get、graph-list、graph-get、graph-clear、graph-create、graph-clone 和 graph-drop
 - 异步任务管理类，task-list、task-get、task-delete、task-cancel 和 task-clear
 - Gremlin类，gremlin-execute 和 gremlin-schedule
 - 备份/恢复类，backup、restore、migrate、schedule-backup 和 dump
 - 认证数据备份/恢复类，auth-backup 和 auth-restore
-- 安装部署类，deploy、clear、start-all 和 stop-all
+- 旧版 Server/Studio 部署，deploy、clear、start-all 和 stop-all
 
 ```bash
 Usage: hugegraph [options] [command] [command options]
@@ -75,20 +116,21 @@ Usage: hugegraph [options] [command] [command options]
 
 ##### 3.2 [options]-全局变量
 
-`options`是 HugeGraph-Tools 的全局变量，可以在 hugegraph-tools/bin/hugegraph 中配置,包括：
+以下全局选项可以通过命令行或环境变量设置。
 
-- --graph，HugeGraph-Tools 操作的图的名字，默认值是 hugegraph
-- --url，HugeGraph-Server 的服务地址，默认是 http://127.0.0.1:8080
-- --user，当 HugeGraph-Server 开启认证时，传递用户名
-- --password，当 HugeGraph-Server 开启认证时，传递用户的密码
-- --timeout，连接 HugeGraph-Server 时的超时时间，默认是 30s
-- --trust-store-file，证书文件的路径，当 --url 使用 https 时，HugeGraph-Client 使用的 truststore 文件，默认为空，代表使用 hugegraph-tools 内置的 truststore 文件 conf/hugegraph.truststore
-- --trust-store-password，证书文件的密码，当 --url 使用 https 时，HugeGraph-Client 使用的 truststore 的密码，默认为空，代表使用 hugegraph-tools 内置的 truststore 文件的密码
-- --throw-mode，HugeGraph-Tools 出错时是否直接抛出异常，而不是打印错误信息后退出，默认为 false（主要用于测试）
+- `--graph` 指定要操作的图，默认为 `hugegraph`。
+- `--url` 指定 Server 地址，默认为 `http://127.0.0.1:8080`。
+- `--user` 在 Server 启用认证时提供用户名。
+- `--password` 提供该用户的密码。
+- `--timeout` 设置连接超时时间，默认为 30 秒。
+- `--trust-store-file` 指定 HTTPS truststore，留空时使用内置的 `conf/hugegraph.truststore`。
+- `--trust-store-password` 提供其密码，留空时使用内置 truststore 的密码。
+- `--throw-mode` 默认为 `false`，出错时打印错误并退出。设为 `true` 时抛出异常，主要用于测试。
 
-> 连接协议由 --url 的 scheme 决定：使用 `https://...` 即通过 https 连接。--trust-store-file 和 --trust-store-password 只能在 --url 使用 https 时设置，--user 和 --password 必须同时提供或同时省略。
+> `--url` 的 scheme 决定连接协议。使用 `https://...` 连接 HTTPS 时，才可设置 truststore 选项。
+> `--user` 和 `--password` 必须同时提供或同时省略。
 
-上述全局变量，也可以通过环境变量来设置。一种方式是在命令行使用 export 设置临时环境变量，在该命令行关闭之前均有效
+使用 `export` 设置的环境变量对当前终端及其启动的命令生效。
 
 
 | 全局变量                   | 环境变量                           | 示例                                                 |
@@ -114,7 +156,7 @@ export HUGEGRAPH_GRAPH=hugegraph
 ./bin/hugegraph gremlin-execute --script 'g.V().count()'
 ```
 
-另一种方式是在 bin/hugegraph 脚本中设置环境变量：
+也可以在 `bin/hugegraph` 脚本中设置这些变量。
 
 ```text
 #!/bin/bash
@@ -258,6 +300,10 @@ export HUGEGRAPH_GRAPH=hugegraph
     - -D，用 -Dkey=value 的模式指定动态参数，用来从 HDFS 恢复数据时，指定 HDFS 的配置项，例如：-Dfs.default.name=hdfs://localhost:9000
 
 ##### 3.8 安装部署类
+
+注意：此处的安装部署命令仅适用于早期历史版本（Server 0.6.1~0.10.4 与 Studio 0.6.1~0.10.0），不支持当前版本的 HugeGraph Server 或 Hubble。
+新部署请参考 [Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/) 与 [Hubble 快速上手](/cn/docs/quickstart/toolchain/hugegraph-hubble/)，
+以下说明仅供维护旧环境参考。
 
 - deploy，一键下载、安装和启动 HugeGraph-Server 和 HugeGraph-Studio
     - -v，必填项，指定要安装的 HugeGraph-Server 和 HugeGraph-Studio 版本，必须是 bin/version-map.yaml 中列出的版本之一（0.6、0.7、0.8、0.9、0.10），脚本据此映射到对应的 server 和 studio 发布版本

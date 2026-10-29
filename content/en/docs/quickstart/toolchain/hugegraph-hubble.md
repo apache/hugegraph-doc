@@ -12,11 +12,26 @@ and switch smoothly between graph, table, and JSON results. This guide uses **st
 
 For use with an HStore distributed cluster, read the foundational operations here first, then consult the
 [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
-This guide aligns with the Toolchain and Server `master` branches (both currently `1.8.0`).
+This guide aligns with the Toolchain and Server `master` branches (currently based on 1.8, unreleased). Docker `latest` is a moving tag; use released versions for production deployments.
+
+The screenshots show the HugeGraph Hubble interface in action; features and workflows are identical in both English and Chinese.
 
 > [!WARNING]
 > Do not expose unauthenticated Hubble or Server instances directly to the public internet. In production, use HTTPS, container isolation,
 > [authentication and authorization](/docs/config/config-authentication/), and network allowlists.
+
+Jump directly to a task below. If this is your first visit, start with the standalone deployment:
+
+- [Start and load a sample](#start-the-standalone-pair)
+
+  Start the two services and load the People & Software Demo Graph.
+- [Query and visualize](#gql-workspace-query-and-explore-relationships)
+
+  Run Gremlin and inspect graph, table, or JSON results.
+- [Import your own data](#data-source-management-prepare-the-input)
+
+  Prepare CSV, map fields, and verify the imported records.
+{.cards}
 
 ## Start the standalone pair
 
@@ -24,37 +39,44 @@ Use the main repository's [docker/docker-compose.yml](https://github.com/apache/
 instead of writing custom Compose files. It already integrates RocksDB Server and Hubble with networking, health checks, and data volumes;
 see the adjacent [README](https://github.com/apache/hugegraph/blob/master/docker/README.md) for deployment details.
 
-```bash
-git clone --branch master --single-branch --depth 1 https://github.com/apache/hugegraph.git
-cd hugegraph/docker
-```
+1. **Prepare the official Compose configuration.**
 
-If you already have the repository locally, navigate directly to its `docker/` directory. Compose automatically mounts
-[`conf/hubble/standalone.properties`](https://github.com/apache/hugegraph/blob/master/docker/conf/hubble/standalone.properties),
-which pre-configures `pd.enabled=false` and `server.direct_url=http://server:8080`. Because both services communicate over a shared Docker network,
-you do not need to configure Server endpoints per graph. Start Compose directly from `docker/` so relative file paths resolve correctly.
+   ```bash
+   git clone --branch master --single-branch --depth 1 https://github.com/apache/hugegraph.git
+   cd hugegraph/docker
+   ```
 
-Hubble publishes on host loopback port `8088` by default (controlled by `HUBBLE_PUBLISH_HOST`, defaulting to `127.0.0.1`), whereas Server publishes
-`8080` across all interfaces. For a local trial, set Server's `ports` in Compose to `127.0.0.1:8080:8080` to prevent exposing unauthenticated ports
-beyond loopback (set `HUBBLE_PUBLISH_HOST=0.0.0.0` if remote access to Hubble is required).
+   If you already have the repository locally, navigate directly to its `docker/` directory. Compose automatically mounts
+   [`conf/hubble/standalone.properties`](https://github.com/apache/hugegraph/blob/master/docker/conf/hubble/standalone.properties),
+   which pre-configures `pd.enabled=false` and `server.direct_url=http://server:8080`. Because both services communicate over a shared Docker network,
+   you do not need to configure Server endpoints per graph. Start Compose directly from `docker/` so relative file paths resolve correctly.
 
-Choose an unused project name for this trial and keep these variables in the same terminal session:
+   Hubble publishes on host loopback port `8088` by default (controlled by `HUBBLE_PUBLISH_HOST`, defaulting to `127.0.0.1`), whereas Server publishes
+   `8080` across all interfaces. For a local trial, set Server's `ports` in Compose to `127.0.0.1:8080:8080` to prevent exposing unauthenticated ports
+   beyond loopback (set `HUBBLE_PUBLISH_HOST=0.0.0.0` if remote access to Hubble is required).
 
-```bash
-export HUGEGRAPH_VERSION=latest
-export HUBBLE_IMAGE=hugegraph/hubble:latest
-export HUBBLE_DEMO_PROJECT="hubble-demo-$(date +%Y%m%d-%H%M%S)"
-docker compose ls
-docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml pull
-docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml up -d --wait
-docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml ps
-curl -fsS http://127.0.0.1:8080/versions
-```
+1. **Start and check the services.**
 
-Once services are healthy, open <http://127.0.0.1:8088>. When `HUGEGRAPH_ADMIN_PASSWORD` is unset in `.env`,
-Server permits anonymous access and Hubble opens the homepage directly. If authentication is enabled, configure an admin password and JWT secret in `.env`
-as described in the Docker README, then sign in with a Server account (Hubble has no independent user database).
-Profile and account management options appear only when authentication is enabled and the account holds requisite permissions.
+   Choose an unused project name for this trial and keep these variables in the same terminal session:
+
+   ```bash
+   export HUGEGRAPH_VERSION=latest
+   export HUBBLE_IMAGE=hugegraph/hubble:latest
+   export HUBBLE_DEMO_PROJECT="hubble-demo-$(date +%Y%m%d-%H%M%S)"
+   docker compose ls
+   docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml pull
+   docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml up -d --wait
+   docker compose -p "$HUBBLE_DEMO_PROJECT" -f docker-compose.yml ps
+   curl -fsS http://127.0.0.1:8080/versions
+   ```
+
+1. **Open Hubble.**
+
+   Once services are healthy, open <http://127.0.0.1:8088>. When `HUGEGRAPH_ADMIN_PASSWORD` is unset in `.env`,
+   Server permits anonymous access and Hubble opens the homepage directly. If authentication is enabled, configure an admin password and JWT secret in `.env`
+   as described in the Docker README, then sign in with a Server account (Hubble has no independent user database).
+   Profile and account management options appear only when authentication is enabled and the account holds requisite permissions.
+{.steps}
 
 Use `latest` to explore recent features; pin a released image version or digest for production. Official release archives are on the
 [download page](/docs/download/download/).
@@ -153,21 +175,18 @@ the natural language prompt, or running statements in the code editor.
 
 ### Text2GQL natural-language queries {#text2gql}
 
-> [!NOTE]
-> The Text2GQL backend capabilities (including Model settings, built-in/temporary models, and Prompt templates) require a Hubble build with
-> [apache/hugegraph-toolchain#824](https://github.com/apache/hugegraph-toolchain/pull/824) or a release containing it.
-> Earlier builds display a preview tab without model management.
-
 Describe your query requirement in the **Natural language** input. Text2GQL combines the current graph schema to generate read-only Gremlin or Cypher
 and execute it automatically. Generated statements can be edited freely (read-only safety checks still apply before execution).
 In **Async** mode, both generated and handwritten queries can be submitted as background tasks.
 Inputs automatically restore the graph's most recent query prompt without running it, and the execution history retains original natural-language questions.
 
 ```gallery
-![Text2GQL query and graph results](/docs/images/hubble/text2gql.jpg) # Query workspace
+![Text2GQL entry and handwritten query results](/docs/images/hubble/text2gql.jpg) # Unconfigured model; handwritten query
 ![Shared model settings](/docs/images/hubble/text2gql-settings.jpg) # Model settings
 ![Gremlin and Cypher Prompt templates](/docs/images/hubble/text2gql-prompt.jpg) # Text2GQL Prompt
 ```
+
+The screenshots show an unconfigured model. The graph results come from handwritten Gremlin; connect a working model before generating natural-language queries.
 
 | Model source | Configuration and storage |
 | --- | --- |
@@ -177,7 +196,7 @@ Inputs automatically restore the graph's most recent query prompt without runnin
 Choose **OpenAI compatible** for OpenAI, DeepSeek, GLM, and similar services, or **Ollama (local)** for local Ollama; unauthenticated Ollama needs no Key.
 The Base URL must be reachable from Hubble's backend; container `localhost` refers to that container. Public endpoints require HTTPS, while plain HTTP is
 accepted only for loopback or private-network models; when changing the Base URL in Model settings, supply a new Key or explicitly clear the saved Key.
-Only the `admin` account (a super administrator in PD mode) manages shared settings. When Server authentication is disabled, anyone who can access the
+Administrators with model-settings management permission manage shared settings. When Server authentication is disabled, anyone who can access the
 deployment can manage them.
 
 Under model settings, click **Text2GQL Prompt** in the header to customize Gremlin and Cypher generation rules and few-shot examples.
@@ -209,7 +228,7 @@ For example, select K-neighbor (GET) with `source=1:marko`, `max_depth=1`, and `
 After parameter validation, use the run button on the card or the form shortcut to explore one-hop neighbors.
 
 ![Built-in neighbor algorithm parameters and graph result](/docs/images/hubble/algorithms.jpg)
-{width="2033" height="977"}
+{width="1600" height="1000"}
 
 ## Async Tasks: confirm background results
 
@@ -301,8 +320,8 @@ After changes, refresh permission context or sign in again and verify menus and 
 Older Servers may hide or disable unsupported operations; a visible button alone does not establish resource authorization.
 See the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/) for space management.
 
-![Authenticated account list in PD mode](/docs/images/hubble/accounts.jpg)
-{width="2033" height="977"}
+![Authenticated account list in standalone mode](/docs/images/hubble/accounts.jpg)
+{width="1600" height="1000"}
 
 ## Operations: inspect the standalone Server
 
@@ -353,19 +372,23 @@ docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volume
 This removes the project's containers, network, named volumes, and anonymous volume, losing the sample data and Hubble import tasks.
 To retain data, omit `--volumes` when taking the deployment down and reuse the same project name when starting it again.
 
-To obtain an exact master build, use JDK 17 and Maven. The Maven plugin installs the required Node/Yarn;
-you do not need to install them separately. These commands skip tests:
+Building current master requires **JDK 17, Maven 3.9+, Python 3.9+, and stable Node.js 24 (at least 24.22.0)**,
+with **pnpm 12.14.0** selected through Corepack. Maven no longer installs Node/Yarn automatically.
 
-```bash
-git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
-cd hugegraph-toolchain
-mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
-cd hugegraph-hubble
-mvn package -Dmaven.javadoc.skip=true -DskipTests -ntp
-cd apache-hugegraph-hubble-*
-# Edit conf/hugegraph-hubble.properties with the correct Server URL
-bin/start-hubble.sh
-```
+1. Follow the [Java 17 migration instructions](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)
+   to install the Server SDK in an isolated Maven repository.
+1. Follow the [Hubble source-build procedure](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-hubble/README.md)
+   to install Python dependencies and build Client, Loader, and Hubble with that same repository (skipping tests).
+1. Open the resulting `hugegraph-hubble/apache-hugegraph-hubble-*` directory,
+   configure Server connection settings in `conf/hugegraph-hubble.properties`, then start:
+
+   ```bash
+   bin/start-hubble.sh -d
+   ```
+{.steps}
+
+Current master uses a new H2 metadata database. Retain the old Hubble distribution and its data, and use a separate data directory for the new version.
+Old metadata has no automatic migration and cannot be reused directly.
 
 The bundled configuration binds to `localhost:8088`. `bin/stop-hubble.sh` requests graceful shutdown before forcing termination on timeout.
 For development and testing, see the [Toolchain local test guide](/docs/guides/toolchain-local-test/).

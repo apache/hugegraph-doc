@@ -12,31 +12,32 @@ weight: 1
 
 ### 2 环境要求
 
-- JDK 11（当前 CI 使用版本；源码目标版本为 Java 8）
-- Maven 3.6+
+- JDK 17，用于本文示例及从 Toolchain `master` 构建 Client `1.8.0`
+- Maven 3.6.3+
 
 ### 3 使用流程
 
-使用 HugeGraph-Client 的基本步骤如下：
+按下面的顺序接入 HugeGraph-Client。
 
-- 新建Eclipse/ IDEA Maven 项目；
-- 在 pom 文件中添加 HugeGraph-Client 依赖；
-- 创建类，调用 HugeGraph-Client 接口；
+1. 使用 IntelliJ IDEA 或 Eclipse 新建 Maven 工程。
+1. 在 `pom.xml` 中添加 HugeGraph-Client 依赖。
+1. 创建客户端、调用 API，并在使用后关闭客户端。
+{.steps}
 
-详细使用过程见下节完整示例。
+详细操作见下面的完整示例。
 
 ### 4 完整示例
 
 #### 4.1 新建 Maven 工程
 
-可以选择 Eclipse 或者 Intellij Idea 创建工程：
+使用 Eclipse 或 IntelliJ IDEA 创建 Maven 工程。
 
 - [Eclipse 新建 Maven 工程](http://www.vogella.com/tutorials/EclipseMaven/article.html)
 - [Intellij Idea 创建 maven 工程](https://vaadin.com/docs/-/part/framework/getting-started/getting-started-idea.html)
 
 #### 4.2 添加 hugegraph-client 依赖
 
-添加 hugegraph-client 依赖
+在 `pom.xml` 中添加依赖。
 
 ```xml
 
@@ -49,24 +50,41 @@ weight: 1
     </dependency>
 </dependencies>
 ```
-以下完整示例使用的 Schema、Graph、Gremlin 和资源关闭接口在已发布的 Client `1.7.0` 中可用，也与 Toolchain `master` 兼容。
-上面的依赖可直接用于示例工程。
 
-如果需要[API 参考](/cn/docs/clients/hugegraph-client/)中的 master 新接口（例如能力探测），请使用 Toolchain `master` 的 Client `1.8.0`，
-将 POM 中的版本改为 `1.8.0`。该版本未发布到 Maven 仓库时，先在 Toolchain 源码根目录运行以下命令，
-将 Client 及其父 POM 安装到本地 Maven 仓库。源码构建仍需从配置的 Maven 仓库获取依赖。
+先根据用途选择客户端版本。
+
+| 用途 | 客户端版本 | Java 编译目标 |
+| --- | --- | --- |
+| 运行下方完整示例 | 已发布的 `1.7.0`，使用上面的依赖即可 | 发布版 POM 为 Java 8；本文统一使用 JDK 17 |
+| 使用能力探测等 master 新接口 | Toolchain `master`（以 1.8 为基线） | Java 17 |
+
+示例使用的 Schema、Graph、Gremlin 和资源关闭接口在 Client `1.7.0` 中可用，也与 Toolchain `master` 兼容。
+发布版的 Java 编译目标不代表所有传递依赖的运行环境要求。
+
+若需要使用 master 分支未发布的新接口，可从源码编译安装 Client（需配合 Toolchain 源码，详见 [Tools 源码构建指引](/cn/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)）：
 
 ```bash
-mvn install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+java -version
+mvn -version
+mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" \
+  -Dsdk.validation.mode=candidate \
+  install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
-Client 与 Server 的版本不必相同；升级前核对服务端 API 兼容范围及所需功能。
+两条版本检查都应显示 JDK 17。使用 master 分支 Client 的项目运行 Maven 命令时，也需添加 `-Dmaven.repo.local="$candidate_dir/m2"`。
+Client 与 Server 的版本不必相同；升级前核对所需 API 及兼容范围。
 
 #### 4.3 Example
 
+选择单条操作或批量操作示例，将完整代码保存为 Maven 工程中的 `src/main/java/SingleExample.java` 或
+`src/main/java/BatchExample.java`。复制按钮会包含已折叠的代码行。
+
+{{< tabs group="java-client-example" default="single" label="Java 客户端示例" >}}
+{{< tab label="SingleExample" value="single" >}}
+
 ##### 4.3.1 SingleExample
 
-```java
+```java {collapse=30}
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -218,9 +236,12 @@ public class SingleExample {
 }
 ```
 
+{{< /tab >}}
+{{< tab label="BatchExample" value="batch" >}}
+
 ##### 4.3.2 BatchExample
 
-```java
+```java {collapse=30}
 import java.util.ArrayList;
 import java.util.List;
 
@@ -362,9 +383,17 @@ public class BatchExample {
 }
 ```
 
+{{< /tab >}}
+{{< /tabs >}}
+
 #### 4.4 运行 Example
 
-运行 Example 之前需要启动 Server, 启动过程见[HugeGraph-Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server)
+1. [启动 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server)，在图空间 `DEFAULT` 中准备名为 `hugegraph` 的测试图。
+1. 将 Maven 工程的 JDK 设为 17，把所选示例中 `HugeClient.builder(...)` 和 `configUser(...)` 的 Server 地址、图空间、图名和凭据改为实际配置。
+   Server 未开启鉴权时，省略 `configUser(...)`。
+1. 在 IDE 中运行 `SingleExample.main()` 或 `BatchExample.main()`。两个示例都会创建 Schema 和图数据、打印结果并关闭客户端。
+   请使用测试图，已有 Schema 或数据可能影响重复运行。
+{.steps}
 
 #### 4.5 详细 API 说明
 

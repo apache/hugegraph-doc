@@ -33,7 +33,6 @@ concurrency:
 
 env:
   HUGO_VERSION: 0.168.0
-  DART_SASS_VERSION: 1.105.2
   HUGO_ENVIRONMENT: production
   PRODUCTION_ORIGIN: https://hugegraph.apache.org/
   STAGING_ORIGIN: https://hugegraph-oink.staged.apache.org/
@@ -55,6 +54,7 @@ jobs:
       source_sha: ${{ steps.plan.outputs.source_sha }}
       python_version: ${{ steps.python.outputs.python-version }}
       cache_key: ${{ steps.history-plan.outputs.key }}
+      cache_prefix: ${{ steps.history-plan.outputs.prefix }}
       history_hit: ${{ steps.history-lookup.outcome == 'success' && steps.history-lookup.outputs.cache-hit || 'false' }}
       groups: ${{ steps.groups.outputs.groups }}
       group_pattern: ${{ steps.groups.outputs.pattern }}
@@ -76,7 +76,6 @@ jobs:
         uses: ./.github/actions/setup-site-tools
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
-          dart-sass-version: ${{ env.DART_SASS_VERSION }}
       - name: Install WebP validators
         run: |
           sudo apt-get update
@@ -123,6 +122,26 @@ jobs:
             latest_sha="$(awk '{print $1}' <<<"$resolved")"
             [[ "$latest_sha" =~ ^[0-9a-f]{40}$ ]]
             git fetch --no-tags origin "$latest_sha"
+
+            # Inspect the immutable candidate before scheduling native-only builds.
+            candidate_theme="$(
+              set -e
+              candidate_probe="$(mktemp -d "$RUNNER_TEMP/oink-candidate.XXXXXX")"
+              trap 'rm -f -- "$candidate_probe/go.mod"; rmdir -- "$candidate_probe"' EXIT
+              git show "$latest_sha:go.mod" > "$candidate_probe/go.mod"
+              go mod edit -json "$candidate_probe/go.mod" |
+                jq -er '.Require[] | select(.Path == "github.com/pgsty/oink") | .Version'
+            )"
+            case "$candidate_theme" in
+              v1.3.0)
+                echo "::error::OINK v1.3.0 manual candidates are not supported by this workflow; upgrade the candidate to OINK v1.4.0 before dispatching again."
+                exit 1
+                ;;
+              v1.3.1)
+                echo "::error::OINK $candidate_theme needs standalone Dart Sass. This workflow uses Hugo's built-in LibSass; upgrade the candidate to OINK v1.4.0 before dispatching again."
+                exit 1
+                ;;
+            esac
 
             case "$OPERATION" in
               staging-next)
@@ -190,10 +209,11 @@ jobs:
           python3 scripts/version_cache.py plan \
             --resolved-manifest resolved-versions.json \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
-            --hugo-version "$(hugo version)" --sass-version "$(sass --version)" --go-version "$(go version)" \
+            --hugo-version "$(hugo version)" --go-version "$(go version)" \
             --cache-dir "$RUNNER_TEMP/history-cache" --output cache-plan.json
           echo "key=$(jq -r .cacheKey cache-plan.json)" >> "$GITHUB_OUTPUT"
-      - name: Look up the complete historical bundle
+          echo "prefix=$(jq -r .cachePrefix cache-plan.json)" >> "$GITHUB_OUTPUT"
+      - name: Look up a compatible historical bundle
         id: history-lookup
         continue-on-error: true
         if: github.event_name != 'workflow_dispatch'
@@ -201,12 +221,15 @@ jobs:
         with:
           path: ${{ runner.temp }}/history-cache
           key: ${{ runner.os }}-${{ steps.history-plan.outputs.key }}
+          restore-keys: ${{ runner.os }}-${{ steps.history-plan.outputs.prefix }}
           lookup-only: true
       - name: Select bounded build groups
         id: groups
         env:
-          CACHE_HIT: ${{ steps.history-lookup.outcome == 'success' && steps.history-lookup.outputs.cache-hit || 'false' }}
+          CACHE_HIT: ${{ steps.history-lookup.outcome == 'success' && steps.history-lookup.outputs.cache-matched-key != '' && 'true' || 'false' }}
         run: |
+          # Prefix lookup avoids extra runners for a partial historical hit.
+          # Builders still verify every version receipt and validate its output.
           python3 scripts/version_cache.py groups \
             --resolved-manifest resolved-versions.json --cache-hit "$CACHE_HIT" > build-groups.json
           echo "groups=$(jq -c . build-groups.json)" >> "$GITHUB_OUTPUT"
@@ -221,6 +244,7 @@ jobs:
         run: |
           mkdir -p setup-site-tools
           cp .github/actions/setup-site-tools/action.yml setup-site-tools/action.yml
+          cp scripts/hugo_build.py setup-site-tools/hugo_build.py
       - name: Upload resolved version manifest
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -268,13 +292,12 @@ jobs:
         uses: ./resolved/setup-site-tools
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
-          dart-sass-version: ${{ env.DART_SASS_VERSION }}
       - name: Cache Hugo resources
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ env.HUGO_CACHEDIR }}
-          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-sass-${{ env.DART_SASS_VERSION }}-${{ hashFiles('resolved/setup-site-tools/action.yml') }}-group${{ matrix.group.id }}-${{ hashFiles('go.sum') }}
-          restore-keys: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-sass-${{ env.DART_SASS_VERSION }}-${{ hashFiles('resolved/setup-site-tools/action.yml') }}-group${{ matrix.group.id }}-
+          key: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ hashFiles('resolved/setup-site-tools/action.yml') }}-group${{ matrix.group.id }}-${{ hashFiles('go.sum') }}
+          restore-keys: ${{ runner.os }}-hugo-${{ env.HUGO_VERSION }}-${{ hashFiles('resolved/setup-site-tools/action.yml') }}-group${{ matrix.group.id }}-
       - name: Verify pinned OINK module
         run: |
           lscpu | sed -n '/^CPU(s):/p; /^Model name:/p'
@@ -302,9 +325,9 @@ jobs:
         with:
           path: ${{ runner.temp }}/history-cache
           key: ${{ runner.os }}-${{ needs.prepare.outputs.cache_key }}
-          # A previous bundle is only transport: each version must pass its
-          # exact input fingerprint and file digest before it can be reused.
-          restore-keys: ${{ runner.os }}-history-v1-
+          # A compatible bundle is only transport: each version must pass its
+          # exact input fingerprint, file digest and current output validation.
+          restore-keys: ${{ runner.os }}-${{ needs.prepare.outputs.cache_prefix }}
       - name: Build and validate selected versions
         if: github.event_name != 'workflow_dispatch'
         env:
@@ -315,7 +338,7 @@ jobs:
           python3 scripts/version_cache.py plan \
             --resolved-manifest selected-versions.json \
             --site-origin "$SITE_ORIGIN" --historical-origin "$HISTORICAL_ORIGIN" \
-            --hugo-version "$(hugo version)" --sass-version "$(sass --version)" --go-version "$(go version)" \
+            --hugo-version "$(hugo version)" --go-version "$(go version)" \
             --cache-dir "$RUNNER_TEMP/history-cache" --output "$RUNNER_TEMP/cache-plan.json" \
             --expected-plan resolved/cache-plan.json
           python3 scripts/build_versions.py \
@@ -464,7 +487,6 @@ jobs:
         uses: ./resolved/setup-site-tools
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
-          dart-sass-version: ${{ env.DART_SASS_VERSION }}
       - name: Install Chromium test workspace
         working-directory: tests/e2e
         run: |
@@ -477,10 +499,11 @@ jobs:
             --site-origin http://127.0.0.1:4174/ \
             --historical-origin "$PRODUCTION_ORIGIN" \
             --output "${RUNNER_TEMP}/ai-version-config.json"
-          hugo \
+          python3 resolved/setup-site-tools/hugo_build.py hugo \
             --config "hugo.yaml,${RUNNER_TEMP}/ai-version-config.json,tests/e2e/ai-enabled.yaml" \
             --destination "${RUNNER_TEMP}/ai-site" \
-            --cleanDestinationDir --gc --minify --environment production
+            --cleanDestinationDir --gc --minify --environment production \
+            --printPathWarnings --printI18nWarnings --logLevel info
       - name: Build AI-disabled rollback fixture
         run: |
           python3 scripts/versioning.py config \
@@ -488,10 +511,11 @@ jobs:
             --site-origin http://127.0.0.1:4175/ \
             --historical-origin "$PRODUCTION_ORIGIN" \
             --output "${RUNNER_TEMP}/ai-disabled-version-config.json"
-          hugo \
+          python3 resolved/setup-site-tools/hugo_build.py hugo \
             --config "hugo.yaml,${RUNNER_TEMP}/ai-disabled-version-config.json,tests/e2e/ai-disabled.yaml" \
             --destination "${RUNNER_TEMP}/ai-disabled-site" \
-            --cleanDestinationDir --gc --minify --environment production
+            --cleanDestinationDir --gc --minify --environment production \
+            --printPathWarnings --printI18nWarnings --logLevel info
       - name: Run blocking Chromium contracts
         working-directory: tests/e2e
         env:

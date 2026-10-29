@@ -201,13 +201,9 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 > **已弃用的别名**：`PD_ADDRESS` → `HG_STORE_PD_ADDRESS`、`GRPC_HOST` → `HG_STORE_GRPC_HOST`、`RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`
 
-RocksDB 缓存位于 Java 堆外。不设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` 时，将按容器内存限制自动计算；若容器未设置限制，则按宿主机（或 Docker Desktop 虚拟机）内存计算。
-前提是加载到的 `rocksdb.total_memory_size` 为 `auto`（或缺失、为 `0`）：沿用旧版本的 `application-pd.yml` 仍是 `32000000000`，会保留该预算，PD 保存并下发给各 Store 的副本也是如此，
-请按 [HStore 配置参考](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)中 `rocksdb.total_memory_size` 一行的升级说明处理。
-上面的 Compose 文件默认未设置内存限制，每个 Store 均会按整台宿主机估算预算；多 Store 共用单机时，建议为服务配置内存限制，或将该变量显式设为字节数。
-需要注意，容器限制仅约束 RocksDB 预算：Store 启动脚本仍会按宿主机空闲内存自动分配 `-Xmx`（最多 2 GiB），并将直接内存设为相同大小。
-因此请同步通过 `JAVA_OPTS`（镜像会以 `-j` 传给启动脚本）显式约束 JVM 内存，例如容器限制为 4 GiB 时可设置 `JAVA_OPTS="-Xmx1g -XX:MaxDirectMemorySize=512m"`；
-若直接使用默认值，堆内存、直接内存、1.5 GiB 预留加上 256 MiB 最低预算总和已超过 2 GiB。详见 [HStore 配置参考](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)中的 `rocksdb.total_memory_size`。
+RocksDB 缓存使用堆外内存。未设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` 时，系统将优先根据容器内存限制（cgroup）自动计算；未配置容器限制时则按宿主机内存推导。
+由于默认 Docker Compose 未限制容器内存，各 Store 均会以宿主机整机容量估算；若单机部署多个 Store，建议显式配置容器内存限制，或直接为该变量指定字节数。
+此外，Store 启动脚本默认会根据系统空闲内存分配 JVM 堆与直接内存（上限各 2 GiB）。建议结合容器规格，通过 `JAVA_OPTS` 显式约束 JVM 内存（例如容器为 4 GiB 时配置 `JAVA_OPTS="-Xmx1g -XX:MaxDirectMemorySize=512m"`）。详细推导公式见 [HStore 配置参考](/cn/docs/quickstart/hugegraph/hugegraph-hstore/#rocksdb-memory-budget)。
 
 ### Server 变量
 

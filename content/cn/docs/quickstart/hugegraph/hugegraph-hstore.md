@@ -152,7 +152,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 #### 4.1 application.yml
 
-以下配置参考表核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 的发行目录值和 Java 默认注入值，其中 `rocksdb.total_memory_size`、`rocksdb.write_buffer_size` 和 `raft.disruptorBufferSize` 三行核对的是合入 apache/hugegraph#3355 的提交 `edd7cee77`；1.7.0 发布包请使用其版本标签对应的配置文件，不要跨版本覆盖。
+以下配置参考表核对的是 Server 主线提交的发行目录值和 Java 默认注入值；1.7.0 发布包请使用其版本标签对应的配置文件，不要跨版本覆盖。
 
 #### 4.2 application-pd.yml
 
@@ -213,11 +213,19 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 | 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
-| `rocksdb.total_memory_size` | `auto` | 自动计算，见说明 | 本节点所有 RocksDB 实例共享的内存预算，取值为 `auto` 或字节数，按 `write_buffer_ratio` 分为写缓存和 block cache。两者都在堆外，不受 `-Xmx` 限制，另有固定 1 GiB 的 Raft 日志缓存不计入其中；所有分区的 Raft 日志 memtable 共用一个 256 MiB 的写缓冲，并计入这 1 GiB 缓存，不会额外占用内存。该预算是容量目标，并非硬上限：`rocksdb.write_buffer_allow_stall` 默认为 `false`，写缓存写满时不会阻塞写入，因此在大量写入时本地内存可能超出预算，容器仍可能被 OOM 终止。将其设为 `true` 能更严格地守住上限，但会增加写入延迟。取值为 `auto` 时（缺失、空值或 `0` 与之等同），取物理内存减去 JVM 最大堆、`MaxDirectMemorySize`（未设置时按堆大小计算；`bin/start-hugegraph-store.sh` 默认把它设为所选的堆大小；`-j` 自行设置了 `-Xmx`、`-XX:MaxHeapSize` 或该上限，或 `JAVA_TOOL_OPTIONS`、`JDK_JAVA_OPTIONS` 设置了该上限时不再添加）和 1.5 GiB 预留（1 GiB Raft 日志缓存加 512 MiB 其他本地内存）后剩余部分的一半，并限制在 256 MiB 到 32 GB 之间；容器内设置了内存限制时以 cgroup 内存限制为准，Store 能看到的父 cgroup 上的限制也会计入；否则以宿主机内存为准。Store 看不到的限制（例如私有 cgroup 命名空间之上的限制）不会被猜测：Store 使用可见的最低限制并输出警告，此时请显式设置该值。启动日志会输出预算及其模式、物理内存限制及来源、堆、直接内存、预留，以及 cgroup 视图是否完整。JVM 和 cgroup 文件都拿不到可用的内存大小时，改用 JVM 最大堆，同样限制在 256 MiB 到 32 GB 之间。沿用旧版本的 `application-pd.yml` 仍是 `32000000000`，需改为 `auto` 才会自动计算。PD 模式下 PD 还可能保存一份副本（KV 键 `S:FS`），由第一个启动的 Store 上传。Store 只有在没有本地文件，或本地文件不比 `S:Timestamp` 新时，才会加载这份副本并覆盖本地文件；上传时不会写入时间戳，缺失的时间戳按 0 处理，因此只修改 `S:FS` 不会生效。升级时，请在每个 Store 上设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=auto` 或 `-Drocksdb.total_memory_size=auto` 并重启，Store 会让这个值优先于本地文件和 PD 的副本。也可以先在 `S:FS` 中把该值改为 `0` 或删除它，再通过 PD 的 KV 服务（gRPC `KvService.put`）把当前时间（毫秒）写入 `S:Timestamp`：所有运行中的 Store 会重新加载 PD 的副本、覆盖本地文件，并在 60 秒内运行 `bin/restart-hugegraph-store.sh`，因此所有 Store 会在同一分钟内重启；已停止的 Store 会在下次启动时加载它。只有所有 Store 都已运行支持 `auto` 的版本后，才能在 `S:FS` 中写入 `auto`：旧版本无法解析 `auto`，会启动失败，而 `0` 在旧版本中按原来的堆大小默认值处理。PD 中原本没有副本、由新版本 Store 上传的副本也是如此，因为发行的配置文件写的是 `auto`。自行重启时不带任何参数，最初启动时的 `-j` 和 `-g` 会丢失，启动脚本改用默认堆大小；只有导出的 `JAVA_OPTIONS` 中的 JVM 设置会保留，因此对使用自定义堆大小启动的 Store，建议采用逐个 Store 覆盖的方式。Docker 中的 Store 根本不会重启：Java 是入口脚本的最后一个进程，停止它会使容器连同其中的重启脚本一起以退出码 143 退出。设置了重启策略的容器（Compose 文件使用 `restart: unless-stopped`）会通过入口脚本重新启动，并保留 `JAVA_OPTS`；像 3.3 节中独立运行的 `docker run -d` 示例那样未指定 `--restart` 启动的容器，则会一直处于停止状态。在 Docker 中请设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE`，不要写入 `S:Timestamp`。其他值按原值使用，且必须是纯字节数，最小为 `1048576`（1 MiB）；更小的值或 `4GB` 之类的值会导致启动失败。 |
+| `rocksdb.total_memory_size` | `auto` | 自动计算，见说明 | 本节点所有 RocksDB 实例共享的堆外内存预算（取值为 `auto` 或具体字节数）。详细自动推导规则见下方说明。 |
 | `rocksdb.write_buffer_size` | `32000000` | 自动推导，见说明 | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`，最小为 `1048576`（1 MiB）。 |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | 落盘前合并的 memtable 数量。 |
 | `rocksdb.write_buffer_ratio` | 未设置 | `0.66` | `total_memory_size` 中分配给写缓存的比例，其余作为 block cache。 |
 {.td-table--wide}
+
+### RocksDB 内存预算自动计算规则 {#rocksdb-memory-budget}
+
+> [!NOTE]
+> 当 `rocksdb.total_memory_size` 设置为 `auto`（或未设置、为 `0`）时，系统自动计算堆外 RocksDB 缓存预算：
+> - **推导公式**：以物理内存（容器环境下优先取可见的 cgroup 限制）减去 JVM 最大堆（`-Xmx`）、直接内存（`MaxDirectMemorySize`）和 1.5 GiB 系统预留后，取剩余量的一半，范围钳制在 256 MiB 至 32 GiB 之间。
+> - **写缓存与 Block Cache**：根据 `rocksdb.write_buffer_ratio`（默认 0.66）切分。该预算为软目标容量；大量并发写入时若需严格限制内存可将 `rocksdb.write_buffer_allow_stall` 设为 `true`。
+> - **升级与覆盖**：历史配置若保留了旧固定值 `32000000000`，可通过设置环境变量 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=auto` 或启动参数 `-Drocksdb.total_memory_size=auto` 启用自动推导。
 
 `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` 中定义的其他选项都可以加在同一个 `rocksdb:` 块下，例如 `rocksdb.max_background_jobs`、`rocksdb.level0_file_num_compaction_trigger` 或 `rocksdb.bloom_filter_bits_per_key`。
 

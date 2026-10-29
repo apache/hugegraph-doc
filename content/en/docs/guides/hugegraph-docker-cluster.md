@@ -201,16 +201,10 @@ The following tables describe current master entrypoints and Compose files, not 
 
 > **Deprecated aliases**: `PD_ADDRESS` → `HG_STORE_PD_ADDRESS`, `GRPC_HOST` → `HG_STORE_GRPC_HOST`, `RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`.
 
-RocksDB caches live outside the Java heap. Leave `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` unset to size them from the container memory limit, or from the
-memory of the Docker host (such as the Docker Desktop VM) when the container has no limit. That needs the loaded
-`rocksdb.total_memory_size` to be `auto` (or missing, or `0`): an `application-pd.yml` kept from an earlier release still sets `32000000000`
-and keeps that budget, as does the copy PD keeps and hands to every Store, so follow the upgrade note under `rocksdb.total_memory_size` in the
-[HStore configuration reference](/docs/quickstart/hugegraph/hugegraph-hstore/). The Compose files above set no limit, so each Store sizes its budget
-from the whole host; set a memory limit on Store services or set this variable to a plain number of bytes when several Stores share one host.
-A container limit bounds only the RocksDB budget: the Store launcher still picks `-Xmx` from the host's free memory (up to 2 GiB) and sets direct memory to the
-same size. Size those for the limit too through `JAVA_OPTS` (passed to the launcher as `-j`), for example `JAVA_OPTS="-Xmx1g -XX:MaxDirectMemorySize=512m"` for
-a 4 GiB container limit; with defaults, heap plus direct memory, the 1.5 GiB reserve, and the 256 MiB minimum budget already exceed a 2 GiB limit.
-See `rocksdb.total_memory_size` in the [HStore configuration reference](/docs/quickstart/hugegraph/hugegraph-hstore/).
+RocksDB caches use off-heap memory. When `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` is unset, the system sizes the cache automatically from the container memory limit (cgroup), or falls back to the host memory if no container limit is configured.
+Because the default Docker Compose file does not set a memory limit, each Store sizes its budget using the host's full capacity. When deploying multiple Stores on a single host, specify a container memory limit or set this variable directly to an explicit byte value.
+Additionally, the Store startup script sizes the JVM heap and direct memory based on host free memory by default (up to 2 GiB each). Constrain JVM memory explicitly via `JAVA_OPTS` to match your container budget (for example, `JAVA_OPTS="-Xmx1g -XX:MaxDirectMemorySize=512m"` for a 4 GiB container). See the [HStore configuration reference](/docs/quickstart/hugegraph/hugegraph-hstore/#rocksdb-memory-budget) for the detailed calculation rules.
+
 
 ### Server Variables
 

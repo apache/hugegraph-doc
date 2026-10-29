@@ -14,7 +14,7 @@ weight: 1
 ### Key Breaking Changes & Compatibility
 
 #### 1. Critical Gremlin Traversal Breaking Changes
-- **Removed `has(key, traversal)` overload**: In Groovy, legacy syntax silently falls back to Object comparison, resulting in **0 results / empty sets** without throwing an error. Use `has('age', gt(30))` for simple conditions, or `filter(__.values('age').is(gt(30)))` for child traversals.
+- **Removed `has(key, traversal)` overload**: In Groovy on HugeGraph 1.8, legacy syntax fails immediately with an `Invalid data type of query value` exception due to strong type checks (pure TinkerGraph returns empty results). Use `has('age', gt(30))` for simple conditions, or `filter(__.values('age').is(gt(30)))` for child traversals.
 - **Removed `store()` & scoped `aggregate()`**: Use `aggregate('x')` for global eager collection; use `local(__.aggregate('x'))` for lazy or per-object collection.
 - **Step `none()` renamed to `discard()`**: Discarding incoming traversers must now use `discard()` (avoids collision with new collection predicate `none(P)`).
 - **Strict `by()` behavior on missing properties**: Vertices missing properties are dropped in `order().by()`; keys are omitted from maps in `project().by()`; paths are discarded in `path().by()`. Wrap with `coalesce()` to provide explicit defaults if preservation is needed.
@@ -24,7 +24,7 @@ weight: 1
 
 #### 2. Server Configuration & Client Compatibility
 - **Serializer class names**: Serializer packages in `conf/gremlin-server.yaml` moved from `org.apache.tinkerpop.gremlin.driver.ser.*` to `org.apache.tinkerpop.gremlin.util.ser.*`.
-- **HugeGraph Client 1.5.0**: Supported via server-side backward-compatibility adapters; however, Gremlin query strings must follow TinkerPop 3.8 syntax.
+- **HugeGraph Client 1.5.0**: Basic CRUD and schema operations are backward-compatible on Server 1.8.0; however, Gremlin queries fail due to missing GraphSpace aliases, and auth paths require upgrading the client or using HTTP endpoints.
 - **GPL word analyzer no longer bundled**: `word-1.3.jar` is no longer bundled by default due to license compliance.
   Graphs configured with `search.text_analyzer=word` remain supported once `word-1.3.jar` is placed in Server's `lib/` directory.
   Alternatively, switch to IK or SmartCN (note that switching analyzers requires rebuilding search indexes).

@@ -17,7 +17,7 @@ HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升�
 
 ## 核心重点：最常用的 5 大语法与行为变化
 
-在已有的业务查询中，以下 5 项改动最为高频，**若不改写在 HugeGraph 1.8 中会直接导致执行报错**，请优先重点排查。
+在已有的业务查询中，以下 5 项改动最为高频：其中前 3 项若不改写在 HugeGraph 1.8 中会直接抛出异常报错；后 2 项则不会报错，但会静默改变返回结果（自动剔除缺失属性的元素或放行未匹配分支），请务必重点排查。
 
 ### 1. `has(key, traversal)` 重载删除（高危：查询执行报错）
 
@@ -184,9 +184,10 @@ TinkerPop 3.8 引入了原生日期操作函数与步骤，这些能力在 3.5.1
 {.td-table--wide}
 
 ### 2. HugeGraph Client 1.5.0 能否平滑使用？
-* **结论**：**基础 CRUD、Schema 与 Gremlin 查询可以继续使用**。
-* 服务端在 1.8.0 中增加了向前兼容层（图别名自动映射等），使用 `hugegraph-client:1.5.0` 进行常规 CRUD、Schema 操作及 Gremlin 脚本请求均可正常连通。
+* **结论**：**基础数据 CRUD 与 Schema 操作可以继续使用；Gremlin 查询与鉴权管理需要升级或适配**。
+* 服务端在 1.8.0 中增加了向前兼容层，使用 `hugegraph-client:1.5.0` 进行常规顶点/边 CRUD 和 Schema 操作均可正常连通。
 * **限制说明**：
+  - **Gremlin 查询别名**：Client 1.5.0 的 `gremlin().execute()` 发送旧版图别名（`graph=<graph>` 与 `g=__g_<graph>`），而 1.8.0 服务端仅绑定了 GraphSpace 命名空间的别名（`DEFAULT-<graph>` 与 `__g_DEFAULT-<graph>`），且服务端 `/gremlin` 会原样透传请求体，因此 1.5.0 客户端的 Gremlin 查询会因别名未识别而失败。如需在 1.8.0 下执行 Gremlin 查询，请升级客户端或改用 HTTP 接口显式传递正确的 aliases。
   - **Auth 鉴权路径**：1.8.0 将用户与鉴权体系重构至 GraphSpace 维度（`graphspaces/{graphspace}/auth/users`），Client 1.5.0 的 `graphs/{graph}/auth/...` 路径并不包含在此重定向范围内，鉴权管理操作需升级 Client。
   - **Gremlin 脚本语法**：客户端所发送的 Gremlin 脚本字符串均在服务端的 3.8.1 引擎中执行，必须按上述规则适配 3.8 语法。
 

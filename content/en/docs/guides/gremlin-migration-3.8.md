@@ -17,7 +17,7 @@ While bringing substantial performance optimizations and specification alignment
 
 ## Top 5 High-Frequency Syntax and Behavioral Changes
 
-Among existing query scripts, the following 5 changes are the most common. **Failure to update these will cause query execution errors on HugeGraph 1.8.**
+Among existing query scripts, the following 5 changes are the most common: changes 1 through 3 will fail immediately with execution errors if left unrewritten, while changes 4 and 5 do not raise errors but silently alter returned results (dropping elements with missing properties or passing unmatched branches through). Please review these with priority.
 
 ### 1. `has(key, traversal)` Overload Removed (High Risk: Execution Error)
 
@@ -187,9 +187,10 @@ to `gremlin-util` (`org.apache.tinkerpop.gremlin.util.ser.*`).
 {.td-table--wide}
 
 ### 2. Can HugeGraph Client 1.5.0 Continue to Work?
-* **Verdict**: **Basic CRUD, schema operations, and Gremlin queries continue to work**.
-* HugeGraph Server 1.8.0 provides backward-compatible adapters (such as default graphspace alias mapping), allowing `hugegraph-client:1.5.0` to connect for standard data operations, schema management, and Gremlin query scripts.
+* **Verdict**: **Basic CRUD and schema operations continue to work; Gremlin queries and auth management require upgrading or custom aliases**.
+* HugeGraph Server 1.8.0 provides backward-compatible adapters, allowing `hugegraph-client:1.5.0` to connect for standard vertex/edge CRUD and schema management.
 * **Limitations**:
+  - **Gremlin Aliases**: `hugegraph-client:1.5.0` sends legacy graph and traversal aliases (`graph=<graph>` and `g=__g_<graph>`), but Server 1.8.0 only binds GraphSpace-scoped aliases (`DEFAULT-<graph>` and `__g_DEFAULT-<graph>`). Because `/gremlin` passes the body unchanged, Gremlin queries sent via `gremlin().execute()` in Client 1.5.0 fail on unknown aliases. To run Gremlin queries against 1.8.0, upgrade the client or submit queries via the HTTP API with explicit GraphSpace aliases.
   - **Auth Paths**: Server 1.8.0 migrates authentication to GraphSpace scopes (`graphspaces/{graphspace}/auth/users`). The legacy Client 1.5.0 path `graphs/{graph}/auth/...` is not redirected to this new endpoint, so auth operations require upgrading the client.
   - **Gremlin Query Strings**: All Gremlin query strings submitted by the client are evaluated on the server's 3.8.1 engine and must adhere to 3.8 syntax.
 

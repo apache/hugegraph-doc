@@ -1,11 +1,8 @@
 name: Setup site compilers
-description: Install the pinned Hugo Extended and standalone Dart Sass compilers
+description: Install pinned Hugo Extended with its built-in LibSass compiler
 inputs:
   hugo-version:
     description: Hugo Extended version
-    required: true
-  dart-sass-version:
-    description: Dart Sass version (update the verified checksum when upgrading)
     required: true
 runs:
   using: composite
@@ -15,26 +12,3 @@ runs:
       with:
         hugo-version: ${{ inputs.hugo-version }}
         extended: true
-    - name: Install standalone Dart Sass
-      shell: bash
-      env:
-        DART_SASS_VERSION: ${{ inputs.dart-sass-version }}
-      run: |
-        set -euo pipefail
-        if [[ "$RUNNER_OS" != Linux || "$RUNNER_ARCH" != X64 ]]; then
-          echo "::error::Site compiler setup supports Linux X64; add a verified official Sass archive for this runner."
-          exit 1
-        fi
-        # Match the official Linux x64 archive used by OINK v1.3.1.
-        if [[ "$DART_SASS_VERSION" != 1.105.2 ]]; then
-          echo "::error::Update setup-site-tools/action.yml with this Sass version's official archive checksum before upgrading."
-          exit 1
-        fi
-        archive="$RUNNER_TEMP/dart-sass-${DART_SASS_VERSION}-linux-x64.tar.gz"
-        curl --fail --location --retry 3 \
-          "https://github.com/sass/dart-sass/releases/download/${DART_SASS_VERSION}/dart-sass-${DART_SASS_VERSION}-linux-x64.tar.gz" \
-          --output "$archive"
-        echo "a530ee08d5792c80bdb9d9614b45fb58219c890cb42a280a80775f0af9c29582  $archive" | sha256sum --check --strict
-        tar -xzf "$archive" -C "$RUNNER_TEMP"
-        echo "$RUNNER_TEMP/dart-sass" >> "$GITHUB_PATH"
-        "$RUNNER_TEMP/dart-sass/sass" --version

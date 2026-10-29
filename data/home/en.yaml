@@ -48,7 +48,7 @@ capabilities:
 
 tlp:
   class: hg-home-band hg-home-tlp
-  title: The First Apache Foundation Top-Level Graph Project
+  title: The First Apache Foundation Top-Level Graph System
 
 community:
   class: hg-home-community

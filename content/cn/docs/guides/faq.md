@@ -4,98 +4,139 @@ linkTitle: "FAQ"
 weight: 6
 ---
 
-- 如何选择后端存储? 选 RocksDB 还是分布式存储?
+## 部署与启动 {#deployment}
 
-  HugeGraph 支持多种部署模式，根据数据规模和场景选择：
-  - **单机模式**：Server + RocksDB，适合开发测试、Graph AI 和中小规模生产环境（≤ 2 TB）
-  - **分布式模式**：HugeGraph-PD + HugeGraph-Store（HStore），用于需要水平扩展和多副本的部署，支持 ≤ 1 PB 的数据规模
+### 如何选择 RocksDB 或 HStore {#choose-backend}
 
-  1.7.0 支持 RocksDB、HStore、HBase 和 Memory。Cassandra、ScyllaDB、MySQL、PostgreSQL 等旧后端需使用 1.5.x 或更早版本。
+开发测试或中小规模单机部署推荐选择 **Server + RocksDB**，部署轻便且性能优异。当数据规模较大（如 TB/PB 级）、需要水平扩容或多副本高可用时，推荐部署 **HStore 分布式集群**（PD + Store + Server）。
 
-- 启动服务时提示：`xxx (core dumped) xxx`
- 
-  请先确认 JDK 版本符合对应版本要求：HugeGraph 1.8.0+ 要求 Java 17，1.7.0 要求 Java 11。HugeGraph 不再支持 Java 8。
+1.7.0 支持 RocksDB、HStore、HBase 和 Memory。Cassandra、ScyllaDB、MySQL、PostgreSQL 等旧后端需使用低于 1.7.0 的版本。
+部署步骤见 [Server 快速开始](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
 
-- 启动服务成功了，但是操作图时有类似于"无法连接到后端或连接未打开"的提示
+### 启动时出现 core dumped 怎么查 {#core-dump}
 
-  RocksDB、HBase 等本地持久化后端首次启动前需要使用 `init-store` 初始化。HStore 由 PD、Store 管理，不执行该脚本。
+先执行 `java -version` 确认 JDK 版本：**HugeGraph master 分支（以 1.8 为基线）要求 Java 17**，**1.7.0 要求 Java 11**（已不再支持 Java 8）。
+若 JDK 版本正确，进一步查看 Server 日志及 JVM 崩溃日志（`hs_err_pid*.log`），排查是否由于系统架构不匹配、依赖的动态库（如 RocksDB JNI）缺失或系统内存不足引起。
 
-- 所有的后端在使用前都需要执行`init-store`吗，序列化的选择可以随意填写么?
-  
-  Memory 和 HStore 不执行 `init-store`；RocksDB、HBase 等本地持久化后端首次使用前需要初始化。序列化器必须与后端匹配，例如 RocksDB 使用 `binary`。
+### 哪些后端需要 init-store {#initialize-backend}
 
-- 执行`init-store`报错：```Exception in thread "main" java.lang.UnsatisfiedLinkError: /tmp/librocksdbjni3226083071221514754.so: /usr/lib64/libstdc++.so.6: version `GLIBCXX_3.4.10' not found (required by /tmp/librocksdbjni3226083071221514754.so)```
+使用 RocksDB 或 HBase 等本地持久化后端时，**首次启动前必须执行 `bin/init-store.sh`** 进行初始化。Memory（内存后端）和 HStore（分布式后端）无需执行此脚本，HStore 的存储由 PD 和 Store 统一管理。
 
-  RocksDB需要 gcc 4.3.0 (GLIBCXX_3.4.10) 及以上版本
+注意：`backend` 与 `serializer` 必须配套使用（例如 RocksDB 配套 `binary`），不可随意替换。若服务启动后提示无法连接后端，请优先检查是否完成初始化以及后端存储配置是否正确。
 
-- `bin`目录下包含`start-hugegraph.sh`、`start-restserver.sh`和`start-gremlinserver.sh`三个似乎与启动有关的脚本，到底该使用哪个
+### init-store 报 GLIBCXX 版本缺失怎么办 {#native-library}
 
-  当前发布包只保留 `start-hugegraph.sh` 作为 Server 启动脚本。GremlinServer 和 REST Server 由同一进程启动。
+出现以下报错表示当前系统的 `libstdc++` 版本过低，缺少 RocksDB JNI 本地库所需的符号：
 
-- 配置了两个图，名字是`hugegraph`和`hugegraph1`，而启动服务的命令是`start-hugegraph.sh`，是只打开了`hugegraph`这个图吗
+```text
+java.lang.UnsatisfiedLinkError: .../librocksdbjni....so:
+.../libstdc++.so.6: version `GLIBCXX_3.4.10' not found
+```
 
-  脚本名称与图名无关。Server 默认从 `conf/graphs` 扫描并加载本地图配置，目录可在 `conf/rest-server.properties` 的 `graphs` 配置项中修改。`graph.load_from_local_config` 默认
-  `false`，控制构造阶段预加载，不能用于禁止启动时加载。每个本地图使用独立配置文件，配置变化后重启 Server。详见[服务端配置说明](/cn/docs/config/config-guide/)。
+解决方法：核对发行包支持的系统架构，升级系统的 `libstdc++`（或安装较新的 GCC 运行库），或者直接使用官方提供的 Docker 镜像运行。
 
-- 服务启动成功后，使用`curl`查询所有顶点时返回乱码
+### 应该使用哪个 Server 启动脚本 {#start-script}
 
-  服务端返回的批量顶点/边是压缩（gzip）过的，可以使用管道重定向至 `gunzip` 进行解压（`curl http://example | gunzip`），也可以用`Firefox`的`postman`或者`Chrome`浏览器的`restlet`插件发请求，会自动解压缩响应数据。
+当前发行包统一使用 `bin/start-hugegraph.sh`，GremlinServer 与 REST Server 会在同一个进程中启动。旧版本文档中的 `start-restserver.sh` 和 `start-gremlinserver.sh` 已废弃。
 
-- 使用顶点Id通过`RESTful API`查询顶点时返回空，但是顶点确实是存在的
+### 启动脚本会加载哪些图 {#load-graphs}
 
-  检查顶点Id的类型，如果是字符串类型，`API`的`url`中的id部分需要加上双引号，数字类型则不用加。
+脚本名称与加载的图无关。Server 默认会扫描并加载 `conf/graphs` 目录下的所有图配置（可在 `conf/rest-server.properties` 中的 `graphs` 修改该目录）。每张本地图使用独立的配置文件，修改配置后需重启 Server。
 
-- 已经根据需要给顶点Id加上了双引号，但是通过`RESTful API`查询顶点时仍然返回空
-  
-  检查顶点id中是否包含`+`、`空格`、`/`、`?`、`%`、`&`和`=`这些URL的保留字符，如果存在则需要进行编码。下表给出了编码值：
-  
-  ```text
-  特殊字符 | 编码值
-  --------| ----
-  +       | %2B
-  空格     | %20
-  /       | %2F
-  ?       | %3F
-  %       | %25
-  #       | %23
-  &       | %26
-  =       | %3D
-  ```
-  
-- 查询某一类别的顶点或边（`query by label`）时提示超时
+注：`graph.load_from_local_config` 默认为 `false`（控制构造阶段预加载），不能用来禁止启动时加载本地图。详见[服务端配置说明](/cn/docs/config/config-guide/)。
 
-  由于属于某一label的数据量可能比较多，请加上limit限制。
+## 连接与查询 {#queries}
 
-- 通过`RESTful API`操作图是可以的，但是发送`Gremlin`语句就报错：`Request Failed(500)`
+### curl 返回乱码怎么办 {#compressed-response}
 
-  可能是`GremlinServer`的配置有误，检查`gremlin-server.yaml`的`host`、`port`是否与`rest-server.properties`的`gremlinserver.url`匹配，如不匹配则修改，然后重启服务。
+批量顶点和边接口默认会返回 gzip 压缩数据。使用 curl 请求时加上 `--compressed` 参数即可自动解压：
 
-- 使用`Loader`导数据出现`Socket Timeout`异常，然后导致`Loader`中断
+```bash
+curl --compressed \
+  'http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices?limit=10'
+```
 
-  持续地导入数据会使`Server`的压力过大，然后导致有些请求超时。可以通过调整`Loader`的参数来适当缓解`Server`压力（如：重试次数，重试间隔，错误容忍数等），降低该问题出现频率。
+若开启了认证，需同时传入凭据。若返回内容仍不符合预期，请检查 HTTP 状态码、`Content-Type` 与 `Content-Encoding`，不要把 JSON 报错直接管道传给 `gunzip`。
 
-- 如何删除图中的全部数据
+### 按顶点 ID 查询却找不到顶点 {#vertex-id}
 
-  管理员可调用 `DELETE /graphspaces/{graphspace}/graphs/{graph}/clear?confirm_message=I'm sure to delete all data`。`confirm_message` 查询参数必须与该值完全一致，否则请求会被拒绝，详见 [Graph API](../clients/restful-api/graphs)。该操作会清除 schema、顶点、边和索引。
+先从已有查询结果中确认 `id` 的实际格式和类型：**字符串 ID 需要 JSON 双引号，数值 ID 不需要**。例如字符串 ID `1:marko` 的 JSON 格式应为 `"1:marko"`。
 
-- 清空了数据库，并且执行了`init-store`，但是添加`schema`时提示"xxx has existed"
+在把 ID 放入 URL 路径时，必须对包含双引号在内的完整字符串进行 URL 编码。若 ID 含有特殊字符，不能仅补双引号而遗漏编码：
 
-  `HugeGraphServer`内是有缓存的，清空数据库的同时是需要重启`Server`的，否则残留的缓存会产生不一致。
+| 字符 | URL 编码 |
+| --- | --- |
+| `+` | `%2B` |
+| 空格 | `%20` |
+| `/` | `%2F` |
+| `?` | `%3F` |
+| `%` | `%25` |
+| `#` | `%23` |
+| `&` | `%26` |
+| `=` | `%3D` |
+| `"` | `%22` |
 
-- 插入顶点或边的过程中报错：`The max length of vertex id is 16384, but got xxx {yyy}` 或 `The max length of edge id is 65536, but got xxx {yyy}`
+### 按类型查询顶点或边时超时 {#label-timeout}
 
-  为了保证查询性能，目前的后端存储对id列的长度做了限制，顶点id不能超过16384字节，边id长度不能超过65536字节；索引id超过32字节时会转为哈希存储，而不是报错。
+当某个标签下的数据量很大时，全量扫描很容易耗尽资源导致超时。建议优化方式：
+1. 加上 `limit()` 限制返回记录数；
+2. 使用分页机制分批读取；
+3. 配合具体属性过滤，并确保对应属性已建立索引，避免全表扫描。
 
-- 是否支持嵌套属性，如果不支持，是否有什么替代方案
+### REST 请求正常，Gremlin 返回 500 {#gremlin-connection}
 
-  嵌套属性目前暂不支持。替代方案：可以把嵌套属性作为单独的顶点拿出来，然后用边连接起来。
+REST 接口正常仅说明 HTTP 入口可用，Gremlin 执行返回 500 通常有以下原因：
+1. **Gremlin Server 连接异常**：检查 `conf/rest-server.properties` 中的 `gremlinserver.url` 是否指向可达的 Gremlin 端口（默认 `8182`，对应 `conf/gremlin-server.yaml`）；
+2. **语句语法或逻辑错误**：例如未加索引导致遍历被拦截；
+3. **认证凭据缺失或过期**。
 
-- 一个`EdgeLabel`是否可以连接多对`VertexLabel`，比如"投资"关系，可以是"个人"投资"企业"，也可以是"企业"投资"企业"
+建议查看 `logs/hugegraph-server.log` 中的异常堆栈定位具体报错。
 
-  可以。创建`EdgeLabel`时对每一对顶点标签各调用一次`link(sourceLabel, targetLabel)`，所有配对都会被保留，因此同一个"投资"标签可以同时覆盖"个人"投资"企业"和"企业"投资"企业"。旧的`sourceLabel()`和`targetLabel()`构建方法已废弃，且只支持单一配对。
+### REST 请求返回 HTTP 415 {#content-type}
 
-- 通过`RestAPI`发送请求时提示`HTTP 415 Unsupported Media Type`
+发送带请求体的 POST/PUT 请求时，需在请求头中指定 `Content-Type: application/json`，并确保请求体是合法的 JSON 格式。
 
-  请求头中需要指定`Content-Type:application/json`
+## 导入与数据维护 {#data-management}
 
-其他问题可以在对应项目的 issue 区搜索，例如 [Server-Issues](https://github.com/apache/hugegraph/issues) / [Loader Issues](https://github.com/apache/hugegraph-toolchain/issues)
+### Loader 出现 Socket Timeout {#loader-timeout}
+
+导入超时通常由于单批次写入过大或并发压力过高导致。建议：
+1. 适当调小 `--batch-size`（如由 500 降为 200）；
+2. 适当降低并发线程数；
+3. 调大 `--timeout` 并配置重试机制。参数说明见 [Loader 指南](/cn/docs/quickstart/toolchain/hugegraph-loader/)。
+
+### 如何清空一张图 {#clear-graph}
+
+管理员可调用以下接口清空指定图的 Schema、顶点、边和索引（执行前请务必确认目标图并做好备份）：
+
+```text
+DELETE /graphspaces/{graphspace}/graphs/{graph}/clear
+```
+
+请求需携带 `confirm_message` 查询参数，值必须严格等于 `I'm sure to delete all data`（需进行 URL 编码）。完整调用方式见 [Graph API](/cn/docs/clients/restful-api/graphs/)。
+
+### 清理底层存储后，为什么仍提示 Schema 已存在 {#schema-cache}
+
+Server 在内存中维护了 Schema 缓存。如果直接绕过 Server 清理底层存储（如清空 RocksDB 目录或 HBase 表），Server 缓存与实际存储将出现不一致。
+若已手动清理底层，必须**重启 Server**。日常清理建议使用官方提供的 [Clear 图 API](/cn/docs/clients/restful-api/graphs/#clear-graph)。
+
+## 建模与 ID {#modeling}
+
+### 顶点或边 ID 超过长度限制 {#id-length}
+
+为保证底层存储与索引性能，HugeGraph 对 ID 长度作了如下限制（按编码后的字节数计算）：
+- **顶点 ID**：最长 16384 字节（16 KB）；
+- **边 ID**：最长 65536 字节（64 KB）。
+
+建议使用简洁的业务唯一标识作为主键，避免在 ID 中拼接大段文本。注：属性索引值超过 32 字节时会自动转为哈希存储，不会报错超长。
+
+### 是否支持嵌套属性 {#nested-properties}
+
+目前不支持嵌套属性（复杂对象或嵌套 Map）。如果需要表达多层级关系，建议将嵌套对象拆分成独立的顶点，通过边与主体顶点相连。
+
+### 一个边类型能连接多组顶点类型吗 {#edge-links}
+
+支持。创建 `EdgeLabel` 时，对每一组起点和终点类型分别调用一次 `link(sourceLabel, targetLabel)` 即可。
+例如“投资”关系可以同时连接“个人 → 企业”和“企业 → 企业”。旧版 `sourceLabel()` 与 `targetLabel()` 只支持单一配对，现已废弃。
+
+其他问题可搜索 [Server issues](https://github.com/apache/hugegraph/issues) 或 [Toolchain issues](https://github.com/apache/hugegraph-toolchain/issues)。

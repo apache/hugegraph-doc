@@ -1,0 +1,184 @@
+{
+  "capturedOn": "2026-10-22",
+  "hubbleSource": "apache/hugegraph-toolchain@d655b0372dfe189ebeff51ea885b3386a1bc4a2c",
+  "serverRuntimeSource": "apache/hugegraph@ebb8f4e17f0bf826cb50745c590d8bc54b45c6b6",
+  "compileSdkSource": "apache/hugegraph@86c05ef9c5d417bd37eab21d4ecd5af82bab17ef",
+  "capture": "Real source-built services; native language toggle; no mocked API responses or external model calls",
+  "sample": {
+    "dataset": "loader",
+    "graphspace": "DEFAULT",
+    "graph": "hugegraph",
+    "vertices": 8,
+    "edges": 6
+  },
+  "images": [
+    {
+      "path": "content/en/docs/images/hubble/accounts.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "41d523cac35c6d2ce63d3485d0811aa83d736df09358902f516b39666e98b1b5"
+    },
+    {
+      "path": "content/en/docs/images/hubble/algorithms.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "604eeb07917bc7ac23162bb09d8f5086253014ea81126460ee21a4af2dbdd059"
+    },
+    {
+      "path": "content/en/docs/images/hubble/cluster-overview.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "cd05d3c6dce882f788c83ce136a5def56215cc40857041b4be1dfec8c22d77ac"
+    },
+    {
+      "path": "content/en/docs/images/hubble/graphspace.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "1d18a7b25fb360598836d89e32a1aed4219386df765b6b0739cca1d42b0958a0"
+    },
+    {
+      "path": "content/en/docs/images/hubble/members.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "a88066b474d0367efebe7ab6a49fc82c4ca8594e98080dfa23910ef9c3240c77"
+    },
+    {
+      "path": "content/en/docs/images/hubble/overview.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "00fb9ce86de1f19c15efdd5008a350a7ded4264bffc356c46e3c589dab293020"
+    },
+    {
+      "path": "content/en/docs/images/hubble/query.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "79d95e34de55e722feb18e528eba3539bbf54abfc27701d3b72619b9e0a8194c"
+    },
+    {
+      "path": "content/en/docs/images/hubble/schema.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "2f84c77f5d413d88d63443d4cdbec684e68f4aebf17aac57a528c03adbb362fe"
+    },
+    {
+      "path": "content/en/docs/images/hubble/store-node.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1200,
+      "sha256": "18898b4f487a11835eb9a46fdfb0b86617cbcd6304d3cf9d95c7dd032d3f20be"
+    },
+    {
+      "path": "content/en/docs/images/hubble/text2gql-prompt.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "18983352307f1a4dbeb0ed4d23c97f268d00a6e7d14ce3dfcf77a7f9a375872d"
+    },
+    {
+      "path": "content/en/docs/images/hubble/text2gql-settings.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "f09e346087cf7f3697161e459cbaf25516badb4f7198eaff66b28cc123dce581"
+    },
+    {
+      "path": "content/en/docs/images/hubble/text2gql.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "889730977372a841491e99ef054b6c470f19b9337d2b42ec3690e8a05e04e545"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/accounts.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "37b43141942d27e0f004e6a42d21225884fbd2cc5553510a07e80bfdb75796c8"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/algorithms.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "1b7c06a02e1f029c688d031dd255717b2fb8019a8fb2d7de5a6adb073562ec81"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/cluster-overview.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "1585fa02d2d4f4d0f5eaca703116d9109ddac4172bc00f70b148bcece4a5bb8a"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/graphspace.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "50cac0d30fb884e6fedd49dfb7dfa6aa2f3e9f604d38aaf6dfb6db1cf1500dec"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/members.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "261d02a39f52780a7f3cbfbd07b88d26b9c73f5b18a77e03f58d441f7bc4bdce"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/overview.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "bb2adeef49baa37530e75509d089f3ac93f095def6e52b09f5ff9b25ae05b0d4"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/query.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "419cf0a28d1748db7edbe314425a1958ded5f11843da500e7624756cb07ef2e5"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/schema.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "dd5be5c084750ace80612b88642d50a356d85e16951995d3c193a0a4030cf4fc"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/store-node.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1200,
+      "sha256": "44ae79b28d0b933f7861e0500ac71d37adf6a3149b371bf9401ee8881c157908"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/text2gql-prompt.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "a9c8535bc7cb967192d5b146ba822334908d696314d4bb7bb421e3dc5d984495"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/text2gql-settings.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "38f81de3c7ce1880638f3a490aae709200b87d1de857269d95b5a60451105b9b"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/text2gql.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "af498fb297cf8477174cb62d7aaae0bcc7127eee7f39c09e082bb9d9dc2d17b4"
+    }
+  ]
+}

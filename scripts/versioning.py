@@ -37,6 +37,7 @@ import urllib.parse
 import xml.etree.ElementTree as ET
 from typing import NoReturn
 
+from hugo_build import run_hugo
 from oink_module import download_locked
 
 
@@ -4279,6 +4280,7 @@ def build(args: argparse.Namespace) -> None:
             cwd=assembly,
             check=True,
         )
+        # Keep the exact known LibSass warning visible; reject other diagnostics.
         command = [
             hugo,
             "--config",
@@ -4292,7 +4294,6 @@ def build(args: argparse.Namespace) -> None:
             "production",
             "--printPathWarnings",
             "--printI18nWarnings",
-            "--panicOnWarning",
             "--logLevel",
             "info",
         ]
@@ -4301,7 +4302,7 @@ def build(args: argparse.Namespace) -> None:
         build_environment["PATH"] = (
             go_directory + os.pathsep + build_environment.get("PATH", "")
         )
-        subprocess.run(command, cwd=assembly, check=True, env=build_environment)
+        run_hugo(command, cwd=assembly, env=build_environment)
         route_aliases = (
             write_historical_route_aliases(
                 output, args.site_origin, entry["publishPath"]

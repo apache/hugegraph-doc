@@ -11,7 +11,7 @@ search_keywords: [HugeGraph Helm 运维, local PV, NetworkPolicy, PD, Store]
 
 ## 1 存储和内网镜像 {#1-storage-and-private-images}
 
-默认安装需要七个持久卷。动态存储需要正常的 provisioner，静态 local 存储需要预建目录和绑定节点的匹配 PV。
+基础安装需要七个持久卷。动态存储需要正常的 provisioner，静态 local 存储需要预建目录和绑定节点的匹配 PV。
 [完整例子](https://github.com/apache/hugegraph/tree/master/helm/hugegraph/examples)包含七个 local PV、`WaitForFirstConsumer`、镜像仓库和 GitOps Secret。
 `WaitForFirstConsumer` 的 PVC 初期 Pending 可以是正常等待；持续 Pending 应检查 PVC/Pod 事件和 PV 匹配。
 PVC 已绑定但目录不存在或权限不匹配时可能挂载失败，不能把故障 PVC 静默替换成临时目录。
@@ -25,6 +25,11 @@ kubectl get pv,storageclass
 
 出现 `ImagePullBackOff` 时检查 Pod 事件、仓库连通性和拉取凭据。默认只需四个组件镜像，等待 Store/Helm test 复用已包含 curl 的组件镜像。
 如显式覆盖 helper 镜像，该镜像也需要同步到内网仓库。
+启用 SeaTunnel 还需配置的 `apache/seatunnel` 镜像；启用 Vermeer 使用按 digest 固定的 `hugegraph/vermeer:helm-30b67d93e7d0`，
+Master、Worker 和令牌初始化共用它。官方发布运行记录源码与镜像 digest，
+详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)。
+自定义镜像覆盖还需同步更新 `vermeer.image.digest`，或显式清空以按标签选择；非空 digest 优先。
+基础 local PV 示例不包含 Vermeer 卷：单机增加两个，集群增加一个 Master 卷及每 Worker 一个卷，默认增加四个。
 
 ## 2 端口和健康检查 {#2-ports-and-health}
 
@@ -33,6 +38,32 @@ PD 端口为 REST 8620、gRPC 8686、Raft 8610；Store 为 REST 8520、gRPC 8500
 PD `/v1/ready` 需要 Raft leader，`/v1/health` 只说明监听器已启动，Store 等待多数 PD peer ready 后启动。
 Server 等待存储的默认上限为 300 秒，可以用 `server.storageWaitTimeoutSeconds` 调整。
 本地模板渲染不能验证集群连通性、卷挂载或 JVM 运行容量。
+
+### 保留元数据命名空间 {#metadata-namespace}
+
+`metadataCluster: hg-test` 用于声明 Server 和 Store 访问 PD 时的元数据前缀（注入至 Server 的 `HG_SERVER_CLUSTER` 与 Store 的 `PD_CLUSTER`）。
+它并非 Raft 分组名，修改该值不会自动迁移历史元数据。**切勿**为了启用 Vermeer 将已有集群的前缀随意变更。若遇到 Server 查询正常但 Vermeer 扫描 Store 报 `Schema missing` 或 `no such vertex label`，应优先核查各组件的元数据前缀是否完全一致。
+
+若历史自建环境使用了非默认前缀，升级前需在 Server Deployment 显式标注确认：
+
+```bash
+kubectl -n hugegraph annotate deployment hugegraph-server \
+  hugegraph.apache.org/metadata-cluster='<已核准的历史前缀>'
+```
+
+并在 values 中将 `metadataCluster` 设为同一值。对于采用 `store.updateStrategy.type=OnDelete` 策略的 Store 节点，需按[受控滚动升级流程](#6-rolling-store-images-safely)逐个重建 Pod，新配置方可生效。
+
+> [!DETAILS]- 可选引擎运维：探针、凭据与拓扑切换
+> - **端口与健康状态**：SeaTunnel HTTP/UI 端口为 `8080`；Vermeer Master HTTP/gRPC 为 `6688/6689`，Worker 为 `6788/6789`。
+>   原生 HTTP/UI 在 easy 下默认 NodePort，strict 下默认 ClusterIP，两者均需登录；内部 RPC、Worker HTTP 与 SeaTunnel `5801` 保持私有。
+>   `service.type: null` 继承模式默认值，显式 `ClusterIP` 保持私有，显式 `NodePort` 则开放需要登录的 HTTP/UI。
+>   使用 `hugegraph-seatunnel` 或 `hugegraph-vermeer-master` Service 分配的 HTTP NodePort 与可达节点 IP 访问。
+>   查询命令见[原生入口说明](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)；ClusterIP 可使用 port-forward。
+> - **密码与会话**：初次部署生成的管理密码在 easy 模式下为 6 位字符，strict 模式下为 16 位；后续升级与模式切换均自动保留既有凭据。
+>   Vermeer 原生控制台直接在 **Admin credential** 填入 `<release>-vermeer-admin` Secret 的 `password` 即可登录；Hubble 内部服务凭据已自动注入。
+> - **拓扑与副本切换**：修改 `seatunnel.mode` 或 `vermeer.mode` 前，请确保所有计算与导入批任务已结束并卸载内存图副本。单机与集群使用独立的数据卷声明，拓扑切换不会自动迁移本地文件。
+> - 完整恢复指引与进阶参数详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)
+>   与 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
 ### Helm test 检查范围 {#helm-test-coverage}
 
@@ -87,10 +118,12 @@ PD 会持久化分区设置，初始化后修改 chart 值不会覆盖已有元�
 
 ## 5 NetworkPolicy {#5-networkpolicy}
 
-easy 模式及普通集群预设默认关闭，strict 模式默认开启；显式 `networkPolicy.enabled` 在任何模式都优先。
+基础服务的完整隔离在 easy 和普通集群预设下默认关闭，strict 下开启。
+SeaTunnel 和 Vermeer 始终需要登录。原生策略仅在最终 Service 类型为 NodePort 时允许外部 HTTP，
+内部 RPC、Worker HTTP 与 SeaTunnel 成员端口仍限制为相应 release 调用方，`networkPolicy.enabled=false` 也不例外。
 集群网络插件必须支持策略执行，才有实际隔离效果。
-生成策略允许组件间通信和 DNS，外部客户端、Ingress 控制器需要适当的 `networkPolicy.<component>.extraIngress`，
-外部发现地址可能还需要 `extraEgress`。空列表合法但可能阻止外部访问；支持 Kubernetes 原生规则，包括允许全部的 `{}`，不要求额外来源确认。
+生成策略允许组件间通信和 DNS，基础服务的外部客户端、Ingress 控制器需要适当的 `networkPolicy.<component>.extraIngress`，
+外部发现地址可能还需要 `extraEgress`。基础服务规则的空列表合法但可能阻止外部访问，并支持 Kubernetes 原生规则，包括允许全部的 `{}`。
 按实际来源地址或 selector 配置，并考虑 NodePort SNAT 和控制器行为。
 
 ```yaml
@@ -113,6 +146,10 @@ networkPolicy:
           - protocol: TCP
             port: 8088
 ```
+
+原生引擎的 extraIngress 只接受显式内部 Pod／namespace selector，拒绝 IP block 和通配规则。
+NodePort HTTP 访问已由生成的策略直接放行，无需额外的 extraIngress 规则。
+上面的基础服务示例用于 Server。外部数据源可按需配置引擎 extraEgress，strict 进一步限制出站流量。
 
 ## 6 逐个升级 Store {#6-rolling-store-images-safely}
 

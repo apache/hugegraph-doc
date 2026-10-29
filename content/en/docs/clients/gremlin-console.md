@@ -69,73 +69,80 @@ For more Gremlin statements, please refer to [Tinkerpop Official Website](http:/
 
 ### 2 Client/Server mode
 
-Gremlin Console connects to HugeGraph Server through WebSocket. The default configuration uses `WsAndHttpChannelizer`, which handles both WebSocket and HTTP requests, so there is no need to switch the Channelizer.
+Gremlin Console connects to HugeGraph Server through WebSocket. Use the Console and `conf/remote.yaml` bundled with the same Server version.
+Keep the serializer settings from that file; change only the address and, if authentication is enabled, credentials.
+Older configuration files may reference serializer classes that no longer exist.
 
-```yaml
-# vim conf/gremlin-server.yaml
-# ......
-channelizer: org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer
-# ......
-```
+1. Prepare the connection configuration and start Server.
 
-Confirm that `host` and `port` match the settings in `remote.yaml`, and then follow the [steps](/docs/quickstart/hugegraph/hugegraph-server) to start HugeGraph Server.
+   Check the `host` and `port` in `conf/gremlin-server.yaml`. The default `WsAndHttpChannelizer` handles both WebSocket and HTTP requests;
+   it does not need to be changed. In `conf/remote.yaml`, `hosts` must contain the Server address reachable from the Console,
+   and `port` must match the Gremlin port (default `8182`, not the REST port `8080`).
+   Start Server following the [quick start](/docs/quickstart/hugegraph/hugegraph-server).
 
-Then enter Gremlin-Console:
+   The current master configuration uses GraphBinary V1 with HugeGraph's type registry:
 
-```bash
-> ./bin/gremlin-console.sh
+   ```yaml
+   hosts: [localhost]
+   port: 8182
+   serializer:
+     className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
+     config:
+       serializeResultToString: false
+       builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+       ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
+   ```
 
-         \,,,/
-         (o o)
------oOOo-(3)-oOOo-----
-plugin activated: HugeGraph
-plugin activated: tinkerpop.server
-plugin activated: tinkerpop.utilities
-plugin activated: tinkerpop.tinkergraph
-```
+   If Server requires authentication, add your actual credentials to the same file:
 
-To connect to the server, you need to specify the connection parameters in the configuration file, and there is a default `remote.yaml` file in the conf directory
+   ```yaml
+   username: admin
+   password: "replace-with-your-password"
+   ```
 
-```yaml
-# cat conf/remote.yaml
-hosts: [localhost]
-port: 8182
-serializer: {
-  className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV1d0,
-  config: {
-    serializeResultToString: false,
-    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
-  }
-}
-```
+   The bundled `remote-objects.yaml` and `gremlin-driver-settings.yaml` use the same serializer settings. Keep them aligned if you use them.
 
-If the Server runs in auth mode, add the credentials to the same file:
+1. Start Console from the Server distribution directory and create a client with a traversal alias.
 
-```yaml
-username: admin
-password: pa
-```
+   ```bash
+   ./bin/gremlin-console.sh
+   ```
 
-The `conf` directory also ships `remote-objects.yaml` and `gremlin-driver-settings.yaml`, which carry the same host, port, and serializer settings.
+   Server binds the graph `hugegraph` in graphspace `DEFAULT` as `DEFAULT-hugegraph`, and its traversal source as `__g_DEFAULT-hugegraph`.
+   Because hyphens are invalid in Groovy variable names, use `.alias(['g': '__g_DEFAULT-hugegraph'])` to map it to `g` when creating the driver client:
+
+   ```groovy
+   import org.apache.tinkerpop.gremlin.driver.Cluster
+   cluster = Cluster.open('conf/remote.yaml')
+   client = cluster.connect().alias(['g': '__g_DEFAULT-hugegraph'])
+   ```
+
+1. Submit queries through the client.
+
+   ```groovy
+   client.submit('g.V().count()').all().get()[0].object
+   client.submit('g.V().toList().size()').all().get()[0].object
+   ```
+
+   Both return `6` if the sample graph was preloaded at Server startup (other graphs return their actual vertex count).
+   When submitting scripts via `client.submit()`, no `:>` prefix is needed.
+
+1. Close the client and cluster when finished.
+
+   ```groovy
+   client.close()
+   cluster.close()
+   ```
+{.steps}
+
+Alternatively, you can connect using Gremlin Console's built-in `:remote` command:
 
 ```groovy
-gremlin> :remote connect tinkerpop.server conf/remote.yaml
-==>Configured localhost/127.0.0.1:8182
+:remote connect tinkerpop.server conf/remote.yaml
+// Use :> as a prefix when submitting scripts through the Console remote connection.
+:remote close
 ```
 
-Server-side graphs are bound under a graphspace-qualified name, so the graph `hugegraph` in graphspace `DEFAULT` is bound as `DEFAULT-hugegraph` and its traversal source as `__g_DEFAULT-hugegraph`. A bare `hugegraph` does not resolve on the Server, and `DEFAULT-hugegraph` is not a valid Groovy identifier, so a remote script reaches the traversal source through an alias. If the sample graph was preloaded when HugeGraph-Server started, a query looks like this:
+When connected with `:remote`, expressions prefixed with `:>` are sent to the remote Server, while normal expressions execute locally in Console.
 
-```groovy
-gremlin> import org.apache.tinkerpop.gremlin.driver.Cluster
-gremlin> cluster = Cluster.open('conf/remote.yaml')
-gremlin> client = cluster.connect().alias(['g': '__g_DEFAULT-hugegraph'])
-gremlin> client.submit('g.V().count()').all().get()[0].object
-==>6
-gremlin> client.submit('g.V().toList().size()').all().get()[0].object
-==>6
-gremlin> client.close(); cluster.close()
-```
-
-> NOTE: In Client/Server mode, all operations related to the Server should be prefixed with `:> `. If not added, it indicates local console operations. A `:> ` script carries no alias, so it can only use names the Server itself has bound.
-
-For more information on the use of Gremlin-Console, please refer to [Tinkerpop Official Website](http://tinkerpop.apache.org/docs/current/reference/)
+For more information, see the [TinkerPop Gremlin Console reference](https://tinkerpop.apache.org/docs/current/reference/#gremlin-console).

@@ -15,15 +15,14 @@ For the short workflow, start with [README.md](./README.md). This file records t
 The site uses the Hugo Module recorded in `go.mod` and `go.sum`:
 
 Toolchain versions are maintained in `go.mod` and `.github/workflows/hugo.yml`;
-`go.mod` / `go.sum` pin the theme. Hugo Extended uses standalone Dart Sass from
-`PATH`; CI installs the official archive with a pinned checksum. Node.js is needed only for the browser tests,
+`go.mod` / `go.sum` pin the theme. Hugo Extended uses its built-in LibSass compiler;
+no standalone Dart Sass or npm dependencies are needed to build the site. Node.js is needed only for the browser tests,
 with its version declared by `tests/e2e/package.json` and CI.
 
 Verify the installed toolchain and locked module:
 
 ```bash
 hugo version
-sass --version
 go version
 python3 scripts/oink_module.py
 ```
@@ -48,7 +47,7 @@ The site's [local preview guide](https://hugegraph.apache.org/community/document
 
 ## Strict production build
 
-Run the same warning-strict build used by CI:
+Run the same production build and diagnostics used by CI:
 
 ```bash
 scripts/hugo.sh build
@@ -60,12 +59,19 @@ example `scripts/hugo.sh server -p 8080`. Set `HG_DOC_VERSION`,
 `HG_DOC_SITE_ORIGIN`, or `HG_DOC_HISTORICAL_ORIGIN` only when validating a
 specific version or publication origin.
 
-The wrapper applies Hugo's configuration, environment, strict-warning,
+The wrapper applies Hugo's configuration, environment, path/i18n diagnostics,
 cleanup, and minification flags before your arguments; Hugo's last-wins flag
 handling means anything you append (for example `--logLevel debug`) takes
 effect. Use `--baseURL` or `HG_DOC_SITE_ORIGIN` when changing the rendered
 origin (the flag wins when both are set); a server `--port` is reflected in
 the generated local origin.
+
+OINK 1.4 uses Hugo's built-in LibSass. Its deprecation warning must remain visible;
+do not add `--panicOnWarning` or suppress it with `ignoreLogs`. The shared
+`scripts/hugo_build.py` gate permits only that exact warning and fails builds on
+all other Hugo warnings, including missing translations and duplicate target
+paths. Full output and Hugo failure status are preserved. The source, output
+and browser validators also remain blocking.
 
 A successful command proves that Hugo rendered the configured outputs. It does not replace browser checks for navigation, search, language switching, accessibility, mobile layout, print, or Content Security Policy behavior.
 
@@ -81,7 +87,13 @@ build groups, with at most two versions building concurrently within each runner
 Historical artifacts are reused only when both the complete build-input fingerprint
 and artifact digest match. Missing or invalid cache entries rebuild automatically;
 manual dispatches start without the artifact cache and use the original build and
-validate commands so older candidate branches do not need the new CI helpers. Cache hits still run the full
+validate commands so older candidate branches do not need the new CI helpers.
+Candidates pinned to OINK 1.3.0 are outside this workflow's supported scope.
+OINK 1.3.1 requires standalone Dart Sass, while this workflow installs native
+LibSass only. Both pins are rejected before scheduling builds; upgrade such a
+candidate to OINK 1.4.0 before dispatching it.
+Historical documentation versions still use the current site's shell and are
+unaffected by this candidate-theme restriction. Cache hits still run the full
 version validator, and aggregation validates every selected version again.
 
 Assembly validates at most two versions concurrently, then writes the complete
@@ -110,112 +122,26 @@ latest 文档使用 SeaTunnel 3.0+ 等最低版本说明，并引用上游 lates
 
 ## Native content components
 
-Prefer [OINK's native Markdown components](https://oink.pgsty.com/docs/components/)
-over copied theme templates: `filetree` for annotated directory layouts, `{.cards}`
-for parallel navigation choices, `{tab="..."}` for equivalent code alternatives,
-and `kbd` for physical keys. Use `{.steps}` only for actions performed in order.
-Keep important prerequisites visible; reserve folding for supplemental detail.
-For FileTree comments that readers must see in full, opt into native wrapping:
-
-````markdown
-```filetree {title="Store directories" wrap=true}
-data/
-  m/ # schema store: property keys and labels
-  g/ # graph store: vertices, edges and indexes
-```
-````
-
-Keep the compact default for short comments. For a technical table whose identifiers
-would squeeze its descriptions, add `{.td-table--wide}` immediately after the table.
-Its native wrapper owns keyboard scrolling; ordinary tables need no modifier.
-Do not restore these behaviors with site-wide table or FileTree CSS.
-
-Use Mermaid for relationships and flows, Markmap for a text hierarchy, and ECharts
-for quantitative comparisons; keep chart data and test conditions alongside the chart.
+Use the focused [OINK feature reference](scripts/oink-features.md) for component
+selection, copyable syntax and real HugeGraph source examples. It covers the
+native components used by this site, OINK 1.4.0's table reader and release cards,
+and the public interfaces used by the site shell. Read the relevant section
+before adding a renderer, shortcode, script or stylesheet.
 
 ### Image loading and albums
 
-Use [Gallery](https://oink.pgsty.com/docs/components/gallery/) for a few screenshots
-inside a tutorial. Use [Expo](https://oink.pgsty.com/docs/write/expo/) when the images
-are the main content of an independent album: a section with `type: expo` and
-`cascade: {type: expo}`, containing leaf bundles with `index.md` and local images.
-For example, `content/en/product-images/hubble/index.md` and an `images/` subdirectory
-can form one album; add the matching Chinese bundle when adopting it. Expo supplies
-wall, masonry and seamless layouts plus original-image viewing; image captions,
-credits and ordering belong in Hugo resource metadata. It does not replace the
-step-by-step explanation in a tutorial. These are authoring examples, not routes
-that this site publishes automatically.
-
-OINK 1.3 adds these loading behaviors to Expo albums:
-
-- Processable local images get previews fitted within 960 × 960 pixels in WebP
-  when either side exceeds 960 pixels or the file is a GIF; other images reuse
-  their original file.
-  The viewer retains the original file and shows the cached preview while it loads.
-- The first four tiles load eagerly, with high priority on the first; later tiles
-  are lazy. Viewing an original preloads one neighboring image on each side.
-- Card layouts batch geometry reads and writes, and known image dimensions avoid
-  another layout pass after each image loads.
-
-Gallery retains native lazy loading, asynchronous decoding and the shared image
-viewer. It does not generate those Expo previews or preload neighboring originals.
-Keep explanatory screenshots in Gallery rather than changing a guide into an album.
-For standalone static images, supply intrinsic `width` and `height` through native
-Markdown attributes to reserve space before loading. These attributes do not compress
-the image. Avoid repeating the same screenshot in a gallery and again at full width.
-
-Check the pinned templates and generated HTML before claiming a loading improvement;
-measure network bytes and timing separately. See the
-[upstream loading change](https://github.com/pgsty/oink/commit/33d5e652ce986e1c197bb87fd588fd3c55851c69)
-and [tagged Expo preview implementation](https://github.com/pgsty/oink/blob/v1.3.1/layouts/_partials/expo/items.html).
+Use Gallery for screenshots within an explanation and Expo for a standalone
+album. Their preview and preloading behavior differs; see
+[image loading and albums](scripts/oink-features.md#image-loading-and-albums)
+before changing content or claiming a performance improvement.
 
 ### Content and output checks
 
-Published Markmap diagrams are limited to text outlines and code. Only a finite,
-nonnegative `spacingHorizontal` is allowed in frontmatter; active images, links, raw HTML
-and other frontmatter fail the site's safety validation.
-Use standard language-labelled fences (`bash`, `properties`, `json`, or `text`
-for plain text). Inline line numbers come from the global Hugo highlight config;
-ordinary documentation code blocks do not need custom filename or title headers.
-For long code examples, show at least 5–9 source lines according to the reading
-context. Do not fold short examples that already fit within that range; preserve
-complete clipboard output, including hidden lines. Keep benchmark tables and test
-conditions beside charts, and use Gallery summaries alongside detailed screenshots
-when readers need to follow UI steps. Math should clarify a real documented formula.
-
-Use terminal recordings only when timing, interactive input or changing output
-adds useful information, such as a startup or troubleshooting walkthrough. Keep
-the commands as copyable code; a version check alone does not need a player.
-The local preview guide includes one optional player-authoring example in both
-languages; it demonstrates component usage rather than replacing version checks.
-Asciicast files store terminal text and timestamps, not video or executable
-commands. Change the shortcode's `title` or `speed` for presentation; re-record
-when commands or output change. Resize the terminal to the intended dimensions
-before recording; overriding the player's `cols` or `rows` can crop the recording.
-
-With the optional [Asciinema recorder](https://oink.pgsty.com/docs/components/asciinema/)
-installed, record a real session, run the demonstration commands, then exit:
-
-```bash
-asciinema rec demo.cast
-```
-
-Save the checked recording under `static/casts/` and reference it from Markdown:
-
-```text
-{{< asciinema file="/casts/demo.cast" title="Startup walkthrough" speed="1" >}}
-```
-
-The recorder is an authoring tool, not a site build dependency. Check both desktop
-and mobile playback, keep output readable, and review the plain-text file before
-committing it so credentials or private output are not included.
-
-Blog section metadata supplies default cover images and reading time; individual
-articles supply real categories, tags and series order. Confirm original authorship
-before creating an author profile. Keep both languages aligned, public article
-routes stable, and accurate defaults; content styling is not a reason to change
-commands or historical benchmark claims. Verify relevant HTML interactions and
-Print/Markdown/RSS fallbacks when adopting a new content component.
+The feature reference also records Markmap/ECharts constraints, complete code
+copying, optional terminal recordings and content metadata rules. Check the
+affected HTML interactions and Print/Markdown fallbacks; check RSS for content
+that appears in a feed. Keep English and Chinese pages aligned and public routes
+stable.
 
 ## Repository structure
 

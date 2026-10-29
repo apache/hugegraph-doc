@@ -2,7 +2,11 @@
 title: "HugeGraph 1.7.0 Release Notes"
 linkTitle: "Release-1.7.0"
 weight: 1
+date: 2025-11-16T15:28:32Z
+release_url: https://github.com/apache/hugegraph/releases/tag/1.7.0
 ---
+
+{{< release-card >}}
 
 > WIP: This doc is under construction, please wait for the final version (BETA)
 

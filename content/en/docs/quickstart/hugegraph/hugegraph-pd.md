@@ -173,7 +173,11 @@ install-snapshot timeout, and id allocation runs no ReadIndex wait.
 | `pd.balance-leader-max-skew` | `2` | `2` | A check balances leaders only when the most leaders on one Store minus the fewest on another exceeds this value. Must be `0` or more. |
 {.td-table--wide}
 
-The three `pd.balance-leader-*` keys exist only in versions after 1.7.0. With `pd.balance-leader-enable` set, a check is skipped while a shard group is unhealthy or has no recent partition heartbeat, while a membership change is in progress, or while a Store that holds a shard is not active. A planned transfer is not sent to a Store whose state is not `Up`, or whose applied index trails the leader's by more than an estimated 1000 entries. An invalid interval or skew logs a warning and leaves periodic balancing off.
+> [!NOTE]
+> The `pd.balance-leader-*` settings are introduced in 1.8.0 (`master` branch). With `pd.balance-leader-enable` turned on, PD periodically balances partition leaders across Stores:
+> - A balance check is skipped if a shard group is unhealthy, lacks recent heartbeats, is undergoing membership changes, or holds a shard on an inactive Store.
+> - Planned transfers are only scheduled to Stores whose state is `Up` and whose replication log is up to date (within 1000 applied entries of the leader).
+> - If an invalid interval or skew threshold is provided, PD logs a warning and keeps periodic balancing disabled.
 
 **Store management**
 

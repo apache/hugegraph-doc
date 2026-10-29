@@ -10,6 +10,9 @@ SeaTunnel 可以把数据库、Kafka 等数据源接入 HugeGraph。连接器分
 
 > **版本要求：本文面向 SeaTunnel [3.0+](https://seatunnel.apache.org/download/)。** 所有示例使用 SeaTunnel 3.0+ 提供的 `mappings` 配置。
 
+通过 HugeGraph Helm 部署时，可直接[启用内置 SeaTunnel](/cn/docs/quickstart/hugegraph/hugegraph-helm/#6-start-seatunnel)。
+Chart 已预置 HugeGraph 连接器、运行环境及同 Release 的连接凭据；本页重点介绍接入外部数据源时的作业配置。
+
 [![Loader 与 SeaTunnel 的工作流对比：直接导入图数据与复用 Source、Transform、Sink 管道](/cn/docs/images/seatunnel/seatunnel-vs-loader-zh.png)](/cn/docs/images/seatunnel/seatunnel-vs-loader-zh.png)
 
 点击配图可查看原图。

@@ -2,7 +2,8 @@
 ui_version_fallback: 目标版本没有此页面，已转到该版本的文档首页。
 ui_ask_ai: 询问 AI
 ui_ask_ai_description: 由 Kapa 提供；仅发送你的问题。
-ui_ask_ai_latest: 回答基于 latest 文档
+ui_ask_ai_version: "回答基于 {{ .Version }} 版本文档"
+ui_ask_ai_unindexed: "{{ .Version }} 版本尚未建立 AI 文档索引，请先使用本地搜索。"
 ui_retry: 重试
 ui_ai_error: AI 暂时不可用，本地搜索不受影响。
 ui_more_versions: 更多版本

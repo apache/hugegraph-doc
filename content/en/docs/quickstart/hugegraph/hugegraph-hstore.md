@@ -111,7 +111,12 @@ Multi-node service names are `pd0`–`pd2`, `store0`–`store2`, and `server0`�
 
 To run master-built Store alone, replace example addresses with actual routable Store and PD addresses:
 
+The `mkdir -p` and nonrecursive `chown` below are for a new empty directory. Before reusing data written by a root image, stop Store and run
+`sudo chown -R 10001:10001 /path/to/storage` once, then start the UID 10001 image.
+
 ```bash
+# Master-built images run as UID 10001; the host data directory must be writable by it
+mkdir -p /path/to/storage && sudo chown 10001:10001 /path/to/storage
 docker run -d \
   -p 8520:8520 -p 8500:8500 -p 8510:8510 \
   -e HG_STORE_PD_ADDRESS=192.168.1.10:8686 \

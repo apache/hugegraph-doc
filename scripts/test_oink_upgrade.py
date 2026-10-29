@@ -30,41 +30,43 @@ class UpgradeTest(unittest.TestCase):
             work.assert_not_called()
             command.assert_not_called()
 
-    def test_target_minimum_and_extended_requirement_fail_before_compilation(self):
+    def test_target_hugo_and_go_requirements_fail_before_compilation(self):
         with tempfile.TemporaryDirectory() as directory:
             theme = Path(directory)
             (theme / "theme.toml").write_text('min_version = "0.170.0"\n')
+            (theme / "go.mod").write_text('module example.test/theme\n\ngo 1.27.3\n')
             for hugo in ("hugo v0.168.0+extended", "hugo v0.170.0"):
                 with patch.object(update_oink, "prior_release", return_value={"Dir": directory}), \
-                     patch.object(update_oink, "tool_versions", return_value={"hugo": hugo, "sass": "1.105.2"}), \
+                     patch.object(update_oink, "tool_versions", return_value={"hugo": hugo, "go": "go1.27.3"}), \
                      patch.object(update_oink.subprocess, "run") as compile:
                     with self.assertRaisesRegex(ValueError, "Extended >= 0.170.0"):
-                        update_oink.check_toolchain(theme, "v1.3.1")
+                        update_oink.check_toolchain(theme, "v1.4.0")
                     compile.assert_not_called()
             with patch.object(update_oink, "prior_release", return_value={"Dir": directory}), \
-                 patch.object(update_oink, "tool_versions", return_value={"hugo": "hugo v0.170.0+extended", "sass": "1.104.0"}):
-                with self.assertRaisesRegex(ValueError, "Dart Sass >= 1.105.2"):
-                    update_oink.check_toolchain(theme, "v1.3.1")
+                 patch.object(update_oink, "tool_versions", return_value={"hugo": "hugo v0.170.0+extended", "go": "go1.27.2"}), \
+                 patch.object(update_oink.subprocess, "run") as compile:
+                with self.assertRaisesRegex(ValueError, "Go >= 1.27.3"):
+                    update_oink.check_toolchain(theme, "v1.4.0")
+                compile.assert_not_called()
 
-    @unittest.skipUnless(shutil.which(os.environ.get("HUGO_BIN", "hugo")) and shutil.which("sass"),
-                         "Hugo and Dart Sass are required")
-    def test_real_hugo_dartsass_smoke_and_broken_embedded_protocol(self):
+    @unittest.skipUnless(shutil.which(os.environ.get("HUGO_BIN", "hugo")), "Hugo is required")
+    def test_real_hugo_libsass_smoke_never_invokes_standalone_sass(self):
         if update_oink.version_tuple(update_oink.tool_output([os.environ.get("HUGO_BIN", "hugo"), "version"])) < (0, 168, 0):
             self.skipTest("Hugo >= 0.168.0 is required")
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "theme.toml").write_text('min_version = "0.168.0"\n')
-            with patch.object(update_oink, "prior_release", return_value={"Dir": directory}):
-                versions = update_oink.check_toolchain(root, "v1.3.1")
-                self.assertGreaterEqual(update_oink.version_tuple(versions["sass"]), (1, 105, 2))
-                # A plausible --version alone cannot prove Hugo's embedded Sass protocol works.
-                shim = root / "sass"
-                shim.write_text(f"#!{sys.executable}\nimport sys\n"
-                                "print('1.105.2') if '--version' in sys.argv else sys.exit(17)\n")
-                shim.chmod(0o755)
-                with patch.dict(os.environ, {"PATH": str(root) + os.pathsep + os.environ["PATH"]}):
-                    with self.assertRaisesRegex(ValueError, "smoke compilation failed"):
-                        update_oink.check_toolchain(root, "v1.3.1")
+            (root / "go.mod").write_text('module example.test/theme\n\ngo 1.27.3\n')
+            marker = root / "sass-invoked"
+            shim = root / "sass"
+            shim.write_text(f"#!{sys.executable}\nfrom pathlib import Path\n"
+                            f"Path({str(marker)!r}).touch()\nraise SystemExit(17)\n")
+            shim.chmod(0o755)
+            with patch.object(update_oink, "prior_release", return_value={"Dir": directory}), \
+                 patch.dict(os.environ, {"PATH": str(root) + os.pathsep + os.environ["PATH"]}):
+                versions = update_oink.check_toolchain(root, "v1.4.0")
+            self.assertNotIn("sass", versions)
+            self.assertFalse(marker.exists(), "Hugo must use its built-in compiler")
 
     def test_work_directory_preserves_before_captures_and_first_lock_backup(self):
         with tempfile.TemporaryDirectory() as directory:

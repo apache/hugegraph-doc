@@ -2,6 +2,8 @@ import json
 import os
 import pathlib
 import stat
+import shlex
+import sys
 import subprocess
 import tempfile
 import unittest
@@ -10,6 +12,11 @@ from unittest.mock import patch
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 WRAPPER = ROOT / "scripts" / "hugo.sh"
+
+LIBSASS_WARNING = (
+    "WARN  deprecated: css.Sass: libsass was deprecated in Hugo v0.153.0 and will be removed in a future release. "
+    "Use dartsass instead. See https://gohugo.io/functions/css/sass/#dart-sass\n"
+)
 
 
 class HugoWrapperTest(unittest.TestCase):
@@ -22,6 +29,9 @@ class HugoWrapperTest(unittest.TestCase):
         self._write_executable(
             "python3",
             """#!/bin/sh
+case "$1" in
+  */hugo_build.py) exec __REAL_PYTHON__ "$@" ;;
+esac
 printf '{"tool":"python3","args":[' >> "$HG_WRAPPER_TEST_LOG"
 first=1
 output=
@@ -35,7 +45,7 @@ for arg in "$@"; do
 done
 printf ']}\\n' >> "$HG_WRAPPER_TEST_LOG"
 printf '%s\\n' '{"params":{"versions":[1,2,3,4,5]}}' > "$output"
-""",
+""".replace("__REAL_PYTHON__", shlex.quote(sys.executable)),
         )
         self._write_executable(
             "hugo",
@@ -55,6 +65,9 @@ printf ']}\\n' >> "$HG_WRAPPER_TEST_LOG"
 generated=${config#*,}
 test -f "$generated"
 grep -q '"versions":\\[1,2,3,4,5\\]' "$generated"
+printf '%s' "${HG_WRAPPER_HUGO_STDOUT:-}"
+printf '%s' "${HG_WRAPPER_HUGO_STDERR:-}" >&2
+exit "${HG_WRAPPER_HUGO_EXIT:-0}"
 """,
         )
 
@@ -182,8 +195,8 @@ grep -q '"versions":\\[1,2,3,4,5\\]' "$generated"
                     expected_origin,
                 )
 
-    def test_build_enforces_the_warning_strict_production_contract(self) -> None:
-        calls = self.run_wrapper("build", "--destination", "custom-public")
+    def test_build_enforces_strict_warnings_with_the_libsass_exception(self) -> None:
+        calls = self.run_wrapper("build", "--destination", "custom public with spaces")
         args = calls[1]["args"]
         self.assertNotIn("build", args)
         for required in (
@@ -194,10 +207,52 @@ grep -q '"versions":\\[1,2,3,4,5\\]' "$generated"
             "production",
             "--printPathWarnings",
             "--printI18nWarnings",
-            "--panicOnWarning",
         ):
             self.assertIn(required, args)
-        self.assertEqual(args[-2:], ["--destination", "custom-public"])
+        self.assertNotIn("--panicOnWarning", args)
+        self.assertIn("--logLevel", args)
+        self.assertIn("info", args)
+        self.assertEqual(args[-2:], ["--destination", "custom public with spaces"])
+
+    def test_build_allows_only_the_exact_libsass_warning_and_keeps_output(self) -> None:
+        output = "Starting Hugo build\n" + LIBSASS_WARNING + "Total in 12 ms\n"
+        result = self.invoke_wrapper(
+            "build", environment_overrides={"HG_WRAPPER_HUGO_STDERR": output}
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(output, result.stdout + result.stderr)
+
+    def test_build_rejects_other_hugo_warnings_even_beside_libsass(self) -> None:
+        for warning in (
+            "WARN  i18n|MISSING_TRANSLATION|en|missing_key\n",
+            "WARN  Duplicate target paths: /collision/index.html\n",
+            "WARN  deprecated: another feature will be removed\n",
+            LIBSASS_WARNING.rstrip("\n") + " unexpected suffix\n",
+        ):
+            with self.subTest(warning=warning):
+                result = self.invoke_wrapper(
+                    "build",
+                    environment_overrides={
+                        "HG_WRAPPER_HUGO_STDOUT": "build output before warning\n",
+                        "HG_WRAPPER_HUGO_STDERR": LIBSASS_WARNING + warning + "build output after warning\n",
+                    },
+                )
+                self.assertNotEqual(result.returncode, 0)
+                output = result.stdout + result.stderr
+                self.assertIn(warning, output)
+                self.assertIn("build output before warning\n", output)
+                self.assertIn("build output after warning\n", output)
+
+    def test_build_preserves_hugo_failure_status_and_diagnostics(self) -> None:
+        result = self.invoke_wrapper(
+            "build",
+            environment_overrides={
+                "HG_WRAPPER_HUGO_EXIT": "7",
+                "HG_WRAPPER_HUGO_STDERR": "WARN  unexpected warning\nERROR Hugo failed\n",
+            },
+        )
+        self.assertEqual(result.returncode, 7)
+        self.assertIn("ERROR Hugo failed\n", result.stdout + result.stderr)
 
     def test_documented_preview_and_build_use_the_wrapper(self) -> None:
         for relative in ("README.md", "contribution.md"):

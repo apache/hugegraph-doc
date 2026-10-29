@@ -4,25 +4,25 @@ linkTitle: "Gremlin Console"
 weight: 3
 ---
 
-Gremlin-Console 是由 Tinkerpop 自己开发的一个交互式客户端，用户可以使用该客户端对 Graph 做各种操作，主要有两种使用模式：
+Gremlin-Console 是 TinkerPop 的交互式客户端，支持离线操作图，也可以连接 Server 提交查询。
 
 - 单机离线调用模式
 - Client/Server 请求模式
 
-**注：Gremlin-Console 只是便于用户快速上手体验，不建议在生产环境中使用。**
+Gremlin-Console 适合学习和调试。生产应用建议使用对应语言的客户端。
 
 ### 1 单机离线调用模式
 
-由于 lib 目录下已经包含了 HugeCore 的 jar 包，且 HugeGraph-Server 已经作为插件注册到 Gremlin-Console 中，用户可以直接写 Groovy 脚本调用 HugeGraph-Core 的代码，然后交由 Gremlin-Console 内的解析引擎执行，就能在**不启动** Server 的情况下操作图。
+Server 发行包内的 Console 已包含 HugeGraph-Core JAR 和插件，可以直接执行 Groovy 脚本操作图，无需启动 Server。
 
-这里提供一个示例，首先修改 `hugegraph.properties` 配置使用 Memory 后端 (使用其他后端可能会出现一些初始化问题)：
+先在 `hugegraph.properties` 中配置 Memory 后端。其他后端可能需要额外初始化。
 
 ```properties
 backend=memory
 serializer=text
 ```
 
-然后输入下述命令：
+然后运行示例脚本。
 
 ```bash
 > ./bin/gremlin-console.sh -- -i scripts/example.groovy
@@ -45,7 +45,7 @@ gremlin>
 
 其中 [`example.groovy`](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy) 是 scripts 目录下的一个示例脚本，该脚本插入了一些数据，并在最后查询图中顶点和边的数量。
 
-此时还可以继续输入 Gremlin 语句对图进行操作：
+脚本执行后，可以继续输入 Gremlin 语句。
 
 ```groovy
 gremlin> g.V()
@@ -69,73 +69,78 @@ gremlin>
 
 ### 2 Client/Server 请求模式
 
-Gremlin-Console 通过 WebSocket 连接 HugeGraph-Server。默认配置使用 `WsAndHttpChannelizer`，可同时处理 WebSocket 和 HTTP 请求，无需切换 Channelizer。
+Gremlin-Console 通过 WebSocket 连接 HugeGraph-Server。使用与 Server 同版本发行包中的 Console 和 `conf/remote.yaml`，
+保留文件中的序列化器配置，只修改地址，以及启用鉴权时需要的凭据。旧版配置可能引用已经不存在的序列化器类。
 
-```yaml
-# vim conf/gremlin-server.yaml
-# ......
-channelizer: org.apache.tinkerpop.gremlin.server.channel.WsAndHttpChannelizer
-# ......
-```
+1. 准备连接配置并启动 Server。
 
-确认 `host`、`port` 与 `remote.yaml` 一致，然后按照[步骤](/cn/docs/quickstart/hugegraph/hugegraph-server/)启动 HugeGraph-Server。
+   检查 `conf/gremlin-server.yaml` 中的 `host`、`port`。默认的 `WsAndHttpChannelizer` 同时处理 WebSocket 和 HTTP 请求，无需修改。
+   `conf/remote.yaml` 中的 `hosts` 应填写 Console 能访问的 Server 地址，`port` 应与 Gremlin 端口一致（默认为 `8182`，不是 REST 端口 `8080`）。
+   按照[快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/)启动 Server。
 
-下面进入 Gremlin-Console：
+   当前 master 配置使用 GraphBinary V1 和 HugeGraph 类型注册器。
 
-```bash
-> ./bin/gremlin-console.sh
+   ```yaml
+   hosts: [localhost]
+   port: 8182
+   serializer:
+     className: org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV1
+     config:
+       serializeResultToString: false
+       builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder
+       ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
+   ```
 
-         \,,,/
-         (o o)
------oOOo-(3)-oOOo-----
-plugin activated: HugeGraph
-plugin activated: tinkerpop.server
-plugin activated: tinkerpop.utilities
-plugin activated: tinkerpop.tinkergraph
-```
+   如果 Server 开启了鉴权，在同一个文件中填写实际凭据。
 
-连接 Server，需在配置文件中指定连接参数，在 conf 目录下有一个默认的 `remote.yaml`：
+   ```yaml
+   username: admin
+   password: "replace-with-your-password"
+   ```
 
-```yaml
-# cat conf/remote.yaml
-hosts: [localhost]
-port: 8182
-serializer: {
-  className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV1d0,
-  config: {
-    serializeResultToString: false,
-    ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
-  }
-}
-```
+   随包的 `remote-objects.yaml` 和 `gremlin-driver-settings.yaml` 使用相同的序列化器配置；使用这些文件时也要保持一致。
 
-如果 Server 开启了鉴权模式，需要在同一个文件中补上凭据：
+1. 从 Server 发行包目录启动 Console，并创建带 traversal 别名的客户端。
 
-```yaml
-username: admin
-password: pa
-```
+   ```bash
+   ./bin/gremlin-console.sh
+   ```
 
-`conf` 目录下还提供了 `remote-objects.yaml` 和 `gremlin-driver-settings.yaml`，它们使用相同的 host、port 和序列化器配置。
+   Server 端将默认图空间下的图绑定为 `DEFAULT-hugegraph`，其 traversal source 绑定为 `__g_DEFAULT-hugegraph`。
+   由于连字符 `-` 在 Groovy 中不能直接用作变量名，通过 Java Driver 连接时，使用 `.alias(['g': '__g_DEFAULT-hugegraph'])` 将其映射为 `g`。
+
+   ```groovy
+   import org.apache.tinkerpop.gremlin.driver.Cluster
+   cluster = Cluster.open('conf/remote.yaml')
+   client = cluster.connect().alias(['g': '__g_DEFAULT-hugegraph'])
+   ```
+
+1. 通过客户端提交查询。
+
+   ```groovy
+   client.submit('g.V().count()').all().get()[0].object
+   client.submit('g.V().toList().size()').all().get()[0].object
+   ```
+
+   若启动 Server 时预加载了示例图，两条查询均返回 `6`（其他图返回其实际顶点数）。
+   通过 Driver 的 `client.submit()` 提交脚本时，无需在语句前加 `:>` 前缀。
+
+1. 使用结束后关闭客户端和集群连接。
+
+   ```groovy
+   client.close()
+   cluster.close()
+   ```
+{.steps}
+
+此外，也可以使用 Gremlin Console 内置的 `:remote` 命令连接：
 
 ```groovy
-gremlin> :remote connect tinkerpop.server conf/remote.yaml
-==>Configured localhost/127.0.0.1:8182
+:remote connect tinkerpop.server conf/remote.yaml
+// 通过 Console 远程连接提交脚本时，前缀使用 :>
+:remote close
 ```
 
-Server 端的图以图空间限定名绑定，因此图空间 `DEFAULT` 下的图 `hugegraph` 绑定名为 `DEFAULT-hugegraph`，其 traversal source 绑定名为 `__g_DEFAULT-hugegraph`。裸写 `hugegraph` 在 Server 端无法解析，而 `DEFAULT-hugegraph` 又不是合法的 Groovy 标识符，所以远程脚本需要通过别名访问 traversal source。如果启动 HugeGraph-Server 时预加载了示例图，查询方式如下：
+使用 `:remote` 连接时，以 `:>` 开头的语句会被发送至远端 Server 执行，普通语句则在 Console 本地执行。
 
-```groovy
-gremlin> import org.apache.tinkerpop.gremlin.driver.Cluster
-gremlin> cluster = Cluster.open('conf/remote.yaml')
-gremlin> client = cluster.connect().alias(['g': '__g_DEFAULT-hugegraph'])
-gremlin> client.submit('g.V().count()').all().get()[0].object
-==>6
-gremlin> client.submit('g.V().toList().size()').all().get()[0].object
-==>6
-gremlin> client.close(); cluster.close()
-```
-
-> 注意：在 Client/Server 模式下，所有和 Server 有关的操作都要加上 `:> `，如果不加，表示在 console 本地操作。`:> ` 发送的脚本不带别名，因此只能使用 Server 自身已绑定的名称。
-
-更多关于 Gremlin-Console 的使用，请参考 [Tinkerpop 官网](http://tinkerpop.apache.org/docs/current/reference/)。
+更多用法见 [TinkerPop Gremlin Console 参考](https://tinkerpop.apache.org/docs/current/reference/#gremlin-console)。

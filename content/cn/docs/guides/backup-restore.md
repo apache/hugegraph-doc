@@ -1,108 +1,128 @@
 ---
-title: "Backup Restore"
+title: "备份与恢复"
 linkTitle: "备份 & 恢复"
 weight: 5
 ---
 
 ## 描述
 
-Backup 和 Restore 是备份图和恢复图的功能。备份和恢复的数据包括元数据（schema）和图数据（vertex 和 edge）。
+Backup 将一张图的 Schema、顶点和边导出为 JSON 数据，Restore 将这些数据导入目标图。
+它们是 [HugeGraph-Tools](/cn/docs/quickstart/toolchain/hugegraph-tools) 的命令，适合图迁移、升级后的恢复及图合并。
 
 #### Backup
 
-将 HugeGraph 系统中的一张图的元数据和图数据以 JSON 格式导出。
+备份可在任意图模式下执行。建议在导出前暂停源图的写入操作，以确保 Schema、顶点和边的数据一致性（分批读取不提供全局事务快照）。
+注意：`backup -t all` 仅导出图的 Schema 和图数据，不包含系统配置文件与用户权限。
 
 #### Restore
 
-将 Backup 导出的JSON格式的数据，重新导入到 HugeGraph 系统中的一个图中。
+恢复数据前，需先根据目标图的状态切换恢复模式。日常读写处于 `NONE` 模式；注意：`LOADING` 模式不能用于 `restore`。
 
-Restore 有两种模式：
+| 目标 | 模式 | Schema ID | 顶点和边 ID |
+|---|---|---|---|
+| 恢复到没有 Schema 和数据的新图 | `RESTORING` | 使用备份中的 ID | 使用备份中的 ID |
+| 合并到已有图 | `MERGING` | 使用目标图的 Schema ID，必要时新建 | 部分 ID 随目标 Schema 重算，见下文 |
 
-- Restoring 模式，将 Backup 导出的元数据和图数据原封不动的恢复到 HugeGraph 系统中。可用于图的备份和恢复，一般目标图是新图（没有元数据和图数据）。比如：
-    - 系统升级，先备份图，然后升级系统，最后将图恢复到新的系统中
-    - 图迁移，从一个 HugeGraph 系统中，使用 Backup 功能将图导出，然后使用 Restore 功能将图导入另一个 HugeGraph 系统中
-- Merging 模式，将 Backup 导出的元数据和图数据导入到另一个已经存在元数据或者图数据的图中，过程中元数据的 ID 可能发生改变，顶点和边的 ID 也会发生相应变化。
-    - 可用于合并图
+`MERGING` 中，`PRIMARY_KEY` 顶点 ID 按目标 label ID 重新生成，关联边的端点与 ID 随之调整。
+`AUTOMATIC` 和自定义顶点 ID 保留。合并会复用同名 Schema，先检查双方的定义是否兼容，以及保留的顶点 ID 是否冲突。
+它不提供任意 Schema 冲突或数据冲突的自动解决策略。先在独立目标图验证，再合并正式数据。
 
 ## 使用方法
 
-可以使用[hugegraph-tools](/cn/docs/quickstart/toolchain/hugegraph-tools)进行图的备份和恢复。
+准备与 Server 版本匹配的 [HugeGraph-Tools](/cn/docs/quickstart/toolchain/hugegraph-tools)，在 Tools 根目录执行以下命令。
+本例从 `8080` 的源图恢复到 `8081` 的空目标图。两个 Server 和目标图应已创建并启动；可将变量改成实际地址及图名。
+
+```bash
+SOURCE_URL=http://127.0.0.1:8080
+TARGET_URL=http://127.0.0.1:8081
+SOURCE_GRAPH=hugegraph
+TARGET_GRAPH=hugegraph
+BACKUP_DIR="$PWD/data/hugegraph-backup"
+```
+
+启用认证时，在每条 Tools 命令的子命令前加入 `--user <user> --password <password>`，并使用具备对应图读写和模式管理权限的账号。
+详细参数及凭据使用方式见 [Tools 参考](/cn/docs/quickstart/toolchain/hugegraph-tools)。
 
 #### Backup
 
+暂停源图写入后，备份全部 Schema、顶点和边。
+
 ```bash
-bin/hugegraph backup -t all -d data
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" \
+  backup -t all -d "$BACKUP_DIR"
 ```
 
-该命令将 http://127.0.0.1:8080（默认 --url）的 hugegraph 图的全部元数据和图数据备份到data目录下。
-
-> Backup 在任意图模式下都可以正常工作，它不会检查图模式
+显式指定的 `-d` 就是备份目录，不会自动附加图名。为每次备份使用独立目录，避免混入旧文件。
+保留完整目录，包括压缩文件；Restore 可读取 Tools 支持的 JSON 备份格式。
 
 #### Restore
 
-Restore 有两种模式： RESTORING 和 MERGING，恢复之前首先要根据需要设置图模式，图处于其他模式时 restore 命令会失败。
+以下流程使用 `RESTORING`。合并时改为 `MERGING`，并先完成上面的兼容性检查。
+操作期间暂停目标图业务写入。
 
-##### 步骤1：查看并设置图模式
+
+1. <span id="步骤1查看并设置图模式"></span>**查看并记录原模式，再切换。**
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-get
+   ORIGINAL_MODE=NONE
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" \
+     graph-mode-set -m RESTORING
+   ```
+
+   正常业务图应处于 `NONE`。将查询返回的值填入 `ORIGINAL_MODE`，例如下方的 `NONE`。若另一项维护正在使用 `RESTORING`、`MERGING` 或 `LOADING`，先协调该任务，不要覆盖其模式。
+
+1. <span id="步骤2restore-数据"></span>**恢复数据。**
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" \
+     restore -t all -d "$BACKUP_DIR"
+   ```
+
+   检查命令输出与各类型的导入结果。若发生错误，请先保留备份目录与日志，并检查目标图的数据状态。
+   Restore 不会自动回滚已写入的数据，切勿在部分恢复的图上盲目重跑。
+
+1. <span id="步骤3恢复图模式"></span>**还原原模式。**
+
+   使用第一步记录的 `ORIGINAL_MODE` 还原模式。
+
+   ```bash
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-set -m "$ORIGINAL_MODE"
+   bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" graph-mode-get
+   ```
+
+   无论恢复成功还是失败，最后都必须将图模式还原为原有模式（通常为 `NONE`）。
+   若恢复失败，先保留现场并排查日志，待重新准备目标图后再恢复业务写入。
+{.steps}
+
+还原模式后，对比两端的顶点数和边数。
 
 ```bash
-bin/hugegraph graph-mode-get
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" gremlin-execute --script 'g.V().count()'
+bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" gremlin-execute --script 'g.V().count()'
+bin/hugegraph --url "$SOURCE_URL" --graph "$SOURCE_GRAPH" gremlin-execute --script 'g.E().count()'
+bin/hugegraph --url "$TARGET_URL" --graph "$TARGET_GRAPH" gremlin-execute --script 'g.E().count()'
 ```
 
-该命令用于查看当前图模式，包括：NONE、RESTORING、MERGING、LOADING。
-
-```bash
-bin/hugegraph graph-mode-set -m RESTORING
-```
-
-该命令用于设置图模式，Restore 之前可以设置成 RESTORING 或者 MERGING 模式，例子中设置成 RESTORING。
-
-##### 步骤2：Restore 数据
-
-```bash
-bin/hugegraph restore -t all -d data
-```
-
-该命令将data目录下的全部元数据和图数据重新导入到 http://127.0.0.1:8080 的 hugegraph 图中。
-
-##### 步骤3：恢复图模式
-
-```bash
-bin/hugegraph graph-mode-set -m NONE
-```
-
-该命令用于恢复图模式为 NONE。
-
-至此，一次完整的图备份和图恢复流程结束。
+两组计数结果应保持完全一致。建议进一步通过 [Schema API](/cn/docs/clients/restful-api/schema/) 核对元数据定义，
+并抽样检查顶点和边的属性与端点关联，确保业务数据的完整性。
 
 #### 帮助
 
-备份和恢复命令的详细使用方式可以参考[hugegraph-tools文档](/cn/docs/quickstart/toolchain/hugegraph-tools)。
+更多关于压缩、并发和分类型备份的参数说明，见 [Tools 参考](/cn/docs/quickstart/toolchain/hugegraph-tools)。
+在跨大版本恢复前，建议先在测试环境中验证备份文件的兼容性。
 
 ## Backup/Restore使用和实现的API说明
 
 #### Backup
 
-Backup 使用`元数据`和`图数据`的相应的 list(GET) API 导出，并未增加新的 API。
+Backup 使用 Schema、顶点和边的列表 GET API 导出数据。
 
 #### Restore
 
-Restore 使用`元数据`和`图数据`的相应的 create(POST) API 导入，并未增加新的 API。
-
-Restore 时存在两种不同的模式： Restoring 和 Merging，另外，还有常规模式 NONE(默认)，区别如下：
-
-- None 模式，元数据和图数据的写入属于正常状态，可参见功能说明。特别的：
-    - 元数据（schema）创建时不允许指定 ID
-    - 图数据（vertex）在 id strategy 为 Automatic 时，不允许指定 ID
-- Restoring 模式，恢复到一个新图中，特别的：
-    - 元数据（schema）创建时允许指定 ID
-    - 图数据（vertex）在 id strategy 为 Automatic 时，允许指定 ID
-- Merging 模式，合并到一个已存在元数据和图数据的图中，特别的：
-    - 元数据（schema）创建时不允许指定 ID
-    - 图数据（vertex）在 id strategy 为 Automatic 时，允许指定 ID
-
-正常情况下，图模式为 None，当需要 Restore 图时，需要根据需要临时修改图模式为 Restoring 模式或者 Merging 模式，并在完成 Restore 时，恢复图模式为 None。
-
-实现的设置图模式的 RESTful API 如下：
+Restore 使用 Schema、顶点和边的创建 API 导入数据。模式对应的 ID 行为见[前面的选择表](#restore)。
+`RESTORING` 允许指定 Schema ID；`MERGING` 不允许指定 Schema ID。两种模式均允许保留 `AUTOMATIC` 顶点 ID。
+普通 `NONE` 模式不接受这些恢复操作所需的 ID 设置。
 
 ##### 查看某个图的模式
 
@@ -128,7 +148,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 }
 ```
 
-> 合法的图模式包括：NONE，RESTORING，MERGING，LOADING
+合法图模式为 `NONE`、`RESTORING`、`MERGING` 和 `LOADING`。
 
 ##### 设置某个图的模式
 
@@ -146,7 +166,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/mode
 "RESTORING"
 ```
 
-> 合法的图模式包括：NONE，RESTORING，MERGING，LOADING
+合法图模式为 `NONE`、`RESTORING`、`MERGING` 和 `LOADING`。
 
 ###### Response Status
 

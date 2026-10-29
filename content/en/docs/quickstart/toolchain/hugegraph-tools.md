@@ -6,7 +6,7 @@ weight: 3
 
 ### 1 HugeGraph-Tools Overview
 
-HugeGraph-Tools is an automated deployment, management and backup/restore component of HugeGraph.
+HugeGraph-Tools manages graphs and tasks and provides backup and restore commands. It also retains deployment commands for legacy Server/Studio versions.
 
 > **Testing Guide**: For running HugeGraph-Tools tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/toolchain-local-test)
 
@@ -19,7 +19,7 @@ HugeGraph-Tools is included in the Toolchain distribution. You can download the 
 
 #### 2.1 Download the compiled archive
 
-Download the latest version of the HugeGraph-Toolchain package:
+The following example uses the released HugeGraph-Toolchain `1.7.0` package. Check the [download page](/docs/download/download/) for releases.
 
 ```bash
 export VERSION=1.7.0
@@ -32,42 +32,83 @@ cd "${ARCHIVE}/apache-hugegraph-tools-incubating-${VERSION}"
 ```
 
 #### 2.2 Clone source code to compile and install
-Please ensure that the wget command is installed before compiling the source code
 
-Download the latest version of the HugeGraph-Tools source package:
+Choose one source below. Both build the released `1.7.0` Tools; install Maven and JDK 11 first. The archive route also requires `wget`.
+Each example ends in the generated Tools directory, where `bin/hugegraph help` lists the available commands.
 
-```bash
-# 1. get from github
-git clone https://github.com/apache/hugegraph-toolchain.git
+```bash {tab="Git tag"}
+git clone --branch 1.7.0 --single-branch https://github.com/apache/hugegraph-toolchain.git
+cd hugegraph-toolchain
+mvn package -pl hugegraph-tools -am -DskipTests -ntp
+cd hugegraph-tools/apache-hugegraph-tools-incubating-1.7.0
+bin/hugegraph help
+```
 
-# 2. Download a released source package
+```bash {tab="Source archive"}
 export VERSION=1.7.0
 export ARCHIVE="apache-hugegraph-toolchain-incubating-${VERSION}"
 wget "https://downloads.apache.org/hugegraph/${VERSION}/${ARCHIVE}-src.tar.gz"
-```
-
-Compile and generate tar package:
-
-```bash
-cd hugegraph-toolchain
+tar zxf "${ARCHIVE}-src.tar.gz"
+cd "${ARCHIVE}-src"
 mvn package -pl hugegraph-tools -am -DskipTests -ntp
+cd "hugegraph-tools/apache-hugegraph-tools-incubating-${VERSION}"
+bin/hugegraph help
 ```
 
-The package is generated as `hugegraph-tools/target/apache-hugegraph-tools-${version}.tar.gz`, and the unpacked directory `hugegraph-tools/apache-hugegraph-tools-${version}` (containing `bin/` and `lib/`) is created next to it.
+The build also writes `hugegraph-tools/target/apache-hugegraph-tools-incubating-1.7.0.tar.gz` relative to the source root.
 
+#### 2.3 Build current source {#build-current-source}
+
+To use unreleased features from the master branch, build Tools from source (master is currently based on 1.8; requires JDK 17, Maven 3.6.3+, and Python 3.9+):
+
+1. **Clone Toolchain source**
+
+   ```bash
+   git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
+   cd hugegraph-toolchain
+   ```
+
+1. **Build matching Server SDK**
+
+   Run the script below to download Server source and install the SDK into an isolated Maven repository:
+
+   ```bash
+   java -version
+   mvn -version
+   candidate_dir=$(mktemp -d)
+   mkdir -p "$candidate_dir/m2"
+   bash hugegraph-client/assembly/travis/install-candidate-sdk.sh \
+     master "$candidate_dir/server" "$candidate_dir/m2"
+   ```
+
+   See the [Java 17 migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md) for details.
+
+1. **Package Tools**
+
+   ```bash
+   mvn -Dmaven.repo.local="$candidate_dir/m2" \
+     -Dsdk.validation.mode=candidate \
+     package -pl hugegraph-tools -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+   cd hugegraph-tools/apache-hugegraph-tools-*
+   bin/hugegraph help
+   ```
+{.steps}
+
+Keep the SDK repository while using this source build. The master build directory does not contain `incubating`.
 
 ### 3 How to use
 
 #### 3.1 Function overview
 
-After decompression, enter the apache-hugegraph-tools-${version} directory, you can use `bin/hugegraph` or `bin/hugegraph help` to view the usage information, and `bin/hugegraph help <sub-command>` to view the usage of a single sub-command. mainly divided:
+From the extracted or generated Tools directory, run `bin/hugegraph help` for the command list,
+or `bin/hugegraph help <sub-command>` for one command. The commands cover these tasks.
 
 - Graph management type, graph-mode-set, graph-mode-get, graph-list, graph-get, graph-clear, graph-create, graph-clone and graph-drop
 - Asynchronous task management type, task-list, task-get, task-delete, task-cancel and task-clear
 - Gremlin type, gremlin-execute and gremlin-schedule
 - Backup/Restore type, backup, restore, migrate, schedule-backup and dump
 - Authentication data backup/restore type, auth-backup and auth-restore
-- Install deployment type, deploy, clear, start-all and stop-all
+- Legacy Server/Studio deployment, deploy, clear, start-all and stop-all
 
 ```bash
 Usage: hugegraph [options] [command] [command options]
@@ -75,20 +116,21 @@ Usage: hugegraph [options] [command] [command options]
 
 ##### 3.2 [options]-Global Variable
 
-`options` is a global variable of HugeGraph-Tools, which can be configured in hugegraph-tools/bin/hugegraph, including:
+Set these global connection options on the command line or through the environment variables below.
 
-- --graph，HugeGraph-Tools The name of the graph to operate on, the default value is hugegraph
-- --url，The service address of HugeGraph-Server, the default is http://127.0.0.1:8080
-- --user，When HugeGraph-Server opens authentication, pass username
-- --password，When HugeGraph-Server opens authentication, pass the user's password
-- --timeout，Timeout when connecting to HugeGraph-Server, the default is 30s
-- --trust-store-file，The path of the certificate file, when --url uses https, the truststore file used by HugeGraph-Client, the default is empty, which means using the built-in truststore file conf/hugegraph.truststore of hugegraph-tools
-- --trust-store-password，The password of the certificate file, when --url uses https, the password of the truststore used by HugeGraph-Client, the default is empty, representing the password of the built-in truststore file of hugegraph-tools
-- --throw-mode, whether HugeGraph-Tools throws the exception instead of printing the error message and exiting, the default is false (mainly used by tests)
+- `--graph` selects the graph, default `hugegraph`.
+- `--url` sets the Server address, default `http://127.0.0.1:8080`.
+- `--user` supplies the username when Server authentication is enabled.
+- `--password` supplies that user's password.
+- `--timeout` sets the connection timeout, default 30 seconds.
+- `--trust-store-file` selects the HTTPS truststore. An empty value uses the built-in `conf/hugegraph.truststore`.
+- `--trust-store-password` supplies its password. An empty value uses the built-in truststore password.
+- `--throw-mode` defaults to `false`, which prints errors and exits. Set it to `true` to throw exceptions, mainly for tests.
 
-> The protocol is taken from the scheme of --url: use `https://...` to connect over https. --trust-store-file and --trust-store-password can only be set when --url uses https, and both --user and --password must be given together or omitted together.
+> The scheme in `--url` selects the protocol. Use `https://...` for HTTPS and set truststore options only with that scheme.
+> Supply both `--user` and `--password`, or omit both.
 
-The above global variables can also be set through environment variables. One way is to use export on the command line to set temporary environment variables, which are valid until the command line is closed
+Use `export` to set an option for the current shell and the commands launched from it.
 
 
 | Global Variable                   | Environment Variable           | Example                                            |
@@ -115,7 +157,7 @@ export HUGEGRAPH_GRAPH=hugegraph
 ./bin/hugegraph gremlin-execute --script 'g.V().count()'
 ```
 
-Another way is to set the environment variable in the bin/hugegraph script:
+You can also set these variables in `bin/hugegraph`.
 
 ```text
 #!/bin/bash
@@ -152,7 +194,7 @@ Another way is to set the environment variable in the bin/hugegraph script:
 
 > graph-create, graph-clone, graph-clear and graph-drop raise --timeout to at least 300 seconds.
 
-> When you need to restore the backup graph to a new graph, you need to set the graph mode to RESTORING mode; when you need to merge the backup graph into an existing graph, you need to first set the graph mode to MERGING model.
+> Before restoring into a new graph, set its mode to `RESTORING`. To merge into an existing graph, use `MERGING`.
 
 ##### 3.4 Asynchronous task management Type，task-list、task-get、task-delete、task-cancel and task-clear
 
@@ -210,7 +252,7 @@ Another way is to set the environment variable in the bin/hugegraph script:
   - --retry, specify the number of failed retries, the default is 3
   - --thread-num or -T, the number of threads to use, default is Math.min(10, Math.max(4, CPUs / 2))
   - -D, use the mode of -Dkey=value to specify dynamic parameters, which are used to specify HDFS configuration items when restoring graphs from HDFS, for example: -Dfs.default.name=hdfs://localhost:9000
-  > restore command can be used only if --format is executed as backup for json
+  > `restore` accepts backups made with `--format json`.
   > restore requires the graph to be in RESTORING or MERGING mode (set it with graph-mode-set first), otherwise the command fails
 - migrate, migrate the currently connected graph to another HugeGraphServer
   - --target-graph, the name of the target graph, the default is hugegraph
@@ -262,6 +304,12 @@ Another way is to set the environment variable in the bin/hugegraph script:
 
 ##### 3.8 Install the deployment type
 
+Note: These deployment commands only apply to legacy versions (Server 0.6.1~0.10.4 and Studio 0.6.1~0.10.0),
+and do not support current HugeGraph Server or Hubble.
+For modern deployments, follow [Server Quick Start](/docs/quickstart/hugegraph/hugegraph-server/)
+and [Hubble Quick Start](/docs/quickstart/toolchain/hugegraph-hubble/).
+The options below are retained only for maintaining legacy environments.
+
 - deploy, one-click download, install and start HugeGraph-Server and HugeGraph-Studio
   - -v, required, specifies the HugeGraph-Server and HugeGraph-Studio version to install, must be one of the versions listed in bin/version-map.yaml (0.6, 0.7, 0.8, 0.9, 0.10), which maps it to the matching server and studio release versions
   - -p, required, specifies the installed HugeGraph-Server and HugeGraph-Studio directories
@@ -275,11 +323,12 @@ Another way is to set the environment variable in the bin/hugegraph script:
 
 > deploy, start-all, clear and stop-all are handed by `bin/hugegraph` straight to the shell scripts `bin/deploy.sh`, `bin/start-all.sh`, `bin/clear.sh` and `bin/stop-all.sh`, so the global options and environment variables in 3.2 do not apply to them.
 
-> There is an optional parameter -u in the deploy command. When provided, the specified download address will be used instead of the default download address to download the tar package, and the address will be written into the `~/hugegraph-download-url-prefix` file; if no address is specified later When -u and `~/hugegraph-download-url-prefix` are not specified, the tar package will be downloaded from the address specified by `~/hugegraph-download-url-prefix`; if there is neither -u nor `~/hugegraph-download-url-prefix`, it will be downloaded from the default download address `https://github.com/hugegraph`
+> `deploy -u` overrides the download URL and saves it in `~/hugegraph-download-url-prefix`.
+> Later runs without `-u` reuse the saved URL. Without either setting, the script uses `https://github.com/hugegraph`.
 
 ##### 3.9 Specific command parameters
 
-The specific parameters of each subcommand are as follows:
+The help output below lists each subcommand and its options.
 
 ```bash
 Usage: hugegraph [options] [command] [command options]

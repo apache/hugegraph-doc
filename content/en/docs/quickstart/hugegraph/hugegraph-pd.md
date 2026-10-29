@@ -82,8 +82,13 @@ docker build -f hugegraph-pd/Dockerfile -t hugegraph/pd:local .
 
 To run master-built PD alone, first set a deployment-specific secret and replace example addresses with addresses reachable by the container:
 
+The `mkdir -p` and nonrecursive `chown` below are for a new empty directory. Before reusing data written by a root image, stop PD and run
+`sudo chown -R 10001:10001 /path/to/data` once, then start the UID 10001 image.
+
 ```bash
 export HG_PD_AUTH_SECRET_KEY="$(openssl rand -hex 24)"
+# Master-built images run as UID 10001; the host data directory must be writable by it
+mkdir -p /path/to/data && sudo chown 10001:10001 /path/to/data
 docker run -d \
   -p 8620:8620 -p 8686:8686 -p 8610:8610 \
   -e HG_PD_GRPC_HOST=192.168.1.10 \
@@ -123,7 +128,7 @@ PD startup reads installation `conf/application.yml`. Match this file to the ins
 
 #### 4.1 Configuration Reference
 
-These tables were checked against `hg-pd-dist` configuration and Java defaults at Server master commit `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4`, and the three `raft.rpc-*` rows against [apache/hugegraph#3368](https://github.com/apache/hugegraph/pull/3368); they do not describe every 1.7.0 behavior. Use original tagged configuration with release binaries and [master configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) with master builds.
+These tables list master configuration values and code defaults. See the [PDConfig implementation](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-core/src/main/java/org/apache/hugegraph/pd/config/PDConfig.java) for Raft timeouts. Use the original tagged configuration with 1.7.0 binaries and [master configuration](https://github.com/apache/hugegraph/blob/master/hugegraph-pd/hg-pd-dist/src/assembly/static/conf/application.yml) with master builds. Differences from 1.7.0 are noted below.
 
 
 **gRPC and REST**

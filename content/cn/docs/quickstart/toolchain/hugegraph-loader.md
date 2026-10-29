@@ -6,7 +6,105 @@ search_keywords: [HugeGraph Loader, 批量导入, 数据导入]
 search_boost: 1.6
 ---
 
-本文以 Toolchain `master`（当前版本为 `1.8.0`）为准。发布版和 Docker `latest` 可能与源码不同；使用时请核对版本，未发布的版本请按下文从源码构建。
+本文以 Toolchain `master` 分支（以 1.8 为基线，尚未正式发布）为准。发布版和 Docker `latest` 可能存在部分差异，使用未发布功能前请先核对版本。
+
+### 快速上手：本地文件导入 {#quick-local-file-import}
+
+下面通过一个最简示例体验 Loader 的基本导入流程：导入两个人和一条关系，并在 Hubble 中查询验证。
+请先[安装 Loader](#2-获取-hugegraph-loader) 并启动 [HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
+以下命令均在 Loader 安装目录下执行，连接本地默认图 `hugegraph`。若 Server 已启用鉴权，在命令中追加 `--username` 与 `--password`（或 `--token`）。
+
+1. **创建数据文件**
+
+   两份 CSV 均不含表头，列名由下一步的映射文件指定。
+
+   ```bash
+   mkdir -p demo-loader
+   cat > demo-loader/people.csv <<'EOF'
+   docs-smoke-alice,29
+   docs-smoke-bob,31
+   EOF
+   cat > demo-loader/knows.csv <<'EOF'
+   docs-smoke-alice,docs-smoke-bob
+   EOF
+   ```
+
+1. **创建 Schema 和映射文件**
+
+   本例使用独立的 `docs_*` 名称，避免与内置的 `person` 数据冲突。
+   映射文件中的路径相对于运行 Loader 时的工作目录。
+
+   ```bash
+   cat > demo-loader/schema.groovy <<'EOF'
+   schema.propertyKey("docs_name").asText().ifNotExist().create()
+   schema.propertyKey("docs_age").asInt().ifNotExist().create()
+   schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age")
+         .primaryKeys("docs_name").ifNotExist().create()
+   schema.edgeLabel("docs_smoke_knows").sourceLabel("docs_smoke_person")
+         .targetLabel("docs_smoke_person").ifNotExist().create()
+   EOF
+   cat > demo-loader/struct.json <<'EOF'
+   {
+     "version": "2.0",
+     "structs": [
+       {
+         "id": "people",
+         "input": {
+           "type": "FILE",
+           "path": "demo-loader/people.csv",
+           "format": "CSV",
+           "header": ["docs_name", "docs_age"]
+         },
+         "vertices": [{"label": "docs_smoke_person"}]
+       },
+       {
+         "id": "knows",
+         "input": {
+           "type": "FILE",
+           "path": "demo-loader/knows.csv",
+           "format": "CSV",
+           "header": ["source_name", "target_name"]
+         },
+         "edges": [{
+           "label": "docs_smoke_knows",
+           "source": ["source_name"],
+           "target": ["target_name"],
+           "field_mapping": {"source_name": "docs_name", "target_name": "docs_name"}
+         }]
+       }
+     ]
+   }
+   EOF
+   ```
+
+1. **执行导入**
+
+   保持在同一工作目录。Server 运行在其他地址时，修改主机和端口。
+
+   ```bash
+   bin/hugegraph-loader.sh \
+     --graphspace DEFAULT --graph hugegraph \
+     --file demo-loader/struct.json --schema demo-loader/schema.groovy \
+     --host 127.0.0.1 --port 8080
+   ```
+
+   首次成功导入后，统计应显示两个顶点、一条边。检查汇总中的成功数和失败数。
+
+1. **在 Hubble 中查询结果**
+
+   将 Hubble 连接到同一个 Server 和图，在 Gremlin 工作台分别执行以下查询。
+
+   ```groovy
+   g.V().hasLabel('docs_smoke_person').valueMap('docs_name', 'docs_age')
+   g.V().has('docs_smoke_person', 'docs_name', 'docs-smoke-alice')
+    .out('docs_smoke_knows').values('docs_name')
+   ```
+
+   第一条查询返回 Alice 的年龄 `29`、Bob 的年龄 `31`，第二条返回 `docs-smoke-bob`。
+{.steps}
+
+导入其他数据源时，继续阅读[映射文件参考](#33-编写数据源映射文件)。
+[内置完整示例](#4-完整示例)还包含软件顶点和边属性。
 
 ### 1 HugeGraph-Loader 概述
 
@@ -22,15 +120,11 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 本地磁盘文件和 HDFS 文件支持断点续传。
 
-后面会具体说明。
-
 > **注意**：使用 HugeGraph-Loader 需要依赖 HugeGraph Server 服务，下载和启动 Server 请参考 [HugeGraph-Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server)
 > 
 > **测试指南**：如需在本地运行 Loader 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
 
-> **并发导入保护方案**：自 1.8.0 起，普通导入支持在同一 Server 实例上获取 owner 保护
-> （需配合返回 `protocol: 1` 的新版 Server 与对应 Loader；当前 `master` 分支暂未包含该协议）。
-> 旧版 Server 保持下文说明的原有导入行为。
+> **并发导入保护**：Toolchain master 分支的 Loader 已支持针对同一 Server 实例的 LOADING owner 保护。当配套 Server 的 `GET .../mode/owners` 返回 `protocol: 1` 时会自动生效；若 Server 无此接口，则保持原有导入行为。
 
 ### 2 获取 HugeGraph-Loader
 
@@ -83,25 +177,23 @@ services:
 
 #### 2.3 克隆源码编译安装
 
-克隆 `master` 分支：
+从 master 分支编译 Loader 需要 Java 17、Maven 3.6.3+ 与 Python 3.9+。直接克隆仓库并编译：
 
 ```bash
 git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
-```
-
-编译生成 tar 包：
-
-```bash
 cd hugegraph-toolchain
-mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
+mvn package -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
+cd hugegraph-loader/apache-hugegraph-loader-*
 ```
+
+如需搭配开发阶段的 Server master SDK 编译，可参阅 [Java 17 迁移指引](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)。
 
 如需读取 Oracle 数据，按所用 Oracle/JDK 版本准备兼容的 JDBC 驱动 JAR，并放入解压后 Loader 的 `lib/` 目录。
 启动脚本会加载该目录中的 JAR；仅将驱动安装到 Maven 本地仓库并不会让运行中的 Loader 找到它。
 
 ### 3 使用流程
 
-使用 HugeGraph-Loader 的基本流程分为以下几步：
+导入数据前先准备图模型、数据文件和映射文件，再运行 Loader。
 
 - 编写图模型
 - 准备数据文件
@@ -110,9 +202,10 @@ mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 
 #### 3.1 编写图模型
 
-这一步是建模的过程，用户需要对自己已有的数据和想要创建的图模型有一个清晰的构想，然后编写 schema 建立图模型。
+先确定数据对应的顶点类型、边类型和属性，再编写 Schema。
 
-比如想创建一个拥有两类顶点及两类边的图，顶点是"人"和"软件"，边是"人认识人"和"人创造软件"，并且这些顶点和边都带有一些属性，比如顶点"人"有："姓名"、"年龄"等属性， "软件"有："名字"、"售卖价格"等属性；边"认识"有："日期"属性等。
+以下示例包含 `person` 和 `software` 两类顶点，以及 `knows` 和 `created` 两类边。
+人有姓名、年龄和城市，软件有名称和价格，两类边都记录日期。
 
 <div style="text-align: center;">
   <img src="/docs/images/demo-graph-model.png" alt="由“认识”和“创建”边连接人物与软件顶点的示例图">
@@ -120,7 +213,7 @@ mvn clean package -pl hugegraph-loader -am -DskipTests -ntp
 </div>
 
 
-在设计好了图模型之后，我们可以用`groovy`编写出`schema`的定义，并保存至文件中，这里命名为`schema.groovy`。
+将 Schema 定义保存到 `schema.groovy`。
 
 ```groovy
 // 创建一些属性
@@ -201,9 +294,10 @@ JSON 文件要求每一行都是一个 JSON 串，且每行的格式需保持一
 
 loader 还支持以部分关系型数据库作为数据源，目前支持 MySQL、PostgreSQL、Oracle 和 SQL Server。
 
-但目前对表结构要求较为严格，如果导入过程中需要做**关联查询**，这样的表结构是不允许的。关联查询的意思是：在读到表的某行后，发现某列的值不能直接使用（比如外键），需要再去做一次查询才能确定该列的真实值。
+Loader 解析一行数据时，不会根据外键再查询其他表。输入行必须直接提供构造图元素所需的值。
+需要关联数据时，先在数据源侧准备好查询结果。
 
-举个例子：假设有三张表，person、software 和 created
+以下以 `person`、`software`、`created` 三张表为例。
 
 ```text
 // person 表结构
@@ -220,12 +314,13 @@ id | name | lang | price
 id | p_id | s_id | date
 ```
 
-如果在建模（schema）时指定 person 或 software 的 id 策略是 PRIMARY_KEY，选择以 name 作为 primary keys（注意：这是 hugegraph 中 vertexlabel 的概念），在导入边数据时，由于需要拼接出源顶点和目标顶点的 id，必须拿着 p_id/s_id 去 person/software 表中查到对应的 name，这种需要做额外查询的表结构的情况，loader 暂时是不支持的。这时可以采用以下两种方式替代：
+若 `person` 和 `software` 使用 `PRIMARY_KEY` 策略，以 `name` 为主键，导入边时就需要两个端点的 `name`。
+`created` 表只有 `p_id` 和 `s_id`，Loader 不会用它们回查名称。可以改用以下两种 ID 设计。
 
-1. 仍然指定 person 和 software 的 id 策略为 PRIMARY_KEY，但是以 person 表和 software 表的 id 列作为顶点的主键属性，这样导入边时直接使用 p_id 和 s_id 和顶点的 label 拼接就能生成 id 了；
-2. 指定 person 和 software 的 id 策略为 CUSTOMIZE，然后直接以 person 表和 software 表的 id 列作为顶点 id，这样导入边时直接使用 p_id 和 s_id 即可；
+1. 保留 `PRIMARY_KEY` 策略，将两张顶点表的 `id` 列作为主键属性。Loader 可用 `p_id`、`s_id` 和顶点标签生成端点 ID。
+2. 使用自定义 ID 策略，将两张顶点表的 `id` 列直接作为顶点 ID，导入边时直接使用 `p_id` 和 `s_id`。
 
-关键点就是要让边能直接使用 p_id 和 s_id，不要再去查一次。
+这两种设计都让边数据直接提供端点 ID，省去回查。
 
 ##### 3.2.2 准备顶点和边数据
 
@@ -270,13 +365,11 @@ Office,388
 
 ##### 3.3.1 映射文件概述
 
-输入源的映射文件用于描述如何将输入源数据与图的顶点类型/边类型建立映射关系，以`JSON`格式组织，由多个映射块组成，其中每一个映射块都负责将一个输入源映射为顶点和边。
+映射文件使用 JSON 格式。每个 `structs` 映射块包含一个 `input`，以及该输入对应的 `vertices` 和 `edges` 映射。
 
-具体而言，每个映射块包含**一个输入源**和多个**顶点映射**与**边映射**块，输入源块对应上面介绍的`本地磁盘文件或目录`、`HDFS 文件或目录`和`关系型数据库`，负责描述数据源的基本信息，比如数据在哪，是什么格式的，分隔符是什么等。顶点映射/边映射与该输入源绑定，可以选择输入源的哪些列，哪些列作为 id、哪些列作为属性，以及每一列映射成什么属性，列的值映射成属性的什么值等等。
+`input` 描述数据位置、格式和分隔符。顶点和边映射指定标签、ID、属性及字段转换。
 
-以最通俗的话讲，每一个映射块描述了：要导入的文件在哪，文件的每一行要作为哪一类顶点/边，文件的哪些列是需要导入的，以及这些列对应顶点/边的什么属性等。
-
-> 注意：0.11.0 版本以前的映射文件与 0.11.0 以后的格式变化较大，为表述方便，下面称 0.11.0 以前的映射文件（格式）为 1.0 版本，0.11.0 以后的为 2.0 版本。并且若无特殊说明，“映射文件”表示的是 2.0 版本的。
+> Loader 0.11.0 起使用 2.0 映射格式，此前的格式称为 1.0。下文未特别说明时，均使用 2.0 格式。
 
 
 > [!DETAILS]- 点击展开/折叠 2.0 版本的映射文件的框架
@@ -936,61 +1029,12 @@ bin/hugegraph-loader.sh -g {GRAPH_NAME} -f ${INPUT_DESC_FILE} -s ${SCHEMA_FILE} 
 
 #### 3.4.5 最小本地文件导入示例
 
-先确保 HugeGraph Server 已启动，当前用户可以访问 `DEFAULT` 图空间中的 `hugegraph` 图，并有权限创建 Schema 和写入数据。若 Server 已启用认证，在命令中增加对应的 `--username`、`--password` 或 `--token`。本例只需本地文件，不依赖 Kafka、HDFS 或 JDBC。
-
-进入解压后的 Loader 安装目录，再创建数据、Schema 和 2.0 格式的映射文件：
-
-```bash
-mkdir -p demo-loader
-
-cat > demo-loader/people.csv <<'EOF'
-docs-smoke-alice,29
-docs-smoke-bob,31
-EOF
-
-cat > demo-loader/schema.groovy <<'EOF'
-schema.propertyKey("docs_name").asText().ifNotExist().create()
-schema.propertyKey("docs_age").asInt().ifNotExist().create()
-schema.vertexLabel("docs_smoke_person").properties("docs_name", "docs_age").primaryKeys("docs_name").ifNotExist().create()
-EOF
-
-cat > demo-loader/struct.json <<'EOF'
-{
-  "version": "2.0",
-  "structs": [
-    {
-      "id": "people",
-      "input": {
-        "type": "FILE",
-        "path": "demo-loader/people.csv",
-        "format": "CSV",
-        "header": ["docs_name", "docs_age"]
-      },
-      "vertices": [
-        {"label": "docs_smoke_person"}
-      ],
-      "edges": []
-    }
-  ]
-}
-EOF
-```
-
-`people.csv` 没有表头行，列名由映射文件的 `header` 提供。映射文件中的本地路径相对于运行命令时的工作目录。仍在 Loader 安装目录中执行导入；如果 Server 在其他容器中，请把 `--host` 改为 Loader 能访问到的 Server 地址。
-
-```bash
-bin/hugegraph-loader.sh \
-  --graphspace DEFAULT --graph hugegraph \
-  --file demo-loader/struct.json --schema demo-loader/schema.groovy \
-  --host 127.0.0.1 --port 8080
-```
-
-本例用独立的 `docs_smoke_person` 标签和 `docs_*` 属性，避免与预置的 `person` 样例数据冲突。成功时统计中应显示顶点写入成功数为 `2`、边写入成功数为 `0`。也可以在 Hubble 的 Gremlin 工作台查询 `g.V().hasLabel('docs_smoke_person').values('docs_name')`，结果应包含 `docs-smoke-alice` 和 `docs-smoke-bob`。
+按本页开头的[本地文件导入步骤](#quick-local-file-import)操作。
 
 #### 3.4.6 并发导入与 LOADING owner {#loading-ownership}
 
-自 1.8.0 版本起，Loader 支持并发导入模式所有权保护协议
-（需配合返回 `protocol: 1` 的新版 Server 与对应 Loader；当前 `master` 分支暂未包含该协议）。
+在 master 分支中，Loader 为普通导入实现了 LOADING 所有权管理协议，与 Server 的 `/mode/owners` 接口协同工作。
+若部署的 Server 提供该接口并返回 `protocol: 1`，Loader 会自动启用所有权保护；已发布的 Server 1.7.0 及更早版本则继续使用原有模式切换流程。
 
 ```mermaid
 graph TD
@@ -1296,52 +1340,50 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 执行的结果如 [4.5.1](#451-使用-docker-exec-直接导入数据) 所示
 
 #### 4.6 使用 spark-loader 导入
-> Spark 版本：Spark 3+，其他版本未测试。当前源码使用 Spark 3.2.2 和 Scala 2.12；其他组合需自行验证。
-> 
-`spark-loader` 的参数分为两部分，注意：因二者参数名缩写存在重合部分，请使用参数全称。两种参数之间无需保证先后顺序。
-- hugegraph 参数（参考：[hugegraph-loader 参数说明](https://hugegraph.apache.org/cn/docs/quickstart/toolchain/hugegraph-loader/#341-%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E) ）
-- Spark 任务提交参数（参考：[Submitting Applications](https://spark.apache.org/docs/3.3.0/submitting-applications.html#content)）
 
-示例：
+当前 master 分支的 API 写入路径使用 Spark `3.5.8`、Scala `2.12`，driver 和 executor 均需 Java 17。
+POM 中的 Spark `3.2.2` 只提供编译期 API，不是运行引擎。设置 `SPARK_HOME` 和 `JAVA_HOME`，
+再使用发行目录中的启动脚本和 shaded Loader JAR。
+
+先创建 Schema，确保 executor 可以读取数据文件。CSV、TEXT 数据须使用 UTF-8、去掉表头行，并在映射中显式指定 `header`。
+其他字符集和 `has_header: true` 会被拒绝。边依赖已有顶点时，先导入顶点。将以下路径替换为准备好的顶点映射文件。
+
 ```bash
-sh bin/hugegraph-spark-loader.sh --master yarn \
---deploy-mode cluster --name spark-hugegraph-loader --file ./hugegraph.json \
---username admin --token admin --host xx.xx.xx.xx --port 8093 \
---graph graph-test --num-executors 6 --executor-cores 16 --executor-memory 15g
+bin/hugegraph-spark-loader.sh \
+  --master 'local[2]' --driver-memory 1g \
+  --file /path/to/vertex-mapping.json \
+  --host 127.0.0.1 --port 8080 --graph hugegraph --sink-type true
 ```
 
-`bin/hugegraph-spark-loader.sh` 通过 `${SPARK_HOME}/bin/spark-submit` 提交 `org.apache.hugegraph.loader.spark.HugeGraphSparkLoader`，因此 `SPARK_HOME` 必须指向一个 Spark 安装目录。`lib/` 下的所有 jar 都会加入 classpath。Spark 应用名默认为 `hugegraph-spark-loader`，可以通过 `APP_NAME` 环境变量修改。
+启动脚本可同时接收 `--master`、`--conf`、`--jars` 等 Spark 参数和 Loader 参数。
+额外的 JDBC 驱动需通过 `--jars` 传入，仅放在 `lib/` 中不会分发到 executor。
+导入后查询目标图，核对数量和属性；API 写入路径的插入计数器不统计分布式写入。
 
-`bin/get-params.sh` 负责拆分命令行：只有下列参数会交给 loader，其余参数原样传给 `spark-submit`。该拆分只识别参数全称，因此 `-f`、`-g` 这类缩写不会被识别。
-
-```text
---graph --schema --host --port --username --token --protocol
---trust-store-file --trust-store-password --clear-all-data --clear-timeout
---incremental-mode --failure-mode --batch-insert-threads --single-insert-threads
---max-conn --max-conn-per-route --batch-size --max-parse-errors --max-insert-errors
---timeout --shutdown-timeout --retry-times --retry-interval --check-vertex
---print-progress --dry-run --sink-type --vertex-partitions --edge-partitions --help
-```
-
-`--file` 单独处理：使用 `--deploy-mode cluster` 时，映射文件会通过 `--files` 分发到 executor，loader 只收到它的文件名；其他情况下路径原样传入。
-
-该模式下 loader 只读取 FILE、HDFS 和 JDBC 输入源，KAFKA 和 GRAPH 输入源会被拒绝。
-
-默认情况下（`--sink-type true`），每个 Spark 分区各自创建一个 HugeClient，通过 HugeGraph server API 写入顶点和边。使用 `--sink-type false` 时，loader 会生成 HFile 并直接 bulkload 到 HBase，此时表名和 ZooKeeper 配置取自 `--vertex-table-name`、`--edge-table-name`、`--hbase-zk-quorum`、`--hbase-zk-port`、`--hbase-zk-parent`、`--vertex-partitions` 和 `--edge-partitions`。
+该路径拒绝 `--incremental-mode true` 和 `--failure-mode true`。Standalone Spark 仅支持 client 部署模式。
+Spark 3.5.8 / Java 17 不支持 HBase bulkload（`--sink-type false`）。已有 bulkload 部署建议继续沿用原环境验证通过的
+Loader 发布包及其相关依赖。更多细节见 [Spark 迁移说明](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/spark-java17.md)。
 
 #### 4.7 使用 flink-cdc-loader 导入
 
-> 当前源码使用 Flink 1.13.5、flink-connector-mysql-cdc 2.2.1 和 Scala 2.12；其他组合需自行验证。
+当前 master 分支适配 Flink `2.2.1`、MySQL CDC `3.6.0-2.2` 和 Java 17。
+此前使用 Flink 1.13.5、CDC 2.2.1 的示例属于旧实现。
+设置 `FLINK_HOME`，确保提交进程、JobManager 和 TaskManager 都使用 Java 17。
+保留 Flink 的模块访问参数，发行目录的 `lib/` 中须恰好有一个 shaded Loader JAR。
 
-`bin/hugegraph-flinkcdc-loader.sh` 通过 `${FLINK_HOME}/bin/flink run` 提交 `org.apache.hugegraph.loader.flink.HugeGraphFlinkCDCLoader`，因此必须设置 `FLINK_HOME`。该任务用 Flink CDC 捕获 MySQL 的变更事件并应用到图上，从而让图与源表保持同步。
+每个映射都需使用 MySQL JDBC 输入，包含 `url`、`database`、`table`、`username` 和 `password`。
+MySQL 须配置 `binlog_row_image=FULL`。UPDATE 事件需要显式指定非空的 `update_strategies`，且图元素标识保持不变。
+顶点 ID、边端点或排序键变化时，任务会拒绝更新。CDC 也会拒绝 `--dry-run true` 和 `--use-prefilter true`。
 
-映射文件格式与命令行 loader 相同，但每个输入源都必须是 MySQL 的 JDBC 输入源：loader 从中读取 `url`、`database`、`table`、`username` 和 `password`，并从 `url` 解析出主机和端口。顶点和边映射的用法不变。[3.4.1](#341-参数说明) 中的 `--cdc-flush-interval` 和 `--cdc-sink-parallelism` 只在该模式下生效。
-
-命令行同样由 `bin/get-params.sh` 按 4.6 的方式拆分，非 loader 参数会传给 `flink run`。
-
-示例：
+不带分隔符时，所有参数均交给 Loader。需要设置 Flink 参数时，将其放在 `--` 之前，Loader 参数放在之后。
+准备好 `mysql-cdc.json` 映射后，使用单个 sink writer 提交任务。
 
 ```bash
-sh bin/hugegraph-flinkcdc-loader.sh --file ./mysql-cdc.json \
---host xx.xx.xx.xx --port 8080 --graph hugegraph --username admin --token admin
+bin/hugegraph-flinkcdc-loader.sh -p 1 -- \
+  --file ./mysql-cdc.json --host 127.0.0.1 --port 8080 \
+  --graph hugegraph --cdc-sink-parallelism 1
 ```
+
+每个映射使用一个 source reader 和一个 sink writer。`--cdc-sink-parallelism` 默认为 `1`，其他取值会被拒绝。
+`--` 之后的 Loader 参数 `-p` 表示 Server 端口。Checkpoint 刷新不提供图写入事务，也不保证 exactly-once。
+在生产环境部署边 CDC 或更复杂的多表映射前，建议先在真实环境中充分验证。
+支持范围和恢复流程见 [Flink CDC 说明](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-loader/docs/flink-cdc-java17.md)。

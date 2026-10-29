@@ -18,10 +18,20 @@ The guidance below focuses on connectivity and operations; ensure prerequisite c
 Docker `latest` is a moving tag. Screenshots assist in UI navigation; verify deployed versions via image digests and build details.
 Metrics and permission APIs vary by version.
 
+The screenshots show the HugeGraph Hubble interface in action; features and workflows are identical in both English and Chinese.
+
 ## Connect to a distributed cluster
 
 Hubble still manages graph data through the **Server graph API**. In distributed mode, it discovers Servers through PD
 and collects cluster information from PD and Store. Hubble does not read or write graph data directly in Store.
+
+```mermaid
+flowchart LR
+    H[Hubble] -->|Graph API| S[Server]
+    S -->|Graph reads and writes| T[Store]
+    H -.->|Discovery and cluster information| P[PD]
+    H -.->|Node metrics| T
+```
 
 1. **Generate Hubble configuration.** Prepare `.env` in the main repository's `docker/` directory following the Docker README.
 
@@ -101,8 +111,8 @@ plus the storage capacity limit. These deployment quotas neither report current 
 Select a space before opening a graph. Check the current graph after switching spaces, especially when spaces contain identically named graphs.
 The list reflects account access. If a space is missing, check membership permissions before creating more graphs.
 
-![GraphSpace creation and advanced resource limits](/docs/images/hubble/graphspace.jpg)
-{width="2048" height="984"}
+![GraphSpace creation form and entry to advanced resource limits](/docs/images/hubble/graphspace.jpg)
+{width="1600" height="1000"}
 
 ### Reuse Schema templates
 
@@ -138,7 +148,7 @@ legacy custom roles on older Servers are not interchangeable with these presets.
 See [Server authentication and authorization](/docs/config/config-authentication/).
 
 ![GraphSpace members and access presets](/docs/images/hubble/members.jpg)
-{width="2048" height="984"}
+{width="1600" height="1000"}
 
 ## Locate problems through the cluster overview
 

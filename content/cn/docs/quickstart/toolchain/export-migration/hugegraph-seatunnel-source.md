@@ -13,11 +13,30 @@ SeaTunnel 3.0+ 提供 HugeGraph Source，支持图模型自动发现和多标签
 
 开始前请先完成[导入页中的通用环境准备和配置](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/#2-准备环境)，其中包含 JDK、HOCON、插件安装和图模型说明。
 
+使用 HugeGraph Helm 时，可按 [Helm 中的 SeaTunnel 部署说明](/cn/docs/quickstart/hugegraph/hugegraph-helm/#6-start-seatunnel)启动常驻单机或集群，
+直接运行挂载的测试作业。跨环境迁移源图的连接地址与认证凭据需按实际环境配置。
+
 ## 1 迁移 HugeGraph 图（graph2graph）
 
 下面从源图迁移 `person` 顶点和 `knows` 边。请使用独立的目标图：本节采用 `CUSTOMIZE_STRING` 保留顶点 ID，不要复用前面已经创建为 `PRIMARY_KEY` 的 `person` 标签。
 
 这两个任务只迁移指定标签和属性，不会完整复制源图的索引、TTL 等全部 Schema 配置。运行期间应暂停源图写入，避免两个任务读到不同时间的数据；完成后核对顶点、边数量及抽样属性。
+
+需要保留普通边标签的 Schema ID 和索引定义时，可参考 Helm Chart 中的
+[Schema 复制及分标签示例](https://github.com/apache/hugegraph/tree/96ce802a25672f8b7b0d08c49e68db694231f5e4/helm/hugegraph/examples/seatunnel/clone)。
+其中的脚本遇到继承边 `PARENT/SUB` 会在访问目标图前退出，不会自动迁移继承关系。
+
+```filetree {wrap=true title="跨图迁移示例目录结构"}
+helm/hugegraph/examples/seatunnel/clone/
+  copy-schema.py             # 读取源图并写入目标图 Schema（保留 Schema ID 与普通索引）
+  person.conf                # 顶点数据迁移任务配置（CUSTOMIZE_STRING 保留原 ID）
+  knows.conf                 # 边数据迁移任务配置（依赖顶点 ID 一致性）
+```
+
+> [!WARNING]
+> **含 `DATE` 属性时，先确认源 Server 的时区。** SeaTunnel 3.0.0 读取的 REST 日期字符串不带时区，
+> 应在每个 Sink `mappings` 条目内设置与源 Server 一致的 `timeZone`，例如 `timeZone = "UTC"`；不要依赖 worker 的默认时区。
+> Source 的 `time_zone` 不能修正这些字符串。Chart 的复制示例按源 Server 为 UTC 配置，非 UTC 源需要相应修改，并核对原始时间戳。
 
 [![跨图迁移时重建主键可能改变顶点 ID；使用 CUSTOMIZE_STRING 保留原 ID，确保边端点匹配](/cn/docs/images/seatunnel/seatunnel-preserve-ids-zh.png)](/cn/docs/images/seatunnel/seatunnel-preserve-ids-zh.png)
 

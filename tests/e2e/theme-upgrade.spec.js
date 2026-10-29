@@ -4,6 +4,59 @@ const expectedVersions = (process.env.EXPECTED_VERSIONS || 'latest,1.7,1.5,1.3,1
 
 const appearanceTrigger = '[data-td-appearance-trigger][aria-controls="td-appearance-navbar"]';
 
+// The project uses a white-on-purple navbar, while OINK's language popover
+// uses the current theme's surface. Check the rendered colors rather than
+// tying this regression to a particular selector or palette.
+for (const [route, language] of [['/', 'zh-CN'], ['/cn/', 'en-US'], ['/docs/', 'zh-CN'], ['/cn/docs/', 'en-US']]) {
+  for (const theme of ['light', 'dark']) {
+    test(`language menu remains legible on ${route} in ${theme} mode`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.addInitScript(theme => {
+        localStorage.setItem('td-color-theme', theme);
+        localStorage.setItem('hg-language', 'en');
+      }, theme);
+      await page.goto(route);
+      await expect(page.locator('html')).toHaveAttribute('data-bs-theme', theme);
+      const menu = page.locator('.td-site-header .td-site-nav__language');
+      const trigger = menu.locator('.td-language-selector__trigger');
+      const list = menu.locator('ul');
+      const alternate = list.locator(`a[hreflang="${language}"]`);
+
+      // Contrast is calculated against the menu's opaque surface, including
+      // the current item and the link which previously inherited white.
+      const contrast = async item => item.evaluate(node => {
+        const rgb = value => value.match(/[\d.]+/g).slice(0, 3).map(Number);
+        const luminance = value => rgb(value).map(channel => {
+          channel /= 255;
+          return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+        }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+        const background = getComputedStyle(node).backgroundColor === 'rgba(0, 0, 0, 0)'
+          ? getComputedStyle(node.closest('ul')).backgroundColor : getComputedStyle(node).backgroundColor;
+        const a = luminance(getComputedStyle(node).color), b = luminance(background);
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      });
+      await trigger.hover();
+      await expect(list).toBeVisible();
+      await expect.poll(() => contrast(alternate)).toBeGreaterThanOrEqual(4.5);
+      await expect.poll(() => contrast(list.locator('.active'))).toBeGreaterThanOrEqual(4.5);
+      // OINK's opaque light hover background previously concealed the white
+      // icon. The trigger must leave the branded navbar visible underneath.
+      await expect.poll(() => trigger.evaluate(node => getComputedStyle(node).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+
+      await page.mouse.move(0, 500);
+      await page.keyboard.press('Tab');
+      await trigger.focus();
+      await expect(trigger).toBeFocused();
+      await expect(list).toBeVisible();
+      await expect.poll(() => contrast(alternate)).toBeGreaterThanOrEqual(4.5);
+      await expect.poll(() => trigger.evaluate(node => getComputedStyle(node).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+      const target = route.startsWith('/cn/') ? route.slice(3) : `/cn${route}`;
+      await alternate.click();
+      await expect(page).toHaveURL(url => url.pathname === target);
+    });
+  }
+}
+
 // These exercise the adopted components on real documentation, including
 // their original content and destinations, rather than a component fixture.
 for (const language of ['en', 'cn']) {
@@ -252,9 +305,14 @@ for (const language of ['en', 'cn']) {
     await expect(page.locator('html')).toHaveAttribute('data-td-preset', 'slate');
     await page.locator(appearanceTrigger).click();
     const panel = page.locator('#td-appearance-navbar');
-    await expect(panel.locator('[data-td-preset-value]')).toHaveCount(2);
+    await expect(panel.locator('[data-td-preset-value]')).toHaveCount(4);
     await panel.locator('[data-bs-theme-value="dark"]').locator('..').click();
-    await panel.locator('[data-td-preset-value="paper"]').locator('..').click();
+    for (const preset of ['ink', 'terminal', 'paper']) {
+      await panel.locator(`[data-td-preset-value="${preset}"]`).locator('..').click();
+      await expect(page.locator('html')).toHaveAttribute('data-td-preset', preset);
+      await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
+      expect(await page.evaluate(() => localStorage.getItem('td-preset'))).toBe(preset);
+    }
     await expect(page.locator('html')).toHaveAttribute('data-td-preset', 'paper');
     await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
     await expect(panel.locator('[data-bs-theme-value="dark"]')).toBeChecked();
@@ -292,6 +350,11 @@ for (const language of ['en', 'cn']) {
     await page.keyboard.press('ArrowLeft');
     await expect(panel.locator('[data-td-preset-value="paper"]')).toBeChecked();
     await expect(page.locator('html')).toHaveAttribute('data-td-preset', 'paper');
+    for (const preset of ['slate', 'ink', 'terminal', 'paper']) {
+      await page.keyboard.press('ArrowRight');
+      await expect(panel.locator(`[data-td-preset-value="${preset}"]`)).toBeChecked();
+      await expect(page.locator('html')).toHaveAttribute('data-td-preset', preset);
+    }
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
@@ -315,8 +378,12 @@ for (const language of ['en', 'cn']) {
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(390);
       expect(box.y + box.height).toBeLessThanOrEqual(844);
-      await panel.locator('[data-td-preset-value="paper"]').locator('..').click();
-      await expect(page.locator('html')).toHaveAttribute('data-td-preset', 'paper');
+      await expect(panel.locator('[data-td-preset-value]')).toHaveCount(4);
+      for (const preset of ['ink', 'terminal', 'paper', 'slate']) {
+        await panel.locator(`[data-td-preset-value="${preset}"]`).locator('..').click();
+        await expect(page.locator('html')).toHaveAttribute('data-td-preset', preset);
+        await expect(panel).toBeVisible();
+      }
       await page.keyboard.press('Escape');
       await expect(panel).toBeHidden();
       await expect(trigger).toBeFocused();

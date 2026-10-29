@@ -14,11 +14,12 @@ site shell.
   `.github/workflows/hugo.yml`; release selection comes from `versions.json`.
 - Browser regression: `tests/e2e/package.json` and its Playwright configuration.
   Node dependencies are for tests, not the Hugo site build.
-- Native content components and examples: the "Native content components" section
-  of [contribution.md](contribution.md); check the pinned OINK documentation before
-  adding a custom renderer, script or stylesheet.
-- Image loading and album selection: [Gallery versus Expo](contribution.md#image-loading-and-albums).
-  Expo's thumbnail, preloading and layout optimizations do not apply automatically to Gallery.
+- Native component selection, working syntax and site integration:
+  [scripts/oink-features.md](scripts/oink-features.md). Read the relevant section
+  before adding a custom renderer, script or stylesheet.
+- Image loading and album selection:
+  [Gallery versus Expo](scripts/oink-features.md#image-loading-and-albums).
+  Expo's previews, preloading and layout optimizations do not apply to Gallery.
 
 Read the entry relevant to the task; small content edits do not require the full
 upgrade or deployment workflow. Use `go.mod` / `go.sum` and CI for pinned versions.
@@ -35,8 +36,9 @@ upgrade or deployment workflow. Use `go.mod` / `go.sum` and CI for pinned versio
   public OINK APIs. Do not edit the module cache or vendor a theme fork.
 - Prefer native Markdown and public configuration: Cards for parallel choices,
   Steps for ordered actions, Tabs for equivalent examples, FileTree for annotated
-  directories (`wrap=true` for complete comments), and `.td-table--wide` only for
-  technical tables that need intact identifiers. Keep ordinary tables compact.
+  directories (`wrap=true` for complete comments), and `.wide` only for technical
+  tables that need intact identifiers; add `.expand` when the native reader helps.
+  Keep ordinary tables compact; existing `.td-table--wide` remains compatible.
 - Use Gallery for screenshots within an explanation and Expo for standalone image
   albums. Use Mermaid for relationships and flows, Markmap for text outlines, and
   ECharts for quantitative comparisons with source tables and test conditions.
@@ -51,7 +53,7 @@ upgrade or deployment workflow. Use `go.mod` / `go.sum` and CI for pinned versio
   screenshots. A rendered site alone does not prove interaction compatibility.
 - Before pushing documentation edits, run `bash dist/validate-links.sh`. For
   title, description, keyword, route or substantial body changes, also run the
-  source tests with CI's Python, Hugo Extended, Dart Sass and WebP tools; build
+  source tests with CI's Python, Hugo Extended and WebP tools; build
   and validate a fresh latest artifact. Run `tests/e2e/search-ranking.spec.js`
   when search-facing content changes; keep metadata accurate instead of
   weakening ranking checks. Small prose edits need only focused checks.

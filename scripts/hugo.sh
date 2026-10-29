@@ -97,7 +97,8 @@ if [ "$mode" = "server" ]; then
     "$hugo_bin" server --config "hugo.yaml,$config_file" "$@"
   fi
 else
-  "$hugo_bin" \
+  # Keep the known LibSass deprecation visible; other warnings remain blocking.
+  "$python_bin" scripts/hugo_build.py "$hugo_bin" \
     --config "hugo.yaml,$config_file" \
     --cleanDestinationDir \
     --gc \
@@ -105,7 +106,6 @@ else
     --environment production \
     --printPathWarnings \
     --printI18nWarnings \
-    --panicOnWarning \
     --logLevel info \
     "$@"
 fi

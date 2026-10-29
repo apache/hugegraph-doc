@@ -433,10 +433,8 @@ sub-label are also sufficient. Indexes on hidden or deleting parents excluded fr
 properties.
 
 For query values compatible with the declared property types, no compatible index or partial candidate coverage produces an index error; complete coverage uses
-the indexes. The partial-coverage error, parent-index fallback for sub-edge labels, and the empty result for hidden or deleting candidate labels apply from
-the release containing [apache/hugegraph#3243](https://github.com/apache/hugegraph/pull/3243); earlier versions use only indexes created on the specified
-label, return only the matches from indexed labels when `label` is omitted, and raise an index error when no label has a compatible index (including labels
-being deleted).
+the indexes. The partial-coverage error, parent-index fallback for sub-edge labels, and the empty result for hidden or deleting candidate labels apply starting from
+1.8.0; earlier versions use only indexes created on the specified label, return only the matches from indexed labels when `label` is omitted, and raise an index error when no label has a compatible index (including labels being deleted).
 A type-incompatible value may return an empty result after a matching index is found, before partial coverage is checked. If no index matches, the index error
 still applies. Specify `label` when querying only one edge label, or create compatible property indexes to cover every candidate label. The query does not
 automatically fall back to a full scan.

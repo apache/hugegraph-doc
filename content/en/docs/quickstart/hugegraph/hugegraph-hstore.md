@@ -225,8 +225,8 @@ This file contains only `rocksdb` and Actuator exposure settings.
 
 > [!NOTE]
 > When `rocksdb.total_memory_size` is set to `auto` (or absent / `0`), the node sizes the off-heap RocksDB budget automatically:
-> - **Calculation Formula**: Takes physical memory (using the visible cgroup limit in containers) minus JVM maximum heap (`-Xmx`), direct memory (`MaxDirectMemorySize`), and a 1.5 GiB system reserve, then allocates half the remainder, clamped between 256 MiB and 32 GiB.
-> - **Write Cache & Block Cache**: Budget is divided according to `rocksdb.write_buffer_ratio` (default 0.66). This is a soft capacity target; under heavy concurrent write loads, set `rocksdb.write_buffer_allow_stall` to `true` to enforce strict memory bounds.
+> - **Calculation Formula**: Takes physical memory (using the visible cgroup limit in containers) minus JVM maximum heap (`-Xmx`), direct memory (`MaxDirectMemorySize`), and a 1.5 GiB system reserve, then allocates half the remainder, clamped between 256 MiB and 32 GB (`32000000000` bytes).
+> - **Write Cache & Block Cache**: Budget is divided according to `rocksdb.write_buffer_ratio` (default 0.66). This is a soft capacity target; under heavy concurrent write loads, set `rocksdb.write_buffer_allow_stall` to `true` to hold the write cache to its share at the cost of write latency. The block cache is not a strict limit, so native memory can still exceed the budget and a container can still be OOM-killed.
 > - **Upgrading Existing Deployments**: Deployments carrying legacy `32000000000` can enable auto-sizing by setting environment variable `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=auto` or JVM property `-Drocksdb.total_memory_size=auto`.
 
 Any other option defined in `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` can be added under the same `rocksdb:` block, for example `rocksdb.max_background_jobs`, `rocksdb.level0_file_num_compaction_trigger` or `rocksdb.bloom_filter_bits_per_key`.

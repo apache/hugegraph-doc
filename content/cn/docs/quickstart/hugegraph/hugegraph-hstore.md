@@ -223,8 +223,8 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 > [!NOTE]
 > 当 `rocksdb.total_memory_size` 设置为 `auto`（或未设置、为 `0`）时，系统自动计算堆外 RocksDB 缓存预算：
-> - **推导公式**：以物理内存（容器环境下优先取可见的 cgroup 限制）减去 JVM 最大堆（`-Xmx`）、直接内存（`MaxDirectMemorySize`）和 1.5 GiB 系统预留后，取剩余量的一半，范围钳制在 256 MiB 至 32 GiB 之间。
-> - **写缓存与 Block Cache**：根据 `rocksdb.write_buffer_ratio`（默认 0.66）切分。该预算为软目标容量；大量并发写入时若需严格限制内存可将 `rocksdb.write_buffer_allow_stall` 设为 `true`。
+> - **推导公式**：以物理内存（容器环境下优先取可见的 cgroup 限制）减去 JVM 最大堆（`-Xmx`）、直接内存（`MaxDirectMemorySize`）和 1.5 GiB 系统预留后，取剩余量的一半，范围钳制在 256 MiB 至 32 GB（`32000000000` 字节）之间。
+> - **写缓存与 Block Cache**：根据 `rocksdb.write_buffer_ratio`（默认 0.66）切分。该预算为软目标容量；大量并发写入时可将 `rocksdb.write_buffer_allow_stall` 设为 `true`，以增加写入延迟为代价把写缓存限制在其份额内。Block cache 并非严格上限，本地内存仍可能超出预算，容器仍可能被 OOM 终止。
 > - **升级与覆盖**：历史配置若保留了旧固定值 `32000000000`，可通过设置环境变量 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=auto` 或启动参数 `-Drocksdb.total_memory_size=auto` 启用自动推导。
 
 `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` 中定义的其他选项都可以加在同一个 `rocksdb:` 块下，例如 `rocksdb.max_background_jobs`、`rocksdb.level0_file_num_compaction_trigger` 或 `rocksdb.bloom_filter_bits_per_key`。

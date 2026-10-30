@@ -41,7 +41,7 @@ cd hugegraph-ai/ontogeny
 # 启动自包含演示环境（SQLite + 预置种子数据）
 docker compose up -d
 
-# 可选：带 Postgres 或 HugeGraph 启动
+# 可选：启动附加的 Postgres 或 HugeGraph 容器（注意：Ontogeny 默认仍使用内置 SQLite，若需切换至 Postgres 需同时配置 ONTOGENY_DB_DSN 环境变量）
 # docker compose --profile postgres up -d
 # docker compose --profile graph up -d
 ```
@@ -69,9 +69,12 @@ ONTOGENY_LLM_BASE_URL=http://<ollama>:11434 ONTOGENY_LLM_MODEL=qwen3:27b ontogen
 ```
 
 > [!NOTE]
-> API 采用 session/bearer 鉴权。用于评估的开发请求头 `X-Ontogeny-Principal` 在未关闭时会将任意请求视为管理员权限。源码运行可通过 `ONTOGENY_DEV_AUTH=0` 关闭；Docker 部署时需在 `docker-compose.yml` 或容器环境中显式配置 `ONTOGENY_DEV_AUTH: "0"`。生产环境务必关闭该头并使用真实凭据登录。
+> API 采用 session/bearer 鉴权。用于评估的开发请求头 `X-Ontogeny-Principal` 在未关闭时会将任意请求视为管理员权限。
+> 源码运行可通过 `ONTOGENY_DEV_AUTH=0` 关闭；Docker 部署时需在 `docker-compose.yml` 或容器环境中显式配置 `ONTOGENY_DEV_AUTH: "0"`。
+> 生产环境务必关闭该头并使用真实凭据登录。
 
-若需导入自定义领域包，可在控制台侧栏选择 **新域 → 导入本体包**，上传包含自定义领域 YAML 规范的 zip 压缩包进行安装与激活（演示模式下已默认加载 `domains/product-manufacturing` 等内置领域，无需重复导入）。
+若需导入自定义领域包，可在控制台侧栏选择 **新域 → 导入本体包**，上传包含自定义领域 YAML 规范的 zip 压缩包进行安装与激活
+（演示模式下已默认加载 `domains/product-manufacturing` 等内置领域，无需重复导入）。
 
 运行看板展示模型规模、Agent 交互与系统状态：
 
@@ -83,7 +86,8 @@ ONTOGENY_LLM_BASE_URL=http://<ollama>:11434 ONTOGENY_LLM_MODEL=qwen3:27b ontogen
 
 1. **开启受控会话**：通过 `agent_open_session(plugin, task)` 为指定插件初始化会话上下文。
 2. **携带治理上下文调用**：工具调用时传递 `plugin`、`session_id` 和 `thought`，统一遵循配额与策略拦截。
-3. **写入门禁审核**：写操作默认在控制台挂起等待管理员审批（`approval.writes=confirm`）；对于配置为 `approval.auto_actions` 白名单内的操作可自动执行，配置为 `never` 时则完全拒绝写入；无会话的请求默认仅限只读。
+3. **写入门禁审核**：写操作默认在控制台挂起等待管理员审批（`approval.writes=confirm`）；对于配置为
+   `approval.auto_actions` 白名单内的操作可自动执行，配置为 `never` 时则完全拒绝写入；无会话的请求默认仅限只读。
 {.steps}
 
 控制台提供悬浮 Agent 对话入口，可直接执行任务调用、本体问答或触发 RSI 提案：

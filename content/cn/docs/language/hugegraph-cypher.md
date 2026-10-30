@@ -169,7 +169,9 @@ HugeGraph 的 Cypher 能力受转译层约束，该层基于 openCypher 9 时代
 - **不支持 `CALL` 过程** —— HugeGraph 的图算法（最短路径、k-out、personalrank 等）未暴露为 Cypher 过程；请改用 [traverser REST API](/cn/docs/clients/restful-api/traverser/) 或 Gremlin。
 - **每次请求仅一条语句** —— 不支持多语句脚本，请每次调用发送一条语句。
 
-语句翻译失败时，响应的 `status.message` 包含转译器错误信息；自 1.8.0（`#3259`）起，服务端还会在响应的 `status.attributes.errors` 列表中返回包含 `code`、`message` 与 `hint` 的结构化错误详情。遇到功能缺口时，等价的 Gremlin 写法是官方推荐的回退方案。
+语句翻译失败时，响应的 `status.message` 包含转译器错误信息；自 1.8.0 起，服务端还会在响应的
+`status.attributes.errors` 列表中返回包含 `code`、`message` 与 `hint` 的结构化错误详情。
+遇到功能缺口时，等价的 Gremlin 写法是官方推荐的回退方案。
 
 ### 延伸阅读
 

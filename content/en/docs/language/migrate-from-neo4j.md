@@ -92,7 +92,10 @@ The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound re
    configuration can create the missing PropertyKey, VertexLabel and EdgeLabel definitions, so
    those three parts of step 2 are optional when you use it; it does not create IndexLabels, so
    create any index your queries rely on (see the habits table above) separately.
-   When SeaTunnel auto-creates EdgeLabels, omitting `frequency` defaults to `SINGLE`, which collapses parallel Neo4j relationships between the same endpoints into a single edge. To preserve parallel relationships, explicitly specify `frequency = "MULTIPLE"` and provide stable relationship discriminator fields as `sortKeys` in the edge mapping (HugeGraph uses sort keys to distinguish parallel edges).
+   When SeaTunnel auto-creates EdgeLabels, omitting `frequency` defaults to `SINGLE`, which collapses parallel Neo4j
+   relationships between the same endpoints into a single edge. To preserve parallel relationships, explicitly specify
+   `frequency = "MULTIPLE"` and provide stable relationship discriminator fields as `sortKeys` in the edge mapping
+   (HugeGraph uses sort keys to distinguish parallel edges).
    Load vertices before edges. These capabilities are
    documented, but a complete Neo4j → HugeGraph migration has not been run end-to-end here —
    validate examples against your own data before treating them as tested.

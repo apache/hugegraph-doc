@@ -7,17 +7,17 @@ weight: 9
 
 HugeGraph 1.8.0 upgrades its underlying graph traversal and query framework from Apache TinkerPop 3.5.1 to **TinkerPop 3.8.1**, requires **Java 17** for Server and builds, and updates the script engine to **Groovy 4.0.25**.
 
-While bringing substantial performance optimizations and specification alignments, this upgrade introduces several language-level breaking changes. This guide highlights the **most critical and frequently used syntax changes** with recommended rewrites to ensure seamless migration. Edge cases and lower-level protocol details are organized in the [Full Compatibility Reference](#full-compatibility-reference) at the end.
+This upgrade introduces several language-level breaking changes. The sections below cover the **most frequently affected syntax and behavioral changes** first; less common edge cases and lower-level protocol details are in the [Full Compatibility Reference](#full-compatibility-reference) at the end.
 
 > [!NOTE]
 > - This guide applies to upgrades from version 1.7.0 (or earlier) to 1.8.0.
-> - The **Groovy script engine** remains supported in 1.8.0, allowing existing multi-line scripts, variable definitions, and Java closures to continue functioning as expected.
+> - The **Groovy script engine** remains supported in 1.8.0; existing multi-line scripts, variable definitions, and Java closures continue to work in most cases.
 
 ---
 
 ## Top 5 High-Frequency Syntax and Behavioral Changes
 
-Among existing query scripts, the following 5 changes are the most common: changes 1 through 3 will fail immediately with execution errors if left unrewritten, while changes 4 and 5 do not raise errors but silently alter returned results (dropping elements with missing properties or passing unmatched branches through). Please review these with priority.
+The following 5 changes affect the most queries. Changes 1–3 cause immediate execution errors if not rewritten; changes 4–5 do not raise errors but silently alter returned results (dropping elements with missing properties or passing unmatched branches through). Review these first.
 
 ### 1. `has(key, traversal)` Overload Removed (High Risk: Execution Error)
 

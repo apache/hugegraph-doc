@@ -94,10 +94,7 @@ Acceptance results are limited to these test cases:
 An additional post-merge REST run on `5039e5b` re-executed the documented guide examples against a fresh RocksDB graph:
 reads, projection with ordering and limit, aggregation, single-vertex `CREATE`, `SET`/`REMOVE`, edge `DELETE`,
 `DETACH DELETE`, and every request-form contract above held, including the missing-binding execution error on all
-three forms. The two-vertex shorthand `CREATE (a)-[:knows]->(b)` was verified in the same run on a graph whose
-`person` label uses the `AUTOMATIC` id strategy; on a `PRIMARY_KEY` label the same statement is rejected with an
-execution error reporting that the primary keys must be set, while single-vertex `CREATE` on that label succeeds.
-On `PRIMARY_KEY` schemas, issue the two `CREATE` statements separately or use the `AUTOMATIC` id strategy for this form.
+three forms. The two-vertex shorthand `CREATE (a)-[:knows]->(b)` fails on schemas requiring vertex properties: on a `PRIMARY_KEY` label the statement is rejected with an execution error reporting that primary keys must be set; on vertex labels with non-nullable properties, even under `AUTOMATIC` id strategy, it fails the graph transaction non-null check (`checkNonnullProperty`) because required attributes are omitted. On schemas with mandatory properties or explicit primary keys, do not rely on property-less vertex shortcuts; create vertices with complete properties separately before creating connecting edges.
 
 Two guide examples depend on the schema. The range-predicate read (`WHERE n.age > 30`) needs the `RANGE` index on `age`
 declared in the fixture schema above; the `scripts/example.groovy` schema has only `SECONDARY` indexes on `person`
@@ -109,7 +106,7 @@ name replaces that vertex; the rename changes only data values and was not run a
 ### Test and Implementation Boundaries
 
 Unit and integration test suites cover `CypherApiTest`, `CypherClientTest`, and `CypherOpProcessorTest`.
-On a schema with `PRIMARY_KEY` strategy, the shorthand `CREATE (a)-[:knows]->(b)` is rejected because primary keys must be set explicitly; the shorthand works with `AUTOMATIC` id strategy. For `PRIMARY_KEY` schemas, execute the two `CREATE` statements separately.
+On schemas with non-nullable properties or `PRIMARY_KEY` strategy, the shorthand `CREATE (a)-[:knows]->(b)` is rejected due to non-null property checks (`checkNonnullProperty`) or missing primary keys. Create vertices with complete properties separately before creating connecting edges.
 
 ### Not verified by this change
 

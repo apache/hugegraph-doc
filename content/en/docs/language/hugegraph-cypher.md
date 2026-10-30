@@ -182,8 +182,7 @@ Cypher support in HugeGraph is bounded by the transpiler layer, which is based o
   [traverser REST APIs](/docs/clients/restful-api/traverser/) or Gremlin instead.
 - **Single statement per request** — multi-statement scripts are not supported; send one statement per call.
 
-When a statement fails translation, the response `status.message` contains the transpiler error. If you hit a gap, the Gremlin equivalent is the supported
-fallback.
+When a statement fails translation, the response `status.message` contains the transpiler error. Starting in 1.8.0, the server also returns structured error objects under `status.attributes.errors` with `code`, `message`, and `hint`. If you hit a gap, the Gremlin equivalent is the supported fallback.
 
 ### Further reading
 

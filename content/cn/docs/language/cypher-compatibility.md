@@ -83,10 +83,7 @@ API 测试夹具使用强类型 Schema，并为 `city` 建立 `SECONDARY` 索引
 
 合入后在 `5039e5b` 上的补充 REST 验证对全新 RocksDB 图重新执行了文档示例：查询、带排序和 LIMIT 的投影、聚合、
 单顶点 `CREATE`、`SET`/`REMOVE`、边 `DELETE`、`DETACH DELETE`，以及上表全部请求形式约定均与文档一致，
-包括三种请求形式下缺失绑定的执行错误。双顶点简写 `CREATE (a)-[:knows]->(b)` 在同一运行中于 `person` 标签使用
-`AUTOMATIC` id 策略的图上验证通过；在 `PRIMARY_KEY` 标签上，同一语句会被拒绝并返回执行错误（提示必须设置主键），
-而同一标签上的单顶点 `CREATE` 成功。在 `PRIMARY_KEY` Schema 上，请将两条 `CREATE` 语句分开执行，或对该形式使用
-`AUTOMATIC` id 策略。
+包括三种请求形式下缺失绑定的执行错误。双顶点简写 `CREATE (a)-[:knows]->(b)` 在顶点标签定义了非空属性或要求显式主键时均会被拒绝：在 `PRIMARY_KEY` 标签上因缺少主键而报错；而在包含非空属性定义的标签下，即使使用 `AUTOMATIC` id 策略，也会因简写未提供必填属性而触发事务非空校验错误（`checkNonnullProperty`）。对于含有必填属性或主键的 Schema，不应依赖省略属性的双顶点简写，建议先为各顶点提供完整属性单独创建，再建立关联边。
 
 指南中有两个示例依赖 Schema。范围谓词查询（`WHERE n.age > 30`）需要上文夹具 Schema 中声明的 `age` 上的 `RANGE` 索引；
 `scripts/example.groovy` 的 Schema 只为 `person` 建了 `SECONDARY` 索引（`city`，以及 `age` 与 `city` 的组合），
@@ -97,7 +94,7 @@ API 测试夹具使用强类型 Schema，并为 `city` 建立 `SECONDARY` 索引
 ### 测试与实现边界
 
 相关单元测试与集成测试覆盖 `CypherApiTest`、`CypherClientTest` 与 `CypherOpProcessorTest`。
-在 `PRIMARY_KEY` 策略的 Schema 下，双顶点简写 `CREATE (a)-[:knows]->(b)` 会因缺少主键而被拒绝；而在 `AUTOMATIC` 策略下支持该简写。对于 `PRIMARY_KEY` Schema，建议将两条创建语句分开执行。
+在包含非空属性或使用 `PRIMARY_KEY` 策略的 Schema 下，双顶点简写 `CREATE (a)-[:knows]->(b)` 会因未提供属性而触发非空属性校验失败（`checkNonnullProperty`）或主键缺失错误。建议将顶点与边的创建语句分开执行，并显式为顶点填充所需属性。
 
 ### 未验证范围
 

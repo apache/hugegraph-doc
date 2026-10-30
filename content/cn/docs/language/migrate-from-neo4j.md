@@ -75,6 +75,7 @@ weight: 4
    第 2 步预创建的标签必须使用同一策略——自动创建不会把已有的 `PRIMARY_KEY` 标签改为 `CUSTOMIZE_STRING`。
    Sink 的 `mappings` 配置可以创建缺失的 PropertyKey、VertexLabel 和 EdgeLabel 定义，因此使用它时第 2 步中的这三类
    定义可省略；但它不会创建 IndexLabel，查询所依赖的索引仍须单独创建（见上文“需要改变习惯的部分”表）。
+   若未显式指定 `frequency`，自动创建 EdgeLabel 时默认采用 `SINGLE`，相同类型且端点相同的多条平行关系（Parallel Relationships）会被覆盖合并为一条边。若需保留 Neo4j 中的平行边，必须在边映射中显式指定 `frequency = "MULTIPLE"`，并配置稳定的业务区分字段作为 `sortKeys`（HugeGraph 依赖 sortKeys 生成重边的唯一边 ID）。
    先导入顶点、后导入边。以上能力均有文档记载，但这里没有完整跑通
    一次 Neo4j → HugeGraph 迁移 —— 在把示例当作已验证之前，请先用你自己的数据验证。
 4. **灰度切换**：Cypher 能表达的查询保持不动， translator 不支持的改写为

@@ -60,8 +60,8 @@ cd web && npm install && npm run build && cd ..
 ontogeny serve --demo --open
 ```
 
-服务启动后访问 **http://localhost:8000**。系统首次启动会自动创建 `admin` 账号，初始默认密码为 `ontogeny@2026`（可在容器日志中查看）。
-在生产环境或对外暴露前，请通过环境变量 `ONTOGENY_ADMIN_PASSWORD` 或控制台及时修改默认密码。
+服务启动后访问 **http://localhost:8000**。系统首次启动会自动创建 `admin` 账号，初始默认密码为 `ontogeny@2026`。
+在源码启动时，可通过环境变量 `ONTOGENY_ADMIN_PASSWORD` 自定义初始密码；Docker 部署时该变量不会自动传入容器，建议登录后通过控制台修改默认密码。
 
 可选接入大语言模型以启用助手与 RSI 进化功能：
 ```bash
@@ -69,10 +69,9 @@ ONTOGENY_LLM_BASE_URL=http://<ollama>:11434 ONTOGENY_LLM_MODEL=qwen3:27b ontogen
 ```
 
 > [!NOTE]
-> API 采用 session/bearer 鉴权。本地评估用的请求头 `X-Ontogeny-Principal` 在开发模式下默认启用（可通过 `ONTOGENY_DEV_AUTH=0` 关闭）。
-> 生产环境务必关闭该开发请求头，所有 Agent 与用户请求必须使用真实身份凭据。
+> API 采用 session/bearer 鉴权。用于评估的开发请求头 `X-Ontogeny-Principal` 在未关闭时会将任意请求视为管理员权限。源码运行可通过 `ONTOGENY_DEV_AUTH=0` 关闭；Docker 部署时需在 `docker-compose.yml` 或容器环境中显式配置 `ONTOGENY_DEV_AUTH: "0"`。生产环境务必关闭该头并使用真实凭据登录。
 
-已有现成领域包时，可在控制台侧栏选择 **新域 → 导入本体包**，上传领域 zip 压缩包（如将 `domains/product-manufacturing` 目录打包为 zip）快速安装与激活。
+若需导入自定义领域包，可在控制台侧栏选择 **新域 → 导入本体包**，上传包含自定义领域 YAML 规范的 zip 压缩包进行安装与激活（演示模式下已默认加载 `domains/product-manufacturing` 等内置领域，无需重复导入）。
 
 运行看板展示模型规模、Agent 交互与系统状态：
 

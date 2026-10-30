@@ -60,8 +60,8 @@ cd web && npm install && npm run build && cd ..
 ontogeny serve --demo --open
 ```
 
-Access the console and API at **http://localhost:8000**. The initial launch creates an `admin` account with default password `ontogeny@2026` (logged in container output).
-Before deploying to production or exposing port 8000, set `ONTOGENY_ADMIN_PASSWORD` or update the password in the console.
+Access the console and API at **http://localhost:8000**. The initial launch creates an `admin` account with default password `ontogeny@2026`.
+When starting from source, you can customize the initial password via `ONTOGENY_ADMIN_PASSWORD`; in Docker Compose mode, this host variable is not automatically passed into the container, so change the default password via the web console after logging in.
 
 Optionally configure a local LLM for the assistant and RSI proposer:
 ```bash
@@ -69,10 +69,9 @@ ONTOGENY_LLM_BASE_URL=http://<ollama>:11434 ONTOGENY_LLM_MODEL=qwen3:27b ontogen
 ```
 
 > [!NOTE]
-> The API uses session/bearer authentication. The `X-Ontogeny-Principal` evaluation header is enabled by default in development mode (disable via `ONTOGENY_DEV_AUTH=0`).
-> In production environments, disable this header and authenticate all agent and user requests with valid credentials.
+> The API uses session/bearer authentication. When enabled, the evaluation header `X-Ontogeny-Principal` treats any client request as an administrator. Disable it via `ONTOGENY_DEV_AUTH=0` when running from source, or explicitly set `ONTOGENY_DEV_AUTH: "0"` in `docker-compose.yml` or container environment for Docker deployments. In production environments, always disable this header and authenticate with valid credentials.
 
-If you already have a domain package, navigate to **New domain → Import ontology package** in the sidebar, and upload a zip package (e.g., zipped from `domains/product-manufacturing`) to validate, install, and activate in one step.
+To import a custom domain package, navigate to **New domain → Import ontology package** in the sidebar, and upload a zip archive containing domain YAML definitions (built-in demo domains such as `domains/product-manufacturing` are loaded automatically in demo mode and do not need to be imported again).
 
 The Overview dashboard shows ontology metrics, agent activities, and runtime status:
 

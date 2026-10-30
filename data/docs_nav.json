@@ -1058,6 +1058,11 @@
       "/docs/quickstart/hugegraph-ai/",
       "/docs/quickstart/hugegraph-ai/rest-api/"
     ],
+    "/docs/quickstart/hugegraph-ai/ontogeny/": [
+      "@group/components",
+      "/docs/quickstart/hugegraph-ai/",
+      "/docs/quickstart/hugegraph-ai/ontogeny/"
+    ],
     "/docs/clients/": [
       "@group/develop",
       "/docs/clients/"
@@ -1381,11 +1386,6 @@
     "/docs/cla/": [
       "@group/reference",
       "/docs/cla/"
-    ],
-    "/docs/quickstart/hugegraph-ai/ontogeny/": [
-      "@group/components",
-      "/docs/quickstart/hugegraph-ai/",
-      "/docs/quickstart/hugegraph-ai/ontogeny/"
     ]
   },
   "children_by_url": {

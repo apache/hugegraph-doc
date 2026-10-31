@@ -10,6 +10,9 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ### 1.6 Rebuild
 
+重建顶点、边或索引标签使用 `PUT .../jobs/rebuild/{type}/{name}`：目标标签不存在时返回 HTTP 404；
+已有标签返回 HTTP 202 与任务 ID，应轮询任务结果后再确认重建完成。
+
 #### 1.6.1 重建 IndexLabel
 
 ##### Method & Url

@@ -3930,6 +3930,11 @@ To create a new graph, click the create button on the overview page and provide 
 Connection details are managed globally by the Hubble backend, so you do not re-enter Server host or credentials per graph.
 User-defined schema templates require PD mode; see the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
 
+Hubble overview uses bounded scans. When the response contains `approximate:true` and `scan_limit:100000`,
+the vertex or edge count can stop at 100000 even with tens of millions of records.
+These values are scan observations, not exact totals. Field names depend on the endpoint (e.g. `gremlin-query` returns `vertexcount` / `edgecount`).
+For exact counts, read completed asynchronous task results from Server.
+
 ## Schema modeling: define the shape of your data
 
 Schema defines allowable properties, vertex labels, and edge labels, while determining vertex ID strategies and query index rules.
@@ -4123,6 +4128,116 @@ See the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegr
 
 ![Authenticated account list in standalone mode](/docs/images/hubble/accounts.jpg)
 {width="1600" height="1000"}
+
+## Hubble HTTP APIs {#hubble-http-api}
+
+Hubble exposes a set of HTTP REST endpoints for automation and integration, listening by default on `http://localhost:8088`.
+
+### Login and sessions
+
+In authenticated mode, log in with **snake_case** field names and retain the session cookie:
+
+```bash
+curl -c hubble.cookies -X POST 'http://localhost:8088/api/v1.3/auth/login' \
+  -H 'Content-Type: application/json' \
+  -d '{"user_name":"<username>","user_password":"<password>"}'
+```
+
+Camel-case `userName` and `userPassword` do not populate this login model. Repeated failed attempts can return HTTP 429;
+correct the fields and credentials before retrying. Anonymous mode does not use the login endpoint.
+
+### Integration Gremlin and Cypher queries
+
+The integration Gremlin endpoint currently requires `username` and `password` in the body as well as the authenticated session:
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/gremlin' \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"g.V().count()","username":"<username>","password":"<password>"}'
+```
+
+Use HTTPS outside a trusted local network: JSON does not encrypt these credentials.
+This integration body differs from Server's `gremlin` field and from Hubble's workspace `gremlin-query` contract.
+The session establishes the caller identity; body credentials do not replace the login cookie.
+
+Hubble's Cypher endpoint uses the workspace query model, not the integration Gremlin model:
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/cypher' \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"MATCH (n) RETURN count(n)","preview":false}'
+```
+
+The query field is `content`; a `query` field or a nested `gremlin-query` object does not populate it.
+The session supplies authentication. Server must advertise Cypher support.
+Hubble UI routes such as `/asyncTasks` are browser navigation routes. Task API requests use the
+`/api/v1.3/graphspaces/{space}/graphs/{graph}/async-tasks` prefix.
+
+### Schema defaults
+
+Hubble in version 1.8.0 and above supports optional field defaults. When using older versions without this feature,
+explicitly supply `"open_label_index":true,"style":{"display_fields":["~id"]}`:
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"http_demo_person","id_strategy":"AUTOMATIC","properties":[]}'
+```
+
+Missing or null `style` uses the standard style displaying `~id`;
+missing or null `open_label_index` defaults to `true`, preserving explicit `false`.
+Style fields use snake_case (`display_fields`, `join_symbols`), not `displayFields`.
+`PRIMARY_KEY` types also require `properties` and `primary_keys`; create properties before labels.
+Server schema uses a different request model without Hubble's visual style fields.
+
+### Import graph elements through Hubble
+
+`POST /api/v1.3/graphspaces/{space}/graphs/{graph}/import` accepts multipart field `file` containing JSON graph elements.
+It does not accept raw CSV or a Loader job specification. Create the referenced schema first.
+For example, with a `person` vertex label using `CUSTOMIZE_STRING` IDs and a `name` property,
+and a `knows` edge label linking two `person` vertices, save this as `graph.json`:
+
+```json
+{
+  "vertices": [
+    {"id": "alice", "label": "person", "properties": {"name": "Alice"}},
+    {"id": "bob", "label": "person", "properties": {"name": "Bob"}}
+  ],
+  "edges": [
+    {"label": "knows", "source": "alice", "target": "bob", "properties": {}}
+  ]
+}
+```
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/import' \
+  -F 'file=@graph.json;type=application/json'
+```
+
+Both arrays are required; empty arrays perform an empty import. Supply all non-nullable schema properties.
+Vertex IDs must match the schema ID strategy. Edge endpoints use `source` and `target`; a `file` key inside a vertex is not a data source.
+This endpoint returns a graph view. Use the separate data-source/Loader workflow for CSV ingestion.
+
+### Use GraphSpace permission presets
+
+When Server disables custom GraphSpace role assignments, the legacy GraphSpace user POST is rejected by policy.
+That endpoint assigns roles to an existing account; it is not account registration.
+Use the permission presets exposed by Hubble, rather than inventing role IDs or disabling the Server policy.
+For an existing account, an authorized GraphSpace manager can assign a preset using:
+
+```bash
+curl -b hubble.cookies -X PUT \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/auth/users/<user_id>/preset' \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","username":"<username>","permission_preset":"GS_READ_ONLY"}'
+```
+
+Supported presets are `GS_READ_ONLY`, `GS_READ_WRITE` and `GS_ADMIN`, subject to the caller's grant permissions.
+The account identity in the path and body must match. Anonymous mode has no account-management capability.
 
 ## Operations: inspect the standalone Server
 
@@ -7924,7 +8039,21 @@ Available URLs:
 
 - Asynchronous: `POST http://master_ip:port/tasks/create`; read the ID from response `task.id`.
 - Synchronous: `POST http://master_ip:port/tasks/create/sync`; returns after the task ends.
-- Query task: `GET http://master_ip:port/task/{task_id}`. `errcode=0` indicates a successful query; inspect `task.state` for task status. Set a client polling deadline for asynchronous jobs; reaching it stops client waiting without canceling the server task.
+- Query task: `GET http://master_ip:port/task/{task_id}`. `errcode=0` indicates a successful query; inspect `task.state` for task status.
+  Set a client polling deadline for asynchronous jobs; reaching it stops client waiting without canceling the server task.
+- Read retained results: `GET http://master_ip:port/tasks/value/{task_id}` (or `/api/v1/tasks/value/{id}`).
+
+Native clients submit `POST /api/v1/tasks/create` with `graph`, `task_type` (`load`, `reload` or `compute`), and a flat string-valued `params` map.
+For computation, set `params["compute.algorithm"]`, not a top-level `algorithm`.
+The response contains a native `task.id`; query it at `GET /api/v1/task/{id}` and read retained values at `GET /api/v1/tasks/value/{id}`.
+These paths and positive IDs differ from Hubble's wrapper.
+`POST /api/v1/tasks` does not submit work: after the task-method fix it returns HTTP 405 and `Allow: GET`;
+older builds can return a misleading `{"code":200}` without creating a task.
+See the [native API examples](https://github.com/apache/hugegraph-computer/blob/master/vermeer/README.md#api-overview).
+
+Vermeer Master HTTP follows Helm mode defaults: easy is NodePort, strict is ClusterIP; RPC and Worker ports remain internal.
+Native UI admin uses the password in `<release>-vermeer-admin`. Automation APIs use service tokens in `Authorization: Bearer <token>`;
+UI admin password cannot be used as this token. Chart automatically configures service token for Hubble.
 
 ### 2.2 Loading Graph Data
 
@@ -8034,6 +8163,41 @@ POST http://localhost:6688/tasks/create
 ```
 
 `output.type=local` writes to the executing worker's local filesystem. For containers, mount the output directory if the host needs to read results.
+
+### 2.4 Submit and Integrate via Hubble
+
+With Chart-managed native integration, `POST /api/v1.3/vermeer/task` is used to load or reload a graph, not for computation.
+It accepts `graphspace`, `graph`, `task_type:"load"`, and optional loading tuning parameters.
+Once the graph is loaded, submit the algorithm via the graph-level computation endpoint:
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/algorithms/vermeer' \
+  -H 'Content-Type: application/json' \
+  -d '{"params":{"compute.algorithm":"pagerank","compute.parallel":1,"compute.max_step":10,"pagerank.damping":0.85,"pagerank.diff_threshold":0.00001}}'
+```
+
+Parameters and example values come from the current Hubble PageRank form:
+
+| Parameter | Meaning | Example |
+|---|---|---|
+| `compute.algorithm` | Supported algorithm name | `pagerank` |
+| `compute.parallel` | Computation parallelism | `1` |
+| `compute.max_step` | Maximum iteration steps | `10` |
+| `pagerank.damping` | PageRank damping factor | `0.85` |
+| `pagerank.diff_threshold` | Convergence threshold | `0.00001` |
+
+Current Hubble accepts `pagerank`, `wcc`, `lpa`, `degree`, `closeness_centrality`, `betweenness_centrality`, `triangle_count`, `kcore`, and `sssp`.
+Use the selected algorithm's form for its own parameters; PageRank keys do not apply to another algorithm.
+The direct adapter accepts `compute.*`, the selected algorithm's `<algorithm>.*` keys and `output.need_statistics`.
+Vermeer still validates the actual values. Hubble controls output storage and does not accept arbitrary output paths or Server credentials.
+
+The response contains `data.task_id` inside the Hubble response envelope. Preserve the returned sign:
+Hubble maps native Vermeer task IDs to negative IDs. Poll the same graph's
+`GET /api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/async-tasks/{id}`;
+read result pages through `GET .../async-tasks/{id}/values?cursor=0&limit=100` after successful completion.
+Do not send that Hubble ID to Server's native `/tasks/{id}` endpoint.
+A graph state of `loaded` confirms loading only. An HTTP 400 on computation requires inspecting the exact rejected request and response.
 
 
 ## 3. Supported Algorithms
@@ -11672,6 +11836,17 @@ LLMS index: [llms.txt](/llms.txt)
 > [1.5 Graphs API](https://hugegraph.apache.org/versions/1.5/docs/clients/restful-api/graphs/).
 
 With authentication enabled, creation, cloning, deletion, clearing, display-name changes, graph-configuration reads, read-mode changes, and manual compaction require graph-space management permission (`space`); administrators can satisfy it through permission inheritance. Snapshot creation/restoration and data-mode changes allow graph-space managers or the graph owner. Listing, details, and data/read-mode queries use graph read permissions. Raft APIs additionally require graph-space membership.
+
+`GET /apis` is the resource index. Listed resource paths belong under the Server origin:
+use `/versions`, `/graphspaces` and `/gremlin`, without prepending `/apis`.
+Earlier indexes return paths without a leading slash; interpret those relative to the Server root, not the index directory.
+When a gateway adds a public prefix, retain that prefix.
+
+`GET /graphspaces` requires PD mode. In standalone mode, skip that step and use `GET /graphs` to list configured graphs.
+Graph creation uses `POST /graphspaces/{space}/graphs/{graph}` and the backend's graph configuration.
+`POST /graphs` is not the graph-creation endpoint. The legacy `/graphs` listing does not mean GraphSpace APIs are unavailable.
+For the SeaTunnel demo, create `graph_a` before running the supplied sink job, as required by the
+[SeaTunnel guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md).
 
 #### 6.1.1 List all graphs in the graphspace
 
@@ -16247,7 +16422,8 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabel
 
 #### 1.5.4 Delete IndexLabel by name
 
-Deleting an IndexLabel will result in the deletion of related index data. This operation will generate an asynchronous task.
+Deleting an IndexLabel will result in the deletion of related index data.
+The response is a task ID for the asynchronous task. The current Server endpoint has no `delete_all` query parameter.
 
 ##### Method & Url
 
@@ -16354,7 +16530,10 @@ In vertex types, the `Id` strategy determines the type of the vertex `Id`, with 
 For the `GET/PUT/DELETE` API of a vertex, the id part in the URL should be passed as the id value with type information. This type information is indicated by whether the JSON string is enclosed in quotes, meaning:
 
 - When the id type is `number`, the id in the URL is without quotes, for example: `xxx/vertices/123456`.
-- When the id type is `string`, the id in the URL is enclosed in quotes, for example: `xxx/vertices/"123456"`.
+- When the id type is `string`, the id in the URL is enclosed in quotes, for example: `xxx/vertices/"123456"`;
+  when escaping reserved characters in clients or curl, encode as `%221%3Amarko%22`.
+
+Append properties using `PUT .../vertices/{id}?action=append` with the corresponding JSON properties body.
 
 -------------------------------------------------------------------
 
@@ -16979,6 +17158,11 @@ The EdgeId is formed by concatenating `src-vertex-id + direction + label + sort-
 
 - When the ID type is number, the vertex ID in the EdgeId has a prefix `L`, like "L123456>1>>L987654".
 - When the ID type is string, the vertex ID in the EdgeId has a prefix `S`, like "S1:peter>1>>S2:lop".
+
+Edge IDs use Server's raw edge ID format; escape URL reserved characters without additional JSON quotes.
+Do not apply vertex ID encoding rules to edge IDs.
+Append properties using `PUT .../edges/{id}?action=append` with the corresponding JSON properties body.
+When deleting an edge by ID, supply the label parameter required by the backend: `DELETE .../edges/{id}?label={label}`.
 
 --------------------------------------------------------------------------------
 
@@ -17808,6 +17992,18 @@ curl --compressed -sS -X POST http://127.0.0.1:8080/gremlin \
 ```
 
 `/gremlin` is a top-level endpoint. The traversal source for graph `hugegraph` in graph space `DEFAULT` is `__g_DEFAULT-hugegraph`; `aliases` maps it to script variable `g`. Adjust the alias to the Server binding name for another graph or graph space. Batch responses can use gzip; curl `--compressed` decompresses them automatically.
+
+Bindings are case-sensitive: `<space>-<graph>` selects the graph and `__g_<space>-<graph>` selects its traversal source.
+There is no implicit global `g` on a multi-graph Server. `bindings` supplies query variables;
+it does not register graphs, and an alias target cannot be the expression `graph.traversal()`.
+For a legacy standalone graph without a GraphSpace, the bindings are `<graph>` and `__g_<graph>`.
+For an authenticated Server, add its configured HTTP credentials, for example `-u "$HG_USER:$HG_PASSWORD"`.
+
+The default synchronous Gremlin evaluation timeout is 30000 milliseconds, configured by `evaluationTimeout` in `gremlin-server.yaml`.
+A whole-graph count can use a different execution path from a filtered label count. Do not infer label-scan latency from `g.V().count()`.
+Submit queries that may exceed the synchronous limit as Server asynchronous tasks (see section 8.1.3 below).
+Poll until `task_status` is terminal and inspect `task_result`; a task still marked `running` does not yet provide a completed count.
+A Hubble transport timeout is separate from the Server evaluation timeout; increasing only one does not remove the other.
 
 ##### Response Status
 
@@ -21397,6 +21593,10 @@ LLMS index: [llms.txt](/llms.txt)
 
 ### 7.1 Task
 
+Poll until `task_status` is terminal before reading `task_result`; `running` does not mean the task has completed.
+A Hubble transport timeout is separate from the Server evaluation timeout; increasing only one does not remove the other.
+Do not pass Hubble-wrapped task IDs (which may be mapped to negative IDs) directly to Server native `/tasks/{id}`.
+
 #### 7.1.1 List all async tasks in graph
 
 ##### Params
@@ -21656,6 +21856,9 @@ LLMS index: [llms.txt](/llms.txt)
 ---
 
 ### 1.6 Rebuild
+
+Rebuilding vertex, edge, or index labels uses `PUT .../jobs/rebuild/{type}/{name}`: non-existent labels return HTTP 404;
+existing labels return HTTP 202 and a task ID. Poll the task status to confirm rebuild completion.
 
 #### 1.6.1 Rebuild IndexLabel
 

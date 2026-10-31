@@ -123,6 +123,10 @@ Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据
 若需新建图，可在页面点击新建按钮，填写图名称、可选别名并选择 Schema 模板或示例数据。连接信息由 Hubble 后端统一配置，
 无需重复填写 Server 主机与账号。用户自定义 Schema 模板属于 PD 模式功能，详见 [分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
 
+Hubble 概览使用有界扫描。响应包含 `approximate:true` 与 `scan_limit:100000` 时，即使实际有数千万条数据，
+顶点或边计数也可能停在 100000。这些值是扫描观测值，不能当作精确总量。
+字段名依接口而定，例如 `gremlin-query` 返回 `vertexcount` / `edgecount`。精确计数应读取已完成的异步计数任务结果。
+
 ## 定义 Schema {#schema-建模定义数据的形状}
 
 Schema 规定了图中允许存储的属性、顶点与边类型，并决定顶点 ID 的生成策略与索引规则。
@@ -301,6 +305,111 @@ Hubble 使用 Server 的认证和账号，没有独立用户库。匿名访问�
 
 ![认证模式下的账号列表（单机模式示例）](/cn/docs/images/hubble/accounts.jpg)
 {width="1600" height="1000"}
+
+## Hubble HTTP API 接口 {#hubble-http-api}
+
+Hubble 开放了一组用于自动化与集成的 HTTP REST 接口，监听地址默认为 `http://localhost:8088`。
+
+### 登录与会话
+
+鉴权模式下，登录字段使用 **snake_case**，并保存会话 cookie：
+
+```bash
+curl -c hubble.cookies -X POST 'http://localhost:8088/api/v1.3/auth/login' \
+  -H 'Content-Type: application/json' \
+  -d '{"user_name":"<username>","user_password":"<password>"}'
+```
+
+`userName` 与 `userPassword` 不会填入该登录模型。连续失败可能返回 HTTP 429，请修正字段与凭据后再重试。
+匿名模式不使用登录接口。
+
+### 集成 Gremlin 与 Cypher 查询
+
+集成用 Gremlin 接口当前除登录会话外，还要求请求体中的 `username` 与 `password`：
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/gremlin' \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"g.V().count()","username":"<username>","password":"<password>"}'
+```
+
+可信本地网络以外应使用 HTTPS；JSON 本身不会加密口令。这里的 `query` 不同于 Server 的 `gremlin` 字段，
+也不同于 Hubble 工作区 `gremlin-query` 请求格式。调用者身份由会话确定，请求体凭据不能替代登录 cookie。
+
+Hubble Cypher 使用工作区查询模型，不使用集成 Gremlin 的请求模型：
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/cypher' \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"MATCH (n) RETURN count(n)","preview":false}'
+```
+
+查询字段是 `content`，`query` 或嵌套的 `gremlin-query` 对象不会填入该字段；鉴权来自登录会话。
+Server 必须声明支持 Cypher。`/asyncTasks` 等路径是 UI 导航路由，任务 API 使用
+`/api/v1.3/graphspaces/{space}/graphs/{graph}/async-tasks` 前缀。
+
+### Schema 默认值
+
+Hubble 在 1.8.0 及以上版本中支持以下可选字段默认值。若使用未包含该特性的旧版本，请在请求体中显式提供 `"open_label_index":true,"style":{"display_fields":["~id"]}`：
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"http_demo_person","id_strategy":"AUTOMATIC","properties":[]}'
+```
+
+缺少或为 null 的 `style` 使用标准样式并显示 `~id`；
+缺少或为 null 的 `open_label_index` 默认为 `true`，显式 `false` 保持不变。
+样式字段使用 snake_case（`display_fields`、`join_symbols`），不能写成 `displayFields`。
+`PRIMARY_KEY` 类型还需要 `properties` 和 `primary_keys`；创建标签前应先创建属性。
+Server schema 使用不同的请求模型，不要求 Hubble 的视觉样式字段。
+
+### 通过 Hubble 导入图元素
+
+`POST /api/v1.3/graphspaces/{space}/graphs/{graph}/import` 接收 multipart 字段 `file`，内容是图元素 JSON。
+上传内容不是 CSV，也不是 Loader 作业规格；请先创建所引用的 schema。
+例如，已有使用 `CUSTOMIZE_STRING` ID、带 `name` 属性的 `person` 顶点类型，以及连接两个 `person` 的 `knows` 边类型时，
+将以下内容保存为 `graph.json`：
+
+```json
+{
+  "vertices": [
+    {"id": "alice", "label": "person", "properties": {"name": "Alice"}},
+    {"id": "bob", "label": "person", "properties": {"name": "Bob"}}
+  ],
+  "edges": [
+    {"label": "knows", "source": "alice", "target": "bob", "properties": {}}
+  ]
+}
+```
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/import' \
+  -F 'file=@graph.json;type=application/json'
+```
+
+两个数组都必须存在；空数组只执行空导入。请提供 schema 要求的所有非空属性，顶点 ID 必须匹配对应 ID 策略。
+边端点使用 `source` 与 `target`；顶点条目中的 `file` 键不是数据源定义。该接口返回图视图，CSV 请使用独立的数据源/Loader 流程。
+
+### 使用图空间权限预设
+
+Server 禁用自定义图空间角色分配时，旧图空间用户 POST 会被策略拒绝。该接口为已有账号分配角色，不是注册账号。
+请使用 Hubble 提供的权限预设，不要自行构造角色 ID 或关闭 Server 策略。
+对于已有账号，具备授权权限的图空间管理者可这样设置预设：
+
+```bash
+curl -b hubble.cookies -X PUT \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/auth/users/<user_id>/preset' \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","username":"<username>","permission_preset":"GS_READ_ONLY"}'
+```
+
+支持 `GS_READ_ONLY`、`GS_READ_WRITE` 与 `GS_ADMIN`，具体授权仍受调用者权限约束。
+路径与请求体中的账号身份必须匹配；匿名模式不提供账号管理能力。
 
 ## 检查单机 Server {#系统运维检查单机-server}
 

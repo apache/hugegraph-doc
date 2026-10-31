@@ -17,6 +17,11 @@ The EdgeId is formed by concatenating `src-vertex-id + direction + label + sort-
 - When the ID type is number, the vertex ID in the EdgeId has a prefix `L`, like "L123456>1>>L987654".
 - When the ID type is string, the vertex ID in the EdgeId has a prefix `S`, like "S1:peter>1>>S2:lop".
 
+Edge IDs use Server's raw edge ID format; escape URL reserved characters without additional JSON quotes.
+Do not apply vertex ID encoding rules to edge IDs.
+Append properties using `PUT .../edges/{id}?action=append` with the corresponding JSON properties body.
+When deleting an edge by ID, supply the label parameter required by the backend: `DELETE .../edges/{id}?label={label}`.
+
 --------------------------------------------------------------------------------
 
 The following example requires creating a graph `schema` based on the following `groovy` script:

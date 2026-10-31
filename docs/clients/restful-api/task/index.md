@@ -10,6 +10,10 @@ LLMS index: [llms.txt](/llms.txt)
 
 ### 7.1 Task
 
+Poll until `task_status` is terminal before reading `task_result`; `running` does not mean the task has completed.
+A Hubble transport timeout is separate from the Server evaluation timeout; increasing only one does not remove the other.
+Do not pass Hubble-wrapped task IDs (which may be mapped to negative IDs) directly to Server native `/tasks/{id}`.
+
 #### 7.1.1 List all async tasks in graph
 
 ##### Params

@@ -10,6 +10,10 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ### 7.1 Task
 
+轮询到 `task_status` 为终态后再读取 `task_result`；`running` 不表示任务已经完成。
+Hubble 客户端传输超时与 Server 执行超时是不同限制，仅调整其中一个不会移除另一个。
+不要把 Hubble 封装的任务 ID（可能映射为负数）直接传给 Server 原生 `/tasks/{id}`。
+
 #### 7.1.1 列出某个图中全部的异步任务
 
 ##### Params

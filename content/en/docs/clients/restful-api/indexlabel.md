@@ -150,7 +150,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabel
 
 #### 1.5.4 Delete IndexLabel by name
 
-Deleting an IndexLabel will result in the deletion of related index data. This operation will generate an asynchronous task.
+Deleting an IndexLabel will result in the deletion of related index data. The response is a task ID for the asynchronous task. The current Server endpoint has no `delete_all` query parameter.
 
 ##### Method & Url
 

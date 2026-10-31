@@ -33,8 +33,6 @@ Jump directly to a task below. If this is your first visit, start with the stand
   Prepare CSV, map fields, and verify the imported records.
 {.cards}
 
-For HTTP login, Gremlin aliases, asynchronous jobs and schema request bodies, see [HTTP API examples](/docs/quickstart/toolchain/http-api/).
-
 ## Start the standalone pair
 
 Use the main repository's [docker/docker-compose.yml](https://github.com/apache/hugegraph/blob/master/docker/docker-compose.yml)
@@ -130,6 +128,11 @@ The remaining examples use this graph to explore connections between people and 
 To create a new graph, click the create button on the overview page and provide a graph name, optional alias, and schema template or sample data.
 Connection details are managed globally by the Hubble backend, so you do not re-enter Server host or credentials per graph.
 User-defined schema templates require PD mode; see the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
+
+Hubble overview uses bounded scans. When the response contains `approximate:true` and `scan_limit:100000`,
+the vertex or edge count can stop at 100000 even with tens of millions of records.
+These values are scan observations, not exact totals. Field names depend on the endpoint (e.g. `gremlin-query` returns `vertexcount` / `edgecount`).
+For exact counts, read completed asynchronous task results from Server.
 
 ## Schema modeling: define the shape of your data
 
@@ -324,6 +327,116 @@ See the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegr
 
 ![Authenticated account list in standalone mode](/docs/images/hubble/accounts.jpg)
 {width="1600" height="1000"}
+
+## Hubble HTTP APIs {#hubble-http-api}
+
+Hubble exposes a set of HTTP REST endpoints for automation and integration, listening by default on `http://localhost:8088`.
+
+### Login and sessions
+
+In authenticated mode, log in with **snake_case** field names and retain the session cookie:
+
+```bash
+curl -c hubble.cookies -X POST 'http://localhost:8088/api/v1.3/auth/login' \
+  -H 'Content-Type: application/json' \
+  -d '{"user_name":"<username>","user_password":"<password>"}'
+```
+
+Camel-case `userName` and `userPassword` do not populate this login model. Repeated failed attempts can return HTTP 429;
+correct the fields and credentials before retrying. Anonymous mode does not use the login endpoint.
+
+### Integration Gremlin and Cypher queries
+
+The integration Gremlin endpoint currently requires `username` and `password` in the body as well as the authenticated session:
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/gremlin' \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"g.V().count()","username":"<username>","password":"<password>"}'
+```
+
+Use HTTPS outside a trusted local network: JSON does not encrypt these credentials.
+This integration body differs from Server's `gremlin` field and from Hubble's workspace `gremlin-query` contract.
+The session establishes the caller identity; body credentials do not replace the login cookie.
+
+Hubble's Cypher endpoint uses the workspace query model, not the integration Gremlin model:
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/cypher' \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"MATCH (n) RETURN count(n)","preview":false}'
+```
+
+The query field is `content`; a `query` field or a nested `gremlin-query` object does not populate it.
+The session supplies authentication. Server must advertise Cypher support.
+Hubble UI routes such as `/asyncTasks` are browser navigation routes. Task API requests use the
+`/api/v1.3/graphspaces/{space}/graphs/{graph}/async-tasks` prefix.
+
+### Schema defaults
+
+Hubble in version 1.8.0 and above supports optional field defaults. When using older versions without this feature,
+explicitly supply `"open_label_index":true,"style":{"display_fields":["~id"]}`:
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabels' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"http_demo_person","id_strategy":"AUTOMATIC","properties":[]}'
+```
+
+Missing or null `style` uses the standard style displaying `~id`;
+missing or null `open_label_index` defaults to `true`, preserving explicit `false`.
+Style fields use snake_case (`display_fields`, `join_symbols`), not `displayFields`.
+`PRIMARY_KEY` types also require `properties` and `primary_keys`; create properties before labels.
+Server schema uses a different request model without Hubble's visual style fields.
+
+### Import graph elements through Hubble
+
+`POST /api/v1.3/graphspaces/{space}/graphs/{graph}/import` accepts multipart field `file` containing JSON graph elements.
+It does not accept raw CSV or a Loader job specification. Create the referenced schema first.
+For example, with a `person` vertex label using `CUSTOMIZE_STRING` IDs and a `name` property,
+and a `knows` edge label linking two `person` vertices, save this as `graph.json`:
+
+```json
+{
+  "vertices": [
+    {"id": "alice", "label": "person", "properties": {"name": "Alice"}},
+    {"id": "bob", "label": "person", "properties": {"name": "Bob"}}
+  ],
+  "edges": [
+    {"label": "knows", "source": "alice", "target": "bob", "properties": {}}
+  ]
+}
+```
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/import' \
+  -F 'file=@graph.json;type=application/json'
+```
+
+Both arrays are required; empty arrays perform an empty import. Supply all non-nullable schema properties.
+Vertex IDs must match the schema ID strategy. Edge endpoints use `source` and `target`; a `file` key inside a vertex is not a data source.
+This endpoint returns a graph view. Use the separate data-source/Loader workflow for CSV ingestion.
+
+### Use GraphSpace permission presets
+
+When Server disables custom GraphSpace role assignments, the legacy GraphSpace user POST is rejected by policy.
+That endpoint assigns roles to an existing account; it is not account registration.
+Use the permission presets exposed by Hubble, rather than inventing role IDs or disabling the Server policy.
+For an existing account, an authorized GraphSpace manager can assign a preset using:
+
+```bash
+curl -b hubble.cookies -X PUT \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/auth/users/<user_id>/preset' \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","username":"<username>","permission_preset":"GS_READ_ONLY"}'
+```
+
+Supported presets are `GS_READ_ONLY`, `GS_READ_WRITE` and `GS_ADMIN`, subject to the caller's grant permissions.
+The account identity in the path and body must match. Anonymous mode has no account-management capability.
 
 ## Operations: inspect the standalone Server
 

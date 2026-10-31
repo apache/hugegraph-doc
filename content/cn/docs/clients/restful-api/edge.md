@@ -14,6 +14,10 @@ EdgeId 是由 `src-vertex-id + direction + label + sort-values + tgt-vertex-id` 
 - 当 id 类型为 number 时，EdgeId 的顶点 id 前有一个前缀 `L` ，形如 "L123456>1>>L987654"
 - 当 id 类型为 string 时，EdgeId 的顶点 id 前有一个前缀 `S` ，形如 "S1:peter>1>>S2:lop"
 
+边 ID 使用 Server 的原始边 ID 格式，转义 URL 保留字符时不要额外加 JSON 引号。不能把顶点 ID 编码规则直接套到边 ID 上。
+追加属性使用 `PUT .../edges/{id}?action=append` 并提交对应 JSON 属性体。
+删除边时按后端要求提供 `DELETE .../edges/{id}?label={label}` 的标签参数。
+
 --------------------------------------------------------------------------------
 
 接下来的示例需要先根据以下 `groovy` 脚本创建图 `schema`

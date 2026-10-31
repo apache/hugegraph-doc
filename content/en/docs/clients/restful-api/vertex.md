@@ -21,7 +21,9 @@ In vertex types, the `Id` strategy determines the type of the vertex `Id`, with 
 For the `GET/PUT/DELETE` API of a vertex, the id part in the URL should be passed as the id value with type information. This type information is indicated by whether the JSON string is enclosed in quotes, meaning:
 
 - When the id type is `number`, the id in the URL is without quotes, for example: `xxx/vertices/123456`.
-- When the id type is `string`, the id in the URL is enclosed in quotes, for example: `xxx/vertices/"123456"`.
+- When the id type is `string`, the id in the URL is enclosed in quotes, for example: `xxx/vertices/"123456"`; when escaping reserved characters in clients or curl, encode as `%221%3Amarko%22`.
+
+Append properties using `PUT .../vertices/{id}?action=append` with the corresponding JSON properties body.
 
 -------------------------------------------------------------------
 

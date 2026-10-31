@@ -253,6 +253,17 @@ curl --fail --show-error http://localhost:6688/graphs
 - 异步接口：`POST http://master_ip:port/tasks/create`，从响应的 `task.id` 取得任务 ID。
 - 同步接口：`POST http://master_ip:port/tasks/create/sync`，等待该任务结束后返回。
 - 查询单个任务：`GET http://master_ip:port/task/{task_id}`；响应中的 `errcode` 为 `0` 表示查询成功，再按 `task.state` 判断业务状态。异步任务应在客户端设置轮询截止时间；到时只停止客户端等待，不会自动取消服务端任务。
+- 查询保留结果：`GET http://master_ip:port/tasks/value/{task_id}`（或 `/api/v1/tasks/value/{id}`）。
+
+原生客户端使用 `POST /api/v1/tasks/create`，请求包含 `graph`、`task_type`（`load`、`reload` 或 `compute`）及扁平的字符串 `params` 映射。
+计算算法名填写 `params["compute.algorithm"]`，不是顶层 `algorithm`。
+响应中的原生 `task.id` 通过 `GET /api/v1/task/{id}` 查询状态，通过 `GET /api/v1/tasks/value/{id}` 查询保留结果。
+`POST /api/v1/tasks` 不提交任务：修复后返回 HTTP 405 和 `Allow: GET`；旧构建可能返回误导性的 `{"code":200}`，但实际并未创建任务。
+详见 [原生 API 示例](https://github.com/apache/hugegraph-computer/blob/master/vermeer/README.md#api-overview)。
+
+Vermeer Master HTTP 遵循 Helm 模式默认值：easy 为 NodePort，strict 为 ClusterIP；RPC 与 Worker 端口保持内部访问。
+原生 UI 管理员使用 `<release>-vermeer-admin` 中的密码。自动化 API 使用服务 token，放入 `Authorization: Bearer <token>`，
+UI 管理密码不能当作该 token。Chart 会自动为 Hubble 配置服务 token。
 
 ### 2.2 加载图数据
 
@@ -362,6 +373,39 @@ POST http://localhost:6688/tasks/create
 ```
 
 `output.type=local` 的结果写在执行任务的 worker 本地文件系统中；容器部署时，如需从宿主机读取结果，请将 worker 的输出目录挂载出来。
+
+### 2.4 通过 Hubble 提交与集成
+
+使用 Chart 管理的原生集成时，`POST /api/v1.3/vermeer/task` 用于加载或重新加载图，不是计算接口。
+该接口接收 `graphspace`、`graph`、`task_type:"load"` 与可选加载调优参数；等图加载完成后，再通过图级计算接口提交算法：
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/algorithms/vermeer' \
+  -H 'Content-Type: application/json' \
+  -d '{"params":{"compute.algorithm":"pagerank","compute.parallel":1,"compute.max_step":10,"pagerank.damping":0.85,"pagerank.diff_threshold":0.00001}}'
+```
+
+参数名与示例值来自当前 Hubble PageRank 表单：
+
+| 参数 | 含义 | 示例 |
+|---|---|---|
+| `compute.algorithm` | 支持的算法名 | `pagerank` |
+| `compute.parallel` | 计算并行度 | `1` |
+| `compute.max_step` | 最大迭代步数 | `10` |
+| `pagerank.damping` | PageRank 阻尼系数 | `0.85` |
+| `pagerank.diff_threshold` | 收敛阈值 | `0.00001` |
+
+当前 Hubble 接受 `pagerank`、`wcc`、`lpa`、`degree`、`closeness_centrality`、`betweenness_centrality`、`triangle_count`、`kcore` 与 `sssp`。
+其他算法请使用对应表单中的参数，不能沿用 PageRank 的专属键。
+直连适配器接受 `compute.*`、当前算法的 `<algorithm>.*` 与 `output.need_statistics`，具体参数值仍由 Vermeer 校验。
+输出存储由 Hubble 管理，不能指定任意输出路径或传入 Server 凭据。
+
+Hubble 响应封装的 `data.task_id` 是任务 ID，请保留正负号：原生 Vermeer 任务会映射为负数 ID。
+使用同一图的 `GET /api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/async-tasks/{id}` 查询状态；
+成功后通过 `GET .../async-tasks/{id}/values?cursor=0&limit=100` 读取结果分页。
+不要把 Hubble ID 直接传给 Server 原生 `/tasks/{id}`。
+图状态 `loaded` 只表示加载成功。计算返回 HTTP 400 时，应结合被拒绝的完整请求与响应排查定位。
 
 ## 三、支持的算法
 

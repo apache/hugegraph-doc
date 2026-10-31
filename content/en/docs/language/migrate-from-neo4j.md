@@ -37,7 +37,10 @@ development-tree verification record and
 | Transaction boundaries inside a Cypher statement | One statement per request; graph-to-graph migration uses [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/) (preferred, see below), file-based bulk loads use the [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/) |
 {.wide}
 
-On `PRIMARY_KEY` labels, a `UNIQUE` index cannot include all primary-key fields (the server rejects it). To keep duplicate-rejection behavior, use a `CUSTOMIZE_STRING` label keyed on the Neo4j node id and add a `UNIQUE` index on the business key.
+On `PRIMARY_KEY` labels, a `UNIQUE` index cannot include all primary-key fields
+(the server rejects it). To keep duplicate-rejection behavior, use a
+`CUSTOMIZE_STRING` label keyed on the Neo4j node id and add a `UNIQUE` index on the
+business key.
 
 The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound request form is a
 `master` feature, not a promise about that release. See the compatibility notes for its validated contract.

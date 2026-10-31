@@ -14,7 +14,10 @@ statement that references `$param` runs with the missing binding inlined as `nul
 while `RETURN $value AS value` still returns a row) — see
 [Known limitations](/docs/language/hugegraph-cypher/#known-limitations).
 
-This page documents the verified use cases and behavioral boundaries of the Cypher implementation. It does not imply complete coverage of openCypher or Neo4j. Cypher parameter binding and enhancements are merged starting from 1.8.0 (Java 17, TinkerPop 3.8.1).
+This page documents the verified use cases and behavioral boundaries of the Cypher
+implementation. It does not imply complete coverage of openCypher or Neo4j. Cypher
+parameter binding and enhancements are merged starting from 1.8.0 (Java 17,
+TinkerPop 3.8.1).
 
 The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. General usage is covered in the
 [HugeGraph Cypher guide](/docs/language/hugegraph-cypher/).

@@ -110,6 +110,9 @@
               "page": "/docs/quickstart/hugegraph-ai/hugegraph-llm"
             },
             {
+              "page": "/docs/quickstart/hugegraph-ai/hugegraph-mcp"
+            },
+            {
               "page": "/docs/quickstart/hugegraph-ai/hugegraph-ml"
             },
             {
@@ -530,6 +533,11 @@
             {
               "page": "/docs/quickstart/hugegraph-ai/hugegraph-llm",
               "url": "/docs/quickstart/hugegraph-ai/hugegraph-llm/",
+              "children": []
+            },
+            {
+              "page": "/docs/quickstart/hugegraph-ai/hugegraph-mcp",
+              "url": "/docs/quickstart/hugegraph-ai/hugegraph-mcp/",
               "children": []
             },
             {
@@ -1059,6 +1067,11 @@
       "/docs/quickstart/hugegraph-ai/",
       "/docs/quickstart/hugegraph-ai/hugegraph-llm/"
     ],
+    "/docs/quickstart/hugegraph-ai/hugegraph-mcp/": [
+      "@group/components",
+      "/docs/quickstart/hugegraph-ai/",
+      "/docs/quickstart/hugegraph-ai/hugegraph-mcp/"
+    ],
     "/docs/quickstart/hugegraph-ai/hugegraph-ml/": [
       "@group/components",
       "/docs/quickstart/hugegraph-ai/",
@@ -1235,6 +1248,21 @@
       "/docs/language/",
       "/docs/language/hugegraph-gremlin/"
     ],
+    "/docs/language/hugegraph-cypher/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/hugegraph-cypher/"
+    ],
+    "/docs/language/cypher-compatibility/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/cypher-compatibility/"
+    ],
+    "/docs/language/migrate-from-neo4j/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/migrate-from-neo4j/"
+    ],
     "/docs/guides/architectural/": [
       "@group/develop",
       "/docs/guides/architectural/"
@@ -1397,21 +1425,6 @@
     "/docs/cla/": [
       "@group/reference",
       "/docs/cla/"
-    ],
-    "/docs/language/hugegraph-cypher/": [
-      "@group/develop",
-      "/docs/language/",
-      "/docs/language/hugegraph-cypher/"
-    ],
-    "/docs/language/cypher-compatibility/": [
-      "@group/develop",
-      "/docs/language/",
-      "/docs/language/cypher-compatibility/"
-    ],
-    "/docs/language/migrate-from-neo4j/": [
-      "@group/develop",
-      "/docs/language/",
-      "/docs/language/migrate-from-neo4j/"
     ]
   },
   "children_by_url": {
@@ -1456,6 +1469,7 @@
     "/docs/quickstart/hugegraph-ai/": [
       "/docs/quickstart/hugegraph-ai/quick_start",
       "/docs/quickstart/hugegraph-ai/hugegraph-llm",
+      "/docs/quickstart/hugegraph-ai/hugegraph-mcp",
       "/docs/quickstart/hugegraph-ai/hugegraph-ml",
       "/docs/quickstart/hugegraph-ai/config-reference",
       "/docs/quickstart/hugegraph-ai/rest-api"

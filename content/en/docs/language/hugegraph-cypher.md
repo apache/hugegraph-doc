@@ -69,7 +69,11 @@ or run them on an empty graph. On a schema without the nullable keys
 the non-null property check: set every non-null property in each statement, or declare the labels with
 `nullableKeys` first. If the `person` label uses the `PRIMARY_KEY` id strategy (as it does in `scripts/example.groovy`), the two-vertex
 shorthand `CREATE (a)-[:knows]->(b)` is rejected with an execution error reporting that the primary keys must be set,
-so the edge example below creates the vertices first and then matches them. The shorthand works with the `AUTOMATIC` id strategy only when the label defines no required (non-null) properties; under the assumed schema, `name` remains non-null, so the shorthand is rejected because each created vertex must supply all non-null properties.
+so the edge example below creates the vertices first and then matches them.
+The shorthand works with the `AUTOMATIC` id strategy only when the label defines no
+required (non-null) properties; under the assumed schema, `name` remains non-null,
+so the shorthand is rejected because each created vertex must supply all non-null
+properties.
 
 #### Read — MATCH / WHERE / RETURN
 

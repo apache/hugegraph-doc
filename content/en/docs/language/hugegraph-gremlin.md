@@ -10,6 +10,10 @@ HugeGraph supports [Gremlin](https://tinkerpop.apache.org/gremlin.html), a graph
 
 Gremlin can be used to create entities (Vertex and Edge) of a graph, modify the properties of entities, and delete entities. More importantly, it can be used to perform graph querying and analysis operations.
 
+> [!NOTE]
+> **Version & Migration Note**: HugeGraph 1.8.0 upgrades its underlying TinkerPop engine to **3.8.1** (along with Java 17 and Groovy 4.0.25).
+> Legacy syntax patterns such as `store()`, scoped `aggregate()`, and `has(key, traversal)` have been completely removed and now fail on 1.8. See the [1.8 Gremlin & TinkerPop Migration Guide](../guides/gremlin-migration-3.8) for details.
+
 ### TinkerPop Features
 
 HugeGraph implements the TinkerPop framework, but not all TinkerPop features are implemented.
@@ -80,7 +84,7 @@ The table below lists the support status of various TinkerPop features in HugeGr
 | SerializableValues |                                                                                                                                                                                                                                                                      | false   |
 | StringArrayValues  |                                                                                                                                                                                                                                                                      | false   |
 | StringValues       |                                                                                                                                                                                                                                                                      | true    |
-| UniformListValues  | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "uniform" it must contain objects of the same type.           | true    |
+| UniformListValues  | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "uniform" it must contain objects of the same type.           | false (supported via Schema valueList()) |
 
 ### Gremlin Steps
 
@@ -96,7 +100,9 @@ HugeGraph supports all steps of Gremlin. For complete reference information abou
 | coalesce   | Returns the first traversal that returns a result.                                                                                    | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step)     |
 | constant   | Returns a constant value. Used in conjunction with coalesce.                                                                          | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step)     |
 | count      | Returns a count from the traversal.                                                                                         | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step)         |
+| datetime   | Creates a datetime object or retrieves current server time (returns `OffsetDateTime` in 1.8.0).     | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
 | dedup      | Returns values with duplicates removed.                                                                                     | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step)           |
+| discard    | Discards all current traversers (replaces parameterless `none()` in 1.8.0).                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)        |
 | drop       | Discards a value (vertex/edge).                                                                                      | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step)             |
 | fold       | Acts as a barrier for computing aggregated values from results.                                                                                  | [fold step](http://tinkerpop.apache.org/docs/current/reference/#fold-step)             |
 | group      | Groups values based on specified labels.                                                                                     | [group step](http://tinkerpop.apache.org/docs/current/reference/#group-step)           |
@@ -116,7 +122,8 @@ HugeGraph supports all steps of Gremlin. For complete reference information abou
 | repeat     | Repeats a step a specified number of times. Used for looping.                                                                                | [repeat step](http://tinkerpop.apache.org/docs/current/reference/#repeat-step)         |
 | sample     | Used to sample results returned by the traversal.                                                                                    | [sample step](http://tinkerpop.apache.org/docs/current/reference/#sample-step)         |
 | select     | Used to project the results returned by the traversal.                                                                                     | [select step](http://tinkerpop.apache.org/docs/current/reference/#select-step)         |
-| store      | This step is used for non-blocking aggregation of results returned by traversal                                                                                    | [store step](http://tinkerpop.apache.org/docs/current/reference/#store-step)           |
+| mergeV     | Matches vertices by property; updates if present, creates if absent (standard upsert).                                     | [mergeV step](http://tinkerpop.apache.org/docs/current/reference/#mergevertex-step)    |
+| mergeE     | Matches edges by property and endpoints; updates if present, creates if absent (standard upsert).                          | [mergeE step](http://tinkerpop.apache.org/docs/current/reference/#mergeedge-step)      |
 | tree       | Aggregate the paths in vertices into a tree.                                                                                    | [tree step](http://tinkerpop.apache.org/docs/current/reference/#tree-step)             |
 | unfold     | Unfolds an iterator as a step.                                                                                      | [unfold step](http://tinkerpop.apache.org/docs/current/reference/#unfold-step)         |
 | union      | Merge the results returned by multiple traversals.                                                                                     | [union step](http://tinkerpop.apache.org/docs/current/reference/#union-step)           |

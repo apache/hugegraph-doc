@@ -43,7 +43,7 @@ HugeGraph Server 是图数据库的 OLTP 引擎和服务入口，负责属性图
 - **查询语言**：支持 Gremlin（TinkerPop 3）和 Cypher（OpenCypher）
 - **REST API**：提供 Schema、图数据、查询、任务和运维接口
 - **索引与查询**：支持精确查询、范围查询和复合条件查询
-- **存储后端**：1.7.0 至 `master` 主要支持 RocksDB（单机）、HStore（分布式）和 HBase
+- **存储后端**：支持 RocksDB（单机推荐）、HStore（分布式推荐）和 HBase（Cassandra、MySQL、PostgreSQL 等历史后端已在 1.7.0 禁用并在 1.8.0 彻底移除）
 
 主要模块包括 `hugegraph-core`、存储后端模块和 `hugegraph-api`。Core 实现图模型、事务和查询逻辑，后端模块负责连接具体存储系统，API 模块负责 HTTP 接入。当前 REST 资源路径包含图空间与图名称，例如：
 

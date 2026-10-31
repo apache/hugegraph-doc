@@ -28,7 +28,7 @@ weight: 4
 |---|---|
 | `CREATE INDEX` / `CREATE CONSTRAINT` | 通过 [IndexLabel REST API](/cn/docs/clients/restful-api/indexlabel/) 创建属性索引；唯一性约束对应 `UNIQUE` 索引；节点键对应非可空属性加复合 `UNIQUE` 索引；属性存在约束对应 [VertexLabel](/cn/docs/clients/restful-api/vertexlabel/) / [EdgeLabel](/cn/docs/clients/restful-api/edgelabel/) 上的非可空属性。注意 `primary_keys` 决定顶点标识，不是约束机制，重复 `CREATE` 直接覆盖旧记录 |
 | 隐式 schema（属性随意添加） | **强 schema**：先定义 VertexLabel/EdgeLabel/PropertyKey，再写数据 |
-| `WHERE` 中的属性谓词无需索引 | 起始顶点查找需要索引覆盖（除非对该标签全部主键做等值匹配）：`>` / `<` 等范围比较需要 `RANGE` 类型的 IndexLabel。缺少覆盖索引时返回 HTTP 400 "未建索引"错误 |
+| `WHERE` 中的属性谓词无需索引 | 起始顶点查找需要索引覆盖（除非对该标签全部主键做等值匹配）：`>` / `<` 等范围比较需要 `RANGE` 类型的 IndexLabel。缺少覆盖索引时返回 HTTP 200（响应体 `status.code` 400 "未建索引"错误） |
 | 参数化查询 `$param` | 已发布版本仅发送原始语句；缺失的绑定内联为 `null`（`SET` 会移除属性，`CREATE` 可能存入 `"  cypher.null"` 或报错），请在客户端预校验取值。JSON 绑定参数自 1.8.0 起支持，顶层绑定最多 16 个 |
 | `CALL dbms.*` / `CALL algo.*` 过程 | 对应功能分散在 [traverser](/cn/docs/clients/restful-api/traverser/)、[task](/cn/docs/clients/restful-api/task/) 等 REST API |
 | 驱动：Neo4j Bolt driver | [hugegraph-client](/cn/docs/clients/hugegraph-client/)（`CypherManager`）或任意 HTTP 客户端 |

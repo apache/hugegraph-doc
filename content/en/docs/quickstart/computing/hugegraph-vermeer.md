@@ -255,7 +255,8 @@ Available URLs:
 
 - Asynchronous: `POST http://master_ip:port/tasks/create`; read the ID from response `task.id`.
 - Synchronous: `POST http://master_ip:port/tasks/create/sync`; returns after the task ends.
-- Query task: `GET http://master_ip:port/task/{task_id}`. `errcode=0` indicates a successful query; inspect `task.state` for task status. Set a client polling deadline for asynchronous jobs; reaching it stops client waiting without canceling the server task.
+- Query task: `GET http://master_ip:port/task/{task_id}`. `errcode=0` indicates a successful query; inspect `task.state` for task status.
+  Set a client polling deadline for asynchronous jobs; reaching it stops client waiting without canceling the server task.
 - Read retained results: `GET http://master_ip:port/tasks/value/{task_id}` (or `/api/v1/tasks/value/{id}`).
 
 Native clients submit `POST /api/v1/tasks/create` with `graph`, `task_type` (`load`, `reload` or `compute`), and a flat string-valued `params` map.

@@ -10,6 +10,7 @@ weight: 3
 
 ## 模块
 
+- [hugegraph-mcp](./hugegraph-mcp.md)：通过 MCP 向 AI 客户端提供图查询、Schema 和受控写入工具。
 - [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm)：知识图谱构建、GraphRAG 和自然语言图查询。
 - [hugegraph-ml](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml)：从 HugeGraph 读取图数据并运行图学习模型。
 - [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client)：管理 Schema、图数据和 Gremlin 查询的 Python SDK。
@@ -88,6 +89,7 @@ cd hugegraph-ml/src
 
 ## 后续阅读
 
+- [HugeGraph-MCP](./hugegraph-mcp.md)
 - [HugeGraph-LLM](./hugegraph-llm.md)
 - [HugeGraph-LLM 使用流程](./quick_start.md)
 - [配置参考](./config-reference.md)

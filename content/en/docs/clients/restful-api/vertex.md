@@ -367,13 +367,27 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 #### Params
 
 - label: Vertex type
-- properties: Property key-value pairs (precondition: indexes are created for property queries)
+- properties: Property key-value pairs (see index coverage below)
 - keep_start_p: Default is false. When set to true, the range matching input expression will not be automatically escaped. For example, `properties={"age":"P.gt(18)"}` will be interpreted as an exact match, i.e., the age property is equal to the string "P.gt(18)"
 - offset: Offset, default is 0
 - limit: Maximum number of results, default is 100
 - page: Page number
 
 All of the above parameters are optional. `page` can not be combined with a non-zero `offset`, everything else can be combined in any way.
+
+When `label` selects a vertex label using the `PRIMARY_KEY` ID strategy and `properties` supplies exact values for **all** primary-key fields (`P.eq` and `P.within` count as exact values), the query resolves the vertex by ID and filters additional property conditions afterward — no property index is required.
+If all primary-key fields are present but any one uses a condition other than `P.eq`, `P.within`, or `P.contains` (e.g. `P.neq`, `P.gt`, `P.between`, `P.textcontains`), the query is rejected before reaching property-index lookup, even when a matching index exists. `P.contains` on a primary-key field takes the single-element ID lookup path and is not rejected.
+
+For other `properties` queries: when `label` is specified, that label must have a property index compatible with the query conditions. **Candidate labels** are vertex labels that declare all queried non-OLAP properties, including labels with no vertices yet.
+
+Labels hidden from normal queries, including those being deleted, are excluded from the candidate set and do not need index coverage. If all candidate labels are hidden or being deleted (or the specified `label` itself is hidden or being deleted), the query returns empty without raising an index error. If no schema label declares the queried properties at all, the index error still applies. A label index alone does not mean the property is indexed.
+
+When the query includes OLAP properties and the read mode exposes OLAP data, HugeGraph uses shared OLAP indexes — those properties do not require per-label coverage.
+
+**Error trigger rules**: when query values are type-compatible, missing a matching index or covering only some candidate labels raises an index error; only full coverage proceeds through the index. When query values are type-incompatible, a matching index may return an empty result (partial-coverage check skipped); with no matching index, the index error still applies. The query never falls back to a full scan.
+
+> [!NOTE]
+> The partial-coverage error and the empty result for hidden or deleting candidate labels apply starting from 1.8.0. Earlier versions return only matches from indexed labels and raise an index error when no label has a compatible index.
 
 Property key-value pairs consist of the property name and value in JSON format. Multiple property key-value pairs are allowed as query conditions. The property value supports exact matching, range matching, and fuzzy matching. For exact matching, use the format `properties={"age":29}`, for range matching, use the format `properties={"age":"P.gt(29)"}`, and for fuzzy matching, use the format `properties={"city": "P.textcontains("ChengDu China")}`. The following expressions are supported for range matching:
 

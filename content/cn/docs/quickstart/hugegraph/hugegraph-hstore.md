@@ -136,6 +136,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` | gRPC 服务端口。 |
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` | REST API 端口。 |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` | 数据存储路径。 |
+| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | 否 | 无 | `rocksdb.total_memory_size` | RocksDB 内存预算：`auto` 或字节数。空值视为未设置；其他值会使入口脚本以退出码 2 退出。未设置时使用 `application-pd.yml` 中的值或自动计算。 |
 {.td-table--wide}
 
 当前主线 entrypoint 将这些变量写入 `SPRING_APPLICATION_JSON`，覆盖镜像内 `conf/application.yml`；其余配置仍从该文件和 `application-pd.yml` 读取，然后以前台方式启动 Java。旧变量 `PD_ADDRESS`、`GRPC_HOST`、`RAFT_ADDRESS` 仍可用，但会输出弃用警告。
@@ -151,7 +152,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 #### 4.1 application.yml
 
-以下配置参考表核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 的发行目录值和 Java 默认注入值；1.7.0 发布包请使用其版本标签对应的配置文件，不要跨版本覆盖。
+以下配置参考表核对的是 Server 主线提交的发行目录值和 Java 默认注入值；1.7.0 发布包请使用其版本标签对应的配置文件，不要跨版本覆盖。
 
 #### 4.2 application-pd.yml
 
@@ -183,7 +184,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
 | `raft.address` | `127.0.0.1:8510` | 必填 | 本节点的 Raft 服务地址，格式为 `host:port`，必须能被其他 Store 节点访问。这里不需要配置 peer 列表：分区 Raft 组的成员由 PD 下发。 |
-| `raft.disruptorBufferSize` | `1024` | `0` | Raft 任务队列大小。设为 `0` 时按 `rocksdb.total_memory_size` 推导：将该内存量的 GB 数取最接近的 2 的幂，再乘以 32。 |
+| `raft.disruptorBufferSize` | `1024` | `0` | Raft 任务队列大小。设为 `0` 时按 `rocksdb.total_memory_size` 推导：将该内存量的 GB 数（至少为 1）取最接近的 2 的幂，再乘以 32。 |
 | `raft.max-log-file-size` | `600000000000` | `50000000000` | Raft 日志的最大字节数。 |
 | `raft.snapshotInterval` | `1800` | `300` | 生成 Raft 快照的时间间隔，单位秒。 |
 | `raft.snapshotLogIndexMargin` | 未设置 | `0` | 距上次快照的最小 applied index 差值，达到后才真正生成快照。设为 `0` 关闭该判断。 |
@@ -212,11 +213,19 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 | 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
-| `rocksdb.total_memory_size` | `32000000000` | `51539607552` | 本节点所有 RocksDB 实例共享的内存预算。缺失或为 `0` 时使用 JVM 最大堆内存。 |
-| `rocksdb.write_buffer_size` | `32000000` | `33554432` | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`。 |
+| `rocksdb.total_memory_size` | `auto` | 自动计算，见说明 | 本节点所有 RocksDB 实例共享的堆外内存预算（取值为 `auto` 或具体字节数）。详细自动推导规则见下方说明。 |
+| `rocksdb.write_buffer_size` | `32000000` | 自动推导，见说明 | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`，最小为 `1048576`（1 MiB）。 |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | 落盘前合并的 memtable 数量。 |
 | `rocksdb.write_buffer_ratio` | 未设置 | `0.66` | `total_memory_size` 中分配给写缓存的比例，其余作为 block cache。 |
 {.td-table--wide}
+
+### RocksDB 内存预算自动计算规则 {#rocksdb-memory-budget}
+
+> [!NOTE]
+> 当 `rocksdb.total_memory_size` 设置为 `auto`（或未设置、为 `0`）时，系统自动计算堆外 RocksDB 缓存预算：
+> - **推导公式**：以物理内存（容器环境下优先取可见的 cgroup 限制）减去 JVM 最大堆（`-Xmx`）、直接内存（`MaxDirectMemorySize`）和 1.5 GiB 系统预留后，取剩余量的一半，范围钳制在 256 MiB 至 32 GB（`32000000000` 字节）之间。
+> - **写缓存与 Block Cache**：根据 `rocksdb.write_buffer_ratio`（默认 0.66）切分。该预算为软目标容量；大量并发写入时可将 `rocksdb.write_buffer_allow_stall` 设为 `true`，以增加写入延迟为代价把写缓存限制在其份额内。Block cache 并非严格上限，本地内存仍可能超出预算，容器仍可能被 OOM 终止。
+> - **升级与覆盖**：历史配置若保留了旧固定值 `32000000000`，可通过设置环境变量 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=auto` 或启动参数 `-Drocksdb.total_memory_size=auto` 启用自动推导。
 
 `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` 中定义的其他选项都可以加在同一个 `rocksdb:` 块下，例如 `rocksdb.max_background_jobs`、`rocksdb.level0_file_num_compaction_trigger` 或 `rocksdb.bloom_filter_bits_per_key`。
 
@@ -330,7 +339,10 @@ master 构建接受 `g1`、`G1`、`zgc` 和 `ZGC`。
 - `-d true`（默认）：以后台守护进程方式运行，脚本立即返回，并把 Java 进程号写入 `bin/pid`。
 - `-d false`：以前台模式运行，脚本通过 `exec` 替换为 Java 进程，容器或进程管理器的进程即为 Java 本身。在 Docker 或进程管理器（systemd、supervisord）下运行时请使用此参数，以便在崩溃时自动检测并重启服务。
 
-JVM 内存方面，如果没有自行设置 `JAVA_OPTIONS`：`-Xms512m`，`-Xmx` 取空闲内存的一半并限制在 512 MB 到 2048 MB 之间。脚本还会加上 `-XX:MetaspaceSize=256M`、OOM 时把堆转储写入 `logs/`，以及滚动的 GC 日志 `logs/gc.log`。生产节点通常需要大得多的堆，请显式指定，例如 `-j "-Xmx32g -Xms32g"`。
+JVM 内存方面，如果没有自行设置 `JAVA_OPTIONS`：`-Xms512m`，`-Xmx` 取空闲内存的一半并限制在 512 MB 到 2048 MB 之间。
+脚本还会加上与该堆大小相同的 `-XX:MaxDirectMemorySize`、`-XX:MetaspaceSize=256M`、OOM 时把堆转储写入 `logs/`，以及滚动的 GC 日志 `logs/gc.log`。
+生产节点通常需要大得多的堆，请显式指定，并同时设置直接内存上限，例如 `-j "-Xmx32g -Xms32g -XX:MaxDirectMemorySize=2g"`。
+不设上限时，JVM 允许的直接内存与 32 GB 的堆相同，RocksDB 预算会把它计算在内，在内存不足约 66 GB 的主机上会降到 256 MiB 的下限。
 
 当 `ulimit -n` 或 `ulimit -u` 低于 1024 时脚本会拒绝启动；在 x86_64 和 arm64 上，如果能成功下载并校验对应的动态库，脚本会预加载 jemalloc。
 

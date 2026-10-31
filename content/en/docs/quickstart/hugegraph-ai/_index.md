@@ -95,5 +95,5 @@ Example scripts are under `hugegraph-ml/src/hugegraph_ml/examples/`.
 - [Configuration reference](./config-reference.md)
 - [REST API](./rest-api.md)
 - [HugeGraph-ML](./hugegraph-ml.md)
-- [Python client](../client/hugegraph-client-python.md)
+- [Python client](/docs/clients/client/hugegraph-client-python/)
 - [Vermeer Python Client](./vermeer-python-client.md)

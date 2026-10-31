@@ -47,7 +47,7 @@ Toolchain 的主要组件如下：
 - [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/)：通过 Web 界面连接图数据库，管理 Schema、导入数据并执行查询。
 - [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/)：转换多种数据源并批量导入图数据。
 - [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/)：提供部署、管理和备份恢复命令。
-- [Client](/cn/docs/quickstart/client/hugegraph-client/)：封装 Server 连接、Schema 管理、图数据读写和查询；支持 [Java](/cn/docs/quickstart/client/hugegraph-client/)、[Python](/cn/docs/quickstart/client/hugegraph-client-python/) 和 [Go](/cn/docs/quickstart/client/hugegraph-client-go/) 客户端，Rust 客户端仍在开发中。
+- [Client](/cn/docs/clients/client/hugegraph-client/)：封装 Server 连接、Schema 管理、图数据读写和查询；支持 [Java](/cn/docs/clients/client/hugegraph-client/)、[Python](/cn/docs/clients/client/hugegraph-client-python/) 和 [Go](/cn/docs/clients/client/hugegraph-client-go/) 客户端，Rust 客户端仍在开发中。
 
 ## 独立图计算引擎
 

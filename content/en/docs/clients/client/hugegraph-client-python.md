@@ -2,6 +2,8 @@
 title: "HugeGraph Python Client Quick Start"
 linkTitle: "Python Client"
 weight: 2
+aliases:
+  - /docs/quickstart/client/hugegraph-client-python/
 ---
 
 `hugegraph-python-client` is the Python SDK for HugeGraph. It manages schemas, reads and writes graph data, and executes Gremlin queries. HugeGraph-LLM and HugeGraph-ML also use this client.

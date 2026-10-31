@@ -47,7 +47,7 @@ Main Toolchain components:
 - [Hubble](/docs/quickstart/toolchain/hugegraph-hubble/): Connects to the graph database through a web interface to manage schemas, import data, and run queries.
 - [Loader](/docs/quickstart/toolchain/hugegraph-loader/): Converts multiple data sources and imports them into graph data in batches.
 - [Tools](/docs/quickstart/toolchain/hugegraph-tools/): Provides command-line deployment, management, backup, and restore operations.
-- [Client](/docs/quickstart/client/hugegraph-client/): Wraps Server connections, schema management, graph reads and writes, and queries. Clients are available for [Java](/docs/quickstart/client/hugegraph-client/), [Python](/docs/quickstart/client/hugegraph-client-python/), and [Go](/docs/quickstart/client/hugegraph-client-go/); a Rust client is under development.
+- [Client](/docs/clients/client/hugegraph-client/): Wraps Server connections, schema management, graph reads and writes, and queries. Clients are available for [Java](/docs/clients/client/hugegraph-client/), [Python](/docs/clients/client/hugegraph-client-python/), and [Go](/docs/clients/client/hugegraph-client-go/); a Rust client is under development.
 
 ## Independent Graph Computing Engines
 

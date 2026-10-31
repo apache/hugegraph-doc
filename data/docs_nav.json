@@ -139,10 +139,18 @@
           "page": "/docs/clients",
           "children": [
             {
-              "page": "/docs/clients/hugegraph-client"
-            },
-            {
-              "page": "/docs/clients/gremlin-console"
+              "page": "/docs/clients/client",
+              "children": [
+                {
+                  "page": "/docs/clients/client/hugegraph-client"
+                },
+                {
+                  "page": "/docs/clients/client/hugegraph-client-python"
+                },
+                {
+                  "page": "/docs/clients/client/hugegraph-client-go"
+                }
+              ]
             },
             {
               "page": "/docs/clients/restful-api",
@@ -205,20 +213,9 @@
                   "page": "/docs/clients/restful-api/other"
                 }
               ]
-            }
-          ]
-        },
-        {
-          "page": "/docs/quickstart/client",
-          "children": [
-            {
-              "page": "/docs/quickstart/client/hugegraph-client"
             },
             {
-              "page": "/docs/quickstart/client/hugegraph-client-python"
-            },
-            {
-              "page": "/docs/quickstart/client/hugegraph-client-go"
+              "page": "/docs/clients/gremlin-console"
             }
           ]
         },
@@ -227,6 +224,15 @@
           "children": [
             {
               "page": "/docs/language/hugegraph-gremlin"
+            },
+            {
+              "page": "/docs/language/hugegraph-cypher"
+            },
+            {
+              "page": "/docs/language/cypher-compatibility"
+            },
+            {
+              "page": "/docs/language/migrate-from-neo4j"
             }
           ]
         },
@@ -560,14 +566,25 @@
           "url": "/docs/clients/",
           "children": [
             {
-              "page": "/docs/clients/hugegraph-client",
-              "url": "/docs/clients/hugegraph-client/",
-              "children": []
-            },
-            {
-              "page": "/docs/clients/gremlin-console",
-              "url": "/docs/clients/gremlin-console/",
-              "children": []
+              "page": "/docs/clients/client",
+              "url": "/docs/clients/client/",
+              "children": [
+                {
+                  "page": "/docs/clients/client/hugegraph-client",
+                  "url": "/docs/clients/client/hugegraph-client/",
+                  "children": []
+                },
+                {
+                  "page": "/docs/clients/client/hugegraph-client-python",
+                  "url": "/docs/clients/client/hugegraph-client-python/",
+                  "children": []
+                },
+                {
+                  "page": "/docs/clients/client/hugegraph-client-go",
+                  "url": "/docs/clients/client/hugegraph-client-go/",
+                  "children": []
+                }
+              ]
             },
             {
               "page": "/docs/clients/restful-api",
@@ -669,26 +686,10 @@
                   "children": []
                 }
               ]
-            }
-          ]
-        },
-        {
-          "page": "/docs/quickstart/client",
-          "url": "/docs/quickstart/client/",
-          "children": [
-            {
-              "page": "/docs/quickstart/client/hugegraph-client",
-              "url": "/docs/quickstart/client/hugegraph-client/",
-              "children": []
             },
             {
-              "page": "/docs/quickstart/client/hugegraph-client-python",
-              "url": "/docs/quickstart/client/hugegraph-client-python/",
-              "children": []
-            },
-            {
-              "page": "/docs/quickstart/client/hugegraph-client-go",
-              "url": "/docs/quickstart/client/hugegraph-client-go/",
+              "page": "/docs/clients/gremlin-console",
+              "url": "/docs/clients/gremlin-console/",
               "children": []
             }
           ]
@@ -700,6 +701,21 @@
             {
               "page": "/docs/language/hugegraph-gremlin",
               "url": "/docs/language/hugegraph-gremlin/",
+              "children": []
+            },
+            {
+              "page": "/docs/language/hugegraph-cypher",
+              "url": "/docs/language/hugegraph-cypher/",
+              "children": []
+            },
+            {
+              "page": "/docs/language/cypher-compatibility",
+              "url": "/docs/language/cypher-compatibility/",
+              "children": []
+            },
+            {
+              "page": "/docs/language/migrate-from-neo4j",
+              "url": "/docs/language/migrate-from-neo4j/",
               "children": []
             }
           ]
@@ -1067,15 +1083,28 @@
       "@group/develop",
       "/docs/clients/"
     ],
-    "/docs/clients/hugegraph-client/": [
+    "/docs/clients/client/": [
       "@group/develop",
       "/docs/clients/",
-      "/docs/clients/hugegraph-client/"
+      "/docs/clients/client/"
     ],
-    "/docs/clients/gremlin-console/": [
+    "/docs/clients/client/hugegraph-client/": [
       "@group/develop",
       "/docs/clients/",
-      "/docs/clients/gremlin-console/"
+      "/docs/clients/client/",
+      "/docs/clients/client/hugegraph-client/"
+    ],
+    "/docs/clients/client/hugegraph-client-python/": [
+      "@group/develop",
+      "/docs/clients/",
+      "/docs/clients/client/",
+      "/docs/clients/client/hugegraph-client-python/"
+    ],
+    "/docs/clients/client/hugegraph-client-go/": [
+      "@group/develop",
+      "/docs/clients/",
+      "/docs/clients/client/",
+      "/docs/clients/client/hugegraph-client-go/"
     ],
     "/docs/clients/restful-api/": [
       "@group/develop",
@@ -1196,24 +1225,10 @@
       "/docs/clients/restful-api/",
       "/docs/clients/restful-api/other/"
     ],
-    "/docs/quickstart/client/": [
+    "/docs/clients/gremlin-console/": [
       "@group/develop",
-      "/docs/quickstart/client/"
-    ],
-    "/docs/quickstart/client/hugegraph-client/": [
-      "@group/develop",
-      "/docs/quickstart/client/",
-      "/docs/quickstart/client/hugegraph-client/"
-    ],
-    "/docs/quickstart/client/hugegraph-client-python/": [
-      "@group/develop",
-      "/docs/quickstart/client/",
-      "/docs/quickstart/client/hugegraph-client-python/"
-    ],
-    "/docs/quickstart/client/hugegraph-client-go/": [
-      "@group/develop",
-      "/docs/quickstart/client/",
-      "/docs/quickstart/client/hugegraph-client-go/"
+      "/docs/clients/",
+      "/docs/clients/gremlin-console/"
     ],
     "/docs/language/": [
       "@group/develop",
@@ -1223,6 +1238,21 @@
       "@group/develop",
       "/docs/language/",
       "/docs/language/hugegraph-gremlin/"
+    ],
+    "/docs/language/hugegraph-cypher/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/hugegraph-cypher/"
+    ],
+    "/docs/language/cypher-compatibility/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/cypher-compatibility/"
+    ],
+    "/docs/language/migrate-from-neo4j/": [
+      "@group/develop",
+      "/docs/language/",
+      "/docs/language/migrate-from-neo4j/"
     ],
     "/docs/guides/architectural/": [
       "@group/develop",
@@ -1436,9 +1466,14 @@
       "/docs/quickstart/hugegraph-ai/rest-api"
     ],
     "/docs/clients/": [
-      "/docs/clients/hugegraph-client",
-      "/docs/clients/gremlin-console",
-      "/docs/clients/restful-api"
+      "/docs/clients/client",
+      "/docs/clients/restful-api",
+      "/docs/clients/gremlin-console"
+    ],
+    "/docs/clients/client/": [
+      "/docs/clients/client/hugegraph-client",
+      "/docs/clients/client/hugegraph-client-python",
+      "/docs/clients/client/hugegraph-client-go"
     ],
     "/docs/clients/restful-api/": [
       "/docs/clients/restful-api/graphs",
@@ -1461,13 +1496,11 @@
       "/docs/clients/restful-api/metrics",
       "/docs/clients/restful-api/other"
     ],
-    "/docs/quickstart/client/": [
-      "/docs/quickstart/client/hugegraph-client",
-      "/docs/quickstart/client/hugegraph-client-python",
-      "/docs/quickstart/client/hugegraph-client-go"
-    ],
     "/docs/language/": [
-      "/docs/language/hugegraph-gremlin"
+      "/docs/language/hugegraph-gremlin",
+      "/docs/language/hugegraph-cypher",
+      "/docs/language/cypher-compatibility",
+      "/docs/language/migrate-from-neo4j"
     ],
     "/docs/config/": [
       "/docs/config/config-guide",

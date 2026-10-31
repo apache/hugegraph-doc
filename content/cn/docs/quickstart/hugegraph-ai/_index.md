@@ -95,5 +95,5 @@ cd hugegraph-ml/src
 - [配置参考](./config-reference.md)
 - [REST API](./rest-api.md)
 - [HugeGraph-ML](./hugegraph-ml.md)
-- [Python 客户端](../client/hugegraph-client-python.md)
+- [Python 客户端](/cn/docs/clients/client/hugegraph-client-python/)
 - [Vermeer Python 客户端](./vermeer-python-client.md)

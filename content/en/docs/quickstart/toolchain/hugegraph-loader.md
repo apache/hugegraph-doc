@@ -230,7 +230,7 @@ schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
 
-> See [HugeGraph Client](/docs/clients/hugegraph-client) for the schema API.
+> See [HugeGraph Client](/docs/clients/client/hugegraph-client/) for the schema API.
 
 #### 3.2 Prepare data
 

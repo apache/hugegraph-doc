@@ -1,14 +1,15 @@
 ---
 title: "HugeGraph Gremlin"
-linkTitle: "Gremlin Query Language"
+linkTitle: "Gremlin 查询语言"
 weight: 1
 ---
 
 ### 概述
 
-HugeGraph支持[Apache TinkerPop3](https://tinkerpop.apache.org)的图形遍历查询语言[Gremlin](https://tinkerpop.apache.org/gremlin.html)。 SQL是关系型数据库查询语言，而Gremlin是一种通用的图数据库查询语言，Gremlin可用于创建图的实体（Vertex和Edge）、修改实体内部属性、删除实体，也可执行图的查询操作。
+HugeGraph 支持 [Apache TinkerPop3](https://tinkerpop.apache.org) 的图形遍历查询语言 [Gremlin](https://tinkerpop.apache.org/gremlin.html)。
+SQL 是关系型数据库查询语言，而 Gremlin 是一种通用的图数据库查询语言，可用于创建图的实体（Vertex 和 Edge）、修改内部属性、删除实体，以及执行复杂的图查询与分析操作。
 
-Gremlin可用于创建图的实体（Vertex和Edge）、修改实体内部属性、删除实体，更主要的是可用于执行图的查询及分析操作。
+若习惯声明式模式匹配（类似 SQL 或 Neo4j 风格），HugeGraph 同时支持 [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)。
 
 > [!NOTE]
 > **版本与升级提示**：HugeGraph 1.8.0 已将底层 TinkerPop 引擎升级至 **3.8.1**（同时要求 Java 17 与 Groovy 4.0.25）。

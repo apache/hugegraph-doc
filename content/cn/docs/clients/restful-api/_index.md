@@ -1,7 +1,7 @@
 ---
 title: "HugeGraph RESTful API"
 linkTitle: "RESTful API"
-weight: 1
+weight: 2
 search_keywords: [HugeGraph REST API, RESTful API, OpenAPI]
 search_boost: 1.7
 ---

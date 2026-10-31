@@ -234,7 +234,7 @@ schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
 
-> 关于 schema 的详细说明请参考 [HugeGraph Java Client](/cn/docs/clients/hugegraph-client/) 中对应部分。
+> 关于 schema 的详细说明请参考 [HugeGraph Java Client](/cn/docs/clients/client/hugegraph-client/) 中对应部分。
 
 #### 3.2 准备数据
 

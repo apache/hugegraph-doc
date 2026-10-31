@@ -162,6 +162,34 @@
       "1.3": "cn/docs/clients/",
       "1.0": "cn/docs/clients/"
     },
+    "cn:clients/client": {
+      "latest": "cn/docs/clients/client/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:clients/client/hugegraph-client": {
+      "latest": "cn/docs/clients/client/hugegraph-client/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:clients/client/hugegraph-client-go": {
+      "latest": "cn/docs/clients/client/hugegraph-client-go/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:clients/client/hugegraph-client-python": {
+      "latest": "cn/docs/clients/client/hugegraph-client-python/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "cn:clients/gremlin-console": {
       "latest": "cn/docs/clients/gremlin-console/",
       "1.7": "cn/docs/clients/gremlin-console/",
@@ -170,7 +198,7 @@
       "1.0": "cn/docs/clients/gremlin-console/"
     },
     "cn:clients/hugegraph-client": {
-      "latest": "cn/docs/clients/hugegraph-client/",
+      "latest": null,
       "1.7": "cn/docs/clients/hugegraph-client/",
       "1.5": "cn/docs/clients/hugegraph-client/",
       "1.3": "cn/docs/clients/hugegraph-client/",
@@ -533,6 +561,20 @@
       "1.3": "cn/docs/language/",
       "1.0": "cn/docs/language/"
     },
+    "cn:language/cypher-compatibility": {
+      "latest": "cn/docs/language/cypher-compatibility/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:language/hugegraph-cypher": {
+      "latest": "cn/docs/language/hugegraph-cypher/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "cn:language/hugegraph-example": {
       "latest": "cn/docs/language/hugegraph-example/",
       "1.7": "cn/docs/language/hugegraph-example/",
@@ -546,6 +588,13 @@
       "1.5": "cn/docs/language/hugegraph-gremlin/",
       "1.3": "cn/docs/language/hugegraph-gremlin/",
       "1.0": "cn/docs/language/hugegraph-gremlin/"
+    },
+    "cn:language/migrate-from-neo4j": {
+      "latest": "cn/docs/language/migrate-from-neo4j/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
     },
     "cn:performance": {
       "latest": "cn/docs/performance/",
@@ -618,28 +667,28 @@
       "1.0": "cn/docs/quickstart/"
     },
     "cn:quickstart/client": {
-      "latest": "cn/docs/quickstart/client/",
+      "latest": null,
       "1.7": "cn/docs/quickstart/client/",
       "1.5": "cn/docs/quickstart/client/",
       "1.3": "cn/docs/quickstart/client/",
       "1.0": "cn/docs/quickstart/client/"
     },
     "cn:quickstart/client/hugegraph-client": {
-      "latest": "cn/docs/quickstart/client/hugegraph-client/",
+      "latest": null,
       "1.7": "cn/docs/quickstart/client/hugegraph-client/",
       "1.5": "cn/docs/quickstart/client/hugegraph-client/",
       "1.3": "cn/docs/quickstart/client/hugegraph-client/",
       "1.0": "cn/docs/quickstart/client/hugegraph-client/"
     },
     "cn:quickstart/client/hugegraph-client-go": {
-      "latest": "cn/docs/quickstart/client/hugegraph-client-go/",
+      "latest": null,
       "1.7": "cn/docs/quickstart/client/hugegraph-client-go/",
       "1.5": "cn/docs/quickstart/client/hugegraph-client-go/",
       "1.3": null,
       "1.0": null
     },
     "cn:quickstart/client/hugegraph-client-python": {
-      "latest": "cn/docs/quickstart/client/hugegraph-client-python/",
+      "latest": null,
       "1.7": "cn/docs/quickstart/client/hugegraph-client-python/",
       "1.5": "cn/docs/quickstart/client/hugegraph-client-python/",
       "1.3": null,
@@ -925,6 +974,34 @@
       "1.3": "docs/clients/",
       "1.0": "docs/clients/"
     },
+    "en:clients/client": {
+      "latest": "docs/clients/client/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:clients/client/hugegraph-client": {
+      "latest": "docs/clients/client/hugegraph-client/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:clients/client/hugegraph-client-go": {
+      "latest": "docs/clients/client/hugegraph-client-go/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:clients/client/hugegraph-client-python": {
+      "latest": "docs/clients/client/hugegraph-client-python/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "en:clients/gremlin-console": {
       "latest": "docs/clients/gremlin-console/",
       "1.7": "docs/clients/gremlin-console/",
@@ -933,7 +1010,7 @@
       "1.0": "docs/clients/gremlin-console/"
     },
     "en:clients/hugegraph-client": {
-      "latest": "docs/clients/hugegraph-client/",
+      "latest": null,
       "1.7": "docs/clients/hugegraph-client/",
       "1.5": "docs/clients/hugegraph-client/",
       "1.3": "docs/clients/hugegraph-client/",
@@ -1296,6 +1373,20 @@
       "1.3": "docs/language/",
       "1.0": "docs/language/"
     },
+    "en:language/cypher-compatibility": {
+      "latest": "docs/language/cypher-compatibility/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:language/hugegraph-cypher": {
+      "latest": "docs/language/hugegraph-cypher/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "en:language/hugegraph-example": {
       "latest": "docs/language/hugegraph-example/",
       "1.7": "docs/language/hugegraph-example/",
@@ -1309,6 +1400,13 @@
       "1.5": "docs/language/hugegraph-gremlin/",
       "1.3": "docs/language/hugegraph-gremlin/",
       "1.0": "docs/language/hugegraph-gremlin/"
+    },
+    "en:language/migrate-from-neo4j": {
+      "latest": "docs/language/migrate-from-neo4j/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
     },
     "en:performance": {
       "latest": "docs/performance/",
@@ -1381,28 +1479,28 @@
       "1.0": "docs/quickstart/"
     },
     "en:quickstart/client": {
-      "latest": "docs/quickstart/client/",
+      "latest": null,
       "1.7": "docs/quickstart/client/",
       "1.5": "docs/quickstart/client/",
       "1.3": "docs/quickstart/client/",
       "1.0": "docs/quickstart/client/"
     },
     "en:quickstart/client/hugegraph-client": {
-      "latest": "docs/quickstart/client/hugegraph-client/",
+      "latest": null,
       "1.7": "docs/quickstart/client/hugegraph-client/",
       "1.5": "docs/quickstart/client/hugegraph-client/",
       "1.3": "docs/quickstart/client/hugegraph-client/",
       "1.0": "docs/quickstart/client/hugegraph-client/"
     },
     "en:quickstart/client/hugegraph-client-go": {
-      "latest": "docs/quickstart/client/hugegraph-client-go/",
+      "latest": null,
       "1.7": "docs/quickstart/client/hugegraph-client-go/",
       "1.5": "docs/quickstart/client/hugegraph-client-go/",
       "1.3": null,
       "1.0": null
     },
     "en:quickstart/client/hugegraph-client-python": {
-      "latest": "docs/quickstart/client/hugegraph-client-python/",
+      "latest": null,
       "1.7": "docs/quickstart/client/hugegraph-client-python/",
       "1.5": "docs/quickstart/client/hugegraph-client-python/",
       "1.3": null,
@@ -1614,8 +1712,40 @@
   },
   "equivalents": [
     [
+      "cn:clients/client",
+      "cn:quickstart/client"
+    ],
+    [
+      "cn:clients/client/hugegraph-client",
+      "cn:clients/hugegraph-client"
+    ],
+    [
+      "cn:clients/client/hugegraph-client-go",
+      "cn:quickstart/client/hugegraph-client-go"
+    ],
+    [
+      "cn:clients/client/hugegraph-client-python",
+      "cn:quickstart/client/hugegraph-client-python"
+    ],
+    [
       "cn:introduction",
       "cn:introduction/readme"
+    ],
+    [
+      "en:clients/client",
+      "en:quickstart/client"
+    ],
+    [
+      "en:clients/client/hugegraph-client",
+      "en:clients/hugegraph-client"
+    ],
+    [
+      "en:clients/client/hugegraph-client-go",
+      "en:quickstart/client/hugegraph-client-go"
+    ],
+    [
+      "en:clients/client/hugegraph-client-python",
+      "en:quickstart/client/hugegraph-client-python"
     ],
     [
       "en:introduction",

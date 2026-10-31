@@ -64,7 +64,7 @@ HugeGraph Toolchain 提供客户端、数据导入、可视化管理、Spark 集
 
 | 模块 | 用途 |
 |---|---|
-| [Client](/cn/docs/quickstart/client/hugegraph-client/) | 封装 Schema 管理、图数据读写、Gremlin 和 Traverser API；支持 Java、[Python](/cn/docs/quickstart/client/hugegraph-client-python/) 和 [Go](/cn/docs/quickstart/client/hugegraph-client-go/)，Rust 客户端正在开发中 |
+| [Client](/cn/docs/clients/client/hugegraph-client/) | 封装 Schema 管理、图数据读写、Gremlin 和 Traverser API；支持 Java、[Python](/cn/docs/clients/client/hugegraph-client-python/) 和 [Go](/cn/docs/clients/client/hugegraph-client-go/)，Rust 客户端正在开发中 |
 | [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) | 从本地文件、HDFS、JDBC、Kafka 或其他图读取数据，转换为顶点和边后批量导入 HugeGraph |
 | [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) | 提供图连接、Schema、数据导入、Gremlin 查询和图形化结果展示的 Web 管理界面 |
 | [Spark Connector](/cn/docs/quickstart/toolchain/hugegraph-spark-connector/) | 在 Spark 作业中批量读写 HugeGraph，适合大数据离线处理 |

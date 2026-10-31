@@ -164,7 +164,16 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 | `pd.initial-store-count` | `1` | `3` | 活跃 Store 节点的最小数量。低于该值时集群状态变为 `Cluster_Not_Ready`，整个集群视为不可用。建议设为实际部署的 Store 数量。 |
 | `pd.initial-store-list` | `127.0.0.1:8500` | 空 | 逗号分隔的 Store gRPC 地址（`ip:port`），列表中的 Store 注册后自动激活。条目也可以带分组 id，写作 `store_address/group_id`。 |
 | `pd.cluster_id` | 未设置 | `1` | 集群 id，用于区分不同的 PD 集群。 |
+| `pd.balance-leader-enable` | `false` | `false` | 是否在 PD leader 上周期性地执行分区 leader 均衡。关闭时，leader 只会通过手动调用 `balanceLeaders` 迁回。 |
+| `pd.balance-leader-interval` | `300` | `300` | 周期性 leader 均衡检查的间隔（秒）。距离上一次规划（包括手动调用）不足该时长时，检查不会规划迁移。必须为正数。 |
+| `pd.balance-leader-max-skew` | `2` | `2` | 只有当单个 Store 上的 leader 数最大值减去最小值大于该值时，检查才会均衡 leader。必须大于或等于 `0`。 |
 {.td-table--wide}
+
+> [!NOTE]
+> `pd.balance-leader-*` 系列配置项自 1.8.0（`master` 分支）起提供。启用 `pd.balance-leader-enable` 后，PD 会周期性触发分区 Leader 自动均衡：
+> - 若分片组处于非健康状态、缺失近期分区心跳、正在执行成员变更，或对应 Store 不在活跃列表中，当前检查周期将自动跳过。
+> - 计划中的迁移仅调度至状态为 `Up` 且复制进度正常的 Store（若目标节点落后 Leader 超过 1000 条日志则不予调度）。
+> - 若检查间隔（`interval`）或倾斜阈值（`max-skew`）配置非法，PD 将打印警告日志并保持该功能关闭。
 
 **Store 管理**
 

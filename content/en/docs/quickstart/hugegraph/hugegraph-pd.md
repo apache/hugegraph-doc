@@ -168,7 +168,16 @@ install-snapshot timeout, and id allocation runs no ReadIndex wait.
 | `pd.initial-store-count` | `1` | `3` | Minimum number of active Store nodes. Below this the cluster state becomes `Cluster_Not_Ready` and the cluster is treated as unavailable. Set it to the number of stores you deploy. |
 | `pd.initial-store-list` | `127.0.0.1:8500` | empty | Comma separated Store gRPC addresses (`ip:port`) that are activated automatically when they register. An entry may also carry a group id as `store_address/group_id`. |
 | `pd.cluster_id` | not set | `1` | Cluster id, used to keep separate PD clusters apart. |
+| `pd.balance-leader-enable` | `false` | `false` | Run partition leader balancing periodically on the PD leader. When off, leaders move back only through a manual `balanceLeaders` call. |
+| `pd.balance-leader-interval` | `300` | `300` | Seconds between periodic leader balance checks. A check plans transfers only when this much time has passed since the last plan, including a manual one. Must be positive. |
+| `pd.balance-leader-max-skew` | `2` | `2` | A check balances leaders only when the most leaders on one Store minus the fewest on another exceeds this value. Must be `0` or more. |
 {.td-table--wide}
+
+> [!NOTE]
+> The `pd.balance-leader-*` settings are introduced in 1.8.0 (`master` branch). With `pd.balance-leader-enable` turned on, PD periodically balances partition leaders across Stores:
+> - A balance check is skipped if a shard group is unhealthy, lacks recent heartbeats, is undergoing membership changes, or holds a shard on an inactive Store.
+> - Planned transfers are only scheduled to Stores whose state is `Up` and whose replication log is up to date (within 1000 applied entries of the leader).
+> - If an invalid interval or skew threshold is provided, PD logs a warning and keeps periodic balancing disabled.
 
 **Store management**
 

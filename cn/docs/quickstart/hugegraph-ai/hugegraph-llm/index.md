@@ -198,4 +198,5 @@ pre-commit run --all-files
 反链：
 
 - [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-MCP](/cn/docs/quickstart/hugegraph-ai/hugegraph-mcp/)
 - [LLM 使用流程](/cn/docs/quickstart/hugegraph-ai/quick_start/)

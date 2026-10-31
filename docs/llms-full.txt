@@ -148,7 +148,8 @@ HugeGraph Server is the OLTP engine and service entry point for the graph databa
 - **Query languages**: Supports Gremlin (TinkerPop 3) and Cypher (OpenCypher)
 - **REST API**: Provides endpoints for schemas, graph data, queries, tasks, and operations
 - **Indexes and queries**: Supports exact, range, and compound-condition queries
-- **Storage backends**: Versions 1.7.0 through `master` primarily support RocksDB (standalone), HStore (distributed), and HBase
+- **Storage backends**: Supports RocksDB (recommended for standalone), HStore (recommended for distributed), and HBase (legacy backends such as Cassandra,
+  MySQL, and PostgreSQL were disabled in 1.7.0 and removed in 1.8.0)
 
 The main modules include `hugegraph-core`, the storage backend modules, and `hugegraph-api`. Core implements the graph model, transactions, and query logic; backend modules connect to specific storage systems; and the API module provides HTTP access. Current REST resource paths include the graph space and graph name, for example:
 
@@ -253,7 +254,7 @@ LLMS index: [llms.txt](/llms.txt)
 The `hugegraph-server` module contains `hugegraph-core`, `hugegraph-api`, `hugegraph-dist`, and storage adapters. Core implements the property graph model, transactions, and TinkerPop interfaces. API provides the HTTP service and delegates client requests to Core. Graph data is stored in RocksDB (the default standalone backend), HStore (distributed), or HBase.
 
 > [!WARNING]
-> **Version scope**: Download examples use the ASF HugeGraph 1.7.0 release. Source builds, configuration defaults, and startup behavior follow `apache/hugegraph` master. A master build is not an ASF release artifact, even if its version number matches a release. This guide covers RocksDB, HStore, and HBase; see [1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md) for other legacy backends.
+> **Version scope**: This guide distinguishes between official releases and the development master branch. For official installations, use official release archives (such as 1.7.0 or the upcoming 1.8.0). Source builds, default configurations, and startup behaviors follow the `apache/hugegraph` master branch (currently targeting 1.8.0). A master build is not an ASF release artifact, even if its version number matches a release. Supported storage backends include RocksDB, HStore, and HBase; see [1.5.x documentation](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/en/docs/quickstart/hugegraph/hugegraph-server.md) for deprecated legacy backends.
 
 > Naming: `HugeGraph` means the overall project or main repository, `hugegraph-server` is its Server module, and `HugeGraphServer` is the Java service class. Server below means the running graph database service.
 
@@ -334,7 +335,8 @@ serializer:
 ```
 
 > [!TIP]
-> For complete client configuration and migration details, see the
+> For complete Gremlin syntax rewrites, compatibility requirements, and reference tables, see the
+> [1.8 Gremlin & TinkerPop Migration Guide](../../guides/gremlin-migration-3.8). Additional runtime details are in the
 > [server runtime documentation](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md).
 
 ## 3 Deploy
@@ -1518,9 +1520,15 @@ The following tables describe current master entrypoints and Compose files, not 
 | `HG_STORE_GRPC_PORT` | No | `8500` | `grpc.port` |
 | `HG_STORE_REST_PORT` | No | `8520` | `server.port` |
 | `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` |
+| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | No | None | `rocksdb.total_memory_size`, `auto` or bytes |
 {.td-table--wide}
 
 > **Deprecated aliases**: `PD_ADDRESS` → `HG_STORE_PD_ADDRESS`, `GRPC_HOST` → `HG_STORE_GRPC_HOST`, `RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`.
+
+RocksDB caches use off-heap memory. When `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` is unset, the system sizes the cache automatically from the container memory limit (cgroup), or falls back to the host memory if no container limit is configured.
+Because the default Docker Compose file does not set a memory limit, each Store sizes its budget using the host's full capacity. When deploying multiple Stores on a single host, specify a container memory limit or set this variable directly to an explicit byte value.
+Additionally, the Store startup script sizes the JVM heap and direct memory based on host free memory by default (up to 2 GiB each). Constrain JVM memory explicitly via `JAVA_OPTS` to match your container budget (for example, `JAVA_OPTS="-Xmx1g -XX:MaxDirectMemorySize=512m"` for a 4 GiB container). See the [HStore configuration reference](/docs/quickstart/hugegraph/hugegraph-hstore/#rocksdb-memory-budget) for the detailed calculation rules.
+
 
 ### Server Variables
 
@@ -1906,6 +1914,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | No | `8500` | `grpc.port` | gRPC service port. |
 | `HG_STORE_REST_PORT` | No | `8520` | `server.port` | REST API port. |
 | `HG_STORE_DATA_PATH` | No | `/hugegraph-store/storage` | `app.data-path` | Data path. |
+| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | No | None | `rocksdb.total_memory_size` | RocksDB memory budget: `auto` or a number of bytes. An empty value counts as unset; any other value makes the entrypoint exit with code 2. When unset, the value in `application-pd.yml` or auto-sizing applies. |
 {.td-table--wide}
 
 The master entrypoint writes these values into `SPRING_APPLICATION_JSON`, overriding image `conf/application.yml`. Other options still come from that file and `application-pd.yml`; Java runs in the foreground. Deprecated `PD_ADDRESS`, `GRPC_HOST`, and `RAFT_ADDRESS` remain supported with warnings.
@@ -1921,7 +1930,7 @@ Store reads two files under `conf/`. Release 1.7.0 sources: [application.yml](ht
 
 #### 4.1 application.yml
 
-The following tables were checked against distribution values and Java defaults at Server master commit `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4`. Use tagged configuration for release 1.7.0 without replacing it with another version's files.
+The following tables were checked against distribution values and Java defaults at Server master. Use tagged configuration for release 1.7.0 without replacing it with another version's files.
 
 #### 4.2 application-pd.yml
 
@@ -1954,7 +1963,7 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | Key | Master distribution value | Code default | Meaning |
 |-----|---------|--------------|---------|
 | `raft.address` | `127.0.0.1:8510` | required | Raft service address of this node, `host:port`. Must be reachable from every other Store node. There is no peer list to configure: PD tells each node which peers belong to a partition's Raft group. |
-| `raft.disruptorBufferSize` | `1024` | `0` | Raft task queue size. `0` derives it from `rocksdb.total_memory_size`, by rounding that size in GB to the nearest power of two and multiplying by 32. |
+| `raft.disruptorBufferSize` | `1024` | `0` | Raft task queue size. `0` derives it from `rocksdb.total_memory_size`, by rounding that size in GB (at least 1) to the nearest power of two and multiplying by 32. |
 | `raft.max-log-file-size` | `600000000000` | `50000000000` | Maximum byte size of Raft logs. |
 | `raft.snapshotInterval` | `1800` | `300` | Seconds between Raft snapshots. |
 | `raft.snapshotLogIndexMargin` | not set | `0` | Minimum applied-index distance since the last snapshot before a snapshot is actually written. `0` disables the distance check. |
@@ -1983,11 +1992,19 @@ This file contains only `rocksdb` and Actuator exposure settings.
 
 | Key | Master distribution value | Code default | Meaning |
 |-----|---------|--------------|---------|
-| `rocksdb.total_memory_size` | `32000000000` | `51539607552` | Memory budget shared by all RocksDB instances on this node. When absent or `0`, the node uses the JVM max heap instead. |
-| `rocksdb.write_buffer_size` | `32000000` | `33554432` | Memtable size in bytes. When absent or `0`, the node uses `total_memory_size / 1000`. |
+| `rocksdb.total_memory_size` | `auto` | Auto-sized, see note | Off-heap memory budget shared across all RocksDB instances on this node (`auto` or byte count). See below for derivation rules. |
+| `rocksdb.write_buffer_size` | `32000000` | Derived, see Meaning | Memtable size in bytes. When absent or `0`, the node uses `total_memory_size / 1000`, at least `1048576` (1 MiB). |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | Number of memtables merged together before a flush. |
 | `rocksdb.write_buffer_ratio` | not set | `0.66` | Share of `total_memory_size` given to the write cache. The rest becomes the block cache. |
 {.td-table--wide}
+
+### RocksDB memory budget sizing rules {#rocksdb-memory-budget}
+
+> [!NOTE]
+> When `rocksdb.total_memory_size` is set to `auto` (or absent / `0`), the node sizes the off-heap RocksDB budget automatically:
+> - **Calculation Formula**: Takes physical memory (using the visible cgroup limit in containers) minus JVM maximum heap (`-Xmx`), direct memory (`MaxDirectMemorySize`), and a 1.5 GiB system reserve, then allocates half the remainder, clamped between 256 MiB and 32 GB (`32000000000` bytes).
+> - **Write Cache & Block Cache**: Budget is divided according to `rocksdb.write_buffer_ratio` (default 0.66). This is a soft capacity target; under heavy concurrent write loads, set `rocksdb.write_buffer_allow_stall` to `true` to hold the write cache to its share at the cost of write latency. The block cache is not a strict limit, so native memory can still exceed the budget and a container can still be OOM-killed.
+> - **Upgrading Existing Deployments**: Deployments carrying legacy `32000000000` can enable auto-sizing by setting environment variable `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=auto` or JVM property `-Drocksdb.total_memory_size=auto`.
 
 Any other option defined in `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` can be added under the same `rocksdb:` block, for example `rocksdb.max_background_jobs`, `rocksdb.level0_file_num_compaction_trigger` or `rocksdb.bloom_filter_bits_per_key`.
 
@@ -2104,7 +2121,11 @@ Daemon mode:
 - `-d true` (default): run as a background daemon. The script returns immediately and writes the Java pid to `bin/pid`.
 - `-d false`: run in the foreground. The script `exec`s Java, so the container or supervisor process is Java itself. Use this under Docker or a process supervisor (systemd, supervisord) so crashes are detected and the service is restarted automatically.
 
-JVM memory, unless you set `JAVA_OPTIONS` yourself: `-Xms512m`, and `-Xmx` set to half the free memory, clamped to the 512 MB to 2048 MB range. The script also adds `-XX:MetaspaceSize=256M`, a heap dump on out-of-memory into `logs/`, and a rolling GC log at `logs/gc.log`. Production nodes normally need a much larger heap, so pass one explicitly, for example `-j "-Xmx32g -Xms32g"`.
+JVM memory, unless you set `JAVA_OPTIONS` yourself: `-Xms512m`, and `-Xmx` set to half the free memory, clamped to the 512 MB to 2048 MB range.
+The script also adds `-XX:MaxDirectMemorySize` equal to that heap, `-XX:MetaspaceSize=256M`, a heap dump on out-of-memory into `logs/`, and a rolling GC log at
+`logs/gc.log`. Production nodes normally need a much larger heap, so pass one explicitly together with a direct-memory cap, for example
+`-j "-Xmx32g -Xms32g -XX:MaxDirectMemorySize=2g"`. Without the cap the JVM allows as much direct memory as the 32 GB heap, the RocksDB budget counts it,
+and on a host with less than about 66 GB it falls to the 256 MiB floor.
 
 The script refuses to start if `ulimit -n` or `ulimit -u` is below 1024, and it preloads jemalloc on x86_64 and arm64 when the shared object can be downloaded and verified.
 
@@ -2368,6 +2389,7 @@ Backlinks:
 
 - [Config HStore Backend](/docs/config/config-backend-hstore/)
 - [Design Concepts (legacy)](/docs/guides/desgin-concept/)
+- [Docker Cluster](/docs/guides/hugegraph-docker-cluster/)
 - [System Introduction](/docs/introduction/)
 - [HugeGraph (OLTP)](/docs/quickstart/hugegraph/)
 - [Install/Build HugeGraph-PD](/docs/quickstart/hugegraph/hugegraph-pd/)
@@ -9171,6 +9193,7 @@ LLMS index: [llms.txt](/llms.txt)
 
 ## Modules
 
+- [hugegraph-mcp](./hugegraph-mcp.md): graph queries, schema tools, and controlled writes for AI clients through MCP.
 - [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm): knowledge graph construction, GraphRAG, and natural-language graph queries.
 - [hugegraph-ml](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml): reads graph data from HugeGraph and runs graph learning models.
 - [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client): a Python SDK for managing schemas and graph data and running Gremlin queries.
@@ -9249,6 +9272,7 @@ Example scripts are under `hugegraph-ml/src/hugegraph_ml/examples/`.
 
 ## Next Steps
 
+- [HugeGraph-MCP](./hugegraph-mcp.md)
 - [HugeGraph-LLM](./hugegraph-llm.md)
 - [HugeGraph-LLM workflow](./quick_start.md)
 - [Configuration reference](./config-reference.md)
@@ -9267,6 +9291,7 @@ Section pages:
 - [Configuration Reference](/docs/quickstart/hugegraph-ai/config-reference/)
 - [HugeGraph-LLM REST API](/docs/quickstart/hugegraph-ai/rest-api/)
 - [Vermeer Python Client](/docs/quickstart/hugegraph-ai/vermeer-python-client/)
+- [HugeGraph-MCP](/docs/quickstart/hugegraph-ai/hugegraph-mcp/)
 
 ---
 
@@ -9740,7 +9765,240 @@ pre-commit run --all-files
 Backlinks:
 
 - [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-MCP](/docs/quickstart/hugegraph-ai/hugegraph-mcp/)
 - [LLM Workflow](/docs/quickstart/hugegraph-ai/quick_start/)
+
+
+================
+Source: https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-mcp/index.md
+================
+
+# HugeGraph-MCP
+
+LLMS index: [llms.txt](/llms.txt)
+
+---
+
+`hugegraph-mcp` exposes HugeGraph tools to AI clients through the Model Context Protocol (MCP).
+It supports schema inspection, structured graph queries, controlled writes, and optional natural-language query generation and graph extraction.
+The MCP client starts a local process and communicates over STDIO. This process is not HugeGraph Server and does not expose an HTTP MCP endpoint.
+
+Ordinary graph queries connect directly to HugeGraph Server. Query generation, extraction, and embedding refresh also require
+[HugeGraph-LLM](./hugegraph-llm.md), where model credentials are configured.
+
+## Requirements
+
+- Python 3.10 or later. A separate HugeGraph-LLM service must also meet that module's Python requirements.
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) and an MCP client that supports STDIO.
+- HugeGraph Server 1.7.0 or later, reachable from the MCP process. The default graph path is `DEFAULT/hugegraph` and uses the graphspace API.
+- An existing graph and an account with the required permissions. See [authentication and authorization](../../config/config-authentication.md).
+
+## Installation and Connection
+
+These examples pin the published `hugegraph-mcp==1.7.1` package. Cloning the repository is not required.
+Replace the address, graph path, and credentials with your deployment values. Verify the connection in read-only mode before enabling supported writes.
+
+For clients that accept a `mcpServers` JSON configuration, add:
+
+```json
+{
+  "mcpServers": {
+    "hugegraph": {
+      "command": "uvx",
+      "args": ["hugegraph-mcp@1.7.1"],
+      "env": {
+        "HUGEGRAPH_URL": "http://127.0.0.1:8080",
+        "HUGEGRAPH_GRAPH_PATH": "DEFAULT/hugegraph",
+        "HUGEGRAPH_USER": "your-user",
+        "HUGEGRAPH_PASSWORD": "your-password",
+        "HUGEGRAPH_MCP_READONLY": "true"
+      }
+    }
+  }
+}
+```
+
+Configuration locations and formats vary between clients. Use your client's instructions to set the same command, arguments, and environment variables.
+If the client cannot find `uvx`, use its absolute path for `command`. Restart the MCP process after changing the configuration.
+
+You can also start it in a terminal with the environment variables above already configured:
+
+```bash
+uvx hugegraph-mcp@1.7.1
+```
+
+The process waits for protocol messages from the MCP client on stdin; it does not open a web page.
+stdout carries MCP JSON-RPC. Do not write extra shell output to that channel.
+
+### Verify the Connection
+
+List tools through the client, then call `inspect_graph_tool`. The following JSON is the parameter body for MCP `tools/call`,
+not a request to send directly to the HugeGraph REST API.
+
+```json
+{
+  "name": "inspect_graph_tool",
+  "arguments": {"include_raw_schema": true}
+}
+```
+
+Check for `ok=true` and `data.hugegraph_server_status="available"`.
+Choose an existing vertex label from the schema and replace `person` below with that label:
+
+```json
+{
+  "name": "query_graph_data_tool",
+  "arguments": {
+    "target": "vertex",
+    "operation": "page",
+    "label": "person",
+    "limit": 5
+  }
+}
+```
+
+This tool belongs to the default set of 16 tools. To paginate, pass the returned `next_page` as `page` on the next call,
+keeping the same query conditions. An empty result does not necessarily mean the connection failed; check the graph path, label, and existing data.
+
+## Toolsets and Versions
+
+A toolset selects a group of tools within the same package. It is not a package version, HugeGraph Server version, or MCP protocol version.
+Version `1.7.1` accepts the following configuration names:
+
+| `HUGEGRAPH_MCP_TOOLSET` | Tools | Purpose |
+|---|---|---|
+| Unset, or `v2_core` | 16 | Default toolset, including structured queries and persistent write-plan tools |
+| `v1` | 10 | Compatibility toolset retaining earlier tool entry points |
+
+Any other value, including `v2`, `core`, `legacy` or an empty string, falls back to the 10-tool `v1` set in 1.7.1 and logs an error.
+Both toolsets report `mcp_tool_contract_version="2.0"`. This field describes the tool contract, not the package version.
+
+### Toolset Naming Evolution {#toolset-evolution}
+
+In upcoming releases, the default toolset is renamed to `core` and the compatibility toolset to `legacy`. For the current `1.7.1` release package, continue using the configurations documented above.
+
+- `v2_core` maps to `core`, and `v1` maps to `legacy`. Legacy identifiers are retained as backward-compatible aliases with migration warnings.
+- Inspection endpoints report `core` or `legacy`. Clients checking `data.toolset` or `meta.toolset` should update their checks accordingly.
+- An unset variable defaults to `core`. Empty or unrecognized values halt startup rather than silently falling back.
+- Toolset selection is resolved at launch; modifying configuration requires restarting the client. Compatibility mode does not bypass security or read-only controls.
+
+## Tool Capabilities
+
+A registered tool does not imply that every operation is enabled. The current capability boundaries are summarized below.
+Use the tool schema returned to your client for exact parameters.
+
+| Feature | Tools | Scope |
+|---|---|---|
+| Inspection and design | `inspect_graph_tool`, `inspect_schema_tool`, `design_schema_tool` | Connection status, schema, and design guidance |
+| Structured reads | `query_graph_data_tool` | Read vertices and edges by ID, ID list, page, or conditions |
+| Schema creation | `apply_schema_tool` | Validate and preview; the default toolset can confirm one property key, vertex label, or edge label creation |
+| Write plans | `confirm_write_tool`, `get_write_status_tool`, `reconcile_write_tool` | Confirm, inspect, and reconcile persistent plans |
+| Graph import | `import_graph_data_tool` | AI-backed `extract`; preview-only `ingest`; `table` is currently disabled |
+| Graph deletion | `delete_graph_data_tool` | Exact edge deletion can be confirmed; vertex deletion is preview-only |
+| Property changes | `mutate_graph_properties_tool` | Preview-only; confirmation is currently disabled |
+| AI generation and extraction | `generate_gremlin_tool`, `extract_graph_data_tool` | Generate queries or graph data without executing generated queries |
+| Embedding refresh | `refresh_vid_embeddings_tool` | Requires AI, admin mode, writes enabled, and confirmation; see service gates below |
+| Raw Gremlin | `execute_gremlin_read_tool`, `execute_gremlin_write_tool` | Both return `FEATURE_DISABLED`; admin mode cannot override this |
+
+The compatibility toolset excludes `inspect_schema_tool`, `query_graph_data_tool`, `mutate_graph_properties_tool`,
+and the three write-plan tools. Switching to compatibility mode does not enable raw Gremlin execution.
+
+### Controlled Writes
+
+To use writes, set `HUGEGRAPH_MCP_READONLY=false` and use a HugeGraph account with the appropriate permissions.
+For a confirmable operation, first run a dry-run, review its exact targets, changes, and warnings, then confirm the returned `plan_id`:
+
+```json
+{
+  "name": "confirm_write_tool",
+  "arguments": {"plan_id": "<PLAN_ID>"}
+}
+```
+
+Use `get_write_status_tool(plan_id)` to inspect the persisted result. `APPLIED` means all operations are confirmed successful.
+`PARTIAL` or `UNKNOWN` means the workflow is incomplete or its outcome is uncertain. Inspect and reconcile status before retrying;
+do not blindly create a replacement plan. Confirming the same completed plan again returns its recorded result without repeating the write.
+
+The built-in SQLite state store requires a single writable MCP instance and a persistent state directory.
+When multiple clients start separate processes, keep them read-only initially; multi-instance writes require a shared transactional store design.
+Operations returning `confirmable=false` cannot be forced through by disabling read-only mode or enabling admin mode.
+
+## Configuration
+
+The following defaults apply to published version `1.7.1`. HugeGraph credentials and the HugeGraph-LLM API token are separate credentials.
+
+| Environment variable | Default | Description |
+|---|---|---|
+| `HUGEGRAPH_URL` | `http://127.0.0.1:8080` | HugeGraph address reachable from the MCP process |
+| `HUGEGRAPH_GRAPH_PATH` | `DEFAULT/hugegraph` | `GRAPH_SPACE/GRAPH_NAME` |
+| `HUGEGRAPH_GRAPHSPACE` | Unset | Overrides the graphspace in `HUGEGRAPH_GRAPH_PATH` |
+| `HUGEGRAPH_GRAPH` | Unset | Overrides the graph name in `HUGEGRAPH_GRAPH_PATH` |
+| `HUGEGRAPH_USER` | `admin` | HugeGraph user |
+| `HUGEGRAPH_PASSWORD` | Empty | HugeGraph password |
+| `HUGEGRAPH_MCP_TOOLSET` | `v2_core` | This release accepts `v2_core` and `v1` |
+| `HUGEGRAPH_MCP_READONLY` | `true` | Disable controlled writes |
+| `HUGEGRAPH_MCP_ALLOW_AI` | `false` | Allow calls to HugeGraph-LLM |
+| `HUGEGRAPH_MCP_ADMIN_MODE` | `false` | Enable eligible administrative operations |
+| `HUGEGRAPH_AI_URL` | `http://127.0.0.1:8001` | HugeGraph-LLM service address |
+| `HUGEGRAPH_AI_TOKEN` | Unset | HugeGraph-LLM bearer token |
+| `HUGEGRAPH_AI_GRAPH_URL` | Unset | Does not change the AI target; ignored in current source |
+| `HUGEGRAPH_AI_TIMEOUT_SECONDS` | `30` | AI HTTP request timeout in seconds |
+| `HUGEGRAPH_MCP_STATE_DIR` | XDG state directory or `~/.local/state/hugegraph-mcp` | Persistent directory for write plans and receipts |
+
+### Optional AI Features
+
+Configure and start the model service using the [HugeGraph-LLM guide](./hugegraph-llm.md), then add these entries to the MCP client's `env`:
+
+```json
+{
+  "HUGEGRAPH_MCP_ALLOW_AI": "true",
+  "HUGEGRAPH_AI_URL": "http://127.0.0.1:8001",
+  "HUGEGRAPH_AI_TOKEN": "your-ai-service-token"
+}
+```
+
+Merge these entries into the earlier `env` object. Generation and extraction can remain read-only.
+Embedding refresh additionally requires:
+- Client settings: `HUGEGRAPH_MCP_READONLY=false`, `HUGEGRAPH_MCP_ADMIN_MODE=true`, and `confirm=true` in the tool call.
+- Service settings (HugeGraph-LLM): `ENABLE_LOGIN=true`, `HUGEGRAPH_LLM_ENABLE_THIN_WRITES=true`, a strong non-default `USER_TOKEN` (avoiding the well-known default `4321`),
+  and valid authentication passed via MCP's `HUGEGRAPH_AI_TOKEN`. Without these service-side gates, refresh requests are rejected
+  with `FEATURE_DISABLED` ("Legacy Thin API writes are disabled").
+
+MCP and HugeGraph-LLM must connect to the same underlying HugeGraph instance. The capability check protocol only verifies `graph_name` and `graphspace`, while the actual embedding refresh executes entirely using the AI service's independent `GRAPH_URL`. Modifying MCP's `HUGEGRAPH_URL` does not redirect the AI service's data target.
+If MCP runs on the host and AI runs in a container, they may need different addresses to reach HugeGraph: configure `GRAPH_URL` on the AI service to an address reachable from its container, such as `http://server:8080`, and ensure `GRAPH_NAME` and `GRAPH_SPACE` match MCP. Do not use the container's `127.0.0.1` to reach the host graph service.
+
+**Capability check protocol**:
+The updated protocol requires `GET /vid-embeddings/refresh-capabilities` to return `protocol_version=1`, transmitting the target graph and graphspace for server-side validation before refreshing embeddings. Services without this endpoint will reject refresh requests. This validation protects multi-tenant boundary integrity in future releases.
+
+## Troubleshooting
+
+- **No tools after client startup**: check the `uvx` path, Python version, and process stderr. Waiting for protocol input in a terminal is normal.
+- **Structured query tool missing**: check whether the compatibility toolset was selected. For `1.7.1`, use `v2_core` or leave the variable unset.
+- **`FEATURE_DISABLED` response**: check the capability table and read-only, AI, and admin settings.
+  Some operations are disabled because of backend capability limits and cannot be enabled through configuration alone.
+- **AI calls fail**: check the service address, token, container networking, and AI logs. An unavailable-service error does not necessarily mean a model was
+  retired.
+- **Embedding calls return 400 or 429**: check the provider's input-count and request-rate limits.
+  Batch size and concurrent request count are different limits; handle them in HugeGraph-LLM's embedding and index-building paths, not by changing MCP toolsets.
+
+An `ok=false` tool response indicates failure. Inspect `error.type`, `error.retryable`, and `warnings`;
+an established MCP connection or successful HTTP status alone does not prove that a business operation succeeded.
+
+## Next Steps
+
+- [HugeGraph-LLM](./hugegraph-llm.md)
+- [HugeGraph-MCP source and README](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-mcp)
+- [Integration checks](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-mcp/docs/integration.md)
+- [PyPI package](https://pypi.org/project/hugegraph-mcp/)
+
+Documentation on the repository's `main` branch follows source changes. Check version applicability when using a pinned package;
+the installation examples on this page use `1.7.1`.
+
+---
+
+Backlinks:
+
+- [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)
 
 
 ================
@@ -16442,13 +16700,27 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 #### Params
 
 - label: Vertex type
-- properties: Property key-value pairs (precondition: indexes are created for property queries)
+- properties: Property key-value pairs (see index coverage below)
 - keep_start_p: Default is false. When set to true, the range matching input expression will not be automatically escaped. For example, `properties={"age":"P.gt(18)"}` will be interpreted as an exact match, i.e., the age property is equal to the string "P.gt(18)"
 - offset: Offset, default is 0
 - limit: Maximum number of results, default is 100
 - page: Page number
 
 All of the above parameters are optional. `page` can not be combined with a non-zero `offset`, everything else can be combined in any way.
+
+When `label` selects a vertex label using the `PRIMARY_KEY` ID strategy and `properties` supplies exact values for **all** primary-key fields (`P.eq` and `P.within` count as exact values), the query resolves the vertex by ID and filters additional property conditions afterward — no property index is required.
+If all primary-key fields are present but any one uses a condition other than `P.eq`, `P.within`, or `P.contains` (e.g. `P.neq`, `P.gt`, `P.between`, `P.textcontains`), the query is rejected before reaching property-index lookup, even when a matching index exists. `P.contains` on a primary-key field takes the single-element ID lookup path and is not rejected.
+
+For other `properties` queries: when `label` is specified, that label must have a property index compatible with the query conditions. **Candidate labels** are vertex labels that declare all queried non-OLAP properties, including labels with no vertices yet.
+
+Labels hidden from normal queries, including those being deleted, are excluded from the candidate set and do not need index coverage. If all candidate labels are hidden or being deleted (or the specified `label` itself is hidden or being deleted), the query returns empty without raising an index error. If no schema label declares the queried properties at all, the index error still applies. A label index alone does not mean the property is indexed.
+
+When the query includes OLAP properties and the read mode exposes OLAP data, HugeGraph uses shared OLAP indexes — those properties do not require per-label coverage.
+
+**Error trigger rules**: when query values are type-compatible, missing a matching index or covering only some candidate labels raises an index error; only full coverage proceeds through the index. When query values are type-incompatible, a matching index may return an empty result (partial-coverage check skipped); with no matching index, the index error still applies. The query never falls back to a full scan.
+
+> [!NOTE]
+> The partial-coverage error and the empty result for hidden or deleting candidate labels apply starting from 1.8.0. Earlier versions return only matches from indexed labels and raise an index error when no label has a compatible index.
 
 Property key-value pairs consist of the property name and value in JSON format. Multiple property key-value pairs are allowed as query conditions. The property value supports exact matching, range matching, and fuzzy matching. For exact matching, use the format `properties={"age":29}`, for range matching, use the format `properties={"age":"P.gt(29)"}`, and for fuzzy matching, use the format `properties={"city": "P.textcontains("ChengDu China")}`. The following expressions are supported for range matching:
 
@@ -17110,11 +17382,25 @@ It is not possible to delete an attribute that is not set as nullable.
 - vertex_id: Vertex ID
 - direction: Edge direction (OUT | IN | BOTH), default is BOTH
 - label: Edge label
-- properties: Key-value pairs of properties (requires pre-built indexes for property queries)
+- properties: Key-value pairs of properties (see index coverage below)
 - keep_start_p: Default is false. When set to true, the range matching input expression will not be automatically escaped. For example, `properties={"age":"P.gt(0.8)"}` will be interpreted as an exact match, i.e., the age property is equal to "P.gt(0.8)"
 - offset: Offset, default is 0
 - limit: Number of queries, default is 100
 - page: Page number
+
+Without `vertex_id`, a `properties` query searches edges globally. When `label` is specified, that label needs a property index compatible with the query conditions; for a sub-edge label without one, a compatible index on its query-visible parent label is used and edges of sibling sub-labels are filtered out.
+
+**Candidate labels** are edge labels that can hold edges and declare all queried non-OLAP properties, including labels with no edges yet. Labels hidden from normal queries, including those being deleted, are excluded from the candidate set and do not need index coverage. If all candidate labels are hidden or being deleted (or the specified `label` itself is hidden or being deleted), the query returns empty without raising an index error. If no schema label declares the queried properties, the index error still applies.
+
+When `label` is omitted: a base (parent) edge label has no direct edges and does not need a separate index when all its sub-labels are covered. A compatible index on a query-visible parent label covers its sub-labels; alternatively, compatible indexes on every candidate sub-label are sufficient. Indexes on parents excluded due to hiding or deletion cannot provide this coverage. A label index alone does not mean the property is indexed.
+
+**Error trigger rules**: when query values are type-compatible, missing a matching index or covering only some candidate labels raises an index error; only full coverage proceeds through the index. When query values are type-incompatible, a matching index may return an empty result (partial-coverage check skipped); with no matching index, the index error still applies. The query never falls back to a full scan.
+
+> [!NOTE]
+> The partial-coverage error, parent-index fallback for sub-edge labels, and the empty result for hidden or deleting candidate labels apply starting from 1.8.0.
+> Earlier versions use only indexes on the specified label, return only matches from indexed labels when `label` is omitted, and raise an index error when no label has a compatible index.
+
+With `vertex_id`, the query filters that vertex's adjacent edges; the global index-coverage requirement above does not apply.
 
 Key-value pairs of properties consist of the property name and value in JSON format. Multiple key-value pairs are allowed as query conditions. Property values support exact matching and range matching. For exact matching, it is in the form `properties={"weight":0.8}`. For range matching, it is in the form `properties={"age":"P.gt(0.8)"}`. The expressions supported by range matching are as follows:
 
@@ -24615,6 +24901,10 @@ HugeGraph supports [Gremlin](https://tinkerpop.apache.org/gremlin.html), a graph
 
 Gremlin can be used to create entities (Vertex and Edge) of a graph, modify the properties of entities, and delete entities. More importantly, it can be used to perform graph querying and analysis operations.
 
+> [!NOTE]
+> **Version & Migration Note**: HugeGraph 1.8.0 upgrades its underlying TinkerPop engine to **3.8.1** (along with Java 17 and Groovy 4.0.25).
+> Legacy syntax patterns such as `store()`, scoped `aggregate()`, and `has(key, traversal)` have been completely removed and now fail on 1.8. See the [1.8 Gremlin & TinkerPop Migration Guide](../guides/gremlin-migration-3.8) for details.
+
 ### TinkerPop Features
 
 HugeGraph implements the TinkerPop framework, but not all TinkerPop features are implemented.
@@ -24685,7 +24975,7 @@ The table below lists the support status of various TinkerPop features in HugeGr
 | SerializableValues |                                                                                                                                                                                                                                                                      | false   |
 | StringArrayValues  |                                                                                                                                                                                                                                                                      | false   |
 | StringValues       |                                                                                                                                                                                                                                                                      | true    |
-| UniformListValues  | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "uniform" it must contain objects of the same type.           | true    |
+| UniformListValues  | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "uniform" it must contain objects of the same type.           | false (supported via Schema valueList()) |
 
 ### Gremlin Steps
 
@@ -24701,7 +24991,9 @@ HugeGraph supports all steps of Gremlin. For complete reference information abou
 | coalesce   | Returns the first traversal that returns a result.                                                                                    | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step)     |
 | constant   | Returns a constant value. Used in conjunction with coalesce.                                                                          | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step)     |
 | count      | Returns a count from the traversal.                                                                                         | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step)         |
+| datetime   | Creates a datetime object or retrieves current server time (returns `OffsetDateTime` in 1.8.0).     | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
 | dedup      | Returns values with duplicates removed.                                                                                     | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step)           |
+| discard    | Discards all current traversers (replaces parameterless `none()` in 1.8.0).                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)        |
 | drop       | Discards a value (vertex/edge).                                                                                      | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step)             |
 | fold       | Acts as a barrier for computing aggregated values from results.                                                                                  | [fold step](http://tinkerpop.apache.org/docs/current/reference/#fold-step)             |
 | group      | Groups values based on specified labels.                                                                                     | [group step](http://tinkerpop.apache.org/docs/current/reference/#group-step)           |
@@ -24721,7 +25013,8 @@ HugeGraph supports all steps of Gremlin. For complete reference information abou
 | repeat     | Repeats a step a specified number of times. Used for looping.                                                                                | [repeat step](http://tinkerpop.apache.org/docs/current/reference/#repeat-step)         |
 | sample     | Used to sample results returned by the traversal.                                                                                    | [sample step](http://tinkerpop.apache.org/docs/current/reference/#sample-step)         |
 | select     | Used to project the results returned by the traversal.                                                                                     | [select step](http://tinkerpop.apache.org/docs/current/reference/#select-step)         |
-| store      | This step is used for non-blocking aggregation of results returned by traversal                                                                                    | [store step](http://tinkerpop.apache.org/docs/current/reference/#store-step)           |
+| mergeV     | Matches vertices by property; updates if present, creates if absent (standard upsert).                                     | [mergeV step](http://tinkerpop.apache.org/docs/current/reference/#mergevertex-step)    |
+| mergeE     | Matches edges by property and endpoints; updates if present, creates if absent (standard upsert).                          | [mergeE step](http://tinkerpop.apache.org/docs/current/reference/#mergeedge-step)      |
 | tree       | Aggregate the paths in vertices into a tree.                                                                                    | [tree step](http://tinkerpop.apache.org/docs/current/reference/#tree-step)             |
 | unfold     | Unfolds an iterator as a step.                                                                                      | [unfold step](http://tinkerpop.apache.org/docs/current/reference/#unfold-step)         |
 | union      | Merge the results returned by multiple traversals.                                                                                     | [union step](http://tinkerpop.apache.org/docs/current/reference/#union-step)           |
@@ -27075,6 +27368,7 @@ Backlinks:
 - [Vermeer: Memory-First Computing Framework](/docs/quickstart/computing/hugegraph-vermeer/)
 - [Configuration Reference](/docs/quickstart/hugegraph-ai/config-reference/)
 - [HugeGraph-LLM](/docs/quickstart/hugegraph-ai/hugegraph-llm/)
+- [HugeGraph-MCP](/docs/quickstart/hugegraph-ai/hugegraph-mcp/)
 - [LLM Workflow](/docs/quickstart/hugegraph-ai/quick_start/)
 - [REST API](/docs/quickstart/hugegraph-ai/rest-api/)
 - [Install/Build HugeGraph-Store](/docs/quickstart/hugegraph/hugegraph-hstore/)
@@ -28631,6 +28925,7 @@ Section pages:
 - [FAQ](/docs/guides/faq/)
 - [Security Report](/docs/guides/security/)
 - [1.8.0 shared-foundation migration](/docs/guides/shared-foundation-migration/): Update Java imports and plugins, then prepare matching Server, PD and Store upgrades for the 1.8.0 shared-foundation changes.
+- [HugeGraph 1.8.0 Gremlin Migration & Compatibility Guide](/docs/guides/gremlin-migration-3.8/): Comprehensive guide to breaking changes, high-frequency syntax rewrites, configuration migrations, and complete compatibility references from TinkerPop 3.5 to 3.8 in HugeGraph 1.8.0.
 - [ToplingDB development integration](/docs/guides/toplingdb/): Build the optional ToplingDB runtime from development source, isolate its data, and understand startup and recovery boundaries.
 
 
@@ -28646,6 +28941,7 @@ LLMS index: [llms.txt](/llms.txt)
 
 Section pages:
 
+- [HugeGraph 1.8.0 Release Notes](/docs/changelog/hugegraph-1.8.0-release-notes/)
 - [HugeGraph 1.7.0 Release Notes](/docs/changelog/hugegraph-1.7.0-release-notes/)
 - [HugeGraph 1.5.0 Release Notes](/docs/changelog/hugegraph-1.5.0-release-notes/)
 - [HugeGraph 1.3.0 Release Notes](/docs/changelog/hugegraph-1.3.0-release-notes/)

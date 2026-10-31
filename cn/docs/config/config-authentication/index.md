@@ -276,6 +276,7 @@ curl -sS -o /dev/null -w '%{http_code}\n' -u admin \
 - [Vermeer: 高性能内存图计算框架](/cn/docs/quickstart/computing/hugegraph-vermeer/)
 - [配置参考](/cn/docs/quickstart/hugegraph-ai/config-reference/)
 - [HugeGraph-LLM](/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/)
+- [HugeGraph-MCP](/cn/docs/quickstart/hugegraph-ai/hugegraph-mcp/)
 - [LLM 使用流程](/cn/docs/quickstart/hugegraph-ai/quick_start/)
 - [REST API](/cn/docs/quickstart/hugegraph-ai/rest-api/)
 - [安装/构建 HugeGraph-Store](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)

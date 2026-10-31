@@ -187,4 +187,5 @@ pre-commit run --all-files
 Backlinks:
 
 - [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-MCP](/docs/quickstart/hugegraph-ai/hugegraph-mcp/)
 - [LLM Workflow](/docs/quickstart/hugegraph-ai/quick_start/)

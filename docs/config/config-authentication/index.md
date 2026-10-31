@@ -293,6 +293,7 @@ Backlinks:
 - [Vermeer: Memory-First Computing Framework](/docs/quickstart/computing/hugegraph-vermeer/)
 - [Configuration Reference](/docs/quickstart/hugegraph-ai/config-reference/)
 - [HugeGraph-LLM](/docs/quickstart/hugegraph-ai/hugegraph-llm/)
+- [HugeGraph-MCP](/docs/quickstart/hugegraph-ai/hugegraph-mcp/)
 - [LLM Workflow](/docs/quickstart/hugegraph-ai/quick_start/)
 - [REST API](/docs/quickstart/hugegraph-ai/rest-api/)
 - [Install/Build HugeGraph-Store](/docs/quickstart/hugegraph/hugegraph-hstore/)

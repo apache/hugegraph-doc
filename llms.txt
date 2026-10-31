@@ -39,6 +39,7 @@
   - [Kubernetes Operations](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-helm-operations/index.md)
   - [REST API](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/rest-api/index.md)
   - [Vermeer Client](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/vermeer-python-client/index.md)
+  - [HugeGraph-MCP](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-mcp/index.md)
 - [Server Config](https://hugegraph.apache.org/docs/config/index.md)
   - [Server Startup Guide](https://hugegraph.apache.org/docs/config/config-guide/index.md)
   - [Server Complete Configuration Manual](https://hugegraph.apache.org/docs/config/config-option/index.md)
@@ -79,6 +80,7 @@
   - [FAQ](https://hugegraph.apache.org/docs/guides/faq/index.md)
   - [Security](https://hugegraph.apache.org/docs/guides/security/index.md)
   - [1.8.0 Java and upgrade migration](https://hugegraph.apache.org/docs/guides/shared-foundation-migration/index.md): Update Java imports and plugins, then prepare matching Server, PD and Store upgrades for the 1.8.0 shared-foundation changes.
+  - [1.8 Gremlin & TinkerPop Migration](https://hugegraph.apache.org/docs/guides/gremlin-migration-3.8/index.md): Comprehensive guide to breaking changes, high-frequency syntax rewrites, configuration migrations, and complete compatibility references from TinkerPop 3.5 to 3.8 in HugeGraph 1.8.0.
   - [ToplingDB (development)](https://hugegraph.apache.org/docs/guides/toplingdb/index.md): Build the optional ToplingDB runtime from development source, isolate its data, and understand startup and recovery boundaries.
 - [Query Languages](https://hugegraph.apache.org/docs/language/index.md)
   - [Gremlin Query Language](https://hugegraph.apache.org/docs/language/hugegraph-gremlin/index.md)
@@ -96,6 +98,7 @@
   - [Setup Server in IDEA](https://hugegraph.apache.org/docs/contribution-guidelines/hugegraph-server-idea-setup/index.md)
   - [Apache HugeGraph Committer Guide](https://hugegraph.apache.org/docs/contribution-guidelines/committer-guidelines/index.md)
 - [CHANGELOGS](https://hugegraph.apache.org/docs/changelog/index.md)
+  - [Release-1.8.0](https://hugegraph.apache.org/docs/changelog/hugegraph-1.8.0-release-notes/index.md)
   - [Release-1.7.0](https://hugegraph.apache.org/docs/changelog/hugegraph-1.7.0-release-notes/index.md)
   - [Release-1.5.0](https://hugegraph.apache.org/docs/changelog/hugegraph-1.5.0-release-notes/index.md)
   - [Release-1.3.0](https://hugegraph.apache.org/docs/changelog/hugegraph-1.3.0-release-notes/index.md)

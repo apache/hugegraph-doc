@@ -141,6 +141,13 @@
       "1.3": null,
       "1.0": null
     },
+    "cn:changelog/hugegraph-1.8.0-release-notes": {
+      "latest": "cn/docs/changelog/hugegraph-1.8.0-release-notes/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "cn:cla": {
       "latest": "cn/docs/cla/",
       "1.7": "cn/docs/cla/",
@@ -463,6 +470,13 @@
       "1.3": "cn/docs/guides/faq/",
       "1.0": "cn/docs/guides/faq/"
     },
+    "cn:guides/gremlin-migration-3.8": {
+      "latest": "cn/docs/guides/gremlin-migration-3.8/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "cn:guides/hugegraph-docker-cluster": {
       "latest": "cn/docs/guides/hugegraph-docker-cluster/",
       "1.7": null,
@@ -687,6 +701,13 @@
       "1.3": null,
       "1.0": null
     },
+    "cn:quickstart/hugegraph-ai/hugegraph-mcp": {
+      "latest": "cn/docs/quickstart/hugegraph-ai/hugegraph-mcp/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "cn:quickstart/hugegraph-ai/hugegraph-ml": {
       "latest": "cn/docs/quickstart/hugegraph-ai/hugegraph-ml/",
       "1.7": "cn/docs/quickstart/hugegraph-ai/hugegraph-ml/",
@@ -879,6 +900,13 @@
     "en:changelog/hugegraph-1.7.0-release-notes": {
       "latest": "docs/changelog/hugegraph-1.7.0-release-notes/",
       "1.7": "docs/changelog/hugegraph-1.7.0-release-notes/",
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:changelog/hugegraph-1.8.0-release-notes": {
+      "latest": "docs/changelog/hugegraph-1.8.0-release-notes/",
+      "1.7": null,
       "1.5": null,
       "1.3": null,
       "1.0": null
@@ -1205,6 +1233,13 @@
       "1.3": "docs/guides/faq/",
       "1.0": "docs/guides/faq/"
     },
+    "en:guides/gremlin-migration-3.8": {
+      "latest": "docs/guides/gremlin-migration-3.8/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "en:guides/hugegraph-docker-cluster": {
       "latest": "docs/guides/hugegraph-docker-cluster/",
       "1.7": null,
@@ -1426,6 +1461,13 @@
       "latest": "docs/quickstart/hugegraph-ai/hugegraph-llm/",
       "1.7": "docs/quickstart/hugegraph-ai/hugegraph-llm/",
       "1.5": "docs/quickstart/hugegraph-ai/hugegraph-llm/",
+      "1.3": null,
+      "1.0": null
+    },
+    "en:quickstart/hugegraph-ai/hugegraph-mcp": {
+      "latest": "docs/quickstart/hugegraph-ai/hugegraph-mcp/",
+      "1.7": null,
+      "1.5": null,
       "1.3": null,
       "1.0": null
     },

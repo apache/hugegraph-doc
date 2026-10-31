@@ -148,7 +148,7 @@ HugeGraph Server 是图数据库的 OLTP 引擎和服务入口，负责属性图
 - **查询语言**：支持 Gremlin（TinkerPop 3）和 Cypher（OpenCypher）
 - **REST API**：提供 Schema、图数据、查询、任务和运维接口
 - **索引与查询**：支持精确查询、范围查询和复合条件查询
-- **存储后端**：1.7.0 至 `master` 主要支持 RocksDB（单机）、HStore（分布式）和 HBase
+- **存储后端**：支持 RocksDB（单机推荐）、HStore（分布式推荐）和 HBase（Cassandra、MySQL、PostgreSQL 等历史后端已在 1.7.0 禁用并在 1.8.0 彻底移除）
 
 主要模块包括 `hugegraph-core`、存储后端模块和 `hugegraph-api`。Core 实现图模型、事务和查询逻辑，后端模块负责连接具体存储系统，API 模块负责 HTTP 接入。当前 REST 资源路径包含图空间与图名称，例如：
 
@@ -253,7 +253,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 `hugegraph-server` 模块包含 `hugegraph-core`、`hugegraph-api`、`hugegraph-dist` 和存储适配等子模块。Core 实现属性图模型、事务与 TinkerPop 接口，API 提供 HTTP 服务并将客户端请求交给 Core 处理。图数据由 RocksDB（单机默认）、HStore（分布式）或 HBase 后端保存。
 
 > [!WARNING]
-> **版本说明**：本文区分已发布版本与开发主线。下载示例使用 ASF 发布的 HugeGraph 1.7.0 安装包；源码构建、配置默认值和启动行为以 `apache/hugegraph` 的 `master` 分支为准。主线源码构建出的包不是 ASF 发布包，即使包内版本号与发布版本一致也不代表属于官方发布包。本文介绍 RocksDB、HStore 和 HBase；其他旧后端请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
+> **版本说明**：本文区分已发布版本与开发主线。已发布的官方包请使用对应版本的正式安装包（如 1.7.0 或即将发布的 1.8.0）；源码构建、配置默认值和启动行为以 `apache/hugegraph` 的 `master` 分支（当前对应 1.8.0 开发版本）为准。主线源码构建出的包不是 ASF 发布包，即使包内版本号与发布版本一致也不代表属于官方发布包。存储后端支持 RocksDB、HStore 和 HBase；已废弃的旧后端请参考 [HugeGraph 1.5.x 文档](https://github.com/apache/hugegraph-doc/blob/release-1.5.0/content/cn/docs/quickstart/hugegraph/hugegraph-server.md)。
 
 > 名称说明：`HugeGraph` 表示整个项目或主仓库，`hugegraph-server` 表示仓库中的 Server 模块，`HugeGraphServer` 是服务进程的 Java 类名。下文的 Server 服务指运行中的图数据库服务。
 
@@ -329,7 +329,7 @@ serializer:
 ```
 
 > [!TIP]
-> 完整客户端配置与验证细节见 [Server 运行时文档](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md)。
+> 完整的 Gremlin 语法改写、兼容性要求与速查表请参阅 [1.8 Gremlin 与 TinkerPop 迁移指南](../../guides/gremlin-migration-3.8)。更多运行时细节见 [Server 运行时文档](https://github.com/apache/hugegraph/blob/master/docs/server-runtime.md)。
 
 ## 3 部署
 
@@ -1493,9 +1493,14 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` |
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` |
+| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | 否 | 无 | `rocksdb.total_memory_size`，`auto` 或字节数 |
 {.td-table--wide}
 
 > **已弃用的别名**：`PD_ADDRESS` → `HG_STORE_PD_ADDRESS`、`GRPC_HOST` → `HG_STORE_GRPC_HOST`、`RAFT_ADDRESS` → `HG_STORE_RAFT_ADDRESS`
+
+RocksDB 缓存使用堆外内存。未设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` 时，系统将优先根据容器内存限制（cgroup）自动计算；未配置容器限制时则按宿主机内存推导。
+由于默认 Docker Compose 未限制容器内存，各 Store 均会以宿主机整机容量估算；若单机部署多个 Store，建议显式配置容器内存限制，或直接为该变量指定字节数。
+此外，Store 启动脚本默认会根据系统空闲内存分配 JVM 堆与直接内存（上限各 2 GiB）。建议结合容器规格，通过 `JAVA_OPTS` 显式约束 JVM 内存（例如容器为 4 GiB 时配置 `JAVA_OPTS="-Xmx1g -XX:MaxDirectMemorySize=512m"`）。详细推导公式见 [HStore 配置参考](/cn/docs/quickstart/hugegraph/hugegraph-hstore/#rocksdb-memory-budget)。
 
 ### Server 变量
 
@@ -1858,6 +1863,7 @@ docker run -d \
 | `HG_STORE_GRPC_PORT` | 否 | `8500` | `grpc.port` | gRPC 服务端口。 |
 | `HG_STORE_REST_PORT` | 否 | `8520` | `server.port` | REST API 端口。 |
 | `HG_STORE_DATA_PATH` | 否 | `/hugegraph-store/storage` | `app.data-path` | 数据存储路径。 |
+| `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` | 否 | 无 | `rocksdb.total_memory_size` | RocksDB 内存预算：`auto` 或字节数。空值视为未设置；其他值会使入口脚本以退出码 2 退出。未设置时使用 `application-pd.yml` 中的值或自动计算。 |
 {.td-table--wide}
 
 当前主线 entrypoint 将这些变量写入 `SPRING_APPLICATION_JSON`，覆盖镜像内 `conf/application.yml`；其余配置仍从该文件和 `application-pd.yml` 读取，然后以前台方式启动 Java。旧变量 `PD_ADDRESS`、`GRPC_HOST`、`RAFT_ADDRESS` 仍可用，但会输出弃用警告。
@@ -1873,7 +1879,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 #### 4.1 application.yml
 
-以下配置参考表核对的是 server 主线提交 `2f827d6e8c9c62ae858f2fc122b3a192d015e2f4` 的发行目录值和 Java 默认注入值；1.7.0 发布包请使用其版本标签对应的配置文件，不要跨版本覆盖。
+以下配置参考表核对的是 Server 主线提交的发行目录值和 Java 默认注入值；1.7.0 发布包请使用其版本标签对应的配置文件，不要跨版本覆盖。
 
 #### 4.2 application-pd.yml
 
@@ -1905,7 +1911,7 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
 | `raft.address` | `127.0.0.1:8510` | 必填 | 本节点的 Raft 服务地址，格式为 `host:port`，必须能被其他 Store 节点访问。这里不需要配置 peer 列表：分区 Raft 组的成员由 PD 下发。 |
-| `raft.disruptorBufferSize` | `1024` | `0` | Raft 任务队列大小。设为 `0` 时按 `rocksdb.total_memory_size` 推导：将该内存量的 GB 数取最接近的 2 的幂，再乘以 32。 |
+| `raft.disruptorBufferSize` | `1024` | `0` | Raft 任务队列大小。设为 `0` 时按 `rocksdb.total_memory_size` 推导：将该内存量的 GB 数（至少为 1）取最接近的 2 的幂，再乘以 32。 |
 | `raft.max-log-file-size` | `600000000000` | `50000000000` | Raft 日志的最大字节数。 |
 | `raft.snapshotInterval` | `1800` | `300` | 生成 Raft 快照的时间间隔，单位秒。 |
 | `raft.snapshotLogIndexMargin` | 未设置 | `0` | 距上次快照的最小 applied index 差值，达到后才真正生成快照。设为 `0` 关闭该判断。 |
@@ -1934,11 +1940,19 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 
 | 配置项 | 当前主线目录值 | 代码默认值 | 说明 |
 |--------|--------|------------|------|
-| `rocksdb.total_memory_size` | `32000000000` | `51539607552` | 本节点所有 RocksDB 实例共享的内存预算。缺失或为 `0` 时使用 JVM 最大堆内存。 |
-| `rocksdb.write_buffer_size` | `32000000` | `33554432` | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`。 |
+| `rocksdb.total_memory_size` | `auto` | 自动计算，见说明 | 本节点所有 RocksDB 实例共享的堆外内存预算（取值为 `auto` 或具体字节数）。详细自动推导规则见下方说明。 |
+| `rocksdb.write_buffer_size` | `32000000` | 自动推导，见说明 | memtable 大小，单位字节。缺失或为 `0` 时取 `total_memory_size / 1000`，最小为 `1048576`（1 MiB）。 |
 | `rocksdb.min_write_buffer_number_to_merge` | `16` | `16` | 落盘前合并的 memtable 数量。 |
 | `rocksdb.write_buffer_ratio` | 未设置 | `0.66` | `total_memory_size` 中分配给写缓存的比例，其余作为 block cache。 |
 {.td-table--wide}
+
+### RocksDB 内存预算自动计算规则 {#rocksdb-memory-budget}
+
+> [!NOTE]
+> 当 `rocksdb.total_memory_size` 设置为 `auto`（或未设置、为 `0`）时，系统自动计算堆外 RocksDB 缓存预算：
+> - **推导公式**：以物理内存（容器环境下优先取可见的 cgroup 限制）减去 JVM 最大堆（`-Xmx`）、直接内存（`MaxDirectMemorySize`）和 1.5 GiB 系统预留后，取剩余量的一半，范围钳制在 256 MiB 至 32 GB（`32000000000` 字节）之间。
+> - **写缓存与 Block Cache**：根据 `rocksdb.write_buffer_ratio`（默认 0.66）切分。该预算为软目标容量；大量并发写入时可将 `rocksdb.write_buffer_allow_stall` 设为 `true`，以增加写入延迟为代价把写缓存限制在其份额内。Block cache 并非严格上限，本地内存仍可能超出预算，容器仍可能被 OOM 终止。
+> - **升级与覆盖**：历史配置若保留了旧固定值 `32000000000`，可通过设置环境变量 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=auto` 或启动参数 `-Drocksdb.total_memory_size=auto` 启用自动推导。
 
 `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` 中定义的其他选项都可以加在同一个 `rocksdb:` 块下，例如 `rocksdb.max_background_jobs`、`rocksdb.level0_file_num_compaction_trigger` 或 `rocksdb.bloom_filter_bits_per_key`。
 
@@ -2052,7 +2066,10 @@ master 构建接受 `g1`、`G1`、`zgc` 和 `ZGC`。
 - `-d true`（默认）：以后台守护进程方式运行，脚本立即返回，并把 Java 进程号写入 `bin/pid`。
 - `-d false`：以前台模式运行，脚本通过 `exec` 替换为 Java 进程，容器或进程管理器的进程即为 Java 本身。在 Docker 或进程管理器（systemd、supervisord）下运行时请使用此参数，以便在崩溃时自动检测并重启服务。
 
-JVM 内存方面，如果没有自行设置 `JAVA_OPTIONS`：`-Xms512m`，`-Xmx` 取空闲内存的一半并限制在 512 MB 到 2048 MB 之间。脚本还会加上 `-XX:MetaspaceSize=256M`、OOM 时把堆转储写入 `logs/`，以及滚动的 GC 日志 `logs/gc.log`。生产节点通常需要大得多的堆，请显式指定，例如 `-j "-Xmx32g -Xms32g"`。
+JVM 内存方面，如果没有自行设置 `JAVA_OPTIONS`：`-Xms512m`，`-Xmx` 取空闲内存的一半并限制在 512 MB 到 2048 MB 之间。
+脚本还会加上与该堆大小相同的 `-XX:MaxDirectMemorySize`、`-XX:MetaspaceSize=256M`、OOM 时把堆转储写入 `logs/`，以及滚动的 GC 日志 `logs/gc.log`。
+生产节点通常需要大得多的堆，请显式指定，并同时设置直接内存上限，例如 `-j "-Xmx32g -Xms32g -XX:MaxDirectMemorySize=2g"`。
+不设上限时，JVM 允许的直接内存与 32 GB 的堆相同，RocksDB 预算会把它计算在内，在内存不足约 66 GB 的主机上会降到 256 MiB 的下限。
 
 当 `ulimit -n` 或 `ulimit -u` 低于 1024 时脚本会拒绝启动；在 x86_64 和 arm64 上，如果能成功下载并校验对应的动态库，脚本会预加载 jemalloc。
 
@@ -2314,6 +2331,7 @@ curl -fsS "$GRAPH_URL/graph/vertices/%22pd-store-demo-1%22"
 
 - [配置 HStore 后端](/cn/docs/config/config-backend-hstore/)
 - [设计理念(legacy)](/cn/docs/guides/desgin-concept/)
+- [Docker 集群](/cn/docs/guides/hugegraph-docker-cluster/)
 - [系统介绍](/cn/docs/introduction/)
 - [HugeGraph (OLTP)](/cn/docs/quickstart/hugegraph/)
 - [安装/构建 HugeGraph-PD](/cn/docs/quickstart/hugegraph/hugegraph-pd/)
@@ -9011,6 +9029,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ## 模块
 
+- [hugegraph-mcp](./hugegraph-mcp.md)：通过 MCP 向 AI 客户端提供图查询、Schema 和受控写入工具。
 - [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm)：知识图谱构建、GraphRAG 和自然语言图查询。
 - [hugegraph-ml](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml)：从 HugeGraph 读取图数据并运行图学习模型。
 - [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client)：管理 Schema、图数据和 Gremlin 查询的 Python SDK。
@@ -9089,6 +9108,7 @@ cd hugegraph-ml/src
 
 ## 后续阅读
 
+- [HugeGraph-MCP](./hugegraph-mcp.md)
 - [HugeGraph-LLM](./hugegraph-llm.md)
 - [HugeGraph-LLM 使用流程](./quick_start.md)
 - [配置参考](./config-reference.md)
@@ -9107,6 +9127,7 @@ cd hugegraph-ml/src
 - [配置参考](/cn/docs/quickstart/hugegraph-ai/config-reference/)
 - [HugeGraph-LLM REST API](/cn/docs/quickstart/hugegraph-ai/rest-api/)
 - [Vermeer Python 客户端](/cn/docs/quickstart/hugegraph-ai/vermeer-python-client/)
+- [HugeGraph-MCP](/cn/docs/quickstart/hugegraph-ai/hugegraph-mcp/)
 
 ---
 
@@ -9599,7 +9620,236 @@ pre-commit run --all-files
 反链：
 
 - [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)
+- [HugeGraph-MCP](/cn/docs/quickstart/hugegraph-ai/hugegraph-mcp/)
 - [LLM 使用流程](/cn/docs/quickstart/hugegraph-ai/quick_start/)
+
+
+================
+Source: https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/hugegraph-mcp/index.md
+================
+
+# HugeGraph-MCP
+
+LLMS 索引： [llms.txt](/cn/llms.txt)
+
+---
+
+`hugegraph-mcp` 通过 Model Context Protocol（MCP）向 AI 客户端提供 HugeGraph 工具，
+包括 Schema 检查、结构化图查询、受控写入，以及可选的自然语言查询生成和图数据抽取。
+服务使用 STDIO 传输，由 MCP 客户端启动本地进程；它不是 HugeGraph Server，也不提供独立的 HTTP MCP 端口。
+
+普通图查询直接访问 HugeGraph Server。自然语言生成、抽取和向量刷新还需要
+[HugeGraph-LLM](./hugegraph-llm.md) 服务，模型凭据配置在该服务中。
+
+## 环境要求
+
+- Python 3.10 或更高版本；单独运行 HugeGraph-LLM 时，请同时满足该模块的 Python 版本要求。
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) 和支持 STDIO 的 MCP 客户端。
+- 可从 MCP 进程访问的 HugeGraph Server 1.7.0 或更高版本。默认图路径为 `DEFAULT/hugegraph`，使用 graphspace API。
+- 已创建的图及具备相应权限的账号。服务端认证配置见[认证与授权](../../config/config-authentication.md)。
+
+## 安装与连接
+
+以下示例固定使用已发布的 `hugegraph-mcp==1.7.1`，不需要克隆代码仓库。
+将地址、图路径和凭据替换为实际部署值。先使用只读模式验证连接，再按需要开放受支持的写入。
+
+支持 `mcpServers` JSON 配置的客户端可添加：
+
+```json
+{
+  "mcpServers": {
+    "hugegraph": {
+      "command": "uvx",
+      "args": ["hugegraph-mcp@1.7.1"],
+      "env": {
+        "HUGEGRAPH_URL": "http://127.0.0.1:8080",
+        "HUGEGRAPH_GRAPH_PATH": "DEFAULT/hugegraph",
+        "HUGEGRAPH_USER": "your-user",
+        "HUGEGRAPH_PASSWORD": "your-password",
+        "HUGEGRAPH_MCP_READONLY": "true"
+      }
+    }
+  }
+}
+```
+
+不同客户端的配置文件位置和结构可能不同，请按客户端说明填写相同的启动命令、参数和环境变量。
+如果客户端找不到 `uvx`，将 `command` 改为本机 `uvx` 的绝对路径。修改配置后重启 MCP 进程。
+
+也可在已配置上述环境变量的终端中启动：
+
+```bash
+uvx hugegraph-mcp@1.7.1
+```
+
+进程启动后等待 MCP 客户端通过标准输入发送协议消息，不会打开网页。
+stdout 用于 MCP JSON-RPC，不要将额外的 shell 输出写入该通道。
+
+### 验证连接
+
+通过客户端列出工具，再调用 `inspect_graph_tool`。以下 JSON 是 MCP `tools/call` 的参数内容，
+不是向 HugeGraph REST API 直接发送的请求。
+
+```json
+{
+  "name": "inspect_graph_tool",
+  "arguments": {"include_raw_schema": true}
+}
+```
+
+确认返回 `ok=true`、`data.hugegraph_server_status="available"`。
+从 Schema 中选择已有的顶点标签，将下例中的 `person` 替换为该标签：
+
+```json
+{
+  "name": "query_graph_data_tool",
+  "arguments": {
+    "target": "vertex",
+    "operation": "page",
+    "label": "person",
+    "limit": 5
+  }
+}
+```
+
+该工具属于默认的 16 工具集。分页时使用响应中的 `next_page` 作为下一次调用的 `page`，
+并保留相同的查询条件。结果为空不一定表示连接失败，请同时检查图路径、标签和已有数据。
+
+## 工具集与版本
+
+工具集选择的是同一个包提供的工具分组，不是软件包版本、HugeGraph Server 版本或 MCP 协议版本。
+`1.7.1` 的配置名称如下：
+
+| `HUGEGRAPH_MCP_TOOLSET` | 工具数量 | 用途 |
+|---|---|---|
+| 未设置，或 `v2_core` | 16 | 默认工具集，包含结构化查询和持久化写入计划工具 |
+| `v1` | 10 | 兼容工具集，保留较早的工具入口 |
+
+其他任何值（包括 `v2`、`core`、`legacy` 或空字符串），在 1.7.1 中均会记录错误日志并回退到包含 10 个工具的 `v1` 兼容工具集。
+两种工具集的 `mcp_tool_contract_version` 均为 `2.0`，该字段表示工具契约，不表示包版本。
+
+### 工具集命名演进 {#toolset-evolution}
+
+最新源码已将默认工具集更名为 `core`，兼容工具集更名为 `legacy`。该规范将在后续版本正式发布；若使用 `1.7.1` 安装包，请继续遵循上述配置。
+
+- `v2_core` 对应新版 `core`，`v1` 对应新版 `legacy`；旧名称作为兼容别名保留，使用时将输出迁移提示。
+- 检查接口统一返回 `core` 或 `legacy`，依赖 `data.toolset` 或 `meta.toolset` 的客户端需同步适配。
+- 未设置变量时默认启用 `core`；空值或未知值将直接拦截启动，不再静默回退。
+- 工具集在启动时加载，变更配置后需重启客户端；切换兼容工具集不会绕过鉴权与只读约束。
+
+## 工具能力
+
+工具已注册不代表所有操作都可以执行。当前能力范围如下，实际工具参数以客户端的工具 Schema 为准。
+
+| 功能 | 工具 | 使用范围 |
+|---|---|---|
+| 检查与设计 | `inspect_graph_tool`、`inspect_schema_tool`、`design_schema_tool` | 查看连接、Schema 和设计指导 |
+| 结构化读取 | `query_graph_data_tool` | 按 ID、ID 列表、分页或条件读取顶点和边 |
+| Schema 创建 | `apply_schema_tool` | 校验和预览；默认工具集支持确认单个属性键、顶点标签或边标签创建 |
+| 写入计划 | `confirm_write_tool`、`get_write_status_tool`、`reconcile_write_tool` | 确认、查询及协调持久化计划 |
+| 图导入 | `import_graph_data_tool` | `extract` 调用 AI；`ingest` 仅预览，`table` 当前禁用 |
+| 图删除 | `delete_graph_data_tool` | 精确边删除可确认；顶点删除仅预览 |
+| 属性变更 | `mutate_graph_properties_tool` | 仅预览，确认当前禁用 |
+| AI 生成与抽取 | `generate_gremlin_tool`、`extract_graph_data_tool` | 生成查询或抽取候选图数据，不自动执行生成的查询 |
+| 向量刷新 | `refresh_vid_embeddings_tool` | 需要 AI、管理模式、允许写入以及显式确认；当前源码的服务侧门禁见下文 |
+| 原始 Gremlin | `execute_gremlin_read_tool`、`execute_gremlin_write_tool` | 当前均返回 `FEATURE_DISABLED`；管理模式不能绕过 |
+
+兼容工具集不包含 `inspect_schema_tool`、`query_graph_data_tool`、`mutate_graph_properties_tool`，
+以及三个写入计划工具。原始 Gremlin 执行也不会因切换到兼容工具集而开放。
+
+### 受控写入
+
+需要写入时，将 `HUGEGRAPH_MCP_READONLY` 设为 `false`，并使用有相应权限的 HugeGraph 账号。
+对于可确认的操作，先执行 dry-run，检查具体目标、变更内容和警告，再使用返回的 `plan_id` 确认：
+
+```json
+{
+  "name": "confirm_write_tool",
+  "arguments": {"plan_id": "<PLAN_ID>"}
+}
+```
+
+用 `get_write_status_tool(plan_id)` 查询持久化结果。`APPLIED` 表示全部操作已确认成功；
+`PARTIAL` 或 `UNKNOWN` 表示部分完成或结果尚不能确定，应先查询和协调状态，不要重新生成计划盲目重试。
+已完成的同一计划再次确认会返回记录的结果，不会重复写入。
+
+内置 SQLite 状态存储要求单个可写 MCP 实例，并需要可持久保存的状态目录。
+多个客户端各自启动进程时，应先保持只读；多实例写入需要另行设计共享事务存储。
+预览返回 `confirmable=false` 的操作不能通过关闭只读或开启管理模式强制执行。
+
+## 配置
+
+下表对应已发布的 `1.7.1`。MCP 图账号与 HugeGraph-LLM 的 API token 是两种不同的凭据。
+
+| 环境变量 | 默认值 | 说明 |
+|---|---|---|
+| `HUGEGRAPH_URL` | `http://127.0.0.1:8080` | MCP 进程访问的 HugeGraph 地址 |
+| `HUGEGRAPH_GRAPH_PATH` | `DEFAULT/hugegraph` | `GRAPH_SPACE/GRAPH_NAME` |
+| `HUGEGRAPH_GRAPHSPACE` | 未设置 | 覆盖 `HUGEGRAPH_GRAPH_PATH` 中的 graphspace |
+| `HUGEGRAPH_GRAPH` | 未设置 | 覆盖 `HUGEGRAPH_GRAPH_PATH` 中的图名 |
+| `HUGEGRAPH_USER` | `admin` | HugeGraph 用户名 |
+| `HUGEGRAPH_PASSWORD` | 空 | HugeGraph 密码 |
+| `HUGEGRAPH_MCP_TOOLSET` | `v2_core` | 该版本支持 `v2_core`、`v1` |
+| `HUGEGRAPH_MCP_READONLY` | `true` | 禁止受控写入 |
+| `HUGEGRAPH_MCP_ALLOW_AI` | `false` | 允许调用 HugeGraph-LLM |
+| `HUGEGRAPH_MCP_ADMIN_MODE` | `false` | 开放符合条件的管理操作 |
+| `HUGEGRAPH_AI_URL` | `http://127.0.0.1:8001` | HugeGraph-LLM 服务地址 |
+| `HUGEGRAPH_AI_TOKEN` | 未设置 | HugeGraph-LLM bearer token |
+| `HUGEGRAPH_AI_GRAPH_URL` | 未设置 | 不用于改变 AI 服务目标；当前源码已忽略此项 |
+| `HUGEGRAPH_AI_TIMEOUT_SECONDS` | `30` | AI HTTP 请求超时，单位为秒 |
+| `HUGEGRAPH_MCP_STATE_DIR` | XDG 状态目录或 `~/.local/state/hugegraph-mcp` | 写入计划与回执的持久化目录 |
+
+### 可选 AI 功能
+
+先按 [HugeGraph-LLM 指南](./hugegraph-llm.md) 配置并启动模型服务，再在 MCP 客户端的 `env` 中加入：
+
+```json
+{
+  "HUGEGRAPH_MCP_ALLOW_AI": "true",
+  "HUGEGRAPH_AI_URL": "http://127.0.0.1:8001",
+  "HUGEGRAPH_AI_TOKEN": "your-ai-service-token"
+}
+```
+
+这段内容应合并到前面的 `env` 对象中。生成和抽取可保持只读；向量刷新要求满足以下条件：
+- 客户端配置：`HUGEGRAPH_MCP_READONLY=false`、`HUGEGRAPH_MCP_ADMIN_MODE=true`，且调用时需传入 `confirm=true`。
+- 服务端配置（HugeGraph-LLM）：需设置 `ENABLE_LOGIN=true` 与 `HUGEGRAPH_LLM_ENABLE_THIN_WRITES=true`，配置非默认的强 `USER_TOKEN`（避免使用弱默认值 `4321`），
+  并通过 MCP 的 `HUGEGRAPH_AI_TOKEN` 传递有效认证。若服务端未开启写入门禁，刷新请求将被拒绝并返回 `FEATURE_DISABLED`（"Legacy Thin API writes are disabled"）。
+
+MCP 与 HugeGraph-LLM 必须连接至同一个底层 HugeGraph 实例。能力校验协议仅校验图名与图空间，
+而实际刷新完全由 AI 服务依据其自身的 `GRAPH_URL` 独立执行；修改 MCP 的 `HUGEGRAPH_URL` 并不会改变 AI 服务的数据目标。
+若 MCP 在宿主机运行，而 AI 在容器中运行，二者访问图服务的网络地址可能不同：应在 AI 服务侧配置 `GRAPH_URL` 为容器可访问的地址
+（例如 `http://server:8080`），并确保 `GRAPH_NAME` 与 `GRAPH_SPACE` 与 MCP 目标一致；不要让容器通过 `127.0.0.1` 访问宿主机上的图服务。
+
+**能力校验协议**：
+新版协议要求调用 `GET /vid-embeddings/refresh-capabilities` 返回 `protocol_version=1`，并在刷新前传递预期图名与 graphspace 由服务端进行合法性校验；不支持该协议的服务将被拒绝。该机制用于保障多租户与图空间隔离，未发布该特性的旧版本不强制依赖。
+
+## 常见问题
+
+- **客户端启动后没有工具**：检查 `uvx` 路径、Python 版本和进程 stderr；终端进程等待协议输入是正常行为。
+- **找不到结构化查询工具**：检查是否选择了兼容工具集。`1.7.1` 使用 `v2_core`，也可直接不设置工具集变量。
+- **返回 `FEATURE_DISABLED`**：先检查能力表、只读、AI 和管理开关；部分操作是后端能力限制，不能仅靠修改配置开放。
+- **AI 调用失败**：检查服务地址、token、容器网络和 AI 日志。MCP 返回的服务不可用错误不一定意味着模型已下线。
+- **向量接口返回 400 或 429**：检查提供商的单次输入条数及请求频率限制。每批最大条数和并发请求数是不同限制；
+  应在 HugeGraph-LLM 的向量适配与索引构建路径中处理，而不是更换 MCP 工具集。
+
+工具响应中的 `ok=false` 表示失败，请同时检查 `error.type`、`error.retryable` 和 `warnings`，
+不要只根据 MCP 连接成功或 HTTP 状态判断业务操作成功。
+
+## 后续阅读
+
+- [HugeGraph-LLM](./hugegraph-llm.md)
+- [HugeGraph-MCP 源码与 README](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-mcp)
+- [集成验证](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-mcp/docs/integration.md)
+- [PyPI 发行包](https://pypi.org/project/hugegraph-mcp/)
+
+仓库 `main` 的文档随源码更新。使用固定发行包时，应先核对对应版本；本文安装示例固定为 `1.7.1`。
+
+---
+
+反链：
+
+- [HugeGraph-AI](/cn/docs/quickstart/hugegraph-ai/)
 
 
 ================
@@ -16330,13 +16580,27 @@ PUT http://127.0.0.1:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/vertices/"1
 **请求参数说明：**
 
 - label: 顶点的类型
-- properties: 属性键值对（查询属性的前提是该属性已经建立了索引）
+- properties: 属性键值对（索引覆盖要求见下文）
 - keep_start_p: 默认为 false，设置为 true 时不会自动转义范围匹配表达式，例如 `properties={"age":"P.gt(18)"}` 会被当作精确匹配，即 age 属性等于字符串 "P.gt(18)"
 - offset: 偏移量，默认为 0
 - limit: 查询结果的最大数目，默认为 100
 - page: 分页的页号
 
 以上参数都是可选的，page 不能与非 0 的 offset 同时使用，其余参数之间可以任意组合。
+
+指定 `label` 且该标签使用 `PRIMARY_KEY` ID 策略时，如果 `properties` 为**所有主键字段**提供精确值（`P.eq` 与 `P.within` 均视作精确值），查询直接按 ID 检索顶点，取回后再验证其余属性条件，无需属性索引。
+若主键字段齐全但其中任一字段使用了 `P.eq`、`P.within`、`P.contains` 以外的谓词（如 `P.neq`、`P.gt`、`P.between`、`P.textcontains` 等），查询在进入属性索引阶段前即被拒绝，即使存在匹配索引也不例外。`P.contains` 用于主键字段时走单元素 ID 查找，不会被拦截。
+
+对于其他 `properties` 查询：指定 `label` 时，该标签需要有与查询条件匹配的属性索引。**候选标签**是指声明了全部待查非 OLAP 属性的顶点标签（包括暂无数据的标签）。
+
+普通查询不可见的标签（包括正在删除的标签）不计入候选集，不需要索引覆盖。若所有候选标签均不可见或正在删除（或指定的 `label` 本身不可见或正在删除），查询直接返回空结果，不报索引错误。若没有任何 Schema 标签声明待查属性，仍会报索引错误。注意：仅建立标签索引不等于属性已建立索引。
+
+若查询包含 OLAP 属性且读取模式已开放 OLAP 数据，HugeGraph 使用全局共享的 OLAP 索引，这类属性无需每个候选标签单独建立索引。
+
+**错误触发规则**：查询值与属性类型兼容，但缺少匹配索引或只覆盖了部分候选标签，均会报索引错误；仅当所有候选标签均被完整覆盖时，查询才通过索引执行。查询值与属性类型不兼容时，若已找到匹配索引则可能返回空结果（跳过部分覆盖检查）；若无任何匹配索引仍报索引错误。查询不会自动回退到全量扫描。
+
+> [!NOTE]
+> 部分覆盖检查与候选标签不可见时返回空结果的机制自 1.8.0 起生效。早期版本仅返回命中索引标签的匹配结果，且在无标签具备匹配索引时直接报索引错误。
 
 属性键值对由属性名称和属性值组成 JSON 格式的对象，可以使用多个属性键值对作为查询条件，属性值支持精确匹配和范围匹配，精确匹配的形式如`properties={"age":29}`，范围匹配的形式如`properties={"age":"P.gt(29)"}`，范围匹配支持以下表达式：
 
@@ -17020,11 +17284,24 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph/edges/S1:ma
 - vertex_id: 顶点 id
 - direction: 边的方向 (OUT | IN | BOTH)，默认为 BOTH
 - label: 边的标签
-- properties: 属性键值对 (根据属性查询的前提是预先建立了索引)
+- properties: 属性键值对（索引覆盖要求见下文）
 - keep_start_p: 默认为 false，当设置为 true 后，不会自动转义范围匹配输入的表达式，例如此时 `properties={"age":"P.gt(0.8)"}` 会被理解为精确匹配，即 age 属性等于 "P.gt(0.8)"
 - offset：偏移，默认为 0
 - limit: 查询数目，默认为 100
 - page: 页号
+
+未指定 `vertex_id` 时，`properties` 在全图范围内查询边。指定 `label` 时，该标签需有与查询条件匹配的属性索引；若指定的是未单独建索引的子边标签，可以使用其父标签（查询可见的）上的匹配索引，同级其他子标签的边会被自动过滤。
+
+**候选标签**是可直接存边且声明了全部待查非 OLAP 属性的边标签（包括当前没有边的标签）。普通查询不可见的标签（包括正在删除的标签）不计入候选集，不需要索引覆盖。若所有候选标签均不可见或正在删除（或指定的 `label` 本身不可见或正在删除），查询返回空结果，不报索引错误。若没有任何 Schema 标签声明待查属性，仍会报索引错误。
+
+未指定 `label` 时：`base` 父边标签不直接存边，子标签全部被覆盖时无需再为父标签单独建立索引。可以使用当前查询可见的父标签上的匹配索引覆盖子标签，也可以为每个候选子标签单独建立索引。父标签因隐藏或正在删除而被排除时，其索引不能用于覆盖子标签。仅有标签索引不等于属性已建立索引。
+
+**错误触发规则**：查询值与属性类型兼容，但缺少匹配索引或只覆盖了部分候选标签，均会报索引错误；仅当所有候选标签均被完整覆盖时，查询才通过索引执行。查询值与属性类型不兼容时，若已找到匹配索引则可能返回空结果（跳过部分覆盖检查）；若无任何匹配索引仍报索引错误。查询不会自动回退到全量扫描。
+
+> [!NOTE]
+> 部分覆盖检查、子边标签复用父标签索引，以及候选标签不可见时返回空结果的机制，自 1.8.0 起生效。早期版本仅使用指定标签自身建立的索引，未指定 `label` 时仅返回命中索引标签的匹配结果，且在无标签具备匹配索引时直接报索引错误。
+
+指定 `vertex_id` 时，查询过滤该顶点的邻接边，不适用上述全图查询的索引覆盖要求。
 
 属性键值对由 JSON 格式的属性名称和属性值组成，允许多个属性键值对作为查询条件，属性值支持精确匹配和范围匹配，精确匹配时形如 `properties={"weight":0.8}`，范围匹配时形如 `properties={"age":"P.gt(0.8)"}`，范围匹配支持的表达式如下：
 
@@ -24510,6 +24787,10 @@ HugeGraph支持[Apache TinkerPop3](https://tinkerpop.apache.org)的图形遍历�
 
 Gremlin可用于创建图的实体（Vertex和Edge）、修改实体内部属性、删除实体，更主要的是可用于执行图的查询及分析操作。
 
+> [!NOTE]
+> **版本与升级提示**：HugeGraph 1.8.0 已将底层 TinkerPop 引擎升级至 **3.8.1**（同时要求 Java 17 与 Groovy 4.0.25）。
+> 部分旧版语法（如 `store()`、带 Scope 的 `aggregate()` 以及 `has(key, traversal)`）已彻底移除，在 1.8 中调用会直接报错。详见 [1.8 Gremlin 与 TinkerPop 迁移指南](../guides/gremlin-migration-3.8)。
+
 ### TinkerPop Features
 
 HugeGraph实现了TinkerPop框架，但是并没有实现TinkerPop所有的特性。
@@ -24580,7 +24861,7 @@ HugeGraph实现了TinkerPop框架，但是并没有实现TinkerPop所有的特�
 | SerializableValues |                                                                                                                                                                                                                                                                      | false   |
 | StringArrayValues  |                                                                                                                                                                                                                                                                      | false   |
 | StringValues       |                                                                                                                                                                                                                                                                      | true    |
-| UniformListValues  | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "uniform" it must contain objects of the same type.           | true    |
+| UniformListValues  | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "uniform" it must contain objects of the same type.           | false (由 Schema 的 valueList() 机制支持) |
 
 ### Gremlin的步骤
 
@@ -24596,7 +24877,9 @@ HugeGraph支持Gremlin的所有步骤。有关Gremlin的完整参考信息，请
 | coalesce   | 返回第一个返回结果的遍历                                                                                    | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step)     |
 | constant   | 返回常量值。 与`coalesce`配合使用                                                                          | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step)     |
 | count      | 从遍历返回计数                                                                                         | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step)         |
+| datetime   | 构造日期时间对象或取得服务器当前时间（1.8.0 默认返回 `OffsetDateTime`）                                      | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
 | dedup      | 返回已删除重复内容的值                                                                                     | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step)           |
+| discard    | 丢弃流中当前输入（1.8.0 替代原无参 `none()`）                                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)       |
 | drop       | 丢弃值（顶点/边缘）                                                                                      | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step)             |
 | fold       | 充当用于计算结果聚合值的屏障                                                                                  | [fold step](http://tinkerpop.apache.org/docs/current/reference/#fold-step)             |
 | group      | 根据指定的标签将值分组                                                                                     | [group step](http://tinkerpop.apache.org/docs/current/reference/#group-step)           |
@@ -24616,7 +24899,8 @@ HugeGraph支持Gremlin的所有步骤。有关Gremlin的完整参考信息，请
 | repeat     | 将步骤重复指定的次数。 用于循环                                                                                | [repeat step](http://tinkerpop.apache.org/docs/current/reference/#repeat-step)         |
 | sample     | 用于对遍历返回的结果采样                                                                                    | [sample step](http://tinkerpop.apache.org/docs/current/reference/#sample-step)         |
 | select     | 用于投影遍历返回的结果                                                                                     | [select step](http://tinkerpop.apache.org/docs/current/reference/#select-step)         |
-| store      | 用于遍历返回的非阻塞聚合                                                                                    | [store step](http://tinkerpop.apache.org/docs/current/reference/#store-step)           |
+| mergeV     | 按属性匹配顶点，存在则更新，不存在则创建（标准 Upsert 步骤）                                                 | [mergeV step](http://tinkerpop.apache.org/docs/current/reference/#mergevertex-step)    |
+| mergeE     | 按属性与端点匹配边，存在则更新，不存在则创建（标准 Upsert 步骤）                                             | [mergeE step](http://tinkerpop.apache.org/docs/current/reference/#mergeedge-step)      |
 | tree       | 将顶点中的路径聚合到树中                                                                                    | [tree step](http://tinkerpop.apache.org/docs/current/reference/#tree-step)             |
 | unfold     | 将迭代器作为步骤展开                                                                                      | [unfold step](http://tinkerpop.apache.org/docs/current/reference/#unfold-step)         |
 | union      | 合并多个遍历返回的结果                                                                                     | [union step](http://tinkerpop.apache.org/docs/current/reference/#union-step)           |
@@ -26921,6 +27205,7 @@ curl -sS -o /dev/null -w '%{http_code}\n' -u admin \
 - [Vermeer: 高性能内存图计算框架](/cn/docs/quickstart/computing/hugegraph-vermeer/)
 - [配置参考](/cn/docs/quickstart/hugegraph-ai/config-reference/)
 - [HugeGraph-LLM](/cn/docs/quickstart/hugegraph-ai/hugegraph-llm/)
+- [HugeGraph-MCP](/cn/docs/quickstart/hugegraph-ai/hugegraph-mcp/)
 - [LLM 使用流程](/cn/docs/quickstart/hugegraph-ai/quick_start/)
 - [REST API](/cn/docs/quickstart/hugegraph-ai/rest-api/)
 - [安装/构建 HugeGraph-Store](/cn/docs/quickstart/hugegraph/hugegraph-hstore/)
@@ -28444,6 +28729,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 - [FAQ](/cn/docs/guides/faq/)
 - [报告安全问题](/cn/docs/guides/security/)
 - [1.8.0 共享基础模块迁移指南](/cn/docs/guides/shared-foundation-migration/): 调整 Java import 和插件实现，并准备 1.8.0 共享基础模块迁移所需的 Server、PD、Store 同步升级。
+- [HugeGraph 1.8.0 Gremlin 迁移与兼容性指南](/cn/docs/guides/gremlin-migration-3.8/): 详细说明 HugeGraph 1.8.0 从 TinkerPop 3.5 升级到 3.8 带来的核心语法兼容性变化、常用改写方案、配置调整及全量细则速查表。
 - [ToplingDB 开发版集成](/cn/docs/guides/toplingdb/): 从开发源码构建可选 ToplingDB 运行时，隔离数据目录，并了解启动与恢复边界。
 
 
@@ -28459,6 +28745,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 本节页面：
 
+- [HugeGraph 1.8.0 Release Notes](/cn/docs/changelog/hugegraph-1.8.0-release-notes/)
 - [HugeGraph 1.7.0 Release Notes](/cn/docs/changelog/hugegraph-1.7.0-release-notes/)
 - [HugeGraph 1.5.0 Release Notes](/cn/docs/changelog/hugegraph-1.5.0-release-notes/)
 - [HugeGraph 1.3.0 Release Notes](/cn/docs/changelog/hugegraph-1.3.0-release-notes/)

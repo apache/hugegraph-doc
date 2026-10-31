@@ -10,6 +10,7 @@ LLMS index: [llms.txt](/llms.txt)
 
 ## Modules
 
+- [hugegraph-mcp](./hugegraph-mcp.md): graph queries, schema tools, and controlled writes for AI clients through MCP.
 - [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm): knowledge graph construction, GraphRAG, and natural-language graph queries.
 - [hugegraph-ml](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml): reads graph data from HugeGraph and runs graph learning models.
 - [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client): a Python SDK for managing schemas and graph data and running Gremlin queries.
@@ -88,6 +89,7 @@ Example scripts are under `hugegraph-ml/src/hugegraph_ml/examples/`.
 
 ## Next Steps
 
+- [HugeGraph-MCP](./hugegraph-mcp.md)
 - [HugeGraph-LLM](./hugegraph-llm.md)
 - [HugeGraph-LLM workflow](./quick_start.md)
 - [Configuration reference](./config-reference.md)
@@ -106,6 +108,7 @@ Section pages:
 - [Configuration Reference](/docs/quickstart/hugegraph-ai/config-reference/)
 - [HugeGraph-LLM REST API](/docs/quickstart/hugegraph-ai/rest-api/)
 - [Vermeer Python Client](/docs/quickstart/hugegraph-ai/vermeer-python-client/)
+- [HugeGraph-MCP](/docs/quickstart/hugegraph-ai/hugegraph-mcp/)
 
 ---
 

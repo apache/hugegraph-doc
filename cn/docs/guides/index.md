@@ -19,4 +19,5 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 - [FAQ](/cn/docs/guides/faq/)
 - [报告安全问题](/cn/docs/guides/security/)
 - [1.8.0 共享基础模块迁移指南](/cn/docs/guides/shared-foundation-migration/): 调整 Java import 和插件实现，并准备 1.8.0 共享基础模块迁移所需的 Server、PD、Store 同步升级。
+- [HugeGraph 1.8.0 Gremlin 迁移与兼容性指南](/cn/docs/guides/gremlin-migration-3.8/): 详细说明 HugeGraph 1.8.0 从 TinkerPop 3.5 升级到 3.8 带来的核心语法兼容性变化、常用改写方案、配置调整及全量细则速查表。
 - [ToplingDB 开发版集成](/cn/docs/guides/toplingdb/): 从开发源码构建可选 ToplingDB 运行时，隔离数据目录，并了解启动与恢复边界。

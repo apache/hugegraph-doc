@@ -19,4 +19,5 @@ Section pages:
 - [FAQ](/docs/guides/faq/)
 - [Security Report](/docs/guides/security/)
 - [1.8.0 shared-foundation migration](/docs/guides/shared-foundation-migration/): Update Java imports and plugins, then prepare matching Server, PD and Store upgrades for the 1.8.0 shared-foundation changes.
+- [HugeGraph 1.8.0 Gremlin Migration & Compatibility Guide](/docs/guides/gremlin-migration-3.8/): Comprehensive guide to breaking changes, high-frequency syntax rewrites, configuration migrations, and complete compatibility references from TinkerPop 3.5 to 3.8 in HugeGraph 1.8.0.
 - [ToplingDB development integration](/docs/guides/toplingdb/): Build the optional ToplingDB runtime from development source, isolate its data, and understand startup and recovery boundaries.

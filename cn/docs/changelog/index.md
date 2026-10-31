@@ -6,6 +6,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 本节页面：
 
+- [HugeGraph 1.8.0 Release Notes](/cn/docs/changelog/hugegraph-1.8.0-release-notes/)
 - [HugeGraph 1.7.0 Release Notes](/cn/docs/changelog/hugegraph-1.7.0-release-notes/)
 - [HugeGraph 1.5.0 Release Notes](/cn/docs/changelog/hugegraph-1.5.0-release-notes/)
 - [HugeGraph 1.3.0 Release Notes](/cn/docs/changelog/hugegraph-1.3.0-release-notes/)

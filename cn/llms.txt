@@ -39,6 +39,7 @@
   - [Kubernetes 运维](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph/hugegraph-helm-operations/index.md)
   - [REST API](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/rest-api/index.md)
   - [Vermeer 客户端](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/vermeer-python-client/index.md)
+  - [HugeGraph-MCP](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-ai/hugegraph-mcp/index.md)
 - [Server 配置](https://hugegraph.apache.org/cn/docs/config/index.md)
   - [Server 启动指南](https://hugegraph.apache.org/cn/docs/config/config-guide/index.md)
   - [Server 完整配置手册](https://hugegraph.apache.org/cn/docs/config/config-option/index.md)
@@ -79,6 +80,7 @@
   - [FAQ](https://hugegraph.apache.org/cn/docs/guides/faq/index.md)
   - [安全公告](https://hugegraph.apache.org/cn/docs/guides/security/index.md)
   - [1.8.0 Java 与升级迁移](https://hugegraph.apache.org/cn/docs/guides/shared-foundation-migration/index.md): 调整 Java import 和插件实现，并准备 1.8.0 共享基础模块迁移所需的 Server、PD、Store 同步升级。
+  - [1.8 Gremlin 与 TinkerPop 迁移](https://hugegraph.apache.org/cn/docs/guides/gremlin-migration-3.8/index.md): 详细说明 HugeGraph 1.8.0 从 TinkerPop 3.5 升级到 3.8 带来的核心语法兼容性变化、常用改写方案、配置调整及全量细则速查表。
   - [ToplingDB（开发版）](https://hugegraph.apache.org/cn/docs/guides/toplingdb/index.md): 从开发源码构建可选 ToplingDB 运行时，隔离数据目录，并了解启动与恢复边界。
 - [查询语言](https://hugegraph.apache.org/cn/docs/language/index.md)
   - [Gremlin Query Language](https://hugegraph.apache.org/cn/docs/language/hugegraph-gremlin/index.md)
@@ -96,6 +98,7 @@
   - [在 IDEA 中配置 Server 开发环境](https://hugegraph.apache.org/cn/docs/contribution-guidelines/hugegraph-server-idea-setup/index.md)
   - [Apache HugeGraph Committer 指南](https://hugegraph.apache.org/cn/docs/contribution-guidelines/committer-guidelines/index.md)
 - [CHANGELOGS](https://hugegraph.apache.org/cn/docs/changelog/index.md)
+  - [Release-1.8.0](https://hugegraph.apache.org/cn/docs/changelog/hugegraph-1.8.0-release-notes/index.md)
   - [Release-1.7.0](https://hugegraph.apache.org/cn/docs/changelog/hugegraph-1.7.0-release-notes/index.md)
   - [Release-1.5.0](https://hugegraph.apache.org/cn/docs/changelog/hugegraph-1.5.0-release-notes/index.md)
   - [Release-1.3.0](https://hugegraph.apache.org/cn/docs/changelog/hugegraph-1.3.0-release-notes/index.md)

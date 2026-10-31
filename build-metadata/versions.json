@@ -6,10 +6,10 @@
       "baseURL": "https://hugegraph.apache.org/",
       "docsNavigation": {
         "groups": 5,
-        "pages": 95,
+        "pages": 96,
         "removed": 4,
         "scopedLinks": 0,
-        "treeSha256": "b33f771f77fc376121902fee37d66235d2920a450320620400320925f985c86a"
+        "treeSha256": "8b2b1f270a27b909b673a30d186c46a6a0feccab4c4a980d9b8127686346be2b"
       },
       "githubBranch": "master",
       "historicalNoindexPages": 0,
@@ -18,7 +18,7 @@
       "id": "latest",
       "migration": {
         "changed": 4,
-        "files": 270,
+        "files": 276,
         "findings": 0,
         "knownFixes": 0,
         "residual": 0,
@@ -28,11 +28,11 @@
       "nonEquivalentHreflangRemoved": 0,
       "publishPath": "",
       "ref": "master",
-      "sha": "e208aa2df9f916379aa2f3d1a1c15c7cbc805da6",
+      "sha": "591de122c76ca3027c878783b4f39d525a3a5cbc",
       "urlScoping": {
-        "files": 316,
+        "files": 322,
         "historicalHomeRedirects": 0,
-        "manifests": 314,
+        "manifests": 320,
         "searchFingerprints": 2,
         "searchRefs": 0,
         "urls": 0
@@ -44,7 +44,7 @@
       "docsNavigation": {
         "groups": 5,
         "pages": 85,
-        "removed": 8,
+        "removed": 9,
         "scopedLinks": 10,
         "treeSha256": "c87538b82b0e3506eef59417411686ddc188e0f33d0e3a1cda687de8d6f88747"
       },
@@ -81,7 +81,7 @@
       "docsNavigation": {
         "groups": 5,
         "pages": 77,
-        "removed": 16,
+        "removed": 17,
         "scopedLinks": 10,
         "treeSha256": "ac29ab8f0e7020496a3a1afe480687043d751e32c93ffb848e2210e3500cd483"
       },
@@ -118,7 +118,7 @@
       "docsNavigation": {
         "groups": 5,
         "pages": 68,
-        "removed": 25,
+        "removed": 26,
         "scopedLinks": 10,
         "treeSha256": "e8c9b0a64dac6dd3e47827ec5072697eb7d3ed79659e0b5c4a9c5df8e1408d38"
       },

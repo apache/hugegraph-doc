@@ -150,7 +150,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabel
 
 #### 1.5.4 根据 name 删除 IndexLabel
 
-删除 IndexLabel 会导致删除相关的索引数据，会产生一个异步任务
+删除 IndexLabel 会导致删除相关的索引数据，响应为任务 ID，会产生一个异步任务。当前 Server 接口没有 `delete_all` 查询参数。
 
 ##### Method & Url
 

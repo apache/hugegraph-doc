@@ -7,6 +7,9 @@ description: "Rebuild REST API: Rebuild graph schema indexes to ensure consisten
 
 ### 1.6 Rebuild
 
+Rebuilding vertex, edge, or index labels uses `PUT .../jobs/rebuild/{type}/{name}`: non-existent labels return HTTP 404;
+existing labels return HTTP 202 and a task ID. Poll the task status to confirm rebuild completion.
+
 #### 1.6.1 Rebuild IndexLabel
 
 ##### Method & Url

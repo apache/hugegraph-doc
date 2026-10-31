@@ -62,6 +62,16 @@ curl --compressed -sS -X POST http://127.0.0.1:8080/gremlin \
 
 `/gremlin` 是顶层接口。图空间 `DEFAULT` 中图 `hugegraph` 对应的 traversal source 名为 `__g_DEFAULT-hugegraph`，请求通过 `aliases` 映射为脚本中的 `g`。若使用不同图空间或图名，应按 Server 绑定名调整 alias。批量结果可能以 gzip 返回，curl 使用 `--compressed` 可自动解压。
 
+绑定名区分大小写：`<space>-<graph>` 是图，`__g_<space>-<graph>` 是遍历源。多图 Server 没有隐含的全局 `g`。
+`bindings` 用于查询变量，不能注册图；alias 目标也不能写成 `graph.traversal()` 表达式。
+没有 GraphSpace 的旧版独立图使用 `<graph>` 与 `__g_<graph>`。Server 启用鉴权时，补充配置要求的 HTTP 凭据，例如 `-u "$HG_USER:$HG_PASSWORD"`。
+
+同步 Gremlin 默认执行上限为 30000 毫秒，由 `gremlin-server.yaml` 的 `evaluationTimeout` 配置。
+全图计数与按标签过滤计数可能走不同执行路径，不能用 `g.V().count()` 的耗时推断标签扫描耗时。
+可能超过同步限制的查询应提交 Server 异步任务（见下文 8.1.3 节）。
+轮询到 `task_status` 为终态后再读取 `task_result`；`running` 不表示计数已经完成。
+Hubble 客户端传输超时与 Server 执行超时是不同限制，仅调整其中一个不会移除另一个。
+
 ##### Response Status
 
 ```json

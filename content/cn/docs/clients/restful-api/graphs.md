@@ -15,6 +15,14 @@ description: "Graphs（图管理）REST 接口:管理图实例的生命周期,�
 
 启用鉴权时，创建、克隆、删除、清空、修改图显示名、读取图配置、设置读模式和手动压缩等操作要求图空间管理权限（`space`）；管理员可按权限继承规则满足。创建或恢复快照、设置数据模式允许图空间管理者或该图所有者操作；列表、详情、数据模式读取和读模式读取按图读取权限校验。Raft API 另要求图空间成员权限。
 
+`GET /apis` 是资源索引。索引中的资源路径属于 Server 根地址，应使用 `/versions`、`/graphspaces` 与 `/gremlin`，不要再加 `/apis` 前缀。
+旧版索引没有前导斜杠，应相对 Server 根路径解析，不能拼到索引目录下面。网关另有公开路径前缀时，保留该前缀。
+
+`GET /graphspaces` 仅支持 PD 模式。独立模式应跳过此步骤，使用 `GET /graphs` 列出已配置的图。
+建图使用 `POST /graphspaces/{space}/graphs/{graph}`，并提供后端要求的图配置。`POST /graphs` 不是建图接口。
+旧形态 `/graphs` 能列出图，并不表示 GraphSpace API 不存在。运行 SeaTunnel 自带 sink 示例前，请按
+[SeaTunnel 指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md) 先创建 `graph_a`。
+
 #### 6.1.1 列出图空间中全部的图
 
 ##### Params

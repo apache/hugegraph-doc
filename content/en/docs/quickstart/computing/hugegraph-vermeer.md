@@ -255,7 +255,21 @@ Available URLs:
 
 - Asynchronous: `POST http://master_ip:port/tasks/create`; read the ID from response `task.id`.
 - Synchronous: `POST http://master_ip:port/tasks/create/sync`; returns after the task ends.
-- Query task: `GET http://master_ip:port/task/{task_id}`. `errcode=0` indicates a successful query; inspect `task.state` for task status. Set a client polling deadline for asynchronous jobs; reaching it stops client waiting without canceling the server task.
+- Query task: `GET http://master_ip:port/task/{task_id}`. `errcode=0` indicates a successful query; inspect `task.state` for task status.
+  Set a client polling deadline for asynchronous jobs; reaching it stops client waiting without canceling the server task.
+- Read retained results: `GET http://master_ip:port/tasks/value/{task_id}` (or `/api/v1/tasks/value/{id}`).
+
+Native clients submit `POST /api/v1/tasks/create` with `graph`, `task_type` (`load`, `reload` or `compute`), and a flat string-valued `params` map.
+For computation, set `params["compute.algorithm"]`, not a top-level `algorithm`.
+The response contains a native `task.id`; query it at `GET /api/v1/task/{id}` and read retained values at `GET /api/v1/tasks/value/{id}`.
+These paths and positive IDs differ from Hubble's wrapper.
+`POST /api/v1/tasks` does not submit work: after the task-method fix it returns HTTP 405 and `Allow: GET`;
+older builds can return a misleading `{"code":200}` without creating a task.
+See the [native API examples](https://github.com/apache/hugegraph-computer/blob/master/vermeer/README.md#api-overview).
+
+Vermeer Master HTTP follows Helm mode defaults: easy is NodePort, strict is ClusterIP; RPC and Worker ports remain internal.
+Native UI admin uses the password in `<release>-vermeer-admin`. Automation APIs use service tokens in `Authorization: Bearer <token>`;
+UI admin password cannot be used as this token. Chart automatically configures service token for Hubble.
 
 ### 2.2 Loading Graph Data
 
@@ -365,6 +379,41 @@ POST http://localhost:6688/tasks/create
 ```
 
 `output.type=local` writes to the executing worker's local filesystem. For containers, mount the output directory if the host needs to read results.
+
+### 2.4 Submit and Integrate via Hubble
+
+With Chart-managed native integration, `POST /api/v1.3/vermeer/task` is used to load or reload a graph, not for computation.
+It accepts `graphspace`, `graph`, `task_type:"load"`, and optional loading tuning parameters.
+Once the graph is loaded, submit the algorithm via the graph-level computation endpoint:
+
+```bash
+curl -b hubble.cookies -X POST \
+  'http://localhost:8088/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/algorithms/vermeer' \
+  -H 'Content-Type: application/json' \
+  -d '{"params":{"compute.algorithm":"pagerank","compute.parallel":1,"compute.max_step":10,"pagerank.damping":0.85,"pagerank.diff_threshold":0.00001}}'
+```
+
+Parameters and example values come from the current Hubble PageRank form:
+
+| Parameter | Meaning | Example |
+|---|---|---|
+| `compute.algorithm` | Supported algorithm name | `pagerank` |
+| `compute.parallel` | Computation parallelism | `1` |
+| `compute.max_step` | Maximum iteration steps | `10` |
+| `pagerank.damping` | PageRank damping factor | `0.85` |
+| `pagerank.diff_threshold` | Convergence threshold | `0.00001` |
+
+Current Hubble accepts `pagerank`, `wcc`, `lpa`, `degree`, `closeness_centrality`, `betweenness_centrality`, `triangle_count`, `kcore`, and `sssp`.
+Use the selected algorithm's form for its own parameters; PageRank keys do not apply to another algorithm.
+The direct adapter accepts `compute.*`, the selected algorithm's `<algorithm>.*` keys and `output.need_statistics`.
+Vermeer still validates the actual values. Hubble controls output storage and does not accept arbitrary output paths or Server credentials.
+
+The response contains `data.task_id` inside the Hubble response envelope. Preserve the returned sign:
+Hubble maps native Vermeer task IDs to negative IDs. Poll the same graph's
+`GET /api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/async-tasks/{id}`;
+read result pages through `GET .../async-tasks/{id}/values?cursor=0&limit=100` after successful completion.
+Do not send that Hubble ID to Server's native `/tasks/{id}` endpoint.
+A graph state of `loaded` confirms loading only. An HTTP 400 on computation requires inspecting the exact rejected request and response.
 
 
 ## 3. Supported Algorithms

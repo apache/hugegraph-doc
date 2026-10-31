@@ -62,6 +62,18 @@ curl --compressed -sS -X POST http://127.0.0.1:8080/gremlin \
 
 `/gremlin` is a top-level endpoint. The traversal source for graph `hugegraph` in graph space `DEFAULT` is `__g_DEFAULT-hugegraph`; `aliases` maps it to script variable `g`. Adjust the alias to the Server binding name for another graph or graph space. Batch responses can use gzip; curl `--compressed` decompresses them automatically.
 
+Bindings are case-sensitive: `<space>-<graph>` selects the graph and `__g_<space>-<graph>` selects its traversal source.
+There is no implicit global `g` on a multi-graph Server. `bindings` supplies query variables;
+it does not register graphs, and an alias target cannot be the expression `graph.traversal()`.
+For a legacy standalone graph without a GraphSpace, the bindings are `<graph>` and `__g_<graph>`.
+For an authenticated Server, add its configured HTTP credentials, for example `-u "$HG_USER:$HG_PASSWORD"`.
+
+The default synchronous Gremlin evaluation timeout is 30000 milliseconds, configured by `evaluationTimeout` in `gremlin-server.yaml`.
+A whole-graph count can use a different execution path from a filtered label count. Do not infer label-scan latency from `g.V().count()`.
+Submit queries that may exceed the synchronous limit as Server asynchronous tasks (see section 8.1.3 below).
+Poll until `task_status` is terminal and inspect `task_result`; a task still marked `running` does not yet provide a completed count.
+A Hubble transport timeout is separate from the Server evaluation timeout; increasing only one does not remove the other.
+
 ##### Response Status
 
 ```json

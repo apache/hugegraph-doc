@@ -21,7 +21,9 @@ description: "Vertex（顶点）REST 接口:创建、查询、更新和删除图
 顶点的 `GET/PUT/DELETE` API 中 url 的 id 部分应该传入带有类型信息的 id 值，这个类型信息通过 json 串是否带引号来表示，也就是说：
 
 - 当 id 类型为 `number` 时，url 中的 id 不带引号，例如 `xxx/vertices/123456`
-- 当 id 类型为 `string` 时，url 中的 id 带引号，例如 `xxx/vertices/"123456"`
+- 当 id 类型为 `string` 时，url 中的 id 带引号，例如 `xxx/vertices/"123456"`；在命令行或客户端转义保留字符时编码为 `%221%3Amarko%22`
+
+追加属性使用 `PUT .../vertices/{id}?action=append` 并提交对应 JSON 属性体。
 
 -------------------------------------------------------------------
 

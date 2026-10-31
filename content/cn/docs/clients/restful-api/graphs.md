@@ -105,6 +105,9 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 
 #### 6.1.4 克隆一个图
 
+该接口仅复制源图的配置，不复制 Schema、顶点或边。`clone_graph_name` 是查询参数，不能放在 JSON 请求体中。
+
+
 ##### Params
 
 **路径参数说明：**
@@ -157,6 +160,25 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_nam
     "description": ""
 }
 ```
+
+##### 复制图的 Schema
+
+包含[拟议的 Schema 克隆变更](https://github.com/hugegraph/hugegraph/pull/361)的 Server 构建提供独立的同步接口。
+客户端应要求 `GET /versions` 返回的 `versions.api` 不低于 `0.73.0.0`；该变更尚未发布。
+该接口在同一图空间创建新图并复制属性键、顶点标签及其索引，不复制图数据。
+目前，源图只要包含边标签，就会在创建目标图之前被拒绝，因为部分存储无法可靠还原边标签层级。复制期间请保持源 Schema 不变。
+开启鉴权时需要图空间管理权限。
+
+```http
+POST /graphspaces/DEFAULT/graphs/schema_copy/schema-clone?source=vertices_only
+Content-Type: application/json
+
+{"nickname":"Schema copy"}
+```
+
+示例假设 `vertices_only` 没有边标签。`nickname` 可省略。201 响应包含新图的 `name`、`nickname` 和 `backend`，表示 Schema 复制已完成。
+操作失败可能留下部分创建的目标图；重试前请检查并显式删除目标图。旧版 Server 不支持此接口，
+不能将 `clone_graph_name` 的 201 响应当作 Schema 复制成功。
 
 #### 6.1.5 创建一个图
 

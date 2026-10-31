@@ -105,6 +105,10 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 
 #### 6.1.4 Clone graph
 
+This endpoint copies the source graph configuration only. It does not copy schema, vertices, or edges.
+`clone_graph_name` is a query parameter, not a JSON field.
+
+
 ##### Params
 
 **Path parameters**
@@ -157,6 +161,26 @@ Clone a `non-auth` mode graph (set `Content-Type: application/json`)
     "description": ""
 }
 ```
+
+##### Copy a graph schema
+
+Server builds containing [the proposed schema-clone change](https://github.com/hugegraph/hugegraph/pull/361) provide a separate synchronous API.
+Clients should require `versions.api` of `0.73.0.0` or later from `GET /versions`; this change has not yet been released.
+It creates a new graph in the same graph space and copies property keys, vertex labels, and their indexes; it does not copy graph data.
+For now, any source with an edge label is rejected before the target is created because some stores cannot reliably recover edge-label hierarchy.
+Keep the source schema unchanged while copying. Authentication, when enabled, requires graph-space administrator permission.
+
+```http
+POST /graphspaces/DEFAULT/graphs/schema_copy/schema-clone?source=vertices_only
+Content-Type: application/json
+
+{"nickname":"Schema copy"}
+```
+
+The example assumes `vertices_only` has no edge labels. `nickname` is optional.
+A 201 response contains the new graph's `name`, `nickname`, and `backend`, and indicates schema copying completed.
+A failed operation can leave a partially created target; inspect it and remove it explicitly before retrying.
+Older Servers do not provide this API. Do not substitute `clone_graph_name` and treat its 201 as a successful schema copy.
 
 #### 6.1.5 Create graph
 

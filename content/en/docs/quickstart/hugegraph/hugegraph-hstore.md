@@ -513,6 +513,7 @@ The Store node exposes these read-only endpoints on `server.port`:
 | GET | `/actuator/prometheus` | Prometheus scrape endpoint |
 | GET | `/` | Node summary, `leaderCount` and `partitionCount` |
 | GET | `/-/state` | Operator-set `STARTING`, `ONLINE`, or `STOPPING` flag; distinct from PD registration state |
+| GET | `/-/lifecycle` | Process lifecycle observation; available only in builds containing the lifecycle change |
 | GET | `/-/echo?name=<text>` | Echo check |
 | GET | `/-/scan` | State of the running scan streams |
 | GET | `/v1/partitions` | All Raft groups on this node with per-partition metrics. Add `?flags=accurate` for exact key counts, which is slower. |
@@ -520,6 +521,13 @@ The Store node exposes these read-only endpoints on `server.port`:
 | GET | `/metrics/system` | Host CPU and memory metrics |
 | GET | `/metrics/drive` | Disk metrics for the data paths |
 | GET | `/metrics/raft` | JRaft node metrics, needs `raft.metrics: true` |
+
+The proposed `GET /-/lifecycle` endpoint returns JSON such as `{"status":0,"text":"STARTED"}`. Its `text` is
+`STARTING`, `STARTED`, `STOPPING`, or `UNAVAILABLE`. `STARTED` means Spring reached its ready event and the gRPC
+server started and has not shut down. It is a **process lifecycle observation**, not a storage readiness check:
+it does not establish PD registration, partition restoration, Raft catch-up, or graph read/write readiness.
+Continue using the deployment's documented per-group checks before replacing another Store. Older Store versions
+do not provide this endpoint and return HTTP 404; a 404 must not be treated as `STARTED`.
 
 Master Store configuration exposes all Actuator endpoints with `management.endpoints.web.exposure.include: "*"` and enables Prometheus. These endpoints lack PD REST Basic protection; restrict Store REST network access.
 

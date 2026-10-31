@@ -6,9 +6,11 @@ weight: 1
 
 ### Overview
 
-HugeGraph supports [Gremlin](https://tinkerpop.apache.org/gremlin.html), a graph traversal query language of [Apache TinkerPop3](https://tinkerpop.apache.org). While SQL is a query language for relational databases, Gremlin is a general-purpose query language for graph databases. Gremlin can be used to create entities (Vertex and Edge) of a graph, modify the properties of entities, delete entities, as well as perform graph queries.
+HugeGraph supports [Gremlin](https://tinkerpop.apache.org/gremlin.html), a graph traversal query language of [Apache TinkerPop3](https://tinkerpop.apache.org).
+While SQL is a query language for relational databases, Gremlin is a general-purpose query language for graph databases, enabling entity creation, property
+modification, deletion, and traversal queries.
 
-Gremlin can be used to create entities (Vertex and Edge) of a graph, modify the properties of entities, and delete entities. More importantly, it can be used to perform graph querying and analysis operations.
+For developers seeking declarative pattern matching (similar to SQL or Neo4j style), HugeGraph also supports [Cypher](/docs/language/hugegraph-cypher/).
 
 > [!NOTE]
 > **Version & Migration Note**: HugeGraph 1.8.0 upgrades its underlying TinkerPop engine to **3.8.1** (along with Java 17 and Groovy 4.0.25).

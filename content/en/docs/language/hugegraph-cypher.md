@@ -22,7 +22,7 @@ implements — see [Known limitations](#known-limitations) below.
 | You want declarative pattern matching (`MATCH (a)-[:KNOWS]->(b)`) | You need fine-grained traversal control, custom steps, or lambdas |
 | Your queries are read-mostly patterns and projections | You need graph algorithms, OLAP, or features Cypher does not expose |
 
-For anything Cypher cannot express, the equivalent Gremlin query always works — examples below show both.
+For anything Cypher cannot express, the equivalent [Gremlin query](/docs/language/hugegraph-gremlin/) always works — examples below show both.
 
 ### Calling the Cypher API
 

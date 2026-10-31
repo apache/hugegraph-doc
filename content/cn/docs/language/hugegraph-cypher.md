@@ -20,7 +20,7 @@ HugeGraph 通过 [cypher-for-gremlin](https://github.com/opencypher/cypher-for-g
 | 需要声明式模式匹配（`MATCH (a)-[:KNOWS]->(b)`） | 需要精细的遍历控制、自定义步骤或 lambda |
 | 查询以读模式和投影为主 | 需要图算法、OLAP 或 Cypher 未暴露的功能 |
 
-凡是 Cypher 表达不了的，等价的 Gremlin 查询总是可用 —— 下文示例同时给出两种写法。
+凡是 Cypher 表达不了的，等价的 [Gremlin 查询](/cn/docs/language/hugegraph-gremlin/) 总是可用 —— 下文示例同时给出两种写法。
 
 ### 调用 Cypher API
 

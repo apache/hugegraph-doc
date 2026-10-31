@@ -11,6 +11,18 @@ async function expectConfigurationCatalog(page, route, wideCount, ordinaryCount,
   const tables = page.locator('.td-content table.td-table--wide');
   await expect(tables).toHaveCount(wideCount);
   await expect(page.locator('.td-content table:not(.td-table--wide)')).toHaveCount(ordinaryCount);
+  if (route.endsWith('/config-backend-hstore/')) {
+    const chinese = route.startsWith('/cn/');
+    const exits = chinese ? ['退出 0', '退出 2', '其他非零退出'] : ['Exit 0', 'Exit 2', 'Other nonzero exit'];
+    const exitTable = page.locator('.td-content table:not(.td-table--wide)').filter({
+      has: page.getByRole('cell', { name: exits[0], exact: true })
+    });
+    await expect(exitTable).toHaveCount(1);
+    await expect(exitTable.locator('tbody tr > td:first-child')).toHaveText(exits);
+    await expect(exitTable.locator('tbody tr > td:nth-child(2)')).toContainText(chinese
+      ? [/未发现不兼容前缀或无效映射.*保留备份/, /活动锁.*不得继续升级/, /同样按拒绝处理/]
+      : [/No incompatible prefix or invalid mapping.*retain backups/, /active locks.*recheck before upgrading/, /refuse the upgrade/]);
+  }
   for (const table of await tables.all()) {
     const wrapper = table.locator('..');
     await wrapper.scrollIntoViewIfNeeded();
@@ -129,7 +141,7 @@ for (const language of ['en', 'cn']) {
           }, { preset, theme });
           const prefix = language === 'cn' ? '/cn' : '';
           for (const [route, wideCount, ordinaryCount] of [
-            ['config-backend-hbase', 4, 2], ['config-backend-hstore', 2, 3], ['config-option', 16, 0]
+            ['config-backend-hbase', 4, 2], ['config-backend-hstore', 2, 4], ['config-option', 16, 0]
           ]) {
             await expectConfigurationCatalog(page, `${prefix}/docs/config/${route}/`, wideCount, ordinaryCount);
           }

@@ -110,6 +110,9 @@
               "page": "/docs/quickstart/hugegraph-ai/hugegraph-llm"
             },
             {
+              "page": "/docs/quickstart/hugegraph-ai/hugegraph-mcp"
+            },
+            {
               "page": "/docs/quickstart/hugegraph-ai/hugegraph-ml"
             },
             {
@@ -521,6 +524,11 @@
             {
               "page": "/docs/quickstart/hugegraph-ai/hugegraph-llm",
               "url": "/docs/quickstart/hugegraph-ai/hugegraph-llm/",
+              "children": []
+            },
+            {
+              "page": "/docs/quickstart/hugegraph-ai/hugegraph-mcp",
+              "url": "/docs/quickstart/hugegraph-ai/hugegraph-mcp/",
               "children": []
             },
             {
@@ -1035,6 +1043,11 @@
       "/docs/quickstart/hugegraph-ai/",
       "/docs/quickstart/hugegraph-ai/hugegraph-llm/"
     ],
+    "/docs/quickstart/hugegraph-ai/hugegraph-mcp/": [
+      "@group/components",
+      "/docs/quickstart/hugegraph-ai/",
+      "/docs/quickstart/hugegraph-ai/hugegraph-mcp/"
+    ],
     "/docs/quickstart/hugegraph-ai/hugegraph-ml/": [
       "@group/components",
       "/docs/quickstart/hugegraph-ai/",
@@ -1417,6 +1430,7 @@
     "/docs/quickstart/hugegraph-ai/": [
       "/docs/quickstart/hugegraph-ai/quick_start",
       "/docs/quickstart/hugegraph-ai/hugegraph-llm",
+      "/docs/quickstart/hugegraph-ai/hugegraph-mcp",
       "/docs/quickstart/hugegraph-ai/hugegraph-ml",
       "/docs/quickstart/hugegraph-ai/config-reference",
       "/docs/quickstart/hugegraph-ai/rest-api"

@@ -7,7 +7,11 @@ description: "Cypher（图查询语言）REST 接口:通过 HTTP 接口执行 Op
 
 ### 9.1 Cypher
 
-> Cypher 接口必须携带 `Authorization` 请求头，`Basic` 或 `Bearer` 均可。即使服务未开启鉴权，不带该请求头的请求也会返回 `401`。凭证会通过 `conf/remote-objects.yaml` 转发给 Gremlin Server。
+> [!NOTE]
+> Cypher 语法、语句示例与转译限制请查阅 [图查询语言 - Cypher](/cn/docs/language/hugegraph-cypher/) 及 [Cypher 兼容性矩阵](/cn/docs/language/cypher-compatibility/)。
+
+> 在 1.2.0 至 1.7.0 版本中，Cypher 接口必须携带 `Authorization` 请求头（`Basic` 或 `Bearer`）。即使服务未开启鉴权，不带该请求头的请求也会返回 `401`。在
+> `master`（1.8.0+）中，未开启鉴权时无需携带此头。凭证会通过 `conf/remote-objects.yaml` 转发给 Gremlin Server。
 
 #### 9.1.1 向 HugeGraphServer 发送 Cypher 语句（GET），同步执行
 

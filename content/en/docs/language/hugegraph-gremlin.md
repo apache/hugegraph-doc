@@ -6,13 +6,16 @@ weight: 1
 
 ### Overview
 
-HugeGraph supports [Gremlin](https://tinkerpop.apache.org/gremlin.html), a graph traversal query language of [Apache TinkerPop3](https://tinkerpop.apache.org). While SQL is a query language for relational databases, Gremlin is a general-purpose query language for graph databases. Gremlin can be used to create entities (Vertex and Edge) of a graph, modify the properties of entities, delete entities, as well as perform graph queries.
+HugeGraph supports [Gremlin](https://tinkerpop.apache.org/gremlin.html), a graph traversal query language of [Apache TinkerPop3](https://tinkerpop.apache.org).
+While SQL is a query language for relational databases, Gremlin is a general-purpose query language for graph databases, enabling entity creation, property
+modification, deletion, and traversal queries.
 
-Gremlin can be used to create entities (Vertex and Edge) of a graph, modify the properties of entities, and delete entities. More importantly, it can be used to perform graph querying and analysis operations.
+For developers seeking declarative pattern matching (similar to SQL or Neo4j style), HugeGraph also supports [Cypher](/docs/language/hugegraph-cypher/).
 
 > [!NOTE]
-> **Version & Migration Note**: HugeGraph 1.8.0 upgrades its underlying TinkerPop engine to **3.8.1** (along with Java 17 and Groovy 4.0.25).
-> Legacy syntax patterns such as `store()`, scoped `aggregate()`, and `has(key, traversal)` have been completely removed and now fail on 1.8. See the [1.8 Gremlin & TinkerPop Migration Guide](../guides/gremlin-migration-3.8) for details.
+> HugeGraph is powered by the TinkerPop **3.8.1** engine (running on Java 17 and Groovy 4.0.25).
+> Upgrading from an older version? Review the [Gremlin & TinkerPop Migration Guide](/docs/guides/gremlin-migration-3.8/) for removed legacy syntax
+> and behavioral changes.
 
 ### TinkerPop Features
 
@@ -29,6 +32,7 @@ The table below lists the support status of various TinkerPop features in HugeGr
 | Persistence          | Determines if the {@code Graph} implementation supports persisting it's contents natively to disk.This feature does not refer to every graph's ability to write to disk via the Gremlin IO packages(.e.g. GraphML), unless the graph natively persists to disk via those options somehow. For example,TinkerGraph does not support this feature as it is a pure in-sideEffects graph.                                                                         | Backend-dependent |
 | ThreadedTransactions | Determines if the {@code Graph} implementation supports threaded transactions which allow a transaction be executed across multiple threads via {@link Transaction#createThreadedTx()}.                                                                                                                                                                                                                                                                       | false   |
 | ConcurrentAccess     | Determines if the {@code Graph} implementation supports more than one connection to the same instance at the same time. For example, Neo4j embedded does not support this feature because concurrent access to the same database files by multiple instances is not possible. However, Neo4j HA could support this feature as each new {@code Graph} instance coordinates with the Neo4j cluster allowing multiple instances to operate on the same database. | false   |
+{.wide}
 
 ### Vertex Features
 
@@ -47,6 +51,7 @@ The table below lists the support status of various TinkerPop features in HugeGr
 | DuplicateMultiProperties | Determines if a {@link Vertex} can support non-unique values on the same key. For this value to be {@code true}, then {@link #supportsMetaProperties()} must also return true. By default this method, just returns what {@link #supportsMultiProperties()} returns.                                                                                                                                                                                                                            | true    |
 | MetaProperties           | Determines if a {@link Vertex} can support properties on vertex properties. It is assumed that a graph will support all the same data types for meta-properties that are supported for regular properties.                                                                                                                                                                                                                                                                                      | false   |
 | RemoveVertices           | Determines if a {@link Vertex} can be removed from the {@code Graph}.                                                                                                                                                                                                                                                                                                                                                                                                                           | true    |
+{.wide}
 
 ### Edge Features
 
@@ -62,6 +67,7 @@ The table below lists the support status of various TinkerPop features in HugeGr
 | RemoveProperty  | Determines if an {@link Element} allows properties to be removed.                                                                                                                                                                                                                                                                                                                                                                                                                               | true    |
 | AddEdges        | Determines if an {@link Edge} can be added to a {@code Vertex}.                                                                                                                                                                                                                                                                                                                                                                                                                                 | true    |
 | RemoveEdges     | Determines if an {@link Edge} can be removed from a {@code Vertex}.                                                                                                                                                                                                                                                                                                                                                                                                                             | true    |
+{.wide}
 
 ### Data Type Features
 
@@ -85,47 +91,50 @@ The table below lists the support status of various TinkerPop features in HugeGr
 | StringArrayValues  |                                                                                                                                                                                                                                                                      | false   |
 | StringValues       |                                                                                                                                                                                                                                                                      | true    |
 | UniformListValues  | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "uniform" it must contain objects of the same type.           | false (supported via Schema valueList()) |
+{.wide}
 
 ### Gremlin Steps
 
-HugeGraph supports all steps of Gremlin. For complete reference information about Gremlin, please refer to the [Gremlin official website](http://tinkerpop.apache.org/docs/current/reference/).
+HugeGraph supports all steps of Gremlin. For complete reference information about Gremlin,
+please refer to the [Apache TinkerPop 3.8.1 official documentation](https://tinkerpop.apache.org/docs/3.8.1/reference/).
 
-| Step       | Description                                                                                     | Documentation                                                                           |
-|------------|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| addE       | Add an edge between two vertices.                                                                      | [addE step](http://tinkerpop.apache.org/docs/current/reference/#addedge-step)          |
-| addV       | add vertices to graph.                                                                                        | [addV step](http://tinkerpop.apache.org/docs/current/reference/#addvertex-step)        |
-| and        | Make sure all traversals return values.	                                                                                      | [and step](http://tinkerpop.apache.org/docs/current/reference/#and-step)               |
-| as         | Step modulator for assigning variables to the step's output.	                                                                              | [as step](http://tinkerpop.apache.org/docs/current/reference/#as-step)                 |
-| by         | Step Modulators used in conjunction with group and order.                                                                   | [by step](http://tinkerpop.apache.org/docs/current/reference/#by-step)                 |
-| coalesce   | Returns the first traversal that returns a result.                                                                                    | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step)     |
-| constant   | Returns a constant value. Used in conjunction with coalesce.                                                                          | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step)     |
-| count      | Returns a count from the traversal.                                                                                         | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step)         |
-| datetime   | Creates a datetime object or retrieves current server time (returns `OffsetDateTime` in 1.8.0).     | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
-| dedup      | Returns values with duplicates removed.                                                                                     | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step)           |
-| discard    | Discards all current traversers (replaces parameterless `none()` in 1.8.0).                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)        |
-| drop       | Discards a value (vertex/edge).                                                                                      | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step)             |
-| fold       | Acts as a barrier for computing aggregated values from results.                                                                                  | [fold step](http://tinkerpop.apache.org/docs/current/reference/#fold-step)             |
-| group      | Groups values based on specified labels.                                                                                     | [group step](http://tinkerpop.apache.org/docs/current/reference/#group-step)           |
-| has        | Used to filter properties, vertices, and edges. Supports `hasLabel`, `hasId`, `hasNot`, and `has` variants.                                          | [has step](http://tinkerpop.apache.org/docs/current/reference/#has-step)               |
-| inject     | Injects values into the stream.                                                                                          | [inject step](http://tinkerpop.apache.org/docs/current/reference/#inject-step)         |
-| is         | Used to filter by a Boolean expression.                                                                                  | [is step](http://tinkerpop.apache.org/docs/current/reference/#is-step)                 |
-| limit      | Used to limit the number of items in a traversal.                                                                                      | [limit step](http://tinkerpop.apache.org/docs/current/reference/#limit-step)           |
-| local      | Locally wraps a part of a traversal, similar to a subquery.                                                                              | [local step](http://tinkerpop.apache.org/docs/current/reference/#local-step)           |
-| not        | Used to generate the negation result of a filter.                                                                                    | [not step](http://tinkerpop.apache.org/docs/current/reference/#not-step)               |
-| optional   | Returns the result of a specified traversal if it generates any results, otherwise returns the calling element.                                                                   | [optional step](http://tinkerpop.apache.org/docs/current/reference/#optional-step)     |
-| or         | Ensures that at least one traversal returns a value.                                                                                   | [or step](http://tinkerpop.apache.org/docs/current/reference/#or-step)                 |
-| order      | Returns results in the specified order.                                                                                    | [order step](http://tinkerpop.apache.org/docs/current/reference/#order-step)           |
-| path       | Returns the full path of the traversal.                                                                                       | [path step](http://tinkerpop.apache.org/docs/current/reference/#path-step)          |
-| project    | Projects properties as a map.                                                                                        | [project step](http://tinkerpop.apache.org/docs/current/reference/#project-step)       |
-| properties | Returns properties with specified labels.                                                                                       | [properties step](http://tinkerpop.apache.org/docs/current/reference/#properties-step) |
-| range      | Filters based on a specified range of values.                                                                                    | [range step](http://tinkerpop.apache.org/docs/current/reference/#range-step)           |
-| repeat     | Repeats a step a specified number of times. Used for looping.                                                                                | [repeat step](http://tinkerpop.apache.org/docs/current/reference/#repeat-step)         |
-| sample     | Used to sample results returned by the traversal.                                                                                    | [sample step](http://tinkerpop.apache.org/docs/current/reference/#sample-step)         |
-| select     | Used to project the results returned by the traversal.                                                                                     | [select step](http://tinkerpop.apache.org/docs/current/reference/#select-step)         |
-| mergeV     | Matches vertices by property; updates if present, creates if absent (standard upsert).                                     | [mergeV step](http://tinkerpop.apache.org/docs/current/reference/#mergevertex-step)    |
-| mergeE     | Matches edges by property and endpoints; updates if present, creates if absent (standard upsert).                          | [mergeE step](http://tinkerpop.apache.org/docs/current/reference/#mergeedge-step)      |
-| tree       | Aggregate the paths in vertices into a tree.                                                                                    | [tree step](http://tinkerpop.apache.org/docs/current/reference/#tree-step)             |
-| unfold     | Unfolds an iterator as a step.                                                                                      | [unfold step](http://tinkerpop.apache.org/docs/current/reference/#unfold-step)         |
-| union      | Merge the results returned by multiple traversals.                                                                                     | [union step](http://tinkerpop.apache.org/docs/current/reference/#union-step)           |
-| V          | These are the steps required for traversing between vertices and edges: `V`, `E`, `out`, `in`, `both`, `outE`, `inE`, `bothE`, `outV`, `inV`, `bothV`, and `otherV`. | [vertex steps](http://tinkerpop.apache.org/docs/current/reference/#vertex-steps)         |
-| where      | Used to filter the results returned by a traversal. Supports `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, and `between` operators.                              | [where step](http://tinkerpop.apache.org/docs/current/reference/#where-step)           |
+| Step | Description | Documentation |
+|---|---|---|
+| `addE` | Add an edge between two vertices. | [addE step](https://tinkerpop.apache.org/docs/3.8.1/reference/#addedge-step) |
+| `addV` | Add vertices to graph. | [addV step](https://tinkerpop.apache.org/docs/3.8.1/reference/#addvertex-step) |
+| `and` | Make sure all traversals return values. | [and step](https://tinkerpop.apache.org/docs/3.8.1/reference/#and-step) |
+| `as` | Step modulator for assigning variables to the step's output. | [as step](https://tinkerpop.apache.org/docs/3.8.1/reference/#as-step) |
+| `by` | Step modulators used in conjunction with `group` and `order`. | [by step](https://tinkerpop.apache.org/docs/3.8.1/reference/#by-step) |
+| `coalesce` | Returns the first traversal that returns a result. | [coalesce step](https://tinkerpop.apache.org/docs/3.8.1/reference/#coalesce-step) |
+| `constant` | Returns a constant value. Used in conjunction with `coalesce`. | [constant step](https://tinkerpop.apache.org/docs/3.8.1/reference/#constant-step) |
+| `count` | Returns a count from the traversal. | [count step](https://tinkerpop.apache.org/docs/3.8.1/reference/#count-step) |
+| `datetime` | Creates a datetime object or retrieves current server time (returns `OffsetDateTime`). | [datetime function](https://tinkerpop.apache.org/docs/3.8.1/reference/#gremlin-groovy-differences) |
+| `dedup` | Returns values with duplicates removed. | [dedup step](https://tinkerpop.apache.org/docs/3.8.1/reference/#dedup-step) |
+| `discard` | Discards all current traversers (replaces parameterless `none()`). | [discard step](https://tinkerpop.apache.org/docs/3.8.1/reference/#discard-step) |
+| `drop` | Discards a value (vertex/edge). | [drop step](https://tinkerpop.apache.org/docs/3.8.1/reference/#drop-step) |
+| `fold` | Acts as a barrier for computing aggregated values from results. | [fold step](https://tinkerpop.apache.org/docs/3.8.1/reference/#fold-step) |
+| `group` | Groups values based on specified labels. | [group step](https://tinkerpop.apache.org/docs/3.8.1/reference/#group-step) |
+| `has` | Used to filter properties, vertices, and edges. Supports `hasLabel`, `hasId`, `hasNot`, and `has` variants. | [has step](https://tinkerpop.apache.org/docs/3.8.1/reference/#has-step) |
+| `inject` | Injects values into the stream. | [inject step](https://tinkerpop.apache.org/docs/3.8.1/reference/#inject-step) |
+| `is` | Used to filter by a Boolean expression. | [is step](https://tinkerpop.apache.org/docs/3.8.1/reference/#is-step) |
+| `limit` | Used to limit the number of items in a traversal. | [limit step](https://tinkerpop.apache.org/docs/3.8.1/reference/#limit-step) |
+| `local` | Locally wraps a part of a traversal, similar to a subquery. | [local step](https://tinkerpop.apache.org/docs/3.8.1/reference/#local-step) |
+| `not` | Used to generate the negation result of a filter. | [not step](https://tinkerpop.apache.org/docs/3.8.1/reference/#not-step) |
+| `optional` | Returns the result of a specified traversal if it generates any results, otherwise returns the calling element. | [optional step](https://tinkerpop.apache.org/docs/3.8.1/reference/#optional-step) |
+| `or` | Ensures that at least one traversal returns a value. | [or step](https://tinkerpop.apache.org/docs/3.8.1/reference/#or-step) |
+| `order` | Returns results in the specified order. | [order step](https://tinkerpop.apache.org/docs/3.8.1/reference/#order-step) |
+| `path` | Returns the full path of the traversal. | [path step](https://tinkerpop.apache.org/docs/3.8.1/reference/#path-step) |
+| `project` | Projects properties as a map. | [project step](https://tinkerpop.apache.org/docs/3.8.1/reference/#project-step) |
+| `properties` | Returns properties with specified labels. | [properties step](https://tinkerpop.apache.org/docs/3.8.1/reference/#properties-step) |
+| `range` | Filters based on a specified range of values. | [range step](https://tinkerpop.apache.org/docs/3.8.1/reference/#range-step) |
+| `repeat` | Repeats a step a specified number of times. Used for looping. | [repeat step](https://tinkerpop.apache.org/docs/3.8.1/reference/#repeat-step) |
+| `sample` | Used to sample results returned by the traversal. | [sample step](https://tinkerpop.apache.org/docs/3.8.1/reference/#sample-step) |
+| `select` | Used to project the results returned by the traversal. | [select step](https://tinkerpop.apache.org/docs/3.8.1/reference/#select-step) |
+| `mergeV` | Matches vertices by property; updates if present, creates if absent (standard upsert). | [mergeV step](https://tinkerpop.apache.org/docs/3.8.1/reference/#mergevertex-step) |
+| `mergeE` | Matches edges by property and endpoints; updates if present, creates if absent (standard upsert). | [mergeE step](https://tinkerpop.apache.org/docs/3.8.1/reference/#mergeedge-step) |
+| `tree` | Aggregate the paths in vertices into a tree. | [tree step](https://tinkerpop.apache.org/docs/3.8.1/reference/#tree-step) |
+| `unfold` | Unfolds an iterator as a step. | [unfold step](https://tinkerpop.apache.org/docs/3.8.1/reference/#unfold-step) |
+| `union` | Combines the results of multiple traversals. | [union step](https://tinkerpop.apache.org/docs/3.8.1/reference/#union-step) |
+| `V` | Traversal steps between vertices and edges: `V`, `E`, `out`, `in`, `both`, `outE`, `inE`, `bothE`, `outV`, `inV`, `bothV`, and `otherV` | [vertex steps](https://tinkerpop.apache.org/docs/3.8.1/reference/#vertex-steps) |
+| `where` | Filters traversal results. Supports `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, and `between` operators. | [where step](https://tinkerpop.apache.org/docs/3.8.1/reference/#where-step) |
+{.wide .expand}

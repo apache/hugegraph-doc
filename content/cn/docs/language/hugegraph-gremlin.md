@@ -1,131 +1,136 @@
 ---
 title: "HugeGraph Gremlin"
-linkTitle: "Gremlin Query Language"
+linkTitle: "Gremlin 查询语言"
 weight: 1
 ---
 
 ### 概述
 
-HugeGraph支持[Apache TinkerPop3](https://tinkerpop.apache.org)的图形遍历查询语言[Gremlin](https://tinkerpop.apache.org/gremlin.html)。 SQL是关系型数据库查询语言，而Gremlin是一种通用的图数据库查询语言，Gremlin可用于创建图的实体（Vertex和Edge）、修改实体内部属性、删除实体，也可执行图的查询操作。
+HugeGraph 原生支持 [Apache TinkerPop3](https://tinkerpop.apache.org) 的图遍历查询语言 [Gremlin](https://tinkerpop.apache.org/gremlin.html)。
+与关系型数据库使用的声明式 SQL 不同，Gremlin 是一种通用的图遍历与计算语言，能够精准控制图的拓扑路径探索，执行实体创建（Vertex 与 Edge）、属性修改、批量删除以及复杂的图分析。
 
-Gremlin可用于创建图的实体（Vertex和Edge）、修改实体内部属性、删除实体，更主要的是可用于执行图的查询及分析操作。
+HugeGraph 基于 TinkerPop **3.8.1** 引擎构建。完整规范与语法参考请查阅 [Apache TinkerPop 3.8.1 官方参考文档](https://tinkerpop.apache.org/docs/3.8.1/reference/)。
+若习惯声明式模式匹配（类似 SQL 或 Neo4j 风格），HugeGraph 同时提供 [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/) 支持。
 
-> [!NOTE]
-> **版本与升级提示**：HugeGraph 1.8.0 已将底层 TinkerPop 引擎升级至 **3.8.1**（同时要求 Java 17 与 Groovy 4.0.25）。
-> 部分旧版语法（如 `store()`、带 Scope 的 `aggregate()` 以及 `has(key, traversal)`）已彻底移除，在 1.8 中调用会直接报错。详见 [1.8 Gremlin 与 TinkerPop 迁移指南](../guides/gremlin-migration-3.8)。
+---
 
-### TinkerPop Features
+### TinkerPop 特性支持
 
-HugeGraph实现了TinkerPop框架，但是并没有实现TinkerPop所有的特性。
+HugeGraph 实现了 TinkerPop 规范核心接口，针对图存储、顶点、边以及属性数据类型的具体支持情况如下：
 
-下表列出HugeGraph对TinkerPop各种特性的支持情况：
+#### 图级特性（Graph Features）
 
-### Graph Features
+| 特性名称 | 含义与说明 | 支持情况 |
+|---|---|---|
+| `Computer` | 是否支持基于 `GraphComputer` 的 OLAP 图计算引擎（HugeGraph 服务端专注实时 OLTP 遍历，大规模图计算由独立组件支持） | `false` |
+| `Transactions` | 是否支持事务机制（原生支持 ACID 事务提交与回滚） | `true` |
+| `Persistence` | 是否原生将数据持久化到磁盘介质（取决于所配置的底层存储后端，RocksDB/Cassandra/HBase 等均持久化存储） | 取决于后端 |
+| `ThreadedTransactions` | 是否支持通过 `createThreadedTx()` 在多个线程间共享同一个执行事务 | `false` |
+| `ConcurrentAccess` | 是否支持同一底层数据实例的多连接并发访问 | `false` |
+{.wide}
 
-| Name                 | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Support |
-|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| Computer             | Determines if the {@code Graph} implementation supports {@link GraphComputer} based processing                                                                                                                                                                                                                                                                                                                                                                | false   |
-| Transactions         | Determines if the {@code Graph} implementations supports transactions.                                                                                                                                                                                                                                                                                                                                                                                        | true    |
-| Persistence          | Determines if the {@code Graph} implementation supports persisting it's contents natively to disk.This feature does not refer to every graph's ability to write to disk via the Gremlin IO packages(.e.g. GraphML), unless the graph natively persists to disk via those options somehow. For example,TinkerGraph does not support this feature as it is a pure in-sideEffects graph.                                                                         | 取决于后端 |
-| ThreadedTransactions | Determines if the {@code Graph} implementation supports threaded transactions which allow a transaction be executed across multiple threads via {@link Transaction#createThreadedTx()}.                                                                                                                                                                                                                                                                       | false   |
-| ConcurrentAccess     | Determines if the {@code Graph} implementation supports more than one connection to the same instance at the same time. For example, Neo4j embedded does not support this feature because concurrent access to the same database files by multiple instances is not possible. However, Neo4j HA could support this feature as each new {@code Graph} instance coordinates with the Neo4j cluster allowing multiple instances to operate on the same database. | false   |
+#### 顶点特性（Vertex Features）
 
-### Vertex Features
+| 特性名称 | 含义与说明 | 支持情况 |
+|---|---|---|
+| `UserSuppliedIds` | 是否允许在创建顶点时由用户指定自定义标识符（HugeGraph 支持用户自定义、主键和自动生成等策略） | `true` |
+| `NumericIds` | 顶点内部标识符是否限定为纯数值类型 | `false` |
+| `StringIds` | 顶点内部标识符是否支持字符串类型 | `true` |
+| `UuidIds` | 顶点内部标识符是否原生限定为 UUID 格式 | `false` |
+| `CustomIds` | 顶点内部标识符是否支持复合自定义对象 | `true` |
+| `AnyIds` | 顶点内部标识符是否允许任意 Java 对象类型 | `false` |
+| `AddProperty` | 是否支持向顶点添加或动态更新属性 | `true` |
+| `RemoveProperty` | 是否支持从顶点移除已有属性 | `true` |
+| `AddVertices` | 是否支持向图中添加新顶点 | `true` |
+| `MultiProperties` | 单个顶点同一属性名下是否支持存储多个值（多值属性） | `true` |
+| `DuplicateMultiProperties` | 在启用多值属性时，是否允许存在相同的重复值 | `true` |
+| `MetaProperties` | 是否支持在属性上附加元属性（属性的属性） | `false` |
+| `RemoveVertices` | 是否支持从图中删除指定顶点 | `true` |
+{.wide}
 
-| Name                     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Support |
-|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| UserSuppliedIds          | Determines if an {@link Element} can have a user defined identifier. Implementation that do not support this feature will be expected to auto-generate unique identifiers. In other words, if the {@link Graph} allows {@code graph.addVertex(id,x)} to work and thus set the identifier of the newly added {@link Vertex} to the value of {@code x} then this feature should return true. In this case, {@code x} is assumed to be an identifier data type that the {@link Graph} will accept. | true    |
-| NumericIds               | Determines if an {@link Element} has numeric identifiers as their internal representation. In other words,if the value returned from {@link Element#id()} is a numeric value then this method should be return {@code true}. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                          | false   |
-| StringIds                | Determines if an {@link Element} has string identifiers as their internal representation. In other words, if the value returned from {@link Element#id()} is a string value then this method should be return {@code true}. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                           | true    |
-| UuidIds                  | Determines if an {@link Element} has UUID identifiers as their internal representation. In other words,if the value returned from {@link Element#id()} is a {@link UUID} value then this method should be return {@code true}.Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                         | false   |
-| CustomIds                | Determines if an {@link Element} has a specific custom object as their internal representation.In other words, if the value returned from {@link Element#id()} is a type defined by the graph implementations, such as OrientDB's {@code Rid}, then this method should be return {@code true}.Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                         | true    |
-| AnyIds                   | Determines if an {@link Element} any Java object is a suitable identifier. TinkerGraph is a good example of a {@link Graph} that can support this feature, as it can use any {@link Object} as a value for the identifier. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite. This setting should only return {@code true} if {@link #supportsUserSuppliedIds()} is {@code true}.                                        | false   |
-| AddProperty              | Determines if an {@link Element} allows properties to be added. This feature is set independently from supporting "data types" and refers to support of calls to {@link Element#property(String, Object)}.                                                                                                                                                                                                                                                                                      | true    |
-| RemoveProperty           | Determines if an {@link Element} allows properties to be removed.                                                                                                                                                                                                                                                                                                                                                                                                                               | true    |
-| AddVertices              | Determines if a {@link Vertex} can be added to the {@code Graph}.                                                                                                                                                                                                                                                                                                                                                                                                                               | true    |
-| MultiProperties          | Determines if a {@link Vertex} can support multiple properties with the same key.                                                                                                                                                                                                                                                                                                                                                                                                               | true    |
-| DuplicateMultiProperties | Determines if a {@link Vertex} can support non-unique values on the same key. For this value to be {@code true}, then {@link #supportsMetaProperties()} must also return true. By default this method, just returns what {@link #supportsMultiProperties()} returns.                                                                                                                                                                                                                            | true    |
-| MetaProperties           | Determines if a {@link Vertex} can support properties on vertex properties. It is assumed that a graph will support all the same data types for meta-properties that are supported for regular properties.                                                                                                                                                                                                                                                                                      | false   |
-| RemoveVertices           | Determines if a {@link Vertex} can be removed from the {@code Graph}.                                                                                                                                                                                                                                                                                                                                                                                                                           | true    |
+#### 边特性（Edge Features）
 
-### Edge Features
+| 特性名称 | 含义与说明 | 支持情况 |
+|---|---|---|
+| `UserSuppliedIds` | 是否允许直接指定边标识符（HugeGraph 边 ID 自动由起点、标签、排序键与终点复合生成） | `false` |
+| `NumericIds` | 边内部标识符是否限定为纯数值类型 | `false` |
+| `StringIds` | 边内部标识符是否支持字符串类型 | `true` |
+| `UuidIds` | 边内部标识符是否限定为 UUID 格式 | `false` |
+| `CustomIds` | 边内部标识符是否支持复合自定义对象 | `true` |
+| `AnyIds` | 边内部标识符是否允许任意 Java 对象类型 | `false` |
+| `AddProperty` | 是否支持向边添加或动态更新属性 | `true` |
+| `RemoveProperty` | 是否支持从边移除已有属性 | `true` |
+| `AddEdges` | 是否支持在顶点之间建立边 | `true` |
+| `RemoveEdges` | 是否支持从图中删除指定边 | `true` |
+{.wide}
 
-| Name            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Support |
-|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| UserSuppliedIds | Determines if an {@link Element} can have a user defined identifier. Implementation that do not support this feature will be expected to auto-generate unique identifiers. In other words, if the {@link Graph} allows {@code graph.addVertex(id,x)} to work and thus set the identifier of the newly added {@link Vertex} to the value of {@code x} then this feature should return true. In this case, {@code x} is assumed to be an identifier data type that the {@link Graph} will accept. | false   |
-| NumericIds      | Determines if an {@link Element} has numeric identifiers as their internal representation. In other words,if the value returned from {@link Element#id()} is a numeric value then this method should be return {@code true}. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                          | false   |
-| StringIds       | Determines if an {@link Element} has string identifiers as their internal representation. In other words, if the value returned from {@link Element#id()} is a string value then this method should be return {@code true}. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                           | true    |
-| UuidIds         | Determines if an {@link Element} has UUID identifiers as their internal representation. In other words,if the value returned from {@link Element#id()} is a {@link UUID} value then this method should be return {@code true}.Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                         | false   |
-| CustomIds       | Determines if an {@link Element} has a specific custom object as their internal representation.In other words, if the value returned from {@link Element#id()} is a type defined by the graph implementations, such as OrientDB's {@code Rid}, then this method should be return {@code true}.Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                         | true    |
-| AnyIds          | Determines if an {@link Element} any Java object is a suitable identifier. TinkerGraph is a good example of a {@link Graph} that can support this feature, as it can use any {@link Object} as a value for the identifier. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite. This setting should only return {@code true} if {@link #supportsUserSuppliedIds()} is {@code true}.                                        | false   |
-| AddProperty     | Determines if an {@link Element} allows properties to be added. This feature is set independently from supporting "data types" and refers to support of calls to {@link Element#property(String, Object)}.                                                                                                                                                                                                                                                                                      | true    |
-| RemoveProperty  | Determines if an {@link Element} allows properties to be removed.                                                                                                                                                                                                                                                                                                                                                                                                                               | true    |
-| AddEdges        | Determines if an {@link Edge} can be added to a {@code Vertex}.                                                                                                                                                                                                                                                                                                                                                                                                                                 | true    |
-| RemoveEdges     | Determines if an {@link Edge} can be removed from a {@code Vertex}.                                                                                                                                                                                                                                                                                                                                                                                                                             | true    |
+#### 数据类型支持（Data Type Features）
 
-### Data Type Features
+| 特性名称 | 含义与说明 | 支持情况 |
+|---|---|---|
+| `BooleanValues` | 布尔类型属性（`boolean`） | `true` |
+| `ByteValues` | 单字节整数（`byte`） | `true` |
+| `DoubleValues` | 双精度浮点数（`double`） | `true` |
+| `FloatValues` | 单精度浮点数（`float`） | `true` |
+| `IntegerValues` | 32 位整型（`int`） | `true` |
+| `LongValues` | 64 位长整型（`long`） | `true` |
+| `MapValues` | 是否支持直接存储嵌套 Map 键值对对象 | `false` |
+| `MixedListValues` | 是否支持存储不同类型混合元素的列表 | `false` |
+| `BooleanArrayValues` | 布尔数组类型（`boolean[]`） | `false` |
+| `ByteArrayValues` | 二进制字节数组（`byte[]`，常用于 Blob 或向量嵌入存储） | `true` |
+| `DoubleArrayValues` | 双精度浮点数组（`double[]`） | `false` |
+| `FloatArrayValues` | 单精度浮点数组（`float[]`） | `false` |
+| `IntegerArrayValues` | 整型数组（`int[]`） | `false` |
+| `LongArrayValues` | 长整型数组（`long[]`） | `false` |
+| `SerializableValues` | 是否支持直接存储任意 Java 序列化对象 | `false` |
+| `StringArrayValues` | 字符串数组（`String[]`） | `false` |
+| `StringValues` | 标准文本字符串类型（`text`/`string`） | `true` |
+| `UniformListValues` | 存储同类型元素的集合列表（由 Schema 中的 `cardinality()` 与 `valueList()` 机制原生支持） | `false`（由 Schema 支持） |
+{.wide}
 
-| Name               | Description                                                                                                                                                                                                                                                          | Support |
-|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| BooleanValues      |                                                                                                                                                                                                                                                                      | true    |
-| ByteValues         |                                                                                                                                                                                                                                                                      | true    |
-| DoubleValues       |                                                                                                                                                                                                                                                                      | true    |
-| FloatValues        |                                                                                                                                                                                                                                                                      | true    |
-| IntegerValues      |                                                                                                                                                                                                                                                                      | true    |
-| LongValues         |                                                                                                                                                                                                                                                                      | true    |
-| MapValues          | Supports setting of a {@code Map} value. The assumption is that the {@code Map} can contain arbitrary serializable values that may or may not be defined as a feature itself                                                                                         | false   |
-| MixedListValues    | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "mixed" it does not need to contain objects of the same type. | false   |
-| BooleanArrayValues |                                                                                                                                                                                                                                                                      | false   |
-| ByteArrayValues    |                                                                                                                                                                                                                                                                      | true    |
-| DoubleArrayValues  |                                                                                                                                                                                                                                                                      | false   |
-| FloatArrayValues   |                                                                                                                                                                                                                                                                      | false   |
-| IntegerArrayValues |                                                                                                                                                                                                                                                                      | false   |
-| LongArrayValues    |                                                                                                                                                                                                                                                                      | false   |
-| SerializableValues |                                                                                                                                                                                                                                                                      | false   |
-| StringArrayValues  |                                                                                                                                                                                                                                                                      | false   |
-| StringValues       |                                                                                                                                                                                                                                                                      | true    |
-| UniformListValues  | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "uniform" it must contain objects of the same type.           | false (由 Schema 的 valueList() 机制支持) |
+---
 
-### Gremlin的步骤
+### Gremlin 常用步骤参考
 
-HugeGraph支持Gremlin的所有步骤。有关Gremlin的完整参考信息，请参与[Gremlin官网](http://tinkerpop.apache.org/docs/current/reference/)。
+HugeGraph 支持 Gremlin 遍历规范定义的各项步骤。完整说明与高级遍历用法请参阅 [TinkerPop 3.8.1 步骤参考](https://tinkerpop.apache.org/docs/3.8.1/reference/)。
 
-| 步骤         | 说明                                                                                              | 文档                                                                                     |
-|------------|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| addE       | 在两个顶点之间添加边                                                                                      | [addE step](http://tinkerpop.apache.org/docs/current/reference/#addedge-step)          |
-| addV       | 将顶点添加到图形                                                                                        | [addV step](http://tinkerpop.apache.org/docs/current/reference/#addvertex-step)        |
-| and        | 确保所有遍历都返回值                                                                                      | [and step](http://tinkerpop.apache.org/docs/current/reference/#and-step)               |
-| as         | 用于向步骤的输出分配变量的步骤调制器                                                                              | [as step](http://tinkerpop.apache.org/docs/current/reference/#as-step)                 |
-| by         | 与`group`和`order`配合使用的步骤调制器                                                                      | [by step](http://tinkerpop.apache.org/docs/current/reference/#by-step)                 |
-| coalesce   | 返回第一个返回结果的遍历                                                                                    | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step)     |
-| constant   | 返回常量值。 与`coalesce`配合使用                                                                          | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step)     |
-| count      | 从遍历返回计数                                                                                         | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step)         |
-| datetime   | 构造日期时间对象或取得服务器当前时间（1.8.0 默认返回 `OffsetDateTime`）                                      | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
-| dedup      | 返回已删除重复内容的值                                                                                     | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step)           |
-| discard    | 丢弃流中当前输入（1.8.0 替代原无参 `none()`）                                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)       |
-| drop       | 丢弃值（顶点/边缘）                                                                                      | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step)             |
-| fold       | 充当用于计算结果聚合值的屏障                                                                                  | [fold step](http://tinkerpop.apache.org/docs/current/reference/#fold-step)             |
-| group      | 根据指定的标签将值分组                                                                                     | [group step](http://tinkerpop.apache.org/docs/current/reference/#group-step)           |
-| has        | 用于筛选属性、顶点和边缘。 支持`hasLabel`、`hasId`、`hasNot` 和 `has` 变体                                          | [has step](http://tinkerpop.apache.org/docs/current/reference/#has-step)               |
-| inject     | 将值注入流中                                                                                          | [inject step](http://tinkerpop.apache.org/docs/current/reference/#inject-step)         |
-| is         | 用于通过布尔表达式执行筛选器                                                                                  | [is step](http://tinkerpop.apache.org/docs/current/reference/#is-step)                 |
-| limit      | 用于限制遍历中的项数                                                                                      | [limit step](http://tinkerpop.apache.org/docs/current/reference/#limit-step)           |
-| local      | 本地包装遍历的某个部分，类似于子查询                                                                              | [local step](http://tinkerpop.apache.org/docs/current/reference/#local-step)           |
-| not        | 用于生成筛选器的求反结果                                                                                    | [not step](http://tinkerpop.apache.org/docs/current/reference/#not-step)               |
-| optional   | 如果生成了某个结果，则返回指定遍历的结果，否则返回调用元素                                                                   | [optional step](http://tinkerpop.apache.org/docs/current/reference/#optional-step)     |
-| or         | 确保至少有一个遍历会返回值                                                                                   | [or step](http://tinkerpop.apache.org/docs/current/reference/#or-step)                 |
-| order      | 按指定的排序顺序返回结果                                                                                    | [order step](http://tinkerpop.apache.org/docs/current/reference/#order-step)           |
-| path       | 返回遍历的完整路径                                                                                       | [path step](http://tinkerpop.apache.org/docs/current/reference/#path-step)          |
-| project    | 将属性投影为映射                                                                                        | [project step](http://tinkerpop.apache.org/docs/current/reference/#project-step)       |
-| properties | 返回指定标签的属性                                                                                       | [properties step](http://tinkerpop.apache.org/docs/current/reference/#properties-step) |
-| range      | 根据指定的值范围进行筛选                                                                                    | [range step](http://tinkerpop.apache.org/docs/current/reference/#range-step)           |
-| repeat     | 将步骤重复指定的次数。 用于循环                                                                                | [repeat step](http://tinkerpop.apache.org/docs/current/reference/#repeat-step)         |
-| sample     | 用于对遍历返回的结果采样                                                                                    | [sample step](http://tinkerpop.apache.org/docs/current/reference/#sample-step)         |
-| select     | 用于投影遍历返回的结果                                                                                     | [select step](http://tinkerpop.apache.org/docs/current/reference/#select-step)         |
-| mergeV     | 按属性匹配顶点，存在则更新，不存在则创建（标准 Upsert 步骤）                                                 | [mergeV step](http://tinkerpop.apache.org/docs/current/reference/#mergevertex-step)    |
-| mergeE     | 按属性与端点匹配边，存在则更新，不存在则创建（标准 Upsert 步骤）                                             | [mergeE step](http://tinkerpop.apache.org/docs/current/reference/#mergeedge-step)      |
-| tree       | 将顶点中的路径聚合到树中                                                                                    | [tree step](http://tinkerpop.apache.org/docs/current/reference/#tree-step)             |
-| unfold     | 将迭代器作为步骤展开                                                                                      | [unfold step](http://tinkerpop.apache.org/docs/current/reference/#unfold-step)         |
-| union      | 合并多个遍历返回的结果                                                                                     | [union step](http://tinkerpop.apache.org/docs/current/reference/#union-step)           |
-| V          | 包括顶点与边之间的遍历所需的步骤：`V`、`E`、`out`、`in`、`both`、`outE`、`inE`、`bothE`、`outV`、`inV`、`bothV` 和 `otherV` | [vertex steps](http://tinkerpop.apache.org/docs/current/reference/#vertex-steps)         |
-| where      | 用于筛选遍历返回的结果。 支持 `eq`、`neq`、`lt`、`lte`、`gt`、`gte` 和 `between` 运算符                                | [where step](http://tinkerpop.apache.org/docs/current/reference/#where-step)           |
+| 步骤 | 说明 | 官方文档 |
+|---|---|---|
+| `addE` | 在两个顶点之间添加有向边 | [addE step](https://tinkerpop.apache.org/docs/3.8.1/reference/#addedge-step) |
+| `addV` | 向图中添加新顶点 | [addV step](https://tinkerpop.apache.org/docs/3.8.1/reference/#addvertex-step) |
+| `and` | 确保所有子遍历都产生有效输出 | [and step](https://tinkerpop.apache.org/docs/3.8.1/reference/#and-step) |
+| `as` | 为步骤输出分配变量标签的调制器 | [as step](https://tinkerpop.apache.org/docs/3.8.1/reference/#as-step) |
+| `by` | 与 `group`、`order` 等步骤配合使用的维度调制器 | [by step](https://tinkerpop.apache.org/docs/3.8.1/reference/#by-step) |
+| `coalesce` | 返回首个产生结果的子遍历 | [coalesce step](https://tinkerpop.apache.org/docs/3.8.1/reference/#coalesce-step) |
+| `constant` | 生成指定常量值，常与 `coalesce` 配合使用 | [constant step](https://tinkerpop.apache.org/docs/3.8.1/reference/#constant-step) |
+| `count` | 统计遍历流中元素的总数量 | [count step](https://tinkerpop.apache.org/docs/3.8.1/reference/#count-step) |
+| `datetime` | 构造日期时间对象或取得服务器当前时间（返回 `OffsetDateTime`） | [datetime function](https://tinkerpop.apache.org/docs/3.8.1/reference/#gremlin-groovy-differences) |
+| `dedup` | 去除遍历流中的重复元素 | [dedup step](https://tinkerpop.apache.org/docs/3.8.1/reference/#dedup-step) |
+| `discard` | 丢弃当前流中的遍历器输出 | [discard step](https://tinkerpop.apache.org/docs/3.8.1/reference/#discard-step) |
+| `drop` | 从图中彻底删除对应实体（顶点、边或属性） | [drop step](https://tinkerpop.apache.org/docs/3.8.1/reference/#drop-step) |
+| `fold` | 栅栏步骤，将流中所有项汇总折叠为一个 List | [fold step](https://tinkerpop.apache.org/docs/3.8.1/reference/#fold-step) |
+| `group` | 根据指定的键与投影调制器对数据进行分组聚合 | [group step](https://tinkerpop.apache.org/docs/3.8.1/reference/#group-step) |
+| `has` | 属性与元素过滤，支持 `hasLabel`、`hasId`、`hasNot` 等变体 | [has step](https://tinkerpop.apache.org/docs/3.8.1/reference/#has-step) |
+| `inject` | 将外部离散值直接注入当前遍历流中 | [inject step](https://tinkerpop.apache.org/docs/3.8.1/reference/#inject-step) |
+| `is` | 针对标量值执行布尔条件匹配与过滤 | [is step](https://tinkerpop.apache.org/docs/3.8.1/reference/#is-step) |
+| `limit` | 限制遍历流返回的最大项数 | [limit step](https://tinkerpop.apache.org/docs/3.8.1/reference/#limit-step) |
+| `local` | 局部作用域执行子遍历，类似于局部子查询 | [local step](https://tinkerpop.apache.org/docs/3.8.1/reference/#local-step) |
+| `not` | 对子遍历匹配结果取反（必须不满足条件） | [not step](https://tinkerpop.apache.org/docs/3.8.1/reference/#not-step) |
+| `optional` | 尝试执行子遍历；若有输出则返回，否则保留输入元素 | [optional step](https://tinkerpop.apache.org/docs/3.8.1/reference/#optional-step) |
+| `or` | 确保至少有一个子遍历返回有效结果 | [or step](https://tinkerpop.apache.org/docs/3.8.1/reference/#or-step) |
+| `order` | 按指定字段或比较规则对元素进行排序 | [order step](https://tinkerpop.apache.org/docs/3.8.1/reference/#order-step) |
+| `path` | 收集并返回当前遍历所经过的历史完整路径 | [path step](https://tinkerpop.apache.org/docs/3.8.1/reference/#path-step) |
+| `project` | 将多个调制结果投影为结构化 Map 映射 | [project step](https://tinkerpop.apache.org/docs/3.8.1/reference/#project-step) |
+| `properties` | 获取指定键的 Property 实体对象 | [properties step](https://tinkerpop.apache.org/docs/3.8.1/reference/#properties-step) |
+| `range` | 基于下标范围进行切片截取（起始索引至结束索引） | [range step](https://tinkerpop.apache.org/docs/3.8.1/reference/#range-step) |
+| `repeat` | 循环执行指定的子遍历步骤 | [repeat step](https://tinkerpop.apache.org/docs/3.8.1/reference/#repeat-step) |
+| `sample` | 从当前流中进行随机抽样 | [sample step](https://tinkerpop.apache.org/docs/3.8.1/reference/#sample-step) |
+| `select` | 从历史路径或映射投影中提取特定标签的变量值 | [select step](https://tinkerpop.apache.org/docs/3.8.1/reference/#select-step) |
+| `mergeV` | 按属性匹配顶点，存在则更新，不存在则创建（标准 Upsert 步骤） | [mergeV step](https://tinkerpop.apache.org/docs/3.8.1/reference/#mergevertex-step) |
+| `mergeE` | 按属性与端点匹配边，存在则更新，不存在则创建（标准 Upsert 步骤） | [mergeE step](https://tinkerpop.apache.org/docs/3.8.1/reference/#mergeedge-step) |
+| `tree` | 将遍历路径汇总聚合成树形层级结构 | [tree step](https://tinkerpop.apache.org/docs/3.8.1/reference/#tree-step) |
+| `unfold` | 将集合或数组结构展开为连续的流元素 | [unfold step](https://tinkerpop.apache.org/docs/3.8.1/reference/#unfold-step) |
+| `union` | 并行执行多个子遍历并合并其输出结果 | [union step](https://tinkerpop.apache.org/docs/3.8.1/reference/#union-step) |
+| `V` | 顶点检索与端点跳转基础步骤：`V`、`E`、`out`、`in`、`both`、`outE`、`inE` 等 | [vertex steps](https://tinkerpop.apache.org/docs/3.8.1/reference/#vertex-steps) |
+| `where` | 使用表达式或谓词（`eq`、`neq`、`gt` 等）进行条件筛选过滤 | [where step](https://tinkerpop.apache.org/docs/3.8.1/reference/#where-step) |
+{.wide .expand}

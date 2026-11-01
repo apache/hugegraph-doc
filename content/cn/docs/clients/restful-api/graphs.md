@@ -113,28 +113,39 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 
 #### 6.1.4 克隆一个图
 
-##### Params
+HugeGraph 提供两种图克隆方式：
+1. **模式一：仅配置克隆（Configuration Clone）**：仅复制源图的配置信息，不复制 Schema、顶点或边数据。
+2. **模式二：Schema 克隆（Schema Clone，Server API 0.73+）**：在同一图空间内复制源图配置及属性键、顶点标签和索引标签，不复制顶点与边数据。
 
-**路径参数说明：**
+##### 模式一：仅配置克隆
 
-- graphspace: 图空间名称
-- graph: 要创建的新图名称
+通过图创建端点配合查询参数 `clone_graph_name` 复制源图配置。
 
-**请求参数说明：**
+> [!NOTE]
+> 在 PD 模式下，若源图配置了 `schema.init_template`，克隆出的新图也会继承该配置并基于模板初始化 Schema。
 
-- clone_graph_name: 已有图的名称；从已有的图来克隆，用户可选择传递配置文件，传递时将替换已有图中的配置；
+###### Params
 
-##### Method & Url
+**路径参数：**
 
-```text
+- `graphspace`: 图空间名称
+- `graph`: 要创建的新图名称
+
+**查询参数：**
+
+- `clone_graph_name`: 源图名称。注意必须作为 Query 参数传入，不能放在请求体 JSON 中。
+
+###### Method & Url
+
+```http
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_name=hugegraph
 ```
 
-##### Request Body (可选)
+###### Request Body (可选)
 
-克隆一个非鉴权模式的图（设置 `Content-Type: application/json`）
+可选择传入 JSON 配置覆盖源图配置（例如自定义存储目录等）：
 
-```javascript
+```json
 {
   "gremlin.graph": "org.apache.hugegraph.HugeFactory",
   "backend": "rocksdb",
@@ -145,24 +156,79 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_nam
 }
 ```
 
-> Note:
-> 1. Rocksdb 存储路径不能与现有图相同（需使用不同的目录）
-> 2. 如需开启新图的权限系统，需替换设置 `gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy`
+> [!NOTE]
+> 1. RocksDB 存储路径不能与现有图冲突，需指定不同目录。
+> 2. 如需开启权限认证，需设置 `"gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy"`。
 
-##### Response Status
+###### Response Status
 
-```javascript
+```text
 201
 ```
 
-##### Response Body
+###### Response Body
 
-```javascript
+```json
 {
-    "name": "cloneGraph",
-    "nickname": "cloneGraph",
-    "backend": "rocksdb",
-    "description": ""
+  "name": "cloneGraph",
+  "nickname": "cloneGraph",
+  "backend": "rocksdb",
+  "description": ""
+}
+```
+
+##### 模式二：Schema 克隆（Server API 0.73+）
+
+自 HugeGraph 1.8.0（Server REST API 0.73+）起提供同步的 Schema 克隆接口。该接口在同一图空间内创建新图，并复制源图的所有属性键、顶点标签及相关索引，但不复制顶点与边数据。复制时会自动清空 `schema.init_template`，以准确复制源图当时的实际 Schema。
+
+克隆期间请保持源图 Schema 不变。开启鉴权时，调用该接口需要图空间管理权限（Space Admin）。
+
+> [!CAUTION]
+> **暂不支持包含边标签（EdgeLabel）的源图**：由于部分后端存储无法可靠还原边标签的继承层级，若源图包含任何边标签，服务端将在创建目标图前直接拦截拒绝；克隆过程中若有新增边标签也会报错中断。
+
+> [!WARNING]
+> **非原子操作与残留清理**：Schema 复制不是原子事务。若在创建目标图后复制 Schema 元素失败，新图可能处于部分初始化的状态且对外可见。服务端不会自动回滚或删除已建的图；遇到失败需排查并显式调用删除接口清理该目标图后再重试。
+
+###### Params
+
+**路径参数：**
+
+- `graphspace`: 图空间名称
+- `graph`: 要创建的目标图名称
+
+**查询参数：**
+
+- `source`: 同一图空间内的源图名称（必填）
+
+###### Method & Url
+
+```http
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/schema_copy/schema-clone?source=vertices_only
+```
+
+###### Request Body (可选)
+
+仅支持通过 JSON 指定 `nickname`（可选）：
+
+```json
+{
+  "nickname": "Schema copy"
+}
+```
+
+###### Response Status
+
+```text
+201
+```
+
+###### Response Body
+
+```json
+{
+  "name": "schema_copy",
+  "nickname": "Schema copy",
+  "backend": "rocksdb"
 }
 ```
 

@@ -116,28 +116,41 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 
 #### 6.1.4 Clone graph
 
-##### Params
+HugeGraph supports two graph cloning modes:
+1. **Mode 1: Configuration clone**: Copies only the source graph configuration, without copying schema, vertices, or edges.
+2. **Mode 2: Schema clone (Server API 0.73+)**: Copies the configuration as well as PropertyKeys, VertexLabels, and IndexLabels within the same graph space,
+   without copying graph vertices or edges.
 
-**Path parameters**
+##### Mode 1: Configuration clone
 
-- graphspace: Graphspace name
-- graph: Name of the new graph to create
+This endpoint clones graph configuration using the `clone_graph_name` query parameter.
 
-**Query parameters**
+> [!NOTE]
+> In PD mode, if the source graph is configured with `schema.init_template`, the cloned graph inherits that template setting and initializes its schema
+> accordingly.
 
-- clone_graph_name: name of an existed graph. To clone from an existing graph, the user can choose to transfer the configuration file, which will replace the configuration in the existing graph
+###### Params
 
-##### Method & Url
+**Path parameters:**
 
-```text
+- `graphspace`: Graphspace name
+- `graph`: Name of the new graph to create
+
+**Query parameters:**
+
+- `clone_graph_name`: Name of the source graph. Note that this must be passed as a query parameter, not inside the JSON body.
+
+###### Method & Url
+
+```http
 POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_name=hugegraph
 ```
 
-##### Request Body [Optional]
+###### Request Body [Optional]
 
-Clone a `non-auth` mode graph (set `Content-Type: application/json`)
+Optionally pass configuration overrides in JSON format:
 
-```javascript
+```json
 {
   "gremlin.graph": "org.apache.hugegraph.HugeFactory",
   "backend": "rocksdb",
@@ -148,24 +161,84 @@ Clone a `non-auth` mode graph (set `Content-Type: application/json`)
 }
 ```
 
-> Note:
-> 1. The data/wal_path can't be the same as the existing graph (use separate directories)
-> 2. Replace "gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy" to enable auth mode
+> [!NOTE]
+> 1. RocksDB data/wal paths cannot conflict with existing graphs; use separate directories.
+> 2. Set `"gremlin.graph": "org.apache.hugegraph.auth.HugeFactoryAuthProxy"` to enable auth mode on the new graph.
 
-##### Response Status
+###### Response Status
 
-```javascript
+```text
 201
 ```
 
-##### Response Body
+###### Response Body
 
-```javascript
+```json
 {
-    "name": "cloneGraph",
-    "nickname": "cloneGraph",
-    "backend": "rocksdb",
-    "description": ""
+  "name": "cloneGraph",
+  "nickname": "cloneGraph",
+  "backend": "rocksdb",
+  "description": ""
+}
+```
+
+##### Mode 2: Schema clone (Server API 0.73+)
+
+Starting from HugeGraph 1.8.0 (Server REST API 0.73+), a dedicated synchronous schema cloning API is provided. It creates a new graph in the same graph space
+and copies all property keys, vertex labels, and their index labels, without copying vertex or edge data. During cloning, `schema.init_template` is
+automatically cleared to ensure the target reflects the actual source schema rather than re-instantiating the template.
+
+Keep the source schema unchanged during copying. When authentication is enabled, graph space administrator permission (`space`) is required.
+
+> [!CAUTION]
+> **EdgeLabel restriction**: Because certain storage backends cannot reliably reconstruct edge label hierarchy metadata, sources with any edge labels are
+> rejected before creating the target graph. The server also checks dynamically during copying that no edge labels were added.
+
+> [!WARNING]
+> **Non-atomic operation and failure cleanup**: Schema copying is not an atomic transaction. If copying schema elements fails after the target graph has been
+> created, the graph may remain visible with partial schema. The server does not automatically roll back or drop the target graph. Inspect and delete the
+> incomplete target graph before retrying.
+
+###### Params
+
+**Path parameters:**
+
+- `graphspace`: Graphspace name
+- `graph`: Name of the target graph to create
+
+**Query parameters:**
+
+- `source`: Name of the source graph in the same graphspace (required)
+
+###### Method & Url
+
+```http
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/schema_copy/schema-clone?source=vertices_only
+```
+
+###### Request Body [Optional]
+
+Optionally specify a `nickname` in JSON:
+
+```json
+{
+  "nickname": "Schema copy"
+}
+```
+
+###### Response Status
+
+```text
+201
+```
+
+###### Response Body
+
+```json
+{
+  "name": "schema_copy",
+  "nickname": "Schema copy",
+  "backend": "rocksdb"
 }
 ```
 

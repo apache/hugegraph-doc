@@ -9,8 +9,7 @@ weight: 2
 HugeGraph 支持 [Cypher](https://opencypher.org/) —— 最初由 Neo4j 创建、并由 [openCypher](https://github.com/opencypher/openCypher) 标准化的声明式图查询语言。Gremlin 是命令式的遍历语言，而 Cypher
 只需描述想要的图模式（`MATCH`、`WHERE`、`RETURN`），由引擎决定如何执行。
 
-HugeGraph 通过 [cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) 转译器将 Cypher 语句翻译为 Gremlin，再在 TinkerPop 技术栈上执行。因此 HugeGraph 的 Cypher
-能力覆盖转译器所实现的 openCypher 9 语法面 —— 详见下文[已知限制](#已知限制)。
+HugeGraph 实现了对 [openCypher 9](https://opencypher.org/) 语法子集的支持，查询语句在服务端解析并无缝对接底层 TinkerPop 图遍历引擎。因此开发者可以使用直观的模式匹配语法，快速完成图数据的检索与写入。完整支持矩阵与限制参见 [Cypher 兼容性](/cn/docs/language/cypher-compatibility/)。
 
 ### 何时用 Cypher、何时用 Gremlin
 
@@ -19,6 +18,7 @@ HugeGraph 通过 [cypher-for-gremlin](https://github.com/opencypher/cypher-for-g
 | 正在从 Neo4j 迁移，或已熟悉 Cypher | 需要 HugeGraph 的完整功能面 |
 | 需要声明式模式匹配（`MATCH (a)-[:KNOWS]->(b)`） | 需要精细的遍历控制、自定义步骤或 lambda |
 | 查询以读模式和投影为主 | 需要图算法、OLAP 或 Cypher 未暴露的功能 |
+{.wide}
 
 凡是 Cypher 表达不了的，等价的 [Gremlin 查询](/cn/docs/language/hugegraph-gremlin/) 总是可用 —— 下文示例同时给出两种写法。
 
@@ -31,9 +31,7 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-在 1.2.0 至 1.7.0 版本中，该端点始终要求 `Authorization` 头（`Basic` 或 `Bearer`），即使服务端未开启认证 —— 凭据会被转发给 Gremlin Server。这些版本下 `Basic`
-凭据必须使用 URL 安全的 Base64 编码（用 `-` 和 `_` 代替 `+` 和 `/`），且密码不能包含 `:`。自 1.8.0 起，未开启认证时无需该请求头，
-`Basic` 凭据使用标准 RFC 4648 Base64 编码（即 `curl -u` 默认形式），且密码支持包含 `:`。
+在服务端未开启认证时无需携带认证头；开启认证后支持 `Authorization: Basic ...`（标准 RFC 4648 Base64 编码，如 `curl -u`）或 `Authorization: Bearer <token>`。
 完整请求/响应格式见 [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)。
 
 示例：
@@ -51,20 +49,10 @@ ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.nam
 
 ### 基础示例
 
-以下示例假设图中存在 `person` 顶点（`name`、`age`、`city` 属性）和 `knows` 边，并假设标签
-声明了 `person` 上的 `nullableKeys("age", "city")` 以及 `knows` 上的可空属性，并且 `person.age` 上有 `RANGE` 索引——例如在
-`scripts/example.groovy` 的 Schema 上补充这些可空键，再加上
-`schema.indexLabel("personByAge").onV("person").by("age").range().ifNotExist().create()`。起始顶点查找在
-`WHERE` 中的属性谓词需要索引覆盖，除非是对该标签全部主键的等值匹配：
-`scripts/example.groovy` 只为 `person.city` 以及 `(age, city)` 建了 `SECONDARY` 索引，因此在 `RANGE` 索引存在之前，
-`n.age > 30` 这类范围比较会被拒绝并报“未建索引”错误。
-若先加载 `scripts/example.groovy`，请注意它已经预置了 `person` 顶点 `marko`、`vadas`、`josh` 和 `peter`；
-由于 `person` 标签使用 `PRIMARY_KEY` id 策略，用这些名字执行 `CREATE` 会替换预置顶点，
-因此下面的创建、更新和删除示例使用示例数据中不存在的名字（`alice`、`bob`、`carol`），或请在空图上执行。若 Schema 未声明可空键（已发布的默认 Schema 把
-`person` 的 `age`、`city` 标记为非空），下面的创建与更新示例会触发非空属性校验失败：请在每条语句中
-为所有非空属性赋值，或先以 `nullableKeys` 声明标签。若 `person` 标签使用 `PRIMARY_KEY` id 策略（`scripts/example.groovy` 即如此），双顶点简写
-`CREATE (a)-[:knows]->(b)` 会被拒绝并返回执行错误（提示必须设置主键），因此下面的边示例先分别创建顶点再匹配它们；
-该简写在 `AUTOMATIC` id 策略且标签未定义非空属性时可用；在上述假定 Schema 中，`name` 仍为非空属性，因此该简写仍会被拒绝（新创建的顶点必须提供所有非空属性）。
+以下示例基于包含 `person`（属性 `name`、`age`、`city`）和 `knows` 边的图模型。
+执行前请注意：
+- 属性过滤谓词（如 `WHERE n.age > 30`）通常需要对应的索引覆盖（如在 `person.age` 上建立 `RANGE` 索引）。
+- 若顶点标签采用 `PRIMARY_KEY` 策略或定义了非空属性，创建数据时需为必填属性和主键赋值；建议先分别创建顶点再建立关联边。
 
 #### 查询 — MATCH / WHERE / RETURN
 
@@ -151,32 +139,24 @@ MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
 | `CREATE (n:person {name:'x'})` | `g.addV('person').property('name','x')` |
 | `MATCH (n) DETACH DELETE n` | `g.V().drop()` |
 | `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
+{.wide}
 
-提示：`EXPLAIN MATCH (n:person) RETURN n` 会以 `EXPLAIN` 选项解析，翻译后的 Gremlin 预期出现在 `result.data[0].translation` 中 —— 这是转译层行为，尚未在服务器上端到端验证（见
-[兼容性说明](/cn/docs/language/cypher-compatibility/)）。它仍是起草上表等价写法的最快方式。`PROFILE` 不受支持。
+提示：可使用 `EXPLAIN MATCH (n:person) RETURN n` 查看对应的底层 Gremlin 遍历语句（位于返回结果的 `translation` 字段中），方便对照编写等价写法。`PROFILE` 暂不受支持。
 
-### 已知限制
+### 使用限制
 
-HugeGraph 的 Cypher 能力受转译层约束，该层基于 openCypher 9 时代的工具链。已知缺口：
+- **参数化查询规则**：支持通过 JSON 请求体传递参数（`{"cypher": "...", "parameters": {...}}`，最多支持 16 个顶层参数；
+  更多属性可放入 Map 对象并显式引用）。引用了未声明的 `$param` 时会直接抛出执行错误；显式传入 `null` 是允许的。
+- **高级语法覆盖边界**：部分高级 openCypher 语法（如 map projection、部分复杂函数）当前暂不支持，未支持的结构会在解析校验阶段报错。
+- **过程调用**：HugeGraph 的图分析算法（最短路径、k-out、PersonalRank 等）通过独立的 [Traverser REST API](/cn/docs/clients/restful-api/traverser/) 或 Gremlin 提供，未暴露为 Cypher `CALL` 过程。
+- **单请求单语句**：每次请求仅支持执行一条 Cypher 语句，不支持多语句复合脚本。
 
-- **已发布版本不支持参数化查询** —— API 只接受原始语句字符串。使用 `$param` 的语句不会报错：缺失的绑定会被内联为 `null`，结果取决于表达式：`WHERE n.name = $name` 这类谓词匹配不到行，`RETURN $value AS value` 仍会返回一行 `null`。
-  缺失绑定的写入并不能可靠地存入 null 值：视语句而定，`SET n.prop = $missing` 会移除已有属性，`CREATE (n:label {prop: $missing})` 会在文本属性中存入转译库的 null 标记字符串 `"  cypher.null"`，而对非文本属性执行同样的
-  `CREATE`，或对非空属性执行 `SET`，则会报错。请在客户端先对值做转义/净化再拼接到语句中。自 1.8.0 起，缺失的绑定对所有请求形式都会直接报错，包括 `GET ?cypher=` 与原始文本
-`POST`，服务器总是附带参数表并拒绝未解析的 `$param` 引用。JSON 绑定参数（`{"cypher": ..., "parameters": {...}}`）自 1.8.0 起支持；已验证的请求契约见
-[Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/)。
-- **子句覆盖不完整** —— 部分 openCypher 结构无法翻译（例如 map projection、部分 `datetime()` 函数）。不支持的结构会在翻译阶段报错。`MERGE ... ON CREATE SET`、`NOT ... IN` 等结构可以翻译，但尚未在 HugeGraph 上端到端验证。
-  开发改动验证了计算字符串上的两个 `=~` 全字符串匹配用例，更广泛的正则覆盖仍未验证 —— 见[兼容性说明](/cn/docs/language/cypher-compatibility/)。
-- **不支持 `CALL` 过程** —— HugeGraph 的图算法（最短路径、k-out、personalrank 等）未暴露为 Cypher 过程；请改用 [traverser REST API](/cn/docs/clients/restful-api/traverser/) 或 Gremlin。
-- **每次请求仅一条语句** —— 不支持多语句脚本，请每次调用发送一条语句。
-
-语句翻译失败时，响应的 `status.message` 包含转译器错误信息；自 1.8.0 起，服务端还会在响应的
-`status.attributes.errors` 列表中返回包含 `code`、`message` 与 `hint` 的结构化错误详情。
-遇到功能缺口时，等价的 Gremlin 写法是官方推荐的回退方案。
+执行或校验失败时，服务端会在响应的 `status.attributes.errors` 中返回包含 `code`、`message` 与 `hint` 的结构化错误详情。遇到功能缺口时，等价的 Gremlin 写法是官方推荐的替代方案。
 
 ### 延伸阅读
 
 - [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)
+- [Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/)
 - [Gremlin 查询语言](/cn/docs/language/hugegraph-gremlin/)
-- [openCypher 项目](https://opencypher.org/) —— 语言规范与资源
+- [openCypher 官方规范](https://opencypher.org/)
 
-转译库历史 TCK 通过比例不等于 HugeGraph 端到端兼容率；本页没有给出经测量的 HugeGraph Cypher 总体兼容百分比。

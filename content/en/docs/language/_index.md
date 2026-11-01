@@ -13,16 +13,16 @@ HugeGraph supports two mainstream graph query languages: **Gremlin** (imperative
 
 - [HugeGraph-Gremlin](/docs/language/hugegraph-gremlin/)
 
-  Gremlin traversal fundamentals, CRUD query examples, TinkerPop feature support, and 1.8 upgrade changes.
+  Gremlin traversal fundamentals, CRUD query examples, and TinkerPop feature support.
 - [HugeGraph Cypher](/docs/language/hugegraph-cypher/)
 
-  Cypher language support via cypher-for-gremlin, read/write statement examples, execution mechanics, and constraints.
+  Declarative Cypher language support, read/write statement examples, execution mechanics, and constraints.
 - [Cypher Compatibility](/docs/language/cypher-compatibility/)
 
-  Coverage matrix for Cypher clauses and functions, known behavior differences, and workarounds for unsupported features.
+  Request contract verification, parameter binding rules, syntax coverage matrix, and behavioral boundaries.
 - [Migrate from Neo4j](/docs/language/migrate-from-neo4j/)
 
-  Core differences between Neo4j and HugeGraph in graph modeling, ID strategies, multiple labels, and query translation.
+  Core differences between Neo4j and HugeGraph in graph modeling, schema rules, ID strategies, indexing, and query translation.
 - [Sample Graph Data](/docs/language/hugegraph-example/)
 
   The classic 6-vertex 6-edge TinkerPop sample graph dataset used across query examples.
@@ -37,5 +37,5 @@ Ways to interact with and execute graph queries across HugeGraph components:
   to run Gremlin / Cypher queries with visual graph exploration and Text2GQL.
 - **HTTP REST APIs**: Submit queries programmatically via HTTP using
   the [Gremlin REST API](/docs/clients/restful-api/gremlin/) and [Cypher REST API](/docs/clients/restful-api/cypher/).
-- **Version Migration**: Upgrading to 1.8.0? Review the
-  [1.8 Gremlin & TinkerPop Migration Guide](/docs/guides/gremlin-migration-3.8/) for TinkerPop 3.8 syntax removals.
+- **Version Migration**: Upgrading from an older version? Review the
+  [Gremlin & TinkerPop Migration Guide](/docs/guides/gremlin-migration-3.8/) for syntax removals and behavioral changes.

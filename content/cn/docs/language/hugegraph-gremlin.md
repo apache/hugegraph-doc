@@ -30,6 +30,7 @@ HugeGraph实现了TinkerPop框架，但是并没有实现TinkerPop所有的特�
 | Persistence          | Determines if the {@code Graph} implementation supports persisting it's contents natively to disk.This feature does not refer to every graph's ability to write to disk via the Gremlin IO packages(.e.g. GraphML), unless the graph natively persists to disk via those options somehow. For example,TinkerGraph does not support this feature as it is a pure in-sideEffects graph.                                                                         | 取决于后端 |
 | ThreadedTransactions | Determines if the {@code Graph} implementation supports threaded transactions which allow a transaction be executed across multiple threads via {@link Transaction#createThreadedTx()}.                                                                                                                                                                                                                                                                       | false   |
 | ConcurrentAccess     | Determines if the {@code Graph} implementation supports more than one connection to the same instance at the same time. For example, Neo4j embedded does not support this feature because concurrent access to the same database files by multiple instances is not possible. However, Neo4j HA could support this feature as each new {@code Graph} instance coordinates with the Neo4j cluster allowing multiple instances to operate on the same database. | false   |
+{.wide}
 
 ### Vertex Features
 
@@ -48,6 +49,7 @@ HugeGraph实现了TinkerPop框架，但是并没有实现TinkerPop所有的特�
 | DuplicateMultiProperties | Determines if a {@link Vertex} can support non-unique values on the same key. For this value to be {@code true}, then {@link #supportsMetaProperties()} must also return true. By default this method, just returns what {@link #supportsMultiProperties()} returns.                                                                                                                                                                                                                            | true    |
 | MetaProperties           | Determines if a {@link Vertex} can support properties on vertex properties. It is assumed that a graph will support all the same data types for meta-properties that are supported for regular properties.                                                                                                                                                                                                                                                                                      | false   |
 | RemoveVertices           | Determines if a {@link Vertex} can be removed from the {@code Graph}.                                                                                                                                                                                                                                                                                                                                                                                                                           | true    |
+{.wide}
 
 ### Edge Features
 
@@ -63,6 +65,7 @@ HugeGraph实现了TinkerPop框架，但是并没有实现TinkerPop所有的特�
 | RemoveProperty  | Determines if an {@link Element} allows properties to be removed.                                                                                                                                                                                                                                                                                                                                                                                                                               | true    |
 | AddEdges        | Determines if an {@link Edge} can be added to a {@code Vertex}.                                                                                                                                                                                                                                                                                                                                                                                                                                 | true    |
 | RemoveEdges     | Determines if an {@link Edge} can be removed from a {@code Vertex}.                                                                                                                                                                                                                                                                                                                                                                                                                             | true    |
+{.wide}
 
 ### Data Type Features
 
@@ -86,47 +89,49 @@ HugeGraph实现了TinkerPop框架，但是并没有实现TinkerPop所有的特�
 | StringArrayValues  |                                                                                                                                                                                                                                                                      | false   |
 | StringValues       |                                                                                                                                                                                                                                                                      | true    |
 | UniformListValues  | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "uniform" it must contain objects of the same type.           | false (由 Schema 的 valueList() 机制支持) |
+{.wide}
 
 ### Gremlin的步骤
 
 HugeGraph支持Gremlin的所有步骤。有关Gremlin的完整参考信息，请参与[Gremlin官网](http://tinkerpop.apache.org/docs/current/reference/)。
 
-| 步骤         | 说明                                                                                              | 文档                                                                                     |
-|------------|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| addE       | 在两个顶点之间添加边                                                                                      | [addE step](http://tinkerpop.apache.org/docs/current/reference/#addedge-step)          |
-| addV       | 将顶点添加到图形                                                                                        | [addV step](http://tinkerpop.apache.org/docs/current/reference/#addvertex-step)        |
-| and        | 确保所有遍历都返回值                                                                                      | [and step](http://tinkerpop.apache.org/docs/current/reference/#and-step)               |
-| as         | 用于向步骤的输出分配变量的步骤调制器                                                                              | [as step](http://tinkerpop.apache.org/docs/current/reference/#as-step)                 |
-| by         | 与`group`和`order`配合使用的步骤调制器                                                                      | [by step](http://tinkerpop.apache.org/docs/current/reference/#by-step)                 |
-| coalesce   | 返回第一个返回结果的遍历                                                                                    | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step)     |
-| constant   | 返回常量值。 与`coalesce`配合使用                                                                          | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step)     |
-| count      | 从遍历返回计数                                                                                         | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step)         |
-| datetime   | 构造日期时间对象或取得服务器当前时间（默认返回 `OffsetDateTime`）                                      | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
-| dedup      | 返回已删除重复内容的值                                                                                     | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step)           |
-| discard    | 丢弃流中当前输入（替代原无参 `none()`）                                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)       |
-| drop       | 丢弃值（顶点/边缘）                                                                                      | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step)             |
-| fold       | 充当用于计算结果聚合值的屏障                                                                                  | [fold step](http://tinkerpop.apache.org/docs/current/reference/#fold-step)             |
-| group      | 根据指定的标签将值分组                                                                                     | [group step](http://tinkerpop.apache.org/docs/current/reference/#group-step)           |
-| has        | 用于筛选属性、顶点和边缘。 支持`hasLabel`、`hasId`、`hasNot` 和 `has` 变体                                          | [has step](http://tinkerpop.apache.org/docs/current/reference/#has-step)               |
-| inject     | 将值注入流中                                                                                          | [inject step](http://tinkerpop.apache.org/docs/current/reference/#inject-step)         |
-| is         | 用于通过布尔表达式执行筛选器                                                                                  | [is step](http://tinkerpop.apache.org/docs/current/reference/#is-step)                 |
-| limit      | 用于限制遍历中的项数                                                                                      | [limit step](http://tinkerpop.apache.org/docs/current/reference/#limit-step)           |
-| local      | 本地包装遍历的某个部分，类似于子查询                                                                              | [local step](http://tinkerpop.apache.org/docs/current/reference/#local-step)           |
-| not        | 用于生成筛选器的求反结果                                                                                    | [not step](http://tinkerpop.apache.org/docs/current/reference/#not-step)               |
-| optional   | 如果生成了某个结果，则返回指定遍历的结果，否则返回调用元素                                                                   | [optional step](http://tinkerpop.apache.org/docs/current/reference/#optional-step)     |
-| or         | 确保至少有一个遍历会返回值                                                                                   | [or step](http://tinkerpop.apache.org/docs/current/reference/#or-step)                 |
-| order      | 按指定的排序顺序返回结果                                                                                    | [order step](http://tinkerpop.apache.org/docs/current/reference/#order-step)           |
-| path       | 返回遍历的完整路径                                                                                       | [path step](http://tinkerpop.apache.org/docs/current/reference/#path-step)          |
-| project    | 将属性投影为映射                                                                                        | [project step](http://tinkerpop.apache.org/docs/current/reference/#project-step)       |
-| properties | 返回指定标签的属性                                                                                       | [properties step](http://tinkerpop.apache.org/docs/current/reference/#properties-step) |
-| range      | 根据指定的值范围进行筛选                                                                                    | [range step](http://tinkerpop.apache.org/docs/current/reference/#range-step)           |
-| repeat     | 将步骤重复指定的次数。 用于循环                                                                                | [repeat step](http://tinkerpop.apache.org/docs/current/reference/#repeat-step)         |
-| sample     | 用于对遍历返回的结果采样                                                                                    | [sample step](http://tinkerpop.apache.org/docs/current/reference/#sample-step)         |
-| select     | 用于投影遍历返回的结果                                                                                     | [select step](http://tinkerpop.apache.org/docs/current/reference/#select-step)         |
-| mergeV     | 按属性匹配顶点，存在则更新，不存在则创建（标准 Upsert 步骤）                                                 | [mergeV step](http://tinkerpop.apache.org/docs/current/reference/#mergevertex-step)    |
-| mergeE     | 按属性与端点匹配边，存在则更新，不存在则创建（标准 Upsert 步骤）                                             | [mergeE step](http://tinkerpop.apache.org/docs/current/reference/#mergeedge-step)      |
-| tree       | 将顶点中的路径聚合到树中                                                                                    | [tree step](http://tinkerpop.apache.org/docs/current/reference/#tree-step)             |
-| unfold     | 将迭代器作为步骤展开                                                                                      | [unfold step](http://tinkerpop.apache.org/docs/current/reference/#unfold-step)         |
-| union      | 合并多个遍历返回的结果                                                                                     | [union step](http://tinkerpop.apache.org/docs/current/reference/#union-step)           |
-| V          | 包括顶点与边之间的遍历所需的步骤：`V`、`E`、`out`、`in`、`both`、`outE`、`inE`、`bothE`、`outV`、`inV`、`bothV` 和 `otherV` | [vertex steps](http://tinkerpop.apache.org/docs/current/reference/#vertex-steps)         |
-| where      | 用于筛选遍历返回的结果。 支持 `eq`、`neq`、`lt`、`lte`、`gt`、`gte` 和 `between` 运算符                                | [where step](http://tinkerpop.apache.org/docs/current/reference/#where-step)           |
+| 步骤 | 说明 | 文档 |
+|---|---|---|
+| `addE` | 在两个顶点之间添加边 | [addE step](http://tinkerpop.apache.org/docs/current/reference/#addedge-step) |
+| `addV` | 将顶点添加到图形 | [addV step](http://tinkerpop.apache.org/docs/current/reference/#addvertex-step) |
+| `and` | 确保所有遍历都返回值 | [and step](http://tinkerpop.apache.org/docs/current/reference/#and-step) |
+| `as` | 用于向步骤的输出分配变量的步骤调制器 | [as step](http://tinkerpop.apache.org/docs/current/reference/#as-step) |
+| `by` | 与 `group` 和 `order` 配合使用的步骤调制器 | [by step](http://tinkerpop.apache.org/docs/current/reference/#by-step) |
+| `coalesce` | 返回第一个返回结果的遍历 | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step) |
+| `constant` | 返回常量值，与 `coalesce` 配合使用 | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step) |
+| `count` | 从遍历返回计数 | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step) |
+| `datetime` | 构造日期时间对象或取得服务器当前时间（默认返回 `OffsetDateTime`） | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
+| `dedup` | 返回已删除重复内容的值 | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step) |
+| `discard` | 丢弃流中当前输入（替代原无参 `none()`） | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step) |
+| `drop` | 丢弃值（顶点/边缘） | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step) |
+| `fold` | 充当用于计算结果聚合值的屏障 | [fold step](http://tinkerpop.apache.org/docs/current/reference/#fold-step) |
+| `group` | 根据指定的标签将值分组 | [group step](http://tinkerpop.apache.org/docs/current/reference/#group-step) |
+| `has` | 用于筛选属性、顶点和边缘。 支持 `hasLabel`、`hasId`、`hasNot` 和 `has` 变体 | [has step](http://tinkerpop.apache.org/docs/current/reference/#has-step) |
+| `inject` | 将值注入流中 | [inject step](http://tinkerpop.apache.org/docs/current/reference/#inject-step) |
+| `is` | 用于通过布尔表达式执行筛选器 | [is step](http://tinkerpop.apache.org/docs/current/reference/#is-step) |
+| `limit` | 用于限制遍历中的项数 | [limit step](http://tinkerpop.apache.org/docs/current/reference/#limit-step) |
+| `local` | 本地包装遍历的某个部分，类似于子查询 | [local step](http://tinkerpop.apache.org/docs/current/reference/#local-step) |
+| `not` | 用于生成筛选器的求反结果 | [not step](http://tinkerpop.apache.org/docs/current/reference/#not-step) |
+| `optional` | 如果生成了某个结果，则返回指定遍历的结果，否则返回调用元素 | [optional step](http://tinkerpop.apache.org/docs/current/reference/#optional-step) |
+| `or` | 确保至少有一个遍历会返回值 | [or step](http://tinkerpop.apache.org/docs/current/reference/#or-step) |
+| `order` | 按指定的排序顺序返回结果 | [order step](http://tinkerpop.apache.org/docs/current/reference/#order-step) |
+| `path` | 返回遍历的完整路径 | [path step](http://tinkerpop.apache.org/docs/current/reference/#path-step) |
+| `project` | 将属性投影为映射 | [project step](http://tinkerpop.apache.org/docs/current/reference/#project-step) |
+| `properties` | 返回指定标签的属性 | [properties step](http://tinkerpop.apache.org/docs/current/reference/#properties-step) |
+| `range` | 根据指定的值范围进行筛选 | [range step](http://tinkerpop.apache.org/docs/current/reference/#range-step) |
+| `repeat` | 将步骤重复指定的次数，用于循环 | [repeat step](http://tinkerpop.apache.org/docs/current/reference/#repeat-step) |
+| `sample` | 用于对遍历返回的结果采样 | [sample step](http://tinkerpop.apache.org/docs/current/reference/#sample-step) |
+| `select` | 用于投影遍历返回的结果 | [select step](http://tinkerpop.apache.org/docs/current/reference/#select-step) |
+| `mergeV` | 按属性匹配顶点，存在则更新，不存在则创建（标准 Upsert 步骤） | [mergeV step](http://tinkerpop.apache.org/docs/current/reference/#mergevertex-step) |
+| `mergeE` | 按属性与端点匹配边，存在则更新，不存在则创建（标准 Upsert 步骤） | [mergeE step](http://tinkerpop.apache.org/docs/current/reference/#mergeedge-step) |
+| `tree` | 将顶点中的路径聚合到树中 | [tree step](http://tinkerpop.apache.org/docs/current/reference/#tree-step) |
+| `unfold` | 将迭代器作为步骤展开 | [unfold step](http://tinkerpop.apache.org/docs/current/reference/#unfold-step) |
+| `union` | 合并多个遍历返回的结果 | [union step](http://tinkerpop.apache.org/docs/current/reference/#union-step) |
+| `V` | 包括顶点与边之间的遍历所需的步骤：`V`、`E`、`out`、`in`、`both`、`outE`、`inE`、`bothE`、`outV`、`inV`、`bothV` 和 `otherV` | [vertex steps](http://tinkerpop.apache.org/docs/current/reference/#vertex-steps) |
+| `where` | 用于筛选遍历返回的结果。 支持 `eq`、`neq`、`lt`、`lte`、`gt`、`gte` 和 `between` 运算符 | [where step](http://tinkerpop.apache.org/docs/current/reference/#where-step) |
+{.wide .expand}

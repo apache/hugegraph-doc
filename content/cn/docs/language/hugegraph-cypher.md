@@ -19,6 +19,7 @@ HugeGraph 通过 [cypher-for-gremlin](https://github.com/opencypher/cypher-for-g
 | 正在从 Neo4j 迁移，或已熟悉 Cypher | 需要 HugeGraph 的完整功能面 |
 | 需要声明式模式匹配（`MATCH (a)-[:KNOWS]->(b)`） | 需要精细的遍历控制、自定义步骤或 lambda |
 | 查询以读模式和投影为主 | 需要图算法、OLAP 或 Cypher 未暴露的功能 |
+{.wide}
 
 凡是 Cypher 表达不了的，等价的 [Gremlin 查询](/cn/docs/language/hugegraph-gremlin/) 总是可用 —— 下文示例同时给出两种写法。
 
@@ -139,6 +140,7 @@ MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
 | `CREATE (n:person {name:'x'})` | `g.addV('person').property('name','x')` |
 | `MATCH (n) DETACH DELETE n` | `g.V().drop()` |
 | `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
+{.wide}
 
 提示：可使用 `EXPLAIN MATCH (n:person) RETURN n` 查看转译后的 Gremlin 遍历语句（位于返回结果的 `translation` 字段中），方便对照编写等价写法。`PROFILE` 暂不受支持。
 

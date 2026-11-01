@@ -18,6 +18,7 @@ weight: 4
 | 基础 Cypher：`MATCH`/`WHERE`/`RETURN`/`CREATE`/`SET`/`DELETE` | 直接可用（REST `/cypher` 端点或 Java 客户端 `CypherManager`），但须遵守下文的 Schema 与索引规则 |
 | 简单聚合（`count`/`sum`/`min`/`max`/`avg`） | 直接可用 |
 | 依赖图遍历的查询需求 | Gremlin 遍历或 [traverser REST API](/cn/docs/clients/restful-api/traverser/)（k-out、最短路、personalrank 等） |
+{.wide}
 
 ### 需要改变习惯的部分
 

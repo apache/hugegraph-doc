@@ -20,6 +20,7 @@ The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. For query exa
 | `POST` (Recommended) | `application/json` | JSON body `{"cypher": "...", "parameters": {...}}`, supports parameter bindings |
 | `POST` | `application/json` | Raw Cypher text string body (for unparameterized raw statements) |
 | `GET` | — | Query parameter `?cypher=<URL-encoded statement>`, suitable for simple read queries |
+{.wide}
 
 Example JSON parameterized request:
 
@@ -49,6 +50,7 @@ Example JSON parameterized request:
 | Results & Projection | Node and scalar projections, aliases (`AS`), property access, nested structures, relationship IDs, path expressions, null handling | Results are mapped to standard JSON structures |
 | Aggregation & Ordering | `count`, `sum`, `min`, `max`, `avg`, `DISTINCT`, `ORDER BY`, `SKIP`, `LIMIT` | Transpiled directly to Gremlin traversal steps |
 | Data Writes | Vertex and edge `CREATE`, property `SET` / `REMOVE`, edge and vertex `DELETE` / `DETACH DELETE` | Create vertices with required properties before creating connecting edges |
+{.wide}
 
 ### Write Constraints and Considerations
 

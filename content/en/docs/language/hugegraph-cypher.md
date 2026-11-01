@@ -21,6 +21,7 @@ implements — see [Known limitations](#known-limitations) below.
 | You are migrating from Neo4j or already know Cypher | You need the full HugeGraph feature surface |
 | You want declarative pattern matching (`MATCH (a)-[:KNOWS]->(b)`) | You need fine-grained traversal control, custom steps, or lambdas |
 | Your queries are read-mostly patterns and projections | You need graph algorithms, OLAP, or features Cypher does not expose |
+{.wide}
 
 For anything Cypher cannot express, the equivalent [Gremlin query](/docs/language/hugegraph-gremlin/) always works — examples below show both.
 
@@ -143,6 +144,7 @@ Every Cypher statement is translated to Gremlin internally. When a Cypher featur
 | `CREATE (n:person {name:'x'})` | `g.addV('person').property('name','x')` |
 | `MATCH (n) DETACH DELETE n` | `g.V().drop()` |
 | `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
+{.wide}
 
 Tip: You can inspect translated Gremlin traversals via `EXPLAIN MATCH (n:person) RETURN n` (in the `translation` field of the response) to draft
 equivalent traversals. `PROFILE` is not supported.

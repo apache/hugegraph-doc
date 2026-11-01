@@ -18,6 +18,7 @@ HugeGraph 通过 [cypher-for-gremlin](https://github.com/opencypher/cypher-for-g
 | `POST`（推荐） | `application/json` | 请求体为 JSON 对象 `{"cypher": "...", "parameters": {...}}`，支持参数绑定 |
 | `POST` | `application/json` | 请求体为原始 Cypher 文本字符串（用于无参数的纯文本语句） |
 | `GET` | — | 查询参数 `?cypher=<URL 编码语句>`，适合简单只读查询 |
+{.wide}
 
 JSON 对象参数化请求示例：
 
@@ -44,6 +45,7 @@ JSON 对象参数化请求示例：
 | 结果投影 | 节点与标量投影、别名（`AS`）、属性访问、嵌套结构、关系 ID、路径表达、空值（null）处理 | 返回结果映射为标准 JSON 格式 |
 | 聚合与排序 | `count`、`sum`、`min`、`max`、`avg`、`DISTINCT`、`ORDER BY`、`SKIP`、`LIMIT` | 分页与聚合计算由引擎转译为对应 Gremlin 步骤 |
 | 数据写入 | 顶点与边 `CREATE`、属性 `SET` / `REMOVE`、边与顶点 `DELETE` / `DETACH DELETE` | 创建边前建议先为端点顶点赋值并创建，避免简写形式因非空约束或主键缺失失败 |
+{.wide}
 
 ### 写入约束与注意事项
 

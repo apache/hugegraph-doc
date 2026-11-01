@@ -20,6 +20,7 @@ For language usage and compatibility references, see [HugeGraph Cypher](/docs/la
 | Core Cypher: `MATCH`/`WHERE`/`RETURN`/`CREATE`/`SET`/`DELETE` | Works as-is (REST `/cypher` endpoint or Java client `CypherManager`), subject to the schema and index rules below |
 | Simple aggregations (`count`/`sum`/`min`/`max`/`avg`) | Works as-is |
 | Traversal-heavy queries | Gremlin traversals or the [traverser REST APIs](/docs/clients/restful-api/traverser/) (k-out, shortest path, personalrank, ...) |
+{.wide}
 
 ### Habits you need to change
 

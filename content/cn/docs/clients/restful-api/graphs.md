@@ -106,7 +106,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 #### 6.1.4 克隆一个图
 
 HugeGraph 提供两种图克隆方式：
-1. **模式一：仅配置克隆（Configuration Clone）**：复制源图配置，不复制 Schema、顶点或边数据。
+1. **模式一：仅配置克隆（Configuration Clone）**：仅复制源图的配置信息，不复制 Schema、顶点或边数据。
 2. **模式二：Schema 克隆（Schema Clone，Server API 0.73+）**：在同一图空间内复制源图配置及属性键、顶点标签和索引标签，不复制顶点与边数据。
 
 ##### 模式一：仅配置克隆
@@ -114,7 +114,7 @@ HugeGraph 提供两种图克隆方式：
 通过图创建端点配合查询参数 `clone_graph_name` 复制源图配置。
 
 > [!NOTE]
-> 在 PD 模式下，若源图配置了 `schema.init_template`，克隆出的新图也会继承该配置并基于模版初始化初始 Schema。
+> 在 PD 模式下，若源图配置了 `schema.init_template`，克隆出的新图也会继承该配置并基于模板初始化 Schema。
 
 ###### Params
 
@@ -173,10 +173,10 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_nam
 
 自 HugeGraph 1.8.0（Server REST API 0.73+）起提供同步的 Schema 克隆接口。该接口在同一图空间内创建新图，并复制源图的所有属性键、顶点标签及相关索引，但不复制顶点与边数据。复制时会自动清空 `schema.init_template`，以准确复制源图当时的实际 Schema。
 
-开启鉴权时，调用该接口需要图空间管理权限（Space Admin）。
+克隆期间请保持源图 Schema 不变。开启鉴权时，调用该接口需要图空间管理权限（Space Admin）。
 
 > [!CAUTION]
-> **暂不支持包含边标签（EdgeLabel）的源图**：由于部分后端存储无法可靠还原边标签的继承层级，若源图包含任何边标签，服务端将在创建目标图前直接拦截拒绝；克隆过程中也会动态校验源图是否有新加入的边标签。
+> **暂不支持包含边标签（EdgeLabel）的源图**：由于部分后端存储无法可靠还原边标签的继承层级，若源图包含任何边标签，服务端将在创建目标图前直接拦截拒绝；克隆过程中若有新增边标签也会报错中断。
 
 > [!WARNING]
 > **非原子操作与残留清理**：Schema 复制不是原子事务。若在创建目标图后复制 Schema 元素失败，新图可能处于部分初始化的状态且对外可见。服务端不会自动回滚或删除已建的图；遇到失败需排查并显式调用删除接口清理该目标图后再重试。
@@ -186,7 +186,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloneGraph?clone_graph_nam
 **路径参数：**
 
 - `graphspace`: 图空间名称
-- `name`: 要创建的目标图名称
+- `graph`: 要创建的目标图名称
 
 **查询参数：**
 

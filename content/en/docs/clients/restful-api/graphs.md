@@ -107,14 +107,16 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/clear?confirm_
 
 HugeGraph supports two graph cloning modes:
 1. **Mode 1: Configuration clone**: Copies only the source graph configuration, without copying schema, vertices, or edges.
-2. **Mode 2: Schema clone (Server API 0.73+)**: Copies the configuration as well as PropertyKeys, VertexLabels, and IndexLabels within the same graph space, without copying graph vertices or edges.
+2. **Mode 2: Schema clone (Server API 0.73+)**: Copies the configuration as well as PropertyKeys, VertexLabels, and IndexLabels within the same graph space,
+   without copying graph vertices or edges.
 
 ##### Mode 1: Configuration clone
 
 This endpoint clones graph configuration using the `clone_graph_name` query parameter.
 
 > [!NOTE]
-> In PD mode, if the source graph is configured with `schema.init_template`, the cloned graph inherits that template setting and initializes its schema accordingly.
+> In PD mode, if the source graph is configured with `schema.init_template`, the cloned graph inherits that template setting and initializes its schema
+> accordingly.
 
 ###### Params
 
@@ -171,22 +173,27 @@ Optionally pass configuration overrides in JSON format:
 
 ##### Mode 2: Schema clone (Server API 0.73+)
 
-Starting from HugeGraph 1.8.0 (Server REST API 0.73+), a dedicated synchronous schema cloning API is provided. It creates a new graph in the same graph space and copies all property keys, vertex labels, and their index labels, without copying vertex or edge data. During cloning, `schema.init_template` is automatically cleared to ensure the target reflects the actual source schema rather than re-instantiating the template.
+Starting from HugeGraph 1.8.0 (Server REST API 0.73+), a dedicated synchronous schema cloning API is provided. It creates a new graph in the same graph space
+and copies all property keys, vertex labels, and their index labels, without copying vertex or edge data. During cloning, `schema.init_template` is
+automatically cleared to ensure the target reflects the actual source schema rather than re-instantiating the template.
 
-When authentication is enabled, graph space administrator permission (`space`) is required.
+Keep the source schema unchanged during copying. When authentication is enabled, graph space administrator permission (`space`) is required.
 
 > [!CAUTION]
-> **EdgeLabel restriction**: Because certain storage backends cannot reliably reconstruct edge label hierarchy metadata, sources with any edge labels are rejected before creating the target graph. The server also checks dynamically during copying that no edge labels were added.
+> **EdgeLabel restriction**: Because certain storage backends cannot reliably reconstruct edge label hierarchy metadata, sources with any edge labels are
+> rejected before creating the target graph. The server also checks dynamically during copying that no edge labels were added.
 
 > [!WARNING]
-> **Non-atomic operation and failure cleanup**: Schema copying is not an atomic transaction. If copying schema elements fails after the target graph has been created, the graph may remain visible with partial schema. The server does not automatically roll back or drop the target graph. Inspect and delete the incomplete target graph before retrying.
+> **Non-atomic operation and failure cleanup**: Schema copying is not an atomic transaction. If copying schema elements fails after the target graph has been
+> created, the graph may remain visible with partial schema. The server does not automatically roll back or drop the target graph. Inspect and delete the
+> incomplete target graph before retrying.
 
 ###### Params
 
 **Path parameters:**
 
 - `graphspace`: Graphspace name
-- `name`: Name of the target graph to create
+- `graph`: Name of the target graph to create
 
 **Query parameters:**
 

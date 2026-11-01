@@ -16,8 +16,8 @@ HugeGraph 支持两种主流图查询语言：**Gremlin**（命令式遍历语�
   Gremlin 遍历基础、CRUD 语法示例以及 TinkerPop 规范支持情况。
 - [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)
 
-  基于 cypher-for-gremlin 的 Cypher 语法支持、读取与写入示例、执行机制与常见限制。
-- [Cypher 兼容性与限制](/cn/docs/language/cypher-compatibility/)
+  Cypher 声明式语法支持、读取与写入示例、执行机制与使用限制。
+- [Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/)
 
   Cypher 子句与函数的覆盖矩阵、已知差异及未实现特性的规避方案。
 - [从 Neo4j 迁移到 HugeGraph](/cn/docs/language/migrate-from-neo4j/)

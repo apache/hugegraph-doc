@@ -6,8 +6,7 @@ weight: 3
 
 ### Scope and Overview
 
-HugeGraph executes openCypher 9 queries on top of the TinkerPop engine using the
-[cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) transpiler.
+HugeGraph supports declarative openCypher 9 queries on top of the TinkerPop engine.
 This page summarizes supported request forms, parameter binding rules, syntax coverage, and behavioral boundaries.
 
 The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. For query examples and Gremlin equivalents, see the
@@ -37,7 +36,7 @@ Example JSON parameterized request:
 - **Parameter Count**: The top-level `parameters` object accepts at most 16 keys. For more properties, group them into a nested Map and reference fields
   explicitly in the statement (e.g. `$props.name`).
 - **Unbound Variables**: Referencing an undeclared `$param` raises an execution error and is rejected (explicit `null` is supported).
-- **Reserved Marker**: The exact string `"  cypher.null"` (two leading spaces) is reserved by the translator as an internal sentinel and is rejected in
+- **Reserved Marker**: The exact string `"  cypher.null"` (two leading spaces) is reserved by the engine as an internal sentinel and is rejected in
   parameter values.
 - **Error Response**: On validation or execution errors, the server returns HTTP 400 (or `status.code` 400 with null result), with structured details
   (`code`, `message`, `hint`) in `status.attributes.errors`.
@@ -48,7 +47,7 @@ Example JSON parameterized request:
 |---|---|---|
 | Reads & Patterns | Label scans, equality and range predicates, boolean logic (AND/OR/NOT), directed 1-hop and multi-hop patterns, regex matching (`=~` full match) | Range comparisons require corresponding indexes |
 | Results & Projection | Node and scalar projections, aliases (`AS`), property access, nested structures, relationship IDs, path expressions, null handling | Results are mapped to standard JSON structures |
-| Aggregation & Ordering | `count`, `sum`, `min`, `max`, `avg`, `DISTINCT`, `ORDER BY`, `SKIP`, `LIMIT` | Transpiled directly to Gremlin traversal steps |
+| Aggregation & Ordering | `count`, `sum`, `min`, `max`, `avg`, `DISTINCT`, `ORDER BY`, `SKIP`, `LIMIT` | Mapped to underlying graph traversal steps |
 | Data Writes | Vertex and edge `CREATE`, property `SET` / `REMOVE`, edge and vertex `DELETE` / `DETACH DELETE` | Create vertices with required properties before creating connecting edges |
 {.wide}
 
@@ -60,7 +59,7 @@ Execute vertex and edge creations separately, ensuring required vertex attribute
 
 ### Unsupported Features
 
-The following advanced features are not currently supported by the transpiler layer; use Gremlin or the respective REST APIs:
+The following advanced features are currently unsupported; use Gremlin or the respective REST APIs:
 - **Complex Clauses**: `MERGE`, `OPTIONAL MATCH`, `WITH`, `UNWIND`, `UNION`, variable-length paths (`*1..3`);
 - **Procedures**: `CALL dbms.*` / `CALL algo.*` (use the [Traverser REST API](/docs/clients/restful-api/traverser/));
 - **Schema Management**: Cypher Schema DDL (use the [Schema REST API](/docs/clients/restful-api/schema/));

@@ -16,7 +16,7 @@ HugeGraph supports two mainstream graph query languages: **Gremlin** (imperative
   Gremlin traversal fundamentals, CRUD query examples, and TinkerPop feature support.
 - [HugeGraph Cypher](/docs/language/hugegraph-cypher/)
 
-  Cypher language support via cypher-for-gremlin, read/write statement examples, execution mechanics, and constraints.
+  Declarative Cypher language support, read/write statement examples, execution mechanics, and constraints.
 - [Cypher Compatibility](/docs/language/cypher-compatibility/)
 
   Coverage matrix for Cypher clauses and functions, known behavior differences, and workarounds for unsupported features.

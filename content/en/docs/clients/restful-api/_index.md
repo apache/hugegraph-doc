@@ -7,12 +7,11 @@ search_boost: 1.7
 description: "HugeGraph RESTful API reference for graph, schema, vertex, and edge operations."
 ---
 
-> This section documents the REST API on current master. For historical APIs, switch to the versioned [HugeGraph 1.7 RESTful API documentation](https://hugegraph.apache.org/versions/1.7/docs/clients/restful-api/) or
-> [HugeGraph 1.5 RESTful API documentation](https://hugegraph.apache.org/versions/1.5/docs/clients/restful-api/).
->
-> The default graph space is `DEFAULT`.
+HugeGraph provides a comprehensive RESTful HTTP API covering Schema management, graph data read/write,
+graph and GraphSpace operations, authentication, and analytical tasks. The default GraphSpace is `DEFAULT`.
 
-After starting Server, open `http://localhost:8080/swagger-ui/index.html` to view the OpenAPI page for the current version. [See the usage example](/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example).
+After starting Server, open `http://localhost:8080/swagger-ui/index.html` to view the OpenAPI page.
+[See the usage example](/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example).
 
 [comment]: <> (- Graph Schema)
 

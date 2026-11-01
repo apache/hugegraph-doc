@@ -9,8 +9,7 @@ weight: 2
 HugeGraph 支持 [Cypher](https://opencypher.org/) —— 最初由 Neo4j 创建、并由 [openCypher](https://github.com/opencypher/openCypher) 标准化的声明式图查询语言。Gremlin 是命令式的遍历语言，而 Cypher
 只需描述想要的图模式（`MATCH`、`WHERE`、`RETURN`），由引擎决定如何执行。
 
-HugeGraph 通过 [cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) 转译器将 Cypher 语句翻译为 Gremlin，再在 TinkerPop 技术栈上执行。因此 HugeGraph 的 Cypher
-能力覆盖转译器所实现的 openCypher 9 语法面 —— 详见下文[已知限制](#已知限制)。
+HugeGraph 实现了对 [openCypher 9](https://opencypher.org/) 语法子集的支持，查询语句在服务端解析并无缝对接底层 TinkerPop 图遍历引擎。因此开发者可以使用直观的模式匹配语法，快速完成图数据的检索与写入。完整支持矩阵与限制参见 [Cypher 兼容性](/cn/docs/language/cypher-compatibility/)。
 
 ### 何时用 Cypher、何时用 Gremlin
 
@@ -142,25 +141,22 @@ MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
 | `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
 {.wide}
 
-提示：可使用 `EXPLAIN MATCH (n:person) RETURN n` 查看转译后的 Gremlin 遍历语句（位于返回结果的 `translation` 字段中），方便对照编写等价写法。`PROFILE` 暂不受支持。
+提示：可使用 `EXPLAIN MATCH (n:person) RETURN n` 查看对应的底层 Gremlin 遍历语句（位于返回结果的 `translation` 字段中），方便对照编写等价写法。`PROFILE` 暂不受支持。
 
-### 已知限制
+### 使用限制
 
-HugeGraph 的 Cypher 能力受转译层约束，该层基于 openCypher 9 时代的工具链。已知限制：
-
-- **参数化查询规则** —— 支持通过 JSON 请求体传递参数（`{"cypher": "...", "parameters": {...}}`，最多支持 16 个顶层参数；
+- **参数化查询规则**：支持通过 JSON 请求体传递参数（`{"cypher": "...", "parameters": {...}}`，最多支持 16 个顶层参数；
   更多属性可放入 Map 对象并显式引用）。引用了未声明的 `$param` 时会直接抛出执行错误；显式传入 `null` 是允许的。
-- **子句覆盖不完整** —— 部分 openCypher 结构无法翻译（例如 map projection、部分 `datetime()` 函数）。不支持的结构会在转译阶段报错。
-- **不支持 `CALL` 过程** —— HugeGraph 的图算法（最短路径、k-out、personalrank 等）未暴露为 Cypher 过程；请改用 [traverser REST API](/cn/docs/clients/restful-api/traverser/) 或 Gremlin。
-- **每次请求仅一条语句** —— 不支持多语句脚本，请每次调用发送一条语句。
+- **高级语法覆盖边界**：部分高级 openCypher 语法（如 map projection、部分复杂函数）当前暂不支持，未支持的结构会在解析校验阶段报错。
+- **过程调用**：HugeGraph 的图分析算法（最短路径、k-out、PersonalRank 等）通过独立的 [Traverser REST API](/cn/docs/clients/restful-api/traverser/) 或 Gremlin 提供，未暴露为 Cypher `CALL` 过程。
+- **单请求单语句**：每次请求仅支持执行一条 Cypher 语句，不支持多语句复合脚本。
 
-语句转译或执行失败时，服务端会在响应的 `status.attributes.errors` 中返回包含 `code`、`message` 与 `hint` 的结构化错误详情。遇到功能缺口时，等价的 Gremlin 写法是官方推荐的回退方案。
+执行或校验失败时，服务端会在响应的 `status.attributes.errors` 中返回包含 `code`、`message` 与 `hint` 的结构化错误详情。遇到功能缺口时，等价的 Gremlin 写法是官方推荐的替代方案。
 
 ### 延伸阅读
 
 - [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)
 - [Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/)
 - [Gremlin 查询语言](/cn/docs/language/hugegraph-gremlin/)
-- [openCypher 项目](https://opencypher.org/) —— 语言规范与资源
+- [openCypher 官方规范](https://opencypher.org/)
 
-注：转译库历史 TCK 通过比例不等于 HugeGraph 端到端兼容率；请结合具体业务查询进行实际测试。

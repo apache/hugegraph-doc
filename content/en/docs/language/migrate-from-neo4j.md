@@ -6,9 +6,8 @@ weight: 4
 
 ### Overview
 
-For developers migrating from Neo4j or evaluating HugeGraph. HugeGraph supports openCypher syntax via the
-[`cypher-for-gremlin`](https://github.com/opencypher/cypher-for-gremlin) translator, but differences exist in the graph model, schema rules, parameter bindings,
-and indexing.
+For developers migrating from Neo4j or evaluating HugeGraph. HugeGraph supports openCypher declarative query syntax,
+but differences exist in the graph model, schema rules, parameter bindings, and indexing.
 For language usage and compatibility references, see [HugeGraph Cypher](/docs/language/hugegraph-cypher/) and
 [Cypher Compatibility](/docs/language/cypher-compatibility/).
 
@@ -93,19 +92,17 @@ business key.
    `frequency = "MULTIPLE"` and provide stable relationship discriminator fields as `sortKeys` in the edge mapping
    (HugeGraph uses sort keys to distinguish parallel edges).
    Load vertices before edges. We recommend thoroughly testing the import pipeline with a representative data sample before cutover.
-4. **Switch incrementally**: keep the queries Cypher can express, and rewrite
-   translator-unsupported constructs as Gremlin — the
+4. **Switch incrementally**: keep queries Cypher supports, and rewrite
+   unsupported constructs as Gremlin — the
    [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents)
    shows the mapping.
 
-### Known limitations at a glance
+### Limitations at a glance
 
-- Multi-statement scripts and `CALL` procedures are not supported; parameter binding supports up to 16 top-level parameters
-  (pass a Map for additional properties).
-- The translator's last release is 2019-11 (1.0.4); uncovered openCypher syntax fails at translation time.
-- Unsupported query constructs can typically be rewritten as Gremlin
+- **Statements and parameters**: Multi-statement scripts and `CALL` procedures are not supported; parameter binding supports up to 16 top-level parameters
+  (pass a nested Map for additional properties).
+- **Unsupported syntax**: Advanced openCypher clauses not covered in the compatibility matrix will fail during query validation.
+- **Fallback path**: Unsupported query constructs can typically be rewritten as Gremlin
   traversals — see the
   [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents);
-  schema DDL and `CALL` procedures map to REST APIs instead.
-
-Note: The transpiler's historical TCK pass rate does not represent end-to-end compatibility in HugeGraph; test with your actual business queries.
+  schema DDL and procedures map to REST APIs instead.

@@ -6,7 +6,7 @@ weight: 3
 
 ### 概述与支持范围
 
-HugeGraph 通过 [cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) 转译器在 TinkerPop 引擎之上执行 openCypher 9 声明式图查询。
+HugeGraph 支持 openCypher 9 声明式图查询规范，支持在 TinkerPop 引擎之上直接执行模式匹配与图数据读写。
 本页汇总 Cypher 请求形式、参数绑定规则、支持的语法子集与行为边界。
 
 接口端点为 `/graphspaces/{graphspace}/graphs/{graph}/cypher`。常规语法示例与 Gremlin 对照参见 [HugeGraph Cypher 指南](/cn/docs/language/hugegraph-cypher/)。
@@ -34,7 +34,7 @@ JSON 对象参数化请求示例：
 - **参数格式**：`cypher` 字段必须为非空字符串；`parameters` 若提供必须为 JSON 对象（省略表示空参数表）。
 - **参数数量**：顶层 `parameters` 最多接受 16 个键。若需要传入更多属性，可将相关字段组织为嵌套 Map 对象，并在 Cypher 语句中显式引用字段（例如 `$props.name`）。
 - **未绑定变量处理**：语句中引用未提供的 `$param` 时会直接抛出执行错误，拒绝执行（显式传入 `null` 是允许的）。
-- **保留标记**：转译层将 `"  cypher.null"`（前导双空格）用作内部标记，绑定值中禁止传入该精确字符串。
+- **保留标记**：引擎将 `"  cypher.null"`（前导双空格）用作内部保留哨兵标记，绑定值中禁止传入该精确字符串。
 - **错误响应**：执行错误或参数校验失败时，服务端返回 HTTP 400（或在 `status.code` 为 400 的响应体中返回错误详情），并在 `status.attributes.errors` 中提供包含 `code`、`message` 与 `hint` 的结构化错误详情。
 
 ### 语法与功能支持矩阵
@@ -43,7 +43,7 @@ JSON 对象参数化请求示例：
 |---|---|---|
 | 查询与模式 | 标签扫描、等值与范围过滤、逻辑组合（AND/OR/NOT）、单跳与多跳有向关系、正则匹配（`=~` 全匹配） | 范围过滤等条件需预先建立相应索引 |
 | 结果投影 | 节点与标量投影、别名（`AS`）、属性访问、嵌套结构、关系 ID、路径表达、空值（null）处理 | 返回结果映射为标准 JSON 格式 |
-| 聚合与排序 | `count`、`sum`、`min`、`max`、`avg`、`DISTINCT`、`ORDER BY`、`SKIP`、`LIMIT` | 分页与聚合计算由引擎转译为对应 Gremlin 步骤 |
+| 聚合与排序 | `count`、`sum`、`min`、`max`、`avg`、`DISTINCT`、`ORDER BY`、`SKIP`、`LIMIT` | 分页与聚合计算由引擎自动转换为对应图遍历步骤 |
 | 数据写入 | 顶点与边 `CREATE`、属性 `SET` / `REMOVE`、边与顶点 `DELETE` / `DETACH DELETE` | 创建边前建议先为端点顶点赋值并创建，避免简写形式因非空约束或主键缺失失败 |
 {.wide}
 
@@ -54,7 +54,7 @@ JSON 对象参数化请求示例：
 
 ### 暂未支持的范围
 
-以下高级语法和特性当前尚未由转译层提供完整支持，建议改用 Gremlin 或相应 REST API：
+以下高级语法和特性在当前版本中尚未直接提供，建议改用 Gremlin 或相应 REST API：
 - **复杂子句**：`MERGE`、`OPTIONAL MATCH`、`WITH`、`UNWIND`、`UNION`、变长路径匹配（`*1..3`）；
 - **过程调用**：`CALL dbms.*` / `CALL algo.*`（请使用 [Traverser REST API](/cn/docs/clients/restful-api/traverser/)）；
 - **模式定义**：Cypher Schema DDL（请使用 [Schema REST API](/cn/docs/clients/restful-api/schema/)）；

@@ -5,10 +5,7 @@ weight: 16
 description: "Authentication（认证鉴权）REST 接口:管理用户、角色、权限和访问控制,实现细粒度的图数据安全机制。"
 ---
 
-> **版本说明**：本页介绍当前 `master` 的接口。历史用法请切换到对应多版本页面： [1.7 版认证 API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/auth/) 或
-> [1.5 版认证 API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/auth/)。
->
-> 用户、图空间用户组、资源、关联和赋权接口使用 `/graphspaces/{graphspace}/auth/...`。登录、登出和 token 校验仍使用 `/auth/login`、`/auth/logout`、`/auth/verify`；图空间默认角色接口位于 `/graphspaces/{graphspace}/role`。源码保留顶层 `/auth/groups`，本页组接口示例使用图空间范围接口。
+用户、图空间用户组、资源、关联和赋权接口使用 `/graphspaces/{graphspace}/auth/...`。登录、登出和 token 校验使用 `/auth/login`、`/auth/logout`、`/auth/verify`；图空间默认角色接口位于 `/graphspaces/{graphspace}/role`。
 
 下文 `{group_id}`、`{target_id}`、`{another_target_id}`、`{belong_id}` 和 `{access_id}` 均为占位符，使用前须替换为对应响应中的 `id`。将 ID 放入 URL 路径时，还须按 URL 路径组件规则编码。
 

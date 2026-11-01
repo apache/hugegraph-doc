@@ -5,10 +5,9 @@ weight: 16
 description: "Authentication REST API: Manage users, roles, permissions, and access control to implement fine-grained graph data security."
 ---
 
-> **Version notes**: This page documents current `master`. For historical behavior, use the [1.7 Authentication API](https://hugegraph.apache.org/versions/1.7/docs/clients/restful-api/auth/) or
-> [1.5 Authentication API](https://hugegraph.apache.org/versions/1.5/docs/clients/restful-api/auth/).
->
-> Users, graph-space groups, resources, memberships, and permission grants use `/graphspaces/{graphspace}/auth/...`. Login, logout, and token verification remain at `/auth/login`, `/auth/logout`, and `/auth/verify`; default graph-space roles are under `/graphspaces/{graphspace}/role`. Source retains top-level `/auth/groups`; this page's group examples use the graph-space API.
+Users, graph-space groups, resources, memberships, and permission grants use `/graphspaces/{graphspace}/auth/...`.
+Login, logout, and token verification remain at `/auth/login`, `/auth/logout`, and `/auth/verify`;
+default graph-space roles are under `/graphspaces/{graphspace}/role`.
 
 `{group_id}`, `{target_id}`, `{another_target_id}`, `{belong_id}`, and `{access_id}` are placeholders. Replace them with the corresponding response `id`, then encode IDs as URL path components before placing them in a path.
 

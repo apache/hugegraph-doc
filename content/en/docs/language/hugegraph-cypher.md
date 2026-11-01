@@ -10,9 +10,8 @@ HugeGraph supports [Cypher](https://opencypher.org/), the declarative graph quer
 [openCypher](https://github.com/opencypher/openCypher). While Gremlin is an imperative traversal language, Cypher lets you describe the graph pattern you want
 (`MATCH`, `WHERE`, `RETURN`) and lets the engine decide how to execute it.
 
-HugeGraph executes Cypher by translating the statement to Gremlin through the [cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) transpiler,
-then running the resulting traversal on the TinkerPop stack. This means Cypher support in HugeGraph covers the openCypher 9 surface that the transpiler
-implements — see [Known limitations](#known-limitations) below.
+HugeGraph supports the [openCypher 9](https://opencypher.org/) syntax subset, parsing declarative pattern queries directly and bridging them
+seamlessly to the underlying TinkerPop graph traversal engine. For complete coverage and boundaries, see [Cypher Compatibility](/docs/language/cypher-compatibility/).
 
 ### When to use Cypher vs Gremlin
 
@@ -146,30 +145,26 @@ Every Cypher statement is translated to Gremlin internally. When a Cypher featur
 | `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
 {.wide}
 
-Tip: You can inspect translated Gremlin traversals via `EXPLAIN MATCH (n:person) RETURN n` (in the `translation` field of the response) to draft
+Tip: You can inspect generated underlying Gremlin traversals via `EXPLAIN MATCH (n:person) RETURN n` (in the `translation` field of the response) to draft
 equivalent traversals. `PROFILE` is not supported.
 
-### Known limitations
+### Limitations
 
-Cypher support in HugeGraph is bounded by the transpiler layer, which is based on openCypher 9 era tooling. Known gaps:
-
-- **Parameterized query rules** — Parameter bindings are supported via JSON request bodies (`{"cypher": "...", "parameters": {...}}`, up to 16 top-level
-  parameters; group additional properties into a Map and reference fields explicitly). Referencing an undeclared `$param` results in an execution error;
+- **Parameterized query rules**: Parameter bindings are supported via JSON request bodies (`{"cypher": "...", "parameters": {...}}`, up to 16 top-level
+  parameters; group additional properties into a nested Map and reference fields explicitly). Referencing an undeclared `$param` results in an execution error;
   explicit `null` is supported.
-- **Partial clause coverage** — Some openCypher constructs cannot be translated (e.g. map projections and certain `datetime()` functions).
-  Unsupported constructs fail during translation.
-- **No `CALL` procedures** — HugeGraph graph algorithms (shortest path, k-out, personalrank, etc.) are not exposed as Cypher procedures; use the
-  [traverser REST APIs](/docs/clients/restful-api/traverser/) or Gremlin instead.
-- **Single statement per request** — Multi-statement scripts are not supported; send one statement per call.
+- **Partial clause coverage**: Certain advanced openCypher constructs (such as map projections and complex functions) are currently unsupported and fail during
+  parsing and validation.
+- **No `CALL` procedures**: Graph algorithms (shortest path, k-out, personalrank, etc.) are available via the
+  [traverser REST APIs](/docs/clients/restful-api/traverser/) or Gremlin instead of Cypher `CALL` procedures.
+- **Single statement per request**: Multi-statement scripts are not supported; submit one statement per call.
 
-When a statement fails translation or execution, the server returns structured error details under `status.attributes.errors` with `code`, `message`, and
-`hint`. If you hit a gap, the Gremlin equivalent is the supported fallback.
+When a statement fails validation or execution, the server returns structured error details under `status.attributes.errors` with `code`, `message`, and
+`hint`. The Gremlin equivalent is the recommended fallback.
 
 ### Further reading
 
 - [Cypher REST API reference](/docs/clients/restful-api/cypher/)
 - [Cypher compatibility notes](/docs/language/cypher-compatibility/)
 - [Gremlin Query Language](/docs/language/hugegraph-gremlin/)
-- [openCypher project](https://opencypher.org/) — language specification and resources
-
-Note: The transpiler's historical TCK pass rate does not represent end-to-end compatibility in HugeGraph; test with your actual business queries.
+- [openCypher specification](https://opencypher.org/)

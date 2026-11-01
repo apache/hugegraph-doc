@@ -270,6 +270,11 @@ export HUGEGRAPH_GRAPH=hugegraph
     - -D，用 -Dkey=value 的模式指定动态参数，用来在迁移图过程中需要备份数据到 HDFS 时，指定 HDFS 的配置项，例如：-Dfs.default.name=hdfs://localhost:9000
     - --graph-mode 或者 -m，将源图恢复到目标图时将目标图设置的模式，合法值包括 [RESTORING, MERGING]，默认为 RESTORING。迁移期间目标图会被切换到该模式，迁移结束后恢复为原来的模式
     - --keep-local-data，是否保留在迁移图的过程中产生的源图的备份，默认为 false，即默认迁移图结束后不保留产生的源图备份
+    > [!WARNING]
+    > **备份与迁移快速失败与分片诊断**：若在重试达到上限后仍有顶点或边数据页拉取失败，备份流程会立即报错中止，且 `migrate` 不会启动向目标图的恢复操作。
+    > 系统会保留已下载的分块文件以及分片诊断日志（以 `*_shards` 结尾，如 `vertex_failed_shards`、`edge_timeout_shards`），便于定位超时或超限原因。
+    > 数据备份目录（`--directory`）与日志目录（`--log`，默认为 `./logs`）相互独立。注意重新执行任务时会自动清空日志目录下的历史 `*_shards` 文件。
+    > 在重新执行前，请先备份诊断日志，或同时指定全新的 `--log` 目录与干净的 `--directory` 备份目录（或清理残留的局部数据）。
 - schedule-backup，周期性对图执行备份操作，并保留一定数目的最新备份（目前仅支持本地文件系统）
     - --directory 或者 -d，必填项，指定备份数据的目录
     - --backup-num，选填项，指定保存的最新的备份的数目，默认为 3
@@ -807,3 +812,6 @@ Usage: hugegraph [options] [command] [command options]
 ```bash
 ./bin/hugegraph --url http://127.0.0.1:8080 --graph hugegraph migrate --target-url http://127.0.0.1:8090 --target-graph hugegraph
 ```
+
+> [!NOTE]
+> 若在迁移的源图备份阶段发生数据页拉取失败，`migrate` 会立即中止退出且不会对目标图做任何变更写入。请检查 `./logs/` 下的分片诊断文件（`*_shards`），并确保重试时使用干净的目录。

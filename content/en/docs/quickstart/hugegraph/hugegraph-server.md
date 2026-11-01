@@ -548,7 +548,7 @@ First deploy PD and Store; see the [PD Quick Start](/docs/quickstart/hugegraph/h
 
 The minimal standalone flow below uses a master build and preloads sample data to verify graph reads and writes.
 
-1. [Check Java](#21-install-java-11-jdk-11) against the master build requirements.
+1. [Check Java](#21-install-java-17-jdk-17) against the master build requirements.
 2. [Build master source](#33-build-from-master-source); the commands below use its nested Server directory.
 3. [Confirm RocksDB configuration](#4-configuration), then enter the build output's nested Server directory.
 4. Initialize storage, then start the service with sample data using the commands below.

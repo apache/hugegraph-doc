@@ -97,6 +97,7 @@ Note: CPU/memory and Kubernetes-related capabilities are not publicly available 
   "cpu_used": 0,
   "memory_used": 0,
   "storage_used": 0,
+  "storage_used_kb": 0,
   "storage_percent": 0.0,
   "graph_number_used": 0,
   "role_number_used": 0,
@@ -174,6 +175,7 @@ GET http://localhost:8080/graphspaces/gs1
   "cpu_used": 0,
   "memory_used": 0,
   "storage_used": 0,
+  "storage_used_kb": 0,
   "storage_percent": 0.0,
   "graph_number_used": 0,
   "role_number_used": 0,
@@ -191,6 +193,19 @@ GET http://localhost:8080/graphspaces/gs1
 #### 2.0.4 Update a graphspace
 
 > `auth` cannot be changed once a graphspace is created.
+
+> [!NOTE]
+> **Dynamic Quota Update & Resource Enforcement**:
+> - **Updating Quotas**: Administrators can dynamically modify quotas using `PUT /graphspaces/{name}` with `{"action":"update","update":{...}}`
+>   containing fields such as `max_graph_number`, `max_role_number`, `cpu_limit`, `memory_limit`, and `storage_limit`. Always query current
+>   graphspace settings with `GET /graphspaces/{name}` first and preserve fields that are not being changed.
+> - **Compute Limit Inheritance**: Setting `compute_cpu_limit: 0` or `compute_memory_limit: 0` (or omitting them on creation) means continuously
+>   inheriting `cpu_limit` and `memory_limit`. Zero represents inheritance, not unlimited or zero allocation.
+> - **Quota Enforcement**: Exceeding `max_graph_number` causes subsequent graph creations to fail with `reach graph limit`. Exceeding
+>   `storage_limit` triggers PD storage enforcement, automatically marking all graphs in the space as `ReadOnly` until usage drops below the
+>   quota on the next patrol cycle.
+> - **High-Precision Storage Metric**: In addition to the integer GB `storage_used` field, responses provide `storage_used_kb` for precise sub-GB
+>   tracking. `storage_percent` is calculated from this exact KB value.
 
 ##### Params
 
@@ -277,6 +292,7 @@ PUT http://localhost:8080/graphspaces/gs1
   "cpu_used": 0,
   "memory_used": 0,
   "storage_used": 0,
+  "storage_used_kb": 0,
   "storage_percent": 0.0,
   "graph_number_used": 0,
   "role_number_used": 0,
@@ -352,6 +368,7 @@ Each entry carries the same fields as `GET /graphspaces/{graphspace}` plus `auth
     "cpu_used": 0,
     "memory_used": 0,
     "storage_used": 0,
+    "storage_used_kb": 0,
     "storage_percent": 0.0,
     "graph_number_used": 0,
     "role_number_used": 0,

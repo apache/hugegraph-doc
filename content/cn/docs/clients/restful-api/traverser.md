@@ -23,7 +23,7 @@ HugeGraph 支持的 Traverser API 包括：
         - 支持只统计邻居数量
         - 支持顶点和边属性过滤
         - 支持返回到达邻居的最短路径
-- Same Neighbors, 查询两个顶点的共同邻居
+- Same Neighbors，查询顶点的共同邻居。GET 接口用于查询两个顶点的共同邻居；POST 批量接口用于在单次请求中独立计算多组顶点对的共同邻居。
 - Jaccard Similarity API，计算 jaccard 相似度，包括两种：
     - 一种是使用 GET 方法，计算两个顶点的邻居的相似度（交并比）
     - 一种是使用 POST 方法，在全图中查找与起点的 jaccard similarity 最高的 N 个点
@@ -3260,3 +3260,75 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/count
 ##### 3.2.27.3 适用场景
 
 只关心多步邻居的规模时使用，避免序列化和传输大量顶点。
+
+#### 3.2.28 Same Neighbors Batch (POST)
+
+##### 3.2.28.1 功能介绍
+
+在单次批量 HTTP 请求中独立计算多组顶点对的共同邻居。
+与接收单组顶点的 GET `sameneighbors` 接口不同，`sameneighborsbatch` 接收一个顶点对列表，并独立计算每一对顶点的共同邻居。
+
+###### Params
+
+- vertex_list：顶点对列表，必填项。每个元素必须且仅包含两个非空的顶点 ID。数值型 ID 必须为 64 位整型范围内的整数（`-9223372036854775808` 至 `9223372036854775807`），也支持 String 和 UUID 格式。
+- direction：顶点向外发散的方向（`OUT`, `IN`, `BOTH`），选填项，默认是 `BOTH`。
+- label：边的类型过滤条件，选填项，默认代表所有 edge label。
+- max_degree：遍历过程中单个顶点访问的最大邻接边数，选填项，默认为 `10000`，必须为正数或 `-1`（不限制）。
+- limit：每组顶点对返回的共同邻居最大数目，选填项，默认为 `10000000`，必须为不超过 `2147483647` 的正数或 `-1`。
+
+##### 3.2.28.2 使用方法
+
+###### Method & Url
+
+```text
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/sameneighborsbatch
+```
+
+###### Request Body
+
+```json
+{
+  "vertex_list": [
+    ["1:marko", "1:josh"],
+    ["1:peter", "1:josh"]
+  ],
+  "direction": "BOTH",
+  "label": "knows",
+  "max_degree": 10000,
+  "limit": 100
+}
+```
+
+###### Response Status
+
+```json
+200
+```
+
+###### Response Body
+
+响应体包含与输入对顺序对应的二维数组 `same_neighbors`，以及包含遍历迭代计数和耗时的 `measure`：
+
+```json
+{
+  "same_neighbors": [
+    [
+      "2:lop"
+    ],
+    []
+  ],
+  "measure": {
+    "vertex_iter_counter": 6,
+    "edge_iter_counter": 8,
+    "cost": 3
+  }
+}
+```
+
+> [!NOTE]
+> 遍历开始前会对 `vertex_list` 中的所有顶点对执行校验。若存在非法或不支持的顶点 ID，请求将直接拒绝。
+> 无共同邻居的顶点对返回空数组 `[]`。`measure` 中的计数统计涵盖该批次的所有顶点对。
+
+##### 3.2.28.3 适用场景
+
+批量查询多组候选顶点之间的共同好友、共同关注或关联实体（如社交推荐、协同过滤），避免发起大量连续串行的 HTTP 请求。

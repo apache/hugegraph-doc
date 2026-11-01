@@ -13,7 +13,7 @@ Ordinary graph queries connect directly to HugeGraph Server. Query generation, e
 
 ## Requirements
 
-- Python 3.10 or later. A separate HugeGraph-LLM service must also meet that module's Python requirements.
+- Python >= 3.12 (Python 3.12–3.14 supported). A separate HugeGraph-LLM service must also meet that module's Python requirements.
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) and an MCP client that supports STDIO.
 - HugeGraph Server 1.7.0 or later, reachable from the MCP process. The default graph path is `DEFAULT/hugegraph` and uses the graphspace API.
 - An existing graph and an account with the required permissions. See [authentication and authorization](../../config/config-authentication.md).

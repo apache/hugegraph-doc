@@ -273,6 +273,13 @@ You can also set these variables in `bin/hugegraph`.
   - -D, use the mode of -Dkey=value to specify dynamic parameters, which are used to specify HDFS configuration items when the data needs to be backed up to HDFS during the migration process, for example: -Dfs.default.name=hdfs://localhost: 9000
   - --graph-mode or -m, the mode to set the target graph when restoring the source graph to the target graph, legal values include [RESTORING, MERGING], the default is RESTORING. The target graph is switched to this mode during the migration and switched back to its original mode afterwards
   - --keep-local-data, whether to keep the backup of the source map generated in the process of migrating the map, the default is false, that is, the backup of the source map is not kept after the default migration map ends
+  > [!WARNING]
+  > **Backup & Migration Failures**: If any vertex or edge data page fails after configured retries, the backup halts immediately with an error, and `migrate`
+  > does not proceed to restore the target graph. Partial backup files and shard diagnostics (files ending in `_shards`, such as `vertex_failed_shards` or
+  > `edge_timeout_shards`) are preserved in `./logs` for root-cause diagnosis.
+  > The backup directory (`--directory`) and log directory (`--log`, default `./logs`) are independent. Note that task initialization automatically clears
+  > files ending in `_shards` from the selected log directory. Before retrying, copy diagnostic files elsewhere or select a new `--log` directory as well as
+  > a clean `--directory`.
 - schedule-backup, periodically back up the graph and keep a certain number of the latest backups (currently only supports local file systems)
   - --directory or -d, required, specifies the directory of the backup data
   - --backup-num, optional, specifies the number of latest backups to save, defaults to 3
@@ -813,3 +820,7 @@ Usage: hugegraph [options] [command] [command options]
 ```bash
 ./bin/hugegraph --url http://127.0.0.1:8080 --graph hugegraph migrate --target-url http://127.0.0.1:8090 --target-graph hugegraph
 ```
+
+> [!NOTE]
+> If a data page fails during the backup phase of migration, `migrate` terminates immediately and leaves the target graph untouched.
+> Inspect shard diagnostic files in `./logs/` (`*_shards`) and ensure a clean directory is provided before retrying.

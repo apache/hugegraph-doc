@@ -90,11 +90,15 @@ hugo_bin=${HUGO_BIN:-hugo}
 if [ "$mode" = "server" ]; then
   if [ -n "$base_url" ] || [ -n "${HG_DOC_SITE_ORIGIN:-}" ]; then
     "$hugo_bin" server \
+      --renderToMemory \
       --config "hugo.yaml,$config_file" \
       --appendPort=false \
       "$@"
   else
-    "$hugo_bin" server --config "hugo.yaml,$config_file" "$@"
+    "$hugo_bin" server \
+      --renderToMemory \
+      --config "hugo.yaml,$config_file" \
+      "$@"
   fi
 else
   # Keep the known LibSass deprecation visible; other warnings remain blocking.

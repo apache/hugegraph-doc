@@ -131,6 +131,7 @@ exit "${HG_WRAPPER_HUGO_EXIT:-0}"
         origin_index = calls[0]["args"].index("--site-origin") + 1
         self.assertEqual(calls[0]["args"][origin_index], "http://localhost:1414/")
         self.assertEqual(calls[1]["args"][0], "server")
+        self.assertIn("--renderToMemory", calls[1]["args"])
         self.assertEqual(
             calls[1]["args"][-4:],
             ["--port", "1414", "--bind", "127.0.0.1"],
@@ -162,6 +163,7 @@ exit "${HG_WRAPPER_HUGO_EXIT:-0}"
             "https://preview.example/docs/",
         )
         hugo_args = calls[1]["args"]
+        self.assertIn("--renderToMemory", hugo_args)
         self.assertIn("--appendPort=false", hugo_args)
         self.assertEqual(hugo_args[-1], "--baseURL=https://preview.example/docs/")
 

@@ -493,6 +493,59 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/manage
 }
 ```
 
+#### 6.1.11 克隆图 Schema
+
+从 Server API 版本 0.73 起，支持将同一图空间内已有源图的 Schema 同步克隆到新建的目标图中。
+该接口会同步复制源图的全部属性类型（Property Key）、顶点类型（Vertex Label）和索引标签（Index Label）。
+
+> [!NOTE]
+> 该接口仅复制 Schema，不复制图中的顶点和边数据。若源图包含任何边类型（Edge Label），接口将在创建目标图前直接拒绝，
+> 因为部分后端存储无法安全保留边类型所需的层次元数据。克隆期间应停止对源图 Schema 进行修改。
+> 若目标图创建后克隆过程出错，目标图可能处于部分 Schema 状态，需人工排查并显式删除后重试。
+
+##### Params
+
+**路径参数说明：**
+
+- graphspace: 图空间名称
+- graph: 要创建的目标图名称
+
+**请求参数说明：**
+
+- source: 被克隆的源图名称（必填）
+
+##### Method & Url
+
+```text
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloned_target_graph/schema-clone?source=hugegraph
+```
+
+##### Request Body (可选)
+
+可选的 JSON 请求体，仅支持设置目标图的 `nickname`（设置 `Content-Type: application/json`）：
+
+```json
+{
+  "nickname": "ClonedGraph"
+}
+```
+
+##### Response Status
+
+```javascript
+201
+```
+
+##### Response Body
+
+```json
+{
+  "name": "cloned_target_graph",
+  "nickname": "ClonedGraph",
+  "backend": "rocksdb"
+}
+```
+
 ### 6.2 Conf
 
 #### 6.2.1 查看某个图的配置

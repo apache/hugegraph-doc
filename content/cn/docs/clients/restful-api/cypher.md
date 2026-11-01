@@ -193,3 +193,54 @@ curl -X POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugecypher1/cypher
     }
 }
 ```
+
+#### 9.1.4 Cypher 结构化错误响应与错误码
+
+当 Cypher 语句解析、转译或执行失败时，HugeGraphServer 返回兼容 Gremlin 规范的响应体，HTTP 状态码保持为 `200`，`status.code` 为 `400`。
+结构化的错误详情挂载在 `status.attributes.errors` 数组中。
+
+> [!NOTE]
+> HTTP 层错误（如鉴权失败 `401` 或不支持的媒体类型 `415`）属于独立处理路径，不使用此响应封套。
+> 客户端应检查响应体中的 `status.code`，而非单纯依赖 HTTP 状态码。响应中不包含顶层 `errors` 字段。
+
+##### 错误响应结构
+
+`status.attributes.errors` 中的每个元素包含以下字段：
+- `code`: 稳定的错误代码字符串。
+- `message`: 来自转译器或执行引擎的详细错误信息（具体文字描述不作为强约束契约）。
+- `hint`: 明确的操作指引与排错建议（无具体指引时为空字符串）。
+
+```json
+{
+  "requestId": "example-request-id",
+  "status": {
+    "message": "Expected exactly one statement per query but got: 2",
+    "code": 400,
+    "attributes": {
+      "errors": [
+        {
+          "code": "HugeGraph.Cypher.SyntaxError",
+          "message": "Expected exactly one statement per query but got: 2",
+          "hint": "Submit exactly one Cypher statement per request"
+        }
+      ]
+    }
+  },
+  "result": {
+    "data": null,
+    "meta": {}
+  }
+}
+```
+
+##### 错误码列表
+
+| 错误码 | 识别的失败类型 | 提示信息（Hint） |
+|---|---|---|
+| `HugeGraph.Cypher.SyntaxError` | 语法解析错误、未知函数、多条语句或未定义变量 | 提示语法规则（如单语句、在 MATCH/WITH 声明变量） |
+| `HugeGraph.Cypher.ExecutionError` | 顶点/边类型、属性或索引未定义；未识别错误兜底 | 建议通过 Schema API 创建元数据；兜底为空字符串 |
+| `HugeGraph.Cypher.UnsupportedFeature` | 不支持的子句、match/create 模式或函数谓词 | 建议查阅 Cypher 兼容性指南确认受支持语法 |
+
+- **SyntaxError**: 语法解析错误、不支持的内置函数、带行列位置的语义错误、单次请求包含多条语句，或未在 `MATCH`、`UNWIND`、`WITH` 中声明即引用的变量。
+- **ExecutionError**: 顶点类型、边类型、属性或索引未定义错误。该错误码同时作为未分类转译错误及底层运行时异常的统一兜底分类，并不意味着图遍历已开始执行。
+- **UnsupportedFeature**: 当前 Cypher 转译器不支持的子句、匹配/创建模式、属性类型或自定义谓词。

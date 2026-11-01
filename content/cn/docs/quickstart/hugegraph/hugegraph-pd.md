@@ -555,4 +555,40 @@ curl -u "store:${HG_PD_AUTH_SECRET_KEY:?请先设置 PD 部署密钥}" \
 
 PD 以 `hg` 前缀注册自己的指标，因此 `/actuator/prometheus` 除标准 JVM 指标外还会暴露 `hg_up`、`hg_graphs`、`hg_stores` 和 `hg_terms`，在存在图之后还会有按图统计的分区和大小指标。
 
+同时暴露用于监控 Raft 法定人数（Quorum）状态及告警的成员指标：
+- `hg_raft_leader`：当前 PD 节点若为选出的 Raft Leader 则为 `1`，Follower 节点为 `0`。
+- `hg_raft_has_leader`：当前 PD 节点若能看到活跃的 Raft Leader（即属于法定多数 Quorum 一部分）则为 `1`，失去 Quorum 时为 `0`。
+- `hg_raft_alive_peers`：Leader 节点在租约超时时间内收到心跳的活跃 Raft 节点总数（包含自身）；非 Leader 节点上返回 `NaN`。
+
+> [!NOTE]
+> **Quorum 丢失告警规则**：当集群所有成员上 `sum(hg_raft_leader) == 0` 或 `hg_raft_has_leader == 0` 时，表明集群已失去 Quorum。告警规则的
+> `for:` 持续时间应长于 Raft 选举超时时间（例如 `for: 30s`），以避免正常重新选举期间误报。若需监控活跃副本数，可使用表达式
+> `hg_raft_alive_peers and on(instance) (hg_raft_leader == 1)`。
+
 在 1.7.0 之后的版本中，PD 还会为每个已注册的 Store 导出 `hg_store_state{store="<id>",state="<state>"}`：Store 当前状态（`Unknown`、`Pending`、`Up`、`Offline`、`Exiting` 或 `Tombstone`）对应的序列为 `1`，其余为 `0`；以及 `hg_store_leader_count{store="<id>"}`，即 leader 位于该 Store 上的分片组数量。重建后的 Store 在 leader 迁回之前会报告 `0`。所有 PD 成员读取的是同一份复制的元数据，因此聚合这些序列前请先只选取一个实例。
+
+#### 7.6 Store 下线与排空生命周期
+
+下线或下架 Store 节点遵循严谨的状态机流转，以确保在不中断业务的前提下安全排空分片副本：
+
+1. **状态机流转过程**：
+   - `Up`：Store 在线且健康，正常参与副本分配和 leader 选举。
+   - `Exiting`：Store 处于排空状态。处于 `Exiting` 时，该节点继续正常续租心跳，但 PD 会将其排除在新的副本分配和迁移目标之外。
+   - 分区迁移：PD 自动调度后台迁移任务，将该节点上的所有分片副本逐步迁至其他健康的活跃 Store 上。
+   - `Tombstone`：Store 永久下线退出。一旦标记为 `Tombstone`，管理接口不再允许将其恢复为活跃状态。
+
+2. **发起排空操作**：
+   通过管理接口将目标 Store 状态置为 `Exiting`：
+   ```bash
+   curl -X POST http://<pd-host>:8620/v1/store/{storeId} \
+     -H "Authorization: Basic <credentials>" \
+     -H "Content-Type: application/json" \
+     -d '{"storeState": "Exiting"}'
+   ```
+
+3. **容量约束与下线检查**：
+   - **容量校验**：排空会校验集群剩余可用 Store 节点数是否满足 `minStoreCount`（`pd.initial-store-count`）。若剩余容量不足以维持所需副本数，
+     PD 将拒绝操作；此时需扩容足够的活跃 Store 后重新提交相同的 `Exiting` 请求，持久化的意图始终保持为 `Exiting`。
+   - **退出完成判定**：PD 会持续保持 `Exiting` 状态，直到 Store 最新心跳上报本地分区引擎数为 0 且 PD 元数据中无任何分片组引用该 Store ID。
+   - **销毁前核验**：在删除 Store Pod 或持久化存储卷前，运维人员必须确认其余分片组已具备完整的 Raft 成员、全额副本以及最新的健康心跳。
+   - **重新注册意图保留**：处于 `Exiting` 状态的 Store 重启重新注册时，即使其地址在 `pd.initial-store-list` 中，PD 仍会保留其 `Exiting` 排空意图。

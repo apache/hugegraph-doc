@@ -13,7 +13,7 @@ HugeGraph-LLM supports knowledge graph construction, GraphRAG, and natural-langu
 
 > AI-generated project documentation: [Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
 
-- Python 3.10 or 3.11 (`>=3.10,<3.12`)
+- Python >= 3.12 (Python 3.12–3.14 supported)
 - `uv` 0.7 or later
 - HugeGraph Server 1.5.0 or later; the current workspace client rejects detectable older versions
 

@@ -470,6 +470,60 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/manage
 }
 ```
 
+#### 6.1.11 Clone graph schema
+
+With Server API version 0.73 or newer, clone the schema of an existing graph into a new target graph within the same graph space.
+This synchronously copies all property keys, vertex labels, and index labels from the source graph to the target graph.
+
+> [!NOTE]
+> Graph vertices and edges (data) are not copied. Sources containing any edge label are rejected before creating the target graph,
+> as some schema backends do not preserve the hierarchy metadata required to copy edge labels safely. Stop changes to the source schema
+> for the duration of the operation. If schema copying fails after the target graph is created, inspect and remove the partial target graph
+> explicitly before retrying.
+
+##### Params
+
+**Path parameters**
+
+- graphspace: Graphspace name
+- graph: Target graph name to create
+
+**Query parameters**
+
+- source: Name of the existing source graph to copy schema from (required)
+
+##### Method & Url
+
+```text
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloned_target_graph/schema-clone?source=hugegraph
+```
+
+##### Request Body [Optional]
+
+Optional JSON body supporting an updated `nickname` for the target graph (set `Content-Type: application/json`):
+
+```json
+{
+  "nickname": "ClonedGraph"
+}
+```
+
+##### Response Status
+
+```javascript
+201
+```
+
+##### Response Body
+
+```json
+{
+  "name": "cloned_target_graph",
+  "nickname": "ClonedGraph",
+  "backend": "rocksdb"
+}
+```
+
 ### 6.2 Conf
 
 #### 6.2.1 Get configuration for a graph

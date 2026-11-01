@@ -197,7 +197,7 @@ Importing a dataset into HugeGraph follows four ordered steps:
 1. [Construct the graph schema](#31-construct-graph-schema) — Define property keys, vertex labels, and edge labels in Groovy.
 1. [Prepare data files](#32-prepare-data) — Format data records (TEXT, CSV, JSON, HDFS, or DB tables).
 1. [Write input source mapping file](#33-write-data-source-mapping-file) — Create the JSON mapping specification.
-1. [Execute data import](#34-execute-the-import) — Run `hugegraph-loader.sh` to load data into the graph.
+1. [Execute data import](#34-execute-command-import) — Run `hugegraph-loader.sh` to load data into the graph.
 {.steps}
 
 #### 3.1 Construct graph schema

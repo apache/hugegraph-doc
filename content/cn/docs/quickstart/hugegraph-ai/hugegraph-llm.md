@@ -13,7 +13,7 @@ HugeGraph-LLM 用于知识图谱构建、GraphRAG 和自然语言图查询。演
 
 > AI 总结项目文档：[Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
 
-- Python 3.10 或 3.11（`>=3.10,<3.12`）
+- Python >= 3.12（支持 Python 3.12–3.14）
 - `uv` 0.7 或更高版本
 - HugeGraph Server 1.5.0 或更高版本；当前 workspace 中的 Python 客户端会拒绝可探测到的更低版本
 

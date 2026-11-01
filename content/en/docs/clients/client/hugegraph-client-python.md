@@ -12,7 +12,7 @@ The module lives in the [hugegraph-ai](https://github.com/apache/hugegraph-ai) r
 
 ## Requirements
 
-- The client and HugeGraph-AI workspace require Python 3.10 or later; CI runs client tests on 3.10 and 3.11.
+- The client and HugeGraph-AI workspace require Python >= 3.12 (Python 3.12–3.14 supported).
 - HugeGraph Server 1.5.0 or later. The client refuses to connect to older servers; use client v1.3.x for those.
 - `uv` (recommended) or `pip`
 

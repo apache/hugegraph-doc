@@ -63,7 +63,7 @@ Toolchain 的主要组件如下：
 
 > [!DETAILS]- 展开旧版架构图
 >
-> ![旧版 HugeGraph 架构图，仅用于历史参考](/docs/images/design/architectural-revised.png)
+> ![旧版 HugeGraph 架构图，仅用于历史参考](/cn/docs/images/design/architectural-revised.png)
 
 ## 相关专题
 

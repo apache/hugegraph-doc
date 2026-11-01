@@ -193,3 +193,56 @@ curl -X POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugecypher1/cypher
     }
 }
 ```
+
+#### 9.1.4 Cypher Error Response Envelope and Error Codes
+
+When query submission, translation, or execution fails inside the Cypher processing pipeline, HugeGraphServer returns a Gremlin-compatible response envelope
+with HTTP status `200` and `status.code = 400`. Structured error details are provided under `status.attributes.errors`.
+
+> [!NOTE]
+> HTTP-layer errors (such as authentication failure `401` or unsupported media type `415`) remain separate and do not use this envelope.
+> Clients must inspect `status.code` rather than relying solely on the HTTP response code. There is no top-level `errors` field in the response.
+
+##### Error Response Structure
+
+Each entry in `status.attributes.errors` contains:
+- `code`: Stable error code string.
+- `message`: Detailed failure message from the translator or execution engine (wording is not a frozen contract).
+- `hint`: Actionable guidance to resolve the issue (empty string when no specific hint is available).
+
+```json
+{
+  "requestId": "example-request-id",
+  "status": {
+    "message": "Expected exactly one statement per query but got: 2",
+    "code": 400,
+    "attributes": {
+      "errors": [
+        {
+          "code": "HugeGraph.Cypher.SyntaxError",
+          "message": "Expected exactly one statement per query but got: 2",
+          "hint": "Submit exactly one Cypher statement per request"
+        }
+      ]
+    }
+  },
+  "result": {
+    "data": null,
+    "meta": {}
+  }
+}
+```
+
+##### Error Codes
+
+| Error Code | Recognized Failure Condition | Hint |
+|---|---|---|
+| `HugeGraph.Cypher.SyntaxError` | Parser syntax/semantic errors, multiple statements, or undefined variables | Guidance on Cypher syntax rules |
+| `HugeGraph.Cypher.ExecutionError` | Undefined schema labels or property keys; unclassified error fallback | Suggests creating schema elements via schema API |
+| `HugeGraph.Cypher.UnsupportedFeature` | Unsupported clauses, match/create patterns, or predicates | Refers to Cypher compatibility guide |
+
+- **SyntaxError**: Triggered by parser syntax rejections, unknown functions, semantic errors with position offsets, multiple statements per request,
+  or variables referenced without prior definition in `MATCH`, `UNWIND`, or `WITH`.
+- **ExecutionError**: Triggered by undefined vertex/edge labels, property keys, or index labels. Also serves as the fallback for unclassified translation
+  or runtime failures; it does not imply traversal execution actually started.
+- **UnsupportedFeature**: Triggered by clauses, patterns, property types, or predicates unsupported by the translator.

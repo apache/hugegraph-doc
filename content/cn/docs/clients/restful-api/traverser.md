@@ -2651,6 +2651,37 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertic
 - page：分页位置，选填项，默认为 null，不分页；当 page 为“”时表示分页的第一页，从 start 指示的位置开始
 - page_limit：分页获取顶点时，一页中顶点数目的上限，选填项，默认为 100000
 
+`start` 与 `end` 都必须出现，即使需要无界扫描，也应传入显式空值。
+包含扫描参数校验修复的构建在缺参时返回 HTTP 400；旧构建可能返回 HTTP 500。
+调用方升级后仍应保留两个参数，缺参不表示无界。
+
+有界分页导出需要显式传入初始空 `page`：
+
+```bash
+curl -fsS -G \
+  'http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertices/scan' \
+  --data-urlencode 'start=' \
+  --data-urlencode 'end=' \
+  --data-urlencode 'page=' \
+  --data-urlencode 'page_limit=1000'
+```
+
+逐分片导出时，应以 `vertices/shards` 返回的原始 `start` 与 `end` 替换空边界。
+边界编码依赖后端，不能将 RocksDB 返回的编码位置转换成下文的数值示例。
+后续请求保持同一组边界，并使用 `--data-urlencode` 传入响应的 `page` 游标。
+响应的 `page` 为 null 或空时结束；末页的元素数量可能少于 `page_limit`。
+
+| 请求 | 行为 |
+| --- | --- |
+| `start=&end=&page=&page_limit=1000` | 第一页，最多 1000 个顶点 |
+| 相同边界并传入响应的 `page` | 同一分片的下一页 |
+| `start=&end=&page_limit=1000`，省略 `page` | 不分页，`page_limit` 不限制该响应 |
+| 缺少 `start` 或 `end` | 无效请求，不能省略参数来表示无界 |
+
+为兼容已有调用方，不分页形式仍然保留。
+导出程序应显式启用分页，避免一次读取整个大分片。
+`edges/scan` 使用相同规则；启用鉴权时需补充配置要求的 HTTP 凭据。
+
 ###### Method & Url
 
 ```text
@@ -2946,6 +2977,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges/
 - end：分片结束位置，必填项
 - page：分页位置，选填项，默认为 null，不分页；当 page 为“”时表示分页的第一页，从 start 指示的位置开始
 - page_limit：分页获取边时，一页中边数目的上限，选填项，默认为 100000
+
+边扫描同样要求两个边界，无界时传入显式空值。
+有界分页的第一页传入 `page=`，后续游标需要 URL 编码，并保持边界不变。
+省略 `page` 时不分页，`page_limit` 不限制结果数量。
+边界应取自 `edges/shards`，不能复用顶点分片的位置。
 
 ###### Method & Url
 

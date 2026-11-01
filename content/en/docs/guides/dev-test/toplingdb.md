@@ -44,7 +44,15 @@ bash bin/prepare-topling.sh
 
 The script verifies the copied JAR's hash, Topling Java marker, one Linux x86_64 JNI entry, ELF architecture and native dependencies.
 Before installation, a disposable database verifies that the selected JNI actually applies EasyMigrate configuration to its persisted write-buffer size.
-Unsupported builds are rejected even when their marker and hash match. The probe does not certify existing-data compatibility or every production setting.
+Unsupported builds are rejected even when their marker and hash match.
+In builds containing the profile validation fix, a second native import validates the actual configuration before publishing the runtime.
+It uses `TOPLINGDB_EASY_MIGRATE_CONF` when set, otherwise the component's `conf/toplingdb.yaml`.
+Missing plugins fail preparation instead of leaving a runtime that fails during Server initialization.
+This import does not open databases using production WAL or log paths.
+Keep an explicit configuration override in the service environment when starting the component too.
+The import validates the file present during preparation. Replacing that file later can introduce unsupported plugins;
+validate the replacement with the selected JNI before restarting the component.
+These probes do not certify existing-data compatibility or every production column family.
 A checksum receipt binds this verification to the installed JAR and native library; launchers reject missing or changed receipts. Use a fresh distribution
 when upgrading from an older preparation script. Launch rejects inherited RocksDB JNI preloads in default/standard mode
 and competing JNI in Topling mode, while preserving unrelated preloads.
@@ -103,6 +111,30 @@ export TOPLINGDB_ROCKSDB_PROVIDER=topling
 The launcher uses that component's `conf/toplingdb.yaml`. Set `TOPLINGDB_EASY_MIGRATE_CONF=/absolute/path/config.yaml` for an explicit override.
 The shipped native profile disables its HTTP server and keeps `memtable_as_log_index=false`, which the Java write path requires.
 Tune that profile for the host; it is separate from the business provider and data-path configuration.
+
+Starting with Server 1.8.0+ (`apache/hugegraph#3447` / master), distributions ship a community-native profile in `conf/toplingdb.yaml`
+using standard SkipList memtables and BlockBasedTable files by default, which does not require CSPP, CSPPMemTabTable, or DispatcherTable plugins.
+In contrast, existing and earlier release builds (such as 1.7.0) ship `conf/toplingdb.yaml` configured with the `cspp` memtable and `DispatcherTable`.
+When using community JNI without CSPP plugins on earlier builds, adjust `conf/toplingdb.yaml` to use SkipList and BlockBasedTable to avoid initialization failures.
+
+The cache and write-buffer values are individual native budgets; memory also grows with the number of databases and column families.
+Inspect the actual profile in the distribution you deploy. Custom native profiles must name plugins supplied by the selected JNI.
+Changing the default profile does not convert existing SST files; data written with another table format still needs its compatible reader.
+
+The standard Server container includes a Java 17 JDK; builds containing the preparation-tool fix also include `unzip`.
+It does not bundle or download optional JNI. The artifact's glibc, libaio and CPU requirements must match the base image or deployment host.
+Use the [Server deployment guide](/docs/quickstart/hugegraph/hugegraph-server/) to distinguish the standalone and HStore images.
+
+On Linux, verify the running standalone Server's mapped JNI after startup:
+
+```bash
+# Run in the Server distribution, as the service account.
+server_pid=$(cat bin/pid)
+grep -F 'topling/librocksdbjni-linux64.so' "/proc/$server_pid/maps"
+```
+
+A successful API response alone does not establish that Topling was selected.
+Check the mapped library and a real graph write/read together; keep these checks separate from a Helm runtime-variant render test.
 
 For a fresh standalone Server graph, initialize its store once before the first startup:
 

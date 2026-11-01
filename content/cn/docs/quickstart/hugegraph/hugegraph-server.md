@@ -113,10 +113,31 @@ serializer:
 
 完整容器部署指引请参考 [Docker 部署方式](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
+使用 Server 构建时，应先区分制品与存储拓扑：
+
+| 制品 | 存储与依赖 |
+| --- | --- |
+| `hugegraph/hugegraph:<tag>` | 单机 RocksDB，不需要 PD 或 Store |
+| 标准二进制发行包 | 默认 `backend=rocksdb`、`serializer=binary`，`pd.peers` 已注释 |
+| `hugegraph/server:<tag>` | 默认 HStore，需要 PD 与 Store |
+| 当前 Helm `values-single.yaml` | 1 PD + 1 Store + 1 Server，仍为 HStore |
+
+Helm 的单节点预设不是单机 RocksDB 预设。
+Vermeer 与 SeaTunnel 的 `standalone` 设置也独立于 Server 后端，不会切换 Server 存储。
+
 快速启动使用 `RocksDB` 单机后端的 Server 容器：
 
 ```bash {tab="快速启动 (默认)"}
 docker run -itd --name=server -p 8080:8080 hugegraph/hugegraph:1.7.0
+```
+
+```bash {tab="使用命名持久化卷"}
+# 使用命名数据卷持久化 RocksDB 数据 (挂载至 /hugegraph-server/rocksdb-data)
+docker volume create hugegraph-rocksdb
+docker run -d --name=server -p 8080:8080 \
+  -e PASSWORD="replace-with-your-password" \
+  -v hugegraph-rocksdb:/hugegraph-server/rocksdb-data \
+  hugegraph/hugegraph:1.7.0
 ```
 
 ```bash {tab="附带内置样例图"}
@@ -134,6 +155,64 @@ docker run -itd --name=server -p 8080:8080 -e PASSWORD="replace-with-your-passwo
 - **查看启动日志**：`docker logs -f server`
 - **验证服务可用性**：`curl -fsS http://127.0.0.1:8080/versions`
 {.td-cards-list}
+
+为保证可复现，应固定经过验证的 release tag；`latest` 会变动，发布镜像也可能尚未包含源码修复。
+命名卷持久化默认 RocksDB 路径，挂到 `/hugegraph-server/data` 不会保存该数据库。
+`PASSWORD` 在首次启动时初始化鉴权；更改环境变量不会轮换已有用户的密码。
+若要在全新空数据安装中复用 HStore 镜像，需显式设置 `HG_SERVER_BACKEND=rocksdb` 与 `HG_SERVER_USE_PD=false`。
+不要以此切换已有 HStore 部署的后端，也不要复用其初始化标记。
+
+自定义配置 bind mount 必须允许 UID/GID 10001 写入。
+应挂载整个可写配置目录；entrypoint 使用原子替换，不能更新单文件 bind mount。
+优先使用命名数据卷，不要递归放宽宿主机目录权限。
+
+解压标准二进制发行包后，使用 Java 17 并确认图的 RocksDB 配置，再初始化和启动：
+
+```bash
+java -version
+# 在全新 Server 发行包目录内执行
+bin/init-store.sh
+bin/start-hugegraph.sh
+```
+
+若全新二进制部署需要鉴权，先在 `conf/rest-server.properties` 配置 `auth.admin_pa`，
+运行 `bin/enable-auth.sh`，再通过 stdin 向 `bin/init-store.sh` 提供同一密码。
+二进制初始化器不读取容器 entrypoint 的 `PASSWORD` 环境变量；含凭据的配置文件应限制访问权限。
+Java 11 无法运行 Server 1.8 字节码。
+
+启动后检查 `/versions`、读取 `/graphspaces/DEFAULT/graphs`，并发送真实 Gremlin 请求。
+Server 1.8 单机遍历源为 `__g_DEFAULT-hugegraph`，禁用 PD 不会恢复旧别名。
+GraphSpace 管理本身需要 PD，本地图列表仍可查询。
+可执行请求与鉴权选项见 [Gremlin API](/cn/docs/clients/restful-api/gremlin/)。
+
+对上述启用鉴权的容器，同时检查 REST 图与遍历源：
+
+```bash
+curl -fsS http://localhost:8080/versions
+curl -fsS -u 'admin:replace-with-your-password' \
+  http://localhost:8080/graphspaces/DEFAULT/graphs
+curl -fsS -u 'admin:replace-with-your-password' \
+  -H 'Content-Type: application/json' \
+  -d '{"gremlin":"g.V().count()","aliases":{"g":"__g_DEFAULT-hugegraph"}}' \
+  http://localhost:8080/gremlin
+```
+
+只有部署未启用鉴权时才省略凭据。
+版本端点正常不代表已验证图已加载或当前凭据具有图访问权限。
+
+| 现象 | 检查项 |
+| --- | --- |
+| 启动等待 PD/Store | 确认镜像与实际图后端，HStore 镜像会等待分布式存储 |
+| 更新属性时报 `Permission denied` | 配置目录须允许镜像的数字服务 UID/GID 写入 |
+| 更新属性时报 `Device or resource busy` | 将单文件配置 bind mount 改为可写目录挂载 |
+| 更换容器后数据消失 | 持久化 `rocksdb-data`，挂载 `data` 不覆盖默认数据库 |
+| `UnsupportedClassVersionError` | 确认二进制发行包使用 Java 17 启动 |
+| 单机 Gremlin 报 `Could not rebind` | 使用 Server 1.8 实际注册的 GraphSpace 别名 |
+
+停止或移除容器不会删除命名数据卷，重启时应保留并复用该卷。
+显式移除数据卷会删除本地图数据。
+更改 `PASSWORD` 或重建镜像不能替代数据迁移或凭据恢复。
+
 
 如果使用 Docker Desktop，则可以按如下方式设置相关选项：
 <div style="text-align: center;">

@@ -88,6 +88,10 @@ LATEST_SHARED_DOC_ROUTES = {
     "/docs/guides/security/",
     "/cn/docs/guides/security/",
 }
+DOCS_MERGE_EQUIVALENT_PREFERENCES = {
+    "en:clients/client/hugegraph-client": "en:clients/hugegraph-client",
+    "cn:clients/client/hugegraph-client": "cn:clients/hugegraph-client",
+}
 URL_ATTRIBUTE_RE = re.compile(
     r"(?P<prefix>[\s<](?:href|xlink:href|src|action|formaction|data|poster|data-td-index-src|data-td-url|data-td-action-url|data-td-image-zoom)=)"
     r"(?P<quote>[\"']?)(?P<url>[^\s\"'<>`]+)(?P=quote)",
@@ -142,28 +146,28 @@ DOCS_NAV_EXPECTED_STATS = {
     "1.7": {
         "groups": 5,
         "pages": 85,
-        "removed": 9,
+        "removed": 12,
         "scopedLinks": 10,
         "treeSha256": "c87538b82b0e3506eef59417411686ddc188e0f33d0e3a1cda687de8d6f88747",
     },
     "1.5": {
         "groups": 5,
         "pages": 77,
-        "removed": 17,
+        "removed": 20,
         "scopedLinks": 10,
         "treeSha256": "ac29ab8f0e7020496a3a1afe480687043d751e32c93ffb848e2210e3500cd483",
     },
     "1.3": {
         "groups": 5,
         "pages": 68,
-        "removed": 26,
+        "removed": 29,
         "scopedLinks": 10,
         "treeSha256": "e8c9b0a64dac6dd3e47827ec5072697eb7d3ed79659e0b5c4a9c5df8e1408d38",
     },
     "1.0": {
         "groups": 5,
         "pages": 59,
-        "removed": 24,
+        "removed": 27,
         "scopedLinks": 10,
         "treeSha256": "bd45db511d9b6728e1523bd3c5ebd9d18912ee85aeabf79c77bcca7e511f977a",
     },
@@ -1073,9 +1077,71 @@ def materialize_docs_navigation(
         "/docs/performance/hugegraph-benchmark-0.5.6" in routes
         and "/docs/performance/hugegraph-benchmark-0.4.4" in routes
     )
-    if not regrouped_toolchain or not regrouped_computing or not regrouped_benchmark:
+    regrouped_clients = "/docs/clients/client" in routes
+    if (
+        not regrouped_toolchain
+        or not regrouped_computing
+        or not regrouped_benchmark
+        or not regrouped_clients
+    ):
         groups_for_materialization = json.loads(json.dumps(groups))
         for group in groups_for_materialization:
+            if group.get("id") == "develop" and not regrouped_clients:
+                clients_node = next(
+                    (
+                        node
+                        for node in group.get("children", [])
+                        if node.get("page") == "/docs/clients"
+                    ),
+                    None,
+                )
+                if clients_node is not None:
+                    restful_node = next(
+                        (
+                            c
+                            for c in clients_node.get("children", [])
+                            if c.get("page") == "/docs/clients/restful-api"
+                        ),
+                        None,
+                    )
+                    clients_node["children"] = [
+                        {"page": "/docs/clients/hugegraph-client"},
+                        {"page": "/docs/clients/gremlin-console"},
+                    ]
+                    if restful_node is not None:
+                        clients_node["children"].append(restful_node)
+
+                if not any(
+                    node.get("page") == "/docs/quickstart/client"
+                    for node in group.get("children", [])
+                ):
+                    quickstart_client_node = {
+                        "page": "/docs/quickstart/client",
+                        "children": [
+                            {"page": "/docs/quickstart/client/hugegraph-client"},
+                            {
+                                "page": "/docs/quickstart/client/hugegraph-client-python"
+                            },
+                            {
+                                "page": "/docs/quickstart/client/hugegraph-client-go"
+                            },
+                        ],
+                    }
+                    clients_index = next(
+                        (
+                            i
+                            for i, node in enumerate(group.get("children", []))
+                            if node.get("page") == "/docs/clients"
+                        ),
+                        -1,
+                    )
+                    if clients_index != -1:
+                        group["children"].insert(
+                            clients_index + 1, quickstart_client_node
+                        )
+                    else:
+                        group["children"].append(quickstart_client_node)
+                continue
             if group.get("id") == "components":
                 for node in group.get("children", []):
                     if (
@@ -2673,6 +2739,13 @@ def validate_version_routes(data: dict, manifest: dict) -> dict:
                     and pages[candidate_id][version] is not None
                 ]
                 if len(candidates) > 1:
+                    preferred_id = DOCS_MERGE_EQUIVALENT_PREFERENCES.get(source_id)
+                    if (
+                        preferred_id
+                        and preferred_id in group
+                        and pages[preferred_id][version] is not None
+                    ):
+                        continue
                     fail(
                         f"version route-map equivalent target is ambiguous for "
                         f"{source_id} {version}: {candidates!r}"
@@ -2751,6 +2824,13 @@ def resolved_logical_target(
         and route_map["pages"][candidate_id][version] is not None
     ]
     if len(alternatives) > 1:
+        preferred_id = DOCS_MERGE_EQUIVALENT_PREFERENCES.get(logical_id)
+        if (
+            preferred_id
+            and preferred_id in group
+            and route_map["pages"][preferred_id][version] is not None
+        ):
+            return route_map["pages"][preferred_id][version]
         fail(
             f"version route-map equivalent target is ambiguous for "
             f"{logical_id} {version}: {alternatives!r}"

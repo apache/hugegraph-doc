@@ -461,16 +461,16 @@ Besides schema, graph and gremlin, HugeClient exposes the following entries. The
 | `task()`              | `TaskManager`          | graph      | List, get, cancel, delete and wait on async tasks                               |
 | `computer()`          | `ComputerManager`      | graph      | Create, cancel, list and get computer jobs                                      |
 | `graphs()`            | `GraphsManager`        | graphspace | Create, clone, list, reload, clear and drop graphs, read and set the graph mode |
-| `graphSpace()`        | `GraphSpaceManager`    | server     | Manage GraphSpaces, see section 4                                               |
+| `graphSpace()`        | `GraphSpaceManager`    | server     | Manage GraphSpaces, see section 8                                               |
 | `auth()`              | `AuthManager`          | server     | Manage users, groups, targets, belongs and accesses                             |
 | `metrics()`           | `MetricsManager`       | server     | Read backend, system and statistics metrics                                     |
 | `versionManager()`    | `VersionManager`       | server     | Read the core, gremlin and API versions of the server                           |
 
 The client also reports what the connected server supports, so callers can branch on a capability instead of on a version string: `supportsGraphSpace()`, `supportsCypher()`, `supportsGraphCreate()`, `supportsDefaultRole()` and `isServerAuthEnabled()`.
 
-### 2 Schema
+### 6 Schema {#2-schema}
 
-#### 6.1 SchemaManager
+#### 6.1 SchemaManager {#21-schemamanager}
 
 SchemaManager is used to manage four kinds of schema in HugeGraph, namely PropertyKey (property type), VertexLabel (vertex type), EdgeLabel (edge type) and IndexLabel (index label). A SchemaManager object can be created for schema information definition.
 
@@ -488,7 +488,7 @@ schema = graph.schema()
 
 The definition process of the 4 kinds of schema is described below.
 
-#### 6.2 PropertyKey
+#### 6.2 PropertyKey {#22-propertykey}
 
 ##### 6.2.1 Interface and parameter introduction
 
@@ -591,7 +591,7 @@ schema.getPropertyKey("name").name()
 schema.getPropertyKey("name").userdata()
 ```
 
-#### 6.3 VertexLabel
+#### 6.3 VertexLabel {#23-vertexlabel}
 
 ##### 6.3.1 Interface and parameter introduction
 
@@ -713,7 +713,7 @@ schema.getVertexLabel("person").ttl()
 schema.getVertexLabel("person").ttlStartTime()
 ```
 
-#### 6.4 EdgeLabel
+#### 6.4 EdgeLabel {#24-edgelabel}
 
 ##### 6.4.1 Interface and parameter introduction
 
@@ -819,7 +819,7 @@ schema.getEdgeLabel("knows").edgeLabelType()
 schema.getEdgeLabel("knows").links()
 ```
 
-#### 6.5 IndexLabel
+#### 6.5 IndexLabel {#25-indexlabel}
 
 ##### 6.5.1 Interface and parameter introduction
 
@@ -913,9 +913,9 @@ schema.getIndexLabel("personByAge").indexType()
 schema.getIndexLabel("personByAge").name()
 ```
 
-### 3 Graph
+### 7 Graph {#3-graph}
 
-#### 7.1 Vertex
+#### 7.1 Vertex {#31-vertex}
 
 Vertices are the most basic elements of a graph, and there can be many vertices in a graph. Here is an example of adding vertices:
 
@@ -934,7 +934,7 @@ Vertex lop = graph.addVertex(T.LABEL, "software", "name", "lop", "lang", "java",
 - The remaining parameters are the settings of other properties of the vertex, but they are not required.
 - After calling the `addVertex` method, the vertices are inserted into the backend storage system immediately.
 
-#### 7.2 Edge
+#### 7.2 Edge {#32-edge}
 
 After added vertices, edges are also needed to form a complete graph. Here is an example of adding edges:
 
@@ -949,12 +949,12 @@ Edge knows1 = marko.addEdge("knows", vadas, "city", "Beijing");
 
 **Note: When frequency is multiple, the value of the property type corresponding to sortKeys must be set.**
 
-### 4 GraphSpace
+### 8 GraphSpace {#4-graphspace}
 The client can manage multiple GraphSpaces in one physical deployment, and each GraphSpace can contain multiple graphs. When no GraphSpace is specified, it uses `DEFAULT`.
 
 GraphSpaces need a server of core version 1.7.0 or later. Against an older server the client falls back to a legacy profile, and `hugeClient.supportsGraphSpace()` returns false.
 
-#### 8.1 Create GraphSpace
+#### 8.1 Create GraphSpace {#41-create-graphspace}
 
 ```java
 GraphSpaceManager spaceManager = hugeClient.graphSpace();
@@ -970,7 +970,7 @@ graphSpace.setMaxRoleNumber(100);  // Maximum number of roles
 spaceManager.createGraphSpace(graphSpace);
 ```
 
-#### 8.2 GraphSpace Interface Summary
+#### 8.2 GraphSpace Interface Summary {#42-graphspace-interface-summary}
 
 | Category | Interface | Description |
 |----------|-----------|-------------|

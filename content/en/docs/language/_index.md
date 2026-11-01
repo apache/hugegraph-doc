@@ -25,7 +25,7 @@ HugeGraph supports two mainstream graph query languages: **Gremlin** (imperative
   Core differences between Neo4j and HugeGraph in graph modeling, ID strategies, multiple labels, and query translation.
 - [Sample Graph Data](/docs/language/hugegraph-example/)
 
-  The classic 6-vertex 6-edge TinkerPop sample graph dataset used across query examples.
+  The classic TitanDB "Graph of the Gods" sample graph dataset (12 vertices) used across query examples.
 {.cards}
 
 ## Related Tools & Entry Points

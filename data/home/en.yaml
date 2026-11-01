@@ -44,7 +44,7 @@ capabilities:
       desc: Supports horizontal scaling and distributed deployment, seamlessly migrating from standalone to PB-level clusters, and provides [**distributed storage engine**](docs/quickstart/hugegraph/hugegraph-hstore/) options for different scale and performance requirements.
     - title: Open Ecosystem
       icon: fa-solid fa-puzzle-piece
-      desc: Adheres to Apache TinkerPop standards, provides [**multi-language clients**](docs/quickstart/client/hugegraph-client/), is compatible with mainstream big data platforms, and is backed by an active and evolving community.
+      desc: Adheres to Apache TinkerPop standards, provides [**multi-language clients**](docs/clients/client/hugegraph-client/), is compatible with mainstream big data platforms, and is backed by an active and evolving community.
 
 tlp:
   class: hg-home-band hg-home-tlp

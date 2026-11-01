@@ -1717,7 +1717,8 @@
     ],
     [
       "cn:clients/client/hugegraph-client",
-      "cn:clients/hugegraph-client"
+      "cn:clients/hugegraph-client",
+      "cn:quickstart/client/hugegraph-client"
     ],
     [
       "cn:clients/client/hugegraph-client-go",
@@ -1737,7 +1738,8 @@
     ],
     [
       "en:clients/client/hugegraph-client",
-      "en:clients/hugegraph-client"
+      "en:clients/hugegraph-client",
+      "en:quickstart/client/hugegraph-client"
     ],
     [
       "en:clients/client/hugegraph-client-go",

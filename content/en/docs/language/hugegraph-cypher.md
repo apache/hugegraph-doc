@@ -33,8 +33,7 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-When server authentication is disabled, no `Authorization` header is required; when authentication is enabled,
-standard `Basic` (RFC 4648 Base64, e.g. `curl -u`) or `Bearer <token>` credentials are supported.
+The Cypher API always requires an `Authorization` header, either `Basic` (standard RFC 4648 Base64, e.g. `curl -u`) or `Bearer <token>`. A request without one is rejected with `401`, even when the server runs without authentication.
 See the [Cypher REST API reference](/docs/clients/restful-api/cypher/) for the full request and response format.
 
 Example:

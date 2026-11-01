@@ -44,7 +44,7 @@ capabilities:
       desc: 支持水平扩容和分布式部署，从单机到 PB 级集群无缝迁移，提供 [**分布式存储引擎**](docs/quickstart/hugegraph/hugegraph-hstore/)适配，满足不同规模和性能需求。
     - title: 开放生态
       icon: fa-solid fa-puzzle-piece
-      desc: 遵循 Apache TinkerPop 标准，提供 [**多语言客户端**](docs/quickstart/client/hugegraph-client/)，兼容主流大数据平台，社区活跃持续演进。
+      desc: 遵循 Apache TinkerPop 标准，提供 [**多语言客户端**](docs/clients/client/hugegraph-client/)，兼容主流大数据平台，社区活跃持续演进。
 
 tlp:
   class: hg-home-band hg-home-tlp

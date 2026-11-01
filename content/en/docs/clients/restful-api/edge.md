@@ -435,6 +435,10 @@ When `label` is omitted: a base (parent) edge label has no direct edges and does
 
 **Error trigger rules**: when query values are type-compatible, missing a matching index or covering only some candidate labels raises an index error; only full coverage proceeds through the index. When query values are type-incompatible, a matching index may return an empty result (partial-coverage check skipped); with no matching index, the index error still applies. The query never falls back to a full scan.
 
+> [!NOTE]
+> The partial-coverage error, parent-index fallback for sub-edge labels, and the empty result for hidden or deleting candidate labels apply starting from 1.8.0.
+> Earlier versions use only indexes on the specified label, return only matches from indexed labels when `label` is omitted, and raise an index error when no label has a compatible index.
+
 With `vertex_id`, the query filters that vertex's adjacent edges; the global index-coverage requirement above does not apply.
 
 Key-value pairs of properties consist of the property name and value in JSON format. Multiple key-value pairs are allowed as query conditions. Property values support exact matching and range matching. For exact matching, it is in the form `properties={"weight":0.8}`. For range matching, it is in the form `properties={"age":"P.gt(0.8)"}`. The expressions supported by range matching are as follows:

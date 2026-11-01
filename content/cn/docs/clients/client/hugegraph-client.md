@@ -3,8 +3,8 @@ title: "HugeGraph Java Client"
 linkTitle: "Java 客户端"
 weight: 1
 aliases:
-  - /cn/docs/quickstart/client/hugegraph-client/
-  - /cn/docs/clients/hugegraph-client/
+  - /docs/quickstart/client/hugegraph-client/
+  - /docs/clients/hugegraph-client/
 ---
 
 ### 1 HugeGraph-Client 概述
@@ -467,16 +467,16 @@ HugeClient hugeClient = HugeClient.builder("http://localhost:8080", "hugegraph")
 | `task()`              | `TaskManager`          | graph      | 列出、获取、取消、删除异步任务，或等待其完成                  |
 | `computer()`          | `ComputerManager`      | graph      | 创建、取消、列出和获取 computer 任务                         |
 | `graphs()`            | `GraphsManager`        | graphspace | 创建、克隆、列出、重载、清空和删除图，读取和设置图的模式      |
-| `graphSpace()`        | `GraphSpaceManager`    | server     | 管理 GraphSpace，详见第 4 节                                 |
+| `graphSpace()`        | `GraphSpaceManager`    | server     | 管理 GraphSpace，详见第 8 节                                 |
 | `auth()`              | `AuthManager`          | server     | 管理 user、group、target、belong 和 access                   |
 | `metrics()`           | `MetricsManager`       | server     | 读取后端、系统和统计指标                                     |
 | `versionManager()`    | `VersionManager`       | server     | 读取服务端的 core、gremlin 和 API 版本                        |
 
 客户端还会报告所连服务端支持的能力，调用方可以据此判断，而不必解析版本号：`supportsGraphSpace()`、`supportsCypher()`、`supportsGraphCreate()`、`supportsDefaultRole()` 和 `isServerAuthEnabled()`。
 
-### 6 元数据管理 (SchemaManager)
+### 6 元数据管理 (SchemaManager) {#2-元数据}
 
-#### 6.1 SchemaManager
+#### 6.1 SchemaManager {#21-schemamanager}
 
 SchemaManager 用于管理 HugeGraph 中的四种元数据，分别是 PropertyKey（属性类型）、VertexLabel（顶点类型）、EdgeLabel（边类型）和 IndexLabel（索引标签）。在定义元数据信息之前必须先创建 SchemaManager 对象。
 
@@ -494,7 +494,7 @@ schema = graph.schema()
 
 下面分别介绍四种元数据的定义过程。
 
-#### 6.2 PropertyKey
+#### 6.2 PropertyKey {#22-propertykey}
 
 ##### 6.2.1 接口及参数介绍
 
@@ -597,7 +597,7 @@ schema.getPropertyKey("name").name()
 schema.getPropertyKey("name").userdata()
 ```
 
-#### 6.3 VertexLabel
+#### 6.3 VertexLabel {#23-vertexlabel}
 
 ##### 6.3.1 接口及参数介绍
 
@@ -721,7 +721,7 @@ schema.getVertexLabel("person").ttl()
 schema.getVertexLabel("person").ttlStartTime()
 ```
 
-#### 6.4 EdgeLabel
+#### 6.4 EdgeLabel {#24-edgelabel}
 
 ##### 6.4.1 接口及参数介绍
 
@@ -827,7 +827,7 @@ schema.getEdgeLabel("knows").edgeLabelType()
 schema.getEdgeLabel("knows").links()
 ```
 
-#### 6.5 IndexLabel
+#### 6.5 IndexLabel {#25-indexlabel}
 
 ##### 6.5.1 接口及参数介绍
 
@@ -930,9 +930,9 @@ schema.getIndexLabel("personByAge").indexType()
 schema.getIndexLabel("personByAge").name()
 ```
 
-### 7 图数据操作 (GraphManager)
+### 7 图数据操作 (GraphManager) {#3-图数据}
 
-#### 7.1 Vertex
+#### 7.1 Vertex {#31-vertex}
 
 顶点是构成图的最基本元素，一个图中可以有非常多的顶点。下面给出一个添加顶点的例子：
 
@@ -951,7 +951,7 @@ Vertex lop = graph.addVertex(T.LABEL, "software", "name", "lop", "lang", "java",
 - 剩下的参数就是顶点其他属性的设置，但并非必须。
 - 调用`addVertex`方法后，顶点会立刻被插入到后端存储系统中。
 
-#### 7.2 Edge
+#### 7.2 Edge {#32-edge}
 
 有了点，还需要边才能构成完整的图。下面给出一个添加边的例子：
 
@@ -963,14 +963,15 @@ Edge knows1 = marko.addEdge("knows", vadas, "city", "Beijing");
 - 源顶点和目标顶点必须符合 EdgeLabel 中 source-label 和 target-label 的定义，不能随意添加。
 - 对于非 nullableKeys 的属性，必须要赋值。
 
+
 **注意：当 frequency 为 multiple 时必须要设置 sortKeys 对应属性类型的值。**
 
-### 8 图空间管理 (GraphSpace)
+### 8 图空间管理 (GraphSpace) {#4-图管理}
 Client 支持管理一个物理部署中的多个 GraphSpace，每个 GraphSpace 可以包含多个图。不指定 GraphSpace 时使用 `DEFAULT`。
 
 GraphSpace 需要服务端 core 版本不低于 1.7.0。连接更早的服务端时，客户端会退回到 legacy 模式，此时 `hugeClient.supportsGraphSpace()` 返回 false。
 
-#### 8.1 创建GraphSpace
+#### 8.1 创建GraphSpace {#41-创建graphspace}
 
 ```java
 GraphSpaceManager spaceManager = hugeClient.graphSpace();
@@ -985,7 +986,7 @@ graphSpace.setMaxRoleNumber(100);  // 最大角色数量
 // 创建 GraphSpace
 spaceManager.createGraphSpace(graphSpace);
 ```
-#### 8.2 GraphSpace 接口汇总
+#### 8.2 GraphSpace 接口汇总 {#42-graphspace-接口汇总}
 
 | 类别 | 接口 | 描述 |
 |------|------|------|

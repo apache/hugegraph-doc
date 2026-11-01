@@ -25,7 +25,7 @@ HugeGraph 支持两种主流图查询语言：**Gremlin**（命令式遍历语�
   Neo4j 与 HugeGraph 在图模型、ID 策略、多标签及查询语法上的核心差异对照与迁移步骤。
 - [经典示例数据](/cn/docs/language/hugegraph-example/)
 
-  TinkerPop 经典的 6 顶点 6 边人际与软件关系图示例，供编写查询时对照参考。
+  经典的 TitanDB“众神图”（Graph of the Gods，包含 12 个顶点）示例数据集，供编写查询时对照参考。
 {.cards}
 
 ## 周边工具与相关入口

@@ -3,7 +3,7 @@ title: "HugeGraph Python 客户端快速上手"
 linkTitle: "Python 客户端"
 weight: 2
 aliases:
-  - /cn/docs/quickstart/client/hugegraph-client-python/
+  - /docs/quickstart/client/hugegraph-client-python/
 ---
 
 `hugegraph-python-client` 是 HugeGraph 的 Python SDK，可管理 Schema、读写图数据并执行 Gremlin 查询。HugeGraph-LLM 和 HugeGraph-ML 也使用这个客户端。

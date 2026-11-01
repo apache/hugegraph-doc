@@ -389,6 +389,9 @@ When the query includes OLAP properties and the read mode exposes OLAP data, Hug
 
 **Error trigger rules**: when query values are type-compatible, missing a matching index or covering only some candidate labels raises an index error; only full coverage proceeds through the index. When query values are type-incompatible, a matching index may return an empty result (partial-coverage check skipped); with no matching index, the index error still applies. The query never falls back to a full scan.
 
+> [!NOTE]
+> The partial-coverage error and the empty result for hidden or deleting candidate labels apply starting from 1.8.0. Earlier versions return only matches from indexed labels and raise an index error when no label has a compatible index.
+
 Property key-value pairs consist of the property name and value in JSON format. Multiple property key-value pairs are allowed as query conditions. The property value supports exact matching, range matching, and fuzzy matching. For exact matching, use the format `properties={"age":29}`, for range matching, use the format `properties={"age":"P.gt(29)"}`, and for fuzzy matching, use the format `properties={"city": "P.textcontains("ChengDu China")}`. The following expressions are supported for range matching:
 
 | Expression                        | Explanation                                    |

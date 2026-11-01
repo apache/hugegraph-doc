@@ -7,7 +7,7 @@ description: "Cypher REST API: Execute OpenCypher declarative graph query langua
 
 ### 9.1 Cypher
 
-> When authentication is disabled, no `Authorization` header is required; when enabled, `Basic` (standard RFC 4648 Base64) or `Bearer` tokens are supported.
+> The Cypher API always needs an `Authorization` header, either `Basic` (standard RFC 4648 Base64) or `Bearer`. A request without one is rejected with `401`, even when the server runs without authentication.
 > The credentials are forwarded to the Gremlin Server through `conf/remote-objects.yaml`.
 
 #### 9.1.1 Sending a cypher statement (GET) to HugeGraphServer for synchronous execution
@@ -86,18 +86,15 @@ POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 
 Note:
 
-> It is not in JSON format, but a plain text Cypher statement.
+> The request body contains the raw Cypher text statement rather than a JSON object. However, because the server endpoint uses `@Consumes(APPLICATION_JSON)`, requests must include `-H "Content-Type: application/json"` (requests sent with `text/plain` are rejected with HTTP 415).
 
 ##### Example
 
-```http
-POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugecypher1/cypher
-```
-
-###### Request Body
-
-```cypher
-match(n:person) return n.name as name order by n.name limit 1
+```bash
+curl -X POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugecypher1/cypher \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d 'match(n:person) return n.name as name order by n.name limit 1'
 ```
 ##### Response Status
 

@@ -4,7 +4,7 @@ linkTitle: "客户端 SDK"
 weight: 1
 description: "HugeGraph 官方多语言客户端 SDK（Java、Python、Go 等）概览与接入指引。"
 aliases:
-  - /cn/docs/quickstart/client/
+  - /docs/quickstart/client/
 ---
 
 HugeGraph 提供多语言客户端 SDK，方便在不同语言与技术栈中连接 HugeGraph Server，进行 Schema 管理、顶点与边数据读写、Gremlin 遍历及高级分析。

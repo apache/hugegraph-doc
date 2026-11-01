@@ -7,7 +7,7 @@ description: "Cypher（图查询语言）REST 接口:通过 HTTP 接口执行 Op
 
 ### 9.1 Cypher
 
-> 服务未开启鉴权时无需携带认证头；开启鉴权后支持携带 `Authorization` 头（`Basic` 或 `Bearer`）。凭据会通过 `conf/remote-objects.yaml` 转发给 Gremlin Server。
+> Cypher 接口必须携带 `Authorization` 请求头，`Basic`（标准 RFC 4648 Base64 编码）或 `Bearer` 均可。即使服务未开启鉴权，不带该请求头的请求也会返回 `401`。凭证会通过 `conf/remote-objects.yaml` 转发给 Gremlin Server。
 
 #### 9.1.1 向 HugeGraphServer 发送 Cypher 语句（GET），同步执行
 
@@ -87,19 +87,15 @@ POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 
 注意：
 
-> 不是 JSON 格式，是纯文本的 Cypher 语句
+> 虽然请求体是原始 Cypher 纯文本语句而非 JSON 对象，但服务端接口使用 `@Consumes(APPLICATION_JSON)` 约束。POST 请求必须显式声明 `-H "Content-Type: application/json"` 请求头；若使用 `text/plain` 会被拒绝并返回 HTTP 415。
 
 ##### 使用示例
 
-```javascript
-POST
-http://localhost:8080/graphspaces/DEFAULT/graphs/hugecypher1/cypher
-```
-
-###### Request Body
-
-```cypher
-match(n:person) return n.name as name order by n.name limit 1
+```bash
+curl -X POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugecypher1/cypher \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d 'match(n:person) return n.name as name order by n.name limit 1'
 ```
 ##### Response Status
 

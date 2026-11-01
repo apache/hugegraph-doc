@@ -7,6 +7,9 @@ description: "Gremlin（图查询语言）REST 接口:通过 HTTP 接口执行 G
 
 ### 8.1 Gremlin
 
+> [!NOTE]
+> Gremlin 遍历语法、特性支持与升级说明请查阅 [图查询语言 - Gremlin](/cn/docs/language/hugegraph-gremlin/)。
+
 > [!WARNING]
 > **生产环境下安全使用原生查询接口**
 >

@@ -155,8 +155,8 @@ Deleting labels or creating/rebuilding indexes typically submits background asyn
 
 ## GQL workspace: query and explore relationships
 
-Open **GQL Traversal** and confirm `hugegraph` is selected. The workspace puts the query editor and graph display together,
-with immediate or async execution, query favorites, and reusable execution history. Start with this Gremlin query:
+Open **GQL Traversal** and confirm `hugegraph` is selected. The workspace puts the query editor and graph display together, with immediate or async execution,
+query favorites, and reusable execution history (see [Graph Query Languages](/docs/language/) for syntax guides). Start with this Gremlin query:
 
 ```groovy
 g.V().hasLabel('person').valueMap()

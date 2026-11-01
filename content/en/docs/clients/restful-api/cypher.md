@@ -7,8 +7,12 @@ description: "Cypher REST API: Execute OpenCypher declarative graph query langua
 
 ### 9.1 Cypher
 
-> When authentication is disabled, no `Authorization` header is required; when enabled, `Basic` (standard RFC 4648 Base64) or `Bearer` tokens are supported (requests without credentials return 401).
-> The credentials are forwarded to the Gremlin Server through `conf/remote-objects.yaml`.
+> [!NOTE]
+> For Cypher syntax, query examples, and translation limits, see [HugeGraph Cypher](/docs/language/hugegraph-cypher/)
+> and [Cypher Compatibility](/docs/language/cypher-compatibility/).
+
+> When authentication is disabled, no `Authorization` header is required; when enabled, `Basic` (standard RFC 4648 Base64) or `Bearer` tokens are supported (requests without credentials return 401). On 1.2.0 to 1.7.0, an `Authorization` header was always required even without authentication.
+> Credentials are forwarded to the Gremlin Server through `conf/remote-objects.yaml`.
 
 #### 9.1.1 Sending a cypher statement (GET) to HugeGraphServer for synchronous execution
 

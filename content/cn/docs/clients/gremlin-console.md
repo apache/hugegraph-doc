@@ -4,7 +4,7 @@ linkTitle: "Gremlin Console"
 weight: 3
 ---
 
-Gremlin-Console 是 TinkerPop 的交互式客户端，支持离线操作图，也可以连接 Server 提交查询。
+Gremlin-Console 是 TinkerPop 的交互式客户端，支持离线操作图，也可以连接 Server 提交查询。常用 Gremlin 遍历语法与示例请参阅 [Gremlin 查询语言](/cn/docs/language/hugegraph-gremlin/)。
 
 - 单机离线调用模式
 - Client/Server 请求模式

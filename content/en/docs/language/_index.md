@@ -13,7 +13,7 @@ HugeGraph supports two mainstream graph query languages: **Gremlin** (imperative
 
 - [HugeGraph-Gremlin](/docs/language/hugegraph-gremlin/)
 
-  Gremlin traversal fundamentals, CRUD query examples, TinkerPop feature support, and 1.8 upgrade changes.
+  Gremlin traversal fundamentals, CRUD query examples, and TinkerPop feature support.
 - [HugeGraph Cypher](/docs/language/hugegraph-cypher/)
 
   Cypher language support via cypher-for-gremlin, read/write statement examples, execution mechanics, and constraints.
@@ -37,5 +37,5 @@ Ways to interact with and execute graph queries across HugeGraph components:
   to run Gremlin / Cypher queries with visual graph exploration and Text2GQL.
 - **HTTP REST APIs**: Submit queries programmatically via HTTP using
   the [Gremlin REST API](/docs/clients/restful-api/gremlin/) and [Cypher REST API](/docs/clients/restful-api/cypher/).
-- **Version Migration**: Upgrading to 1.8.0? Review the
-  [1.8 Gremlin & TinkerPop Migration Guide](/docs/guides/gremlin-migration-3.8/) for TinkerPop 3.8 syntax removals.
+- **Version Migration**: Upgrading from an older version? Review the
+  [Gremlin & TinkerPop Migration Guide](/docs/guides/gremlin-migration-3.8/) for syntax removals and behavioral changes.

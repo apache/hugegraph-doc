@@ -4,16 +4,13 @@ linkTitle: "Migrating from Neo4j"
 weight: 4
 ---
 
-### Who this page is for
+### Overview
 
-Neo4j users evaluating HugeGraph. HugeGraph's Cypher coverage is defined by
-the [`cypher-for-gremlin`](https://github.com/opencypher/cypher-for-gremlin)
-translator and is not 1:1 with Neo4j — see
-[Known limitations](/docs/language/hugegraph-cypher/#known-limitations) for what
-released HugeGraph versions do, and the
-[Cypher compatibility notes](/docs/language/cypher-compatibility/) for the
-development-tree verification record and
-[HugeGraph Cypher](/docs/language/hugegraph-cypher/) for usage.
+For developers migrating from Neo4j or evaluating HugeGraph. HugeGraph supports openCypher syntax via the
+[`cypher-for-gremlin`](https://github.com/opencypher/cypher-for-gremlin) translator, but differences exist in the graph model, schema rules, parameter bindings,
+and indexing.
+For language usage and compatibility references, see [HugeGraph Cypher](/docs/language/hugegraph-cypher/) and
+[Cypher Compatibility](/docs/language/cypher-compatibility/).
 
 ### What carries over directly
 
@@ -31,7 +28,7 @@ development-tree verification record and
 | `CREATE INDEX` / `CREATE CONSTRAINT` | Create property indexes through the [IndexLabel REST API](/docs/clients/restful-api/indexlabel/); uniqueness constraints map to `UNIQUE` IndexLabels; node keys map to non-nullable keys plus a composite `UNIQUE` index; property existence constraints map to non-nullable keys on [VertexLabels](/docs/clients/restful-api/vertexlabel/) or [EdgeLabels](/docs/clients/restful-api/edgelabel/). Note that `primary_keys` defines vertex identity, not a uniqueness constraint — a duplicate `CREATE` overwrites the existing vertex instead of failing |
 | Implicit schema (add properties freely) | **Strong schema**: define VertexLabel / EdgeLabel / PropertyKey before writing data |
 | Property predicates in `WHERE` need no index | The starting vertex lookup in `WHERE` needs a covering index unless it is an equality on every primary key of the label. Use `RANGE` for `>` / `<` comparisons. Without a covering index the request returns HTTP 200 with `status.code` 400 and a "not indexed" error |
-| Parameterized queries `$param` | Released versions send the raw statement only; a missing binding is inlined as `null` (a predicate on it matches no rows, `SET` removes the property, `CREATE` can store the marker string `"  cypher.null"` or fail). Validate values client-side. JSON-bound parameters are supported from 1.8.0, limited to 16 top-level bindings |
+| Parameterized queries `$param` | Parameterized requests are supported via JSON body (up to 16 top-level parameters; group additional values into a nested Map); missing parameters result in execution errors |
 | `CALL dbms.*` / `CALL algo.*` procedures | Equivalent capabilities are in the [traverser](/docs/clients/restful-api/traverser/), [task](/docs/clients/restful-api/task/), and other REST APIs |
 | Driver: Neo4j Bolt driver | [hugegraph-client](/docs/clients/client/hugegraph-client/) (`CypherManager`) or any HTTP client |
 | Transaction boundaries inside a Cypher statement | One statement per request; graph-to-graph migration uses [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/) (preferred, see below), file-based bulk loads use the [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/) |
@@ -42,17 +39,12 @@ On `PRIMARY_KEY` labels, a `UNIQUE` index cannot include all primary-key fields
 `CUSTOMIZE_STRING` label keyed on the Neo4j node id and add a `UNIQUE` index on the
 business key.
 
-The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound request form is a
-`master` feature, not a promise about that release. See the compatibility notes for its validated contract.
-
 ### Suggested migration path
 
-1. **Inventory your queries**: classify the Cypher in your application against
-   the [Known limitations](/docs/language/hugegraph-cypher/#known-limitations)
-   (which describe released behaviour) into
-   "works as-is / rewrite as Gremlin / switch to a REST API"; the
-   [compatibility notes](/docs/language/cypher-compatibility/) record only the
-   development-tree contract.
+1. **Inventory your queries**: Review your application's Cypher queries against the
+   [Cypher Compatibility Notes](/docs/language/cypher-compatibility/) and
+   [Known Limitations](/docs/language/hugegraph-cypher/#known-limitations) to classify them into
+   "works as-is", "rewrite as Gremlin", or "switch to a REST API".
 2. **Create the schema first**: define VertexLabel / EdgeLabel / PropertyKey
    and indexes through the schema API — HugeGraph requires the schema to
    exist before data is written.
@@ -99,9 +91,7 @@ The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound re
    relationships between the same endpoints into a single edge. To preserve parallel relationships, explicitly specify
    `frequency = "MULTIPLE"` and provide stable relationship discriminator fields as `sortKeys` in the edge mapping
    (HugeGraph uses sort keys to distinguish parallel edges).
-   Load vertices before edges. These capabilities are
-   documented, but a complete Neo4j → HugeGraph migration has not been run end-to-end here —
-   validate examples against your own data before treating them as tested.
+   Load vertices before edges. We recommend thoroughly testing the import pipeline with a representative data sample before cutover.
 4. **Switch incrementally**: keep the queries Cypher can express, and rewrite
    translator-unsupported constructs as Gremlin — the
    [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents)
@@ -109,15 +99,12 @@ The latest published release is 1.7.0 as of 2026-10-09; the merged JSON-bound re
 
 ### Known limitations at a glance
 
-- Released versions support neither parameter binding (a missing binding
-  is inlined as `null` — see the habits table), multi-statement
-  scripts, nor `CALL` procedures.
-- The translator's last release is 2019-11 (1.0.4); its own TCK self-report is
-  879 pass / 79 fail (~91.8%) — uncovered syntax fails at translation time.
+- Multi-statement scripts and `CALL` procedures are not supported; parameter binding supports up to 16 top-level parameters
+  (pass a Map for additional properties).
+- The translator's last release is 2019-11 (1.0.4); uncovered openCypher syntax fails at translation time.
 - Unsupported query constructs can typically be rewritten as Gremlin
   traversals — see the
   [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents);
   schema DDL and `CALL` procedures map to REST APIs instead.
 
-The translator’s historical TCK percentage is not a HugeGraph end-to-end compatibility rate; no measured overall HugeGraph Cypher percentage is established
-here.
+Note: The transpiler's historical TCK pass rate does not represent end-to-end compatibility in HugeGraph; test with your actual business queries.

@@ -12,8 +12,8 @@ SQL 是关系型数据库查询语言，而 Gremlin 是一种通用的图数据�
 若习惯声明式模式匹配（类似 SQL 或 Neo4j 风格），HugeGraph 同时支持 [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)。
 
 > [!NOTE]
-> **版本与升级提示**：HugeGraph 1.8.0 已将底层 TinkerPop 引擎升级至 **3.8.1**（同时要求 Java 17 与 Groovy 4.0.25）。
-> 部分旧版语法（如 `store()`、带 Scope 的 `aggregate()` 以及 `has(key, traversal)`）已彻底移除，在 1.8 中调用会直接报错。详见 [1.8 Gremlin 与 TinkerPop 迁移指南](../guides/gremlin-migration-3.8)。
+> HugeGraph 基于 TinkerPop **3.8.1** 引擎（运行于 Java 17 与 Groovy 4.0.25）。
+> 若从旧版本升级，请查阅 [Gremlin 与 TinkerPop 迁移指南](/cn/docs/guides/gremlin-migration-3.8/) 排查已废弃语法的变化。
 
 ### TinkerPop Features
 
@@ -101,9 +101,9 @@ HugeGraph支持Gremlin的所有步骤。有关Gremlin的完整参考信息，请
 | coalesce   | 返回第一个返回结果的遍历                                                                                    | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step)     |
 | constant   | 返回常量值。 与`coalesce`配合使用                                                                          | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step)     |
 | count      | 从遍历返回计数                                                                                         | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step)         |
-| datetime   | 构造日期时间对象或取得服务器当前时间（1.8.0 默认返回 `OffsetDateTime`）                                      | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
+| datetime   | 构造日期时间对象或取得服务器当前时间（默认返回 `OffsetDateTime`）                                      | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
 | dedup      | 返回已删除重复内容的值                                                                                     | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step)           |
-| discard    | 丢弃流中当前输入（1.8.0 替代原无参 `none()`）                                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)       |
+| discard    | 丢弃流中当前输入（替代原无参 `none()`）                                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)       |
 | drop       | 丢弃值（顶点/边缘）                                                                                      | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step)             |
 | fold       | 充当用于计算结果聚合值的屏障                                                                                  | [fold step](http://tinkerpop.apache.org/docs/current/reference/#fold-step)             |
 | group      | 根据指定的标签将值分组                                                                                     | [group step](http://tinkerpop.apache.org/docs/current/reference/#group-step)           |

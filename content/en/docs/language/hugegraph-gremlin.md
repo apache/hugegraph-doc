@@ -13,8 +13,9 @@ modification, deletion, and traversal queries.
 For developers seeking declarative pattern matching (similar to SQL or Neo4j style), HugeGraph also supports [Cypher](/docs/language/hugegraph-cypher/).
 
 > [!NOTE]
-> **Version & Migration Note**: HugeGraph 1.8.0 upgrades its underlying TinkerPop engine to **3.8.1** (along with Java 17 and Groovy 4.0.25).
-> Legacy syntax patterns such as `store()`, scoped `aggregate()`, and `has(key, traversal)` have been completely removed and now fail on 1.8. See the [1.8 Gremlin & TinkerPop Migration Guide](../guides/gremlin-migration-3.8) for details.
+> HugeGraph is powered by the TinkerPop **3.8.1** engine (running on Java 17 and Groovy 4.0.25).
+> Upgrading from an older version? Review the [Gremlin & TinkerPop Migration Guide](/docs/guides/gremlin-migration-3.8/) for removed legacy syntax
+> and behavioral changes.
 
 ### TinkerPop Features
 
@@ -90,7 +91,8 @@ The table below lists the support status of various TinkerPop features in HugeGr
 
 ### Gremlin Steps
 
-HugeGraph supports all steps of Gremlin. For complete reference information about Gremlin, please refer to the [Gremlin official website](http://tinkerpop.apache.org/docs/current/reference/).
+HugeGraph supports all steps of Gremlin. For complete reference information about Gremlin,
+please refer to the [Gremlin official website](http://tinkerpop.apache.org/docs/current/reference/).
 
 | Step       | Description                                                                                     | Documentation                                                                           |
 |------------|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
@@ -102,9 +104,9 @@ HugeGraph supports all steps of Gremlin. For complete reference information abou
 | coalesce   | Returns the first traversal that returns a result.                                                                                    | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step)     |
 | constant   | Returns a constant value. Used in conjunction with coalesce.                                                                          | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step)     |
 | count      | Returns a count from the traversal.                                                                                         | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step)         |
-| datetime   | Creates a datetime object or retrieves current server time (returns `OffsetDateTime` in 1.8.0).     | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
+| datetime   | Creates a datetime object or retrieves current server time (returns `OffsetDateTime`).     | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
 | dedup      | Returns values with duplicates removed.                                                                                     | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step)           |
-| discard    | Discards all current traversers (replaces parameterless `none()` in 1.8.0).                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)        |
+| discard    | Discards all current traversers (replaces parameterless `none()`).                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)        |
 | drop       | Discards a value (vertex/edge).                                                                                      | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step)             |
 | fold       | Acts as a barrier for computing aggregated values from results.                                                                                  | [fold step](http://tinkerpop.apache.org/docs/current/reference/#fold-step)             |
 | group      | Groups values based on specified labels.                                                                                     | [group step](http://tinkerpop.apache.org/docs/current/reference/#group-step)           |

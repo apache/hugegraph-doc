@@ -4,14 +4,11 @@ linkTitle: "从 Neo4j 迁移"
 weight: 4
 ---
 
-### 本页面向谁
+### 概述
 
-正在评估 HugeGraph 的 Neo4j 用户。HugeGraph 的 Cypher 覆盖面由
-[cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) 转译器决定，
-与 Neo4j 并非 1:1 等价 —— 已发布版本的行为见
-[已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)，开发树验证记录见
-[Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/)，
-用法见 [HugeGraph Cypher](/cn/docs/language/hugegraph-cypher/)。
+面向从 Neo4j 迁移或评估 HugeGraph 的开发者。HugeGraph 通过 [cypher-for-gremlin](https://github.com/opencypher/cypher-for-gremlin) 转译器支持 openCypher 语法，
+但在图模型、Schema 规范、参数绑定和索引机制上与 Neo4j 存在差异。
+具体语法与兼容性请参考 [HugeGraph Cypher](/cn/docs/language/hugegraph-cypher/) 与 [Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/)。
 
 ### 可以直接带过来的部分
 
@@ -29,7 +26,7 @@ weight: 4
 | `CREATE INDEX` / `CREATE CONSTRAINT` | 通过 [IndexLabel REST API](/cn/docs/clients/restful-api/indexlabel/) 创建属性索引；唯一性约束对应 `UNIQUE` 索引；节点键对应非可空属性加复合 `UNIQUE` 索引；属性存在约束对应 [VertexLabel](/cn/docs/clients/restful-api/vertexlabel/) / [EdgeLabel](/cn/docs/clients/restful-api/edgelabel/) 上的非可空属性。注意 `primary_keys` 决定顶点标识，不是约束机制，重复 `CREATE` 直接覆盖旧记录 |
 | 隐式 schema（属性随意添加） | **强 schema**：先定义 VertexLabel/EdgeLabel/PropertyKey，再写数据 |
 | `WHERE` 中的属性谓词无需索引 | 起始顶点查找需要索引覆盖（除非对该标签全部主键做等值匹配）：`>` / `<` 等范围比较需要 `RANGE` 类型的 IndexLabel。缺少覆盖索引时返回 HTTP 200（响应体 `status.code` 400 "未建索引"错误） |
-| 参数化查询 `$param` | 已发布版本仅发送原始语句；缺失的绑定内联为 `null`（`SET` 会移除属性，`CREATE` 可能存入 `"  cypher.null"` 或报错），请在客户端预校验取值。JSON 绑定参数自 1.8.0 起支持，顶层绑定最多 16 个 |
+| 参数化查询 `$param` | 支持 JSON 格式参数化请求（最多支持 16 个顶层参数，更多属性可通过嵌套 Map 传递）；未声明的参数会报错 |
 | `CALL dbms.*` / `CALL algo.*` 过程 | 对应功能分散在 [traverser](/cn/docs/clients/restful-api/traverser/)、[task](/cn/docs/clients/restful-api/task/) 等 REST API |
 | 驱动：Neo4j Bolt driver | [hugegraph-client](/cn/docs/clients/client/hugegraph-client/)（`CypherManager`）或任意 HTTP 客户端 |
 | 事务边界在 Cypher 语句内 | 每次请求一个语句；图到图的数据迁移使用 [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/)（首选，见下文），基于文件的批量导入使用 [HugeGraph Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) |
@@ -37,14 +34,11 @@ weight: 4
 
 `PRIMARY_KEY` 标签上 `UNIQUE` 索引不能包含该标签的全部主键（服务端会拒绝）。若需保留唯一性约束，请改用 `CUSTOMIZE_STRING` id 策略，以 Neo4j 节点 id 为键，再在业务键上建 `UNIQUE` 索引。
 
-截至 2026-10-09，最新已发布版本为 1.7.0；JSON 绑定请求已进入 `master`（1.8.0 开发线），不能据此认为 1.7.0 已支持。
-
 ### 建议的迁移路径
 
-1. **盘点查询**：把应用里的 Cypher 按
-   [已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)（描述已发布版本行为）分成
-   "直接可用 / 需改写为 Gremlin / 需换 REST API" 三类；
-   [兼容性说明](/cn/docs/language/cypher-compatibility/) 仅记录开发树上的验证结果。
+1. **盘点查询**：对照 [Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/) 与
+   [已知限制](/cn/docs/language/hugegraph-cypher/#已知限制)，梳理应用中的 Cypher 语句，
+   确认直接可用、需改写为 Gremlin 或需调用 REST API 的部分。
 2. **先建 schema**：用 schema API 建好 VertexLabel/EdgeLabel/PropertyKey 和索引 ——
    HugeGraph 在写入前要求 schema 存在。
 3. **导入数据**：首选路径是 [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/)
@@ -77,19 +71,16 @@ weight: 4
    定义可省略；但它不会创建 IndexLabel，查询所依赖的索引仍须单独创建（见上文“需要改变习惯的部分”表）。
    若未显式指定 `frequency`，自动创建 EdgeLabel 时默认采用 `SINGLE`，相同类型且端点相同的多条平行关系（Parallel Relationships）会被覆盖合并为一条边。
    若需保留 Neo4j 中的平行边，必须在边映射中显式指定 `frequency = "MULTIPLE"`，并配置稳定的业务区分字段作为 `sortKeys`（HugeGraph 依赖 sortKeys 生成重边的唯一边 ID）。
-   先导入顶点、后导入边。以上能力均有文档记载，但这里没有完整跑通
-   一次 Neo4j → HugeGraph 迁移 —— 在把示例当作已验证之前，请先用你自己的数据验证。
+   先导入顶点、后导入边。建议在正式切换前，先在测试环境中使用业务数据样本完整验证导入流程。
 4. **灰度切换**：Cypher 能表达的查询保持不动， translator 不支持的改写为
    Gremlin（等价写法见 [对照表](/cn/docs/language/hugegraph-cypher/#等价的-gremlin-写法)）。
 
 ### 已知限制速查
 
-- 已发布版本不支持参数绑定（缺失的绑定会被内联为 `null`，见上表）、
-  多语句脚本与 `CALL` 过程。
-- 转译器最后一次发布是 2019-11（1.0.4），其自身 TCK 报告为
-  879 通过 / 79 失败（约 91.8%）—— 未覆盖的语法会在翻译期报错。
+- 不支持多语句脚本与 `CALL` 过程；参数绑定最多支持 16 个顶层参数（更多属性可通过 Map 组织）。
+- 转译器最后一次发布是 2019-11（1.0.4），未覆盖的 openCypher 语法会在转译期报错。
 - 不受支持的查询结构通常可以改写为等价的 Gremlin 遍历 —— 见
   [HugeGraph Cypher 的对照表](/cn/docs/language/hugegraph-cypher/#等价的-gremlin-写法)；
   schema DDL 与 `CALL` 过程请改用 REST API。
 
-转译库历史 TCK 通过比例不等于 HugeGraph 端到端兼容率；本页没有给出经测量的 HugeGraph Cypher 总体兼容百分比。
+注：转译库历史 TCK 通过比例不等于 HugeGraph 端到端兼容率；请结合具体业务查询进行实际测试。

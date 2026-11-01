@@ -147,7 +147,8 @@ Every Cypher statement is translated to Gremlin internally. When a Cypher featur
 Tip: You can inspect generated underlying Gremlin traversals via `EXPLAIN MATCH (n:person) RETURN n` (in the `translation` field of the response) to draft
 equivalent traversals. `PROFILE` is not supported.
 
-### Limitations
+<a id="known-limitations"></a>
+### Limitations {#limitations}
 
 - **Parameterized query rules**: Parameter bindings are supported via JSON request bodies (`{"cypher": "...", "parameters": {...}}`, up to 16 top-level
   parameters; group additional properties into a nested Map and reference fields explicitly). Referencing an undeclared `$param` results in an execution error;

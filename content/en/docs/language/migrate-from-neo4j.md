@@ -43,7 +43,7 @@ business key.
 
 1. **Inventory your queries**: Review your application's Cypher queries against the
    [Cypher Compatibility Notes](/docs/language/cypher-compatibility/) and
-   [Known Limitations](/docs/language/hugegraph-cypher/#known-limitations) to classify them into
+   [Limitations](/docs/language/hugegraph-cypher/#limitations) to classify them into
    "works as-is", "rewrite as Gremlin", or "switch to a REST API".
 2. **Create the schema first**: define VertexLabel / EdgeLabel / PropertyKey
    and indexes through the schema API — HugeGraph requires the schema to
@@ -101,7 +101,7 @@ business key.
 
 - **Statements and parameters**: Multi-statement scripts and `CALL` procedures are not supported; parameter binding supports up to 16 top-level parameters
   (pass a nested Map for additional properties).
-- **Unsupported syntax**: Advanced openCypher clauses not covered in the compatibility matrix will fail during query validation.
+- **Unverified syntax**: Advanced openCypher constructs not covered in the compatibility matrix are unverified and may fail during query validation; established limitations are listed above.
 - **Fallback path**: Unsupported query constructs can typically be rewritten as Gremlin
   traversals — see the
   [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents);

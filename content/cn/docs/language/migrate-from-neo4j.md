@@ -79,7 +79,7 @@ weight: 4
 ### 使用限制速查
 
 - **语句与参数**：不支持多语句脚本与 `CALL` 过程；参数绑定最多支持 16 个顶层参数（更多属性可通过嵌套 Map 传递）。
-- **未覆盖语法**：未覆盖的高级 openCypher 语法会在解析校验期报错。
+- **未覆盖语法**：兼容性矩阵中未涉及的高级 openCypher 结构属于未验证范围，可能在解析校验期报错；明确不支持的限制见前文说明。
 - **回退方案**：不受支持的查询结构通常可以改写为等价的 Gremlin 遍历 —— 详见
   [HugeGraph Cypher 对照表](/cn/docs/language/hugegraph-cypher/#等价的-gremlin-写法)；
   Schema DDL 与存储过程请改用对应 REST API。

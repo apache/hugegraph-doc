@@ -31,10 +31,12 @@ PD listens on three ports:
 
 ### 3 Deployment
 
-There are two ways to deploy the HugeGraph-PD component:
+Choose a deployment method for the HugeGraph-PD component:
 
-- Method 1: Download the tar package
-- Method 2: Compile from source
+- [Download released archive](#31-download-the-tar-package) — Download the bundled official release package.
+- [Compile from source](#32-compile-from-source) — Build the latest master PD module with Maven and Java 17.
+- [Docker deployment](#33-docker-deployment) — Run containerized PD for local trials or cluster testing.
+{.cards}
 
 #### 3.1 Download the tar package
 
@@ -49,25 +51,27 @@ cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 
 #### 3.2 Compile from source
 
-```bash
-# 1. Clone the source code
-git clone https://github.com/apache/hugegraph.git
+1. **Clone the source code:**
 
-# 2. Build the project
-cd hugegraph
-mvn clean install -DskipTests=true
+   ```bash
+   git clone https://github.com/apache/hugegraph.git
+   cd hugegraph
+   ```
 
-# 3. After a successful build, the PD directory and packages are located at
-#    hugegraph-pd/apache-hugegraph-pd-{version}          (unpacked PD distribution)
-#    hugegraph-pd/apache-hugegraph-pd-{version}.tar.gz   (PD only package, Linux build hosts only)
-#    target/apache-hugegraph-{version}.tar.gz            (PD + Store + Server package)
-```
+1. **Build the PD module:**
 
-To build only the PD distribution and the modules it depends on:
+   ```bash
+   # Build only the PD distribution and its dependencies
+   mvn clean package -pl hugegraph-pd/hg-pd-dist -am -DskipTests
+   ```
 
-```bash
-mvn clean package -pl hugegraph-pd/hg-pd-dist -am -DskipTests
-```
+1. **Locate the distribution output:**
+
+   ```bash
+   cd hugegraph-pd/apache-hugegraph-pd-*
+   ls -la bin conf lib
+   ```
+{.steps}
 
 The unpacked distribution contains just three directories: `bin` (start and stop scripts), `conf` (`application.yml`, `application.yml.template`, `log4j2.xml`, `verify-license.json`) and `lib` (the `hg-pd-service` jar).
 

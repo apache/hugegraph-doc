@@ -10,13 +10,14 @@ description: "Graphs REST API: Manage graph instance lifecycle including creatin
 > [!WARNING]
 > In production, enable [Server authentication and authorization](/docs/config/config-authentication/), restrict graph management with an IP allowlist and minimum permissions, and retain `audit-*.log` audit records. Unauthenticated settings below are only for isolated local tests.
 
+> This page documents the Graphs API on current master. For historical paths and request bodies, use the [1.7 Graphs API](https://hugegraph.apache.org/versions/1.7/docs/clients/restful-api/graphs/) or
+> [1.5 Graphs API](https://hugegraph.apache.org/versions/1.5/docs/clients/restful-api/graphs/).
+
 With authentication enabled, creation, cloning, deletion, clearing, display-name changes, graph-configuration reads, read-mode changes, and manual compaction require graph-space management permission (`space`); administrators can satisfy it through permission inheritance. Snapshot creation/restoration and data-mode changes allow graph-space managers or the graph owner. Listing, details, and data/read-mode queries use graph read permissions. Raft APIs additionally require graph-space membership.
 
-- `GET /apis` is the resource index. Listed resource paths belong under the Server origin: use `/versions`, `/graphspaces` and `/gremlin`.
-- `GET /graphspaces` requires PD mode. In standalone mode, use `GET /graphs` to list configured graphs.
-- Dynamic graph creation uses `POST /graphspaces/{space}/graphs/{graph}` with the required backend graph configuration.
-  For the SeaTunnel demo, create `graph_a` before running the supplied sink job, as required by the
-  [SeaTunnel guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md).
+- `GET /apis` is the resource index. Listed resource paths belong under the Server origin: use `/versions`, `/graphspaces` and `/gremlin`, without prepending `/apis`. Earlier indexes return paths without a leading slash; interpret those relative to the Server root, not the index directory. When a gateway adds a public prefix, retain that prefix.
+- `GET /graphspaces` requires PD mode. In standalone mode, skip that step and use `GET /graphs` to list configured graphs.
+- Dynamic graph creation uses `POST /graphspaces/{space}/graphs/{graph}` and the backend's graph configuration. `POST /graphs` is not the graph-creation endpoint. The legacy `/graphs` listing does not mean GraphSpace APIs are unavailable. For the SeaTunnel demo, create `graph_a` before running the supplied sink job, as required by the [SeaTunnel guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md).
 
 #### 6.1.1 List all graphs in the graphspace
 

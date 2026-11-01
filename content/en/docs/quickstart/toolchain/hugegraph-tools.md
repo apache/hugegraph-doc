@@ -8,14 +8,16 @@ weight: 3
 
 HugeGraph-Tools manages graphs and tasks and provides backup and restore commands. It also retains deployment commands for legacy Server/Studio versions.
 
-> **Testing Guide**: For running HugeGraph-Tools tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/toolchain-local-test)
+> **Testing Guide**: For running HugeGraph-Tools tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/dev-test/toolchain-local-test/)
 
 ### 2 Get HugeGraph-Tools
 
-HugeGraph-Tools is included in the Toolchain distribution. You can download the distribution or build it from source.
+HugeGraph-Tools is included in the Toolchain distribution. You can obtain it via:
 
-- Download the compiled tarball
-- Clone source code then compile and install
+- [Download compiled archive](#21-download-the-compiled-archive) — Download the official released Toolchain tarball.
+- [Compile released 1.7.0 from source](#22-clone-source-code-to-compile-and-install) — Build release 1.7.0 using Git tag or source archive with JDK 11.
+- [Build current master source](#build-current-source) — Build latest master Tools with JDK 17.
+{.cards}
 
 #### 2.1 Download the compiled archive
 

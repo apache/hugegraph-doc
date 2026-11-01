@@ -506,4 +506,4 @@ Current master uses a new H2 metadata database. Retain the old Hubble distributi
 Old metadata has no automatic migration and cannot be reused directly.
 
 The bundled configuration binds to `localhost:8088`. `bin/stop-hubble.sh` requests graceful shutdown before forcing termination on timeout.
-For development and testing, see the [Toolchain local test guide](/docs/guides/toolchain-local-test/).
+For development and testing, see the [Toolchain local test guide](/docs/guides/dev-test/toolchain-local-test/).

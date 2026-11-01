@@ -1,10 +1,15 @@
 ---
 title: "HugeGraph RESTful API"
 linkTitle: "RESTful API"
-weight: 2
+weight: 1
 search_keywords: [HugeGraph REST API, RESTful API, OpenAPI]
 search_boost: 1.7
 ---
+
+> 本目录介绍当前 master 的 REST API。历史版本用法请切换到对应的多版本文档： [HugeGraph 1.7 RESTful API](https://hugegraph.apache.org/versions/1.7/cn/docs/clients/restful-api/) 或
+> [HugeGraph 1.5 RESTful API](https://hugegraph.apache.org/versions/1.5/cn/docs/clients/restful-api/)。
+>
+> 默认图空间名是 `DEFAULT`。
 
 HugeGraph 提供了完备的 RESTful HTTP API，涵盖 Schema 管理、图数据读写、图实例与图空间运维、认证鉴权及分析计算。默认图空间名为 `DEFAULT`。
 

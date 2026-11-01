@@ -8,14 +8,16 @@ weight: 3
 
 HugeGraph-Tools 提供图与任务管理、备份和恢复命令，也保留旧版 Server/Studio 的部署命令。
 
-> **测试指南**：如需在本地运行 Tools 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
+> **测试指南**：如需在本地运行 Tools 测试，请参考 [工具链本地测试指南](/cn/docs/guides/dev-test/toolchain-local-test/)
 
 ### 2 获取 HugeGraph-Tools
 
-HugeGraph-Tools 包含在 Toolchain 发布包中，可以下载发布包，也可以从源码编译。
+HugeGraph-Tools 包含在 Toolchain 发布包中，可以通过以下途径获取与构建：
 
-- 下载二进制tar包
-- 下载源码编译安装
+- [下载二进制 tar 包](#21-下载二进制tar包) — 下载官方已发布的 Toolchain 二进制安装包。
+- [源码编译 1.7.0 发布版](#22-下载源码编译安装) — 基于 Git 标签或源码包配合 JDK 11 进行编译。
+- [构建当前 master 源码](#build-current-source) — 基于 master 主线代码配合 JDK 17 进行编译。
+{.cards}
 
 #### 2.1 下载二进制tar包
 

@@ -1,7 +1,7 @@
 ---
 title: "Client SDKs"
 linkTitle: "Client SDKs"
-weight: 1
+weight: 2
 description: "Overview and integration guides for official HugeGraph client SDKs (Java, Python, Go, and more)."
 aliases:
   - /docs/quickstart/client/

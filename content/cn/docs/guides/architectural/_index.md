@@ -1,7 +1,7 @@
 ---
 title: "HugeGraph 架构概览"
 linkTitle: "架构概览"
-weight: 1
+weight: 3
 ---
 
 ## 全栈组件
@@ -61,3 +61,13 @@ Toolchain 的主要组件如下：
 > [!DETAILS]- 展开旧版架构图
 >
 > ![旧版 HugeGraph 架构图，仅用于历史参考](/docs/images/design/architectural-revised.png)
+
+## 相关专题
+
+- [HugeGraph Plugin](/cn/docs/guides/architectural/custom-plugin/)
+
+  介绍 HugeGraph Plugin 扩展机制、SPI 接口注册与自定义插件生命周期。
+- [设计理念(legacy)](/cn/docs/guides/architectural/desgin-concept/)
+
+  早期属性图模型设计背景、分区方案与历史实现考量。
+{.cards}

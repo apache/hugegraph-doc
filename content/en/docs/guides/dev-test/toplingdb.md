@@ -1,8 +1,10 @@
 ---
 title: "ToplingDB development integration"
 linkTitle: "ToplingDB (development)"
-weight: 11
+weight: 2
 description: "Build the optional ToplingDB runtime from development source, isolate its data, and understand startup and recovery boundaries."
+aliases:
+  - /docs/guides/toplingdb/
 ---
 
 > **Development interface:** This guide applies to development builds with the optional ToplingDB runtime enabled.

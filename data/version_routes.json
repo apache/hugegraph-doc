@@ -470,6 +470,20 @@
       "1.3": "cn/docs/guides/architectural/",
       "1.0": "cn/docs/guides/architectural/"
     },
+    "cn:guides/architectural/custom-plugin": {
+      "latest": "cn/docs/guides/architectural/custom-plugin/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:guides/architectural/desgin-concept": {
+      "latest": "cn/docs/guides/architectural/desgin-concept/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "cn:guides/backup-restore": {
       "latest": "cn/docs/guides/backup-restore/",
       "1.7": "cn/docs/guides/backup-restore/",
@@ -478,18 +492,39 @@
       "1.0": "cn/docs/guides/backup-restore/"
     },
     "cn:guides/custom-plugin": {
-      "latest": "cn/docs/guides/custom-plugin/",
+      "latest": null,
       "1.7": "cn/docs/guides/custom-plugin/",
       "1.5": "cn/docs/guides/custom-plugin/",
       "1.3": "cn/docs/guides/custom-plugin/",
       "1.0": "cn/docs/guides/custom-plugin/"
     },
     "cn:guides/desgin-concept": {
-      "latest": "cn/docs/guides/desgin-concept/",
+      "latest": null,
       "1.7": "cn/docs/guides/desgin-concept/",
       "1.5": "cn/docs/guides/desgin-concept/",
       "1.3": "cn/docs/guides/desgin-concept/",
       "1.0": "cn/docs/guides/desgin-concept/"
+    },
+    "cn:guides/dev-test": {
+      "latest": "cn/docs/guides/dev-test/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:guides/dev-test/toolchain-local-test": {
+      "latest": "cn/docs/guides/dev-test/toolchain-local-test/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "cn:guides/dev-test/toplingdb": {
+      "latest": "cn/docs/guides/dev-test/toplingdb/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
     },
     "cn:guides/faq": {
       "latest": "cn/docs/guides/faq/",
@@ -527,15 +562,8 @@
       "1.0": null
     },
     "cn:guides/toolchain-local-test": {
-      "latest": "cn/docs/guides/toolchain-local-test/",
+      "latest": null,
       "1.7": "cn/docs/guides/toolchain-local-test/",
-      "1.5": null,
-      "1.3": null,
-      "1.0": null
-    },
-    "cn:guides/toplingdb": {
-      "latest": "cn/docs/guides/toplingdb/",
-      "1.7": null,
       "1.5": null,
       "1.3": null,
       "1.0": null
@@ -1282,6 +1310,20 @@
       "1.3": "docs/guides/architectural/",
       "1.0": "docs/guides/architectural/"
     },
+    "en:guides/architectural/custom-plugin": {
+      "latest": "docs/guides/architectural/custom-plugin/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:guides/architectural/desgin-concept": {
+      "latest": "docs/guides/architectural/desgin-concept/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
     "en:guides/backup-restore": {
       "latest": "docs/guides/backup-restore/",
       "1.7": "docs/guides/backup-restore/",
@@ -1290,18 +1332,39 @@
       "1.0": "docs/guides/backup-restore/"
     },
     "en:guides/custom-plugin": {
-      "latest": "docs/guides/custom-plugin/",
+      "latest": null,
       "1.7": "docs/guides/custom-plugin/",
       "1.5": "docs/guides/custom-plugin/",
       "1.3": "docs/guides/custom-plugin/",
       "1.0": "docs/guides/custom-plugin/"
     },
     "en:guides/desgin-concept": {
-      "latest": "docs/guides/desgin-concept/",
+      "latest": null,
       "1.7": "docs/guides/desgin-concept/",
       "1.5": "docs/guides/desgin-concept/",
       "1.3": "docs/guides/desgin-concept/",
       "1.0": "docs/guides/desgin-concept/"
+    },
+    "en:guides/dev-test": {
+      "latest": "docs/guides/dev-test/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:guides/dev-test/toolchain-local-test": {
+      "latest": "docs/guides/dev-test/toolchain-local-test/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
+    },
+    "en:guides/dev-test/toplingdb": {
+      "latest": "docs/guides/dev-test/toplingdb/",
+      "1.7": null,
+      "1.5": null,
+      "1.3": null,
+      "1.0": null
     },
     "en:guides/faq": {
       "latest": "docs/guides/faq/",
@@ -1339,15 +1402,8 @@
       "1.0": null
     },
     "en:guides/toolchain-local-test": {
-      "latest": "docs/guides/toolchain-local-test/",
+      "latest": null,
       "1.7": "docs/guides/toolchain-local-test/",
-      "1.5": null,
-      "1.3": null,
-      "1.0": null
-    },
-    "en:guides/toplingdb": {
-      "latest": "docs/guides/toplingdb/",
-      "1.7": null,
       "1.5": null,
       "1.3": null,
       "1.0": null
@@ -1729,6 +1785,18 @@
       "cn:quickstart/client/hugegraph-client-python"
     ],
     [
+      "cn:guides/architectural/custom-plugin",
+      "cn:guides/custom-plugin"
+    ],
+    [
+      "cn:guides/architectural/desgin-concept",
+      "cn:guides/desgin-concept"
+    ],
+    [
+      "cn:guides/dev-test/toolchain-local-test",
+      "cn:guides/toolchain-local-test"
+    ],
+    [
       "cn:introduction",
       "cn:introduction/readme"
     ],
@@ -1748,6 +1816,18 @@
     [
       "en:clients/client/hugegraph-client-python",
       "en:quickstart/client/hugegraph-client-python"
+    ],
+    [
+      "en:guides/architectural/custom-plugin",
+      "en:guides/custom-plugin"
+    ],
+    [
+      "en:guides/architectural/desgin-concept",
+      "en:guides/desgin-concept"
+    ],
+    [
+      "en:guides/dev-test/toolchain-local-test",
+      "en:guides/toolchain-local-test"
     ],
     [
       "en:introduction",

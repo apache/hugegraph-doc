@@ -496,7 +496,7 @@ schema = graph.schema()
 
 #### 6.2 PropertyKey {#22-propertykey}
 
-##### 6.2.1 接口及参数介绍
+##### 6.2.1 接口及参数介绍 {#221-接口及参数介绍}
 
 PropertyKey 用来规范顶点和边的属性的约束，暂不支持定义属性的属性。
 
@@ -562,7 +562,7 @@ PropertyKey 允许定义的约束信息包括：name、datatype、cardinality、
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 6.2.2 创建 PropertyKey
+##### 6.2.2 创建 PropertyKey {#222-创建-propertykey}
 
 ```java
 schema.propertyKey("name").asText().valueSet().ifNotExist().create()
@@ -578,13 +578,13 @@ graph.schema().propertyKey("name").asText().valueSet().ifNotExist().create()
 
 - ifNotExist()：为 create 添加判断机制，若当前 PropertyKey 已经存在则不再创建，否则创建该属性。若不添加判断，在 properkey 已存在的情况下会抛出异常信息，下同，不再赘述。
 
-##### 6.2.3 删除 PropertyKey
+##### 6.2.3 删除 PropertyKey {#223-删除-propertykey}
 
 ```java
 schema.propertyKey("name").remove()
 ```
 
-##### 6.2.4 查询 PropertyKey
+##### 6.2.4 查询 PropertyKey {#224-查询-propertykey}
 
 ```java
 // 获取 PropertyKey 对象
@@ -599,7 +599,7 @@ schema.getPropertyKey("name").userdata()
 
 #### 6.3 VertexLabel {#23-vertexlabel}
 
-##### 6.3.1 接口及参数介绍
+##### 6.3.1 接口及参数介绍 {#231-接口及参数介绍}
 
 VertexLabel 用来定义顶点类型，描述顶点的约束信息：
 
@@ -671,7 +671,7 @@ VertexLabel 允许定义的约束信息包括：name、idStrategy、properties�
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 6.3.2 创建 VertexLabel
+##### 6.3.2 创建 VertexLabel {#232-创建-vertexlabel}
 
 ```java
 // 使用 Automatic 的 Id 策略
@@ -690,7 +690,7 @@ schema.vertexLabel("person").properties("name", "age").primaryKeys("name").ifNot
 schema.vertexLabel("person").usePrimaryKeyId().properties("name", "age").primaryKeys("name").ifNotExist().create();
 ```
 
-##### 6.3.3 追加 VertexLabel
+##### 6.3.3 追加 VertexLabel {#233-追加-vertexlabel}
 
 VertexLabel 是可以追加约束的，不过仅限 properties 和 nullableKeys，而且追加的属性也必须添加到 nullableKeys 集合中。
 
@@ -698,13 +698,13 @@ VertexLabel 是可以追加约束的，不过仅限 properties 和 nullableKeys�
 schema.vertexLabel("person").properties("price").nullableKeys("price").append();
 ```
 
-##### 6.3.4 删除 VertexLabel
+##### 6.3.4 删除 VertexLabel {#234-删除-vertexlabel}
 
 ```java
 schema.vertexLabel("person").remove();
 ```
 
-##### 6.3.5 查询 VertexLabel
+##### 6.3.5 查询 VertexLabel {#235-查询-vertexlabel}
 
 ```java
 // 获取 VertexLabel 对象
@@ -723,7 +723,7 @@ schema.getVertexLabel("person").ttlStartTime()
 
 #### 6.4 EdgeLabel {#24-edgelabel}
 
-##### 6.4.1 接口及参数介绍
+##### 6.4.1 接口及参数介绍 {#241-接口及参数介绍}
 
 EdgeLabel 用来定义边类型，描述边的约束信息。
 
@@ -786,26 +786,26 @@ EdgeLabel 允许定义的约束信息包括：name、sourceLabel、targetLabel�
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 6.4.2 创建 EdgeLabel
+##### 6.4.2 创建 EdgeLabel {#242-创建-edgelabel}
 
 ```java
 schema.edgeLabel("knows").link("person", "person").properties("date").ifNotExist().create();
 schema.edgeLabel("created").multiTimes().link("person", "software").properties("date").sortKeys("date").ifNotExist().create();
 ```
 
-##### 6.4.3 追加 EdgeLabel
+##### 6.4.3 追加 EdgeLabel {#243-追加-edgelabel}
 
 ```java
 schema.edgeLabel("knows").properties("price").nullableKeys("price").append();
 ```
 
-##### 6.4.4 删除 EdgeLabel
+##### 6.4.4 删除 EdgeLabel {#244-删除-edgelabel}
 
 ```java
 schema.edgeLabel("knows").remove();
 ```
 
-##### 6.4.5 查询 EdgeLabel
+##### 6.4.5 查询 EdgeLabel {#245-查询-edgelabel}
 
 ```java
 // 获取 EdgeLabel 对象
@@ -829,7 +829,7 @@ schema.getEdgeLabel("knows").links()
 
 #### 6.5 IndexLabel {#25-indexlabel}
 
-##### 6.5.1 接口及参数介绍
+##### 6.5.1 接口及参数介绍 {#251-接口及参数介绍}
 
 IndexLabel 用来定义索引类型，描述索引的约束信息，主要是为了方便查询。
 
@@ -891,7 +891,7 @@ IndexLabel 允许定义的约束信息包括：name、baseType、baseValue、ind
 | shard()     | Shard     | support prefix + range(numeric or date type) search |
 | unique()    | Unique    | support unique props value, not support search      |
 
-##### 6.5.2 创建 IndexLabel
+##### 6.5.2 创建 IndexLabel {#252-创建-indexlabel}
 
 以下示例假定已创建带 `name`、`age` 的 `person` 顶点类型，以及带 `date` 的 `created` 边类型。
 先补充索引所需属性；`id` 是业务属性，与顶点的内部 ID 不同。
@@ -910,13 +910,13 @@ schema.indexLabel("personByCityAndAge").onV("person").by("city", "age").shard().
 schema.indexLabel("personById").onV("person").by("id").unique().ifNotExist().create();
 ```
 
-##### 6.5.3 删除 IndexLabel
+##### 6.5.3 删除 IndexLabel {#253-删除-indexlabel}
 
 ```java
 schema.indexLabel("personByAge").remove()
 ```
 
-##### 6.5.4 查询 IndexLabel
+##### 6.5.4 查询 IndexLabel {#254-查询-indexlabel}
 
 ```java
 // 获取 IndexLabel 对象

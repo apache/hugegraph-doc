@@ -35,14 +35,15 @@ draft: true
 
 ## 使用指南
 
-- [架构](guides/architectural)
-- [设计](guides/desgin-concept)
+- [架构](guides/architectural/_index)
+  - [自定义插件](guides/architectural/custom-plugin)
+  - [设计](guides/architectural/desgin-concept)
 - [备份与恢复](guides/backup-restore)
-- [自定义插件](guides/custom-plugin)
 - [Docker 集群](guides/hugegraph-docker-cluster)
 - [安全](guides/security)
-- [Toolchain 本地测试](guides/toolchain-local-test)
-- [ToplingDB（开发版）](guides/toplingdb)
+- [开发测试](guides/dev-test/_index)
+  - [Toolchain 本地测试](guides/dev-test/toolchain-local-test)
+  - [ToplingDB（开发版）](guides/dev-test/toplingdb)
 - [常见问题](guides/faq)
 
 ## 查询语言

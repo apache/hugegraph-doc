@@ -4,12 +4,14 @@ linkTitle: "Gremlin Console"
 weight: 3
 ---
 
-Gremlin-Console 是 TinkerPop 的交互式客户端，支持离线操作图，也可以连接 Server 提交查询。常用 Gremlin 遍历语法与示例请参阅 [Gremlin 查询语言](/cn/docs/language/hugegraph-gremlin/)。
+Gremlin-Console 是 TinkerPop 的交互式客户端，支持离线操作图，也可以连接 Server 提交查询。常用 Gremlin 遍历语法与示例请参阅 [Gremlin 查询语言](/cn/docs/language/hugegraph-gremlin/)。主要包含两种工作模式：
 
-- 单机离线调用模式
-- Client/Server 请求模式
+- [单机离线调用模式](#1-单机离线调用模式) — 直接执行 Groovy 脚本操作 HugeGraph-Core，无需启动 Server 服务。
+- [Client/Server 请求模式](#2-clientserver-请求模式) — 通过 WebSocket 连接运行中的 HugeGraph Server，远程执行 Gremlin 查询。
+{.cards}
 
-Gremlin-Console 适合学习和调试。生产应用建议使用对应语言的客户端。
+> [!NOTE]
+> Gremlin-Console 适合快速体验、原型探索与排查调试，不推荐直接用于高并发或高吞吐的生产环境。生产环境建议使用相应语言的客户端（如 HugeGraph-Client）。
 
 ### 1 单机离线调用模式
 
@@ -41,7 +43,7 @@ model load finished, time elapsed 35 ms.
 gremlin> 
 ```
 
-> 这里的 `--` 会被 getopts 解析为最后一个 option，这样后面的 options 就可以传入 Gremlin-Console 进行处理了。`-i` 代表 `Execute the specified script and leave the console open on completion`，更多的选项可以参考 Gremlin-Console 的[源代码](https://github.com/apache/tinkerpop/blob/3.5.1/gremlin-console/src/main/groovy/org/apache/tinkerpop/gremlin/console/Console.groovy#L483)。
+> 这里的 `--` 会被 getopts 解析为最后一个 option，这样后面的 options 就可以传入 Gremlin-Console 进行处理了。`-i` 代表 `Execute the specified script and leave the console open on completion`，更多选项请参考 [TinkerPop Gremlin Console 官方文档](https://tinkerpop.apache.org/docs/current/reference/#gremlin-console)。
 
 其中 [`example.groovy`](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy) 是 scripts 目录下的一个示例脚本，该脚本插入了一些数据，并在最后查询图中顶点和边的数量。
 

@@ -28,10 +28,14 @@ HugeGraph-Store 是 HugeGraph 分布式版本的存储节点组件，负责实�
 
 ### 3 部署
 
-有两种方式可以部署 HugeGraph-Store 组件：
+### 3 部署
 
-- 方式 1：下载 tar 包
-- 方式 2：源码编译
+HugeGraph-Store 组件主要支持以下部署与运行方式：
+
+- [下载发布包](#31-下载-tar-包) — 下载并解压官方发布的完整二进制安装包。
+- [源码编译](#32-源码编译) — 基于 master 主线代码使用 Maven 与 Java 17 编译 Store 模块。
+- [Docker 部署](#33-docker-部署) — 使用容器运行 Store 节点并组建分布式集群。
+{.cards}
 
 #### 3.1 下载 tar 包
 
@@ -46,25 +50,28 @@ cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-store-incubating-1.7.0
 
 #### 3.2 源码编译
 
-```bash
-# 1. 克隆源代码
-git clone https://github.com/apache/hugegraph.git
+1. **克隆源代码仓库：**
 
-# 2. 编译项目
-cd hugegraph
-mvn clean install -DskipTests=true
+   ```bash
+   git clone https://github.com/apache/hugegraph.git
+   cd hugegraph
+   ```
 
-# 3. 编译成功后，Store 目录和完整发布包分别位于
-#    hugegraph-store/apache-hugegraph-store-{version}
-#    target/apache-hugegraph-{version}.tar.gz
-```
+1. **编译依赖及 Store 模块：**
 
-如果只想单独编译 Store 而不是整个仓库，需要先编译 `hugegraph-struct`，因为 Store 依赖它：
+   ```bash
+   # 单独编译 Store 前需先编译其依赖的 hugegraph-struct 模块
+   mvn install -pl hugegraph-struct -am -DskipTests
+   mvn clean package -pl hugegraph-store/hg-store-dist -am -DskipTests
+   ```
 
-```bash
-mvn install -pl hugegraph-struct -am -DskipTests
-mvn clean package -pl hugegraph-store/hg-store-dist -am -DskipTests
-```
+1. **检查编译产物：**
+
+   ```bash
+   cd hugegraph-store/apache-hugegraph-store-*
+   ls -la bin conf lib
+   ```
+{.steps}
 
 生成的目录只包含 `bin/`、`conf/` 和 `lib/hg-store-node-{version}.jar`。
 

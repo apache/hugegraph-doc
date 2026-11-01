@@ -90,7 +90,7 @@ POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 
 Note:
 
-> The request body contains the raw Cypher text statement rather than a JSON object. However, because the server endpoint uses `@Consumes(APPLICATION_JSON)`, requests must include `-H "Content-Type: application/json"` (requests sent with `text/plain` are rejected with HTTP 415).
+> The request body contains a raw Cypher string (a JSON object body is also accepted; see 9.1.3). However, because the server endpoint uses `@Consumes(APPLICATION_JSON)`, requests must include `-H "Content-Type: application/json"` (requests sent with `text/plain` are rejected with HTTP 415).
 
 ##### Example
 

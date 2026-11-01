@@ -35,14 +35,15 @@ draft: true
 
 ## Guides
 
-- [Architecture](guides/architectural)
-- [Design](guides/desgin-concept)
+- [Architecture](guides/architectural/_index)
+  - [Custom Plugins](guides/architectural/custom-plugin)
+  - [Design](guides/architectural/desgin-concept)
 - [Backup and Restore](guides/backup-restore)
-- [Custom Plugins](guides/custom-plugin)
 - [Docker Cluster](guides/hugegraph-docker-cluster)
 - [Security](guides/security)
-- [Toolchain Local Testing](guides/toolchain-local-test)
-- [ToplingDB (development)](guides/toplingdb)
+- [Development & Testing](guides/dev-test/_index)
+  - [Toolchain Local Testing](guides/dev-test/toolchain-local-test)
+  - [ToplingDB (development)](guides/dev-test/toplingdb)
 - [FAQ](guides/faq)
 
 ## Query Languages

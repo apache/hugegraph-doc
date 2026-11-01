@@ -138,10 +138,10 @@ DOCS_NAV_GROUP_TITLES = {
 DOCS_NAV_EXPECTED_STATS = {
     "latest": {
         "groups": 5,
-        "pages": 98,
+        "pages": 99,
         "removed": 4,
         "scopedLinks": 0,
-        "treeSha256": "1dc2d3b15ad66adf1fa50e23ad4a0af42f287baa85cfa0ae3547a63c6ac23764",
+        "treeSha256": "71220ececd45307411aa1479de9a3592f0bf7d2cfec42ec1e5310beac3a929bf",
     },
     "1.7": {
         "groups": 5,
@@ -988,6 +988,14 @@ def docs_nav_page_for_routes(page: str, routes: set[str]) -> str | None:
         candidates.append("/docs/introduction/readme")
     if "/api-performance" in normalized:
         candidates.append(normalized.replace("/api-performance", "/api-preformance"))
+    if normalized.startswith("/docs/guides/architectural/"):
+        candidates.append(
+            normalized.replace("/docs/guides/architectural/", "/docs/guides/")
+        )
+    if normalized.startswith("/docs/guides/dev-test/"):
+        candidates.append(
+            normalized.replace("/docs/guides/dev-test/", "/docs/guides/")
+        )
     return next((candidate for candidate in candidates if candidate in routes), None)
 
 
@@ -1141,6 +1149,23 @@ def materialize_docs_navigation(
                         )
                     else:
                         group["children"].append(quickstart_client_node)
+
+                new_children = []
+                for node in group.get("children", []):
+                    if node.get("page") in (
+                        "/docs/guides/architectural",
+                        "/docs/guides/dev-test",
+                    ):
+                        continue
+                    new_children.append(node)
+                new_children.extend([
+                    {"page": "/docs/guides/architectural"},
+                    {"page": "/docs/guides/desgin-concept"},
+                    {"page": "/docs/guides/custom-plugin"},
+                    {"page": "/docs/guides/toolchain-local-test"},
+                    {"page": "/docs/guides/toplingdb"},
+                ])
+                group["children"] = new_children
                 continue
             if group.get("id") == "components":
                 for node in group.get("children", []):

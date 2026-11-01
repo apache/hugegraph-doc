@@ -1,7 +1,7 @@
 ---
 title: "HugeGraph Architecture Overview"
 linkTitle: "Architecture Overview"
-weight: 1
+weight: 3
 ---
 
 ## Full-Stack Components
@@ -61,3 +61,13 @@ The following diagram is retained for historical reference. Its depiction of Ser
 > [!DETAILS]- Expand the historical architecture diagram
 >
 > ![Historical HugeGraph architecture, for reference only](/docs/images/design/architectural-revised.png)
+
+## Related Topics
+
+- [HugeGraph Plugin](/docs/guides/architectural/custom-plugin/)
+
+  Extension mechanism, SPI registration, and plugin lifecycle in HugeGraph.
+- [Design Concepts (legacy)](/docs/guides/architectural/desgin-concept/)
+
+  Historical background on the property graph model, graph partitioning, and early architecture tradeoffs.
+{.cards}

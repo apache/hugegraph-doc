@@ -29,10 +29,12 @@ Each Store node keeps graph data in RocksDB and replicates it with Raft (JRaft):
 
 ### 3 Deployment
 
-There are two ways to deploy the HugeGraph-Store component:
+Choose a deployment method for the HugeGraph-Store component:
 
-- Method 1: Download the tar package
-- Method 2: Compile from source
+- [Download released archive](#31-download-the-tar-package) — Download the bundled official release package.
+- [Compile from source](#32-compile-from-source) — Build the latest master Store module with Maven and Java 17.
+- [Docker deployment](#33-docker-deployment) — Run containerized Store nodes for cluster topologies.
+{.cards}
 
 #### 3.1 Download the tar package
 
@@ -47,25 +49,28 @@ cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-store-incubating-1.7.0
 
 #### 3.2 Compile from source
 
-```bash
-# 1. Clone the source code
-git clone https://github.com/apache/hugegraph.git
+1. **Clone the source code:**
 
-# 2. Build the project
-cd hugegraph
-mvn clean install -DskipTests=true
+   ```bash
+   git clone https://github.com/apache/hugegraph.git
+   cd hugegraph
+   ```
 
-# 3. After a successful build, the Store directory and complete distribution package are located at
-#    hugegraph-store/apache-hugegraph-store-{version}
-#    target/apache-hugegraph-{version}.tar.gz
-```
+1. **Build dependent struct and Store module:**
 
-To build Store alone instead of the whole repository, build `hugegraph-struct` first, because Store depends on it:
+   ```bash
+   # Build hugegraph-struct dependency and Store distribution
+   mvn install -pl hugegraph-struct -am -DskipTests
+   mvn clean package -pl hugegraph-store/hg-store-dist -am -DskipTests
+   ```
 
-```bash
-mvn install -pl hugegraph-struct -am -DskipTests
-mvn clean package -pl hugegraph-store/hg-store-dist -am -DskipTests
-```
+1. **Locate the distribution output:**
+
+   ```bash
+   cd hugegraph-store/apache-hugegraph-store-*
+   ls -la bin conf lib
+   ```
+{.steps}
 
 The assembled directory contains only `bin/`, `conf/` and `lib/hg-store-node-{version}.jar`.
 

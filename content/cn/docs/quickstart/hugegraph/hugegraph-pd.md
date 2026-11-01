@@ -30,10 +30,12 @@ PD 监听三个端口：
 
 ### 3 部署
 
-有两种方式可以部署 HugeGraph-PD 组件：
+HugeGraph-PD 组件主要支持以下部署与运行方式：
 
-- 方式 1：下载 tar 包
-- 方式 2：源码编译
+- [下载发布包](#31-下载-tar-包) — 下载并解压官方发布的完整二进制安装包。
+- [源码编译](#32-源码编译) — 基于 master 主线代码使用 Maven 与 Java 17 编译 PD 模块。
+- [Docker 部署](#33-docker-部署) — 使用容器快速体验或搭建分布式集群。
+{.cards}
 
 #### 3.1 下载 tar 包
 
@@ -48,25 +50,27 @@ cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 
 #### 3.2 源码编译
 
-```bash
-# 1. 克隆源代码
-git clone https://github.com/apache/hugegraph.git
+1. **克隆源代码仓库：**
 
-# 2. 编译项目
-cd hugegraph
-mvn clean install -DskipTests=true
+   ```bash
+   git clone https://github.com/apache/hugegraph.git
+   cd hugegraph
+   ```
 
-# 3. 编译成功后，PD 目录和发布包分别位于
-#    hugegraph-pd/apache-hugegraph-pd-{version}          （解压后的 PD 发布目录）
-#    hugegraph-pd/apache-hugegraph-pd-{version}.tar.gz   （仅含 PD 的发布包，只在 Linux 构建机上生成）
-#    target/apache-hugegraph-{version}.tar.gz            （PD + Store + Server 的完整发布包）
-```
+1. **编译 PD 模块：**
 
-只编译 PD 发布包及其依赖模块：
+   ```bash
+   # 仅编译 PD 发行包及其依赖模块
+   mvn clean package -pl hugegraph-pd/hg-pd-dist -am -DskipTests
+   ```
 
-```bash
-mvn clean package -pl hugegraph-pd/hg-pd-dist -am -DskipTests
-```
+1. **检查编译产物：**
+
+   ```bash
+   cd hugegraph-pd/apache-hugegraph-pd-*
+   ls -la bin conf lib
+   ```
+{.steps}
 
 解压后的发布目录只包含三个子目录：`bin`（启停脚本）、`conf`（`application.yml`、`application.yml.template`、`log4j2.xml`、`verify-license.json`）和 `lib`（`hg-pd-service` jar 包）。
 

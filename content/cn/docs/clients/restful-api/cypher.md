@@ -90,7 +90,7 @@ POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 
 注意：
 
-> 虽然请求体是原始 Cypher 纯文本语句而非 JSON 对象，但服务端接口使用 `@Consumes(APPLICATION_JSON)` 约束。POST 请求必须显式声明 `-H "Content-Type: application/json"` 请求头；若使用 `text/plain` 会被拒绝并返回 HTTP 415。
+> 请求体包含原始 Cypher 纯文本语句（也支持传入 JSON 对象体，详见 9.1.3）。但服务端接口使用 `@Consumes(APPLICATION_JSON)` 约束，POST 请求必须显式声明 `-H "Content-Type: application/json"` 请求头；若使用 `text/plain` 会被拒绝并返回 HTTP 415。
 
 ##### 使用示例
 

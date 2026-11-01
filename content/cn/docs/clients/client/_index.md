@@ -1,7 +1,7 @@
 ---
-title: "客户端 SDK"
-linkTitle: "客户端 SDK"
-weight: 1
+title: "客户端/SDK"
+linkTitle: "客户端/SDK"
+weight: 2
 description: "HugeGraph 官方多语言客户端 SDK（Java、Python、Go 等）概览与接入指引。"
 aliases:
   - /docs/quickstart/client/

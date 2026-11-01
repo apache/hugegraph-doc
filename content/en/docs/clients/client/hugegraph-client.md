@@ -490,7 +490,7 @@ The definition process of the 4 kinds of schema is described below.
 
 #### 6.2 PropertyKey {#22-propertykey}
 
-##### 6.2.1 Interface and parameter introduction
+##### 6.2.1 Interface and parameter introduction {#221-interface-and-parameter-introduction}
 
 PropertyKey is used to standardize the property constraints of vertices and edges, and properties of properties are not currently supported.
 
@@ -556,7 +556,7 @@ The constraint information that PropertyKey allows to define includes: name, dat
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 6.2.2 Create PropertyKey
+##### 6.2.2 Create PropertyKey {#222-create-propertykey}
 
 ```java
 schema.propertyKey("name").asText().valueSet().ifNotExist().create()
@@ -572,13 +572,13 @@ In the following examples, the syntax of `gremlin` and `java` is exactly the sam
 
 - ifNotExist(): Add a judgment mechanism for create, if the current PropertyKey already exists, it will not be created, otherwise the property will be created. If no ifNotExist() is added, an exception will be thrown if a property-key with the same name already exists. The same as below, and will not be repeated there.
 
-##### 6.2.3 Delete PropertyKey
+##### 6.2.3 Delete PropertyKey {#223-delete-propertykey}
 
 ```java
 schema.propertyKey("name").remove()
 ```
 
-##### 6.2.4 Query PropertyKey
+##### 6.2.4 Query PropertyKey {#224-query-propertykey}
 
 ```java
 // Get PropertyKey
@@ -593,7 +593,7 @@ schema.getPropertyKey("name").userdata()
 
 #### 6.3 VertexLabel {#23-vertexlabel}
 
-##### 6.3.1 Interface and parameter introduction
+##### 6.3.1 Interface and parameter introduction {#231-interface-and-parameter-introduction}
 
 VertexLabel is used to define the vertex type and describe the constraint information of the vertex.
 
@@ -663,7 +663,7 @@ Note: primaryKeys and nullableKeys cannot intersect, because a property cannot b
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 6.3.2 Create VertexLabel
+##### 6.3.2 Create VertexLabel {#232-create-vertexlabel}
 
 ```java
 // Use Automatic Id strategy
@@ -682,7 +682,7 @@ schema.vertexLabel("person").properties("name", "age").primaryKeys("name").ifNot
 schema.vertexLabel("person").usePrimaryKeyId().properties("name", "age").primaryKeys("name").ifNotExist().create();
 ```
 
-##### 6.3.3 Update VertexLabel
+##### 6.3.3 Update VertexLabel {#233-update-vertexlabel}
 
 VertexLabel can append constraints, but only properties and nullableKeys, and the appended properties must also be added to the nullableKeys collection.
 
@@ -690,13 +690,13 @@ VertexLabel can append constraints, but only properties and nullableKeys, and th
 schema.vertexLabel("person").properties("price").nullableKeys("price").append();
 ```
 
-##### 6.3.4 Delete VertexLabel
+##### 6.3.4 Delete VertexLabel {#234-delete-vertexlabel}
 
 ```java
 schema.vertexLabel("person").remove();
 ```
 
-##### 6.3.5 Query VertexLabel
+##### 6.3.5 Query VertexLabel {#235-query-vertexlabel}
 
 ```java
 // Get VertexLabel
@@ -715,7 +715,7 @@ schema.getVertexLabel("person").ttlStartTime()
 
 #### 6.4 EdgeLabel {#24-edgelabel}
 
-##### 6.4.1 Interface and parameter introduction
+##### 6.4.1 Interface and parameter introduction {#241-interface-and-parameter-introduction}
 
 EdgeLabel is used to define the edge type and describe the constraint information of the edge.
 
@@ -778,26 +778,26 @@ Note: sortKeys and nullableKeys also cannot intersect.
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 6.4.2 Create EdgeLabel
+##### 6.4.2 Create EdgeLabel {#242-create-edgelabel}
 
 ```java
 schema.edgeLabel("knows").link("person", "person").properties("date").ifNotExist().create();
 schema.edgeLabel("created").multiTimes().link("person", "software").properties("date").sortKeys("date").ifNotExist().create();
 ```
 
-##### 6.4.3 Update EdgeLabel
+##### 6.4.3 Update EdgeLabel {#243-update-edgelabel}
 
 ```java
 schema.edgeLabel("knows").properties("price").nullableKeys("price").append();
 ```
 
-##### 6.4.4 Delete EdgeLabel
+##### 6.4.4 Delete EdgeLabel {#244-delete-edgelabel}
 
 ```java
 schema.edgeLabel("knows").remove();
 ```
 
-##### 6.4.5 Query EdgeLabel
+##### 6.4.5 Query EdgeLabel {#245-query-edgelabel}
 
 ```java
 // Get EdgeLabel
@@ -821,7 +821,7 @@ schema.getEdgeLabel("knows").links()
 
 #### 6.5 IndexLabel {#25-indexlabel}
 
-##### 6.5.1 Interface and parameter introduction
+##### 6.5.1 Interface and parameter introduction {#251-interface-and-parameter-introduction}
 
 IndexLabel is used to define the index type and describe the constraint information of the index, mainly for the convenience of query.
 
@@ -874,7 +874,7 @@ The constraint information that IndexLabel allows to define include: name, baseT
 | shard()     | Shard     | support prefix + range(numeric or date type) search |
 | unique()    | Unique    | support unique props value, not support search      |
 
-##### 6.5.2 Create IndexLabel
+##### 6.5.2 Create IndexLabel {#252-create-indexlabel}
 
 These examples assume a `person` vertex label with `name` and `age`, and a `created` edge label with `date`.
 First add the indexed properties below; `id` is a business property, separate from the internal vertex ID.
@@ -893,13 +893,13 @@ schema.indexLabel("personByCityAndAge").onV("person").by("city", "age").shard().
 schema.indexLabel("personById").onV("person").by("id").unique().ifNotExist().create();
 ```
 
-##### 6.5.3 Delete IndexLabel
+##### 6.5.3 Delete IndexLabel {#253-delete-indexlabel}
 
 ```java
 schema.indexLabel("personByAge").remove()
 ```
 
-##### 6.5.4 Query IndexLabel
+##### 6.5.4 Query IndexLabel {#254-query-indexlabel}
 
 ```java
 // Get IndexLabel

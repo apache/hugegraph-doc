@@ -7,10 +7,12 @@ weight: 3
 Gremlin-Console is an interactive client developed by TinkerPop. Users can use this client to perform various operations on Graph.
 For traversal syntax and examples, see the [Gremlin Query Language](/docs/language/hugegraph-gremlin/) guide. There are two main usage modes:
 
-- Stand-alone offline mode
-- Client/Server mode
+- [Stand-alone offline mode](#1-stand-alone-offline-mode) — Run Groovy scripts against HugeGraph-Core directly without running the Server.
+- [Client/Server mode](#2-clientserver-mode) — Connect to a running HugeGraph Server via WebSocket for remote Gremlin execution.
+{.cards}
 
-**Note: Gremlin-Console is only for users to quickly get started and experience, it is not recommended for use in production environments.**
+> [!NOTE]
+> Gremlin-Console is designed for interactive exploration, rapid testing, and debugging. It is not recommended for high-concurrency production environments; use the language-specific client (such as HugeGraph-Client) instead.
 
 ### 1 Stand-alone offline mode
 
@@ -42,7 +44,7 @@ model load finished, time elapsed 35 ms.
 gremlin> 
 ```
 
-> The `--` here will be parsed by getopts as the last option, allowing the subsequent options to be passed to Gremlin-Console for processing. `-i` represents `Execute the specified script and leave the console open on completion`. For more options, you can refer to the [source code](https://github.com/apache/tinkerpop/blob/3.5.1/gremlin-console/src/main/groovy/org/apache/tinkerpop/gremlin/console/Console.groovy#L483) of Gremlin-Console.
+> The `--` here is parsed by getopts as the last option flag, allowing subsequent options to be forwarded to Gremlin-Console. `-i` specifies `Execute the specified script and leave the console open on completion`. For additional options, see the [TinkerPop Gremlin Console documentation](https://tinkerpop.apache.org/docs/current/reference/#gremlin-console).
 
 [`example.groovy`](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/scripts/example.groovy) is an example script under the `scripts` directory. This script inserts some data and queries the number of vertices and edges in the graph at the end.
 

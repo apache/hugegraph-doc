@@ -1,7 +1,9 @@
 ---
 title: "HugeGraph Toolchain Local Testing Guide"
 linkTitle: "Toolchain Local Testing"
-weight: 4
+weight: 1
+aliases:
+  - /docs/guides/toolchain-local-test/
 ---
 
 This guide helps developers run HugeGraph toolchain tests locally.

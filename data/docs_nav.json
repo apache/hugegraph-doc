@@ -139,20 +139,6 @@
           "page": "/docs/clients",
           "children": [
             {
-              "page": "/docs/clients/client",
-              "children": [
-                {
-                  "page": "/docs/clients/client/hugegraph-client"
-                },
-                {
-                  "page": "/docs/clients/client/hugegraph-client-python"
-                },
-                {
-                  "page": "/docs/clients/client/hugegraph-client-go"
-                }
-              ]
-            },
-            {
               "page": "/docs/clients/restful-api",
               "children": [
                 {
@@ -215,6 +201,20 @@
               ]
             },
             {
+              "page": "/docs/clients/client",
+              "children": [
+                {
+                  "page": "/docs/clients/client/hugegraph-client"
+                },
+                {
+                  "page": "/docs/clients/client/hugegraph-client-python"
+                },
+                {
+                  "page": "/docs/clients/client/hugegraph-client-go"
+                }
+              ]
+            },
+            {
               "page": "/docs/clients/gremlin-console"
             }
           ]
@@ -237,19 +237,26 @@
           ]
         },
         {
-          "page": "/docs/guides/architectural"
+          "page": "/docs/guides/architectural",
+          "children": [
+            {
+              "page": "/docs/guides/architectural/custom-plugin"
+            },
+            {
+              "page": "/docs/guides/architectural/desgin-concept"
+            }
+          ]
         },
         {
-          "page": "/docs/guides/desgin-concept"
-        },
-        {
-          "page": "/docs/guides/custom-plugin"
-        },
-        {
-          "page": "/docs/guides/toolchain-local-test"
-        },
-        {
-          "page": "/docs/guides/toplingdb"
+          "page": "/docs/guides/dev-test",
+          "children": [
+            {
+              "page": "/docs/guides/dev-test/toolchain-local-test"
+            },
+            {
+              "page": "/docs/guides/dev-test/toplingdb"
+            }
+          ]
         }
       ]
     },
@@ -566,27 +573,6 @@
           "url": "/docs/clients/",
           "children": [
             {
-              "page": "/docs/clients/client",
-              "url": "/docs/clients/client/",
-              "children": [
-                {
-                  "page": "/docs/clients/client/hugegraph-client",
-                  "url": "/docs/clients/client/hugegraph-client/",
-                  "children": []
-                },
-                {
-                  "page": "/docs/clients/client/hugegraph-client-python",
-                  "url": "/docs/clients/client/hugegraph-client-python/",
-                  "children": []
-                },
-                {
-                  "page": "/docs/clients/client/hugegraph-client-go",
-                  "url": "/docs/clients/client/hugegraph-client-go/",
-                  "children": []
-                }
-              ]
-            },
-            {
               "page": "/docs/clients/restful-api",
               "url": "/docs/clients/restful-api/",
               "children": [
@@ -688,6 +674,27 @@
               ]
             },
             {
+              "page": "/docs/clients/client",
+              "url": "/docs/clients/client/",
+              "children": [
+                {
+                  "page": "/docs/clients/client/hugegraph-client",
+                  "url": "/docs/clients/client/hugegraph-client/",
+                  "children": []
+                },
+                {
+                  "page": "/docs/clients/client/hugegraph-client-python",
+                  "url": "/docs/clients/client/hugegraph-client-python/",
+                  "children": []
+                },
+                {
+                  "page": "/docs/clients/client/hugegraph-client-go",
+                  "url": "/docs/clients/client/hugegraph-client-go/",
+                  "children": []
+                }
+              ]
+            },
+            {
               "page": "/docs/clients/gremlin-console",
               "url": "/docs/clients/gremlin-console/",
               "children": []
@@ -723,27 +730,34 @@
         {
           "page": "/docs/guides/architectural",
           "url": "/docs/guides/architectural/",
-          "children": []
+          "children": [
+            {
+              "page": "/docs/guides/architectural/custom-plugin",
+              "url": "/docs/guides/architectural/custom-plugin/",
+              "children": []
+            },
+            {
+              "page": "/docs/guides/architectural/desgin-concept",
+              "url": "/docs/guides/architectural/desgin-concept/",
+              "children": []
+            }
+          ]
         },
         {
-          "page": "/docs/guides/desgin-concept",
-          "url": "/docs/guides/desgin-concept/",
-          "children": []
-        },
-        {
-          "page": "/docs/guides/custom-plugin",
-          "url": "/docs/guides/custom-plugin/",
-          "children": []
-        },
-        {
-          "page": "/docs/guides/toolchain-local-test",
-          "url": "/docs/guides/toolchain-local-test/",
-          "children": []
-        },
-        {
-          "page": "/docs/guides/toplingdb",
-          "url": "/docs/guides/toplingdb/",
-          "children": []
+          "page": "/docs/guides/dev-test",
+          "url": "/docs/guides/dev-test/",
+          "children": [
+            {
+              "page": "/docs/guides/dev-test/toolchain-local-test",
+              "url": "/docs/guides/dev-test/toolchain-local-test/",
+              "children": []
+            },
+            {
+              "page": "/docs/guides/dev-test/toplingdb",
+              "url": "/docs/guides/dev-test/toplingdb/",
+              "children": []
+            }
+          ]
         }
       ],
       "group": "develop"
@@ -1083,29 +1097,6 @@
       "@group/develop",
       "/docs/clients/"
     ],
-    "/docs/clients/client/": [
-      "@group/develop",
-      "/docs/clients/",
-      "/docs/clients/client/"
-    ],
-    "/docs/clients/client/hugegraph-client/": [
-      "@group/develop",
-      "/docs/clients/",
-      "/docs/clients/client/",
-      "/docs/clients/client/hugegraph-client/"
-    ],
-    "/docs/clients/client/hugegraph-client-python/": [
-      "@group/develop",
-      "/docs/clients/",
-      "/docs/clients/client/",
-      "/docs/clients/client/hugegraph-client-python/"
-    ],
-    "/docs/clients/client/hugegraph-client-go/": [
-      "@group/develop",
-      "/docs/clients/",
-      "/docs/clients/client/",
-      "/docs/clients/client/hugegraph-client-go/"
-    ],
     "/docs/clients/restful-api/": [
       "@group/develop",
       "/docs/clients/",
@@ -1225,6 +1216,29 @@
       "/docs/clients/restful-api/",
       "/docs/clients/restful-api/other/"
     ],
+    "/docs/clients/client/": [
+      "@group/develop",
+      "/docs/clients/",
+      "/docs/clients/client/"
+    ],
+    "/docs/clients/client/hugegraph-client/": [
+      "@group/develop",
+      "/docs/clients/",
+      "/docs/clients/client/",
+      "/docs/clients/client/hugegraph-client/"
+    ],
+    "/docs/clients/client/hugegraph-client-python/": [
+      "@group/develop",
+      "/docs/clients/",
+      "/docs/clients/client/",
+      "/docs/clients/client/hugegraph-client-python/"
+    ],
+    "/docs/clients/client/hugegraph-client-go/": [
+      "@group/develop",
+      "/docs/clients/",
+      "/docs/clients/client/",
+      "/docs/clients/client/hugegraph-client-go/"
+    ],
     "/docs/clients/gremlin-console/": [
       "@group/develop",
       "/docs/clients/",
@@ -1258,21 +1272,29 @@
       "@group/develop",
       "/docs/guides/architectural/"
     ],
-    "/docs/guides/desgin-concept/": [
+    "/docs/guides/architectural/custom-plugin/": [
       "@group/develop",
-      "/docs/guides/desgin-concept/"
+      "/docs/guides/architectural/",
+      "/docs/guides/architectural/custom-plugin/"
     ],
-    "/docs/guides/custom-plugin/": [
+    "/docs/guides/architectural/desgin-concept/": [
       "@group/develop",
-      "/docs/guides/custom-plugin/"
+      "/docs/guides/architectural/",
+      "/docs/guides/architectural/desgin-concept/"
     ],
-    "/docs/guides/toolchain-local-test/": [
+    "/docs/guides/dev-test/": [
       "@group/develop",
-      "/docs/guides/toolchain-local-test/"
+      "/docs/guides/dev-test/"
     ],
-    "/docs/guides/toplingdb/": [
+    "/docs/guides/dev-test/toolchain-local-test/": [
       "@group/develop",
-      "/docs/guides/toplingdb/"
+      "/docs/guides/dev-test/",
+      "/docs/guides/dev-test/toolchain-local-test/"
+    ],
+    "/docs/guides/dev-test/toplingdb/": [
+      "@group/develop",
+      "/docs/guides/dev-test/",
+      "/docs/guides/dev-test/toplingdb/"
     ],
     "/docs/config/": [
       "@group/operate",
@@ -1466,14 +1488,9 @@
       "/docs/quickstart/hugegraph-ai/rest-api"
     ],
     "/docs/clients/": [
-      "/docs/clients/client",
       "/docs/clients/restful-api",
+      "/docs/clients/client",
       "/docs/clients/gremlin-console"
-    ],
-    "/docs/clients/client/": [
-      "/docs/clients/client/hugegraph-client",
-      "/docs/clients/client/hugegraph-client-python",
-      "/docs/clients/client/hugegraph-client-go"
     ],
     "/docs/clients/restful-api/": [
       "/docs/clients/restful-api/graphs",
@@ -1496,11 +1513,24 @@
       "/docs/clients/restful-api/metrics",
       "/docs/clients/restful-api/other"
     ],
+    "/docs/clients/client/": [
+      "/docs/clients/client/hugegraph-client",
+      "/docs/clients/client/hugegraph-client-python",
+      "/docs/clients/client/hugegraph-client-go"
+    ],
     "/docs/language/": [
       "/docs/language/hugegraph-gremlin",
       "/docs/language/hugegraph-cypher",
       "/docs/language/cypher-compatibility",
       "/docs/language/migrate-from-neo4j"
+    ],
+    "/docs/guides/architectural/": [
+      "/docs/guides/architectural/custom-plugin",
+      "/docs/guides/architectural/desgin-concept"
+    ],
+    "/docs/guides/dev-test/": [
+      "/docs/guides/dev-test/toolchain-local-test",
+      "/docs/guides/dev-test/toplingdb"
     ],
     "/docs/config/": [
       "/docs/config/config-guide",

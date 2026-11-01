@@ -474,4 +474,4 @@ docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volume
 当前 master 使用新的 H2 元数据库。升级时保留旧 Hubble 包及其数据，新版使用独立的数据目录；旧元数据不支持自动迁移，不能直接复用。
 
 打包配置默认绑定本机 `localhost:8088`。`bin/stop-hubble.sh` 会先请求正常停机，超时后才强制终止。
-需要开发与测试说明时，参考 [Toolchain 本地测试指南](/cn/docs/guides/toolchain-local-test/)。
+需要开发与测试说明时，参考 [Toolchain 本地测试指南](/cn/docs/guides/dev-test/toolchain-local-test/)。

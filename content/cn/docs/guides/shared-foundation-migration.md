@@ -73,7 +73,7 @@ Id vertexId = IdGenerator.of("vertex-1");
 ```
 
 调整源码后，重新编译应用和插件。迁移后的类型同时改变了方法描述符，仅修改 import 不能让旧的已编译 jar 具备二进制兼容性。
-被移除的 core 类没有通用兼容包。[插件示例](/cn/docs/guides/custom-plugin/)仍描述 1.7.0 API，接入迁移后的 API 时按下表调整。
+被移除的 core 类没有通用兼容包。[插件示例](/cn/docs/guides/architectural/custom-plugin/)仍描述 1.7.0 API，接入迁移后的 API 时按下表调整。
 
 | 原 Java 入口 | 迁移后的入口 |
 |---|---|

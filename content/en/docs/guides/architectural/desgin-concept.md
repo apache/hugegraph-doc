@@ -2,6 +2,8 @@
 title: "HugeGraph Design Concepts"
 linkTitle: "Design Concepts (legacy)"
 weight: 2
+aliases:
+  - /docs/guides/desgin-concept/
 ---
 
 ### 1. Property Graph

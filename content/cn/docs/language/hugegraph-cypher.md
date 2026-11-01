@@ -31,7 +31,7 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-Cypher 接口必须携带 `Authorization` 请求头，支持 `Authorization: Basic ...`（标准 RFC 4648 Base64 编码，如 `curl -u`）或 `Authorization: Bearer <token>`。即使服务端未开启鉴权，不带该请求头的请求也会返回 `401`。
+当服务端开启鉴权时，Cypher 请求需要携带 `Authorization` 请求头，支持 `Authorization: Basic ...`（标准 RFC 4648 Base64 编码，如 `curl -u`）或 `Authorization: Bearer <token>`（未携带认证信息的请求返回 `401`）。服务端未开启鉴权时无需携带此头。
 完整请求/响应格式见 [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)。
 
 示例：

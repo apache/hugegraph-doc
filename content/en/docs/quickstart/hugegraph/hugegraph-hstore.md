@@ -513,6 +513,7 @@ The Store node exposes these read-only endpoints on `server.port`:
 | GET | `/actuator/prometheus` | Prometheus scrape endpoint |
 | GET | `/` | Node summary, `leaderCount` and `partitionCount` |
 | GET | `/-/state` | Operator-set `STARTING`, `ONLINE`, or `STOPPING` flag; distinct from PD registration state |
+| GET | `/-/lifecycle` | Process lifecycle state (available in 1.8.0+) |
 | GET | `/-/echo?name=<text>` | Echo check |
 | GET | `/-/scan` | State of the running scan streams |
 | GET | `/v1/partitions` | All Raft groups on this node with per-partition metrics. Add `?flags=accurate` for exact key counts, which is slower. |
@@ -520,6 +521,20 @@ The Store node exposes these read-only endpoints on `server.port`:
 | GET | `/metrics/system` | Host CPU and memory metrics |
 | GET | `/metrics/drive` | Disk metrics for the data paths |
 | GET | `/metrics/raft` | JRaft node metrics, needs `raft.metrics: true` |
+
+`GET /-/lifecycle` reports the process lifecycle status as JSON, such as `{"status":0,"text":"STARTED"}`. The `text` field has four possible values:
+- `STARTING`: Spring application context or gRPC service is still initializing;
+- `STARTED`: Spring application is ready (ApplicationReadyEvent) and gRPC service is running;
+- `STOPPING`: Process shutdown has initiated (ContextClosedEvent takes precedence);
+- `UNAVAILABLE`: gRPC service stopped or terminated unexpectedly before shutdown.
+
+> [!WARNING]
+> **Process lifecycle does not equal cluster readiness**:
+> `STARTED` reflects only local JVM and gRPC process state, **not storage or cluster data readiness**. It does not prove that the node has registered with PD,
+> that data shards have completed recovery, or that Raft replicas have caught up.
+> - Before continuing a rolling update or replacing nodes, always check PD via `GET /v1/stores` to confirm the store status is `Up`, and inspect
+>   `GET /v1/partitions` to ensure all Raft groups are healthy. Never rely solely on `STARTED` as a rolling update gate.
+> - Versions prior to 1.8.0 do not support this endpoint and return HTTP 404; a 404 must not be treated as `STARTED`.
 
 Master Store configuration exposes all Actuator endpoints with `management.endpoints.web.exposure.include: "*"` and enables Prometheus. These endpoints lack PD REST Basic protection; restrict Store REST network access.
 

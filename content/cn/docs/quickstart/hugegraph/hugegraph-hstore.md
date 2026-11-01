@@ -506,6 +506,7 @@ Store 节点在 `server.port` 上提供以下只读接口：
 | GET | `/actuator/prometheus` | Prometheus 抓取接口 |
 | GET | `/` | 节点概览，包含 `leaderCount` 和 `partitionCount` |
 | GET | `/-/state` | 运维设置的节点状态标志，取值为 `STARTING`、`ONLINE`、`STOPPING`；此标志不表示 PD 注册状态 |
+| GET | `/-/lifecycle` | 进程生命周期状态（1.8.0+ 提供） |
 | GET | `/-/echo?name=<text>` | 回显检查 |
 | GET | `/-/scan` | 当前扫描流的状态 |
 | GET | `/v1/partitions` | 本节点上的所有 Raft 组及分区指标。加上 `?flags=accurate` 可获取精确的 key 数量，但更慢。 |
@@ -513,6 +514,18 @@ Store 节点在 `server.port` 上提供以下只读接口：
 | GET | `/metrics/system` | 主机 CPU 和内存指标 |
 | GET | `/metrics/drive` | 数据路径所在磁盘的指标 |
 | GET | `/metrics/raft` | JRaft 节点指标，需要 `raft.metrics: true` |
+
+`GET /-/lifecycle` 返回 JSON 格式的进程生命周期状态，形如 `{"status":0,"text":"STARTED"}`。其中 `text` 包含四种状态：
+- `STARTING`：Spring 上下文或 gRPC 服务仍在启动中；
+- `STARTED`：Spring 应用已就绪（ApplicationReadyEvent）且 gRPC 服务已启动运行；
+- `STOPPING`：进程已进入关闭流程（ContextClosedEvent，优先级最高）；
+- `UNAVAILABLE`：gRPC 服务已提前停止或已终止。
+
+> [!WARNING]
+> **进程生命周期不等于存储或集群就绪**：
+> `STARTED` 仅代表本地 JVM 与 gRPC 进程状态，**不代表节点可对外提供数据读写服务**。它无法证明节点已成功向 PD 注册、数据分片已恢复完成或 Raft 副本已追平日志。
+> - 在执行滚动重启或下线替换节点前，必须通过 PD 端点 `GET /v1/stores` 确认节点处于 `Up` 状态，并通过 `GET /v1/partitions` 确认本节点所有 Raft 分区状态健康，切勿仅凭 `STARTED` 作为滚动更新放行条件。
+> - 1.8.0 之前的旧版本 Store 未提供此接口，调用将返回 HTTP 404；不能将 404 视为已启动或可替换状态。
 
 主线发行目录的 Store 配置将 `management.endpoints.web.exposure.include` 设为 `"*"`，并启用 Prometheus；Actuator 端点没有 PD REST Basic 认证保护，请限制 Store REST 端口的网络可达范围。
 

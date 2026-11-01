@@ -510,9 +510,9 @@ Store 节点在 `server.port` 上提供以下只读接口：
 - `UNAVAILABLE`：gRPC 服务已提前停止或已终止。
 
 > [!WARNING]
-> **进程生命周期不等于集群就绪**：
-> `STARTED` 仅代表本地 JVM 与 gRPC 服务的进程状态，**不代表节点已就绪对外提供服务**。它不能证明节点已成功向 PD 注册、分片已完成恢复或 Raft 副本已追平日志。
-> - 在执行滚动重启或下线节点前，必须通过 PD 端点 `GET /v1/stores` 确认节点处于 `Up` 状态，并通过 `GET /v1/partitions` 确认本节点所有 Raft 分区状态健康，切勿仅凭 `STARTED` 作为滚动更新门禁。
+> **进程生命周期不等于存储或集群就绪**：
+> `STARTED` 仅代表本地 JVM 与 gRPC 进程状态，**不代表节点可对外提供数据读写服务**。它无法证明节点已成功向 PD 注册、数据分片已恢复完成或 Raft 副本已追平日志。
+> - 在执行滚动重启或下线替换节点前，必须通过 PD 端点 `GET /v1/stores` 确认节点处于 `Up` 状态，并通过 `GET /v1/partitions` 确认本节点所有 Raft 分区状态健康，切勿仅凭 `STARTED` 作为滚动更新放行条件。
 > - 1.8.0 之前的旧版本 Store 未提供此接口，调用将返回 HTTP 404；不能将 404 视为已启动或可替换状态。
 
 主线发行目录的 Store 配置将 `management.endpoints.web.exposure.include` 设为 `"*"`，并启用 Prometheus；Actuator 端点没有 PD REST Basic 认证保护，请限制 Store REST 端口的网络可达范围。

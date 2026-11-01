@@ -517,8 +517,10 @@ The Store node exposes these read-only endpoints on `server.port`:
 
 > [!WARNING]
 > **Process lifecycle does not equal cluster readiness**:
-> `STARTED` reflects only local JVM and gRPC process readiness, **not storage or cluster data readiness**. It does not prove that the node has registered with PD, that shards have completed restoration, or that Raft replicas have caught up.
-> - Before continuing a rolling update or replacing nodes, always check PD via `GET /v1/stores` to confirm the store status is `Up`, and inspect `GET /v1/partitions` to ensure all Raft groups are healthy. Never rely solely on `STARTED` as a rolling update gate.
+> `STARTED` reflects only local JVM and gRPC process state, **not storage or cluster data readiness**. It does not prove that the node has registered with PD,
+> that data shards have completed recovery, or that Raft replicas have caught up.
+> - Before continuing a rolling update or replacing nodes, always check PD via `GET /v1/stores` to confirm the store status is `Up`, and inspect
+>   `GET /v1/partitions` to ensure all Raft groups are healthy. Never rely solely on `STARTED` as a rolling update gate.
 > - Versions prior to 1.8.0 do not support this endpoint and return HTTP 404; a 404 must not be treated as `STARTED`.
 
 Master Store configuration exposes all Actuator endpoints with `management.endpoints.web.exposure.include: "*"` and enables Prometheus. These endpoints lack PD REST Basic protection; restrict Store REST network access.

@@ -10,6 +10,9 @@ LLMS index: [llms.txt](/llms.txt)
 
 ### 8.1 Gremlin
 
+> [!NOTE]
+> For Gremlin traversal syntax, feature support, and upgrade notes, see the [Gremlin Query Language](/docs/language/hugegraph-gremlin/) guide.
+
 > [!WARNING]
 > **Use native query APIs safely in production**
 >
@@ -228,3 +231,4 @@ Note:
 Backlinks:
 
 - [Task](/docs/clients/restful-api/task/)
+- [Graph Query Languages](/docs/language/)

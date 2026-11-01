@@ -4,7 +4,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-Gremlin-Console 是 TinkerPop 的交互式客户端，支持离线操作图，也可以连接 Server 提交查询。
+Gremlin-Console 是 TinkerPop 的交互式客户端，支持离线操作图，也可以连接 Server 提交查询。常用 Gremlin 遍历语法与示例请参阅 [Gremlin 查询语言](/cn/docs/language/hugegraph-gremlin/)。
 
 - 单机离线调用模式
 - Client/Server 请求模式
@@ -149,4 +149,5 @@ Gremlin-Console 通过 WebSocket 连接 HugeGraph-Server。使用与 Server 同�
 
 反链：
 
+- [图查询语言](/cn/docs/language/)
 - [HugeGraph Examples](/cn/docs/language/hugegraph-example/)

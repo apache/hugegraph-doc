@@ -613,5 +613,8 @@ Simple examples can reference [HugeGraph-Client](/docs/quickstart/client/hugegra
 
 Backlinks:
 
+- [Cypher Compatibility](/docs/language/cypher-compatibility/)
+- [Cypher Query Language](/docs/language/hugegraph-cypher/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
 - [Java-Client](/docs/quickstart/client/hugegraph-client/)
 - [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)

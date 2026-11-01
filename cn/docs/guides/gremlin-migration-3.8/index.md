@@ -235,5 +235,5 @@ TinkerPop 3.8 引入了原生日期操作函数与步骤，这些能力在 3.5.1
 反链：
 
 - [Release-1.8.0](/cn/docs/changelog/hugegraph-1.8.0-release-notes/)
-- [Gremlin Query Language](/cn/docs/language/hugegraph-gremlin/)
+- [图查询语言](/cn/docs/language/)
 - [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)

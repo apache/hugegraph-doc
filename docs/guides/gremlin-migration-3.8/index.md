@@ -237,5 +237,6 @@ HugeGraph 1.8.0 (introduced upstream in TinkerPop 3.6.0) supports standard `merg
 Backlinks:
 
 - [Release-1.8.0](/docs/changelog/hugegraph-1.8.0-release-notes/)
+- [Graph Query Languages](/docs/language/)
 - [Gremlin Query Language](/docs/language/hugegraph-gremlin/)
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)

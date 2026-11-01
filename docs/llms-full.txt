@@ -69,7 +69,7 @@ Section pages:
 - [HugeGraph-Server Configuration](/docs/config/)
 - [Clients and APIs](/docs/clients/): Connect to HugeGraph with the Java client, REST API, Gremlin Console, and other client libraries.
 - [GUIDES](/docs/guides/)
-- [Query Languages](/docs/language/)
+- [Graph Query Languages](/docs/language/)
 - [PERFORMANCE](/docs/performance/)
 - [Contribution Guidelines](/docs/contribution-guidelines/)
 - [CHANGELOGS](/docs/changelog/)
@@ -1316,6 +1316,12 @@ It is recommended to use [HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph
 #### 3.2 Summary
 
 HugeGraph currently supports `Gremlin` syntax, and users can implement various query requirements through `Gremlin / REST-API`.
+
+---
+
+Backlinks:
+
+- [Graph Query Languages](/docs/language/)
 
 
 ================
@@ -3956,8 +3962,8 @@ Deleting labels or creating/rebuilding indexes typically submits background asyn
 
 ## GQL workspace: query and explore relationships
 
-Open **GQL Traversal** and confirm `hugegraph` is selected. The workspace puts the query editor and graph display together,
-with immediate or async execution, query favorites, and reusable execution history. Start with this Gremlin query:
+Open **GQL Traversal** and confirm `hugegraph` is selected. The workspace puts the query editor and graph display together, with immediate or async execution,
+query favorites, and reusable execution history (see [Graph Query Languages](/docs/language/) for syntax guides). Start with this Gremlin query:
 
 ```groovy
 g.V().hasLabel('person').valueMap()
@@ -4316,6 +4322,7 @@ Backlinks:
 - [Documentation](/docs/)
 - [Architecture Overview](/docs/guides/architectural/)
 - [System Introduction](/docs/introduction/)
+- [Graph Query Languages](/docs/language/)
 - [HugeGraph Examples](/docs/language/hugegraph-example/)
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
 - [Manage with Tools](/docs/quickstart/toolchain/hugegraph-tools/)
@@ -5991,6 +5998,7 @@ Backlinks:
 - [Architecture Overview](/docs/guides/architectural/)
 - [FAQ](/docs/guides/faq/)
 - [System Introduction](/docs/introduction/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
 - [HugeGraph-Loader Performance](/docs/performance/hugegraph-loader-performance/)
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
 - [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
@@ -6366,6 +6374,7 @@ Backlinks:
 
 - [Documentation](/docs/)
 - [System Introduction](/docs/introduction/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
 - [Export and migrate with SeaTunnel Source](/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/)
 - [Graph import](/docs/quickstart/toolchain/import/)
@@ -11556,6 +11565,9 @@ Simple examples can reference [HugeGraph-Client](/docs/quickstart/client/hugegra
 
 Backlinks:
 
+- [Cypher Compatibility](/docs/language/cypher-compatibility/)
+- [Cypher Query Language](/docs/language/hugegraph-cypher/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
 - [Java-Client](/docs/quickstart/client/hugegraph-client/)
 - [Load data with HugeGraph-Loader](/docs/quickstart/toolchain/hugegraph-loader/)
 
@@ -11570,7 +11582,8 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-Gremlin-Console is an interactive client developed by TinkerPop. Users can use this client to perform various operations on Graph. There are two main usage modes:
+Gremlin-Console is an interactive client developed by TinkerPop. Users can use this client to perform various operations on Graph.
+For traversal syntax and examples, see the [Gremlin Query Language](/docs/language/hugegraph-gremlin/) guide. There are two main usage modes:
 
 - Stand-alone offline mode
 - Client/Server mode
@@ -11717,6 +11730,7 @@ For more information, see the [TinkerPop Gremlin Console reference](https://tink
 
 Backlinks:
 
+- [Graph Query Languages](/docs/language/)
 - [HugeGraph Examples](/docs/language/hugegraph-example/)
 
 
@@ -15352,6 +15366,7 @@ e.g: GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema
 Backlinks:
 
 - [Backup Restore](/docs/guides/backup-restore/)
+- [Cypher Compatibility](/docs/language/cypher-compatibility/)
 
 
 ================
@@ -15939,6 +15954,12 @@ Note:
 
 > You can use `GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1` (where "1" is the task_id) to query the execution status of the asynchronous task. For more information, refer to the [Asynchronous Task RESTful API](./task).
 
+---
+
+Backlinks:
+
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
+
 
 ================
 Source: https://hugegraph.apache.org/docs/clients/restful-api/edgelabel/index.md
@@ -16262,6 +16283,12 @@ Note:
 
 > You can query the execution status of an asynchronous task by using `GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1` (where "1" is the task_id). For more information, refer to the [Asynchronous Task RESTful API](./task).
 
+---
+
+Backlinks:
+
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
+
 
 ================
 Source: https://hugegraph.apache.org/docs/clients/restful-api/indexlabel/index.md
@@ -16498,6 +16525,12 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabel
     }
 }
 ```
+
+---
+
+Backlinks:
+
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
 
 
 ================
@@ -17938,6 +17971,9 @@ LLMS index: [llms.txt](/llms.txt)
 
 ### 8.1 Gremlin
 
+> [!NOTE]
+> For Gremlin traversal syntax, feature support, and upgrade notes, see the [Gremlin Query Language](/docs/language/hugegraph-gremlin/) guide.
+
 > [!WARNING]
 > **Use native query APIs safely in production**
 >
@@ -18156,6 +18192,7 @@ Note:
 Backlinks:
 
 - [Task](/docs/clients/restful-api/task/)
+- [Graph Query Languages](/docs/language/)
 
 
 ================
@@ -18174,7 +18211,13 @@ LLMS index: [llms.txt](/llms.txt)
 
 ### 9.1 Cypher
 
-> The Cypher API always needs an `Authorization` header, either `Basic` or `Bearer`. A request without one is rejected with `401`, even when the server runs without authentication. The credentials are forwarded to the Gremlin Server through `conf/remote-objects.yaml`.
+> [!NOTE]
+> For Cypher syntax, query examples, and translation limits, see [HugeGraph Cypher](/docs/language/hugegraph-cypher/)
+> and [Cypher Compatibility](/docs/language/cypher-compatibility/).
+
+> On 1.2.0 to 1.7.0, the Cypher API always needs an `Authorization` header (`Basic` or `Bearer`). A request without one is rejected with `401`, even when the
+> server runs without authentication. On `master` (1.8.0+), the header is optional when authentication is disabled.
+> Credentials are forwarded to the Gremlin Server through `conf/remote-objects.yaml`.
 
 #### 9.1.1 Sending a cypher statement (GET) to HugeGraphServer for synchronous execution
 
@@ -18297,7 +18340,8 @@ match(n:person) return n.name as name order by n.name limit 1
 
 Backlinks:
 
-- [Query Languages](/docs/language/)
+- [Graph Query Languages](/docs/language/)
+- [Cypher Query Language](/docs/language/hugegraph-cypher/)
 
 
 ================
@@ -21576,6 +21620,14 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/count
 
 Get the size of a multi-step neighborhood when only the number matters, so the vertices do not have to be serialized and transferred.
 
+---
+
+Backlinks:
+
+- [Cypher Compatibility](/docs/language/cypher-compatibility/)
+- [Cypher Query Language](/docs/language/hugegraph-cypher/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
+
 
 ================
 Source: https://hugegraph.apache.org/docs/clients/restful-api/task/index.md
@@ -21839,6 +21891,7 @@ Backlinks:
 - [IndexLabel](/docs/clients/restful-api/indexlabel/)
 - [Rebuild](/docs/clients/restful-api/rebuild/)
 - [VertexLabel](/docs/clients/restful-api/vertexlabel/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
 
 
 ================
@@ -25072,20 +25125,63 @@ Backlinks:
 Source: https://hugegraph.apache.org/docs/language/index.md
 ================
 
-# Query Languages
+# Graph Query Languages
 
 LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-HugeGraph supports Gremlin and Cypher. This section mainly covers Gremlin; see the [Cypher API](/docs/clients/restful-api/cypher/) for the Cypher HTTP interface.
+HugeGraph supports two mainstream graph query languages: **Gremlin** (imperative traversal language) and **Cypher** (declarative pattern matching language).
+
+- **Gremlin**: The core graph traversal language of Apache TinkerPop, offering rich traversal primitives and fine control over complex topological paths.
+- **Cypher**: The declarative query language standardized by openCypher, featuring intuitive SQL-like patterns (`MATCH ... WHERE ... RETURN`) for Neo4j parity.
+
+## Language Guides & References
+
+- [HugeGraph-Gremlin](/docs/language/hugegraph-gremlin/)
+
+  Gremlin traversal fundamentals, CRUD query examples, and TinkerPop feature support.
+- [HugeGraph Cypher](/docs/language/hugegraph-cypher/)
+
+  Declarative Cypher language support, read/write statement examples, execution mechanics, and constraints.
+- [Cypher Compatibility](/docs/language/cypher-compatibility/)
+
+  Request contract verification, parameter binding rules, syntax coverage matrix, and behavioral boundaries.
+- [Migrate from Neo4j](/docs/language/migrate-from-neo4j/)
+
+  Core differences between Neo4j and HugeGraph in graph modeling, schema rules, ID strategies, indexing, and query translation.
+- [Sample Graph Data](/docs/language/hugegraph-example/)
+
+  The classic 6-vertex 6-edge TinkerPop sample graph dataset used across query examples.
+{.cards}
+
+## Related Tools & Entry Points
+
+Ways to interact with and execute graph queries across HugeGraph components:
+
+- **CLI Shell**: Use [Gremlin Console](/docs/clients/gremlin-console/) to debug queries offline or connect directly to Server over WebSocket.
+- **Web Visualization**: Use [HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph-hubble/)
+  to run Gremlin / Cypher queries with visual graph exploration and Text2GQL.
+- **HTTP REST APIs**: Submit queries programmatically via HTTP using
+  the [Gremlin REST API](/docs/clients/restful-api/gremlin/) and [Cypher REST API](/docs/clients/restful-api/cypher/).
+- **Version Migration**: Upgrading from an older version? Review the
+  [Gremlin & TinkerPop Migration Guide](/docs/guides/gremlin-migration-3.8/) for syntax removals and behavioral changes.
 
 ---
 
 Section pages:
 
 - [HugeGraph Gremlin](/docs/language/hugegraph-gremlin/)
+- [HugeGraph Cypher](/docs/language/hugegraph-cypher/)
 - [HugeGraph Examples](/docs/language/hugegraph-example/)
+- [Cypher Compatibility](/docs/language/cypher-compatibility/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
+
+---
+
+Backlinks:
+
+- [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)
 
 
 ================
@@ -25100,13 +25196,16 @@ LLMS index: [llms.txt](/llms.txt)
 
 ### Overview
 
-HugeGraph supports [Gremlin](https://tinkerpop.apache.org/gremlin.html), a graph traversal query language of [Apache TinkerPop3](https://tinkerpop.apache.org). While SQL is a query language for relational databases, Gremlin is a general-purpose query language for graph databases. Gremlin can be used to create entities (Vertex and Edge) of a graph, modify the properties of entities, delete entities, as well as perform graph queries.
+HugeGraph supports [Gremlin](https://tinkerpop.apache.org/gremlin.html), a graph traversal query language of [Apache TinkerPop3](https://tinkerpop.apache.org).
+While SQL is a query language for relational databases, Gremlin is a general-purpose query language for graph databases, enabling entity creation, property
+modification, deletion, and traversal queries.
 
-Gremlin can be used to create entities (Vertex and Edge) of a graph, modify the properties of entities, and delete entities. More importantly, it can be used to perform graph querying and analysis operations.
+For developers seeking declarative pattern matching (similar to SQL or Neo4j style), HugeGraph also supports [Cypher](/docs/language/hugegraph-cypher/).
 
 > [!NOTE]
-> **Version & Migration Note**: HugeGraph 1.8.0 upgrades its underlying TinkerPop engine to **3.8.1** (along with Java 17 and Groovy 4.0.25).
-> Legacy syntax patterns such as `store()`, scoped `aggregate()`, and `has(key, traversal)` have been completely removed and now fail on 1.8. See the [1.8 Gremlin & TinkerPop Migration Guide](../guides/gremlin-migration-3.8) for details.
+> HugeGraph is powered by the TinkerPop **3.8.1** engine (running on Java 17 and Groovy 4.0.25).
+> Upgrading from an older version? Review the [Gremlin & TinkerPop Migration Guide](/docs/guides/gremlin-migration-3.8/) for removed legacy syntax
+> and behavioral changes.
 
 ### TinkerPop Features
 
@@ -25123,6 +25222,7 @@ The table below lists the support status of various TinkerPop features in HugeGr
 | Persistence          | Determines if the {@code Graph} implementation supports persisting it's contents natively to disk.This feature does not refer to every graph's ability to write to disk via the Gremlin IO packages(.e.g. GraphML), unless the graph natively persists to disk via those options somehow. For example,TinkerGraph does not support this feature as it is a pure in-sideEffects graph.                                                                         | Backend-dependent |
 | ThreadedTransactions | Determines if the {@code Graph} implementation supports threaded transactions which allow a transaction be executed across multiple threads via {@link Transaction#createThreadedTx()}.                                                                                                                                                                                                                                                                       | false   |
 | ConcurrentAccess     | Determines if the {@code Graph} implementation supports more than one connection to the same instance at the same time. For example, Neo4j embedded does not support this feature because concurrent access to the same database files by multiple instances is not possible. However, Neo4j HA could support this feature as each new {@code Graph} instance coordinates with the Neo4j cluster allowing multiple instances to operate on the same database. | false   |
+{.wide}
 
 ### Vertex Features
 
@@ -25141,6 +25241,7 @@ The table below lists the support status of various TinkerPop features in HugeGr
 | DuplicateMultiProperties | Determines if a {@link Vertex} can support non-unique values on the same key. For this value to be {@code true}, then {@link #supportsMetaProperties()} must also return true. By default this method, just returns what {@link #supportsMultiProperties()} returns.                                                                                                                                                                                                                            | true    |
 | MetaProperties           | Determines if a {@link Vertex} can support properties on vertex properties. It is assumed that a graph will support all the same data types for meta-properties that are supported for regular properties.                                                                                                                                                                                                                                                                                      | false   |
 | RemoveVertices           | Determines if a {@link Vertex} can be removed from the {@code Graph}.                                                                                                                                                                                                                                                                                                                                                                                                                           | true    |
+{.wide}
 
 ### Edge Features
 
@@ -25156,6 +25257,7 @@ The table below lists the support status of various TinkerPop features in HugeGr
 | RemoveProperty  | Determines if an {@link Element} allows properties to be removed.                                                                                                                                                                                                                                                                                                                                                                                                                               | true    |
 | AddEdges        | Determines if an {@link Edge} can be added to a {@code Vertex}.                                                                                                                                                                                                                                                                                                                                                                                                                                 | true    |
 | RemoveEdges     | Determines if an {@link Edge} can be removed from a {@code Vertex}.                                                                                                                                                                                                                                                                                                                                                                                                                             | true    |
+{.wide}
 
 ### Data Type Features
 
@@ -25179,50 +25281,449 @@ The table below lists the support status of various TinkerPop features in HugeGr
 | StringArrayValues  |                                                                                                                                                                                                                                                                      | false   |
 | StringValues       |                                                                                                                                                                                                                                                                      | true    |
 | UniformListValues  | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "uniform" it must contain objects of the same type.           | false (supported via Schema valueList()) |
+{.wide}
 
 ### Gremlin Steps
 
-HugeGraph supports all steps of Gremlin. For complete reference information about Gremlin, please refer to the [Gremlin official website](http://tinkerpop.apache.org/docs/current/reference/).
+HugeGraph supports all steps of Gremlin. For complete reference information about Gremlin,
+please refer to the [Apache TinkerPop 3.8.1 official documentation](https://tinkerpop.apache.org/docs/3.8.1/reference/).
 
-| Step       | Description                                                                                     | Documentation                                                                           |
-|------------|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| addE       | Add an edge between two vertices.                                                                      | [addE step](http://tinkerpop.apache.org/docs/current/reference/#addedge-step)          |
-| addV       | add vertices to graph.                                                                                        | [addV step](http://tinkerpop.apache.org/docs/current/reference/#addvertex-step)        |
-| and        | Make sure all traversals return values.	                                                                                      | [and step](http://tinkerpop.apache.org/docs/current/reference/#and-step)               |
-| as         | Step modulator for assigning variables to the step's output.	                                                                              | [as step](http://tinkerpop.apache.org/docs/current/reference/#as-step)                 |
-| by         | Step Modulators used in conjunction with group and order.                                                                   | [by step](http://tinkerpop.apache.org/docs/current/reference/#by-step)                 |
-| coalesce   | Returns the first traversal that returns a result.                                                                                    | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step)     |
-| constant   | Returns a constant value. Used in conjunction with coalesce.                                                                          | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step)     |
-| count      | Returns a count from the traversal.                                                                                         | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step)         |
-| datetime   | Creates a datetime object or retrieves current server time (returns `OffsetDateTime` in 1.8.0).     | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
-| dedup      | Returns values with duplicates removed.                                                                                     | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step)           |
-| discard    | Discards all current traversers (replaces parameterless `none()` in 1.8.0).                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)        |
-| drop       | Discards a value (vertex/edge).                                                                                      | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step)             |
-| fold       | Acts as a barrier for computing aggregated values from results.                                                                                  | [fold step](http://tinkerpop.apache.org/docs/current/reference/#fold-step)             |
-| group      | Groups values based on specified labels.                                                                                     | [group step](http://tinkerpop.apache.org/docs/current/reference/#group-step)           |
-| has        | Used to filter properties, vertices, and edges. Supports `hasLabel`, `hasId`, `hasNot`, and `has` variants.                                          | [has step](http://tinkerpop.apache.org/docs/current/reference/#has-step)               |
-| inject     | Injects values into the stream.                                                                                          | [inject step](http://tinkerpop.apache.org/docs/current/reference/#inject-step)         |
-| is         | Used to filter by a Boolean expression.                                                                                  | [is step](http://tinkerpop.apache.org/docs/current/reference/#is-step)                 |
-| limit      | Used to limit the number of items in a traversal.                                                                                      | [limit step](http://tinkerpop.apache.org/docs/current/reference/#limit-step)           |
-| local      | Locally wraps a part of a traversal, similar to a subquery.                                                                              | [local step](http://tinkerpop.apache.org/docs/current/reference/#local-step)           |
-| not        | Used to generate the negation result of a filter.                                                                                    | [not step](http://tinkerpop.apache.org/docs/current/reference/#not-step)               |
-| optional   | Returns the result of a specified traversal if it generates any results, otherwise returns the calling element.                                                                   | [optional step](http://tinkerpop.apache.org/docs/current/reference/#optional-step)     |
-| or         | Ensures that at least one traversal returns a value.                                                                                   | [or step](http://tinkerpop.apache.org/docs/current/reference/#or-step)                 |
-| order      | Returns results in the specified order.                                                                                    | [order step](http://tinkerpop.apache.org/docs/current/reference/#order-step)           |
-| path       | Returns the full path of the traversal.                                                                                       | [path step](http://tinkerpop.apache.org/docs/current/reference/#path-step)          |
-| project    | Projects properties as a map.                                                                                        | [project step](http://tinkerpop.apache.org/docs/current/reference/#project-step)       |
-| properties | Returns properties with specified labels.                                                                                       | [properties step](http://tinkerpop.apache.org/docs/current/reference/#properties-step) |
-| range      | Filters based on a specified range of values.                                                                                    | [range step](http://tinkerpop.apache.org/docs/current/reference/#range-step)           |
-| repeat     | Repeats a step a specified number of times. Used for looping.                                                                                | [repeat step](http://tinkerpop.apache.org/docs/current/reference/#repeat-step)         |
-| sample     | Used to sample results returned by the traversal.                                                                                    | [sample step](http://tinkerpop.apache.org/docs/current/reference/#sample-step)         |
-| select     | Used to project the results returned by the traversal.                                                                                     | [select step](http://tinkerpop.apache.org/docs/current/reference/#select-step)         |
-| mergeV     | Matches vertices by property; updates if present, creates if absent (standard upsert).                                     | [mergeV step](http://tinkerpop.apache.org/docs/current/reference/#mergevertex-step)    |
-| mergeE     | Matches edges by property and endpoints; updates if present, creates if absent (standard upsert).                          | [mergeE step](http://tinkerpop.apache.org/docs/current/reference/#mergeedge-step)      |
-| tree       | Aggregate the paths in vertices into a tree.                                                                                    | [tree step](http://tinkerpop.apache.org/docs/current/reference/#tree-step)             |
-| unfold     | Unfolds an iterator as a step.                                                                                      | [unfold step](http://tinkerpop.apache.org/docs/current/reference/#unfold-step)         |
-| union      | Merge the results returned by multiple traversals.                                                                                     | [union step](http://tinkerpop.apache.org/docs/current/reference/#union-step)           |
-| V          | These are the steps required for traversing between vertices and edges: `V`, `E`, `out`, `in`, `both`, `outE`, `inE`, `bothE`, `outV`, `inV`, `bothV`, and `otherV`. | [vertex steps](http://tinkerpop.apache.org/docs/current/reference/#vertex-steps)         |
-| where      | Used to filter the results returned by a traversal. Supports `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, and `between` operators.                              | [where step](http://tinkerpop.apache.org/docs/current/reference/#where-step)           |
+| Step | Description | Documentation |
+|---|---|---|
+| `addE` | Add an edge between two vertices. | [addE step](https://tinkerpop.apache.org/docs/3.8.1/reference/#addedge-step) |
+| `addV` | Add vertices to graph. | [addV step](https://tinkerpop.apache.org/docs/3.8.1/reference/#addvertex-step) |
+| `and` | Make sure all traversals return values. | [and step](https://tinkerpop.apache.org/docs/3.8.1/reference/#and-step) |
+| `as` | Step modulator for assigning variables to the step's output. | [as step](https://tinkerpop.apache.org/docs/3.8.1/reference/#as-step) |
+| `by` | Step modulators used in conjunction with `group` and `order`. | [by step](https://tinkerpop.apache.org/docs/3.8.1/reference/#by-step) |
+| `coalesce` | Returns the first traversal that returns a result. | [coalesce step](https://tinkerpop.apache.org/docs/3.8.1/reference/#coalesce-step) |
+| `constant` | Returns a constant value. Used in conjunction with `coalesce`. | [constant step](https://tinkerpop.apache.org/docs/3.8.1/reference/#constant-step) |
+| `count` | Returns a count from the traversal. | [count step](https://tinkerpop.apache.org/docs/3.8.1/reference/#count-step) |
+| `datetime` | Creates a datetime object or retrieves current server time (returns `OffsetDateTime`). | [datetime function](https://tinkerpop.apache.org/docs/3.8.1/reference/#gremlin-groovy-differences) |
+| `dedup` | Returns values with duplicates removed. | [dedup step](https://tinkerpop.apache.org/docs/3.8.1/reference/#dedup-step) |
+| `discard` | Discards all current traversers (replaces parameterless `none()`). | [discard step](https://tinkerpop.apache.org/docs/3.8.1/reference/#discard-step) |
+| `drop` | Discards a value (vertex/edge). | [drop step](https://tinkerpop.apache.org/docs/3.8.1/reference/#drop-step) |
+| `fold` | Acts as a barrier for computing aggregated values from results. | [fold step](https://tinkerpop.apache.org/docs/3.8.1/reference/#fold-step) |
+| `group` | Groups values based on specified labels. | [group step](https://tinkerpop.apache.org/docs/3.8.1/reference/#group-step) |
+| `has` | Used to filter properties, vertices, and edges. Supports `hasLabel`, `hasId`, `hasNot`, and `has` variants. | [has step](https://tinkerpop.apache.org/docs/3.8.1/reference/#has-step) |
+| `inject` | Injects values into the stream. | [inject step](https://tinkerpop.apache.org/docs/3.8.1/reference/#inject-step) |
+| `is` | Used to filter by a Boolean expression. | [is step](https://tinkerpop.apache.org/docs/3.8.1/reference/#is-step) |
+| `limit` | Used to limit the number of items in a traversal. | [limit step](https://tinkerpop.apache.org/docs/3.8.1/reference/#limit-step) |
+| `local` | Locally wraps a part of a traversal, similar to a subquery. | [local step](https://tinkerpop.apache.org/docs/3.8.1/reference/#local-step) |
+| `not` | Used to generate the negation result of a filter. | [not step](https://tinkerpop.apache.org/docs/3.8.1/reference/#not-step) |
+| `optional` | Returns the result of a specified traversal if it generates any results, otherwise returns the calling element. | [optional step](https://tinkerpop.apache.org/docs/3.8.1/reference/#optional-step) |
+| `or` | Ensures that at least one traversal returns a value. | [or step](https://tinkerpop.apache.org/docs/3.8.1/reference/#or-step) |
+| `order` | Returns results in the specified order. | [order step](https://tinkerpop.apache.org/docs/3.8.1/reference/#order-step) |
+| `path` | Returns the full path of the traversal. | [path step](https://tinkerpop.apache.org/docs/3.8.1/reference/#path-step) |
+| `project` | Projects properties as a map. | [project step](https://tinkerpop.apache.org/docs/3.8.1/reference/#project-step) |
+| `properties` | Returns properties with specified labels. | [properties step](https://tinkerpop.apache.org/docs/3.8.1/reference/#properties-step) |
+| `range` | Filters based on a specified range of values. | [range step](https://tinkerpop.apache.org/docs/3.8.1/reference/#range-step) |
+| `repeat` | Repeats a step a specified number of times. Used for looping. | [repeat step](https://tinkerpop.apache.org/docs/3.8.1/reference/#repeat-step) |
+| `sample` | Used to sample results returned by the traversal. | [sample step](https://tinkerpop.apache.org/docs/3.8.1/reference/#sample-step) |
+| `select` | Used to project the results returned by the traversal. | [select step](https://tinkerpop.apache.org/docs/3.8.1/reference/#select-step) |
+| `mergeV` | Matches vertices by property; updates if present, creates if absent (standard upsert). | [mergeV step](https://tinkerpop.apache.org/docs/3.8.1/reference/#mergevertex-step) |
+| `mergeE` | Matches edges by property and endpoints; updates if present, creates if absent (standard upsert). | [mergeE step](https://tinkerpop.apache.org/docs/3.8.1/reference/#mergeedge-step) |
+| `tree` | Aggregate the paths in vertices into a tree. | [tree step](https://tinkerpop.apache.org/docs/3.8.1/reference/#tree-step) |
+| `unfold` | Unfolds an iterator as a step. | [unfold step](https://tinkerpop.apache.org/docs/3.8.1/reference/#unfold-step) |
+| `union` | Combines the results of multiple traversals. | [union step](https://tinkerpop.apache.org/docs/3.8.1/reference/#union-step) |
+| `V` | Traversal steps between vertices and edges: `V`, `E`, `out`, `in`, `both`, `outE`, `inE`, `bothE`, `outV`, `inV`, `bothV`, and `otherV` | [vertex steps](https://tinkerpop.apache.org/docs/3.8.1/reference/#vertex-steps) |
+| `where` | Filters traversal results. Supports `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, and `between` operators. | [where step](https://tinkerpop.apache.org/docs/3.8.1/reference/#where-step) |
+{.wide .expand}
+
+---
+
+Backlinks:
+
+- [Gremlin Console](/docs/clients/gremlin-console/)
+- [Gremlin](/docs/clients/restful-api/gremlin/)
+- [Graph Query Languages](/docs/language/)
+- [Cypher Query Language](/docs/language/hugegraph-cypher/)
+
+
+================
+Source: https://hugegraph.apache.org/docs/language/hugegraph-cypher/index.md
+================
+
+# HugeGraph Cypher
+
+LLMS index: [llms.txt](/llms.txt)
+
+---
+
+### Overview
+
+HugeGraph supports [Cypher](https://opencypher.org/), the declarative graph query language originally created by Neo4j and standardized as
+[openCypher](https://github.com/opencypher/openCypher). While Gremlin is an imperative traversal language, Cypher lets you describe the graph pattern you want
+(`MATCH`, `WHERE`, `RETURN`) and lets the engine decide how to execute it.
+
+HugeGraph supports the [openCypher 9](https://opencypher.org/) syntax subset, parsing declarative pattern queries directly and bridging them
+seamlessly to the underlying TinkerPop graph traversal engine. For complete coverage and boundaries, see [Cypher Compatibility](/docs/language/cypher-compatibility/).
+
+### When to use Cypher vs Gremlin
+
+| Use Cypher when | Use Gremlin when |
+|---|---|
+| You are migrating from Neo4j or already know Cypher | You need the full HugeGraph feature surface |
+| You want declarative pattern matching (`MATCH (a)-[:KNOWS]->(b)`) | You need fine-grained traversal control, custom steps, or lambdas |
+| Your queries are read-mostly patterns and projections | You need graph algorithms, OLAP, or features Cypher does not expose |
+{.wide}
+
+For anything Cypher cannot express, the equivalent [Gremlin query](/docs/language/hugegraph-gremlin/) always works — examples below show both.
+
+### Calling the Cypher API
+
+Cypher statements are submitted to the HugeGraph Server through the REST endpoint:
+
+```http
+GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
+POST /graphspaces/{graphspace}/graphs/{graph}/cypher
+```
+
+When server authentication is disabled, no `Authorization` header is required; when authentication is enabled,
+standard `Basic` (RFC 4648 Base64, e.g. `curl -u`) or `Bearer <token>` credentials are supported.
+See the [Cypher REST API reference](/docs/clients/restful-api/cypher/) for the full request and response format.
+
+Example:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/cypher?cypher=MATCH%20(n:person)%20RETURN%20n.name%20LIMIT%2010"
+```
+
+From the Java client, use `CypherManager` (see [hugegraph-client](/docs/clients/hugegraph-client/)):
+
+```java
+ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.name LIMIT 10");
+```
+
+### Basic examples
+
+The examples below assume a graph with `person` vertices (`name`, `age`, `city` properties) and `knows` edges.
+Before running them, note:
+- Property predicates in `WHERE` (such as `WHERE n.age > 30`) require covering indexes (e.g. a `RANGE` index on `person.age`).
+- On schemas with non-nullable properties or `PRIMARY_KEY` strategy, create statements must provide required attributes and primary keys;
+  create vertices with complete properties separately before creating connecting edges.
+
+#### Read — MATCH / WHERE / RETURN
+
+```cypher
+// All persons named "marko"
+MATCH (n:person) WHERE n.name = 'marko' RETURN n
+```
+
+```cypher
+// Projection with ordering and limit
+MATCH (n:person)
+WHERE n.age > 30
+RETURN n.name AS name, n.age AS age
+ORDER BY age DESC
+LIMIT 10
+```
+
+```cypher
+// Relationship pattern
+MATCH (a:person)-[:knows]->(b:person)
+WHERE a.name = 'marko'
+RETURN b.name AS friend
+```
+
+#### Create — CREATE
+
+```cypher
+// Create a vertex
+CREATE (n:person {name: 'alice', age: 32, city: 'beijing'})
+```
+
+```cypher
+// Create two vertices, then an edge between them (send each statement as its own request)
+CREATE (:person {name: 'bob'})
+CREATE (:person {name: 'carol'})
+MATCH (a:person), (b:person)
+WHERE a.name = 'bob' AND b.name = 'carol'
+CREATE (a)-[:knows]->(b)
+```
+
+#### Update — SET / REMOVE
+
+```cypher
+MATCH (n:person) WHERE n.name = 'alice'
+SET n.age = 33
+REMOVE n.city
+```
+
+#### Delete — DELETE / DETACH DELETE
+
+```cypher
+// Delete an edge
+MATCH (a:person)-[r:knows]->(b:person)
+WHERE a.name = 'bob' AND b.name = 'carol'
+DELETE r
+```
+
+```cypher
+// Delete a vertex and all its edges
+MATCH (n:person) WHERE n.name = 'alice'
+DETACH DELETE n
+```
+
+#### Aggregation
+
+```cypher
+// Total count
+MATCH (n:person) RETURN count(n) AS total
+```
+
+```cypher
+// Grouped count
+MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
+```
+
+### Gremlin equivalents
+
+Every Cypher statement is translated to Gremlin internally. When a Cypher feature is unsupported, write the traversal directly:
+
+| Cypher | Gremlin equivalent |
+|---|---|
+| `MATCH (n:person) WHERE n.name='marko' RETURN n` | `g.V().hasLabel('person').has('name','marko')` |
+| `MATCH (a)-[:knows]->(b) RETURN b` | `g.V().out('knows')` |
+| `CREATE (n:person {name:'x'})` | `g.addV('person').property('name','x')` |
+| `MATCH (n) DETACH DELETE n` | `g.V().drop()` |
+| `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
+{.wide}
+
+Tip: You can inspect generated underlying Gremlin traversals via `EXPLAIN MATCH (n:person) RETURN n` (in the `translation` field of the response) to draft
+equivalent traversals. `PROFILE` is not supported.
+
+### Limitations
+
+- **Parameterized query rules**: Parameter bindings are supported via JSON request bodies (`{"cypher": "...", "parameters": {...}}`, up to 16 top-level
+  parameters; group additional properties into a nested Map and reference fields explicitly). Referencing an undeclared `$param` results in an execution error;
+  explicit `null` is supported.
+- **Partial clause coverage**: Certain advanced openCypher constructs (such as map projections and complex functions) are currently unsupported and fail during
+  parsing and validation.
+- **No `CALL` procedures**: Graph algorithms (shortest path, k-out, personalrank, etc.) are available via the
+  [traverser REST APIs](/docs/clients/restful-api/traverser/) or Gremlin instead of Cypher `CALL` procedures.
+- **Single statement per request**: Multi-statement scripts are not supported; submit one statement per call.
+
+When a statement fails validation or execution, the server returns structured error details under `status.attributes.errors` with `code`, `message`, and
+`hint`. The Gremlin equivalent is the recommended fallback.
+
+### Further reading
+
+- [Cypher REST API reference](/docs/clients/restful-api/cypher/)
+- [Cypher compatibility notes](/docs/language/cypher-compatibility/)
+- [Gremlin Query Language](/docs/language/hugegraph-gremlin/)
+- [openCypher specification](https://opencypher.org/)
+
+---
+
+Backlinks:
+
+- [Cypher](/docs/clients/restful-api/cypher/)
+- [Graph Query Languages](/docs/language/)
+- [Cypher Compatibility](/docs/language/cypher-compatibility/)
+- [Gremlin Query Language](/docs/language/hugegraph-gremlin/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
+
+
+================
+Source: https://hugegraph.apache.org/docs/language/cypher-compatibility/index.md
+================
+
+# Cypher Compatibility
+
+LLMS index: [llms.txt](/llms.txt)
+
+---
+
+### Scope and Overview
+
+HugeGraph supports declarative openCypher 9 queries on top of the TinkerPop engine.
+This page summarizes supported request forms, parameter binding rules, syntax coverage, and behavioral boundaries.
+
+The endpoint is `/graphspaces/{graphspace}/graphs/{graph}/cypher`. For query examples and Gremlin equivalents, see the
+[HugeGraph Cypher Guide](/docs/language/hugegraph-cypher/).
+
+### Request Forms and Parameter Bindings
+
+| Request Form | Content-Type | Description |
+|---|---|---|
+| `POST` (Recommended) | `application/json` | JSON body `{"cypher": "...", "parameters": {...}}`, supports parameter bindings |
+| `POST` | `application/json` | Raw Cypher text string body (for unparameterized raw statements) |
+| `GET` | — | Query parameter `?cypher=<URL-encoded statement>`, suitable for simple read queries |
+{.wide}
+
+Example JSON parameterized request:
+
+```json
+{
+  "cypher": "MATCH (n:person) WHERE n.name = $name RETURN n.name",
+  "parameters": {"name": "marko"}
+}
+```
+
+#### Parameter Binding Rules
+
+- **Parameter Format**: The `cypher` field must be a non-empty string; `parameters`, if provided, must be a JSON object (omitted means an empty map).
+- **Parameter Count**: The top-level `parameters` object accepts at most 16 keys. For more properties, group them into a nested Map and reference fields
+  explicitly in the statement (e.g. `$props.name`).
+- **Unbound Variables**: Referencing an undeclared `$param` raises an execution error and is rejected (explicit `null` is supported).
+- **Reserved Marker**: The exact string `"  cypher.null"` (two leading spaces) is reserved by the engine as an internal sentinel and is rejected in
+  parameter values.
+- **Error Response**: On validation or execution errors, the server returns HTTP 400 (or `status.code` 400 with null result), with structured details
+  (`code`, `message`, `hint`) in `status.attributes.errors`.
+
+### Syntax and Feature Support Matrix
+
+| Category | Supported Features | Notes |
+|---|---|---|
+| Reads & Patterns | Label scans, equality and range predicates, boolean logic (AND/OR/NOT), directed 1-hop and multi-hop patterns, regex matching (`=~` full match) | Range comparisons require corresponding indexes |
+| Results & Projection | Node and scalar projections, aliases (`AS`), property access, nested structures, relationship IDs, path expressions, null handling | Results are mapped to standard JSON structures |
+| Aggregation & Ordering | `count`, `sum`, `min`, `max`, `avg`, `DISTINCT`, `ORDER BY`, `SKIP`, `LIMIT` | Mapped to underlying graph traversal steps |
+| Data Writes | Vertex and edge `CREATE`, property `SET` / `REMOVE`, edge and vertex `DELETE` / `DETACH DELETE` | Create vertices with required properties before creating connecting edges |
+{.wide}
+
+### Write Constraints and Considerations
+
+On schemas with non-nullable properties or `PRIMARY_KEY` strategy, the shorthand `CREATE (a)-[:knows]->(b)` fails
+due to non-null property validation (`checkNonnullProperty`) or missing primary keys.
+Execute vertex and edge creations separately, ensuring required vertex attributes are fully specified.
+
+### Unsupported Features
+
+The following advanced features are currently unsupported; use Gremlin or the respective REST APIs:
+- **Complex Clauses**: `MERGE`, `OPTIONAL MATCH`, `WITH`, `UNWIND`, `UNION`, variable-length paths (`*1..3`);
+- **Procedures**: `CALL dbms.*` / `CALL algo.*` (use the [Traverser REST API](/docs/clients/restful-api/traverser/));
+- **Schema Management**: Cypher Schema DDL (use the [Schema REST API](/docs/clients/restful-api/schema/));
+- **Protocols & Drivers**: Bolt protocol and drivers (use the HTTP REST API or [HugeGraph Client](/docs/clients/hugegraph-client/)).
+
+---
+
+Backlinks:
+
+- [Cypher](/docs/clients/restful-api/cypher/)
+- [Graph Query Languages](/docs/language/)
+- [Cypher Query Language](/docs/language/hugegraph-cypher/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
+
+
+================
+Source: https://hugegraph.apache.org/docs/language/migrate-from-neo4j/index.md
+================
+
+# Migrating from Neo4j
+
+LLMS index: [llms.txt](/llms.txt)
+
+---
+
+### Overview
+
+For developers migrating from Neo4j or evaluating HugeGraph. HugeGraph supports openCypher declarative query syntax,
+but differences exist in the graph model, schema rules, parameter bindings, and indexing.
+For language usage and compatibility references, see [HugeGraph Cypher](/docs/language/hugegraph-cypher/) and
+[Cypher Compatibility](/docs/language/cypher-compatibility/).
+
+### What carries over directly
+
+| Neo4j concept | HugeGraph equivalent |
+|---|---|
+| Property graph model (nodes / relationships / properties) | Same — vertex labels / edge labels / properties |
+| Core Cypher: `MATCH`/`WHERE`/`RETURN`/`CREATE`/`SET`/`DELETE` | Works as-is (REST `/cypher` endpoint or Java client `CypherManager`), subject to the schema and index rules below |
+| Simple aggregations (`count`/`sum`/`min`/`max`/`avg`) | Works as-is |
+| Traversal-heavy queries | Gremlin traversals or the [traverser REST APIs](/docs/clients/restful-api/traverser/) (k-out, shortest path, personalrank, ...) |
+{.wide}
+
+### Habits you need to change
+
+| In Neo4j | In HugeGraph |
+|---|---|
+| `CREATE INDEX` / `CREATE CONSTRAINT` | Create property indexes through the [IndexLabel REST API](/docs/clients/restful-api/indexlabel/); uniqueness constraints map to `UNIQUE` IndexLabels; node keys map to non-nullable keys plus a composite `UNIQUE` index; property existence constraints map to non-nullable keys on [VertexLabels](/docs/clients/restful-api/vertexlabel/) or [EdgeLabels](/docs/clients/restful-api/edgelabel/). Note that `primary_keys` defines vertex identity, not a uniqueness constraint — a duplicate `CREATE` overwrites the existing vertex instead of failing |
+| Implicit schema (add properties freely) | **Strong schema**: define VertexLabel / EdgeLabel / PropertyKey before writing data |
+| Property predicates in `WHERE` need no index | The starting vertex lookup in `WHERE` needs a covering index unless it is an equality on every primary key of the label. Use `RANGE` for `>` / `<` comparisons. Without a covering index the request returns HTTP 200 with `status.code` 400 and a "not indexed" error |
+| Parameterized queries `$param` | Parameterized requests are supported via JSON body (up to 16 top-level parameters; group additional values into a nested Map); missing parameters result in execution errors |
+| `CALL dbms.*` / `CALL algo.*` procedures | Equivalent capabilities are in the [traverser](/docs/clients/restful-api/traverser/), [task](/docs/clients/restful-api/task/), and other REST APIs |
+| Driver: Neo4j Bolt driver | [hugegraph-client](/docs/clients/hugegraph-client/) (`CypherManager`) or any HTTP client |
+| Transaction boundaries inside a Cypher statement | One statement per request; graph-to-graph migration uses [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/) (preferred, see below), file-based bulk loads use the [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/) |
+{.wide}
+
+On `PRIMARY_KEY` labels, a `UNIQUE` index cannot include all primary-key fields
+(the server rejects it). To keep duplicate-rejection behavior, use a
+`CUSTOMIZE_STRING` label keyed on the Neo4j node id and add a `UNIQUE` index on the
+business key.
+
+### Suggested migration path
+
+1. **Inventory your queries**: Review your application's Cypher queries against the
+   [Cypher Compatibility Notes](/docs/language/cypher-compatibility/) and
+   [Known Limitations](/docs/language/hugegraph-cypher/#known-limitations) to classify them into
+   "works as-is", "rewrite as Gremlin", or "switch to a REST API".
+2. **Create the schema first**: define VertexLabel / EdgeLabel / PropertyKey
+   and indexes through the schema API — HugeGraph requires the schema to
+   exist before data is written.
+3. **Import data**: the preferred path is
+   [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/) (released
+   2026-09-29) running **Neo4j Source → HugeGraph Sink** directly — no
+   intermediate file export. REST remains fine for small datasets; the
+   [HugeGraph Loader](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-loader)
+   stays an alternative for file-based imports. HugeGraph-side setup
+   (environment, `mappings`, vertex/edge import examples) is covered in the
+   [Import Graph Data with SeaTunnel Sink guide](/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/).
+
+   The [SeaTunnel 3.0.0 connector docs](https://seatunnel.apache.org/docs/3.0.0/introduction/about/) document
+   what to rely on:
+   - [Neo4j Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/Neo4j/) reads Cypher
+     query results with explicit field schemas; 3.0.0 adds multi-table reads via `tables_configs`.
+   - [HugeGraph Sink](https://seatunnel.apache.org/docs/3.0.0/connectors/sink/HugeGraph/) is
+     refactored in 3.0.0 with multi-mapping support — use the recommended `mappings` configuration
+    for vertices/edges and follow its schema-creation behavior. By default, the Sink fails fast on
+    errors (`batch_failure_fallback=false` and `max_insert_errors=0`). Record skipping is opt-in via
+    `batch_failure_fallback=true`; if enabled, capture and reconcile skipped records and compare row counts before cutover.
+   - [HugeGraph Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/) is
+     new in 3.0.0 (schema auto-discovery, multi-label/parallel reads), enabling HugeGraph export
+     and migration workflows.
+
+   Map Neo4j properties to HugeGraph PropertyKeys and pick the vertex ID strategy
+   before importing. The Sink requires `idFields` for every vertex strategy other than
+   `AUTOMATIC`, and edge mappings need separate `sourceConfig.idFields` and
+   `targetConfig.idFields`, so the Neo4j query must return the field that carries the ID:
+   - `idStrategy = "PRIMARY_KEY"`: put a Neo4j business key in `idFields` and express edge
+     endpoints through those same key fields.
+   - `idStrategy = "CUSTOMIZE_STRING"`: this alone does not keep the Neo4j node id. Make the
+     Neo4j query return the id you want to keep as its own column (aliased, for example `AS node_id`),
+     declare that field in the Source `schema.fields` (it must match the fields the query
+     returns), set the vertex `idFields` to it, and map the matching edge endpoint fields
+     in `sourceConfig.idFields` and `targetConfig.idFields`.
+
+   Labels you pre-created in step 2 must use that same strategy — automatic creation does not
+   convert an existing `PRIMARY_KEY` label into `CUSTOMIZE_STRING`. The Sink `mappings`
+   configuration can create the missing PropertyKey, VertexLabel and EdgeLabel definitions, so
+   those three parts of step 2 are optional when you use it; it does not create IndexLabels, so
+   create any index your queries rely on (see the habits table above) separately.
+   When SeaTunnel auto-creates EdgeLabels, omitting `frequency` defaults to `SINGLE`, which collapses parallel Neo4j
+   relationships between the same endpoints into a single edge. To preserve parallel relationships, explicitly specify
+   `frequency = "MULTIPLE"` and provide stable relationship discriminator fields as `sortKeys` in the edge mapping
+   (HugeGraph uses sort keys to distinguish parallel edges).
+   Load vertices before edges. We recommend thoroughly testing the import pipeline with a representative data sample before cutover.
+4. **Switch incrementally**: keep queries Cypher supports, and rewrite
+   unsupported constructs as Gremlin — the
+   [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents)
+   shows the mapping.
+
+### Limitations at a glance
+
+- **Statements and parameters**: Multi-statement scripts and `CALL` procedures are not supported; parameter binding supports up to 16 top-level parameters
+  (pass a nested Map for additional properties).
+- **Unsupported syntax**: Advanced openCypher clauses not covered in the compatibility matrix will fail during query validation.
+- **Fallback path**: Unsupported query constructs can typically be rewritten as Gremlin
+  traversals — see the
+  [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents);
+  schema DDL and procedures map to REST APIs instead.
+
+---
+
+Backlinks:
+
+- [Graph Query Languages](/docs/language/)
 
 
 ================

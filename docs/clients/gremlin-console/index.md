@@ -4,7 +4,8 @@ LLMS index: [llms.txt](/llms.txt)
 
 ---
 
-Gremlin-Console is an interactive client developed by TinkerPop. Users can use this client to perform various operations on Graph. There are two main usage modes:
+Gremlin-Console is an interactive client developed by TinkerPop. Users can use this client to perform various operations on Graph.
+For traversal syntax and examples, see the [Gremlin Query Language](/docs/language/hugegraph-gremlin/) guide. There are two main usage modes:
 
 - Stand-alone offline mode
 - Client/Server mode
@@ -151,4 +152,5 @@ For more information, see the [TinkerPop Gremlin Console reference](https://tink
 
 Backlinks:
 
+- [Graph Query Languages](/docs/language/)
 - [HugeGraph Examples](/docs/language/hugegraph-example/)

@@ -3269,3 +3269,11 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/count
 ##### 3.2.27.3 Use Cases
 
 Get the size of a multi-step neighborhood when only the number matters, so the vertices do not have to be serialized and transferred.
+
+---
+
+Backlinks:
+
+- [Cypher Compatibility](/docs/language/cypher-compatibility/)
+- [Cypher Query Language](/docs/language/hugegraph-cypher/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)

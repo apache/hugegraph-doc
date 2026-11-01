@@ -256,3 +256,4 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/computer/pa
 - [IndexLabel](/cn/docs/clients/restful-api/indexlabel/)
 - [Rebuild](/cn/docs/clients/restful-api/rebuild/)
 - [VertexLabel](/cn/docs/clients/restful-api/vertexlabel/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)

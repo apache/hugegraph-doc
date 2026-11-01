@@ -362,6 +362,7 @@ Backlinks:
 
 - [Documentation](/docs/)
 - [System Introduction](/docs/introduction/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
 - [Export and migrate with SeaTunnel Source](/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/)
 - [Graph import](/docs/quickstart/toolchain/import/)

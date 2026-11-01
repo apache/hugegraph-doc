@@ -192,3 +192,9 @@ g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place
 #### 3.2 总结
 
 HugeGraph 目前支持 `Gremlin` 的语法，用户可以通过 `Gremlin / REST-API` 实现各种查询需求。
+
+---
+
+反链：
+
+- [图查询语言](/cn/docs/language/)

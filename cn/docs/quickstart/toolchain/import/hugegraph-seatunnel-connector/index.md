@@ -361,6 +361,7 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 
 - [Documentation](/cn/docs/)
 - [系统介绍](/cn/docs/introduction/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
 - [HugeGraph 工具链](/cn/docs/quickstart/toolchain/)
 - [使用 SeaTunnel Source 导出/迁移图数据](/cn/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/)
 - [图导入](/cn/docs/quickstart/toolchain/import/)

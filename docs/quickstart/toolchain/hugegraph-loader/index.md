@@ -1406,6 +1406,7 @@ Backlinks:
 - [Architecture Overview](/docs/guides/architectural/)
 - [FAQ](/docs/guides/faq/)
 - [System Introduction](/docs/introduction/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)
 - [HugeGraph-Loader Performance](/docs/performance/hugegraph-loader-performance/)
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
 - [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)

@@ -229,3 +229,9 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabel
     }
 }
 ```
+
+---
+
+Backlinks:
+
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)

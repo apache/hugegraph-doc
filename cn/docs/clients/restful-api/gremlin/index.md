@@ -10,6 +10,9 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ### 8.1 Gremlin
 
+> [!NOTE]
+> Gremlin 遍历语法、特性支持与升级说明请查阅 [图查询语言 - Gremlin](/cn/docs/language/hugegraph-gremlin/)。
+
 > [!WARNING]
 > **生产环境下安全使用原生查询接口**
 >
@@ -226,3 +229,4 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/gremlin
 反链：
 
 - [Task](/cn/docs/clients/restful-api/task/)
+- [图查询语言](/cn/docs/language/)

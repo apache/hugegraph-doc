@@ -256,3 +256,4 @@ Backlinks:
 - [IndexLabel](/docs/clients/restful-api/indexlabel/)
 - [Rebuild](/docs/clients/restful-api/rebuild/)
 - [VertexLabel](/docs/clients/restful-api/vertexlabel/)
+- [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)

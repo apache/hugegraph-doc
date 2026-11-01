@@ -330,3 +330,4 @@ e.g: GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema
 反链：
 
 - [备份 & 恢复](/cn/docs/guides/backup-restore/)
+- [Cypher 兼容性](/cn/docs/language/cypher-compatibility/)

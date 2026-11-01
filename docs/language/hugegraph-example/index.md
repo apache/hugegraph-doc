@@ -192,3 +192,9 @@ It is recommended to use [HugeGraph-Hubble](/docs/quickstart/toolchain/hugegraph
 #### 3.2 Summary
 
 HugeGraph currently supports `Gremlin` syntax, and users can implement various query requirements through `Gremlin / REST-API`.
+
+---
+
+Backlinks:
+
+- [Graph Query Languages](/docs/language/)

@@ -10,7 +10,13 @@ LLMS index: [llms.txt](/llms.txt)
 
 ### 9.1 Cypher
 
-> The Cypher API always needs an `Authorization` header, either `Basic` or `Bearer`. A request without one is rejected with `401`, even when the server runs without authentication. The credentials are forwarded to the Gremlin Server through `conf/remote-objects.yaml`.
+> [!NOTE]
+> For Cypher syntax, query examples, and translation limits, see [HugeGraph Cypher](/docs/language/hugegraph-cypher/)
+> and [Cypher Compatibility](/docs/language/cypher-compatibility/).
+
+> On 1.2.0 to 1.7.0, the Cypher API always needs an `Authorization` header (`Basic` or `Bearer`). A request without one is rejected with `401`, even when the
+> server runs without authentication. On `master` (1.8.0+), the header is optional when authentication is disabled.
+> Credentials are forwarded to the Gremlin Server through `conf/remote-objects.yaml`.
 
 #### 9.1.1 Sending a cypher statement (GET) to HugeGraphServer for synchronous execution
 
@@ -133,4 +139,5 @@ match(n:person) return n.name as name order by n.name limit 1
 
 Backlinks:
 
-- [Query Languages](/docs/language/)
+- [Graph Query Languages](/docs/language/)
+- [Cypher Query Language](/docs/language/hugegraph-cypher/)

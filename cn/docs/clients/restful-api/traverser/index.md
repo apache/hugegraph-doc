@@ -3263,3 +3263,11 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/count
 ##### 3.2.27.3 适用场景
 
 只关心多步邻居的规模时使用，避免序列化和传输大量顶点。
+
+---
+
+反链：
+
+- [Cypher 兼容性](/cn/docs/language/cypher-compatibility/)
+- [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)

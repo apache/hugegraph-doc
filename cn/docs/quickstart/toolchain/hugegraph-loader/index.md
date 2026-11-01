@@ -1395,6 +1395,7 @@ bin/hugegraph-flinkcdc-loader.sh -p 1 -- \
 - [架构概览](/cn/docs/guides/architectural/)
 - [FAQ](/cn/docs/guides/faq/)
 - [系统介绍](/cn/docs/introduction/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
 - [HugeGraph-Loader 性能](/cn/docs/performance/hugegraph-loader-performance/)
 - [HugeGraph 工具链](/cn/docs/quickstart/toolchain/)
 - [Hubble 基础与单机](/cn/docs/quickstart/toolchain/hugegraph-hubble/)

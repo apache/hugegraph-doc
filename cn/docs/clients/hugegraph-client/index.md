@@ -624,5 +624,8 @@ spaceManager.createGraphSpace(graphSpace);
 
 反链：
 
+- [Cypher 兼容性](/cn/docs/language/cypher-compatibility/)
+- [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
 - [Java 客户端](/cn/docs/quickstart/client/hugegraph-client/)
 - [使用 Loader 实时/流式导入数据](/cn/docs/quickstart/toolchain/hugegraph-loader/)

@@ -228,3 +228,9 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabel
     }
 }
 ```
+
+---
+
+反链：
+
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)

@@ -69,7 +69,7 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 - [HugeGraph-Server 配置](/cn/docs/config/)
 - [客户端与 API](/cn/docs/clients/): 通过 Java 客户端、REST API、Gremlin Console 和其他客户端库连接 HugeGraph。
 - [使用指南](/cn/docs/guides/)
-- [查询语言](/cn/docs/language/)
+- [图查询语言](/cn/docs/language/)
 - [PERFORMANCE](/cn/docs/performance/)
 - [贡献指南](/cn/docs/contribution-guidelines/)
 - [CHANGELOGS](/cn/docs/changelog/)
@@ -1289,6 +1289,12 @@ g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place
 #### 3.2 总结
 
 HugeGraph 目前支持 `Gremlin` 的语法，用户可以通过 `Gremlin / REST-API` 实现各种查询需求。
+
+---
+
+反链：
+
+- [图查询语言](/cn/docs/language/)
 
 
 ================
@@ -3852,7 +3858,7 @@ Schema 规定了图中允许存储的属性、顶点与边类型，并决定顶�
 ## 在 GQL 工作台查询人物关系 {#gql-工作台查询与探索人物关系}
 
 进入【GQL 图遍历】，确认当前图为 `hugegraph`。工作台将查询编辑器与图展示区集成在一起，
-支持即时执行与异步执行、常用语句收藏，并可随时从执行历史中重载语句。先在 Gremlin 编辑器中查询人物属性。
+支持即时执行与异步执行、常用语句收藏，并可随时从执行历史中重载语句（语法参考见 [图查询语言](/cn/docs/language/)）。先在 Gremlin 编辑器中查询人物属性。
 
 ```groovy
 g.V().hasLabel('person').valueMap()
@@ -4188,6 +4194,7 @@ docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volume
 - [Documentation](/cn/docs/)
 - [架构概览](/cn/docs/guides/architectural/)
 - [系统介绍](/cn/docs/introduction/)
+- [图查询语言](/cn/docs/language/)
 - [HugeGraph Examples](/cn/docs/language/hugegraph-example/)
 - [HugeGraph 工具链](/cn/docs/quickstart/toolchain/)
 - [使用 Tools 导出/管理图](/cn/docs/quickstart/toolchain/hugegraph-tools/)
@@ -5836,6 +5843,7 @@ bin/hugegraph-flinkcdc-loader.sh -p 1 -- \
 - [架构概览](/cn/docs/guides/architectural/)
 - [FAQ](/cn/docs/guides/faq/)
 - [系统介绍](/cn/docs/introduction/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
 - [HugeGraph-Loader 性能](/cn/docs/performance/hugegraph-loader-performance/)
 - [HugeGraph 工具链](/cn/docs/quickstart/toolchain/)
 - [Hubble 基础与单机](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
@@ -6210,6 +6218,7 @@ HugeGraph Sink 是 **at-least-once（至少一次）** 写入，故障恢复可�
 
 - [Documentation](/cn/docs/)
 - [系统介绍](/cn/docs/introduction/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
 - [HugeGraph 工具链](/cn/docs/quickstart/toolchain/)
 - [使用 SeaTunnel Source 导出/迁移图数据](/cn/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/)
 - [图导入](/cn/docs/quickstart/toolchain/import/)
@@ -11415,6 +11424,9 @@ spaceManager.createGraphSpace(graphSpace);
 
 反链：
 
+- [Cypher 兼容性](/cn/docs/language/cypher-compatibility/)
+- [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
 - [Java 客户端](/cn/docs/quickstart/client/hugegraph-client/)
 - [使用 Loader 实时/流式导入数据](/cn/docs/quickstart/toolchain/hugegraph-loader/)
 
@@ -11429,7 +11441,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-Gremlin-Console 是 TinkerPop 的交互式客户端，支持离线操作图，也可以连接 Server 提交查询。
+Gremlin-Console 是 TinkerPop 的交互式客户端，支持离线操作图，也可以连接 Server 提交查询。常用 Gremlin 遍历语法与示例请参阅 [Gremlin 查询语言](/cn/docs/language/hugegraph-gremlin/)。
 
 - 单机离线调用模式
 - Client/Server 请求模式
@@ -11574,6 +11586,7 @@ Gremlin-Console 通过 WebSocket 连接 HugeGraph-Server。使用与 Server 同�
 
 反链：
 
+- [图查询语言](/cn/docs/language/)
 - [HugeGraph Examples](/cn/docs/language/hugegraph-example/)
 
 
@@ -15173,6 +15186,7 @@ e.g: GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema
 反链：
 
 - [备份 & 恢复](/cn/docs/guides/backup-restore/)
+- [Cypher 兼容性](/cn/docs/language/cypher-compatibility/)
 
 
 ================
@@ -15761,6 +15775,12 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexl
 
 > 可以通过`GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1`（其中"1"是 task_id）来查询异步任务的执行状态，更多[异步任务 RESTful API](./task)
 
+---
+
+反链：
+
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
+
 
 ================
 Source: https://hugegraph.apache.org/cn/docs/clients/restful-api/edgelabel/index.md
@@ -16084,6 +16104,12 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/edgelab
 
 > 可以通过`GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/tasks/1`（其中"1"是 task_id）来查询异步任务的执行状态，更多[异步任务 RESTful API](./task)
 
+---
+
+反链：
+
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
+
 
 ================
 Source: https://hugegraph.apache.org/cn/docs/clients/restful-api/indexlabel/index.md
@@ -16319,6 +16345,12 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/indexlabel
     }
 }
 ```
+
+---
+
+反链：
+
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
 
 
 ================
@@ -17824,6 +17856,9 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ### 8.1 Gremlin
 
+> [!NOTE]
+> Gremlin 遍历语法、特性支持与升级说明请查阅 [图查询语言 - Gremlin](/cn/docs/language/hugegraph-gremlin/)。
+
 > [!WARNING]
 > **生产环境下安全使用原生查询接口**
 >
@@ -18040,6 +18075,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/gremlin
 反链：
 
 - [Task](/cn/docs/clients/restful-api/task/)
+- [图查询语言](/cn/docs/language/)
 
 
 ================
@@ -18058,7 +18094,11 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ### 9.1 Cypher
 
-> Cypher 接口必须携带 `Authorization` 请求头，`Basic` 或 `Bearer` 均可。即使服务未开启鉴权，不带该请求头的请求也会返回 `401`。凭证会通过 `conf/remote-objects.yaml` 转发给 Gremlin Server。
+> [!NOTE]
+> Cypher 语法、语句示例与转译限制请查阅 [图查询语言 - Cypher](/cn/docs/language/hugegraph-cypher/) 及 [Cypher 兼容性矩阵](/cn/docs/language/cypher-compatibility/)。
+
+> 在 1.2.0 至 1.7.0 版本中，Cypher 接口必须携带 `Authorization` 请求头（`Basic` 或 `Bearer`）。即使服务未开启鉴权，不带该请求头的请求也会返回 `401`。在
+> `master`（1.8.0+）中，未开启鉴权时无需携带此头。凭证会通过 `conf/remote-objects.yaml` 转发给 Gremlin Server。
 
 #### 9.1.1 向 HugeGraphServer 发送 Cypher 语句（GET），同步执行
 
@@ -18186,7 +18226,8 @@ match(n:person) return n.name as name order by n.name limit 1
 
 反链：
 
-- [查询语言](/cn/docs/language/)
+- [图查询语言](/cn/docs/language/)
+- [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)
 
 
 ================
@@ -21459,6 +21500,14 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/count
 
 只关心多步邻居的规模时使用，避免序列化和传输大量顶点。
 
+---
+
+反链：
+
+- [Cypher 兼容性](/cn/docs/language/cypher-compatibility/)
+- [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
+
 
 ================
 Source: https://hugegraph.apache.org/cn/docs/clients/restful-api/task/index.md
@@ -21722,6 +21771,7 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/computer/pa
 - [IndexLabel](/cn/docs/clients/restful-api/indexlabel/)
 - [Rebuild](/cn/docs/clients/restful-api/rebuild/)
 - [VertexLabel](/cn/docs/clients/restful-api/vertexlabel/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
 
 
 ================
@@ -24939,20 +24989,60 @@ fmt.Println(resp.Data.Result.Data)
 Source: https://hugegraph.apache.org/cn/docs/language/index.md
 ================
 
-# 查询语言
+# 图查询语言
 
 LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-HugeGraph 支持 Gremlin 和 Cypher。这里主要介绍 Gremlin 用法；Cypher HTTP 接口见 [Cypher API](/cn/docs/clients/restful-api/cypher/)。
+HugeGraph 支持两种主流图查询语言：**Gremlin**（命令式遍历语言）与 **Cypher**（声明式模式匹配语言）。
+
+- **Gremlin**：Apache TinkerPop 的核心图遍历语言，语法灵活、表达力强，适合复杂拓扑路径探索与精细遍历控制。
+- **Cypher**：openCypher 标准化的声明式语言，类似 SQL 的直观模式匹配（`MATCH ... WHERE ... RETURN`），易读性强且便于 Neo4j 迁移。
+
+## 语言指南与参考
+
+- [HugeGraph-Gremlin](/cn/docs/language/hugegraph-gremlin/)
+
+  Gremlin 遍历基础、CRUD 语法示例以及 TinkerPop 规范支持情况。
+- [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)
+
+  Cypher 声明式语法支持、读取与写入示例、执行机制与使用限制。
+- [Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/)
+
+  请求契约规范、参数绑定规则、语法特性覆盖对照及行为边界说明。
+- [从 Neo4j 迁移到 HugeGraph](/cn/docs/language/migrate-from-neo4j/)
+
+  Neo4j 与 HugeGraph 在图模型、Schema 规范、ID 策略、索引机制及查询语法上的核心差异对照与迁移步骤。
+- [经典示例数据](/cn/docs/language/hugegraph-example/)
+
+  TinkerPop 经典的 6 顶点 6 边人际与软件关系图示例，供编写查询时对照参考。
+{.cards}
+
+## 周边工具与相关入口
+
+在不同场景下执行图查询的快捷入口：
+
+- **命令行交互**：通过 [Gremlin Console](/cn/docs/clients/gremlin-console/) 可以在终端中离线调试或连接 Server 提交脚本。
+- **Web 可视化探索**：在 [HugeGraph-Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) 中在线执行 Gremlin / Cypher，进行图谱可视化与 Text2GQL 探索。
+- **HTTP REST 接口**：直接通过 HTTP 请求提交查询，见 [Gremlin REST API](/cn/docs/clients/restful-api/gremlin/) 与 [Cypher REST API](/cn/docs/clients/restful-api/cypher/)。
+- **版本升级参考**：从旧版本升级时，请查阅 [Gremlin 与 TinkerPop 迁移指南](/cn/docs/guides/gremlin-migration-3.8/)，排查语法废弃与行为变化。
 
 ---
 
 本节页面：
 
 - [HugeGraph Gremlin](/cn/docs/language/hugegraph-gremlin/)
+- [HugeGraph Cypher](/cn/docs/language/hugegraph-cypher/)
 - [HugeGraph Examples](/cn/docs/language/hugegraph-example/)
+- [Cypher 兼容性](/cn/docs/language/cypher-compatibility/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
+
+---
+
+反链：
+
+- [Hubble 基础与单机](/cn/docs/quickstart/toolchain/hugegraph-hubble/)
 
 
 ================
@@ -24967,129 +25057,493 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ### 概述
 
-HugeGraph支持[Apache TinkerPop3](https://tinkerpop.apache.org)的图形遍历查询语言[Gremlin](https://tinkerpop.apache.org/gremlin.html)。 SQL是关系型数据库查询语言，而Gremlin是一种通用的图数据库查询语言，Gremlin可用于创建图的实体（Vertex和Edge）、修改实体内部属性、删除实体，也可执行图的查询操作。
+HugeGraph 原生支持 [Apache TinkerPop3](https://tinkerpop.apache.org) 的图遍历查询语言 [Gremlin](https://tinkerpop.apache.org/gremlin.html)。
+与关系型数据库使用的声明式 SQL 不同，Gremlin 是一种通用的图遍历与计算语言，能够精准控制图的拓扑路径探索，执行实体创建（Vertex 与 Edge）、属性修改、批量删除以及复杂的图分析。
 
-Gremlin可用于创建图的实体（Vertex和Edge）、修改实体内部属性、删除实体，更主要的是可用于执行图的查询及分析操作。
+HugeGraph 基于 TinkerPop **3.8.1** 引擎构建。完整规范与语法参考请查阅 [Apache TinkerPop 3.8.1 官方参考文档](https://tinkerpop.apache.org/docs/3.8.1/reference/)。
+若习惯声明式模式匹配（类似 SQL 或 Neo4j 风格），HugeGraph 同时提供 [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/) 支持。
 
-> [!NOTE]
-> **版本与升级提示**：HugeGraph 1.8.0 已将底层 TinkerPop 引擎升级至 **3.8.1**（同时要求 Java 17 与 Groovy 4.0.25）。
-> 部分旧版语法（如 `store()`、带 Scope 的 `aggregate()` 以及 `has(key, traversal)`）已彻底移除，在 1.8 中调用会直接报错。详见 [1.8 Gremlin 与 TinkerPop 迁移指南](../guides/gremlin-migration-3.8)。
+---
 
-### TinkerPop Features
+### TinkerPop 特性支持
 
-HugeGraph实现了TinkerPop框架，但是并没有实现TinkerPop所有的特性。
+HugeGraph 实现了 TinkerPop 规范核心接口，针对图存储、顶点、边以及属性数据类型的具体支持情况如下：
 
-下表列出HugeGraph对TinkerPop各种特性的支持情况：
+#### 图级特性（Graph Features）
 
-### Graph Features
+| 特性名称 | 含义与说明 | 支持情况 |
+|---|---|---|
+| `Computer` | 是否支持基于 `GraphComputer` 的 OLAP 图计算引擎（HugeGraph 服务端专注实时 OLTP 遍历，大规模图计算由独立组件支持） | `false` |
+| `Transactions` | 是否支持事务机制（原生支持 ACID 事务提交与回滚） | `true` |
+| `Persistence` | 是否原生将数据持久化到磁盘介质（取决于所配置的底层存储后端，RocksDB/Cassandra/HBase 等均持久化存储） | 取决于后端 |
+| `ThreadedTransactions` | 是否支持通过 `createThreadedTx()` 在多个线程间共享同一个执行事务 | `false` |
+| `ConcurrentAccess` | 是否支持同一底层数据实例的多连接并发访问 | `false` |
+{.wide}
 
-| Name                 | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Support |
-|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| Computer             | Determines if the {@code Graph} implementation supports {@link GraphComputer} based processing                                                                                                                                                                                                                                                                                                                                                                | false   |
-| Transactions         | Determines if the {@code Graph} implementations supports transactions.                                                                                                                                                                                                                                                                                                                                                                                        | true    |
-| Persistence          | Determines if the {@code Graph} implementation supports persisting it's contents natively to disk.This feature does not refer to every graph's ability to write to disk via the Gremlin IO packages(.e.g. GraphML), unless the graph natively persists to disk via those options somehow. For example,TinkerGraph does not support this feature as it is a pure in-sideEffects graph.                                                                         | 取决于后端 |
-| ThreadedTransactions | Determines if the {@code Graph} implementation supports threaded transactions which allow a transaction be executed across multiple threads via {@link Transaction#createThreadedTx()}.                                                                                                                                                                                                                                                                       | false   |
-| ConcurrentAccess     | Determines if the {@code Graph} implementation supports more than one connection to the same instance at the same time. For example, Neo4j embedded does not support this feature because concurrent access to the same database files by multiple instances is not possible. However, Neo4j HA could support this feature as each new {@code Graph} instance coordinates with the Neo4j cluster allowing multiple instances to operate on the same database. | false   |
+#### 顶点特性（Vertex Features）
 
-### Vertex Features
+| 特性名称 | 含义与说明 | 支持情况 |
+|---|---|---|
+| `UserSuppliedIds` | 是否允许在创建顶点时由用户指定自定义标识符（HugeGraph 支持用户自定义、主键和自动生成等策略） | `true` |
+| `NumericIds` | 顶点内部标识符是否限定为纯数值类型 | `false` |
+| `StringIds` | 顶点内部标识符是否支持字符串类型 | `true` |
+| `UuidIds` | 顶点内部标识符是否原生限定为 UUID 格式 | `false` |
+| `CustomIds` | 顶点内部标识符是否支持复合自定义对象 | `true` |
+| `AnyIds` | 顶点内部标识符是否允许任意 Java 对象类型 | `false` |
+| `AddProperty` | 是否支持向顶点添加或动态更新属性 | `true` |
+| `RemoveProperty` | 是否支持从顶点移除已有属性 | `true` |
+| `AddVertices` | 是否支持向图中添加新顶点 | `true` |
+| `MultiProperties` | 单个顶点同一属性名下是否支持存储多个值（多值属性） | `true` |
+| `DuplicateMultiProperties` | 在启用多值属性时，是否允许存在相同的重复值 | `true` |
+| `MetaProperties` | 是否支持在属性上附加元属性（属性的属性） | `false` |
+| `RemoveVertices` | 是否支持从图中删除指定顶点 | `true` |
+{.wide}
 
-| Name                     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Support |
-|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| UserSuppliedIds          | Determines if an {@link Element} can have a user defined identifier. Implementation that do not support this feature will be expected to auto-generate unique identifiers. In other words, if the {@link Graph} allows {@code graph.addVertex(id,x)} to work and thus set the identifier of the newly added {@link Vertex} to the value of {@code x} then this feature should return true. In this case, {@code x} is assumed to be an identifier data type that the {@link Graph} will accept. | true    |
-| NumericIds               | Determines if an {@link Element} has numeric identifiers as their internal representation. In other words,if the value returned from {@link Element#id()} is a numeric value then this method should be return {@code true}. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                          | false   |
-| StringIds                | Determines if an {@link Element} has string identifiers as their internal representation. In other words, if the value returned from {@link Element#id()} is a string value then this method should be return {@code true}. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                           | true    |
-| UuidIds                  | Determines if an {@link Element} has UUID identifiers as their internal representation. In other words,if the value returned from {@link Element#id()} is a {@link UUID} value then this method should be return {@code true}.Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                         | false   |
-| CustomIds                | Determines if an {@link Element} has a specific custom object as their internal representation.In other words, if the value returned from {@link Element#id()} is a type defined by the graph implementations, such as OrientDB's {@code Rid}, then this method should be return {@code true}.Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                         | true    |
-| AnyIds                   | Determines if an {@link Element} any Java object is a suitable identifier. TinkerGraph is a good example of a {@link Graph} that can support this feature, as it can use any {@link Object} as a value for the identifier. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite. This setting should only return {@code true} if {@link #supportsUserSuppliedIds()} is {@code true}.                                        | false   |
-| AddProperty              | Determines if an {@link Element} allows properties to be added. This feature is set independently from supporting "data types" and refers to support of calls to {@link Element#property(String, Object)}.                                                                                                                                                                                                                                                                                      | true    |
-| RemoveProperty           | Determines if an {@link Element} allows properties to be removed.                                                                                                                                                                                                                                                                                                                                                                                                                               | true    |
-| AddVertices              | Determines if a {@link Vertex} can be added to the {@code Graph}.                                                                                                                                                                                                                                                                                                                                                                                                                               | true    |
-| MultiProperties          | Determines if a {@link Vertex} can support multiple properties with the same key.                                                                                                                                                                                                                                                                                                                                                                                                               | true    |
-| DuplicateMultiProperties | Determines if a {@link Vertex} can support non-unique values on the same key. For this value to be {@code true}, then {@link #supportsMetaProperties()} must also return true. By default this method, just returns what {@link #supportsMultiProperties()} returns.                                                                                                                                                                                                                            | true    |
-| MetaProperties           | Determines if a {@link Vertex} can support properties on vertex properties. It is assumed that a graph will support all the same data types for meta-properties that are supported for regular properties.                                                                                                                                                                                                                                                                                      | false   |
-| RemoveVertices           | Determines if a {@link Vertex} can be removed from the {@code Graph}.                                                                                                                                                                                                                                                                                                                                                                                                                           | true    |
+#### 边特性（Edge Features）
 
-### Edge Features
+| 特性名称 | 含义与说明 | 支持情况 |
+|---|---|---|
+| `UserSuppliedIds` | 是否允许直接指定边标识符（HugeGraph 边 ID 自动由起点、标签、排序键与终点复合生成） | `false` |
+| `NumericIds` | 边内部标识符是否限定为纯数值类型 | `false` |
+| `StringIds` | 边内部标识符是否支持字符串类型 | `true` |
+| `UuidIds` | 边内部标识符是否限定为 UUID 格式 | `false` |
+| `CustomIds` | 边内部标识符是否支持复合自定义对象 | `true` |
+| `AnyIds` | 边内部标识符是否允许任意 Java 对象类型 | `false` |
+| `AddProperty` | 是否支持向边添加或动态更新属性 | `true` |
+| `RemoveProperty` | 是否支持从边移除已有属性 | `true` |
+| `AddEdges` | 是否支持在顶点之间建立边 | `true` |
+| `RemoveEdges` | 是否支持从图中删除指定边 | `true` |
+{.wide}
 
-| Name            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Support |
-|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| UserSuppliedIds | Determines if an {@link Element} can have a user defined identifier. Implementation that do not support this feature will be expected to auto-generate unique identifiers. In other words, if the {@link Graph} allows {@code graph.addVertex(id,x)} to work and thus set the identifier of the newly added {@link Vertex} to the value of {@code x} then this feature should return true. In this case, {@code x} is assumed to be an identifier data type that the {@link Graph} will accept. | false   |
-| NumericIds      | Determines if an {@link Element} has numeric identifiers as their internal representation. In other words,if the value returned from {@link Element#id()} is a numeric value then this method should be return {@code true}. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                          | false   |
-| StringIds       | Determines if an {@link Element} has string identifiers as their internal representation. In other words, if the value returned from {@link Element#id()} is a string value then this method should be return {@code true}. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                           | true    |
-| UuidIds         | Determines if an {@link Element} has UUID identifiers as their internal representation. In other words,if the value returned from {@link Element#id()} is a {@link UUID} value then this method should be return {@code true}.Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                                                                                         | false   |
-| CustomIds       | Determines if an {@link Element} has a specific custom object as their internal representation.In other words, if the value returned from {@link Element#id()} is a type defined by the graph implementations, such as OrientDB's {@code Rid}, then this method should be return {@code true}.Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite.                                                                         | true    |
-| AnyIds          | Determines if an {@link Element} any Java object is a suitable identifier. TinkerGraph is a good example of a {@link Graph} that can support this feature, as it can use any {@link Object} as a value for the identifier. Note that this feature is most generally used for determining the appropriate tests to execute in the Gremlin Test Suite. This setting should only return {@code true} if {@link #supportsUserSuppliedIds()} is {@code true}.                                        | false   |
-| AddProperty     | Determines if an {@link Element} allows properties to be added. This feature is set independently from supporting "data types" and refers to support of calls to {@link Element#property(String, Object)}.                                                                                                                                                                                                                                                                                      | true    |
-| RemoveProperty  | Determines if an {@link Element} allows properties to be removed.                                                                                                                                                                                                                                                                                                                                                                                                                               | true    |
-| AddEdges        | Determines if an {@link Edge} can be added to a {@code Vertex}.                                                                                                                                                                                                                                                                                                                                                                                                                                 | true    |
-| RemoveEdges     | Determines if an {@link Edge} can be removed from a {@code Vertex}.                                                                                                                                                                                                                                                                                                                                                                                                                             | true    |
+#### 数据类型支持（Data Type Features）
 
-### Data Type Features
+| 特性名称 | 含义与说明 | 支持情况 |
+|---|---|---|
+| `BooleanValues` | 布尔类型属性（`boolean`） | `true` |
+| `ByteValues` | 单字节整数（`byte`） | `true` |
+| `DoubleValues` | 双精度浮点数（`double`） | `true` |
+| `FloatValues` | 单精度浮点数（`float`） | `true` |
+| `IntegerValues` | 32 位整型（`int`） | `true` |
+| `LongValues` | 64 位长整型（`long`） | `true` |
+| `MapValues` | 是否支持直接存储嵌套 Map 键值对对象 | `false` |
+| `MixedListValues` | 是否支持存储不同类型混合元素的列表 | `false` |
+| `BooleanArrayValues` | 布尔数组类型（`boolean[]`） | `false` |
+| `ByteArrayValues` | 二进制字节数组（`byte[]`，常用于 Blob 或向量嵌入存储） | `true` |
+| `DoubleArrayValues` | 双精度浮点数组（`double[]`） | `false` |
+| `FloatArrayValues` | 单精度浮点数组（`float[]`） | `false` |
+| `IntegerArrayValues` | 整型数组（`int[]`） | `false` |
+| `LongArrayValues` | 长整型数组（`long[]`） | `false` |
+| `SerializableValues` | 是否支持直接存储任意 Java 序列化对象 | `false` |
+| `StringArrayValues` | 字符串数组（`String[]`） | `false` |
+| `StringValues` | 标准文本字符串类型（`text`/`string`） | `true` |
+| `UniformListValues` | 存储同类型元素的集合列表（由 Schema 中的 `cardinality()` 与 `valueList()` 机制原生支持） | `false`（由 Schema 支持） |
+{.wide}
 
-| Name               | Description                                                                                                                                                                                                                                                          | Support |
-|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| BooleanValues      |                                                                                                                                                                                                                                                                      | true    |
-| ByteValues         |                                                                                                                                                                                                                                                                      | true    |
-| DoubleValues       |                                                                                                                                                                                                                                                                      | true    |
-| FloatValues        |                                                                                                                                                                                                                                                                      | true    |
-| IntegerValues      |                                                                                                                                                                                                                                                                      | true    |
-| LongValues         |                                                                                                                                                                                                                                                                      | true    |
-| MapValues          | Supports setting of a {@code Map} value. The assumption is that the {@code Map} can contain arbitrary serializable values that may or may not be defined as a feature itself                                                                                         | false   |
-| MixedListValues    | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "mixed" it does not need to contain objects of the same type. | false   |
-| BooleanArrayValues |                                                                                                                                                                                                                                                                      | false   |
-| ByteArrayValues    |                                                                                                                                                                                                                                                                      | true    |
-| DoubleArrayValues  |                                                                                                                                                                                                                                                                      | false   |
-| FloatArrayValues   |                                                                                                                                                                                                                                                                      | false   |
-| IntegerArrayValues |                                                                                                                                                                                                                                                                      | false   |
-| LongArrayValues    |                                                                                                                                                                                                                                                                      | false   |
-| SerializableValues |                                                                                                                                                                                                                                                                      | false   |
-| StringArrayValues  |                                                                                                                                                                                                                                                                      | false   |
-| StringValues       |                                                                                                                                                                                                                                                                      | true    |
-| UniformListValues  | Supports setting of a {@code List} value. The assumption is that the {@code List} can contain arbitrary serializable values that may or may not be defined as a feature itself. As this{@code List} is "uniform" it must contain objects of the same type.           | false (由 Schema 的 valueList() 机制支持) |
+---
 
-### Gremlin的步骤
+### Gremlin 常用步骤参考
 
-HugeGraph支持Gremlin的所有步骤。有关Gremlin的完整参考信息，请参与[Gremlin官网](http://tinkerpop.apache.org/docs/current/reference/)。
+HugeGraph 支持 Gremlin 遍历规范定义的各项步骤。完整说明与高级遍历用法请参阅 [TinkerPop 3.8.1 步骤参考](https://tinkerpop.apache.org/docs/3.8.1/reference/)。
 
-| 步骤         | 说明                                                                                              | 文档                                                                                     |
-|------------|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| addE       | 在两个顶点之间添加边                                                                                      | [addE step](http://tinkerpop.apache.org/docs/current/reference/#addedge-step)          |
-| addV       | 将顶点添加到图形                                                                                        | [addV step](http://tinkerpop.apache.org/docs/current/reference/#addvertex-step)        |
-| and        | 确保所有遍历都返回值                                                                                      | [and step](http://tinkerpop.apache.org/docs/current/reference/#and-step)               |
-| as         | 用于向步骤的输出分配变量的步骤调制器                                                                              | [as step](http://tinkerpop.apache.org/docs/current/reference/#as-step)                 |
-| by         | 与`group`和`order`配合使用的步骤调制器                                                                      | [by step](http://tinkerpop.apache.org/docs/current/reference/#by-step)                 |
-| coalesce   | 返回第一个返回结果的遍历                                                                                    | [coalesce step](http://tinkerpop.apache.org/docs/current/reference/#coalesce-step)     |
-| constant   | 返回常量值。 与`coalesce`配合使用                                                                          | [constant step](http://tinkerpop.apache.org/docs/current/reference/#constant-step)     |
-| count      | 从遍历返回计数                                                                                         | [count step](http://tinkerpop.apache.org/docs/current/reference/#count-step)         |
-| datetime   | 构造日期时间对象或取得服务器当前时间（1.8.0 默认返回 `OffsetDateTime`）                                      | [datetime function](https://tinkerpop.apache.org/docs/current/reference/#gremlin-groovy-differences) |
-| dedup      | 返回已删除重复内容的值                                                                                     | [dedup step](http://tinkerpop.apache.org/docs/current/reference/#dedup-step)           |
-| discard    | 丢弃流中当前输入（1.8.0 替代原无参 `none()`）                                                                | [discard step](http://tinkerpop.apache.org/docs/current/reference/#discard-step)       |
-| drop       | 丢弃值（顶点/边缘）                                                                                      | [drop step](http://tinkerpop.apache.org/docs/current/reference/#drop-step)             |
-| fold       | 充当用于计算结果聚合值的屏障                                                                                  | [fold step](http://tinkerpop.apache.org/docs/current/reference/#fold-step)             |
-| group      | 根据指定的标签将值分组                                                                                     | [group step](http://tinkerpop.apache.org/docs/current/reference/#group-step)           |
-| has        | 用于筛选属性、顶点和边缘。 支持`hasLabel`、`hasId`、`hasNot` 和 `has` 变体                                          | [has step](http://tinkerpop.apache.org/docs/current/reference/#has-step)               |
-| inject     | 将值注入流中                                                                                          | [inject step](http://tinkerpop.apache.org/docs/current/reference/#inject-step)         |
-| is         | 用于通过布尔表达式执行筛选器                                                                                  | [is step](http://tinkerpop.apache.org/docs/current/reference/#is-step)                 |
-| limit      | 用于限制遍历中的项数                                                                                      | [limit step](http://tinkerpop.apache.org/docs/current/reference/#limit-step)           |
-| local      | 本地包装遍历的某个部分，类似于子查询                                                                              | [local step](http://tinkerpop.apache.org/docs/current/reference/#local-step)           |
-| not        | 用于生成筛选器的求反结果                                                                                    | [not step](http://tinkerpop.apache.org/docs/current/reference/#not-step)               |
-| optional   | 如果生成了某个结果，则返回指定遍历的结果，否则返回调用元素                                                                   | [optional step](http://tinkerpop.apache.org/docs/current/reference/#optional-step)     |
-| or         | 确保至少有一个遍历会返回值                                                                                   | [or step](http://tinkerpop.apache.org/docs/current/reference/#or-step)                 |
-| order      | 按指定的排序顺序返回结果                                                                                    | [order step](http://tinkerpop.apache.org/docs/current/reference/#order-step)           |
-| path       | 返回遍历的完整路径                                                                                       | [path step](http://tinkerpop.apache.org/docs/current/reference/#path-step)          |
-| project    | 将属性投影为映射                                                                                        | [project step](http://tinkerpop.apache.org/docs/current/reference/#project-step)       |
-| properties | 返回指定标签的属性                                                                                       | [properties step](http://tinkerpop.apache.org/docs/current/reference/#properties-step) |
-| range      | 根据指定的值范围进行筛选                                                                                    | [range step](http://tinkerpop.apache.org/docs/current/reference/#range-step)           |
-| repeat     | 将步骤重复指定的次数。 用于循环                                                                                | [repeat step](http://tinkerpop.apache.org/docs/current/reference/#repeat-step)         |
-| sample     | 用于对遍历返回的结果采样                                                                                    | [sample step](http://tinkerpop.apache.org/docs/current/reference/#sample-step)         |
-| select     | 用于投影遍历返回的结果                                                                                     | [select step](http://tinkerpop.apache.org/docs/current/reference/#select-step)         |
-| mergeV     | 按属性匹配顶点，存在则更新，不存在则创建（标准 Upsert 步骤）                                                 | [mergeV step](http://tinkerpop.apache.org/docs/current/reference/#mergevertex-step)    |
-| mergeE     | 按属性与端点匹配边，存在则更新，不存在则创建（标准 Upsert 步骤）                                             | [mergeE step](http://tinkerpop.apache.org/docs/current/reference/#mergeedge-step)      |
-| tree       | 将顶点中的路径聚合到树中                                                                                    | [tree step](http://tinkerpop.apache.org/docs/current/reference/#tree-step)             |
-| unfold     | 将迭代器作为步骤展开                                                                                      | [unfold step](http://tinkerpop.apache.org/docs/current/reference/#unfold-step)         |
-| union      | 合并多个遍历返回的结果                                                                                     | [union step](http://tinkerpop.apache.org/docs/current/reference/#union-step)           |
-| V          | 包括顶点与边之间的遍历所需的步骤：`V`、`E`、`out`、`in`、`both`、`outE`、`inE`、`bothE`、`outV`、`inV`、`bothV` 和 `otherV` | [vertex steps](http://tinkerpop.apache.org/docs/current/reference/#vertex-steps)         |
-| where      | 用于筛选遍历返回的结果。 支持 `eq`、`neq`、`lt`、`lte`、`gt`、`gte` 和 `between` 运算符                                | [where step](http://tinkerpop.apache.org/docs/current/reference/#where-step)           |
+| 步骤 | 说明 | 官方文档 |
+|---|---|---|
+| `addE` | 在两个顶点之间添加有向边 | [addE step](https://tinkerpop.apache.org/docs/3.8.1/reference/#addedge-step) |
+| `addV` | 向图中添加新顶点 | [addV step](https://tinkerpop.apache.org/docs/3.8.1/reference/#addvertex-step) |
+| `and` | 确保所有子遍历都产生有效输出 | [and step](https://tinkerpop.apache.org/docs/3.8.1/reference/#and-step) |
+| `as` | 为步骤输出分配变量标签的调制器 | [as step](https://tinkerpop.apache.org/docs/3.8.1/reference/#as-step) |
+| `by` | 与 `group`、`order` 等步骤配合使用的维度调制器 | [by step](https://tinkerpop.apache.org/docs/3.8.1/reference/#by-step) |
+| `coalesce` | 返回首个产生结果的子遍历 | [coalesce step](https://tinkerpop.apache.org/docs/3.8.1/reference/#coalesce-step) |
+| `constant` | 生成指定常量值，常与 `coalesce` 配合使用 | [constant step](https://tinkerpop.apache.org/docs/3.8.1/reference/#constant-step) |
+| `count` | 统计遍历流中元素的总数量 | [count step](https://tinkerpop.apache.org/docs/3.8.1/reference/#count-step) |
+| `datetime` | 构造日期时间对象或取得服务器当前时间（返回 `OffsetDateTime`） | [datetime function](https://tinkerpop.apache.org/docs/3.8.1/reference/#gremlin-groovy-differences) |
+| `dedup` | 去除遍历流中的重复元素 | [dedup step](https://tinkerpop.apache.org/docs/3.8.1/reference/#dedup-step) |
+| `discard` | 丢弃当前流中的遍历器输出 | [discard step](https://tinkerpop.apache.org/docs/3.8.1/reference/#discard-step) |
+| `drop` | 从图中彻底删除对应实体（顶点、边或属性） | [drop step](https://tinkerpop.apache.org/docs/3.8.1/reference/#drop-step) |
+| `fold` | 栅栏步骤，将流中所有项汇总折叠为一个 List | [fold step](https://tinkerpop.apache.org/docs/3.8.1/reference/#fold-step) |
+| `group` | 根据指定的键与投影调制器对数据进行分组聚合 | [group step](https://tinkerpop.apache.org/docs/3.8.1/reference/#group-step) |
+| `has` | 属性与元素过滤，支持 `hasLabel`、`hasId`、`hasNot` 等变体 | [has step](https://tinkerpop.apache.org/docs/3.8.1/reference/#has-step) |
+| `inject` | 将外部离散值直接注入当前遍历流中 | [inject step](https://tinkerpop.apache.org/docs/3.8.1/reference/#inject-step) |
+| `is` | 针对标量值执行布尔条件匹配与过滤 | [is step](https://tinkerpop.apache.org/docs/3.8.1/reference/#is-step) |
+| `limit` | 限制遍历流返回的最大项数 | [limit step](https://tinkerpop.apache.org/docs/3.8.1/reference/#limit-step) |
+| `local` | 局部作用域执行子遍历，类似于局部子查询 | [local step](https://tinkerpop.apache.org/docs/3.8.1/reference/#local-step) |
+| `not` | 对子遍历匹配结果取反（必须不满足条件） | [not step](https://tinkerpop.apache.org/docs/3.8.1/reference/#not-step) |
+| `optional` | 尝试执行子遍历；若有输出则返回，否则保留输入元素 | [optional step](https://tinkerpop.apache.org/docs/3.8.1/reference/#optional-step) |
+| `or` | 确保至少有一个子遍历返回有效结果 | [or step](https://tinkerpop.apache.org/docs/3.8.1/reference/#or-step) |
+| `order` | 按指定字段或比较规则对元素进行排序 | [order step](https://tinkerpop.apache.org/docs/3.8.1/reference/#order-step) |
+| `path` | 收集并返回当前遍历所经过的历史完整路径 | [path step](https://tinkerpop.apache.org/docs/3.8.1/reference/#path-step) |
+| `project` | 将多个调制结果投影为结构化 Map 映射 | [project step](https://tinkerpop.apache.org/docs/3.8.1/reference/#project-step) |
+| `properties` | 获取指定键的 Property 实体对象 | [properties step](https://tinkerpop.apache.org/docs/3.8.1/reference/#properties-step) |
+| `range` | 基于下标范围进行切片截取（起始索引至结束索引） | [range step](https://tinkerpop.apache.org/docs/3.8.1/reference/#range-step) |
+| `repeat` | 循环执行指定的子遍历步骤 | [repeat step](https://tinkerpop.apache.org/docs/3.8.1/reference/#repeat-step) |
+| `sample` | 从当前流中进行随机抽样 | [sample step](https://tinkerpop.apache.org/docs/3.8.1/reference/#sample-step) |
+| `select` | 从历史路径或映射投影中提取特定标签的变量值 | [select step](https://tinkerpop.apache.org/docs/3.8.1/reference/#select-step) |
+| `mergeV` | 按属性匹配顶点，存在则更新，不存在则创建（标准 Upsert 步骤） | [mergeV step](https://tinkerpop.apache.org/docs/3.8.1/reference/#mergevertex-step) |
+| `mergeE` | 按属性与端点匹配边，存在则更新，不存在则创建（标准 Upsert 步骤） | [mergeE step](https://tinkerpop.apache.org/docs/3.8.1/reference/#mergeedge-step) |
+| `tree` | 将遍历路径汇总聚合成树形层级结构 | [tree step](https://tinkerpop.apache.org/docs/3.8.1/reference/#tree-step) |
+| `unfold` | 将集合或数组结构展开为连续的流元素 | [unfold step](https://tinkerpop.apache.org/docs/3.8.1/reference/#unfold-step) |
+| `union` | 并行执行多个子遍历并合并其输出结果 | [union step](https://tinkerpop.apache.org/docs/3.8.1/reference/#union-step) |
+| `V` | 顶点检索与端点跳转基础步骤：`V`、`E`、`out`、`in`、`both`、`outE`、`inE` 等 | [vertex steps](https://tinkerpop.apache.org/docs/3.8.1/reference/#vertex-steps) |
+| `where` | 使用表达式或谓词（`eq`、`neq`、`gt` 等）进行条件筛选过滤 | [where step](https://tinkerpop.apache.org/docs/3.8.1/reference/#where-step) |
+{.wide .expand}
+
+---
+
+反链：
+
+- [Gremlin Console](/cn/docs/clients/gremlin-console/)
+- [Gremlin](/cn/docs/clients/restful-api/gremlin/)
+- [图查询语言](/cn/docs/language/)
+- [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)
+
+
+================
+Source: https://hugegraph.apache.org/cn/docs/language/hugegraph-cypher/index.md
+================
+
+# HugeGraph Cypher
+
+LLMS 索引： [llms.txt](/cn/llms.txt)
+
+---
+
+### 概述
+
+HugeGraph 支持 [Cypher](https://opencypher.org/) —— 最初由 Neo4j 创建、并由 [openCypher](https://github.com/opencypher/openCypher) 标准化的声明式图查询语言。Gremlin 是命令式的遍历语言，而 Cypher
+只需描述想要的图模式（`MATCH`、`WHERE`、`RETURN`），由引擎决定如何执行。
+
+HugeGraph 实现了对 [openCypher 9](https://opencypher.org/) 语法子集的支持，查询语句在服务端解析并无缝对接底层 TinkerPop 图遍历引擎。因此开发者可以使用直观的模式匹配语法，快速完成图数据的检索与写入。完整支持矩阵与限制参见 [Cypher 兼容性](/cn/docs/language/cypher-compatibility/)。
+
+### 何时用 Cypher、何时用 Gremlin
+
+| 适合用 Cypher | 适合用 Gremlin |
+|---|---|
+| 正在从 Neo4j 迁移，或已熟悉 Cypher | 需要 HugeGraph 的完整功能面 |
+| 需要声明式模式匹配（`MATCH (a)-[:KNOWS]->(b)`） | 需要精细的遍历控制、自定义步骤或 lambda |
+| 查询以读模式和投影为主 | 需要图算法、OLAP 或 Cypher 未暴露的功能 |
+{.wide}
+
+凡是 Cypher 表达不了的，等价的 [Gremlin 查询](/cn/docs/language/hugegraph-gremlin/) 总是可用 —— 下文示例同时给出两种写法。
+
+### 调用 Cypher API
+
+Cypher 语句通过 HugeGraph Server 的 REST 端点提交：
+
+```http
+GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
+POST /graphspaces/{graphspace}/graphs/{graph}/cypher
+```
+
+在服务端未开启认证时无需携带认证头；开启认证后支持 `Authorization: Basic ...`（标准 RFC 4648 Base64 编码，如 `curl -u`）或 `Authorization: Bearer <token>`。
+完整请求/响应格式见 [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)。
+
+示例：
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/cypher?cypher=MATCH%20(n:person)%20RETURN%20n.name%20LIMIT%2010"
+```
+
+Java 客户端使用 `CypherManager`（见 [hugegraph-client](/cn/docs/clients/hugegraph-client/)）：
+
+```java
+ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.name LIMIT 10");
+```
+
+### 基础示例
+
+以下示例基于包含 `person`（属性 `name`、`age`、`city`）和 `knows` 边的图模型。
+执行前请注意：
+- 属性过滤谓词（如 `WHERE n.age > 30`）通常需要对应的索引覆盖（如在 `person.age` 上建立 `RANGE` 索引）。
+- 若顶点标签采用 `PRIMARY_KEY` 策略或定义了非空属性，创建数据时需为必填属性和主键赋值；建议先分别创建顶点再建立关联边。
+
+#### 查询 — MATCH / WHERE / RETURN
+
+```cypher
+// 所有名为 "marko" 的 person
+MATCH (n:person) WHERE n.name = 'marko' RETURN n
+```
+
+```cypher
+// 投影 + 排序 + 限制条数
+MATCH (n:person)
+WHERE n.age > 30
+RETURN n.name AS name, n.age AS age
+ORDER BY age DESC
+LIMIT 10
+```
+
+```cypher
+// 关系模式
+MATCH (a:person)-[:knows]->(b:person)
+WHERE a.name = 'marko'
+RETURN b.name AS friend
+```
+
+#### 创建 — CREATE
+
+```cypher
+// 创建顶点
+CREATE (n:person {name: 'alice', age: 32, city: 'beijing'})
+```
+
+```cypher
+// 先创建两个顶点，再创建它们之间的边（每条语句单独作为一次请求发送）
+CREATE (:person {name: 'bob'})
+CREATE (:person {name: 'carol'})
+MATCH (a:person), (b:person)
+WHERE a.name = 'bob' AND b.name = 'carol'
+CREATE (a)-[:knows]->(b)
+```
+
+#### 更新 — SET / REMOVE
+
+```cypher
+MATCH (n:person) WHERE n.name = 'alice'
+SET n.age = 33
+REMOVE n.city
+```
+
+#### 删除 — DELETE / DETACH DELETE
+
+```cypher
+// 删除边
+MATCH (a:person)-[r:knows]->(b:person)
+WHERE a.name = 'bob' AND b.name = 'carol'
+DELETE r
+```
+
+```cypher
+// 删除顶点及其所有边
+MATCH (n:person) WHERE n.name = 'alice'
+DETACH DELETE n
+```
+
+#### 聚合
+
+```cypher
+// 总数
+MATCH (n:person) RETURN count(n) AS total
+```
+
+```cypher
+// 按城市分组计数
+MATCH (n:person) RETURN n.city AS city, count(*) AS cnt ORDER BY cnt DESC
+```
+
+### 等价的 Gremlin 写法
+
+每条 Cypher 语句在内部都会被翻译为 Gremlin。当某个 Cypher 特性不受支持时，可直接编写遍历：
+
+| Cypher | 等价 Gremlin |
+|---|---|
+| `MATCH (n:person) WHERE n.name='marko' RETURN n` | `g.V().hasLabel('person').has('name','marko')` |
+| `MATCH (a)-[:knows]->(b) RETURN b` | `g.V().out('knows')` |
+| `CREATE (n:person {name:'x'})` | `g.addV('person').property('name','x')` |
+| `MATCH (n) DETACH DELETE n` | `g.V().drop()` |
+| `MATCH (n:person) RETURN count(n)` | `g.V().hasLabel('person').count()` |
+{.wide}
+
+提示：可使用 `EXPLAIN MATCH (n:person) RETURN n` 查看对应的底层 Gremlin 遍历语句（位于返回结果的 `translation` 字段中），方便对照编写等价写法。`PROFILE` 暂不受支持。
+
+### 使用限制
+
+- **参数化查询规则**：支持通过 JSON 请求体传递参数（`{"cypher": "...", "parameters": {...}}`，最多支持 16 个顶层参数；
+  更多属性可放入 Map 对象并显式引用）。引用了未声明的 `$param` 时会直接抛出执行错误；显式传入 `null` 是允许的。
+- **高级语法覆盖边界**：部分高级 openCypher 语法（如 map projection、部分复杂函数）当前暂不支持，未支持的结构会在解析校验阶段报错。
+- **过程调用**：HugeGraph 的图分析算法（最短路径、k-out、PersonalRank 等）通过独立的 [Traverser REST API](/cn/docs/clients/restful-api/traverser/) 或 Gremlin 提供，未暴露为 Cypher `CALL` 过程。
+- **单请求单语句**：每次请求仅支持执行一条 Cypher 语句，不支持多语句复合脚本。
+
+执行或校验失败时，服务端会在响应的 `status.attributes.errors` 中返回包含 `code`、`message` 与 `hint` 的结构化错误详情。遇到功能缺口时，等价的 Gremlin 写法是官方推荐的替代方案。
+
+### 延伸阅读
+
+- [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)
+- [Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/)
+- [Gremlin 查询语言](/cn/docs/language/hugegraph-gremlin/)
+- [openCypher 官方规范](https://opencypher.org/)
+
+---
+
+反链：
+
+- [Cypher](/cn/docs/clients/restful-api/cypher/)
+- [图查询语言](/cn/docs/language/)
+- [Cypher 兼容性](/cn/docs/language/cypher-compatibility/)
+- [Gremlin 查询语言](/cn/docs/language/hugegraph-gremlin/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
+
+
+================
+Source: https://hugegraph.apache.org/cn/docs/language/cypher-compatibility/index.md
+================
+
+# Cypher 兼容性
+
+LLMS 索引： [llms.txt](/cn/llms.txt)
+
+---
+
+### 概述与支持范围
+
+HugeGraph 支持 openCypher 9 声明式图查询规范，支持在 TinkerPop 引擎之上直接执行模式匹配与图数据读写。
+本页汇总 Cypher 请求形式、参数绑定规则、支持的语法子集与行为边界。
+
+接口端点为 `/graphspaces/{graphspace}/graphs/{graph}/cypher`。常规语法示例与 Gremlin 对照参见 [HugeGraph Cypher 指南](/cn/docs/language/hugegraph-cypher/)。
+
+### 请求形式与参数绑定
+
+| 请求形式 | Content-Type | 说明 |
+|---|---|---|
+| `POST`（推荐） | `application/json` | 请求体为 JSON 对象 `{"cypher": "...", "parameters": {...}}`，支持参数绑定 |
+| `POST` | `application/json` | 请求体为原始 Cypher 文本字符串（用于无参数的纯文本语句） |
+| `GET` | — | 查询参数 `?cypher=<URL 编码语句>`，适合简单只读查询 |
+{.wide}
+
+JSON 对象参数化请求示例：
+
+```json
+{
+  "cypher": "MATCH (n:person) WHERE n.name = $name RETURN n.name",
+  "parameters": {"name": "marko"}
+}
+```
+
+#### 参数绑定规则
+
+- **参数格式**：`cypher` 字段必须为非空字符串；`parameters` 若提供必须为 JSON 对象（省略表示空参数表）。
+- **参数数量**：顶层 `parameters` 最多接受 16 个键。若需要传入更多属性，可将相关字段组织为嵌套 Map 对象，并在 Cypher 语句中显式引用字段（例如 `$props.name`）。
+- **未绑定变量处理**：语句中引用未提供的 `$param` 时会直接抛出执行错误，拒绝执行（显式传入 `null` 是允许的）。
+- **保留标记**：引擎将 `"  cypher.null"`（前导双空格）用作内部保留哨兵标记，绑定值中禁止传入该精确字符串。
+- **错误响应**：执行错误或参数校验失败时，服务端返回 HTTP 400（或在 `status.code` 为 400 的响应体中返回错误详情），并在 `status.attributes.errors` 中提供包含 `code`、`message` 与 `hint` 的结构化错误详情。
+
+### 语法与功能支持矩阵
+
+| 分类 | 支持特性 | 说明 |
+|---|---|---|
+| 查询与模式 | 标签扫描、等值与范围过滤、逻辑组合（AND/OR/NOT）、单跳与多跳有向关系、正则匹配（`=~` 全匹配） | 范围过滤等条件需预先建立相应索引 |
+| 结果投影 | 节点与标量投影、别名（`AS`）、属性访问、嵌套结构、关系 ID、路径表达、空值（null）处理 | 返回结果映射为标准 JSON 格式 |
+| 聚合与排序 | `count`、`sum`、`min`、`max`、`avg`、`DISTINCT`、`ORDER BY`、`SKIP`、`LIMIT` | 分页与聚合计算由引擎自动转换为对应图遍历步骤 |
+| 数据写入 | 顶点与边 `CREATE`、属性 `SET` / `REMOVE`、边与顶点 `DELETE` / `DETACH DELETE` | 创建边前建议先为端点顶点赋值并创建，避免简写形式因非空约束或主键缺失失败 |
+{.wide}
+
+### 写入约束与注意事项
+
+在包含非空属性或使用 `PRIMARY_KEY` 策略的 Schema 下，双顶点简写 `CREATE (a)-[:knows]->(b)` 会因未提供属性而触发非空属性校验失败（`checkNonnullProperty`）或主键缺失错误。
+建议将顶点与边的创建语句分开执行，并显式为顶点填充所需属性。
+
+### 暂未支持的范围
+
+以下高级语法和特性在当前版本中尚未直接提供，建议改用 Gremlin 或相应 REST API：
+- **复杂子句**：`MERGE`、`OPTIONAL MATCH`、`WITH`、`UNWIND`、`UNION`、变长路径匹配（`*1..3`）；
+- **过程调用**：`CALL dbms.*` / `CALL algo.*`（请使用 [Traverser REST API](/cn/docs/clients/restful-api/traverser/)）；
+- **模式定义**：Cypher Schema DDL（请使用 [Schema REST API](/cn/docs/clients/restful-api/schema/)）；
+- **协议与驱动**：Bolt 协议与驱动（请使用 HTTP REST API 或 [HugeGraph 客户端](/cn/docs/clients/hugegraph-client/)）。
+
+---
+
+反链：
+
+- [Cypher](/cn/docs/clients/restful-api/cypher/)
+- [图查询语言](/cn/docs/language/)
+- [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)
+- [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)
+
+
+================
+Source: https://hugegraph.apache.org/cn/docs/language/migrate-from-neo4j/index.md
+================
+
+# 从 Neo4j 迁移
+
+LLMS 索引： [llms.txt](/cn/llms.txt)
+
+---
+
+### 概述
+
+面向从 Neo4j 迁移或评估 HugeGraph 的开发者。HugeGraph 原生支持 openCypher 声明式查询语法，
+但在图模型、Schema 规范、参数绑定和索引机制上与 Neo4j 存在差异。
+具体语法与兼容性请参考 [HugeGraph Cypher](/cn/docs/language/hugegraph-cypher/) 与 [Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/)。
+
+### 可以直接带过来的部分
+
+| Neo4j 概念 | HugeGraph 对应 |
+|---|---|
+| 属性图模型（节点/关系/属性） | 相同 —— 顶点标签 / 边标签 / 属性 |
+| 基础 Cypher：`MATCH`/`WHERE`/`RETURN`/`CREATE`/`SET`/`DELETE` | 直接可用（REST `/cypher` 端点或 Java 客户端 `CypherManager`），但须遵守下文的 Schema 与索引规则 |
+| 简单聚合（`count`/`sum`/`min`/`max`/`avg`） | 直接可用 |
+| 依赖图遍历的查询需求 | Gremlin 遍历或 [traverser REST API](/cn/docs/clients/restful-api/traverser/)（k-out、最短路、personalrank 等） |
+{.wide}
+
+### 需要改变习惯的部分
+
+| 在 Neo4j 里 | 在 HugeGraph 里 |
+|---|---|
+| `CREATE INDEX` / `CREATE CONSTRAINT` | 通过 [IndexLabel REST API](/cn/docs/clients/restful-api/indexlabel/) 创建属性索引；唯一性约束对应 `UNIQUE` 索引；节点键对应非可空属性加复合 `UNIQUE` 索引；属性存在约束对应 [VertexLabel](/cn/docs/clients/restful-api/vertexlabel/) / [EdgeLabel](/cn/docs/clients/restful-api/edgelabel/) 上的非可空属性。注意 `primary_keys` 决定顶点标识，不是约束机制，重复 `CREATE` 直接覆盖旧记录 |
+| 隐式 schema（属性随意添加） | **强 schema**：先定义 VertexLabel/EdgeLabel/PropertyKey，再写数据 |
+| `WHERE` 中的属性谓词无需索引 | 起始顶点查找需要索引覆盖（除非对该标签全部主键做等值匹配）：`>` / `<` 等范围比较需要 `RANGE` 类型的 IndexLabel。缺少覆盖索引时返回 HTTP 200（响应体 `status.code` 400 "未建索引"错误） |
+| 参数化查询 `$param` | 支持 JSON 格式参数化请求（最多支持 16 个顶层参数，更多属性可通过嵌套 Map 传递）；未声明的参数会报错 |
+| `CALL dbms.*` / `CALL algo.*` 过程 | 对应功能分散在 [traverser](/cn/docs/clients/restful-api/traverser/)、[task](/cn/docs/clients/restful-api/task/) 等 REST API |
+| 驱动：Neo4j Bolt driver | [hugegraph-client](/cn/docs/clients/hugegraph-client/)（`CypherManager`）或任意 HTTP 客户端 |
+| 事务边界在 Cypher 语句内 | 每次请求一个语句；图到图的数据迁移使用 [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/)（首选，见下文），基于文件的批量导入使用 [HugeGraph Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) |
+{.wide}
+
+`PRIMARY_KEY` 标签上 `UNIQUE` 索引不能包含该标签的全部主键（服务端会拒绝）。若需保留唯一性约束，请改用 `CUSTOMIZE_STRING` id 策略，以 Neo4j 节点 id 为键，再在业务键上建 `UNIQUE` 索引。
+
+### 建议的迁移路径
+
+1. **盘点查询**：对照 [Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/) 与
+   [使用限制](/cn/docs/language/hugegraph-cypher/#使用限制)，梳理应用中的 Cypher 语句，
+   确认直接可用、需改写为 Gremlin 或需调用 REST API 的部分。
+2. **先建 schema**：用 schema API 建好 VertexLabel/EdgeLabel/PropertyKey 和索引 ——
+   HugeGraph 在写入前要求 schema 存在。
+3. **导入数据**：首选路径是 [Apache SeaTunnel](https://seatunnel.apache.org/download/)
+   的 `Neo4j` Connector（Source）与 `HugeGraph` Connector（Sink），直接运行 **Neo4j Source → HugeGraph Sink** —— 无需中间文件导出。
+   小数据集用 REST 也没问题；基于文件的大批量导入仍可使用
+   [HugeGraph Loader](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-loader)。
+   HugeGraph 侧的环境准备、`mappings` 配置与顶点/边导入示例见
+   [通过 SeaTunnel Sink 导入图数据](/cn/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/)。
+
+   [SeaTunnel 连接器文档](https://seatunnel.apache.org/docs/3.0.0/introduction/about/) 说明了可依赖的能力：
+   - [Neo4j Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/Neo4j/) 以显式字段
+     schema 读取 Cypher 查询结果，支持通过 `tables_configs` 的多表读取。
+   - [HugeGraph Sink](https://seatunnel.apache.org/docs/3.0.0/connectors/sink/HugeGraph/)
+    支持多映射 —— 顶点/边请使用推荐的 `mappings` 配置，并遵循其 schema 创建行为。该 Sink 默认
+    遇到错误快速失败（`batch_failure_fallback=false` 与 `max_insert_errors=0`）。跳过失败记录为
+    可选配置（`batch_failure_fallback=true`）；若开启，请在正式切换前捕获并核对跳过行，并比对数据总条数。
+   - [HugeGraph Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/)
+     支持 schema 自动发现与多标签并行读取，使 HugeGraph 的导出与迁移工作流成为可能。
+
+   将 Neo4j 属性映射为 HugeGraph PropertyKey，并在导入前先定好顶点 ID 策略。Sink 对除 `AUTOMATIC`
+   之外的每种顶点策略都要求 `idFields`，边映射还需要分别设置 `sourceConfig.idFields` 与
+   `targetConfig.idFields`，因此 Neo4j 查询必须返回承载 ID 的字段：
+   - `idStrategy = "PRIMARY_KEY"`：在 `idFields` 中放入 Neo4j 业务键，边的端点也通过这些键字段表达。
+   - `idStrategy = "CUSTOMIZE_STRING"`：仅选择它并不能保留 Neo4j 节点 id。请让 Neo4j 查询把要保留的 id
+     作为单独一列返回（用 `AS node_id` 等别名），在 Source 的 `schema.fields` 中声明该字段（必须与查询返回的字段一致），
+     把顶点的 `idFields` 设为该字段，并在 `sourceConfig.idFields` 与 `targetConfig.idFields` 中映射对应的边端点字段。
+
+   第 2 步预创建的标签必须使用同一策略——自动创建不会把已有的 `PRIMARY_KEY` 标签改为 `CUSTOMIZE_STRING`。
+   Sink 的 `mappings` 配置可以创建缺失的 PropertyKey、VertexLabel 和 EdgeLabel 定义，因此使用它时第 2 步中的这三类
+   定义可省略；但它不会创建 IndexLabel，查询所依赖的索引仍须单独创建（见上文“需要改变习惯的部分”表）。
+   若未显式指定 `frequency`，自动创建 EdgeLabel 时默认采用 `SINGLE`，相同类型且端点相同的多条平行关系（Parallel Relationships）会被覆盖合并为一条边。
+   若需保留 Neo4j 中的平行边，必须在边映射中显式指定 `frequency = "MULTIPLE"`，并配置稳定的业务区分字段作为 `sortKeys`（HugeGraph 依赖 sortKeys 生成重边的唯一边 ID）。
+   先导入顶点、后导入边。建议在正式切换前，先在测试环境中使用业务数据样本完整验证导入流程。
+4. **灰度切换**：Cypher 能表达的查询保持不动，暂不支持的改写为
+   Gremlin（等价写法见 [对照表](/cn/docs/language/hugegraph-cypher/#等价的-gremlin-写法)）。
+
+### 使用限制速查
+
+- **语句与参数**：不支持多语句脚本与 `CALL` 过程；参数绑定最多支持 16 个顶层参数（更多属性可通过嵌套 Map 传递）。
+- **未覆盖语法**：未覆盖的高级 openCypher 语法会在解析校验期报错。
+- **回退方案**：不受支持的查询结构通常可以改写为等价的 Gremlin 遍历 —— 详见
+  [HugeGraph Cypher 对照表](/cn/docs/language/hugegraph-cypher/#等价的-gremlin-写法)；
+  Schema DDL 与存储过程请改用对应 REST API。
+
+---
+
+反链：
+
+- [图查询语言](/cn/docs/language/)
 
 
 ================

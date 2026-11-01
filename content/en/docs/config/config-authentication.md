@@ -160,12 +160,14 @@ initialization.
 
 ### Enable authentication with Docker
 
-For a new container, choose either Docker run or Docker Compose. For an existing container, see
-[enabling authentication in existing containers](#3-enter-the-container-to-enable-authentication-mode).
+When deploying with Docker, the official image supports enabling authentication directly via environment variables. Choose one of the deployment paths below:
 
-When deploying with Docker, the official image supports enabling authentication
-directly via environment variables (applicable to the official `/hugegraph-server` layout).
-Replace the placeholder below with your image tag or digest:
+- [Docker run](#1-use-docker-run) — Start a fresh single-container instance with authentication enabled.
+- [Docker Compose](#2-use-docker-compose) — Manage authenticated container services declaratively.
+- [Existing containers](#3-enter-the-container-to-enable-authentication-mode) — Enable authentication on an existing container without losing data.
+{.cards}
+
+Set your image tag or digest and enter the admin password:
 
 ```bash
 export HUGEGRAPH_IMAGE='<image:tag-or-digest>'

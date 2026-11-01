@@ -28,13 +28,12 @@ Currently, the plug-in method provides extensions in the following dimensions:
 
 ### Plug-in implementation mechanism
 
-1. HugeGraph provides a plug-in interface HugeGraphPlugin, which supports plug-in through the Java SPI mechanism
-2. HugeGraph provides four extension registration functions as static methods on HugeGraphPlugin: registerOptions(), registerBackend(), registerSerializer(), registerAnalyzer()
-3. The plug-in implementer implements the corresponding Options, Backend, Serializer or Analyzer interface
-4. The plug-in implementer implements register()the method of the HugeGraphPlugin interface, registers the specific 
-implementation class listed in the above point 3 in this method, and packs it into a jar package
-5. The plug-in user puts the jar package in the HugeGraph Server installation directory plugins, modifies the relevant 
-configuration items to the plug-in custom value, and restarts to take effect
+1. **Provide SPI interface**: HugeGraph provides the `HugeGraphPlugin` interface, supporting pluggability via Java SPI.
+2. **Registration functions**: `HugeGraphPlugin` exposes static registration methods: `registerOptions()`, `registerBackend()`, `registerSerializer()`, and `registerAnalyzer()`.
+3. **Implement components**: The developer implements the corresponding `OptionSpace`, `BackendStoreProvider`, `AbstractSerializer`, or `Analyzer` interfaces.
+4. **Register in plugin**: The developer implements the `register()` method of `HugeGraphPlugin` to register implementation classes, declared in `META-INF/services/`.
+5. **Deploy and activate**: Place the packaged JAR in the HugeGraph Server `plugins/` directory, configure the custom options, and restart the service.
+{.steps}
 
 ### Plug-in implementation process example
 

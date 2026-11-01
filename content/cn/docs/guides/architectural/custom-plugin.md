@@ -26,11 +26,12 @@ aliases:
 
 ### 插件实现机制
 
-1. HugeGraph 提供插件接口 HugeGraphPlugin，通过 Java SPI 机制支持插件化
-2. HugeGraph 在 HugeGraphPlugin 接口上以静态方法提供了 4 个扩展项注册函数：`registerOptions()`、`registerBackend()`、`registerSerializer()`、`registerAnalyzer()`
-3. 插件实现者实现相应的 Options、Backend、Serializer 或 Analyzer 的接口
-4. 插件实现者实现 HugeGraphPlugin 接口的`register()`方法，在该方法中注册上述第 3 点所列的具体实现类，并打成 jar 包
-5. 插件使用者将 jar 包放在 HugeGraph Server 安装目录的`plugins`目录下，修改相关配置项为插件自定义值，重启即可生效
+1. **提供 SPI 接口**：HugeGraph 提供核心插件接口 `HugeGraphPlugin`，通过标准 Java SPI 机制支持运行时插件化发现。
+2. **静态注册入口**：`HugeGraphPlugin` 提供了 4 个扩展项注册静态函数：`registerOptions()`、`registerBackend()`、`registerSerializer()`、`registerAnalyzer()`。
+3. **实现扩展接口**：插件开发者实现相应的 `OptionSpace`、`BackendStoreProvider`、`AbstractSerializer` 或 `Analyzer` 等核心接口。
+4. **插件注册并打包**：实现 `HugeGraphPlugin` 的 `register()` 方法完成类注册，配置 `META-INF/services/` 描述文件并打成 JAR 包。
+5. **部署生效**：将编译出的 JAR 包放置在 HugeGraph Server 安装目录的 `plugins/` 路径下，修改对应配置项后重启服务即可生效。
+{.steps}
 
 ### 插件实现流程实例
 

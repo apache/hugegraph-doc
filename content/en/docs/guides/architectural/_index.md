@@ -2,6 +2,7 @@
 title: "HugeGraph Architecture Overview"
 linkTitle: "Architecture Overview"
 weight: 3
+no_list: true
 ---
 
 ## Full-Stack Components
@@ -44,15 +45,17 @@ Current Server implementations include RocksDB, HBase, HStore, and memory backen
 
 Main Toolchain components:
 
-- [Hubble](/docs/quickstart/toolchain/hugegraph-hubble/): Connects to the graph database through a web interface to manage schemas, import data, and run queries.
-- [Loader](/docs/quickstart/toolchain/hugegraph-loader/): Converts multiple data sources and imports them into graph data in batches.
-- [Tools](/docs/quickstart/toolchain/hugegraph-tools/): Provides command-line deployment, management, backup, and restore operations.
-- [Client](/docs/clients/client/hugegraph-client/): Wraps Server connections, schema management, graph reads and writes, and queries. Clients are available for [Java](/docs/clients/client/hugegraph-client/), [Python](/docs/clients/client/hugegraph-client-python/), and [Go](/docs/clients/client/hugegraph-client-go/); a Rust client is under development.
+- [Hubble](/docs/quickstart/toolchain/hugegraph-hubble/) — Web visualization and management workspace for schema, imports, and queries.
+- [Loader](/docs/quickstart/toolchain/hugegraph-loader/) — Multi-source batch data import utility for fast bulk loading.
+- [Tools](/docs/quickstart/toolchain/hugegraph-tools/) — CLI operations tool for cluster maintenance, backup, and restore.
+- [Client](/docs/clients/client/hugegraph-client/) — Official programmatic client SDKs available in Java, Python, and Go.
+{.cards}
 
 ## Independent Graph Computing Engines
 
-- [Vermeer](/docs/quickstart/computing/hugegraph-vermeer/): Provides independent graph computing services and algorithm APIs.
-- [HugeGraph-Computer](/docs/quickstart/computing/hugegraph-computer/): A Java distributed graph computing engine based on BSP/Pregel.
+- [Vermeer](/docs/quickstart/computing/hugegraph-vermeer/) — High-performance Go in-memory graph computing engine with 15+ OLAP algorithms.
+- [HugeGraph-Computer](/docs/quickstart/computing/hugegraph-computer/) — Java distributed graph computing framework based on BSP/Pregel.
+{.cards}
 
 ## Historical Architecture
 

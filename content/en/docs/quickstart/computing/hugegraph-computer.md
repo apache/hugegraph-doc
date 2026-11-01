@@ -71,15 +71,15 @@ The `computer/computer-dist` module assembles the distribution, including `bin/s
 
 Edit `conf/computer.properties` in the distribution directory with your HugeGraph URL, graph name, and credentials; point `bsp.etcd_endpoints` to reachable etcd. The default configuration selects built-in `PageRankParams`. Master and workers must use the same configuration and `job.id`; concurrent jobs need distinct job IDs.
 
-Start processes from the distribution directory in two terminals. The script reads `conf/computer.properties` by default; use `-c` to select another file.
+Start processes from the distribution directory in two terminals. The script reads `conf/computer.properties` by default; use `-c` to select another file:
 
-```bash
-# Terminal 1: start master
+```bash {tab="Terminal 1: Master"}
+# Start Computer Master process
 bin/start-computer.sh -d local -r master
 ```
 
-```bash
-# Terminal 2: start worker
+```bash {tab="Terminal 2: Worker"}
+# Start Computer Worker process
 bin/start-computer.sh -d local -r worker
 ```
 

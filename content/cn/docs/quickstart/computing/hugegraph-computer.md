@@ -71,15 +71,15 @@ mvn clean package -DskipTests
 
 先编辑发行目录中的 `conf/computer.properties`，按实际环境修改 HugeGraph 地址、图名和认证信息，并确认 `bsp.etcd_endpoints` 指向可访问的 etcd。默认配置已选择内置 `PageRankParams`；master 和 worker 必须使用同一份配置及相同的 `job.id`。每个并行作业应使用不同的 `job.id`。
 
-在两个终端中都从发行目录启动进程。启动脚本默认读取 `conf/computer.properties`，也可用 `-c` 指定配置文件。
+在两个终端中都从发行目录启动进程。启动脚本默认读取 `conf/computer.properties`，也可用 `-c` 指定配置文件：
 
-```bash
-# 终端一：启动 master
+```bash {tab="终端一：Master"}
+# 启动 Computer Master 进程
 bin/start-computer.sh -d local -r master
 ```
 
-```bash
-# 终端二：启动 worker
+```bash {tab="终端二：Worker"}
+# 启动 Computer Worker 进程
 bin/start-computer.sh -d local -r worker
 ```
 

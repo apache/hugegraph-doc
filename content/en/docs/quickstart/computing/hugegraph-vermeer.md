@@ -868,17 +868,11 @@ Kubernetes / Helm availability probes).
 endpoint requires an administrator token (`Authorization: Bearer <admin-token>`) and enforces the standard `/admin` authentication filters.
 
 #### Health and Readiness Semantics
-- **`registered_workers` vs `ready_workers`**: Worker registration alone does not constitute readiness. A worker is considered ready only when it maintains an
-  active reverse gRPC connection to Master and 3 live task streams: `load`, `compute`, and `superstep`.
-- **Status evaluation**: If there are zero registered workers or any registered worker fails readiness checks, the cluster status is marked as `DEGRADED`
-  with an explicit explanation in `reason` (such as `no_workers` or `worker_not_ready`). A fully operational cluster reports status `UP` (or `HEALTHY`).
-- **Telemetry metrics**: Process-level telemetry is collected independently for Master and each Worker under `metrics`:
-  - `metrics.cpu_cores`: Consumed process CPU seconds per elapsed wall-clock second (can exceed 1.0 on multi-core architectures).
-  - `metrics.rss_bytes`: Resident Set Size in bytes (actual process resident memory, rather than host or container limits).
-  - `sample_window_seconds`: Elapsed time window over which CPU utilization was measured.
-  - `metric_status`: Resource sampling state (`ok`, `metrics_warming_up` during the initial measurement window, or `unsupported` on legacy nodes).
-- **Isolation and bounded latency**: RPC metrics collection runs outside the Worker manager lock with an 800 ms timeout. A telemetry failure or timeout never
-  alters worker readiness or disrupts running computations.
+- Registration alone is not readiness. A Worker must be registered, connected to Master, and have `load`, `compute`, and `superstep` streams ready.
+- Cluster status is `DEGRADED` for an unready Master, no Workers, or any unready Worker; aggregate reasons are `master_initializing` / `service_offline`, `no_workers`, or `workers_not_ready`. Otherwise status is `UP`.
+- `metric_status` is an object with `availability` (`AVAILABLE`, `UNAVAILABLE`, or `UNSUPPORTED`), `observed_at`, and optional `reason`.
+- Master checks are `http_ready`, `initialized`, and `service_online`; Worker checks are `registered`, `connection_ready`, and the three `*_stream_ready` fields.
+- Worker telemetry uses one 800 ms aggregate deadline outside the Worker manager lock and does not affect readiness.
 
 #### Example Request and Response
 
@@ -892,42 +886,27 @@ curl -H "Authorization: Bearer <admin-token>" \
   "schema_version": 1,
   "observed_at": 1730419200000,
   "status": "UP",
-  "registered_workers": 2,
-  "ready_workers": 2,
+  "registered_workers": 1,
+  "ready_workers": 1,
   "master": {
-    "launch_time": "2026-11-01T08:00:00Z",
-    "status": "UP",
-    "ready": true,
-    "checks": { "grpc": true },
-    "metrics": {
-      "cpu_cores": 0.15,
-      "rss_bytes": 134217728,
-      "sample_window_seconds": 10.0
-    },
-    "metric_status": "ok"
+    "id": "master", "name": "Vermeer Master", "role": "MASTER",
+    "grpc_peer": "127.0.0.1:6688", "version": "1.8.0",
+    "launch_time": "2026-11-01T08:00:00Z", "status": "UP", "ready": true,
+    "checks": {"http_ready": true, "initialized": true, "service_online": true},
+    "metrics": {"cpu_cores": 0.15, "rss_bytes": 134217728, "sample_window_seconds": 10.0},
+    "metric_status": {"availability": "AVAILABLE", "observed_at": 1730419200000}
   },
-  "workers": [
-    {
-      "launch_time": "2026-11-01T08:00:05Z",
-      "status": "UP",
-      "ready": true,
-      "checks": {
-        "grpc_reverse": true,
-        "load_stream": true,
-        "compute_stream": true,
-        "superstep_stream": true
-      },
-      "metrics": {
-        "cpu_cores": 1.42,
-        "rss_bytes": 2147483648,
-        "sample_window_seconds": 10.0
-      },
-      "metric_status": "ok"
-    }
-  ]
+  "workers": [{
+    "id": "worker-1", "name": "worker-1", "role": "WORKER", "group": "default",
+    "grpc_peer": "127.0.0.1:6689", "version": "1.8.0",
+    "launch_time": "2026-11-01T08:00:05Z", "status": "UP", "ready": true,
+    "checks": {"registered": true, "connection_ready": true, "load_stream_ready": true,
+      "compute_stream_ready": true, "superstep_stream_ready": true},
+    "metrics": {"cpu_cores": 1.42, "rss_bytes": 2147483648, "sample_window_seconds": 10.0},
+    "metric_status": {"availability": "AVAILABLE", "observed_at": 1730419200000}
+  }]
 }
 ```
-
 ### 4.2 Space Worker Availability Probe (`GET /api/v1/workers/availability`)
 
 `GET /api/v1/workers/availability` provides a space-scoped readiness check for Kubernetes and Helm availability hooks.

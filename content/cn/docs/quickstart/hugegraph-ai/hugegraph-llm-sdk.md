@@ -18,37 +18,29 @@ search_keywords: [HugeGraph-LLM SDK, hugegraph_llm_sdk, Schema 设计, 图数据
 - **发行包名**：`hugegraph-llm-sdk`
 - **导入模块名**：`hugegraph_llm_sdk`
 
-### 通过 pip 或 uv 安装
+### 从源码或本地 wheel 安装
 
-可以直接从 PyPI 或本地源码目录进行安装：
+当前 SDK 随 `hugegraph-ai` 源码提供，尚未发布到公共软件包索引。请从本地源码目录或自行构建的 wheel 安装。
 
 ```bash
-# 通过 pip 安装
-pip install hugegraph-llm-sdk
-
-# 或从本地仓库源码以可编辑模式安装
 pip install -e /path/to/hugegraph-ai/hugegraph-llm-sdk
-
-# 在自有项目中使用 uv 安装
+# 或
 uv add --editable /path/to/hugegraph-ai/hugegraph-llm-sdk
+
+uv build --no-sources /path/to/hugegraph-ai/hugegraph-llm-sdk --out-dir /tmp/llm-sdk-dist
+pip install /tmp/llm-sdk-dist/hugegraph_llm_sdk-1.8.0-py3-none-any.whl
 ```
 
 ### 模型厂商适配器（Extras）
 
-基础 SDK 未内置捆绑特定的大模型客户端库。如需使用开箱即用的厂商适配器，可按需安装对应的 extra 扩展包：
+请从同一源码目录安装所需的适配器 extra：
 
 ```bash
-# 安装带 OpenAI 适配器的扩展
-pip install "hugegraph-llm-sdk[openai]"
-# 或使用 uv: uv add --editable /path/to/hugegraph-ai/hugegraph-llm-sdk --extra openai
-
-# 安装带 Ollama 适配器的扩展
-pip install "hugegraph-llm-sdk[ollama]"
-
-# 安装带 LiteLLM 适配器的扩展（多厂商动态路由）
-pip install "hugegraph-llm-sdk[litellm]"
+pip install -e "/path/to/hugegraph-ai/hugegraph-llm-sdk[openai]"
+pip install -e "/path/to/hugegraph-ai/hugegraph-llm-sdk[ollama]"
+pip install -e "/path/to/hugegraph-ai/hugegraph-llm-sdk[litellm]"
+# uv 示例：uv add --editable /path/to/hugegraph-ai/hugegraph-llm-sdk --extra openai
 ```
-
 ## 快速上手：最小示例
 
 以下展示使用自定义模型函数完成“设计 Schema → 校验 Schema → 抽取并审阅属性图”的完整流程：
@@ -83,7 +75,7 @@ assert not validation_issues, f"Schema 校验失败: {validation_issues}"
 
 # 4. 从文本中抽取属性图
 result = extract_graph(
-    text="Alice 在 Acme 集团担任首席工程师。",
+    texts="Alice 在 Acme 集团担任首席工程师。",
     schema=schema,
     model=model,
 )
@@ -101,15 +93,15 @@ for chunk in result.chunks:
 
 | 接口名称 | 签名 | 说明 |
 |---|---|---|
-| `design_schema` | `(texts, questions, model, prompt=..., examples=...) -> SchemaDraft` | 根据文本与问题生成候选图结构草案（`SchemaDraft(schema, issues)`）。 |
-| `adesign_schema` | `(texts, questions, model, prompt=..., examples=...) -> SchemaDraft` | 异步版本的 Schema 设计接口。 |
+| `design_schema` | `(texts, *, model, questions=(), example_schema=None, prompt=None) -> SchemaDraft` | 根据文本与问题生成候选图结构草案（`SchemaDraft(schema, issues)`）。 |
+| `adesign_schema` | `(texts, *, model, questions=(), example_schema=None, prompt=None) -> SchemaDraft` | 异步版本的 Schema 设计接口。 |
 | `validate_schema` | `(schema) -> list[Issue]` | 校验 Schema 结构是否符合 HugeGraph 属性图约束，不修改输入对象。 |
-| `extract_graph` | `(text_or_chunks, schema, model=None, model_factory=None, options=...) -> ExtractionResult` | 执行分块图抽取、结构校验以及多轮审阅修复循环。 |
-| `aextract_graph` | `(text_or_chunks, schema, model=None, model_factory=None, options=...) -> ExtractionResult` | 异步版本的图抽取接口。 |
+| `extract_graph` | `(texts, *, schema, model=None, model_factory=None, review=True, options=None, prompts=None, validators=()) -> ExtractionResult` | 执行分块图抽取、结构校验以及多轮审阅修复循环。 |
+| `aextract_graph` | `(texts, *, schema, model=None, model_factory=None, review=True, options=None, prompts=None, validators=()) -> ExtractionResult` | 异步版本的图抽取接口。 |
 
 ### Schema 校验规则
 
-- `validate_schema` 检查顶点标签、边标签、主键策略（`PRIMARY_KEY`、`CUSTOMIZE_STRING`、`CUSTOMIZE_NUMBER`）以及属性声明。
+- `validate_schema` 检查顶点标签、边标签、主键策略（`DEFAULT`、`AUTOMATIC`、`PRIMARY_KEY`、`CUSTOMIZE_STRING`、`CUSTOMIZE_NUMBER`、`CUSTOMIZE_UUID`）以及属性声明。
 - 省略 `propertykeys` 时，不对全局属性引用作硬性约束；省略标签的 `properties` 时，不限制其属性集合。
 - 显式声明 `properties: []` 表示该标签严禁携带任何属性。
 - 边标签的 `sort_keys` 不能同时属于 `nullable_keys`；当 `frequency` 为 `SINGLE` 或 `DEFAULT` 时禁止排序键，为 `MULTIPLE` 时必须声明非空排序键。
@@ -158,7 +150,7 @@ options = ExtractionOptions(
 )
 
 result = extract_graph(
-    text="Bob 在 Beta 公司管理 Charlie。",
+    texts="Bob 在 Beta 公司管理 Charlie。",
     schema=schema,
     model=model,
     options=options,
@@ -192,7 +184,7 @@ chunks = [
 ]
 
 result = extract_graph(
-    text_or_chunks=chunks,
+    texts=chunks,
     schema=schema,
     model_factory=lambda: OpenAIClient(api_key="your-api-key", model_name="gpt-4o-mini"),
     options=ExtractionOptions(max_workers=3),

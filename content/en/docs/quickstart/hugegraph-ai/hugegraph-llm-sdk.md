@@ -20,37 +20,29 @@ database. Its core runtime depends only on `pydantic>=2.14,<3`.
 - **Package name**: `hugegraph-llm-sdk`
 - **Import name**: `hugegraph_llm_sdk`
 
-### Install with pip or uv
+### Install from source or a local wheel
 
-Install the package directly from PyPI or your local source checkout:
+The SDK is currently provided by the `hugegraph-ai` source tree and has not yet been published to a public package index. Install it from a checkout or a locally built wheel.
 
 ```bash
-# Install via pip
-pip install hugegraph-llm-sdk
-
-# Or install in editable mode from local repository source
 pip install -e /path/to/hugegraph-ai/hugegraph-llm-sdk
-
-# Using uv in your own project
+# or
 uv add --editable /path/to/hugegraph-ai/hugegraph-llm-sdk
+
+uv build --no-sources /path/to/hugegraph-ai/hugegraph-llm-sdk --out-dir /tmp/llm-sdk-dist
+pip install /tmp/llm-sdk-dist/hugegraph_llm_sdk-1.8.0-py3-none-any.whl
 ```
 
 ### Provider Extras
 
-The base SDK does not bundle specific LLM provider client libraries. If you want ready-to-use provider clients, install the corresponding extras:
+Install provider extras from the same checkout:
 
 ```bash
-# Install with OpenAI adapter
-pip install "hugegraph-llm-sdk[openai]"
-# Or with uv: uv add --editable /path/to/hugegraph-ai/hugegraph-llm-sdk --extra openai
-
-# Install with Ollama adapter
-pip install "hugegraph-llm-sdk[ollama]"
-
-# Install with LiteLLM adapter (multi-provider routing)
-pip install "hugegraph-llm-sdk[litellm]"
+pip install -e "/path/to/hugegraph-ai/hugegraph-llm-sdk[openai]"
+pip install -e "/path/to/hugegraph-ai/hugegraph-llm-sdk[ollama]"
+pip install -e "/path/to/hugegraph-ai/hugegraph-llm-sdk[litellm]"
+# uv example: uv add --editable /path/to/hugegraph-ai/hugegraph-llm-sdk --extra openai
 ```
-
 ## Quick Start: Minimal Example
 
 Here is a complete example demonstrating schema design, schema validation, and reviewed graph extraction using a custom model function:
@@ -85,7 +77,7 @@ assert not validation_issues, f"Validation failed: {validation_issues}"
 
 # 4. Extract property graph from text
 result = extract_graph(
-    text="Alice works for Acme Corp as Chief Engineer.",
+    texts="Alice works for Acme Corp as Chief Engineer.",
     schema=schema,
     model=model,
 )
@@ -103,15 +95,15 @@ for chunk in result.chunks:
 
 | Function | Signature | Description |
 |---|---|---|
-| `design_schema` | `(texts, questions, model, prompt=..., examples=...) -> SchemaDraft` | Generates a candidate schema (`SchemaDraft(schema, issues)`) from texts and domain queries. |
-| `adesign_schema` | `(texts, questions, model, prompt=..., examples=...) -> SchemaDraft` | Asynchronous schema design variant. |
+| `design_schema` | `(texts, *, model, questions=(), example_schema=None, prompt=None) -> SchemaDraft` | Generates a candidate schema (`SchemaDraft(schema, issues)`) from texts and domain queries. |
+| `adesign_schema` | `(texts, *, model, questions=(), example_schema=None, prompt=None) -> SchemaDraft` | Asynchronous schema design variant. |
 | `validate_schema` | `(schema) -> list[Issue]` | Validates schema structure against HugeGraph property graph constraints without mutating the input. |
-| `extract_graph` | `(text_or_chunks, schema, model=None, model_factory=None, options=...) -> ExtractionResult` | Executes chunked graph extraction, validation, and review/repair loops. |
-| `aextract_graph` | `(text_or_chunks, schema, model=None, model_factory=None, options=...) -> ExtractionResult` | Asynchronous graph extraction variant. |
+| `extract_graph` | `(texts, *, schema, model=None, model_factory=None, review=True, options=None, prompts=None, validators=()) -> ExtractionResult` | Executes chunked graph extraction, validation, and review/repair loops. |
+| `aextract_graph` | `(texts, *, schema, model=None, model_factory=None, review=True, options=None, prompts=None, validators=()) -> ExtractionResult` | Asynchronous graph extraction variant. |
 
 ### Schema Validation Rules
 
-- `validate_schema` inspects vertex labels, edge labels, ID strategies (`PRIMARY_KEY`, `CUSTOMIZE_STRING`, `CUSTOMIZE_NUMBER`), and property declarations.
+- `validate_schema` inspects vertex labels, edge labels, ID strategies (`DEFAULT`, `AUTOMATIC`, `PRIMARY_KEY`, `CUSTOMIZE_STRING`, `CUSTOMIZE_NUMBER`, `CUSTOMIZE_UUID`), and property declarations.
 - When `propertykeys` is omitted, global property definitions are not strictly checked. When a label omits `properties`, its property set is unconstrained.
 - An explicit empty `properties: []` indicates that no properties are allowed for that label.
 - For edge labels, `sort_keys` cannot be members of `nullable_keys`. When `frequency` is `SINGLE` or `DEFAULT`, sort keys are disallowed;
@@ -161,7 +153,7 @@ options = ExtractionOptions(
 )
 
 result = extract_graph(
-    text="Bob manages Charlie at Beta Corp.",
+    texts="Bob manages Charlie at Beta Corp.",
     schema=schema,
     model=model,
     options=options,
@@ -196,7 +188,7 @@ chunks = [
 ]
 
 result = extract_graph(
-    text_or_chunks=chunks,
+    texts=chunks,
     schema=schema,
     model_factory=lambda: OpenAIClient(api_key="your-api-key", model_name="gpt-4o-mini"),
     options=ExtractionOptions(max_workers=3),

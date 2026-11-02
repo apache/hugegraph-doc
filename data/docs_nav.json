@@ -113,6 +113,9 @@
               "page": "/docs/quickstart/hugegraph-ai/hugegraph-mcp"
             },
             {
+              "page": "/docs/quickstart/hugegraph-ai/hugegraph-llm-sdk"
+            },
+            {
               "page": "/docs/quickstart/hugegraph-ai/hugegraph-ml"
             },
             {
@@ -542,6 +545,11 @@
             {
               "page": "/docs/quickstart/hugegraph-ai/hugegraph-mcp",
               "url": "/docs/quickstart/hugegraph-ai/hugegraph-mcp/",
+              "children": []
+            },
+            {
+              "page": "/docs/quickstart/hugegraph-ai/hugegraph-llm-sdk",
+              "url": "/docs/quickstart/hugegraph-ai/hugegraph-llm-sdk/",
               "children": []
             },
             {

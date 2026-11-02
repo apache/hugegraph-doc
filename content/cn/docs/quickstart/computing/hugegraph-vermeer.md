@@ -856,16 +856,11 @@ Vermeer 提供了面向运维看板（如 Apache HugeGraph Hubble）和云原生
 该接口需要管理员 token（`Authorization: Bearer <admin-token>`），并执行标准 `/admin` 鉴权过滤。
 
 #### 健康与就绪语义
-- **`registered_workers` 与 `ready_workers`**：Worker 仅完成注册并不代表具备执行任务的能力。只有当 Worker 与 Master 保持双向 gRPC 连接，
-  且同时维持 `load`、`compute` 和 `superstep` 3 个活跃流时，才被判定为就绪（Ready）。
-- **状态评估**：若注册 Worker 数为 0 或存在未就绪 Worker，集群状态将被标记为 `DEGRADED`，并在 `reason` 字段中说明具体原因（如 `no_workers` 或 `worker_not_ready`）。
-  全部 Worker 就绪时状态为 `UP`（或 `HEALTHY`）。
-- **遥测指标**：Master 与各 Worker 独立上报进程级资源消耗数据，位于 `metrics` 字段：
-  - `metrics.cpu_cores`：当前进程每秒消耗的 CPU 时间（多核多线程下可超过 1.0）。
-  - `metrics.rss_bytes`：常驻内存集大小（字节），反映进程实际物理内存占用，而非宿主机或 Pod 限制。
-  - `sample_window_seconds`：CPU 采样的实际时间窗口（秒）。
-  - `metric_status`：遥测采样状态（`ok`；初次采样可能为 `metrics_warming_up`；旧版本节点为 `unsupported`）。
-- **指标隔离与超时保护**：资源采样 RPC 在 Worker 管理器互斥锁外部执行，并设定 800 ms 超时上限。采样失败或超时绝不会影响 Worker 的就绪判定或正在运行的任务。
+- 仅注册不代表就绪。Worker 必须已注册、连接 Master，并使 `load`、`compute`、`superstep` 三个任务流均就绪。
+- Master 未就绪、无 Worker 或存在未就绪 Worker 时，集群状态为 `DEGRADED`；聚合原因分别为 `master_initializing` / `service_offline`、`no_workers` 或 `workers_not_ready`。其余情况为 `UP`。
+- `metric_status` 是对象，包含 `availability`（`AVAILABLE`、`UNAVAILABLE` 或 `UNSUPPORTED`）、`observed_at` 与可选 `reason`。
+- Master 检查项为 `http_ready`、`initialized`、`service_online`；Worker 检查项为 `registered`、`connection_ready` 和三个 `*_stream_ready` 字段。
+- Worker 遥测在管理器锁外使用整批 800 ms 截止时间，不影响就绪判定。
 
 #### 请求与响应示例
 
@@ -879,42 +874,27 @@ curl -H "Authorization: Bearer <admin-token>" \
   "schema_version": 1,
   "observed_at": 1730419200000,
   "status": "UP",
-  "registered_workers": 2,
-  "ready_workers": 2,
+  "registered_workers": 1,
+  "ready_workers": 1,
   "master": {
-    "launch_time": "2026-11-01T08:00:00Z",
-    "status": "UP",
-    "ready": true,
-    "checks": { "grpc": true },
-    "metrics": {
-      "cpu_cores": 0.15,
-      "rss_bytes": 134217728,
-      "sample_window_seconds": 10.0
-    },
-    "metric_status": "ok"
+    "id": "master", "name": "Vermeer Master", "role": "MASTER",
+    "grpc_peer": "127.0.0.1:6688", "version": "1.8.0",
+    "launch_time": "2026-11-01T08:00:00Z", "status": "UP", "ready": true,
+    "checks": {"http_ready": true, "initialized": true, "service_online": true},
+    "metrics": {"cpu_cores": 0.15, "rss_bytes": 134217728, "sample_window_seconds": 10.0},
+    "metric_status": {"availability": "AVAILABLE", "observed_at": 1730419200000}
   },
-  "workers": [
-    {
-      "launch_time": "2026-11-01T08:00:05Z",
-      "status": "UP",
-      "ready": true,
-      "checks": {
-        "grpc_reverse": true,
-        "load_stream": true,
-        "compute_stream": true,
-        "superstep_stream": true
-      },
-      "metrics": {
-        "cpu_cores": 1.42,
-        "rss_bytes": 2147483648,
-        "sample_window_seconds": 10.0
-      },
-      "metric_status": "ok"
-    }
-  ]
+  "workers": [{
+    "id": "worker-1", "name": "worker-1", "role": "WORKER", "group": "default",
+    "grpc_peer": "127.0.0.1:6689", "version": "1.8.0",
+    "launch_time": "2026-11-01T08:00:05Z", "status": "UP", "ready": true,
+    "checks": {"registered": true, "connection_ready": true, "load_stream_ready": true,
+      "compute_stream_ready": true, "superstep_stream_ready": true},
+    "metrics": {"cpu_cores": 1.42, "rss_bytes": 2147483648, "sample_window_seconds": 10.0},
+    "metric_status": {"availability": "AVAILABLE", "observed_at": 1730419200000}
+  }]
 }
 ```
-
 ### 4.2 图空间 Worker 可用性探针（`GET /api/v1/workers/availability`）
 
 `GET /api/v1/workers/availability` 专为 Kubernetes 与 Helm 探针提供图空间粒度的计算可用性检测。

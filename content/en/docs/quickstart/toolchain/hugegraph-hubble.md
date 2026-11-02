@@ -247,7 +247,7 @@ Enable direct Vermeer communication in `conf/hugegraph-hubble.properties`:
 
 ```properties
 # Direct Vermeer integration endpoint
-vermeer.url=http://vermeer-master:8888
+vermeer.url=http://vermeer-master:6688
 # Protected file containing the Vermeer service bearer token
 vermeer.token_file=/path/to/vermeer-service.token
 ```
@@ -259,8 +259,8 @@ vermeer.token_file=/path/to/vermeer-service.token
 #### Supported OLAP algorithms and execution lifecycle
 
 Vermeer executes batch algorithms over in-memory graph partitions:
-- **Supported algorithms**: PageRank, Personalized PageRank, Weakly Connected Components (WCC), Louvain community detection, Betweenness Centrality,
-  Closeness Centrality, Degree Centrality, Local Clustering Coefficient (LCC), and Triangle Count.
+- **Supported algorithms**: PageRank, Personalized PageRank (PPR), Weakly Connected Components (WCC), Label Propagation Algorithm (LPA),
+  Degree Centrality, Closeness Centrality, Betweenness Centrality, Triangle Count, K-Core, and Single-Source Shortest Path (SSSP).
 - **Loading graph into memory**: The workflow begins by loading or reloading graph data from PD/Store into Vermeer worker memory. Accepted loads retain their
   task ID per graph so queued operations stay in `Loading` state until ready.
 - **Task monitoring & cancellation**: Native tasks run asynchronously and can be filtered by state (`RUNNING`, `SUCCESS`, `FAILED`) or cancelled on demand.
@@ -487,7 +487,7 @@ When Vermeer is deployed, Hubble provides an independent Vermeer compute cluster
 - Configure telemetry in `conf/hugegraph-hubble.properties`:
   ```properties
   operations.vermeer.enabled=true
-  operations.vermeer.address=http://vermeer-master:8888
+  operations.vermeer.address=http://vermeer-master:6688
   operations.vermeer.token_file=/path/to/vermeer-service.token
   ```
 - **Readiness & node topology**: Inspects Vermeer Master readiness, registered Worker node health, and cluster topology.

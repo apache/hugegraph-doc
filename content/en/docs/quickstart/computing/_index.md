@@ -31,7 +31,8 @@ flowchart TB
 
 Job configuration can be submitted through the Kubernetes Operator or YARN. Workers read graph data through the HugeGraph Server REST API and can write results back according to the output configuration. With HDFS input or output, workers access HDFS directly. The master uses etcd to coordinate BSP jobs.
 
-- [Vermeer Quick Start](./hugegraph-vermeer.md)
-- [Computer Quick Start](./hugegraph-computer/)
-- [Computer Configuration Reference](./hugegraph-computer-config.md)
-- [Computer source code](https://github.com/apache/hugegraph-computer)
+- [Vermeer Quick Start](./hugegraph-vermeer.md) — Memory-first high-performance graph computing engine for fast OLAP algorithms.
+- [Computer Quick Start](./hugegraph-computer.md) — Distributed Java BSP/Pregel computing framework for large-scale iterative graph analysis.
+- [Computer Configuration Reference](./hugegraph-computer-config.md) — Configuration properties for Computer jobs and Kubernetes CRD resources.
+- [Computer Source Code](https://github.com/apache/hugegraph-computer) — Source repository containing both Vermeer and Computer engines.
+{.cards}

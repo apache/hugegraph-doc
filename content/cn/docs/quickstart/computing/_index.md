@@ -31,7 +31,8 @@ flowchart TB
 
 作业配置可由 Kubernetes Operator 或 YARN 提交。Workers 通过 REST API 从 HugeGraph Server 读取图数据，并可按输出配置写回计算结果；选择 HDFS 输入或输出时，Workers 直接访问 HDFS。Master 使用 etcd 协调 BSP 作业。
 
-- [Vermeer 快速上手](./hugegraph-vermeer.md)
-- [Computer 快速上手](./hugegraph-computer/)
-- [Computer 配置参考](./hugegraph-computer-config.md)
-- [Computer 源码](https://github.com/apache/hugegraph-computer)
+- [Vermeer 快速上手](./hugegraph-vermeer.md) — 基于 Go 的内存优先高性能图计算引擎，适用于通用 OLAP 算法秒级/分钟级快速执行。
+- [Computer 快速上手](./hugegraph-computer.md) — 基于 Java BSP/Pregel 模型的分布式图计算框架，支持大规模超步迭代分析。
+- [Computer 配置参考](./hugegraph-computer-config.md) — Computer 任务配置项及 Kubernetes Operator CRD 参数参考。
+- [Computer 源码仓库](https://github.com/apache/hugegraph-computer) — 包含 Vermeer 与 Computer 两套计算引擎的官方代码仓库。
+{.cards}

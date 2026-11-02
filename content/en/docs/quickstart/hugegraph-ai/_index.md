@@ -10,19 +10,21 @@ weight: 3
 
 ## Modules
 
+- [hugegraph-llm-sdk](./hugegraph-llm-sdk.md): standalone Python SDK for schema design, validation, and reviewed property-graph extraction.
 - [hugegraph-mcp](./hugegraph-mcp.md): graph queries, schema tools, and controlled writes for AI clients through MCP.
 - [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm): knowledge graph construction, GraphRAG, and natural-language graph queries.
 - [hugegraph-ml](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml): reads graph data from HugeGraph and runs graph learning models.
 - [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client): a Python SDK for managing schemas and graph data and running Gremlin queries.
 - [vermeer-python-client](https://github.com/apache/hugegraph-ai/tree/main/vermeer-python-client): a Python SDK for the Vermeer graph computing service.
 
-The repository uses a `uv` workspace whose members are `hugegraph-llm` and `hugegraph-python-client`. `hugegraph-ml` and `vermeer-python-client` are editable path dependencies rather than workspace members. The current repository version is `1.7.0`. The client source directory is named `hugegraph-python-client`, but its distribution name is `hugegraph-python`.
+The repository uses a `uv` workspace whose members are `hugegraph-llm-sdk`, `hugegraph-llm`, and `hugegraph-python-client`. `hugegraph-ml` and `vermeer-python-client` are editable path dependencies rather than workspace members. The current repository version is `1.8.0`. The client source directory is named `hugegraph-python-client`, but its distribution name is `hugegraph-python`.
 
 ## Requirements
 
-- HugeGraph-AI root workspace: Python 3.10 or later; HugeGraph-LLM additionally requires a version below 3.12
+- HugeGraph-AI root workspace: Python >= 3.12 (Python 3.12–3.14 supported)
+- HugeGraph-LLM & HugeGraph-LLM-SDK: Python >= 3.12 (Python 3.12–3.14 supported)
 - HugeGraph-ML: Python 3.10 or later
-- PyPI `hugegraph-python` 1.5.0: Python 3.9 or later; current repository source uses Python 3.10 or later with the workspace
+- PyPI `hugegraph-python` 1.5.0: Python 3.9 or later; current repository source uses Python >= 3.12 with the workspace
 - Vermeer Python client: current source requires Python 3.10 or later, although package metadata still says `>=3.9`; see the [client guide](/docs/quickstart/hugegraph-ai/vermeer-python-client/)
 - `uv` 0.7 or later
 - HugeGraph Server 1.5.0 or later; the current workspace client rejects detectable older versions
@@ -89,11 +91,12 @@ Example scripts are under `hugegraph-ml/src/hugegraph_ml/examples/`.
 
 ## Next Steps
 
+- [HugeGraph-LLM SDK](./hugegraph-llm-sdk.md)
 - [HugeGraph-MCP](./hugegraph-mcp.md)
 - [HugeGraph-LLM](./hugegraph-llm.md)
 - [HugeGraph-LLM workflow](./quick_start.md)
 - [Configuration reference](./config-reference.md)
 - [REST API](./rest-api.md)
 - [HugeGraph-ML](./hugegraph-ml.md)
-- [Python client](../client/hugegraph-client-python.md)
+- [Python client](/docs/clients/client/hugegraph-client-python/)
 - [Vermeer Python Client](./vermeer-python-client.md)

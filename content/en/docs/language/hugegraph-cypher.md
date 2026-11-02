@@ -33,8 +33,7 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-When server authentication is disabled, no `Authorization` header is required; when authentication is enabled,
-standard `Basic` (RFC 4648 Base64, e.g. `curl -u`) or `Bearer <token>` credentials are supported.
+When authentication is enabled, Cypher requests require an `Authorization` header, supporting `Basic` (standard RFC 4648 Base64, e.g. `curl -u`) or `Bearer <token>` (requests without credentials return `401`). When authentication is disabled, no `Authorization` header is required.
 See the [Cypher REST API reference](/docs/clients/restful-api/cypher/) for the full request and response format.
 
 Example:
@@ -44,7 +43,7 @@ curl -H "Authorization: Bearer $TOKEN" \
   "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/cypher?cypher=MATCH%20(n:person)%20RETURN%20n.name%20LIMIT%2010"
 ```
 
-From the Java client, use `CypherManager` (see [hugegraph-client](/docs/clients/hugegraph-client/)):
+From the Java client, use `CypherManager` (see [hugegraph-client](/docs/clients/client/hugegraph-client/)):
 
 ```java
 ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.name LIMIT 10");
@@ -148,7 +147,8 @@ Every Cypher statement is translated to Gremlin internally. When a Cypher featur
 Tip: You can inspect generated underlying Gremlin traversals via `EXPLAIN MATCH (n:person) RETURN n` (in the `translation` field of the response) to draft
 equivalent traversals. `PROFILE` is not supported.
 
-### Limitations
+<a id="known-limitations"></a>
+### Limitations {#limitations}
 
 - **Parameterized query rules**: Parameter bindings are supported via JSON request bodies (`{"cypher": "...", "parameters": {...}}`, up to 16 top-level
   parameters; group additional properties into a nested Map and reference fields explicitly). Referencing an undeclared `$param` results in an execution error;

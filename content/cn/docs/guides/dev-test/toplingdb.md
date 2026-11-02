@@ -1,8 +1,10 @@
 ---
 title: "ToplingDB 开发版集成"
-linkTitle: "ToplingDB（开发版）"
-weight: 11
+linkTitle: "ToplingDB (开发版)"
+weight: 2
 description: "从开发源码构建可选 ToplingDB 运行时，隔离数据目录，并了解启动与恢复边界。"
+aliases:
+  - /docs/guides/toplingdb/
 ---
 
 > **开发版接口**：本文适用于开启可选 ToplingDB 运行时的开发构建版本。

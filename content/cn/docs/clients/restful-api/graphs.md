@@ -15,13 +15,9 @@ description: "Graphs（图管理）REST 接口:管理图实例的生命周期,�
 
 启用鉴权时，创建、克隆、删除、清空、修改图显示名、读取图配置、设置读模式和手动压缩等操作要求图空间管理权限（`space`）；管理员可按权限继承规则满足。创建或恢复快照、设置数据模式允许图空间管理者或该图所有者操作；列表、详情、数据模式读取和读模式读取按图读取权限校验。Raft API 另要求图空间成员权限。
 
-`GET /apis` 是资源索引。索引中的资源路径属于 Server 根地址，应使用 `/versions`、`/graphspaces` 与 `/gremlin`，不要再加 `/apis` 前缀。
-旧版索引没有前导斜杠，应相对 Server 根路径解析，不能拼到索引目录下面。网关另有公开路径前缀时，保留该前缀。
-
-`GET /graphspaces` 仅支持 PD 模式。独立模式应跳过此步骤，使用 `GET /graphs` 列出已配置的图。
-建图使用 `POST /graphspaces/{space}/graphs/{graph}`，并提供后端要求的图配置。`POST /graphs` 不是建图接口。
-旧形态 `/graphs` 能列出图，并不表示 GraphSpace API 不存在。运行 SeaTunnel 自带 sink 示例前，请按
-[SeaTunnel 指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md) 先创建 `graph_a`。
+- `GET /apis` 是资源索引。索引中的资源路径属于 Server 根地址，应使用 `/versions`、`/graphspaces` 与 `/gremlin`，不要再加 `/apis` 前缀。旧版索引没有前导斜杠，应相对 Server 根路径解析，不能拼到索引目录下面。网关另有公开路径前缀时，保留该前缀。
+- `GET /graphspaces` 仅支持 PD 模式；独立部署模式请使用 `GET /graphs` 列出已配置的图。
+- 动态建图使用 `POST /graphspaces/{space}/graphs/{graph}`，并提供后端要求的图配置。`POST /graphs` 不是建图接口。旧形态 `/graphs` 能列出图，并不表示 GraphSpace API 不存在。运行 SeaTunnel 自带 sink 示例前，请按 [SeaTunnel 指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md) 先创建目标图。
 
 #### 6.1.1 列出图空间中全部的图
 
@@ -560,6 +556,59 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/manage
 ```javascript
 {
   "graphs": "reloaded"
+}
+```
+
+#### 6.1.11 克隆图 Schema
+
+从 Server API 版本 0.73 起，支持将同一图空间内已有源图的 Schema 同步克隆到新建的目标图中。
+该接口会同步复制源图的全部属性类型（Property Key）、顶点类型（Vertex Label）和索引标签（Index Label）。
+
+> [!NOTE]
+> 该接口仅复制 Schema，不复制图中的顶点和边数据。若源图包含任何边类型（Edge Label），接口将在创建目标图前直接拒绝，
+> 因为部分后端存储无法安全保留边类型所需的层次元数据。克隆期间应停止对源图 Schema 进行修改。
+> 若目标图创建后克隆过程出错，目标图可能处于部分 Schema 状态，需人工排查并显式删除后重试。
+
+##### Params
+
+**路径参数说明：**
+
+- graphspace: 图空间名称
+- graph: 要创建的目标图名称
+
+**请求参数说明：**
+
+- source: 被克隆的源图名称（必填）
+
+##### Method & Url
+
+```text
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloned_target_graph/schema-clone?source=hugegraph
+```
+
+##### Request Body (可选)
+
+可选的 JSON 请求体，仅支持设置目标图的 `nickname`（设置 `Content-Type: application/json`）：
+
+```json
+{
+  "nickname": "ClonedGraph"
+}
+```
+
+##### Response Status
+
+```javascript
+201
+```
+
+##### Response Body
+
+```json
+{
+  "name": "cloned_target_graph",
+  "nickname": "ClonedGraph",
+  "backend": "rocksdb"
 }
 ```
 

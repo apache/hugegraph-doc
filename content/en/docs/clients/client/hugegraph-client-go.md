@@ -2,6 +2,8 @@
 title: "HugeGraph Go Client Quick Start"
 linkTitle: "Go Client"
 weight: 3
+aliases:
+  - /docs/quickstart/client/hugegraph-client-go/
 ---
 
 HugeGraph Go Client is the Go SDK in the Toolchain repository. It currently provides APIs for version queries, schemas (property keys, vertex labels, and edge labels), vertices, and Gremlin. An edge data API is not implemented yet.

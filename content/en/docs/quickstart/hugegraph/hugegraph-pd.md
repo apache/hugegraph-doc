@@ -31,10 +31,12 @@ PD listens on three ports:
 
 ### 3 Deployment
 
-There are two ways to deploy the HugeGraph-PD component:
+Choose a deployment method for the HugeGraph-PD component:
 
-- Method 1: Download the tar package
-- Method 2: Compile from source
+- [Download released archive](#31-download-the-tar-package) — Download the bundled official release package.
+- [Compile from source](#32-compile-from-source) — Build the latest master PD module with Maven and Java 17.
+- [Docker deployment](#33-docker-deployment) — Run containerized PD for local trials or cluster testing.
+{.cards}
 
 #### 3.1 Download the tar package
 
@@ -49,25 +51,27 @@ cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 
 #### 3.2 Compile from source
 
-```bash
-# 1. Clone the source code
-git clone https://github.com/apache/hugegraph.git
+1. **Clone the source code:**
 
-# 2. Build the project
-cd hugegraph
-mvn clean install -DskipTests=true
+   ```bash
+   git clone https://github.com/apache/hugegraph.git
+   cd hugegraph
+   ```
 
-# 3. After a successful build, the PD directory and packages are located at
-#    hugegraph-pd/apache-hugegraph-pd-{version}          (unpacked PD distribution)
-#    hugegraph-pd/apache-hugegraph-pd-{version}.tar.gz   (PD only package, Linux build hosts only)
-#    target/apache-hugegraph-{version}.tar.gz            (PD + Store + Server package)
-```
+1. **Build the PD module:**
 
-To build only the PD distribution and the modules it depends on:
+   ```bash
+   # Build only the PD distribution and its dependencies
+   mvn clean package -pl hugegraph-pd/hg-pd-dist -am -DskipTests
+   ```
 
-```bash
-mvn clean package -pl hugegraph-pd/hg-pd-dist -am -DskipTests
-```
+1. **Locate the distribution output:**
+
+   ```bash
+   cd hugegraph-pd/apache-hugegraph-pd-*/
+   ls -la bin conf lib
+   ```
+{.steps}
 
 The unpacked distribution contains just three directories: `bin` (start and stop scripts), `conf` (`application.yml`, `application.yml.template`, `log4j2.xml`, `verify-license.json`) and `lib` (the `hg-pd-service` jar).
 
@@ -166,6 +170,7 @@ install-snapshot timeout, and id allocation runs no ReadIndex wait.
 | `pd.data-path` | `./pd_data` | none, required | Metadata directory. Holds the RocksDB store in `rocksdb/` and the Raft log, metadata and snapshots in `pd_raft/`. |
 | `pd.patrol-interval` | `1800` | `300` | Seconds between patrol runs, which check partition health across stores and rebalance partition counts. |
 | `pd.initial-store-count` | `1` | `3` | Minimum number of active Store nodes. Below this the cluster state becomes `Cluster_Not_Ready` and the cluster is treated as unavailable. Set it to the number of stores you deploy. |
+| `pd.min-store-count` | not set | `0` | Minimum active Store count required during Store drain/retirement checks. If remaining active stores fall below this value, the transition to `Exiting` is rejected. |
 | `pd.initial-store-list` | `127.0.0.1:8500` | empty | Comma separated Store gRPC addresses (`ip:port`) that are activated automatically when they register. An entry may also carry a group id as `store_address/group_id`. |
 | `pd.cluster_id` | not set | `1` | Cluster id, used to keep separate PD clusters apart. |
 {.td-table--wide}
@@ -557,4 +562,45 @@ The two `log` endpoints take a time range as `{"startTime": "...", "endTime": ".
 
 PD registers its own meters under the `hg` prefix, so `/actuator/prometheus` exposes `hg_up`, `hg_graphs`, `hg_stores` and `hg_terms` alongside the standard JVM metrics, plus per-graph partition and size meters once graphs exist.
 
+It also exposes Raft membership gauges for monitoring and alerting on quorum loss:
+- `hg_raft_leader`: `1` if this PD node is the elected Raft leader, `0` otherwise.
+- `hg_raft_has_leader`: `1` if this PD node observes an active Raft leader (i.e. is part of a quorum), `0` when quorum is lost.
+- `hg_raft_alive_peers`: Number of active Raft peers (including itself) that the leader has heard from within the leader lease timeout;
+  reported as `NaN` on non-leader follower nodes.
+
+> [!NOTE]
+> **Quorum Loss Alerting**: Cluster quorum is lost when `sum(hg_raft_leader) == 0` or `hg_raft_has_leader == 0` across all members. Alert rules should
+> configure a `for:` window longer than the Raft election timeout (e.g. `for: 30s`) to avoid false positives during expected leader transitions.
+> To alert on peer degradation from Prometheus, query `hg_raft_alive_peers and on(instance) (hg_raft_leader == 1)`.
+
 In versions after 1.7.0, PD also exports, for each registered store, `hg_store_state{store="<id>",state="<state>"}`, which is `1` for the store's current state (`Unknown`, `Pending`, `Up`, `Offline`, `Exiting` or `Tombstone`) and `0` for the others, and `hg_store_leader_count{store="<id>"}`, the number of shard groups whose leader is on that store. A rebuilt Store reports `0` leaders until leadership moves back to it. Every PD member reads the same replicated metadata, so select one instance before aggregating these series.
+
+#### 7.6 Store Decommissioning and Drain Lifecycle
+
+Decommissioning a Store node follows a state machine to safely drain partition replicas without service interruption:
+
+1. **State Machine Overview**:
+   - `Up`: The Store is online, healthy, and accepting new shard allocations and leader roles.
+   - `Exiting`: The Store is actively draining. While in `Exiting`, the Store continues renewing its heartbeat lease, but PD excludes it from new
+     replica allocation and partition migration targets.
+   - Partition Migration: PD schedules background tasks to migrate all shard replicas off the draining store to other eligible active Stores.
+   - `Tombstone`: The Store is permanently retired. Once marked `Tombstone`, management updates cannot return the Store to an active state.
+
+2. **Draining Invocation**:
+   Initiate store draining via:
+   ```bash
+   curl -X POST http://<pd-host>:8620/v1/store/{storeId} \
+     -H "Authorization: Basic <credentials>" \
+     -H "Content-Type: application/json" \
+     -d '{"storeState": "Exiting"}'
+   ```
+
+3. **Capacity Constraints & Retirement Checks**:
+   - **Capacity Check**: Draining checks that remaining eligible active stores satisfy `minStoreCount` (`pd.min-store-count`). If remaining
+     capacity is insufficient, PD blocks the transition and rejects the request before state changes. In this case, add eligible Store capacity and resubmit the request.
+   - **Retirement Criteria**: PD keeps the Store in `Exiting` until its latest heartbeat reports 0 local partition engines AND PD has no remaining
+     shard groups referencing that Store ID.
+   - **Pre-Deletion Verification**: Before deleting the Store Pod or persistent volume, operators must verify remaining shard groups have full Raft
+     membership, complete replicas, and fresh heartbeats.
+   - **Re-registration Intent Preservation**: Re-registering an `Exiting` Store (e.g. after process restart) preserves the `Exiting` intent even if
+     its address is in `pd.initial-store-list`.

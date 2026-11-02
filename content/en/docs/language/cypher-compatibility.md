@@ -38,8 +38,7 @@ Example JSON parameterized request:
 - **Unbound Variables**: Referencing an undeclared `$param` raises an execution error and is rejected (explicit `null` is supported).
 - **Reserved Marker**: The exact string `"  cypher.null"` (two leading spaces) is reserved by the engine as an internal sentinel and is rejected in
   parameter values.
-- **Error Response**: On validation or execution errors, the server returns HTTP 400 (or `status.code` 400 with null result), with structured details
-  (`code`, `message`, `hint`) in `status.attributes.errors`.
+- **Error Response**: A malformed request body returns HTTP 400 with the standard error body. Translation and execution errors return HTTP 200 with `status.code` 400 (and null `result`), with structured details (`code`, `message`, `hint`) in `status.attributes.errors`.
 
 ### Syntax and Feature Support Matrix
 
@@ -60,7 +59,7 @@ Execute vertex and edge creations separately, ensuring required vertex attribute
 ### Unsupported Features
 
 The following advanced features are currently unsupported; use Gremlin or the respective REST APIs:
-- **Complex Clauses**: `MERGE`, `OPTIONAL MATCH`, `WITH`, `UNWIND`, `UNION`, variable-length paths (`*1..3`);
+- **Complex Clauses**: `MERGE`, `UNION`, variable-length paths (`*1..3`);
 - **Procedures**: `CALL dbms.*` / `CALL algo.*` (use the [Traverser REST API](/docs/clients/restful-api/traverser/));
 - **Schema Management**: Cypher Schema DDL (use the [Schema REST API](/docs/clients/restful-api/schema/));
-- **Protocols & Drivers**: Bolt protocol and drivers (use the HTTP REST API or [HugeGraph Client](/docs/clients/hugegraph-client/)).
+- **Protocols & Drivers**: Bolt protocol and drivers (use the HTTP REST API or [HugeGraph Client](/docs/clients/client/hugegraph-client/)).

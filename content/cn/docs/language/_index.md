@@ -19,13 +19,13 @@ HugeGraph 支持两种主流图查询语言：**Gremlin**（命令式遍历语�
   Cypher 声明式语法支持、读取与写入示例、执行机制与使用限制。
 - [Cypher 兼容性说明](/cn/docs/language/cypher-compatibility/)
 
-  请求契约规范、参数绑定规则、语法特性覆盖对照及行为边界说明。
+  Cypher 子句与函数的覆盖矩阵、已知差异及未实现特性的规避方案。
 - [从 Neo4j 迁移到 HugeGraph](/cn/docs/language/migrate-from-neo4j/)
 
-  Neo4j 与 HugeGraph 在图模型、Schema 规范、ID 策略、索引机制及查询语法上的核心差异对照与迁移步骤。
+  Neo4j 与 HugeGraph 在图模型、ID 策略、多标签及查询语法上的核心差异对照与迁移步骤。
 - [经典示例数据](/cn/docs/language/hugegraph-example/)
 
-  TinkerPop 经典的 6 顶点 6 边人际与软件关系图示例，供编写查询时对照参考。
+  经典的 TitanDB“众神图”（Graph of the Gods，包含 12 个顶点）示例数据集，供编写查询时对照参考。
 {.cards}
 
 ## 周边工具与相关入口

@@ -1,18 +1,412 @@
 ---
 title: "HugeGraph Java Client"
-linkTitle: "HugeGraph Java Client"
-weight: 2
+linkTitle: "Java 客户端"
+weight: 1
+aliases:
+  - /docs/quickstart/client/hugegraph-client/
+  - /docs/clients/hugegraph-client/
 ---
+
+### 1 HugeGraph-Client 概述 {#1-hugegraph-client}
+
+[HugeGraph Java Client](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-client) 将 Java API 转换为 HugeGraph Server 的 REST 请求，支持管理 Schema 和图数据、执行 Gremlin 及调用 Traverser API。本文涵盖 Java 项目的快速接入示例与全量核心 API 参考。
+
+其他语言可使用 [Go Client](/cn/docs/clients/client/hugegraph-client-go/) 或 [Python Client](/cn/docs/clients/client/hugegraph-client-python/)。
+
+### 2 环境要求
+
+- JDK 17，用于本文示例及从 Toolchain `master` 构建 Client `1.8.0`
+- Maven 3.6.3+
+
+### 3 使用流程
+
+按下面的顺序接入 HugeGraph-Client。
+
+1. 使用 IntelliJ IDEA 或 Eclipse 新建 Maven 工程。
+1. 在 `pom.xml` 中添加 HugeGraph-Client 依赖。
+1. 创建客户端、调用 API，并在使用后关闭客户端。
+{.steps}
+
+详细操作见下面的完整示例。
+
+### 4 完整示例 {#5-简单示例}
+
+#### 4.1 新建 Maven 工程
+
+使用 Eclipse 或 IntelliJ IDEA 创建 Maven 工程。
+
+- [Eclipse 新建 Maven 工程](http://www.vogella.com/tutorials/EclipseMaven/article.html)
+- [Intellij Idea 创建 maven 工程](https://vaadin.com/docs/-/part/framework/getting-started/getting-started-idea.html)
+
+#### 4.2 添加 hugegraph-client 依赖
+
+在 `pom.xml` 中添加依赖。
+
+```xml
+
+<dependencies>
+    <dependency>
+        <groupId>org.apache.hugegraph</groupId>
+        <artifactId>hugegraph-client</artifactId>
+        <!-- 以下完整示例可使用已发布的 1.7.0 -->
+        <version>1.7.0</version>
+    </dependency>
+</dependencies>
+```
+
+先根据用途选择客户端版本。
+
+| 用途 | 客户端版本 | Java 编译目标 |
+| --- | --- | --- |
+| 运行下方完整示例 | 已发布的 `1.7.0`，使用上面的依赖即可 | 发布版 POM 为 Java 8；本文统一使用 JDK 17 |
+| 使用能力探测等 master 新接口 | Toolchain `master`（以 1.8 为基线） | Java 17 |
+
+示例使用的 Schema、Graph、Gremlin 和资源关闭接口在 Client `1.7.0` 中可用，也与 Toolchain `master` 兼容。
+发布版的 Java 编译目标不代表所有传递依赖的运行环境要求。
+
+若需要使用 master 分支未发布的新接口，可从源码编译安装 Client（需配合 Toolchain 源码，详见 [Tools 源码构建指引](/cn/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)）：
+
+```bash
+java -version
+mvn -version
+mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" \
+  -Dsdk.validation.mode=candidate \
+  install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+```
+
+两条版本检查都应显示 JDK 17。使用 master 分支 Client 的项目运行 Maven 命令时，也需添加 `-Dmaven.repo.local="$candidate_dir/m2"`。
+Client 与 Server 的版本不必相同；升级前核对所需 API 及兼容范围。
+
+#### 4.3 Example
+
+选择单条操作或批量操作示例，将完整代码保存为 Maven 工程中的 `src/main/java/SingleExample.java` 或
+`src/main/java/BatchExample.java`。复制按钮会包含已折叠的代码行。
+
+{{< tabs group="java-client-example" default="single" label="Java 客户端示例" >}}
+{{< tab label="SingleExample" value="single" >}}
+
+##### 4.3.1 SingleExample
+
+```java {collapse=30}
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+
+import org.apache.hugegraph.driver.GraphManager;
+import org.apache.hugegraph.driver.GremlinManager;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.driver.SchemaManager;
+import org.apache.hugegraph.structure.constant.T;
+import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.hugegraph.structure.graph.Path;
+import org.apache.hugegraph.structure.graph.Vertex;
+import org.apache.hugegraph.structure.gremlin.Result;
+import org.apache.hugegraph.structure.gremlin.ResultSet;
+
+public class SingleExample {
+
+    public static void main(String[] args) throws IOException {
+        // If connect failed will throw a exception.
+        HugeClient hugeClient = HugeClient.builder("http://localhost:8080",
+                                                   "DEFAULT",
+                                                   "hugegraph")
+                                          .configUser("username", "password")
+                                          // 这是示例,生产环境需要使用安全的凭证
+                                          .build();
+
+        SchemaManager schema = hugeClient.schema();
+
+        schema.propertyKey("name").asText().ifNotExist().create();
+        schema.propertyKey("age").asInt().ifNotExist().create();
+        schema.propertyKey("city").asText().ifNotExist().create();
+        schema.propertyKey("weight").asDouble().ifNotExist().create();
+        schema.propertyKey("lang").asText().ifNotExist().create();
+        schema.propertyKey("date").asDate().ifNotExist().create();
+        schema.propertyKey("price").asInt().ifNotExist().create();
+
+        schema.vertexLabel("person")
+              .properties("name", "age", "city")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+
+        schema.vertexLabel("software")
+              .properties("name", "lang", "price")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("personByCity")
+              .onV("person")
+              .by("city")
+              .secondary()
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("personByAgeAndCity")
+              .onV("person")
+              .by("age", "city")
+              .secondary()
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("softwareByPrice")
+              .onV("software")
+              .by("price")
+              .range()
+              .ifNotExist()
+              .create();
+
+        schema.edgeLabel("knows")
+              .sourceLabel("person")
+              .targetLabel("person")
+              .properties("date", "weight")
+              .ifNotExist()
+              .create();
+
+        schema.edgeLabel("created")
+              .sourceLabel("person").targetLabel("software")
+              .properties("date", "weight")
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("createdByDate")
+              .onE("created")
+              .by("date")
+              .secondary()
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("createdByWeight")
+              .onE("created")
+              .by("weight")
+              .range()
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("knowsByWeight")
+              .onE("knows")
+              .by("weight")
+              .range()
+              .ifNotExist()
+              .create();
+
+        GraphManager graph = hugeClient.graph();
+        Vertex marko = graph.addVertex(T.LABEL, "person", "name", "marko",
+                                       "age", 29, "city", "Beijing");
+        Vertex vadas = graph.addVertex(T.LABEL, "person", "name", "vadas",
+                                       "age", 27, "city", "Hongkong");
+        Vertex lop = graph.addVertex(T.LABEL, "software", "name", "lop",
+                                     "lang", "java", "price", 328);
+        Vertex josh = graph.addVertex(T.LABEL, "person", "name", "josh",
+                                      "age", 32, "city", "Beijing");
+        Vertex ripple = graph.addVertex(T.LABEL, "software", "name", "ripple",
+                                        "lang", "java", "price", 199);
+        Vertex peter = graph.addVertex(T.LABEL, "person", "name", "peter",
+                                       "age", 35, "city", "Shanghai");
+
+        marko.addEdge("knows", vadas, "date", "2016-01-10", "weight", 0.5);
+        marko.addEdge("knows", josh, "date", "2013-02-20", "weight", 1.0);
+        marko.addEdge("created", lop, "date", "2017-12-10", "weight", 0.4);
+        josh.addEdge("created", lop, "date", "2009-11-11", "weight", 0.4);
+        josh.addEdge("created", ripple, "date", "2017-12-10", "weight", 1.0);
+        peter.addEdge("created", lop, "date", "2017-03-24", "weight", 0.2);
+
+        GremlinManager gremlin = hugeClient.gremlin();
+        System.out.println("==== Path ====");
+        ResultSet resultSet = gremlin.gremlin("g.V().outE().path()").execute();
+        Iterator<Result> results = resultSet.iterator();
+        results.forEachRemaining(result -> {
+            System.out.println(result.getObject().getClass());
+            Object object = result.getObject();
+            if (object instanceof Vertex) {
+                System.out.println(((Vertex) object).id());
+            } else if (object instanceof Edge) {
+                System.out.println(((Edge) object).id());
+            } else if (object instanceof Path) {
+                List<Object> elements = ((Path) object).objects();
+                elements.forEach(element -> {
+                    System.out.println(element.getClass());
+                    System.out.println(element);
+                });
+            } else {
+                System.out.println(object);
+            }
+        });
+
+        hugeClient.close();
+    }
+}
+```
+
+{{< /tab >}}
+{{< tab label="BatchExample" value="batch" >}}
+
+##### 4.3.2 BatchExample
+
+```java {collapse=30}
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.hugegraph.driver.GraphManager;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.driver.SchemaManager;
+import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.hugegraph.structure.graph.Vertex;
+
+public class BatchExample {
+
+    public static void main(String[] args) {
+        // If connect failed will throw a exception.
+        HugeClient hugeClient = HugeClient.builder("http://localhost:8080",
+                                                "DEFAULT",
+                                                "hugegraph")
+                                          .configUser("username", "password")
+                                          // 这是示例,生产环境需要使用安全的凭证
+                                          .build();
+
+        SchemaManager schema = hugeClient.schema();
+
+        schema.propertyKey("name").asText().ifNotExist().create();
+        schema.propertyKey("age").asInt().ifNotExist().create();
+        schema.propertyKey("lang").asText().ifNotExist().create();
+        schema.propertyKey("date").asDate().ifNotExist().create();
+        schema.propertyKey("price").asInt().ifNotExist().create();
+
+        schema.vertexLabel("person")
+              .properties("name", "age")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+
+        schema.vertexLabel("person")
+              .properties("price")
+              .nullableKeys("price")
+              .append();
+
+        schema.vertexLabel("software")
+              .properties("name", "lang", "price")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("softwareByPrice")
+              .onV("software").by("price")
+              .range()
+              .ifNotExist()
+              .create();
+
+        schema.edgeLabel("knows")
+              .link("person", "person")
+              .properties("date")
+              .ifNotExist()
+              .create();
+
+        schema.edgeLabel("created")
+              .link("person", "software")
+              .properties("date")
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("createdByDate")
+              .onE("created").by("date")
+              .secondary()
+              .ifNotExist()
+              .create();
+
+        // get schema object by name
+        System.out.println(schema.getPropertyKey("name"));
+        System.out.println(schema.getVertexLabel("person"));
+        System.out.println(schema.getEdgeLabel("knows"));
+        System.out.println(schema.getIndexLabel("createdByDate"));
+
+        // list all schema objects
+        System.out.println(schema.getPropertyKeys());
+        System.out.println(schema.getVertexLabels());
+        System.out.println(schema.getEdgeLabels());
+        System.out.println(schema.getIndexLabels());
+
+        GraphManager graph = hugeClient.graph();
+
+        Vertex marko = new Vertex("person").property("name", "marko")
+                                           .property("age", 29);
+        Vertex vadas = new Vertex("person").property("name", "vadas")
+                                           .property("age", 27);
+        Vertex lop = new Vertex("software").property("name", "lop")
+                                           .property("lang", "java")
+                                           .property("price", 328);
+        Vertex josh = new Vertex("person").property("name", "josh")
+                                          .property("age", 32);
+        Vertex ripple = new Vertex("software").property("name", "ripple")
+                                              .property("lang", "java")
+                                              .property("price", 199);
+        Vertex peter = new Vertex("person").property("name", "peter")
+                                           .property("age", 35);
+
+        Edge markoKnowsVadas = new Edge("knows").source(marko).target(vadas)
+                                                .property("date", "2016-01-10");
+        Edge markoKnowsJosh = new Edge("knows").source(marko).target(josh)
+                                               .property("date", "2013-02-20");
+        Edge markoCreateLop = new Edge("created").source(marko).target(lop)
+                                                 .property("date",
+                                                           "2017-12-10");
+        Edge joshCreateRipple = new Edge("created").source(josh).target(ripple)
+                                                   .property("date",
+                                                             "2017-12-10");
+        Edge joshCreateLop = new Edge("created").source(josh).target(lop)
+                                                .property("date", "2009-11-11");
+        Edge peterCreateLop = new Edge("created").source(peter).target(lop)
+                                                 .property("date",
+                                                           "2017-03-24");
+
+        List<Vertex> vertices = new ArrayList<>();
+        vertices.add(marko);
+        vertices.add(vadas);
+        vertices.add(lop);
+        vertices.add(josh);
+        vertices.add(ripple);
+        vertices.add(peter);
+
+        List<Edge> edges = new ArrayList<>();
+        edges.add(markoKnowsVadas);
+        edges.add(markoKnowsJosh);
+        edges.add(markoCreateLop);
+        edges.add(joshCreateRipple);
+        edges.add(joshCreateLop);
+        edges.add(peterCreateLop);
+
+        vertices = graph.addVertices(vertices);
+        vertices.forEach(vertex -> System.out.println(vertex));
+
+        edges = graph.addEdges(edges, false);
+        edges.forEach(edge -> System.out.println(edge));
+
+        hugeClient.close();
+    }
+}
+```
+
+{{< /tab >}}
+{{< /tabs >}}
+
+#### 4.4 运行 Example
+
+1. [启动 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server)，在图空间 `DEFAULT` 中准备名为 `hugegraph` 的测试图。
+1. 将 Maven 工程的 JDK 设为 17，把所选示例中 `HugeClient.builder(...)` 和 `configUser(...)` 的 Server 地址、图空间、图名和凭据改为实际配置。
+   Server 未开启鉴权时，省略 `configUser(...)`。
+1. 在 IDE 中运行 `SingleExample.main()` 或 `BatchExample.main()`。两个示例都会创建 Schema 和图数据、打印结果并关闭客户端。
+   请使用测试图，已有 Schema 或数据可能影响重复运行。
+{.steps}
 
 本文的代码都是`java`语言写的，但其风格与`gremlin(groovy)`是非常类似的。用户只需要把代码中的变量声明替换成`def`或直接去掉，
 就能将`java`代码转变为`groovy`；另外就是每一行语句最后可以不加分号，`groovy`认为一行就是一条语句。
 
 用户在`HugeGraph-Hubble`中编写的`gremlin(groovy)`可以参考本文的`java`代码，下面会举出几个例子。
 
-本文以 Toolchain `master`（Client `1.8.0`）为准。请先按[快速入门](/cn/docs/quickstart/client/hugegraph-client/)准备对应依赖；
+本文以 Toolchain `master`（Client `1.8.0`）为准。请先按上方快速入门准备对应依赖；
 能力探测等新增接口不能直接用于旧版 Client。
 
-### 1 HugeGraph-Client
+### 5 HugeClient 构造与操作入口
 
 HugeGraph-Client 是操作 graph 的总入口，用户必须先创建出 HugeGraph-Client 对象，与 HugeGraph-Server 建立连接（伪连接）后，才能获取到 schema、graph 以及 gremlin 的操作入口对象。
 
@@ -32,7 +426,7 @@ HugeClient hugeClient = HugeClient.builder("http://localhost:8080", "hugegraph")
 
 在`HugeGraph - Hubble`中通过`gremlin`来操作时，不需要使用`HugeClient`，可以忽略。
 
-#### 1.1 构造器选项
+#### 5.1 构造器选项 {#11-构造器选项}
 
 构造器支持下列选项。所有超时参数的单位都是秒，内部会转换为毫秒。
 
@@ -57,7 +451,7 @@ HugeClient hugeClient = HugeClient.builder("http://localhost:8080", "hugegraph")
 
 调用 `build()` 时，客户端会读取服务端的 API 版本，超出 `[0.38, 0.81)` 范围时报错。
 
-#### 1.2 操作入口
+#### 5.2 操作入口 {#12-操作入口}
 
 除 schema、graph 和 gremlin 外，HugeClient 还提供下列入口。图级别的入口只有在指定了图名称时才可用；如果创建客户端时图名称为空，这些入口会返回 null，直到调用 `assignGraph(graphSpace, graph)` 为止。
 
@@ -73,16 +467,16 @@ HugeClient hugeClient = HugeClient.builder("http://localhost:8080", "hugegraph")
 | `task()`              | `TaskManager`          | graph      | 列出、获取、取消、删除异步任务，或等待其完成                  |
 | `computer()`          | `ComputerManager`      | graph      | 创建、取消、列出和获取 computer 任务                         |
 | `graphs()`            | `GraphsManager`        | graphspace | 创建、克隆、列出、重载、清空和删除图，读取和设置图的模式      |
-| `graphSpace()`        | `GraphSpaceManager`    | server     | 管理 GraphSpace，详见第 4 节                                 |
+| `graphSpace()`        | `GraphSpaceManager`    | server     | 管理 GraphSpace，详见第 8 节                                 |
 | `auth()`              | `AuthManager`          | server     | 管理 user、group、target、belong 和 access                   |
 | `metrics()`           | `MetricsManager`       | server     | 读取后端、系统和统计指标                                     |
 | `versionManager()`    | `VersionManager`       | server     | 读取服务端的 core、gremlin 和 API 版本                        |
 
 客户端还会报告所连服务端支持的能力，调用方可以据此判断，而不必解析版本号：`supportsGraphSpace()`、`supportsCypher()`、`supportsGraphCreate()`、`supportsDefaultRole()` 和 `isServerAuthEnabled()`。
 
-### 2 元数据
+### 6 元数据管理 (SchemaManager) {#2-元数据}
 
-#### 2.1 SchemaManager
+#### 6.1 SchemaManager {#21-schemamanager}
 
 SchemaManager 用于管理 HugeGraph 中的四种元数据，分别是 PropertyKey（属性类型）、VertexLabel（顶点类型）、EdgeLabel（边类型）和 IndexLabel（索引标签）。在定义元数据信息之前必须先创建 SchemaManager 对象。
 
@@ -100,9 +494,9 @@ schema = graph.schema()
 
 下面分别介绍四种元数据的定义过程。
 
-#### 2.2 PropertyKey
+#### 6.2 PropertyKey {#22-propertykey}
 
-##### 2.2.1 接口及参数介绍
+##### 6.2.1 接口及参数介绍 {#221-接口及参数介绍}
 
 PropertyKey 用来规范顶点和边的属性的约束，暂不支持定义属性的属性。
 
@@ -168,7 +562,7 @@ PropertyKey 允许定义的约束信息包括：name、datatype、cardinality、
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 2.2.2 创建 PropertyKey
+##### 6.2.2 创建 PropertyKey {#222-创建-propertykey}
 
 ```java
 schema.propertyKey("name").asText().valueSet().ifNotExist().create()
@@ -184,13 +578,13 @@ graph.schema().propertyKey("name").asText().valueSet().ifNotExist().create()
 
 - ifNotExist()：为 create 添加判断机制，若当前 PropertyKey 已经存在则不再创建，否则创建该属性。若不添加判断，在 properkey 已存在的情况下会抛出异常信息，下同，不再赘述。
 
-##### 2.2.3 删除 PropertyKey
+##### 6.2.3 删除 PropertyKey {#223-删除-propertykey}
 
 ```java
 schema.propertyKey("name").remove()
 ```
 
-##### 2.2.4 查询 PropertyKey
+##### 6.2.4 查询 PropertyKey {#224-查询-propertykey}
 
 ```java
 // 获取 PropertyKey 对象
@@ -203,9 +597,9 @@ schema.getPropertyKey("name").name()
 schema.getPropertyKey("name").userdata()
 ```
 
-#### 2.3 VertexLabel
+#### 6.3 VertexLabel {#23-vertexlabel}
 
-##### 2.3.1 接口及参数介绍
+##### 6.3.1 接口及参数介绍 {#231-接口及参数介绍}
 
 VertexLabel 用来定义顶点类型，描述顶点的约束信息：
 
@@ -277,7 +671,7 @@ VertexLabel 允许定义的约束信息包括：name、idStrategy、properties�
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 2.3.2 创建 VertexLabel
+##### 6.3.2 创建 VertexLabel {#232-创建-vertexlabel}
 
 ```java
 // 使用 Automatic 的 Id 策略
@@ -296,7 +690,7 @@ schema.vertexLabel("person").properties("name", "age").primaryKeys("name").ifNot
 schema.vertexLabel("person").usePrimaryKeyId().properties("name", "age").primaryKeys("name").ifNotExist().create();
 ```
 
-##### 2.3.3 追加 VertexLabel
+##### 6.3.3 追加 VertexLabel {#233-追加-vertexlabel}
 
 VertexLabel 是可以追加约束的，不过仅限 properties 和 nullableKeys，而且追加的属性也必须添加到 nullableKeys 集合中。
 
@@ -304,13 +698,13 @@ VertexLabel 是可以追加约束的，不过仅限 properties 和 nullableKeys�
 schema.vertexLabel("person").properties("price").nullableKeys("price").append();
 ```
 
-##### 2.3.4 删除 VertexLabel
+##### 6.3.4 删除 VertexLabel {#234-删除-vertexlabel}
 
 ```java
 schema.vertexLabel("person").remove();
 ```
 
-##### 2.3.5 查询 VertexLabel
+##### 6.3.5 查询 VertexLabel {#235-查询-vertexlabel}
 
 ```java
 // 获取 VertexLabel 对象
@@ -327,9 +721,9 @@ schema.getVertexLabel("person").ttl()
 schema.getVertexLabel("person").ttlStartTime()
 ```
 
-#### 2.4 EdgeLabel
+#### 6.4 EdgeLabel {#24-edgelabel}
 
-##### 2.4.1 接口及参数介绍
+##### 6.4.1 接口及参数介绍 {#241-接口及参数介绍}
 
 EdgeLabel 用来定义边类型，描述边的约束信息。
 
@@ -392,26 +786,26 @@ EdgeLabel 允许定义的约束信息包括：name、sourceLabel、targetLabel�
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 2.4.2 创建 EdgeLabel
+##### 6.4.2 创建 EdgeLabel {#242-创建-edgelabel}
 
 ```java
 schema.edgeLabel("knows").link("person", "person").properties("date").ifNotExist().create();
 schema.edgeLabel("created").multiTimes().link("person", "software").properties("date").sortKeys("date").ifNotExist().create();
 ```
 
-##### 2.4.3 追加 EdgeLabel
+##### 6.4.3 追加 EdgeLabel {#243-追加-edgelabel}
 
 ```java
 schema.edgeLabel("knows").properties("price").nullableKeys("price").append();
 ```
 
-##### 2.4.4 删除 EdgeLabel
+##### 6.4.4 删除 EdgeLabel {#244-删除-edgelabel}
 
 ```java
 schema.edgeLabel("knows").remove();
 ```
 
-##### 2.4.5 查询 EdgeLabel
+##### 6.4.5 查询 EdgeLabel {#245-查询-edgelabel}
 
 ```java
 // 获取 EdgeLabel 对象
@@ -433,9 +827,9 @@ schema.getEdgeLabel("knows").edgeLabelType()
 schema.getEdgeLabel("knows").links()
 ```
 
-#### 2.5 IndexLabel
+#### 6.5 IndexLabel {#25-indexlabel}
 
-##### 2.5.1 接口及参数介绍
+##### 6.5.1 接口及参数介绍 {#251-接口及参数介绍}
 
 IndexLabel 用来定义索引类型，描述索引的约束信息，主要是为了方便查询。
 
@@ -497,7 +891,7 @@ IndexLabel 允许定义的约束信息包括：name、baseType、baseValue、ind
 | shard()     | Shard     | support prefix + range(numeric or date type) search |
 | unique()    | Unique    | support unique props value, not support search      |
 
-##### 2.5.2 创建 IndexLabel
+##### 6.5.2 创建 IndexLabel {#252-创建-indexlabel}
 
 以下示例假定已创建带 `name`、`age` 的 `person` 顶点类型，以及带 `date` 的 `created` 边类型。
 先补充索引所需属性；`id` 是业务属性，与顶点的内部 ID 不同。
@@ -516,13 +910,13 @@ schema.indexLabel("personByCityAndAge").onV("person").by("city", "age").shard().
 schema.indexLabel("personById").onV("person").by("id").unique().ifNotExist().create();
 ```
 
-##### 2.5.3 删除 IndexLabel
+##### 6.5.3 删除 IndexLabel {#253-删除-indexlabel}
 
 ```java
 schema.indexLabel("personByAge").remove()
 ```
 
-##### 2.5.4 查询 IndexLabel
+##### 6.5.4 查询 IndexLabel {#254-查询-indexlabel}
 
 ```java
 // 获取 IndexLabel 对象
@@ -536,9 +930,9 @@ schema.getIndexLabel("personByAge").indexType()
 schema.getIndexLabel("personByAge").name()
 ```
 
-### 3 图数据
+### 7 图数据操作 (GraphManager) {#3-图数据}
 
-#### 3.1 Vertex
+#### 7.1 Vertex {#31-vertex}
 
 顶点是构成图的最基本元素，一个图中可以有非常多的顶点。下面给出一个添加顶点的例子：
 
@@ -557,7 +951,7 @@ Vertex lop = graph.addVertex(T.LABEL, "software", "name", "lop", "lang", "java",
 - 剩下的参数就是顶点其他属性的设置，但并非必须。
 - 调用`addVertex`方法后，顶点会立刻被插入到后端存储系统中。
 
-#### 3.2 Edge
+#### 7.2 Edge {#32-edge}
 
 有了点，还需要边才能构成完整的图。下面给出一个添加边的例子：
 
@@ -569,14 +963,15 @@ Edge knows1 = marko.addEdge("knows", vadas, "city", "Beijing");
 - 源顶点和目标顶点必须符合 EdgeLabel 中 source-label 和 target-label 的定义，不能随意添加。
 - 对于非 nullableKeys 的属性，必须要赋值。
 
+
 **注意：当 frequency 为 multiple 时必须要设置 sortKeys 对应属性类型的值。**
 
-### 4 图管理
+### 8 图空间管理 (GraphSpace) {#4-图管理}
 Client 支持管理一个物理部署中的多个 GraphSpace，每个 GraphSpace 可以包含多个图。不指定 GraphSpace 时使用 `DEFAULT`。
 
 GraphSpace 需要服务端 core 版本不低于 1.7.0。连接更早的服务端时，客户端会退回到 legacy 模式，此时 `hugeClient.supportsGraphSpace()` 返回 false。
 
-#### 4.1 创建GraphSpace
+#### 8.1 创建GraphSpace {#41-创建graphspace}
 
 ```java
 GraphSpaceManager spaceManager = hugeClient.graphSpace();
@@ -591,7 +986,7 @@ graphSpace.setMaxRoleNumber(100);  // 最大角色数量
 // 创建 GraphSpace
 spaceManager.createGraphSpace(graphSpace);
 ```
-#### 4.2 GraphSpace 接口汇总
+#### 8.2 GraphSpace 接口汇总 {#42-graphspace-接口汇总}
 
 | 类别 | 接口 | 描述 |
 |------|------|------|
@@ -614,8 +1009,3 @@ spaceManager.createGraphSpace(graphSpace);
 | | setMaxGraphNumber(int) / setMaxRoleNumber(int) | 设置最大图数量/角色数量 |
 | | setCpuLimit(int) / setMemoryLimit(int) / setStorageLimit(int) | 设置资源配额 |
 | | setConfigs(Map&lt;String, Object&gt;) | 设置额外的配置项 |
-
-
-### 5 简单示例
-
-简单示例见[HugeGraph-Client](/cn/docs/quickstart/client/hugegraph-client)

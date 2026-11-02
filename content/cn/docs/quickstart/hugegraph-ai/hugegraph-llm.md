@@ -13,9 +13,16 @@ HugeGraph-LLM 用于知识图谱构建、GraphRAG 和自然语言图查询。演
 
 > AI 总结项目文档：[Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
 
-- Python 3.10 或 3.11（`>=3.10,<3.12`）
+- Python >= 3.12（支持 Python 3.12–3.14）
 - `uv` 0.7 或更高版本
 - HugeGraph Server 1.5.0 或更高版本；当前 workspace 中的 Python 客户端会拒绝可探测到的更低版本
+
+支持以下部署与运行方式：
+
+- [Docker Compose 部署](#docker-compose-部署) — 一键拉起 Server 与 HugeGraph-LLM 容器环境。
+- [Kubernetes 部署](#kubernetes-部署) — 基于 Helm 将 RAG 服务部署到 K8s 集群。
+- [从源码启动](#从源码启动) — 使用 `uv` 配置 Python 环境并在本地运行 Gradio/FastAPI 服务。
+{.cards}
 
 ## Docker Compose 部署
 
@@ -72,16 +79,27 @@ kubectl create configmap hugegraph-llm-prompt-config --from-file=/path/to/config
 
 ## 从源码启动
 
-依赖应从仓库根目录按 workspace 安装：
+1. **克隆源代码仓库：**
 
-```bash
-git clone https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai
-uv sync --extra llm
-source .venv/bin/activate
-cd hugegraph-llm
-python -m hugegraph_llm.demo.rag_demo.app
-```
+   ```bash
+   git clone https://github.com/apache/hugegraph-ai.git
+   cd hugegraph-ai
+   ```
+
+1. **安装依赖并激活虚拟环境：**
+
+   ```bash
+   uv sync --extra llm
+   source .venv/bin/activate
+   ```
+
+1. **启动 Web 应用服务：**
+
+   ```bash
+   cd hugegraph-llm
+   python -m hugegraph_llm.demo.rag_demo.app
+   ```
+{.steps}
 
 自定义监听地址和端口：
 

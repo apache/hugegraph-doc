@@ -35,7 +35,7 @@ JSON 对象参数化请求示例：
 - **参数数量**：顶层 `parameters` 最多接受 16 个键。若需要传入更多属性，可将相关字段组织为嵌套 Map 对象，并在 Cypher 语句中显式引用字段（例如 `$props.name`）。
 - **未绑定变量处理**：语句中引用未提供的 `$param` 时会直接抛出执行错误，拒绝执行（显式传入 `null` 是允许的）。
 - **保留标记**：引擎将 `"  cypher.null"`（前导双空格）用作内部保留哨兵标记，绑定值中禁止传入该精确字符串。
-- **错误响应**：执行错误或参数校验失败时，服务端返回 HTTP 400（或在 `status.code` 为 400 的响应体中返回错误详情），并在 `status.attributes.errors` 中提供包含 `code`、`message` 与 `hint` 的结构化错误详情。
+- **错误响应**：格式错误的请求体直接返回 HTTP 400 及标准错误结构；语法翻译与查询执行错误则返回 HTTP 200（响应体中包含 `status.code: 400` 与空 `result`），并在 `status.attributes.errors` 中提供包含 `code`、`message` 与 `hint` 的结构化错误详情。
 
 ### 语法与功能支持矩阵
 
@@ -55,7 +55,7 @@ JSON 对象参数化请求示例：
 ### 暂未支持的范围
 
 以下高级语法和特性在当前版本中尚未直接提供，建议改用 Gremlin 或相应 REST API：
-- **复杂子句**：`MERGE`、`OPTIONAL MATCH`、`WITH`、`UNWIND`、`UNION`、变长路径匹配（`*1..3`）；
+- **复杂子句**：`MERGE`、`UNION`、变长路径匹配（`*1..3`）；
 - **过程调用**：`CALL dbms.*` / `CALL algo.*`（请使用 [Traverser REST API](/cn/docs/clients/restful-api/traverser/)）；
 - **模式定义**：Cypher Schema DDL（请使用 [Schema REST API](/cn/docs/clients/restful-api/schema/)）；
-- **协议与驱动**：Bolt 协议与驱动（请使用 HTTP REST API 或 [HugeGraph 客户端](/cn/docs/clients/hugegraph-client/)）。
+- **协议与驱动**：Bolt 协议与驱动（请使用 HTTP REST API 或 [HugeGraph 客户端](/cn/docs/clients/client/hugegraph-client/)）。

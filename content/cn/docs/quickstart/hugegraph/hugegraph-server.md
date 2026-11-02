@@ -111,15 +111,29 @@ serializer:
 ### 3.1 使用 Docker 容器 (便于**测试**)
 <!-- 3.1 is linked by another place. if change 3.1's title, please check -->
 
-可参考 [Docker 部署方式](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
+完整容器部署指引请参考 [Docker 部署方式](https://github.com/apache/hugegraph/blob/master/docker/README.md)。
 
-可以使用 `docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0` 快速启动一个使用 `RocksDB` 后端的 Server 实例。
+快速启动使用 `RocksDB` 单机后端的 Server 容器：
 
-可选项：
+```bash {tab="快速启动 (默认)"}
+docker run -itd --name=server -p 8080:8080 hugegraph/hugegraph:1.7.0
+```
 
-1. 可以使用 `docker exec -it server bash` 进入容器执行运维或调试操作。
-2. 可以使用 `docker run -itd --name=server -p 8080:8080 -e PRELOAD="true" hugegraph/hugegraph:1.7.0` 在启动时预加载一个**内置**样例图。可通过 `RESTful API` 进行验证，具体步骤可参考 [5.1.4](#514-%E5%90%AF%E5%8A%A8-server-%E7%9A%84%E6%97%B6%E5%80%99%E5%88%9B%E5%BB%BA%E7%A4%BA%E4%BE%8B%E5%9B%BE)。
-3. 可以使用 `-e PASSWORD=xxx` 开启鉴权模式并设置 admin 密码，具体步骤可参考 [Config Authentication](/cn/docs/config/config-authentication#使用-docker-时开启鉴权模式)。
+```bash {tab="附带内置样例图"}
+# 启动时自动预加载内置样例图（marko / lop 等数据）
+docker run -itd --name=server -p 8080:8080 -e PRELOAD="true" hugegraph/hugegraph:1.7.0
+```
+
+```bash {tab="开启用户鉴权"}
+# 开启鉴权模式并设置内置 admin 初始密码
+docker run -itd --name=server -p 8080:8080 -e PASSWORD="replace-with-your-password" hugegraph/hugegraph:1.7.0
+```
+
+常用容器操作：
+- **进入容器终端**：`docker exec -it server bash`
+- **查看启动日志**：`docker logs -f server`
+- **验证服务可用性**：`curl -fsS http://127.0.0.1:8080/versions`
+{.td-cards-list}
 
 如果使用 Docker Desktop，则可以按如下方式设置相关选项：
 <div style="text-align: center;">
@@ -511,7 +525,7 @@ HugeGraphServer 启动时会连接后端存储并检查其版本信息。如果�
 
 从 `master` 构建的单机最小流程如下。此例启用内置样例数据，以便后续请求能验证图数据读写路径。
 
-1. [检查 Java 环境](#21-安装-java-11-jdk-11)，确认满足主线构建要求。
+1. [检查 Java 环境](#21-安装-java-17-jdk-17)，确认满足主线构建要求。
 2. [构建 master 源码](#33-从-master-源码构建)；下方命令使用该构建包中的 Server 子目录。
 3. [确认 RocksDB 配置](#4-配置)，再进入构建产物中的 Server 子目录。
 4. 初始化存储，然后启动服务并加载样例图，命令见下方。
@@ -526,7 +540,8 @@ HugeGraphServer 启动时会连接后端存储并检查其版本信息。如果�
 初始化数据库（首次启动，或在 `conf/graphs/` 下添加了新图配置后）：
 
 ```bash
-cd apache-hugegraph-1.7.0/apache-hugegraph-server-1.7.0
+# 进入解压或构建出的 Server 根目录
+cd apache-hugegraph-*/apache-hugegraph-server-*
 bin/init-store.sh
 ```
 
@@ -821,7 +836,7 @@ restserver.url=http://0.0.0.0:8080
 ## 7 停止 Server
 
 ```bash
-cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-server-incubating-1.7.0
+# 在 Server 根目录下执行
 bin/stop-hugegraph.sh
 ```
 

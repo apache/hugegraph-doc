@@ -2,6 +2,8 @@
 title: "HugeGraph Python 客户端快速上手"
 linkTitle: "Python 客户端"
 weight: 2
+aliases:
+  - /docs/quickstart/client/hugegraph-client-python/
 ---
 
 `hugegraph-python-client` 是 HugeGraph 的 Python SDK，可管理 Schema、读写图数据并执行 Gremlin 查询。HugeGraph-LLM 和 HugeGraph-ML 也使用这个客户端。
@@ -10,7 +12,7 @@ weight: 2
 
 ## 环境要求
 
-- 客户端与 HugeGraph-AI workspace 均要求 Python 3.10 或更高版本，CI 在 3.10 和 3.11 上运行客户端测试。
+- 客户端与 HugeGraph-AI workspace 均要求 Python >= 3.12（支持 Python 3.12–3.14）。
 - HugeGraph Server 1.5.0 或更高版本。客户端会拒绝连接更低版本的 Server，此类场景请改用 v1.3.x 客户端。
 - `uv`（推荐）或 `pip`
 

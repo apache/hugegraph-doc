@@ -13,9 +13,9 @@ draft: true
 - [HugeGraph Server](quickstart/hugegraph/hugegraph-server)
 - [PD](quickstart/hugegraph/hugegraph-pd)
 - [HStore](quickstart/hugegraph/hugegraph-hstore)
-- [Java Client](quickstart/client/hugegraph-client)
-- [Go Client](quickstart/client/hugegraph-client-go)
-- [Python Client](quickstart/client/hugegraph-client-python)
+- [Java Client](clients/client/hugegraph-client)
+- [Go Client](clients/client/hugegraph-client-go)
+- [Python Client](clients/client/hugegraph-client-python)
 - [Loader](quickstart/toolchain/hugegraph-loader)
 - [Hubble](quickstart/toolchain/hugegraph-hubble)
 - [Spark Connector](quickstart/toolchain/hugegraph-spark-connector)
@@ -23,6 +23,7 @@ draft: true
 - [Vermeer](quickstart/computing/hugegraph-vermeer)
 - [Computer](quickstart/computing/hugegraph-computer)
 - [HugeGraph-AI](quickstart/hugegraph-ai/quick_start)
+  - [HugeGraph-LLM SDK](quickstart/hugegraph-ai/hugegraph-llm-sdk)
 
 ## Server Configuration and APIs
 
@@ -35,14 +36,15 @@ draft: true
 
 ## Guides
 
-- [Architecture](guides/architectural)
-- [Design](guides/desgin-concept)
+- [Architecture](guides/architectural/_index)
+  - [Custom Plugins](guides/architectural/custom-plugin)
+  - [Design](guides/architectural/desgin-concept)
 - [Backup and Restore](guides/backup-restore)
-- [Custom Plugins](guides/custom-plugin)
 - [Docker Cluster](guides/hugegraph-docker-cluster)
 - [Security](guides/security)
-- [Toolchain Local Testing](guides/toolchain-local-test)
-- [ToplingDB (development)](guides/toplingdb)
+- [Development & Testing](guides/dev-test/_index)
+  - [Toolchain Local Testing](guides/dev-test/toolchain-local-test)
+  - [ToplingDB (development)](guides/dev-test/toplingdb)
 - [FAQ](guides/faq)
 
 ## Query Languages

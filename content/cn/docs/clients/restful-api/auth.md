@@ -27,7 +27,15 @@ city: Beijing})
 描述：用户'boss'拥有对'graph1'图中北京人的读权限。
 
 ##### 接口说明：
-用户认证与权限控制的核心接口包括 5 类：UserAPI、GroupAPI、TargetAPI、BelongAPI、AccessAPI。除此之外，ManagerAPI 用于授予图空间级别的管理角色，LoginAPI 用于签发和校验 token，ProjectAPI 用于把多个图归为一组从而一次性授权。
+用户认证与权限控制的核心接口包括 5 类核心接口与配套管理 API：
+
+- [用户 (User) API](#102-用户userapi) — 管理用户账号、密码及基本信息。
+- [用户组 (Group) API](#103-用户组groupapi) — 管理用户组，实现基于角色的聚合。
+- [资源 (Target) API](#104-资源targetapi) — 定义可访问的资源类型与过滤边界。
+- [关联角色 (Belong) API](#105-关联角色belongapi) — 将用户关联绑定到用户组。
+- [赋权 (Access) API](#106-赋权accessapi) — 为用户组授予对应资源的访问权限。
+- [登录与管理员 API](#108-登录loginapi) — 授予图空间管理角色以及签发校验 Token。
+{.cards}
 ### 10.2 用户（User）API
 用户接口包括：创建用户，删除用户，修改用户，和查询用户相关信息接口。
 

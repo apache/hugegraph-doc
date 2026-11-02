@@ -2,6 +2,8 @@
 title: "HugeGraph Go 客户端快速入门"
 linkTitle: "Go 客户端"
 weight: 3
+aliases:
+  - /docs/quickstart/client/hugegraph-client-go/
 ---
 
 HugeGraph Go Client 是 Toolchain 仓库中的 Go SDK，目前提供版本查询、Schema（PropertyKey、VertexLabel、EdgeLabel）、顶点和 Gremlin API。边数据 API 尚未实现。

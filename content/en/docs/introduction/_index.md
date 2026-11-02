@@ -65,7 +65,7 @@ HugeGraph Toolchain provides clients, data import, visual management, Spark inte
 
 | Module | Purpose |
 |---|---|
-| [Client](/docs/quickstart/client/hugegraph-client/) | Wraps schema management, graph data reads and writes, Gremlin, and Traverser APIs; supports Java, [Python](/docs/quickstart/client/hugegraph-client-python/), and [Go](/docs/quickstart/client/hugegraph-client-go/), with a Rust client under development |
+| [Client](/docs/clients/client/hugegraph-client/) | Wraps schema management, graph data reads and writes, Gremlin, and Traverser APIs; supports Java, [Python](/docs/clients/client/hugegraph-client-python/), and [Go](/docs/clients/client/hugegraph-client-go/), with a Rust client under development |
 | [Loader](/docs/quickstart/toolchain/hugegraph-loader/) | Reads data from local files, HDFS, JDBC, Kafka, or another graph, converts it into vertices and edges, and imports it into HugeGraph in batches |
 | [Hubble](/docs/quickstart/toolchain/hugegraph-hubble/) | Provides a web management interface for graph connections, schemas, data import, Gremlin queries, and visual results |
 | [Spark Connector](/docs/quickstart/toolchain/hugegraph-spark-connector/) | Reads and writes HugeGraph data in Spark jobs for offline big-data processing |

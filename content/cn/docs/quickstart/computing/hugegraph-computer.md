@@ -16,7 +16,11 @@ Computer 支持从 HugeGraph 或 HDFS 读取图数据，并可将结果写回 Hu
 
 ## 2. 前置条件与连接
 
-构建和运行需要 JDK 11 或更高版本。源码构建还需要 Maven 3.5 或更高版本。PageRank 示例要求一个已启动且包含待计算图数据的 HugeGraph-Server，以及可供 master、worker 访问的 etcd。
+构建和运行 Computer 在**示例固定的 1.7.0 版本需使用 JDK 11**（主线 **1.8.0+ 及 master 要求 JDK 17 或更高版本**，包括集群中各计算节点与 Worker）；
+源码构建还需要 **Maven 3.6.3 或更高版本**（1.7.0 需 Maven 3.5+）。在自定义 Java 应用程序中嵌入运行 Computer 1.8.0+ 时，必须配置以下 JVM 运行选项：
+`--add-opens=java.base/java.io=ALL-UNNAMED`（用于缓冲文件复制）与 `--add-opens=java.base/java.lang=ALL-UNNAMED`（用于 SOFA RPC 动态代理生成）；
+官方发行包启动脚本 `bin/start-computer.sh` 及 Kubernetes Operator 已自动配置上述参数。PageRank 示例要求一个已启动且包含待计算图数据的
+HugeGraph-Server，以及可供 master、worker 访问的 etcd。
 
 | 服务 | 示例地址或端口 | 用途 |
 |------|----------------|------|
@@ -26,9 +30,10 @@ Computer 支持从 HugeGraph 或 HDFS 读取图数据，并可将结果写回 Hu
 | Computer worker 数据传输 | 本地默认由系统分配；K8s Operator 默认 `8099` | worker 之间传输顶点和消息。跨主机时需保证公告地址和端口可达。 |
 | MinIO（K8s 清单） | HTTP `9000` | 用于输入分区快照。Computer 1.7.0 清单把 Service 的 `9000` 错映射到 MinIO Console 的 `9090`；启用快照前需将 `targetPort` 改为 `9000`。默认 `snapshot.write=false`、`snapshot.load=false`，不启用快照时无需访问 MinIO。 |
 | cert-manager（K8s） | 集群内服务 | Operator 清单使用 `cert-manager.io/v1` 的 `Certificate`、`Issuer` 和 CA 注入功能；部署 Operator 前必须先安装兼容版本。 |
-| HDFS | 按集群配置 | 仅当输入或输出配置为 HDFS 时需要。 |
+| HDFS | 按集群配置（CI 测试使用 Hadoop 3.5.0） | 仅当输入或输出配置为 HDFS 时需要。CI 测试使用兼容 Java 17 的 Hadoop 3.5.0 镜像。 |
 
-Kubernetes 作业中的 `hugegraph.url` 必须是各计算 Pod 都能访问的地址，不能填仅在个人电脑上可用的 `localhost`。如果启用了 HugeGraph 认证，应在配置中填写用户名和密码，并为 REST 查询使用对应凭据。
+Kubernetes 作业中的 `hugegraph.url` 必须是各计算 Pod 都能访问的地址，不能填仅在个人电脑上可用的 `localhost`。如果启用了 HugeGraph 认证，
+应在配置中填写用户名和密码，并为 REST 查询使用对应凭据。容器化与 Kubernetes 部署中，计算镜像（如 `hugegraph/hugegraph-computer:latest`）基于 Java 17 运行时构建。
 
 > [!WARNING]
 > 生产环境必须为 HugeGraph Server 开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（标准日志文件为 `audit-*.log`），为 Computer 使用只具备作业所需读写权限的专用账号，并为 Server 网络入口设置来源 IP 白名单。`hugegraph.username` 和 `hugegraph.password` 只是 Computer 连接 Server 的凭据，不能替代 Server 端认证。
@@ -71,15 +76,15 @@ mvn clean package -DskipTests
 
 先编辑发行目录中的 `conf/computer.properties`，按实际环境修改 HugeGraph 地址、图名和认证信息，并确认 `bsp.etcd_endpoints` 指向可访问的 etcd。默认配置已选择内置 `PageRankParams`；master 和 worker 必须使用同一份配置及相同的 `job.id`。每个并行作业应使用不同的 `job.id`。
 
-在两个终端中都从发行目录启动进程。启动脚本默认读取 `conf/computer.properties`，也可用 `-c` 指定配置文件。
+在两个终端中都从发行目录启动进程。启动脚本默认读取 `conf/computer.properties`，也可用 `-c` 指定配置文件：
 
-```bash
-# 终端一：启动 master
+```bash {tab="终端一：Master"}
+# 启动 Computer Master 进程
 bin/start-computer.sh -d local -r master
 ```
 
-```bash
-# 终端二：启动 worker
+```bash {tab="终端二：Worker"}
+# 启动 Computer Worker 进程
 bin/start-computer.sh -d local -r worker
 ```
 
@@ -147,7 +152,10 @@ kubectl rollout status deployment/hugegraph-computer-operator-controller-manager
 >   -p='[{"op":"replace","path":"/spec/ports/0/targetPort","value":9000}]'
 > ```
 
-替换 HugeGraph 地址为计算 Pod 可访问的服务地址后，提交 `HugeGraphComputerJob`。示例使用官方 Docker Hub 的 `hugegraph/hugegraph-computer:latest`，并引用镜像内置的 PageRank JAR；自定义算法 JAR 可预置在镜像内通过 `jarFile` 指定，也可用 `remoteJarUri` 从 HTTP(S) 地址下载。分区数需不小于 worker 数量。
+把 HugeGraph 地址替换为计算 Pod 能访问的服务地址后，提交 `HugeGraphComputerJob`。示例使用 Docker Hub 官方镜像
+`hugegraph/hugegraph-computer:latest`（基于 Java 17 运行时）和内置 PageRank 算法包。若在 Kubernetes 或 Docker 环境下测试 HDFS 输入输出，
+请搭配兼容 Java 17 的 Apache Hadoop 3.5.0 存储集群或镜像使用。自定义算法可打包进镜像并通过 `jarFile` 指定，也可通过 `remoteJarUri` 从 HTTP(S) 地址下载。
+分区数需不小于 worker 数量。
 
 将以下 YAML 保存为 `pagerank-job.yaml`，然后应用该文件：
 

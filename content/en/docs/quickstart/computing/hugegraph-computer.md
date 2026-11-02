@@ -16,7 +16,11 @@ Computer reads graph data from HugeGraph or HDFS and writes results to either sy
 
 ## 2. Prerequisites and Connections
 
-Building and running require JDK 11 or later; source builds also require Maven 3.5 or later. The PageRank example needs a running HugeGraph-Server with graph data, plus etcd reachable by the master and workers.
+Building and running Computer requires **JDK 11 for the pinned 1.7.0 release** (or **JDK 17+ for 1.8.0+ and master**, across build hosts and cluster workers);
+source builds also require **Maven 3.6.3 or later** (Maven 3.5+ for 1.7.0). When embedding Computer 1.8.0+ in custom Java applications, you must specify
+the required JVM options: `--add-opens=java.base/java.io=ALL-UNNAMED` (for buffered file duplication) and `--add-opens=java.base/java.lang=ALL-UNNAMED`
+(for SOFA RPC proxy generation). The distribution launcher script `bin/start-computer.sh` and Kubernetes Operator automatically configure these JVM options.
+The PageRank example needs a running HugeGraph-Server with graph data, plus etcd reachable by the master and workers.
 
 | Service | Example address or port | Purpose |
 |------|----------------|------|
@@ -26,9 +30,11 @@ Building and running require JDK 11 or later; source builds also require Maven 3
 | Computer worker data transfer | OS-assigned locally; K8s Operator defaults to `8099` | Transfer vertices and messages between workers. Advertised addresses and ports must be reachable across hosts. |
 | MinIO (K8s manifests) | HTTP `9000` | Input partition snapshots. Computer 1.7.0 manifests incorrectly map Service port `9000` to MinIO Console port `9090`; change `targetPort` to `9000` before enabling snapshots. Defaults are `snapshot.write=false` and `snapshot.load=false`, so MinIO access is unnecessary when snapshots are disabled. |
 | cert-manager (K8s) | In-cluster service | Operator manifests use `cert-manager.io/v1` `Certificate`, `Issuer`, and CA injection. Install a compatible version before deploying the Operator. |
-| HDFS | Cluster-specific | Required only when input or output uses HDFS. |
+| HDFS | Cluster-specific (Hadoop 3.5.0 in CI) | Required only when input or output uses HDFS. CI tests use Java 17-compatible Hadoop 3.5.0. |
 
-For Kubernetes jobs, `hugegraph.url` must be reachable from all computing Pods; do not use a `localhost` address available only on your computer. If HugeGraph authentication is enabled, configure the username and password and supply matching credentials for REST queries.
+For Kubernetes jobs, `hugegraph.url` must be reachable from all computing Pods; do not use a `localhost` address available only on your computer. If
+HugeGraph authentication is enabled, configure the username and password and supply matching credentials for REST queries. For containerized deployments,
+ensure the container runtime supports Java 17 container base images (such as `hugegraph/hugegraph-computer:latest`).
 
 > [!WARNING]
 > In production, enable [Server authentication and authorization](/docs/config/config-authentication/), retain Server audit logs (normally `audit-*.log`), give Computer a dedicated account with only the read/write permissions required by its jobs, and configure a source IP allowlist for Server. `hugegraph.username` and `hugegraph.password` are credentials for connecting to Server, not a replacement for Server authentication.
@@ -71,15 +77,15 @@ The `computer/computer-dist` module assembles the distribution, including `bin/s
 
 Edit `conf/computer.properties` in the distribution directory with your HugeGraph URL, graph name, and credentials; point `bsp.etcd_endpoints` to reachable etcd. The default configuration selects built-in `PageRankParams`. Master and workers must use the same configuration and `job.id`; concurrent jobs need distinct job IDs.
 
-Start processes from the distribution directory in two terminals. The script reads `conf/computer.properties` by default; use `-c` to select another file.
+Start processes from the distribution directory in two terminals. The script reads `conf/computer.properties` by default; use `-c` to select another file:
 
-```bash
-# Terminal 1: start master
+```bash {tab="Terminal 1: Master"}
+# Start Computer Master process
 bin/start-computer.sh -d local -r master
 ```
 
-```bash
-# Terminal 2: start worker
+```bash {tab="Terminal 2: Worker"}
+# Start Computer Worker process
 bin/start-computer.sh -d local -r worker
 ```
 
@@ -147,7 +153,11 @@ kubectl rollout status deployment/hugegraph-computer-operator-controller-manager
 >   -p='[{"op":"replace","path":"/spec/ports/0/targetPort","value":9000}]'
 > ```
 
-Replace the HugeGraph URL with a service address reachable by computing Pods, then submit a `HugeGraphComputerJob`. This example uses the official Docker Hub image `hugegraph/hugegraph-computer:latest` and its built-in PageRank JAR. Custom algorithm JARs can be bundled in the image and selected with `jarFile`, or downloaded from HTTP(S) with `remoteJarUri`. The partition count must be at least the worker count.
+Replace the HugeGraph URL with a service address reachable by computing Pods, then submit a `HugeGraphComputerJob`.
+This example uses the official Docker Hub image `hugegraph/hugegraph-computer:latest` (built on Java 17) and its
+built-in PageRank JAR. When testing HDFS inputs or outputs in Kubernetes or Docker environments, pair with an Apache
+Hadoop 3.5.0 compatible storage cluster or image. Custom algorithm JARs can be bundled in the image and selected with
+`jarFile`, or downloaded from HTTP(S) with `remoteJarUri`. The partition count must be at least the worker count.
 
 Save the following YAML as `pagerank-job.yaml`, then apply it:
 

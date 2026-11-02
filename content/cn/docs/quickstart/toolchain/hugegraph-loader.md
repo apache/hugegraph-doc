@@ -122,7 +122,7 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 > **注意**：使用 HugeGraph-Loader 需要依赖 HugeGraph Server 服务，下载和启动 Server 请参考 [HugeGraph-Server 快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server)
 > 
-> **测试指南**：如需在本地运行 Loader 测试，请参考 [工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
+> **测试指南**：如需在本地运行 Loader 测试，请参考 [工具链本地测试指南](/cn/docs/guides/dev-test/toolchain-local-test/)
 
 > **并发导入保护**：Toolchain master 分支的 Loader 已支持针对同一 Server 实例的 LOADING owner 保护。当配套 Server 的 `GET .../mode/owners` 返回 `protocol: 1` 时会自动生效；若 Server 无此接口，则保持原有导入行为。
 
@@ -130,9 +130,10 @@ HugeGraph-Loader 是 HugeGraph 的数据导入组件，能够将多种数据源�
 
 可以通过以下三种方式获取 HugeGraph-Loader：
 
-- 使用 Docker 镜像 (便于**测试**)
-- 下载已编译的压缩包
-- 克隆源码编译安装
+- [使用 Docker 镜像](#21-使用-docker-镜像-便于测试) — 快速启动容器化 Loader 服务进行功能体验。
+- [下载已编译压缩包](#22-下载已编译的压缩包) — 下载官方已发布的 Toolchain 二进制包。
+- [克隆源码编译安装](#23-克隆源码编译安装) — 基于 master 主线使用 Maven 与 Java 17 编译安装。
+{.cards}
 
 
 #### 2.1 使用 Docker 镜像 (便于**测试**)
@@ -193,12 +194,13 @@ cd hugegraph-loader/apache-hugegraph-loader-*
 
 ### 3 使用流程
 
-导入数据前先准备图模型、数据文件和映射文件，再运行 Loader。
+导入数据到 HugeGraph 遵循以下四个标准操作阶段：
 
-- 编写图模型
-- 准备数据文件
-- 编写输入源映射文件
-- 执行命令导入
+1. [编写图模型 (Schema)](#31-编写图模型) — 使用 Groovy 脚本定义属性键、顶点标签与边标签。
+1. [准备数据源文件](#32-准备数据) — 准备待导入的文本、表格或数据库连接配置。
+1. [编写数据源映射配置](#33-编写数据源映射文件) — 建立源字段与图模型的映射关系规则。
+1. [执行命令导入](#34-执行命令导入) — 运行 `hugegraph-loader.sh` 脚本执行批量数据导入。
+{.steps}
 
 #### 3.1 编写图模型
 
@@ -234,7 +236,7 @@ schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
 
-> 关于 schema 的详细说明请参考 [HugeGraph Java Client](/cn/docs/clients/hugegraph-client/) 中对应部分。
+> 关于 schema 的详细说明请参考 [HugeGraph Java Client](/cn/docs/clients/client/hugegraph-client/) 中对应部分。
 
 #### 3.2 准备数据
 

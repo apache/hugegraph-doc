@@ -1,17 +1,406 @@
 ---
 title: "HugeGraph Java Client"
-linkTitle: "HugeGraph Java Client"
-weight: 2
+linkTitle: "Java Client"
+weight: 1
+aliases:
+  - /docs/quickstart/client/hugegraph-client/
+  - /docs/clients/hugegraph-client/
 ---
+
+### 1 Overview {#1-hugegraph-client}
+
+[HugeGraph Java Client](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-client) translates Java APIs into REST requests to HugeGraph Server. It supports managing schemas and graph data, executing Gremlin queries, and calling Traverser APIs. This guide covers quick-start setup and examples alongside complete core API reference documentation.
+
+For other languages, use the [Go Client](/docs/clients/client/hugegraph-client-go/) or the [Python Client](/docs/clients/client/hugegraph-client-python/).
+
+### 2 What You Need
+
+- JDK 17 for this walkthrough and for building Client `1.8.0` from Toolchain `master`
+- Maven 3.6.3+
+
+### 3 How To Use
+
+The basic steps to use HugeGraph-Client are as follows:
+
+1. Create a Maven project in IntelliJ IDEA or Eclipse.
+1. Add the HugeGraph-Client dependency to `pom.xml`.
+1. Create a client, call its APIs, and close it after use.
+{.steps}
+
+See the complete example in the following section for the detail.
+
+### 4 Complete Example {#5-simple-example}
+
+#### 4.1 Build New Maven Project
+
+Using IDEA or Eclipse to create the project:
+
+- [Build by Eclipse](http://www.vogella.com/tutorials/EclipseMaven/article.html)
+- [Build by IntelliJ IDEA](https://vaadin.com/docs/-/part/framework/getting-started/getting-started-idea.html)
+
+#### 4.2 Add Hugegraph-Client Dependency In POM
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.apache.hugegraph</groupId>
+        <artifactId>hugegraph-client</artifactId>
+        <!-- The complete examples below work with the published 1.7.0 client -->
+        <version>1.7.0</version>
+    </dependency>    
+</dependencies>
+```
+
+Choose the client version before building:
+
+| Use case | Client version | Java build target |
+| --- | --- | --- |
+| Run the complete examples below | Published `1.7.0`; use the dependency above | Java 8 in the release POM; this walkthrough uses JDK 17 |
+| Use new master APIs, such as capability detection | Toolchain `master` (based on 1.8) | Java 17 |
+
+The examples use Schema, Graph, Gremlin and resource-cleanup APIs available in Client `1.7.0` and compatible with Toolchain `master`.
+The release's Java build target does not describe the runtime requirements of every transitive dependency.
+
+To use unreleased features from the master branch, build Client from source (see [Tools source build instructions](/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)):
+
+```bash
+java -version
+mvn -version
+mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" \
+  -Dsdk.validation.mode=candidate \
+  install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+```
+
+Both version checks must report JDK 17. Also pass `-Dmaven.repo.local="$candidate_dir/m2"` to Maven commands in projects using Client from master.
+Client and Server versions need not be identical; check the required APIs and compatibility before upgrading.
+
+#### 4.3 Example
+
+Choose a single-record or batch example. Save the complete code as `src/main/java/SingleExample.java` or
+`src/main/java/BatchExample.java` in your Maven project. The copy button includes the folded lines.
+
+{{< tabs group="java-client-example" default="single" label="Java client example" >}}
+{{< tab label="SingleExample" value="single" >}}
+
+##### 4.3.1 SingleExample
+
+```java {collapse=30}
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+
+import org.apache.hugegraph.driver.GraphManager;
+import org.apache.hugegraph.driver.GremlinManager;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.driver.SchemaManager;
+import org.apache.hugegraph.structure.constant.T;
+import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.hugegraph.structure.graph.Path;
+import org.apache.hugegraph.structure.graph.Vertex;
+import org.apache.hugegraph.structure.gremlin.Result;
+import org.apache.hugegraph.structure.gremlin.ResultSet;
+
+public class SingleExample {
+
+    public static void main(String[] args) throws IOException {
+        // If connect failed will throw a exception.
+        HugeClient hugeClient = HugeClient.builder("http://localhost:8080",
+                                                   "DEFAULT",
+                                                   "hugegraph")
+                                          .configUser("username", "password")
+                                          // This is an example. In a production environment, secure credentials should be used.
+                                          .build();
+
+        SchemaManager schema = hugeClient.schema();
+
+        schema.propertyKey("name").asText().ifNotExist().create();
+        schema.propertyKey("age").asInt().ifNotExist().create();
+        schema.propertyKey("city").asText().ifNotExist().create();
+        schema.propertyKey("weight").asDouble().ifNotExist().create();
+        schema.propertyKey("lang").asText().ifNotExist().create();
+        schema.propertyKey("date").asDate().ifNotExist().create();
+        schema.propertyKey("price").asInt().ifNotExist().create();
+
+        schema.vertexLabel("person")
+              .properties("name", "age", "city")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+
+        schema.vertexLabel("software")
+              .properties("name", "lang", "price")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("personByCity")
+              .onV("person")
+              .by("city")
+              .secondary()
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("personByAgeAndCity")
+              .onV("person")
+              .by("age", "city")
+              .secondary()
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("softwareByPrice")
+              .onV("software")
+              .by("price")
+              .range()
+              .ifNotExist()
+              .create();
+
+        schema.edgeLabel("knows")
+              .sourceLabel("person")
+              .targetLabel("person")
+              .properties("date", "weight")
+              .ifNotExist()
+              .create();
+
+        schema.edgeLabel("created")
+              .sourceLabel("person").targetLabel("software")
+              .properties("date", "weight")
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("createdByDate")
+              .onE("created")
+              .by("date")
+              .secondary()
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("createdByWeight")
+              .onE("created")
+              .by("weight")
+              .range()
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("knowsByWeight")
+              .onE("knows")
+              .by("weight")
+              .range()
+              .ifNotExist()
+              .create();
+
+        GraphManager graph = hugeClient.graph();
+        Vertex marko = graph.addVertex(T.LABEL, "person", "name", "marko",
+                                       "age", 29, "city", "Beijing");
+        Vertex vadas = graph.addVertex(T.LABEL, "person", "name", "vadas",
+                                       "age", 27, "city", "Hongkong");
+        Vertex lop = graph.addVertex(T.LABEL, "software", "name", "lop",
+                                     "lang", "java", "price", 328);
+        Vertex josh = graph.addVertex(T.LABEL, "person", "name", "josh",
+                                      "age", 32, "city", "Beijing");
+        Vertex ripple = graph.addVertex(T.LABEL, "software", "name", "ripple",
+                                        "lang", "java", "price", 199);
+        Vertex peter = graph.addVertex(T.LABEL, "person", "name", "peter",
+                                       "age", 35, "city", "Shanghai");
+
+        marko.addEdge("knows", vadas, "date", "2016-01-10", "weight", 0.5);
+        marko.addEdge("knows", josh, "date", "2013-02-20", "weight", 1.0);
+        marko.addEdge("created", lop, "date", "2017-12-10", "weight", 0.4);
+        josh.addEdge("created", lop, "date", "2009-11-11", "weight", 0.4);
+        josh.addEdge("created", ripple, "date", "2017-12-10", "weight", 1.0);
+        peter.addEdge("created", lop, "date", "2017-03-24", "weight", 0.2);
+
+        GremlinManager gremlin = hugeClient.gremlin();
+        System.out.println("==== Path ====");
+        ResultSet resultSet = gremlin.gremlin("g.V().outE().path()").execute();
+        Iterator<Result> results = resultSet.iterator();
+        results.forEachRemaining(result -> {
+            System.out.println(result.getObject().getClass());
+            Object object = result.getObject();
+            if (object instanceof Vertex) {
+                System.out.println(((Vertex) object).id());
+            } else if (object instanceof Edge) {
+                System.out.println(((Edge) object).id());
+            } else if (object instanceof Path) {
+                List<Object> elements = ((Path) object).objects();
+                elements.forEach(element -> {
+                    System.out.println(element.getClass());
+                    System.out.println(element);
+                });
+            } else {
+                System.out.println(object);
+            }
+        });
+
+        hugeClient.close();
+    }
+}
+```
+
+{{< /tab >}}
+{{< tab label="BatchExample" value="batch" >}}
+
+##### 4.3.2 BatchExample
+
+```java {collapse=30}
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.hugegraph.driver.GraphManager;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.driver.SchemaManager;
+import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.hugegraph.structure.graph.Vertex;
+
+public class BatchExample {
+
+    public static void main(String[] args) {
+        HugeClient hugeClient = HugeClient.builder("http://localhost:8080",
+                                                   "DEFAULT",
+                                                   "hugegraph")
+                                          .configUser("username", "password")
+                                          // This is an example. In a production environment, secure credentials should be used.
+                                          .build();
+
+        SchemaManager schema = hugeClient.schema();
+
+        schema.propertyKey("name").asText().ifNotExist().create();
+        schema.propertyKey("age").asInt().ifNotExist().create();
+        schema.propertyKey("lang").asText().ifNotExist().create();
+        schema.propertyKey("date").asDate().ifNotExist().create();
+        schema.propertyKey("price").asInt().ifNotExist().create();
+
+        schema.vertexLabel("person")
+              .properties("name", "age")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+
+        schema.vertexLabel("person")
+              .properties("price")
+              .nullableKeys("price")
+              .append();
+
+        schema.vertexLabel("software")
+              .properties("name", "lang", "price")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("softwareByPrice")
+              .onV("software").by("price")
+              .range()
+              .ifNotExist()
+              .create();
+
+        schema.edgeLabel("knows")
+              .link("person", "person")
+              .properties("date")
+              .ifNotExist()
+              .create();
+
+        schema.edgeLabel("created")
+              .link("person", "software")
+              .properties("date")
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("createdByDate")
+              .onE("created").by("date")
+              .secondary()
+              .ifNotExist()
+              .create();
+
+        // get schema object by name
+        System.out.println(schema.getPropertyKey("name"));
+        System.out.println(schema.getVertexLabel("person"));
+        System.out.println(schema.getEdgeLabel("knows"));
+        System.out.println(schema.getIndexLabel("createdByDate"));
+
+        // list all schema objects
+        System.out.println(schema.getPropertyKeys());
+        System.out.println(schema.getVertexLabels());
+        System.out.println(schema.getEdgeLabels());
+        System.out.println(schema.getIndexLabels());
+
+        GraphManager graph = hugeClient.graph();
+
+        Vertex marko = new Vertex("person").property("name", "marko")
+                                           .property("age", 29);
+        Vertex vadas = new Vertex("person").property("name", "vadas")
+                                           .property("age", 27);
+        Vertex lop = new Vertex("software").property("name", "lop")
+                                           .property("lang", "java")
+                                           .property("price", 328);
+        Vertex josh = new Vertex("person").property("name", "josh")
+                                          .property("age", 32);
+        Vertex ripple = new Vertex("software").property("name", "ripple")
+                                              .property("lang", "java")
+                                              .property("price", 199);
+        Vertex peter = new Vertex("person").property("name", "peter")
+                                           .property("age", 35);
+
+        Edge markoKnowsVadas = new Edge("knows").source(marko).target(vadas)
+                                                .property("date", "2016-01-10");
+        Edge markoKnowsJosh = new Edge("knows").source(marko).target(josh)
+                                               .property("date", "2013-02-20");
+        Edge markoCreateLop = new Edge("created").source(marko).target(lop)
+                                                 .property("date",
+                                                           "2017-12-10");
+        Edge joshCreateRipple = new Edge("created").source(josh).target(ripple)
+                                                   .property("date",
+                                                             "2017-12-10");
+        Edge joshCreateLop = new Edge("created").source(josh).target(lop)
+                                                .property("date", "2009-11-11");
+        Edge peterCreateLop = new Edge("created").source(peter).target(lop)
+                                                 .property("date",
+                                                           "2017-03-24");
+
+        List<Vertex> vertices = new ArrayList<>();
+        vertices.add(marko);
+        vertices.add(vadas);
+        vertices.add(lop);
+        vertices.add(josh);
+        vertices.add(ripple);
+        vertices.add(peter);
+
+        List<Edge> edges = new ArrayList<>();
+        edges.add(markoKnowsVadas);
+        edges.add(markoKnowsJosh);
+        edges.add(markoCreateLop);
+        edges.add(joshCreateRipple);
+        edges.add(joshCreateLop);
+        edges.add(peterCreateLop);
+
+        vertices = graph.addVertices(vertices);
+        vertices.forEach(vertex -> System.out.println(vertex));
+
+        edges = graph.addEdges(edges, false);
+        edges.forEach(edge -> System.out.println(edge));
+
+        hugeClient.close();
+    }
+}
+```
+
+{{< /tab >}}
+{{< /tabs >}}
+
+#### 4.4 Run The Example
+
+1. [Start HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server) and prepare a test graph named `hugegraph` in graphspace `DEFAULT`.
+1. Set the Maven project's JDK to 17. In the selected example, replace the Server URL, graphspace, graph and credentials in `HugeClient.builder(...)`
+   and `configUser(...)` with your settings. Omit `configUser(...)` if Server does not require authentication.
+1. Run `SingleExample.main()` or `BatchExample.main()` in your IDE. Both examples create schema and graph data, print the results, and close the client.
+   Use a test graph: existing schema or data can affect repeated runs.
+{.steps}
 
 The code in this document is written in `java`, but its style is very similar to `gremlin(groovy)`. The user only needs to replace the variable declaration in the code with `def` or remove it directly,
 You can convert `java` code into `groovy`; in addition, each line of statement can be without a semicolon at the end, `groovy` considers a line to be a statement.
 The `gremlin(groovy)` written by the user in `HugeGraph-Studio` can refer to the `java` code in this document, and some examples will be given below.
 
-This reference follows Toolchain `master` (Client `1.8.0`). Prepare the matching dependency using the
-[quickstart](/docs/quickstart/client/hugegraph-client/); newly added APIs such as capability detection are unavailable in older clients.
+This reference follows Toolchain `master` (Client `1.8.0`). Prepare the matching dependency using the quickstart above; newly added APIs such as capability detection are unavailable in older clients.
 
-### 1 HugeGraph-Client
+### 5 HugeClient Builder & Operation Entries
 
 HugeGraph-Client is the general entry for operating graph. Users must first create a HugeGraph-Client object and establish a connection (pseudo connection) with HugeGraph-Server before they can obtain the operation entry objects of schema, graph and gremlin.
 
@@ -31,7 +420,7 @@ If the above process of creating HugeClient fails, an exception will be thrown, 
 
 When operating through `gremlin` in `HugeGraph-Hubble`(or `HugeGraph-Studio`), `HugeClient` is not required and can be ignored.
 
-#### 1.1 Builder options
+#### 5.1 Builder options {#11-builder-options}
 
 The builder accepts the following options. Every timeout is expressed in seconds and converted to milliseconds internally.
 
@@ -56,7 +445,7 @@ Omit the call to keep the default, or use `configTimeout(20)` explicitly; do not
 
 On `build()`, the client reads the server API version and rejects anything outside the range `[0.38, 0.81)`.
 
-#### 1.2 Operation entries
+#### 5.2 Operation entries {#12-operation-entries}
 
 Besides schema, graph and gremlin, HugeClient exposes the following entries. The graph-scoped ones are only available when a graph name was supplied; when the client is built with an empty graph name they return null until `assignGraph(graphSpace, graph)` is called.
 
@@ -72,16 +461,16 @@ Besides schema, graph and gremlin, HugeClient exposes the following entries. The
 | `task()`              | `TaskManager`          | graph      | List, get, cancel, delete and wait on async tasks                               |
 | `computer()`          | `ComputerManager`      | graph      | Create, cancel, list and get computer jobs                                      |
 | `graphs()`            | `GraphsManager`        | graphspace | Create, clone, list, reload, clear and drop graphs, read and set the graph mode |
-| `graphSpace()`        | `GraphSpaceManager`    | server     | Manage GraphSpaces, see section 4                                               |
+| `graphSpace()`        | `GraphSpaceManager`    | server     | Manage GraphSpaces, see section 8                                               |
 | `auth()`              | `AuthManager`          | server     | Manage users, groups, targets, belongs and accesses                             |
 | `metrics()`           | `MetricsManager`       | server     | Read backend, system and statistics metrics                                     |
 | `versionManager()`    | `VersionManager`       | server     | Read the core, gremlin and API versions of the server                           |
 
 The client also reports what the connected server supports, so callers can branch on a capability instead of on a version string: `supportsGraphSpace()`, `supportsCypher()`, `supportsGraphCreate()`, `supportsDefaultRole()` and `isServerAuthEnabled()`.
 
-### 2 Schema
+### 6 Schema {#2-schema}
 
-#### 2.1 SchemaManager
+#### 6.1 SchemaManager {#21-schemamanager}
 
 SchemaManager is used to manage four kinds of schema in HugeGraph, namely PropertyKey (property type), VertexLabel (vertex type), EdgeLabel (edge type) and IndexLabel (index label). A SchemaManager object can be created for schema information definition.
 
@@ -99,9 +488,9 @@ schema = graph.schema()
 
 The definition process of the 4 kinds of schema is described below.
 
-#### 2.2 PropertyKey
+#### 6.2 PropertyKey {#22-propertykey}
 
-##### 2.2.1 Interface and parameter introduction
+##### 6.2.1 Interface and parameter introduction {#221-interface-and-parameter-introduction}
 
 PropertyKey is used to standardize the property constraints of vertices and edges, and properties of properties are not currently supported.
 
@@ -167,7 +556,7 @@ The constraint information that PropertyKey allows to define includes: name, dat
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 2.2.2 Create PropertyKey
+##### 6.2.2 Create PropertyKey {#222-create-propertykey}
 
 ```java
 schema.propertyKey("name").asText().valueSet().ifNotExist().create()
@@ -183,13 +572,13 @@ In the following examples, the syntax of `gremlin` and `java` is exactly the sam
 
 - ifNotExist(): Add a judgment mechanism for create, if the current PropertyKey already exists, it will not be created, otherwise the property will be created. If no ifNotExist() is added, an exception will be thrown if a property-key with the same name already exists. The same as below, and will not be repeated there.
 
-##### 2.2.3 Delete PropertyKey
+##### 6.2.3 Delete PropertyKey {#223-delete-propertykey}
 
 ```java
 schema.propertyKey("name").remove()
 ```
 
-##### 2.2.4 Query PropertyKey
+##### 6.2.4 Query PropertyKey {#224-query-propertykey}
 
 ```java
 // Get PropertyKey
@@ -202,9 +591,9 @@ schema.getPropertyKey("name").name()
 schema.getPropertyKey("name").userdata()
 ```
 
-#### 2.3 VertexLabel
+#### 6.3 VertexLabel {#23-vertexlabel}
 
-##### 2.3.1 Interface and parameter introduction
+##### 6.3.1 Interface and parameter introduction {#231-interface-and-parameter-introduction}
 
 VertexLabel is used to define the vertex type and describe the constraint information of the vertex.
 
@@ -274,7 +663,7 @@ Note: primaryKeys and nullableKeys cannot intersect, because a property cannot b
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 2.3.2 Create VertexLabel
+##### 6.3.2 Create VertexLabel {#232-create-vertexlabel}
 
 ```java
 // Use Automatic Id strategy
@@ -293,7 +682,7 @@ schema.vertexLabel("person").properties("name", "age").primaryKeys("name").ifNot
 schema.vertexLabel("person").usePrimaryKeyId().properties("name", "age").primaryKeys("name").ifNotExist().create();
 ```
 
-##### 2.3.3 Update VertexLabel
+##### 6.3.3 Update VertexLabel {#233-update-vertexlabel}
 
 VertexLabel can append constraints, but only properties and nullableKeys, and the appended properties must also be added to the nullableKeys collection.
 
@@ -301,13 +690,13 @@ VertexLabel can append constraints, but only properties and nullableKeys, and th
 schema.vertexLabel("person").properties("price").nullableKeys("price").append();
 ```
 
-##### 2.3.4 Delete VertexLabel
+##### 6.3.4 Delete VertexLabel {#234-delete-vertexlabel}
 
 ```java
 schema.vertexLabel("person").remove();
 ```
 
-##### 2.3.5 Query VertexLabel
+##### 6.3.5 Query VertexLabel {#235-query-vertexlabel}
 
 ```java
 // Get VertexLabel
@@ -324,9 +713,9 @@ schema.getVertexLabel("person").ttl()
 schema.getVertexLabel("person").ttlStartTime()
 ```
 
-#### 2.4 EdgeLabel
+#### 6.4 EdgeLabel {#24-edgelabel}
 
-##### 2.4.1 Interface and parameter introduction
+##### 6.4.1 Interface and parameter introduction {#241-interface-and-parameter-introduction}
 
 EdgeLabel is used to define the edge type and describe the constraint information of the edge.
 
@@ -389,26 +778,26 @@ Note: sortKeys and nullableKeys also cannot intersect.
 |------------------------------------|------------------------------------------------|
 | userdata(String key, Object value) | The same key, the latter will cover the former |
 
-##### 2.4.2 Create EdgeLabel
+##### 6.4.2 Create EdgeLabel {#242-create-edgelabel}
 
 ```java
 schema.edgeLabel("knows").link("person", "person").properties("date").ifNotExist().create();
 schema.edgeLabel("created").multiTimes().link("person", "software").properties("date").sortKeys("date").ifNotExist().create();
 ```
 
-##### 2.4.3 Update EdgeLabel
+##### 6.4.3 Update EdgeLabel {#243-update-edgelabel}
 
 ```java
 schema.edgeLabel("knows").properties("price").nullableKeys("price").append();
 ```
 
-##### 2.4.4 Delete EdgeLabel
+##### 6.4.4 Delete EdgeLabel {#244-delete-edgelabel}
 
 ```java
 schema.edgeLabel("knows").remove();
 ```
 
-##### 2.4.5 Query EdgeLabel
+##### 6.4.5 Query EdgeLabel {#245-query-edgelabel}
 
 ```java
 // Get EdgeLabel
@@ -430,9 +819,9 @@ schema.getEdgeLabel("knows").edgeLabelType()
 schema.getEdgeLabel("knows").links()
 ```
 
-#### 2.5 IndexLabel
+#### 6.5 IndexLabel {#25-indexlabel}
 
-##### 2.5.1 Interface and parameter introduction
+##### 6.5.1 Interface and parameter introduction {#251-interface-and-parameter-introduction}
 
 IndexLabel is used to define the index type and describe the constraint information of the index, mainly for the convenience of query.
 
@@ -485,7 +874,7 @@ The constraint information that IndexLabel allows to define include: name, baseT
 | shard()     | Shard     | support prefix + range(numeric or date type) search |
 | unique()    | Unique    | support unique props value, not support search      |
 
-##### 2.5.2 Create IndexLabel
+##### 6.5.2 Create IndexLabel {#252-create-indexlabel}
 
 These examples assume a `person` vertex label with `name` and `age`, and a `created` edge label with `date`.
 First add the indexed properties below; `id` is a business property, separate from the internal vertex ID.
@@ -504,13 +893,13 @@ schema.indexLabel("personByCityAndAge").onV("person").by("city", "age").shard().
 schema.indexLabel("personById").onV("person").by("id").unique().ifNotExist().create();
 ```
 
-##### 2.5.3 Delete IndexLabel
+##### 6.5.3 Delete IndexLabel {#253-delete-indexlabel}
 
 ```java
 schema.indexLabel("personByAge").remove()
 ```
 
-##### 2.5.4 Query IndexLabel
+##### 6.5.4 Query IndexLabel {#254-query-indexlabel}
 
 ```java
 // Get IndexLabel
@@ -524,9 +913,9 @@ schema.getIndexLabel("personByAge").indexType()
 schema.getIndexLabel("personByAge").name()
 ```
 
-### 3 Graph
+### 7 Graph {#3-graph}
 
-#### 3.1 Vertex
+#### 7.1 Vertex {#31-vertex}
 
 Vertices are the most basic elements of a graph, and there can be many vertices in a graph. Here is an example of adding vertices:
 
@@ -545,7 +934,7 @@ Vertex lop = graph.addVertex(T.LABEL, "software", "name", "lop", "lang", "java",
 - The remaining parameters are the settings of other properties of the vertex, but they are not required.
 - After calling the `addVertex` method, the vertices are inserted into the backend storage system immediately.
 
-#### 3.2 Edge
+#### 7.2 Edge {#32-edge}
 
 After added vertices, edges are also needed to form a complete graph. Here is an example of adding edges:
 
@@ -560,12 +949,12 @@ Edge knows1 = marko.addEdge("knows", vadas, "city", "Beijing");
 
 **Note: When frequency is multiple, the value of the property type corresponding to sortKeys must be set.**
 
-### 4 GraphSpace
+### 8 GraphSpace {#4-graphspace}
 The client can manage multiple GraphSpaces in one physical deployment, and each GraphSpace can contain multiple graphs. When no GraphSpace is specified, it uses `DEFAULT`.
 
 GraphSpaces need a server of core version 1.7.0 or later. Against an older server the client falls back to a legacy profile, and `hugeClient.supportsGraphSpace()` returns false.
 
-#### 4.1 Create GraphSpace
+#### 8.1 Create GraphSpace {#41-create-graphspace}
 
 ```java
 GraphSpaceManager spaceManager = hugeClient.graphSpace();
@@ -581,7 +970,7 @@ graphSpace.setMaxRoleNumber(100);  // Maximum number of roles
 spaceManager.createGraphSpace(graphSpace);
 ```
 
-#### 4.2 GraphSpace Interface Summary
+#### 8.2 GraphSpace Interface Summary {#42-graphspace-interface-summary}
 
 | Category | Interface | Description |
 |----------|-----------|-------------|
@@ -604,7 +993,3 @@ spaceManager.createGraphSpace(graphSpace);
 |           | setMaxGraphNumber(int) / setMaxRoleNumber(int) | Set the maximum number of graphs / roles |
 |           | setCpuLimit(int) / setMemoryLimit(int) / setStorageLimit(int) | Set the resource quotas |
 |           | setConfigs(Map&lt;String, Object&gt;) | Set extra configuration entries |
-
-### 5 Simple Example
-
-Simple examples can reference [HugeGraph-Client](/docs/quickstart/client/hugegraph-client)

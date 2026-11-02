@@ -245,6 +245,69 @@ curl --fail --show-error http://localhost:6688/graphs
 
 Expect HTTP 200 and JSON `errcode=0`.
 
+### 1.3 Authentication, Token Tooling, and Deployment Credentials
+
+When `auth=token` is enabled in `master.ini` (or `-auth token` via CLI), protect the Master signing factor in a dedicated file (`0600`) instead of command-line
+arguments. File-backed authentication uses **v2 HMAC-SHA256** Base58-encoded tokens with constant-time MAC verification, preventing legacy downgrade attacks.
+
+#### 1. Generating File-Backed Signing Factor
+
+Create a protected signing factor file before starting Master:
+
+```bash
+umask 077
+openssl rand -hex 32 > config/token-factor
+```
+
+Set the environment variable `VERMEER_AUTH_TOKEN_FACTOR_FILE=/path/to/token-factor`, or set `auth_token_factor_file` in Master's `master.ini`. The environment
+variable takes precedence over the INI file, and either file setting takes precedence over inline `auth_token_factor`. The file must contain one valid UTF-8
+line with at least 16 characters and cannot consist solely of whitespace. An invalid or unreadable file stops Master before opening network listeners (fails
+closed), and it never falls back to inline or default factors.
+
+#### 2. Generating Auth Tokens with `/go/bin/vermeer-token`
+
+Vermeer container images bundle the native `/go/bin/vermeer-token` CLI utility (built from `cmd/vermeer-token`). It generates v2 Base58 tokens without
+requiring a running Master or Kubernetes API access:
+
+```bash {tab="Docker CLI"}
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/config:/tokens" \
+  --entrypoint /go/bin/vermeer-token \
+  hugegraph/vermeer:latest -user admin -space '$DEFAULT' \
+  -factor-file /tokens/token-factor -output-file /tokens/admin-token -i -quiet
+```
+
+```bash {tab="Go Source"}
+go run ./cmd/vermeer-token -user admin -space '$DEFAULT' \
+  -factor-file config/token-factor -output-file config/admin-token -i -quiet
+```
+
+CLI Parameters:
+- `-user`: Username (default: `foo`).
+- `-space`: Graph space name (default: `bar`; use `$DEFAULT` for system default graph space).
+- `-factor-file`: Path to the signing factor file (required; inline factors are rejected).
+- `-output-file`: Atomically writes the Base58 token with file mode `0600` without echoing secrets to stdout.
+- `-quiet`: Suppresses informational logs and outputs only the token when `-output-file` is omitted.
+- `-client`: Client identifier (default: `hg`).
+- `-i`: Generates an immortal token that never expires (standard tokens expire after 24 hours).
+
+To authenticate HTTP requests, pass the generated token in the header:
+```bash
+curl -H "Authorization: Bearer <token>" http://localhost:6688/graphs
+```
+
+#### 3. Kubernetes Secret Password Files and Credential Isolation
+
+To integrate with Kubernetes Secrets without wrapping raw credentials in JSON, configure Worker with raw password files:
+
+- Set `VERMEER_HUGEGRAPH_USERNAME` and `VERMEER_HUGEGRAPH_PASSWORD_FILE` (or `hugegraph_username` and `hugegraph_password_file` in `worker.ini`). Both values
+  must be configured together; if either is set, a missing or unreadable file fails graph loading closed.
+- Raw password file bytes are preserved exactly, including quotes, backslashes, spaces, and terminal newlines.
+- When an explicit JSON credentials file is set (`VERMEER_HUGEGRAPH_CREDENTIALS_FILE` or `hugegraph_credentials_file`), it takes precedence over the raw pair.
+- For PD authentication, mount `VERMEER_PD_PASSWORD_FILE` (or `pd_password_file` in INI). When deployment credentials are used, `VERMEER_PD_PEERS` (`pd_peers`)
+  is required to discover Schema exclusively through trusted PD endpoints.
+- Secret credentials remain confined to deployment configuration and worker processes; they are never persisted in task metadata or returned in query APIs.
+- Dial timeouts can be bounded with `grpc_dial_timeout` or `VERMEER_GRPC_DIAL_TIMEOUT` (default `5s`).
+
 ## 2. Task Creation REST API
 
 ### 2.1 Introduction
@@ -258,6 +321,8 @@ Available URLs:
 - Query task: `GET http://master_ip:port/task/{task_id}`. `errcode=0` indicates a successful query; inspect `task.state` for task status.
   Set a client polling deadline for asynchronous jobs; reaching it stops client waiting without canceling the server task.
 - Read retained results: `GET http://master_ip:port/tasks/value/{task_id}` (or `/api/v1/tasks/value/{id}`).
+- Cluster health snapshot: `GET http://master_ip:port/api/v1/admin/cluster` (admin token required; see [Section 4](#4-cluster-monitoring-and-telemetry)).
+- Worker availability probe: `GET http://master_ip:port/api/v1/workers/availability` (space-scoped availability check).
 
 Native clients submit `POST /api/v1/tasks/create` with `graph`, `task_type` (`load`, `reload` or `compute`), and a flat string-valued `params` map.
 For computation, set `params["compute.algorithm"]`, not a top-level `algorithm`.
@@ -791,5 +856,64 @@ POST http://localhost:6688/tasks/create
 }
 
 ```
+
+## 4. Cluster Monitoring and Telemetry
+
+Vermeer provides dedicated REST endpoints for operations dashboards (such as Apache HugeGraph Hubble) and cloud-native container orchestrators (such as
+Kubernetes / Helm availability probes).
+
+### 4.1 Cluster Health Snapshot (`GET /api/v1/admin/cluster`)
+
+`GET /api/v1/admin/cluster` returns a read-only, versioned cluster health snapshot (`schema_version: 1`). In deployments where `auth=token` is enabled, this
+endpoint requires an administrator token (`Authorization: Bearer <admin-token>`) and enforces the standard `/admin` authentication filters.
+
+#### Health and Readiness Semantics
+- Registration alone is not readiness. A Worker must be registered, connected to Master, and have `load`, `compute`, and `superstep` streams ready.
+- Cluster status is `DEGRADED` for an unready Master, no Workers, or any unready Worker; aggregate reasons are `master_initializing` / `service_offline`, `no_workers`, or `workers_not_ready`. Otherwise status is `UP`.
+- `metric_status` is an object with `availability` (`AVAILABLE`, `UNAVAILABLE`, or `UNSUPPORTED`), `observed_at`, and optional `reason`.
+- Master checks are `http_ready`, `initialized`, and `service_online`; Worker checks are `registered`, `connection_ready`, and the three `*_stream_ready` fields.
+- Worker telemetry uses one 800 ms aggregate deadline outside the Worker manager lock and does not affect readiness.
+
+#### Example Request and Response
+
+```bash
+curl -H "Authorization: Bearer <admin-token>" \
+  http://localhost:6688/api/v1/admin/cluster
+```
+
+```json
+{
+  "schema_version": 1,
+  "observed_at": 1730419200000,
+  "status": "UP",
+  "registered_workers": 1,
+  "ready_workers": 1,
+  "master": {
+    "id": "master", "name": "Vermeer Master", "role": "MASTER",
+    "grpc_peer": "127.0.0.1:6689", "version": "1.8.0",
+    "launch_time": "2026-11-01T08:00:00Z", "status": "UP", "ready": true,
+    "checks": {"http_ready": true, "initialized": true, "service_online": true},
+    "metrics": {"cpu_cores": 0.15, "rss_bytes": 134217728, "sample_window_seconds": 10.0},
+    "metric_status": {"availability": "AVAILABLE", "observed_at": 1730419200000}
+  },
+  "workers": [{
+    "id": "worker-1", "name": "worker-1", "role": "WORKER", "group": "default",
+    "grpc_peer": "127.0.0.1:6789", "version": "1.8.0",
+    "launch_time": "2026-11-01T08:00:05Z", "status": "UP", "ready": true,
+    "checks": {"registered": true, "connection_ready": true, "load_stream_ready": true,
+      "compute_stream_ready": true, "superstep_stream_ready": true},
+    "metrics": {"cpu_cores": 1.42, "rss_bytes": 2147483648, "sample_window_seconds": 10.0},
+    "metric_status": {"availability": "AVAILABLE", "observed_at": 1730419200000}
+  }]
+}
+```
+### 4.2 Space Worker Availability Probe (`GET /api/v1/workers/availability`)
+
+`GET /api/v1/workers/availability` provides a space-scoped readiness check for Kubernetes and Helm availability hooks.
+
+- **Request**: Sent with caller authentication credentials representing a specific graph space.
+- **Response**: Returns `{"available": true}` when the target space has available computing capacity, or `{"available": false}` otherwise.
+- **Availability criteria**: An accessible common, space, or graph Worker group must contain at least one Worker, and every registered member in that group
+  must pass all readiness checks. Workers registered exclusively in other graph spaces do not fulfill availability for the caller's space.
 
 > 🚧, further updates and improvements will be made at any time. Suggestions and feedback are welcome.

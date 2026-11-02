@@ -125,15 +125,16 @@ Local disk files and HDFS files support resumable uploads.
 
 > **Concurrent imports**: Loader on the master branch supports LOADING owner protection on the same Server instance when the Server's `GET .../mode/owners` returns `protocol: 1`. Servers without this endpoint retain legacy import behavior without this protection; see the compatibility notes below.
 
-> **Testing Guide**: For running HugeGraph-Loader tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/toolchain-local-test)
+> **Testing Guide**: For running HugeGraph-Loader tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/dev-test/toolchain-local-test/)
 
 ### 2 Get HugeGraph-Loader
 
 HugeGraph-Loader is available in the following three ways:
 
-- Use docker image (Convenient for Test/Dev)
-- Download the compiled tarball
-- Clone source code then compile and install
+- [Use Docker image](#21-use-docker-image-convenient-for-testdev) — Quickly start a containerized loader for development and testing.
+- [Download compiled archive](#22-download-the-compiled-archive) — Download the official released Toolchain tarball.
+- [Compile from source](#23-clone-source-code-to-compile-and-install) — Build Loader from the Toolchain master branch with Java 17.
+{.cards}
 
 #### 2.1 Use Docker image (Convenient for Test/Dev)
 
@@ -190,11 +191,14 @@ For Oracle input, obtain a JDBC driver JAR compatible with your Oracle/JDK versi
 The startup script loads JARs there; installing a driver only in the local Maven repository does not put it on Loader’s runtime classpath.
 
 ### 3 How to use
-To import a dataset, prepare the schema, data and mapping, then run Loader.
-- Write graph schema
-- Prepare data files
-- Write input source map files
-- Execute command import
+
+Importing a dataset into HugeGraph follows four ordered steps:
+
+1. [Construct the graph schema](#31-construct-graph-schema) — Define property keys, vertex labels, and edge labels in Groovy.
+1. [Prepare data files](#32-prepare-data) — Format data records (TEXT, CSV, JSON, HDFS, or DB tables).
+1. [Write input source mapping file](#33-write-data-source-mapping-file) — Create the JSON mapping specification.
+1. [Execute data import](#34-execute-command-import) — Run `hugegraph-loader.sh` to load data into the graph.
+{.steps}
 
 #### 3.1 Construct graph schema
 
@@ -230,7 +234,7 @@ schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").ifNotExist().create();
 ```
 
-> See [HugeGraph Client](/docs/clients/hugegraph-client) for the schema API.
+> See [HugeGraph Client](/docs/clients/client/hugegraph-client/) for the schema API.
 
 #### 3.2 Prepare data
 

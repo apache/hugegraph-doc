@@ -12,7 +12,8 @@ and switch smoothly between graph, table, and JSON results. This guide uses **st
 
 For use with an HStore distributed cluster, read the foundational operations here first, then consult the
 [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
-This guide aligns with the Toolchain and Server `master` branches (currently based on 1.8, unreleased). Docker `latest` is a moving tag; use released versions for production deployments.
+This guide aligns with the Toolchain and Server `master` branches (currently based on 1.8, unreleased).
+Docker `latest` is a moving tag; use released versions for production deployments.
 
 The screenshots show the HugeGraph Hubble interface in action; features and workflows are identical in both English and Chinese.
 
@@ -218,22 +219,54 @@ Input footers show model generation time and query request time separately. Asyn
 
 ## Built-in algorithms: explore with parameter forms
 
-Use **Built-in Algorithms** when you prefer a form to writing traversal code. Search for an algorithm and supply its parameters.
-Neighbor exploration answers what surrounds a vertex, path algorithms connect two vertices, and similarity/ranking algorithms compare or select vertices.
-Start with a known vertex ID and limit direction, edge labels, depth, and result size before attempting broader computation.
+Hubble cleanly separates algorithm execution into two dedicated workflows: **OLTP online exploration** and **OLAP batch computing**.
+
+### OLTP online algorithms
+
+Use **Built-in Algorithms** when you prefer parameter forms to writing manual Gremlin traversals for real-time queries:
+- **Neighbor exploration**: answers what surrounds a vertex (e.g. K-neighbor, K-hop).
+- **Paths**: discovers connections between two vertices (e.g. shortest path, all paths).
+- **Similarity & ranking**: compares or ranks vertices within local subgraphs.
 
 Forms provide parameter guidance and documentation links, and restore common parameters when navigating away and back.
-Results use graph or algorithm-specific panels. Consult the help and documentation links beside the algorithm title for definitions and parameters.
 While the parameter form is focused, `Ctrl` / `Command` + `Enter` runs the current algorithm.
-
-OLAP batch algorithms require external compute services such as Computer or Vermeer.
-The two containers in this example provide online graph operations, not those compute services.
 
 For example, select K-neighbor (GET) with `source=1:marko`, `max_depth=1`, and `limit=20`.
 After parameter validation, use the run button on the card or the form shortcut to explore one-hop neighbors.
 
 ![Built-in neighbor algorithm parameters and graph result](/docs/images/hubble/algorithms.jpg)
 {width="1600" height="1000"}
+
+### Native Vermeer OLAP integration
+
+For large-scale, whole-graph analytical algorithms, Hubble integrates natively with the high-performance **Vermeer** graph computing engine.
+Hubble prefers Vermeer for OLAP workloads by default, while Computer remains available as an opt-in alternative.
+
+#### Configuration in `hugegraph-hubble.properties`
+
+Enable direct Vermeer communication in `conf/hugegraph-hubble.properties`:
+
+```properties
+# Direct Vermeer integration endpoint
+vermeer.url=http://vermeer-master:6688
+# Protected file containing the Vermeer service bearer token
+vermeer.token_file=/path/to/vermeer-service.token
+```
+
+> [!NOTE]
+> When `vermeer.url` is empty, Hubble falls back to the legacy Server proxy path. Direct Vermeer integration requires PD/Store cluster mode;
+> it is disabled in standalone mode.
+
+#### Supported OLAP algorithms and execution lifecycle
+
+Vermeer executes batch algorithms over in-memory graph partitions:
+- **Supported algorithms**: PageRank, Personalized PageRank (PPR), Weakly Connected Components (WCC), Label Propagation Algorithm (LPA),
+  Degree Centrality, Closeness Centrality, Betweenness Centrality, Triangle Count, K-Core, and Single-Source Shortest Path (SSSP).
+- **Loading graph into memory**: The workflow begins by loading or reloading graph data from PD/Store into Vermeer worker memory. Accepted loads retain their
+  task ID per graph so queued operations stay in `Loading` state until ready.
+- **Task monitoring & cancellation**: Native tasks run asynchronously and can be filtered by state (`RUNNING`, `SUCCESS`, `FAILED`) or cancelled on demand.
+- **Cursor-paged results**: Analytical outputs (e.g., vertex scores, cluster IDs) are retrieved through cursor-based pagination. Results preserve values
+  consistently across page boundaries and stop cleanly at an exactly full final page.
 
 ## Async Tasks: confirm background results
 
@@ -449,6 +482,20 @@ Anonymous mode can read operations information. With authentication enabled, ope
 This is an observation and diagnosis interface, not a start/stop or scaling console.
 The distributed supplement covers cluster overview and the PD/Store node hierarchy.
 
+### Vermeer cluster health view
+
+When Vermeer is deployed, Hubble provides an independent Vermeer compute cluster health view under Operations:
+- Configure telemetry in `conf/hugegraph-hubble.properties`:
+  ```properties
+  operations.vermeer.enabled=true
+  operations.vermeer.address=http://vermeer-master:6688
+  operations.vermeer.token_file=/path/to/vermeer-service.token
+  ```
+- **Readiness & node topology**: Inspects Vermeer Master readiness, registered Worker node health, and cluster topology.
+- **Resource metrics**: Visualizes active compute jobs, CPU utilization, and process RSS memory usage across workers.
+- **Fault isolation**: Service credentials remain backend-only. If telemetry times out or workers become unavailable, stale status is distinguished from
+  zero usage or current readiness.
+
 ## Keyboard shortcuts and graph interactions
 
 Use the topbar shortcut-help button to see key bindings. Their scope differs: typing `?` in an input does not trigger global help.
@@ -506,4 +553,4 @@ Current master uses a new H2 metadata database. Retain the old Hubble distributi
 Old metadata has no automatic migration and cannot be reused directly.
 
 The bundled configuration binds to `localhost:8088`. `bin/stop-hubble.sh` requests graceful shutdown before forcing termination on timeout.
-For development and testing, see the [Toolchain local test guide](/docs/guides/toolchain-local-test/).
+For development and testing, see the [Toolchain local test guide](/docs/guides/dev-test/toolchain-local-test/).

@@ -1,7 +1,7 @@
 ---
 title: "HugeGraph Examples"
 linkTitle: "HugeGraph Examples"
-weight: 2
+weight: 5
 ---
 
 ### 1 Overview

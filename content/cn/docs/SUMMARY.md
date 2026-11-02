@@ -13,9 +13,9 @@ draft: true
 - [HugeGraph Server](quickstart/hugegraph/hugegraph-server)
 - [PD](quickstart/hugegraph/hugegraph-pd)
 - [HStore](quickstart/hugegraph/hugegraph-hstore)
-- [Java Client](quickstart/client/hugegraph-client)
-- [Go Client](quickstart/client/hugegraph-client-go)
-- [Python Client](quickstart/client/hugegraph-client-python)
+- [Java Client](clients/client/hugegraph-client)
+- [Go Client](clients/client/hugegraph-client-go)
+- [Python Client](clients/client/hugegraph-client-python)
 - [Loader](quickstart/toolchain/hugegraph-loader)
 - [Hubble](quickstart/toolchain/hugegraph-hubble)
 - [Spark Connector](quickstart/toolchain/hugegraph-spark-connector)
@@ -23,6 +23,7 @@ draft: true
 - [Vermeer](quickstart/computing/hugegraph-vermeer)
 - [Computer](quickstart/computing/hugegraph-computer)
 - [HugeGraph-AI](quickstart/hugegraph-ai/quick_start)
+  - [HugeGraph-LLM SDK](quickstart/hugegraph-ai/hugegraph-llm-sdk)
 
 ## Server 配置与 API
 
@@ -35,14 +36,15 @@ draft: true
 
 ## 使用指南
 
-- [架构](guides/architectural)
-- [设计](guides/desgin-concept)
+- [架构](guides/architectural/_index)
+  - [自定义插件](guides/architectural/custom-plugin)
+  - [设计](guides/architectural/desgin-concept)
 - [备份与恢复](guides/backup-restore)
-- [自定义插件](guides/custom-plugin)
 - [Docker 集群](guides/hugegraph-docker-cluster)
 - [安全](guides/security)
-- [Toolchain 本地测试](guides/toolchain-local-test)
-- [ToplingDB（开发版）](guides/toplingdb)
+- [开发测试](guides/dev-test/_index)
+  - [Toolchain 本地测试](guides/dev-test/toolchain-local-test)
+  - [ToplingDB (开发版)](guides/dev-test/toplingdb)
 - [常见问题](guides/faq)
 
 ## 查询语言

@@ -30,10 +30,12 @@ PD 监听三个端口：
 
 ### 3 部署
 
-有两种方式可以部署 HugeGraph-PD 组件：
+HugeGraph-PD 组件主要支持以下部署与运行方式：
 
-- 方式 1：下载 tar 包
-- 方式 2：源码编译
+- [下载发布包](#31-下载-tar-包) — 下载并解压官方发布的完整二进制安装包。
+- [源码编译](#32-源码编译) — 基于 master 主线代码使用 Maven 与 Java 17 编译 PD 模块。
+- [Docker 部署](#33-docker-部署) — 使用容器快速体验或搭建分布式集群。
+{.cards}
 
 #### 3.1 下载 tar 包
 
@@ -48,25 +50,27 @@ cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 
 #### 3.2 源码编译
 
-```bash
-# 1. 克隆源代码
-git clone https://github.com/apache/hugegraph.git
+1. **克隆源代码仓库：**
 
-# 2. 编译项目
-cd hugegraph
-mvn clean install -DskipTests=true
+   ```bash
+   git clone https://github.com/apache/hugegraph.git
+   cd hugegraph
+   ```
 
-# 3. 编译成功后，PD 目录和发布包分别位于
-#    hugegraph-pd/apache-hugegraph-pd-{version}          （解压后的 PD 发布目录）
-#    hugegraph-pd/apache-hugegraph-pd-{version}.tar.gz   （仅含 PD 的发布包，只在 Linux 构建机上生成）
-#    target/apache-hugegraph-{version}.tar.gz            （PD + Store + Server 的完整发布包）
-```
+1. **编译 PD 模块：**
 
-只编译 PD 发布包及其依赖模块：
+   ```bash
+   # 仅编译 PD 发行包及其依赖模块
+   mvn clean package -pl hugegraph-pd/hg-pd-dist -am -DskipTests
+   ```
 
-```bash
-mvn clean package -pl hugegraph-pd/hg-pd-dist -am -DskipTests
-```
+1. **检查编译产物：**
+
+   ```bash
+   cd hugegraph-pd/apache-hugegraph-pd-*/
+   ls -la bin conf lib
+   ```
+{.steps}
 
 解压后的发布目录只包含三个子目录：`bin`（启停脚本）、`conf`（`application.yml`、`application.yml.template`、`log4j2.xml`、`verify-license.json`）和 `lib`（`hg-pd-service` jar 包）。
 
@@ -162,6 +166,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 | `pd.data-path` | `./pd_data` | 无，必填 | 元数据目录。`rocksdb/` 子目录存放 RocksDB 数据，`pd_raft/` 子目录存放 Raft 日志、元信息和快照。 |
 | `pd.patrol-interval` | `1800` | `300` | 巡检周期（秒）。巡检会检查各 Store 上的分区健康状况并平衡分区数量。 |
 | `pd.initial-store-count` | `1` | `3` | 活跃 Store 节点的最小数量。低于该值时集群状态变为 `Cluster_Not_Ready`，整个集群视为不可用。建议设为实际部署的 Store 数量。 |
+| `pd.min-store-count` | 未设置 | `0` | Store 排空/下线容量校验所需的最小活跃 Store 数量。若下线后剩余活跃 Store 低于该值，拒绝转入 `Exiting` 状态。 |
 | `pd.initial-store-list` | `127.0.0.1:8500` | 空 | 逗号分隔的 Store gRPC 地址（`ip:port`），列表中的 Store 注册后自动激活。条目也可以带分组 id，写作 `store_address/group_id`。 |
 | `pd.cluster_id` | 未设置 | `1` | 集群 id，用于区分不同的 PD 集群。 |
 {.td-table--wide}
@@ -551,4 +556,40 @@ curl -u "store:${HG_PD_AUTH_SECRET_KEY:?请先设置 PD 部署密钥}" \
 
 PD 以 `hg` 前缀注册自己的指标，因此 `/actuator/prometheus` 除标准 JVM 指标外还会暴露 `hg_up`、`hg_graphs`、`hg_stores` 和 `hg_terms`，在存在图之后还会有按图统计的分区和大小指标。
 
+同时暴露用于监控 Raft 法定人数（Quorum）状态及告警的成员指标：
+- `hg_raft_leader`：当前 PD 节点若为选出的 Raft Leader 则为 `1`，Follower 节点为 `0`。
+- `hg_raft_has_leader`：当前 PD 节点若能看到活跃的 Raft Leader（即属于法定多数 Quorum 一部分）则为 `1`，失去 Quorum 时为 `0`。
+- `hg_raft_alive_peers`：Leader 节点在租约超时时间内收到心跳的活跃 Raft 节点总数（包含自身）；非 Leader 节点上返回 `NaN`。
+
+> [!NOTE]
+> **Quorum 丢失告警规则**：当集群所有成员上 `sum(hg_raft_leader) == 0` 或 `hg_raft_has_leader == 0` 时，表明集群已失去 Quorum。告警规则的
+> `for:` 持续时间应长于 Raft 选举超时时间（例如 `for: 30s`），以避免正常重新选举期间误报。若需监控活跃副本数，可使用表达式
+> `hg_raft_alive_peers and on(instance) (hg_raft_leader == 1)`。
+
 在 1.7.0 之后的版本中，PD 还会为每个已注册的 Store 导出 `hg_store_state{store="<id>",state="<state>"}`：Store 当前状态（`Unknown`、`Pending`、`Up`、`Offline`、`Exiting` 或 `Tombstone`）对应的序列为 `1`，其余为 `0`；以及 `hg_store_leader_count{store="<id>"}`，即 leader 位于该 Store 上的分片组数量。重建后的 Store 在 leader 迁回之前会报告 `0`。所有 PD 成员读取的是同一份复制的元数据，因此聚合这些序列前请先只选取一个实例。
+
+#### 7.6 Store 下线与排空生命周期
+
+下线或下架 Store 节点遵循严谨的状态机流转，以确保在不中断业务的前提下安全排空分片副本：
+
+1. **状态机流转过程**：
+   - `Up`：Store 在线且健康，正常参与副本分配和 leader 选举。
+   - `Exiting`：Store 处于排空状态。处于 `Exiting` 时，该节点继续正常续租心跳，但 PD 会将其排除在新的副本分配和迁移目标之外。
+   - 分区迁移：PD 自动调度后台迁移任务，将该节点上的所有分片副本逐步迁至其他健康的活跃 Store 上。
+   - `Tombstone`：Store 永久下线退出。一旦标记为 `Tombstone`，管理接口不再允许将其恢复为活跃状态。
+
+2. **发起排空操作**：
+   通过管理接口将目标 Store 状态置为 `Exiting`：
+   ```bash
+   curl -X POST http://<pd-host>:8620/v1/store/{storeId} \
+     -H "Authorization: Basic <credentials>" \
+     -H "Content-Type: application/json" \
+     -d '{"storeState": "Exiting"}'
+   ```
+
+3. **容量约束与下线检查**：
+   - **容量校验**：排空会校验集群剩余可用 Store 节点数是否满足 `minStoreCount`（`pd.min-store-count`）。若剩余容量不足，
+     PD 将直接拦截并在状态持久化前拒绝请求；此时需扩容足够的活跃 Store 后重新发起下线请求。
+   - **退出完成判定**：PD 会持续保持 `Exiting` 状态，直到 Store 最新心跳上报本地分区引擎数为 0 且 PD 元数据中无任何分片组引用该 Store ID。
+   - **销毁前核验**：在删除 Store Pod 或持久化存储卷前，运维人员必须确认其余分片组已具备完整的 Raft 成员、全额副本以及最新的健康心跳。
+   - **重新注册意图保留**：处于 `Exiting` 状态的 Store 重启重新注册时，即使其地址在 `pd.initial-store-list` 中，PD 仍会保留其 `Exiting` 排空意图。

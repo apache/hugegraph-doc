@@ -10,19 +10,21 @@ weight: 3
 
 ## 模块
 
+- [hugegraph-llm-sdk](./hugegraph-llm-sdk.md)：提供 Schema 设计、结构校验与属性图抽取审阅的独立 Python SDK。
 - [hugegraph-mcp](./hugegraph-mcp.md)：通过 MCP 向 AI 客户端提供图查询、Schema 和受控写入工具。
 - [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm)：知识图谱构建、GraphRAG 和自然语言图查询。
 - [hugegraph-ml](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml)：从 HugeGraph 读取图数据并运行图学习模型。
 - [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client)：管理 Schema、图数据和 Gremlin 查询的 Python SDK。
 - [vermeer-python-client](https://github.com/apache/hugegraph-ai/tree/main/vermeer-python-client)：调用 Vermeer 图计算服务的 Python SDK。
 
-仓库使用 `uv` workspace，其成员是 `hugegraph-llm` 和 `hugegraph-python-client`。`hugegraph-ml` 和 `vermeer-python-client` 是可编辑的路径依赖，不在 workspace members 中。当前仓库版本为 `1.7.0`。客户端源码目录叫 `hugegraph-python-client`，但发行包名是 `hugegraph-python`。
+仓库使用 `uv` workspace，其成员是 `hugegraph-llm-sdk`、`hugegraph-llm` 和 `hugegraph-python-client`。`hugegraph-ml` 和 `vermeer-python-client` 是可编辑的路径依赖，不在 workspace members 中。当前仓库版本为 `1.8.0`。客户端源码目录叫 `hugegraph-python-client`，但发行包名是 `hugegraph-python`。
 
 ## 环境要求
 
-- HugeGraph-AI 根目录 workspace：Python 3.10 或更高版本；HugeGraph-LLM 还要求低于 3.12
+- HugeGraph-AI 根目录 workspace：Python >= 3.12（支持 Python 3.12–3.14）
+- HugeGraph-LLM 与 HugeGraph-LLM-SDK：Python >= 3.12（支持 Python 3.12–3.14）
 - HugeGraph-ML：Python 3.10 或更高版本
-- PyPI 上的 `hugegraph-python` 1.5.0：Python 3.9 或更高版本；当前仓库源码随 workspace 使用 Python 3.10 或更高版本
+- PyPI 上的 `hugegraph-python` 1.5.0：Python 3.9 或更高版本；当前仓库源码随 workspace 使用 Python >= 3.12
 - Vermeer Python 客户端：当前源码要求 Python 3.10 或更高版本；发行元数据仍声明 `>=3.9`，详见[客户端页](/cn/docs/quickstart/hugegraph-ai/vermeer-python-client/)
 - `uv` 0.7 或更高版本
 - HugeGraph Server 1.5.0 或更高版本；当前 workspace 的 Python 客户端会拒绝可探测到的更低版本
@@ -89,11 +91,12 @@ cd hugegraph-ml/src
 
 ## 后续阅读
 
+- [HugeGraph-LLM SDK](./hugegraph-llm-sdk.md)
 - [HugeGraph-MCP](./hugegraph-mcp.md)
 - [HugeGraph-LLM](./hugegraph-llm.md)
 - [HugeGraph-LLM 使用流程](./quick_start.md)
 - [配置参考](./config-reference.md)
 - [REST API](./rest-api.md)
 - [HugeGraph-ML](./hugegraph-ml.md)
-- [Python 客户端](../client/hugegraph-client-python.md)
+- [Python 客户端](/cn/docs/clients/client/hugegraph-client-python/)
 - [Vermeer Python 客户端](./vermeer-python-client.md)

@@ -1,44 +1,49 @@
 ---
-title: "HugeGraph Plugin 机制及插件扩展流程"
+title: "HugeGraph Plugin mechanism and plug-in extension process"
 linkTitle: "HugeGraph Plugin"
-weight: 3
+weight: 1
+aliases:
+  - /docs/guides/custom-plugin/
 ---
 
-插件接入计划用于 1.8.0 的共享基础模块 API 时，请按[Java/SPI 迁移指南](/cn/docs/guides/shared-foundation-migration/)调整并使用配套 artifacts 重新编译。
-下方示例描述 1.7.0 API。
+For plugins targeting the planned 1.8.0 shared-foundation API, follow the
+[Java/SPI migration guide](/docs/guides/shared-foundation-migration/) and recompile against matching artifacts.
+The examples below describe the 1.7.0 API.
 
-### 背景
+### Background
 
-1. HugeGraph 不仅开源开放，而且要做到简单易用，一般用户无需更改源码也能轻松增加插件扩展功能。
-2. HugeGraph 支持多种内置存储后端，也允许用户无需更改现有源码的情况下扩展自定义后端。
-3. HugeGraph 支持全文检索，全文检索功能涉及到各语言分词，目前已内置 7 种分词器（ansj、hanlp、smartcn、jieba、jcseg、mmseg4j、ikanalyzer），也允许用户无需更改现有源码的情况下扩展自定义分词器。
+1. HugeGraph is not only open source and open, but also simple and easy to use. General users can easily add plug-in extension functions without changing the source code.
+2. HugeGraph supports a variety of built-in storage backends, and also allows users to extend custom backends without changing the existing source code.
+3. HugeGraph supports full-text search. The full-text search function involves word segmentation in various languages. Currently, there are 7 built-in word 
+breakers (ansj, hanlp, smartcn, jieba, jcseg, mmseg4j, ikanalyzer), and it also allows users to expand custom word breakers without changing the existing source code.
 
-### 可扩展维度
+### Scalable dimension
 
-目前插件方式提供如下几个维度的扩展项：
+Currently, the plug-in method provides extensions in the following dimensions:
 
-- 后端存储
-- 序列化器
-- 自定义配置项
-- 分词器
+- backend storage
+- serializer
+- Custom configuration items
+- tokenizer
 
-### 插件实现机制
+### Plug-in implementation mechanism
 
-1. HugeGraph 提供插件接口 HugeGraphPlugin，通过 Java SPI 机制支持插件化
-2. HugeGraph 在 HugeGraphPlugin 接口上以静态方法提供了 4 个扩展项注册函数：`registerOptions()`、`registerBackend()`、`registerSerializer()`、`registerAnalyzer()`
-3. 插件实现者实现相应的 Options、Backend、Serializer 或 Analyzer 的接口
-4. 插件实现者实现 HugeGraphPlugin 接口的`register()`方法，在该方法中注册上述第 3 点所列的具体实现类，并打成 jar 包
-5. 插件使用者将 jar 包放在 HugeGraph Server 安装目录的`plugins`目录下，修改相关配置项为插件自定义值，重启即可生效
+1. **Provide SPI interface**: HugeGraph provides the `HugeGraphPlugin` interface, supporting pluggability via Java SPI.
+2. **Registration functions**: `HugeGraphPlugin` exposes static registration methods: `registerOptions()`, `registerBackend()`, `registerSerializer()`, and `registerAnalyzer()`.
+3. **Implement components**: The developer implements the corresponding `OptionHolder`, `BackendStoreProvider`, `AbstractSerializer`, or `Analyzer` interfaces.
+4. **Register in plugin**: The developer implements the `register()` method of `HugeGraphPlugin` to register implementation classes, declared in `META-INF/services/`.
+5. **Deploy and activate**: Place the packaged JAR in the HugeGraph Server `plugins/` directory, configure the custom options, and restart the service.
+{.steps}
 
-### 插件实现流程实例
+### Plug-in implementation process example
 
-#### 1 新建一个 maven 项目
+#### 1 Create a new maven project
 
-##### 1.1 项目名称取名：hugegraph-plugin-demo
+##### 1.1 Name the project name: hugegraph-plugin-demo
 
-##### 1.2 添加`hugegraph-core` Jar 包依赖
+##### 1.2 Add `hugegraph-core` Jar package dependencies
 
-maven pom.xml 详细内容如下。`hugegraph.version` 应与要兼容的 Server 版本一致；此处以当前主线版本 1.7.0 为例：
+The Maven `pom.xml` is shown below. Match `hugegraph.version` to the target Server version; this example uses the current master version 1.7.0:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -70,16 +75,16 @@ maven pom.xml 详细内容如下。`hugegraph.version` 应与要兼容的 Server
 
 ```
  
-#### 2 实现扩展功能
+#### 2 Realize extended functions
 
-##### 2.1 扩展自定义后端
+##### 2.1 Extending a custom backend
 
-###### 2.1.1 实现接口 BackendStoreProvider
+###### 2.1.1  Implement the interface BackendStoreProvider
 
-- 可实现接口：`org.apache.hugegraph.backend.store.BackendStoreProvider`
-- 或者继承抽象类：`org.apache.hugegraph.backend.store.AbstractBackendStoreProvider`
+- Realizable interfaces: `org.apache.hugegraph.backend.store.BackendStoreProvider`
+- Or inherit an abstract class:`org.apache.hugegraph.backend.store.AbstractBackendStoreProvider`
  
-以 RocksDB 后端 RocksDBStoreProvider 为例：
+Take the RocksDB backend RocksDBStoreProvider as an example:
 
 ```java
 public class RocksDBStoreProvider extends AbstractBackendStoreProvider {
@@ -115,9 +120,9 @@ public class RocksDBStoreProvider extends AbstractBackendStoreProvider {
 }
 ```
 
-###### 2.1.2 实现接口 BackendStore
+###### 2.1.2 Implement interface BackendStore
 
-BackendStore 的核心抽象方法如下（接口默认辅助方法略）：
+The main abstract methods of `BackendStore` are shown below; default helper methods are omitted:
 
 ```java
 public interface BackendStore {
@@ -158,8 +163,8 @@ public interface BackendStore {
     // Query data
     Iterator<BackendEntry> query(Query query);
     Iterator<Iterator<BackendEntry>> query(Iterator<Query> queries,
-                                           Function<Query, Query> queryWriter,
-                                           HugeGraph hugeGraph);
+                                          Function<Query, Query> queryWriter,
+                                          HugeGraph hugeGraph);
     Number queryNumber(Query query);
 
     // Transaction
@@ -181,9 +186,10 @@ public interface BackendStore {
 }
 ```
  
-###### 2.1.3 扩展自定义序列化器
+###### 2.1.3 Extending custom serializers
 
-序列化器必须继承抽象类：`org.apache.hugegraph.backend.serializer.AbstractSerializer`(`implements GraphSerializer, SchemaSerializer`) 主要接口的定义如下：
+The serializer must inherit the abstract class: `org.apache.hugegraph.backend.serializer.AbstractSerializer` 
+( `implements GraphSerializer, SchemaSerializer`) The main interface is defined as follows:
 
 ```java
 public interface GraphSerializer {
@@ -213,15 +219,15 @@ public interface SchemaSerializer {
 }
 ```
 
-###### 2.1.4 扩展自定义配置项
+###### 2.1.4 Extend custom configuration items
 
-增加自定义后端时，可能需要增加新的配置项，实现流程主要包括：
+When adding a custom backend, it may be necessary to add new configuration items. The implementation process mainly includes:
 
-- 增加配置项容器类，并实现接口`org.apache.hugegraph.config.OptionHolder`
-- 提供单例方法`public static OptionHolder instance()`，并在对象初始化时调用方法`OptionHolder.registerOptions()`
-- 增加配置项声明，单值配置项类型为`ConfigOption`、多值配置项类型为`ConfigListOption`
+- Add a configuration item container class and implement the interface `org.apache.hugegraph.config.OptionHolder`
+- Provide a singleton method `public static OptionHolder instance()`, and call the method when the object is initialized `OptionHolder.registerOptions()`
+- Add configuration item declaration, single-value configuration item type is `ConfigOption`, multi-value configuration item type is `ConfigListOption`
  
-以 RocksDB 配置项定义为例：
+Take the RocksDB configuration item definition as an example:
 
 ```java
 public class RocksDBOptions extends OptionHolder {
@@ -275,9 +281,9 @@ public class RocksDBOptions extends OptionHolder {
 }
 ```
 
-##### 2.2 扩展自定义分词器
+##### 2.2 Extend custom tokenizer
 
-分词器需要实现接口`org.apache.hugegraph.analyzer.Analyzer`，以实现一个 SpaceAnalyzer 空格分词器为例。
+The tokenizer needs to implement the interface `org.apache.hugegraph.analyzer.Analyzer`, take implementing a SpaceAnalyzer space tokenizer as an example.
 
 ```java
 package org.apache.hugegraph.plugin;
@@ -297,9 +303,10 @@ public class SpaceAnalyzer implements Analyzer {
 }
 ```
  
-#### 3. 实现插件接口，并进行注册
+#### 3. Implement the plug-in interface and register it
 
-插件注册入口为`HugeGraphPlugin.register()`，自定义插件必须实现该接口方法，在其内部注册上述定义好的扩展项。接口`org.apache.hugegraph.plugin.HugeGraphPlugin`定义如下：
+The plug-in registration entry is `HugeGraphPlugin.register()`, the custom plug-in must implement this interface method, and register the extension 
+items defined above inside it. The interface `org.apache.hugegraph.plugin.HugeGraphPlugin` is defined as follows:
 
 ```java
 public interface HugeGraphPlugin {
@@ -314,15 +321,15 @@ public interface HugeGraphPlugin {
 }
 ```
  
-并且 HugeGraphPlugin 提供了 4 个静态方法用于注册扩展项：
+And HugeGraphPlugin provides 4 static methods for registering extensions:
 
-- registerOptions(String name, String classPath)：注册配置项
-- registerBackend(String name, String classPath)：注册后端（BackendStoreProvider）
-- registerSerializer(String name, String classPath)：注册序列化器
-- registerAnalyzer(String name, String classPath)：注册分词器
+- registerOptions(String name, String classPath): register configuration items
+- registerBackend(String name, String classPath): register backend (BackendStoreProvider)
+- registerSerializer(String name, String classPath): register serializer
+- registerAnalyzer(String name, String classPath): register tokenizer
  
  
-下面以注册 SpaceAnalyzer 分词器为例：
+The following is an example of registering the SpaceAnalyzer tokenizer:
 
 ```java
 package org.apache.hugegraph.plugin;
@@ -351,12 +358,13 @@ public class DemoPlugin implements HugeGraphPlugin {
 }
 ```
 
-#### 4. 配置 SPI 入口
+#### 4. Configure SPI entry
 
-1. 确保 services 目录存在：hugegraph-plugin-demo/resources/META-INF/services
-2. 在 services 目录下建立文本文件：org.apache.hugegraph.plugin.HugeGraphPlugin
-3. 文件内容如下：org.apache.hugegraph.plugin.DemoPlugin
- 
-#### 5. 打 Jar 包
+1. Make sure the services directory exists: hugegraph-plugin-demo/resources/META-INF/services
+2. Create a text file in the services directory: org.apache.hugegraph.plugin.HugeGraphPlugin
+3. The content of the file is as follows: org.apache.hugegraph.plugin.DemoPlugin
 
-通过 maven 打包，在项目目录下执行命令`mvn package`，在 target 目录下会生成 Jar 包文件。使用时将该 Jar 包拷到`plugins`目录，重启服务即可生效。
+#### 5. Make Jar package
+
+Through maven packaging, execute the command in the project directory mvn package, and a Jar package file will be generated in the 
+target directory. Copy the Jar package to the `plugins` directory when using it, and restart the service to take effect.

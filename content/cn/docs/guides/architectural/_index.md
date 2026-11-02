@@ -1,7 +1,8 @@
 ---
 title: "HugeGraph 架构概览"
 linkTitle: "架构概览"
-weight: 1
+weight: 3
+no_list: true
 ---
 
 ## 全栈组件
@@ -44,15 +45,17 @@ Server 的 REST API 和 Gremlin 接口把请求交给 Core，再由存储后端�
 
 Toolchain 的主要组件如下：
 
-- [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/)：通过 Web 界面连接图数据库，管理 Schema、导入数据并执行查询。
-- [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/)：转换多种数据源并批量导入图数据。
-- [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/)：提供部署、管理和备份恢复命令。
-- [Client](/cn/docs/quickstart/client/hugegraph-client/)：封装 Server 连接、Schema 管理、图数据读写和查询；支持 [Java](/cn/docs/quickstart/client/hugegraph-client/)、[Python](/cn/docs/quickstart/client/hugegraph-client-python/) 和 [Go](/cn/docs/quickstart/client/hugegraph-client-go/) 客户端，Rust 客户端仍在开发中。
+- [Hubble](/cn/docs/quickstart/toolchain/hugegraph-hubble/) — Web 交互式图可视化与一站式管理工作台。
+- [Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/) — 支持多源、断点续传的高性能批量图数据导入工具。
+- [Tools](/cn/docs/quickstart/toolchain/hugegraph-tools/) — 提供集群部署运维、元数据检查与备份恢复能力的 CLI 工具。
+- [Client](/cn/docs/clients/client/hugegraph-client/) — 官方多语言客户端 SDK，支持 Java、Python 与 Go。
+{.cards}
 
 ## 独立图计算引擎
 
-- [Vermeer](/cn/docs/quickstart/computing/hugegraph-vermeer/)：提供独立的图计算服务及算法接口。
-- [HugeGraph-Computer](/cn/docs/quickstart/computing/hugegraph-computer/)：基于 BSP/Pregel 模型的 Java 分布式图计算引擎。
+- [Vermeer](/cn/docs/quickstart/computing/hugegraph-vermeer/) — 基于 Go 实现的高性能内存级图计算引擎，内置 15+ OLAP 核心算法。
+- [HugeGraph-Computer](/cn/docs/quickstart/computing/hugegraph-computer/) — 基于 BSP/Pregel 模型的 Java 分布式大规模图计算框架。
+{.cards}
 
 ## 历史架构图
 
@@ -60,4 +63,14 @@ Toolchain 的主要组件如下：
 
 > [!DETAILS]- 展开旧版架构图
 >
-> ![旧版 HugeGraph 架构图，仅用于历史参考](/docs/images/design/architectural-revised.png)
+> ![旧版 HugeGraph 架构图，仅用于历史参考](/cn/docs/images/design/architectural-revised.png)
+
+## 相关专题
+
+- [HugeGraph Plugin](/cn/docs/guides/architectural/custom-plugin/)
+
+  介绍 HugeGraph Plugin 扩展机制、SPI 接口注册与自定义插件生命周期。
+- [设计理念(legacy)](/cn/docs/guides/architectural/desgin-concept/)
+
+  早期属性图模型设计背景、分区方案与历史实现考量。
+{.cards}

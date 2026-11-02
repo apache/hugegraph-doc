@@ -48,7 +48,7 @@
         {{- end -}}
       {{- end -}}
     {{- end -}}
-    {{- if eq (len $alternates) 1 -}}
+    {{- if ge (len $alternates) 1 -}}
       {{- $path = index $alternates 0 -}}
     {{- end -}}
   {{- end -}}

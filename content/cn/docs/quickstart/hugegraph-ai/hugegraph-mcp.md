@@ -13,7 +13,8 @@ weight: 7
 
 ## 环境要求
 
-- Python 3.10 或更高版本；单独运行 HugeGraph-LLM 时，请同时满足该模块的 Python 版本要求。
+- 运行发布的 1.7.1 版本要求 Python >= 3.10（主线 master / 1.8.0+ 要求 Python >= 3.12）；
+  单独运行 HugeGraph-LLM 时，请同时满足该模块的 Python 版本要求。
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) 和支持 STDIO 的 MCP 客户端。
 - 可从 MCP 进程访问的 HugeGraph Server 1.7.0 或更高版本。默认图路径为 `DEFAULT/hugegraph`，使用 graphspace API。
 - 已创建的图及具备相应权限的账号。服务端认证配置见[认证与授权](../../config/config-authentication.md)。

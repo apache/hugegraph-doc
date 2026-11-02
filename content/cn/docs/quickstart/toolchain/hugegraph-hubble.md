@@ -203,21 +203,52 @@ Base URL 必须能被 Hubble 后端服务正常访问（若 Hubble 运行在容�
 
 ## 使用内置图算法 {#内置图算法用表单探索关系}
 
-不想从头编写遍历语句时，可以进入【内置图算法】，搜索算法并填写参数。
-邻居探索用于回答“这个点附近有什么”，路径算法用于寻找两个点的连接，相似度和排序算法用于比较或筛选顶点。
-从一个已知顶点 ID 开始，先限定方向、边类型、深度与返回规模，再观察结果，会比直接运行大范围计算更容易理解。
+Hubble 将图算法清晰划分为两个独立工作流：**OLTP 在线探索**与 **OLAP 批量分析计算**。
+
+### OLTP 在线探索算法
+
+不想从头编写遍历语句时，可以进入【内置图算法】，使用参数表单完成实时图查询：
+- **邻居探索**：用于回答“这个顶点附近有什么”（如 K-neighbor、K-hop 等）。
+- **路径分析**：用于寻找两个顶点间的连通关系（如最短路径、全路径）。
+- **相似度与排序**：在局部子图内对顶点进行相似度比对或排序。
 
 算法表单提供参数说明及文档入口；常用参数可以在页面间往返时恢复。
-运行结果按算法显示为图或相应的结果面板；需要理解具体定义和参数时，使用算法标题旁的说明与文档链接。
-表单聚焦时也可用 `Ctrl` / `Command` + `Enter` 运行当前算法。
-
-OLAP 批量算法需要 Computer 或 Vermeer 等外部计算环境。本例的两个容器用于在线图操作，不包含这些计算服务。
+表单聚焦时可用 `Ctrl` / `Command` + `Enter` 快捷运行当前算法。
 
 例如选择 K-neighbor（GET），设置 `source=1:marko`、`max_depth=1`、`limit=20`，
 参数校验通过后点击卡片右侧运行按钮，或在参数表单内使用快捷键，即可观察一跳邻居。
 
 ![内置邻居算法的参数与图结果](/cn/docs/images/hubble/algorithms.jpg)
 {width="1600" height="1000"}
+
+### 原生 Vermeer OLAP 分析集成
+
+针对全图级别的大规模复杂分析计算，Hubble 原生集成了高性能图计算引擎 **Vermeer**。
+Hubble 默认优先选用 Vermeer 承担 OLAP 计算任务，同时保留 Computer 作为可选引擎。
+
+#### `hugegraph-hubble.properties` 配置项
+
+在 `conf/hugegraph-hubble.properties` 中开启 Vermeer 直连通信：
+
+```properties
+# Vermeer Master 直连 HTTP 服务地址
+vermeer.url=http://vermeer-master:6688
+# 存放 Vermeer 服务 Bearer Token 的安全凭据文件路径
+vermeer.token_file=/path/to/vermeer-service.token
+```
+
+> [!NOTE]
+> 当 `vermeer.url` 为空时，Hubble 保持原有的 Server 代理转发路径。Vermeer 直连模式需要 PD/Store 分布式集群模式支持，单机模式下自动禁用。
+
+#### 支持的 OLAP 算法与执行生命周期
+
+Vermeer 在内存分布式分区上执行批处理图算法：
+- **支持算法**：PageRank、Personalized PageRank（个性化 PageRank）、Weakly Connected Components（WCC 弱连通分量）、
+  Label Propagation Algorithm（LPA 标签传播）、Betweenness Centrality（介数中心度）、Closeness Centrality（紧密中心度）、
+  Degree Centrality（度中心度）、Triangle Count（三角形计数）、K-Core 以及 Single-Source Shortest Path（SSSP 单源最短路径）。
+- **内存图加载**：计算流程首先将图数据从 PD/Store 加载或重新加载至 Vermeer Worker 内存。每个图在加载确认后保持任务 ID，入队任务维持在 `Loading` 状态直至加载完毕。
+- **任务监控与取消**：原生任务在后台异步运行，可按状态（`RUNNING`、`SUCCESS`、`FAILED`）筛选监控，并支持在需要时主动取消任务。
+- **游标分页结果**：计算产出的分析指标（如顶点得分、社区编号）通过游标机制进行分页流式拉取。分页跨页数据完整一致，并在最后一页精准停止。
 
 ## 查看异步任务的最终结果 {#异步任务确认后台操作的最终结果}
 
@@ -419,6 +450,19 @@ curl -b hubble.cookies -X PUT \
 匿名模式可以查看运维信息；开启认证后，运维入口仅对有运维权限的管理员显示。
 此处用于观测和排查，不是启动、停止或扩缩容控制台。PD 模式的集群概览与节点层级见分布式补充。
 
+### Vermeer 计算集群健康观测
+
+在部署了 Vermeer 计算服务时，Hubble 在【系统运维】中提供独立的 Vermeer 计算集群健康监控视图：
+- 在 `conf/hugegraph-hubble.properties` 中配置运维指标收集：
+  ```properties
+  operations.vermeer.enabled=true
+  operations.vermeer.address=http://vermeer-master:6688
+  operations.vermeer.token_file=/path/to/vermeer-service.token
+  ```
+- **就绪状态与节点拓扑**：监控 Vermeer Master 服务的就绪情况、注册的 Worker 节点健康状态与集群拓扑。
+- **资源利用率**：直观展示正在运行的计算作业、各 Worker 节点的 CPU 利用率以及进程物理内存（RSS）占用。
+- **故障隔离与保真**：服务凭据仅在后端安全读取。若采集超时或 Worker 离线，界面将明确区分陈旧数据与零负载，避免误判健康状态。
+
 ## 快捷键与画布操作
 
 顶部的快捷键帮助入口随时可查看按键说明。以下快捷键有不同的作用范围，输入框中不会触发全局 `?` 帮助。
@@ -474,4 +518,4 @@ docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volume
 当前 master 使用新的 H2 元数据库。升级时保留旧 Hubble 包及其数据，新版使用独立的数据目录；旧元数据不支持自动迁移，不能直接复用。
 
 打包配置默认绑定本机 `localhost:8088`。`bin/stop-hubble.sh` 会先请求正常停机，超时后才强制终止。
-需要开发与测试说明时，参考 [Toolchain 本地测试指南](/cn/docs/guides/toolchain-local-test/)。
+需要开发与测试说明时，参考 [Toolchain 本地测试指南](/cn/docs/guides/dev-test/toolchain-local-test/)。

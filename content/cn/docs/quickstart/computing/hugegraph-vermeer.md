@@ -242,6 +242,68 @@ curl --fail --show-error http://localhost:6688/graphs
 
 请求应返回 HTTP 200，JSON 响应中的 `errcode` 为 `0`。
 
+### 1.3 身份认证、Token 工具与部署凭据
+
+当在 `master.ini` 中启用 `auth=token`（或命令行参数 `-auth token`）时，应将 Master 签名因子保存在受保护的独立文件（`0600` 权限）中，
+而非放置在启动参数内。基于文件的认证机制采用 **v2 HMAC-SHA256** Base58 编码 token，具备恒定时间 MAC 校验能力，防止降级为不安全的旧协议。
+
+#### 1. 生成基于文件的签名因子
+
+启动 Master 前先生成签名因子文件：
+
+```bash
+umask 077
+openssl rand -hex 32 > config/token-factor
+```
+
+配置环境变量 `VERMEER_AUTH_TOKEN_FACTOR_FILE=/path/to/token-factor`，或在 `master.ini` 中设置 `auth_token_factor_file`。环境变量优先级高于 INI 文件，
+两者均高于行内 `auth_token_factor`。文件必须为有效的 UTF-8 编码且至少包含 16 个有效字符，不可全为空白字符。配置无效或不可读的文件会导致 Master
+在监听网络端口前直接退出（Fail-Closed），绝不会静默回退至行内或默认签名因子。
+
+#### 2. 使用 `/go/bin/vermeer-token` 生成认证 Token
+
+Vermeer 运行时容器镜像已内置打包 `/go/bin/vermeer-token` CLI 工具（源自 `cmd/vermeer-token`）。该工具无需运行 Master 或访问 Kubernetes API，
+即可直接生成合法的 v2 Base58 token：
+
+```bash {tab="Docker 命令"}
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/config:/tokens" \
+  --entrypoint /go/bin/vermeer-token \
+  hugegraph/vermeer:latest -user admin -space '$DEFAULT' \
+  -factor-file /tokens/token-factor -output-file /tokens/admin-token -i -quiet
+```
+
+```bash {tab="Go 源码"}
+go run ./cmd/vermeer-token -user admin -space '$DEFAULT' \
+  -factor-file config/token-factor -output-file config/admin-token -i -quiet
+```
+
+参数说明：
+- `-user`：用户名（默认：`foo`）。
+- `-space`：图空间名称（默认：`bar`；系统默认空间填写 `$DEFAULT`）。
+- `-factor-file`：签名因子文件路径（必填；不再接受行内 `-factor`）。
+- `-output-file`：以 `0600` 权限将 Base58 token 原子写入指定文件，不会向标准输出打印密钥。
+- `-quiet`：在未指定 `-output-file` 时仅输出 token 字符串，方便脚本捕获。
+- `-client`：客户端标识（默认：`hg`）。
+- `-i`：生成永不过期的永久 token（普通 token 默认 24 小时过期）。
+
+调用 REST 接口时，将 token 填入 HTTP 请求头：
+```bash
+curl -H "Authorization: Bearer <token>" http://localhost:6688/graphs
+```
+
+#### 3. Kubernetes Secret 密码文件与凭据隔离
+
+为了方便直接挂载 Kubernetes Secret 原始密码文件而无需封装为 JSON，Worker 支持通过密码文件注入连接凭据：
+
+- 配置 `VERMEER_HUGEGRAPH_USERNAME` 与 `VERMEER_HUGEGRAPH_PASSWORD_FILE`（或在 `worker.ini` 中配置 `hugegraph_username` 与 `hugegraph_password_file`）。
+  两项配置必须成对提供；若任一项配置后文件缺失或不可读，数据加载将直接失败。
+- 密码文件内容被原样读取，完整保留引号、反斜杠、空格及末尾换行符。
+- 若同时配置了显式 JSON 凭据文件（`VERMEER_HUGEGRAPH_CREDENTIALS_FILE` 或 `hugegraph_credentials_file`），JSON 文件拥有更高优先级。
+- PD 认证凭据：支持挂载 `VERMEER_PD_PASSWORD_FILE`（或 `pd_password_file`）。使用部署凭据时，必须同时配置 `VERMEER_PD_PEERS`（`pd_peers`），
+  确保 Worker 仅通过受信任的 PD 节点发现 Schema。
+- 部署凭据仅在进程内部加载时使用，绝不会持久化至任务元数据中，也不会通过查询接口泄露。
+- 可通过 `grpc_dial_timeout` 或 `VERMEER_GRPC_DIAL_TIMEOUT`（默认 `5s`）设定 Worker 建立 gRPC 连接的超时阈值。
+
 ## 二、任务创建类 rest api
 
 ### 2.1 简介
@@ -254,6 +316,8 @@ curl --fail --show-error http://localhost:6688/graphs
 - 同步接口：`POST http://master_ip:port/tasks/create/sync`，等待该任务结束后返回。
 - 查询单个任务：`GET http://master_ip:port/task/{task_id}`；响应中的 `errcode` 为 `0` 表示查询成功，再按 `task.state` 判断业务状态。异步任务应在客户端设置轮询截止时间；到时只停止客户端等待，不会自动取消服务端任务。
 - 查询保留结果：`GET http://master_ip:port/tasks/value/{task_id}`（或 `/api/v1/tasks/value/{id}`）。
+- 集群健康与遥测快照：`GET http://master_ip:port/api/v1/admin/cluster`（需管理员 token；参见[第四节](#四集群监控与遥测cluster-monitoring--telemetry)）。
+- 图空间计算可用性探针：`GET http://master_ip:port/api/v1/workers/availability`（图空间粒度就绪检测）。
 
 原生客户端使用 `POST /api/v1/tasks/create`，请求包含 `graph`、`task_type`（`load`、`reload` 或 `compute`）及扁平的字符串 `params` 映射。
 计算算法名填写 `params["compute.algorithm"]`，不是顶层 `algorithm`。
@@ -782,5 +846,62 @@ POST http://localhost:6688/tasks/create
 }
 ```
 
-> 🚧, 后续随时更新完善，欢迎随时提出建议和意见。
+## 四、集群监控与遥测（Cluster Monitoring & Telemetry）
 
+Vermeer 提供了面向运维看板（如 Apache HugeGraph Hubble）和云原生编排系统（如 Kubernetes / Helm 探针）的专用 REST 接口。
+
+### 4.1 集群健康与遥测快照（`GET /api/v1/admin/cluster`）
+
+`GET /api/v1/admin/cluster` 返回只读、带版本号的集群运行状态快照（`schema_version: 1`）。在开启 `auth=token` 的部署中，
+该接口需要管理员 token（`Authorization: Bearer <admin-token>`），并执行标准 `/admin` 鉴权过滤。
+
+#### 健康与就绪语义
+- 仅注册不代表就绪。Worker 必须已注册、连接 Master，并使 `load`、`compute`、`superstep` 三个任务流均就绪。
+- Master 未就绪、无 Worker 或存在未就绪 Worker 时，集群状态为 `DEGRADED`；聚合原因分别为 `master_initializing` / `service_offline`、`no_workers` 或 `workers_not_ready`。其余情况为 `UP`。
+- `metric_status` 是对象，包含 `availability`（`AVAILABLE`、`UNAVAILABLE` 或 `UNSUPPORTED`）、`observed_at` 与可选 `reason`。
+- Master 检查项为 `http_ready`、`initialized`、`service_online`；Worker 检查项为 `registered`、`connection_ready` 和三个 `*_stream_ready` 字段。
+- Worker 遥测在管理器锁外使用整批 800 ms 截止时间，不影响就绪判定。
+
+#### 请求与响应示例
+
+```bash
+curl -H "Authorization: Bearer <admin-token>" \
+  http://localhost:6688/api/v1/admin/cluster
+```
+
+```json
+{
+  "schema_version": 1,
+  "observed_at": 1730419200000,
+  "status": "UP",
+  "registered_workers": 1,
+  "ready_workers": 1,
+  "master": {
+    "id": "master", "name": "Vermeer Master", "role": "MASTER",
+    "grpc_peer": "127.0.0.1:6689", "version": "1.8.0",
+    "launch_time": "2026-11-01T08:00:00Z", "status": "UP", "ready": true,
+    "checks": {"http_ready": true, "initialized": true, "service_online": true},
+    "metrics": {"cpu_cores": 0.15, "rss_bytes": 134217728, "sample_window_seconds": 10.0},
+    "metric_status": {"availability": "AVAILABLE", "observed_at": 1730419200000}
+  },
+  "workers": [{
+    "id": "worker-1", "name": "worker-1", "role": "WORKER", "group": "default",
+    "grpc_peer": "127.0.0.1:6789", "version": "1.8.0",
+    "launch_time": "2026-11-01T08:00:05Z", "status": "UP", "ready": true,
+    "checks": {"registered": true, "connection_ready": true, "load_stream_ready": true,
+      "compute_stream_ready": true, "superstep_stream_ready": true},
+    "metrics": {"cpu_cores": 1.42, "rss_bytes": 2147483648, "sample_window_seconds": 10.0},
+    "metric_status": {"availability": "AVAILABLE", "observed_at": 1730419200000}
+  }]
+}
+```
+### 4.2 图空间 Worker 可用性探针（`GET /api/v1/workers/availability`）
+
+`GET /api/v1/workers/availability` 专为 Kubernetes 与 Helm 探针提供图空间粒度的计算可用性检测。
+
+- **请求方式**：携带调用者凭据以确定目标图空间。
+- **响应格式**：当目标图空间具备可用计算资源时返回 `{"available": true}`，否则返回 `{"available": false}`。
+- **判定规则**：当前空间可访问的 common、space 或 graph Worker 分组中必须至少包含一个 Worker，且该组内所有已注册 Worker 都必须通过全部就绪检查。
+  仅注册在其他空间分组的 Worker 不会计入当前空间的可用性。
+
+> 🚧, 后续随时更新完善，欢迎随时提出建议和意见。

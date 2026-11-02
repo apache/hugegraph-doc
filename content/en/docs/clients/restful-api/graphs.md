@@ -15,16 +15,9 @@ description: "Graphs REST API: Manage graph instance lifecycle including creatin
 
 With authentication enabled, creation, cloning, deletion, clearing, display-name changes, graph-configuration reads, read-mode changes, and manual compaction require graph-space management permission (`space`); administrators can satisfy it through permission inheritance. Snapshot creation/restoration and data-mode changes allow graph-space managers or the graph owner. Listing, details, and data/read-mode queries use graph read permissions. Raft APIs additionally require graph-space membership.
 
-`GET /apis` is the resource index. Listed resource paths belong under the Server origin:
-use `/versions`, `/graphspaces` and `/gremlin`, without prepending `/apis`.
-Earlier indexes return paths without a leading slash; interpret those relative to the Server root, not the index directory.
-When a gateway adds a public prefix, retain that prefix.
-
-`GET /graphspaces` requires PD mode. In standalone mode, skip that step and use `GET /graphs` to list configured graphs.
-Graph creation uses `POST /graphspaces/{space}/graphs/{graph}` and the backend's graph configuration.
-`POST /graphs` is not the graph-creation endpoint. The legacy `/graphs` listing does not mean GraphSpace APIs are unavailable.
-For the SeaTunnel demo, create `graph_a` before running the supplied sink job, as required by the
-[SeaTunnel guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md).
+- `GET /apis` is the resource index. Listed resource paths belong under the Server origin: use `/versions`, `/graphspaces` and `/gremlin`, without prepending `/apis`. Earlier indexes return paths without a leading slash; interpret those relative to the Server root, not the index directory. When a gateway adds a public prefix, retain that prefix.
+- `GET /graphspaces` requires PD mode. In standalone mode, skip that step and use `GET /graphs` to list configured graphs.
+- Dynamic graph creation uses `POST /graphspaces/{space}/graphs/{graph}` and the backend's graph configuration. `POST /graphs` is not the graph-creation endpoint. The legacy `/graphs` listing does not mean GraphSpace APIs are unavailable. For the SeaTunnel demo, create `graph_a` before running the supplied sink job, as required by the [SeaTunnel guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md).
 
 #### 6.1.1 List all graphs in the graphspace
 
@@ -547,6 +540,60 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/manage
 ```javascript
 {
   "graphs": "reloaded"
+}
+```
+
+#### 6.1.11 Clone graph schema
+
+With Server API version 0.73 or newer, clone the schema of an existing graph into a new target graph within the same graph space.
+This synchronously copies all property keys, vertex labels, and index labels from the source graph to the target graph.
+
+> [!NOTE]
+> Graph vertices and edges (data) are not copied. Sources containing any edge label are rejected before creating the target graph,
+> as some schema backends do not preserve the hierarchy metadata required to copy edge labels safely. Stop changes to the source schema
+> for the duration of the operation. If schema copying fails after the target graph is created, inspect and remove the partial target graph
+> explicitly before retrying.
+
+##### Params
+
+**Path parameters**
+
+- graphspace: Graphspace name
+- graph: Target graph name to create
+
+**Query parameters**
+
+- source: Name of the existing source graph to copy schema from (required)
+
+##### Method & Url
+
+```text
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/cloned_target_graph/schema-clone?source=hugegraph
+```
+
+##### Request Body [Optional]
+
+Optional JSON body supporting an updated `nickname` for the target graph (set `Content-Type: application/json`):
+
+```json
+{
+  "nickname": "ClonedGraph"
+}
+```
+
+##### Response Status
+
+```javascript
+201
+```
+
+##### Response Body
+
+```json
+{
+  "name": "cloned_target_graph",
+  "nickname": "ClonedGraph",
+  "backend": "rocksdb"
 }
 ```
 

@@ -97,6 +97,7 @@ POST http://localhost:8080/graphspaces
   "cpu_used": 0,
   "memory_used": 0,
   "storage_used": 0,
+  "storage_used_kb": 0,
   "storage_percent": 0.0,
   "graph_number_used": 0,
   "role_number_used": 0,
@@ -174,6 +175,7 @@ GET http://localhost:8080/graphspaces/gs1
   "cpu_used": 0,
   "memory_used": 0,
   "storage_used": 0,
+  "storage_used_kb": 0,
   "storage_percent": 0.0,
   "graph_number_used": 0,
   "role_number_used": 0,
@@ -191,6 +193,17 @@ GET http://localhost:8080/graphspaces/gs1
 #### 2.0.4 更新某个图空间
 
 > 注意：auth 鉴权配置，在创建图空间的过程一旦确定下来，不允许更新
+
+> [!NOTE]
+> **动态配额更新与资源约束**：
+> - **动态配额更新**：管理员可通过 `PUT /graphspaces/{name}` 并携带 `{"action":"update","update":{...}}` 动态调整配额（包括 `max_graph_number`、
+>   `max_role_number`、`cpu_limit`、`memory_limit`、`storage_limit`）。更新前建议先通过 `GET /graphspaces/{name}` 读取当前配置，并保留未修改字段的原值。
+> - **计算资源配额继承**：当 `compute_cpu_limit: 0` 或 `compute_memory_limit: 0`（或创建时缺省）时，表示持续继承主图空间的 `cpu_limit` 和 `memory_limit`。
+>   数值 0 代表继承，既非无限制也非分配 0 资源。
+> - **配额超限约束**：图数量达到 `max_graph_number` 时，新建图请求将被拒绝并返回 `reach graph limit`；存储占用超过 `storage_limit` 时，PD 会将该图空间内的图标记为
+>   `ReadOnly`（只读），待后续巡检检测到占用降至配额以下后自动恢复 `ReadWrite`。
+> - **高精度存储指标**：响应体在保留以 GB 为单位的整数 `storage_used` 字段外，新增了 `storage_used_kb` 字段以支持 1GB 以下的高精度用量展示，`storage_percent`
+>   比率直接基于该 KB 精度值计算得出。
 
 ##### Params
 
@@ -277,6 +290,7 @@ PUT http://localhost:8080/graphspaces/gs1
   "cpu_used": 0,
   "memory_used": 0,
   "storage_used": 0,
+  "storage_used_kb": 0,
   "storage_percent": 0.0,
   "graph_number_used": 0,
   "role_number_used": 0,
@@ -352,6 +366,7 @@ GET http://localhost:8080/graphspaces/profile
     "cpu_used": 0,
     "memory_used": 0,
     "storage_used": 0,
+    "storage_used_kb": 0,
     "storage_percent": 0.0,
     "graph_number_used": 0,
     "role_number_used": 0,

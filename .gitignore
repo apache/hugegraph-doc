@@ -35,6 +35,7 @@ GEMINI.md
 .gemini/
 WARP.md
 /.goal-task
+/.agents
 
 __pycache__/
 *.pyc

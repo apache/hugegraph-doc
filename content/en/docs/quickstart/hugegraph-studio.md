@@ -145,7 +145,7 @@ graph.schema().propertyKey("price").asInt().ifNotExist().create()
 1. These Gremlin statements use Groovy syntax and are sent to HugeGraphServer for execution.
 See [Gremlin Query Language](../language/hugegraph-gremlin) or the [TinkerPop website](http://tinkerpop.apache.org/) for Gremlin details.
 
-2. `graph.schema()` returns a `SchemaManager` for schema operations. See [HugeGraph-Client](/docs/clients/hugegraph-client/) for examples.
+2. `graph.schema()` returns a `SchemaManager` for schema operations. See [HugeGraph-Client](/docs/clients/client/hugegraph-client/) for examples.
 The Java client uses Java syntax, broadly similar to Gremlin; see its documentation for differences.
 
 3. Studio exposes `graph`, the connected graph object for data operations, and `g`, its traversal object (`graph.traversal()`).

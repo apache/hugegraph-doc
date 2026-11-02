@@ -19,13 +19,13 @@ HugeGraph supports two mainstream graph query languages: **Gremlin** (imperative
   Declarative Cypher language support, read/write statement examples, execution mechanics, and constraints.
 - [Cypher Compatibility](/docs/language/cypher-compatibility/)
 
-  Request contract verification, parameter binding rules, syntax coverage matrix, and behavioral boundaries.
+  Coverage matrix for Cypher clauses and functions, known behavior differences, and workarounds for unsupported features.
 - [Migrate from Neo4j](/docs/language/migrate-from-neo4j/)
 
-  Core differences between Neo4j and HugeGraph in graph modeling, schema rules, ID strategies, indexing, and query translation.
+  Core differences between Neo4j and HugeGraph in graph modeling, ID strategies, multiple labels, and query translation.
 - [Sample Graph Data](/docs/language/hugegraph-example/)
 
-  The classic 6-vertex 6-edge TinkerPop sample graph dataset used across query examples.
+  The classic TitanDB "Graph of the Gods" sample graph dataset (12 vertices) used across query examples.
 {.cards}
 
 ## Related Tools & Entry Points

@@ -10,7 +10,7 @@ series_weight: 1
 ---
 
 > **Historical integration.** This 2025 article describes an earlier interface and is retained for reference.
-> For the proposed replacement, see the [ToplingDB development guide](/docs/guides/toplingdb/).
+> For the proposed replacement, see the [ToplingDB development guide](/docs/guides/dev-test/toplingdb/).
 > That guide describes unreleased changes; do not mix its settings with these historical examples.
 
 

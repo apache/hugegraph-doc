@@ -24,7 +24,15 @@ user(name=boss) -belong-> group(name=all) -access(read)-> target(graph=graph1, r
 Description: User 'boss' has read permission for people in the 'graph1' graph from Beijing.
 
 ##### Interface Description:
-The core of user authentication and access control is 5 categories: UserAPI, GroupAPI, TargetAPI, BelongAPI, AccessAPI. Alongside them, ManagerAPI grants graphspace-level manager roles, LoginAPI issues and verifies tokens, and ProjectAPI groups several graphs so that permissions can be granted for the whole set at once.
+The core of user authentication and access control consists of 5 primary categories and complementary management APIs:
+
+- [User API](#102-user-user-api) — Manage user accounts, credentials, and profile information.
+- [Group API](#103-group-group-api) — Manage user groups for role-based aggregation.
+- [Target API](#104-resource-target-api) — Define accessible resource boundaries.
+- [Belong API](#105-association-of-roles-belong-api) — Bind users into user groups.
+- [Access API](#106-authorization-access-api) — Grant permissions on targets to groups.
+- [Manager & Token APIs](#108-login-login-api) — Manage graph-space manager roles and login tokens.
+{.cards}
 ### 10.2 User (User) API
 The user interface includes APIs for creating users, deleting users, modifying users, and querying user-related information.
 

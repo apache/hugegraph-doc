@@ -75,7 +75,7 @@ Id vertexId = IdGenerator.of("vertex-1");
 
 Recompile the application and its plugins after adapting source. Relocated types also change method descriptors,
 so editing imports cannot make an old compiled jar binary-compatible. Removed core classes have no general compatibility package.
-The [plugin examples](/docs/guides/custom-plugin/) still describe 1.7.0; apply the following mappings when targeting the migrated API.
+The [plugin examples](/docs/guides/architectural/custom-plugin/) still describe 1.7.0; apply the following mappings when targeting the migrated API.
 
 | Previous Java entry | Use in the migrated API |
 |---|---|

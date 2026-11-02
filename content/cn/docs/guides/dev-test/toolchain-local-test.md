@@ -1,7 +1,9 @@
 ---
 title: "HugeGraph工具链本地测试指南"
-linkTitle: "Toolchain本地测试"
-weight: 4
+linkTitle: "Toolchain 本地测试"
+weight: 1
+aliases:
+  - /docs/guides/toolchain-local-test/
 ---
 
 本指南帮助开发者在本地运行 HugeGraph 工具链测试。

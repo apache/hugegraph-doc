@@ -2,6 +2,8 @@
 title: "HugeGraph 设计理念"
 linkTitle: "设计理念(legacy)"
 weight: 2
+aliases:
+  - /docs/guides/desgin-concept/
 ---
 
 ### 1. 属性图模型

@@ -7,7 +7,7 @@ aliases:
   - /docs/clients/hugegraph-client/
 ---
 
-### 1 Overview
+### 1 Overview {#1-hugegraph-client}
 
 [HugeGraph Java Client](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-client) translates Java APIs into REST requests to HugeGraph Server. It supports managing schemas and graph data, executing Gremlin queries, and calling Traverser APIs. This guide covers quick-start setup and examples alongside complete core API reference documentation.
 
@@ -29,7 +29,7 @@ The basic steps to use HugeGraph-Client are as follows:
 
 See the complete example in the following section for the detail.
 
-### 4 Complete Example 
+### 4 Complete Example {#5-simple-example}
 
 #### 4.1 Build New Maven Project
 
@@ -420,7 +420,7 @@ If the above process of creating HugeClient fails, an exception will be thrown, 
 
 When operating through `gremlin` in `HugeGraph-Hubble`(or `HugeGraph-Studio`), `HugeClient` is not required and can be ignored.
 
-#### 5.1 Builder options
+#### 5.1 Builder options {#11-builder-options}
 
 The builder accepts the following options. Every timeout is expressed in seconds and converted to milliseconds internally.
 
@@ -445,7 +445,7 @@ Omit the call to keep the default, or use `configTimeout(20)` explicitly; do not
 
 On `build()`, the client reads the server API version and rejects anything outside the range `[0.38, 0.81)`.
 
-#### 5.2 Operation entries
+#### 5.2 Operation entries {#12-operation-entries}
 
 Besides schema, graph and gremlin, HugeClient exposes the following entries. The graph-scoped ones are only available when a graph name was supplied; when the client is built with an empty graph name they return null until `assignGraph(graphSpace, graph)` is called.
 

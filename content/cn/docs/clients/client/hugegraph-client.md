@@ -7,7 +7,7 @@ aliases:
   - /docs/clients/hugegraph-client/
 ---
 
-### 1 HugeGraph-Client 概述
+### 1 HugeGraph-Client 概述 {#1-hugegraph-client}
 
 [HugeGraph Java Client](https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-client) 将 Java API 转换为 HugeGraph Server 的 REST 请求，支持管理 Schema 和图数据、执行 Gremlin 及调用 Traverser API。本文涵盖 Java 项目的快速接入示例与全量核心 API 参考。
 
@@ -29,7 +29,7 @@ aliases:
 
 详细操作见下面的完整示例。
 
-### 4 完整示例
+### 4 完整示例 {#5-简单示例}
 
 #### 4.1 新建 Maven 工程
 
@@ -426,7 +426,7 @@ HugeClient hugeClient = HugeClient.builder("http://localhost:8080", "hugegraph")
 
 在`HugeGraph - Hubble`中通过`gremlin`来操作时，不需要使用`HugeClient`，可以忽略。
 
-#### 5.1 构造器选项
+#### 5.1 构造器选项 {#11-构造器选项}
 
 构造器支持下列选项。所有超时参数的单位都是秒，内部会转换为毫秒。
 
@@ -451,7 +451,7 @@ HugeClient hugeClient = HugeClient.builder("http://localhost:8080", "hugegraph")
 
 调用 `build()` 时，客户端会读取服务端的 API 版本，超出 `[0.38, 0.81)` 范围时报错。
 
-#### 5.2 操作入口
+#### 5.2 操作入口 {#12-操作入口}
 
 除 schema、graph 和 gremlin 外，HugeClient 还提供下列入口。图级别的入口只有在指定了图名称时才可用；如果创建客户端时图名称为空，这些入口会返回 null，直到调用 `assignGraph(graphSpace, graph)` 为止。
 

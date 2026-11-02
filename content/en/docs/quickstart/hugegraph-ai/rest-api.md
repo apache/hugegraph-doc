@@ -205,7 +205,7 @@ When `review_options` is omitted, `status` is always `succeeded` on HTTP 200. Wh
     `blocked` (schema constraints unresolved), or `failed` (exception or truncation).
   - `graph`: The extracted sub-graph object (`vertices` and `edges`), or `null` on failure.
   - `issues`: List of issues found during validation or review, including `path`, `message`, and optional `evidence`.
-  - `reason` and `stage`: Failure explanation and execution stage (`extract`, `review`, or `repair`).
+  - `reason` and `stage`: Failure explanation and execution stage (`prepare`, `extract`, `validate`, `review`, or `repair`).
   - `reviews_used`, `fixes_used`, and `llm_calls`: Consumed model call counters.
 
 ## Text2Gremlin

@@ -16,10 +16,11 @@ Computer 支持从 HugeGraph 或 HDFS 读取图数据，并可将结果写回 Hu
 
 ## 2. 前置条件与连接
 
-构建和运行 Computer（1.8.0+ 版本）需要 **JDK 17 或更高版本**（包括集群中各计算节点与 Worker）；源码构建还需要 **Maven 3.6.3 或更高版本**。
-在自定义 Java 应用程序中嵌入运行 Computer 时，必须配置以下 JVM 运行选项：`--add-opens=java.base/java.io=ALL-UNNAMED`（用于缓冲文件复制）
-与 `--add-opens=java.base/java.lang=ALL-UNNAMED`（用于 SOFA RPC 动态代理生成）；官方发行包启动脚本 `bin/start-computer.sh`
-及 Kubernetes Operator 已自动配置上述参数。PageRank 示例要求一个已启动且包含待计算图数据的 HugeGraph-Server，以及可供 master、worker 访问的 etcd。
+构建和运行 Computer 在**示例固定的 1.7.0 版本需使用 JDK 11**（主线 **1.8.0+ 及 master 要求 JDK 17 或更高版本**，包括集群中各计算节点与 Worker）；
+源码构建还需要 **Maven 3.6.3 或更高版本**（1.7.0 需 Maven 3.5+）。在自定义 Java 应用程序中嵌入运行 Computer 1.8.0+ 时，必须配置以下 JVM 运行选项：
+`--add-opens=java.base/java.io=ALL-UNNAMED`（用于缓冲文件复制）与 `--add-opens=java.base/java.lang=ALL-UNNAMED`（用于 SOFA RPC 动态代理生成）；
+官方发行包启动脚本 `bin/start-computer.sh` 及 Kubernetes Operator 已自动配置上述参数。PageRank 示例要求一个已启动且包含待计算图数据的
+HugeGraph-Server，以及可供 master、worker 访问的 etcd。
 
 | 服务 | 示例地址或端口 | 用途 |
 |------|----------------|------|

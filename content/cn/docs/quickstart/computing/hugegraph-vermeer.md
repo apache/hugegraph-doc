@@ -878,7 +878,7 @@ curl -H "Authorization: Bearer <admin-token>" \
   "ready_workers": 1,
   "master": {
     "id": "master", "name": "Vermeer Master", "role": "MASTER",
-    "grpc_peer": "127.0.0.1:6688", "version": "1.8.0",
+    "grpc_peer": "127.0.0.1:6689", "version": "1.8.0",
     "launch_time": "2026-11-01T08:00:00Z", "status": "UP", "ready": true,
     "checks": {"http_ready": true, "initialized": true, "service_online": true},
     "metrics": {"cpu_cores": 0.15, "rss_bytes": 134217728, "sample_window_seconds": 10.0},
@@ -886,7 +886,7 @@ curl -H "Authorization: Bearer <admin-token>" \
   },
   "workers": [{
     "id": "worker-1", "name": "worker-1", "role": "WORKER", "group": "default",
-    "grpc_peer": "127.0.0.1:6689", "version": "1.8.0",
+    "grpc_peer": "127.0.0.1:6789", "version": "1.8.0",
     "launch_time": "2026-11-01T08:00:05Z", "status": "UP", "ready": true,
     "checks": {"registered": true, "connection_ready": true, "load_stream_ready": true,
       "compute_stream_ready": true, "superstep_stream_ready": true},

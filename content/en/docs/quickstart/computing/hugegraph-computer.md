@@ -16,11 +16,11 @@ Computer reads graph data from HugeGraph or HDFS and writes results to either sy
 
 ## 2. Prerequisites and Connections
 
-Building and running Computer (version 1.8.0+) require **JDK 17 or later** (for building, running, and cluster workers); source builds also require
-**Maven 3.6.3 or later**. When embedding Computer in custom Java applications, you must specify the required JVM options:
-`--add-opens=java.base/java.io=ALL-UNNAMED` (for buffered file duplication) and `--add-opens=java.base/java.lang=ALL-UNNAMED` (for SOFA RPC proxy generation).
-The distribution launcher script `bin/start-computer.sh` and Kubernetes Operator automatically configure these JVM options. The PageRank example needs a
-running HugeGraph-Server with graph data, plus etcd reachable by the master and workers.
+Building and running Computer requires **JDK 11 for the pinned 1.7.0 release** (or **JDK 17+ for 1.8.0+ and master**, across build hosts and cluster workers);
+source builds also require **Maven 3.6.3 or later** (Maven 3.5+ for 1.7.0). When embedding Computer 1.8.0+ in custom Java applications, you must specify
+the required JVM options: `--add-opens=java.base/java.io=ALL-UNNAMED` (for buffered file duplication) and `--add-opens=java.base/java.lang=ALL-UNNAMED`
+(for SOFA RPC proxy generation). The distribution launcher script `bin/start-computer.sh` and Kubernetes Operator automatically configure these JVM options.
+The PageRank example needs a running HugeGraph-Server with graph data, plus etcd reachable by the master and workers.
 
 | Service | Example address or port | Purpose |
 |------|----------------|------|

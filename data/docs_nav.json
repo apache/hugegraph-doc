@@ -1446,6 +1446,11 @@
     "/docs/cla/": [
       "@group/reference",
       "/docs/cla/"
+    ],
+    "/docs/quickstart/hugegraph-ai/hugegraph-llm-sdk/": [
+      "@group/components",
+      "/docs/quickstart/hugegraph-ai/",
+      "/docs/quickstart/hugegraph-ai/hugegraph-llm-sdk/"
     ]
   },
   "children_by_url": {
@@ -1491,6 +1496,7 @@
       "/docs/quickstart/hugegraph-ai/quick_start",
       "/docs/quickstart/hugegraph-ai/hugegraph-llm",
       "/docs/quickstart/hugegraph-ai/hugegraph-mcp",
+      "/docs/quickstart/hugegraph-ai/hugegraph-llm-sdk",
       "/docs/quickstart/hugegraph-ai/hugegraph-ml",
       "/docs/quickstart/hugegraph-ai/config-reference",
       "/docs/quickstart/hugegraph-ai/rest-api"

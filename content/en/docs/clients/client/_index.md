@@ -28,6 +28,7 @@ read and write vertices and edges, execute Gremlin traversals, and run graph alg
 ## Selection Guide
 
 - **Java/Scala production services**: Use the **HugeGraph Java Client** for the most comprehensive feature set, connection pooling, and advanced Traverser algorithms.
-- **AI, LLM, and data science workflows**: Use the **HugeGraph Python Client** for seamless integration with Python ML ecosystems, LangChain, and LlamaIndex.
+- **AI, LLM, and data science workflows**: Use the **HugeGraph Python Client** (`pyhugegraph`) for Python data science, graph analytics,
+  and native integration with HugeGraph-LLM and HugeGraph-ML.
 - **Microservices and cloud-native utilities**: Use the **HugeGraph Go Client** or integrate directly via [RESTful API](/docs/clients/restful-api/).
 - **Interactive shell debugging**: Use the [Gremlin Console](/docs/clients/gremlin-console/) for command-line exploration.

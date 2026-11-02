@@ -25,6 +25,6 @@ HugeGraph 提供多语言客户端 SDK，方便在不同语言与技术栈中连
 ## 选择建议
 
 - **生产级 Java/Scala 服务**：推荐使用 **HugeGraph Java Client**，功能最完备，覆盖所有底层能力与连接池管理。
-- **AI/LLM/算法与数据科学应用**：推荐使用 **HugeGraph Python Client**，易于与 LangChain、LlamaIndex 及 Python 数据科学库配合。
+- **AI/LLM/算法与数据科学应用**：推荐使用 **HugeGraph Python Client**（`pyhugegraph`），深度适配 HugeGraph-LLM、HugeGraph-ML 及 Python 数据科学分析工作流。
 - **微服务与云原生工具构建**：推荐使用 **HugeGraph Go Client** 或直接调用 [RESTful API](/cn/docs/clients/restful-api/)。
 - **终端离线调试或临时查询**：推荐使用 [Gremlin Console](/cn/docs/clients/gremlin-console/)。

@@ -204,7 +204,7 @@ curl -X POST http://localhost:8001/graph/extract \
   - `status`：`final`（通过结构校验与模型审阅）、`candidate`（通过校验但审阅配额耗尽）、`blocked`（Schema 约束无法修复或被审阅拦截）或 `failed`（调用异常或截断）。
   - `graph`：当前抽取的子图数据对象（`vertices` 与 `edges`），失败时为 `null`。
   - `issues`：校验或审阅中发现的问题列表，包含 `path`、`message` 及可选的原文 `evidence`。
-  - `reason` 与 `stage`：失败原因与发生阶段（`extract`、`review` 或 `repair`）。
+  - `reason` 与 `stage`：失败原因与发生阶段（`prepare`、`extract`、`validate`、`review` 或 `repair`）。
   - `reviews_used`、`fixes_used` 与 `llm_calls`：记录该文本块消耗的大模型调用计数。
 
 ## Text2Gremlin

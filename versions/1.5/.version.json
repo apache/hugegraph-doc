@@ -4,7 +4,7 @@
   "docsNavigation": {
     "groups": 5,
     "pages": 77,
-    "removed": 20,
+    "removed": 21,
     "scopedLinks": 10,
     "treeSha256": "ac29ab8f0e7020496a3a1afe480687043d751e32c93ffb848e2210e3500cd483"
   },
@@ -32,6 +32,6 @@
     "manifests": 201,
     "searchFingerprints": 2,
     "searchRefs": 133,
-    "urls": 1327
+    "urls": 1337
   }
 }

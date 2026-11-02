@@ -14,4 +14,3 @@ Section pages:
 - [HugeGraph ToolChain](/docs/quickstart/toolchain/)
 - [HugeGraph-AI](/docs/quickstart/hugegraph-ai/)
 - [HugeGraph Computing (OLAP)](/docs/quickstart/computing/)
-- [HugeGraph Client](/docs/quickstart/client/)

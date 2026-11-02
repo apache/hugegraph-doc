@@ -153,6 +153,7 @@ Request fields:
 | `language` | `zh` | `zh` or `en`, used for chunk splitting |
 | `split_type` | `document` | `document`, `paragraph`, or `sentence` |
 | `include_meta` | `false` | Adds `vertex_count`, `edge_count`, and `text_count` to `meta` |
+| `review_options` | `none` (disabled) | Optional JSON object enabling model review and bounded repair: `max_reviews`, `max_fixes`, `max_workers` |
 | `client_config` | none | Only allowed with a graph-name schema |
 
 An inline schema must be an object with `vertexlabels` and `edgelabels` lists. Every vertex label needs a non-empty `name` and a non-empty `properties` list; every edge label needs a non-empty `name`, `source_label`, and `target_label`. `propertykeys` is optional and must be a list when present.
@@ -172,7 +173,40 @@ When `schema` is an existing graph name, also pass `client_config`, and make `cl
 }
 ```
 
-A successful response always contains `status` (always `succeeded`), `result.vertices`, `result.edges`, `warnings`, and `meta`. `meta` stays empty unless `include_meta` is `true`.
+### Model Review and Repair (`review_options`)
+
+Providing `review_options` enables iterative model review and bounded schema repair for each text chunk:
+
+```json
+{
+  "texts": ["Alice works at Acme Corp.", "Bob works at Beta LLC."],
+  "schema": {...},
+  "review_options": {
+    "max_reviews": 2,
+    "max_fixes": 1,
+    "max_workers": 4
+  }
+}
+```
+
+- `max_reviews` (default `2`, range `0`–`5`): Maximum review iterations per chunk.
+- `max_fixes` (default `1`, range `0`–`3`): Maximum bounded repair attempts per chunk.
+- `max_workers` (default `4`, range `1`–`8`): Number of chunks executed concurrently.
+- Passing `{}` uses the defaults. Omitting `review_options` or setting it to `null` uses legacy extraction without review.
+
+### Response Format
+
+When `review_options` is omitted, `status` is always `succeeded` on HTTP 200. When `review_options` is enabled:
+- The overall `status` reflects cumulative chunk results: `succeeded` (all chunks final), `partial` (some chunks final), or `failed` (no chunks final).
+- Only `final` chunks are merged into top-level `result.vertices` and `result.edges`.
+- The response includes `chunk_results` detailing each chunk's execution:
+  - `index`: 0-based chunk position.
+  - `status`: `final` (passed validation & review), `candidate` (passed validation; review budget exhausted),
+    `blocked` (schema constraints unresolved), or `failed` (exception or truncation).
+  - `graph`: The extracted sub-graph object (`vertices` and `edges`), or `null` on failure.
+  - `issues`: List of issues found during validation or review, including `path`, `message`, and optional `evidence`.
+  - `reason` and `stage`: Failure explanation and execution stage (`prepare`, `extract`, `validate`, `review`, or `repair`).
+  - `reviews_used`, `fixes_used`, and `llm_calls`: Consumed model call counters.
 
 ## Text2Gremlin
 

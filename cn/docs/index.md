@@ -63,7 +63,7 @@ Apache HugeGraph 包含图数据库、图计算和图 AI 组件。HugeGraph 核�
 - [下载 Apache HugeGraph](/cn/docs/download/download/)
 - [快速上手](/cn/docs/quickstart/)
 - [HugeGraph-Server 配置](/cn/docs/config/)
-- [客户端与 API](/cn/docs/clients/): 通过 Java 客户端、REST API、Gremlin Console 和其他客户端库连接 HugeGraph。
+- [客户端与 API](/cn/docs/clients/): 通过 RESTful API、多语言客户端/SDK 与 Gremlin Console 连接并操作 HugeGraph。
 - [使用指南](/cn/docs/guides/)
 - [图查询语言](/cn/docs/language/)
 - [PERFORMANCE](/cn/docs/performance/)

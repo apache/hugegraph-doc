@@ -9,7 +9,9 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 >
 > 默认图空间名是 `DEFAULT`。
 
-Server 启动后，可访问 `http://localhost:8080/swagger-ui/index.html` 查看当前版本的 OpenAPI 页面。[使用示例](/cn/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example)
+HugeGraph 提供了完备的 RESTful HTTP API，涵盖 Schema 管理、图数据读写、图实例与图空间运维、认证鉴权及分析计算。默认图空间名为 `DEFAULT`。
+
+Server 启动后，可直接访问 `http://localhost:8080/swagger-ui/index.html` 在线查看 OpenAPI 交互文档与调试接口（参见 [Swagger UI 使用示例](/cn/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example)）。
 
 [comment]: <> (- Graph Schema)
 
@@ -79,5 +81,7 @@ Server 启动后，可访问 `http://localhost:8080/swagger-ui/index.html` 查�
 
 反链：
 
+- [客户端与 API](/cn/docs/clients/)
+- [客户端/SDK](/cn/docs/clients/client/)
 - [系统介绍](/cn/docs/introduction/)
 - [安装/构建 HugeGraph Server](/cn/docs/quickstart/hugegraph/hugegraph-server/)

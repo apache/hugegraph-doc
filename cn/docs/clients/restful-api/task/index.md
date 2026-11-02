@@ -246,6 +246,9 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/jobs/computer/pa
 }
 ```
 
+Python 调用方：异步全图任务使用 `client.olap()`，立即返回的 OLTP 查询使用 `client.traverser()` 或 `client.rank()`，
+详见 [Python 客户端指南](/cn/docs/clients/client/hugegraph-client-python/)。
+
 ---
 
 反链：

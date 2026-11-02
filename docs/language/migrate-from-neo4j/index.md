@@ -30,7 +30,7 @@ For language usage and compatibility references, see [HugeGraph Cypher](/docs/la
 | Property predicates in `WHERE` need no index | The starting vertex lookup in `WHERE` needs a covering index unless it is an equality on every primary key of the label. Use `RANGE` for `>` / `<` comparisons. Without a covering index the request returns HTTP 200 with `status.code` 400 and a "not indexed" error |
 | Parameterized queries `$param` | Parameterized requests are supported via JSON body (up to 16 top-level parameters; group additional values into a nested Map); missing parameters result in execution errors |
 | `CALL dbms.*` / `CALL algo.*` procedures | Equivalent capabilities are in the [traverser](/docs/clients/restful-api/traverser/), [task](/docs/clients/restful-api/task/), and other REST APIs |
-| Driver: Neo4j Bolt driver | [hugegraph-client](/docs/clients/hugegraph-client/) (`CypherManager`) or any HTTP client |
+| Driver: Neo4j Bolt driver | [hugegraph-client](/docs/clients/client/hugegraph-client/) (`CypherManager`) or any HTTP client |
 | Transaction boundaries inside a Cypher statement | One statement per request; graph-to-graph migration uses [Apache SeaTunnel 3.0.0](https://seatunnel.apache.org/download/) (preferred, see below), file-based bulk loads use the [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/) |
 {.wide}
 
@@ -43,7 +43,7 @@ business key.
 
 1. **Inventory your queries**: Review your application's Cypher queries against the
    [Cypher Compatibility Notes](/docs/language/cypher-compatibility/) and
-   [Known Limitations](/docs/language/hugegraph-cypher/#known-limitations) to classify them into
+   [Limitations](/docs/language/hugegraph-cypher/#limitations) to classify them into
    "works as-is", "rewrite as Gremlin", or "switch to a REST API".
 2. **Create the schema first**: define VertexLabel / EdgeLabel / PropertyKey
    and indexes through the schema API — HugeGraph requires the schema to
@@ -101,7 +101,7 @@ business key.
 
 - **Statements and parameters**: Multi-statement scripts and `CALL` procedures are not supported; parameter binding supports up to 16 top-level parameters
   (pass a nested Map for additional properties).
-- **Unsupported syntax**: Advanced openCypher clauses not covered in the compatibility matrix will fail during query validation.
+- **Unverified syntax**: Advanced openCypher constructs not covered in the compatibility matrix are unverified and may fail during query validation; established limitations are listed above.
 - **Fallback path**: Unsupported query constructs can typically be rewritten as Gremlin
   traversals — see the
   [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents);

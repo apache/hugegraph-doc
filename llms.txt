@@ -18,7 +18,6 @@
   - [Hubble Basics and Standalone](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-hubble/index.md): Use Hubble and RocksDB Server to manage schema, import CSV, and query graph data with Gremlin, Cypher, or Text2GQL.
   - [HugeGraph-LLM](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-llm/index.md)
   - [Install/Build HugeGraph Server](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/index.md)
-  - [Java-Client](https://hugegraph.apache.org/docs/quickstart/client/hugegraph-client/index.md)
   - [Vermeer: Memory-First Computing Framework](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-vermeer/index.md): Vermeer high-performance in-memory graph computing: start once, execute repeatedly, with 15+ OLAP algorithms, seconds-to-minutes execution, deployment, loading, PageRank, and community detection.
   - [Analysis with HugeGraph-Computer](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-computer/index.md)
   - [Export and migrate with SeaTunnel Source](https://hugegraph.apache.org/docs/quickstart/toolchain/export-migration/hugegraph-seatunnel-source/index.md)
@@ -27,9 +26,7 @@
   - [Import graph data with SeaTunnel Sink](https://hugegraph.apache.org/docs/quickstart/toolchain/import/hugegraph-seatunnel-connector/index.md)
   - [Install/Build HugeGraph-PD](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-pd/index.md)
   - [Load data with HugeGraph-Loader](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-loader/index.md): Bulk import graph data into HugeGraph with Loader from files, HDFS, relational databases, Kafka, and other HugeGraph graphs.
-  - [Python Client](https://hugegraph.apache.org/docs/quickstart/client/hugegraph-client-python/index.md)
   - [Computer Config Reference](https://hugegraph.apache.org/docs/quickstart/computing/hugegraph-computer-config/index.md)
-  - [Go Client](https://hugegraph.apache.org/docs/quickstart/client/hugegraph-client-go/index.md)
   - [Install/Build HugeGraph-Store](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-hstore/index.md)
   - [LLM Workflow](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/quick_start/index.md)
   - [Manage with Tools](https://hugegraph.apache.org/docs/quickstart/toolchain/hugegraph-tools/index.md)
@@ -40,6 +37,7 @@
   - [REST API](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/rest-api/index.md)
   - [Vermeer Client](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/vermeer-python-client/index.md)
   - [HugeGraph-MCP](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-mcp/index.md)
+  - [HugeGraph-LLM SDK](https://hugegraph.apache.org/docs/quickstart/hugegraph-ai/hugegraph-llm-sdk/index.md): Standalone Python SDK for schema design, entity/relation extraction, graph validation, and reviewed graph construction from text.
 - [Server Config](https://hugegraph.apache.org/docs/config/index.md)
   - [Server Startup Guide](https://hugegraph.apache.org/docs/config/config-guide/index.md)
   - [Server Complete Configuration Manual](https://hugegraph.apache.org/docs/config/config-option/index.md)
@@ -48,11 +46,13 @@
   - [Config RocksDB Backend](https://hugegraph.apache.org/docs/config/config-backend-rocksdb/index.md)
   - [Config HStore Backend](https://hugegraph.apache.org/docs/config/config-backend-hstore/index.md)
   - [Config HBase Backend](https://hugegraph.apache.org/docs/config/config-backend-hbase/index.md)
-- [Clients and APIs](https://hugegraph.apache.org/docs/clients/index.md): Connect to HugeGraph with the Java client, REST API, Gremlin Console, and other client libraries.
+- [Clients and APIs](https://hugegraph.apache.org/docs/clients/index.md): Connect to and operate HugeGraph with the RESTful API, multi-language client SDKs, and Gremlin Console.
   - [Graphspace](https://hugegraph.apache.org/docs/clients/restful-api/graphspace/index.md): Graphspace REST API: Multi-tenancy and resource isolation for creating, viewing, updating, and deleting graph spaces with prerequisites and constraints.
+  - [Java Client](https://hugegraph.apache.org/docs/clients/client/hugegraph-client/index.md)
   - [Schema](https://hugegraph.apache.org/docs/clients/restful-api/schema/index.md): Schema REST API: Query the complete schema definition of a graph, including property keys, vertex labels, edge labels, and index labels.
-  - [HugeGraph Java Client](https://hugegraph.apache.org/docs/clients/hugegraph-client/index.md)
   - [PropertyKey](https://hugegraph.apache.org/docs/clients/restful-api/propertykey/index.md): PropertyKey REST API: Define data types and cardinality constraints for all properties in the graph, serving as fundamental schema elements.
+  - [Python Client](https://hugegraph.apache.org/docs/clients/client/hugegraph-client-python/index.md)
+  - [Go Client](https://hugegraph.apache.org/docs/clients/client/hugegraph-client-go/index.md)
   - [Gremlin Console](https://hugegraph.apache.org/docs/clients/gremlin-console/index.md)
   - [VertexLabel](https://hugegraph.apache.org/docs/clients/restful-api/vertexlabel/index.md): VertexLabel REST API: Define vertex types, ID strategies, and associated properties that determine vertex structure and constraints.
   - [EdgeLabel](https://hugegraph.apache.org/docs/clients/restful-api/edgelabel/index.md): EdgeLabel REST API: Define edge types and relationship constraints between source and target vertices to construct graph connection rules.
@@ -71,23 +71,22 @@
   - [Metrics](https://hugegraph.apache.org/docs/clients/restful-api/metrics/index.md): Metrics REST API: Retrieve runtime performance metrics, statistics, and health status data of the system.
   - [Other](https://hugegraph.apache.org/docs/clients/restful-api/other/index.md): Other REST API: Provide auxiliary functions such as version query, API listing, exception trace switch, IP allowlist and the Arthas agent.
 - [GUIDES](https://hugegraph.apache.org/docs/guides/index.md)
-  - [Architecture Overview](https://hugegraph.apache.org/docs/guides/architectural/index.md)
-  - [Design Concepts (legacy)](https://hugegraph.apache.org/docs/guides/desgin-concept/index.md)
-  - [HugeGraph Plugin](https://hugegraph.apache.org/docs/guides/custom-plugin/index.md)
-  - [Toolchain Local Testing](https://hugegraph.apache.org/docs/guides/toolchain-local-test/index.md)
+  - [HugeGraph Plugin](https://hugegraph.apache.org/docs/guides/architectural/custom-plugin/index.md)
+  - [Toolchain Local Testing](https://hugegraph.apache.org/docs/guides/dev-test/toolchain-local-test/index.md)
+  - [Design Concepts (legacy)](https://hugegraph.apache.org/docs/guides/architectural/desgin-concept/index.md)
+  - [ToplingDB (development)](https://hugegraph.apache.org/docs/guides/dev-test/toplingdb/index.md): Build the optional ToplingDB runtime from development source, isolate its data, and understand startup and recovery boundaries.
   - [Backup Restore](https://hugegraph.apache.org/docs/guides/backup-restore/index.md)
   - [Docker Cluster](https://hugegraph.apache.org/docs/guides/hugegraph-docker-cluster/index.md)
   - [FAQ](https://hugegraph.apache.org/docs/guides/faq/index.md)
   - [Security](https://hugegraph.apache.org/docs/guides/security/index.md)
   - [1.8.0 Java and upgrade migration](https://hugegraph.apache.org/docs/guides/shared-foundation-migration/index.md): Update Java imports and plugins, then prepare matching Server, PD and Store upgrades for the 1.8.0 shared-foundation changes.
   - [1.8 Gremlin & TinkerPop Migration](https://hugegraph.apache.org/docs/guides/gremlin-migration-3.8/index.md): Comprehensive guide to breaking changes, high-frequency syntax rewrites, configuration migrations, and complete compatibility references from TinkerPop 3.5 to 3.8 in HugeGraph 1.8.0.
-  - [ToplingDB (development)](https://hugegraph.apache.org/docs/guides/toplingdb/index.md): Build the optional ToplingDB runtime from development source, isolate its data, and understand startup and recovery boundaries.
 - [Graph Query Languages](https://hugegraph.apache.org/docs/language/index.md)
   - [Gremlin Query Language](https://hugegraph.apache.org/docs/language/hugegraph-gremlin/index.md)
   - [Cypher Query Language](https://hugegraph.apache.org/docs/language/hugegraph-cypher/index.md)
-  - [HugeGraph Examples](https://hugegraph.apache.org/docs/language/hugegraph-example/index.md)
   - [Cypher Compatibility](https://hugegraph.apache.org/docs/language/cypher-compatibility/index.md)
   - [Migrating from Neo4j](https://hugegraph.apache.org/docs/language/migrate-from-neo4j/index.md)
+  - [HugeGraph Examples](https://hugegraph.apache.org/docs/language/hugegraph-example/index.md)
 - [PERFORMANCE](https://hugegraph.apache.org/docs/performance/index.md)
   - [HugeGraph BenchMark Performance](https://hugegraph.apache.org/docs/performance/hugegraph-benchmark-0.5.6/index.md)
   - [v0.5.6 Stand-alone(RocksDB)](https://hugegraph.apache.org/docs/performance/api-performance/hugegraph-api-0.5.6-rocksdb/index.md)

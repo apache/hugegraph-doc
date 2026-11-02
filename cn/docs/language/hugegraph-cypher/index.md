@@ -31,7 +31,7 @@ GET  /graphspaces/{graphspace}/graphs/{graph}/cypher?cypher={statement}
 POST /graphspaces/{graphspace}/graphs/{graph}/cypher
 ```
 
-在服务端未开启认证时无需携带认证头；开启认证后支持 `Authorization: Basic ...`（标准 RFC 4648 Base64 编码，如 `curl -u`）或 `Authorization: Bearer <token>`。
+当服务端开启鉴权时，Cypher 请求需要携带 `Authorization` 请求头，支持 `Authorization: Basic ...`（标准 RFC 4648 Base64 编码，如 `curl -u`）或 `Authorization: Bearer <token>`（未携带认证信息的请求返回 `401`）。服务端未开启鉴权时无需携带此头。
 完整请求/响应格式见 [Cypher REST API 参考](/cn/docs/clients/restful-api/cypher/)。
 
 示例：
@@ -41,7 +41,7 @@ curl -H "Authorization: Bearer $TOKEN" \
   "http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/cypher?cypher=MATCH%20(n:person)%20RETURN%20n.name%20LIMIT%2010"
 ```
 
-Java 客户端使用 `CypherManager`（见 [hugegraph-client](/cn/docs/clients/hugegraph-client/)）：
+Java 客户端使用 `CypherManager`（见 [hugegraph-client](/cn/docs/clients/client/hugegraph-client/)）：
 
 ```java
 ResultSet resultSet = hugeClient.cypher().execute("MATCH (n:person) RETURN n.name LIMIT 10");

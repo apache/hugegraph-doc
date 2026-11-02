@@ -11,13 +11,10 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 本节页面：
 
 - [HugeGraph 架构概览](/cn/docs/guides/architectural/)
-- [HugeGraph 设计理念](/cn/docs/guides/desgin-concept/)
-- [HugeGraph Plugin 机制及插件扩展流程](/cn/docs/guides/custom-plugin/)
-- [HugeGraph工具链本地测试指南](/cn/docs/guides/toolchain-local-test/)
+- [开发测试](/cn/docs/guides/dev-test/): HugeGraph 开发者测试与环境集成指南，包含 Toolchain 本地测试与开发版存储引擎集成。
 - [备份与恢复](/cn/docs/guides/backup-restore/)
 - [HugeGraph Docker 集群部署指南](/cn/docs/guides/hugegraph-docker-cluster/)
 - [FAQ](/cn/docs/guides/faq/)
 - [报告安全问题](/cn/docs/guides/security/)
 - [1.8.0 共享基础模块迁移指南](/cn/docs/guides/shared-foundation-migration/): 调整 Java import 和插件实现，并准备 1.8.0 共享基础模块迁移所需的 Server、PD、Store 同步升级。
 - [HugeGraph 1.8.0 Gremlin 迁移与兼容性指南](/cn/docs/guides/gremlin-migration-3.8/): 详细说明 HugeGraph 1.8.0 从 TinkerPop 3.5 升级到 3.8 带来的核心语法兼容性变化、常用改写方案、配置调整及全量细则速查表。
-- [ToplingDB 开发版集成](/cn/docs/guides/toplingdb/): 从开发源码构建可选 ToplingDB 运行时，隔离数据目录，并了解启动与恢复边界。

@@ -153,6 +153,7 @@ curl -X POST http://localhost:8001/graph/extract \
 | `language` | `zh` | `zh` 或 `en`，用于文本切分 |
 | `split_type` | `document` | `document`、`paragraph` 或 `sentence` |
 | `include_meta` | `false` | 在 `meta` 中加入 `vertex_count`、`edge_count` 和 `text_count` |
+| `review_options` | 无（禁用） | 可选 JSON 对象，启用多轮模型审阅与有限修复：`max_reviews`、`max_fixes`、`max_workers` |
 | `client_config` | 无 | 仅在 `schema` 为图名时允许传入 |
 
 内联 Schema 必须是包含 `vertexlabels` 和 `edgelabels` 两个列表的对象。每个顶点标签需要非空的 `name` 和非空的 `properties` 列表；每条边标签需要非空的 `name`、`source_label` 和 `target_label`。`propertykeys` 可选，若存在必须是列表。
@@ -172,7 +173,39 @@ curl -X POST http://localhost:8001/graph/extract \
 }
 ```
 
-成功响应固定包含 `status`（始终为 `succeeded`）、`result.vertices`、`result.edges`、`warnings` 和 `meta`。`include_meta` 不为 `true` 时 `meta` 为空。
+### 模型审阅与修复（`review_options`）
+
+传入 `review_options` 可为每个切分后的文本块启用迭代式模型审阅与有限 Schema 自动修复：
+
+```json
+{
+  "texts": ["Alice 在 Acme 集团工作。", "Bob 在 Beta 公司工作。"],
+  "schema": {...},
+  "review_options": {
+    "max_reviews": 2,
+    "max_fixes": 1,
+    "max_workers": 4
+  }
+}
+```
+
+- `max_reviews`（默认 `2`，范围 `0`–`5`）：每个文本块允许的最大模型审阅轮数。
+- `max_fixes`（默认 `1`，范围 `0`–`3`）：每个文本块允许的最大自动修复尝试次数。
+- `max_workers`（默认 `4`，范围 `1`–`8`）：并发处理文本块的工作线程数。
+- 传入 `{}` 使用上述默认值；省略 `review_options` 或设为 `null` 则保持旧版直接抽取且不审阅。
+
+### 响应格式说明
+
+省略 `review_options` 时，HTTP 200 响应中的 `status` 始终为 `succeeded`。开启 `review_options` 后：
+- 全局 `status` 综合各分块状态计算：`succeeded`（所有分块达成 final）、`partial`（部分分块达成 final）或 `failed`（没有任何分块达成 final）。
+- 仅达成 `final` 状态的分块会被汇总合并到顶层 `result.vertices` 与 `result.edges`。
+- 响应体包含 `chunk_results` 列表，记录每个文本块的具体执行结果：
+  - `index`：文本块在输入序列中的 0 起始索引。
+  - `status`：`final`（通过结构校验与模型审阅）、`candidate`（通过校验但审阅配额耗尽）、`blocked`（Schema 约束无法修复或被审阅拦截）或 `failed`（调用异常或截断）。
+  - `graph`：当前抽取的子图数据对象（`vertices` 与 `edges`），失败时为 `null`。
+  - `issues`：校验或审阅中发现的问题列表，包含 `path`、`message` 及可选的原文 `evidence`。
+  - `reason` 与 `stage`：失败原因与发生阶段（`prepare`、`extract`、`validate`、`review` 或 `repair`）。
+  - `reviews_used`、`fixes_used` 与 `llm_calls`：记录该文本块消耗的大模型调用计数。
 
 ## Text2Gremlin
 

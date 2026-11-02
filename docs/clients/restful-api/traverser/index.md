@@ -26,7 +26,8 @@ The Traverser API supported by HugeGraph includes:
         - Supports counting the number of neighbors only
         - Supports filtering by edge and vertex properties
         - Supports returning the shortest path to reach the neighbor
-- Same Neighbors: It queries the common neighbors of two vertices.
+- Same Neighbors: It queries common neighbors of vertices. The GET version queries common neighbors between two vertices;
+  the batch POST version independently computes pairwise common neighbors for multiple vertex pairs.
 - Jaccard Similarity API: It calculates the Jaccard similarity, which includes two types:
     - One type uses the GET method to calculate the similarity (intersection over union) of neighbors between two vertices.
     - The other type uses the POST method to find the top N vertices with the highest Jaccard similarity to a given starting vertex in the entire graph.
@@ -3269,6 +3270,84 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/count
 ##### 3.2.27.3 Use Cases
 
 Get the size of a multi-step neighborhood when only the number matters, so the vertices do not have to be serialized and transferred.
+
+#### 3.2.28 Same Neighbors Batch (POST)
+
+##### 3.2.28.1 Function Introduction
+
+Independently compute the common neighbors of multiple vertex pairs in a single batch HTTP request.
+Unlike the GET `sameneighbors` endpoint which accepts two vertices, or the single-pair POST endpoint which computes one intersection across all vertices,
+`sameneighborsbatch` accepts an array of pairs and evaluates each pair independently.
+
+###### Params
+
+- vertex_list: A list of vertex pairs, required. Each entry must contain exactly two non-null vertex IDs. Numeric IDs must be whole
+  numbers in the 64-bit integer range (`-9223372036854775808` to `9223372036854775807`). String and UUID formats are also supported.
+- direction: Direction in which vertices expand outward (`OUT`, `IN`, `BOTH`). Optional, default is `BOTH`.
+- label: Edge label filter. Optional, default matches all edge labels.
+- max_degree: Maximum number of adjacent edges to traverse per vertex. Optional, default is `10000`. Must be positive or `-1` (unlimited).
+- limit: Maximum number of common neighbors returned per pair. Optional, default is `10000000`. Must be positive up to `2147483647` or `-1`.
+
+##### 3.2.28.2 Usage Method
+
+###### Method & Url
+
+```text
+POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/sameneighborsbatch
+```
+
+###### Request Body
+
+```json
+{
+  "vertex_list": [
+    ["1:marko", "1:josh"],
+    ["1:peter", "1:josh"]
+  ],
+  "direction": "BOTH",
+  "label": "knows",
+  "max_degree": 10000,
+  "limit": 100
+}
+```
+
+###### Response Status
+
+```json
+200
+```
+
+###### Response Body
+
+The response contains `same_neighbors`, an array of arrays in input-pair order, and `measure` with traversal iteration counts and elapsed time:
+
+```json
+{
+  "same_neighbors": [
+    [
+      "2:lop"
+    ],
+    []
+  ],
+  "measure": {
+    "vertice_iterations": 6,
+    "edge_iterations": 8,
+    "cost(ns)": 3000000
+  }
+}
+```
+
+> [!NOTE]
+> All pairs in `vertex_list` are validated before traversal begins. If any ID is malformed or invalid, the request is rejected immediately.
+> Pairs with no common neighbors contribute an empty array `[]`. Traversal counters in `measure` aggregate across all evaluated pairs.
+
+##### 3.2.28.3 Use Cases
+
+Batch querying common connections or followers across multiple candidate pairs (e.g. recommendation systems, mutual friends scoring)
+without issuing multiple sequential HTTP requests.
+
+Python callers: use `client.olap()` for asynchronous full-graph jobs and `client.traverser()`/`client.rank()` for immediate OLTP queries.
+See the [Python Client Guide](/docs/clients/client/hugegraph-client-python/).
 
 ---
 

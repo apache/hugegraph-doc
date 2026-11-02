@@ -174,7 +174,7 @@ res = g.exec("g.V().limit(5)")
 print(res)
 ```
 
-Other info is under 🚧 (Welcome to add more docs for it, users could refer [java-client-doc](https://hugegraph.apache.org/docs/clients/hugegraph-client/) for similar usage)
+Other info is under 🚧 (Welcome to add more docs for it, users could refer [java-client-doc](https://hugegraph.apache.org/versions/1.5/docs/clients/hugegraph-client/) for similar usage)
 
 ## Contributing
 

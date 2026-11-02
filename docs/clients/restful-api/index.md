@@ -13,7 +13,11 @@ LLMS index: [llms.txt](/llms.txt)
 >
 > The default graph space is `DEFAULT`.
 
-After starting Server, open `http://localhost:8080/swagger-ui/index.html` to view the OpenAPI page for the current version. [See the usage example](/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example).
+HugeGraph provides a comprehensive RESTful HTTP API covering Schema management, graph data read/write,
+graph and GraphSpace operations, authentication, and analytical tasks. The default GraphSpace is `DEFAULT`.
+
+After starting Server, open `http://localhost:8080/swagger-ui/index.html` to view the OpenAPI page.
+[See the usage example](/docs/quickstart/hugegraph/hugegraph-server#swaggerui-example).
 
 [comment]: <> (- Graph Schema)
 
@@ -83,5 +87,7 @@ Section pages:
 
 Backlinks:
 
+- [Clients and APIs](/docs/clients/)
+- [Client SDKs](/docs/clients/client/)
 - [System Introduction](/docs/introduction/)
 - [Install/Build HugeGraph Server](/docs/quickstart/hugegraph/hugegraph-server/)

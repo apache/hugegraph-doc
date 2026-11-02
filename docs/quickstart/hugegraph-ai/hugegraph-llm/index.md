@@ -13,9 +13,16 @@ HugeGraph-LLM supports knowledge graph construction, GraphRAG, and natural-langu
 
 > AI-generated project documentation: [Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
 
-- Python 3.10 or 3.11 (`>=3.10,<3.12`)
+- Python >= 3.12 (Python 3.12–3.14 supported)
 - `uv` 0.7 or later
 - HugeGraph Server 1.5.0 or later; the current workspace client rejects detectable older versions
+
+Choose your deployment method below:
+
+- [Deploy with Docker Compose](#deploy-with-docker-compose) — Quickly spin up Server and HugeGraph-LLM containers together.
+- [Deploy on Kubernetes](#deploy-on-kubernetes) — Deploy the RAG service onto Kubernetes using Helm.
+- [Start from Source](#start-from-source) — Set up Python environment with `uv` and run the Gradio/FastAPI app locally.
+{.cards}
 
 ## Deploy with Docker Compose
 
@@ -67,16 +74,27 @@ Uncomment the `volumeMounts` entries and enable the prompt ConfigMap volume/moun
 
 ## Start from Source
 
-Install dependencies through the workspace at the repository root:
+1. **Clone the repository:**
 
-```bash
-git clone https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai
-uv sync --extra llm
-source .venv/bin/activate
-cd hugegraph-llm
-python -m hugegraph_llm.demo.rag_demo.app
-```
+   ```bash
+   git clone https://github.com/apache/hugegraph-ai.git
+   cd hugegraph-ai
+   ```
+
+1. **Install dependencies and activate environment:**
+
+   ```bash
+   uv sync --extra llm
+   source .venv/bin/activate
+   ```
+
+1. **Launch the Web application:**
+
+   ```bash
+   cd hugegraph-llm
+   python -m hugegraph_llm.demo.rag_demo.app
+   ```
+{.steps}
 
 To use a custom address and port:
 

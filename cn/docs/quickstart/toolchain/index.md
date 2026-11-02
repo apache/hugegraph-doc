@@ -4,7 +4,7 @@ LLMS 索引： [llms.txt](/cn/llms.txt)
 
 ---
 
-> **测试指南**：如需在本地运行工具链测试，请参考 [HugeGraph 工具链本地测试指南](/cn/docs/guides/toolchain-local-test)
+> **测试指南**：如需在本地运行工具链测试，请参考 [HugeGraph 工具链本地测试指南](/cn/docs/guides/dev-test/toolchain-local-test/)
 
 HugeGraph Toolchain 包含 Java/Go 客户端、Loader、Hubble、Tools、Spark Connector 和 SeaTunnel Sink/Source。先按任务选择入口，再查看对应组件的配置与命令。
 

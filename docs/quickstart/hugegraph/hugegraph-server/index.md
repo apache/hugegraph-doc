@@ -114,14 +114,29 @@ There are four ways to deploy the Server service:
 ### 3.1 Use Docker container (Convenient for Test/Dev)
 
 <!-- 3.1 is linked by another place. if change 3.1's title, please check -->
-You can refer to the [Docker deployment guide](https://github.com/apache/hugegraph/blob/master/docker/README.md).
+For complete container setup instructions, refer to the [Docker deployment guide](https://github.com/apache/hugegraph/blob/master/docker/README.md).
 
-You can use `docker run -itd --name=server -p 8080:8080 -e PASSWORD=xxx hugegraph/hugegraph:1.7.0` to quickly start a Server instance using the `RocksDB` backend.
+Run a standalone Server container with the RocksDB backend:
 
-Optional:
-1. You can use `docker exec -it server bash` to enter the container for troubleshooting or other maintenance operations.
-2. You can use `docker run -itd --name=server -p 8080:8080 -e PRELOAD="true" hugegraph/hugegraph:1.7.0` to preload a **built-in** sample graph at startup. You can verify it through the `RESTful API`. See [5.1.4](#514-create-an-example-graph-when-startup) for details.
-3. You can use `-e PASSWORD=xxx` to enable authentication mode and set the admin password. See [Config Authentication](/docs/config/config-authentication#use-docker-to-enable-authentication-mode) for details.
+```bash {tab="Quick Start (Default)"}
+docker run -itd --name=server -p 8080:8080 hugegraph/hugegraph:1.7.0
+```
+
+```bash {tab="With Sample Graph"}
+# Preload the built-in sample graph at startup
+docker run -itd --name=server -p 8080:8080 -e PRELOAD="true" hugegraph/hugegraph:1.7.0
+```
+
+```bash {tab="With Authentication"}
+# Enable authentication mode and set the admin password
+docker run -itd --name=server -p 8080:8080 -e PASSWORD="replace-with-your-password" hugegraph/hugegraph:1.7.0
+```
+
+Common container inspection operations:
+- **Inspect container shell**: `docker exec -it server bash`
+- **Check startup logs**: `docker logs -f server`
+- **Verify service health**: `curl -fsS http://127.0.0.1:8080/versions`
+{.td-cards-list}
 
 If you use Docker Desktop, you can set the options as follows:
 <div style="text-align: center;">
@@ -529,7 +544,7 @@ First deploy PD and Store; see the [PD Quick Start](/docs/quickstart/hugegraph/h
 
 The minimal standalone flow below uses a master build and preloads sample data to verify graph reads and writes.
 
-1. [Check Java](#21-install-java-11-jdk-11) against the master build requirements.
+1. [Check Java](#21-install-java-17-jdk-17) against the master build requirements.
 2. [Build master source](#33-build-from-master-source); the commands below use its nested Server directory.
 3. [Confirm RocksDB configuration](#4-configuration), then enter the build output's nested Server directory.
 4. Initialize storage, then start the service with sample data using the commands below.
@@ -544,7 +559,8 @@ Master `conf/graphs/hugegraph.properties` already sets `backend=rocksdb` and `se
 Initialize storage on first startup or after adding graph configuration under `conf/graphs/`:
 
 ```bash
-cd apache-hugegraph-1.7.0/apache-hugegraph-server-1.7.0
+# Enter the extracted or built Server directory
+cd apache-hugegraph-*/apache-hugegraph-server-*
 bin/init-store.sh
 ```
 
@@ -842,7 +858,7 @@ Currently, HugeGraph supports setting authentication information in two forms: B
 ## 7 Stop Server
 
 ```bash
-cd apache-hugegraph-1.7.0/apache-hugegraph-server-1.7.0
+# From within the Server directory
 bin/stop-hugegraph.sh
 ```
 
@@ -856,17 +872,17 @@ Backlinks:
 
 - [Maturity](/community/maturity/)
 - [Documentation](/docs/)
+- [Java Client](/docs/clients/client/hugegraph-client/)
 - [Gremlin Console](/docs/clients/gremlin-console/)
 - [RESTful API](/docs/clients/restful-api/)
 - [Graphs](/docs/clients/restful-api/graphs/)
 - [Setup Server in IDEA](/docs/contribution-guidelines/hugegraph-server-idea-setup/)
 - [Download](/docs/download/download/)
 - [Architecture Overview](/docs/guides/architectural/)
+- [Toolchain Local Testing](/docs/guides/dev-test/toolchain-local-test/)
 - [FAQ](/docs/guides/faq/)
 - [Security](/docs/guides/security/)
-- [Toolchain Local Testing](/docs/guides/toolchain-local-test/)
 - [System Introduction](/docs/introduction/)
-- [Java-Client](/docs/quickstart/client/hugegraph-client/)
 - [HugeGraph (OLTP)](/docs/quickstart/hugegraph/)
 - [Install/Build HugeGraph-Store](/docs/quickstart/hugegraph/hugegraph-hstore/)
 - [Hubble Basics and Standalone](/docs/quickstart/toolchain/hugegraph-hubble/)

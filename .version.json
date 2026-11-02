@@ -3,10 +3,10 @@
   "baseURL": "https://hugegraph.apache.org/",
   "docsNavigation": {
     "groups": 5,
-    "pages": 99,
+    "pages": 100,
     "removed": 4,
     "scopedLinks": 0,
-    "treeSha256": "228c59c99880695982722c1cd4fcb975afe38d28a6464d4ecb3c43f446d394ab"
+    "treeSha256": "85f2f209301263b6d6b11eb752a35b68040bacdf814aa82799bc9ea9b3be32f3"
   },
   "githubBranch": "master",
   "historicalNoindexPages": 0,
@@ -15,7 +15,7 @@
   "id": "latest",
   "migration": {
     "changed": 4,
-    "files": 282,
+    "files": 284,
     "findings": 0,
     "knownFixes": 0,
     "residual": 0,
@@ -25,11 +25,11 @@
   "nonEquivalentHreflangRemoved": 0,
   "publishPath": "",
   "ref": "master",
-  "sha": "cd1964155add2234bd4d3f69f3eac56078669e7e",
+  "sha": "ab64b578ae902865d8e998fae6b33342a19891d8",
   "urlScoping": {
-    "files": 328,
+    "files": 334,
     "historicalHomeRedirects": 0,
-    "manifests": 326,
+    "manifests": 332,
     "searchFingerprints": 2,
     "searchRefs": 0,
     "urls": 0

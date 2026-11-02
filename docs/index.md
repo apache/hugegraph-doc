@@ -63,7 +63,7 @@ Section pages:
 - [Download Apache HugeGraph](/docs/download/download/)
 - [Quick Start](/docs/quickstart/)
 - [HugeGraph-Server Configuration](/docs/config/)
-- [Clients and APIs](/docs/clients/): Connect to HugeGraph with the Java client, REST API, Gremlin Console, and other client libraries.
+- [Clients and APIs](/docs/clients/): Connect to and operate HugeGraph with the RESTful API, multi-language client SDKs, and Gremlin Console.
 - [GUIDES](/docs/guides/)
 - [Graph Query Languages](/docs/language/)
 - [PERFORMANCE](/docs/performance/)

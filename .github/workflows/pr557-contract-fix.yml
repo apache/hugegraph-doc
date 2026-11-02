@@ -29,14 +29,18 @@ jobs:
           python3 -m json.tool data/docs_nav.json >/dev/null
           git diff --check
 
-      - name: Commit and push with lease
+      - name: Commit to a protected-branch fix PR
         shell: bash
         run: |
           set -euo pipefail
+          target=codex/pr557-contract-fix-20261102
+          if git ls-remote --exit-code --heads origin "refs/heads/${target}"; then
+            echo "Refusing to overwrite existing ${target}" >&2
+            exit 1
+          fi
           rm scripts/.pr557_fix.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "docs: align SDK and Vermeer contracts"
-          git push --force-with-lease=refs/heads/refactor/unify-clients-nav:${GITHUB_SHA} \
-            origin HEAD:refs/heads/refactor/unify-clients-nav
+          git push origin "HEAD:refs/heads/${target}"

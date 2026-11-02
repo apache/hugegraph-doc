@@ -106,7 +106,7 @@ export TOPLINGDB_ROCKSDB_PROVIDER=topling
 发行包中的 native 配置关闭 HTTP 服务，并保留 Java 写入路径要求的 `memtable_as_log_index=false`。
 请按机器条件调整该文件；它与业务 provider、数据目录配置分别生效。
 
-自 Server 1.8.0+（`apache/hugegraph#3447` / master）起，发行包中的 `conf/toplingdb.yaml` 默认预设基于社区通用 JNI 的 SkipList 内存表与 BlockBasedTable 文件配置，不再依赖 CSPP、CSPPMemTabTable 或 DispatcherTable 插件。
+自 Server 1.8.0+（master）起，发行包中的 `conf/toplingdb.yaml` 默认预设基于社区通用 JNI 的 SkipList 内存表与 BlockBasedTable 文件配置，不再依赖 CSPP、CSPPMemTabTable 或 DispatcherTable 插件。
 而现有及历史正式发行版本（如 1.7.0）附带的 `conf/toplingdb.yaml` 仍默认配置 `cspp` 内存表与 `DispatcherTable`。
 在旧版本上使用缺少 CSPP 插件的社区版 JNI 时，需手动将 `conf/toplingdb.yaml` 调整为 SkipList 和 BlockBasedTable 配置，以防止服务初始化失败。
 

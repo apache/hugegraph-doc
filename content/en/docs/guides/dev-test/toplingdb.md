@@ -112,10 +112,11 @@ The launcher uses that component's `conf/toplingdb.yaml`. Set `TOPLINGDB_EASY_MI
 The shipped native profile disables its HTTP server and keeps `memtable_as_log_index=false`, which the Java write path requires.
 Tune that profile for the host; it is separate from the business provider and data-path configuration.
 
-Starting with Server 1.8.0+ (`apache/hugegraph#3447` / master), distributions ship a community-native profile in `conf/toplingdb.yaml`
+Starting with Server 1.8.0+ (master), distributions ship a community-native profile in `conf/toplingdb.yaml`
 using standard SkipList memtables and BlockBasedTable files by default, which does not require CSPP, CSPPMemTabTable, or DispatcherTable plugins.
 In contrast, existing and earlier release builds (such as 1.7.0) ship `conf/toplingdb.yaml` configured with the `cspp` memtable and `DispatcherTable`.
-When using community JNI without CSPP plugins on earlier builds, adjust `conf/toplingdb.yaml` to use SkipList and BlockBasedTable to avoid initialization failures.
+When using community JNI without CSPP plugins on earlier builds, adjust `conf/toplingdb.yaml`
+to use SkipList and BlockBasedTable to avoid initialization failures.
 
 The cache and write-buffer values are individual native budgets; memory also grows with the number of databases and column families.
 Inspect the actual profile in the distribution you deploy. Custom native profiles must name plugins supplied by the selected JNI.

@@ -401,3 +401,6 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/neigh
 Find the vertices in different layers for a given start point that should be most recommended
 
 - For example, in the four-layered structure of the audience, friends, movies, and directors, according to the movies that a certain audience's friends like, recommend movies for that audience, or recommend directors for those movies based on who made them.
+
+Python callers: use `client.olap()` for asynchronous full-graph jobs and `client.traverser()`/`client.rank()` for immediate OLTP queries.
+See the [Python Client Guide](/docs/clients/client/hugegraph-client-python/).

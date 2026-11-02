@@ -3332,3 +3332,6 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/samenei
 ##### 3.2.28.3 适用场景
 
 批量查询多组候选顶点之间的共同好友、共同关注或关联实体（如社交推荐、协同过滤），避免发起大量连续串行的 HTTP 请求。
+
+Python 调用方：异步全图任务使用 `client.olap()`，立即返回的 OLTP 查询使用 `client.traverser()` 或 `client.rank()`，
+详见 [Python 客户端指南](/cn/docs/clients/client/hugegraph-client-python/)。

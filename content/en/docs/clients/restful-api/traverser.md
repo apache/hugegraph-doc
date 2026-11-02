@@ -3342,3 +3342,6 @@ The response contains `same_neighbors`, an array of arrays in input-pair order, 
 
 Batch querying common connections or followers across multiple candidate pairs (e.g. recommendation systems, mutual friends scoring)
 without issuing multiple sequential HTTP requests.
+
+Python callers: use `client.olap()` for asynchronous full-graph jobs and `client.traverser()`/`client.rank()` for immediate OLTP queries.
+See the [Python Client Guide](/docs/clients/client/hugegraph-client-python/).

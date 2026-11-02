@@ -3327,9 +3327,9 @@ The response contains `same_neighbors`, an array of arrays in input-pair order, 
     []
   ],
   "measure": {
-    "vertex_iter_counter": 6,
-    "edge_iter_counter": 8,
-    "cost": 3
+    "vertice_iterations": 6,
+    "edge_iterations": 8,
+    "cost(ns)": 3000000
   }
 }
 ```

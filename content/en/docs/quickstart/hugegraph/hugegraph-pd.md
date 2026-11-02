@@ -68,7 +68,7 @@ cd apache-hugegraph-incubating-1.7.0/apache-hugegraph-pd-incubating-1.7.0
 1. **Locate the distribution output:**
 
    ```bash
-   cd hugegraph-pd/apache-hugegraph-pd-*
+   cd hugegraph-pd/apache-hugegraph-pd-*/
    ls -la bin conf lib
    ```
 {.steps}

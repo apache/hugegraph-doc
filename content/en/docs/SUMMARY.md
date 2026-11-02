@@ -23,6 +23,7 @@ draft: true
 - [Vermeer](quickstart/computing/hugegraph-vermeer)
 - [Computer](quickstart/computing/hugegraph-computer)
 - [HugeGraph-AI](quickstart/hugegraph-ai/quick_start)
+  - [HugeGraph-LLM SDK](quickstart/hugegraph-ai/hugegraph-llm-sdk)
 
 ## Server Configuration and APIs
 

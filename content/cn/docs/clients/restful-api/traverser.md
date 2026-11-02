@@ -3318,9 +3318,9 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/samenei
     []
   ],
   "measure": {
-    "vertex_iter_counter": 6,
-    "edge_iter_counter": 8,
-    "cost": 3
+    "vertice_iterations": 6,
+    "edge_iterations": 8,
+    "cost(ns)": 3000000
   }
 }
 ```

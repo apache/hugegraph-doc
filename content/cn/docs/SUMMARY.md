@@ -23,6 +23,7 @@ draft: true
 - [Vermeer](quickstart/computing/hugegraph-vermeer)
 - [Computer](quickstart/computing/hugegraph-computer)
 - [HugeGraph-AI](quickstart/hugegraph-ai/quick_start)
+  - [HugeGraph-LLM SDK](quickstart/hugegraph-ai/hugegraph-llm-sdk)
 
 ## Server 配置与 API
 
@@ -43,7 +44,7 @@ draft: true
 - [安全](guides/security)
 - [开发测试](guides/dev-test/_index)
   - [Toolchain 本地测试](guides/dev-test/toolchain-local-test)
-  - [ToplingDB（开发版）](guides/dev-test/toplingdb)
+  - [ToplingDB (开发版)](guides/dev-test/toplingdb)
 - [常见问题](guides/faq)
 
 ## 查询语言

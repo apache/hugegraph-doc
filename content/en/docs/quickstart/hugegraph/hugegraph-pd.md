@@ -173,7 +173,16 @@ install-snapshot timeout, and id allocation runs no ReadIndex wait.
 | `pd.min-store-count` | not set | `0` | Minimum active Store count required during Store drain/retirement checks. If remaining active stores fall below this value, the transition to `Exiting` is rejected. |
 | `pd.initial-store-list` | `127.0.0.1:8500` | empty | Comma separated Store gRPC addresses (`ip:port`) that are activated automatically when they register. An entry may also carry a group id as `store_address/group_id`. |
 | `pd.cluster_id` | not set | `1` | Cluster id, used to keep separate PD clusters apart. |
+| `pd.balance-leader-enable` | `false` | `false` | Run partition leader balancing periodically on the PD leader. When off, leaders move back only through a manual `balanceLeaders` call. |
+| `pd.balance-leader-interval` | `300` | `300` | Seconds between periodic leader balance checks. A check plans transfers only when this much time has passed since the last plan, including a manual one. Must be positive. |
+| `pd.balance-leader-max-skew` | `2` | `2` | A check balances leaders only when the most leaders on one Store minus the fewest on another exceeds this value. Must be `0` or more. |
 {.td-table--wide}
+
+> [!NOTE]
+> The `pd.balance-leader-*` settings are introduced in 1.8.0 (`master` branch). With `pd.balance-leader-enable` turned on, PD periodically balances partition leaders across Stores:
+> - A balance check is skipped if a shard group is unhealthy, lacks recent heartbeats, is undergoing membership changes, or holds a shard on an inactive Store.
+> - Planned transfers are only scheduled to Stores whose state is `Up`. PD also skips a target whose applied index it estimates to trail the leader's by more than 1000 entries. The estimate comes from Store heartbeats sent at different times, so it is best effort rather than a strict bound: a burst of writes can hold back an up-to-date target until a later check, or let through one that is further behind. In the second case, writes to the partition can stall during the transfer until the target catches up and takes over as leader, or until the transfer times out and the old leader takes writes again.
+> - If an invalid interval or skew threshold is provided, PD logs a warning and keeps periodic balancing disabled.
 
 **Store management**
 

@@ -49,6 +49,8 @@ bash bin/prepare-topling.sh
 缺少插件会在准备阶段失败，避免准备成功后才在 Server 初始化阶段崩溃。
 此导入不会按生产 WAL 或日志路径打开数据库。
 若显式指定配置，启动组件时也要保留相同的环境变量。
+准备与运行时选择都会在启动器切换目录前，按调用方工作目录将相对路径转为绝对路径。
+两个步骤应使用同一文件，服务配置优先采用绝对路径以免歧义。
 导入检查针对准备时的实际文件；之后更换文件仍可能引入不支持的插件。
 重启组件前，应使用所选 JNI 验证替换后的配置。
 这些探针不代表已有数据兼容性或所有生产列族均已验证。
@@ -108,11 +110,22 @@ export TOPLINGDB_ROCKSDB_PROVIDER=topling
 
 自 Server 1.8.0+（master）起，发行包中的 `conf/toplingdb.yaml` 默认预设基于社区通用 JNI 的 SkipList 内存表与 BlockBasedTable 文件配置，不再依赖 CSPP、CSPPMemTabTable 或 DispatcherTable 插件。
 而现有及历史正式发行版本（如 1.7.0）附带的 `conf/toplingdb.yaml` 仍默认配置 `cspp` 内存表与 `DispatcherTable`。
-在旧版本上使用缺少 CSPP 插件的社区版 JNI 时，需手动将 `conf/toplingdb.yaml` 调整为 SkipList 和 BlockBasedTable 配置，以防止服务初始化失败。
+在旧版本上使用缺少 CSPP 插件的社区版 JNI 创建**全新空数据库**时，可将 `conf/toplingdb.yaml` 调整为 SkipList 和 BlockBasedTable，以防止初始化失败。
 
 缓存与写缓冲区参数是单项 native 预算；实际内存还随数据库和列族数量增长。
 请检查部署包中的实际配置。自定义 native 配置需要所选 JNI 提供对应插件。
 更改默认配置不会转换已有 SST 文件；其他表格式写入的数据仍需要兼容的 reader。
+
+升级已有 CSPP 部署前，先停止组件并保留匹配的 JNI、之前调优的配置与可恢复的数据备份。
+包含兼容配置修复的 Server、PD、Store 发行包会提供 `conf/toplingdb-legacy-cspp.yaml`，完整保留旧配置。
+准备和启动时，通过绝对路径 `TOPLINGDB_EASY_MIGRATE_CONF` 选择该文件或部署原有的配置。
+用于验证的社区 JNI 缺少 CSPP reader；旧 CSPP SST 的兼容性仍需要匹配 JNI 与真实旧格式数据验证。
+不能用社区配置替换已有 CSPP 部署的 native 设置。
+
+新默认值还调整了资源参数：缓存 8 GiB → 64 MiB、写缓冲 128 MiB → 16 MiB、最多缓冲数 6 → 3、后台任务 8 → 2。
+部分原有压缩整理调优也已移除。这些变化可能影响性能，不是透明的格式迁移。
+实测社区 JNI 中，Java 先设置 128 MiB 与六个缓冲，EasyMigrate 在打开数据库时实际应用 16 MiB、三个缓冲及 64 MiB 缓存。
+其他 JNI 构建应检查持久化 OPTIONS 与 `rocksdb.block-cache-capacity`，不能仅凭打开前的 Java getter 判断最终 native 值。
 
 标准 Server 容器包含 Java 17 JDK；包含准备工具修复的构建还提供 `unzip`。
 该镜像不捆绑或下载可选 JNI，制品的 glibc、libaio 与 CPU 要求仍须匹配基础镜像或宿主机。

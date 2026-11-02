@@ -160,6 +160,8 @@ docker run -itd --name=server -p 8080:8080 -e PASSWORD="replace-with-your-passwo
 命名卷持久化默认 RocksDB 路径，挂到 `/hugegraph-server/data` 不会保存该数据库。
 `PASSWORD` 在首次启动时初始化鉴权；更改环境变量不会轮换已有用户的密码。
 若要在全新空数据安装中复用 HStore 镜像，需显式设置 `HG_SERVER_BACKEND=rocksdb` 与 `HG_SERVER_USE_PD=false`。
+应使用包含本地后端等待逻辑与数据目录归属修复的镜像：它忽略残留 `pd.peers`，并以 10001:10001 预建 `rocksdb-data`，供新命名卷继承。
+旧 HStore 镜像仍需修正可写图配置，并设置正确的数据目录归属。
 不要以此切换已有 HStore 部署的后端，也不要复用其初始化标记。
 
 自定义配置 bind mount 必须允许 UID/GID 10001 写入。

@@ -2651,11 +2651,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertic
 - page：分页位置，选填项，默认为 null，不分页；当 page 为“”时表示分页的第一页，从 start 指示的位置开始
 - page_limit：分页获取顶点时，一页中顶点数目的上限，选填项，默认为 100000
 
-`start` 与 `end` 都必须出现，即使需要无界扫描，也应传入显式空值。
-包含扫描参数校验修复的构建在缺参时返回 HTTP 400；旧构建可能返回 HTTP 500。
-调用方升级后仍应保留两个参数，缺参不表示无界。
+包含扫描参数校验修复的构建在所有后端都要求 `start` 与 `end`，缺少任意一项返回 HTTP 400。
+这也改变了旧版 HStore 与内存后端将缺参按零处理、可能返回不完整数据的行为。
+只有 RocksDB 与 HBase 将空字符串视为开放边界；HStore 与内存后端没有相同语义。
 
-有界分页导出需要显式传入初始空 `page`：
+下面的 **RocksDB** 示例通过显式 `page=` 请求有界分页的第一页：
 
 ```bash
 curl -fsS -G \
@@ -2666,12 +2666,14 @@ curl -fsS -G \
   --data-urlencode 'page_limit=1000'
 ```
 
-逐分片导出时，应以 `vertices/shards` 返回的原始 `start` 与 `end` 替换空边界。
+HStore 与内存后端应遍历 `vertices/shards` 返回的每个区间，使用原始 `start`、`end`，并为每个分片重新传入 `page=`。
+空 HStore 区间可能只扫描哈希零所属的分区；空的内存后端结束边界可能不返回任何数据。
+一个分页序列结束只代表该分片完成，还须继续导出其余返回的分片。
 边界编码依赖后端，不能将 RocksDB 返回的编码位置转换成下文的数值示例。
 后续请求保持同一组边界，并使用 `--data-urlencode` 传入响应的 `page` 游标。
 响应的 `page` 为 null 或空时结束；末页的元素数量可能少于 `page_limit`。
 
-| 请求 | 行为 |
+| RocksDB 请求 | 行为 |
 | --- | --- |
 | `start=&end=&page=&page_limit=1000` | 第一页，最多 1000 个顶点 |
 | 相同边界并传入响应的 `page` | 同一分片的下一页 |
@@ -2978,10 +2980,11 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges/
 - page：分页位置，选填项，默认为 null，不分页；当 page 为“”时表示分页的第一页，从 start 指示的位置开始
 - page_limit：分页获取边时，一页中边数目的上限，选填项，默认为 100000
 
-边扫描同样要求两个边界，无界时传入显式空值。
+边扫描在所有后端都要求两个边界，只有 RocksDB 与 HBase 将空值视为开放边界。
 有界分页的第一页传入 `page=`，后续游标需要 URL 编码，并保持边界不变。
 省略 `page` 时不分页，`page_limit` 不限制结果数量。
 边界应取自 `edges/shards`，不能复用顶点分片的位置。
+HStore 与内存后端应逐个导出全部边分片，不能以空边界代替全图扫描。
 
 ###### Method & Url
 

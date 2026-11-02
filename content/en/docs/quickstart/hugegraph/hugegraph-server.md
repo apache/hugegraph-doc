@@ -167,6 +167,9 @@ Pin a tested release tag for reproducibility; mutable tags such as `latest` may 
 The named volume persists the default RocksDB path. Mounting `/hugegraph-server/data` does not persist that database.
 Authentication is initialized from `PASSWORD` on first startup; changing this variable does not rotate an existing user's password.
 To reuse the HStore image for a new empty standalone installation, explicitly set both `HG_SERVER_BACKEND=rocksdb` and `HG_SERVER_USE_PD=false`.
+Use an image containing the local-backend storage-wait and data-directory ownership fixes:
+it ignores retained `pd.peers` and pre-creates `rocksdb-data` owned by 10001:10001 for a fresh named volume.
+Older HStore images need a corrected writable graph configuration and data-directory ownership instead.
 Do not switch an existing HStore installation's backend or reuse its initialization marker this way.
 
 Custom configuration bind mounts must be writable by UID/GID 10001.

@@ -50,6 +50,8 @@ It uses `TOPLINGDB_EASY_MIGRATE_CONF` when set, otherwise the component's `conf/
 Missing plugins fail preparation instead of leaving a runtime that fails during Server initialization.
 This import does not open databases using production WAL or log paths.
 Keep an explicit configuration override in the service environment when starting the component too.
+Preparation and runtime selection normalize relative overrides against the caller's working directory before the launcher changes directories.
+Use the same file in both steps; an absolute service configuration path avoids ambiguity.
 The import validates the file present during preparation. Replacing that file later can introduce unsupported plugins;
 validate the replacement with the selected JNI before restarting the component.
 These probes do not certify existing-data compatibility or every production column family.
@@ -116,11 +118,22 @@ Starting with Server 1.8.0+ (master), distributions ship a community-native prof
 using standard SkipList memtables and BlockBasedTable files by default, which does not require CSPP, CSPPMemTabTable, or DispatcherTable plugins.
 In contrast, existing and earlier release builds (such as 1.7.0) ship `conf/toplingdb.yaml` configured with the `cspp` memtable and `DispatcherTable`.
 When using community JNI without CSPP plugins on earlier builds, adjust `conf/toplingdb.yaml`
-to use SkipList and BlockBasedTable to avoid initialization failures.
+to use SkipList and BlockBasedTable for a **new, empty database** to avoid initialization failures.
 
 The cache and write-buffer values are individual native budgets; memory also grows with the number of databases and column families.
 Inspect the actual profile in the distribution you deploy. Custom native profiles must name plugins supplied by the selected JNI.
 Changing the default profile does not convert existing SST files; data written with another table format still needs its compatible reader.
+
+For an existing CSPP installation, stop the component and preserve its matching JNI, previous tuned configuration and recoverable data backup.
+Distributions containing the compatibility-profile fix ship `conf/toplingdb-legacy-cspp.yaml` in Server, PD and Store, preserving the old profile.
+Select that file or the deployment's previous profile with an absolute `TOPLINGDB_EASY_MIGRATE_CONF` during preparation and startup.
+The community JNI used for validation lacks CSPP readers; old CSPP SST compatibility still needs matching JNI and real old-format data.
+Do not replace an existing CSPP installation's native settings with the community profile.
+
+The new defaults also change tuning: cache 8 GiB → 64 MiB, write buffer 128 MiB → 16 MiB, maximum buffers 6 → 3, background jobs 8 → 2.
+Other previous compaction tuning is absent. These changes can affect performance and are not a transparent format migration.
+With the tested community JNI, Java initially sets 128 MiB and six buffers, but EasyMigrate applies 16 MiB, three buffers and a 64 MiB cache at open.
+Verify other JNI builds against persisted OPTIONS and `rocksdb.block-cache-capacity`; Java getters before open do not show the final native values.
 
 The standard Server container includes a Java 17 JDK; builds containing the preparation-tool fix also include `unzip`.
 It does not bundle or download optional JNI. The artifact's glibc, libaio and CPU requirements must match the base image or deployment host.

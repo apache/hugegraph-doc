@@ -170,6 +170,7 @@ install-snapshot timeout, and id allocation runs no ReadIndex wait.
 | `pd.data-path` | `./pd_data` | none, required | Metadata directory. Holds the RocksDB store in `rocksdb/` and the Raft log, metadata and snapshots in `pd_raft/`. |
 | `pd.patrol-interval` | `1800` | `300` | Seconds between patrol runs, which check partition health across stores and rebalance partition counts. |
 | `pd.initial-store-count` | `1` | `3` | Minimum number of active Store nodes. Below this the cluster state becomes `Cluster_Not_Ready` and the cluster is treated as unavailable. Set it to the number of stores you deploy. |
+| `pd.min-store-count` | not set | `0` | Minimum active Store count required during Store drain/retirement checks. If remaining active stores fall below this value, the transition to `Exiting` is rejected. |
 | `pd.initial-store-list` | `127.0.0.1:8500` | empty | Comma separated Store gRPC addresses (`ip:port`) that are activated automatically when they register. An entry may also carry a group id as `store_address/group_id`. |
 | `pd.cluster_id` | not set | `1` | Cluster id, used to keep separate PD clusters apart. |
 {.td-table--wide}
@@ -595,9 +596,8 @@ Decommissioning a Store node follows a state machine to safely drain partition r
    ```
 
 3. **Capacity Constraints & Retirement Checks**:
-   - **Capacity Check**: Draining checks that remaining eligible active stores satisfy `minStoreCount` (`pd.initial-store-count`). If remaining
-     capacity is insufficient, PD blocks the transition. In this case, add eligible Store capacity and resubmit the same `Exiting` request.
-     The stored intent remains `Exiting`.
+   - **Capacity Check**: Draining checks that remaining eligible active stores satisfy `minStoreCount` (`pd.min-store-count`). If remaining
+     capacity is insufficient, PD blocks the transition and rejects the request before state changes. In this case, add eligible Store capacity and resubmit the request.
    - **Retirement Criteria**: PD keeps the Store in `Exiting` until its latest heartbeat reports 0 local partition engines AND PD has no remaining
      shard groups referencing that Store ID.
    - **Pre-Deletion Verification**: Before deleting the Store Pod or persistent volume, operators must verify remaining shard groups have full Raft

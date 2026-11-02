@@ -166,6 +166,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 | `pd.data-path` | `./pd_data` | 无，必填 | 元数据目录。`rocksdb/` 子目录存放 RocksDB 数据，`pd_raft/` 子目录存放 Raft 日志、元信息和快照。 |
 | `pd.patrol-interval` | `1800` | `300` | 巡检周期（秒）。巡检会检查各 Store 上的分区健康状况并平衡分区数量。 |
 | `pd.initial-store-count` | `1` | `3` | 活跃 Store 节点的最小数量。低于该值时集群状态变为 `Cluster_Not_Ready`，整个集群视为不可用。建议设为实际部署的 Store 数量。 |
+| `pd.min-store-count` | 未设置 | `0` | Store 排空/下线容量校验所需的最小活跃 Store 数量。若下线后剩余活跃 Store 低于该值，拒绝转入 `Exiting` 状态。 |
 | `pd.initial-store-list` | `127.0.0.1:8500` | 空 | 逗号分隔的 Store gRPC 地址（`ip:port`），列表中的 Store 注册后自动激活。条目也可以带分组 id，写作 `store_address/group_id`。 |
 | `pd.cluster_id` | 未设置 | `1` | 集群 id，用于区分不同的 PD 集群。 |
 {.td-table--wide}
@@ -587,8 +588,8 @@ PD 以 `hg` 前缀注册自己的指标，因此 `/actuator/prometheus` 除标�
    ```
 
 3. **容量约束与下线检查**：
-   - **容量校验**：排空会校验集群剩余可用 Store 节点数是否满足 `minStoreCount`（`pd.initial-store-count`）。若剩余容量不足以维持所需副本数，
-     PD 将拒绝操作；此时需扩容足够的活跃 Store 后重新提交相同的 `Exiting` 请求，持久化的意图始终保持为 `Exiting`。
+   - **容量校验**：排空会校验集群剩余可用 Store 节点数是否满足 `minStoreCount`（`pd.min-store-count`）。若剩余容量不足，
+     PD 将直接拦截并在状态持久化前拒绝请求；此时需扩容足够的活跃 Store 后重新发起下线请求。
    - **退出完成判定**：PD 会持续保持 `Exiting` 状态，直到 Store 最新心跳上报本地分区引擎数为 0 且 PD 元数据中无任何分片组引用该 Store ID。
    - **销毁前核验**：在删除 Store Pod 或持久化存储卷前，运维人员必须确认其余分片组已具备完整的 Raft 成员、全额副本以及最新的健康心跳。
    - **重新注册意图保留**：处于 `Exiting` 状态的 Store 重启重新注册时，即使其地址在 `pd.initial-store-list` 中，PD 仍会保留其 `Exiting` 排空意图。

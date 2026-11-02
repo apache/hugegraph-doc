@@ -22,14 +22,13 @@ Runtime dependencies include `decorator`, `requests`, `urllib3`, and `rich`.
 
 ## Installation
 
-The client provides two installation methods depending on whether you require the stable PyPI release or development features from the master branch
-([apache/hugegraph-ai#392](https://github.com/apache/hugegraph-ai/pull/392)).
+The client provides two installation methods depending on whether you require the stable PyPI release or development features from the master branch.
 
 > [!NOTE]
 > **Version & Feature Boundary**:
 > The published PyPI release (`hugegraph-python` 1.7.x) provides the baseline client supporting CamelCase methods with legacy snake_case aliases.
 > The modern features demonstrated in this guide — including native `snake_case` APIs, `client.olap()` whole-graph algorithms, `client.task().wait()`,
-> `client.close()`, and updated traverser signatures — align with the master development branch ([PR #392](https://github.com/apache/hugegraph-ai/pull/392)).
+> `client.close()`, and updated traverser signatures — align with the master development branch.
 > For testing these features, install the client from source.
 
 ```bash {tab="PyPI (Stable 1.7.x)"}
@@ -38,7 +37,7 @@ pip install hugegraph-python
 # uv pip install hugegraph-python
 ```
 
-```bash {tab="Source (Master / PR #392)"}
+```bash {tab="Source (Master)"}
 git clone https://github.com/apache/hugegraph-ai.git
 cd hugegraph-ai/hugegraph-python-client
 pip install -e .

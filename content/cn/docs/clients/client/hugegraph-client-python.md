@@ -21,13 +21,13 @@ aliases:
 
 ## 安装
 
-客户端提供两种安装方式，具体取决于使用的是 PyPI 稳定发行版还是 master 分支最新的开发功能（[apache/hugegraph-ai#392](https://github.com/apache/hugegraph-ai/pull/392)）。
+客户端提供两种安装方式，具体取决于使用的是 PyPI 稳定发行版还是 master 分支最新的开发功能。
 
 > [!NOTE]
 > **版本与功能边界说明**：
 > 已发布的 PyPI 发行包（`hugegraph-python` 1.7.x）为稳定基础版本，以 CamelCase 命名风格为主（带旧版 snake_case 别名）。
 > 本文档演示的现代特性——包括原生 `snake_case` API、`client.olap()` 全图计算算法、`client.task().wait()` 任务轮询等待、
-> `client.close()` 连接生命周期管理以及更新后的遍历器签名——均对齐 master 开发分支（[PR #392](https://github.com/apache/hugegraph-ai/pull/392)）。
+> `client.close()` 连接生命周期管理以及更新后的遍历器签名——均对齐 master 分支最新实现。
 > 如需体验或测试这些新特性，请通过源码方式安装客户端。
 
 ```bash {tab="PyPI 稳定版 (1.7.x)"}
@@ -36,7 +36,7 @@ pip install hugegraph-python
 # uv pip install hugegraph-python
 ```
 
-```bash {tab="源码安装 (Master / PR #392)"}
+```bash {tab="源码安装 (Master)"}
 git clone https://github.com/apache/hugegraph-ai.git
 cd hugegraph-ai/hugegraph-python-client
 pip install -e .

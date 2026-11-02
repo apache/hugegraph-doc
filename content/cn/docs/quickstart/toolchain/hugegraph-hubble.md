@@ -243,8 +243,9 @@ vermeer.token_file=/path/to/vermeer-service.token
 #### 支持的 OLAP 算法与执行生命周期
 
 Vermeer 在内存分布式分区上执行批处理图算法：
-- **支持算法**：PageRank、Personalized PageRank（个性化 PageRank）、Weakly Connected Components（WCC 弱连通分量）、Label Propagation Algorithm（LPA 标签传播）、Betweenness Centrality（介数中心度）、
-  Closeness Centrality（紧密中心度）、Degree Centrality（度中心度）、Triangle Count（三角形计数）、K-Core 以及 Single-Source Shortest Path（SSSP 单源最短路径）。
+- **支持算法**：PageRank、Personalized PageRank（个性化 PageRank）、Weakly Connected Components（WCC 弱连通分量）、
+  Label Propagation Algorithm（LPA 标签传播）、Betweenness Centrality（介数中心度）、Closeness Centrality（紧密中心度）、
+  Degree Centrality（度中心度）、Triangle Count（三角形计数）、K-Core 以及 Single-Source Shortest Path（SSSP 单源最短路径）。
 - **内存图加载**：计算流程首先将图数据从 PD/Store 加载或重新加载至 Vermeer Worker 内存。每个图在加载确认后保持任务 ID，入队任务维持在 `Loading` 状态直至加载完毕。
 - **任务监控与取消**：原生任务在后台异步运行，可按状态（`RUNNING`、`SUCCESS`、`FAILED`）筛选监控，并支持在需要时主动取消任务。
 - **游标分页结果**：计算产出的分析指标（如顶点得分、社区编号）通过游标机制进行分页流式拉取。分页跨页数据完整一致，并在最后一页精准停止。

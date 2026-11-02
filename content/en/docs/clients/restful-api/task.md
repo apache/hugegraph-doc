@@ -242,3 +242,6 @@ The body is the parameter map of the computer job. Pass `{}` to run with the def
     "task_id": 2
 }
 ```
+
+Python callers: use `client.olap()` for asynchronous full-graph jobs and `client.traverser()`/`client.rank()` for immediate OLTP queries.
+See the [Python Client Guide](/docs/clients/client/hugegraph-client-python/).

@@ -386,3 +386,6 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/neigh
 为给定的起点在不同的层中找到最应该推荐的顶点。
 
 - 比如：在观众、朋友、电影、导演的四层图结构中，根据某个观众的朋友们喜欢的电影，为这个观众推荐电影；或者根据这些电影是谁拍的，为其推荐导演。
+
+Python 调用方：异步全图任务使用 `client.olap()`，立即返回的 OLTP 查询使用 `client.traverser()` 或 `client.rank()`，
+详见 [Python 客户端指南](/cn/docs/clients/client/hugegraph-client-python/)。

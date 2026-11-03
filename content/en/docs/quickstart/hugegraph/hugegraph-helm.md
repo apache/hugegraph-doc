@@ -329,6 +329,8 @@ NodePort connects via the node IP and assigned port, while ClusterIP uses port-f
 Use native Helm value reuse to preserve an existing deployment's UI, entry, storage and credentials:
 
 ```bash
+# For a private registry, replace this with the reachable Chart address.
+CHART=oci://ghcr.io/hugegraph/hugegraph-helm
 helm get values hugegraph -n hugegraph --all
 # Follow the latest version for testing; use --version with a reviewed stable version for production.
 helm upgrade hugegraph "$CHART" --devel -n hugegraph \

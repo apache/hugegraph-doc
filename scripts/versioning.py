@@ -141,7 +141,7 @@ DOCS_NAV_EXPECTED_STATS = {
         "pages": 100,
         "removed": 4,
         "scopedLinks": 0,
-        "treeSha256": "85f2f209301263b6d6b11eb752a35b68040bacdf814aa82799bc9ea9b3be32f3",
+        "treeSha256": "d11065d54a99b270852fe0e4e604545f60fb754f504f9c99622533c138aaf61b",
     },
     "1.7": {
         "groups": 5,

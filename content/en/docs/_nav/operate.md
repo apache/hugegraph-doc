@@ -1,7 +1,7 @@
 ---
 title: "Operate"
 linkTitle: "Operate"
-description: "Start with configuration, then browse security, backup, and performance guidance."
+description: "Deploy on Kubernetes with Helm, then browse configuration, security, backup, and performance guidance."
 manual_link: /docs/config/
 search_exclude: true
 pager: false

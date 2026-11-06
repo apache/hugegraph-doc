@@ -138,3 +138,29 @@ please refer to the [Apache TinkerPop 3.8.1 official documentation](https://tink
 | `V` | Traversal steps between vertices and edges: `V`, `E`, `out`, `in`, `both`, `outE`, `inE`, `bothE`, `outV`, `inV`, `bothV`, and `otherV` | [vertex steps](https://tinkerpop.apache.org/docs/3.8.1/reference/#vertex-steps) |
 | `where` | Filters traversal results. Supports `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, and `between` operators. | [where step](https://tinkerpop.apache.org/docs/3.8.1/reference/#where-step) |
 {.wide .expand}
+
+
+### Numeric Literal Type Matching in Gremlin-Groovy Predicates
+
+When evaluating property predicates via Gremlin-Groovy (HTTP `/gremlin` endpoint, HugeGraph-Console, or HugeGraph-Hubble), Groovy parses **unsuffixed decimal literals** (such as `1.0` or `1.5`) as `java.math.BigDecimal` rather than `java.lang.Double` or `java.lang.Float`.
+
+- **Comparison predicates (`P.eq`, `P.neq`, `P.lt`, `P.lte`, `P.gt`, `P.gte`, `P.between`):** TinkerPop's `Compare` predicate performs value-based numeric promotion across `Number` subclasses (`BigDecimal`, `Double`, `Float`, `Long`, `Integer`).
+- **Collection membership predicates (`P.within`, `P.without`):** `Contains.within` and `Contains.without` evaluate collection membership using Java object equality (`Collection.contains(value)`), where `BigDecimal.valueOf(1.0).equals(Double.valueOf(1.0d))` is `false` because the runtime classes differ.
+
+Always append the explicit Java/Groovy numeric literal suffix matching your `PropertyKey` schema data type when writing properties or filtering with `has(..., P.within(...))` / `has(..., P.without(...))`:
+
+| Schema DataType | Java Runtime Class | Gremlin-Groovy Literal Syntax | Predicate Example |
+|-----------------|--------------------|-------------------------------|-------------------|
+| `DOUBLE` (`asDouble()`) | `java.lang.Double` | `1.0d` / `1.5D` (or `(double) 1.0`) | `g.E().has('weight', P.within(1.0d)).has('weight', P.lt(1.5d))` |
+| `FLOAT` (`asFloat()`) | `java.lang.Float` | `1.0f` / `1.5F` (or `(float) 1.0`) | `g.V().has('score', P.within(0.5f, 1.0f))` |
+| `LONG` (`asLong()`) | `java.lang.Long` | `1L` / `100L` | `g.V().has('timestamp', P.within(1700000000L))` |
+| `INT` (`asInt()`) | `java.lang.Integer` | `1` / `100` | `g.V().has('age', P.within(18, 25))` |
+| `BYTE` (`asByte()`) | `java.lang.Byte` | `(byte) 1` | `g.V().has('level', P.within((byte) 1, (byte) 2))` |
+
+```groovy
+schema.propertyKey('weight').asDouble().ifNotExist().create()
+// Use 'd' suffix so Groovy passes java.lang.Double instead of java.math.BigDecimal
+g.E().has('weight', P.within(1.0d)).has('weight', P.lt(1.5d)).count()
+```
+
+See also the [Cypher & Gremlin Comparison Matrix](/docs/language/cypher-compatibility/) and [PropertyKey REST API](/docs/clients/restful-api/propertykey/).

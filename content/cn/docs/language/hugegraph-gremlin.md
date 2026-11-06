@@ -134,3 +134,29 @@ HugeGraph 支持 Gremlin 遍历规范定义的各项步骤。完整说明与高�
 | `V` | 顶点检索与端点跳转基础步骤：`V`、`E`、`out`、`in`、`both`、`outE`、`inE` 等 | [vertex steps](https://tinkerpop.apache.org/docs/3.8.1/reference/#vertex-steps) |
 | `where` | 使用表达式或谓词（`eq`、`neq`、`gt` 等）进行条件筛选过滤 | [where step](https://tinkerpop.apache.org/docs/3.8.1/reference/#where-step) |
 {.wide .expand}
+
+
+### Gremlin-Groovy 数值字面量类型与属性谓词匹配规则
+
+在通过 Gremlin-Groovy（如 HTTP `/gremlin` 接口、HugeGraph-Console 或 HugeGraph-Hubble）执行属性过滤时，Groovy 默认将**不带类型后缀的小数字面量**（例如 `1.0` 或 `1.5`）解析为 `java.math.BigDecimal`，而非 `java.lang.Double` 或 `java.lang.Float`。
+
+- **比较谓词（`P.eq`、`P.neq`、`P.lt`、`P.lte`、`P.gt`、`P.gte`、`P.between`）：** TinkerPop 的 `Compare` 谓词会对不同 `Number` 子类（`BigDecimal`、`Double`、`Float`、`Long`、`Integer`）执行基于数值的自动类型提升比较。
+- **集合包含谓词（`P.within`、`P.without`）：** `Contains.within` 与 `Contains.without` 基于 Java 对象的 `Collection.contains(value)` 判等逻辑执行匹配；由于运行时类型不同，`BigDecimal.valueOf(1.0).equals(Double.valueOf(1.0d))` 返回 `false`。
+
+在写入属性值或使用 `has(..., P.within(...))` / `has(..., P.without(...))` 过滤数值属性时，请显式指定与 `PropertyKey` 数据类型一致的字面量后缀：
+
+| Schema 数据类型 | Java 运行时类型 | Gremlin-Groovy 字面量写法 | 查询示例 |
+|----------------|----------------|--------------------------|---------|
+| `DOUBLE` (`asDouble()`) | `java.lang.Double` | `1.0d` / `1.5D`（或 `(double) 1.0`） | `g.E().has('weight', P.within(1.0d)).has('weight', P.lt(1.5d))` |
+| `FLOAT` (`asFloat()`) | `java.lang.Float` | `1.0f` / `1.5F`（或 `(float) 1.0`） | `g.V().has('score', P.within(0.5f, 1.0f))` |
+| `LONG` (`asLong()`) | `java.lang.Long` | `1L` / `100L` | `g.V().has('timestamp', P.within(1700000000L))` |
+| `INT` (`asInt()`) | `java.lang.Integer` | `1` / `100` | `g.V().has('age', P.within(18, 25))` |
+| `BYTE` (`asByte()`) | `java.lang.Byte` | `(byte) 1` | `g.V().has('level', P.within((byte) 1, (byte) 2))` |
+
+```groovy
+schema.propertyKey('weight').asDouble().ifNotExist().create()
+// 显式使用 'd' 后缀，确保传入 java.lang.Double 而非默认的 java.math.BigDecimal
+g.E().has('weight', P.within(1.0d)).has('weight', P.lt(1.5d)).count()
+```
+
+更多对比请参考 [Cypher 与 Gremlin 特性对比矩阵](/cn/docs/language/cypher-compatibility/) 及 [PropertyKey REST API](/cn/docs/clients/restful-api/propertykey/)。

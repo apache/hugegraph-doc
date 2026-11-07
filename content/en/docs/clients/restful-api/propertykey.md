@@ -12,10 +12,8 @@ Params Description:
 - name: The name of the property type, required.
 - data_type: The data type of the property type, including: bool, byte, int, long, float,
   double, text, blob, date, uuid. The default data type is `text` (Represent a `string`
-  type). When querying `double`, `float`, `long`, or `byte` properties in Gremlin-Groovy
-  (especially with `P.within` / `P.without`), use explicit numeric suffixes or casts
-  (`1.0d`, `1.0f`, `1L`, `(byte) 1`) so Groovy matches the stored Java numeric type (see
-  [Numeric Literal Type Matching](/docs/language/hugegraph-gremlin/#numeric-literal-type-matching-in-gremlin-groovy-predicates)).
+  type). For numeric literal coercion rules in Gremlin-Groovy predicates, see
+  [Numeric Literal Coercion in Gremlin-Groovy Predicates](/docs/language/hugegraph-gremlin/#numeric-literal-coercion-in-gremlin-groovy-predicates).
 - cardinality: The cardinality of the property type, including: single, list, set. The default cardinality is `single`.
 
 Request Body Field Description:

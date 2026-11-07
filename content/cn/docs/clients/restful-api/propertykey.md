@@ -11,10 +11,8 @@ Params 说明：
 
 - name：属性类型名称，必填
 - data_type：属性类型数据类型，包括：bool、byte、int、long、float、double、text、date、uuid、blob，
-  默认 `text` 类型 (代表 string 字符串类型)。在 Gremlin-Groovy 中查询 `double`、`float`、`long` 或
-  `byte` 属性（特别是配合 `P.within` / `P.without`）时，请使用显式数值后缀或类型转换（`1.0d`、`1.0f`、
-  `1L`、`(byte) 1`），以匹配存储的 Java 数值类型（详见
-  [Gremlin 数值字面量类型匹配规则](/cn/docs/language/hugegraph-gremlin/#gremlin-groovy-数值字面量类型与属性谓词匹配规则)）
+  默认 `text` 类型 (代表 string 字符串类型)。关于 Gremlin-Groovy 谓词中的数值字面量类型转换规则，详见
+  [Gremlin-Groovy 数值字面量与属性谓词转换规则](/cn/docs/language/hugegraph-gremlin/#gremlin-groovy-数值字面量与属性谓词转换规则)。
 - cardinality：属性类型基数，包括：single、list、set，默认 `single` (代表单属性值)
 
 请求体字段说明：

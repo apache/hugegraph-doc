@@ -135,7 +135,6 @@ HugeGraph 支持 Gremlin 遍历规范定义的各项步骤。完整说明与高�
 | `where` | 使用表达式或谓词（`eq`、`neq`、`gt` 等）进行条件筛选过滤 | [where step](https://tinkerpop.apache.org/docs/3.8.1/reference/#where-step) |
 {.wide .expand}
 
-
 ### Gremlin-Groovy 数值字面量与属性谓词转换规则
 
 在通过 Gremlin-Groovy（例如 HTTP `/gremlin` 接口、HugeGraph-Console 或 HugeGraph-Hubble）
@@ -151,7 +150,7 @@ HugeGraph 支持 Gremlin 遍历规范定义的各项步骤。完整说明与高�
   `Double.valueOf(value.toString())` / `Float.valueOf(value.toString())` 按数值完成转换。只要属性键已建立索引，不带后缀的 `has('weight', P.within(1.0))` 或 `has('weight', P.lt(1.5))` 即可按数值匹配存储的 `DOUBLE` 值 `1.0d`。
 - **`LONG`、`INT` 与 `BYTE` 属性键：** 取值范围内的整数字面量可通过 `Long.valueOf` /
   `Integer.valueOf` / `Byte.valueOf` 转换；但传入带小数点的字面量（如 `1.0`，类型为 `BigDecimal`）会因整型解析失败而抛出 `IllegalArgumentException`。
-- **索引要求：** 在 `g.V()` 或 `g.E()` 上按用户属性过滤时，必须先为该属性键建立索引（例如数值属性的 `.range()` 范围索引）；未建索引时，无论字面量是否带后缀，HugeGraph 均会抛出 `NoIndexException`。
+- **索引要求：** 在 `g.V()` 或 `g.E()` 上按用户属性过滤时，必须先为该属性键建立索引（例如数值属性的 `.range()` 范围索引），除非顶点查询已指定标签及全部主键属性（`GraphTransaction.optimizeQuery` 会将其转为主键查询）。未建索引且非主键查询时，无论字面量是否带后缀，HugeGraph 均会抛出 `NoIndexException`。
 
 显式指定 Groovy 数值后缀或类型转换（`DOUBLE` 使用 `d`/`D`，`FLOAT` 使用 `f`/`F`，`LONG` 使用 `L`，
 `BYTE` 使用 `(byte)`）可直接传入目标 Java 数值类型，避免经由字符串中转转换：

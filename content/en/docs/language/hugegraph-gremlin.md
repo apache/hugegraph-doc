@@ -158,8 +158,10 @@ value-compared `EQ` / `NEQ` relations (`ConditionQueryFlatten` / `NumericUtil.co
   `Long.valueOf` / `Integer.valueOf` / `Byte.valueOf`, whereas decimal literals such as `1.0`
   (`BigDecimal`) fail integer parsing and throw `IllegalArgumentException`.
 - **Index requirement:** Filtering `g.V()` or `g.E()` by a user property requires an index on
-  that property key (for example, a `.range()` index on numeric properties); without an index,
-  HugeGraph throws `NoIndexException` regardless of literal suffix.
+  that property key (for example, a `.range()` index on numeric properties), except for vertex
+  queries that specify the label and all its primary keys (where `GraphTransaction.optimizeQuery`
+  converts them to an id query). Without an applicable index or primary-key lookup, HugeGraph throws
+  `NoIndexException` regardless of literal suffix.
 
 Using explicit Groovy numeric suffixes or casts (`d`/`D` for `DOUBLE`, `f`/`F` for `FLOAT`,
 `L` for `LONG`, `(byte)` for `BYTE`) passes the target Java numeric class directly without

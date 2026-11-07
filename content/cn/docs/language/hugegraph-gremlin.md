@@ -140,23 +140,21 @@ HugeGraph 支持 Gremlin 遍历规范定义的各项步骤。完整说明与高�
 
 在通过 Gremlin-Groovy（例如 HTTP `/gremlin` 接口、HugeGraph-Console 或 HugeGraph-Hubble）
 执行图查询时，Groovy 默认将不带类型后缀的小数字面量（如 `1.0` 或 `1.5`）解析为
-`java.math.BigDecimal`，将不带后缀的整数字面量（如 `1`）解析为 `java.lang.Integer`。根据
-`has(...)` 过滤步骤是被下推为 HugeGraph 后端查询条件（`TraversalUtil.convPredicateValue`）
-还是由 TinkerPop 的 `HasStep` 在内存中执行，字面量类型不匹配会导致两类问题：
+`java.math.BigDecimal`，将不带后缀的整数字面量（如 `1`）解析为 `java.lang.Integer`。在对属性键
+执行谓词过滤时，字面量类型不匹配会导致 HugeGraph 中的两类行为：
 
-- **内存集合包含谓词（`P.within`、`P.without`）**：当 TinkerPop 在内存中计算 `Contains.within`
-  与 `Contains.without` 时（例如未建索引的属性或链式 `has(...)` 过滤
-  `g.E().has('weight', P.within(1.0)).has('weight', P.lt(1.5))`），底层直接调用
-  `java.util.Collection.contains(value)` 并按 Java `Object.equals()` 进行严格类型相等比较，
-  不会进行跨数值类型转换。由于 `BigDecimal.valueOf(1.0).equals(Double.valueOf(1.0d))` 与
-  `Integer.valueOf(1).equals(Long.valueOf(1L))` 均返回 `false`，当属性类型为 `DOUBLE` 且实际
-  存储值为 `1.0` 时，`has('weight', P.within(1.0))` 仍会返回 `0` 条结果。（相比之下，`P.eq`、
-  `P.neq`、`P.lt`、`P.lte`、`P.gt`、`P.gte`、`P.between` 使用 TinkerPop 的 `Compare`，会在
-  内存中对数值类型进行提升转换。）
-- **后端查询条件转换（`LONG`、`INT`、`BYTE`）**：当 HugeGraph 根据 Schema 的 `data_type` 转换
-  谓词参数时，若对整型属性键（`LONG`、`INT`、`BYTE`）传入带小数点的字面量（如 `1.0`），会因
-  `Long.valueOf` / `Integer.valueOf` / `Byte.valueOf` 无法解析小数格式而抛出异常。
-
+- **集合包含谓词（`P.within`、`P.without`）：** HugeGraph 将列表中的值直接传给 `IN` / `NOT_IN`
+  查询条件（`TraversalUtil.convIn2Relation`），不按 `PropertyKey` 数据类型进行转换，并基于
+  Java 对象的 `Collection.contains(value)` 判等逻辑执行匹配。由于运行时类型不同，
+  `BigDecimal.valueOf(1.0).equals(Double.valueOf(1.0d))` 与 `Integer.valueOf(1).equals(Long.valueOf(1L))`
+  均返回 `false`，当属性类型为 `DOUBLE` 且实际存储值为 `1.0` 时，`has('weight', P.within(1.0))`
+  仍会返回 `0` 条结果。
+- **比较谓词（`P.eq`、`P.neq`、`P.lt`、`P.lte`、`P.gt`、`P.gte`、`P.between`）：** HugeGraph
+  在构建查询条件前会将比较值转换为属性键对应的数据类型（`convCompare2UserpropRelation` →
+  `validPropertyValue` → `DataType.valueToNumber`）。对于 `DOUBLE` 与 `FLOAT` 属性键，小数字面量
+  如 `1.5`（`BigDecimal`）可成功转换；对于整型属性键（`LONG`、`INT`、`BYTE`），传入带小数点的字面量
+  （如 `1.0`）会因 `Long.valueOf` / `Integer.valueOf` / `Byte.valueOf` 无法解析而由 HugeGraph 抛出
+  `IllegalArgumentException` 异常拒绝查询。
 在 Gremlin 谓词（尤其是 `P.within(...)` 与 `P.without(...)`）中传入数值字面量时，请显式指定与
 属性 `data_type` 对应的 Groovy 数值后缀或类型转换（`DOUBLE` 使用 `d`/`D`，`FLOAT` 使用 `f`/`F`，
 `LONG` 使用 `L`，`BYTE` 使用 `(byte)`）：

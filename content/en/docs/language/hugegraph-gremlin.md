@@ -142,26 +142,21 @@ please refer to the [Apache TinkerPop 3.8.1 official documentation](https://tink
 ### Numeric Literal Type Matching in Gremlin-Groovy Predicates
 
 In Gremlin-Groovy, an unsuffixed decimal literal like `1.0` is parsed as `java.math.BigDecimal`,
-and an unsuffixed integer literal like `1` is parsed as `java.lang.Integer`. Depending on whether
-a `has(...)` step is pushed down to HugeGraph's backend condition converter
-(`TraversalUtil.convPredicateValue`) or evaluated in-memory by TinkerPop's `HasStep`, mismatched
-literal types cause two distinct pitfalls:
+and an unsuffixed integer literal like `1` is parsed as `java.lang.Integer`. When evaluating
+predicates against property keys, mismatched literal types lead to two distinct behaviors in HugeGraph:
 
-- **In-memory collection membership (`P.within`, `P.without`)**: When TinkerPop evaluates
-  `Contains.within` or `Contains.without` in memory (for example on unindexed properties or
-  chained `has(...)` filters such as
-  `g.E().has('weight', P.within(1.0)).has('weight', P.lt(1.5))`), it delegates to
-  `java.util.Collection.contains(value)`, which uses strict `Object.equals()` without numeric
-  promotion. Because `BigDecimal.valueOf(1.0).equals(Double.valueOf(1.0d))` and
+- **Collection membership predicates (`P.within`, `P.without`):** HugeGraph passes the listed
+  values to its `IN` / `NOT_IN` query condition (`TraversalUtil.convIn2Relation`) without converting
+  them to the `PropertyKey` data type, and matches them using Java object equality
+  (`Collection.contains(value)`). Because `BigDecimal.valueOf(1.0).equals(Double.valueOf(1.0d))` and
   `Integer.valueOf(1).equals(Long.valueOf(1L))` are both `false`, `has('weight', P.within(1.0))`
-  returns `0` results on a `DOUBLE` property even when `weight = 1.0`. (By contrast, `P.eq`,
-  `P.neq`, `P.lt`, `P.lte`, `P.gt`, `P.gte`, and `P.between` use TinkerPop's `Compare`, which
-  promotes numeric types in memory.)
-- **Backend condition conversion (`LONG`, `INT`, `BYTE`)**: When HugeGraph converts predicate
-  values against the schema `data_type`, passing a decimal literal such as `1.0` (`BigDecimal`)
-  to an integer-typed property key (`LONG`, `INT`, or `BYTE`) fails `Long.valueOf` /
-  `Integer.valueOf` / `Byte.valueOf` parsing with a `NumberFormatException`.
-
+  returns `0` results on a `DOUBLE` property even when `weight = 1.0`.
+- **Comparison predicates (`P.eq`, `P.neq`, `P.lt`, `P.lte`, `P.gt`, `P.gte`, `P.between`):** HugeGraph
+  converts comparison values to the property key type before constructing the query condition
+  (`convCompare2UserpropRelation` → `validPropertyValue` → `DataType.valueToNumber`). For `DOUBLE`
+  and `FLOAT` keys, decimal literals such as `1.5` (`BigDecimal`) convert successfully. For integer
+  keys (`LONG`, `INT`, `BYTE`), decimal literals such as `1.0` fail `Long.valueOf` / `Integer.valueOf`
+  / `Byte.valueOf` parsing, and HugeGraph rejects the query with an `IllegalArgumentException`.
 Always match the Gremlin-Groovy literal type to the property key's `data_type` (`d`/`D` for
 `DOUBLE`, `f`/`F` for `FLOAT`, `L` for `LONG`, `(byte)` cast for `BYTE`)—especially inside
 `P.within(...)` and `P.without(...)`:

@@ -139,15 +139,32 @@ please refer to the [Apache TinkerPop 3.8.1 official documentation](https://tink
 | `where` | Filters traversal results. Supports `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, and `between` operators. | [where step](https://tinkerpop.apache.org/docs/3.8.1/reference/#where-step) |
 {.wide .expand}
 
-
 ### Numeric Literal Type Matching in Gremlin-Groovy Predicates
 
-When evaluating property predicates via Gremlin-Groovy (HTTP `/gremlin` endpoint, HugeGraph-Console, or HugeGraph-Hubble), Groovy parses **unsuffixed decimal literals** (such as `1.0` or `1.5`) as `java.math.BigDecimal` rather than `java.lang.Double` or `java.lang.Float`.
+In Gremlin-Groovy, an unsuffixed decimal literal like `1.0` is parsed as `java.math.BigDecimal`,
+and an unsuffixed integer literal like `1` is parsed as `java.lang.Integer`. Depending on whether
+a `has(...)` step is pushed down to HugeGraph's backend condition converter
+(`TraversalUtil.convPredicateValue`) or evaluated in-memory by TinkerPop's `HasStep`, mismatched
+literal types cause two distinct pitfalls:
 
-- **Comparison predicates (`P.eq`, `P.neq`, `P.lt`, `P.lte`, `P.gt`, `P.gte`, `P.between`):** TinkerPop's `Compare` predicate performs value-based numeric promotion across `Number` subclasses (`BigDecimal`, `Double`, `Float`, `Long`, `Integer`).
-- **Collection membership predicates (`P.within`, `P.without`):** `Contains.within` and `Contains.without` evaluate collection membership using Java object equality (`Collection.contains(value)`), where `BigDecimal.valueOf(1.0).equals(Double.valueOf(1.0d))` is `false` because the runtime classes differ.
+- **In-memory collection membership (`P.within`, `P.without`)**: When TinkerPop evaluates
+  `Contains.within` or `Contains.without` in memory (for example on unindexed properties or
+  chained `has(...)` filters such as
+  `g.E().has('weight', P.within(1.0)).has('weight', P.lt(1.5))`), it delegates to
+  `java.util.Collection.contains(value)`, which uses strict `Object.equals()` without numeric
+  promotion. Because `BigDecimal.valueOf(1.0).equals(Double.valueOf(1.0d))` and
+  `Integer.valueOf(1).equals(Long.valueOf(1L))` are both `false`, `has('weight', P.within(1.0))`
+  returns `0` results on a `DOUBLE` property even when `weight = 1.0`. (By contrast, `P.eq`,
+  `P.neq`, `P.lt`, `P.lte`, `P.gt`, `P.gte`, and `P.between` use TinkerPop's `Compare`, which
+  promotes numeric types in memory.)
+- **Backend condition conversion (`LONG`, `INT`, `BYTE`)**: When HugeGraph converts predicate
+  values against the schema `data_type`, passing a decimal literal such as `1.0` (`BigDecimal`)
+  to an integer-typed property key (`LONG`, `INT`, or `BYTE`) fails `Long.valueOf` /
+  `Integer.valueOf` / `Byte.valueOf` parsing with a `NumberFormatException`.
 
-Always append the explicit Java/Groovy numeric literal suffix matching your `PropertyKey` schema data type when writing properties or filtering with `has(..., P.within(...))` / `has(..., P.without(...))`:
+Always match the Gremlin-Groovy literal type to the property key's `data_type` (`d`/`D` for
+`DOUBLE`, `f`/`F` for `FLOAT`, `L` for `LONG`, `(byte)` cast for `BYTE`)—especially inside
+`P.within(...)` and `P.without(...)`:
 
 | Schema DataType | Java Runtime Class | Gremlin-Groovy Literal Syntax | Predicate Example |
 |-----------------|--------------------|-------------------------------|-------------------|

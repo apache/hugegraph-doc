@@ -8,6 +8,8 @@ aliases:
 ---
 
 > **Development interface:** This guide applies to development builds with the optional ToplingDB runtime enabled.
+> The community-compatible profile and preparation validation described below require a build containing
+> [apache/hugegraph#3447](https://github.com/apache/hugegraph/pull/3447).
 > Existing releases and image tags do not establish support, and runtime acceptance remains a deployment prerequisite.
 
 ## Choose the database owner
@@ -114,11 +116,11 @@ The launcher uses that component's `conf/toplingdb.yaml`. Set `TOPLINGDB_EASY_MI
 The shipped native profile disables its HTTP server and keeps `memtable_as_log_index=false`, which the Java write path requires.
 Tune that profile for the host; it is separate from the business provider and data-path configuration.
 
-Starting with Server 1.8.0+ (master), distributions ship a community-native profile in `conf/toplingdb.yaml`
-using standard SkipList memtables and BlockBasedTable files by default, which does not require CSPP, CSPPMemTabTable, or DispatcherTable plugins.
-In contrast, existing and earlier release builds (such as 1.7.0) ship `conf/toplingdb.yaml` configured with the `cspp` memtable and `DispatcherTable`.
-When using community JNI without CSPP plugins on earlier builds, adjust `conf/toplingdb.yaml`
-to use SkipList and BlockBasedTable for a **new, empty database** to avoid initialization failures.
+Builds containing the compatibility-profile fix in [apache/hugegraph#3447](https://github.com/apache/hugegraph/pull/3447)
+ship a community-native `conf/toplingdb.yaml` using SkipList memtables and BlockBasedTable files.
+This profile does not require CSPP, CSPPMemTabTable or DispatcherTable plugins.
+Earlier development builds may use `cspp` and `DispatcherTable`, which require a JNI supplying those plugins.
+Server 1.7.0 does not include this profile or `prepare-topling.sh`; do not assume these development instructions apply to that release.
 
 The cache and write-buffer values are individual native budgets; memory also grows with the number of databases and column families.
 Inspect the actual profile in the distribution you deploy. Custom native profiles must name plugins supplied by the selected JNI.

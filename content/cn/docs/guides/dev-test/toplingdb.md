@@ -8,6 +8,7 @@ aliases:
 ---
 
 > **开发版接口**：本文适用于开启可选 ToplingDB 运行时的开发构建版本。
+> 下文所述的社区兼容配置和准备阶段验证需要包含 [apache/hugegraph#3447](https://github.com/apache/hugegraph/pull/3447) 的构建。
 > 已有发行版和镜像标签不代表支持本文接口，采用前须完成运行时验证。
 
 ## 确认数据库所属组件
@@ -108,9 +109,9 @@ export TOPLINGDB_ROCKSDB_PROVIDER=topling
 发行包中的 native 配置关闭 HTTP 服务，并保留 Java 写入路径要求的 `memtable_as_log_index=false`。
 请按机器条件调整该文件；它与业务 provider、数据目录配置分别生效。
 
-自 Server 1.8.0+（master）起，发行包中的 `conf/toplingdb.yaml` 默认预设基于社区通用 JNI 的 SkipList 内存表与 BlockBasedTable 文件配置，不再依赖 CSPP、CSPPMemTabTable 或 DispatcherTable 插件。
-而现有及历史正式发行版本（如 1.7.0）附带的 `conf/toplingdb.yaml` 仍默认配置 `cspp` 内存表与 `DispatcherTable`。
-在旧版本上使用缺少 CSPP 插件的社区版 JNI 创建**全新空数据库**时，可将 `conf/toplingdb.yaml` 调整为 SkipList 和 BlockBasedTable，以防止初始化失败。
+包含 [apache/hugegraph#3447](https://github.com/apache/hugegraph/pull/3447) 兼容配置修复的构建，提供基于 SkipList 内存表与 BlockBasedTable 文件的社区版 `conf/toplingdb.yaml`，不依赖 CSPP、CSPPMemTabTable 或 DispatcherTable 插件。
+较早的开发构建可能使用 `cspp` 和 `DispatcherTable`，需要所选 JNI 提供对应插件。
+Server 1.7.0 不包含该配置或 `prepare-topling.sh`，不能将本开发指南直接用于该发行版。
 
 缓存与写缓冲区参数是单项 native 预算；实际内存还随数据库和列族数量增长。
 请检查部署包中的实际配置。自定义 native 配置需要所选 JNI 提供对应插件。

@@ -9,6 +9,11 @@ description: "VertexLabel REST API: Define vertex types, ID strategies, and asso
 
 Assuming that the PropertyKeys listed in 1.1.3 have already been created.
 
+**Note:**
+The following examples are verified against HugeGraph Server v1.5.0.
+PropertyKeys must be created before creating a VertexLabel.
+When running HugeGraph via Docker with the PASSWORD parameter, authentication is enabled and requests must use Basic Auth.
+
 Params Description:
 
 - id: The ID value of the vertex type.
@@ -17,7 +22,7 @@ Params Description:
 - properties: The property types associated with the vertex type.
 - primary_keys: The primary key properties. This field must have a value when the ID strategy is PRIMARY_KEY, and must be empty for other ID strategies.
 - enable_label_index: Whether to enable label indexing. It is disabled by default.
-- index_names: The indexes created for the vertex type. See details in section 3.4.
+- index_labels: The indexes created for the vertex type. See details in section 3.4.
 - nullable_keys: Nullable properties.
 - user_data: Setting the common information of the vertex type, similar to the property type.
 
@@ -33,46 +38,38 @@ POST http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlab
 
 ```json
 {
-    "name": "person",
-    "id_strategy": "DEFAULT",
-    "properties": [
-        "name",
-        "age"
-    ],
-    "primary_keys": [
-        "name"
-    ],
-    "nullable_keys": [],
-    "enable_label_index": true
+  "name": "person",
+  "id_strategy": "PRIMARY_KEY",
+  "properties": ["name", "age"],
+  "primary_keys": ["name"],
+  "nullable_keys": [],
+  "enable_label_index": true
 }
 ```
 
 ##### Response Status
 
 ```json
-201
+201 Created
 ```
 
 ##### Response Body
 
 ```json
 {
-    "id": 1,
-    "primary_keys": [
-        "name"
-    ],
-    "id_strategy": "PRIMARY_KEY",
-    "name": "person2",
-    "index_names": [
-    ],
-    "properties": [
-        "name",
-        "age"
-    ],
-    "nullable_keys": [
-    ],
-    "enable_label_index": true,
-    "user_data": {}
+  "id": 1,
+  "name": "person",
+  "id_strategy": "PRIMARY_KEY",
+  "primary_keys": ["name"],
+  "nullable_keys": [],
+  "index_labels": [],
+  "properties": ["name", "age"],
+  "status": "CREATED",
+  "ttl": 0,
+  "enable_label_index": true,
+  "user_data": {
+    "~create_time": "2025-12-16 15:08:57.458"
+  }
 }
 ```
 
@@ -80,18 +77,13 @@ Starting from version v0.11.2, hugegraph-server supports Time-to-Live (TTL) func
 
 ```json
 {
-    "name": "person",
-    "id_strategy": "DEFAULT",
-    "properties": [
-        "name",
-        "age"
-    ],
-    "primary_keys": [
-        "name"
-    ],
-    "nullable_keys": [],
-    "ttl": 86400000,
-    "enable_label_index": true
+  "name": "person",
+  "id_strategy": "PRIMARY_KEY",
+  "properties": ["name", "age"],
+  "primary_keys": ["name"],
+  "nullable_keys": [],
+  "ttl": 86400000,
+  "enable_label_index": true
 }
 ```
 
@@ -99,20 +91,14 @@ Additionally, if the vertex has a property called "createdTime" and you want to 
 
 ```json
 {
-    "name": "person",
-    "id_strategy": "DEFAULT",
-    "properties": [
-        "name",
-        "age",
-        "createdTime"
-    ],
-    "primary_keys": [
-        "name"
-    ],
-    "nullable_keys": [],
-    "ttl": 86400000,
-    "ttl_start_time": "createdTime",
-    "enable_label_index": true
+  "name": "person",
+  "id_strategy": "PRIMARY_KEY",
+  "properties": ["name", "age", "createdTime"],
+  "primary_keys": ["name"],
+  "nullable_keys": [],
+  "ttl": 86400000,
+  "ttl_start_time": "createdTime",
+  "enable_label_index": true
 }
 ```
 
@@ -132,14 +118,12 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabe
 
 ```json
 {
-    "name": "person",
-    "properties": [
-        "city"
-    ],
-    "nullable_keys": ["city"],
-    "user_data": {
-        "super": "animal"
-    }
+  "name": "person",
+  "properties": ["city"],
+  "nullable_keys": ["city"],
+  "user_data": {
+    "super": "animal"
+  }
 }
 ```
 
@@ -153,26 +137,17 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabe
 
 ```json
 {
-    "id": 1,
-    "primary_keys": [
-        "name"
-    ],
-    "id_strategy": "PRIMARY_KEY",
-    "name": "person",
-    "index_names": [
-    ],
-    "properties": [
-        "city",
-        "name",
-        "age"
-    ],
-    "nullable_keys": [
-        "city"
-    ],
-    "enable_label_index": true,
-    "user_data": {
-        "super": "animal"
-    }
+  "id": 1,
+  "primary_keys": ["name"],
+  "id_strategy": "PRIMARY_KEY",
+  "name": "person",
+  "index_labels": [],
+  "properties": ["city", "name", "age"],
+  "nullable_keys": ["city"],
+  "enable_label_index": true,
+  "user_data": {
+    "super": "animal"
+  }
 }
 ```
 
@@ -194,50 +169,23 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabe
 
 ```json
 {
-    "vertexlabels": [
-        {
-            "id": 1,
-            "primary_keys": [
-                "name"
-            ],
-            "id_strategy": "PRIMARY_KEY",
-            "name": "person",
-            "index_names": [
-            ],
-            "properties": [
-                "city",
-                "name",
-                "age"
-            ],
-            "nullable_keys": [
-                "city"
-            ],
-            "enable_label_index": true,
-            "user_data": {
-                "super": "animal"
-            }
-        },
-        {
-            "id": 2,
-            "primary_keys": [
-                "name"
-            ],
-            "id_strategy": "PRIMARY_KEY",
-            "name": "software",
-            "index_names": [
-            ],
-            "properties": [
-                "price",
-                "name",
-                "lang"
-            ],
-            "nullable_keys": [
-                "price"
-            ],
-            "enable_label_index": false,
-            "user_data": {}
-        }
-    ]
+  "vertexlabels": [
+    {
+      "id": 1,
+      "name": "person",
+      "id_strategy": "PRIMARY_KEY",
+      "primary_keys": ["name"],
+      "nullable_keys": [],
+      "index_labels": [],
+      "properties": ["name", "age"],
+      "status": "CREATED",
+      "ttl": 0,
+      "enable_label_index": true,
+      "user_data": {
+        "~create_time": "2025-12-16 15:08:57.458"
+      }
+    }
+  ]
 }
 ```
 
@@ -258,26 +206,25 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexlabe
 ##### Response Body
 
 ```json
+
 {
     "id": 1,
+    "name": "person",
+    "id_strategy": "PRIMARY_KEY",
     "primary_keys": [
         "name"
     ],
-    "id_strategy": "PRIMARY_KEY",
-    "name": "person",
-    "index_names": [
-    ],
+    "nullable_keys": [],
+    "index_labels": [],
     "properties": [
-        "city",
         "name",
         "age"
     ],
-    "nullable_keys": [
-        "city"
-    ],
+    "status": "CREATED",
+    "ttl": 0,
     "enable_label_index": true,
     "user_data": {
-        "super": "animal"
+        "~create_time": "2025-12-16 15:08:57.458"
     }
 }
 ```
@@ -302,7 +249,7 @@ DELETE http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/schema/vertexl
 
 ```json
 {
-    "task_id": 1
+  "task_id": 1
 }
 ```
 

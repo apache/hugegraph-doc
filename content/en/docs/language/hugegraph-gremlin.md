@@ -138,3 +138,52 @@ please refer to the [Apache TinkerPop 3.8.1 official documentation](https://tink
 | `V` | Traversal steps between vertices and edges: `V`, `E`, `out`, `in`, `both`, `outE`, `inE`, `bothE`, `outV`, `inV`, `bothV`, and `otherV` | [vertex steps](https://tinkerpop.apache.org/docs/3.8.1/reference/#vertex-steps) |
 | `where` | Filters traversal results. Supports `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, and `between` operators. | [where step](https://tinkerpop.apache.org/docs/3.8.1/reference/#where-step) |
 {.wide .expand}
+
+### Numeric Literal Coercion in Gremlin-Groovy Predicates
+
+In Gremlin-Groovy, an unsuffixed decimal literal such as `1.0` or `1.5` is parsed as
+`java.math.BigDecimal`, and an unsuffixed integer literal such as `1` is parsed as
+`java.lang.Integer`. Before executing `has` predicates (`P.eq`, `P.neq`, `P.lt`, `P.lte`,
+`P.gt`, `P.gte`, `P.between`, `P.within`, `P.without`), HugeGraph converts predicate values
+to the target `PropertyKey` schema type (`TraversalUtil.convAllHasSteps` →
+`validPropertyValue` → `DataType.valueToNumber`) and flattens `IN` / `NOT_IN` conditions into
+value-compared `EQ` / `NEQ` relations (`ConditionQueryFlatten` / `NumericUtil.compareNumber`):
+
+- **`DOUBLE` and `FLOAT` properties:** Both integer literals (`1`) and decimal literals
+  (`1.0`, `1.5`) convert by numeric value via `Double.valueOf(value.toString())` /
+  `Float.valueOf(value.toString())`. An unsuffixed predicate such as
+  `has('weight', P.within(1.0))` or `has('weight', P.lt(1.5))` matches a stored `DOUBLE`
+  `1.0d` when `weight` is indexed.
+- **`LONG`, `INT`, and `BYTE` properties:** Integer literals within range convert via
+  `Long.valueOf` / `Integer.valueOf` / `Byte.valueOf`, whereas decimal literals such as `1.0`
+  (`BigDecimal`) fail integer parsing and throw `IllegalArgumentException`.
+- **Index requirement:** Filtering `g.V()` or `g.E()` by a user property requires an index on
+  that property key (for example, a `.range()` index on numeric properties), except for vertex
+  queries that specify the label and all its primary keys (where `GraphTransaction.optimizeQuery`
+  converts them to an id query). Without an applicable index or primary-key lookup, HugeGraph throws
+  `NoIndexException` regardless of literal suffix.
+
+Using explicit Groovy numeric suffixes or casts (`d`/`D` for `DOUBLE`, `f`/`F` for `FLOAT`,
+`L` for `LONG`, `(byte)` for `BYTE`) passes the target Java numeric class directly without
+intermediate string conversion:
+
+| Schema DataType | Java Runtime Class | Explicit Groovy Literal | Indexed Query Example |
+|-----------------|--------------------|-------------------------|-----------------------|
+| `DOUBLE` (`asDouble()`) | `java.lang.Double` | `1.0d` / `1.5D` (or `(double) 1.0`) | `g.E().has('weight', P.within(1.0d))` |
+| `FLOAT` (`asFloat()`) | `java.lang.Float` | `1.0f` / `1.5F` (or `(float) 1.0`) | `g.V().has('score', P.within(0.5f, 1.0f))` |
+| `LONG` (`asLong()`) | `java.lang.Long` | `1L` / `100L` | `g.V().has('timestamp', P.gte(1700000000L))` |
+| `INT` (`asInt()`) | `java.lang.Integer` | `1` / `100` | `g.V().has('age', P.within(18, 25))` |
+| `BYTE` (`asByte()`) | `java.lang.Byte` | `(byte) 1` | `g.V().has('level', P.within((byte) 1, (byte) 2))` |
+
+```groovy
+schema.propertyKey('weight').asDouble().ifNotExist().create()
+schema.vertexLabel('DocVertex').useCustomizeStringId().ifNotExist().create()
+schema.edgeLabel('DocEdge').sourceLabel('DocVertex').targetLabel('DocVertex').properties('weight').ifNotExist().create()
+schema.indexLabel('edgeByWeight').onE('DocEdge').by('weight').range().ifNotExist().create()
+
+// Both unsuffixed BigDecimal (1.0) and explicit Double (1.0d) match by numeric value when indexed
+g.E().has('weight', P.within(1.0)).count()
+g.E().has('weight', P.lt(1.5d)).count()
+```
+
+See also the [Cypher & Gremlin Comparison Matrix](/docs/language/cypher-compatibility/) and [PropertyKey REST API](/docs/clients/restful-api/propertykey/).

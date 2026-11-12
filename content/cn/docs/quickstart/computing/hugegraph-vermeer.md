@@ -39,8 +39,8 @@ flowchart LR
 ### 1.2 运行方法
 
 > [!DETAILS]- Helm：与 HugeGraph、Hubble 一起部署 Vermeer
-> HugeGraph Helm Chart 支持一键拉起原生 Vermeer 内存图计算引擎，默认保持关闭。
-> 在 HugeGraph 仓库根目录下，开启 Vermeer 并启动：
+> HugeGraph Helm Chart 可以在同一个 Release 中与 HugeGraph、Hubble 一起部署 Vermeer，默认不启用。
+> 在 HugeGraph 仓库根目录下执行以下命令启用：
 >
 > ```bash
 > helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
@@ -51,21 +51,18 @@ flowchart LR
 >
 > ```filetree {wrap=true title="Vermeer 核心文件与配置结构"}
 > helm/hugegraph/
->   examples/
->     values-vermeer-standalone.yaml # 单机预设（单个 Pod 同时运行 Master 与 Worker 容器）
->     values-vermeer-cluster.yaml    # 集群预设（独立 Master Pod + 多 Worker Pods 分布式计算）
 >   templates/
->     vermeer-master.yaml            # Master 调度节点编排
->     vermeer-worker.yaml            # Worker 内存计算节点编排
->     vermeer-auth-secret.yaml       # 管理员密码与 Hubble 内部调用服务令牌
+>     vermeer-statefulset.yaml       # Master 与 Worker 工作负载（单机模式下为同一个 Pod）
+>     vermeer-admin-secret.yaml      # 原生控制台管理员密码
+>     vermeer-auth-secret.yaml       # Hubble 服务令牌所用的签名因子
 >   docs/
->     vermeer.md                     # Vermeer 算法调用、参数映射与运维指引
+>     vermeer.md                     # 运行模式、Hubble 使用、凭据、存储与恢复
 > ```
 >
 > **架构与运行模式**：
-> - **单机模式（standalone）**：Master 与 Worker 运行在同一个 Pod 中，开销小，适合小规模图计算测试。
-> - **集群模式（cluster）**：设 `vermeer.mode=cluster` 与 `vermeer.worker.replicas=3`，提供独立的 Master 协调节点与多个分布式 Worker 计算节点。
-> - **图服务协同**：Master 通过 gRPC 向 PD 查询分区信息，Worker 直连 Store 扫描图数据切片；Hubble 会自动注入 Master 地址与通信令牌，在可视化界面中一键加载图并执行 15+ 种图算法。
+> - **单机模式（standalone）**：Master 与 Worker 以两个容器运行在同一个 Pod 中，适合本地试用和小图。
+> - **集群模式（cluster）**：设置 `vermeer.mode=cluster`，运行 1 个 Master Pod 和 `vermeer.worker.replicas` 个 Worker Pod（默认 3 个）。
+> - **图服务协同**：Master 通过 gRPC 向 PD 查询分区信息，Worker 通过 gRPC 直接从 Store 读取图数据；Chart 会把 Master 地址和服务令牌配置给 Hubble，可在 Hubble 中加载图并运行 9 种内置算法之一。
 >
 > **核心注意事项**：
 > 1. **保持元数据命名空间一致**：保留 Chart 默认的 `metadataCluster: hg-test`。该值统一了 Server 的 `HG_SERVER_CLUSTER` 与 Store 的 `PD_CLUSTER`，确保 Schema 正确读取；切勿随意修改该值，以免计算加载时报 `Schema missing`。
@@ -75,8 +72,8 @@ flowchart LR
 >    内部 Master/Worker RPC 与 Worker HTTP 仍保持私有；`standalone` / `cluster` 不改变上述访问选择。
 >    在 **Admin credential** 处填入 `<release>-vermeer-admin` Secret 的 `password`（无需用户名），登录后获得 24 小时会话。
 >    新密码在 easy 下为 6 位随机字母数字，strict 下为 16 位；升级与模式切换保留既有凭据。
-> 3. 详细镜像固定策略、持久卷配置及运维命令可参考 [Helm 可选引擎指南](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)
->    与 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)。
+> 3. 镜像设置、持久卷配置及运维命令可参考 [Helm 可选引擎指南](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)
+>    与 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
 
 > [!WARNING]
 > 生产环境必须启用 HugeGraph Server [认证与授权](/cn/docs/config/config-authentication/)、IP 白名单和最小权限授权，并保留 `audit-*.log` 审计记录。Server Auth 不会保护 Vermeer、PD 和 Store 的独立接口；这些 HTTP、gRPC 端口必须限制在可信网络及调用方范围内，Vermeer 对外入口需配置访问控制。

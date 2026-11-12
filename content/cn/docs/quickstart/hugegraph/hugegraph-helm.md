@@ -9,8 +9,7 @@ search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, 内网部�
 可从 GHCR 或 Docker Hub 安装 `hugegraph-helm`。Chart 与 HugeGraph 服务分别维护版本，例如 `0.4.x` 的 Chart 可以部署 `1.8.x` 的服务。
 
 > [!WARNING]
-> 当前开发 Chart 的 HugeGraph 基础组件使用 `latest` 镜像，适合测试。
-> 可选 Vermeer 已固定为经过验证的已发布镜像及 digest，见[可选引擎](#optional-engines)。
+> 当前开发 Chart 的 HugeGraph 组件和可选的 Vermeer 都使用 `latest` 镜像，适合测试。
 > 对应 HugeGraph 服务正式发布后，生产环境请选择稳定 Chart，并检查其中的镜像版本。
 > 镜像标签可能变化；需要固定镜像内容时，请配置各组件的 `image.digest`。
 
@@ -118,13 +117,13 @@ NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据
 
 ### 可选引擎：默认关闭 {#optional-engines}
 
-Chart 默认仅部署核心图服务（PD + Store + Server + Hubble）。针对数据集成与超大规模内存图计算场景，Chart 提供了 SeaTunnel 与 Vermeer 两款原生可选引擎，默认均保持关闭：
+除 PD、Store、Server 和 Hubble 外，Chart 还能在同一个 Release 中部署两个可选引擎，默认都不启用：
 
 | 可选引擎 | 默认状态 | 核心用途 | 运行模式 (`*.mode`) | 访问控制 |
 |---|---|---|---|---|
-| **Hubble** | 开启 (`true`) | 图数据可视化、多图空间与任务监控 | 单副本 Deployment | 跟随全局 `mode`（NodePort 或 ClusterIP） |
-| **SeaTunnel** | 关闭 (`false`) | 异构数据源批流导入与跨图整库迁移 | `standalone` / `cluster` | easy 为 NodePort，strict 为 ClusterIP；HTTP Basic 鉴权 |
-| **Vermeer** | 关闭 (`false`) | 内存优先的高性能分布式图计算算法 | `standalone` / `cluster` | easy 为 NodePort，strict 为 ClusterIP；Token 鉴权，Hubble 自动集成 |
+| **Hubble** | 开启 (`true`) | 图、图空间和任务的 Web 界面 | 单副本 Deployment | 跟随全局 `mode`（NodePort 或 ClusterIP） |
+| **SeaTunnel** | 关闭 (`false`) | 数据导入、导出和跨图迁移 | `standalone` / `cluster` | easy 为 NodePort，strict 为 ClusterIP；HTTP Basic 鉴权 |
+| **Vermeer** | 关闭 (`false`) | 内存图算法，可在 Hubble 中运行 | `standalone` / `cluster` | easy 为 NodePort，strict 为 ClusterIP；Token 鉴权，已接入 Hubble |
 
 在 values 中将对应引擎的 `enabled` 设为 `true` 即可启用，管理密码与 Server 独立生成。
 `seatunnel.service.type` 和 `vermeer.service.type` 为 `null` 时继承模式默认值：easy 为 NodePort，strict 为 ClusterIP。
@@ -132,7 +131,7 @@ Chart 默认仅部署核心图服务（PD + Store + Server + Hubble）。针对�
 旧配置显式指定了 `ClusterIP` 时，需改回 `null` 才会继承 easy 默认值；省略 `service.nodePort` 或设为 `null` 时由 Kubernetes 分配端口。
 引擎的 `standalone` / `cluster` 拓扑独立于上述访问设置。
 
-> [!DETAILS]- SeaTunnel：按需开启原生数据导入、导出与迁移
+> [!DETAILS]- SeaTunnel：数据导入、导出与迁移
 > ```bash
 > helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
 >   -f ./hugegraph-helm/values-single.yaml \
@@ -140,7 +139,7 @@ Chart 默认仅部署核心图服务（PD + Store + Server + Hubble）。针对�
 >   --wait --timeout 30m
 > ```
 >
-> - **运行模式**：`standalone` 启动 1 个 Hybrid 节点（轻量测试）；`cluster` 模式启动多个同构节点（高并发批处理）。
+> - **运行模式**：`standalone` 启动 1 个 Hybrid 节点；`cluster` 启动 `seatunnel.replicas` 个 Hybrid 节点（默认 2 个）。
 > - **访问与凭据**：easy 模式通过分配的 HTTP NodePort 打开 `http://<可达节点IP>:<NodePort>/#/overview`：
 >
 >   ```bash
@@ -153,7 +152,7 @@ Chart 默认仅部署核心图服务（PD + Store + Server + Hubble）。针对�
 >   strict 默认 ClusterIP，可用 `kubectl -n hugegraph port-forward svc/hugegraph-seatunnel 8081:8080` 在本机访问；`5801` 仍仅供内部通信。
 > - 完整作业配置、内置示例验证及跨图迁移流程见 [SeaTunnel 部署章节](#6-start-seatunnel) 或 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
-> [!DETAILS]- Vermeer：按需开启内存图计算，自动接入 Hubble
+> [!DETAILS]- Vermeer：在 Hubble 中使用内存图计算
 > ```bash
 > helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
 >   -f ./hugegraph-helm/values-single.yaml \
@@ -161,17 +160,10 @@ Chart 默认仅部署核心图服务（PD + Store + Server + Hubble）。针对�
 >   --wait --timeout 20m
 > ```
 >
-> ```text
-> hugegraph-helm/
->   examples/
->     values-vermeer-standalone.yaml # 单机预设（单个 Pod 同时包含 Master 与 Worker）
->     values-vermeer-cluster.yaml    # 集群预设（1 个 Master Pod + 3 个 Worker Pods）
->   docs/
->     vermeer.md                     # Vermeer 算法调用、参数映射与进阶运维手册
-> ```
->
-> - **运行模式**：`standalone` 单机模式在同一个 Pod 中运行 Master 协调与 Worker 计算容器；`cluster` 模式提供独立的 Master Pod 与可水平扩展的 Worker Pod 集群（默认 3 副本）。
-> - **Hubble 一键集成**：Hubble 会自动注入 Master 内部 Service 地址与访问令牌。管理员在 Hubble 控制台即可直接触发 15+ 种图算法，计算结果保留在内存副本中，不污染原图属性。
+> - **运行模式**：`standalone` 在同一个 Pod 中以两个容器运行 Master 和 Worker；改用 `--set vermeer.mode=cluster` 时，
+>   运行 1 个 Master Pod 和 `vermeer.worker.replicas` 个 Worker Pod（默认 3 个）。
+> - **Hubble**：Chart 会把 Master 的内部地址和服务令牌配置给 Hubble。用 HugeGraph 的 `admin` 账号登录 Hubble，
+>   把图加载到 Vermeer 后即可运行 9 种内置算法之一，无需手动填写令牌。
 > - **原生控制台直连**：easy 模式通过 `<release>-vermeer-master` 分配的 HTTP NodePort 打开 `http://<可达节点IP>:<NodePort>/`：
 >
 >   ```bash
@@ -182,7 +174,7 @@ Chart 默认仅部署核心图服务（PD + Store + Server + Hubble）。针对�
 >
 >   并在 **Admin credential** 输入框中填入 `<release>-vermeer-admin` Secret 的 `password`（无需用户名）登录。
 >   strict 模式默认 ClusterIP，可用 `kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688` 转发访问；内部 Master/Worker RPC 与 Worker HTTP 保持私有。
-> - 镜像固定策略与进阶凭据管理见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)。
+> - 镜像设置、凭据、存储与恢复见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
 
 ### PD 元数据命名空间 {#metadata-namespace}
 
@@ -220,9 +212,11 @@ GitOps 凭据、仅 API 部署以及无域名的 HTTP Ingress。
 等待 PD 的 init container 复用 Store 镜像，Helm test 复用 Server 镜像。这两个镜像已包含 `curl`，无需额外 curl 镜像或启动时安装软件。
 自定义镜像可以继续使用显式 `store.waitImage` 和 `server.waitImage` 覆盖。
 
-启用 SeaTunnel 时还需同步其配置的 `apache/seatunnel` 镜像，启用 Vermeer 时使用上文固定的已发布构建。
+启用 SeaTunnel 时还需同步其配置的 `apache/seatunnel` 镜像；启用 Vermeer 时需要 `hugegraph/vermeer`，默认标签为 `latest`。
 Vermeer 的 Master、Worker 和服务令牌初始化复用同一镜像；所有已启用镜像及显式 helper 覆盖都应同步。
 使用自定义 Vermeer 镜像时，还需更新 `vermeer.image.digest`，或在按标签选择时显式清空；非空 digest 优先于标签。
+在 Chart 仍按 digest 固定 Vermeer 时安装的 Release，使用 `--reuse-values` 升级会保留该 digest；
+如需改用 `latest`，见[镜像兼容性](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md#image-compatibility)。
 
 ### 存储配置
 
@@ -377,11 +371,11 @@ CSI 驱动忽略 `fsGroup` 的卷（例如许多 NFS 驱动）和 `hostPath` 卷
 
 ## 6 部署与使用 SeaTunnel（可选引擎）{#6-start-seatunnel}
 
-SeaTunnel 是 HugeGraph 支持的可选数据集成引擎，默认关闭。启用后，Helm 会在集群内拉起常驻的 SeaTunnel Zeta 引擎及任务 Web 前端。
-官方 `apache/seatunnel:3.0.0` 镜像已内置 HugeGraph 连接器（Source 与 Sink），无需额外构建镜像或安装插件。
+设置 `seatunnel.enabled=true` 后，Release 中会多出一个 SeaTunnel Zeta 引擎及其 Web 界面。
+默认的 `apache/seatunnel:3.0.0` 镜像已自带 HugeGraph Source 和 Sink 连接器，不需要自己构建镜像或安装插件。
 
 ```text
-helm/hugegraph/
+hugegraph-helm/
   examples/
     values-seatunnel-standalone.yaml # 单机预设（单个 Hybrid 节点，适合本地与轻量测试）
     values-seatunnel-cluster.yaml    # 集群预设（多个 Hybrid 节点，支持分布式并行执行）
@@ -390,7 +384,7 @@ helm/hugegraph/
       hugegraph-source.conf          # 读取示例：从 HugeGraph 读取图数据并输出至日志
       clone/                         # 跨图整库迁移配置集
         copy-schema.py               # 自动化 Schema 同步脚本
-        person.conf / knows.conf     # 分标签顶点与边迁移作业配置
+        person.conf, knows.conf, ... # 每个顶点或边标签对应一个迁移作业
 ```
 
 ```mermaid
@@ -404,11 +398,10 @@ flowchart TB
 
 ### 6.1 选择单机或集群模式
 
-SeaTunnel 采用 Hybrid 节点架构，单个节点同时负责作业协调调度与任务执行：
-- **单机模式（Standalone）**：启动 1 个常驻节点，内存占用小，适合开发测试与小规模数据处理。
-- **集群模式（Cluster）**：启动多个同构节点组成集群，支持分布式高可用和更大吞吐。
+SeaTunnel 的每个节点都是 Hybrid 节点，既调度作业也执行作业。
+`standalone` 启动 1 个节点；`cluster` 启动 `seatunnel.replicas` 个节点（默认 2 个）分担作业。
 
-SeaTunnel 的副本规模与 HugeGraph 拓扑完全独立解耦。在解压包目录（或源码根目录）下，可通过组合 values 快速安装：
+SeaTunnel 的模式与 HugeGraph 拓扑互不影响。在存放已拉取 Chart 的目录下，组合 values 安装：
 
 ```bash {tab="SeaTunnel 单机"}
 helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
@@ -425,7 +418,9 @@ helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
 ```
 
 > [!TIP]
-> 若为已有 HugeGraph 集群追加 SeaTunnel，只需在现有 values 中加入 `seatunnel.enabled: true` 及相应模式配置，执行 `helm upgrade` 即可，无需重建已有图服务。SeaTunnel 镜像体积较大，建议在离线环境提前同步至私有镜像仓库。
+> 为已有 Release 追加 SeaTunnel 时，在 values 中设置 `seatunnel.enabled: true` 和模式，再执行 `helm upgrade`。
+> 这只会新增 SeaTunnel 相关资源，PD、Store、Server 和 Hubble 的 Pod 模板不变。
+> SeaTunnel 镜像较大，离线环境请提前同步到内网仓库。
 
 ### 6.2 访问 Web 控制台与鉴权
 

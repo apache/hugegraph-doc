@@ -39,8 +39,8 @@ flowchart LR
 ### 1.2 Running Vermeer
 
 > [!DETAILS]- Helm: Deploy Vermeer with HugeGraph and Hubble
-> The HugeGraph Helm Chart supports deploying the native Vermeer in-memory graph computing engine, disabled by default.
-> From the HugeGraph repository root, enable Vermeer with:
+> The HugeGraph Helm Chart can deploy Vermeer in the same release as HugeGraph and Hubble. It is off by default.
+> From the HugeGraph repository root, enable it with:
 >
 > ```bash
 > helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
@@ -51,21 +51,18 @@ flowchart LR
 >
 > ```filetree {wrap=true title="Vermeer Core Files and Layout"}
 > helm/hugegraph/
->   examples/
->     values-vermeer-standalone.yaml # Standalone preset (Master and Worker run in a single Pod)
->     values-vermeer-cluster.yaml    # Cluster preset (dedicated Master Pod + distributed Worker Pods)
 >   templates/
->     vermeer-master.yaml            # Master scheduling and coordination workload
->     vermeer-worker.yaml            # Worker in-memory computing workload
->     vermeer-auth-secret.yaml       # Admin credentials and Hubble internal service tokens
+>     vermeer-statefulset.yaml       # Master and Worker workloads (one Pod in standalone mode)
+>     vermeer-admin-secret.yaml      # Native admin password
+>     vermeer-auth-secret.yaml       # Token signing factor for the Hubble service token
 >   docs/
->     vermeer.md                     # Advanced algorithm parameters, API mapping and operations
+>     vermeer.md                     # Topologies, Hubble use, credentials, storage and recovery
 > ```
 >
 > **Architecture & Topologies**:
-> - **Standalone Mode (`standalone`)**: Master and Worker run as distinct containers in the same Pod with minimal overhead, suitable for local exploration and small-scale testing.
-> - **Cluster Mode (`cluster`)**: Set `vermeer.mode=cluster` and `vermeer.worker.replicas=3` to provision a dedicated Master coordinator Pod and multiple distributed Worker computing Pods.
-> - **Graph Service Integration**: Master queries PD via gRPC for partition topology, while Workers scan graph slices directly from Store via gRPC. Hubble automatically injects the Master URL and communication token, allowing users to load graphs and execute 15+ graph algorithms directly from the UI.
+> - **Standalone Mode (`standalone`)**: Master and Worker run as two containers in one Pod. Use it for local trials and small graphs.
+> - **Cluster Mode (`cluster`)**: Set `vermeer.mode=cluster` for one Master Pod and `vermeer.worker.replicas` Worker Pods (default 3).
+> - **Graph Service Integration**: Master asks PD over gRPC for the partition layout, and Workers read graph data straight from Store over gRPC. The Chart gives Hubble the Master address and a service token, so you can load a graph and run one of the nine supported algorithms from Hubble.
 >
 > **Key Operational Considerations**:
 > 1. **Preserve Metadata Namespace**: Retain the Chart default `metadataCluster: hg-test`. This key synchronizes Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER` so that Store can properly resolve schemas. Do not arbitrarily change this value on existing clusters to avoid `Schema missing` errors during load tasks.
@@ -75,9 +72,9 @@ flowchart LR
 >    Internal Master/Worker RPC and Worker HTTP stay private; `standalone` / `cluster` does not change this access choice.
 >    Enter the `<release>-vermeer-admin` Secret's `password` into **Admin credential** (no username) for a 24-hour session.
 >    New passwords use 6 random alphanumeric characters in easy mode or 16 in strict mode; upgrades and mode changes retain existing credentials.
-> 3. For image pinning, persistent volume sizing, and recovery procedures, refer to the
+> 3. For image settings, persistent volume sizing, and recovery procedures, refer to the
 >    [Helm Optional Engines Guide](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) and
->    [Vermeer Deployment Guide](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md).
+>    [Vermeer Deployment Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md).
 
 > [!WARNING]
 > In production, enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum permissions; retain `audit-*.log`. Server Auth does not protect independent Vermeer, PD, or Store APIs. Restrict these HTTP/gRPC ports to trusted networks and callers, and configure access controls at the Vermeer external entry point.

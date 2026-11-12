@@ -34,12 +34,6 @@
             },
             {
               "page": "/docs/quickstart/hugegraph/hugegraph-pd"
-            },
-            {
-              "page": "/docs/quickstart/hugegraph/hugegraph-helm"
-            },
-            {
-              "page": "/docs/quickstart/hugegraph/hugegraph-helm-operations"
             }
           ]
         },
@@ -268,6 +262,12 @@
       "page": "/docs/_nav/operate",
       "children": [
         {
+          "page": "/docs/quickstart/hugegraph/hugegraph-helm"
+        },
+        {
+          "page": "/docs/quickstart/hugegraph/hugegraph-helm-operations"
+        },
+        {
           "page": "/docs/config",
           "children": [
             {
@@ -433,16 +433,6 @@
             {
               "page": "/docs/quickstart/hugegraph/hugegraph-pd",
               "url": "/docs/quickstart/hugegraph/hugegraph-pd/",
-              "children": []
-            },
-            {
-              "page": "/docs/quickstart/hugegraph/hugegraph-helm",
-              "url": "/docs/quickstart/hugegraph/hugegraph-helm/",
-              "children": []
-            },
-            {
-              "page": "/docs/quickstart/hugegraph/hugegraph-helm-operations",
-              "url": "/docs/quickstart/hugegraph/hugegraph-helm-operations/",
               "children": []
             }
           ]
@@ -775,6 +765,16 @@
       "url": "@group/operate",
       "children": [
         {
+          "page": "/docs/quickstart/hugegraph/hugegraph-helm",
+          "url": "/docs/quickstart/hugegraph/hugegraph-helm/",
+          "children": []
+        },
+        {
+          "page": "/docs/quickstart/hugegraph/hugegraph-helm-operations",
+          "url": "/docs/quickstart/hugegraph/hugegraph-helm-operations/",
+          "children": []
+        },
+        {
           "page": "/docs/config",
           "url": "/docs/config/",
           "children": [
@@ -976,16 +976,6 @@
       "/docs/quickstart/hugegraph/",
       "/docs/quickstart/hugegraph/hugegraph-pd/"
     ],
-    "/docs/quickstart/hugegraph/hugegraph-helm/": [
-      "@group/components",
-      "/docs/quickstart/hugegraph/",
-      "/docs/quickstart/hugegraph/hugegraph-helm/"
-    ],
-    "/docs/quickstart/hugegraph/hugegraph-helm-operations/": [
-      "@group/components",
-      "/docs/quickstart/hugegraph/",
-      "/docs/quickstart/hugegraph/hugegraph-helm-operations/"
-    ],
     "/docs/quickstart/toolchain/": [
       "@group/components",
       "/docs/quickstart/toolchain/"
@@ -1085,6 +1075,11 @@
       "@group/components",
       "/docs/quickstart/hugegraph-ai/",
       "/docs/quickstart/hugegraph-ai/hugegraph-mcp/"
+    ],
+    "/docs/quickstart/hugegraph-ai/hugegraph-llm-sdk/": [
+      "@group/components",
+      "/docs/quickstart/hugegraph-ai/",
+      "/docs/quickstart/hugegraph-ai/hugegraph-llm-sdk/"
     ],
     "/docs/quickstart/hugegraph-ai/hugegraph-ml/": [
       "@group/components",
@@ -1304,6 +1299,14 @@
       "/docs/guides/dev-test/",
       "/docs/guides/dev-test/toplingdb/"
     ],
+    "/docs/quickstart/hugegraph/hugegraph-helm/": [
+      "@group/operate",
+      "/docs/quickstart/hugegraph/hugegraph-helm/"
+    ],
+    "/docs/quickstart/hugegraph/hugegraph-helm-operations/": [
+      "@group/operate",
+      "/docs/quickstart/hugegraph/hugegraph-helm-operations/"
+    ],
     "/docs/config/": [
       "@group/operate",
       "/docs/config/"
@@ -1446,11 +1449,6 @@
     "/docs/cla/": [
       "@group/reference",
       "/docs/cla/"
-    ],
-    "/docs/quickstart/hugegraph-ai/hugegraph-llm-sdk/": [
-      "@group/components",
-      "/docs/quickstart/hugegraph-ai/",
-      "/docs/quickstart/hugegraph-ai/hugegraph-llm-sdk/"
     ]
   },
   "children_by_url": {
@@ -1463,9 +1461,7 @@
     ],
     "/docs/quickstart/hugegraph/": [
       "/docs/quickstart/hugegraph/hugegraph-hstore",
-      "/docs/quickstart/hugegraph/hugegraph-pd",
-      "/docs/quickstart/hugegraph/hugegraph-helm",
-      "/docs/quickstart/hugegraph/hugegraph-helm-operations"
+      "/docs/quickstart/hugegraph/hugegraph-pd"
     ],
     "/docs/quickstart/toolchain/": [
       "/docs/quickstart/toolchain/visualization",

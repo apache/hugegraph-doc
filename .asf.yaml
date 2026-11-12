@@ -31,8 +31,8 @@ github:
     - doc
     - apache
     - graph
-  del_branch_on_merge: true
   pull_requests:
+    del_branch_on_merge: true
     creation_cap:
       enabled: true
       max_open_pull_requests: 5

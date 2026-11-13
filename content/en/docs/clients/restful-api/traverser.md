@@ -2658,6 +2658,38 @@ Retrieve vertices in batches based on the specified shard information (refer to 
 - page: Page position for pagination, optional. Default is null, no pagination. When page is "", it represents the first page of pagination starting from the position indicated by start.
 - page_limit: The upper limit of the number of vertices per page when retrieving vertices with pagination, optional. Default is 100000.
 
+`start` and `end` must be present on every backend in builds containing the scan validation fix; missing either returns HTTP 400.
+This also changes older HStore and in-memory requests that treated missing bounds as zero and could return incomplete data.
+Empty strings represent open bounds only in RocksDB and HBase, not in HStore or in-memory scans.
+
+The following **RocksDB** example requests the first bounded page with explicit `page=`:
+
+```bash
+curl -fsS -G \
+  'http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/vertices/scan' \
+  --data-urlencode 'start=' \
+  --data-urlencode 'end=' \
+  --data-urlencode 'page=' \
+  --data-urlencode 'page_limit=1000'
+```
+
+For HStore and in-memory exports, iterate every range returned by `vertices/shards`, using its exact `start` and `end` and a fresh `page=`.
+An empty HStore range can stop after the partition containing hash zero; an empty in-memory end can produce no results.
+Finishing a page sequence completes that shard only; continue until every returned shard has been exported.
+Their encoding depends on the backend; do not convert RocksDB's encoded positions to the numeric examples below.
+Keep the same bounds on every continuation request and pass the returned `page` value through `--data-urlencode`.
+Stop when the response's `page` is null or empty, even if the final page contains fewer elements than `page_limit`.
+
+| RocksDB request | Behavior |
+| --- | --- |
+| `start=&end=&page=&page_limit=1000` | First page, at most 1000 vertices |
+| Same bounds and returned `page` token | Next page of the same shard |
+| `start=&end=&page_limit=1000` without `page` | Unpaged scan; `page_limit` does not bound the response |
+| Missing `start` or `end` | Invalid request; neither is an implicit open bound |
+
+The unpaged form remains supported for existing callers. Exporters should explicitly request paging to avoid materializing an entire large shard.
+The same rules apply to `edges/scan`. For authenticated Servers, supply the configured HTTP credentials.
+
 ###### Method & Url
 
 ```text
@@ -2953,6 +2985,12 @@ Batch retrieve edges by specifying shard information (refer to section 3.2.22.2 
 - end: Shard ending position, required field.
 - page: Page position for pagination, optional field. Default is null, which means no pagination. When `page` is empty, it indicates the first page of pagination starting from the position indicated by `start`.
 - page_limit: Upper limit of the number of edges per page for paginated retrieval, optional field. Default is 100000.
+
+As with vertex scans, both bounds are required on every backend; only RocksDB and HBase treat empty values as open bounds.
+Send `page=` for the first bounded page and URL-encode each returned continuation token, keeping the bounds unchanged.
+Omitting `page` selects an unpaged scan and ignores `page_limit`.
+Use boundaries from `edges/shards`; do not reuse vertex shard positions for edges.
+For HStore and in-memory exports, iterate every returned edge shard independently rather than using empty bounds for a whole-graph scan.
 
 ###### Method & Url
 

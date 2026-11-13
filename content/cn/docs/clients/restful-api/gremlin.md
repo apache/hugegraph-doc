@@ -67,7 +67,9 @@ curl --compressed -sS -X POST http://127.0.0.1:8080/gremlin \
 
 绑定名区分大小写：`<space>-<graph>` 是图，`__g_<space>-<graph>` 是遍历源。多图 Server 没有隐含的全局 `g`。
 `bindings` 用于查询变量，不能注册图；alias 目标也不能写成 `graph.traversal()` 表达式。
-没有 GraphSpace 的旧版独立图使用 `<graph>` 与 `__g_<graph>`。Server 启用鉴权时，补充配置要求的 HTTP 凭据，例如 `-u "$HG_USER:$HG_PASSWORD"`。
+Server 1.8 的单机 RocksDB 模式同样使用 `DEFAULT-hugegraph` 与 `__g_DEFAULT-hugegraph`；禁用 PD 不会改用旧别名。
+只有没有 GraphSpace 绑定的旧版 Server 才使用 `<graph>` 与 `__g_<graph>`。
+Server 启用鉴权时，补充配置要求的 HTTP 凭据，例如 `-u "$HG_USER:$HG_PASSWORD"`。
 
 同步 Gremlin 默认执行上限为 30000 毫秒，由 `gremlin-server.yaml` 的 `evaluationTimeout` 配置。
 全图计数与按标签过滤计数可能走不同执行路径，不能用 `g.V().count()` 的耗时推断标签扫描耗时。

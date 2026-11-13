@@ -128,3 +128,36 @@ test('social fallback preserves the supplied HugeGraph and Apache image dimensio
   assert.equal(image.readUInt32BE(16), 1681);
   assert.equal(image.readUInt32BE(20), 936);
 });
+
+test('OINK Duo View stays native and HugeGraph site runtimes stand down in panes', () => {
+  const config = read('hugo.yaml');
+  const manifest = read('layouts/_partials/actions/manifest.html');
+  assert.match(config, /\n\s+compare: true\n/);
+  assert.match(manifest, /partial "compare\/page-key\.html" \./);
+  assert.doesNotMatch(manifest, /\.RelPermalink \$outputFormat/);
+  for (const file of [
+    'assets/js/hugegraph-shell.js',
+    'assets/js/language-preference.js',
+    'assets/js/kapa-adapter.js',
+  ]) {
+    assert.match(
+      read(file),
+      /if \(typeof window !== 'undefined' && window\.OinkComparePane\) return;/,
+      `${file} must not initialize site-level behavior inside native Duo View panes`,
+    );
+  }
+  assert.equal(fs.existsSync(path.join(root, 'assets/js/document-compare.js')), false);
+  assert.equal(fs.existsSync(path.join(root, 'layouts/_partials/compare')), false);
+});
+
+test('OINK lock and reviewed override inventory advance together', () => {
+  const goMod = read('go.mod');
+  const goSum = read('go.sum');
+  const inventory = JSON.parse(read('scripts/oink-overrides.json'));
+  assert.match(goMod, /github\.com\/pgsty\/oink v1\.5\.1/);
+  assert.match(goSum, /github\.com\/pgsty\/oink v1\.5\.1 h1:/);
+  assert.match(goSum, /github\.com\/pgsty\/oink v1\.5\.1\/go\.mod h1:/);
+  assert.equal(inventory.version, 'v1.5.1');
+  assert.ok(inventory.files['assets/scss/td/_document-compare.scss']);
+  assert.ok(inventory.files['layouts/_partials/actions/manifest.html']);
+});

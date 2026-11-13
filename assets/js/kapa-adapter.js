@@ -7,6 +7,8 @@
 (function (global) {
   'use strict';
 
+  if (typeof window !== 'undefined' && window.OinkComparePane) return;
+
   var BUNDLE_URL = 'https://widget.kapa.ai/kapa-widget.bundle.js';
   var TIMEOUT_MS = 5000;
 

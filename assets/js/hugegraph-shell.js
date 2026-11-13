@@ -7,6 +7,8 @@
 (function (global) {
   'use strict';
 
+  if (typeof window !== 'undefined' && window.OinkComparePane) return;
+
   var versionExecutorRegistries = new WeakSet();
 
   function readConfig(documentObject) {

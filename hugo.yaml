@@ -159,6 +159,8 @@ params:
     reading_time: false
     feedback: false
     keyboard_nav: true
+    # OINK native Duo View is exposed only for real Docs/Book/Blog translations.
+    compare: true
 
 module:
   imports:

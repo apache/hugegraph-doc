@@ -15,6 +15,10 @@ const states = [
   ["cn-appearance-mobile-dark", "/cn/docs/introduction/", { width: 390, height: 844 }, "dark", "appearance"],
   ["en-paper-desktop-light", "/docs/introduction/", { width: 1440, height: 900 }, "light", "paper"],
   ["cn-paper-mobile-dark", "/cn/docs/introduction/", { width: 390, height: 844 }, "dark", "paper"],
+  ["en-duo-docs-desktop-light", "/docs/quickstart/hugegraph/hugegraph-server/", { width: 1440, height: 900 }, "light", "duo"],
+  ["cn-duo-docs-desktop-light", "/cn/docs/quickstart/hugegraph/hugegraph-server/", { width: 1440, height: 900 }, "light", "duo"],
+  ["en-duo-docs-mobile-light", "/docs/quickstart/hugegraph/hugegraph-server/", { width: 390, height: 844 }, "light", "duo"],
+  ["cn-duo-docs-mobile-light", "/cn/docs/quickstart/hugegraph/hugegraph-server/", { width: 390, height: 844 }, "light", "duo"],
   ...["en", "cn"].flatMap(language => {
     const prefix = language === "cn" ? "/cn" : "";
     return ["slate", "paper"].flatMap(preset => ["light", "dark"].flatMap(theme => {
@@ -176,6 +180,16 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
         await expect(page.locator("html")).toHaveAttribute("data-td-preset", "paper");
         await page.keyboard.press("Escape");
       }
+    } else if (state === "duo") {
+      await page.locator("[data-td-compare-open]").click();
+      const dialog = page.locator("dialog[data-td-compare]");
+      await expect(dialog).toBeVisible();
+      await expect(dialog.locator("[data-td-compare-frame]")).toHaveCount(2);
+      await expect.poll(() => page.frames().filter(frame => {
+        try { return new URL(frame.url()).searchParams.get("oink_compare_pane") === "1"; }
+        catch (_) { return false; }
+      }).length).toBe(2);
+      await expect(dialog.locator("[data-td-compare-sync]")).toBeEnabled();
     } else if (state === "search") {
       await page.locator("[data-td-shell-search-open]").first().click();
       await page.locator(".td-shell-search__input").fill(url.startsWith("/cn/") ? "服务端" : "server");
@@ -212,7 +226,7 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
     await page.screenshot({
       animations: "disabled",
       path: path.join(directory, `${name}.png`),
-      fullPage: !["gallery", "chart", "longcode", "markmap", "terminal", "math", "pd", "computer", "config-api", "helm", "footer", "hubble-import", "hubble-nodes"].includes(state)
+      fullPage: !["gallery", "chart", "longcode", "markmap", "terminal", "math", "pd", "computer", "config-api", "helm", "footer", "hubble-import", "hubble-nodes", "duo"].includes(state)
     });
     if (sectionHeading) {
       expect(await sectionHeading.evaluate(node => Math.abs(node.getBoundingClientRect().top - 108))).toBeLessThan(2);

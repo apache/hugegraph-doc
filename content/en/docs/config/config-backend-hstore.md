@@ -248,3 +248,113 @@ curl http://localhost:8080/metrics/backend
 The `nodes` value in the response is the count of active stores PD returns. A `nodes` value of `0` means the
 Server reached PD but PD has no store in state `Up`, which usually means the Store nodes have not registered
 yet, or registered as `Pending` because they are not in PD's `pd.initial-store-list`.
+
+### 9 Legacy GraphID upgrade preflight
+
+Some 1.7 Store batch writes use the reserved `FFFE` prefix when a graph has no ID mapping. Allocating a real GraphID does not move those rows,
+so newer reads can miss old data; Raft replay can also trigger allocation. This does not affect every 1.7 database.
+
+> [!NOTE]
+> Released 1.7.0 does not include this protection. Before relying on it, ensure the Store build contains the
+> [GraphID preflight patch](https://github.com/apache/hugegraph/pull/3330).
+
+These builds inspect all retained valid local partition DB versions before Store registration, heartbeats or Raft startup.
+Each graph-data column family is checked by an ordered seek to `FFFE`, without a full scan. Legacy rows, a DB that cannot be safely inspected,
+a nonempty DB directory without `CURRENT`, or an incomplete selected version that would hide a valid older version cause startup to fail.
+Errors identify the stage, partition and path,
+and the column family when a legacy row is found. This startup does not register the Store as `Up`; a prior registration can remain until its heartbeat expires.
+
+The check does not create, prune or rewrite partition DBs, or change the persisted ID format. The same protection remains before missing-ID allocation,
+cold DB opens, Raft initialization and staged snapshot activation. Cached primary sessions are checked directly to include unflushed writes with WAL disabled.
+A GraphID preflight failure during later local recovery requests a nonzero exit. Rejected snapshots retain the active DB and committed index,
+incoming snapshot and staged copy. The entire application startup is not read-only: configuration loading can already have contacted PD,
+and later bootstrap stages can have changed Store/Raft location metadata.
+
+#### Offline check before startup
+
+> [!NOTE]
+> These commands additionally require a Store build containing the [offline checker change](https://github.com/apache/hugegraph/pull/3399).
+> Availability depends on that runtime change being merged and included in your distribution; this guide does not establish that a released tag has the script.
+> The registration guard and offline command are separate entry points. A build with only the registration guard need not include this command.
+
+Stop writers, retain matching PD, Store data and Raft backups, and complete the original version's snapshot and Store shutdown procedure.
+Using Java 17, selected through `JAVA_HOME` or `PATH`, run from the Store distribution containing the change:
+
+```bash
+bin/hugegraph-store-check.sh --check
+```
+
+`--config` selects a local configuration directory, defaulting to the distribution's `conf`. Use `--data-path` for the effective data roots.
+Separate multiple roots with commas in one argument. Do not repeat `--data-path`: duplicate options are rejected rather than accumulated.
+
+```bash
+bin/hugegraph-store-check.sh --check \
+  --config /srv/hugegraph-store/conf \
+  --data-path /srv/store-data-a,/srv/store-data-b
+```
+
+Replace these example paths with deployment values. Relative paths resolve from the Store distribution.
+The command reads `application.yml` followed by `application-pd.yml` when present.
+It starts no Spring context, PD, Server or Raft node and creates no inspected DB.
+It does not automatically apply Spring environment, JSON or profile overrides. For example, pass a container's `HG_STORE_DATA_PATH` explicitly through
+`--data-path`; the entrypoint's `SPRING_APPLICATION_JSON` is not applied. Configuration files must also contain the resolved effective RocksDB settings.
+
+For Topling, prepare the verified runtime assets first, set `TOPLINGDB_ROCKSDB_PROVIDER=topling`,
+and retain `rocksdb.provider=topling` in effective configuration.
+The checker shares the Store launcher's runtime selector, and the selected JNI JAR precedes the bundled standard RocksDB classes.
+Missing or unverified assets fail the check; do not switch providers to treat that failure as a pass.
+
+Check every stopped Store. Active DB locks cause refusal; a separate read-only process also cannot see a running Store's unflushed memtables.
+The scope includes configured data roots, retained DB versions, each partition's latest local snapshot and other recorded storage locations.
+It seeks `FFFE` per column family and validates GraphID metadata instead of scanning every business row
+or invoking the normal opener that can prune old versions.
+
+| Result | Meaning and action |
+| --- | --- |
+| Exit 0 | No incompatible prefix or invalid mapping was found in the inspected persisted DBs and latest snapshots; retain backups and continue normal upgrade acceptance |
+| Exit 2 | Legacy data, invalid mappings, active locks, configuration or I/O problems; resolve the path-specific diagnosis and recheck before upgrading |
+| Other nonzero exit | The launcher, JVM or check did not succeed; refuse the upgrade instead of treating this as clean |
+
+Exit 0 does not establish historical ownership, backup completeness or acceptance of the whole upgrade, and never authorizes merging prefixes.
+On refusal, follow the trusted-source recovery boundaries below. See the
+[runtime upgrade guide](https://github.com/hugegraph/hugegraph/blob/fix/graphid-upgrade-guard/docs/graphid-upgrade.md) for the command contract.
+
+#### Upgrade and migration
+
+Stop application writes and back up the original cluster's data, metadata and Raft state. Data that passes the GraphID guard needs no migration for this issue;
+complete the usual upgrade validation before resuming writes.
+
+If startup reports `FFFE`, stop the upgrade and preserve the original DBs, WAL, metadata and snapshots. Prefer logical migration from a complete, trusted
+1.7 source to a fresh 1.8 cluster with existing HugeGraph-Tools. Target data then uses the normal GraphID and Raft write paths.
+Restore an isolated 1.7 source from a pre-upgrade backup when necessary. Confirm source completeness and graph ownership before exporting;
+a current single-graph configuration does not prove historical ownership of every `FFFE` row.
+
+For a graph in the `DEFAULT` graph space, use an empty target graph and a Tools build containing the
+[backup data-page failure fix](https://github.com/hugegraph/hugegraph-toolchain/pull/96), so a failed export stops migration before target restore:
+
+```bash
+bin/hugegraph --url http://old-1.7:8080 --graph hugegraph \
+  migrate --target-url http://new-1.8:8080 --target-graph hugegraph \
+  --graph-mode RESTORING --directory /safe-backup/hugegraph \
+  --huge-types all --keep-local-data
+```
+
+Keep application writes stopped throughout the process; export does not provide a snapshot across all requests.
+`RESTORING` preserves schema IDs on the empty target,
+and `--keep-local-data` retains the logical backup.
+The current command uses the default graph space; do not apply this example directly to another graph space.
+Do not switch traffic after an export or restore error. Retain the backup and retry against a fresh empty target;
+a failed restore can leave partial data and `RESTORING` mode. Successful exit and matching counts alone do not establish completeness: compare vertex/edge IDs,
+endpoints, properties, schema, indexes and application queries against a known baseline. Repeat queries after a target snapshot and restart,
+and verify follower rebuilds in replicated deployments. Switch traffic after acceptance and retain the source and backup;
+new target writes are absent from the old backup.
+
+If a previous upgrade allocated new IDs, the source view can be incomplete; remapping to `FFFE` can instead hide newer rows. Prefer a pre-upgrade backup;
+replacing the JAR alone does not undo a persisted mapping. Multiple graphs may share the old prefix, physical keys do not prove ownership,
+and overwritten or deleted values cannot be reconstructed without another source. Do not automatically merge old and new prefixes,
+assign all legacy rows to one graph, or edit each replica's RocksDB independently. Recover these cases from backup and write-history evidence first.
+The guard detects and refuses unsafe operations; it does not migrate data automatically or enable in-place rolling upgrades of affected data.
+
+See the
+[Store GraphID upgrade guide](https://github.com/hugegraph/hugegraph/blob/fix/store-legacy-graph-prefix-preflight/docs/store-graphid-upgrade.md)
+for details.

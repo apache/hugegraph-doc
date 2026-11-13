@@ -210,3 +210,95 @@ curl http://localhost:8080/metrics/backend
 ```
 
 响应中的 `nodes` 就是 PD 返回的活跃 Store 数量。`nodes` 为 `0` 说明 Server 连上了 PD，但 PD 中没有状态为 `Up` 的 Store，通常是 Store 节点还没注册，或者因为不在 PD 的 `pd.initial-store-list` 中而注册成了 `Pending`。
+
+### 9 旧 GraphID 升级预检
+
+部分 1.7 Store 批量写入会在缺失 GraphID 映射时使用保留前缀 `FFFE`。新版分配真实 GraphID 后，旧行不会自动移动，
+读取可能看不到旧数据；Raft 回放也可能触发分配。这不意味着所有 1.7 数据库都需要迁移。
+
+> [!NOTE]
+> 已发布的 1.7.0 不包含此保护。依赖下述行为前，请确认 Store 构建已包含 [GraphID 预检补丁](https://github.com/apache/hugegraph/pull/3330)。
+
+包含补丁的 Store 会在注册 Store、启动心跳和 Raft 前，只读检查配置目录中所有仍保留的有效分区 DB 版本。
+每个业务列族通过有序定位检查 `FFFE`，不做全库扫描。发现旧行、无法安全读取 DB、非空 DB 目录缺少 `CURRENT`，
+或选中的不完整版本会遮蔽有效旧版本时，启动失败，
+并报告阶段、分区和路径；发现旧行时还会报告列族。本次启动不会向 PD 注册为 `Up`，此前的注册可能要等心跳超时才失效。
+
+检查不会创建、清理或重写分区 DB，也不改变持久化 ID 格式。分配缺失 ID、冷打开 DB、初始化 Raft 和激活暂存快照前仍有相同保护；
+已缓存的主会话会直接检查，以覆盖关闭 WAL 后未刷盘的数据。后续本地恢复中的 GraphID 预检失败会请求非零退出。
+快照被拒绝时保留当前 DB 和提交索引、输入快照及暂存副本。整个应用启动并非只读：配置加载可能已访问 PD，后续启动阶段中的 Store/Raft 位置元数据也可能已更新。
+
+#### 启动前的离线检查命令
+
+> [!NOTE]
+> 以下命令另需 Store 构建包含 [离线检查器补丁](https://github.com/apache/hugegraph/pull/3399)。
+> 工具可用性取决于该运行时变更合入并进入所用发行包，不能据此推断某个已发布 tag 已提供脚本。
+> 注册前保护与离线命令是不同入口；仅包含上述注册前保护的构建不一定包含此命令。
+
+先停写、保留匹配的 PD、Store 数据与 Raft 备份，并按原版本流程完成快照和停止 Store。
+使用 Java 17（由 `JAVA_HOME` 或 `PATH` 选择），从包含补丁的 Store 发行包目录运行：
+
+```bash
+bin/hugegraph-store-check.sh --check
+```
+
+`--config` 指定本地配置目录，默认是发行包下的 `conf`；`--data-path` 可显式指定实际数据根目录。
+多个根目录在同一个参数中用逗号分隔，不要重复 `--data-path`：重复选项会被拒绝，而不会累加。
+
+```bash
+bin/hugegraph-store-check.sh --check \
+  --config /srv/hugegraph-store/conf \
+  --data-path /srv/store-data-a,/srv/store-data-b
+```
+
+路径示例需替换为实际部署值。相对路径从 Store 发行包目录解析。命令依次读取 `application.yml` 和存在时的
+`application-pd.yml`，不启动 Spring、PD、Server 或 Raft，也不创建被检查的数据库。
+它不会自动应用 Spring 环境变量、JSON 或 profile 覆盖；例如容器的 `HG_STORE_DATA_PATH` 需通过 `--data-path` 显式传入，
+不能依赖入口脚本的 `SPRING_APPLICATION_JSON`。使用这类覆盖时，配置文件也必须包含解析后的有效 RocksDB 设置。
+
+Topling 部署须先准备经过验证的运行时资产，设置 `TOPLINGDB_ROCKSDB_PROVIDER=topling`，并在有效配置中保留
+`rocksdb.provider=topling`。检查器复用 Store 启动器的运行时选择逻辑，选中的 JNI JAR 优先于发行包内标准 RocksDB 类；
+资产缺失或验证失败会拒绝检查，不应改用其他 provider 把它当作通过。
+
+逐个检查每台已停止的 Store。活动数据库锁会导致拒绝；另一个只读进程也无法看到运行中 Store 的未刷盘 memtable。
+检查范围包括配置的数据根、保留的 DB 版本、各分区最新本地快照和记录的其他存储位置。它按列族定位 `FFFE` 并校验
+GraphID 元数据，不全量扫描业务行，也不通过可能清理旧版本的普通 DB 打开流程。
+
+| 结果 | 含义与处理 |
+| --- | --- |
+| 退出 0 | 所检查的持久化 DB 和最新快照未发现不兼容前缀或无效映射；保留备份，继续常规升级验收 |
+| 退出 2 | 发现旧数据、无效映射、活动锁、配置或 I/O 问题；根据路径和诊断处理后重查，不得继续升级 |
+| 其他非零退出 | 启动器或 JVM 等检查未成功；同样按拒绝处理，不能当作干净结果 |
+
+退出 0 不证明历史数据归属、备份完整或整个升级已经通过，也不授权合并新旧前缀。
+遇到拒绝时按下述可信源恢复边界处理。详细命令契约见
+[运行时升级指南](https://github.com/hugegraph/hugegraph/blob/fix/graphid-upgrade-guard/docs/graphid-upgrade.md)。
+
+#### 升级与迁移
+
+先停写并备份原集群的数据、元数据和 Raft 状态。未遇到 GraphID 拦截的数据无需为本问题迁移，完成常规升级验证后再恢复写入。
+
+若启动报告 `FFFE`，停止升级并保留原始 DB、WAL、元数据和快照。首选从完整可信的 1.7 源，通过现有 HugeGraph-Tools 逻辑迁移到全新 1.8 集群，
+目标数据由正常 GraphID 与 Raft 写入路径生成。需要时从升级前备份恢复隔离的 1.7 源；确认源视图完整、数据归属明确后再导出。
+当前只配置了一个图，不能证明历史 `FFFE` 行都属于它。
+
+以下示例适用于 `DEFAULT` 图空间，在空目标图中使用包含
+[数据页导出失败修复](https://github.com/hugegraph/hugegraph-toolchain/pull/96) 的 Tools 构建，确保导出失败后不会继续恢复目标：
+
+```bash
+bin/hugegraph --url http://old-1.7:8080 --graph hugegraph \
+  migrate --target-url http://new-1.8:8080 --target-graph hugegraph \
+  --graph-mode RESTORING --directory /safe-backup/hugegraph \
+  --huge-types all --keep-local-data
+```
+
+全程保持应用停写，导出不提供跨请求的一致性快照。`RESTORING` 保留空目标中的 Schema ID，`--keep-local-data` 保留逻辑备份；
+当前命令使用默认图空间，不能直接套用于其他图空间。导出或恢复出现错误时不要切流，保留备份并改用全新空目标重试；失败目标可能残留部分数据及 `RESTORING` 模式。
+成功退出和数量一致也不足以证明完整：需按已知基线核对顶点/边 ID、端点、属性、Schema、索引及业务查询，
+并在目标快照、重启后复查；多副本部署还需验证 Follower 重建。验收后切换流量，保留源与备份；目标接受的新写入不在旧备份中。
+
+若已升级并产生新 ID，当前源视图可能不完整，映射改回 `FFFE` 又可能隐藏新行。优先使用升级前备份；仅回滚 JAR 不会撤销已持久化的映射。
+多个图可能共享旧前缀，物理 Key 无法证明归属，已覆盖或删除的值也不能凭空恢复。不要自动合并新旧前缀、将全部旧行归给一个图，或逐副本改写 RocksDB。
+这些情况需要先依据备份和写入历史恢复数据。预检只负责检测和拒绝，不是自动迁移，也不表示受影响数据支持原地滚动升级。
+
+详细机制见 [Store GraphID 升级说明](https://github.com/hugegraph/hugegraph/blob/fix/store-legacy-graph-prefix-preflight/docs/store-graphid-upgrade.md)。

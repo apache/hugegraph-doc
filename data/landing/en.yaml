@@ -76,7 +76,7 @@ statement:
       label: latency for optimized queries
     - value: 20+
       label: built-in graph algorithms
-    - value: 1st
+    - value: First
       label: Apache top‑level graph system
 
 capabilities:

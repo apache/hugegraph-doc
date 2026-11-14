@@ -657,6 +657,9 @@
     const L = { database: layer('database'), toolchain: layer('toolchain'), computing: layer('computing'), ai: layer('ai') };
     const HOOKS = ['--hgs-drift', '--hgs-fade', '--hgs-plate'];
     const panels = $$('.panel');
+    const printMedia = matchMedia('print');
+    let printing = false, screenY = scrollY;
+    const isPrinting = () => printing || printMedia.matches;
     /* lift-off windows, in scroll progress p. Nothing moves before HERO_P (about 40 px of scroll): a small accidental scroll
        leaves the hero, and the stack's hover and click, exactly as they were. */
     const HERO_P = 0.0075;
@@ -765,6 +768,7 @@
 
     /* One timeline: any progress value renders the correct frame, forwards or backwards. */
     function render(p, t) {
+      if (isPrinting()) return;
       const changed = p !== lastP;
       if (changed) {
         // The background hand-off shares the graph timeline, including reverse
@@ -805,8 +809,8 @@
         el.style.setProperty('--dy', (12 * (1 - entry)).toFixed(1) + 'px');
         el.classList.toggle('on', active);
         el.style.visibility = active ? 'visible' : 'hidden';
-        el.inert = !active || copyOpacity < 0.5;
-        el.setAttribute('aria-hidden', String(!active));
+        // Hidden panels already leave the accessibility tree through visibility.
+        el.inert = active && copyOpacity < 0.5;
       });
       const txt = bi < 0 ? '' : beats[bi].note;
       if (txt !== note) readout.textContent = note = txt;
@@ -816,7 +820,7 @@
        becomes a short glide instead of a step. It snaps once the difference is under a third of a pixel. */
     function frame(now) {
       raf = 0;
-      if (!running) return;
+      if (!running || isPrinting()) return;
       const rect = story.getBoundingClientRect();
       const spanPx = Math.max(1, rect.height - innerHeight);
       const target = clamp(-rect.top / spanPx, 0, 1);
@@ -840,12 +844,40 @@
       raf = requestAnimationFrame(frame);
     }
     const kick = () => { if (running && !raf) { snapNext = true; lastNow = performance.now(); raf = requestAnimationFrame(frame); } };
-    const resize = new ResizeObserver(() => { if (lifetime.signal.aborted) return; size(); if (running && !raf) kick(); });
+    const resize = new ResizeObserver(() => {
+      if (lifetime.signal.aborted) return;
+      if (printMedia.matches) { beforePrint(); return; }
+      if (printing) return;
+      size();
+      if (running && !raf) kick();
+    });
     resize.observe(stage);
     const visibility = new IntersectionObserver(es => { if (lifetime.signal.aborted) return; running = es[0].isIntersecting && !document.hidden; kick(); });
     visibility.observe(story);
     listen(document, 'visibilitychange', () => { if (document.hidden) running = false; else { const r = story.getBoundingClientRect(); running = r.bottom > 0 && r.top < innerHeight; kick(); } });
-    size();
+    // Print uses ordinary document flow. Its shorter height can clamp scrollY
+    // before the media change fires, so remember the last screen scroll event.
+    listen(window, 'scroll', () => { if (!isPrinting()) screenY = scrollY; }, { passive: true });
+    function beforePrint() {
+      if (printing) return;
+      if (!printMedia.matches) screenY = scrollY;
+      printing = true;
+      interrupt();
+      for (const panel of panels) panel.inert = false;
+    }
+    function afterPrint() {
+      if (!printing || printMedia.matches) return;
+      printing = false;
+      scrollTo({ top: screenY, behavior: 'instant' });
+      size();
+      render(ps, (performance.now() - t0) / 1000);
+      kick();
+    }
+    listen(window, 'beforeprint', beforePrint);
+    listen(window, 'afterprint', afterPrint);
+    listen(printMedia, 'change', event => event.matches ? beforePrint() : afterPrint());
+    if (printMedia.matches) beforePrint();
+    else size();
 
     // Use one clock for both the scroll position and camera. Re-targeting starts at the frame the reader
     // sees, and manual input takes over without a native smooth scroll or delayed callback racing it.
@@ -907,7 +939,7 @@
         }
         panels.forEach(el => {
           el.removeAttribute('style'); el.classList.remove('on');
-          el.inert = false; el.removeAttribute('aria-hidden');
+          el.inert = false;
         });
         ctx.clearRect(0, 0, W, H);
         onPalette = () => {};

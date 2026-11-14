@@ -312,6 +312,29 @@ test("the copy button has a visible keyboard focus indicator on the command pane
   }
 });
 
+test("printing an active graph scene exposes all four explanations and restores the screen scene", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  await expect(page.locator("#hg-stack")).toHaveClass(/hgs-live/);
+  await page.locator('#hg-stack button[data-layer="3"]').press("Enter");
+  const guide = page.locator("#beat-ai .story-guide");
+  await expect(guide).toBeFocused();
+  const scrollBeforePrint = await page.evaluate(() => scrollY);
+  const guides = page.locator("#story .panel").getByRole("link");
+  await expect(guides).toHaveCount(1);
+
+  await page.emulateMedia({ media: "print" });
+  await expect(guides).toHaveCount(4);
+  await expect(page.locator("#story .panel").getByRole("heading", { level: 2 })).toHaveCount(4);
+  await expect(page.locator("#story .panel[inert]")).toHaveCount(0);
+
+  await page.emulateMedia({ media: "screen" });
+  await expect(guides).toHaveCount(1);
+  await expect(guide).toBeFocused();
+  await expect(page.locator("#beat-ai")).toHaveCSS("opacity", "1");
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeCloseTo(scrollBeforePrint, 0);
+});
+
 test("dark reduced-motion diagrams follow appearance and print on paper", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" });
   await page.goto("/cn/");

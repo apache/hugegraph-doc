@@ -67,8 +67,8 @@ statement:
     - value: 千亿级
       label: 顶点与边的规模
     - value: 毫秒级
-      label: 优化后的查询延迟
-    - value: 20+
+      label: 多跳查询延迟
+    - value: 30+
       label: 内置图算法
     - value: 首个
       label: Apache 顶级图系统

@@ -71,8 +71,8 @@ statement:
     - value: 100s of billions
       label: vertices and edges
     - value: Milliseconds
-      label: latency for optimized queries
-    - value: 20+
+      label: multi-hop query latency
+    - value: 30+
       label: built-in graph algorithms
     - value: First
       label: Apache top‑level graph system

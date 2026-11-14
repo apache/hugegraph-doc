@@ -26,13 +26,25 @@ kubectl get pv,storageclass
 
 For `ImagePullBackOff`, inspect Pod events and registry access/credentials. The default image inventory contains four component images;
 Store wait and Helm test reuse existing component images with `curl` already installed. Explicit helper-image overrides must also be mirrored.
-Enabled SeaTunnel adds its configured `apache/seatunnel` image. Enabled Vermeer uses `hugegraph/vermeer:helm-30b67d93e7d0`, pinned by digest
-and reused by Master, Worker and token initialization. Official publishing runs
-record the source and image digest; see the
-[Vermeer deployment guide](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md).
+Enabled SeaTunnel adds its configured `apache/seatunnel` image. Vermeer uses `hugegraph/vermeer:latest` by default,
+reused by Master, Worker and token initialization; pin a compatible digest or tag for reproducibility.
+Enabled RAG adds the image digest in `values-rag.yaml`. See the
+[Vermeer deployment guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md).
 Custom image overrides must also update `vermeer.image.digest`, or explicitly clear it to select by tag; digest takes priority.
 The base local-PV example omits Vermeer claims: standalone adds two,
 while cluster adds one Master claim plus one per Worker (four additional claims by default).
+
+### Preserve the Text2GQL encryption key {#text2gql-master-key}
+
+The chart now sets `text2gql.shared.master_key_file=/hubble-data/text2gql-master.key`, alongside H2 on the Hubble data volume.
+Back up and restore both together. With Hubble persistence disabled, replacing the Pod loses the `emptyDir` data and key.
+
+When upgrading from the old container-local `/hubble/data/text2gql-master.key`, preserve that key at the new path or
+**re-enter and save the model API key once after upgrading**. H2 may still indicate a saved API key while generation returns HTTP 503;
+saving other settings does not repair a missing encryption key. A new key is created on API-key save, not during startup or decryption.
+Keep the key's owner UID stable and its mode `0600` across replacements. A Secret-supplied `HUBBLE_TEXT2GQL_MASTER_KEY` takes precedence over the file;
+preserve the same Secret value to decrypt existing data. See the
+[full key recovery contract](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#hubble-text2gql-credentials).
 
 ## 2 Ports and health
 
@@ -41,6 +53,17 @@ Client Services hide individual Pod addresses. NodePort is a separate allocated 
 PD `/v1/ready` requires a Raft leader; `/v1/health` only confirms the listener. Store startup waits for a majority of ready PD peers.
 Server waits up to `server.storageWaitTimeoutSeconds` (default 300) before its application startup; adjust it for slow storage bootstrap.
 No local Helm rendering verifies live cluster reachability, volumes or JVM capacity.
+
+Store probes use `/v1/health`. On supported versions, `/-/lifecycle: STARTED` only confirms Spring readiness and a running gRPC listener;
+`/-/state` is a separate operator-controlled flag and can still be `STARTING`. Kubernetes Ready and Hubble's `NOT_READY` observation can therefore
+coexist. Check PD registration, partition recovery and actual graph queries separately; see the
+[Store lifecycle contract](https://github.com/apache/hugegraph/blob/master/hugegraph-store/docs/deployment-guide.md#step-3-deploy-store-cluster).
+
+PD cluster statistics and per-member metric collection are independent too. A Service origin that cannot be mapped to one advertised member can
+report `pd_metrics_unmapped` while cluster statistics remain available. Hubble does not infer a member from a Service alias or assign that sample to
+the leader. Inspect the configured/advertised origins and collection details; the
+[operations diagnostics](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-hubble/docs/operations-diagnostics-20261023.md)
+explain the trusted-origin boundary.
 
 ### Preserve the metadata namespace {#metadata-namespace}
 
@@ -67,7 +90,7 @@ and ensure `metadataCluster` matches this value in your values file. For Store n
 >   In Vermeer native UI, enter the password from Secret `<release>-vermeer-admin` into **Admin credential**; Hubble internal service tokens are auto-wired.
 > - **Topology Changes**: Ensure active computations and batch ingestion jobs are complete and in-memory graphs are unloaded before changing `seatunnel.mode`
 >   or `vermeer.mode`. Standalone and cluster use separate PVC claims, so mode changes do not migrate local files.
-> - See the [Vermeer Guide](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md) and
+> - See the [Vermeer Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md) and
 >   [SeaTunnel Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md) for full recovery and configuration details.
 
 ### Helm test coverage
@@ -118,9 +141,38 @@ so it needs at least three schedulable nodes. Explicit affinity takes priority o
 Local PV node affinity must match the workload's placement constraints; PV capacity declarations do not enforce filesystem quotas.
 Do not change a persisted PD/Store Raft hostname or port as an ordinary upgrade: those addresses are recorded identities.
 
+### Keep initialization history separate from live membership {#stable-bootstrap-topology}
+
+The chart records initial PD peers, Store allowlist count and startup Store threshold in an immutable, retained
+`<fullname>-bootstrap` ConfigMap. The Helm caller needs namespace ConfigMap-read and PVC-list permissions.
+There is no `bootstrap.enabled` switch. Keep this record through upgrades, rollbacks and manual node changes;
+it is initialization history, not the current PD voting set or the set of all admitted Stores.
+
+| Value | Fresh installation | Initialized installation |
+|---|---|---|
+| `bootstrap.pdReplicas` | Empty uses requested PD replicas | Retain recorded initial count |
+| `bootstrap.storeReplicas` | Empty uses requested Store replicas | Retain recorded initial allowlist count |
+| `bootstrap.initialStoreCount` | Empty uses requested Store replicas | Retain recorded startup threshold |
+| `pd.partition.defaultShardCount` | Explicit odd RF, or RF=1 below 3 initial Stores / RF=3 otherwise | PD-persisted replica policy remains authoritative |
+{.wide .expand}
+
+For example, growing one Store to three does not convert persisted RF=1 to RF=3. Five PD replicas require a PDB that preserves
+three available voters (`pd.pdb.minAvailable=3`); the default two is insufficient. Use PD images implementing separate bootstrap admission
+and runtime voting-quorum checks, and verify the capability of the selected image rather than inferring it from `latest`.
+
+An older test installation without a record can be adopted only with unchanged, verified topology, RF, names, ports,
+PVC bindings and Raft identities. Run the read-only `helm/check_bootstrap_adoption.py` from the matching Server source against PD and every Store,
+retain its before report, then upgrade with reviewed values and compare with `--before` afterward. Follow the
+[complete adoption procedure](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#adopting-same-topology-test-data);
+it includes graph read/write checks. Do not delete a conflicting record or infer original membership from current replica counts.
+
+Offline upgrades cannot discover retained history: use `helm template --is-upgrade` and explicitly pin all three recorded bootstrap counts.
+Offline rendering cannot establish that existing PVCs are safe to reuse. Remove a legacy `bootstrap.enabled` value through reviewed
+`--reset-values -f reviewed-values.yaml`; carrying it forward with `--reuse-values` is rejected.
+
 ## 4 Partition sharding
 
-At first bootstrap, the chart seeds three shard replicas when there are at least three Stores, and one otherwise.
+At first bootstrap, the chart seeds three shard replicas when the recorded initial Store count is at least three, and one otherwise.
 PD persists the partition settings; changing chart values after initialization does not rewrite that metadata.
 Use the PD configuration API and a coordinated partition patrol for an existing cluster. An explicit shard count must be odd and no greater than Store replicas.
 See the [topology constraints](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#topology-and-scheduling)
@@ -199,10 +251,22 @@ Before destructive changes, establish and validate a recovery plan for the deplo
 
 ## 8 Scaling
 
-Server replicas are routinely mutable; an HPA also needs CPU requests. Store growth is a coordinated storage/shard operation.
-PD growth/shrink and Store shrink cannot be handled as ordinary replica changes, because persistent Raft/shard membership must be updated first.
-Chart upgrade checks reject unsupported identity/membership changes on initialized StatefulSets; fresh installs do not query StatefulSets for upgrade checks.
-Scale through the documented lifecycle procedure rather than `kubectl scale`, which can leave Hubble's Store metrics configuration stale.
+Server replicas are routinely mutable; an HPA also needs CPU requests. PD and Store changes need database-level coordination before
+reconciling Helm resources. Preserve the [bootstrap record](#stable-bootstrap-topology) throughout:
+
+- **PD growth/shrink:** prepare and verify the actual Raft membership first. Desired replicas do not change that membership.
+- **Store growth:** prepare storage, check capacity, and explicitly admit the new Pending Store identity.
+- **Store shrink:** set the source to Exiting, wait for migration and recovery, verify that actual members exclude it and its local engines are empty,
+  then reduce resources. Keep PVCs until retirement and data checks finish.
+- **Vermeer Workers:** finish/cancel tasks and unload compute graphs before changing Worker count; recheck availability and reload afterward.
+
+Historical PD seeds still govern Store startup. An initial one-PD cluster expanded to three still needs PD0 to start a new Store;
+current PD quorum alone is not enough. Shrinking below the recorded seed majority is unsupported.
+Before Store restarts/additions, check both the recorded seed majority and actual PD quorum. Follow the
+[controlled node-change procedure][node-changes].
+
+[node-changes]: https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#controlled-node-changes-and-recovery-limits
+Avoid direct `kubectl scale` as a substitute for the lifecycle procedure; it can also leave Hubble's trusted Store metric targets stale.
 
 ## 9 Running Hubble outside the cluster
 
@@ -220,3 +284,40 @@ A test that only calls `/versions` does not prove graph binding; also check fres
 For `ERROR: missing required env 'HG_PD_AUTH_SECRET_KEY'`, inspect the PD Pod's Secret reference and the corresponding key, not the Secret value in logs.
 The chart normally injects this shared PD REST credential automatically. Custom containers/manifests must provide the same value to PD and its clients.
 In GitOps, create the external Secret before workload reconciliation; with ordinary Helm, retain the chart-generated release Secret.
+
+## 11 Vermeer and RAG recovery {#vermeer-and-rag-recovery}
+
+Vermeer standalone adds two claims; cluster adds one Master claim and one per Worker. Master and Worker must never share a Pebble directory,
+even when their containers share a Pod. Claims are retained when disabling/uninstalling Vermeer or reducing Workers.
+Explicitly disabled storage uses `emptyDir`; a PVC failure does not fall back to it. Separate standalone and cluster claims are not migrated
+when switching topology. Persistent metadata, Worker files and task history do not restore in-memory graphs, cached results or running tasks.
+Stop submissions, complete/cancel tasks and unload graphs before topology changes; check Worker availability and reload afterward.
+
+Application logs go to stdout, not the data volume. For the standalone Pod:
+
+```bash
+kubectl -n hugegraph logs hugegraph-vermeer-master-0 -c master
+kubectl -n hugegraph logs hugegraph-vermeer-master-0 -c worker
+```
+
+In cluster mode, use the selected Worker Pod's name (for example, `hugegraph-vermeer-worker-0`) for the second command.
+If graph loading fails, check PD discovery, Store gRPC reachability, metadata namespace and Worker Schema credentials;
+Pod Ready or `/healthcheck` alone does not establish usable Worker allocation. See
+[Vermeer load and compute verification](./hugegraph-helm.md#vermeer-workflow).
+
+RAG uses one persistent resource tree and one replica with Recreate deployment. Saved `settings.yaml` connections override deployment defaults.
+A Secret/file change needs a restart; it does not overwrite user-saved connection fields. Preserve the PVC and use the UI to update saved credentials.
+A UI save validates and persists configuration without calling the model; **Test saved connection** performs that separate check.
+See the [RAG configuration and recovery contract](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/rag.md).
+
+### Check the complete workflow {#integrated-verification}
+
+1. Run `helm test hugegraph -n hugegraph --logs --timeout 5m` and inspect workload/PVC state.
+1. Sign in to Hubble afresh and read/write an isolated graph with known expected data.
+1. Load that graph into Vermeer, run an algorithm, confirm task success and read result pages. Check the engine and graph context.
+1. Open the Vermeer compute summary in Hubble Operations and inspect readiness plus observation timestamps.
+1. If RAG is enabled, test saved Chat/Embedding connections and a small extraction/retrieval workflow separately.
+{.steps}
+
+Helm rendering checks configuration, `--wait` checks Kubernetes readiness, and the test hook checks its documented graph assertions.
+None independently proves Vermeer calculations, RAG model availability, upgrade data preservation or recovery.

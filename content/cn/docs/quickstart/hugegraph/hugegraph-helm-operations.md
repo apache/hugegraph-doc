@@ -25,11 +25,22 @@ kubectl get pv,storageclass
 
 出现 `ImagePullBackOff` 时检查 Pod 事件、仓库连通性和拉取凭据。默认只需四个组件镜像，等待 Store/Helm test 复用已包含 curl 的组件镜像。
 如显式覆盖 helper 镜像，该镜像也需要同步到内网仓库。
-启用 SeaTunnel 还需配置的 `apache/seatunnel` 镜像；启用 Vermeer 使用按 digest 固定的 `hugegraph/vermeer:helm-30b67d93e7d0`，
-Master、Worker 和令牌初始化共用它。官方发布运行记录源码与镜像 digest，
-详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)。
+启用 SeaTunnel 还需配置的 `apache/seatunnel` 镜像；Vermeer 默认使用 `hugegraph/vermeer:latest`，Master、Worker 和令牌初始化共用它。
+需要可复现时固定兼容的标签或 digest。启用 RAG 还需 `values-rag.yaml` 中固定 digest 的镜像。
+详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)。
 自定义镜像覆盖还需同步更新 `vermeer.image.digest`，或显式清空以按标签选择；非空 digest 优先。
 基础 local PV 示例不包含 Vermeer 卷：单机增加两个，集群增加一个 Master 卷及每 Worker 一个卷，默认增加四个。
+
+### 保留 Text2GQL 加密主密钥 {#text2gql-master-key}
+
+Chart 现在将 `text2gql.shared.master_key_file` 设为 `/hubble-data/text2gql-master.key`，与 H2 一起保存在 Hubble 数据卷。
+备份和恢复时二者应配套；关闭 Hubble 持久化后，Pod 替换会丢失 `emptyDir` 中的数据与密钥。
+
+从旧的容器内路径 `/hubble/data/text2gql-master.key` 升级时，将原密钥保留到新路径，或在升级后**重新输入并保存一次模型 API Key**。
+H2 可能仍显示已保存 API Key，但生成请求返回 HTTP 503；仅保存其他设置不能修复缺失的加密密钥。
+新密钥在保存 API Key 时创建，不是在启动或解密时创建。Pod 替换后应保持文件 owner UID 和 `0600` 权限。
+若通过 Secret 提供 `HUBBLE_TEXT2GQL_MASTER_KEY`，它优先于文件；解密旧数据需保留相同 Secret 值。
+详见[完整密钥恢复约定](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#hubble-text2gql-credentials)。
 
 ## 2 端口和健康检查 {#2-ports-and-health}
 
@@ -38,6 +49,14 @@ PD 端口为 REST 8620、gRPC 8686、Raft 8610；Store 为 REST 8520、gRPC 8500
 PD `/v1/ready` 需要 Raft leader，`/v1/health` 只说明监听器已启动，Store 等待多数 PD peer ready 后启动。
 Server 等待存储的默认上限为 300 秒，可以用 `server.storageWaitTimeoutSeconds` 调整。
 本地模板渲染不能验证集群连通性、卷挂载或 JVM 运行容量。
+
+Store 探针使用 `/v1/health`。支持该接口的版本中，`/-/lifecycle: STARTED` 只说明 Spring 已就绪且 gRPC listener 正在运行；
+`/-/state` 是独立的运维管理标记，仍可能为 `STARTING`。因此 Kubernetes Ready 与 Hubble 的 `NOT_READY` 观测可以同时出现。
+应分别核对 PD 注册、分区恢复和实际图查询，见 [Store 生命周期约定](https://github.com/apache/hugegraph/blob/master/hugegraph-store/docs/deployment-guide.md#step-3-deploy-store-cluster)。
+
+PD 集群统计与逐成员指标采集也独立。Service origin 无法归属某个上报成员时，可能显示 `pd_metrics_unmapped`，而集群统计仍可用。
+Hubble 不会按 Service 别名推断成员，也不会将该样本归到 leader。检查配置与上报的 origin、采集详情；
+[运维诊断说明](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-hubble/docs/operations-diagnostics-20261023.md)记录了可信 origin 边界。
 
 ### 保留元数据命名空间 {#metadata-namespace}
 
@@ -62,7 +81,7 @@ kubectl -n hugegraph annotate deployment hugegraph-server \
 > - **密码与会话**：初次部署生成的管理密码在 easy 模式下为 6 位字符，strict 模式下为 16 位；后续升级与模式切换均自动保留既有凭据。
 >   Vermeer 原生控制台直接在 **Admin credential** 填入 `<release>-vermeer-admin` Secret 的 `password` 即可登录；Hubble 内部服务凭据已自动注入。
 > - **拓扑与副本切换**：修改 `seatunnel.mode` 或 `vermeer.mode` 前，请确保所有计算与导入批任务已结束并卸载内存图副本。单机与集群使用独立的数据卷声明，拓扑切换不会自动迁移本地文件。
-> - 完整恢复指引与进阶参数详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)
+> - 完整恢复指引与进阶参数详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
 >   与 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
 ### Helm test 检查范围 {#helm-test-coverage}
@@ -109,9 +128,37 @@ curl --user "hg:${PD_SECRET}" "http://<pd-rest-address>:8620/v1/stores"
 显式 affinity 优先于预设。local PV 节点亲和必须匹配工作负载位置约束，PV 容量声明不等于文件系统配额。
 持久化 PD/Store 的 Raft 主机名和端口会记录为成员身份，不能作为普通配置随意变更。
 
+### 区分初始化历史与当前成员关系 {#stable-bootstrap-topology}
+
+Chart 将首次 PD peers、Store allowlist 数量和启动 Store 门槛记录在不可变、保留的 `<fullname>-bootstrap` ConfigMap 中。
+执行 Helm 的账号需要 namespace 的 ConfigMap 读取和 PVC 列表权限。没有 `bootstrap.enabled` 开关。
+升级、回退与手动节点变更时保留这份记录；它是初始化历史，不是当前 PD 投票成员或所有已准入 Store 的清单。
+
+| 参数 | 新安装 | 已初始化安装 |
+|---|---|---|
+| `bootstrap.pdReplicas` | 留空使用本次请求的 PD 副本数 | 保留记录中的首次数量 |
+| `bootstrap.storeReplicas` | 留空使用本次请求的 Store 副本数 | 保留首次 allowlist 数量 |
+| `bootstrap.initialStoreCount` | 留空使用本次请求的 Store 副本数 | 保留首次启动门槛 |
+| `pd.partition.defaultShardCount` | 显式奇数 RF；否则首次 Store 少于 3 为 RF=1，其余 RF=3 | PD 持久化的副本策略保持权威 |
+{.wide .expand}
+
+例如，将一个 Store 扩为三个不会把持久化 RF=1 自动转为 RF=3。五个 PD 副本要求 PDB 至少保留三个可用投票节点
+（`pd.pdb.minAvailable=3`），默认的两个不足。PD 镜像需实现区分 bootstrap 准入与运行时投票 quorum 的检查；
+应核验所选镜像的能力，不能仅凭 `latest` 推断。
+
+没有记录的旧测试安装，仅能在拓扑、RF、名称、端口、PVC 绑定与 Raft 身份均不变且已核验时接管。
+使用匹配 Server 源码的只读 `helm/check_bootstrap_adoption.py` 检查 PD 与每个 Store，保留 before 报告；
+再以审阅后的 values 升级，随后通过 `--before` 比对。
+按[完整接管流程](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#adopting-same-topology-test-data)
+继续验证图读写。不要删除冲突记录，也不要按当前副本数猜测首次成员关系。
+
+离线升级无法发现保留的历史，应使用 `helm template --is-upgrade` 并显式固定三个已记录的 bootstrap 计数。
+离线渲染不能证明已有 PVC 可安全复用。旧 values 含 `bootstrap.enabled` 时，通过审阅后的
+`--reset-values -f reviewed-values.yaml` 移除；继续用 `--reuse-values` 携带该键会被拒绝。
+
 ## 4 分区副本 {#4-partition-sharding}
 
-首次初始化时，Store 至少三个则默认每个分区三副本，否则一副本。
+首次初始化时，记录的首次 Store 数量至少三个则默认每个分区三副本，否则一副本。
 PD 会持久化分区设置，初始化后修改 chart 值不会覆盖已有元数据，应使用 PD 配置 API 并协调分区巡检。
 显式 shard 数必须为奇数且不超过 Store 数，操作在线集群前先核对
 [拓扑约束](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#topology-and-scheduling)；chart 不负责迁移已有 shard 元数据。
@@ -184,10 +231,18 @@ local 磁盘不能在节点故障时自动迁移文件。备份应放在这些 P
 
 ## 8 扩缩容 {#8-scaling}
 
-Server 副本可以常规变更，HPA 还需要 CPU requests。Store 扩容需要协调存储和 shard。
-PD 扩缩容及 Store 缩容不能仅修改副本数，需要先更新持久化 Raft/shard 成员关系。
-chart 对已初始化 StatefulSet 检查不支持的身份和成员变更，首次安装不执行升级专用查询。
-按生命周期流程扩缩容，避免直接 `kubectl scale` 使 Hubble 的 Store metrics 配置过期。
+Server 副本可以常规变更，HPA 还需要 CPU requests。PD 与 Store 变更应先协调数据库成员，再同步 Helm 资源，
+过程中始终保留 [bootstrap 记录](#stable-bootstrap-topology)：
+
+- **PD 扩缩容**：先准备并验证实际 Raft 成员关系，期望副本数不会修改成员关系。
+- **Store 扩容**：准备存储、核验容量，再显式准入新的 Pending Store 身份。
+- **Store 缩容**：将源节点设为 Exiting，等待迁移与恢复，确认实际成员已排除它且本地引擎为空，再减少资源；退役与数据检查完成前保留 PVC。
+- **Vermeer Worker**：先完成/取消任务并卸载计算图，再修改数量；随后重新检查 Worker 可用性并加载图。
+
+Store 启动仍使用历史 PD seeds。首次一个 PD 后扩为三个，新增 Store 仍依赖 PD0；当前 PD quorum 正常还不够。
+不支持缩到记录的 seed 多数以下。重启或新增 Store 前，同时检查历史 seed 多数可达与当前实际 PD quorum。
+按[受控节点变更流程](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md#controlled-node-changes-and-recovery-limits)操作，
+避免用直接 `kubectl scale` 代替生命周期流程；它还可能使 Hubble 的可信 Store 指标目标配置过期。
 
 ## 9 集群外的 Hubble {#9-running-hubble-outside-the-cluster}
 
@@ -205,3 +260,39 @@ PD 滚动更新期间，Server 可能 Ready、能响应 REST，但 Gremlin bindi
 出现 `ERROR: missing required env 'HG_PD_AUTH_SECRET_KEY'` 时，检查 PD Pod 的 Secret 引用和对应 key，不要把 Secret 值输出到日志。
 chart 正常情况下自动注入共享 PD REST 凭据，自定义容器或 manifest 必须向 PD 和客户端提供同一值。
 GitOps 先创建外部 Secret 再调谐工作负载，普通 Helm 保留自动创建的 release Secret。
+
+## 11 Vermeer 与 RAG 恢复 {#vermeer-and-rag-recovery}
+
+Vermeer 单机增加两个 claim；集群增加一个 Master claim 与每个 Worker 一个 claim。
+即便两个容器在同一 Pod，Master、Worker 也不能共享 Pebble 目录。关闭/卸载 Vermeer 或减少 Worker 时，claim 会保留。
+显式关闭存储才使用 `emptyDir`，PVC 故障不会自动降级。切换拓扑不会迁移单机与集群各自的 claim。
+持久化元数据、Worker 文件与任务历史不能恢复内存图、结果缓存或运行任务。
+切换拓扑前停止提交、完成/取消任务并卸载图，随后检查 Worker 可用性并重新加载。
+
+应用日志写入 stdout，不在数据卷内。单机 Pod 可执行：
+
+```bash
+kubectl -n hugegraph logs hugegraph-vermeer-master-0 -c master
+kubectl -n hugegraph logs hugegraph-vermeer-master-0 -c worker
+```
+
+集群模式第二条命令使用对应 Worker Pod 名，例如 `hugegraph-vermeer-worker-0`。
+图加载失败时检查 PD discovery、Store gRPC 连通性、元数据命名空间与 Worker Schema 凭据；
+Pod Ready 或 `/healthcheck` 都不能单独证明 Worker 可分配。见 [Vermeer 加载与计算验证](./hugegraph-helm.md#vermeer-workflow)。
+
+RAG 使用一份持久化资源树、单副本与 Recreate 部署。`settings.yaml` 中保存的连接优先于部署默认值。
+Secret/文件变更需要重启，不会覆盖用户已保存的连接字段；保留 PVC，通过界面更新保存的凭据。
+界面保存只校验并持久化配置，不调用模型；**测试已保存连接**执行独立的连接检查。
+详见 [RAG 配置与恢复约定](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/rag.md)。
+
+### 验证完整工作流 {#integrated-verification}
+
+1. 执行 `helm test hugegraph -n hugegraph --logs --timeout 5m`，检查工作负载与 PVC 状态。
+1. 在 Hubble 重新登录，对具有已知预期数据的隔离图执行读写。
+1. 将该图加载到 Vermeer，运行算法，确认任务成功并读取分页结果，核对引擎与图上下文。
+1. 在 Hubble 运维中打开 Vermeer 计算摘要，检查就绪状态与观测时间。
+1. 启用 RAG 时，分别测试已保存的 Chat/Embedding 连接及小规模抽取/检索流程。
+{.steps}
+
+Helm 渲染检查配置，`--wait` 检查 Kubernetes readiness，测试 hook 检查其说明范围内的图断言。
+任何单项都不能证明 Vermeer 计算、RAG 模型可用性、升级数据保留或恢复成功。

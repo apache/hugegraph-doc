@@ -1,10 +1,68 @@
 {{- $page := . -}}
 {{- $data := index hugo.Data.landing .Site.Language.Lang -}}
-<div class="hg-landing" id="hg-landing" data-story-palette="light"
+<div class="hg-landing" id="hg-landing"
      data-hg-story-config="{{ dict "readouts" $data.story.readouts | jsonify }}">
   <section class="story" id="story" aria-label="{{ $data.story.label }}">
     <div class="stage" id="stage">
       <header class="hero" id="hero">
+        <div class="hg-sky" aria-hidden="true">
+          {{/* Northern phases mark when the light reaches each star within one animation cycle. */}}
+          {{- $north := slice
+              (dict "x" 13  "y" 107 "r" 2.7 "phase" 0)
+              (dict "x" 72  "y" 72  "r" 2.4 "phase" 0.1905)
+              (dict "x" 126 "y" 87  "r" 2.6 "phase" 0.2872)
+              (dict "x" 215 "y" 39  "r" 3   "phase" 0.4436)
+              (dict "x" 278 "y" 60  "r" 2.4 "phase" 0.5508)
+              (dict "x" 309 "y" 18  "r" 2.6 "phase" 0.6505)
+              (dict "x" 362 "y" 12  "r" 3.1 "phase" 0.84) -}}
+          {{- $south := slice
+              (dict "x" 8 "y" 39 "r" 2)
+              (dict "x" 70 "y" 9 "r" 2.8)
+              (dict "x" 135 "y" 43 "r" 2.1) -}}
+          {{ range slice
+              (dict "id" "north" "viewBox" "0 0 410 124" "stars" $north)
+              (dict "id" "south" "viewBox" "0 0 144 52" "stars" $south) }}
+          {{- $route := printf "hg-star-route-%s" .id }}
+          <svg class="hg-constellation hg-constellation--{{ .id }}" viewBox="{{ .viewBox }}"
+               aria-hidden="true" focusable="false">
+            <defs>
+              <path id="{{ $route }}" pathLength="100"
+                    d="M{{ range $i, $s := .stars }}{{ if $i }} L{{ end }}{{ $s.x }} {{ $s.y }}{{ end }}"/>
+              {{ if eq .id "north" -}}
+              <radialGradient id="hg-star-aura">
+                <stop stop-color="white" stop-opacity=".9"/>
+                <stop offset=".22" stop-color="var(--signal-wake)" stop-opacity=".68"/>
+                <stop offset=".55" stop-color="var(--signal-glow)" stop-opacity=".24"/>
+                <stop offset="1" stop-color="var(--signal-glow)" stop-opacity="0"/>
+              </radialGradient>
+              <g id="hg-star-glint">
+                <circle r="14" fill="url(#hg-star-aura)"/>
+                <path d="M0 -9 Q1 -1 7 0 Q1 1 0 9 Q-1 1 -7 0 Q-1 -1 0 -9Z" fill="#f5fcff"/>
+              </g>
+              {{ end -}}
+            </defs>
+            <use href="#{{ $route }}" class="hg-star-route"/>
+            <g class="hg-star-nodes">
+              {{ range .stars -}}
+              <circle cx="{{ .x }}" cy="{{ .y }}" r="{{ .r }}"/>
+              {{ end -}}
+            </g>
+            {{ if eq .id "north" -}}
+            <g class="hg-star-glints">
+              {{ range .stars -}}
+              <use href="#hg-star-glint" x="{{ .x }}" y="{{ .y }}" style="--arrival-phase:{{ .phase }}"/>
+              {{ end -}}
+            </g>
+            {{ end -}}
+            <g class="hg-star-signal">
+              <use href="#{{ $route }}" class="hg-star-wake"/>
+              <use href="#{{ $route }}" class="hg-star-glow"/>
+              <use href="#{{ $route }}" class="hg-star-head"/>
+            </g>
+          </svg>
+          {{ end -}}
+          <span class="hg-lone-meteor"></span>
+        </div>
         <div class="wrap hero-grid">
           <div class="hero-copy">
             <p class="hero-brand">Apache HugeGraph</p>
@@ -75,29 +133,31 @@
         <div class="hgs-flat"><div class="hgs-face hgs-top">
           <svg class="hgs-art" viewBox="0 0 320 320">
             <defs>
-              <pattern id="hgs-compute-dots" width="20" height="20" patternUnits="userSpaceOnUse">
-                <circle cx="10" cy="10" r="2.3" fill="var(--hgs-accent)" fill-opacity=".6"/>
-              </pattern>
-              <linearGradient id="hgs-compute-sweep">
-                <stop offset="0" stop-color="var(--hgs-accent)" stop-opacity="0"/>
-                <stop offset=".5" stop-color="var(--hgs-accent)" stop-opacity=".64"/>
-                <stop offset="1" stop-color="var(--hgs-accent)" stop-opacity="0"/>
-              </linearGradient>
-              <clipPath id="hgs-compute-face"><rect width="320" height="320"/></clipPath>
+              <g id="hgs-community">
+                <ellipse rx="41" ry="35" fill="currentColor" opacity=".12"/>
+                <path d="M-26 1L-7-22L21-13L27 12L2 23ZM-26 1L1 0L-7-22M1 0L21-13M1 0L27 12M1 0L2 23"
+                      fill="none" stroke="currentColor" stroke-width="2.8"/>
+                <g fill="currentColor">
+                  <circle cx="-26" cy="1" r="5"/><circle cx="-7" cy="-22" r="5.5"/>
+                  <circle cx="21" cy="-13" r="5"/><circle cx="27" cy="12" r="5"/>
+                  <circle cx="2" cy="23" r="5"/><circle cx="1" cy="0" r="7"/>
+                </g>
+              </g>
             </defs>
-            <rect width="320" height="320" fill="url(#hgs-compute-dots)"/>
-            <g clip-path="url(#hgs-compute-face)">
-              <rect class="hgs-scan" width="90" height="320" fill="url(#hgs-compute-sweep)"/>
+            <g transform="translate(160 160) rotate(-45)">
+              <path d="M-89 64L-26 133M27 144L96 70M-5-48L-95 43M21-35L97 44"
+                    fill="none" stroke="#417b8b" stroke-width="2.6" stroke-dasharray="5 5"/>
+              <g transform="translate(0 -48)" color="#588295"><use href="#hgs-community"/></g>
+              <g transform="translate(-116 52)" color="#007a80">
+                <use class="hgs-community" href="#hgs-community"/>
+              </g>
+              <g transform="translate(0 132)" color="#4163ad">
+                <use class="hgs-community" href="#hgs-community" style="--delay:-1.1s"/>
+              </g>
+              <g transform="translate(118 58)" color="#087d97">
+                <use class="hgs-community" href="#hgs-community" style="--delay:-2.2s"/>
+              </g>
             </g>
-            <svg x="264" y="264" width="36" height="36" viewBox="0 0 256 256" fill="var(--hgs-accent)">
-              <path d="M152,96H104a8,8,0,0,0-8,8v48a8,8,0,0,0,8,8h48a8,8,0,0,0,8-8V104
-                       A8,8,0,0,0,152,96Zm-8,48H112V112h32Zm88,0H216V112h16a8,8,0,0,0,0-16H216V56
-                       a16,16,0,0,0-16-16H160V24a8,8,0,0,0-16,0V40H112V24a8,8,0,0,0-16,0V40H56
-                       A16,16,0,0,0,40,56V96H24a8,8,0,0,0,0,16H40v32H24a8,8,0,0,0,0,16H40v40
-                       a16,16,0,0,0,16,16H96v16a8,8,0,0,0,16,0V216h32v16a8,8,0,0,0,16,0V216h40
-                       a16,16,0,0,0,16-16V160h16a8,8,0,0,0,0-16Zm-32,56H56V56H200v95.87
-                       s0,.09,0,.13,0,.09,0,.13V200Z"/>
-            </svg>
           </svg>
         </div></div>
       </div></div>
@@ -137,27 +197,31 @@
         <div class="hgs-face hgs-under"></div>
         <div class="hgs-flat"><div class="hgs-face hgs-top">
           <svg class="hgs-art" viewBox="0 0 320 320">
-            <path d="M160 160L262 160L211 248ZM160 160L109 248L58 160ZM160 160L109 72L211 72Z"
-                  fill="none" stroke="var(--hgs-accent)" stroke-opacity=".5" stroke-width="2"/>
-            <g fill="var(--hgs-accent)">
-              <circle class="hgs-pulse" cx="262" cy="160" r="9"/>
-              <circle class="hgs-pulse" cx="211" cy="248" r="9" style="--delay:.4s"/>
-              <circle class="hgs-pulse" cx="109" cy="248" r="9" style="--delay:.8s"/>
-              <circle class="hgs-pulse" cx="58" cy="160" r="9" style="--delay:1.2s"/>
-              <circle class="hgs-pulse" cx="109" cy="72" r="9" style="--delay:1.6s"/>
-              <circle class="hgs-pulse" cx="211" cy="72" r="9" style="--delay:2s"/>
+            <g transform="translate(160 160) rotate(-45) scale(1 1.65)" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M-108-10L-72 10L-46 1M45 1L75 18L112 7"
+                    fill="none" stroke="#79bba1" stroke-width="3"/>
+              <g class="hgs-question" transform="translate(-111 -24)">
+                <path d="M-21-18H18Q27-18 27-9V7Q27 15 18 15H12V24L0 15H-21Q-29 15-29 7V-10Q-29-18-21-18Z"
+                      fill="#e3f5eb" stroke="#20865e" stroke-width="3"/>
+                <path d="M-9-6C-9-15 9-15 9-6C9 0 0-1 0 5" fill="none" stroke="#137749" stroke-width="4"/>
+                <circle cy="10" r="2.3" fill="#137749"/>
+              </g>
+              <g stroke="#146b4d" stroke-width="4">
+                <path d="M0-23V-34" fill="none"/><circle cy="-37" r="5" fill="#50c991"/>
+                <rect x="-49" y="-5" width="98" height="19" rx="7" fill="#94dcb8"/>
+                <rect x="-42" y="-24" width="84" height="55" rx="17" fill="#edf9f1"/>
+                <rect x="-30" y="-12" width="60" height="26" rx="10" fill="#146b4d" stroke="none"/>
+                <path d="M-13 2V-2M13 2V-2" stroke="#c0ffe3" stroke-width="6"/>
+                <path d="M-6 21Q0 25 6 21" fill="none" stroke-width="3"/>
+              </g>
+              <g transform="translate(109 -16)">
+                <path d="M-19-17H21Q29-17 29-9V8Q29 16 21 16H-2L-16 24V16H-19Q-28 16-28 8V-9Q-28-17-19-17Z"
+                      fill="#178158"/>
+                <g class="hgs-answer" fill="none" stroke="#fff" stroke-width="4">
+                  <path d="M-13-5H14M-13 4H5"/>
+                </g>
+              </g>
             </g>
-            <circle cx="160" cy="160" r="36.5" fill="#fff" stroke="var(--hgs-accent)" stroke-width="3"/>
-            <svg x="140" y="140" width="40" height="40" viewBox="0 0 256 256" fill="var(--hgs-accent)">
-              <path d="M197.58,129.06,146,110l-19-51.62a15.92,15.92,0,0,0-29.88,0L78,110l-51.62,19
-                       a15.92,15.92,0,0,0,0,29.88L78,178l19,51.62a15.92,15.92,0,0,0,29.88,0L146,178
-                       l51.62-19a15.92,15.92,0,0,0,0-29.88ZM137,164.22a8,8,0,0,0-4.74,4.74
-                       L112,223.85,91.78,169A8,8,0,0,0,87,164.22L32.15,144,87,123.78
-                       A8,8,0,0,0,91.78,119L112,64.15,132.22,119a8,8,0,0,0,4.74,4.74L191.85,144Z
-                       M144,40a8,8,0,0,1,8-8h16V16a8,8,0,0,1,16,0V32h16a8,8,0,0,1,0,16H184V64
-                       a8,8,0,0,1-16,0V48H152A8,8,0,0,1,144,40ZM248,88a8,8,0,0,1-8,8h-8v8
-                       a8,8,0,0,1-16,0V96h-8a8,8,0,0,1,0-16h8V72a8,8,0,0,1,16,0v8h8A8,8,0,0,1,248,88Z"/>
-            </svg>
           </svg>
         </div></div>
       </div></div>
@@ -177,6 +241,7 @@
         <span class="hgs-lab-desc">{{ $layer.description }}</span>
       </span>
     </button>
+    <a class="hgs-fallback" href="#beat-{{ $id }}">{{ $layer.name }}</a>
     {{ end }}
   </div>
 </div>
@@ -208,9 +273,22 @@
     </div>
   </section>
   <div class="landing-content">
+    <section class="statement" aria-labelledby="statement-title">
+      <div class="wrap">
+        <h2 id="statement-title" class="reveal">{{ $data.statement.body | markdownify }}</h2>
+        <dl class="statement-figures">
+          {{ range $index, $figure := $data.statement.figures }}
+          <div class="reveal" style="--i:{{ add $index 1 }}">
+            <dt>{{ $figure.value }}</dt>
+            <dd>{{ $figure.label }}</dd>
+          </div>
+          {{ end }}
+        </dl>
+      </div>
+    </section>
     <section class="section" id="capabilities" aria-labelledby="capabilities-title">
       <div class="wrap">
-        <h2 id="capabilities-title">{{ $data.capabilities.title }}</h2>
+        <h2 id="capabilities-title" class="reveal">{{ $data.capabilities.title }}</h2>
         <div class="cap-grid">
           {{ range $index, $item := $data.capabilities.items }}
           <article class="cap reveal{{ with $item.variant }} cap-{{ . }}{{ end }}" style="--i:{{ mod $index 3 }}">
@@ -230,9 +308,17 @@
             <svg class="cap-graph" viewBox="0 0 260 190" aria-hidden="true" focusable="false">
               <path d="M30 40L96 70L70 140ZM96 70L168 46L226 84L212 160L150 118L168 46M70 140L150 118"
                     fill="none" stroke="white" stroke-opacity=".34" stroke-width="1.5"/>
-              <g fill="#aab4ff"><circle cx="30" cy="40" r="6"/><circle cx="70" cy="140" r="6"/><circle cx="226" cy="84" r="6"/></g>
-              <g fill="white"><circle cx="96" cy="70" r="7"/><circle cx="168" cy="46" r="7"/>
-                <circle cx="150" cy="118" r="7"/><circle cx="212" cy="160" r="7"/></g>
+              <g fill="#aab4ff">
+                <circle cx="30" cy="40" r="6"/>
+                <circle cx="70" cy="140" r="6"/>
+                <circle cx="226" cy="84" r="6"/>
+              </g>
+              <g class="cap-graph-path" fill="white">
+                <circle cx="96" cy="70" r="7" style="--delay:0s"/>
+                <circle cx="168" cy="46" r="7" style="--delay:.5s"/>
+                <circle cx="150" cy="118" r="7" style="--delay:1s"/>
+                <circle cx="212" cy="160" r="7" style="--delay:1.5s"/>
+              </g>
             </svg>
             {{ end }}
           </article>
@@ -240,11 +326,37 @@
         </div>
       </div>
     </section>
-    <section class="section parts" id="components" aria-labelledby="components-title">
-      <div class="wrap">
-        <h2 id="components-title">{{ $data.components.title }}</h2>
+    <section class="platforms" id="components" aria-labelledby="platforms-title">
+      <h2 id="platforms-title" class="reveal">{{ $data.platforms.title }}</h2>
+      <div class="platform-logos">
+        <label class="platform-pause">
+          <input type="checkbox" class="sr-only" aria-label="{{ $data.platforms.pause }}">
+          <i class="fa-solid fa-pause" aria-hidden="true"></i>
+          <i class="fa-solid fa-play" aria-hidden="true"></i>
+        </label>
+        {{- $sprite := resources.Get "img/landing-platforms.svg" | fingerprint }}
+        <div class="platform-window">
+          <div class="platform-track">
+            {{ range $copy := seq 2 }}
+            <ul class="platform-set"{{ if eq $copy 2 }} aria-hidden="true"{{ end }}>
+              {{ range hugo.Data.landing.platforms }}
+              <li>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <title>{{ .name }}</title>
+                  <use href="{{ $sprite.RelPermalink }}#{{ .id }}"/>
+                </svg>
+                <span class="platform-name">{{ .name }}</span>
+              </li>
+              {{ end }}
+            </ul>
+            {{ end }}
+          </div>
+        </div>
+      </div>
+      <details class="component-guides wrap">
+        <summary id="components-title">{{ $data.components.title }}</summary>
         <p class="sub">{{ $data.components.body }}</p>
-        <div class="parts-grid reveal">
+        <div class="parts-grid">
           {{ range $data.components.groups }}
           <div class="group"><h3>{{ .title }}</h3><dl>
             {{ range .items }}
@@ -261,13 +373,13 @@
           </dl></div>
           {{ end }}
         </div>
-      </div>
+      </details>
     </section>
-    <section class="section" id="quickstart" aria-labelledby="quickstart-title">
+    <section class="section quick" id="quickstart" aria-labelledby="quickstart-title">
       <div class="wrap">
-        <h2 id="quickstart-title">{{ $data.quickstart.title }}</h2>
+        <h2 id="quickstart-title" class="reveal">{{ $data.quickstart.title }}</h2>
         <p class="sub">{{ $data.quickstart.body }}</p>
-        <div class="cmd">
+        <div class="cmd reveal">
           <code id="cmd" tabindex="0">{{ $data.quickstart.command }}</code>
           <button class="copy-btn" id="copy" type="button"
                   data-copy="{{ $data.quickstart.copy }}"
@@ -275,32 +387,37 @@
                   data-copy-fallback="{{ $data.quickstart.copy_fallback }}"
                   data-copy-status="{{ $data.quickstart.copy_status }}"
                   data-copy-fallback-status="{{ $data.quickstart.copy_fallback_status }}">
-            <i class="fa-regular fa-copy" aria-hidden="true"></i>
+            <i class="fa-regular fa-copy ic-copy" aria-hidden="true"></i>
+            <i class="fa-solid fa-check ic-done" aria-hidden="true"></i>
             <span id="copy-label">{{ $data.quickstart.copy }}</span>
           </button>
         </div>
         <p class="sr-only" id="copy-status" role="status" aria-live="polite"></p>
         <p class="next-step">
-          {{ $data.quickstart.verify }}
-          <a href="{{ $data.quickstart.next.url | relURL }}">
-            {{ $data.quickstart.next.label }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-          </a>
+          {{ range slice $data.quickstart.install $data.quickstart.next }}
+          <a href="{{ .url | relURL }}">{{ .label }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+          {{ end }}
         </p>
       </div>
     </section>
-    <section class="section" id="community" aria-labelledby="community-title">
+    <section class="section community" id="community" aria-labelledby="community-title">
       <div class="wrap">
-        <h2 id="community-title">{{ $data.community.title }}</h2>
-        <p class="sub">{{ $data.community.body }}</p>
+        <div>
+          <h2 id="community-title" class="reveal">{{ $data.community.title }}</h2>
+          <p class="sub">{{ $data.community.body }}</p>
+        </div>
         <ul class="doors">
           {{ range $data.community.items }}
           <li class="reveal">
-            <a href="{{ if .external }}{{ .url }}{{ else }}{{ .url | relURL }}{{ end }}">
+            {{ if .url }}
+            <a class="community-item" href="{{ if .external }}{{ .url }}{{ else }}{{ .url | relURL }}{{ end }}">
+            {{ else }}
+            <div class="community-item">
+            {{ end }}
               <i class="{{ .icon }} ic" aria-hidden="true"></i>
-              <span class="t">{{ .title }}</span>
-              <span class="d">{{ .body }}</span>
-              <span class="go"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span>
-            </a>
+              <span><strong class="t">{{ .title }}</strong><span class="d">{{ .body }}</span></span>
+              {{ if .url }}<i class="go fa-solid fa-arrow-right" aria-hidden="true"></i>{{ end }}
+            {{ if .url }}</a>{{ else }}</div>{{ end }}
           </li>
           {{ end }}
         </ul>

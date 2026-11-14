@@ -47,7 +47,7 @@
   width: 100%;
   border-block-end: 0;
   background: transparent;
-  color: #fff;
+  color: var(--hg-home-nav-ink, #fff);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   transition:
@@ -69,12 +69,12 @@
 
   .td-nav-title {
     background: none;
-    color: #fff;
+    color: var(--hg-home-nav-ink, #fff);
     font-family: var(--td-ui-font-family);
     font-size: 1.08rem;
     font-weight: 700;
     letter-spacing: 0;
-    -webkit-text-fill-color: #fff;
+    -webkit-text-fill-color: currentColor;
   }
 
   .td-nav-brand,
@@ -87,17 +87,17 @@
   .td-shell-keyboard__trigger,
   .td-nav-github,
   .td-site-drawer-toggle {
-    color: #fff;
+    color: var(--hg-home-nav-ink, #fff);
   }
 
   .td-nav-search-box {
-    border-color: rgba(255, 255, 255, 0.38);
-    background: rgba(15, 24, 92, 0.2);
+    border-color: color-mix(in srgb, currentColor 38%, transparent);
+    background: var(--hg-home-nav-search, rgba(15, 24, 92, 0.2));
 
     kbd {
-      border-color: rgba(255, 255, 255, 0.32);
+      border-color: color-mix(in srgb, currentColor 32%, transparent);
       background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+      color: var(--hg-home-nav-ink, #fff);
     }
   }
 
@@ -115,8 +115,8 @@
   .td-nav-github:focus-visible,
   .td-site-drawer-toggle:hover,
   .td-site-drawer-toggle:focus-visible {
-    background: rgba(15, 24, 92, 0.28);
-    color: #fff;
+    background: var(--hg-home-nav-hover, rgba(15, 24, 92, 0.28));
+    color: var(--hg-home-nav-ink, #fff);
   }
 }
 
@@ -455,9 +455,9 @@
 }
 
 .hg-asf-footer {
-  border-block-start: 2px solid #21b6d7;
-  background: #41414d;
-  color: #f5f5f8;
+  border-block-start: 1px dashed var(--bs-border-color);
+  background: var(--bs-body-bg);
+  color: var(--bs-secondary-color);
 
   &__container {
     display: grid;
@@ -496,13 +496,14 @@
   }
 
   a {
-    color: #f5f5f8;
-    text-decoration-color: rgba(255, 255, 255, 0.5);
+    color: var(--bs-body-color);
+    text-decoration-color: currentColor;
     text-underline-offset: 0.16em;
 
     &:hover,
     &:focus-visible {
-      color: #fff;
+      color: var(--bs-emphasis-color);
+      text-decoration: underline;
       text-decoration-thickness: 2px;
     }
   }
@@ -512,6 +513,10 @@
     line-height: 1.5;
     text-align: center;
 
+    a {
+      text-decoration-line: underline;
+    }
+
     p {
       margin: 0;
     }
@@ -520,6 +525,14 @@
       margin-top: 0.6rem;
     }
   }
+}
+
+[data-bs-theme="dark"] .hg-asf-footer__brand img {
+  filter: brightness(1.5);
+}
+
+body:has(.hg-ask-ai-launcher:not([hidden])) .hg-asf-footer__legal {
+  padding-inline-end: 3.5rem;
 }
 
 .hg-shell-mobile-utils,

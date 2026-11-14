@@ -178,7 +178,7 @@
 /* Concept D5 (stack v6, drawn glass; light and dark themes): one pinned scene. render(progress) = the graph lifts off the Graph Database plate, then the story pulls back.
    Timeline in scroll progress p (0..1 across the 720vh pinned section):
      0.000 - 0.0075 nothing moves: a small accidental scroll leaves the hero, and the stack's hover and click, as they were
-     0.0075 - 0.036 hero copy and the stack labels leave
+     0.0075 - 0.036 the stack labels leave; hero copy fades as the first explanation arrives
      0.011 - 0.058  the other three plates drift slightly apart and fade, with the corner guides
      0.018 - 0.100  the plate turns from isometric to face-on (tilt only), at 1.0x to 1.3x of its hero size
      0.042 - 0.095  the Graph Database plate dissolves; its six-vertex graph is left floating on the page
@@ -191,10 +191,9 @@
    notches do not step the camera. Once the lift-off starts the story owns the stack (HGStack.setInteractive(false)).
    Selecting a layer eases into its stop. Manual scrolling still plays the complete progression.
    Theme: the canvas reads site-owned CSS tokens and follows OINK appearance changes without replacing its theme controller.
-   The white graph scene has its own ink-on-paper palette, independent of the blue hero and native shell. */
+   The graph scene and its text follow the native appearance setting. */
 (() => {
   'use strict';
-  const FORCE_P = null;   // review hook: set 0..1 to freeze the whole timeline at one scroll position
   const html = document.documentElement;
   const stillMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const $ = (s, r = landing) => r.querySelector(s), $$ = (s, r = landing) => [...r.querySelectorAll(s)];
@@ -225,8 +224,6 @@
              edgeA: 0.36, linkA: 0.24, tintA: 0.5, nodeA: 0.92, nameA: 0.8, pathW: 12, pathGlow: 0.2, nearA: 0.42, ringA: 0.85 },
   };
   const themeNow = () => {
-    const palette = landing.dataset.storyPalette;
-    if (palette === 'dark' || palette === 'light') return palette;
     const nativeTheme = html.getAttribute('data-bs-theme');
     return nativeTheme === 'dark' || (!nativeTheme && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   };
@@ -343,10 +340,24 @@
     clumps.push({ cx, cy, col, pts, role: 0, ord: 0 });
   }
   const FL = [];
-  clumps.forEach((A, i) => {
-    clumps.map((B, j) => [j, (A.cx - B.cx) ** 2 + (A.cy - B.cy) ** 2]).filter(v => v[0] !== i).sort((p, q) => p[1] - q[1]).slice(0, 2)
-      .forEach(([j]) => FL.push(A.cx, A.cy, clumps[j].cx, clumps[j].cy));
-  });
+  for (const source of clumps) {
+    let nearest, second;
+    let nearestDistance = Infinity, secondDistance = Infinity;
+    for (const candidate of clumps) {
+      if (candidate === source) continue;
+      const distance = (source.cx - candidate.cx) ** 2 + (source.cy - candidate.cy) ** 2;
+      if (distance < nearestDistance) {
+        second = nearest;
+        secondDistance = nearestDistance;
+        nearest = candidate;
+        nearestDistance = distance;
+      } else if (distance < secondDistance) {
+        second = candidate;
+        secondDistance = distance;
+      }
+    }
+    FL.push(source.cx, source.cy, nearest.cx, nearest.cy, source.cx, source.cy, second.cx, second.cy);
+  }
   /* question path: a walk through neighbouring clumps across the visible field, plus the clumps it pulls in */
   const ROT_END = 0.47;                                             // camera rotation once the pull-back has finished
   const PATH = [], NEAR = [];
@@ -641,7 +652,7 @@
     const veil = $('#veil'), cv = $('#world'), ctx = cv.getContext('2d');
     const readout = $('#readout');
     const plane = $('.hgs-plane', sroot), scene = $('.hgs-scene', sroot), labels = $('.hgs-labels', sroot);
-    const ground = $('.hgs-ground', sroot), guides = $$('.hgs-guide', sroot), brand = $('[data-hg-story-home]');
+    const ground = $('.hgs-ground', sroot), guides = $$('.hgs-guide', sroot);
     const layer = id => $(`.hgs-layer[data-id="${id}"]`, sroot);
     const L = { database: layer('database'), toolchain: layer('toolchain'), computing: layer('computing'), ai: layer('ai') };
     const HOOKS = ['--hgs-drift', '--hgs-fade', '--hgs-plate'];
@@ -650,17 +661,18 @@
        leaves the hero, and the stack's hover and click, exactly as they were. */
     const HERO_P = 0.0075;
     const T = { out: [HERO_P, 0.036], away: [0.011, 0.058], ground: [HERO_P, 0.048], turn: [0.018, 0.1], plate: [0.042, 0.095], move: [HERO_P, 0.105], size: [0.022, 0.105], cv: [0.105, 0.117], rig: [0.117, 0.127], gone: 0.13 };
+    const heroExit = [0.02, 0.052], storyEntry = [0.042, 0.073];
     const PQ = [[0.125, 0.06], [0.2, 0.2], [0.31, 0.36], [0.41, 0.5], [0.53, 0.66], [0.66, 0.82], [0.8, 1], [1, 1.25]];   // scroll progress p -> story progress q
     /* Text is a stable reading surface. The graph keeps interpolating, while exactly one beat's copy is shown at full
        strength. Scrubbing or stopping between beats can never leave two headings or barely visible paragraphs stacked. */
-    const NOTES = [
-      [0.42, readoutText('database', '{vertices} vertices, 1 neighborhood', { vertices: home.length + 1 })],
-      [0.72, readoutText('toolchain', 'Explore vertices and relationships')],
-      [1.03, readoutText('computing', '{vertices} vertices, {communities} communities', { vertices: N.length, communities: clusters.length })],
-      [9, readoutText('ai', '1 question, 1 retrieved subgraph')],
+    const beats = [
+      { id: 'database', end: 0.42, stop: 0.25,
+        note: readoutText('database', '{vertices} vertices, 1 neighborhood', { vertices: home.length + 1 }) },
+      { id: 'toolchain', end: 0.72, stop: 0.58, note: readoutText('toolchain', 'Explore vertices and relationships') },
+      { id: 'computing', end: 1.03, stop: 0.91,
+        note: readoutText('computing', '{vertices} vertices, {communities} communities', { vertices: N.length, communities: clusters.length }) },
+      { id: 'ai', end: Infinity, stop: 1.2, note: readoutText('ai', '1 question, 1 retrieved subgraph') },
     ];
-    const BEATS = [[0.42, 'database'], [0.72, 'toolchain'], [1.03, 'computing'], [9, 'ai']];
-    const GOQ = { database: 0.25, toolchain: 0.58, computing: 0.91, ai: 1.2 };   // where a click on a layer lands, in q
     const qmap = p => {
       if (p <= PQ[0][0]) return PQ[0][1];
       for (let i = 1; i < PQ.length; i++) if (p <= PQ[i][0]) return lerp(PQ[i - 1][1], PQ[i][1], (p - PQ[i - 1][0]) / (PQ[i][0] - PQ[i - 1][0]));
@@ -673,11 +685,10 @@
     const narrow = matchMedia('(max-width:1023px)');
     const A0 = GEO.tilt * Math.PI / 180, B0 = GEO.turn * Math.PI / 180;   // the module's isometric plane: rotateX(tilt) rotateZ(turn)
     const G = {};                                             // rig geometry, measured on resize
-    const D = { phase: 'hero', x: 0, y: 0, r: 0, zoom: 0, scale: 1, q: 0.06 };   // what the last frame drew, for window.__hgDebug()
-    let W = 0, H = 0, small = false, ps = FORCE_P ?? 0, target = 0, spanPx = 1, running = false, raf = 0, note = '';
+    let W = 0, H = 0, small = false, ps = 0, running = false, raf = 0, note = '';
     let diving = false, gone = false, lastP = -1;
     let tau = 0.12, lastNow = 0, snapNext = true, travel = null;
-    const t0 = performance.now() - (FORCE_P !== null ? 20000 : 0);
+    const t0 = performance.now();
 
     /* orthographic projection of a point on the plane after rotateX(a) rotateZ(b), relative to the plane centre */
     const proj = (a, b, x, y, z) => { const cb = Math.cos(b), sb = Math.sin(b); return [x * cb - y * sb, (x * sb + y * cb) * Math.cos(a) - z * Math.sin(a)]; };
@@ -715,7 +726,6 @@
       for (const id in L) { HOOKS.forEach(k => L[id].style.removeProperty(k)); L[id].style.removeProperty('visibility'); }
       gone = false; S.setPaused(false);
       S.setActive(null); S.setInteractive(true);
-      D.phase = 'hero'; D.x = G.hx; D.y = G.hy; D.r = F_MAIN * G.u; D.zoom = G.u / U; D.scale = 1;
     }
 
     /* The graph lifts off its layer: the other layers drift apart and fade, the plane turns face-on at about its hero size,
@@ -729,7 +739,8 @@
       if (off) return;
       const w = k => sstep(T[k][0], T[k][1], p);
       const eOut = w('out'), eAway = w('away'), eG = w('ground'), eR = w('turn'), eP = w('plate'), eT = w('move'), eS = w('size');
-      copy.style.opacity = (1 - eOut).toFixed(3); copy.style.transform = `translateY(${(-24 * eOut).toFixed(1)}px)`;
+      const copyExit = sstep(...heroExit, p);
+      copy.style.opacity = (1 - copyExit).toFixed(3); copy.style.transform = `translateY(${(-24 * copyExit).toFixed(1)}px)`;
       labels.style.opacity = (1 - eOut).toFixed(3);
       ground.style.opacity = (1 - eG).toFixed(3);
       const fade = (1 - eAway).toFixed(3);
@@ -741,7 +752,7 @@
       L.database.style.setProperty('--hgs-plate', (1 - eP).toFixed(3));
       /* once something has fully faded, stop painting it */
       const hide = (el, h) => { const v = h ? 'hidden' : ''; if (el.style.visibility !== v) el.style.visibility = v; };
-      hide(ground, eG >= 1); hide(labels, eOut >= 1); hide(copy, eOut >= 1);
+      hide(ground, eG >= 1); hide(labels, eOut >= 1); hide(copy, copyExit >= 1);
       for (const el of guides) hide(el, eAway >= 1);
       for (const id of ['toolchain', 'computing', 'ai']) hide(L[id], eAway >= 1);
       /* tilt only: the diamond opens into a square standing on its corner, so nothing rotates on screen */
@@ -750,7 +761,6 @@
       plane.style.setProperty('--hgs-cos', Math.cos(a).toFixed(5)); plane.style.setProperty('--hgs-sin', Math.sin(a).toFixed(5));
       rig.style.transform = `translate(${(tx - G.ox - sc * (G.cx + pl[0])).toFixed(2)}px,${(ty - G.oy - sc * (G.cy + pl[1])).toFixed(2)}px) scale(${sc.toFixed(5)})`;
       rig.style.opacity = (1 - w('rig')).toFixed(3);
-      D.phase = 'liftoff'; D.x = tx; D.y = ty; D.r = F_MAIN * G.u * sc; D.zoom = G.u * sc / U; D.scale = sc;
     }
 
     /* One timeline: any progress value renders the correct frame, forwards or backwards. */
@@ -763,23 +773,23 @@
         liftoff(p);
       }
       const q = qmap(p), aCv = sstep(T.cv[0], T.cv[1], p);
-      D.q = q;
       if (changed) cv.style.opacity = aCv.toFixed(3);
       if (aCv > 0) {
         const e = sstep(0.06, 0.2, q), z = zoom(q, G.z0);
         const fx = lerp(G.mx / W, small ? 0.5 : W < 1280 ? 0.74 : 0.71, e), fy = lerp(G.my / H, small ? 0.31 : 0.54, e);
         draw(ctx, W, H, q, t, { z, k: G.k, fx, fy, mainOnly: small, clear: small ? (x, y) => y < H * 0.4 : x => x > W * 0.52 });
-        if (p >= T.rig[0]) { D.phase = 'story'; D.x = fx * W; D.y = fy * H; D.zoom = z * G.k; D.r = lerp(S_MAIN, F_MAIN * U, 1 - sstep(0.07, 0.2, q)) * z * G.k; D.scale = G.sc; }
       }
       if (!changed) return;
       lastP = p;
       const ui = sstep(0.075, 0.14, q).toFixed(3);
-      veil.style.opacity = ui; readout.style.opacity = ui;
+      readout.style.opacity = ui;
       // While a layer shortcut moves past other stops, show only the departure and destination copy.
-      let bi = BEATS.findIndex(n => q < n[0]);
+      let bi = beats.findIndex(beat => q < beat.end);
       if (travel) bi = travel.fraction < 0.5 ? travel.fromBeat : travel.toBeat;
-      const currentBeat = q >= 0.1 && bi >= 0 ? BEATS[bi][1] : null;
-      let copyOpacity = 1;
+      const entry = sstep(...storyEntry, p);
+      veil.style.opacity = entry.toFixed(3);
+      const currentBeat = entry > 0 && bi >= 0 ? beats[bi].id : null;
+      let copyOpacity = entry;
       if (travel) {
         if (travel.fromBeat === travel.toBeat) {
           copyOpacity = lerp(travel.fromOpacity, 1, sstep(0, 1, travel.fraction));
@@ -792,13 +802,13 @@
       panels.forEach(el => {
         const active = el.id === 'beat-' + currentBeat;
         el.style.opacity = active ? copyOpacity.toFixed(3) : '0';
-        el.style.setProperty('--dy', '0px');
+        el.style.setProperty('--dy', (12 * (1 - entry)).toFixed(1) + 'px');
         el.classList.toggle('on', active);
         el.style.visibility = active ? 'visible' : 'hidden';
-        el.inert = !active;
+        el.inert = !active || copyOpacity < 0.5;
         el.setAttribute('aria-hidden', String(!active));
       });
-      const txt = bi < 0 ? '' : NOTES[bi][1];
+      const txt = bi < 0 ? '' : beats[bi].note;
       if (txt !== note) readout.textContent = note = txt;
     }
 
@@ -808,19 +818,19 @@
       raf = 0;
       if (!running) return;
       const rect = story.getBoundingClientRect();
-      spanPx = Math.max(1, rect.height - innerHeight);
-      target = FORCE_P !== null ? FORCE_P : clamp(-rect.top / spanPx, 0, 1);
+      const spanPx = Math.max(1, rect.height - innerHeight);
+      const target = clamp(-rect.top / spanPx, 0, 1);
       const dt = clamp((now - lastNow) / 1000, 0.001, 0.1); lastNow = now;
       // A scrollbar drag or external navigation can move the page without a wheel or touch event.
       if (travel && Math.abs(scrollY - travel.scrollY) > 1) interrupt();
       const move = travel;
       if (move) {
         move.fraction = clamp((now - move.start) / move.duration, 0, 1);
-        ps = target = lerp(move.from, move.to, sstep(0, 1, move.fraction));
+        ps = lerp(move.from, move.to, sstep(0, 1, move.fraction));
         scrollTo({ top: scrollY + rect.top + ps * spanPx, behavior: 'instant' });
         move.scrollY = scrollY;
         snapNext = false;
-      } else if (snapNext || FORCE_P !== null) { ps = target; snapNext = false; }
+      } else if (snapNext) { ps = target; snapNext = false; }
       else { ps += (target - ps) * (1 - Math.exp(-dt / tau)); if (Math.abs(target - ps) * spanPx < 0.34) ps = target; }
       render(ps, (now - t0) / 1000);
       if (move && move.fraction === 1) {
@@ -840,17 +850,17 @@
     // Use one clock for both the scroll position and camera. Re-targeting starts at the frame the reader
     // sees, and manual input takes over without a native smooth scroll or delayed callback racing it.
     function go(id, byKeyboard = false, animate = true) {
-      if (id !== 'hero' && !(id in GOQ)) return;
+      const toBeat = beats.findIndex(beat => beat.id === id);
+      if (id !== 'hero' && toBeat < 0) return;
       if (travel?.id === id) {
         travel.byKeyboard ||= byKeyboard;
         return;
       }
-      const to = id === 'hero' ? 0 : pOf(GOQ[id]);
+      const to = id === 'hero' ? 0 : pOf(beats[toBeat].stop);
       if (animate && Math.abs(to - ps) > 0.001 && running) {
         const visiblePanel = panels.find(panel => panel.classList.contains('on'));
-        const fromBeat = visiblePanel ? BEATS.findIndex(entry => visiblePanel.id === 'beat-' + entry[1]) : -1;
+        const fromBeat = visiblePanel ? beats.findIndex(beat => visiblePanel.id === 'beat-' + beat.id) : -1;
         const fromOpacity = visiblePanel ? Number(getComputedStyle(visiblePanel).opacity) : 0;
-        const toBeat = BEATS.findIndex(entry => entry[1] === id);
         travel = { id, from: ps, to, start: performance.now(), fraction: 0, fromBeat, fromOpacity, toBeat, byKeyboard, scrollY,
           duration: 360 + 120 * Math.abs(to - ps) };
         return;
@@ -858,7 +868,7 @@
       travel = null;
       const rect = story.getBoundingClientRect();
       scrollTo({ top: scrollY + rect.top + to * Math.max(1, rect.height - innerHeight), behavior: 'instant' });
-      ps = target = to;
+      ps = to;
       lastP = -1;
       render(to, (performance.now() - t0) / 1000);
       if (byKeyboard) $('#beat-' + id + ' .story-guide')?.focus({ preventScroll: true });
@@ -872,7 +882,6 @@
       const hit = e.target.closest('[data-layer]');
       if (hit) go(S.layers[Number(hit.dataset.layer)].id, e.detail === 0);
     });
-    if (brand) listen(brand, 'click', e => { e.preventDefault(); go('hero'); });
     listen(window, 'wheel', () => { tau = 0.12; interrupt(); }, { passive: true });
     listen(window, 'touchmove', () => { tau = 0.05; interrupt(); }, { passive: true });
 
@@ -884,11 +893,9 @@
 
     /* the palette changed: draw the current frame again now (a view transition snapshots the page right after), and keep the loop alive */
     onPalette = () => { if (running && W) { lastP = -1; render(ps, (performance.now() - t0) / 1000); } kick(); };
-    window.__hgSyncTheme = ms => syncTheme(ms);
-    window.__hgDebug = () => Object.assign({}, D, { p: ps, target, tau, diving, hero: { x: G.hx, y: G.hy, r: F_MAIN * G.u, zoom: G.u / U }, land: { x: G.mx, y: G.my }, z0: G.z0, sc: G.sc });
     if (initialBeat) go(initialBeat, false, false);
     return {
-      currentBeat: () => travel?.id ?? (ps <= T.gone ? 'hero' : BEATS.find(n => qmap(ps) < n[0])[1]),
+      currentBeat: () => travel?.id ?? (ps < (storyEntry[0] + storyEntry[1]) / 2 ? 'hero' : beats.find(beat => qmap(ps) < beat.end).id),
       destroy() {
         lifetime.abort();
         resize.disconnect(); visibility.disconnect();
@@ -904,7 +911,6 @@
         });
         ctx.clearRect(0, 0, W, H);
         onPalette = () => {};
-        delete window.__hgDebug; delete window.__hgSyncTheme;
       },
     };
   }
@@ -919,10 +925,7 @@
       clearTimeout(rt); rt = setTimeout(renderStills, 150);
     });
     resize.observe(landing);
-    const sroot = window.HGStack?.root, brand = $('[data-hg-story-home]');
-    if (brand) brand.addEventListener('click', e => {
-      e.preventDefault(); scrollTo({ top: 0, behavior: 'instant' });
-    }, { signal: lifetime.signal });
+    const sroot = window.HGStack?.root;
     if (sroot) sroot.addEventListener('click', e => {
       const hit = e.target.closest('[data-layer]'); if (!hit) return;
       const el = $('#beat-' + window.HGStack.layers[+hit.dataset.layer].id);
@@ -957,7 +960,10 @@
     const active = document.activeElement;
     const story = $('#story'), content = $('.landing-content');
     const box = story.getBoundingClientRect();
-    const withinStory = box.top < innerHeight && box.bottom > 0;
+    // At the boundary, keep whichever section occupies the larger readable area.
+    const headerSpace = parseFloat(getComputedStyle(document.scrollingElement).scrollPaddingTop) || 0;
+    const readingCenter = (headerSpace + innerHeight) / 2;
+    const withinStory = box.top < innerHeight && box.bottom >= readingCenter;
     const beat = mode && withinStory ? mode.currentBeat() : null;
     const contentTop = mode && !withinStory ? content.getBoundingClientRect().top : null;
     mode?.destroy(); reveal?.disconnect();
@@ -989,11 +995,9 @@
   updateMotion();
   stillMotion.addEventListener('change', updateMotion);
 
-  /* OINK owns appearance selection and persistence. The scene only reads the native theme, or its authored white-scene
-     palette override; it never changes the site's data-bs-theme or saved preferences. */
+  /* Follow OINK's resolved appearance, including changes to the system preference in auto mode. */
   const followNativeTheme = () => syncTheme(stillMotion.matches ? 0 : 260);
   new MutationObserver(followNativeTheme).observe(html, { attributes: true, attributeFilter: ['data-bs-theme'] });
-  new MutationObserver(followNativeTheme).observe(landing, { attributes: true, attributeFilter: ['data-story-palette'] });
 
   /* The navbar, language switching and mobile drawers stay in the native site shell. Only the homepage command is local. */
   const copyBtn = $('#copy'), cmd = $('#cmd'), label = $('#copy-label'), status = $('#copy-status');

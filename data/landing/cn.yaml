@@ -12,25 +12,25 @@ hero:
 layers:
   ai:
     name: 图 AI
-    components: hugegraph-llm、hugegraph-ml
-    description: 结合大语言模型实现 GraphRAG 与知识图谱构建
+    components: llm/sdk/rag
+    description: 结合大语言模型实现 GraphRAG 与本体图谱构建
     url: /cn/docs/quickstart/hugegraph-ai/
     go: 探索图 AI
   computing:
     name: 图计算
-    components: hugegraph-computer、Vermeer
+    components: 内存 + 磁盘
     description: 在内存或 BSP 集群上对全图进行 OLAP 分析
     url: /cn/docs/quickstart/computing/
     go: 探索图计算
   toolchain:
     name: 图工具链
-    components: Loader、Hubble、Tools
+    components: loader/hubble/tools
     description: 用 Loader 批量导入顶点和边，在 Hubble 中查看关系，用 Tools 备份和迁移数据
     url: /cn/docs/quickstart/toolchain/
     go: 探索图工具链
   database:
     name: 图数据库
-    components: Server · 单机或分布式
+    components: 单机/分布式
     description: Server 提供图查询，分布式部署使用 PD 管理分区、Store 存储副本
     url: /cn/docs/quickstart/hugegraph/
     go: 探索图数据库
@@ -51,23 +51,35 @@ story:
       url: /cn/docs/quickstart/toolchain/
       link_label: 查看图工具链指南
     computing:
-      title: 拉远视角，发现社区
+      title: 全图计算，挖掘社群
       body: 图计算对整个数据集进行 OLAP 分析，Vermeer 在内存中运行，Computer 使用 BSP 集群
       url: /cn/docs/quickstart/computing/
       link_label: 探索图计算
     ai:
-      title: 然后，向图提问
+      title: 拥抱 AI，向图前行
       body: GraphRAG 检索子图，为大语言模型的回答提供依据；同一套工具也能帮助构建知识图谱
       url: /cn/docs/quickstart/hugegraph-ai/
       link_label: 探索图 AI
   readouts:
     database: "{vertices} 个顶点，1 个邻域"
     toolchain: 图探索 · 顶点与边
-    computing: "{vertices} 个顶点，{communities} 个社区"
+    computing: "{vertices} 个顶点，{communities} 个社群"
     ai: 1 个问题，1 个检索子图
 
+statement:
+  body: 从**图数据存储**和**实时查询**，到**离线分析**和**图 AI**，一套图系统贯穿全程
+  figures:
+    - value: 千亿级
+      label: 顶点与边的规模
+    - value: 毫秒级
+      label: 优化后的查询延迟
+    - value: 20+
+      label: 内置图算法
+    - value: 首个
+      label: Apache 顶级图系统
+
 capabilities:
-  title: 图数据工作负载所需，尽在其中
+  title: 核心特点
   items:
     - title: 高效
       variant: efficient
@@ -97,8 +109,12 @@ capabilities:
       icon: fa-solid fa-plug
       url: /cn/docs/clients/client/hugegraph-client/
 
+platforms:
+  title: 融入你已有的技术栈
+  pause: 暂停标识滚动
+
 components:
-  title: 一套系统，八个组件
+  title: ALL IN ONE
   body: 图数据库可单机或分布式部署。按需搭配图工具链、图计算和图 AI 组件
   first_use: 从这里开始
   groups:
@@ -127,16 +143,16 @@ components:
           url: /cn/docs/quickstart/toolchain/hugegraph-tools/
     - title: 图计算与 AI
       items:
-        - name: Computer
-          body: 采用 BSP 运行时、面向 OLAP 工作负载的分布式图计算框架
-          url: /cn/docs/quickstart/computing/hugegraph-computer/
+        - name: Vermeer
+          body: 在内存中运行图算法，支持 PageRank 和社群发现
+          url: /cn/docs/quickstart/computing/hugegraph-vermeer/
         - name: AI
           body: 结合大语言模型实现 GraphRAG 与知识图谱构建
           url: /cn/docs/quickstart/hugegraph-ai/
 
 quickstart:
-  title: 一条命令，启动服务
-  body: 使用 Docker 启动用于测试或开发的单节点 Server，然后通过 8080 端口访问 REST API
+  title: 快速开始
+  body: 这个 Docker 镜像会在本机 8080 端口启动 HugeGraph Server，默认使用 RocksDB 存储数据
   command: docker run -itd --name=server -p 127.0.0.1:8080:8080 hugegraph/hugegraph:1.7.0
   copy: 复制
   copied: 已复制
@@ -148,22 +164,29 @@ quickstart:
   next:
     label: 验证服务并执行第一次查询
     url: /cn/docs/quickstart/hugegraph/hugegraph-server/
+  install:
+    label: 其他安装方式
+    url: /cn/docs/download/download/
 
 community:
-  title: 首个 Apache 顶级图系统
-  body: 欢迎加入 HugeGraph 开源社区
+  title: 欢迎加入 HugeGraph 开源社区
+  body: 欢迎新用户和贡献者一起交流、参与开发
   items:
     - title: GitHub
-      body: 通过 GitHub Pull Request 参与协作，欢迎新的贡献者加入
+      body: 通过 GitHub Pull Request 提交贡献
       url: https://github.com/apache/hugegraph
       icon: fa-brands fa-github
       external: true
-    - title: ASF Slack
-      body: 加入 HugeGraph 频道，参与社区讨论
-      url: https://the-asf.slack.com/archives/C059UU2FJ23
-      icon: fa-brands fa-slack
-      external: true
+    - title: 微信公众号
+      body: 扫码关注「Apache HugeGraph」，获取社区动态
+      url: /cn/docs/introduction/#community
+      icon: fa-brands fa-weixin
     - title: 工具链
       body: 获取图数据导入、可视化、备份、恢复与迁移工具
       url: /cn/docs/quickstart/toolchain/
       icon: fa-solid fa-screwdriver-wrench
+    - title: Discord
+      body: 加入 HugeGraph 社区，交流使用经验
+      url: https://discord.gg/bT7GtKEnJK
+      icon: fa-brands fa-discord
+      external: true

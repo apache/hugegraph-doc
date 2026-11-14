@@ -106,6 +106,28 @@ test("motion preferences can switch repeatedly without losing explanations or du
     .toBeCloseTo(before, 0);
 });
 
+test("switching motion keeps partially revealed homepage content at the reading position", async ({ page }) => {
+  await page.setViewportSize({ width: 1414, height: 826 });
+  await page.goto("/");
+  const landing = page.locator("#hg-landing");
+  const content = page.locator(".landing-content");
+  await expect(landing).toHaveClass(/\blive\b/);
+  for (const remainingStory of [100, 20]) {
+    await content.evaluate((element, top) => {
+      scrollBy({ top: element.getBoundingClientRect().top - top, behavior: "instant" });
+    }, remainingStory);
+    const drift = () => content.evaluate((element, top) =>
+      Math.abs(element.getBoundingClientRect().top - top), remainingStory);
+    await expect.poll(drift).toBeLessThanOrEqual(2);
+    for (const reducedMotion of ["reduce", "no-preference"]) {
+      await page.emulateMedia({ reducedMotion });
+      if (reducedMotion === "reduce") await expect(landing).not.toHaveClass(/\blive\b/);
+      else await expect(landing).toHaveClass(/\blive\b/);
+      await expect.poll(drift).toBeLessThanOrEqual(2);
+    }
+  }
+});
+
 test("each layer animates its own artwork on the idle hero and respects reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
@@ -202,4 +224,107 @@ test("idle layer tour follows the visual stack and yields to hover, keyboard and
   await expect(page.locator("#hg-landing")).not.toHaveClass(/\blive\b/);
   await page.clock.fastForward(dwell);
   await expect(active).toHaveCount(0);
+});
+
+async function graphInkBrightness(canvas) {
+  return canvas.evaluate(node => {
+    const pixels = node.getContext("2d").getImageData(0, 0, node.width, node.height).data;
+    let brightness = 0;
+    let samples = 0;
+    // Sample solid graph marks. Transparent space and translucent halos would
+    // otherwise dominate the measurement on this sparse drawing.
+    for (let i = 0; i < pixels.length; i += 16) {
+      if (pixels[i + 3] < 200) continue;
+      brightness += (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
+      samples++;
+    }
+    return samples > 0 ? brightness / samples : null;
+  });
+}
+
+function luminance(color) {
+  const channels = color.match(/[\d.]+/g).slice(0, 3).map(Number).map(channel => {
+    const n = channel / 255;
+    return n <= 0.04045 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4;
+  });
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+}
+
+function contrast(foreground, background) {
+  const a = luminance(foreground), b = luminance(background);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+test("the appearance switch recolors the open graph and keeps homepage copy readable", async ({ page }) => {
+  await page.goto("/");
+  await page.locator('#hg-stack button[data-layer="0"]').click();
+  const canvas = page.locator("#world");
+  const panel = page.locator("#beat-database");
+  await expect(panel).toHaveCSS("opacity", "1");
+  await expect(canvas).toHaveCSS("opacity", "1");
+  for (const theme of ["dark", "light"]) {
+    await page.locator('[data-td-appearance-trigger][aria-controls="td-appearance-navbar"]').click();
+    await page.locator(`#td-appearance-navbar [data-bs-theme-value="${theme}"]`).locator("..").click();
+    await expect(page.locator("html")).toHaveAttribute("data-bs-theme", theme);
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeInViewport();
+    const ink = expect.poll(() => graphInkBrightness(canvas));
+    if (theme === "dark") await ink.toBeGreaterThan(150);
+    else await ink.toBeLessThan(100);
+
+    const surfaces = await page.evaluate(() => {
+      const card = "#capabilities .cap:not(.cap-efficient,.cap-ai,.cap-open)";
+      return [["#beat-database .lede", "#veil"], [card + " p", card], ["#cmd", "#quickstart .cmd"]]
+        .map(([text, surface]) => ({
+          surface, foreground: getComputedStyle(document.querySelector(text)).color,
+          background: getComputedStyle(document.querySelector(surface)).backgroundColor
+        }));
+    });
+    for (const { surface, foreground, background } of surfaces) {
+      const paper = luminance(background);
+      if (theme === "dark" || surface === "#quickstart .cmd") expect(paper, surface).toBeLessThan(0.15);
+      else expect(paper, surface).toBeGreaterThan(0.7);
+      expect(contrast(foreground, background), surface).toBeGreaterThanOrEqual(4.5);
+    }
+  }
+});
+
+test("the copy button has a visible keyboard focus indicator on the command panel in both themes", async ({ page }) => {
+  await page.goto("/");
+  for (const theme of ["light", "dark"]) {
+    await page.evaluate(value => window.OinkActions.run("switch_theme", { value }), theme);
+    await expect(page.locator("html")).toHaveAttribute("data-bs-theme", theme);
+    await page.locator("#cmd").focus();
+    await page.keyboard.press("Tab");
+    const copy = page.locator("#copy");
+    await expect(copy).toBeFocused();
+    const ring = await copy.evaluate(button => {
+      const style = getComputedStyle(button);
+      return { color: style.outlineColor, style: style.outlineStyle, width: parseFloat(style.outlineWidth),
+        background: getComputedStyle(button.parentElement).backgroundColor };
+    });
+    expect(ring.style).not.toBe("none");
+    expect(ring.width).toBeGreaterThanOrEqual(2);
+    expect(contrast(ring.color, ring.background), theme).toBeGreaterThanOrEqual(3);
+  }
+});
+
+test("dark reduced-motion diagrams follow appearance and print on paper", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" });
+  await page.goto("/cn/");
+  await page.evaluate(() => window.OinkActions.run("switch_theme", { value: "auto" }));
+  await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
+  await expectStaticStory(page);
+  const still = page.locator("#beat-database .still");
+  await expect.poll(() => graphInkBrightness(still)).toBeGreaterThan(150);
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "light");
+  await expect.poll(() => graphInkBrightness(still)).toBeLessThan(100);
+
+  await page.emulateMedia({ colorScheme: "dark", media: "print" });
+  await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
+  await expect(still).toBeHidden();
+  await expect(page.locator("#beat-database .story-guide")).toBeVisible();
+  await expect(page.locator("#hg-landing")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(page.locator("#capabilities")).toHaveCSS("background-color", "rgb(255, 255, 255)");
 });

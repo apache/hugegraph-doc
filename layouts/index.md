@@ -37,6 +37,11 @@
       (partial "content/markdown-url.html" ($beat.url | relURL))) -}}
 {{- end -}}
 
+{{- $chunks = $chunks | append (printf "## %s" $data.statement.body) -}}
+{{- range $data.statement.figures -}}
+  {{- $chunks = $chunks | append (printf "- **%s** — %s" .value .label) -}}
+{{- end -}}
+
 {{- $chunks = $chunks | append (printf "## %s" $data.capabilities.title) -}}
 {{- range $data.capabilities.items -}}
   {{- $chunks = $chunks | append (printf "- [**%s**](%s) — %s"
@@ -44,6 +49,7 @@
       (partial "content/markdown-url.html" (.url | relURL)) .body) -}}
 {{- end -}}
 
+{{- $chunks = $chunks | append (printf "## %s\n\n%s" $data.platforms.title (delimit (collections.Apply hugo.Data.landing.platforms "index" "." "name") ", ")) -}}
 {{- $chunks = $chunks | append (printf "## %s\n\n%s" $data.components.title $data.components.body) -}}
 {{- range $data.components.groups -}}
   {{- $chunks = $chunks | append (printf "### %s" .title) -}}
@@ -59,15 +65,19 @@
 {{- $chunks = $chunks | append (printf "## %s\n\n%s\n\n```bash\n%s\n```\n\n%s\n\n```bash\n%s\n```"
     $data.quickstart.title $data.quickstart.body $data.quickstart.command
     $data.quickstart.verify $data.quickstart.verify_command) -}}
-{{- $chunks = $chunks | append (printf "[%s](%s)"
-    (partial "content/markdown-escape.html" $data.quickstart.next.label)
-    (partial "content/markdown-url.html" ($data.quickstart.next.url | relURL))) -}}
+{{- range slice $data.quickstart.install $data.quickstart.next -}}
+  {{- $chunks = $chunks | append (printf "[%s](%s)"
+      (partial "content/markdown-escape.html" .label)
+      (partial "content/markdown-url.html" (.url | relURL))) -}}
+{{- end -}}
 
 {{- $chunks = $chunks | append (printf "## %s\n\n%s" $data.community.title $data.community.body) -}}
 {{- range $data.community.items -}}
-  {{- $chunks = $chunks | append (printf "- [**%s**](%s) — %s"
-      (partial "content/markdown-escape.html" .title)
-      (partial "content/markdown-url.html" (.url | relURL)) .body) -}}
+  {{- $label := printf "**%s**" (partial "content/markdown-escape.html" .title) -}}
+  {{- with .url -}}
+    {{- $label = printf "[%s](%s)" $label (partial "content/markdown-url.html" (. | relURL)) -}}
+  {{- end -}}
+  {{- $chunks = $chunks | append (printf "- %s — %s" $label .body) -}}
 {{- end -}}
 {{- end -}}
 

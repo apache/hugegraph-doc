@@ -12,25 +12,25 @@ hero:
 layers:
   ai:
     name: Graph AI
-    components: hugegraph-llm, hugegraph-ml
-    description: GraphRAG and knowledge graph construction with LLMs
+    components: llm/sdk/rag
+    description: GraphRAG and ontology graph construction with LLMs
     url: /docs/quickstart/hugegraph-ai/
     go: Explore Graph AI
   computing:
     name: Graph Computing
-    components: hugegraph-computer, Vermeer
+    components: memory + disk
     description: OLAP over the whole graph, in memory or on a BSP cluster
     url: /docs/quickstart/computing/
     go: Explore Graph Computing
   toolchain:
     name: Graph Toolchain
-    components: Loader, Hubble, Tools
+    components: loader/hubble/tools
     description: Import vertices and edges with Loader, explore them in Hubble, and back up or migrate data with Tools
     url: /docs/quickstart/toolchain/
     go: Explore Graph Toolchain
   database:
     name: Graph Database
-    components: Server · standalone or distributed
+    components: standalone/distributed
     description: Server handles graph queries. In a distributed deployment, PD manages partitions
       and Store keeps replicas
     url: /docs/quickstart/hugegraph/
@@ -52,12 +52,12 @@ story:
       url: /docs/quickstart/toolchain/
       link_label: Explore the graph toolchain
     computing:
-      title: Step back. Communities appear
+      title: Analyze the whole graph to discover communities
       body: Graph computing runs OLAP over the whole dataset, with Vermeer in memory and Computer on a BSP cluster
       url: /docs/quickstart/computing/
       link_label: Explore graph computing
     ai:
-      title: Then ask it a question
+      title: Explore graphs with AI
       body: GraphRAG retrieves the subgraph that grounds an LLM answer, and the same toolkit builds knowledge graphs
       url: /docs/quickstart/hugegraph-ai/
       link_label: Explore Graph AI
@@ -67,8 +67,20 @@ story:
     computing: "{vertices} vertices, {communities} communities"
     ai: 1 question, 1 retrieved subgraph
 
+statement:
+  body: A full-stack graph system that carries your data from **storage** and **real-time querying** to **offline analysis** and **AI**
+  figures:
+    - value: 100s of billions
+      label: vertices and edges
+    - value: Milliseconds
+      label: latency for optimized queries
+    - value: 20+
+      label: built-in graph algorithms
+    - value: 1st
+      label: Apache top‑level graph system
+
 capabilities:
-  title: Everything a graph workload needs
+  title: Key features
   items:
     - title: Efficient
       variant: efficient
@@ -99,8 +111,12 @@ capabilities:
       icon: fa-solid fa-plug
       url: /docs/clients/client/hugegraph-client/
 
+platforms:
+  title: Fits the platforms you already run
+  pause: Pause logo animation
+
 components:
-  title: One system, eight components
+  title: ALL IN ONE
   body: Deploy the database on one node or across a cluster. Add tools, graph computing and AI as needed
   first_use: Start here
   groups:
@@ -129,16 +145,16 @@ components:
           url: /docs/quickstart/toolchain/hugegraph-tools/
     - title: Computing and AI
       items:
-        - name: Computer
-          body: Distributed graph computing for OLAP workloads with a BSP runtime
-          url: /docs/quickstart/computing/hugegraph-computer/
+        - name: Vermeer
+          body: In-memory graph algorithms for PageRank and community detection
+          url: /docs/quickstart/computing/hugegraph-vermeer/
         - name: AI
           body: GraphRAG and knowledge graph construction with LLMs
           url: /docs/quickstart/hugegraph-ai/
 
 quickstart:
-  title: Running in one command
-  body: Start a single-node Server with Docker for testing or development, then reach the REST API on port 8080
+  title: Quick start
+  body: The Docker image starts HugeGraph Server on port 8080, with RocksDB as the default backend
   command: docker run -itd --name=server -p 127.0.0.1:8080:8080 hugegraph/hugegraph:1.7.0
   copy: Copy
   copied: Copied
@@ -150,13 +166,16 @@ quickstart:
   next:
     label: Verify setup and run your first query
     url: /docs/quickstart/hugegraph/hugegraph-server/
+  install:
+    label: Other install options
+    url: /docs/download/download/
 
 community:
-  title: The first Apache top-level graph system
-  body: Welcome to the HugeGraph open source community
+  title: Welcome to the HugeGraph open source community
+  body: New users and contributors are always welcome
   items:
     - title: GitHub
-      body: We work through pull requests on GitHub. New contributors are always welcome
+      body: Contributions go through pull requests on GitHub
       url: https://github.com/apache/hugegraph
       icon: fa-brands fa-github
       external: true
@@ -165,7 +184,11 @@ community:
       url: https://the-asf.slack.com/archives/C059UU2FJ23
       icon: fa-brands fa-slack
       external: true
-    - title: Toolchain
-      body: Graph loading, visualization, backup, restore and migration tools
-      url: /docs/quickstart/toolchain/
-      icon: fa-solid fa-screwdriver-wrench
+    - title: Discord
+      body: Join the HugeGraph community on Discord
+      url: https://discord.gg/bT7GtKEnJK
+      icon: fa-brands fa-discord
+      external: true
+    - title: Twitter
+      body: On the way
+      icon: fa-brands fa-twitter

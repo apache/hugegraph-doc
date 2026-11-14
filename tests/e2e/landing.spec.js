@@ -69,21 +69,31 @@ for (const [language, prefix, locale] of [["en", "", "en-US"], ["cn", "/cn", "zh
 
   test(`${language} component choices link to the corresponding local guides`, async ({ page }) => {
     await openHome(page, prefix);
-    const choices = page.locator("#components a[href]");
-    await expect(choices).toHaveCount(8);
-    const destinations = [];
-    for (const link of await choices.all()) {
-      const destination = new URL(await link.getAttribute("href"), page.url());
-      expect(destination.pathname).toMatch(new RegExp(`^${prefix}/docs/`));
-      expect((await link.textContent()).trim()).not.toBe("");
-      const local = new URL(destination.pathname + destination.search, "http://127.0.0.1:4173");
-      const response = await page.request.get(local.href);
-      expect(response.ok(), destination.pathname).toBe(true);
-      destinations.push(destination.pathname);
+    const platforms = page.locator("#components .platform-set").first();
+    await expect(platforms.locator("li")).toHaveCount(10);
+    await page.locator("#components summary").click();
+    const guides = {
+      Server: "hugegraph/hugegraph-server",
+      PD: "hugegraph/hugegraph-pd",
+      Store: "hugegraph/hugegraph-hstore",
+      Hubble: "toolchain/hugegraph-hubble",
+      Loader: "toolchain/hugegraph-loader",
+      Tools: "toolchain/hugegraph-tools",
+      Vermeer: "computing/hugegraph-vermeer",
+      AI: "hugegraph-ai"
+    };
+    const directory = page.locator("#components");
+    await expect(directory.getByRole("link")).toHaveCount(Object.keys(guides).length);
+    const siteOrigin = new URL(await page.locator('link[rel="canonical"]').getAttribute("href"), page.url()).origin;
+    for (const [name, guide] of Object.entries(guides)) {
+      const link = directory.getByRole("link", { name, exact: true });
+      const path = `${prefix}/docs/quickstart/${guide}/`;
+      const url = new URL(await link.getAttribute("href"), page.url());
+      expect([siteOrigin, new URL(page.url()).origin]).toContain(url.origin);
+      expect(url.pathname + url.search + url.hash, name).toBe(path);
+      const response = await page.request.get(path, { maxRedirects: 0 });
+      expect(response.ok(), name).toBe(true);
     }
-    // Each advertised component should be a useful choice, not eight copies
-    // of the generic documentation landing page.
-    expect(new Set(destinations).size).toBe(8);
     const server = page.locator("#components").getByRole("link", { name: "Server", exact: true });
     const serverPath = `${prefix}/docs/quickstart/hugegraph/hugegraph-server/`;
     const serverGuide = language === "en" ? "HugeGraph Server Quick Start" : "HugeGraph Server 快速上手";
@@ -282,20 +292,22 @@ test("blue hero fades to white before graph evolution and restores on reverse sc
     await page.locator("#story").evaluate((story, value) => {
       scrollTo({ top: story.offsetTop + (story.offsetHeight - innerHeight) * value, behavior: "instant" });
     }, value);
-    await page.waitForTimeout(900);
   };
   const light = () => page.locator("#stage").evaluate(node =>
     Number(getComputedStyle(node).getPropertyValue("--scene-light")));
   await expect.poll(light).toBe(0);
   await progress(0.05);
-  expect(await light()).toBeGreaterThan(0);
+  await expect.poll(light).toBeGreaterThan(0);
   expect(await light()).toBeLessThan(1);
   // Background conversion finishes before the first canvas graph appears.
   await progress(0.10);
   await expect.poll(light).toBe(1);
   await expect(page.locator("#world")).toHaveCSS("opacity", "0");
-  for (const value of [0.20, 0.42, 0.68, 0.94]) {
+  await expect(page.locator("#beat-database")).toHaveCSS("opacity", "1");
+  await expect(page.locator("#beat-database .story-guide")).toBeVisible();
+  for (const [value, beat] of [[0.20, "database"], [0.42, "toolchain"], [0.68, "computing"], [0.94, "ai"]]) {
     await progress(value);
+    await expect(page.locator(`#beat-${beat}`)).toHaveCSS("opacity", "1");
     expect(await light()).toBe(1);
     await expect(page.locator("#veil")).toHaveCSS("background-color", "rgb(255, 255, 255)");
     await expect(page.locator("#story .panel.on h2")).toHaveCSS("color", "rgb(20, 26, 51)");

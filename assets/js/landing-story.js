@@ -696,8 +696,8 @@
       labels.style.opacity = (1 - eOut).toFixed(3);
       ground.style.opacity = (1 - eG).toFixed(3);
       const fade = (1 - eAway).toFixed(3);
-      L.toolchain.style.setProperty('--hgs-drift', (12 * eAway).toFixed(2));
-      L.computing.style.setProperty('--hgs-drift', (24 * eAway).toFixed(2));
+      L.toolchain.style.setProperty('--hgs-drift', (24 * eAway).toFixed(2));
+      L.computing.style.setProperty('--hgs-drift', (12 * eAway).toFixed(2));
       L.ai.style.setProperty('--hgs-drift', (46 * eAway).toFixed(2));
       for (const id of ['toolchain', 'computing', 'ai']) L[id].style.setProperty('--hgs-fade', fade);
       for (const el of guides) el.style.opacity = fade;

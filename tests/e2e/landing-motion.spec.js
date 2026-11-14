@@ -79,7 +79,7 @@ test("motion preferences can switch repeatedly without losing explanations or du
   await page.goto("/");
   const timeOrigin = await page.evaluate(() => performance.timeOrigin);
   await expectStaticStory(page);
-  for (const [layer, beat] of [["1", "toolchain"], ["2", "computing"]]) {
+  for (const [layer, beat] of [["2", "toolchain"], ["1", "computing"]]) {
     await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
     await page.locator(`#hg-stack button[data-layer="${layer}"]`).click();
     await expectStaticBeatAtTop(page, beat);

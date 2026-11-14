@@ -1620,10 +1620,11 @@ syntax:"<number>";inherits:true;initial-value:1
 /* The native shell owns menu, language, appearance, search and their focus. */
 .td-home main:has(> .hg-landing), .td-home main:has(.hg-landing) { padding: 0; overflow: visible; }
 
-/* Keep the native launcher outside desktop hero layer controls. During the
-   story it returns to its native position above the graph readout. */
+/* On the homepage, the launcher follows the native header's scroll state. */
+.td-home:has(.td-site-header.td-scrolled) .hg-ask-ai-launcher { display: none; }
+
 @media (min-width: 1024px) {
-  .td-home:has(.stage:not(.diving)) .hg-ask-ai-launcher { bottom: max(8px, env(safe-area-inset-bottom)); }
+  .td-home .hg-ask-ai-launcher { bottom: max(8px, env(safe-area-inset-bottom)); }
 }
 
 /* Keep a compact desktop legend from enlarging the plates when it moves below them. */

@@ -55,7 +55,7 @@ story:
       link_label: Explore graph computing
     ai:
       title: Explore graphs with AI
-      body: Our graph extraction tools, GraphRAG, and ontology platform are evolving quickly.
+      body: Our graph extraction SDK, Memory, and ontology platform are evolving quickly.
         Join us in building Graph AI
       url: /docs/quickstart/hugegraph-ai/
       link_label: Explore Graph AI

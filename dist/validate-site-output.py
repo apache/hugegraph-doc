@@ -57,8 +57,6 @@ REQUIRED_FILES = (
 HREFLANG_FALLBACKS = {
     # The English release note is intentionally draft-only.
     "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html": {"en-US": "/"},
-    # This community page currently has no Chinese source counterpart.
-    "community/maturity/index.html": {"zh-CN": "/cn/"},
 }
 
 # Mirrors the HTTPS image sources currently allowed by the ASF staging CSP:

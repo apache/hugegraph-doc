@@ -1,6 +1,6 @@
 hero:
-  title: 全栈图平台
-  body: 实时查询数据关系，离线分析全图，用 Graph AI 构建知识图谱和问答应用
+  title: 全栈图技术平台
+  body: 实时查询数据关系，离线分析全图，用 Graph AI 构建 LLM 记忆和本体图谱
   primary:
     label: 快速开始
     url: /cn/docs/quickstart/
@@ -41,8 +41,8 @@ story:
   read_guide: 阅读指南
   beats:
     database:
-      title: 从一个顶点开始
-      body: 从一个顶点查询它的邻居。图数据库可单机运行，也可由 Server、PD 和 Store 组成分布式集群
+      title: 从一个点开始
+      body: 沿着边，找到这个点的邻居。图数据库支持单机内嵌存储，也支持基于 Raft 的高可用分布式存储
       url: /cn/docs/quickstart/hugegraph/
       link_label: 查看图数据库部署指南
     toolchain:

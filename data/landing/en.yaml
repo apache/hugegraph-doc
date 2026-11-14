@@ -1,7 +1,7 @@
 hero:
   title: Full-stack graph platform
   body: Query relationships in real time, analyze whole graphs offline,
-    and build knowledge graphs and question-answering apps with Graph AI
+    and use Graph AI to build LLM memory and ontology graphs
   primary:
     label: Get Started
     url: /docs/quickstart/
@@ -44,7 +44,8 @@ story:
   beats:
     database:
       title: Start with one vertex
-      body: Query a vertex and its neighbors. Run the database on one node or deploy Server, PD and Store as a cluster
+      body: Follow an edge to a neighboring vertex. Use embedded storage on a single machine
+        or Raft replication for highly available distributed storage
       url: /docs/quickstart/hugegraph/
       link_label: Explore database deployment
     toolchain:

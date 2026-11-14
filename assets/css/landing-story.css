@@ -242,7 +242,7 @@
 .hg-landing .hero-brand {
   margin:0 0 clamp(12px,1.4vw,20px);
   color:#e2e9ff;
-  font:650 clamp(1.375rem,2vw,1.875rem)/1.15 var(--display);
+  font:650 clamp(1.5rem,2.25vw,2.125rem)/1.15 var(--display);
   letter-spacing:-.025em;
 }
 
@@ -1657,6 +1657,7 @@ syntax:"<number>";inherits:true;initial-value:1
   .td-home:has(.hg-landing) .hg-ask-ai-launcher { bottom: max(16px, env(safe-area-inset-bottom)); }
   .hg-landing .btn { height: 46px; padding-inline: 18px; font-size: .875rem; }
   .hg-landing .hero h1 { font-size: 2rem; }
+  .hg-landing .hero .lede { text-wrap: balance; }
   .hg-landing.live .hero { padding-top: calc(var(--nav-h) + 20px); }
 }
 /* Short screens keep an actual diagram instead of a near-zero computed size.
@@ -1698,7 +1699,7 @@ syntax:"<number>";inherits:true;initial-value:1
   .hg-landing .hero { min-height: 100svh; }
 }
 @media (max-width:1023px) and (max-height:640px) {
-  .hg-landing .hero-brand { margin-bottom:8px; font-size:1.25rem; }
+  .hg-landing .hero-brand { margin-bottom:8px; font-size:1.375rem; }
   .hg-landing.live .hero .lede { margin-top:8px; }
   .hg-landing.live .cta-row { margin-top:12px; }
 }

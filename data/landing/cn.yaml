@@ -147,7 +147,7 @@ components:
 
 quickstart:
   title: 快速开始
-  body: 这个 Docker 镜像会在本机 8080 端口启动 HugeGraph Server，默认使用 RocksDB 存储数据
+  body: Docker 默认以单机模式启动 HugeGraph Server，监听本机 8080 端口。单机模式支持内存或磁盘存储
   command: docker run -d -p 127.0.0.1:8080:8080 hugegraph/hugegraph
   copy: 复制
   copied: 已复制

@@ -152,7 +152,8 @@ components:
 
 quickstart:
   title: Quick start
-  body: The Docker image starts HugeGraph Server on port 8080, with RocksDB as the default backend
+  body: Docker starts HugeGraph Server in standalone mode by default on port 8080 of localhost.
+    Standalone mode supports in-memory or disk storage
   command: docker run -d -p 127.0.0.1:8080:8080 hugegraph/hugegraph
   copy: Copy
   copied: Copied

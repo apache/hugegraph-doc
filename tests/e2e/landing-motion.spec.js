@@ -332,21 +332,37 @@ test("dark reduced-motion diagrams follow appearance and print on paper", async 
   await expect(page.locator("#capabilities")).toHaveCSS("background-color", "rgb(255, 255, 255)");
 });
 
-test("light travels continuously between the northern stars", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/");
-  const head = page.locator(".hg-constellation--north .hg-star-head");
-  const positions = await head.evaluate(node => {
-    const [animation] = node.getAnimations();
-    const { delay, duration } = animation.effect.getTiming();
-    animation.pause();
-    return [0.2, 0.4, 0.6].map(fraction => {
-      animation.currentTime = delay + duration * fraction;
-      return Number.parseFloat(getComputedStyle(node).strokeDashoffset);
+for (const position of ["north", "south"]) {
+  test(`light travels along the ${position} constellation and follows motion preferences`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    const constellation = page.locator(`.hg-constellation--${position}`);
+    const band = constellation.locator(".hg-star-band");
+    await expect(band).toBeVisible();
+    const mask = constellation.locator("mask");
+    const maskId = await mask.getAttribute("id");
+    await expect(band.locator("..")).toHaveCSS("mask-image", new RegExp(`#${maskId}["')]`));
+    await expect(mask.locator("path")).toHaveAttribute("d", /L/);
+
+    const positions = await band.evaluate(node => {
+      const [animation] = node.getAnimations();
+      const { delay, duration } = animation.effect.getTiming();
+      animation.pause();
+      const samples = [0.25, 0.5, 0.75].map(fraction => {
+        animation.currentTime = delay + duration * (1 + fraction);
+        return new DOMMatrix(getComputedStyle(node).transform).m41;
+      });
+      animation.play();
+      return samples;
     });
+    expect(positions[0]).toBeLessThan(positions[1]);
+    expect(positions[1]).toBeLessThan(positions[2]);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(band).toBeHidden();
+    await expect.poll(() => constellation.evaluate(svg => svg.getAnimations({ subtree: true }).length)).toBe(0);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await expect(band).toHaveCSS("animation-play-state", "running");
+    await page.locator('#hg-stack button[data-layer="0"]').click();
+    await expect(band).toHaveCSS("animation-play-state", "paused");
   });
-  expect(positions[0]).toBeLessThan(0);
-  expect(positions[1]).toBeLessThan(positions[0]);
-  expect(positions[2]).toBeLessThan(positions[1]);
-  expect(positions[2]).toBeGreaterThan(-100);
-});
+}

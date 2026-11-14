@@ -6,55 +6,59 @@
     <div class="stage" id="stage">
       <header class="hero" id="hero">
         <div class="hg-sky" aria-hidden="true">
-          {{/* Northern phases mark when the light reaches each star within one animation cycle. */}}
           {{- $north := slice
-              (dict "x" 13  "y" 107 "r" 2.7 "phase" 0 "glow" .32)
-              (dict "x" 72  "y" 72  "r" 2.4 "phase" 0.1905 "glow" .56)
-              (dict "x" 126 "y" 87  "r" 2.6 "phase" 0.2872 "glow" .36)
-              (dict "x" 215 "y" 39  "r" 3   "phase" 0.4436 "glow" .7)
-              (dict "x" 278 "y" 60  "r" 2.4 "phase" 0.5508 "glow" .4)
-              (dict "x" 309 "y" 18  "r" 2.6 "phase" 0.6505 "glow" .5)
-              (dict "x" 362 "y" 12  "r" 3.1 "phase" 0.84 "glow" .8) -}}
+              (dict "x" 13  "y" 107 "r" 2.7 "glow" .32)
+              (dict "x" 72  "y" 72  "r" 2.4 "glow" .56)
+              (dict "x" 126 "y" 87  "r" 2.6 "glow" .36)
+              (dict "x" 215 "y" 39  "r" 3   "glow" .7)
+              (dict "x" 278 "y" 60  "r" 2.4 "glow" .4)
+              (dict "x" 309 "y" 18  "r" 2.6 "glow" .5)
+              (dict "x" 362 "y" 12  "r" 3.1 "glow" .8) -}}
           {{- $south := slice
-              (dict "x" 8 "y" 39 "r" 2)
-              (dict "x" 70 "y" 9 "r" 2.8)
-              (dict "x" 135 "y" 43 "r" 2.1) -}}
+              (dict "x" 8 "y" 39 "r" 2 "glow" .24)
+              (dict "x" 70 "y" 9 "r" 2.8 "glow" .4)
+              (dict "x" 135 "y" 43 "r" 2.1 "glow" .28) -}}
           {{ range slice
-              (dict "id" "north" "viewBox" "0 0 410 124" "stars" $north)
-              (dict "id" "south" "viewBox" "0 0 144 52" "stars" $south) }}
-          {{- $route := printf "hg-star-route-%s" .id }}
-          <svg class="hg-constellation hg-constellation--{{ .id }}" viewBox="{{ .viewBox }}"
+              (dict "id" "north" "width" 410 "height" 124 "band" 160 "travel" 550 "stars" $north)
+              (dict "id" "south" "width" 144 "height" 52 "band" 60 "travel" 200 "stars" $south) }}
+          {{- $sky := . }}
+          <svg class="hg-constellation hg-constellation--{{ .id }}" viewBox="0 0 {{ .width }} {{ .height }}"
                aria-hidden="true" focusable="false">
             <defs>
-              <path id="{{ $route }}" pathLength="100"
-                    d="M{{ range $i, $s := .stars }}{{ if $i }} L{{ end }}{{ $s.x }} {{ $s.y }}{{ end }}"/>
-              {{ if eq .id "north" -}}
-              <radialGradient id="hg-star-aura">
+              <mask id="hg-star-line-{{ .id }}" maskUnits="userSpaceOnUse" x="0" y="0" width="{{ .width }}" height="{{ .height }}">
+                <path id="hg-star-route-{{ .id }}" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+                      d="M{{ range $i, $s := .stars }}{{ if $i }} L{{ end }}{{ $s.x }} {{ $s.y }}{{ end }}"/>
+              </mask>
+              <linearGradient id="hg-star-band-fill-{{ .id }}" class="hg-star-band-fill">
+                <stop stop-opacity="0"/>
+                <stop offset=".24" stop-opacity=".18"/>
+                <stop offset=".5" stop-opacity=".95"/>
+                <stop offset=".76" stop-opacity=".18"/>
+                <stop offset="1" stop-opacity="0"/>
+              </linearGradient>
+              <radialGradient id="hg-star-aura-{{ .id }}">
                 <stop stop-color="white" stop-opacity=".9"/>
                 <stop offset=".22" stop-color="var(--signal-wake)" stop-opacity=".68"/>
                 <stop offset=".55" stop-color="var(--signal-glow)" stop-opacity=".24"/>
                 <stop offset="1" stop-color="var(--signal-glow)" stop-opacity="0"/>
               </radialGradient>
-              {{ end -}}
             </defs>
-            <use href="#{{ $route }}" class="hg-star-route"/>
+            <g mask="url(#hg-star-line-{{ .id }})">
+              <rect class="hg-star-line-base" width="{{ .width }}" height="{{ .height }}"/>
+              <rect class="hg-star-band" x="-{{ .band }}" width="{{ .band }}" height="{{ .height }}"
+                    fill="url(#hg-star-band-fill-{{ .id }})" style="--band-travel:{{ .travel }}px"/>
+            </g>
             <g class="hg-star-nodes">
               {{ range .stars -}}
               <circle cx="{{ .x }}" cy="{{ .y }}" r="{{ .r }}"/>
               {{ end -}}
             </g>
-            {{ if eq .id "north" -}}
-            <g class="hg-star-halos" fill="url(#hg-star-aura)">
+            <g class="hg-star-halos" fill="url(#hg-star-aura-{{ .id }})">
               {{ range .stars -}}
-              <circle cx="{{ .x }}" cy="{{ .y }}" r="{{ mul .r 3.3 }}"
-                      style="--arrival-phase:{{ .phase }}; --peak:{{ .glow }}"/>
+              {{/* The center begins half a band before x=0. */}}
+              {{- $phase := div (add .x (div $sky.band 2)) (float $sky.travel) -}}
+              <circle cx="{{ .x }}" cy="{{ .y }}" r="{{ mul .r 3.3 }}" style="--arrival-phase:{{ $phase }}; --peak:{{ .glow }}"/>
               {{ end -}}
-            </g>
-            {{ end -}}
-            <g class="hg-star-signal">
-              <use href="#{{ $route }}" class="hg-star-wake"/>
-              <use href="#{{ $route }}" class="hg-star-glow"/>
-              <use href="#{{ $route }}" class="hg-star-head"/>
             </g>
           </svg>
           {{ end -}}

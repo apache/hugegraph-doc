@@ -1679,6 +1679,29 @@ class VersionUrlTest(unittest.TestCase):
             self.assertEqual(scoped["labels"], {"title": "Duo View"})
             self.assertEqual(stats["compareConfigs"], 1)
 
+    def test_duo_view_page_marker_uses_the_mounted_path(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        examples = {
+            "docs/deep/page/index.html": '<meta name=oink-compare-page content="{mount}/docs/deep/page/">',
+            "cn/docs/图/index.html": "<meta content='{mount}/cn/docs/%E5%9B%BE/' name='oink-compare-page'>",
+        }
+        other_meta = '<meta name="description" content="/docs/deep/page/">'
+        for version in ("latest", "1.7"):
+            entry = next(item for item in manifest["versions"] if item["id"] == version)
+            prefix = "/" + entry["publishPath"] if entry["publishPath"] else ""
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as temp_name:
+                output = Path(temp_name)
+                for relative, marker in examples.items():
+                    page = output / relative
+                    page.parent.mkdir(parents=True)
+                    page.write_text(marker.format(mount="") + other_meta, encoding="utf-8")
+                for _ in range(2):
+                    versioning.scope_version_artifact(output, manifest, entry, ORIGIN)
+                    for relative, marker in examples.items():
+                        self.assertEqual(
+                            (output / relative).read_text(), marker.format(mount=prefix) + other_meta
+                        )
+
     def test_latest_language_fallback_preserves_root_relative_url(self) -> None:
         relative = "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html"
         current_url = f"{ORIGIN}cn/docs/changelog/hugegraph-0.12.0-release-notes/"

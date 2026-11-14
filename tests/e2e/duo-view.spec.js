@@ -25,14 +25,15 @@ async function actionManifest(page) {
 async function paneFrames(page) {
   const dialog = page.locator('dialog[data-td-compare]');
   await expect(dialog).toBeVisible({ timeout: 15_000 });
-  const locators = dialog.locator('iframe[data-td-compare-frame]');
-  await expect(locators).toHaveCount(2);
+  // OINK keeps aria-busy while loading and removes failed frames on error.
+  const locators = dialog.locator('.td-compare__body:not([aria-busy]) > iframe[data-td-compare-frame]');
+  await expect(locators).toHaveCount(2, { timeout: 15_000 });
   const frames = [];
   for (let index = 0; index < 2; index += 1) {
     const handle = await locators.nth(index).elementHandle();
     const frame = await handle.contentFrame();
     await frame.waitForFunction(() => window.OinkComparePane === true &&
-      Boolean(document.querySelector('meta[name="oink-compare-page"]')) &&
+      document.querySelector('meta[name="oink-compare-page"]')?.content === location.pathname &&
       Boolean(document.querySelector('#td-main-content .td-content')));
     frames.push(frame);
   }
@@ -185,7 +186,7 @@ test('real Docs page lazily opens, synchronizes, restores and exposes all native
   await page.locator('[data-td-shell-search-open]').first().click();
   const input = page.locator('.td-shell-search__input');
   await input.fill('Duo View');
-  await page.getByRole('option').filter({ hasText: /^Duo View$/ }).first().click();
+  await page.getByRole('group', { name: 'Actions' }).getByText('Duo View', { exact: true }).click();
   ({ dialog } = await paneFrames(page));
 
   await page.reload({ waitUntil: 'domcontentloaded' });

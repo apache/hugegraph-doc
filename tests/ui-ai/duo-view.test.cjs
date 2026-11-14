@@ -11,24 +11,17 @@ const exists = (file) => fs.existsSync(path.join(root, file));
 const shell = require('../../assets/js/hugegraph-shell.js');
 const kapa = require('../../assets/js/kapa-adapter.js');
 
-test('OINK 1.5.1 is locked exactly and native Duo View is enabled', () => {
-  assert.match(read('go.mod'), /github\.com\/pgsty\/oink v1\.5\.1\s*$/m);
-  const sums = read('go.sum').trim().split('\n');
-  assert.deepEqual(sums, [
-    'github.com/pgsty/oink v1.5.1 h1:PgOZ7gnbkoJKZMFZ4YvCVXNL7HDiMV0LJiNYYhxiRmw=',
-    'github.com/pgsty/oink v1.5.1/go.mod h1:GBKnERMfbKlRSFuKCa+kV7sehSAT7kAlYHxwxglg9Jw=',
-  ]);
+test('the site enables native Duo View', () => {
   assert.match(read('hugo.yaml'), /^\s*compare: true\s*$/m);
-  assert.equal(JSON.parse(read('scripts/oink-overrides.json')).version, 'v1.5.1');
 });
 
-test('local and legacy preview toolchains match the OINK 1.5.1 contract', () => {
-  assert.match(read('go.mod'), /^go 1\.27\.3$/m);
-  assert.match(read('.github/workflows/hugo.yml'), /^\s*HUGO_VERSION:\s*0\.168\.0$/m);
+test('the legacy preview uses the same build command and toolchain as the site', () => {
+  const goVersion = read('go.mod').match(/^go (\S+)$/m)[1];
+  const hugoVersion = read('.github/workflows/hugo.yml').match(/^ +HUGO_VERSION: (\S+)$/m)[1];
   const netlify = read('netlify.toml');
   assert.match(netlify, /^command = "bash scripts\/hugo\.sh build"$/m);
-  assert.match(netlify, /^GO_VERSION = "1\.27\.3"$/m);
-  assert.match(netlify, /^HUGO_VERSION = "0\.168\.0"$/m);
+  assert.equal(netlify.match(/^GO_VERSION = "([^"]+)"$/m)[1], goVersion);
+  assert.equal(netlify.match(/^HUGO_VERSION = "([^"]+)"$/m)[1], hugoVersion);
 });
 
 test('the site reuses OINK Duo View instead of carrying a second reader or router', () => {

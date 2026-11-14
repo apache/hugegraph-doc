@@ -197,16 +197,6 @@ only for presentation. Resize the terminal before recording: overriding player
 `cols`/`rows` can crop it. Check desktop and mobile playback.
 The recorder is an authoring tool, not a build dependency.
 
-## Site integration and output checks
-
-- `hugo.yaml` owns appearance, search and output configuration. Four style
-  presets are selected with `params.ui.preset_menu: [paper, slate, ink, terminal]`;
-  boolean `true` offers only Paper/Slate. Ink and Terminal are experimental.
-  Style and light/dark mode are independent; OINK owns saved preferences.
-- Header and mobile drawers use the public `shell/appearance-menu.html` partial.
-  Sidebar persistence uses `OinkSidebar`; AI integration uses the public
-  search-tail API. Keep HugeGraph consent, version/language scope and local
-  availability behavior in their existing hooks/adapters.
 ## Native Duo View
 
 OINK 1.5.1 calls the feature **Duo View** in English and **双列视图** in
@@ -225,6 +215,16 @@ Site-level integrations loaded from hooks must stand down when
 `window.OinkComparePane` is true. Content runtimes remain active so tables, tabs,
 diagrams, code controls and fragment links continue to work inside each pane.
 
+## Site integration and output checks
+
+- `hugo.yaml` owns appearance, search and output configuration. Four style
+  presets are selected with `params.ui.preset_menu: [paper, slate, ink, terminal]`;
+  boolean `true` offers only Paper/Slate. Ink and Terminal are experimental.
+  Style and light/dark mode are independent; OINK owns saved preferences.
+- Header and mobile drawers use the public `shell/appearance-menu.html` partial.
+  Sidebar persistence uses `OinkSidebar`; AI integration uses the public
+  search-tail API. Keep HugeGraph consent, version/language scope and local
+  availability behavior in their existing hooks/adapters.
 - Local search uses `params.offline_search_index: content` so configuration names,
   error messages and other body-only terms are searchable in both languages.
   OINK loads the current language's index on demand; full content increases its

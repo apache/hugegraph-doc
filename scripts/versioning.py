@@ -119,6 +119,11 @@ COMPARE_CONFIG_RE = re.compile(
     r"(?P<close></script>)",
     re.IGNORECASE | re.DOTALL,
 )
+COMPARE_PAGE_PATH_RE = re.compile(
+    r"""(?P<open><meta\b(?=[^>]*\sname=["']?oink-compare-page(?:["'\s>]|$))"""
+    r"""[^>]*?\scontent=["']?)(?P<path>/[^"'\s>]*)""",
+    re.IGNORECASE,
+)
 HREFLANG_LINK_RE = re.compile(
     r"<link\b(?=[^>]*\brel=[\"']?alternate(?:[\"'\s>]|$))"
     r"(?=[^>]*\bhreflang=)[^>]*>",
@@ -3017,6 +3022,16 @@ def scope_version_artifact(
     reviewed_selector_urls = reviewed_version_route_urls(
         manifest, route_map, origin, historical_origin
     )
+    mount = "/" + entry["publishPath"] if entry["publishPath"] else ""
+
+    def mount_compare_page(match: re.Match) -> str:
+        # OINK checks this page's identity against location.pathname inside
+        # the iframe. Keep its encoded permalink, without navigation fallbacks.
+        pathname = match["path"]
+        if pathname == mount or pathname.startswith(mount + "/"):
+            return match[0]
+        return match["open"] + mount + pathname
+
     historical_selector_urls: set[str] = set()
     if historical_origin is not None:
         archived_ids = {
@@ -3173,6 +3188,8 @@ def scope_version_artifact(
             )
 
         if path.suffix == ".html":
+            if mount:
+                rendered = COMPARE_PAGE_PATH_RE.sub(mount_compare_page, rendered)
             rendered = ACTION_MANIFEST_RE.sub(replace_manifest, rendered)
             rendered = COMPARE_CONFIG_RE.sub(replace_compare_config, rendered)
         if rendered != original:

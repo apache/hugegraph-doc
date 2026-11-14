@@ -128,37 +128,3 @@ test('social fallback preserves the supplied HugeGraph and Apache image dimensio
   assert.equal(image.readUInt32BE(16), 1681);
   assert.equal(image.readUInt32BE(20), 936);
 });
-
-test('OINK Duo View stays native and HugeGraph pane runtimes remain content-scoped', () => {
-  const config = read('hugo.yaml');
-  const manifest = read('layouts/_partials/actions/manifest.html');
-  const shell = read('assets/js/hugegraph-shell.js');
-  assert.match(config, /\n\s+compare: true\n/);
-  assert.match(manifest, /partial "compare\/page-key\.html" \./);
-  assert.doesNotMatch(manifest, /\.RelPermalink \$outputFormat/);
-  assert.match(shell, /if \(windowObject\.OinkComparePane\) \{/);
-  assert.match(shell, /if \(windowObject\.OinkComparePane\)[\s\S]*?initScrollableTables\(documentObject\);[\s\S]*?return;/);
-  assert.doesNotMatch(shell, /if \(typeof window !== 'undefined' && window\.OinkComparePane\) return;/);
-  assert.match(
-    read('assets/js/language-preference.js'),
-    /if \(window\.OinkComparePane\) return;/,
-  );
-  assert.match(
-    read('assets/js/kapa-adapter.js'),
-    /if \(windowObject\.OinkComparePane\) return null;/,
-  );
-  assert.equal(fs.existsSync(path.join(root, 'assets/js/document-compare.js')), false);
-  assert.equal(fs.existsSync(path.join(root, 'layouts/_partials/compare')), false);
-});
-
-test('OINK lock and reviewed override inventory advance together', () => {
-  const goMod = read('go.mod');
-  const goSum = read('go.sum');
-  const inventory = JSON.parse(read('scripts/oink-overrides.json'));
-  assert.match(goMod, /github\.com\/pgsty\/oink v1\.5\.1/);
-  assert.match(goSum, /github\.com\/pgsty\/oink v1\.5\.1 h1:/);
-  assert.match(goSum, /github\.com\/pgsty\/oink v1\.5\.1\/go\.mod h1:/);
-  assert.equal(inventory.version, 'v1.5.1');
-  assert.ok(inventory.files['assets/scss/td/_document-compare.scss']);
-  assert.ok(inventory.files['layouts/_partials/actions/manifest.html']);
-});

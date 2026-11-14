@@ -1,6 +1,7 @@
 sections:
   - type: hero
     data:
+      class: hg-community-hero
       eyebrow: Apache HugeGraph
       title: 加入 Apache HugeGraph 社区
       lead: Apache HugeGraph 是一个开放的开源项目，社区中的每个人都可以使用、改进并从中受益。欢迎加入我们，通过以下方式了解项目动态并参与社区。

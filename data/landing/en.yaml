@@ -1,6 +1,7 @@
 hero:
-  title: From graph database to Graph AI
-  body: Query relationships in real time with Gremlin or Cypher, find communities with offline graph algorithms, and use graph data to answer questions with an LLM
+  title: Full-stack graph platform
+  body: Query relationships in real time, analyze whole graphs offline,
+    and build knowledge graphs and question-answering apps with Graph AI
   primary:
     label: Get Started
     url: /docs/quickstart/

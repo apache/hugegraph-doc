@@ -46,7 +46,11 @@ for (const version of VERSION_IDS.slice(1)) {
       const targets = links.map(link => new URL(link, response.url()));
       expect(targets.map(target => target.pathname)).toContain(`${prefix}/docs/`);
       expect(markdown).not.toContain("docker run");
-      const origins = [new URL(response.url()).origin, "https://hugegraph.apache.org", "https://hugegraph-oink.staged.apache.org"];
+      const origins = [
+        new URL(response.url()).origin,
+        "https://hugegraph.apache.org",
+        "https://hugegraph-oink.staged.apache.org",
+      ];
       for (const url of targets) {
         expect(origins).toContain(url.origin);
         expect(url.pathname.startsWith(prefix + "/"), url.href).toBe(true);

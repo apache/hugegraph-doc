@@ -1,6 +1,6 @@
 hero:
-  title: 从图数据库到 Graph AI
-  body: 用 Gremlin 或 Cypher 实时查询图中的关系，用图算法离线发现社群，让大语言模型依据图数据回答问题
+  title: 全栈图平台
+  body: 实时查询数据关系，离线分析全图，用 Graph AI 构建知识图谱和问答应用
   primary:
     label: 快速开始
     url: /cn/docs/quickstart/

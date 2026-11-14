@@ -34,6 +34,5 @@ The [homepage tests](tests/e2e/landing.spec.js) cover bilingual navigation, comp
 The [motion tests](tests/e2e/landing-motion.spec.js) exercise focus and hover, switching motion preferences, canvas colors and printing.
 Changes to historical Markdown also need the [versioning tests](tests/e2e/versioning.spec.js) against an assembled site with archived releases.
 
-For visual changes, compare the [desktop](tests/e2e/screenshots/landing/after-en-1440.jpg) and [320px](tests/e2e/screenshots/landing/after-en-320.jpg) views.
-Use the [entry transition](tests/e2e/screenshots/landing/after-transition.jpg) to check the canvas handoff and the
-[Chinese feature cards](tests/e2e/screenshots/landing/after-capabilities-cn.jpg) to check wrapping. Refresh affected captures alongside changes.
+For visual changes, capture the desktop and narrow layouts before and after the change. Include the affected scroll position and theme in the pull request.
+The [visual checks](tests/e2e/visual.spec.js) write screenshots to the workflow artifact.

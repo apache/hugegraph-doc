@@ -147,12 +147,18 @@ stable.
 
 - `content/en/` and `content/cn/` contain the bilingual source pages.
 - `hugo.yaml` owns routing, languages, outputs, search, navigation, and OINK parameters.
-- `data/home/<language>.yaml` owns the bilingual homepage.
+- The HTML and Markdown homepages share [English](data/landing/en.yaml) and [Chinese](data/landing/cn.yaml) copy.
+- The [platform list](data/landing/platforms.yaml) maps each logo to its ID in the [SVG sprite](assets/img/landing-platforms.svg).
 - `data/footer/<language>.yaml` owns the bilingual footer.
 - `i18n/zh-CN.yaml` carries only HugeGraph-specific Simplified Chinese labels; generic interface translations come from OINK for the preserved `cn` URL language key; the file is named after the `zh-CN` locale because Hugo resolves translations by locale, not by the URL key.
 - `assets/` and `static/` contain site-owned brand and compatibility assets.
 
 OINK is a module dependency. Do not copy or edit generated module-cache files. Site-specific overrides belong in the corresponding root `layouts/`, `assets/`, or data path and require focused regression evidence.
+
+### Homepage checks
+
+From `tests/e2e`, run `SITE_ROOT=/path/to/built/site npm test -- landing.spec.js landing-motion.spec.js` to check layout, navigation and motion.
+For archived homepage changes, also run `versioning.spec.js` against a site assembled with the historical releases.
 
 ## 中文说明
 

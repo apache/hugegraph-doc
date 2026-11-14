@@ -1,0 +1,187 @@
+hero:
+  title: 全栈图技术平台
+  body: 实时查询数据关系，离线分析全图，用 Graph AI 构建 LLM 记忆和本体图谱
+  primary:
+    label: 快速开始
+    url: /cn/docs/quickstart/
+  secondary:
+    label: GitHub
+    url: https://github.com/apache/hugegraph
+  explore: 探索四层架构
+
+layers:
+  ai:
+    name: 图 AI
+    components: llm/sdk/rag
+    description: 结合大语言模型实现 GraphRAG 与本体图谱构建
+    go: 探索图 AI
+  computing:
+    name: 图计算
+    components: vermeer/computer
+    description: 在内存或 BSP 集群上对全图进行 OLAP 分析
+    go: 探索图计算
+  toolchain:
+    name: 图工具链
+    components: loader/hubble/tools
+    description: 用 Loader 批量导入顶点和边，在 Hubble 中查看关系，用 Tools 备份和迁移数据
+    go: 探索图工具链
+  database:
+    name: 图数据库
+    components: server/pd/store
+    description: Server 提供图查询，分布式部署使用 PD 管理分区、Store 存储副本
+    go: 探索图数据库
+
+story:
+  label: HugeGraph，从一套技术栈到不同规模
+  stack_label: HugeGraph 四层架构，从图数据库到 AI
+  beats:
+    database:
+      title: 从一个点开始
+      body: 沿着边，找到这个点的邻居。图数据库支持单机内嵌存储，也支持基于 Raft 的高可用分布式存储
+      url: /cn/docs/quickstart/hugegraph/
+      link_label: 查看图数据库部署指南
+    toolchain:
+      title: 沿着边出发
+      body: 用 Loader 导入顶点和边，再用 Hubble 查看查询结果，沿着一条边找到下一个顶点
+      url: /cn/docs/quickstart/toolchain/
+      link_label: 查看图工具链指南
+    computing:
+      title: 全图计算，挖掘社群
+      body: 图计算对整个数据集进行 OLAP 分析，Vermeer 在内存中运行，Computer 使用 BSP 集群
+      url: /cn/docs/quickstart/computing/
+      link_label: 探索图计算
+    ai:
+      title: 拥抱 AI，向图前行
+      body: Graph AI 的图抽取 SDK、Memory 和本体平台都在快速迭代，欢迎大家参与共建
+      url: /cn/docs/quickstart/hugegraph-ai/
+      link_label: 探索图 AI
+  readouts:
+    database: "{vertices} 个顶点，1 个邻域"
+    toolchain: 图探索 · 顶点与边
+    computing: "{vertices} 个顶点，{communities} 个社群"
+    ai: 1 个问题，1 个检索子图
+
+statement:
+  body: 从**图数据存储**和**实时查询**，到**离线分析**和**图 AI**，一套图系统贯穿全程
+  figures:
+    - value: 千亿级
+      label: 顶点与边的规模
+    - value: 毫秒级
+      label: 多跳查询延迟
+    - value: 30+
+      label: 内置图算法
+    - value: 首个
+      label: Apache 顶级图系统
+
+capabilities:
+  title: 核心特点
+  items:
+    - title: 高效
+      variant: efficient
+      body: 支持海量数据批量导入、毫秒级图检索，以及数千用户并发的在线操作
+      icon: fa-solid fa-bolt
+      url: /cn/docs/quickstart/toolchain/hugegraph-loader/
+    - title: 智能化
+      variant: ai
+      body: 支持 GraphRAG、自动化知识图谱构建，并内置 20 多种图机器学习算法
+      icon: fa-solid fa-wand-magic-sparkles
+      url: /cn/docs/quickstart/hugegraph-ai/
+    - title: 易用
+      body: 支持 Gremlin、Cypher 与 RESTful API，配备覆盖导入、可视化和运维的完整工具链
+      icon: fa-solid fa-terminal
+      url: /cn/docs/quickstart/toolchain/
+    - title: 通用
+      body: 基于 Apache TinkerPop 的属性图建模，覆盖 OLTP 与 OLAP，可集成 Hadoop 和 Spark
+      icon: fa-solid fa-puzzle-piece
+      url: /cn/docs/quickstart/computing/
+    - title: 可扩展
+      body: 支持水平扩容和分布式部署，覆盖从单机到 PB 级集群的使用场景
+      icon: fa-solid fa-expand
+      url: /cn/docs/quickstart/hugegraph/hugegraph-hstore/
+    - title: 开放生态
+      variant: open
+      body: 遵循 TinkerPop 标准，提供多语言客户端，由活跃且持续演进的 Apache 社区支持
+      icon: fa-solid fa-plug
+      url: /cn/docs/clients/client/hugegraph-client/
+
+platforms:
+  title: 无缝衔接现有技术栈
+  pause: 暂停标识滚动
+
+components:
+  title: ALL IN ONE
+  body: 图数据库可单机或分布式部署。按需搭配图工具链、图计算和图 AI 组件
+  first_use: 从这里开始
+  groups:
+    - title: 图数据库
+      items:
+        - name: Server
+          body: 图数据库引擎，提供 REST API、Gremlin 与 Cypher
+          url: /cn/docs/quickstart/hugegraph/hugegraph-server/
+          first_use: true
+        - name: PD
+          body: 管理元数据、分区和集群调度的 Placement Driver
+          url: /cn/docs/quickstart/hugegraph/hugegraph-pd/
+        - name: Store
+          body: 基于 Raft 一致性协议的分布式存储
+          url: /cn/docs/quickstart/hugegraph/hugegraph-hstore/
+    - title: 工具链
+      items:
+        - name: Hubble
+          body: 用于图数据可视化的 Web 平台
+          url: /cn/docs/quickstart/toolchain/hugegraph-hubble/
+        - name: Loader
+          body: 用于批量加载图数据的导入工具
+          url: /cn/docs/quickstart/toolchain/hugegraph-loader/
+        - name: Tools
+          body: 用于备份、恢复和迁移的命令行工具
+          url: /cn/docs/quickstart/toolchain/hugegraph-tools/
+    - title: 图计算与 AI
+      items:
+        - name: Vermeer
+          body: 在内存中运行图算法，支持 PageRank 和社群发现
+          url: /cn/docs/quickstart/computing/hugegraph-vermeer/
+        - name: AI
+          body: 结合大语言模型实现 GraphRAG 与知识图谱构建
+          url: /cn/docs/quickstart/hugegraph-ai/
+
+quickstart:
+  title: 快速开始
+  body: Docker 默认以单机模式启动 HugeGraph Server，监听本机 8080 端口。单机模式支持内存或磁盘存储
+  command: docker run -d -p 127.0.0.1:8080:8080 hugegraph/hugegraph
+  copy: 复制
+  copied: 已复制
+  copy_fallback: 复制已选命令
+  copy_status: 命令已复制到剪贴板
+  copy_fallback_status: 命令已选中，请使用系统复制命令完成复制
+  verify: 查看启动日志，再确认服务已就绪
+  verify_command: curl -fsS http://127.0.0.1:8080/versions
+  next:
+    label: 验证服务并执行第一次查询
+    url: /cn/docs/quickstart/hugegraph/hugegraph-server/
+  install:
+    label: 其他安装方式
+    url: /cn/docs/download/download/
+
+community:
+  title: 欢迎加入 HugeGraph 开源社区
+  body: 欢迎新用户和贡献者一起交流、参与开发
+  items:
+    - title: GitHub
+      body: 通过 GitHub Pull Request 提交贡献
+      url: https://github.com/apache/hugegraph
+      icon: fa-brands fa-github
+      external: true
+    - title: 微信公众号
+      body: 扫码关注「Apache HugeGraph」，获取社区动态
+      url: /cn/docs/introduction/#community
+      icon: fa-brands fa-weixin
+    - title: 工具链
+      body: 获取图数据导入、可视化、备份、恢复与迁移工具
+      url: /cn/docs/quickstart/toolchain/
+      icon: fa-solid fa-screwdriver-wrench
+    - title: Discord
+      body: 加入 HugeGraph 社区，交流使用经验
+      url: https://discord.gg/bT7GtKEnJK
+      icon: fa-brands fa-discord
+      external: true

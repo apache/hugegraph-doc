@@ -9,6 +9,40 @@ const appearanceTrigger = '[data-td-appearance-trigger][aria-controls="td-appear
 // tying this regression to a particular selector or palette.
 for (const [route, language] of [['/', 'zh-CN'], ['/cn/', 'en-US'], ['/docs/', 'zh-CN'], ['/cn/docs/', 'en-US']]) {
   for (const theme of ['light', 'dark']) {
+    test(`expanded Docs menu keeps its header colors on ${route} in ${theme} mode`, async ({ page }) => {
+      await page.setViewportSize({ width: 1414, height: 826 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.addInitScript(theme => {
+        localStorage.setItem('td-color-theme', theme);
+        localStorage.setItem('td-preset', 'ink');
+        localStorage.setItem('hg-language', 'en');
+      }, theme);
+      await page.goto(route);
+      const trigger = page.locator('.td-site-header .td-nav-menu__parent-link').first();
+      const panel = page.locator(`#${await trigger.getAttribute('aria-controls')}`);
+      const first = panel.getByRole('link').first();
+      const colors = () => trigger.evaluate(node => {
+        const style = getComputedStyle(node);
+        return [style.color, style.backgroundColor];
+      });
+      await trigger.hover();
+      const hovered = await colors();
+      // Inside the panel, the trigger stays expanded after losing :hover.
+      await first.hover();
+      await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+      expect(await colors()).toEqual(hovered);
+      await page.locator('.td-nav-menu-zone > .nav-link').first().hover();
+      await expect(panel).toBeHidden();
+
+      await trigger.focus();
+      await page.keyboard.press('ArrowDown');
+      await expect(first).toBeFocused();
+      expect(await colors()).toEqual(hovered);
+      await page.keyboard.press('Escape');
+      await expect(panel).toBeHidden();
+      await expect(trigger).toBeFocused();
+    });
+
     test(`language menu remains legible on ${route} in ${theme} mode`, async ({ page }) => {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.addInitScript(theme => {

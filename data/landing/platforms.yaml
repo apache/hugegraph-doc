@@ -1,0 +1,20 @@
+- id: spark
+  name: Apache Spark
+- id: flink
+  name: Apache Flink
+- id: hadoop
+  name: Apache Hadoop
+- id: docker
+  name: Docker
+- id: kubernetes
+  name: Kubernetes
+- id: helm
+  name: Helm
+- id: rocksdb
+  name: RocksDB
+- id: python
+  name: Python
+- id: go
+  name: Go
+- id: openjdk
+  name: OpenJDK

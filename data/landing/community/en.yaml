@@ -1,6 +1,7 @@
 sections:
   - type: hero
     data:
+      class: hg-community-hero
       eyebrow: Apache HugeGraph
       title: Join the Apache HugeGraph community
       lead: Apache HugeGraph is an open source project that anyone in the community can use, improve, and enjoy. We'd love you to join us! Here are a few ways to find out what's happening and get involved.

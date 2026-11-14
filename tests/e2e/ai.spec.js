@@ -530,6 +530,42 @@ test("blocked storage page-only consent expires after reload", async ({ page }) 
   expect(requests).toHaveLength(1);
 });
 
+for (const reducedMotion of ["no-preference", "reduce"]) {
+  test(`the home Ask AI launcher follows the introduction in ${reducedMotion} mode`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto(AI_ORIGIN + "/");
+    const launcher = page.locator(".hg-ask-ai-launcher");
+    await expect(launcher).toBeInViewport();
+    await page.locator('#hg-stack button[data-layer="0"]').click();
+    await expect(page.locator("#beat-database h2")).toBeInViewport();
+    await expect(launcher).toBeHidden();
+    await page.locator("#community").scrollIntoViewIfNeeded();
+    await expect(launcher).toBeHidden();
+    await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+    await expect(page.locator("#hero h1")).toBeInViewport();
+    await expect(launcher).toBeInViewport();
+  });
+}
+
+test("closing AI consent after leaving the introduction returns focus to the page", async ({ page }) => {
+  await page.goto(AI_ORIGIN + "/cn/");
+  await page.locator(".hg-ask-ai-launcher").click();
+  await page.locator("#community").scrollIntoViewIfNeeded();
+  const readingPosition = await page.evaluate(() => scrollY);
+  await page.locator("[data-hg-ai-cancel]").click();
+  await expect(page.locator("main")).toBeFocused();
+  expect(await page.evaluate(() => scrollY)).toBe(readingPosition);
+});
+
+test("the document Ask AI launcher remains available while reading", async ({ page }) => {
+  await page.goto(AI_ORIGIN + "/docs/introduction/");
+  const launcher = page.locator(".hg-ask-ai-launcher");
+  await expect(launcher).toBeInViewport();
+  await page.evaluate(() => scrollTo({ top: document.body.scrollHeight, behavior: "instant" }));
+  expect(await page.evaluate(() => scrollY)).toBeGreaterThan(0);
+  await expect(launcher).toBeInViewport();
+});
+
 for (const route of ["/", "/cn/", "/docs/", "/cn/docs/"]) {
   test(`visiting ${route} keeps consent hidden and AI offline until activation`, async ({ page }) => {
     const requests = [];

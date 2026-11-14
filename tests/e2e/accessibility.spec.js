@@ -2,6 +2,8 @@ const { test, expect } = require("./artifact-test");
 const AxeBuilder = require("@axe-core/playwright").default;
 
 for (const route of [
+  "/",
+  "/cn/",
   "/docs/",
   "/cn/docs/",
   "/community/",
@@ -42,6 +44,26 @@ for (const route of [
     expect(blocking).toEqual([]);
   });
 }
+
+test("homepage graph computing guide remains accessible on the light graph surface", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  await expect(page.locator("#hg-landing")).toBeVisible();
+  await page.locator("#story").evaluate(story => {
+    const top = story.getBoundingClientRect().top + scrollY;
+    scrollTo({ top: top + (story.offsetHeight - innerHeight) * 0.68, behavior: "instant" });
+  });
+  const panel = page.locator("#beat-computing");
+  await expect(panel).toHaveCSS("opacity", "1");
+  await expect(panel.getByRole("link")).toBeVisible();
+  const results = await new AxeBuilder({ page })
+    .include("#beat-computing")
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(results.violations.filter(item => ["critical", "serious"].includes(item.impact)))
+    .toEqual([]);
+});
 
 for (const locale of ["en", "cn"]) {
   test(`download table scrolls with the keyboard on mobile ${locale}`, async ({ page }) => {

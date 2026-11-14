@@ -1,0 +1,438 @@
+{{- $data := index hugo.Data.landing .Site.Language.Lang -}}
+<div class="hg-landing" id="hg-landing"
+     data-hg-story-config="{{ dict "readouts" $data.story.readouts | jsonify }}">
+  <section class="story" id="story" aria-label="{{ $data.story.label }}">
+    <div class="stage" id="stage">
+      <header class="hero" id="hero">
+        <div class="hg-sky" aria-hidden="true">
+          {{- $north := slice
+              (dict "x" 13  "y" 107 "r" 2.7 "glow" .32 "period" 8.7 "delay" 1.6)
+              (dict "x" 72  "y" 72  "r" 2.4 "glow" .56 "period" 11.3 "delay" 7.2)
+              (dict "x" 126 "y" 87  "r" 2.6 "glow" .36 "period" 9.2 "delay" 4.8)
+              (dict "x" 215 "y" 39  "r" 3   "glow" .7 "period" 10.6 "delay" 2.1)
+              (dict "x" 278 "y" 60  "r" 2.4 "glow" .4 "period" 8.1 "delay" 6.5)
+              (dict "x" 309 "y" 18  "r" 2.6 "glow" .5 "period" 12.4 "delay" 4.2)
+              (dict "x" 362 "y" 12  "r" 3.1 "glow" .8 "period" 9.7 "delay" 7.9) -}}
+          {{- $south := slice
+              (dict "x" 8 "y" 39 "r" 2 "glow" .24 "period" 10.1 "delay" 5.4)
+              (dict "x" 70 "y" 9 "r" 2.8 "glow" .4 "period" 8.9 "delay" 0.7)
+              (dict "x" 135 "y" 43 "r" 2.1 "glow" .28 "period" 11.8 "delay" 9.1) -}}
+          {{ range slice
+              (dict "id" "north" "width" 410 "height" 124 "band" 160 "travel" 550 "stars" $north)
+              (dict "id" "south" "width" 144 "height" 52 "band" 60 "travel" 200 "stars" $south) }}
+          {{- $sky := . }}
+          <svg class="hg-constellation hg-constellation--{{ .id }}" viewBox="0 0 {{ .width }} {{ .height }}"
+               aria-hidden="true" focusable="false">
+            <defs>
+              <mask id="hg-star-line-{{ .id }}" maskUnits="userSpaceOnUse"
+                    x="0" y="0" width="{{ .width }}" height="{{ .height }}">
+                <path id="hg-star-route-{{ .id }}" fill="none" stroke="white" stroke-width="1"
+                      stroke-linecap="round" stroke-linejoin="round"
+                      d="M{{ range $i, $s := .stars }}{{ if $i }} L{{ end }}{{ $s.x }} {{ $s.y }}{{ end }}"/>
+              </mask>
+              <linearGradient id="hg-star-band-fill-{{ .id }}" class="hg-star-band-fill">
+                <stop stop-opacity="0"/>
+                <stop offset=".24" stop-opacity=".18"/>
+                <stop offset=".5" stop-opacity=".95"/>
+                <stop offset=".76" stop-opacity=".18"/>
+                <stop offset="1" stop-opacity="0"/>
+              </linearGradient>
+              <radialGradient id="hg-star-core-{{ .id }}">
+                <stop stop-color="var(--node-ink)"/>
+                <stop offset=".22" stop-color="var(--node-ink)" stop-opacity=".96"/>
+                <stop offset=".38" stop-color="var(--node-ink)" stop-opacity=".58"/>
+                <stop offset=".6" stop-color="var(--signal-wake)" stop-opacity=".17"/>
+                <stop offset="1" stop-color="var(--signal-glow)" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="hg-star-aura-{{ .id }}">
+                <stop stop-color="white" stop-opacity=".9"/>
+                <stop offset=".22" stop-color="var(--signal-wake)" stop-opacity=".68"/>
+                <stop offset=".55" stop-color="var(--signal-glow)" stop-opacity=".24"/>
+                <stop offset="1" stop-color="var(--signal-glow)" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <g mask="url(#hg-star-line-{{ .id }})">
+              <rect class="hg-star-line-base" width="{{ .width }}" height="{{ .height }}"/>
+              <rect class="hg-star-band" x="-{{ .band }}" width="{{ .band }}" height="{{ .height }}"
+                    fill="url(#hg-star-band-fill-{{ .id }})" style="--band-travel:{{ .travel }}px"/>
+            </g>
+            <g class="hg-star-nodes" fill="url(#hg-star-core-{{ .id }})">
+              {{ range .stars -}}
+              <circle cx="{{ .x }}" cy="{{ .y }}" r="{{ mul .r 2.8 }}"
+                      style="--star-period:{{ .period }}s; --star-delay:-{{ .delay }}s"/>
+              {{ end -}}
+            </g>
+            <g class="hg-star-halos" fill="url(#hg-star-aura-{{ .id }})">
+              {{ range .stars -}}
+              {{/* The center begins half a band before x=0. */}}
+              {{- $phase := div (add .x (div $sky.band 2)) (float $sky.travel) -}}
+              <circle cx="{{ .x }}" cy="{{ .y }}" r="{{ mul .r 3.3 }}"
+                      style="--arrival-phase:{{ $phase }}; --peak:{{ .glow }}"/>
+              {{ end -}}
+            </g>
+          </svg>
+          {{ end -}}
+          <span class="hg-lone-meteor"></span>
+        </div>
+        <div class="wrap hero-grid">
+          <div class="hero-copy">
+            <p class="hero-brand">Apache HugeGraph</p>
+            <h1>{{ $data.hero.title }}</h1>
+            <p class="lede">{{ $data.hero.body }}</p>
+            <div class="cta-row">
+              <a class="btn btn-primary" href="{{ $data.hero.primary.url | relURL }}">
+                {{ $data.hero.primary.label }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+              </a>
+              <a class="btn btn-ghost" href="{{ $data.hero.secondary.url }}">
+                <i class="fa-brands fa-github" aria-hidden="true"></i> {{ $data.hero.secondary.label }}
+              </a>
+            </div>
+          </div>
+          <div class="hero-stack" id="rig">
+<div id="hg-stack" data-labels="side" role="group" aria-label="{{ $data.story.stack_label }}">
+<div class="hgs-inner">
+  <div class="hgs-scene" aria-hidden="true">
+    <div class="hgs-plane">
+      <div class="hgs-ground"></div>
+
+      <div class="hgs-guide" style="--side:-1"></div>
+      <div class="hgs-guide" style="--side:1"></div>
+
+
+      <div class="hgs-layer" style="--i:0" data-layer="0" data-id="database"><div class="hgs-slab">
+        <div class="hgs-face hgs-under"></div>
+        <div class="hgs-flat"><div class="hgs-face hgs-top">
+          <svg class="hgs-art" viewBox="0 0 380 380">
+            {{/* Outer branches fade with the plate; the six central vertices continue into the canvas. */}}
+            <g opacity="var(--hgs-plate,1)">
+              <path class="hgs-edge" stroke-opacity=".65"
+                    d="M96 185L45 98L128 136L142 48L232 122L332 72L301 181L232 122
+                       M301 181L340 276L238 309L148 240L122 301L52 340L96 185
+                       M52 340L173 349L238 309M173 349L122 301"/>
+              <g class="hgs-v">
+                <circle cx="45" cy="98" r="7"/>
+                <circle cx="142" cy="48" r="7"/>
+                <circle cx="332" cy="72" r="8"/>
+                <circle cx="301" cy="181" r="8"/>
+                <circle cx="340" cy="276" r="8"/>
+                <circle cx="238" cy="309" r="8"/>
+                <circle cx="173" cy="349" r="8"/>
+                <circle cx="122" cy="301" r="7"/>
+                <circle cx="52" cy="340" r="7"/>
+              </g>
+              <path class="hgs-flow" pathLength="100" d="M173 349L238 309L340 276L301 181"/>
+            </g>
+            <path class="hgs-edge"
+                  d="M167 191L148 240M167 191L184 136M167 191L128 136M184 136L128 136M184 136L232 122M96 185L128 136"/>
+            <g class="hgs-v">
+              <circle cx="148" cy="240" r="5.6"/>
+              <circle cx="184" cy="136" r="5.6"/>
+              <circle cx="128" cy="136" r="5.6"/>
+              <circle cx="232" cy="122" r="5.6"/>
+              <circle cx="96" cy="185" r="5.6"/>
+            </g>
+            <circle class="hgs-ring" cx="167" cy="191" r="13.5"/>
+            <circle class="hgs-v-main" cx="167" cy="191" r="7.2"/>
+
+          </svg>
+        </div></div>
+      </div></div>
+
+
+      <div class="hgs-layer" style="--i:1" data-layer="1" data-id="computing"><div class="hgs-slab">
+        <div class="hgs-face hgs-under"></div>
+        <div class="hgs-flat"><div class="hgs-face hgs-top">
+          <svg class="hgs-art" viewBox="0 0 320 320">
+            <defs>
+              <g id="hgs-community">
+                <ellipse rx="41" ry="35" fill="currentColor" opacity=".12"/>
+                <path d="M-26 1L-7-22L21-13L27 12L2 23ZM-26 1L1 0L-7-22M1 0L21-13M1 0L27 12M1 0L2 23"
+                      fill="none" stroke="currentColor" stroke-width="2.8"/>
+                <g fill="currentColor">
+                  <circle cx="-26" cy="1" r="5"/><circle cx="-7" cy="-22" r="5.5"/>
+                  <circle cx="21" cy="-13" r="5"/><circle cx="27" cy="12" r="5"/>
+                  <circle cx="2" cy="23" r="5"/><circle cx="1" cy="0" r="7"/>
+                </g>
+              </g>
+            </defs>
+            <g transform="translate(160 160) rotate(-45)">
+              <path d="M-89 64L-26 133M27 144L96 70M-5-48L-95 43M21-35L97 44"
+                    fill="none" stroke="#417b8b" stroke-width="2.6" stroke-dasharray="5 5"/>
+              <g transform="translate(0 -48)" color="#588295"><use href="#hgs-community"/></g>
+              <g transform="translate(-116 52)" color="#007a80">
+                <use class="hgs-community" href="#hgs-community"/>
+              </g>
+              <g transform="translate(0 132)" color="#4163ad">
+                <use class="hgs-community" href="#hgs-community" style="--delay:-1.1s"/>
+              </g>
+              <g transform="translate(118 58)" color="#087d97">
+                <use class="hgs-community" href="#hgs-community" style="--delay:-2.2s"/>
+              </g>
+            </g>
+          </svg>
+        </div></div>
+      </div></div>
+
+
+      <div class="hgs-layer" style="--i:2" data-layer="2" data-id="toolchain"><div class="hgs-slab">
+        <div class="hgs-face hgs-under"></div>
+        <div class="hgs-flat"><div class="hgs-face hgs-top">
+          <svg class="hgs-art" viewBox="0 0 320 320">
+            <g transform="translate(0 66)" fill="white" stroke="var(--hgs-accent)"
+               stroke-width="3" stroke-linejoin="round">
+              <rect x="43" y="142" width="86" height="78" rx="5"/>
+              <rect x="51" y="150" width="86" height="78" rx="5"/>
+              <g class="hgs-import-row" fill="var(--hgs-accent)" stroke="none">
+                <rect x="53" y="173" width="82" height="15" rx="2"/>
+              </g>
+              <path d="M51 171h86M51 190h86M51 209h86M79 171v57M106 171v57" fill="none" stroke-opacity=".5"/>
+              <path d="M149 189h35m-10-9 10 9-10 9" fill="none" stroke-width="5" stroke-linecap="round"/>
+            </g>
+            <path class="hgs-edge" d="M196 255l34 10 22-66 27-36-56-9 29 45 33 45-55 21m-34-10 56-56"/>
+            <g class="hgs-v">
+              <circle cx="196" cy="255" r="8"/>
+              <circle cx="223" cy="154" r="7"/>
+              <circle cx="279" cy="163" r="8"/>
+              <circle cx="252" cy="199" r="9"/>
+              <circle cx="285" cy="244" r="8"/>
+              <circle cx="230" cy="265" r="7"/>
+            </g>
+            <circle cx="252" cy="199" r="15" fill="none" stroke="var(--hgs-accent)" stroke-width="2"/>
+            <path class="hgs-flow" pathLength="100" d="M135 255H196L230 265L252 199L285 244"/>
+          </svg>
+        </div></div>
+      </div></div>
+
+
+      <div class="hgs-layer" style="--i:3" data-layer="3" data-id="ai"><div class="hgs-slab">
+        <div class="hgs-face hgs-under"></div>
+        <div class="hgs-flat"><div class="hgs-face hgs-top">
+          <svg class="hgs-art" viewBox="0 0 320 320">
+            <g transform="translate(160 160) rotate(-45) scale(1 1.65)" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M-108-10L-72 10L-46 1M45 1L75 18L112 7"
+                    fill="none" stroke="#79bba1" stroke-width="3"/>
+              <g class="hgs-question" transform="translate(-111 -24)">
+                <path d="M-21-18H18Q27-18 27-9V7Q27 15 18 15H12V24L0 15H-21Q-29 15-29 7V-10Q-29-18-21-18Z"
+                      fill="#e3f5eb" stroke="#20865e" stroke-width="3"/>
+                <path d="M-9-6C-9-15 9-15 9-6C9 0 0-1 0 5" fill="none" stroke="#137749" stroke-width="4"/>
+                <circle cy="10" r="2.3" fill="#137749"/>
+              </g>
+              <g stroke="#146b4d" stroke-width="4">
+                <path d="M0-23V-34" fill="none"/><circle cy="-37" r="5" fill="#50c991"/>
+                <rect x="-49" y="-5" width="98" height="19" rx="7" fill="#94dcb8"/>
+                <rect x="-42" y="-24" width="84" height="55" rx="17" fill="#edf9f1"/>
+                <rect x="-30" y="-12" width="60" height="26" rx="10" fill="#146b4d" stroke="none"/>
+                <path d="M-13 2V-2M13 2V-2" stroke="#c0ffe3" stroke-width="6"/>
+                <path d="M-6 21Q0 25 6 21" fill="none" stroke-width="3"/>
+              </g>
+              <g transform="translate(109 -16)">
+                <path d="M-19-17H21Q29-17 29-9V8Q29 16 21 16H-2L-16 24V16H-19Q-28 16-28 8V-9Q-28-17-19-17Z"
+                      fill="#178158"/>
+                <g class="hgs-answer" fill="none" stroke="#fff" stroke-width="4">
+                  <path d="M-13-5H14M-13 4H5"/>
+                </g>
+              </g>
+            </g>
+          </svg>
+        </div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="hgs-labels">
+    {{ range $index, $id := slice "ai" "toolchain" "computing" "database" }}
+    {{ $layer := index $data.layers $id }}
+    <button class="hgs-lab" type="button" style="--i:{{ sub 3 $index }}"
+            data-layer="{{ sub 3 $index }}" aria-label="{{ $layer.go }}">
+      <span class="hgs-lab-in">
+        <span class="hgs-lab-name">
+          {{ $layer.name }}<i class="fa-solid fa-arrow-right hgs-go" aria-hidden="true"></i>
+        </span>
+        <span class="hgs-lab-parts">{{ $layer.components }}</span>
+        <span class="hgs-lab-desc">{{ $layer.description }}</span>
+      </span>
+    </button>
+    <a class="hgs-fallback" href="#beat-{{ $id }}">{{ $layer.name }}</a>
+    {{ end }}
+  </div>
+</div>
+</div>
+          </div>
+        </div>
+        <p class="explore-hint"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> {{ $data.hero.explore }}</p>
+      </header>
+      <canvas id="world" aria-hidden="true"></canvas>
+      <div class="veil" id="veil" aria-hidden="true"></div>
+      <div class="wrap stage-in">
+        {{ range $id := slice "database" "toolchain" "computing" "ai" }}
+        {{ $beat := index $data.story.beats $id }}
+        {{ $q := index (dict "database" "0.28" "toolchain" "0.6" "computing" "0.93" "ai" "1.22") $id }}
+        <section class="panel" id="beat-{{ $id }}" aria-labelledby="beat-title-{{ $id }}">
+          <div class="copy">
+            <h2 id="beat-title-{{ $id }}">{{ $beat.title }}</h2>
+            <p class="lede">{{ $beat.body }}</p>
+            {{ if eq $id "database" }}<code class="query">g.V().has('name', 'marko').out('knows')</code>{{ end }}
+            <a class="story-guide" href="{{ $beat.url | relURL }}">
+              {{ $beat.link_label }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </a>
+          </div>
+          <canvas class="still" data-q="{{ $q }}" aria-hidden="true"></canvas>
+        </section>
+        {{ end }}
+      </div>
+      <p class="readout" id="readout" aria-hidden="true"></p>
+    </div>
+  </section>
+  <div class="landing-content">
+    <section class="statement" aria-labelledby="statement-title">
+      <div class="wrap">
+        <h2 id="statement-title" class="reveal">{{ $data.statement.body | markdownify }}</h2>
+        <dl class="statement-figures">
+          {{ range $index, $figure := $data.statement.figures }}
+          <div class="reveal" style="--i:{{ add $index 1 }}">
+            <dt>{{ $figure.value }}</dt>
+            <dd>{{ $figure.label }}</dd>
+          </div>
+          {{ end }}
+        </dl>
+      </div>
+    </section>
+    <section class="section" id="capabilities" aria-labelledby="capabilities-title">
+      <div class="wrap">
+        <h2 id="capabilities-title" class="reveal">{{ $data.capabilities.title }}</h2>
+        <div class="cap-grid">
+          {{ range $index, $item := $data.capabilities.items }}
+          <article class="cap reveal{{ with $item.variant }} cap-{{ . }}{{ end }}" style="--i:{{ mod $index 3 }}">
+            <i class="{{ $item.icon }} ic" aria-hidden="true"></i>
+            <h3><a href="{{ $item.url | relURL }}">{{ $item.title }}</a></h3>
+            <p>{{ $item.body }}</p>
+            {{ if eq $item.variant "efficient" }}
+            <div class="cap-lanes" aria-hidden="true">
+              <i style="--y:4px;--w:22%;--end:460%;--speed:3.4s;--delay:-1s"></i>
+              <i style="--y:16px;--w:34%;--end:300%;--speed:4.6s;--delay:-3s"></i>
+              <i style="--y:28px;--w:16%;--end:630%;--speed:2.8s;--delay:-2.2s"></i>
+              <i style="--y:40px;--w:28%;--end:360%;--speed:4s;--delay:-.4s"></i>
+              <i style="--y:52px;--w:12%;--end:840%;--speed:2.4s;--delay:-1.5s"></i>
+              <i style="--y:64px;--w:24%;--end:420%;--speed:3.8s;--delay:-2.9s"></i>
+            </div>
+            {{ else if eq $item.variant "ai" }}
+            <svg class="cap-graph" viewBox="0 0 260 190" aria-hidden="true" focusable="false">
+              <path d="M30 40L96 70L70 140ZM96 70L168 46L226 84L212 160L150 118L168 46M70 140L150 118"
+                    fill="none" stroke="white" stroke-opacity=".34" stroke-width="1.5"/>
+              <g fill="#aab4ff">
+                <circle cx="30" cy="40" r="6"/>
+                <circle cx="70" cy="140" r="6"/>
+                <circle cx="226" cy="84" r="6"/>
+              </g>
+              <g class="cap-graph-path" fill="white">
+                <circle cx="96" cy="70" r="7" style="--delay:0s"/>
+                <circle cx="168" cy="46" r="7" style="--delay:.5s"/>
+                <circle cx="150" cy="118" r="7" style="--delay:1s"/>
+                <circle cx="212" cy="160" r="7" style="--delay:1.5s"/>
+              </g>
+            </svg>
+            {{ end }}
+          </article>
+          {{ end }}
+        </div>
+      </div>
+    </section>
+    <section class="platforms" id="components" aria-labelledby="platforms-title">
+      <h2 id="platforms-title" class="reveal">{{ $data.platforms.title }}</h2>
+      <div class="platform-logos">
+        <label class="platform-pause">
+          <input type="checkbox" class="sr-only" aria-label="{{ $data.platforms.pause }}">
+          <i class="fa-solid fa-pause" aria-hidden="true"></i>
+          <i class="fa-solid fa-play" aria-hidden="true"></i>
+        </label>
+        {{- $sprite := resources.Get "img/landing-platforms.svg" | fingerprint }}
+        <div class="platform-window">
+          <div class="platform-track">
+            {{ range $copy := seq 2 }}
+            <ul class="platform-set"{{ if eq $copy 2 }} aria-hidden="true"{{ end }}>
+              {{ range hugo.Data.landing.platforms }}
+              <li>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <title>{{ .name }}</title>
+                  <use href="{{ $sprite.RelPermalink }}#{{ .id }}"/>
+                </svg>
+                <span class="platform-name">{{ .name }}</span>
+              </li>
+              {{ end }}
+            </ul>
+            {{ end }}
+          </div>
+        </div>
+      </div>
+      <details class="component-guides wrap">
+        <summary id="components-title">{{ $data.components.title }}</summary>
+        <p class="sub">{{ $data.components.body }}</p>
+        <div class="parts-grid">
+          {{ range $data.components.groups }}
+          <div class="group"><h3>{{ .title }}</h3><dl>
+            {{ range .items }}
+            <div>
+              <dt>
+                <a href="{{ .url | relURL }}">
+                  {{ .name }} <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                </a>
+                {{ if .first_use }}<span class="first-use">{{ $data.components.first_use }}</span>{{ end }}
+              </dt>
+              <dd>{{ .body }}</dd>
+            </div>
+            {{ end }}
+          </dl></div>
+          {{ end }}
+        </div>
+      </details>
+    </section>
+    <section class="section quick" id="quickstart" aria-labelledby="quickstart-title">
+      <div class="wrap">
+        <h2 id="quickstart-title" class="reveal">{{ $data.quickstart.title }}</h2>
+        <p class="sub">{{ $data.quickstart.body }}</p>
+        <div class="cmd reveal">
+          <code id="cmd" tabindex="0">{{ $data.quickstart.command }}</code>
+          <button class="copy-btn" id="copy" type="button"
+                  data-copy="{{ $data.quickstart.copy }}"
+                  data-copied="{{ $data.quickstart.copied }}"
+                  data-copy-fallback="{{ $data.quickstart.copy_fallback }}"
+                  data-copy-status="{{ $data.quickstart.copy_status }}"
+                  data-copy-fallback-status="{{ $data.quickstart.copy_fallback_status }}">
+            <i class="fa-regular fa-copy ic-copy" aria-hidden="true"></i>
+            <i class="fa-solid fa-check ic-done" aria-hidden="true"></i>
+            <span id="copy-label">{{ $data.quickstart.copy }}</span>
+          </button>
+        </div>
+        <p class="sr-only" id="copy-status" role="status" aria-live="polite"></p>
+        <p class="next-step">
+          {{ range slice $data.quickstart.install $data.quickstart.next }}
+          <a href="{{ .url | relURL }}">{{ .label }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+          {{ end }}
+        </p>
+      </div>
+    </section>
+    <section class="section community" id="community" aria-labelledby="community-title">
+      <div class="wrap">
+        <div>
+          <h2 id="community-title" class="reveal">{{ $data.community.title }}</h2>
+          <p class="sub">{{ $data.community.body }}</p>
+        </div>
+        <ul class="doors">
+          {{ range $data.community.items }}
+          <li class="reveal">
+            {{ if .url }}
+            <a class="community-item" href="{{ if .external }}{{ .url }}{{ else }}{{ .url | relURL }}{{ end }}">
+            {{ else }}
+            <div class="community-item">
+            {{ end }}
+              <i class="{{ .icon }} ic" aria-hidden="true"></i>
+              <span><strong class="t">{{ .title }}</strong><span class="d">{{ .body }}</span></span>
+              {{ if .url }}<i class="go fa-solid fa-arrow-right" aria-hidden="true"></i>{{ end }}
+            {{ if .url }}</a>{{ else }}</div>{{ end }}
+          </li>
+          {{ end }}
+        </ul>
+      </div>
+    </section>
+  </div>
+</div>

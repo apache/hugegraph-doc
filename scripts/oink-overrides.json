@@ -113,6 +113,7 @@
     "layouts/_partials/shell/search-enabled.html": "0c55b2dfb3438942ff39eaf6b5b30829920af4871a71c88b0aa3d55c671a50d6",
     "layouts/_partials/shell/sidebar-panel.html": "32088fbf038706e7e45e21d35fbed906042594a3fc70bf0e18bf9a65512e0ec3",
     "layouts/_partials/shell/toc.html": "7f3bce19c87102e53bc87c1c6fca8dcf935bb72b53a1fe3cf8c1800f414622af",
+    "layouts/index.html": "2beed9a14c6cca6da64396f6d49839cfd100d74db9e67cb9ad16c3adc2d16b0a",
     "layouts/landing.html": "073148bdbea02e8d4e5bd3cfc61c1efdc9213de73345a6027ba242eff014d8a7"
   },
   "version": "v1.5.1"

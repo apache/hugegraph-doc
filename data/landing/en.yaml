@@ -1,0 +1,193 @@
+hero:
+  title: Full-stack graph platform
+  body: Query relationships in real time, analyze whole graphs offline,
+    and use Graph AI to build LLM memory and ontology graphs
+  primary:
+    label: Get Started
+    url: /docs/quickstart/
+  secondary:
+    label: GitHub
+    url: https://github.com/apache/hugegraph
+  explore: Explore the layers
+
+layers:
+  ai:
+    name: Graph AI
+    components: llm/sdk/rag
+    description: GraphRAG and ontology graph construction with LLMs
+    go: Explore Graph AI
+  computing:
+    name: Graph Computing
+    components: vermeer/computer
+    description: OLAP over the whole graph, in memory or on a BSP cluster
+    go: Explore Graph Computing
+  toolchain:
+    name: Graph Toolchain
+    components: loader/hubble/tools
+    description: Import vertices and edges with Loader, explore them in Hubble, and back up or migrate data with Tools
+    go: Explore Graph Toolchain
+  database:
+    name: Graph Database
+    components: server/pd/store
+    description: Server handles graph queries. In a distributed deployment, PD manages partitions
+      and Store keeps replicas
+    go: Explore Graph Database
+
+story:
+  label: HugeGraph, from one stack to every scale
+  stack_label: HugeGraph stack, four layers from database to AI
+  beats:
+    database:
+      title: Start with one vertex
+      body: Follow an edge to a neighboring vertex. Use embedded storage on a single machine
+        or Raft replication for highly available distributed storage
+      url: /docs/quickstart/hugegraph/
+      link_label: Explore database deployment
+    toolchain:
+      title: Follow an edge
+      body: Load vertices and edges with Loader, then explore the query results in Hubble, one relationship at a time
+      url: /docs/quickstart/toolchain/
+      link_label: Explore the graph toolchain
+    computing:
+      title: Analyze the whole graph to discover communities
+      body: Graph computing runs OLAP over the whole dataset, with Vermeer in memory and Computer on a BSP cluster
+      url: /docs/quickstart/computing/
+      link_label: Explore graph computing
+    ai:
+      title: Explore graphs with AI
+      body: Our graph extraction SDK, Memory, and ontology platform are evolving quickly.
+        Join us in building Graph AI
+      url: /docs/quickstart/hugegraph-ai/
+      link_label: Explore Graph AI
+  readouts:
+    database: "{vertices} vertices, 1 neighborhood"
+    toolchain: Graph exploration · vertices and edges
+    computing: "{vertices} vertices, {communities} communities"
+    ai: 1 question, 1 retrieved subgraph
+
+statement:
+  body: A full-stack graph system that carries your data from **storage** and **real-time querying** to **offline analysis** and **AI**
+  figures:
+    - value: 100s of billions
+      label: vertices and edges
+    - value: Milliseconds
+      label: multi-hop query latency
+    - value: 30+
+      label: built-in graph algorithms
+    - value: First
+      label: Apache top‑level graph system
+
+capabilities:
+  title: Key features
+  items:
+    - title: Efficient
+      variant: efficient
+      body: Batch import for massive datasets, millisecond-level retrieval
+        and concurrent online operations for thousands of users
+      icon: fa-solid fa-bolt
+      url: /docs/quickstart/toolchain/hugegraph-loader/
+    - title: AI-Ready
+      variant: ai
+      body: GraphRAG, automated knowledge graph construction and 20+ built-in graph machine learning algorithms
+      icon: fa-solid fa-wand-magic-sparkles
+      url: /docs/quickstart/hugegraph-ai/
+    - title: Convenient
+      body: Gremlin, Cypher and a RESTful API, plus a complete toolchain for import, visualization and operations
+      icon: fa-solid fa-terminal
+      url: /docs/quickstart/toolchain/
+    - title: Adaptable
+      body: Property graph modeling on Apache TinkerPop, covering OLTP and OLAP, with Hadoop and Spark integration
+      icon: fa-solid fa-puzzle-piece
+      url: /docs/quickstart/computing/
+    - title: Scalable
+      body: Horizontal scaling and distributed deployment, from a standalone server to PB-level clusters
+      icon: fa-solid fa-expand
+      url: /docs/quickstart/hugegraph/hugegraph-hstore/
+    - title: Open Ecosystem
+      variant: open
+      body: TinkerPop standards, multi-language clients and an active, evolving Apache community
+      icon: fa-solid fa-plug
+      url: /docs/clients/client/hugegraph-client/
+
+platforms:
+  title: Works seamlessly with your existing stack
+  pause: Pause logo animation
+
+components:
+  title: ALL IN ONE
+  body: Deploy the database on one node or across a cluster. Add tools, graph computing and AI as needed
+  first_use: Start here
+  groups:
+    - title: Graph Database
+      items:
+        - name: Server
+          body: Core graph engine with REST API, Gremlin and Cypher
+          url: /docs/quickstart/hugegraph/hugegraph-server/
+          first_use: true
+        - name: PD
+          body: Placement Driver for metadata, partitions and cluster scheduling
+          url: /docs/quickstart/hugegraph/hugegraph-pd/
+        - name: Store
+          body: Distributed storage with Raft consensus
+          url: /docs/quickstart/hugegraph/hugegraph-hstore/
+    - title: Toolchain
+      items:
+        - name: Hubble
+          body: Web platform for graph visualization
+          url: /docs/quickstart/toolchain/hugegraph-hubble/
+        - name: Loader
+          body: Data import tool for bulk loading
+          url: /docs/quickstart/toolchain/hugegraph-loader/
+        - name: Tools
+          body: Command-line utilities for backup, restore and migration
+          url: /docs/quickstart/toolchain/hugegraph-tools/
+    - title: Computing and AI
+      items:
+        - name: Vermeer
+          body: In-memory graph algorithms for PageRank and community detection
+          url: /docs/quickstart/computing/hugegraph-vermeer/
+        - name: AI
+          body: GraphRAG and knowledge graph construction with LLMs
+          url: /docs/quickstart/hugegraph-ai/
+
+quickstart:
+  title: Quick start
+  body: Docker starts HugeGraph Server in standalone mode by default on port 8080 of localhost.
+    Standalone mode supports in-memory or disk storage
+  command: docker run -d -p 127.0.0.1:8080:8080 hugegraph/hugegraph
+  copy: Copy
+  copied: Copied
+  copy_fallback: Copy selected command
+  copy_status: Command copied to clipboard
+  copy_fallback_status: Command selected; use your system copy command to copy it
+  verify: Check the startup logs, then verify the service is ready
+  verify_command: curl -fsS http://127.0.0.1:8080/versions
+  next:
+    label: Verify setup and run your first query
+    url: /docs/quickstart/hugegraph/hugegraph-server/
+  install:
+    label: Other install options
+    url: /docs/download/download/
+
+community:
+  title: Welcome to the HugeGraph open source community
+  body: New users and contributors are always welcome
+  items:
+    - title: GitHub
+      body: Contributions go through pull requests on GitHub
+      url: https://github.com/apache/hugegraph
+      icon: fa-brands fa-github
+      external: true
+    - title: ASF Slack
+      body: Join the HugeGraph channel for community discussions
+      url: https://the-asf.slack.com/archives/C059UU2FJ23
+      icon: fa-brands fa-slack
+      external: true
+    - title: Discord
+      body: Join the HugeGraph community on Discord
+      url: https://discord.gg/bT7GtKEnJK
+      icon: fa-brands fa-discord
+      external: true
+    - title: Twitter
+      body: On the way
+      icon: fa-brands fa-twitter

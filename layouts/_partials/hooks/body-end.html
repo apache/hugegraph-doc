@@ -13,6 +13,14 @@
 {{- if hugo.IsProduction }}{{ $shell = $shell | minify | fingerprint }}{{ end }}
 <script src="{{ $shell.RelPermalink }}"
   {{- with $shell.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}></script>
+{{- if and .IsHome (eq (lower (.Page.Store.Get "tdOutputFormat" | default "html")) "html") -}}
+{{- with resources.Get "js/landing-story.js" -}}
+{{- $landingStory := . -}}
+{{- if hugo.IsProduction }}{{ $landingStory = $landingStory | minify | fingerprint }}{{ end }}
+<script src="{{ $landingStory.RelPermalink }}"
+  {{- with $landingStory.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}></script>
+{{- end -}}
+{{- end -}}
 
 {{- $ai := partial "ai/config.html" . -}}
 {{- if $ai.enabled -}}

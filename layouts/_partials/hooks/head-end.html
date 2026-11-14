@@ -10,3 +10,11 @@
 {{- if hugo.IsProduction }}{{ $language = $language | minify | fingerprint }}{{ end }}
 <script src="{{ $language.RelPermalink }}"
   {{- with $language.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}></script>
+{{- if .IsHome -}}
+{{- with resources.Get "css/landing-story.css" -}}
+{{- $landingStyle := . -}}
+{{- if hugo.IsProduction }}{{ $landingStyle = $landingStyle | minify | fingerprint }}{{ end }}
+<link rel="stylesheet" href="{{ $landingStyle.RelPermalink }}"
+  {{- with $landingStyle.Data.Integrity }} integrity="{{ . }}" crossorigin="anonymous"{{ end }}>
+{{- end -}}
+{{- end -}}

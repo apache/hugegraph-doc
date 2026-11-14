@@ -995,11 +995,15 @@
     printing = false;
     scrollTo({ top: screenY, behavior: 'instant' });
     mode?.afterPrint?.();
+    updateMotion();
   }
   window.addEventListener('beforeprint', beforePrint);
   window.addEventListener('afterprint', afterPrint);
   printMedia.addEventListener('change', event => event.matches ? beforePrint() : afterPrint());
   function updateMotion() {
+    const live = !stillMotion.matches && Boolean(window.HGStack);
+    // Preserve the screen layout until its saved scroll position has been restored.
+    if (mode && (isPrinting() || live === landing.classList.contains('live'))) return;
     const active = document.activeElement;
     const story = $('#story'), content = $('.landing-content');
     const box = story.getBoundingClientRect();
@@ -1011,7 +1015,6 @@
     const contentTop = mode && !withinStory ? content.getBoundingClientRect().top : null;
     mode?.destroy(); reveal?.disconnect();
     cancelAnimationFrame(themeRaf);
-    const live = !stillMotion.matches && Boolean(window.HGStack);
     landing.classList.toggle('live', live);
     window.HGStack?.setPaused(!live);
     window.HGStack?.setInteractive(true);

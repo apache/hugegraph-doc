@@ -361,6 +361,24 @@ test("dark reduced-motion diagrams follow appearance and print on paper", async 
   await expect.poll(contentTop).toBeCloseTo(beforePrint, 0);
 });
 
+test("a motion change during print preserves the community reading position", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  const landing = page.locator("#hg-landing");
+  const community = page.locator("#community");
+  await community.scrollIntoViewIfNeeded();
+  const top = () => community.evaluate(node => node.getBoundingClientRect().top);
+  const before = await top();
+  for (const reducedMotion of ["reduce", "no-preference"]) {
+    await page.emulateMedia({ media: "print" });
+    await page.emulateMedia({ reducedMotion });
+    await page.emulateMedia({ media: "screen" });
+    if (reducedMotion === "reduce") await expect(landing).not.toHaveClass(/\blive\b/);
+    else await expect(landing).toHaveClass(/\blive\b/);
+    await expect.poll(top).toBeCloseTo(before, 0);
+  }
+});
+
 for (const position of ["north", "south"]) {
   test(`light travels along the ${position} constellation and follows motion preferences`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });

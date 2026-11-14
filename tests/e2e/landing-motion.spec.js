@@ -347,12 +347,18 @@ test("dark reduced-motion diagrams follow appearance and print on paper", async 
   await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "light");
   await expect.poll(() => graphInkBrightness(still)).toBeLessThan(100);
 
+  const community = page.locator("#community");
+  await community.scrollIntoViewIfNeeded();
+  const contentTop = () => community.evaluate(node => node.getBoundingClientRect().top);
+  const beforePrint = await contentTop();
   await page.emulateMedia({ colorScheme: "dark", media: "print" });
   await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
   await expect(still).toBeHidden();
   await expect(page.locator("#beat-database .story-guide")).toBeVisible();
   await expect(page.locator("#hg-landing")).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(page.locator("#capabilities")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await page.emulateMedia({ media: "screen" });
+  await expect.poll(contentTop).toBeCloseTo(beforePrint, 0);
 });
 
 for (const position of ["north", "south"]) {

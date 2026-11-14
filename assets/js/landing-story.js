@@ -196,6 +196,13 @@
   'use strict';
   const html = document.documentElement;
   const stillMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const printMedia = matchMedia('print');
+  let printing = false, screenY = scrollY;
+  const isPrinting = () => printing || printMedia.matches;
+  function syncPrintLayout() {
+    if (printMedia.matches) beforePrint();
+    else afterPrint();
+  }
   const $ = (s, r = landing) => r.querySelector(s), $$ = (s, r = landing) => [...r.querySelectorAll(s)];
   let config = {};
   try { config = JSON.parse(landing.dataset.hgStoryConfig || '{}'); } catch { /* use authored defaults */ }
@@ -657,9 +664,6 @@
     const L = { database: layer('database'), toolchain: layer('toolchain'), computing: layer('computing'), ai: layer('ai') };
     const HOOKS = ['--hgs-drift', '--hgs-fade', '--hgs-plate'];
     const panels = $$('.panel');
-    const printMedia = matchMedia('print');
-    let printing = false, screenY = scrollY;
-    const isPrinting = () => printing || printMedia.matches;
     /* lift-off windows, in scroll progress p. Nothing moves before HERO_P (about 40 px of scroll): a small accidental scroll
        leaves the hero, and the stack's hover and click, exactly as they were. */
     const HERO_P = 0.0075;
@@ -846,8 +850,8 @@
     const kick = () => { if (running && !raf) { snapNext = true; lastNow = performance.now(); raf = requestAnimationFrame(frame); } };
     const resize = new ResizeObserver(() => {
       if (lifetime.signal.aborted) return;
-      if (printMedia.matches) { beforePrint(); return; }
-      if (printing) return;
+      syncPrintLayout();
+      if (isPrinting()) return;
       size();
       if (running && !raf) kick();
     });
@@ -855,29 +859,7 @@
     const visibility = new IntersectionObserver(es => { if (lifetime.signal.aborted) return; running = es[0].isIntersecting && !document.hidden; kick(); });
     visibility.observe(story);
     listen(document, 'visibilitychange', () => { if (document.hidden) running = false; else { const r = story.getBoundingClientRect(); running = r.bottom > 0 && r.top < innerHeight; kick(); } });
-    // Print uses ordinary document flow. Its shorter height can clamp scrollY
-    // before the media change fires, so remember the last screen scroll event.
-    listen(window, 'scroll', () => { if (!isPrinting()) screenY = scrollY; }, { passive: true });
-    function beforePrint() {
-      if (printing) return;
-      if (!printMedia.matches) screenY = scrollY;
-      printing = true;
-      interrupt();
-      for (const panel of panels) panel.inert = false;
-    }
-    function afterPrint() {
-      if (!printing || printMedia.matches) return;
-      printing = false;
-      scrollTo({ top: screenY, behavior: 'instant' });
-      size();
-      render(ps, (performance.now() - t0) / 1000);
-      kick();
-    }
-    listen(window, 'beforeprint', beforePrint);
-    listen(window, 'afterprint', afterPrint);
-    listen(printMedia, 'change', event => event.matches ? beforePrint() : afterPrint());
-    if (printMedia.matches) beforePrint();
-    else size();
+    if (!isPrinting()) size();
 
     // Use one clock for both the scroll position and camera. Re-targeting starts at the frame the reader
     // sees, and manual input takes over without a native smooth scroll or delayed callback racing it.
@@ -927,6 +909,15 @@
     onPalette = () => { if (running && W) { lastP = -1; render(ps, (performance.now() - t0) / 1000); } kick(); };
     if (initialBeat) go(initialBeat, false, false);
     return {
+      beforePrint() {
+        interrupt();
+        for (const panel of panels) panel.inert = false;
+      },
+      afterPrint() {
+        size();
+        render(ps, (performance.now() - t0) / 1000);
+        kick();
+      },
       currentBeat: () => travel?.id ?? (ps < (storyEntry[0] + storyEntry[1]) / 2 ? 'hero' : beats.find(beat => qmap(ps) < beat.end).id),
       destroy() {
         lifetime.abort();
@@ -954,6 +945,8 @@
     let rt = 0;
     const resize = new ResizeObserver(() => {
       if (lifetime.signal.aborted) return;
+      syncPrintLayout();
+      if (isPrinting()) return;
       clearTimeout(rt); rt = setTimeout(renderStills, 150);
     });
     resize.observe(landing);
@@ -988,6 +981,24 @@
   // Preference changes retain the current explanation (or downstream position)
   // while swapping between the pinned story and ordinary document sections.
   let mode = null, reveal = null;
+  // Print uses ordinary document flow. The shorter layout can clamp scrollY
+  // before the media change fires, so retain the last screen scroll position.
+  window.addEventListener('scroll', () => { if (!isPrinting()) screenY = scrollY; }, { passive: true });
+  function beforePrint() {
+    if (printing) return;
+    if (!printMedia.matches) screenY = scrollY;
+    printing = true;
+    mode?.beforePrint?.();
+  }
+  function afterPrint() {
+    if (!printing || printMedia.matches) return;
+    printing = false;
+    scrollTo({ top: screenY, behavior: 'instant' });
+    mode?.afterPrint?.();
+  }
+  window.addEventListener('beforeprint', beforePrint);
+  window.addEventListener('afterprint', afterPrint);
+  printMedia.addEventListener('change', event => event.matches ? beforePrint() : afterPrint());
   function updateMotion() {
     const active = document.activeElement;
     const story = $('#story'), content = $('.landing-content');
@@ -1025,6 +1036,7 @@
     syncTheme(0);
   }
   updateMotion();
+  if (printMedia.matches) beforePrint();
   stillMotion.addEventListener('change', updateMotion);
 
   /* Follow OINK's resolved appearance, including changes to the system preference in auto mode. */

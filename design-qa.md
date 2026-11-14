@@ -36,6 +36,7 @@ place; the diagram remains live instead of becoming a raster illustration.
   [after 320px](tests/e2e/screenshots/landing/after-en-320.jpg).
 - [Short portrait](tests/e2e/screenshots/landing/after-en-short.jpg).
 - [Chinese](tests/e2e/screenshots/landing/after-cn-1440.jpg),
+  [capability cards](tests/e2e/screenshots/landing/after-capabilities-cn.jpg),
   [graph toolchain](tests/e2e/screenshots/landing/after-toolchain.jpg),
   [entry transition](tests/e2e/screenshots/landing/after-transition.jpg).
 - Real browser recording: `/workspace/landing-review/animation.webm` (15 s).
@@ -58,7 +59,7 @@ place; the diagram remains live instead of becoming a raster illustration.
    0.0075–0.095), before the canvas appears at 0.105. A pale-to-white background
    rises behind the existing geometry and reverses with scrolling. All four
    graph scenes use the original ink-on-white palette, with a matching white
-   text veil and pale floating controls. The delayed exit gradient is removed.
+   text veil. The delayed exit gradient is removed.
 5. CI exposed current-only component links in archived Markdown homepages.
    Archived homes now retain their native documentation/LLMS index, while the
    current homepage retains its full catalogue. Regression checks cover all
@@ -107,7 +108,7 @@ with one readable explanation at every sampled stop. The entry transition is
 also checked before canvas hand-off, throughout all four scenes and in reverse.
 Selecting a layer eases the camera to its stop. Reduced motion opens the corresponding explanation immediately.
 Browser checks cover clicks on the slab itself,
-rapid switches, keyboard focus and scrolling immediately after selection. Motion-preference regressions check
+focus transfer to the selected guide and scrolling after selection. Motion-preference regressions check
 absence of hidden canvas painting, static navigation, repeated mode switches
 and preservation of the current explanation and downstream reading position. Native theme, search and
 AI enabled/disabled fixtures are checked by the existing browser suites.
@@ -121,8 +122,9 @@ make third-party requests. Native AI consent behavior is unchanged.
 ## Follow-up polish and limits
 
 - The first Concept B prototype supplies the opaque faces and colored edges. The toolchain layer depicts data import and exploration.
-  With the pointer at rest, the database traces edges, the toolchain imports rows, the compute layer scans and the AI nodes pulse.
-  System reduced motion disables all four loops. The database face keeps its central vertices aligned with the scroll-driven graph.
+  The diagram highlights AI, toolchain, computing, database and the overview at 3.2-second intervals. Hover and keyboard focus pause the tour.
+  The database traces edges, the toolchain imports rows, the compute layer scans and the AI nodes pulse.
+  System reduced motion disables the tour and the four artwork loops. The database face keeps its central vertices aligned with the scroll-driven graph.
 - Device checks use Chromium emulation, not real-device Safari or a complete
   screen-reader certification.
 

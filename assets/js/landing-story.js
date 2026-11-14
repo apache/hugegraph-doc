@@ -42,10 +42,12 @@
     return hit ? hit.index : null;
   };
 
-  // base = set by the host page; hover = temporary user focus that falls back to base
-  let base = null, hover = null, shown;
+  // Manual selection takes priority over the idle tour.
+  const tour = [null, ...layers.map(layer => layer.index).reverse()];
+  let tourStep = 0, tourTimer = 0, pointerInside = false;
+  let base = null, hover = null, focused = null, shown;
   function render(fromUser) {
-    const a = hover !== null ? hover : base;
+    const a = (interactive ? hover ?? focused : null) ?? base ?? tour[tourStep];
     if (a === shown) return;
     shown = a;
     root.classList.toggle('hgs-has-active', a !== null);
@@ -82,20 +84,35 @@
     intend(idx, idx === null ? 140 : hover === null ? 40 : 75);
   };
   if (hoverable) {
+    root.addEventListener('mouseenter', () => { pointerInside = true; syncTour(); });
     root.addEventListener('mousemove', e => {
       px = e.clientX; py = e.clientY;
       if (!armed) { if (Math.hypot(px - ax, py - ay) < 3) return; armed = true; }
       over(e);
     });
-    root.addEventListener('mouseleave', () => { if (interactive && (hover !== null || pending)) intend(null, 140); });
+    root.addEventListener('mouseleave', () => {
+      pointerInside = false;
+      if (interactive && (hover !== null || pending)) intend(null, 140);
+      syncTour();
+    });
     addEventListener('mousemove', e => { px = e.clientX; py = e.clientY; }, { passive: true });
   }
   root.addEventListener('click', e => { const t = target(e); if (t) { armed = true; now(t.dataset.layer); } });
   if (!hoverable) document.addEventListener('click', e => { if (!target(e)) now(null); });
   labs.forEach(l => {
-    l.addEventListener('focus', () => { if (l.matches(':focus-visible')) now(l.dataset.layer); });
-    l.addEventListener('blur', () => { if (!root.matches(':hover')) now(null); });
+    l.addEventListener('focus', () => {
+      focused = l.matches(':focus-visible') ? norm(l.dataset.layer) : null;
+      if (focused !== null) now(null);
+    });
+    l.addEventListener('blur', () => {
+      focused = null;
+      if (!pointerInside) now(null);
+      else render(true);
+    });
   });
+  root.addEventListener('focusin', syncTour);
+  root.addEventListener('focusout', () => queueMicrotask(syncTour));
+
   function setInteractive(v) {
     v = Boolean(v);
     if (v === interactive) return;
@@ -104,6 +121,7 @@
     drop();
     if (!v) { hover = null; render(false); }
     else { armed = false; ax = px; ay = py; }
+    syncTour();
   }
 
   let scrubFrame = 0;
@@ -118,7 +136,25 @@
   }
 
   let userPaused = false, offscreen = false;
-  const syncPaused = () => root.classList.toggle('hgs-paused', userPaused || offscreen);
+  function syncTour() {
+    clearTimeout(tourTimer);
+    if (!interactive || userPaused || offscreen || document.hidden) {
+      tourStep = 0;
+      render(false);
+      return;
+    }
+    if (pointerInside || root.matches(':focus-within') || !root.classList.contains('hgs-live')) return;
+    tourTimer = setTimeout(() => {
+      tourStep = (tourStep + 1) % tour.length;
+      render(false);
+      syncTour();
+    }, 3200);
+  }
+  document.addEventListener('visibilitychange', syncTour);
+  const syncPaused = () => {
+    root.classList.toggle('hgs-paused', userPaused || offscreen);
+    syncTour();
+  };
   const setPaused = v => { userPaused = Boolean(v); syncPaused(); };
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(([e]) => { offscreen = !e.isIntersecting; syncPaused(); }).observe(root);
@@ -128,7 +164,10 @@
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   requestAnimationFrame(() => requestAnimationFrame(() => {
     root.classList.add('hgs-ready');
-    setTimeout(() => root.classList.add('hgs-live'), reduce ? 0 : 1700);
+    setTimeout(() => {
+      root.classList.add('hgs-live');
+      syncTour();
+    }, reduce ? 0 : 1700);
   }));
 
   const geom = { tilt: 62, turn: 45, face: 380, gap: 95.25, slab: 16, cx: 300, cy: 428, box: [600, 600], labels: 192 };
@@ -600,7 +639,7 @@
     const S = window.HGStack, sroot = S.root, GEO = S.geom;
     const story = $('#story'), stage = $('#stage'), hero = $('#hero'), copy = $('.hero-copy'), rig = $('#rig');
     const veil = $('#veil'), cv = $('#world'), ctx = cv.getContext('2d');
-    const mini = $('#mini'), miniName = $('#mini-name'), bars = $$('#mini button'), readout = $('#readout');
+    const readout = $('#readout');
     const plane = $('.hgs-plane', sroot), scene = $('.hgs-scene', sroot), labels = $('.hgs-labels', sroot);
     const ground = $('.hgs-ground', sroot), guides = $$('.hgs-guide', sroot), brand = $('[data-hg-story-home]');
     const layer = id => $(`.hgs-layer[data-id="${id}"]`, sroot);
@@ -620,9 +659,7 @@
       [1.03, readoutText('computing', '{vertices} vertices, {communities} communities', { vertices: N.length, communities: clusters.length })],
       [9, readoutText('ai', '1 question, 1 retrieved subgraph')],
     ];
-    const layerName = id => S.layers.find(item => item.id === id)?.name || id;
-    const BEATS = [[0.42, 'database'], [0.72, 'toolchain'], [1.03, 'computing'], [9, 'ai']]
-      .map(([until, id]) => [until, id, layerName(id)]);
+    const BEATS = [[0.42, 'database'], [0.72, 'toolchain'], [1.03, 'computing'], [9, 'ai']];
     const GOQ = { database: 0.25, toolchain: 0.58, computing: 0.91, ai: 1.2 };   // where a click on a layer lands, in q
     const qmap = p => {
       if (p <= PQ[0][0]) return PQ[0][1];
@@ -637,8 +674,8 @@
     const A0 = GEO.tilt * Math.PI / 180, B0 = GEO.turn * Math.PI / 180;   // the module's isometric plane: rotateX(tilt) rotateZ(turn)
     const G = {};                                             // rig geometry, measured on resize
     const D = { phase: 'hero', x: 0, y: 0, r: 0, zoom: 0, scale: 1, q: 0.06 };   // what the last frame drew, for window.__hgDebug()
-    let W = 0, H = 0, small = false, ps = FORCE_P ?? 0, target = 0, spanPx = 1, running = false, raf = 0, note = '', beat = -1;
-    let diving = false, gone = false, lastP = -1, shown = null;
+    let W = 0, H = 0, small = false, ps = FORCE_P ?? 0, target = 0, spanPx = 1, running = false, raf = 0, note = '';
+    let diving = false, gone = false, lastP = -1;
     let tau = 0.12, lastNow = 0, snapNext = true, travel = null;
     const t0 = performance.now() - (FORCE_P !== null ? 20000 : 0);
 
@@ -736,9 +773,8 @@
       }
       if (!changed) return;
       lastP = p;
-      const aUi = sstep(0.075, 0.14, q), ui = aUi.toFixed(3), vis = aUi < 0.01 ? 'hidden' : 'visible';
-      veil.style.opacity = ui; mini.style.opacity = ui; readout.style.opacity = ui;
-      if (vis !== shown) { shown = vis; mini.style.visibility = vis; }
+      const ui = sstep(0.075, 0.14, q).toFixed(3);
+      veil.style.opacity = ui; readout.style.opacity = ui;
       // While a layer shortcut moves past other stops, show only the departure and destination copy.
       let bi = BEATS.findIndex(n => q < n[0]);
       if (travel) bi = travel.fraction < 0.5 ? travel.fromBeat : travel.toBeat;
@@ -764,10 +800,6 @@
       });
       const txt = bi < 0 ? '' : NOTES[bi][1];
       if (txt !== note) readout.textContent = note = txt;
-      if (bi !== beat && bi >= 0) {
-        beat = bi; miniName.textContent = BEATS[bi][2];
-        bars.forEach(el => { const on = el.dataset.id === BEATS[bi][1]; el.classList.toggle('on', on); if (on) el.setAttribute('aria-current', 'true'); else el.removeAttribute('aria-current'); });
-      }
     }
 
     /* The scene follows a smoothed copy of the scroll position (frame-rate independent, time constant tau), so a wheel notch
@@ -793,7 +825,7 @@
       render(ps, (now - t0) / 1000);
       if (move && move.fraction === 1) {
         travel = null;
-        if (move.byKeyboard) bars.find(button => button.dataset.id === move.id)?.focus({ preventScroll: true });
+        if (move.byKeyboard) $('#beat-' + move.id + ' .story-guide')?.focus({ preventScroll: true });
       }
       raf = requestAnimationFrame(frame);
     }
@@ -829,7 +861,7 @@
       ps = target = to;
       lastP = -1;
       render(to, (performance.now() - t0) / 1000);
-      if (byKeyboard) bars.find(button => button.dataset.id === id)?.focus({ preventScroll: true });
+      if (byKeyboard) $('#beat-' + id + ' .story-guide')?.focus({ preventScroll: true });
     }
     function interrupt() {
       if (!travel) return;
@@ -840,7 +872,6 @@
       const hit = e.target.closest('[data-layer]');
       if (hit) go(S.layers[Number(hit.dataset.layer)].id, e.detail === 0);
     });
-    bars.forEach(button => listen(button, 'click', e => go(button.dataset.id, e.detail === 0)));
     if (brand) listen(brand, 'click', e => { e.preventDefault(); go('hero'); });
     listen(window, 'wheel', () => { tau = 0.12; interrupt(); }, { passive: true });
     listen(window, 'touchmove', () => { tau = 0.05; interrupt(); }, { passive: true });
@@ -864,14 +895,13 @@
         running = false; cancelAnimationFrame(raf); raf = 0;
         clearLift();
         stage.style.removeProperty('--scene-light');
-        for (const el of [cv, veil, mini, readout]) {
+        for (const el of [cv, veil, readout]) {
           el.style.removeProperty('opacity'); el.style.removeProperty('visibility');
         }
         panels.forEach(el => {
           el.removeAttribute('style'); el.classList.remove('on');
           el.inert = false; el.removeAttribute('aria-hidden');
         });
-        bars.forEach(el => { el.classList.remove('on'); el.removeAttribute('aria-current'); });
         ctx.clearRect(0, 0, W, H);
         onPalette = () => {};
         delete window.__hgDebug; delete window.__hgSyncTheme;
@@ -949,9 +979,9 @@
     if (contentTop !== null) {
       scrollBy({ top: content.getBoundingClientRect().top - contentTop, behavior: 'instant' });
     }
-    // A keyboard user must not keep focus in the now-hidden pinned controls.
+    // Keep focus with the reader when a motion mode change hides the old target.
     if (beat && active && landing.contains(active) && !active.getClientRects().length) {
-      const target = live ? $('#mini button[data-id="' + beat + '"]') : $('#beat-' + beat + ' .story-guide');
+      const target = beat === 'hero' ? $('#hero .btn-primary') : $('#beat-' + beat + ' .story-guide');
       target?.focus({ preventScroll: true });
     }
     syncTheme(0);

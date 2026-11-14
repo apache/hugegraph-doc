@@ -204,19 +204,6 @@
         </section>
         {{ end }}
       </div>
-      <nav class="mini" id="mini" aria-label="{{ $data.story.controls_label }}">
-        <span class="mini-bars">
-          {{ range $index, $id := slice "ai" "toolchain" "computing" "database" }}
-          {{ $layer := index $data.layers $id }}
-          <button type="button" data-id="{{ $id }}" style="--c:var(--accent);--o:{{ $index }}"
-                  aria-label="{{ $layer.go }}"></button>
-          {{ end }}
-        </span>
-        <span id="mini-name" aria-live="polite">{{ $data.layers.database.name }}</span>
-        <a class="story-skip" href="#components">
-          {{ $data.hero.skip }} <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
-        </a>
-      </nav>
       <p class="readout" id="readout" aria-hidden="true"></p>
     </div>
   </section>
@@ -226,10 +213,28 @@
         <h2 id="capabilities-title">{{ $data.capabilities.title }}</h2>
         <div class="cap-grid">
           {{ range $index, $item := $data.capabilities.items }}
-          <article class="cap reveal" style="--i:{{ mod $index 2 }}">
+          <article class="cap reveal{{ with $item.variant }} cap-{{ . }}{{ end }}" style="--i:{{ mod $index 3 }}">
             <i class="{{ $item.icon }} ic" aria-hidden="true"></i>
             <h3><a href="{{ $item.url | relURL }}">{{ $item.title }}</a></h3>
             <p>{{ $item.body }}</p>
+            {{ if eq $item.variant "efficient" }}
+            <div class="cap-lanes" aria-hidden="true">
+              <i style="--y:4px;--w:22%;--end:460%;--speed:3.4s;--delay:-1s"></i>
+              <i style="--y:16px;--w:34%;--end:300%;--speed:4.6s;--delay:-3s"></i>
+              <i style="--y:28px;--w:16%;--end:630%;--speed:2.8s;--delay:-2.2s"></i>
+              <i style="--y:40px;--w:28%;--end:360%;--speed:4s;--delay:-.4s"></i>
+              <i style="--y:52px;--w:12%;--end:840%;--speed:2.4s;--delay:-1.5s"></i>
+              <i style="--y:64px;--w:24%;--end:420%;--speed:3.8s;--delay:-2.9s"></i>
+            </div>
+            {{ else if eq $item.variant "ai" }}
+            <svg class="cap-graph" viewBox="0 0 260 190" aria-hidden="true" focusable="false">
+              <path d="M30 40L96 70L70 140ZM96 70L168 46L226 84L212 160L150 118L168 46M70 140L150 118"
+                    fill="none" stroke="white" stroke-opacity=".34" stroke-width="1.5"/>
+              <g fill="#aab4ff"><circle cx="30" cy="40" r="6"/><circle cx="70" cy="140" r="6"/><circle cx="226" cy="84" r="6"/></g>
+              <g fill="white"><circle cx="96" cy="70" r="7"/><circle cx="168" cy="46" r="7"/>
+                <circle cx="150" cy="118" r="7"/><circle cx="212" cy="160" r="7"/></g>
+            </svg>
+            {{ end }}
           </article>
           {{ end }}
         </div>

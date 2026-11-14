@@ -8,7 +8,6 @@ hero:
     label: GitHub
     url: https://github.com/apache/hugegraph
   explore: Explore the layers
-  skip: Explore components
 
 layers:
   ai:
@@ -39,7 +38,6 @@ layers:
 
 story:
   label: HugeGraph, from one stack to every scale
-  controls_label: Story layers
   stack_label: HugeGraph stack, four layers from database to AI
   read_guide: Read the guide
   beats:
@@ -72,30 +70,33 @@ story:
 capabilities:
   title: Everything a graph workload needs
   items:
-    - title: Convenient
-      body: Gremlin, Cypher and a RESTful API, plus a complete toolchain for import, visualization and operations
-      icon: fa-solid fa-terminal
-      url: /docs/quickstart/toolchain/
     - title: Efficient
+      variant: efficient
       body: Batch import for massive datasets, millisecond-level retrieval
         and concurrent online operations for thousands of users
       icon: fa-solid fa-bolt
       url: /docs/quickstart/toolchain/hugegraph-loader/
+    - title: AI-Ready
+      variant: ai
+      body: GraphRAG, automated knowledge graph construction and 20+ built-in graph machine learning algorithms
+      icon: fa-solid fa-wand-magic-sparkles
+      url: /docs/quickstart/hugegraph-ai/
+    - title: Convenient
+      body: Gremlin, Cypher and a RESTful API, plus a complete toolchain for import, visualization and operations
+      icon: fa-solid fa-terminal
+      url: /docs/quickstart/toolchain/
     - title: Adaptable
       body: Property graph modeling on Apache TinkerPop, covering OLTP and OLAP, with Hadoop and Spark integration
-      icon: fa-solid fa-arrow-right-arrow-left
+      icon: fa-solid fa-puzzle-piece
       url: /docs/quickstart/computing/
-    - title: AI-Ready
-      body: GraphRAG, automated knowledge graph construction and 20+ built-in graph machine learning algorithms
-      icon: fa-solid fa-brain
-      url: /docs/quickstart/hugegraph-ai/
     - title: Scalable
       body: Horizontal scaling and distributed deployment, from a standalone server to PB-level clusters
-      icon: fa-solid fa-up-right-and-down-left-from-center
+      icon: fa-solid fa-expand
       url: /docs/quickstart/hugegraph/hugegraph-hstore/
     - title: Open Ecosystem
+      variant: open
       body: TinkerPop standards, multi-language clients and an active, evolving Apache community
-      icon: fa-solid fa-puzzle-piece
+      icon: fa-solid fa-plug
       url: /docs/clients/client/hugegraph-client/
 
 components:

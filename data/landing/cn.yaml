@@ -8,7 +8,6 @@ hero:
     label: GitHub
     url: https://github.com/apache/hugegraph
   explore: 探索四层架构
-  skip: 查看组件
 
 layers:
   ai:
@@ -38,7 +37,6 @@ layers:
 
 story:
   label: HugeGraph，从一套技术栈到不同规模
-  controls_label: 架构层级
   stack_label: HugeGraph 四层架构，从图数据库到 AI
   read_guide: 阅读指南
   beats:
@@ -71,29 +69,32 @@ story:
 capabilities:
   title: 图数据工作负载所需，尽在其中
   items:
+    - title: 高效
+      variant: efficient
+      body: 支持海量数据批量导入、毫秒级图检索，以及数千用户并发的在线操作
+      icon: fa-solid fa-bolt
+      url: /cn/docs/quickstart/toolchain/hugegraph-loader/
+    - title: 智能化
+      variant: ai
+      body: 支持 GraphRAG、自动化知识图谱构建，并内置 20 多种图机器学习算法
+      icon: fa-solid fa-wand-magic-sparkles
+      url: /cn/docs/quickstart/hugegraph-ai/
     - title: 易用
       body: 支持 Gremlin、Cypher 与 RESTful API，配备覆盖导入、可视化和运维的完整工具链
       icon: fa-solid fa-terminal
       url: /cn/docs/quickstart/toolchain/
-    - title: 高效
-      body: 支持海量数据批量导入、毫秒级图检索，以及数千用户并发的在线操作
-      icon: fa-solid fa-bolt
-      url: /cn/docs/quickstart/toolchain/hugegraph-loader/
     - title: 通用
       body: 基于 Apache TinkerPop 的属性图建模，覆盖 OLTP 与 OLAP，可集成 Hadoop 和 Spark
-      icon: fa-solid fa-arrow-right-arrow-left
+      icon: fa-solid fa-puzzle-piece
       url: /cn/docs/quickstart/computing/
-    - title: 智能化
-      body: 支持 GraphRAG、自动化知识图谱构建，并内置 20 多种图机器学习算法
-      icon: fa-solid fa-brain
-      url: /cn/docs/quickstart/hugegraph-ai/
     - title: 可扩展
       body: 支持水平扩容和分布式部署，覆盖从单机到 PB 级集群的使用场景
-      icon: fa-solid fa-up-right-and-down-left-from-center
+      icon: fa-solid fa-expand
       url: /cn/docs/quickstart/hugegraph/hugegraph-hstore/
     - title: 开放生态
+      variant: open
       body: 遵循 TinkerPop 标准，提供多语言客户端，由活跃且持续演进的 Apache 社区支持
-      icon: fa-solid fa-puzzle-piece
+      icon: fa-solid fa-plug
       url: /cn/docs/clients/client/hugegraph-client/
 
 components:

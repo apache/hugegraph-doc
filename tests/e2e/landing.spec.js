@@ -200,7 +200,7 @@ for (const viewport of [{ width: 1200, height: 900 }, { width: 1440, height: 700
   });
 }
 
-test("a painted slab eases into its stop and a new selection takes over", async ({ page }) => {
+test("a painted slab eases into its stop and scrolling takes over", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await openHome(page);
@@ -221,52 +221,8 @@ test("a painted slab eases into its stop and a new selection takes over", async 
   await page.mouse.click(edge.x, edge.y);
   await expect(page.locator("#beat-ai")).toHaveClass(/\bon\b/);
   expect(await page.evaluate(() => new Set(window.travelPositions).size)).toBeGreaterThan(1);
-  const database = page.locator('#mini button[data-id="database"]');
-  const computing = page.locator('#mini button[data-id="computing"]');
-  await database.click();
-  await computing.click();
-  await expect(page.locator("#beat-computing")).toHaveClass(/\bon\b/);
-  // A real wheel gesture interrupts the return trip before it reaches the first stop.
-  await database.click();
-  await page.mouse.wheel(0, 250);
-  await page.waitForTimeout(600);
-  await expect(page.locator("#beat-database")).not.toHaveClass(/\bon\b/);
-});
-
-test("holding a second shortcut preserves the visible chapter and its fade", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.clock.install();
-  await openHome(page);
-  await page.locator('.hgs-lab[data-layer="3"]').click();
-  const aiPanel = page.locator("#beat-ai");
-  await expect(aiPanel).toHaveCSS("opacity", "1");
-  await expect(aiPanel).toHaveClass(/\bon\b/);
-
-  // Isolate timing from the test runner's load. A mouse press and release are separate user actions.
-  await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 60_000));
-  const ai = page.locator('#mini button[data-id="ai"]');
-  const database = page.locator('#mini button[data-id="database"]');
-  await database.click({ force: true });
-  await page.clock.runFor(96);
-  const box = await ai.boundingBox();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  const panels = page.locator("#story .panel.on");
-  for (let frame = 0; frame < 6; frame++) {
-    await page.clock.runFor(16);
-    expect(await panels.getAttribute("id")).toBe("beat-ai");
-  }
-  const releaseOpacity = Number(await aiPanel.evaluate(node => getComputedStyle(node).opacity));
-  expect(releaseOpacity).toBeGreaterThan(0);
-  expect(releaseOpacity).toBeLessThan(0.5);
-  await page.mouse.up();
-  await page.clock.runFor(16);
-  const nextOpacity = Number(await aiPanel.evaluate(node => getComputedStyle(node).opacity));
-  expect(nextOpacity).toBeGreaterThanOrEqual(releaseOpacity);
-  expect(nextOpacity - releaseOpacity).toBeLessThan(0.1);
-  await page.clock.runFor(500);
-  await expect(aiPanel).toHaveCSS("opacity", "1");
-  await expect(ai).toHaveAttribute("aria-current", "true");
+  await page.mouse.wheel(0, -2200);
+  await expect(page.locator("#beat-ai")).not.toHaveClass(/\bon\b/);
 });
 
 test("keyboard activation transfers focus to the selected graph layer", async ({ page }) => {
@@ -279,8 +235,7 @@ test("keyboard activation transfers focus to the selected graph layer", async ({
   });
   await expect(page.locator("#stage")).toHaveClass(/diving/);
   await page.locator('.hgs-lab[data-layer="0"]').press("Enter");
-  const destination = page.locator('#mini button[data-id="database"]');
-  await expect(destination).toHaveAttribute("aria-current", "true");
+  const destination = page.locator("#beat-database .story-guide");
   await expect(destination).toBeFocused();
   await expect(page.locator(".hero-copy")).toBeHidden();
   await expect(page.locator(".hgs-labels")).toBeHidden();

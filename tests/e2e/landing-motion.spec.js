@@ -89,8 +89,10 @@ test("motion preferences can switch repeatedly without losing explanations or du
     await expect(page.locator("#world")).toHaveCSS("opacity", "1");
     const paints = await page.evaluate(() => window.landingWorldPaints);
     await expect.poll(() => page.evaluate(() => window.landingWorldPaints)).toBeGreaterThan(paints);
-    await page.locator('#mini button[data-id="ai"]').click();
-    await expect(page.locator("#beat-ai")).toHaveClass(/\bon\b/);
+    await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+    await expect(page.locator("#stage")).not.toHaveClass(/diving/);
+    await page.locator('#hg-stack button[data-layer="3"]').click();
+    await expect(page.locator("#beat-ai")).toHaveCSS("opacity", "1");
     await page.emulateMedia({ reducedMotion: "reduce" });
     await expectStaticStory(page);
     await expectStaticBeatAtTop(page, "ai");
@@ -129,4 +131,75 @@ test("each layer animates its own artwork on the idle hero and respects reduced 
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect.poll(snapshot).toEqual(["", "", "", ""]);
+});
+
+test("idle layer tour follows the visual stack and yields to hover, keyboard and reduced motion", async ({ page }) => {
+  const dwell = 3200;
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.clock.install({ time: new Date("2026-01-01T12:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-01-01T12:01:00Z"));
+  await page.goto("/");
+  const stack = page.locator("#hg-stack");
+  const active = stack.locator(".hgs-layer.is-active");
+  await page.clock.runFor(1800);
+  await expect(stack).toHaveClass(/hgs-live/);
+  await expect(active).toHaveCount(0);
+
+  for (const id of ["ai", "toolchain", "computing", "database", null, "ai"]) {
+    await page.clock.fastForward(dwell);
+    if (id) await expect(active).toHaveAttribute("data-id", id);
+    else await expect(active).toHaveCount(0);
+  }
+
+  const database = stack.getByRole("button", { name: "Explore Graph Database" });
+  const box = await database.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.clock.runFor(160);
+  await expect(active).toHaveAttribute("data-id", "database");
+  await page.clock.fastForward(dwell);
+  await expect(active).toHaveAttribute("data-id", "database");
+  await page.mouse.move(1, 1);
+  await page.clock.runFor(160);
+  await page.clock.fastForward(dwell);
+  await expect(active).toHaveAttribute("data-id", "toolchain");
+
+  // Tab from the preceding hero link to give the first layer real keyboard focus.
+  await page.locator("#hero .cta-row a").last().focus();
+  await page.keyboard.press("Tab");
+  const aiButton = stack.getByRole("button", { name: "Explore Graph AI" });
+  await expect(aiButton).toBeFocused();
+  await page.clock.fastForward(dwell);
+  await expect(active).toHaveAttribute("data-id", "ai");
+
+  const computingBox = await stack.getByRole("button", { name: "Explore Graph Computing" }).boundingBox();
+  await page.mouse.move(computingBox.x + computingBox.width / 2, computingBox.y + computingBox.height / 2);
+  await page.clock.runFor(160);
+  await expect(active).toHaveAttribute("data-id", "computing");
+  await page.mouse.move(1, 1);
+  await page.clock.runFor(160);
+  await expect(aiButton).toBeFocused();
+  await expect(active).toHaveAttribute("data-id", "ai");
+
+  for (const reducedMotion of ["reduce", "no-preference"]) {
+    await page.emulateMedia({ reducedMotion });
+    await page.clock.runFor(200);
+    if (reducedMotion === "reduce") await expect(page.locator("#hg-landing")).not.toHaveClass(/\blive\b/);
+    else await expect(page.locator("#hg-landing")).toHaveClass(/\blive\b/);
+    await page.clock.fastForward(dwell);
+    await expect(aiButton).toBeFocused();
+    await expect(active).toHaveAttribute("data-id", "ai");
+  }
+
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.locator("#hero .cta-row a").last()).toBeFocused();
+  await page.clock.runFor(200);
+  await page.clock.fastForward(dwell);
+  await expect(active).toHaveAttribute("data-id", "ai");
+  await page.clock.fastForward(dwell);
+  await expect(active).toHaveAttribute("data-id", "toolchain");
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.locator("#hg-landing")).not.toHaveClass(/\blive\b/);
+  await page.clock.fastForward(dwell);
+  await expect(active).toHaveCount(0);
 });

@@ -207,7 +207,7 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 | `management.metrics.export.prometheus.enabled` | `true` | Spring Boot 默认值 | 是否暴露 `/actuator/prometheus`。 |
 | `management.endpoints.web.exposure.include` | `health,metrics,prometheus` | Spring Boot 默认只暴露 `health` | Actuator 暴露白名单；这些端点不经过 PD REST Basic 拦截器。 |
 | `logging.config` | `file:./conf/log4j2.xml` | 无 | Log4j2 配置文件，会写出 `logs/hugegraph-pd.log`、`logs/hugegraph-pd_raft.log` 和 `logs/audit-hugegraph-pd.log`。 |
-{.td-table--wide}
+{.wide .hg-config-keys}
 
 **线程池**
 

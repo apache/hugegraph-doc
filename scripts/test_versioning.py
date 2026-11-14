@@ -1254,6 +1254,81 @@ class VersionUrlTest(unittest.TestCase):
             self.assertEqual(versioning.ensure_legacy_config_tables_wide(page), 0)
             self.assertEqual(page.read_text(encoding="utf-8"), source)
 
+    def test_historical_config_option_marks_only_the_rocksdb_key_table(self) -> None:
+        key_row = "rocksdb.use_direct_io_for_flush_and_compaction"
+        other_table = (
+            "| config option | default value | description |\n|---|---|---|\n"
+            "| gremlin.graph | graph.yaml | Graph config file. |\n"
+            "{#other .td-table--wide data-label=\"keep } here\"}\n"
+        )
+        key_table = (
+            "| config option | default value | description |\n|---|---|---|\n"
+            f"| {key_row} | false | RocksDB option. |\n"
+            '{#rocksdb class="td-table--wide authored" data-label="preserve } here"}\n'
+        )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            page = Path(temporary) / "config-option.md"
+            source = other_table + "\n" + key_table
+            page.write_text(source, encoding="utf-8")
+
+            self.assertEqual(
+                versioning.ensure_legacy_config_tables_wide(
+                    page, config_key_row=key_row
+                ),
+                1,
+            )
+            rendered = page.read_text(encoding="utf-8")
+            self.assertIn('{#other .td-table--wide data-label="keep } here"}\n', rendered)
+            self.assertIn(
+                '{#rocksdb class="td-table--wide authored" '
+                'data-label="preserve } here" .hg-config-keys}\n',
+                rendered,
+            )
+            self.assertEqual(
+                versioning.ensure_legacy_config_tables_wide(
+                    page, config_key_row=key_row
+                ),
+                0,
+            )
+            self.assertEqual(page.read_text(encoding="utf-8"), rendered)
+
+    def test_historical_adapter_adds_rocksdb_key_class_only_to_archive(self) -> None:
+        key_row = "rocksdb.use_direct_io_for_flush_and_compaction"
+        table = (
+            "| config option | default value | description |\n|---|---|---|\n"
+            "| gremlin.graph | graph.yaml | Graph config file. |\n"
+            "\n"
+            "| config option | default value | description |\n|---|---|---|\n"
+            f"| {key_row} | false | RocksDB option. |\n"
+        )
+        for version in ("1.3", "latest"):
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as temporary:
+                assembly = Path(temporary)
+                pages = []
+                for language in ("en", "cn"):
+                    page = assembly / f"content/{language}/docs/config/config-option.md"
+                    page.parent.mkdir(parents=True, exist_ok=True)
+                    page.write_text(table, encoding="utf-8")
+                    pages.append(page)
+
+                with (
+                    mock.patch.object(versioning, "apply_exact_legacy_content_fixes", return_value=4),
+                    mock.patch.object(versioning, "ensure_search_metadata", return_value=0),
+                    mock.patch.object(versioning, "normalize_historical_server_headings", return_value=0),
+                    mock.patch.object(versioning, "first_existing_path", return_value=assembly / "server.md"),
+                ):
+                    versioning.apply_known_legacy_fixes(assembly, version)
+
+                for page in pages:
+                    rendered = page.read_text(encoding="utf-8")
+                    if version == "latest":
+                        self.assertEqual(rendered, table)
+                    else:
+                        self.assertEqual(rendered.count(".hg-config-keys"), 1)
+                        self.assertIn("{.td-table--wide .hg-config-keys}\n", rendered)
+                        self.assertIn("{.td-table--wide}\n", rendered)
+
     def test_known_legacy_catalog_adapter_is_bound_to_versions_languages_and_paths(self) -> None:
         source = (
             "---\ntitle: Config\n---\n"

@@ -211,7 +211,7 @@ initial partitions = store count * partition.store-max-shard-count / partition.d
 | `management.metrics.export.prometheus.enabled` | `true` | Spring Boot default | Exposes `/actuator/prometheus`. |
 | `management.endpoints.web.exposure.include` | `health,metrics,prometheus` | Spring Boot exposes only `health` by default | Actuator allowlist; these endpoints bypass the PD REST Basic interceptor. |
 | `logging.config` | `file:./conf/log4j2.xml` | none | Log4j2 configuration. Writes `logs/hugegraph-pd.log`, `logs/hugegraph-pd_raft.log` and `logs/audit-hugegraph-pd.log`. |
-{.td-table--wide}
+{.wide .hg-config-keys}
 
 **Thread pools**
 

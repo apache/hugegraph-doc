@@ -1606,6 +1606,7 @@ def ensure_legacy_config_tables_wide(
     path: pathlib.Path,
     headers: tuple[tuple[str, ...], ...] = (("config option", "default value", "description"),),
     required_row: str | None = None,
+    config_key_row: str | None = None,
 ) -> int:
     """Opt frozen technical catalogs into OINK's native horizontal table layout."""
     source = path.read_text(encoding="utf-8")
@@ -1644,14 +1645,27 @@ def ensure_legacy_config_tables_wide(
                 while end < len(lines) and parts(lines[end])[0].strip() == prefix.strip() and parts(lines[end])[1].startswith("|"):
                     end += 1
                 result.extend(lines[index:end])
-                if required_row and not any(required_row in line for line in lines[index + 2:end]):
+                table_rows = lines[index + 2:end]
+                if required_row and not any(required_row in line for line in table_rows):
                     index = end
                     continue
+                classes = ["td-table--wide"]
+                if config_key_row and any(config_key_row in line for line in table_rows):
+                    classes.append("hg-config-keys")
                 attribute = parts(lines[end])[1].strip() if end < len(lines) and parts(lines[end])[0].strip() == prefix.strip() else ""
                 if attribute.startswith("{") and attribute.endswith("}"):
-                    if not re.search(r"(?<![\w-])td-table--wide(?![\w-])", attribute):
+                    missing_classes = [
+                        class_name
+                        for class_name in classes
+                        if not re.search(
+                            rf"(?<![\w-]){re.escape(class_name)}(?![\w-])",
+                            attribute,
+                        )
+                    ]
+                    if missing_classes:
                         closing = lines[end].rfind("}")
-                        result.append(lines[end][:closing] + " .td-table--wide" + lines[end][closing:])
+                        class_markers = " ".join(f".{class_name}" for class_name in missing_classes)
+                        result.append(lines[end][:closing] + " " + class_markers + lines[end][closing:])
                         fixed += 1
                     else:
                         result.append(lines[end])
@@ -1659,7 +1673,8 @@ def ensure_legacy_config_tables_wide(
                 else:
                     if not result[-1].endswith("\n"):
                         result[-1] += "\n"
-                    result.append(prefix + "{.td-table--wide}\n")
+                    class_markers = " ".join(f".{class_name}" for class_name in classes)
+                    result.append(prefix + "{" + class_markers + "}\n")
                     fixed += 1
                 index = end
                 continue
@@ -1758,7 +1773,17 @@ def apply_known_legacy_fixes(assembly: pathlib.Path, version: str) -> int:
             for relative, headers, required_row in catalogs:
                 page = assembly / f"content/{language}/docs/{relative}"
                 if page.is_file():
-                    fixed += ensure_legacy_config_tables_wide(page, headers, required_row)
+                    config_key_row = (
+                        "rocksdb.use_direct_io_for_flush_and_compaction"
+                        if relative == "config/config-option.md"
+                        else None
+                    )
+                    fixed += ensure_legacy_config_tables_wide(
+                        page,
+                        headers,
+                        required_row,
+                        config_key_row=config_key_row,
+                    )
             summary_path = assembly / f"content/{language}/docs/SUMMARY.md"
             if version in {"1.7", "1.5"}:
                 fixed += repair_historical_performance_routes(summary_path)

@@ -28,8 +28,9 @@
       "nonEquivalentHreflangRemoved": 0,
       "publishPath": "",
       "ref": "master",
-      "sha": "2eaa5775582a9a2f3e50f7498176db216e11d7c2",
+      "sha": "7ea15624d9ad4796b2110ad71c157359b0ba36c7",
       "urlScoping": {
+        "compareConfigs": 236,
         "files": 334,
         "historicalHomeRedirects": 0,
         "manifests": 332,
@@ -67,6 +68,7 @@
       "ref": "release-1.7.0",
       "sha": "4211f768b64a709168b7f92ea2eab15b9d89e3b3",
       "urlScoping": {
+        "compareConfigs": 176,
         "files": 407,
         "historicalHomeRedirects": 2,
         "manifests": 221,
@@ -104,6 +106,7 @@
       "ref": "release-1.5.0",
       "sha": "34bbc87147f60db49888b2ce718cc051973c943e",
       "urlScoping": {
+        "compareConfigs": 158,
         "files": 366,
         "historicalHomeRedirects": 2,
         "manifests": 201,
@@ -141,6 +144,7 @@
       "ref": "release-1.3.0",
       "sha": "3bf6270b31a848bab0d7db8ae1ac033483ef9f55",
       "urlScoping": {
+        "compareConfigs": 140,
         "files": 331,
         "historicalHomeRedirects": 2,
         "manifests": 181,
@@ -178,6 +182,7 @@
       "ref": "release-1.0.0",
       "sha": "b787a1f379511282b55933a05cb2daf693b9c388",
       "urlScoping": {
+        "compareConfigs": 124,
         "files": 326,
         "historicalHomeRedirects": 2,
         "manifests": 178,

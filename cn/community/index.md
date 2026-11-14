@@ -6,7 +6,7 @@
 
 Apache HugeGraph 是一个开放的开源项目，社区中的每个人都可以使用、改进并从中受益。欢迎加入我们，通过以下方式了解项目动态并参与社区。
 
-[参与贡献](/docs/contribution-guidelines/)
+[参与贡献](/cn/docs/contribution-guidelines/)
 
 [前往 GitHub](https://github.com/apache/hugegraph)
 

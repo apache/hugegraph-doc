@@ -25,8 +25,9 @@
   "nonEquivalentHreflangRemoved": 0,
   "publishPath": "",
   "ref": "master",
-  "sha": "2eaa5775582a9a2f3e50f7498176db216e11d7c2",
+  "sha": "7ea15624d9ad4796b2110ad71c157359b0ba36c7",
   "urlScoping": {
+    "compareConfigs": 236,
     "files": 334,
     "historicalHomeRedirects": 0,
     "manifests": 332,

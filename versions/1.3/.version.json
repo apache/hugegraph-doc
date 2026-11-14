@@ -27,6 +27,7 @@
   "ref": "release-1.3.0",
   "sha": "3bf6270b31a848bab0d7db8ae1ac033483ef9f55",
   "urlScoping": {
+    "compareConfigs": 140,
     "files": 331,
     "historicalHomeRedirects": 2,
     "manifests": 181,

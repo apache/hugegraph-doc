@@ -46,7 +46,7 @@ story:
       url: /cn/docs/quickstart/hugegraph/
       link_label: 查看图数据库部署指南
     toolchain:
-      title: 导入数据，沿着关系探索
+      title: 顺着边出发
       body: 用 Loader 导入顶点和边，再用 Hubble 查看查询结果，沿着一条边找到下一个顶点
       url: /cn/docs/quickstart/toolchain/
       link_label: 查看图工具链指南

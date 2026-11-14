@@ -49,7 +49,7 @@ story:
       url: /docs/quickstart/hugegraph/
       link_label: Explore database deployment
     toolchain:
-      title: Import the data. Follow a connection
+      title: Follow an edge
       body: Load vertices and edges with Loader, then explore the query results in Hubble, one relationship at a time
       url: /docs/quickstart/toolchain/
       link_label: Explore the graph toolchain

@@ -7,17 +7,17 @@
       <header class="hero" id="hero">
         <div class="hg-sky" aria-hidden="true">
           {{- $north := slice
-              (dict "x" 13  "y" 107 "r" 2.7 "glow" .32)
-              (dict "x" 72  "y" 72  "r" 2.4 "glow" .56)
-              (dict "x" 126 "y" 87  "r" 2.6 "glow" .36)
-              (dict "x" 215 "y" 39  "r" 3   "glow" .7)
-              (dict "x" 278 "y" 60  "r" 2.4 "glow" .4)
-              (dict "x" 309 "y" 18  "r" 2.6 "glow" .5)
-              (dict "x" 362 "y" 12  "r" 3.1 "glow" .8) -}}
+              (dict "x" 13  "y" 107 "r" 2.7 "glow" .32 "period" 8.7 "delay" 1.6)
+              (dict "x" 72  "y" 72  "r" 2.4 "glow" .56 "period" 11.3 "delay" 7.2)
+              (dict "x" 126 "y" 87  "r" 2.6 "glow" .36 "period" 9.2 "delay" 4.8)
+              (dict "x" 215 "y" 39  "r" 3   "glow" .7 "period" 10.6 "delay" 2.1)
+              (dict "x" 278 "y" 60  "r" 2.4 "glow" .4 "period" 8.1 "delay" 6.5)
+              (dict "x" 309 "y" 18  "r" 2.6 "glow" .5 "period" 12.4 "delay" 4.2)
+              (dict "x" 362 "y" 12  "r" 3.1 "glow" .8 "period" 9.7 "delay" 7.9) -}}
           {{- $south := slice
-              (dict "x" 8 "y" 39 "r" 2 "glow" .24)
-              (dict "x" 70 "y" 9 "r" 2.8 "glow" .4)
-              (dict "x" 135 "y" 43 "r" 2.1 "glow" .28) -}}
+              (dict "x" 8 "y" 39 "r" 2 "glow" .24 "period" 10.1 "delay" 5.4)
+              (dict "x" 70 "y" 9 "r" 2.8 "glow" .4 "period" 8.9 "delay" 0.7)
+              (dict "x" 135 "y" 43 "r" 2.1 "glow" .28 "period" 11.8 "delay" 9.1) -}}
           {{ range slice
               (dict "id" "north" "width" 410 "height" 124 "band" 160 "travel" 550 "stars" $north)
               (dict "id" "south" "width" 144 "height" 52 "band" 60 "travel" 200 "stars" $south) }}
@@ -25,8 +25,10 @@
           <svg class="hg-constellation hg-constellation--{{ .id }}" viewBox="0 0 {{ .width }} {{ .height }}"
                aria-hidden="true" focusable="false">
             <defs>
-              <mask id="hg-star-line-{{ .id }}" maskUnits="userSpaceOnUse" x="0" y="0" width="{{ .width }}" height="{{ .height }}">
-                <path id="hg-star-route-{{ .id }}" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+              <mask id="hg-star-line-{{ .id }}" maskUnits="userSpaceOnUse"
+                    x="0" y="0" width="{{ .width }}" height="{{ .height }}">
+                <path id="hg-star-route-{{ .id }}" fill="none" stroke="white" stroke-width="1"
+                      stroke-linecap="round" stroke-linejoin="round"
                       d="M{{ range $i, $s := .stars }}{{ if $i }} L{{ end }}{{ $s.x }} {{ $s.y }}{{ end }}"/>
               </mask>
               <linearGradient id="hg-star-band-fill-{{ .id }}" class="hg-star-band-fill">
@@ -36,6 +38,13 @@
                 <stop offset=".76" stop-opacity=".18"/>
                 <stop offset="1" stop-opacity="0"/>
               </linearGradient>
+              <radialGradient id="hg-star-core-{{ .id }}">
+                <stop stop-color="var(--node-ink)"/>
+                <stop offset=".22" stop-color="var(--node-ink)" stop-opacity=".96"/>
+                <stop offset=".38" stop-color="var(--node-ink)" stop-opacity=".58"/>
+                <stop offset=".6" stop-color="var(--signal-wake)" stop-opacity=".17"/>
+                <stop offset="1" stop-color="var(--signal-glow)" stop-opacity="0"/>
+              </radialGradient>
               <radialGradient id="hg-star-aura-{{ .id }}">
                 <stop stop-color="white" stop-opacity=".9"/>
                 <stop offset=".22" stop-color="var(--signal-wake)" stop-opacity=".68"/>
@@ -48,16 +57,18 @@
               <rect class="hg-star-band" x="-{{ .band }}" width="{{ .band }}" height="{{ .height }}"
                     fill="url(#hg-star-band-fill-{{ .id }})" style="--band-travel:{{ .travel }}px"/>
             </g>
-            <g class="hg-star-nodes">
+            <g class="hg-star-nodes" fill="url(#hg-star-core-{{ .id }})">
               {{ range .stars -}}
-              <circle cx="{{ .x }}" cy="{{ .y }}" r="{{ .r }}"/>
+              <circle cx="{{ .x }}" cy="{{ .y }}" r="{{ mul .r 2.8 }}"
+                      style="--star-period:{{ .period }}s; --star-delay:-{{ .delay }}s"/>
               {{ end -}}
             </g>
             <g class="hg-star-halos" fill="url(#hg-star-aura-{{ .id }})">
               {{ range .stars -}}
               {{/* The center begins half a band before x=0. */}}
               {{- $phase := div (add .x (div $sky.band 2)) (float $sky.travel) -}}
-              <circle cx="{{ .x }}" cy="{{ .y }}" r="{{ mul .r 3.3 }}" style="--arrival-phase:{{ $phase }}; --peak:{{ .glow }}"/>
+              <circle cx="{{ .x }}" cy="{{ .y }}" r="{{ mul .r 3.3 }}"
+                      style="--arrival-phase:{{ $phase }}; --peak:{{ .glow }}"/>
               {{ end -}}
             </g>
           </svg>

@@ -146,7 +146,7 @@
   width: min(9.5vw, 150px);
   opacity: .83;
 }
-.hg-star-nodes { fill: var(--node-ink); opacity: .83; }
+.hg-star-nodes { opacity: .88; }
 .hg-star-halos circle { opacity: 0; }
 .hg-star-line-base { fill: var(--route-ink); opacity: .42; }
 .hg-star-band-fill stop { stop-color: var(--signal-wake); }
@@ -183,17 +183,30 @@
     display: block;
     animation: hg-star-sweep var(--signal-period) linear var(--signal-delay) infinite;
   }
+  .hg-star-nodes circle {
+    animation: hg-star-twinkle var(--star-period) ease-in-out var(--star-delay) infinite;
+  }
   .hg-star-halos circle {
     animation: hg-star-afterglow var(--signal-period) ease-in-out infinite;
     /* The halo reaches its peak as the light passes the node. */
     animation-delay: calc(var(--signal-delay) + (var(--arrival-phase) - .09) * var(--signal-period));
   }
   .hg-lone-meteor { animation: hg-lone-flight 19s linear 1.2s infinite both; }
-  .diving .hg-sky :is(.hg-star-band, .hg-star-halos circle, .hg-lone-meteor) { animation-play-state: paused; }
+  .diving .hg-sky :is(.hg-star-band, .hg-star-nodes circle, .hg-star-halos circle, .hg-lone-meteor) {
+    animation-play-state: paused;
+  }
 }
 @keyframes hg-star-sweep {
   from { transform: translateX(0); }
   to { transform: translateX(var(--band-travel)); }
+}
+@keyframes hg-star-twinkle {
+  0%, 100% { opacity: .72; }
+  18% { opacity: .98; }
+  39% { opacity: .52; }
+  53% { opacity: .69; }
+  72% { opacity: .37; }
+  90% { opacity: .82; }
 }
 @keyframes hg-star-afterglow {
   0%, 29%, 100% { opacity: 0; }

@@ -339,7 +339,8 @@
       if (!config.sourceGroupId) {
         if (context && !context.handoff()) return Promise.resolve();
         renderState('unavailable', config.labels.unavailable);
-        if (launcher) launcher.focus();
+        lastTrigger = launcher;
+        restoreFocus();
         return Promise.resolve();
       }
       lastTrigger = trigger || documentObject.activeElement;
@@ -412,6 +413,11 @@
     function restoreFocus() {
       if (lastTrigger && typeof lastTrigger.focus === 'function') {
         lastTrigger.focus();
+        // The homepage launcher can leave the screen while the dialog is open.
+        if (documentObject.activeElement !== lastTrigger) {
+          var main = documentObject.querySelector('main[tabindex]');
+          if (main) main.focus({ preventScroll: true });
+        }
       }
     }
 

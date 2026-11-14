@@ -547,6 +547,16 @@ for (const reducedMotion of ["no-preference", "reduce"]) {
   });
 }
 
+test("closing AI consent after leaving the introduction returns focus to the page", async ({ page }) => {
+  await page.goto(AI_ORIGIN + "/cn/");
+  await page.locator(".hg-ask-ai-launcher").click();
+  await page.locator("#community").scrollIntoViewIfNeeded();
+  const readingPosition = await page.evaluate(() => scrollY);
+  await page.locator("[data-hg-ai-cancel]").click();
+  await expect(page.locator("main")).toBeFocused();
+  expect(await page.evaluate(() => scrollY)).toBe(readingPosition);
+});
+
 test("the document Ask AI launcher remains available while reading", async ({ page }) => {
   await page.goto(AI_ORIGIN + "/docs/introduction/");
   const launcher = page.locator(".hg-ask-ai-launcher");

@@ -1,40 +1,59 @@
 # OINK upgrade SOP
 
-OINK is the site's sole theme module. Its version and two checksums live in
-`go.mod` / `go.sum`; CI and historical builds use the same locks through
-`oink_module.py`. Keep site changes in configuration, data, hooks and public APIs.
-Do not edit the module cache, vendor a fork or run `go mod tidy` (there are no Go
-source imports, so it can remove the theme).
+OINK is the site's sole theme module. Its exact release and checksums live in `go.mod` / `go.sum`; latest and historical builds consume the same locks
+through `oink_module.py`. Keep HugeGraph customizations in configuration, data, hooks and public OINK APIs. Do not edit the module cache, vendor a fork,
+copy the Duo View implementation, or run `go mod tidy`: this repository has no Go source imports, so `tidy` can remove the theme module.
+
+This document uses the upstream product names consistently:
+
+- **OINK 1.5.1** is the theme release.
+- **Duo View** is the English feature name; the Chinese UI label is **双列视图**.
+- **Sync Scroll** is the English control; the Chinese UI label is **同步滚动**.
 
 ## Toolchain and upstream guidance
 
-Use the Hugo Extended version pinned in `.github/workflows/hugo.yml`, the Go
-version in `go.mod`, Python 3.13, WebP's `cwebp` / `dwebp`, and Node satisfying
-`tests/e2e/package.json`. Node is only for browser tests. OINK 1.4.0 requires
-Hugo Extended 0.168.0 and Go 1.27.3; Hugo's built-in LibSass compiles the site,
-so no standalone Dart Sass or npm site-build dependencies are needed.
-Set `HUGO_BIN` / `PYTHON_BIN` for task-local tools.
+OINK 1.5.1 requires Hugo Extended 0.168.0 and Go 1.27.3. Hugo's built-in LibSass compiles the site, so no standalone Dart Sass or npm site-build
+dependency is needed. Use Python 3.13, WebP's `cwebp` / `dwebp`, and a Node version satisfying `tests/e2e/package.json`; Node is used only by browser tests.
+The pinned versions live in `.github/workflows/hugo.yml`, `go.mod`, and the local/legacy preview configuration. Set `HUGO_BIN`, `GO_BIN`, or `PYTHON_BIN`
+only for task-local tools.
 
-Read the target release notes and the [official upgrade guide](https://oink.pgsty.com/zh/docs/admin/upgrade/).
-For [1.4.0](https://oink.pgsty.com/zh/blog/release/1.4.0/), keep LibSass deprecation
-warnings visible: do not add `--panicOnWarning` or suppress the warning through
-`ignoreLogs`. The shared `scripts/hugo_build.py` runner streams the full output
-and permits only that exact LibSass warning; every other Hugo `WARN`, including
-missing translations and duplicate target paths, fails production builds. The
-same gate covers local, versioned and AI fixture builds. Build errors,
-source/output validation and browser contracts remain blocking.
+Read the [OINK 1.5 upgrade guide](https://oink.pgsty.com/zh/docs/admin/upgrade/#preparing-1-5) and the
+[OINK 1.5.1 release notes](https://github.com/pgsty/oink/releases/tag/v1.5.1) before changing the lock. Keep LibSass deprecation warnings visible: do not add
+`--panicOnWarning` or suppress them through `ignoreLogs`. The shared `scripts/hugo_build.py` runner permits only the known LibSass warning; every other Hugo
+`WARN`, including missing translations and duplicate target paths, remains blocking.
 
-The official Module sequence is `hugo mod get`, `hugo mod tidy`, `hugo mod graph`
-and a production build. Our runner adds HugeGraph's module identity, historical
-navigation, search, consent and browser checks to that workflow. Its `go get`
-and checksum cleanup preserve the site's sole-theme contract. Use the existing
-runner; the upstream multi-consumer updater is unnecessary for this one site.
+The upstream generic Module sequence includes `hugo mod get`, `go mod tidy`, `hugo mod graph`, and a production build. HugeGraph's updater deliberately replaces
+that sequence: it changes the exact pin, preserves the theme requirement, prunes only stale OINK checksums, verifies the published module graph, runs the full
+site/version/browser checks, and updates the reviewed override inventory.
+
+## Duo View scope and route matrix
+
+Set `params.ui.compare: true` once. OINK then discovers only real, same-origin HTML translations for page types `docs`, `book`, and `blog`. It supplies the page
+entry button, Command Palette action, `B` shortcut, lazy reader runtime, Sync Scroll, history/state restoration, mobile pane switcher, failure/retry UI, and
+accessibility behavior. HugeGraph must not add a second comparison component or route map.
+
+HugeGraph currently publishes translated Docs and Blog pages but no real Book content tree. Book remains enabled through the native OINK type support; browser
+verification starts when actual translated Book pages exist. Do not create fixture-like production Book pages merely to satisfy a matrix.
+
+| Release | English Docs | Chinese Docs | Blog | Book |
+| --- | --- | --- | --- | --- |
+| latest | `/docs/…` | `/cn/docs/…` | `/blog/…` and `/cn/blog/…` | No published HugeGraph Book route |
+| 1.7 | `/versions/1.7/docs/…` | `/versions/1.7/cn/docs/…` | Shared latest Blog, not archived | No published HugeGraph Book route |
+| 1.5 | `/versions/1.5/docs/…` | `/versions/1.5/cn/docs/…` | Shared latest Blog, not archived | No published HugeGraph Book route |
+| 1.3 | `/versions/1.3/docs/…` | `/versions/1.3/cn/docs/…` | Shared latest Blog, not archived | No published HugeGraph Book route |
+| 1.0 | `/versions/1.0/docs/…` | `/versions/1.0/cn/docs/…` | Shared latest Blog, not archived | No published HugeGraph Book route |
+
+For each real pair, validate both language entry routes. Desktop widths at or above OINK's 900 px breakpoint show two panes; narrower viewports show one
+pane and native language tabs. A page with no real peer, a draft peer, a `build.render: link/never/false` peer, a non-HTML peer, or a later Blog archive page
+must not show Duo View. Print, Markdown and RSS outputs must never carry the reader.
+
+Sync Scroll intentionally uses approximate alignment when heading IDs differ. Improve explicit shared heading IDs only on important pages where evidence shows a
+poor reading experience; do not rewrite the documentation tree as part of a theme upgrade.
 
 ## Upgrade and review
 
-Start with a clean worktree and capture the current site with its matching
-toolchain. Network access is needed for modules, archived content, npm and
-Chromium; ports 4173–4175 must be free.
+Start from a clean worktree and capture the pre-upgrade OINK 1.4.0 site with its matching toolchain. Network access is needed for modules, archived content, npm
+and Chromium; ports 4173-4175 must be free.
 
 ```sh
 upgrade_dir=$(mktemp -d "${TMPDIR:-/tmp}/hugegraph-oink-review.XXXXXX")
@@ -45,105 +64,121 @@ scripts/hugo.sh build --destination "$upgrade_dir/before-site"
   npx playwright install chromium
   SITE_ROOT="$upgrade_dir/before-site" VISUAL_RESULTS_DIR="$upgrade_dir/before" npm run test:visual
 )
-# Select the target toolchain, then use an explicit release tag.
-scripts/update-oink.sh v1.4.0 --work-dir "$upgrade_dir"
+
+scripts/update-oink.sh v1.5.1 --work-dir "$upgrade_dir"
 ```
 
-The single command checks target tool requirements and a real Hugo/LibSass
-compilation before changing locks. It then updates the pin, removes old
-checksums, verifies Go/Hugo module identity and reports watched upstream changes
-in `review.json`. With no review impacts it runs all checks and records the
-new override baseline. It never installs tools, commits, pushes or publishes.
+The updater first resolves target metadata and performs a real Hugo Extended/LibSass smoke compilation without changing locks. It then updates `go.mod` and
+`go.sum`, verifies that `github.com/apache/hugegraph-doc` imports only published `github.com/pgsty/oink@v1.5.1`, and compares the reviewed upstream inventory in
+`scripts/oink-overrides.json`.
 
-When upstream changes affect local integrations, compare the old upstream, new
-upstream and local override. Adapt only affected behavior, then resume:
+When `review.json` reports an affected local integration, compare the old upstream implementation, OINK 1.5.1, and the HugeGraph override. Adapt only behavior
+that is actually affected, then resume in the same work directory:
 
 ```sh
-scripts/update-oink.sh v1.4.0 --resume --accept-reviewed --work-dir "$upgrade_dir"
+scripts/update-oink.sh v1.5.1 --resume --accept-reviewed --work-dir "$upgrade_dir"
 ```
 
-`--accept-reviewed` acknowledges the reported compatibility review; it skips no
-validation. A failed run retains the target pin, artifacts, Playwright report and
-traces. Fix the cause and resume in the same directory. A same-version run also
-validates changes to local overrides. The baseline advances only after all
-checks pass. Inspect bilingual desktop/mobile before/after captures and obtain
-an independent combined-diff review before publishing.
+`--accept-reviewed` acknowledges the compatibility review; it skips no validation. A failed run retains locks, logs, Playwright traces, captures and the first
+pre-upgrade backup. A same-version run validates later fixes against the same OINK release. The override baseline advances only after the required checks pass.
 
-## Validation and reuse
-
-The runner reuses existing link checks, Python source tests, production build,
-bounded two-worker version builder, aggregate validator, blocking Chromium suite
-and visual harness. It checks every selected version. Latest always rebuilds;
-archived artifacts can be reused only when source, shared shell, toolchain,
-origins and year fingerprints plus file digests match. Restored artifacts are
-validated again. A theme or shell change invalidates those receipts automatically;
-a browser-only repair can resume without recompiling unchanged archives.
-
-CI derives build groups from `versions.json`: adding a version needs no copied
-job/action. A compatible historical bundle uses one warm group even when only
-some per-version keys match; a fully cold shell uses at most three groups of
-two workers. Compatibility lookup uses a shared-input prefix, while each
-artifact still needs its exact version key, digest and validation before reuse.
-Theme, Hugo, branding or version-menu changes correctly rebuild archives:
-their static HTML shares the current shell. Updating ordinary latest Docs
-content or browser/source tests leaves historical content reusable.
-
-Validation includes current `content/` and `static/` changes, including
-non-ignored new files and deletions, using a temporary index and (if needed) an
-unreferenced validation commit. It does not stage files or move HEAD/branches.
-`validation-snapshot.json` records that scope; historical sources remain pinned
-by `versions.json`.
-
-Release checks disable inherited Hugo replacements and preview themes, set
-`GOWORK=off` / `HUGO_MODULE_WORKSPACE=off`, and reject `_vendor`. A correct
-`go.mod` alone cannot prove Hugo used the selected theme. Read-only
-`--check-baseline` uses disposable locks in a sibling workspace so Hugo's graph
-initialization cannot rewrite the checkout; the parent directory must be writable.
-Normal preview commands retain local-development capabilities.
-
-Manual CI dispatches inspect the immutable candidate's theme pin before scheduling
-builds. OINK 1.3.0 manual candidates are outside this workflow's supported scope;
-OINK 1.3.1 requires standalone Dart Sass. Both pins are rejected by the current
-workflow; upgrade such a candidate to OINK 1.4.0 first.
-This restriction concerns the candidate's theme, not historical documentation:
-archived content continues to use the current site shell.
-
-Reuse the same external work directory to preserve the first lock/inventory
-backup, `review.json`, `toolchain.json`, build artifacts and captures. Initial
-runs reject reserved outputs instead of overwriting user files; existing
-`before/` captures and `before-site/` are allowed. Resume never regenerates
-baseline screenshots. A fresh `--resume` directory backs up the already-pinned
-target, which `review.json` explicitly records.
-
-## Customization review map
+## Compatibility review map
 
 | Integration | Local entry | Required evidence |
 | --- | --- | --- |
-| Version/language navigation, historical shell | `layouts/`, `scripts/versioning.py` | All-version aggregate and navigation/browser contracts |
-| Language preference and sidebar memory | `language-preference.js`, `hugegraph-shell.js`, head hook | Storage, focus, keyboard and public OinkSidebar API |
-| Ask AI consent and community entry | `hugo.yaml`, AI config partial, `kapa-adapter.js`, body/footer hooks | Enabled/disabled AI fixtures, public search-tail API |
-| Branding and appearance | `assets/scss/`, `data/`, `i18n/` | Four presets, light/dark, bilingual desktop/mobile and Print |
-| Native content | `content/`, output validator | Component behavior, actual payload sinks, Print/Markdown fallbacks |
+| Navbar, mobile drawer and keyboard help | `layouts/_partials/navbar.html` | OINK 1.5.1 navbar semantics, desktop/mobile utilities and version links |
+| Page actions and Command Palette | `layouts/_partials/actions/manifest.html` | Page-scoped `compare_translations` availability and no cache leakage |
+| Language preference / historical shell | `language-preference.js`, `hugegraph-shell.js`, `layouts/` | No duplicate controllers; language/version/history |
+| Kapa AI and consent | `kapa-adapter.js`, body/footer hooks, project SCSS | No duplicate widget, consent, request or floating launcher inside panes |
+| SEO and language targets | `seo-alternates.html`, `language-targets.html` | Canonical/hreflang only for real translations across current and archived Docs |
+| Branding and appearance | `assets/scss/`, `data/`, `i18n/` | Light/dark, presets, Print and mobile; pane content remains usable |
+| Historical assembly and cache | `versioning.py`, `version_cache.py`, `versions.json` | Five-version aggregate; theme/toolchain invalidates archived caches |
+| Native content outputs | `content/`, output validator | Docs/Blog, draft/missing peers, HTML-only entry, Print/Markdown/RSS isolation |
 
-`scripts/oink-overrides.json` stores upstream hashes, not copied source. The
-inventory covers same-name local layouts/assets/translations/data, watched
-sidebar/search/surface/appearance interfaces and upstream SCSS selectors used
-locally. Added/removed/changed entries require review; unchanged hashes do not
-prove interaction compatibility. After adding/removing an override, use
-`scripts/update-oink.sh <pinned-version> --resume --accept-reviewed` to validate
-and record the inventory.
+A Duo View iframe is an ordinary same-origin page. Preserve content-level runtimes such as tables, tabs and diagrams, but suppress HugeGraph's top-level shell,
+language preference controller and Kapa initialization inside `window.OinkComparePane`. Do not disable all scripts in the pane.
 
-Use [OINK features](oink-features.md) for native component selection and real
-site examples. Prefer native configuration/components over a copied template,
-CSS patch or second DOM controller. When removing shared styles, also check
-archived content in its temporary assembly; do not rewrite release branches.
-Visible virtual Docs groups must omit `toc_hide`, which hides whole subtrees.
+`scripts/oink-overrides.json` stores upstream hashes, not copied source. Its inventory includes same-name local overrides, upstream SCSS selectors consumed by
+project styles, and watched public interfaces. Added, removed, or changed hashes require review; unchanged hashes alone do not prove interaction compatibility.
 
-## Recovery
+## Required validation
 
-Keep upgrade/adaptations/baseline in a dedicated commit. Revert that commit to
-undo a committed upgrade, then validate the restored version with `--resume`.
-For an uncommitted run, inspect the diff and restore only upgrade files from the
-known pre-upgrade revision or the first work-directory backup. Do not reset
-unrelated work. The runner does not roll back automatically. Publication uses
-the existing release workflow.
+Run the updater's complete validation and retain its report. At minimum, the evidence must include:
+
+1. Exact locks: OINK `v1.5.1`, both `go.sum` entries, Hugo Extended 0.168.0, Go 1.27.3, and built-in LibSass.
+2. Source/link tests and a production Hugo build with no new warning class.
+3. The five-version aggregate with English and Chinese Docs routes shown in the matrix above.
+4. Real latest Docs and Blog pairs opened from both languages; the published Chinese 0.12.0 release notes page must not offer Duo View because its English peer
+   is still a draft.
+5. Page button, Command Palette, `B`, close/reopen, Back/Forward, refresh restoration, reading-position restoration, fragment navigation, Sync Scroll and
+   continuous scrolling.
+6. Desktop two-pane and mobile single-pane/tab behavior, light/dark themes, Print, RSS, Markdown, search, version switching and Kapa coexistence.
+7. Lazy loading: before opening, no translated page or `document-compare.js` request; inside panes, no duplicate Kapa load or HugeGraph top-level controllers.
+8. Failure, Retry and direct-link fallback, keyboard focus, dialog name, pane titles and reduced-motion behavior.
+9. Before/after desktop Duo View captures, mobile captures, and a short Sync Scroll GIF. Use real HugeGraph pages, not only generated fixtures.
+10. An independent combined-diff review covering correctness, native reuse, security/CSP, performance and over-design.
+
+OINK's release fixtures cover Docs/Book/Blog discovery, draft/non-HTML filtering, output isolation, lazy assets, pane runtime classification and reader
+geometry. HugeGraph's Playwright suite adds real content, historical paths, local override behavior and product integration. Review both layers; neither
+replaces the other.
+
+## Cache and build behavior
+
+Latest always rebuilds. Historical artifacts may be reused only when their source, current shared shell, theme lock, Hugo/Go toolchain, origins, year
+fingerprints and file digests match. A change to `go.sum`, OINK inventory, shared layouts, styles or shell scripts invalidates the relevant cache receipts;
+every restored artifact is validated again. Browser-only fixes may reuse unchanged compiled archives.
+
+Release checks clear Hugo replacements and preview themes, set `GOWORK=off` and `HUGO_MODULE_WORKSPACE=off`, and reject `_vendor`. A correct `go.mod` is not
+proof that Hugo used the selected module; the module graph and rendered artifacts are both checked.
+
+`netlify.toml` is retained only for legacy/ad-hoc previews. ASF staging and production use `.github/workflows/hugo.yml`; Netlify settings must not become a
+second release authority.
+
+## Staging release gate
+
+Do not publish Production as part of an upgrade PR. After the candidate branch exists in the ASF repository and PR CI passes, dispatch **Build and deploy site**
+from ASF `master` with the immutable candidate branch and these inputs:
+
+```text
+operation: staging-next
+scope: full
+candidate_branch: <ASF candidate branch>
+confirmation: publish asf-staging-oink
+```
+
+`scope: full` is required for this upgrade because the current theme is applied to latest plus 1.7, 1.5, 1.3 and 1.0. Verify the staged origin's English/Chinese
+route matrix, same-origin iframe policy, canonical/hreflang, search, Kapa consent, Print/RSS/Markdown outputs, desktop/mobile behavior and captures. Record the
+candidate commit and the workflow run; a local build or ORG-only branch is not an ASF Staging pass.
+
+Production remains a separate authorized operation. Do not dispatch `production-history-refresh` and do not update `asf-site` until Staging evidence is accepted
+and explicit Production approval is given.
+
+## Rollback
+
+Keep the version lock, compatibility fixes, tests and reviewed baseline in one focused upgrade commit or a small contiguous commit series.
+
+### Before Production
+
+1. Revert the complete upgrade commit/series; do not reset unrelated work.
+2. Confirm `go.mod`, `go.sum`, `hugo.yaml` and `scripts/oink-overrides.json` are back to the OINK 1.4.0 state.
+3. From a clean worktree, run a same-version validation with a new work directory:
+
+   ```sh
+   rollback_dir=$(mktemp -d "${TMPDIR:-/tmp}/hugegraph-oink-rollback.XXXXXX")
+   scripts/update-oink.sh v1.4.0 --work-dir "$rollback_dir"
+   ```
+
+4. Run the full five-version browser matrix and publish only to Staging with `scope: full`.
+5. Compare the staged rollback against the retained pre-upgrade captures before any Production decision.
+
+### Uncommitted recovery
+
+Use the first updater work-directory backup or `git restore --source=<known-pre-upgrade-commit>` for only the upgrade-owned files. Do not use a broad hard
+reset.
+The updater does not roll back automatically.
+
+### After Production
+
+Use the repository's normal git revert and release workflow; never patch generated `asf-site` content by hand. Rebuild all five versions from the reverted
+source, validate Staging, then publish Production only with the same explicit authorization used for the original release. Retain both release workflow run
+IDs and the rollback commit for auditability.

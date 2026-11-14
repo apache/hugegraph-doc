@@ -931,3 +931,20 @@
   width: 100%;
   max-width: 36rem;
 }
+
+@media screen {
+  // Let configuration keys set the width of their own column.
+  .td-content .td-table-scroll:not(.td-table-scroll--static) > .hg-config-keys > tbody > tr > td:first-child {
+    max-width: none;
+  }
+}
+
+// OINK Duo View loads ordinary pages in same-origin iframes. Keep content-level
+// interactions, but remove HugeGraph's top-level AI chrome from both panes.
+html[data-td-compare-pane] {
+  .hg-ask-ai-launcher,
+  .hg-ai-consent,
+  .hg-ai-status {
+    display: none !important;
+  }
+}

@@ -5,6 +5,10 @@ const path = require("node:path");
 const states = [
   ["en-docs-desktop-light", "/docs/", { width: 1440, height: 900 }, "light", "default"],
   ["cn-docs-desktop-dark", "/cn/docs/", { width: 1440, height: 900 }, "dark", "default"],
+  ["en-duo-desktop-light", "/docs/quickstart/hugegraph/hugegraph-server/", { width: 1440, height: 900 }, "light", "duo"],
+  ["cn-duo-desktop-light", "/cn/docs/quickstart/hugegraph/hugegraph-server/", { width: 1440, height: 900 }, "light", "duo"],
+  ["en-duo-mobile-light", "/docs/quickstart/hugegraph/hugegraph-server/", { width: 390, height: 844 }, "light", "duo-mobile"],
+  ["cn-duo-mobile-dark", "/cn/docs/quickstart/hugegraph/hugegraph-server/", { width: 390, height: 844 }, "dark", "duo-mobile"],
   ["en-search-desktop-light", "/docs/", { width: 1440, height: 900 }, "light", "search"],
   ["cn-search-mobile-dark", "/cn/docs/", { width: 390, height: 844 }, "dark", "search"],
   ["en-sidebar-desktop-light", "/docs/introduction/", { width: 1440, height: 900 }, "light", "collapse"],
@@ -176,6 +180,21 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
         await expect(page.locator("html")).toHaveAttribute("data-td-preset", "paper");
         await page.keyboard.press("Escape");
       }
+    } else if (state === "duo" || state === "duo-mobile") {
+      await page.locator("[data-td-compare-open]").click();
+      const dialog = page.locator("dialog[data-td-compare]");
+      await expect(dialog).toBeVisible();
+      await expect(dialog.locator("iframe[data-td-compare-frame]")).toHaveCount(2);
+      for (const frame of await dialog.locator("iframe[data-td-compare-frame]").all()) {
+        const handle = await frame.elementHandle();
+        const content = await handle.contentFrame();
+        await content.waitForFunction(() => window.OinkComparePane === true &&
+          Boolean(document.querySelector("#td-main-content .td-content")));
+      }
+      if (state === "duo-mobile") {
+        await dialog.locator(".td-compare__tab").nth(1).click();
+        await expect(dialog.locator("[data-td-compare-side='1']")).toHaveAttribute("aria-hidden", "false");
+      }
     } else if (state === "search") {
       await page.locator("[data-td-shell-search-open]").first().click();
       await page.locator(".td-shell-search__input").fill(url.startsWith("/cn/") ? "服务端" : "server");
@@ -212,7 +231,8 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
     await page.screenshot({
       animations: "disabled",
       path: path.join(directory, `${name}.png`),
-      fullPage: !["gallery", "chart", "longcode", "markmap", "terminal", "math", "pd", "computer", "config-api", "helm", "footer", "hubble-import", "hubble-nodes"].includes(state)
+      fullPage: !["duo", "duo-mobile", "gallery", "chart", "longcode", "markmap", "terminal", "math",
+        "pd", "computer", "config-api", "helm", "footer", "hubble-import", "hubble-nodes"].includes(state)
     });
     if (sectionHeading) {
       expect(await sectionHeading.evaluate(node => Math.abs(node.getBoundingClientRect().top - 108))).toBeLessThan(2);

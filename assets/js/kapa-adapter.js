@@ -427,6 +427,7 @@
   }
 
   function init(windowObject, documentObject) {
+    if (windowObject.OinkComparePane) return null;
     var config = readConfig(documentObject);
     if (!config) return null;
     var controller = createController(windowObject, documentObject, config);

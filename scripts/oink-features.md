@@ -176,7 +176,7 @@ Expo's generated previews, neighboring-original preload and album layout work
 do not apply to Gallery. Supply intrinsic `width` and `height` on standalone
 Markdown images to reserve space; those attributes do not compress the file.
 Inspect generated HTML and measure bytes/timing before claiming an improvement.
-See the [tagged Expo implementation](https://github.com/pgsty/oink/blob/v1.4.0/layouts/_partials/expo/items.html).
+See the [tagged Expo implementation](https://github.com/pgsty/oink/blob/v1.5.1/layouts/_partials/expo/items.html).
 
 ### Terminal recordings
 
@@ -196,6 +196,24 @@ private output. Re-record when commands/output change; change `title` or `speed`
 only for presentation. Resize the terminal before recording: overriding player
 `cols`/`rows` can crop it. Check desktop and mobile playback.
 The recorder is an authoring tool, not a build dependency.
+
+## Native Duo View
+
+OINK 1.5.1 calls the feature **Duo View** in English and **双列视图** in
+Chinese. Use **Sync Scroll / 同步滚动** for its optional approximate heading
+alignment. The configuration and action IDs remain `params.ui.compare` and
+`compare_translations`; do not rename those public identifiers.
+
+HugeGraph enables the native feature globally. OINK discovers only real,
+same-origin HTML translations of Docs, Book and Blog pages, loads the peer page
+on demand, and hides the entry when no valid translation exists. Do not add a
+parallel route map, copied reader template, machine-generated placeholder
+translation or site-specific comparison controller. Align heading IDs only on
+important pages where a real Sync Scroll problem is observed.
+
+Site-level integrations loaded from hooks must stand down when
+`window.OinkComparePane` is true. Content runtimes remain active so tables, tabs,
+diagrams, code controls and fragment links continue to work inside each pane.
 
 ## Site integration and output checks
 
@@ -225,7 +243,8 @@ The recorder is an authoring tool, not a build dependency.
   fallbacks. Check RSS where the component appears in a feed. A successful Hugo
   render alone does not establish compatibility.
 
-The [1.4.0 release notes](https://oink.pgsty.com/zh/blog/release/1.4.0/) and
-[tagged source](https://github.com/pgsty/oink/tree/v1.4.0) are the reference for
-this upgrade. Consult the pinned release before extending a component; the
+The [1.5.1 release](https://github.com/pgsty/oink/releases/tag/v1.5.1),
+[changelog](https://github.com/pgsty/oink/blob/v1.5.1/CHANGELOG.md) and
+[tagged source](https://github.com/pgsty/oink/tree/v1.5.1) are the reference for
+the current pin. Consult the pinned release before extending a component; the
 upstream website can describe a newer version.

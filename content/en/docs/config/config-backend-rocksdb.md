@@ -184,7 +184,7 @@ Other points to keep in mind:
 | rocksdb.use_direct_io_for_flush_and_compaction | `false`       | Enable the OS to use direct read/writes in flush and compaction.                                                                                                 |
 | rocksdb.use_fsync                              | `false`       | If true, then every store to stable storage will issue a fsync.                                                                                                 |
 | rocksdb.atomic_flush                           | `false`       | If true, flushing multiple column families and committing their results atomically to MANIFEST. Note that it's not necessary to set atomic_flush=true if WAL is always enabled. |
-{.td-table--wide}
+{.wide .hg-config-keys}
 
 ### SST table format and block cache options
 

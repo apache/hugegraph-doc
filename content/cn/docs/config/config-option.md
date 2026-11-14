@@ -302,7 +302,7 @@ HStore 后端还会从图配置文件 `{graph-name}.properties` 中读取以下�
 | rocksdb.partition_filters_and_indexes           | false                                            | If bloom filter is enabled, set this option true to use partitioned full filters and indexes for each sst file. This option is incompatible with block-based filters.                                                                                                                                                                                                                                  |
 | rocksdb.pin_top_level_index_and_filter          | true                                             | If partition_filters_and_indexes is set true, set this option true if we'd pin top-level index of partitioned filter and index blocks to the block cache.                                                                                                                                                                                                                                              |
 | rocksdb.prefix_extractor_n_bytes                | 0                                                | The prefix-extractor uses the first N bytes of a key as its prefix, it will use the full key when a key is shorter than the N. 0 means unset prefix-extractor.                                                                                                                                                                                                                                         |
-{.td-table--wide}
+{.wide .hg-config-keys}
 
 > [!DETAILS]- **K8s 配置项 (可选)**
 > 对应配置文件`rest-server.properties`

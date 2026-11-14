@@ -172,7 +172,7 @@ rocksdb-data/
 | rocksdb.use_direct_io_for_flush_and_compaction | `false`       | flush 和 compaction 时使用直接读写。                                                                 |
 | rocksdb.use_fsync                              | `false`       | 为 true 时每次持久化都会执行 fsync。                                                                 |
 | rocksdb.atomic_flush                           | `false`       | 为 true 时多个列族的 flush 结果会原子地提交到 MANIFEST。WAL 一直开启的情况下不必设置该项。             |
-{.td-table--wide}
+{.wide .hg-config-keys}
 
 ### SST 表格式与块缓存配置项
 

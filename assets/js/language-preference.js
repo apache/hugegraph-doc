@@ -2,6 +2,8 @@
 (function () {
   'use strict';
 
+  if (window.OinkComparePane) return;
+
   var node = document.getElementById('hg-language-config');
   if (!node) return;
   var config = JSON.parse(node.textContent);

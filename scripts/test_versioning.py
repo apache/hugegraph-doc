@@ -1254,6 +1254,81 @@ class VersionUrlTest(unittest.TestCase):
             self.assertEqual(versioning.ensure_legacy_config_tables_wide(page), 0)
             self.assertEqual(page.read_text(encoding="utf-8"), source)
 
+    def test_historical_config_option_marks_only_the_rocksdb_key_table(self) -> None:
+        key_row = "rocksdb.use_direct_io_for_flush_and_compaction"
+        other_table = (
+            "| config option | default value | description |\n|---|---|---|\n"
+            "| gremlin.graph | graph.yaml | Graph config file. |\n"
+            "{#other .td-table--wide data-label=\"keep } here\"}\n"
+        )
+        key_table = (
+            "| config option | default value | description |\n|---|---|---|\n"
+            f"| {key_row} | false | RocksDB option. |\n"
+            '{#rocksdb class="td-table--wide authored" data-label="preserve } here"}\n'
+        )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            page = Path(temporary) / "config-option.md"
+            source = other_table + "\n" + key_table
+            page.write_text(source, encoding="utf-8")
+
+            self.assertEqual(
+                versioning.ensure_legacy_config_tables_wide(
+                    page, config_key_row=key_row
+                ),
+                1,
+            )
+            rendered = page.read_text(encoding="utf-8")
+            self.assertIn('{#other .td-table--wide data-label="keep } here"}\n', rendered)
+            self.assertIn(
+                '{#rocksdb class="td-table--wide authored" '
+                'data-label="preserve } here" .hg-config-keys}\n',
+                rendered,
+            )
+            self.assertEqual(
+                versioning.ensure_legacy_config_tables_wide(
+                    page, config_key_row=key_row
+                ),
+                0,
+            )
+            self.assertEqual(page.read_text(encoding="utf-8"), rendered)
+
+    def test_historical_adapter_adds_rocksdb_key_class_only_to_archive(self) -> None:
+        key_row = "rocksdb.use_direct_io_for_flush_and_compaction"
+        table = (
+            "| config option | default value | description |\n|---|---|---|\n"
+            "| gremlin.graph | graph.yaml | Graph config file. |\n"
+            "\n"
+            "| config option | default value | description |\n|---|---|---|\n"
+            f"| {key_row} | false | RocksDB option. |\n"
+        )
+        for version in ("1.3", "latest"):
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as temporary:
+                assembly = Path(temporary)
+                pages = []
+                for language in ("en", "cn"):
+                    page = assembly / f"content/{language}/docs/config/config-option.md"
+                    page.parent.mkdir(parents=True, exist_ok=True)
+                    page.write_text(table, encoding="utf-8")
+                    pages.append(page)
+
+                with (
+                    mock.patch.object(versioning, "apply_exact_legacy_content_fixes", return_value=4),
+                    mock.patch.object(versioning, "ensure_search_metadata", return_value=0),
+                    mock.patch.object(versioning, "normalize_historical_server_headings", return_value=0),
+                    mock.patch.object(versioning, "first_existing_path", return_value=assembly / "server.md"),
+                ):
+                    versioning.apply_known_legacy_fixes(assembly, version)
+
+                for page in pages:
+                    rendered = page.read_text(encoding="utf-8")
+                    if version == "latest":
+                        self.assertEqual(rendered, table)
+                    else:
+                        self.assertEqual(rendered.count(".hg-config-keys"), 1)
+                        self.assertIn("{.td-table--wide .hg-config-keys}\n", rendered)
+                        self.assertIn("{.td-table--wide}\n", rendered)
+
     def test_known_legacy_catalog_adapter_is_bound_to_versions_languages_and_paths(self) -> None:
         source = (
             "---\ntitle: Config\n---\n"
@@ -1624,6 +1699,83 @@ class VersionUrlTest(unittest.TestCase):
                     )
                     switch = scoped["actions"][0]
                     self.assertEqual(switch["options"][0]["url"], expected_url)
+
+    def test_scopes_duo_view_config_urls_for_archived_artifact(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        archived = next(
+            entry for entry in manifest["versions"] if entry["id"] == "1.7"
+        )
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            page = output / "docs/index.html"
+            page.parent.mkdir(parents=True)
+            counterpart = output / "cn/docs/index.html"
+            counterpart.parent.mkdir(parents=True)
+            counterpart.write_text("<p>中文</p>", encoding="utf-8")
+            config = {
+                "current": {"label": "English", "url": "/docs/"},
+                "src": "/js/chunks/document-compare.js",
+                "targets": [
+                    {
+                        "code": "zh-CN",
+                        "label": "简体中文",
+                        "url": "/cn/docs/",
+                    }
+                ],
+                "labels": {"title": "Duo View"},
+            }
+            page.write_text(
+                '<script type="application/json" id="td-compare-config">'
+                + json.dumps(config, ensure_ascii=False)
+                + "</script>",
+                encoding="utf-8",
+            )
+
+            stats = versioning.scope_version_artifact(
+                output,
+                manifest,
+                archived,
+                ORIGIN,
+            )
+
+            rendered = page.read_text(encoding="utf-8")
+            scoped = json.loads(
+                versioning.COMPARE_CONFIG_RE.search(rendered).group("body")
+            )
+            self.assertEqual(scoped["current"]["url"], "/versions/1.7/docs/")
+            self.assertEqual(
+                scoped["targets"][0]["url"],
+                "/versions/1.7/cn/docs/",
+            )
+            self.assertEqual(
+                scoped["src"],
+                "/versions/1.7/js/chunks/document-compare.js",
+            )
+            self.assertEqual(scoped["labels"], {"title": "Duo View"})
+            self.assertEqual(stats["compareConfigs"], 1)
+
+    def test_duo_view_page_marker_uses_the_mounted_path(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        examples = {
+            "docs/deep/page/index.html": '<meta name=oink-compare-page content="{mount}/docs/deep/page/">',
+            "cn/docs/图/index.html": "<meta content='{mount}/cn/docs/%E5%9B%BE/' name='oink-compare-page'>",
+        }
+        other_meta = '<meta name="description" content="/docs/deep/page/">'
+        for version in ("latest", "1.7"):
+            entry = next(item for item in manifest["versions"] if item["id"] == version)
+            prefix = "/" + entry["publishPath"] if entry["publishPath"] else ""
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as temp_name:
+                output = Path(temp_name)
+                for relative, marker in examples.items():
+                    page = output / relative
+                    page.parent.mkdir(parents=True)
+                    page.write_text(marker.format(mount="") + other_meta, encoding="utf-8")
+                for _ in range(2):
+                    versioning.scope_version_artifact(output, manifest, entry, ORIGIN)
+                    for relative, marker in examples.items():
+                        self.assertEqual(
+                            (output / relative).read_text(), marker.format(mount=prefix) + other_meta
+                        )
 
     def test_latest_language_fallback_preserves_root_relative_url(self) -> None:
         relative = "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html"

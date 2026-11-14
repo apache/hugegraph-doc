@@ -1,9 +1,9 @@
+# Legacy/ad-hoc preview only. ASF staging and production use .github/workflows/hugo.yml.
 [build]
-command = "hugo --cleanDestinationDir --gc --minify --environment production --printPathWarnings --printI18nWarnings --panicOnWarning"
+command = "bash scripts/hugo.sh build"
 publish = "public"
 
 [build.environment]
-GO_VERSION = "1.27.0"
-HUGO_VERSION = "0.165.0"
+GO_VERSION = "1.27.3"
+HUGO_VERSION = "0.168.0"
 HUGO_ENVIRONMENT = "production"
-

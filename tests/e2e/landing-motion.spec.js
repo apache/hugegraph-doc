@@ -312,6 +312,13 @@ test("the copy button has a visible keyboard focus indicator on the command pane
   }
 });
 
+// Media emulation skips native beforeprint/afterprint. A frame lets pending
+// scroll and media change events reach the page before the next layout change.
+async function emulateMediaAfterFrame(page, options) {
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+  await page.emulateMedia(options);
+}
+
 test("printing an active graph scene exposes all four explanations and restores the screen scene", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
@@ -323,12 +330,12 @@ test("printing an active graph scene exposes all four explanations and restores 
   const guides = page.locator("#story .panel").getByRole("link");
   await expect(guides).toHaveCount(1);
 
-  await page.emulateMedia({ media: "print" });
+  await emulateMediaAfterFrame(page, { media: "print" });
   await expect(guides).toHaveCount(4);
   await expect(page.locator("#story .panel").getByRole("heading", { level: 2 })).toHaveCount(4);
   await expect(page.locator("#story .panel[inert]")).toHaveCount(0);
 
-  await page.emulateMedia({ media: "screen" });
+  await emulateMediaAfterFrame(page, { media: "screen" });
   await expect(guides).toHaveCount(1);
   await expect(guide).toBeFocused();
   await expect(page.locator("#beat-ai")).toHaveCSS("opacity", "1");
@@ -351,13 +358,13 @@ test("dark reduced-motion diagrams follow appearance and print on paper", async 
   await community.scrollIntoViewIfNeeded();
   const contentTop = () => community.evaluate(node => node.getBoundingClientRect().top);
   const beforePrint = await contentTop();
-  await page.emulateMedia({ colorScheme: "dark", media: "print" });
+  await emulateMediaAfterFrame(page, { colorScheme: "dark", media: "print" });
   await expect(page.locator("html")).toHaveAttribute("data-bs-theme", "dark");
   await expect(still).toBeHidden();
   await expect(page.locator("#beat-database .story-guide")).toBeVisible();
   await expect(page.locator("#hg-landing")).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(page.locator("#capabilities")).toHaveCSS("background-color", "rgb(255, 255, 255)");
-  await page.emulateMedia({ media: "screen" });
+  await emulateMediaAfterFrame(page, { media: "screen" });
   await expect.poll(contentTop).toBeCloseTo(beforePrint, 0);
 });
 
@@ -370,9 +377,9 @@ test("a motion change during print preserves the community reading position", as
   const top = () => community.evaluate(node => node.getBoundingClientRect().top);
   const before = await top();
   for (const reducedMotion of ["reduce", "no-preference"]) {
-    await page.emulateMedia({ media: "print" });
-    await page.emulateMedia({ reducedMotion });
-    await page.emulateMedia({ media: "screen" });
+    await emulateMediaAfterFrame(page, { media: "print" });
+    await emulateMediaAfterFrame(page, { reducedMotion });
+    await emulateMediaAfterFrame(page, { media: "screen" });
     if (reducedMotion === "reduce") await expect(landing).not.toHaveClass(/\blive\b/);
     else await expect(landing).toHaveClass(/\blive\b/);
     await expect.poll(top).toBeCloseTo(before, 0);

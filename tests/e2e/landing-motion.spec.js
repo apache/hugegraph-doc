@@ -18,7 +18,6 @@ test.beforeEach(async ({ page }) => {
 async function expectStaticStory(page) {
   await expect(page.locator("#hg-landing")).not.toHaveClass(/\blive\b/);
   await expect(page.locator("#world")).toBeHidden();
-  await expect(page.locator("#wash")).not.toHaveClass(/\bon\b/);
   const panels = page.locator("#story .panel");
   await expect(panels).toHaveCount(4);
   for (const panel of await panels.all()) {
@@ -42,7 +41,7 @@ async function expectStaticBeatAtTop(page, id) {
   })).toBeLessThanOrEqual(2);
 }
 
-test("enabling reduced motion cancels an in-flight layer jump and stops hidden canvas work", async ({ page }) => {
+test("enabling reduced motion keeps the selected layer and stops hidden canvas work", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
@@ -53,8 +52,8 @@ test("enabling reduced motion cancels an in-flight layer jump and stops hidden c
   await expectStaticStory(page);
   await expectStaticBeatAtTop(page, "ai");
   const stopped = await page.evaluate(() => ({ y: scrollY, paints: window.landingWorldPaints }));
-  // Wait past both the animated jump and its 2.6-second recovery timer.
-  await page.waitForTimeout(2800);
+  // Give the old frame loop several chances to repaint or move the page.
+  await page.waitForTimeout(300);
   expect(await page.evaluate(() => ({ y: scrollY, paints: window.landingWorldPaints }))).toEqual(stopped);
   expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
   await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
@@ -70,7 +69,7 @@ test("enabling reduced motion cancels an in-flight layer jump and stops hidden c
         && node.contains(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2));
     })).toBe(true);
   }
-  await page.locator('#hg-stack button[data-layer="1"]').click();
+  await page.locator('#hg-stack button[data-layer="0"]').click();
   await expectStaticBeatAtTop(page, "database");
   await expect(page.locator("#beat-database .story-guide")).toBeVisible();
 });
@@ -80,7 +79,7 @@ test("motion preferences can switch repeatedly without losing explanations or du
   await page.goto("/");
   const timeOrigin = await page.evaluate(() => performance.timeOrigin);
   await expectStaticStory(page);
-  for (const [layer, beat] of [["2", "computing"], ["0", "storage"]]) {
+  for (const [layer, beat] of [["1", "toolchain"], ["2", "computing"]]) {
     await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
     await page.locator(`#hg-stack button[data-layer="${layer}"]`).click();
     await expectStaticBeatAtTop(page, beat);
@@ -103,4 +102,31 @@ test("motion preferences can switch repeatedly without losing explanations or du
   await expect(page.locator("#hg-landing")).toHaveClass(/\blive\b/);
   await expect.poll(() => page.locator("#components").evaluate(node => node.getBoundingClientRect().top))
     .toBeCloseTo(before, 0);
+});
+
+test("each layer animates its own artwork on the idle hero and respects reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  const layers = page.locator("#hg-stack .hgs-layer");
+  await expect(page.locator("#hg-stack")).toHaveClass(/hgs-live/);
+
+  // Look inside each SVG, so floating the entire slab cannot satisfy this check.
+  const snapshot = () => layers.evaluateAll(elements => elements.map(layer => {
+    const animations = layer.querySelector(".hgs-art").getAnimations({ subtree: true });
+    return animations.filter(animation => animation.playState === "running").map(animation => {
+      const style = getComputedStyle(animation.effect.target);
+      return [style.transform, style.opacity, style.strokeDashoffset, style.fillOpacity].join("/");
+    }).join("|");
+  }));
+  const first = await snapshot();
+  expect(first).toHaveLength(4);
+  expect(first.every(Boolean)).toBe(true);
+  const changed = new Set();
+  await expect.poll(async () => {
+    (await snapshot()).forEach((frame, i) => { if (frame !== first[i]) changed.add(i); });
+    return changed.size;
+  }).toBe(4);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect.poll(snapshot).toEqual(["", "", "", ""]);
 });

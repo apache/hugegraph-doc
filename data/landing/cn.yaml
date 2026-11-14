@@ -1,6 +1,6 @@
 hero:
-  title: 一套图技术栈，从存储到 AI。
-  body: Apache HugeGraph 覆盖图数据库、图计算与图 AI，在分布式存储之上支持 Gremlin 与 Cypher 查询。
+  title: 一套图技术栈，从图数据库到 AI。
+  body: 用工具链导入和探索图数据，在单机或分布式图数据库上运行查询，开展图计算与 GraphRAG 应用开发。
   primary:
     label: 快速开始
     url: /cn/docs/quickstart/
@@ -23,40 +23,40 @@ layers:
     description: 在内存或 BSP 集群上对全图进行 OLAP 分析。
     url: /cn/docs/quickstart/computing/
     go: 探索图计算
+  toolchain:
+    name: 图工具链
+    components: Loader、Hubble、Tools
+    description: 用 Loader 批量导入顶点和边，在 Hubble 中查看关系，用 Tools 备份和迁移数据。
+    url: /cn/docs/quickstart/toolchain/
+    go: 探索图工具链
   database:
     name: 图数据库
-    components: hugegraph-server
-    description: 通过 REST、Gremlin 与 Cypher 执行实时 OLTP 查询。
-    url: /cn/docs/quickstart/hugegraph/hugegraph-server/
+    components: Server · 单机或分布式
+    description: Server 提供图查询，分布式部署使用 PD 管理分区、Store 存储副本。
+    url: /cn/docs/quickstart/hugegraph/
     go: 探索图数据库
-  storage:
-    name: 分布式存储
-    components: hugegraph-pd、hugegraph-store
-    description: PD 管理分区，Store 通过 Raft 在 RocksDB 上维护副本。
-    url: /cn/docs/quickstart/hugegraph/hugegraph-hstore/
-    go: 探索分布式存储
 
 story:
   label: HugeGraph，从一套技术栈到不同规模
   controls_label: 架构层级
-  stack_label: HugeGraph 四层架构，从存储到 AI
+  stack_label: HugeGraph 四层架构，从图数据库到 AI
   read_guide: 阅读指南
   beats:
     database:
       title: 从一个顶点开始。
-      body: 实时图数据库以毫秒级响应 Gremlin 与 Cypher 图遍历查询。
-      url: /cn/docs/quickstart/hugegraph/hugegraph-server/
-      link_label: 从 Server 开始
+      body: 从一个顶点查询它的邻居。图数据库可单机运行，也可由 Server、PD 和 Store 组成分布式集群。
+      url: /cn/docs/quickstart/hugegraph/
+      link_label: 查看图数据库部署指南
+    toolchain:
+      title: 导入数据，沿着关系探索。
+      body: 用 Loader 导入顶点和边，再用 Hubble 查看查询结果，沿着一条边找到下一个顶点。
+      url: /cn/docs/quickstart/toolchain/
+      link_label: 查看图工具链指南
     computing:
       title: 拉远视角，发现社区。
       body: 图计算对整个数据集进行 OLAP 分析，Vermeer 在内存中运行，Computer 使用 BSP 集群。
       url: /cn/docs/quickstart/computing/
       link_label: 探索图计算
-    storage:
-      title: 继续扩展，容纳更大的图。
-      body: 随着图规模增长，哈希分区和 Raft 副本将顶点与边分布到不同的 Store 节点。
-      url: /cn/docs/quickstart/hugegraph/hugegraph-hstore/
-      link_label: 探索分布式存储
     ai:
       title: 然后，向图提问。
       body: GraphRAG 检索子图，为大语言模型的回答提供依据；同一套工具也能帮助构建知识图谱。
@@ -64,8 +64,8 @@ story:
       link_label: 探索图 AI
   readouts:
     database: "{vertices} 个顶点，1 个邻域"
+    toolchain: 图探索 · 顶点与边
     computing: "{vertices} 个顶点，{communities} 个社区"
-    storage: 分区与多副本存储
     ai: 1 个问题，1 个检索子图
 
 capabilities:
@@ -98,10 +98,10 @@ capabilities:
 
 components:
   title: 一套系统，八个组件。
-  body: 可以先独立运行 Server，再随图规模增长加入分布式存储、工具链、图计算和 AI。
+  body: 图数据库可单机或分布式部署。按需搭配图工具链、图计算和图 AI 组件。
   first_use: 从这里开始
   groups:
-    - title: 核心组件
+    - title: 图数据库
       items:
         - name: Server
           body: 图数据库引擎，提供 REST API、Gremlin 与 Cypher。

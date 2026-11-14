@@ -24,7 +24,7 @@
 {{- end -}}
 
 {{- $chunks = $chunks | append (printf "## %s" $data.story.label) -}}
-{{- range $id := slice "database" "computing" "storage" "ai" -}}
+{{- range $id := slice "database" "toolchain" "computing" "ai" -}}
   {{- $layer := index $data.layers $id -}}
   {{- $beat := index $data.story.beats $id -}}
   {{- $chunks = $chunks | append (printf "### %s\n\n%s\n\n%s\n\n**%s**\n\n%s"

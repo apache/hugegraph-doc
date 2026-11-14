@@ -1,7 +1,6 @@
 hero:
-  title: One graph stack, from storage to AI.
-  body: Apache HugeGraph covers graph database, graph computing and graph AI,
-    with Gremlin and Cypher on top of distributed storage.
+  title: One graph stack, from database to AI.
+  body: Query and explore connected data, run graph algorithms, and build GraphRAG applications.
   primary:
     label: Get Started
     url: /docs/quickstart/
@@ -24,40 +23,41 @@ layers:
     description: OLAP over the whole graph, in memory or on a BSP cluster.
     url: /docs/quickstart/computing/
     go: Explore Graph Computing
+  toolchain:
+    name: Graph Toolchain
+    components: Loader, Hubble, Tools
+    description: Import vertices and edges with Loader, explore them in Hubble, and back up or migrate data with Tools.
+    url: /docs/quickstart/toolchain/
+    go: Explore Graph Toolchain
   database:
     name: Graph Database
-    components: hugegraph-server
-    description: Real-time OLTP queries through REST, Gremlin and Cypher.
-    url: /docs/quickstart/hugegraph/hugegraph-server/
+    components: Server · standalone or distributed
+    description: Server handles graph queries. In a distributed deployment, PD manages partitions
+      and Store keeps replicas.
+    url: /docs/quickstart/hugegraph/
     go: Explore Graph Database
-  storage:
-    name: Distributed Storage
-    components: hugegraph-pd, hugegraph-store
-    description: PD places partitions; Store replicates them with Raft on RocksDB.
-    url: /docs/quickstart/hugegraph/hugegraph-hstore/
-    go: Explore Distributed Storage
 
 story:
   label: HugeGraph, from one stack to every scale
   controls_label: Story layers
-  stack_label: HugeGraph stack, four layers from storage to AI
+  stack_label: HugeGraph stack, four layers from database to AI
   read_guide: Read the guide
   beats:
     database:
       title: Start with one vertex.
-      body: A real-time graph database answers Gremlin and Cypher traversals in milliseconds.
-      url: /docs/quickstart/hugegraph/hugegraph-server/
-      link_label: Start with Server
+      body: Query a vertex and its neighbors. Run the database on one node or deploy Server, PD and Store as a cluster.
+      url: /docs/quickstart/hugegraph/
+      link_label: Explore database deployment
+    toolchain:
+      title: Import the data. Follow a connection.
+      body: Load vertices and edges with Loader, then explore the query results in Hubble, one relationship at a time.
+      url: /docs/quickstart/toolchain/
+      link_label: Explore the graph toolchain
     computing:
       title: Step back. Communities appear.
       body: Graph computing runs OLAP over the whole dataset, with Vermeer in memory and Computer on a BSP cluster.
       url: /docs/quickstart/computing/
       link_label: Explore graph computing
-    storage:
-      title: Keep going. Scale the graph.
-      body: Hash partitions and Raft replicas spread vertices and edges across Store nodes as the graph grows.
-      url: /docs/quickstart/hugegraph/hugegraph-hstore/
-      link_label: Explore distributed storage
     ai:
       title: Then ask it a question.
       body: GraphRAG retrieves the subgraph that grounds an LLM answer, and the same toolkit builds knowledge graphs.
@@ -65,8 +65,8 @@ story:
       link_label: Explore Graph AI
   readouts:
     database: "{vertices} vertices, 1 neighborhood"
+    toolchain: Graph exploration · vertices and edges
     computing: "{vertices} vertices, {communities} communities"
-    storage: Partitions and replicated storage
     ai: 1 question, 1 retrieved subgraph
 
 capabilities:
@@ -100,10 +100,10 @@ capabilities:
 
 components:
   title: One system, eight components.
-  body: Run the server on its own, then add distributed storage, tooling, computing and AI as the graph grows.
+  body: Deploy the database on one node or across a cluster. Add tools, graph computing and AI as needed.
   first_use: Start here
   groups:
-    - title: Core
+    - title: Graph Database
       items:
         - name: Server
           body: Core graph engine with REST API, Gremlin and Cypher.

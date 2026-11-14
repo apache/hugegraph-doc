@@ -29,14 +29,14 @@ place; the diagram remains live instead of becoming a raster illustration.
   runtime's separate scroll states are labelled. No pixel-difference claim is
   made across those intentionally different compositions.
 - Focused evidence: four layer labels at 320/390px and 844 × 390; stopped
-  Database/Computing/Storage/AI panels; the entry gradient; native Print media.
+  Database/Toolchain/Computing/AI panels; the entry gradient; native Print media.
 - [Before desktop](tests/e2e/screenshots/landing/before-en-1440.jpg) /
   [after desktop](tests/e2e/screenshots/landing/after-en-1440.jpg).
 - [Before 320px](tests/e2e/screenshots/landing/before-en-320.jpg) /
   [after 320px](tests/e2e/screenshots/landing/after-en-320.jpg).
 - [Short portrait](tests/e2e/screenshots/landing/after-en-short.jpg).
 - [Chinese](tests/e2e/screenshots/landing/after-cn-1440.jpg),
-  [progressive graph](tests/e2e/screenshots/landing/after-storage.jpg),
+  [graph toolchain](tests/e2e/screenshots/landing/after-toolchain.jpg),
   [entry transition](tests/e2e/screenshots/landing/after-transition.jpg).
 - Real browser recording: `/workspace/landing-review/animation.webm` (15 s).
 
@@ -72,7 +72,7 @@ place; the diagram remains live instead of becoming a raster illustration.
    hit targets, including 1200 × 900 and 1440 × 700.
 7. Layer buttons use a white keyboard focus outline on the blue hero. Changing
    reduced-motion preference while the page is open now disposes the previous
-   mode's listeners, observers, animation frame and jump timers, switches to
+   mode's listeners, observers and animation frame, switches to
    readable static scenes, and restores the current explanation when animation
    is enabled again. The page does not reload. The Docker example binds only
    to loopback for local development.
@@ -105,21 +105,24 @@ clipboard content/status, reduced motion, 320px drawer reachability/Escape/focus
 visible layer names including landscape, and distinct nonempty graph frames
 with one readable explanation at every sampled stop. The entry transition is
 also checked before canvas hand-off, throughout all four scenes and in reverse.
-Runtime motion-preference regressions check cancellation of an in-flight jump,
+Selecting a layer eases the camera to its stop. Reduced motion opens the corresponding explanation immediately.
+Browser checks cover clicks on the slab itself,
+rapid switches, keyboard focus and scrolling immediately after selection. Motion-preference regressions check
 absence of hidden canvas painting, static navigation, repeated mode switches
 and preservation of the current explanation and downstream reading position. Native theme, search and
 AI enabled/disabled fixtures are checked by the existing browser suites.
 
-Independent review confirmed the fixes. The actual Hugo runtime recording also
-verified hero → lift-off → Database → Computing → Storage → AI, localized
+Independent review confirmed the fixes. Browser checks cover the progression
+from the database through toolchain and computing to AI, localized
 Chinese counts, dark appearance and reduced-motion canvases, without page errors
 or failed main-page requests. All assets load locally; the new runtime does not
 make third-party requests. Native AI consent behavior is unchanged.
 
 ## Follow-up polish and limits
 
-- Per-layer internal glyph composition can be refined in a later visual review;
-  this PR preserves the reviewed interactive geometry and timeline.
+- The first Concept B prototype supplies the opaque faces and colored edges. The toolchain layer depicts data import and exploration.
+  With the pointer at rest, the database traces edges, the toolchain imports rows, the compute layer scans and the AI nodes pulse.
+  System reduced motion disables all four loops. The database face keeps its central vertices aligned with the scroll-driven graph.
 - Device checks use Chromium emulation, not real-device Safari or a complete
   screen-reader certification.
 

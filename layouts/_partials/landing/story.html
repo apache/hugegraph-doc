@@ -5,6 +5,7 @@
   <section class="story" id="story" aria-label="{{ $data.story.label }}">
     <div class="stage" id="stage">
       <header class="hero" id="hero">
+        <p class="hero-brand">Apache HugeGraph</p>
         <div class="wrap hero-grid">
           <div class="hero-copy">
             <h1>{{ $data.hero.title }}</h1>
@@ -32,36 +33,29 @@
       <div class="hgs-guide" style="--side:1"></div>
 
 
-      <div class="hgs-layer" style="--i:0" data-layer="0" data-id="storage"><div class="hgs-slab">
+      <div class="hgs-layer" style="--i:0" data-layer="0" data-id="database"><div class="hgs-slab">
         <div class="hgs-face hgs-under"></div>
         <div class="hgs-flat"><div class="hgs-face hgs-top">
           <svg class="hgs-art" viewBox="0 0 380 380">
-            <g class="hgs-cell">
-              <rect x="90" y="130" width="34" height="34" rx="5"/>
-              <rect x="132" y="130" width="34" height="34" rx="5"/>
-              <rect x="174" y="130" width="34" height="34" rx="5"/>
-              <rect x="216" y="130" width="34" height="34" rx="5"/>
-              <rect x="90" y="172" width="34" height="34" rx="5"/>
-              <rect x="132" y="172" width="34" height="34" rx="5"/>
-              <rect x="174" y="172" width="34" height="34" rx="5"/>
-              <rect x="216" y="172" width="34" height="34" rx="5"/>
-              <rect x="90" y="214" width="34" height="34" rx="5"/>
-              <rect x="132" y="214" width="34" height="34" rx="5"/>
-              <rect x="174" y="214" width="34" height="34" rx="5"/>
-              <rect x="216" y="214" width="34" height="34" rx="5"/>
+            {{/* Outer branches fade with the plate; the six central vertices continue into the canvas. */}}
+            <g opacity="var(--hgs-plate,1)">
+              <path class="hgs-edge" stroke-opacity=".65"
+                    d="M96 185L45 98L128 136L142 48L232 122L332 72L301 181L232 122
+                       M301 181L340 276L238 309L148 240L122 301L52 340L96 185
+                       M52 340L173 349L238 309M173 349L122 301"/>
+              <g class="hgs-v">
+                <circle cx="45" cy="98" r="7"/>
+                <circle cx="142" cy="48" r="7"/>
+                <circle cx="332" cy="72" r="8"/>
+                <circle cx="301" cy="181" r="8"/>
+                <circle cx="340" cy="276" r="8"/>
+                <circle cx="238" cy="309" r="8"/>
+                <circle cx="173" cy="349" r="8"/>
+                <circle cx="122" cy="301" r="7"/>
+                <circle cx="52" cy="340" r="7"/>
+              </g>
+              <path class="hgs-flow" pathLength="100" d="M173 349L238 309L340 276L301 181"/>
             </g>
-            <rect class="hgs-rep" x="132" y="172" width="34" height="34" rx="5"/>
-            <rect class="hgs-rep hgs-rep-2" x="216" y="130" width="34" height="34" rx="5"/>
-            <rect class="hgs-rep hgs-rep-3" x="90" y="214" width="34" height="34" rx="5"/>
-          </svg>
-        </div></div>
-      </div></div>
-
-
-      <div class="hgs-layer" style="--i:1" data-layer="1" data-id="database"><div class="hgs-slab">
-        <div class="hgs-face hgs-under"></div>
-        <div class="hgs-flat"><div class="hgs-face hgs-top">
-          <svg class="hgs-art" viewBox="0 0 380 380">
             <path class="hgs-edge"
                   d="M167 191L148 240M167 191L184 136M167 191L128 136M184 136L128 136M184 136L232 122M96 185L128 136"/>
             <g class="hgs-v">
@@ -74,7 +68,36 @@
             <circle class="hgs-ring" cx="167" cy="191" r="13.5"/>
             <circle class="hgs-v-main" cx="167" cy="191" r="7.2"/>
 
-            <g class="hgs-loop"><circle class="hgs-dot" cx="167" cy="191" r="2.6" style="--dx:17px;--dy:-55px"/></g>
+          </svg>
+        </div></div>
+      </div></div>
+
+
+      <div class="hgs-layer" style="--i:1" data-layer="1" data-id="toolchain"><div class="hgs-slab">
+        <div class="hgs-face hgs-under"></div>
+        <div class="hgs-flat"><div class="hgs-face hgs-top">
+          <svg class="hgs-art" viewBox="0 0 320 320">
+            <g transform="translate(0 66)" fill="white" stroke="var(--hgs-accent)"
+               stroke-width="3" stroke-linejoin="round">
+              <rect x="43" y="142" width="86" height="78" rx="5"/>
+              <rect x="51" y="150" width="86" height="78" rx="5"/>
+              <g class="hgs-import-row" fill="var(--hgs-accent)" stroke="none">
+                <rect x="53" y="173" width="82" height="15" rx="2"/>
+              </g>
+              <path d="M51 171h86M51 190h86M51 209h86M79 171v57M106 171v57" fill="none" stroke-opacity=".5"/>
+              <path d="M149 189h35m-10-9 10 9-10 9" fill="none" stroke-width="5" stroke-linecap="round"/>
+            </g>
+            <path class="hgs-edge" d="M196 255l34 10 22-66 27-36-56-9 29 45 33 45-55 21m-34-10 56-56"/>
+            <g class="hgs-v">
+              <circle cx="196" cy="255" r="8"/>
+              <circle cx="223" cy="154" r="7"/>
+              <circle cx="279" cy="163" r="8"/>
+              <circle cx="252" cy="199" r="9"/>
+              <circle cx="285" cy="244" r="8"/>
+              <circle cx="230" cy="265" r="7"/>
+            </g>
+            <circle cx="252" cy="199" r="15" fill="none" stroke="var(--hgs-accent)" stroke-width="2"/>
+            <path class="hgs-flow" pathLength="100" d="M135 255H196L230 265L252 199L285 244"/>
           </svg>
         </div></div>
       </div></div>
@@ -83,14 +106,31 @@
       <div class="hgs-layer" style="--i:2" data-layer="2" data-id="computing"><div class="hgs-slab">
         <div class="hgs-face hgs-under"></div>
         <div class="hgs-flat"><div class="hgs-face hgs-top">
-          <svg class="hgs-art" viewBox="0 0 380 380">
-            <g transform="translate(180 180) rotate(45)">
-              <path class="hgs-base" d="M29 -76V76"/>
-              <path class="hgs-bar"
-                    d="M26 -68.25h-13M26 -57.75h-21M26 -47.25h-33M26 -36.75h-48M26 -26.25h-67M26 -15.75h-87
-                       M26 5.25h-92M26 15.75h-77M26 26.25h-58M26 36.75h-40M26 47.25h-28M26 57.75h-18M26 68.25h-11"/>
-              <path class="hgs-bar hgs-bar-main" d="M26 -5.25h-100"/>
+          <svg class="hgs-art" viewBox="0 0 320 320">
+            <defs>
+              <pattern id="hgs-compute-dots" width="20" height="20" patternUnits="userSpaceOnUse">
+                <circle cx="10" cy="10" r="2.3" fill="var(--hgs-accent)" fill-opacity=".6"/>
+              </pattern>
+              <linearGradient id="hgs-compute-sweep">
+                <stop offset="0" stop-color="var(--hgs-accent)" stop-opacity="0"/>
+                <stop offset=".5" stop-color="var(--hgs-accent)" stop-opacity=".64"/>
+                <stop offset="1" stop-color="var(--hgs-accent)" stop-opacity="0"/>
+              </linearGradient>
+              <clipPath id="hgs-compute-face"><rect width="320" height="320"/></clipPath>
+            </defs>
+            <rect width="320" height="320" fill="url(#hgs-compute-dots)"/>
+            <g clip-path="url(#hgs-compute-face)">
+              <rect class="hgs-scan" width="90" height="320" fill="url(#hgs-compute-sweep)"/>
             </g>
+            <svg x="264" y="264" width="36" height="36" viewBox="0 0 256 256" fill="var(--hgs-accent)">
+              <path d="M152,96H104a8,8,0,0,0-8,8v48a8,8,0,0,0,8,8h48a8,8,0,0,0,8-8V104
+                       A8,8,0,0,0,152,96Zm-8,48H112V112h32Zm88,0H216V112h16a8,8,0,0,0,0-16H216V56
+                       a16,16,0,0,0-16-16H160V24a8,8,0,0,0-16,0V40H112V24a8,8,0,0,0-16,0V40H56
+                       A16,16,0,0,0,40,56V96H24a8,8,0,0,0,0,16H40v32H24a8,8,0,0,0,0,16H40v40
+                       a16,16,0,0,0,16,16H96v16a8,8,0,0,0,16,0V216h32v16a8,8,0,0,0,16,0V216h40
+                       a16,16,0,0,0,16-16V160h16a8,8,0,0,0,0-16Zm-32,56H56V56H200v95.87
+                       s0,.09,0,.13,0,.09,0,.13V200Z"/>
+            </svg>
           </svg>
         </div></div>
       </div></div>
@@ -98,39 +138,37 @@
 
       <div class="hgs-layer" style="--i:3" data-layer="3" data-id="ai"><div class="hgs-slab">
         <div class="hgs-face hgs-under"></div>
-        <div class="hgs-flat"><div class="hgs-face hgs-top hgs-crown">
-          <svg class="hgs-art" viewBox="0 0 380 380">
-            <defs>
-              <radialGradient id="hgs-bloom">
-                <stop offset="0" class="hgs-bloom-a"/>
-                <stop offset=".45" class="hgs-bloom-b"/>
-                <stop offset="1" class="hgs-bloom-c"/>
-              </radialGradient>
-            </defs>
-            <circle class="hgs-bloom" cx="190" cy="190" r="124" fill="url(#hgs-bloom)"/>
-            <circle class="hgs-orbit" cx="190" cy="190" r="30"/>
-            <circle class="hgs-orbit hgs-orbit-2" cx="190" cy="190" r="74"/>
-            <g class="hgs-sats">
-              <path class="hgs-spoke" d="M190 190L259.5 215.3M190 190L133.3 237.6M190 190L177.2 117.1"/>
-              <circle cx="259.5" cy="215.3" r="7.6" fill="#229efa"/>
-              <circle cx="133.3" cy="237.6" r="7.6" fill="#9948f7"/>
-              <circle cx="177.2" cy="117.1" r="7.6" fill="#33bc7a"/>
+        <div class="hgs-flat"><div class="hgs-face hgs-top">
+          <svg class="hgs-art" viewBox="0 0 320 320">
+            <path d="M160 160L262 160L211 248ZM160 160L109 248L58 160ZM160 160L109 72L211 72Z"
+                  fill="none" stroke="var(--hgs-accent)" stroke-opacity=".5" stroke-width="2"/>
+            <g fill="var(--hgs-accent)">
+              <circle class="hgs-pulse" cx="262" cy="160" r="9"/>
+              <circle class="hgs-pulse" cx="211" cy="248" r="9" style="--delay:.4s"/>
+              <circle class="hgs-pulse" cx="109" cy="248" r="9" style="--delay:.8s"/>
+              <circle class="hgs-pulse" cx="58" cy="160" r="9" style="--delay:1.2s"/>
+              <circle class="hgs-pulse" cx="109" cy="72" r="9" style="--delay:1.6s"/>
+              <circle class="hgs-pulse" cx="211" cy="72" r="9" style="--delay:2s"/>
             </g>
-            <circle class="hgs-core" cx="190" cy="190" r="9.6"/>
+            <circle cx="160" cy="160" r="36.5" fill="#fff" stroke="var(--hgs-accent)" stroke-width="3"/>
+            <svg x="140" y="140" width="40" height="40" viewBox="0 0 256 256" fill="var(--hgs-accent)">
+              <path d="M197.58,129.06,146,110l-19-51.62a15.92,15.92,0,0,0-29.88,0L78,110l-51.62,19
+                       a15.92,15.92,0,0,0,0,29.88L78,178l19,51.62a15.92,15.92,0,0,0,29.88,0L146,178
+                       l51.62-19a15.92,15.92,0,0,0,0-29.88ZM137,164.22a8,8,0,0,0-4.74,4.74
+                       L112,223.85,91.78,169A8,8,0,0,0,87,164.22L32.15,144,87,123.78
+                       A8,8,0,0,0,91.78,119L112,64.15,132.22,119a8,8,0,0,0,4.74,4.74L191.85,144Z
+                       M144,40a8,8,0,0,1,8-8h16V16a8,8,0,0,1,16,0V32h16a8,8,0,0,1,0,16H184V64
+                       a8,8,0,0,1-16,0V48H152A8,8,0,0,1,144,40ZM248,88a8,8,0,0,1-8,8h-8v8
+                       a8,8,0,0,1-16,0V96h-8a8,8,0,0,1,0-16h8V72a8,8,0,0,1,16,0v8h8A8,8,0,0,1,248,88Z"/>
+            </svg>
           </svg>
         </div></div>
       </div></div>
     </div>
-
-
-    <div class="hgs-hit" style="--i:0" data-layer="0"></div>
-    <div class="hgs-hit" style="--i:1" data-layer="1"></div>
-    <div class="hgs-hit" style="--i:2" data-layer="2"></div>
-    <div class="hgs-hit" style="--i:3" data-layer="3"></div>
   </div>
 
   <div class="hgs-labels">
-    {{ range $index, $id := slice "ai" "computing" "database" "storage" }}
+    {{ range $index, $id := slice "ai" "computing" "toolchain" "database" }}
     {{ $layer := index $data.layers $id }}
     <button class="hgs-lab" type="button" style="--i:{{ sub 3 $index }}"
             data-layer="{{ sub 3 $index }}" aria-label="{{ $layer.go }}">
@@ -153,9 +191,9 @@
       <canvas id="world" aria-hidden="true"></canvas>
       <div class="veil" id="veil" aria-hidden="true"></div>
       <div class="wrap stage-in">
-        {{ range $id := slice "database" "computing" "storage" "ai" }}
+        {{ range $id := slice "database" "toolchain" "computing" "ai" }}
         {{ $beat := index $data.story.beats $id }}
-        {{ $q := index (dict "database" "0.28" "computing" "0.6" "storage" "0.93" "ai" "1.22") $id }}
+        {{ $q := index (dict "database" "0.28" "toolchain" "0.6" "computing" "0.93" "ai" "1.22") $id }}
         <section class="panel" id="beat-{{ $id }}" aria-labelledby="beat-title-{{ $id }}">
           <div class="copy">
             <h2 id="beat-title-{{ $id }}">{{ $beat.title }}</h2>
@@ -171,9 +209,9 @@
       </div>
       <nav class="mini" id="mini" aria-label="{{ $data.story.controls_label }}">
         <span class="mini-bars">
-          {{ range $index, $id := slice "ai" "computing" "database" "storage" }}
+          {{ range $index, $id := slice "database" "toolchain" "computing" "ai" }}
           {{ $layer := index $data.layers $id }}
-          <button type="button" data-id="{{ $id }}" style="--c:var(--accent);--o:{{ add $index 1 }}"
+          <button type="button" data-id="{{ $id }}" style="--c:var(--accent);--o:{{ sub 3 $index }}"
                   aria-label="{{ $layer.go }}"></button>
           {{ end }}
         </span>
@@ -183,7 +221,6 @@
         </a>
       </nav>
       <p class="readout" id="readout" aria-hidden="true"></p>
-      <div class="wash" id="wash" aria-hidden="true"></div>
     </div>
   </section>
   <div class="landing-content">

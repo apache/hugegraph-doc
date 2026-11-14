@@ -1,5 +1,9 @@
 # 文档更新盘点与截图基准
 
+Hubble 的后续源码、Helm 实测与新截图记录见 [2026-11-15 更新基线](hubble-refresh-audit.md)。
+下文保留上一轮盘点范围；当时的 Hubble 截图清单见
+[固定版本](https://github.com/apache/hugegraph-doc/blob/7ea15624d9ad4796b2110ad71c157359b0ba36c7/scripts/fixtures/hubble-screenshots.json)。
+
 本轮盘点全站当前文档，更新 Hubble 双语指南及会导致照做失败的高影响指引，并完成六组 P2/P3 页面的后续改造。
 公开路由、旧锚点、历史版本导航和语言切换保持可用。下表记录本轮处理范围，不代表全站命令均已运行。
 

@@ -1,184 +1,325 @@
 {
-  "capturedOn": "2026-10-22",
-  "hubbleSource": "apache/hugegraph-toolchain@d655b0372dfe189ebeff51ea885b3386a1bc4a2c",
-  "serverRuntimeSource": "apache/hugegraph@ebb8f4e17f0bf826cb50745c590d8bc54b45c6b6",
-  "compileSdkSource": "apache/hugegraph@86c05ef9c5d417bd37eab21d4ecd5af82bab17ef",
-  "capture": "Real source-built services; native language toggle; no mocked API responses or external model calls",
+  "capturedOn": "2026-11-15",
+  "timezone": "Asia/Singapore",
+  "hubbleSource": "apache/hugegraph-toolchain@20807295eed25d8c135bb1d10ab456d4f4523ecb",
+  "helmSource": "apache/hugegraph@8828d8238ad578f0d8ac25010c3dd6d4b3ba0e07",
+  "vermeerSource": "apache/hugegraph-computer@cc990987d2932fe269948e197a82d73da6869494",
+  "capture": "Unmodified official images and real services; native language toggle; 1600px viewport; no intercepted API responses, DOM substitutions, or model calls",
+  "runtime": {
+    "hubble": {
+      "reference": "hugegraph/hubble@sha256:40f020c3a629ec81127cdad90054283259eb3730ee2804598367bb370b3950b5",
+      "localImageId": "sha256:9b3887eb0b77d5e19669df331307fa3bb61f551a0c188c945ed1ca5a4e5d2817",
+      "created": "2026-11-13T03:02:15.894344617Z",
+      "architecture": "amd64",
+      "revision": "20807295eed25d8c135bb1d10ab456d4f4523ecb",
+      "source": "https://github.com/apache/hugegraph-toolchain"
+    },
+    "standaloneServer": {
+      "reference": "hugegraph/hugegraph@sha256:87a1b74e410663973db85d49cca4ba36c1f0e0eeeaea6e9cd91606226182b2f0",
+      "observedVersions": {
+        "core": "1.8.0",
+        "gremlin": "3.8.1",
+        "api": "0.73.0.0"
+      },
+      "revision": null
+    },
+    "helm": {
+      "chartSource": "apache/hugegraph@8828d8238ad578f0d8ac25010c3dd6d4b3ba0e07",
+      "kubernetes": "1.37.0",
+      "topology": "1 PD, 1 Store, 1 Server, Hubble and standalone Vermeer (Master plus Worker containers)",
+      "images": {
+        "pd": {
+          "reference": "hugegraph/pd@sha256:5929dcfe9a45009a55ab871bd0370b500d3517b59d9dac62727bb2661ce84a54",
+          "localImageId": "sha256:c327f0a075a8c8b75ff05e23f97f0f30d3ac1a75c49cf22614712aca99fa7bcc",
+          "created": "2026-11-13T03:25:47.005593407Z",
+          "architecture": "amd64",
+          "revision": null,
+          "source": null
+        },
+        "store": {
+          "reference": "hugegraph/store@sha256:947237c603cf692e571db21267d1694bf4904ceb82ee3dd103d3eae0aec20750",
+          "localImageId": "sha256:1fa9c6c5aca18cf8b1bc7d9aef6d934fdb875d1c80b22e9a9052d71e09b7e7c2",
+          "created": "2026-11-13T03:25:47.36082655Z",
+          "architecture": "amd64",
+          "revision": null,
+          "source": null
+        },
+        "server": {
+          "reference": "hugegraph/server@sha256:f0a792265d86f4f9b14421c742ebdcec76861d4bee9e1b9091ad0153f2e71a34",
+          "localImageId": "sha256:dad76ad0d4d8756a4d7e5246be9b7281a84e5a5348f7296949496d869741d812",
+          "created": "2026-11-13T03:25:47.790379146Z",
+          "architecture": "amd64",
+          "revision": null,
+          "source": null
+        },
+        "hubble": {
+          "reference": "hugegraph/hubble@sha256:40f020c3a629ec81127cdad90054283259eb3730ee2804598367bb370b3950b5",
+          "localImageId": "sha256:9b3887eb0b77d5e19669df331307fa3bb61f551a0c188c945ed1ca5a4e5d2817",
+          "created": "2026-11-13T03:02:15.894344617Z",
+          "architecture": "amd64",
+          "revision": "20807295eed25d8c135bb1d10ab456d4f4523ecb",
+          "source": "https://github.com/apache/hugegraph-toolchain"
+        },
+        "vermeer": {
+          "reference": "hugegraph/vermeer@sha256:80ccc46d2f4553ce383941ff5d5247ae18c99de4f6fa01a9817defec00ac722a",
+          "localImageId": "sha256:23ae3fdb523e2056d92b493a1776b9306a77408431023b6b7b5eacc2beaef29c",
+          "created": "2026-11-06T03:18:02.679703735Z",
+          "architecture": "amd64",
+          "revision": "cc990987d2932fe269948e197a82d73da6869494",
+          "source": "https://github.com/apache/hugegraph-computer"
+        }
+      }
+    }
+  },
   "sample": {
     "dataset": "loader",
     "graphspace": "DEFAULT",
     "graph": "hugegraph",
     "vertices": 8,
-    "edges": 6
+    "edges": 6,
+    "afterCsvImport": {
+      "vertices": 10,
+      "edges": 6,
+      "inputRecords": 3,
+      "acknowledgedVertexWrites": 2,
+      "acknowledgedEdgeWrites": 0,
+      "serverTaskId": 1,
+      "serverTaskResult": [
+        10
+      ]
+    }
   },
+  "notes": [
+    "Core query/algorithm screenshots precede the CSV import and show the original 8-vertex/6-edge graph.",
+    "Import and Server task screenshots show the same successful CSV instance and its subsequent count of 10.",
+    "Accounts use a separate fresh authenticated standalone distribution; ordinary accounts have access across graphs.",
+    "PD/Store/Server image digests establish runtime identity; no source revision is claimed for images without revision labels.",
+    "Helm operations screenshots retain the actual PD endpoint mapping and Store management-state diagnostics."
+  ],
   "images": [
     {
       "path": "content/en/docs/images/hubble/accounts.jpg",
       "language": "en",
       "width": 1600,
       "height": 1000,
-      "sha256": "41d523cac35c6d2ce63d3485d0811aa83d736df09358902f516b39666e98b1b5"
+      "sha256": "89b88a6e855144c56c6839490ec6a7b1e845ef2f43c5feff7ae6afa5d854064c",
+      "deployment": "standalone-authenticated"
     },
     {
       "path": "content/en/docs/images/hubble/algorithms.jpg",
       "language": "en",
       "width": 1600,
       "height": 1000,
-      "sha256": "604eeb07917bc7ac23162bb09d8f5086253014ea81126460ee21a4af2dbdd059"
+      "sha256": "1e3ac83e9b7610c514bc1864c574e2fe2ccbce01b90a65c61059cd55dd985e44",
+      "deployment": "standalone-anonymous"
+    },
+    {
+      "path": "content/en/docs/images/hubble/async-tasks.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "e05e95f6dd8d9dd1466c95abec2c3ebee784e3410d65f8cae05571b9db9ed3c9",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/en/docs/images/hubble/cluster-overview.jpg",
       "language": "en",
       "width": 1600,
       "height": 1000,
-      "sha256": "cd05d3c6dce882f788c83ce136a5def56215cc40857041b4be1dfec8c22d77ac"
+      "sha256": "1862f0e28af01cb48de6652c32ff14fdd28c9e53f2f65057df394d8b47ecc568",
+      "deployment": "helm"
     },
     {
       "path": "content/en/docs/images/hubble/graphspace.jpg",
       "language": "en",
       "width": 1600,
       "height": 1000,
-      "sha256": "1d18a7b25fb360598836d89e32a1aed4219386df765b6b0739cca1d42b0958a0"
+      "sha256": "90098142af5ad529aced1f24132fc67b58ffd7845db5dc5dbb44814442dc3ad0",
+      "deployment": "helm"
+    },
+    {
+      "path": "content/en/docs/images/hubble/import-task.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "3f80a3b15701eb6f1c310f1ef9debc046f06f112ba854eeca19ce2278fa15ccc",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/en/docs/images/hubble/members.jpg",
       "language": "en",
       "width": 1600,
       "height": 1000,
-      "sha256": "a88066b474d0367efebe7ab6a49fc82c4ca8594e98080dfa23910ef9c3240c77"
+      "sha256": "beab4a28940d8817794a59f1eda8559fb5e415df209bcb65f85dd67ab09cb6d0",
+      "deployment": "helm"
     },
     {
       "path": "content/en/docs/images/hubble/overview.jpg",
       "language": "en",
       "width": 1600,
       "height": 1000,
-      "sha256": "00fb9ce86de1f19c15efdd5008a350a7ded4264bffc356c46e3c589dab293020"
+      "sha256": "ddf9de7f0169f0c0170030156dc67b7bf611c1756880a1572c67f41aaa27dcdf",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/en/docs/images/hubble/query.jpg",
       "language": "en",
       "width": 1600,
       "height": 1000,
-      "sha256": "79d95e34de55e722feb18e528eba3539bbf54abfc27701d3b72619b9e0a8194c"
+      "sha256": "c0280ff133f7a8f16e9f0b458a6a5d1e43ae9cdd612e277257d5376d9096c379",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/en/docs/images/hubble/schema.jpg",
       "language": "en",
       "width": 1600,
       "height": 1000,
-      "sha256": "2f84c77f5d413d88d63443d4cdbec684e68f4aebf17aac57a528c03adbb362fe"
+      "sha256": "224c81f1adbf4662d3ba0946443fdc1412fb8f1f2a855a8996c992ad1b2a0425",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/en/docs/images/hubble/store-node.jpg",
       "language": "en",
       "width": 1600,
       "height": 1200,
-      "sha256": "18898b4f487a11835eb9a46fdfb0b86617cbcd6304d3cf9d95c7dd032d3f20be"
+      "sha256": "ff3f43d5569f63b8c8c2411b9a9abbe3e451045b9dcd235b47e8c644bedc82c0",
+      "deployment": "helm"
     },
     {
       "path": "content/en/docs/images/hubble/text2gql-prompt.jpg",
       "language": "en",
       "width": 1600,
       "height": 1000,
-      "sha256": "18983352307f1a4dbeb0ed4d23c97f268d00a6e7d14ce3dfcf77a7f9a375872d"
+      "sha256": "e6d639ac61625000f0d060d948db35b58986b694407fb5e16518e550cfcb1756",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/en/docs/images/hubble/text2gql-settings.jpg",
       "language": "en",
       "width": 1600,
       "height": 1000,
-      "sha256": "f09e346087cf7f3697161e459cbaf25516badb4f7198eaff66b28cc123dce581"
+      "sha256": "fa5214740198588bc3ebbcffd3d791dc1b006af83b0b5e437e8ac6866c8ae4ff",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/en/docs/images/hubble/text2gql.jpg",
       "language": "en",
       "width": 1600,
       "height": 1000,
-      "sha256": "889730977372a841491e99ef054b6c470f19b9337d2b42ec3690e8a05e04e545"
+      "sha256": "5e8973c0b4771cdf197b6aa45e594e7529faa7f5f274d9ce165069badfa9bdb8",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/cn/docs/images/hubble/accounts.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1000,
-      "sha256": "37b43141942d27e0f004e6a42d21225884fbd2cc5553510a07e80bfdb75796c8"
+      "sha256": "6e97408db763023025f9ac984c3feb4cdc2439b7cea4f727fe2ed6685d040811",
+      "deployment": "standalone-authenticated"
     },
     {
       "path": "content/cn/docs/images/hubble/algorithms.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1000,
-      "sha256": "1b7c06a02e1f029c688d031dd255717b2fb8019a8fb2d7de5a6adb073562ec81"
+      "sha256": "23389f2f77d92c6f9b4fb8ad7321c19e333b9f6827580f46b47bfd7cb4f01c3b",
+      "deployment": "standalone-anonymous"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/async-tasks.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "f0ba903c419d27b67fe26f4a550a8a3261e8fab862dedea9fc811305a9d79859",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/cn/docs/images/hubble/cluster-overview.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1000,
-      "sha256": "1585fa02d2d4f4d0f5eaca703116d9109ddac4172bc00f70b148bcece4a5bb8a"
+      "sha256": "d68513e320f4607a049edbb8b56661156916059eb7be14cc4d6cb768d60b4292",
+      "deployment": "helm"
     },
     {
       "path": "content/cn/docs/images/hubble/graphspace.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1000,
-      "sha256": "50cac0d30fb884e6fedd49dfb7dfa6aa2f3e9f604d38aaf6dfb6db1cf1500dec"
+      "sha256": "85f7245f0b0310264762891dcd25eda44e7b00d04de943834185cc1d32097672",
+      "deployment": "helm"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/import-task.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "67b42b6815edb60a44e1e7a8e49049eb917fee413503e51004e675b813c6b74a",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/cn/docs/images/hubble/members.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1000,
-      "sha256": "261d02a39f52780a7f3cbfbd07b88d26b9c73f5b18a77e03f58d441f7bc4bdce"
+      "sha256": "293d078254b870bd58ed02ca173ebb4f9ffa52cddc4dac559a4aef3e3cb99063",
+      "deployment": "helm"
     },
     {
       "path": "content/cn/docs/images/hubble/overview.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1000,
-      "sha256": "bb2adeef49baa37530e75509d089f3ac93f095def6e52b09f5ff9b25ae05b0d4"
+      "sha256": "f85388ab0ac1adcb98dc16ea99591d2439917256fbb33e7747aac7d803bac8f9",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/cn/docs/images/hubble/query.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1000,
-      "sha256": "419cf0a28d1748db7edbe314425a1958ded5f11843da500e7624756cb07ef2e5"
+      "sha256": "545b85c1dfbbaa978ed0c04966116928c71376bf0311081a35f568c4dd51fd6f",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/cn/docs/images/hubble/schema.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1000,
-      "sha256": "dd5be5c084750ace80612b88642d50a356d85e16951995d3c193a0a4030cf4fc"
+      "sha256": "390a766395743816418817e23920066b88b770beac72fc85d5c2fa27a4acc166",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/cn/docs/images/hubble/store-node.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1200,
-      "sha256": "44ae79b28d0b933f7861e0500ac71d37adf6a3149b371bf9401ee8881c157908"
+      "sha256": "e0332ce2d71641447817aed04bebb9363937e49b11a63547de673e6618e2642c",
+      "deployment": "helm"
     },
     {
       "path": "content/cn/docs/images/hubble/text2gql-prompt.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1000,
-      "sha256": "a9c8535bc7cb967192d5b146ba822334908d696314d4bb7bb421e3dc5d984495"
+      "sha256": "2801ff0b9a46af2a3052a119647cc1877181440a0b0c5f5ad461c4dd2da3499f",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/cn/docs/images/hubble/text2gql-settings.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1000,
-      "sha256": "38f81de3c7ce1880638f3a490aae709200b87d1de857269d95b5a60451105b9b"
+      "sha256": "9c269b664dde86cb5f69a404208404ccc1d58b04215dec3631a83ab6ef21022c",
+      "deployment": "standalone-anonymous"
     },
     {
       "path": "content/cn/docs/images/hubble/text2gql.jpg",
       "language": "cn",
       "width": 1600,
       "height": 1000,
-      "sha256": "af498fb297cf8477174cb62d7aaae0bcc7127eee7f39c09e082bb9d9dc2d17b4"
+      "sha256": "6a3d2ebdbe903de9dbc88cc04181b6f88c5efe25abcde3e6e813bfcc1daba77b",
+      "deployment": "standalone-anonymous"
     }
   ]
 }

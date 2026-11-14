@@ -130,10 +130,14 @@ To create a new graph, click the create button on the overview page and provide 
 Connection details are managed globally by the Hubble backend, so you do not re-enter Server host or credentials per graph.
 User-defined schema templates require PD mode; see the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/).
 
-Hubble overview uses bounded scans. When the response contains `approximate:true` and `scan_limit:100000`,
-the vertex or edge count can stop at 100000 even with tens of millions of records.
-These values are scan observations, not exact totals. Field names depend on the endpoint (e.g. `gremlin-query` returns `vertexcount` / `edgecount`).
-For exact counts, read completed asynchronous task results from Server.
+Graph metadata appears before statistics finish loading. Check the source and observation time beside a count:
+bounded Server scans can be approximate, while a loaded Vermeer snapshot describes the compute copy at its load time.
+A snapshot is not a live count after subsequent writes. Unavailable counts remain unknown rather than becoming zero.
+Use completed asynchronous Server counts when you need an exact count; avoid treating the query canvas size as the graph total.
+
+**Clone Schema** copies definitions into a new graph in the same GraphSpace, without copying vertices or edges.
+It requires Server API 0.73 or later. The current implementation rejects source schemas containing edge labels before creating the target.
+If a later step fails, inspect whether the target graph already exists before retrying.
 
 ## Schema modeling: define the shape of your data
 
@@ -179,12 +183,39 @@ queries as background async tasks. Cypher is available when supported by the bac
 The keyboard shortcut acts on whichever input currently has focus: generating a query from
 the natural language prompt, or running statements in the code editor.
 
+### Read bounded previews {#query-previews}
+
+Common Gremlin and Cypher reads without an explicit output bound receive a default limit of **300 rows**.
+Interactive previews retain at most **1,000 rows** and display at most **1,000 vertices**, with a separate edge budget.
+An explicit larger decimal limit runs as a bounded preview and shows an async-mode reminder; it does not return the complete large result.
+Start with a small local query, for example `g.V().limit(30)`, when you want readable labels and relationships.
+
+| Result or operation | How to interpret it |
+| --- | --- |
+| `limit`, `range`, `tail` | Preserve an explicit output bound on common reads; a following adjacency step creates a new output stream |
+| `fold`, `group`, `groupCount`, Cypher `collect` / `range` | Recognized collection builders use async execution to preserve aggregation semantics |
+| Edges added to a vertex-only result | A bounded incident-edge sample; it may omit edges between the displayed vertices |
+| A clipped property or wide property map | A partial, read-only preview; exported JSON keeps the partial marker |
+
+Automatic limiting handles common read syntax. Complex handwritten scripts may retain their native execution path, so use async mode for large work.
+These preview controls do not impose an upstream byte or execution-time budget. Exported partial results cannot be imported as complete graph data.
+Importing ordinary canvas JSON writes graph elements and can overwrite existing IDs; inspect the target and acknowledged writes after a failure.
+The operation is not transactional, and Hubble cannot automatically undo overwritten values or a request whose response was lost.
+
 ### Text2GQL natural-language queries {#text2gql}
 
 Describe your query requirement in the **Natural language** input. Text2GQL combines the current graph schema to generate read-only Gremlin or Cypher
 and execute it automatically. Generated statements can be edited freely (read-only safety checks still apply before execution).
 In **Async** mode, both generated and handwritten queries can be submitted as background tasks.
-Inputs automatically restore the graph's most recent query prompt without running it, and the execution history retains original natural-language questions.
+Gremlin is selected initially; switch to Cypher when supported by Server. Each language keeps its own draft and restores its latest synchronous
+or asynchronous record without running it or overwriting edits in progress. Execution history retains the original natural-language question.
+
+For the person/software sample, try “Find people and the software they created.” Check that the selected graph contains the corresponding schema.
+The workspace streams generated text into the editor and shows whether it is waiting for the model, correcting a statement, or executing it.
+Only a complete statement that passes the read-only checks is executed. A recognized validation, syntax, or schema error can trigger one correction;
+connection errors, timeouts and empty results do not. Each model generation request times out after 60 seconds; a correction starts another request.
+**Cancel** stops waiting and later automatic execution,
+but a query already submitted to Server may still be running.
 
 ```gallery
 ![Text2GQL entry and handwritten query results](/docs/images/hubble/text2gql.jpg) # Unconfigured model; handwritten query
@@ -198,6 +229,10 @@ The screenshots show an unconfigured model. The graph results come from handwrit
 | --- | --- |
 | Use built-in model | Configure under **System & Operations → Model settings**; Keys are encrypted in H2 and never returned to the browser |
 | Use temporary model | Enter the API type, Base URL, model name, and temporary API Key on the query page; the Key clears on refresh |
+
+In **Model settings**, **Save and test** saves an enabled configuration, then tests a minimal model request.
+**Test saved configuration** checks the saved connection without saving draft changes. A failed test does not undo a successful save;
+use the feedback to distinguish save failures from connection failures. An available deployment default is selected for new users.
 
 Choose **OpenAI compatible** for OpenAI, DeepSeek, GLM, and similar services, or **Ollama (local)** for local Ollama; unauthenticated Ollama needs no Key.
 The Base URL must be reachable from Hubble's backend; container `localhost` refers to that container. Public endpoints require HTTPS, while plain HTTP is
@@ -213,7 +248,24 @@ The current graph schema is appended automatically during generation.
 >
 > When backing up the Hubble H2 database, always back up the master-key file (`data/text2gql-master.key` by default); losing it prevents decrypting saved Keys.
 > Query generation sends only the prompt, graph schema, and necessary error-correction context to the model provider—it never transmits graph query results.
-> Browsers can remember frequently used Base URLs and model names, but temporary API Keys remain in memory only and clear on page refresh.
+> The temporary connection type, URL and model stay in account-scoped browser session storage. Successful connection tests and generations can remember
+> recent URLs and model names locally; neither history contains API Keys. Temporary Keys clear on refresh or account changes.
+
+> [!DETAILS]- Configure a deployment default without entering a Key in the browser
+>
+> Operators can set these values in `conf/hugegraph-hubble.properties`:
+>
+> ```properties
+> text2gql.shared.enabled=true
+> text2gql.shared.connection_type=openai
+> text2gql.shared.base_url=https://api.deepseek.com/v1
+> text2gql.shared.model=deepseek-chat
+> ```
+>
+> Provide the Key through `HUBBLE_TEXT2GQL_API_KEY` or the secret file named by `text2gql.shared.api_key_file`; the environment variable takes precedence.
+> The enabled switch alone does not configure a usable model. Once an administrator saves managed settings, that complete configuration takes precedence
+> over deployment defaults, including when disabled. Helm persists the managed-key encryption file alongside H2; see
+> [Kubernetes operations](/docs/quickstart/hugegraph/hugegraph-helm-operations/).
 
 Input footers show model generation time and query request time separately. Async submission time excludes background execution.
 
@@ -241,6 +293,9 @@ After parameter validation, use the run button on the card or the form shortcut 
 
 For large-scale, whole-graph analytical algorithms, Hubble integrates natively with the high-performance **Vermeer** graph computing engine.
 Hubble prefers Vermeer for OLAP workloads by default, while Computer remains available as an opt-in alternative.
+Standalone RocksDB does not support the native PD/Store loading path. For an integrated deployment, use
+[Helm with Vermeer](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) and follow the
+[Vermeer workflow](/docs/quickstart/computing/hugegraph-vermeer/).
 
 #### Configuration in `hugegraph-hubble.properties`
 
@@ -260,13 +315,18 @@ vermeer.token_file=/path/to/vermeer-service.token
 #### Supported OLAP algorithms and execution lifecycle
 
 Vermeer executes batch algorithms over in-memory graph partitions:
-- **Supported algorithms**: PageRank, Personalized PageRank (PPR), Weakly Connected Components (WCC), Label Propagation Algorithm (LPA),
-  Degree Centrality, Closeness Centrality, Betweenness Centrality, Triangle Count, K-Core, and Single-Source Shortest Path (SSSP).
+- **Algorithm catalog**: The current direct adapter supports 19 algorithms, including PageRank/PPR, WCC/SCC, LPA/SLPA,
+  centrality, Triangle Count, K-Core, SSSP, Clustering Coefficient, Depth, Cycle Detection, Louvain variants, K-out and Jaccard.
+  Select the form for the current engine; parameters and property-filter restrictions are listed in the Vermeer guide.
 - **Loading graph into memory**: The workflow begins by loading or reloading graph data from PD/Store into Vermeer worker memory. Accepted loads retain their
   task ID per graph so queued operations stay in `Loading` state until ready.
 - **Task monitoring & cancellation**: Native tasks run asynchronously and can be filtered by state (`RUNNING`, `SUCCESS`, `FAILED`) or cancelled on demand.
 - **Cursor-paged results**: Analytical outputs (e.g., vertex scores, cluster IDs) are retrieved through cursor-based pagination. Results preserve values
   consistently across page boundaries and stop cleanly at an exactly full final page.
+
+Loading and native computation require a super administrator when Server authentication is enabled because direct Store scans bypass label permissions.
+Results describe the loaded compute copy. Reload after source changes; a successful historical task does not guarantee its in-memory results survived
+a restart. The **Computer compatibility** section checks support only after you expand it; selecting another graph resets that opt-in.
 
 ## Async Tasks: confirm background results
 
@@ -277,6 +337,14 @@ Completed task records can be deleted where the interface permits. These tasks a
 For example, submit `g.V().count()` asynchronously, confirm success in the list, then inspect the returned count.
 A successful submission means the request was accepted, not that computation or indexing has finished.
 Use task errors and Server logs together when diagnosing failures.
+
+Task labels distinguish **Server #123** from **Vermeer #123**. Submission links retain the GraphSpace, graph and routing ID;
+when sharing a task identity, include its GraphSpace and graph. An accepted task can appear before its persisted status is discoverable;
+Hubble retries metadata discovery and offers Retry
+when synchronization stops. A missing status is not evidence that the task has failed or that it should be submitted again.
+
+For Server result-size failures, reduce returned records/properties and rerun in the indicated query language.
+Vermeer results can be sampled in the OLAP workspace or paged from Async Tasks; the sample is not the complete result set.
 
 ## Data Source Management: prepare the input
 
@@ -293,8 +361,9 @@ docs_alice,28,Beijing
 docs_bob,32,Shanghai
 ```
 
-Create a FILE data source and upload it. Select CSV (comma separation and UTF-8 by default), with column names `name,age,city`.
-Header, delimiter, and encoding belong to the data source, not mapping settings. The source fields must match the file.
+Create a **Local Upload (FILE)** data source and upload it. Select CSV (comma separation and UTF-8 by default).
+This file already has a header, so leave **Column Names** empty; the import wizard detects `name`, `age` and `city` from the first row.
+Supply Column Names only when the file has no usable header. Parsing settings belong to the data source; verify the detected fields before mapping.
 
 ## Data Import: turn fields into a queryable graph
 
@@ -311,7 +380,8 @@ map them to the graph, and choose execution timing. Use the preceding data sourc
 AUTOMATIC lets Server generate IDs, while PRIMARY_KEY derives them from mapped primary-key properties.
 Edge mappings need source/target fields that follow the corresponding vertex ID rules.
 
-The task list manages configuration and execution entry points; execution history in task details shows each instance's state, count, and errors.
+The task list manages configuration and execution entry points. In **Actions**, open **View execution history**
+to inspect each instance's state, input/write counters and errors.
 Periodic schedules and real-time Kafka tasks are also available; choose an execution mode compatible with the source.
 After completion, verify the result in the GQL workspace:
 
@@ -319,10 +389,21 @@ After completion, verify the result in the GQL workspace:
 g.V().hasLabel('person').has('name', within('docs_alice', 'docs_bob')).valueMap()
 ```
 
-The result should include both new people. Import counts are not necessarily counts of newly created vertices:
-reruns may update existing elements, and header processing can affect reader counts.
+The result should include both new people. **Input progress** counts records read, including headers and skipped/failed rows.
+Vertex and edge write counters count submitted elements in acknowledged successful responses for the current or most recent Loader attempt.
+They are not newly created elements or independently verified successful rows. Retry/resume starts fresh write counters;
+timed-out or interrupted requests can leave writes uncounted. Older tasks show unknown values when these counters were not recorded.
 If the import fails, check source fields, numeric types, nullable properties, and target schema.
 Use Hubble for small trials and [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/) for production bulk ingestion.
+
+The example below ran once: the history reads 3 input records (including the header), acknowledges 2 vertex writes and no edge writes.
+Query verification returns `docs_alice` (28, Beijing) and `docs_bob` (32, Shanghai).
+After these two additions to the 8-vertex sample, the async `g.V().count()` task returns **10**; its task ID is separate from the import instance ID.
+
+```gallery
+![CSV import execution history](/docs/images/hubble/import-task.jpg) # One run: 3 input records, 2 confirmed vertex writes, 0 edge writes
+![Successful asynchronous vertex count](/docs/images/hubble/async-tasks.jpg) # Server #1 returns 10 after the two-person import
+```
 
 ## Profile and account permissions
 
@@ -330,6 +411,12 @@ Hubble uses Server authentication and accounts, with no separate user database. 
 After authentication is enabled, Profile shows the current account's details and permissions and allows changing your password.
 Editing details such as a nickname requires Server support for the personal-profile API. Changing a password ends the current session;
 sign in again with the new password.
+
+The session panel shows the deployed idle timeout and lets signed-in users choose a whole-hour/day value within the administrator's range.
+The servlet default is 48 hours; `hubble.session.max-idle-seconds` (or `HUBBLE_SESSION_MAX_IDLE_SECONDS`) defaults to a 30-day ceiling.
+Mouse, keyboard and touch activity share a browser activity timer across tabs; background requests do not extend it.
+The servlet request-idle clock is separate, and either clock can end the session. Signing in again restores the deployment timeout.
+Personal session changes do not extend password or Server token lifetime.
 
 ### Standalone account management
 
@@ -519,7 +606,7 @@ Use the topbar shortcut-help button to see key bindings. Their scope differs: ty
 | Expected data is missing | Current graph, sample load result, matching labels/properties; distinguish canvas display from stored data |
 | No cluster overview | This example has no PD; see the distributed supplement |
 
-Configuration can affect displayed query size. `gremlin.suffix_limit` defaults to `250` and supplies `.limit(N)` appended to applicable Gremlin queries;
+Configuration can affect displayed query size. `gremlin.suffix_limit` defaults to `300` and supplies `.limit(N)` appended to applicable common reads;
 it is not a universal hard limit. `gremlin.vertex_degree_limit` (`100`) and `gremlin.edges_total_limit` (`500`) constrain expansion.
 FILE uploads allow `csv,txt` by default, with 1 GB per file and 10 GB total. Override `upload_file.*` settings when needed.
 

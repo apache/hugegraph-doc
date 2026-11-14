@@ -127,7 +127,6 @@ MARKDOWN_DESTINATION_RE = re.compile(
 )
 HREFLANG_FALLBACKS = {
     "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html": {"en-US": "/"},
-    "community/maturity/index.html": {"zh-CN": "/cn/"},
 }
 LANGUAGE_OPTION_TITLES = {"en-US": "English", "zh-CN": "简体中文"}
 DOCS_NAV_GROUP_IDS = ("start", "components", "develop", "operate", "reference")

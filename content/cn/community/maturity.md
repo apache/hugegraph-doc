@@ -24,9 +24,9 @@ weight: 50
 | -------- | --------------- | ---------- |
 | **CD10** | 项目以免费方式向公众发布开源软件。 | **是** 项目源代码采用 `Apache License 2.0` 许可。 |
 | **CD20** | 任何人都可以方便地发现并访问项目代码。 | **是** [官方网站](https://hugegraph.apache.org/)包含指向 [GitHub 仓库](https://github.com/apache/hugegraph)的链接。 |
-| **CD30** | 任何人都可以使用标准且广泛可用的工具以可复现的方式构建代码。 | **是** Apache HugeGraph 提供了[快速上手](https://hugegraph.apache.org/docs/quickstart/hugegraph/hugegraph-server/)文档，说明如何编译源代码。 |
+| **CD30** | 任何人都可以使用标准且广泛可用的工具以可复现的方式构建代码。 | **是** Apache HugeGraph 提供了[快速上手](/cn/docs/quickstart/hugegraph/hugegraph-server/)文档，说明如何编译源代码。 |
 | **CD40** | 项目代码的完整历史可通过版本控制系统获取，任何人都能据此重建任意已发布的版本。 | **是** 项目使用 Git，任何人都可以通过每次发布的提交日志和标签查看项目的完整历史。 |
-| **CD50** | 版本控制系统基于对提交者的强身份认证，以可靠的方式确定每一行代码的来源。当第三方贡献代码时，提交信息提供可靠的代码来源信息。 | **是** 项目使用由 Apache Infra 管理的 GitHub，确保每一行代码都能溯源到提交者。第三方贡献按照[贡献指南](https://hugegraph.apache.org/docs/contribution-guidelines/)通过拉取请求接收。 |
+| **CD50** | 版本控制系统基于对提交者的强身份认证，以可靠的方式确定每一行代码的来源。当第三方贡献代码时，提交信息提供可靠的代码来源信息。 | **是** 项目使用由 Apache Infra 管理的 GitHub，确保每一行代码都能溯源到提交者。第三方贡献按照[贡献指南](/cn/docs/contribution-guidelines/)通过拉取请求接收。 |
 
 ### 许可证（LICENSE）
 
@@ -42,7 +42,7 @@ weight: 50
 
 | **ID** | **描述** | **状态** |
 | -------- | --------------- | ---------- |
-| **RE10** | 发布内容由源代码组成，使用标准且开放的归档格式分发，以保证长期可读。 | **是** 源码发布通过 [dist.apache.org](https://dist.apache.org/repos/dist/release/hugegraph/) 分发，并在官网的[下载页面](https://hugegraph.apache.org/docs/download/download/)提供链接。 |
+| **RE10** | 发布内容由源代码组成，使用标准且开放的归档格式分发，以保证长期可读。 | **是** 源码发布通过 [dist.apache.org](https://dist.apache.org/repos/dist/release/hugegraph/) 分发，并在官网的[下载页面](/cn/docs/download/download/)提供链接。 |
 | **RE20** | 项目 PMC（项目管理委员会，见 CS10）批准每次软件发布，使发布成为基金会的行为。 | **是** 所有发布均由 PMC 在 dev@hugegraph.apache.org 邮件列表上投票通过。 |
 | **RE30** | 发布内容附带签名和/或摘要，任何人都能可靠地用它验证下载的归档文件。 | **是** 所有发布均由发布经理签名并附带校验和。[KEYS](https://downloads.apache.org/hugegraph/KEYS) 文件可用于验证。 |
 | **RE40** | 项目可以在源代码之外分发便利二进制包，但它们不是 Apache 发布版本，不提供任何保证。 | **是** 项目提供便利二进制包，但只有源码归档是官方 Apache 发布版本。 |
@@ -54,7 +54,7 @@ weight: 50
 | -------- | --------------- | ---------- |
 | **QU10** | 项目对其代码质量保持开放和诚实。各模块存在不同的质量和成熟度是自然且可接受的，只要清楚地告知用户。 | **是** 鼓励用户在 GitHub 上[报告问题](https://github.com/apache/hugegraph/issues)，所有讨论都是公开的。 |
 | **QU20** | 项目高度重视产出安全的软件。 | **是** 所有报告的安全问题都会得到高优先级处理。 |
-| **QU30** | 项目提供文档完备、安全且私密的渠道来报告安全问题，并记录了响应这些问题的方式。 | **是** 项目网站设有专门的[安全页面](https://hugegraph.apache.org/docs/guides/security/)，说明如何报告漏洞。 |
+| **QU30** | 项目提供文档完备、安全且私密的渠道来报告安全问题，并记录了响应这些问题的方式。 | **是** 项目网站设有专门的[安全页面](/cn/docs/guides/security/)，说明如何报告漏洞。 |
 | **QU40** | 项目高度重视向后兼容性，力求记录所有不兼容的变更，并提供工具和文档帮助用户迁移到新功能。 | **是** 项目重视向后兼容性，并在发布说明中记录所有破坏性变更。 |
 | **QU50** | 项目力求及时响应已记录的缺陷报告。 | **是** 社区积极处理 GitHub 上报告的问题和邮件列表中的提问。 |
 
@@ -63,10 +63,10 @@ weight: 50
 | **ID** | **描述** | **状态** |
 | -------- | --------------- | ---------- |
 | **CO10** | 项目拥有广为人知的主页，指向按照本成熟度模型运作所需的全部信息。 | **是** [网站](https://hugegraph.apache.org/)是项目信息的中心入口。 |
-| **CO20** | 社区欢迎任何以善意和尊重的方式行事、并为项目增加价值的贡献者。 | **是** Apache HugeGraph 设有[贡献指南](https://hugegraph.apache.org/docs/contribution-guidelines/)页面，欢迎所有有价值的贡献。 |
+| **CO20** | 社区欢迎任何以善意和尊重的方式行事、并为项目增加价值的贡献者。 | **是** Apache HugeGraph 设有[贡献指南](/cn/docs/contribution-guidelines/)页面，欢迎所有有价值的贡献。 |
 | **CO30** | 贡献包括源代码、文档、建设性的缺陷报告、建设性的讨论、市场推广以及任何为项目增加价值的内容。 | **是** 项目同样重视代码和非代码贡献。 |
 | **CO40** | 社区力求任人唯贤，随着时间推移为项目增加价值的贡献者将获得更多权利和责任。 | **是** 社区遵循 Apache Way，并有过将活跃贡献者提升为提交者和 PMC 成员的历史。 |
-| **CO50** | 项目记录了贡献者如何获得更多权利（如提交权限或决策权），并始终如一地应用这些原则。 | **是** 成为提交者的流程在[贡献指南](https://hugegraph.apache.org/docs/contribution-guidelines/committer-guidelines/)中说明。 |
+| **CO50** | 项目记录了贡献者如何获得更多权利（如提交权限或决策权），并始终如一地应用这些原则。 | **是** 成为提交者的流程在[贡献指南](/cn/docs/contribution-guidelines/committer-guidelines/)中说明。 |
 | **CO60** | 社区依据拥有决策权的成员（见 CS10）的共识运作。Apache 项目不欢迎独裁者，无论其是否善意。 | **是** 所有重大决策都通过邮件列表上的公开讨论和共识做出。 |
 | **CO70** | 项目力求及时回答用户的问题。 | **是** 社区通过 dev@hugegraph.apache.org 邮件列表、[GitHub Issues](https://github.com/apache/hugegraph/issues) 和 [GitHub Discussions](https://github.com/apache/hugegraph/discussions) 为用户提供支持。 |
 

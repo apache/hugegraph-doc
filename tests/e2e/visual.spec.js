@@ -231,7 +231,8 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
     await page.screenshot({
       animations: "disabled",
       path: path.join(directory, `${name}.png`),
-      fullPage: !["gallery", "chart", "longcode", "markmap", "terminal", "math", "pd", "computer", "config-api", "helm", "footer", "hubble-import", "hubble-nodes"].includes(state)
+      fullPage: !["duo", "duo-mobile", "gallery", "chart", "longcode", "markmap", "terminal", "math",
+        "pd", "computer", "config-api", "helm", "footer", "hubble-import", "hubble-nodes"].includes(state)
     });
     if (sectionHeading) {
       expect(await sectionHeading.evaluate(node => Math.abs(node.getBoundingClientRect().top - 108))).toBeLessThan(2);

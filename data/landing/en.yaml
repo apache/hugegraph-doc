@@ -110,7 +110,7 @@ capabilities:
       url: /docs/clients/client/hugegraph-client/
 
 platforms:
-  title: Fits the platforms you already run
+  title: Works seamlessly with your existing stack
   pause: Pause logo animation
 
 components:

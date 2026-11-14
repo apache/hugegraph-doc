@@ -931,3 +931,13 @@
   width: 100%;
   max-width: 36rem;
 }
+
+// OINK Duo View loads ordinary pages in same-origin iframes. Keep content-level
+// interactions, but remove HugeGraph's top-level AI chrome from both panes.
+html[data-td-compare-pane] {
+  .hg-ask-ai-launcher,
+  .hg-ai-consent,
+  .hg-ai-status {
+    display: none !important;
+  }
+}

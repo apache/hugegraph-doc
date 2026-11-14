@@ -1,5 +1,5 @@
-{{- /* OINK v1.3.1 override: keep keyboard help in the header and expose
-       version links inside the landing-page mobile drawer. */ -}}
+{{- /* OINK v1.5.1 override: keep keyboard help in the header and expose
+       HugeGraph version links inside the native navbar-only mobile drawer. */ -}}
 {{- $config := partialCached "shell/config.html" . .Site.Language.Lang -}}
 {{- $targets := partialCached "language-targets.html" . .Site.BaseURL .RelPermalink .Site.Language.Lang -}}
 {{- $localSearch := partial "shell/search-enabled.html" . -}}
@@ -8,12 +8,10 @@
        aside). */ -}}
 {{- $landingLayout := eq .Layout "landing" -}}
 {{- $drawerMode := and (not $landingLayout) (partial "shell/chrome-enabled.html" .) (partial "shell/sidebar-enabled.html" .) -}}
-{{- /* Home and explicit Landing layouts render the drawer entry: these are
-       the navbar-only surfaces with no sidebar drawer to fall back on. CSS
-       gates the button to the below-md tier, where it joins search as the
-       whole right-hand contract; the centered link tree stays at every
-       width, so the drawer only restores the full labelled hierarchy. */ -}}
-{{- $landingSurface := and (not $drawerMode) (or .IsHome $landingLayout) -}}
+{{- /* Every navbar-only surface needs the native mobile drawer. OINK 1.5.1
+       widened this from home/landing pages so utility controls stay reachable
+       on taxonomy, list and other pages without the docs sidebar. */ -}}
+{{- $landingSurface := not $drawerMode -}}
 {{- /* The navbar owns this drawer even with a local homepage renderer. */ -}}
 {{- if $landingSurface }}{{ .Page.Store.Set "hasLanding" true }}{{ end -}}
 {{- $githubStars := partial "landing/github-stars.html" . -}}

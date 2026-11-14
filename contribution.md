@@ -66,7 +66,7 @@ effect. Use `--baseURL` or `HG_DOC_SITE_ORIGIN` when changing the rendered
 origin (the flag wins when both are set); a server `--port` is reflected in
 the generated local origin.
 
-OINK 1.4 uses Hugo's built-in LibSass. Its deprecation warning must remain visible;
+The pinned OINK release uses Hugo's built-in LibSass. Its deprecation warning must remain visible;
 do not add `--panicOnWarning` or suppress it with `ignoreLogs`. The shared
 `scripts/hugo_build.py` gate permits only that exact warning and fails builds on
 all other Hugo warnings, including missing translations and duplicate target
@@ -91,7 +91,7 @@ validate commands so older candidate branches do not need the new CI helpers.
 Candidates pinned to OINK 1.3.0 are outside this workflow's supported scope.
 OINK 1.3.1 requires standalone Dart Sass, while this workflow installs native
 LibSass only. Both pins are rejected before scheduling builds; upgrade such a
-candidate to OINK 1.4.0 before dispatching it.
+candidate to the current OINK pin before dispatching it.
 Historical documentation versions still use the current site's shell and are
 unaffected by this candidate-theme restriction. Cache hits still run the full
 version validator, and aggregation validates every selected version again.
@@ -124,7 +124,7 @@ latest 文档使用 SeaTunnel 3.0+ 等最低版本说明，并引用上游 lates
 
 Use the focused [OINK feature reference](scripts/oink-features.md) for component
 selection, copyable syntax and real HugeGraph source examples. It covers the
-native components used by this site, OINK 1.4.0's table reader and release cards,
+native components used by this site, including the table reader, release cards and Duo View,
 and the public interfaces used by the site shell. Read the relevant section
 before adding a renderer, shortcode, script or stylesheet.
 

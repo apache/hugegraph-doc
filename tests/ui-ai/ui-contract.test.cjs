@@ -129,23 +129,24 @@ test('social fallback preserves the supplied HugeGraph and Apache image dimensio
   assert.equal(image.readUInt32BE(20), 936);
 });
 
-test('OINK Duo View stays native and HugeGraph site runtimes stand down in panes', () => {
+test('OINK Duo View stays native and HugeGraph pane runtimes remain content-scoped', () => {
   const config = read('hugo.yaml');
   const manifest = read('layouts/_partials/actions/manifest.html');
+  const shell = read('assets/js/hugegraph-shell.js');
   assert.match(config, /\n\s+compare: true\n/);
   assert.match(manifest, /partial "compare\/page-key\.html" \./);
   assert.doesNotMatch(manifest, /\.RelPermalink \$outputFormat/);
-  for (const file of [
-    'assets/js/hugegraph-shell.js',
-    'assets/js/language-preference.js',
-    'assets/js/kapa-adapter.js',
-  ]) {
-    assert.match(
-      read(file),
-      /if \(typeof window !== 'undefined' && window\.OinkComparePane\) return;/,
-      `${file} must not initialize site-level behavior inside native Duo View panes`,
-    );
-  }
+  assert.match(shell, /if \(windowObject\.OinkComparePane\) \{/);
+  assert.match(shell, /if \(windowObject\.OinkComparePane\)[\s\S]*?initScrollableTables\(documentObject\);[\s\S]*?return;/);
+  assert.doesNotMatch(shell, /if \(typeof window !== 'undefined' && window\.OinkComparePane\) return;/);
+  assert.match(
+    read('assets/js/language-preference.js'),
+    /if \(window\.OinkComparePane\) return;/,
+  );
+  assert.match(
+    read('assets/js/kapa-adapter.js'),
+    /if \(windowObject\.OinkComparePane\) return null;/,
+  );
   assert.equal(fs.existsSync(path.join(root, 'assets/js/document-compare.js')), false);
   assert.equal(fs.existsSync(path.join(root, 'layouts/_partials/compare')), false);
 });

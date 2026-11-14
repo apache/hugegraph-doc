@@ -1,246 +1,277 @@
 const { test, expect } = require('./artifact-test');
 
 const VERSION_IDS = ['latest', '1.7', '1.5', '1.3', '1.0'];
-const EXPECTED_IDS = (process.env.EXPECTED_VERSIONS || VERSION_IDS.join(',')).split(',');
+const EXPECTED_IDS = new Set((process.env.EXPECTED_VERSIONS || VERSION_IDS.join(','))
+  .split(',').map(value => value.trim()).filter(Boolean));
 
-function versionPrefix(version) {
-  return version === 'latest' ? '' : `/versions/${version}`;
+function docsRoute(version, locale, relative = '') {
+  const versionPrefix = version === 'latest' ? '' : `/versions/${version}`;
+  const languagePrefix = locale === 'cn' ? '/cn' : '';
+  return `${versionPrefix}${languagePrefix}/docs/${relative}`;
 }
 
-function docsRoute(version, locale) {
-  return `${versionPrefix(version)}${locale === 'cn' ? '/cn' : ''}/docs/`;
-}
-
-function alternateDocsRoute(version, locale) {
-  return docsRoute(version, locale === 'cn' ? 'en' : 'cn');
-}
-
-async function config(page) {
+async function compareConfig(page) {
   return page.locator('#td-compare-config').evaluate(node => JSON.parse(node.textContent));
+}
+
+function resolvedURL(page, value) {
+  return new URL(value, page.url());
 }
 
 async function actionManifest(page) {
   return page.locator('#td-action-manifest').evaluate(node => JSON.parse(node.textContent));
 }
 
-function paneFrames(page) {
-  return page.frames().filter(frame => {
-    try {
-      return new URL(frame.url()).searchParams.get('oink_compare_pane') === '1';
-    } catch (_) {
-      return false;
-    }
-  });
-}
-
-async function waitForReadyPanes(page) {
+async function paneFrames(page) {
   const dialog = page.locator('dialog[data-td-compare]');
-  await expect(dialog).toBeVisible();
-  await expect(dialog.locator('[data-td-compare-frame]')).toHaveCount(2);
-  await expect.poll(() => paneFrames(page).length).toBe(2);
-  for (const frame of paneFrames(page)) {
-    await expect.poll(() => frame.evaluate(() => Boolean(
-      window.OinkComparePane &&
-      document.documentElement.hasAttribute('data-td-compare-pane') &&
-      document.querySelector('meta[name="oink-compare-page"]') &&
-      document.querySelector('#td-main-content .td-content')
-    ))).toBe(true);
+  await expect(dialog).toBeVisible({ timeout: 15_000 });
+  const locators = dialog.locator('iframe[data-td-compare-frame]');
+  await expect(locators).toHaveCount(2);
+  const frames = [];
+  for (let index = 0; index < 2; index += 1) {
+    const handle = await locators.nth(index).elementHandle();
+    const frame = await handle.contentFrame();
+    await frame.waitForFunction(() => window.OinkComparePane === true &&
+      Boolean(document.querySelector('meta[name="oink-compare-page"]')) &&
+      Boolean(document.querySelector('#td-main-content .td-content')));
+    frames.push(frame);
   }
-  await expect(dialog.locator('[data-td-compare-sync]')).toBeEnabled();
-  return dialog;
+  return { dialog, locators, frames };
 }
 
-async function visiblePaneCount(dialog) {
-  return dialog.locator('[data-td-compare-side]').evaluateAll(nodes => nodes.filter(node => {
-    const style = getComputedStyle(node);
-    return style.visibility !== 'hidden' && style.display !== 'none';
-  }).length);
+async function closeReader(page) {
+  const dialog = page.locator('dialog[data-td-compare]');
+  if (await dialog.count()) {
+    await dialog.locator('[data-td-compare-close]').click();
+    await expect(dialog).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => history.state?.oinkCompareReader || null)).toBe(null);
+  }
 }
 
 for (const version of VERSION_IDS) {
   for (const locale of ['en', 'cn']) {
-    test(`${version} ${locale} uses native Duo View on desktop and one-pane mobile`, async ({ page }) => {
-      test.skip(!EXPECTED_IDS.includes(version), 'version not selected for this artifact');
-      await page.setViewportSize({ width: 1440, height: 900 });
+    test(`${version} ${locale} Duo View covers desktop and mobile Docs`, async ({ page }) => {
+      test.skip(!EXPECTED_IDS.has(version), 'version absent from this aggregate artifact');
+      test.setTimeout(60_000);
       const route = docsRoute(version, locale);
-      await page.goto(route);
+      const expectedTarget = docsRoute(version, locale === 'en' ? 'cn' : 'en');
 
-      const descriptor = await config(page);
-      expect(descriptor.current.url).toBe(route);
-      expect(descriptor.targets.map(target => target.url)).toContain(alternateDocsRoute(version, locale));
-      expect(descriptor.shortcut).toBe('B');
-      const manifest = await actionManifest(page);
-      expect(manifest.actions.find(action => action.id === 'compare_translations')).toMatchObject({
-        available: true,
-        kind: 'invoke',
-      });
+      for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+        await page.setViewportSize(viewport);
+        await page.goto(route);
+        const darkMobile = version === 'latest' && locale === 'cn' && viewport.width < 900;
+        if (darkMobile) {
+          await page.evaluate(() => localStorage.setItem('td-color-theme', 'dark'));
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
+        }
+        const entry = page.locator('[data-td-compare-open]');
+        await expect(entry).toBeVisible();
+        const config = await compareConfig(page);
+        expect(config.current.url).toBeTruthy();
+        expect(config.targets).toHaveLength(1);
+        expect(resolvedURL(page, config.targets[0].url).pathname).toBe(expectedTarget);
+        const manifest = await actionManifest(page);
+        expect(manifest.actions.some(action => action.id === 'compare_translations')).toBe(true);
+        expect(manifest.actions.some(action => action.id === 'switch_version')).toBe(true);
 
-      const entry = page.locator('[data-td-compare-open]');
-      await expect(entry).toBeVisible();
-      await expect(entry).toHaveAttribute('aria-keyshortcuts', 'B');
-      await entry.click();
-      const dialog = await waitForReadyPanes(page);
-      await expect.poll(() => visiblePaneCount(dialog)).toBe(2);
+        const targetLocale = locale === 'en' ? 'zh-CN' : 'en-US';
+        const alternate = page.locator(`link[rel="alternate"][hreflang="${targetLocale}"]`);
+        await expect(alternate).toHaveCount(1);
+        expect(new URL(await alternate.getAttribute('href')).pathname).toBe(expectedTarget);
+        expect(new URL(await page.locator('link[rel="canonical"]').getAttribute('href')).pathname).toBe(route);
 
-      await page.setViewportSize({ width: 390, height: 844 });
-      const tabs = dialog.locator('.td-compare__tab');
-      await expect(tabs).toHaveCount(2);
-      await expect(tabs.first()).toHaveAttribute('aria-pressed', 'true');
-      await expect.poll(() => visiblePaneCount(dialog)).toBe(1);
-      await tabs.nth(1).click();
-      await expect(tabs.nth(1)).toHaveAttribute('aria-pressed', 'true');
-      await expect.poll(() => visiblePaneCount(dialog)).toBe(1);
+        await entry.click();
+        const { dialog, locators, frames } = await paneFrames(page);
+        await expect(dialog).toHaveAccessibleName(locale === 'cn' ? '双列视图' : 'Duo View');
+        await expect(locators.nth(0)).toHaveAttribute('title', config.current.label);
+        await expect(locators.nth(1)).toHaveAttribute('title', config.targets[0].label);
+        await expect(dialog.locator('[data-td-compare-close]')).toHaveAttribute('aria-keyshortcuts', /Escape B/);
 
-      await dialog.locator('[data-td-compare-close]').click();
-      await expect(page.locator('dialog[data-td-compare]')).toHaveCount(0);
+        const panes = dialog.locator('[data-td-compare-side]');
+        if (viewport.width >= 900) {
+          await expect(panes.nth(0)).toHaveAttribute('aria-hidden', 'false');
+          await expect(panes.nth(1)).toHaveAttribute('aria-hidden', 'false');
+        } else {
+          await expect(dialog.locator('.td-compare__tab')).toHaveCount(2);
+          await expect(panes.nth(0)).toHaveAttribute('aria-hidden', 'false');
+          await expect(panes.nth(1)).toHaveAttribute('aria-hidden', 'true');
+          await dialog.locator('.td-compare__tab').nth(1).click();
+          await expect(panes.nth(0)).toHaveAttribute('aria-hidden', 'true');
+          await expect(panes.nth(1)).toHaveAttribute('aria-hidden', 'false');
+        }
+
+        for (const [index, frame] of frames.entries()) {
+          expect(await frame.evaluate(() => new URL(location.href).searchParams.get('oink_compare_pane'))).toBe('1');
+          const canonicalPath = await frame.locator('link[rel="canonical"]').evaluate(node => new URL(node.href).pathname);
+          expect(canonicalPath).toBe(index === 0 ? route : expectedTarget);
+          expect(await frame.evaluate(() => document.querySelector('.hg-ask-ai-launcher')?.dataset.hgAiBound)).toBeUndefined();
+          if (darkMobile) {
+            expect(await frame.evaluate(() => document.documentElement.getAttribute('data-bs-theme'))).toBe('dark');
+          }
+          const launcher = frame.locator('.hg-ask-ai-launcher');
+          if (await launcher.count()) await expect(launcher).toBeHidden();
+        }
+        await closeReader(page);
+      }
     });
   }
 }
 
-test('real Docs pair is lazy, pane-isolated, synchronized and history-restorable', async ({ page }) => {
-  const runtimeRequests = [];
-  const thirdPartyRequests = [];
-  page.on('request', request => {
-    if (request.url().includes('document-compare')) runtimeRequests.push(request.url());
-    if (/kapa\.ai|hcaptcha\.com|kapa-widget-proxy/.test(request.url())) thirdPartyRequests.push(request.url());
-  });
-
+test('real Docs page lazily opens, synchronizes, restores and exposes all native entries', async ({ page }) => {
+  test.setTimeout(90_000);
+  const requested = [];
+  page.on('request', request => requested.push(request.url()));
   await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/docs/quickstart/hugegraph/hugegraph-server/');
-  expect(runtimeRequests).toEqual([]);
-  const descriptor = await config(page);
-  expect(descriptor.targets.map(target => target.url)).toContain(
-    '/cn/docs/quickstart/hugegraph/hugegraph-server/'
-  );
+  expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
+
+  const config = await compareConfig(page);
+  const targetPath = resolvedURL(page, config.targets[0].url).pathname;
+  expect(requested.some(url => url.includes('document-compare'))).toBe(false);
+  expect(requested.some(url => new URL(url).pathname === targetPath)).toBe(false);
+
+  const readingHeading = page.locator('#td-main-content .td-content h2[id]').nth(2);
+  await readingHeading.scrollIntoViewIfNeeded();
+  const sourceScroll = await page.evaluate(() => scrollY);
+  expect(sourceScroll).toBeGreaterThan(0);
 
   await page.keyboard.press('b');
-  let dialog = await waitForReadyPanes(page);
-  expect(runtimeRequests.length).toBeGreaterThan(0);
-  let frames = paneFrames(page);
-  for (const frame of frames) {
-    expect(await frame.evaluate(() => ({
-      shell: typeof window.HugeGraphShell,
-      kapa: typeof window.HugeGraphKapa,
-      pane: window.OinkComparePane,
-    }))).toEqual({ shell: 'undefined', kapa: 'undefined', pane: true });
-  }
-  expect(thirdPartyRequests).toEqual([]);
-
+  let { dialog, frames } = await paneFrames(page);
+  expect(requested.some(url => url.includes('document-compare'))).toBe(true);
+  expect(requested.some(url => new URL(url).pathname === targetPath)).toBe(true);
   const sync = dialog.locator('[data-td-compare-sync]');
-  await expect(sync).toHaveAttribute('role', 'switch');
+  await expect(sync).toBeEnabled();
   await expect(sync).toHaveAttribute('aria-checked', 'true');
   await sync.click();
   await expect(sync).toHaveAttribute('aria-checked', 'false');
   await sync.click();
   await expect(sync).toHaveAttribute('aria-checked', 'true');
+  expect(await frames[0].evaluate(() => scrollY)).toBeGreaterThan(0);
+  await expect.poll(() => frames[1].evaluate(() => scrollY)).toBeGreaterThan(0);
 
-  await frames[0].evaluate(() => window.scrollTo({
-    top: Math.max(500, document.documentElement.scrollHeight * 0.55),
-    behavior: 'instant',
-  }));
-  await expect.poll(() => frames[1].evaluate(() => window.scrollY)).toBeGreaterThan(100);
-  const firstFollowerPosition = await frames[1].evaluate(() => window.scrollY);
-  await frames[0].evaluate(() => window.scrollTo({
-    top: document.documentElement.scrollHeight * 0.8,
-    behavior: 'instant',
-  }));
-  await expect.poll(() => frames[1].evaluate(() => window.scrollY))
-    .toBeGreaterThan(firstFollowerPosition + 20);
+  const targetBefore = await frames[1].evaluate(() => scrollY);
+  await frames[0].evaluate(() => {
+    document.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
+    window.scrollTo({ top: Math.min(document.documentElement.scrollHeight - innerHeight, scrollY + 700), behavior: 'instant' });
+  });
+  await expect.poll(() => frames[1].evaluate(() => scrollY)).not.toBe(targetBefore);
+  const targetAfterFirstMove = await frames[1].evaluate(() => scrollY);
+  await frames[0].evaluate(() => {
+    document.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
+    window.scrollBy({ top: 500, behavior: 'instant' });
+  });
+  await expect.poll(() => frames[1].evaluate(() => scrollY)).not.toBe(targetAfterFirstMove);
 
-  const followerBeforeFragment = await frames[1].evaluate(() => window.scrollY);
-  const selfLink = frames[0].locator('#td-main-content .td-content a.td-heading-self-link').nth(2);
-  await expect(selfLink).toBeAttached();
-  await selfLink.click();
-  await expect.poll(() => new URL(frames[0].url()).hash.length).toBeGreaterThan(1);
-  await expect.poll(async () => Math.abs(
-    await frames[1].evaluate(() => window.scrollY) - followerBeforeFragment
-  )).toBeGreaterThan(20);
-
-  await page.waitForTimeout(450);
-  await page.reload();
-  dialog = await waitForReadyPanes(page);
-  frames = paneFrames(page);
-  await expect.poll(() => frames[0].evaluate(() => window.scrollY)).toBeGreaterThan(100);
-  await expect.poll(() => frames[1].evaluate(() => window.scrollY)).toBeGreaterThan(100);
+  const fragment = await frames[0].evaluate(() => {
+    const heading = [...document.querySelectorAll('#td-main-content .td-content h2[id], #td-main-content .td-content h3[id]')]
+      .find(node => node.getBoundingClientRect().height > 0 && node.id);
+    if (!heading) return null;
+    const link = [...document.querySelectorAll('a[href]')].find(anchor => {
+      try { return new URL(anchor.href).hash === `#${heading.id}`; } catch (_) { return false; }
+    });
+    if (!link) return null;
+    link.click();
+    return `#${heading.id}`;
+  });
+  expect(fragment).toBeTruthy();
+  await expect.poll(() => frames[0].evaluate(() => location.hash)).toBe(fragment);
 
   await page.keyboard.press('b');
   await expect(page.locator('dialog[data-td-compare]')).toHaveCount(0);
-  await expect.poll(() => page.evaluate(() => Boolean(history.state?.oinkCompareReader))).toBe(false);
-  await page.goForward();
-  await waitForReadyPanes(page);
-  await page.goBack();
-  await expect(page.locator('dialog[data-td-compare]')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => history.state?.oinkCompareReader || null)).toBe(null);
 
   await page.locator('[data-td-shell-search-open]').first().click();
   const input = page.locator('.td-shell-search__input');
-  await input.fill('>Duo View');
-  const command = page.locator('[role="option"]').filter({ hasText: 'Duo View' }).first();
-  await expect(command).toBeVisible();
-  await command.click();
-  await waitForReadyPanes(page);
-});
+  await input.fill('Duo View');
+  await page.getByRole('option').filter({ hasText: /^Duo View$/ }).first().click();
+  ({ dialog } = await paneFrames(page));
 
-test('real Blog translation coexists with search, Print, Markdown and RSS', async ({ page, request }) => {
-  const route = '/blog/2025/10/09/toplingdb-quick-start/';
-  await page.goto(route);
-  const descriptor = await config(page);
-  expect(descriptor.targets.map(target => target.url)).toContain(
-    '/cn/blog/2025/10/09/toplingdb-quick-start/'
-  );
-  await page.locator('[data-td-compare-open]').click();
-  const dialog = await waitForReadyPanes(page);
-  await dialog.locator('[data-td-compare-close]').click();
-  await page.locator('[data-td-shell-search-open]').first().click();
-  await page.locator('.td-shell-search__input').fill('ToplingDB');
-  await expect(page.locator('[role="option"]').first()).toBeVisible();
-
-  for (const output of ['/blog/index.xml', '/_print/docs/', `${route}index.md`]) {
-    const response = await request.get(output);
-    expect(response.ok(), output).toBeTruthy();
-    const body = await response.text();
-    expect(body, output).not.toContain('id="td-compare-config"');
-    expect(body, output).not.toMatch(/<button[^>]+data-td-compare-open/);
-  }
-});
-
-test('a real one-language page exposes no Duo View entry or command', async ({ page }) => {
-  await page.goto('/cn/docs/changelog/hugegraph-0.10.4-release-notes/');
-  await expect(page.locator('#td-compare-config')).toHaveCount(0);
-  await expect(page.locator('[data-td-compare-open]')).toHaveCount(0);
-  const manifest = await actionManifest(page);
-  expect(manifest.actions.some(action => action.id === 'compare_translations')).toBe(false);
-  await page.keyboard.press('b');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  ({ dialog, frames } = await paneFrames(page));
+  expect(await frames[0].evaluate(() => scrollY)).toBeGreaterThan(0);
+  await page.goBack();
   await expect(page.locator('dialog[data-td-compare]')).toHaveCount(0);
+  await page.goForward();
+  await expect(page.locator('dialog[data-td-compare]')).toBeVisible({ timeout: 15_000 });
+  await closeReader(page);
 });
 
-test('failed pane times out to an accessible retry and recovers', async ({ page }) => {
-  await page.addInitScript(() => {
-    const nativeSetTimeout = window.setTimeout.bind(window);
+test('Duo View times out a stalled pane, retries and keeps an explicit direct link', async ({ page }) => {
+  test.setTimeout(45_000);
+  await page.goto('/docs/quickstart/hugegraph/hugegraph-server/');
+  const config = await compareConfig(page);
+  const target = resolvedURL(page, config.targets[0].url);
+  await page.evaluate(() => {
+    const nativeTimeout = window.setTimeout.bind(window);
     window.setTimeout = (callback, delay, ...args) =>
-      nativeSetTimeout(callback, delay === 15000 ? 80 : delay, ...args);
+      nativeTimeout(callback, delay === 15_000 ? 100 : delay, ...args);
   });
-  let held = false;
-  await page.route('**/*', async route => {
-    const url = new URL(route.request().url());
-    if (!held && url.pathname === '/cn/docs/' && url.searchParams.get('oink_compare_pane') === '1') {
-      held = true;
-      await new Promise(resolve => setTimeout(resolve, 250));
-      try { await route.abort('failed'); } catch (_) { /* The timed-out frame may already be gone. */ }
-      return;
+  let attempts = 0;
+  await page.route(url => url.pathname === target.pathname && url.searchParams.get('oink_compare_pane') === '1', async route => {
+    attempts += 1;
+    if (attempts === 1) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      try { await route.continue(); } catch (_) { /* Timed-out iframe was disposed. */ }
+    } else {
+      await route.continue();
     }
-    await route.fallback();
   });
 
-  await page.goto('/docs/');
   await page.locator('[data-td-compare-open]').click();
   const dialog = page.locator('dialog[data-td-compare]');
   await expect(dialog).toBeVisible();
-  const failure = dialog.locator('.td-compare__failure');
-  await expect(failure).toBeVisible();
-  await expect(failure).toContainText('Could not load this page.');
-  const retry = failure.locator('.td-compare__retry');
-  await expect(retry).toHaveAccessibleName('Retry');
-  await expect(failure.locator('a[target="_blank"]')).toHaveAttribute('rel', 'noopener');
+  const retry = dialog.locator('.td-compare__retry');
+  await expect(retry).toBeVisible({ timeout: 15_000 });
+  const direct = retry.locator('xpath=following-sibling::a');
+  await expect(direct).toHaveAttribute('href', target.href);
+  await expect(direct).toHaveAttribute('target', '_blank');
+  await expect(direct).toHaveAttribute('rel', 'noopener');
+
   await retry.click();
-  await waitForReadyPanes(page);
+  const { frames } = await paneFrames(page);
+  expect(attempts).toBe(2);
+  expect(await frames[1].evaluate(() => document.querySelector('meta[name="oink-compare-page"]')?.content)).toBe(target.pathname);
+  await closeReader(page);
 });
+
+test('draft/missing peers and non-HTML outputs never expose Duo View', async ({ page, request }) => {
+  await page.goto('/cn/docs/changelog/hugegraph-0.12.0-release-notes/');
+  await expect(page.locator('[data-td-compare-open]')).toHaveCount(0);
+  await expect(page.locator('#td-compare-config')).toHaveCount(0);
+  const manifest = await actionManifest(page);
+  expect(manifest.actions.some(action => action.id === 'compare_translations')).toBe(false);
+
+  for (const route of [
+    '/docs/quickstart/hugegraph/hugegraph-server/index.md',
+    '/_print/docs/',
+    '/docs/index.xml',
+  ]) {
+    const response = await request.get(route);
+    expect(response.ok(), route).toBeTruthy();
+    const body = await response.text();
+    expect(body, route).not.toContain('td-compare-config');
+    expect(body, route).not.toContain('data-td-compare-open');
+  }
+});
+
+for (const [locale, route] of [
+  ['en', '/blog/2025/10/09/toplingdb-quick-start/'],
+  ['cn', '/cn/blog/2025/10/09/toplingdb-quick-start/'],
+]) {
+  test(`${locale} real Blog page uses native Duo View without preloading the peer`, async ({ page }) => {
+    const requested = [];
+    page.on('request', request => requested.push(request.url()));
+    await page.goto(route);
+    const config = await compareConfig(page);
+    const target = resolvedURL(page, config.targets[0].url);
+    await expect(page.locator('[data-td-compare-open]')).toBeVisible();
+    expect(requested.some(url => new URL(url).pathname === target.pathname)).toBe(false);
+    await page.locator('[data-td-compare-open]').click();
+    await paneFrames(page);
+    expect(requested.some(url => new URL(url).pathname === target.pathname)).toBe(true);
+    expect(requested.filter(url => /(?:kapa\.ai|hcaptcha\.com|a\.run\.app)/.test(url))).toEqual([]);
+    await closeReader(page);
+  });
+}

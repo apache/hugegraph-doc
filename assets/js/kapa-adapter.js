@@ -7,8 +7,6 @@
 (function (global) {
   'use strict';
 
-  if (typeof window !== 'undefined' && window.OinkComparePane) return;
-
   var BUNDLE_URL = 'https://widget.kapa.ai/kapa-widget.bundle.js';
   var TIMEOUT_MS = 5000;
 
@@ -429,6 +427,7 @@
   }
 
   function init(windowObject, documentObject) {
+    if (windowObject.OinkComparePane) return null;
     var config = readConfig(documentObject);
     if (!config) return null;
     var controller = createController(windowObject, documentObject, config);

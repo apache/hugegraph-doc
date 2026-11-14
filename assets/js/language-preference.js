@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  if (typeof window !== 'undefined' && window.OinkComparePane) return;
+  if (window.OinkComparePane) return;
 
   var node = document.getElementById('hg-language-config');
   if (!node) return;

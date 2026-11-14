@@ -1,10 +1,12 @@
 {
-  "version": "v1.5.1",
   "files": {
     "assets/js/appearance.js": "66fa6a6fea304c235a8b11ca714478b221d8fdc8db0e9fffdfe5f6a2524760ff",
     "assets/js/command-palette.js": "2d1bd325480e5d117fe9f4aca78569846fdb6b19372453c3b24b468b3d362528",
+    "assets/js/compare-entry.js": "063313bec498b35329b4f553f70eecf40035b625bf264a4785266068809bdb80",
+    "assets/js/compare-scroll.js": "156f95de0df0c3fc042294ecc1ef83a8fdf785d59bfafc2fd08bb9dee9a7ddc8",
     "assets/js/dark-mode.js": "d0f19cd7011f05debab7ffadc4c268321d4845f12be781d090d2e461978c03b2",
     "assets/js/docs-shell.js": "c44358e29573f32bc54165eed0e8234d4f7598bf4ad6dbd47af6d6b0d7ad827f",
+    "assets/js/document-compare.js": "fa56ddea93cc55cb162e19575b1cc29025c4fc7a396a50356e2597d009ee2f21",
     "assets/js/search-engine.js": "9ca8b850f126ee817a348df97244a916b31611054930cf8e13894363391e87ae",
     "assets/js/search.js": "69d9316572736644a9a46f915ab7576e7e3a56aed81a5151cdd1ffe0d5c17a93",
     "assets/js/sidebar-nav.js": "8d848619d326934d92d87354d3d1511db5c65b5122af136f161d6af1fb070d39",
@@ -83,13 +85,22 @@
     "i18n/en.yaml": "d456d73384f10ec7997dedb3982d367fac607396885436ca66404a990e560210",
     "i18n/zh-cn.yaml": "188311a8238449c73c0adc29de1ca0869a31e85d059164eafbed7565447a719b",
     "layouts/404.html": "8aa99a52d82914e85360df70e75b2b184c0e0ffd6389bad20e68ddaf3be8c934",
+    "layouts/_partials/actions/context.html": "0b1359f19b2270e2c24e01837539c625ed41bc3c07a63c48daaf5cb55bd84996",
     "layouts/_partials/actions/manifest.html": "3aed378114d4cb8f46a9f9b163cd6483b9b37fb7c71817c324705dcc3e4aa49a",
     "layouts/_partials/backlinks-sources.html": "46ede594b89f971731dd5caf322bd13b0dc7b791f5e04294daa0d793bff1908b",
     "layouts/_partials/backlinks.html": "be94ac2f7917993128f603188045b69fb425bd2882b1888ad2d3db253ce72653",
+    "layouts/_partials/compare/analytics.html": "227e4407f3307d3f156e0eec5d347989fcc4a174d6383f002c62874df82eda88",
+    "layouts/_partials/compare/bootstrap.html": "c2ad9725c0a1de6f498dac9d53f5cdef87a95d2867d2e64e389e701c842a7e29",
+    "layouts/_partials/compare/enabled.html": "8f278b044ee95b52fb214c9b336e7771f88c9ad52babd68af5f44922996e4512",
+    "layouts/_partials/compare/entry.html": "9278c555c0993b61e7d35a605417336f4cc64259ebf0b7f824575f801a43dda4",
+    "layouts/_partials/compare/page-key.html": "a69595b47434c15fd907a35bb9a952fc94b1e60b0dec794b03a3a48b9e15b83c",
+    "layouts/_partials/compare/scripts.html": "216e18f92409589ba17d5a3e89111ab679cf335ea3d7f327cc600f86c04ed0b8",
+    "layouts/_partials/compare/targets.html": "171b3f818dffb8092e6018228c7b84e5594b3e57c4be6d58896fe2eac84d05e8",
     "layouts/_partials/content/image-zoom-config.html": "3ad22eed2f6317dab16429cd91dffa2b01ab433674409b9ac5b4be41498b6fba",
     "layouts/_partials/content/render.html": "573629e404d2eb48dc53908c7b4540bf58c05de160f8274415482169a391411e",
     "layouts/_partials/dark-mode-config.html": "c7c07026dfe91e812ef94d9827dbfe6e756bd0e74dd619b43d146b5825410243",
     "layouts/_partials/footer.html": "6cbf0f74e6591b3235d47ed5cdad537c795508bd4af27e789962ec41f4b03544",
+    "layouts/_partials/head.html": "30e9ca8acd5d450ed8b034308e6eb5e7e493af0a6974a6801f86ea98a3abea9c",
     "layouts/_partials/hooks/body-end.html": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "layouts/_partials/hooks/head-end.html": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "layouts/_partials/navbar.html": "5c8063fc39a75b670eb24d3bdb255267ed4d7d7b3e1f11c91ca10ac09eeb3337",
@@ -103,5 +114,6 @@
     "layouts/_partials/shell/sidebar-panel.html": "32088fbf038706e7e45e21d35fbed906042594a3fc70bf0e18bf9a65512e0ec3",
     "layouts/_partials/shell/toc.html": "7f3bce19c87102e53bc87c1c6fca8dcf935bb72b53a1fe3cf8c1800f414622af",
     "layouts/landing.html": "073148bdbea02e8d4e5bd3cfc61c1efdc9213de73345a6027ba242eff014d8a7"
-  }
+  },
+  "version": "v1.5.1"
 }

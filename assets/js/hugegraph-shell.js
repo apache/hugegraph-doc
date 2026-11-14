@@ -7,8 +7,6 @@
 (function (global) {
   'use strict';
 
-  if (typeof window !== 'undefined' && window.OinkComparePane) return;
-
   var versionExecutorRegistries = new WeakSet();
 
   function readConfig(documentObject) {
@@ -276,6 +274,12 @@
   }
 
   function init(windowObject, documentObject) {
+    if (windowObject.OinkComparePane) {
+      // Duo View panes are ordinary documents: keep article table behavior,
+      // but do not bind navigation, storage, search or version controllers twice.
+      initScrollableTables(documentObject);
+      return;
+    }
     var config = readConfig(documentObject);
     consumeVersionFallback(windowObject, documentObject, config);
     initVersionSwitching(windowObject, documentObject);

@@ -1,4 +1,3 @@
-{{- $page := . -}}
 {{- $data := index hugo.Data.landing .Site.Language.Lang -}}
 <div class="hg-landing" id="hg-landing"
      data-hg-story-config="{{ dict "readouts" $data.story.readouts | jsonify }}">

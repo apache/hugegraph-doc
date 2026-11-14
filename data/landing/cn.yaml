@@ -14,31 +14,26 @@ layers:
     name: 图 AI
     components: llm/sdk/rag
     description: 结合大语言模型实现 GraphRAG 与本体图谱构建
-    url: /cn/docs/quickstart/hugegraph-ai/
     go: 探索图 AI
   computing:
     name: 图计算
     components: vermeer/computer
     description: 在内存或 BSP 集群上对全图进行 OLAP 分析
-    url: /cn/docs/quickstart/computing/
     go: 探索图计算
   toolchain:
     name: 图工具链
     components: loader/hubble/tools
     description: 用 Loader 批量导入顶点和边，在 Hubble 中查看关系，用 Tools 备份和迁移数据
-    url: /cn/docs/quickstart/toolchain/
     go: 探索图工具链
   database:
     name: 图数据库
     components: server/pd/store
     description: Server 提供图查询，分布式部署使用 PD 管理分区、Store 存储副本
-    url: /cn/docs/quickstart/hugegraph/
     go: 探索图数据库
 
 story:
   label: HugeGraph，从一套技术栈到不同规模
   stack_label: HugeGraph 四层架构，从图数据库到 AI
-  read_guide: 阅读指南
   beats:
     database:
       title: 从一个点开始

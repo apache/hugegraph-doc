@@ -15,32 +15,27 @@ layers:
     name: Graph AI
     components: llm/sdk/rag
     description: GraphRAG and ontology graph construction with LLMs
-    url: /docs/quickstart/hugegraph-ai/
     go: Explore Graph AI
   computing:
     name: Graph Computing
     components: vermeer/computer
     description: OLAP over the whole graph, in memory or on a BSP cluster
-    url: /docs/quickstart/computing/
     go: Explore Graph Computing
   toolchain:
     name: Graph Toolchain
     components: loader/hubble/tools
     description: Import vertices and edges with Loader, explore them in Hubble, and back up or migrate data with Tools
-    url: /docs/quickstart/toolchain/
     go: Explore Graph Toolchain
   database:
     name: Graph Database
     components: server/pd/store
     description: Server handles graph queries. In a distributed deployment, PD manages partitions
       and Store keeps replicas
-    url: /docs/quickstart/hugegraph/
     go: Explore Graph Database
 
 story:
   label: HugeGraph, from one stack to every scale
   stack_label: HugeGraph stack, four layers from database to AI
-  read_guide: Read the guide
   beats:
     database:
       title: Start with one vertex

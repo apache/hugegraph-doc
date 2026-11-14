@@ -1426,7 +1426,7 @@ syntax:"<number>";inherits:true;initial-value:1
     margin-top: -26px;
   }
   .hg-landing #hg-stack[data-labels="none"] .hgs-lab { padding: 4px 6px; }
-  .td-home:has(.hg-landing) .hg-ask-ai-launcher { bottom: max(90px, env(safe-area-inset-bottom)); }
+  .td-home:has(.hg-landing) .hg-ask-ai-launcher { bottom: max(26svh, env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .hg-landing *, .hg-landing *::before, .hg-landing *::after { animation: none !important; transition: none !important; }

@@ -60,7 +60,8 @@ story:
       link_label: Explore graph computing
     ai:
       title: Explore graphs with AI
-      body: GraphRAG retrieves the subgraph that grounds an LLM answer, and the same toolkit builds knowledge graphs
+      body: Our graph extraction tools, GraphRAG, and ontology platform are evolving quickly.
+        Join us in building Graph AI
       url: /docs/quickstart/hugegraph-ai/
       link_label: Explore Graph AI
   readouts:

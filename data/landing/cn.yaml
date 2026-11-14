@@ -57,7 +57,7 @@ story:
       link_label: 探索图计算
     ai:
       title: 拥抱 AI，向图前行
-      body: GraphRAG 检索子图，为大语言模型的回答提供依据；同一套工具也能帮助构建知识图谱
+      body: Graph AI 的图抽取工具、GraphRAG 和本体平台都在快速迭代，欢迎大家参与共建
       url: /cn/docs/quickstart/hugegraph-ai/
       link_label: 探索图 AI
   readouts:

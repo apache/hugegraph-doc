@@ -342,7 +342,8 @@ for (const position of ["north", "south"]) {
     const mask = constellation.locator("mask");
     const maskId = await mask.getAttribute("id");
     await expect(band.locator("..")).toHaveCSS("mask-image", new RegExp(`#${maskId}["')]`));
-    await expect(mask.locator("path")).toHaveAttribute("d", /L/);
+    const routeLength = await mask.locator("path").evaluate(path => path.getTotalLength());
+    expect(routeLength).toBeGreaterThan(0);
 
     const positions = await band.evaluate(node => {
       const [animation] = node.getAnimations();

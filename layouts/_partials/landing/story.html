@@ -8,13 +8,13 @@
         <div class="hg-sky" aria-hidden="true">
           {{/* Northern phases mark when the light reaches each star within one animation cycle. */}}
           {{- $north := slice
-              (dict "x" 13  "y" 107 "r" 2.7 "phase" 0)
-              (dict "x" 72  "y" 72  "r" 2.4 "phase" 0.1905)
-              (dict "x" 126 "y" 87  "r" 2.6 "phase" 0.2872)
-              (dict "x" 215 "y" 39  "r" 3   "phase" 0.4436)
-              (dict "x" 278 "y" 60  "r" 2.4 "phase" 0.5508)
-              (dict "x" 309 "y" 18  "r" 2.6 "phase" 0.6505)
-              (dict "x" 362 "y" 12  "r" 3.1 "phase" 0.84) -}}
+              (dict "x" 13  "y" 107 "r" 2.7 "phase" 0 "glow" .32)
+              (dict "x" 72  "y" 72  "r" 2.4 "phase" 0.1905 "glow" .56)
+              (dict "x" 126 "y" 87  "r" 2.6 "phase" 0.2872 "glow" .36)
+              (dict "x" 215 "y" 39  "r" 3   "phase" 0.4436 "glow" .7)
+              (dict "x" 278 "y" 60  "r" 2.4 "phase" 0.5508 "glow" .4)
+              (dict "x" 309 "y" 18  "r" 2.6 "phase" 0.6505 "glow" .5)
+              (dict "x" 362 "y" 12  "r" 3.1 "phase" 0.84 "glow" .8) -}}
           {{- $south := slice
               (dict "x" 8 "y" 39 "r" 2)
               (dict "x" 70 "y" 9 "r" 2.8)
@@ -35,10 +35,6 @@
                 <stop offset=".55" stop-color="var(--signal-glow)" stop-opacity=".24"/>
                 <stop offset="1" stop-color="var(--signal-glow)" stop-opacity="0"/>
               </radialGradient>
-              <g id="hg-star-glint">
-                <circle r="14" fill="url(#hg-star-aura)"/>
-                <path d="M0 -9 Q1 -1 7 0 Q1 1 0 9 Q-1 1 -7 0 Q-1 -1 0 -9Z" fill="#f5fcff"/>
-              </g>
               {{ end -}}
             </defs>
             <use href="#{{ $route }}" class="hg-star-route"/>
@@ -48,9 +44,10 @@
               {{ end -}}
             </g>
             {{ if eq .id "north" -}}
-            <g class="hg-star-glints">
+            <g class="hg-star-halos" fill="url(#hg-star-aura)">
               {{ range .stars -}}
-              <use href="#hg-star-glint" x="{{ .x }}" y="{{ .y }}" style="--arrival-phase:{{ .phase }}"/>
+              <circle cx="{{ .x }}" cy="{{ .y }}" r="{{ mul .r 3.3 }}"
+                      style="--arrival-phase:{{ .phase }}; --peak:{{ .glow }}"/>
               {{ end -}}
             </g>
             {{ end -}}

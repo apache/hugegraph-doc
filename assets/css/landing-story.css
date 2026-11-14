@@ -135,8 +135,8 @@
 .hg-landing .diving .hg-sky { opacity: 0; }
 .hg-constellation { position: absolute; overflow: visible; height: auto; fill: none; }
 .hg-constellation--north {
-  --signal-period: 8.6s;
-  --signal-delay: -.35s;
+  --signal-period: 12s;
+  --signal-delay: -1.2s;
   left: 20%;
   top: 13%;
   width: min(27vw, 420px);
@@ -151,12 +151,12 @@
 }
 .hg-star-route { stroke: var(--route-ink); stroke-width: 1; opacity: .42; }
 .hg-star-nodes { fill: var(--node-ink); opacity: .83; }
-.hg-star-glints use {
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
+.hg-star-halos circle { opacity: 0; }
+.hg-constellation--north .hg-star-wake {
+  --dash-start: 9;
+  stroke-dasharray: 9 140;
+  opacity: .72;
 }
-.hg-star-glints use:last-child { --glint-scale: 1.25; }
 .hg-star-signal { opacity: 0; stroke-linecap: round; }
 .hg-star-wake {
   --dash-start: 4;
@@ -196,20 +196,19 @@
 }
 @media (prefers-reduced-motion: no-preference) {
   .hg-sky { transition: opacity .5s ease; }
-  .hg-star-glints use {
-    animation: hg-star-twinkle var(--signal-period) ease-in-out infinite;
-    /* The glint peaks 4% into its own cycle. */
-    animation-delay: calc(var(--signal-delay) + (var(--arrival-phase) - .04) * var(--signal-period));
+  .hg-star-halos circle {
+    animation: hg-star-afterglow var(--signal-period) ease-in-out infinite;
+    /* The halo reaches its peak as the light passes the node. */
+    animation-delay: calc(var(--signal-delay) + (var(--arrival-phase) - .09) * var(--signal-period));
   }
   .hg-star-signal { animation: hg-sky-breathe var(--signal-period) linear var(--signal-delay) infinite; }
   .hg-star-signal use { animation: hg-sky-follow var(--signal-period) linear var(--signal-delay) infinite; }
   .hg-lone-meteor { animation: hg-lone-flight 19s linear 1.2s infinite both; }
-  .diving .hg-sky :is(.hg-star-glints use, .hg-star-signal, .hg-star-signal use, .hg-lone-meteor) { animation-play-state: paused; }
+  .diving .hg-sky :is(.hg-star-halos circle, .hg-star-signal, .hg-star-signal use, .hg-lone-meteor) { animation-play-state: paused; }
 }
-@keyframes hg-star-twinkle {
-  0%, 23%, 100% { opacity: 0; transform: scale(.55); }
-  4% { opacity: 1; transform: scale(var(--glint-scale, 1)); }
-  10% { opacity: .62; transform: scale(.85); }
+@keyframes hg-star-afterglow {
+  0%, 29%, 100% { opacity: 0; }
+  9% { opacity: var(--peak); }
 }
 @keyframes hg-sky-follow {
   0% { stroke-dashoffset: var(--dash-start, 0); animation-timing-function: cubic-bezier(.32, .1, .66, .95); }

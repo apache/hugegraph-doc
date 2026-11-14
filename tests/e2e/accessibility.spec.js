@@ -45,7 +45,7 @@ for (const route of [
   });
 }
 
-test("homepage graph computing guide remains accessible on the white graph surface", async ({ page }) => {
+test("homepage graph computing guide remains accessible on the light graph surface", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");

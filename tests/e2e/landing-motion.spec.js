@@ -268,6 +268,9 @@ test("the appearance switch recolors the open graph and keeps homepage copy read
     await expect(page.locator("html")).toHaveAttribute("data-bs-theme", theme);
     await page.keyboard.press("Escape");
     await expect(panel).toBeInViewport();
+    const readingSurface = await page.locator(".landing-content").evaluate(node => getComputedStyle(node).backgroundColor);
+    await expect(page.locator("#veil")).toHaveCSS("background-color", readingSurface);
+    await expect(page.locator(".td-site-header")).toHaveCSS("background-color", readingSurface);
     const ink = expect.poll(() => graphInkBrightness(canvas));
     if (theme === "dark") await ink.toBeGreaterThan(150);
     else await ink.toBeLessThan(100);
@@ -327,4 +330,23 @@ test("dark reduced-motion diagrams follow appearance and print on paper", async 
   await expect(page.locator("#beat-database .story-guide")).toBeVisible();
   await expect(page.locator("#hg-landing")).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(page.locator("#capabilities")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+});
+
+test("light travels continuously between the northern stars", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  const head = page.locator(".hg-constellation--north .hg-star-head");
+  const positions = await head.evaluate(node => {
+    const [animation] = node.getAnimations();
+    const { delay, duration } = animation.effect.getTiming();
+    animation.pause();
+    return [0.2, 0.4, 0.6].map(fraction => {
+      animation.currentTime = delay + duration * fraction;
+      return Number.parseFloat(getComputedStyle(node).strokeDashoffset);
+    });
+  });
+  expect(positions[0]).toBeLessThan(0);
+  expect(positions[1]).toBeLessThan(positions[0]);
+  expect(positions[2]).toBeLessThan(positions[1]);
+  expect(positions[2]).toBeGreaterThan(-100);
 });

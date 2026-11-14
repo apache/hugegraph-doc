@@ -147,7 +147,7 @@ stable.
 
 - `content/en/` and `content/cn/` contain the bilingual source pages.
 - `hugo.yaml` owns routing, languages, outputs, search, navigation, and OINK parameters.
-- `data/home/<language>.yaml` owns the bilingual homepage.
+- Edit the bilingual homepage in `data/landing/<language>.yaml`. See the [homepage design and verification guide](design-qa.md).
 - `data/footer/<language>.yaml` owns the bilingual footer.
 - `i18n/zh-CN.yaml` carries only HugeGraph-specific Simplified Chinese labels; generic interface translations come from OINK for the preserved `cn` URL language key; the file is named after the `zh-CN` locale because Hugo resolves translations by locale, not by the URL key.
 - `assets/` and `static/` contain site-owned brand and compatibility assets.

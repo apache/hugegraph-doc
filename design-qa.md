@@ -7,7 +7,7 @@ On scroll, the database plate unfolds into a graph. The six central vertices kee
 Scrolling forward or backward moves between the database, toolchain, computing and AI explanations.
 Selecting a layer moves directly to its explanation. Keyboard activation places focus on its guide link.
 
-The entry gradient fades from blue to white in light mode and from indigo to navy in dark mode.
+The entry gradient settles on the same surface as the overview and scrolled header, pale gray in light mode and navy in dark mode.
 The canvas follows the native appearance control, including when the reader changes themes midway through a scene.
 On narrow or short screens the layer names move into a compact legend.
 Reduced motion presents the four explanations in document order. Print uses the same reading order on a white background.

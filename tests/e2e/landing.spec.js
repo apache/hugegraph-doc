@@ -285,7 +285,7 @@ test("progressive graph remains rendered while each stopped scene has one readab
   expect(new Set(frames).size).toBe(4);
 });
 
-test("blue hero fades to white before graph evolution and restores on reverse scroll", async ({ page }) => {
+test("blue hero fades to the reading surface before graph evolution and restores on reverse scroll", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await openHome(page);
   const progress = async value => {
@@ -309,7 +309,7 @@ test("blue hero fades to white before graph evolution and restores on reverse sc
     await progress(value);
     await expect(page.locator(`#beat-${beat}`)).toHaveCSS("opacity", "1");
     expect(await light()).toBe(1);
-    await expect(page.locator("#veil")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(page.locator("#veil")).toHaveCSS("background-color", "rgb(243, 245, 251)");
     await expect(page.locator("#story .panel.on h2")).toHaveCSS("color", "rgb(20, 26, 51)");
   }
   await progress(0);

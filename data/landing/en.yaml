@@ -18,7 +18,7 @@ layers:
     go: Explore Graph AI
   computing:
     name: Graph Computing
-    components: memory + disk
+    components: vermeer/computer
     description: OLAP over the whole graph, in memory or on a BSP cluster
     url: /docs/quickstart/computing/
     go: Explore Graph Computing
@@ -30,7 +30,7 @@ layers:
     go: Explore Graph Toolchain
   database:
     name: Graph Database
-    components: standalone/distributed
+    components: server/pd/store
     description: Server handles graph queries. In a distributed deployment, PD manages partitions
       and Store keeps replicas
     url: /docs/quickstart/hugegraph/

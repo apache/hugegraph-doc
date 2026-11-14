@@ -1,6 +1,6 @@
 hero:
-  title: One graph stack, from database to AI
-  body: Query and explore connected data, run graph algorithms, and build GraphRAG applications
+  title: From graph database to Graph AI
+  body: Query relationships in real time with Gremlin or Cypher, find communities with offline graph algorithms, and use graph data to answer questions with an LLM
   primary:
     label: Get Started
     url: /docs/quickstart/

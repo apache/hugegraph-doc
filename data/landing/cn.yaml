@@ -1,6 +1,6 @@
 hero:
-  title: 一套图技术栈，从图数据库到 AI
-  body: 用工具链导入和探索图数据，在单机或分布式图数据库上运行查询，开展图计算与 GraphRAG 应用开发
+  title: 从图数据库到 Graph AI
+  body: 用 Gremlin 或 Cypher 实时查询图中的关系，用图算法离线发现社群，让大语言模型依据图数据回答问题
   primary:
     label: 快速开始
     url: /cn/docs/quickstart/

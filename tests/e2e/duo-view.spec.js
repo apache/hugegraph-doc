@@ -205,8 +205,17 @@ test('Duo View times out a stalled pane, retries and keeps an explicit direct li
   const target = resolvedURL(page, config.targets[0].url);
   await page.evaluate(() => {
     const nativeTimeout = window.setTimeout.bind(window);
-    window.setTimeout = (callback, delay, ...args) =>
-      nativeTimeout(callback, delay === 15_000 ? 100 : delay, ...args);
+    let paneTimeouts = 0;
+    window.setTimeout = (callback, delay, ...args) => {
+      if (delay === 15_000) {
+        paneTimeouts += 1;
+        // OINK loads the source pane first and the target pane second. Fail
+        // only the target's first attempt; the source and retry keep the real
+        // timeout so this test cannot manufacture a two-pane race.
+        if (paneTimeouts === 2) return nativeTimeout(callback, 100, ...args);
+      }
+      return nativeTimeout(callback, delay, ...args);
+    };
   });
   let attempts = 0;
   await page.route(url => url.pathname === target.pathname && url.searchParams.get('oink_compare_pane') === '1', async route => {

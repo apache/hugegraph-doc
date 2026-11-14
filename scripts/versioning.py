@@ -113,6 +113,12 @@ ACTION_MANIFEST_RE = re.compile(
     r"(?P<close></script>)",
     re.IGNORECASE | re.DOTALL,
 )
+COMPARE_CONFIG_RE = re.compile(
+    r"(?P<open><script\b[^>]*\bid=[\"']?td-compare-config[\"']?[^>]*>)"
+    r"(?P<body>.*?)"
+    r"(?P<close></script>)",
+    re.IGNORECASE | re.DOTALL,
+)
 HREFLANG_LINK_RE = re.compile(
     r"<link\b(?=[^>]*\brel=[\"']?alternate(?:[\"'\s>]|$))"
     r"(?=[^>]*\bhreflang=)[^>]*>",
@@ -3093,7 +3099,13 @@ def scope_version_artifact(
                         )
         return rewritten
 
-    stats = {"files": 0, "urls": 0, "manifests": 0, "searchRefs": 0}
+    stats = {
+        "files": 0,
+        "urls": 0,
+        "manifests": 0,
+        "compareConfigs": 0,
+        "searchRefs": 0,
+    }
     for path in sorted(output.rglob("*")):
         if not path.is_file():
             continue
@@ -3145,8 +3157,24 @@ def scope_version_artifact(
                 + match.group("close")
             )
 
+        def replace_compare_config(match: re.Match) -> str:
+            # Hugo renders version-local RelPermalinks such as /docs/. Archived
+            # artifacts are later mounted below /versions/<id>/, so the native
+            # Duo View reader's JSON URLs need the same scoping as links and
+            # action manifests. Otherwise an archived page silently opens the
+            # latest documentation in both panes.
+            data = json.loads(match.group("body"))
+            rewritten = rewrite_json_urls(data, rewrite)
+            stats["compareConfigs"] += 1
+            return (
+                match.group("open")
+                + json.dumps(rewritten, ensure_ascii=False, separators=(",", ":"))
+                + match.group("close")
+            )
+
         if path.suffix == ".html":
             rendered = ACTION_MANIFEST_RE.sub(replace_manifest, rendered)
+            rendered = COMPARE_CONFIG_RE.sub(replace_compare_config, rendered)
         if rendered != original:
             path.write_text(rendered, encoding="utf-8")
             stats["files"] += 1

@@ -68,7 +68,7 @@ for (const version of VERSION_IDS) {
         const entry = page.locator('[data-td-compare-open]');
         await expect(entry).toBeVisible();
         const config = await compareConfig(page);
-        expect(config.current.url).toBeTruthy();
+        expect(resolvedURL(page, config.current.url).pathname).toBe(route);
         expect(config.targets).toHaveLength(1);
         expect(resolvedURL(page, config.targets[0].url).pathname).toBe(expectedTarget);
         const manifest = await actionManifest(page);

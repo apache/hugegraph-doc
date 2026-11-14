@@ -1625,6 +1625,60 @@ class VersionUrlTest(unittest.TestCase):
                     switch = scoped["actions"][0]
                     self.assertEqual(switch["options"][0]["url"], expected_url)
 
+    def test_scopes_duo_view_config_urls_for_archived_artifact(self) -> None:
+        manifest = versioning.load_manifest(versioning.ROOT / "versions.json")
+        archived = next(
+            entry for entry in manifest["versions"] if entry["id"] == "1.7"
+        )
+        with tempfile.TemporaryDirectory() as temp_name:
+            output = Path(temp_name)
+            page = output / "docs/index.html"
+            page.parent.mkdir(parents=True)
+            counterpart = output / "cn/docs/index.html"
+            counterpart.parent.mkdir(parents=True)
+            counterpart.write_text("<p>中文</p>", encoding="utf-8")
+            config = {
+                "current": {"label": "English", "url": "/docs/"},
+                "src": "/js/chunks/document-compare.js",
+                "targets": [
+                    {
+                        "code": "zh-CN",
+                        "label": "简体中文",
+                        "url": "/cn/docs/",
+                    }
+                ],
+                "labels": {"title": "Duo View"},
+            }
+            page.write_text(
+                '<script type="application/json" id="td-compare-config">'
+                + json.dumps(config, ensure_ascii=False)
+                + "</script>",
+                encoding="utf-8",
+            )
+
+            stats = versioning.scope_version_artifact(
+                output,
+                manifest,
+                archived,
+                ORIGIN,
+            )
+
+            rendered = page.read_text(encoding="utf-8")
+            scoped = json.loads(
+                versioning.COMPARE_CONFIG_RE.search(rendered).group("body")
+            )
+            self.assertEqual(scoped["current"]["url"], "/versions/1.7/docs/")
+            self.assertEqual(
+                scoped["targets"][0]["url"],
+                "/versions/1.7/cn/docs/",
+            )
+            self.assertEqual(
+                scoped["src"],
+                "/versions/1.7/js/chunks/document-compare.js",
+            )
+            self.assertEqual(scoped["labels"], {"title": "Duo View"})
+            self.assertEqual(stats["compareConfigs"], 1)
+
     def test_latest_language_fallback_preserves_root_relative_url(self) -> None:
         relative = "cn/docs/changelog/hugegraph-0.12.0-release-notes/index.html"
         current_url = f"{ORIGIN}cn/docs/changelog/hugegraph-0.12.0-release-notes/"

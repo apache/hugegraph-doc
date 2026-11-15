@@ -92,6 +92,7 @@ The [plugin examples](/docs/guides/architectural/custom-plugin/) still describe 
 
 Only `Id`, `IdGenerator`, `EdgeId`, `IdUtil` and `SplicingIdGenerator` move from the ID package.
 `SnowflakeIdGenerator` remains in core under `org.apache.hugegraph.backend.id`; retain its existing import.
+
 The moved query types are `Query`, `ConditionQuery`, `Condition`, `IdQuery`, `IdPrefixQuery`, `IdRangeQuery`, `BatchConditionQuery` and `Aggregate`.
 `QueryResults`, `ConditionQueryFlatten`, `EdgesQueryIterator`, `QueryBatch` and `QueryResultContext` remain in core under
 `org.apache.hugegraph.backend.query`; retain their existing imports.
@@ -127,7 +128,7 @@ Update constructors and catch clauses along with imports. `HubbleException` keep
 Computer's `HgkvDirImpl` is one affected client-exception caller. Struct's similarly named exceptions have different contracts.
 Loader's REST boundary and independent client DTOs do not need an overall conversion to struct.
 
-The Toolchain and Computer changes are still unpublished downstream handoffs. They need matching publication, builds and packaged-classpath checks.
+Use matching Toolchain and Computer artifacts, rebuilding the integrations when working from source. Validate the packaged classpath before deployment.
 Inspect the built jars as well as the source tree for stale or transitive copies of the same class.
 
 ## Prepare a coordinated service upgrade
@@ -214,8 +215,16 @@ Legacy rows used only the vertex ID; their values remain readable without a rewr
 | Operation | Behavior with compound and legacy keys |
 |---|---|
 | Read a property | Prefer its compound key. Fall back to a vertex-only row only when its value contains the requested property ID. |
-| Delete a property | Remove its compound row and a matching legacy row; preserve other properties. |
+| Delete one vertex's OLAP property value | Remove its compound row and a matching legacy row; preserve other properties. |
+| Clear an OLAP property | Delete its matching compound and legacy rows, retaining its schema. |
+| Remove an OLAP property | Delete its matching rows before the schema/index removal job completes. |
 | Read a property already overwritten by the old writer | The lost value cannot be recovered by this repair. |
+
+Clearing or removing one OLAP property retains the shared table, other properties and other graphs.
+Stop writes to the affected property before cleanup and keep them stopped until it completes: the scan does not coordinate concurrent writers,
+so new rows can be missed and rewritten rows can be deleted.
+
+Cleanup commits bounded batches. A failed task can leave earlier batches committed; retries are idempotent, but the operation is not graph-wide atomic.
 
 Upgrade all Server and Store writers before resuming writes. An old writer can update a legacy row while a new reader prefers an existing compound row.
 Mixed-version OLAP writes are outside the supported upgrade contract.

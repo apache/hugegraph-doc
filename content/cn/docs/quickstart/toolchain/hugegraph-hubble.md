@@ -13,8 +13,6 @@ Hubble 是 HugeGraph 的 Web 管理与图可视化界面。你可以在同一个
 如需搭配 HStore 分布式集群使用，可先了解本文的基础操作，再参考 [HStore 分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
 文档内容以 Toolchain 与 Server 的 `master` 分支（当前均以 1.8 为基线，尚未正式发布）为准；Docker `latest` 为动态标签，生产环境建议使用已发布的固定版本。
 
-本文截图基于 HugeGraph Hubble 界面，中英文界面功能与操作一致。
-
 > [!WARNING]
 > 请勿将未配置防护的 Hubble 或 Server 直接暴露在公网上。生产环境请务必开启 HTTPS、容器网络隔离、
 > [认证与授权](/cn/docs/config/config-authentication/)及访问白名单。
@@ -77,14 +75,21 @@ Hubble 是 HugeGraph 的 Web 管理与图可视化界面。你可以在同一个
    个人中心与账号管理入口仅在开启认证且具备相应权限时展示。
 {.steps}
 
-`latest` 镜像便于快速体验最新功能，生产环境建议指定发布版本号或镜像 digest。正式发布包可前往 [下载页](/cn/docs/download/download/) 获取。
-
-> [!DETAILS]- 核实部署版本
->
-> 文档截图用于定位界面元素，实际版本以部署镜像的 digest 及构建信息为准。
+请根据部署镜像的 digest 与构建信息，核对当前环境是否提供本文功能。
+正式发布包可前往 [下载页](/cn/docs/download/download/) 获取。
 
 Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据与 Hubble 元数据；更多生产配置参见
 [Server 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
+
+> [!WARNING] 升级时单独处理 Hubble 元数据
+> Hubble 1.8 元数据只支持 **H2 2.x**；MySQL 仍可作为导入源，不再用作元数据库。
+> 打包配置默认连接为 `jdbc:h2:file:./data/hubble-v2;DB_CLOSE_ON_EXIT=FALSE`。
+>
+> 升级时保留旧数据库及其匹配的 Hubble 版本，让新版使用新的数据库路径。
+> 旧元数据不会自动迁移，不要将新版指向旧数据库。
+>
+> H2 错误 `90097` 不代表数据库为空。先停止 Hubble、保留文件，再核对版本、凭据和权限，确定恢复方式。
+> 详细排查见[元数据恢复说明](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-hubble/docs/metadata-storage.md)。
 
 <span id="首页找到当前任务的入口"></span>
 
@@ -136,6 +141,12 @@ Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据
 
 【克隆 Schema】可将定义复制到同一图空间的新图，不复制顶点或边；要求 Server API 0.73 或更高版本。
 当前实现会在创建目标图前拒绝包含边类型的源 Schema。若后续步骤失败，先检查目标图是否已创建，再决定是否重试。
+
+> [!NOTE] 删除有 Vermeer 副本的图
+> 配置原生 Vermeer 集成后，Hubble 会先检查待处理的加载任务并清理计算副本，再删除源图。
+> 请先完成或取消已接受的 load/reload 任务；如果检查或清理失败，恢复 Vermeer 访问后再重试删除。
+> 操作步骤见[分布式删除说明](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/#create-and-adjust-a-graphspace)，
+> 卸载接口见 [Vermeer 指南](/cn/docs/quickstart/computing/hugegraph-vermeer/)。
 
 <span id="schema-建模定义数据的形状"></span>
 
@@ -204,13 +215,16 @@ Cypher 查询仅在 Server 后端支持时提供。快捷键会作用于当前�
 
 在【自然语言】输入框中用自然语言描述查询需求，Text2GQL 会结合当前图的 Schema 自动生成只读 Gremlin 或 Cypher 语句并执行查询。
 生成的语句支持二次编辑（执行前同样会进行只读安全校验）。切换至【异步】模式时，生成的查询与手写查询均可提交为后台异步任务。
+
 默认选择 Gremlin；Server 支持时可切换 Cypher。两种语言分别保留草稿，恢复各自最近的同步或异步记录时不会自动执行，也不会覆盖正在编辑的内容。
 执行记录保留原始自然语言问题。
 
 人物与软件示例可尝试“查找人物以及他们创建的软件”，先确认当前图包含对应 Schema。
 工作台会流式显示生成的语句，并区分等待模型、纠正语句和执行查询。只有完整且通过只读校验的语句才会执行。
 遇到已识别的校验、语法或 Schema 错误时，最多自动纠正一次；连接错误、超时和空结果不会触发纠正。
-每次模型生成请求的超时为 60 秒，自动纠正会另发请求。【取消】会停止等待及后续自动执行，但已经提交到 Server 的查询可能仍在运行。
+每次模型生成请求的超时为 60 秒，自动纠正会另发请求。
+
+【取消】会停止等待及后续自动执行，但已经提交到 Server 的查询可能仍在运行。
 
 ```gallery
 ![未配置模型时的自然语言入口与手写 Gremlin 查询结果](/cn/docs/images/hubble/text2gql.jpg) # 查询工作台，模型尚未配置，结果来自手写查询
@@ -229,8 +243,10 @@ Cypher 查询仅在 Server 后端支持时提供。快捷键会作用于当前�
 测试失败不会撤销已成功保存的配置，请根据反馈区分保存失败与连接失败。部署默认模型可用时，新用户默认使用该模型。
 
 使用 OpenAI、DeepSeek、GLM 等模型时选择【OpenAI 兼容接口】；使用本地运行的 Ollama 时选择【Ollama（本地）】（无认证时 Key 可留空）。
+
 Base URL 必须能被 Hubble 后端服务正常访问（若 Hubble 运行在容器中，`localhost` 指向容器本身而非宿主机）。公网端点必须使用 HTTPS，HTTP 仅允许用于
 本地回环或私网模型；在【模型设置】中修改 Base URL 时，必须重新填写 Key 或清空已保存的 Key。
+
 全局内置模型由具备模型设置管理权限的管理员统一配置；未开启 Server 认证时，任何访问者均可配置。
 
 在模型设置页面右上角打开 **Text2GQL Prompt**，可分别定制 Gremlin 与 Cypher 的生成规则及 Few-shot 示例。
@@ -390,6 +406,7 @@ g.V().hasLabel('person').has('name', within('docs_alice', 'docs_bob')).valueMap(
 结果应包含两条新人物记录。【输入进度】统计读取记录，包括表头以及跳过或失败的行。
 顶点与边写入计数累计当前或最近一次 Loader 尝试中，已收到成功响应的请求所提交的元素数，不等于新增元素或逐条核实的成功源行。
 重试或继续执行会重新开始写入计数；超时或中断的请求可能已写入但未计数，未记录这些指标的历史任务显示未知值。
+
 失败时先检查源字段、数值类型、可空属性及目标 Schema。Hubble 导入适合小规模体验，
 大批量正式导入请使用 [HugeGraph Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/)。
 
@@ -441,6 +458,7 @@ Servlet 的请求空闲时钟独立运行，任一时钟到期均可结束登录
 
 同一账号在不同空间可以有不同权限。成员管理先选择空间，再添加已有账号或调整权限；
 把已有自定义权限替换为预设前，先核对需要保留的授权，避免把复杂权限误认为单一预设。
+
 权限变更后刷新权限上下文或重新登录，确认菜单和目标空间已更新；最终请求仍由 Server 校验。
 旧 Server 未提供相应接口时，页面按能力隐藏或禁用操作，不应只凭按钮是否可见推断资源权限。
 更完整的空间管理见 [分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
@@ -646,8 +664,6 @@ docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volume
    bin/start-hubble.sh -d
    ```
 {.steps}
-
-当前 master 使用新的 H2 元数据库。升级时保留旧 Hubble 包及其数据，新版使用独立的数据目录；旧元数据不支持自动迁移，不能直接复用。
 
 打包配置默认绑定本机 `localhost:8088`。`bin/stop-hubble.sh` 会先请求正常停机，超时后才强制终止。
 需要开发与测试说明时，参考 [Toolchain 本地测试指南](/cn/docs/guides/dev-test/toolchain-local-test/)。

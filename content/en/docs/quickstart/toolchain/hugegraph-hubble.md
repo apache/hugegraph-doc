@@ -15,8 +15,6 @@ For use with an HStore distributed cluster, read the foundational operations her
 This guide aligns with the Toolchain and Server `master` branches (currently based on 1.8, unreleased).
 Docker `latest` is a moving tag; use released versions for production deployments.
 
-The screenshots show the HugeGraph Hubble interface in action; features and workflows are identical in both English and Chinese.
-
 > [!WARNING]
 > Do not expose unauthenticated Hubble or Server instances directly to the public internet. In production, use HTTPS, container isolation,
 > [authentication and authorization](/docs/config/config-authentication/), and network allowlists.
@@ -79,15 +77,21 @@ see the adjacent [README](https://github.com/apache/hugegraph/blob/master/docker
    Profile and account management options appear only when authentication is enabled and the account holds requisite permissions.
 {.steps}
 
-Use `latest` to explore recent features; pin a released image version or digest for production. Official release archives are on the
-[download page](/docs/download/download/).
-
-> [!DETAILS]- Verify the deployed versions
->
-> Screenshots help locate controls. Verify actual versions from the deployed image digests and build information.
+Check the deployed image digest and build information when matching your installation to this guide.
+Official release archives are on the [download page](/docs/download/download/).
 
 Compose's `server-data` and `hubble-data` retain graph data and Hubble metadata respectively. For further persistence and production settings,
 see the [Server deployment guide](/docs/quickstart/hugegraph/hugegraph-server/).
+
+> [!WARNING] Upgrade Hubble metadata separately
+> Hubble 1.8 uses **H2 2.x only** for metadata; MySQL remains an import source, not a metadata backend.
+> The package default is `jdbc:h2:file:./data/hubble-v2;DB_CLOSE_ON_EXIT=FALSE`.
+>
+> When upgrading, retain the old database with its matching Hubble release and start the new version with a new database path.
+> Old metadata is not migrated automatically; do not point the new version at the old database.
+>
+> H2 error `90097` does not prove the database is empty. Stop Hubble, preserve the files and check versions, credentials and permissions before recovery.
+> See the [metadata recovery guidance](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-hubble/docs/metadata-storage.md).
 
 ## Home: find the right starting point
 
@@ -138,6 +142,12 @@ Use completed asynchronous Server counts when you need an exact count; avoid tre
 **Clone Schema** copies definitions into a new graph in the same GraphSpace, without copying vertices or edges.
 It requires Server API 0.73 or later. The current implementation rejects source schemas containing edge labels before creating the target.
 If a later step fails, inspect whether the target graph already exists before retrying.
+
+> [!NOTE] Deleting graphs with a Vermeer copy
+> With direct Vermeer integration configured, Hubble checks pending loads and cleans up the compute copy before deleting a source graph.
+> Finish or cancel accepted load/reload tasks first. If verification or cleanup fails, restore Vermeer access before retrying deletion.
+> See the [distributed deletion steps](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/#create-and-adjust-a-graphspace)
+> and [Vermeer unload API](/docs/quickstart/computing/hugegraph-vermeer/).
 
 ## Schema modeling: define the shape of your data
 
@@ -207,6 +217,7 @@ The operation is not transactional, and Hubble cannot automatically undo overwri
 Describe your query requirement in the **Natural language** input. Text2GQL combines the current graph schema to generate read-only Gremlin or Cypher
 and execute it automatically. Generated statements can be edited freely (read-only safety checks still apply before execution).
 In **Async** mode, both generated and handwritten queries can be submitted as background tasks.
+
 Gremlin is selected initially; switch to Cypher when supported by Server. Each language keeps its own draft and restores its latest synchronous
 or asynchronous record without running it or overwriting edits in progress. Execution history retains the original natural-language question.
 
@@ -214,6 +225,7 @@ For the person/software sample, try “Find people and the software they created
 The workspace streams generated text into the editor and shows whether it is waiting for the model, correcting a statement, or executing it.
 Only a complete statement that passes the read-only checks is executed. A recognized validation, syntax, or schema error can trigger one correction;
 connection errors, timeouts and empty results do not. Each model generation request times out after 60 seconds; a correction starts another request.
+
 **Cancel** stops waiting and later automatic execution,
 but a query already submitted to Server may still be running.
 
@@ -235,8 +247,10 @@ In **Model settings**, **Save and test** saves an enabled configuration, then te
 use the feedback to distinguish save failures from connection failures. An available deployment default is selected for new users.
 
 Choose **OpenAI compatible** for OpenAI, DeepSeek, GLM, and similar services, or **Ollama (local)** for local Ollama; unauthenticated Ollama needs no Key.
+
 The Base URL must be reachable from Hubble's backend; container `localhost` refers to that container. Public endpoints require HTTPS, while plain HTTP is
 accepted only for loopback or private-network models; when changing the Base URL in Model settings, supply a new Key or explicitly clear the saved Key.
+
 Administrators with model-settings management permission manage shared settings. When Server authentication is disabled, anyone who can access the
 deployment can manage them.
 
@@ -393,6 +407,7 @@ The result should include both new people. **Input progress** counts records rea
 Vertex and edge write counters count submitted elements in acknowledged successful responses for the current or most recent Loader attempt.
 They are not newly created elements or independently verified successful rows. Retry/resume starts fresh write counters;
 timed-out or interrupted requests can leave writes uncounted. Older tasks show unknown values when these counters were not recorded.
+
 If the import fails, check source fields, numeric types, nullable properties, and target schema.
 Use Hubble for small trials and [HugeGraph Loader](/docs/quickstart/toolchain/hugegraph-loader/) for production bulk ingestion.
 
@@ -441,6 +456,7 @@ The following presets are for PD mode, and are not universally editable on older
 
 An account may have different permissions in different spaces. Select a space before adding an existing account or changing member permissions.
 Before replacing custom permissions with a preset, inspect the grants that need to be retained; complex permissions may not match a single preset.
+
 After changes, refresh permission context or sign in again and verify menus and space selection. Server still validates every request.
 Older Servers may hide or disable unsupported operations; a visible button alone does not establish resource authorization.
 See the [distributed supplement](/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/) for space management.
@@ -635,9 +651,6 @@ with **pnpm 12.14.0** selected through Corepack. Maven no longer installs Node/Y
    bin/start-hubble.sh -d
    ```
 {.steps}
-
-Current master uses a new H2 metadata database. Retain the old Hubble distribution and its data, and use a separate data directory for the new version.
-Old metadata has no automatic migration and cannot be reused directly.
 
 The bundled configuration binds to `localhost:8088`. `bin/stop-hubble.sh` requests graceful shutdown before forcing termination on timeout.
 For development and testing, see the [Toolchain local test guide](/docs/guides/dev-test/toolchain-local-test/).

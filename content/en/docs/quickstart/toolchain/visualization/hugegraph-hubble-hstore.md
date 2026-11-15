@@ -15,14 +15,13 @@ provides complete orchestration for PD, Store, Server, and Hubble. Follow the ad
 [Docker README](https://github.com/apache/hugegraph/blob/master/docker/README.md) to prepare `.env` and generate the local Hubble configuration,
 then launch services from `docker/` without maintaining separate Compose files.
 The guidance below focuses on connectivity and operations; ensure prerequisite credentials and service readiness from the README are met.
+
 Docker `latest` is a moving tag. Screenshots assist in UI navigation; verify deployed versions via image digests and build details.
 Metrics and permission APIs vary by version.
 
 For Kubernetes, [Helm deployment](/docs/quickstart/hugegraph/hugegraph-helm/) provides the same PD/Store/Server/Hubble foundation.
 Enable optional Vermeer there to configure Hubble's compute connection and monitoring together; the RocksDB standalone deployment does not provide
 the native PD/Store loading path.
-
-The screenshots show the HugeGraph Hubble interface in action; features and workflows are identical in both English and Chinese.
 
 ## Connect to a distributed cluster
 
@@ -116,6 +115,7 @@ Space cards display available storage usage separately, with its source and refr
 For API creation, omitted compute limits persist as `0`, inheriting the corresponding graph-service limit; positive values remain explicit.
 The creation form submits its displayed values. When editing, zero or a cleared compute field restores inheritance, and the UI shows the effective limit.
 Existing positive quotas are preserved. Use a paired current Server and Java Client when updating inheritance.
+
 Storage usage follows Store heartbeats and PD quota refreshes, rather than individual writes. Servers supplying `storage_used_kb` enable sub-GB usage
 and ratios below 0.01%; older Servers retain the integer-GB fallback. Only the legacy `Integer.MAX_VALUE` quota sentinel displays as unlimited.
 
@@ -124,6 +124,21 @@ The list reflects account access. If a space is missing, check membership permis
 
 ![GraphSpace creation form and entry to advanced resource limits](/docs/images/hubble/graphspace.jpg)
 {width="1600" height="1000"}
+
+Before deleting a source graph or GraphSpace with native Vermeer integration configured:
+
+1. **Stop new submissions and finish or cancel active work.** Pending load/reload tasks block source deletion;
+   active computations must also finish or be cancelled before unloading their graph.
+   Use **Async Tasks** to check their final state; switching pages or algorithms does not cancel them.
+1. **Check access and cleanup.** Hubble verifies the task queue and unloads existing compute copies before deleting the source.
+   With authentication enabled, cleaning up a copy requires a super administrator. If Vermeer is unreachable, queue verification fails,
+   or unloading is rejected, restore the service or permissions and retry. A graph without a copy retains Server's usual deletion permissions.
+1. **Inspect state after a failure.** GraphSpace cleanup can unload some copies before a later unload fails;
+   the source space and its administrator bindings remain in that case. Check which copies remain before retrying.
+   New submissions can race with these checks; keep them stopped until deletion finishes.
+{.steps}
+
+For loading and unloading APIs, see the [Vermeer guide](/docs/quickstart/computing/hugegraph-vermeer/).
 
 ### Reuse Schema templates
 
@@ -153,8 +168,11 @@ Servers supporting permission presets provide these common choices:
 
 An account may have different access in different spaces, such as read-write in `research` and read-only in `sales`.
 Accounts and space memberships are managed separately; removing a member does not delete the global account.
+
 After creating an account, continue directly to assigning space access. When changing an existing membership, check the selected space and preset
-and preserve permissions still needed in other spaces. Enabling `pd.enabled` grants no permissions;
+and preserve permissions still needed in other spaces.
+
+Enabling `pd.enabled` grants no permissions;
 legacy custom roles on older Servers are not interchangeable with these presets.
 See [Server authentication and authorization](/docs/config/config-authentication/).
 

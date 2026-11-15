@@ -14,13 +14,12 @@ search_keywords: [HugeGraph Hubble, HStore, PD, GraphSpace, 集群管理, Vermee
 已提供完整的 PD、Store、Server 与 Hubble 服务编排。请直接参考同目录 [Docker README](https://github.com/apache/hugegraph/blob/master/docker/README.md)
 配置 `.env` 并生成 Hubble 本地配置文件，然后在 `docker/` 目录下启动，无需自行维护部署文件。
 下文重点说明连接与运维配置要点，部署前请确保满足 README 中的 PD 凭据与前置依赖要求。
+
 Docker `latest` 为动态标签，配图用于定位界面，实际版本以部署镜像的 digest 及构建信息为准。
 不同版本可提供的指标和权限接口有所区别。
 
 Kubernetes 环境可使用 [Helm 部署](/cn/docs/quickstart/hugegraph/hugegraph-helm/)，获得相同的 PD/Store/Server/Hubble 基础服务。
 启用可选 Vermeer 时，Chart 会同时配置 Hubble 的计算连接与健康采集；RocksDB 单机部署不提供这条原生 PD/Store 加载路径。
-
-本文截图基于 HugeGraph Hubble 界面，中英文界面功能与操作一致。
 
 <span id="连接分布式集群"></span>
 
@@ -113,6 +112,7 @@ GraphSpace（图空间）将图、Schema 模板和访问权限组织在同一个
 API 创建请求中，省略的计算限额保存为 `0`，继承对应图服务限额；正数表示独立的显式限额。
 创建表单提交界面显示的数值。编辑时，计算字段输入零或清空可恢复继承，界面会显示当前生效值。
 已有正数配置保持不变；修改继承设置应使用配套更新的 Server 与 Java Client。
+
 存储用量随 Store 心跳与 PD 配额检查刷新，不会逐次写入实时更新。支持 `storage_used_kb` 的 Server 可展示不足 1 GB 的用量及低于 0.01% 的比例；
 旧 Server 回退到整数 GB 用量。只有旧版 `Integer.MAX_VALUE` 配额哨兵值显示为不限。
 
@@ -121,6 +121,21 @@ API 创建请求中，省略的计算限额保存为 `0`，继承对应图服务
 
 ![图空间创建表单与高级资源限制入口](/cn/docs/images/hubble/graphspace.jpg)
 {width="1600" height="1000"}
+
+配置原生 Vermeer 集成后，删除源图或图空间前请依次操作：
+
+1. **停止新提交，完成或取消正在处理的任务。** 待处理的 load/reload 任务会阻止源删除；
+   正在执行的计算也要先完成或取消，才能卸载对应的图。
+   在【异步任务】中确认最终状态；切换页面或算法不会取消任务。
+1. **确认访问权限与清理结果。** Hubble 会先检查任务队列并卸载已有计算副本，再删除源。
+   开启认证时，清理副本需要超级管理员权限。如果 Vermeer 不可达、队列检查失败或卸载被拒绝，先恢复服务或权限再重试。
+   没有计算副本的图仍遵循 Server 原有的删除权限。
+1. **失败后先核对状态。** 删除图空间时，后续副本卸载失败可能发生在部分副本已卸载之后；
+   此时源空间及其管理员绑定仍保留。请检查剩余副本后再重试。
+   新提交的任务可能与这些检查冲突，因此应保持停止提交，直到删除完成。
+{.steps}
+
+加载与卸载接口见 [Vermeer 指南](/cn/docs/quickstart/computing/hugegraph-vermeer/)。
 
 <span id="复用-schema-模板"></span>
 
@@ -152,7 +167,10 @@ API 创建请求中，省略的计算限额保存为 `0`，继承对应图服务
 | 超级管理员 | 管理账号、图空间及集群的运维人员 | 全局，应按实际职责分配。 |
 
 同一账号可在不同空间拥有不同权限，例如对 `research` 读写、对 `sales` 只读。
-账号与空间成员分开管理，移除成员不会删除全局账号。创建账号后可以立即继续分配空间权限；调整已有成员时，确认当前空间及预设，保留其他空间仍需要的权限。
+账号与空间成员分开管理，移除成员不会删除全局账号。
+
+创建账号后可以立即继续分配空间权限；调整已有成员时，确认当前空间及预设，保留其他空间仍需要的权限。
+
 仅启用 `pd.enabled` 不会授予权限，旧 Server 的自定义角色也不能直接当作这些预设处理。
 认证配置见 [Server 认证与授权](/cn/docs/config/config-authentication/)。
 

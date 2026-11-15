@@ -358,10 +358,12 @@ Native clients submit `POST /api/v1/tasks/create` with `graph`, `task_type` (`lo
 For computation, set `params["compute.algorithm"]`, not a top-level `algorithm`.
 The response contains a native `task.id`; query it at `GET /api/v1/task/{id}` and read retained values at `GET /api/v1/tasks/value/{id}`.
 These paths and positive IDs differ from Hubble's wrapper.
+
 Native result rows use `ID` and `Value`. Set `output.need_query=1` on the compute request to retain values for this API.
 Native pages return `cursor` but no total or `has_more`: continue with the returned cursor until `message:"EOF"` or an empty final page.
 When the final page exactly fills `limit`, one additional request can be needed to observe EOF.
 Hubble's wrapper separately peeks one value ahead to supply `has_more`.
+
 `POST /api/v1/tasks` does not submit work: after the task-method fix it returns HTTP 405 and `Allow: GET`;
 older builds can return a misleading `{"code":200}` without creating a task.
 See the [native API examples](https://github.com/apache/hugegraph-computer/blob/master/vermeer/README.md#api-overview).
@@ -604,11 +606,14 @@ The current loading page provides Load/Reload controls; use the administrator AP
 
 The OLAP result area offers graph, table and connected-sample views. Values are computation **ID/value pairs**, not editable Server vertices.
 It loads 12 values at a time, up to 300 for this preview; use Async Tasks and paged result APIs for additional retained values.
+
 The graph view shows the sampled IDs and their values. Optional edges come from the **currently loaded Vermeer graph**,
 not Server and not necessarily the snapshot that produced a historical result.
 Each page's edge lookup is bounded to 3000 scanned edges and 30 returned edges, and cannot establish a complete induced subgraph.
+
 Edge enrichment requires a Vermeer build implementing `POST /api/v1/graphs/{graph}/preview-edges`; the current native source baseline
 does not expose that route, so Hubble keeps values readable and reports adjacency unavailable.
+
 The connected-sample view shows at most six linked sampled vertices; it does not calculate a new graph path query.
 Missing adjacency leaves valid table values readable. No edges in a preview is not proof that the graph has no edges.
 
@@ -999,10 +1004,13 @@ and the algorithm's `mod_value` is `0`. This is a valid degenerate result.
 `compute.algorithm=cycle_detection` finds simple directed cycles and excludes self-loops.
 Use `cycle.mode=limit` for a bounded number of cycles, `boolean` to mark participation, or `all` only when full enumeration is intended.
 The native default is `all`; the Hubble form defaults to `limit` with `cycle.max_cycles=10`.
+
 `cycle.min_length` values 0 or 1 use the natural minimum of 2; `cycle.max_length` must be at least 2 and not below the minimum.
 `cycle.max_cycles` must be positive in limit mode, and `compute.max_step` must be at least 2.
+
 Boolean mode outputs integer `0` / `1`; all/limit modes output text. Use separate typed properties when writing different modes back
 ([schema migration](#vermeer-result-types)).
+
 Choose a small maximum length first: limiting output does not make every graph search inexpensive.
 Hubble's property-filter fields must remain empty until its loader can verify those properties.
 

@@ -367,6 +367,7 @@ Chart 部署步骤见 [Helm 运维](/cn/docs/quickstart/hugegraph/hugegraph-helm
 原生客户端使用 `POST /api/v1/tasks/create`，请求包含 `graph`、`task_type`（`load`、`reload` 或 `compute`）及扁平的字符串 `params` 映射。
 计算算法名填写 `params["compute.algorithm"]`，不是顶层 `algorithm`。
 响应中的原生 `task.id` 通过 `GET /api/v1/task/{id}` 查询状态，通过 `GET /api/v1/tasks/value/{id}` 查询保留结果。
+
 原生结果行使用 `ID` 和 `Value` 字段，计算请求需设置 `output.need_query=1` 才保留可查询值。
 原生分页返回 `cursor`，没有总数或 `has_more`；按返回游标继续，直到 `message:"EOF"` 或最终空页。
 最后一页刚好填满 `limit` 时，可能需要再请求一次才能观察到 EOF。Hubble 包装层则额外窥读一条，提供 `has_more`。
@@ -617,10 +618,13 @@ curl -b hubble.cookies -X POST \
 
 OLAP 结果区提供图、表格与连通样本视图。计算结果是 **ID/值对**，不是可编辑的 Server 顶点。
 预览每次加载 12 条，最多展示 300 条；更多保留结果通过异步任务和分页结果 API 获取。
+
 图视图展示样本 ID 及计算值。可选连边来自**当前已加载的 Vermeer 图**，不是 Server，也不一定是历史任务计算时的图快照。
 每页连边查找最多扫描 3000 条、返回 30 条边，不能证明完整诱导子图。
+
 连边补充要求 Vermeer 构建实现 `POST /api/v1/graphs/{graph}/preview-edges`；当前原生源码基线没有该路由，
 因此 Hubble 保留可读的计算值，并提示邻接关系不可用。
+
 连通样本最多展示六个相连的样本顶点，并非再次执行图路径查询。连边不可用时，合法的表格值仍可阅读；预览无边不代表原图没有边。
 
 其他算法提交或完成时，已接受的任务仍可在结果区独立选择。
@@ -1031,10 +1035,13 @@ Hubble 当前要求该属性字段留空，见[适配器限制](#hubble-algorith
 `compute.algorithm=cycle_detection` 查找简单有向环，排除自环。
 `cycle.mode=limit` 限制返回环数，`boolean` 标记顶点是否参与环，只有确需枚举时才选择 `all`。
 原生默认值为 `all`；Hubble 表单默认 `limit`，`cycle.max_cycles=10`。
+
 `cycle.min_length` 为 0 或 1 时使用自然下限 2；`cycle.max_length` 必须至少为 2，且不小于最小长度。
 limit 模式要求 `cycle.max_cycles` 为正数，`compute.max_step` 至少为 2。
+
 boolean 模式输出整数 `0` / `1`，all/limit 模式输出文本；不同模式写回应使用不同类型的属性
 （见 [Schema 迁移](#vermeer-result-types)）。
+
 先选择较小的最大环长，限制输出并不能保证所有图上的搜索开销都很小。
 在 Hubble 加载器能够验证属性前，属性过滤字段应保持空白。
 

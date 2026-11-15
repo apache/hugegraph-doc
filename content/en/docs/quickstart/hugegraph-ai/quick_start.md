@@ -19,38 +19,21 @@ The reranker is optional. Start with the local `bleu` method.
 
 The screenshots show the HugeGraph-LLM Web UI. The built-in prompt language can be toggled via `LANGUAGE` in `.env`, while UI controls remain in English.
 
-> [!DETAILS]- Missing batch-question template when starting from source
->
-> If startup raises `FileNotFoundError` for `questions_template.xlsx`, create the input template from the repository root after installing dependencies,
-> then restart. This preserves an existing file. The template has all 6 columns, with a test question and expected answer; the 4 model-answer columns stay empty.
->
-> ```bash
-> uv run --extra llm python - <<'PYTHON'
-> from pathlib import Path
-> from openpyxl import Workbook
->
-> path = Path("hugegraph-llm/src/hugegraph_llm/resources/demo/questions_template.xlsx")
-> if not path.exists():
->     workbook = Workbook()
->     sheet = workbook.active
->     sheet.append([
->         "Question", "Expected Answer", "Basic LLM Answer",
->         "Vector-only Answer", "Graph-only Answer", "Graph-Vector Answer",
->     ])
->     sheet.append(["Who is Sarah?", "Sarah is a 30-year-old attorney.", None, None, None, None])
->     workbook.save(path)
-> PYTHON
-> ```
+## 0. Configuration Panel {#0-configuration-panel}
 
-## 0. Configuration Panel
+The collapsible configuration panel has HugeGraph, LLM, embedding, reranker and vector-engine sections.
+For models, select `chat`, `extract` or `text2gql`, then use `Save configuration`. Save checks format;
+`Test saved connection` separately verifies the provider. A failed test leaves the saved connection unchanged.
 
-Above the tabs sits a collapsible configuration panel with five sections: `1. Set up the HugeGraph server.`, `2. Set up the LLM.`, `3. Set up the Embedding.`, `4. Set up the Reranker.`, and `5. Set up the vector engine.`. Each section has its own apply button, and applying a change writes the supported fields back to `.env`. The header also shows the current prompt language.
+Extraction and Text2Gremlin initially use Chat; saving a role independently detaches it, and `Use Chat connection` restores inheritance.
+Leave a key blank to retain it, or select `Clear API key` to remove it. A destination change requires a new key or explicit clearing.
+Saved connections live in `settings.yaml`, not `.env`; persist them across restarts and Helm upgrades.
+See [configuration precedence and paths](./config-reference.md#saved-connections).
 
-Set the answer, extraction, and query-generation models in the `chat`, `mini_tasks`, and `text2gql` sub-tabs of the LLM settings.
 The screenshots use local Ollama models `qwen2.5:3b` and `mxbai-embed-large`, with `Faiss` as the vector engine.
 Rebuild indexes after changing embedding models, since vector dimensions or meaning can differ.
 
-## 1. Build RAG Indexes
+## 1. Build RAG Indexes {#1-build-rag-indexes}
 
 The first tab splits documents into a chunk vector index. It also extracts vertices and edges according to a schema, writes them to HugeGraph, and maintains a vertex vector index.
 
@@ -115,7 +98,7 @@ Two collapsed helpers sit below the main controls:
 - `Graph Schema Generator` takes query examples and a few-shot example and produces a schema for the Graph Schema field.
 - `Graph Extraction Prompt Generator` takes an expected scenario, such as social relationships or a financial knowledge graph, and a selected reference example, and produces a Graph Extract Prompt Header.
 
-## 2. GraphRAG Queries
+## 2. GraphRAG Queries {#2-graphrag-queries}
 
 The second tab offers four answer modes. Choose the indexes needed for your question.
 
@@ -182,7 +165,7 @@ Other controls on this tab are `Rerank method` (`bleu` or `reranker`), `Graph Ra
 
 Below the single-question panel is a batch back-testing panel. Upload an `.xlsx` or `.csv` file of questions, set `Max Lines To Show`, and click `Generate Answer (Batch)`. The answers appear in a preview table and can be downloaded as a file. A template file is offered next to the upload control.
 
-## 3. Text2Gremlin
+## 3. Text2Gremlin {#3-text2gremlin}
 
 The third tab converts natural language into Gremlin and executes the generated queries.
 The upper panel builds an example vector index from question and Gremlin pairs in `.json` or `.csv` files.
@@ -231,7 +214,7 @@ To generate a query without executing it, select the corresponding output types 
 
 A custom prompt must retain `{query}`, `{schema}`, `{example}`, and `{vertices}`. The REST API rejects it if any placeholder is missing.
 
-## 4. Graph and Administration Tools
+## 4. Graph and Administration Tools {#4-graph-and-administration-tools}
 
 `Graph Tools` runs a Gremlin query directly against the configured graph, triggers a manual graph backup, and can initialize demo data in HugeGraph through a beta action. A background job also backs up the graph every day at 01:00, and a second background task keeps vertex-id embeddings up to date while the process runs.
 Initializing demo data first clears the current graph. Use this action only on a dedicated test graph.
@@ -247,10 +230,12 @@ When `ENABLE_LOGIN=True`, the Web UI asks for basic credentials with the fixed u
 ![Handwritten Gremlin and its result in Graph Tools](/images/docs/hugegraph-ai/en/graph-tools.jpg)
 ```
 
-## 5. Prompt Language
+## 5. Prompt Language {#5-prompt-language}
 
-Set `LANGUAGE=EN` or `LANGUAGE=CN` in `hugegraph-llm/.env`, then restart the service. This selects the language of built-in prompts; it does not translate input documents and is not a field in the `/rag` request body.
+Set `LANGUAGE=EN` or `LANGUAGE=CN` as a deployment default, then restart the service.
+If a language option was saved in `settings.yaml`, it takes precedence; follow the [configuration reference](./config-reference.md#saved-connections) to reset
+it. This selects the language of built-in prompts; it does not translate input documents and is not a field in the `/rag` request body.
 
-## 6. REST Calls
+## 6. REST Calls {#6-rest-calls}
 
 The Web UI and REST API use the same pipeline. For application integration, use `/rag`, `/rag/graph`, `/graph/extract`, and `/text2gremlin`; see the [REST API](./rest-api.md) for request formats.

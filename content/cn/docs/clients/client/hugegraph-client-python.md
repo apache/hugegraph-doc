@@ -13,7 +13,7 @@ aliases:
 
 ## 环境要求
 
-- Python >= 3.12（支持 Python 3.12–3.14）。
+- 当前源码要求 Python >= 3.12（支持 Python 3.12–3.14）；已发布的 1.7.1 包要求 Python >= 3.10。
 - HugeGraph Server 1.5.0 或更高版本（Server 1.7+ 推荐开启 GraphSpace 模式；1.5/1.6 使用传统路由）。
 - `pip` 或 `uv` 包管理器。
 
@@ -31,9 +31,9 @@ aliases:
 > 如需体验或测试这些新特性，请通过源码方式安装客户端。
 
 ```bash {tab="PyPI 稳定版 (1.7.x)"}
-pip install hugegraph-python
+pip install hugegraph-python==1.7.1
 # 或使用 uv:
-# uv pip install hugegraph-python
+# uv pip install hugegraph-python==1.7.1
 ```
 
 ```bash {tab="源码安装 (Master)"}

@@ -80,6 +80,8 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 }
 ```
 
+<span id="clear-graph"></span>
+
 #### 6.1.3 Clear all data of a graph, include: schema, vertex, edge and index
 
 ##### Params

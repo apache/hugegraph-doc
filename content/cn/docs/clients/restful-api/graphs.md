@@ -80,6 +80,8 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 }
 ```
 
+<span id="clear-graph"></span>
+
 #### 6.1.3 清空某个图的全部数据，包括 schema、vertex、edge 和 index 等
 
 ##### Params
@@ -834,7 +836,9 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode/owners
 ```
 
 只有响应中包含 `state: "active"` 时才表示申请成功；此时返回 `200` 并回显 `protocol`、`instance`、`epoch`、`token` 以及 `mode: "LOADING"`。
+
 若返回 `200` 但 `state: "released"`，说明该句柄已失效或已被提前取消，此时并未获得 owner 保护；必须先停止并排空该次导入尝试，然后再通过 GET 获取新的 `instance` 和 `epoch` 并使用新 token 重新发起尝试。
+
 释放时将 `action` 设置为 `release`，句柄保持不变；响应中包含 `state: "released"` 和当前实际模式。未申请前直接调用释放会被记录，并导致后续使用该句柄的申请直接返回 `released`。
 重试保留同一句柄；Server 校验其鉴权身份、instance 和 epoch。已释放句柄不能再次申请。
 

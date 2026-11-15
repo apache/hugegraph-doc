@@ -2986,7 +2986,8 @@ Batch retrieve edges by specifying shard information (refer to section 3.2.22.2 
 - page: Page position for pagination, optional field. Default is null, which means no pagination. When `page` is empty, it indicates the first page of pagination starting from the position indicated by `start`.
 - page_limit: Upper limit of the number of edges per page for paginated retrieval, optional field. Default is 100000.
 
-As with vertex scans, both bounds are required on every backend; only RocksDB and HBase treat empty values as open bounds.
+As with vertex scans, builds containing the scan validation fix require both bounds on every backend.
+Only RocksDB and HBase treat empty values as open bounds.
 Send `page=` for the first bounded page and URL-encode each returned continuation token, keeping the bounds unchanged.
 Omitting `page` selects an unpaged scan and ignores `page_limit`.
 Use boundaries from `edges/shards`; do not reuse vertex shard positions for edges.

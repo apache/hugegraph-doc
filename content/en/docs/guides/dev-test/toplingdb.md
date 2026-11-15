@@ -54,8 +54,8 @@ Missing plugins fail preparation instead of leaving a runtime that fails during 
 This import does not open databases using production WAL or log paths.
 
 Keep an explicit configuration override in the service environment when starting the component too.
-Preparation and runtime selection normalize relative overrides against the caller's working directory before the launcher changes directories.
-Use the same file in both steps; an absolute service configuration path avoids ambiguity.
+Use the same absolute `TOPLINGDB_EASY_MIGRATE_CONF` path for preparation and startup,
+because component launchers can use different working directories.
 
 The import validates the file present during preparation. Replacing that file later can introduce unsupported plugins;
 validate the replacement with the selected JNI before restarting the component.

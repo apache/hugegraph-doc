@@ -2980,7 +2980,7 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/traversers/edges/
 - page：分页位置，选填项，默认为 null，不分页；当 page 为“”时表示分页的第一页，从 start 指示的位置开始
 - page_limit：分页获取边时，一页中边数目的上限，选填项，默认为 100000
 
-边扫描在所有后端都要求两个边界，只有 RocksDB 与 HBase 将空值视为开放边界。
+与顶点扫描一样，包含扫描校验修复的构建在所有后端都要求两个边界；只有 RocksDB 与 HBase 将空值视为开放边界。
 有界分页的第一页传入 `page=`，后续游标需要 URL 编码，并保持边界不变。
 省略 `page` 时不分页，`page_limit` 不限制结果数量。
 边界应取自 `edges/shards`，不能复用顶点分片的位置。

@@ -17,6 +17,7 @@ search_keywords: [HugeGraph Helm, Kubernetes, K8s, NodePort, Hubble, Vermeer, Gr
 > 镜像标签可能变化；需要固定镜像内容时，请配置各组件的 `image.digest`。
 
 [Artifact Hub](https://artifacthub.io/packages/helm/hugegraph-helm/hugegraph-helm) 方便查找 Chart、查看版本和安装说明，实际安装包仍从 GHCR 或 Docker Hub 下载。
+
 参数和源码开发方式见 [chart README](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/README.md)，
 生命周期操作见 [运维参考](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md)。
 
@@ -100,9 +101,11 @@ hugegraph-helm/
 
 默认 `mode: easy`，Server 和 Hubble 自动分配 NodePort，PD 保持 ClusterIP。可以直接使用 HTTP，无需域名、证书或额外确认参数。
 `mode: strict` 默认将 Server/Hubble 设为 ClusterIP，并开启完整 NetworkPolicy 隔离。
+
 SeaTunnel 和 Vermeer 启用后的原生 HTTP/UI 在 easy 模式下默认使用 NodePort，strict 模式下默认使用 ClusterIP，两种模式均需登录。
 内部 RPC、Worker HTTP 与 SeaTunnel 成员端口仍保持私有。两个模式都保留鉴权和持久化。
 优先级是组件显式参数高于全局参数，全局参数高于模式默认值，显式 `false` 也会生效。
+
 全局参数包括 `persistence.enabled` 和 `global.imageRegistry`，严格预设为 `values-strict.yaml`。
 
 | 入口 | 访问方式 | 前提 |
@@ -121,10 +124,13 @@ kubectl -n hugegraph get secret hugegraph-admin \
 
 使用 Hubble 的 NodePort 打开页面，以 `admin` 和查出的密码登录。
 默认 `externalTrafficPolicy: Cluster` 下，访问的节点不必运行目标 Pod。ClusterIP 是集群内部的虚拟服务地址，不是节点 IP，普通笔记本通常不能直接访问。
+
 也可以运行 `kubectl -n hugegraph port-forward svc/hugegraph-hubble 8088:8088`，在本机打开 `http://127.0.0.1:8088`。
 
 基础 PD/Server/Hubble 三类客户端 Service 支持 `externalTrafficPolicy`、`loadBalancerClass`、`loadBalancerIP`、`loadBalancerSourceRanges`、`externalIPs`
-和 `allocateLoadBalancerNodePorts`，具体行为取决于集群及负载均衡实现。LoadBalancer 专用字段应配合对应类型使用。
+和 `allocateLoadBalancerNodePorts`，具体行为取决于集群及负载均衡实现。
+
+LoadBalancer 专用字段应配合对应类型使用。
 NodePort 省略或设为 `0` 时自动分配，固定端口由 Kubernetes 根据集群配置的范围校验，chart 不再强制 `30000–32767`。
 原 HTTP 暴露确认参数保留兼容，但不再阻止渲染。
 
@@ -142,34 +148,18 @@ Chart 默认部署 PD + Store + Server + Hubble，按工作流启用需要的可
 
 SeaTunnel、Vermeer 分别通过 `enabled` 启用，其原生管理密码与 Server 独立。
 RAG 将 `values-rag.yaml` 叠加在拓扑预设之后，在两种模式下都默认保留私有 HTTP 入口。
+
 `seatunnel.service.type` 和 `vermeer.service.type` 为 `null` 时继承模式默认值：easy 为 NodePort，strict 为 ClusterIP。
 显式 `ClusterIP` 保持私有；显式 `NodePort`（包括 strict 模式）开放需要登录的 HTTP/UI。
+
 旧配置显式指定了 `ClusterIP` 时，需改回 `null` 才会继承 easy 默认值；省略 `service.nodePort` 或设为 `null` 时由 Kubernetes 分配端口。
 引擎的 `standalone` / `cluster` 拓扑独立于上述访问设置。
 
-> [!DETAILS]- SeaTunnel：按需开启原生数据导入、导出与迁移
-> ```bash
-> helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
->   -f ./hugegraph-helm/values-single.yaml \
->   --set seatunnel.enabled=true --set seatunnel.mode=standalone \
->   --wait --timeout 30m
-> ```
->
-> - **运行模式**：`standalone` 启动 1 个 Hybrid 节点（轻量测试）；`cluster` 模式启动多个同构节点（高并发批处理）。
-> - **访问与凭据**：easy 模式通过分配的 HTTP NodePort 打开 `http://<可达节点IP>:<NodePort>/#/overview`：
->
->   ```bash
->   kubectl -n hugegraph get svc hugegraph-seatunnel \
->     -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}{"\n"}'
->   kubectl get nodes -o wide
->   ```
->
->   使用 HTTP Basic 用户名 `admin` 和 `hugegraph-seatunnel-auth` Secret 中的密码登录。
->   strict 默认 ClusterIP，可用 `kubectl -n hugegraph port-forward svc/hugegraph-seatunnel 8081:8080` 在本机访问；`5801` 仍仅供内部通信。
-> - 完整作业配置、内置示例验证及跨图迁移流程见 [SeaTunnel 部署章节](#6-start-seatunnel) 或 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
+按组件继续完成工作流：
 
-需要一体化加载、计算、结果与健康观测时，继续阅读 [通过 Hubble 使用 Vermeer](#7-vermeer-through-hubble)；
-需要知识抽取与问答时，阅读 [GraphRAG](#8-graphrag)。
+- [SeaTunnel](#6-start-seatunnel)：启动引擎、提交导入/导出作业，再验证目标图。
+- [通过 Hubble 使用 Vermeer](#7-vermeer-through-hubble)：加载图、计算、读取结果并检查计算集群。
+- [GraphRAG](#8-graphrag)：连接模型，完成抽取、检索与问答。
 
 ### PD 元数据命名空间 {#metadata-namespace}
 
@@ -208,11 +198,13 @@ GitOps 凭据、仅 API 部署以及无域名的 HTTP Ingress。
 
 `global.imageRegistry` 为未指定 registry 的镜像仓库加前缀，组件指定完整 registry 地址时优先采用组件配置。
 默认只需镜像仓库中的 `hugegraph/pd`、`hugegraph/store`、`hugegraph/server` 和 `hugegraph/hubble` 四个镜像，标签或 digest 按实际配置选取。
+
 等待 PD 的 init container 复用 Store 镜像，Helm test 复用 Server 镜像。这两个镜像已包含 `curl`，无需额外 curl 镜像或启动时安装软件。
 自定义镜像可以继续使用显式 `store.waitImage` 和 `server.waitImage` 覆盖。
 
 启用 SeaTunnel 时还需其配置的 `apache/seatunnel` 镜像；Vermeer 使用所选标签或 digest 的 `hugegraph/vermeer`。
 启用 RAG 还需 `values-rag.yaml` 中固定 digest 的 `hugegraph/rag`（或审阅后的覆盖值）。
+
 Vermeer 的 Master、Worker 和服务令牌初始化复用同一镜像；所有已启用镜像及显式 helper 覆盖都应同步。
 使用自定义 Vermeer 镜像时，还需更新 `vermeer.image.digest`，或在按标签选择时显式清空；非空 digest 优先于标签。
 
@@ -223,12 +215,14 @@ Vermeer 的 Master、Worker 和服务令牌初始化复用同一镜像；所有�
 `storageClassName` 为空时继承集群默认 StorageClass，`"-"` 表示显式不使用 StorageClass。
 local PV 需要预建宿主机目录、匹配容量、`nodeAffinity` 和 `kubernetes.io/no-provisioner` StorageClass。
 `WaitForFirstConsumer` 根据 Pod 调度约束绑定，创建资源前请查看七个卷的完整例子。
+
 新建临时实例可以设置 `persistence.enabled=false` 使用 `emptyDir`，组件存储开关优先。
 PVC 失败不会自动降级为临时存储，已经初始化的 PD/Store 切换存储模式会被拒绝。
 
 Vermeer 的 Master 和 Worker 使用独立数据卷，单 Pod 模式也不共享 Pebble 目录。
 单机模式增加 2 个卷；集群模式为 1 个 Master 卷加每 Worker 1 个卷，默认增加 4 个。
 因此默认基础拓扑加 Vermeer 单机／集群分别需要 9／11 个卷，轻量 HugeGraph 预设加 Vermeer 单机需要 5 个。
+
 七卷 local PV 示例仅覆盖基础安装；SeaTunnel checkpoint 仍使用临时本地文件。RAG 默认额外需要一个 10 GiB PVC。
 
 <span id="离线安装和私库"></span>
@@ -236,6 +230,7 @@ Vermeer 的 Master 和 Worker 使用独立数据卷，单 Pod 模式也不共享
 ### 离线安装和私库 {#offline-installation-and-internal-repositories}
 
 先选择最新版本，再按该版本下载 Chart，将 `.tgz` 搬入内网。可以直接安装，也可以接入已有的 OCI 或 HTTP 私库。
+
 内网安装需通过 `--set global.imageRegistry=...` 覆盖镜像私库，
 参见 [values-internal-registry.yaml](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/examples/values-internal-registry.yaml)。
 
@@ -279,11 +274,14 @@ helm install hugegraph hugegraph-internal/hugegraph-helm \
 ## 4 鉴权和 Secret {#4-authentication-and-secrets}
 
 普通 Helm 安装自动生成、复用三份凭据，分别为 `<release>-admin` 的 `password`、`<release>-auth-token` 的 `token_secret`
-以及 `<release>-pd-auth` 的 `secret-key`。PD REST 使用共享的 PD Secret，通过 `HG_PD_AUTH_SECRET_KEY` 注入 PD 容器，
+以及 `<release>-pd-auth` 的 `secret-key`。
+
+PD REST 使用共享的 PD Secret，通过 `HG_PD_AUTH_SECRET_KEY` 注入 PD 容器，
 Server 等待存储和 Hubble 使用同一份凭据，不需要用户为每个 PD Pod 单独发明密码。
 
 GitOps 使用加密的固定值，或预先创建 Secret 并配置 `pd.auth.existingSecret`、`server.auth.admin.existingSecret`
 和 `server.auth.token.existingSecret`。`existingSecret` 高于内联值，chart 不管理这类外部 Secret。
+
 管理员密码需要可打印 ASCII，不能包含空格、冒号、反斜杠；PD 密码需要可打印 ASCII，不能包含首尾空白和反斜杠；JWT key 至少 32 字节。
 离线渲染器不能通过 `lookup` 读取在线已生成 Secret，因此不能依赖每次渲染随机生成凭据。
 
@@ -297,6 +295,7 @@ Hubble 默认开启，当前镜像的登录仍依赖 Server 鉴权。只使用 A
 可选引擎的原生入口始终需要登录，easy 模式也不例外。新生成的独立管理员密码在 easy 模式下为 6 位随机字母数字，strict 模式下为 16 位。
 SeaTunnel 使用 HTTP Basic，Vermeer 使用 `<release>-vermeer-admin` Secret 与 **Admin credential** 登录。
 升级保留既有密码，切换模式也不会自动轮换。
+
 Vermeer 管理密码可通过 `vermeer.auth.admin.password` 或 `vermeer.auth.admin.existingSecret/key` 配置，仅 Master 读取。
 原生管理按最终 Service 类型访问：NodePort 直接通过节点 IP 和分配端口访问，ClusterIP 使用 port-forward 转发，Hubble 的服务凭据自动配置。
 
@@ -314,6 +313,7 @@ Vermeer 管理密码可通过 `vermeer.auth.admin.password` 或 `vermeer.auth.ad
 
 Chart 会将首次 PD/Store 拓扑保存在不可变的 `hugegraph-bootstrap` ConfigMap（名称跟随 `fullnameOverride`）。
 旧安装没有记录时，应先按[首次拓扑接管检查](./hugegraph-helm-operations.md#stable-bootstrap-topology)核验，再升级。
+
 保留元数据命名空间、PVC 身份与实际 RF；修改副本数或删除记录不会迁移数据库成员。
 
 使用 Helm 原生值复用保留已有部署的 UI、入口、存储和凭据设置。
@@ -330,46 +330,58 @@ helm test hugegraph -n hugegraph --logs --timeout 5m
 要采用新的默认值，先审阅已有配置，再使用 `--reset-values` 和保留镜像、凭据、存储、拓扑设置的配置文件。
 PD 成员、持久存储和共享凭据变更需要按生命周期说明协调处理。
 
-基于当前 master 构建的 PD、Store 和 Server 镜像以 UID/GID `10001` 运行。除非 `podSecurityContext` 已设置 `fsGroup`，Chart 会为 PD 和 Store Pod 设置
-`fsGroup: 10001`（以及 `fsGroupChangePolicy: OnRootMismatch`），即使 `--reuse-values` 保留了旧 Release 的空值也是如此，使其能写入旧镜像（以 root 运行）创建的 PVC。
+### 迁移 root 属主的数据卷 {#root-owned-volume-upgrade}
 
-请在首次应用 `fsGroup` 的同一次滚动更新中，将 PD 和 Store 切换到基于此版本构建的镜像，使 kubelet 在 `10001` 镜像启动前修改卷的属主。不要先用仍以 root
-运行的镜像（例如尚未更新到此版本的 `latest`）运行此 Chart：这些镜像创建的文件归 root 所有，而 `OnRootMismatch` 只检查卷的根目录，之后不会再修正它们。
-请将 `pd.image` 和 `store.image` 固定为基于此版本构建的镜像，而不要依赖 `latest`。非空的 `image.digest` 优先于 `image.tag`，且 `--reuse-values`
-会保留已有的 digest，因此按 digest 固定镜像的 Release 必须修改 digest，而不能只修改标签。
+当前 PD、Store、Server 镜像以 UID/GID `10001` 运行。除非显式覆盖，PD/Store Pod 使用 `fsGroup: 10001`
+和 `fsGroupChangePolicy: OnRootMismatch`，复用旧空安全上下文的升级也适用。
+请在首次切换到非 root 镜像的同一次滚动更新中应用该卷属主设置。
 
-如果 Release 已在设置了 `fsGroup` 的情况下运行过 root 镜像，请在首次滚动更新到 `10001` 镜像的同时执行一次递归属主变更。请在同一条命令中设置镜像，
-使递归变更作用于 `10001` 镜像，而不是已固定的 root 镜像。示例清空了保留下来的 digest，使标签生效；按 digest 固定镜像的 Release 应改为将 `pd.image.digest`
-和 `store.image.digest` 设为此版本镜像的 digest：
+若中途运行 root 镜像，它创建的文件可能不会被后续
+`OnRootMismatch` 修复，因为该策略只检查卷根目录。
 
-```bash
-helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
-  --set pd.image.tag=<this-version> \
-  --set store.image.tag=<this-version> \
-  --set-string pd.image.digest= \
-  --set-string store.image.digest= \
-  --set pd.podSecurityContext.fsGroupChangePolicy=Always \
-  --set store.podSecurityContext.fsGroupChangePolicy=Always \
-  --wait --timeout 15m
-```
+固定本次非 root 构建的镜像标签或 digest，保留的 digest 优先于标签。
+若 release 已在设置 `fsGroup` 后运行过 root 镜像，按以下顺序执行一次性修复：
 
-改回原策略前，请确认每个 PD 和 Store Pod 运行的都是你设置的 `10001` 镜像，而不是旧的 root 镜像：
+1. **发布非 root 镜像，同时执行递归属主修复。**
 
-```bash
-kubectl get pods -n hugegraph \
-  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].image}{"\n"}{end}'
-```
+   将 `<this-version>` 替换为审阅后的非 root 构建。示例清空旧 digest 以使用标签；
+   按 digest 固定的部署应改为设置新构建的对应 digest。
 
-`--reuse-values` 会保留 `Always`，而它会在每次 Pod 启动时遍历整个卷，因此请在这些 Pod 运行后改回原策略：
+   ```bash
+   helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+     --set pd.image.tag=<this-version> \
+     --set store.image.tag=<this-version> \
+     --set-string pd.image.digest= \
+     --set-string store.image.digest= \
+     --set pd.podSecurityContext.fsGroupChangePolicy=Always \
+     --set store.podSecurityContext.fsGroupChangePolicy=Always \
+     --wait --timeout 15m
+   ```
 
-```bash
-helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
-  --set pd.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
-  --set store.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
-  --wait --timeout 15m
-```
+1. **核实每个 PD、Store Pod 的镜像。**
+
+   确认实际运行的镜像后，再恢复常规属主策略。
+
+   ```bash
+   kubectl get pods -n hugegraph \
+     -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].image}{"\n"}{end}'
+   ```
+
+1. **验证后恢复 `OnRootMismatch`。**
+
+   `--reuse-values` 会保留 `Always`，否则每次 Pod 启动都会遍历整个卷。
+
+   ```bash
+   helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+     --set pd.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+     --set store.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+     --wait --timeout 15m
+   ```
+{.steps}
 
 CSI 驱动忽略 `fsGroup` 的卷（例如许多 NFS 驱动）和 `hostPath` 卷需要改为执行一次 `chown -R 10001:10001`。
+
+### 验证启动与应用行为 {#verify-startup-and-application}
 
 `server.storageWaitTimeoutSeconds` 默认 300，通过 `WAIT_STORAGE_TIMEOUT_S` 传给启动脚本。
 未指定的启动探针阈值按存储等待加 150 秒推导；显式探针不会被改写，但预算必须覆盖存储等待和至少 120 秒 Server 启动时间。
@@ -438,6 +450,7 @@ helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
 
 `seatunnel.service.type: null` 时继承全局 `mode`：easy 默认 NodePort，strict 默认 ClusterIP。
 显式 `ClusterIP` 保持私有；显式 `NodePort`（包括 strict 模式）开放 HTTP/UI，仍需正常登录。
+
 旧配置显式指定 `ClusterIP` 时，需改回 `null` 才会继承 easy；省略 `seatunnel.service.nodePort` 或设为 `null` 时自动分配端口。
 `standalone` / `cluster` 拓扑不改变上述访问选择：
 
@@ -507,6 +520,7 @@ HugeGraph 单节点预设使用 HStore，满足此条件；单机 RocksDB Server
 
 以下为**全新安装**方案。已有 release 启用引擎时使用 `helm upgrade`，并保留完整审阅后的 values。旧配置可能缺少新增组件的默认项；先将
 `helm get values hugegraph -n hugegraph --all -o yaml` 导出到私有文件，审阅后以 `-f` 提供，不带 `--reuse-values`。
+
 保留原始 bootstrap 计数、凭据、存储和元数据命名空间。只更新可变的 `latest` 标签不会重启已有 Pod；
 应发布审阅后的新镜像标签/digest，或有计划地重启相关 StatefulSet 与 Hubble Deployment。
 
@@ -581,7 +595,12 @@ kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688
 
 打开 <http://127.0.0.1:6688/>，将 Secret `hugegraph-vermeer-admin` 的 `password` 填入 **Admin credential**（无需用户名）。
 这份人工登录密码与 Server/Hubble 登录、Hubble 服务令牌分别管理。切换拓扑前，停止提交、完成或取消运行任务，并卸载计算图。
-Master 与 Worker 使用独立 PVC；切换 `vermeer.mode` 不迁移文件，也不恢复运行中的任务，见[存储与恢复](./hugegraph-helm-operations.md#vermeer-and-rag-recovery)。
+
+Master 与 Worker 使用独立 PVC；切换 `vermeer.mode` 不迁移文件，也不恢复运行中的任务。
+Vermeer Master 与全部 Worker 必须报告完全相同的版本，不同版本的 Worker 会在注册时被拒绝。
+安排协调升级窗口，完成后检查 Worker 可用性，重新加载计算图，再恢复任务。
+
+详见 [Vermeer 升级步骤](./hugegraph-helm-operations.md#vermeer-upgrade)与[存储和恢复](./hugegraph-helm-operations.md#vermeer-and-rag-recovery)。
 
 ## 8 可选 GraphRAG {#8-graphrag}
 
@@ -596,11 +615,23 @@ helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
 kubectl -n hugegraph port-forward svc/hugegraph-rag 8001:8001
 ```
 
-打开 <http://127.0.0.1:8001/>。Chart 自动派生同一 release 的 Server URL、图身份和管理员 Secret；模型端点与凭据在 RAG 界面单独配置。
-保存配置后再测试已保存连接，保存成功不会测试模型服务。需要 Embedding 的工作流应先配置 Embedding provider。
+打开 <http://127.0.0.1:8001/>。Chart 自动派生同一 release 的 Server URL、图身份和管理员 Secret。
+在 RAG 界面中配置模型连接：
 
-RAG 需要实现外部配置约定的 HugeGraph AI 1.8.0 或更高版本镜像。Overlay 固定镜像 digest，修改仓库/标签时需同时替换或清空 digest。
-RAG 使用单副本与 Recreate 策略，默认额外需要一个 10 GiB PVC。`settings.yaml` 中已保存的连接优先于部署默认值，开启持久化时可在 Pod 替换后保留。
-两种模式下 RAG 都默认 ClusterIP；远程访问应经过鉴权反向代理，因为应用登录没有保护所有 HTTP 路由。
-详见 [RAG 部署约定](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/rag.md)
-和 [HugeGraph AI 快速开始](/cn/docs/quickstart/hugegraph-ai/quick_start/)。
+1. 选择 Chat provider，填写可达的端点、模型名称与所需凭据。
+1. 保存配置，再使用**测试已保存连接**；仅保存成功不会测试模型服务。
+1. 需要 Embedding 的工作流先配置 Embedding provider；抽取与检索步骤见
+   [HugeGraph AI 快速开始](/cn/docs/quickstart/hugegraph-ai/quick_start/)。
+{.steps}
+
+使用实现外部配置约定的 HugeGraph AI 1.8.0 或更高版本镜像。Overlay 固定镜像 digest，修改仓库/标签时需同时替换或清空 digest。
+RAG 使用单副本与 Recreate 策略，默认增加一个 10 GiB PVC。
+`settings.yaml` 中已保存的连接优先于部署默认值，开启持久化时可在 Pod 替换后保留。
+
+两种模式下 RAG 都默认 ClusterIP。远程入口应经过鉴权反向代理，因为应用登录没有保护所有 HTTP 路由。
+strict 模式下，其 NetworkPolicy 默认只允许 DNS 和同一 release 的 Server。
+
+通过 `rag.networkPolicy.extraEgress` 放行模型目标，通过 `rag.networkPolicy.extraIngress` 放行选定入口或 Ingress 控制器。
+这些规则需要支持 NetworkPolicy 的 CNI 才会生效，见 [RAG 网络访问](./hugegraph-helm-operations.md#rag-network-access)。
+
+挂载配置、外部 Server 与恢复约定见 [RAG 部署说明](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/rag.md)。

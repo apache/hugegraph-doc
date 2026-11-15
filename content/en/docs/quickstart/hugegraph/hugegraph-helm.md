@@ -19,6 +19,7 @@ for example, a `0.4.x` Chart can deploy a `1.8.x` service.
 
 [Artifact Hub](https://artifacthub.io/packages/helm/hugegraph-helm/hugegraph-helm) helps you find the Chart, browse versions and read installation instructions.
 The packages themselves are downloaded from GHCR or Docker Hub.
+
 See the [chart README](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/README.md) for settings and source-based development,
 and the [operations reference](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/operations.md) for lifecycle procedures.
 
@@ -101,6 +102,7 @@ hugegraph-helm/
 `mode: easy` is the default. Server and Hubble use automatic NodePorts; PD stays ClusterIP. HTTP works without a domain, certificate or acknowledgement.
 `mode: strict` defaults Server/Hubble to ClusterIP and enables full NetworkPolicy isolation.
 Enabled SeaTunnel and Vermeer native HTTP/UI default to NodePort in easy mode and ClusterIP in strict mode; both require login.
+
 Internal RPC, Worker HTTP and SeaTunnel member ports remain private.
 Both modes keep authentication and persistence.
 Explicit component parameters take priority over global parameters, which take priority over mode defaults; explicit `false` remains an override.
@@ -126,7 +128,9 @@ Use `kubectl -n hugegraph port-forward svc/hugegraph-hubble 8088:8088` for a loc
 
 The base PD/Server/Hubble client Services support `externalTrafficPolicy`, `loadBalancerClass`, `loadBalancerIP`, `loadBalancerSourceRanges`, `externalIPs`
 and `allocateLoadBalancerNodePorts`, subject to the cluster/controller's capabilities. Use LoadBalancer fields with that Service type.
-NodePort omission or `0` means automatic allocation. Fixed ports are validated against the cluster's configured range by Kubernetes;
+NodePort omission or `0` means automatic allocation.
+
+Fixed ports are validated against the cluster's configured range by Kubernetes;
 the chart does not force `30000–32767`. Legacy HTTP acknowledgement fields remain accepted but no longer gate rendering.
 
 ### Optional engines: disabled by default {#optional-engines}
@@ -144,34 +148,16 @@ By default, the Chart provisions PD + Store + Server + Hubble. Enable the compon
 Enable SeaTunnel or Vermeer with its `enabled` key; their native administrator passwords are separate from Server.
 For RAG, layer `values-rag.yaml` after the topology preset; it keeps its HTTP entry private in both modes.
 For `seatunnel.service.type` and `vermeer.service.type`, `null` inherits the mode default: NodePort in easy mode, ClusterIP in strict mode.
+
 An explicit `ClusterIP` stays private; an explicit `NodePort`, including in strict mode, exposes authenticated HTTP/UI.
 Clear an older explicit `ClusterIP` override to `null` to inherit easy mode. With `service.nodePort` omitted or `null`, Kubernetes assigns the port.
 The engines' `standalone` / `cluster` topologies are independent of these access settings.
 
-> [!DETAILS]- SeaTunnel: On-demand Data Import, Export, and Migration
-> ```bash
-> helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
->   -f ./hugegraph-helm/values-single.yaml \
->   --set seatunnel.enabled=true --set seatunnel.mode=standalone \
->   --wait --timeout 30m
-> ```
->
-> - **Topologies**: `standalone` runs 1 Hybrid node for lightweight testing; `cluster` runs multiple homogeneous nodes for high-throughput batch jobs.
-> - **Access & Authentication**: In easy mode, open `http://<reachable-node-ip>:<NodePort>/#/overview` using the assigned HTTP NodePort:
->
->   ```bash
->   kubectl -n hugegraph get svc hugegraph-seatunnel \
->     -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}{"\n"}'
->   kubectl get nodes -o wide
->   ```
->
->   Log in with HTTP Basic username `admin` and the password from `hugegraph-seatunnel-auth` Secret.
->   Strict mode defaults to ClusterIP; use `kubectl -n hugegraph port-forward svc/hugegraph-seatunnel 8081:8080` for local access.
->   Port `5801` remains internal.
-> - See the [SeaTunnel Deployment Section](#6-start-seatunnel) or [SeaTunnel Guide](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md) for full job configs and migration steps.
+Continue with the component's workflow:
 
-Start with [Vermeer through Hubble](#7-vermeer-through-hubble) for load, compute, results and health in one release,
-or [GraphRAG](#8-graphrag) for extraction and question answering.
+- [SeaTunnel](#6-start-seatunnel): start its engine, submit import/export jobs and verify the target graph.
+- [Vermeer through Hubble](#7-vermeer-through-hubble): load a graph, compute, read results and inspect compute health.
+- [GraphRAG](#8-graphrag): connect models for extraction, retrieval and answers.
 
 ### PD metadata namespace {#metadata-namespace}
 
@@ -209,12 +195,14 @@ GitOps credentials, API-only deployment and a hostless HTTP Ingress.
 
 Set `global.imageRegistry` to prefix unqualified image repositories; an explicit registry in a component repository takes precedence.
 The default mirror inventory is only `hugegraph/pd`, `hugegraph/store`, `hugegraph/server` and `hugegraph/hubble`, at the configured tags/digests.
+
 Store's PD wait init container and the Helm test reuse Store and Server images respectively, which already contain `curl`.
 No separate curl image or runtime package installation is required. Explicit `store.waitImage` / `server.waitImage` overrides remain supported.
 
 Enabled SeaTunnel additionally needs its configured `apache/seatunnel` image; Vermeer uses `hugegraph/vermeer` at your selected tag or digest.
 Enabled RAG also needs `hugegraph/rag` at the digest in `values-rag.yaml` (or your reviewed override).
 Vermeer reuses that image for Master, Worker and service-token initialization. Mirror every enabled image and explicit helper override.
+
 For a custom Vermeer image, also update `vermeer.image.digest`, or explicitly clear it when selecting by tag; a nonempty digest takes priority.
 
 ### Storage configuration
@@ -222,12 +210,14 @@ For a custom Vermeer image, also update `vermeer.image.digest`, or explicitly cl
 For storage, empty `storageClassName` inherits the cluster default, while `"-"` explicitly selects no StorageClass.
 Local PVs require prepared host directories, matching capacities, `nodeAffinity` and a `kubernetes.io/no-provisioner` StorageClass;
 `WaitForFirstConsumer` binds with the Pod's scheduling constraints. See the complete seven-volume example before creating resources.
+
 For a new temporary installation, set `persistence.enabled=false` to use `emptyDir`; component storage flags override it.
 The chart never replaces a failed PVC with temporary storage and rejects PD/Store storage-mode changes on initialized releases.
 
 Vermeer uses separate Master and Worker claims, even in its single-Pod mode: two additional volumes in standalone,
 or one Master volume plus one per Worker in cluster mode. With the default base topology this means 9 or 11 volumes respectively.
 The small HugeGraph preset plus standalone Vermeer needs 5. The seven-volume local example covers only the base installation.
+
 SeaTunnel checkpoints remain temporary local files. RAG adds one 10 GiB PVC by default, independent of the graph topology.
 
 ### Offline installation and internal repositories
@@ -277,10 +267,13 @@ The archive contains no container images: mirror all configured container images
 
 Normal Helm installations generate and reuse three credentials: `<release>-admin` (`password`), `<release>-auth-token` (`token_secret`)
 and `<release>-pd-auth` (`secret-key`). PD REST requires the shared PD secret, supplied to the PD container as `HG_PD_AUTH_SECRET_KEY`;
-Server's storage wait and Hubble read the same credential. It is not a separate user password that must be invented for each Pod.
+Server's storage wait and Hubble read the same credential.
+
+It is not a separate user password that must be invented for each Pod.
 
 For GitOps, use fixed encrypted values or pre-created Secrets through `pd.auth.existingSecret`, `server.auth.admin.existingSecret`
 and `server.auth.token.existingSecret`. `existingSecret` wins over inline values and is not managed by the chart.
+
 The admin password must be printable ASCII without spaces, colons or backslashes; the PD secret must be printable ASCII without surrounding whitespace
 or backslashes; the JWT signing key must be at least 32 bytes. Offline renderers cannot reuse live generated Secrets through `lookup`.
 
@@ -293,9 +286,13 @@ optionally also set `server.auth.enabled=false` for an unauthenticated API. Inac
 
 Enabled optional engines always require native login, including in easy mode. Newly generated administrator passwords use 6 random alphanumeric
 characters in easy mode or 16 in strict mode. SeaTunnel uses HTTP Basic, while Vermeer uses Secret `<release>-vermeer-admin` and its
-**Admin credential** login. Upgrades retain existing passwords, including when changing mode; mode changes do not rotate them automatically.
+**Admin credential** login.
+
+Upgrades retain existing passwords, including when changing mode; mode changes do not rotate them automatically.
 Vermeer password sources are `vermeer.auth.admin.password` or `vermeer.auth.admin.existingSecret/key`;
-only Master reads that password. Access native administration according to the final Service type:
+only Master reads that password.
+
+Access native administration according to the final Service type:
 NodePort connects via the node IP and assigned port, while ClusterIP uses port-forwarding. Hubble service credentials are automatic.
 
 > [!DETAILS]- Advanced: Vermeer deployment credentials and GitOps
@@ -310,7 +307,9 @@ NodePort connects via the node IP and assigned port, while ClusterIP uses port-f
 
 The chart retains the initial PD/Store topology in an immutable `hugegraph-bootstrap` ConfigMap (name follows `fullnameOverride`).
 Before upgrading an older installation without that record, follow the
-[bootstrap adoption checks](./hugegraph-helm-operations.md#stable-bootstrap-topology). Preserve the metadata namespace, PVC identities and actual RF;
+[bootstrap adoption checks](./hugegraph-helm-operations.md#stable-bootstrap-topology).
+
+Preserve the metadata namespace, PVC identities and actual RF;
 changing replica counts or deleting the record does not migrate membership.
 
 Use native Helm value reuse to preserve an existing deployment's UI, entry, storage and credentials:
@@ -326,54 +325,67 @@ helm test hugegraph -n hugegraph --logs --timeout 5m
 Existing explicit helper images also remain under `--reuse-values`;
 add `--set-string store.waitImage= --set-string server.waitImage=` to reuse component images.
 Adopt new defaults deliberately with `--reset-values` and a reviewed file retaining your image, credential, storage and topology settings.
+
 Do not treat PD membership, storage or credential changes as ordinary independent overrides; consult the lifecycle reference.
 
-PD, Store and Server images built from current master run as UID/GID `10001`. The chart gives the PD and Store pods `fsGroup: 10001` (with
-`fsGroupChangePolicy: OnRootMismatch`) unless their `podSecurityContext` sets `fsGroup`, also when `--reuse-values` keeps an older release's empty value,
-so they can write PVCs created by older images, which ran as root.
+### Migrate root-owned volumes {#root-owned-volume-upgrade}
 
-Switch PD and Store to images built from this version in the same rollout that first applies `fsGroup`, so the kubelet changes the volume ownership right
-before the `10001` image starts. Do not run images that still run as root with this chart first, for example a `latest` that has not moved to this version:
-files they create stay owned by root, and `OnRootMismatch` checks only the volume root, so it does not fix them later. Pin `pd.image` and `store.image` to a
-build from this version rather than relying on `latest`. A non-empty `image.digest` wins over `image.tag`, and `--reuse-values` keeps an existing digest,
-so a release pinned by digest must change the digest, not only the tag.
+Current PD, Store and Server images run as UID/GID `10001`. Unless explicitly overridden, PD/Store Pods use `fsGroup: 10001`
+and `fsGroupChangePolicy: OnRootMismatch`, including upgrades that reuse an older empty security context.
+Apply this volume ownership setting together with the first non-root image.
 
-If a release already ran root images with `fsGroup` set, roll out the first `10001` image together with a one-time recursive ownership change. Set the
-images in the same command, so the recursive change runs for the `10001` image rather than for a pinned root image. The example clears any reused digest so
-the tag applies; a release pinned by digest sets `pd.image.digest` and `store.image.digest` to the digests of this version's images instead:
+A root image started in between can create files that
+`OnRootMismatch` will not repair later, because that policy checks only the volume root.
 
-```bash
-helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
-  --set pd.image.tag=<this-version> \
-  --set store.image.tag=<this-version> \
-  --set-string pd.image.digest= \
-  --set-string store.image.digest= \
-  --set pd.podSecurityContext.fsGroupChangePolicy=Always \
-  --set store.podSecurityContext.fsGroupChangePolicy=Always \
-  --wait --timeout 15m
-```
+Pin the actual non-root image tag or digest for the same rollout. A retained digest wins over the tag.
+For a release that already ran root images after `fsGroup` was set, use this one-time repair sequence:
 
-Before switching the policy back, check that every PD and Store Pod runs the `10001` image you set, not an older root image:
+1. **Roll out the non-root images with recursive ownership repair.**
 
-```bash
-kubectl get pods -n hugegraph \
-  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].image}{"\n"}{end}'
-```
+   Replace `<this-version>` with your reviewed non-root build. The example clears reused digests so the tags apply;
+   a digest-pinned deployment sets the matching new digests instead.
 
-`--reuse-values` keeps `Always`, which walks the whole volume on every Pod start, so set the policy back once those Pods are running:
+   ```bash
+   helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+     --set pd.image.tag=<this-version> \
+     --set store.image.tag=<this-version> \
+     --set-string pd.image.digest= \
+     --set-string store.image.digest= \
+     --set pd.podSecurityContext.fsGroupChangePolicy=Always \
+     --set store.podSecurityContext.fsGroupChangePolicy=Always \
+     --wait --timeout 15m
+   ```
 
-```bash
-helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
-  --set pd.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
-  --set store.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
-  --wait --timeout 15m
-```
+1. **Verify the selected images on every PD and Store Pod.**
+
+   Confirm the running images before restoring the ordinary ownership policy.
+
+   ```bash
+   kubectl get pods -n hugegraph \
+     -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].image}{"\n"}{end}'
+   ```
+
+1. **Restore `OnRootMismatch` after verification.**
+
+   `--reuse-values` retains `Always`, which otherwise walks the whole volume on every Pod start.
+
+   ```bash
+   helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \
+     --set pd.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+     --set store.podSecurityContext.fsGroupChangePolicy=OnRootMismatch \
+     --wait --timeout 15m
+   ```
+{.steps}
 
 Volumes whose CSI driver ignores `fsGroup` (for example many NFS drivers) and `hostPath` volumes need a one-time `chown -R 10001:10001` instead.
 
+### Verify startup and application behavior {#verify-startup-and-application}
+
 `server.storageWaitTimeoutSeconds` defaults to 300 and is passed as `WAIT_STORAGE_TIMEOUT_S`. An unspecified startup probe threshold is derived
 from that wait plus 150 seconds; an explicit threshold is preserved and must cover the storage wait plus at least 120 seconds of Server startup.
-A contradictory budget fails rendering with the relevant parameter names. Storage wait timeout is not a JVM memory setting.
+A contradictory budget fails rendering with the relevant parameter names.
+
+Storage wait timeout is not a JVM memory setting.
 
 The default `helm test` hook checks connectivity and reads. After installation or recovery, also test a new UI login and your application's
 read/write queries.
@@ -381,7 +393,7 @@ For scheduling, NetworkPolicy, rolling updates and recovery, see [Kubernetes ope
 
 ## 6 Deploy and Use SeaTunnel (Optional Engine) {#6-start-seatunnel}
 
-SeaTunnel is an optional data integration engine supported by HugeGraph, disabled by default. When enabled, Helm provisions a persistent SeaTunnel Zeta engine alongside a task Web dashboard within the same release.
+SeaTunnel is disabled by default. Enabling it starts a long-running Zeta engine and task Web dashboard in the same release.
 The official `apache/seatunnel:3.0.0` image comes with built-in HugeGraph connectors (Source and Sink), requiring no custom image builds or plugin installation.
 
 ```text
@@ -435,7 +447,9 @@ helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
 
 SeaTunnel inherits the global `mode` setting when `seatunnel.service.type: null`: easy defaults to NodePort, strict to ClusterIP.
 An explicit `ClusterIP` stays private; explicit `NodePort`, including in strict mode, exposes HTTP/UI with the same required login.
-Clear an older explicit `ClusterIP` override to `null` to inherit easy mode. Omit `seatunnel.service.nodePort` or use `null` for automatic allocation.
+Clear an older explicit `ClusterIP` override to `null` to inherit easy mode.
+
+Omit `seatunnel.service.nodePort` or use `null` for automatic allocation.
 The `standalone` / `cluster` topology does not change this access choice:
 
 ```bash {tab="NodePort (easy mode)"}
@@ -501,7 +515,9 @@ A standalone RocksDB Server cannot supply this direct Store-loading path. No Com
 The following are **fresh installation** choices. For an existing release, use `helm upgrade` with its complete reviewed values.
 Older saved values can omit new component defaults;
 export `helm get values hugegraph -n hugegraph --all -o yaml` to a private file, review it, then supply it with `-f` without `--reuse-values`.
-Keep original bootstrap counts, credentials, storage and metadata namespace. Updating a mutable `latest` tag alone does not restart existing Pods;
+Keep original bootstrap counts, credentials, storage and metadata namespace.
+
+Updating a mutable `latest` tag alone does not restart existing Pods;
 roll out reviewed new image tags/digests, or deliberately restart the relevant StatefulSets and Hubble Deployment.
 
 Run from the extracted chart's parent directory, choosing one topology:
@@ -561,6 +577,7 @@ flowchart TB
 With Server authentication enabled, Hubble restricts direct Store loading and Vermeer computation to super administrators;
 GraphSpace read access alone is insufficient. The chart's service identity does not grant the signed-in user that privilege.
 Results remain in the compute/result cache and are not written into HugeGraph vertex properties by this Hubble workflow.
+
 A retained successful task or PVC does not guarantee its result cache survives a restart; check state, reload and recompute when necessary.
 
 The chart wires both `vermeer.url` / `vermeer.token_file` and `operations.vermeer.*` to the same Master and service token.
@@ -579,8 +596,13 @@ kubectl -n hugegraph port-forward svc/hugegraph-vermeer-master 6688:6688
 Open <http://127.0.0.1:6688/> and enter the `password` from Secret `hugegraph-vermeer-admin` into **Admin credential** (no username).
 This human password is separate from the Server/Hubble login and Hubble's service token.
 Before topology changes, stop submissions, finish/cancel active tasks and unload the compute graphs.
+
 Master and Worker use separate PVCs; changing `vermeer.mode` does not move their files or restore running jobs.
-See [storage and recovery](./hugegraph-helm-operations.md#vermeer-and-rag-recovery).
+Vermeer Master and every Worker must report exactly the same version; a different Worker version is rejected during registration.
+Plan a coordinated upgrade window, then verify Worker availability and reload the compute graphs before resuming work.
+
+See the [Vermeer upgrade steps](./hugegraph-helm-operations.md#vermeer-upgrade) and
+[storage and recovery](./hugegraph-helm-operations.md#vermeer-and-rag-recovery).
 
 ## 8 Optional GraphRAG {#8-graphrag}
 
@@ -595,13 +617,24 @@ helm install hugegraph ./hugegraph-helm -n hugegraph --create-namespace \
 kubectl -n hugegraph port-forward svc/hugegraph-rag 8001:8001
 ```
 
-Open <http://127.0.0.1:8001/>. The chart derives the Server URL, graph identity and administrator Secret from this release;
-model endpoints and credentials are configured separately in the RAG UI. Save configuration, then test the saved connection;
-a successful save does not test the model. Configure an Embedding provider before workflows requiring embeddings.
+Open <http://127.0.0.1:8001/>. The chart derives the Server URL, graph identity and administrator Secret from this release.
+Model connections are configured in the RAG UI:
 
-RAG requires a compatible HugeGraph AI 1.8.0-or-later image implementing external configuration. The overlay pins its image digest;
-changing the repository/tag requires updating or clearing that digest. It uses one replica with a Recreate strategy and adds a 10 GiB PVC by default.
-Saved connections in `settings.yaml` take precedence over deployment defaults and survive replacement when persistence is enabled.
-RAG stays ClusterIP in both modes; use an authenticated reverse proxy for remote exposure, because application login does not protect every route.
-See the [RAG deployment contract](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/rag.md)
-and [HugeGraph AI quick start](/docs/quickstart/hugegraph-ai/quick_start/).
+1. Select a Chat provider and enter its reachable endpoint, model and required credential.
+1. Save configuration, then use **Test saved connection**. A successful save alone does not test the model.
+1. Configure an Embedding provider before workflows requiring embeddings; continue with the
+   [HugeGraph AI quick start](/docs/quickstart/hugegraph-ai/quick_start/) for extraction and retrieval.
+{.steps}
+
+Use a compatible HugeGraph AI 1.8.0-or-later image implementing external configuration. The overlay pins its image digest;
+changing repository/tag requires updating or clearing that digest. RAG uses one replica with Recreate and adds a 10 GiB PVC by default.
+Saved `settings.yaml` connections take precedence over deployment defaults and survive Pod replacement when persistence is enabled.
+
+RAG stays ClusterIP in both modes. Remote exposure needs an authenticated reverse proxy because application login does not protect every route.
+In strict mode, its NetworkPolicy permits only DNS and the same-release Server by default. Allow model destinations with
+`rag.networkPolicy.extraEgress` and the chosen ingress/controller with `rag.networkPolicy.extraIngress`.
+
+These rules require a NetworkPolicy-capable CNI; see [RAG network access](./hugegraph-helm-operations.md#rag-network-access).
+
+For mounted configuration, external Servers and recovery, use the
+[RAG deployment contract](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/rag.md).

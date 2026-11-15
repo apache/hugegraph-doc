@@ -179,16 +179,21 @@ For a PD-backed Server, the Helm chart exposes `server.serviceId` and `server.gr
 Both default to `DEFAULT`, which preserves the existing `server.service_id` and `server.graphspace`
 values in `conf/rest-server.properties`. A non-default chart value injects `HG_SERVER_SERVICE_ID`
 or `HG_SERVER_GRAPHSPACE` into the Server container.
+
 These service identity chart settings (`server.serviceId`, `server.graphSpace`, and `server.testGraphAlias`)
 apply to development 1.8.0+ builds and charts; older versions such as 1.7.0 do not support these options.
 Do not use this example with older chart or image versions lacking these features.
+
 Non-empty service IDs supplied through `HG_SERVER_SERVICE_ID`, `SERVICE_ID`, or `server.serviceId`
 must use printable ASCII; spaces and backslashes are supported, while deployment checks reject
 non-ASCII and control characters. This entrypoint restriction does not change Core Service naming
 or existing manually supplied properties. Helm preserves dollar signs in `server.serviceId` literally,
 including `$(POD_IP)`; this field does not expand Kubernetes environment references.
+
 The full service ID, including `/` and `-`, is retained when service metadata is reloaded or its graph space is cleared.
+
 Set the identity through these chart values; Server `extraEnv` reserves both the new and legacy identity variable names.
+
 `HG_SERVER_GRAPHSPACE`, the effective `GRAPH_SPACE` fallback,
 and `server.graphSpace` accept `DEFAULT` or an existing space name of up to 48 lowercase letters, digits,
 and underscores, starting with a letter:
@@ -660,23 +665,41 @@ This indicates the successful creation of the sample graph.
 
 `bin/stop-hugegraph.sh` accepts `-m true|false` (default `true`), which controls whether the cron monitor task is removed along with the service.
 
-`bin/hugegraph-server.sh` puts `-XX:+HeapDumpOnOutOfMemoryError`, `-XX:HeapDumpPath` and `-XX:ErrorFile` first in `JAVA_TOOL_OPTIONS`, so, whether or not
-`JAVA_OPTIONS` is set and with the exceptions below, an out-of-memory heap dump (`heapdump_<host>_<launch time>/java_pid<pid>.hprof`) and a JVM crash log
-(`hs_err_pid<pid>_<host>_<launch time>.log`) land in `logs/`, where `<launch time>` is the local time as `YYYYMMDD-HHMMSS`. Each start gets its own `heapdump_*`
-directory, so the server and the JVMs it starts, such as computer jobs, write separate dumps (HotSpot names each dump and crash log after the JVM's PID, so a
-JVM that reuses an earlier PID from the same start cannot write its dump, and its crash log replaces the earlier one's). The host name keeps servers that share
-one log directory from picking the same name, and a counter (`<launch time>-1`, `-2`, ...) is added when the same host already used that second. If the
-directory cannot be created, for example on a full disk, the server still starts and dumps go to `logs/` itself, as a best effort: a full disk may have no room
-for the dump either. A heap dump can be as large as the heap. The launcher never deletes dumps or `heapdump_*` directories: each start that reaches Java leaves
-one, empty unless something ran out of memory, and the launcher keeps it because a computer-job JVM can go on using it after the server exits. Move or delete
-old ones once no HugeGraph JVM from that launch is running, but never the newest one of a running server; without it, the next dump is written as a file with
-that name. The JVM reads your own `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS` (including `@argfiles`), the command line (`JAVA_OPTIONS`, or `-j` when `JAVA_OPTIONS`
-is unset or empty) and `_JAVA_OPTIONS` after these defaults, so a value for one of these flags in any of them overrides the default. Only the environment
-variables reach the JVMs the server starts: to turn dumps off for all of them, set `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`, while `-j` or
-`JAVA_OPTIONS` turns them off for the server JVM only. Either way each start that reaches Java still creates its empty `heapdump_*` directory, unless creating
-it failed and dumps fell back to `logs/`. If the logs path contains a double quote or `%`, the launcher warns and heap dumps go to `logs/` itself, with no
-per-launch directory and no crash log default; the `JAVA_TOOL_OPTIONS` opt-out still applies. A path with both quote characters gets no heap dump default at
-all. Because of the defaults, the JVM prints `Picked up JAVA_TOOL_OPTIONS: ...` on stderr at startup.
+`bin/hugegraph-server.sh` enables out-of-memory heap dumps and JVM crash logs by default in current source builds.
+It prepends `-XX:+HeapDumpOnOutOfMemoryError`, `-XX:HeapDumpPath` and `-XX:ErrorFile` to `JAVA_TOOL_OPTIONS`.
+
+| Diagnostic | Default location below `logs/` |
+| --- | --- |
+| Heap dump | `heapdump_<host>_<launch time>/java_pid<pid>.hprof` |
+| JVM crash log | `hs_err_pid<pid>_<host>_<launch time>.log` |
+{.wide .expand}
+
+**Plan storage and cleanup.** A dump can be as large as the JVM heap. Each start that reaches Java creates its own `heapdump_*` directory,
+which stays empty unless a JVM runs out of memory. The launcher never removes these directories because child JVMs, including Computer jobs,
+may still use them after Server exits. Move or delete an old directory only after every HugeGraph JVM from that launch has exited.
+Keep the newest directory of a running Server: removing it can make a later dump become a file with that directory's name.
+
+**Override the defaults at the right scope.** Your `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS` (including `@argfiles`),
+`_JAVA_OPTIONS` and Server command-line flags can override these defaults.
+The command line uses `JAVA_OPTIONS`, or `-j` when `JAVA_OPTIONS` is unset or empty.
+
+- To disable dumps for Server and its child JVMs, set `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError` in the process environment.
+- To change only Server, use `JAVA_OPTIONS` or `-j`. These command-line options do not reach child JVMs.
+
+Disabling dumps still leaves the empty per-launch directory when it can be created.
+The normal `Picked up JAVA_TOOL_OPTIONS: ...` message on stderr reports that the JVM received these options.
+
+> [!DETAILS]- File naming and unusual log paths
+>
+> Launch times use local `YYYYMMDD-HHMMSS`; a counter is added if the same host starts again within that second.
+> Host names distinguish Servers sharing a log directory. HotSpot uses JVM PIDs for individual files;
+> reusing a PID within one launch can prevent a new dump and overwrite its earlier crash log.
+>
+> If creating the launch directory fails, Server still starts and tries to write dumps directly in `logs/`.
+> A full disk may also prevent that fallback from succeeding.
+>
+> A log path containing a double quote or `%` causes a warning, uses `logs/` directly for dumps and omits the crash-log default.
+> A path containing both quote characters omits both diagnostic defaults. Explicit operator settings still take precedence.
 
 > **Version scope**: this applies to current development/master builds. In 1.7.0 the heap dump flags are
 > added only when `JAVA_OPTIONS` is unset, heap dumps go directly to `logs/java_pid<pid>.hprof`, and JVM crash logs go to the install directory.

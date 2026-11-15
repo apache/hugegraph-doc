@@ -26,7 +26,7 @@ HugeGraph-Store 是 HugeGraph 分布式版本的存储节点组件，负责实�
 - Maven 版本：≥ 3.6.3（从源码编译时）
 - 如需进行多节点部署，请先部署 HugeGraph-PD
 
-### 3 部署
+<span id="3-部署-1"></span>
 
 ### 3 部署
 
@@ -198,12 +198,23 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 | `raft.rpc-timeout` | 未设置 | `10000` | Raft RPC 超时时间，单位毫秒。 |
 | `raft.metrics` | 未设置 | `true` | 采集 JRaft 节点指标，可通过 `/metrics/raft` 读取。 |
 | `raft.useRocksDBSegmentLogStorage` | 未设置 | `true` | 使用 RocksDB 分段日志存储保存 Raft 日志。 |
-| `raft.maxSegmentFileSize` | 未设置 | `67108864` | 分段日志文件大小，单位字节（64 MB）。 |
+| `raft.maxSegmentFileSize` | `1073741824` | `1073741824` | 新分配的单个分段日志文件的最大字节数（1 GiB）。 |
 | `raft.maxReplicatorInflightMsgs` | 未设置 | `256` | 每个 follower 的最大在途复制请求数。 |
 | `raft.maxEntriesSize` | 未设置 | `256` | 单次 `AppendEntries` 请求包含的最大条目数。 |
 | `raft.maxBodySize` | 未设置 | `524288` | 单次 `AppendEntries` 请求的最大字节数。 |
 | `ave-logEntry-size-ratio` | 未设置 | `0.95` | 估算日志条目平均大小时的平滑系数。注意该配置项位于顶层，不在 `raft` 下。 |
 {.td-table--wide}
+
+启用分段日志存储时，`raft.maxSegmentFileSize` 控制新分配文件的大小，不是 Raft 日志总量或数据库磁盘占用的上限。
+配置值必须大于最大的编码后 Raft 条目，包括副本追赶时接收的条目。
+显式 Store 配置优先于 `-Djraft.log_storage.segment.max.size.bytes`；两者均未指定时默认为 1 GiB。
+
+> [!DETAILS]- 调整已有 Store 的分段大小
+>
+> 非空分段保留原大小并继续可读。重启时，不兼容的空白预分配分段会先重命名为 `<sequence>.s.blank-<old-size>-<unique-id>`，再按新配置分配空白分段。
+> 重命名文件保留用于诊断，不会因此释放已分配的磁盘块；无法识别或不完整的头部也会保留，并可能导致启动失败，不能将其直接当作空文件。
+>
+> 排查稀疏分段时应同时检查已分配块和表观大小，并为 WAL、快照与压缩预留空间。能够读取旧的大分段，不代表新的较小分段足以承接后续写入或副本追赶。
 
 **存储与标签**
 
@@ -232,7 +243,9 @@ Store 从 `conf/` 读取两个配置文件。1.7.0 发布标签的源文件见 [
 > 当 `rocksdb.total_memory_size` 设置为 `auto`（或未设置、为 `0`）时，系统自动计算堆外 RocksDB 缓存预算：
 > - **推导公式**：以物理内存（容器环境下优先取可见的 cgroup 限制）减去 JVM 最大堆（`-Xmx`）、直接内存（`MaxDirectMemorySize`）和 1.5 GiB 系统预留后，取剩余量的一半，范围钳制在 256 MiB 至 32 GB（`32000000000` 字节）之间。
 > - **写缓存与 Block Cache**：根据 `rocksdb.write_buffer_ratio`（默认 0.66）切分。该预算为软目标容量；大量并发写入时可将 `rocksdb.write_buffer_allow_stall` 设为 `true`，以增加写入延迟为代价把写缓存限制在其份额内。Block cache 并非严格上限，本地内存仍可能超出预算，容器仍可能被 OOM 终止。
-> - **升级与覆盖**：历史配置若保留了旧固定值 `32000000000`，可通过设置环境变量 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=auto` 或启动参数 `-Drocksdb.total_memory_size=auto` 启用自动推导。
+> - **升级与覆盖**：历史配置若保留旧固定值 `32000000000`，可用 Docker 环境变量 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=auto`、
+>   JVM 参数 `-Drocksdb.total_memory_size=auto` 或 Store jar 参数 `--rocksdb.total_memory_size=auto` 覆盖，优先于本地和 PD 下发的配置文件。
+>   普通环境变量 `ROCKSDB_TOTAL_MEMORY_SIZE` 不会设置这项预算。
 
 `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` 中定义的其他选项都可以加在同一个 `rocksdb:` 块下，例如 `rocksdb.max_background_jobs`、`rocksdb.level0_file_num_compaction_trigger` 或 `rocksdb.bloom_filter_bits_per_key`。
 
@@ -388,6 +401,17 @@ YYYY-mm-dd xx:xx:xx [main] [INFO] o.a.h.s.n.StoreNodeApplication - Started Store
 3. **最后启动 HugeGraph-Server**，此时所有 Store 节点都应上报 `state: "Up"`。Server 需要分区就绪之后才能初始化或打开图。
 
 主线 Compose 用 `depends_on: condition: service_healthy` 等待本地健康检查，但 PD 和 Store 的 Docker 健康检查都只访问 `/v1/health`，不能证明 Raft 多数派或 Store 注册已就绪。Server entrypoint 会等待 PD 至少报告一个 `Up` 的 Store；运维时仍应检查 PD `/v1/ready` 和 `/v1/stores`。
+
+#### 5.5 Store 重启后的恢复 {#store-recovery}
+
+启动时，Store 先直接向 PD 核验持久化分区及成员信息，再恢复其引擎。PD 查询不可用、结果不明确或成员无效时，会保留本地数据并阻止 Store 启动。
+先恢复 PD 连通性或修正元数据，再重试启动；不要删除数据库、Raft 文件或重置 peer 来绕过失败。已有持久化 Raft 配置不会被 PD 的初始成员信息替换。
+
+只有 PD 对持久化图分区明确返回 `NOT_FOUND` 时，才跳过该图分区的恢复，例如图在 Store 离线期间已被删除。
+其本地数据和 Raft 文件仍保留，其他图可继续恢复；清理前先确认所有权及需要保留的数据。
+
+副本迁移中重试同一成员变更时，会继续追赶已有 learner，并在追赶后提升为投票成员。每次追赶检查最多等待 600 秒，再返回 `TASK_CONTINUE`；
+这不是整个迁移的截止时间。继续下一项节点操作前，应同时核对实际 voter/learner 列表、复制进度和最新心跳，参见 [PD 的 Store 退役流程](/cn/docs/quickstart/hugegraph/hugegraph-pd/)。
 
 ### 6 多节点部署示例
 

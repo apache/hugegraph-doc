@@ -6,6 +6,9 @@ weight: 3
 
 ## Computer 配置选项
 
+本页配置 **Java/BSP Computer 运行时**。Vermeer 使用 INI 文件与任务 `params`，
+请参考独立的 [Vermeer 指南](/cn/docs/quickstart/computing/hugegraph-vermeer/)。
+
 表格中的默认值来自 `computer-api` 模块的 `ComputerOptions.java`；发行包的 `conf/computer.properties` 显式设置的值以“代码默认值（发行包：实际值）”标注。`rpc.*` 等通用配置由 HugeGraph Commons 提供，以下会单独标出发行包实际值。
 
 ### 配置文件从哪里来
@@ -98,7 +101,8 @@ HugeGraph-Computer 核心作业设置。
 
 ### 4. 快照与存储配置
 
-HugeGraph-Computer 支持快照功能,可将顶点/边分区保存到本地存储或 MinIO 对象存储,用于断点恢复或加速重复计算。
+快照用于在后续作业中复用**输入顶点/边分区**。当前实现通过 MinIO 上传和下载，Worker 本地文件是中转数据，
+不构成独立的纯本地快照后端。快照不保存算法状态或传输中的消息；后续作业会重新开始计算，不会从失败超步继续。
 
 #### 4.1 基础快照配置
 
@@ -109,9 +113,10 @@ HugeGraph-Computer 支持快照功能,可将顶点/边分区保存到本地存�
 | snapshot.name | "" (空) | 用户自定义的快照名称,用于区分不同的快照。 |
 {.td-table--wide}
 
-#### 4.2 MinIO 集成(可选)
+#### 4.2 MinIO 存储 {#42-minio-集成可选}
 
-MinIO 可用作 K8s 部署中快照的分布式对象存储后端。
+启用 `snapshot.write` 或 `snapshot.load` 时，应配置可访问的 MinIO 端点、凭据和存储桶。
+作业会检查存储桶，不存在时尝试创建；需授予对应存储桶和对象权限，或预先创建存储桶。
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
@@ -121,27 +126,39 @@ MinIO 可用作 K8s 部署中快照的分布式对象存储后端。
 | snapshot.minio_bucket_name | "" (空) | 用于存储快照数据的 MinIO 存储桶名称。 |
 {.td-table--wide}
 
-**使用场景:**
-- **断点恢复**:作业失败后从快照恢复,避免重新加载数据
-- **重复计算**:多次运行同一算法时从快照加载数据以加速启动
-- **A/B 测试**:保存同一数据集的多个快照版本,测试不同的算法参数
+#### 复用输入快照 {#computer-snapshot-reuse}
 
-**示例:本地快照**(在 `computer.properties` 中):
-```properties
-snapshot.write=true
-snapshot.name=pagerank-snapshot-20260201
-```
+适用于同一输入上的重复计算或参数对比。后续作业保持相同的 `snapshot.name`、`worker.partitioner` 和 `job.partitions_count`，
+并确认已保存输入包含新算法所需的属性。刷新源数据时使用新的快照名，避免多个作业同时写入同一个快照。
 
-**示例:MinIO 快照**(在 K8s CRD `computerConf` 中):
-```yaml
-computerConf:
-  snapshot.write: "true"
-  snapshot.name: "pagerank-snapshot-v1"
-  snapshot.minio_endpoint: "http://minio:9000"
-  snapshot.minio_access_key: "my-access-key"
-  snapshot.minio_secret_key: "my-secret-key"
-  snapshot.minio_bucket_name: "hugegraph-snapshots"
-```
+1. **配置共享存储。** 在所有作业进程的 `conf/computer.properties` 中设置以下值，使用实际端点和凭据：
+
+   ```properties
+   snapshot.name=graph-input-v1
+   snapshot.minio_endpoint=http://minio:9000
+   snapshot.minio_access_key=<access-key>
+   snapshot.minio_secret_key=<secret-key>
+   snapshot.minio_bucket_name=hugegraph-snapshots
+   ```
+
+1. **保存首次输入。** 使用正常数据源读取器运行作业，等待输入处理和快照上传完成：
+
+   ```properties
+   snapshot.write=true
+   snapshot.load=false
+   ```
+
+1. **在后续作业复用。** 保留存储设置及兼容的分区配置，使用新的 `job.id`，并通过以下设置重新开始计算：
+
+   ```properties
+   snapshot.write=false
+   snapshot.load=true
+   ```
+{.steps}
+
+Kubernetes 部署在 `spec.computerConf` 中以字符串值设置同样的键。使用 Computer 1.7.0 清单前，
+先应用 [MinIO Service 端口修正](/cn/docs/quickstart/computing/hugegraph-computer/)。
+
 
 ---
 

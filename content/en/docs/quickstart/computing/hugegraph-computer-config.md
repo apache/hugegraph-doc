@@ -6,6 +6,9 @@ weight: 3
 
 ## Computer Config Options
 
+This reference configures the **Java/BSP Computer runtime**. Vermeer uses INI files and task `params`;
+see the [Vermeer guide](/docs/quickstart/computing/hugegraph-vermeer/) for that separate engine.
+
 The defaults in the tables come from `ComputerOptions.java` in `computer-api`; explicit `conf/computer.properties` overrides are shown as "code default (distribution: actual value)". Common options such as `rpc.*` come from HugeGraph Commons; distribution values are listed separately below.
 
 ### Configuration Sources
@@ -98,7 +101,9 @@ Configuration for loading input data from HugeGraph or other sources.
 
 ### 4. Snapshot & Storage Configuration
 
-HugeGraph-Computer supports snapshot functionality to save vertex/edge partitions to local storage or MinIO object storage, enabling checkpoint recovery or accelerating repeated computations.
+Snapshots reuse **input vertex/edge partitions** for a subsequent job. The current implementation uploads and downloads them through MinIO;
+local worker files are staging data, not an independent local-only snapshot backend. A snapshot does not capture algorithm state or in-flight messages,
+so a later job starts computation again rather than resuming a failed superstep.
 
 #### 4.1 Basic Snapshot Configuration
 
@@ -109,9 +114,10 @@ HugeGraph-Computer supports snapshot functionality to save vertex/edge partition
 | snapshot.name | "" (empty) | User-defined snapshot name to distinguish different snapshots. |
 {.td-table--wide}
 
-#### 4.2 MinIO Integration (Optional)
+#### 4.2 MinIO storage {#42-minio-integration-optional}
 
-MinIO can be used as a distributed object storage backend for snapshots in K8s deployments.
+Configure a reachable MinIO endpoint, credentials and bucket whenever `snapshot.write` or `snapshot.load` is enabled.
+The job checks the bucket and attempts to create it if absent; grant the needed bucket/object permissions or provision the bucket in advance.
 
 | config option | default value | description |
 |---------------|---------------|-------------|
@@ -121,27 +127,40 @@ MinIO can be used as a distributed object storage backend for snapshots in K8s d
 | snapshot.minio_bucket_name | "" (empty) | MinIO bucket name for storing snapshot data. |
 {.td-table--wide}
 
-**Usage Scenarios:**
-- **Checkpoint Recovery**: Resume from snapshots after job failures, avoiding data reloading
-- **Repeated Computations**: Load data from snapshots when running the same algorithm multiple times
-- **A/B Testing**: Save multiple snapshot versions of the same dataset to test different algorithm parameters
+#### Reuse an input snapshot {#computer-snapshot-reuse}
 
-**Example: Local Snapshot** (in `computer.properties`):
-```properties
-snapshot.write=true
-snapshot.name=pagerank-snapshot-20260201
-```
+Use this workflow for repeated computations or parameter comparisons on the same input. Keep the same `snapshot.name`,
+`worker.partitioner` and `job.partitions_count`; ensure the saved input contains the properties needed by the later algorithm.
+Use a new snapshot name when refreshing source data, and avoid concurrent writers to the same snapshot.
 
-**Example: MinIO Snapshot** (in K8s CRD `computerConf`):
-```yaml
-computerConf:
-  snapshot.write: "true"
-  snapshot.name: "pagerank-snapshot-v1"
-  snapshot.minio_endpoint: "http://minio:9000"
-  snapshot.minio_access_key: "my-access-key"
-  snapshot.minio_secret_key: "my-secret-key"
-  snapshot.minio_bucket_name: "hugegraph-snapshots"
-```
+1. **Configure shared storage.** Set these values in `conf/computer.properties` for all job processes, using your own endpoint and credentials:
+
+   ```properties
+   snapshot.name=graph-input-v1
+   snapshot.minio_endpoint=http://minio:9000
+   snapshot.minio_access_key=<access-key>
+   snapshot.minio_secret_key=<secret-key>
+   snapshot.minio_bucket_name=hugegraph-snapshots
+   ```
+
+1. **Save the first input.** Run the job with the normal source reader and wait for input processing and snapshot uploads to finish:
+
+   ```properties
+   snapshot.write=true
+   snapshot.load=false
+   ```
+
+1. **Reuse it in a later job.** Keep the storage settings and compatible partition configuration, use a new `job.id`, and restart computation with:
+
+   ```properties
+   snapshot.write=false
+   snapshot.load=true
+   ```
+{.steps}
+
+For Kubernetes, place the same keys under `spec.computerConf` as string values. Before using Computer 1.7.0 manifests,
+apply the [MinIO Service port correction](/docs/quickstart/computing/hugegraph-computer/).
+
 
 ---
 

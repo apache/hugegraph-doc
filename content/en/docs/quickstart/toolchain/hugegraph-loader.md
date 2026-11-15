@@ -176,16 +176,24 @@ A release may not include all `master` functionality; use the source build below
 
 #### 2.3 Clone source code to compile and install
 
-Building Loader from the master branch requires Java 17, Maven 3.6.3+, and Python 3.9+. Clone the repository and build:
+Building current Loader source requires **JDK 17, Maven 3.6.3+, and Python 3.9+**, including a matching Server SDK.
 
-```bash
-git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
-cd hugegraph-toolchain
-mvn package -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
-cd hugegraph-loader/apache-hugegraph-loader-*
-```
+1. **Prepare Toolchain and its SDK.** Follow the clone and
+   [SDK preparation steps in the Tools guide](/docs/quickstart/toolchain/hugegraph-tools/#prepare-server-sdk).
+   Keep the same terminal, with `candidate_dir` pointing to the prepared directory, and run the next command from the Toolchain repository root.
 
-To build against candidate Server SDKs during development, refer to the [Java 17 migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md).
+1. **Package Loader and open its distribution.**
+
+   ```bash
+   mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
+     -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+     package -pl hugegraph-client,hugegraph-loader -am \
+     -DskipTests -Dmaven.javadoc.skip=true -ntp
+   cd hugegraph-loader/apache-hugegraph-loader-*
+   ```
+{.steps}
+
+The isolated Maven repository and candidate mode are part of this source-build procedure; a plain `mvn package` does not prepare the SDK.
 
 For Oracle input, obtain a JDBC driver JAR compatible with your Oracle/JDK versions and place it in the extracted Loader `lib/` directory.
 The startup script loads JARs there; installing a driver only in the local Maven repository does not put it on Loader’s runtime classpath.
@@ -962,7 +970,7 @@ With the schema, data and mapping ready, run Loader with the options below.
 | `--serializer`                           | binary      |      | The serializer type when creating graph if not exists              |
 | `--scheduler-type`                       | distributed |      | The task scheduler type when creating graph if not exists          |
 | `--batch-failure-fallback`               | true        |      | Whether to fallback to single insert when batch insert fails       |
-{.td-table--wide}
+{.td-table--wide .expand}
 
 The mapping file option `--file` (`-f`) is required; other options use their defaults. A valid minimal invocation is:
 
@@ -993,6 +1001,19 @@ For a long import, use a progress file to resume after an interruption.
 
 Set `--incremental-mode` to `true` to resume from a progress file. Loader records progress when it closes normally after a successful import
 or a normal stop; an unexpected failure may prevent this write.
+
+The resume behavior depends on the input source:
+
+| Input source | What determines the next starting point |
+| --- | --- |
+| FILE / HDFS | Loader restores the recorded per-file positions from its progress file |
+| JDBC / GRAPH | Loader does not restore a source-row or graph-scan position; restarting can read previously imported elements again |
+| Kafka | Consumer-group offsets stored by Kafka determine the starting point; Loader's progress file does not replace them |
+
+A readable GRAPH progress file does not mean the graph scan can resume at a saved position.
+Review the target graph before retrying and account for repeated writes, especially with update strategies such as `SUM` or `APPEND`.
+Neither these checkpoints nor Kafka's automatic offset commits provide an exactly-once graph-write guarantee.
+
 The progress file is in `${struct}` and named `load-progress_${timestamp}`, where `${struct}` is the mapping-file prefix and `${timestamp}` is the
 import start time, formatted as `yyyyMMdd-HHmmss`. For example, an import started at `2019-10-10 12:30:30` with mapping file `struct-example.json`
 writes `struct-example/load-progress_20191010-123030`. When the directory holds several progress files, the resumed import reads the last one in name
@@ -1001,15 +1022,19 @@ order, which is the most recent one.
 > Note: A progress file is written after a successful import or a normal stop (including an error limit), regardless of `--incremental-mode`
 > or `--print-progress`. An import aborted by an unexpected failure may not write one.
 
-After stopping an import with `Ctrl+C` or `kill`, set `--incremental-mode true` to continue from the recorded position.
+For FILE/HDFS input, after stopping an import with `Ctrl+C` or `kill`, set `--incremental-mode true`
+to continue from the recorded position.
 A forced stop with `kill -9` cannot save progress.
 
 Invalid data or connection failures can exhaust `--max-read-errors`, `--max-parse-errors` or `--max-insert-errors`.
 Correct the rows in the failure files, then use `--failure-mode true` to retry them. This leaves the original data files unchanged.
 Rows that still fail are recorded again and deduplicated when the failure file closes. Failure mode lifts these three limits and scans the entire file.
+File-backed retries use the source's date format and `time_zone`; keep those settings consistent with the original input.
 
 Each input source, that is each item of `structs` in the mapping file, gets its own failure file. The file is named after the `id` of that input source with the suffix `.error` and is stored in the `${struct}/failure-data` directory.
+
 Every failed line is written as a pair of lines: a tip line starting with `#### READ ERROR:`, `#### PARSE ERROR:` or `#### INSERT ERROR:`, followed by the original data line. When the input source has a header, that header is written as JSON to a sibling `${id}.header` file, so the failure file can be read back with the right columns.
+
 For example, if the mapping file has an input source with id `1` holding a vertex mapping person and an input source with id `3` holding an edge mapping knows, each of which has some error lines, you will see the following files in the `${struct}/failure-data` directory when the Loader exits:
 
 - 1.error: the failed lines of input source 1, each preceded by its tip line

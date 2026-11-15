@@ -203,6 +203,7 @@ The following tables describe current master entrypoints and Compose files, not 
 
 RocksDB caches use off-heap memory. When `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` is unset, the system sizes the cache automatically from the container memory limit (cgroup), or falls back to the host memory if no container limit is configured.
 Because the default Docker Compose file does not set a memory limit, each Store sizes its budget using the host's full capacity. When deploying multiple Stores on a single host, specify a container memory limit or set this variable directly to an explicit byte value.
+
 Additionally, the Store startup script sizes the JVM heap and direct memory based on host free memory by default (up to 2 GiB each). Constrain JVM memory explicitly via `JAVA_OPTS` to match your container budget (for example, `JAVA_OPTS="-Xmx1g -XX:MaxDirectMemorySize=512m"` for a 4 GiB container). See the [HStore configuration reference](/docs/quickstart/hugegraph/hugegraph-hstore/#rocksdb-memory-budget) for the detailed calculation rules.
 
 

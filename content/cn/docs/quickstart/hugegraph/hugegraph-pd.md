@@ -424,7 +424,11 @@ curl -u "store:${HG_PD_AUTH_SECRET_KEY:?请先设置 PD 部署密钥}" \
 > [!WARNING]
 > **生产环境分别保护 Server 与 PD 端口**
 >
-> 生产环境的 Server 图 API 必须按 [Server 认证与授权配置](/cn/docs/config/config-authentication/)启用 Auth、IP 白名单和最小权限授权，并保留、保护 Server `audit-*.log`。这些设置不保护 PD：当前主线 PD REST 使用 `auth.secret-key`；1.7.0 的认证实现仅检查用户名是否属于内部服务名，不比较密码。Raft 端口应保持 `raft.ip-whitelist.enabled` 并只允许配置的 peer，PD REST 与 gRPC 端口也必须限制在受信网络内。PD 的 `/v1/health`、`/v1/ready` 和 Actuator 探针无需 Basic 认证，须由网络策略限制可达范围；主线默认日志配置生成的 `logs/audit-hugegraph-pd.log` 也须纳入日志保护。
+> 生产环境的 Server 图 API 必须按 [Server 认证与授权配置](/cn/docs/config/config-authentication/)启用 Auth、IP 白名单和最小权限授权，并保留、保护 Server `audit-*.log`。
+>
+> 这些设置不保护 PD：当前主线 PD REST 使用 `auth.secret-key`；1.7.0 的认证实现仅检查用户名是否属于内部服务名，不比较密码。
+>
+> Raft 端口应保持 `raft.ip-whitelist.enabled` 并只允许配置的 peer，PD REST 与 gRPC 端口也必须限制在受信网络内。PD 的 `/v1/health`、`/v1/ready` 和 Actuator 探针无需 Basic 认证，须由网络策略限制可达范围；主线默认日志配置生成的 `logs/audit-hugegraph-pd.log` 也须纳入日志保护。
 
 #### 7.2 健康检查
 

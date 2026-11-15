@@ -47,7 +47,9 @@ HG_PD_AUTH_SECRET_KEY='<24 字节随机值，例如 openssl rand -hex 24>'
 
 `HUGEGRAPH_ADMIN_PASSWORD` 非空时会以 `PASSWORD` 启用 Server 鉴权，Hubble 通过 Server API 自动识别该模式；该密码只在首次初始化内置 `admin` 账号。不设置或设为空值则关闭鉴权，这只适用于可信的本地环境。
 
-当前主线 Compose 会把 `HUGEGRAPH_AUTH_TOKEN_SECRET` 传给 `HG_SERVER_AUTH_TOKEN_SECRET`。同一密钥可让主线多 Server 副本验证相同 token，并在容器重建后继续验证已签发 token；HA Compose 还要求显式提供该密钥。`hugegraph/hugegraph:1.7.0` 单机镜像的 Docker 入口脚本只根据 `PASSWORD` 开启鉴权，不读取 `HG_SERVER_AUTH_TOKEN_SECRET`，因此不要把 `.env` 中该变量视为该镜像的固定 JWT 配置。若在 1.7.0 中需要固定 JWT secret，请在其认证图配置 `conf/graphs/hugegraph.properties` 中显式设置 `auth.token_secret`，并确保该配置随容器替换保留；认证图路径及密钥生成说明见[鉴权配置指南](/cn/docs/config/config-authentication/)。
+当前主线 Compose 会把 `HUGEGRAPH_AUTH_TOKEN_SECRET` 传给 `HG_SERVER_AUTH_TOKEN_SECRET`。同一密钥可让主线多 Server 副本验证相同 token，并在容器重建后继续验证已签发 token；HA Compose 还要求显式提供该密钥。
+
+`hugegraph/hugegraph:1.7.0` 单机镜像的 Docker 入口脚本只根据 `PASSWORD` 开启鉴权，不读取 `HG_SERVER_AUTH_TOKEN_SECRET`，因此不要把 `.env` 中该变量视为该镜像的固定 JWT 配置。若在 1.7.0 中需要固定 JWT secret，请在其认证图配置 `conf/graphs/hugegraph.properties` 中显式设置 `auth.token_secret`，并确保该配置随容器替换保留；认证图路径及密钥生成说明见[鉴权配置指南](/cn/docs/config/config-authentication/)。
 
 之后修改 `HUGEGRAPH_ADMIN_PASSWORD` 不会轮换已有密码，请使用用户 API 修改。
 
@@ -203,6 +205,7 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 RocksDB 缓存使用堆外内存。未设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` 时，系统将优先根据容器内存限制（cgroup）自动计算；未配置容器限制时则按宿主机内存推导。
 由于默认 Docker Compose 未限制容器内存，各 Store 均会以宿主机整机容量估算；若单机部署多个 Store，建议显式配置容器内存限制，或直接为该变量指定字节数。
+
 此外，Store 启动脚本默认会根据系统空闲内存分配 JVM 堆与直接内存（上限各 2 GiB）。建议结合容器规格，通过 `JAVA_OPTS` 显式约束 JVM 内存（例如容器为 4 GiB 时配置 `JAVA_OPTS="-Xmx1g -XX:MaxDirectMemorySize=512m"`）。详细推导公式见 [HStore 配置参考](/cn/docs/quickstart/hugegraph/hugegraph-hstore/#rocksdb-memory-budget)。
 
 ### Server 变量

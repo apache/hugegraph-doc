@@ -4,99 +4,66 @@ linkTitle: "HugeGraph-AI"
 weight: 3
 ---
 
-`hugegraph-ai` provides Python clients for HugeGraph, graph machine learning tools, and LLM tools for knowledge graph construction and GraphRAG applications.
+`hugegraph-ai` provides graph clients, knowledge-graph construction, GraphRAG, MCP tools and graph learning.
+Choose the module for your task; deployment and API examples are maintained in its guide.
+Current source is the `1.8.0` workspace; source versions do not establish that every package or image has been published.
 
-[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) · [Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) · [Source repository](https://github.com/apache/hugegraph-ai)
 
-## Modules
+## Modules {#modules}
 
-- [hugegraph-llm-sdk](./hugegraph-llm-sdk.md): standalone Python SDK for schema design, validation, and reviewed property-graph extraction.
-- [hugegraph-mcp](./hugegraph-mcp.md): graph queries, schema tools, and controlled writes for AI clients through MCP.
-- [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm): knowledge graph construction, GraphRAG, and natural-language graph queries.
-- [hugegraph-ml](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml): reads graph data from HugeGraph and runs graph learning models.
-- [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client): a Python SDK for managing schemas and graph data and running Gremlin queries.
-- [vermeer-python-client](https://github.com/apache/hugegraph-ai/tree/main/vermeer-python-client): a Python SDK for the Vermeer graph computing service.
+- [GraphRAG application](./hugegraph-llm.md) — Run the Web UI and REST service for document ingestion, graph retrieval and natural-language queries.
+- [Standalone LLM SDK](./hugegraph-llm-sdk.md) — Embed schema design, validation and reviewed graph extraction in Python applications.
+- [MCP tools](./hugegraph-mcp.md) — Connect AI clients to graph queries, schemas and controlled writes.
+- [Python graph client](/docs/clients/client/hugegraph-client-python/) — Manage schemas, graph data and Gremlin requests.
+- [Vermeer Python client](./vermeer-python-client.md) — Automate graph loading, computation and result retrieval.
+- [Graph learning](./hugegraph-ml.md) — Read HugeGraph data and run graph-learning examples.
+{.cards .td-cards-list}
 
-The repository uses a `uv` workspace whose members are `hugegraph-llm-sdk`, `hugegraph-llm`, and `hugegraph-python-client`. `hugegraph-ml` and `vermeer-python-client` are editable path dependencies rather than workspace members. The current repository version is `1.8.0`. The client source directory is named `hugegraph-python-client`, but its distribution name is `hugegraph-python`.
+## Requirements {#requirements}
 
-## Requirements
+- Current source modules require Python **3.12+**; the LLM application supports Python **3.12–3.14**.
+- Use [`uv`](https://docs.astral.sh/uv/getting-started/installation/) for the source workspace.
+- The graph client requires HugeGraph Server **1.5.0+** and rejects detectable older versions. Check each feature's Server-version requirement separately.
 
-- HugeGraph-AI root workspace: Python >= 3.12 (Python 3.12–3.14 supported)
-- HugeGraph-LLM & HugeGraph-LLM-SDK: Python >= 3.12 (Python 3.12–3.14 supported)
-- HugeGraph-ML: Python 3.10 or later
-- PyPI `hugegraph-python` 1.5.0: Python 3.9 or later; current repository source uses Python >= 3.12 with the workspace
-- Vermeer Python client: current source requires Python 3.10 or later, although package metadata still says `>=3.9`; see the [client guide](/docs/quickstart/hugegraph-ai/vermeer-python-client/)
-- `uv` 0.7 or later
-- HugeGraph Server 1.5.0 or later; the current workspace client rejects detectable older versions
+The `uv` workspace contains `hugegraph-llm-sdk`, `hugegraph-llm`, and `hugegraph-python-client`.
+Vermeer is an editable path dependency; ML and MCP have their own installation guides.
+The Python client's source directory is `hugegraph-python-client`, while its distribution name is `hugegraph-python`.
 
-## Optional Dependency Groups
+## Optional Dependency Groups {#optional-dependency-groups}
 
-The root project declares one extra per module plus a few combined ones:
+Run root workspace commands from the repository checkout:
 
 | Extra | Installs |
-|---|---|
-| `llm` | `hugegraph-llm` |
-| `ml` | `hugegraph-ml` |
-| `python-client` | `hugegraph-python` (source directory `hugegraph-python-client`) |
+| --- | --- |
+| `llm` | LLM application and its dependencies |
+| `vectordb` | LLM application with Milvus/Qdrant support |
+| `python-client` | `hugegraph-python` |
 | `vermeer` | `vermeer-python-client` |
-| `dev` | pytest, pytest-cov, coverage, pylint, ruff, mypy, ty, pre-commit |
-| `nk-llm` | `hugegraph-llm`, `hugegraph-python-client`, and Nuitka for the compiled image |
-| `all` | all four module packages |
+| `dev` | pytest, coverage, Ruff, ty and pre-commit |
+| `nk-llm` | LLM application, graph client and Nuitka image-build dependencies |
+| `all` | LLM application, graph client and Vermeer client; does not include ML or MCP |
 
-`hugegraph-llm` itself declares a `vectordb` extra that adds `pymilvus` and `qdrant-client`.
+There is no root `ml` extra. Follow the separate ML and MCP guides rather than adding their dependencies to the LLM deployment.
 
-## Deploy with Docker Compose
+## Deploy with Docker Compose {#deploy-with-docker-compose}
 
-The repository includes a Compose file that starts both HugeGraph Server and the RAG service:
+Follow the [canonical Compose procedure](./hugegraph-llm.md#deploy-with-docker-compose).
+It prepares the bootstrap file and builds the source workspace's expected RAG image before starting Server and RAG together.
+For Kubernetes and persistent application configuration, use the [unified Helm deployment](/docs/quickstart/hugegraph/hugegraph-helm/#8-graphrag).
 
-```bash
-git clone https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai
-cp docker/env.template docker/.env
-# Edit docker/.env and set PROJECT_PATH to the absolute path of this repository
-touch hugegraph-llm/.env
-# Set GRAPH_URL=server:8080 in hugegraph-llm/.env and supply matching Server credentials
-cd docker
-docker compose -f docker-compose-network.yml up -d
-```
+## Start the RAG Service from Source {#start-the-rag-service-from-source}
 
-Default addresses:
+Follow [source startup](./hugegraph-llm.md#start-from-source), then the [workflow guide](./quick_start.md).
+`uv sync --extra llm` creates `.venv` at the workspace root. The checkout does not track `uv.lock`, so resolution follows `pyproject.toml` constraints.
+For deployment defaults, saved model connections and persistent files, read the [configuration reference](./config-reference.md).
 
-- HugeGraph Server: `http://localhost:8080`
-- RAG service and Web UI: `http://localhost:8001`
+## Install ML Dependencies {#install-ml-dependencies}
 
-## Start the RAG Service from Source
+ML is a separate project. Use the [ML installation and examples](./hugegraph-ml.md); root `--extra all` does not install it.
 
-```bash
-git clone https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai
-uv sync --extra llm
-source .venv/bin/activate
-cd hugegraph-llm
-python -m hugegraph_llm.demo.rag_demo.app
-```
+## Next Steps {#next-steps}
 
-`uv sync` creates `.venv` at the repository root. Installing from the root resolves workspace members and path dependencies together. The repository does not track `uv.lock`; `uv sync` resolves the declarations and version constraints in `pyproject.toml`.
-
-## Install ML Dependencies
-
-```bash
-cd hugegraph-ai
-uv sync --extra ml
-source .venv/bin/activate
-cd hugegraph-ml/src
-```
-
-Example scripts are under `hugegraph-ml/src/hugegraph_ml/examples/`.
-
-## Next Steps
-
-- [HugeGraph-LLM SDK](./hugegraph-llm-sdk.md)
-- [HugeGraph-MCP](./hugegraph-mcp.md)
-- [HugeGraph-LLM](./hugegraph-llm.md)
-- [HugeGraph-LLM workflow](./quick_start.md)
-- [Configuration reference](./config-reference.md)
-- [REST API](./rest-api.md)
-- [HugeGraph-ML](./hugegraph-ml.md)
-- [Python client](/docs/clients/client/hugegraph-client-python/)
-- [Vermeer Python Client](./vermeer-python-client.md)
+- [Build indexes and query documents](./quick_start.md)
+- [Configure models, storage and credentials](./config-reference.md)
+- [Call the RAG and configuration APIs](./rest-api.md)

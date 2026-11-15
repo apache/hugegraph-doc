@@ -4,29 +4,38 @@ linkTitle: "HugeGraph-LLM"
 weight: 1
 ---
 
-HugeGraph-LLM 用于知识图谱构建、GraphRAG 和自然语言图查询。演示服务把 Gradio 页面和 FastAPI 接口挂在同一个进程上，直接从源码启动时默认只监听本机 `127.0.0.1:8001`，可用 `http://localhost:8001` 访问。若显式启动源码入口且只需本机访问，可指定 `--host 127.0.0.1`；源码 Docker 镜像的 `Dockerfile.llm` 会覆盖默认值并监听 `0.0.0.0:8001`，不要在容器内改为 loopback，否则容器外无法通过映射端口访问。
+HugeGraph-LLM 用于知识图谱构建、GraphRAG 和自然语言图查询。
+本文面向当前 1.8 源码构建；部署时请固定支持下述配置契约的镜像版本。
+
+演示服务把 Gradio 页面和 FastAPI 接口挂在同一个进程上，直接从源码启动时默认只监听本机 `127.0.0.1:8001`，可用 `http://localhost:8001` 访问。若显式启动源码入口且只需本机访问，可指定 `--host 127.0.0.1`；源码 Docker 镜像的
+`Dockerfile.llm` 会覆盖默认值并监听 `0.0.0.0:8001`，不要在容器内改为 loopback，否则容器外无法通过映射端口访问。
 
 > [!WARNING]
 > 生产环境必须为 HugeGraph-LLM 启用自身的登录认证（`ENABLE_LOGIN=True`，并替换 `USER_TOKEN`、`ADMIN_TOKEN`），同时在防火墙或网络入口设置来源 IP 白名单。HugeGraph Server 还必须单独开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（标准日志文件为 `audit-*.log`），为 `GRAPH_USER` 配置只具备该服务所需权限的账号。AI 服务 token 只认证 LLM 页面和 API，不能替代 HugeGraph Server 认证。
 
-## 环境要求
+<span id="环境要求"></span>
+
+## 环境要求 {#requirements}
 
 > AI 总结项目文档：[Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
 
 - Python >= 3.12（支持 Python 3.12–3.14）
-- `uv` 0.7 或更高版本
+- [`uv`](https://docs.astral.sh/uv/getting-started/installation/)
 - HugeGraph Server 1.5.0 或更高版本；当前 workspace 中的 Python 客户端会拒绝可探测到的更低版本
 
 支持以下部署与运行方式：
 
-- [Docker Compose 部署](#docker-compose-部署) — 一键拉起 Server 与 HugeGraph-LLM 容器环境。
-- [Kubernetes 部署](#kubernetes-部署) — 基于 Helm 将 RAG 服务部署到 K8s 集群。
-- [从源码启动](#从源码启动) — 使用 `uv` 配置 Python 环境并在本地运行 Gradio/FastAPI 服务。
+- [Docker Compose 部署](#deploy-with-docker-compose) — 一键拉起 Server 与 HugeGraph-LLM 容器环境。
+- [Kubernetes 部署](#deploy-on-kubernetes) — 基于 Helm 将 RAG 服务部署到 K8s 集群。
+- [从源码启动](#start-from-source) — 使用 `uv` 配置 Python 环境并在本地运行 Gradio/FastAPI 服务。
 {.cards}
 
-## Docker Compose 部署
+<span id="docker-compose-部署"></span>
 
-在 HugeGraph-AI 仓库根目录准备环境文件：
+## Docker Compose 部署 {#deploy-with-docker-compose}
+
+当前源码工作区的 Compose 文件使用自身的 `1.8.0` 镜像，请先从检出源码本地构建；
+源码版本元数据不代表相应公共镜像标签已经发布。在 HugeGraph-AI 仓库根目录准备环境文件：
 
 ```bash
 git clone https://github.com/apache/hugegraph-ai.git
@@ -34,7 +43,8 @@ cd hugegraph-ai
 cp docker/env.template docker/.env
 # 编辑 docker/.env，将 PROJECT_PATH 改为当前仓库的绝对路径
 touch hugegraph-llm/.env
-# 编辑 hugegraph-llm/.env：GRAPH_URL=server:8080，并设置与 Server 相符的 GRAPH_USER、GRAPH_PWD
+# 编辑 hugegraph-llm/.env：GRAPH_URL=http://server:8080，并设置与 Server 相符的 GRAPH_USER、GRAPH_PWD
+./scripts/build_llm_image.sh
 cd docker
 docker compose -f docker-compose-network.yml up -d
 docker compose -f docker-compose-network.yml ps
@@ -47,37 +57,49 @@ docker compose -f docker-compose-network.yml ps
 
 Compose 文件会把 `${PROJECT_PATH}/hugegraph-llm/.env` 挂载到容器内的 `/home/work/hugegraph-llm/.env`，因此该文件必须在容器启动前存在。资源目录 `hugegraph-llm/src/hugegraph_llm/resources` 也可以用同样方式挂载，该挂载默认被注释掉。
 
-应用读取 `GRAPH_URL`，Compose 注入的 `HUGEGRAPH_HOST` 和 `HUGEGRAPH_PORT` 不会覆盖它；因此容器内要将 `GRAPH_URL` 设为 `server:8080`，并在 `.env` 中配置匹配 HugeGraph Server 的用户名和密码。
+默认 Compose 只挂载引导配置 `.env`，容器重建后保留应用保存的连接还需要可写持久化存储。
+持久部署可使用下文 Helm 方案；自行挂载资源目录时，设置 `HUGEGRAPH_LLM_RESOURCE_PATH`，并明确保留
+`HUGEGRAPH_LLM_ENV_PATH=/home/work/hugegraph-llm/.env` 作为引导配置。详见[配置路径](./config-reference.md#configuration-files)。
 
-## 容器镜像
+应用读取 `GRAPH_URL`，Compose 注入的 `HUGEGRAPH_HOST` 和 `HUGEGRAPH_PORT` 不会覆盖它；因此容器内要将 `GRAPH_URL` 设为 `http://server:8080`，并在 `.env` 中配置匹配 HugeGraph Server 的用户名和密码。
 
-| 镜像 | 构建文件 | 内容 |
-|---|---|---|
+<span id="容器镜像"></span>
+
+## 容器镜像 {#container-images}
+
+| 构建文件 | 内容 |
+|---|---|
 | `docker/Dockerfile.llm` | 源码运行镜像构建配方，入口是 `python -m hugegraph_llm.demo.rag_demo.app --host 0.0.0.0 --port 8001` |
 | `docker/Dockerfile.nk` | 基于 `nk-llm` extra 用 Nuitka 编译的二进制镜像构建配方，入口是 `./app.dist/app.bin` |
 
-Compose 文件引用未指定标签的 `hugegraph/rag`，Docker 会使用默认的 `latest` 标签。`scripts/build_llm_image.sh` 则以 `docker/Dockerfile.llm` 在本地构建 `hugegraph/graphrag:1.7.0`。Compose 引用的 `hugegraph/rag:latest` 与本地构建的 `hugegraph/graphrag:1.7.0` 是不同镜像；本地构建不会自动替换 Compose 所用镜像。要在 Compose 中运行本地构建结果，需将 Compose 的 `image` 改为 `hugegraph/graphrag:1.7.0`。该脚本只构建镜像，不会推送。两个 Dockerfile 都声明 `8001` 端口、以非 root 用户 `work` 运行，并用 `curl -f http://localhost:8001/` 做镜像健康检查；两者都为资源目录声明数据卷。
-
-`scripts/build_llm_image.sh` 会用 `docker/Dockerfile.llm` 构建并打上 `hugegraph/graphrag:1.7.0` 标签。
-
-## Kubernetes 部署
-
-`docker/charts/hg-llm` 是 RAG 服务的 Helm chart，部署 `hugegraph/graphrag` 镜像。默认发布 `NodePort` 类型的 Service，把节点端口 `8039` 和服务端口 `8080` 映射到容器端口 `8001`，名称固定为 `hg-llm-service`。Ingress 和水平自动扩缩容已定义但默认关闭。
-
-该 chart 只部署 RAG 服务，不会部署 HugeGraph Server。挂载的 `.env` 中要把 `GRAPH_URL` 设为 Pod 可访问的 HugeGraph 地址，并配置匹配的用户名和密码。
-
-chart 中 `image.tag` 仍默认为 `v0.0.1`。当前构建脚本生成的标签是本地 `hugegraph/graphrag:1.7.0`；部署前须确保同名镜像已推送到集群可访问的仓库，或已加载到集群节点，并将 chart 的标签和拉取策略设为匹配的值。
-
-chart 的 `values.yaml` 中，`.env` 和提示词 YAML 的挂载默认被注释掉。提示词 YAML 可用 ConfigMap；`.env` 可能含有密钥和密码，应使用 Secret，并把 `volumes` 中 `env-config` 的 `configMap` 改为 `secret`。Secret 和提示词 ConfigMap 可分别创建：
+Compose 使用 `hugegraph/rag:1.8.0`。本地构建脚本从仓库根目录的 `pyproject.toml` 读取镜像仓库与版本：
 
 ```bash
-kubectl create secret generic hugegraph-llm-env --from-file=.env=/path/to/.env
-kubectl create configmap hugegraph-llm-prompt-config --from-file=/path/to/config_prompt.yaml
+./scripts/build_llm_image.sh
 ```
 
-随后取消 `volumeMounts` 段落的注释，并按需要启用提示词 ConfigMap 的 `volumes` 和挂载。Helm 模板会直接渲染 `values.yaml` 中的卷定义。
+该命令仅在本地构建 `hugegraph/rag:1.8.0`，不会推送镜像。远端部署前应加载到集群节点或推送到自己的镜像仓库；
+本地构建不会替换正在运行的容器。两个 Dockerfile 均暴露 `8001` 端口、以非 root 用户 `work` 运行，并声明资源目录数据卷。
+请持久化可写资源目录，以保留应用保存的连接、提示词和索引。
 
-## 从源码启动
+<span id="kubernetes-部署"></span>
+
+## Kubernetes 部署 {#deploy-on-kubernetes}
+
+使用 [HugeGraph 统一 Helm 部署](/cn/docs/quickstart/hugegraph/hugegraph-helm/#8-graphrag)。
+在 Server 仓库的 `helm/hugegraph` Chart 中，将 `values-rag.yaml` 叠加在单节点或集群预设之后。
+Chart 会为 `hugegraph/rag` 接好同一 release 的 Server 地址与凭据，无需单独部署 AI Chart。
+
+RAG 默认通过 `ClusterIP:8001` 在集群内部访问，单副本采用 `Recreate` 策略，并使用 10 Gi 持久卷；
+升级时保留已保存的连接、提示词和索引。首次验证可使用本地端口转发，再从页面配置模型。
+严格 NetworkPolicy 下，模型及向量库出口需通过 `rag.networkPolicy.extraEgress` 放行，授权入口通过 `extraIngress` 配置；
+策略是否生效取决于 CNI 支持。安装、存储和访问示例统一维护在 Helm 指南中。
+
+已保存连接和部署默认值的关系见[配置参考](./config-reference.md#saved-connections)。
+
+<span id="从源码启动"></span>
+
+## 从源码启动 {#start-from-source}
 
 1. **克隆源代码仓库：**
 
@@ -111,13 +133,18 @@ python -m hugegraph_llm.demo.rag_demo.app \
 
 设置 `HG_DEV_RELOAD=1` 可让 uvicorn 以自动重载方式启动，便于开发调试。
 
-服务以 `hugegraph-llm/.env` 保存模型、HugeGraph 和登录配置。提示词放在 `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml`。缺少文件时，配置代码会按默认值创建。
+在进程环境或 `.env` 中设置登录等部署默认值。页面和配置 API 将应用连接保存到 `settings.yaml`，重启后保留，并优先于部署默认值。
 
-`.env` 路径按以下顺序解析：先看是否设置了 `HUGEGRAPH_LLM_ENV_PATH`；未设置时，从源码运行则使用 `hugegraph-llm/.env`；否则使用当前工作目录下的 `.env`。
+启动时缺少配置会使用代码默认值，不会自动写入文件。使用 `HUGEGRAPH_LLM_RESOURCE_PATH` 指定可写持久化目录，存放设置、提示词和生成的索引。
+挂载只读 Secret 或修改部署默认值前，请先了解[配置路径和优先级](./config-reference.md)。
 
-## 主要功能
+<span id="主要功能"></span>
 
-### 构建 RAG 索引
+## 主要功能 {#main-capabilities}
+
+<span id="构建-rag-索引"></span>
+
+### 构建 RAG 索引 {#build-rag-indexes}
 
 Web 页面的第一个标签页可以处理文本或文件，并执行以下操作：
 
@@ -131,7 +158,7 @@ Schema 可以是内联 JSON，也可以是现有图名。通过 REST API 使用�
 
 该标签页还提供两个生成器。`Graph Schema Generator` 根据查询示例和少样本示例生成 Schema。`Graph Extraction Prompt Generator` 根据描述的场景和选定的参考示例生成抽取提示词。`Graph Extraction Split Type` 下拉框可在抽取前选择 `document`、`paragraph` 或 `sentence` 粒度。
 
-### GraphRAG
+### GraphRAG {#graphrag}
 
 查询流程可以组合直接回答、chunk 向量召回和图召回。图召回先抽取关键词并匹配顶点，再尝试 Text2Gremlin；生成或执行失败时可回退到预定义的图遍历方式。请求参数可控制返回数量、向量距离阈值、模板数量和重排序方式。
 
@@ -139,21 +166,27 @@ Schema 可以是内联 JSON，也可以是现有图名。通过 REST API 使用�
 
 ![知识图谱构建器](/images/docs/hugegraph-ai/gradio-kg.jpg)
 
-### Text2Gremlin
+### Text2Gremlin {#text2gremlin}
 
 `POST /text2gremlin` 根据自然语言、图 Schema 和可选示例生成 Gremlin。自定义提示词必须保留 `{query}`、`{schema}`、`{example}` 和 `{vertices}` 四个占位符。
 
 对应的页面标签可以先用问题与 Gremlin 对照文件（`.json` 或 `.csv`）构建示例向量索引。未上传文件时使用内置的 `resources/demo/text2gremlin.csv`。
 
-### 图工具与管理工具
+<span id="图工具与管理工具"></span>
+
+### 图工具与管理工具 {#graph-and-admin-tools}
 
 `Graph Tools` 标签页可直接执行 Gremlin 查询、手动触发图备份，以及初始化 HugeGraph 演示数据。`Admin Tools` 标签页在校验 `ADMIN_TOKEN` 后展示 `logs/llm-server.log` 的末尾内容，并可刷新或清空该文件。
 
 进程运行期间还有两个后台任务：每天 01:00 执行图备份的定时任务，以及持续更新顶点 id 向量的任务。
 
-## 模型与向量后端
+<span id="模型与向量后端"></span>
 
-聊天、信息抽取和 Text2Gremlin 可以分别使用 OpenAI 兼容接口、Ollama 或 LiteLLM。嵌入模型可独立选择，同样支持这三种提供方。重排序支持 Cohere 和 SiliconFlow。
+## 模型与向量后端 {#models-and-vector-backends}
+
+Chat 支持 OpenAI 兼容接口和 Ollama。抽取与 Text2Gremlin 默认跟随 Chat，独立配置后使用自己的连接；Embedding 单独配置。
+应用接受 `openai`、`ollama/local` 两种 provider。其他服务可通过 OpenAI 兼容代理接入；独立 SDK 仍提供 LiteLLM 适配器。
+Reranker 支持 Cohere 和 SiliconFlow。
 
 默认向量索引使用 FAISS。`CUR_VECTOR_INDEX` 可选 `Faiss`、`Milvus` 或 `Qdrant`，Web 页面的 `5. Set up the vector engine.` 面板提供同样的选择。Milvus 和 Qdrant 需要安装可选依赖：
 
@@ -164,7 +197,9 @@ uv sync --package hugegraph-llm --extra vectordb
 
 页面操作流程见[使用流程](./quick_start.md)，完整环境变量见[配置参考](./config-reference.md)，HTTP 请求格式见[REST API](./rest-api.md)。
 
-## 程序化调用
+<span id="程序化调用"></span>
+
+## 程序化调用 {#programmatic-use}
 
 原有的 `RAGPipeline` 和 `KgBuilder` 类已被流水线调度器取代。通过 `SchedulerSingleton` 按名称调用流程：
 
@@ -186,7 +221,9 @@ print(res.get("graph_only_answer"))
 
 已注册的流程名包括 `rag_raw`、`rag_vector_only`、`rag_graph_only`、`rag_graph_vector`、`text2gremlin`、`build_examples_index`、`build_vector_index`、`graph_extract`、`import_graph_data`、`update_vid_embeddings`、`get_graph_index_info`、`build_schema` 和 `prompt_generate`。`schedule_stream_flow` 是对应的异步流式版本。
 
-## 开发检查
+<span id="开发检查"></span>
+
+## 开发检查 {#development-checks}
 
 先在仓库根目录安装模块和开发工具，再运行与 CI 一致的检查：
 

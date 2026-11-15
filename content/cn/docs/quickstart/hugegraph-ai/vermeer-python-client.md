@@ -10,15 +10,16 @@ weight: 6
 
 ## 环境要求
 
-- 当前源码实际要求 Python 3.10 或更高版本；虽然该模块打包元数据声明 `>=3.9`，代码中的类型标注使用了 Python 3.10 语法
+- 当前源码要求 Python 3.12 或更高版本。
 - 一个可通过 HTTP 访问的 Vermeer master。默认 HTTP 端口为 `6688`；Docker 部署需发布 `6688:6688`，见 [Vermeer 快速上手](../computing/hugegraph-vermeer.md)。
 - `uv`（推荐）或 `pip`
 
-运行时依赖：`requests`、`urllib3`、`python-dateutil`、`decorator`、`rich` 和 `setuptools`。
+运行时依赖：`requests`、`urllib3` 和 `python-dateutil>=2.9,<3`。
 
 ## 安装
 
-打包元数据中的发行包名是 `vermeer-python-client`，其版本号独立于仓库版本号管理。该包尚未发布到 PyPI，请从源码安装。
+发行包名是 `vermeer-python-client`，版本号与仓库发布版本同步。
+该包尚未发布到 PyPI，请从源码安装。
 
 在 HugeGraph-AI 仓库根目录，使用 `vermeer` extra 把它安装到共用的虚拟环境中：
 
@@ -31,13 +32,14 @@ source .venv/bin/activate
 
 `vermeer-python-client` 是以可编辑路径依赖的方式接入的，并不是 `uv` workspace member，因此在仓库根目录直接执行 `uv sync` 不会安装它，必须显式指定该 extra（或使用 `--all-extras`）。
 
-单独安装该模块：
+也可以从仓库根目录将该模块安装到独立环境：
 
 ```bash
 git clone https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai/vermeer-python-client
-uv sync
-source .venv/bin/activate
+cd hugegraph-ai
+uv venv --python 3.12 .venv-vermeer
+uv pip install --python .venv-vermeer/bin/python -e ./vermeer-python-client
+source .venv-vermeer/bin/activate
 ```
 
 ## 连接 Vermeer master

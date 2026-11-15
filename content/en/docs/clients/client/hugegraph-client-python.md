@@ -14,7 +14,7 @@ name is `pyhugegraph`.
 
 ## Requirements
 
-- Python >= 3.12 (Python 3.12–3.14 supported).
+- Python >= 3.12 for current source (Python 3.12–3.14 supported); the published 1.7.1 package requires Python >= 3.10.
 - HugeGraph Server 1.5.0 or later (Server 1.7+ recommends GraphSpace mode; 1.5/1.6 uses legacy routing).
 - `pip` or `uv` package manager.
 
@@ -32,9 +32,9 @@ The client provides two installation methods depending on whether you require th
 > For testing these features, install the client from source.
 
 ```bash {tab="PyPI (Stable 1.7.x)"}
-pip install hugegraph-python
+pip install hugegraph-python==1.7.1
 # Or using uv:
-# uv pip install hugegraph-python
+# uv pip install hugegraph-python==1.7.1
 ```
 
 ```bash {tab="Source (Master)"}

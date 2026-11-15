@@ -4,50 +4,69 @@ linkTitle: "Configuration Reference"
 weight: 4
 ---
 
-HugeGraph-LLM reads runtime configuration from `.env` and prompts from `config_prompt.yaml`. These files have different path-resolution rules; the prompt file is not part of `.env`.
+HugeGraph-LLM separates deployment defaults from application-saved connections. This reference describes the current 1.8 configuration contract.
+For Kubernetes installation and storage, use the [unified Helm guide](/docs/quickstart/hugegraph/hugegraph-helm/#8-graphrag).
 
-The `.env` path is resolved in this order:
+## Saved Connections {#saved-connections}
 
-1. `HUGEGRAPH_LLM_ENV_PATH`, if that environment variable is set. A leading `~` is expanded.
-2. `hugegraph-llm/.env`, when the package runs from a source checkout.
-3. `.env` in the current working directory, for an installed package.
+Save model connections through the Web UI or [configuration API](./rest-api.md#runtime-configuration).
+The application writes complete connections to `settings.yaml`, then uses them immediately and after restarts or Helm upgrades.
+Saved connections take precedence over process environment/Secrets, `.env`, and code defaults, in that order.
+Changing a Helm bootstrap value therefore does not replace a connection already saved in the application.
 
-The path is selected when the configuration module is imported. Set `HUGEGRAPH_LLM_ENV_PATH` before starting Python, not inside the `.env` file that will be loaded. Relative overrides are resolved against the process working directory.
+`Save configuration` validates format without contacting the model. Use `Test saved connection` separately; a failed test leaves the saved connection intact.
 
-The prompt YAML path is resolved in this order:
+Keys are not displayed. A blank UI key or omitted API `api_key` retains the current key; `Clear API key` or `clear_api_key: true` removes it.
+Changing a destination/provider requires a replacement key or explicit clearing. Changing only the model at the same endpoint can retain the key.
+A connection saved with an unchanged deployment-injected key keeps a reference to that environment variable; restart the Pod after rotating the Secret.
 
-1. `HUGEGRAPH_LLM_PROMPT_CONFIG_PATH` from the process environment, expanding a leading `~`.
-2. `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml` when running from source.
-3. `${XDG_CONFIG_HOME:-~/.config}/hugegraph-llm/config_prompt.yaml` for an installed package.
+Extraction and Text2Gremlin follow Chat unless configured independently. `Use Chat connection` restores inheritance.
+Embeddings and reranking remain separate. Login and Thin API write-enable flags remain deployment-owned.
+For an offline reset, remove the corresponding connection group from `settings.yaml` and restart; do not edit it while the application is saving.
 
-Set path overrides before starting the process. Relative paths use its working directory. The source Docker image points `PYTHONPATH` at the source tree, so its default prompt path remains under `hugegraph-llm/src/hugegraph_llm/resources/demo/`.
+## Configuration Files {#configuration-files}
 
-Create or update files from configuration-class defaults with:
+Set `HUGEGRAPH_LLM_RESOURCE_PATH` before startup to put saved settings, prompts, indexes and generated files in a writable persistent directory.
+Bundled examples remain readable from the installed package if absent from that directory; startup does not copy or create configuration files.
+
+| File | Path selection, in priority order |
+| --- | --- |
+| Saved connections | `HUGEGRAPH_LLM_SETTINGS_PATH`; otherwise `settings.yaml` under the resource root, or beside the selected `.env` |
+| Deployment defaults | `HUGEGRAPH_LLM_ENV_PATH`; resource root's `.env`; source checkout's `hugegraph-llm/.env`; current working directory's `.env` |
+| Prompts | `HUGEGRAPH_LLM_PROMPT_CONFIG_PATH`; resource root's `demo/config_prompt.yaml`; source resource file; `${XDG_CONFIG_HOME:-~/.config}/hugegraph-llm/config_prompt.yaml` |
+{.wide .expand}
+
+Path overrides expand `~`; relative paths use the process working directory. Set overrides in the process environment before importing configuration,
+not inside the `.env` file whose location they select. Read-only `.env`/Secret mounts work as bootstrap defaults; saved settings and explicit prompt edits need
+writable storage.
+Persist the whole resource directory or mount its writable files deliberately. Both `.env` and `settings.yaml` can contain credentials; restrict volume and
+backup access.
+
+Export the resolved configuration explicitly when a deployment file is needed:
 
 ```bash
 cd hugegraph-ai/hugegraph-llm
 python -m hugegraph_llm.config.generate --update
 ```
 
-`--update` is enabled by default, so running without arguments has the same effect. On first configuration-module import, missing `.env` and prompt YAML files are created from defaults. The generator asks interactively before overwriting existing files. It handles HugeGraph, administrator, LLM, index, and prompt settings without overwriting existing files silently.
+The generator asks before replacing existing files. This is an explicit export, not a required startup step or the destination for ordinary UI saves.
 
-`.env` contains keys and passwords. Do not commit it to version control.
-
-## Basic Options
+## Basic Options {#basic-options}
 
 | Setting | Default | Description |
 |---|---|---|
 | `LANGUAGE` | `EN` | Prompt language: `EN` or `CN` |
-| `CHAT_LLM_TYPE` | `openai` | Answer model: `openai`, `litellm`, or `ollama/local` |
+| `CHAT_LLM_TYPE` | `openai` | Answer model: `openai` or `ollama/local` |
 | `EXTRACT_LLM_TYPE` | `openai` | Information extraction model; same choices as above |
 | `TEXT2GQL_LLM_TYPE` | `openai` | Text2Gremlin model; same choices as above |
-| `EMBEDDING_TYPE` | `openai` | Embedding model; same choices as above, or empty |
+| `EMBEDDING_TYPE` | `openai` | Embedding model; same choices as above |
+| `EXTRACT_USE_CHAT` / `TEXT2GQL_USE_CHAT` | `True` | Follow Chat unless a role has its own configuration |
 | `RERANKER_TYPE` | empty | `cohere` or `siliconflow` |
 | `KEYWORD_EXTRACT_TYPE` | `llm` | `llm`, `textrank`, or `hybrid` |
 | `WINDOW_SIZE` | `3` | TextRank window size, from 1 to 10 |
 | `HYBRID_LLM_WEIGHTS` | `0.5` | Weight of LLM results in hybrid mode, from 0 to 1 |
 
-## OpenAI-Compatible APIs
+## OpenAI-Compatible APIs {#openai-compatible-apis}
 
 Chat, extraction, and Text2Gremlin can use different endpoints, keys, and models.
 
@@ -63,19 +82,12 @@ The default API base is `https://api.openai.com/v1`. The default language model 
 
 `OPENAI_BASE_URL` and `OPENAI_API_KEY` provide general fallback values. Embeddings also support `OPENAI_EMBEDDING_BASE_URL` and `OPENAI_EMBEDDING_API_KEY` as fallback values.
 
-## LiteLLM
+## LiteLLM {#litellm}
 
-| Purpose | API base | Key | Model | Default maximum tokens |
-|---|---|---|---|---|
-| Answer | `LITELLM_CHAT_API_BASE` | `LITELLM_CHAT_API_KEY` | `LITELLM_CHAT_LANGUAGE_MODEL` | `LITELLM_CHAT_TOKENS=8192` |
-| Extraction | `LITELLM_EXTRACT_API_BASE` | `LITELLM_EXTRACT_API_KEY` | `LITELLM_EXTRACT_LANGUAGE_MODEL` | `LITELLM_EXTRACT_TOKENS=256` |
-| Text2Gremlin | `LITELLM_TEXT2GQL_API_BASE` | `LITELLM_TEXT2GQL_API_KEY` | `LITELLM_TEXT2GQL_LANGUAGE_MODEL` | `LITELLM_TEXT2GQL_TOKENS=4096` |
-| Embedding | `LITELLM_EMBEDDING_API_BASE` | `LITELLM_EMBEDDING_API_KEY` | `LITELLM_EMBEDDING_MODEL` | Not applicable |
-{.td-table--wide}
+The application has no `litellm` provider or `LITELLM_*` settings. To use a LiteLLM proxy, select `openai` and configure its OpenAI-compatible URL,
+key and model name. The [standalone SDK](./hugegraph-llm-sdk.md#model-adapters) still offers a `LiteLLMClient` adapter.
 
-The default language model is `openai/gpt-4.1-mini`, and the default embedding model is `openai/text-embedding-3-small`. Model names generally use the `provider/model` form; supported values depend on the LiteLLM service.
-
-## Ollama
+## Ollama {#ollama}
 
 | Purpose | Host | Port | Model |
 |---|---|---|---|
@@ -87,7 +99,7 @@ The default language model is `openai/gpt-4.1-mini`, and the default embedding m
 
 The default host is `127.0.0.1` and the default port is `11434`. Model names have no defaults; pull the required models in Ollama before use.
 
-## Reranking
+## Reranking {#reranking}
 
 | Setting | Default | Description |
 |---|---|---|
@@ -95,7 +107,7 @@ The default host is `127.0.0.1` and the default port is `11434`. Model names hav
 | `RERANKER_API_KEY` | empty | Cohere or SiliconFlow key |
 | `RERANKER_MODEL` | empty | Model name supported by the service |
 
-## HugeGraph Connection and Retrieval Limits
+## HugeGraph Connection and Retrieval Limits {#hugegraph-connection-and-retrieval-limits}
 
 | Setting | Default | Description |
 |---|---|---|
@@ -112,7 +124,7 @@ The default host is `127.0.0.1` and the default port is `11434`. Model names hav
 | `TOPK_PER_KEYWORD` | `1` | Candidates per keyword |
 | `TOPK_RETURN_RESULTS` | `20` | Results returned after reranking |
 
-## Vector Index Backend
+## Vector Index Backend {#vector-index-backend}
 
 | Setting | Default | Description |
 |---|---|---|
@@ -134,7 +146,7 @@ uv sync --package hugegraph-llm --extra vectordb
 
 The same choice is available in the `5. Set up the vector engine.` panel of the Web UI, which also persists the connection settings for the selected engine.
 
-## Login and Log API
+## Login and Log API {#login-and-log-api}
 
 | Setting | Default | Description |
 |---|---|---|
@@ -147,13 +159,11 @@ The same choice is available in the `5. Set up the vector engine.` panel of the 
 > [!WARNING]
 > In production, set `ENABLE_LOGIN=True`, replace `USER_TOKEN` and `ADMIN_TOKEN`, and enforce a source IP allowlist at the firewall or network entry point. This protects only HugeGraph-LLM. Separately enable [Server authentication and authorization](/docs/config/config-authentication/), retain Server audit logs (normally `audit-*.log`), and grant `GRAPH_USER` minimum required permissions. The two services use different credentials.
 
-## Minimal OpenAI Configuration
+## Minimal OpenAI Configuration {#minimal-openai-configuration}
 
 ```properties
 LANGUAGE=EN
 CHAT_LLM_TYPE=openai
-EXTRACT_LLM_TYPE=openai
-TEXT2GQL_LLM_TYPE=openai
 EMBEDDING_TYPE=openai
 
 OPENAI_API_KEY=your-api-key
@@ -169,11 +179,16 @@ GRAPH_USER=admin
 GRAPH_PWD=your-password
 ```
 
-## Configuration Loading
+## Configuration Loading {#configuration-loading}
 
-Configuration classes supply code defaults. During initialization, values from the selected `.env` are written into the process environment before the configuration objects are created, overriding same-named shell variables. Missing keys use defaults; empty values and unknown keys are ignored. The Web UI and configuration APIs can update settings and write supported fields back to `.env`. Restart after manual `.env` edits; prompt YAML is read at service startup or page load.
+Explicit Python configuration arguments take precedence, followed by saved application connections, process environment, `.env`, and defaults.
+Keys are case-insensitive. Empty deployment values are normally ignored; an explicitly empty `GRAPH_PWD` is retained for an unauthenticated Server.
+Role-specific extraction/Text2GQL settings select an independent connection unless the corresponding `*_USE_CHAT` flag explicitly enables inheritance.
 
-Keys are matched case-insensitively.
+Deployment fields can combine across sources, such as an endpoint from `.env` and its key from a Secret.
+A different endpoint/provider supplied by the environment does not inherit a lower-priority file credential.
+Saved connections retain their own destination and key/reference together. Hand-edited deployment files require a restart;
+UI/API saves update supported connections without rewriting `.env` or process environment variables.
 
 Configuration definitions are in:
 

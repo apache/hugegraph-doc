@@ -45,18 +45,24 @@ bash bin/prepare-topling.sh
 
 脚本校验复制后的 JAR 哈希、Topling Java 标识、唯一的 Linux x86_64 JNI 条目、ELF 架构及 native 依赖。
 安装前还会用所选 JNI 打开临时数据库，确认 EasyMigrate 配置实际改变了持久化的写缓冲区大小；类标识和哈希匹配但不支持该配置入口的构建会被拒绝。
+
 包含配置验证修复的构建还会在发布运行时前，以 native 导入检查实际配置。
 设置 `TOPLINGDB_EASY_MIGRATE_CONF` 时探测指定文件，否则使用组件的 `conf/toplingdb.yaml`。
 缺少插件会在准备阶段失败，避免准备成功后才在 Server 初始化阶段崩溃。
 此导入不会按生产 WAL 或日志路径打开数据库。
+
 若显式指定配置，启动组件时也要保留相同的环境变量。
 准备与运行时选择都会在启动器切换目录前，按调用方工作目录将相对路径转为绝对路径。
 两个步骤应使用同一文件，服务配置优先采用绝对路径以免歧义。
+
 导入检查针对准备时的实际文件；之后更换文件仍可能引入不支持的插件。
 重启组件前，应使用所选 JNI 验证替换后的配置。
+
 这些探针不代表已有数据兼容性或所有生产列族均已验证。
+
 校验记录绑定已测试的 JAR 和 native 库，启动时拒绝缺失或失效的记录；从旧准备脚本升级时请重新准备一份新发行包。
 默认/标准模式启动时会拒绝继承的 RocksDB JNI 预载库，Topling 模式则拒绝与所选 JNI 竞争的预载库；其他预载库继续保留。
+
 它将 `topling/rocksdbjni.jar`、对应 native 库和可选网页资源放在 `lib` 之外。已有 `topling` 目录时会拒绝准备；更换运行时请使用另一份已停止的新发行包。
 按实际部署需要，为 Server、PD 和 Store 分别执行准备步骤。
 
@@ -110,6 +116,7 @@ export TOPLINGDB_ROCKSDB_PROVIDER=topling
 请按机器条件调整该文件；它与业务 provider、数据目录配置分别生效。
 
 包含 [apache/hugegraph#3447](https://github.com/apache/hugegraph/pull/3447) 兼容配置修复的构建，提供基于 SkipList 内存表与 BlockBasedTable 文件的社区版 `conf/toplingdb.yaml`，不依赖 CSPP、CSPPMemTabTable 或 DispatcherTable 插件。
+
 较早的开发构建可能使用 `cspp` 和 `DispatcherTable`，需要所选 JNI 提供对应插件。
 Server 1.7.0 不包含该配置或 `prepare-topling.sh`，不能将本开发指南直接用于该发行版。
 
@@ -120,11 +127,13 @@ Server 1.7.0 不包含该配置或 `prepare-topling.sh`，不能将本开发指�
 升级已有 CSPP 部署前，先停止组件并保留匹配的 JNI、之前调优的配置与可恢复的数据备份。
 包含兼容配置修复的 Server、PD、Store 发行包会提供 `conf/toplingdb-legacy-cspp.yaml`，完整保留旧配置。
 准备和启动时，通过绝对路径 `TOPLINGDB_EASY_MIGRATE_CONF` 选择该文件或部署原有的配置。
+
 用于验证的社区 JNI 缺少 CSPP reader；旧 CSPP SST 的兼容性仍需要匹配 JNI 与真实旧格式数据验证。
 不能用社区配置替换已有 CSPP 部署的 native 设置。
 
 新默认值还调整了资源参数：缓存 8 GiB → 64 MiB、写缓冲 128 MiB → 16 MiB、最多缓冲数 6 → 3、后台任务 8 → 2。
 部分原有压缩整理调优也已移除。这些变化可能影响性能，不是透明的格式迁移。
+
 实测社区 JNI 中，Java 先设置 128 MiB 与六个缓冲，EasyMigrate 在打开数据库时实际应用 16 MiB、三个缓冲及 64 MiB 缓存。
 其他 JNI 构建应检查持久化 OPTIONS 与 `rocksdb.block-cache-capacity`，不能仅凭打开前的 Java getter 判断最终 native 值。
 
@@ -151,6 +160,7 @@ bash bin/start-hugegraph.sh
 ```
 
 `bin/init-store.sh`、`bin/dump-store.sh` 与 `bin/start-hugegraph.sh` 使用同一显式运行时选择。
+
 HStore 按 PD、Store、Server 的顺序启动。在同一 shell 中启动 HStore Server 前，执行 `unset TOPLINGDB_ROCKSDB_PROVIDER`
 （或 `export TOPLINGDB_ROCKSDB_PROVIDER=rocksdb`）；不要在该 Server 上启用本地 Topling。
 业务 provider 与实际运行时不一致时，组件会在开库前拒绝启动。

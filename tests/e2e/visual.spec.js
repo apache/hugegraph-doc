@@ -146,7 +146,7 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
       await viewport.evaluate(node => { node.scrollLeft = node.scrollWidth; });
       await expect(table).toBeVisible();
     } else if (state === "computer" || state === "config-api") {
-      const token = state === "computer" ? "worker.vertex_properties_combiner_class" : "LITELLM_TEXT2GQL_LANGUAGE_MODEL";
+      const token = state === "computer" ? "worker.vertex_properties_combiner_class" : "OPENAI_TEXT2GQL_LANGUAGE_MODEL";
       const table = page.locator(".td-content table").filter({ hasText: token });
       await table.locator("..").scrollIntoViewIfNeeded();
       await expect(table).toBeVisible();

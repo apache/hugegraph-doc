@@ -5,6 +5,10 @@ weight: 2
 search_keywords: [HugeGraph Loader, 批量导入, 数据导入]
 search_boost: 1.6
 ---
+> **Kafka 与 `skipped_line`：** HugeGraph Loader 在 Kafka 输入源中接受
+> `skipped_line`，但不会对 Kafka 消息应用该过滤。如需跳过行，请在写入 topic
+> 前预处理，或改用 `FILE`/`HDFS` 输入源。
+
 
 本文以 Toolchain `master` 分支（以 1.8 为基线，尚未正式发布）为准。发布版和 Docker `latest` 可能存在部分差异，使用未发布功能前请先核对版本。
 

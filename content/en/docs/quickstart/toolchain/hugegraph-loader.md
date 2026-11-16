@@ -6,6 +6,11 @@ search_keywords: [HugeGraph Loader, bulk import, data loading]
 search_boost: 1.6
 description: "Bulk import graph data into HugeGraph with Loader from files, HDFS, relational databases, Kafka, and other HugeGraph graphs."
 ---
+> **Kafka and `skipped_line`:** HugeGraph Loader accepts `skipped_line` for
+> Kafka input sources, but it does not apply the filter to Kafka messages.
+> Preprocess the topic or use a `FILE`/`HDFS` input source if you need to skip
+> lines.
+
 
 This guide aligns with the Toolchain `master` branch (currently based on 1.8, unreleased). Released packages and Docker `latest` may differ; check your version before using unreleased features.
 

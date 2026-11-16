@@ -351,3 +351,9 @@ Apache HugeGraph 已于 2026 年 1 月毕业，治理信息不再通过 Incubato
 6. https://www.apache.org/licenses/cla-faq.html#printer
 7. https://linkis.apache.org/zh-CN/community/how-to-sign-apache-icla
 8. https://github.com/apache/hugegraph/issues/1732 (HugeGraph ICLA related issue)
+
+---
+
+反链：
+
+- [成熟度](/cn/community/maturity/)

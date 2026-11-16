@@ -65,4 +65,4 @@ Apache HugeGraph 当前的 PMC 成员与 Committers，数据来自 ASF 记录。
 
 ## 了解项目运作方式
 
-Apache HugeGraph 使用英文版 [项目成熟度评估](/community/maturity/) 记录社区实践。
+Apache HugeGraph 使用 [项目成熟度评估](/cn/community/maturity/) 记录社区实践。

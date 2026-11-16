@@ -18,7 +18,7 @@
       "id": "latest",
       "migration": {
         "changed": 4,
-        "files": 284,
+        "files": 285,
         "findings": 0,
         "knownFixes": 0,
         "residual": 0,
@@ -28,12 +28,12 @@
       "nonEquivalentHreflangRemoved": 0,
       "publishPath": "",
       "ref": "master",
-      "sha": "ff56a6d046956f3a42f4ec29a4e97f09205bc4af",
+      "sha": "446b4f34a630249c3b9e11067696408e17bac22e",
       "urlScoping": {
         "compareConfigs": 236,
-        "files": 334,
+        "files": 335,
         "historicalHomeRedirects": 0,
-        "manifests": 332,
+        "manifests": 333,
         "searchFingerprints": 2,
         "searchRefs": 0,
         "urls": 0

@@ -169,11 +169,19 @@ install-snapshot timeout, and id allocation runs no ReadIndex wait.
 |-----|---------------|------------------|-------------|
 | `pd.data-path` | `./pd_data` | none, required | Metadata directory. Holds the RocksDB store in `rocksdb/` and the Raft log, metadata and snapshots in `pd_raft/`. |
 | `pd.patrol-interval` | `1800` | `300` | Seconds between patrol runs, which check partition health across stores and rebalance partition counts. |
-| `pd.initial-store-count` | `1` | `3` | Minimum number of active Store nodes. Below this the cluster state becomes `Cluster_Not_Ready` and the cluster is treated as unavailable. Set it to the number of stores you deploy. |
-| `pd.min-store-count` | not set | `0` | Minimum active Store count required during Store drain/retirement checks. If remaining active stores fall below this value, the transition to `Exiting` is rejected. |
+| `pd.initial-store-count` | `1` | `1` | Required eligible Store count before any shard group exists. Set for the initial topology; it is not a runtime replica count. |
+| `pd.min-store-count` | not set | `0` | First-bootstrap seed for the persisted placement/drain floor. Existing PD configuration takes precedence; `0` adds no floor beyond the desired replica count. |
 | `pd.initial-store-list` | `127.0.0.1:8500` | empty | Comma separated Store gRPC addresses (`ip:port`) that are activated automatically when they register. An entry may also carry a group id as `store_address/group_id`. |
 | `pd.cluster_id` | not set | `1` | Cluster id, used to keep separate PD clusters apart. |
 {.td-table--wide}
+
+Before any shard group exists, bootstrap requires enough eligible `Up` Stores for the initial count, desired replica count and persisted placement
+floor. Set the initial Store count and shard replica count independently; changing one does not change the other.
+
+For existing groups, PD checks whether a strict majority of each group's known `Leader`/`Follower` voters have fresh Store leases. `Learner` and
+pending `None` targets do not count as voters. A serving `Exiting` source can still contribute a live vote, but cannot receive new replicas.
+This metadata health hint does not prove committed Raft membership, successful writes or completed migration; JRaft enforces the actual quorum.
+New placement and drain destinations must still satisfy the configured replica count and persisted floor, rather than silently reducing replicas.
 
 **Store management**
 
@@ -331,6 +339,11 @@ The script requires Java 17 or later on `PATH` or in `JAVA_HOME` (Java ≥ 11 on
 It exits without doing anything if it finds a Java process already using this installation's `conf` directory.
 
 The lifecycle details below describe current master builds. The downloaded 1.7.0 launcher does not include those repairs.
+
+Current PD startup waits up to 30 seconds when another process holds the metadata RocksDB `LOCK` under `<pd.data-path>/rocksdb`.
+It fails startup if the lock remains held; other open failures are not retried. Check that the previous JVM has exited instead of deleting `LOCK`
+files to bypass the conflict. This wait applies to metadata startup, not snapshot loading.
+
 Supported flags, with GC version limits noted below:
 
 | Flag | Values | Default | Description |
@@ -577,10 +590,11 @@ In versions after 1.7.0, PD also exports, for each registered store, `hg_store_s
 
 #### 7.6 Store Decommissioning and Drain Lifecycle
 
-Decommissioning a Store node follows a state machine to safely drain partition replicas without service interruption:
+Retire a Store through `Exiting` while it keeps serving the replicas being migrated. Migration can still cause request errors or timeouts;
+keep the source running until the retirement checks below are complete.
 
 1. **State Machine Overview**:
-   - `Up`: The Store is online, healthy, and accepting new shard allocations and leader roles.
+   - `Up`: The Store is active and can receive shard allocations when placement checks pass; the status alone does not prove replica recovery.
    - `Exiting`: The Store is actively draining. While in `Exiting`, the Store continues renewing its heartbeat lease, but PD excludes it from new
      replica allocation and partition migration targets.
    - Partition Migration: PD schedules background tasks to migrate all shard replicas off the draining store to other eligible active Stores.
@@ -596,11 +610,17 @@ Decommissioning a Store node follows a state machine to safely drain partition r
    ```
 
 3. **Capacity Constraints & Retirement Checks**:
-   - **Capacity Check**: Draining checks that remaining eligible active stores satisfy `minStoreCount` (`pd.min-store-count`). If remaining
-     capacity is insufficient, PD blocks the transition and rejects the request before state changes. In this case, add eligible Store capacity and resubmit the request.
+   - **Capacity Check**: Starting a drain requires current voting quorum with the serving source included, plus enough eligible destinations
+     excluding that source for the desired replica count and persisted Store floor.
+   - **Retry After Failure**: Recheck the current Store state after a rejected request: an earlier planning attempt may already have persisted
+     `Exiting`. Restore eligible capacity and repeat the same `Exiting` request to resume remaining groups; do not toggle the source to `Up`.
+     Accepted migration groups are reused within one management request, without durable deduplication across independent requests.
    - **Retirement Criteria**: PD keeps the Store in `Exiting` until its latest heartbeat reports 0 local partition engines AND PD has no remaining
      shard groups referencing that Store ID.
    - **Pre-Deletion Verification**: Before deleting the Store Pod or persistent volume, operators must verify remaining shard groups have full Raft
      membership, complete replicas, and fresh heartbeats.
    - **Re-registration Intent Preservation**: Re-registering an `Exiting` Store (e.g. after process restart) preserves the `Exiting` intent even if
      its address is in `pd.initial-store-list`.
+
+A successful state-update response does not prove migration is complete. For restart recovery and learner catch-up checks, see
+[Store recovery](/docs/quickstart/hugegraph/hugegraph-hstore/#store-recovery).

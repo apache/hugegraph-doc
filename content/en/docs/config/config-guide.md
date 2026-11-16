@@ -14,7 +14,7 @@ The main files are `gremlin-server.yaml`, `rest-server.properties`, and `hugegra
 
 `HugeGraphServer` integrates GremlinServer and RestServer, configured by `gremlin-server.yaml` and `rest-server.properties` respectively.
 
-- [GremlinServer](https://tinkerpop.apache.org/docs/3.5.1/reference/#gremlin-server): Accepts Gremlin requests and invokes the graph engine.
+- [GremlinServer](https://tinkerpop.apache.org/docs/3.8.1/reference/#gremlin-server): Accepts Gremlin requests and invokes the graph engine.
 - RestServer: Provides REST APIs that invoke Core APIs. A Gremlin request body is forwarded to GremlinServer to operate on graph data.
 
 The following sections describe these files.
@@ -25,7 +25,7 @@ The following sections describe these files.
 > The authentication settings on this page apply to HugeGraph Server. In production, enable [authentication and authorization](/docs/config/config-authentication/), maintain an IP allowlist, grant minimum permissions, and retain and protect Server `audit-*.log` files. Commented authentication settings in the examples indicate that authentication is disabled by default.
 
 The distribution copies default files from the Server repository into the installation directory's `conf/` folder. Options absent from these files use source-code defaults; explicit file settings override those defaults.
-The file-loading behavior on this page was checked against Server master commit `2f827d6`. Use the configuration files and entry scripts that correspond to your installed release.
+This page describes the current Server source. For a released package, use its matching configuration files and entry scripts.
 
 | File | Source and purpose | Loading behavior |
 |------|------------|----------|
@@ -36,7 +36,12 @@ The file-loading behavior on this page was checked against Server master commit 
 
 Complete defaults are in Server master: [gremlin-server.yaml](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/gremlin-server.yaml), [rest-server.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/rest-server.properties), [hugegraph.properties](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hugegraph.properties), and [hstore.properties.template](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/src/assembly/static/conf/graphs/hstore.properties.template).
 
-The following Docker environment-variable behavior applies only to images built from `master`; arbitrary variable names are not converted into configuration options. Before initialization and startup, this entrypoint processes `HG_SERVER_BACKEND`, `HG_SERVER_PD_PEERS`, `HG_SERVER_USE_PD`, `HG_SERVER_CLUSTER`, `HG_SERVER_REST_URL`, `HG_SERVER_URLS_TO_PD`, `HG_SERVER_DEPLOY_IN_K8S`, `HG_SERVER_MIN_FREE_MEMORY`, `HG_SERVER_AUTH_TOKEN_SECRET`, `HG_SERVER_INIT_STORE_ENABLED`, and `PASSWORD`. Check the tagged entrypoint for historical release images. See [Docker entrypoint](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh).
+Docker images built from `master` support a defined set of environment variables; arbitrary variable names do not become configuration options.
+The entrypoint applies supported settings before initialization and startup.
+
+Use the [Docker variable reference](/docs/guides/hugegraph-docker-cluster/#server-variables) for backend, PD, listener, memory and authentication settings.
+For a released image, check its tagged entrypoint rather than assuming every current variable is supported.
+The current [Docker entrypoint](https://github.com/apache/hugegraph/blob/master/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh) is the source of this mapping.
 
 ### 2 gremlin-server.yaml
 

@@ -161,7 +161,9 @@ HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
 
 单机拓扑将 Server 暴露在 `8080` 端口，Hubble 暴露在 `127.0.0.1:8088`。`HUGEGRAPH_VERSION` 决定 Server、PD 和 Store 的镜像 tag，Hubble 由 `HUBBLE_IMAGE` 单独选择。
 
-单机 `docker-compose.yml` 示例使用 HugeGraph 1.7.0 版本镜像 `hugegraph/hugegraph:1.7.0`；该文件引用的 `docker/conf/hubble/standalone.properties` 已随源码提供。Compose 文件从 `HUGEGRAPH_ADMIN_PASSWORD` 读取管理员密码，从 `HUGEGRAPH_AUTH_TOKEN_SECRET` 读取 JWT 密钥，通常放在 `docker/.env` 文件中。`HUGEGRAPH_ADMIN_PASSWORD` 非空即开启鉴权，Hubble 会自动识别该模式。若直接使用 `docker run`，则改为传入 `-e PASSWORD=xxx`。HStore Compose 文件属于当前主线，不能与 1.7.0 的 PD/Store/Server 发布镜像混用，见下文。
+单机 `docker-compose.yml` 示例使用 HugeGraph 1.7.0 版本镜像 `hugegraph/hugegraph:1.7.0`；该文件引用的 `docker/conf/hubble/standalone.properties` 已随源码提供。Compose 文件从 `HUGEGRAPH_ADMIN_PASSWORD` 读取管理员密码，从 `HUGEGRAPH_AUTH_TOKEN_SECRET` 读取 JWT 密钥，通常放在 `docker/.env` 文件中。`HUGEGRAPH_ADMIN_PASSWORD` 非空即开启鉴权，Hubble 会自动识别该模式。若直接使用 `docker run`，则改为传入 `-e PASSWORD=xxx`。
+
+HStore Compose 文件属于当前主线，不能与 1.7.0 的 PD/Store/Server 发布镜像混用，见下文。
 
 **JWT 密钥的版本差异**：当前主线构建的 Server 镜像会把 `HUGEGRAPH_AUTH_TOKEN_SECRET` 映射到 `HG_SERVER_AUTH_TOKEN_SECRET`，并写入 Server 启动配置；跨重建时应在 `.env` 中保留同一密钥。1.7.0 镜像的 [Docker 入口脚本](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-server/hugegraph-dist/docker/docker-entrypoint.sh)只处理 `PASSWORD` 等旧变量，不会读取 `HG_SERVER_AUTH_TOKEN_SECRET`。如需在 1.7.0 中固定 JWT 密钥，须将 [`auth.token_secret`](https://github.com/apache/hugegraph/blob/1.7.0/hugegraph-server/hugegraph-core/src/main/java/org/apache/hugegraph/config/AuthOptions.java) 持久写入该版本的 `conf/graphs/hugegraph.properties`；若保留默认随机密钥，不应假定已有 JWT 在 Server 重启后仍有效。
 
@@ -172,13 +174,18 @@ HUGEGRAPH_VERSION=1.7.0 docker compose -f docker-compose.yml up -d --wait
 对于使用 PD 的 Server，Helm chart 提供 `server.serviceId` 和 `server.graphSpace` 配置项。
 二者默认为 `DEFAULT`，此时保留 `conf/rest-server.properties` 中已有的 `server.service_id` 和 `server.graphspace`。
 非默认值会向 Server 容器注入 `HG_SERVER_SERVICE_ID` 或 `HG_SERVER_GRAPHSPACE`。
+
 注意：这些服务身份相关的 Chart 配置项（`server.serviceId`、`server.graphSpace` 和 `server.testGraphAlias`）适用于开发中的 1.8.0+ 版本镜像与 Chart；
 目前尚无已发布的 Chart 或镜像支持这些选项。不要将本示例与未支持该特性的旧版本搭配使用。
+
 通过 `HG_SERVER_SERVICE_ID`、`SERVICE_ID` 或 `server.serviceId` 传入的非空服务 ID 仅支持可打印 ASCII，包含空格和反斜杠；
 部署校验会拒绝非 ASCII 和控制字符。此限制仅针对这些配置入口，不改变 Core Service 名称协议和已有的手工 properties 配置。
 Helm 会将 `server.serviceId` 中的美元符号（包括 `$(POD_IP)`）按字面量保留，不展开 Kubernetes 环境变量引用。
+
 重读服务元数据或清理图空间时，会保留完整的服务 ID，包括其中的 `/` 和 `-`。
+
 使用上述 chart values 设置身份；Server 的 `extraEnv` 会保留对应的新旧身份变量名，禁止重复覆盖。
+
 `HG_SERVER_GRAPHSPACE`、生效的旧变量 `GRAPH_SPACE` 和 `server.graphSpace` 遵循同一规则：
 接受 `DEFAULT`，或以小写字母开头、最多 48 位的小写字母、数字和下划线组成的已有空间名称：
 
@@ -642,15 +649,41 @@ Connecting to HugeGraphServer (http://127.0.0.1:8080/graphs)......OK
 
 `bin/stop-hugegraph.sh` 支持 `-m true|false`（默认 `true`），用于控制停止服务时是否同时移除 crontab 监控任务。
 
-`bin/hugegraph-server.sh` 会把 `-XX:+HeapDumpOnOutOfMemoryError`、`-XX:HeapDumpPath` 和 `-XX:ErrorFile` 放在 `JAVA_TOOL_OPTIONS` 的最前面。因此无论是否设置了
-`JAVA_OPTIONS`（下文所述的例外情况除外），内存溢出时的堆转储（`heapdump_<主机名>_<启动时间>/java_pid<pid>.hprof`）和 JVM 崩溃日志（`hs_err_pid<pid>_<主机名>_<启动时间>.log`）都会写入 `logs/`，其中 `<启动时间>`
-为本地时间，格式是 `YYYYMMDD-HHMMSS`。每次启动都有自己的 `heapdump_*` 目录，因此服务及其启动的 JVM（例如 computer 任务）会分别写入各自的转储（HotSpot 按 JVM 的 PID 命名转储文件和崩溃日志，因此同一次启动中复用了先前 PID 的 JVM
-无法写入它的转储，它的崩溃日志也会覆盖先前那个 JVM 的）。主机名可避免共用同一日志目录的多个服务选到相同的名字；如果同一主机在同一秒内已经用过该名字，会再加上计数（`<启动时间>-1`、`-2`……）。如果无法创建该目录（例如磁盘已满），服务仍会启动，堆转储改为尽力写入 `logs/`
-本身；磁盘已满时可能也没有空间写入转储。堆转储可能和堆一样大。启动脚本从不删除转储或 `heapdump_*` 目录：每次启动到 Java 阶段都会留下一个目录，除非发生内存溢出否则为空；启动脚本保留它，是因为 computer 任务的 JVM 可能在服务退出后仍在使用它。在该次启动的 HugeGraph JVM
-都已退出后，可以移走或删除旧目录，但不要动正在运行的服务最新的那个目录；没有它，下一次转储会被写成一个同名文件。JVM 会在这些默认值之后读取你自己的 `JAVA_TOOL_OPTIONS`、`JDK_JAVA_OPTIONS`（包括 `@argfile`）、命令行（`JAVA_OPTIONS`；未设置或为空时为
-`-j`）和 `_JAVA_OPTIONS`，因此在其中任意一处为上述参数指定的值都会覆盖默认值。只有环境变量会传给服务启动的 JVM：要对所有 JVM 关闭堆转储，请设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`；通过 `-j` 或
-`JAVA_OPTIONS` 关闭只对服务自身的 JVM 生效。无论哪种方式，每次启动到 Java 阶段仍会创建空的 `heapdump_*` 目录，除非创建失败而改为写入 `logs/`。如果日志路径中包含双引号或 `%`，启动脚本会给出警告，堆转储直接写入
-`logs/`，不使用每次启动的目录，也不设置崩溃日志的默认值；通过 `JAVA_TOOL_OPTIONS` 关闭堆转储的方式仍然有效。同时包含两种引号的路径则完全不设置堆转储默认值。由于设置了这些默认值，JVM 启动时会在 stderr 输出 `Picked up JAVA_TOOL_OPTIONS: ...`。
+当前源码构建的 `bin/hugegraph-server.sh` 默认启用内存溢出堆转储和 JVM 崩溃日志。
+脚本会把 `-XX:+HeapDumpOnOutOfMemoryError`、`-XX:HeapDumpPath` 和 `-XX:ErrorFile` 放在 `JAVA_TOOL_OPTIONS` 最前面。
+
+| 诊断文件 | `logs/` 下的默认位置 |
+| --- | --- |
+| 堆转储 | `heapdump_<主机名>_<启动时间>/java_pid<pid>.hprof` |
+| JVM 崩溃日志 | `hs_err_pid<pid>_<主机名>_<启动时间>.log` |
+{.wide .expand}
+
+**先规划空间，再清理旧文件。** 一份堆转储可能和 JVM 堆一样大。
+每次启动到 Java 阶段都会创建独立的 `heapdump_*` 目录，没有发生内存溢出时目录为空。
+启动脚本不会删除它们，因为 Computer 任务等子 JVM 可能在 Server 退出后继续使用该目录。
+
+只有该次启动的所有 HugeGraph JVM 都退出后，才能移走或删除旧目录。
+不要删除运行中 Server 最新的转储目录，否则后续转储可能变成一个与目录同名的文件。
+
+**按需要选择覆盖范围。** 你设置的 `JAVA_TOOL_OPTIONS`、`JDK_JAVA_OPTIONS`（含 `@argfile`）、
+`_JAVA_OPTIONS` 和 Server 命令行参数都可以覆盖默认值。
+命令行使用 `JAVA_OPTIONS`；该变量未设置或为空时才使用 `-j`。
+
+- 对 Server 及其子 JVM 一起关闭堆转储：在进程环境中设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`。
+- 仅修改 Server 自身：使用 `JAVA_OPTIONS` 或 `-j`。这些命令行参数不会传给子 JVM。
+
+关闭堆转储后，只要目录能够创建，仍会留下空的启动目录。
+启动时 stderr 输出的 `Picked up JAVA_TOOL_OPTIONS: ...` 表示 JVM 已读取这些参数，本身不是错误。
+
+> [!DETAILS]- 文件命名与特殊日志路径
+>
+> 启动时间使用本地 `YYYYMMDD-HHMMSS`；同一主机在同一秒再次启动时会追加计数。
+> 主机名用于区分共享日志目录的 Server。HotSpot 按 JVM PID 命名文件；同一次启动中复用 PID，可能无法写入新的转储并覆盖旧崩溃日志。
+>
+> 无法创建启动目录时，Server 仍会启动，并尝试把堆转储直接写入 `logs/`；磁盘已满时，这个回退也可能失败。
+>
+> 日志路径含双引号或 `%` 时，脚本会告警，转储直接写入 `logs/`，且不设置崩溃日志默认值。
+> 路径同时含两种引号时，不设置这两类诊断默认值。显式传入的运维配置仍可覆盖默认值。
 
 > **版本范围**：以上行为适用于当前开发分支/master 分支。1.7.0 只在未设置 `JAVA_OPTIONS` 时添加堆转储参数，堆转储直接写入
 > `logs/java_pid<pid>.hprof`，JVM 崩溃日志写入安装目录。

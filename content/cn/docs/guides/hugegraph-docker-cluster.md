@@ -47,7 +47,9 @@ HG_PD_AUTH_SECRET_KEY='<24 字节随机值，例如 openssl rand -hex 24>'
 
 `HUGEGRAPH_ADMIN_PASSWORD` 非空时会以 `PASSWORD` 启用 Server 鉴权，Hubble 通过 Server API 自动识别该模式；该密码只在首次初始化内置 `admin` 账号。不设置或设为空值则关闭鉴权，这只适用于可信的本地环境。
 
-当前主线 Compose 会把 `HUGEGRAPH_AUTH_TOKEN_SECRET` 传给 `HG_SERVER_AUTH_TOKEN_SECRET`。同一密钥可让主线多 Server 副本验证相同 token，并在容器重建后继续验证已签发 token；HA Compose 还要求显式提供该密钥。`hugegraph/hugegraph:1.7.0` 单机镜像的 Docker 入口脚本只根据 `PASSWORD` 开启鉴权，不读取 `HG_SERVER_AUTH_TOKEN_SECRET`，因此不要把 `.env` 中该变量视为该镜像的固定 JWT 配置。若在 1.7.0 中需要固定 JWT secret，请在其认证图配置 `conf/graphs/hugegraph.properties` 中显式设置 `auth.token_secret`，并确保该配置随容器替换保留；认证图路径及密钥生成说明见[鉴权配置指南](/cn/docs/config/config-authentication/)。
+当前主线 Compose 会把 `HUGEGRAPH_AUTH_TOKEN_SECRET` 传给 `HG_SERVER_AUTH_TOKEN_SECRET`。同一密钥可让主线多 Server 副本验证相同 token，并在容器重建后继续验证已签发 token；HA Compose 还要求显式提供该密钥。
+
+`hugegraph/hugegraph:1.7.0` 单机镜像的 Docker 入口脚本只根据 `PASSWORD` 开启鉴权，不读取 `HG_SERVER_AUTH_TOKEN_SECRET`，因此不要把 `.env` 中该变量视为该镜像的固定 JWT 配置。若在 1.7.0 中需要固定 JWT secret，请在其认证图配置 `conf/graphs/hugegraph.properties` 中显式设置 `auth.token_secret`，并确保该配置随容器替换保留；认证图路径及密钥生成说明见[鉴权配置指南](/cn/docs/config/config-authentication/)。
 
 之后修改 `HUGEGRAPH_ADMIN_PASSWORD` 不会轮换已有密码，请使用用户 API 修改。
 
@@ -203,6 +205,7 @@ curl -o /dev/null -w '%{http_code}\n' -u "admin:${HUGEGRAPH_ADMIN_PASSWORD}" \
 
 RocksDB 缓存使用堆外内存。未设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` 时，系统将优先根据容器内存限制（cgroup）自动计算；未配置容器限制时则按宿主机内存推导。
 由于默认 Docker Compose 未限制容器内存，各 Store 均会以宿主机整机容量估算；若单机部署多个 Store，建议显式配置容器内存限制，或直接为该变量指定字节数。
+
 此外，Store 启动脚本默认会根据系统空闲内存分配 JVM 堆与直接内存（上限各 2 GiB）。建议结合容器规格，通过 `JAVA_OPTS` 显式约束 JVM 内存（例如容器为 4 GiB 时配置 `JAVA_OPTS="-Xmx1g -XX:MaxDirectMemorySize=512m"`）。详细推导公式见 [HStore 配置参考](/cn/docs/quickstart/hugegraph/hugegraph-hstore/#rocksdb-memory-budget)。
 
 ### Server 变量
@@ -328,21 +331,50 @@ RocksDB 缓存使用堆外内存。未设置 `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE
    作为 bind mount 的宿主机目录必须对 UID `10001` 可写；旧镜像写入过的目录需要执行 `sudo chown -R 10001:10001 <dir>`，因为其中的文件仍归 root 所有。在 Kubernetes 上，Pod 安全上下文需要 `fsGroup: 10001`，Helm Chart 已为 PD 和 Store 设置，参见
    [Helm 升级和验证](/cn/docs/quickstart/hugegraph/hugegraph-helm/#5-升级和验证)。
 
-**查看运行时日志**：使用 `docker logs <container-name>`（如 `docker logs hg-pd0`）可直接查看日志，无需进入容器。基于当前 master 构建的 PD、Store 以及两个 Server 镜像（`hugegraph/hugegraph` 和 HStore 的
-`hugegraph/server`）都设置了 `STDOUT_MODE=true`，服务日志会输出到容器 stdout。对 Server 而言，Hadoop、ZooKeeper、SOFA、Netty 和 Commons 的 WARN 及以上日志也会输出到 stdout；Hadoop、Netty 和 Commons 的
-INFO 日志以及审计日志、慢查询日志仍只写入文件，ZooKeeper 和 SOFA 不输出 WARN 以下的日志。`/hugegraph-server/logs` 中包含 `hugegraph-server.log`、JVM
-崩溃日志（`hs_err_pid*.log`）和内存溢出时的堆转储（`heapdump_*/java_pid*.hprof`，每次启动一个目录，Server 及其启动的 JVM 分别写入各自的文件，除非某个 JVM 复用了同一次启动中先前的 PID；如果无法创建该目录，转储会直接写入
-`/hugegraph-server/logs`）。两个镜像都声明了 `VOLUME /hugegraph-server`，因此 `docker restart` 和 Compose 重新创建容器都会保留这些文件；`docker compose down` 会留下这个匿名卷，下一次 `up` 不会再挂载它，之后执行
-`down -v` 也不会删除它（请在 `down` 之前用 `docker inspect` 记下卷名，再用 `docker volume rm <name>` 删除；`docker volume prune` 会同时删除 Docker
-主机上所有其他未使用的匿名卷），所以请使用具名卷或绑定挂载来保留这些文件。Kubernetes 每次重启都会新建容器，因此需要在 `/hugegraph-server/logs` 挂载 `emptyDir` 或 PersistentVolumeClaim。请为每个 Pod 使用单独的卷，或在共享 PVC 上为每个
-Pod 使用单独的目录（`subPathExpr: $(POD_NAME)`，并通过 Downward API 从 `metadata.name` 传入 `POD_NAME`；Helm Chart 两者都没有设置）：崩溃文件的名字各不相同，但日志文件本身的名字是固定的。只有当存储支持多个节点同时读写挂载（通常是
-`ReadWriteMany`）时，不同节点上的 Pod 才能共享同一个 PVC；`ReadWriteOnce` 的 PVC 只能被一个节点读写挂载，否则请为每个 Pod 使用单独的 PVC。Helm Chart 目前还不会挂载日志卷。堆转储可能和 JVM 堆一样大，而且每次启动都会使用新目录，因此反复内存溢出的
-Server 会把卷写满；请按需要保留的转储数量规划卷大小，并确保不超过 `ephemeral-storage` 限制或 `emptyDir` 的 `sizeLimit`（被驱逐时 `emptyDir` 会连同转储一起删除），也不要使用 `medium: Memory`。存活探针失败后，容器最早可能在转储开始后约
-`(failureThreshold - 1) × periodSeconds + timeoutSeconds` 被重启，kubelet 最多再等待 `terminationGracePeriodSeconds`
-就会终止它；请让这段时间长于写入一次堆转储所需的时间，否则在写转储的过程中重启会留下不完整的文件。启动脚本从不删除转储或 `heapdump_*` 目录，因为 computer 任务的 JVM 可能在 Server 退出后仍在使用它；每次启动到 Java 阶段都会留下一个目录，除非发生内存溢出否则为空。在该次启动的
-HugeGraph JVM 都已退出后可以删除旧目录，但不要动正在运行的 Server 最新的那个目录。要对所有 JVM 关闭堆转储，请在容器的环境变量中设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`（可以使用 `docker run -e`，或在
-Compose 中 Server 服务的 `environment:` 里添加，自带的 Compose 文件没有设置它，或在 Kubernetes 中使用 `env`；只在宿主机 shell 中导出不会生效），这样会保留镜像默认的 `JAVA_OPTS`；把该参数加到 `JAVA_OPTS` 中只对 Server
-自身的 JVM 生效，而且会替换镜像默认值（`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`），需要把这些参数一并写上。
+**先从容器外查看日志。** 使用 `docker logs <container-name>`，例如 `docker logs hg-pd0`。
+当前源码构建的 PD、Store 和两个 Server 镜像均设置 `STDOUT_MODE=true`，服务日志输出到 stdout。
+部分 Server 诊断仍需查文件：
+
+| 输出 | 查看位置 |
+| --- | --- |
+| 服务日志；Hadoop、ZooKeeper、SOFA、Netty、Commons 的 WARN 及以上日志 | 容器 stdout |
+| Hadoop、Netty、Commons 的 INFO；审计日志、慢查询日志 | Server 日志文件 |
+| Server 文件日志、JVM 崩溃日志和堆转储 | `/hugegraph-server/logs` |
+{.wide .expand}
+
+ZooKeeper 和 SOFA 不输出 WARN 以下的日志。转储命名、覆盖参数和安全清理方法见
+[Server 启动诊断](/cn/docs/quickstart/hugegraph/hugegraph-server/#515-启动脚本的参数)。
+
+**Docker 中优先使用具名卷。** 两个 Server 镜像都声明 `VOLUME /hugegraph-server`。
+重启或 Compose 重建会保留对应卷；但 `docker compose down` 会留下匿名卷，后续 `up` 不会重新挂载它。
+使用具名卷或绑定挂载，避免诊断文件留在难以找到的卷中。
+
+要删除旧匿名卷，先在 `down` 前用 `docker inspect` 记下卷名，再用 `docker volume rm <name>` 删除该卷。
+后续执行的 `down -v` 无法识别已经脱离容器的旧卷。
+
+**为每个 Kubernetes Pod 准备日志位置。** 在 `/hugegraph-server/logs` 挂载 `emptyDir` 或 PVC；当前 Helm Chart 不会自动添加日志卷。
+日志文件名固定，因此每个 Pod 应使用独立卷，或在共享卷中使用各自的目录。
+
+共享目录可用 `subPathExpr: $(POD_NAME)`，同时通过 Downward API 的 `metadata.name` 传入 `POD_NAME`；Chart 没有自动配置这两项。
+跨节点共享还要求存储支持多节点读写，通常为 `ReadWriteMany`。
+`ReadWriteOnce` 只允许一个节点读写挂载，否则应给每个 Pod 单独的 PVC。
+
+**为转储预留空间和写入时间。** 一份堆转储可能和 JVM 堆一样大，反复失败还会留下多个启动目录。
+卷容量应覆盖需要保留的转储，并满足 `ephemeral-storage` 和 `emptyDir.sizeLimit` 限制，不要使用内存型 `emptyDir`。
+Pod 被驱逐时，`emptyDir` 中的诊断文件也会丢失。存活探针和终止宽限时间应足够写完转储，否则可能只留下不完整文件。
+
+要对 Server 及其子 JVM 关闭转储，在容器内设置 `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError`：
+可使用 `docker run -e`、Compose `environment:` 或 Kubernetes `env`。
+仅在宿主机 shell 导出不会生效，自带 Compose 也不会自动转发它；这种方式会保留镜像默认的 `JAVA_OPTS`。
+把开关放进 `JAVA_OPTS` 则只影响 Server，并替换其默认值，因此必须保留需要的容器内存参数。
+
+> [!DETAILS]- 探针时限与清理
+>
+> 存活探针失败后，约经过 `(failureThreshold - 1) × periodSeconds + timeoutSeconds` 即可能触发重启，
+> kubelet 最多再等待 `terminationGracePeriodSeconds` 就会终止进程。请让这些时间足够写完转储。
+>
+> 启动脚本不会删除 `heapdump_*` 目录，因为子 JVM 可能在 Server 退出后继续使用它。
+> 只有该次启动的所有 JVM 退出后才能清理旧目录，不要删除运行中 Server 最新的目录。
 
 > **版本范围**：上文描述的是基于当前 master 构建的镜像。1.7.0 及更早的镜像都没有设置 `STDOUT_MODE`，包括上文使用的单机镜像 `hugegraph/hugegraph:1.7.0`：`docker logs`
 > 只能看到入口脚本的输出，服务日志仍在容器内的 `logs/` 中（Server 为 `logs/hugegraph-server.log`）。

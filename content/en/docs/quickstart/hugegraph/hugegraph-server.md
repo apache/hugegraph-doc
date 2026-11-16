@@ -120,10 +120,31 @@ There are four ways to deploy the Server service:
 <!-- 3.1 is linked by another place. if change 3.1's title, please check -->
 For complete container setup instructions, refer to the [Docker deployment guide](https://github.com/apache/hugegraph/blob/master/docker/README.md).
 
+For Server builds, select the appropriate artifact and storage topology:
+
+| Artifact | Storage and dependencies |
+| --- | --- |
+| `hugegraph/hugegraph:<tag>` | Standalone RocksDB; no PD or Store required |
+| Standard binary distribution | Ships `backend=rocksdb`, `serializer=binary`; `pd.peers` is commented out |
+| `hugegraph/server:<tag>` | HStore defaults; requires PD and Store |
+| Helm `values-single.yaml` | 1 PD + 1 Store + 1 Server; still HStore |
+
+Helm's single-node preset is not a standalone RocksDB preset.
+Vermeer and SeaTunnel have independent `standalone` settings that do not change the Server backend.
+
 Run a standalone Server container with the RocksDB backend:
 
 ```bash {tab="Quick Start (Default)"}
 docker run -itd --name=server -p 8080:8080 hugegraph/hugegraph:1.7.0
+```
+
+```bash {tab="With Persistent Volume"}
+# Persist RocksDB data using a named volume (mounted to /hugegraph-server/rocksdb-data)
+docker volume create hugegraph-rocksdb
+docker run -d --name=server -p 8080:8080 \
+  -e PASSWORD="replace-with-your-password" \
+  -v hugegraph-rocksdb:/hugegraph-server/rocksdb-data \
+  hugegraph/hugegraph:1.7.0
 ```
 
 ```bash {tab="With Sample Graph"}
@@ -141,6 +162,67 @@ Common container inspection operations:
 - **Check startup logs**: `docker logs -f server`
 - **Verify service health**: `curl -fsS http://127.0.0.1:8080/versions`
 {.td-cards-list}
+
+Pin a tested release tag for reproducibility; mutable tags such as `latest` may lag source fixes.
+The named volume persists the default RocksDB path. Mounting `/hugegraph-server/data` does not persist that database.
+Authentication is initialized from `PASSWORD` on first startup; changing this variable does not rotate an existing user's password.
+To reuse the HStore image for a new empty standalone installation, explicitly set both `HG_SERVER_BACKEND=rocksdb` and `HG_SERVER_USE_PD=false`.
+Use an image containing the local-backend storage-wait and data-directory ownership fixes:
+it ignores retained `pd.peers` and pre-creates `rocksdb-data` owned by 10001:10001 for a fresh named volume.
+Older HStore images need a corrected writable graph configuration and data-directory ownership instead.
+Do not switch an existing HStore installation's backend or reuse its initialization marker this way.
+
+Custom configuration bind mounts must be writable by UID/GID 10001.
+Mount the whole writable configuration directory: the entrypoint's atomic file replacement cannot update a single-file bind mount.
+Prefer named data volumes rather than recursively changing host-directory permissions.
+
+For an unpacked standard binary distribution, use Java 17, confirm the graph's RocksDB settings, then initialize and start it:
+
+```bash
+java -version
+# Run inside the fresh Server distribution directory
+bin/init-store.sh
+bin/start-hugegraph.sh
+```
+
+For authentication on a fresh binary distribution, first configure `auth.admin_pa` in `conf/rest-server.properties`,
+run `bin/enable-auth.sh`, and provide the same password on stdin to `bin/init-store.sh`.
+The binary initializer does not read the container entrypoint's `PASSWORD` variable. Restrict access to credential-bearing configuration files.
+Java 11 cannot execute Server 1.8 bytecode.
+
+Check `/versions`, list `/graphspaces/DEFAULT/graphs`, and send a real Gremlin request after startup.
+Standalone Server 1.8 uses the traversal source `__g_DEFAULT-hugegraph`; disabling PD does not restore legacy graph aliases.
+GraphSpace management itself requires PD; local graph listing remains available.
+See the [Gremlin API](/docs/clients/restful-api/gremlin/) for a runnable request and authentication options.
+
+For the authenticated container above, verify both the REST graph and its traversal source:
+
+```bash
+curl -fsS http://localhost:8080/versions
+curl -fsS -u 'admin:replace-with-your-password' \
+  http://localhost:8080/graphspaces/DEFAULT/graphs
+curl -fsS -u 'admin:replace-with-your-password' \
+  -H 'Content-Type: application/json' \
+  -d '{"gremlin":"g.V().count()","aliases":{"g":"__g_DEFAULT-hugegraph"}}' \
+  http://localhost:8080/gremlin
+```
+
+Omit credentials only when the deployment has authentication disabled.
+The version endpoint alone does not verify access to a loaded graph.
+
+| Symptom | Check |
+| --- | --- |
+| Startup waits for PD/Store | Confirm the image and active graph backend; the HStore image deliberately waits for distributed storage |
+| `Permission denied` updating properties | Configuration directories must be writable by the image's numeric service UID/GID |
+| `Device or resource busy` updating properties | Replace the single-file configuration bind mount with a writable directory mount |
+| Data disappears after container replacement | Persist `rocksdb-data`; a mount at `data` does not cover the default database |
+| `UnsupportedClassVersionError` | Check that the binary distribution is launched with Java 17 |
+| `Could not rebind` in standalone Gremlin | Use the GraphSpace-scoped alias registered by Server 1.8 |
+
+Stopping or removing the container does not delete its named data volume.
+Retain that volume for a restart; removing it explicitly deletes the local graph data.
+Changing `PASSWORD` or rebuilding an image is not a data migration or credential recovery procedure.
+
 
 If you use Docker Desktop, you can set the options as follows:
 <div style="text-align: center;">

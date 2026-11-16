@@ -68,7 +68,8 @@ curl --compressed -sS -X POST http://127.0.0.1:8080/gremlin \
 Bindings are case-sensitive: `<space>-<graph>` selects the graph and `__g_<space>-<graph>` selects its traversal source.
 There is no implicit global `g` on a multi-graph Server. `bindings` supplies query variables;
 it does not register graphs, and an alias target cannot be the expression `graph.traversal()`.
-For a legacy standalone graph without a GraphSpace, the bindings are `<graph>` and `__g_<graph>`.
+Server 1.8 uses GraphSpace-scoped bindings in standalone RocksDB mode too: `DEFAULT-hugegraph` and `__g_DEFAULT-hugegraph`.
+Disabling PD does not select legacy aliases. Only older Servers without GraphSpace bindings use `<graph>` and `__g_<graph>`.
 For an authenticated Server, add its configured HTTP credentials, for example `-u "$HG_USER:$HG_PASSWORD"`.
 
 The default synchronous Gremlin evaluation timeout is 30000 milliseconds, configured by `evaluationTimeout` in `gremlin-server.yaml`.

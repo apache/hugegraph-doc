@@ -169,7 +169,7 @@ it is initialization history, not the current PD voting set or the set of all ad
 | `bootstrap.pdReplicas` | Empty uses requested PD replicas | Retain recorded initial count |
 | `bootstrap.storeReplicas` | Empty uses requested Store replicas | Retain recorded initial allowlist count |
 | `bootstrap.initialStoreCount` | Empty uses requested Store replicas | Retain recorded startup threshold |
-| `pd.partition.defaultShardCount` | Explicit odd RF, or RF=1 below 3 initial Stores / RF=3 otherwise | PD-persisted replica policy remains authoritative |
+| `pd.partition.defaultShardCount` | Explicit odd RF, or RF=1 below 3 `bootstrap.storeReplicas` / RF=3 otherwise | PD-persisted replica policy remains authoritative |
 {.wide .expand}
 
 For example, growing one Store to three does not convert persisted RF=1 to RF=3. Five PD replicas require a PDB that preserves
@@ -190,7 +190,7 @@ Offline rendering cannot establish that existing PVCs are safe to reuse. Remove 
 
 ## 4 Partition sharding
 
-At first bootstrap, the chart seeds three shard replicas when the recorded initial Store count is at least three, and one otherwise.
+At first bootstrap, the chart seeds three shard replicas when the recorded Store allowlist count (`bootstrap.storeReplicas`) is at least three, and one otherwise.
 PD persists the partition settings; changing chart values after initialization does not rewrite that metadata.
 Use the PD configuration API and a coordinated partition patrol for an existing cluster.
 

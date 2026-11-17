@@ -619,7 +619,7 @@ kubectl -n hugegraph port-forward svc/hugegraph-rag 8001:8001
 在 RAG 界面中配置模型连接：
 
 1. 选择 Chat provider，填写可达的端点、模型名称与所需凭据。
-1. 保存配置，再使用**测试已保存连接**；仅保存成功不会测试模型服务。
+1. 保存配置，再使用 **Test saved connection**；仅保存成功不会测试模型服务。
 1. 需要 Embedding 的工作流先配置 Embedding provider；抽取与检索步骤见
    [HugeGraph AI 快速开始](/cn/docs/quickstart/hugegraph-ai/quick_start/)。
 {.steps}

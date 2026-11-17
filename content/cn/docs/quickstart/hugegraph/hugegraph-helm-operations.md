@@ -151,7 +151,7 @@ Chart 将首次 PD peers、Store allowlist 数量和启动 Store 门槛记录在
 | `bootstrap.pdReplicas` | 留空使用本次请求的 PD 副本数 | 保留记录中的首次数量 |
 | `bootstrap.storeReplicas` | 留空使用本次请求的 Store 副本数 | 保留首次 allowlist 数量 |
 | `bootstrap.initialStoreCount` | 留空使用本次请求的 Store 副本数 | 保留首次启动门槛 |
-| `pd.partition.defaultShardCount` | 显式奇数 RF；否则首次 Store 少于 3 为 RF=1，其余 RF=3 | PD 持久化的副本策略保持权威 |
+| `pd.partition.defaultShardCount` | 显式奇数 RF；否则首次 Store 准入数量（`bootstrap.storeReplicas`）少于 3 为 RF=1，其余 RF=3 | PD 持久化的副本策略保持权威 |
 {.wide .expand}
 
 例如，将一个 Store 扩为三个不会把持久化 RF=1 自动转为 RF=3。五个 PD 副本要求 PDB 至少保留三个可用投票节点
@@ -171,7 +171,7 @@ Chart 将首次 PD peers、Store allowlist 数量和启动 Store 门槛记录在
 
 ## 4 分区副本 {#4-partition-sharding}
 
-首次初始化时，记录的首次 Store 数量至少三个则默认每个分区三副本，否则一副本。
+首次初始化时，记录的首次 Store 准入数量（`bootstrap.storeReplicas`）至少三个则默认每个分区三副本，否则一副本。
 PD 会持久化分区设置，初始化后修改 chart 值不会覆盖已有元数据，应使用 PD 配置 API 并协调分区巡检。
 
 显式 shard 数必须为奇数且不超过 Store 数，操作在线集群前先核对
@@ -345,7 +345,7 @@ Pod Ready 或 `/healthcheck` 都不能单独证明 Worker 可分配。
 
 RAG 使用一份持久化资源树、单副本与 Recreate 部署。`settings.yaml` 中保存的连接优先于部署默认值。
 Secret/文件变更需要重启，不会覆盖用户已保存的连接字段；保留 PVC，通过界面更新保存的凭据。
-界面保存只校验并持久化配置，不调用模型；**测试已保存连接**执行独立的连接检查。
+界面保存只校验并持久化配置，不调用模型；**Test saved connection** 执行独立的连接检查。
 
 详见 [RAG 配置与恢复约定](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/rag.md)。
 

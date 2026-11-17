@@ -155,7 +155,7 @@ PMC 同学请特别注意认真检查 `LICENSE` + `NOTICE` 文件，确保文件
 大部分的发版问题都与之相关
 
 ```bash
-# HugeGraph 1.8.0 与当前 Computer 源码验证使用 JDK 17。
+# HugeGraph 1.8.0（包含 Computer 1.8.0 源码）使用 JDK 17。
 # HugeGraph 1.7.0 使用 Java 11。
 # java --version
 

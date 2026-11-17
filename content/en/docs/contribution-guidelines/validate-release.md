@@ -160,7 +160,7 @@ After decompressing `*hugegraph*src.tar.gz`, Do the following checks:
 6. Finally, make sure the source code works/compiles correctly
 
 ```bash
-# Use JDK 17 for HugeGraph 1.8.0 and current Computer source validation.
+# Use JDK 17 for HugeGraph 1.8.0, including Computer 1.8.0 sources.
 # Use Java 11 for HugeGraph 1.7.0.
 # java --version
 

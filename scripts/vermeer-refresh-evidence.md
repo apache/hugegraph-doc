@@ -36,4 +36,3 @@ Review the [native APIs and algorithms](https://github.com/apache/hugegraph-comp
 - Review native API handling in `apps/master/services/http_tasks.go` and `http_cluster.go`, output contracts in `algorithms/`,
   and Hubble routing/preview behavior in `DirectVermeerService`, `AsyncTaskService` and the OLAP result components.
 - Run source, build, link and browser gates against a frozen artifact using the [contribution guide](../contribution.md).
-  Detailed native task readbacks remain under `/var/tmp/hubble-month-audit/native-algorithms/`.

@@ -297,7 +297,7 @@ Ollama uses `host`, integer `port`, and `language_model`; it needs no API-key fi
 `reranker_type` accepts `cohere` or `siliconflow`. Cohere also accepts `cohere_base_url`.
 
 The four configuration endpoints return 201 on success. Saved application connections go to writable `settings.yaml`, not the bootstrap `.env`.
-Model saves validate format without contacting the provider. Invalid model configuration returns 400; a storage-write failure returns 503.
+Model saves validate format without contacting the provider. Request-schema errors (such as invalid types or out-of-range ports) return 422, while rejected settings (such as a destination change without a key) return 400; a storage-write failure returns 503.
 Blank or omitted model keys retain the current key; `clear_api_key: true` explicitly clears it.
 Changing the provider or endpoint requires a replacement key or explicit clearing, so the old key is not silently sent to another service.
 

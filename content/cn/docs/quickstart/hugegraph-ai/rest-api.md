@@ -305,7 +305,7 @@ Ollama 使用 `host`、整数 `port` 和 `language_model`，无需 API-key 字�
 `reranker_type` 可选 `cohere`、`siliconflow`。Cohere 还可以传 `cohere_base_url`。
 
 四个配置端点成功时返回 201。应用连接保存到可写的 `settings.yaml`，不改写引导配置 `.env`。
-模型保存只校验格式，不连接服务；无效模型配置返回 400，存储写入失败返回 503。
+模型保存只校验格式，不连接服务；请求 Schema 校验错误（如类型不合法或端口越界）返回 422，被拒绝的配置项（如更换目标但未提供 key）返回 400，存储写入失败返回 503。
 key 留空或省略时保留原 key；`clear_api_key: true` 才会明确清除。
 更换 provider 或端点时须输入新 key 或明确清除，原 key 不会静默发送到其他服务。
 

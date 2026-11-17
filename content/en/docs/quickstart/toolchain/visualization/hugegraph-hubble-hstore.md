@@ -114,7 +114,7 @@ Space cards display available storage usage separately, with its source and refr
 
 For API creation, omitted compute limits persist as `0`, inheriting the corresponding graph-service limit; positive values remain explicit.
 The creation form submits its displayed values. When editing, zero or a cleared compute field restores inheritance, and the UI shows the effective limit.
-Existing positive quotas are preserved. Use a paired current Server and Java Client when updating inheritance.
+Existing positive quotas are preserved (apache/hugegraph#3391). Updating inheritance requires a matching Server and Java Client; older Java Clients send unset compute limits as 0 and reset them on partial updates.
 
 Storage usage follows Store heartbeats and PD quota refreshes, rather than individual writes. Servers supplying `storage_used_kb` enable sub-GB usage
 and ratios below 0.01%; older Servers retain the integer-GB fallback. Only the legacy `Integer.MAX_VALUE` quota sentinel displays as unlimited.

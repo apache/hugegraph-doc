@@ -29,5 +29,5 @@
 - 图片与运行身份：[hubble-screenshots.json](fixtures/hubble-screenshots.json)。
 - 阅读体验：`tests/e2e/duo-view.spec.js`、`theme-upgrade.spec.js`、`technical-catalogs.spec.js` 与 `search-ranking.spec.js`。
   重点检查双语旧锚点、双 pane 原图、Escape／焦点恢复、移动端、Print／Markdown 回退与禁用 AI 时的网络行为。
-- 真实导入请求与读回详证保留在任务临时产物 `hubble-import-live/`；截图不能代替后端运行验证。
+- 截图不能代替后端运行验证；真实导入请求与读回需以各模块端到端测试与真实服务断言为准。
 - 源码、构建、链接与浏览器检查使用冻结的内容产物；具体门禁见 [贡献指南](../contribution.md)。

@@ -140,7 +140,7 @@ Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据
 需要精确计数时读取已完成的 Server 异步计数结果，不要把查询画布里的元素数量当作全图总量。
 
 【克隆 Schema】可将定义复制到同一图空间的新图，不复制顶点或边；要求 Server API 0.73 或更高版本。
-当前实现会在创建目标图前拒绝包含边类型的源 Schema。若后续步骤失败，先检查目标图是否已创建，再决定是否重试。
+Server 会在创建目标图前拒绝包含边类型的源 Schema。若后续步骤失败，先检查目标图是否已创建，再决定是否重试。
 
 > [!NOTE] 删除有 Vermeer 副本的图
 > 配置原生 Vermeer 集成后，Hubble 会先检查待处理的加载任务并清理计算副本，再删除源图。
@@ -331,7 +331,7 @@ vermeer.token_file=/path/to/vermeer-service.token
 #### 支持的 OLAP 算法与执行生命周期 {#supported-olap-algorithms-and-execution-lifecycle}
 
 Vermeer 在内存分布式分区上执行批处理图算法：
-- **算法目录**：当前直连接口支持 19 种算法，包括 PageRank/PPR、WCC/SCC、LPA/SLPA、中心度、三角形计数、K-Core、SSSP、
+- **算法目录**：直连接口支持 19 种算法，包括 PageRank/PPR、WCC/SCC、LPA/SLPA、中心度、三角形计数、K-Core、SSSP、
   聚集系数、Depth、环检测、Louvain 及其变体、K-out 和 Jaccard。请选择当前引擎对应的表单，参数及属性过滤限制见 Vermeer 指南。
 - **内存图加载**：计算流程首先将图数据从 PD/Store 加载或重新加载至 Vermeer Worker 内存。每个图在加载确认后保持任务 ID，入队任务维持在 `Loading` 状态直至加载完毕。
 - **任务监控与取消**：原生任务在后台异步运行，可按状态（`RUNNING`、`SUCCESS`、`FAILED`）筛选监控，并支持在需要时主动取消任务。

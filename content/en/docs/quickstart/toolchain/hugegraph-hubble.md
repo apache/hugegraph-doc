@@ -140,7 +140,7 @@ A snapshot is not a live count after subsequent writes. Unavailable counts remai
 Use completed asynchronous Server counts when you need an exact count; avoid treating the query canvas size as the graph total.
 
 **Clone Schema** copies definitions into a new graph in the same GraphSpace, without copying vertices or edges.
-It requires Server API 0.73 or later. The current implementation rejects source schemas containing edge labels before creating the target.
+It requires Server API 0.73 or later. Server rejects source schemas containing edge labels before creating the target.
 If a later step fails, inspect whether the target graph already exists before retrying.
 
 > [!NOTE] Deleting graphs with a Vermeer copy
@@ -329,7 +329,7 @@ vermeer.token_file=/path/to/vermeer-service.token
 #### Supported OLAP algorithms and execution lifecycle
 
 Vermeer executes batch algorithms over in-memory graph partitions:
-- **Algorithm catalog**: The current direct adapter supports 19 algorithms, including PageRank/PPR, WCC/SCC, LPA/SLPA,
+- **Algorithm catalog**: The direct adapter supports 19 algorithms, including PageRank/PPR, WCC/SCC, LPA/SLPA,
   centrality, Triangle Count, K-Core, SSSP, Clustering Coefficient, Depth, Cycle Detection, Louvain variants, K-out and Jaccard.
   Select the form for the current engine; parameters and property-filter restrictions are listed in the Vermeer guide.
 - **Loading graph into memory**: The workflow begins by loading or reloading graph data from PD/Store into Vermeer worker memory. Accepted loads retain their

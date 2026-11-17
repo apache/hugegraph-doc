@@ -814,7 +814,7 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 #### 6.3.5 LOADING ownership {#loading-ownership}
 
-Current 1.8.0 `master` provides the protocol 1 endpoints for LOADING ownership. Probe `GET .../mode/owners` and require `protocol: 1`;
+HugeGraph Server 1.8.0 and later provide the protocol 1 endpoints for LOADING ownership. Probe `GET .../mode/owners` and require `protocol: 1`;
 Loader integration also needs a matching 1.8.0 or newer client. Server 1.7.0 and earlier lack this protocol, as do some earlier 1.8 development builds.
 Support for the `LOADING` enum alone does not imply support for these endpoints.
 With authentication enabled, both endpoints use the mode setter's permissions: graph-space management (`space`) or graph ownership, with STATUS write

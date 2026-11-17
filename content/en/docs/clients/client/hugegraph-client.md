@@ -998,7 +998,7 @@ spaceManager.createGraphSpace(graphSpace);
 
 #### 8.3 Compute quotas and storage usage {#graphspace-resource-updates}
 
-The current `1.8.0` Client preserves the distinction between an unset compute quota and an explicit zero.
+Client `1.8.0`, built from Toolchain `master` per section 4.2, preserves the distinction between an unset compute quota and an explicit zero.
 On a Server that supports inherited compute quotas:
 
 | When updating a GraphSpace | Result |
@@ -1011,7 +1011,7 @@ The getters return `0` for an unset value too. Do not copy that default into a s
 Older Clients can send zero for unset compute fields and unintentionally restore inheritance when updating against a newer Server.
 Upgrade the Client together with this Server capability, or explicitly preserve the existing limits when updating.
 
-For storage monitoring, prefer `getStorageUsedKb()` (`storage_used_kb`), an optional non-negative integer metric in KB.
+For storage monitoring with Client `1.8.0` (built from Toolchain `master`), prefer `getStorageUsedKb()` (`storage_used_kb`), an optional non-negative integer metric in KB.
 If it is `null`, fall back to `getStorageUsed()` in whole GB; sub-GB usage can appear as zero in that legacy field.
 Treat malformed or string-valued `storage_used_kb` as unavailable. These are reported usage metrics, so allow for Store heartbeat
 and PD refresh delays after writes.

@@ -1014,7 +1014,7 @@ spaceManager.createGraphSpace(graphSpace);
 
 #### 8.3 计算配额与存储用量 {#graphspace-resource-updates}
 
-当前 `1.8.0` Client 会区分“未设置计算配额”和“显式设置为零”。连接支持计算配额继承的 Server 时：
+按 4.2 节由 Toolchain `master` 构建的 Client `1.8.0` 会区分“未设置计算配额”和“显式设置为零”。连接支持计算配额继承的 Server 时：
 
 | 更新 GraphSpace 时的操作 | 结果 |
 | --- | --- |
@@ -1026,6 +1026,6 @@ getter 在字段未设置时也会返回 `0`。如果只是想保留原值，不
 旧 Client 可能把未设置的计算配额发送为零，连接新版 Server 更新 GraphSpace 时意外恢复继承。
 启用这项 Server 能力时应同时升级 Client；暂时无法升级时，更新请求中需显式保留现有配额。
 
-监控存储时优先使用 `getStorageUsedKb()`（`storage_used_kb`）：这是可选的非负整数指标，单位为 KB。
+监控存储时，使用基于 Toolchain `master` 构建的 Client `1.8.0` 优先使用 `getStorageUsedKb()`（`storage_used_kb`）：这是可选的非负整数指标，单位为 KB。
 返回 `null` 时，回退到以整数 GB 表示的 `getStorageUsed()`；旧字段可能把不足 1 GB 的用量显示为零。
 格式不合法或字符串形式的 `storage_used_kb` 视为不可用。这些是上报用量，写入后需考虑 Store 心跳与 PD 刷新的延迟。

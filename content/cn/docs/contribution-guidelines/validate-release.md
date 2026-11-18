@@ -4,10 +4,10 @@ linkTitle: "验证 Apache 发版"
 weight: 3
 ---
 
-> Note: 这篇文档会持续更新。
-> HugeGraph 1.8.0 的源码构建与发行包运行验证统一使用 Java 17（Maven 源码构建仅接受 JDK 17）；1.7.0 请使用 Java 11。从 1.5.0 版本开始 (除 client 外) 不再支持 Java 8。
->
-> 毕业说明：Apache HugeGraph 已于 2026 年 1 月毕业。正式发版投票现由 HugeGraph 社区内部完成（`dev@hugegraph.apache.org` 上的 PMC binding 投票），不再需要 Incubator `general@incubator.apache.org` 审批。
+> [!NOTE]
+> 这篇文档会持续更新。
+> - **Java 版本**：1.8.0 源码构建与发行包验证统一使用 Java 17；1.7.0 请使用 Java 11；1.5.0 起（除 client 外）不再支持 Java 8。
+> - **社区毕业**：Apache HugeGraph 已于 2026 年 1 月毕业。发版投票现由 HugeGraph 社区内部完成（`dev@hugegraph.apache.org` PMC binding 投票），无需 Incubator 审批。
 
 ## 自动化发版验证
 

@@ -4,10 +4,10 @@ linkTitle: "Validate Apache Release"
 weight: 3
 ---
 
-> Note: this doc will be updated continuously.
-> Use Java 17 to build and verify HugeGraph 1.8.0 release packages (the Maven build accepts only JDK 17); use Java 11 for 1.7.0. Since version 1.5.0, components other than the client no longer support Java 8.
->
-> Graduation note: Apache HugeGraph graduated in January 2026. Official release voting is now completed within the HugeGraph community (PMC binding votes on `dev@hugegraph.apache.org`), and no longer requires Incubator `general@incubator.apache.org` approval.
+> [!NOTE]
+> This doc will be updated continuously.
+> - **Java version**: use Java 17 for 1.8.0 builds and release verification; Java 11 for 1.7.0; Java 8 is no longer supported since 1.5.0 (except the client).
+> - **Graduation**: Apache HugeGraph graduated in January 2026. Release voting is now completed within the HugeGraph community (PMC binding votes on `dev@hugegraph.apache.org`); Incubator approval is no longer required.
 
 ## Automated release validation
 

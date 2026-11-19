@@ -12,28 +12,54 @@ Reading from HugeGraph is not implemented yet: the table only implements `Suppor
 
 ### 2 Environment Requirements
 
-- Java 8+
-- Maven 3.6+
-- Spark 3.2.x (the module is built against Spark 3.2.2 with `provided` scope, so your Spark runtime must supply the Spark jars)
-- Scala 2.12 (built with Scala 2.12.11)
+- Java 17 on the build machine, Spark driver and every executor
+- Maven 3.6.3+; Python 3.9+ for source SDK preparation
+- Spark 3.5.8 (dependencies use `provided` scope; the Spark distribution supplies them at runtime)
+- Scala 2.12 (built with Scala 2.12.18)
 
 ### 3 Building
+
+The following commands build current Toolchain `master`. First complete the
+[Tools SDK preparation](/docs/quickstart/toolchain/hugegraph-tools/#prepare-server-sdk), then stay in that Toolchain checkout
+and terminal to reuse `candidate_dir`. The Scala bytecode target alone does not lower the Java 17 requirement of the Client dependencies.
 
 #### 3.1 Build without executing tests
 
 ```bash
-git clone https://github.com/apache/hugegraph-toolchain.git
-cd hugegraph-toolchain
-mvn clean package -pl hugegraph-spark-connector -am -DskipTests -ntp
+mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
+  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+  clean package -pl hugegraph-spark-connector -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
 #### 3.2 Build with default tests
 
+The default integration tests clear their target graph before writing. Use a disposable Server and graph;
+set `-Dhugegraph.test.url=... -Dhugegraph.test.graph=...` to select it. See the
+[connector testing guide](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-spark-connector/README.md#building)
+for local Spark and HTTPS test settings. Install the upstream modules with `-DskipTests` first, then run the connector tests without `-am`:
+
 ```bash
-mvn clean package -pl hugegraph-spark-connector -am -ntp
+mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
+  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+  clean install -pl hugegraph-spark-connector -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+
+mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
+  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+  test -pl hugegraph-spark-connector -Dmaven.javadoc.skip=true -ntp
 ```
 
 Both commands produce a fat jar at `hugegraph-spark-connector/target/hugegraph-spark-connector-${revision}-jar-with-dependencies.jar` (Spark itself is not bundled). Pass it to `spark-submit --jars` when you do not manage the dependency through Maven.
+
+#### 3.3 Submit the application {#spark-runtime-submission}
+
+Use `spark-submit` from the matching Spark distribution. Keep Spark's default logging class loading order and use
+Guava `30.0-jre` for the application on both driver and executors; Spark's older Guava can cause a missing
+`Preconditions.checkNotNull` overload. Set UTF-8 explicitly for both JVMs.
+The [submission example](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-spark-connector/README.md#building)
+shows how to fetch Guava and set `--driver-class-path`, `spark.executor.extraClassPath` and the UTF-8 options.
+
+Provision the executor JAR at the same absolute path on every worker. In cluster deploy mode, also provision it on the remote driver;
+copying it to executors does not provision that driver. Test that deployment separately from the embedded Maven fixture.
 
 ### 4 Usage
 

@@ -12,30 +12,55 @@ HugeGraph-Spark-Connector 使用 Spark DataFrame API 将批量数据写入 HugeG
 
 ### 2 环境要求
 
-- Java 8+
-- Maven 3.6+
-- Spark 3.2.x（模块基于 Spark 3.2.2 编译，依赖范围为 `provided`，因此需要由 Spark 运行环境提供 Spark 的 jar）
-- Scala 2.12（基于 Scala 2.12.11 编译）
+- 构建环境、Spark driver 与所有 executor 均使用 Java 17
+- Maven 3.6.3+；源码 SDK 准备另需 Python 3.9+
+- Spark 3.5.8（依赖范围为 `provided`，运行时由 Spark 发行包提供）
+- Scala 2.12（基于 Scala 2.12.18 编译）
 
 ### 3 编译
 
+以下命令构建当前 Toolchain `master`。先完成
+[Tools 的 SDK 准备步骤](/cn/docs/quickstart/toolchain/hugegraph-tools/#prepare-server-sdk)，
+然后留在同一终端、同一份 Toolchain 源码根目录，沿用 `candidate_dir`。
+Scala 字节码的编译目标不会降低 Client 依赖所要求的 Java 17 运行环境。
+
 #### 3.1 不执行测试的编译
 
-以下命令均在仓库根目录执行。
-
 ```bash
-git clone https://github.com/apache/hugegraph-toolchain.git
-cd hugegraph-toolchain
-mvn clean package -pl hugegraph-spark-connector -am -DskipTests -ntp
+mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
+  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+  clean package -pl hugegraph-spark-connector -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
 #### 3.2 执行默认测试的编译
 
+默认集成测试会先清空目标图再写入数据，请使用可丢弃的 Server 和图。
+通过 `-Dhugegraph.test.url=... -Dhugegraph.test.graph=...` 指定目标；本地 Spark 与 HTTPS 测试配置见
+[连接器测试指引](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-spark-connector/README.md#building)。
+先使用 `-DskipTests` 安装上游模块，再单独执行连接器测试（不带 `-am`），避免触发 `hugegraph-client` 的默认清空测试：
+
 ```bash
-mvn clean package -pl hugegraph-spark-connector -am -ntp
+mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
+  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+  clean install -pl hugegraph-spark-connector -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+
+mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
+  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+  test -pl hugegraph-spark-connector -Dmaven.javadoc.skip=true -ntp
 ```
 
 两条命令都会在 `hugegraph-spark-connector/target/hugegraph-spark-connector-${revision}-jar-with-dependencies.jar` 生成一个包含依赖的 jar（不包含 Spark 本身）。如果不通过 Maven 管理依赖，可以把它传给 `spark-submit --jars`。
+
+#### 3.3 提交应用 {#spark-runtime-submission}
+
+使用配套 Spark 发行包中的 `spark-submit`。保留 Spark 默认的日志类加载顺序，
+并为 driver 与 executor 的应用类路径提供 Guava `30.0-jre`；Spark 自带的旧 Guava 可能导致缺少
+`Preconditions.checkNotNull` 重载方法。同时显式设置两个 JVM 的 UTF-8 编码。
+[提交示例](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-spark-connector/README.md#building)
+提供 Guava 下载命令，以及 `--driver-class-path`、`spark.executor.extraClassPath` 与编码选项的完整写法。
+
+每个 worker 上的 executor JAR 应位于同一绝对路径。使用 cluster deploy 模式时，还需为远端 driver 配置可读的 JAR 路径；
+复制到 executor 不会自动为 driver 提供该 JAR。该部署应单独验证，不能用 Maven 内嵌测试代替。
 
 ### 4 使用方法
 

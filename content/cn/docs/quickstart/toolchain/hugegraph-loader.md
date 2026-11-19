@@ -178,16 +178,24 @@ services:
 
 #### 2.3 克隆源码编译安装
 
-从 master 分支编译 Loader 需要 Java 17、Maven 3.6.3+ 与 Python 3.9+。直接克隆仓库并编译：
+构建当前 Loader 源码需要 **JDK 17、Maven 3.6.3+ 与 Python 3.9+**，以及配套 Server SDK。
 
-```bash
-git clone --branch master --single-branch https://github.com/apache/hugegraph-toolchain.git
-cd hugegraph-toolchain
-mvn package -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
-cd hugegraph-loader/apache-hugegraph-loader-*
-```
+1. **准备 Toolchain 与 SDK。** 先完成 Tools 指南中的克隆及
+   [SDK 准备步骤](/cn/docs/quickstart/toolchain/hugegraph-tools/#prepare-server-sdk)。
+   保留同一终端和已准备好的 `candidate_dir`，下一步在 Toolchain 仓库根目录执行。
 
-如需搭配开发阶段的 Server master SDK 编译，可参阅 [Java 17 迁移指引](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md)。
+1. **打包并进入 Loader 目录。**
+
+   ```bash
+   mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
+     -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+     package -pl hugegraph-client,hugegraph-loader -am \
+     -DskipTests -Dmaven.javadoc.skip=true -ntp
+   cd hugegraph-loader/apache-hugegraph-loader-*
+   ```
+{.steps}
+
+独立 Maven 仓库和 candidate 模式是这套源码构建流程的一部分；仅运行 `mvn package` 不会准备配套 SDK。
 
 如需读取 Oracle 数据，按所用 Oracle/JDK 版本准备兼容的 JDBC 驱动 JAR，并放入解压后 Loader 的 `lib/` 目录。
 启动脚本会加载该目录中的 JAR；仅将驱动安装到 Maven 本地仓库并不会让运行中的 Loader 找到它。
@@ -962,7 +970,7 @@ GRAPH 输入源从另一个 HugeGraph 图（通过 HugeGraph-PD 访问）读取�
 | `--serializer`                          | binary      |      | 自动创建图（如果不存在）时的序列化器类型                                              |
 | `--scheduler-type`                      | distributed |      | 自动创建图（如果不存在）时的任务调度器类型                                             |
 | `--batch-failure-fallback`              | true        |      | 批量插入失败时是否回退至单条插入模式                                                |
-{.td-table--wide}
+{.td-table--wide .expand}
 
 映射文件选项 `--file`（`-f`）是必填项，其他选项使用默认值。有效的最简调用为：
 
@@ -991,6 +999,19 @@ Loader 必须能够创建并写入以映射文件前缀命名的进度目录。
 通常情况下，Loader 任务都需要较长时间执行，如果因为某些原因导致导入中断进程退出，而下次希望能从中断的点继续导，这就是使用断点续导的场景。
 
 设置 `--incremental-mode` 为 `true` 即可从进度文件续导。Loader 在导入成功或正常停止后关闭时写入进度；意外失败可能阻止该写入。
+
+实际恢复位置取决于输入源：
+
+| 输入源 | 下一次从哪里开始 |
+| --- | --- |
+| FILE / HDFS | 从 Loader 进度文件恢复记录的各文件位置 |
+| JDBC / GRAPH | 不恢复源行或图扫描位置；重新启动可能再次读取已导入的元素 |
+| Kafka | 由 Kafka 保存的消费者组 offset 决定，Loader 进度文件不能替代它 |
+
+能够读取 GRAPH 进度文件，不代表图扫描可以从保存的位置续导。
+重试前先检查目标图，并考虑重复写入，尤其是使用 `SUM`、`APPEND` 等更新策略时。
+这些检查点和 Kafka 自动提交 offset 均不提供图写入的 exactly-once 保证。
+
 进度文件位于 `${struct}` 目录下，文件名形如 `load-progress_${timestamp}` ，${struct} 为映射文件的前缀，${timestamp} 为导入开始
 的时刻，格式为 `yyyyMMdd-HHmmss`。比如：在 `2019-10-10 12:30:30` 开始的一次导入任务，使用的映射文件为 `struct-example.json`，则进度文件的路径为与 struct-example.json 
 同级的 `struct-example/load-progress_20191010-123030`。当目录下存在多个进度文件时，续导会读取按文件名排序的最后一个，也就是最新的那个。
@@ -998,14 +1019,18 @@ Loader 必须能够创建并写入以映射文件前缀命名的进度目录。
 > 注意：导入成功或正常停止（包括达到错误上限）后会写入进度文件，与 `--incremental-mode` 或 `--print-progress` 是否打开无关。
 > 意外失败导致导入中止时，可能不会写入进度文件。
 
-如果数据文件格式都是合法的，是用户自己停止（CTRL + C 或 kill，kill -9 不支持）的导入任务，也就是说没有错误记录的情况下，下一次导入只需要设置为断点续导即可。
+对于 FILE/HDFS 输入，使用 `Ctrl+C` 或 `kill` 正常停止后，设置 `--incremental-mode true` 可从已保存的位置继续。
+`kill -9` 强制终止不能保存进度。
 
 但如果是因为太多数据不合法或者网络异常，达到了 --max-read-errors、--max-parse-errors 或 --max-insert-errors 的限制，Loader 会把这些失败的原始行记录到
-失败文件中，用户对失败文件中的数据行修改后，设置 --failure-mode 为 true 即可把这些"失败文件"也当作输入源进行导入（不影响正常的文件的导入），
-当然如果修改后的数据行仍然有问题，则会被再次记录到失败文件中（不用担心会有重复行，关闭文件时会去重）。失败模式下上述三个错误上限会被解除，因此会扫描整个失败文件。
+失败文件中。修正其中的数据行后，设置 `--failure-mode true` 即可重新导入，不会修改原始数据文件。
+仍失败的行会再次写入失败文件，关闭时去重。失败模式下上述三个错误上限会被解除，因此会扫描整个失败文件。
+基于文件的重试沿用输入源的日期格式和 `time_zone`，应与原始输入的设置保持一致。
 
 每个输入源（即映射文件 `structs` 中的每一项）都会有自己的失败文件，文件名为该输入源的 `id` 加后缀 `.error`，保存在 `${struct}/failure-data` 目录下。
+
 每一条失败记录写为两行：一行以 `#### READ ERROR:`、`#### PARSE ERROR:` 或 `#### INSERT ERROR:` 开头的提示行，紧接着是原始数据行。当输入源有 header 时，header 会以 JSON 形式写入同目录下的 `${id}.header` 文件，以便失败文件能按正确的列重新读取。
+
 比如映射文件中 id 为 `1` 的输入源包含顶点映射 person，id 为 `3` 的输入源包含边映射 knows，它们各有一些错误行，当 Loader 退出后，在 `${struct}/failure-data` 目录下会看到如下文件：
 
 - 1.error: 输入源 1 的失败数据行，每行前面都有对应的提示行

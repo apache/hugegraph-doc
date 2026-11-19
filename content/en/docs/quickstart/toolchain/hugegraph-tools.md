@@ -61,7 +61,9 @@ The build also writes `hugegraph-tools/target/apache-hugegraph-tools-incubating-
 
 #### 2.3 Build current source {#build-current-source}
 
-To use unreleased features from the master branch, build Tools from source (master is currently based on 1.8; requires JDK 17, Maven 3.6.3+, and Python 3.9+):
+Building current Toolchain source requires **JDK 17, Maven 3.6.3+, and Python 3.9+**.
+Set `JAVA_HOME` to your JDK 17 installation. Prepare the matching Server SDK before building Tools, Client or Loader.
+Use the same terminal and isolated Maven repository for these steps.
 
 1. **Clone Toolchain source**
 
@@ -70,33 +72,44 @@ To use unreleased features from the master branch, build Tools from source (mast
    cd hugegraph-toolchain
    ```
 
-1. **Build matching Server SDK**
+1. <span id="prepare-server-sdk"></span>**Prepare the matching Server SDK.**
 
    Run the script below to download Server source and install the SDK into an isolated Maven repository:
 
    ```bash
    java -version
    mvn -version
+   server_commit=$(python3 - <<'PY'
+   import runpy
+   print(runpy.run_path(
+       "hugegraph-client/assembly/travis/verify_candidate_image_sdk.py"
+   )["COMMIT"])
+   PY
+   )
    candidate_dir=$(mktemp -d)
    mkdir -p "$candidate_dir/m2"
    bash hugegraph-client/assembly/travis/install-candidate-sdk.sh \
-     master "$candidate_dir/server" "$candidate_dir/m2"
+     "$server_commit" "$candidate_dir/server" "$candidate_dir/m2"
    ```
 
-   See the [Java 17 migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md) for details.
+   Both version checks must report JDK 17. The helper requires the full Server source identity selected by Toolchain;
+   passing `master` is rejected. This keeps the installed SDK and package verification consistent.
+   Keep `candidate_dir` for the following commands. See the
+   [Java 17 migration guide](https://github.com/apache/hugegraph-toolchain/blob/master/docs/java17-migration.md) for other build modes.
 
 1. **Package Tools**
 
    ```bash
    mvn -Dmaven.repo.local="$candidate_dir/m2" \
-     -Dsdk.validation.mode=candidate \
+     -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
      package -pl hugegraph-tools -am -DskipTests -Dmaven.javadoc.skip=true -ntp
    cd hugegraph-tools/apache-hugegraph-tools-*
    bin/hugegraph help
    ```
 {.steps}
 
-Keep the SDK repository while using this source build. The master build directory does not contain `incubating`.
+These are development packages, not an ASF release. Keep the isolated SDK repository while building other Toolchain modules or applications using them.
+The master build directory does not contain `incubating`.
 
 ### 3 How to use
 
@@ -144,7 +157,7 @@ Use `export` to set an option for the current shell and the commands launched fr
 | --timeout              | HUGEGRAPH_TIMEOUT              | export HUGEGRAPH_TIMEOUT=30                        |
 | --trust-store-file     | HUGEGRAPH_TRUST_STORE_FILE     | export HUGEGRAPH_TRUST_STORE_FILE=/tmp/trust-store |
 | --trust-store-password | HUGEGRAPH_TRUST_STORE_PASSWORD | export HUGEGRAPH_TRUST_STORE_PASSWORD=xxxx         |
-{.td-table--wide}
+{.td-table--wide .expand}
 
 Both forms below count vertices in the same graph; choose either form. The example uses a local Server without authentication.
 For an authenticated Server, also provide the username and password described above.
@@ -157,21 +170,6 @@ For an authenticated Server, also provide the username and password described ab
 export HUGEGRAPH_URL=http://127.0.0.1:8080
 export HUGEGRAPH_GRAPH=hugegraph
 ./bin/hugegraph gremlin-execute --script 'g.V().count()'
-```
-
-You can also set these variables in `bin/hugegraph`.
-
-```text
-#!/bin/bash
-
-# Set environment here if needed
-#export HUGEGRAPH_URL=
-#export HUGEGRAPH_GRAPH=
-#export HUGEGRAPH_USERNAME=
-#export HUGEGRAPH_PASSWORD=
-#export HUGEGRAPH_TIMEOUT=
-#export HUGEGRAPH_TRUST_STORE_FILE=
-#export HUGEGRAPH_TRUST_STORE_PASSWORD=
 ```
 
 `bin/hugegraph` also reads `JAVA_HOME` (a warning is printed when it is not set, and it is needed for https) and `JAVA_OPTIONS` (JVM options; when it is empty the script uses `-Xms512m` plus an `-Xmx` computed from the free memory of the machine).
@@ -188,7 +186,7 @@ You can also set these variables in `bin/hugegraph`.
 - graph-create, create a new graph with configuration file
   - --name or -n, optional, the name of the new graph, default is g
   - --file or -f, the path to the graph configuration file, the content of the file is sent to HugeGraph-Server as the config of the new graph
-- graph-clone, clone an existing graph
+- graph-clone, create a graph using an existing graph’s configuration; Schema and data are not copied
   - --name or -n, optional, the name of the cloned graph, default is g
   - --clone-graph-name, optional, the name of the source graph to clone from, default is hugegraph
 - graph-drop, drop a graph (different from graph-clear, this completely removes the graph)
@@ -337,420 +335,16 @@ The options below are retained only for maintaining legacy environments.
 
 ##### 3.9 Specific command parameters
 
-The help output below lists each subcommand and its options.
+Use the help shipped with your installed version to check supported commands and defaults:
 
 ```bash
-Usage: hugegraph [options] [command] [command options]
-  Options:
-    --graph
-      Name of graph
-      Default: hugegraph
-    --password
-      Password of user
-    --throw-mode
-      Whether the hugegraph-tools work to throw an exception
-      Default: false
-    --timeout
-      Connection timeout
-      Default: 30
-    --trust-store-file
-      The path of client truststore file used when https protocol is enabled
-    --trust-store-password
-      The password of the client truststore file used when the https protocol 
-      is enabled
-    --url
-      The URL of HugeGraph-Server
-      Default: http://127.0.0.1:8080
-    --user
-      Name of user
-  Commands:
-    graph-create      Create graph with config
-      Usage: graph-create [options]
-        Options:
-          --file, -f
-            Creating graph config file
-          --name, -n
-            The name of new created graph, default is g
-            Default: g
-
-    graph-clone      Clone graph
-      Usage: graph-clone [options]
-        Options:
-          --clone-graph-name
-            The name of cloned graph, default is hugegraph
-            Default: hugegraph
-          --name, -n
-            The name of new created graph, default is g
-            Default: g
-
-    graph-list      List all graphs
-      Usage: graph-list
-
-    graph-get      Get graph info
-      Usage: graph-get
-
-    graph-clear      Clear graph schema and data
-      Usage: graph-clear [options]
-        Options:
-        * --confirm-message, -c
-            Confirm message of graph clear is "I'm sure to delete all data". 
-            (Note: include "")
-
-    graph-drop      Drop graph
-      Usage: graph-drop [options]
-        Options:
-        * --confirm-message, -c
-            Confirm message of graph clear is "I'm sure to drop the graph". 
-            (Note: include "")
-
-    graph-mode-set      Set graph mode
-      Usage: graph-mode-set [options]
-        Options:
-        * --graph-mode, -m
-            Graph mode, include: [NONE, RESTORING, MERGING]
-            Possible Values: [NONE, RESTORING, MERGING, LOADING]
-
-    graph-mode-get      Get graph mode
-      Usage: graph-mode-get
-
-    task-list      List tasks
-      Usage: task-list [options]
-        Options:
-          --limit
-            Limit number, no limit if not provided
-            Default: -1
-          --status
-            Status of task
-
-    task-get      Get task info
-      Usage: task-get [options]
-        Options:
-        * --task-id
-            Task id
-            Default: 0
-
-    task-delete      Delete task
-      Usage: task-delete [options]
-        Options:
-        * --task-id
-            Task id
-            Default: 0
-
-    task-cancel      Cancel task
-      Usage: task-cancel [options]
-        Options:
-        * --task-id
-            Task id
-            Default: 0
-
-    task-clear      Clear completed tasks
-      Usage: task-clear [options]
-        Options:
-          --force
-            Force to clear all tasks, cancel all uncompleted tasks firstly, 
-            and delete all completed tasks
-            Default: false
-
-    gremlin-execute      Execute Gremlin statements
-      Usage: gremlin-execute [options]
-        Options:
-          --aliases, -a
-            Gremlin aliases, valid format is: 'key1=value1,key2=value2...'
-            Default: {}
-          --bindings, -b
-            Gremlin bindings, valid format is: 'key1=value1,key2=value2...'
-            Default: {}
-          --file, -f
-            Gremlin Script file to be executed, UTF-8 encoded, exclusive to 
-            --script 
-          --language, -l
-            Gremlin script language
-            Default: gremlin-groovy
-          --script, -s
-            Gremlin script to be executed, exclusive to --file
-
-    gremlin-schedule      Execute Gremlin statements as asynchronous job
-      Usage: gremlin-schedule [options]
-        Options:
-          --bindings, -b
-            Gremlin bindings, valid format is: 'key1=value1,key2=value2...'
-            Default: {}
-          --file, -f
-            Gremlin Script file to be executed, UTF-8 encoded, exclusive to 
-            --script 
-          --language, -l
-            Gremlin script language
-            Default: gremlin-groovy
-          --script, -s
-            Gremlin script to be executed, exclusive to --file
-
-    backup      Backup graph schema/data. If directory is on HDFS, use -D to 
-            set HDFS params. For example: 
-            -Dfs.default.name=hdfs://localhost:9000 
-      Usage: backup [options]
-        Options:
-          --all-properties
-            All properties to be backup flag
-            Default: false
-          --compress
-            compress flag
-            Default: true
-          --directory, -d
-            Directory of graph schema/data, default is './{graphname}' in 
-            local file system or '{fs.default.name}/{graphname}' in HDFS
-          --format
-            File format, valid is [json, text]
-            Default: json
-          --huge-types, -t
-            Type of schema/data. Concat with ',' if more than one. Other types 
-            include 'all' and 'schema'. 'all' means all vertices, edges and 
-            schema. In other words, 'all' equals with 'vertex, edge, 
-            vertex_label, edge_label, property_key, index_label'. 'schema' 
-            equals with 'vertex_label, edge_label, property_key, index_label'.
-            Default: [PROPERTY_KEY, VERTEX_LABEL, EDGE_LABEL, INDEX_LABEL, VERTEX, EDGE]
-          --label
-            Vertex label or edge label, only valid when type is vertex or edge
-          --log, -l
-            Directory of log
-            Default: ./logs
-          --properties
-            Vertex or edge properties to backup, only valid when type is 
-            vertex or edge
-            Default: []
-          --retry
-            Retry times, default is 3
-            Default: 3
-          --split-size, -s
-            Split size of shard
-            Default: 1048576
-          --thread-num, -T
-            Threads number to use, default is Math.min(10, Math.max(4, CPUs / 
-            2)) 
-            Default: 0
-          -D
-            HDFS config parameters
-            Syntax: -Dkey=value
-            Default: {}
-
-    schedule-backup      Schedule backup task
-      Usage: schedule-backup [options]
-        Options:
-          --backup-num
-            The number of latest backups to keep
-            Default: 3
-        * --directory, -d
-            The directory of backups stored
-          --interval
-            The interval of backup, format is: "a b c d e". 'a' means minute 
-            (0 - 59), 'b' means hour (0 - 23), 'c' means day of month (1 - 
-            31), 'd' means month (1 - 12), 'e' means day of week (0 - 6) 
-            (Sunday=0), "*" means all
-            Default: "0 0 * * *"
-
-    dump      Dump graph to files
-      Usage: dump [options]
-        Options:
-          --directory, -d
-            Directory of graph schema/data, default is './{graphname}' in 
-            local file system or '{fs.default.name}/{graphname}' in HDFS
-          --formatter, -f
-            Formatter to customize format of vertex/edge
-            Default: JsonFormatter
-          --log, -l
-            Directory of log
-            Default: ./logs
-          --retry
-            Retry times, default is 3
-            Default: 3
-          --split-size, -s
-            Split size of shard
-            Default: 1048576
-          --thread-num, -T
-            Threads number to use, default is Math.min(10, Math.max(4, CPUs / 
-            2)) 
-            Default: 0
-          -D
-            HDFS config parameters
-            Syntax: -Dkey=value
-            Default: {}
-
-    restore      Restore graph schema/data. If directory is on HDFS, use -D to 
-            set HDFS params if needed. For 
-            example:-Dfs.default.name=hdfs://localhost:9000 
-      Usage: restore [options]
-        Options:
-          --clean
-            Whether to remove the directory of graph data after restored
-            Default: false
-          --directory, -d
-            Directory of graph schema/data, default is './{graphname}' in 
-            local file system or '{fs.default.name}/{graphname}' in HDFS
-          --huge-types, -t
-            Type of schema/data. Concat with ',' if more than one. Other types 
-            include 'all' and 'schema'. 'all' means all vertices, edges and 
-            schema. In other words, 'all' equals with 'vertex, edge, 
-            vertex_label, edge_label, property_key, index_label'. 'schema' 
-            equals with 'vertex_label, edge_label, property_key, index_label'.
-            Default: [PROPERTY_KEY, VERTEX_LABEL, EDGE_LABEL, INDEX_LABEL, VERTEX, EDGE]
-          --log, -l
-            Directory of log
-            Default: ./logs
-          --retry
-            Retry times, default is 3
-            Default: 3
-          --thread-num, -T
-            Threads number to use, default is Math.min(10, Math.max(4, CPUs / 
-            2)) 
-            Default: 0
-          -D
-            HDFS config parameters
-            Syntax: -Dkey=value
-            Default: {}
-
-    migrate      Migrate graph
-      Usage: migrate [options]
-        Options:
-          --directory, -d
-            Directory of graph schema/data, default is './{graphname}' in 
-            local file system or '{fs.default.name}/{graphname}' in HDFS
-          --graph-mode, -m
-            Mode used when migrating to target graph, include: [RESTORING, 
-            MERGING] 
-            Default: RESTORING
-            Possible Values: [NONE, RESTORING, MERGING, LOADING]
-          --huge-types, -t
-            Type of schema/data. Concat with ',' if more than one. Other types 
-            include 'all' and 'schema'. 'all' means all vertices, edges and 
-            schema. In other words, 'all' equals with 'vertex, edge, 
-            vertex_label, edge_label, property_key, index_label'. 'schema' 
-            equals with 'vertex_label, edge_label, property_key, index_label'.
-            Default: [PROPERTY_KEY, VERTEX_LABEL, EDGE_LABEL, INDEX_LABEL, VERTEX, EDGE]
-          --keep-local-data
-            Whether to keep the local directory of graph data after restored
-            Default: false
-          --log, -l
-            Directory of log
-            Default: ./logs
-          --retry
-            Retry times, default is 3
-            Default: 3
-          --split-size, -s
-            Split size of shard
-            Default: 1048576
-          --target-graph
-            The name of target graph to migrate
-            Default: hugegraph
-          --target-password
-            The password of target graph to migrate
-          --target-timeout
-            The timeout to connect target graph to migrate
-            Default: 0
-          --target-trust-store-file
-            The trust store file of target graph to migrate
-          --target-trust-store-password
-            The trust store password of target graph to migrate
-          --target-url
-            The url of target graph to migrate
-            Default: http://127.0.0.1:8081
-          --target-user
-            The username of target graph to migrate
-          --thread-num, -T
-            Threads number to use, default is Math.min(10, Math.max(4, CPUs / 
-            2)) 
-            Default: 0
-          -D
-            HDFS config parameters
-            Syntax: -Dkey=value
-            Default: {}
-
-    deploy      Install HugeGraph-Server and HugeGraph-Studio
-      Usage: deploy [options]
-        Options:
-        * -p
-            Install path of HugeGraph-Server and HugeGraph-Studio
-          -u
-            Download url prefix path of HugeGraph-Server and HugeGraph-Studio
-        * -v
-            Version of HugeGraph-Server and HugeGraph-Studio
-
-    start-all      Start HugeGraph-Server and HugeGraph-Studio
-      Usage: start-all [options]
-        Options:
-        * -p
-            Install path of HugeGraph-Server and HugeGraph-Studio
-        * -v
-            Version of HugeGraph-Server and HugeGraph-Studio
-
-    clear      Clear HugeGraph-Server and HugeGraph-Studio
-      Usage: clear [options]
-        Options:
-        * -p
-            Install path of HugeGraph-Server and HugeGraph-Studio
-
-    stop-all      Stop HugeGraph-Server and HugeGraph-Studio
-      Usage: stop-all
-
-    auth-backup      null
-      Usage: auth-backup [options]
-        Options:
-          --directory
-            Directory of auth information, default is 
-            './{auth-backup-restore}' in local file system or 
-            '{fs.default.name}/{auth-backup-restore}' in HDFS
-          --retry
-            Retry times, default is 3
-            Default: 3
-          --types, -t
-            Type of auth data to restore and backup, concat with ',' if more 
-            than one. 'all' means all auth information. In other words, 'all' 
-            equals with 'user, group, target, belong, access'. In addition, 
-            'belong' or 'access' can not backup or restore alone, if type 
-            contains 'belong' then should contains 'user' and 'group'. If type 
-            contains 'access' then should contains 'group' and 'target'.
-            Default: [TARGET, GROUP, USER, ACCESS, BELONG]
-          -D
-            HDFS config parameters
-            Syntax: -Dkey=value
-            Default: {}
-
-    auth-restore      null
-      Usage: auth-restore [options]
-        Options:
-          --directory
-            Directory of auth information, default is 
-            './{auth-backup-restore}' in local file system or 
-            '{fs.default.name}/{auth-backup-restore}' in HDFS
-          --init-password
-            Init user password, if restore type include 'user', please specify 
-            the init-password of users.
-            Default: <empty string>
-          --retry
-            Retry times, default is 3
-            Default: 3
-          --strategy
-            The strategy needs to be chosen in the event of a conflict when 
-            restoring. Valid strategies include 'stop' and 'ignore', default 
-            is 'stop'. 'stop' means if there a conflict, stop restore. 
-            'ignore' means if there a conflict, ignore and continue to 
-            restore. 
-            Default: STOP
-            Possible Values: [STOP, IGNORE]
-          --types, -t
-            Type of auth data to restore and backup, concat with ',' if more 
-            than one. 'all' means all auth information. In other words, 'all' 
-            equals with 'user, group, target, belong, access'. In addition, 
-            'belong' or 'access' can not backup or restore alone, if type 
-            contains 'belong' then should contains 'user' and 'group'. If type 
-            contains 'access' then should contains 'group' and 'target'.
-            Default: [TARGET, GROUP, USER, ACCESS, BELONG]
-          -D
-            HDFS config parameters
-            Syntax: -Dkey=value
-            Default: {}
-
-    help      Print usage
-      Usage: help
+./bin/hugegraph help
+./bin/hugegraph help backup
+./bin/hugegraph help graph-clone
 ```
+
+Place global options such as `--url` and `--graph` before the command, and its own options after it.
+For example, use `./bin/hugegraph --graph hugegraph backup --directory ./backup`.
 
 ##### 3.10 Specific command example
 

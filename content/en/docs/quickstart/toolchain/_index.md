@@ -15,8 +15,6 @@ HugeGraph Toolchain includes the Java and Go clients, Loader, Hubble, Tools, Spa
 
 > **Testing Guide**: For running toolchain tests locally, please refer to [HugeGraph Toolchain Local Testing Guide](/docs/guides/dev-test/toolchain-local-test/)
 
-> DeepWiki provides real-time updated project documentation with more comprehensive and accurate content, suitable for quickly understanding the latest project information.
->
-> 📖 [https://deepwiki.com/apache/hugegraph-toolchain](https://deepwiki.com/apache/hugegraph-toolchain)
+Optional external reference: [DeepWiki](https://deepwiki.com/apache/hugegraph-toolchain).
 
 Source repository: <i class="fab fa-github"></i> [apache/hugegraph-toolchain](https://github.com/apache/hugegraph-toolchain)

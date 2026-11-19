@@ -36,12 +36,16 @@ mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
 The default integration tests clear their target graph before writing. Use a disposable Server and graph;
 set `-Dhugegraph.test.url=... -Dhugegraph.test.graph=...` to select it. See the
 [connector testing guide](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-spark-connector/README.md#building)
-for local Spark and HTTPS test settings.
+for local Spark and HTTPS test settings. Install the upstream modules with `-DskipTests` first, then run the connector tests without `-am`:
 
 ```bash
 mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
   -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
-  clean package -pl hugegraph-spark-connector -am -Dmaven.javadoc.skip=true -ntp
+  clean install -pl hugegraph-spark-connector -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+
+mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
+  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+  test -pl hugegraph-spark-connector -Dmaven.javadoc.skip=true -ntp
 ```
 
 Both commands produce a fat jar at `hugegraph-spark-connector/target/hugegraph-spark-connector-${revision}-jar-with-dependencies.jar` (Spark itself is not bundled). Pass it to `spark-submit --jars` when you do not manage the dependency through Maven.

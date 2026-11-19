@@ -37,11 +37,16 @@ mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
 默认集成测试会先清空目标图再写入数据，请使用可丢弃的 Server 和图。
 通过 `-Dhugegraph.test.url=... -Dhugegraph.test.graph=...` 指定目标；本地 Spark 与 HTTPS 测试配置见
 [连接器测试指引](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-spark-connector/README.md#building)。
+先使用 `-DskipTests` 安装上游模块，再单独执行连接器测试（不带 `-am`），避免触发 `hugegraph-client` 的默认清空测试：
 
 ```bash
 mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
   -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
-  clean package -pl hugegraph-spark-connector -am -Dmaven.javadoc.skip=true -ntp
+  clean install -pl hugegraph-spark-connector -am -DskipTests -Dmaven.javadoc.skip=true -ntp
+
+mvn -Dmaven.repo.local="${candidate_dir:?Prepare the candidate SDK first}/m2" \
+  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
+  test -pl hugegraph-spark-connector -Dmaven.javadoc.skip=true -ntp
 ```
 
 两条命令都会在 `hugegraph-spark-connector/target/hugegraph-spark-connector-${revision}-jar-with-dependencies.jar` 生成一个包含依赖的 jar（不包含 Spark 本身）。如果不通过 Maven 管理依赖，可以把它传给 `spark-submit --jars`。

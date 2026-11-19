@@ -1003,7 +1003,7 @@ spaceManager.createGraphSpace(graphSpace);
 | GraphSpace - 属性 | getName() / getNickname() / getDescription() | 获取名称/昵称/描述 |
 | | getGraphNumberUsed() / getRoleNumberUsed() | 获取已使用的图数量/角色数量 |
 | | getCpuUsed() / getMemoryUsed() / getStorageUsed() | 获取已使用的资源 |
-| | getStorageUsedKb() | 获取 KB 精度的存储用量，服务端未提供有效指标时返回 null |
+| | getStorageUsedKb() | 获取 KB 精度的存储用量（需 Toolchain `master` 构建的 Client `1.8.0`），服务端未提供有效指标时返回 null |
 | | getCreateTime() / getUpdateTime() | 获取创建时间/更新时间 |
 | GraphSpace - 配置 | setDescription(String) / setNickname(String) | 设置描述/昵称 |
 | | setMaxGraphNumber(int) / setMaxRoleNumber(int) | 设置最大图数量/角色数量 |

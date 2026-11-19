@@ -987,7 +987,7 @@ spaceManager.createGraphSpace(graphSpace);
 | GraphSpace - Properties | getName() / getNickname() / getDescription() | Get name / nickname / description |
 |           | getGraphNumberUsed() / getRoleNumberUsed() | Get the number of graphs / roles in use |
 |           | getCpuUsed() / getMemoryUsed() / getStorageUsed() | Get the resources in use |
-|           | getStorageUsedKb() | Get storage usage in KB when the Server supplies a valid metric |
+|           | getStorageUsedKb() | Get storage usage in KB (Client `1.8.0` built from Toolchain `master`) when the Server supplies a valid metric |
 |           | getCreateTime() / getUpdateTime() | Get the creation / update time |
 | GraphSpace - Configuration | setDescription(String) / setNickname(String) | Set description / nickname |
 |           | setMaxGraphNumber(int) / setMaxRoleNumber(int) | Set the maximum number of graphs / roles |

@@ -13,8 +13,6 @@ Hubble 是 HugeGraph 的 Web 管理与图可视化界面。你可以在同一个
 如需搭配 HStore 分布式集群使用，可先了解本文的基础操作，再参考 [HStore 分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
 文档内容以 Toolchain 与 Server 的 `master` 分支（当前均以 1.8 为基线，尚未正式发布）为准；Docker `latest` 为动态标签，生产环境建议使用已发布的固定版本。
 
-本文截图基于 HugeGraph Hubble 界面，中英文界面功能与操作一致。
-
 > [!WARNING]
 > 请勿将未配置防护的 Hubble 或 Server 直接暴露在公网上。生产环境请务必开启 HTTPS、容器网络隔离、
 > [认证与授权](/cn/docs/config/config-authentication/)及访问白名单。
@@ -32,7 +30,9 @@ Hubble 是 HugeGraph 的 Web 管理与图可视化界面。你可以在同一个
   准备 CSV，配置数据源、字段映射并验证导入结果。
 {.cards}
 
-## 启动单机组合
+<span id="启动单机组合"></span>
+
+## 启动单机组合 {#start-the-standalone-pair}
 
 直接使用主仓库提供的 [docker/docker-compose.yml](https://github.com/apache/hugegraph/blob/master/docker/docker-compose.yml) 即可，
 无需自行编写 Compose 配置文件。该文件已内置编排了 RocksDB Server 与 Hubble，并配置好网络、健康检查及持久化数据卷；
@@ -75,16 +75,25 @@ Hubble 是 HugeGraph 的 Web 管理与图可视化界面。你可以在同一个
    个人中心与账号管理入口仅在开启认证且具备相应权限时展示。
 {.steps}
 
-`latest` 镜像便于快速体验最新功能，生产环境建议指定发布版本号或镜像 digest。正式发布包可前往 [下载页](/cn/docs/download/download/) 获取。
-
-> [!DETAILS]- 核实部署版本
->
-> 文档截图用于定位界面元素，实际版本以部署镜像的 digest 及构建信息为准。
+请根据部署镜像的 digest 与构建信息，核对当前环境是否提供本文功能。
+正式发布包可前往 [下载页](/cn/docs/download/download/) 获取。
 
 Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据与 Hubble 元数据；更多生产配置参见
 [Server 部署指南](/cn/docs/quickstart/hugegraph/hugegraph-server/)。
 
-## 首页与任务入口 {#首页找到当前任务的入口}
+> [!WARNING] 升级时单独处理 Hubble 元数据
+> Hubble 1.8 元数据只支持 **H2 2.x**；MySQL 仍可作为导入源，不再用作元数据库。
+> 打包配置默认连接为 `jdbc:h2:file:./data/hubble-v2;DB_CLOSE_ON_EXIT=FALSE`。
+>
+> 升级时保留旧数据库及其匹配的 Hubble 版本，让新版使用新的数据库路径。
+> 旧元数据不会自动迁移，不要将新版指向旧数据库。
+>
+> H2 错误 `90097` 不代表数据库为空。先停止 Hubble、保留文件，再核对版本、凭据和权限，确定恢复方式。
+> 详细排查见[元数据恢复说明](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-hubble/docs/metadata-storage.md)。
+
+<span id="首页找到当前任务的入口"></span>
+
+## 首页与任务入口 {#home-find-the-right-starting-point}
 
 首页按“图概览 → 图导入 → 图查询”组织核心工作流。左侧导航栏可随时切换各功能模块；
 顶部的图选择器用于切换当前操作的目标图，所有查询、Schema 操作和异步任务均作用于当前选中的图。
@@ -102,7 +111,9 @@ Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据
 | 个人中心与账号管理 | 查看个人资料、修改密码，按权限管理账号及空间成员 |
 | 系统运维 | 查看 Server 节点；PD 模式还提供集群概览和 Store / PD 节点 |
 
-### 界面速览
+<span id="界面速览"></span>
+
+### 界面速览 {#interface-at-a-glance}
 
 图概览、Schema 和查询工作区如下，点击任一截图可查看原图。
 
@@ -112,7 +123,9 @@ Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据
 ![Gremlin 路径查询与图结果](/cn/docs/images/hubble/query.jpg) # 图查询，执行 Gremlin 并探索图结果
 ```
 
-## 认识图概览与图详情 {#图概览与图详情先认识一张图}
+<span id="图概览与图详情先认识一张图"></span>
+
+## 认识图概览与图详情 {#graph-overview-and-details-get-to-know-a-graph}
 
 在【图概览】中选择默认图 `hugegraph`。点击图卡片或详情，可查看该图的 Schema 结构与数据统计，并快速跳转到建模、数据导入或查询页面。
 
@@ -122,11 +135,22 @@ Compose 中的 `server-data` 与 `hubble-data` 卷分别持久化保存图数据
 若需新建图，可在页面点击新建按钮，填写图名称、可选别名并选择 Schema 模板或示例数据。连接信息由 Hubble 后端统一配置，
 无需重复填写 Server 主机与账号。用户自定义 Schema 模板属于 PD 模式功能，详见 [分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
 
-Hubble 概览使用有界扫描。响应包含 `approximate:true` 与 `scan_limit:100000` 时，即使实际有数千万条数据，
-顶点或边计数也可能停在 100000。这些值是扫描观测值，不能当作精确总量。
-字段名依接口而定，例如 `gremlin-query` 返回 `vertexcount` / `edgecount`。精确计数应读取已完成的异步计数任务结果。
+图元数据会先于统计结果展示。读计数时同时检查来源与观测时间：Server 有界扫描可能是近似值，
+已加载的 Vermeer 快照则描述加载时的计算副本。后续写入不会自动更新快照；无法取得的计数保持未知，不显示为零。
+需要精确计数时读取已完成的 Server 异步计数结果，不要把查询画布里的元素数量当作全图总量。
 
-## 定义 Schema {#schema-建模定义数据的形状}
+【克隆 Schema】可将定义复制到同一图空间的新图，不复制顶点或边；要求 Server API 0.73 或更高版本。
+Server 会在创建目标图前拒绝包含边类型的源 Schema。若后续步骤失败，先检查目标图是否已创建，再决定是否重试。
+
+> [!NOTE] 删除有 Vermeer 副本的图
+> 配置原生 Vermeer 集成后，Hubble 会先检查待处理的加载任务并清理计算副本，再删除源图。
+> 请先完成或取消已接受的 load/reload 任务；如果检查或清理失败，恢复 Vermeer 访问后再重试删除。
+> 操作步骤见[分布式删除说明](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/#create-and-adjust-a-graphspace)，
+> 卸载接口见 [Vermeer 指南](/cn/docs/quickstart/computing/hugegraph-vermeer/)。
+
+<span id="schema-建模定义数据的形状"></span>
+
+## 定义 Schema {#schema-modeling-define-the-shape-of-your-data}
 
 Schema 规定了图中允许存储的属性、顶点与边类型，并决定顶点 ID 的生成策略与索引规则。
 在【元数据配置】中，可以通过列表视图维护定义，或通过图关系视图直观查看顶点与边的拓扑结构。
@@ -144,7 +168,9 @@ Schema 规定了图中允许存储的属性、顶点与边类型，并决定顶�
 自主建模时，建议遵循 **属性 → 顶点类型 → 边类型 → 索引** 的顺序依次创建。
 删除类型或创建/重建索引操作通常会提交为后台异步任务，操作提交后可在【异步任务】中查看最终执行结果。
 
-## 在 GQL 工作台查询人物关系 {#gql-工作台查询与探索人物关系}
+<span id="gql-工作台查询与探索人物关系"></span>
+
+## 在 GQL 工作台查询人物关系 {#gql-workspace-query-and-explore-relationships}
 
 进入【GQL 图遍历】，确认当前图为 `hugegraph`。工作台将查询编辑器与图展示区集成在一起，
 支持即时执行与异步执行、常用语句收藏，并可随时从执行历史中重载语句（语法参考见 [图查询语言](/cn/docs/language/)）。先在 Gremlin 编辑器中查询人物属性。
@@ -166,11 +192,39 @@ g.V().hasLabel('person').outE('created').inV().path()
 快捷键 `Ctrl` / `Command` + `Enter` 可快速执行查询。普通即时执行适合小规模交互探索；大数据量或耗时查询建议提交为后台异步任务。
 Cypher 查询仅在 Server 后端支持时提供。快捷键会作用于当前获得焦点的输入框（在自然语言框中生成查询，在语句框中执行已有语句）。
 
+### 理解有界查询预览 {#query-previews}
+
+常见 Gremlin 与 Cypher 读查询未显式限制输出时，默认追加 **300 行**限制。
+交互预览最多保留 **1,000 行**，画布最多展示 **1,000 个顶点**，边另有数量预算。
+显式写入更大的十进制 limit 时仍执行有界预览，并提示使用异步模式，不代表已取得完整大结果。
+希望看清标签与关系时，可以先从 `g.V().limit(30)` 等小范围查询开始。
+
+| 结果或操作 | 如何理解 |
+| --- | --- |
+| `limit`、`range`、`tail` | 常见读查询保留显式输出范围；后续邻接步骤会开启新的输出流 |
+| `fold`、`group`、`groupCount`、Cypher `collect` / `range` | 识别到这些集合构造时使用异步执行，保留完整聚合语义 |
+| 为顶点结果补充的边 | 有界的关联边采样，不保证包含展示顶点之间的全部边 |
+| 截断属性或过宽的属性映射 | 只读的局部预览；导出 JSON 保留不完整标记 |
+
+自动补限适用于常见读语法，复杂手写脚本可能继续走原生执行路径，大任务应使用异步模式。
+预览限制不等于上游响应字节或执行时间预算。不完整预览不能作为完整图数据重新导入。
+导入普通画布 JSON 会写入图元素，并可能覆盖已有 ID；失败后应检查目标图与已确认写入数。
+该操作不具备事务性，Hubble 无法自动撤销被覆盖的数据，也无法确定响应丢失的请求是否已经写入。
+
 ### Text2GQL 自然语言查询 {#text2gql}
 
 在【自然语言】输入框中用自然语言描述查询需求，Text2GQL 会结合当前图的 Schema 自动生成只读 Gremlin 或 Cypher 语句并执行查询。
 生成的语句支持二次编辑（执行前同样会进行只读安全校验）。切换至【异步】模式时，生成的查询与手写查询均可提交为后台异步任务。
-输入框会自动恢复当前图最近一次的查询输入（不会自动触发执行），执行记录中也会完整保留原始自然语言问题。
+
+默认选择 Gremlin；Server 支持时可切换 Cypher。两种语言分别保留草稿，恢复各自最近的同步或异步记录时不会自动执行，也不会覆盖正在编辑的内容。
+执行记录保留原始自然语言问题。
+
+人物与软件示例可尝试“查找人物以及他们创建的软件”，先确认当前图包含对应 Schema。
+工作台会流式显示生成的语句，并区分等待模型、纠正语句和执行查询。只有完整且通过只读校验的语句才会执行。
+遇到已识别的校验、语法或 Schema 错误时，最多自动纠正一次；连接错误、超时和空结果不会触发纠正。
+每次模型生成请求的超时为 60 秒，自动纠正会另发请求。
+
+【取消】会停止等待及后续自动执行，但已经提交到 Server 的查询可能仍在运行。
 
 ```gallery
 ![未配置模型时的自然语言入口与手写 Gremlin 查询结果](/cn/docs/images/hubble/text2gql.jpg) # 查询工作台，模型尚未配置，结果来自手写查询
@@ -185,9 +239,14 @@ Cypher 查询仅在 Server 后端支持时提供。快捷键会作用于当前�
 | 使用内置模型 | 在【系统与运维 → 模型设置】统一配置，Key 加密存入 H2，不回传浏览器 |
 | 使用临时模型 | 在查询页填写 API 类别、Base URL、模型名称和临时 API Key；Key 只保留在前端内存中，刷新后清除 |
 
+【模型设置】中的【保存并测试】先保存启用的配置，再发送最小模型请求测试连接；【测试已保存配置】仅测试已保存的连接，不保存表单草稿。
+测试失败不会撤销已成功保存的配置，请根据反馈区分保存失败与连接失败。部署默认模型可用时，新用户默认使用该模型。
+
 使用 OpenAI、DeepSeek、GLM 等模型时选择【OpenAI 兼容接口】；使用本地运行的 Ollama 时选择【Ollama（本地）】（无认证时 Key 可留空）。
+
 Base URL 必须能被 Hubble 后端服务正常访问（若 Hubble 运行在容器中，`localhost` 指向容器本身而非宿主机）。公网端点必须使用 HTTPS，HTTP 仅允许用于
 本地回环或私网模型；在【模型设置】中修改 Base URL 时，必须重新填写 Key 或清空已保存的 Key。
+
 全局内置模型由具备模型设置管理权限的管理员统一配置；未开启 Server 认证时，任何访问者均可配置。
 
 在模型设置页面右上角打开 **Text2GQL Prompt**，可分别定制 Gremlin 与 Cypher 的生成规则及 Few-shot 示例。
@@ -197,15 +256,35 @@ Base URL 必须能被 Hubble 后端服务正常访问（若 Hubble 运行在容�
 >
 > 备份 Hubble H2 数据库时，请一并备份主密钥文件（默认路径 `data/text2gql-master.key`），该文件丢失将导致无法解密已保存的 Key。
 > 生成查询时仅向模型接口发送用户问题、当前 Schema 及纠错提示，绝不会发送图数据查询结果。
-> 浏览器可选择记住常用的 Base URL 与模型名称，但临时 API Key 仅保留在前端内存中，刷新页面即自动清除。
+> 临时接入方式、URL 和模型名保留在按账号隔离的浏览器会话存储中；成功的连接测试与生成可以在本地记住近期 URL 和模型名。
+> 两类记录均不包含 API Key；临时 Key 在刷新页面或切换账号后清除。
+
+> [!DETAILS]- 不在浏览器中输入 Key，配置部署默认模型
+>
+> 运维人员可以在 `conf/hugegraph-hubble.properties` 中设置：
+>
+> ```properties
+> text2gql.shared.enabled=true
+> text2gql.shared.connection_type=openai
+> text2gql.shared.base_url=https://api.deepseek.com/v1
+> text2gql.shared.model=deepseek-chat
+> ```
+>
+> Key 通过 `HUBBLE_TEXT2GQL_API_KEY` 或 `text2gql.shared.api_key_file` 指向的凭据文件提供，环境变量优先。
+> 仅打开启用开关并不代表模型配置完整。管理员保存托管配置后，整份托管配置优先于部署默认值，禁用状态也会覆盖默认值。
+> Helm 将托管 Key 的加密密钥文件与 H2 一并持久化，详见 [Kubernetes 运维](/cn/docs/quickstart/hugegraph/hugegraph-helm-operations/)。
 
 页脚分别显示模型生成耗时与查询请求耗时；异步提交耗时仅代表任务入队耗时，不代表后台任务实际运行时间。
 
-## 使用内置图算法 {#内置图算法用表单探索关系}
+<span id="内置图算法用表单探索关系"></span>
+
+## 使用内置图算法 {#built-in-algorithms-explore-with-parameter-forms}
 
 Hubble 将图算法清晰划分为两个独立工作流：**OLTP 在线探索**与 **OLAP 批量分析计算**。
 
-### OLTP 在线探索算法
+<span id="oltp-在线探索算法"></span>
+
+### OLTP 在线探索算法 {#oltp-online-algorithms}
 
 不想从头编写遍历语句时，可以进入【内置图算法】，使用参数表单完成实时图查询：
 - **邻居探索**：用于回答“这个顶点附近有什么”（如 K-neighbor、K-hop 等）。
@@ -221,12 +300,19 @@ Hubble 将图算法清晰划分为两个独立工作流：**OLTP 在线探索**�
 ![内置邻居算法的参数与图结果](/cn/docs/images/hubble/algorithms.jpg)
 {width="1600" height="1000"}
 
-### 原生 Vermeer OLAP 分析集成
+<span id="原生-vermeer-olap-分析集成"></span>
+
+### 原生 Vermeer OLAP 分析集成 {#native-vermeer-olap-integration}
 
 针对全图级别的大规模复杂分析计算，Hubble 原生集成了高性能图计算引擎 **Vermeer**。
 Hubble 默认优先选用 Vermeer 承担 OLAP 计算任务，同时保留 Computer 作为可选引擎。
+单机 RocksDB 不提供原生 PD/Store 加载路径。一体化部署请使用
+[Helm 与 Vermeer](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)，并按
+[Vermeer 工作流](/cn/docs/quickstart/computing/hugegraph-vermeer/)加载与计算。
 
-#### `hugegraph-hubble.properties` 配置项
+<span id="hugegraph-hubbleproperties-配置项"></span>
+
+#### `hugegraph-hubble.properties` 配置项 {#configuration-in-hugegraph-hubbleproperties}
 
 在 `conf/hugegraph-hubble.properties` 中开启 Vermeer 直连通信：
 
@@ -240,17 +326,24 @@ vermeer.token_file=/path/to/vermeer-service.token
 > [!NOTE]
 > 当 `vermeer.url` 为空时，Hubble 保持原有的 Server 代理转发路径。Vermeer 直连模式需要 PD/Store 分布式集群模式支持，单机模式下自动禁用。
 
-#### 支持的 OLAP 算法与执行生命周期
+<span id="支持的-olap-算法与执行生命周期"></span>
+
+#### 支持的 OLAP 算法与执行生命周期 {#supported-olap-algorithms-and-execution-lifecycle}
 
 Vermeer 在内存分布式分区上执行批处理图算法：
-- **支持算法**：PageRank、Personalized PageRank（个性化 PageRank）、Weakly Connected Components（WCC 弱连通分量）、
-  Label Propagation Algorithm（LPA 标签传播）、Betweenness Centrality（介数中心度）、Closeness Centrality（紧密中心度）、
-  Degree Centrality（度中心度）、Triangle Count（三角形计数）、K-Core 以及 Single-Source Shortest Path（SSSP 单源最短路径）。
+- **算法目录**：直连接口支持 19 种算法，包括 PageRank/PPR、WCC/SCC、LPA/SLPA、中心度、三角形计数、K-Core、SSSP、
+  聚集系数、Depth、环检测、Louvain 及其变体、K-out 和 Jaccard。请选择当前引擎对应的表单，参数及属性过滤限制见 Vermeer 指南。
 - **内存图加载**：计算流程首先将图数据从 PD/Store 加载或重新加载至 Vermeer Worker 内存。每个图在加载确认后保持任务 ID，入队任务维持在 `Loading` 状态直至加载完毕。
 - **任务监控与取消**：原生任务在后台异步运行，可按状态（`RUNNING`、`SUCCESS`、`FAILED`）筛选监控，并支持在需要时主动取消任务。
 - **游标分页结果**：计算产出的分析指标（如顶点得分、社区编号）通过游标机制进行分页流式拉取。分页跨页数据完整一致，并在最后一页精准停止。
 
-## 查看异步任务的最终结果 {#异步任务确认后台操作的最终结果}
+开启 Server 认证时，加载与原生计算要求超级管理员，因为直接扫描 Store 会绕过 Server 的标签权限。
+结果描述已加载的计算副本；源数据变化后需重新加载。历史任务成功不代表重启后内存结果仍然可用。
+【Computer 兼容】仅在展开后检查当前图的支持能力，切换图后需重新选择。
+
+<span id="异步任务确认后台操作的最终结果"></span>
+
+## 查看异步任务的最终结果 {#async-tasks-confirm-background-results}
 
 【异步任务】集中显示当前图的后台任务，包括异步查询及部分 Schema、索引操作。
 可以按任务类型和状态筛选，查看任务 ID、创建时间与执行状态；成功查询可打开结果，失败任务可展开错误信息。
@@ -259,7 +352,16 @@ Vermeer 在内存分布式分区上执行批处理图算法：
 例如把 `g.V().count()` 以异步方式提交后，先在列表确认成功，再查看返回的数量。
 “提交成功”只表示请求被接受，不表示计算或索引已完成。排查失败时，结合任务错误和 Server 日志定位原因。
 
-## 准备数据源 {#数据源管理把原始数据准备好}
+任务显示区分 **Server #123** 与 **Vermeer #123**。提交后的跳转链接保留图空间、图与路由 ID；向他人分享任务身份时，还需注明图空间与图。
+已接收的任务可能先于持久化状态出现在页面，Hubble 会重试发现任务元数据，停止同步后提供重试入口。
+暂时查不到状态不代表执行失败，也不代表应重新提交。
+
+Server 结果过大时，应减少返回记录或属性，并使用恢复链接指定的查询语言重试。
+Vermeer 可在 OLAP 工作台查看样本，或从异步任务分页读取；样本不等于完整结果集。
+
+<span id="数据源管理把原始数据准备好"></span>
+
+## 准备数据源 {#data-source-management-prepare-the-input}
 
 数据源负责“从哪里读、怎样解析”，可以被导入任务引用。Hubble 支持 FILE、HDFS、JDBC 和 Kafka；
 不同来源需要对应的路径、连接或订阅配置。首次体验可选择 FILE。上传文件后，配置格式、分隔符、编码和表头，
@@ -273,10 +375,13 @@ docs_alice,28,Beijing
 docs_bob,32,Shanghai
 ```
 
-创建 FILE 数据源并上传它，选择 CSV（逗号分隔、默认 UTF-8），列名为 `name,age,city`。
-表头、分隔符和编码属于数据源配置，不在后面的映射步骤设置；源字段应与文件内容一致。
+创建【本地上传（FILE）】数据源并上传文件，选择 CSV（逗号分隔、默认 UTF-8）。
+文件已经有表头，因此【列名】留空，导入向导会从首行识别 `name`、`age`、`city`；只有文件没有可用表头时才手动填写列名。
+解析设置属于数据源，进入映射前请核对检测出的字段。
 
-## 映射字段并导入数据 {#数据导入从字段映射到可查询的图}
+<span id="数据导入从字段映射到可查询的图"></span>
+
+## 映射字段并导入数据 {#data-import-turn-fields-into-a-queryable-graph}
 
 【数据导入】把数据源中的行转换为顶点和边。任务创建采用四段配置，先明确目标，再选择字段和映射，最后决定执行时机。
 沿用上面的数据源，在 `DEFAULT` / `hugegraph` 中创建人物导入任务。
@@ -290,7 +395,7 @@ docs_bob,32,Shanghai
 `person` 使用 PRIMARY_KEY，不设置独立 ID 列。自定义 ID 策略需要指定 ID 列；
 AUTOMATIC 由 Server 生成 ID，PRIMARY_KEY 根据映射的主键属性生成 ID。边映射还需指定起点、终点字段并匹配对应顶点的 ID 规则。
 
-任务列表用于管理配置和执行入口，详情中的执行历史用于查看每次实例的状态、导入量与错误。
+任务列表用于管理配置和执行入口。在【操作】中打开【查看执行历史】，查看每次实例的状态、输入/写入计数与错误。
 Hubble 还提供周期调度和 Kafka 实时执行，调度方式需与数据源类型匹配。
 完成后返回 GQL 工作台查询新导入的数据。
 
@@ -298,23 +403,47 @@ Hubble 还提供周期调度和 Kafka 实时执行，调度方式需与数据源
 g.V().hasLabel('person').has('name', within('docs_alice', 'docs_bob')).valueMap()
 ```
 
-结果应包含两条新人物记录。导入量统计不应直接当作新增顶点数；重跑可能更新已有元素，表头处理也会影响读取统计。
+结果应包含两条新人物记录。【读取输入数】统计读取记录，包括表头以及跳过或失败的行。
+顶点与边写入计数累计当前或最近一次 Loader 尝试中，已收到成功响应的请求所提交的元素数，不等于新增元素或逐条核实的成功源行。
+重试或继续执行会重新开始写入计数；超时或中断的请求可能已写入但未计数，未记录这些指标的历史任务显示未知值。
+
 失败时先检查源字段、数值类型、可空属性及目标 Schema。Hubble 导入适合小规模体验，
 大批量正式导入请使用 [HugeGraph Loader](/cn/docs/quickstart/toolchain/hugegraph-loader/)。
 
-## 个人中心与账号权限
+以下示例只执行一次：历史记录读取 3 条输入（含表头），确认 2 次顶点写入、0 次边写入。
+查询核实 `docs_alice`（28、Beijing）和 `docs_bob`（32、Shanghai）均已写入。
+向原有 8 顶点示例加入这两人后，异步 `g.V().count()` 任务返回 **10**；其任务 ID 与导入执行实例 ID 分属不同入口。
+
+```gallery
+![CSV 导入执行历史](/cn/docs/images/hubble/import-task.jpg) # 单次导入：3 条输入，2 次已确认顶点写入，0 次边写入
+![成功的异步顶点计数任务](/cn/docs/images/hubble/async-tasks.jpg) # 导入两人后，Server #1 返回 10
+```
+
+<span id="个人中心与账号权限"></span>
+
+## 个人中心与账号权限 {#profile-and-account-permissions}
 
 Hubble 使用 Server 的认证和账号，没有独立用户库。匿名访问时不显示【个人中心】与【账号管理】；
 开启认证后，个人中心展示当前账号资料与权限信息，可修改自己的密码。昵称等资料编辑依赖 Server 对个人资料接口的支持。
 修改密码后会退出当前会话，需要重新登录。
 
-### 单机账号管理
+会话面板显示部署的空闲超时，并允许登录用户在管理员规定范围内选择整小时或整天。
+Servlet 默认超时为 48 小时；`hubble.session.max-idle-seconds`（或 `HUBBLE_SESSION_MAX_IDLE_SECONDS`）默认设置 30 天上限。
+鼠标、键盘与触摸活动会更新跨标签页共享的浏览器活动计时，后台请求不会延长该计时。
+Servlet 的请求空闲时钟独立运行，任一时钟到期均可结束登录；重新登录会恢复部署默认超时。
+个人会话设置不会延长密码或 Server Token 的有效期。
+
+<span id="单机账号管理"></span>
+
+### 单机账号管理 {#standalone-account-management}
 
 单机模式由管理员管理账号，可创建、查看、编辑或删除账号，并支持批量创建。
 通过 Hubble 新建的普通单机账号会获得覆盖所有图的读、写、删除和执行权限，不能把它当作只读账号或单图隔离账号。
 需要更细的资源权限时，应按 [Server 认证与授权](/cn/docs/config/config-authentication/)配置，而不是依赖空间预设。
 
-### PD 模式的空间权限
+<span id="pd-模式的空间权限"></span>
+
+### PD 模式的空间权限 {#graphspace-permissions-in-pd-mode}
 
 连接支持默认角色接口的 Server 后，账号与空间访问可以分别管理。管理员管理全局账号，
 空间管理员只管理已授权空间的成员；普通成员不会获得账号管理或运维入口。
@@ -329,6 +458,7 @@ Hubble 使用 Server 的认证和账号，没有独立用户库。匿名访问�
 
 同一账号在不同空间可以有不同权限。成员管理先选择空间，再添加已有账号或调整权限；
 把已有自定义权限替换为预设前，先核对需要保留的授权，避免把复杂权限误认为单一预设。
+
 权限变更后刷新权限上下文或重新登录，确认菜单和目标空间已更新；最终请求仍由 Server 校验。
 旧 Server 未提供相应接口时，页面按能力隐藏或禁用操作，不应只凭按钮是否可见推断资源权限。
 更完整的空间管理见 [分布式补充](/cn/docs/quickstart/toolchain/visualization/hugegraph-hubble-hstore/)。
@@ -340,7 +470,9 @@ Hubble 使用 Server 的认证和账号，没有独立用户库。匿名访问�
 
 Hubble 开放了一组用于自动化与集成的 HTTP REST 接口，监听地址默认为 `http://localhost:8088`。
 
-### 登录与会话
+<span id="登录与会话"></span>
+
+### 登录与会话 {#login-and-sessions}
 
 鉴权模式下，登录字段使用 **snake_case**，并保存会话 cookie：
 
@@ -353,7 +485,9 @@ curl -c hubble.cookies -X POST 'http://localhost:8088/api/v1.3/auth/login' \
 `userName` 与 `userPassword` 不会填入该登录模型。连续失败可能返回 HTTP 429，请修正字段与凭据后再重试。
 匿名模式不使用登录接口。
 
-### 集成 Gremlin 与 Cypher 查询
+<span id="集成-gremlin-与-cypher-查询"></span>
+
+### 集成 Gremlin 与 Cypher 查询 {#integration-gremlin-and-cypher-queries}
 
 集成用 Gremlin 接口当前除登录会话外，还要求请求体中的 `username` 与 `password`：
 
@@ -380,7 +514,9 @@ curl -b hubble.cookies -X POST \
 Server 必须声明支持 Cypher。`/asyncTasks` 等路径是 UI 导航路由，任务 API 使用
 `/api/v1.3/graphspaces/{space}/graphs/{graph}/async-tasks` 前缀。
 
-### Schema 默认值
+<span id="schema-默认值"></span>
+
+### Schema 默认值 {#schema-defaults}
 
 Hubble 在 1.8.0 及以上版本中支持以下可选字段默认值。若使用未包含该特性的旧版本，请在请求体中显式提供 `"open_label_index":true,"style":{"display_fields":["~id"]}`：
 
@@ -397,7 +533,9 @@ curl -b hubble.cookies -X POST \
 `PRIMARY_KEY` 类型还需要 `properties` 和 `primary_keys`；创建标签前应先创建属性。
 Server schema 使用不同的请求模型，不要求 Hubble 的视觉样式字段。
 
-### 通过 Hubble 导入图元素
+<span id="通过-hubble-导入图元素"></span>
+
+### 通过 Hubble 导入图元素 {#import-graph-elements-through-hubble}
 
 `POST /api/v1.3/graphspaces/{space}/graphs/{graph}/import` 接收 multipart 字段 `file`，内容是图元素 JSON。
 上传内容不是 CSV，也不是 Loader 作业规格；请先创建所引用的 schema。
@@ -425,7 +563,9 @@ curl -b hubble.cookies -X POST \
 两个数组都必须存在；空数组只执行空导入。请提供 schema 要求的所有非空属性，顶点 ID 必须匹配对应 ID 策略。
 边端点使用 `source` 与 `target`；顶点条目中的 `file` 键不是数据源定义。该接口返回图视图，CSV 请使用独立的数据源/Loader 流程。
 
-### 使用图空间权限预设
+<span id="使用图空间权限预设"></span>
+
+### 使用图空间权限预设 {#use-graphspace-permission-presets}
 
 Server 禁用自定义图空间角色分配时，旧图空间用户 POST 会被策略拒绝。该接口为已有账号分配角色，不是注册账号。
 请使用 Hubble 提供的权限预设，不要自行构造角色 ID 或关闭 Server 策略。
@@ -441,7 +581,9 @@ curl -b hubble.cookies -X PUT \
 支持 `GS_READ_ONLY`、`GS_READ_WRITE` 与 `GS_ADMIN`，具体授权仍受调用者权限约束。
 路径与请求体中的账号身份必须匹配；匿名模式不提供账号管理能力。
 
-## 检查单机 Server {#系统运维检查单机-server}
+<span id="系统运维检查单机-server"></span>
+
+## 检查单机 Server {#operations-inspect-the-standalone-server}
 
 单机模式的【系统运维】提供【节点信息】，只显示 Server，不显示 PD / Store 节点或集群概览。
 节点列表可搜索、筛选健康状态并进入详情；详情用于查看可用的版本、系统、JVM、Server 后端等指标。
@@ -450,7 +592,9 @@ curl -b hubble.cookies -X PUT \
 匿名模式可以查看运维信息；开启认证后，运维入口仅对有运维权限的管理员显示。
 此处用于观测和排查，不是启动、停止或扩缩容控制台。PD 模式的集群概览与节点层级见分布式补充。
 
-### Vermeer 计算集群健康观测
+<span id="vermeer-计算集群健康观测"></span>
+
+### Vermeer 计算集群健康观测 {#vermeer-cluster-health-view}
 
 在部署了 Vermeer 计算服务时，Hubble 在【系统运维】中提供独立的 Vermeer 计算集群健康监控视图：
 - 在 `conf/hugegraph-hubble.properties` 中配置运维指标收集：
@@ -463,7 +607,9 @@ curl -b hubble.cookies -X PUT \
 - **资源利用率**：直观展示正在运行的计算作业、各 Worker 节点的 CPU 利用率以及进程物理内存（RSS）占用。
 - **故障隔离与保真**：服务凭据仅在后端安全读取。若采集超时或 Worker 离线，界面将明确区分陈旧数据与零负载，避免误判健康状态。
 
-## 快捷键与画布操作
+<span id="快捷键与画布操作"></span>
+
+## 快捷键与画布操作 {#keyboard-shortcuts-and-graph-interactions}
 
 顶部的快捷键帮助入口随时可查看按键说明。以下快捷键有不同的作用范围，输入框中不会触发全局 `?` 帮助。
 
@@ -476,7 +622,9 @@ curl -b hubble.cookies -X PUT \
 | 查看元素详情 | 单击顶点或边 | 图结果 |
 | 展开相邻关系 | 双击顶点 | 图结果 |
 
-## 排查连接与结果问题
+<span id="排查连接与结果问题"></span>
+
+## 排查连接与结果问题 {#diagnose-connection-and-result-issues}
 
 | 现象 | 先检查 |
 |---|---|
@@ -486,11 +634,13 @@ curl -b hubble.cookies -X PUT \
 | 查询没有预期数据 | 顶部当前图、示例是否加载成功、标签和属性是否一致；区分画布展示与 Server 数据 |
 | 没有集群概览 | 本例没有 PD；集群功能见分布式补充 |
 
-查询显示规模受配置影响。`gremlin.suffix_limit` 默认 `250`，用于对适用的 Gremlin 查询追加 `.limit(N)`，
+查询显示规模受配置影响。`gremlin.suffix_limit` 默认 `300`，用于对适用的常见读查询追加 `.limit(N)`，
 不是所有查询的硬上限；`gremlin.vertex_degree_limit`（`100`）与 `gremlin.edges_total_limit`（`500`）限制展开规模。
 FILE 上传默认允许 `csv,txt`，单文件 1 GB、总量 10 GB；需要覆盖时修改 `upload_file.*` 配置。
 
-## 停止试用环境或从源码构建
+<span id="停止试用环境或从源码构建"></span>
+
+## 停止试用环境或从源码构建 {#stop-the-trial-or-build-from-source}
 
 清理测试环境时，在 `docker/` 目录下执行以下命令：
 
@@ -514,8 +664,6 @@ docker compose -p "${HUBBLE_DEMO_PROJECT:?}" -f docker-compose.yml down --volume
    bin/start-hubble.sh -d
    ```
 {.steps}
-
-当前 master 使用新的 H2 元数据库。升级时保留旧 Hubble 包及其数据，新版使用独立的数据目录；旧元数据不支持自动迁移，不能直接复用。
 
 打包配置默认绑定本机 `localhost:8088`。`bin/stop-hubble.sh` 会先请求正常停机，超时后才强制终止。
 需要开发与测试说明时，参考 [Toolchain 本地测试指南](/cn/docs/guides/dev-test/toolchain-local-test/)。

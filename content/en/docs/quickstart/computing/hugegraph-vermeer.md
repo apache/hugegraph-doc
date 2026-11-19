@@ -468,7 +468,7 @@ Parameters and example values come from the current Hubble PageRank form:
 | `pagerank.damping` | PageRank damping factor | `0.85` |
 | `pagerank.diff_threshold` | Convergence threshold | `0.00001` |
 
-Current Hubble accepts `pagerank`, `wcc`, `lpa`, `degree`, `closeness_centrality`, `betweenness_centrality`, `triangle_count`, `kcore`, and `sssp`.
+The Hubble direct adapter accepts 19 algorithms: `pagerank`, `ppr`, `wcc`, `scc`, `lpa`, `slpa`, `degree`, `closeness_centrality`, `betweenness_centrality`, `triangle_count`, `kcore`, `sssp`, `clustering_coefficient`, `depth`, `cycle_detection`, `louvain`, `fast_louvain`, `kout`, and `jaccard`.
 Use the selected algorithm's form for its own parameters; PageRank keys do not apply to another algorithm.
 The direct adapter accepts `compute.*`, the selected algorithm's `<algorithm>.*` keys and `output.need_statistics`.
 Vermeer still validates the actual values. Hubble controls output storage and does not accept arbitrary output paths or Server credentials.

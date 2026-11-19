@@ -127,10 +127,10 @@ for (const [name, url, viewport, theme, state, preset = "slate"] of states) {
       }
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     } else if (state === "hubble-import" || state === "hubble-nodes") {
-      const chinese = url.startsWith("/cn/");
+      // Both translations share heading IDs; old Chinese fragments remain aliases.
       const headingId = state === "hubble-import"
-        ? (chinese ? "数据导入从字段映射到可查询的图" : "data-import-turn-fields-into-a-queryable-graph")
-        : (chinese ? "节点详情读什么" : "read-node-details");
+        ? "data-import-turn-fields-into-a-queryable-graph"
+        : "read-node-details";
       const heading = page.locator(`[id="${headingId}"]`);
       sectionHeading = heading;
       await expect(heading).toBeVisible();

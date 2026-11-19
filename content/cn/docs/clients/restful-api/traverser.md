@@ -2076,7 +2076,8 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/{graph}/traversers/crosspoi
         - max_degree：查询过程中，单个顶点遍历的最大邻接边数目，默认为 10000；当前也兼容参数名 `degree`。
         - skip_degree：用于设置查询过程中舍弃超级顶点的最小边数，即当某个顶点的邻接边数目大于 skip_degree 时，完全舍弃该顶点。选填项，如果开启时，需满足 `skip_degree >= max_degree` 约束，默认为 0 (不启用)，表示不跳过任何点 (注意：开启此配置后，遍历时会尝试访问一个顶点的 skip_degree 条边，而不仅仅是 max_degree 条边，这样有额外的遍历开销，对查询性能影响可能有较大影响，请确认理解后再开启)
 - capacity：遍历过程中最大的访问的顶点数目，选填项，默认为 10000000
-- limit：返回的路径的最大数目，选填项，默认为 10
+- limit：返回的不同交点的最大数目，选填，默认 `10`；`-1` 表示不限制交点数。
+  `with_path=true` 时，多条路径可能到达同一个交点，因此返回的路径数可以超过该限制。
 - with_path：true 表示返回交点所在的路径，false 表示不返回交点所在的路径，选填项，默认为 false
 - with_vertex，选填项，默认为 false：
     - true 表示返回结果包含完整的顶点信息（路径中的全部顶点）

@@ -80,6 +80,8 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 }
 ```
 
+<span id="clear-graph"></span>
+
 #### 6.1.3 Clear all data of a graph, include: schema, vertex, edge and index
 
 ##### Params
@@ -812,10 +814,9 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 #### 6.3.5 LOADING ownership {#loading-ownership}
 
-Starting with HugeGraph 1.8.0, the Server provides the protocol 1 endpoints for LOADING ownership
-(requires a Server whose `GET .../mode/owners` returns `protocol: 1` and a matching Loader; current `master` does not include it yet);
-Loader integration requires a matching 1.8.0 or newer client.
-Released packages, earlier 1.8 builds, and current `master` builds lack this protocol. Support for the `LOADING` enum alone does not imply support for it.
+HugeGraph Server 1.8.0 and later provide the protocol 1 endpoints for LOADING ownership. Probe `GET .../mode/owners` and require `protocol: 1`;
+Loader integration also needs a matching 1.8.0 or newer client. Server 1.7.0 and earlier lack this protocol, as do some earlier 1.8 development builds.
+Support for the `LOADING` enum alone does not imply support for these endpoints.
 With authentication enabled, both endpoints use the mode setter's permissions: graph-space management (`space`) or graph ownership, with STATUS write
 authorization. Server binds the handle to the authenticated principal; a token grants no permission. Keep the same identity for acquire, release and retries.
 
@@ -857,7 +858,8 @@ Release with `action: "release"` and the same handle; its response has `state: "
 recorded and causes a subsequent acquire with that handle to return `released`.
 Keep one handle for retries; Server checks its principal, instance and epoch. A released handle cannot acquire again.
 
-To clear orphaned handles after an abnormal exit (e.g. `kill -9`), an administrator can execute an explicit recovery request:
+To clear orphaned handles after an abnormal exit (e.g. `kill -9`), first stop and drain all related imports and graph writes.
+An administrator can then read the current handle state and execute an explicit recovery request:
 
 ```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode/owners

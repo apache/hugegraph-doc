@@ -80,6 +80,8 @@ GET http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph
 }
 ```
 
+<span id="clear-graph"></span>
+
 #### 6.1.3 清空某个图的全部数据，包括 schema、vertex、edge 和 index 等
 
 ##### Params
@@ -798,8 +800,8 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/graph_read_mode
 
 #### 6.3.5 LOADING owner 管理 {#loading-ownership}
 
-自 HugeGraph 1.8.0 起提供 owner 协议 1 接口（需配合返回 `protocol: 1` 的新版 Server 与对应 Loader；当前 `master` 分支暂未包含该协议）；
-Loader 需使用配套的 1.8.0 及以上版本客户端。旧版本发行包、早期 1.8 构建以及当前 `master` 分支均不包含该协议；仅支持 `LOADING` 枚举不能说明支持这些接口。
+HugeGraph Server 1.8.0 及更高版本已提供 LOADING owner 协议 1 接口。先探测 `GET .../mode/owners` 并确认返回 `protocol: 1`；
+Loader 还需使用配套的 1.8.0 及以上版本客户端。Server 1.7.0 及更早版本，以及部分早期 1.8 开发构建不包含该协议；仅支持 `LOADING` 枚举不能说明支持这些接口。
 启用鉴权时，两个接口沿用模式设置接口的权限要求，即图空间管理权限（`space`）或该图所有者权限，并校验 STATUS 写权限。
 Server 将句柄绑定到实际鉴权用户；token 本身不赋予权限。申请、释放和重试必须保持相同身份。
 
@@ -834,11 +836,14 @@ PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode/owners
 ```
 
 只有响应中包含 `state: "active"` 时才表示申请成功；此时返回 `200` 并回显 `protocol`、`instance`、`epoch`、`token` 以及 `mode: "LOADING"`。
+
 若返回 `200` 但 `state: "released"`，说明该句柄已失效或已被提前取消，此时并未获得 owner 保护；必须先停止并排空该次导入尝试，然后再通过 GET 获取新的 `instance` 和 `epoch` 并使用新 token 重新发起尝试。
+
 释放时将 `action` 设置为 `release`，句柄保持不变；响应中包含 `state: "released"` 和当前实际模式。未申请前直接调用释放会被记录，并导致后续使用该句柄的申请直接返回 `released`。
 重试保留同一句柄；Server 校验其鉴权身份、instance 和 epoch。已释放句柄不能再次申请。
 
-当异常中断（如 `kill -9`）导致句柄残留时，管理员可发起强制恢复请求：
+当异常中断（如 `kill -9`）导致句柄残留时，先停止并排空所有相关导入和图写入，
+再由管理员读取当前句柄状态并发起强制恢复请求：
 
 ```text
 PUT http://localhost:8080/graphspaces/DEFAULT/graphs/hugegraph/mode/owners

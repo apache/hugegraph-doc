@@ -2081,7 +2081,8 @@ Finds the intersection of destination vertices that satisfy the specified condit
 		- skip_degree: Sets the minimum number of edges to discard super vertices during the query process. If the number of adjacent edges for a vertex is greater than skip_degree, the vertex is completely discarded. Optional. If enabled, it must satisfy the constraint `skip_degree >= max_degree`. Default is 0 (not enabled), which means no vertices are skipped. Note: When this configuration is enabled, the traversal process will attempt to visit skip_degree edges of a vertex, not just max_degree edges. This incurs additional traversal overhead and may significantly impact query performance. Please make sure you understand it before enabling.
 
 - capacity: Maximum number of vertices to be visited during the traversal process. Optional. Default is 10000000.
-- limit: Maximum number of paths to be returned. Optional. Default is 10.
+- limit: Maximum number of distinct crosspoints to return. Optional, default `10`; `-1` means no limit.
+  With `with_path=true`, several paths may end at the same crosspoint, so the number of returned paths can exceed this limit.
 - with_path: When set to true, returns the paths where the intersection points are located. When set to false, does not return the paths. Optional. Default is false.
 - with_vertex: Optional. Default is false.
 	- When set to true, the result includes complete vertex information (all vertices in the paths):

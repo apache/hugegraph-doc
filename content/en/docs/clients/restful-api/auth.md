@@ -17,7 +17,18 @@ description: "Authentication REST API: Manage users, roles, permissions, and acc
 > To enable authentication and related configurations, please refer to the [Authentication Configuration](/docs/config/config-authentication/) documentation.
 
 ##### Overview of User Authentication and Access Control:
-HugeGraph supports multi-user authentication and fine-grained access control. It adopts a 4-tier design based on "User-User Group-Operation-Resource" to flexibly control user roles and permissions. Resources describe data in the graph database, such as vertices that meet certain conditions. Each resource consists of three elements: type, label, and properties. There are a total of 18 types and combinations of any label and properties to form resources. The internal condition of a resource is an "AND" relationship, while the condition between multiple resources is an "OR" relationship. Users can belong to one or more user groups, and each user group can have permissions for any number of resources. The types of operations include read, write, delete, execute, etc. HugeGraph supports dynamically creating users, user groups, and resources, and supports dynamically assigning or revoking permissions. During the initialization of the database, a super administrator user is created, and subsequently, various role users can be created by the super administrator. If a newly created user is assigned sufficient permissions, they can create or manage more users.
+
+HugeGraph controls access through four elements:
+
+- **Users** belong to one or more groups.
+- **Groups** receive permissions on resources.
+- **Operations** include read, write, delete and execute.
+- **Resources** combine `type`, `label` and `properties`, such as vertices with label `person` whose `city` is `Beijing`.
+
+Conditions within one resource are combined with **AND**; alternative resources are combined with **OR**.
+The APIs below create users, groups and resources, and grant or revoke permissions dynamically.
+After authentication is initialized, the super administrator manages accounts and permissions; delegated accounts need the corresponding
+management permissions to create or manage other users.
 
 ##### Example:
 user(name=boss) -belong-> group(name=all) -access(read)-> target(graph=graph1, resource={label: person, city: Beijing})  

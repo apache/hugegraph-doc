@@ -403,7 +403,7 @@ After completion, verify the result in the GQL workspace:
 g.V().hasLabel('person').has('name', within('docs_alice', 'docs_bob')).valueMap()
 ```
 
-The result should include both new people. **Input progress** counts records read, including headers and skipped/failed rows.
+The result should include both new people. **Input Records Read** counts records read, including headers and skipped/failed rows.
 Vertex and edge write counters count submitted elements in acknowledged successful responses for the current or most recent Loader attempt.
 They are not newly created elements or independently verified successful rows. Retry/resume starts fresh write counters;
 timed-out or interrupted requests can leave writes uncounted. Older tasks show unknown values when these counters were not recorded.

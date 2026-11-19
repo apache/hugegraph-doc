@@ -54,10 +54,6 @@ for (const locale of ['en', 'cn']) {
     test(`${locale} Hubble screenshots remain interactive in Duo View at ${width}px`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(docsRoute('latest', locale, 'quickstart/toolchain/hugegraph-hubble/'));
-      // Open the actual publication origin so absolute legacy fragment links
-      // remain same-origin inside the reader, including when testing an artifact locally.
-      const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-      if (new URL(canonical).origin !== new URL(page.url()).origin) await page.goto(canonical);
       const opener = page.locator('[data-td-compare-open]');
       await opener.click();
       const { dialog, frames } = await paneFrames(page);
@@ -73,6 +69,17 @@ for (const locale of ['en', 'cn']) {
         await expect(chinese.locator(`[id="${id}"]`)).toHaveCount(1);
       }
       if (width < 900) await dialog.locator('.td-compare__tab').nth(chineseIndex).click();
+      // Keep fragment navigation on the local artifact origin
+      await chinese.evaluate(() => {
+        for (const a of document.querySelectorAll('a[href*="#"]')) {
+          try {
+            const url = new URL(a.getAttribute('href'), window.location.href);
+            if (url.hash && url.origin !== window.location.origin) {
+              a.setAttribute('href', url.pathname + url.search + url.hash);
+            }
+          } catch {}
+        }
+      });
       await chinese.getByRole('link', { name: '查询与可视化', exact: true }).click();
       await expect(chinese.locator('#gql-workspace-query-and-explore-relationships')).toBeInViewport();
       for (const [index, frame] of frames.entries()) {

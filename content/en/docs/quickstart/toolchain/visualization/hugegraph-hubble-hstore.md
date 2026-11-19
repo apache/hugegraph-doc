@@ -255,7 +255,7 @@ With [Helm's optional Vermeer engine](/docs/quickstart/hugegraph/hugegraph-helm/
 HugeGraph account. Helm supplies the internal Master URL and token file for both computation and health collection.
 With Server authentication enabled, direct Store loading and native computation require a super administrator.
 
-1. Select the GraphSpace and graph, then open **OLAP graph compute**.
+1. Select the GraphSpace and graph, then open **OLAP Whole-graph Compute** under **Built-in Graph Algorithms**.
 1. Load or reload the graph and wait for its load task to complete. The compute copy does not track later graph writes automatically.
 1. Select a supported Vermeer algorithm, set its parameters and submit. Keep its task identity when opening **Async Tasks**.
 1. Inspect the workspace's bounded result sample or open paginated task results; distinguish a sample from the full result set.
@@ -265,7 +265,7 @@ See the [Vermeer guide](/docs/quickstart/computing/hugegraph-vermeer/#24-submit-
 parameters, API task IDs and result-cache limits. An existing Computer deployment remains accessible through its separate compatibility section.
 
 In **Cluster Overview**, a compact Vermeer summary opens a separate Master-above-Worker perspective.
-**Return to main cluster** restores the Server/PD/Store view. Ready/registered Worker counts describe observations, not desired Helm replicas.
+**Back to main cluster** restores the Server/PD/Store view. Ready/registered Worker counts describe observations, not desired Helm replicas.
 CPU is measured in process cores and memory in RSS; partial coverage is not a complete cluster resource total.
 If monitoring fails, cached observations are marked stale and current readiness remains unknown. Vermeer trouble is shown separately from the main
 graph cluster's status. The space-scoped Worker allocation probe and deployment-wide health snapshot answer different questions.

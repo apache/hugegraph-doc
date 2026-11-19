@@ -250,7 +250,7 @@ operations.store.allowed_targets=[http://store:8520]
 使用 [Helm 可选 Vermeer 引擎](/cn/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines)时，沿用 HugeGraph 账号登录 Hubble。
 Chart 为计算和健康观测提供内部 Master URL 与 Token 文件。Server 开启认证时，直接 Store 加载与原生计算要求超级管理员权限。
 
-1. 选择图空间和图，进入【OLAP 图计算】。
+1. 选择图空间和图，在【内置图算法】下进入【OLAP 全图计算】。
 1. 加载或重新加载图，等待加载任务完成。内存中的计算副本不会自动跟随之后的图写入。
 1. 选择受支持的 Vermeer 算法并设置参数，提交后保留其任务身份，进入【异步任务】查看。
 1. 在工作台查看有界结果样本，或打开任务的分页结果；区分样本与完整结果集。

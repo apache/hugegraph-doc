@@ -356,18 +356,22 @@ For a release that already ran root images after `fsGroup` was set, use this one
      --wait --timeout 15m
    ```
 
-1. **Verify the selected images on every PD and Store Pod.**
+1. **Recreate Store Pods and verify `Always` was applied on every replacement.**
 
-   Confirm the running images before restoring the ordinary ownership policy.
+   Under `values-cluster.yaml` (`store.updateStrategy.type=OnDelete`), `helm upgrade` does not automatically recreate Store Pods.
+   Their image names may match even though they have not mounted their volumes under `Always`.
+   Recreate Store Pods one at a time using the [controlled rollout procedure](./hugegraph-helm-operations.md#6-rolling-store-images-safely).
+   Confirm each replacement Pod runs the selected image, mounts its PVC with `fsGroupChangePolicy: Always`, and passes shard recovery before restoring the policy.
 
    ```bash
    kubectl get pods -n hugegraph \
-     -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].image}{"\n"}{end}'
+     -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].image}{"\t"}{.spec.securityContext.fsGroupChangePolicy}{"\n"}{end}'
    ```
 
 1. **Restore `OnRootMismatch` after verification.**
 
    `--reuse-values` retains `Always`, which otherwise walks the whole volume on every Pod start.
+   Only restore `OnRootMismatch` after all Store replacements have mounted under `Always`.
 
    ```bash
    helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \

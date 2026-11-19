@@ -358,18 +358,22 @@ PD 成员、持久存储和共享凭据变更需要按生命周期说明协调�
      --wait --timeout 15m
    ```
 
-1. **核实每个 PD、Store Pod 的镜像。**
+1. **逐个重建 Store Pod，并确认新 Pod 已应用 `Always` 策略。**
 
-   确认实际运行的镜像后，再恢复常规属主策略。
+   在 `values-cluster.yaml`（`store.updateStrategy.type=OnDelete`）预设下，`helm upgrade` 不会自动重建 Store Pod。
+   即使镜像名称匹配，旧 Pod 也并未以 `Always` 策略重新挂载 PVC。
+   请按[受控滚动升级流程](./hugegraph-helm-operations.md#6-安全逐个滚动更新-store-镜像)逐个删除并重建 Store Pod。
+   确认每个替换后的 Pod 均运行指定镜像、PVC 挂载已应用 `fsGroupChangePolicy: Always` 且分片恢复就绪后，再恢复常规策略。
 
    ```bash
    kubectl get pods -n hugegraph \
-     -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].image}{"\n"}{end}'
+     -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].image}{"\t"}{.spec.securityContext.fsGroupChangePolicy}{"\n"}{end}'
    ```
 
 1. **验证后恢复 `OnRootMismatch`。**
 
    `--reuse-values` 会保留 `Always`，否则每次 Pod 启动都会遍历整个卷。
+   必须在所有 Store Pod 均已用 `Always` 成功挂载并修复后，再恢复 `OnRootMismatch`。
 
    ```bash
    helm upgrade hugegraph "$CHART" --devel -n hugegraph --reuse-values \

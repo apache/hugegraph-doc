@@ -179,7 +179,6 @@ to `gremlin-util` (`org.apache.tinkerpop.gremlin.util.ser.*`).
 >
 > HugeGraph requires custom serializer builders and registries: GraphBinary requires `builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder`
 > to serialize HugeGraph `Id`, schema, `Blob`, and enum values (otherwise failing with `IOException: Serializer for type ... not found`);
->
 > untyped GraphSON V1 requires `org.apache.hugegraph.io.HugeGraphSONV1MessageIoRegistry`.
 
 | Legacy Serializer (`driver.ser.*`) | 1.8.0 Serializer (`util.ser.*`) | Required Registries / Builder | Notes |

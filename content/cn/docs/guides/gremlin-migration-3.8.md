@@ -176,7 +176,6 @@ TinkerPop 3.8 引入了原生日期操作函数与步骤，这些能力在 3.5.1
 >
 > HugeGraph 需要专用的 Builder 与 Registry：GraphBinary 必须配置 `builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder`
 > 才能序列化 HugeGraph 的 `Id`、Schema、`Blob` 与枚举类型（否则会抛出 `IOException: Serializer for type ... not found`）；
->
 > 无类型 GraphSON V1 需要添加 `org.apache.hugegraph.io.HugeGraphSONV1MessageIoRegistry`。
 
 | 旧配置类名 (`driver.ser.*`) | 1.8.0 对应类名 (`util.ser.*`) | 所需 Builder / Registry | 说明 |

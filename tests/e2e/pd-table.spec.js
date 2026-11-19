@@ -47,7 +47,10 @@ async function expectConfigurationCatalog(page, route, wideCount, ordinaryCount,
         expect(cell.rowHeight).toBeLessThan(200);
       }
     }
-    const description = table.locator('tbody tr > td:nth-child(3)').first();
+    // The new file/path reference has two columns. Other catalogues retain
+    // their existing third-column check, including four/five-column tables.
+    const columnCount = await table.locator('thead tr').first().locator('th').count();
+    const description = table.locator(`tbody tr > td:nth-child(${columnCount === 2 ? 2 : 3})`).first();
     await expect(description).not.toBeEmpty();
     expect(await description.evaluate(node => parseFloat(getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(14);
     if (await wrapper.evaluate(node => node.scrollWidth > node.clientWidth + 1)) {

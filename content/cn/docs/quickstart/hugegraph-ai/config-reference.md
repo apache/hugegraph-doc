@@ -4,50 +4,70 @@ linkTitle: "配置参考"
 weight: 4
 ---
 
-HugeGraph-LLM 从 `.env` 读取运行配置，提示词单独保存在 `config_prompt.yaml`。两者使用不同的路径解析规则；不要把提示词文件当作 `.env` 的一部分。
+HugeGraph-LLM 将部署默认值与应用保存的连接分开管理。本文说明当前 1.8 配置契约；
+Kubernetes 安装和存储配置统一见 [Helm 指南](/cn/docs/quickstart/hugegraph/hugegraph-helm/#8-graphrag)。
 
-`.env` 路径按以下顺序解析：
+## 保存连接 {#saved-connections}
 
-1. 若设置了环境变量 `HUGEGRAPH_LLM_ENV_PATH`，则使用该路径，开头的 `~` 会被展开。
-2. 从源码运行时，使用 `hugegraph-llm/.env`。
-3. 以已安装的包运行时，使用当前工作目录下的 `.env`。
+通过 Web 页面或[配置 API](./rest-api.md#runtime-configuration)保存模型连接。
+应用把完整连接写入 `settings.yaml`，立即生效，并在重启或 Helm 升级后继续使用。
+优先级依次为：应用已保存连接、进程环境变量／Secret、`.env`、代码默认值。
+因此修改 Helm 引导默认值不会替换应用中已经保存的连接。
 
-该路径在导入配置模块时确定。设置 `HUGEGRAPH_LLM_ENV_PATH` 时，需在启动 Python 进程前设置；不能只把它写进将要读取的 `.env` 文件。覆盖路径使用相对路径时，以进程当前工作目录为基准。
+`Save configuration` 只校验格式，不连接模型；`Test saved connection` 单独测试，失败不会撤销保存。
+已有 key 不回显。页面 key 留空或 API 省略 `api_key` 时保留原 key；`Clear API key` 或 `clear_api_key: true` 才会删除。
+更换目标地址或 provider 时必须提供新 key 或明确清除；同一端点仅更换模型可以保留 key。
+未替换部署注入的 key 时，保存的是对应环境变量引用；轮换 Secret 后需重建 Pod。
 
-提示词 YAML 路径按以下顺序解析：
+抽取与 Text2Gremlin 未独立配置时跟随 Chat；`Use Chat connection` 可恢复继承。
+Embedding、reranker 独立配置，登录和 Thin API 写入开关仍由部署管理。
+离线重置连接时，删除 `settings.yaml` 中相应连接组并重启；不要与应用保存操作同时编辑该文件。
 
-1. 若进程环境中设置了 `HUGEGRAPH_LLM_PROMPT_CONFIG_PATH`，使用该路径，并展开开头的 `~`。
-2. 从源码运行时，使用 `hugegraph-llm/src/hugegraph_llm/resources/demo/config_prompt.yaml`。
-3. 以已安装的包运行时，使用 `${XDG_CONFIG_HOME:-~/.config}/hugegraph-llm/config_prompt.yaml`。
+## 配置文件 {#configuration-files}
 
-覆盖路径的环境变量也要在进程启动前设置。相对路径以进程当前工作目录为基准。源码 Docker 镜像通过 `PYTHONPATH` 指向源码目录，因此默认提示词路径仍位于 `hugegraph-llm/src/hugegraph_llm/resources/demo/`。
+在启动前设置 `HUGEGRAPH_LLM_RESOURCE_PATH`，把设置、提示词、索引和生成文件放到可写持久化目录。
+该目录缺少示例资源时，应用从安装包读取；启动不会复制资源或创建默认配置文件。
 
-运行以下命令可按配置类的默认值创建或更新文件：
+| 文件 | 路径选择顺序，从高到低 |
+| --- | --- |
+| 已保存连接 | `HUGEGRAPH_LLM_SETTINGS_PATH`；否则为资源目录的 `settings.yaml`，未指定资源目录时位于所选 `.env` 旁 |
+| 部署默认值 | `HUGEGRAPH_LLM_ENV_PATH`；资源目录的 `.env`；源码目录的 `hugegraph-llm/.env`；当前工作目录的 `.env` |
+| 提示词 | `HUGEGRAPH_LLM_PROMPT_CONFIG_PATH`；资源目录的 `demo/config_prompt.yaml`；源码资源文件；`${XDG_CONFIG_HOME:-~/.config}/hugegraph-llm/config_prompt.yaml` |
+{.wide .expand}
+
+覆盖路径会展开 `~`，相对路径以进程工作目录为基准。环境变量要在导入配置前设置，不能只写入由它们选择的 `.env`。
+只读 `.env`／Secret 可以作为部署默认值；保存设置、显式修改提示词则需要可写存储。
+请持久化整个资源目录，或明确挂载其中需要写入的文件。`.env` 和 `settings.yaml` 均可能含凭据，应限制卷与备份的访问权限。
+
+需要部署文件时，可显式导出当前解析后的配置：
 
 ```bash
 cd hugegraph-ai/hugegraph-llm
 python -m hugegraph_llm.config.generate --update
 ```
 
-`--update` 默认开启，因此不带参数运行效果相同。配置模块首次导入时会为缺失的 `.env` 和提示词 YAML 按默认值创建文件；文件已存在时，生成器会交互询问是否覆盖。该命令会处理 HugeGraph、管理员、LLM、索引配置及提示词 YAML，不会在无确认的情况下覆盖已有文件。
+生成器会在替换已有文件前询问。这是显式导出操作，不是启动前必需步骤，页面日常保存也不会写入这些部署文件。
 
-`.env` 包含密钥和密码，不要提交到版本库。
+<span id="基础选项"></span>
 
-## 基础选项
+## 基础选项 {#basic-options}
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
 | `LANGUAGE` | `EN` | 提示词语言，可选 `EN`、`CN` |
-| `CHAT_LLM_TYPE` | `openai` | 回答模型，可选 `openai`、`litellm`、`ollama/local` |
+| `CHAT_LLM_TYPE` | `openai` | 回答模型，可选 `openai`、`ollama/local` |
 | `EXTRACT_LLM_TYPE` | `openai` | 信息抽取模型，取值同上 |
 | `TEXT2GQL_LLM_TYPE` | `openai` | Text2Gremlin 模型，取值同上 |
-| `EMBEDDING_TYPE` | `openai` | 嵌入模型，取值同上，也可以留空 |
+| `EMBEDDING_TYPE` | `openai` | 嵌入模型，取值同上 |
+| `EXTRACT_USE_CHAT` / `TEXT2GQL_USE_CHAT` | `True` | 未独立配置时跟随 Chat |
 | `RERANKER_TYPE` | 空 | 可选 `cohere`、`siliconflow` |
 | `KEYWORD_EXTRACT_TYPE` | `llm` | 可选 `llm`、`textrank`、`hybrid` |
 | `WINDOW_SIZE` | `3` | TextRank 滑窗，范围 1 到 10 |
 | `HYBRID_LLM_WEIGHTS` | `0.5` | hybrid 模式中 LLM 结果的权重，范围 0 到 1 |
 
-## OpenAI 兼容接口
+<span id="openai-兼容接口"></span>
+
+## OpenAI 兼容接口 {#openai-compatible-apis}
 
 聊天、抽取和 Text2Gremlin 可以使用不同端点、密钥和模型。
 
@@ -63,19 +83,12 @@ API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `g
 
 `OPENAI_BASE_URL` 和 `OPENAI_API_KEY` 可作为通用回退值。嵌入模型另有 `OPENAI_EMBEDDING_BASE_URL` 和 `OPENAI_EMBEDDING_API_KEY` 回退值。
 
-## LiteLLM
+## LiteLLM {#litellm}
 
-| 用途 | API 地址 | 密钥 | 模型 | 最大 token 默认值 |
-|---|---|---|---|---|
-| 回答 | `LITELLM_CHAT_API_BASE` | `LITELLM_CHAT_API_KEY` | `LITELLM_CHAT_LANGUAGE_MODEL` | `LITELLM_CHAT_TOKENS=8192` |
-| 抽取 | `LITELLM_EXTRACT_API_BASE` | `LITELLM_EXTRACT_API_KEY` | `LITELLM_EXTRACT_LANGUAGE_MODEL` | `LITELLM_EXTRACT_TOKENS=256` |
-| Text2Gremlin | `LITELLM_TEXT2GQL_API_BASE` | `LITELLM_TEXT2GQL_API_KEY` | `LITELLM_TEXT2GQL_LANGUAGE_MODEL` | `LITELLM_TEXT2GQL_TOKENS=4096` |
-| 嵌入 | `LITELLM_EMBEDDING_API_BASE` | `LITELLM_EMBEDDING_API_KEY` | `LITELLM_EMBEDDING_MODEL` | 不适用 |
-{.td-table--wide}
+应用不接受 `litellm` provider 或 `LITELLM_*` 配置。使用 LiteLLM 代理时请选择 `openai`，设置代理的 OpenAI 兼容 URL、key 和模型名。
+[独立 SDK](./hugegraph-llm-sdk.md#模型适配器)仍提供 `LiteLLMClient` 适配器。
 
-三个语言模型默认是 `openai/gpt-4.1-mini`，嵌入模型默认是 `openai/text-embedding-3-small`。模型名通常使用 `供应商/模型` 格式，具体取值由 LiteLLM 服务决定。
-
-## Ollama
+## Ollama {#ollama}
 
 | 用途 | 主机 | 端口 | 模型 |
 |---|---|---|---|
@@ -87,7 +100,9 @@ API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `g
 
 主机默认是 `127.0.0.1`，端口默认是 `11434`，模型名没有默认值。使用前先在 Ollama 中拉取对应模型。
 
-## 重排序
+<span id="重排序"></span>
+
+## 重排序 {#reranking}
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
@@ -95,7 +110,9 @@ API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `g
 | `RERANKER_API_KEY` | 空 | Cohere 或 SiliconFlow 密钥 |
 | `RERANKER_MODEL` | 空 | 服务端支持的模型名 |
 
-## HugeGraph 连接与召回限制
+<span id="hugegraph-连接与召回限制"></span>
+
+## HugeGraph 连接与召回限制 {#hugegraph-connection-and-retrieval-limits}
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
@@ -112,7 +129,9 @@ API 地址默认是 `https://api.openai.com/v1`；三个语言模型默认是 `g
 | `TOPK_PER_KEYWORD` | `1` | 每个关键词的候选数 |
 | `TOPK_RETURN_RESULTS` | `20` | 重排序后返回的结果数 |
 
-## 向量索引后端
+<span id="向量索引后端"></span>
+
+## 向量索引后端 {#vector-index-backend}
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
@@ -134,7 +153,9 @@ uv sync --package hugegraph-llm --extra vectordb
 
 Web 页面的 `5. Set up the vector engine.` 面板提供同样的选择，并会保存所选引擎的连接配置。
 
-## 登录与日志接口
+<span id="登录与日志接口"></span>
+
+## 登录与日志接口 {#login-and-log-api}
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
@@ -147,13 +168,13 @@ Web 页面的 `5. Set up the vector engine.` 面板提供同样的选择，并�
 > [!WARNING]
 > 生产环境必须设置 `ENABLE_LOGIN=True`，替换 `USER_TOKEN` 和 `ADMIN_TOKEN`，并通过防火墙或网络入口设置来源 IP 白名单。这只保护 HugeGraph-LLM；HugeGraph Server 还必须单独开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（标准日志文件为 `audit-*.log`），为 `GRAPH_USER` 设置最小必要权限。两端使用不同的认证凭据。
 
-## 最小 OpenAI 配置
+<span id="最小-openai-配置"></span>
+
+## 最小 OpenAI 配置 {#minimal-openai-configuration}
 
 ```properties
 LANGUAGE=CN
 CHAT_LLM_TYPE=openai
-EXTRACT_LLM_TYPE=openai
-TEXT2GQL_LLM_TYPE=openai
 EMBEDDING_TYPE=openai
 
 OPENAI_API_KEY=your-api-key
@@ -169,11 +190,17 @@ GRAPH_USER=admin
 GRAPH_PWD=your-password
 ```
 
-## 配置加载
+<span id="配置加载"></span>
 
-配置类先提供代码默认值。当前实现会在初始化时把所选 `.env` 中的值写入进程环境，再初始化配置对象；若 shell 中已经有同名变量，文件中的值会覆盖它。缺少的键使用配置类默认值，空值会被忽略，未知键会被忽略。Web 页面和配置 API 可以在运行时更新当前设置，并把受支持的字段同步回 `.env`。手工改动 `.env` 后应重启服务；提示词 YAML 会在服务启动或页面加载时读取。
+## 配置加载 {#configuration-loading}
 
-键名匹配不区分大小写。
+显式传入 Python 配置的参数优先，其后依次为应用已保存连接、进程环境变量、`.env` 和默认值，键名不区分大小写。
+部署源中的空值通常会被忽略，但显式为空的 `GRAPH_PWD` 会保留，用于未启用认证的 Server。
+抽取或 Text2GQL 的专用配置会选择独立连接，除非相应 `*_USE_CHAT` 标志明确启用继承。
+
+部署字段可以跨来源组合，例如从 `.env` 读取地址、从 Secret 读取 key。
+通过环境变量换用不同端点或 provider 时，不会继承低优先级文件中原端点的凭据；已保存连接则整体保留自己的目标与 key／引用。
+手工修改部署文件后应重启服务；页面／API 保存会更新受支持的连接，不会改写 `.env` 或进程环境变量。
 
 配置定义位于：
 

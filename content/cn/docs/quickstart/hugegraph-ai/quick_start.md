@@ -18,39 +18,25 @@ weight: 3
 
 本文截图基于 HugeGraph-LLM Web 界面，示例包含中英文提示词模式（通过环境变量 `LANGUAGE` 切换内置提示词语言，界面控件保持英文）。
 
-> [!DETAILS]- 源码启动时缺少批量问题模板
->
-> 若启动时报 `FileNotFoundError`，且缺少的文件为 `questions_template.xlsx`，在已安装依赖的仓库根目录创建输入模板后重启。
-> 已有文件会保留。模板包含完整的 6 列，只填写测试问题和预期答案，4 个模型回答列留空。
->
-> ```bash
-> uv run --extra llm python - <<'PYTHON'
-> from pathlib import Path
-> from openpyxl import Workbook
->
-> path = Path("hugegraph-llm/src/hugegraph_llm/resources/demo/questions_template.xlsx")
-> if not path.exists():
->     workbook = Workbook()
->     sheet = workbook.active
->     sheet.append([
->         "Question", "Expected Answer", "Basic LLM Answer",
->         "Vector-only Answer", "Graph-only Answer", "Graph-Vector Answer",
->     ])
->     sheet.append(["Who is Sarah?", "Sarah is a 30-year-old attorney.", None, None, None, None])
->     workbook.save(path)
-> PYTHON
-> ```
+<span id="0-配置面板"></span>
 
-## 0. 配置面板
+## 0. 配置面板 {#0-configuration-panel}
 
-标签页上方是可折叠的配置面板，共五个部分，包括 `1. Set up the HugeGraph server.`、`2. Set up the LLM.`、`3. Set up the Embedding.`、`4. Set up the Reranker.` 和 `5. Set up the vector
-engine.`。每部分都有独立的应用按钮，应用后会把受支持的字段写回 `.env`。页面顶部还会显示当前提示词语言。
+可折叠配置面板分为 HugeGraph、LLM、Embedding、Reranker 和向量引擎五部分。
+模型可选择 `chat`、`extract` 或 `text2gql` 角色，再点 `Save configuration` 保存。
+保存只校验格式；`Test saved connection` 单独验证服务连接，测试失败不会撤销已经保存的配置。
 
-在 LLM 配置的 `chat`、`mini_tasks`、`text2gql` 子页分别设置回答、抽取和查询生成模型。
+抽取与 Text2Gremlin 默认使用 Chat；为某角色独立保存连接后停止跟随，`Use Chat connection` 可恢复继承。
+key 留空表示保留，勾选 `Clear API key` 才会清除；更改目标地址时需输入新 key 或明确清除。
+连接保存到 `settings.yaml` 而非 `.env`，请在重启和 Helm 升级时持久化该文件。
+配置优先级和路径见[配置参考](./config-reference.md#saved-connections)。
+
 截图使用本地 Ollama 的 `qwen2.5:3b` 和 `mxbai-embed-large`，向量引擎为 `Faiss`。
 更换 Embedding 模型后需重建索引，避免新旧向量维数或含义不同。
 
-## 1. 构建 RAG 索引
+<span id="1-构建-rag-索引"></span>
+
+## 1. 构建 RAG 索引 {#1-build-rag-indexes}
 
 第一个标签页负责两类索引。
 
@@ -116,7 +102,9 @@ Sarah is a 30-year-old attorney. James is a journalist. Sarah has been James's r
 - `Graph Schema Generator` 根据查询示例和少样本示例生成 Schema，填入 Graph Schema 字段。
 - `Graph Extraction Prompt Generator` 根据期望场景（例如社交关系、金融知识图谱）和选定的参考示例生成 Graph Extract Prompt Header。
 
-## 2. GraphRAG 查询
+<span id="2-graphrag-查询"></span>
+
+## 2. GraphRAG 查询 {#2-graphrag-queries}
 
 第二个标签页提供四种回答范围，按需要选择对应索引。
 
@@ -182,7 +170,7 @@ flowchart TD
 
 单条问答面板下方是批量回归测试面板。上传 `.xlsx` 或 `.csv` 问题文件，设置 `Max Lines To Show`，点击 `Generate Answer (Batch)`。答案会显示在预览表格中，并可下载为文件。上传控件旁提供模板文件下载。
 
-## 3. Text2Gremlin
+## 3. Text2Gremlin {#3-text2gremlin}
 
 第三个标签页将自然语言转换为 Gremlin，并执行生成的查询。上半部分用 `.json` 或 `.csv` 的问题与 Gremlin 对建立示例向量索引；
 未上传文件时使用内置的 `resources/demo/text2gremlin.csv`。示例中的标签和属性应与当前图一致。
@@ -229,7 +217,9 @@ Web 页面会直接执行生成的语句，请使用专用测试图。需要只�
 
 自定义提示词必须保留 `{query}`、`{schema}`、`{example}` 和 `{vertices}`。缺少任一占位符时，REST API 会拒绝请求。
 
-## 4. 图工具与管理工具
+<span id="4-图工具与管理工具"></span>
+
+## 4. 图工具与管理工具 {#4-graph-and-administration-tools}
 
 `Graph Tools` 标签页可直接对当前图执行 Gremlin 查询、手动触发图备份，并通过 beta 操作初始化 HugeGraph 演示数据。后台还有两个任务，每天凌晨 1 点自动备份图数据，以及在进程运行期间持续更新顶点 id 向量。
 初始化演示数据会先清空当前图，只能在专用测试图上使用。
@@ -245,9 +235,11 @@ Web 页面会直接执行生成的语句，请使用专用测试图。需要只�
 ![Graph Tools 中手写 Gremlin 的查询结果](/images/docs/hugegraph-ai/cn/graph-tools.jpg)
 ```
 
-## 5. 提示词语言
+<span id="5-提示词语言"></span>
 
-在 `hugegraph-llm/.env` 中选择一种提示词语言。
+## 5. 提示词语言 {#5-prompt-language}
+
+在部署默认值中选择一种提示词语言。
 
 ```properties
 # 英文提示词
@@ -257,8 +249,11 @@ LANGUAGE=EN
 LANGUAGE=CN
 ```
 
-修改后重启服务。该配置选择内置提示词语言，不会自动翻译输入文档，也不属于 `/rag` 请求体字段。
+修改后重启服务；若 `settings.yaml` 已保存语言选项，会优先使用它，重置方式见[配置参考](./config-reference.md#saved-connections)。
+该配置选择内置提示词语言，不会自动翻译输入文档，也不属于 `/rag` 请求体字段。
 
-## 6. REST 调用
+<span id="6-rest-调用"></span>
+
+## 6. REST 调用 {#6-rest-calls}
 
 Web 页面和 REST API 使用同一套流程。需要程序集成时使用 `/rag`、`/rag/graph`、`/graph/extract` 和 `/text2gremlin`；请求结构见 [REST API](./rest-api.md)。

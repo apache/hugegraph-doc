@@ -8,38 +8,44 @@ HugeGraph-ML 从 HugeGraph 读取图数据并转换为 DGL 图，供节点嵌入
 
 ## 环境要求
 
-- Python 3.10 或更高版本
-- HugeGraph Server 1.5.0 或更高版本；当前 workspace 中的 Python 客户端会拒绝可探测到的更低版本
-- `uv` 0.7 或更高版本
+- 当前源码要求 Python 3.12 或更高版本
+- HugeGraph Server 1.5.0 或更高版本；当前 Python 客户端会拒绝可探测到的更低版本
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)，用于下文的独立环境
 
-所有服务端访问都通过同一仓库中的 `hugegraph-python-client`（即 `pyhugegraph` 包）完成。`HugeGraph2DGL` 使用 Gremlin 接口的 `g.V().hasLabel(...)` 和 `g.E().hasLabel(...)` 拉取点边，数据集导入函数则通过 schema 接口和顶点、边的批量接口写入，每批 500 条。
+所有服务端访问都通过同一仓库中的 `hugegraph-python-client`（即 `pyhugegraph` 包）完成。
+`HugeGraph2DGL` 使用 Gremlin 接口的 `g.V().hasLabel(...)` 和 `g.E().hasLabel(...)` 拉取点边；
+数据集导入函数通过 Schema 接口和顶点、边的批量接口写入，每批 500 条。
 
-ML 依赖在仓库根目录的 `[tool.uv] constraint-dependencies` 中声明版本约束：
+独立模块的依赖声明在
+[`hugegraph-ml/pyproject.toml`](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/pyproject.toml) 中：
 
-| 依赖 | 版本约束 |
+| 用途 | 依赖 |
 |---|---|
-| `torch` | `==2.2.0` |
-| `dgl` | `~=2.1.0` |
-| `ogb` | `~=1.3.6` |
-| `torchdata` | `~=0.7.0` |
-| `catboost` | `~=1.2.3` |
-| `category-encoders` | `~=2.6.3` |
-| `numpy` | `~=1.24.4` |
-| `pandas` | `~=2.2.3` |
+| 图学习 | `torch`、`dgl`、`torchdata`、`ogb` |
+| 表格模型 | `catboost`、`category-encoders` |
+| 数据与运行支持 | `numpy`、`pandas`、`pydantic`、`PyYAML`、`packaging`、`tqdm` |
+| Server 客户端 | `hugegraph-python>=1.8.0,<2` |
 
-这些约束限定依赖版本，不指定 CPU 或 CUDA 构建。支持 `gpu` 参数的任务默认值 `-1` 表示使用 CPU；使用 GPU 时，需要安装彼此兼容的 CUDA 版 `torch` 和 `dgl`。
+模块没有固定 ML 依赖栈的版本。请根据 Python 版本与平台选择兼容的 PyTorch、DGL 和 torchdata 构建；
+依赖解析成功不代表二进制库彼此兼容。支持 `gpu` 参数的任务默认值 `-1` 表示使用 CPU，GPU 还要求兼容的 CUDA 构建。
 
 ## 安装
+
+HugeGraph-ML 尚未发布到 PyPI，也不属于根目录的 `uv` workspace。
+请将它与同一 checkout 的 Python 客户端一起安装到独立环境：
 
 ```bash
 git clone https://github.com/apache/hugegraph-ai.git
 cd hugegraph-ai
-uv sync --extra ml
-source .venv/bin/activate
+uv venv --python 3.12 .venv-ml
+uv pip install --python .venv-ml/bin/python \
+  -e ./hugegraph-python-client -e ./hugegraph-ml
+source .venv-ml/bin/activate
+python -c 'import torch, dgl; print(torch.__version__, dgl.__version__)'
 cd hugegraph-ml/src
 ```
 
-HugeGraph-ML 是根项目的路径依赖，但不属于 `uv` workspace members。应在仓库根目录选择 `ml` extra，让 `uv` 按 workspace 配置安装它及其本地客户端依赖。
+先确认两个库均可导入，再运行示例。这个检查不会训练模型，也不验证 GPU 支持。
 
 ## 已实现模型
 
@@ -247,6 +253,7 @@ GRAND 每次增强采样都会返回一组 logits，`NodeClassify` 会对列表�
 - Schema 不匹配：示例默认使用 `CORA_vertex` 和 `CORA_edge`，自有数据需要传入实际标签。
 - `ValueError: Graph is missing required node attribute ...`：节点分类任务需要 `ndata` 中包含 `feat`、`label`、`train_mask`、`val_mask` 和 `test_mask`。请导入带掩码的数据集，或给 `convert_graph` 传入自定义的 `mask_keys`。
 - `ValueError: dataset not supported`：导入函数只接受上表列出的名称，且 `import_graph_from_ogb` 匹配 `ogbl-collab` 时不做大写转换。
-- DGL 或 PyTorch 导入失败：回到仓库根目录重新执行 `uv sync --extra ml`，并确认当前 Python 来自根目录 `.venv`。
+- DGL 或 PyTorch 导入失败：确认 Python 来自 `.venv-ml`，再核对 PyTorch/DGL/torchdata 的版本与 CPU/CUDA 构建。
+  按 [DGL 安装说明](https://www.dgl.ai/pages/start.html)选择兼容组合，不要反复重试根目录的 workspace 同步。
 - `bgrl_example.py` 目前在导入阶段就会失败：它从 `hugegraph_ml.models.bgrl` 导入 `MLP_Predictor`，而该模块中的类名是 `MLPPredictor`。
 - `care_gnn_example.py` 读取 `AMAZON_user_v` 和三个 `AMAZON_net_*_e` 边标签，仓库内没有对应的导入函数，需要自行准备该数据集后再运行。

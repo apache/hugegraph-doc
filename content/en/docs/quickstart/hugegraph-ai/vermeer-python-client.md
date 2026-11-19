@@ -10,15 +10,16 @@ The module does not pin a Vermeer server version. It talks to the Vermeer master
 
 ## Requirements
 
-- Current source requires Python 3.10 or later because its type annotations use Python 3.10 features, although packaging metadata still declares `>=3.9`.
+- Current source requires Python 3.12 or later.
 - A running Vermeer master reachable over HTTP on its default port `6688`. Docker deployments must publish `6688:6688`; see the [Vermeer quick start](../computing/hugegraph-vermeer.md).
 - `uv` (recommended) or `pip`
 
-Runtime dependencies: `requests`, `urllib3`, `python-dateutil`, `decorator`, `rich`, and `setuptools`.
+Runtime dependencies: `requests`, `urllib3`, and `python-dateutil>=2.9,<3`.
 
 ## Installation
 
-The distribution name in the packaging metadata is `vermeer-python-client` and the version is managed independently of the repository version. The package is not published on PyPI yet, so install it from source.
+The distribution name is `vermeer-python-client`; its version follows the repository release version.
+The package is not published on PyPI yet, so install it from source.
 
 From the root of the HugeGraph-AI repository, the `vermeer` extra installs it into the shared virtual environment:
 
@@ -31,13 +32,14 @@ source .venv/bin/activate
 
 `vermeer-python-client` is wired in as an editable path dependency rather than a `uv` workspace member, so a plain `uv sync` at the repository root does not install it. You have to ask for the extra (or for `--all-extras`).
 
-To install the module standalone:
+To install the module in a separate environment, run from the repository root:
 
 ```bash
 git clone https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai/vermeer-python-client
-uv sync
-source .venv/bin/activate
+cd hugegraph-ai
+uv venv --python 3.12 .venv-vermeer
+uv pip install --python .venv-vermeer/bin/python -e ./vermeer-python-client
+source .venv-vermeer/bin/activate
 ```
 
 ## Connect to a Vermeer Master

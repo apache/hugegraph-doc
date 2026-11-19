@@ -64,7 +64,7 @@ Changing these fields does not resize existing Pods.
 | configs                      | No       | Map     |         |                                                                                | Additional configuration                                                          |
 {.td-table--wide}
 
-These are current Server REST creation defaults. Existing spaces keep their configured limits; clients such as Hubble can submit different values.
+Server applies these defaults only when a create request omits the field; a space keeps the limits stored at creation, and clients such as Hubble can submit other values.
 Omitted compute limits are stored as `0`, continuously inheriting the corresponding CPU or memory quota.
 
 ```json

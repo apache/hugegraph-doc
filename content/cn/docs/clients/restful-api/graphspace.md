@@ -62,7 +62,7 @@ POST http://localhost:8080/graphspaces
 | configs                      | 否       | Map     |           |                                                                 | 其他配置信息                                                                                         |
 {.td-table--wide}
 
-以上是当前 Server REST 创建接口的默认值；已有图空间保留原配额，Hubble 等客户端也可以显式提交其他值。
+创建请求省略字段时，Server 采用上述默认值；图空间保留创建时保存的配额，Hubble 等客户端也可以显式提交其他值。
 省略的计算配额保存为 `0`，持续继承对应的 CPU 或内存配额。
 
 ```json

@@ -90,6 +90,7 @@ Id vertexId = IdGenerator.of("vertex-1");
 
 ID 包只迁移 `Id`、`IdGenerator`、`EdgeId`、`IdUtil`、`SplicingIdGenerator`。
 `SnowflakeIdGenerator` 保留在 core 的 `org.apache.hugegraph.backend.id`，继续使用原 import。
+
 查询包迁移 `Query`、`ConditionQuery`、`Condition`、`IdQuery`、`IdPrefixQuery`、`IdRangeQuery`、`BatchConditionQuery`、`Aggregate`。
 `QueryResults`、`ConditionQueryFlatten`、`EdgesQueryIterator`、`QueryBatch`、`QueryResultContext` 保留在 core 的
 `org.apache.hugegraph.backend.query`，继续使用原 import。
@@ -125,7 +126,7 @@ Common 的 JWT 依赖为 optional，直接使用 JWT 的模块需声明所需库
 Computer 的 `HgkvDirImpl` 是受影响的 client 异常调用方。Struct 中名称相近的异常具有不同契约。
 Loader 的 REST 边界和独立 client DTO 无需整体改为 struct。
 
-Toolchain、Computer 调整仍是未发布的下游交接内容，需要配套发布、构建和发行包类路径检查。
+使用配套的 Toolchain、Computer 产物；从源码构建时重新编译相关集成，并在部署前检查发行包类路径。
 检查构建后的 jar 以及源码，排除残留或传递依赖引入的同名类副本。
 
 ## 准备同步升级服务
@@ -210,8 +211,15 @@ Core SYSTEM-label 写入端保留原有字节。这次迁移不为这些 key 添
 | 操作 | 组合 key 与旧 key 的处理方式 |
 |---|---|
 | 读取某个属性 | 优先读取其组合 key；旧 vertex-only 行的 value 包含请求的 property ID 时，才回退读取。 |
-| 删除某个属性 | 移除其组合行和匹配的旧行，保留其他属性。 |
+| 删除单个顶点的 OLAP 属性值 | 移除其组合行和匹配的旧行，保留其他属性。 |
+| 清空 OLAP 属性 | 删除匹配的组合行和旧行，保留 schema。 |
+| 移除 OLAP 属性 | 先删除匹配行，再完成 schema/index 移除任务。 |
 | 读取旧写入端已经覆盖丢失的属性 | 本次修复无法恢复丢失的值。 |
+
+清空或移除一个 OLAP 属性会保留共享表、其他属性和其他图。
+清理前停止对目标属性的写入，并保持到清理完成；扫描不会协调并发写入，因此可能遗漏新行，或删除扫描后被重新写入的行。
+
+清理按有界批次提交。任务失败时，前序批次可能已提交；重试是幂等的，但整个操作不具备图级原子性。
 
 恢复写入前，升级全部 Server、Store 写入端。旧写入端可能更新旧行，新读取端仍优先读取已经存在的组合行。
 混合版本 OLAP 写入不在支持的升级契约内。

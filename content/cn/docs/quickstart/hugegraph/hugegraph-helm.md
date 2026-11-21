@@ -360,9 +360,9 @@ PD 成员、持久存储和共享凭据变更需要按生命周期说明协调�
 
 1. **逐个重建 Store Pod，并确认新 Pod 已应用 `Always` 策略。**
 
-   在 `values-cluster.yaml`（`store.updateStrategy.type=OnDelete`）预设下，`helm upgrade` 不会自动重建 Store Pod。
-   即使镜像名称匹配，旧 Pod 也并未以 `Always` 策略重新挂载 PVC。
-   请按[受控滚动升级流程](./hugegraph-helm-operations.md#6-rolling-store-images-safely)逐个删除并重建 Store Pod。
+   先运行下方 `kubectl get pods` 检查现有 Pod 策略。若 Store 使用默认未分区的 `RollingUpdate`，第 1 步的 `helm upgrade` 已自动逐个重建 Store Pod 并应用 `Always`；
+   若在 `values-cluster.yaml`（`store.updateStrategy.type=OnDelete`）预设下，`helm upgrade` 不会自动重建 Store Pod，旧 Pod 并未以 `Always` 策略重新挂载 PVC。
+   此时请按[受控滚动升级流程](./hugegraph-helm-operations.md#6-rolling-store-images-safely)仅逐个删除并重建尚未应用 `Always` 的 Store Pod。
    确认每个替换后的 Pod 均运行指定镜像、PVC 挂载已应用 `fsGroupChangePolicy: Always` 且分片恢复就绪后，再恢复常规策略。
 
    ```bash
@@ -523,7 +523,7 @@ HugeGraph 单节点预设使用 HStore，满足此条件；单机 RocksDB Server
 无需 Computer Operator、CRD 或 etcd。
 
 以下为**全新安装**方案。已有 release 启用引擎时使用 `helm upgrade`，并保留完整审阅后的 values。旧配置可能缺少新增组件的默认项；先将
-`helm get values hugegraph -n hugegraph --all -o yaml` 导出到私有文件，审阅后以 `-f` 提供，不带 `--reuse-values`。
+`helm get values hugegraph -n hugegraph --all -o yaml` 导出到私有文件，移除已完成的单次初始化标志（如 `bootstrap.enable`），审阅后以 `-f` 提供，不带 `--reuse-values`。
 
 保留原始 bootstrap 计数、凭据、存储和元数据命名空间。只更新可变的 `latest` 标签不会重启已有 Pod；
 应发布审阅后的新镜像标签/digest，或有计划地重启相关 StatefulSet 与 Hubble Deployment。

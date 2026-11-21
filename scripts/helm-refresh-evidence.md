@@ -36,5 +36,5 @@ Review contracts in the [chart](https://github.com/apache/hugegraph/tree/master/
 - Lifecycle and diagnostics: [Store deployment](https://github.com/apache/hugegraph/blob/master/hugegraph-store/docs/deployment-guide.md)
   and [Hubble diagnostics](https://github.com/apache/hugegraph-toolchain/blob/master/hugegraph-hubble/docs/operations-diagnostics-20261023.md).
 - Native Duo View IDs preserve old Chinese fragments; review Mermaid, Steps, topology Tabs, technical tables and Markdown fallbacks on desktop/mobile.
-- Runtime logs and API readbacks are verified against live clusters; assertions are recorded in [fixtures](fixtures/vermeer-helm-screenshots.json).
+- Runtime logs and API readbacks are verified against live clusters. The PageRank result summary, runtime image identities and screenshot hashes are recorded in [fixtures](fixtures/vermeer-helm-screenshots.json). Other algorithm, paging and Store/PD diagnostic assertions are not recorded in that file.
 - Run source, build, link and browser gates against a frozen artifact using the [contribution guide](../contribution.md).

@@ -358,9 +358,11 @@ For a release that already ran root images after `fsGroup` was set, use this one
 
 1. **Recreate Store Pods and verify `Always` was applied on every replacement.**
 
-   Under `values-cluster.yaml` (`store.updateStrategy.type=OnDelete`), `helm upgrade` does not automatically recreate Store Pods.
-   Their image names may match even though they have not mounted their volumes under `Always`.
-   Recreate Store Pods one at a time using the [controlled rollout procedure](./hugegraph-helm-operations.md#6-rolling-store-images-safely).
+   Run the `kubectl get pods` command below first to inspect current policy status.
+   Under unpartitioned `RollingUpdate`, `helm upgrade` in step 1 has already recreated Store Pods one by one with `Always` applied.
+   Under `values-cluster.yaml` (`store.updateStrategy.type=OnDelete`), `helm upgrade` does not automatically recreate Store Pods,
+   so existing Pods have not mounted their volumes under `Always`. In that case, recreate only the Store Pods that do not yet have `Always` applied,
+   one at a time using the [controlled rollout procedure](./hugegraph-helm-operations.md#6-rolling-store-images-safely).
    Confirm each replacement Pod runs the selected image, mounts its PVC with `fsGroupChangePolicy: Always`, and passes shard recovery before restoring the policy.
 
    ```bash
@@ -518,7 +520,7 @@ A standalone RocksDB Server cannot supply this direct Store-loading path. No Com
 
 The following are **fresh installation** choices. For an existing release, use `helm upgrade` with its complete reviewed values.
 Older saved values can omit new component defaults;
-export `helm get values hugegraph -n hugegraph --all -o yaml` to a private file, review it, then supply it with `-f` without `--reuse-values`.
+export `helm get values hugegraph -n hugegraph --all -o yaml` to a private file, remove completed one-time initialization flags (such as `bootstrap.enable`), review it, then supply it with `-f` without `--reuse-values`.
 Keep original bootstrap counts, credentials, storage and metadata namespace.
 
 Updating a mutable `latest` tag alone does not restart existing Pods;

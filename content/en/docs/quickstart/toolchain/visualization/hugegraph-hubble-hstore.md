@@ -245,7 +245,7 @@ If topology renders but node metrics are missing, check Hubble backend connectiv
 returned by PD, and ensure targets are in `operations.store.allowed_targets`. A partially available overview indicates metrics collection was blocked for
 specific sources, not that graph APIs are down.
 
-When `pd.server` names a Service or proxy that cannot identify one member, its process metrics remain a **configured endpoint sample**.
+When `pd.server` names a Service or proxy that cannot identify one member, its process metrics remain a **Configured PD endpoint sample**.
 They are neither a member's history nor a cluster total. Only trusted, uniquely mapped PD members receive attributed member metrics;
 review routing before enabling direct-peer collection.
 

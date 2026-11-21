@@ -70,7 +70,7 @@ mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" 
   install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
-Both version checks must report JDK 17. Also pass `-Dmaven.repo.local="$candidate_dir/m2"` to Maven commands in projects using Client from master.
+Both version checks must report JDK 17. In downstream projects using Client from master, set the dependency `<version>` to `1.8.0` and pass `-Dmaven.repo.local="$candidate_dir/m2"` to Maven commands.
 Client and Server versions need not be identical; check the required APIs and compatibility before upgrading.
 
 #### 4.3 Example

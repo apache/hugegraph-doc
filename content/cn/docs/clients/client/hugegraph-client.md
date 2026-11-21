@@ -73,7 +73,7 @@ mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" 
   install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
-两条版本检查都应显示 JDK 17。使用 master 分支 Client 的项目运行 Maven 命令时，也需添加 `-Dmaven.repo.local="$candidate_dir/m2"`。
+两条版本检查都应显示 JDK 17。使用 master 分支 Client 的项目，需将依赖 `<version>` 设为 `1.8.0`，并在运行 Maven 命令时添加 `-Dmaven.repo.local="$candidate_dir/m2"`。
 Client 与 Server 的版本不必相同；升级前核对所需 API 及兼容范围。
 
 #### 4.3 Example

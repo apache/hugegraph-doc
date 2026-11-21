@@ -73,7 +73,7 @@ weight: 4
      改为 `CUSTOMIZE_STRING`。Sink 可通过 `mappings` 创建缺失的 PropertyKey、VertexLabel 和 EdgeLabel，
      因而这些定义可省略手动创建。
    - **索引**：Sink 不会创建 IndexLabel。查询依赖的索引仍需单独创建，见上文“需要改变习惯的部分”表。
-   - **平行边**：自动创建的 EdgeLabel 默认使用 `frequency = "SINGLE"`，相同类型且端点相同的关系会合并为一条边。
+   - **平行边**：自动创建的 EdgeLabel 默认使用 `frequency = "SINGLE"`（预创建的 EdgeLabel 也必须定义为 `MULTIPLE` 才能保留多条边），相同类型且端点相同的关系会合并为一条边。
      若需保留平行边，在边映射中显式设置 `frequency = "MULTIPLE"`，并提供稳定的区分字段作为 `sortKeys`；
      HugeGraph 依靠这些字段区分同一对端点间的多条边。
 

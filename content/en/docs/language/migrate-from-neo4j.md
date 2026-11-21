@@ -89,7 +89,7 @@ business key.
      VertexLabels and EdgeLabels through `mappings`, so you may omit those parts of step 2.
    - **Indexes**: the Sink does not create IndexLabels. Create the indexes your queries rely on separately
      (see the habits table above).
-   - **Parallel relationships**: auto-created EdgeLabels default to `frequency = "SINGLE"`, which collapses
+   - **Parallel relationships**: auto-created EdgeLabels default to `frequency = "SINGLE"` (and pre-created labels must also be defined as `MULTIPLE` to preserve multiple edges), which collapses
      relationships of the same label between the same endpoints. To keep parallel relationships, set
      `frequency = "MULTIPLE"` and provide stable discriminator fields as `sortKeys` in the edge mapping.
      HugeGraph uses those fields to distinguish parallel edges.

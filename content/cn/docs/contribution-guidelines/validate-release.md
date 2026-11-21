@@ -86,12 +86,12 @@ hash 值一致 (一般是 sha512)
 (
   for archive in *.tar.gz; do
     printf '%s\n' "$archive"
-    grep -E "([[:space:]]|\*)${archive}$" "$archive.sha512" | shasum -a 512 --check || exit "$?"
+    grep -E "([[:space:]]|\*)${archive}$|^SHA512[[:space:]]*\(${archive}\)[[:space:]]*=" "$archive.sha512" | shasum -a 512 --check || exit "$?"
   done
 )
 ```
 
-在子 shell 中执行；校验会先确保 sidecar 中记录的文件名与当前归档一致，任何一个校验失败都会立即停止，不会因最后一个包通过而掩盖前面的失败，也不会退出交互终端。
+在子 shell 中执行；校验会先确保 sidecar 中记录的文件名与当前归档一致（支持标准与 BSD 校验格式），任何一个校验失败都会立即停止，不会因最后一个包通过而掩盖前面的失败，也不会退出交互终端。
 
 #### 3. 检查 gpg 签名
 

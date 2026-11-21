@@ -92,12 +92,12 @@ is the same as the last step of 0x02 inspection.
 (
   for archive in *.tar.gz; do
     printf '%s\n' "$archive"
-    grep -E "([[:space:]]|\*)${archive}$" "$archive.sha512" | shasum -a 512 --check || exit "$?"
+    grep -E "([[:space:]]|\*)${archive}$|^SHA512[[:space:]]*\(${archive}\)[[:space:]]*=" "$archive.sha512" | shasum -a 512 --check || exit "$?"
   done
 )
 ```
 
-Run the loop in a subshell; the check verifies that the sidecar references the current archive, and the first failed checksum stops validation without closing your interactive terminal.
+Run the loop in a subshell; the check verifies that the sidecar references the current archive (in either standard or BSD checksum format), and the first failed checksum stops validation without closing your interactive terminal.
 
 #### 3. check gpg signature
 

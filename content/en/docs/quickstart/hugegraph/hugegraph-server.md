@@ -164,8 +164,11 @@ Common container inspection operations:
 {.td-cards-list}
 
 Pin a tested release tag for reproducibility; mutable tags such as `latest` may lag source fixes.
-The named volume persists the default RocksDB path. Mounting `/hugegraph-server/data` does not persist that database.
-Authentication is initialized from `PASSWORD` on first startup; changing this variable does not rotate an existing user's password.
+The named volume persists the default RocksDB path (`/hugegraph-server/rocksdb-data`). Mounting `/hugegraph-server/data` does not persist that database.
+The 1.7.0 entrypoint stores its initialization marker and authentication configuration outside the data volume.
+When recreating or replacing an authenticated container with an existing data volume, supply `-e PASSWORD="<existing-password>"` again
+(or restore preserved authentication configuration); otherwise, the replacement container enters the non-auth branch and exposes graph data without authentication.
+Re-specifying `PASSWORD` maintains authentication mode but does not rotate an existing user's password.
 To reuse the HStore image for a new empty standalone installation, explicitly set both `HG_SERVER_BACKEND=rocksdb` and `HG_SERVER_USE_PD=false`.
 Use an image containing the local-backend storage-wait and data-directory ownership fixes:
 it ignores retained `pd.peers` and pre-creates `rocksdb-data` owned by 10001:10001 for a fresh named volume.
@@ -195,9 +198,14 @@ Standalone Server 1.8 uses the traversal source `__g_DEFAULT-hugegraph`; disabli
 GraphSpace management itself requires PD; local graph listing remains available.
 See the [Gremlin API](/docs/clients/restful-api/gremlin/) for a runnable request and authentication options.
 
-For the authenticated container above, verify both the REST graph and its traversal source:
+For the authenticated container above, first verify that unauthenticated graph requests are rejected (returning HTTP 401 Unauthorized),
+then verify access using credentials for both the REST graph and its traversal source:
 
 ```bash
+# Verify unauthenticated request is rejected (HTTP 401)
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/graphspaces/DEFAULT/graphs
+
+# Verify authenticated access
 curl -fsS http://localhost:8080/versions
 curl -fsS -u 'admin:replace-with-your-password' \
   http://localhost:8080/graphspaces/DEFAULT/graphs
@@ -208,7 +216,7 @@ curl -fsS -u 'admin:replace-with-your-password' \
 ```
 
 Omit credentials only when the deployment has authentication disabled.
-The version endpoint alone does not verify access to a loaded graph.
+The version endpoint alone does not verify access to a loaded graph, nor does it enforce authentication.
 
 | Symptom | Check |
 | --- | --- |

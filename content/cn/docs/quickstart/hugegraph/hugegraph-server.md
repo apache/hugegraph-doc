@@ -157,8 +157,11 @@ docker run -itd --name=server -p 8080:8080 -e PASSWORD="replace-with-your-passwo
 {.td-cards-list}
 
 为保证可复现，应固定经过验证的 release tag；`latest` 会变动，发布镜像也可能尚未包含源码修复。
-命名卷持久化默认 RocksDB 路径，挂到 `/hugegraph-server/data` 不会保存该数据库。
-`PASSWORD` 在首次启动时初始化鉴权；更改环境变量不会轮换已有用户的密码。
+命名卷持久化默认 RocksDB 路径（`/hugegraph-server/rocksdb-data`），挂到 `/hugegraph-server/data` 不会保存该数据库。
+1.7.0 entrypoint 的初始化标记与鉴权配置文件位于数据卷之外的容器层中。
+当重建或更换挂载已有数据卷的鉴权容器时，必须再次传入 `-e PASSWORD="<原有密码>"`（或恢复保留的鉴权配置）；
+否则新容器会进入未开启鉴权的初始化分支，导致已有图数据在无鉴权保护下暴露。
+重新指定 `PASSWORD` 会保持鉴权模式开启，但不会轮换已有用户的密码。
 若要在全新空数据安装中复用 HStore 镜像，需显式设置 `HG_SERVER_BACKEND=rocksdb` 与 `HG_SERVER_USE_PD=false`。
 应使用包含本地后端等待逻辑与数据目录归属修复的镜像：它忽略残留 `pd.peers`，并以 10001:10001 预建 `rocksdb-data`，供新命名卷继承。
 旧 HStore 镜像仍需修正可写图配置，并设置正确的数据目录归属。
@@ -187,9 +190,13 @@ Server 1.8 单机遍历源为 `__g_DEFAULT-hugegraph`，禁用 PD 不会恢复�
 GraphSpace 管理本身需要 PD，本地图列表仍可查询。
 可执行请求与鉴权选项见 [Gremlin API](/cn/docs/clients/restful-api/gremlin/)。
 
-对上述启用鉴权的容器，同时检查 REST 图与遍历源：
+对上述启用鉴权的容器，先验证未携带凭据的图请求会被拒绝（返回 HTTP 401 Unauthorized），再通过凭据检查 REST 图与遍历源：
 
 ```bash
+# 验证未携带鉴权信息的请求被拒绝（返回 401）
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/graphspaces/DEFAULT/graphs
+
+# 验证携带凭据的访问
 curl -fsS http://localhost:8080/versions
 curl -fsS -u 'admin:replace-with-your-password' \
   http://localhost:8080/graphspaces/DEFAULT/graphs
@@ -200,7 +207,7 @@ curl -fsS -u 'admin:replace-with-your-password' \
 ```
 
 只有部署未启用鉴权时才省略凭据。
-版本端点正常不代表已验证图已加载或当前凭据具有图访问权限。
+版本端点正常不代表已验证图已加载或当前凭据具有图访问权限，版本端点本身也不校验鉴权。
 
 | 现象 | 检查项 |
 | --- | --- |

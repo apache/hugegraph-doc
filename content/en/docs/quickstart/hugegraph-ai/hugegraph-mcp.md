@@ -44,6 +44,7 @@ For clients that accept a `mcpServers` JSON configuration, add:
 ```
 
 Configuration locations and formats vary between clients. Use your client's instructions to set the same command, arguments, and environment variables.
+Do not save real `HUGEGRAPH_PASSWORD` or `HUGEGRAPH_AI_TOKEN` credentials into committable client configuration files. Only omit those `env` keys if your client explicitly inherits launch environment variables, or use the client's secure credential storage. Setting environment variables in a terminal does not guarantee client processes inherit them.
 If the client cannot find `uvx`, use its absolute path for `command`. Restart the MCP process after changing the configuration.
 
 You can also start it in a terminal with the environment variables above already configured:

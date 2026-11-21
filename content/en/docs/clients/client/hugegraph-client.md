@@ -1003,13 +1003,15 @@ On a Server that supports inherited compute quotas:
 
 | When updating a GraphSpace | Result |
 | --- | --- |
-| Do not call `setComputeCpuLimit` / `setComputeMemoryLimit` | Omit that field; keep its existing value |
+| The fields are unset (new object without calling `setComputeCpuLimit` / `setComputeMemoryLimit`) | Omit that field; keep its existing value |
 | Pass `0` to a compute setter | Restore inheritance from the corresponding graph-service quota |
 | Pass a positive value | Set an independent compute quota; memory is in GB |
 
 The getters return `0` for an unset value too. Do not copy that default into a setter when you intend to leave a field unchanged.
-Older Clients can send zero for unset compute fields and unintentionally restore inheritance when updating against a newer Server.
-Upgrade the Client together with this Server capability, or explicitly preserve the existing limits when updating.
+Note that a `GraphSpace` returned by `getGraphSpace()` already holds the limits from the Server response; updating that fetched object
+resends those values even if setters are not called, which can overwrite concurrent quota changes. Use a clean object with unset fields
+when you want the update request to omit them. Older Clients can send zero for unset compute fields and unintentionally restore inheritance
+when updating against a newer Server. Upgrade the Client together with this Server capability, or explicitly preserve the existing limits when updating.
 
 For storage monitoring with Client `1.8.0` (built from Toolchain `master`), prefer `getStorageUsedKb()` (`storage_used_kb`), an optional non-negative integer metric in KB.
 If it is `null`, fall back to `getStorageUsed()` in whole GB; sub-GB usage can appear as zero in that legacy field.

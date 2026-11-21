@@ -1018,11 +1018,13 @@ spaceManager.createGraphSpace(graphSpace);
 
 | 更新 GraphSpace 时的操作 | 结果 |
 | --- | --- |
-| 不调用 `setComputeCpuLimit` / `setComputeMemoryLimit` | 请求省略该字段，保留原值 |
+| 字段处于未设置状态（新对象且未调用 `setComputeCpuLimit` / `setComputeMemoryLimit`） | 请求省略该字段，保留原值 |
 | 向计算配额 setter 传入 `0` | 恢复继承对应的图服务配额 |
 | 传入正值 | 设置独立的计算配额，内存单位为 GB |
 
 getter 在字段未设置时也会返回 `0`。如果只是想保留原值，不要把这个默认值再传给 setter。
+注意：通过 `getGraphSpace()` 获取的 `GraphSpace` 对象已包含响应中的配额值；直接更新该已获取对象时，
+即使不调用 setter 也会重新发送这些既有值，可能覆盖并发修改。若希望更新请求中省略计算配额字段，应使用字段未设置的全新对象。
 旧 Client 可能把未设置的计算配额发送为零，连接新版 Server 更新 GraphSpace 时意外恢复继承。
 启用这项 Server 能力时应同时升级 Client；暂时无法升级时，更新请求中需显式保留现有配额。
 

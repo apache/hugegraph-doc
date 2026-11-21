@@ -64,7 +64,7 @@ Changing these fields does not resize existing Pods.
 | configs                      | No       | Map     |         |                                                                                | Additional configuration                                                          |
 {.td-table--wide}
 
-Server applies these defaults only when a create request omits the field; a space keeps the limits stored at creation, and clients such as Hubble can submit other values.
+Server 1.8.0 applies these defaults when a create request omits the fields. On Server 1.7.0, `cpu_limit`, `memory_limit`, `storage_limit` and `max_graph_number` are required positive values; omitting them leaves them at zero and causes the request to be rejected. Existing spaces keep their configured limits, and clients such as Hubble can submit other values.
 Omitted compute limits are stored as `0`, continuously inheriting the corresponding CPU or memory quota.
 
 ```json
@@ -213,7 +213,9 @@ GET http://localhost:8080/graphspaces/gs1
 >   graphspace settings with `GET /graphspaces/{name}` first and preserve fields that are not being changed.
 > - **Compute Limit Inheritance**: Setting `compute_cpu_limit: 0` or `compute_memory_limit: 0` (or omitting them on creation) means continuously
 >   inheriting `cpu_limit` and `memory_limit`. Zero represents inheritance, not unlimited or zero allocation.
->   On update, omitting a compute field preserves its current setting; explicit zero restores inheritance. Responses retain that zero marker.
+>   In Server 1.8.0+, omitting a compute field on update preserves its current setting, while an explicit zero restores inheritance.
+>   In Server 1.7.0, zero is ignored on update, leaving previous configured limits unchanged instead of restoring inheritance.
+>   Responses retain that zero marker.
 > - **Quota Enforcement**: Exceeding `max_graph_number` causes subsequent graph creations to fail with `reach graph limit`. Exceeding
 >   `storage_limit` triggers PD storage enforcement, automatically marking all graphs in the space as `ReadOnly` until usage drops below the
 >   quota on the next patrol cycle.

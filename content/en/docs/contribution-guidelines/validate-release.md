@@ -27,7 +27,7 @@ bash dist/validate-release.sh 1.8.0 imbajin /path/to/rc 17
 Strict RC validation builds with fresh, separate Maven repositories and does not preinstall a local Server SDK.
 It validates both source-built and downloaded binaries through Server, Client, ordinary Loader, Tools and Hubble business assertions.
 
-Logs remain available after failures. The console and GitHub Job Summary show the result, failed phase, review notes and log location.
+Logs remain available after failures. Once the validation script executes and creates an evidence directory, the console and GitHub Job Summary show the result, failed phase, review notes and log location (if the workflow fails during early checks like `Check validator` or pre-build steps before the validator runs, inspect the step console logs directly).
 See [the validator instructions](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md) for local prevalidation and evidence paths.
 
 The `source-prevalidation` workflow mode uses exact Server/Toolchain commit SHAs and unsigned archives;
@@ -92,12 +92,12 @@ is the same as the last step of 0x02 inspection.
 (
   for archive in *.tar.gz; do
     printf '%s\n' "$archive"
-    shasum -a 512 --check "$archive.sha512" || exit "$?"
+    grep -E "([[:space:]]|\*)${archive}$" "$archive.sha512" | shasum -a 512 --check || exit "$?"
   done
 )
 ```
 
-Run the loop in a subshell so the first failed checksum stops validation without closing your interactive terminal.
+Run the loop in a subshell; the check verifies that the sidecar references the current archive, and the first failed checksum stops validation without closing your interactive terminal.
 
 #### 3. check gpg signature
 

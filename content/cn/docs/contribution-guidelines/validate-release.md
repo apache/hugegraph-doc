@@ -26,7 +26,7 @@ bash dist/validate-release.sh 1.8.0 imbajin /path/to/rc 17
 严格 RC 模式使用全新、相互隔离的 Maven 仓库，不预装本地 Server SDK。
 源码构建产物和下载的二进制包分别执行 Server、Client、普通 Loader、Tools 与 Hubble 业务断言。
 
-失败后保留日志。控制台和 GitHub Job Summary 汇总结果、失败阶段、复核提示及日志位置。
+失败后保留日志。验证脚本运行并创建证据目录后，控制台和 GitHub Job Summary 汇总结果、失败阶段、复核提示及日志位置（若工作流在 `Check validator` 或构建前置阶段即失败，验证脚本尚未执行，请查看该步骤的控制台日志）。
 本地预验证和证据目录说明见[验证脚本指南](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md)。
 
 Workflow 的 `source-prevalidation` 模式使用明确的 Server/Toolchain commit SHA 和无签名源码归档，
@@ -86,12 +86,12 @@ hash 值一致 (一般是 sha512)
 (
   for archive in *.tar.gz; do
     printf '%s\n' "$archive"
-    shasum -a 512 --check "$archive.sha512" || exit "$?"
+    grep -E "([[:space:]]|\*)${archive}$" "$archive.sha512" | shasum -a 512 --check || exit "$?"
   done
 )
 ```
 
-在子 shell 中执行；任何一个校验失败都会立即停止，不会因最后一个包通过而掩盖前面的失败，也不会退出交互终端。
+在子 shell 中执行；校验会先确保 sidecar 中记录的文件名与当前归档一致，任何一个校验失败都会立即停止，不会因最后一个包通过而掩盖前面的失败，也不会退出交互终端。
 
 #### 3. 检查 gpg 签名
 

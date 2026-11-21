@@ -362,7 +362,7 @@ PD 成员、持久存储和共享凭据变更需要按生命周期说明协调�
 
    在 `values-cluster.yaml`（`store.updateStrategy.type=OnDelete`）预设下，`helm upgrade` 不会自动重建 Store Pod。
    即使镜像名称匹配，旧 Pod 也并未以 `Always` 策略重新挂载 PVC。
-   请按[受控滚动升级流程](./hugegraph-helm-operations.md#6-安全逐个滚动更新-store-镜像)逐个删除并重建 Store Pod。
+   请按[受控滚动升级流程](./hugegraph-helm-operations.md#6-rolling-store-images-safely)逐个删除并重建 Store Pod。
    确认每个替换后的 Pod 均运行指定镜像、PVC 挂载已应用 `fsGroupChangePolicy: Always` 且分片恢复就绪后，再恢复常规策略。
 
    ```bash

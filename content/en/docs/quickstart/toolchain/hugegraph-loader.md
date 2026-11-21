@@ -6,11 +6,6 @@ search_keywords: [HugeGraph Loader, bulk import, data loading]
 search_boost: 1.6
 description: "Bulk import graph data into HugeGraph with Loader from files, HDFS, relational databases, Kafka, and other HugeGraph graphs."
 ---
-> **Kafka and `skipped_line`:** HugeGraph Loader accepts `skipped_line` for
-> Kafka input sources, but it does not apply the filter to Kafka messages.
-> Preprocess the topic or use a `FILE`/`HDFS` input source if you need to skip
-> lines.
-
 
 This guide aligns with the Toolchain `master` branch (currently based on 1.8, unreleased). Released packages and Docker `latest` may differ; check your version before using unreleased features.
 
@@ -799,7 +794,7 @@ schema: required
 - date_format: customized date format, default value is yyyy-MM-dd HH:mm:ss, optional; if the date is presented in the form of timestamp, this item must be written as timestamp (fixed);
 - extra_date_formats: a customized list of another date formats, empty by default, optional; each item in the list is an alternate date format to the date_format specified date format;
 - time_zone: set which time zone the date data is in, default is GMT+8, optional;
-- skipped_line: current master `KafkaReader` does not implement this filter. Kafka messages go directly to the parser, so configuring this field does not skip blank or comment messages; preprocess them upstream or in the consumer to avoid parse failures;
+- skipped_line: current master `KafkaReader` does not implement this filter. Kafka messages go directly to the parser, so configuring this field does not skip blank or comment messages; preprocess them upstream or in the consumer to avoid parse failures, or export the messages to files and load them through a `FILE`/`HDFS` input source, which applies `skipped_line`;
 - batch_size: the maximum number of records fetched in one poll (`max.poll.records`), default is 500, optional;
 - early_stop: the record pulled from Kafka broker at a certain time is empty, stop the task, default is false, only for debugging, optional;
 

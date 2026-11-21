@@ -5,10 +5,6 @@ weight: 2
 search_keywords: [HugeGraph Loader, 批量导入, 数据导入]
 search_boost: 1.6
 ---
-> **Kafka 与 `skipped_line`：** HugeGraph Loader 在 Kafka 输入源中接受
-> `skipped_line`，但不会对 Kafka 消息应用该过滤。如需跳过行，请在写入 topic
-> 前预处理，或改用 `FILE`/`HDFS` 输入源。
-
 
 本文以 Toolchain `master` 分支（以 1.8 为基线，尚未正式发布）为准。发布版和 Docker `latest` 可能存在部分差异，使用未发布功能前请先核对版本。
 
@@ -796,7 +792,7 @@ schema: 必填
 - date_format：自定义的日期格式，默认值为 yyyy-MM-dd HH:mm:ss，选填；如果日期是以时间戳的形式呈现的，此项须写为 timestamp（固定写法）；
 - extra_date_formats：自定义的其他日期格式列表，默认为空，选填；列表中每一项都是一个 date_format 指定日期格式的备用日期格式；
 - time_zone：置日期数据是处于哪个时区的，默认值为 GMT+8，选填；
-- skipped_line：当前 master 的 KafkaReader 未实现该过滤，配置此字段不会跳过 Kafka 消息；每条消息仍会直接交给所选格式的解析器，空行或注释行可能因此触发解析错误。需要过滤时请在写入 Kafka 前或消费侧预处理；
+- skipped_line：当前 master 的 KafkaReader 未实现该过滤，配置此字段不会跳过 Kafka 消息；每条消息仍会直接交给所选格式的解析器，空行或注释行可能因此触发解析错误。需要过滤时请在写入 Kafka 前或消费侧预处理，或将消息导出为文件后改用 `FILE`/`HDFS` 输入源（这类输入源会应用 `skipped_line`）；
 - batch_size：单次拉取的最大记录数（`max.poll.records`），默认为 500，选填；
 - early_stop：某次从 Kafka broker 拉取的记录为空，停止任务，默认为 false，仅用于调试，选填；
 

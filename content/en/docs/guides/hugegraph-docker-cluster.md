@@ -203,6 +203,7 @@ The following tables describe current master entrypoints and Compose files, not 
 
 RocksDB caches use off-heap memory. When `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE` is unset, the system sizes the cache automatically from the container memory limit (cgroup), or falls back to the host memory if no container limit is configured.
 Because the default Docker Compose file does not set a memory limit, each Store sizes its budget using the host's full capacity. When deploying multiple Stores on a single host, specify a container memory limit or set this variable directly to an explicit byte value.
+
 Additionally, the Store startup script sizes the JVM heap and direct memory based on host free memory by default (up to 2 GiB each). Constrain JVM memory explicitly via `JAVA_OPTS` to match your container budget (for example, `JAVA_OPTS="-Xmx1g -XX:MaxDirectMemorySize=512m"` for a 4 GiB container). See the [HStore configuration reference](/docs/quickstart/hugegraph/hugegraph-hstore/#rocksdb-memory-budget) for the detailed calculation rules.
 
 
@@ -337,30 +338,48 @@ Standalone publishes only `8080` and `8088`; minimal HStore publishes `8620` (PD
    the pod security context needs `fsGroup: 10001`, which the Helm chart sets for PD and Store; see [Helm upgrade and
    verification](/docs/quickstart/hugegraph/hugegraph-helm/#5-upgrade-and-verification).
 
-**Runtime logs**: `docker logs <container-name>` (for example, `docker logs hg-pd0`) shows logs without entering containers. In images built from current
-master, the PD, Store and both Server images (`hugegraph/hugegraph` and the HStore `hugegraph/server`) set `STDOUT_MODE=true` and send service logs to stdout.
-For the Server, WARN and above from Hadoop, ZooKeeper, SOFA, Netty and Commons also reaches stdout; INFO from Hadoop, Netty and Commons and the audit and
-slow-query logs stay in files, and ZooKeeper and SOFA log nothing below WARN. `/hugegraph-server/logs` holds `hugegraph-server.log`, JVM crash logs
-(`hs_err_pid*.log`) and out-of-memory heap dumps (`heapdump_*/java_pid*.hprof`, one directory per start, so the Server and the JVMs it starts get separate files
-unless a JVM reuses an earlier PID from that start; if the directory cannot be created, dumps go to `/hugegraph-server/logs` itself). Both images declare
-`VOLUME /hugegraph-server`, so `docker restart` and a Compose recreate keep them; `docker compose down` leaves that anonymous volume behind unattached, and a
-later `down -v` does not remove it (note the volume name from `docker inspect` before `down` and delete it with `docker volume rm <name>`; `docker volume prune`
-would also delete every other unused anonymous volume on the Docker host), so use a named volume or bind mount to keep them reachable. Kubernetes starts a new
-container on every restart, so mount an `emptyDir` or a PersistentVolumeClaim at `/hugegraph-server/logs`. Give each pod its own volume, or a per-pod directory
-on a shared PVC (`subPathExpr: $(POD_NAME)`, with `POD_NAME` passed in from `metadata.name` through the Downward API; the Helm chart sets neither): crash files
-get distinct names, but the log files themselves have fixed names. Pods on different nodes can share one PVC only if its storage supports read-write mounts from
-several nodes (typically `ReadWriteMany`); a `ReadWriteOnce` claim is writable from one node only, so otherwise give each pod its own PVC. The Helm chart does
-not mount a logs volume yet. A heap dump can be as large as the JVM heap, and every start uses a new directory, so a Server that keeps running out of memory
-fills the volume; size it for the dumps you want to keep, keep it within any `ephemeral-storage` limit or `emptyDir` `sizeLimit` (eviction deletes the
-`emptyDir` with the dump), and do not use `medium: Memory`. A failing liveness probe can restart the container as soon as about
-`(failureThreshold - 1) × periodSeconds + timeoutSeconds` after a dump starts, and the kubelet kills it at most `terminationGracePeriodSeconds` after that; make
-that time longer than writing a heap dump takes, or a restart in the middle of a dump leaves a truncated file. The launcher never deletes dumps or `heapdump_*`
-directories, because a computer-job JVM can go on using one after its Server exits; each start that reaches Java leaves one, empty unless something ran out of
-memory. Delete old ones once no HugeGraph JVM from that launch is running, never the newest one of a running Server. To turn dumps off for every JVM, set
-`JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError` in the container's environment (`docker run -e`, an `environment:` entry on the Server service in Compose,
-which the shipped Compose files do not set, or `env` in Kubernetes; exporting it in the host shell has no effect), which keeps the image's default `JAVA_OPTS`;
-putting the flag in `JAVA_OPTS` affects the Server JVM only and replaces that default (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=50 ...`), so repeat those
-flags.
+**Find logs without entering the container.** Use `docker logs <container-name>`, for example `docker logs hg-pd0`.
+Current source-built PD, Store and both Server images set `STDOUT_MODE=true` for service logs.
+Some Server diagnostics remain in files:
+
+| Output | Where to look |
+| --- | --- |
+| Service logs; Hadoop, ZooKeeper, SOFA, Netty and Commons WARN or above | Container stdout |
+| Hadoop, Netty and Commons INFO; audit and slow-query logs | Server log files |
+| Server file log, JVM crash logs and heap dumps | `/hugegraph-server/logs` |
+{.wide .expand}
+
+ZooKeeper and SOFA do not emit logs below WARN. For dump names, override options and safe cleanup, see
+[Server startup diagnostics](/docs/quickstart/hugegraph/hugegraph-server/#515-startup-script-options).
+
+**Keep Docker diagnostics attached.** Both Server images declare `VOLUME /hugegraph-server`.
+A restart or Compose recreate retains its volume, but `docker compose down` leaves an anonymous volume unattached to a later `up`.
+Prefer a named volume or bind mount. If removing an old anonymous volume, record its name with `docker inspect` before `down`,
+then remove that specific volume with `docker volume rm <name>`; a later `down -v` cannot identify the detached volume.
+
+**Give each Kubernetes Pod a log location.** Mount an `emptyDir` or PVC at `/hugegraph-server/logs`; the current Helm chart does not add one.
+Use a separate volume per Pod, or separate directories on a shared volume, because log file names are fixed.
+For shared directories, `subPathExpr: $(POD_NAME)` requires `POD_NAME` from the Downward API's `metadata.name`;
+the chart supplies neither setting. Sharing across nodes also requires a storage access mode that supports it, typically `ReadWriteMany`.
+A `ReadWriteOnce` claim permits read-write mounts from one node, so otherwise use one PVC per Pod.
+
+**Budget for dumps and restarts.** A dump can be as large as the JVM heap, and repeated failures leave multiple launch directories.
+Size storage for the dumps you retain; respect `ephemeral-storage` and `emptyDir.sizeLimit`, and avoid memory-backed `emptyDir`.
+Eviction removes `emptyDir` and its diagnostics. Allow enough liveness-probe and termination time for a dump to finish, or it may be truncated.
+
+To disable dumps for Server and child JVMs, set `JAVA_TOOL_OPTIONS=-XX:-HeapDumpOnOutOfMemoryError` inside the container environment:
+use `docker run -e`, Compose `environment:` or Kubernetes `env`. Exporting it only in the host shell is insufficient;
+the shipped Compose files do not forward it automatically. This preserves the image's default `JAVA_OPTS`.
+Setting the flag in `JAVA_OPTS` changes only Server and replaces its defaults, so retain the required container-memory options.
+
+> [!DETAILS]- Probe timing and cleanup
+>
+> A failing liveness probe can restart a container after approximately
+> `(failureThreshold - 1) × periodSeconds + timeoutSeconds`, followed by up to `terminationGracePeriodSeconds` before termination.
+> Allow more time than writing a dump needs.
+>
+> The launcher does not delete `heapdump_*` directories: a child JVM may still use one after Server exits.
+> Remove an old directory only after all JVMs from that launch have exited; keep the newest one of a running Server.
 
 > **Version scope**: the paragraph above describes current master images. No 1.7.0 or older image sets
 > `STDOUT_MODE`, including the standalone `hugegraph/hugegraph:1.7.0` used above: `docker logs` shows only entrypoint output, and service logs stay in `logs/`

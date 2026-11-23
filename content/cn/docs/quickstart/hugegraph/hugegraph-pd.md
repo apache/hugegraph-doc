@@ -165,11 +165,18 @@ PD 启动脚本读取安装目录中的 `conf/application.yml`。请使用与安
 |--------|--------------|------------|------|
 | `pd.data-path` | `./pd_data` | 无，必填 | 元数据目录。`rocksdb/` 子目录存放 RocksDB 数据，`pd_raft/` 子目录存放 Raft 日志、元信息和快照。 |
 | `pd.patrol-interval` | `1800` | `300` | 巡检周期（秒）。巡检会检查各 Store 上的分区健康状况并平衡分区数量。 |
-| `pd.initial-store-count` | `1` | `3` | 活跃 Store 节点的最小数量。低于该值时集群状态变为 `Cluster_Not_Ready`，整个集群视为不可用。建议设为实际部署的 Store 数量。 |
-| `pd.min-store-count` | 未设置 | `0` | Store 排空/下线容量校验所需的最小活跃 Store 数量。若下线后剩余活跃 Store 低于该值，拒绝转入 `Exiting` 状态。 |
+| `pd.initial-store-count` | `1` | `1` | 尚无分片组时所需的合格 Store 数量。按初始拓扑配置，不是运行期的副本数量。 |
+| `pd.min-store-count` | 未设置 | `0` | 首次初始化时写入持久化配置的放置/排空数量下限；已有 PD 配置优先。`0` 表示不增加目标副本数之外的额外下限。 |
 | `pd.initial-store-list` | `127.0.0.1:8500` | 空 | 逗号分隔的 Store gRPC 地址（`ip:port`），列表中的 Store 注册后自动激活。条目也可以带分组 id，写作 `store_address/group_id`。 |
 | `pd.cluster_id` | 未设置 | `1` | 集群 id，用于区分不同的 PD 集群。 |
 {.td-table--wide}
+
+尚无分片组时，首次启动必须有足够的合格 `Up` Store，满足初始 Store 数量、目标副本数和持久化放置下限。
+初始 Store 数量与分片副本数需要分别配置，修改其中一项不会改变另一项。
+
+已有分片组时，PD 检查每组已知 `Leader`/`Follower` 投票成员中，是否有严格多数持有新鲜 Store 心跳租约；`Learner` 与待加入的 `None` 目标不计为投票成员。
+仍在服务的 `Exiting` 源节点可以贡献存活票，但不能承接新副本。这只是元数据健康提示，不能证明实际已提交的 Raft 成员、写入成功或迁移完成，实际多数派由 JRaft 校验。
+新副本放置和排空目标仍须满足目标副本数与持久化下限，不会静默降为更少副本。
 
 **Store 管理**
 
@@ -326,6 +333,10 @@ HG_PD_RAFT_PEERS_LIST: pd0:8610,pd1:8610,pd2:8610
 脚本要求 `PATH` 或 `JAVA_HOME` 中有 17 及以上版本的 JDK（1.7.0 要求 11 及以上）；如果发现已有 Java 进程在使用本安装目录的 `conf` 目录，脚本会直接退出，不做任何事。
 
 下文的生命周期说明适用于当前主线构建；上文下载的 1.7.0 启动脚本不包含这些修复。
+
+当前 PD 启动时，如果其他进程仍持有 `<pd.data-path>/rocksdb` 下的元数据 RocksDB `LOCK`，会最多等待 30 秒。
+锁仍被持有则启动失败；其他打开失败不会重试。应确认旧 JVM 已退出，不要删除 `LOCK` 文件绕过冲突。此等待仅适用于元数据启动，不适用于快照加载。
+
 支持的参数如下，GC 的版本限制见下文：
 
 | 参数 | 取值 | 默认值 | 描述 |
@@ -413,7 +424,11 @@ curl -u "store:${HG_PD_AUTH_SECRET_KEY:?请先设置 PD 部署密钥}" \
 > [!WARNING]
 > **生产环境分别保护 Server 与 PD 端口**
 >
-> 生产环境的 Server 图 API 必须按 [Server 认证与授权配置](/cn/docs/config/config-authentication/)启用 Auth、IP 白名单和最小权限授权，并保留、保护 Server `audit-*.log`。这些设置不保护 PD：当前主线 PD REST 使用 `auth.secret-key`；1.7.0 的认证实现仅检查用户名是否属于内部服务名，不比较密码。Raft 端口应保持 `raft.ip-whitelist.enabled` 并只允许配置的 peer，PD REST 与 gRPC 端口也必须限制在受信网络内。PD 的 `/v1/health`、`/v1/ready` 和 Actuator 探针无需 Basic 认证，须由网络策略限制可达范围；主线默认日志配置生成的 `logs/audit-hugegraph-pd.log` 也须纳入日志保护。
+> 生产环境的 Server 图 API 必须按 [Server 认证与授权配置](/cn/docs/config/config-authentication/)启用 Auth、IP 白名单和最小权限授权，并保留、保护 Server `audit-*.log`。
+>
+> 这些设置不保护 PD：当前主线 PD REST 使用 `auth.secret-key`；1.7.0 的认证实现仅检查用户名是否属于内部服务名，不比较密码。
+>
+> Raft 端口应保持 `raft.ip-whitelist.enabled` 并只允许配置的 peer，PD REST 与 gRPC 端口也必须限制在受信网络内。PD 的 `/v1/health`、`/v1/ready` 和 Actuator 探针无需 Basic 认证，须由网络策略限制可达范围；主线默认日志配置生成的 `logs/audit-hugegraph-pd.log` 也须纳入日志保护。
 
 #### 7.2 健康检查
 
@@ -570,10 +585,10 @@ PD 以 `hg` 前缀注册自己的指标，因此 `/actuator/prometheus` 除标�
 
 #### 7.6 Store 下线与排空生命周期
 
-下线或下架 Store 节点遵循严谨的状态机流转，以确保在不中断业务的前提下安全排空分片副本：
+通过 `Exiting` 排空 Store 时，源节点继续服务正在迁移的副本。迁移仍可能造成请求失败或超时；完成下述退出核验之前，应保持源节点运行。
 
 1. **状态机流转过程**：
-   - `Up`：Store 在线且健康，正常参与副本分配和 leader 选举。
+   - `Up`：Store 处于活跃状态，放置检查通过后可承接副本；此状态本身不能证明副本已恢复。
    - `Exiting`：Store 处于排空状态。处于 `Exiting` 时，该节点继续正常续租心跳，但 PD 会将其排除在新的副本分配和迁移目标之外。
    - 分区迁移：PD 自动调度后台迁移任务，将该节点上的所有分片副本逐步迁至其他健康的活跃 Store 上。
    - `Tombstone`：Store 永久下线退出。一旦标记为 `Tombstone`，管理接口不再允许将其恢复为活跃状态。
@@ -588,8 +603,12 @@ PD 以 `hg` 前缀注册自己的指标，因此 `/actuator/prometheus` 除标�
    ```
 
 3. **容量约束与下线检查**：
-   - **容量校验**：排空会校验集群剩余可用 Store 节点数是否满足 `minStoreCount`（`pd.min-store-count`）。若剩余容量不足，
-     PD 将直接拦截并在状态持久化前拒绝请求；此时需扩容足够的活跃 Store 后重新发起下线请求。
+   - **容量校验**：开始排空时，包含仍在服务的源节点在内必须具有当前投票多数派；排除源节点后的合格目标还必须满足目标副本数和持久化 Store 数量下限。
+   - **失败后重试**：请求被拒绝后，应重新查询 Store 状态：前一次规划可能已持久化 `Exiting`。
+     恢复合格容量后，重复同一个 `Exiting` 请求以继续处理剩余分片组，不要将源节点切回 `Up`。
+     单次管理请求会复用已接受的迁移分片组，但不提供跨独立请求的持久化去重。
    - **退出完成判定**：PD 会持续保持 `Exiting` 状态，直到 Store 最新心跳上报本地分区引擎数为 0 且 PD 元数据中无任何分片组引用该 Store ID。
    - **销毁前核验**：在删除 Store Pod 或持久化存储卷前，运维人员必须确认其余分片组已具备完整的 Raft 成员、全额副本以及最新的健康心跳。
    - **重新注册意图保留**：处于 `Exiting` 状态的 Store 重启重新注册时，即使其地址在 `pd.initial-store-list` 中，PD 仍会保留其 `Exiting` 排空意图。
+
+状态更新请求成功不代表迁移已完成。重启恢复与 Learner 追赶检查见 [Store 恢复](/cn/docs/quickstart/hugegraph/hugegraph-hstore/#store-recovery)。

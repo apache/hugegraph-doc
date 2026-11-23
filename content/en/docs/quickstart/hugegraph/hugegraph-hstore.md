@@ -198,12 +198,25 @@ This file contains only `rocksdb` and Actuator exposure settings.
 | `raft.rpc-timeout` | not set | `10000` | Raft RPC timeout in milliseconds. |
 | `raft.metrics` | not set | `true` | Collect JRaft node metrics, readable at `/metrics/raft`. |
 | `raft.useRocksDBSegmentLogStorage` | not set | `true` | Store Raft logs in the RocksDB segment log storage. |
-| `raft.maxSegmentFileSize` | not set | `67108864` | Segment log file size in bytes (64 MB). |
+| `raft.maxSegmentFileSize` | `1073741824` | `1073741824` | Maximum bytes per newly allocated segment log file (1 GiB). |
 | `raft.maxReplicatorInflightMsgs` | not set | `256` | Maximum in-flight replication requests per follower. |
 | `raft.maxEntriesSize` | not set | `256` | Maximum number of entries in one `AppendEntries` request. |
 | `raft.maxBodySize` | not set | `524288` | Maximum byte size of one `AppendEntries` request. |
 | `ave-logEntry-size-ratio` | not set | `0.95` | Smoothing ratio used to estimate the average log entry size. Note that this key sits at the top level, not under `raft`. |
 {.td-table--wide}
+
+With segment log storage enabled, `raft.maxSegmentFileSize` controls newly allocated files, not total Raft log or database disk usage.
+Keep it larger than the largest encoded Raft entry, including entries received during replica catch-up.
+An explicit Store setting takes priority over `-Djraft.log_storage.segment.max.size.bytes`; otherwise the default is 1 GiB.
+
+> [!DETAILS]- Changing segment size on an existing Store
+>
+> Nonempty segments keep their original size and remain readable. On restart, incompatible blank preallocated segments are renamed to
+> `<sequence>.s.blank-<old-size>-<unique-id>` before new blanks are allocated. The renamed files remain for diagnosis; renaming does not free their
+> allocated blocks. Unknown or incomplete headers are retained and can fail startup rather than being treated as empty files.
+>
+> Compare allocated blocks with apparent file sizes when investigating sparse segments. Retain room for WAL, snapshots and compaction;
+> reading an existing large segment does not make a smaller new segment large enough for subsequent writes or replica catch-up.
 
 **Storage and labels**
 
@@ -232,7 +245,9 @@ This file contains only `rocksdb` and Actuator exposure settings.
 > When `rocksdb.total_memory_size` is set to `auto` (or absent / `0`), the node sizes the off-heap RocksDB budget automatically:
 > - **Calculation Formula**: Takes physical memory (using the visible cgroup limit in containers) minus JVM maximum heap (`-Xmx`), direct memory (`MaxDirectMemorySize`), and a 1.5 GiB system reserve, then allocates half the remainder, clamped between 256 MiB and 32 GB (`32000000000` bytes).
 > - **Write Cache & Block Cache**: Budget is divided according to `rocksdb.write_buffer_ratio` (default 0.66). This is a soft capacity target; under heavy concurrent write loads, set `rocksdb.write_buffer_allow_stall` to `true` to hold the write cache to its share at the cost of write latency. The block cache is not a strict limit, so native memory can still exceed the budget and a container can still be OOM-killed.
-> - **Upgrading Existing Deployments**: Deployments carrying legacy `32000000000` can enable auto-sizing by setting environment variable `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=auto` or JVM property `-Drocksdb.total_memory_size=auto`.
+> - **Upgrading Existing Deployments**: Override a legacy `32000000000` budget with Docker's `HG_STORE_ROCKSDB_TOTAL_MEMORY_SIZE=auto`,
+>   JVM property `-Drocksdb.total_memory_size=auto`, or Store jar argument `--rocksdb.total_memory_size=auto`. These overrides take priority over
+>   local and PD-supplied files. A plain `ROCKSDB_TOTAL_MEMORY_SIZE` environment variable does not set this budget.
 
 Any other option defined in `org/apache/hugegraph/rocksdb/access/RocksDBOptions.java` can be added under the same `rocksdb:` block, for example `rocksdb.max_background_jobs`, `rocksdb.level0_file_num_compaction_trigger` or `rocksdb.bloom_filter_bits_per_key`.
 
@@ -393,6 +408,19 @@ It sources the stop script and then the start script, and forwards the flags fro
 3. **Server last.** Every Store should report `Up`; partitions must be ready before opening or initializing graphs.
 
 Master Compose uses `depends_on: condition: service_healthy` for local liveness, but PD and Store Docker checks only call `/v1/health`; they do not confirm Raft quorum or Store registration. Server waits for PD to report at least one `Up` Store. Operators should still check PD `/v1/ready` and `/v1/stores`.
+
+#### 5.5 Recovering a restarted Store {#store-recovery}
+
+Startup verifies persisted partitions and membership directly with PD before recovering their engines. An unavailable PD lookup, ambiguous result
+or invalid membership blocks Store startup while retaining local data. Restore PD access or correct the metadata before retrying; do not remove
+database/Raft files or reset peers to bypass the failure. Existing durable Raft configuration is not replaced by PD bootstrap metadata.
+
+Only an explicit PD `NOT_FOUND` for a persisted graph partition skips that partition's recovery, for example when it was deleted while Store was offline.
+Its local data and Raft files remain intact, while other graphs can recover. Confirm ownership and retained data before any cleanup.
+
+During replica migration, a membership-change retry resumes existing learners and promotes them after catch-up. Each catch-up check waits up to
+600 seconds before returning `TASK_CONTINUE`; this is not an overall migration deadline. Check actual voter/learner lists and replication progress,
+as well as fresh heartbeats, before the next node operation. See the [PD Store retirement procedure](/docs/quickstart/hugegraph/hugegraph-pd/).
 
 ### 6 Multi-Node Deployment Example
 

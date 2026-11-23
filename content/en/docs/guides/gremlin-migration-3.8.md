@@ -5,9 +5,11 @@ description: "Comprehensive guide to breaking changes, high-frequency syntax rew
 weight: 9
 ---
 
-HugeGraph 1.8.0 upgrades its underlying graph traversal and query framework from Apache TinkerPop 3.5.1 to **TinkerPop 3.8.1**, requires **Java 17** for Server and builds, and updates the script engine to **Groovy 4.0.25**.
+HugeGraph 1.8.0 upgrades its graph traversal and query framework from Apache TinkerPop 3.5.1 to **TinkerPop 3.8.1**.
+Server and builds require **Java 17**, and the script engine uses **Groovy 4.0.25**.
 
-This upgrade introduces several language-level breaking changes. The sections below cover the **most frequently affected syntax and behavioral changes** first; less common edge cases and lower-level protocol details are in the [Full Compatibility Reference](#full-compatibility-reference) at the end.
+Review the **most frequently affected syntax and behavioral changes** below first.
+For less common cases and protocol details, see the [Full Compatibility Reference](#full-compatibility-reference).
 
 > [!NOTE]
 > - This guide applies to upgrades from version 1.7.0 (or earlier) to 1.8.0.
@@ -17,7 +19,9 @@ This upgrade introduces several language-level breaking changes. The sections be
 
 ## Top 5 High-Frequency Syntax and Behavioral Changes
 
-The following 5 changes affect the most queries. Changes 1–3 cause immediate execution errors if not rewritten; changes 4–5 do not raise errors but silently alter returned results (dropping elements with missing properties or passing unmatched branches through). Review these first.
+Start with these five changes. Changes 1–3 can cause immediate execution errors and require query rewrites.
+
+Changes 4–5 can silently alter returned results: elements with missing properties may be dropped, or unmatched branches may pass through.
 
 ### 1. `has(key, traversal)` Overload Removed (High Risk: Execution Error)
 
@@ -172,6 +176,7 @@ to `gremlin-util` (`org.apache.tinkerpop.gremlin.util.ser.*`).
 > [!IMPORTANT]
 > **Do not simply copy an old `gremlin-server.yaml` from 1.7.0 and edit class names.**
 > Always start from the `conf/gremlin-server.yaml` bundled with HugeGraph 1.8.0 and carry over your customizations (ports, host, authenticator).
+>
 > HugeGraph requires custom serializer builders and registries: GraphBinary requires `builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder`
 > to serialize HugeGraph `Id`, schema, `Blob`, and enum values (otherwise failing with `IOException: Serializer for type ... not found`);
 > untyped GraphSON V1 requires `org.apache.hugegraph.io.HugeGraphSONV1MessageIoRegistry`.

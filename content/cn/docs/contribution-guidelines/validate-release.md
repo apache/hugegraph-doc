@@ -4,10 +4,10 @@ linkTitle: "验证 Apache 发版"
 weight: 3
 ---
 
-> Note: 这篇文档会持续更新。
-> HugeGraph 1.8.0 的源码构建与发行包运行验证统一使用 Java 17（Maven 源码构建仅接受 JDK 17）；1.7.0 请使用 Java 11。从 1.5.0 版本开始 (除 client 外) 不再支持 Java 8。
->
-> 毕业说明：Apache HugeGraph 已于 2026 年 1 月毕业。正式发版投票现由 HugeGraph 社区内部完成（`dev@hugegraph.apache.org` 上的 PMC binding 投票），不再需要 Incubator `general@incubator.apache.org` 审批。
+> [!NOTE]
+> 这篇文档会持续更新。
+> - **Java 版本**：1.8.0 源码构建与发行包验证统一使用 Java 17；1.7.0 请使用 Java 11；1.5.0 起（除 client 外）不再支持 Java 8。
+> - **社区毕业**：Apache HugeGraph 已于 2026 年 1 月毕业。发版投票现由 HugeGraph 社区内部完成（`dev@hugegraph.apache.org` PMC binding 投票），无需 Incubator 审批。
 
 ## 自动化发版验证
 
@@ -24,13 +24,15 @@ bash dist/validate-release.sh 1.8.0 imbajin /path/to/rc 17
 ```
 
 严格 RC 模式使用全新、相互隔离的 Maven 仓库，不预装本地 Server SDK。
-源码构建产物和下载的二进制包分别执行 Server、Client、普通 Loader、Tools 与 Hubble 业务断言，失败后保留日志。
-Workflow 的 `source-prevalidation` 模式使用明确的 Server/Toolchain commit SHA 和无签名源码归档，
-它不证明真实 RC 签名、下载及远端 staging 依赖解析已通过。
-`license-review-*.txt` 中的许可选择和例外仍需人工复核，明确的 Category-X-only 依赖会阻断验证；自动成功不等于发布批准。
+源码构建产物和下载的二进制包分别执行 Server、Client、普通 Loader、Tools 与 Hubble 业务断言。
+
+失败后保留日志。验证脚本运行并创建证据目录后，控制台和 GitHub Job Summary 汇总结果、失败阶段、复核提示及日志位置（若工作流在 `Check validator` 或构建前置阶段即失败，验证脚本尚未执行，请查看该步骤的控制台日志）。
 本地预验证和证据目录说明见[验证脚本指南](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md)。
 
-控制台和 GitHub Job Summary 汇总结果、失败阶段、复核提示及日志位置；源码预验证不会显示为 RC 验收通过。
+Workflow 的 `source-prevalidation` 模式使用明确的 Server/Toolchain commit SHA 和无签名源码归档，
+它不证明真实 RC 签名、下载及远端 staging 依赖解析已通过。
+`license-review-*.txt` 中的许可选择和例外仍需人工复核，明确的 Category-X-only 依赖会阻断验证。
+自动成功不等于发布批准，源码预验证也不等于 RC 验收通过。
 
 ## 验证阶段
 
@@ -81,28 +83,24 @@ wget https://dist.apache.org/repos/dist/dev/hugegraph/1.x.x/apache-hugegraph-too
 hash 值一致 (一般是 sha512)
 
 ```bash
-执行命令:
-for i in *.tar.gz; do echo $i; shasum -a 512 --check  $i.sha512; done
+(
+  for archive in *.tar.gz; do
+    printf '%s\n' "$archive"
+    grep -E "([[:space:]]|\*)${archive}$|^SHA512[[:space:]]*\(${archive}\)[[:space:]]*=" "$archive.sha512" | shasum -a 512 --check || exit "$?"
+  done
+)
 ```
+
+在子 shell 中执行；校验会先确保 sidecar 中记录的文件名与当前归档一致（支持标准与 BSD 校验格式），任何一个校验失败都会立即停止，不会因最后一个包通过而掩盖前面的失败，也不会退出交互终端。
 
 #### 3. 检查 gpg 签名
 
-这个就是为了确保发布的包是由**可信赖**的人上传的，假设 tom 签名后上传，其他人应该下载 A 的**公钥**
-然后进行**签名确认**, 相关命令：
+导入项目公钥，将签名者的完整指纹与发版投票邮件核对，再逐个验证归档签名。
 
 ```bash
 # 1. 下载项目可信赖公钥到本地 (首次需要) & 导入
 curl  https://downloads.apache.org/hugegraph/KEYS > KEYS
 gpg --import KEYS
-
-# 导入后可以看到如下输出, 这代表导入了 x 个用户公钥
-gpg: /home/ubuntu/.gnupg/trustdb.gpg: trustdb created
-gpg: key BA7E78F8A81A885E: public key "imbajin (apache mail) <jin@apache.org>" imported
-gpg: key 818108E7924549CC: public key "vaughn <vaughn@apache.org>" imported
-gpg: key 28DCAED849C4180E: public key "coderzc (CODE SIGNING KEY) <zhaocong@apache.org>" imported
-....
-gpg: Total number processed: x
-gpg:               imported: x
 
 # 2. 将完整主密钥指纹与发版投票邮件中的签名者指纹对照
 release_signer_fingerprint='<signer-full-fingerprint>'
@@ -157,7 +155,8 @@ PMC 同学请特别注意认真检查 `LICENSE` + `NOTICE` 文件，确保文件
 大部分的发版问题都与之相关
 
 ```bash
-# 验证 HugeGraph 1.8.0+ 请优先使用/切换到 `java 17` 版本（1.7.0 请使用 `java 11`）进行后序的编译和运行操作 (注:`Computer` 仅支持 `java >= 11`)
+# HugeGraph 1.8.0（包含 Computer 1.8.0 源码）使用 JDK 17。
+# HugeGraph 1.7.0 使用 Java 11。
 # java --version
 
 # 尝试在 Unix 环境下编译测试是否正常
@@ -185,9 +184,9 @@ bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file
 
 # hugegraph-hubble
 bin/start-hubble.sh
-
-更多参考官网: https://hugegraph.apache.org/cn/docs/quickstart
 ```
+
+各组件启动步骤见[快速入门](/cn/docs/quickstart/)。
 
 **注:** 如果二进制包里面引入了第三方依赖, 则需要更新 LICENSE, 加入第三方依赖的 LICENSE; 若第三方依赖
 LICENSE 是 Apache 2.0, 且对应的项目中包含了 NOTICE, 则还需要更新我们的 NOTICE 文件

@@ -5,9 +5,11 @@ description: "详细说明 HugeGraph 1.8.0 从 TinkerPop 3.5 升级到 3.8 带�
 weight: 9
 ---
 
-HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升级至 **TinkerPop 3.8.1**，运行环境统一要求 **Java 17**（服务端与构建），并将脚本引擎升级至 **Groovy 4.0.25**。
+HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升级到 **TinkerPop 3.8.1**。
+Server 与源码构建要求 **Java 17**，脚本引擎使用 **Groovy 4.0.25**。
 
-此次升级引入了部分语言层面的破坏性变更（Breaking Changes）。下文优先列出**最常用且行为发生变化的核心语法与改写方案**，以便快速排查和迁移；次常用选项及底层协议等边缘细节整理在文末的[全量细则速查表](#全量细则速查表)。
+先检查下文**最常用且行为发生变化的核心语法与改写方案**，完成常见场景的迁移。
+其他场景与底层协议细节见[全量细则速查表](#全量细则速查表)。
 
 > [!NOTE]
 > - 本指南适用于从 1.7.0（或更早版本）升级至 1.8.0 的用户。
@@ -17,7 +19,9 @@ HugeGraph 1.8.0 将底层图遍历与查询框架从 Apache TinkerPop 3.5.1 升�
 
 ## 最常用的 5 大语法与行为变化
 
-以下 5 项改动在已有业务查询中最为高频。前 3 项若不改写，在 HugeGraph 1.8 中会直接抛出异常；后 2 项不报错，但会静默改变返回结果（自动剔除缺失属性的元素或放行未匹配分支），需重点排查。
+检查以下五项变化。前 3 项可能直接导致执行异常，需要改写查询。
+
+后 2 项可能静默改变返回结果：属性缺失的元素被过滤，或未匹配的分支直接放行。
 
 ### 1. `has(key, traversal)` 重载删除（高危：查询执行报错）
 
@@ -169,6 +173,7 @@ TinkerPop 3.8 引入了原生日期操作函数与步骤，这些能力在 3.5.1
 > [!IMPORTANT]
 > **请勿直接复制 1.7.0 的 `gremlin-server.yaml` 并仅替换类名！**
 > 推荐直接使用 HugeGraph 1.8.0 发行包自带的 `conf/gremlin-server.yaml`，再将自定义端口、认证等配置合并进去。
+>
 > HugeGraph 需要专用的 Builder 与 Registry：GraphBinary 必须配置 `builder: org.apache.hugegraph.io.HugeGraphTypeSerializerRegistryBuilder`
 > 才能序列化 HugeGraph 的 `Id`、Schema、`Blob` 与枚举类型（否则会抛出 `IOException: Serializer for type ... not found`）；
 > 无类型 GraphSON V1 需要添加 `org.apache.hugegraph.io.HugeGraphSONV1MessageIoRegistry`。

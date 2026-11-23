@@ -4,10 +4,10 @@ linkTitle: "Validate Apache Release"
 weight: 3
 ---
 
-> Note: this doc will be updated continuously.
-> Use Java 17 to build and verify HugeGraph 1.8.0 release packages (the Maven build accepts only JDK 17); use Java 11 for 1.7.0. Since version 1.5.0, components other than the client no longer support Java 8.
->
-> Graduation note: Apache HugeGraph graduated in January 2026. Official release voting is now completed within the HugeGraph community (PMC binding votes on `dev@hugegraph.apache.org`), and no longer requires Incubator `general@incubator.apache.org` approval.
+> [!NOTE]
+> This doc will be updated continuously.
+> - **Java version**: use Java 17 for 1.8.0 builds and release verification; Java 11 for 1.7.0; Java 8 is no longer supported since 1.5.0 (except the client).
+> - **Graduation**: Apache HugeGraph graduated in January 2026. Release voting is now completed within the HugeGraph community (PMC binding votes on `dev@hugegraph.apache.org`); Incubator approval is no longer required.
 
 ## Automated release validation
 
@@ -26,12 +26,14 @@ bash dist/validate-release.sh 1.8.0 imbajin /path/to/rc 17
 
 Strict RC validation builds with fresh, separate Maven repositories and does not preinstall a local Server SDK.
 It validates both source-built and downloaded binaries through Server, Client, ordinary Loader, Tools and Hubble business assertions.
-Logs remain available after failures. The `source-prevalidation` workflow mode uses exact Server/Toolchain commit SHAs and unsigned archives;
+
+Logs remain available after failures. Once the validation script executes and creates an evidence directory, the console and GitHub Job Summary show the result, failed phase, review notes and log location (if the workflow fails during early checks like `Check validator` or pre-build steps before the validator runs, inspect the step console logs directly).
+See [the validator instructions](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md) for local prevalidation and evidence paths.
+
+The `source-prevalidation` workflow mode uses exact Server/Toolchain commit SHAs and unsigned archives;
 its result does not prove real RC signatures, downloads or remote staging dependency resolution.
 Review `license-review-*.txt` for license choices and exceptions; explicit Category-X-only dependencies block validation.
-Automatic success does not approve the release.
-The console and GitHub Job Summary show the result, failed phase, review notes and log location. Source prevalidation is clearly separate from RC acceptance.
-See [the validator instructions](https://github.com/apache/hugegraph-doc/blob/master/dist/README.md) for local prevalidation and evidence paths.
+Automatic success does not approve the release, and source prevalidation is separate from RC acceptance.
 
 ## Verification
 
@@ -87,32 +89,24 @@ ensure that it is consistent with the hash value published on apache/GitHub (Usu
 is the same as the last step of 0x02 inspection.
 
 ```bash
-execute the following command:
-for i in *.tar.gz; do echo $i; shasum -a 512 --check  $i.sha512; done
+(
+  for archive in *.tar.gz; do
+    printf '%s\n' "$archive"
+    grep -E "([[:space:]]|\*)${archive}$|^SHA512[[:space:]]*\(${archive}\)[[:space:]]*=" "$archive.sha512" | shasum -a 512 --check || exit "$?"
+  done
+)
 ```
+
+Run the loop in a subshell; the check verifies that the sidecar references the current archive (in either standard or BSD checksum format), and the first failed checksum stops validation without closing your interactive terminal.
 
 #### 3. check gpg signature
 
-This is to ensure that the published package is uploaded by a **reliable** person.
-Assuming tom signs and uploads,
-others should download A's **public key** and then perform **signature
-confirmation**.
-
-Related commands:
+Import the project's public keys, compare the signer's full fingerprint with the release vote email, and verify each archive's signature.
 
 ```bash
 # 1. Download project trusted public key to local (required for the first time) & import
 curl  https://downloads.apache.org/hugegraph/KEYS > KEYS
 gpg --import KEYS
-
-# After importing, you can see the following output, which means that x user public keys have been imported
-gpg: /home/ubuntu/.gnupg/trustdb.gpg: trustdb created
-gpg: key BA7E78F8A81A885E: public key "imbajin (apache mail) <jin@apache.org>" imported
-gpg: key 818108E7924549CC: public key "vaughn <vaughn@apache.org>" imported
-gpg: key 28DCAED849C4180E: public key "coderzc (CODE SIGNING KEY) <zhaocong@apache.org>" imported
-...
-gpg: Total number processed: x
-gpg:               imported: x
 
 # 2. Compare the full primary-key fingerprint with the release vote email
 release_signer_fingerprint='<signer-full-fingerprint>'
@@ -160,13 +154,14 @@ After decompressing `*hugegraph*src.tar.gz`, Do the following checks:
 2. `LICENSE` + `NOTICE` exist and the content is normal; `DISCLAIMER` is required for historical incubating artifacts
 3. **does not exist** binaries (without LICENSE)
 4. The source code files all contain the standard `ASF License` header (this could be done with
-   the `Maven-MAT` plugin)
+   the `Maven RAT` plugin)
 5. Check whether the `pom.xml` version number of each parent/child module is consistent (and meet
    expectations)
 6. Finally, make sure the source code works/compiles correctly
 
 ```bash
-# prefer to use/switch to `java 17` for HugeGraph 1.8.0+ (`java 11` for 1.7.0) for the following operations (compiling/running) (Note: `Computer` only supports `java >= 11`)
+# Use JDK 17 for HugeGraph 1.8.0, including Computer 1.8.0 sources.
+# Use Java 11 for HugeGraph 1.7.0.
 # java --version
 
 # try to compile in the Unix env to check if it works well (-P is optional)
@@ -194,9 +189,9 @@ bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file
 
 # hugegraph-hubble
 bin/start-hubble.sh
-
-more reference official website: https://hugegraph.apache.org/docs/quickstart
 ```
+
+[Quick start guides](/docs/quickstart/) cover the component startup procedures.
 
 **Note:** If a third-party dependency is introduced in the binary package, you need to update the
 LICENSE and add the third-party dependent LICENSE; if the third-party dependent LICENSE is Apache

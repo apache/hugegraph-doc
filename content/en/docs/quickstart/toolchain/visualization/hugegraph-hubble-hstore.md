@@ -1,9 +1,9 @@
 ---
 title: "Manage an HStore Cluster with Hubble"
-description: "Connect HStore and PD to Hubble and understand GraphSpaces, Schema templates, cluster topology, and node metrics."
+description: "Connect HStore and PD to Hubble, manage GraphSpaces, and use integrated Vermeer computing and cluster diagnostics."
 linkTitle: "Hubble with HStore"
 weight: 2
-search_keywords: [HugeGraph Hubble, HStore, PD, GraphSpace, cluster management]
+search_keywords: [HugeGraph Hubble, HStore, PD, GraphSpace, cluster management, Vermeer, Helm]
 ---
 
 This guide highlights the key differences between HStore + PD distributed deployments and standalone RocksDB.
@@ -15,10 +15,13 @@ provides complete orchestration for PD, Store, Server, and Hubble. Follow the ad
 [Docker README](https://github.com/apache/hugegraph/blob/master/docker/README.md) to prepare `.env` and generate the local Hubble configuration,
 then launch services from `docker/` without maintaining separate Compose files.
 The guidance below focuses on connectivity and operations; ensure prerequisite credentials and service readiness from the README are met.
+
 Docker `latest` is a moving tag. Screenshots assist in UI navigation; verify deployed versions via image digests and build details.
 Metrics and permission APIs vary by version.
 
-The screenshots show the HugeGraph Hubble interface in action; features and workflows are identical in both English and Chinese.
+For Kubernetes, [Helm deployment](/docs/quickstart/hugegraph/hugegraph-helm/) provides the same PD/Store/Server/Hubble foundation.
+Enable optional Vermeer there to configure Hubble's compute connection and monitoring together; the RocksDB standalone deployment does not provide
+the native PD/Store loading path.
 
 ## Connect to a distributed cluster
 
@@ -100,19 +103,42 @@ The name cannot change after creation. The alias and description can change; ali
 Choose GraphSpace administrators from existing accounts.
 
 “Advanced deployment and resource limits” includes CPU and memory limits for graph query/write services and asynchronous compute tasks,
-plus the storage capacity limit. These deployment quotas neither report current usage nor resize existing containers.
+plus the storage capacity limit. Deployment quotas do not resize existing containers.
+Space cards display available storage usage separately, with its source and refresh delay.
 
 > [!DETAILS]- Advanced deployment defaults
 >
-> Defaults are 100 graphs, 64 CPU cores and 128 GB of memory for each of the graph and compute services, and 1000000 GB of storage.
+> The creation form defaults to 100 graphs, 128 CPU cores and 128 GB of memory for each of the graph and compute services, and 256 GB of storage.
 > Keep the defaults for a container trial. Configure Kubernetes namespaces, Operator images, and algorithm images only for the corresponding deployment
 > or compute use.
+
+For API creation, omitted compute limits persist as `0`, inheriting the corresponding graph-service limit; positive values remain explicit.
+The creation form submits its displayed values. When editing, zero or a cleared compute field restores inheritance, and the UI shows the effective limit.
+Existing positive quotas are preserved (apache/hugegraph#3391). Updating inheritance requires a matching Server and Java Client; older Java Clients send unset compute limits as 0 and reset them on partial updates.
+
+Storage usage follows Store heartbeats and PD quota refreshes, rather than individual writes. Servers supplying `storage_used_kb` enable sub-GB usage
+and ratios below 0.01%; older Servers retain the integer-GB fallback. Only the legacy `Integer.MAX_VALUE` quota sentinel displays as unlimited.
 
 Select a space before opening a graph. Check the current graph after switching spaces, especially when spaces contain identically named graphs.
 The list reflects account access. If a space is missing, check membership permissions before creating more graphs.
 
 ![GraphSpace creation form and entry to advanced resource limits](/docs/images/hubble/graphspace.jpg)
 {width="1600" height="1000"}
+
+Before deleting a source graph or GraphSpace with native Vermeer integration configured:
+
+1. **Stop new submissions and finish or cancel active work.** Pending load/reload tasks block source deletion;
+   active computations must also finish or be cancelled before unloading their graph.
+   Use **Async Tasks** to check their final state; switching pages or algorithms does not cancel them.
+1. **Check access and cleanup.** Hubble verifies the task queue and unloads existing compute copies before deleting the source.
+   With authentication enabled, cleaning up a copy requires a super administrator. If Vermeer is unreachable, queue verification fails,
+   or unloading is rejected, restore the service or permissions and retry. A graph without a copy retains Server's usual deletion permissions.
+1. **Inspect state after a failure.** GraphSpace cleanup can unload some copies before a later unload fails;
+   the source space and its administrator bindings remain in that case. Check which copies remain before retrying.
+   New submissions can race with these checks; keep them stopped until deletion finishes.
+{.steps}
+
+For loading and unloading APIs, see the [Vermeer guide](/docs/quickstart/computing/hugegraph-vermeer/).
 
 ### Reuse Schema templates
 
@@ -142,8 +168,11 @@ Servers supporting permission presets provide these common choices:
 
 An account may have different access in different spaces, such as read-write in `research` and read-only in `sales`.
 Accounts and space memberships are managed separately; removing a member does not delete the global account.
+
 After creating an account, continue directly to assigning space access. When changing an existing membership, check the selected space and preset
-and preserve permissions still needed in other spaces. Enabling `pd.enabled` grants no permissions;
+and preserve permissions still needed in other spaces.
+
+Enabling `pd.enabled` grants no permissions;
 legacy custom roles on older Servers are not interchangeable with these presets.
 See [Server authentication and authorization](/docs/config/config-authentication/).
 
@@ -162,6 +191,10 @@ Graphs may remain queryable when topology is available but some metrics are miss
 The UI distinguishes unsupported, unavailable, stale, and failed collections and includes observation times.
 An empty value is not zero, and an older value is not a current observation.
 
+Check registration, service readiness, data state and metrics collection separately. A registered Store can still be unready to serve data;
+an HTTP metrics failure can leave a registered node online. Source diagnostics retain the failed endpoint, response status and last successful
+observation, with recovery guidance. A PD address-mapping issue remains visible even when a more urgent PD data fault is also reported.
+
 ### Read node details
 
 | Node | Main observations | Use |
@@ -173,7 +206,7 @@ An empty value is not zero, and an older value is not a current observation.
 
 ```gallery
 ![Cluster topology, node status, and capacity](/docs/images/hubble/cluster-overview.jpg) # Start with cluster health and affected sources
-![Store system, drive, Raft, and partition metrics](/docs/images/hubble/store-node.jpg) # Inspect the affected Store node
+![Store registration, readiness, lifecycle, and resource metrics](/docs/images/hubble/store-node.jpg) # Inspect the affected Store node
 ```
 
 The PD Leader and Store Leader partitions serve different purposes: PD coordinates cluster metadata, while a Store leads the respective data partition's Raft
@@ -196,6 +229,7 @@ Do not include passwords in documentation, screenshots, or committed configurati
 | `operations.pd.username` / `operations.pd.password` | Username `hubble`, empty password | Match PD operations REST authentication. |
 | `operations.store.username` / `operations.store.password` | Username `hubble`, empty password | Set the service account when upstream Store REST authentication is enabled. |
 | `operations.store.allowed_targets` | `[http://127.0.0.1:8520,http://[::1]:8520]` | List trusted Store metric origins. |
+| `operations.pd.direct_peers` | `false` | Enable only when each configured PD peer hostname identifies one member, rather than a shared Service. |
 {.td-table--wide}
 
 For example, when a containerized Store advertises `store:8520`, set:
@@ -210,3 +244,28 @@ matching the Store metric target returned by PD. Adding an origin here only auth
 If topology renders but node metrics are missing, check Hubble backend connectivity and credentials to PD REST, verify the Store REST and metric addresses
 returned by PD, and ensure targets are in `operations.store.allowed_targets`. A partially available overview indicates metrics collection was blocked for
 specific sources, not that graph APIs are down.
+
+When `pd.server` names a Service or proxy that cannot identify one member, its process metrics remain a **Configured PD endpoint sample**.
+They are neither a member's history nor a cluster total. Only trusted, uniquely mapped PD members receive attributed member metrics;
+review routing before enabling direct-peer collection.
+
+## Use the integrated Vermeer workflow {#vermeer-workflow}
+
+With [Helm's optional Vermeer engine](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines), sign in to Hubble using the existing
+HugeGraph account. Helm supplies the internal Master URL and token file for both computation and health collection.
+With Server authentication enabled, direct Store loading and native computation require a super administrator.
+
+1. Select the GraphSpace and graph, then open **OLAP Whole-graph Compute** under **Built-in Graph Algorithms**.
+1. Load or reload the graph and wait for its load task to complete. The compute copy does not track later graph writes automatically.
+1. Select a supported Vermeer algorithm, set its parameters and submit. Keep its task identity when opening **Async Tasks**.
+1. Inspect the workspace's bounded result sample or open paginated task results; distinguish a sample from the full result set.
+{.steps}
+
+See the [Vermeer guide](/docs/quickstart/computing/hugegraph-vermeer/#24-submit-and-integrate-via-hubble) for the supported algorithms,
+parameters, API task IDs and result-cache limits. An existing Computer deployment remains accessible through its separate compatibility section.
+
+In **Cluster Overview**, a compact Vermeer summary opens a separate Master-above-Worker perspective.
+**Back to main cluster** restores the Server/PD/Store view. Ready/registered Worker counts describe observations, not desired Helm replicas.
+CPU is measured in process cores and memory in RSS; partial coverage is not a complete cluster resource total.
+If monitoring fails, cached observations are marked stale and current readiness remains unknown. Vermeer trouble is shown separately from the main
+graph cluster's status. The space-scoped Worker allocation probe and deployment-wide health snapshot answer different questions.

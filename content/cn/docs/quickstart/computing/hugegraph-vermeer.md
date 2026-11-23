@@ -460,9 +460,10 @@ curl -b hubble.cookies -X POST \
 | `pagerank.damping` | PageRank 阻尼系数 | `0.85` |
 | `pagerank.diff_threshold` | 收敛阈值 | `0.00001` |
 
-当前 Hubble 接受 `pagerank`、`wcc`、`lpa`、`degree`、`closeness_centrality`、`betweenness_centrality`、`triangle_count`、`kcore` 与 `sssp`。
+Hubble 直连适配器支持 19 种算法：`pagerank`、`ppr`、`wcc`、`scc`、`lpa`、`slpa`、`degree`、`closeness_centrality`、`betweenness_centrality`、`triangle_count`、`kcore`、`sssp`、`clustering_coefficient`、`depth`、`cycle_detection`、`louvain`、`louvain_weighted`、`kout` 与 `jaccard`。
 其他算法请使用对应表单中的参数，不能沿用 PageRank 的专属键。
 直连适配器接受 `compute.*`、当前算法的 `<algorithm>.*` 与 `output.need_statistics`，具体参数值仍由 Vermeer 校验。
+Hubble 对 `cycle_detection` 拒绝 `filter.vertex_expr` 与 `filter.edge_expr` 属性过滤参数；对 `louvain_weighted` 拒绝 `louvain.edge_weight_property` 参数。
 输出存储由 Hubble 管理，不能指定任意输出路径或传入 Server 凭据。
 
 Hubble 响应封装的 `data.task_id` 是任务 ID，请保留正负号：原生 Vermeer 任务会映射为负数 ID。

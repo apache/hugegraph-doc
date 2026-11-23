@@ -49,6 +49,62 @@ async function closeReader(page) {
   }
 }
 
+for (const locale of ['en', 'cn']) {
+  for (const width of [1440, 390]) {
+    test(`${locale} Hubble screenshots remain interactive in Duo View at ${width}px`, async ({ page }, testInfo) => {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.goto(docsRoute('latest', locale, 'quickstart/toolchain/hugegraph-hubble/'));
+      const opener = page.locator('[data-td-compare-open]');
+      await opener.click();
+      const { dialog, frames } = await paneFrames(page);
+      const headingIDs = [];
+      for (const frame of frames) {
+        headingIDs.push(await frame.locator('.td-content h2[id], .td-content h3[id], .td-content h4[id]')
+          .evaluateAll(headings => headings.map(heading => heading.id)));
+      }
+      expect(headingIDs[0]).toEqual(headingIDs[1]);
+      const chineseIndex = locale === 'cn' ? 0 : 1;
+      const chinese = frames[chineseIndex];
+      for (const id of ['启动单机组合', '图概览与图详情先认识一张图', 'gql-工作台查询与探索人物关系']) {
+        await expect(chinese.locator(`[id="${id}"]`)).toHaveCount(1);
+      }
+      if (width < 900) await dialog.locator('.td-compare__tab').nth(chineseIndex).click();
+      // Keep fragment navigation on the local artifact origin
+      await chinese.evaluate(() => {
+        for (const a of document.querySelectorAll('a[href*="#"]')) {
+          try {
+            const url = new URL(a.getAttribute('href'), window.location.href);
+            if (url.hash && url.origin !== window.location.origin) {
+              a.setAttribute('href', url.pathname + url.search + url.hash);
+            }
+          } catch {}
+        }
+      });
+      await chinese.getByRole('link', { name: '查询与可视化', exact: true }).click();
+      await expect(chinese.locator('#gql-workspace-query-and-explore-relationships')).toBeInViewport();
+      for (const [index, frame] of frames.entries()) {
+        if (width < 900) await dialog.locator('.td-compare__tab').nth(index).click();
+        const image = frame.locator('.td-gallery img').first();
+        await image.scrollIntoViewIfNeeded();
+        await expect.poll(() => image.evaluate(node => node.complete && node.naturalWidth > 0)).toBe(true);
+        const imageOpener = image.locator('..');
+        await image.click();
+        const viewer = frame.locator('[data-td-image-zoom-dialog]');
+        await expect(viewer).toBeVisible();
+        await expect.poll(() => viewer.locator('img').evaluate(node => node.complete && node.naturalWidth > 0)).toBe(true);
+        await page.keyboard.press('Escape');
+        await expect(viewer).toBeHidden();
+        await expect(imageOpener).toBeFocused();
+        // The first Escape belongs to the image dialog inside the pane.
+        await expect(dialog).toBeVisible();
+      }
+      await testInfo.attach('Hubble screenshot panes', { body: await page.screenshot(), contentType: 'image/png' });
+      await closeReader(page);
+      await expect(opener).toBeFocused();
+    });
+  }
+}
+
 for (const version of VERSION_IDS) {
   for (const locale of ['en', 'cn']) {
     test(`${version} ${locale} Duo View covers desktop and mobile Docs`, async ({ page }) => {

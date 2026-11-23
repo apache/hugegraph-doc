@@ -25,9 +25,8 @@ kubectl get pv,storageclass
 
 出现 `ImagePullBackOff` 时检查 Pod 事件、仓库连通性和拉取凭据。默认只需四个组件镜像，等待 Store/Helm test 复用已包含 curl 的组件镜像。
 如显式覆盖 helper 镜像，该镜像也需要同步到内网仓库。
-启用 SeaTunnel 还需配置的 `apache/seatunnel` 镜像；启用 Vermeer 使用按 digest 固定的 `hugegraph/vermeer:helm-30b67d93e7d0`，
-Master、Worker 和令牌初始化共用它。官方发布运行记录源码与镜像 digest，
-详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)。
+启用 SeaTunnel 还需配置的 `apache/seatunnel` 镜像；启用 Vermeer 还需 `hugegraph/vermeer`（默认标签 `latest`），
+Master、Worker 和令牌初始化共用它，详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md#image-compatibility)。
 自定义镜像覆盖还需同步更新 `vermeer.image.digest`，或显式清空以按标签选择；非空 digest 优先。
 基础 local PV 示例不包含 Vermeer 卷：单机增加两个，集群增加一个 Master 卷及每 Worker 一个卷，默认增加四个。
 
@@ -62,7 +61,7 @@ kubectl -n hugegraph annotate deployment hugegraph-server \
 > - **密码与会话**：初次部署生成的管理密码在 easy 模式下为 6 位字符，strict 模式下为 16 位；后续升级与模式切换均自动保留既有凭据。
 >   Vermeer 原生控制台直接在 **Admin credential** 填入 `<release>-vermeer-admin` Secret 的 `password` 即可登录；Hubble 内部服务凭据已自动注入。
 > - **拓扑与副本切换**：修改 `seatunnel.mode` 或 `vermeer.mode` 前，请确保所有计算与导入批任务已结束并卸载内存图副本。单机与集群使用独立的数据卷声明，拓扑切换不会自动迁移本地文件。
-> - 完整恢复指引与进阶参数详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md)
+> - 完整恢复指引与进阶参数详见 [Vermeer 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/vermeer.md)
 >   与 [SeaTunnel 部署指南](https://github.com/apache/hugegraph/blob/master/helm/hugegraph/docs/seatunnel.md)。
 
 ### Helm test 检查范围 {#helm-test-coverage}

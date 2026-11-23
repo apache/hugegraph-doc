@@ -134,3 +134,44 @@ HugeGraph 支持 Gremlin 遍历规范定义的各项步骤。完整说明与高�
 | `V` | 顶点检索与端点跳转基础步骤：`V`、`E`、`out`、`in`、`both`、`outE`、`inE` 等 | [vertex steps](https://tinkerpop.apache.org/docs/3.8.1/reference/#vertex-steps) |
 | `where` | 使用表达式或谓词（`eq`、`neq`、`gt` 等）进行条件筛选过滤 | [where step](https://tinkerpop.apache.org/docs/3.8.1/reference/#where-step) |
 {.wide .expand}
+
+### Gremlin-Groovy 数值字面量与属性谓词转换规则
+
+在通过 Gremlin-Groovy（例如 HTTP `/gremlin` 接口、HugeGraph-Console 或 HugeGraph-Hubble）
+执行图查询时，Groovy 默认将不带类型后缀的小数字面量（如 `1.0` 或 `1.5`）解析为
+`java.math.BigDecimal`，将不带后缀的整数字面量（如 `1`）解析为 `java.lang.Integer`。在执行
+`has` 属性谓词（`P.eq`、`P.neq`、`P.lt`、`P.lte`、`P.gt`、`P.gte`、`P.between`、`P.within`、
+`P.without`）前，HugeGraph 会先将谓词参数按目标 `PropertyKey` 数据类型转换
+（`TraversalUtil.convAllHasSteps` → `validPropertyValue` → `DataType.valueToNumber`），并将
+`IN` / `NOT_IN` 条件展开为按数值比较的 `EQ` / `NEQ` 条件（`ConditionQueryFlatten` /
+`NumericUtil.compareNumber`）：
+
+- **`DOUBLE` 与 `FLOAT` 属性键：** 整数字面量（`1`）与小数字面量（`1.0`、`1.5`）均会通过
+  `Double.valueOf(value.toString())` / `Float.valueOf(value.toString())` 按数值完成转换。只要属性键已建立索引，不带后缀的 `has('weight', P.within(1.0))` 或 `has('weight', P.lt(1.5))` 即可按数值匹配存储的 `DOUBLE` 值 `1.0d`。
+- **`LONG`、`INT` 与 `BYTE` 属性键：** 取值范围内的整数字面量可通过 `Long.valueOf` /
+  `Integer.valueOf` / `Byte.valueOf` 转换；但传入带小数点的字面量（如 `1.0`，类型为 `BigDecimal`）会因整型解析失败而抛出 `IllegalArgumentException`。
+- **索引要求：** 在 `g.V()` 或 `g.E()` 上按用户属性过滤时，必须先为该属性键建立索引（例如数值属性的 `.range()` 范围索引），除非顶点查询已指定标签及全部主键属性（`GraphTransaction.optimizeQuery` 会将其转为主键查询）。未建索引且非主键查询时，无论字面量是否带后缀，HugeGraph 均会抛出 `NoIndexException`。
+
+显式指定 Groovy 数值后缀或类型转换（`DOUBLE` 使用 `d`/`D`，`FLOAT` 使用 `f`/`F`，`LONG` 使用 `L`，
+`BYTE` 使用 `(byte)`）可直接传入目标 Java 数值类型，避免经由字符串中转转换：
+
+| Schema 数据类型 | Java 运行时类型 | 显式 Groovy 字面量写法 | 已建索引查询示例 |
+|----------------|----------------|-----------------------|-----------------|
+| `DOUBLE` (`asDouble()`) | `java.lang.Double` | `1.0d` / `1.5D`（或 `(double) 1.0`） | `g.E().has('weight', P.within(1.0d))` |
+| `FLOAT` (`asFloat()`) | `java.lang.Float` | `1.0f` / `1.5F`（或 `(float) 1.0`） | `g.V().has('score', P.within(0.5f, 1.0f))` |
+| `LONG` (`asLong()`) | `java.lang.Long` | `1L` / `100L` | `g.V().has('timestamp', P.gte(1700000000L))` |
+| `INT` (`asInt()`) | `java.lang.Integer` | `1` / `100` | `g.V().has('age', P.within(18, 25))` |
+| `BYTE` (`asByte()`) | `java.lang.Byte` | `(byte) 1` | `g.V().has('level', P.within((byte) 1, (byte) 2))` |
+
+```groovy
+schema.propertyKey('weight').asDouble().ifNotExist().create()
+schema.vertexLabel('DocVertex').useCustomizeStringId().ifNotExist().create()
+schema.edgeLabel('DocEdge').sourceLabel('DocVertex').targetLabel('DocVertex').properties('weight').ifNotExist().create()
+schema.indexLabel('edgeByWeight').onE('DocEdge').by('weight').range().ifNotExist().create()
+
+// 建立范围索引后，不带后缀的 BigDecimal (1.0) 与显式 Double (1.0d) 均可按数值匹配
+g.E().has('weight', P.within(1.0)).count()
+g.E().has('weight', P.lt(1.5d)).count()
+```
+
+更多对比请参考 [Cypher 与 Gremlin 特性对比矩阵](/cn/docs/language/cypher-compatibility/) 及 [PropertyKey REST API](/cn/docs/clients/restful-api/propertykey/)。

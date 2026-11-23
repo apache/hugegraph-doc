@@ -792,7 +792,7 @@ schema: 必填
 - date_format：自定义的日期格式，默认值为 yyyy-MM-dd HH:mm:ss，选填；如果日期是以时间戳的形式呈现的，此项须写为 timestamp（固定写法）；
 - extra_date_formats：自定义的其他日期格式列表，默认为空，选填；列表中每一项都是一个 date_format 指定日期格式的备用日期格式；
 - time_zone：置日期数据是处于哪个时区的，默认值为 GMT+8，选填；
-- skipped_line：当前 master 的 KafkaReader 未实现该过滤，配置此字段不会跳过 Kafka 消息；每条消息仍会直接交给所选格式的解析器，空行或注释行可能因此触发解析错误。需要过滤时请在写入 Kafka 前或消费侧预处理，或将消息导出为文件后改用 `FILE`/`HDFS` 输入源（这类输入源会应用 `skipped_line`）；
+- skipped_line：当前 master 的 KafkaReader 未实现该过滤，配置此字段不会跳过 Kafka 消息；每条消息仍会直接交给所选格式的解析器，空行或注释行可能因此触发解析错误。需要过滤时请在写入 Kafka 前或消费侧预处理，或将消息导出为按行存储的文本文件（CSV、TEXT 或 JSON，不含 ORC 和 Parquet，后两者的读取器不会检查 `skipped_line`）后改用 `FILE`/`HDFS` 输入源；
 - batch_size：单次拉取的最大记录数（`max.poll.records`），默认为 500，选填；
 - early_stop：某次从 Kafka broker 拉取的记录为空，停止任务，默认为 false，仅用于调试，选填；
 

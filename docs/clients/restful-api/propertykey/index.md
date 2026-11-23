@@ -13,7 +13,10 @@ LLMS index: [llms.txt](/llms.txt)
 Params Description:
 
 - name: The name of the property type, required.
-- data_type: The data type of the property type, including: bool, byte, int, long, float, double, text, blob, date, uuid. The default data type is `text` (Represent a `string` type)
+- data_type: The data type of the property type, including: bool, byte, int, long, float,
+  double, text, blob, date, uuid. The default data type is `text` (Represent a `string`
+  type). For numeric literal coercion rules in Gremlin-Groovy predicates, see
+  [Numeric Literal Coercion in Gremlin-Groovy Predicates](/docs/language/hugegraph-gremlin/#numeric-literal-coercion-in-gremlin-groovy-predicates).
 - cardinality: The cardinality of the property type, including: single, list, set. The default cardinality is `single`.
 
 Request Body Field Description:
@@ -258,3 +261,9 @@ Where `age` is the name of the PropertyKey to be deleted.
     "task_id" : 0
 }
 ```
+
+---
+
+Backlinks:
+
+- [Gremlin Query Language](/docs/language/hugegraph-gremlin/)

@@ -67,4 +67,5 @@ JSON 对象参数化请求示例：
 - [Cypher](/cn/docs/clients/restful-api/cypher/)
 - [图查询语言](/cn/docs/language/)
 - [Cypher 查询语言](/cn/docs/language/hugegraph-cypher/)
+- [Gremlin 查询语言](/cn/docs/language/hugegraph-gremlin/)
 - [从 Neo4j 迁移](/cn/docs/language/migrate-from-neo4j/)

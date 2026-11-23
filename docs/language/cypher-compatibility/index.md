@@ -71,4 +71,5 @@ Backlinks:
 - [Cypher](/docs/clients/restful-api/cypher/)
 - [Graph Query Languages](/docs/language/)
 - [Cypher Query Language](/docs/language/hugegraph-cypher/)
+- [Gremlin Query Language](/docs/language/hugegraph-gremlin/)
 - [Migrating from Neo4j](/docs/language/migrate-from-neo4j/)

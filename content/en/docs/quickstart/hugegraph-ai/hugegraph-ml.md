@@ -8,38 +8,45 @@ HugeGraph-ML reads graph data from HugeGraph and converts it to DGL graphs for t
 
 ## Requirements
 
-- Python 3.10 or later
-- HugeGraph Server 1.5.0 or later; the current workspace client rejects detectable older versions
-- `uv` 0.7 or later
+- Python 3.12 or later for the current source
+- HugeGraph Server 1.5.0 or later; the current Python client rejects detectable older versions
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) for the isolated environment below
 
-All server access goes through `hugegraph-python-client` (the `pyhugegraph` package) from the same repository. `HugeGraph2DGL` pulls vertices and edges over the Gremlin endpoint with `g.V().hasLabel(...)` and `g.E().hasLabel(...)`, and the dataset importers write through the schema and batch vertex/edge APIs in batches of 500.
+All server access goes through `hugegraph-python-client` (the `pyhugegraph` package) from the same repository.
+`HugeGraph2DGL` pulls vertices and edges over the Gremlin endpoint with `g.V().hasLabel(...)` and `g.E().hasLabel(...)`.
+Dataset importers write through the schema and batch vertex/edge APIs in batches of 500.
 
-The repository root declares ML version constraints under `[tool.uv] constraint-dependencies`:
+The standalone module declares its dependencies in
+[`hugegraph-ml/pyproject.toml`](https://github.com/apache/hugegraph-ai/blob/main/hugegraph-ml/pyproject.toml):
 
-| Package | Constraint |
+| Purpose | Dependencies |
 |---|---|
-| `torch` | `==2.2.0` |
-| `dgl` | `~=2.1.0` |
-| `ogb` | `~=1.3.6` |
-| `torchdata` | `~=0.7.0` |
-| `catboost` | `~=1.2.3` |
-| `category-encoders` | `~=2.6.3` |
-| `numpy` | `~=1.24.4` |
-| `pandas` | `~=2.2.3` |
+| Graph learning | `torch`, `dgl`, `torchdata`, `ogb` |
+| Tabular models | `catboost`, `category-encoders` |
+| Data and runtime support | `numpy`, `pandas`, `pydantic`, `PyYAML`, `packaging`, `tqdm` |
+| Server client | `hugegraph-python>=1.8.0,<2` |
 
-These constraints limit versions but do not select CPU or CUDA builds. Tasks that support `gpu` default to `-1` for CPU. GPU use requires mutually compatible CUDA builds of `torch` and `dgl`.
+The module does not pin versions of the ML stack. Choose compatible PyTorch, DGL and torchdata builds for your Python version and platform;
+successful dependency resolution alone does not verify their binary compatibility.
+Tasks that support `gpu` default to `-1` for CPU. GPU use also requires compatible CUDA builds.
 
 ## Installation
+
+HugeGraph-ML is not published on PyPI and is outside the root `uv` workspace.
+Install it and the matching Python client from the same checkout into a separate environment:
 
 ```bash
 git clone https://github.com/apache/hugegraph-ai.git
 cd hugegraph-ai
-uv sync --extra ml
-source .venv/bin/activate
+uv venv --python 3.12 .venv-ml
+uv pip install --python .venv-ml/bin/python \
+  -e ./hugegraph-python-client -e ./hugegraph-ml
+source .venv-ml/bin/activate
+python -c 'import torch, dgl; print(torch.__version__, dgl.__version__)'
 cd hugegraph-ml/src
 ```
 
-HugeGraph-ML is a path dependency of the root project but is not a `uv` workspace member. Select the `ml` extra at the repository root so `uv` installs it and its local client dependency according to workspace configuration.
+Check that both libraries import before running examples. This check does not train a model or verify GPU support.
 
 ## Implemented Models
 
@@ -239,6 +246,7 @@ GRAND returns a list of logits per augmentation sample, and `NodeClassify` masks
 - Schema mismatches: the examples use `CORA_vertex` and `CORA_edge`; pass the actual labels for your own data.
 - `ValueError: Graph is missing required node attribute ...`: the node classification tasks need `feat`, `label`, `train_mask`, `val_mask` and `test_mask` in `ndata`. Import a dataset that carries masks, or pass your own `mask_keys` to `convert_graph`.
 - `ValueError: dataset not supported`: the importer only accepts the names in the table above, and `import_graph_from_ogb` matches `ogbl-collab` without upper-casing.
-- DGL or PyTorch import failures: rerun `uv sync --extra ml` from the repository root and confirm that Python comes from the root `.venv`.
+- DGL or PyTorch import failures: confirm Python comes from `.venv-ml`, then check the installed PyTorch/DGL/torchdata versions and CPU/CUDA builds.
+  Follow the [DGL installation guidance](https://www.dgl.ai/pages/start.html) for a compatible combination rather than retrying the root workspace sync.
 - `bgrl_example.py` currently fails on import: it asks for `MLP_Predictor` from `hugegraph_ml.models.bgrl`, but that module defines the class as `MLPPredictor`.
 - `care_gnn_example.py` reads `AMAZON_user_v` and the three `AMAZON_net_*_e` edge labels. No bundled importer creates them, so load that dataset yourself before running the script.

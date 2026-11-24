@@ -4,99 +4,80 @@ linkTitle: "HugeGraph-AI"
 weight: 3
 ---
 
-`hugegraph-ai` 提供 HugeGraph 的 Python 客户端、图机器学习工具，以及面向知识图谱构建和 GraphRAG 的 LLM 工具。
+`hugegraph-ai` 提供图客户端、知识图谱构建、GraphRAG、MCP 工具和图学习能力。
+按任务选择模块，部署与 API 示例统一维护在对应指南中。
+当前源码工作区版本为 `1.8.0`，源码版本不代表每个发行包或镜像均已发布。
 
-[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) · [Ask DeepWiki](https://deepwiki.com/apache/hugegraph-ai)
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) · [源码仓库](https://github.com/apache/hugegraph-ai)
 
-## 模块
+<span id="模块"></span>
 
-- [hugegraph-llm-sdk](./hugegraph-llm-sdk.md)：提供 Schema 设计、结构校验与属性图抽取审阅的独立 Python SDK。
-- [hugegraph-mcp](./hugegraph-mcp.md)：通过 MCP 向 AI 客户端提供图查询、Schema 和受控写入工具。
-- [hugegraph-llm](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-llm)：知识图谱构建、GraphRAG 和自然语言图查询。
-- [hugegraph-ml](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-ml)：从 HugeGraph 读取图数据并运行图学习模型。
-- [hugegraph-python-client](https://github.com/apache/hugegraph-ai/tree/main/hugegraph-python-client)：管理 Schema、图数据和 Gremlin 查询的 Python SDK。
-- [vermeer-python-client](https://github.com/apache/hugegraph-ai/tree/main/vermeer-python-client)：调用 Vermeer 图计算服务的 Python SDK。
+## 模块 {#modules}
 
-仓库使用 `uv` workspace，其成员是 `hugegraph-llm-sdk`、`hugegraph-llm` 和 `hugegraph-python-client`。`hugegraph-ml` 和 `vermeer-python-client` 是可编辑的路径依赖，不在 workspace members 中。当前仓库版本为 `1.8.0`。客户端源码目录叫 `hugegraph-python-client`，但发行包名是 `hugegraph-python`。
+- [GraphRAG 应用](./hugegraph-llm.md) — 运行文档导入、图检索和自然语言查询的 Web 页面与 REST 服务。
+- [独立 LLM SDK](./hugegraph-llm-sdk.md) — 在 Python 应用中集成 Schema 设计、校验及带审阅的图抽取。
+- [MCP 工具](./hugegraph-mcp.md) — 向 AI 客户端提供图查询、Schema 和受控写入能力。
+- [Python 图客户端](/cn/docs/clients/client/hugegraph-client-python/) — 管理 Schema、图数据和 Gremlin 请求。
+- [Vermeer Python 客户端](./vermeer-python-client.md) — 自动化加载图、计算和获取结果。
+- [图学习](./hugegraph-ml.md) — 读取 HugeGraph 数据并运行图学习示例。
+{.cards .td-cards-list}
 
-## 环境要求
+<span id="环境要求"></span>
 
-- HugeGraph-AI 根目录 workspace：Python >= 3.12（支持 Python 3.12–3.14）
-- HugeGraph-LLM 与 HugeGraph-LLM-SDK：Python >= 3.12（支持 Python 3.12–3.14）
-- HugeGraph-ML：Python 3.10 或更高版本
-- PyPI 上的 `hugegraph-python` 1.5.0：Python 3.9 或更高版本；当前仓库源码随 workspace 使用 Python >= 3.12
-- Vermeer Python 客户端：当前源码要求 Python 3.10 或更高版本；发行元数据仍声明 `>=3.9`，详见[客户端页](/cn/docs/quickstart/hugegraph-ai/vermeer-python-client/)
-- `uv` 0.7 或更高版本
-- HugeGraph Server 1.5.0 或更高版本；当前 workspace 的 Python 客户端会拒绝可探测到的更低版本
+## 环境要求 {#requirements}
 
-## 可选依赖组
+- 当前源码模块要求 Python **3.12+**；LLM 应用支持 Python **3.12–3.14**。
+- 源码工作区使用 [`uv`](https://docs.astral.sh/uv/getting-started/installation/)。
+- 图客户端要求 HugeGraph Server **1.5.0+**，会拒绝可探测到的更早版本；各功能的 Server 版本要求需另行确认。
 
-根项目为每个模块声明一个 extra，另有几个组合项：
+`uv` workspace 包含 `hugegraph-llm-sdk`、`hugegraph-llm` 和 `hugegraph-python-client`。
+Vermeer 是可编辑路径依赖；ML 和 MCP 有各自的安装指南。
+Python 客户端源码目录叫 `hugegraph-python-client`，发行包名为 `hugegraph-python`。
+
+<span id="可选依赖组"></span>
+
+## 可选依赖组 {#optional-dependency-groups}
+
+在源码仓库根目录执行 workspace 命令：
 
 | Extra | 安装内容 |
-|---|---|
-| `llm` | `hugegraph-llm` |
-| `ml` | `hugegraph-ml` |
-| `python-client` | `hugegraph-python`（源码目录 `hugegraph-python-client`）|
+| --- | --- |
+| `llm` | LLM 应用及其依赖 |
+| `vectordb` | LLM 应用及 Milvus／Qdrant 支持 |
+| `python-client` | `hugegraph-python` |
 | `vermeer` | `vermeer-python-client` |
-| `dev` | pytest、pytest-cov、coverage、pylint、ruff、mypy、ty、pre-commit |
-| `nk-llm` | `hugegraph-llm`、`hugegraph-python-client`，以及编译镜像所需的 Nuitka |
-| `all` | 四个模块包 |
+| `dev` | pytest、coverage、Ruff、ty 和 pre-commit |
+| `nk-llm` | LLM 应用、图客户端及 Nuitka 镜像构建依赖 |
+| `all` | LLM 应用、图客户端、Vermeer 客户端，不含 ML 或 MCP |
 
-`hugegraph-llm` 自身还声明了 `vectordb` extra，用于安装 `pymilvus` 和 `qdrant-client`。
+根目录没有 `ml` extra。ML 和 MCP 应使用各自的安装指南，无需把它们的依赖加入 LLM 部署。
 
-## Docker Compose 部署
+<span id="docker-compose-部署"></span>
 
-仓库提供同时启动 HugeGraph Server 和 RAG 服务的 Compose 文件：
+## Docker Compose 部署 {#deploy-with-docker-compose}
 
-```bash
-git clone https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai
-cp docker/env.template docker/.env
-# 编辑 docker/.env，将 PROJECT_PATH 改为当前仓库的绝对路径
-touch hugegraph-llm/.env
-# 在 hugegraph-llm/.env 中设置 GRAPH_URL=server:8080，并填写匹配 Server 的账号
-cd docker
-docker compose -f docker-compose-network.yml up -d
-```
+使用[统一维护的 Compose 步骤](./hugegraph-llm.md#deploy-with-docker-compose)，
+准备引导配置并构建源码工作区要求的 RAG 镜像，再同时启动 Server 与 RAG。
+Kubernetes 和持久化应用配置使用[统一 Helm 部署](/cn/docs/quickstart/hugegraph/hugegraph-helm/#8-graphrag)。
 
-默认地址：
+<span id="从源码启动-rag-服务"></span>
 
-- HugeGraph Server：`http://localhost:8080`
-- RAG 服务和 Web 界面：`http://localhost:8001`
+## 从源码启动 RAG 服务 {#start-the-rag-service-from-source}
 
-## 从源码启动 RAG 服务
+先按[源码启动步骤](./hugegraph-llm.md#start-from-source)运行服务，再阅读[使用流程](./quick_start.md)。
+`uv sync --extra llm` 会在 workspace 根目录创建 `.venv`。仓库不跟踪 `uv.lock`，依赖按 `pyproject.toml` 约束解析。
+部署默认值、已保存模型连接和持久化文件见[配置参考](./config-reference.md)。
 
-```bash
-git clone https://github.com/apache/hugegraph-ai.git
-cd hugegraph-ai
-uv sync --extra llm
-source .venv/bin/activate
-cd hugegraph-llm
-python -m hugegraph_llm.demo.rag_demo.app
-```
+<span id="安装-ml-依赖"></span>
 
-`uv sync` 会在仓库根目录创建 `.venv`。从根目录安装可让 `uv` 一起解析 workspace 成员和路径依赖。当前仓库不跟踪 `uv.lock`；`uv sync` 会按 `pyproject.toml` 中的依赖声明和版本约束解析依赖。
+## 安装 ML 依赖 {#install-ml-dependencies}
 
-## 安装 ML 依赖
+ML 是独立项目，安装和示例见 [ML 指南](./hugegraph-ml.md)；根目录 `--extra all` 不会安装它。
 
-```bash
-cd hugegraph-ai
-uv sync --extra ml
-source .venv/bin/activate
-cd hugegraph-ml/src
-```
+<span id="后续阅读"></span>
 
-示例脚本位于 `hugegraph-ml/src/hugegraph_ml/examples/`。
+## 后续阅读 {#next-steps}
 
-## 后续阅读
-
-- [HugeGraph-LLM SDK](./hugegraph-llm-sdk.md)
-- [HugeGraph-MCP](./hugegraph-mcp.md)
-- [HugeGraph-LLM](./hugegraph-llm.md)
-- [HugeGraph-LLM 使用流程](./quick_start.md)
-- [配置参考](./config-reference.md)
-- [REST API](./rest-api.md)
-- [HugeGraph-ML](./hugegraph-ml.md)
-- [Python 客户端](/cn/docs/clients/client/hugegraph-client-python/)
-- [Vermeer Python 客户端](./vermeer-python-client.md)
+- [建立索引与查询文档](./quick_start.md)
+- [配置模型、存储和凭据](./config-reference.md)
+- [调用 RAG 与配置 API](./rest-api.md)

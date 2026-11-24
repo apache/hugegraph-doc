@@ -13,7 +13,7 @@ python -m hugegraph_llm.demo.rag_demo.app \
   --port 8001
 ```
 
-All endpoints are `POST`:
+The RAG and configuration endpoints below use `POST`:
 
 | Path | Success status | Purpose |
 |---|---|---|
@@ -27,7 +27,7 @@ All endpoints are `POST`:
 | `/config/rerank` | 201 | Update the reranker |
 | `/logs` | 200 | Stream the server log |
 
-## Authentication
+## Authentication {#authentication}
 
 Enable login in `.env`:
 
@@ -42,14 +42,17 @@ Requests then require a Bearer token:
 Authorization: Bearer replace-with-a-secret
 ```
 
-The same setting puts the Gradio UI behind basic authentication, with the fixed user name `rag` and `USER_TOKEN` as the password. A wrong token returns 401 with a `WWW-Authenticate: Bearer` header. When `ENABLE_LOGIN` is left at `False`, every endpoint is open.
+The same setting puts the Gradio UI behind basic authentication, with the fixed user name `rag` and `USER_TOKEN` as the password. A wrong token returns 401 with
+a `WWW-Authenticate: Bearer` header. When `ENABLE_LOGIN=False`, these RAG/configuration routes have no Bearer-token check.
+`/logs` still requires its administrator token, and Thin API write routes have an additional deployment gate.
+Application login does not protect every HTTP route; retain a trusted network or an authenticating reverse proxy.
 
 > [!WARNING]
 > Production requires HugeGraph-LLM login and a source IP allowlist at the firewall or network entry point. This protects only the LLM UI and REST API. Separately enable [Server authentication and authorization](/docs/config/config-authentication/), retain Server audit logs (normally `audit-*.log`), and grant `GRAPH_USER` minimum permissions. `USER_TOKEN` does not replace Server authentication.
 
-## RAG
+## RAG {#rag}
 
-### `POST /rag`
+### `POST /rag` {#post-rag}
 
 Returns one or more answer types according to the switches. When none is explicitly selected, only `graph_only` is enabled.
 
@@ -66,14 +69,7 @@ curl -X POST http://localhost:8001/rag \
     "topk_return_results": 20,
     "vector_dis_threshold": 0.9,
     "topk_per_keyword": 1,
-    "gremlin_tmpl_num": 1,
-    "client_config": {
-      "url": "127.0.0.1:8080",
-      "graph": "hugegraph",
-      "user": "admin",
-      "pwd": "admin",
-      "gs": "DEFAULT"
-    }
+    "gremlin_tmpl_num": 1
   }'
 ```
 
@@ -92,7 +88,7 @@ Other optional parameters include `graph_ratio` (default `0.5`), `rerank_method`
 
 An empty or whitespace-only `query` returns 400.
 
-### `POST /rag/graph`
+### `POST /rag/graph` {#post-raggraph}
 
 Runs graph retrieval without generating a final natural-language answer:
 
@@ -111,9 +107,9 @@ curl -X POST http://localhost:8001/rag/graph \
 
 An empty `query` returns 400, a type error in the request returns 400, and any other failure returns 500.
 
-## Graph Extraction
+## Graph Extraction {#graph-extraction}
 
-### `POST /graph/extract`
+### `POST /graph/extract` {#post-graphextract}
 
 An inline schema does not connect to HugeGraph:
 
@@ -173,14 +169,22 @@ When `schema` is an existing graph name, also pass `client_config`, and make `cl
 }
 ```
 
-### Model Review and Repair (`review_options`)
+### Model Review and Repair (`review_options`) {#model-review-and-repair-review_options}
 
 Providing `review_options` enables iterative model review and bounded schema repair for each text chunk:
 
 ```json
 {
   "texts": ["Alice works at Acme Corp.", "Bob works at Beta LLC."],
-  "schema": {...},
+  "schema": {
+    "vertexlabels": [
+      {"name": "person", "properties": ["name"]},
+      {"name": "company", "properties": ["name"]}
+    ],
+    "edgelabels": [
+      {"name": "works_at", "source_label": "person", "target_label": "company", "properties": []}
+    ]
+  },
   "review_options": {
     "max_reviews": 2,
     "max_fixes": 1,
@@ -194,7 +198,7 @@ Providing `review_options` enables iterative model review and bounded schema rep
 - `max_workers` (default `4`, range `1`–`8`): Number of chunks executed concurrently.
 - Passing `{}` uses the defaults. Omitting `review_options` or setting it to `null` uses legacy extraction without review.
 
-### Response Format
+### Response Format {#response-format}
 
 When `review_options` is omitted, `status` is always `succeeded` on HTTP 200. When `review_options` is enabled:
 - The overall `status` reflects cumulative chunk results: `succeeded` (all chunks final), `partial` (some chunks final), or `failed` (no chunks final).
@@ -208,9 +212,9 @@ When `review_options` is omitted, `status` is always `succeeded` on HTTP 200. Wh
   - `reason` and `stage`: Failure explanation and execution stage (`prepare`, `extract`, `validate`, `review`, or `repair`).
   - `reviews_used`, `fixes_used`, and `llm_calls`: Consumed model call counters.
 
-## Text2Gremlin
+## Text2Gremlin {#text2gremlin}
 
-### `POST /text2gremlin`
+### `POST /text2gremlin` {#post-text2gremlin}
 
 ```bash
 curl -X POST http://localhost:8001/text2gremlin \
@@ -232,11 +236,13 @@ curl -X POST http://localhost:8001/text2gremlin \
 
 If omitted, only `template_gremlin` is returned by default. An empty array lets the implementation return all outputs. A custom `gremlin_prompt` must contain `{query}`, `{schema}`, `{example}`, and `{vertices}`; a missing placeholder fails request validation and names the placeholders that are absent.
 
-`example_num` defaults to `0`, which means no templates, and is clamped to the range 0 to 10. `client_config` overrides the HugeGraph connection for the request; the schema used for generation is the active graph name. An empty `query` returns 400, and a generation failure returns 500.
+`example_num` defaults to `0`, which means no templates, and is clamped to the range 0 to 10. `client_config` may only confirm the configured HugeGraph
+connection: supplied URL, graph, GraphSpace and credentials must match, or the request returns 400.
+It cannot select another destination; generation uses the configured graph schema. An empty `query` returns 400, and a generation failure returns 500.
 
-## Runtime Configuration
+## Runtime Configuration {#runtime-configuration}
 
-### `POST /config/graph`
+### `POST /config/graph` {#post-configgraph}
 
 ```json
 {
@@ -250,34 +256,35 @@ If omitted, only `template_gremlin` is returned by default. An empty array lets 
 
 `user` and `pwd` default to empty strings, and `gs` is optional.
 
-### `POST /config/llm` and `POST /config/embedding`
+### `POST /config/llm` and `POST /config/embedding` {#post-configllm-and-post-configembedding}
 
-Both endpoints use the same request model. `/config/llm` sets `chat_llm_type`, `extract_llm_type`, and `text2gql_llm_type` to the same value; per-task types can only be set separately through `.env` or the Web UI. OpenAI or LiteLLM example:
+`/config/llm` saves one `role`: `chat` (default), `extract`, or `text2gql`. Unconfigured extraction/Text2Gremlin inherit Chat dynamically;
+saving a role gives it its own connection. `/config/embedding` saves the separate embedding connection.
+Providers are `openai` and `ollama/local`. Example for an OpenAI-compatible service:
 
 ```json
 {
+  "role": "chat",
   "llm_type": "openai",
   "api_key": "your-key",
   "api_base": "https://api.openai.com/v1",
   "language_model": "gpt-4.1-mini",
-  "max_tokens": "4096"
+  "max_tokens": 4096
 }
 ```
 
-Ollama requests still require the common fields; `api_key` and `api_base` can be empty strings:
+Ollama uses `host`, integer `port`, and `language_model`; it needs no API-key fields:
 
 ```json
 {
   "llm_type": "ollama/local",
-  "api_key": "",
-  "api_base": "",
   "language_model": "qwen2.5:7b",
   "host": "127.0.0.1",
-  "port": "11434"
+  "port": 11434
 }
 ```
 
-### `POST /config/rerank`
+### `POST /config/rerank` {#post-configrerank}
 
 ```json
 {
@@ -289,13 +296,38 @@ Ollama requests still require the common fields; `api_key` and `api_base` can be
 
 `reranker_type` accepts `cohere` or `siliconflow`. Cohere also accepts `cohere_base_url`.
 
-All four configuration endpoints return 201 on success. They change the process's active configuration and may write values back to `.env`. `/config/llm`, `/config/embedding`, and `/config/rerank` restore the previous values if applying a change raises; `/config/graph` does not.
+The four configuration endpoints return 201 on success. Saved application connections go to writable `settings.yaml`, not the bootstrap `.env`.
+Model saves validate format without contacting the provider. Request-schema errors (such as invalid types or out-of-range ports) return 422, while rejected settings (such as a destination change without a key) return 400; a storage-write failure returns 503.
+Blank or omitted model keys retain the current key; `clear_api_key: true` explicitly clears it.
+Changing the provider or endpoint requires a replacement key or explicit clearing, so the old key is not silently sent to another service.
 
-`client_config` in `/rag`, `/rag/graph`, and `/text2gremlin` overrides the HugeGraph connection for one request, and only the fields actually present in the request are applied. The current implementation still changes process-global settings temporarily, so do not issue long-running requests with different connections concurrently.
+### Test and Inherit Model Connections {#test-model-connections}
 
-## Logs
+Call `POST /config/model/{role}/test` after saving. Supported roles are `chat`, `extract`, `text2gql`, `embedding` and `reranker`.
+Success returns 200; a failed connection test returns 502 and leaves the saved configuration unchanged.
+Use `POST /config/llm/extract/use-chat` or `POST /config/llm/text2gql/use-chat` to restore Chat inheritance; success returns 200.
 
-### `POST /logs`
+`client_config` in `/rag` and `/rag/graph` is accepted for request compatibility but ignored: both use the configured graph connection.
+For `/text2gremlin`, supplied target and credential fields must match the configured connection. These request fields do not save settings or
+provide per-request multi-tenant routing. Change the deployment connection deliberately through `/config/graph`.
+See [saved connections and deployment defaults](./config-reference.md#saved-connections).
+
+## Automation Endpoints {#automation-endpoints}
+
+The Thin API offers `GET /graph-index-info` and `GET /vid-embeddings/refresh-capabilities` for read-only discovery.
+Use `/graph/extract` for extraction with review/repair; the legacy `/graph-extract` wrapper has a different envelope and no `review_options`.
+
+Thin write routes `POST /graph-import` and `POST /vid-embeddings/refresh` are disabled unless both `ENABLE_LOGIN=true` and
+`HUGEGRAPH_LLM_ENABLE_THIN_WRITES=true` are set for an authenticated internal deployment. For target-checked refresh automation,
+use `POST /v1/vid-embeddings/refresh` with both `expected_graph` and `expected_graphspace` matching the configured target.
+Capability discovery alone does not guarantee that an older replica validates these fields.
+
+Thin responses use an `ok`, `data`, `error`, `warnings`, `next_actions`, `meta` envelope.
+A disabled write or flow failure can return HTTP 200 with `ok:false`; inspect `ok` and `error.type` rather than treating the HTTP status as success.
+
+## Logs {#logs}
+
+### `POST /logs` {#post-logs}
 
 This endpoint requires `ADMIN_TOKEN` in `.env` to be changed to a secure value. Example request body:
 

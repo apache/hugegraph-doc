@@ -13,7 +13,7 @@ python -m hugegraph_llm.demo.rag_demo.app \
   --port 8001
 ```
 
-所有接口都使用 `POST`：
+下列 RAG 和配置接口使用 `POST`：
 
 | 路径 | 成功状态码 | 用途 |
 |---|---|---|
@@ -27,7 +27,9 @@ python -m hugegraph_llm.demo.rag_demo.app \
 | `/config/rerank` | 201 | 更新重排序模型 |
 | `/logs` | 200 | 流式返回服务日志 |
 
-## 认证
+<span id="认证"></span>
+
+## 认证 {#authentication}
 
 在 `.env` 中启用登录：
 
@@ -42,14 +44,15 @@ USER_TOKEN=replace-with-a-secret
 Authorization: Bearer replace-with-a-secret
 ```
 
-同一开关也会给 Gradio 页面加上基础认证，用户名固定为 `rag`，密码是 `USER_TOKEN`。token 不正确时返回 401，并带上 `WWW-Authenticate: Bearer` 响应头。`ENABLE_LOGIN` 保持 `False` 时所有接口都不做鉴权。
+同一开关也会给 Gradio 页面加上基础认证，用户名固定为 `rag`，密码是 `USER_TOKEN`。token 不正确时返回 401，并带上 `WWW-Authenticate: Bearer` 响应头。`ENABLE_LOGIN=False` 时，这些 RAG／配置路由不检查 Bearer token。
+`/logs` 仍要求管理员 token，Thin API 写路由另有部署开关。应用登录不保护每个 HTTP 路由，仍需可信网络或带认证的反向代理。
 
 > [!WARNING]
 > 生产环境必须启用 HugeGraph-LLM 自身的登录认证，并在防火墙或网络入口设置来源 IP 白名单。该认证只保护 HugeGraph-LLM 的页面和 REST API；HugeGraph Server 还必须单独开启认证与授权（见[认证与授权说明](/cn/docs/config/config-authentication/)）并保留 Server 审计日志（标准日志文件为 `audit-*.log`），为 `GRAPH_USER` 配置最小必要权限。`USER_TOKEN` 不会替代 Server 认证。
 
-## RAG
+## RAG {#rag}
 
-### `POST /rag`
+### `POST /rag` {#post-rag}
 
 根据开关返回一种或多种回答。未显式指定时只启用 `graph_only`。
 
@@ -66,14 +69,7 @@ curl -X POST http://localhost:8001/rag \
     "topk_return_results": 20,
     "vector_dis_threshold": 0.9,
     "topk_per_keyword": 1,
-    "gremlin_tmpl_num": 1,
-    "client_config": {
-      "url": "127.0.0.1:8080",
-      "graph": "hugegraph",
-      "user": "admin",
-      "pwd": "admin",
-      "gs": "DEFAULT"
-    }
+    "gremlin_tmpl_num": 1
   }'
 ```
 
@@ -92,7 +88,7 @@ curl -X POST http://localhost:8001/rag \
 
 `query` 为空或只有空白字符时返回 400。
 
-### `POST /rag/graph`
+### `POST /rag/graph` {#post-raggraph}
 
 只执行图召回，不生成最终自然语言答案：
 
@@ -111,9 +107,11 @@ curl -X POST http://localhost:8001/rag/graph \
 
 `query` 为空返回 400，请求类型错误返回 400，其他失败返回 500。
 
-## 图抽取
+<span id="图抽取"></span>
 
-### `POST /graph/extract`
+## 图抽取 {#graph-extraction}
+
+### `POST /graph/extract` {#post-graphextract}
 
 使用内联 Schema 时不会连接 HugeGraph：
 
@@ -173,14 +171,24 @@ curl -X POST http://localhost:8001/graph/extract \
 }
 ```
 
-### 模型审阅与修复（`review_options`）
+<span id="模型审阅与修复review_options"></span>
+
+### 模型审阅与修复（`review_options`） {#model-review-and-repair-review_options}
 
 传入 `review_options` 可为每个切分后的文本块启用迭代式模型审阅与有限 Schema 自动修复：
 
 ```json
 {
   "texts": ["Alice 在 Acme 集团工作。", "Bob 在 Beta 公司工作。"],
-  "schema": {...},
+  "schema": {
+    "vertexlabels": [
+      {"name": "person", "properties": ["name"]},
+      {"name": "company", "properties": ["name"]}
+    ],
+    "edgelabels": [
+      {"name": "works_at", "source_label": "person", "target_label": "company", "properties": []}
+    ]
+  },
   "review_options": {
     "max_reviews": 2,
     "max_fixes": 1,
@@ -194,7 +202,9 @@ curl -X POST http://localhost:8001/graph/extract \
 - `max_workers`（默认 `4`，范围 `1`–`8`）：并发处理文本块的工作线程数。
 - 传入 `{}` 使用上述默认值；省略 `review_options` 或设为 `null` 则保持旧版直接抽取且不审阅。
 
-### 响应格式说明
+<span id="响应格式说明"></span>
+
+### 响应格式说明 {#response-format}
 
 省略 `review_options` 时，HTTP 200 响应中的 `status` 始终为 `succeeded`。开启 `review_options` 后：
 - 全局 `status` 综合各分块状态计算：`succeeded`（所有分块达成 final）、`partial`（部分分块达成 final）或 `failed`（没有任何分块达成 final）。
@@ -207,9 +217,9 @@ curl -X POST http://localhost:8001/graph/extract \
   - `reason` 与 `stage`：失败原因与发生阶段（`prepare`、`extract`、`validate`、`review` 或 `repair`）。
   - `reviews_used`、`fixes_used` 与 `llm_calls`：记录该文本块消耗的大模型调用计数。
 
-## Text2Gremlin
+## Text2Gremlin {#text2gremlin}
 
-### `POST /text2gremlin`
+### `POST /text2gremlin` {#post-text2gremlin}
 
 ```bash
 curl -X POST http://localhost:8001/text2gremlin \
@@ -231,11 +241,14 @@ curl -X POST http://localhost:8001/text2gremlin \
 
 省略该字段时默认只返回 `template_gremlin`；传空数组表示由实现返回全部输出。自定义 `gremlin_prompt` 必须包含 `{query}`、`{schema}`、`{example}` 和 `{vertices}`，缺少占位符时请求校验失败，并会列出缺失的占位符。
 
-`example_num` 默认是 `0`，表示不使用模板，取值会被限制在 0 到 10 之间。`client_config` 只在单次请求内覆盖 HugeGraph 连接，生成时使用的 Schema 是当前生效的图名。`query` 为空返回 400，生成失败返回 500。
+`example_num` 默认是 `0`，表示不使用模板，取值会被限制在 0 到 10 之间。`client_config` 只能确认已配置的 HugeGraph 连接：传入的 URL、图、GraphSpace 和凭据必须匹配，否则返回 400。
+它不能选择其他目标，生成时使用已配置图的 Schema。`query` 为空返回 400，生成失败返回 500。
 
-## 运行时配置
+<span id="运行时配置"></span>
 
-### `POST /config/graph`
+## 运行时配置 {#runtime-configuration}
+
+### `POST /config/graph` {#post-configgraph}
 
 ```json
 {
@@ -249,34 +262,37 @@ curl -X POST http://localhost:8001/text2gremlin \
 
 `user` 和 `pwd` 默认是空字符串，`gs` 可选。
 
-### `POST /config/llm` 与 `POST /config/embedding`
+<span id="post-configllm-与-post-configembedding"></span>
 
-两个端点使用同一个请求模型。`/config/llm` 会把 `chat_llm_type`、`extract_llm_type` 和 `text2gql_llm_type` 一起设为相同的值；要分别设置各任务的类型，只能通过 `.env` 或 Web 页面。OpenAI 或 LiteLLM 示例：
+### `POST /config/llm` 与 `POST /config/embedding` {#post-configllm-and-post-configembedding}
+
+`/config/llm` 保存一个 `role`：`chat`（默认）、`extract` 或 `text2gql`。
+未独立配置的抽取／Text2Gremlin 动态跟随 Chat；保存某角色后，它使用自己的连接。`/config/embedding` 保存独立的嵌入模型连接。
+Provider 可选 `openai`、`ollama/local`。OpenAI 兼容服务示例：
 
 ```json
 {
+  "role": "chat",
   "llm_type": "openai",
   "api_key": "your-key",
   "api_base": "https://api.openai.com/v1",
   "language_model": "gpt-4.1-mini",
-  "max_tokens": "4096"
+  "max_tokens": 4096
 }
 ```
 
-Ollama 请求仍要提供公共字段；`api_key` 和 `api_base` 可传空字符串：
+Ollama 使用 `host`、整数 `port` 和 `language_model`，无需 API-key 字段：
 
 ```json
 {
   "llm_type": "ollama/local",
-  "api_key": "",
-  "api_base": "",
   "language_model": "qwen2.5:7b",
   "host": "127.0.0.1",
-  "port": "11434"
+  "port": 11434
 }
 ```
 
-### `POST /config/rerank`
+### `POST /config/rerank` {#post-configrerank}
 
 ```json
 {
@@ -288,13 +304,39 @@ Ollama 请求仍要提供公共字段；`api_key` 和 `api_base` 可传空字符
 
 `reranker_type` 可选 `cohere`、`siliconflow`。Cohere 还可以传 `cohere_base_url`。
 
-四个配置端点成功时都返回 201。它们会改动进程当前配置，并可能同步到 `.env`。`/config/llm`、`/config/embedding` 和 `/config/rerank` 在应用过程中抛出异常时会回滚到原有取值，`/config/graph` 不会。
+四个配置端点成功时返回 201。应用连接保存到可写的 `settings.yaml`，不改写引导配置 `.env`。
+模型保存只校验格式，不连接服务；请求 Schema 校验错误（如类型不合法或端口越界）返回 422，被拒绝的配置项（如更换目标但未提供 key）返回 400，存储写入失败返回 503。
+key 留空或省略时保留原 key；`clear_api_key: true` 才会明确清除。
+更换 provider 或端点时须输入新 key 或明确清除，原 key 不会静默发送到其他服务。
 
-`/rag`、`/rag/graph` 和 `/text2gremlin` 的 `client_config` 只在单次请求期间覆盖 HugeGraph 连接，且仅应用请求中实际出现的字段。当前实现仍会临时改动进程全局设置，不适合用不同连接并发发起长请求。
+### 测试与继承模型连接 {#test-model-connections}
 
-## 日志
+保存后调用 `POST /config/model/{role}/test` 测试连接，支持 `chat`、`extract`、`text2gql`、`embedding`、`reranker`。
+成功返回 200；连接测试失败返回 502，已保存配置保持不变。
+调用 `POST /config/llm/extract/use-chat` 或 `POST /config/llm/text2gql/use-chat` 可恢复跟随 Chat，成功返回 200。
 
-### `POST /logs`
+`/rag`、`/rag/graph` 接受 `client_config` 仅为请求兼容，实际忽略该字段，使用已配置连接。
+`/text2gremlin` 则要求传入的目标和凭据与已配置连接一致。这些请求字段不会保存设置，也不提供逐请求多租户路由。
+需要改变部署连接时，应明确调用 `/config/graph`。已保存连接和部署默认值的关系见[配置参考](./config-reference.md#saved-connections)。
+
+## 自动化接口 {#automation-endpoints}
+
+Thin API 提供 `GET /graph-index-info` 和 `GET /vid-embeddings/refresh-capabilities` 只读发现接口。
+需要带审查／修复的抽取时使用 `/graph/extract`；旧 `/graph-extract` 包装接口的响应 envelope 不同，也不支持 `review_options`。
+
+Thin 写路由 `POST /graph-import`、`POST /vid-embeddings/refresh` 默认关闭，仅在内部已认证部署同时设置
+`ENABLE_LOGIN=true` 与 `HUGEGRAPH_LLM_ENABLE_THIN_WRITES=true` 后启用。
+需要验证目标的自动刷新请用 `POST /v1/vid-embeddings/refresh`，同时提供与当前配置匹配的 `expected_graph`、`expected_graphspace`。
+仅发现能力接口可用，不能保证旧副本也会验证这些字段。
+
+Thin 响应使用 `ok`、`data`、`error`、`warnings`、`next_actions`、`meta` envelope。
+写入被禁用或流程失败时可能仍返回 HTTP 200、`ok:false`；请检查 `ok` 和 `error.type`，不要只按 HTTP 状态判断成功。
+
+<span id="日志"></span>
+
+## 日志 {#logs}
+
+### `POST /logs` {#post-logs}
 
 该接口要求 `.env` 中的 `ADMIN_TOKEN` 已改成安全值。请求体示例：
 

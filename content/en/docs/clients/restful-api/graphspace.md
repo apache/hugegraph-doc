@@ -20,7 +20,15 @@ HugeGraph implements multi-tenancy through graph spaces, which isolate compute/s
 > [!WARNING]
 > **Restrict graph-space listing and detail endpoints**
 >
-> `GET /graphspaces` and `GET /graphspaces/{graphspace}` have no `@RolesAllowed` annotation. They are anonymous when Server authentication is disabled and lack method-level administrator checks when it is enabled. Detail responses contain `dp_username` and `dp_password`. In production, set `white_ip.status=enable` and maintain the [IP allowlist](/docs/clients/restful-api/other/). A gateway must restrict both paths by caller identity or role to administrators and trusted operators; restricting only source IPs still lets ordinary authenticated accounts on that network read DP credentials. Server network policy must allow only trusted gateway egress addresses to the API port, blocking direct client bypass. Record caller identity, source, and outcome at the gateway. Server `audit-*.log` files record authentication and authorization but do not replace gateway access auditing for these paths. Grant business accounts minimum permissions.
+> `GET /graphspaces` and `GET /graphspaces/{graphspace}` have no `@RolesAllowed` annotation. They are anonymous when Server authentication is disabled
+> and lack method-level administrator checks when it is enabled. Detail responses contain `dp_username` and `dp_password`.
+>
+> In production, set `white_ip.status=enable` and maintain the [IP allowlist](/docs/clients/restful-api/other/). Restrict both paths at the gateway by
+> caller identity or role to administrators and trusted operators. An IP restriction alone still permits ordinary authenticated accounts on that
+> network to read DP credentials. Allow only trusted gateway egress addresses to reach Server's API port, blocking direct client bypass.
+>
+> Record caller identity, source and outcome at the gateway. Server `audit-*.log` files record authentication and authorization, but do not replace
+> gateway access auditing for these paths. Grant business accounts minimum permissions.
 
 #### 2.0.1 Create a graphspace
 
@@ -32,28 +40,32 @@ POST http://localhost:8080/graphspaces
 
 ##### Request Body
 
-Note: CPU/memory and Kubernetes-related capabilities are not publicly available yet.
+CPU and memory limits configure namespace quotas when `server.use_k8s=true`; in other deployments they do not impose JVM or container limits.
+Changing these fields does not resize existing Pods.
 
 | Name                         | Required | Type    | Default | Range/Note                                                                     | Description                                                                       |
 |------------------------------|----------|---------|---------|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
 | name                         | Yes      | String  |         | Lowercase letters, digits, underscore; must start with a letter; max length 48 | Graphspace name                                                                   |
 | nickname                     | No       | String  | name    | Must be unique among graphspaces                                               | Display name of the graphspace                                                    |
 | description                  | No       | String  |         |                                                                                | Description                                                                       |
-| cpu_limit                    | Yes      | Int     |         | > 0                                                                            | CPU cores for the graphspace                                                      |
-| memory_limit                 | Yes      | Int     |         | > 0 (GB)                                                                       | Memory quota in GB                                                                |
-| storage_limit                | Yes      | Int     |         | > 0                                                                            | Maximum disk usage, in GB                                                                |
-| compute_cpu_limit            | No       | Int     | 0       | >= 0                                                                           | Extra HugeGraph-Computer CPU cores; falls back to `cpu_limit` if unset or 0       |
-| compute_memory_limit         | No       | Int     | 0       | >= 0                                                                           | Extra HugeGraph-Computer memory in GB; falls back to `memory_limit` if unset or 0 |
+| cpu_limit                    | No | Int     | 128 | > 0                                                                            | CPU cores for the graphspace                                                      |
+| memory_limit                 | No | Int     | 128 | > 0 (GB)                                                                       | Memory quota in GB                                                                |
+| storage_limit                | No | Int     | 10240 | > 0                                                                            | Maximum disk usage, in GB                                                                |
+| compute_cpu_limit            | No       | Int     | 0       | >= 0                                                                           | Compute quota; omitted or `0` continuously inherits `cpu_limit` |
+| compute_memory_limit         | No       | Int     | 0       | >= 0                                                                           | Compute quota; omitted or `0` continuously inherits `memory_limit` |
 | oltp_namespace               | No       | String  | ""      |                                                                                | Kubernetes namespace for OLTP HugeGraph-Server                                    |
 | olap_namespace               | No       | String  | ""      | Resources are merged when identical to `oltp_namespace`                        | Kubernetes namespace for OLAP / HugeGraph-Computer                                |
 | storage_namespace            | No       | String  | ""      |                                                                                | Kubernetes namespace for HugeGraph-Store                                          |
 | operator_image_path          | No       | String  | ""      |                                                                                | HugeGraph-Computer operator image registry                                        |
 | internal_algorithm_image_url | No       | String  | ""      |                                                                                | HugeGraph-Computer algorithm image registry                                       |
-| max_graph_number             | Yes      | Int     |         | > 0                                                                            | Maximum number of graphs that can be created inside the graphspace                |
-| max_role_number              | No       | Int     | 0       |                                                                                | Maximum number of roles that can be created inside the graphspace                 |
+| max_graph_number             | No | Int     | 100 | > 0                                                                            | Maximum number of graphs that can be created inside the graphspace                |
+| max_role_number              | No | Int     | 100 |                                                                                | Maximum number of roles that can be created inside the graphspace                 |
 | auth                         | No       | Boolean | false   | true / false                                                                   | Whether to enable authentication for the graphspace                               |
 | configs                      | No       | Map     |         |                                                                                | Additional configuration                                                          |
 {.td-table--wide}
+
+Server 1.8.0 applies these defaults when a create request omits the fields. On Server 1.7.0, `cpu_limit`, `memory_limit`, `storage_limit` and `max_graph_number` are required positive values; omitting them leaves them at zero and causes the request to be rejected. Existing spaces keep their configured limits, and clients such as Hubble can submit other values.
+Omitted compute limits are stored as `0`, continuously inheriting the corresponding CPU or memory quota.
 
 ```json
 {
@@ -201,11 +213,17 @@ GET http://localhost:8080/graphspaces/gs1
 >   graphspace settings with `GET /graphspaces/{name}` first and preserve fields that are not being changed.
 > - **Compute Limit Inheritance**: Setting `compute_cpu_limit: 0` or `compute_memory_limit: 0` (or omitting them on creation) means continuously
 >   inheriting `cpu_limit` and `memory_limit`. Zero represents inheritance, not unlimited or zero allocation.
+>   In Server 1.8.0+, omitting a compute field on update preserves its current setting, while an explicit zero restores inheritance.
+>   In Server 1.7.0, zero is ignored on update, leaving previous configured limits unchanged instead of restoring inheritance.
+>   Responses retain that zero marker.
 > - **Quota Enforcement**: Exceeding `max_graph_number` causes subsequent graph creations to fail with `reach graph limit`. Exceeding
 >   `storage_limit` triggers PD storage enforcement, automatically marking all graphs in the space as `ReadOnly` until usage drops below the
 >   quota on the next patrol cycle.
 > - **High-Precision Storage Metric**: In addition to the integer GB `storage_used` field, responses provide `storage_used_kb` for precise sub-GB
 >   tracking. `storage_percent` is calculated from this exact KB value.
+
+Use a client that preserves omitted compute fields. Older clients can serialize an unset field as zero, unintentionally restoring inheritance.
+With those clients, read the current space and explicitly send its existing compute limits when preserving independent values.
 
 ##### Params
 
@@ -226,11 +244,11 @@ GET http://localhost:8080/graphspaces/gs1
 | cpu_limit                    | Yes      | Int    | > 0                                                     | CPU cores for OLTP HugeGraph-Server                                               |
 | memory_limit                 | Yes      | Int    | > 0 (GB)                                                | Memory quota (GB) for OLTP HugeGraph-Server                                       |
 | storage_limit                | Yes      | Int    | > 0                                                     | Maximum disk usage, in GB                                                                |
-| compute_cpu_limit            | No       | Int    | >= 0                                                    | Extra HugeGraph-Computer CPU cores; falls back to `cpu_limit` if unset or 0       |
-| compute_memory_limit         | No       | Int    | >= 0                                                    | Extra HugeGraph-Computer memory in GB; falls back to `memory_limit` if unset or 0 |
-| oltp_namespace               | Yes      | String |                                                         | Kubernetes namespace for OLTP HugeGraph-Server                                    |
-| olap_namespace               | Yes      | String | Resources are merged when identical to `oltp_namespace` | Kubernetes namespace for OLAP                                                     |
-| storage_namespace            | Yes      | String |                                                         | Kubernetes namespace for HugeGraph-Store                                          |
+| compute_cpu_limit            | No       | Int    | >= 0                                                    | Omitted: preserve current setting; `0`: inherit `cpu_limit` |
+| compute_memory_limit         | No       | Int    | >= 0                                                    | Omitted: preserve current setting; `0`: inherit `memory_limit` |
+| oltp_namespace               | No | String |                                                         | Kubernetes namespace for OLTP HugeGraph-Server                                    |
+| olap_namespace               | No | String | Resources are merged when identical to `oltp_namespace` | Kubernetes namespace for OLAP                                                     |
+| storage_namespace            | No | String |                                                         | Kubernetes namespace for HugeGraph-Store                                          |
 | operator_image_path          | No       | String |                                                         | HugeGraph-Computer operator image registry                                        |
 | internal_algorithm_image_url | No       | String |                                                         | HugeGraph-Computer algorithm image registry                                       |
 | max_graph_number             | Yes      | Int    | > 0                                                     | Maximum number of graphs                                                          |
@@ -323,7 +341,19 @@ DELETE http://localhost:8080/graphspaces/gs1
 204
 ```
 
-> Warning: deleting a graphspace releases all resources that belong to it.
+> [!WARNING]
+> Upgrade **every PD node before Server** when adopting graph-space statistics cleanup. An older PD returns `UNIMPLEMENTED` after Server has already
+> cleared graphs, authorization, Schema templates and services. The remaining space configuration and list entry are retained, and deletion fails.
+> This operation is not transactional; a failed request does not restore cleared resources.
+
+Stop graph creation in the space before deleting it. Successful deletion also removes its exact PD quota/usage record, but does not purge orphans
+left by older deletions. After a PD cleanup failure, correct the cause and retry; do not assume the space still contains its previous graphs.
+
+If PD reports remaining graph metadata, inspect authenticated `GET /v1/partitionsAndStats` on PD. Its full graph identifiers include both data `/g`
+and Schema `/m` records, even with no partitions; `GET /v1/graphs` alone is not a complete inventory. Confirm ownership and retained data before
+using the normal Server graph APIs to remove a confirmed obsolete graph. If its Server configuration is missing, recreate it with the original
+space, graph name and backend, then drop it normally and retry space deletion. A graph belonging to another Server must be handled by that owner;
+do not delete PD records blindly or recreate another Server's graph.
 
 #### 2.0.6 List all graphspaces with their details
 

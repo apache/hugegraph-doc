@@ -20,7 +20,13 @@ description: "Graphspace（图空间）REST 接口：多租户与资源隔离的
 > [!WARNING]
 > **限制图空间列表和详情接口的访问**
 >
-> `GET /graphspaces` 和 `GET /graphspaces/{graphspace}` 均未声明 `@RolesAllowed`；Server 未启用鉴权时这两个接口可匿名调用，启用鉴权后也没有方法级管理员角色限制。详情响应包含 `dp_username` 和 `dp_password`。生产环境必须将 `white_ip.status` 设为 `enable` 并通过 [IP 白名单 API](/cn/docs/clients/restful-api/other/) 启用、维护名单。网关必须按调用者身份或角色，仅允许管理员和可信运维调用方访问这两条路径；只限制来源 IP 范围仍会让同一网段的普通已认证业务账号读取 DP 凭据。Server 网络策略必须仅允许可信网关的出口地址访问 API 端口，阻断客户端绕过网关的直连路径。网关须记录这两条路径的调用身份、来源和结果；Server `audit-*.log` 用于鉴权授权记录，不能替代这两条路径的网关访问审计。业务账号须按最小权限授权。
+> `GET /graphspaces` 和 `GET /graphspaces/{graphspace}` 均未声明 `@RolesAllowed`；Server 未启用鉴权时可匿名调用，启用鉴权后也没有方法级管理员角色限制。
+> 详情响应包含 `dp_username` 和 `dp_password`。
+>
+> 生产环境设置 `white_ip.status=enable`，并通过 [IP 白名单 API](/cn/docs/clients/restful-api/other/) 维护名单。网关还须按调用者身份或角色，
+> 仅允许管理员和可信运维调用方访问这两条路径。只限制来源 IP 仍会让同一网段的普通已认证账号读取 DP 凭据；Server API 端口应仅允许可信网关出口访问，阻断客户端直连。
+>
+> 在网关记录调用身份、来源和结果。Server `audit-*.log` 记录鉴权授权，不能替代这两条路径的网关访问审计；业务账号按最小权限授权。
 
 #### 2.0.1 创建一个图空间
 
@@ -32,28 +38,32 @@ POST http://localhost:8080/graphspaces
 
 ##### Request Body
 
-注意：目前 cpu，内存，以及 k8s 相关功能暂未开放
+`server.use_k8s=true` 时，CPU 与内存限额用于配置 Kubernetes 命名空间配额；其他部署不会据此限制 JVM 或容器资源。
+修改这些字段不会自动调整现有 Pod 的资源。
 
 | 名称                         | 是否必填 | 类型    | 默认值    | 取值范围                                                        | 说明                                                                                                 |
 |------------------------------|----------|---------|-----------|-----------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
 | name                         | 是       | String  |           | 小写字母、数字和下划线组成，首字符必须是小写字母，长度不超过 48 | 图空间的名字                                                                                         |
 | nickname                     | 否       | String  | name 的值 | 在所有图空间中必须唯一                                          | 图空间的显示名                                                                                       |
 | description                  | 否       | String  |           |                                                                 | 图空间的描述信息                                                                                     |
-| cpu_limit                    | 是       | Int     |           | > 0                                                             | CPU 核数                                                                                             |
-| memory_limit                 | 是       | Int     |           | > 0                                                             | 内存大小，单位 GB                                                                                    |
-| storage_limit                | 是       | Int     |           | > 0                                                             | 图空间的数据占据的磁盘空间上限，单位 GB                                                              |
-| compute_cpu_limit            | 否       | Int     | 0         | >= 0                                                            | 针对图计算的额外资源配置，单位 cores。当该字段不配置或者配置为 0 时，会由 cpu_limit 字段的值进行覆盖 |
-| compute_memory_limit         | 否       | Int     | 0         | >= 0                                                            | 针对图计算的额外内存配置，单位 GB。当该字段不配置或者配置为 0 时，会由 memory_limit 字段的值进行覆盖 |
+| cpu_limit                    | 否 | Int     | 128 | > 0                                                             | CPU 核数                                                                                             |
+| memory_limit                 | 否 | Int     | 128 | > 0                                                             | 内存大小，单位 GB                                                                                    |
+| storage_limit                | 否 | Int     | 10240 | > 0                                                             | 图空间的数据占据的磁盘空间上限，单位 GB                                                              |
+| compute_cpu_limit            | 否       | Int     | 0         | >= 0                                                            | 计算配额；省略或为 `0` 时持续继承 `cpu_limit` |
+| compute_memory_limit         | 否       | Int     | 0         | >= 0                                                            | 计算配额；省略或为 `0` 时持续继承 `memory_limit` |
 | oltp_namespace               | 否       | String  | ""        |                                                                 | OLTP 的 k8s 命名空间                                                                                 |
 | olap_namespace               | 否       | String  | ""        |                                                                 | OLAP 的 k8s 命名空间。当 olap_namespace 和 oltp_namespace 的值相同时，其配置的资源限额会进行合并     |
 | storage_namespace            | 否       | String  | ""        |                                                                 | 存储的 k8s 命名空间                                                                                  |
 | operator_image_path          | 否       | String  | ""        |                                                                 | 图计算 operator 的镜像地址：在创建图空间时，允许指定对应的图计算镜像并交由 K8S 进行统一管理          |
 | internal_algorithm_image_url | 否       | String  | ""        |                                                                 | 图计算的算法镜像地址：在创建图空间时，允许指定图计算的算法镜像并交由 K8S 进行统一管理                |
-| max_graph_number             | 是       | Int     |           | > 0                                                             | 图空间的图数目的上限                                                                                 |
-| max_role_number              | 否       | Int     | 0         |                                                                 | 图空间的角色数目的上限                                                                               |
+| max_graph_number             | 否 | Int     | 100 | > 0                                                             | 图空间的图数目的上限                                                                                 |
+| max_role_number              | 否 | Int     | 100 |                                                                 | 图空间的角色数目的上限                                                                               |
 | auth                         | 否       | Boolean | false     | true, false                                                     | 图空间是否支持权限认证                                                                               |
 | configs                      | 否       | Map     |           |                                                                 | 其他配置信息                                                                                         |
 {.td-table--wide}
+
+以上创建默认值自 Server 1.8.0 起生效。在 Server 1.7.0 中，`cpu_limit`、`memory_limit`、`storage_limit` 与 `max_graph_number` 均为必填项（必须 > 0），省略会导致字段取值为 0 并被校验拒绝。已有图空间保留原配额，Hubble 等客户端也可以显式提交其他值。
+省略的计算配额保存为 `0`，持续继承对应的 CPU 或内存配额。
 
 ```json
 {
@@ -200,10 +210,14 @@ GET http://localhost:8080/graphspaces/gs1
 >   `max_role_number`、`cpu_limit`、`memory_limit`、`storage_limit`）。更新前建议先通过 `GET /graphspaces/{name}` 读取当前配置，并保留未修改字段的原值。
 > - **计算资源配额继承**：当 `compute_cpu_limit: 0` 或 `compute_memory_limit: 0`（或创建时缺省）时，表示持续继承主图空间的 `cpu_limit` 和 `memory_limit`。
 >   数值 0 代表继承，既非无限制也非分配 0 资源。
+>   在 Server 1.8.0+ 中，更新时省略计算配额字段会保留原设置，显式传入 0 恢复继承；而在 Server 1.7.0 中，更新处理会忽略 0，保留之前的配额而不会恢复继承。响应保留这个原始 0 标记。
 > - **配额超限约束**：图数量达到 `max_graph_number` 时，新建图请求将被拒绝并返回 `reach graph limit`；存储占用超过 `storage_limit` 时，PD 会将该图空间内的图标记为
 >   `ReadOnly`（只读），待后续巡检检测到占用降至配额以下后自动恢复 `ReadWrite`。
 > - **高精度存储指标**：响应体在保留以 GB 为单位的整数 `storage_used` 字段外，新增了 `storage_used_kb` 字段以支持 1GB 以下的高精度用量展示，`storage_percent`
 >   比率直接基于该 KB 精度值计算得出。
+
+客户端必须保留“省略字段”与“显式传入 0”的区别。旧客户端可能把未设置的计算配额序列化为 0，意外恢复继承。
+使用这类客户端时，先读取图空间，再显式传入需要保留的原计算配额。
 
 ##### Params
 
@@ -224,15 +238,15 @@ GET http://localhost:8080/graphspaces/gs1
 | cpu_limit                    | 是       | Int    |        | > 0                        | OLTP HugeGraphServer 的 CPU 核数                                                                     |
 | memory_limit                 | 是       | Int    |        | > 0                        | OLTP HugeGraphServer 的内存大小，单位 GB                                                             |
 | storage_limit                | 是       | Int    |        | > 0                        | 图空间的数据占据的磁盘空间上限，单位 GB                                                              |
-| compute_cpu_limit            | 否       | Int    | 0      | >= 0                       | 针对图计算的额外资源配置，单位 cores。当该字段不配置或者配置为 0 时，会由 cpu_limit 字段的值进行覆盖 |
-| compute_memory_limit         | 否       | Int    | 0      | >= 0                       | 针对图计算的额外内存配置，单位 GB。当该字段不配置或者配置为 0 时，会由 memory_limit 字段的值进行覆盖 |
+| compute_cpu_limit            | 否       | Int    | 保留原值 | >= 0                       | 省略时保留当前设置；`0` 恢复继承 `cpu_limit` |
+| compute_memory_limit         | 否       | Int    | 保留原值 | >= 0                       | 省略时保留当前设置；`0` 恢复继承 `memory_limit` |
 | oltp_namespace               | 否       | String |        |                            | OLTP 的 k8s 命名空间                                                                                 |
 | olap_namespace               | 否       | String |        |                            | OLAP 的 k8s 命名空间。当 olap_namespace 和 oltp_namespace 的值相同时，其配置的资源限额会进行合并     |
 | storage_namespace            | 否       | String |        |                            | 存储的 k8s 命名空间                                                                                  |
 | operator_image_path          | 否       | String |        |                            | 图计算 operator 的镜像地址：在更新图空间时，允许指定对应的图计算镜像并交由 K8S 进行统一管理          |
 | internal_algorithm_image_url | 否       | String |        |                            | 图计算的算法镜像地址：在更新图空间时，允许指定图计算的算法镜像并交由 K8S 进行统一管理                |
 | max_graph_number             | 是       | Int    |        | > 0                        | 图空间的图数目的上限                                                                                 |
-| max_role_number              | 否       | Int    |        |                            | 图空间的角色数目的上限                                                                               |
+| max_role_number              | 是 | Int    |        |                            | 图空间的角色数目的上限                                                                               |
 {.td-table--wide}
 
 ##### Method & Url
@@ -321,7 +335,17 @@ DELETE http://localhost:8080/graphspaces/gs1
 204
 ```
 
-> 注意：删除图空间，会导致图空间的全部资源被释放。
+> [!WARNING]
+> 升级到支持图空间统计清理的 Server 前，先升级**全部 PD 节点**。旧 PD 会返回 `UNIMPLEMENTED`，但此时 Server 已清理图、
+> 图空间权限、Schema 模板和服务，只保留图空间配置与列表项并报告删除失败。该操作不是事务，失败响应不会恢复已经清理的资源。
+
+删除期间停止在该空间新建图。成功删除还会移除该空间的 PD 配额与用量记录，但不会清理旧版本删除操作留下的历史孤儿记录。
+PD 清理失败时，应修正原因再重试，不能假设失败后的图空间仍保留原有图。
+
+若 PD 报告仍有图元数据，通过 PD 已鉴权的 `GET /v1/partitionsAndStats` 核查完整图标识，包含数据 `/g` 与 Schema `/m` 记录，
+即使记录下已无分区也会列出；仅查询 `GET /v1/graphs` 不足以完成排查。确认所有权和需要保留的数据后，通过正常 Server 图接口处理
+确认废弃的图。若 Server 已缺少该图配置，使用原图空间、图名和后端重建配置，再正常删除图并重试删除图空间。
+其他 Server 管理的图应通过其所有者处理；不要直接删除 PD 记录，也不要擅自重建其他 Server 管理的图。
 
 #### 2.0.6 列出系统所有图空间及其详情
 

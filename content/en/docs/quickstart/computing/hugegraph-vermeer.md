@@ -2,15 +2,25 @@
 title: "HugeGraph-Vermeer Quick Start"
 linkTitle: "Vermeer: Memory-First Computing Framework"
 weight: 1
-description: "Vermeer high-performance in-memory graph computing: start once, execute repeatedly, with 15+ OLAP algorithms, seconds-to-minutes execution, deployment, loading, PageRank, and community detection."
-search_keywords: [Vermeer, high-performance graph computing, in-memory graph computing, OLAP, PageRank, community detection]
+description: "Deploy Vermeer with Helm and Hubble, load HStore graphs, run OLAP algorithms, inspect paged results, and monitor Master/Worker readiness."
+search_keywords: [Vermeer, high-performance graph computing, in-memory graph computing, OLAP, PageRank, community detection, Hubble, Helm, result preview]
 ---
+
+Use [Helm and Hubble](#24-submit-and-integrate-via-hubble) for the integrated HStore workflow, or the native API for your own automation.
+This guide follows current source builds; released images may offer fewer algorithms or result-preview capabilities.
+Pin compatible Hubble and Vermeer image tags or digests when deploying.
+
+- [Load and compute through Hubble](#24-submit-and-integrate-via-hubble) — Use chart-managed connections and your HugeGraph login.
+- [Call the native task API](#2-task-creation-rest-api) — Submit load/compute requests with Vermeer service credentials.
+- [Check health and readiness](#4-cluster-monitoring-and-telemetry) — Separate Worker registration, task availability and process metrics.
+{.cards .td-cards-list}
 
 ## 1. Overview of Vermeer
 
 ### 1.1 Architecture
 
-Vermeer is a high-performance, memory-first graph computing framework written in Go: start once and execute repeatedly. It supports fast execution of 15+ OLAP algorithms, often in seconds to minutes; actual time depends on graph size, algorithm parameters, and resources. A single master currently schedules multiple workers.
+Vermeer is a memory-first graph computing framework written in Go: load a graph once, then run repeated OLAP computations.
+A single Master schedules multiple Workers. Compute time depends on graph size, algorithm parameters and available resources.
 
 The master handles communication, forwarding, and aggregation, with modest computation and resource usage. Workers store graph data and execute tasks, consuming most memory and CPU. gRPC handles internal communication; REST provides external APIs.
 
@@ -38,9 +48,8 @@ flowchart LR
 
 ### 1.2 Running Vermeer
 
-> [!DETAILS]- Helm: Deploy Vermeer with HugeGraph and Hubble
-> The HugeGraph Helm Chart supports deploying the native Vermeer in-memory graph computing engine, disabled by default.
-> From the HugeGraph repository root, enable Vermeer with:
+> [!DETAILS]- Helm: deploy Vermeer with HugeGraph and Hubble
+> From the HugeGraph repository root, enable Vermeer alongside the HStore stack:
 >
 > ```bash
 > helm install hugegraph ./helm/hugegraph -n hugegraph --create-namespace \
@@ -49,35 +58,15 @@ flowchart LR
 >   --wait --timeout 20m
 > ```
 >
-> ```filetree {wrap=true title="Vermeer Core Files and Layout"}
-> helm/hugegraph/
->   examples/
->     values-vermeer-standalone.yaml # Standalone preset (Master and Worker run in a single Pod)
->     values-vermeer-cluster.yaml    # Cluster preset (dedicated Master Pod + distributed Worker Pods)
->   templates/
->     vermeer-master.yaml            # Master scheduling and coordination workload
->     vermeer-worker.yaml            # Worker in-memory computing workload
->     vermeer-auth-secret.yaml       # Admin credentials and Hubble internal service tokens
->   docs/
->     vermeer.md                     # Advanced algorithm parameters, API mapping and operations
-> ```
+> `standalone` places distinct Master and Worker containers in one Pod. For a dedicated Master and multiple Worker Pods, use
+> `vermeer.mode=cluster` and set `vermeer.worker.replicas`. Both topologies require authentication.
+> Easy mode defaults to authenticated native HTTP/UI through NodePort; strict mode defaults to ClusterIP.
+> Use the `<release>-vermeer-admin` Secret's `password` for UI login; automation and Hubble use service tokens.
 >
-> **Architecture & Topologies**:
-> - **Standalone Mode (`standalone`)**: Master and Worker run as distinct containers in the same Pod with minimal overhead, suitable for local exploration and small-scale testing.
-> - **Cluster Mode (`cluster`)**: Set `vermeer.mode=cluster` and `vermeer.worker.replicas=3` to provision a dedicated Master coordinator Pod and multiple distributed Worker computing Pods.
-> - **Graph Service Integration**: Master queries PD via gRPC for partition topology, while Workers scan graph slices directly from Store via gRPC. Hubble automatically injects the Master URL and communication token, allowing users to load graphs and execute 15+ graph algorithms directly from the UI.
->
-> **Key Operational Considerations**:
-> 1. **Preserve Metadata Namespace**: Retain the Chart default `metadataCluster: hg-test`. This key synchronizes Server `HG_SERVER_CLUSTER` and Store `PD_CLUSTER` so that Store can properly resolve schemas. Do not arbitrarily change this value on existing clusters to avoid `Schema missing` errors during load tasks.
-> 2. **Access Native Web Dashboard**: In easy mode, open `http://<reachable-node-ip>:<assigned-http-node-port>/` for Service `<release>-vermeer-master`.
->    Strict mode defaults to ClusterIP; use `kubectl -n hugegraph port-forward svc/<release>-vermeer-master 6688:6688` for local access.
->    `vermeer.service.type: null` inherits the mode; explicit `ClusterIP` stays private and explicit `NodePort` exposes authenticated HTTP/UI.
->    Internal Master/Worker RPC and Worker HTTP stay private; `standalone` / `cluster` does not change this access choice.
->    Enter the `<release>-vermeer-admin` Secret's `password` into **Admin credential** (no username) for a 24-hour session.
->    New passwords use 6 random alphanumeric characters in easy mode or 16 in strict mode; upgrades and mode changes retain existing credentials.
-> 3. For image pinning, persistent volume sizing, and recovery procedures, refer to the
->    [Helm Optional Engines Guide](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) and
->    [Vermeer Deployment Guide](https://github.com/apache/hugegraph/blob/e886e9a669cdfd47c9f83392f86fc47940167960/helm/hugegraph/docs/vermeer.md).
+> Keep the existing `metadataCluster` value (chart default `hg-test`) consistent across Server and Store;
+> changing it does not migrate data and can cause `Schema missing` during loading.
+> The chart configures Hubble's Master URL and service token. Continue with the [Hubble workflow](#24-submit-and-integrate-via-hubble),
+> or consult [Helm optional engines](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) for access, image pinning and persistence.
 
 > [!WARNING]
 > In production, enable [Server authentication and authorization](/docs/config/config-authentication/), an IP allowlist, and minimum permissions; retain `audit-*.log`. Server Auth does not protect independent Vermeer, PD, or Store APIs. Restrict these HTTP/gRPC ports to trusted networks and callers, and configure access controls at the Vermeer external entry point.
@@ -114,14 +103,14 @@ curl --fail --show-error -X POST \
 
 An `errcode=0` response confirms binding; with token authentication, also supply the authorization header. `master_peer` must reach master gRPC from the worker network. `grpc_peer` is both the listener and advertised worker address, so do not advertise `0.0.0.0`, which other containers cannot reach. Update these IPs when changing the subnet or addresses; each additional worker needs a unique, mutually reachable `grpc_peer`.
 
-1. **Option 1: Docker Compose (Recommended)**
+#### Docker Compose {#vermeer-compose}
 
 Run from the Vermeer repository root. Modify existing `docker-compose.yaml` or use the following example. The repository file currently mounts all of `~/` as configuration and does not publish master HTTP; replace the mount and add the port mapping before starting:
 
 ```yaml
 services:
   vermeer-master:
-    image: hugegraph/vermeer
+    image: hugegraph/vermeer:latest
     container_name: vermeer-master
     ports:
       - "127.0.0.1:6688:6688"
@@ -133,7 +122,7 @@ services:
         ipv4_address: 172.20.0.10 # Static master address
 
   vermeer-worker:
-    image: hugegraph/vermeer
+    image: hugegraph/vermeer:latest
     container_name: vermeer-worker
     volumes:
       - /home/user/vermeer-config:/go/bin/config:ro
@@ -152,34 +141,32 @@ networks:
 
 Replace `/home/user/vermeer-config` with your actual absolute configuration directory. Changing the subnet or static IPs of `vermeer_network` also requires updating `grpc_peer` and `master_peer` in `worker.ini`. Do not use the default `grpc_peer=0.0.0.0:6789` as an advertised container address.
 
-Build and start from the project directory:
+Obtain an image, then start the Compose stack. Use a published image for a quick trial, or build from the checked-out source:
 
-```shell
-# Build the image from the Vermeer root directory
-docker build -t hugegraph/vermeer .
+```bash {tab="Published image"}
+docker pull hugegraph/vermeer:latest
+```
 
-# Start from the Vermeer root directory
-docker-compose up -d
-# Or use the newer CLI:
-# docker compose up -d
+```bash {tab="Source image"}
+docker build -t hugegraph/vermeer:latest .
+```
+
+```bash
+docker compose up -d
 ```
 
 View logs / stop / remove:
 
 ```shell
-docker-compose logs -f
-docker-compose down
+docker compose logs -f
+docker compose down
 ```
 
-2. **Option 2: Separate docker run Commands (Manual Network and Static IPs)**
+#### Separate Docker commands {#vermeer-docker-run}
 
 Set `CONFIG_DIR` to the prepared configuration directory, with `grpc_peer` and `master_peer` matching the static container addresses. Replace the example `CONFIG_DIR` with your actual absolute path.
 
-Build the image:
-
-```shell
-docker build -t hugegraph/vermeer .
-```
+Use the same published or source-built image as in the [Compose option](#vermeer-compose).
 
 Create a custom bridge network (once):
 
@@ -199,7 +186,7 @@ docker run -d \
   --network vermeer_network --ip 172.20.0.10 \
   -p 127.0.0.1:6688:6688 \
   -v ${CONFIG_DIR}:/go/bin/config:ro \
-  hugegraph/vermeer \
+  hugegraph/vermeer:latest \
   --env=master
 ```
 
@@ -210,7 +197,7 @@ docker run -d \
   --name vermeer-worker \
   --network vermeer_network --ip 172.20.0.11 \
   -v ${CONFIG_DIR}:/go/bin/config:ro \
-  hugegraph/vermeer \
+  hugegraph/vermeer:latest \
   --env=worker
 ```
 
@@ -227,15 +214,34 @@ docker rm vermeer-master vermeer-worker
 docker network rm vermeer_network
 ```
 
-3. **Option 3: Build from Source**
+#### Build from source {#vermeer-source-build}
 
 Build following the [Vermeer README](https://github.com/apache/hugegraph-computer/tree/master/vermeer).
+Use the toolchain recorded in `go.mod` (currently Go 1.23.7); a newer toolchain is not automatically compatible with every dependency.
+Install Node.js/npm, `curl` and `unzip` for the first asset/dependency setup, then run from `vermeer/`:
 
-```shell
-go build
+```bash
+export GOTOOLCHAIN=go1.23.7
+make
 ```
 
-Start from the Vermeer root directory with `./vermeer --env=master` and `./vermeer --env=worker01`. In `worker01.ini`, set `grpc_peer` to an address bindable locally and reachable by master and other workers; point `master_peer` to master gRPC.
+The default build generates embedded UI assets before compiling the executable.
+For local API development, `GOTOOLCHAIN=go1.23.7 go build -tags=dev` reads UI files from disk instead;
+a successful development build does not verify packaged UI assets.
+
+For a single-host trial, use the supplied `config/master.ini` and `config/worker.ini`. Set the Worker's `master_peer=127.0.0.1:6689`,
+`grpc_peer=127.0.0.1:6789` and `worker_group=$`; container addresses from the Docker example do not apply here.
+Start the two processes from the Vermeer root in separate terminals:
+
+```bash
+./vermeer --env=master
+```
+
+```bash
+./vermeer --env=worker
+```
+
+For multiple hosts, advertise addresses reachable from every participating node.
 
 After starting master, check its HTTP port from the host:
 
@@ -308,17 +314,41 @@ To integrate with Kubernetes Secrets without wrapping raw credentials in JSON, c
 - Secret credentials remain confined to deployment configuration and worker processes; they are never persisted in task metadata or returned in query APIs.
 - Dial timeouts can be bounded with `grpc_dial_timeout` or `VERMEER_GRPC_DIAL_TIMEOUT` (default `5s`).
 
+### 1.4 Upgrading Master and Workers {#vermeer-upgrade}
+
+Master accepts a Worker only when their **reported runtime version strings are identical**. A mixed-version deployment can reject registration with
+`registration denied: inconsistent registration version`; matching image tags alone do not verify the running versions.
+Plan an unavailable interval when changing versions:
+
+1. Stop new load/compute submissions. Let active tasks finish, or cancel them, then unload the compute graphs.
+1. Preserve configuration, authentication material and any output files that must survive. Deploy the matching Master and all Workers together.
+1. Check reported versions and Worker registration in the [cluster snapshot](#41-cluster-health-snapshot-get-apiv1admincluster),
+   then verify [availability for the caller's space](#42-space-worker-availability-probe-get-apiv1workersavailability).
+1. Reload the source graph and run a small computation before reopening submissions.
+   PVC files do not automatically restore in-memory graphs or retained results.
+{.steps}
+
+See [Helm operations](/docs/quickstart/hugegraph/hugegraph-helm-operations/#vermeer-upgrade) for the chart deployment procedure.
+
 ## 2. Task Creation REST API
 
 ### 2.1 Introduction
 
-Submit a `load` task, wait for loading to finish, then submit a `compute` task. A loaded graph can support repeated computations and is not deleted after completion. Asynchronous APIs return creation results and task information, including ID, before completion; synchronous APIs wait for success or failure, so client and proxy HTTP timeouts must be sufficiently long. Query task states: `loaded` for successful loading, `complete` for successful computation, `error` for failure, and `canceled` for cancellation; other states remain waiting or running. Graphs loading or in an error state cannot be computed. Deletion requires a deletable graph state and no current usage.
+Submit a `load` task, wait for loading to finish, then submit a `compute` task.
+A loaded graph supports repeated computations and is not deleted after a task completes.
+
+Asynchronous APIs return task information, including its ID, before completion. Synchronous APIs wait for success or failure;
+client and proxy HTTP timeouts must be long enough for that wait.
+
+Query `task.status`: `loaded` means successful loading, `complete` successful computation, `error` failure, and `canceled` cancellation.
+Other states remain waiting or running. Graphs loading or in an error state cannot be computed;
+deletion requires a deletable graph state with no current usage.
 
 Available URLs:
 
 - Asynchronous: `POST http://master_ip:port/tasks/create`; read the ID from response `task.id`.
 - Synchronous: `POST http://master_ip:port/tasks/create/sync`; returns after the task ends.
-- Query task: `GET http://master_ip:port/task/{task_id}`. `errcode=0` indicates a successful query; inspect `task.state` for task status.
+- Query task: `GET http://master_ip:port/task/{task_id}`. `errcode=0` indicates a successful query; inspect `task.status` for task status.
   Set a client polling deadline for asynchronous jobs; reaching it stops client waiting without canceling the server task.
 - Read retained results: `GET http://master_ip:port/tasks/value/{task_id}` (or `/api/v1/tasks/value/{id}`).
 - Cluster health snapshot: `GET http://master_ip:port/api/v1/admin/cluster` (admin token required; see [Section 4](#4-cluster-monitoring-and-telemetry)).
@@ -328,6 +358,12 @@ Native clients submit `POST /api/v1/tasks/create` with `graph`, `task_type` (`lo
 For computation, set `params["compute.algorithm"]`, not a top-level `algorithm`.
 The response contains a native `task.id`; query it at `GET /api/v1/task/{id}` and read retained values at `GET /api/v1/tasks/value/{id}`.
 These paths and positive IDs differ from Hubble's wrapper.
+
+Native result rows use `ID` and `Value`. Set `output.need_query=1` on the compute request to retain values for this API.
+Native pages return `cursor` but no total or `has_more`: continue with the returned cursor until `message:"EOF"` or an empty final page.
+When the final page exactly fills `limit`, one additional request can be needed to observe EOF.
+Hubble's wrapper separately peeks one value ahead to supply `has_more`.
+
 `POST /api/v1/tasks` does not submit work: after the task-method fix it returns HTTP 405 and `Allow: GET`;
 older builds can return a misleading `{"code":200}` without creating a task.
 See the [native API examples](https://github.com/apache/hugegraph-computer/blob/master/vermeer/README.md#api-overview).
@@ -340,45 +376,67 @@ UI admin password cannot be used as this token. Chart automatically configures s
 
 The examples list common load parameters. Each loader reads its own keys; unused keys do not change behavior.
 
-Vermeer provides three loading methods:
+Choose one source for a load task. The JSON bodies below are submitted to `POST /api/v1/tasks/create`,
+with the same authentication as the complete curl examples.
 
-1. Local files
+#### Local files {#vermeer-load-local}
 
-`load.vertex_files` and `load.edge_files` map worker address host portions to file paths read by those workers. With containers, mount data into the worker and use container paths. In the Compose example, mount a host data directory at worker `/data` (such as `- /host/data:/data:ro`) and use `172.20.0.11` from `grpc_peer` as the mapping key. Other deployments use the host portion of their advertised worker addresses.
+Start with a four-vertex directed ring. Save these two UTF-8 files **without headers** in a directory readable by the Worker:
 
-Obtain a dataset such as [Twitter-2010](https://snap.stanford.edu/data/twitter-2010.html); the first `twitter-2010.txt.gz` file is sufficient.
-
-**Request example:**
-
-```javascript
-POST http://localhost:6688/tasks/create
-{
- "task_type": "load",
- "graph": "testdb",
- "params": {
-  "load.parallel": "50",
-  "load.type": "local",
-  "load.vertex_files": "{\"172.20.0.11\":\"/data/twitter-2010.v_[0,99]\"}",
-  "load.edge_files": "{\"172.20.0.11\":\"/data/twitter-2010.e_[0,99]\"}",
-  "load.use_out_degree": "1",
-  "load.use_outedge": "1"
- }
-}
+```csv {title="vertices.csv"}
+1
+2
+3
+4
 ```
 
-2. HugeGraph
+```csv {title="edges.csv"}
+1,2
+2,3
+3,4
+4,1
+```
+
+`load.vertex_files` and `load.edge_files` are JSON-encoded strings mapping the host portion of the Worker's advertised `grpc_peer` to files.
+The following request assumes a local Worker advertising `127.0.0.1`; replace `/absolute/data` with its actual readable directory.
+For the Compose example, mount the files at Worker `/data`, use `/data/vertices.csv` and `/data/edges.csv`, and change the mapping key to `172.20.0.11`.
+Paths are resolved by Workers, not by the HTTP client or Master.
+
+```bash
+curl -X POST http://localhost:6688/api/v1/tasks/create \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "task_type":"load",
+    "graph":"docs_ring",
+    "params":{
+      "load.type":"local",
+      "load.parallel":"1",
+      "load.delimiter":",",
+      "load.vertex_backend":"mem",
+      "load.vertex_files":"{\"127.0.0.1\":\"/absolute/data/vertices.csv\"}",
+      "load.edge_files":"{\"127.0.0.1\":\"/absolute/data/edges.csv\"}",
+      "load.use_out_degree":"1",
+      "load.use_outedge":"1"
+    }
+  }'
+```
+
+Wait for the returned load task to succeed, then compute with `graph:"docs_ring"`.
+This four-vertex/four-edge example yields four equal PageRank values (`0.25`) with the PageRank defaults and sufficient iteration budget.
+Token-authenticated deployments must add their service credential; these loopback examples assume `auth=none`.
+
+#### HugeGraph / HStore {#vermeer-load-hugegraph}
 
 **Request example:**
 
 Replace request addresses, graph name, and credentials with your actual connection settings.
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
   "task_type": "load",
   "graph": "testdb",
   "params": {
-    "load.parallel": "50",
+    "load.parallel": "1",
     "load.type": "hugegraph",
     "load.hg_pd_peers": "[\"<pd-address-reachable-from-vermeer>:8686\"]",
     "load.hugegraph_name": "DEFAULT/hugegraph2/g",
@@ -392,17 +450,16 @@ POST http://localhost:6688/tasks/create
 
 Vermeer master connects to PD through `load.hg_pd_peers` to look up partitions; workers read data from the returned Store addresses. These services must be reachable from the corresponding Vermeer hosts or containers. Inside Docker, `127.0.0.1` identifies the container itself, not the host or another container.
 
-3. HDFS
+#### HDFS {#vermeer-load-hdfs}
 
 **Request example:**
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
   "task_type": "load",
   "graph": "testdb",
   "params": {
-    "load.parallel": "50",
+    "load.parallel": "1",
     "load.type": "hdfs",
     "load.hdfs_namenode": "name_node1:9000",
     "load.hdfs_conf_path": "/path/to/conf",
@@ -427,29 +484,100 @@ The examples list common computation and output parameters; supported algorithm 
 
 Request example:
 
-```javascript
-POST http://localhost:6688/tasks/create
-{
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "pagerank",
- "compute.parallel": "10",
- "compute.max_step": "10",
- "output.type": "local",
- "output.parallel": "1",
- "output.file_path": "result/pagerank"
-  }
-}
+```bash
+curl -X POST http://localhost:6688/api/v1/tasks/create \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "task_type":"compute",
+    "graph":"docs_ring",
+    "params":{
+      "compute.algorithm":"pagerank",
+      "compute.parallel":"1",
+      "compute.max_step":"20",
+      "pagerank.damping":"0.85",
+      "pagerank.diff_threshold":"0.00001",
+      "output.type":"local",
+      "output.file_path":"./data/pagerank-example",
+      "output.need_query":"1"
+    }
+  }'
 ```
 
-`output.type=local` writes to the executing worker's local filesystem. For containers, mount the output directory if the host needs to read results.
+`output.type=local` writes to the executing Worker's local filesystem. For containers, mount the output directory if the host needs to read files.
+To retain query results without writing output files, use `output.type=none` with `output.need_query=1`.
+These choices do not write PageRank scores into the HugeGraph source graph.
+
+Replace `123` below with the computation's returned `task.id`, wait for `task.status:"complete"`, then read its values:
+
+```bash
+curl http://localhost:6688/api/v1/task/123
+curl 'http://localhost:6688/api/v1/tasks/value/123?cursor=0&limit=2'
+```
+
+The example ring yields `ID`/`Value` pairs with values equivalent to `0.25` (the JSON may use scientific notation).
+Read the computation's ID, not the earlier load task's ID. Cached results can disappear after a process restart.
+
+
+#### Result types when writing back {#vermeer-result-types}
+
+For native `output.type=hugegraph`, the writer creates a property key using the algorithm's output type.
+`output.hugegraph_property` selects its name; if omitted, the name defaults to `compute.algorithm`.
+Check existing schema before reusing that default after an upgrade or when changing cycle mode:
+
+| Algorithm / mode | Current property type | Existing schema to migrate |
+|---|---|---|
+| `triangle_count` | `LONG` | Older `INT` result properties |
+| `cycle_detection`, `cycle.mode=boolean` | `INT` (`0` / `1`) | Older `TEXT` result properties |
+| `cycle_detection`, `cycle.mode=all` or `limit` | `TEXT` | A property previously used by boolean mode |
+{.wide}
+
+Choose a new property name of the required type, for example `output.hugegraph_property=triangle_count_v2` or `cycle_membership_v2`.
+Verify a small write-back task and its values before updating application queries; retain old properties until their consumers have migrated.
+Do not rely on the writer to convert an existing property's type. Hubble's default `output.type=none` only retains results and does not alter Server schema.
 
 ### 2.4 Submit and Integrate via Hubble
 
-With Chart-managed native integration, `POST /api/v1.3/vermeer/task` is used to load or reload a graph, not for computation.
-It accepts `graphspace`, `graph`, `task_type:"load"`, and optional loading tuning parameters.
-Once the graph is loaded, submit the algorithm via the graph-level computation endpoint:
+The shortest integrated path is **Helm → Hubble → Vermeer**. The chart provisions the service URL and read-only token file;
+Hubble keeps your Server login separate from the service credential. Use matching current Hubble and Vermeer builds.
+See [Helm optional engines](/docs/quickstart/hugegraph/hugegraph-helm/#optional-engines) for installation and image selection.
+
+1. **Deploy HStore and enable Vermeer.** Keep Hubble in PD mode. The single-node Helm preset still uses PD + Store + Server,
+   so it supports direct loading; a standalone RocksDB Server does not. Vermeer does not need the Computer Operator or its CRDs.
+1. **Choose the source graph in Hubble.** Sign in with a HugeGraph super-administrator account and select its GraphSpace and graph.
+   Direct Store scans bypass Server label-level authorization, so ordinary graph read permission is insufficient for this integration.
+   Anonymous deployments follow their existing anonymous-access policy.
+1. **Load the compute copy.** Open **OLAP graph compute (Vermeer)** and select Load or Reload. Wait for the load task to succeed
+   and the graph to become `loaded`; acceptance of a task alone does not establish readiness.
+1. **Submit an algorithm.** Start with PageRank, use its parameter form, and keep the returned task identity.
+   Computation is asynchronous. Switching to another algorithm does not cancel previously accepted tasks.
+1. **Read results and release resources.** Inspect the task and its paged values or bounded preview.
+   Finish/cancel work before unloading the compute copy. Source graph changes require Reload before the next computation uses them.
+{.steps}
+
+```mermaid
+flowchart LR
+  User["HugeGraph administrator"] --> Hubble["Hubble: graph selection and task results"]
+  Hubble -->|"Internal HTTP + service token"| Master["Vermeer Master"]
+  Master -->|"Partition discovery"| PD["PD"]
+  Master <-->|"Task coordination"| Worker["Vermeer Workers"]
+  Worker -->|"Read source partitions"| Store["HStore"]
+  Worker --> Cache["Retained ID/value results"]
+  Cache --> Hubble
+```
+
+#### Load, compute and unload APIs {#hubble-task-apis}
+
+With an authenticated Hubble cookie, first submit the selected graph's load:
+
+```bash
+curl -b hubble.cookies -X POST 'http://localhost:8088/api/v1.3/vermeer/task' \
+  -H 'Content-Type: application/json' \
+  -d '{"graphspace":"DEFAULT","graph":"hugegraph","task_type":"load"}'
+```
+
+Use `task_type:"reload"` to refresh an existing compute copy. Hubble accepts load tuning such as `load.parallel`,
+but resolves the PD endpoints, source graph and credentials itself. `POST /api/v1.3/vermeer/task` does not submit computation.
+Wait for loading to complete, then submit PageRank through the graph-scoped endpoint:
 
 ```bash
 curl -b hubble.cookies -X POST \
@@ -458,30 +586,103 @@ curl -b hubble.cookies -X POST \
   -d '{"params":{"compute.algorithm":"pagerank","compute.parallel":1,"compute.max_step":10,"pagerank.damping":0.85,"pagerank.diff_threshold":0.00001}}'
 ```
 
-Parameters and example values come from the current Hubble PageRank form:
+The response envelope contains `data.task_id`. Use the exact returned ID with that graph's async-task API:
 
-| Parameter | Meaning | Example |
+| Surface | Example for native task `123` | Meaning |
 |---|---|---|
-| `compute.algorithm` | Supported algorithm name | `pagerank` |
-| `compute.parallel` | Computation parallelism | `1` |
-| `compute.max_step` | Maximum iteration steps | `10` |
-| `pagerank.damping` | PageRank damping factor | `0.85` |
-| `pagerank.diff_threshold` | Convergence threshold | `0.00001` |
+| Vermeer native API | `123`, queried at `/api/v1/task/123` | Positive native task ID |
+| Hubble API | `-123`, queried at `/api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/async-tasks/-123` | Signed routing ID; preserve the minus sign |
+| Hubble task list | `Vermeer #123` | Display identity, distinct from `Server #123`; either qualified identity can be searched |
 
-Current Hubble accepts `pagerank`, `wcc`, `lpa`, `degree`, `closeness_centrality`, `betweenness_centrality`, `triangle_count`, `kcore`, and `sssp`.
-Use the selected algorithm's form for its own parameters; PageRank keys do not apply to another algorithm.
-The direct adapter accepts `compute.*`, the selected algorithm's `<algorithm>.*` keys and `output.need_statistics`.
-Vermeer still validates the actual values. Hubble controls output storage and does not accept arbitrary output paths or Server credentials.
+Never send Hubble's negative routing ID to Server's `/tasks/{id}` or Vermeer's native API.
+After success, request `GET .../async-tasks/-123/values?cursor=0&limit=100` and continue with the returned `cursor` while `has_more` is true.
+The wrapper accepts `limit` from 1 through 10000. A full final page still reports `has_more:false`; use metadata rather than guessing from row count.
 
-The response contains `data.task_id` inside the Hubble response envelope. Preserve the returned sign:
-Hubble maps native Vermeer task IDs to negative IDs. Poll the same graph's
-`GET /api/v1.3/graphspaces/DEFAULT/graphs/hugegraph/async-tasks/{id}`;
-read result pages through `GET .../async-tasks/{id}/values?cursor=0&limit=100` after successful completion.
-Do not send that Hubble ID to Server's native `/tasks/{id}` endpoint.
-A graph state of `loaded` confirms loading only. An HTTP 400 on computation requires inspecting the exact rejected request and response.
+To unload the in-memory graph, send `DELETE /api/v1.3/vermeer/DEFAULT-hugegraph` with
+`{"graphspace":"DEFAULT","graph":"hugegraph"}`. Finish/cancel active work first. This removes the Vermeer copy, not the HugeGraph source graph.
+The current loading page provides Load/Reload controls; use the administrator API for unload.
 
+#### Read bounded previews and concurrent results {#hubble-result-preview}
+
+The OLAP result area offers graph, table and connected-sample views. Values are computation **ID/value pairs**, not editable Server vertices.
+It loads 12 values at a time, up to 300 for this preview; use Async Tasks and paged result APIs for additional retained values.
+
+The graph view shows the sampled IDs and their values. Optional edges come from the **currently loaded Vermeer graph**,
+not Server and not necessarily the snapshot that produced a historical result.
+Each page's edge lookup is bounded to 3000 scanned edges and 30 returned edges, and cannot establish a complete induced subgraph.
+
+Edge enrichment requires a Vermeer build implementing `POST /api/v1/graphs/{graph}/preview-edges`; the current native source baseline
+does not expose that route, so Hubble keeps values readable and reports adjacency unavailable.
+
+The connected-sample view shows at most six linked sampled vertices; it does not calculate a new graph path query.
+Missing adjacency leaves valid table values readable. No edges in a preview is not proof that the graph has no edges.
+
+Accepted tasks remain separately selectable in the result area while other algorithms submit or finish.
+The page remembers recent tasks by GraphSpace and graph in memory; a page refresh clears that selection history.
+It is not durable task storage.
+Switching graphs or algorithms does not merge results. Returning to an algorithm can restore its latest accepted task without rerunning it.
+A missing, expired, oversized or failed result has its own feedback; task success does not guarantee that its cached values still exist.
+
+Hubble submits compute with `output.type=none` and `output.need_query=1`: it retains queryable results without generating worker-local output files
+or writing scores into HugeGraph properties. Restarting Vermeer can discard those in-memory results even when task metadata or PVC files survive.
+Native API callers can choose an explicit output writer instead; see [output configuration](#23-outputting-computation-results).
+
+```gallery
+![Vermeer OLAP algorithm catalog in Hubble](/docs/images/hubble/olap-catalog.jpg) # Select Vermeer and load the selected HStore graph
+![Read-only Vermeer result preview](/docs/images/hubble/olap-results.jpg) # Sampled results; use the task entry for full retained pages
+```
+
+#### Hubble algorithm catalog and limits {#hubble-algorithm-catalog}
+
+The current native adapter accepts these 19 algorithm identifiers. The page's native examples below are not interchangeable with the
+`params` object expected by Hubble's graph-level computation endpoint.
+
+| Category | `compute.algorithm` |
+|---|---|
+| Centrality | `pagerank`, `ppr`, `degree`, `closeness_centrality`, `betweenness_centrality` |
+| Components and communities | `wcc`, `scc`, `lpa`, `slpa`, `louvain`, `louvain_weighted` |
+| Structure and traversal | `triangle_count`, `kcore`, `clustering_coefficient`, `sssp`, `depth`, `cycle_detection`, `kout` |
+| Similarity | `jaccard` |
+{.wide .expand}
+
+Use the selected form's own parameters. For example, PPR uses `ppr.source`, Jaccard requires `jaccard.source`, and K-out accepts
+`kout.direction` as `in`, `out` or `both`. Hubble allows `compute.*`, the selected algorithm's namespace and `output.need_statistics`;
+Louvain variants also use the `louvain.*` settings, and cycle detection uses `cycle.*` plus the filter-pair fields.
+Arbitrary output paths and caller-supplied Server credentials are rejected.
+
+Current Hubble loading cannot verify property availability for weighted/filter operations.
+Leave `louvain.edge_weight_property` blank and cycle property-filter expressions empty when using this adapter;
+selecting the weighted form does not establish that source edge weights were loaded. Native Vermeer property-loading capabilities do not remove this boundary.
+Use the [native engine step budgets](#vermeer-step-budgets), even if a form accepts a smaller value.
+In particular, current Triangle Count and clustering coefficient both require at least 3 steps; Hubble's clustering form can still accept 2.
+Louvain requires at least 2 and weighted Louvain at least 3, with more steps needed to finish some graphs.
+
+**Computer compatibility** remains an explicit optional workflow. Expanding it checks the selected graph's capability;
+it does not switch automatically when Vermeer is unavailable. Computer job parameters, task identities and deployment remain separate.
 
 ## 3. Supported Algorithms
+
+The JSON snippets below replace the **entire `params` map** in the [complete native compute request](#23-outputting-computation-results).
+Keep its loaded `graph` (the CSV example uses `docs_ring`) and `task_type=compute`; submit to `POST /api/v1/tasks/create`.
+The snippets retain query results without file output. Source-based examples use vertex ID `1` from that CSV; choose an existing ID for your graph.
+
+### Step budgets and complete output {#vermeer-step-budgets}
+
+`compute.max_step` defaults to 10. The minimum accepted value only permits execution; it does not establish convergence or complete output.
+
+| Algorithm | Native minimum / completion condition |
+|---|---|
+| Triangle Count, clustering coefficient | At least 3 steps |
+| Betweenness centrality | At least 2 steps; contribution scattering may need more |
+| Cycle detection | At least 2 steps; bound search length and cycle count separately |
+| Louvain / weighted Louvain | At least 2 / 3 steps; final community publication must finish |
+| Closeness centrality | All vertices must finish distance expansion |
+{.wide}
+
+Closeness and betweenness reject incomplete output instead of publishing partial scores. If the task reports
+`increase compute.max_step`, raise the budget and resubmit; the same applies to unfinished Louvain publication.
+Inspect task status and error before reading retained values. Start with centrality sampling rate `1` for a small correctness check,
+then reduce it deliberately for an approximation: the two centrality algorithms sample different things.
 
 ### 3.1 PageRank
 
@@ -492,21 +693,15 @@ The PageRank algorithm, also known as the web ranking algorithm, is a technique 
 
 The PageRank algorithm is suitable for scenarios such as web page ranking and identifying key figures in social networks.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "pagerank",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/pagerank",
- "compute.max_step":"10"
- }
+  "compute.algorithm": "pagerank",
+  "compute.parallel": "1",
+  "output.type": "none",
+  "compute.max_step": "10",
+  "output.need_query": "1"
 }
 ```
 
@@ -514,21 +709,15 @@ POST http://localhost:6688/tasks/create
 
 The weakly connected components algorithm calculates all connected subgraphs in an undirected graph and outputs the weakly connected subgraph ID to which each vertex belongs, indicating the connectivity between points and distinguishing different connected communities.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "wcc",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/wcc",
- "compute.max_step":"10"
- }
+  "compute.algorithm": "wcc",
+  "compute.parallel": "1",
+  "output.type": "none",
+  "compute.max_step": "10",
+  "output.need_query": "1"
 }
 ```
 
@@ -536,156 +725,136 @@ POST http://localhost:6688/tasks/create
 
 The label propagation algorithm is a graph clustering algorithm commonly used in social networks to discover potential communities.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "lpa",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/lpa",
- "compute.max_step":"10"
- }
+  "compute.algorithm": "lpa",
+  "compute.parallel": "1",
+  "output.type": "none",
+  "compute.max_step": "10",
+  "output.need_query": "1"
 }
 ```
 
 ### 3.4 Degree Centrality
 
-The degree centrality algorithm calculates the degree centrality value of each node in the graph, supporting both undirected and directed graphs. Degree centrality is an important indicator of node importance; the more edges a node has with other nodes, the higher its degree centrality value, and the more important the node is in the graph. In an undirected graph, degree centrality is calculated based on edge information to count the number of times a node appears, resulting in the degree centrality value of the node. In a directed graph, it is based on the direction of the edges, filtering based on input or output-edge information to count the number of times a node appears, resulting in the in-degree or out-degree value of the node. It indicates the importance of each point, with more important points having higher degrees.
+Degree counts incident edges using `degree.direction=in`, `out` or `both`. It measures local connectivity,
+not shortest-path centrality; select the direction that matches the question being asked.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "degree",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/degree",
- "degree.direction":"both"
- }
+  "compute.algorithm": "degree",
+  "compute.parallel": "1",
+  "output.type": "none",
+  "degree.direction": "both",
+  "output.need_query": "1"
 }
 ```
 
 ### 3.5 Closeness Centrality
 
-Closeness centrality is used to calculate the inverse of the shortest distance from a node to all other reachable nodes, accumulating and normalizing the value. Closeness centrality can be used to measure the time it takes for information to be transmitted from the node to other nodes. The larger the closeness centrality of a node, the closer its position in the graph is to the center, suitable for scenarios such as identifying key nodes in social networks.
+Current Vermeer computes **inward closeness** on a directed graph: distances from other reachable vertices to the current vertex.
+With `closeness_centrality.sample_rate=1`, no incoming edges are sampled out. If `r` other vertices can reach this vertex and
+`D` is the sum of their shortest-path distances, the base score is `r / D`.
+The default `closeness_centrality.wf_improved=1` multiplies it by `r / (N - 1)`, where `N` is the loaded vertex count;
+set it to `0` to disable that correction. A vertex with no reachable others, or a graph of at most one vertex, scores `0`.
 
-Request example:
+The finite sampling rate must be in `(0, 1]`. A lower rate samples **incoming adjacency**, so the score describes the sampled graph;
+it is not equivalent to sampling source vertices in betweenness. The current distributed implementation checks global completion;
+if distance expansion exhausts the step budget, the task fails and asks for a larger `compute.max_step`.
 
-```javascript
-POST http://localhost:6688/tasks/create
+`params` example:
+
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "closeness_centrality",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/closeness_centrality",
- "closeness_centrality.sample_rate":"0.01"
- }
+  "compute.algorithm": "closeness_centrality",
+  "compute.parallel": "1",
+  "output.type": "none",
+  "closeness_centrality.sample_rate": "1",
+  "output.need_query": "1",
+  "compute.max_step": "20",
+  "closeness_centrality.wf_improved": "1"
 }
 ```
 
 ### 3.6 Betweenness Centrality
 
-The betweenness centrality algorithm determines the value of a node as a "bridge" node; the larger the value, the more likely it is to be a necessary path between two points in the graph. Typical examples include mutual followers in social networks. It is suitable for measuring the degree of aggregation around a node in a community.
+Betweenness measures a vertex's contribution to shortest paths between other vertices, using the Brandes algorithm.
+`betweenness_centrality.sample_rate=1` uses every source vertex. A finite rate in `(0, 1)` selects a deterministic subset of
+**source vertices** and scales contributions by the sampling rate; it gives an approximation, with no fixed error guarantee.
 
-Request example:
+`betweenness_centrality.use_endpoint` accepts `0` (default, exclude endpoints) or `1` (include endpoints).
+Scores are normalized by `(N - 1)(N - 2)` without endpoints or `N(N - 1)` with endpoints, and adjusted for the sampling rate.
+Graphs too small for the respective denominator score `0`.
+The native engine needs at least 2 steps, but propagation and contribution scattering can require more.
+It rejects incomplete contribution scattering with `increase compute.max_step` rather than returning a partial score.
 
-```javascript
-POST http://localhost:6688/tasks/create
+`params` example:
+
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "betweenness_centrality",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/betweenness_centrality",
- "betweenness_centrality.sample_rate":"0.01"
- }
+  "compute.algorithm": "betweenness_centrality",
+  "compute.parallel": "1",
+  "output.type": "none",
+  "betweenness_centrality.sample_rate": "1",
+  "output.need_query": "1",
+  "compute.max_step": "20",
+  "betweenness_centrality.use_endpoint": "0"
 }
 ```
 
 ### 3.7 Triangle Count
 
-The triangle count algorithm calculates the number of triangles passing through each vertex, suitable for calculating the relationships between users and whether the associations form triangles. The more triangles, the higher the degree of association between nodes in the graph, and the tighter the organizational relationship. In social networks, triangles indicate cohesive communities, and identifying triangles helps understand clustering and interconnections among individuals or groups in the network. In financial or transaction networks, the presence of triangles may indicate suspicious or fraudulent activities, and triangle counting can help identify transaction patterns that may require further investigation.
+Triangle Count returns the number of triangles containing each vertex as a `LONG`. It treats adjacency as undirected,
+removes self-loops and duplicate neighbors, and requires `compute.max_step >= 3`.
+Before writing into a property created by an older version, follow the [result-type migration](#vermeer-result-types).
 
-The output result is the Triangle Count corresponding to each vertex, i.e., the number of triangles the vertex is part of.
+`params` example:
 
-Note: This algorithm is for undirected graphs and ignores edge directions.
-
-Request example:
-
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "triangle_count",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/triangle_count"
- }
+  "compute.algorithm": "triangle_count",
+  "compute.parallel": "1",
+  "output.type": "none",
+  "output.need_query": "1",
+  "compute.max_step": "3"
 }
 ```
 
 ### 3.8 K-Core
 
-The K-Core algorithm marks all vertices with a degree of K, suitable for graph pruning and finding the core part of the graph.
+K-Core repeatedly removes vertices whose remaining undirected neighbor count is below `kcore.degree_k`.
+It outputs the remaining degree, with `0` for removed vertices; it does not select only vertices whose original degree equals K.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "kcore",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/kcore",
- "kcore.degree_k":"5"
- }
+  "compute.algorithm": "kcore",
+  "compute.parallel": "1",
+  "output.type": "none",
+  "kcore.degree_k": "2",
+  "output.need_query": "1"
 }
 ```
 
 ### 3.9 SSSP (Single Source Shortest Path)
 
-The single source the shortest path algorithm calculates the shortest distance from one point to all other points.
+SSSP computes **unweighted hop distances** along outgoing edges from `sssp.source`: the source has distance `0`
+and unreachable vertices have `-1`. The source ID must exist in the loaded graph. This is not a weighted shortest-path solver.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "sssp",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/degree",
- "sssp.source":"tom"
- }
+  "compute.algorithm": "sssp",
+  "compute.parallel": "1",
+  "output.type": "none",
+  "sssp.source": "1",
+  "output.need_query": "1"
 }
 ```
 
@@ -693,22 +862,16 @@ POST http://localhost:6688/tasks/create
 
 Starting from a point, get the k-layer nodes of this point.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "kout",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/kout",
- "kout.source":"tom",
- "compute.max_step":"6"
- }
+  "compute.algorithm": "kout",
+  "compute.parallel": "1",
+  "output.type": "none",
+  "kout.source": "1",
+  "compute.max_step": "6",
+  "output.need_query": "1"
 }
 ```
 
@@ -716,49 +879,38 @@ POST http://localhost:6688/tasks/create
 
 The Louvain algorithm is a community detection algorithm based on modularity. The basic idea is that nodes in the network try to traverse all neighbor community labels and choose the community label that maximizes the modularity increment. After maximizing modularity, each community is regarded as a new node, and the process is repeated until the modularity no longer increases.
 
-The distributed Louvain algorithm implemented on Vermeer is affected by factors such as node order and parallel computation. Due to the random traversal order of the Louvain algorithm, community compression also has a certain randomness, leading to different results in multiple executions. However, the overall trend will not change significantly.
+Vertex order, parallel execution and random traversal can change the community assignment between runs.
+Compare partitions and modularity for your data rather than assuming identical community IDs.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "louvain",
- "compute.parallel":"10",
- "compute.max_step":"1000",
- "louvain.threshold":"0.0000001",
- "louvain.resolution":"1.0",
- "louvain.step":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/louvain"
-  }
- }
+  "compute.algorithm": "louvain",
+  "compute.parallel": "1",
+  "compute.max_step": "1000",
+  "louvain.threshold": "0.0000001",
+  "louvain.resolution": "1.0",
+  "louvain.step": "10",
+  "output.type": "none",
+  "output.need_query": "1"
+}
 ```
 
 ### 3.12 Jaccard Similarity Coefficient
 
 The Jaccard index, also known as the Jaccard similarity coefficient, is used to compare the similarity and diversity between finite sample sets. The larger the Jaccard coefficient value, the higher the similarity of the samples. It is used to calculate the Jaccard similarity coefficient between a given source point and all other points in the graph.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "jaccard",
- "compute.parallel":"10",
- "compute.max_step":"2",
- "jaccard.source":"123",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/jaccard"
- }
+  "compute.algorithm": "jaccard",
+  "compute.parallel": "1",
+  "compute.max_step": "2",
+  "jaccard.source": "1",
+  "output.type": "none",
+  "output.need_query": "1"
 }
 ```
 
@@ -768,69 +920,41 @@ The goal of personalized PageRank is to calculate the relevance of all nodes rel
 
 Since the calculation requires using out-degree, load.use_out_degree needs to be set to 1 when reading the graph.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "ppr",
- "compute.parallel":"100",
- "compute.max_step":"10",
- "ppr.source":"123",
- "ppr.damping":"0.85",
- "ppr.diff_threshold":"0.00001",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/ppr"
- }
+  "compute.algorithm": "ppr",
+  "compute.parallel": "1",
+  "compute.max_step": "10",
+  "ppr.source": "1",
+  "ppr.damping": "0.85",
+  "ppr.diff_threshold": "0.00001",
+  "output.type": "none",
+  "output.need_query": "1"
 }
 ```
 
 ### 3.14 Global Kout
 
-Calculate the k-degree neighbors of all nodes in the graph (excluding themselves and 1~k-1 degree neighbors). Due to the severe memory expansion of the global kout algorithm, k is currently limited to 1 and 2. Additionally, the global kout algorithm supports filtering functions (parameters such as "compute.filter":"risk_level==1"), and the filtering condition is judged when calculating the k-degree. The final result set includes those that meet the filtering condition. The algorithm's final output is the number of neighbors that meet the condition.
-
-Request example:
-
-```javascript
-POST http://localhost:6688/tasks/create
-{
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "kout_all",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"10",
- "output.file_path":"result/kout",
- "compute.max_step":"2",
- "compute.filter":"risk_level==1"
- }
-}
-```
+Older examples used `compute.algorithm=kout_all` for all-vertex K-out counts. The current native algorithm registry does not register `kout_all`,
+and Hubble does not accept it. Do not submit that legacy request to current builds.
+Use [`kout`](#310-kout) for a selected source's traversal; it is not an all-vertex replacement.
 
 ### 3.15 Clustering Coefficient
 
-The clustering coefficient represents the coefficient of the clustering degree of nodes in a graph. In real networks, especially in specific networks, nodes tend to establish a tightly organized relationship due to relatively high-density connection points. The clustering coefficient algorithm (Cluster Coefficient) is used to calculate the clustering degree of nodes in the graph. This algorithm is for local clustering coefficients. The local clustering coefficient can measure the clustering degree around each node in the graph.
+The local clustering coefficient measures connections between a vertex's undirected neighbors.
+Like Triangle Count, it ignores edge direction, self-loops and duplicate neighbors, and requires `compute.max_step >= 3`.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "clustering_coefficient",
- "compute.parallel":"100",
- "compute.max_step":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/cc"
- }
+  "compute.algorithm": "clustering_coefficient",
+  "compute.parallel": "1",
+  "compute.max_step": "3",
+  "output.type": "none",
+  "output.need_query": "1"
 }
 ```
 
@@ -838,24 +962,57 @@ POST http://localhost:6688/tasks/create
 
 In the mathematical theory of directed graphs, if every vertex of a graph can be reached from any other point in the graph, the graph is said to be strongly connected. The parts of any directed graph that can achieve strong connectivity are called strongly connected components. It indicates the connectivity between points and distinguishes different connected communities.
 
-Request example:
+`params` example:
 
-```javascript
-POST http://localhost:6688/tasks/create
+```json
 {
- "task_type": "compute",
- "graph": "testdb",
- "params": {
- "compute.algorithm": "scc",
- "compute.parallel":"10",
- "output.type":"local",
- "output.parallel":"1",
- "output.file_path":"result/scc",
- "compute.max_step":"200"
- }
+  "compute.algorithm": "scc",
+  "compute.parallel": "1",
+  "output.type": "none",
+  "compute.max_step": "200",
+  "output.need_query": "1"
 }
-
 ```
+
+### 3.17 Depth {#vermeer-depth}
+
+`compute.algorithm=depth` computes a depth sketch over the loaded graph. It has no caller-selected `depth.source` parameter;
+use the form's `compute.parallel` and `compute.max_step` controls. It is distinct from source-vertex K-out or shortest-path queries.
+
+### 3.18 SLPA {#vermeer-slpa}
+
+`compute.algorithm=slpa` runs Speaker-Listener Label Propagation. `slpa.k` limits retained labels (`-1` means no such limit),
+and `slpa.select_method` selects `max` or `random`. The Hubble form requires `slpa.k=-1` or a positive integer.
+Increasing `compute.max_step` increases the iterative budget; the current native implementation caps SLPA at 1000 steps.
+
+### 3.19 Weighted Louvain {#vermeer-weighted-louvain}
+
+`compute.algorithm=louvain_weighted` shares `louvain.resolution`, `louvain.threshold` and `louvain.step` with Louvain.
+Resolution must be positive and finite; threshold must be finite and nonnegative; `louvain.step` must be positive.
+Native callers can select `louvain.edge_weight_property` only when the corresponding finite, nonnegative edge weights were loaded.
+Hubble currently requires that property field to remain blank, as explained in [adapter limits](#hubble-algorithm-catalog).
+
+Both Louvain variants validate that final community IDs have been published before output is accepted.
+A computation that reaches its outer step budget early can fail with an instruction to increase `compute.max_step`.
+Task failure does not produce a valid provisional community assignment; inspect the task error before reading results.
+
+When there are no effective edges (or total effective weight is zero for weighted Louvain), each vertex forms its own community
+and the algorithm's `mod_value` is `0`. This is a valid degenerate result.
+
+### 3.20 Directed cycle detection {#vermeer-cycle-detection}
+
+`compute.algorithm=cycle_detection` finds simple directed cycles and excludes self-loops.
+Use `cycle.mode=limit` for a bounded number of cycles, `boolean` to mark participation, or `all` only when full enumeration is intended.
+The native default is `all`; the Hubble form defaults to `limit` with `cycle.max_cycles=10`.
+
+`cycle.min_length` values 0 or 1 use the natural minimum of 2; `cycle.max_length` must be at least 2 and not below the minimum.
+`cycle.max_cycles` must be positive in limit mode, and `compute.max_step` must be at least 2.
+
+Boolean mode outputs integer `0` / `1`; all/limit modes output text. Use separate typed properties when writing different modes back
+([schema migration](#vermeer-result-types)).
+
+Choose a small maximum length first: limiting output does not make every graph search inexpensive.
+Hubble's property-filter fields must remain empty until its loader can verify those properties.
 
 ## 4. Cluster Monitoring and Telemetry
 
@@ -876,15 +1033,21 @@ endpoint requires an administrator token (`Authorization: Bearer <admin-token>`)
 
 #### Example Request and Response
 
+CPU is consumed process CPU seconds per elapsed wall second (`cpu_cores`); RSS is resident process memory in bytes.
+These are not Kubernetes Pod utilization percentages. The first sample may report `metrics_warming_up`; later observations include
+`sample_window_seconds`. Missing metrics do not mean zero usage and do not alone make a ready Worker unavailable.
+
 ```bash
 curl -H "Authorization: Bearer <admin-token>" \
   http://localhost:6688/api/v1/admin/cluster
 ```
 
+The following JSON illustrates the response shape; use the returned observation time and collection state for actual diagnosis.
+
 ```json
 {
   "schema_version": 1,
-  "observed_at": 1730419200000,
+  "observed_at": 1793491200000,
   "status": "UP",
   "registered_workers": 1,
   "ready_workers": 1,
@@ -894,7 +1057,7 @@ curl -H "Authorization: Bearer <admin-token>" \
     "launch_time": "2026-11-01T08:00:00Z", "status": "UP", "ready": true,
     "checks": {"http_ready": true, "initialized": true, "service_online": true},
     "metrics": {"cpu_cores": 0.15, "rss_bytes": 134217728, "sample_window_seconds": 10.0},
-    "metric_status": {"availability": "AVAILABLE", "observed_at": 1730419200000}
+    "metric_status": {"availability": "AVAILABLE", "observed_at": 1793491200000}
   },
   "workers": [{
     "id": "worker-1", "name": "worker-1", "role": "WORKER", "group": "default",
@@ -903,10 +1066,17 @@ curl -H "Authorization: Bearer <admin-token>" \
     "checks": {"registered": true, "connection_ready": true, "load_stream_ready": true,
       "compute_stream_ready": true, "superstep_stream_ready": true},
     "metrics": {"cpu_cores": 1.42, "rss_bytes": 2147483648, "sample_window_seconds": 10.0},
-    "metric_status": {"availability": "AVAILABLE", "observed_at": 1730419200000}
+    "metric_status": {"availability": "AVAILABLE", "observed_at": 1793491200000}
   }]
 }
 ```
+In Hubble, **System & Operations → Cluster Overview** keeps Server, PD and Store as the primary topology.
+With Vermeer monitoring enabled, open its compute summary to inspect Master above Workers, then return to the main cluster view.
+This deployment-wide snapshot is separate from the selected graph's loaded-copy state and its algorithm result cache.
+A failed Vermeer metrics collection does not by itself establish a HugeGraph database outage.
+Helm configures `operations.vermeer.enabled`, `operations.vermeer.address` and `operations.vermeer.token_file` together with the compute connection;
+manual deployments must configure those backend properties separately.
+
 ### 4.2 Space Worker Availability Probe (`GET /api/v1/workers/availability`)
 
 `GET /api/v1/workers/availability` provides a space-scoped readiness check for Kubernetes and Helm availability hooks.

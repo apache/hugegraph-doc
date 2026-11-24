@@ -65,7 +65,7 @@ for (const language of ['en', 'cn']) {
             localStorage.setItem('td-color-theme', theme);
           }, { preset, theme });
           const prefix = language === 'cn' ? '/cn' : '';
-          for (const [route, count] of [['config/config-backend-rocksdb', 3], ['quickstart/hugegraph/hugegraph-helm', 14]]) {
+          for (const [route, count] of [['config/config-backend-rocksdb', 3], ['quickstart/hugegraph/hugegraph-helm', 15]]) {
             await page.goto(`${prefix}/docs/${route}/`);
             const tree = page.locator('.td-filetree');
             await expect(tree).toHaveClass(/td-filetree--wrap/);

@@ -1,0 +1,113 @@
+{
+  "capturedOn": "2026-11-15",
+  "timezone": "Asia/Singapore",
+  "hubbleSource": "apache/hugegraph-toolchain@20807295eed25d8c135bb1d10ab456d4f4523ecb",
+  "vermeerSource": "apache/hugegraph-computer@cc990987d2932fe269948e197a82d73da6869494",
+  "helmSource": "apache/hugegraph@8828d8238ad578f0d8ac25010c3dd6d4b3ba0e07",
+  "capture": "Real authenticated Helm deployment and native language toggle; no API interception, DOM substitutions, or model calls",
+  "runtimeImages": {
+    "pd": {
+      "reference": "hugegraph/pd@sha256:5929dcfe9a45009a55ab871bd0370b500d3517b59d9dac62727bb2661ce84a54",
+      "localImageId": "sha256:c327f0a075a8c8b75ff05e23f97f0f30d3ac1a75c49cf22614712aca99fa7bcc",
+      "created": "2026-11-13T03:25:47.005593407Z",
+      "architecture": "amd64",
+      "revision": null,
+      "source": null
+    },
+    "store": {
+      "reference": "hugegraph/store@sha256:947237c603cf692e571db21267d1694bf4904ceb82ee3dd103d3eae0aec20750",
+      "localImageId": "sha256:1fa9c6c5aca18cf8b1bc7d9aef6d934fdb875d1c80b22e9a9052d71e09b7e7c2",
+      "created": "2026-11-13T03:25:47.36082655Z",
+      "architecture": "amd64",
+      "revision": null,
+      "source": null
+    },
+    "server": {
+      "reference": "hugegraph/server@sha256:f0a792265d86f4f9b14421c742ebdcec76861d4bee9e1b9091ad0153f2e71a34",
+      "localImageId": "sha256:dad76ad0d4d8756a4d7e5246be9b7281a84e5a5348f7296949496d869741d812",
+      "created": "2026-11-13T03:25:47.790379146Z",
+      "architecture": "amd64",
+      "revision": null,
+      "source": null
+    },
+    "hubble": {
+      "reference": "hugegraph/hubble@sha256:40f020c3a629ec81127cdad90054283259eb3730ee2804598367bb370b3950b5",
+      "localImageId": "sha256:9b3887eb0b77d5e19669df331307fa3bb61f551a0c188c945ed1ca5a4e5d2817",
+      "created": "2026-11-13T03:02:15.894344617Z",
+      "architecture": "amd64",
+      "revision": "20807295eed25d8c135bb1d10ab456d4f4523ecb",
+      "source": "https://github.com/apache/hugegraph-toolchain"
+    },
+    "vermeer": {
+      "reference": "hugegraph/vermeer@sha256:80ccc46d2f4553ce383941ff5d5247ae18c99de4f6fa01a9817defec00ac722a",
+      "localImageId": "sha256:23ae3fdb523e2056d92b493a1776b9306a77408431023b6b7b5eacc2beaef29c",
+      "created": "2026-11-06T03:18:02.679703735Z",
+      "architecture": "amd64",
+      "revision": "cc990987d2932fe269948e197a82d73da6869494",
+      "source": "https://github.com/apache/hugegraph-computer"
+    }
+  },
+  "sample": {
+    "graphspace": "DEFAULT",
+    "graph": "hugegraph",
+    "vertices": 8,
+    "edges": 6
+  },
+  "result": {
+    "algorithm": "pagerank",
+    "hubbleTaskId": -9,
+    "displayTaskId": "Vermeer #9",
+    "rows": 8,
+    "view": "table",
+    "edgesStatus": "unavailable"
+  },
+  "notes": [
+    "Both result screenshots show the same successful task and eight ID/value rows.",
+    "The native image lacks preview-edges support; the UI retains result values and reports unavailable edge samples.",
+    "The compute cluster has one ready Master and one ready Worker; main graph-cluster diagnostics remain visible."
+  ],
+  "images": [
+    {
+      "path": "content/en/docs/images/hubble/olap-catalog.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "6aa6c696e39835297bb53d895594a200e1a41881bea20543b26fb487afecbbea"
+    },
+    {
+      "path": "content/en/docs/images/hubble/olap-results.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "9dcae4c1bd34ef8074586a683a31870ab9150fc575c94a469e786ce3f901bf0a"
+    },
+    {
+      "path": "content/en/docs/images/hubble/vermeer-cluster.jpg",
+      "language": "en",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "36040814d5788e8b18e73f294469c645323ea926d03a8aeb699df6900ae2b8ef"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/olap-catalog.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "8efe2ba06e412c2b5f8f78a08d244b7696cccecafd4ee10e549df9a08e7393bf"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/olap-results.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "5f69e96170b3bc5243c6e23b22358a7678ecdf2716d5c181e8c9c198770ee88b"
+    },
+    {
+      "path": "content/cn/docs/images/hubble/vermeer-cluster.jpg",
+      "language": "cn",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "0964c45951097ba57f95e702c178dbc8f0d32d294a820b490096f59b0f5a89e3"
+    }
+  ]
+}

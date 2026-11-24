@@ -63,9 +63,9 @@ business key.
      query results with explicit field schemas; 3.0.0 adds multi-table reads via `tables_configs`.
    - [HugeGraph Sink](https://seatunnel.apache.org/docs/3.0.0/connectors/sink/HugeGraph/) is
      refactored in 3.0.0 with multi-mapping support — use the recommended `mappings` configuration
-    for vertices/edges and follow its schema-creation behavior. By default, the Sink fails fast on
-    errors (`batch_failure_fallback=false` and `max_insert_errors=0`). Record skipping is opt-in via
-    `batch_failure_fallback=true`; if enabled, capture and reconcile skipped records and compare row counts before cutover.
+     for vertices/edges and follow its schema-creation behavior. By default, the Sink fails fast on
+     errors (`batch_failure_fallback=false` and `max_insert_errors=0`). Record skipping is opt-in via
+     `batch_failure_fallback=true`; if enabled, capture and reconcile skipped records and compare row counts before cutover.
    - [HugeGraph Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/) is
      new in 3.0.0 (schema auto-discovery, multi-label/parallel reads), enabling HugeGraph export
      and migration workflows.
@@ -82,16 +82,19 @@ business key.
      returns), set the vertex `idFields` to it, and map the matching edge endpoint fields
      in `sourceConfig.idFields` and `targetConfig.idFields`.
 
-   Labels you pre-created in step 2 must use that same strategy — automatic creation does not
-   convert an existing `PRIMARY_KEY` label into `CUSTOMIZE_STRING`. The Sink `mappings`
-   configuration can create the missing PropertyKey, VertexLabel and EdgeLabel definitions, so
-   those three parts of step 2 are optional when you use it; it does not create IndexLabels, so
-   create any index your queries rely on (see the habits table above) separately.
-   When SeaTunnel auto-creates EdgeLabels, omitting `frequency` defaults to `SINGLE`, which collapses parallel Neo4j
-   relationships between the same endpoints into a single edge. To preserve parallel relationships, explicitly specify
-   `frequency = "MULTIPLE"` and provide stable relationship discriminator fields as `sortKeys` in the edge mapping
-   (HugeGraph uses sort keys to distinguish parallel edges).
-   Load vertices before edges. We recommend thoroughly testing the import pipeline with a representative data sample before cutover.
+   Check three details before running the import:
+
+   - **Schema creation**: labels pre-created in step 2 must use the chosen ID strategy. Automatic creation does not
+     convert an existing `PRIMARY_KEY` label into `CUSTOMIZE_STRING`. The Sink can create missing PropertyKeys,
+     VertexLabels and EdgeLabels through `mappings`, so you may omit those parts of step 2.
+   - **Indexes**: the Sink does not create IndexLabels. Create the indexes your queries rely on separately
+     (see the habits table above).
+   - **Parallel relationships**: auto-created EdgeLabels default to `frequency = "SINGLE"` (and pre-created labels must also be defined as `MULTIPLE` to preserve multiple edges), which collapses
+     relationships of the same label between the same endpoints. To keep parallel relationships, set
+     `frequency = "MULTIPLE"` and provide stable discriminator fields as `sortKeys` in the edge mapping.
+     HugeGraph uses those fields to distinguish parallel edges.
+
+   Load vertices before edges, and test the complete import with representative data before cutover.
 4. **Switch incrementally**: keep queries Cypher supports, and rewrite
    unsupported constructs as Gremlin — the
    [equivalents table](/docs/language/hugegraph-cypher/#gremlin-equivalents)

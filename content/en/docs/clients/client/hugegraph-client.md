@@ -33,10 +33,8 @@ See the complete example in the following section for the detail.
 
 #### 4.1 Build New Maven Project
 
-Using IDEA or Eclipse to create the project:
-
-- [Build by Eclipse](http://www.vogella.com/tutorials/EclipseMaven/article.html)
-- [Build by IntelliJ IDEA](https://vaadin.com/docs/-/part/framework/getting-started/getting-started-idea.html)
+Create a Maven project with JDK 17 in your IDE, or use an existing project. Put Java sources under `src/main/java`
+and add the dependency below to its `pom.xml`.
 
 #### 4.2 Add Hugegraph-Client Dependency In POM
 
@@ -61,17 +59,18 @@ Choose the client version before building:
 The examples use Schema, Graph, Gremlin and resource-cleanup APIs available in Client `1.7.0` and compatible with Toolchain `master`.
 The release's Java build target does not describe the runtime requirements of every transitive dependency.
 
-To use unreleased features from the master branch, build Client from source (see [Tools source build instructions](/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)):
+To use unreleased master APIs, first follow the [Tools SDK preparation](/docs/quickstart/toolchain/hugegraph-tools/#prepare-server-sdk).
+Then run this command from that Toolchain checkout, in the same terminal so `candidate_dir` still points to the prepared SDK:
 
 ```bash
 java -version
 mvn -version
 mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" \
-  -Dsdk.validation.mode=candidate \
+  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
   install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
-Both version checks must report JDK 17. Also pass `-Dmaven.repo.local="$candidate_dir/m2"` to Maven commands in projects using Client from master.
+Both version checks must report JDK 17. In downstream projects using Client from master, set the dependency `<version>` to `1.8.0` and pass `-Dmaven.repo.local="$candidate_dir/m2"` to Maven commands.
 Client and Server versions need not be identical; check the required APIs and compatibility before upgrading.
 
 #### 4.3 Example
@@ -988,8 +987,33 @@ spaceManager.createGraphSpace(graphSpace);
 | GraphSpace - Properties | getName() / getNickname() / getDescription() | Get name / nickname / description |
 |           | getGraphNumberUsed() / getRoleNumberUsed() | Get the number of graphs / roles in use |
 |           | getCpuUsed() / getMemoryUsed() / getStorageUsed() | Get the resources in use |
+|           | getStorageUsedKb() | Get storage usage in KB (Client `1.8.0` built from Toolchain `master`) when the Server supplies a valid metric |
 |           | getCreateTime() / getUpdateTime() | Get the creation / update time |
 | GraphSpace - Configuration | setDescription(String) / setNickname(String) | Set description / nickname |
 |           | setMaxGraphNumber(int) / setMaxRoleNumber(int) | Set the maximum number of graphs / roles |
 |           | setCpuLimit(int) / setMemoryLimit(int) / setStorageLimit(int) | Set the resource quotas |
+|           | setComputeCpuLimit(int) / setComputeMemoryLimit(int) | Set compute quotas; see the update semantics below |
 |           | setConfigs(Map&lt;String, Object&gt;) | Set extra configuration entries |
+{.wide .expand}
+
+#### 8.3 Compute quotas and storage usage {#graphspace-resource-updates}
+
+Client `1.8.0`, built from Toolchain `master` per section 4.2, preserves the distinction between an unset compute quota and an explicit zero.
+On a Server that supports inherited compute quotas:
+
+| When updating a GraphSpace | Result |
+| --- | --- |
+| The fields are unset (new object without calling `setComputeCpuLimit` / `setComputeMemoryLimit`) | Omit that field; keep its existing value |
+| Pass `0` to a compute setter | Restore inheritance from the corresponding graph-service quota |
+| Pass a positive value | Set an independent compute quota; memory is in GB |
+
+The getters return `0` for an unset value too. Do not copy that default into a setter when you intend to leave a field unchanged.
+Note that a `GraphSpace` returned by `getGraphSpace()` already holds the limits from the Server response; updating that fetched object
+resends those values even if setters are not called, which can overwrite concurrent quota changes. Use a clean object with unset fields
+when you want the update request to omit them. Older Clients can send zero for unset compute fields and unintentionally restore inheritance
+when updating against a newer Server. Upgrade the Client together with this Server capability, or explicitly preserve the existing limits when updating.
+
+For storage monitoring with Client `1.8.0` (built from Toolchain `master`), prefer `getStorageUsedKb()` (`storage_used_kb`), an optional non-negative integer metric in KB.
+If it is `null`, fall back to `getStorageUsed()` in whole GB; sub-GB usage can appear as zero in that legacy field.
+Treat malformed or string-valued `storage_used_kb` as unavailable. These are reported usage metrics, so allow for Store heartbeat
+and PD refresh delays after writes.

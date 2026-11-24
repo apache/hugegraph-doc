@@ -33,10 +33,8 @@ aliases:
 
 #### 4.1 新建 Maven 工程
 
-使用 Eclipse 或 IntelliJ IDEA 创建 Maven 工程。
-
-- [Eclipse 新建 Maven 工程](http://www.vogella.com/tutorials/EclipseMaven/article.html)
-- [Intellij Idea 创建 maven 工程](https://vaadin.com/docs/-/part/framework/getting-started/getting-started-idea.html)
+在 IDE 中创建使用 JDK 17 的 Maven 工程，也可使用已有工程。Java 源文件放在 `src/main/java` 下，
+并在工程的 `pom.xml` 中添加下列依赖。
 
 #### 4.2 添加 hugegraph-client 依赖
 
@@ -64,17 +62,18 @@ aliases:
 示例使用的 Schema、Graph、Gremlin 和资源关闭接口在 Client `1.7.0` 中可用，也与 Toolchain `master` 兼容。
 发布版的 Java 编译目标不代表所有传递依赖的运行环境要求。
 
-若需要使用 master 分支未发布的新接口，可从源码编译安装 Client（需配合 Toolchain 源码，详见 [Tools 源码构建指引](/cn/docs/quickstart/toolchain/hugegraph-tools/#build-current-source)）：
+如需使用 master 未发布的接口，先完成 [Tools 的 SDK 准备步骤](/cn/docs/quickstart/toolchain/hugegraph-tools/#prepare-server-sdk)。
+然后在同一终端、同一份 Toolchain 源码根目录执行下列命令，沿用指向配套 SDK 的 `candidate_dir`：
 
 ```bash
 java -version
 mvn -version
 mvn -Dmaven.repo.local="${candidate_dir:?Run the candidate SDK setup first}/m2" \
-  -Dsdk.validation.mode=candidate \
+  -Dhugegraph.version=1.8.0 -Dsdk.validation.mode=candidate \
   install -pl hugegraph-client -am -DskipTests -Dmaven.javadoc.skip=true -ntp
 ```
 
-两条版本检查都应显示 JDK 17。使用 master 分支 Client 的项目运行 Maven 命令时，也需添加 `-Dmaven.repo.local="$candidate_dir/m2"`。
+两条版本检查都应显示 JDK 17。使用 master 分支 Client 的项目，需将依赖 `<version>` 设为 `1.8.0`，并在运行 Maven 命令时添加 `-Dmaven.repo.local="$candidate_dir/m2"`。
 Client 与 Server 的版本不必相同；升级前核对所需 API 及兼容范围。
 
 #### 4.3 Example
@@ -1004,8 +1003,31 @@ spaceManager.createGraphSpace(graphSpace);
 | GraphSpace - 属性 | getName() / getNickname() / getDescription() | 获取名称/昵称/描述 |
 | | getGraphNumberUsed() / getRoleNumberUsed() | 获取已使用的图数量/角色数量 |
 | | getCpuUsed() / getMemoryUsed() / getStorageUsed() | 获取已使用的资源 |
+| | getStorageUsedKb() | 获取 KB 精度的存储用量（需 Toolchain `master` 构建的 Client `1.8.0`），服务端未提供有效指标时返回 null |
 | | getCreateTime() / getUpdateTime() | 获取创建时间/更新时间 |
 | GraphSpace - 配置 | setDescription(String) / setNickname(String) | 设置描述/昵称 |
 | | setMaxGraphNumber(int) / setMaxRoleNumber(int) | 设置最大图数量/角色数量 |
 | | setCpuLimit(int) / setMemoryLimit(int) / setStorageLimit(int) | 设置资源配额 |
+| | setComputeCpuLimit(int) / setComputeMemoryLimit(int) | 设置计算配额，更新语义见下文 |
 | | setConfigs(Map&lt;String, Object&gt;) | 设置额外的配置项 |
+{.wide .expand}
+
+#### 8.3 计算配额与存储用量 {#graphspace-resource-updates}
+
+按 4.2 节由 Toolchain `master` 构建的 Client `1.8.0` 会区分“未设置计算配额”和“显式设置为零”。连接支持计算配额继承的 Server 时：
+
+| 更新 GraphSpace 时的操作 | 结果 |
+| --- | --- |
+| 字段处于未设置状态（新对象且未调用 `setComputeCpuLimit` / `setComputeMemoryLimit`） | 请求省略该字段，保留原值 |
+| 向计算配额 setter 传入 `0` | 恢复继承对应的图服务配额 |
+| 传入正值 | 设置独立的计算配额，内存单位为 GB |
+
+getter 在字段未设置时也会返回 `0`。如果只是想保留原值，不要把这个默认值再传给 setter。
+注意：通过 `getGraphSpace()` 获取的 `GraphSpace` 对象已包含响应中的配额值；直接更新该已获取对象时，
+即使不调用 setter 也会重新发送这些既有值，可能覆盖并发修改。若希望更新请求中省略计算配额字段，应使用字段未设置的全新对象。
+旧 Client 可能把未设置的计算配额发送为零，连接新版 Server 更新 GraphSpace 时意外恢复继承。
+启用这项 Server 能力时应同时升级 Client；暂时无法升级时，更新请求中需显式保留现有配额。
+
+监控存储时，使用基于 Toolchain `master` 构建的 Client `1.8.0` 优先使用 `getStorageUsedKb()`（`storage_used_kb`）：这是可选的非负整数指标，单位为 KB。
+返回 `null` 时，回退到以整数 GB 表示的 `getStorageUsed()`；旧字段可能把不足 1 GB 的用量显示为零。
+格式不合法或字符串形式的 `storage_used_kb` 视为不可用。这些是上报用量，写入后需考虑 Store 心跳与 PD 刷新的延迟。

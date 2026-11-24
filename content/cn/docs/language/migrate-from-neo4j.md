@@ -53,9 +53,9 @@ weight: 4
    - [Neo4j Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/Neo4j/) 以显式字段
      schema 读取 Cypher 查询结果，支持通过 `tables_configs` 的多表读取。
    - [HugeGraph Sink](https://seatunnel.apache.org/docs/3.0.0/connectors/sink/HugeGraph/)
-    支持多映射 —— 顶点/边请使用推荐的 `mappings` 配置，并遵循其 schema 创建行为。该 Sink 默认
-    遇到错误快速失败（`batch_failure_fallback=false` 与 `max_insert_errors=0`）。跳过失败记录为
-    可选配置（`batch_failure_fallback=true`）；若开启，请在正式切换前捕获并核对跳过行，并比对数据总条数。
+     支持多映射 —— 顶点/边请使用推荐的 `mappings` 配置，并遵循其 schema 创建行为。该 Sink 默认
+     遇到错误快速失败（`batch_failure_fallback=false` 与 `max_insert_errors=0`）。跳过失败记录为
+     可选配置（`batch_failure_fallback=true`）；若开启，请在正式切换前捕获并核对跳过行，并比对数据总条数。
    - [HugeGraph Source](https://seatunnel.apache.org/docs/3.0.0/connectors/source/HugeGraph/)
      支持 schema 自动发现与多标签并行读取，使 HugeGraph 的导出与迁移工作流成为可能。
 
@@ -67,12 +67,17 @@ weight: 4
      作为单独一列返回（用 `AS node_id` 等别名），在 Source 的 `schema.fields` 中声明该字段（必须与查询返回的字段一致），
      把顶点的 `idFields` 设为该字段，并在 `sourceConfig.idFields` 与 `targetConfig.idFields` 中映射对应的边端点字段。
 
-   第 2 步预创建的标签必须使用同一策略——自动创建不会把已有的 `PRIMARY_KEY` 标签改为 `CUSTOMIZE_STRING`。
-   Sink 的 `mappings` 配置可以创建缺失的 PropertyKey、VertexLabel 和 EdgeLabel 定义，因此使用它时第 2 步中的这三类
-   定义可省略；但它不会创建 IndexLabel，查询所依赖的索引仍须单独创建（见上文“需要改变习惯的部分”表）。
-   若未显式指定 `frequency`，自动创建 EdgeLabel 时默认采用 `SINGLE`，相同类型且端点相同的多条平行关系（Parallel Relationships）会被覆盖合并为一条边。
-   若需保留 Neo4j 中的平行边，必须在边映射中显式指定 `frequency = "MULTIPLE"`，并配置稳定的业务区分字段作为 `sortKeys`（HugeGraph 依赖 sortKeys 生成重边的唯一边 ID）。
-   先导入顶点、后导入边。建议在正式切换前，先在测试环境中使用业务数据样本完整验证导入流程。
+   开始导入前，再确认三项配置：
+
+   - **Schema 创建**：第 2 步预创建的标签必须使用选定的 ID 策略；自动创建不会把已有 `PRIMARY_KEY` 标签
+     改为 `CUSTOMIZE_STRING`。Sink 可通过 `mappings` 创建缺失的 PropertyKey、VertexLabel 和 EdgeLabel，
+     因而这些定义可省略手动创建。
+   - **索引**：Sink 不会创建 IndexLabel。查询依赖的索引仍需单独创建，见上文“需要改变习惯的部分”表。
+   - **平行边**：自动创建的 EdgeLabel 默认使用 `frequency = "SINGLE"`（预创建的 EdgeLabel 也必须定义为 `MULTIPLE` 才能保留多条边），相同类型且端点相同的关系会合并为一条边。
+     若需保留平行边，在边映射中显式设置 `frequency = "MULTIPLE"`，并提供稳定的区分字段作为 `sortKeys`；
+     HugeGraph 依靠这些字段区分同一对端点间的多条边。
+
+   先导入顶点、后导入边，并在正式切换前用业务样本验证完整流程。
 4. **灰度切换**：Cypher 能表达的查询保持不动，暂不支持的改写为
    Gremlin（等价写法见 [对照表](/cn/docs/language/hugegraph-cypher/#等价的-gremlin-写法)）。
 
